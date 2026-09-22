@@ -17,7 +17,7 @@ import {
 } from "./packages/fuse/scripts/entries.ts";
 
 const FUSE = "packages/fuse";
-/** One route directory per component page — the page, its demos and its `api.json` (§6). */
+/** One route directory per component page — the page, its demos and its `api.json`. */
 const DOCS_ROUTE = "apps/docs/src/app/(docs)/components/{{name}}";
 const TEMPLATES = "plop-templates/component";
 const BUDGETS = `${FUSE}/scripts/size-budgets.ts`;
@@ -119,7 +119,7 @@ export default function plopfile(plop) {
         path: BUDGETS,
         pattern: BUDGET_MARKER,
         // A brand-new packed entry has no measurement yet; 0 fails size-limit until the
-        // implementer records measuredGzip (performance.md §2, how-to §6).
+        // implementer records measuredGzip.
         template: `  { name: "{{name}}", entryFile: "{{name}}.js", measuredGzip: 0 }, // TODO({{name}}): record measuredGzip`,
       },
       // Template line breaks cannot know how long a component name is, so the emitted
@@ -144,13 +144,13 @@ export default function plopfile(plop) {
       (answers) =>
         [
           "next steps",
-          `  1. Implement ${answers.name} using docs/component-authoring.md; replace every failing placeholder.`,
+          `  1. Implement ${answers.name} using AGENTS.md; replace every failing placeholder.`,
           "  2. pnpm --filter @elmeragroup/fuse generate:exports  # rewrites tracked package.json#exports and src/index.ts",
           "  3. pnpm --filter @elmeragroup/fuse build             # dist + publish manifest; does not rewrite source exports",
           `  4. Author the page and demos; record required scenarios in apps/docs/test/fixtures/component-demo-requirements.json.`,
           "  5. pnpm --filter docs generate                    # writes the committed api.json next to the page",
           "  6. Record measuredGzip in packages/fuse/scripts/size-budgets.ts.",
-          "  7. Add the component to independent RSC expectations and public type/API contract checks.",
+          "  7. Add the component to apps/docs/test/fixtures/component-rsc-statuses.json, source-contracts.test.ts and public type/API checks.",
           "  8. pnpm ci:checks",
         ].join("\n"),
     ],

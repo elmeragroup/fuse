@@ -12,7 +12,7 @@ const workspace = asRecord(
 );
 
 /**
- * The catalog entry for a dependency (tooling.md §2).
+ * The catalog entry for a dependency.
  * @param {string} name
  */
 function catalogEntry(name) {

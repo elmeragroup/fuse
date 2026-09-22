@@ -28,7 +28,7 @@ async function matrixGrid(): Promise<string> {
   return html.slice(start, end);
 }
 
-describe("theme matrix (docs-site.md §5)", () => {
+describe("theme matrix", () => {
   it("enumerates 20 legal permutations, including elma", () => {
     expect(LEGAL_THEMES).toHaveLength(20);
     expect(LEGAL_THEMES.filter((theme) => theme.brand === "elma")).toHaveLength(4);
@@ -70,7 +70,7 @@ describe("theme matrix (docs-site.md §5)", () => {
   });
 });
 
-describe("tokens page (docs-site.md §3.3, performance.md §2)", () => {
+describe("tokens page", () => {
   it("publishes a measured size and a ceiling for every budgeted entry", async () => {
     const html = await fetchText("/handbook/tokens");
     expect(BUNDLE_SIZES.length).toBeGreaterThan(0);
@@ -98,7 +98,7 @@ describe("tokens page (docs-site.md §3.3, performance.md §2)", () => {
   });
 });
 
-describe("localization page (accessibility.md §4)", () => {
+describe("localization page", () => {
   it("documents the mechanism, the locale union, precedence and a switcher", async () => {
     const html = await fetchText("/handbook/localization");
     for (const locale of ["nb-NO", "sv-SE", "en-US", "fi-FI"]) {
@@ -112,7 +112,7 @@ describe("localization page (accessibility.md §4)", () => {
   });
 });
 
-describe("quick start page (accessibility.md §2)", () => {
+describe("quick start page", () => {
   it("shows the app page scaffold once — landmarks, skip link and lang", async () => {
     const html = await fetchText("/quick-start");
     expect(html).toContain('id="page-scaffold"');

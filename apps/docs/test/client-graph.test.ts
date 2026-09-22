@@ -6,7 +6,7 @@ import { docsRoot } from "../scripts/lib/paths.ts";
 
 const srcRoot = path.join(docsRoot, "src");
 
-/** The highlighter, and the one component that may reach it (docs-site.md §8). */
+/** The highlighter, and the one component that may reach it. */
 const HIGHLIGHTER = "sugar-high";
 
 const EXTENSIONS = [".ts", ".tsx"] as const;
@@ -81,7 +81,7 @@ function importsHighlighter(file: string): boolean {
   );
 }
 
-describe("the docs client graph never reaches the highlighter (docs-site.md §8, ADR 0009)", () => {
+describe("the docs client graph never reaches the highlighter", () => {
   it("keeps sugar-high out of every module a client component can import", () => {
     const offenders: string[] = [];
     for (const entry of sourceFiles(srcRoot).filter((file) => isClientModule(readFileSync(file, "utf8")))) {

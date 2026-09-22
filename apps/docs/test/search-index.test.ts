@@ -9,7 +9,7 @@ import { docsBaseUrl } from "./docs-server";
 
 const NAV_HREFS = NAV_GROUPS.flatMap((group) => group.items.map((item) => item.href));
 
-describe("search index (docs-site.md §3.2)", () => {
+describe("search index", () => {
   it("is generated from the two page manifests, with nothing else in it", () => {
     expect(SEARCH_ENTRIES.map((entry) => entry.href)).toEqual([
       HOME_PAGE.href,

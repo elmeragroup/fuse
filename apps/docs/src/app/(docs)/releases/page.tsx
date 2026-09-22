@@ -30,7 +30,7 @@ export default function ReleasesPage(): ReactElement {
         Packages PR by applying the pending notes (<code>pnpm exec changeset version</code>); merging that PR
         publishes the stable line. The changelog is generated and never hand-edited; the rest of the procedure
         lives in the{" "}
-        <Link href="https://github.com/elmeragroup/fuse/blob/main/docs/spec/release.md" rel="noreferrer">
+        <Link href="https://github.com/elmeragroup/fuse/blob/main/scripts/RELEASE.md" rel="noreferrer">
           release runbook
         </Link>
         .

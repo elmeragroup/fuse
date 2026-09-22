@@ -1,5 +1,5 @@
 /**
- * Matching for the ⌘K palette (docs-site.md §3.2).
+ * Matching for the ⌘K palette.
  *
  * Pure over the generated index, so the ranking is testable without a browser and the
  * palette component holds nothing but state and keyboard wiring.

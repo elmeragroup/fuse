@@ -1,5 +1,5 @@
 /**
- * Reading a component page's committed `api.json` at render time (docs-site.md §8).
+ * Reading a component page's committed `api.json` at render time.
  *
  * The page renders the *committed artifact*, not a fresh extraction: `api.json` is generated
  * from the library's types and JSDoc, reviewed as a diff, and read back here verbatim. The
@@ -31,7 +31,7 @@ export async function readComponentApi(slug: string): Promise<ComponentApiArtifa
   } catch (cause) {
     throw new Error(
       `Component page "${slug}" renders an API reference, but ${location.repoPath} does not exist. ` +
-        `Run \`${API_REGEN_COMMAND}\` and commit the artifact (docs-site.md §8).`,
+        `Run \`${API_REGEN_COMMAND}\` and commit the artifact.`,
       { cause }
     );
   }

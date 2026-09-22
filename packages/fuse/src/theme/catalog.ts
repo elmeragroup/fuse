@@ -1,6 +1,6 @@
 /**
  * Workspace-only docs-pipeline facade. Not published; not in the root barrel
- * (architecture.md §8). Server-safe `.ts` only — Node generate scripts cannot
+ * Server-safe `.ts` only — Node generate scripts cannot
  * load `/theme` because that entry re-exports client TSX.
  */
 

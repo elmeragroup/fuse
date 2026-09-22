@@ -36,7 +36,7 @@ export type SearchFieldProps = {
   placeholder?: string;
   /**
    * Accessible name for the clear button. Defaults to the `searchField.clear`
-   * row of the locale dictionary (accessibility.md §4.1); an explicit string wins.
+   * row of the locale dictionary; an explicit string wins.
    */
   clearLabel?: string;
 } & AriaSearchFieldProps;

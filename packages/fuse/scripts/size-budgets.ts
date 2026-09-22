@@ -1,6 +1,10 @@
 /**
- * Packed-entry gzip ceilings. Rows store `measuredGzip`. Ceiling derives as
- * measured × 1.5 unless a standing ceiling is written.
+ * Packed-entry gzip ceilings measured through consumer bundles with peers excluded.
+ * Start new entries at measured × 1.5. Keep per-component and per-icon ceilings
+ * fixed as weight grows unless a reviewed change explains the increase.
+ * Shared entries, including styles.css and the root barrel, recalibrate to
+ * measured × 1.5 when their measurement exceeds the standing ceiling.
+ * When an entry shrinks, lower its ceiling by the bytes saved to retain headroom.
  */
 import { FLAG_RAW_CEILING_BYTES } from "./flag-payload";
 
@@ -52,7 +56,7 @@ function derive<T extends MeasuredRow>(rows: readonly T[]): Array<T & { ceilingG
 // 2026-09-19: all rows re-measured against the pinned toolchain. Growth below a written ceiling
 // keeps it; shrink ratchets it down by the saved bytes (scroll-area −73, illustrations −10,
 // sidebar −76). Collapsible measures 27627 (+351), still under its standing ceiling — no shrink to
-// record. The shared root barrel grew within its standing ceiling, which stays unchanged (performance.md §2).
+// record. The shared root barrel grew within its standing ceiling, which stays unchanged.
 export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   { name: ".", entryFile: "index.js", measuredGzip: 234557, ceilingGzip: 257843 },
   { name: "theme", entryFile: "theme.js", measuredGzip: 6197, ceilingGzip: 9194 },
@@ -210,7 +214,7 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // longer depends on emission order. themes.css re-measured at 4472 (+29 gzip over the
   // 2026-09-15 record); no token values changed and the ceiling stays at 6416.
   // 2026-09-19: styles.css re-measured at 23421 (+456), within its standing ceiling of 24466
-  // (performance.md §2); themes.css is unchanged at 4472/6416.
+  // while themes.css is unchanged at 4472/6416.
   { name: "themes.css", file: "themes.css", measuredGzip: 4472, ceilingGzip: 6416 },
   { name: "styles.css", file: "styles.css", measuredGzip: 23421, ceilingGzip: 24466 },
 ] satisfies readonly Measured<CssBudget>[]);

@@ -10,8 +10,8 @@ import { runCommand } from "./run-command";
 const packageRoot = packageRootFromScript(import.meta.url);
 
 /**
- * The release.md §5 gates the pack adapter runs (the spec lists more rows than this adapter;
- * pending fixtures and the merge-only theme contract are not publish gates here). Every gate
+ * Gates rerun against the exact tarball before publication. The merge suite supplies
+ * the theme contract; future full consumer fixtures remain in scripts/RELEASE.md. Every gate
  * also runs in the merge `ci:checks` graph, which `test/release-workflow.test.mjs` keeps pinned.
  */
 export const PUBLISH_GATES = ["package:check", "size-limit", "test:packed-consumer"] as const;
@@ -19,7 +19,7 @@ export const PUBLISH_GATES = ["package:check", "size-limit", "test:packed-consum
 /**
  * Builds the package with the release intent written into its publish manifest, packs it, and
  * runs the publish gates against the packed tarball, then returns its bytes. `dist/` is
- * rebuildable output, so no restoration is needed (release.md §5).
+ * rebuildable output, so no restoration is needed.
  */
 export function pack(intent: ReleaseIntent): Uint8Array {
   buildPackage(packageRoot, intent);

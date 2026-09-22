@@ -20,7 +20,7 @@ import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import type { ComponentApiArtifact, ComponentPageEntry } from "../src/lib/docs-model";
 import { dependencyPackageName, normalizeDemoSource } from "../src/lib/docs-model";
 import demoRequirements from "./fixtures/component-demo-requirements.json";
-import { specSectionBody } from "./spec-section.ts";
+import rscStatuses from "./fixtures/component-rsc-statuses.json";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const docsRoot = join(here, "..");
@@ -45,7 +45,7 @@ function authoredPage(slug: string): AuthoredPage {
   return { text, parsed: parseComponentPage(text, slug, file) };
 }
 
-/** The component's committed API artifact — the one source of its API data (§8). */
+/** The component's committed API artifact — the one source of its API data. */
 function api(slug: string): ComponentApiArtifact {
   // SAFETY: every api.json is written by one serialiser from `ComponentApiArtifact`, and the
   // drift check (`api-artifact.test.ts`) regenerates and byte-compares each committed file, so
@@ -53,12 +53,12 @@ function api(slug: string): ComponentApiArtifact {
   return JSON.parse(readFileSync(resolveComponentPaths(slug).apiFile, "utf8")) as ComponentApiArtifact;
 }
 
-/** The component's generated markdown endpoint (§9). */
+/** The component's generated markdown endpoint. */
 function endpoint(slug: string): string {
   return readFileSync(join(docsRoot, "public/components", `${slug}.md`), "utf8");
 }
 
-/** The declaring module's own directive — the fact performance.md §3 classifies on. */
+/** Read each part's declaring module independently of the generated API artifact. */
 function declaredRsc(sourcePath: string): string {
   return readRscStatus(readFileSync(join(repoRoot, sourcePath), "utf8"));
 }
@@ -66,21 +66,8 @@ function declaredRsc(sourcePath: string): string {
 /** Reviewed demo coverage, maintained independently of pages and generated output. */
 const requiredDemoScenarios: Readonly<Record<string, readonly string[]>> = demoRequirements;
 
-/**
- * The RSC status performance.md §3 assigns each component. That table calls itself the
- * audit view that **wins on conflict**, so it — not a sibling artifact — is what the
- * generated docs status is checked against.
- */
-function specRscStatuses(): ReadonlyMap<string, string> {
-  const statuses = new Map<string, string>();
-  for (const line of specSectionBody("performance.md", 3).split("\n")) {
-    const row = /^\s*\|\s*([a-z][a-z0-9-]*)\s*\|\s*(server|client|deferred)\b/.exec(line);
-    if (row === null) continue;
-    const [, slug = "", status = ""] = row;
-    statuses.set(slug, status);
-  }
-  return statuses;
-}
+/** Reviewed compatibility expectations, authored independently of source and generated output. */
+const expectedRscStatuses: ReadonlyMap<string, string> = new Map(Object.entries(rscStatuses));
 
 describe("component page manifest", () => {
   it("covers every authored component page", () => {
@@ -156,7 +143,7 @@ describe("component page manifest", () => {
 
   it("carries page metadata only — no demo source, no API data", () => {
     // The slim manifest is the point: a demo's source is read from its file at render time
-    // and the reference reads api.json, so neither may travel through here (§6, §8).
+    // and the reference reads api.json, so neither may travel through here.
     const serialized = JSON.stringify(COMPONENT_PAGES);
     expect(serialized).not.toContain('"source"');
     expect(serialized).not.toContain('"props"');
@@ -177,7 +164,7 @@ describe("component page manifest", () => {
   it("keeps the demo frame and its displayed source on the same authored file", () => {
     for (const entry of COMPONENT_PAGES) {
       // The page imports each demo from its own route directory, and the frame's source is
-      // that very file — read once, never copied (docs-site.md §6).
+      // that very file — read once, never copied.
       const authored = authoredPage(entry.slug);
       const markdown = endpoint(entry.slug);
       expect(authored.parsed.demos.map((demo) => demo.id)).toEqual(entry.demos.map((demo) => demo.id));
@@ -187,7 +174,7 @@ describe("component page manifest", () => {
         // Authored in the file, not grafted on in transit.
         expect(source.startsWith('"use client";'), demo.file).toBe(true);
         expect(authored.text, demo.file).toContain(`from "./demos/${demo.file.replace(/\.tsx$/, "")}"`);
-        // And the endpoint embeds the very bytes of that file, under its own path (§9).
+        // And the endpoint embeds the very bytes of that file, under its own path.
         expect(markdown, demo.file).toContain(normalizeDemoSource(source));
         expect(markdown, demo.file).toContain(`Source: \`${repoRelative(file)}\``);
       }
@@ -239,18 +226,17 @@ describe("component page manifest", () => {
     expect(page("button").markdownUrl).toBe("/components/button.md");
   });
 
-  it("reports RSC status from the declaring module, matching performance.md §3", () => {
-    const authoritative = specRscStatuses();
+  it("reports per-part directives and independently reviewed page RSC status", () => {
+    const authoritative = expectedRscStatuses;
     expect(authoritative.size).toBeGreaterThanOrEqual(COMPONENT_PAGES.length);
     for (const entry of COMPONENT_PAGES) {
       // Each part's badge is its own declaring module's leading directive.
       for (const part of api(entry.slug).parts) {
         expect(part.rsc, `${entry.slug} ${part.name}`).toBe(declaredRsc(part.sourcePath));
       }
-      // The page's status is what the §3 audit table assigns — the table that wins on
-      // conflict — not what a sibling artifact happens to say.
+      // The reviewed fixture stays independent of the generated API artifact.
       const expected = authoritative.get(entry.slug);
-      expect(expected, `performance.md §3 does not classify ${entry.slug}`).toBeDefined();
+      expect(expected, `the RSC fixture does not classify ${entry.slug}`).toBeDefined();
       expect(entry.rsc, entry.slug).toBe(expected);
     }
   });
@@ -482,7 +468,7 @@ describe("generated markdown endpoints", () => {
       const markdown = endpoint(entry.slug);
       expect(markdown, entry.slug).toContain("## API reference");
       for (const part of api(entry.slug).parts) {
-        // Per-part RSC rides on the heading, matching the HTML page's indicator (§8).
+        // Per-part RSC rides on the heading, matching the HTML page's indicator.
         expect(markdown, part.name).toContain(`### ${part.name} · RSC: ${part.rsc}`);
         // Either the part's own props as a table, or the line that says it has none —
         // a part that forwards everything is documented as such, not silently skipped.

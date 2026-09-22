@@ -65,7 +65,7 @@ export type CheckboxCardProps = Omit<
 /**
  * Selectable marketing/product card over the base-ui Checkbox primitive.
  * Client — Field.Item / label wiring and the checkbox
- * primitive (performance.md §RSC classification). Requires a `Field.Root`
+ * primitive. Requires a `Field.Root`
  * ancestor and a checkbox-group ancestor for `value` membership.
  */
 export function CheckboxCard({

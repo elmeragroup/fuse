@@ -7,7 +7,7 @@ const workspaceRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), ".
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: workspaceRoot,
-  /** Component pages are authored as `page.mdx` route files (docs-site.md §1). */
+  /** Component pages are authored as `page.mdx` route files. */
   pageExtensions: ["ts", "tsx", "mdx"],
   /**
    * `next dev` otherwise writes `AGENTS.md`/`CLAUDE.md` into this app on every start.

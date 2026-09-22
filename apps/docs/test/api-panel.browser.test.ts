@@ -53,7 +53,7 @@ async function headerCellVisibility(page: Page): Promise<HeaderVisibility> {
   });
 }
 
-describe("API panel layout (docs-site.md §8)", () => {
+describe("API panel layout", () => {
   it("shows the entire persisted country union in the expanded phone reference", async () => {
     const page = await browser().newPage();
     try {

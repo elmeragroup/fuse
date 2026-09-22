@@ -96,7 +96,7 @@ export type QueryableRole = Parameters<typeof page.getByRole>[0];
 
 /**
  * The one role query every browser suite uses: exact accessible name, asserted to be an element.
- * Suites query by role and name, never by class or `data-slot` (tooling §7.2).
+ * Suites query by role and name, never by class or `data-slot`.
  */
 export function roleNamed(role: QueryableRole, name: string): HTMLElement {
   const element = page.getByRole(role, { name, exact: true }).element();

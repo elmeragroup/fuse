@@ -1,5 +1,5 @@
 /**
- * Reading an authored component page (docs-site.md §1).
+ * Reading an authored component page.
  *
  * A `page.mdx` is compiled by `@next/mdx` for the browser; this is the same file read as
  * *data* by the docs generation pass, which needs three things a page declares and
@@ -26,7 +26,7 @@ export type PageDemo = {
   file: string;
 };
 
-/** One authored component page read as data (docs-site.md §1). */
+/** One authored component page read as data. */
 export type ComponentPageSource = {
   /** The editorial half of the page: the one-paragraph description under the H1. */
   lede: string;

@@ -6,7 +6,7 @@ import { tv } from "tailwind-variants";
  * stacked-card list inside it. CheckboxGroup and RadioGroup read `group`,
  * `SelectionItemGroup` reads `list`, and the three copies of these two strings that used
  * to sit in `checkbox.tsx`, `radio-group.tsx` and `selection-item.tsx` are gone
- * (spec 08 finding S18).
+ *
  *
  * The option-stack `gap-2` is layout, not a control rung, which is why
  * it is a plain literal here and not a `--control-gap-*` read. The vertical group collapses

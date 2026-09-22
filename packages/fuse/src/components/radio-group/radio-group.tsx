@@ -18,7 +18,7 @@ import { radioIconButtonVariants } from "./radio-group-variants";
 
 /**
  * Unlabeled 16px radio over the base-ui primitive. Client —
- * base-ui Radio owns checked state (performance.md §RSC classification). The
+ * base-ui Radio owns checked state. The
  * indicator is an 8px primary-foreground dot. Labeled usage composes `Radio` or
  * `RadioItem`.
  */
@@ -107,7 +107,6 @@ export type RadioGroupProps = {
 /**
  * Labeled radio group composite over Field + base-ui RadioGroup.
  * Client — Field validity wiring and the group primitive
- * (performance.md §RSC classification).
  */
 export function RadioGroup({
   label,
@@ -217,7 +216,7 @@ export type RadioItemProps = {
 
 /**
  * Labeled selection row over `SelectionItem.Shell`. Client —
- * Field.Item / label wiring (performance.md §RSC classification). Namespace
+ * Field.Item / label wiring. Namespace
  * aliases `Title` / `Description` / `Content` / `Actions` / `SubSection` are the
  * exact `SelectionItem.*` objects so `child.type` partitioning works across both
  * spellings.
@@ -262,14 +261,13 @@ export type RadioIconButtonProps = Omit<
   children?: ReactNode;
   /**
    * Required accessible name. `RadioIconButton` is mechanically icon-only
-   * (accessibility.md §3).
    */
   "aria-label": string;
 };
 
 /**
  * Icon-only segmented radio over the base-ui radio root.
- * Client — base-ui Radio owns checked state (performance.md §RSC classification).
+ * Client — base-ui Radio owns checked state.
  */
 export function RadioIconButton({
   value,

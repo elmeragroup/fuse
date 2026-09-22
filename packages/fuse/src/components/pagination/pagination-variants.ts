@@ -6,9 +6,9 @@
  * `direction` is not a consumer-facing prop. No recipe
  * default — Previous/Next pass the axis internally (ConfirmButton/TimelineList).
  *
- * `pl-2.5` / `pr-2.5` are spec-named chevron-side layout literals, not a
+ * `pl-2.5` / `pr-2.5` are reviewed chevron-side layout literals, not a
  * control-box size axis. `size-9` on the ellipsis slot is
- * the spec-named decorative box, not a density rung.
+ * the reviewed decorative box, not a density rung.
  */
 import { tv } from "tailwind-variants";
 

@@ -140,7 +140,7 @@ export const EXTERNAL_PALETTES = {
   },
 } as const satisfies Record<ExternalBrandCode, Partial<TokenContract>>;
 
-/** fkab is a permanent alias of fkas (theming.md §5); every palette lookup goes through here. */
+/** fkab is a permanent alias of fkas; every palette lookup goes through here. */
 export function paletteBrand(brand: BrandCode): ExternalBrandCode {
   return brand === "fkab" ? "fkas" : brand;
 }

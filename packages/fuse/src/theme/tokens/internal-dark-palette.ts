@@ -5,7 +5,7 @@ import { DARK_DEFAULTS } from "./dark-defaults";
 // Missing library roles use neutral surfaces or shared dark support colors.
 // The supplied palette's sidebar-primary pair is dropped in favour of the sidebar-brand
 // pointer; --sidebar-primary(-foreground) is deliberately dead with no replacement alias.
-// Mapping decisions and contrast limits: docs/notes/dark-theme/internal-dark-theme-matrix.md.
+// Mapping decisions and contrast limits: PROVENANCE.md.
 export const INTERNAL_DARK_PALETTE = {
   ...DARK_DEFAULTS,
   background: "oklch(0.145 0 0)",

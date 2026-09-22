@@ -2,7 +2,7 @@
 
 // Owns a client boundary rather than state: it dots into `Dialog.Root`, a member of a
 // namespace compound exported from a client module, which a server component only sees
-// as an opaque client reference (docs-site.md §6).
+// as an opaque client reference.
 
 import type { ReactElement } from "react";
 
@@ -32,7 +32,7 @@ const themeMatrix = tv({
 const { grid, cell, slug: slugClass, surface, row, controls, control } = themeMatrix();
 
 /**
- * The whitelabel pitch grid (docs-site.md §5).
+ * The whitelabel pitch grid.
  *
  * One cell per legal permutation — twenty of them, including `elma` — each rendering the
  * same fixed set of key components inside its own `ThemeScope`. There is no density

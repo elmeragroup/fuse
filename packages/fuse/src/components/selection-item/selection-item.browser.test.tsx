@@ -281,7 +281,7 @@ describe("SelectionItem", () => {
             control={
               // Inline, not utility classes: the browser suite loads `styles.css`, which is
               // compiled from `dist/**/*.js` only, so a class spelled solely in a test never
-              // reaches the sheet (architecture.md §5).
+              // reaches the sheet.
               <span
                 role="img"
                 aria-label="Wide indicator"

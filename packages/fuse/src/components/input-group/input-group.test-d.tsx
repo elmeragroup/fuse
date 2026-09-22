@@ -14,7 +14,7 @@ test("InputGroup ships from the input-group entry and the root barrel", () => {
   expectTypeOf(InputGroup.Textarea).toBeFunction();
 });
 
-test("the addon align axis is the four spec values", () => {
+test("the addon align axis is the four public values", () => {
   expectTypeOf<InputGroupAddonProps["align"]>().toEqualTypeOf<
     "inline-start" | "inline-end" | "block-start" | "block-end" | undefined
   >();

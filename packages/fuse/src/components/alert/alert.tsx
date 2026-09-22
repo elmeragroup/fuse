@@ -70,7 +70,7 @@ export type AlertDescriptionProps = ComponentProps<"p">;
 /**
  * Status alert composite over the library Item family. Server —
  * it owns no state, effects, or browser APIs; `onAction` is a forwarded consumer
- * handler (performance.md §RSC classification).
+ * handler.
  */
 function AlertRoot({
   children,

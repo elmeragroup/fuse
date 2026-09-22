@@ -17,7 +17,7 @@ describe("linkVariants", () => {
     expect(linkVariants.variantKeys).toEqual(["variant", "leading", "truncate", "align", "weight"]);
     expect(linkVariants.variantKeys).not.toContain("size");
     // The focus state is composed at the call site from RAC render props, never an axis a
-    // consumer could set (accessibility.md §2).
+    // consumer could set.
     expect(linkVariants.variantKeys).not.toContain("isFocusVisible");
   });
 

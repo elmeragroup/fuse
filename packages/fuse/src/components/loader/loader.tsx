@@ -12,7 +12,6 @@ export type LoaderProps = HTMLAttributes<HTMLDivElement> & VariantProps<typeof l
  * Server spinner. A polite `role="status"` wrapper around a
  * decorative spinning `SpinnerGap`. Consumers pass a translated `aria-label`;
  * there is no baked English name. Owns no state, handlers, or browser APIs
- * (performance.md §RSC classification).
  */
 export function Loader({ className, variant, size, ...props }: LoaderProps): ReactElement {
   const { base, icon } = loaderVariants({ variant, size });

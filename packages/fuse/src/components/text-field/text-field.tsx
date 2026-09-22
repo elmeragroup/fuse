@@ -80,7 +80,6 @@ function warnIfNotNumeric(prop: "value" | "defaultValue", value: string | null |
 /**
  * Labeled single-line field composite over Field + Input.
  * Client — it normalizes numeric input in its change handler
- * (performance.md §3 RSC / client boundaries).
  */
 export function TextField({
   label,

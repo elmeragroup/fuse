@@ -21,7 +21,7 @@
     "strict": true,
     "strictNullChecks": true,
     "noUncheckedIndexedAccess": true,
-    // The csstype augmentation types every `--*` custom property once (tooling.md §4). A child
+    // The csstype augmentation types every `--*` custom property once. A child
     // config that overrides `types` must re-list this entry; the repo-policy test asserts it.
     "types": ["node", "@elmeragroup/typescript-config/css-custom-properties"]
   },

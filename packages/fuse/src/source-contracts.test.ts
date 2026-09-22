@@ -211,9 +211,9 @@ function classTokens(value: string): string[] {
 }
 
 describe("RSC classification", () => {
-  // Why not a lint rule: performance.md §3 is a per-component table, not a
-  // syntactic pattern. Package-check asserts packed JS matches source
-  // directives; this suite asserts source matches the spec table.
+  // Why not a lint rule: server/client compatibility is a reviewed per-component
+  // decision. Package-check checks packed directives against source; this independent
+  // expectation catches an unintended source-boundary change.
   it.each(CLIENT_COMPONENTS)("%s is client", (_component, files) => {
     for (const file of files) {
       expectRsc(file, "client");
@@ -236,7 +236,7 @@ describe("RSC classification", () => {
     expectRsc(file, "client");
   });
 
-  // Why not a lint rule: "does this module own client state?" is a judgment the spec
+  // Why not a lint rule: "does this module own client state?" is a judgment the reviewed
   // table answers per module, not a syntactic pattern. The shared overlay close button
   // resolves its own label from the overlay dictionary, so it owns client state and
   // carries the directive; Dialog, Sheet and Sidebar were already client modules.
@@ -382,7 +382,7 @@ describe("Twemoji artwork fidelity", () => {
 
 describe("overlay layer", () => {
   // Why not a lint rule: the invariant is a count across two places — the
-  // shared overlay module spells `z-50` once (theming.md §7.4) and no
+  // shared overlay module spells `z-50` once and no
   // component restates it. A lint rule banning the class
   // would need a per-file exemption for exactly the module that owns it, and
   // could not assert the "exactly once" half.
@@ -397,9 +397,8 @@ describe("superseded local forms", () => {
   // Why not a lint rule: each of these is a "there is exactly one owner" count
   // across the whole tree. A rule banning the spelling would need a per-file
   // exemption for precisely its owner and still could not assert the "exactly
-  // once" half. Spec 08 built the owners; this is the ban on the private copies
-  // growing back (2026-09-03). One-owner *calls and imports* moved to lint
-  // allow lists (ADR 0008 amendment 2026-09-04); class-string ownership stays
+  // once" half. Private copies would undo the shared ownership. Calls and imports use lint
+  // allow lists; class-string ownership stays
   // here because lint cannot count.
   it("spells the popup motion, fill and surface classes only in overlay-classes.ts", () => {
     for (const needle of [

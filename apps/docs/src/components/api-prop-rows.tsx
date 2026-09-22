@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * The expandable prop rows of one part's API reference (docs-site.md §8).
+ * The expandable prop rows of one part's API reference.
  *
  * Ported from Base UI's docs site — `docs/src/components/ReferenceTable/ReferenceAccordion.tsx`,
  * `docs/src/components/Accordion.tsx` and `docs/src/components/DescriptionList.tsx` in

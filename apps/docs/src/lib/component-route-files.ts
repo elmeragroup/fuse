@@ -1,5 +1,5 @@
 /**
- * Locating a component page's co-located files at render time (docs-site.md §1, §6, §8).
+ * Locating a component page's co-located files at render time.
  *
  * Two render-time readers reach into a component's route directory: the demo frame reads
  * `demos/<name>.tsx` and the API reference reads `api.json`. Both need the same location in

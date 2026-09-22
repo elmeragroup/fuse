@@ -11,11 +11,8 @@ const VAGUE_MODULE_NAME = /^(utils|helpers|common|misc)$/;
 
 /**
  * The rule statement the failure message carries once, before the offending paths.
- * `docs/spec/tooling.md` §7.6 is its canonical statement.
  */
-const RULE =
-  "module basenames utils, helpers, common, misc are banned; name the module after what it owns " +
-  "(docs/spec/tooling.md §7.6)";
+const RULE = "module basenames utils, helpers, common, misc are banned; name the module after what it owns";
 
 /**
  * The one path the rule lets through. It stays allowlisted until the `@elmeragroup/internal`

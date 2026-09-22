@@ -102,7 +102,7 @@ describe("meter dictionary", () => {
     }
   });
 
-  it("carries no key beyond the two rows accessibility.md §4.1 assigns to Meter", () => {
+  it("carries no key beyond the two rows owned by Meter", () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(Object.keys(meterStrings.getStringsForLocale(locale)).sort(), locale).toEqual([
         "success",

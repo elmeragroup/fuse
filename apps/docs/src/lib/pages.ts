@@ -1,9 +1,9 @@
 /**
- * The non-component half of the site inventory (docs-site.md §3.3).
+ * The non-component half of the site inventory.
  *
  * Component pages are generated from the library and never listed here. These are the
  * two hand-authored groups — Overview and Handbook — and each entry carries the
- * one-line description that the generated `llms.txt` index publishes (§9) and the page
+ * one-line description that the generated `llms.txt` index publishes and the page
  * itself uses as its metadata description. The description lives next to the route so
  * the index has exactly one source and cannot drift from the nav.
  */

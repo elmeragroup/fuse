@@ -15,7 +15,7 @@ export type DemoFrameProps = {
   title: string;
   /** Demo file name inside the page's `demos/` directory — the file the page imports. */
   file: string;
-  /** The rendered demo, imported by the page as an ordinary ESM module (§6). */
+  /** The rendered demo, imported by the page as an ordinary ESM module. */
   children: ReactNode;
 };
 
@@ -29,12 +29,12 @@ const demoFrame = tv({
 const { root, card } = demoFrame();
 
 /**
- * The §3.5 demo frame: a theme-tinted stage, the active theme coordinate and its
+ * The demo frame: a theme-tinted stage, the active theme coordinate and its
  * deployment-default density in mono, and the source of the very file that rendered the
  * stage.
  *
  * An async server component, so the source region comes from a read of the demo file
- * during prerendering rather than from generated data threaded through the page (§6).
+ * during prerendering rather than from generated data threaded through the page.
  * Only the stage and meta row need the preview theme, and they are the client half
  * (`DemoStage`); the shell and the source region — highlighted by the shared
  * `DocsCodeBlock` from the same file the stage renders — stay on the server.

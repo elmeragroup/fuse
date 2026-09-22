@@ -1,5 +1,5 @@
 /**
- * Nav-destination verification (docs-site.md §3.3).
+ * Nav-destination verification.
  *
  * The Components group is derived from the route directories the generation pass globbed,
  * so it cannot point at a missing page. The Overview and Handbook groups are *authored* in

@@ -1,5 +1,5 @@
 /**
- * Reading a demo's source at render time (docs-site.md §6).
+ * Reading a demo's source at render time.
  *
  * A demo is one file: the page imports it as an ordinary ESM module — that is the live
  * render — and the frame reads the very same file from disk to display its source. There
@@ -37,7 +37,7 @@ export async function readDemoSource(slug: string, file: string): Promise<DemoSo
   } catch (cause) {
     throw new Error(
       `Component page "${slug}" renders a demo from ${file}, but ${location.repoPath} does not exist. ` +
-        `A demo is one file, imported by the page and read by the frame (docs-site.md §6).`,
+        `A demo is one file, imported by the page and read by the frame.`,
       { cause }
     );
   }

@@ -1,5 +1,5 @@
 /**
- * Measured bundle sizes for the Tokens page (docs-site.md §3.3, performance.md §2).
+ * Measured bundle sizes for the Tokens page.
  *
  * The docs never carry their own numbers: both columns come out of
  * `packages/fuse/scripts/size-budgets.ts`, the module `size-limit` enforces in the merge
@@ -14,7 +14,7 @@
  * is something the file literally says.
  *
  * The flag SVG aggregate is deliberately out of scope: it is a raw-byte asset ceiling,
- * not a measured JS/CSS payload, and performance.md keeps it on its own gate. It has no
+ * not a measured JS/CSS payload, and flag-payload.ts owns its gate. It has no
  * `ceilingGzip`, so it never matches.
  */
 

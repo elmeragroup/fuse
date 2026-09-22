@@ -339,7 +339,7 @@ describe("Dialog", () => {
   });
 
   it("keeps Escape and backdrop clicks inert for a non-dismissible dialog", async () => {
-    // base-ui 1.6.0 spells the spec's `dismissible={false}` as `disablePointerDismissal`
+    // base-ui 1.6.0 spells outside-pointer dismissal control as `disablePointerDismissal`
     // plus cancelling the escape-key close reason; Root forwards both verbatim.
     renderThemed(
       withLocale(

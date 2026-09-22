@@ -107,8 +107,7 @@ export type FieldFrameProps = {
  *
  * It is not exported through `package.json#exports` and carries no client directive: it
  * owns no state, and its consumers are client modules already, so a directive here
- * would only widen the client graph (performance.md §3; `source-contracts.test.ts` pins
- * the classification).
+ * would only widen the client graph.
  *
  * Keep exactly one `Field.Root` per composite so a nested root cannot break label wiring.
  */

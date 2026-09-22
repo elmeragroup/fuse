@@ -3,7 +3,7 @@ import type { ReactElement } from "react";
 import { tv } from "tailwind-variants";
 
 export type MetaLinksProps = {
-  /** The per-component markdown endpoint (docs-site.md §9). */
+  /** The per-component markdown endpoint. */
   markdownUrl: string;
   /** The component's source file on the repo host. */
   sourceUrl: string;
@@ -18,7 +18,7 @@ const metaLinks = tv({
 
 const { root } = metaLinks();
 
-/** The §3.4 meta links that sit directly under the lede. */
+/** The meta links that sit directly under the lede. */
 export function MetaLinks({ markdownUrl, sourceUrl, sourcePath }: MetaLinksProps): ReactElement {
   return (
     <p className={root()}>

@@ -22,6 +22,9 @@ Adjust the `@source` path only when the stylesheet is not one directory below th
 @import "@elmeragroup/fuse/themes.css";
 ```
 
+The standalone stylesheet includes library utilities without Tailwind preflight.
+Keep your app's reset and import `themes.css` in either mode.
+
 ## JavaScript
 
 ```ts
@@ -35,7 +38,7 @@ import {
 } from "@elmeragroup/fuse/theme";
 ```
 
-Brand is a controlled host value: spread `themeAttributes(theme)` on `<html>` and pass the same object to `ThemeProvider`. Stamp density with `densityAttributes(defaultDensityForVariant(theme.variant))` on the same document root — both `dense` and `comfortable` are explicit. Color scheme uses a host-placed `ColorSchemeScript` or `colorSchemeScriptSource` **before** paintable content — the provider is not a first-paint adapter (`injectColorSchemeScript` defaults false). Next App Router and Vite recipes are fixture-verified; Next Pages, TanStack Start, and React Router 7 are written recipes only. Full recipes: [theme integration](../../docs/theming-integration.md).
+Brand is a controlled host value: spread `themeAttributes(theme)` on `<html>` and pass the same object to `ThemeProvider`. Stamp density with `densityAttributes(defaultDensityForVariant(theme.variant))` on the same document root — both `dense` and `comfortable` are explicit. Color scheme uses a host-placed `ColorSchemeScript` or `colorSchemeScriptSource` **before** paintable content — the provider is not a first-paint adapter (`injectColorSchemeScript` defaults false). Next App Router and Vite recipes are fixture-verified; Next Pages, TanStack Start, and React Router 7 are written recipes only. Full recipes: [theme integration](<../../apps/docs/src/app/(docs)/handbook/theming/page.tsx>).
 
 Workspace apps import the same public subpaths. Do not deep-import `src/` internals.
 

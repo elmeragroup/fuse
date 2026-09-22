@@ -41,11 +41,11 @@ const {
 } = searchPalette();
 
 /**
- * The complete-site header search (docs-site.md §3.2).
+ * The complete-site header search.
  *
  * Docs-local by ruling — there is no library `Command` component — but the modal
  * mechanics are not reimplemented: the library `Dialog` supplies the focus trap, the
- * Escape dismissal and the focus return that accessibility.md §2 requires. Inside the
+ * Escape dismissal and focus return to the trigger. Inside the
  * popup this is the ARIA combobox/listbox pattern: focus never leaves the text field,
  * arrow keys move `aria-activedescendant` over non-focusable options, and Enter
  * navigates. That is what makes typing and arrowing work in the same keystroke stream —

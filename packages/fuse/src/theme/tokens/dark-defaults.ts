@@ -1,7 +1,7 @@
 import type { TokenContract } from "./contract";
 
 // Shared dark additions for roles absent from the supplied palettes.
-// Provenance and inferred roles: docs/notes/dark-theme/external-dark-theme-matrix.md.
+// Provenance and inferred roles: PROVENANCE.md.
 // Error uses the shared M3 error ramp; info/success use Telinet schematic pairs.
 // Warning, chart order and syntax assignments are provisional accessible mappings.
 export const DARK_DEFAULTS = {

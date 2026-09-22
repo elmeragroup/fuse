@@ -55,7 +55,7 @@ describe("sidebar dictionary", () => {
     }
   });
 
-  it("carries no key beyond the three rows accessibility.md §4.1 assigns to Sidebar", () => {
+  it("carries no key beyond the three rows owned by Sidebar", () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(Object.keys(sidebarStrings.getStringsForLocale(locale)).sort(), locale).toEqual([
         "description",
@@ -90,7 +90,7 @@ describe("useSidebar", () => {
 });
 
 describe("Sidebar namespace", () => {
-  it("is the provider plus the 23 spec parts, each carrying its dotted displayName", () => {
+  it("is the provider plus the 23 public parts, each carrying its dotted displayName", () => {
     expect(Object.keys(Sidebar).sort()).toEqual([...PART_NAMES].sort());
     expect(PART_NAMES).toHaveLength(24);
     for (const part of PART_NAMES) {

@@ -23,7 +23,7 @@ export type ConfirmButtonProps = DistributiveOmit<ButtonProps, "onClick" | "chil
 
 /**
  * Two-press confirm wrapper over the library Button.
- * Client — owns armed state (performance.md §RSC classification).
+ * Client — owns armed state.
  */
 export function ConfirmButton({
   onConfirm,

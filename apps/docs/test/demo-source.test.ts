@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { readDemoSource } from "../src/lib/demo-source";
 
-describe("demo source read at render time (docs-site.md §6)", () => {
+describe("demo source read at render time", () => {
   it("reads the authored demo file verbatim", async () => {
     const demo = await readDemoSource("button", "button-variant-matrix.tsx");
     expect(demo.sourcePath).toBe(

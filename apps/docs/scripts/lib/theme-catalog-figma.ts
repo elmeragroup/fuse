@@ -1,5 +1,5 @@
 /**
- * DTCG JSON projected from the theme catalog for native Figma import (docs-site.md §9.2).
+ * DTCG JSON projected from the theme catalog for native Figma import.
  *
  * One file is one Figma mode. Colors are sRGB; dimensions are px; CSS var() becomes
  * `{group.name}` aliases. Conversion stays here; the generation pass writes one module
@@ -187,7 +187,7 @@ function emitCssMap(groups: DtcgGroups, map: ThemeCatalogTokenMap): void {
   }
 }
 
-/** One DTCG document projected from a catalog row; primitives are inlined (docs-site.md §9.2). */
+/** One DTCG document projected from a catalog row; primitives are inlined. */
 export function figmaDocumentFromCatalog(
   entry: ThemeCatalogEntry,
   primitives: ThemeCatalogTokenMap
@@ -212,7 +212,7 @@ export function buildFigmaThemeIndex(catalog: ThemeCatalog): FigmaThemeIndex {
   };
 }
 
-/** The generated module the `/api/themes/figma` routes import (docs-site.md §9.2). */
+/** The generated module the `/api/themes/figma` routes import. */
 export function renderFigmaThemeCatalog(catalog: ThemeCatalog): string {
   const files = catalog.themes
     .map((theme) => {

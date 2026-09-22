@@ -9,7 +9,7 @@
  *
  * This lives beside the generator rather than inside it because two readers need the
  * same resolution: the generation pass, and the `api.json` drift check that regenerates
- * the API data in-memory (docs-site.md §8).
+ * the API data in-memory.
  */
 
 import { existsSync, readdirSync } from "node:fs";
@@ -39,7 +39,6 @@ const FIXED_CASE_SLUG_PARTS = new Map<string, string>([["ui", "UI"]]);
  * Every reader-facing surface — the SideNav label, the H1, the ⌘K hit, the `llms.txt` row,
  * the `<title>` and the markdown endpoint's heading — reads this one spelling, so no surface
  * has to be checked against another: the slug is the one place a component's name is declared
- * (docs-site.md §3.3).
  */
 function displayName(slug: string): string {
   return slug
@@ -60,15 +59,15 @@ export function componentSlugs(): readonly string[] {
 
 export type ComponentPaths = {
   pageFile: string;
-  /** The page's reader-facing name, derived from the slug (docs-site.md §3.3). */
+  /** The page's reader-facing name, derived from the slug. */
   title: string;
-  /** The committed, generated API artifact next to the page (docs-site.md §8). */
+  /** The committed, generated API artifact next to the page. */
   apiFile: string;
   entryFile: string;
   entry: string;
   exportName: string;
   /**
-   * Facade value exports the API generator walks (docs-site.md §8). Explicit names —
+   * Facade value exports the API generator walks. Explicit names —
    * never a sweep of every namespace-shaped export on the entry.
    */
   apiExportNames: readonly string[];

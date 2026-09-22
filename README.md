@@ -4,7 +4,7 @@ Whitelabel React components for Elmera Group's energy brands and corporate Elmer
 
 Density is a document-level control-metric axis, independent of theme. Variant supplies only the deployment default (`internal → dense`, `external → comfortable`). Brand is host-owned: spread `themeAttributes(theme)` on `<html>`, then stamp density with `densityAttributes(defaultDensityForVariant(theme.variant))`.
 
-Current cross-component contracts live in [docs/spec/](docs/spec/README.md); the glossary is [CONTEXT.md](CONTEXT.md). Read only the chapter your change affects.
+Start with [AGENTS.md](AGENTS.md) for contribution conventions and [CONTEXT.md](CONTEXT.md) for theme vocabulary. Consumer guidance lives in the [docs app](<apps/docs/src/app/(docs)>).
 
 ## Why Fuse
 
@@ -18,7 +18,7 @@ An electrical fuse connects the name to Elmera's energy business. To fuse means 
 
 - **Node**: `>=24.13 <25` — the version in [`.node-version`](.node-version) (`24.13.0`). The build, codegen and docs scripts run TypeScript directly through Node's type-stripping flags, so an older major fails.
 - **pnpm 11** — `packageManager` pins the exact version; use Corepack.
-- `.ref/` reference checkouts are needed only to lift new reference implementations or artwork ([reference sources](docs/reference-sources.md)). They are not needed to build, test, or run the repo.
+- `.ref/` reference checkouts are needed only to lift new reference implementations or artwork ([reference sources](packages/fuse/REFERENCE-SOURCES.md)). They are not needed to build, test, or run the repo.
 
 ```sh
 pnpm install
@@ -76,7 +76,7 @@ The API extractor and the `elmera/*` and `anti-slop/*` lint rules come from [`@e
 ## Contribution flow
 
 1. **Scaffold** — `pnpm gen` for a new component; it writes the source, the entry facade, test files and demo stubs.
-2. **Implement** using [component authoring](docs/component-authoring.md) and the owning library-wide contract in [docs/spec/](docs/spec/README.md). Update public JSDoc and authored docs with the code; record architectural decisions in an ADR.
+2. **Implement** using [AGENTS.md](AGENTS.md) and the component's source and tests. Update public JSDoc and consumer docs when usage changes; keep implementation rationale beside its owner.
 3. **Tests and demos** ship in that same change. Maintain the reviewed demo coverage in `apps/docs/test/fixtures/component-demo-requirements.json` and regenerate API artifacts.
 4. **Changeset** — `pnpm changeset` for anything user-facing. Internal-only PRs (CI, docs site, tests) carry the `no-changeset` GitHub label instead. Never edit an existing changeset to move a gate; edit one only to correct what it says shipped.
 5. **Gate** — `pnpm ci:checks` green locally before review. The merge workflow runs the same stages plus the label-aware changeset check.
@@ -85,17 +85,17 @@ The API extractor and the `elmera/*` and `anti-slop/*` lint rules come from [`@e
 
 ## Release
 
-Once publishing is activated, every push to `main` publishes a **canary** and the bot opens or updates the **Version Packages PR** while changesets are pending; merging that PR publishes the **stable** line and is the release action — several canaries can precede a stable. Publishing runs on the [`@elmeragroup/internal` release engine](docs/adr/0011-release-runs-on-the-internal-engine.md) with a token for now, moving to OIDC later. The [release runbook](docs/spec/release.md) owns the channels, the pack-adapter gates, and the activation prerequisites.
+Once publishing is activated, every push to `main` publishes a **canary** and the bot opens or updates the **Version Packages PR** while changesets are pending; merging that PR publishes the **stable** line and is the release action — several canaries can precede a stable. Publishing runs on the [`@elmeragroup/internal` release engine](https://github.com/elmeragroup/internal) with a token for now, moving to OIDC later. The [release runbook](scripts/RELEASE.md) owns the channels, the pack-adapter gates, and the activation prerequisites.
 
 ## Reading by task
 
-| Task                              | Start here                                                                                             |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Change or add a component         | [Component authoring](docs/component-authoring.md), then that component's source, tests, and docs page |
-| Integrate the library into an app | [Package README](packages/fuse/README.md) and [theme integration](docs/theming-integration.md)         |
-| Change library-wide behavior      | [Contract index](docs/spec/README.md), which maps changes to one owning chapter                        |
-| Diagnose build or test failures   | [Tooling](docs/spec/tooling.md), the failing workspace's scripts, and its Turbo config                 |
-| Understand a decision             | [ADRs](docs/adr/) and [domain glossary](CONTEXT.md)                                                    |
-| Find unfinished work              | [Roadmap](docs/spec/roadmap.md)                                                                        |
+| Task                              | Start here                                                                                                    |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Change or add a component         | [AGENTS.md](AGENTS.md), then the component's source, tests and docs page                                      |
+| Integrate the library into an app | [Package README](packages/fuse/README.md) and [theming](<apps/docs/src/app/(docs)/handbook/theming/page.tsx>) |
+| Diagnose build or test failures   | The failing workspace's scripts and [Turbo dependencies](turbo.json)                                          |
+| Understand theme vocabulary       | [Domain glossary](CONTEXT.md)                                                                                 |
+| Find unfinished work              | [TODO.md](TODO.md)                                                                                            |
+| Prepare a release                 | [Release runbook](scripts/RELEASE.md)                                                                         |
 
 Source and configuration own inventories, versions, values, and measurements. Documentation explains the policies and procedures that govern them.

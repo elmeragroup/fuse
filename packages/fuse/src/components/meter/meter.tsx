@@ -77,7 +77,6 @@ function MeterIcon({
 /**
  * Labeled meter composite over base-ui Meter. Read-only value
  * display — never an input. Client — it reads locale from the provider
- * (performance.md §RSC classification).
  */
 export function Meter({
   label,

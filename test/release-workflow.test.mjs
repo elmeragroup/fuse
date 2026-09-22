@@ -155,7 +155,7 @@ describe("release wiring", () => {
       "persist-credentials": false,
     });
     // test:packed-consumer launches Playwright Chromium on this fresh runner, so the browser
-    // install must precede the engine run (release.md §5).
+    // install must precede the engine run.
     const browser = requiredRunStep(steps, "pnpm --filter @elmeragroup/fuse exec playwright install");
     expect(browser.if).toBe("inputs.record_tag == ''");
     expect(browser.run).toBe("pnpm --filter @elmeragroup/fuse exec playwright install --with-deps chromium");
@@ -170,7 +170,7 @@ describe("release wiring", () => {
     expect(asString(concurrency.group, "concurrency group")).toBe("npm-release");
     expect(concurrency["cancel-in-progress"]).toBe(false);
     // GitHub replaces the single waiting job by default; a waiting stable merge could be
-    // dropped before it records its publication (release.md §2.1).
+    // dropped before it records its publication.
     expect(asString(concurrency.queue, "concurrency queue")).toBe("max");
   });
 

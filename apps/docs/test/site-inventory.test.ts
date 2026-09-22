@@ -7,12 +7,12 @@ import { fetchOk, fetchText } from "./docs-server";
 
 const NAV_HREFS = NAV_GROUPS.flatMap((group) => group.items.map((item) => item.href));
 
-describe("SideNav inventory (docs-site.md §3.3)", () => {
+describe("SideNav inventory", () => {
   it("carries exactly the three groups, in order", () => {
     expect(NAV_GROUPS.map((group) => group.label)).toEqual(["Overview", "Handbook", "Components"]);
   });
 
-  it("lists the Overview and Handbook pages the spec names", () => {
+  it("lists the Overview and Handbook pages in the reviewed inventory", () => {
     expect(NAV_GROUPS[0]?.items.map((item) => item.label)).toEqual([
       "Quick start",
       "Accessibility",
@@ -51,7 +51,7 @@ describe("SideNav inventory (docs-site.md §3.3)", () => {
   });
 });
 
-describe("llms.txt (docs-site.md §9)", () => {
+describe("llms.txt", () => {
   it("is served from the site root", async () => {
     const response = await fetchOk("/llms.txt");
     expect(response.headers.get("content-type")).toContain("text/plain");
@@ -76,7 +76,7 @@ describe("llms.txt (docs-site.md §9)", () => {
   });
 });
 
-describe("markdown endpoints (docs-site.md §9)", () => {
+describe("markdown endpoints", () => {
   it.each(COMPONENT_PAGES.map((component) => component.markdownUrl))(
     "serves the View-as-Markdown target %s",
     async (markdownUrl) => {

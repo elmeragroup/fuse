@@ -11,7 +11,6 @@ import { selfFocusRingClass } from "../../styles/utils";
  * The `h-8` / `h-7` / `h-12` ladder is shell-local navigation-rail geometry, exempt from
  * the `--control-*` density rungs. Collapse
  * motion is color/shadow only; layout keys are not in the shell-width exception
- * (performance.md §6).
  */
 export const sidebarMenuButtonVariants = tv({
   base: [

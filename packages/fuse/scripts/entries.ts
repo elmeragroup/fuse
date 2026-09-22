@@ -69,7 +69,7 @@ export const BARE_COMPONENT_ENTRIES = [
 
 /**
  * Allowlisted entries with no source until they ship.
- * `chart` is Wave 9 — docs/spec/roadmap.md §11 (ruling 2026-09-02).
+ * Chart stays deferred until a consuming product needs it; see the root TODO.md.
  */
 export const DEFERRED_ENTRIES = ["chart"] as const;
 
@@ -91,8 +91,7 @@ export const RAC_ENTRIES = [
 export const NON_COMPONENT_JS_ENTRIES = [".", "theme", "icons", "illustrations", "flags"] as const;
 
 /**
- * In-repo `package.json#exports` only — not packed, not in the root barrel
- * (architecture.md §8).
+ * In-repo `package.json#exports` only. Neither packed nor in the root barrel.
  */
 export const TOOLING_ONLY_JS_ENTRIES = [
   { subpath: "theme-catalog", sourceFile: "src/theme/catalog.ts" },
@@ -100,7 +99,7 @@ export const TOOLING_ONLY_JS_ENTRIES = [
 
 export const CSS_ENTRY_NAMES = ["css", "demo-stage-comfortable.css", "styles.css", "themes.css"] as const;
 
-/** architecture.md §6 packages that published JS is allowed to import. */
+/** Runtime packages that published JS is allowed to import. */
 export const runtimeDependencies = [
   "react",
   "react-dom",

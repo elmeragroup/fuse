@@ -30,7 +30,7 @@ function useAccordion(): AccordionVariantProps {
 /**
  * Client accordion over `@base-ui/react/accordion`. Root owns
  * open-item state; `variant` / `radius` publish through module-private context so
- * parts style themselves (performance.md §RSC classification).
+ * parts style themselves.
  */
 function AccordionRoot<Value = unknown>({
   className,

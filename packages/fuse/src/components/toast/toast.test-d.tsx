@@ -35,7 +35,7 @@ test("Positioner, Arrow, Portal and the private recipe stay off the public names
   expectTypeOf(ToastModule).not.toHaveProperty("Toaster");
 });
 
-test("Viewport container, Close label, and manager faces match the spec", () => {
+test("Viewport container, Close label, and manager faces match the public API", () => {
   expectTypeOf<ToastViewportProps["container"]>().toEqualTypeOf<
     HTMLElement | RefObject<HTMLElement | null> | undefined
   >();

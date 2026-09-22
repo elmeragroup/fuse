@@ -22,7 +22,7 @@ import type { RefObject } from "react";
  * forms or changes its `form` attribute is followed without a resubscribe, and a reset on
  * any other form is ignored. The listener is registered in capture phase, so a form that
  * stops propagation during dispatch cannot hide its own reset. The subscription lifecycle
- * is part of the runtime listener policy (performance.md §6).
+ * is part of the runtime listener policy.
  */
 export function useFormReset(
   element: RefObject<HTMLInputElement | HTMLTextAreaElement | null>,

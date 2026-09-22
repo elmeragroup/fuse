@@ -12,7 +12,7 @@ export default defineConfig({
   dts: true,
   clean: true,
   sourcemap: true,
-  // Keep validateTheme's runtime NODE_ENV branch (theming.md §7.6).
+  // Keep validateTheme's runtime NODE_ENV branch.
   define: {
     "process.env.NODE_ENV": "process.env.NODE_ENV",
   },
@@ -21,7 +21,7 @@ export default defineConfig({
     onlyImport: [...entries.runtimeDependencies],
   },
   // Package-shape gates run against the packed artifact in package:check
-  // (architecture.md §4). In-repo exports point at src/ for workspace consumers.
+  // In-repo exports point at src/ for workspace consumers.
   publint: false,
   attw: false,
 });

@@ -4,5 +4,5 @@ import { fiFI } from "./fi-FI";
 import { nbNO } from "./nb-NO";
 import { svSE } from "./sv-SE";
 
-/** Breadcrumb's own dictionary: it owns the `breadcrumb.*` rows of accessibility.md §4.1. */
+/** Breadcrumb's own dictionary: it owns the `breadcrumb.*` keys. */
 export const breadcrumbStrings = createStringDictionary({ enUS, fiFI, nbNO, svSE });

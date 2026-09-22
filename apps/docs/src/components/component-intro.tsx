@@ -23,7 +23,7 @@ const componentIntro = tv({
 const { importLine, importCode } = componentIntro();
 
 /**
- * The head of a component page (docs-site.md §3.4, items 1–2): H1, the lede from the
+ * The head of a component page: H1, the lede from the
  * page's frontmatter, the two meta links, and the import line with the part's RSC
  * status. Authored pages open with this so the anatomy's order is one decision, not
  * eleven.

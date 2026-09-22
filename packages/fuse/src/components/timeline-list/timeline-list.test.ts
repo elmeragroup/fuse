@@ -8,7 +8,7 @@ import { TimelineList } from "./timeline-list";
 import { timelineListVariants } from "./timeline-list-variants";
 
 describe("timelineListVariants", () => {
-  it("resolves root, item, dot, title, time, and description with the spec geometry", () => {
+  it("resolves root, item, dot, title, time, and description with the reviewed layout values", () => {
     const slots = timelineListVariants();
     expect(slots.root()).toContain("m-0");
     expect(slots.root()).toContain("list-none");

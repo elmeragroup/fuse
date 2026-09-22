@@ -19,7 +19,7 @@ import { Button } from "./button";
  * Package-private — the public dialog family is the base-ui `@elmeragroup/fuse/dialog`
  * entry and this module never reaches `package.json#exports`.
  *
- * The close copy is the locked `dialog.close` row of accessibility.md §4.1, read from
+ * The close copy is the shared `overlay.close` key, read from
  * Dialog's own dictionary rather than re-declared here.
  */
 const dialogVariants = tv({

@@ -1,5 +1,5 @@
 /**
- * The ⌘K palette index (docs-site.md §3.2).
+ * The ⌘K palette index.
  *
  * Built at docs build from the same two inventories the SideNav renders and `llms.txt`
  * publishes: the authored page manifest and the component pages the generation pass globbed
@@ -62,7 +62,7 @@ export function buildSearchIndex(components: readonly DocsComponent[]): readonly
 export function renderSearchIndex(components: readonly DocsComponent[]): string {
   return `import type { SearchEntry } from "../lib/docs-model";
 
-/** Every destination the ⌘K palette can navigate to (docs-site.md §3.2). */
+/** Every destination the ⌘K palette can navigate to. */
 export const SEARCH_ENTRIES: readonly SearchEntry[] = ${JSON.stringify(
     buildSearchIndex(components),
     null,

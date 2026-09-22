@@ -15,7 +15,7 @@ export type ToggleProps = Omit<ComponentProps<typeof TogglePrimitive>, "classNam
 
 /**
  * Two-state pressed button. Client — base-ui Toggle owns
- * pressed state (performance.md §RSC classification).
+ * pressed state.
  */
 export function Toggle({
   className,

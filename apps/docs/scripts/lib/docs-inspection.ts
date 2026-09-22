@@ -24,7 +24,7 @@ import type { BundleSizeReport } from "./sizes.ts";
 import { assertDocsFuseCssExports } from "./workspace-css.ts";
 
 /**
- * RSC classification of a module from its own leading directive (performance.md §3).
+ * RSC classification of a module from its own leading directive.
  *
  * Only a directive in the module prologue counts: comments and other directives
  * (`"use strict"`) may precede it, but the first statement ends the prologue, so a

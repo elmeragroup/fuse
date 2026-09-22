@@ -150,7 +150,7 @@ type PromiseStateInput<Value, Data extends object> =
  *
  * Neither can borrow the shared `isTextNode`/`isTextValueNode` helpers: those narrow a
  * `ReactNode`, and these values are Toast's own manager unions — an options object is
- * not a `ReactNode`, and no shared guard narrows a callable (spec 08 names none).
+ * not a `ReactNode`, and no shared guard narrows a callable.
  */
 function isShorthandDescription<Data extends object>(
   value: string | ToastManagerUpdateOptions<Data>

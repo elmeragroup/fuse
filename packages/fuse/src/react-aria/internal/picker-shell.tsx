@@ -17,7 +17,7 @@ import { Popover } from "./popover";
  * field box, trigger, help text, and the popover/dialog the grid opens into. Only the
  * segment row(s) and the popover body differ between DatePicker and DateRangePicker, so
  * those two are the `children` and `popover` props and everything else lives here once
- * (spec 08 user story 5, 2026-09-03).
+ *
  *
  * Package-private, like every module in this directory.
  *

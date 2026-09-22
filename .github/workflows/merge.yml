@@ -80,8 +80,8 @@ jobs:
         run: pnpm exec turbo run test:browser test:packed-consumer
 
   # Every activated push to main publishes a canary for the merged commit; a merged Version
-  # Packages PR carries the stable bump and publishes the stable line (release.md §2, §3).
-  # Publishing and versioning stay off until activation sets RELEASE_ENABLED (release.md §8).
+  # Packages PR carries the stable bump and publishes the stable line.
+  # Publishing and versioning stay off until activation sets RELEASE_ENABLED.
   # Gating versioning too matters: a Version Packages PR merged while publishing is off would
   # land its stable bump and consume its changesets, and the skipped release job would never
   # publish that version.

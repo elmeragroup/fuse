@@ -44,7 +44,7 @@ test("Portal, Positioner and Popup stay off the public namespace", () => {
   expectTypeOf(ComboboxModule).not.toHaveProperty("ComboboxClear");
 });
 
-test("Input, Content, Chip and Clear take the spec's extra props and Root omits locale", () => {
+test("Input, Content, Chip and Clear take the public extra props and Root omits locale", () => {
   expectTypeOf<ComboboxInputProps["showTrigger"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<ComboboxInputProps["showClear"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<ComboboxInputProps["clearLabel"]>().toEqualTypeOf<string | undefined>();

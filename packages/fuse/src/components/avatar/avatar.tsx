@@ -19,7 +19,7 @@ const GROUP_CLASSES = cn("flex -space-x-2 [:where(&>*)]:ring-2 [:where(&>*)]:rin
 
 /**
  * Client image-or-initials avatar. Base-ui Avatar owns image
- * loading state (performance.md §RSC classification).
+ * loading state.
  */
 function AvatarRoot({ className, ...props }: ComponentProps<typeof AvatarPrimitive.Root>): ReactElement {
   return (

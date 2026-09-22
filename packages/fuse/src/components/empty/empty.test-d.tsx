@@ -26,7 +26,7 @@ test("public API exports only the namespace — recipes and flat parts stay priv
   expectTypeOf(Empty).not.toHaveProperty("Icon");
 });
 
-test("parts take native attributes, the spec variant unions, and no as prop", () => {
+test("parts take native attributes, the public variant unions, and no as prop", () => {
   const _root = (
     <Empty.Root variant="outline-dashed" className="max-w-md">
       <Empty.Header>

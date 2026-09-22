@@ -1,5 +1,5 @@
 /**
- * Turning the committed API artifact into what a reference row displays (docs-site.md §8).
+ * Turning the committed API artifact into what a reference row displays.
  *
  * The presentation contract asks each row three questions the artifact does not answer
  * literally: what one line stands in for the type while the row is closed, what a missing
@@ -41,7 +41,7 @@ export type ApiPropGroupView = {
 
 /**
  * A part's RSC status in the words a reader acts on: whether they may render it from a
- * server component, or whether it drags in a client boundary (performance.md §3).
+ * server component, or whether it drags in a client boundary.
  */
 function rscLabel(rsc: RscStatus): string {
   return rsc === "server" ? "server-safe" : '"use client"';

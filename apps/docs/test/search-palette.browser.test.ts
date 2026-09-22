@@ -95,7 +95,7 @@ async function waitForActiveOptionOtherThan(page: Page, previousId: string): Pro
   return await readActiveOption(page);
 }
 
-describe("docs ⌘K palette (docs-site.md §3.2)", () => {
+describe("docs ⌘K palette", () => {
   it("opens on ⌘K and on Ctrl+K from anywhere in the docs, and Escape closes it", async () => {
     const page = await openDocsPage();
 

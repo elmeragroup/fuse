@@ -17,7 +17,7 @@ import { selectionGroupOrientationVariants } from "../selection-item/selection-i
 
 /**
  * Unlabeled 16px checkbox over the base-ui primitive. Client —
- * base-ui Checkbox owns checked state (performance.md §RSC classification). The
+ * base-ui Checkbox owns checked state. The
  * indicator is internal: Phosphor regular `Minus` when indeterminate, `Check`
  * otherwise. Labeled usage composes `Field.Root` + `Field.Label`, or `CheckboxItem`.
  */
@@ -92,7 +92,6 @@ export type CheckboxGroupProps = {
 /**
  * Labeled checkbox group composite over Field + base-ui CheckboxGroup.
  * Client — Field validity wiring and the group primitive
- * (performance.md §RSC classification).
  */
 export function CheckboxGroup({
   label,
@@ -220,7 +219,7 @@ export type CheckboxItemProps = CheckboxItemBaseProps &
 
 /**
  * Labeled selection row over `SelectionItem.Shell`. Client —
- * Field.Item / label wiring (performance.md §RSC classification). Namespace
+ * Field.Item / label wiring. Namespace
  * aliases `Title` / `Description` / `Content` / `Actions` / `SubSection` are the
  * exact `SelectionItem.*` objects so `child.type` partitioning works across both
  * spellings.

@@ -5,7 +5,7 @@
 @import "@elmeragroup/fuse/demo-stage-comfortable.css";
 /* Tailwind's automatic source detection is rooted at this file's own directory, so both
    class sources are declared explicitly: the library's recipes, and the docs app itself
-   — which is where the component demos now live (docs-site.md §6). */
+   — which is where the component demos now live. */
 @source "../../../../packages/fuse/src";
 @source "../../src";
 

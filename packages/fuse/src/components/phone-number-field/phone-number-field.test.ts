@@ -52,7 +52,7 @@ describe("phone-number-field dictionary", () => {
     }
   });
 
-  it("carries no key beyond the three rows accessibility.md §4.1 assigns to PhoneNumberField", () => {
+  it("carries no key beyond the three rows owned by PhoneNumberField", () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(Object.keys(phoneNumberFieldStrings.getStringsForLocale(locale)).sort(), locale).toEqual([
         "noCountries",
@@ -69,7 +69,7 @@ describe("phone-number-field picker set", () => {
     // Derived from libphonenumber and the flag manifest directly, so this is a two-way
     // guard: a code wrongly added to the engine's exclusion set disappears from `codes`
     // while staying in `expected`, and a code wrongly kept shows up the other way round.
-    // Counting the test's own literal instead would only restate it (ADR 0008).
+    // Counting the test's own literal instead would only restate it.
     const expected = getMetadataCountries(defaultMetadata).filter(
       (code) =>
         Object.hasOwn(flagAssets, code) &&

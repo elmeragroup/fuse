@@ -8,7 +8,7 @@ export type NavItem = {
 };
 
 export type NavGroup = {
-  /** Muted, normal-case group label (docs-site.md §3.3). */
+  /** Muted, normal-case group label. */
   label: string;
   items: readonly NavItem[];
 };
@@ -27,8 +27,7 @@ export function apiPartAnchor(partName: string): string {
 }
 
 /**
- * Anchor id for one prop row of a part's reference, so a single prop is linkable
- * (docs-site.md §8: deep-linkable rows).
+ * Anchor id for one prop row of a part's reference, so a single prop is linkable.
  *
  * The prop's own casing survives — `#api-button-isVisuallyDisabled` reads as the prop it
  * names, and a row that a hash points at opens itself.
@@ -43,7 +42,7 @@ export function componentHref(slug: string): string {
   return `${COMPONENTS_PREFIX}${slug}`;
 }
 
-/** Flat alphabetical list of every published component page (docs-site.md §3.3). */
+/** Flat alphabetical list of every published component page. */
 export const COMPONENT_NAV: readonly NavItem[] = COMPONENT_PAGES.map((component) => ({
   href: componentHref(component.slug),
   label: component.title,
@@ -54,7 +53,7 @@ function toNavItems(pages: readonly { href: string; label: string }[]): readonly
 }
 
 /**
- * The complete three-group SideNav inventory (docs-site.md §3.3).
+ * The complete three-group SideNav inventory.
  *
  * Overview and Handbook come from the authored page manifest; Components is derived from
  * the generated component-page manifest, which the generation pass globs off the route

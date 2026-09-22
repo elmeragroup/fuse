@@ -20,7 +20,7 @@ async function partView(slug: string, name: string): Promise<ApiPartView> {
   return toPartView(part);
 }
 
-describe("committed api.json read at render time (docs-site.md §8)", () => {
+describe("committed api.json read at render time", () => {
   it("renders the artifact the repository committed, banner and all", async () => {
     const api = await readComponentApi("button");
     expect(api.slug).toBe("button");
@@ -63,7 +63,7 @@ describe("committed api.json read at render time (docs-site.md §8)", () => {
   });
 });
 
-describe("reference row presentation (docs-site.md §8)", () => {
+describe("reference row presentation", () => {
   it("keeps library and dependency rows in distinct groups", async () => {
     const view = await partView("button", "Button");
     expect(view.propGroups.map(({ key, label }) => ({ key, label }))).toEqual([

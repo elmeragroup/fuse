@@ -1,5 +1,5 @@
 /**
- * What one API reference row *is*, as types and constants only (docs-site.md §8).
+ * What one API reference row *is*, as types and constants only.
  *
  * The accordion is the page's only client component, and it needs two things from the view
  * layer: the shape of a row and the string a missing default renders as. Both live here, in a
@@ -16,7 +16,7 @@
 
 import type { ReactElement } from "react";
 
-/** What a missing default renders as (docs-site.md §8). */
+/** What a missing default renders as. */
 export const NO_DEFAULT = "—";
 
 /** One expandable prop row: ready strings, plus the server-rendered signature block. */

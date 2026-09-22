@@ -1,5 +1,5 @@
 /**
- * The lookups a hand-authored component `page.mdx` needs (docs-site.md §1).
+ * The lookups a hand-authored component `page.mdx` needs.
  *
  * A page is authored; its metadata is generated. These accessors are the seam between the
  * two: the page names a slug, and the generated manifest answers with its identity, TOC
@@ -7,8 +7,8 @@
  * silently empty section.
  *
  * Neither the demos nor the API reference come through this seam — the frame reads the demo
- * file itself (`demo-source.ts`, docs-site.md §6) and the reference reads the committed
- * `api.json` (`api-source.ts`, §8).
+ * file itself (`demo-source.ts`) and the reference reads the committed
+ * `api.json` (`api-source.ts`).
  */
 
 import type { Metadata } from "next";

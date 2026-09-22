@@ -74,7 +74,7 @@ export type VerticalTableValueProps = ComponentProps<"td"> & {
 
 /**
  * Semantic `<table>` composite. Server compound — it owns no state,
- * no handlers, and no browser APIs (performance.md §RSC classification). `Header` and
+ * no handlers, and no browser APIs. `Header` and
  * `Key` on `VerticalTable` are client `useRender` islands so other outline levels and
  * row-header hosts stay possible without flipping this module to a client boundary.
  */

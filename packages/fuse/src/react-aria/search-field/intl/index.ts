@@ -6,6 +6,6 @@ import { svSE } from "./sv-SE";
 
 /**
  * SearchField's own dictionary: it owns the `searchField.clear` row of
- * accessibility.md §4.1 — the clear button's default accessible name.
+ * the clear button's default accessible name.
  */
 export const searchFieldStrings = createStringDictionary({ enUS, fiFI, nbNO, svSE });

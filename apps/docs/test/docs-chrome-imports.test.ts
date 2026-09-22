@@ -29,7 +29,7 @@ const SIDEBAR_ROUTE = "src/app/(docs)/components/sidebar/";
 
 /**
  * The Sidebar component page and its demos are the one place the library Sidebar may be
- * imported: they are the component's documentation (docs-site.md §6), not docs chrome.
+ * imported: they are the component's documentation, not docs chrome.
  */
 function isSidebarPage(file: string): boolean {
   return path.relative(docsRoot, file).split(path.sep).join("/").startsWith(SIDEBAR_ROUTE);

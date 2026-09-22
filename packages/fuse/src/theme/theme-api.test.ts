@@ -235,7 +235,7 @@ describe("themeAttributes", () => {
 });
 
 describe("BRANDS", () => {
-  it("matches the theming chapter record", () => {
+  it("matches the reviewed brand metadata", () => {
     expect(BRANDS).toEqual({
       fkas: { code: "fkas", displayName: "Fjordkraft", segments: ["private", "company"] },
       tkas: { code: "tkas", displayName: "TrøndelagKraft", segments: ["private", "company"] },
@@ -385,7 +385,7 @@ describe("ThemeProvider server snapshot", () => {
     vi.stubEnv("NODE_ENV", "production");
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const outer = { variant: "internal", brand: "fkas", segment: "private" } as const;
-    // @ts-expect-error untyped CMS/env input is the §7.6 runtime boundary
+    // @ts-expect-error untyped CMS/env input is the runtime boundary
     const illegalPinned: ThemeInput = { variant: "internal", brand: "fkab", segment: "private" };
 
     const html = renderToStaticMarkup(

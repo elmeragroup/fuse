@@ -28,7 +28,7 @@ const apiReference = tv({
 const { part, partHeader, partHeading, partHeadingCode, partNote, propGroupHeading } = apiReference();
 
 /**
- * A component page's API reference (docs-site.md §3.4 item 4, §8): one expandable table per
+ * A component page's API reference: one expandable table per
  * compound part, in the order the entry facade exports them.
  *
  * An async server component reading the page's committed `api.json` — the same seam the demo
@@ -38,7 +38,7 @@ const { part, partHeader, partHeading, partHeadingCode, partNote, propGroupHeadi
  * `DocsCodeBlock` that highlights a panel's full signature.
  *
  * RSC status is a per-part fact, so it sits next to the part heading rather than repeating
- * down a column (§8, performance.md §3).
+ * down a column.
  */
 export async function ApiReference({ slug }: ApiReferenceProps): Promise<ReactElement> {
   const api = await readComponentApi(slug);

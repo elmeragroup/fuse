@@ -81,7 +81,7 @@ const stepperButton = cn(
 /**
  * Labeled number field composite over Field + base-ui NumberField.
  * Client — it owns the reset remount and change handler, and reads locale
- * from the provider (performance.md §RSC classification).
+ * from the provider.
  */
 export function NumberField({
   label,

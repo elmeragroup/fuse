@@ -2,7 +2,7 @@ import { LocalizedStringDictionary } from "@internationalized/string";
 import type { LocalizedString } from "@internationalized/string";
 
 /**
- * Builds a component's four-locale dictionary (ADR 0006, accessibility.md §4.1).
+ * Builds a component's four-locale dictionary.
  *
  * Every component owns its own rows, but the assembly was byte-identical in thirteen
  * `intl/index.ts` modules; this factory is that assembly. Naming the four locales as

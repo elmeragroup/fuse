@@ -9,7 +9,7 @@ import { packageRootFromScript } from "./paths";
 const require = createRequire(import.meta.url);
 const packageRoot = packageRootFromScript(import.meta.url);
 
-/** Mirrors `minimumReleaseAge` in pnpm-workspace.yaml (tooling.md §2). */
+/** Mirrors `minimumReleaseAge` in pnpm-workspace.yaml. */
 export const RELEASE_AGE_MINUTES = 4320;
 
 /** UTC ISO instant exactly RELEASE_AGE_MINUTES before `now`, for npm's `--before`. */
@@ -35,7 +35,6 @@ export function checkPackedReactCompatibility(tarball: string): void {
   ];
   // One cutoff for the whole run: three consumers resolving against different instants
   // could disagree about which versions exist. `--before` mirrors pnpm's `minimumReleaseAge`
-  // (tooling.md §2).
   const cutoff = releaseAgeCutoff(new Date());
   for (const pair of reactPairs) {
     const consumer = mkdtempSync(join(tmpdir(), "elmera-packed-react-"));

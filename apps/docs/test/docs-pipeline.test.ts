@@ -75,7 +75,7 @@ describe("authored page.mdx as generation input", () => {
 
   it("rejects an unknown frontmatter key rather than ignoring it", () => {
     // `title` is the one that used to be legal: the page title is derived from the slug
-    // (docs-site.md §3.3), so a page that still declares one fails instead of carrying a
+    // so a page that still declares one fails instead of carrying a
     // second name. An arbitrary key is rejected by the same branch, named in the message.
     expect(() => parseComponentPage("---\ntitle: Button\nlede: Y\n---\n", "button", "x.mdx")).toThrow(
       /unknown frontmatter key/
@@ -121,7 +121,7 @@ describe("authored page.mdx as generation input", () => {
   });
 });
 
-describe("component page titles (docs-site.md §3.3)", () => {
+describe("component page titles", () => {
   it("spells the slug as words a reader says, never the exported identifier", () => {
     expect(resolveComponentPaths("button").title).toBe("Button");
     expect(resolveComponentPaths("alert-dialog").title).toBe("Alert Dialog");
@@ -143,7 +143,7 @@ describe("component page titles (docs-site.md §3.3)", () => {
   });
 });
 
-describe("nav destination verification (docs-site.md §3.3)", () => {
+describe("nav destination verification", () => {
   it("passes for the authored nav as it stands: every entry has a route module", () => {
     expect(missingNavRoutes()).toEqual([]);
   });
@@ -296,7 +296,7 @@ describe("markdown endpoint rendering", () => {
   it("carries the demo source, RSC per part on the heading, and the tokens list", () => {
     const markdown = renderComponentMarkdown(component);
     expect(markdown).toContain("export function WidgetBasic() {}");
-    // RSC is a per-part fact (docs-site.md §8): a badge on the part heading, not a column.
+    // RSC is a per-part fact: a badge on the part heading, not a column.
     expect(markdown).toContain("### Widget · RSC: client");
     expect(markdown).toContain("| Prop | Type | Default | Required | Description |");
     expect(markdown).not.toContain("| RSC |");
