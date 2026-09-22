@@ -3,8 +3,9 @@
  *
  * One directory under the components route per page. The directory *is* the inventory —
  * there is no shell registry a page can be missing from — and everything else about a
- * page is convention (its public entry, the identifier that entry exports, the
- * implementation file), so frontmatter never restates what the repo layout already says.
+ * page is convention (its reader-facing title, its public entry, the identifier that entry
+ * exports, the implementation file), so frontmatter never restates what the repo layout
+ * already says.
  *
  * This lives beside the generator rather than inside it because two readers need the
  * same resolution: the generation pass, and the `api.json` drift check that regenerates
@@ -23,6 +24,30 @@ function pascalCase(slug: string): string {
     .join("");
 }
 
+/**
+ * Slug parts a reader sees in a fixed casing, so `ui-providers` is the `UI Providers` page.
+ *
+ * A `Map` for the same reason as `EXTRA_API_EXPORT_NAMES` below: lookup semantics, and no
+ * open `Record` annotation to widen a literal.
+ */
+const FIXED_CASE_SLUG_PARTS = new Map<string, string>([["ui", "UI"]]);
+
+/**
+ * The reader-facing name of a component: `alert-dialog` → `Alert Dialog`,
+ * `ui-providers` → `UI Providers`.
+ *
+ * Every reader-facing surface — the SideNav label, the H1, the ⌘K hit, the `llms.txt` row,
+ * the `<title>` and the markdown endpoint's heading — reads this one spelling, so no surface
+ * has to be checked against another: the slug is the one place a component's name is declared
+ * (docs-site.md §3.3).
+ */
+function displayName(slug: string): string {
+  return slug
+    .split("-")
+    .map((part) => FIXED_CASE_SLUG_PARTS.get(part) ?? part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 /** Every component page on the site, in route order. */
 export function componentSlugs(): readonly string[] {
   if (!existsSync(componentRoutesDir)) {
@@ -35,6 +60,8 @@ export function componentSlugs(): readonly string[] {
 
 export type ComponentPaths = {
   pageFile: string;
+  /** The page's reader-facing name, derived from the slug (docs-site.md §3.3). */
+  title: string;
   /** The committed, generated API artifact next to the page (docs-site.md §8). */
   apiFile: string;
   entryFile: string;
@@ -90,6 +117,7 @@ export function resolveComponentPaths(slug: string): ComponentPaths {
     : path.join(fuseSrc, "components", slug);
   return {
     pageFile: path.join(routeDir, "page.mdx"),
+    title: displayName(slug),
     apiFile: path.join(routeDir, "api.json"),
     entryFile: isRac ? racFacade : path.join(fuseSrc, `${slug}.ts`),
     entry: isRac ? `@elmeragroup/fuse/react-aria/${slug}` : `@elmeragroup/fuse/${slug}`,

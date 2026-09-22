@@ -27,7 +27,7 @@ export function requireComponent(slug: string): ComponentPageEntry {
   return component;
 }
 
-/** Page metadata from the frontmatter the generator read (title, lede). */
+/** Page metadata from the generated manifest: the slug-derived title and the lede. */
 export function componentMetadata(slug: string): Metadata {
   const component = requireComponent(slug);
   return { title: component.title, description: component.lede };

@@ -112,7 +112,7 @@ function buildComponent(
 
   return {
     slug,
-    title: page.title,
+    title: paths.title,
     lede: page.lede,
     entry: paths.entry,
     exportName: paths.exportName,

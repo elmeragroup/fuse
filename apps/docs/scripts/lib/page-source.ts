@@ -3,13 +3,13 @@
  *
  * A `page.mdx` is compiled by `@next/mdx` for the browser; this is the same file read as
  * *data* by the docs generation pass, which needs three things a page declares and
- * nothing else does: its frontmatter metadata, the headings its prose contributes to the
- * on-page TOC, and the demos it renders. There is no separate registry to drift from —
- * the page the site serves is the page the generator reads.
+ * nothing else does: its lede, the headings its prose contributes to the on-page TOC, and
+ * the demos it renders. There is no separate registry to drift from — the page the site
+ * serves is the page the generator reads.
  *
  * Deliberately a small line-oriented reader rather than an MDX/YAML parse: the schema is
- * closed (title, lede), so an unknown key is a build failure instead of silently ignored
- * input, and the generator stays free of the bundler's MDX plumbing.
+ * closed (lede), so an unknown key is a build failure instead of silently ignored input,
+ * and the generator stays free of the bundler's MDX plumbing.
  */
 
 import { readFileSync } from "node:fs";
@@ -26,14 +26,13 @@ export type PageDemo = {
   file: string;
 };
 
-/** The editorial half of a page: what the build cannot derive from the repo layout. */
-export type PageFrontmatter = {
-  title: string;
+/** One authored component page read as data (docs-site.md §1). */
+export type ComponentPageSource = {
+  /** The editorial half of the page: the one-paragraph description under the H1. */
   lede: string;
-};
-
-export type ComponentPageSource = PageFrontmatter & {
+  /** The headings the page's prose contributes to the on-page TOC. */
   headings: readonly ContentHeading[];
+  /** The demos the page renders, in authored order. */
   demos: readonly PageDemo[];
 };
 
@@ -92,10 +91,10 @@ function readBlockScalar(lines: readonly string[], start: number, fold: boolean)
   return [fold ? collected.join(" ").trim() : collected.join("\n"), index];
 }
 
-/** The editorial metadata of a page: title and lede, and nothing else. */
-function parseFrontmatter(frontmatter: string, file: string): PageFrontmatter {
-  const scalars = new Map<string, string>();
+/** The page's lede — the only editorial metadata a page declares — or a failure. */
+function parseFrontmatter(frontmatter: string, file: string): string {
   const lines = frontmatter.split("\n");
+  let lede: string | null = null;
   let index = 0;
   while (index < lines.length) {
     const line = lines[index] ?? "";
@@ -108,28 +107,23 @@ function parseFrontmatter(frontmatter: string, file: string): PageFrontmatter {
     if (match === null || key === undefined) {
       throw new Error(`${file}: unparsable frontmatter line: ${line}`);
     }
-    if (key !== "title" && key !== "lede") {
-      throw new Error(`${file}: unknown frontmatter key "${key}" — a page declares title and lede`);
+    if (key !== "lede") {
+      throw new Error(`${file}: unknown frontmatter key "${key}" — a page declares only its lede`);
     }
     const rawValue = (match[2] ?? "").trim();
     if (rawValue === ">" || rawValue === "|") {
       const [value, next] = readBlockScalar(lines, index + 1, rawValue === ">");
-      scalars.set(key, value);
+      lede = value;
       index = next;
       continue;
     }
-    scalars.set(key, unquote(rawValue));
+    lede = unquote(rawValue);
     index += 1;
   }
-  const title = scalars.get("title") ?? "";
-  const lede = scalars.get("lede") ?? "";
-  if (title === "") {
-    throw new Error(`${file}: frontmatter key "title" is required`);
-  }
-  if (lede === "") {
+  if (lede === null || lede === "") {
     throw new Error(`${file}: frontmatter key "lede" is required`);
   }
-  return { title, lede };
+  return lede;
 }
 
 /**
@@ -197,7 +191,7 @@ export function parseComponentPage(source: string, slug: string, label: string):
   const split = splitFrontmatter(source, label);
   const lines = withoutCodeFences(split.body);
   return {
-    ...parseFrontmatter(split.frontmatter, label),
+    lede: parseFrontmatter(split.frontmatter, label),
     headings: readHeadings(lines),
     demos: readDemos(lines, slug, label),
   };

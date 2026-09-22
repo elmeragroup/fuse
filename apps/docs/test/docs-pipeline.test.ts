@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
+import { componentSlugs, resolveComponentPaths } from "../scripts/lib/components.ts";
 import { readRscStatus } from "../scripts/lib/docs-inspection.ts";
 import { renderComponentMarkdown } from "../scripts/lib/markdown.ts";
 import { parseComponentPage } from "../scripts/lib/page-source.ts";
@@ -48,9 +49,7 @@ describe("docs generation ownership", () => {
 
 describe("authored page.mdx as generation input", () => {
   function page(...body: readonly string[]): string {
-    return ["---", "title: Button", "lede: >", "  First line", "  second line", "---", "", ...body].join(
-      "\n"
-    );
+    return ["---", "lede: >", "  First line", "  second line", "---", "", ...body].join("\n");
   }
 
   it("folds a `>` lede and reads the demos the page renders, in order", () => {
@@ -67,7 +66,6 @@ describe("authored page.mdx as generation input", () => {
       "button",
       "button/page.mdx"
     );
-    expect(parsed.title).toBe("Button");
     expect(parsed.lede).toBe("First line second line");
     expect(parsed.demos).toEqual([
       { id: "variants", title: "Variants", file: "button-variant-matrix.tsx" },
@@ -76,13 +74,19 @@ describe("authored page.mdx as generation input", () => {
   });
 
   it("rejects an unknown frontmatter key rather than ignoring it", () => {
-    expect(() => parseComponentPage("---\ntitle: X\nlede: Y\nnope: 1\n---\n", "x", "x.mdx")).toThrow(
+    // `title` is the one that used to be legal: the page title is derived from the slug
+    // (docs-site.md §3.3), so a page that still declares one fails instead of carrying a
+    // second name. An arbitrary key is rejected by the same branch, named in the message.
+    expect(() => parseComponentPage("---\ntitle: Button\nlede: Y\n---\n", "button", "x.mdx")).toThrow(
       /unknown frontmatter key/
+    );
+    expect(() => parseComponentPage("---\nlede: Y\nnope: 1\n---\n", "button", "x.mdx")).toThrow(
+      /unknown frontmatter key "nope"/
     );
   });
 
-  it("requires a title and a lede", () => {
-    expect(() => parseComponentPage("---\ntitle: X\n---\n", "x", "x.mdx")).toThrow(/"lede" is required/);
+  it("requires a lede", () => {
+    expect(() => parseComponentPage("---\nlede:\n---\n", "x", "x.mdx")).toThrow(/"lede" is required/);
   });
 
   it("refuses a <Demo> that is missing an attribute, or names another page's slug", () => {
@@ -114,6 +118,28 @@ describe("authored page.mdx as generation input", () => {
       { id: "details", title: "Details", depth: 3 },
     ]);
     expect(parsed.demos).toEqual([]);
+  });
+});
+
+describe("component page titles (docs-site.md §3.3)", () => {
+  it("spells the slug as words a reader says, never the exported identifier", () => {
+    expect(resolveComponentPaths("button").title).toBe("Button");
+    expect(resolveComponentPaths("alert-dialog").title).toBe("Alert Dialog");
+    expect(resolveComponentPaths("date-range-picker").title).toBe("Date Range Picker");
+    // The fixed-casing part: the identifier is `UiProviders`, the label is `UI Providers`.
+    expect(resolveComponentPaths("ui-providers").title).toBe("UI Providers");
+  });
+
+  it("renders a multi-word slug as separate title-cased words, never the identifier", () => {
+    for (const slug of componentSlugs()) {
+      if (!slug.includes("-")) continue;
+      const { title, exportName } = resolveComponentPaths(slug);
+      expect(title, slug).toContain(" ");
+      expect(title, slug).not.toBe(exportName);
+      for (const word of title.split(" ")) {
+        expect(word.charAt(0), `${slug}: ${title}`).toMatch(/[A-Z]/);
+      }
+    }
   });
 });
 

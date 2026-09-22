@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
  * through one configuration.
  *
  * - `remark-frontmatter` claims the `---` block, so it is metadata for the build to read
- *   (title and lede — see `scripts/lib/page-source.ts`) rather than rendered prose.
+ *   (the lede — see `scripts/lib/page-source.ts`) rather than rendered prose.
  * - `remark-gfm` keeps tables, strikethrough and autolinks available to page authors.
  */
 const withMdx = createMdx({
