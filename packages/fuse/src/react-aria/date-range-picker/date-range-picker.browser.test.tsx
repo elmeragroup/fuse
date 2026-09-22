@@ -567,6 +567,19 @@ describe("DateRangePicker density metrics", () => {
     );
     expect(px(getComputedStyle(groupNamed("Meter")).height)).toBe(CONTROL_MD.dense.height);
   });
+
+  it("insets the en-dash by one md inset from each date at both densities", async () => {
+    renderPicker(<DateRangePicker label="Delivery window" defaultValue={julyWeek} />);
+    await expect.element(segmentLocator("month, Start Date")).toBeVisible();
+    for (const density of ["dense", "comfortable"] as const) {
+      stampDensity(density);
+      const dash = separator("Delivery window").getBoundingClientRect();
+      const beforeDash = dash.left - segmentNamed("year, Start Date").getBoundingClientRect().right;
+      const afterDash = segmentNamed("month, End Date").getBoundingClientRect().left - dash.right;
+      expect(Math.round(beforeDash)).toBe(CONTROL_MD[density].px);
+      expect(Math.round(afterDash)).toBe(CONTROL_MD[density].px);
+    }
+  });
 });
 
 describe("DateRangePicker composition surface", () => {

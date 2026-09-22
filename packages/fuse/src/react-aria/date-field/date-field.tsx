@@ -89,9 +89,9 @@ export type DateInputProps = {
 } & Omit<AriaDateInputProps, "children" | "slot" | "className">;
 
 export function DateInput({ className, ...props }: DateInputProps): ReactElement {
-  const { input, segment } = dateFieldVariants();
   const state = useContext(DateFieldStateContext);
   const hasGroupSurface = useContext(FieldGroupSurfaceContext);
+  const { input, segment } = dateFieldVariants({ surface: hasGroupSurface ? "group" : "own" });
 
   return (
     <AriaDateInput

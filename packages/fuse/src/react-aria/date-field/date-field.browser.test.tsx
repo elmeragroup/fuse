@@ -53,6 +53,14 @@ function spinbuttonsIn(name: string): HTMLElement[] {
     );
 }
 
+function segmentInsetsIn(name: string) {
+  const box = groupNamed(name).getBoundingClientRect();
+  const segments = spinbuttonsIn(name).map((segment) => segment.getBoundingClientRect());
+  const top = Math.min(...segments.map((rect) => rect.top));
+  const bottom = Math.max(...segments.map((rect) => rect.bottom));
+  return { top: top - box.top, bottom: box.bottom - bottom, slack: box.height - (bottom - top) };
+}
+
 function fieldRootFrom(name: string): HTMLElement {
   const root = groupNamed(name).parentElement;
   if (!(root instanceof HTMLElement)) {
@@ -332,6 +340,16 @@ describe("DateField density metrics", () => {
       </ThemeScope>
     );
     expect(px(getComputedStyle(groupNamed("Meter")).height)).toBe(CONTROL_MD.dense.height);
+  });
+
+  it("centers the segment row in the field box at both densities", () => {
+    renderField(<DateField label="Meter" defaultValue={july14} />);
+    for (const density of ["dense", "comfortable"] as const) {
+      stampDensity(density);
+      const inset = segmentInsetsIn("Meter");
+      expect(inset.slack, `the ${density} box has no slack to distribute`).toBeGreaterThan(1);
+      expect(inset.top, `segment row is off-center at ${density}`).toBeCloseTo(inset.bottom, 1);
+    }
   });
 });
 
