@@ -11,8 +11,6 @@ describe("selectionGroupOrientationVariants", () => {
     expect(slots.group()).toContain("has-[>[data-selection-item]]:gap-0");
     expect(slots.list()).toContain("gap-0");
     expect(slots.list()).not.toContain("flex-row");
-    expect(slots.group()).toBe(selectionGroupOrientationVariants({ orientation: "vertical" }).group());
-    expect(slots.list()).toBe(selectionGroupOrientationVariants({ orientation: "vertical" }).list());
   });
 
   it("resolves the vertical orientation", () => {

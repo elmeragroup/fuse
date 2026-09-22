@@ -47,7 +47,6 @@ const CONTENT_SIZE_CLASS = {
 describe("popoverInfoButtonStyles", () => {
   it("keeps the content base and maps every contentSize onto max-w-*", () => {
     const defaults = popoverInfoButtonStyles();
-    expect(defaults.content()).toBe(popoverInfoButtonStyles({ contentSize: "default" }).content());
     expect(defaults.icon()).toContain("size-4");
     expect(defaults.content()).toContain("w-auto");
     expect(defaults.content()).toContain("p-4");

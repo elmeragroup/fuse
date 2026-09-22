@@ -33,15 +33,15 @@ describe("roleNamed", () => {
     expect(() => roleNamed("button", "Cancel")).toThrow();
   });
 
-  it("backs textboxNamed", () => {
+  it("finds a textbox by its label", () => {
     renderThemed(
       <label>
         Meter number
-        <input type="text" />
+        <input type="text" defaultValue="7070575000" />
       </label>
     );
 
-    expect(textboxNamed("Meter number")).toBe(roleNamed("textbox", "Meter number"));
+    expect(textboxNamed("Meter number")).toHaveProperty("value", "7070575000");
   });
 });
 

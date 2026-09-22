@@ -4,8 +4,8 @@ import type { ReactNode, RefObject } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { render } from "../../test/browser-render";
+import { DEFAULT_BOOTSTRAP_MANIFEST } from "../../test/color-scheme-contract";
 import {
-  defaultManifest,
   fkasPrivate,
   guenPrivate,
   readDocumentBrand,
@@ -20,7 +20,7 @@ import { ThemeScopeContainerContext, useResolvedPortalContainer } from "./theme-
 import type { ThemeInput } from "./tokens/themes";
 
 beforeEach(() => {
-  writeManifest(defaultManifest);
+  writeManifest(DEFAULT_BOOTSTRAP_MANIFEST);
 });
 
 afterEach(() => {

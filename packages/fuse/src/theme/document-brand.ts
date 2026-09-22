@@ -36,7 +36,7 @@ export function documentBrandDisagrees(found: DocumentBrandSnapshot, expected: T
   );
 }
 
-export function documentBrandMismatchMessage(
+function documentBrandMismatchMessage(
   found: DocumentBrandSnapshot,
   expected: ThemeAttributes
 ): string {

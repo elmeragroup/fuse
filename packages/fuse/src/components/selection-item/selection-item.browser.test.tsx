@@ -5,9 +5,9 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { assertHorizontalItemList, radiusToken } from "../../../test/assert-selection-item-group-layout";
 import { headingNamed, renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
-import { disabledHatch } from "../../styles/utils";
 import { Checkbox as UiCheckbox, CheckboxGroup, CheckboxItem, CheckboxItemGroup } from "../checkbox/checkbox";
 import { Field } from "../field/field";
+import { disabledHatch } from "../../styles/utils";
 import { Radio, RadioGroup, RadioItem, RadioItemGroup } from "../radio-group/radio-group";
 import { SelectionItem } from "./selection-item";
 
@@ -367,6 +367,7 @@ describe("SelectionItem", () => {
     const shellStyle = getComputedStyle(shell);
     expect(shellStyle.cursor).toBe("not-allowed");
     expect(shellStyle.backgroundColor).toBe(tokenBackgroundColor(shell, "bg-muted"));
+    // Oracle: the shared hatch, which utils.test.ts pins by hand.
     expect(shellStyle.backgroundImage).toBe(tokenBackgroundImage(shell, disabledHatch));
     expect(shellStyle.backgroundImage).not.toBe("none");
 

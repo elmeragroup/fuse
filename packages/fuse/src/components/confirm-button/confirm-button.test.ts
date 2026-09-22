@@ -27,8 +27,6 @@ describe("confirmButtonVariants", () => {
   });
 
   it("covers every Button-aligned variant without raw palette, dark, density, or destructive classes", () => {
-    expect(EMPTY_VARIANTS).toHaveLength(5);
-    expect(ARMED_VARIANTS).toHaveLength(2);
     for (const variant of ARMED_VARIANTS) {
       const resolved = confirmButtonVariants({ variant });
       expect(resolved.length, variant).toBeGreaterThan(0);

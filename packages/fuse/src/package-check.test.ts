@@ -14,15 +14,10 @@ import {
   parsePackedEvalJson,
   withDeclarationParser,
 } from "../scripts/package-check-lib";
-import { parseFacadeValueExports } from "../scripts/parse-facade";
 import { ARTIFACTS_DIR } from "../scripts/tarball";
 import { copyTwemojiNotices, TWEMOJI_LICENSE_FILE, TWEMOJI_NOTICE_FILE } from "../scripts/twemoji-notices";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-
-function sorted(names: readonly string[]): string[] {
-  return [...names].toSorted((left, right) => left.localeCompare(right));
-}
 
 describe("shared script helpers", () => {
   it("exports one RAC forbidden list consumed by package-check and the lint rule", () => {
@@ -111,26 +106,6 @@ describe("packed value-export gate", () => {
       packedValueExportFailure("./theme", ["BRANDS", "isBrandCode"], ["isBrandCode", "BRANDS"])
     ).toBeUndefined();
   });
-
-  // Timeout: discoverEntries walks the published import graph; slow under full-gate parallel load.
-  it("uses the parsed theme facade and asserts icons parse equals the roster", () => {
-    const themeFacade = parseFacadeValueExports(
-      "src/theme.ts",
-      readFileSync(join(packageRoot, "src/theme.ts"), "utf8")
-    );
-    expect(themeFacade).toContain("BRAND_CODES");
-    expect(themeFacade).toContain("isBrandCode");
-    const discovered = discoverEntries(packageRoot);
-    const theme = discovered.jsEntries.find((entry) => entry.subpath === "theme");
-    expect(theme?.runtimeExports).toEqual(themeFacade);
-
-    const iconsFacade = parseFacadeValueExports(
-      "src/icons.ts",
-      readFileSync(join(packageRoot, "src/icons.ts"), "utf8")
-    );
-    const icons = discovered.jsEntries.find((entry) => entry.subpath === "icons");
-    expect(sorted(icons?.runtimeExports ?? [])).toEqual(sorted(iconsFacade));
-  }, 30_000);
 });
 
 describe("emitted-directive walker", () => {

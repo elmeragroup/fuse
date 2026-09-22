@@ -5,7 +5,7 @@ import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import { SEARCH_ENTRIES } from "../src/generated/search-index";
 import { NAV_GROUPS } from "../src/lib/nav";
 import { HOME_PAGE, STATIC_PAGES } from "../src/lib/pages";
-import { matchSearchEntries, SEARCH_RESULT_LIMIT } from "../src/lib/search";
+import { matchSearchEntries } from "../src/lib/search";
 import { docsBaseUrl } from "./docs-server";
 
 const NAV_HREFS = NAV_GROUPS.flatMap((group) => group.items.map((item) => item.href));
@@ -56,8 +56,8 @@ describe("search index", () => {
 describe("search matching", () => {
   it("lists the site in nav order for an empty query, capped at the result limit", () => {
     const results = matchSearchEntries("");
-    expect(results.length).toBe(Math.min(SEARCH_ENTRIES.length, SEARCH_RESULT_LIMIT));
-    expect(results[0]?.href).toBe(HOME_PAGE.href);
+    expect(results.length).toBe(20);
+    expect(results[0]?.href).toBe("/");
   });
 
   it("ranks a title prefix above a body mention", () => {

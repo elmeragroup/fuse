@@ -1,0 +1,795 @@
+{
+  "accordion": {
+    "title": "Accordion",
+    "rsc": "client",
+    "demos": [
+      "accordion-basic.tsx",
+      "accordion-multiple.tsx",
+      "multiple.tsx",
+      "defaultValue.tsx",
+      "accordion-variants.tsx",
+      "default.tsx",
+      "card.tsx",
+      "infodropdown.tsx",
+      "radius.tsx",
+      "accordion-controlled.tsx",
+      "value.tsx",
+      "onValueChange.tsx",
+      "accordion-hidden-until-found.tsx",
+      "hiddenUntilFound.tsx"
+    ]
+  },
+  "alert": {
+    "title": "Alert",
+    "rsc": "server",
+    "demos": [
+      "alert-variants.tsx",
+      "alert-action.tsx",
+      "onAction.tsx",
+      "actionLabel.tsx",
+      "alert-title-only.tsx",
+      "alert-heading-level.tsx",
+      "level.tsx"
+    ]
+  },
+  "alert-dialog": {
+    "title": "Alert Dialog",
+    "rsc": "client",
+    "demos": [
+      "alert-dialog-destructive.tsx",
+      "onAction.tsx",
+      "alert-dialog-neutral.tsx",
+      "isAutomaticallyCloseOnActionEnabled.tsx",
+      "alert-dialog-pending.tsx",
+      "isPerformingAction.tsx",
+      "isActionDisabled.tsx",
+      "alert-dialog-custom-icon.tsx",
+      "icon.tsx",
+      "cancelLabel.tsx"
+    ]
+  },
+  "avatar": {
+    "title": "Avatar",
+    "rsc": "client",
+    "demos": [
+      "avatar-basic.tsx",
+      "avatar-fallback.tsx",
+      "delay.tsx",
+      "avatar-sizes.tsx",
+      "avatar-group.tsx"
+    ]
+  },
+  "badge": {
+    "title": "Badge",
+    "rsc": "server",
+    "demos": [
+      "badge-basic.tsx",
+      "badge-variants.tsx",
+      "badge-status.tsx",
+      "badge-sizes.tsx"
+    ]
+  },
+  "breadcrumb": {
+    "title": "Breadcrumb",
+    "rsc": "client",
+    "demos": [
+      "breadcrumb-basic.tsx",
+      "breadcrumb-custom-separator.tsx",
+      "breadcrumb-ellipsis.tsx",
+      "breadcrumb-render-link.tsx",
+      "render.tsx"
+    ]
+  },
+  "button": {
+    "title": "Button",
+    "rsc": "client",
+    "demos": [
+      "button-variant-matrix.tsx",
+      "button-sizes.tsx",
+      "button-pending.tsx",
+      "isPending.tsx",
+      "SpinnerGap.tsx",
+      "button-visually-disabled.tsx",
+      "isVisuallyDisabled.tsx",
+      "button-predictive-intent.tsx",
+      "onIntent.tsx",
+      "predictionZoneSize.tsx"
+    ]
+  },
+  "button-group": {
+    "title": "Button Group",
+    "rsc": "client",
+    "demos": [
+      "button-group-basic.tsx",
+      "button-group-vertical.tsx",
+      "button-group-split-button.tsx",
+      "CaretDown.tsx",
+      "aria-expanded.tsx",
+      "button-group-text.tsx",
+      "render.tsx",
+      "label.tsx",
+      "button-group-nested.tsx",
+      "gap-2.tsx"
+    ]
+  },
+  "calendar": {
+    "title": "Calendar",
+    "rsc": "client",
+    "demos": [
+      "calendar-basic.tsx",
+      "calendar-controlled.tsx",
+      "calendar-bounds.tsx",
+      "calendar-error.tsx",
+      "calendar-rtl.tsx"
+    ]
+  },
+  "card": {
+    "title": "Card",
+    "rsc": "server",
+    "demos": [
+      "card-basic.tsx",
+      "card-with-action.tsx",
+      "card-tag.tsx",
+      "card-horizontal.tsx",
+      "card-item-rows.tsx"
+    ]
+  },
+  "checkbox": {
+    "title": "Checkbox",
+    "rsc": "client",
+    "demos": [
+      "checkbox-basic.tsx",
+      "checkbox-group.tsx",
+      "Checkbox.tsx",
+      "checkbox-item-group.tsx",
+      "checkbox-tristate.tsx",
+      "allValues.tsx",
+      "CheckboxItemGroup.tsx",
+      "inert.tsx",
+      "checkbox-description.tsx",
+      "CheckboxDescription.tsx",
+      "describedBy.tsx"
+    ]
+  },
+  "checkbox-card": {
+    "title": "Checkbox Card",
+    "rsc": "client",
+    "demos": [
+      "checkbox-card-basic.tsx",
+      "checkbox-card-tags.tsx",
+      "children.tsx",
+      "checkbox-card-right-content.tsx",
+      "rightContent.tsx",
+      "checkbox-card-variants.tsx",
+      "default.tsx",
+      "muted.tsx",
+      "isDisabled.tsx",
+      "checkbox-card-group.tsx"
+    ]
+  },
+  "code": {
+    "title": "Code",
+    "rsc": "server",
+    "demos": [
+      "code-basic.tsx",
+      "code-scroll.tsx",
+      "max-h-160.tsx",
+      "aria-label.tsx"
+    ]
+  },
+  "collapsible": {
+    "title": "Collapsible",
+    "rsc": "client",
+    "demos": [
+      "collapsible-basic.tsx",
+      "defaultOpen.tsx",
+      "--collapsible-panel-height.tsx",
+      "collapsible-controlled.tsx",
+      "open.tsx",
+      "collapsible-hidden-until-found.tsx",
+      "hiddenUntilFound.tsx"
+    ]
+  },
+  "combobox": {
+    "title": "Combobox",
+    "rsc": "client",
+    "demos": [
+      "combobox-basic.tsx",
+      "combobox-groups.tsx",
+      "combobox-multi-chips.tsx",
+      "multiple.tsx",
+      "useComboboxAnchor.tsx",
+      "combobox-input-group-anchor.tsx"
+    ]
+  },
+  "confirm-button": {
+    "title": "Confirm Button",
+    "rsc": "client",
+    "demos": [
+      "confirm-button-destructive.tsx",
+      "armedChildren.tsx",
+      "confirm-button-success.tsx",
+      "confirm-button-icon.tsx",
+      "armedAriaLabel.tsx"
+    ]
+  },
+  "date-field": {
+    "title": "Date Field",
+    "rsc": "client",
+    "demos": [
+      "date-field-basic.tsx",
+      "date-field-validation.tsx",
+      "date-field-granularity.tsx",
+      "hourCycle.tsx",
+      "date-field-states.tsx",
+      "date-field-date-input.tsx",
+      "DateInput.tsx"
+    ]
+  },
+  "date-picker": {
+    "title": "Date Picker",
+    "rsc": "client",
+    "demos": [
+      "date-picker-basic.tsx",
+      "date-picker-controlled.tsx",
+      "date-picker-presets.tsx",
+      "isCloseDialogOnDoubleClick.tsx",
+      "date-picker-validation.tsx",
+      "date-picker-states.tsx",
+      "date-picker-in-modal.tsx"
+    ]
+  },
+  "date-range-picker": {
+    "title": "Date Range Picker",
+    "rsc": "client",
+    "demos": [
+      "date-range-picker-basic.tsx",
+      "date-range-picker-controlled.tsx",
+      "date-range-picker-validation.tsx",
+      "date-range-picker-states.tsx",
+      "date-range-picker-in-modal.tsx"
+    ]
+  },
+  "description-list": {
+    "title": "Description List",
+    "rsc": "server",
+    "demos": [
+      "description-list-basic.tsx",
+      "description-list-multi-details.tsx",
+      "description-list-responsive.tsx"
+    ]
+  },
+  "dialog": {
+    "title": "Dialog",
+    "rsc": "client",
+    "demos": [
+      "dialog-basic.tsx",
+      "dialog-sizes.tsx",
+      "dialog-footer-close.tsx",
+      "showCloseButton.tsx",
+      "dialog-no-close-button.tsx",
+      "dialog-scrolling.tsx",
+      "max-h.tsx"
+    ]
+  },
+  "dropdown-menu": {
+    "title": "Dropdown Menu",
+    "rsc": "client",
+    "demos": [
+      "dropdown-menu-basic.tsx",
+      "dropdown-menu-checkboxes.tsx",
+      "dropdown-menu-radio-group.tsx",
+      "dropdown-menu-submenu.tsx",
+      "dropdown-menu-links.tsx",
+      "render.tsx",
+      "dropdown-menu-destructive.tsx"
+    ]
+  },
+  "emoji": {
+    "title": "Emoji",
+    "rsc": "server",
+    "demos": [
+      "emoji-faces.tsx",
+      "size-8.tsx",
+      "emoji-labeled.tsx",
+      "label.tsx",
+      "emoji-sizing.tsx",
+      "size-4.tsx",
+      "size-5.tsx"
+    ]
+  },
+  "empty": {
+    "title": "Empty",
+    "rsc": "server",
+    "demos": [
+      "empty-basic.tsx",
+      "empty-outline.tsx",
+      "empty-with-actions.tsx",
+      "empty-media-variants.tsx",
+      "empty-inline-link.tsx"
+    ]
+  },
+  "field": {
+    "title": "Field",
+    "rsc": "client",
+    "demos": [
+      "field-basic.tsx",
+      "field-error.tsx",
+      "field-orientations.tsx",
+      "field-set.tsx",
+      "field-choice-card.tsx",
+      "field-separator.tsx"
+    ]
+  },
+  "file-trigger": {
+    "title": "File Trigger",
+    "rsc": "client",
+    "demos": [
+      "file-trigger-basic.tsx",
+      "acceptedFileTypes.tsx",
+      "allowsMultiple.tsx",
+      "file-trigger-modes.tsx"
+    ]
+  },
+  "focusable": {
+    "title": "Focusable",
+    "rsc": "client",
+    "demos": [
+      "focusable-tooltip-trigger.tsx"
+    ]
+  },
+  "frame": {
+    "title": "Frame",
+    "rsc": "server",
+    "demos": [
+      "frame-basic.tsx",
+      "frame-stacked-panels.tsx",
+      "stackedPanels.tsx",
+      "frame-with-table.tsx",
+      "table-in-frame.tsx"
+    ]
+  },
+  "grid-list": {
+    "title": "Grid List",
+    "rsc": "client",
+    "demos": [
+      "grid-list-selection.tsx",
+      "grid-list-empty.tsx",
+      "renderEmptyState.tsx"
+    ]
+  },
+  "heading": {
+    "title": "Heading",
+    "rsc": "client",
+    "demos": [
+      "heading-basic.tsx",
+      "heading-sizes.tsx",
+      "heading-variants.tsx",
+      "heading-modifiers.tsx"
+    ]
+  },
+  "input": {
+    "title": "Input",
+    "rsc": "client",
+    "demos": [
+      "input-basic.tsx",
+      "input-types.tsx",
+      "input-states.tsx",
+      "input-in-field.tsx"
+    ]
+  },
+  "input-group": {
+    "title": "Input Group",
+    "rsc": "client",
+    "demos": [
+      "input-group-icons.tsx",
+      "input-group-buttons.tsx",
+      "xs.tsx",
+      "icon-xs.tsx",
+      "input-group-block.tsx",
+      "input-group-textarea.tsx",
+      "input-group-invalid.tsx",
+      "input-group-kbd.tsx"
+    ]
+  },
+  "item": {
+    "title": "Item",
+    "rsc": "client",
+    "demos": [
+      "item-basic.tsx",
+      "item-as-link.tsx",
+      "item-as-button.tsx",
+      "item-group.tsx",
+      "item-media-variants.tsx",
+      "item-footer-reveal.tsx",
+      "item-sizes.tsx"
+    ]
+  },
+  "link": {
+    "title": "Link",
+    "rsc": "client",
+    "demos": [
+      "link-variants.tsx",
+      "truncate.tsx",
+      "weight.tsx",
+      "link-router.tsx"
+    ]
+  },
+  "loader": {
+    "title": "Loader",
+    "rsc": "server",
+    "demos": [
+      "loader-sizes.tsx",
+      "loader-inline.tsx",
+      "aria-label.tsx"
+    ]
+  },
+  "meter": {
+    "title": "Meter",
+    "rsc": "client",
+    "demos": [
+      "meter-basic.tsx",
+      "meter-modes.tsx",
+      "meter-value-label.tsx",
+      "valueLabel.tsx",
+      "meter-range.tsx",
+      "minValue.tsx",
+      "maxValue.tsx",
+      "meter-neutral.tsx"
+    ]
+  },
+  "number-field": {
+    "title": "Number Field",
+    "rsc": "client",
+    "demos": [
+      "number-field-basic.tsx",
+      "number-field-denomination.tsx",
+      "number-field-format.tsx",
+      "formatOptions.tsx",
+      "number-field-error.tsx",
+      "number-field-states.tsx",
+      "number-field-uncontrolled.tsx"
+    ]
+  },
+  "pagination": {
+    "title": "Pagination",
+    "rsc": "client",
+    "demos": [
+      "pagination-basic.tsx",
+      "pagination-ellipsis.tsx",
+      "pagination-controlled.tsx",
+      "isActive.tsx"
+    ]
+  },
+  "phone-number-field": {
+    "title": "Phone Number Field",
+    "rsc": "client",
+    "demos": [
+      "phone-number-field-basic.tsx",
+      "phone-number-field-international.tsx",
+      "phone-number-field-detect.tsx",
+      "phone-number-field-form.tsx",
+      "phone-number-field-i18n.tsx",
+      "phone-number-field-states.tsx"
+    ]
+  },
+  "popover": {
+    "title": "Popover",
+    "rsc": "client",
+    "demos": [
+      "popover-basic.tsx",
+      "popover-arrow.tsx",
+      "showArrow.tsx",
+      "popover-placement.tsx",
+      "popover-controlled.tsx"
+    ]
+  },
+  "popover-info-button": {
+    "title": "Popover Info Button",
+    "rsc": "client",
+    "demos": [
+      "popover-info-button-basic.tsx",
+      "popover-info-button-sizes.tsx",
+      "contentSize.tsx",
+      "popover-info-button-i18n.tsx",
+      "label.tsx"
+    ]
+  },
+  "radio-group": {
+    "title": "Radio Group",
+    "rsc": "client",
+    "demos": [
+      "radio-group-basic.tsx",
+      "Radio.tsx",
+      "radio-group-pending.tsx",
+      "isPending.tsx",
+      "radio-item-group.tsx",
+      "RadioItemGroup.tsx",
+      "mode.tsx",
+      "inert.tsx",
+      "radio-icon-button.tsx",
+      "radio-controlled-null.tsx",
+      "value.tsx",
+      "null.tsx"
+    ]
+  },
+  "range-calendar": {
+    "title": "Range Calendar",
+    "rsc": "client",
+    "demos": [
+      "range-calendar-basic.tsx",
+      "range-calendar-controlled.tsx",
+      "range-calendar-unavailable.tsx",
+      "range-calendar-error.tsx",
+      "range-calendar-bounds.tsx"
+    ]
+  },
+  "scroll-area": {
+    "title": "Scroll Area",
+    "rsc": "client",
+    "demos": [
+      "scroll-area-vertical.tsx",
+      "scroll-area-horizontal.tsx",
+      "scroll-area-always.tsx",
+      "scroll-area-composed.tsx"
+    ]
+  },
+  "search-field": {
+    "title": "Search Field",
+    "rsc": "client",
+    "demos": [
+      "search-field-basic.tsx",
+      "search-field-validation.tsx",
+      "isRequired.tsx",
+      "errorMessage.tsx"
+    ]
+  },
+  "select": {
+    "title": "Select",
+    "rsc": "client",
+    "demos": [
+      "select-basic.tsx",
+      "select-groups.tsx",
+      "select-sizes.tsx",
+      "select-scrolling.tsx",
+      "alignItemWithTrigger.tsx",
+      "select-invalid.tsx"
+    ]
+  },
+  "selection-item": {
+    "title": "Selection Item",
+    "rsc": "client",
+    "demos": [
+      "selection-item-basic.tsx",
+      "selection-item-subsection.tsx",
+      "mode.tsx",
+      "visible.tsx",
+      "hidden.tsx",
+      "selection-item-control-end.tsx",
+      "control.tsx",
+      "selection-item-stacked.tsx",
+      "selection-item-disabled.tsx"
+    ]
+  },
+  "separator": {
+    "title": "Separator",
+    "rsc": "client",
+    "demos": [
+      "separator-horizontal.tsx",
+      "separator-vertical.tsx",
+      "self-stretch.tsx"
+    ]
+  },
+  "sheet": {
+    "title": "Sheet",
+    "rsc": "client",
+    "demos": [
+      "sheet-basic.tsx",
+      "sheet-sides.tsx",
+      "side.tsx",
+      "sheet-sizes.tsx",
+      "top.tsx",
+      "sheet-form.tsx",
+      "sheet-scrolling.tsx"
+    ]
+  },
+  "show": {
+    "title": "Show",
+    "rsc": "server",
+    "demos": [
+      "show-basic.tsx"
+    ]
+  },
+  "sidebar": {
+    "title": "Sidebar",
+    "rsc": "client",
+    "demos": [
+      "sidebar-app-frame.tsx",
+      "defaultOpen.tsx",
+      "sidebar-icon-collapse.tsx",
+      "tooltip.tsx",
+      "sidebar-mobile-sheet.tsx",
+      "sidebar-inset-variant.tsx",
+      "sidebar-menu-rich.tsx",
+      "MenuBadge.tsx",
+      "isActive.tsx",
+      "MenuSub.tsx",
+      "MenuSubItem.tsx",
+      "MenuSubButton.tsx",
+      "MenuSkeleton.tsx"
+    ]
+  },
+  "skeleton": {
+    "title": "Skeleton",
+    "rsc": "server",
+    "demos": [
+      "skeleton-basic.tsx",
+      "h-4.tsx",
+      "aria-busy.tsx",
+      "aria-hidden.tsx",
+      "skeleton-card.tsx",
+      "vertical-table-data.tsx",
+      "isLoading.tsx"
+    ]
+  },
+  "span": {
+    "title": "Span",
+    "rsc": "client",
+    "demos": [
+      "span-basic.tsx",
+      "span-sizes.tsx",
+      "span-variants.tsx",
+      "span-truncate.tsx"
+    ]
+  },
+  "switch": {
+    "title": "Switch",
+    "rsc": "client",
+    "demos": [
+      "switch-basic.tsx",
+      "switch-sizes.tsx",
+      "sm.tsx",
+      "default.tsx",
+      "switch-states.tsx",
+      "switch-in-field.tsx",
+      "switch-form.tsx"
+    ]
+  },
+  "table": {
+    "title": "Table",
+    "rsc": "server",
+    "demos": [
+      "table-basic.tsx",
+      "data-state.tsx",
+      "table-in-frame.tsx",
+      "vertical-table-data.tsx",
+      "data.tsx",
+      "vertical-table-compact.tsx"
+    ]
+  },
+  "tabs": {
+    "title": "Tabs",
+    "rsc": "client",
+    "demos": [
+      "tabs-basic.tsx",
+      "tabs-line.tsx",
+      "tabs-vertical.tsx",
+      "tabs-with-icons.tsx",
+      "tabs-disabled.tsx"
+    ]
+  },
+  "text": {
+    "title": "Text",
+    "rsc": "client",
+    "demos": [
+      "text-basic.tsx",
+      "text-sizes.tsx",
+      "text-variants.tsx",
+      "text-leading-weight.tsx",
+      "text-truncate.tsx"
+    ]
+  },
+  "text-field": {
+    "title": "Text Field",
+    "rsc": "client",
+    "demos": [
+      "text-field-basic.tsx",
+      "text-field-error.tsx",
+      "text-field-states.tsx",
+      "text-field-pending-success.tsx",
+      "text-field-icon.tsx",
+      "text-field-numeric.tsx",
+      "text-field-card.tsx",
+      "text-field-inline.tsx"
+    ]
+  },
+  "textarea": {
+    "title": "Textarea",
+    "rsc": "server",
+    "demos": [
+      "textarea-basic.tsx",
+      "textarea-states.tsx",
+      "textarea-in-field.tsx",
+      "TextareaField.tsx"
+    ]
+  },
+  "textarea-field": {
+    "title": "Textarea Field",
+    "rsc": "client",
+    "demos": [
+      "textarea-field-basic.tsx",
+      "textarea-field-counter.tsx",
+      "textarea-field-uncontrolled.tsx",
+      "textarea-field-error.tsx",
+      "textarea-field-disabled.tsx"
+    ]
+  },
+  "timeline-list": {
+    "title": "Timeline List",
+    "rsc": "server",
+    "demos": [
+      "timeline-list-basic.tsx",
+      "timeline-list-rich.tsx"
+    ]
+  },
+  "toast": {
+    "title": "Toast",
+    "rsc": "client",
+    "demos": [
+      "toast-statuses.tsx",
+      "toast-action.tsx",
+      "actionProps.tsx",
+      "toast-promise.tsx",
+      "promise.tsx",
+      "SpinnerGap.tsx",
+      "toast-stacking.tsx",
+      "limit.tsx"
+    ]
+  },
+  "toggle": {
+    "title": "Toggle",
+    "rsc": "client",
+    "demos": [
+      "toggle-basic.tsx",
+      "toggle-variants.tsx",
+      "toggle-sizes.tsx",
+      "toggle-icon-only.tsx",
+      "data-icon.tsx",
+      "toggle-controlled.tsx"
+    ]
+  },
+  "toggle-group": {
+    "title": "Toggle Group",
+    "rsc": "client",
+    "demos": [
+      "toggle-group-single.tsx",
+      "toggle-group-multiple.tsx",
+      "toggle-group-outline-segmented.tsx",
+      "toggle-group-vertical.tsx",
+      "toggle-group-sizes.tsx"
+    ]
+  },
+  "tooltip": {
+    "title": "Tooltip",
+    "rsc": "client",
+    "demos": [
+      "tooltip-basic.tsx",
+      "tooltip-sides.tsx",
+      "tooltip-delay.tsx",
+      "delay.tsx",
+      "tooltip-controlled.tsx",
+      "open.tsx"
+    ]
+  },
+  "ui-providers": {
+    "title": "UI Providers",
+    "rsc": "client",
+    "demos": [
+      "ui-providers-basic.tsx",
+      "navigate.tsx",
+      "locale.tsx",
+      "Link.tsx",
+      "ui-providers-locale-switch.tsx"
+    ]
+  }
+}

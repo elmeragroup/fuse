@@ -77,7 +77,7 @@ The API extractor and the `elmera/*` and `anti-slop/*` lint rules come from [`@e
 
 1. **Scaffold** — `pnpm gen` for a new component; it writes the source, the entry facade, test files and demo stubs.
 2. **Implement** using [AGENTS.md](AGENTS.md) and the component's source and tests. Update public JSDoc and consumer docs when usage changes; keep implementation rationale beside its owner.
-3. **Tests and demos** ship in that same change. Maintain the reviewed demo coverage in `apps/docs/test/fixtures/component-demo-requirements.json` and regenerate API artifacts.
+3. **Tests and demos** ship in that same change. Record the title, RSC status and demo files in `apps/docs/test/fixtures/component-inventory.json` and regenerate API artifacts.
 4. **Changeset** — `pnpm changeset` for anything user-facing. Internal-only PRs (CI, docs site, tests) carry the `no-changeset` GitHub label instead. Never edit an existing changeset to move a gate; edit one only to correct what it says shipped.
 5. **Gate** — `pnpm ci:checks` green locally before review. The merge workflow runs the same stages plus the label-aware changeset check.
 

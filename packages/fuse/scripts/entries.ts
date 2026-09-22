@@ -329,7 +329,7 @@ function barrelCollisionMessage(name: string, firstSubpath: string, secondSubpat
   return `Duplicate barrel export ${name} from ${firstSubpath} and ${secondSubpath}`;
 }
 
-export function uniqueBarrelRuntimeExports(jsEntries: readonly JsExportEntry[]): string[] {
+function uniqueBarrelRuntimeExports(jsEntries: readonly JsExportEntry[]): string[] {
   const ownerByName = new Map<string, string>();
   const names: string[] = [];
   for (const entry of jsEntries) {

@@ -5,14 +5,9 @@ import type { ButtonProps } from "@elmeragroup/fuse/button";
 import { Button, buttonVariants } from "@elmeragroup/fuse/button";
 
 test("icon-only sizes require an accessible name", () => {
-  const labeled = { size: "icon", "aria-label": "Close" } satisfies ButtonProps;
-  const labeledInline = { size: "icon-inline", "aria-label": "Open" } satisfies ButtonProps;
-  const text = { children: "Save" } satisfies ButtonProps;
-
-  expectTypeOf(labeled["aria-label"]).toEqualTypeOf<string>();
-  expectTypeOf(labeled.size).toEqualTypeOf<"icon">();
-  expectTypeOf(labeledInline.size).toEqualTypeOf<"icon-inline">();
-  expectTypeOf(text).not.toHaveProperty("aria-label");
+  ({ size: "icon", "aria-label": "Close" }) satisfies ButtonProps;
+  ({ size: "icon-inline", "aria-label": "Open" }) satisfies ButtonProps;
+  ({ children: "Save" }) satisfies ButtonProps;
 
   // @ts-expect-error icon size requires aria-label
   const _missingIcon: ButtonProps = { size: "icon" };

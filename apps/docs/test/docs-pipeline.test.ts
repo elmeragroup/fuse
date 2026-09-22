@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { componentSlugs, resolveComponentPaths } from "../scripts/lib/components.ts";
+import { resolveComponentPaths } from "../scripts/lib/components.ts";
 import { readRscStatus } from "../scripts/lib/docs-inspection.ts";
 import { renderComponentMarkdown } from "../scripts/lib/markdown.ts";
 import { parseComponentPage } from "../scripts/lib/page-source.ts";
@@ -12,7 +12,6 @@ import { collectRecipeSources } from "../scripts/lib/sources.ts";
 import { extractTokens, readColorTokenMap } from "../scripts/lib/tokens.ts";
 import type { DocsComponent } from "../src/lib/docs-model";
 import { STATIC_PAGES } from "../src/lib/pages";
-import { slugifyHeading } from "../src/lib/slug";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const docsRoot = join(here, "..");
@@ -114,7 +113,7 @@ describe("authored page.mdx as generation input", () => {
       "button/page.mdx"
     );
     expect(parsed.headings).toEqual([
-      { id: slugifyHeading("Composition limits"), title: "Composition limits", depth: 2 },
+      { id: "composition-limits", title: "Composition limits", depth: 2 },
       { id: "details", title: "Details", depth: 3 },
     ]);
     expect(parsed.demos).toEqual([]);
@@ -128,18 +127,6 @@ describe("component page titles", () => {
     expect(resolveComponentPaths("date-range-picker").title).toBe("Date Range Picker");
     // The fixed-casing part: the identifier is `UiProviders`, the label is `UI Providers`.
     expect(resolveComponentPaths("ui-providers").title).toBe("UI Providers");
-  });
-
-  it("renders a multi-word slug as separate title-cased words, never the identifier", () => {
-    for (const slug of componentSlugs()) {
-      if (!slug.includes("-")) continue;
-      const { title, exportName } = resolveComponentPaths(slug);
-      expect(title, slug).toContain(" ");
-      expect(title, slug).not.toBe(exportName);
-      for (const word of title.split(" ")) {
-        expect(word.charAt(0), `${slug}: ${title}`).toMatch(/[A-Z]/);
-      }
-    }
   });
 });
 

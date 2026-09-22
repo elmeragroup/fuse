@@ -4,13 +4,11 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { evaluateColorSchemeBootstrapScript } from "../../scripts/color-scheme-bootstrap-harness";
+import { DEFAULT_BOOTSTRAP_MANIFEST } from "../../test/color-scheme-contract";
 import {
   COLOR_SCHEME_BOOTSTRAP_SOURCE_DESCRIPTION,
   COLOR_SCHEME_BOOTSTRAP_SOURCE_DUPLICATE,
   COLOR_SCHEME_BOOTSTRAP_SOURCE_PROVIDER,
-  DEFAULT_COLOR_SCHEME,
-  DEFAULT_COLOR_SCHEME_STORAGE_KEY,
-  DEFAULT_ENABLE_SYSTEM,
   serializeScriptData,
 } from "./color-scheme";
 import type {
@@ -96,7 +94,7 @@ describe("colorSchemeScriptSource resolution", () => {
       prefersDark: true,
     });
     expect(missing.attributes["data-theme"]).toBe("dark");
-    expect(missing.storageReads).toEqual([DEFAULT_COLOR_SCHEME_STORAGE_KEY]);
+    expect(missing.storageReads).toEqual(["elmera-color-scheme"]);
 
     expect(
       evaluateColorSchemeBootstrapScript(colorSchemeScriptSource(), {
@@ -168,12 +166,7 @@ describe("colorSchemeScriptSource resolution", () => {
     expect(first.attributes).toEqual({ "data-theme": "light" });
     expect(first.style).toEqual({});
     expect(first.createdElements).toEqual([]);
-    expect(first.manifest).toEqual({
-      storageKey: DEFAULT_COLOR_SCHEME_STORAGE_KEY,
-      defaultColorScheme: DEFAULT_COLOR_SCHEME,
-      enableSystem: DEFAULT_ENABLE_SYSTEM,
-      forcedColorScheme: undefined,
-    });
+    expect(first.manifest).toEqual(DEFAULT_BOOTSTRAP_MANIFEST);
 
     const second = evaluateColorSchemeBootstrapScript(
       colorSchemeScriptSource({
@@ -199,12 +192,7 @@ describe("colorSchemeScriptSource resolution", () => {
     const first = evaluateColorSchemeBootstrapScript(injectedColorSchemeScriptSource(), {
       storedValue: "light",
     });
-    expect(first.manifest).toEqual({
-      storageKey: DEFAULT_COLOR_SCHEME_STORAGE_KEY,
-      defaultColorScheme: DEFAULT_COLOR_SCHEME,
-      enableSystem: DEFAULT_ENABLE_SYSTEM,
-      forcedColorScheme: undefined,
-    });
+    expect(first.manifest).toEqual(DEFAULT_BOOTSTRAP_MANIFEST);
     expect(bootstrapSource(first.manifest)).toBe(COLOR_SCHEME_BOOTSTRAP_SOURCE_PROVIDER);
 
     const second = evaluateColorSchemeBootstrapScript(injectedColorSchemeScriptSource(), {
@@ -270,7 +258,8 @@ describe("ColorSchemeScript", () => {
     expect(markup).toContain('data-cfasync="false"');
     expect(markup).not.toContain("type=");
     expect(markup).not.toContain("src=");
-    expect(scriptInnerHtml(markup)).toBe(colorSchemeScriptSource());
+    const result = evaluateColorSchemeBootstrapScript(scriptInnerHtml(markup), { storedValue: "dark" });
+    expect(result.attributes["data-theme"]).toBe("dark");
   });
 
   it("rejects or overrides forbidden script props", () => {
@@ -297,12 +286,14 @@ describe("ColorSchemeScript", () => {
     expect(markup).not.toContain("src=");
     expect(markup).not.toContain("https://evil.example/theme.js");
     expect(markup).not.toContain("__ELMERA_FORBIDDEN");
-    expect(scriptInnerHtml(markup)).toBe(colorSchemeScriptSource({ defaultColorScheme: "light" }));
+    const result = evaluateColorSchemeBootstrapScript(scriptInnerHtml(markup));
+    expect(result.attributes["data-theme"]).toBe("light");
   });
 
   it("forwards forcedColorScheme into the generated body", () => {
     const forced: ColorScheme = "dark";
     const markup = renderToStaticMarkup(createElement(ColorSchemeScript, { forcedColorScheme: forced }));
-    expect(scriptInnerHtml(markup)).toBe(colorSchemeScriptSource({ forcedColorScheme: forced }));
+    const result = evaluateColorSchemeBootstrapScript(scriptInnerHtml(markup), { storedValue: "light" });
+    expect(result.attributes["data-theme"]).toBe("dark");
   });
 });

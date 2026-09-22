@@ -51,7 +51,12 @@ describe("Card", () => {
         <Card.Footer>Footer</Card.Footer>
       </Card.Root>
     );
-    for (const name of [
+    // DOM audit: enumerate the emitted slot contract independently of each slot lookup.
+    expect(
+      [...document.querySelectorAll("[data-slot]")]
+        .map((element) => element.getAttribute("data-slot"))
+        .filter((name) => name?.startsWith("card"))
+    ).toEqual([
       "card",
       "card-header",
       "card-tag",
@@ -60,9 +65,7 @@ describe("Card", () => {
       "card-action",
       "card-content",
       "card-footer",
-    ]) {
-      expect(slot(name).getAttribute("data-slot"), name).toBe(name);
-    }
+    ]);
     expect(slot("card-description").tagName).toBe("P");
     expect(slot("card-tag").tagName).toBe("DIV");
   });

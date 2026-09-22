@@ -45,8 +45,6 @@ export function readRscStatus(source: string): RscStatus {
 export type DocsApiComponent = {
   readonly slug: string;
   readonly entryFile: string;
-  /** Primary page export, used for the page's source and display identity. */
-  readonly exportName: string;
   /** Exact public exports the API generator walks. */
   readonly exportNames: readonly string[];
   readonly sourceFile: string;
@@ -91,7 +89,6 @@ export function docsApiInventory(
     return {
       slug,
       entryFile: paths.entryFile,
-      exportName: paths.exportName,
       exportNames: paths.apiExportNames,
       sourceFile: paths.sourceFile,
       apiFile: paths.apiFile,

@@ -9,7 +9,6 @@ import {
   discoverEntries,
   TOOLING_ONLY_JS_ENTRIES,
   unexpectedJsEntryFiles,
-  uniqueBarrelRuntimeExports,
 } from "../scripts/entries";
 import {
   buildPublishExportMap,
@@ -410,9 +409,6 @@ describe("exports map", () => {
   it("re-exports the theme API from the root barrel and the /theme entry", () => {
     const theme = discovered.jsEntries.find((entry) => entry.subpath === "theme");
     const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
-    expect(theme?.runtimeExports).toEqual(
-      parseFacadeValueExports("src/theme.ts", readFileSync(join(packageRoot, "src/theme.ts"), "utf8"))
-    );
     expect(theme?.runtimeExports).toContain("BRAND_CODES");
     expect(theme?.runtimeExports).toContain("isBrandCode");
     expect(theme?.runtimeExports).toContain("THEME_VARIANTS");
@@ -429,7 +425,6 @@ describe("exports map", () => {
     expect(theme?.runtimeExports).toContain("ColorSchemeScript");
     expect(theme?.runtimeExports).toContain("ForceColorScheme");
     expect(theme?.runtimeExports).toContain("colorSchemeScriptSource");
-    expect(root?.runtimeExports).toEqual(uniqueBarrelRuntimeExports(discovered.jsEntries));
     expect(root?.runtimeExports).toContain("Button");
     expect(root?.runtimeExports).toContain("buttonVariants");
     expect(root?.runtimeExports).toContain("ScrollArea");

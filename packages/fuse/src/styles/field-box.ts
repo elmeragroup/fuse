@@ -5,17 +5,15 @@ import { controlInsetMdClass } from "./control-inset";
 import { selfFocusRingClass, withinFocusRingClass } from "./utils";
 
 /**
- * The field box's *chrome* — the surface a reader recognises as "a field": elevation
- * rung, radius rung, hairline border, fill, and the transition that animates all three.
+ * The field box chrome: elevation, radius, hairline border, fill and the transition that
+ * animates them. {@link fieldBox} paints it for Input and Textarea. RAC
+ * `fieldGroupVariants`, Select's trigger and NumberField's group paint it without being
+ * `fieldBox` variants.
  *
- * Sibling of {@link fieldBox}: that recipe is a flat `box` axis consumed as a string by
- * Input/Textarea, and chrome is also painted by RAC `fieldGroupVariants` and Select's
- * trigger, which are not field-box variants. NumberField's group is a second sibling —
- * same chrome, plus flex/`within` focus/invalid ring. Export names stay.
- *
- * `internal-stack.test.ts` asserts every token here reaches all three consumers' computed
- * output and that none carries a second radius or elevation rung; `date-field.browser.test.tsx`
- * asserts the two boxes' *computed* radius and shadow are equal in one rendered form.
+ * `field-box.test.ts` pins the tokens. `internal-stack.test.ts` checks that each token
+ * reaches every consumer's merged classes and that no consumer adds a second radius or
+ * elevation rung. `date-field.browser.test.tsx` compares the computed radius and shadow of
+ * two rendered boxes.
  */
 export const fieldBoxChromeClass = cn(
   "shadow-xs box-border rounded-md border border-input bg-card transition-[color,border-color,box-shadow]"

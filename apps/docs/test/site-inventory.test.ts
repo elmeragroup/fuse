@@ -4,6 +4,7 @@ import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import { COMPONENT_NAV, NAV_GROUPS } from "../src/lib/nav";
 import { HOME_PAGE, STATIC_PAGES } from "../src/lib/pages";
 import { fetchOk, fetchText } from "./docs-server";
+import { COMPONENT_INVENTORY } from "./component-inventory";
 
 const NAV_HREFS = NAV_GROUPS.flatMap((group) => group.items.map((item) => item.href));
 
@@ -30,14 +31,13 @@ describe("SideNav inventory", () => {
     ]);
   });
 
-  it("generates the Components group from the page manifest, flat and alphabetical", () => {
+  it("generates the Components group from the reviewed titles, flat and alphabetical", () => {
     expect(NAV_GROUPS[2]?.items).toBe(COMPONENT_NAV);
+    // Unit under test: the nav labels and their order. Oracle: the reviewed inventory
+    // titles in the order the fixture lists them, which is alphabetical.
     expect(COMPONENT_NAV.map((item) => item.label)).toEqual(
-      [...COMPONENT_PAGES.map((component) => component.title)].sort((left, right) =>
-        left.localeCompare(right)
-      )
+      [...COMPONENT_INVENTORY.values()].map((entry) => entry.title)
     );
-    expect(COMPONENT_NAV.length).toBe(COMPONENT_PAGES.length);
   });
 
   it.each(NAV_HREFS)("resolves %s instead of 404ing", async (href) => {

@@ -35,42 +35,22 @@ describe("BrandLogo", () => {
     expect(img.querySelector("path")).toBeNull();
   });
 
-  it("is exhaustive over every brand code and stamps data-variant", () => {
+  it("names every brand by its display name and defaults to the full variant", () => {
     expect(BRAND_CODES).toContain("elma");
     for (const brand of BRAND_CODES) {
-      const { host, unmount } = render(<BrandLogo brand={brand} variant="full" />);
-      const img = page.getByRole("img", { name: BRANDS[brand].displayName, exact: true }).element();
+      // Oracle: the brand display name, which theme-api.test.ts pins by hand.
+      const name = BRANDS[brand].displayName;
+      const { host, unmount } = render(<BrandLogo brand={brand} />);
+      const img = page.getByRole("img", { name, exact: true }).element();
       expect(img.tagName).toBe("SPAN");
       expect(img.getAttribute("data-variant")).toBe("full");
       expect(img.getAttribute("role")).toBe("img");
-      expect(img.getAttribute("aria-label")).toBe(BRANDS[brand].displayName);
+      expect(img.getAttribute("aria-label")).toBe(name);
       if (brand === "elma") {
-        expect(img.textContent).toBe(BRANDS[brand].displayName);
+        expect(img.textContent).toBe(name);
         expect(host.querySelector("svg")).toBeNull();
       } else {
         expect(host.querySelector("svg")).not.toBeNull();
-      }
-      unmount();
-    }
-  });
-
-  it("maps energy brands to their display names", () => {
-    const cases = [
-      ["fkas", "Fjordkraft"],
-      ["fkab", "Fjordkraft Företag"],
-      ["tkas", "TrøndelagKraft"],
-      ["guen", "Gudbrandsdal Energi"],
-      ["fkse", "Telinet"],
-      ["elma", "Elmera"],
-    ] as const;
-    for (const [brand, name] of cases) {
-      const { unmount } = render(<BrandLogo brand={brand} />);
-      const img = page.getByRole("img", { name, exact: true }).element();
-      if (brand === "elma") {
-        expect(img.textContent).toBe(name);
-        expect(img.querySelector("svg")).toBeNull();
-      } else {
-        expect(img.querySelector("svg")).not.toBeNull();
       }
       unmount();
     }

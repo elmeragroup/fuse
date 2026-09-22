@@ -3,7 +3,6 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { FLAG_RAW_CEILING_BYTES } from "../scripts/flag-payload";
 import {
   budgetFailure,
   ceilingFromMeasured,
@@ -112,7 +111,7 @@ describe("size-limit harness", () => {
       "react-aria/file-trigger",
       "icons/Check",
     ]);
-    expect(FLAG_RAW_BUDGETS).toEqual([{ name: "flags/*.svg", ceilingBytes: FLAG_RAW_CEILING_BYTES }]);
+    expect(FLAG_RAW_BUDGETS).toEqual([{ name: "flags/*.svg", ceilingBytes: 819200 }]);
     expect(CSS_BUDGETS.map((budget) => budget.name)).toEqual(["themes.css", "styles.css"]);
   });
 

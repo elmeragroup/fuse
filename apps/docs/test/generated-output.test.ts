@@ -18,9 +18,8 @@ import type { ComponentPageSource } from "../scripts/lib/page-source.ts";
 import { repoRelative, repoRoot } from "../scripts/lib/paths.ts";
 import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import type { ComponentApiArtifact, ComponentPageEntry } from "../src/lib/docs-model";
-import { dependencyPackageName, normalizeDemoSource } from "../src/lib/docs-model";
-import demoRequirements from "./fixtures/component-demo-requirements.json";
-import rscStatuses from "./fixtures/component-rsc-statuses.json";
+import { dependencyPackageName } from "../src/lib/docs-model";
+import { COMPONENT_INVENTORY } from "./component-inventory";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const docsRoot = join(here, "..");
@@ -63,99 +62,38 @@ function declaredRsc(sourcePath: string): string {
   return readRscStatus(readFileSync(join(repoRoot, sourcePath), "utf8"));
 }
 
-/** Reviewed demo coverage, maintained independently of pages and generated output. */
-const requiredDemoScenarios: Readonly<Record<string, readonly string[]>> = demoRequirements;
-
-/** Reviewed compatibility expectations, authored independently of source and generated output. */
-const expectedRscStatuses: ReadonlyMap<string, string> = new Map(Object.entries(rscStatuses));
+/** The keys a manifest entry carries. Anything else would ship to the browser unreviewed. */
+const MANIFEST_ENTRY_KEYS = [
+  "demos",
+  "headings",
+  "lede",
+  "markdownUrl",
+  "partNames",
+  "slug",
+  "sourcePath",
+  "sourceUrl",
+  "title",
+  "tokens",
+];
 
 describe("component page manifest", () => {
   it("covers every authored component page", () => {
-    expect(COMPONENT_PAGES.map((entry) => entry.slug)).toEqual([
-      "accordion",
-      "alert",
-      "alert-dialog",
-      "avatar",
-      "badge",
-      "breadcrumb",
-      "button",
-      "button-group",
-      "calendar",
-      "card",
-      "checkbox",
-      "checkbox-card",
-      "code",
-      "collapsible",
-      "combobox",
-      "confirm-button",
-      "date-field",
-      "date-picker",
-      "date-range-picker",
-      "description-list",
-      "dialog",
-      "dropdown-menu",
-      "emoji",
-      "empty",
-      "field",
-      "file-trigger",
-      "focusable",
-      "frame",
-      "grid-list",
-      "heading",
-      "input",
-      "input-group",
-      "item",
-      "link",
-      "loader",
-      "meter",
-      "number-field",
-      "pagination",
-      "phone-number-field",
-      "popover",
-      "popover-info-button",
-      "radio-group",
-      "range-calendar",
-      "scroll-area",
-      "search-field",
-      "select",
-      "selection-item",
-      "separator",
-      "sheet",
-      "show",
-      "sidebar",
-      "skeleton",
-      "span",
-      "switch",
-      "table",
-      "tabs",
-      "text",
-      "text-field",
-      "textarea",
-      "textarea-field",
-      "timeline-list",
-      "toast",
-      "toggle",
-      "toggle-group",
-      "tooltip",
-      "ui-providers",
-    ]);
+    // Unit under test: the generated manifest's page set. Oracle: the reviewed inventory,
+    // whose slug order is the alphabetical order the generator globs to.
+    expect(COMPONENT_PAGES.map((entry) => entry.slug)).toEqual([...COMPONENT_INVENTORY.keys()]);
   });
 
-  it("carries page metadata only — no demo source, no API data", () => {
-    // The slim manifest is the point: a demo's source is read from its file at render time
-    // and the reference reads api.json, so neither may travel through here.
+  it("carries page metadata only, with no demo source and no API data", () => {
+    // The frame reads demo source from its file and the reference reads api.json, so
+    // neither travels through the manifest the browser downloads.
     const serialized = JSON.stringify(COMPONENT_PAGES);
     expect(serialized).not.toContain('"source"');
     expect(serialized).not.toContain('"props"');
     expect(serialized).not.toContain("use client");
-    // The import specifier and the page's RSC status are generation-pass facts: the
-    // markdown endpoint and the search index read them, the browser never does.
-    expect(serialized).not.toContain('"entry"');
-    expect(serialized).not.toContain('"exportName"');
-    expect(serialized).not.toContain('"rsc"');
     for (const entry of COMPONENT_PAGES) {
-      // What the manifest does carry about the API is TOC material — one anchor per part —
-      // and it has to name exactly the parts the committed artifact describes.
+      expect(Object.keys(entry).toSorted(), entry.slug).toEqual(MANIFEST_ENTRY_KEYS);
+      // The API data the manifest carries is one TOC anchor per part, named exactly as the
+      // committed artifact names them.
       expect(entry.partNames, entry.slug).toEqual(api(entry.slug).parts.map((part) => part.name));
     }
   });
@@ -172,7 +110,6 @@ describe("component page manifest", () => {
       // that very file — read once, never copied.
       const authored = authoredPage(entry.slug);
       const markdown = endpoint(entry.slug);
-      expect(authored.parsed.demos.map((demo) => demo.id)).toEqual(entry.demos.map((demo) => demo.id));
       for (const demo of authored.parsed.demos) {
         const file = join(resolveComponentPaths(entry.slug).demosDir, demo.file);
         const source = readFileSync(file, "utf8");
@@ -180,32 +117,29 @@ describe("component page manifest", () => {
         expect(source.startsWith('"use client";'), demo.file).toBe(true);
         expect(authored.text, demo.file).toContain(`from "./demos/${demo.file.replace(/\.tsx$/, "")}"`);
         // And the endpoint embeds the very bytes of that file, under its own path.
-        expect(markdown, demo.file).toContain(normalizeDemoSource(source));
+        expect(markdown, demo.file).toContain(source.trimEnd());
         expect(markdown, demo.file).toContain(`Source: \`${repoRelative(file)}\``);
       }
     }
   });
 
   it("renders every required demo scenario without adding unreviewed scenarios", () => {
-    expect(Object.keys(requiredDemoScenarios).sort()).toEqual(
-      COMPONENT_PAGES.map((entry) => entry.slug).sort()
-    );
-    for (const entry of COMPONENT_PAGES) {
-      const scenarios = requiredDemoScenarios[entry.slug] ?? [];
-      expect(scenarios.length, entry.slug).toBeGreaterThan(0);
-      const rendered = authoredPage(entry.slug).parsed.demos.map((demo) => demo.file);
+    for (const [slug, reviewed] of COMPONENT_INVENTORY) {
+      expect(reviewed.demos.length, slug).toBeGreaterThan(0);
+      const rendered = authoredPage(slug).parsed.demos.map((demo) => demo.file);
       for (const file of rendered) {
-        expect(scenarios, `${entry.slug} renders an unreviewed scenario: ${file}`).toContain(file);
+        expect(reviewed.demos, `${slug} renders an unreviewed scenario: ${file}`).toContain(file);
       }
-      for (const file of scenarios) {
-        // Sibling scenarios belong to the component named in the filename.
-        if (!file.startsWith(`${entry.slug}-`)) continue;
-        expect(rendered, `${entry.slug} is missing required demo ${file}`).toContain(file);
+      // A file named after the slug is required. Other listed files may be rendered.
+      for (const file of reviewed.demos.filter((demo) => demo.startsWith(`${slug}-`))) {
+        expect(rendered, `${slug} is missing required demo ${file}`).toContain(file);
       }
     }
   });
 
-  it("lists the demos the page renders, once each, in the order it renders them", () => {
+  it("carries every demo the page renders into the manifest, in the order it renders them", () => {
+    // Unit under test: the generator's copy of each page's demos into the manifest. Oracle:
+    // the parsed page. The parser itself is tested against literal pages in docs-pipeline.
     for (const entry of COMPONENT_PAGES) {
       const authored = authoredPage(entry.slug).parsed;
       expect(
@@ -216,6 +150,11 @@ describe("component page manifest", () => {
         entry.demos.map((demo) => demo.title),
         entry.slug
       ).toEqual(authored.demos.map((demo) => demo.title));
+    }
+  });
+
+  it("gives each generated demo a unique URL-safe ID and a nonempty title", () => {
+    for (const entry of COMPONENT_PAGES) {
       expect(new Set(entry.demos.map((demo) => demo.id)).size, entry.slug).toBe(entry.demos.length);
       for (const demo of entry.demos) {
         expect(demo.id, `${entry.slug}.${demo.id}`).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
@@ -231,30 +170,22 @@ describe("component page manifest", () => {
     expect(page("button").markdownUrl).toBe("/components/button.md");
   });
 
-  it("reports per-part directives and independently reviewed page RSC status", () => {
-    const authoritative = expectedRscStatuses;
-    expect(authoritative.size).toBeGreaterThanOrEqual(COMPONENT_PAGES.length);
-    for (const entry of COMPONENT_PAGES) {
-      // Each part's badge is its own declaring module's leading directive.
-      for (const part of api(entry.slug).parts) {
-        expect(part.rsc, `${entry.slug} ${part.name}`).toBe(declaredRsc(part.sourcePath));
+  it("reports per-part directives and the reviewed page RSC status", () => {
+    for (const [slug, reviewed] of COMPONENT_INVENTORY) {
+      // Each part's badge is the leading directive of the module that declares it.
+      for (const part of api(slug).parts) {
+        expect(part.rsc, `${slug} ${part.name}`).toBe(declaredRsc(part.sourcePath));
       }
-      // The page's own status surfaces on the markdown endpoint, not in the browser
-      // manifest. The reviewed fixture stays independent of the generated API artifact.
-      const expected = authoritative.get(entry.slug) ?? "";
-      expect(expected, `the RSC fixture does not classify ${entry.slug}`).not.toBe("");
-      expect(endpoint(entry.slug), entry.slug).toContain(`- RSC: ${expected}`);
+      // The page's own status appears on the markdown endpoint, not in the browser manifest.
+      expect(endpoint(slug), slug).toContain(`- RSC: ${reviewed.rsc}`);
     }
   });
 });
 
 describe("committed api.json", () => {
   it("walks only the export names resolveComponentPaths lists", () => {
-    expect(resolveComponentPaths("table").exportName).toBe("Table");
     expect(resolveComponentPaths("table").apiExportNames).toEqual(["Table", "VerticalTable"]);
-    expect(resolveComponentPaths("checkbox-card").exportName).toBe("CheckboxCard");
     expect(resolveComponentPaths("checkbox-card").apiExportNames).toEqual(["CheckboxCard"]);
-    expect(resolveComponentPaths("checkbox").exportName).toBe("Checkbox");
     expect(resolveComponentPaths("checkbox").apiExportNames).toEqual([
       "Checkbox",
       "CheckboxGroup",
@@ -262,7 +193,6 @@ describe("committed api.json", () => {
       "CheckboxItemGroup",
       "CheckboxDescription",
     ]);
-    expect(resolveComponentPaths("radio-group").exportName).toBe("RadioGroup");
     expect(resolveComponentPaths("radio-group").apiExportNames).toEqual([
       "RadioGroup",
       "RadioGroupItem",
@@ -278,38 +208,28 @@ describe("committed api.json", () => {
     expect(resolveComponentPaths("breadcrumb").apiExportNames).toEqual(["Breadcrumb"]);
     expect(resolveComponentPaths("alert").apiExportNames).toEqual(["Alert"]);
     expect(resolveComponentPaths("ui-providers").entry).toBe("@elmeragroup/fuse/react-aria/ui-providers");
-    expect(resolveComponentPaths("ui-providers").exportName).toBe("UiProviders");
     expect(resolveComponentPaths("ui-providers").apiExportNames).toEqual(["UiProviders"]);
     expect(resolveComponentPaths("link").entry).toBe("@elmeragroup/fuse/react-aria/link");
-    expect(resolveComponentPaths("link").exportName).toBe("Link");
     expect(resolveComponentPaths("link").apiExportNames).toEqual(["Link"]);
     expect(resolveComponentPaths("search-field").entry).toBe("@elmeragroup/fuse/react-aria/search-field");
-    expect(resolveComponentPaths("search-field").exportName).toBe("SearchField");
     expect(resolveComponentPaths("search-field").apiExportNames).toEqual(["SearchField"]);
     expect(resolveComponentPaths("file-trigger").entry).toBe("@elmeragroup/fuse/react-aria/file-trigger");
-    expect(resolveComponentPaths("file-trigger").exportName).toBe("FileTrigger");
     expect(resolveComponentPaths("file-trigger").apiExportNames).toEqual(["FileTrigger"]);
     expect(resolveComponentPaths("focusable").entry).toBe("@elmeragroup/fuse/react-aria/focusable");
-    expect(resolveComponentPaths("focusable").exportName).toBe("Focusable");
     expect(resolveComponentPaths("focusable").apiExportNames).toEqual(["Focusable", "useFocusable"]);
     expect(resolveComponentPaths("grid-list").entry).toBe("@elmeragroup/fuse/react-aria/grid-list");
-    expect(resolveComponentPaths("grid-list").exportName).toBe("GridList");
     expect(resolveComponentPaths("grid-list").apiExportNames).toEqual(["GridList", "GridListItem"]);
     expect(resolveComponentPaths("date-field").entry).toBe("@elmeragroup/fuse/react-aria/date-field");
-    expect(resolveComponentPaths("date-field").exportName).toBe("DateField");
     expect(resolveComponentPaths("date-field").apiExportNames).toEqual(["DateField", "DateInput"]);
     expect(resolveComponentPaths("calendar").entry).toBe("@elmeragroup/fuse/react-aria/calendar");
-    expect(resolveComponentPaths("calendar").exportName).toBe("Calendar");
     expect(resolveComponentPaths("calendar").apiExportNames).toEqual([
       "Calendar",
       "CalendarHeader",
       "CalendarGridHeader",
     ]);
     expect(resolveComponentPaths("range-calendar").entry).toBe("@elmeragroup/fuse/react-aria/range-calendar");
-    expect(resolveComponentPaths("range-calendar").exportName).toBe("RangeCalendar");
     expect(resolveComponentPaths("range-calendar").apiExportNames).toEqual(["RangeCalendar"]);
     expect(resolveComponentPaths("date-picker").entry).toBe("@elmeragroup/fuse/react-aria/date-picker");
-    expect(resolveComponentPaths("date-picker").exportName).toBe("DatePicker");
     expect(resolveComponentPaths("date-picker").apiExportNames).toEqual([
       "DatePicker",
       "DatePickerPresetGroup",
@@ -318,7 +238,6 @@ describe("committed api.json", () => {
     expect(resolveComponentPaths("date-range-picker").entry).toBe(
       "@elmeragroup/fuse/react-aria/date-range-picker"
     );
-    expect(resolveComponentPaths("date-range-picker").exportName).toBe("DateRangePicker");
     expect(resolveComponentPaths("date-range-picker").apiExportNames).toEqual(["DateRangePicker"]);
   });
 

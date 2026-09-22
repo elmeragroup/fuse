@@ -1,33 +1,26 @@
-import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
-
-import { DOCUMENT_COLOR_SCHEME, DOCUMENT_THEME } from "../src/theme";
-
-const fixtureRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
-const packedThemeHref = pathToFileURL(path.join(fixtureRoot, "../../packages/fuse/dist/theme.js")).href;
 
 export const BOOTSTRAP_MANIFEST_KEY = "__ELMERA_COLOR_SCHEME_BOOTSTRAP__";
 export const INJECTED_BOOTSTRAP_SOURCE_KEY = "elmera.colorScheme.bootstrapSource";
 
 export const DOCUMENT_BRAND = {
-  variant: DOCUMENT_THEME.variant,
-  brand: DOCUMENT_THEME.brand,
-  segment: DOCUMENT_THEME.segment,
+  variant: "internal",
+  brand: "elma",
+  segment: "private",
 } as const;
 
 export const EXPECTED_BOOTSTRAP_MANIFEST = {
-  storageKey: DOCUMENT_COLOR_SCHEME.storageKey,
-  defaultColorScheme: DOCUMENT_COLOR_SCHEME.defaultColorScheme,
-  enableSystem: DOCUMENT_COLOR_SCHEME.enableSystem,
+  storageKey: "elmera-color-scheme",
+  defaultColorScheme: "system",
+  enableSystem: true,
   forcedColorScheme: undefined,
 } as const;
 
 export const EXPECTED_FORCED_DARK_MANIFEST = {
-  storageKey: DOCUMENT_COLOR_SCHEME.storageKey,
-  defaultColorScheme: DOCUMENT_COLOR_SCHEME.defaultColorScheme,
-  enableSystem: DOCUMENT_COLOR_SCHEME.enableSystem,
+  storageKey: "elmera-color-scheme",
+  defaultColorScheme: "system",
+  enableSystem: true,
   forcedColorScheme: "dark",
 } as const;
 
@@ -179,23 +172,6 @@ export function isClassicScript(attrs: string): boolean {
     return true;
   }
   return false;
-}
-
-export function packedColorSchemeScriptSource(optionsLiteral: string): string {
-  const result = spawnSync(
-    process.execPath,
-    [
-      "--input-type=module",
-      "--eval",
-      `import { colorSchemeScriptSource } from ${JSON.stringify(packedThemeHref)};
-process.stdout.write(colorSchemeScriptSource(${optionsLiteral}));`,
-    ],
-    { encoding: "utf8" }
-  );
-  if (result.status !== 0) {
-    throw new Error(result.stderr || result.stdout || "packed colorSchemeScriptSource failed");
-  }
-  return result.stdout;
 }
 
 export function isLightCanvas(color: string): boolean {

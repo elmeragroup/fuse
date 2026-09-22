@@ -9,6 +9,8 @@ import { textFieldVariants } from "./text-field-variants";
 
 describe("textFieldVariants", () => {
   it("composes FieldFrame recipe slots under its public slot names", () => {
+    // Unit under test: textFieldVariants' slot wiring. Oracle: fieldFrameVariants, the
+    // upstream recipe whose classes the text field must forward unchanged.
     const slots = textFieldVariants();
     const frame = fieldFrameVariants();
     expect(slots.base()).toBe(frame.root());
@@ -31,6 +33,7 @@ describe("textFieldVariants", () => {
 
   it("composes cardVariants on variant=card and restyles inline chrome", () => {
     const card = textFieldVariants({ variant: "card" });
+    // Oracle: cardVariants, the upstream recipe every base token must survive twMerge with.
     const cardBase = cardVariants().base();
     for (const token of cardBase.split(/\s+/).filter(Boolean)) {
       expect(card.base(), token).toContain(token);

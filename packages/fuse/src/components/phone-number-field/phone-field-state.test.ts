@@ -197,7 +197,7 @@ describe("clearedForReset", () => {
     const stored = stateWith(configuration, undefined, "41234567");
     const next = clearedForReset(stored);
     expect(next.accepted.digits).toBe("");
-    expect(next.accepted.country).toBe(visibleSnapshot(stored).country);
+    expect(next.accepted.country.code).toBe("NO");
     expect(next.proposal).toBeNull();
     expect(next.value).toBeUndefined();
     expect(next.configuration).toBe(configuration);

@@ -95,9 +95,9 @@ describe("theme contract", () => {
   });
 
   it("materializes each composed theme in its emitted rules", () => {
-    // The F12 deletion removed the cascade simulator; this keeps its fast half. Each
-    // theme's emitted rule bodies must equal what `composeTheme` resolves, so drift
-    // names the offending key instead of only showing up as a snapshot diff.
+    // Unit under test: generateThemesCss, the emitter. Oracle: composeTheme, the upstream
+    // composer whose resolution the emitter must reproduce. Drift names the offending key
+    // instead of only showing up as a snapshot diff.
     const byDirectSelector = new Map(rules.map((rule) => [rule.selector.split(",")[0]?.trim() ?? "", rule]));
     for (const colorScheme of ["light", "dark"] as const) {
       for (const theme of LEGAL_THEMES) {
@@ -308,7 +308,7 @@ describe("elma identity", () => {
     expect(
       assignedTokenNames(EXTERNAL_PALETTES.elma).toSorted((left, right) => left.localeCompare(right))
     ).toEqual([...EXTERNAL_RESET_KEYS].toSorted((left, right) => left.localeCompare(right)));
-    expect(EXTERNAL_PALETTES.elma.foreground).toBe(PRIMITIVES["brand-elma"]);
+    expect(EXTERNAL_PALETTES.elma.foreground).toBe("oklch(0.28898 0.051828 217.7)");
     expect(EXTERNAL_PALETTES.elma.foreground).not.toBe(DEFAULTS.foreground);
     expect(EXTERNAL_PALETTES.elma.primary).not.toBe(DEFAULTS.primary);
 
@@ -316,6 +316,9 @@ describe("elma identity", () => {
       (rule) => rule.selector === '[data-theme-variant="external"][data-theme-brand="elma"]'
     );
     expect(externalRule).toBeDefined();
+    expect(externalRule?.declarations).toEqual(
+      expect.arrayContaining([{ name: "foreground", value: "oklch(0.28898 0.051828 217.7)" }])
+    );
     for (const key of EXTERNAL_RESET_KEYS) {
       expect(externalRule?.declarations.find((declaration) => declaration.name === key)?.value).toBe(
         EXTERNAL_PALETTES.elma[key]

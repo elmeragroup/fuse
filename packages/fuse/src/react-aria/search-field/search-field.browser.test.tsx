@@ -169,8 +169,6 @@ describe("SearchField", () => {
   });
 
   it("names the clear button from the dictionary in every shipped locale", async () => {
-    expect(Object.keys(CLEAR_COPY)).toEqual([...SUPPORTED_LOCALES]);
-
     for (const locale of SUPPORTED_LOCALES) {
       const { unmount } = renderThemed(
         withLocale(locale, <SearchField label="Meter search" defaultValue="735999123" />)

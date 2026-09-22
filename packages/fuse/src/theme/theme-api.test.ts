@@ -3,6 +3,14 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { evaluateColorSchemeBootstrapScript } from "../../scripts/color-scheme-bootstrap-harness";
+import {
+  DEFAULT_BOOTSTRAP_MANIFEST,
+  DUPLICATE_BOOTSTRAP_MESSAGE,
+  MISMATCH_BOOTSTRAP_MESSAGE,
+  MISMATCHED_BOOTSTRAP_MANIFEST,
+  MISSING_BOOTSTRAP_MESSAGE,
+} from "../../test/color-scheme-contract";
 import { LEGAL_THEMES as PUBLIC_LEGAL_THEMES, THEME_SEGMENTS, THEME_VARIANTS } from "../theme";
 import {
   COLOR_SCHEME_BOOTSTRAP_SOURCE_DUPLICATE,
@@ -11,18 +19,9 @@ import {
   resolveColorSchemeOptions,
 } from "./color-scheme";
 import type { ColorSchemeBootstrapManifest } from "./color-scheme";
-import {
-  COLOR_SCHEME_BOOTSTRAP_DUPLICATE_MESSAGE,
-  COLOR_SCHEME_BOOTSTRAP_MISSING_MESSAGE,
-  colorSchemeBootstrapMismatchMessage,
-  diagnoseColorSchemeBootstrap,
-} from "./color-scheme-diagnostics";
+import { diagnoseColorSchemeBootstrap } from "./color-scheme-diagnostics";
 import { colorSchemeScriptSource } from "./color-scheme-script";
-import {
-  documentBrandDisagrees,
-  documentBrandMismatchMessage,
-  warnDocumentBrandMismatch,
-} from "./document-brand";
+import { documentBrandDisagrees, warnDocumentBrandMismatch } from "./document-brand";
 import { themeAttributes } from "./theme-attributes";
 import { ThemeProvider, useTheme } from "./theme-provider";
 import { BRANDS, LEGAL_THEMES, parseThemeSlug, themeSlug } from "./tokens/themes";
@@ -194,7 +193,9 @@ describe("document brand mismatch", () => {
     expect(isThemeDevelopment()).toBe(true);
     warnDocumentBrandMismatch(mismatching, expected);
     expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn.mock.calls[0]?.[0]).toBe(documentBrandMismatchMessage(mismatching, expected));
+    expect(warn.mock.calls[0]?.[0]).toBe(
+      'ThemeProvider controlled theme does not match document brand attributes. Expected data-theme-variant="internal" data-theme-brand="fkas" data-theme-segment="private", found data-theme-variant="external" data-theme-brand="tkas" data-theme-segment="company". Recovering to the validated controlled theme.'
+    );
 
     warn.mockClear();
     warnDocumentBrandMismatch(matching, expected);
@@ -296,7 +297,7 @@ describe("color-scheme bootstrap diagnostics", () => {
     vi.stubEnv("NODE_ENV", "development");
     diagnoseColorSchemeBootstrap(expected, false);
     expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn.mock.calls[0]?.[0]).toBe(COLOR_SCHEME_BOOTSTRAP_MISSING_MESSAGE);
+    expect(warn.mock.calls[0]?.[0]).toBe(MISSING_BOOTSTRAP_MESSAGE);
 
     warn.mockClear();
     vi.stubEnv("NODE_ENV", "production");
@@ -309,16 +310,10 @@ describe("color-scheme bootstrap diagnostics", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     vi.stubEnv("NODE_ENV", "development");
 
-    const found = resolveColorSchemeOptions({
-      storageKey: "other-key",
-      defaultColorScheme: "light",
-      enableSystem: false,
-      forcedColorScheme: "dark",
-    });
-    writeManifest(found);
+    writeManifest(MISMATCHED_BOOTSTRAP_MANIFEST);
     diagnoseColorSchemeBootstrap(expected, false);
     expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn.mock.calls[0]?.[0]).toBe(colorSchemeBootstrapMismatchMessage(expected, found));
+    expect(warn.mock.calls[0]?.[0]).toBe(MISMATCH_BOOTSTRAP_MESSAGE);
 
     warn.mockClear();
     writeManifest(expected);
@@ -332,7 +327,7 @@ describe("color-scheme bootstrap diagnostics", () => {
     writeManifest(expected);
     diagnoseColorSchemeBootstrap(expected, true);
     expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn.mock.calls[0]?.[0]).toBe(COLOR_SCHEME_BOOTSTRAP_DUPLICATE_MESSAGE);
+    expect(warn.mock.calls[0]?.[0]).toBe(DUPLICATE_BOOTSTRAP_MESSAGE);
   });
 
   it("does not warn duplicate for a matching provider-owned self-inject", () => {
@@ -357,7 +352,7 @@ describe("color-scheme bootstrap diagnostics", () => {
     writeManifest(overwritten);
     diagnoseColorSchemeBootstrap(expected, true);
     expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn.mock.calls[0]?.[0]).toBe(COLOR_SCHEME_BOOTSTRAP_DUPLICATE_MESSAGE);
+    expect(warn.mock.calls[0]?.[0]).toBe(DUPLICATE_BOOTSTRAP_MESSAGE);
   });
 });
 
@@ -412,8 +407,11 @@ describe("ThemeProvider server snapshot", () => {
       })
     );
     expect(injected.startsWith("<script>")).toBe(true);
-    expect(injected).toContain(colorSchemeScriptSource());
-    expect(injected.endsWith("<span>child</span>")).toBe(true);
+    expect(injected.endsWith("</script><span>child</span>")).toBe(true);
+    const body = injected.slice("<script>".length, injected.indexOf("</script>"));
+    const bootstrap = evaluateColorSchemeBootstrapScript(body, { storedValue: "dark" });
+    expect(bootstrap.attributes).toEqual({ "data-theme": "dark" });
+    expect(bootstrap.manifest).toEqual(DEFAULT_BOOTSTRAP_MANIFEST);
 
     const plain = renderToStaticMarkup(
       createElement(ThemeProvider, { theme, children: createElement("span", null, "child") })

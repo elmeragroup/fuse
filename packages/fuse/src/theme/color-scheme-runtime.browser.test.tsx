@@ -4,8 +4,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { render } from "../../test/browser-render";
 import {
+  DEFAULT_BOOTSTRAP_MANIFEST,
+  DUPLICATE_BOOTSTRAP_MESSAGE,
+  MISMATCH_BOOTSTRAP_MESSAGE,
+  MISMATCHED_BOOTSTRAP_MANIFEST,
+  MISSING_BOOTSTRAP_MESSAGE,
+} from "../../test/color-scheme-contract";
+import {
   ColorSchemeOutput,
-  defaultManifest,
   emitStorageChange,
   fkasPrivate,
   mountedColorScheme,
@@ -13,11 +19,6 @@ import {
   writeManifest,
 } from "../../test/theme-browser-fixtures";
 import { DEFAULT_COLOR_SCHEME_STORAGE_KEY, resolveColorSchemeOptions } from "./color-scheme";
-import {
-  COLOR_SCHEME_BOOTSTRAP_DUPLICATE_MESSAGE,
-  COLOR_SCHEME_BOOTSTRAP_MISSING_MESSAGE,
-  colorSchemeBootstrapMismatchMessage,
-} from "./color-scheme-diagnostics";
 import { createColorSchemeRuntimeStore } from "./color-scheme-runtime";
 import type { ColorSchemeRuntimeConfig } from "./color-scheme-runtime";
 import { colorSchemeScriptSource, injectedColorSchemeScriptSource } from "./color-scheme-script";
@@ -32,7 +33,7 @@ function runBootstrap(source: string) {
 }
 
 beforeEach(() => {
-  writeManifest(defaultManifest);
+  writeManifest(DEFAULT_BOOTSTRAP_MANIFEST);
 });
 
 afterEach(() => {
@@ -74,22 +75,16 @@ describe("color-scheme bootstrap diagnostics", () => {
         <ColorSchemeOutput />
       </ThemeProvider>
     );
-    expect(warn).toHaveBeenCalledWith(COLOR_SCHEME_BOOTSTRAP_MISSING_MESSAGE);
+    expect(warn).toHaveBeenCalledWith(MISSING_BOOTSTRAP_MESSAGE);
 
     warn.mockClear();
-    const found = resolveColorSchemeOptions({
-      storageKey: "other-key",
-      defaultColorScheme: "light",
-      enableSystem: false,
-      forcedColorScheme: "dark",
-    });
-    writeManifest(found);
+    writeManifest(MISMATCHED_BOOTSTRAP_MANIFEST);
     render(
       <ThemeProvider theme={fkasPrivate}>
         <ColorSchemeOutput />
       </ThemeProvider>
     );
-    expect(warn).toHaveBeenCalledWith(colorSchemeBootstrapMismatchMessage(expected, found));
+    expect(warn).toHaveBeenCalledWith(MISMATCH_BOOTSTRAP_MESSAGE);
 
     warn.mockClear();
     writeManifest(expected);
@@ -107,8 +102,8 @@ describe("color-scheme bootstrap diagnostics", () => {
         <ColorSchemeOutput />
       </ThemeProvider>
     );
-    expect(warn).toHaveBeenCalledWith(COLOR_SCHEME_BOOTSTRAP_DUPLICATE_MESSAGE);
-    expect(warn).not.toHaveBeenCalledWith(COLOR_SCHEME_BOOTSTRAP_MISSING_MESSAGE);
+    expect(warn).toHaveBeenCalledWith(DUPLICATE_BOOTSTRAP_MESSAGE);
+    expect(warn).not.toHaveBeenCalledWith(MISSING_BOOTSTRAP_MESSAGE);
 
     warn.mockClear();
     writeManifest(undefined);
@@ -118,8 +113,8 @@ describe("color-scheme bootstrap diagnostics", () => {
         <ColorSchemeOutput />
       </ThemeProvider>
     );
-    expect(warn).not.toHaveBeenCalledWith(COLOR_SCHEME_BOOTSTRAP_DUPLICATE_MESSAGE);
-    expect(warn).not.toHaveBeenCalledWith(COLOR_SCHEME_BOOTSTRAP_MISSING_MESSAGE);
+    expect(warn).not.toHaveBeenCalledWith(DUPLICATE_BOOTSTRAP_MESSAGE);
+    expect(warn).not.toHaveBeenCalledWith(MISSING_BOOTSTRAP_MESSAGE);
 
     warn.mockClear();
     writeManifest(undefined);
@@ -129,7 +124,7 @@ describe("color-scheme bootstrap diagnostics", () => {
         <ColorSchemeOutput />
       </ThemeProvider>
     );
-    expect(warn).toHaveBeenCalledWith(COLOR_SCHEME_BOOTSTRAP_DUPLICATE_MESSAGE);
+    expect(warn).toHaveBeenCalledWith(DUPLICATE_BOOTSTRAP_MESSAGE);
   });
 });
 

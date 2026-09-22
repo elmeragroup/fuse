@@ -10,8 +10,7 @@ import { emptyMediaVariants, emptyVariants } from "./empty-variants";
 
 describe("emptyVariants", () => {
   it("defaults to the frameless variant and covers outline frames", () => {
-    expect(emptyVariants()).toBe(emptyVariants({ variant: "default" }));
-    expect(emptyVariants({ variant: "default" })).not.toContain("border");
+    expect(emptyVariants()).not.toContain("border");
     expect(emptyVariants({ variant: "outline" })).toContain("border");
     expect(emptyVariants({ variant: "outline" })).toContain("border-border");
     expect(emptyVariants({ variant: "outline" })).not.toContain("border-dashed");
@@ -52,8 +51,7 @@ describe("emptyVariants", () => {
 
 describe("emptyMediaVariants", () => {
   it("defaults to transparent media and boxes the icon variant", () => {
-    expect(emptyMediaVariants()).toBe(emptyMediaVariants({ variant: "default" }));
-    expect(emptyMediaVariants({ variant: "default" })).toContain("bg-transparent");
+    expect(emptyMediaVariants()).toContain("bg-transparent");
     expect(emptyMediaVariants({ variant: "icon" })).toContain("size-10");
     expect(emptyMediaVariants({ variant: "icon" })).toContain("rounded-lg");
     expect(emptyMediaVariants({ variant: "icon" })).toContain("bg-muted");

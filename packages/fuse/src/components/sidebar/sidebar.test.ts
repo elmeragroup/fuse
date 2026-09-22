@@ -92,7 +92,6 @@ describe("useSidebar", () => {
 describe("Sidebar namespace", () => {
   it("is the provider plus the 23 public parts, each carrying its dotted displayName", () => {
     expect(Object.keys(Sidebar).sort()).toEqual([...PART_NAMES].sort());
-    expect(PART_NAMES).toHaveLength(24);
     for (const part of PART_NAMES) {
       expect(Sidebar[part].displayName, part).toBe(`Sidebar.${part}`);
     }

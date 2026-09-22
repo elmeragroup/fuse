@@ -6,9 +6,10 @@
  * every component has (`className`, `children`) plus the recipe's variant props; add the
  * documented public props, then delete the throw.
  *
- * Reminders: `"use client"` only if this module owns state/effects/handlers/context or a
- * browser API; record its reviewed status in the RSC fixture; polymorphism is base-ui
- * `useRender`, never an `as` prop; classes merge through `cn`; tokens only.
+ * Reminders: add `"use client"` only if this module owns state, effects, handlers, context
+ * or a browser API, and record the status in `apps/docs/test/fixtures/component-inventory.json`.
+ * Polymorphism is base-ui `useRender`, never an `as` prop. Classes merge through `cn`.
+ * Use tokens only.
  */
 import type { ReactElement, ReactNode } from "react";
 

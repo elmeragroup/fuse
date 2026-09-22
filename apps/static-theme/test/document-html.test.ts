@@ -4,7 +4,6 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { applyHostRootAttributes } from "../src/host-html";
-import { DOCUMENT_COLOR_SCHEME } from "../src/theme";
 import {
   BOOTSTRAP_MANIFEST_KEY,
   DOCUMENT_BRAND,
@@ -13,7 +12,6 @@ import {
   definesCssCustomProperty,
   isClassicScript,
   moduleScriptIndex,
-  packedColorSchemeScriptSource,
   readDocumentBrand,
   readDocumentDensity,
   tokenBackgroundDefinitionIndex,
@@ -40,12 +38,7 @@ function moveStylesheetLinksAfterModule(html: string): string {
   return `${stripped.slice(0, insertAt)}${links.join("")}${stripped.slice(insertAt)}`;
 }
 
-function expectHostFirstPaintHtml(
-  html: string,
-  expectedSource: string,
-  documentPath: string,
-  expectedBrand = DOCUMENT_BRAND
-): void {
+function expectHostFirstPaintHtml(html: string, documentPath: string, expectedBrand = DOCUMENT_BRAND): void {
   expect(readDocumentBrand(html)).toEqual(expectedBrand);
   expect(readDocumentDensity(html)).toBe("dense");
 
@@ -54,7 +47,6 @@ function expectHostFirstPaintHtml(
   const bootstrap = bootstraps[0];
   expect(bootstrap).toBeDefined();
   expect(bootstrap && isClassicScript(bootstrap.attrs)).toBe(true);
-  expect(bootstrap?.source).toBe(expectedSource);
   expect(bootstrap?.attrs).not.toMatch(/\stype=/i);
   expect(html).not.toContain(INJECTED_BOOTSTRAP_SOURCE_KEY);
 
@@ -74,33 +66,13 @@ function expectHostFirstPaintHtml(
 describe("static theme built HTML", () => {
   it("stamps brand attributes and a classic bootstrap before the module entry", () => {
     const html = readFixtureFile("dist/index.html");
-    expectHostFirstPaintHtml(
-      html,
-      packedColorSchemeScriptSource(
-        JSON.stringify({
-          storageKey: DOCUMENT_COLOR_SCHEME.storageKey,
-          defaultColorScheme: DOCUMENT_COLOR_SCHEME.defaultColorScheme,
-          enableSystem: DOCUMENT_COLOR_SCHEME.enableSystem,
-        })
-      ),
-      path.join(fixtureRoot, "dist/index.html")
-    );
+    expectHostFirstPaintHtml(html, path.join(fixtureRoot, "dist/index.html"));
   });
 
-  it("passes the same document-level force into the packed theme bootstrap", () => {
+  it("keeps the first-paint order in the forced-dark document", () => {
+    // first-paint.browser.test.ts runs this document's bootstrap and checks the forced manifest.
     const html = readFixtureFile("dist/forced-dark.html");
-    expectHostFirstPaintHtml(
-      html,
-      packedColorSchemeScriptSource(
-        JSON.stringify({
-          storageKey: DOCUMENT_COLOR_SCHEME.storageKey,
-          defaultColorScheme: DOCUMENT_COLOR_SCHEME.defaultColorScheme,
-          enableSystem: DOCUMENT_COLOR_SCHEME.enableSystem,
-          forcedColorScheme: "dark",
-        })
-      ),
-      path.join(fixtureRoot, "dist/forced-dark.html")
-    );
+    expectHostFirstPaintHtml(html, path.join(fixtureRoot, "dist/forced-dark.html"));
   });
 
   it("fails if token CSS follows the blocking bootstrap while --background is unset", () => {

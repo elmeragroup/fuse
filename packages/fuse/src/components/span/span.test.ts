@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { cn } from "../../styles/cn";
-import { typographyFragments } from "../../styles/typography-fragments";
 import { textVariants } from "../text/text-variants";
 import { spanVariants } from "./span-variants";
 
@@ -18,10 +17,6 @@ const VARIANTS = [
   "success",
 ] as const;
 
-function expectedVariantClass(variant: (typeof VARIANTS)[number]): string {
-  return variant === "success" ? "text-success" : typographyFragments({ variant });
-}
-
 const SIZES = ["xs", "sm", "default", "lg", "xl", "2xl"] as const;
 const SIZE_TOKEN = {
   xs: "xs",
@@ -35,9 +30,6 @@ const SIZE_TOKEN = {
 describe("spanVariants", () => {
   it("defaults to variant/size default, leading snug, and weight normal", () => {
     const resolved = spanVariants();
-    expect(resolved).toBe(
-      spanVariants({ variant: "default", size: "default", leading: "snug", weight: "normal" })
-    );
     expect(resolved).toContain("font-sans");
     expect(resolved).toContain("text-inherit");
     expect(resolved).toContain("text-base");
@@ -52,9 +44,10 @@ describe("spanVariants", () => {
     expect(spanVariants().split(/\s+/)).not.toContain("leading-relaxed");
   });
 
-  it.each(VARIANTS)("resolves variant %s onto its token class", (variant) => {
+  it.each(VARIANTS)("resolves variant %s onto Text's class", (variant) => {
     const resolved = spanVariants({ variant });
-    expect(resolved.split(/\s+/)).toContain(expectedVariantClass(variant));
+    // Oracle: the parent Text recipe's class for the variant, pinned in its own tests.
+    expect(resolved.split(/\s+/)).toContain(textVariants.variants.variant[variant]);
     expect(resolved, variant).not.toContain("dark:");
     expect(resolved, variant).not.toMatch(RAW_PALETTE_RE);
   });
@@ -102,11 +95,9 @@ describe("spanVariants", () => {
   });
 
   it("surfaces align as a first-class axis", () => {
-    expect(spanVariants({ align: "left" }).split(/\s+/)).toContain(typographyFragments({ align: "left" }));
-    expect(spanVariants({ align: "center" }).split(/\s+/)).toContain(
-      typographyFragments({ align: "center" })
-    );
-    expect(spanVariants({ align: "right" }).split(/\s+/)).toContain(typographyFragments({ align: "right" }));
+    expect(spanVariants({ align: "left" }).split(/\s+/)).toContain("text-left");
+    expect(spanVariants({ align: "center" }).split(/\s+/)).toContain("text-center");
+    expect(spanVariants({ align: "right" }).split(/\s+/)).toContain("text-right");
     expect(spanVariants({ align: "justify" }).split(/\s+/)).toContain("text-justify");
     expect(spanVariants().split(/\s+/)).not.toContain("text-left");
   });

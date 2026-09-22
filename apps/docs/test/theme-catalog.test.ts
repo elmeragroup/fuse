@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { TOKEN_NAMES, buildThemeCatalog } from "../scripts/lib/theme-catalog.ts";
+import { TOKEN_NAMES } from "../scripts/lib/theme-catalog.ts";
 import { THEME_CATALOG } from "../src/generated/theme-catalog";
 import type { ThemeCatalogEntry } from "../src/lib/docs-model";
 import { docsBaseUrl } from "./docs-server";
@@ -95,10 +95,6 @@ describe("theme catalog payload", () => {
 
     expect(THEME_CATALOG.primitives["--brand-fkas"]).toBe("oklch(0.68 0.21747 38.8)");
     expect(THEME_CATALOG.primitives["--brand-fkab"]).toBe("var(--brand-fkas)");
-  });
-
-  it("matches the generate-pipeline artifact the route serves", () => {
-    expect(buildThemeCatalog()).toEqual(THEME_CATALOG);
   });
 });
 

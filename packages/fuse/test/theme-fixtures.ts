@@ -1,4 +1,3 @@
-import { themeAttributes } from "../src/theme/theme-attributes";
 import type { ThemeInput } from "../src/theme/tokens/themes";
 
 /** fkas/private, internal: the theme every component browser suite mounts under. */
@@ -31,5 +30,7 @@ export const guenPrivate = {
 
 /** Stamp a theme's three axes onto an element, the way `ThemeScope` writes them. */
 export function stampTheme(element: HTMLElement, theme: ThemeInput): void {
-  for (const [name, value] of Object.entries(themeAttributes(theme))) element.setAttribute(name, value);
+  element.setAttribute("data-theme-variant", theme.variant);
+  element.setAttribute("data-theme-brand", theme.brand);
+  element.setAttribute("data-theme-segment", theme.segment);
 }

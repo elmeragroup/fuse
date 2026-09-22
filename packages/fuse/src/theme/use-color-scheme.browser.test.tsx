@@ -3,10 +3,10 @@ import { useLayoutEffect } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { render } from "../../test/browser-render";
+import { DEFAULT_BOOTSTRAP_MANIFEST } from "../../test/color-scheme-contract";
 import {
   ColorSchemeOutput,
   ColorSchemeSetter,
-  defaultManifest,
   emitStorageChange,
   emitStorageClear,
   fkasPrivate,
@@ -25,7 +25,7 @@ import { ThemeScope } from "./theme-scope";
 import { useColorScheme } from "./use-color-scheme";
 
 beforeEach(() => {
-  writeManifest(defaultManifest);
+  writeManifest(DEFAULT_BOOTSTRAP_MANIFEST);
 });
 
 afterEach(() => {
