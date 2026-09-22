@@ -26,6 +26,16 @@
 - Retire repo-policy workarounds when upstream lint can require disable reasons
   and configure the focus-ring owner path.
 
+## Figma token sync
+
+- Run the first sync against a real Enterprise file and confirm that empty picker scopes,
+  cross-collection aliases, code syntax updates merge rather than replace, and the
+  read-back check behave as the in-memory fake assumes.
+- Add a CI job running `figma:check` once a service account owns a personal access token.
+- Density control metrics live only in CSS, so the sync cannot send them to Figma yet.
+- Revisit Figma extended collections for brand theming if the two-collection mode
+  pairing proves awkward for designers.
+
 ## Product-triggered work
 
 - When Base UI offers suitable date primitives, migrate the interim React Aria tier.
@@ -37,6 +47,7 @@
   add visual regression coverage over demos to the publish gate.
 - When measured icon weight becomes a problem, reconsider Phosphor core code generation.
 - Revisit a source registry or separate playground when consumer demand or docs limitations justify it.
-- Add dark catalog/Figma export modes when consumers need them; existing exports remain light.
+- The docs DTCG export still emits light modes only; the Figma sync in `packages/fuse-figma`
+  writes both schemes. Retire the export once designers work from the synced variables.
 
 OrderModule application migrations remain outside this repository's work.

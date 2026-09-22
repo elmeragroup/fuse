@@ -1,7 +1,7 @@
 import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
-import { oklchToLinearSrgb, parseOklch } from "./oklch";
-import type { LinearRgb } from "./oklch";
+import { linearSrgbFromOklch, oklchToLinearSrgb, parseOklch } from "./oklch";
+import type { LinearRgb, OklchColor } from "./oklch";
 import type { TokenName } from "./tokens/contract";
 import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
 import type { ThemeSlug } from "./tokens/themes";
@@ -50,6 +50,31 @@ function clipChannel(channel: number): number {
 function linearToSrgb(channel: number): number {
   const clipped = clipChannel(channel);
   return clipped <= 0.0031308 ? 12.92 * clipped : 1.055 * clipped ** (1 / 2.4) - 0.055;
+}
+
+/** A gamma-encoded sRGB color with channels and alpha in `0..1`. */
+export type SrgbColor = {
+  readonly r: number;
+  readonly g: number;
+  readonly b: number;
+  readonly alpha: number;
+};
+
+/**
+ * Convert OKLCH coordinates to gamma-encoded sRGB, the form design tools store. It clips
+ * out-of-gamut channels to `0..1`, as the contrast checks do.
+ *
+ * @param color - Coordinates from {@link readOklch} or {@link parseOklch}.
+ * @returns The sRGB channels and the color's alpha.
+ */
+export function oklchToSrgb(color: OklchColor): SrgbColor {
+  const linear = linearSrgbFromOklch(color);
+  return {
+    r: linearToSrgb(linear.r),
+    g: linearToSrgb(linear.g),
+    b: linearToSrgb(linear.b),
+    alpha: color.alpha,
+  };
 }
 
 function srgbToLinear(channel: number): number {

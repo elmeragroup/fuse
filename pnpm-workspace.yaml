@@ -6,6 +6,8 @@ packages:
 catalog:
   "@arethetypeswrong/cli": 0.18.5
   "@changesets/cli": 3.0.2
+  "@effect/platform-node": 4.0.0-rc.115
+  "@effect/vitest": 4.0.0-rc.115
   "@elmeragroup/internal": 0.2.0-canary.3
   "@arethetypeswrong/core": 0.18.5
   "@base-ui/react": 1.8.0
@@ -57,6 +59,11 @@ catalog:
   yaml: 2.9.1
 
 autoInstallPeers: true
+
+overrides:
+  # @effect/platform-node declares a caret range here, which resolves to a release whose
+  # effect peer is newer than the catalog's effect. Keep the whole Effect family on one version.
+  "@effect/platform-node-shared": 4.0.0-rc.115
 
 allowBuilds:
   esbuild: true

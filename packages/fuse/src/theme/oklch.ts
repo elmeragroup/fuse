@@ -25,6 +25,27 @@ const OKLCH_RE =
 const DECIMALS = 7;
 
 /**
+ * Read an `oklch(L C H)` or `oklch(L C H / A)` literal, with the alpha as a number or a
+ * percentage.
+ *
+ * @param value - A CSS color.
+ * @returns The coordinates and alpha, or `undefined` when `value` is not a well-formed
+ *   `oklch()` literal.
+ */
+export function readOklch(value: string): OklchColor | undefined {
+  const match = OKLCH_RE.exec(value);
+  if (!match) {
+    return undefined;
+  }
+  return {
+    l: Number(match[1]),
+    c: Number(match[2]),
+    h: Number(match[3]),
+    alpha: match[4] === undefined ? 1 : Number(match[4]) / (match[5] === "%" ? 100 : 1),
+  };
+}
+
+/**
  * Parse an `oklch(L C H)` or `oklch(L C H / A)` literal, with the alpha as a number or a
  * percentage.
  *
@@ -33,16 +54,10 @@ const DECIMALS = 7;
  * @throws When the value is not an `oklch()` literal, which is a defect in a token module.
  */
 export function parseOklch(value: string): OklchColor {
-  const match = OKLCH_RE.exec(value);
-  if (!match) {
+  const parsed = readOklch(value);
+  if (parsed === undefined) {
     throw new Error(`Expected an oklch() color, received: ${value}`);
   }
-  const parsed: OklchColor = {
-    l: Number(match[1]),
-    c: Number(match[2]),
-    h: Number(match[3]),
-    alpha: match[4] === undefined ? 1 : Number(match[4]) / (match[5] === "%" ? 100 : 1),
-  };
   return parsed;
 }
 
@@ -53,7 +68,16 @@ export function parseOklch(value: string): OklchColor {
  * @returns The unclipped linear sRGB channels.
  */
 export function oklchToLinearSrgb(value: string): LinearRgb {
-  const { l, c, h } = parseOklch(value);
+  return linearSrgbFromOklch(parseOklch(value));
+}
+
+/**
+ * Convert parsed OKLCH coordinates to linear-light sRGB through OKLab, ignoring alpha.
+ *
+ * @param color - Coordinates from {@link readOklch} or {@link parseOklch}.
+ * @returns The unclipped linear sRGB channels.
+ */
+export function linearSrgbFromOklch({ l, c, h }: OklchColor): LinearRgb {
   const hue = (h * Math.PI) / 180;
   const a = c * Math.cos(hue);
   const b = c * Math.sin(hue);

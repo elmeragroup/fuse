@@ -1,0 +1,30 @@
+{
+  "name": "@elmeragroup/fuse-figma",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Syncs the Fuse design tokens into a Figma file's local variables.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "figma": "node --env-file-if-exists=.env --experimental-strip-types --import ../fuse/scripts/ts-resolve.mjs src/main.ts",
+    "figma:check": "pnpm run figma check",
+    "figma:sync": "pnpm run figma sync",
+    "test": "vitest run",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@effect/platform-node": "catalog:",
+    "@elmeragroup/fuse": "workspace:*",
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/vitest": "catalog:",
+    "@elmeragroup/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=24.13.0 <25"
+  }
+}

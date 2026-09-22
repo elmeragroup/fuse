@@ -1,0 +1,466 @@
+import { assert, describe, it } from "@effect/vitest";
+import { ConfigProvider, Effect, Fiber, FileSystem, Layer, Path, Stdio, Terminal } from "effect";
+import { TestClock, TestConsole } from "effect/testing";
+import { CliOutput } from "effect/unstable/cli";
+import { ChildProcessSpawner } from "effect/unstable/process";
+
+import { runCli } from "../src/cli.ts";
+import { InMemoryFigma } from "./in-memory-figma.ts";
+
+const FILE_KEY = "FuseFile123";
+const TOKEN = "figd_test-token";
+
+const cliEnvironment = Layer.mergeAll(
+  FileSystem.layerNoop({}),
+  Path.layer,
+  Stdio.layerTest({}),
+  Layer.succeed(
+    Terminal.Terminal,
+    Terminal.make({
+      columns: Effect.succeed(100),
+      rows: Effect.succeed(40),
+      readInput: Effect.die("the CLI never reads input"),
+      readLine: Effect.die("the CLI never reads input"),
+      display: () => Effect.void,
+    })
+  ),
+  Layer.succeed(
+    ChildProcessSpawner.ChildProcessSpawner,
+    ChildProcessSpawner.make(() => Effect.die("the CLI never spawns processes"))
+  ),
+  CliOutput.layer(CliOutput.defaultFormatter({ colors: false }))
+);
+
+function environment(figma: InMemoryFigma, env: Record<string, string> = { FIGMA_TOKEN: TOKEN }) {
+  return Layer.mergeAll(cliEnvironment, figma.layer(), ConfigProvider.layer(ConfigProvider.fromEnv({ env })));
+}
+
+function run(figma: InMemoryFigma, argv: readonly string[], env?: Record<string, string>) {
+  return runCli(argv).pipe(Effect.provide(environment(figma, env)));
+}
+
+const output = Effect.map(TestConsole.logLines, (lines) => lines.map(String).join("\n"));
+const errors = Effect.map(TestConsole.errorLines, (lines) => lines.map(String).join("\n"));
+
+function writes(figma: InMemoryFigma): number {
+  return figma.requests.filter((request) => request.method === "POST").length;
+}
+
+function hex(value: ReturnType<InMemoryFigma["resolve"]>): string {
+  if (!(value instanceof Object)) throw new Error(`expected a color, got ${String(value)}`);
+  const byte = (channel: number) =>
+    Math.round(channel * 255)
+      .toString(16)
+      .padStart(2, "0")
+      .toUpperCase();
+  return `#${byte(value.r)}${byte(value.g)}${byte(value.b)}`;
+}
+
+const light = (theme: string) => ({ "Fuse tokens": "Light", "Fuse themes": theme });
+const dark = (theme: string) => ({ "Fuse tokens": "Dark", "Fuse themes": theme });
+
+describe("fuse-figma sync", () => {
+  it.effect("creates the three Fuse collections in an empty file", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
+
+      assert.deepStrictEqual(figma.collectionNames(), ["Fuse primitives", "Fuse themes", "Fuse tokens"]);
+      assert.deepStrictEqual(figma.modeNames("Fuse tokens"), ["Light", "Dark"]);
+      assert.deepStrictEqual(figma.modeNames("Fuse primitives"), ["Value"]);
+      const themeModes = figma.modeNames("Fuse themes");
+      assert.strictEqual(themeModes.length, 20);
+      assert.includeMembers(themeModes, [
+        "internal-fkas-private",
+        "external-elma-company",
+        "external-fkab-company",
+        "external-fkse-private",
+      ]);
+      assert.notInclude(themeModes, "external-fkab-private");
+      assert.strictEqual(figma.variableNames("Fuse tokens").length, 77);
+      assert.strictEqual(figma.variableNames("Fuse themes").length, 154);
+      assert.strictEqual(figma.variableNames("Fuse primitives").length, 23);
+      assert.strictEqual(writes(figma), 1);
+      assert.include(yield* output, "reading it back matches the tokens");
+    })
+  );
+
+  it.effect("resolves token values the way a designer's frame sees them", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
+
+      // Pinned in the docs DTCG export for the same theme.
+      assert.strictEqual(
+        hex(figma.resolve("Fuse tokens", "primary", light("external-elma-company"))),
+        "#3C6470"
+      );
+      assert.strictEqual(
+        hex(figma.resolve("Fuse tokens", "primary-foreground", light("external-fkas-private"))),
+        "#FFFFFF"
+      );
+      assert.strictEqual(figma.resolve("Fuse tokens", "radius", light("external-elma-company")), 6);
+      // 1.8125rem at the 16px root.
+      assert.strictEqual(figma.resolve("Fuse tokens", "radius-button", light("external-fkas-private")), 29);
+      assert.strictEqual(
+        figma.resolve("Fuse tokens", "font-heading", light("external-fkas-private")),
+        "Neo Sans"
+      );
+      assert.strictEqual(
+        figma.resolve("Fuse tokens", "font-heading", light("internal-fkas-private")),
+        "Roboto"
+      );
+
+      // Internal dark borders are white at 10% opacity, stored as 32-bit floats.
+      const border = figma.resolve("Fuse tokens", "border", dark("internal-guen-company"));
+      assert.isTrue(border instanceof Object && Math.abs(border.a - 0.1) < 1e-6 && border.r > 0.999);
+
+      // The brand pointer reaches the brand's primitive, the way `var(--brand-tkas)` does in CSS.
+      assert.deepStrictEqual(figma.aliasChain("Fuse tokens", "brand", light("internal-tkas-private")), [
+        "Fuse tokens/brand",
+        "Fuse themes/light/brand",
+        "Fuse primitives/brand-tkas",
+      ]);
+      // destructive aliases the error role of the same scheme.
+      assert.deepStrictEqual(
+        figma.aliasChain("Fuse tokens", "destructive", dark("external-tkas-company")).slice(0, 3),
+        ["Fuse tokens/destructive", "Fuse themes/dark/destructive", "Fuse themes/dark/error"]
+      );
+    })
+  );
+
+  it.effect("sets code syntax and picker scopes on the variables designers bind", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
+
+      assert.deepStrictEqual(figma.metadata("Fuse tokens", "primary"), {
+        scopes: ["ALL_SCOPES"],
+        web: "var(--primary)",
+      });
+      assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius"), {
+        scopes: ["CORNER_RADIUS"],
+        web: "var(--radius)",
+      });
+      assert.deepStrictEqual(figma.metadata("Fuse tokens", "font-sans"), {
+        scopes: ["FONT_FAMILY"],
+        web: "var(--font-sans)",
+      });
+      assert.deepStrictEqual(figma.metadata("Fuse themes", "light/primary"), { scopes: [], web: undefined });
+    })
+  );
+
+  it.effect("writes nothing when the file already matches", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
+      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
+
+      assert.strictEqual(writes(figma), 1);
+      assert.include(yield* output, `Figma file ${FILE_KEY} already matches the Fuse tokens.`);
+    })
+  );
+
+  it.effect("repairs a drifted value in place, keeping every variable id", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
+      const idsBefore = figma.variableIds();
+      const synced = hex(figma.resolve("Fuse tokens", "primary", light("external-fkas-private")));
+      figma.setValue("Fuse themes", "light/primary", "external-fkas-private", { r: 1, g: 0, b: 0, a: 1 });
+
+      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
+
+      assert.deepStrictEqual(figma.variableIds(), idsBefore);
+      const repair = figma.acceptedWrites.at(-1);
+      assert.deepStrictEqual(repair?.variableModeValues?.length, 1);
+      assert.strictEqual(repair?.variables?.length ?? 0, 0);
+      assert.strictEqual(
+        hex(figma.resolve("Fuse tokens", "primary", light("external-fkas-private"))),
+        synced
+      );
+    })
+  );
+
+  it.effect("rewrites a composed color in a variable it owns", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
+      const synced = hex(figma.resolve("Fuse tokens", "primary", light("external-fkas-private")));
+      const accent = figma.variableIds().get("Fuse primitives/brand-fkas") ?? "";
+      figma.setValue("Fuse themes", "light/primary", "external-fkas-private", {
+        color: { type: "VARIABLE_ALIAS", id: accent },
+        opacity: 50,
+      });
+
+      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
+
+      assert.strictEqual(figma.acceptedWrites.at(-1)?.variableModeValues?.length, 1);
+      assert.strictEqual(
+        hex(figma.resolve("Fuse tokens", "primary", light("external-fkas-private"))),
+        synced
+      );
+    })
+  );
+
+  it.effect("leaves code syntax alone on the variables whose web syntax it does not set", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
+      const id = figma.variableIds().get("Fuse themes/light/primary");
+      if (id === undefined) throw new Error("the first sync creates light/primary");
+      figma.setMetadata("Fuse themes", "light/primary", { scopes: ["ALL_SCOPES"], web: "var(--designer)" });
+
+      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
+
+      // The write carries no codeSyntax at all, so it is safe whether Figma merges or replaces it.
+      assert.deepStrictEqual(figma.acceptedWrites.at(-1)?.variables, [{ action: "UPDATE", id, scopes: [] }]);
+      assert.deepStrictEqual(figma.metadata("Fuse themes", "light/primary"), {
+        scopes: [],
+        web: "var(--designer)",
+      });
+    })
+  );
+
+  it.effect("leaves collections it does not own alone and prunes stale entries in the ones it does", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      const brandId = figma.addCollection("Brand (designers)", ["Default"]);
+      figma.addVariable(brandId, "accent", "COLOR", { r: 0.2, g: 0.4, b: 0.6, a: 1 });
+      const accent = figma.resolve("Brand (designers)", "accent", {});
+      const tokensId = figma.addCollection("Fuse tokens", ["Light", "Dark", "Sepia"]);
+      figma.addVariable(tokensId, "legacy-accent", "COLOR", { r: 0, g: 0, b: 0, a: 1 });
+      const primaryId = figma.addVariable(tokensId, "primary", "COLOR", { r: 0, g: 0, b: 0, a: 1 });
+
+      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
+
+      assert.deepStrictEqual(figma.variableNames("Brand (designers)"), ["accent"]);
+      assert.deepStrictEqual(figma.resolve("Brand (designers)", "accent", {}), accent);
+      assert.strictEqual(figma.collectionId("Fuse tokens"), tokensId);
+      assert.deepStrictEqual(figma.modeNames("Fuse tokens"), ["Light", "Dark"]);
+      assert.notInclude(figma.variableNames("Fuse tokens"), "legacy-accent");
+      assert.strictEqual(figma.variableIds().get("Fuse tokens/primary"), primaryId);
+      assert.include(yield* output, "Fuse tokens: delete variable legacy-accent");
+    })
+  );
+
+  it.effect("renames a designer's default mode instead of replacing it, keeping its id", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      figma.addCollection("Fuse primitives", ["Mode 1"]);
+      const modeId = figma.modeId("Fuse primitives", "Mode 1");
+
+      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
+
+      assert.deepStrictEqual(figma.modeNames("Fuse primitives"), ["Value"]);
+      assert.strictEqual(figma.modeId("Fuse primitives", "Value"), modeId);
+      assert.include(yield* output, "Fuse primitives: rename mode Mode 1 to Value");
+    })
+  );
+
+  it.effect("ignores library collections and extensions that share a Fuse collection's name", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      const libraryId = figma.addLibraryCollection("Fuse tokens", ["Light", "Dark"]);
+      const libraryPrimary = figma.addVariable(libraryId, "primary", "COLOR", { r: 0, g: 0, b: 0, a: 1 });
+      const brandId = figma.addCollection("Brand (designers)", ["Light", "Dark"]);
+      figma.addExtension("Fuse themes", brandId);
+
+      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
+
+      assert.deepStrictEqual(figma.collectionNames(), [
+        "Brand (designers)",
+        "Fuse primitives",
+        "Fuse themes",
+        "Fuse tokens",
+      ]);
+      assert.strictEqual(figma.variableNames("Fuse themes").length, 154);
+      assert.deepStrictEqual(figma.variableById(libraryPrimary).values, [
+        { r: 0, g: 0, b: 0, a: 1 },
+        { r: 0, g: 0, b: 0, a: 1 },
+      ]);
+      assert.include(yield* output, "reading it back matches the tokens");
+    })
+  );
+
+  it.effect("does not match a deleted variable that layers still reference", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      const tokensId = figma.addCollection("Fuse tokens", ["Light", "Dark"]);
+      const deleted = figma.addVariable(tokensId, "primary", "COLOR", { r: 0, g: 0, b: 0, a: 1 });
+      figma.deleteButKeepReferenced(deleted);
+
+      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
+
+      const primary = figma.variableIds().get("Fuse tokens/primary");
+      assert.isDefined(primary);
+      assert.notStrictEqual(primary, deleted);
+      assert.isTrue(figma.variableById(deleted).deletedButReferenced);
+      assert.strictEqual(
+        hex(figma.resolve("Fuse tokens", "primary", light("external-elma-company"))),
+        "#3C6470"
+      );
+    })
+  );
+
+  it.effect("fails when reading the file back still differs from the tokens", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      figma.afterNextWrite(() =>
+        figma.setValue("Fuse themes", "light/primary", "external-fkas-private", { r: 1, g: 0, b: 0, a: 1 })
+      );
+
+      const failure = yield* Effect.flip(run(figma, ["--file-key", FILE_KEY, "sync"]));
+
+      assert.strictEqual(failure._tag, "ReportedFailure");
+      assert.strictEqual(writes(figma), 1);
+      assert.include(
+        yield* errors,
+        "Figma accepted the update, but the file still differs from the tokens in 1 place. Run `check` to see them."
+      );
+      assert.notInclude(yield* output, "reading it back matches the tokens");
+    })
+  );
+
+  it.effect("refuses to change a variable's type", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      const tokensId = figma.addCollection("Fuse tokens", ["Light", "Dark"]);
+      figma.addVariable(tokensId, "radius", "COLOR", { r: 0, g: 0, b: 0, a: 1 });
+
+      const failure = yield* Effect.flip(run(figma, ["--file-key", FILE_KEY, "sync"]));
+
+      assert.strictEqual(failure._tag, "ReportedFailure");
+      assert.strictEqual(writes(figma), 0);
+      assert.include(
+        yield* errors,
+        '"Fuse tokens/radius" is a COLOR variable in Figma but the tokens define a FLOAT.'
+      );
+    })
+  );
+});
+
+describe("fuse-figma check", () => {
+  it.effect("prints the plan for an empty file and writes nothing", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      const failure = yield* Effect.flip(run(figma, ["--file-key", FILE_KEY, "check"]));
+
+      assert.strictEqual(failure._tag, "ReportedFailure");
+      assert.strictEqual(writes(figma), 0);
+      assert.deepStrictEqual(figma.collectionNames(), []);
+      const printed = yield* output;
+      assert.include(printed, "Fuse tokens: create collection");
+      assert.include(printed, "Fuse tokens: create mode Light");
+      assert.include(printed, "Fuse themes: create variable ×154");
+    })
+  );
+
+  it.effect("passes on a synced file and fails on drift without writing", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
+      yield* run(figma, ["--file-key", FILE_KEY, "check"]);
+      assert.include(yield* output, `Figma file ${FILE_KEY} matches the Fuse tokens.`);
+
+      figma.setValue("Fuse tokens", "ring", "Dark", { r: 0, g: 1, b: 0, a: 1 });
+      const failure = yield* Effect.flip(run(figma, ["--file-key", FILE_KEY, "check"]));
+
+      assert.strictEqual(failure._tag, "ReportedFailure");
+      assert.strictEqual(writes(figma), 1);
+      assert.include(yield* output, "Fuse tokens: set value");
+      assert.include(
+        yield* errors,
+        `Figma file ${FILE_KEY} differs from the Fuse tokens in 1 place. Run \`sync\` to update it.`
+      );
+    })
+  );
+});
+
+describe("fuse-figma talking to Figma", () => {
+  it.effect("waits out a rate-limited read for as long as Retry-After asks", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      figma.script({ method: "GET", status: 429, headers: { "retry-after": "30" } });
+
+      const fiber = yield* Effect.forkChild(run(figma, ["--file-key", FILE_KEY, "check"]).pipe(Effect.flip));
+      yield* TestClock.adjust("29 seconds");
+      assert.strictEqual(figma.requests.length, 1);
+      yield* TestClock.adjust("1 second");
+      yield* Fiber.join(fiber);
+
+      assert.strictEqual(figma.requests.length, 2);
+      assert.include(yield* output, "Figma request failed (429); retry 1 of 4 in 30s.");
+    })
+  );
+
+  it.effect("fails at once when Retry-After asks for a longer wait than the sync allows", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      figma.script({ method: "GET", status: 429, headers: { "retry-after": "3600" } });
+
+      const failure = yield* Effect.flip(run(figma, ["--file-key", FILE_KEY, "check"]));
+
+      assert.strictEqual(failure._tag, "ReportedFailure");
+      assert.strictEqual(figma.requests.length, 1);
+      assert.notInclude(yield* output, "retry 1 of 4");
+      assert.include(
+        yield* errors,
+        "Figma asked the sync to wait 3600 seconds before the next request, longer than the 60 seconds it waits; try again later."
+      );
+    })
+  );
+
+  it.effect("does not repeat a write that failed on the server", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      figma.script({ method: "POST", status: 500 });
+
+      const failure = yield* Effect.flip(run(figma, ["--file-key", FILE_KEY, "sync"]));
+
+      assert.strictEqual(failure._tag, "ReportedFailure");
+      assert.strictEqual(writes(figma), 1);
+      assert.include(yield* errors, "Could not write variables: Figma answered 500 (Scripted failure).");
+    })
+  );
+
+  it.effect("explains a refused token", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+
+      yield* Effect.flip(run(figma, ["--file-key", FILE_KEY, "check"], { FIGMA_TOKEN: "figd_wrong" }));
+
+      const printed = yield* errors;
+      assert.include(printed, "Could not read variables: Figma answered 403 (Invalid token).");
+      assert.include(printed, "Enterprise plan");
+      assert.notInclude(printed, "figd_wrong");
+    })
+  );
+
+  it.effect("needs FIGMA_TOKEN to sync but not to print help", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      yield* run(figma, ["--help"], {});
+      assert.include(yield* output, "check");
+
+      yield* Effect.flip(run(figma, ["--file-key", FILE_KEY, "sync"], {}));
+      assert.include(yield* errors, "Set FIGMA_TOKEN to a Figma personal access token");
+      assert.strictEqual(figma.requests.length, 0);
+    })
+  );
+
+  it.effect("reads the file key from FIGMA_FILE_KEY and rejects keys that are not one", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      yield* run(figma, ["check"], { FIGMA_TOKEN: TOKEN, FIGMA_FILE_KEY: FILE_KEY }).pipe(Effect.flip);
+      assert.deepStrictEqual(figma.requests[0], {
+        method: "GET",
+        path: `/v1/files/${FILE_KEY}/variables/local`,
+      });
+
+      const failure = yield* Effect.flip(run(figma, ["--file-key", "../other", "check"]));
+      assert.strictEqual(failure._tag, "ShowHelp");
+      assert.strictEqual(figma.requests.length, 1);
+    })
+  );
+});
