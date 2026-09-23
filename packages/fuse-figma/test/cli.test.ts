@@ -77,8 +77,8 @@ describe("fuse-figma sync", () => {
         "external-fkse-private",
       ]);
       assert.notInclude(themeModes, "external-fkab-private");
-      assert.strictEqual(figma.variableNames("Fuse tokens").length, 77);
-      assert.strictEqual(figma.variableNames("Fuse themes").length, 154);
+      assert.strictEqual(figma.variableNames("Fuse tokens").length, 79);
+      assert.strictEqual(figma.variableNames("Fuse themes").length, 158);
       assert.strictEqual(figma.variableNames("Fuse primitives").length, 23);
       assert.strictEqual(writes(figma), 1);
       assert.include(yield* output, "reading it back matches the tokens");
@@ -109,6 +109,26 @@ describe("fuse-figma sync", () => {
       assert.strictEqual(
         figma.resolve("Fuse tokens", "font-heading", light("internal-fkas-private")),
         "Roboto"
+      );
+
+      // radius-step is 0px in internal themes and 2px in external ones.
+      assert.strictEqual(figma.resolve("Fuse tokens", "radius-step", light("internal-fkas-private")), 0);
+      assert.strictEqual(figma.resolve("Fuse tokens", "radius-step", light("external-fkas-private")), 2);
+
+      // secondary-hover holds the composed literal, since Figma cannot mix colors. The theme
+      // contract test pins oklch(0.929 0.000205 2.4655) light and oklch(0.3048 0 0) dark, which
+      // are #E7E7E7 and #2F2F2F in sRGB.
+      assert.deepStrictEqual(
+        figma.aliasChain("Fuse tokens", "secondary-hover", light("internal-fkas-private")),
+        ["Fuse tokens/secondary-hover", "Fuse themes/light/secondary-hover"]
+      );
+      assert.strictEqual(
+        hex(figma.resolve("Fuse tokens", "secondary-hover", light("internal-fkas-private"))),
+        "#E7E7E7"
+      );
+      assert.strictEqual(
+        hex(figma.resolve("Fuse tokens", "secondary-hover", dark("internal-fkas-private"))),
+        "#2F2F2F"
       );
 
       // Internal dark borders are white at 10% opacity, stored as 32-bit floats.
@@ -145,6 +165,15 @@ describe("fuse-figma sync", () => {
       assert.deepStrictEqual(figma.metadata("Fuse tokens", "font-sans"), {
         scopes: ["FONT_FAMILY"],
         codeSyntax: { WEB: "var(--font-sans)" },
+      });
+      assert.deepStrictEqual(figma.metadata("Fuse tokens", "secondary-hover"), {
+        scopes: ["ALL_SCOPES"],
+        codeSyntax: { WEB: "var(--secondary-hover)" },
+      });
+      // radius-step spaces the radius scale, so no picker offers it for a corner.
+      assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius-step"), {
+        scopes: [],
+        codeSyntax: { WEB: "var(--radius-step)" },
       });
       assert.deepStrictEqual(figma.metadata("Fuse themes", "light/primary"), { scopes: [], codeSyntax: {} });
     })
@@ -337,7 +366,7 @@ describe("fuse-figma sync", () => {
         "Fuse themes",
         "Fuse tokens",
       ]);
-      assert.strictEqual(figma.variableNames("Fuse themes").length, 154);
+      assert.strictEqual(figma.variableNames("Fuse themes").length, 158);
       assert.deepStrictEqual(figma.variableById(libraryPrimary).values, [
         { r: 0, g: 0, b: 0, a: 1 },
         { r: 0, g: 0, b: 0, a: 1 },
@@ -415,7 +444,7 @@ describe("fuse-figma check", () => {
       const printed = yield* output;
       assert.include(printed, "Fuse tokens: create collection");
       assert.include(printed, "Fuse tokens: create mode Light");
-      assert.include(printed, "Fuse themes: create variable ×154");
+      assert.include(printed, "Fuse themes: create variable ×158");
     })
   );
 

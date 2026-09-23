@@ -20,7 +20,9 @@ The token values come from `composeTheme` in `@elmeragroup/fuse/theme-catalog`, 
 - `var(--name)` becomes an alias to the matching variable. A role reference points at the same scheme's role in `Fuse themes`, and a primitive reference points into `Fuse primitives`.
 - A `rem` length becomes pixels at a 16px root.
 - A font stack becomes its first family name.
+- A derived role, such as `secondary-hover`, becomes the literal color that composition computes, because Figma variables cannot mix colors.
 - The variables designers bind carry web code syntax, such as `var(--primary)`, and a picker scope that fits their type.
+- `radius-step` gets no picker scope. It is a length, but it spaces the radius scale and switches between the internal and external variants, so no layer rounds with it. It keeps its code syntax, `var(--radius-step)`.
 
 ## Running it
 

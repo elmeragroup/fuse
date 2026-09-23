@@ -109,6 +109,24 @@ const KIND_PROJECTIONS = {
   },
 } as const satisfies Record<TokenKind, KindProjection>;
 
+/** Picker scopes that replace the kind's scopes on some `Fuse tokens` variables. */
+type TokenScopeOverrides = { readonly [Name in TokenName]?: readonly VariableScope[] };
+
+/**
+ * Picker scopes for the `Fuse tokens` variables whose kind's scopes do not fit them.
+ * `radius-step` is a dimension, but it spaces the radius scale and switches between the
+ * internal and external variants, so no layer rounds with it. It syncs hidden from every
+ * picker and keeps its code syntax for developers.
+ */
+const TOKEN_SCOPE_OVERRIDES: TokenScopeOverrides = {
+  "radius-step": [],
+};
+
+/** The pickers that offer a token's `Fuse tokens` variable. */
+function tokenScopes(token: TokenName): readonly VariableScope[] {
+  return TOKEN_SCOPE_OVERRIDES[token] ?? KIND_PROJECTIONS[TOKEN_KINDS[token]].scopes;
+}
+
 const primitiveNames: ReadonlySet<string> = new Set(PRIMITIVE_NAMES);
 const tokenNames: ReadonlySet<string> = new Set(TOKEN_NAMES);
 
@@ -179,7 +197,7 @@ function tokensCollection(): CollectionSpec {
     return {
       name: token,
       type: projection.type,
-      scopes: projection.scopes,
+      scopes: tokenScopes(token),
       webSyntax: `var(--${token})`,
       values: new Map([
         [SCHEME_MODES.light, themeAlias(themeVariableName("light", token))],
