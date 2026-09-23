@@ -1,4 +1,4 @@
-import type { TokenContract } from "./contract";
+import type { TokenContract, TokenLayer } from "./contract";
 
 /**
  * The Figma sheet roles every external dark palette must name. The remaining roles —
@@ -30,5 +30,4 @@ export const EXTERNAL_DARK_SHEET_KEYS = [
  * A dark palette for one external brand or segment: every Figma-named role is required,
  * and a sheet may additionally name any other role it owns.
  */
-export type ExternalDarkSheet = Pick<TokenContract, (typeof EXTERNAL_DARK_SHEET_KEYS)[number]> &
-  Partial<TokenContract>;
+export type ExternalDarkSheet = Pick<TokenContract, (typeof EXTERNAL_DARK_SHEET_KEYS)[number]> & TokenLayer;

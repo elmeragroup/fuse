@@ -1,9 +1,10 @@
 import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
 import { brandPointer } from "./tokens/brand-pointers";
-import { EXTERNAL_RESET_KEYS, TOKEN_NAMES } from "./tokens/contract";
+import { derivedRoleSources, EXTERNAL_RESET_KEYS, isDerivedTokenName, TOKEN_NAMES } from "./tokens/contract";
 import type { TokenContract, TokenName } from "./tokens/contract";
 import { DEFAULTS } from "./tokens/defaults";
+import { derivedRoleCss } from "./tokens/derived-tokens";
 import { PRIMITIVE_NAMES, PRIMITIVES } from "./tokens/primitives";
 import { THEME_RESET_KEYS } from "./tokens/reset-keys";
 import { BRAND_CODES, BRANDS, LEGAL_THEMES } from "./tokens/themes";
@@ -19,6 +20,16 @@ const GENERATED_FILE_HEADER = `/**
 
 function cssCustomProperty(name: string, value: string): string {
   return `  --${name}: ${value};`;
+}
+
+/**
+ * The value a theme rule declares for one composed role. A derived role declares its live
+ * `color-mix()`, so the browser mixes the sources of the element that carries the rule.
+ * Every other role declares its composed value. The catalog, the docs and design tools
+ * read the composed literals.
+ */
+function cssValue(name: TokenName, value: string): string {
+  return isDerivedTokenName(name) ? derivedRoleCss(name) : value;
 }
 
 function cssRule(
@@ -52,7 +63,7 @@ function themeRule(
 
 function rootDeclarations(): (readonly [string, string])[] {
   const primitives = PRIMITIVE_NAMES.map((name) => [name, PRIMITIVES[name]] as const);
-  const roles = TOKEN_NAMES.map((name) => [name, DEFAULTS[name]] as const);
+  const roles = TOKEN_NAMES.map((name) => [name, cssValue(name, DEFAULTS[name])] as const);
   return [...primitives, ...roles];
 }
 
@@ -65,10 +76,7 @@ function resetDeclarations(
   overrides: Partial<TokenContract>,
   keys: readonly TokenName[]
 ): (readonly [string, string])[] {
-  return keys.map((key) => {
-    const value = overrides[key] ?? DEFAULTS[key];
-    return [key, value] as const;
-  });
+  return keys.map((key) => [key, cssValue(key, overrides[key] ?? DEFAULTS[key])] as const);
 }
 
 function resetKeys(colorScheme: ResolvedColorScheme): readonly TokenName[] {
@@ -119,8 +127,16 @@ function emitInternalDarkPalette(): string {
   );
 }
 
+/**
+ * The roles a segment changes against its brand base. A derived role counts as changed
+ * wherever one of its sources does, because the rule must declare its `color-mix()` again
+ * to mix the segment's sources instead of inheriting the base's result.
+ */
 function changedKeys(base: TokenContract, tokens: TokenContract): TokenName[] {
-  return TOKEN_NAMES.filter((key) => tokens[key] !== base[key]);
+  const differs = (key: TokenName): boolean => tokens[key] !== base[key];
+  return TOKEN_NAMES.filter((key) =>
+    isDerivedTokenName(key) ? derivedRoleSources(key).some(differs) : differs(key)
+  );
 }
 
 /** True when the two compositions differ in any token. */
@@ -171,7 +187,7 @@ function emitBrandPalettes(colorScheme: ResolvedColorScheme): string {
       const declarations =
         colorScheme === "dark"
           ? resetDeclarations(tokens, keys)
-          : changedKeys(base, tokens).map((key) => [key, tokens[key]] as const);
+          : changedKeys(base, tokens).map((key) => [key, cssValue(key, tokens[key])] as const);
       rules.push(themeRule(`${selector}[data-theme-segment="${theme.segment}"]`, declarations, colorScheme));
     }
   }

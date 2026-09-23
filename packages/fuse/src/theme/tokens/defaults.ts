@@ -1,4 +1,5 @@
-import type { TokenContract } from "./contract";
+import type { LayerTokens, TokenContract } from "./contract";
+import { withDerivedTokens } from "./derived-tokens";
 import { WHITE } from "./primitives";
 
 const INTERNAL_FOREGROUND = "oklch(0.15 0.0041 49.31)";
@@ -9,7 +10,11 @@ const WARNING = "oklch(0.468 0.10443 65.71)";
 const NEUTRAL_LINE = "oklch(0.9219 0 0)";
 const NEUTRAL_950 = "oklch(0.16 0 0)";
 
-export const DEFAULTS = {
+/**
+ * The shared defaults before derivation, which are the internal light theme before its
+ * brand pointer. Composition overlays the palette layers on these.
+ */
+export const LAYER_DEFAULTS = {
   background: WHITE,
   foreground: INTERNAL_FOREGROUND,
   card: WHITE,
@@ -84,7 +89,18 @@ export const DEFAULTS = {
   "sh-sign": "#ed9366",
   "sh-comment": "#abb0b6",
   radius: "0.375rem",
-  "radius-button": "0.375rem",
+  // The internal variant rounds every element alike. Buttons alias the one radius, and a
+  // zero step collapses the `rounded-*` scale in `fuse.css` onto it. Each theme rule
+  // resolves the alias against the `--radius` of the element it matches. External palettes
+  // set a brand button radius, and the external variant layer sets the step.
+  "radius-button": "var(--radius)",
+  "radius-step": "0px",
   "font-sans": "Roboto, ui-sans-serif, system-ui, sans-serif",
   "font-heading": "var(--font-sans)",
-} as const satisfies TokenContract;
+} as const satisfies LayerTokens;
+
+/**
+ * The complete shared defaults, which are the internal light theme before its brand
+ * pointer. The `:root` rule and the internal reset emit these values.
+ */
+export const DEFAULTS: TokenContract = withDerivedTokens(LAYER_DEFAULTS);

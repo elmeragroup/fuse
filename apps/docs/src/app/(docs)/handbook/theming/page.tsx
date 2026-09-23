@@ -183,6 +183,22 @@ export default function ThemingPage(): ReactElement {
         Because it is attributes plus cascade, brand is correct at first paint with JavaScript disabled, and
         re-theming a subtree costs one wrapper element rather than a second stylesheet.
       </p>
+      <p>
+        Corner rounding is part of the theme. An external theme rounds cards and fields from the brand&apos;s{" "}
+        <code>--radius</code> and spaces the <code>rounded-*</code> scale around it in 2px{" "}
+        <code>--radius-step</code> increments. Every standalone button rounds with{" "}
+        <code>--radius-button</code>, which is a pill for Fjordkraft, Fjordkraft Företag and Telinet. A button
+        inside a button group, a field or a preset list keeps a field-sized corner instead, and the checkbox,
+        the phone country trigger and the standalone calendar keep the reference&apos;s 4px corner. The
+        internal variant rounds every element with the one <code>--radius</code>. Its step is <code>0px</code>{" "}
+        and its <code>--radius-button</code> is <code>var(--radius)</code>, so a host rule that reads{" "}
+        <code>var(--radius-button)</code> gets the same corner. To change the radius, override{" "}
+        <code>--radius</code> on the element that carries the theme attributes, which is{" "}
+        <code>&lt;html&gt;</code> or a <code>ThemeScope</code>. The theme rules resolve{" "}
+        <code>--radius-button</code> there, so buttons move with the cards and fields. On a plain wrapper the
+        override reaches cards and fields, but buttons keep the button radius the theme element resolved.
+        Nested internal surfaces share the radius instead of stepping inward, and dialogs round like cards.
+      </p>
 
       <h2 id="document-theme">The document theme</h2>
       <p>

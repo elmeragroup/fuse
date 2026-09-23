@@ -210,7 +210,8 @@ describe("token extraction", () => {
       "--ring",
       "--error",
       "--success",
-      "--radius-md",
+      "--secondary-hover",
+      "--radius-button",
       "--control-h-md",
     ]) {
       expect(names).toContain(expected);

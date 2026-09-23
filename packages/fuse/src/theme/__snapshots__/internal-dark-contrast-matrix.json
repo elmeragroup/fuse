@@ -13,6 +13,7 @@
     "primary-foreground/primary": 14.22,
     "primary-soft-foreground/primary-soft": 14.48,
     "secondary-foreground/secondary": 14.48,
+    "secondary-foreground/secondary-hover": 12.84,
     "secondary-soft-foreground/secondary-soft": 14.48,
     "success-foreground/success": 7.72,
     "success-soft-foreground/success-soft": 7.24,

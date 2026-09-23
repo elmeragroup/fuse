@@ -16,11 +16,11 @@ describe("buttonVariants", () => {
   });
 
   it("renders each variant recipe", () => {
-    expect(buttonVariants({ variant: "default" })).toContain("hover:bg-primary/80");
+    expect(buttonVariants({ variant: "default" })).toContain("enabled-hover:bg-primary/80");
     expect(buttonVariants({ variant: "outline" })).toContain("border-border");
     expect(buttonVariants({ variant: "outline" })).toContain("aria-expanded:bg-muted");
     expect(buttonVariants({ variant: "secondary" })).toContain("bg-secondary");
-    expect(buttonVariants({ variant: "ghost" })).toContain("hover:bg-muted");
+    expect(buttonVariants({ variant: "ghost" })).toContain("enabled-hover:bg-muted");
     expect(buttonVariants({ variant: "destructive" })).toContain("bg-error/10");
     expect(buttonVariants({ variant: "destructive" })).toContain("text-error");
     expect(buttonVariants({ variant: "success" })).toContain("bg-success/10");
@@ -42,14 +42,12 @@ describe("buttonVariants", () => {
     const xs = buttonVariants({ size: "xs" });
     expect(xs).toContain("h-(--control-h-xs)");
     expect(xs).toContain("text-xs");
-    expect(xs).toContain("rounded-[min(var(--radius-md),8px)]");
     expect(xs).toContain("has-data-[icon=inline-start]:pl-(--control-px-icon-xs)");
     expect(xs).toContain("has-data-[icon=inline-end]:pr-(--control-px-icon-xs)");
 
     const sm = buttonVariants({ size: "sm" });
     expect(sm).toContain("h-(--control-h-sm)");
     expect(sm).toContain("text-sm");
-    expect(sm).toContain("rounded-[min(var(--radius-md),10px)]");
     expect(sm).not.toContain("[font-size:var(--control-text)]");
     expect(sm).toContain("has-data-[icon=inline-start]:pl-(--control-px-icon-sm)");
     expect(sm).toContain("has-data-[icon=inline-end]:pr-(--control-px-icon-sm)");

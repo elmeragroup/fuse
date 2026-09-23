@@ -91,6 +91,37 @@ export function px(value: string): number {
   return parsed;
 }
 
+/** The lightness, chroma and hue of an opaque OKLCH color, as Chromium computes it. */
+export type ComputedOklch = { readonly l: number; readonly c: number; readonly h: number };
+
+/**
+ * Read a computed color that Chromium serializes as an opaque `oklch(L C H)`.
+ *
+ * @param serialized - A computed color value, such as `getComputedStyle(el).backgroundColor`.
+ * @returns The three components.
+ * @throws When the value is not an opaque `oklch()` color, which is a defect in the suite.
+ */
+export function readOklch(serialized: string): ComputedOklch {
+  const match = /^oklch\(([\d.]+) ([\d.]+) ([\d.]+)\)$/.exec(serialized);
+  if (match === null) {
+    throw new Error(`expected an opaque oklch() color, received ${serialized}`);
+  }
+  return { l: Number(match[1]), c: Number(match[2]), h: Number(match[3]) };
+}
+
+/**
+ * The opacity an element paints at, which is its own computed opacity multiplied by every
+ * ancestor's. A disabled control inside a dimmed wrapper compounds, so a suite that checks
+ * that a control dims once reads this instead of the element's own `opacity`.
+ */
+export function effectiveOpacity(element: Element): number {
+  let opacity = 1;
+  for (let current: Element | null = element; current !== null; current = current.parentElement) {
+    opacity *= Number.parseFloat(getComputedStyle(current).opacity);
+  }
+  return opacity;
+}
+
 /** The ARIA role names `page.getByRole` accepts, so callers keep the checked union. */
 export type QueryableRole = Parameters<typeof page.getByRole>[0];
 

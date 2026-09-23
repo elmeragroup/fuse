@@ -15,7 +15,9 @@ export const searchFieldVariants = tv({
     base: "group flex min-w-12 flex-col gap-1",
     icon: "ml-2 size-4 text-foreground group-aria-disabled:text-muted-foreground forced-colors:text-[ButtonText] forced-colors:group-aria-disabled:text-[GrayText]",
     input: "[&::-webkit-search-cancel-button]:hidden",
-    button: "mr-1 w-6 px-0 group-data-[empty]:invisible",
+    // The clear button sits inside the field box, so it keeps the field's `rounded-md`
+    // corner instead of Button's `--radius-button`.
+    button: "mr-1 w-6 rounded-md px-0 group-data-[empty]:invisible",
     buttonIcon: "size-4 text-foreground",
   },
 });

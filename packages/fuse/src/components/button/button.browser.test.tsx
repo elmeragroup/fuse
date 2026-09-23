@@ -4,9 +4,36 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
+import { render } from "../../../test/browser-render";
+import { whilePointerPressed } from "../../../test/pointer-press";
 import { dispatchPredictedPointer } from "../../../test/predicted-pointer";
-import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import {
+  cssVarColor,
+  effectiveOpacity,
+  fkasPrivate,
+  readOklch,
+  renderThemed,
+  roleNamed,
+} from "../../../test/themed-browser-render";
+import { ThemeScope } from "../../theme/theme-scope";
+import { Tooltip } from "../tooltip/tooltip";
 import { Button } from "./button";
+
+const VARIANTS = ["default", "outline", "secondary", "ghost", "destructive", "success", "link"] as const;
+
+/** The paint and position a hover or press could change on a button. */
+function pointerPaint(element: Element) {
+  const style = getComputedStyle(element);
+  return {
+    backgroundColor: style.backgroundColor,
+    borderColor: style.borderColor,
+    color: style.color,
+    textDecorationLine: style.textDecorationLine,
+    transform: style.transform,
+    translate: style.translate,
+  };
+}
 
 describe("Button", () => {
   it("activates once on click, Enter, and Space", async () => {
@@ -57,6 +84,141 @@ describe("Button", () => {
 
     expect(onDisabledClick).not.toHaveBeenCalled();
     expect(onPendingClick).not.toHaveBeenCalled();
+  });
+
+  it("dims a disabled button to half opacity when it renders a native button or another element", () => {
+    renderThemed(
+      <>
+        <Button disabled>Native</Button>
+        <Button render={<a href="/docs" />} nativeButton={false} disabled>
+          Anchor
+        </Button>
+        <Button>Enabled</Button>
+      </>
+    );
+
+    // A rendered <a> never matches `:disabled`; Base UI marks it with the disabled state
+    // attribute instead, and the dim must follow that attribute.
+    expect(effectiveOpacity(roleNamed("button", "Native"))).toBe(0.5);
+    expect(effectiveOpacity(roleNamed("button", "Anchor"))).toBe(0.5);
+    expect(effectiveOpacity(roleNamed("button", "Enabled"))).toBe(1);
+  });
+
+  it("keeps a focusable disabled button hoverable, so a tooltip on it still opens", async () => {
+    renderThemed(
+      <Tooltip.Provider>
+        <Tooltip.Root>
+          <Tooltip.Trigger render={<Button disabled focusableWhenDisabled />}>Why</Tooltip.Trigger>
+          <Tooltip.Content>Needs a signed contract</Tooltip.Content>
+        </Tooltip.Root>
+      </Tooltip.Provider>
+    );
+    const button = roleNamed("button", "Why");
+
+    // Base UI keeps a focusable disabled button out of `:disabled` and marks it with
+    // `data-disabled`, so the dim follows that attribute while pointer events stay on.
+    expect(button.hasAttribute("disabled")).toBe(false);
+    expect(effectiveOpacity(button)).toBe(0.5);
+    expect(getComputedStyle(button).pointerEvents).toBe("auto");
+
+    await userEvent.hover(button);
+    await vi.waitFor(() => {
+      expect(page.getByRole("tooltip", { name: "Needs a signed contract" }).query()).not.toBeNull();
+    });
+  });
+
+  it("keeps a focusable disabled button's paint and position still under hover and press, for every variant", async () => {
+    renderThemed(
+      <>
+        <p>Away</p>
+        {VARIANTS.map((variant) => (
+          <Button key={variant} variant={variant} disabled focusableWhenDisabled className="transition-none">
+            {`Disabled ${variant}`}
+          </Button>
+        ))}
+      </>
+    );
+
+    for (const variant of VARIANTS) {
+      const name = `Disabled ${variant}`;
+      const button = roleNamed("button", name);
+      await userEvent.hover(page.getByText("Away"));
+      const resting = pointerPaint(button);
+
+      await userEvent.hover(page.getByRole("button", { name }));
+      expect(pointerPaint(button), `${variant} while hovered`).toEqual(resting);
+      const pressed = await whilePointerPressed(() => pointerPaint(button));
+      expect(pressed, `${variant} while pressed`).toEqual(resting);
+    }
+  });
+
+  it("changes an enabled button's paint on hover and moves it down 1px on press, for every variant", async () => {
+    renderThemed(
+      <>
+        <p>Away</p>
+        {VARIANTS.map((variant) => (
+          <Button key={variant} variant={variant} className="transition-none">
+            {`Enabled ${variant}`}
+          </Button>
+        ))}
+      </>
+    );
+
+    for (const variant of VARIANTS) {
+      const name = `Enabled ${variant}`;
+      const button = roleNamed("button", name);
+      await userEvent.hover(page.getByText("Away"));
+      const resting = pointerPaint(button);
+
+      await userEvent.hover(page.getByRole("button", { name }));
+      expect(pointerPaint(button), `${variant} while hovered`).not.toEqual(resting);
+      const pressed = await whilePointerPressed(() => getComputedStyle(button).translate);
+      expect(pressed, `${variant} while pressed`).toBe("0px 1px");
+    }
+  });
+
+  it("lets a consumer hover class replace the recipe hover", async () => {
+    renderThemed(<Button className="transition-none hover:bg-muted">Custom hover</Button>);
+    const button = roleNamed("button", "Custom hover");
+
+    await userEvent.hover(page.getByRole("button", { name: "Custom hover" }));
+    expect(getComputedStyle(button).backgroundColor).toBe(cssVarColor(button, "--muted"));
+  });
+
+  it("paints a hovered secondary button with the secondary-hover role", async () => {
+    renderThemed(
+      <Button variant="secondary" className="transition-none">
+        Secondary
+      </Button>
+    );
+    const button = roleNamed("button", "Secondary");
+    expect(getComputedStyle(button).backgroundColor).toBe(cssVarColor(button, "--secondary"));
+
+    await userEvent.hover(button);
+    expect(getComputedStyle(button).backgroundColor).toBe(cssVarColor(button, "--secondary-hover"));
+    // Internal secondary moves 5% toward foreground, so the hover is visibly a different fill.
+    expect(cssVarColor(button, "--secondary-hover")).not.toBe(cssVarColor(button, "--secondary"));
+  });
+
+  it("mixes the secondary hover from a host override of --secondary on a theme scope", async () => {
+    render(
+      <ThemeScope theme={fkasPrivate} style={{ "--secondary": "oklch(0.6 0.2 30)" }}>
+        <Button variant="secondary" className="transition-none">
+          Custom
+        </Button>
+      </ThemeScope>
+    );
+    const button = roleNamed("button", "Custom");
+    await userEvent.hover(button);
+
+    // The expected values mix the override 5% of the way toward the internal light
+    // foreground, oklch(0.15 0.0041 49.31). L 0.6 * 0.95 + 0.15 * 0.05 = 0.5775.
+    // C 0.2 * 0.95 + 0.0041 * 0.05 = 0.190205. H 30 + (49.31 - 30) * 0.05 = 30.9655.
+    // The theme's own hover would be a near-white gray.
+    const hovered = readOklch(getComputedStyle(button).backgroundColor);
+    expect(hovered.l).toBeCloseTo(0.5775, 4);
+    expect(hovered.c).toBeCloseTo(0.190205, 4);
+    expect(hovered.h).toBeCloseTo(30.9655, 2);
   });
 
   it("stays activatable when visually disabled and suppresses mousedown focus", async () => {

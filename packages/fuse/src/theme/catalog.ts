@@ -5,7 +5,7 @@
  */
 
 export { composeTheme } from "./compose-theme";
-export { oklchToLinearSrgb, parseOklch } from "./contrast";
+export { oklchToLinearSrgb, parseOklch } from "./oklch";
 export { defaultDensityForVariant, densityAttributes } from "./density";
 export { themeAttributes } from "./theme-attributes";
 export { TOKEN_NAMES } from "./tokens/contract";

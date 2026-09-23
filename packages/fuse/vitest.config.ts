@@ -1,6 +1,8 @@
 import { playwright } from "@vitest/browser-playwright";
 import { defineConfig } from "vitest/config";
 
+import { pointerCommands } from "./test/pointer-commands.ts";
+
 export default defineConfig({
   test: {
     passWithNoTests: true,
@@ -47,6 +49,7 @@ export default defineConfig({
             headless: true,
             provider: playwright(),
             instances: [{ browser: "chromium" }],
+            commands: pointerCommands,
           },
         },
       },

@@ -36,7 +36,7 @@ function dtcgSlot(name: string): DtcgSlot {
   if (name === "font-heading") {
     return { group: "font", key: "heading" };
   }
-  if (name === "radius" || name === "radius-button") {
+  if (name === "radius" || name === "radius-button" || name === "radius-step") {
     return { group: "size", key: name };
   }
   return { group: "color", key: name };
@@ -133,11 +133,7 @@ function dimensionFromCss(css: string): FigmaDimensionToken["$value"] {
   throw new Error(`Expected a rem or px dimension, received: ${css}`);
 }
 
-function colorOrAlias(css: string): FigmaColorToken["$value"] {
-  const referenced = VAR_RE.exec(css)?.[1];
-  if (referenced !== undefined) {
-    return aliasOf(referenced);
-  }
+function colorFromCss(css: string): FigmaColorToken["$value"] {
   if (css.startsWith("oklch(")) {
     return colorFromOklch(css);
   }
@@ -147,12 +143,13 @@ function colorOrAlias(css: string): FigmaColorToken["$value"] {
   throw new Error(`Expected a color, hex, or var() alias, received: ${css}`);
 }
 
-function fontOrAlias(css: string): string {
+/**
+ * The DTCG value for one role. A `var(--role)` value becomes an alias of that role's slot,
+ * and any other value goes through the parser for its token type.
+ */
+function valueOrAlias<Value>(css: string, parse: (css: string) => Value): Value | `{${string}}` {
   const referenced = VAR_RE.exec(css)?.[1];
-  if (referenced !== undefined) {
-    return aliasOf(referenced);
-  }
-  return firstFontFamily(css);
+  return referenced === undefined ? parse(css) : aliasOf(referenced);
 }
 
 function cssTokenName(cssKey: string): string {
@@ -171,14 +168,14 @@ type DtcgGroups = {
 function emitToken(groups: DtcgGroups, name: string, css: string): void {
   const slot = dtcgSlot(name);
   if (slot.group === "font") {
-    groups.font[slot.key] = { $type: "fontFamily", $value: fontOrAlias(css) };
+    groups.font[slot.key] = { $type: "fontFamily", $value: valueOrAlias(css, firstFontFamily) };
     return;
   }
   if (slot.group === "size") {
-    groups.size[slot.key] = { $type: "dimension", $value: dimensionFromCss(css) };
+    groups.size[slot.key] = { $type: "dimension", $value: valueOrAlias(css, dimensionFromCss) };
     return;
   }
-  groups.color[slot.key] = { $type: "color", $value: colorOrAlias(css) };
+  groups.color[slot.key] = { $type: "color", $value: valueOrAlias(css, colorFromCss) };
 }
 
 function emitCssMap(groups: DtcgGroups, map: ThemeCatalogTokenMap): void {

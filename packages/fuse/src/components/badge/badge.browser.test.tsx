@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
@@ -10,6 +10,23 @@ import { Heading } from "../heading/heading";
 import { Span } from "../span/span";
 import { Text } from "../text/text";
 import { Badge } from "./badge";
+
+const BADGE_VARIANTS = [
+  "default",
+  "secondary",
+  "destructive",
+  "success",
+  "warning",
+  "info",
+  "outline",
+  "outline-secondary",
+  "outline-destructive",
+  "outline-success",
+  "outline-warning",
+  "muted",
+  "accent",
+  "card",
+] as const;
 
 function badgeNamed(label: string): HTMLElement {
   const element = page.getByText(label, { exact: true }).element();
@@ -93,6 +110,32 @@ describe("Badge", () => {
     expect(comfortable.fontSize).toBe(denseMetrics.font);
   });
 
+  it("keeps every variant's paint while the pointer hovers it", async () => {
+    // Badge is a non-interactive <div>, so hover must not suggest an affordance.
+    // `transition-none` makes a hover rule, if one existed, apply at once.
+    renderThemed(
+      <>
+        {BADGE_VARIANTS.map((variant) => (
+          <Badge key={variant} variant={variant} className="transition-none">
+            {`${variant} sample`}
+          </Badge>
+        ))}
+      </>
+    );
+
+    for (const variant of BADGE_VARIANTS) {
+      const badge = badgeNamed(`${variant} sample`);
+      const paint = (): readonly string[] => {
+        const style = getComputedStyle(badge);
+        return [style.backgroundColor, style.borderTopColor, style.color];
+      };
+      const atRest = paint();
+      await userEvent.hover(badge);
+      expect(paint(), variant).toEqual(atRest);
+      await userEvent.unhover(badge);
+    }
+  });
+
   it("lets a className override win over the recipe", () => {
     renderThemed(<Badge className="bg-muted">Active</Badge>);
     const badge = badgeNamed("Active");
@@ -101,7 +144,7 @@ describe("Badge", () => {
 });
 
 describe("badge and secondary typography contrast", () => {
-  it("uses readable rendered pairs in every theme and color scheme, including badge hover", async () => {
+  it("uses readable rendered pairs in every theme and color scheme", () => {
     const { rerender } = renderThemed(null);
     for (const scheme of ["light", "dark"] as const) {
       for (const theme of LEGAL_THEMES) {
@@ -140,12 +183,6 @@ describe("badge and secondary typography contrast", () => {
           const badge = badgeNamed(label);
           expect(getComputedStyle(badge).color, context).toBe(cssVarColor(badge, `--${foreground}`));
         }
-        const outline = badgeNamed("Outline sample");
-        await userEvent.hover(outline);
-        await vi.waitFor(() =>
-          expect(getComputedStyle(outline).color).toBe(cssVarColor(outline, "--secondary-foreground"))
-        );
-        await userEvent.unhover(outline);
         for (const label of [
           "Secondary heading",
           "Secondary text",

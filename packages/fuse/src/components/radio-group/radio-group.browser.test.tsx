@@ -15,11 +15,14 @@ import {
 } from "../../../test/assert-selection-item-group-layout";
 import {
   cssVarColor,
+  effectiveOpacity,
   headingNamed,
   px,
   renderThemed,
   stampDensity,
+  textNamed,
 } from "../../../test/themed-browser-render";
+import { Badge } from "../badge/badge";
 import { Radio, RadioGroup, RadioGroupItem, RadioIconButton, RadioItem, RadioItemGroup } from "./radio-group";
 
 const ICON_SIZES = ["icon-xxs", "icon-xs", "icon-sm", "icon", "icon-lg"] as const;
@@ -376,6 +379,51 @@ describe("Radio", () => {
     ).toBe(true);
   });
 
+  it("dims a disabled row's control and label text once each", () => {
+    renderThemed(
+      <RadioGroup label="Contract">
+        <Radio value="spot" isDisabled>
+          Spot
+        </Radio>
+        <Radio value="fixed">Fixed</Radio>
+      </RadioGroup>
+    );
+
+    // The control dims itself and the label dims only its text, so neither compounds.
+    expect(effectiveOpacity(radioNamed("Spot"))).toBe(0.5);
+    expect(effectiveOpacity(textNamed("Spot"))).toBe(0.5);
+    expect(effectiveOpacity(radioNamed("Fixed"))).toBe(1);
+    expect(effectiveOpacity(textNamed("Fixed"))).toBe(1);
+  });
+
+  it("lays out rich label content in the label's row and dims all of it once", () => {
+    renderThemed(
+      <RadioGroup label="Contract">
+        <Radio value="spot" isDisabled>
+          Spot <Badge>New</Badge>
+        </Radio>
+      </RadioGroup>
+    );
+
+    const badge = textNamed("New");
+    const text = badge.parentElement?.firstChild;
+    if (!(text instanceof Text)) {
+      throw new Error("expected the label text before the badge");
+    }
+    const range = document.createRange();
+    range.selectNodeContents(text);
+    const textBox = range.getBoundingClientRect();
+    const badgeBox = badge.getBoundingClientRect();
+
+    // The label row puts gap-2 (8px) between the text and the badge and centers both. One
+    // inline run would collapse the gap to a space and align the badge to the baseline.
+    expect(badgeBox.left - textBox.right).toBeCloseTo(8, 0);
+    const offCenter = badgeBox.top + badgeBox.height / 2 - (textBox.top + textBox.height / 2);
+    expect(Math.abs(offCenter)).toBeLessThanOrEqual(1);
+    expect(effectiveOpacity(radioNamed("Spot New"))).toBe(0.5);
+    expect(effectiveOpacity(badge)).toBe(0.5);
+  });
+
   it("paints the shared ring on keyboard focus-visible and not on mouse focus, at both densities", async () => {
     renderThemed(
       <>
@@ -586,6 +634,22 @@ describe("RadioIconButton", () => {
     }
     await assertFocusRingAtBothDensities(previous, radioNamed("List"));
   });
+
+  it("dims a disabled icon button to half opacity", () => {
+    renderThemed(
+      <RadioGroup label="View">
+        <RadioIconButton value="list" aria-label="List" isDisabled>
+          <Glyph />
+        </RadioIconButton>
+        <RadioIconButton value="grid" aria-label="Grid">
+          <Glyph />
+        </RadioIconButton>
+      </RadioGroup>
+    );
+
+    expect(effectiveOpacity(radioNamed("List"))).toBe(0.5);
+    expect(effectiveOpacity(radioNamed("Grid"))).toBe(1);
+  });
 });
 
 describe("RadioGroupItem", () => {
@@ -596,6 +660,20 @@ describe("RadioGroupItem", () => {
       </RadioGroup>
     );
     expect(radioNamed("Fixed primitive").getAttribute("data-slot")).toBe("radio-group-item");
+  });
+
+  it("dims a standalone disabled item to half opacity and leaves an enabled one opaque", () => {
+    // Base UI renders the root as a <span>, which never matches `:disabled`. No label
+    // wraps these items, so only the item's own rule can dim it.
+    renderThemed(
+      <RadioGroup label="Contract">
+        <RadioGroupItem value="spot" aria-label="Spot primitive" disabled />
+        <RadioGroupItem value="fixed" aria-label="Fixed primitive" />
+      </RadioGroup>
+    );
+
+    expect(effectiveOpacity(radioNamed("Spot primitive"))).toBe(0.5);
+    expect(effectiveOpacity(radioNamed("Fixed primitive"))).toBe(1);
   });
 
   it("composes library classes with a string className or a stateful callback", async () => {

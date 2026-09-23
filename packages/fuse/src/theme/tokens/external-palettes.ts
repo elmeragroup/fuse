@@ -1,8 +1,18 @@
-import type { TokenContract } from "./contract";
+import type { TokenLayer } from "./contract";
 import { WHITE } from "./primitives";
 import type { BrandCode } from "./themes";
 
 export type ExternalBrandCode = Exclude<BrandCode, "fkab">;
+
+/**
+ * The roles every external theme shares, whatever its brand. External rounding spreads the
+ * `rounded-*` scale in 2px steps around the brand radius, so `rounded-md` sits 2px inside
+ * `--radius` and `rounded-xl` 4px outside it. The internal variant keeps the default 0px
+ * step.
+ */
+export const EXTERNAL_VARIANT_LAYER = {
+  "radius-step": "2px",
+} as const satisfies TokenLayer;
 
 export const EXTERNAL_PALETTES = {
   fkas: {
@@ -138,13 +148,13 @@ export const EXTERNAL_PALETTES = {
     "radius-button": "0.375rem",
     "font-heading": "var(--font-sans)",
   },
-} as const satisfies Record<ExternalBrandCode, Partial<TokenContract>>;
+} as const satisfies Record<ExternalBrandCode, TokenLayer>;
 
 /** fkab is a permanent alias of fkas; every palette lookup goes through here. */
 export function paletteBrand(brand: BrandCode): ExternalBrandCode {
   return brand === "fkab" ? "fkas" : brand;
 }
 
-export function externalPalette(brand: BrandCode): Partial<TokenContract> {
+export function externalPalette(brand: BrandCode): TokenLayer {
   return EXTERNAL_PALETTES[paletteBrand(brand)];
 }

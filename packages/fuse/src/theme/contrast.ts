@@ -1,5 +1,7 @@
 import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
+import { oklchToLinearSrgb, parseOklch } from "./oklch";
+import type { LinearRgb } from "./oklch";
 import type { TokenName } from "./tokens/contract";
 import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
 import type { ThemeSlug } from "./tokens/themes";
@@ -14,6 +16,7 @@ export const TEXT_GRADE_PAIRS = [
   ["primary-foreground", "primary"],
   ["primary-soft-foreground", "primary-soft"],
   ["secondary-foreground", "secondary"],
+  ["secondary-foreground", "secondary-hover"],
   ["secondary-soft-foreground", "secondary-soft"],
   ["error-foreground", "error"],
   ["error-soft-foreground", "error-soft"],
@@ -33,54 +36,6 @@ export type ContrastMatrix = {
     [Pair in TextGradePairId]: number;
   };
 };
-
-export type LinearRgb = {
-  r: number;
-  g: number;
-  b: number;
-};
-
-export type OklchColor = {
-  l: number;
-  c: number;
-  h: number;
-  alpha: number;
-};
-
-const OKLCH_RE =
-  /^oklch\(\s*([0-9]*\.?[0-9]+)\s+([0-9]*\.?[0-9]+)\s+([0-9]*\.?[0-9]+)(?:\s*\/\s*([0-9]*\.?[0-9]+)(%)?)?\s*\)$/i;
-
-export function parseOklch(value: string): OklchColor {
-  const match = OKLCH_RE.exec(value);
-  if (!match) {
-    throw new Error(`Expected an oklch() color, received: ${value}`);
-  }
-  const parsed: OklchColor = {
-    l: Number(match[1]),
-    c: Number(match[2]),
-    h: Number(match[3]),
-    alpha: match[4] === undefined ? 1 : Number(match[4]) / (match[5] === "%" ? 100 : 1),
-  };
-  return parsed;
-}
-
-export function oklchToLinearSrgb(value: string): LinearRgb {
-  const { l, c, h } = parseOklch(value);
-  const hue = (h * Math.PI) / 180;
-  const a = c * Math.cos(hue);
-  const b = c * Math.sin(hue);
-  const l_ = l + 0.3963377774 * a + 0.2158037573 * b;
-  const m_ = l - 0.1055613458 * a - 0.0638541728 * b;
-  const s_ = l - 0.0894841775 * a - 1.291485548 * b;
-  const lmsL = l_ * l_ * l_;
-  const lmsM = m_ * m_ * m_;
-  const lmsS = s_ * s_ * s_;
-  return {
-    r: 4.0767416621 * lmsL - 3.3077115913 * lmsM + 0.2309699292 * lmsS,
-    g: -1.2684380046 * lmsL + 2.6097574011 * lmsM - 0.3413193965 * lmsS,
-    b: -0.0041960863 * lmsL - 0.7034186147 * lmsM + 1.707614701 * lmsS,
-  };
-}
 
 function clipChannel(channel: number): number {
   if (channel < 0) {

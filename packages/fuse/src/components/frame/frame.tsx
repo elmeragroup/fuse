@@ -36,7 +36,7 @@ function FramePanel({ className, ...props }: FramePanelProps): ReactElement {
     <div
       data-slot="frame-panel"
       className={cn(
-        "shadow-xs/5 before:shadow-[0_1px_--theme(--color-black/6%)] relative rounded-xl border bg-background bg-clip-padding p-5 before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-xl)-1px)]",
+        "shadow-xs/5 before:shadow-[0_1px_--theme(--color-black/6%)] relative rounded-xl border bg-background bg-clip-padding p-5 before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(--theme(--radius-xl)-1px)]",
         className
       )}
       {...props}

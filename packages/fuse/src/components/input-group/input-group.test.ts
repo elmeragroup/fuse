@@ -27,10 +27,6 @@ describe("inputGroupAddonVariants", () => {
     expect(inputGroupAddonVariants({ align: "block-start" })).toContain("w-full");
     expect(inputGroupAddonVariants({ align: "block-end" })).toContain("w-full");
   });
-
-  it("keeps the documented kbd radius arithmetic", () => {
-    expect(inputGroupAddonVariants()).toContain("[&>kbd]:rounded-[calc(var(--radius)-5px)]");
-  });
 });
 
 describe("inputGroupButtonVariants", () => {

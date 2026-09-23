@@ -1,4 +1,4 @@
-import type { TokenContract } from "./contract";
+import type { TokenLayer } from "./contract";
 import { DARK_DEFAULTS } from "./dark-defaults";
 
 // User-supplied shadcn neutral dark base, 2026-09-15.
@@ -52,4 +52,4 @@ export const INTERNAL_DARK_PALETTE = {
   // sidebar-ring remains the default alias to ring, rebound at each scope.
   "right-panel": "oklch(0.205 0 0)",
   "right-panel-foreground": "oklch(0.985 0 0)",
-} as const satisfies Partial<TokenContract>;
+} as const satisfies TokenLayer;

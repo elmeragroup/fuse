@@ -1,11 +1,11 @@
-import type { TokenContract } from "./contract";
+import type { TokenLayer } from "./contract";
 import type { ExternalDarkSheet } from "./external-dark-sheet";
 import type { BrandCode, ThemeSegment } from "./themes";
 
 /** Both schemes' sheets for one brand/segment pair that departs from its brand base. */
 export type SegmentSheets = {
   /** The light overrides applied on top of the brand's base palette. */
-  readonly light: Partial<TokenContract>;
+  readonly light: TokenLayer;
 
   /** The dark sheet that replaces the brand's dark palette. */
   readonly dark: ExternalDarkSheet;
@@ -29,7 +29,7 @@ const FKAS_COMPANY_DELTA = {
   feature: "oklch(0.55738 0.06979 216.27)",
   "feature-bright": "oklch(0.7871 0.0657 225.82)",
   "feature-foreground": "oklch(0.90856 0.05958 225.03)",
-} as const satisfies Partial<TokenContract>;
+} as const satisfies TokenLayer;
 
 // Bedrift UF9t0CyeKAwPEypCW3S41m. Only fkas-company uses this sheet, and it replaces
 // the fkas dark sheet key for key rather than layering on top of it.

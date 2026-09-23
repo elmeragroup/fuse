@@ -1,5 +1,5 @@
-import { assignedTokenNames, TOKEN_NAMES } from "./contract";
-import type { TokenContract, TokenName } from "./contract";
+import { assignedTokenNames, derivedRoleSources, isDerivedTokenName, TOKEN_NAMES } from "./contract";
+import type { TokenLayer, TokenName } from "./contract";
 import { DEFAULTS } from "./defaults";
 import { paletteLayers } from "./palette-layers";
 import { LEGAL_THEMES } from "./themes";
@@ -12,11 +12,23 @@ export function aliasTarget(value: string): string | undefined {
 }
 
 /**
+ * The roles a token's value reads. A derived role reads its sources, a `var(--role)` default
+ * reads its target, and a literal default reads none.
+ */
+function tokenSources(name: TokenName): readonly string[] {
+  if (isDerivedTokenName(name)) {
+    return derivedRoleSources(name);
+  }
+  const target = aliasTarget(DEFAULTS[name]);
+  return target === undefined ? [] : [target];
+}
+
+/**
  * Every token name the given layers can change, in `TOKEN_NAMES` order. An `undefined`
  * layer — a theme with no segment sheet — is skipped rather than replaced with an empty
  * object.
  */
-function resetKeysFor(layers: readonly (Partial<TokenContract> | undefined)[]): readonly TokenName[] {
+function resetKeysFor(layers: readonly (TokenLayer | undefined)[]): readonly TokenName[] {
   const changedKeys = new Set<string>();
   for (const layer of layers) {
     if (layer === undefined) continue;
@@ -25,19 +37,18 @@ function resetKeysFor(layers: readonly (Partial<TokenContract> | undefined)[]): 
     }
   }
 
-  // An inherited alias has already resolved against its parent's variables. Rebind it
-  // wherever a scope resets the role it references. No `DEFAULTS` alias targets another
-  // alias today, so this iteration is defensive: it keeps the closure correct if one is
-  // ever added, independent of `TOKEN_NAMES` order.
-  let addedAlias = true;
-  while (addedAlias) {
-    addedAlias = false;
+  // An inherited alias or derived value has already resolved against its parent's
+  // variables. Reset it wherever a scope resets a role it reads. No source is itself an
+  // alias or derived role today, so this iteration is defensive. It keeps the closure
+  // correct if one is ever added, independent of `TOKEN_NAMES` order.
+  let addedDependent = true;
+  while (addedDependent) {
+    addedDependent = false;
     for (const name of TOKEN_NAMES) {
       if (changedKeys.has(name)) continue;
-      const target = aliasTarget(DEFAULTS[name]);
-      if (target !== undefined && changedKeys.has(target)) {
+      if (tokenSources(name).some((source) => changedKeys.has(source))) {
         changedKeys.add(name);
-        addedAlias = true;
+        addedDependent = true;
       }
     }
   }

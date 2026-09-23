@@ -16,6 +16,7 @@ import { X } from "../../icons/generated/x";
 import { isTextValueNode } from "../../internal/is-text-node";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
+import { compactCornerClass } from "../../styles/corner-radius";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { withinFocusRingClass, withinFocusRingControlClass } from "../../styles/utils";
 import { Button } from "../button/button";
@@ -441,7 +442,9 @@ function ComboboxChipRemove({ label }: { label: string }): ReactElement {
     <ComboboxPrimitive.ChipRemove
       data-slot="combobox-chip-remove"
       render={<Button variant="ghost" size="icon-sm" aria-label={label} />}
-      className="-ml-1 opacity-50 hover:opacity-100"
+      // The remove button sits inside a chip in the field box, so it takes the compact
+      // corner instead of Button's `--radius-button`.
+      className={cn("-ml-1 opacity-50 hover:opacity-100", compactCornerClass)}
       aria-label={label}>
       <X className="pointer-events-none" />
     </ComboboxPrimitive.ChipRemove>

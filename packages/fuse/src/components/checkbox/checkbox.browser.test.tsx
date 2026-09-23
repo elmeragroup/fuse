@@ -11,7 +11,12 @@ import {
   listitemHosts,
   radiusToken,
 } from "../../../test/assert-selection-item-group-layout";
-import { cssVarColor, headingNamed, renderThemed } from "../../../test/themed-browser-render";
+import {
+  cssVarColor,
+  effectiveOpacity,
+  headingNamed,
+  renderThemed,
+} from "../../../test/themed-browser-render";
 import { Field } from "../field/field";
 import { Checkbox, CheckboxDescription, CheckboxGroup, CheckboxItem, CheckboxItemGroup } from "./checkbox";
 
@@ -93,6 +98,20 @@ describe("Checkbox", () => {
     await userEvent.keyboard(" ");
     expect(onCheckedChange).not.toHaveBeenCalled();
     expect(checkboxNamed("Alerts", false).getAttribute("aria-checked")).toBe("false");
+  });
+
+  it("dims a standalone disabled checkbox to half opacity and leaves an enabled one opaque", () => {
+    // Base UI renders the root as a <span>, which never matches `:disabled`. No wrapper
+    // here dims on the control's behalf, so only the control's own rule can dim it.
+    renderThemed(
+      <>
+        <Checkbox disabled aria-label="Locked" />
+        <Checkbox aria-label="Open" />
+      </>
+    );
+
+    expect(effectiveOpacity(checkboxNamed("Locked"))).toBe(0.5);
+    expect(effectiveOpacity(checkboxNamed("Open"))).toBe(1);
   });
 
   it("renders readOnly without changing on click", async () => {

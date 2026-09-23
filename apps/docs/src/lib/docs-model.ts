@@ -227,7 +227,7 @@ export type FigmaColorToken = {
 
 export type FigmaDimensionToken = {
   $type: "dimension";
-  $value: { value: number; unit: "px" };
+  $value: { value: number; unit: "px" } | `{${string}}`;
 };
 
 export type FigmaFontToken = {

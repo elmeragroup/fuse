@@ -19,7 +19,8 @@ import { radioIconButtonVariants } from "./radio-group-variants";
 /**
  * Unlabeled 16px radio over the base-ui primitive. Client component, because base-ui
  * Radio owns the checked state. The indicator is an 8px primary-foreground dot. Labeled
- * usage composes `Radio` or `RadioItem`.
+ * usage composes `Radio` or `RadioItem`. A disabled item dims to 50% on its own, also
+ * outside a label.
  */
 export function RadioGroupItem({
   className,
@@ -30,8 +31,10 @@ export function RadioGroupItem({
       data-slot="radio-group-item"
       className={(state) =>
         cn(
+          // The root is a <span>, which never matches `:disabled`, so the disabled dim keys
+          // off Base UI's `data-disabled` state attribute.
           // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; ring comes from the shared adapter
-          "group/radio-group-item peer relative flex aspect-square size-4 shrink-0 rounded-full border border-input transition-[color,box-shadow] outline-none after:absolute after:-inset-x-3 after:-inset-y-2 after:content-[''] disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20 aria-invalid:aria-checked:border-primary data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground",
+          "group/radio-group-item peer relative flex aspect-square size-4 shrink-0 rounded-full border border-input transition-[color,box-shadow] outline-none after:absolute after:-inset-x-3 after:-inset-y-2 after:content-[''] aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20 aria-invalid:aria-checked:border-primary data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground data-disabled:cursor-not-allowed data-disabled:opacity-50",
           selfFocusRingClass,
           className instanceof Function ? className(state) : className
         )
@@ -181,14 +184,18 @@ export type RadioProps = {
 
 /**
  * Compact labeled radio row over `Field.Item` + base-ui `Field.Label`.
- * The whole label is the click target.
+ * The whole label is the click target. A disabled row dims the control and the label
+ * content once each. The control dims itself, so the label dims only its content.
  */
 export function Radio({ value, isDisabled, className, children }: RadioProps): ReactElement {
   return (
     <Field.Item className={cn("flex", className)}>
-      <FieldPrimitive.Label className="text-sm flex cursor-pointer items-center gap-2 has-disabled:cursor-not-allowed has-disabled:opacity-50">
+      <FieldPrimitive.Label className="text-sm flex cursor-pointer items-center gap-2 has-disabled:cursor-not-allowed">
         <RadioGroupItem value={value} disabled={isDisabled} />
-        {children}
+        {/* The span keeps the label's flex row for its children, so text and a badge stay
+            8px apart and centered. It dims from the control's `data-disabled` through
+            `peer`, so the control is not dimmed twice. */}
+        <span className="flex items-center gap-2 peer-data-disabled:opacity-50">{children}</span>
       </FieldPrimitive.Label>
     </Field.Item>
   );

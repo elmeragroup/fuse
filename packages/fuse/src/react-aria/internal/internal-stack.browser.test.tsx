@@ -8,7 +8,14 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { withLocale } from "../../../test/locale-matrix";
-import { CONTROL_MD, CONTROL_SM, cssVarColor, px, renderThemed } from "../../../test/themed-browser-render";
+import {
+  CONTROL_MD,
+  CONTROL_SM,
+  cssVarColor,
+  px,
+  renderThemed,
+  roleNamed,
+} from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
 import { Button } from "./button";
 import { Dialog } from "./dialog";
@@ -34,6 +41,20 @@ describe("the internal RAC Button", () => {
 
     expect(px(getComputedStyle(trigger).marginTop)).toBe(16);
     expect(px(getComputedStyle(trigger).height)).toBe(CONTROL_MD.dense.height);
+  });
+
+  it("paints the recipe hover from RAC's hover state", async () => {
+    renderThemed(
+      <Button variant="ghost" className="transition-none">
+        Previous month
+      </Button>
+    );
+    const trigger = roleNamed("button", "Previous month");
+    expect(trigger.hasAttribute("data-rac")).toBe(true);
+
+    await userEvent.hover(page.getByRole("button", { name: "Previous month" }));
+    expect(trigger.hasAttribute("data-hovered")).toBe(true);
+    expect(getComputedStyle(trigger).backgroundColor).toBe(cssVarColor(trigger, "--muted"));
   });
 
   it("stays a real RAC button that reports presses", async () => {

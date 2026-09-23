@@ -5,6 +5,7 @@ import "../../dist/styles.css";
 // Role tokens live in themes.css only; styles.css defines none of them.
 import "../../dist/themes.css";
 import { render } from "../../test/browser-render";
+import { declaredThemeValue } from "../../test/theme-css-contract";
 import { snapshotDocumentTheme, stampDocumentTheme, stampTheme } from "../../test/themed-browser-render";
 import { Dialog } from "../components/dialog/dialog";
 import { LocaleProvider } from "../intl/locale-context";
@@ -26,7 +27,8 @@ afterEach(() => {
 });
 
 // Unit under test: the document cascade stamped by stampTheme. Oracle: composeTheme,
-// whose resolved token map the emitted CSS must reproduce per permutation.
+// whose resolved token map the emitted CSS must reproduce per permutation, in the form the
+// theme contract declares each role.
 function expectedElement(
   parent: HTMLElement,
   theme: ThemeInput,
@@ -35,7 +37,7 @@ function expectedElement(
   const element = document.createElement("div");
   element.style.colorScheme = colorScheme;
   for (const [name, value] of Object.entries(composeTheme(theme, colorScheme))) {
-    element.style.setProperty(`--${name}`, value);
+    element.style.setProperty(`--${name}`, declaredThemeValue(name, value));
   }
   parent.append(element);
   return element;
