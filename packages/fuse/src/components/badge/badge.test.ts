@@ -43,11 +43,12 @@ describe("badgeVariants", () => {
     expect(resolved).not.toContain("ring-");
   });
 
-  it("resolves all fourteen variants without raw palette or dark classes", () => {
+  it("resolves all fourteen variants without raw palette, dark or hover classes", () => {
     for (const variant of VARIANTS) {
       const resolved = badgeVariants({ variant });
       expect(resolved, variant).not.toBe("");
       expect(resolved, variant).not.toContain("dark:");
+      expect(resolved, variant).not.toContain("hover:");
       expect(resolved, variant).not.toMatch(RAW_PALETTE_RE);
     }
   });
@@ -56,14 +57,11 @@ describe("badgeVariants", () => {
     const filled = badgeVariants({ variant: "destructive" });
     expect(filled).toContain("bg-error");
     expect(filled).toContain("text-error-foreground");
-    expect(filled).toContain("hover:bg-error/80");
     expect(filled).not.toContain("destructive");
 
     const outline = badgeVariants({ variant: "outline-destructive" });
     expect(outline).toContain("border-error");
     expect(outline).toContain("text-error");
-    expect(outline).toContain("hover:bg-error");
-    expect(outline).toContain("hover:text-error-foreground");
     expect(outline).not.toContain("destructive");
   });
 
@@ -71,7 +69,6 @@ describe("badgeVariants", () => {
     const resolved = badgeVariants({ variant: "info" });
     expect(resolved).toContain("bg-info-soft");
     expect(resolved).toContain("border-info/20");
-    expect(resolved).toContain("hover:border-info/40");
     expect(resolved).toContain("text-info-soft-foreground");
   });
 
@@ -101,8 +98,6 @@ describe("badgeVariants", () => {
     expect(merged).not.toContain("bg-success");
     expect(merged).toContain("text-xs");
     expect(merged).not.toContain("text-sm");
-    // The hover arm is a different modifier, so it survives the merge.
-    expect(merged).toContain("hover:bg-success/80");
   });
 
   it("reads no --control-* variable: the size axis is decorative, not a density rung", () => {

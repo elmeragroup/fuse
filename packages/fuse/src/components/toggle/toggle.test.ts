@@ -59,7 +59,7 @@ describe("toggleVariants", () => {
   it("keeps icon-padding hooks, size-owned type, and the control-type pair on the mapped rungs", () => {
     const xs = toggleVariants({ size: "xs" });
     expect(xs).toContain("text-xs");
-    expect(xs).toContain("rounded-[min(var(--radius-md),10px)]");
+    expect(xs).toContain("rounded-[min(--theme(--radius-md),10px)]");
     expect(xs).toContain("has-data-[icon=inline-start]:pl-(--control-px-icon-xs)");
     expect(xs).toContain("has-data-[icon=inline-end]:pr-(--control-px-icon-xs)");
     expect(xs).toContain("[&_svg:not([class*='size-'])]:size-3");

@@ -91,6 +91,19 @@ export function px(value: string): number {
   return parsed;
 }
 
+/**
+ * The opacity an element paints at: its own computed opacity multiplied by every
+ * ancestor's. A disabled control inside a dimmed wrapper compounds, so a suite that checks
+ * that a control dims once reads this instead of the element's own `opacity`.
+ */
+export function effectiveOpacity(element: Element): number {
+  let opacity = 1;
+  for (let current: Element | null = element; current !== null; current = current.parentElement) {
+    opacity *= Number.parseFloat(getComputedStyle(current).opacity);
+  }
+  return opacity;
+}
+
 /** The ARIA role names `page.getByRole` accepts, so callers keep the checked union. */
 export type QueryableRole = Parameters<typeof page.getByRole>[0];
 

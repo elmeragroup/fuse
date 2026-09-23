@@ -42,14 +42,12 @@ describe("buttonVariants", () => {
     const xs = buttonVariants({ size: "xs" });
     expect(xs).toContain("h-(--control-h-xs)");
     expect(xs).toContain("text-xs");
-    expect(xs).toContain("rounded-[min(var(--radius-md),8px)]");
     expect(xs).toContain("has-data-[icon=inline-start]:pl-(--control-px-icon-xs)");
     expect(xs).toContain("has-data-[icon=inline-end]:pr-(--control-px-icon-xs)");
 
     const sm = buttonVariants({ size: "sm" });
     expect(sm).toContain("h-(--control-h-sm)");
     expect(sm).toContain("text-sm");
-    expect(sm).toContain("rounded-[min(var(--radius-md),10px)]");
     expect(sm).not.toContain("[font-size:var(--control-text)]");
     expect(sm).toContain("has-data-[icon=inline-start]:pl-(--control-px-icon-sm)");
     expect(sm).toContain("has-data-[icon=inline-end]:pr-(--control-px-icon-sm)");
@@ -79,6 +77,22 @@ describe("buttonVariants", () => {
     expect(classes).toContain("aria-invalid:border-error");
     expect(classes).toContain("aria-invalid:ring-error/20");
     expect(classes.includes(["focus-visible", "ring-3"].join(":"))).toBe(false);
+  });
+
+  it("rounds every size with the theme's button radius and no size-local clamp", () => {
+    for (const size of SIZES) {
+      const classes = buttonVariants({ size }).split(/\s+/);
+      expect(classes, size).toContain("rounded-(--radius-button)");
+      expect(
+        classes.filter((token) => token.startsWith("rounded-") && token !== "rounded-(--radius-button)"),
+        size
+      ).toEqual([]);
+    }
+  });
+
+  it("hovers the secondary variant with the secondary-hover role", () => {
+    expect(buttonVariants({ variant: "secondary" })).toContain("hover:bg-secondary-hover");
+    expect(buttonVariants({ variant: "secondary" })).not.toContain("color-mix");
   });
 
   it("covers every public variant and size value", () => {

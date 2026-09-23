@@ -183,6 +183,14 @@ export default function ThemingPage(): ReactElement {
         Because it is attributes plus cascade, brand is correct at first paint with JavaScript disabled, and
         re-theming a subtree costs one wrapper element rather than a second stylesheet.
       </p>
+      <p>
+        Corner rounding is part of the theme. An external theme rounds cards and fields from the brand&apos;s{" "}
+        <code>--radius</code>, spaces the <code>rounded-*</code> scale around it in <code>--radius-step</code>{" "}
+        increments of 2px, and rounds every button with <code>--radius-button</code>, which is a pill for
+        Fjordkraft and Telinet. The internal variant rounds every element alike. Its step is <code>0px</code>{" "}
+        and its button radius reads <code>--radius</code>, so overriding <code>--radius</code> in an internal
+        scope moves buttons, cards and fields together.
+      </p>
 
       <h2 id="document-theme">The document theme</h2>
       <p>

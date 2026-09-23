@@ -28,8 +28,10 @@ describe("inputGroupAddonVariants", () => {
     expect(inputGroupAddonVariants({ align: "block-end" })).toContain("w-full");
   });
 
-  it("keeps the documented kbd radius arithmetic", () => {
-    expect(inputGroupAddonVariants()).toContain("[&>kbd]:rounded-[calc(var(--radius)-5px)]");
+  it("keeps the reference's 5px kbd inset as 2.5 radius steps", () => {
+    expect(inputGroupAddonVariants()).toContain(
+      "[&>kbd]:rounded-[calc(var(--radius)-2.5*var(--radius-step))]"
+    );
   });
 });
 
@@ -42,6 +44,14 @@ describe("inputGroupButtonVariants", () => {
     const base = inputGroupButtonVariants({ size: "sm" });
     for (const token of tokens(base)) {
       expect(token, token).not.toMatch(/^(?:h|size|px)-/);
+    }
+  });
+
+  it("gives every addon size the kbd's inset radius", () => {
+    for (const size of BUTTON_SIZES) {
+      expect(tokens(inputGroupButtonVariants({ size })), size).toContain(
+        "rounded-[calc(var(--radius)-2.5*var(--radius-step))]"
+      );
     }
   });
 

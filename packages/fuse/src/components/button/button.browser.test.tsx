@@ -4,8 +4,9 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import { dispatchPredictedPointer } from "../../../test/predicted-pointer";
-import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { cssVarColor, effectiveOpacity, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Button } from "./button";
 
 describe("Button", () => {
@@ -57,6 +58,39 @@ describe("Button", () => {
 
     expect(onDisabledClick).not.toHaveBeenCalled();
     expect(onPendingClick).not.toHaveBeenCalled();
+  });
+
+  it("dims a disabled button to half opacity when it renders a native button or another element", () => {
+    renderThemed(
+      <>
+        <Button disabled>Native</Button>
+        <Button render={<a href="/docs" />} nativeButton={false} disabled>
+          Anchor
+        </Button>
+        <Button>Enabled</Button>
+      </>
+    );
+
+    // A rendered <a> never matches `:disabled`; Base UI marks it with the disabled state
+    // attribute instead, and the dim must follow that attribute.
+    expect(effectiveOpacity(roleNamed("button", "Native"))).toBe(0.5);
+    expect(effectiveOpacity(roleNamed("button", "Anchor"))).toBe(0.5);
+    expect(effectiveOpacity(roleNamed("button", "Enabled"))).toBe(1);
+  });
+
+  it("paints a hovered secondary button with the secondary-hover role", async () => {
+    renderThemed(
+      <Button variant="secondary" className="transition-none">
+        Secondary
+      </Button>
+    );
+    const button = roleNamed("button", "Secondary");
+    expect(getComputedStyle(button).backgroundColor).toBe(cssVarColor(button, "--secondary"));
+
+    await userEvent.hover(button);
+    expect(getComputedStyle(button).backgroundColor).toBe(cssVarColor(button, "--secondary-hover"));
+    // Internal secondary moves 5% toward foreground, so the hover is visibly a different fill.
+    expect(cssVarColor(button, "--secondary-hover")).not.toBe(cssVarColor(button, "--secondary"));
   });
 
   it("stays activatable when visually disabled and suppresses mousedown focus", async () => {

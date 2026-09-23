@@ -8,6 +8,10 @@
 - When design supplies ring colors or an audit escalates contrast, replace the
   shared violet where needed. Retain the [accepted contrast exceptions](<apps/docs/src/app/(docs)/accessibility/page.tsx>)
   until reviewed replacements exist, including internal and Telinet light muted copy.
+- Ask design for an external secondary hover tone. Every external palette sets `secondary`
+  equal to `foreground`, so `--secondary-hover` equals `--secondary` and the hover is invisible.
+- Confirm that the 16px `Checkbox` keeps its 4px cap under the internal one-radius rule, while
+  the interim React Aria selection checkbox follows the scale to `--radius`.
 - Confirm the shared overlay-close dictionary and the docs' client-demo rule and
   three non-public import exceptions with the owner; these remain implemented defaults.
 

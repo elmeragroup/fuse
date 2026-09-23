@@ -1,4 +1,4 @@
-import type { TokenContract } from "./contract";
+import type { TokenLayer } from "./contract";
 
 // Shared dark values for roles the supplied palettes lack. PROVENANCE.md records where
 // each one came from and which are still provisional.
@@ -40,4 +40,4 @@ export const DARK_DEFAULTS = {
   "sh-jsxliterals": "oklch(0.8156596 0.1022421 190.6206)", // #69D8D2
   "sh-sign": "oklch(0.91205 0.0286161 218.9613)", // #CEE7EF
   "sh-comment": "oklch(0.8280204 0.0042636 121.5755)", // #C6C7C4
-} as const satisfies Partial<TokenContract>;
+} as const satisfies TokenLayer;

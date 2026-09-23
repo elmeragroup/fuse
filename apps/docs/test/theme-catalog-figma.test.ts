@@ -123,10 +123,37 @@ describe("Figma DTCG documents", () => {
       $type: "dimension",
       $value: { value: 12, unit: "px" },
     });
+    expect(token<FigmaDimensionToken>(document.size, "radius-button")).toEqual({
+      $type: "dimension",
+      $value: { value: 29, unit: "px" },
+    });
+    expect(token<FigmaDimensionToken>(document.size, "radius-step")).toEqual({
+      $type: "dimension",
+      $value: { value: 2, unit: "px" },
+    });
     expect(token<FigmaFontToken>(document.font, "sans")).toEqual({ $type: "fontFamily", $value: "Roboto" });
     expect(token<FigmaFontToken>(document.font, "heading")).toEqual({
       $type: "fontFamily",
       $value: "Neo Sans",
+    });
+  });
+
+  it("aliases the internal button radius to the one radius and emits a zero step", () => {
+    const document = figmaDocumentFromCatalog(
+      catalogTheme("internal-fkas-private"),
+      THEME_CATALOG.primitives
+    );
+    expect(token<FigmaDimensionToken>(document.size, "radius")).toEqual({
+      $type: "dimension",
+      $value: { value: 6, unit: "px" },
+    });
+    expect(token<FigmaDimensionToken>(document.size, "radius-button")).toEqual({
+      $type: "dimension",
+      $value: "{size.radius}",
+    });
+    expect(token<FigmaDimensionToken>(document.size, "radius-step")).toEqual({
+      $type: "dimension",
+      $value: { value: 0, unit: "px" },
     });
   });
 

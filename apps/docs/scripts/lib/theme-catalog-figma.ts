@@ -36,7 +36,7 @@ function dtcgSlot(name: string): DtcgSlot {
   if (name === "font-heading") {
     return { group: "font", key: "heading" };
   }
-  if (name === "radius" || name === "radius-button") {
+  if (name === "radius" || name === "radius-button" || name === "radius-step") {
     return { group: "size", key: name };
   }
   return { group: "color", key: name };
@@ -133,6 +133,14 @@ function dimensionFromCss(css: string): FigmaDimensionToken["$value"] {
   throw new Error(`Expected a rem or px dimension, received: ${css}`);
 }
 
+function dimensionOrAlias(css: string): FigmaDimensionToken["$value"] {
+  const referenced = VAR_RE.exec(css)?.[1];
+  if (referenced !== undefined) {
+    return aliasOf(referenced);
+  }
+  return dimensionFromCss(css);
+}
+
 function colorOrAlias(css: string): FigmaColorToken["$value"] {
   const referenced = VAR_RE.exec(css)?.[1];
   if (referenced !== undefined) {
@@ -175,7 +183,7 @@ function emitToken(groups: DtcgGroups, name: string, css: string): void {
     return;
   }
   if (slot.group === "size") {
-    groups.size[slot.key] = { $type: "dimension", $value: dimensionFromCss(css) };
+    groups.size[slot.key] = { $type: "dimension", $value: dimensionOrAlias(css) };
     return;
   }
   groups.color[slot.key] = { $type: "color", $value: colorOrAlias(css) };

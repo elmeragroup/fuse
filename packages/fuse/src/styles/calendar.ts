@@ -47,7 +47,7 @@ export const cellVariants = tv({
  */
 export const calendarVariants = tv({
   slots: {
-    base: "max-w-sm rounded text-sm shadow-md min-h-80 min-w-32 border border-border bg-card bg-clip-padding p-2 text-card-foreground will-change-transform",
+    base: "max-w-sm text-sm shadow-md min-h-80 min-w-32 rounded-lg border border-border bg-card bg-clip-padding p-2 text-card-foreground will-change-transform",
     header: "flex w-full items-center gap-1 px-1 pb-4",
     heading: "mx-2 flex-1 text-center",
     headerCell: "text-sm font-medium text-muted-foreground",

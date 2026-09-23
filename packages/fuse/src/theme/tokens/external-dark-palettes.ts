@@ -1,4 +1,4 @@
-import type { TokenContract } from "./contract";
+import type { TokenLayer } from "./contract";
 import { DARK_DEFAULTS } from "./dark-defaults";
 import type { ExternalDarkSheet } from "./external-dark-sheet";
 import { paletteBrand } from "./external-palettes";
@@ -123,7 +123,7 @@ function darkSheet(brand: BrandCode, segment: ThemeSegment): ExternalDarkSheet {
  * role a sheet does name is never clobbered. Internal themes compose
  * `INTERNAL_DARK_PALETTE` instead.
  */
-export function externalDarkPalette(brand: BrandCode, segment: ThemeSegment): Partial<TokenContract> {
+export function externalDarkPalette(brand: BrandCode, segment: ThemeSegment): TokenLayer {
   const palette = darkSheet(brand, segment);
   return {
     ...DARK_DEFAULTS,

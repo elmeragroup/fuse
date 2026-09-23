@@ -20,6 +20,7 @@ export const TOKEN_NAMES = [
   "primary-soft-foreground",
   "secondary",
   "secondary-foreground",
+  "secondary-hover",
   "secondary-soft",
   "secondary-soft-foreground",
   "brand",
@@ -74,6 +75,7 @@ export const TOKEN_NAMES = [
   "sh-comment",
   "radius",
   "radius-button",
+  "radius-step",
   "font-sans",
   "font-heading",
 ] as const;
@@ -84,6 +86,48 @@ export type TokenContract = {
   [Name in TokenName]: string;
 };
 
+/**
+ * The roles the pipeline computes from other composed roles instead of reading from a
+ * layer. `withDerivedTokens` in `derived-tokens.ts` owns how each one is computed.
+ */
+export const DERIVED_TOKEN_NAMES = ["secondary-hover"] as const satisfies readonly TokenName[];
+
+/** A role the pipeline computes from other composed roles. */
+export type DerivedTokenName = (typeof DERIVED_TOKEN_NAMES)[number];
+
+/** A role a palette, sheet, pointer or the defaults assign directly. */
+export type LayerTokenName = Exclude<TokenName, DerivedTokenName>;
+
+/** Every role a layer can assign, each with a value. It is a composed theme before derivation. */
+export type LayerTokens = Pick<TokenContract, LayerTokenName>;
+
+/**
+ * The roles one layer assigns. A derived role is not assignable, so a layer cannot set a
+ * value that composition would overwrite.
+ */
+export type TokenLayer = Partial<LayerTokens>;
+
+/**
+ * Whether the pipeline computes this role rather than reading it from a layer.
+ *
+ * @param name - A contract token name.
+ * @returns `true` for a derived role.
+ */
+export function isDerivedTokenName(name: TokenName): name is DerivedTokenName {
+  return DERIVED_TOKEN_NAMES.some((derived) => derived === name);
+}
+
+function isLayerTokenName(name: TokenName): name is LayerTokenName {
+  return !isDerivedTokenName(name);
+}
+
+/** Every role a layer can assign, in `TOKEN_NAMES` order. */
+export const LAYER_TOKEN_NAMES: readonly LayerTokenName[] = TOKEN_NAMES.filter(isLayerTokenName);
+
+/**
+ * The roles a light theme rule resets: every key an external palette or segment delta can
+ * assign, plus each derived role computed from them.
+ */
 export const EXTERNAL_RESET_KEYS = [
   "background",
   "foreground",
@@ -99,6 +143,7 @@ export const EXTERNAL_RESET_KEYS = [
   "primary-soft-foreground",
   "secondary",
   "secondary-foreground",
+  "secondary-hover",
   "secondary-soft",
   "secondary-soft-foreground",
   "feature",
@@ -108,6 +153,7 @@ export const EXTERNAL_RESET_KEYS = [
   "input",
   "radius",
   "radius-button",
+  "radius-step",
   "font-heading",
 ] as const;
 
@@ -137,24 +183,35 @@ export const MUST_OVERRIDE_EXTERNAL = [
   "input",
   "radius",
   "radius-button",
+  "radius-step",
   "brand",
   "brand-foreground",
 ] as const;
 
 export const MUST_OVERRIDE_INTERNAL = ["brand", "brand-foreground"] as const;
 
+/** Geometry and typography a dark palette keeps from the light composition. */
+const LIGHT_ONLY_KEYS: ReadonlySet<TokenName> = new Set([
+  "radius",
+  "radius-button",
+  "radius-step",
+  "font-heading",
+]);
+
 /**
  * The roles every dark palette must override. Geometry and typography (`radius`,
- * `radius-button`, `font-heading`) intentionally keep their light values, so they are the
- * only `EXTERNAL_RESET_KEYS` entries a dark palette need not supply.
+ * `radius-button`, `radius-step`, `font-heading`) intentionally keep their light values,
+ * and a derived role is computed rather than supplied, so those are the only
+ * `EXTERNAL_RESET_KEYS` entries a dark palette need not name.
  */
 export const MUST_OVERRIDE_DARK = EXTERNAL_RESET_KEYS.filter(
-  (key) => key !== "radius" && key !== "radius-button" && key !== "font-heading"
+  (key): key is Extract<ExternalResetKey, LayerTokenName> =>
+    isLayerTokenName(key) && !LIGHT_ONLY_KEYS.has(key)
 );
 
-export function assignedTokenNames(layer: Partial<TokenContract>): TokenName[] {
-  const names: TokenName[] = [];
-  for (const name of TOKEN_NAMES) {
+export function assignedTokenNames(layer: TokenLayer): LayerTokenName[] {
+  const names: LayerTokenName[] = [];
+  for (const name of LAYER_TOKEN_NAMES) {
     if (layer[name] !== undefined) {
       names.push(name);
     }
@@ -162,10 +219,10 @@ export function assignedTokenNames(layer: Partial<TokenContract>): TokenName[] {
   return names;
 }
 
-export function mergeTokenLayers(...layers: Partial<TokenContract>[]): Partial<TokenContract> {
-  const merged: Partial<TokenContract> = {};
+export function mergeTokenLayers(...layers: TokenLayer[]): TokenLayer {
+  const merged: TokenLayer = {};
   for (const layer of layers) {
-    for (const name of TOKEN_NAMES) {
+    for (const name of LAYER_TOKEN_NAMES) {
       const value = layer[name];
       if (value !== undefined) {
         merged[name] = value;
@@ -175,6 +232,6 @@ export function mergeTokenLayers(...layers: Partial<TokenContract>[]): Partial<T
   return merged;
 }
 
-export function overlayTokenLayers(base: TokenContract, ...layers: Partial<TokenContract>[]): TokenContract {
+export function overlayTokenLayers(base: LayerTokens, ...layers: TokenLayer[]): LayerTokens {
   return { ...base, ...mergeTokenLayers(...layers) };
 }

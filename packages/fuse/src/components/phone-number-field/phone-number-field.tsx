@@ -255,7 +255,7 @@ export function PhoneNumberField({
                 aria-labelledby={undefined}
                 className={cn(
                   selfFocusRingClass,
-                  "rounded flex min-h-5.5 shrink-0 items-center px-1 transition-[color,background-color,scale] duration-150",
+                  "flex min-h-5.5 shrink-0 items-center rounded-[calc(var(--radius)-2.5*var(--radius-step))] px-1 transition-[color,background-color,scale] duration-150",
                   isEditable
                     ? "cursor-pointer hover:bg-muted active:scale-[0.97] data-pressed:bg-muted"
                     : "cursor-default"

@@ -1,5 +1,5 @@
 import type { ResolvedColorScheme } from "../color-scheme-types";
-import type { TokenContract } from "./contract";
+import type { TokenLayer } from "./contract";
 import { externalDarkPalette } from "./external-dark-palettes";
 import { externalPalette } from "./external-palettes";
 import { INTERNAL_DARK_PALETTE } from "./internal-dark-palette";
@@ -12,8 +12,8 @@ import type { ThemeInput } from "./themes";
  * internal dark adds the shared internal palette. External light is the brand palette
  * plus its segment delta; external dark is the brand-and-segment dark sheet.
  */
-export function paletteLayers(theme: ThemeInput, colorScheme: ResolvedColorScheme): Partial<TokenContract>[] {
-  const layers: Partial<TokenContract>[] = [];
+export function paletteLayers(theme: ThemeInput, colorScheme: ResolvedColorScheme): TokenLayer[] {
+  const layers: TokenLayer[] = [];
   if (theme.variant === "internal") {
     if (colorScheme === "dark") {
       layers.push(INTERNAL_DARK_PALETTE);

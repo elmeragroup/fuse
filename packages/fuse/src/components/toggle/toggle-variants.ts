@@ -15,7 +15,7 @@ export const toggleVariants = tv({
       outline: "shadow-xs border border-input bg-transparent hover:bg-muted",
     },
     size: {
-      xs: "text-xs h-(--control-h-xs) min-w-(--control-h-xs) gap-(--control-gap-xs) rounded-[min(var(--radius-md),10px)] px-(--control-px-xs) has-data-[icon=inline-end]:pr-(--control-px-icon-xs) has-data-[icon=inline-start]:pl-(--control-px-icon-xs) [&_svg:not([class*='size-'])]:size-3",
+      xs: "text-xs h-(--control-h-xs) min-w-(--control-h-xs) gap-(--control-gap-xs) rounded-[min(--theme(--radius-md),10px)] px-(--control-px-xs) has-data-[icon=inline-end]:pr-(--control-px-icon-xs) has-data-[icon=inline-start]:pl-(--control-px-icon-xs) [&_svg:not([class*='size-'])]:size-3",
       sm: "text-sm h-(--control-h-sm) min-w-(--control-h-sm) gap-(--control-gap-sm) px-(--control-px-sm) has-data-[icon=inline-end]:pr-(--control-px-icon-sm) has-data-[icon=inline-start]:pl-(--control-px-icon-sm)",
       default:
         "h-(--control-h-md) min-w-(--control-h-md) gap-(--control-gap-md) px-(--control-px-md) [font-size:var(--control-text)] [line-height:var(--control-leading)] has-data-[icon=inline-end]:pr-(--control-px-icon-md) has-data-[icon=inline-start]:pl-(--control-px-icon-md)",

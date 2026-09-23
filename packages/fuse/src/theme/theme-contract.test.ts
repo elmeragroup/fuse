@@ -8,9 +8,16 @@ import { contrastRatio } from "./contrast";
 import { parseStyleRules } from "./css-rules";
 import { generateThemesCss } from "./generate-css";
 import { brandPointer } from "./tokens/brand-pointers";
-import { assignedTokenNames, EXTERNAL_RESET_KEYS, MUST_OVERRIDE_DARK, TOKEN_NAMES } from "./tokens/contract";
-import type { TokenContract, TokenName } from "./tokens/contract";
+import {
+  assignedTokenNames,
+  EXTERNAL_RESET_KEYS,
+  isDerivedTokenName,
+  MUST_OVERRIDE_DARK,
+  TOKEN_NAMES,
+} from "./tokens/contract";
+import type { LayerTokenName, TokenLayer, TokenName } from "./tokens/contract";
 import { DEFAULTS } from "./tokens/defaults";
+import { DERIVED_TOKEN_SOURCES } from "./tokens/derived-tokens";
 import { externalDarkPalette } from "./tokens/external-dark-palettes";
 import { EXTERNAL_PALETTES } from "./tokens/external-palettes";
 import { INTERNAL_DARK_PALETTE } from "./tokens/internal-dark-palette";
@@ -21,13 +28,18 @@ import { segmentSheet } from "./tokens/segment-sheets";
 import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
 
 /** fkas-company's light sheet through the real accessor; the sheet table must keep it. */
-function fkasCompanyLight(): Partial<TokenContract> {
+function fkasCompanyLight(): TokenLayer {
   const sheet = segmentSheet("fkas", "company");
   if (sheet === undefined) {
     throw new Error("fkas-company has no segment sheet");
   }
   return sheet.light;
 }
+
+/** The light reset keys a palette layer assigns, without the derived roles composition adds. */
+const LAYER_RESET_KEYS = EXTERNAL_RESET_KEYS.filter(
+  (key): key is Extract<(typeof EXTERNAL_RESET_KEYS)[number], LayerTokenName> => !isDerivedTokenName(key)
+);
 
 const EXPECTED_SELECTORS = [
   ":root",
@@ -205,6 +217,12 @@ describe("theme contract", () => {
     for (const name of assignedTokenNames(fkasCompanyLight())) {
       supplied.add(name);
     }
+    // A derived role changes wherever one of its declared sources does.
+    for (const [name, sources] of Object.entries(DERIVED_TOKEN_SOURCES)) {
+      if (sources.some((source) => supplied.has(source))) {
+        supplied.add(name);
+      }
+    }
 
     expect([...supplied].toSorted((left, right) => left.localeCompare(right))).toEqual(
       [...EXTERNAL_RESET_KEYS].toSorted((left, right) => left.localeCompare(right))
@@ -255,7 +273,7 @@ describe("theme contract", () => {
       expect(dark.brand).toBe(light.brand);
       expect(dark["sidebar-brand"]).toBe(light["sidebar-brand"]);
       expect(dark["sidebar-brand-foreground"]).toBe(light["sidebar-brand-foreground"]);
-      for (const key of ["radius", "radius-button", "font-sans", "font-heading"] as const) {
+      for (const key of ["radius", "radius-button", "radius-step", "font-sans", "font-heading"] as const) {
         expect(dark[key]).toBe(light[key]);
       }
     }
@@ -297,7 +315,7 @@ describe("elma identity", () => {
       expect(themeSlug(theme)).toBe(`${theme.variant}-elma-${theme.segment}`);
       expect(composed.brand).toBe("var(--brand-elma)");
       expect(composed["brand-foreground"]).toBe("var(--brand-elma-foreground)");
-      for (const key of EXTERNAL_RESET_KEYS) {
+      for (const key of LAYER_RESET_KEYS) {
         const expected = theme.variant === "internal" ? DEFAULTS[key] : EXTERNAL_PALETTES.elma[key];
         expect(composed[key], `${themeSlug(theme)} ${key}`).toBe(expected);
       }
@@ -307,7 +325,7 @@ describe("elma identity", () => {
   it("emits a full external palette sourced from the Elmera sheet, not a default copy", () => {
     expect(
       assignedTokenNames(EXTERNAL_PALETTES.elma).toSorted((left, right) => left.localeCompare(right))
-    ).toEqual([...EXTERNAL_RESET_KEYS].toSorted((left, right) => left.localeCompare(right)));
+    ).toEqual([...LAYER_RESET_KEYS].toSorted((left, right) => left.localeCompare(right)));
     expect(EXTERNAL_PALETTES.elma.foreground).toBe("oklch(0.28898 0.051828 217.7)");
     expect(EXTERNAL_PALETTES.elma.foreground).not.toBe(DEFAULTS.foreground);
     expect(EXTERNAL_PALETTES.elma.primary).not.toBe(DEFAULTS.primary);
@@ -319,11 +337,63 @@ describe("elma identity", () => {
     expect(externalRule?.declarations).toEqual(
       expect.arrayContaining([{ name: "foreground", value: "oklch(0.28898 0.051828 217.7)" }])
     );
-    for (const key of EXTERNAL_RESET_KEYS) {
+    for (const key of LAYER_RESET_KEYS) {
       expect(externalRule?.declarations.find((declaration) => declaration.name === key)?.value).toBe(
         EXTERNAL_PALETTES.elma[key]
       );
     }
+  });
+});
+
+describe("derived roles", () => {
+  const internalFkas = { variant: "internal", brand: "fkas", segment: "private" } as const;
+  const externalFkas = { variant: "external", brand: "fkas", segment: "private" } as const;
+
+  it("mixes the secondary hover 5% from secondary toward foreground in OKLCH", () => {
+    // Worked by hand from each theme's own secondary and foreground literals.
+    // Internal light: 0.97 0 0 toward 0.15 0.0041 49.31. L 0.9215 + 0.0075, C 0.000205,
+    // H 49.31 * 0.05.
+    expect(composeTheme(internalFkas)["secondary-hover"]).toBe("oklch(0.929 0.000205 2.4655)");
+    // Internal dark: 0.269 0 0 toward 0.985 0 0. L 0.25555 + 0.04925.
+    expect(composeTheme(internalFkas, "dark")["secondary-hover"]).toBe("oklch(0.3048 0 0)");
+    // External fkas paints secondary in its foreground color, so the hover keeps that color.
+    expect(composeTheme(externalFkas)["secondary-hover"]).toBe("oklch(0.3209 0.10325 38.8)");
+  });
+
+  it("declares the hover in the root rule and in each rule that resets its sources", () => {
+    const rules = parseStyleRules(generateThemesCss());
+    const hoverIn = (selector: string): string | undefined =>
+      rules
+        .find((rule) => rule.selector === selector)
+        ?.declarations.find((declaration) => declaration.name === "secondary-hover")?.value;
+    expect(hoverIn(":root")).toBe("oklch(0.929 0.000205 2.4655)");
+    expect(hoverIn('[data-theme-variant="internal"]')).toBe("oklch(0.929 0.000205 2.4655)");
+    expect(hoverIn('[data-theme-variant="external"][data-theme-brand="fkas"]')).toBe(
+      "oklch(0.3209 0.10325 38.8)"
+    );
+    // fkas-company's delta changes secondary and foreground, so its rule carries the hover.
+    expect(
+      hoverIn('[data-theme-variant="external"][data-theme-brand="fkas"][data-theme-segment="company"]')
+    ).toBe("oklch(0.30579 0.03693 215.45)");
+  });
+});
+
+describe("radius roles", () => {
+  it("aliases the internal button radius to the one radius and collapses the scale step", () => {
+    const internal = composeTheme({ variant: "internal", brand: "tkas", segment: "private" });
+    expect(internal["radius-button"]).toBe("var(--radius)");
+    expect(internal["radius-step"]).toBe("0px");
+  });
+
+  it("keeps external brand radii and spreads the scale in 2px steps", () => {
+    const fkas = composeTheme({ variant: "external", brand: "fkas", segment: "private" });
+    expect(fkas.radius).toBe("0.75rem");
+    expect(fkas["radius-button"]).toBe("1.8125rem");
+    expect(fkas["radius-step"]).toBe("2px");
+    const tkas = composeTheme({ variant: "external", brand: "tkas", segment: "company" });
+    expect(tkas.radius).toBe("0.95rem");
+    expect(tkas["radius-button"]).toBe("0.95rem");
+    expect(tkas["radius-step"]).toBe("2px");
   });
 });
 
