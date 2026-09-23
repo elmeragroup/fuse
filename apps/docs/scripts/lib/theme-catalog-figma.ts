@@ -7,8 +7,10 @@
  * is no second, per-slug JSON serialisation.
  */
 
+import * as CssColor from "@elmeragroup/color/css-color";
+import * as Hex from "@elmeragroup/color/hex";
+import { getOrThrow } from "@elmeragroup/color/result";
 import {
-  cssColorToSrgb,
   cssFirstFontFamily,
   cssLengthToPx,
   cssVarReference,
@@ -59,15 +61,6 @@ function roundComponent(channel: number): number {
   return Math.round(channel * 1_000_000) / 1_000_000;
 }
 
-function hexFromSrgb(r: number, g: number, b: number): string {
-  const byte = (channel: number): string =>
-    Math.round(channel * 255)
-      .toString(16)
-      .padStart(2, "0")
-      .toUpperCase();
-  return `#${byte(r)}${byte(g)}${byte(b)}`;
-}
-
 function aliasOf(tokenName: string): `{${string}}` {
   const slot = dtcgSlot(tokenName);
   return `{${slot.group}.${slot.key}}`;
@@ -81,17 +74,14 @@ function dimensionFromCss(css: string): FigmaDimensionToken["$value"] {
   return { value: px, unit: "px" };
 }
 
+/** A token value that is not a color is a defect in the theme catalog, so it throws. */
 function colorFromCss(css: string): FigmaColorToken["$value"] {
-  const srgb = cssColorToSrgb(css);
-  if (srgb === undefined) {
-    throw new Error(`Expected an oklch() or hex color, received: ${css}`);
-  }
-  const components = [roundComponent(srgb.r), roundComponent(srgb.g), roundComponent(srgb.b)] as const;
+  const srgb = CssColor.toSrgb(getOrThrow(CssColor.parse(css)));
   const color: FigmaSrgbColor = {
     colorSpace: "srgb",
-    components,
+    components: [roundComponent(srgb.r), roundComponent(srgb.g), roundComponent(srgb.b)],
     alpha: srgb.alpha,
-    hex: hexFromSrgb(...components),
+    hex: Hex.formatOpaque(srgb),
   };
   return color;
 }

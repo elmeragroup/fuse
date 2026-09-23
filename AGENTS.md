@@ -17,6 +17,7 @@ Guard conditional aria spreads so `undefined` cannot erase automatic wiring.
 Style components with role tokens and shared recipes. Theme layers own colors;
 control metrics follow document density. Keep density out of subtree theming.
 Use Field for label/error wiring and the shared focus, overlay and locale owners.
+Parse, convert, mix and measure colors through `@elmeragroup/color`, never ad hoc.
 Keep explicit string overrides ahead of dictionary defaults.
 Preserve the 24px target-size floor at both densities and central reduced motion.
 

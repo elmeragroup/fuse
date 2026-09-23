@@ -1,3 +1,6 @@
+import * as CssColor from "@elmeragroup/color/css-color";
+import * as Wcag from "@elmeragroup/color/wcag";
+
 export const BOOTSTRAP_MANIFEST_KEY = "__ELMERA_COLOR_SCHEME_BOOTSTRAP__";
 export const INJECTED_BOOTSTRAP_SOURCE_KEY = "elmera.colorScheme.bootstrapSource";
 
@@ -115,22 +118,33 @@ export function firstPaintableIndex(html: string): number {
   return -1;
 }
 
+// The first-paint suites call a canvas light when its relative luminance is at least that of
+// CIE L* 99. Chromium computes the light themes' background as `rgb(255, 255, 255)`,
+// `oklch(1 0 0)` or a `lab()` lightness near 100, and all three pass. The check reads
+// luminance rather than a notation's lightness, so a tinted near-white such as
+// `oklch(1 0.05 30)` does not count. CIE L* 99 is Y = ((99 + 16) / 116) ^ 3 ≈ 0.9744 by the
+// CIE L* definition above L* 8, and WCAG relative luminance is that Y for a neutral color.
+const NEAR_WHITE_LUMINANCE = ((99 + 16) / 116) ** 3;
+
+// The conversion from `lab(99 0 0)` to sRGB and back to luminance lands a float step below
+// that Y, so the comparison allows 1e-9 of rounding. L* 98.9 sits 0.0025 lower and fails.
+const LUMINANCE_ROUNDING = 1e-9;
+
+/**
+ * Whether a computed canvas color is near white: opaque, with a relative luminance at least
+ * that of CIE L* 99. A translucent color, or a notation the color parser does not read, is
+ * not a painted light canvas.
+ *
+ * @param color - A computed color, such as the body's `background-color`.
+ * @returns True when the canvas is near white.
+ */
 export function isLightCanvas(color: string): boolean {
-  const value = color.trim().toLowerCase();
-  if (value === "white") {
-    return true;
-  }
-  if (/^rgba?\(\s*255\s*,\s*255\s*,\s*255(?:\s*,\s*1(?:\.0+)?)?\s*\)$/.test(value)) {
-    return true;
-  }
-  if (/^oklch\(\s*1(?:\.0+)?\b/.test(value)) {
-    return true;
-  }
-  const lab = /^lab\(\s*([0-9.]+)%?\s/.exec(value);
-  if (lab?.[1] === undefined) {
+  const parsed = CssColor.parse(color.trim());
+  if (parsed._tag === "err") {
     return false;
   }
-  return Number(lab[1]) >= 99;
+  const canvas = CssColor.toSrgb(parsed.value);
+  return canvas.alpha === 1 && Wcag.relativeLuminance(canvas) >= NEAR_WHITE_LUMINANCE - LUMINANCE_ROUNDING;
 }
 
 export function stampBootstrapNonce(html: string, nonce: string): string {

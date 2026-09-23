@@ -341,6 +341,34 @@
       }
     },
     {
+      "files": ["packages/color/src/**/*.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "effect",
+                "message": "The color core imports nothing. Only src/effect.ts, the Effect adapter, and tests import effect."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["effect/*"],
+                "message": "The color core imports nothing. Only src/effect.ts, the Effect adapter, and tests import effect."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["packages/color/src/effect.ts", "packages/color/src/*.test.ts"],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    },
+    {
       "files": ["plopfile.mjs"],
       "rules": {
         "typescript/no-unsafe-assignment": "off",

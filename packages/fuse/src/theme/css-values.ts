@@ -1,14 +1,11 @@
 /**
  * Readers for the CSS values a theme token holds, for exporters that translate tokens into
  * design-tool units. Each reader returns `undefined` when the value is not in its form, so a
- * caller can try the forms a token kind allows and report the value when none fits.
+ * caller can try the forms a token kind allows and report the value when none fits. Colors
+ * are read by `@elmeragroup/color`, which owns every color notation.
  */
 
-import { oklchToSrgb, readOklch } from "./oklch";
-import type { SrgbColor } from "./oklch";
-
 const VAR_REFERENCE = /^var\(--([a-z0-9-]+)\)$/;
-const HEX_COLOR = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i;
 const LENGTH = /^(-?[0-9]*\.?[0-9]+)(rem|px)$/;
 const QUOTED = /^(["'])(.*)\1$/;
 
@@ -23,25 +20,6 @@ const ROOT_FONT_PX = 16;
  */
 export function cssVarReference(value: string): string | undefined {
   return VAR_REFERENCE.exec(value)?.[1];
-}
-
-/**
- * Read an `oklch()` or `#rrggbb` color as gamma-encoded sRGB. A hex color is opaque.
- *
- * @param value - A token's CSS value.
- * @returns The color, or `undefined` when the value is neither a well-formed `oklch()` nor a six-digit hex color.
- */
-export function cssColorToSrgb(value: string): SrgbColor | undefined {
-  const oklch = readOklch(value);
-  if (oklch !== undefined) {
-    return oklchToSrgb(oklch);
-  }
-  const hex = HEX_COLOR.exec(value);
-  if (hex === null) {
-    return undefined;
-  }
-  const channel = (pair: string | undefined): number => Number.parseInt(pair ?? "", 16) / 255;
-  return { r: channel(hex[1]), g: channel(hex[2]), b: channel(hex[3]), alpha: 1 };
 }
 
 /**

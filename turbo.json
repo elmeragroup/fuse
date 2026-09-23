@@ -24,6 +24,8 @@
         // roster or theme edit must miss this task's cache.
         "packages/fuse/src/icons/roster.ts",
         "packages/fuse/src/theme/**",
+        // The theme generators parse and mix colors through the color package.
+        "packages/color/src/**",
         "tooling/typescript/**",
         "package.json",
         "pnpm-workspace.yaml"

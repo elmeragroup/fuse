@@ -16,6 +16,7 @@
     "react-dom": "catalog:"
   },
   "devDependencies": {
+    "@elmeragroup/color": "workspace:*",
     "@elmeragroup/typescript-config": "workspace:*",
     "@types/node": "catalog:",
     "@types/react": "catalog:",

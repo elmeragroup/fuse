@@ -367,6 +367,7 @@
   "devDependencies": {
     "@arethetypeswrong/cli": "catalog:",
     "@arethetypeswrong/core": "catalog:",
+    "@elmeragroup/color": "workspace:*",
     "@elmeragroup/internal": "catalog:",
     "@elmeragroup/typescript-config": "workspace:*",
     "@tailwindcss/cli": "catalog:",

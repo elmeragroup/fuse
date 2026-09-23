@@ -1,4 +1,7 @@
-import { mixOklch } from "../oklch";
+import * as Oklch from "@elmeragroup/color/oklch";
+import { getOrThrow } from "@elmeragroup/color/result";
+
+import { tokenOklch } from "../token-oklch";
 import { DERIVED_ROLES } from "./contract";
 import type { DerivedTokenName, LayerTokens, TokenContract } from "./contract";
 
@@ -8,8 +11,15 @@ import type { DerivedTokenName, LayerTokens, TokenContract } from "./contract";
  */
 type DerivedRole = (typeof DERIVED_ROLES)[DerivedTokenName];
 
+// `DERIVED_ROLES` is source, so a percent outside 0..100 is a defect and throws, as
+// `tokenOklch` does for a source role that is not an `oklch()` literal.
 function mixLiteral(tokens: LayerTokens, role: DerivedRole): string {
-  return mixOklch(tokens[role.from], tokens[role.toward], role.percent / 100);
+  const mixed = Oklch.mix(
+    tokenOklch(tokens[role.from]),
+    tokenOklch(tokens[role.toward]),
+    getOrThrow(Oklch.makeMixWeight(role.percent / 100))
+  );
+  return Oklch.format(mixed);
 }
 
 /**

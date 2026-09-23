@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { cssColorToSrgb, cssFirstFontFamily, cssLengthToPx, cssVarReference, remToPx } from "./css-values";
+import { cssFirstFontFamily, cssLengthToPx, cssVarReference, remToPx } from "./css-values";
 
 describe("cssVarReference", () => {
   it("names the custom property of a single var() reference", () => {
@@ -12,27 +12,6 @@ describe("cssVarReference", () => {
     expect(cssVarReference("var(--primary, red)")).toBeUndefined();
     expect(cssVarReference(" var(--primary)")).toBeUndefined();
     expect(cssVarReference("oklch(1 0 0)")).toBeUndefined();
-  });
-});
-
-describe("cssColorToSrgb", () => {
-  it("reads a six-digit hex color as opaque sRGB in either case", () => {
-    expect(cssColorToSrgb("#5c6773")).toEqual({ r: 92 / 255, g: 103 / 255, b: 115 / 255, alpha: 1 });
-    expect(cssColorToSrgb("#FF0000")).toEqual({ r: 1, g: 0, b: 0, alpha: 1 });
-  });
-
-  it("reads an oklch() color with its alpha", () => {
-    const white = cssColorToSrgb("oklch(1 0 0 / 40%)");
-    expect(white?.r).toBeCloseTo(1, 5);
-    expect(white?.g).toBeCloseTo(1, 5);
-    expect(white?.b).toBeCloseTo(1, 5);
-    expect(white?.alpha).toBe(0.4);
-  });
-
-  it("rejects malformed and unsupported colors instead of throwing", () => {
-    expect(cssColorToSrgb("oklch(0.5 0.1)")).toBeUndefined();
-    expect(cssColorToSrgb("#fff")).toBeUndefined();
-    expect(cssColorToSrgb("red")).toBeUndefined();
   });
 });
 

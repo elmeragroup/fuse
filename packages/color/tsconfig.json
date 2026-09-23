@@ -1,0 +1,13 @@
+{
+  "extends": "@elmeragroup/typescript-config/base.json",
+  "compilerOptions": {
+    // No DOM and no Node types: the package runs unchanged on a server, in a CLI and in a
+    // browser, so a runtime-specific global fails the type check here.
+    "lib": ["ES2022"],
+    "types": ["@elmeragroup/typescript-config/css-custom-properties"],
+    "exactOptionalPropertyTypes": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true
+  },
+  "include": ["src", "vitest.config.ts"]
+}

@@ -3,10 +3,12 @@ import type { ReactNode } from "react";
 import { afterEach } from "vitest";
 import { page } from "vitest/browser";
 
+import * as Oklch from "@elmeragroup/color/oklch";
+import { getOrThrow } from "@elmeragroup/color/result";
+
 import type { ResolvedColorScheme } from "../src/theme/color-scheme";
 import { remToPx } from "../src/theme/css-values";
 import type { Density } from "../src/theme/density";
-import { parseOklch } from "../src/theme/oklch";
 import { ThemeScope } from "../src/theme/theme-scope";
 import { DENSITY_METRICS } from "../src/theme/tokens/density-metrics";
 import type { DensityMetricName } from "../src/theme/tokens/density-metrics";
@@ -124,7 +126,7 @@ export type ComputedOklch = { readonly l: number; readonly c: number; readonly h
 
 /**
  * Read a computed color that Chromium serializes as an opaque `oklch(L C H)`, through the
- * token pipeline's own `oklch()` parser.
+ * `oklch()` parser the token pipeline uses.
  *
  * @param serialized - A computed color value, such as `getComputedStyle(el).backgroundColor`.
  * @returns The three components.
@@ -132,7 +134,8 @@ export type ComputedOklch = { readonly l: number; readonly c: number; readonly h
  *   the suite.
  */
 export function computedOklch(serialized: string): ComputedOklch {
-  const { l, c, h, alpha } = parseOklch(serialized);
+  // Chromium computed this value, so it is not a token literal and `tokenOklch` does not apply.
+  const { l, c, h, alpha } = getOrThrow(Oklch.parse(serialized));
   if (alpha !== 1) {
     throw new Error(`expected an opaque oklch() color, received ${serialized}`);
   }
