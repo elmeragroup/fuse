@@ -3,8 +3,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { parseCssBlocks, parseStyleRules } from "./css-rules";
-import type { CssDeclaration } from "./css-rules";
+import { parseCssBlocks, parseStyleRules } from "../../test/css-rules";
+import type { CssDeclaration } from "../../test/css-rules";
 import type { Density } from "./density";
 import { generateThemesCss } from "./generate-css";
 import { DEMO_STAGE_COMFORTABLE_SELECTOR, generateDemoStageComfortableCss } from "./generate-demo-stage-css";
@@ -35,7 +35,8 @@ function expectedDeclarations(density: Density): CssDeclaration[] {
 }
 
 describe("density CSS", () => {
-  // Cross-check: fuse.css is hand-written, and DENSITY_METRICS is the oracle it must reproduce.
+  // This cross-check reads the hand-written fuse.css, and DENSITY_METRICS is the oracle it
+  // must reproduce.
   it("declares exactly DENSITY_METRICS, dense on :root and comfortable on the rooted attribute", () => {
     expect(fuseCssRule(DENSITY_SELECTORS.dense).filter(isControlMetric)).toEqual(
       expectedDeclarations("dense")

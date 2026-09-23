@@ -464,7 +464,7 @@ describe("exports map", () => {
       "PRIMITIVE_NAMES",
       "PRIMITIVES",
       "RADIUS_RUNG_NAMES",
-      "RADIUS_RUNG_STEPS",
+      "RADIUS_RUNGS",
       "LEGAL_THEMES",
       "themeSlug",
     ]);

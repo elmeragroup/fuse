@@ -1,3 +1,8 @@
+/**
+ * A small CSS reader for the unit tests that compare hand-written `fuse.css` with the
+ * token maps in `src/theme`. No shipped module imports it, so it lives with the test tooling.
+ */
+
 /** One declaration, with a custom property's leading dashes removed from its name. */
 export type CssDeclaration = {
   name: string;

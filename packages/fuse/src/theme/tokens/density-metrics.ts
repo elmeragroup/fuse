@@ -89,7 +89,8 @@ export const DENSITY_METRICS = {
 
 /**
  * The `fuse.css` rule that declares each density's metrics. Dense is the default on `:root`,
- * and comfortable overrides it on the rooted attribute.
+ * and comfortable overrides it on the rooted attribute. The `fuse.css` cross-check in
+ * `density-css.test.ts` is its only reader.
  */
 export const DENSITY_SELECTORS = {
   dense: ":root",

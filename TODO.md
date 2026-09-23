@@ -44,7 +44,7 @@
   as the compact corner that caps `rounded-md` at 10px in external themes, when the
   component pilot needs them. The sync sends only the plain radius rungs, `radius-step`
   and the density metrics.
-- Remove the unused `--radius-popover` rung from `fuse.css` and `RADIUS_RUNG_STEPS` in a
+- Remove the unused `--radius-popover` rung from `fuse.css` and `RADIUS_RUNGS` in a
   separate change. No component uses it, Fuse popups use `rounded-md`, and the Figma sync
   already leaves it out.
 - Revisit Figma extended collections for brand theming if the two-collection mode

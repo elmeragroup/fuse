@@ -161,9 +161,10 @@ function referencedProperties(css: string): readonly string[] {
 }
 
 describe("web code syntax", () => {
-  // Cross-check: the unit under test is the code syntax fuseVariableSet gives each variable,
-  // and the oracle is the built styles.css and themes.css. A developer pastes the syntax into
-  // code that loads those sheets, so every var() in it must name a property they declare.
+  // In this cross-check, the unit under test is the code syntax fuseVariableSet gives each
+  // variable, and the oracle is the built styles.css and themes.css. A developer pastes the
+  // syntax into code that loads those sheets, so every var() in it must name a property they
+  // declare.
   it("reads only custom properties that the shipped stylesheets declare", () => {
     for (const path of SHIPPED_STYLESHEETS) {
       expect(existsSync(path), `${path} is missing. Build @elmeragroup/fuse first.`).toBe(true);

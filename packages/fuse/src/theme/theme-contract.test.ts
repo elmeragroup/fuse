@@ -3,10 +3,10 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
+import { parseStyleRules } from "../../test/css-rules";
 import { declaredThemeValue, SECONDARY_HOVER_CSS } from "../../test/theme-css-contract";
 import { assertMustOverrideCoverage, composeTheme, coverageSchemes } from "./compose-theme";
 import { contrastRatio } from "./contrast";
-import { parseStyleRules } from "./css-rules";
 import { cssVarReference } from "./css-values";
 import { generateThemesCss } from "./generate-css";
 import { brandPointer } from "./tokens/brand-pointers";

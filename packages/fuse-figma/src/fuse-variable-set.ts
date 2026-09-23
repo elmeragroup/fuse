@@ -33,7 +33,7 @@ import {
   PRIMITIVE_NAMES,
   PRIMITIVES,
   RADIUS_RUNG_NAMES,
-  RADIUS_RUNG_STEPS,
+  RADIUS_RUNGS,
   remToPx,
   themeSlug,
   TOKEN_KINDS,
@@ -220,18 +220,19 @@ function contractVariable(token: TokenName): BoundVariable {
  * the `calc()` from `fuse.css` with the theme's `radius` and `radius-step`. CSS clamps a
  * negative `border-radius` to 0, so a rung below zero becomes 0, the radius a layer shows.
  *
- * The code syntax is the `calc()` itself, as `fuse.css` spells it. `fuse.css` declares the
- * rungs in `@theme inline`, so Tailwind inlines them into its utilities and the built CSS
- * does not define `--radius-sm` and most other rungs as custom properties.
+ * The code syntax is the `calc()` itself, the CSS value in `RADIUS_RUNGS` that `fuse.css`
+ * declares. `fuse.css` declares the rungs in `@theme inline`, so Tailwind inlines them into
+ * its utilities and the built CSS does not define `--radius-sm` and most other rungs as
+ * custom properties.
  */
 function radiusRungVariable(rung: RadiusRungName): BoundVariable {
-  const steps = RADIUS_RUNG_STEPS[rung];
+  const { steps, css } = RADIUS_RUNGS[rung];
   const projection = KIND_PROJECTIONS.dimension;
   return {
     name: rung,
     type: projection.type,
     scopes: ["CORNER_RADIUS"],
-    webSyntax: radiusRungSyntax(steps),
+    webSyntax: css,
     valueIn: (tokens) =>
       Result.gen(function* () {
         const radius = yield* lengthInPx("radius", tokens.radius, rung);
@@ -240,16 +241,6 @@ function radiusRungVariable(rung: RadiusRungName): BoundVariable {
         return value;
       }),
   };
-}
-
-/** `calc(var(--radius) - 3 * var(--radius-step))`, or `var(--radius)` for zero steps. */
-function radiusRungSyntax(steps: number): string {
-  if (steps === 0) {
-    return "var(--radius)";
-  }
-  const sign = steps < 0 ? "-" : "+";
-  const count = Math.abs(steps);
-  return `calc(var(--radius) ${sign} ${count === 1 ? "" : `${count} * `}var(--radius-step))`;
 }
 
 /** A length token in pixels, or the failure that names the rung that needs it. */
