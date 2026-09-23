@@ -4,29 +4,61 @@ import { afterEach } from "vitest";
 import { page } from "vitest/browser";
 
 import type { ResolvedColorScheme } from "../src/theme/color-scheme";
+import { cssLengthToPx } from "../src/theme/css-values";
 import type { Density } from "../src/theme/density";
 import { parseOklch } from "../src/theme/oklch";
 import { ThemeScope } from "../src/theme/theme-scope";
+import { DENSITY_METRICS } from "../src/theme/tokens/density-metrics";
+import type { DensityMetricName } from "../src/theme/tokens/density-metrics";
 import type { ThemeInput } from "../src/theme/tokens/themes";
 import { render } from "./browser-render";
 import { fkasPrivate, stampTheme } from "./theme-fixtures";
 
 export { fkasExternal, fkasPrivate, stampTheme } from "./theme-fixtures";
 
-/** Signed md control-rung metrics (`--control-*-md` plus the control-type pair). */
+/** A density metric in the pixels a browser computes, with `rem` at the 16px root. */
+function metricPx(name: DensityMetricName, density: Density): number {
+  const css = DENSITY_METRICS[name][density];
+  const value = cssLengthToPx(css);
+  if (value === undefined) {
+    throw new Error(`${name} is ${css} in ${density}, which is not a rem or px length`);
+  }
+  return value;
+}
+
+/** The md control-rung metrics in pixels per density, read from `DENSITY_METRICS`. */
+function controlMd(density: Density) {
+  return {
+    height: metricPx("control-h-md", density),
+    px: metricPx("control-px-md", density),
+    font: metricPx("control-text", density),
+    leading: metricPx("control-leading", density),
+  };
+}
+
+/** The sm control-rung metrics in pixels per density, read from `DENSITY_METRICS`. */
+function controlSm(density: Density) {
+  return { height: metricPx("control-h-sm", density), px: metricPx("control-px-sm", density) };
+}
+
+/**
+ * Md control-rung metrics (`--control-*-md` plus the control-type pair) in pixels. The
+ * density-css cross-check ties `DENSITY_METRICS` to `fuse.css`, so a suite comparing
+ * computed styles with these checks that a component binds the md rung.
+ */
 export const CONTROL_MD = {
-  dense: { height: 36, px: 10, font: 14, leading: 20 },
-  comfortable: { height: 44, px: 14, font: 18, leading: 24 },
+  dense: controlMd("dense"),
+  comfortable: controlMd("comfortable"),
 } as const;
 
 /**
- * Signed `sm` control-rung metrics (`--control-h-sm` / `--control-px-sm`). The rung the
- * RAC tier's package-private Button defaults to — FileTrigger's visible button and the
- * GridList drag handle — so those suites read it here rather than restating the numbers.
+ * Sm control-rung metrics (`--control-h-sm` / `--control-px-sm`) in pixels. The rung the
+ * RAC tier's package-private Button defaults to, which FileTrigger's visible button and the
+ * GridList drag handle use, so those suites read it here rather than restating the numbers.
  */
 export const CONTROL_SM = {
-  dense: { height: 32, px: 10 },
-  comfortable: { height: 36, px: 14 },
+  dense: controlSm("dense"),
+  comfortable: controlSm("comfortable"),
 } as const;
 
 afterEach(() => {

@@ -60,7 +60,13 @@ export type VariableType = "COLOR" | "FLOAT" | "STRING";
  * The Figma picker scopes the sync assigns. An empty list hides a variable from every
  * picker while keeping it available as an alias target.
  */
-export type VariableScope = "ALL_SCOPES" | "CORNER_RADIUS";
+export type VariableScope =
+  | "ALL_SCOPES"
+  | "CORNER_RADIUS"
+  | "FONT_SIZE"
+  | "GAP"
+  | "LINE_HEIGHT"
+  | "WIDTH_HEIGHT";
 
 /** A variable the sync owns. */
 export type VariableSpec = {
@@ -103,6 +109,7 @@ export type CollectionSpec = {
  * - Every collection has between 1 and 40 modes, and no mode name is longer than 40
  *   characters, Figma's limits.
  * - Every variable has exactly one value for each mode of its collection.
+ * - Every scope applies to its variable's type, and `ALL_SCOPES` stands alone.
  * - Every literal matches its variable's type.
  * - Every alias targets a variable of the set with the same type.
  * - No chain of aliases leads back to where it started, in any mode.
@@ -130,6 +137,19 @@ const MAX_MODES = 40;
 const MAX_MODE_NAME_LENGTH = 40;
 
 const brandVariableSet = Brand.nominal<VariableSet>();
+
+/**
+ * The variable types each scope applies to, as the Plugin API's `VariableScope` reference
+ * lists them. The REST API documents no per-type rule, so the set follows the Plugin API.
+ */
+const SCOPE_TYPES = {
+  ALL_SCOPES: ["COLOR", "FLOAT", "STRING"],
+  CORNER_RADIUS: ["FLOAT"],
+  FONT_SIZE: ["FLOAT"],
+  GAP: ["FLOAT"],
+  LINE_HEIGHT: ["FLOAT"],
+  WIDTH_HEIGHT: ["FLOAT"],
+} as const satisfies Record<VariableScope, readonly VariableType[]>;
 
 const LITERAL_TYPES = {
   Color: "COLOR",
@@ -194,7 +214,7 @@ export function makeVariableSet(
 
   for (const collection of collections) {
     for (const variable of collection.variables) {
-      const problem = valueProblem(collection, variable, variables);
+      const problem = scopeProblem(variable) ?? valueProblem(collection, variable, variables);
       if (problem !== undefined) {
         return invalid(qualifiedName(collection.name, variable.name), problem);
       }
@@ -257,6 +277,19 @@ function aliasCycle(collections: readonly CollectionSpec[]): readonly string[] |
     if (cycle !== undefined) return cycle;
   }
   return undefined;
+}
+
+function scopeProblem(variable: VariableSpec): string | undefined {
+  if (variable.scopes.includes("ALL_SCOPES") && variable.scopes.length > 1) {
+    return "combines ALL_SCOPES with other scopes";
+  }
+  const misfit = variable.scopes.find((scope) => !typeHasScope(variable.type, scope));
+  return misfit === undefined ? undefined : `is a ${variable.type} variable but has the scope ${misfit}`;
+}
+
+function typeHasScope(type: VariableType, scope: VariableScope): boolean {
+  const types: readonly VariableType[] = SCOPE_TYPES[scope];
+  return types.includes(type);
 }
 
 function valueProblem(

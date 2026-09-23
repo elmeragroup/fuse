@@ -29,8 +29,8 @@
 ## Figma token sync
 
 - Run the first sync against a real Enterprise file and confirm that empty picker scopes,
-  cross-collection aliases, the mode change order and the read-back check behave as the
-  in-memory fake assumes.
+  the per-type scopes the fake takes from the Plugin API, cross-collection aliases, the
+  mode change order and the read-back check behave as the in-memory fake assumes.
   - Find out whether Figma checks for an alias cycle after each value in a batch or once
     at the end. The sync orders values so that either rule passes, and the fake checks
     after each one.
@@ -40,7 +40,9 @@
     on a STRING variable, tighten them to it. If it stores other scopes than the sync
     sent, every `check` reports drift.
 - Add a CI job running `figma:check` once a service account owns a personal access token.
-- Density control metrics live only in CSS, so the sync cannot send them to Figma yet.
+- Add named Figma variables for the size-specific radius clamps, such as
+  `min(var(--radius-md), 8px)`, when the component pilot needs them. The sync sends only
+  the plain radius steps and the density metrics.
 - Revisit Figma extended collections for brand theming if the two-collection mode
   pairing proves awkward for designers.
 

@@ -458,8 +458,12 @@ describe("exports map", () => {
       "themeAttributes",
       "TOKEN_KINDS",
       "TOKEN_NAMES",
+      "DENSITY_METRIC_NAMES",
+      "DENSITY_METRICS",
       "PRIMITIVE_NAMES",
       "PRIMITIVES",
+      "RADIUS_STEP_NAMES",
+      "RADIUS_STEP_OFFSETS",
       "LEGAL_THEMES",
       "themeSlug",
     ]);

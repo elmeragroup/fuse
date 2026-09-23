@@ -67,6 +67,21 @@ describe("makeVariableSet", () => {
     );
   });
 
+  it("refuses a scope that does not apply to the variable's type", () => {
+    const six: VariableValue = { _tag: "Float", value: 6 };
+    const scoped = (type: VariableSpec["type"], scopes: VariableSpec["scopes"], value: VariableValue) => ({
+      ...variable("probe", type, { Light: value, Dark: value }),
+      scopes,
+    });
+    expect(failure([palette([scoped("FLOAT", ["WIDTH_HEIGHT", "GAP"], six)])])).toBeUndefined();
+    expect(failure([palette([scoped("COLOR", ["GAP"], RED)])])).toBe(
+      'The Figma variable set is invalid: "Palette/probe" is a COLOR variable but has the scope GAP.'
+    );
+    expect(failure([palette([scoped("FLOAT", ["ALL_SCOPES", "CORNER_RADIUS"], six)])])).toBe(
+      'The Figma variable set is invalid: "Palette/probe" combines ALL_SCOPES with other scopes.'
+    );
+  });
+
   it("refuses duplicate names and a collection without modes", () => {
     expect(failure([palette([]), palette([])])).toBe(
       'The Figma variable set is invalid: "Palette" appears twice.'

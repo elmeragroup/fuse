@@ -1,4 +1,4 @@
-import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { generateThemesCss } from "../src/theme/generate-css";
@@ -13,9 +13,8 @@ export function buildCss(packageRoot: string): void {
   mkdirSync(join(distDir, "styles"), { recursive: true });
 
   const fuseCssPath = join(srcStylesDir, "fuse.css");
-  const fuseCss = readFileSync(fuseCssPath, "utf8");
   writeFileSync(join(distDir, "themes.css"), generateThemesCss());
-  writeFileSync(join(distDir, "demo-stage-comfortable.css"), generateDemoStageComfortableCss(fuseCss));
+  writeFileSync(join(distDir, "demo-stage-comfortable.css"), generateDemoStageComfortableCss());
   copyFileSync(fuseCssPath, join(distDir, "styles/fuse.css"));
 
   runCommand(

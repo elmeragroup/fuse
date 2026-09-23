@@ -3,14 +3,17 @@
  *
  * Fuse themes vary on two axes, the theme slug and the color scheme. Figma resolves an
  * alias using the layer's mode for the target collection, so the two axes become two
- * collections that designers set independently on a frame.
+ * collections that designers set independently on a frame. Density is a third axis,
+ * independent of the theme, so it has a collection of its own.
  *
- * - `Fuse tokens` holds one variable per role token with a Light and a Dark mode. These are
- *   the variables designers bind; each one aliases its scheme's variable in `Fuse themes`.
+ * - `Fuse tokens` holds one variable per role token and per radius step, with a Light and a
+ *   Dark mode. These are the variables designers bind; each one aliases its scheme's
+ *   variable in `Fuse themes`.
  * - `Fuse themes` holds `light/<token>` and `dark/<token>` with one mode per theme slug.
  *   Its variables are hidden from the pickers because they only feed `Fuse tokens`.
  * - `Fuse primitives` holds the neutral ramp and brand accents in a single mode. Primitive
  *   tokens are public API, so designers can bind these too.
+ * - `Fuse density` holds the control metrics with a Dense and a Comfortable mode.
  *
  * Twenty theme modes stay well inside Figma's 40-mode limit, and a new theme adds a mode
  * rather than a collection.
@@ -24,14 +27,26 @@ import {
   cssFirstFontFamily,
   cssLengthToPx,
   cssVarReference,
+  DENSITY_METRIC_NAMES,
+  DENSITY_METRICS,
   LEGAL_THEMES,
   PRIMITIVE_NAMES,
   PRIMITIVES,
+  RADIUS_STEP_NAMES,
+  RADIUS_STEP_OFFSETS,
   themeSlug,
   TOKEN_KINDS,
   TOKEN_NAMES,
 } from "@elmeragroup/fuse/theme-catalog";
-import type { ResolvedColorScheme, TokenKind, TokenName } from "@elmeragroup/fuse/theme-catalog";
+import type {
+  Density,
+  DensityMetricKind,
+  RadiusStepName,
+  ResolvedColorScheme,
+  TokenContract,
+  TokenKind,
+  TokenName,
+} from "@elmeragroup/fuse/theme-catalog";
 
 import { makeVariableSet } from "./variable-set.ts";
 import type {
@@ -59,11 +74,39 @@ export const THEMES_COLLECTION = "Fuse themes";
 /** The collection holding the scheme-independent palette. */
 export const PRIMITIVES_COLLECTION = "Fuse primitives";
 
+/** The collection with the control metrics and one mode per density. */
+export const DENSITY_COLLECTION = "Fuse density";
+
 const PRIMITIVES_MODE = "Value";
 
 const SCHEME_MODES = { light: "Light", dark: "Dark" } as const satisfies Record<ResolvedColorScheme, string>;
 
 const SCHEMES = ["light", "dark"] as const satisfies readonly ResolvedColorScheme[];
+
+const DENSITY_MODES = { dense: "Dense", comfortable: "Comfortable" } as const satisfies Record<
+  Density,
+  string
+>;
+
+const DENSITIES = ["dense", "comfortable"] as const satisfies readonly Density[];
+
+/** The pickers that offer each kind of density metric. Figma's `GAP` covers padding too. */
+const DENSITY_SCOPES = {
+  height: ["WIDTH_HEIGHT"],
+  padding: ["GAP"],
+  gap: ["GAP"],
+  fontSize: ["FONT_SIZE"],
+  lineHeight: ["LINE_HEIGHT"],
+} as const satisfies Record<DensityMetricKind, readonly VariableScope[]>;
+
+/** A `Fuse tokens` variable: a contract token, or a radius step `fuse.css` derives from `--radius`. */
+type BoundName = TokenName | RadiusStepName;
+
+/** Every `Fuse tokens` variable with the kind that decides its Figma type. */
+const BOUND_TOKENS: readonly (readonly [BoundName, TokenKind])[] = [
+  ...TOKEN_NAMES.map((token) => [token, TOKEN_KINDS[token]] as const),
+  ...RADIUS_STEP_NAMES.map((step) => [step, "dimension"] as const),
+];
 
 /** A token value the projection has no Figma form for. */
 export class UnsupportedTokenValue extends Schema.TaggedError<UnsupportedTokenValue>()(
@@ -137,18 +180,19 @@ function isDimensionToken(token: TokenName): token is DimensionTokenName {
   return TOKEN_KINDS[token] === "dimension";
 }
 
-/** The pickers that offer a token's `Fuse tokens` variable. */
-function tokenScopes(token: TokenName): readonly VariableScope[] {
-  return isDimensionToken(token) ? DIMENSION_SCOPES[token] : KIND_SCOPES[TOKEN_KINDS[token]];
+/** The pickers that offer a `Fuse tokens` variable. Every radius step rounds corners. */
+function tokenScopes(name: BoundName): readonly VariableScope[] {
+  if (!isTokenName(name)) return ["CORNER_RADIUS"];
+  return isDimensionToken(name) ? DIMENSION_SCOPES[name] : KIND_SCOPES[TOKEN_KINDS[name]];
 }
 
 const primitiveNames: ReadonlySet<string> = new Set(PRIMITIVE_NAMES);
 const tokenNames: ReadonlySet<string> = new Set(TOKEN_NAMES);
 
 /**
- * Build the variable set for every legal theme in both color schemes.
+ * Build the variable set for every legal theme in both color schemes and both densities.
  *
- * @returns The three Fuse collections. It fails on the first token value that has no Figma
+ * @returns The four Fuse collections. It fails on the first token value that has no Figma
  *   form, or on the variable set rule the projection breaks.
  */
 export function fuseVariableSet(): Result.Result<
@@ -158,7 +202,8 @@ export function fuseVariableSet(): Result.Result<
   return Result.gen(function* () {
     const primitives = yield* primitivesCollection();
     const themes = yield* themesCollection();
-    return yield* makeVariableSet([primitives, themes, tokensCollection()]);
+    const density = yield* densityCollection();
+    return yield* makeVariableSet([primitives, themes, tokensCollection(), density]);
   });
 }
 
@@ -201,14 +246,42 @@ function themesCollection(): Result.Result<CollectionSpec, UnsupportedTokenValue
           values,
         });
       }
+      for (const step of RADIUS_STEP_NAMES) {
+        const values = new Map<string, VariableValue>();
+        for (const [slug, tokens] of composed) {
+          values.set(slug, yield* radiusStepValue(step, tokens));
+        }
+        variables.push({
+          name: themeVariableName(scheme, step),
+          type: KIND_PROJECTIONS.dimension.type,
+          scopes: [],
+          webSyntax: undefined,
+          values,
+        });
+      }
     }
     return { name: THEMES_COLLECTION, modes: LEGAL_THEMES.map(themeSlug), variables };
   });
 }
 
+/**
+ * A radius step in pixels for one composed theme. Figma variables cannot compute, so the
+ * sync does the `calc()` from `fuse.css`. CSS clamps a negative `border-radius` to 0, so a
+ * step below zero becomes 0, the radius a layer shows.
+ */
+function radiusStepValue(
+  step: RadiusStepName,
+  tokens: TokenContract
+): Result.Result<FloatValue, UnsupportedTokenValue> {
+  const radius = cssLengthToPx(tokens.radius);
+  return radius === undefined
+    ? unsupported("radius", tokens.radius, `a rem or px length to derive ${step} from`)
+    : Result.succeed({ _tag: "Float", value: Math.max(0, radius + RADIUS_STEP_OFFSETS[step]) });
+}
+
 function tokensCollection(): CollectionSpec {
-  const variables = TOKEN_NAMES.map((token): VariableSpec => {
-    const projection = KIND_PROJECTIONS[TOKEN_KINDS[token]];
+  const variables = BOUND_TOKENS.map(([token, kind]): VariableSpec => {
+    const projection = KIND_PROJECTIONS[kind];
     return {
       name: token,
       type: projection.type,
@@ -224,8 +297,37 @@ function tokensCollection(): CollectionSpec {
 }
 
 /** The `Fuse themes` variable holding one token's value in one scheme. */
-function themeVariableName(scheme: ResolvedColorScheme, token: TokenName): string {
+function themeVariableName(scheme: ResolvedColorScheme, token: BoundName): string {
   return `${scheme}/${token}`;
+}
+
+/**
+ * One FLOAT variable per control metric, named after its custom property. Density is
+ * independent of theme and scheme, so these variables hold literals and alias nothing.
+ */
+function densityCollection(): Result.Result<CollectionSpec, UnsupportedTokenValue> {
+  return Result.gen(function* () {
+    const variables: VariableSpec[] = [];
+    for (const name of DENSITY_METRIC_NAMES) {
+      const metric = DENSITY_METRICS[name];
+      const values = new Map<string, VariableValue>();
+      for (const density of DENSITIES) {
+        const literal = dimensionLiteral(metric[density]);
+        if (literal === undefined) {
+          return yield* unsupported(name, metric[density], KIND_PROJECTIONS.dimension.expected);
+        }
+        values.set(DENSITY_MODES[density], literal);
+      }
+      variables.push({
+        name,
+        type: KIND_PROJECTIONS.dimension.type,
+        scopes: DENSITY_SCOPES[metric.kind],
+        webSyntax: `var(--${name})`,
+        values,
+      });
+    }
+    return { name: DENSITY_COLLECTION, modes: DENSITIES.map((density) => DENSITY_MODES[density]), variables };
+  });
 }
 
 /** Resolves the name inside a `var(--name)` reference to the variable it aliases. */

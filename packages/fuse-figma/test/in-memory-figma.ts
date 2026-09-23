@@ -70,6 +70,36 @@ const MAX_MODES = 40;
 const MAX_MODE_NAME = 40;
 const MAX_BODY_BYTES = 4 * 1024 * 1024;
 
+/**
+ * The scopes each variable type accepts, from the Plugin API's `VariableScope` reference.
+ * The REST API does not say which scopes fit which type, so the fake takes the Plugin API's
+ * table as the stricter reading and rejects a scope outside it. The table lists no scope for
+ * BOOLEAN, so the fake accepts only `ALL_SCOPES` there, and the same for `FUTURE_TYPE`.
+ */
+const TYPE_SCOPES = {
+  BOOLEAN: ["ALL_SCOPES"],
+  COLOR: ["ALL_SCOPES", "ALL_FILLS", "FRAME_FILL", "SHAPE_FILL", "TEXT_FILL", "STROKE_COLOR", "EFFECT_COLOR"],
+  FLOAT: [
+    "ALL_SCOPES",
+    "TEXT_CONTENT",
+    "CORNER_RADIUS",
+    "WIDTH_HEIGHT",
+    "GAP",
+    "OPACITY",
+    "COLOR_OPACITY",
+    "STROKE_FLOAT",
+    "EFFECT_FLOAT",
+    "FONT_WEIGHT",
+    "FONT_SIZE",
+    "LINE_HEIGHT",
+    "LETTER_SPACING",
+    "PARAGRAPH_SPACING",
+    "PARAGRAPH_INDENT",
+  ],
+  STRING: ["ALL_SCOPES", "TEXT_CONTENT", "FONT_FAMILY", "FONT_STYLE"],
+  FUTURE_TYPE: ["ALL_SCOPES"],
+} as const satisfies Record<ResolvedType, readonly string[]>;
+
 const Action = Schema.Literals(["CREATE", "UPDATE", "DELETE"]);
 const PostBody = Schema.Struct({
   variableCollections: Schema.optionalKey(
@@ -528,7 +558,7 @@ export class InMemoryFigma {
           variableCollectionId: collection.id,
           resolvedType,
           valuesByMode: new Map(collection.modes.map((mode) => [mode.modeId, defaultValue(resolvedType)])),
-          scopes: [...(change.scopes ?? ["ALL_SCOPES"])],
+          scopes: checkedScopes(change.scopes ?? ["ALL_SCOPES"], resolvedType),
           codeSyntax: { ...change.codeSyntax },
           deletedButReferenced: false,
         });
@@ -539,7 +569,7 @@ export class InMemoryFigma {
         draft.variables.delete(variable.id);
         continue;
       }
-      if (change.scopes !== undefined) variable.scopes = [...change.scopes];
+      if (change.scopes !== undefined) variable.scopes = checkedScopes(change.scopes, variable.resolvedType);
       // Figma does not document whether an UPDATE merges code syntax or replaces it. The fake
       // replaces it, the stricter rule, so a sync that keeps other platforms' entries under
       // replacement also keeps them under a merge.
@@ -655,6 +685,16 @@ function validModeName(name: string | undefined, collection: StoredCollection, s
   if (collection.modes.some((mode) => mode.name === name && mode.modeId !== self))
     reject(`Duplicate mode name ${name}`);
   return name;
+}
+
+/** The Plugin API's rules: every scope fits the type, and `ALL_SCOPES` stands alone. */
+function checkedScopes(scopes: readonly string[], type: ResolvedType): string[] {
+  const accepted: readonly string[] = TYPE_SCOPES[type];
+  const misfit = scopes.find((scope) => !accepted.includes(scope));
+  if (misfit !== undefined) reject(`Scope ${misfit} does not apply to a ${type} variable`);
+  if (scopes.includes("ALL_SCOPES") && scopes.length > 1)
+    reject("ALL_SCOPES cannot combine with other scopes");
+  return [...scopes];
 }
 
 function defaultValue(type: ResolvedType): StoredValue {
