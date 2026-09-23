@@ -243,6 +243,31 @@
     @slot;
   }
 }
+/* Hover and press on a control that is neither `data-disabled` nor `:disabled`. A
+   `data-disabled` root keeps pointer events so a Tooltip on it still opens, and these
+   variants keep its paint and position still. tailwind-merge keeps a consumer's plain
+   `hover:` class beside these, and these rules sort after it. Every condition sits in
+   :where(), so each rule has the specificity of one class and the consumer's `hover:`
+   rule, with two, still wins. The [data-rac] branches match the selectors
+   tailwindcss-react-aria-components emits for hover and active. */
+@custom-variant enabled-hover {
+  @media (hover: hover) {
+    &:where(:not([data-disabled]:not([data-disabled="false"]), :disabled)):where(
+        [data-rac][data-hovered],
+        :not([data-rac]):hover
+      ) {
+      @slot;
+    }
+  }
+}
+@custom-variant enabled-active {
+  &:where(:not([data-disabled]:not([data-disabled="false"]), :disabled)):where(
+      [data-rac][data-active],
+      :not([data-rac]):active
+    ) {
+    @slot;
+  }
+}
 
 @utility hit-area-* {
   position: relative;

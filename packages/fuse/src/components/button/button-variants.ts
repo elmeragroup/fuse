@@ -9,6 +9,9 @@ import { selfFocusRingClass } from "../../styles/utils";
 // `render={<a />}` or `focusableWhenDisabled`. Only the native key drops pointer events.
 // `focusableWhenDisabled` exists to keep the button reachable, so a Tooltip on it must
 // still open on hover, and Base UI already cancels clicks on a disabled non-native root.
+// Hover and press styles use the `enabled-hover:` and `enabled-active:` variants from
+// fuse.css, so a disabled root never changes fill, border, text or position under the
+// pointer. `aria-expanded:` follows an open popup, not the pointer, so it has no gate.
 // Every size rounds with the theme's `--radius-button`. The arbitrary value keeps
 // tailwind-merge able to replace it with a consumer `rounded-*` class, which the custom
 // `rounded-button` utility would not be.
@@ -17,20 +20,23 @@ import { selfFocusRingClass } from "../../styles/utils";
 // rounds like a field, and a pill button would bulge out of that outline.
 export const buttonVariants = tv({
   base: cn(
-    "group/button font-medium box-border inline-flex shrink-0 items-center justify-center rounded-(--radius-button) border border-transparent bg-clip-padding p-0 whitespace-nowrap transition-[color,background-color,border-color,box-shadow,translate,opacity] select-none active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 in-data-[slot=button-group]:rounded-md aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20 data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+    "group/button font-medium box-border inline-flex shrink-0 items-center justify-center rounded-(--radius-button) border border-transparent bg-clip-padding p-0 whitespace-nowrap transition-[color,background-color,border-color,box-shadow,translate,opacity] select-none disabled:pointer-events-none disabled:opacity-50 in-data-[slot=button-group]:rounded-md aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20 data-disabled:opacity-50 enabled-active:not-aria-[haspopup]:translate-y-px [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
     selfFocusRingClass
   ),
   variants: {
     variant: {
-      default: "bg-primary text-primary-foreground hover:bg-primary/80",
+      default: "bg-primary text-primary-foreground enabled-hover:bg-primary/80",
       outline:
-        "shadow-xs border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground",
+        "shadow-xs border-border bg-background aria-expanded:bg-muted aria-expanded:text-foreground enabled-hover:bg-muted enabled-hover:text-foreground",
       secondary:
-        "bg-secondary text-secondary-foreground hover:bg-secondary-hover aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
-      ghost: "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground",
-      destructive: "border-error/20 bg-error/10 text-error hover:border-error hover:bg-error/20",
-      success: "border-success/20 bg-success/10 text-success hover:border-success hover:bg-success/20",
-      link: "text-primary underline-offset-4 hover:underline",
+        "bg-secondary text-secondary-foreground aria-expanded:bg-secondary aria-expanded:text-secondary-foreground enabled-hover:bg-secondary-hover",
+      ghost:
+        "aria-expanded:bg-muted aria-expanded:text-foreground enabled-hover:bg-muted enabled-hover:text-foreground",
+      destructive:
+        "border-error/20 bg-error/10 text-error enabled-hover:border-error enabled-hover:bg-error/20",
+      success:
+        "border-success/20 bg-success/10 text-success enabled-hover:border-success enabled-hover:bg-success/20",
+      link: "text-primary underline-offset-4 enabled-hover:underline",
     },
     size: {
       default:

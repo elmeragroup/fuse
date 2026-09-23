@@ -6,6 +6,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { render } from "../../../test/browser-render";
+import { whilePointerPressed } from "../../../test/pointer-press";
 import { dispatchPredictedPointer } from "../../../test/predicted-pointer";
 import {
   cssVarColor,
@@ -18,6 +19,21 @@ import {
 import { ThemeScope } from "../../theme/theme-scope";
 import { Tooltip } from "../tooltip/tooltip";
 import { Button } from "./button";
+
+const VARIANTS = ["default", "outline", "secondary", "ghost", "destructive", "success", "link"] as const;
+
+/** The paint and position a hover or press could change on a button. */
+function pointerPaint(element: Element) {
+  const style = getComputedStyle(element);
+  return {
+    backgroundColor: style.backgroundColor,
+    borderColor: style.borderColor,
+    color: style.color,
+    textDecorationLine: style.textDecorationLine,
+    transform: style.transform,
+    translate: style.translate,
+  };
+}
 
 describe("Button", () => {
   it("activates once on click, Enter, and Space", async () => {
@@ -109,6 +125,64 @@ describe("Button", () => {
     await vi.waitFor(() => {
       expect(page.getByRole("tooltip", { name: "Needs a signed contract" }).query()).not.toBeNull();
     });
+  });
+
+  it("keeps a focusable disabled button's paint and position still under hover and press, for every variant", async () => {
+    renderThemed(
+      <>
+        <p>Away</p>
+        {VARIANTS.map((variant) => (
+          <Button key={variant} variant={variant} disabled focusableWhenDisabled className="transition-none">
+            {`Disabled ${variant}`}
+          </Button>
+        ))}
+      </>
+    );
+
+    for (const variant of VARIANTS) {
+      const name = `Disabled ${variant}`;
+      const button = roleNamed("button", name);
+      await userEvent.hover(page.getByText("Away"));
+      const resting = pointerPaint(button);
+
+      await userEvent.hover(page.getByRole("button", { name }));
+      expect(pointerPaint(button), `${variant} while hovered`).toEqual(resting);
+      const pressed = await whilePointerPressed(() => pointerPaint(button));
+      expect(pressed, `${variant} while pressed`).toEqual(resting);
+    }
+  });
+
+  it("changes an enabled button's paint on hover and moves it down 1px on press, for every variant", async () => {
+    renderThemed(
+      <>
+        <p>Away</p>
+        {VARIANTS.map((variant) => (
+          <Button key={variant} variant={variant} className="transition-none">
+            {`Enabled ${variant}`}
+          </Button>
+        ))}
+      </>
+    );
+
+    for (const variant of VARIANTS) {
+      const name = `Enabled ${variant}`;
+      const button = roleNamed("button", name);
+      await userEvent.hover(page.getByText("Away"));
+      const resting = pointerPaint(button);
+
+      await userEvent.hover(page.getByRole("button", { name }));
+      expect(pointerPaint(button), `${variant} while hovered`).not.toEqual(resting);
+      const pressed = await whilePointerPressed(() => getComputedStyle(button).translate);
+      expect(pressed, `${variant} while pressed`).toBe("0px 1px");
+    }
+  });
+
+  it("lets a consumer hover class replace the recipe hover", async () => {
+    renderThemed(<Button className="transition-none hover:bg-muted">Custom hover</Button>);
+    const button = roleNamed("button", "Custom hover");
+
+    await userEvent.hover(page.getByRole("button", { name: "Custom hover" }));
+    expect(getComputedStyle(button).backgroundColor).toBe(cssVarColor(button, "--muted"));
   });
 
   it("paints a hovered secondary button with the secondary-hover role", async () => {
