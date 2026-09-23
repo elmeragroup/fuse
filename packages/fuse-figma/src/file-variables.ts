@@ -1,8 +1,9 @@
 /**
  * The Figma side of a sync. It covers what a file holds now and the changes one atomic
- * write makes. Ids are branded because one write mixes collection, mode and variable ids,
- * both real ones read from the file and temporary ones minted for new objects. A swapped
- * id would fail only inside Figma. `FigmaApi` owns the REST encoding of these changes.
+ * write makes. The module brands ids because one write mixes collection, mode and variable
+ * ids, both real ones read from the file and temporary ones minted for new objects. A
+ * swapped id would fail only inside Figma. `FigmaApi` owns the REST encoding of these
+ * changes.
  */
 
 import { Brand } from "effect";
@@ -27,10 +28,33 @@ export type VariableId = string & Brand.Brand<"VariableId">;
 /** Brand a variable id read from Figma or minted for a request. */
 export const VariableId = Brand.nominal<VariableId>();
 
-/** Figma's variable types. `BOOLEAN` can exist in a file even though the sync never writes it. */
-export type FileVariableType = "BOOLEAN" | VariableType;
+/** A variable type newer than the sync, with the name Figma gave it. */
+export type UnknownVariableType = { readonly _tag: "UnknownType"; readonly name: string };
 
-/** A value a write sets: a literal, or an alias to a variable by its real or temporary id. */
+/**
+ * Figma's variable types. `BOOLEAN` can exist in a file even though the sync never writes
+ * it, and a file can hold a type newer than the sync.
+ */
+export type FileVariableType = "BOOLEAN" | VariableType | UnknownVariableType;
+
+/**
+ * The name Figma gives a variable type, for messages.
+ *
+ * @param type - A type read from the file.
+ */
+export function fileTypeName(type: FileVariableType): string {
+  switch (type) {
+    case "BOOLEAN":
+    case "COLOR":
+    case "FLOAT":
+    case "STRING":
+      return type;
+    default:
+      return type.name;
+  }
+}
+
+/** A value a write sets, which is a literal or an alias to a variable by its real or temporary id. */
 export type WriteValue = { readonly _tag: "Alias"; readonly id: VariableId } | LiteralValue;
 
 /** One mode value as Figma stores it. */
@@ -39,7 +63,10 @@ export type FileValue =
   | { readonly _tag: "Boolean"; readonly value: boolean }
   // A color composed from aliased channels. The sync never writes one, so it always
   // differs from the value the sync wants.
-  | { readonly _tag: "ComposedColor" };
+  | { readonly _tag: "ComposedColor" }
+  // A value shape newer than the sync. It always differs from the value the sync wants,
+  // so a variable the sync owns gets its value rewritten.
+  | { readonly _tag: "Unknown" };
 
 /**
  * The code a developer writes for a variable on each platform, shown in Figma's code

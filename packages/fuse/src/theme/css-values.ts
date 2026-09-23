@@ -4,9 +4,8 @@
  * caller can try the forms a token kind allows and report the value when none fits.
  */
 
-import { oklchToSrgb } from "./contrast";
-import type { SrgbColor } from "./contrast";
-import { readOklch } from "./oklch";
+import { oklchToSrgb, readOklch } from "./oklch";
+import type { SrgbColor } from "./oklch";
 
 const VAR_REFERENCE = /^var\(--([a-z0-9-]+)\)$/;
 const HEX_COLOR = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i;

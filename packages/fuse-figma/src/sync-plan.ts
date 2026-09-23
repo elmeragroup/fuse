@@ -13,7 +13,7 @@
 
 import { Result, Schema } from "effect";
 
-import { CollectionId, ModeId, VariableId } from "./file-variables.ts";
+import { CollectionId, fileTypeName, ModeId, VariableId } from "./file-variables.ts";
 import type {
   ChangeBatch,
   CodeSyntax,
@@ -146,8 +146,60 @@ export function planSync(desired: VariableSet, file: FileVariables): Result.Resu
     }
     // Aliases cross collections, so values resolve only once every variable has an id.
     const ids = variableIds(matches);
-    return { changes: matches.flatMap((match) => [...match.changes, ...valueChanges(match, ids)]) };
+    const values = matches.flatMap((match) => valueChanges(match, ids));
+    return {
+      changes: [...matches.flatMap((match) => match.changes), ...aliasTargetsFirst(desired, values)],
+    };
   });
+}
+
+type PlannedValueChange = Extract<PlannedChange, { readonly _tag: "SetValue" }>;
+
+/**
+ * Order the value writes so that every variable's values follow the values of each variable
+ * it aliases. Figma applies values in array order and refuses an alias cycle, and it does
+ * not say whether it checks after each value or once at the end. Writes in set order can
+ * pass through a cycle when the tokens reverse an alias, because the new alias would land
+ * while the old one still points back. In this order every alias a write adds points at a
+ * variable whose values, and whose targets' values, already hold their final values, and
+ * `makeVariableSet` proved that final graph acyclic. Variables keep set order where aliases
+ * do not force another.
+ */
+function aliasTargetsFirst(
+  desired: VariableSet,
+  values: readonly PlannedValueChange[]
+): PlannedValueChange[] {
+  const byVariable = new Map<string, PlannedValueChange[]>();
+  for (const change of values) {
+    const name = qualifiedName(change.collection, change.variable);
+    byVariable.set(name, [...(byVariable.get(name) ?? []), change]);
+  }
+  return aliasOrder(desired).flatMap((name) => byVariable.get(name) ?? []);
+}
+
+/** Every variable of the set by qualified name, each one after the variables it aliases. */
+function aliasOrder(desired: VariableSet): readonly string[] {
+  const specs = new Map(
+    desired.collections.flatMap((collection) =>
+      collection.variables.map(
+        (variable) => [qualifiedName(collection.name, variable.name), variable] as const
+      )
+    )
+  );
+  const order: string[] = [];
+  const placed = new Set<string>();
+  // A depth-first walk that places each variable after its targets. The set has no cycle,
+  // so marking a variable before its targets are placed never cuts a chain short.
+  const place = (name: string): void => {
+    if (placed.has(name)) return;
+    placed.add(name);
+    for (const value of specs.get(name)?.values.values() ?? []) {
+      if (value._tag === "Alias") place(qualifiedName(value.target.collection, value.target.variable));
+    }
+    order.push(name);
+  };
+  for (const name of specs.keys()) place(name);
+  return order;
 }
 
 function matchCollection(
@@ -276,9 +328,8 @@ function existingCollection(spec: CollectionSpec, existing: FileCollection, inde
  * falls to the kept modes and then rises to the set's size. When no mode survives, the plan
  * deletes every stale mode but the last, creates the first new mode, deletes the last stale
  * mode and then creates the rest. The count then never exceeds the larger of the file's and
- * the set's mode counts, or 2. Renaming the last
- * stale mode instead would keep its id, but it would also turn an unrelated theme into the
- * new one.
+ * the set's mode counts, or 2. Renaming the last stale mode instead would keep its id, but
+ * it would also turn an unrelated theme into the new one.
  */
 function orderModeChanges(
   kept: number,
@@ -336,12 +387,13 @@ function matchVariable(
     });
   }
   if (found.type !== spec.type) {
+    const fileType = fileTypeName(found.type);
     return Result.fail(
       new VariableTypeConflict({
-        message: `"${qualifiedName(collection, spec.name)}" is a ${found.type} variable in Figma but the tokens define a ${spec.type}. Figma cannot change a variable's type; delete it in Figma and sync again, then rebind the layers that used it.`,
+        message: `"${qualifiedName(collection, spec.name)}" is a ${fileType} variable in Figma but the tokens define a ${spec.type}. Figma cannot change a variable's type; delete it in Figma and sync again, then rebind the layers that used it.`,
         collection,
         variable: spec.name,
-        fileType: found.type,
+        fileType,
         wantedType: spec.type,
       })
     );
@@ -372,10 +424,10 @@ function variableIds(matches: readonly CollectionMatch[]): ReadonlyMap<string, V
   );
 }
 
-function valueChanges(match: CollectionMatch, ids: ReadonlyMap<string, VariableId>): PlannedChange[] {
+function valueChanges(match: CollectionMatch, ids: ReadonlyMap<string, VariableId>): PlannedValueChange[] {
   const collection = match.spec.name;
   return match.variables.flatMap((target) =>
-    match.modes.flatMap((mode): PlannedChange[] => {
+    match.modes.flatMap((mode): PlannedValueChange[] => {
       const value = guaranteed(
         target.spec.values.get(mode.name),
         `"${qualifiedName(collection, target.spec.name)}" has a value for mode "${mode.name}"`

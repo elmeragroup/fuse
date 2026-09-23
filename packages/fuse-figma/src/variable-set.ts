@@ -60,7 +60,7 @@ export type VariableType = "COLOR" | "FLOAT" | "STRING";
  * The Figma picker scopes the sync assigns. An empty list hides a variable from every
  * picker while keeping it available as an alias target.
  */
-export type VariableScope = "ALL_SCOPES" | "CORNER_RADIUS" | "FONT_FAMILY";
+export type VariableScope = "ALL_SCOPES" | "CORNER_RADIUS";
 
 /** A variable the sync owns. */
 export type VariableSpec = {

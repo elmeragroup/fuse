@@ -5,7 +5,7 @@
  */
 
 import { Config, Context, Duration, Effect, Layer, Option, Redacted, Schedule, Schema } from "effect";
-import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http";
+import { Headers, HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http";
 import type { HttpClientError } from "effect/unstable/http";
 
 import { CollectionId, ModeId, VariableId } from "./file-variables.ts";
@@ -36,12 +36,23 @@ export type FileKey = typeof FileKey.Type;
 /** Which call failed, for messages and telemetry. */
 export type FigmaOperation = "read variables" | "write variables";
 
+/**
+ * Why a call never got an answer. It keeps the request line and drops the request itself,
+ * whose headers carry the token.
+ */
+const TransportFailure = Schema.Struct({
+  /** The `HttpClientError` reason, such as `TransportError`. */
+  reason: Schema.String,
+  method: Schema.String,
+  url: Schema.String,
+});
+
 /** Figma answered with an error, could not be reached, or sent a body the sync cannot read. */
 export class FigmaRequestFailed extends Schema.TaggedError<FigmaRequestFailed>()("FigmaRequestFailed", {
   message: Schema.String,
   operation: Schema.Literals(["read variables", "write variables"]),
   status: Schema.optionalKey(Schema.Number),
-  cause: Schema.optionalKey(Schema.Defect()),
+  cause: Schema.optionalKey(TransportFailure),
 }) {}
 
 /** `FIGMA_TOKEN` is unset or empty. */
@@ -80,8 +91,15 @@ export class FigmaApi extends Context.Service<
         HttpClient.mapRequest((request) =>
           request.pipe(
             HttpClientRequest.prependUrl(FIGMA_API),
-            HttpClientRequest.setHeader("X-Figma-Token", Redacted.value(token)),
+            HttpClientRequest.setHeader(TOKEN_HEADER, Redacted.value(token)),
             HttpClientRequest.acceptJson
+          )
+        ),
+        // The client records every request header on its span and masks only the names in
+        // `CurrentRedactedNames`, whose defaults do not include Figma's token header.
+        HttpClient.transform((response) =>
+          response.pipe(
+            Effect.updateService(Headers.CurrentRedactedNames, (names) => [...names, TOKEN_HEADER])
           )
         ),
         HttpClient.filterStatusOk
@@ -115,6 +133,7 @@ export class FigmaApi extends Context.Service<
 }
 
 const FIGMA_API = "https://api.figma.com";
+const TOKEN_HEADER = "x-figma-token";
 const RETRIES = 4;
 
 /**
@@ -222,7 +241,7 @@ const requestFailed = Effect.fnUntraced(function* (
     return yield* new FigmaRequestFailed({
       message: `Could not ${operation}: ${error.message}`,
       operation,
-      cause: error,
+      cause: { reason: error.reason._tag, method: error.request.method, url: error.request.url },
     });
   }
   const body = yield* HttpClientResponse.schemaBodyJson(ErrorBody)(response).pipe(Effect.option);
@@ -392,13 +411,30 @@ const ComposedColor = Schema.Struct({
   color: Schema.Union([Rgba, Rgb, Alias]),
   opacity: Schema.Union([Schema.Number, Alias]),
 });
-const Value = Schema.Union([Schema.Boolean, Schema.Number, Schema.String, Alias, Rgba, ComposedColor]);
+/** Stands in for a value shape newer than the sync; `Value` decodes any such value to it. */
+const UnknownValue = Schema.Struct({ unknownValue: Schema.Literal(true) });
+const Value = Schema.Union([
+  Schema.Boolean,
+  Schema.Number,
+  Schema.String,
+  Alias,
+  Rgba,
+  ComposedColor,
+  UnknownValue,
+]).pipe(Schema.catchDecoding(() => Effect.succeed(Option.some({ unknownValue: true } as const))));
+const KnownType = Schema.Literals(["BOOLEAN", "COLOR", "FLOAT", "STRING"]);
 
+/**
+ * A variable row. The planner reads its id, name, collection, scopes and code syntax, and
+ * those decode strictly. Figma has added value shapes before, so `resolvedType` accepts
+ * any name and `Value` decodes a shape it does not know to `UnknownValue`. A row in a
+ * collection the sync does not own therefore cannot fail the read.
+ */
 const LocalVariable = Schema.Struct({
   id: Schema.String,
   name: Schema.String,
   variableCollectionId: Schema.String,
-  resolvedType: Schema.Literals(["BOOLEAN", "COLOR", "FLOAT", "STRING"]),
+  resolvedType: Schema.String,
   valuesByMode: Schema.Record(Schema.String, Value),
   remote: Schema.Boolean,
   scopes: Schema.Array(Schema.String),
@@ -445,11 +481,15 @@ function fileVariables(response: LocalVariablesResponse): FileVariables {
   return { collections };
 }
 
+const isKnownType = Schema.is(KnownType);
+
 function fileVariable(variable: LocalVariable): FileVariable {
   return {
     id: VariableId(variable.id),
     name: variable.name,
-    type: variable.resolvedType,
+    type: isKnownType(variable.resolvedType)
+      ? variable.resolvedType
+      : { _tag: "UnknownType", name: variable.resolvedType },
     scopes: variable.scopes,
     codeSyntax: variable.codeSyntax,
     values: new Map(
@@ -465,6 +505,7 @@ const isNumber = Schema.is(Schema.Number);
 const isString = Schema.is(Schema.String);
 const isAlias = Schema.is(Alias);
 const isRgba = Schema.is(Rgba);
+const isComposedColor = Schema.is(ComposedColor);
 
 function fileValue(value: typeof Value.Type): FileValue {
   if (isBoolean(value)) return { _tag: "Boolean", value };
@@ -472,5 +513,6 @@ function fileValue(value: typeof Value.Type): FileValue {
   if (isString(value)) return { _tag: "String", value };
   if (isAlias(value)) return { _tag: "Alias", id: VariableId(value.id) };
   if (isRgba(value)) return { _tag: "Color", color: value };
-  return { _tag: "ComposedColor" };
+  if (isComposedColor(value)) return { _tag: "ComposedColor" };
+  return { _tag: "Unknown" };
 }

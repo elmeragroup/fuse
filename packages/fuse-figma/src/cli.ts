@@ -74,21 +74,33 @@ const check = Command.make(
 const cli = root.pipe(Command.withSubcommands([sync, check]), Command.provide(FigmaApi.layer));
 
 /**
- * A failure whose message is already on stderr. The runtime still exits with status 1 but
- * does not log it again with a stack trace.
+ * The exit status of a failed run. `check` exits 2 when the file drifted, so a CI job can
+ * tell drift from a check that could not run, which exits 1.
  */
-class ReportedFailure extends Data.TaggedError("ReportedFailure") {
+type ExitCode = 1 | 2;
+
+/**
+ * A failure whose message is already on stderr. The runtime exits with its status but does
+ * not log it again with a stack trace.
+ */
+class ReportedFailure extends Data.TaggedError("ReportedFailure")<{ readonly exitCode: ExitCode }> {
   override readonly [Runtime.errorReported] = false;
+  override readonly [Runtime.errorExitCode] = this.exitCode;
 }
 
-function report(failure: { readonly message: string }): Effect.Effect<never, ReportedFailure> {
-  return Console.error(failure.message).pipe(Effect.andThen(Effect.fail(new ReportedFailure())));
+function report(failure: {
+  readonly _tag: string;
+  readonly message: string;
+}): Effect.Effect<never, ReportedFailure> {
+  const exitCode: ExitCode = failure._tag === "DriftDetected" ? 2 : 1;
+  return Console.error(failure.message).pipe(Effect.andThen(Effect.fail(new ReportedFailure({ exitCode }))));
 }
 
 /**
  * Run the command line. Every expected failure prints its message and fails with
- * `ReportedFailure`; argument errors keep the parser's own help output. A failure type
- * without a `message` does not compile here, so no new error can skip the report.
+ * `ReportedFailure`, which exits 2 for drift and 1 for anything else; argument errors keep
+ * the parser's own help output. A failure type without a `_tag` and a `message` does not
+ * compile here, so no new error can skip the report.
  *
  * @param argv - The arguments after the executable and script path.
  */
@@ -97,34 +109,47 @@ export const runCli = (argv: readonly string[]) =>
     Effect.catchIf(CliError.isCliError, Effect.fail, report)
   );
 
+/** The most changes of one kind in one collection that the plan lists one by one. */
+const LISTED_CHANGES = 10;
+
 /**
- * One line per collection and kind of change. Value changes are counted rather than
- * listed, because a first sync sets several thousand.
+ * The plan, grouped by collection and kind of change. A group of up to 10 changes lists each
+ * one with its variable and mode, so a small drift names what changed. A larger group is
+ * one counted line, because a first sync sets several thousand values.
  */
 function describePlan(plan: SyncPlan): string {
-  const lines = new Map<string, number>();
+  const groups = new Map<string, string[]>();
   for (const change of plan.changes) {
-    const line = `${change.collection}: ${changeLabel(change)}`;
-    lines.set(line, (lines.get(line) ?? 0) + 1);
+    const { kind, detail } = changeLabel(change);
+    const group = `${change.collection}: ${kind}`;
+    groups.set(group, [...(groups.get(group) ?? []), `${change.collection}: ${detail}`]);
   }
-  return [...lines].map(([line, count]) => (count === 1 ? line : `${line} ×${count}`)).join("\n");
+  return [...groups]
+    .flatMap(([group, lines]) => (lines.length <= LISTED_CHANGES ? lines : [`${group} ×${lines.length}`]))
+    .join("\n");
 }
 
-function changeLabel(change: PlannedChange): string {
+/** A change's kind, which groups it, and the line that names it. */
+type ChangeLabel = { readonly kind: string; readonly detail: string };
+
+function changeLabel(change: PlannedChange): ChangeLabel {
   switch (change._tag) {
     case "CreateCollection":
-      return "create collection";
+      return { kind: "create collection", detail: "create collection" };
     case "CreateMode":
-      return `create mode ${change.mode}`;
+      return { kind: "create mode", detail: `create mode ${change.mode}` };
     case "DeleteMode":
-      return `delete mode ${change.mode}`;
+      return { kind: "delete mode", detail: `delete mode ${change.mode}` };
     case "CreateVariable":
-      return "create variable";
+      return { kind: "create variable", detail: `create variable ${change.variable}` };
     case "UpdateVariable":
-      return "update scopes or code syntax";
+      return {
+        kind: "update scopes or code syntax",
+        detail: `update scopes or code syntax of ${change.variable}`,
+      };
     case "DeleteVariable":
-      return `delete variable ${change.variable}`;
+      return { kind: "delete variable", detail: `delete variable ${change.variable}` };
     case "SetValue":
-      return "set value";
+      return { kind: "set value", detail: `set value of ${change.variable} in ${change.mode}` };
   }
 }

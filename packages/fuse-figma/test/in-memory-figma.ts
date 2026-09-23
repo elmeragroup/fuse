@@ -9,15 +9,21 @@
  */
 
 import { Effect, Layer, Schema } from "effect";
-import { HttpClient, HttpClientResponse } from "effect/unstable/http";
+import { HttpClient, HttpClientError, HttpClientResponse } from "effect/unstable/http";
 import type { HttpClientRequest } from "effect/unstable/http";
 
 type Rgba = { r: number; g: number; b: number; a: number };
 type Alias = { type: "VARIABLE_ALIAS"; id: string };
 /** A color whose channels or opacity alias other variables; opacity is a percentage. */
 type ComposedColor = { color: Alias | Omit<Rgba, "a">; opacity: Alias | number };
-type StoredValue = Alias | ComposedColor | Rgba | boolean | number | string;
-type ResolvedType = "BOOLEAN" | "COLOR" | "FLOAT" | "STRING";
+/**
+ * A value shape newer than the sync. Figma added the composed color in September 2026, and
+ * it can add more. The fake stores and serves this shape as is and never resolves it.
+ */
+type FutureValue = { type: "FUTURE_VALUE"; payload: string };
+type StoredValue = Alias | ComposedColor | FutureValue | Rgba | boolean | number | string;
+/** Figma's variable types, and `FUTURE_TYPE` for a type newer than the sync. */
+type ResolvedType = "BOOLEAN" | "COLOR" | "FLOAT" | "STRING" | "FUTURE_TYPE";
 type CodeSyntax = { WEB?: string; ANDROID?: string; iOS?: string };
 
 /**
@@ -143,6 +149,7 @@ export class InMemoryFigma {
   private state: FileState = { collections: new Map(), variables: new Map() };
   private nextId = 1;
   private readonly scripted: ScriptedReply[] = [];
+  private readonly droppedConnections: ("GET" | "POST")[] = [];
   private afterWrite: (() => void) | undefined;
 
   constructor(
@@ -155,7 +162,19 @@ export class InMemoryFigma {
     return Layer.succeed(
       HttpClient.HttpClient,
       HttpClient.make((request) =>
-        Effect.sync(() => HttpClientResponse.fromWeb(request, this.handle(request)))
+        Effect.suspend(() => {
+          this.requests.push({ method: request.method, path: new URL(request.url).pathname });
+          const dropped = this.droppedConnections.findIndex((method) => method === request.method);
+          if (dropped !== -1) {
+            this.droppedConnections.splice(dropped, 1);
+            return Effect.fail(
+              new HttpClientError.HttpClientError({
+                reason: new HttpClientError.TransportError({ request, cause: new Error("socket hang up") }),
+              })
+            );
+          }
+          return Effect.succeed(HttpClientResponse.fromWeb(request, this.handle(request)));
+        })
       )
     );
   }
@@ -163,6 +182,11 @@ export class InMemoryFigma {
   /** Answer the next request with this method using a canned status instead. */
   script(reply: ScriptedReply): void {
     this.scripted.push(reply);
+  }
+
+  /** Drop the connection of the next request with this method before Figma answers. */
+  dropNextConnection(method: "GET" | "POST"): void {
+    this.droppedConnections.push(method);
   }
 
   /**
@@ -320,7 +344,6 @@ export class InMemoryFigma {
 
   private handle(request: HttpClientRequest.HttpClientRequest): Response {
     const url = new URL(request.url);
-    this.requests.push({ method: request.method, path: url.pathname });
     const scriptedIndex = this.scripted.findIndex((reply) => reply.method === request.method);
     if (scriptedIndex !== -1) {
       const [reply] = this.scripted.splice(scriptedIndex, 1);
@@ -531,10 +554,11 @@ export class InMemoryFigma {
         reject(`Mode ${change.modeId} is not in the variable's collection`);
       }
       variable.valuesByMode.set(modeId, checkedValue(draft, variable, change.value, real));
+      // Figma does not say whether it checks for cycles after each value or only once the
+      // batch is applied. The fake checks after each one, the stricter reading, so a batch
+      // must never pass through a cycle on the way to an acyclic end state.
+      if (onAliasCycle(draft, variable)) reject(`Alias cycle through ${variable.name}`);
     }
-
-    const cycle = aliasCycleThrough(draft);
-    if (cycle !== undefined) reject(`Alias cycle through ${cycle}`);
   }
 
   private resolveVariable(
@@ -548,6 +572,7 @@ export class InMemoryFigma {
     if (value === undefined)
       throw new Error(`${owner.name}/${variable.name} has no value in the context mode`);
     if (isComposed(value)) throw new Error(`${owner.name}/${variable.name} holds a composed color`);
+    if (isFuture(value)) throw new Error(`${owner.name}/${variable.name} holds a value newer than the sync`);
     if (!isAlias(value)) return value;
     const target = this.state.variables.get(value.id);
     if (target === undefined) throw new Error(`${owner.name}/${variable.name} aliases a missing variable`);
@@ -636,6 +661,8 @@ function defaultValue(type: ResolvedType): StoredValue {
   switch (type) {
     case "BOOLEAN":
       return false;
+    case "FUTURE_TYPE":
+      return { type: "FUTURE_VALUE", payload: "" };
     case "COLOR":
       return { r: 1, g: 1, b: 1, a: 1 };
     case "FLOAT":
@@ -672,37 +699,41 @@ function checkedValue(
       return Schema.is(Schema.String)(value) ? value : reject(`${variable.name} needs a string`);
     case "BOOLEAN":
       return value === true || value === false ? value : reject(`${variable.name} needs a boolean`);
+    case "FUTURE_TYPE":
+      return reject(`The fake does not model writes to ${variable.name}, whose type is newer than the sync`);
   }
 }
 
 /**
- * A variable on an alias cycle, or `undefined`. Figma does not document how it treats a
- * cycle that only closes across modes, so the fake applies the sync's own conservative rule:
- * a variable points at every variable any of its modes aliases, and any cycle is refused.
- * It follows each chain from every variable, which is slow but plain, and the files in the
- * tests hold a few hundred variables.
+ * Whether a chain of aliases leads from `start` back to it. Figma does not document how it
+ * treats a cycle that only closes across modes, so the fake applies the sync's own
+ * conservative rule: a variable points at every variable any of its modes aliases, and any
+ * cycle is refused. The file had no cycle before the value that just changed, so only a
+ * cycle through the changed variable is possible.
  */
-function aliasCycleThrough(state: FileState): string | undefined {
+function onAliasCycle(state: FileState, start: StoredVariable): boolean {
   const aliased = (variable: StoredVariable): StoredVariable[] =>
     [...variable.valuesByMode.values()].flatMap((value) => {
       const target = isAlias(value) ? state.variables.get(value.id) : undefined;
       return target === undefined ? [] : [target];
     });
-  for (const start of state.variables.values()) {
-    const seen = new Set<StoredVariable>();
-    const pending = aliased(start);
-    for (let next = pending.pop(); next !== undefined; next = pending.pop()) {
-      if (next === start) return start.name;
-      if (seen.has(next)) continue;
-      seen.add(next);
-      pending.push(...aliased(next));
-    }
+  const seen = new Set<StoredVariable>();
+  const pending = aliased(start);
+  for (let next = pending.pop(); next !== undefined; next = pending.pop()) {
+    if (next === start) return true;
+    if (seen.has(next)) continue;
+    seen.add(next);
+    pending.push(...aliased(next));
   }
-  return undefined;
+  return false;
 }
 
 function isAlias(value: StoredValue | PostValue | undefined): value is Alias {
-  return value instanceof Object && "type" in value;
+  return value instanceof Object && "type" in value && value.type === "VARIABLE_ALIAS";
+}
+
+function isFuture(value: StoredValue): value is FutureValue {
+  return value instanceof Object && "type" in value && value.type === "FUTURE_VALUE";
 }
 
 function isComposed(value: StoredValue): value is ComposedColor {

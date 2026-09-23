@@ -32,4 +32,16 @@ describe("the Node entry point", () => {
     expect(result.stdout).toContain("sync");
     expect(result.stdout).toContain("check");
   });
+
+  it("exits 1 when a check cannot run, which keeps exit 2 for drift", () => {
+    const env = Object.fromEntries(Object.entries(process.env).filter(([name]) => name !== "FIGMA_TOKEN"));
+    const result = spawnSync(process.execPath, [...figmaScriptArguments(), "check", "--file-key", "abc"], {
+      cwd: packageRoot,
+      encoding: "utf8",
+      env,
+    });
+
+    expect(result.stderr).toContain("Set FIGMA_TOKEN to a Figma personal access token");
+    expect(result.status).toBe(1);
+  });
 });

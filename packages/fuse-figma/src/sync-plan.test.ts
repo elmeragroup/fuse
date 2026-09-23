@@ -263,6 +263,80 @@ describe("planSync", () => {
     ]);
   });
 
+  it("writes an alias target's value before the value that aliases it", () => {
+    // error comes first and aliases destructive, which the file still points at error.
+    const result = makeVariableSet([
+      {
+        name: "Roles",
+        modes: ["Light"],
+        variables: [
+          {
+            name: "error",
+            type: "COLOR",
+            scopes: [],
+            webSyntax: undefined,
+            values: new Map([
+              ["Light", { _tag: "Alias", target: { collection: "Roles", variable: "destructive" } }],
+            ]),
+          },
+          {
+            name: "destructive",
+            type: "COLOR",
+            scopes: [],
+            webSyntax: undefined,
+            values: new Map([["Light", { _tag: "Color", color: RED }]]),
+          },
+        ],
+      },
+    ]);
+    if (Result.isFailure(result)) throw new Error(result.failure.message);
+    const file: FileCollection = {
+      id: CollectionId("VariableCollectionId:1:1"),
+      name: "Roles",
+      modes: [LIGHT],
+      variables: [
+        {
+          id: VariableId("VariableID:1:20"),
+          name: "error",
+          type: "COLOR",
+          scopes: [],
+          codeSyntax: {},
+          values: new Map([[LIGHT.id, { _tag: "Color", color: RED }]]),
+        },
+        {
+          id: VariableId("VariableID:1:21"),
+          name: "destructive",
+          type: "COLOR",
+          scopes: [],
+          codeSyntax: {},
+          values: new Map([[LIGHT.id, { _tag: "Alias", id: VariableId("VariableID:1:20") }]]),
+        },
+      ],
+    };
+
+    expect(plan({ collections: [file] }, result.success).batch.values).toEqual([
+      { variableId: "VariableID:1:21", modeId: "1:0", value: { _tag: "Color", color: RED } },
+      { variableId: "VariableID:1:20", modeId: "1:0", value: { _tag: "Alias", id: "VariableID:1:21" } },
+    ]);
+  });
+
+  it("reports a type newer than the sync by the name Figma gave it", () => {
+    const file = syncedPalette();
+    const [red, danger] = file.variables;
+    if (red === undefined || danger === undefined) throw new Error("fixture has two variables");
+    const retyped = planSync(variableSet(), {
+      collections: [
+        { ...file, variables: [{ ...red, type: { _tag: "UnknownType", name: "GRADIENT" } }, danger] },
+      ],
+    });
+
+    expect(Result.isFailure(retyped) && retyped.failure).toMatchObject({
+      _tag: "VariableTypeConflict",
+      fileType: "GRADIENT",
+      wantedType: "COLOR",
+    });
+  });
+
   it("refuses to plan when a collection name is ambiguous or a type would change", () => {
     const duplicate = planSync(variableSet(), { collections: [syncedPalette(), syncedPalette()] });
     expect(Result.isFailure(duplicate) && duplicate.failure._tag).toBe("DuplicateCollection");

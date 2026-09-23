@@ -9,7 +9,8 @@
  *   the variables designers bind; each one aliases its scheme's variable in `Fuse themes`.
  * - `Fuse themes` holds `light/<token>` and `dark/<token>` with one mode per theme slug.
  *   Its variables are hidden from the pickers because they only feed `Fuse tokens`.
- * - `Fuse primitives` holds the neutral ramp and brand accents in a single mode.
+ * - `Fuse primitives` holds the neutral ramp and brand accents in a single mode. Primitive
+ *   tokens are public API, so designers can bind these too.
  *
  * Twenty theme modes stay well inside Figma's 40-mode limit, and a new theme adds a mode
  * rather than a collection.
@@ -78,9 +79,6 @@ export class UnsupportedTokenValue extends Schema.TaggedError<UnsupportedTokenVa
 type KindProjection = {
   readonly type: VariableType;
 
-  /** The pickers that offer a `Fuse tokens` variable of this kind. */
-  readonly scopes: readonly VariableScope[];
-
   /** Read a literal CSS value, or return `undefined` when it is not in this kind's form. */
   readonly literal: (css: string) => LiteralValue | undefined;
 
@@ -91,40 +89,57 @@ type KindProjection = {
 const KIND_PROJECTIONS = {
   color: {
     type: "COLOR",
-    scopes: ["ALL_SCOPES"],
     literal: colorLiteral,
     expected: "an oklch() or #rrggbb color",
   },
   dimension: {
     type: "FLOAT",
-    scopes: ["CORNER_RADIUS"],
     literal: dimensionLiteral,
     expected: "a rem or px length",
   },
   fontFamily: {
     type: "STRING",
-    scopes: ["FONT_FAMILY"],
     literal: fontFamilyLiteral,
     expected: "a font stack that starts with a named family",
   },
 } as const satisfies Record<TokenKind, KindProjection>;
 
-/** Picker scopes that replace the kind's scopes on some `Fuse tokens` variables. */
-type TokenScopeOverrides = { readonly [Name in TokenName]?: readonly VariableScope[] };
+/** The tokens of the dimension kind. */
+type DimensionTokenName = {
+  [Name in TokenName]: (typeof TOKEN_KINDS)[Name] extends "dimension" ? Name : never;
+}[TokenName];
 
 /**
- * Picker scopes for the `Fuse tokens` variables whose kind's scopes do not fit them.
- * `radius-step` is a dimension, but it spaces the radius scale and switches between the
- * internal and external variants, so no layer rounds with it. It syncs hidden from every
- * picker and keeps its code syntax for developers.
+ * The pickers that offer each dimension token. A length can round corners, space a gap or
+ * size a stroke, so the kind alone does not pick a scope. A new dimension token fails to
+ * compile until it has an entry here. `radius-step` spaces the radius scale and switches
+ * between the internal and external variants, so no layer rounds with it. It syncs hidden
+ * from every picker and keeps its code syntax for developers.
  */
-const TOKEN_SCOPE_OVERRIDES: TokenScopeOverrides = {
+const DIMENSION_SCOPES = {
+  radius: ["CORNER_RADIUS"],
+  "radius-button": ["CORNER_RADIUS"],
   "radius-step": [],
-};
+} as const satisfies Record<DimensionTokenName, readonly VariableScope[]>;
+
+/**
+ * The pickers that offer a color or font token. Font tokens are STRING variables, and the
+ * REST API's variable types page says scopes are currently only supported on FLOAT and COLOR
+ * variables (https://developers.figma.com/docs/rest-api/variables-types/). They get
+ * `ALL_SCOPES` until a real file shows that Figma keeps `FONT_FAMILY` on a STRING variable.
+ */
+const KIND_SCOPES = {
+  color: ["ALL_SCOPES"],
+  fontFamily: ["ALL_SCOPES"],
+} as const satisfies Record<Exclude<TokenKind, "dimension">, readonly VariableScope[]>;
+
+function isDimensionToken(token: TokenName): token is DimensionTokenName {
+  return TOKEN_KINDS[token] === "dimension";
+}
 
 /** The pickers that offer a token's `Fuse tokens` variable. */
 function tokenScopes(token: TokenName): readonly VariableScope[] {
-  return TOKEN_SCOPE_OVERRIDES[token] ?? KIND_PROJECTIONS[TOKEN_KINDS[token]].scopes;
+  return isDimensionToken(token) ? DIMENSION_SCOPES[token] : KIND_SCOPES[TOKEN_KINDS[token]];
 }
 
 const primitiveNames: ReadonlySet<string> = new Set(PRIMITIVE_NAMES);
@@ -156,7 +171,7 @@ function primitivesCollection(): Result.Result<CollectionSpec, UnsupportedTokenV
       variables.push({
         name,
         type: projection.type,
-        scopes: projection.scopes,
+        scopes: KIND_SCOPES.color,
         webSyntax: `var(--${name})`,
         values: new Map([[PRIMITIVES_MODE, value]]),
       });
