@@ -29,8 +29,8 @@
 ## Figma token sync
 
 - Run the first sync against a real Enterprise file and confirm that empty picker scopes,
-  cross-collection aliases, the mode change order and the read-back check behave as the
-  in-memory fake assumes.
+  the per-type scopes from the REST variable types page, cross-collection aliases, the
+  mode change order and the read-back check behave as the in-memory fake assumes.
   - Find out whether Figma checks for an alias cycle after each value in a batch or once
     at the end. The sync orders values so that either rule passes, and the fake checks
     after each one.
@@ -40,7 +40,13 @@
     on a STRING variable, tighten them to it. If it stores other scopes than the sync
     sent, every `check` reports drift.
 - Add a CI job running `figma:check` once a service account owns a personal access token.
-- Density control metrics live only in CSS, so the sync cannot send them to Figma yet.
+- Add named Figma variables for the private corners in `styles/corner-radius.ts`, such
+  as the compact corner that caps `rounded-md` at 10px in external themes, when the
+  component pilot needs them. The sync sends only the plain radius rungs, `radius-step`
+  and the density metrics.
+- Remove the unused `--radius-popover` rung from `fuse.css` and `RADIUS_RUNGS` in a
+  separate change. No component uses it, Fuse popups use `rounded-md`, and the Figma sync
+  already leaves it out.
 - Revisit Figma extended collections for brand theming if the two-collection mode
   pairing proves awkward for designers.
 

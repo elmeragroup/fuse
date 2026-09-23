@@ -3,10 +3,13 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { parseStyleRules } from "./css-rules";
+import { parseCssBlocks, parseStyleRules } from "../../test/css-rules";
+import type { CssDeclaration } from "../../test/css-rules";
+import type { Density } from "./density";
 import { generateThemesCss } from "./generate-css";
-import { LIBRARY_COMFORTABLE_SELECTOR, generateDemoStageComfortableCss } from "./generate-demo-stage-css";
+import { DEMO_STAGE_COMFORTABLE_SELECTOR, generateDemoStageComfortableCss } from "./generate-demo-stage-css";
 import { EXTERNAL_RESET_KEYS, TOKEN_NAMES } from "./tokens/contract";
+import { DENSITY_METRIC_NAMES, DENSITY_METRICS, DENSITY_SELECTORS } from "./tokens/density-metrics";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fuseCss = readFileSync(join(here, "../styles/fuse.css"), "utf8");
@@ -14,70 +17,38 @@ const compiledCssPath = join(here, "../../dist/styles.css");
 const packedRawCssPath = join(here, "../../dist/styles/fuse.css");
 const demoStageCssPath = join(here, "../../dist/demo-stage-comfortable.css");
 
-const DENSITY_VARIABLE_NAMES = [
-  "--control-h-xs",
-  "--control-h-sm",
-  "--control-h-md",
-  "--control-h-lg",
-  "--control-px-xs",
-  "--control-px-sm",
-  "--control-px-md",
-  "--control-px-lg",
-  "--control-px-icon-xs",
-  "--control-px-icon-sm",
-  "--control-px-icon-md",
-  "--control-px-icon-lg",
-  "--control-gap-xs",
-  "--control-gap-sm",
-  "--control-gap-md",
-  "--control-gap-lg",
-  "--control-text",
-  "--control-leading",
-] as const;
+const isControlMetric = (declaration: CssDeclaration): boolean => declaration.name.startsWith("control-");
+
+/** The declarations of the one `fuse.css` rule with this selector. */
+function fuseCssRule(selector: string): CssDeclaration[] {
+  const matching = parseStyleRules(fuseCss).filter((rule) => rule.selector === selector);
+  expect(
+    matching.map((rule) => rule.selector),
+    `one ${selector} rule in fuse.css`
+  ).toEqual([selector]);
+  return matching[0]?.declarations ?? [];
+}
+
+/** What a density's rule must declare, in order, according to `DENSITY_METRICS`. */
+function expectedDeclarations(density: Density): CssDeclaration[] {
+  return DENSITY_METRIC_NAMES.map((name) => ({ name, value: DENSITY_METRICS[name][density] }));
+}
 
 describe("density CSS", () => {
-  it("declares dense defaults on :root and comfortable overrides on the rooted attribute", () => {
-    expect(fuseCss).toContain(':root[data-density="comfortable"]');
-    const dense = /:root\s*\{[^}]*\}/s.exec(fuseCss)?.[0] ?? "";
-    const comfortable = /:root\[data-density="comfortable"\]\s*\{[^}]*\}/s.exec(fuseCss)?.[0] ?? "";
+  // This cross-check reads the hand-written fuse.css, and DENSITY_METRICS is the oracle it
+  // must reproduce.
+  it("declares exactly DENSITY_METRICS, dense on :root and comfortable on the rooted attribute", () => {
+    expect(fuseCssRule(DENSITY_SELECTORS.dense).filter(isControlMetric)).toEqual(
+      expectedDeclarations("dense")
+    );
+    expect(fuseCssRule(DENSITY_SELECTORS.comfortable)).toEqual(expectedDeclarations("comfortable"));
+  });
 
-    expect(dense).toMatch(/--control-h-xs:\s*1\.5rem/);
-    expect(dense).toMatch(/--control-h-sm:\s*2rem/);
-    expect(dense).toMatch(/--control-h-md:\s*2\.25rem/);
-    expect(dense).toMatch(/--control-h-lg:\s*2\.5rem/);
-    expect(dense).toMatch(/--control-px-xs:\s*0\.5rem/);
-    expect(dense).toMatch(/--control-px-sm:\s*0\.625rem/);
-    expect(dense).toMatch(/--control-px-md:\s*0\.625rem/);
-    expect(dense).toMatch(/--control-px-lg:\s*0\.625rem/);
-    expect(dense).toMatch(/--control-px-icon-xs:\s*0\.375rem/);
-    expect(dense).toMatch(/--control-px-icon-sm:\s*0\.375rem/);
-    expect(dense).toMatch(/--control-px-icon-md:\s*0\.5rem/);
-    expect(dense).toMatch(/--control-px-icon-lg:\s*0\.5rem/);
-    expect(dense).toMatch(/--control-gap-xs:\s*0\.25rem/);
-    expect(dense).toMatch(/--control-gap-sm:\s*0\.25rem/);
-    expect(dense).toMatch(/--control-gap-md:\s*0\.375rem/);
-    expect(dense).toMatch(/--control-gap-lg:\s*0\.375rem/);
-    expect(dense).toMatch(/--control-text:\s*0\.875rem/);
-    expect(dense).toMatch(/--control-leading:\s*1\.25rem/);
-
-    expect(comfortable).toMatch(/--control-h-xs:\s*2rem/);
-    expect(comfortable).toMatch(/--control-h-sm:\s*2\.25rem/);
-    expect(comfortable).toMatch(/--control-h-md:\s*2\.75rem/);
-    expect(comfortable).toMatch(/--control-h-lg:\s*3rem/);
-    expect(comfortable).toMatch(/--control-px-xs:\s*0\.75rem/);
-    expect(comfortable).toMatch(/--control-px-sm:\s*0\.875rem/);
-    expect(comfortable).toMatch(/--control-px-md:\s*0\.875rem/);
-    expect(comfortable).toMatch(/--control-px-lg:\s*0\.875rem/);
-    expect(comfortable).toMatch(/--control-px-icon-xs:\s*0\.625rem/);
-    expect(comfortable).toMatch(/--control-px-icon-sm:\s*0\.625rem/);
-    expect(comfortable).toMatch(/--control-px-icon-md:\s*0\.75rem/);
-    expect(comfortable).toMatch(/--control-px-icon-lg:\s*0\.75rem/);
-    expect(comfortable).toMatch(/--control-gap-xs:\s*0\.375rem/);
-    expect(comfortable).toMatch(/--control-gap-sm:\s*0\.375rem/);
-    expect(comfortable).toMatch(/--control-gap-md:\s*0\.5rem/);
-    expect(comfortable).toMatch(/--control-gap-lg:\s*0\.5rem/);
-    expect(comfortable).toMatch(/--control-text:\s*1\.125rem/);
-    expect(comfortable).toMatch(/--control-leading:\s*1\.5rem/);
+  it("declares control metrics in no other block, at-rule blocks such as @utility included", () => {
+    const declaring = parseCssBlocks(fuseCss)
+      .filter((block) => block.declarations.some(isControlMetric))
+      .map((block) => block.prelude);
+    expect(declaring).toEqual([DENSITY_SELECTORS.dense, DENSITY_SELECTORS.comfortable]);
   });
 
   it("does not key density metrics on data-theme-variant or a nested attribute selector", () => {
@@ -86,10 +57,9 @@ describe("density CSS", () => {
   });
 
   it("never enters TOKEN_NAMES or EXTERNAL_RESET_KEYS", () => {
-    for (const name of DENSITY_VARIABLE_NAMES) {
-      const token = name.replace(/^--/, "");
-      expect(TOKEN_NAMES).not.toContain(token);
-      expect(EXTERNAL_RESET_KEYS).not.toContain(token);
+    for (const name of DENSITY_METRIC_NAMES) {
+      expect(TOKEN_NAMES).not.toContain(name);
+      expect(EXTERNAL_RESET_KEYS).not.toContain(name);
     }
   });
 
@@ -114,35 +84,25 @@ describe("density CSS", () => {
   });
 });
 
+// The generator reads DENSITY_METRICS, so these tests take the hand-written fuse.css
+// comfortable block as the oracle the demo stage must reproduce under its own selector.
 describe("DemoStage comfortable density artifact", () => {
   it("re-scopes the library comfortable block onto [data-demo-stage]", () => {
-    const derived = generateDemoStageComfortableCss(
-      ':root[data-density="comfortable"] { --control-h-md: 2.75rem; --control-text: 1.125rem; }'
-    );
-    expect(parseStyleRules(derived)).toEqual([
+    expect(parseStyleRules(generateDemoStageComfortableCss())).toEqual([
       {
         selector: '[data-demo-stage][data-density="comfortable"]',
-        declarations: [
-          { name: "control-h-md", value: "2.75rem" },
-          { name: "control-text", value: "1.125rem" },
-        ],
+        declarations: fuseCssRule(DENSITY_SELECTORS.comfortable),
       },
     ]);
   });
 
-  it("throws when the library comfortable block is missing", () => {
-    expect(() => generateDemoStageComfortableCss(":root { --control-h-md: 2.25rem; }")).toThrow(
-      LIBRARY_COMFORTABLE_SELECTOR
-    );
-  });
-
-  it("is emitted next to themes.css with every density variable", () => {
+  it("is emitted next to themes.css with every comfortable metric", () => {
     // Guaranteed by the root `test` task's direct `@elmeragroup/fuse#build` dependency.
     expect(existsSync(demoStageCssPath), demoStageCssPath).toBe(true);
     const rules = parseStyleRules(readFileSync(demoStageCssPath, "utf8"));
-    expect(rules.map((rule) => rule.selector)).toEqual(['[data-demo-stage][data-density="comfortable"]']);
+    expect(rules.map((rule) => rule.selector)).toEqual([DEMO_STAGE_COMFORTABLE_SELECTOR]);
     const declarations = rules[0]?.declarations ?? [];
-    expect(declarations.map((declaration) => `--${declaration.name}`)).toEqual([...DENSITY_VARIABLE_NAMES]);
+    expect(declarations).toEqual(fuseCssRule(DENSITY_SELECTORS.comfortable));
     expect(declarations.find((declaration) => declaration.name === "control-h-md")?.value).toBe("2.75rem");
   });
 });

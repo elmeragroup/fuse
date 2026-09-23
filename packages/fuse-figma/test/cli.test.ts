@@ -64,14 +64,20 @@ const light = (theme: string) => ({ "Fuse tokens": "Light", "Fuse themes": theme
 const dark = (theme: string) => ({ "Fuse tokens": "Dark", "Fuse themes": theme });
 
 describe("fuse-figma sync", () => {
-  it.effect("creates the three Fuse collections in an empty file", () =>
+  it.effect("creates the four Fuse collections in an empty file", () =>
     Effect.gen(function* () {
       const figma = new InMemoryFigma(FILE_KEY, TOKEN);
       yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
 
-      assert.deepStrictEqual(figma.collectionNames(), ["Fuse primitives", "Fuse themes", "Fuse tokens"]);
+      assert.deepStrictEqual(figma.collectionNames(), [
+        "Fuse primitives",
+        "Fuse themes",
+        "Fuse tokens",
+        "Fuse density",
+      ]);
       assert.deepStrictEqual(figma.modeNames("Fuse tokens"), ["Light", "Dark"]);
       assert.deepStrictEqual(figma.modeNames("Fuse primitives"), ["Value"]);
+      assert.deepStrictEqual(figma.modeNames("Fuse density"), ["Dense", "Comfortable"]);
       const themeModes = figma.modeNames("Fuse themes");
       assert.strictEqual(themeModes.length, 20);
       assert.includeMembers(themeModes, [
@@ -81,9 +87,11 @@ describe("fuse-figma sync", () => {
         "external-fkse-private",
       ]);
       assert.notInclude(themeModes, "external-fkab-private");
-      assert.strictEqual(figma.variableNames("Fuse tokens").length, 79);
-      assert.strictEqual(figma.variableNames("Fuse themes").length, 158);
+      // 79 contract tokens plus 5 radius rungs, and each of those per scheme in Fuse themes.
+      assert.strictEqual(figma.variableNames("Fuse tokens").length, 84);
+      assert.strictEqual(figma.variableNames("Fuse themes").length, 168);
       assert.strictEqual(figma.variableNames("Fuse primitives").length, 23);
+      assert.strictEqual(figma.variableNames("Fuse density").length, 18);
       assert.strictEqual(writes(figma), 1);
       assert.include(yield* output, "reading it back matches the tokens");
     })
@@ -184,6 +192,100 @@ describe("fuse-figma sync", () => {
         codeSyntax: { WEB: "var(--neutral-500)" },
       });
       assert.deepStrictEqual(figma.metadata("Fuse themes", "light/primary"), { scopes: [], codeSyntax: {} });
+      // The built CSS defines no --radius-sm and most other rungs, so the rungs carry the calc().
+      assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius-md"), {
+        scopes: ["CORNER_RADIUS"],
+        codeSyntax: { WEB: "calc(var(--radius) - var(--radius-step))" },
+      });
+      assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius-lg").codeSyntax, { WEB: "var(--radius)" });
+      assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius-xl").codeSyntax, {
+        WEB: "calc(var(--radius) + 2 * var(--radius-step))",
+      });
+      assert.deepStrictEqual(figma.metadata("Fuse themes", "dark/radius-md"), { scopes: [], codeSyntax: {} });
+      assert.deepStrictEqual(figma.metadata("Fuse density", "control-h-md"), {
+        scopes: ["WIDTH_HEIGHT"],
+        codeSyntax: { WEB: "var(--control-h-md)" },
+      });
+      assert.deepStrictEqual(figma.metadata("Fuse density", "control-px-icon-sm"), {
+        scopes: ["GAP"],
+        codeSyntax: { WEB: "var(--control-px-icon-sm)" },
+      });
+      assert.deepStrictEqual(figma.metadata("Fuse density", "control-gap-lg"), {
+        scopes: ["GAP"],
+        codeSyntax: { WEB: "var(--control-gap-lg)" },
+      });
+      assert.deepStrictEqual(figma.metadata("Fuse density", "control-text"), {
+        scopes: ["FONT_SIZE"],
+        codeSyntax: { WEB: "var(--control-text)" },
+      });
+      assert.deepStrictEqual(figma.metadata("Fuse density", "control-leading"), {
+        scopes: ["LINE_HEIGHT"],
+        codeSyntax: { WEB: "var(--control-leading)" },
+      });
+    })
+  );
+
+  it.effect("resolves the radius rungs a theme derives from its radius and radius step", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
+      const radius = (name: string, modes: Readonly<Record<string, string>>) =>
+        figma.resolve("Fuse tokens", name, modes);
+
+      const rungs = (modes: Readonly<Record<string, string>>) =>
+        ["radius-xs", "radius-sm", "radius-md", "radius-lg", "radius-xl"].map((rung) => radius(rung, modes));
+
+      // Internal themes inherit --radius: 0.375rem, 6px, and step 0px, so every rung is 6px.
+      assert.deepStrictEqual(rungs(light("internal-fkas-private")), [6, 6, 6, 6, 6]);
+      // External themes step 2px. external-fkas-private sets --radius: 0.75rem, 12px at the
+      // 16px root, so the rungs are 12 - 3 * 2, 12 - 2 * 2, 12 - 2, 12 and 12 + 2 * 2.
+      assert.strictEqual(radius("radius", light("external-fkas-private")), 12);
+      assert.deepStrictEqual(rungs(light("external-fkas-private")), [6, 8, 10, 12, 16]);
+      // Dark keeps the light radius and step.
+      assert.deepStrictEqual(rungs(dark("external-fkas-private")), [6, 8, 10, 12, 16]);
+      // external-guen-private sets 0.5rem, 8px.
+      assert.deepStrictEqual(rungs(light("external-guen-private")), [2, 4, 6, 8, 12]);
+      // external-tkas-private sets 0.95rem, 15.2px. Figma stores each value as a 32-bit float.
+      assert.deepStrictEqual(
+        rungs(light("external-tkas-private")),
+        [9.2, 11.2, 13.2, 15.2, 19.2].map(Math.fround)
+      );
+      // No component uses radius-popover, so the sync gives designers no variable for it.
+      assert.notInclude(figma.variableNames("Fuse tokens"), "radius-popover");
+      assert.notInclude(figma.variableNames("Fuse themes"), "light/radius-popover");
+
+      assert.deepStrictEqual(figma.aliasChain("Fuse tokens", "radius-md", dark("internal-tkas-company")), [
+        "Fuse tokens/radius-md",
+        "Fuse themes/dark/radius-md",
+      ]);
+    })
+  );
+
+  it.effect("resolves each control metric in the density a frame sets, whatever its theme", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
+      const metric = (name: string, density: string, theme = "external-fkas-private") =>
+        figma.resolve("Fuse density", name, { ...light(theme), "Fuse density": density });
+
+      // fuse.css: --control-h-md is 2.25rem on :root and 2.75rem when comfortable.
+      assert.strictEqual(metric("control-h-md", "Dense"), 36);
+      assert.strictEqual(metric("control-h-md", "Comfortable"), 44);
+      assert.strictEqual(metric("control-h-md", "Dense", "internal-guen-company"), 36);
+      assert.strictEqual(metric("control-h-xs", "Dense"), 24);
+      assert.strictEqual(metric("control-h-lg", "Comfortable"), 48);
+      assert.strictEqual(metric("control-px-xs", "Dense"), 8);
+      assert.strictEqual(metric("control-px-md", "Comfortable"), 14);
+      assert.strictEqual(metric("control-px-icon-sm", "Dense"), 6);
+      assert.strictEqual(metric("control-px-icon-lg", "Comfortable"), 12);
+      assert.strictEqual(metric("control-gap-sm", "Dense"), 4);
+      assert.strictEqual(metric("control-gap-md", "Comfortable"), 8);
+      assert.strictEqual(metric("control-text", "Dense"), 14);
+      assert.strictEqual(metric("control-text", "Comfortable"), 18);
+      assert.strictEqual(metric("control-leading", "Dense"), 20);
+      assert.strictEqual(metric("control-leading", "Comfortable"), 24);
+      // A frame that sets no density mode sees the collection's first mode, Dense.
+      assert.strictEqual(figma.resolve("Fuse density", "control-h-sm", {}), 32);
     })
   );
 
@@ -373,8 +475,9 @@ describe("fuse-figma sync", () => {
         "Fuse primitives",
         "Fuse themes",
         "Fuse tokens",
+        "Fuse density",
       ]);
-      assert.strictEqual(figma.variableNames("Fuse themes").length, 158);
+      assert.strictEqual(figma.variableNames("Fuse themes").length, 168);
       assert.deepStrictEqual(figma.variableById(libraryPrimary).values, [
         { r: 0, g: 0, b: 0, a: 1 },
         { r: 0, g: 0, b: 0, a: 1 },
@@ -536,7 +639,9 @@ describe("fuse-figma check", () => {
       assert.include(printed, "Fuse tokens: create mode Dark");
       assert.include(printed, "Fuse themes: create mode ×20");
       assert.notInclude(printed, "Fuse themes: create mode external-elma-company");
-      assert.include(printed, "Fuse themes: create variable ×158");
+      assert.include(printed, "Fuse themes: create variable ×168");
+      assert.include(printed, "Fuse density: create mode Comfortable");
+      assert.include(printed, "Fuse density: create variable ×18");
     })
   );
 

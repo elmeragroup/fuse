@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { cssColorToSrgb, cssFirstFontFamily, cssLengthToPx, cssVarReference } from "./css-values";
+import { cssColorToSrgb, cssFirstFontFamily, cssLengthToPx, cssVarReference, remToPx } from "./css-values";
 
 describe("cssVarReference", () => {
   it("names the custom property of a single var() reference", () => {
@@ -47,6 +47,14 @@ describe("cssLengthToPx", () => {
   it("rejects other units and bare numbers", () => {
     expect(cssLengthToPx("2em")).toBeUndefined();
     expect(cssLengthToPx("1.5")).toBeUndefined();
+  });
+});
+
+describe("remToPx", () => {
+  it("reads rem at the 16px root", () => {
+    expect(remToPx("2.25rem")).toBe(36);
+    expect(remToPx("0.625rem")).toBe(10);
+    expect(remToPx("3rem")).toBe(48);
   });
 });
 

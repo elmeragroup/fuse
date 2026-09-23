@@ -3,14 +3,17 @@
  *
  * Fuse themes vary on two axes, the theme slug and the color scheme. Figma resolves an
  * alias using the layer's mode for the target collection, so the two axes become two
- * collections that designers set independently on a frame.
+ * collections that designers set independently on a frame. Density is a third axis,
+ * independent of the theme, so it has a collection of its own.
  *
- * - `Fuse tokens` holds one variable per role token with a Light and a Dark mode. These are
- *   the variables designers bind; each one aliases its scheme's variable in `Fuse themes`.
+ * - `Fuse tokens` holds one variable per role token and per radius rung a component uses,
+ *   with a Light and a Dark mode. These are the variables designers bind; each one aliases
+ *   its scheme's variable in `Fuse themes`.
  * - `Fuse themes` holds `light/<token>` and `dark/<token>` with one mode per theme slug.
  *   Its variables are hidden from the pickers because they only feed `Fuse tokens`.
  * - `Fuse primitives` holds the neutral ramp and brand accents in a single mode. Primitive
  *   tokens are public API, so designers can bind these too.
+ * - `Fuse density` holds the control metrics with a Dense and a Comfortable mode.
  *
  * Twenty theme modes stay well inside Figma's 40-mode limit, and a new theme adds a mode
  * rather than a collection.
@@ -24,14 +27,27 @@ import {
   cssFirstFontFamily,
   cssLengthToPx,
   cssVarReference,
+  DENSITY_METRIC_FAMILIES,
+  DENSITY_METRICS,
   LEGAL_THEMES,
   PRIMITIVE_NAMES,
   PRIMITIVES,
+  RADIUS_RUNG_NAMES,
+  RADIUS_RUNGS,
+  remToPx,
   themeSlug,
   TOKEN_KINDS,
   TOKEN_NAMES,
 } from "@elmeragroup/fuse/theme-catalog";
-import type { ResolvedColorScheme, TokenKind, TokenName } from "@elmeragroup/fuse/theme-catalog";
+import type {
+  Density,
+  DensityMetricKind,
+  RadiusRungName,
+  ResolvedColorScheme,
+  TokenContract,
+  TokenKind,
+  TokenName,
+} from "@elmeragroup/fuse/theme-catalog";
 
 import { makeVariableSet } from "./variable-set.ts";
 import type {
@@ -59,11 +75,30 @@ export const THEMES_COLLECTION = "Fuse themes";
 /** The collection holding the scheme-independent palette. */
 export const PRIMITIVES_COLLECTION = "Fuse primitives";
 
+/** The collection with the control metrics and one mode per density. */
+export const DENSITY_COLLECTION = "Fuse density";
+
 const PRIMITIVES_MODE = "Value";
 
 const SCHEME_MODES = { light: "Light", dark: "Dark" } as const satisfies Record<ResolvedColorScheme, string>;
 
 const SCHEMES = ["light", "dark"] as const satisfies readonly ResolvedColorScheme[];
+
+const DENSITY_MODES = { dense: "Dense", comfortable: "Comfortable" } as const satisfies Record<
+  Density,
+  string
+>;
+
+const DENSITIES = ["dense", "comfortable"] as const satisfies readonly Density[];
+
+/** The pickers that offer each kind of density metric. Figma's `GAP` covers padding too. */
+const DENSITY_SCOPES = {
+  height: ["WIDTH_HEIGHT"],
+  padding: ["GAP"],
+  gap: ["GAP"],
+  fontSize: ["FONT_SIZE"],
+  lineHeight: ["LINE_HEIGHT"],
+} as const satisfies Record<DensityMetricKind, readonly VariableScope[]>;
 
 /** A token value the projection has no Figma form for. */
 export class UnsupportedTokenValue extends Schema.TaggedError<UnsupportedTokenValue>()(
@@ -112,7 +147,7 @@ type DimensionTokenName = {
 /**
  * The pickers that offer each dimension token. A length can round corners, space a gap or
  * size a stroke, so the kind alone does not pick a scope. A new dimension token fails to
- * compile until it has an entry here. `radius-step` spaces the radius scale and switches
+ * compile until it has an entry here. `radius-step` spaces the radius rungs and switches
  * between the internal and external variants, so no layer rounds with it. It syncs hidden
  * from every picker and keeps its code syntax for developers.
  */
@@ -137,18 +172,106 @@ function isDimensionToken(token: TokenName): token is DimensionTokenName {
   return TOKEN_KINDS[token] === "dimension";
 }
 
-/** The pickers that offer a token's `Fuse tokens` variable. */
+/** The pickers that offer a contract token's `Fuse tokens` variable. */
 function tokenScopes(token: TokenName): readonly VariableScope[] {
   return isDimensionToken(token) ? DIMENSION_SCOPES[token] : KIND_SCOPES[TOKEN_KINDS[token]];
 }
+
+/** Resolves the name inside a `var(--name)` reference to the variable it aliases. */
+type ReferenceResolver = (name: string) => AliasValue | undefined;
+
+/**
+ * One variable designers bind in `Fuse tokens`. `Fuse themes` holds its value per theme as
+ * `light/<name>` and `dark/<name>`, and the `Fuse tokens` variable aliases those.
+ */
+type BoundVariable = {
+  readonly name: string;
+  readonly type: VariableType;
+
+  /** The pickers that offer the `Fuse tokens` variable. */
+  readonly scopes: readonly VariableScope[];
+
+  /** The CSS a developer pastes. Every `var()` in it names a property the shipped CSS defines. */
+  readonly webSyntax: string;
+
+  /**
+   * The Figma value in one composed theme. `reference` turns a `var()` into an alias in the
+   * same scheme.
+   */
+  readonly valueIn: (
+    tokens: TokenContract,
+    reference: ReferenceResolver
+  ) => Result.Result<VariableValue, UnsupportedTokenValue>;
+};
+
+function contractVariable(token: TokenName): BoundVariable {
+  const projection = KIND_PROJECTIONS[TOKEN_KINDS[token]];
+  return {
+    name: token,
+    type: projection.type,
+    scopes: tokenScopes(token),
+    webSyntax: `var(--${token})`,
+    valueIn: (tokens, reference) => tokenValue(token, tokens[token], projection, reference),
+  };
+}
+
+/**
+ * A radius rung as a pixel value per theme. Figma variables cannot compute, so the sync does
+ * the `calc()` from `fuse.css` with the theme's `radius` and `radius-step`. CSS clamps a
+ * negative `border-radius` to 0, so a rung below zero becomes 0, the radius a layer shows.
+ *
+ * The code syntax is the `calc()` itself, the CSS value in `RADIUS_RUNGS` that `fuse.css`
+ * declares. `fuse.css` declares the rungs in `@theme inline`, so Tailwind inlines them into
+ * its utilities and the built CSS does not define `--radius-sm` and most other rungs as
+ * custom properties.
+ */
+function radiusRungVariable(rung: RadiusRungName): BoundVariable {
+  const { steps, css } = RADIUS_RUNGS[rung];
+  const projection = KIND_PROJECTIONS.dimension;
+  return {
+    name: rung,
+    type: projection.type,
+    scopes: ["CORNER_RADIUS"],
+    webSyntax: css,
+    valueIn: (tokens) =>
+      Result.gen(function* () {
+        const radius = yield* lengthInPx("radius", tokens.radius, rung);
+        const step = yield* lengthInPx("radius-step", tokens["radius-step"], rung);
+        const value: FloatValue = { _tag: "Float", value: Math.max(0, radius + steps * step) };
+        return value;
+      }),
+  };
+}
+
+/** A length token in pixels, or the failure that names the rung that needs it. */
+function lengthInPx(
+  token: TokenName,
+  css: string,
+  rung: RadiusRungName
+): Result.Result<number, UnsupportedTokenValue> {
+  const px = cssLengthToPx(css);
+  return px === undefined
+    ? unsupported(token, css, `a rem or px length to derive ${rung} from`)
+    : Result.succeed(px);
+}
+
+/**
+ * Every `Fuse tokens` variable. The sync leaves out `radius-popover` because no component
+ * uses it. Fuse popups use `radius-md`, so a designer who binds `radius-popover` to a popover
+ * gets a radius the code never renders. `TODO.md` tracks removing the rung from `fuse.css`.
+ */
+const BOUND_VARIABLES: readonly BoundVariable[] = [
+  ...TOKEN_NAMES.map(contractVariable),
+  ...RADIUS_RUNG_NAMES.filter((rung) => rung !== "radius-popover").map(radiusRungVariable),
+];
 
 const primitiveNames: ReadonlySet<string> = new Set(PRIMITIVE_NAMES);
 const tokenNames: ReadonlySet<string> = new Set(TOKEN_NAMES);
 
 /**
- * Build the variable set for every legal theme in both color schemes.
+ * Build the variable set for every legal theme in both color schemes and both densities.
  *
- * @returns The three Fuse collections. It fails on the first token value that has no Figma
+ * @returns The four Fuse collections. It fails on the first token value that has no Figma
  *   form, or on the variable set rule the projection breaks.
  */
 export function fuseVariableSet(): Result.Result<
@@ -158,7 +281,7 @@ export function fuseVariableSet(): Result.Result<
   return Result.gen(function* () {
     const primitives = yield* primitivesCollection();
     const themes = yield* themesCollection();
-    return yield* makeVariableSet([primitives, themes, tokensCollection()]);
+    return yield* makeVariableSet([primitives, themes, tokensCollection(), densityCollection()]);
   });
 }
 
@@ -186,16 +309,15 @@ function themesCollection(): Result.Result<CollectionSpec, UnsupportedTokenValue
     for (const scheme of SCHEMES) {
       const composed = LEGAL_THEMES.map((theme) => [themeSlug(theme), composeTheme(theme, scheme)] as const);
       const reference = schemeReference(scheme);
-      for (const token of TOKEN_NAMES) {
-        const projection = KIND_PROJECTIONS[TOKEN_KINDS[token]];
+      for (const bound of BOUND_VARIABLES) {
         const values = new Map<string, VariableValue>();
         for (const [slug, tokens] of composed) {
-          values.set(slug, yield* tokenValue(token, tokens[token], projection, reference));
+          values.set(slug, yield* bound.valueIn(tokens, reference));
         }
         // Only designers' pickers read scopes; these variables are reached through aliases.
         variables.push({
-          name: themeVariableName(scheme, token),
-          type: projection.type,
+          name: themeVariableName(scheme, bound.name),
+          type: bound.type,
           scopes: [],
           webSyntax: undefined,
           values,
@@ -207,29 +329,46 @@ function themesCollection(): Result.Result<CollectionSpec, UnsupportedTokenValue
 }
 
 function tokensCollection(): CollectionSpec {
-  const variables = TOKEN_NAMES.map((token): VariableSpec => {
-    const projection = KIND_PROJECTIONS[TOKEN_KINDS[token]];
-    return {
-      name: token,
+  const variables = BOUND_VARIABLES.map((bound): VariableSpec => ({
+    name: bound.name,
+    type: bound.type,
+    scopes: bound.scopes,
+    webSyntax: bound.webSyntax,
+    values: new Map(
+      SCHEMES.map((scheme) => [SCHEME_MODES[scheme], themeAlias(themeVariableName(scheme, bound.name))])
+    ),
+  }));
+  return { name: TOKENS_COLLECTION, modes: SCHEMES.map((scheme) => SCHEME_MODES[scheme]), variables };
+}
+
+/** The `Fuse themes` variable holding one bound variable's value in one scheme. */
+function themeVariableName(scheme: ResolvedColorScheme, name: string): string {
+  return `${scheme}/${name}`;
+}
+
+/**
+ * One FLOAT variable per control metric, named after its custom property. Density is
+ * independent of theme and scheme, so these variables hold literals and alias nothing. A
+ * metric's family decides its scopes.
+ */
+function densityCollection(): CollectionSpec {
+  const projection = KIND_PROJECTIONS.dimension;
+  const variables = DENSITY_METRIC_FAMILIES.flatMap(({ kind, metrics }) =>
+    metrics.map((name): VariableSpec => ({
+      name,
       type: projection.type,
-      scopes: tokenScopes(token),
-      webSyntax: `var(--${token})`,
-      values: new Map([
-        [SCHEME_MODES.light, themeAlias(themeVariableName("light", token))],
-        [SCHEME_MODES.dark, themeAlias(themeVariableName("dark", token))],
-      ]),
-    };
-  });
-  return { name: TOKENS_COLLECTION, modes: [SCHEME_MODES.light, SCHEME_MODES.dark], variables };
+      scopes: DENSITY_SCOPES[kind],
+      webSyntax: `var(--${name})`,
+      values: new Map<string, VariableValue>(
+        DENSITIES.map((density) => [
+          DENSITY_MODES[density],
+          { _tag: "Float", value: remToPx(DENSITY_METRICS[name][density]) },
+        ])
+      ),
+    }))
+  );
+  return { name: DENSITY_COLLECTION, modes: DENSITIES.map((density) => DENSITY_MODES[density]), variables };
 }
-
-/** The `Fuse themes` variable holding one token's value in one scheme. */
-function themeVariableName(scheme: ResolvedColorScheme, token: TokenName): string {
-  return `${scheme}/${token}`;
-}
-
-/** Resolves the name inside a `var(--name)` reference to the variable it aliases. */
-type ReferenceResolver = (name: string) => AliasValue | undefined;
 
 function primitiveReference(name: string): AliasValue | undefined {
   return primitiveNames.has(name)
@@ -246,15 +385,11 @@ function schemeReference(scheme: ResolvedColorScheme): ReferenceResolver {
     if (primitiveNames.has(name)) {
       return primitiveReference(name);
     }
-    if (isTokenName(name)) {
+    if (tokenNames.has(name)) {
       return themeAlias(themeVariableName(scheme, name));
     }
     return undefined;
   };
-}
-
-function isTokenName(name: string): name is TokenName {
-  return tokenNames.has(name);
 }
 
 function themeAlias(variable: string): AliasValue {
