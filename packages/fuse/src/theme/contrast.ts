@@ -1,6 +1,6 @@
 import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
-import { oklchToLinearSrgb, parseOklch } from "./oklch";
+import { clipChannel, linearToSrgb, oklchToLinearSrgb, parseOklch } from "./oklch";
 import type { LinearRgb } from "./oklch";
 import type { TokenName } from "./tokens/contract";
 import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
@@ -36,21 +36,6 @@ export type ContrastMatrix = {
     [Pair in TextGradePairId]: number;
   };
 };
-
-function clipChannel(channel: number): number {
-  if (channel < 0) {
-    return 0;
-  }
-  if (channel > 1) {
-    return 1;
-  }
-  return channel;
-}
-
-function linearToSrgb(channel: number): number {
-  const clipped = clipChannel(channel);
-  return clipped <= 0.0031308 ? 12.92 * clipped : 1.055 * clipped ** (1 / 2.4) - 0.055;
-}
 
 function srgbToLinear(channel: number): number {
   return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;

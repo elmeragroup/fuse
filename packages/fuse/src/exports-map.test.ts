@@ -449,11 +449,14 @@ describe("exports map", () => {
     );
     expect(catalog).toEqual([
       "composeTheme",
-      "oklchToLinearSrgb",
-      "parseOklch",
+      "cssColorToSrgb",
+      "cssFirstFontFamily",
+      "cssLengthToPx",
+      "cssVarReference",
       "defaultDensityForVariant",
       "densityAttributes",
       "themeAttributes",
+      "TOKEN_KINDS",
       "TOKEN_NAMES",
       "PRIMITIVE_NAMES",
       "PRIMITIVES",

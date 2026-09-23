@@ -1,6 +1,7 @@
 // The OKLCH color math the token pipeline shares. Theme composition mixes derived roles
-// with it and the contrast gate converts roles to linear sRGB with it, so it imports
-// nothing from the theme pipeline.
+// with it, the contrast gate converts roles to linear sRGB with it, and the CSS value
+// readers convert colors to gamma-encoded sRGB with it, so it imports nothing from the
+// theme pipeline.
 
 /** A color's linear-light sRGB channels, unclipped, as the contrast math reads them. */
 export type LinearRgb = {
@@ -25,6 +26,27 @@ const OKLCH_RE =
 const DECIMALS = 7;
 
 /**
+ * Read an `oklch(L C H)` or `oklch(L C H / A)` literal, with the alpha as a number or a
+ * percentage.
+ *
+ * @param value - A CSS color.
+ * @returns The coordinates and alpha, or `undefined` when `value` is not a well-formed
+ *   `oklch()` literal.
+ */
+export function readOklch(value: string): OklchColor | undefined {
+  const match = OKLCH_RE.exec(value);
+  if (!match) {
+    return undefined;
+  }
+  return {
+    l: Number(match[1]),
+    c: Number(match[2]),
+    h: Number(match[3]),
+    alpha: match[4] === undefined ? 1 : Number(match[4]) / (match[5] === "%" ? 100 : 1),
+  };
+}
+
+/**
  * Parse an `oklch(L C H)` or `oklch(L C H / A)` literal, with the alpha as a number or a
  * percentage.
  *
@@ -33,16 +55,10 @@ const DECIMALS = 7;
  * @throws When the value is not an `oklch()` literal, which is a defect in a token module.
  */
 export function parseOklch(value: string): OklchColor {
-  const match = OKLCH_RE.exec(value);
-  if (!match) {
+  const parsed = readOklch(value);
+  if (parsed === undefined) {
     throw new Error(`Expected an oklch() color, received: ${value}`);
   }
-  const parsed: OklchColor = {
-    l: Number(match[1]),
-    c: Number(match[2]),
-    h: Number(match[3]),
-    alpha: match[4] === undefined ? 1 : Number(match[4]) / (match[5] === "%" ? 100 : 1),
-  };
   return parsed;
 }
 
@@ -53,7 +69,16 @@ export function parseOklch(value: string): OklchColor {
  * @returns The unclipped linear sRGB channels.
  */
 export function oklchToLinearSrgb(value: string): LinearRgb {
-  const { l, c, h } = parseOklch(value);
+  return linearSrgbFromOklch(parseOklch(value));
+}
+
+/**
+ * Convert parsed OKLCH coordinates to linear-light sRGB through OKLab, ignoring alpha.
+ *
+ * @param color - Coordinates from {@link readOklch} or {@link parseOklch}.
+ * @returns The unclipped linear sRGB channels.
+ */
+export function linearSrgbFromOklch({ l, c, h }: OklchColor): LinearRgb {
   const hue = (h * Math.PI) / 180;
   const a = c * Math.cos(hue);
   const b = c * Math.sin(hue);
@@ -67,6 +92,59 @@ export function oklchToLinearSrgb(value: string): LinearRgb {
     r: 4.0767416621 * lmsL - 3.3077115913 * lmsM + 0.2309699292 * lmsS,
     g: -1.2684380046 * lmsL + 2.6097574011 * lmsM - 0.3413193965 * lmsS,
     b: -0.0041960863 * lmsL - 0.7034186147 * lmsM + 1.707614701 * lmsS,
+  };
+}
+
+/**
+ * Clip a channel to `0..1`, the range sRGB can show.
+ *
+ * @param channel - A linear or gamma-encoded channel, possibly out of gamut.
+ * @returns The channel clipped to `0..1`.
+ */
+export function clipChannel(channel: number): number {
+  if (channel < 0) {
+    return 0;
+  }
+  if (channel > 1) {
+    return 1;
+  }
+  return channel;
+}
+
+/**
+ * Gamma-encode one linear-light channel with the sRGB transfer function, after clipping it
+ * to `0..1`.
+ *
+ * @param channel - A linear-light channel, possibly out of gamut.
+ * @returns The gamma-encoded channel in `0..1`.
+ */
+export function linearToSrgb(channel: number): number {
+  const clipped = clipChannel(channel);
+  return clipped <= 0.0031308 ? 12.92 * clipped : 1.055 * clipped ** (1 / 2.4) - 0.055;
+}
+
+/** A gamma-encoded sRGB color with channels and alpha in `0..1`. */
+export type SrgbColor = {
+  readonly r: number;
+  readonly g: number;
+  readonly b: number;
+  readonly alpha: number;
+};
+
+/**
+ * Convert OKLCH coordinates to gamma-encoded sRGB, the form design tools store. It clips
+ * out-of-gamut channels to `0..1`, as the contrast checks do.
+ *
+ * @param color - Coordinates from {@link readOklch} or {@link parseOklch}.
+ * @returns The sRGB channels and the color's alpha.
+ */
+export function oklchToSrgb(color: OklchColor): SrgbColor {
+  const linear = linearSrgbFromOklch(color);
+  return {
+    r: linearToSrgb(linear.r),
+    g: linearToSrgb(linear.g),
+    b: linearToSrgb(linear.b),
+    alpha: color.alpha,
   };
 }
 

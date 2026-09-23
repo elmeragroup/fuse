@@ -12,7 +12,7 @@ import {
   cssVarColor,
   effectiveOpacity,
   fkasPrivate,
-  readOklch,
+  computedOklch,
   renderThemed,
   roleNamed,
 } from "../../../test/themed-browser-render";
@@ -215,7 +215,7 @@ describe("Button", () => {
     // foreground, oklch(0.15 0.0041 49.31). L 0.6 * 0.95 + 0.15 * 0.05 = 0.5775.
     // C 0.2 * 0.95 + 0.0041 * 0.05 = 0.190205. H 30 + (49.31 - 30) * 0.05 = 30.9655.
     // The theme's own hover would be a near-white gray.
-    const hovered = readOklch(getComputedStyle(button).backgroundColor);
+    const hovered = computedOklch(getComputedStyle(button).backgroundColor);
     expect(hovered.l).toBeCloseTo(0.5775, 4);
     expect(hovered.c).toBeCloseTo(0.190205, 4);
     expect(hovered.h).toBeCloseTo(30.9655, 2);

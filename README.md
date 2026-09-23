@@ -52,24 +52,26 @@ Root scripts fan out through turbo unless noted.
 
 Package-scoped scripts worth knowing:
 
-| Script                                             | Does                                                                         |
-| -------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `pnpm --filter @elmeragroup/fuse generate:exports` | Regenerates the root barrel and runtime export names from the entry facades  |
-| `pnpm --filter @elmeragroup/fuse pack`             | Produces the single tarball that `package:check` and `size-limit` consume    |
-| `pnpm --filter @elmeragroup/fuse package:check`    | publint / attw / exports-map / emitted-directive checks against that tarball |
-| `pnpm --filter @elmeragroup/fuse size-limit`       | Bundle budgets against that tarball                                          |
-| `pnpm --filter docs generate`                      | Regenerates the docs API tables and each component's committed `api.json`    |
+| Script                                             | Does                                                                                  |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `pnpm --filter @elmeragroup/fuse generate:exports` | Regenerates the root barrel and runtime export names from the entry facades           |
+| `pnpm --filter @elmeragroup/fuse pack`             | Produces the single tarball that `package:check` and `size-limit` consume             |
+| `pnpm --filter @elmeragroup/fuse package:check`    | publint / attw / exports-map / emitted-directive checks against that tarball          |
+| `pnpm --filter @elmeragroup/fuse size-limit`       | Bundle budgets against that tarball                                                   |
+| `pnpm --filter docs generate`                      | Regenerates the docs API tables and each component's committed `api.json`             |
+| `pnpm --filter @elmeragroup/fuse-figma figma:sync` | Writes the tokens into a Figma file; `figma:check` prints the plan and fails on drift |
 
 `@elmeragroup/fuse` has no work of its own to do under `ci:checks`: its gates are separate turbo tasks that the aggregate already depends on. Its `ci:checks` script is therefore a no-op anchor that lets `turbo run ci:checks` fan out, and it says so; the same note is in [`turbo.json`](turbo.json).
 
 ## Package map
 
-| Path                 | Name                             | What it is                                                                               |
-| -------------------- | -------------------------------- | ---------------------------------------------------------------------------------------- |
-| `packages/fuse`      | `@elmeragroup/fuse`              | The one published package: components, `/theme`, `/icons`, `/illustrations`, CSS entries |
-| `apps/docs`          | `docs`                           | Next docs site, generated API reference, demo corpus, llms.txt                           |
-| `apps/static-theme`  | `static-theme`                   | Vite host proving standalone-CSS mode and first-paint theme attributes                   |
-| `tooling/typescript` | `@elmeragroup/typescript-config` | Shared tsconfig bases                                                                    |
+| Path                  | Name                             | What it is                                                                               |
+| --------------------- | -------------------------------- | ---------------------------------------------------------------------------------------- |
+| `packages/fuse`       | `@elmeragroup/fuse`              | The one published package: components, `/theme`, `/icons`, `/illustrations`, CSS entries |
+| `apps/docs`           | `docs`                           | Next docs site, generated API reference, demo corpus, llms.txt                           |
+| `apps/static-theme`   | `static-theme`                   | Vite host proving standalone-CSS mode and first-paint theme attributes                   |
+| `packages/fuse-figma` | `@elmeragroup/fuse-figma`        | Private CLI that syncs the design tokens into a Figma file's variables                   |
+| `tooling/typescript`  | `@elmeragroup/typescript-config` | Shared tsconfig bases                                                                    |
 
 The API extractor and the `elmera/*` and `anti-slop/*` lint rules come from [`@elmeragroup/internal`](https://github.com/elmeragroup/internal). The workspace pins it once in the pnpm catalog.
 
@@ -97,5 +99,6 @@ Once publishing is activated, every push to `main` publishes a **canary** and th
 | Understand theme vocabulary       | [Domain glossary](CONTEXT.md)                                                                                 |
 | Find unfinished work              | [TODO.md](TODO.md)                                                                                            |
 | Prepare a release                 | [Release runbook](scripts/RELEASE.md)                                                                         |
+| Sync tokens to Figma              | [fuse-figma README](packages/fuse-figma/README.md)                                                            |
 
 Source and configuration own inventories, versions, values, and measurements. Documentation explains the policies and procedures that govern them.

@@ -1,15 +1,9 @@
+import { cssVarReference } from "../css-values";
 import { assignedTokenNames, derivedRoleSources, isDerivedTokenName, TOKEN_NAMES } from "./contract";
 import type { TokenLayer, TokenName } from "./contract";
 import { DEFAULTS } from "./defaults";
 import { paletteLayers } from "./palette-layers";
 import { LEGAL_THEMES } from "./themes";
-
-const VARIABLE_REFERENCE = /^var\(--([a-z0-9-]+)\)$/;
-
-/** The role a `var(--role)` default points at, or `undefined` for literal values. */
-export function aliasTarget(value: string): string | undefined {
-  return VARIABLE_REFERENCE.exec(value)?.[1];
-}
 
 /**
  * The roles a token's value reads. A derived role reads its sources, a `var(--role)` default
@@ -19,7 +13,7 @@ function tokenSources(name: TokenName): readonly string[] {
   if (isDerivedTokenName(name)) {
     return derivedRoleSources(name);
   }
-  const target = aliasTarget(DEFAULTS[name]);
+  const target = cssVarReference(DEFAULTS[name]);
   return target === undefined ? [] : [target];
 }
 

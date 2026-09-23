@@ -7,6 +7,7 @@ import { declaredThemeValue, SECONDARY_HOVER_CSS } from "../../test/theme-css-co
 import { assertMustOverrideCoverage, composeTheme, coverageSchemes } from "./compose-theme";
 import { contrastRatio } from "./contrast";
 import { parseStyleRules } from "./css-rules";
+import { cssVarReference } from "./css-values";
 import { generateThemesCss } from "./generate-css";
 import { brandPointer } from "./tokens/brand-pointers";
 import { assignedTokenNames, EXTERNAL_RESET_KEYS, MUST_OVERRIDE_DARK, TOKEN_NAMES } from "./tokens/contract";
@@ -17,7 +18,7 @@ import { EXTERNAL_PALETTES, EXTERNAL_VARIANT_LAYER } from "./tokens/external-pal
 import { INTERNAL_DARK_PALETTE } from "./tokens/internal-dark-palette";
 import { paletteLayers } from "./tokens/palette-layers";
 import { PRIMITIVES } from "./tokens/primitives";
-import { aliasTarget, THEME_RESET_KEYS } from "./tokens/reset-keys";
+import { THEME_RESET_KEYS } from "./tokens/reset-keys";
 import { segmentSheet } from "./tokens/segment-sheets";
 import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
 
@@ -251,7 +252,7 @@ describe("theme contract", () => {
     expect(THEME_RESET_KEYS).toEqual(expect.arrayContaining([...EXTERNAL_RESET_KEYS]));
     const reset = new Set<string>(THEME_RESET_KEYS);
     for (const name of TOKEN_NAMES) {
-      const target = aliasTarget(DEFAULTS[name]);
+      const target = cssVarReference(DEFAULTS[name]);
       if (target !== undefined && reset.has(target)) {
         expect(reset.has(name), `${name} rebinds to ${target}`).toBe(true);
       }

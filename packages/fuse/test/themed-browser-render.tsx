@@ -5,6 +5,7 @@ import { page } from "vitest/browser";
 
 import type { ResolvedColorScheme } from "../src/theme/color-scheme";
 import type { Density } from "../src/theme/density";
+import { parseOklch } from "../src/theme/oklch";
 import { ThemeScope } from "../src/theme/theme-scope";
 import type { ThemeInput } from "../src/theme/tokens/themes";
 import { render } from "./browser-render";
@@ -95,18 +96,20 @@ export function px(value: string): number {
 export type ComputedOklch = { readonly l: number; readonly c: number; readonly h: number };
 
 /**
- * Read a computed color that Chromium serializes as an opaque `oklch(L C H)`.
+ * Read a computed color that Chromium serializes as an opaque `oklch(L C H)`, through the
+ * token pipeline's own `oklch()` parser.
  *
  * @param serialized - A computed color value, such as `getComputedStyle(el).backgroundColor`.
  * @returns The three components.
- * @throws When the value is not an opaque `oklch()` color, which is a defect in the suite.
+ * @throws When the value is not an `oklch()` color or is translucent, which is a defect in
+ *   the suite.
  */
-export function readOklch(serialized: string): ComputedOklch {
-  const match = /^oklch\(([\d.]+) ([\d.]+) ([\d.]+)\)$/.exec(serialized);
-  if (match === null) {
+export function computedOklch(serialized: string): ComputedOklch {
+  const { l, c, h, alpha } = parseOklch(serialized);
+  if (alpha !== 1) {
     throw new Error(`expected an opaque oklch() color, received ${serialized}`);
   }
-  return { l: Number(match[1]), c: Number(match[2]), h: Number(match[3]) };
+  return { l, c, h };
 }
 
 /**

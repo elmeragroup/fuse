@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import "../../dist/styles.css";
 import "../../dist/themes.css";
 import { render } from "../../test/browser-render";
-import { readOklch, roleNamed } from "../../test/themed-browser-render";
+import { computedOklch, roleNamed } from "../../test/themed-browser-render";
 import { composeTheme } from "./compose-theme";
 import { parseOklch } from "./oklch";
 import { ThemeScope } from "./theme-scope";
@@ -37,7 +37,7 @@ describe("derived roles", () => {
         const host = roleNamed("group", "Probe");
         const context = `${scheme} ${themeSlug(theme)}`;
         const literal = parseOklch(composeTheme(theme, scheme)["secondary-hover"]);
-        const mixed = readOklch(
+        const mixed = computedOklch(
           computedBackground(host, "color-mix(in oklch, var(--secondary), var(--foreground) 5%)")
         );
         expect(literal.l, `${context} lightness`).toBeCloseTo(mixed.l, 4);

@@ -62,3 +62,4 @@ Before copying reference code or assets, read
 For palette changes, read [token provenance](packages/fuse/src/theme/tokens/PROVENANCE.md)
 and [consumer contrast exceptions](<apps/docs/src/app/(docs)/accessibility/page.tsx>).
 For theme vocabulary, read [CONTEXT.md](CONTEXT.md).
+For Figma variable sync, read [the fuse-figma README](packages/fuse-figma/README.md).

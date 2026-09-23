@@ -7,7 +7,15 @@
  * is no second, per-slug JSON serialisation.
  */
 
-import { oklchToLinearSrgb, parseOklch } from "@elmeragroup/fuse/theme-catalog";
+import {
+  cssColorToSrgb,
+  cssFirstFontFamily,
+  cssLengthToPx,
+  cssVarReference,
+  PRIMITIVE_NAMES,
+  TOKEN_KINDS,
+} from "@elmeragroup/fuse/theme-catalog";
+import type { TokenKind } from "@elmeragroup/fuse/theme-catalog";
 
 import type {
   FigmaColorToken,
@@ -21,43 +29,30 @@ import type {
   ThemeCatalogTokenMap,
 } from "../../src/lib/docs-model.ts";
 
-const VAR_RE = /^var\(--([a-z0-9-]+)\)$/;
-const REM_RE = /^(-?[0-9]*\.?[0-9]+)rem$/;
-const PX_RE = /^(-?[0-9]*\.?[0-9]+)px$/;
-const HEX_RE = /^#([0-9a-f]{6})$/i;
-const REM_PX = 16;
+type DtcgGroup = "color" | "size" | "font";
 
-type DtcgSlot = { group: "color" | "size" | "font"; key: string };
+type DtcgSlot = { group: DtcgGroup; key: string };
+
+const DTCG_GROUPS = {
+  color: "color",
+  dimension: "size",
+  fontFamily: "font",
+} as const satisfies Record<TokenKind, DtcgGroup>;
+
+// Every primitive is a color.
+const KINDS: ReadonlyMap<string, TokenKind> = new Map<string, TokenKind>([
+  ...PRIMITIVE_NAMES.map((name) => [name, "color"] as const),
+  ...Object.entries(TOKEN_KINDS),
+]);
 
 function dtcgSlot(name: string): DtcgSlot {
-  if (name === "font-sans") {
-    return { group: "font", key: "sans" };
+  const kind = KINDS.get(name);
+  if (kind === undefined) {
+    throw new Error(`Expected a Fuse token or primitive name, received: ${name}`);
   }
-  if (name === "font-heading") {
-    return { group: "font", key: "heading" };
-  }
-  if (name === "radius" || name === "radius-button" || name === "radius-step") {
-    return { group: "size", key: name };
-  }
-  return { group: "color", key: name };
-}
-
-function clipChannel(channel: number): number {
-  if (channel < 0) {
-    return 0;
-  }
-  if (channel > 1) {
-    return 1;
-  }
-  return channel;
-}
-
-function encodeSrgbChannel(linear: number): number {
-  const clipped = clipChannel(linear);
-  if (clipped <= 0.0031308) {
-    return 12.92 * clipped;
-  }
-  return 1.055 * clipped ** (1 / 2.4) - 0.055;
+  // Font tokens sit in the font group without their prefix, as `font.sans`.
+  const key = kind === "fontFamily" ? name.replace(/^font-/, "") : name;
+  return { group: DTCG_GROUPS[kind], key };
 }
 
 function roundComponent(channel: number): number {
@@ -66,46 +61,11 @@ function roundComponent(channel: number): number {
 
 function hexFromSrgb(r: number, g: number, b: number): string {
   const byte = (channel: number): string =>
-    Math.round(clipChannel(channel) * 255)
+    Math.round(channel * 255)
       .toString(16)
       .padStart(2, "0")
       .toUpperCase();
   return `#${byte(r)}${byte(g)}${byte(b)}`;
-}
-
-function srgbColor(linearR: number, linearG: number, linearB: number, alpha: number): FigmaSrgbColor {
-  const r = roundComponent(encodeSrgbChannel(linearR));
-  const g = roundComponent(encodeSrgbChannel(linearG));
-  const b = roundComponent(encodeSrgbChannel(linearB));
-  return {
-    colorSpace: "srgb",
-    components: [r, g, b],
-    alpha,
-    hex: hexFromSrgb(r, g, b),
-  };
-}
-
-function colorFromOklch(css: string): FigmaSrgbColor {
-  const parsed = parseOklch(css);
-  const linear = oklchToLinearSrgb(css);
-  return srgbColor(linear.r, linear.g, linear.b, parsed.alpha);
-}
-
-function colorFromHex(css: string): FigmaSrgbColor {
-  const match = HEX_RE.exec(css);
-  if (match === null) {
-    throw new Error(`Expected a six-digit hex color, received: ${css}`);
-  }
-  const hex = match[1] ?? "";
-  const r = Number.parseInt(hex.slice(0, 2), 16) / 255;
-  const g = Number.parseInt(hex.slice(2, 4), 16) / 255;
-  const b = Number.parseInt(hex.slice(4, 6), 16) / 255;
-  return {
-    colorSpace: "srgb",
-    components: [roundComponent(r), roundComponent(g), roundComponent(b)],
-    alpha: 1,
-    hex: `#${hex.toUpperCase()}`,
-  };
 }
 
 function aliasOf(tokenName: string): `{${string}}` {
@@ -113,34 +73,35 @@ function aliasOf(tokenName: string): `{${string}}` {
   return `{${slot.group}.${slot.key}}`;
 }
 
-function firstFontFamily(css: string): string {
-  const first = css.split(",")[0]?.trim() ?? css;
-  if ((first.startsWith('"') && first.endsWith('"')) || (first.startsWith("'") && first.endsWith("'"))) {
-    return first.slice(1, -1);
-  }
-  return first;
-}
-
 function dimensionFromCss(css: string): FigmaDimensionToken["$value"] {
-  const rem = REM_RE.exec(css);
-  if (rem !== null) {
-    return { value: Number(rem[1]) * REM_PX, unit: "px" };
+  const px = cssLengthToPx(css);
+  if (px === undefined) {
+    throw new Error(`Expected a rem or px dimension, received: ${css}`);
   }
-  const px = PX_RE.exec(css);
-  if (px !== null) {
-    return { value: Number(px[1]), unit: "px" };
-  }
-  throw new Error(`Expected a rem or px dimension, received: ${css}`);
+  return { value: px, unit: "px" };
 }
 
 function colorFromCss(css: string): FigmaColorToken["$value"] {
-  if (css.startsWith("oklch(")) {
-    return colorFromOklch(css);
+  const srgb = cssColorToSrgb(css);
+  if (srgb === undefined) {
+    throw new Error(`Expected an oklch() or hex color, received: ${css}`);
   }
-  if (HEX_RE.test(css)) {
-    return colorFromHex(css);
+  const components = [roundComponent(srgb.r), roundComponent(srgb.g), roundComponent(srgb.b)] as const;
+  const color: FigmaSrgbColor = {
+    colorSpace: "srgb",
+    components,
+    alpha: srgb.alpha,
+    hex: hexFromSrgb(...components),
+  };
+  return color;
+}
+
+function fontFamilyFromCss(css: string): string {
+  const family = cssFirstFontFamily(css);
+  if (family === undefined) {
+    throw new Error(`Expected a font stack that starts with a named family, received: ${css}`);
   }
-  throw new Error(`Expected a color, hex, or var() alias, received: ${css}`);
+  return family;
 }
 
 /**
@@ -148,7 +109,7 @@ function colorFromCss(css: string): FigmaColorToken["$value"] {
  * and any other value goes through the parser for its token type.
  */
 function valueOrAlias<Value>(css: string, parse: (css: string) => Value): Value | `{${string}}` {
-  const referenced = VAR_RE.exec(css)?.[1];
+  const referenced = cssVarReference(css);
   return referenced === undefined ? parse(css) : aliasOf(referenced);
 }
 
@@ -168,7 +129,7 @@ type DtcgGroups = {
 function emitToken(groups: DtcgGroups, name: string, css: string): void {
   const slot = dtcgSlot(name);
   if (slot.group === "font") {
-    groups.font[slot.key] = { $type: "fontFamily", $value: valueOrAlias(css, firstFontFamily) };
+    groups.font[slot.key] = { $type: "fontFamily", $value: valueOrAlias(css, fontFamilyFromCss) };
     return;
   }
   if (slot.group === "size") {
