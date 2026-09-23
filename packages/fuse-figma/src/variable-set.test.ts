@@ -25,6 +25,12 @@ function failure(collections: readonly CollectionSpec[]): string | undefined {
   return Result.isFailure(result) ? result.failure.message : undefined;
 }
 
+/** The cycle `makeVariableSet` reports, or `undefined` when it reports none. */
+function cycle(collections: readonly CollectionSpec[]): readonly string[] | undefined {
+  const result = makeVariableSet(collections);
+  return Result.isFailure(result) && result.failure._tag === "AliasCycle" ? result.failure.cycle : undefined;
+}
+
 describe("makeVariableSet", () => {
   it("accepts collections whose values cover every mode and alias a variable of the same type", () => {
     const red = variable("red", "COLOR", { Light: RED, Dark: RED });
@@ -68,5 +74,53 @@ describe("makeVariableSet", () => {
     expect(failure([{ name: "Empty", modes: [], variables: [] }])).toBe(
       'The Figma variable set is invalid: "Empty" has no modes.'
     );
+  });
+
+  it("refuses more modes or longer mode names than Figma allows", () => {
+    const modes = (count: number) => Array.from({ length: count }, (_, index) => `theme-${index}`);
+    expect(failure([{ name: "Themes", modes: modes(40), variables: [] }])).toBeUndefined();
+    expect(failure([{ name: "Themes", modes: modes(41), variables: [] }])).toBe(
+      'The Figma variable set is invalid: "Themes" has 41 modes, more than the 40 Figma allows.'
+    );
+
+    const fortyOne = "x".repeat(41);
+    expect(failure([{ name: "Themes", modes: ["x".repeat(40)], variables: [] }])).toBeUndefined();
+    expect(failure([{ name: "Themes", modes: [fortyOne], variables: [] }])).toBe(
+      `The Figma variable set is invalid: "Themes" names the mode "${fortyOne}", longer than the 40 characters Figma allows.`
+    );
+  });
+
+  it("refuses aliases that lead back to where they started, in any mode", () => {
+    const alias = (collection: string, name: string): VariableValue => ({
+      _tag: "Alias",
+      target: { collection, variable: name },
+    });
+
+    const itself = variable("red", "COLOR", { Light: toRed, Dark: RED });
+    expect(cycle([palette([itself])])).toEqual(["Palette/red", "Palette/red"]);
+
+    // Each alias closes the loop in a different mode, which still counts as a cycle.
+    const warm = variable("warm", "COLOR", { Light: alias("Palette", "cool"), Dark: RED });
+    const cool = variable("cool", "COLOR", { Light: RED, Dark: alias("Palette", "warm") });
+    const pair = [palette([warm, cool])];
+    expect(cycle(pair)).toEqual(["Palette/warm", "Palette/cool", "Palette/warm"]);
+    expect(failure(pair)).toBe(
+      'The Figma variable set is invalid: "Palette/warm" aliases "Palette/cool", which aliases "Palette/warm". Aliases must not form a cycle.'
+    );
+
+    const tokens: CollectionSpec = {
+      name: "Tokens",
+      modes: ["Value"],
+      variables: [variable("accent", "COLOR", { Value: alias("Palette", "brand") })],
+    };
+    const brand = variable("brand", "COLOR", { Light: RED, Dark: alias("Tokens", "accent") });
+    expect(cycle([tokens, palette([brand])])).toEqual(["Tokens/accent", "Palette/brand", "Tokens/accent"]);
+
+    // A chain that ends at a literal is fine, however long.
+    const chain = [
+      variable("red", "COLOR", { Light: RED, Dark: RED }),
+      variable("danger", "COLOR", { Light: toRed, Dark: toRed }),
+    ];
+    expect(cycle([palette(chain)])).toBeUndefined();
   });
 });

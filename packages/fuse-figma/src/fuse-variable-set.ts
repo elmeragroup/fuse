@@ -34,6 +34,7 @@ import type { ResolvedColorScheme, TokenKind, TokenName } from "@elmeragroup/fus
 
 import { makeVariableSet } from "./variable-set.ts";
 import type {
+  AliasCycle,
   AliasValue,
   CollectionSpec,
   ColorValue,
@@ -117,7 +118,10 @@ const tokenNames: ReadonlySet<string> = new Set(TOKEN_NAMES);
  * @returns The three Fuse collections. It fails on the first token value that has no Figma
  *   form, or on the variable set rule the projection breaks.
  */
-export function fuseVariableSet(): Result.Result<VariableSet, UnsupportedTokenValue | InvalidVariableSet> {
+export function fuseVariableSet(): Result.Result<
+  VariableSet,
+  UnsupportedTokenValue | InvalidVariableSet | AliasCycle
+> {
   return Result.gen(function* () {
     const primitives = yield* primitivesCollection();
     const themes = yield* themesCollection();
@@ -209,11 +213,15 @@ function schemeReference(scheme: ResolvedColorScheme): ReferenceResolver {
     if (primitiveNames.has(name)) {
       return primitiveReference(name);
     }
-    if (tokenNames.has(name)) {
-      return { _tag: "Alias", target: { collection: THEMES_COLLECTION, variable: `${scheme}/${name}` } };
+    if (isTokenName(name)) {
+      return themeAlias(themeVariableName(scheme, name));
     }
     return undefined;
   };
+}
+
+function isTokenName(name: string): name is TokenName {
+  return tokenNames.has(name);
 }
 
 function themeAlias(variable: string): AliasValue {

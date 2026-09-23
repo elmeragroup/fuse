@@ -449,8 +449,6 @@ describe("exports map", () => {
     );
     expect(catalog).toEqual([
       "composeTheme",
-      "oklchToLinearSrgb",
-      "parseOklch",
       "cssColorToSrgb",
       "cssFirstFontFamily",
       "cssLengthToPx",

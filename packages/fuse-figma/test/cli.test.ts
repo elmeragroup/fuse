@@ -136,17 +136,46 @@ describe("fuse-figma sync", () => {
 
       assert.deepStrictEqual(figma.metadata("Fuse tokens", "primary"), {
         scopes: ["ALL_SCOPES"],
-        web: "var(--primary)",
+        codeSyntax: { WEB: "var(--primary)" },
       });
       assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius"), {
         scopes: ["CORNER_RADIUS"],
-        web: "var(--radius)",
+        codeSyntax: { WEB: "var(--radius)" },
       });
       assert.deepStrictEqual(figma.metadata("Fuse tokens", "font-sans"), {
         scopes: ["FONT_FAMILY"],
-        web: "var(--font-sans)",
+        codeSyntax: { WEB: "var(--font-sans)" },
       });
-      assert.deepStrictEqual(figma.metadata("Fuse themes", "light/primary"), { scopes: [], web: undefined });
+      assert.deepStrictEqual(figma.metadata("Fuse themes", "light/primary"), { scopes: [], codeSyntax: {} });
+    })
+  );
+
+  it.effect("keeps a designer's Android and iOS code syntax when it corrects the web entry", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
+      const id = figma.variableIds().get("Fuse tokens/primary");
+      if (id === undefined) throw new Error("the first sync creates primary");
+      figma.setMetadata("Fuse tokens", "primary", {
+        scopes: ["ALL_SCOPES"],
+        codeSyntax: { WEB: "var(--old-primary)", ANDROID: "R.color.primary", iOS: "Color.primary" },
+      });
+
+      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
+
+      // The fake replaces code syntax on an update, so the write must carry every platform.
+      assert.deepStrictEqual(figma.acceptedWrites.at(-1)?.variables, [
+        {
+          action: "UPDATE",
+          id,
+          scopes: ["ALL_SCOPES"],
+          codeSyntax: { WEB: "var(--primary)", ANDROID: "R.color.primary", iOS: "Color.primary" },
+        },
+      ]);
+      assert.deepStrictEqual(figma.metadata("Fuse tokens", "primary"), {
+        scopes: ["ALL_SCOPES"],
+        codeSyntax: { WEB: "var(--primary)", ANDROID: "R.color.primary", iOS: "Color.primary" },
+      });
     })
   );
 
@@ -209,7 +238,10 @@ describe("fuse-figma sync", () => {
       yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
       const id = figma.variableIds().get("Fuse themes/light/primary");
       if (id === undefined) throw new Error("the first sync creates light/primary");
-      figma.setMetadata("Fuse themes", "light/primary", { scopes: ["ALL_SCOPES"], web: "var(--designer)" });
+      figma.setMetadata("Fuse themes", "light/primary", {
+        scopes: ["ALL_SCOPES"],
+        codeSyntax: { WEB: "var(--designer)", ANDROID: "R.color.designer" },
+      });
 
       yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
 
@@ -217,7 +249,7 @@ describe("fuse-figma sync", () => {
       assert.deepStrictEqual(figma.acceptedWrites.at(-1)?.variables, [{ action: "UPDATE", id, scopes: [] }]);
       assert.deepStrictEqual(figma.metadata("Fuse themes", "light/primary"), {
         scopes: [],
-        web: "var(--designer)",
+        codeSyntax: { WEB: "var(--designer)", ANDROID: "R.color.designer" },
       });
     })
   );
@@ -244,17 +276,48 @@ describe("fuse-figma sync", () => {
     })
   );
 
-  it.effect("renames a designer's default mode instead of replacing it, keeping its id", () =>
+  it.effect("replaces a collection's only mode when the tokens do not name it", () =>
     Effect.gen(function* () {
       const figma = new InMemoryFigma(FILE_KEY, TOKEN);
       figma.addCollection("Fuse primitives", ["Mode 1"]);
       const modeId = figma.modeId("Fuse primitives", "Mode 1");
 
+      // The fake refuses a batch that leaves a collection without a mode, so this passes
+      // only when the new mode exists before the old one goes.
       yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
 
       assert.deepStrictEqual(figma.modeNames("Fuse primitives"), ["Value"]);
-      assert.strictEqual(figma.modeId("Fuse primitives", "Value"), modeId);
-      assert.include(yield* output, "Fuse primitives: rename mode Mode 1 to Value");
+      assert.notInclude(figma.modeIds("Fuse primitives"), modeId);
+      const printed = yield* output;
+      assert.include(printed, "Fuse primitives: create mode Value");
+      assert.include(printed, "Fuse primitives: delete mode Mode 1");
+    })
+  );
+
+  it.effect("deletes a mode the tokens dropped instead of renaming it to the mode they added", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      figma.addCollection("Fuse tokens", ["Light", "Sepia"]);
+      const lightId = figma.modeId("Fuse tokens", "Light");
+      const sepiaId = figma.modeId("Fuse tokens", "Sepia");
+
+      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
+
+      assert.deepStrictEqual(figma.modeNames("Fuse tokens"), ["Light", "Dark"]);
+      const [keptId, darkId] = figma.modeIds("Fuse tokens");
+      assert.strictEqual(keptId, lightId);
+      // Frames pinned to Sepia lose the mode; none of them silently turn Dark.
+      assert.notStrictEqual(darkId, sepiaId);
+      assert.notInclude(figma.modeIds("Fuse tokens"), sepiaId);
+      // The new Dark mode holds the dark aliases.
+      assert.deepStrictEqual(
+        figma.aliasChain("Fuse tokens", "primary", dark("external-elma-company")).slice(0, 2),
+        ["Fuse tokens/primary", "Fuse themes/dark/primary"]
+      );
+      const printed = yield* output;
+      assert.include(printed, "Fuse tokens: delete mode Sepia");
+      assert.include(printed, "Fuse tokens: create mode Dark");
+      assert.notInclude(printed, "rename");
     })
   );
 

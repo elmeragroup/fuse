@@ -13,7 +13,6 @@ import { places } from "./plural.ts";
 import { isInSync } from "./sync-plan.ts";
 import type { PlannedChange, SyncPlan } from "./sync-plan.ts";
 import { planFileSync, syncFile } from "./token-sync.ts";
-import type { SyncOutcome } from "./token-sync.ts";
 
 /** `check` found differences between the file and the tokens. */
 export class DriftDetected extends Schema.TaggedError<DriftDetected>()("DriftDetected", {
@@ -41,9 +40,13 @@ const sync = Command.make(
   {},
   Effect.fn("cli.sync")(function* () {
     const { fileKey } = yield* root;
-    const desired = yield* Effect.fromResult(fuseVariableSet());
-    const outcome = yield* syncFile(fileKey, desired);
-    yield* Console.log(describeOutcome(fileKey, outcome));
+    const plan = yield* syncFile(fileKey, yield* Effect.fromResult(fuseVariableSet()));
+    if (isInSync(plan)) {
+      yield* Console.log(`Figma file ${fileKey} already matches the Fuse tokens.`);
+      return;
+    }
+    yield* Console.log(describePlan(plan));
+    yield* Console.log(`Updated Figma file ${fileKey}; reading it back matches the tokens.`);
   })
 ).pipe(Command.withDescription("Create or update the Fuse collections in the file"));
 
@@ -94,15 +97,6 @@ export const runCli = (argv: readonly string[]) =>
     Effect.catchIf(CliError.isCliError, Effect.fail, report)
   );
 
-function describeOutcome(fileKey: FileKey, outcome: SyncOutcome): string {
-  switch (outcome._tag) {
-    case "InSync":
-      return `Figma file ${fileKey} already matches the Fuse tokens.`;
-    case "Applied":
-      return `${describePlan(outcome.plan)}\nUpdated Figma file ${fileKey}; reading it back matches the tokens.`;
-  }
-}
-
 /**
  * One line per collection and kind of change. Value changes are counted rather than
  * listed, because a first sync sets several thousand.
@@ -122,8 +116,6 @@ function changeLabel(change: PlannedChange): string {
       return "create collection";
     case "CreateMode":
       return `create mode ${change.mode}`;
-    case "RenameMode":
-      return `rename mode ${change.from} to ${change.mode}`;
     case "DeleteMode":
       return `delete mode ${change.mode}`;
     case "CreateVariable":

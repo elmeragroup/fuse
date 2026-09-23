@@ -6,7 +6,6 @@
 
 export type { ResolvedColorScheme } from "./color-scheme-types";
 export { composeTheme } from "./compose-theme";
-export { oklchToLinearSrgb, parseOklch } from "./oklch";
 export type { SrgbColor } from "./contrast";
 export { cssColorToSrgb, cssFirstFontFamily, cssLengthToPx, cssVarReference } from "./css-values";
 export { defaultDensityForVariant, densityAttributes } from "./density";

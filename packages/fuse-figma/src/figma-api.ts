@@ -11,6 +11,7 @@ import type { HttpClientError } from "effect/unstable/http";
 import { CollectionId, ModeId, VariableId } from "./file-variables.ts";
 import type {
   ChangeBatch,
+  CodeSyntax,
   FileCollection,
   FileValue,
   FileVariable,
@@ -86,33 +87,27 @@ export class FigmaApi extends Context.Service<
         HttpClient.filterStatusOk
       );
 
-      const readVariables = Effect.fn("FigmaApi.readVariables")(
-        function* (fileKey: FileKey) {
-          yield* Effect.annotateCurrentSpan({ fileKey });
-          const response = yield* client
-            .get(`/v1/files/${fileKey}/variables/local`)
-            .pipe(retryWhile(isSafeToRetryRead));
-          const body = yield* HttpClientResponse.schemaBodyJson(LocalVariablesResponse)(response).pipe(
-            Effect.mapError((cause) => invalidBody("read variables", cause.message))
-          );
-          return fileVariables(body);
-        },
-        Effect.catchTag("HttpClientError", (error) => requestFailed("read variables", error))
-      );
+      const readVariables = Effect.fn("FigmaApi.readVariables")(function* (fileKey: FileKey) {
+        yield* Effect.annotateCurrentSpan({ fileKey });
+        const response = yield* client
+          .get(`/v1/files/${fileKey}/variables/local`)
+          .pipe(withRetries("read variables"));
+        const body = yield* HttpClientResponse.schemaBodyJson(LocalVariablesResponse)(response).pipe(
+          Effect.mapError((cause) => invalidBody("read variables", cause.message))
+        );
+        return fileVariables(body);
+      });
 
-      const writeVariables = Effect.fn("FigmaApi.writeVariables")(
-        function* (fileKey: FileKey, batch: ChangeBatch) {
-          yield* Effect.annotateCurrentSpan({ fileKey });
-          const request = HttpClientRequest.post(`/v1/files/${fileKey}/variables`).pipe(
-            HttpClientRequest.bodyJsonUnsafe(postVariablesBody(batch))
-          );
-          // Only a rate-limited write is retried, because Figma rejects it before applying anything.
-          // A failed or unanswered write may have been applied, and repeating it could
-          // create a second copy of every new collection.
-          yield* client.execute(request).pipe(retryWhile(isRateLimited));
-        },
-        Effect.catchTag("HttpClientError", (error) => requestFailed("write variables", error))
-      );
+      const writeVariables = Effect.fn("FigmaApi.writeVariables")(function* (
+        fileKey: FileKey,
+        batch: ChangeBatch
+      ) {
+        yield* Effect.annotateCurrentSpan({ fileKey });
+        const request = HttpClientRequest.post(`/v1/files/${fileKey}/variables`).pipe(
+          HttpClientRequest.bodyJsonUnsafe(postVariablesBody(batch))
+        );
+        yield* client.execute(request).pipe(withRetries("write variables"));
+      });
 
       return FigmaApi.of({ readVariables, writeVariables });
     })
@@ -128,52 +123,85 @@ const RETRIES = 4;
  */
 const MAX_RETRY_AFTER = Duration.seconds(60);
 
+/** What to do about one failed call, decided once from its error. */
+type RetryDecision =
+  /** Figma rate limited the call and asked for a wait the sync accepts. */
+  | { readonly _tag: "RetryAfter"; readonly wait: Duration.Duration }
+  /** Retry after an exponential back-off. */
+  | { readonly _tag: "Backoff" }
+  /** Figma rate limited the call and asked for a longer wait than the sync accepts. */
+  | { readonly _tag: "WaitTooLong"; readonly wait: Duration.Duration }
+  | { readonly _tag: "DoNotRetry" };
+
+/** A failed call with the decision about it. */
+type FailedCall = {
+  readonly error: HttpClientError.HttpClientError;
+  readonly decision: RetryDecision;
+};
+
 /**
- * Retry while `predicate` allows it, up to `RETRIES` times. Each wait is as long as a 429's
- * `Retry-After` asks, otherwise an exponential back-off, and each retry logs a warning.
+ * Decide once what a failure means for a retry. A rate-limited call is safe to repeat
+ * because Figma refuses it before doing anything. A read changes nothing, so a transport
+ * failure or a server error is worth another read. A write that failed or went unanswered
+ * may have been applied, and repeating it could create a second copy of every new
+ * collection, so no other write failure is retried.
  */
-function retryWhile(
-  predicate: (error: HttpClientError.HttpClientError) => boolean
-): <A, R>(
-  effect: Effect.Effect<A, HttpClientError.HttpClientError, R>
-) => Effect.Effect<A, HttpClientError.HttpClientError, R> {
-  const schedule = Schedule.exponential("500 millis").pipe(
-    Schedule.setInputType<HttpClientError.HttpClientError>(),
-    Schedule.while(
-      ({ input, attempt }) => attempt <= RETRIES && predicate(input) && !asksTooLongAWait(input)
-    ),
-    // This runs only for a retry the condition above allows, so every warning is a real retry.
-    Schedule.modifyDelay(({ input, attempt, duration }) => {
-      const delay = Option.getOrElse(retryAfter(input), () => duration);
-      return Effect.logWarning(
-        `Figma request failed (${input.response?.status ?? input.reason._tag}); retry ${attempt} of ${RETRIES} in ${Duration.format(delay)}.`
-      ).pipe(Effect.as(delay));
-    })
-  );
-  return Effect.retry(schedule);
+function decide(operation: FigmaOperation, error: HttpClientError.HttpClientError): RetryDecision {
+  const status = error.response?.status;
+  if (status === 429) {
+    return Option.match(retryAfter(error), {
+      onNone: () => ({ _tag: "Backoff" }),
+      onSome: (wait) =>
+        Duration.isGreaterThan(wait, MAX_RETRY_AFTER)
+          ? { _tag: "WaitTooLong", wait }
+          : { _tag: "RetryAfter", wait },
+    });
+  }
+  const readWorthRepeating =
+    operation === "read variables" &&
+    (status === undefined ? error.reason._tag === "TransportError" : status >= 500);
+  return readWorthRepeating ? { _tag: "Backoff" } : { _tag: "DoNotRetry" };
 }
 
 /** A 429's `Retry-After`, which Figma sends in whole seconds. */
 function retryAfter(error: HttpClientError.HttpClientError): Option.Option<Duration.Duration> {
-  const header = error.response?.status === 429 ? error.response.headers["retry-after"] : undefined;
+  const header = error.response?.headers["retry-after"];
   const seconds = Number(header);
   return header !== undefined && Number.isFinite(seconds)
     ? Option.some(Duration.seconds(seconds))
     : Option.none();
 }
 
-function asksTooLongAWait(error: HttpClientError.HttpClientError): boolean {
-  return Option.exists(retryAfter(error), (wait) => Duration.isGreaterThan(wait, MAX_RETRY_AFTER));
-}
-
-function isRateLimited(error: HttpClientError.HttpClientError): boolean {
-  return error.response?.status === 429;
-}
-
-/** Reads change nothing, so a transport failure or a server error is worth another try. */
-function isSafeToRetryRead(error: HttpClientError.HttpClientError): boolean {
-  const status = error.response?.status;
-  return error.reason._tag === "TransportError" || status === 429 || (status !== undefined && status >= 500);
+/**
+ * Retry a call up to `RETRIES` times while its decision allows it, then turn the last
+ * failure into a `FigmaRequestFailed`. Each wait is as long as `Retry-After` asks, or an
+ * exponential back-off, and each retry logs a warning.
+ */
+function withRetries(
+  operation: FigmaOperation
+): <A, R>(
+  effect: Effect.Effect<A, HttpClientError.HttpClientError, R>
+) => Effect.Effect<A, FigmaRequestFailed, R> {
+  const schedule = Schedule.exponential("500 millis").pipe(
+    Schedule.setInputType<FailedCall>(),
+    Schedule.while(
+      ({ input, attempt }) =>
+        attempt <= RETRIES && (input.decision._tag === "RetryAfter" || input.decision._tag === "Backoff")
+    ),
+    // This runs only for a retry the condition above allows, so every warning is a real retry.
+    Schedule.modifyDelay(({ input, attempt, duration }) => {
+      const delay = input.decision._tag === "RetryAfter" ? input.decision.wait : duration;
+      return Effect.logWarning(
+        `Figma request failed (${input.error.response?.status ?? input.error.reason._tag}); retry ${attempt} of ${RETRIES} in ${Duration.format(delay)}.`
+      ).pipe(Effect.as(delay));
+    })
+  );
+  return (effect) =>
+    effect.pipe(
+      Effect.mapError((error): FailedCall => ({ error, decision: decide(operation, error) })),
+      Effect.retry(schedule),
+      Effect.catch((failure) => requestFailed(operation, failure))
+    );
 }
 
 const ErrorBody = Schema.Struct({
@@ -187,7 +215,7 @@ const ErrorBody = Schema.Struct({
  */
 const requestFailed = Effect.fnUntraced(function* (
   operation: FigmaOperation,
-  error: HttpClientError.HttpClientError
+  { error, decision }: FailedCall
 ): Effect.fn.Return<never, FigmaRequestFailed> {
   const response = error.response;
   if (response === undefined) {
@@ -204,14 +232,14 @@ const requestFailed = Effect.fnUntraced(function* (
     onSome: (text) => `${response.status} (${text})`,
   });
   return yield* new FigmaRequestFailed({
-    message: `Could not ${operation}: Figma answered ${answer}.${statusHint(error)}`,
+    message: `Could not ${operation}: Figma answered ${answer}.${statusHint(response.status, decision)}`,
     operation,
     status: response.status,
   });
 });
 
-function statusHint(error: HttpClientError.HttpClientError): string {
-  switch (error.response?.status) {
+function statusHint(status: number, decision: RetryDecision): string {
+  switch (status) {
     case 401:
       return " Check that FIGMA_TOKEN is a valid personal access token.";
     case 403:
@@ -219,14 +247,9 @@ function statusHint(error: HttpClientError.HttpClientError): string {
     case 404:
       return " Check the file key; it is the part after /design/ in the file URL.";
     case 429:
-      return Option.match(
-        Option.filter(retryAfter(error), () => asksTooLongAWait(error)),
-        {
-          onNone: () => " Figma is still rate limiting after several retries; try again later.",
-          onSome: (wait) =>
-            ` Figma asked the sync to wait ${Duration.toSeconds(wait)} seconds before the next request, longer than the ${Duration.toSeconds(MAX_RETRY_AFTER)} seconds it waits; try again later.`,
-        }
-      );
+      return decision._tag === "WaitTooLong"
+        ? ` Figma asked the sync to wait ${Duration.toSeconds(decision.wait)} seconds before the next request, longer than the ${Duration.toSeconds(MAX_RETRY_AFTER)} seconds it waits; try again later.`
+        : " Figma is still rate limiting after several retries; try again later.";
     default:
       return "";
   }
@@ -242,7 +265,7 @@ function invalidBody(operation: FigmaOperation, detail: string): FigmaRequestFai
 /** The editable metadata of a variable in a POST. Only the fields the sync sets are present. */
 type VariableMetadataRequest = {
   readonly scopes: readonly string[];
-  codeSyntax?: { readonly WEB: string };
+  readonly codeSyntax?: CodeSyntax;
 };
 
 /** `POST /v1/files/:key/variables`, as the REST API documents it. */
@@ -306,10 +329,16 @@ function postVariablesBody(batch: ChangeBatch): PostVariablesBody {
 
 function modeRequest(change: ModeChange): PostVariablesBody["variableModes"][number] {
   switch (change._tag) {
-    case "RenameMode":
+    case "NameInitialMode":
+      return {
+        action: "UPDATE",
+        id: change.id,
+        name: change.name,
+        variableCollectionId: change.collectionId,
+      };
     case "CreateMode":
       return {
-        action: change._tag === "RenameMode" ? "UPDATE" : "CREATE",
+        action: "CREATE",
         id: change.id,
         name: change.name,
         variableCollectionId: change.collectionId,
@@ -337,17 +366,11 @@ function variableRequest(change: VariableChange): PostVariablesBody["variables"]
   }
 }
 
-/**
- * `codeSyntax` is left out when the sync sets no web syntax, so the write leaves the
- * variable's code syntax alone whether Figma merges or replaces it. When the sync does set
- * it, it assumes Figma merges, keeping the Android and iOS entries; nothing documents that.
- */
+/** `codeSyntax` is present only when the metadata sets one, and then it is complete. */
 function metadataRequest(metadata: VariableMetadata): VariableMetadataRequest {
-  const request: VariableMetadataRequest = { scopes: metadata.scopes };
-  if (metadata.webSyntax !== undefined) {
-    request.codeSyntax = { WEB: metadata.webSyntax };
-  }
-  return request;
+  return metadata.codeSyntax === undefined
+    ? { scopes: metadata.scopes }
+    : { scopes: metadata.scopes, codeSyntax: metadata.codeSyntax };
 }
 
 function valueRequest(value: WriteValue): PostVariablesBody["variableModeValues"][number]["value"] {
@@ -379,7 +402,11 @@ const LocalVariable = Schema.Struct({
   valuesByMode: Schema.Record(Schema.String, Value),
   remote: Schema.Boolean,
   scopes: Schema.Array(Schema.String),
-  codeSyntax: Schema.Struct({ WEB: Schema.optionalKey(Schema.String) }),
+  codeSyntax: Schema.Struct({
+    WEB: Schema.optionalKey(Schema.String),
+    ANDROID: Schema.optionalKey(Schema.String),
+    iOS: Schema.optionalKey(Schema.String),
+  }),
   deletedButReferenced: Schema.optionalKey(Schema.Boolean),
 });
 
@@ -424,7 +451,7 @@ function fileVariable(variable: LocalVariable): FileVariable {
     name: variable.name,
     type: variable.resolvedType,
     scopes: variable.scopes,
-    webSyntax: variable.codeSyntax.WEB,
+    codeSyntax: variable.codeSyntax,
     values: new Map(
       Object.entries(variable.valuesByMode).map(
         ([modeId, value]) => [ModeId(modeId), fileValue(value)] as const

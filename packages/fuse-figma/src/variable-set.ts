@@ -100,10 +100,12 @@ export type CollectionSpec = {
  * builds one, so a set always has these properties:
  *
  * - Collection names are unique, and so are mode and variable names inside a collection.
- * - Every collection has at least one mode.
+ * - Every collection has between 1 and 40 modes, and no mode name is longer than 40
+ *   characters, Figma's limits.
  * - Every variable has exactly one value for each mode of its collection.
  * - Every literal matches its variable's type.
- * - Every alias targets another variable of the set with the same type.
+ * - Every alias targets a variable of the set with the same type.
+ * - No chain of aliases leads back to where it started, in any mode.
  */
 export type VariableSet = {
   readonly collections: readonly CollectionSpec[];
@@ -114,6 +116,18 @@ export class InvalidVariableSet extends Schema.TaggedError<InvalidVariableSet>()
   message: Schema.String,
   location: Schema.String,
 }) {}
+
+/** Aliases in the collections given to {@link makeVariableSet} lead back to where they started. */
+export class AliasCycle extends Schema.TaggedError<AliasCycle>()("AliasCycle", {
+  message: Schema.String,
+
+  /** The qualified names along the cycle, starting and ending with the same variable. */
+  cycle: Schema.Array(Schema.String),
+}) {}
+
+/** Figma's limits on the modes of one collection. */
+const MAX_MODES = 40;
+const MAX_MODE_NAME_LENGTH = 40;
 
 const brandVariableSet = Brand.nominal<VariableSet>();
 
@@ -138,11 +152,11 @@ export function qualifiedName(collection: string, variable: string): string {
  * {@link VariableSet}.
  *
  * @param collections - The collections a sync should own, in the order it creates them.
- * @returns The set, or the first rule a collection breaks.
+ * @returns The set, the first rule a collection breaks, or an alias cycle.
  */
 export function makeVariableSet(
   collections: readonly CollectionSpec[]
-): Result.Result<VariableSet, InvalidVariableSet> {
+): Result.Result<VariableSet, InvalidVariableSet | AliasCycle> {
   const variables = new Map<string, VariableSpec>();
   const collectionNames = new Set<string>();
   for (const collection of collections) {
@@ -152,6 +166,19 @@ export function makeVariableSet(
     collectionNames.add(collection.name);
     if (collection.modes.length === 0) {
       return invalid(collection.name, "has no modes");
+    }
+    if (collection.modes.length > MAX_MODES) {
+      return invalid(
+        collection.name,
+        `has ${collection.modes.length} modes, more than the ${MAX_MODES} Figma allows`
+      );
+    }
+    const longName = collection.modes.find((mode) => mode.length > MAX_MODE_NAME_LENGTH);
+    if (longName !== undefined) {
+      return invalid(
+        collection.name,
+        `names the mode "${longName}", longer than the ${MAX_MODE_NAME_LENGTH} characters Figma allows`
+      );
     }
     if (new Set(collection.modes).size !== collection.modes.length) {
       return invalid(collection.name, "names a mode twice");
@@ -173,7 +200,63 @@ export function makeVariableSet(
       }
     }
   }
+
+  const cycle = aliasCycle(collections);
+  if (cycle !== undefined) {
+    return Result.fail(
+      new AliasCycle({
+        message: `The Figma variable set is invalid: ${describeCycle(cycle)}. Aliases must not form a cycle.`,
+        cycle,
+      })
+    );
+  }
   return Result.succeed(brandVariableSet({ collections }));
+}
+
+/**
+ * The first alias cycle in the set, as the qualified names along it, or `undefined`.
+ *
+ * Figma resolves an alias with the layer's mode for the target collection, so whether a
+ * chain loops depends on the modes a layer sets, and a set cannot know which combinations
+ * designers pick. The check is therefore conservative. It counts every target a variable
+ * aliases in any of its modes and refuses any cycle in that graph. It can refuse a set in
+ * which no mode combination loops, which is the safe side for a file designers bind to.
+ */
+function aliasCycle(collections: readonly CollectionSpec[]): readonly string[] | undefined {
+  const targets = new Map<string, ReadonlySet<string>>();
+  for (const collection of collections) {
+    for (const variable of collection.variables) {
+      const aliased = new Set<string>();
+      for (const value of variable.values.values()) {
+        if (value._tag === "Alias")
+          aliased.add(qualifiedName(value.target.collection, value.target.variable));
+      }
+      targets.set(qualifiedName(collection.name, variable.name), aliased);
+    }
+  }
+
+  // A depth-first walk. `path` is the chain being followed; `cleared` holds variables whose
+  // every chain already ended without a cycle.
+  const path: string[] = [];
+  const cleared = new Set<string>();
+  const walk = (name: string): readonly string[] | undefined => {
+    const start = path.indexOf(name);
+    if (start !== -1) return [...path.slice(start), name];
+    if (cleared.has(name)) return undefined;
+    path.push(name);
+    for (const target of targets.get(name) ?? []) {
+      const cycle = walk(target);
+      if (cycle !== undefined) return cycle;
+    }
+    path.pop();
+    cleared.add(name);
+    return undefined;
+  };
+  for (const name of targets.keys()) {
+    const cycle = walk(name);
+    if (cycle !== undefined) return cycle;
+  }
+  return undefined;
 }
 
 function valueProblem(
@@ -201,14 +284,18 @@ function valueProblem(
     if (target === undefined) {
       return `aliases "${targetName}", which the set does not define`;
     }
-    if (target === variable) {
-      return "aliases itself";
-    }
     if (target.type !== variable.type) {
       return `is a ${variable.type} variable but aliases the ${target.type} variable "${targetName}"`;
     }
   }
   return undefined;
+}
+
+/** `"a" aliases "b", which aliases "a"`, for a cycle that starts and ends at the same name. */
+function describeCycle(cycle: readonly string[]): string {
+  const quoted = cycle.map((name) => `"${name}"`);
+  const then = quoted.slice(2).map((name) => `, which aliases ${name}`);
+  return [quoted.slice(0, 2).join(" aliases "), ...then].join("");
 }
 
 function invalid(location: string, problem: string): Result.Result<never, InvalidVariableSet> {

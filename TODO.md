@@ -29,8 +29,8 @@
 ## Figma token sync
 
 - Run the first sync against a real Enterprise file and confirm that empty picker scopes,
-  cross-collection aliases, code syntax updates merge rather than replace, and the
-  read-back check behave as the in-memory fake assumes.
+  cross-collection aliases, the mode change order and the read-back check behave as the
+  in-memory fake assumes.
 - Add a CI job running `figma:check` once a service account owns a personal access token.
 - Density control metrics live only in CSS, so the sync cannot send them to Figma yet.
 - Revisit Figma extended collections for brand theming if the two-collection mode

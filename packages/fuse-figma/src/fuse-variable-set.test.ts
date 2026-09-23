@@ -30,7 +30,7 @@ function value(collectionName: string, variable: string, mode: string): Variable
 describe("fuseVariableSet", () => {
   it("builds a set that meets every variable set rule", () => {
     const result = fuseVariableSet();
-    expect(Result.isFailure(result) && result.failure.message).toBe(false);
+    expect(result._tag, Result.isFailure(result) ? result.failure.message : undefined).toBe("Success");
   });
 
   it("names Figma variables without the characters the API rejects", () => {

@@ -18,6 +18,7 @@ type Alias = { type: "VARIABLE_ALIAS"; id: string };
 type ComposedColor = { color: Alias | Omit<Rgba, "a">; opacity: Alias | number };
 type StoredValue = Alias | ComposedColor | Rgba | boolean | number | string;
 type ResolvedType = "BOOLEAN" | "COLOR" | "FLOAT" | "STRING";
+type CodeSyntax = { WEB?: string; ANDROID?: string; iOS?: string };
 
 /**
  * Where a collection comes from. A library collection is remote, and an extension inherits
@@ -39,7 +40,7 @@ type StoredVariable = {
   resolvedType: ResolvedType;
   valuesByMode: Map<string, StoredValue>;
   scopes: string[];
-  codeSyntax: { WEB?: string; ANDROID?: string; iOS?: string };
+  codeSyntax: CodeSyntax;
   /** Deleted in the editor while layers or aliases still point at it. */
   deletedButReferenced: boolean;
 };
@@ -49,8 +50,8 @@ type FileState = {
   variables: Map<string, StoredVariable>;
 };
 
-/** The picker scopes and web code syntax of a stored variable. */
-export type StoredMetadata = { scopes: string[]; web: string | undefined };
+/** The picker scopes and code syntax of a stored variable. */
+export type StoredMetadata = { scopes: string[]; codeSyntax: CodeSyntax };
 
 /** A canned reply that replaces the next matching request's normal handling. */
 export type ScriptedReply = {
@@ -95,7 +96,13 @@ const PostBody = Schema.Struct({
         variableCollectionId: Schema.optionalKey(Schema.String),
         resolvedType: Schema.optionalKey(Schema.Literals(["BOOLEAN", "COLOR", "FLOAT", "STRING"])),
         scopes: Schema.optionalKey(Schema.Array(Schema.String)),
-        codeSyntax: Schema.optionalKey(Schema.Struct({ WEB: Schema.optionalKey(Schema.String) })),
+        codeSyntax: Schema.optionalKey(
+          Schema.Struct({
+            WEB: Schema.optionalKey(Schema.String),
+            ANDROID: Schema.optionalKey(Schema.String),
+            iOS: Schema.optionalKey(Schema.String),
+          })
+        ),
       })
     )
   ),
@@ -219,12 +226,11 @@ export class InMemoryFigma {
     );
   }
 
-  /** Change the picker scopes and web code syntax of a local variable as a designer would. */
+  /** Change the picker scopes and code syntax of a local variable as a designer would. */
   setMetadata(collection: string, variable: string, metadata: StoredMetadata): void {
     const stored = this.variableNamed(collection, variable);
     stored.scopes = [...metadata.scopes];
-    if (metadata.web === undefined) delete stored.codeSyntax.WEB;
-    else stored.codeSyntax.WEB = metadata.web;
+    stored.codeSyntax = { ...metadata.codeSyntax };
   }
 
   /** A variable's stored state by id, for rows that name lookups skip. */
@@ -238,9 +244,14 @@ export class InMemoryFigma {
     };
   }
 
-  /** A mode's id, for checking that a renamed mode keeps it. */
+  /** A mode's id, for checking which modes a sync kept. */
   modeId(collection: string, mode: string): string {
     return this.modeNamed(this.collectionNamed(collection), mode).modeId;
+  }
+
+  /** Mode ids of a collection in order. */
+  modeIds(collection: string): string[] {
+    return this.collectionNamed(collection).modes.map((mode) => mode.modeId);
   }
 
   /** Local collection names in creation order. */
@@ -276,10 +287,10 @@ export class InMemoryFigma {
     return this.collectionNamed(collection).id;
   }
 
-  /** The scopes and web code syntax of a variable. */
+  /** The scopes and code syntax of a variable. */
   metadata(collection: string, variable: string): StoredMetadata {
     const stored = this.variableNamed(collection, variable);
-    return { scopes: stored.scopes, web: stored.codeSyntax.WEB };
+    return { scopes: stored.scopes, codeSyntax: stored.codeSyntax };
   }
 
   /**
@@ -431,17 +442,10 @@ export class InMemoryFigma {
     };
 
     for (const change of body.variableCollections ?? []) {
+      // The sync only creates collections. Failing loudly here catches a write that starts
+      // doing anything else before a real file sees it.
       if (change.action !== "CREATE") {
-        const collection = editable(change.id);
-        if (change.action === "DELETE") {
-          draft.collections.delete(collection.id);
-          for (const variable of draft.variables.values()) {
-            if (variable.variableCollectionId === collection.id) draft.variables.delete(variable.id);
-          }
-        } else if (change.name !== undefined) {
-          collection.name = change.name;
-        }
-        continue;
+        throw new Error(`The fake does not model collection updates or deletes (got ${change.action})`);
       }
       if (change.name === undefined || change.name === "") reject("A new collection needs a name");
       const id = create(change.id, "VariableCollectionId");
@@ -513,11 +517,10 @@ export class InMemoryFigma {
         continue;
       }
       if (change.scopes !== undefined) variable.scopes = [...change.scopes];
-      // ASSUMPTION: Figma does not document whether an UPDATE merges code syntax or replaces
-      // it. The fake merges, which is what the sync relies on. The first sync against a real
-      // file confirms it.
-      if (change.codeSyntax !== undefined)
-        variable.codeSyntax = { ...variable.codeSyntax, ...change.codeSyntax };
+      // Figma does not document whether an UPDATE merges code syntax or replaces it. The fake
+      // replaces it, the stricter rule, so a sync that keeps other platforms' entries under
+      // replacement also keeps them under a merge.
+      if (change.codeSyntax !== undefined) variable.codeSyntax = { ...change.codeSyntax };
     }
 
     for (const change of body.variableModeValues ?? []) {
@@ -529,6 +532,9 @@ export class InMemoryFigma {
       }
       variable.valuesByMode.set(modeId, checkedValue(draft, variable, change.value, real));
     }
+
+    const cycle = aliasCycleThrough(draft);
+    if (cycle !== undefined) reject(`Alias cycle through ${cycle}`);
   }
 
   private resolveVariable(
@@ -667,6 +673,32 @@ function checkedValue(
     case "BOOLEAN":
       return value === true || value === false ? value : reject(`${variable.name} needs a boolean`);
   }
+}
+
+/**
+ * A variable on an alias cycle, or `undefined`. Figma does not document how it treats a
+ * cycle that only closes across modes, so the fake applies the sync's own conservative rule:
+ * a variable points at every variable any of its modes aliases, and any cycle is refused.
+ * It follows each chain from every variable, which is slow but plain, and the files in the
+ * tests hold a few hundred variables.
+ */
+function aliasCycleThrough(state: FileState): string | undefined {
+  const aliased = (variable: StoredVariable): StoredVariable[] =>
+    [...variable.valuesByMode.values()].flatMap((value) => {
+      const target = isAlias(value) ? state.variables.get(value.id) : undefined;
+      return target === undefined ? [] : [target];
+    });
+  for (const start of state.variables.values()) {
+    const seen = new Set<StoredVariable>();
+    const pending = aliased(start);
+    for (let next = pending.pop(); next !== undefined; next = pending.pop()) {
+      if (next === start) return start.name;
+      if (seen.has(next)) continue;
+      seen.add(next);
+      pending.push(...aliased(next));
+    }
+  }
+  return undefined;
 }
 
 function isAlias(value: StoredValue | PostValue | undefined): value is Alias {

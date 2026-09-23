@@ -9,12 +9,9 @@ import { Effect, Schema } from "effect";
 import { FigmaApi } from "./figma-api.ts";
 import type { FigmaRequestFailed, FileKey } from "./figma-api.ts";
 import { places } from "./plural.ts";
-import { isInSync, planSync } from "./sync-plan.ts";
+import { changeBatch, isInSync, planSync } from "./sync-plan.ts";
 import type { PlanConflict, SyncPlan } from "./sync-plan.ts";
 import type { VariableSet } from "./variable-set.ts";
-
-/** What a sync found and did. */
-export type SyncOutcome = { readonly _tag: "InSync" } | { readonly _tag: "Applied"; readonly plan: SyncPlan };
 
 /**
  * Figma accepted the batch, yet reading the file back still shows differences. Something
@@ -45,20 +42,20 @@ export const planFileSync = Effect.fn("TokenSync.plan")(function* (fileKey: File
  *
  * @param fileKey - The file to update.
  * @param desired - The variables the file should hold.
- * @returns Whether the file already matched, or the plan the sync applied.
+ * @returns The plan the sync applied, which is empty when the file already matched.
  */
 export const syncFile = Effect.fn("TokenSync.sync")(function* (
   fileKey: FileKey,
   desired: VariableSet
-): Effect.fn.Return<SyncOutcome, FigmaRequestFailed | PlanConflict | SyncDidNotConverge, FigmaApi> {
+): Effect.fn.Return<SyncPlan, FigmaRequestFailed | PlanConflict | SyncDidNotConverge, FigmaApi> {
   const plan = yield* planFileSync(fileKey, desired);
   yield* Effect.annotateCurrentSpan({ fileKey, changes: plan.changes.length });
   if (isInSync(plan)) {
-    return { _tag: "InSync" };
+    return plan;
   }
 
   const figma = yield* FigmaApi;
-  yield* figma.writeVariables(fileKey, plan.batch);
+  yield* figma.writeVariables(fileKey, changeBatch(plan));
   const remaining = yield* planFileSync(fileKey, desired);
   if (!isInSync(remaining)) {
     return yield* new SyncDidNotConverge({
@@ -66,5 +63,5 @@ export const syncFile = Effect.fn("TokenSync.sync")(function* (
       remainingChanges: remaining.changes.length,
     });
   }
-  return { _tag: "Applied", plan };
+  return plan;
 });

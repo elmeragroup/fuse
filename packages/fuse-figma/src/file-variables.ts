@@ -41,13 +41,23 @@ export type FileValue =
   // differs from the value the sync wants.
   | { readonly _tag: "ComposedColor" };
 
+/**
+ * The code a developer writes for a variable on each platform, shown in Figma's code
+ * panel. The keys are Figma's platform names, and a missing key means no entry.
+ */
+export type CodeSyntax = {
+  readonly WEB?: string;
+  readonly ANDROID?: string;
+  readonly iOS?: string;
+};
+
 /** A local variable in the file. */
 export type FileVariable = {
   readonly id: VariableId;
   readonly name: string;
   readonly type: FileVariableType;
   readonly scopes: readonly string[];
-  readonly webSyntax: string | undefined;
+  readonly codeSyntax: CodeSyntax;
   readonly values: ReadonlyMap<ModeId, FileValue>;
 };
 
@@ -80,10 +90,13 @@ export type NewCollection = {
   readonly initialModeId: ModeId;
 };
 
-/** A change to one mode of a collection. */
+/**
+ * A change to one mode of a collection. `NameInitialMode` names the one mode Figma gives a
+ * collection the same write creates; it is the only mode a write renames.
+ */
 export type ModeChange =
   | {
-      readonly _tag: "RenameMode" | "CreateMode";
+      readonly _tag: "NameInitialMode" | "CreateMode";
       readonly collectionId: CollectionId;
       readonly id: ModeId;
       readonly name: string;
@@ -94,8 +107,11 @@ export type ModeChange =
 export type VariableMetadata = {
   readonly scopes: readonly VariableScope[];
 
-  /** `undefined` leaves the variable's code syntax as it is. */
-  readonly webSyntax: string | undefined;
+  /**
+   * The complete code syntax the variable should end up with, every platform included.
+   * `undefined` leaves the variable's code syntax as it is.
+   */
+  readonly codeSyntax: CodeSyntax | undefined;
 };
 
 /** A change to one variable. */
