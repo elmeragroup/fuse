@@ -1,12 +1,13 @@
 /**
- * The radius steps `fuse.css` derives from the theme's `--radius` in its `@theme` block,
- * such as `--radius-md: calc(var(--radius) - 2px)`. The CSS keeps the arithmetic, so a theme
- * sets only `--radius`. Tooling without `calc()`, such as the Figma sync, reads the offsets
- * here, and `radius-scale-css.test.ts` requires `fuse.css` to declare the same ones.
+ * The radius rungs `fuse.css` derives from the theme's `--radius` and `--radius-step` in its
+ * `@theme` block, such as `--radius-md: calc(var(--radius) - var(--radius-step))`. The CSS
+ * keeps the arithmetic, so a theme sets only `--radius` and `--radius-step`. Tooling without
+ * `calc()`, such as the Figma sync, reads the step counts here, and
+ * `radius-scale-css.test.ts` requires `fuse.css` to declare the same ones.
  */
 
 /** The derived radius custom properties, without their leading dashes, in `fuse.css` order. */
-export const RADIUS_STEP_NAMES = [
+export const RADIUS_RUNG_NAMES = [
   "radius-xs",
   "radius-sm",
   "radius-md",
@@ -15,18 +16,20 @@ export const RADIUS_STEP_NAMES = [
   "radius-popover",
 ] as const;
 
-/** One derived radius step, such as `radius-md`. */
-export type RadiusStepName = (typeof RADIUS_STEP_NAMES)[number];
+/** One derived radius rung, such as `radius-md`. */
+export type RadiusRungName = (typeof RADIUS_RUNG_NAMES)[number];
 
 /**
- * How many pixels each step adds to `--radius`. A negative offset can take a step below
- * zero for a small theme radius, and CSS then clamps the `border-radius` that uses it to 0.
+ * How many `--radius-step` lengths each rung adds to `--radius`. External themes step 2px,
+ * and the internal variant steps 0px, so every internal rung equals `--radius`. A negative
+ * count can take a rung below zero for a small theme radius, and CSS then clamps the
+ * `border-radius` that uses it to 0.
  */
-export const RADIUS_STEP_OFFSETS = {
-  "radius-xs": -6,
-  "radius-sm": -4,
-  "radius-md": -2,
+export const RADIUS_RUNG_STEPS = {
+  "radius-xs": -3,
+  "radius-sm": -2,
+  "radius-md": -1,
   "radius-lg": 0,
-  "radius-xl": 4,
-  "radius-popover": -8,
-} as const satisfies Record<RadiusStepName, number>;
+  "radius-xl": 2,
+  "radius-popover": -4,
+} as const satisfies Record<RadiusRungName, number>;

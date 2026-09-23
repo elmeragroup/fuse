@@ -6,7 +6,7 @@
  * collections that designers set independently on a frame. Density is a third axis,
  * independent of the theme, so it has a collection of its own.
  *
- * - `Fuse tokens` holds one variable per role token and per radius step a component uses,
+ * - `Fuse tokens` holds one variable per role token and per radius rung a component uses,
  *   with a Light and a Dark mode. These are the variables designers bind; each one aliases
  *   its scheme's variable in `Fuse themes`.
  * - `Fuse themes` holds `light/<token>` and `dark/<token>` with one mode per theme slug.
@@ -32,8 +32,8 @@ import {
   LEGAL_THEMES,
   PRIMITIVE_NAMES,
   PRIMITIVES,
-  RADIUS_STEP_NAMES,
-  RADIUS_STEP_OFFSETS,
+  RADIUS_RUNG_NAMES,
+  RADIUS_RUNG_STEPS,
   remToPx,
   themeSlug,
   TOKEN_KINDS,
@@ -42,7 +42,7 @@ import {
 import type {
   Density,
   DensityMetricKind,
-  RadiusStepName,
+  RadiusRungName,
   ResolvedColorScheme,
   TokenContract,
   TokenKind,
@@ -147,7 +147,7 @@ type DimensionTokenName = {
 /**
  * The pickers that offer each dimension token. A length can round corners, space a gap or
  * size a stroke, so the kind alone does not pick a scope. A new dimension token fails to
- * compile until it has an entry here. `radius-step` spaces the radius scale and switches
+ * compile until it has an entry here. `radius-step` spaces the radius rungs and switches
  * between the internal and external variants, so no layer rounds with it. It syncs hidden
  * from every picker and keeps its code syntax for developers.
  */
@@ -216,40 +216,62 @@ function contractVariable(token: TokenName): BoundVariable {
 }
 
 /**
- * A radius step as a pixel value per theme. Figma variables cannot compute, so the sync does
- * the `calc()` from `fuse.css`. CSS clamps a negative `border-radius` to 0, so a step below
- * zero becomes 0, the radius a layer shows.
+ * A radius rung as a pixel value per theme. Figma variables cannot compute, so the sync does
+ * the `calc()` from `fuse.css` with the theme's `radius` and `radius-step`. CSS clamps a
+ * negative `border-radius` to 0, so a rung below zero becomes 0, the radius a layer shows.
  *
- * The code syntax is the `calc()` itself. `fuse.css` declares the steps in `@theme inline`,
- * so Tailwind inlines them into its utilities and the built CSS does not define
- * `--radius-sm` and most other steps as custom properties.
+ * The code syntax is the `calc()` itself, as `fuse.css` spells it. `fuse.css` declares the
+ * rungs in `@theme inline`, so Tailwind inlines them into its utilities and the built CSS
+ * does not define `--radius-sm` and most other rungs as custom properties.
  */
-function radiusStepVariable(step: RadiusStepName): BoundVariable {
-  const offset = RADIUS_STEP_OFFSETS[step];
+function radiusRungVariable(rung: RadiusRungName): BoundVariable {
+  const steps = RADIUS_RUNG_STEPS[rung];
   const projection = KIND_PROJECTIONS.dimension;
   return {
-    name: step,
+    name: rung,
     type: projection.type,
     scopes: ["CORNER_RADIUS"],
-    webSyntax:
-      offset === 0 ? "var(--radius)" : `calc(var(--radius) ${offset < 0 ? "-" : "+"} ${Math.abs(offset)}px)`,
-    valueIn: (tokens) => {
-      const radius = cssLengthToPx(tokens.radius);
-      return radius === undefined
-        ? unsupported("radius", tokens.radius, `a rem or px length to derive ${step} from`)
-        : Result.succeed({ _tag: "Float", value: Math.max(0, radius + offset) });
-    },
+    webSyntax: radiusRungSyntax(steps),
+    valueIn: (tokens) =>
+      Result.gen(function* () {
+        const radius = yield* lengthInPx("radius", tokens.radius, rung);
+        const step = yield* lengthInPx("radius-step", tokens["radius-step"], rung);
+        const value: FloatValue = { _tag: "Float", value: Math.max(0, radius + steps * step) };
+        return value;
+      }),
   };
+}
+
+/** `calc(var(--radius) - 3 * var(--radius-step))`, or `var(--radius)` for zero steps. */
+function radiusRungSyntax(steps: number): string {
+  if (steps === 0) {
+    return "var(--radius)";
+  }
+  const sign = steps < 0 ? "-" : "+";
+  const count = Math.abs(steps);
+  return `calc(var(--radius) ${sign} ${count === 1 ? "" : `${count} * `}var(--radius-step))`;
+}
+
+/** A length token in pixels, or the failure that names the rung that needs it. */
+function lengthInPx(
+  token: TokenName,
+  css: string,
+  rung: RadiusRungName
+): Result.Result<number, UnsupportedTokenValue> {
+  const px = cssLengthToPx(css);
+  return px === undefined
+    ? unsupported(token, css, `a rem or px length to derive ${rung} from`)
+    : Result.succeed(px);
 }
 
 /**
  * Every `Fuse tokens` variable. The sync leaves out `radius-popover` because no component
  * uses it. Fuse popups use `radius-md`, so a designer who binds `radius-popover` to a popover
- * gets a radius the code never renders. `TODO.md` tracks removing the step from `fuse.css`.
+ * gets a radius the code never renders. `TODO.md` tracks removing the rung from `fuse.css`.
  */
 const BOUND_VARIABLES: readonly BoundVariable[] = [
   ...TOKEN_NAMES.map(contractVariable),
-  ...RADIUS_STEP_NAMES.filter((step) => step !== "radius-popover").map(radiusStepVariable),
+  ...RADIUS_RUNG_NAMES.filter((rung) => rung !== "radius-popover").map(radiusRungVariable),
 ];
 
 const primitiveNames: ReadonlySet<string> = new Set(PRIMITIVE_NAMES);

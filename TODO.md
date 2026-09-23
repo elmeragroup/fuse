@@ -40,10 +40,11 @@
     on a STRING variable, tighten them to it. If it stores other scopes than the sync
     sent, every `check` reports drift.
 - Add a CI job running `figma:check` once a service account owns a personal access token.
-- Add named Figma variables for the size-specific radius clamps, such as
-  `min(var(--radius-md), 8px)`, when the component pilot needs them. The sync sends only
-  the plain radius steps and the density metrics.
-- Remove the unused `--radius-popover` step from `fuse.css` and `RADIUS_STEP_OFFSETS` in a
+- Add named Figma variables for the private corners in `styles/corner-radius.ts`, such
+  as the compact corner that caps `rounded-md` at 10px in external themes, when the
+  component pilot needs them. The sync sends only the plain radius rungs, `radius-step`
+  and the density metrics.
+- Remove the unused `--radius-popover` rung from `fuse.css` and `RADIUS_RUNG_STEPS` in a
   separate change. No component uses it, Fuse popups use `rounded-md`, and the Figma sync
   already leaves it out.
 - Revisit Figma extended collections for brand theming if the two-collection mode

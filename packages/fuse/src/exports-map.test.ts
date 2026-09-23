@@ -463,8 +463,8 @@ describe("exports map", () => {
       "DENSITY_METRICS",
       "PRIMITIVE_NAMES",
       "PRIMITIVES",
-      "RADIUS_STEP_NAMES",
-      "RADIUS_STEP_OFFSETS",
+      "RADIUS_RUNG_NAMES",
+      "RADIUS_RUNG_STEPS",
       "LEGAL_THEMES",
       "themeSlug",
     ]);

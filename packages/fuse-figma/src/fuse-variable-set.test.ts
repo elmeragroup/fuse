@@ -109,13 +109,17 @@ describe("fuseVariableSet", () => {
     expect(spec(DENSITY_COLLECTION, "control-leading")?.scopes).toEqual(["LINE_HEIGHT"]);
   });
 
-  it("computes the radius steps per theme", () => {
-    // external-fkas-private sets --radius: 0.75rem, 12px.
+  it("computes the radius rungs per theme", () => {
+    // external-fkas-private sets --radius: 0.75rem, 12px, and external themes step 2px.
     expect(value(THEMES_COLLECTION, "light/radius-md", "external-fkas-private")).toEqual(px(10));
     expect(value(THEMES_COLLECTION, "dark/radius-xl", "external-fkas-private")).toEqual(px(16));
-    // Internal themes keep the default 0.375rem, 6px.
-    expect(value(THEMES_COLLECTION, "light/radius-md", "internal-elma-private")).toEqual(px(4));
-    expect(value(THEMES_COLLECTION, "light/radius-xs", "internal-elma-private")).toEqual(px(0));
+    // Internal themes keep the default 0.375rem, 6px, and step 0px, so every rung is 6px.
+    expect(value(THEMES_COLLECTION, "light/radius-md", "internal-elma-private")).toEqual(px(6));
+    expect(value(THEMES_COLLECTION, "light/radius-xs", "internal-elma-private")).toEqual(px(6));
+    expect(value(THEMES_COLLECTION, "light/radius-xl", "internal-elma-private")).toEqual(px(6));
+    // external-tkas-private sets 0.95rem, 15.2px, so radius-xs is 15.2 - 3 * 2.
+    const tkasXs = value(THEMES_COLLECTION, "light/radius-xs", "external-tkas-private");
+    expect(tkasXs?._tag === "Float" && tkasXs.value).toBeCloseTo(9.2, 9);
     expect(spec(THEMES_COLLECTION, "light/radius-md")).toMatchObject({ scopes: [], webSyntax: undefined });
     expect(value(TOKENS_COLLECTION, "radius-md", "Light")).toEqual({
       _tag: "Alias",
@@ -123,14 +127,14 @@ describe("fuseVariableSet", () => {
     });
   });
 
-  it("gives each radius step the calc() fuse.css declares as its code syntax", () => {
-    const webSyntax = (step: string) => spec(TOKENS_COLLECTION, step)?.webSyntax;
+  it("gives each radius rung the calc() fuse.css declares as its code syntax", () => {
+    const webSyntax = (rung: string) => spec(TOKENS_COLLECTION, rung)?.webSyntax;
     expect(spec(TOKENS_COLLECTION, "radius-sm")).toMatchObject({ type: "FLOAT", scopes: ["CORNER_RADIUS"] });
-    expect(webSyntax("radius-xs")).toBe("calc(var(--radius) - 6px)");
-    expect(webSyntax("radius-sm")).toBe("calc(var(--radius) - 4px)");
-    expect(webSyntax("radius-md")).toBe("calc(var(--radius) - 2px)");
+    expect(webSyntax("radius-xs")).toBe("calc(var(--radius) - 3 * var(--radius-step))");
+    expect(webSyntax("radius-sm")).toBe("calc(var(--radius) - 2 * var(--radius-step))");
+    expect(webSyntax("radius-md")).toBe("calc(var(--radius) - var(--radius-step))");
     expect(webSyntax("radius-lg")).toBe("var(--radius)");
-    expect(webSyntax("radius-xl")).toBe("calc(var(--radius) + 4px)");
+    expect(webSyntax("radius-xl")).toBe("calc(var(--radius) + 2 * var(--radius-step))");
   });
 
   it("leaves out radius-popover, which no component uses", () => {
@@ -177,7 +181,7 @@ describe("web code syntax", () => {
     );
 
     expect(references.map((reference) => reference.name)).toEqual(
-      expect.arrayContaining(["primary", "brand-fkas", "radius", "control-h-md"])
+      expect.arrayContaining(["primary", "brand-fkas", "radius", "radius-step", "control-h-md"])
     );
     expect(references.filter((reference) => !declared.has(reference.name))).toEqual([]);
   });

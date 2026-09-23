@@ -13,7 +13,7 @@ Ubiquitous language for the `@elmeragroup/fuse` whitelabel component library eff
 - **Theme**: a concrete permutation of variant × brand × segment, e.g. `internal-fkas-company`, `external-tkas-private`, `internal-elma-private`. 20 permutations exist at v1 (10 internal, 10 external).
 - **Theme slug**: the canonical string name of a theme, `<variant>-<brand>-<segment>`.
 - **Token / token contract**: a CSS custom property that components consume (e.g. a primary color role). The _contract_ is the fixed set of token names; themes vary values, never names. The library ships complete defaults; a theme overrides a subset.
-- **Radius step**: a radius the library derives from a theme's `--radius` by a fixed pixel offset, `--radius-xs` through `--radius-xl` plus `--radius-popover`. Themes set only `--radius`.
+- **Radius rung**: a radius the library derives from a theme's `--radius` in whole multiples of the radius step, `--radius-xs` through `--radius-xl` plus `--radius-popover`. `--radius-md` is `--radius` minus one step, so every internal rung equals `--radius`. Themes set only `--radius`, and the variant sets the step.
 - **Role token**: a semantic, themable token named for its job (`--primary`, `--card`, `--error`), following the shadcn grammar of base + `-foreground` pairs.
 - **Primitive token**: a public but non-themed token holding a raw palette value — the neutral ramp (`--neutral-50..950`, 50 lightest) and the per-brand accents (`--brand-<code>`). Stable API, same values in every theme.
 - **Soft form (`-soft`)**: the tinted-background companion of a role (`--error-soft`/`--error-soft-foreground`) — the contract's rename of Material-3's `-container` concept.

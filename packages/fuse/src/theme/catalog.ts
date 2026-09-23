@@ -15,6 +15,6 @@ export type { TokenContract, TokenKind, TokenName } from "./tokens/contract";
 export { DENSITY_METRIC_FAMILIES, DENSITY_METRICS } from "./tokens/density-metrics";
 export type { DensityMetricKind, DensityMetricName } from "./tokens/density-metrics";
 export { PRIMITIVE_NAMES, PRIMITIVES } from "./tokens/primitives";
-export { RADIUS_STEP_NAMES, RADIUS_STEP_OFFSETS } from "./tokens/radius-scale";
-export type { RadiusStepName } from "./tokens/radius-scale";
+export { RADIUS_RUNG_NAMES, RADIUS_RUNG_STEPS } from "./tokens/radius-scale";
+export type { RadiusRungName } from "./tokens/radius-scale";
 export { LEGAL_THEMES, themeSlug } from "./tokens/themes";

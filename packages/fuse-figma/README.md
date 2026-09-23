@@ -8,7 +8,7 @@ The sync owns four variable collections, matched by name.
 
 | Collection        | Modes                  | Variables |
 | --- | --- | --- |
-| `Fuse tokens`     | `Light`, `Dark`        | One per role token, such as `primary` or `radius`, and one per radius step, such as `radius-md`. Designers bind these. |
+| `Fuse tokens`     | `Light`, `Dark`        | One per role token, such as `primary` or `radius`, and one per radius rung, such as `radius-md`. Designers bind these. |
 | `Fuse themes`     | One per theme slug, 20 | `light/<token>` and `dark/<token>`. They are hidden from pickers and only feed `Fuse tokens`. |
 | `Fuse primitives` | `Value`                | The neutral ramp and the brand accents. Primitive tokens are public API with the same value in every theme, so designers can bind these too. |
 | `Fuse density`    | `Dense`, `Comfortable` | One per control metric, such as `control-h-md`. Designers bind these. |
@@ -20,14 +20,14 @@ The token values come from `composeTheme` in `@elmeragroup/fuse/theme-catalog`, 
 - An `oklch()` or hex color becomes an sRGB color, with alpha kept.
 - `var(--name)` becomes an alias to the matching variable. A role reference points at the same scheme's role in `Fuse themes`, and a primitive reference points into `Fuse primitives`.
 - A `rem` length becomes pixels at a 16px root.
-- A radius step becomes the pixels `fuse.css` computes for it, such as `--radius-md: calc(var(--radius) - 2px)`, because Figma variables cannot compute. The sync writes each step per theme mode from the theme's `radius` and the offsets in `@elmeragroup/fuse/theme-catalog`. CSS clamps a negative `border-radius` to 0, and so does the sync. It leaves out `radius-popover`, because no component uses that step and Fuse popups use `radius-md`.
+- A radius rung becomes the pixels `fuse.css` computes for it, such as `--radius-md: calc(var(--radius) - var(--radius-step))`, because Figma variables cannot compute. The sync writes each rung per theme mode from the theme's `radius` and `radius-step` and the step counts in `@elmeragroup/fuse/theme-catalog`. Internal themes step 0px, so every rung equals `radius`. External themes step 2px, so `external-fkas-private` with a 12px radius gets 6, 8, 10, 12 and 16px from `radius-xs` to `radius-xl`. CSS clamps a negative `border-radius` to 0, and so does the sync. It leaves out `radius-popover`, because no component uses that rung and Fuse popups use `radius-md`.
 - A control metric comes from `DENSITY_METRICS` in the theme catalog, which the `fuse.css` density blocks must equal. Heights get the width and height picker, padding and gaps the gap picker, and `control-text` and `control-leading` the font size and line height pickers.
 - A font stack becomes its first family name.
 - A derived role, such as `secondary-hover`, becomes the literal color that composition computes, because Figma variables cannot mix colors.
-- The `Fuse tokens`, `Fuse primitives` and `Fuse density` variables carry web code syntax. A token, primitive or metric carries its `var()`, such as `var(--primary)`. A radius step carries its `calc()`, such as `calc(var(--radius) - 2px)`. `fuse.css` declares the steps in `@theme inline`, so Tailwind inlines them into its utilities, and the built CSS declares no `--radius-sm` property. A test requires every `var()` in the code syntax to name a property that the built `styles.css` or `themes.css` declares.
+- The `Fuse tokens`, `Fuse primitives` and `Fuse density` variables carry web code syntax. A token, primitive or metric carries its `var()`, such as `var(--primary)`. A radius rung carries its `calc()`, such as `calc(var(--radius) - 3 * var(--radius-step))`. `fuse.css` declares the rungs in `@theme inline`, so Tailwind inlines them into its utilities, and the built CSS declares no `--radius-sm` property. A test requires every `var()` in the code syntax to name a property that the built `styles.css` or `themes.css` declares.
 - Colors and font families appear in every picker. Figma's REST documentation says scopes currently apply only to FLOAT and COLOR variables, so font families do not get the font picker scope yet.
-- Each length token names its picker scope in a table in `fuse-variable-set.ts`, so a new length token does not compile until someone picks one. `radius`, `radius-button` and the radius steps get the corner radius picker.
-- `radius-step` gets no picker scope. It is a length, but it spaces the radius scale and switches between the internal and external variants, so no layer rounds with it. It keeps its code syntax, `var(--radius-step)`.
+- Each length token names its picker scope in a table in `fuse-variable-set.ts`, so a new length token does not compile until someone picks one. `radius`, `radius-button` and the radius rungs get the corner radius picker.
+- `radius-step` gets no picker scope. It is a length, but it spaces the radius rungs and switches between the internal and external variants, so no layer rounds with it. It keeps its code syntax, `var(--radius-step)`.
 
 ## Running it
 

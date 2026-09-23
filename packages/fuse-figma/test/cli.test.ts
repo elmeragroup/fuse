@@ -87,7 +87,7 @@ describe("fuse-figma sync", () => {
         "external-fkse-private",
       ]);
       assert.notInclude(themeModes, "external-fkab-private");
-      // 79 contract tokens plus 5 radius steps, and each of those per scheme in Fuse themes.
+      // 79 contract tokens plus 5 radius rungs, and each of those per scheme in Fuse themes.
       assert.strictEqual(figma.variableNames("Fuse tokens").length, 84);
       assert.strictEqual(figma.variableNames("Fuse themes").length, 168);
       assert.strictEqual(figma.variableNames("Fuse primitives").length, 23);
@@ -192,14 +192,14 @@ describe("fuse-figma sync", () => {
         codeSyntax: { WEB: "var(--neutral-500)" },
       });
       assert.deepStrictEqual(figma.metadata("Fuse themes", "light/primary"), { scopes: [], codeSyntax: {} });
-      // The built CSS defines no --radius-sm and most other steps, so the steps carry the calc().
+      // The built CSS defines no --radius-sm and most other rungs, so the rungs carry the calc().
       assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius-md"), {
         scopes: ["CORNER_RADIUS"],
-        codeSyntax: { WEB: "calc(var(--radius) - 2px)" },
+        codeSyntax: { WEB: "calc(var(--radius) - var(--radius-step))" },
       });
       assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius-lg").codeSyntax, { WEB: "var(--radius)" });
       assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius-xl").codeSyntax, {
-        WEB: "calc(var(--radius) + 4px)",
+        WEB: "calc(var(--radius) + 2 * var(--radius-step))",
       });
       assert.deepStrictEqual(figma.metadata("Fuse themes", "dark/radius-md"), { scopes: [], codeSyntax: {} });
       assert.deepStrictEqual(figma.metadata("Fuse density", "control-h-md"), {
@@ -225,30 +225,31 @@ describe("fuse-figma sync", () => {
     })
   );
 
-  it.effect("resolves the radius steps a theme derives from its radius", () =>
+  it.effect("resolves the radius rungs a theme derives from its radius and radius step", () =>
     Effect.gen(function* () {
       const figma = new InMemoryFigma(FILE_KEY, TOKEN);
       yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
-      const radius = (step: string, modes: Readonly<Record<string, string>>) =>
-        figma.resolve("Fuse tokens", step, modes);
+      const radius = (name: string, modes: Readonly<Record<string, string>>) =>
+        figma.resolve("Fuse tokens", name, modes);
 
-      // external-fkas-private sets --radius: 0.75rem, 12px at the 16px root.
-      const fkas = light("external-fkas-private");
-      assert.strictEqual(radius("radius", fkas), 12);
-      assert.strictEqual(radius("radius-xs", fkas), 6);
-      assert.strictEqual(radius("radius-sm", fkas), 8);
-      assert.strictEqual(radius("radius-md", fkas), 10);
-      assert.strictEqual(radius("radius-lg", fkas), 12);
-      assert.strictEqual(radius("radius-xl", fkas), 16);
-      // Dark keeps the light radius.
-      assert.strictEqual(radius("radius-md", dark("external-fkas-private")), 10);
+      const rungs = (modes: Readonly<Record<string, string>>) =>
+        ["radius-xs", "radius-sm", "radius-md", "radius-lg", "radius-xl"].map((rung) => radius(rung, modes));
 
-      // Internal themes inherit --radius: 0.375rem, 6px.
-      const internal = light("internal-fkas-private");
-      assert.strictEqual(radius("radius-md", internal), 4);
-      assert.strictEqual(radius("radius-xs", internal), 0);
+      // Internal themes inherit --radius: 0.375rem, 6px, and step 0px, so every rung is 6px.
+      assert.deepStrictEqual(rungs(light("internal-fkas-private")), [6, 6, 6, 6, 6]);
+      // External themes step 2px. external-fkas-private sets --radius: 0.75rem, 12px at the
+      // 16px root, so the rungs are 12 - 3 * 2, 12 - 2 * 2, 12 - 2, 12 and 12 + 2 * 2.
+      assert.strictEqual(radius("radius", light("external-fkas-private")), 12);
+      assert.deepStrictEqual(rungs(light("external-fkas-private")), [6, 8, 10, 12, 16]);
+      // Dark keeps the light radius and step.
+      assert.deepStrictEqual(rungs(dark("external-fkas-private")), [6, 8, 10, 12, 16]);
       // external-guen-private sets 0.5rem, 8px.
-      assert.strictEqual(radius("radius-sm", light("external-guen-private")), 4);
+      assert.deepStrictEqual(rungs(light("external-guen-private")), [2, 4, 6, 8, 12]);
+      // external-tkas-private sets 0.95rem, 15.2px. Figma stores each value as a 32-bit float.
+      assert.deepStrictEqual(
+        rungs(light("external-tkas-private")),
+        [9.2, 11.2, 13.2, 15.2, 19.2].map(Math.fround)
+      );
       // No component uses radius-popover, so the sync gives designers no variable for it.
       assert.notInclude(figma.variableNames("Fuse tokens"), "radius-popover");
       assert.notInclude(figma.variableNames("Fuse themes"), "light/radius-popover");
