@@ -31,7 +31,28 @@ describe("parseCssBlocks", () => {
         ],
       },
       { prelude: "@theme inline", declarations: [{ name: "radius-md", value: "calc(var(--radius) - 2px)" }] },
+      { prelude: "@custom-variant data-open", declarations: [] },
       { prelude: "&:where([data-open])", declarations: [] },
+    ]);
+  });
+
+  it("keeps a block's own declarations around the blocks nested in it", () => {
+    const nested = `
+.a {
+  --control-h-md: 3rem;
+  &:hover { color: red; }
+  @apply hover:underline;
+  margin: 0;
+}`;
+    expect(parseCssBlocks(nested)).toEqual([
+      {
+        prelude: ".a",
+        declarations: [
+          { name: "control-h-md", value: "3rem" },
+          { name: "margin", value: "0" },
+        ],
+      },
+      { prelude: "&:hover", declarations: [{ name: "color", value: "red" }] },
     ]);
   });
 });

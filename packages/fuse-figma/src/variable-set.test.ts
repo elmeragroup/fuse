@@ -82,6 +82,37 @@ describe("makeVariableSet", () => {
     );
   });
 
+  // The rules below come from https://developers.figma.com/docs/rest-api/variables-types/.
+  it("applies FONT_VARIATIONS to STRING variables only and TEXT_CONTENT to FLOAT and STRING", () => {
+    const six: VariableValue = { _tag: "Float", value: 6 };
+    const text: VariableValue = { _tag: "String", value: "Roboto" };
+    const scoped = (type: VariableSpec["type"], scopes: VariableSpec["scopes"], value: VariableValue) => ({
+      ...variable("probe", type, { Light: value, Dark: value }),
+      scopes,
+    });
+    expect(failure([palette([scoped("STRING", ["FONT_STYLE", "FONT_VARIATIONS"], text)])])).toBeUndefined();
+    expect(failure([palette([scoped("STRING", ["TEXT_CONTENT"], text)])])).toBeUndefined();
+    expect(failure([palette([scoped("FLOAT", ["TEXT_CONTENT"], six)])])).toBeUndefined();
+    expect(failure([palette([scoped("FLOAT", ["FONT_VARIATIONS"], six)])])).toBe(
+      'The Figma variable set is invalid: "Palette/probe" is a FLOAT variable but has the scope FONT_VARIATIONS.'
+    );
+  });
+
+  it("refuses ALL_FILLS beside another fill scope but not beside a stroke or effect scope", () => {
+    const scoped = (scopes: VariableSpec["scopes"]) => ({
+      ...variable("probe", "COLOR", { Light: RED, Dark: RED }),
+      scopes,
+    });
+    expect(failure([palette([scoped(["ALL_FILLS", "STROKE_COLOR", "EFFECT_COLOR"])])])).toBeUndefined();
+    expect(failure([palette([scoped(["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"])])])).toBeUndefined();
+    expect(failure([palette([scoped(["ALL_FILLS", "FRAME_FILL"])])])).toBe(
+      'The Figma variable set is invalid: "Palette/probe" combines ALL_FILLS with other fill scopes.'
+    );
+    expect(failure([palette([scoped(["TEXT_FILL", "ALL_FILLS"])])])).toBe(
+      'The Figma variable set is invalid: "Palette/probe" combines ALL_FILLS with other fill scopes.'
+    );
+  });
+
   it("refuses duplicate names and a collection without modes", () => {
     expect(failure([palette([]), palette([])])).toBe(
       'The Figma variable set is invalid: "Palette" appears twice.'

@@ -71,23 +71,24 @@ const MAX_MODE_NAME = 40;
 const MAX_BODY_BYTES = 4 * 1024 * 1024;
 
 /**
- * The scopes each variable type accepts, from the Plugin API's `VariableScope` reference.
- * The REST API does not say which scopes fit which type, so the fake takes the Plugin API's
- * table as the stricter reading and rejects a scope outside it. The table lists no scope for
- * BOOLEAN, so the fake accepts only `ALL_SCOPES` there, and the same for `FUTURE_TYPE`.
+ * The scopes each variable type accepts, copied from the valid scopes per type on the REST
+ * API's variable types page, at https://developers.figma.com/docs/rest-api/variables-types/.
+ * The fake keeps its own copy in the page's layout, type by type, so it checks the table in
+ * `makeVariableSet` rather than repeating it. The page lists no scope for BOOLEAN, so the
+ * fake accepts only `ALL_SCOPES` there, and the same for `FUTURE_TYPE`.
  */
 const TYPE_SCOPES = {
   BOOLEAN: ["ALL_SCOPES"],
   COLOR: ["ALL_SCOPES", "ALL_FILLS", "FRAME_FILL", "SHAPE_FILL", "TEXT_FILL", "STROKE_COLOR", "EFFECT_COLOR"],
   FLOAT: [
     "ALL_SCOPES",
-    "TEXT_CONTENT",
     "CORNER_RADIUS",
+    "TEXT_CONTENT",
     "WIDTH_HEIGHT",
     "GAP",
+    "STROKE_FLOAT",
     "OPACITY",
     "COLOR_OPACITY",
-    "STROKE_FLOAT",
     "EFFECT_FLOAT",
     "FONT_WEIGHT",
     "FONT_SIZE",
@@ -96,9 +97,12 @@ const TYPE_SCOPES = {
     "PARAGRAPH_SPACING",
     "PARAGRAPH_INDENT",
   ],
-  STRING: ["ALL_SCOPES", "TEXT_CONTENT", "FONT_FAMILY", "FONT_STYLE"],
+  STRING: ["ALL_SCOPES", "TEXT_CONTENT", "FONT_FAMILY", "FONT_STYLE", "FONT_VARIATIONS"],
   FUTURE_TYPE: ["ALL_SCOPES"],
 } as const satisfies Record<ResolvedType, readonly string[]>;
+
+/** The fill scopes the same page forbids beside `ALL_FILLS`. */
+const FILL_SCOPES: readonly string[] = ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"];
 
 const Action = Schema.Literals(["CREATE", "UPDATE", "DELETE"]);
 const PostBody = Schema.Struct({
@@ -687,13 +691,18 @@ function validModeName(name: string | undefined, collection: StoredCollection, s
   return name;
 }
 
-/** The Plugin API's rules: every scope fits the type, and `ALL_SCOPES` stands alone. */
+/**
+ * Apply the REST page's scope rules. Every scope must fit the type, `ALL_SCOPES` stands alone,
+ * and `ALL_FILLS` allows no other fill scope.
+ */
 function checkedScopes(scopes: readonly string[], type: ResolvedType): string[] {
   const accepted: readonly string[] = TYPE_SCOPES[type];
   const misfit = scopes.find((scope) => !accepted.includes(scope));
   if (misfit !== undefined) reject(`Scope ${misfit} does not apply to a ${type} variable`);
   if (scopes.includes("ALL_SCOPES") && scopes.length > 1)
     reject("ALL_SCOPES cannot combine with other scopes");
+  if (scopes.includes("ALL_FILLS") && scopes.some((scope) => FILL_SCOPES.includes(scope)))
+    reject("ALL_FILLS cannot combine with other fill scopes");
   return [...scopes];
 }
 

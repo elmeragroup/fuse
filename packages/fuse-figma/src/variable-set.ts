@@ -57,15 +57,35 @@ export type VariableValue = AliasValue | LiteralValue;
 export type VariableType = "COLOR" | "FLOAT" | "STRING";
 
 /**
- * The Figma picker scopes the sync assigns. An empty list hides a variable from every
- * picker while keeping it available as an alias target.
+ * The Figma picker scopes the REST API lists for the variable types the sync writes. An
+ * empty list hides a variable from every picker while keeping it available as an alias
+ * target. The type leaves out `FONT_FAMILY`. The same page says scopes currently apply only
+ * to FLOAT and COLOR variables, so the font tokens take `ALL_SCOPES` until a real file shows
+ * that Figma keeps `FONT_FAMILY` on a STRING variable.
  */
 export type VariableScope =
+  | "ALL_FILLS"
   | "ALL_SCOPES"
+  | "COLOR_OPACITY"
   | "CORNER_RADIUS"
+  | "EFFECT_COLOR"
+  | "EFFECT_FLOAT"
   | "FONT_SIZE"
+  | "FONT_STYLE"
+  | "FONT_VARIATIONS"
+  | "FONT_WEIGHT"
+  | "FRAME_FILL"
   | "GAP"
+  | "LETTER_SPACING"
   | "LINE_HEIGHT"
+  | "OPACITY"
+  | "PARAGRAPH_INDENT"
+  | "PARAGRAPH_SPACING"
+  | "SHAPE_FILL"
+  | "STROKE_COLOR"
+  | "STROKE_FLOAT"
+  | "TEXT_CONTENT"
+  | "TEXT_FILL"
   | "WIDTH_HEIGHT";
 
 /** A variable the sync owns. */
@@ -109,7 +129,8 @@ export type CollectionSpec = {
  * - Every collection has between 1 and 40 modes, and no mode name is longer than 40
  *   characters, Figma's limits.
  * - Every variable has exactly one value for each mode of its collection.
- * - Every scope applies to its variable's type, and `ALL_SCOPES` stands alone.
+ * - Every scope applies to its variable's type. `ALL_SCOPES` stands alone, and `ALL_FILLS`
+ *   stands alone among the fill scopes.
  * - Every literal matches its variable's type.
  * - Every alias targets a variable of the set with the same type.
  * - No chain of aliases leads back to where it started, in any mode.
@@ -139,17 +160,38 @@ const MAX_MODE_NAME_LENGTH = 40;
 const brandVariableSet = Brand.nominal<VariableSet>();
 
 /**
- * The variable types each scope applies to, as the Plugin API's `VariableScope` reference
- * lists them. The REST API documents no per-type rule, so the set follows the Plugin API.
+ * The variable types each scope applies to. The REST API's variable types page lists the
+ * valid scopes per type, at https://developers.figma.com/docs/rest-api/variables-types/.
  */
 const SCOPE_TYPES = {
+  ALL_FILLS: ["COLOR"],
   ALL_SCOPES: ["COLOR", "FLOAT", "STRING"],
+  COLOR_OPACITY: ["FLOAT"],
   CORNER_RADIUS: ["FLOAT"],
+  EFFECT_COLOR: ["COLOR"],
+  EFFECT_FLOAT: ["FLOAT"],
   FONT_SIZE: ["FLOAT"],
+  FONT_STYLE: ["STRING"],
+  FONT_VARIATIONS: ["STRING"],
+  FONT_WEIGHT: ["FLOAT"],
+  FRAME_FILL: ["COLOR"],
   GAP: ["FLOAT"],
+  LETTER_SPACING: ["FLOAT"],
   LINE_HEIGHT: ["FLOAT"],
+  OPACITY: ["FLOAT"],
+  PARAGRAPH_INDENT: ["FLOAT"],
+  PARAGRAPH_SPACING: ["FLOAT"],
+  // oxlint-disable-next-line anti-slop/no-shape-in-symbol-names -- the key is Figma's own scope name, which the REST API sends and expects verbatim
+  SHAPE_FILL: ["COLOR"],
+  STROKE_COLOR: ["COLOR"],
+  STROKE_FLOAT: ["FLOAT"],
+  TEXT_CONTENT: ["FLOAT", "STRING"],
+  TEXT_FILL: ["COLOR"],
   WIDTH_HEIGHT: ["FLOAT"],
 } as const satisfies Record<VariableScope, readonly VariableType[]>;
+
+/** The fill scopes that `ALL_FILLS` covers, so the page forbids setting them beside it. */
+const FILL_SCOPES: readonly VariableScope[] = ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"];
 
 const LITERAL_TYPES = {
   Color: "COLOR",
@@ -282,6 +324,9 @@ function aliasCycle(collections: readonly CollectionSpec[]): readonly string[] |
 function scopeProblem(variable: VariableSpec): string | undefined {
   if (variable.scopes.includes("ALL_SCOPES") && variable.scopes.length > 1) {
     return "combines ALL_SCOPES with other scopes";
+  }
+  if (variable.scopes.includes("ALL_FILLS") && variable.scopes.some((scope) => FILL_SCOPES.includes(scope))) {
+    return "combines ALL_FILLS with other fill scopes";
   }
   const misfit = variable.scopes.find((scope) => !typeHasScope(variable.type, scope));
   return misfit === undefined ? undefined : `is a ${variable.type} variable but has the scope ${misfit}`;

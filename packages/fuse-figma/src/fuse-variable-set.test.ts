@@ -1,4 +1,6 @@
 import { Result } from "effect";
+import { existsSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -107,23 +109,76 @@ describe("fuseVariableSet", () => {
     expect(spec(DENSITY_COLLECTION, "control-leading")?.scopes).toEqual(["LINE_HEIGHT"]);
   });
 
-  it("computes the radius steps per theme and clamps them at zero", () => {
+  it("computes the radius steps per theme", () => {
     // external-fkas-private sets --radius: 0.75rem, 12px.
     expect(value(THEMES_COLLECTION, "light/radius-md", "external-fkas-private")).toEqual(px(10));
     expect(value(THEMES_COLLECTION, "dark/radius-xl", "external-fkas-private")).toEqual(px(16));
-    // Internal themes keep the default 0.375rem, 6px; CSS clamps 6px - 8px to 0.
+    // Internal themes keep the default 0.375rem, 6px.
     expect(value(THEMES_COLLECTION, "light/radius-md", "internal-elma-private")).toEqual(px(4));
-    expect(value(THEMES_COLLECTION, "light/radius-popover", "internal-elma-private")).toEqual(px(0));
+    expect(value(THEMES_COLLECTION, "light/radius-xs", "internal-elma-private")).toEqual(px(0));
     expect(spec(THEMES_COLLECTION, "light/radius-md")).toMatchObject({ scopes: [], webSyntax: undefined });
-
-    expect(spec(TOKENS_COLLECTION, "radius-popover")).toMatchObject({
-      type: "FLOAT",
-      scopes: ["CORNER_RADIUS"],
-      webSyntax: "var(--radius-popover)",
-    });
     expect(value(TOKENS_COLLECTION, "radius-md", "Light")).toEqual({
       _tag: "Alias",
       target: { collection: THEMES_COLLECTION, variable: "light/radius-md" },
     });
+  });
+
+  it("gives each radius step the calc() fuse.css declares as its code syntax", () => {
+    const webSyntax = (step: string) => spec(TOKENS_COLLECTION, step)?.webSyntax;
+    expect(spec(TOKENS_COLLECTION, "radius-sm")).toMatchObject({ type: "FLOAT", scopes: ["CORNER_RADIUS"] });
+    expect(webSyntax("radius-xs")).toBe("calc(var(--radius) - 6px)");
+    expect(webSyntax("radius-sm")).toBe("calc(var(--radius) - 4px)");
+    expect(webSyntax("radius-md")).toBe("calc(var(--radius) - 2px)");
+    expect(webSyntax("radius-lg")).toBe("var(--radius)");
+    expect(webSyntax("radius-xl")).toBe("calc(var(--radius) + 4px)");
+  });
+
+  it("leaves out radius-popover, which no component uses", () => {
+    expect(spec(TOKENS_COLLECTION, "radius-popover")).toBeUndefined();
+    expect(spec(THEMES_COLLECTION, "light/radius-popover")).toBeUndefined();
+    expect(spec(THEMES_COLLECTION, "dark/radius-popover")).toBeUndefined();
+  });
+});
+
+// The package's `test` task depends on `@elmeragroup/fuse#build` in turbo.json, so the built
+// stylesheets exist in CI. A missing file fails the test instead of skipping it.
+const FUSE_DIST = fileURLToPath(new URL("../node_modules/@elmeragroup/fuse/dist/", import.meta.url));
+const SHIPPED_STYLESHEETS = ["styles.css", "themes.css"].map((file) => `${FUSE_DIST}${file}`);
+
+/** The custom properties a stylesheet declares, without their leading dashes. */
+function declaredProperties(css: string): ReadonlySet<string> {
+  const withoutComments = css.replace(/\/\*[\s\S]*?\*\//g, "");
+  return new Set(Array.from(withoutComments.matchAll(/--([\w-]+)\s*:/g), (match) => match[1] ?? ""));
+}
+
+/** The custom properties a CSS value reads through `var()`, without their leading dashes. */
+function referencedProperties(css: string): readonly string[] {
+  return Array.from(css.matchAll(/var\(\s*--([\w-]+)/g), (match) => match[1] ?? "");
+}
+
+describe("web code syntax", () => {
+  // Cross-check: the unit under test is the code syntax fuseVariableSet gives each variable,
+  // and the oracle is the built styles.css and themes.css. A developer pastes the syntax into
+  // code that loads those sheets, so every var() in it must name a property they declare.
+  it("reads only custom properties that the shipped stylesheets declare", () => {
+    for (const path of SHIPPED_STYLESHEETS) {
+      expect(existsSync(path), `${path} is missing. Build @elmeragroup/fuse first.`).toBe(true);
+    }
+    const declared = declaredProperties(
+      SHIPPED_STYLESHEETS.map((path) => readFileSync(path, "utf8")).join("\n")
+    );
+    const references = variableSet().collections.flatMap((spec) =>
+      spec.variables.flatMap((variable) =>
+        referencedProperties(variable.webSyntax ?? "").map((name) => ({
+          variable: `${spec.name}/${variable.name}`,
+          name,
+        }))
+      )
+    );
+
+    expect(references.map((reference) => reference.name)).toEqual(
+      expect.arrayContaining(["primary", "brand-fkas", "radius", "control-h-md"])
+    );
+    expect(references.filter((reference) => !declared.has(reference.name))).toEqual([]);
   });
 });

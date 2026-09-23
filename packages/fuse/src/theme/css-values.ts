@@ -59,6 +59,20 @@ export function cssLengthToPx(value: string): number | undefined {
   return length[2] === "rem" ? amount * ROOT_FONT_PX : amount;
 }
 
+/** A CSS length in `rem`, such as `2.25rem`, for lengths the library writes in TypeScript. */
+export type RemLength = `${number}rem`;
+
+/**
+ * Read a `rem` length as pixels, with `rem` at the 16px root. The type admits only a number
+ * before the unit, so the conversion always has a result.
+ *
+ * @param length - A `rem` length.
+ * @returns The length in pixels.
+ */
+export function remToPx(length: RemLength): number {
+  return Number(length.slice(0, -"rem".length)) * ROOT_FONT_PX;
+}
+
 /**
  * The first family of a CSS font stack, without its quotes. Design tools bind one family, so
  * the first one is the designed choice and the rest are fallbacks.

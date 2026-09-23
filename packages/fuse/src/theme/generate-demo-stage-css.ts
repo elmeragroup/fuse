@@ -1,7 +1,5 @@
 import { DENSITY_METRIC_NAMES, DENSITY_METRICS } from "./tokens/density-metrics";
 
-/** The rule in `fuse.css` that declares the comfortable density metrics. */
-export const LIBRARY_COMFORTABLE_SELECTOR = ':root[data-density="comfortable"]';
 // Stamped by apps/docs/src/components/demo-stage.tsx; the docs browser first-paint test verifies the pairing against the shipped CSS.
 export const DEMO_STAGE_COMFORTABLE_SELECTOR = '[data-demo-stage][data-density="comfortable"]';
 

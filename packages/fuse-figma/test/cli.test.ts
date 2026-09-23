@@ -87,9 +87,9 @@ describe("fuse-figma sync", () => {
         "external-fkse-private",
       ]);
       assert.notInclude(themeModes, "external-fkab-private");
-      // 79 contract tokens plus 6 radius steps, and each of those per scheme in Fuse themes.
-      assert.strictEqual(figma.variableNames("Fuse tokens").length, 85);
-      assert.strictEqual(figma.variableNames("Fuse themes").length, 170);
+      // 79 contract tokens plus 5 radius steps, and each of those per scheme in Fuse themes.
+      assert.strictEqual(figma.variableNames("Fuse tokens").length, 84);
+      assert.strictEqual(figma.variableNames("Fuse themes").length, 168);
       assert.strictEqual(figma.variableNames("Fuse primitives").length, 23);
       assert.strictEqual(figma.variableNames("Fuse density").length, 18);
       assert.strictEqual(writes(figma), 1);
@@ -192,9 +192,14 @@ describe("fuse-figma sync", () => {
         codeSyntax: { WEB: "var(--neutral-500)" },
       });
       assert.deepStrictEqual(figma.metadata("Fuse themes", "light/primary"), { scopes: [], codeSyntax: {} });
+      // The built CSS defines no --radius-sm and most other steps, so the steps carry the calc().
       assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius-md"), {
         scopes: ["CORNER_RADIUS"],
-        codeSyntax: { WEB: "var(--radius-md)" },
+        codeSyntax: { WEB: "calc(var(--radius) - 2px)" },
+      });
+      assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius-lg").codeSyntax, { WEB: "var(--radius)" });
+      assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius-xl").codeSyntax, {
+        WEB: "calc(var(--radius) + 4px)",
       });
       assert.deepStrictEqual(figma.metadata("Fuse themes", "dark/radius-md"), { scopes: [], codeSyntax: {} });
       assert.deepStrictEqual(figma.metadata("Fuse density", "control-h-md"), {
@@ -235,17 +240,18 @@ describe("fuse-figma sync", () => {
       assert.strictEqual(radius("radius-md", fkas), 10);
       assert.strictEqual(radius("radius-lg", fkas), 12);
       assert.strictEqual(radius("radius-xl", fkas), 16);
-      assert.strictEqual(radius("radius-popover", fkas), 4);
       // Dark keeps the light radius.
       assert.strictEqual(radius("radius-md", dark("external-fkas-private")), 10);
 
-      // Internal themes inherit --radius: 0.375rem, 6px. CSS clamps 6px - 8px to 0.
+      // Internal themes inherit --radius: 0.375rem, 6px.
       const internal = light("internal-fkas-private");
       assert.strictEqual(radius("radius-md", internal), 4);
       assert.strictEqual(radius("radius-xs", internal), 0);
-      assert.strictEqual(radius("radius-popover", internal), 0);
       // external-guen-private sets 0.5rem, 8px.
       assert.strictEqual(radius("radius-sm", light("external-guen-private")), 4);
+      // No component uses radius-popover, so the sync gives designers no variable for it.
+      assert.notInclude(figma.variableNames("Fuse tokens"), "radius-popover");
+      assert.notInclude(figma.variableNames("Fuse themes"), "light/radius-popover");
 
       assert.deepStrictEqual(figma.aliasChain("Fuse tokens", "radius-md", dark("internal-tkas-company")), [
         "Fuse tokens/radius-md",
@@ -470,7 +476,7 @@ describe("fuse-figma sync", () => {
         "Fuse tokens",
         "Fuse density",
       ]);
-      assert.strictEqual(figma.variableNames("Fuse themes").length, 170);
+      assert.strictEqual(figma.variableNames("Fuse themes").length, 168);
       assert.deepStrictEqual(figma.variableById(libraryPrimary).values, [
         { r: 0, g: 0, b: 0, a: 1 },
         { r: 0, g: 0, b: 0, a: 1 },
@@ -632,7 +638,7 @@ describe("fuse-figma check", () => {
       assert.include(printed, "Fuse tokens: create mode Dark");
       assert.include(printed, "Fuse themes: create mode ×20");
       assert.notInclude(printed, "Fuse themes: create mode external-elma-company");
-      assert.include(printed, "Fuse themes: create variable ×170");
+      assert.include(printed, "Fuse themes: create variable ×168");
       assert.include(printed, "Fuse density: create mode Comfortable");
       assert.include(printed, "Fuse density: create variable ×18");
     })

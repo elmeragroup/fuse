@@ -4,7 +4,7 @@ import { afterEach } from "vitest";
 import { page } from "vitest/browser";
 
 import type { ResolvedColorScheme } from "../src/theme/color-scheme";
-import { cssLengthToPx } from "../src/theme/css-values";
+import { remToPx } from "../src/theme/css-values";
 import type { Density } from "../src/theme/density";
 import { parseOklch } from "../src/theme/oklch";
 import { ThemeScope } from "../src/theme/theme-scope";
@@ -18,12 +18,7 @@ export { fkasExternal, fkasPrivate, stampTheme } from "./theme-fixtures";
 
 /** A density metric in the pixels a browser computes, with `rem` at the 16px root. */
 function metricPx(name: DensityMetricName, density: Density): number {
-  const css = DENSITY_METRICS[name][density];
-  const value = cssLengthToPx(css);
-  if (value === undefined) {
-    throw new Error(`${name} is ${css} in ${density}, which is not a rem or px length`);
-  }
-  return value;
+  return remToPx(DENSITY_METRICS[name][density]);
 }
 
 /** The md control-rung metrics in pixels per density, read from `DENSITY_METRICS`. */

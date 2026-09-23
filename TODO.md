@@ -29,7 +29,7 @@
 ## Figma token sync
 
 - Run the first sync against a real Enterprise file and confirm that empty picker scopes,
-  the per-type scopes the fake takes from the Plugin API, cross-collection aliases, the
+  the per-type scopes from the REST variable types page, cross-collection aliases, the
   mode change order and the read-back check behave as the in-memory fake assumes.
   - Find out whether Figma checks for an alias cycle after each value in a batch or once
     at the end. The sync orders values so that either rule passes, and the fake checks
@@ -43,6 +43,9 @@
 - Add named Figma variables for the size-specific radius clamps, such as
   `min(var(--radius-md), 8px)`, when the component pilot needs them. The sync sends only
   the plain radius steps and the density metrics.
+- Remove the unused `--radius-popover` step from `fuse.css` and `RADIUS_STEP_OFFSETS` in a
+  separate change. No component uses it, Fuse popups use `rounded-md`, and the Figma sync
+  already leaves it out.
 - Revisit Figma extended collections for brand theming if the two-collection mode
   pairing proves awkward for designers.
 

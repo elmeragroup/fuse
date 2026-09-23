@@ -6,9 +6,9 @@
  * collections that designers set independently on a frame. Density is a third axis,
  * independent of the theme, so it has a collection of its own.
  *
- * - `Fuse tokens` holds one variable per role token and per radius step, with a Light and a
- *   Dark mode. These are the variables designers bind; each one aliases its scheme's
- *   variable in `Fuse themes`.
+ * - `Fuse tokens` holds one variable per role token and per radius step a component uses,
+ *   with a Light and a Dark mode. These are the variables designers bind; each one aliases
+ *   its scheme's variable in `Fuse themes`.
  * - `Fuse themes` holds `light/<token>` and `dark/<token>` with one mode per theme slug.
  *   Its variables are hidden from the pickers because they only feed `Fuse tokens`.
  * - `Fuse primitives` holds the neutral ramp and brand accents in a single mode. Primitive
@@ -27,13 +27,14 @@ import {
   cssFirstFontFamily,
   cssLengthToPx,
   cssVarReference,
-  DENSITY_METRIC_NAMES,
+  DENSITY_METRIC_FAMILIES,
   DENSITY_METRICS,
   LEGAL_THEMES,
   PRIMITIVE_NAMES,
   PRIMITIVES,
   RADIUS_STEP_NAMES,
   RADIUS_STEP_OFFSETS,
+  remToPx,
   themeSlug,
   TOKEN_KINDS,
   TOKEN_NAMES,
@@ -98,15 +99,6 @@ const DENSITY_SCOPES = {
   fontSize: ["FONT_SIZE"],
   lineHeight: ["LINE_HEIGHT"],
 } as const satisfies Record<DensityMetricKind, readonly VariableScope[]>;
-
-/** A `Fuse tokens` variable: a contract token, or a radius step `fuse.css` derives from `--radius`. */
-type BoundName = TokenName | RadiusStepName;
-
-/** Every `Fuse tokens` variable with the kind that decides its Figma type. */
-const BOUND_TOKENS: readonly (readonly [BoundName, TokenKind])[] = [
-  ...TOKEN_NAMES.map((token) => [token, TOKEN_KINDS[token]] as const),
-  ...RADIUS_STEP_NAMES.map((step) => [step, "dimension"] as const),
-];
 
 /** A token value the projection has no Figma form for. */
 export class UnsupportedTokenValue extends Schema.TaggedError<UnsupportedTokenValue>()(
@@ -180,11 +172,85 @@ function isDimensionToken(token: TokenName): token is DimensionTokenName {
   return TOKEN_KINDS[token] === "dimension";
 }
 
-/** The pickers that offer a `Fuse tokens` variable. Every radius step rounds corners. */
-function tokenScopes(name: BoundName): readonly VariableScope[] {
-  if (!isTokenName(name)) return ["CORNER_RADIUS"];
-  return isDimensionToken(name) ? DIMENSION_SCOPES[name] : KIND_SCOPES[TOKEN_KINDS[name]];
+/** The pickers that offer a contract token's `Fuse tokens` variable. */
+function tokenScopes(token: TokenName): readonly VariableScope[] {
+  return isDimensionToken(token) ? DIMENSION_SCOPES[token] : KIND_SCOPES[TOKEN_KINDS[token]];
 }
+
+/** Resolves the name inside a `var(--name)` reference to the variable it aliases. */
+type ReferenceResolver = (name: string) => AliasValue | undefined;
+
+/**
+ * One variable designers bind in `Fuse tokens`. `Fuse themes` holds its value per theme as
+ * `light/<name>` and `dark/<name>`, and the `Fuse tokens` variable aliases those.
+ */
+type BoundVariable = {
+  readonly name: string;
+  readonly type: VariableType;
+
+  /** The pickers that offer the `Fuse tokens` variable. */
+  readonly scopes: readonly VariableScope[];
+
+  /** The CSS a developer pastes. Every `var()` in it names a property the shipped CSS defines. */
+  readonly webSyntax: string;
+
+  /**
+   * The Figma value in one composed theme. `reference` turns a `var()` into an alias in the
+   * same scheme.
+   */
+  readonly valueIn: (
+    tokens: TokenContract,
+    reference: ReferenceResolver
+  ) => Result.Result<VariableValue, UnsupportedTokenValue>;
+};
+
+function contractVariable(token: TokenName): BoundVariable {
+  const projection = KIND_PROJECTIONS[TOKEN_KINDS[token]];
+  return {
+    name: token,
+    type: projection.type,
+    scopes: tokenScopes(token),
+    webSyntax: `var(--${token})`,
+    valueIn: (tokens, reference) => tokenValue(token, tokens[token], projection, reference),
+  };
+}
+
+/**
+ * A radius step as a pixel value per theme. Figma variables cannot compute, so the sync does
+ * the `calc()` from `fuse.css`. CSS clamps a negative `border-radius` to 0, so a step below
+ * zero becomes 0, the radius a layer shows.
+ *
+ * The code syntax is the `calc()` itself. `fuse.css` declares the steps in `@theme inline`,
+ * so Tailwind inlines them into its utilities and the built CSS does not define
+ * `--radius-sm` and most other steps as custom properties.
+ */
+function radiusStepVariable(step: RadiusStepName): BoundVariable {
+  const offset = RADIUS_STEP_OFFSETS[step];
+  const projection = KIND_PROJECTIONS.dimension;
+  return {
+    name: step,
+    type: projection.type,
+    scopes: ["CORNER_RADIUS"],
+    webSyntax:
+      offset === 0 ? "var(--radius)" : `calc(var(--radius) ${offset < 0 ? "-" : "+"} ${Math.abs(offset)}px)`,
+    valueIn: (tokens) => {
+      const radius = cssLengthToPx(tokens.radius);
+      return radius === undefined
+        ? unsupported("radius", tokens.radius, `a rem or px length to derive ${step} from`)
+        : Result.succeed({ _tag: "Float", value: Math.max(0, radius + offset) });
+    },
+  };
+}
+
+/**
+ * Every `Fuse tokens` variable. The sync leaves out `radius-popover` because no component
+ * uses it. Fuse popups use `radius-md`, so a designer who binds `radius-popover` to a popover
+ * gets a radius the code never renders. `TODO.md` tracks removing the step from `fuse.css`.
+ */
+const BOUND_VARIABLES: readonly BoundVariable[] = [
+  ...TOKEN_NAMES.map(contractVariable),
+  ...RADIUS_STEP_NAMES.filter((step) => step !== "radius-popover").map(radiusStepVariable),
+];
 
 const primitiveNames: ReadonlySet<string> = new Set(PRIMITIVE_NAMES);
 const tokenNames: ReadonlySet<string> = new Set(TOKEN_NAMES);
@@ -202,8 +268,7 @@ export function fuseVariableSet(): Result.Result<
   return Result.gen(function* () {
     const primitives = yield* primitivesCollection();
     const themes = yield* themesCollection();
-    const density = yield* densityCollection();
-    return yield* makeVariableSet([primitives, themes, tokensCollection(), density]);
+    return yield* makeVariableSet([primitives, themes, tokensCollection(), densityCollection()]);
   });
 }
 
@@ -231,29 +296,15 @@ function themesCollection(): Result.Result<CollectionSpec, UnsupportedTokenValue
     for (const scheme of SCHEMES) {
       const composed = LEGAL_THEMES.map((theme) => [themeSlug(theme), composeTheme(theme, scheme)] as const);
       const reference = schemeReference(scheme);
-      for (const token of TOKEN_NAMES) {
-        const projection = KIND_PROJECTIONS[TOKEN_KINDS[token]];
+      for (const bound of BOUND_VARIABLES) {
         const values = new Map<string, VariableValue>();
         for (const [slug, tokens] of composed) {
-          values.set(slug, yield* tokenValue(token, tokens[token], projection, reference));
+          values.set(slug, yield* bound.valueIn(tokens, reference));
         }
         // Only designers' pickers read scopes; these variables are reached through aliases.
         variables.push({
-          name: themeVariableName(scheme, token),
-          type: projection.type,
-          scopes: [],
-          webSyntax: undefined,
-          values,
-        });
-      }
-      for (const step of RADIUS_STEP_NAMES) {
-        const values = new Map<string, VariableValue>();
-        for (const [slug, tokens] of composed) {
-          values.set(slug, yield* radiusStepValue(step, tokens));
-        }
-        variables.push({
-          name: themeVariableName(scheme, step),
-          type: KIND_PROJECTIONS.dimension.type,
+          name: themeVariableName(scheme, bound.name),
+          type: bound.type,
           scopes: [],
           webSyntax: undefined,
           values,
@@ -264,74 +315,47 @@ function themesCollection(): Result.Result<CollectionSpec, UnsupportedTokenValue
   });
 }
 
-/**
- * A radius step in pixels for one composed theme. Figma variables cannot compute, so the
- * sync does the `calc()` from `fuse.css`. CSS clamps a negative `border-radius` to 0, so a
- * step below zero becomes 0, the radius a layer shows.
- */
-function radiusStepValue(
-  step: RadiusStepName,
-  tokens: TokenContract
-): Result.Result<FloatValue, UnsupportedTokenValue> {
-  const radius = cssLengthToPx(tokens.radius);
-  return radius === undefined
-    ? unsupported("radius", tokens.radius, `a rem or px length to derive ${step} from`)
-    : Result.succeed({ _tag: "Float", value: Math.max(0, radius + RADIUS_STEP_OFFSETS[step]) });
-}
-
 function tokensCollection(): CollectionSpec {
-  const variables = BOUND_TOKENS.map(([token, kind]): VariableSpec => {
-    const projection = KIND_PROJECTIONS[kind];
-    return {
-      name: token,
-      type: projection.type,
-      scopes: tokenScopes(token),
-      webSyntax: `var(--${token})`,
-      values: new Map([
-        [SCHEME_MODES.light, themeAlias(themeVariableName("light", token))],
-        [SCHEME_MODES.dark, themeAlias(themeVariableName("dark", token))],
-      ]),
-    };
-  });
-  return { name: TOKENS_COLLECTION, modes: [SCHEME_MODES.light, SCHEME_MODES.dark], variables };
+  const variables = BOUND_VARIABLES.map((bound): VariableSpec => ({
+    name: bound.name,
+    type: bound.type,
+    scopes: bound.scopes,
+    webSyntax: bound.webSyntax,
+    values: new Map(
+      SCHEMES.map((scheme) => [SCHEME_MODES[scheme], themeAlias(themeVariableName(scheme, bound.name))])
+    ),
+  }));
+  return { name: TOKENS_COLLECTION, modes: SCHEMES.map((scheme) => SCHEME_MODES[scheme]), variables };
 }
 
-/** The `Fuse themes` variable holding one token's value in one scheme. */
-function themeVariableName(scheme: ResolvedColorScheme, token: BoundName): string {
-  return `${scheme}/${token}`;
+/** The `Fuse themes` variable holding one bound variable's value in one scheme. */
+function themeVariableName(scheme: ResolvedColorScheme, name: string): string {
+  return `${scheme}/${name}`;
 }
 
 /**
  * One FLOAT variable per control metric, named after its custom property. Density is
- * independent of theme and scheme, so these variables hold literals and alias nothing.
+ * independent of theme and scheme, so these variables hold literals and alias nothing. A
+ * metric's family decides its scopes.
  */
-function densityCollection(): Result.Result<CollectionSpec, UnsupportedTokenValue> {
-  return Result.gen(function* () {
-    const variables: VariableSpec[] = [];
-    for (const name of DENSITY_METRIC_NAMES) {
-      const metric = DENSITY_METRICS[name];
-      const values = new Map<string, VariableValue>();
-      for (const density of DENSITIES) {
-        const literal = dimensionLiteral(metric[density]);
-        if (literal === undefined) {
-          return yield* unsupported(name, metric[density], KIND_PROJECTIONS.dimension.expected);
-        }
-        values.set(DENSITY_MODES[density], literal);
-      }
-      variables.push({
-        name,
-        type: KIND_PROJECTIONS.dimension.type,
-        scopes: DENSITY_SCOPES[metric.kind],
-        webSyntax: `var(--${name})`,
-        values,
-      });
-    }
-    return { name: DENSITY_COLLECTION, modes: DENSITIES.map((density) => DENSITY_MODES[density]), variables };
-  });
+function densityCollection(): CollectionSpec {
+  const projection = KIND_PROJECTIONS.dimension;
+  const variables = DENSITY_METRIC_FAMILIES.flatMap(({ kind, metrics }) =>
+    metrics.map((name): VariableSpec => ({
+      name,
+      type: projection.type,
+      scopes: DENSITY_SCOPES[kind],
+      webSyntax: `var(--${name})`,
+      values: new Map<string, VariableValue>(
+        DENSITIES.map((density) => [
+          DENSITY_MODES[density],
+          { _tag: "Float", value: remToPx(DENSITY_METRICS[name][density]) },
+        ])
+      ),
+    }))
+  );
+  return { name: DENSITY_COLLECTION, modes: DENSITIES.map((density) => DENSITY_MODES[density]), variables };
 }
-
-/** Resolves the name inside a `var(--name)` reference to the variable it aliases. */
-type ReferenceResolver = (name: string) => AliasValue | undefined;
 
 function primitiveReference(name: string): AliasValue | undefined {
   return primitiveNames.has(name)
@@ -348,15 +372,11 @@ function schemeReference(scheme: ResolvedColorScheme): ReferenceResolver {
     if (primitiveNames.has(name)) {
       return primitiveReference(name);
     }
-    if (isTokenName(name)) {
+    if (tokenNames.has(name)) {
       return themeAlias(themeVariableName(scheme, name));
     }
     return undefined;
   };
-}
-
-function isTokenName(name: string): name is TokenName {
-  return tokenNames.has(name);
 }
 
 function themeAlias(variable: string): AliasValue {
