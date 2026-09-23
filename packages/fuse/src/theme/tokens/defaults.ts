@@ -10,7 +10,11 @@ const WARNING = "oklch(0.468 0.10443 65.71)";
 const NEUTRAL_LINE = "oklch(0.9219 0 0)";
 const NEUTRAL_950 = "oklch(0.16 0 0)";
 
-const LAYER_DEFAULTS = {
+/**
+ * The shared defaults before derivation, which are the internal light theme before its
+ * brand pointer. Composition overlays the palette layers on these.
+ */
+export const LAYER_DEFAULTS = {
   background: WHITE,
   foreground: INTERNAL_FOREGROUND,
   card: WHITE,
@@ -86,8 +90,10 @@ const LAYER_DEFAULTS = {
   "sh-comment": "#abb0b6",
   radius: "0.375rem",
   // The internal variant rounds every element alike. Buttons alias the one radius, and a
-  // zero step collapses the `rounded-*` scale in `fuse.css` onto it. External palettes
-  // override both.
+  // zero step collapses the `rounded-*` scale in `fuse.css` onto it. The CSS emitter writes
+  // this alias as `initial`, so `var(--radius-button, var(--radius))` reads the radius on
+  // the button itself. External palettes set a brand button radius, and the external
+  // variant layer sets the step.
   "radius-button": "var(--radius)",
   "radius-step": "0px",
   "font-sans": "Roboto, ui-sans-serif, system-ui, sans-serif",

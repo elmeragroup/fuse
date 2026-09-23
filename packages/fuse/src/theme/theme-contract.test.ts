@@ -3,23 +3,17 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
+import { declaredThemeValue, SECONDARY_HOVER_CSS } from "../../test/theme-css-contract";
 import { assertMustOverrideCoverage, composeTheme, coverageSchemes } from "./compose-theme";
 import { contrastRatio } from "./contrast";
 import { parseStyleRules } from "./css-rules";
 import { generateThemesCss } from "./generate-css";
 import { brandPointer } from "./tokens/brand-pointers";
-import {
-  assignedTokenNames,
-  EXTERNAL_RESET_KEYS,
-  isDerivedTokenName,
-  MUST_OVERRIDE_DARK,
-  TOKEN_NAMES,
-} from "./tokens/contract";
-import type { LayerTokenName, TokenLayer, TokenName } from "./tokens/contract";
+import { assignedTokenNames, EXTERNAL_RESET_KEYS, MUST_OVERRIDE_DARK, TOKEN_NAMES } from "./tokens/contract";
+import type { TokenLayer, TokenName } from "./tokens/contract";
 import { DEFAULTS } from "./tokens/defaults";
-import { DERIVED_TOKEN_SOURCES } from "./tokens/derived-tokens";
 import { externalDarkPalette } from "./tokens/external-dark-palettes";
-import { EXTERNAL_PALETTES } from "./tokens/external-palettes";
+import { EXTERNAL_PALETTES, EXTERNAL_VARIANT_LAYER } from "./tokens/external-palettes";
 import { INTERNAL_DARK_PALETTE } from "./tokens/internal-dark-palette";
 import { paletteLayers } from "./tokens/palette-layers";
 import { PRIMITIVES } from "./tokens/primitives";
@@ -36,10 +30,25 @@ function fkasCompanyLight(): TokenLayer {
   return sheet.light;
 }
 
-/** The light reset keys a palette layer assigns, without the derived roles composition adds. */
-const LAYER_RESET_KEYS = EXTERNAL_RESET_KEYS.filter(
-  (key): key is Extract<(typeof EXTERNAL_RESET_KEYS)[number], LayerTokenName> => !isDerivedTokenName(key)
+/**
+ * The light reset keys a brand palette does not assign. Composition derives the secondary
+ * hover, and the external variant layer sets the radius step for every brand.
+ */
+const NOT_IN_BRAND_PALETTES = ["secondary-hover", "radius-step"] as const;
+
+type BrandPaletteKey = Exclude<(typeof EXTERNAL_RESET_KEYS)[number], (typeof NOT_IN_BRAND_PALETTES)[number]>;
+
+/** The light reset keys every external brand palette assigns itself. */
+const BRAND_PALETTE_KEYS = EXTERNAL_RESET_KEYS.filter(
+  (key): key is BrandPaletteKey => !NOT_IN_BRAND_PALETTES.some((excluded) => excluded === key)
 );
+
+/** One declaration of the rule whose first selector is `selector`. */
+function declaration(rules: ReturnType<typeof parseStyleRules>, selector: string, name: string) {
+  return rules
+    .find((rule) => rule.selector.split(",")[0]?.trim() === selector)
+    ?.declarations.find((entry) => entry.name === name)?.value;
+}
 
 const EXPECTED_SELECTORS = [
   ":root",
@@ -134,7 +143,9 @@ describe("theme contract", () => {
         const composed: Readonly<Record<string, string>> = composeTheme(theme, colorScheme);
         for (const [name, value] of declared) {
           if (name === "color-scheme") continue;
-          expect(value, `${colorScheme} ${slug} ${name}`).toBe(composed[name]);
+          const composedValue = composed[name];
+          expect(composedValue, `${colorScheme} ${slug} ${name} is composed`).toBeDefined();
+          expect(value, `${colorScheme} ${slug} ${name}`).toBe(declaredThemeValue(name, composedValue ?? ""));
         }
         // The brand pointer serves both schemes from one light rule; its inherited
         // alias values must still equal what composition resolves, or a nested scope
@@ -207,8 +218,8 @@ describe("theme contract", () => {
     }
   });
 
-  it("covers every key any external palette or segment delta can override", () => {
-    const supplied = new Set<string>();
+  it("covers every key the external variant layer, a palette or a segment delta can override", () => {
+    const supplied = new Set<string>(assignedTokenNames(EXTERNAL_VARIANT_LAYER));
     for (const palette of Object.values(EXTERNAL_PALETTES)) {
       for (const name of assignedTokenNames(palette)) {
         supplied.add(name);
@@ -217,12 +228,10 @@ describe("theme contract", () => {
     for (const name of assignedTokenNames(fkasCompanyLight())) {
       supplied.add(name);
     }
-    // A derived role changes wherever one of its declared sources does.
-    for (const [name, sources] of Object.entries(DERIVED_TOKEN_SOURCES)) {
-      if (sources.some((source) => supplied.has(source))) {
-        supplied.add(name);
-      }
-    }
+    // The secondary hover mixes secondary toward foreground. Both are palette keys, so a
+    // light rule that resets them resets the hover too.
+    expect(supplied.has("secondary") && supplied.has("foreground")).toBe(true);
+    supplied.add("secondary-hover");
 
     expect([...supplied].toSorted((left, right) => left.localeCompare(right))).toEqual(
       [...EXTERNAL_RESET_KEYS].toSorted((left, right) => left.localeCompare(right))
@@ -315,7 +324,7 @@ describe("elma identity", () => {
       expect(themeSlug(theme)).toBe(`${theme.variant}-elma-${theme.segment}`);
       expect(composed.brand).toBe("var(--brand-elma)");
       expect(composed["brand-foreground"]).toBe("var(--brand-elma-foreground)");
-      for (const key of LAYER_RESET_KEYS) {
+      for (const key of BRAND_PALETTE_KEYS) {
         const expected = theme.variant === "internal" ? DEFAULTS[key] : EXTERNAL_PALETTES.elma[key];
         expect(composed[key], `${themeSlug(theme)} ${key}`).toBe(expected);
       }
@@ -325,7 +334,7 @@ describe("elma identity", () => {
   it("emits a full external palette sourced from the Elmera sheet, not a default copy", () => {
     expect(
       assignedTokenNames(EXTERNAL_PALETTES.elma).toSorted((left, right) => left.localeCompare(right))
-    ).toEqual([...LAYER_RESET_KEYS].toSorted((left, right) => left.localeCompare(right)));
+    ).toEqual([...BRAND_PALETTE_KEYS].toSorted((left, right) => left.localeCompare(right)));
     expect(EXTERNAL_PALETTES.elma.foreground).toBe("oklch(0.28898 0.051828 217.7)");
     expect(EXTERNAL_PALETTES.elma.foreground).not.toBe(DEFAULTS.foreground);
     expect(EXTERNAL_PALETTES.elma.primary).not.toBe(DEFAULTS.primary);
@@ -337,8 +346,8 @@ describe("elma identity", () => {
     expect(externalRule?.declarations).toEqual(
       expect.arrayContaining([{ name: "foreground", value: "oklch(0.28898 0.051828 217.7)" }])
     );
-    for (const key of LAYER_RESET_KEYS) {
-      expect(externalRule?.declarations.find((declaration) => declaration.name === key)?.value).toBe(
+    for (const key of BRAND_PALETTE_KEYS) {
+      expect(externalRule?.declarations.find((entry) => entry.name === key)?.value).toBe(
         EXTERNAL_PALETTES.elma[key]
       );
     }
@@ -360,29 +369,40 @@ describe("derived roles", () => {
     expect(composeTheme(externalFkas)["secondary-hover"]).toBe("oklch(0.3209 0.10325 38.8)");
   });
 
-  it("declares the hover in the root rule and in each rule that resets its sources", () => {
+  it("declares the live hover mix in the root rule and in each rule that resets its sources", () => {
     const rules = parseStyleRules(generateThemesCss());
-    const hoverIn = (selector: string): string | undefined =>
-      rules
-        .find((rule) => rule.selector === selector)
-        ?.declarations.find((declaration) => declaration.name === "secondary-hover")?.value;
-    expect(hoverIn(":root")).toBe("oklch(0.929 0.000205 2.4655)");
-    expect(hoverIn('[data-theme-variant="internal"]')).toBe("oklch(0.929 0.000205 2.4655)");
-    expect(hoverIn('[data-theme-variant="external"][data-theme-brand="fkas"]')).toBe(
-      "oklch(0.3209 0.10325 38.8)"
-    );
-    // fkas-company's delta changes secondary and foreground, so its rule carries the hover.
-    expect(
-      hoverIn('[data-theme-variant="external"][data-theme-brand="fkas"][data-theme-segment="company"]')
-    ).toBe("oklch(0.30579 0.03693 215.45)");
+    for (const selector of [
+      ":root",
+      '[data-theme-variant="internal"]',
+      '[data-theme-variant="external"][data-theme-brand="fkas"]',
+      // fkas-company's delta changes secondary and foreground, so its rule mixes them again.
+      '[data-theme-variant="external"][data-theme-brand="fkas"][data-theme-segment="company"]',
+      '[data-theme="dark"][data-theme-variant="internal"]',
+    ]) {
+      expect(declaration(rules, selector, "secondary-hover"), selector).toBe(SECONDARY_HOVER_CSS);
+    }
+    // The brand pointer rule touches neither source, so it leaves the hover alone.
+    expect(declaration(rules, '[data-theme-brand="fkas"]', "secondary-hover")).toBeUndefined();
   });
 });
 
 describe("radius roles", () => {
+  const rules = parseStyleRules(generateThemesCss());
+
   it("aliases the internal button radius to the one radius and collapses the scale step", () => {
     const internal = composeTheme({ variant: "internal", brand: "tkas", segment: "private" });
     expect(internal["radius-button"]).toBe("var(--radius)");
     expect(internal["radius-step"]).toBe("0px");
+  });
+
+  it("leaves the internal button radius unset in CSS so buttons read --radius where they sit", () => {
+    for (const selector of [":root", '[data-theme-variant="internal"]']) {
+      expect(declaration(rules, selector, "radius-button"), selector).toBe("initial");
+      expect(declaration(rules, selector, "radius-step"), selector).toBe("0px");
+    }
+    expect(
+      declaration(rules, '[data-theme-variant="external"][data-theme-brand="fkas"]', "radius-button")
+    ).toBe("1.8125rem");
   });
 
   it("keeps external brand radii and spreads the scale in 2px steps", () => {
@@ -394,6 +414,17 @@ describe("radius roles", () => {
     expect(tkas.radius).toBe("0.95rem");
     expect(tkas["radius-button"]).toBe("0.95rem");
     expect(tkas["radius-step"]).toBe("2px");
+  });
+
+  it("sets the radius step once for the external variant, not in each brand palette", () => {
+    expect(EXTERNAL_VARIANT_LAYER).toEqual({ "radius-step": "2px" });
+    for (const [brand, palette] of Object.entries(EXTERNAL_PALETTES)) {
+      expect(palette, brand).not.toHaveProperty("radius-step");
+    }
+    for (const brand of ["fkas", "tkas", "guen", "fkab", "fkse", "elma"]) {
+      const selector = `[data-theme-variant="external"][data-theme-brand="${brand}"]`;
+      expect(declaration(rules, selector, "radius-step"), selector).toBe("2px");
+    }
   });
 });
 

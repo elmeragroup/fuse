@@ -87,13 +87,31 @@ export type TokenContract = {
 };
 
 /**
- * The roles the pipeline computes from other composed roles instead of reading from a
- * layer. `withDerivedTokens` in `derived-tokens.ts` owns how each one is computed.
+ * A derived role, mixed from one composed role toward another in OKLCH. `derived-tokens.ts`
+ * reads the entry twice. Composition computes the literal that the catalog, the docs and
+ * design tools store, and the CSS emitter writes the matching `color-mix()`.
  */
-export const DERIVED_TOKEN_NAMES = ["secondary-hover"] as const satisfies readonly TokenName[];
+export type OklchMixRole = {
+  /** The role the mix starts from. */
+  readonly from: TokenName;
+  /** The role the mix moves toward. */
+  readonly toward: TokenName;
+  /** The share of `toward` in percent, as CSS `color-mix()` spells it. */
+  readonly percent: number;
+};
+
+/**
+ * The roles the pipeline computes from other composed roles instead of reading them from
+ * a layer, each with the only roles it reads. The reset closure reads the same entry, so a
+ * scope that resets a source always resets the derived role too.
+ */
+export const DERIVED_ROLES = {
+  // The secondary Button hover, which the recipe used to spell as an inline color-mix().
+  "secondary-hover": { from: "secondary", toward: "foreground", percent: 5 },
+} as const satisfies Partial<Record<TokenName, OklchMixRole>>;
 
 /** A role the pipeline computes from other composed roles. */
-export type DerivedTokenName = (typeof DERIVED_TOKEN_NAMES)[number];
+export type DerivedTokenName = keyof typeof DERIVED_ROLES;
 
 /** A role a palette, sheet, pointer or the defaults assign directly. */
 export type LayerTokenName = Exclude<TokenName, DerivedTokenName>;
@@ -114,19 +132,30 @@ export type TokenLayer = Partial<LayerTokens>;
  * @returns `true` for a derived role.
  */
 export function isDerivedTokenName(name: TokenName): name is DerivedTokenName {
-  return DERIVED_TOKEN_NAMES.some((derived) => derived === name);
+  return Object.hasOwn(DERIVED_ROLES, name);
 }
 
 function isLayerTokenName(name: TokenName): name is LayerTokenName {
   return !isDerivedTokenName(name);
 }
 
+/**
+ * The roles a derived role reads, straight from its `DERIVED_ROLES` entry.
+ *
+ * @param name - A derived role.
+ * @returns The role the mix starts from and the role it moves toward.
+ */
+export function derivedRoleSources(name: DerivedTokenName): readonly [LayerTokenName, LayerTokenName] {
+  const role = DERIVED_ROLES[name];
+  return [role.from, role.toward];
+}
+
 /** Every role a layer can assign, in `TOKEN_NAMES` order. */
 export const LAYER_TOKEN_NAMES: readonly LayerTokenName[] = TOKEN_NAMES.filter(isLayerTokenName);
 
 /**
- * The roles a light theme rule resets: every key an external palette or segment delta can
- * assign, plus each derived role computed from them.
+ * The roles a light theme rule resets. They are every key the external variant layer, an
+ * external palette or a segment delta can assign, plus each derived role computed from them.
  */
 export const EXTERNAL_RESET_KEYS = [
   "background",
@@ -183,7 +212,6 @@ export const MUST_OVERRIDE_EXTERNAL = [
   "input",
   "radius",
   "radius-button",
-  "radius-step",
   "brand",
   "brand-foreground",
 ] as const;

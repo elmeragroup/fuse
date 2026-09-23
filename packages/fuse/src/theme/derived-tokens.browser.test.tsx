@@ -4,6 +4,8 @@ import "../../dist/styles.css";
 import "../../dist/themes.css";
 import { render } from "../../test/browser-render";
 import { roleNamed } from "../../test/themed-browser-render";
+import { composeTheme } from "./compose-theme";
+import { parseOklch } from "./oklch";
 import { ThemeScope } from "./theme-scope";
 import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
 
@@ -29,10 +31,10 @@ function computedBackground(host: HTMLElement, value: string): string {
 }
 
 describe("derived roles", () => {
-  it("ships the secondary hover the browser's color-mix of secondary and foreground computes", () => {
-    // Unit under test: the literal `--secondary-hover` each theme rule declares. Oracle: the
-    // browser's own `color-mix(in oklch, …)`, which the Button recipe used before the role
-    // existed, evaluated against the same scope's `--secondary` and `--foreground`.
+  it("composes the secondary hover literal the browser's color-mix computes in every theme", () => {
+    // Unit under test: the `secondary-hover` literal that composition stores for the catalog,
+    // the docs and design tools. Oracle: Chromium's own `color-mix(in oklch, …)` over the
+    // same scope's `--secondary` and `--foreground`.
     const { rerender } = render(null);
     for (const scheme of ["light", "dark"] as const) {
       for (const theme of LEGAL_THEMES) {
@@ -45,14 +47,14 @@ describe("derived roles", () => {
         );
         const host = roleNamed("group", "Probe");
         const context = `${scheme} ${themeSlug(theme)}`;
-        const token = readOklch(computedBackground(host, "var(--secondary-hover)"));
+        const literal = parseOklch(composeTheme(theme, scheme)["secondary-hover"]);
         const mixed = readOklch(
           computedBackground(host, "color-mix(in oklch, var(--secondary), var(--foreground) 5%)")
         );
-        expect(token.l, `${context} lightness`).toBeCloseTo(mixed.l, 4);
-        expect(token.c, `${context} chroma`).toBeCloseTo(mixed.c, 4);
+        expect(literal.l, `${context} lightness`).toBeCloseTo(mixed.l, 4);
+        expect(literal.c, `${context} chroma`).toBeCloseTo(mixed.c, 4);
         // Chromium serializes the mixed hue with float error, 2.46552 for internal light's 2.4655.
-        expect(token.h, `${context} hue`).toBeCloseTo(mixed.h, 2);
+        expect(literal.h, `${context} hue`).toBeCloseTo(mixed.h, 2);
       }
     }
   });

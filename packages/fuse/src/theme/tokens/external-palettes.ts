@@ -4,9 +4,15 @@ import type { BrandCode } from "./themes";
 
 export type ExternalBrandCode = Exclude<BrandCode, "fkab">;
 
-// External rounding spreads the `rounded-*` scale in 2px steps around the brand radius, so
-// `rounded-md` sits 2px inside `--radius` and `rounded-xl` 4px outside it.
-const EXTERNAL_RADIUS_STEP = "2px";
+/**
+ * The roles every external theme shares, whatever its brand. External rounding spreads the
+ * `rounded-*` scale in 2px steps around the brand radius, so `rounded-md` sits 2px inside
+ * `--radius` and `rounded-xl` 4px outside it. The internal variant keeps the default 0px
+ * step.
+ */
+export const EXTERNAL_VARIANT_LAYER = {
+  "radius-step": "2px",
+} as const satisfies TokenLayer;
 
 export const EXTERNAL_PALETTES = {
   fkas: {
@@ -33,7 +39,6 @@ export const EXTERNAL_PALETTES = {
     input: "oklch(0.9232 0.0026 48.72)",
     radius: "0.75rem",
     "radius-button": "1.8125rem",
-    "radius-step": EXTERNAL_RADIUS_STEP,
     "font-heading": '"Neo Sans", var(--font-sans)',
   },
   tkas: {
@@ -60,7 +65,6 @@ export const EXTERNAL_PALETTES = {
     input: "oklch(0.929 0.0126 255.53)",
     radius: "0.95rem",
     "radius-button": "0.95rem",
-    "radius-step": EXTERNAL_RADIUS_STEP,
     "font-heading": "var(--font-sans)",
   },
   guen: {
@@ -87,7 +91,6 @@ export const EXTERNAL_PALETTES = {
     input: "oklch(0.929 0.0126 255.53)",
     radius: "0.5rem",
     "radius-button": "0.5rem",
-    "radius-step": EXTERNAL_RADIUS_STEP,
     "font-heading": "var(--font-sans)",
   },
   fkse: {
@@ -114,7 +117,6 @@ export const EXTERNAL_PALETTES = {
     input: "oklch(0.9232 0.0026 48.72)",
     radius: "0.75rem",
     "radius-button": "1.8125rem",
-    "radius-step": EXTERNAL_RADIUS_STEP,
     "font-heading": "var(--font-sans)",
   },
   // Elmera Figma "Farger" sheet (file dWv89e4X0DXeCKMsJwD5zL, node 2106:18246). card-soft (P-99)
@@ -144,7 +146,6 @@ export const EXTERNAL_PALETTES = {
     input: "oklch(0.9219 0 0)",
     radius: "0.375rem",
     "radius-button": "0.375rem",
-    "radius-step": EXTERNAL_RADIUS_STEP,
     "font-heading": "var(--font-sans)",
   },
 } as const satisfies Record<ExternalBrandCode, TokenLayer>;

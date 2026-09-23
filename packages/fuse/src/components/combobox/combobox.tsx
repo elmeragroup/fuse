@@ -441,7 +441,9 @@ function ComboboxChipRemove({ label }: { label: string }): ReactElement {
     <ComboboxPrimitive.ChipRemove
       data-slot="combobox-chip-remove"
       render={<Button variant="ghost" size="icon-sm" aria-label={label} />}
-      className="-ml-1 opacity-50 hover:opacity-100"
+      // The remove button sits inside a chip in the field box, so it keeps the field
+      // chrome's corner instead of Button's `--radius-button`.
+      className="-ml-1 rounded-[min(--theme(--radius-md),10px)] opacity-50 hover:opacity-100"
       aria-label={label}>
       <X className="pointer-events-none" />
     </ComboboxPrimitive.ChipRemove>

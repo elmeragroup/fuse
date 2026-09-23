@@ -146,7 +146,7 @@
   --color-brand-elma-foreground: var(--brand-elma-foreground);
 
   /* Each rung sits whole --radius-step multiples from the theme's --radius. External themes
-     step 2px; the internal variant steps 0px, so every rung is the one radius. An arbitrary
+     step 2px. The internal variant steps 0px, so every rung is the one radius. An arbitrary
      value reads a rung through --theme(--radius-md), which inlines the formula so it resolves
      in the element's own theme scope. var(--radius-md) would read the value the document root
      computed. */
@@ -156,6 +156,18 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 2 * var(--radius-step));
   --radius-popover: calc(var(--radius) - 4 * var(--radius-step));
+  /* The input-group kbd and xs addon buttons sit 5px inside the field's --radius in external
+     themes, the reference's inset. That is 2.5 steps, so the internal variant insets by 0. */
+  --radius-inset: calc(var(--radius) - 2.5 * var(--radius-step));
+  /* External themes keep the reference's fixed 4px corner on the checkbox, the phone country
+     trigger and the standalone calendar. The internal variant rounds them with the one
+     radius. A zero step makes the clamp's bounds meet at --radius; a 2px step spreads them
+     2000px apart, so the preferred 4px applies. */
+  --radius-fixed: clamp(
+    calc(var(--radius) - 1000 * var(--radius-step)),
+    4px,
+    calc(var(--radius) + 1000 * var(--radius-step))
+  );
   --breakpoint-xs: 574px;
   --breakpoint-lg: 60rem;
   --breakpoint-3xl: 1920px;
@@ -187,8 +199,10 @@
 @utility font-mono {
   font-family: var(--font-mono);
 }
+/* An internal theme leaves --radius-button unset, so the fallback reads --radius on the
+   element and follows a subtree override of it. */
 @utility rounded-button {
-  border-radius: var(--radius-button);
+  border-radius: var(--radius-button, var(--radius));
 }
 
 @custom-variant data-open {

@@ -22,6 +22,7 @@ import {
   stampDensity,
   textNamed,
 } from "../../../test/themed-browser-render";
+import { Badge } from "../badge/badge";
 import { Radio, RadioGroup, RadioGroupItem, RadioIconButton, RadioItem, RadioItemGroup } from "./radio-group";
 
 const ICON_SIZES = ["icon-xxs", "icon-xs", "icon-sm", "icon", "icon-lg"] as const;
@@ -393,6 +394,34 @@ describe("Radio", () => {
     expect(effectiveOpacity(textNamed("Spot"))).toBe(0.5);
     expect(effectiveOpacity(radioNamed("Fixed"))).toBe(1);
     expect(effectiveOpacity(textNamed("Fixed"))).toBe(1);
+  });
+
+  it("lays out rich label content in the label's row and dims all of it once", () => {
+    renderThemed(
+      <RadioGroup label="Contract">
+        <Radio value="spot" isDisabled>
+          Spot <Badge>New</Badge>
+        </Radio>
+      </RadioGroup>
+    );
+
+    const badge = textNamed("New");
+    const text = badge.parentElement?.firstChild;
+    if (!(text instanceof Text)) {
+      throw new Error("expected the label text before the badge");
+    }
+    const range = document.createRange();
+    range.selectNodeContents(text);
+    const textBox = range.getBoundingClientRect();
+    const badgeBox = badge.getBoundingClientRect();
+
+    // The label row puts gap-2 (8px) between the text and the badge and centers both. One
+    // inline run would collapse the gap to a space and align the badge to the baseline.
+    expect(badgeBox.left - textBox.right).toBeCloseTo(8, 0);
+    const offCenter = badgeBox.top + badgeBox.height / 2 - (textBox.top + textBox.height / 2);
+    expect(Math.abs(offCenter)).toBeLessThanOrEqual(1);
+    expect(effectiveOpacity(radioNamed("Spot New"))).toBe(0.5);
+    expect(effectiveOpacity(badge)).toBe(0.5);
   });
 
   it("paints the shared ring on keyboard focus-visible and not on mouse focus, at both densities", async () => {

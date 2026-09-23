@@ -2,8 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
-import { contrastRatio } from "./contrast";
-import { buildContrastMatrix, TEXT_GRADE_PAIRS } from "./contrast-matrix";
+import { buildContrastMatrix, contrastRatio, TEXT_GRADE_PAIRS } from "./contrast";
 import type { TokenName } from "./tokens/contract";
 import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
 import type { ThemeInput } from "./tokens/themes";

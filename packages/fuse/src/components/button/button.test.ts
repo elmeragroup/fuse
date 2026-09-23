@@ -79,22 +79,6 @@ describe("buttonVariants", () => {
     expect(classes.includes(["focus-visible", "ring-3"].join(":"))).toBe(false);
   });
 
-  it("rounds every size with the theme's button radius and no size-local clamp", () => {
-    for (const size of SIZES) {
-      const classes = buttonVariants({ size }).split(/\s+/);
-      expect(classes, size).toContain("rounded-(--radius-button)");
-      expect(
-        classes.filter((token) => token.startsWith("rounded-") && token !== "rounded-(--radius-button)"),
-        size
-      ).toEqual([]);
-    }
-  });
-
-  it("hovers the secondary variant with the secondary-hover role", () => {
-    expect(buttonVariants({ variant: "secondary" })).toContain("hover:bg-secondary-hover");
-    expect(buttonVariants({ variant: "secondary" })).not.toContain("color-mix");
-  });
-
   it("covers every public variant and size value", () => {
     for (const variant of VARIANTS) {
       expect(buttonVariants({ variant }).length).toBeGreaterThan(0);

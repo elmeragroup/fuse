@@ -5,9 +5,29 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { render } from "../../../test/browser-render";
 import { dispatchPredictedPointer } from "../../../test/predicted-pointer";
-import { cssVarColor, effectiveOpacity, renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import {
+  cssVarColor,
+  effectiveOpacity,
+  fkasPrivate,
+  renderThemed,
+  roleNamed,
+} from "../../../test/themed-browser-render";
+import { ThemeScope } from "../../theme/theme-scope";
+import { Tooltip } from "../tooltip/tooltip";
 import { Button } from "./button";
+
+type Oklch = { readonly l: number; readonly c: number; readonly h: number };
+
+/** Chromium serializes an opaque `oklch()` color with space-separated L C H components. */
+function readOklch(serialized: string): Oklch {
+  const match = /^oklch\(([\d.]+) ([\d.]+) ([\d.]+)\)$/.exec(serialized);
+  if (match === null) {
+    throw new Error(`expected an opaque oklch() color, received ${serialized}`);
+  }
+  return { l: Number(match[1]), c: Number(match[2]), h: Number(match[3]) };
+}
 
 describe("Button", () => {
   it("activates once on click, Enter, and Space", async () => {
@@ -78,6 +98,29 @@ describe("Button", () => {
     expect(effectiveOpacity(roleNamed("button", "Enabled"))).toBe(1);
   });
 
+  it("keeps a focusable disabled button hoverable, so a tooltip on it still opens", async () => {
+    renderThemed(
+      <Tooltip.Provider>
+        <Tooltip.Root>
+          <Tooltip.Trigger render={<Button disabled focusableWhenDisabled />}>Why</Tooltip.Trigger>
+          <Tooltip.Content>Needs a signed contract</Tooltip.Content>
+        </Tooltip.Root>
+      </Tooltip.Provider>
+    );
+    const button = roleNamed("button", "Why");
+
+    // Base UI keeps a focusable disabled button out of `:disabled` and marks it with
+    // `data-disabled`, so the dim follows that attribute while pointer events stay on.
+    expect(button.hasAttribute("disabled")).toBe(false);
+    expect(effectiveOpacity(button)).toBe(0.5);
+    expect(getComputedStyle(button).pointerEvents).toBe("auto");
+
+    await userEvent.hover(button);
+    await vi.waitFor(() => {
+      expect(page.getByRole("tooltip", { name: "Needs a signed contract" }).query()).not.toBeNull();
+    });
+  });
+
   it("paints a hovered secondary button with the secondary-hover role", async () => {
     renderThemed(
       <Button variant="secondary" className="transition-none">
@@ -91,6 +134,26 @@ describe("Button", () => {
     expect(getComputedStyle(button).backgroundColor).toBe(cssVarColor(button, "--secondary-hover"));
     // Internal secondary moves 5% toward foreground, so the hover is visibly a different fill.
     expect(cssVarColor(button, "--secondary-hover")).not.toBe(cssVarColor(button, "--secondary"));
+  });
+
+  it("mixes the secondary hover from a host override of --secondary on a theme scope", async () => {
+    render(
+      <ThemeScope theme={fkasPrivate} style={{ "--secondary": "oklch(0.6 0.2 30)" }}>
+        <Button variant="secondary" className="transition-none">
+          Custom
+        </Button>
+      </ThemeScope>
+    );
+    const button = roleNamed("button", "Custom");
+    await userEvent.hover(button);
+
+    // Worked by hand against the internal light foreground, oklch(0.15 0.0041 49.31), 5% of
+    // the way. L 0.6 * 0.95 + 0.15 * 0.05 = 0.5775. C 0.2 * 0.95 + 0.0041 * 0.05 = 0.190205.
+    // H 30 + (49.31 - 30) * 0.05 = 30.9655. The theme's own hover would be a near-white gray.
+    const hovered = readOklch(getComputedStyle(button).backgroundColor);
+    expect(hovered.l).toBeCloseTo(0.5775, 4);
+    expect(hovered.c).toBeCloseTo(0.190205, 4);
+    expect(hovered.h).toBeCloseTo(30.9655, 2);
   });
 
   it("stays activatable when visually disabled and suppresses mousedown focus", async () => {

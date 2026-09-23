@@ -187,9 +187,11 @@ export default function ThemingPage(): ReactElement {
         Corner rounding is part of the theme. An external theme rounds cards and fields from the brand&apos;s{" "}
         <code>--radius</code>, spaces the <code>rounded-*</code> scale around it in <code>--radius-step</code>{" "}
         increments of 2px, and rounds every button with <code>--radius-button</code>, which is a pill for
-        Fjordkraft and Telinet. The internal variant rounds every element alike. Its step is <code>0px</code>{" "}
-        and its button radius reads <code>--radius</code>, so overriding <code>--radius</code> in an internal
-        scope moves buttons, cards and fields together.
+        Fjordkraft and Telinet. The internal variant rounds every element with the one <code>--radius</code>.
+        Its step is <code>0px</code>, and it leaves <code>--radius-button</code> unset, so each button reads{" "}
+        <code>--radius</code> where it sits. Overriding <code>--radius</code> on any element of an internal
+        page therefore moves the buttons, cards and fields below it together. Nested internal surfaces share
+        that radius instead of stepping inward, and dialogs round like cards.
       </p>
 
       <h2 id="document-theme">The document theme</h2>

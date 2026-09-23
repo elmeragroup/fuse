@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { mixOklch } from "./oklch-mix";
+import { mixOklch } from "./oklch";
 
 // Every expectation is worked by hand from the CSS Color 4 interpolation rules
 // (premultiplied lightness and chroma, shorter-arc hue). Chromium's own

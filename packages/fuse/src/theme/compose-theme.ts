@@ -8,7 +8,7 @@ import {
   overlayTokenLayers,
 } from "./tokens/contract";
 import type { TokenContract, TokenName } from "./tokens/contract";
-import { DEFAULTS } from "./tokens/defaults";
+import { LAYER_DEFAULTS } from "./tokens/defaults";
 import { withDerivedTokens } from "./tokens/derived-tokens";
 import { paletteLayers } from "./tokens/palette-layers";
 import { themeSlug } from "./tokens/themes";
@@ -61,12 +61,12 @@ export function composeTheme(theme: ThemeInput, colorScheme: ResolvedColorScheme
     assertMustOverrideCoverage(suppliedTokenNames(theme, gate), theme.variant, gate, slug);
   }
   const light = withDerivedTokens(
-    overlayTokenLayers(DEFAULTS, brandPointer(theme.brand), ...paletteLayers(theme, "light"))
+    overlayTokenLayers(LAYER_DEFAULTS, brandPointer(theme.brand), ...paletteLayers(theme, "light"))
   );
   if (colorScheme === "dark") {
-    // Dark layers overlay the light composition, so roles no dark palette names — radius,
-    // typography — keep their light values. Derived roles are computed again from the
-    // dark roles.
+    // Dark layers overlay the light composition, so roles no dark palette names, such as
+    // radius and typography, keep their light values. Derived roles are computed again
+    // from the dark roles.
     return withDerivedTokens(overlayTokenLayers(light, ...paletteLayers(theme, "dark")));
   }
   return light;

@@ -6,6 +6,7 @@ import { page } from "vitest/browser";
 import "../../dist/styles.css";
 import "../../dist/themes.css";
 import { render } from "../../test/browser-render";
+import { withLocale } from "../../test/locale-matrix";
 import { fkasExternal, fkasPrivate, tkasCompany } from "../../test/theme-fixtures";
 import {
   px,
@@ -15,98 +16,157 @@ import {
   textNamed,
 } from "../../test/themed-browser-render";
 import { Badge } from "../components/badge/badge";
+import { ButtonGroup } from "../components/button-group/button-group";
 import { Button } from "../components/button/button";
 import { Card } from "../components/card/card";
 import { Checkbox } from "../components/checkbox/checkbox";
 import { Frame } from "../components/frame/frame";
 import { InputGroup } from "../components/input-group/input-group";
 import { Input } from "../components/input/input";
+import { PhoneNumberField } from "../components/phone-number-field/phone-number-field";
 import { Tabs } from "../components/tabs/tabs";
 import { Toggle } from "../components/toggle/toggle";
 import { Calendar } from "../react-aria/calendar/calendar";
+import { DatePicker } from "../react-aria/date-picker/date-picker";
+import { SearchField } from "../react-aria/search-field/search-field";
 import { UiProviders } from "../react-aria/ui-providers/ui-providers";
 import { ThemeScope } from "./theme-scope";
 import type { ThemeInput } from "./tokens/themes";
 
-const BUTTON_SIZES = ["default", "xs", "sm", "lg"] as const;
-const ICON_BUTTON_SIZES = ["icon", "icon-xs", "icon-sm", "icon-lg"] as const;
+const BUTTON_SIZES = ["default", "xs", "sm", "lg", "icon", "icon-xs", "icon-sm", "icon-lg"] as const;
+
+const guenExternal = { variant: "external", brand: "guen", segment: "private" } as const satisfies ThemeInput;
 
 type Specimen =
   | "button"
+  | "grouped button"
   | "card"
   | "input"
   | "badge"
   | "toggle"
-  | "toggle-xs"
+  | "toggle xs"
   | "checkbox"
-  | "input-group"
-  | "input-group-button"
+  | "input group"
+  | "kbd"
+  | "addon xs"
+  | "addon sm"
   | "frame"
   | "calendar"
-  | "tab";
+  | "tab"
+  | "phone trigger"
+  | "search clear"
+  | "date trigger";
+
+type Variant = "internal" | "fkas" | "tkas" | "guen";
 
 /**
- * Hand-computed corner radii in px from each theme's palette literals and the `fuse.css`
- * rung formulas. Internal: `--radius` 0.375rem (6px), step 0, and the button radius
- * aliases `--radius`. fkas: 0.75rem (12px), step 2px, button 1.8125rem (29px). tkas:
- * 0.95rem (15.2px), step 2px, button 0.95rem. `rounded-md` is one step inside `--radius`,
- * `rounded-xl` two steps outside, and the input-group addon 2.5 steps inside. The checkbox
- * caps at 4px and the xs toggle at 10px.
+ * Corner radii in px. The external rows outside `button` are the values Chromium measured
+ * on origin/main (e178f6d7) with each theme on the document, because external themes change
+ * only their standalone buttons. Buttons inside a field box or a button group keep the
+ * radius they had there. The `button` column and the internal row are worked by hand from the
+ * palette literals. Internal rounds every element with `--radius`, 0.375rem (6px). An
+ * external button rounds with the brand's `--radius-button`: fkas 1.8125rem (29px), tkas
+ * 0.95rem (15.2px), guen 0.5rem (8px).
  */
 const EXPECTED = {
   internal: {
     button: 6,
+    "grouped button": 6,
     card: 6,
     input: 6,
     badge: 6,
     toggle: 6,
-    "toggle-xs": 6,
-    checkbox: 4,
-    "input-group": 6,
-    "input-group-button": 6,
+    "toggle xs": 6,
+    checkbox: 6,
+    "input group": 6,
+    kbd: 6,
+    "addon xs": 6,
+    "addon sm": 6,
     frame: 6,
     calendar: 6,
     tab: 6,
+    "phone trigger": 6,
+    "search clear": 6,
+    "date trigger": 6,
   },
   fkas: {
     button: 29,
+    "grouped button": 10,
     card: 12,
     input: 10,
     badge: 12,
     toggle: 10,
-    "toggle-xs": 10,
+    "toggle xs": 10,
     checkbox: 4,
-    "input-group": 10,
-    "input-group-button": 7,
+    "input group": 10,
+    kbd: 7,
+    "addon xs": 7,
+    "addon sm": 10,
     frame: 16,
-    calendar: 12,
+    calendar: 4,
     tab: 10,
+    "phone trigger": 4,
+    "search clear": 10,
+    "date trigger": 10,
   },
   tkas: {
     button: 15.2,
+    "grouped button": 13.2,
     card: 15.2,
     input: 13.2,
     badge: 15.2,
     toggle: 13.2,
-    "toggle-xs": 10,
+    "toggle xs": 10,
     checkbox: 4,
-    "input-group": 13.2,
-    "input-group-button": 10.2,
+    "input group": 13.2,
+    kbd: 10.2,
+    "addon xs": 10.2,
+    "addon sm": 13.2,
     frame: 19.2,
-    calendar: 15.2,
+    calendar: 4,
     tab: 13.2,
+    "phone trigger": 4,
+    "search clear": 13.2,
+    "date trigger": 10,
   },
-} as const satisfies Record<"internal" | "fkas" | "tkas", Record<Specimen, number>>;
+  guen: {
+    button: 8,
+    "grouped button": 6,
+    card: 8,
+    input: 6,
+    badge: 8,
+    toggle: 6,
+    "toggle xs": 6,
+    checkbox: 4,
+    "input group": 6,
+    kbd: 3,
+    "addon xs": 3,
+    "addon sm": 6,
+    frame: 12,
+    calendar: 4,
+    tab: 6,
+    "phone trigger": 4,
+    "search clear": 6,
+    "date trigger": 6,
+  },
+} as const satisfies Record<Variant, Record<Specimen, number>>;
 
 function Specimens(): ReactElement {
-  return (
+  return withLocale(
+    "en-US",
     <UiProviders locale="en-US" navigate={() => undefined}>
       {BUTTON_SIZES.map((size) => (
-        <Button key={size} size={size}>{`Button ${size}`}</Button>
-      ))}
-      {ICON_BUTTON_SIZES.map((size) => (
         <Button key={size} size={size} aria-label={`Button ${size}`} />
       ))}
+      {/* The measured corner is the top-left one, so each grouped size leads its own group. */}
+      <ButtonGroup.Root>
+        <Button aria-label="Grouped default" />
+        <Button aria-label="Grouped default end" />
+      </ButtonGroup.Root>
+      <ButtonGroup.Root>
+        <Button size="xs" aria-label="Grouped xs" />
+        <Button size="xs" aria-label="Grouped xs end" />
+      </ButtonGroup.Root>
       <Card.Root role="group" aria-label="Card" />
       <Input aria-label="Input" />
       <Badge>Badge</Badge>
@@ -115,6 +175,9 @@ function Specimens(): ReactElement {
       <Checkbox aria-label="Checkbox" />
       <InputGroup.Root aria-label="Input group">
         <InputGroup.Input aria-label="Grouped input" />
+        <InputGroup.Addon align="inline-end">
+          <kbd>K</kbd>
+        </InputGroup.Addon>
         <InputGroup.Addon align="inline-end">
           <InputGroup.Button size="xs">Addon xs</InputGroup.Button>
           <InputGroup.Button size="sm">Addon sm</InputGroup.Button>
@@ -129,6 +192,9 @@ function Specimens(): ReactElement {
           <Tabs.Trigger value="one">Tab</Tabs.Trigger>
         </Tabs.List>
       </Tabs.Root>
+      <PhoneNumberField label="Phone" />
+      <SearchField label="Meter search" defaultValue="7359" />
+      <DatePicker label="Start" />
     </UiProviders>
   );
 }
@@ -142,43 +208,61 @@ function calendarRoot(): HTMLElement {
   return element;
 }
 
+/** The date picker's calendar trigger. React Aria names it "Calendar" plus the field label. */
+function dateTrigger(): HTMLElement {
+  const element = page.getByRole("button", { name: /^Calendar.*Start/ }).element();
+  if (!(element instanceof HTMLElement)) {
+    throw new Error("expected the date picker trigger");
+  }
+  return element;
+}
+
 function radius(element: HTMLElement): number {
   return px(getComputedStyle(element).borderTopLeftRadius);
 }
 
-/** Every specimen's corner radius, keyed by the element it stands for. */
+/** Every specimen's top-left corner radius, keyed by the element it stands for. */
 function measure(): readonly (readonly [Specimen, string, number])[] {
-  const buttonNames = [...BUTTON_SIZES, ...ICON_BUTTON_SIZES].map((size) => `Button ${size}`);
+  const button = (specimen: Specimen, name: string) =>
+    [specimen, name, radius(roleNamed("button", name))] as const;
   return [
-    ...buttonNames.map((name) => ["button", name, radius(roleNamed("button", name))] as const),
+    ...BUTTON_SIZES.map((size) => button("button", `Button ${size}`)),
+    button("grouped button", "Grouped default"),
+    button("grouped button", "Grouped xs"),
     ["card", "Card", radius(roleNamed("group", "Card"))],
     ["input", "Input", radius(roleNamed("textbox", "Input"))],
     ["badge", "Badge", radius(textNamed("Badge"))],
-    ["toggle", "Toggle", radius(roleNamed("button", "Toggle"))],
-    ["toggle-xs", "Toggle xs", radius(roleNamed("button", "Toggle xs"))],
+    button("toggle", "Toggle"),
+    button("toggle xs", "Toggle xs"),
     ["checkbox", "Checkbox", radius(roleNamed("checkbox", "Checkbox"))],
-    ["input-group", "Input group", radius(roleNamed("group", "Input group"))],
-    ...["Addon xs", "Addon sm", "Addon icon-xs", "Addon icon-sm"].map(
-      (name) => ["input-group-button", name, radius(roleNamed("button", name))] as const
-    ),
+    ["input group", "Input group", radius(roleNamed("group", "Input group"))],
+    ["kbd", "Kbd", radius(textNamed("K"))],
+    button("addon xs", "Addon xs"),
+    button("addon xs", "Addon icon-xs"),
+    button("addon sm", "Addon sm"),
+    button("addon sm", "Addon icon-sm"),
     ["frame", "Frame", radius(roleNamed("group", "Frame"))],
     ["calendar", "Calendar", radius(calendarRoot())],
     ["tab", "Tab", radius(roleNamed("tab", "Tab"))],
+    button("phone trigger", "Select country"),
+    button("search clear", "Clear search"),
+    ["date trigger", "Date trigger", radius(dateTrigger())],
   ];
 }
 
-function expectRadii(variant: keyof typeof EXPECTED, context: string): void {
-  for (const [element, name, measured] of measure()) {
-    expect(measured, `${context} ${name}`).toBeCloseTo(EXPECTED[variant][element], 1);
+function expectRadii(variant: Variant, context: string): void {
+  for (const [specimen, name, measured] of measure()) {
+    expect(measured, `${context} ${name}`).toBeCloseTo(EXPECTED[variant][specimen], 1);
   }
 }
 
-const CASES: readonly (readonly [keyof typeof EXPECTED, ThemeInput, ThemeInput])[] = [
+const CASES: readonly (readonly [Variant, ThemeInput, ThemeInput])[] = [
   // Each case names the theme under test and a document theme with different radii, so a
   // value resolved against the document root instead of the scope shows up as a mismatch.
   ["internal", fkasPrivate, tkasCompany],
   ["fkas", fkasExternal, fkasPrivate],
   ["tkas", tkasCompany, fkasPrivate],
+  ["guen", guenExternal, tkasCompany],
 ];
 
 describe("radius roles", () => {
@@ -216,11 +300,24 @@ describe("radius roles", () => {
     }
   });
 
-  it("gives every internal button, card and field the same radius", () => {
+  it("gives every internal element the same radius", () => {
     stampDocumentTheme(fkasPrivate, "light");
     render(<Specimens />);
-    const uniform = measure().filter(([element]) => element !== "checkbox");
-    const radii = new Set(uniform.map(([, , measured]) => measured));
+    const radii = new Set(measure().map(([, , measured]) => measured));
     expect([...radii]).toEqual([6]);
+  });
+
+  it("moves internal buttons with cards and fields when a subtree overrides --radius", () => {
+    stampDocumentTheme(fkasPrivate, "light");
+    render(
+      <div style={{ "--radius": "1rem" }}>
+        <Button>Save</Button>
+        <Card.Root role="group" aria-label="Card" />
+        <Input aria-label="Input" />
+      </div>
+    );
+    expect(radius(roleNamed("button", "Save"))).toBe(16);
+    expect(radius(roleNamed("group", "Card"))).toBe(16);
+    expect(radius(roleNamed("textbox", "Input"))).toBe(16);
   });
 });

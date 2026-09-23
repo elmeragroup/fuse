@@ -185,14 +185,16 @@ export type RadioProps = {
 /**
  * Compact labeled radio row over `Field.Item` + base-ui `Field.Label`.
  * The whole label is the click target. A disabled row dims the control and the label
- * text once each. The control dims itself, so the label dims only its text.
+ * content once each. The control dims itself, so the label dims only its content.
  */
 export function Radio({ value, isDisabled, className, children }: RadioProps): ReactElement {
   return (
     <Field.Item className={cn("flex", className)}>
       <FieldPrimitive.Label className="group/radio-label text-sm flex cursor-pointer items-center gap-2 has-disabled:cursor-not-allowed">
         <RadioGroupItem value={value} disabled={isDisabled} />
-        <span className="group-has-disabled/radio-label:opacity-50">{children}</span>
+        {/* The span keeps the label's flex row for its children, so text and a badge stay
+            8px apart and centered, and it dims them without dimming the control twice. */}
+        <span className="flex items-center gap-2 group-has-disabled/radio-label:opacity-50">{children}</span>
       </FieldPrimitive.Label>
     </Field.Item>
   );
