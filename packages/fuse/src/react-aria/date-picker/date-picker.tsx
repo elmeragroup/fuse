@@ -20,6 +20,8 @@ import type {
 import { buttonVariants } from "../../components/button/button-variants";
 import type { OverlayContainerProps } from "../../components/overlay/overlay-props";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
+import { cn } from "../../styles/cn";
+import { compactCornerClass } from "../../styles/corner-radius";
 import { pickerVariants } from "../../styles/picker";
 import { Calendar } from "../calendar/calendar";
 import { DateInput } from "../date-field/date-field";
@@ -227,10 +229,14 @@ export function DatePickerPresetItem({
         buttonVariants({
           size: "sm",
           variant: "ghost",
-          // The radio's own indicator, if a caller's children render one, stays hidden:
-          // the preset is a button-shaped choice, not a bullet list.
-          className:
-            "justify-start text-left data-disabled:pointer-events-none data-selected:bg-accent *:data-[slot=radio-indicator]:hidden",
+          // The radio's own indicator, if a caller's children render one, stays hidden,
+          // because the preset is a button-shaped choice and not a bullet list. A preset is
+          // a row in a list, so it takes the compact corner instead of Button's
+          // `--radius-button`.
+          className: cn(
+            "justify-start text-left *:data-[slot=radio-indicator]:hidden data-selected:bg-accent data-disabled:pointer-events-none",
+            compactCornerClass
+          ),
         })
       )}
       onDoubleClick={(event) => {

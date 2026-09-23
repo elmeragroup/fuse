@@ -190,11 +190,12 @@ export type RadioProps = {
 export function Radio({ value, isDisabled, className, children }: RadioProps): ReactElement {
   return (
     <Field.Item className={cn("flex", className)}>
-      <FieldPrimitive.Label className="group/radio-label text-sm flex cursor-pointer items-center gap-2 has-disabled:cursor-not-allowed">
+      <FieldPrimitive.Label className="text-sm flex cursor-pointer items-center gap-2 has-disabled:cursor-not-allowed">
         <RadioGroupItem value={value} disabled={isDisabled} />
         {/* The span keeps the label's flex row for its children, so text and a badge stay
-            8px apart and centered, and it dims them without dimming the control twice. */}
-        <span className="flex items-center gap-2 group-has-disabled/radio-label:opacity-50">{children}</span>
+            8px apart and centered. It dims from the control's `data-disabled` through
+            `peer`, so the control is not dimmed twice. */}
+        <span className="flex items-center gap-2 peer-data-disabled:opacity-50">{children}</span>
       </FieldPrimitive.Label>
     </Field.Item>
   );

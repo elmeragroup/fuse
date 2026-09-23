@@ -11,23 +11,13 @@ import {
   cssVarColor,
   effectiveOpacity,
   fkasPrivate,
+  readOklch,
   renderThemed,
   roleNamed,
 } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
 import { Tooltip } from "../tooltip/tooltip";
 import { Button } from "./button";
-
-type Oklch = { readonly l: number; readonly c: number; readonly h: number };
-
-/** Chromium serializes an opaque `oklch()` color with space-separated L C H components. */
-function readOklch(serialized: string): Oklch {
-  const match = /^oklch\(([\d.]+) ([\d.]+) ([\d.]+)\)$/.exec(serialized);
-  if (match === null) {
-    throw new Error(`expected an opaque oklch() color, received ${serialized}`);
-  }
-  return { l: Number(match[1]), c: Number(match[2]), h: Number(match[3]) };
-}
 
 describe("Button", () => {
   it("activates once on click, Enter, and Space", async () => {
@@ -147,9 +137,10 @@ describe("Button", () => {
     const button = roleNamed("button", "Custom");
     await userEvent.hover(button);
 
-    // Worked by hand against the internal light foreground, oklch(0.15 0.0041 49.31), 5% of
-    // the way. L 0.6 * 0.95 + 0.15 * 0.05 = 0.5775. C 0.2 * 0.95 + 0.0041 * 0.05 = 0.190205.
-    // H 30 + (49.31 - 30) * 0.05 = 30.9655. The theme's own hover would be a near-white gray.
+    // The expected values mix the override 5% of the way toward the internal light
+    // foreground, oklch(0.15 0.0041 49.31). L 0.6 * 0.95 + 0.15 * 0.05 = 0.5775.
+    // C 0.2 * 0.95 + 0.0041 * 0.05 = 0.190205. H 30 + (49.31 - 30) * 0.05 = 30.9655.
+    // The theme's own hover would be a near-white gray.
     const hovered = readOklch(getComputedStyle(button).backgroundColor);
     expect(hovered.l).toBeCloseTo(0.5775, 4);
     expect(hovered.c).toBeCloseTo(0.190205, 4);

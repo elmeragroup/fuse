@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { mixOklch } from "./oklch";
 
-// Every expectation is worked by hand from the CSS Color 4 interpolation rules
+// Each expectation follows by hand from the CSS Color 4 interpolation rules
 // (premultiplied lightness and chroma, shorter-arc hue). Chromium's own
 // `color-mix(in oklch, …)` serializes the same values for these inputs.
 describe("mixOklch", () => {

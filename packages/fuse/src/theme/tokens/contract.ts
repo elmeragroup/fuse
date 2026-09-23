@@ -228,15 +228,21 @@ const LIGHT_ONLY_KEYS: ReadonlySet<TokenName> = new Set([
 
 /**
  * The roles every dark palette must override. Geometry and typography (`radius`,
- * `radius-button`, `radius-step`, `font-heading`) intentionally keep their light values,
- * and a derived role is computed rather than supplied, so those are the only
- * `EXTERNAL_RESET_KEYS` entries a dark palette need not name.
+ * `radius-button`, `radius-step`, `font-heading`) keep their light values, and composition
+ * computes each derived role, so those are the only `EXTERNAL_RESET_KEYS` entries a dark
+ * palette need not name.
  */
 export const MUST_OVERRIDE_DARK = EXTERNAL_RESET_KEYS.filter(
   (key): key is Extract<ExternalResetKey, LayerTokenName> =>
     isLayerTokenName(key) && !LIGHT_ONLY_KEYS.has(key)
 );
 
+/**
+ * The roles one layer assigns.
+ *
+ * @param layer - A palette, sheet, pointer or defaults layer.
+ * @returns The names the layer gives a value, in `TOKEN_NAMES` order.
+ */
 export function assignedTokenNames(layer: TokenLayer): LayerTokenName[] {
   const names: LayerTokenName[] = [];
   for (const name of LAYER_TOKEN_NAMES) {
@@ -247,6 +253,12 @@ export function assignedTokenNames(layer: TokenLayer): LayerTokenName[] {
   return names;
 }
 
+/**
+ * Merge layers into one, a later layer's value replacing an earlier one's.
+ *
+ * @param layers - The layers in application order.
+ * @returns One layer that assigns every role any input layer assigns.
+ */
 export function mergeTokenLayers(...layers: TokenLayer[]): TokenLayer {
   const merged: TokenLayer = {};
   for (const layer of layers) {
@@ -260,6 +272,13 @@ export function mergeTokenLayers(...layers: TokenLayer[]): TokenLayer {
   return merged;
 }
 
+/**
+ * Overlay layers on a complete base, a later layer's value replacing an earlier one's.
+ *
+ * @param base - A value for every layer role, such as `LAYER_DEFAULTS`.
+ * @param layers - The layers in application order.
+ * @returns Every layer role with its value after the overlay, before derivation.
+ */
 export function overlayTokenLayers(base: LayerTokens, ...layers: TokenLayer[]): LayerTokens {
   return { ...base, ...mergeTokenLayers(...layers) };
 }

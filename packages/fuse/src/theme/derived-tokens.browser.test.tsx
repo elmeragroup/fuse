@@ -3,22 +3,11 @@ import { describe, expect, it } from "vitest";
 import "../../dist/styles.css";
 import "../../dist/themes.css";
 import { render } from "../../test/browser-render";
-import { roleNamed } from "../../test/themed-browser-render";
+import { readOklch, roleNamed } from "../../test/themed-browser-render";
 import { composeTheme } from "./compose-theme";
 import { parseOklch } from "./oklch";
 import { ThemeScope } from "./theme-scope";
 import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
-
-type Oklch = { readonly l: number; readonly c: number; readonly h: number };
-
-/** Chromium serializes an `oklch()` color with space-separated L C H components. */
-function readOklch(serialized: string): Oklch {
-  const match = /^oklch\(([\d.]+) ([\d.]+) ([\d.]+)\)$/.exec(serialized);
-  if (match === null) {
-    throw new Error(`expected an opaque oklch() color, received ${serialized}`);
-  }
-  return { l: Number(match[1]), c: Number(match[2]), h: Number(match[3]) };
-}
 
 /** The color a background declaration computes to where `host` sits in the cascade. */
 function computedBackground(host: HTMLElement, value: string): string {

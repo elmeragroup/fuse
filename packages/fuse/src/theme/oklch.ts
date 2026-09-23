@@ -121,8 +121,8 @@ function formatNumber(value: number): string {
 
 function formatOklch({ l, c, h, alpha }: OklchColor): string {
   const coordinates = `${formatNumber(l)} ${formatNumber(c)} ${formatNumber(h)}`;
-  // The alpha is compared after rounding, because `0.95 + 0.05` need not sum to exactly 1
-  // in floating point.
+  // The check reads the alpha after rounding, because `0.95 + 0.05` need not sum to
+  // exactly 1 in floating point.
   const opacity = formatNumber(alpha);
   return opacity === "1" ? `oklch(${coordinates})` : `oklch(${coordinates} / ${opacity})`;
 }

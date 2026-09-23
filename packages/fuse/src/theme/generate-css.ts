@@ -23,30 +23,13 @@ function cssCustomProperty(name: string, value: string): string {
 }
 
 /**
- * Roles a component reads with a fallback role, as `var(--radius-button, var(--radius))`
- * in the Button recipe and the `rounded-button` utility. A `var(--radius)` declaration
- * would resolve on the element that carries the theme rule, and every button below it
- * would inherit that length. So a theme that aliases such a role to its fallback declares
- * it `initial` instead, and the fallback resolves on each button. A subtree that overrides
- * `--radius` then moves its buttons with its cards and fields.
- */
-const ELEMENT_FALLBACK_ROLES = new Map<TokenName, TokenName>([["radius-button", "radius"]]);
-
-/**
- * The value a theme rule declares for one composed role. A derived role ships its live
- * `color-mix()`, so the browser mixes the scope's own sources, and a role that aliases its
- * element fallback ships `initial`. Every other role ships its composed value. The
- * composed literals stay the values the catalog, the docs and design tools read.
+ * The value a theme rule declares for one composed role. A derived role declares its live
+ * `color-mix()`, so the browser mixes the sources of the element that carries the rule.
+ * Every other role declares its composed value. The catalog, the docs and design tools
+ * read the composed literals.
  */
 function cssValue(name: TokenName, value: string): string {
-  if (isDerivedTokenName(name)) {
-    return derivedRoleCss(name);
-  }
-  const fallback = ELEMENT_FALLBACK_ROLES.get(name);
-  if (fallback !== undefined && value === `var(--${fallback})`) {
-    return "initial";
-  }
-  return value;
+  return isDerivedTokenName(name) ? derivedRoleCss(name) : value;
 }
 
 function cssRule(

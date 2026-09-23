@@ -90,10 +90,9 @@ export const LAYER_DEFAULTS = {
   "sh-comment": "#abb0b6",
   radius: "0.375rem",
   // The internal variant rounds every element alike. Buttons alias the one radius, and a
-  // zero step collapses the `rounded-*` scale in `fuse.css` onto it. The CSS emitter writes
-  // this alias as `initial`, so `var(--radius-button, var(--radius))` reads the radius on
-  // the button itself. External palettes set a brand button radius, and the external
-  // variant layer sets the step.
+  // zero step collapses the `rounded-*` scale in `fuse.css` onto it. Each theme rule
+  // resolves the alias against the `--radius` of the element it matches. External palettes
+  // set a brand button radius, and the external variant layer sets the step.
   "radius-button": "var(--radius)",
   "radius-step": "0px",
   "font-sans": "Roboto, ui-sans-serif, system-ui, sans-serif",

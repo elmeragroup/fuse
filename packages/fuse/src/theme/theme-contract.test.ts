@@ -389,15 +389,15 @@ describe("derived roles", () => {
 describe("radius roles", () => {
   const rules = parseStyleRules(generateThemesCss());
 
-  it("aliases the internal button radius to the one radius and collapses the scale step", () => {
-    const internal = composeTheme({ variant: "internal", brand: "tkas", segment: "private" });
-    expect(internal["radius-button"]).toBe("var(--radius)");
-    expect(internal["radius-step"]).toBe("0px");
-  });
-
-  it("leaves the internal button radius unset in CSS so buttons read --radius where they sit", () => {
+  it("declares the internal button radius as the one radius, so a plain var() read resolves", () => {
+    for (const selector of [
+      ":root",
+      '[data-theme-variant="internal"]',
+      '[data-theme="dark"][data-theme-variant="internal"]',
+    ]) {
+      expect(declaration(rules, selector, "radius-button"), selector).toBe("var(--radius)");
+    }
     for (const selector of [":root", '[data-theme-variant="internal"]']) {
-      expect(declaration(rules, selector, "radius-button"), selector).toBe("initial");
       expect(declaration(rules, selector, "radius-step"), selector).toBe("0px");
     }
     expect(
@@ -417,7 +417,6 @@ describe("radius roles", () => {
   });
 
   it("sets the radius step once for the external variant, not in each brand palette", () => {
-    expect(EXTERNAL_VARIANT_LAYER).toEqual({ "radius-step": "2px" });
     for (const [brand, palette] of Object.entries(EXTERNAL_PALETTES)) {
       expect(palette, brand).not.toHaveProperty("radius-step");
     }

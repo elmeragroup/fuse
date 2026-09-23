@@ -65,8 +65,8 @@ export function composeTheme(theme: ThemeInput, colorScheme: ResolvedColorScheme
   );
   if (colorScheme === "dark") {
     // Dark layers overlay the light composition, so roles no dark palette names, such as
-    // radius and typography, keep their light values. Derived roles are computed again
-    // from the dark roles.
+    // radius and typography, keep their light values. Composition computes the derived
+    // roles again from the dark roles.
     return withDerivedTokens(overlayTokenLayers(light, ...paletteLayers(theme, "dark")));
   }
   return light;

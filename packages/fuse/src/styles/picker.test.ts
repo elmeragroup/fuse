@@ -154,7 +154,7 @@ describe("pickerVariants range axis", () => {
     // Wide: the trigger is the fourth column of the single row, no longer spanning rows.
     expect(trigger).toContain(`@min-[${RANGE_BREAKPOINT}]/picker:col-start-4`);
     expect(trigger).toContain(`@min-[${RANGE_BREAKPOINT}]/picker:row-span-1`);
-    // Single-date: no placement class at all.
+    // The single-date trigger carries no placement class.
     expect(pickerVariants().trigger()).not.toMatch(/(?:col|row)-/);
   });
 

@@ -10,8 +10,8 @@
   until reviewed replacements exist, including internal and Telinet light muted copy.
 - Ask design for an external secondary hover tone. Every external palette sets `secondary`
   equal to `foreground`, so `--secondary-hover` equals `--secondary` and the hover is invisible.
-- Ask design whether external themes keep the reference's fixed 4px corner on the `Checkbox`,
-  the phone country trigger and the standalone `Calendar` (the `--radius-fixed` rung), or
+- Ask design whether external themes keep the reference's 4px corner on the `Checkbox`,
+  the phone country trigger and the standalone `Calendar` (`styles/corner-radius.ts`), or
   round them from the brand radius. Internal themes round them with `--radius`.
 - Confirm the shared overlay-close dictionary and the docs' client-demo rule and
   three non-public import exceptions with the owner; these remain implemented defaults.

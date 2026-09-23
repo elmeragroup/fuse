@@ -7,8 +7,8 @@ import { tv } from "tailwind-variants";
  * - `destructive` / `outline-destructive` keep their ref value names for consumer
  *   compat, but their classes resolve to the canonical `error` tokens.
  * - The `info` arm uses the paired soft status tokens on its tinted surface.
- * - Badge is deliberately non-interactive. The ref's bare `:focus` ring and its `hover:`
- *   fills are dropped, so no state suggests an affordance a <div> does not have.
+ * - Badge is deliberately non-interactive. The recipe drops the ref's bare `:focus` ring
+ *   and its `hover:` fills, so no state suggests an affordance a <div> does not have.
  * - `size` is a decorative pill axis, not a density rung:
  *   it pins no control box, so it does not read `--control-*`.
  */

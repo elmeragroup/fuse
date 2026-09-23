@@ -103,7 +103,7 @@
   --sh-sign: #ed9366;
   --sh-comment: #abb0b6;
   --radius: 0.375rem;
-  --radius-button: initial;
+  --radius-button: var(--radius);
   --radius-step: 0px;
   --font-sans: Roboto, ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-sans);
@@ -175,7 +175,7 @@
   --border: oklch(0.9219 0 0);
   --input: oklch(0.9219 0 0);
   --radius: 0.375rem;
-  --radius-button: initial;
+  --radius-button: var(--radius);
   --radius-step: 0px;
   --font-heading: var(--font-sans);
   color-scheme: light;
@@ -454,7 +454,7 @@
   --sh-sign: oklch(0.91205 0.0286161 218.9613);
   --sh-comment: oklch(0.8280204 0.0042636 121.5755);
   --radius: 0.375rem;
-  --radius-button: initial;
+  --radius-button: var(--radius);
   --radius-step: 0px;
   --font-heading: var(--font-sans);
   color-scheme: dark;

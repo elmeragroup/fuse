@@ -1,15 +1,14 @@
 import { mixOklch } from "../oklch";
 import { DERIVED_ROLES } from "./contract";
-import type { DerivedTokenName, LayerTokenName, LayerTokens, TokenContract } from "./contract";
+import type { DerivedTokenName, LayerTokens, TokenContract } from "./contract";
 
-/** A `DERIVED_ROLES` entry whose sources are layer roles, so composition can read them. */
-type LayerMix = {
-  readonly from: LayerTokenName;
-  readonly toward: LayerTokenName;
-  readonly percent: number;
-};
+/**
+ * One `DERIVED_ROLES` entry. Indexing `LayerTokens` with its sources fails to compile if an
+ * entry ever names a derived role as a source.
+ */
+type DerivedRole = (typeof DERIVED_ROLES)[DerivedTokenName];
 
-function mixLiteral(tokens: LayerTokens, role: LayerMix): string {
+function mixLiteral(tokens: LayerTokens, role: DerivedRole): string {
   return mixOklch(tokens[role.from], tokens[role.toward], role.percent / 100);
 }
 
@@ -38,6 +37,6 @@ export function withDerivedTokens(tokens: LayerTokens): TokenContract {
  * @returns The `color-mix(in oklch, …)` expression over the role's sources.
  */
 export function derivedRoleCss(name: DerivedTokenName): string {
-  const role: LayerMix = DERIVED_ROLES[name];
+  const role = DERIVED_ROLES[name];
   return `color-mix(in oklch, var(--${role.from}), var(--${role.toward}) ${role.percent}%)`;
 }
