@@ -10,11 +10,13 @@
 import * as CssColor from "@elmeragroup/color/css-color";
 import * as Hex from "@elmeragroup/color/hex";
 import { getOrThrow } from "@elmeragroup/color/result";
+import * as Srgb from "@elmeragroup/color/srgb";
 import {
   cssFirstFontFamily,
   cssLengthToPx,
   cssVarReference,
   PRIMITIVE_NAMES,
+  readTokenColor,
   TOKEN_KINDS,
 } from "@elmeragroup/fuse/theme-catalog";
 import type { TokenKind } from "@elmeragroup/fuse/theme-catalog";
@@ -57,8 +59,12 @@ function dtcgSlot(name: string): DtcgSlot {
   return { group: DTCG_GROUPS[kind], key };
 }
 
-function roundComponent(channel: number): number {
-  return Math.round(channel * 1_000_000) / 1_000_000;
+/** Round each channel to 1e-6. Rounding keeps a channel inside `0..1`, so `make` accepts it. */
+function roundedSrgb(color: Srgb.Srgb): Srgb.Srgb {
+  const round = (channel: number) => Math.round(channel * 1_000_000) / 1_000_000;
+  return getOrThrow(
+    Srgb.make({ r: round(color.r), g: round(color.g), b: round(color.b), alpha: color.alpha })
+  );
 }
 
 function aliasOf(tokenName: string): `{${string}}` {
@@ -74,12 +80,15 @@ function dimensionFromCss(css: string): FigmaDimensionToken["$value"] {
   return { value: px, unit: "px" };
 }
 
-/** A token value that is not a color is a defect in the theme catalog, so it throws. */
+/**
+ * A token value that is not an `oklch()` or hex color is a defect in the theme catalog, so it
+ * throws. `hex` is built from the rounded `components`, so the two fields always agree.
+ */
 function colorFromCss(css: string): FigmaColorToken["$value"] {
-  const srgb = CssColor.toSrgb(getOrThrow(CssColor.parse(css)));
+  const srgb = roundedSrgb(CssColor.toSrgb(getOrThrow(readTokenColor(css))));
   const color: FigmaSrgbColor = {
     colorSpace: "srgb",
-    components: [roundComponent(srgb.r), roundComponent(srgb.g), roundComponent(srgb.b)],
+    components: [srgb.r, srgb.g, srgb.b],
     alpha: srgb.alpha,
     hex: Hex.formatOpaque(srgb),
   };

@@ -456,6 +456,7 @@ describe("exports map", () => {
       "defaultDensityForVariant",
       "densityAttributes",
       "themeAttributes",
+      "readTokenColor",
       "TOKEN_KINDS",
       "TOKEN_NAMES",
       "DENSITY_METRIC_FAMILIES",

@@ -8,6 +8,7 @@ import {
   fuseVariableSet,
   PRIMITIVES_COLLECTION,
   THEMES_COLLECTION,
+  tokenLiteral,
   TOKENS_COLLECTION,
 } from "./fuse-variable-set.ts";
 import type { CollectionSpec, VariableSet, VariableSpec, VariableValue } from "./variable-set.ts";
@@ -185,5 +186,49 @@ describe("web code syntax", () => {
       expect.arrayContaining(["primary", "brand-fkas", "radius", "radius-step", "control-h-md"])
     );
     expect(references.filter((reference) => !declared.has(reference.name))).toEqual([]);
+  });
+});
+
+describe("tokenLiteral", () => {
+  it.each([
+    [
+      "primary",
+      "color",
+      "oklch(0.5 0.1)",
+      'The Figma sync cannot read token "primary": Expected an oklch() color, received "oklch(0.5 0.1)".',
+    ],
+    [
+      "primary",
+      "color",
+      "rgb(1, 2, 3)",
+      'The Figma sync cannot read token "primary": Expected an oklch() color, received "rgb(1, 2, 3)".',
+    ],
+    [
+      "sh-keyword",
+      "color",
+      "#fff",
+      'The Figma sync cannot read token "sh-keyword": Expected a #rrggbb hex color, received "#fff".',
+    ],
+    [
+      "radius",
+      "dimension",
+      "12pt",
+      'The Figma sync cannot read token "radius": Expected a rem or px length, received "12pt".',
+    ],
+    [
+      "font-sans",
+      "fontFamily",
+      "var(--font-sans), serif",
+      'The Figma sync cannot read token "font-sans": Expected a font stack that starts with a named family, received "var(--font-sans), serif".',
+    ],
+  ] as const)("fails %s (%s) %s with the reader's message", (token, kind, css, message) => {
+    expect(tokenLiteral(token, kind, css)).toMatchObject({ _tag: "Failure", failure: { message } });
+  });
+
+  it("reads a hex color literal as its sRGB channels", () => {
+    expect(tokenLiteral("sh-identifier", "color", "#5c6773")).toMatchObject({
+      _tag: "Success",
+      success: { _tag: "Color", color: { r: 0x5c / 255, g: 0x67 / 255, b: 0x73 / 255, a: 1 } },
+    });
   });
 });

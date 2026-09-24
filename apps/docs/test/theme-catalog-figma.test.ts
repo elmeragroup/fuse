@@ -138,6 +138,23 @@ describe("Figma DTCG documents", () => {
     });
   });
 
+  it("writes hex from the same rounded channels as components", () => {
+    // oklch(0.3031888 0 0) is a gray whose sRGB channel is 46.4999/255. Rounded to 1e-6 it is
+    // 0.182353, and 0.182353 * 255 = 46.500015, which rounds to 47 = 0x2F. Built from the
+    // unrounded channel, hex would be #2E2E2E and disagree with components.
+    const theme = catalogTheme("external-fkas-private");
+    const document = figmaDocumentFromCatalog(
+      { ...theme, tokens: { ...theme.tokens, "--background": "oklch(0.3031888 0 0)" } },
+      THEME_CATALOG.primitives
+    );
+    expect(token<FigmaColorToken>(document.color, "background").$value).toEqual({
+      colorSpace: "srgb",
+      components: [0.182353, 0.182353, 0.182353],
+      alpha: 1,
+      hex: "#2F2F2F",
+    });
+  });
+
   it("aliases the internal button radius to the one radius and emits a zero step", () => {
     const document = figmaDocumentFromCatalog(
       catalogTheme("internal-fkas-private"),

@@ -36,6 +36,7 @@ import {
   PRIMITIVES,
   RADIUS_RUNG_NAMES,
   RADIUS_RUNGS,
+  readTokenColor,
   remToPx,
   themeSlug,
   TOKEN_KINDS,
@@ -407,11 +408,36 @@ function tokenValue(
       ? unsupported(token, css, unreadable("a reference to a Fuse token or primitive"))
       : Result.succeed(alias);
   }
+  return literalValue(token, css, projection);
+}
+
+/**
+ * Read one literal token value of a kind, through the same reader the sync uses. It is exported
+ * so a test can feed a malformed value; `fuseVariableSet` composes only the real themes.
+ *
+ * @param token - The token or primitive name, for the message.
+ * @param kind - The token's kind.
+ * @param css - The token's CSS value, not a `var()` reference.
+ * @returns The Figma literal, or the `UnsupportedTokenValue` the sync would fail with.
+ */
+export function tokenLiteral(
+  token: string,
+  kind: TokenKind,
+  css: string
+): Result.Result<LiteralValue, UnsupportedTokenValue> {
+  return literalValue(token, css, KIND_PROJECTIONS[kind]);
+}
+
+function literalValue(
+  token: string,
+  css: string,
+  projection: KindProjection
+): Result.Result<LiteralValue, UnsupportedTokenValue> {
   return Result.mapError(projection.literal(css), (failure) => unsupportedTokenValue(token, css, failure));
 }
 
 function colorLiteral(css: string): Result.Result<ColorValue, InvalidColor> {
-  return Result.map(ColorEffect.toResult(CssColor.parse(css)), (color): ColorValue => {
+  return Result.map(ColorEffect.toResult(readTokenColor(css)), (color): ColorValue => {
     const srgb = CssColor.toSrgb(color);
     return { _tag: "Color", color: { r: srgb.r, g: srgb.g, b: srgb.b, a: srgb.alpha } };
   });
