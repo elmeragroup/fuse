@@ -7,9 +7,9 @@ import { controlMd } from "./control-size-md";
  * Control size: the size × fit mapping of the density-owned control metrics (`--control-*`
  * in `fuse.css`, mirrored by `theme/tokens/density-metrics.ts`) onto a control. Button,
  * Toggle and ToggleGroup, and RadioIconButton take their size classes from
- * {@link controlSize}. Select's trigger and a segmented ToggleGroup item compose their size
- * from the {@link controlMetrics} slots. Controls without a size axis take the md parts from
- * `control-size-md.ts`.
+ * {@link controlSize}. Select's trigger takes its label from {@link controlLabel}, and a
+ * segmented ToggleGroup item takes its inset from the {@link controlMetrics} slots. Controls
+ * without a size axis take the md parts from `control-size-md.ts`.
  *
  * Two rules live here and nowhere else. xs and sm set a fixed `text-xs` / `text-sm` that
  * does not follow density, while md and lg bind the density's `--control-text` /
@@ -41,8 +41,8 @@ export type ControlFit = "label" | "square" | "min-square";
 /**
  * The metric parts of each control size, one slot per metric family.
  * {@link controlSize} assembles the fits from these parts. `iconInset` is the icon inset on
- * both sides, which a segmented ToggleGroup item takes in place of the label inset. Select's
- * trigger and Sidebar's sub-button read the parts they bind.
+ * both sides, which a segmented ToggleGroup item takes in place of the label inset.
+ * Sidebar's sub-button reads the parts it binds.
  */
 export const controlMetrics = tv({
   slots: {
@@ -105,6 +105,39 @@ export const controlMetrics = tv({
   },
 });
 
+/** Options for {@link controlLabel}. */
+export type ControlLabelOptions = {
+  /**
+   * Whether the label maps a `data-icon="inline-start"` or `"inline-end"` child onto the
+   * icon edge. `"omit"` is for a control that has never tightened its inset around an
+   * icon child, as Select's trigger.
+   */
+  readonly iconEdge: "include" | "omit";
+};
+
+/**
+ * The `label` fit of one control size: height, gap, inset and type, then the icon edge
+ * unless the options omit it. {@link controlSize} builds its `label` and `min-square`
+ * fits from this, and a control that composes its own size axis takes it too, so a new
+ * label part reaches every label box.
+ *
+ * @param size - The control size.
+ * @param options - Whether the label includes the icon edge.
+ * @returns The label's size classes.
+ * @example
+ * controlLabel("sm", { iconEdge: "omit" })
+ */
+export function controlLabel(size: ControlSize, options: ControlLabelOptions): string {
+  const parts = controlMetrics({ size });
+  return cn(
+    parts.height(),
+    parts.gap(),
+    parts.inset(),
+    parts.type(),
+    options.iconEdge === "include" && parts.iconEdge()
+  );
+}
+
 /** One size × fit cell of {@link controlSize}. */
 type ControlSizeCell = {
   readonly size: ControlSize;
@@ -115,7 +148,7 @@ type ControlSizeCell = {
 /** The three fits of one size, as compound variants of {@link controlSize}. */
 function fitsOf(size: ControlSize): readonly ControlSizeCell[] {
   const parts = controlMetrics({ size });
-  const label = cn(parts.height(), parts.gap(), parts.inset(), parts.type(), parts.iconEdge());
+  const label = controlLabel(size, { iconEdge: "include" });
   return [
     { size, fit: "label", class: label },
     { size, fit: "min-square", class: cn(label, parts.minWidth()) },

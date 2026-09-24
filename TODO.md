@@ -32,6 +32,18 @@
   focused NumberField nested in an InputGroup addon also rings the outer group. The state
   face already reads only a direct child (`styles/state-face.ts`).
 
+## Control size
+
+- Docs token extraction is file-granular: Select lists xs/lg control metrics and the
+  text-entry family lists gap-md/px-icon-md they don't bind; resolve per recipe (from
+  built CSS, or aware of tv calls) instead of per file.
+- Move the segmented ToggleGroup item's remaining rounded-none, shadow-none and scale-100
+  classes from `group-data-[spacing=0]/toggle-group:` (any ancestor group) onto the
+  item's own `data-[spacing=0]:`, which it already stamps, so they follow the nearest
+  group as its inset does.
+- Sweep the older "not a control rung" lint-disable reasons and other "rung" wording on
+  control metrics to "control size"; "rung" is reserved for radius rungs.
+
 ## Figma token sync
 
 - Run the first sync against a real Enterprise file and confirm that empty picker scopes,

@@ -10,9 +10,10 @@ import { cn } from "./cn";
  *
  * It sits in its own file, beside `control-size.ts`, because the docs token extraction
  * lists every `--control-*` variable a component's reachable sources spell. A consumer
- * that only binds md imports this file and lists only the md variables. Each slot is one
- * metric family, so a consumer takes the parts it binds and keeps its own geometry for the
- * rest.
+ * that imports only this file lists no xs, sm or lg variables. The extraction is
+ * file-granular, so it still lists every md part here, including ones the consumer does
+ * not bind. Each slot is one metric family, so a consumer takes the parts it binds and
+ * keeps its own geometry for the rest.
  */
 export const controlMd = tv({
   slots: {

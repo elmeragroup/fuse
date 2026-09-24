@@ -1,7 +1,7 @@
 /**
  * PUBLIC recipe. Consumers borrow it from `@elmeragroup/fuse/tabs`.
  *
- * Horizontal list pins the `md` field-box rung (`h-(--control-h-md)`). Vertical stays
+ * Horizontal list pins the `md` control size (`h-(--control-h-md)`). Vertical stays
  * `h-fit`. `p-[3px]` is optical track padding, not `--control-px-*`. No `size` axis.
  */
 import { tv } from "tailwind-variants";
