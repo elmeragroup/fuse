@@ -186,18 +186,13 @@ function boundVariables(template: ResolvedScheme): readonly BoundVariable[] {
  * Build the variable set for every legal theme in both color schemes and both densities.
  *
  * @returns The four Fuse collections, or the variable set rule the projection breaks.
- * @throws Error when the theme catalog meets a token value it cannot resolve or resolves no
- *   theme, which is a defect in a Fuse token module.
+ * @throws Error when the theme catalog meets a token value it cannot resolve, which is a
+ *   defect in a Fuse token module.
  */
 export function fuseVariableSet(): Result.Result<VariableSet, InvalidVariableSet | AliasCycle> {
   const catalog = resolveThemeCatalog();
+  // The token list comes from the first theme; every theme holds the same tokens and rungs.
   const [first] = catalog.themes;
-  if (first === undefined) {
-    // LEGAL_THEMES is a flatMap over the brand pin table, so its type cannot say non-empty.
-    throw new Error(
-      "The theme catalog resolved no legal theme, a defect in Fuse's theme table: the variable set takes its token list from the first theme."
-    );
-  }
   const bound = boundVariables(first.schemes.light);
   return makeVariableSet([
     primitivesCollection(catalog.primitives),

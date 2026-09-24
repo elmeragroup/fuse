@@ -165,8 +165,8 @@ export type ResolvedThemeCatalog = {
   /** Every primitive, in `PRIMITIVE_NAMES` order. */
   readonly primitives: { readonly [N in PrimitiveName]: PrimitiveEntry<N> };
 
-  /** Every legal theme, in `LEGAL_THEMES` order. */
-  readonly themes: readonly ResolvedTheme[];
+  /** Every legal theme, in `LEGAL_THEMES` order. The pin table always admits one. */
+  readonly themes: readonly [ResolvedTheme, ...ResolvedTheme[]];
 
   /** Every control metric, in `fuse.css` order. */
   readonly density: readonly DensityMetricEntry[];
@@ -183,14 +183,21 @@ export type ResolvedThemeCatalog = {
  *   - a primitive that references a token
  *   - a reference whose target has another kind
  *   - a reference cycle
+ *   - a theme table with no legal theme
  *   The message names the slug, scheme, token and value. A `composeTheme` failure passes
  *   through unchanged.
  */
 export function resolveThemeCatalog(): ResolvedThemeCatalog {
+  const [first, ...rest] = LEGAL_THEMES;
+  if (first === undefined) {
+    // LEGAL_THEMES is a flatMap over the brand pin table, so its type cannot say non-empty.
+    throw new Error("The theme catalog found no legal theme, a defect in Fuse's theme table.");
+  }
   const primitives = resolvePrimitives();
+  const resolve = (theme: ThemeInput): ResolvedTheme => resolveTheme(theme, primitives);
   return {
     primitives,
-    themes: LEGAL_THEMES.map((theme) => resolveTheme(theme, primitives)),
+    themes: [resolve(first), ...rest.map(resolve)],
     density: DENSITY_METRIC_FAMILIES.flatMap(({ kind, metrics }) =>
       metrics.map((name) => densityEntry(name, kind))
     ),
@@ -285,19 +292,39 @@ type UncorrelatedEntry = {
   readonly value: LiteralByKind[TokenKind];
 };
 
+/** The names a reference into `space` can take. */
+type NameIn<S extends Reference["space"]> = Extract<Reference, { readonly space: S }>["name"];
+
+/** A reference out of `space` into the other one. */
+type ReferenceOutside<S extends Reference["space"]> = Exclude<Reference, { readonly space: S }>;
+
 /**
- * The entries of one scope in `names` order, such as one theme's tokens in one scheme. An
- * entry resolves the entries its reference chain reaches first, each once, and a name met
- * again while its own chain resolves is a cycle.
+ * The entries of one scope in `names` order, such as one theme's tokens in one scheme. A
+ * reference into the scope's own `space` resolves within the scope: an entry resolves the
+ * entries its reference chain reaches first, each once, and a name met again while its own
+ * chain resolves is a cycle. `foreignTarget` answers a reference into the other space.
+ *
+ * @template S - The space the scope's names belong to.
+ * @template E - The correlated entry union the scope holds.
  */
-function resolveScope<N extends string, E>(
-  names: readonly N[],
-  siteOf: (name: N) => Site,
-  resolveOne: (site: Site, name: N, entryOf: (name: N) => E) => E
-): ReadonlyMap<N, E> {
-  const resolved = new Map<N, E>();
-  const resolving = new Set<N>();
-  const entryOf = (name: N): E => {
+function resolveScope<S extends Reference["space"], E extends AnyEntry>(
+  space: S,
+  names: readonly NameIn<S>[],
+  siteOf: (name: NameIn<S>) => Site,
+  kindOf: (name: NameIn<S>) => TokenKind,
+  foreignTarget: (reference: ReferenceOutside<S>, site: Site) => UncorrelatedEntry
+): ReadonlyMap<NameIn<S>, E> {
+  const resolved = new Map<NameIn<S>, E>();
+  const resolving = new Set<NameIn<S>>();
+  const targetOf = (reference: Reference, site: Site): UncorrelatedEntry =>
+    reference.space === space
+      ? // SAFETY: a reference whose space is `space` is the `Reference` member tagged S, so its
+        // name is a NameIn<S>. TypeScript does not narrow a union by a generic tag.
+        entryOf(reference.name as NameIn<S>)
+      : // SAFETY: every other reference is a member not tagged S, which ReferenceOutside<S>
+        // names. TypeScript does not narrow a union by a generic tag.
+        foreignTarget(reference as ReferenceOutside<S>, site);
+  const entryOf = (name: NameIn<S>): E => {
     const known = resolved.get(name);
     if (known !== undefined) {
       return known;
@@ -307,7 +334,7 @@ function resolveScope<N extends string, E>(
       throw defect(site, "its reference chain is a cycle");
     }
     resolving.add(name);
-    const entry = resolveOne(site, name, entryOf);
+    const entry = resolveEntry<E>(site, kindOf(name), (reference) => targetOf(reference, site));
     resolving.delete(name);
     resolved.set(name, entry);
     return entry;
@@ -383,16 +410,14 @@ function resolveEntry<E extends AnyEntry>(
 }
 
 function resolvePrimitives(): ResolvedThemeCatalog["primitives"] {
-  const entries = resolveScope<PrimitiveName, PrimitiveEntry>(
+  const entries = resolveScope<"primitive", PrimitiveEntry>(
+    "primitive",
     PRIMITIVE_NAMES,
     (name) => ({ scope: "primitive", name, css: PRIMITIVES[name] }),
-    (site, _name, entryOf) =>
-      resolveEntry(site, "color", (reference) => {
-        if (reference.space === "token") {
-          throw defect(site, `a primitive cannot reference the token ${reference.name}`);
-        }
-        return entryOf(reference.name);
-      })
+    () => "color",
+    (reference, site) => {
+      throw defect(site, `a primitive cannot reference the token ${reference.name}`);
+    }
   );
   return recordOf(PRIMITIVE_NAMES, entries);
 }
@@ -420,13 +445,12 @@ function resolveScheme(
   where: string,
   primitives: ResolvedThemeCatalog["primitives"]
 ): ResolvedScheme {
-  const entries = resolveScope<TokenName, TokenEntry>(
+  const entries = resolveScope<"token", TokenEntry>(
+    "token",
     TOKEN_NAMES,
     (name) => ({ scope: `token in ${where}`, name, css: composed[name] }),
-    (site, name, entryOf) =>
-      resolveEntry(site, TOKEN_KINDS[name], (reference) =>
-        reference.space === "primitive" ? primitives[reference.name] : entryOf(reference.name)
-      )
+    (name) => TOKEN_KINDS[name],
+    (reference) => primitives[reference.name]
   );
   const tokens = recordOf(TOKEN_NAMES, entries);
   return { tokens, rungs: resolveRungs(tokens.radius.value, tokens["radius-step"].value) };

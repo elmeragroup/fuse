@@ -33,6 +33,14 @@ function catalogTheme(slug: string): ThemeCatalogEntry {
   return theme;
 }
 
+function firstCatalogTheme(): ThemeCatalogEntry {
+  const [theme] = THEME_CATALOG.themes;
+  if (theme === undefined) {
+    throw new Error("the theme catalog has no theme");
+  }
+  return theme;
+}
+
 describe("theme catalog payload", () => {
   it("emits one row per legal theme, never an illegal slug", () => {
     expect(THEME_CATALOG.legalThemeCount).toBe(20);
@@ -46,7 +54,7 @@ describe("theme catalog payload", () => {
 
   it("locks density to variant and stamps matching attributes on every row", () => {
     // The first and last role in TOKEN_NAMES order; the fuse catalog suite pins the full order.
-    const tokenKeys = Object.keys(THEME_CATALOG.themes[0]?.tokens ?? {});
+    const tokenKeys = Object.keys(firstCatalogTheme().tokens);
     expect(tokenKeys).toHaveLength(ROLE_TOKEN_COUNT);
     expect(tokenKeys[0]).toBe("--background");
     expect(tokenKeys.at(-1)).toBe("--font-heading");
