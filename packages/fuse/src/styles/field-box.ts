@@ -1,7 +1,7 @@
 import { tv } from "tailwind-variants";
 
 import { cn } from "./cn";
-import { controlInsetMdClass } from "./control-inset";
+import { controlMdInsetTypeClass } from "./control-size-md";
 import { ariaStateFaceClass, nativeStateFaceClass, withinStateFaceClass } from "./state-face";
 import { selfFocusRingClass, withinFocusRingClass } from "./utils";
 
@@ -48,7 +48,7 @@ export const fieldBox = tv({
   base: cn(
     fieldBoxChromeClass,
     "w-full",
-    controlInsetMdClass,
+    controlMdInsetTypeClass,
     "placeholder:text-muted-foreground disabled:bg-input/50",
     nativeStateFaceClass,
     selfFocusRingClass

@@ -23,39 +23,65 @@ function metricPx(name: DensityMetricName, density: Density): number {
   return remToPx(DENSITY_METRICS[name][density]);
 }
 
-/** The md control-rung metrics in pixels per density, read from `DENSITY_METRICS`. */
-function controlMd(density: Density) {
+/** The four control sizes a sized density family has one metric for. */
+export type ControlSizeName = "xs" | "sm" | "md" | "lg";
+
+/**
+ * One control size's box metrics in pixels at a density, read from `DENSITY_METRICS`: the
+ * height (also the square side), the label inset, the icon-edge inset and the gap.
+ */
+function controlBox(size: ControlSizeName, density: Density) {
   return {
-    height: metricPx("control-h-md", density),
-    px: metricPx("control-px-md", density),
+    height: metricPx(`control-h-${size}`, density),
+    px: metricPx(`control-px-${size}`, density),
+    pxIcon: metricPx(`control-px-icon-${size}`, density),
+    gap: metricPx(`control-gap-${size}`, density),
+  };
+}
+
+/** {@link controlBox} plus the density-owned type pair, which md and lg bind. */
+function controlBoxWithDensityType(size: "md" | "lg", density: Density) {
+  return {
+    ...controlBox(size, density),
     font: metricPx("control-text", density),
     leading: metricPx("control-leading", density),
   };
 }
 
-/** The sm control-rung metrics in pixels per density, read from `DENSITY_METRICS`. */
-function controlSm(density: Density) {
-  return { height: metricPx("control-h-sm", density), px: metricPx("control-px-sm", density) };
-}
-
 /**
- * Md control-rung metrics (`--control-*-md` plus the control-type pair) in pixels. The
+ * Md control-size metrics (`--control-*-md` plus the control-type pair) in pixels. The
  * density-css cross-check ties `DENSITY_METRICS` to `fuse.css`, so a suite comparing
- * computed styles with these checks that a component binds the md rung.
+ * computed styles with these checks that a component binds the md size.
  */
 export const CONTROL_MD = {
-  dense: controlMd("dense"),
-  comfortable: controlMd("comfortable"),
+  dense: controlBoxWithDensityType("md", "dense"),
+  comfortable: controlBoxWithDensityType("md", "comfortable"),
 } as const;
 
 /**
- * Sm control-rung metrics (`--control-h-sm` / `--control-px-sm`) in pixels. The rung the
- * RAC tier's package-private Button defaults to, which FileTrigger's visible button and the
- * GridList drag handle use, so those suites read it here rather than restating the numbers.
+ * Sm control-size metrics (`--control-*-sm`) in pixels. The size the RAC tier's
+ * package-private Button defaults to, which FileTrigger's visible button and the GridList
+ * drag handle use, so those suites read it here rather than restating the numbers. The sm
+ * type is a fixed `text-sm`, not a density metric, so it has no type pair here.
  */
 export const CONTROL_SM = {
-  dense: controlSm("dense"),
-  comfortable: controlSm("comfortable"),
+  dense: controlBox("sm", "dense"),
+  comfortable: controlBox("sm", "comfortable"),
+} as const;
+
+/**
+ * Xs control-size metrics (`--control-*-xs`) in pixels. Like {@link CONTROL_SM}, the xs type
+ * is a fixed `text-xs` rather than a density metric.
+ */
+export const CONTROL_XS = {
+  dense: controlBox("xs", "dense"),
+  comfortable: controlBox("xs", "comfortable"),
+} as const;
+
+/** Lg control-size metrics (`--control-*-lg` plus the control-type pair) in pixels. */
+export const CONTROL_LG = {
+  dense: controlBoxWithDensityType("lg", "dense"),
+  comfortable: controlBoxWithDensityType("lg", "comfortable"),
 } as const;
 
 afterEach(() => {

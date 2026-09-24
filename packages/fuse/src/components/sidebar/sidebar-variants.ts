@@ -1,5 +1,7 @@
 import { tv } from "tailwind-variants";
 
+import { cn } from "../../styles/cn";
+import { controlMetrics } from "../../styles/control-size";
 import { nativeStateFaceClass } from "../../styles/state-face";
 import { selfFocusRingClass } from "../../styles/utils";
 
@@ -10,7 +12,7 @@ import { selfFocusRingClass } from "../../styles/utils";
  * `ring-sidebar-ring` focus literals are the canonical `focusRing`.
  *
  * The `h-8` / `h-7` / `h-12` ladder is shell-local navigation-rail geometry, exempt from
- * the `--control-*` density rungs. Collapse motion animates colour and shadow only. The
+ * the `--control-*` control sizes. Collapse motion animates colour and shadow only. The
  * shell width is the one sidebar layout transition `source-contracts.test.ts` allows.
  * The row is a native `<button>` or a `render`ed link, so the state face composes the
  * `native` target, whose `aria-disabled` arm covers a link row, and hover and press sit
@@ -40,9 +42,16 @@ export const sidebarMenuButtonVariants = tv({
   defaultVariants: { variant: "default", size: "default" },
 });
 
+/** A sub-button row's height and type at one control size. */
+function subButtonSize(size: "sm" | "md"): string {
+  const parts = controlMetrics({ size });
+  return cn(parts.height(), parts.type());
+}
+
 /**
- * `Sidebar.MenuSubButton` size axis — module-private. `md` pins the md
- * control rung and the control-type pair; `sm` pins the sm rung with size-owned `text-sm`.
+ * `Sidebar.MenuSubButton` size axis — module-private. Each size takes the control size's
+ * height and type: `md` the md height with the density type pair, `sm` the sm height with
+ * the fixed `text-sm`. The row keeps its own inset and gap.
  */
 export const sidebarMenuSubButtonVariants = tv({
   base: [
@@ -52,8 +61,8 @@ export const sidebarMenuSubButtonVariants = tv({
   ],
   variants: {
     size: {
-      md: "h-(--control-h-md) [font-size:var(--control-text)] [line-height:var(--control-leading)]",
-      sm: "text-sm h-(--control-h-sm)",
+      md: subButtonSize("md"),
+      sm: subButtonSize("sm"),
     },
   },
   defaultVariants: { size: "md" },

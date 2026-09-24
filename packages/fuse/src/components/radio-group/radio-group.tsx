@@ -258,7 +258,7 @@ export type RadioIconButtonProps = Omit<
   /** Forwards `disabled` to the radio root. */
   isDisabled?: boolean;
   /**
-   * Icon-button size mapped onto the control-height rungs like Button: `icon-xxs`
+   * Icon-button size mapped onto the control sizes like Button: `icon-xxs`
    * and `icon-xs` share `--control-h-xs` (svg-3 / svg-3.5), `icon-sm` `--control-h-sm`
    * (svg-4), `icon` `--control-h-md` (svg-4), `icon-lg` `--control-h-lg` (svg-5).
    * Svg sizes apply only to `svg:not([class*='size-'])`. Default `"icon"`.

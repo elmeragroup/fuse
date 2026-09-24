@@ -5,6 +5,7 @@ import type { ComponentProps, ReactElement } from "react";
 import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
 import type { VariantProps } from "tailwind-variants";
 
+import { controlMd } from "../../styles/control-size-md";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { dataStateFaceClass, nativeStateFaceClass } from "../../styles/state-face";
 import { selfFocusRingClass } from "../../styles/utils";
@@ -59,7 +60,11 @@ function TabsTrigger({ className, ...props }: ComponentProps<typeof TabsPrimitiv
       data-slot="tabs-trigger"
       className={mergeClassName(
         className,
-        "font-medium ease-out group-data-[variant=default]/tabs-list:data-active:shadow-sm relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-(--control-gap-md) rounded-md border border-transparent px-(--control-px-md) [font-size:var(--control-text)] [line-height:var(--control-leading)] whitespace-nowrap text-foreground/60 transition-[color,background-color,border-color,box-shadow] duration-150 group-data-vertical/tabs:w-full group-data-vertical/tabs:justify-start enabled-hover:text-foreground has-data-[icon=inline-end]:pr-(--control-px-icon-md) has-data-[icon=inline-start]:pl-(--control-px-icon-md) group-data-[variant=line]/tabs-list:data-active:shadow-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        controlMd.gap(),
+        controlMd.inset(),
+        controlMd.iconEdge(),
+        controlMd.type(),
+        "font-medium ease-out group-data-[variant=default]/tabs-list:data-active:shadow-sm relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center rounded-md border border-transparent whitespace-nowrap text-foreground/60 transition-[color,background-color,border-color,box-shadow] duration-150 group-data-vertical/tabs:w-full group-data-vertical/tabs:justify-start enabled-hover:text-foreground group-data-[variant=line]/tabs-list:data-active:shadow-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         selfFocusRingClass,
         nativeStateFaceClass,
         dataStateFaceClass,

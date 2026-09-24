@@ -120,12 +120,9 @@ describe("sidebarMenuButtonVariants", () => {
     expect(defaults).not.toContain("transition-[width,height,padding,color,background-color,box-shadow]");
   });
 
-  it("puts MenuSubButton's size axis on the control ladder", () => {
-    expect(sidebarMenuSubButtonVariants()).toContain("h-(--control-h-md)");
-    expect(sidebarMenuSubButtonVariants()).toContain("[font-size:var(--control-text)]");
-    expect(sidebarMenuSubButtonVariants()).toContain("[line-height:var(--control-leading)]");
-    expect(sidebarMenuSubButtonVariants({ size: "sm" })).toContain("h-(--control-h-sm)");
-    expect(sidebarMenuSubButtonVariants({ size: "sm" })).toContain("text-sm");
+  // MenuSubButton's size axis is measured, not string-matched: control-size.browser.test.tsx
+  // checks each size's computed height and type against DENSITY_METRICS.
+  it("keeps MenuSubButton's size axis off the rail ladder and data-size selectors", () => {
     expect(sidebarMenuSubButtonVariants()).not.toContain("h-7");
     expect(sidebarMenuSubButtonVariants()).not.toContain("data-[size=");
   });

@@ -16,6 +16,7 @@ import { X } from "../../icons/generated/x";
 import { isTextValueNode } from "../../internal/is-text-node";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
+import { controlMd } from "../../styles/control-size-md";
 import { compactCornerClass } from "../../styles/corner-radius";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { withinStateFaceClass, withinStateFaceControlClass } from "../../styles/state-face";
@@ -338,7 +339,9 @@ function ComboboxChips({
         // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- chip wrap gap and compact chip padding are layout, not a control rung
         className={mergeClassName(
           className,
-          "text-sm shadow-xs flex min-h-(--control-h-md) flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent bg-clip-padding px-(--control-px-md) py-1.5 transition-[color,box-shadow] has-data-[slot=combobox-chip]:px-1.5",
+          controlMd.minHeight(),
+          controlMd.inset(),
+          "text-sm shadow-xs flex flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent bg-clip-padding py-1.5 transition-[color,box-shadow] has-data-[slot=combobox-chip]:px-1.5",
           withinFocusRingClass,
           withinStateFaceClass
         )}

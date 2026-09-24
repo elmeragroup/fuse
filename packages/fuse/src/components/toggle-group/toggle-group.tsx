@@ -9,6 +9,7 @@ import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
 import { toggleVariants } from "../toggle/toggle-variants";
+import { segmentedItemInset } from "./toggle-group-variants";
 
 type ToggleGroupContextValue = VariantProps<typeof toggleVariants> & {
   spacing?: number;
@@ -105,7 +106,7 @@ function ToggleGroupItem({
           variant: resolvedVariant,
           size: resolvedSize,
         }),
-        "group-data-[spacing=0]/toggle-group:data-[size=default]:px-(--control-px-icon-md) group-data-[spacing=0]/toggle-group:has-data-[icon=inline-end]:data-[size=default]:pr-(--control-px-icon-md) group-data-[spacing=0]/toggle-group:has-data-[icon=inline-start]:data-[size=default]:pl-(--control-px-icon-md) group-data-[spacing=0]/toggle-group:data-[size=lg]:px-(--control-px-icon-lg) group-data-[spacing=0]/toggle-group:has-data-[icon=inline-end]:data-[size=lg]:pr-(--control-px-icon-lg) group-data-[spacing=0]/toggle-group:has-data-[icon=inline-start]:data-[size=lg]:pl-(--control-px-icon-lg) group-data-[spacing=0]/toggle-group:data-[size=sm]:px-(--control-px-icon-sm) group-data-[spacing=0]/toggle-group:has-data-[icon=inline-end]:data-[size=sm]:pr-(--control-px-icon-sm) group-data-[spacing=0]/toggle-group:has-data-[icon=inline-start]:data-[size=sm]:pl-(--control-px-icon-sm) group-data-[spacing=0]/toggle-group:data-[size=xs]:px-(--control-px-icon-xs) group-data-[spacing=0]/toggle-group:has-data-[icon=inline-end]:data-[size=xs]:pr-(--control-px-icon-xs) group-data-[spacing=0]/toggle-group:has-data-[icon=inline-start]:data-[size=xs]:pl-(--control-px-icon-xs)",
+        context.spacing === 0 && segmentedItemInset({ size: resolvedSize }),
         className
       )}
       {...props}>

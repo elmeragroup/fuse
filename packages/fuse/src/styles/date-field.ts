@@ -1,6 +1,6 @@
 import { tv } from "tailwind-variants";
 
-import { controlInsetMdClass } from "./control-inset";
+import { controlMdInsetTypeClass } from "./control-size-md";
 
 /**
  * DateField's slotted recipe. Package-private: no entry re-exports it. Every RAC entry
@@ -16,7 +16,7 @@ export const dateFieldVariants = tv({
   slots: {
     // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- label/input stack gap is layout, not a control rung
     base: "flex flex-col gap-1",
-    input: controlInsetMdClass,
+    input: controlMdInsetTypeClass,
     segment:
       // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- type-literal segments carry no inline padding
       "inline rounded-xs p-0.5 text-foreground caret-transparent outline outline-0 forced-color-adjust-none forced-colors:text-[ButtonText] type-literal:px-0",

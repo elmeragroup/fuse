@@ -603,7 +603,7 @@
           "type": "\"md\" | \"sm\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"md\"",
-          "description": "Row size, emitted as `data-size`. `md` pins the md control rung and the control-type pair; `sm` pins the sm rung with size-owned `text-sm`.",
+          "description": "Row size, emitted as `data-size`. `md` takes the md control size's height and the density type pair; `sm` takes the sm control size's height and fixed `text-sm`.",
           "required": false
         }
       ]

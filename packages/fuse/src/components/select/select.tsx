@@ -23,6 +23,7 @@ import {
 } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
+import { selectTriggerSize } from "./select-variants";
 
 function SelectRoot<Value = unknown, Multiple extends boolean | undefined = false>(
   props: SelectRootType.Props<Value, Multiple>
@@ -32,8 +33,8 @@ function SelectRoot<Value = unknown, Multiple extends boolean | undefined = fals
 
 export type SelectTriggerProps = ComponentProps<typeof SelectPrimitive.Trigger> & {
   /**
-   * Control-box height. Emitted as `data-size`. `"default"` maps to the `md` density
-   * rung; `"sm"` maps to the `sm` rung.
+   * Control size of the trigger box. Emitted as `data-size`. `"default"` maps to the `md`
+   * control size; `"sm"` maps to the `sm` control size.
    * @default "default"
    */
   size?: "sm" | "default";
@@ -56,8 +57,9 @@ function SelectTrigger({
         fieldBoxChromeClass,
         nativeStateFaceClass,
         dataStateFaceClass,
+        selectTriggerSize({ size }),
         // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; ring comes from the shared adapter
-        "group/select-trigger data-[size=sm]:text-sm flex w-fit items-center justify-between whitespace-nowrap outline-none select-none data-placeholder:text-muted-foreground data-[size=default]:h-(--control-h-md) data-[size=default]:gap-(--control-gap-md) data-[size=default]:px-(--control-px-md) data-[size=default]:[font-size:var(--control-text)] data-[size=default]:[line-height:var(--control-leading)] data-[size=sm]:h-(--control-h-sm) data-[size=sm]:gap-(--control-gap-sm) data-[size=sm]:px-(--control-px-sm) *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+        "group/select-trigger flex w-fit items-center justify-between whitespace-nowrap outline-none select-none data-placeholder:text-muted-foreground *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
       )}
       {...props}>
       {children}

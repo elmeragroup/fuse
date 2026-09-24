@@ -326,7 +326,7 @@
           "type": "\"default\" | \"sm\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "Control-box height. Emitted as `data-size`. `\"default\"` maps to the `md` density rung; `\"sm\"` maps to the `sm` rung.",
+          "description": "Control size of the trigger box. Emitted as `data-size`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size.",
           "required": false
         },
         {

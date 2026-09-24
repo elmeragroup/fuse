@@ -1,6 +1,6 @@
 import { tv } from "tailwind-variants";
 
-import { controlInsetMdClass } from "./control-inset";
+import { controlMdInsetTypeClass } from "./control-size-md";
 import { compactCornerClass } from "./corner-radius";
 
 /**
@@ -19,7 +19,7 @@ export const pickerVariants = tv({
     /** The private FieldGroup around the segment row(s) and the trigger. */
     group: "w-auto",
     /** A public DateInput inside the field box. */
-    input: controlInsetMdClass,
+    input: controlMdInsetTypeClass,
     /**
      * The en-dash between a range's two rows: decorative, `aria-hidden`, and the only slot
      * with a colour of its own. It uses role tokens; the forced-colors fallbacks are kept verbatim so the

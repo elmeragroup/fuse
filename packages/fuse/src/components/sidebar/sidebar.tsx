@@ -776,8 +776,8 @@ function SidebarMenuSubItem({ className, ...props }: SidebarMenuSubItemProps): R
  */
 export type SidebarMenuSubButtonProps = useRender.ComponentProps<"a"> & {
   /**
-   * Row size, emitted as `data-size`. `md` pins the md control rung and the control-type
-   * pair; `sm` pins the sm rung with size-owned `text-sm`.
+   * Row size, emitted as `data-size`. `md` takes the md control size's height and the
+   * density type pair; `sm` takes the sm control size's height and fixed `text-sm`.
    * @default "md"
    */
   size?: "sm" | "md";

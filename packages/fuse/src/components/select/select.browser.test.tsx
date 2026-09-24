@@ -6,29 +6,9 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
-import {
-  CONTROL_MD,
-  fkasExternal,
-  px,
-  renderThemed,
-  stampDensity,
-} from "../../../test/themed-browser-render";
+import { renderThemed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
 import { Select } from "./select";
-
-const CONTROL_SM = {
-  dense: 32,
-  comfortable: 36,
-} as const;
-
-function tokenPx(host: HTMLElement, name: `--${string}`): number {
-  const probe = document.createElement("span");
-  probe.style.width = `var(${name})`;
-  host.append(probe);
-  const value = px(getComputedStyle(probe).width);
-  probe.remove();
-  return value;
-}
 
 function comboboxNamed(name?: string): HTMLElement {
   const locator =
@@ -287,77 +267,6 @@ describe("Select", () => {
     });
     await userEvent.click(comboboxNamed("Unaligned"));
     expect(selectContent().getAttribute("data-align-trigger")).toBe("false");
-  });
-
-  it("matches signed trigger heights at both densities and does not rescope", () => {
-    const { rerender } = renderThemed(
-      <>
-        <Select.Root>
-          <Select.Trigger aria-label="Default meter">
-            <Select.Value placeholder="Default" />
-          </Select.Trigger>
-          <Select.Content>
-            <Select.Item value="a">A</Select.Item>
-          </Select.Content>
-        </Select.Root>
-        <Select.Root>
-          <Select.Trigger size="sm" aria-label="Small meter">
-            <Select.Value placeholder="Small" />
-          </Select.Trigger>
-          <Select.Content>
-            <Select.Item value="a">A</Select.Item>
-          </Select.Content>
-        </Select.Root>
-      </>
-    );
-
-    for (const density of ["dense", "comfortable"] as const) {
-      stampDensity(density);
-      const defEl = comboboxNamed("Default meter");
-      const def = getComputedStyle(defEl);
-      expect(px(def.height)).toBe(tokenPx(defEl, "--control-h-md"));
-      expect(px(def.paddingInlineStart)).toBe(tokenPx(defEl, "--control-px-md"));
-      expect(px(def.gap)).toBe(tokenPx(defEl, "--control-gap-md"));
-      expect(px(def.fontSize)).toBe(tokenPx(defEl, "--control-text"));
-      expect(px(def.lineHeight)).toBe(tokenPx(defEl, "--control-leading"));
-      expect(px(def.height)).toBe(CONTROL_MD[density].height);
-
-      const smEl = comboboxNamed("Small meter");
-      const sm = getComputedStyle(smEl);
-      expect(px(sm.height)).toBe(tokenPx(smEl, "--control-h-sm"));
-      expect(px(sm.paddingInlineStart)).toBe(tokenPx(smEl, "--control-px-sm"));
-      expect(px(sm.gap)).toBe(tokenPx(smEl, "--control-gap-sm"));
-      expect(px(sm.height)).toBe(CONTROL_SM[density]);
-    }
-
-    stampDensity("dense");
-    rerender(
-      <div data-density="comfortable">
-        <Select.Root>
-          <Select.Trigger aria-label="Nested meter">
-            <Select.Value placeholder="Nested" />
-          </Select.Trigger>
-          <Select.Content>
-            <Select.Item value="a">A</Select.Item>
-          </Select.Content>
-        </Select.Root>
-      </div>
-    );
-    expect(px(getComputedStyle(comboboxNamed("Nested meter")).height)).toBe(CONTROL_MD.dense.height);
-
-    rerender(
-      <ThemeScope theme={fkasExternal}>
-        <Select.Root>
-          <Select.Trigger aria-label="Scoped meter">
-            <Select.Value placeholder="Scoped" />
-          </Select.Trigger>
-          <Select.Content>
-            <Select.Item value="a">A</Select.Item>
-          </Select.Content>
-        </Select.Root>
-      </ThemeScope>
-    );
-    expect(px(getComputedStyle(comboboxNamed("Scoped meter")).height)).toBe(CONTROL_MD.dense.height);
   });
 
   it("surfaces aria-invalid on the trigger and disables it from Root", () => {

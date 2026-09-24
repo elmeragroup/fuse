@@ -11,7 +11,7 @@ import { CaretDown } from "../../icons/generated/caret-down";
 import { CaretUp } from "../../icons/generated/caret-up";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
-import { controlInsetMdClass } from "../../styles/control-inset";
+import { controlMdInsetTypeClass } from "../../styles/control-size-md";
 import { numberFieldGroupClass } from "../../styles/field-box";
 import { withinStateFaceControlClass } from "../../styles/state-face";
 import { withinFocusRingControlClass } from "../../styles/utils";
@@ -164,7 +164,7 @@ export function NumberField({
             data-focus-ring-control=""
             className={cn(
               "box-border h-full w-full min-w-0 flex-1 border-0 bg-transparent py-0 tabular-nums",
-              controlInsetMdClass,
+              controlMdInsetTypeClass,
               withinFocusRingControlClass,
               withinStateFaceControlClass
             )}
