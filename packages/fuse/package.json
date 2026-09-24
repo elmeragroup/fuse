@@ -16,6 +16,9 @@
     "fuse"
   ],
   "homepage": "https://github.com/elmeragroup/fuse#readme",
+  "bugs": {
+    "url": "https://github.com/elmeragroup/fuse/issues"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/elmeragroup/fuse.git",

@@ -154,7 +154,7 @@ function gitOutput(sourceRoot: string, args: readonly string[]): string {
 export function assertFlagSourceCheckout(sourceRoot: string, expectedCommit: string): void {
   if (!existsSync(sourceRoot) || !statSync(sourceRoot).isDirectory()) {
     throw new Error(
-      `Flag source ${sourceRoot} is missing; clone the pinned reference described in packages/fuse/REFERENCE-SOURCES.md`
+      `Flag source ${sourceRoot} is missing; clone ${FLAG_SOURCE_REPO} there at ${expectedCommit}`
     );
   }
 

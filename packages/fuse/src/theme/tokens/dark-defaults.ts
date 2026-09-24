@@ -1,7 +1,7 @@
 import type { TokenLayer } from "./contract";
 
-// Shared dark values for roles the supplied palettes lack. PROVENANCE.md records where
-// each one came from and which are still provisional.
+// Shared dark values for roles the supplied palettes lack. Several remain provisional
+// until design reviews them.
 export const DARK_DEFAULTS = {
   "muted-foreground": "oklch(0.8280204 0.0042636 121.5755)", // #C6C7C4
   error: "oklch(0.8383036 0.089085 26.7575)", // #FFB4AB

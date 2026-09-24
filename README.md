@@ -6,6 +6,14 @@ Density is a document-level control-metric axis, independent of theme. Variant s
 
 Start with [AGENTS.md](AGENTS.md) for contribution conventions and [CONTEXT.md](CONTEXT.md) for theme vocabulary. Consumer guidance lives in the [docs app](<apps/docs/src/app/(docs)>).
 
+## Install
+
+```sh
+pnpm add @elmeragroup/fuse
+```
+
+Then follow the [package README](packages/fuse/README.md) to wire up the CSS and theme attributes.
+
 ## Why Fuse
 
 An electrical fuse connects the name to Elmera's energy business. To fuse means bringing things together, which reflects teams sharing components and solutions across brands and markets.
@@ -18,7 +26,7 @@ An electrical fuse connects the name to Elmera's energy business. To fuse means 
 
 - **Node**: `>=24.13 <25` — the version in [`.node-version`](.node-version) (`24.13.0`). The build, codegen and docs scripts run TypeScript directly through Node's type-stripping flags, so an older major fails.
 - **pnpm 11** — `packageManager` pins the exact version; use Corepack.
-- `.ref/` reference checkouts are needed only to lift new reference implementations or artwork ([reference sources](packages/fuse/REFERENCE-SOURCES.md)). They are not needed to build, test, or run the repo.
+- `.ref/` reference checkouts are needed only to lift new reference implementations or artwork. They are not needed to build, test, or run the repo.
 
 ```sh
 pnpm install
