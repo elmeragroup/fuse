@@ -1,19 +1,22 @@
 import { describe, expect, it } from "vitest";
 
+import { getOrThrow } from "@elmeragroup/color/result";
+import * as Srgb from "@elmeragroup/color/srgb";
+import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
+import type { ResolvedScheme } from "@elmeragroup/fuse/theme-catalog";
+
 import {
   buildFigmaThemeIndex,
-  figmaDocumentFromCatalog,
+  figmaDocumentFromScheme,
   renderFigmaThemeCatalog,
 } from "../scripts/lib/theme-catalog-figma.ts";
 import { GET as getFigmaThemeFile } from "../src/app/api/themes/figma/[slug]/route.ts";
-import { THEME_CATALOG } from "../src/generated/theme-catalog";
 import { FIGMA_THEME_FILES, FIGMA_THEME_INDEX } from "../src/generated/theme-catalog-figma";
 import type {
   FigmaColorToken,
   FigmaDimensionToken,
   FigmaFontToken,
   FigmaThemeDocument,
-  ThemeCatalogEntry,
 } from "../src/lib/docs-model";
 import { docsBaseUrl } from "./docs-server";
 
@@ -37,12 +40,15 @@ async function expectThemeFile(response: Response, slug: string) {
   expect(body).toEqual(FIGMA_THEME_FILES[slug]);
 }
 
-function catalogTheme(slug: string): ThemeCatalogEntry {
-  const theme = THEME_CATALOG.themes.find((entry) => entry.slug === slug);
+const CATALOG = resolveThemeCatalog();
+
+/** The light scheme the DTCG export writes for one theme. */
+function lightScheme(slug: string): ResolvedScheme {
+  const theme = CATALOG.themes.find((entry) => entry.slug === slug);
   if (theme === undefined) {
     throw new Error(`missing theme ${slug}`);
   }
-  return theme;
+  return theme.schemes.light;
 }
 
 function figmaDocument(slug: string): FigmaThemeDocument {
@@ -90,10 +96,7 @@ describe("Figma DTCG documents", () => {
   });
 
   it("converts CSS-honest values into Figma-importable DTCG", () => {
-    const document = figmaDocumentFromCatalog(
-      catalogTheme("external-fkas-private"),
-      THEME_CATALOG.primitives
-    );
+    const document = figmaDocumentFromScheme(lightScheme("external-fkas-private"), CATALOG.primitives);
     expect(token<FigmaColorToken>(document.color, "brand")).toEqual({
       $type: "color",
       $value: "{color.brand-fkas}",
@@ -139,13 +142,23 @@ describe("Figma DTCG documents", () => {
   });
 
   it("writes hex from the same rounded channels as components", () => {
-    // oklch(0.3031888 0 0) is a gray whose sRGB channel is 46.4999/255. Rounded to 1e-6 it is
-    // 0.182353, and 0.182353 * 255 = 46.500015, which rounds to 47 = 0x2F. Built from the
-    // unrounded channel, hex would be #2E2E2E and disagree with components.
-    const theme = catalogTheme("external-fkas-private");
-    const document = figmaDocumentFromCatalog(
-      { ...theme, tokens: { ...theme.tokens, "--background": "oklch(0.3031888 0 0)" } },
-      THEME_CATALOG.primitives
+    // A gray whose sRGB channel is 46.4999/255, 0.1823525..., rounds to 0.182353 at 1e-6, and
+    // 0.182353 * 255 = 46.500015, which rounds to 47 = 0x2F. Built from the unrounded
+    // channel, hex would be #2E2E2E and disagree with components.
+    const channel = 46.4999 / 255;
+    const scheme = lightScheme("external-fkas-private");
+    const document = figmaDocumentFromScheme(
+      {
+        ...scheme,
+        tokens: {
+          ...scheme.tokens,
+          background: {
+            ...scheme.tokens.background,
+            value: getOrThrow(Srgb.make({ r: channel, g: channel, b: channel, alpha: 1 })),
+          },
+        },
+      },
+      CATALOG.primitives
     );
     expect(token<FigmaColorToken>(document.color, "background").$value).toEqual({
       colorSpace: "srgb",
@@ -156,10 +169,7 @@ describe("Figma DTCG documents", () => {
   });
 
   it("aliases the internal button radius to the one radius and emits a zero step", () => {
-    const document = figmaDocumentFromCatalog(
-      catalogTheme("internal-fkas-private"),
-      THEME_CATALOG.primitives
-    );
+    const document = figmaDocumentFromScheme(lightScheme("internal-fkas-private"), CATALOG.primitives);
     expect(token<FigmaDimensionToken>(document.size, "radius")).toEqual({
       $type: "dimension",
       $value: { value: 6, unit: "px" },
@@ -175,7 +185,7 @@ describe("Figma DTCG documents", () => {
   });
 
   it("emits a typed FIGMA_THEME_FILES const without chained assertions", () => {
-    const module = renderFigmaThemeCatalog(THEME_CATALOG);
+    const module = renderFigmaThemeCatalog(CATALOG);
     expect(module).toContain(
       "export const FIGMA_THEME_FILES: { readonly [slug: string]: FigmaThemeDocument } = {"
     );
@@ -187,13 +197,13 @@ describe("Figma DTCG documents", () => {
   it("is a projection of the catalog", () => {
     // Unit under test: the committed module's serialisation of every document. Oracle: the
     // converter it serialised. The converter's own output is pinned by hand above and below.
-    expect(buildFigmaThemeIndex(THEME_CATALOG)).toEqual(FIGMA_THEME_INDEX);
+    expect(buildFigmaThemeIndex(CATALOG)).toEqual(FIGMA_THEME_INDEX);
     expect(FIGMA_THEME_INDEX.files.map((file) => file.slug)).toEqual(
-      THEME_CATALOG.themes.map((theme) => theme.slug)
+      CATALOG.themes.map((theme) => theme.slug)
     );
-    expect(Object.keys(FIGMA_THEME_FILES)).toEqual(THEME_CATALOG.themes.map((theme) => theme.slug));
-    for (const theme of THEME_CATALOG.themes) {
-      expect(figmaDocumentFromCatalog(theme, THEME_CATALOG.primitives), theme.slug).toEqual(
+    expect(Object.keys(FIGMA_THEME_FILES)).toEqual(CATALOG.themes.map((theme) => theme.slug));
+    for (const theme of CATALOG.themes) {
+      expect(figmaDocumentFromScheme(theme.schemes.light, CATALOG.primitives), theme.slug).toEqual(
         FIGMA_THEME_FILES[theme.slug]
       );
     }

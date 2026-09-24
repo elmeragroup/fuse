@@ -2,7 +2,7 @@
  * The control metrics each density sets. `fuse.css` declares the same values by hand in the
  * rules {@link DENSITY_SELECTORS} names, and `density-css.test.ts` requires both rules to equal
  * {@link DENSITY_METRICS}. Tooling that cannot read CSS, such as the demo-stage artifact and
- * the Figma sync, reads this module.
+ * the resolved theme catalog the Figma sync reads, reads this module.
  */
 
 import type { RemLength } from "../css-values";

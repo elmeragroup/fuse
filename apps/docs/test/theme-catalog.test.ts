@@ -3,7 +3,9 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { TOKEN_NAMES } from "../scripts/lib/theme-catalog.ts";
+import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
+
+import { buildThemeCatalog } from "../scripts/lib/theme-catalog.ts";
 import { THEME_CATALOG } from "../src/generated/theme-catalog";
 import type { ThemeCatalogEntry } from "../src/lib/docs-model";
 import { docsBaseUrl } from "./docs-server";
@@ -31,6 +33,14 @@ function catalogTheme(slug: string): ThemeCatalogEntry {
   return theme;
 }
 
+function firstCatalogTheme(): ThemeCatalogEntry {
+  const [theme] = THEME_CATALOG.themes;
+  if (theme === undefined) {
+    throw new Error("the theme catalog has no theme");
+  }
+  return theme;
+}
+
 describe("theme catalog payload", () => {
   it("emits one row per legal theme, never an illegal slug", () => {
     expect(THEME_CATALOG.legalThemeCount).toBe(20);
@@ -43,8 +53,11 @@ describe("theme catalog payload", () => {
   });
 
   it("locks density to variant and stamps matching attributes on every row", () => {
-    expect(TOKEN_NAMES).toHaveLength(ROLE_TOKEN_COUNT);
-    const tokenKeys = TOKEN_NAMES.map((name) => `--${name}`);
+    // The first and last role in TOKEN_NAMES order; the fuse catalog suite pins the full order.
+    const tokenKeys = Object.keys(firstCatalogTheme().tokens);
+    expect(tokenKeys).toHaveLength(ROLE_TOKEN_COUNT);
+    expect(tokenKeys[0]).toBe("--background");
+    expect(tokenKeys.at(-1)).toBe("--font-heading");
     for (const theme of THEME_CATALOG.themes) {
       const density = theme.variant === "internal" ? "dense" : "comfortable";
       expect(theme.density).toBe(density);
@@ -79,6 +92,12 @@ describe("theme catalog payload", () => {
     expect(internal.density).toBe("dense");
     expect(internal.tokens["--primary"]).toBe("oklch(0.16 0 0)");
     expect(internal.tokens["--primary-foreground"]).toBe("oklch(1 0 0)");
+  });
+
+  it("is the light CSS of the resolved catalog", () => {
+    // Unit under test: the committed module. Oracle: the builder it serialised, whose values
+    // the cases above and below pin by hand.
+    expect(buildThemeCatalog(resolveThemeCatalog())).toEqual(THEME_CATALOG);
   });
 
   it("keeps CSS custom-property names and var() values as the cascade writes them", () => {

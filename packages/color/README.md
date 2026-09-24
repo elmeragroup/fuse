@@ -50,7 +50,7 @@ const toSrgbOrLog = (input: string) =>
   );
 ```
 
-`toResult` returns Effect's own `Result` instead. The Figma sync reads token colors through it.
+`toResult` returns Effect's own `Result` instead.
 
 ## Where it runs
 

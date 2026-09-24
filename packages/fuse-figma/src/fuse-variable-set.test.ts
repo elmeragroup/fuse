@@ -8,7 +8,6 @@ import {
   fuseVariableSet,
   PRIMITIVES_COLLECTION,
   THEMES_COLLECTION,
-  tokenLiteral,
   TOKENS_COLLECTION,
 } from "./fuse-variable-set.ts";
 import type { CollectionSpec, VariableSet, VariableSpec, VariableValue } from "./variable-set.ts";
@@ -48,26 +47,23 @@ describe("fuseVariableSet", () => {
     }
   });
 
-  it("translates CSS values into Figma values", () => {
+  it("writes each kind's resolved literal in its Figma form", () => {
     // `#5c6773` in DEFAULTS is a hex literal, not oklch.
     expect(value(THEMES_COLLECTION, "light/sh-identifier", "internal-fkas-private")).toEqual({
       _tag: "Color",
       color: { r: 0x5c / 255, g: 0x67 / 255, b: 0x73 / 255, a: 1 },
     });
-    expect(value(THEMES_COLLECTION, "light/radius-button", "external-fkas-private")).toEqual({
-      _tag: "Float",
-      value: 29,
-    });
+    const mutedForeground = value(THEMES_COLLECTION, "light/muted-foreground", "external-fkas-private");
+    expect(mutedForeground?._tag === "Color" && mutedForeground.color.a).toBe(0.7);
+    expect(value(THEMES_COLLECTION, "light/radius-button", "external-fkas-private")).toEqual(px(29));
     expect(value(THEMES_COLLECTION, "light/font-heading", "external-fkas-private")).toEqual({
       _tag: "String",
       value: "Neo Sans",
     });
-    expect(value(THEMES_COLLECTION, "light/font-sans", "internal-elma-company")).toEqual({
-      _tag: "String",
-      value: "Roboto",
-    });
-    const mutedForeground = value(THEMES_COLLECTION, "light/muted-foreground", "external-fkas-private");
-    expect(mutedForeground?._tag === "Color" && mutedForeground.color.a).toBe(0.7);
+    expect(spec(TOKENS_COLLECTION, "primary")).toMatchObject({ type: "COLOR", scopes: ["ALL_SCOPES"] });
+    expect(spec(TOKENS_COLLECTION, "radius")).toMatchObject({ type: "FLOAT", scopes: ["CORNER_RADIUS"] });
+    expect(spec(TOKENS_COLLECTION, "radius-step")).toMatchObject({ type: "FLOAT", scopes: [] });
+    expect(spec(TOKENS_COLLECTION, "font-sans")).toMatchObject({ type: "STRING", scopes: ["ALL_SCOPES"] });
   });
 
   it("turns var() references into aliases in the same scheme or to primitives", () => {
@@ -96,9 +92,6 @@ describe("fuseVariableSet", () => {
     // fuse.css: --control-h-md is 2.25rem on :root and 2.75rem when comfortable.
     expect(value(DENSITY_COLLECTION, "control-h-md", "Dense")).toEqual(px(36));
     expect(value(DENSITY_COLLECTION, "control-h-md", "Comfortable")).toEqual(px(44));
-    expect(value(DENSITY_COLLECTION, "control-px-icon-xs", "Dense")).toEqual(px(6));
-    expect(value(DENSITY_COLLECTION, "control-px-icon-xs", "Comfortable")).toEqual(px(10));
-    expect(value(DENSITY_COLLECTION, "control-leading", "Comfortable")).toEqual(px(24));
     expect(spec(DENSITY_COLLECTION, "control-h-md")).toMatchObject({
       type: "FLOAT",
       scopes: ["WIDTH_HEIGHT"],
@@ -110,17 +103,9 @@ describe("fuseVariableSet", () => {
     expect(spec(DENSITY_COLLECTION, "control-leading")?.scopes).toEqual(["LINE_HEIGHT"]);
   });
 
-  it("computes the radius rungs per theme", () => {
+  it("writes each radius rung per theme in Fuse themes and aliases it from Fuse tokens", () => {
     // external-fkas-private sets --radius: 0.75rem, 12px, and external themes step 2px.
-    expect(value(THEMES_COLLECTION, "light/radius-md", "external-fkas-private")).toEqual(px(10));
     expect(value(THEMES_COLLECTION, "dark/radius-xl", "external-fkas-private")).toEqual(px(16));
-    // Internal themes keep the default 0.375rem, 6px, and step 0px, so every rung is 6px.
-    expect(value(THEMES_COLLECTION, "light/radius-md", "internal-elma-private")).toEqual(px(6));
-    expect(value(THEMES_COLLECTION, "light/radius-xs", "internal-elma-private")).toEqual(px(6));
-    expect(value(THEMES_COLLECTION, "light/radius-xl", "internal-elma-private")).toEqual(px(6));
-    // external-tkas-private sets 0.95rem, 15.2px, so radius-xs is 15.2 - 3 * 2.
-    const tkasXs = value(THEMES_COLLECTION, "light/radius-xs", "external-tkas-private");
-    expect(tkasXs?._tag === "Float" && tkasXs.value).toBeCloseTo(9.2, 9);
     expect(spec(THEMES_COLLECTION, "light/radius-md")).toMatchObject({ scopes: [], webSyntax: undefined });
     expect(value(TOKENS_COLLECTION, "radius-md", "Light")).toEqual({
       _tag: "Alias",
@@ -186,49 +171,5 @@ describe("web code syntax", () => {
       expect.arrayContaining(["primary", "brand-fkas", "radius", "radius-step", "control-h-md"])
     );
     expect(references.filter((reference) => !declared.has(reference.name))).toEqual([]);
-  });
-});
-
-describe("tokenLiteral", () => {
-  it.each([
-    [
-      "primary",
-      "color",
-      "oklch(0.5 0.1)",
-      'The Figma sync cannot read token "primary": Expected an oklch() color, received "oklch(0.5 0.1)".',
-    ],
-    [
-      "primary",
-      "color",
-      "rgb(1, 2, 3)",
-      'The Figma sync cannot read token "primary": Expected an oklch() color, received "rgb(1, 2, 3)".',
-    ],
-    [
-      "sh-keyword",
-      "color",
-      "#fff",
-      'The Figma sync cannot read token "sh-keyword": Expected a #rrggbb hex color, received "#fff".',
-    ],
-    [
-      "radius",
-      "dimension",
-      "12pt",
-      'The Figma sync cannot read token "radius": Expected a rem or px length, received "12pt".',
-    ],
-    [
-      "font-sans",
-      "fontFamily",
-      "var(--font-sans), serif",
-      'The Figma sync cannot read token "font-sans": Expected a font stack that starts with a named family, received "var(--font-sans), serif".',
-    ],
-  ] as const)("fails %s (%s) %s with the reader's message", (token, kind, css, message) => {
-    expect(tokenLiteral(token, kind, css)).toMatchObject({ _tag: "Failure", failure: { message } });
-  });
-
-  it("reads a hex color literal as its sRGB channels", () => {
-    expect(tokenLiteral("sh-identifier", "color", "#5c6773")).toMatchObject({
-      _tag: "Success",
-      success: { _tag: "Color", color: { r: 0x5c / 255, g: 0x67 / 255, b: 0x73 / 255, a: 1 } },
-    });
   });
 });

@@ -447,29 +447,7 @@ describe("exports map", () => {
       "src/theme/catalog.ts",
       readFileSync(join(packageRoot, "src/theme/catalog.ts"), "utf8")
     );
-    expect(catalog).toEqual([
-      "composeTheme",
-      "cssFirstFontFamily",
-      "cssLengthToPx",
-      "cssVarReference",
-      "remToPx",
-      "defaultDensityForVariant",
-      "densityAttributes",
-      "themeAttributes",
-      "readTokenColor",
-      "TOKEN_KINDS",
-      "TOKEN_NAMES",
-      "DENSITY_METRIC_FAMILIES",
-      "DENSITY_METRICS",
-      "PRIMITIVE_NAMES",
-      "PRIMITIVES",
-      "RADIUS_RUNG_NAMES",
-      "RADIUS_RUNGS",
-      "LEGAL_THEMES",
-      "themeSlug",
-    ]);
-    expect(catalog).not.toContain("ThemeProvider");
-    expect(catalog).not.toContain("ColorSchemeScript");
+    expect(catalog).toEqual(["resolveThemeCatalog"]);
   });
 
   it("publishes Button and buttonVariants from /button and the root barrel", () => {

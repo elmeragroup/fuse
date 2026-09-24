@@ -14,12 +14,12 @@
   },
   "dependencies": {
     "@effect/platform-node": "catalog:",
-    "@elmeragroup/color": "workspace:*",
     "@elmeragroup/fuse": "workspace:*",
     "effect": "catalog:"
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",
+    "@elmeragroup/color": "workspace:*",
     "@elmeragroup/typescript-config": "workspace:*",
     "@types/node": "catalog:",
     "typescript": "catalog:",
