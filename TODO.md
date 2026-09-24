@@ -62,6 +62,7 @@
 - When measured icon weight becomes a problem, reconsider Phosphor core code generation.
 - Revisit a source registry or separate playground when consumer demand or docs limitations justify it.
 - The docs DTCG export still emits light modes only; the Figma sync in `packages/fuse-figma`
-  writes both schemes. Retire the export once designers work from the synced variables.
+  writes both schemes. Retire the export after the first real Enterprise sync, once designers
+  work from the synced variables.
 
 OrderModule application migrations remain outside this repository's work.

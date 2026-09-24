@@ -27,6 +27,8 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
+import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
+import type { ResolvedThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 import type { ApiArtifactDiagnostic, GeneratedApiComponent } from "@elmeragroup/internal";
 
 import type { DocsComponent, DocsDemo, ThemeCatalog } from "../src/lib/docs-model.ts";
@@ -197,7 +199,7 @@ function emitThemeCatalog(catalog: ThemeCatalog): void {
 }
 
 /** Per-mode DTCG documents for native Figma import, inlined in one module. */
-function emitFigmaThemeCatalog(catalog: ThemeCatalog): void {
+function emitFigmaThemeCatalog(catalog: ResolvedThemeCatalog): void {
   writeFile(
     path.join(generatedDir, "theme-catalog-figma.ts"),
     `${BANNER}${renderFigmaThemeCatalog(catalog)}`
@@ -263,8 +265,8 @@ async function main(): Promise<void> {
   emitApiDrift(generated.artifacts.values());
   emitBundleSizes(sizes);
   emitTokenReference(colors);
-  const catalog = buildThemeCatalog();
-  emitThemeCatalog(catalog);
+  const catalog = resolveThemeCatalog();
+  emitThemeCatalog(buildThemeCatalog(catalog));
   emitFigmaThemeCatalog(catalog);
   emitMarkdownEndpoints(components);
   emitSearchIndex(components);

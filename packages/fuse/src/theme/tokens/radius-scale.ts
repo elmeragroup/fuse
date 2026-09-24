@@ -2,8 +2,9 @@
  * The radius rungs `fuse.css` derives from the theme's `--radius` and `--radius-step` in its
  * `@theme` block, such as `--radius-md: calc(var(--radius) - var(--radius-step))`. The CSS
  * keeps the arithmetic. Themes set only `--radius`, and the variant sets `--radius-step`.
- * Tooling without `calc()`, such as the Figma sync, reads the step counts and CSS values
- * here, and `radius-scale-css.test.ts` requires `fuse.css` to declare exactly these values.
+ * The resolved theme catalog reads the step counts here to compute each rung in px for
+ * tooling without `calc()`, and `radius-scale-css.test.ts` requires `fuse.css` to declare
+ * exactly these CSS values.
  */
 
 /** The derived radius custom properties, without their leading dashes, in `fuse.css` order. */
@@ -33,14 +34,33 @@ type RadiusRung = {
 };
 
 /**
- * Each rung's step count and CSS value. External themes step 2px, and the internal variant
+ * The CSS a rung `steps` lengths from `--radius` declares, written the way `fuse.css` writes
+ * it: no `calc()` at zero, and no count for a single step.
+ */
+function rungCss(steps: number): string {
+  if (steps === 0) {
+    return "var(--radius)";
+  }
+  const count = Math.abs(steps);
+  const stepLength = count === 1 ? "var(--radius-step)" : `${String(count)} * var(--radius-step)`;
+  return `calc(var(--radius) ${steps < 0 ? "-" : "+"} ${stepLength})`;
+}
+
+/** A rung `steps` lengths from `--radius`, with the CSS value built from that count. */
+function rung(steps: number): RadiusRung {
+  return { steps, css: rungCss(steps) };
+}
+
+/**
+ * Each rung's step count and CSS value. The CSS is built from the count, so the arithmetic
+ * and the declared value cannot disagree. External themes step 2px, and the internal variant
  * steps 0px, so every internal rung equals `--radius`.
  */
 export const RADIUS_RUNGS = {
-  "radius-xs": { steps: -3, css: "calc(var(--radius) - 3 * var(--radius-step))" },
-  "radius-sm": { steps: -2, css: "calc(var(--radius) - 2 * var(--radius-step))" },
-  "radius-md": { steps: -1, css: "calc(var(--radius) - var(--radius-step))" },
-  "radius-lg": { steps: 0, css: "var(--radius)" },
-  "radius-xl": { steps: 2, css: "calc(var(--radius) + 2 * var(--radius-step))" },
-  "radius-popover": { steps: -4, css: "calc(var(--radius) - 4 * var(--radius-step))" },
+  "radius-xs": rung(-3),
+  "radius-sm": rung(-2),
+  "radius-md": rung(-1),
+  "radius-lg": rung(0),
+  "radius-xl": rung(2),
+  "radius-popover": rung(-4),
 } as const satisfies Record<RadiusRungName, RadiusRung>;

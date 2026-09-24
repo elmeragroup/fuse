@@ -1,25 +1,24 @@
 /**
- * DTCG JSON projected from the theme catalog for native Figma import.
+ * DTCG JSON projected from the resolved theme catalog for native Figma import.
  *
- * One file is one Figma mode. Colors are sRGB; dimensions are px; CSS var() becomes
- * `{group.name}` aliases. Conversion stays here; the generation pass writes one module
- * that inlines every document (`FIGMA_THEME_FILES`), and the routes serve from it — there
- * is no second, per-slug JSON serialisation.
+ * One file is one Figma mode. Colors are sRGB rounded to 1e-6; dimensions are px; a
+ * reference becomes a `{group.name}` alias. The DTCG vocabulary stays here, and the catalog
+ * owns every CSS reading. The generation pass writes one module that inlines every document
+ * (`FIGMA_THEME_FILES`), and the routes serve from it — there is no second, per-slug JSON
+ * serialisation.
  */
 
-import * as CssColor from "@elmeragroup/color/css-color";
 import * as Hex from "@elmeragroup/color/hex";
 import { getOrThrow } from "@elmeragroup/color/result";
 import * as Srgb from "@elmeragroup/color/srgb";
-import {
-  cssFirstFontFamily,
-  cssLengthToPx,
-  cssVarReference,
-  PRIMITIVE_NAMES,
-  readTokenColor,
-  TOKEN_KINDS,
+import type {
+  PrimitiveEntry,
+  Reference,
+  ResolvedScheme,
+  ResolvedThemeCatalog,
+  TokenEntry,
+  TokenKind,
 } from "@elmeragroup/fuse/theme-catalog";
-import type { TokenKind } from "@elmeragroup/fuse/theme-catalog";
 
 import type {
   FigmaColorToken,
@@ -28,14 +27,9 @@ import type {
   FigmaSrgbColor,
   FigmaThemeDocument,
   FigmaThemeIndex,
-  ThemeCatalog,
-  ThemeCatalogEntry,
-  ThemeCatalogTokenMap,
 } from "../../src/lib/docs-model.ts";
 
 type DtcgGroup = "color" | "size" | "font";
-
-type DtcgSlot = { group: DtcgGroup; key: string };
 
 const DTCG_GROUPS = {
   color: "color",
@@ -43,80 +37,33 @@ const DTCG_GROUPS = {
   fontFamily: "font",
 } as const satisfies Record<TokenKind, DtcgGroup>;
 
-// Every primitive is a color.
-const KINDS: ReadonlyMap<string, TokenKind> = new Map<string, TokenKind>([
-  ...PRIMITIVE_NAMES.map((name) => [name, "color"] as const),
-  ...Object.entries(TOKEN_KINDS),
-]);
+type DtcgAlias = `{${string}}`;
 
-function dtcgSlot(name: string): DtcgSlot {
-  const kind = KINDS.get(name);
-  if (kind === undefined) {
-    throw new Error(`Expected a Fuse token or primitive name, received: ${name}`);
-  }
-  // Font tokens sit in the font group without their prefix, as `font.sans`.
-  const key = kind === "fontFamily" ? name.replace(/^font-/, "") : name;
-  return { group: DTCG_GROUPS[kind], key };
+/** A name's key in its kind's group. Font tokens drop their prefix, as `font.sans`. */
+function dtcgKey(kind: TokenKind, name: string): string {
+  return kind === "fontFamily" ? name.replace(/^font-/, "") : name;
 }
 
-/** Round each channel to 1e-6. Rounding keeps a channel inside `0..1`, so `make` accepts it. */
-function roundedSrgb(color: Srgb.Srgb): Srgb.Srgb {
-  const round = (channel: number) => Math.round(channel * 1_000_000) / 1_000_000;
-  return getOrThrow(
-    Srgb.make({ r: round(color.r), g: round(color.g), b: round(color.b), alpha: color.alpha })
-  );
-}
-
-function aliasOf(tokenName: string): `{${string}}` {
-  const slot = dtcgSlot(tokenName);
-  return `{${slot.group}.${slot.key}}`;
-}
-
-function dimensionFromCss(css: string): FigmaDimensionToken["$value"] {
-  const px = cssLengthToPx(css);
-  if (px === undefined) {
-    throw new Error(`Expected a rem or px dimension, received: ${css}`);
-  }
-  return { value: px, unit: "px" };
+/** The DTCG alias of a reference. A reference target has the same kind as the entry holding it. */
+function aliasOf(kind: TokenKind, reference: Reference): DtcgAlias {
+  return `{${DTCG_GROUPS[kind]}.${dtcgKey(kind, reference.name)}}`;
 }
 
 /**
- * A token value that is not an `oklch()` or hex color is a defect in the theme catalog, so it
- * throws. `hex` is built from the rounded `components`, so the two fields always agree.
+ * Round each channel to 1e-6. Rounding keeps a channel inside `0..1`, so `make` accepts it.
+ * `hex` is built from the rounded `components`, so the two fields always agree.
  */
-function colorFromCss(css: string): FigmaColorToken["$value"] {
-  const srgb = roundedSrgb(CssColor.toSrgb(getOrThrow(readTokenColor(css))));
-  const color: FigmaSrgbColor = {
+function dtcgColor(color: Srgb.Srgb): FigmaSrgbColor {
+  const round = (channel: number) => Math.round(channel * 1_000_000) / 1_000_000;
+  const srgb = getOrThrow(
+    Srgb.make({ r: round(color.r), g: round(color.g), b: round(color.b), alpha: color.alpha })
+  );
+  return {
     colorSpace: "srgb",
     components: [srgb.r, srgb.g, srgb.b],
     alpha: srgb.alpha,
     hex: Hex.formatOpaque(srgb),
   };
-  return color;
-}
-
-function fontFamilyFromCss(css: string): string {
-  const family = cssFirstFontFamily(css);
-  if (family === undefined) {
-    throw new Error(`Expected a font stack that starts with a named family, received: ${css}`);
-  }
-  return family;
-}
-
-/**
- * The DTCG value for one role. A `var(--role)` value becomes an alias of that role's slot,
- * and any other value goes through the parser for its token type.
- */
-function valueOrAlias<Value>(css: string, parse: (css: string) => Value): Value | `{${string}}` {
-  const referenced = cssVarReference(css);
-  return referenced === undefined ? parse(css) : aliasOf(referenced);
-}
-
-function cssTokenName(cssKey: string): string {
-  if (!cssKey.startsWith("--")) {
-    throw new Error(`Expected a --custom-property key, received: ${cssKey}`);
-  }
-  return cssKey.slice(2);
 }
 
 type DtcgGroups = {
@@ -125,33 +72,41 @@ type DtcgGroups = {
   font: Record<string, FigmaFontToken>;
 };
 
-function emitToken(groups: DtcgGroups, name: string, css: string): void {
-  const slot = dtcgSlot(name);
-  if (slot.group === "font") {
-    groups.font[slot.key] = { $type: "fontFamily", $value: valueOrAlias(css, fontFamilyFromCss) };
-    return;
-  }
-  if (slot.group === "size") {
-    groups.size[slot.key] = { $type: "dimension", $value: valueOrAlias(css, dimensionFromCss) };
-    return;
-  }
-  groups.color[slot.key] = { $type: "color", $value: valueOrAlias(css, colorFromCss) };
-}
-
-function emitCssMap(groups: DtcgGroups, map: ThemeCatalogTokenMap): void {
-  for (const [cssKey, css] of Object.entries(map)) {
-    emitToken(groups, cssTokenName(cssKey), css);
+/** Write one entry into its kind's group: an alias for a reference, else its literal. */
+function emitEntry(groups: DtcgGroups, entry: PrimitiveEntry | TokenEntry): void {
+  const key = dtcgKey(entry.kind, entry.name);
+  const alias = entry.reference === undefined ? undefined : aliasOf(entry.kind, entry.reference);
+  switch (entry.kind) {
+    case "color":
+      groups.color[key] = { $type: "color", $value: alias ?? dtcgColor(entry.value) };
+      return;
+    case "dimension":
+      groups.size[key] = { $type: "dimension", $value: alias ?? { value: entry.value, unit: "px" } };
+      return;
+    case "fontFamily":
+      groups.font[key] = { $type: "fontFamily", $value: alias ?? entry.value };
+      return;
   }
 }
 
-/** One DTCG document projected from a catalog row; primitives are inlined. */
-export function figmaDocumentFromCatalog(
-  entry: ThemeCatalogEntry,
-  primitives: ThemeCatalogTokenMap
+/**
+ * One DTCG document for one theme's scheme; primitives are inlined first.
+ *
+ * @param scheme - The theme's resolved tokens in one color scheme.
+ * @param primitives - The catalog's primitives.
+ * @returns The document Figma's native importer reads as one mode.
+ */
+export function figmaDocumentFromScheme(
+  scheme: ResolvedScheme,
+  primitives: ResolvedThemeCatalog["primitives"]
 ): FigmaThemeDocument {
   const groups: DtcgGroups = { color: {}, size: {}, font: {} };
-  emitCssMap(groups, primitives);
-  emitCssMap(groups, entry.tokens);
+  for (const entry of Object.values(primitives)) {
+    emitEntry(groups, entry);
+  }
+  for (const entry of Object.values(scheme.tokens)) {
+    emitEntry(groups, entry);
+  }
   return {
     color: { $type: "color", ...groups.color },
     size: { $type: "dimension", ...groups.size },
@@ -159,7 +114,13 @@ export function figmaDocumentFromCatalog(
   };
 }
 
-export function buildFigmaThemeIndex(catalog: ThemeCatalog): FigmaThemeIndex {
+/**
+ * The index of per-mode files, one per legal theme.
+ *
+ * @param catalog - The resolved theme catalog.
+ * @returns The `/api/themes/figma` payload.
+ */
+export function buildFigmaThemeIndex(catalog: ResolvedThemeCatalog): FigmaThemeIndex {
   return {
     format: "figma",
     files: catalog.themes.map((theme) => ({
@@ -169,11 +130,16 @@ export function buildFigmaThemeIndex(catalog: ThemeCatalog): FigmaThemeIndex {
   };
 }
 
-/** The generated module the `/api/themes/figma` routes import. */
-export function renderFigmaThemeCatalog(catalog: ThemeCatalog): string {
+/**
+ * The generated module the `/api/themes/figma` routes import. The export writes light modes only.
+ *
+ * @param catalog - The resolved theme catalog.
+ * @returns The module source.
+ */
+export function renderFigmaThemeCatalog(catalog: ResolvedThemeCatalog): string {
   const files = catalog.themes
     .map((theme) => {
-      const document = figmaDocumentFromCatalog(theme, catalog.primitives);
+      const document = figmaDocumentFromScheme(theme.schemes.light, catalog.primitives);
       return `  "${theme.slug}": ${JSON.stringify(document)}`;
     })
     .join(",\n");
