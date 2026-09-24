@@ -102,7 +102,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Applies `opacity-75` on the card and `disabled` on the checkbox primitive. Primitive `disabled` is omitted from the pass-through.",
+          "description": "Dims the card with the shared disabled look (50% opacity, `not-allowed` cursor) and sets `disabled` on the checkbox primitive. Primitive `disabled` is omitted from the pass-through.",
           "required": false
         },
         {

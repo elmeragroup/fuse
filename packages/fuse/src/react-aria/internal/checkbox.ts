@@ -1,5 +1,7 @@
 import { tv } from "tailwind-variants";
 
+import { cn } from "../../styles/cn";
+import { racInvalidStateFaceClass } from "../../styles/state-face";
 import { stateFocusRingClass, stateFocusRingVisibleClass } from "../../styles/utils";
 
 /**
@@ -12,6 +14,10 @@ import { stateFocusRingClass, stateFocusRingVisibleClass } from "../../styles/ut
  * The box is a decorative glyph, not a control box, so it is outside the density
  * ladder and keeps its optical `size-4.5`. There is no `variant` axis: the one
  * consumer renders `<Checkbox slot="selection" />` with no variant.
+ *
+ * The invalid box takes the rac-target invalid state face on top of the error fill. A
+ * disabled box is a part of its disabled row, so like the row it keeps the muted colours
+ * instead of the whole-control dim.
  */
 export const checkboxVariants = tv({
   slots: {
@@ -40,7 +46,10 @@ export const checkboxVariants = tv({
     },
     isInvalid: {
       true: {
-        box: "[--checkbox-color:var(--error)] forced-colors:[--checkbox-color:Mark]!",
+        box: cn(
+          racInvalidStateFaceClass,
+          "[--checkbox-color:var(--error)] forced-colors:[--checkbox-color:Mark]!"
+        ),
       },
       false: {},
     },

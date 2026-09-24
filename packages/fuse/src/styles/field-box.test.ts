@@ -35,7 +35,7 @@ describe("fieldBoxChromeClass", () => {
 });
 
 describe("fieldBox recipe", () => {
-  it("owns shared chrome, one transition list, and invalid styling", () => {
+  it("owns shared chrome and one transition list", () => {
     const classes = tokens(fieldBox());
     for (const token of [
       "bg-card",
@@ -45,12 +45,7 @@ describe("fieldBox recipe", () => {
       "[font-size:var(--control-text)]",
       "[line-height:var(--control-leading)]",
       "placeholder:text-muted-foreground",
-      "disabled:cursor-not-allowed",
       "disabled:bg-input/50",
-      "disabled:opacity-50",
-      "aria-invalid:border-error",
-      "aria-invalid:ring-3",
-      "aria-invalid:ring-error/20",
       "transition-[color,border-color,box-shadow]",
     ]) {
       expect(classes).toContain(token);

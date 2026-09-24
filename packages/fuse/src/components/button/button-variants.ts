@@ -1,14 +1,15 @@
 import { tv } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import { dataStateFaceClass, nativeStateFaceClass } from "../../styles/state-face";
 import { selfFocusRingClass } from "../../styles/utils";
 
 // Runtime-free recipe so other components can borrow it without Button's client graph.
-// The disabled dim has two keys. `disabled:` covers a native <button> that borrows the
-// recipe, and `data-disabled:` covers Base UI roots that never match `:disabled`, such as
-// `render={<a />}` or `focusableWhenDisabled`. Only the native key drops pointer events.
-// `focusableWhenDisabled` exists to keep the button reachable, so a Tooltip on it must
-// still open on hover, and Base UI already cancels clicks on a disabled non-native root.
+// The state face composes two targets. `native` covers a native <button> that borrows
+// the recipe, and `data` covers Base UI roots that never match `:disabled`, such as
+// `render={<a />}` or `focusableWhenDisabled`. Both carry the `aria-disabled` arm, which
+// covers `isVisuallyDisabled` and a consumer's own `aria-disabled`. No target drops pointer events, so a Tooltip on a
+// disabled button still opens, and Base UI already cancels clicks on a disabled root.
 // Hover and press styles use the `enabled-hover:` and `enabled-active:` variants from
 // fuse.css, so a disabled root never changes fill, border, text or position under the
 // pointer. `aria-expanded:` follows an open popup, not the pointer, so it has no gate.
@@ -20,8 +21,10 @@ import { selfFocusRingClass } from "../../styles/utils";
 // rounds like a field, and a pill button would bulge out of that outline.
 export const buttonVariants = tv({
   base: cn(
-    "group/button font-medium box-border inline-flex shrink-0 items-center justify-center rounded-(--radius-button) border border-transparent bg-clip-padding p-0 whitespace-nowrap transition-[color,background-color,border-color,box-shadow,translate,opacity] select-none disabled:pointer-events-none disabled:opacity-50 in-data-[slot=button-group]:rounded-md aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20 data-disabled:opacity-50 enabled-active:not-aria-[haspopup]:translate-y-px [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-    selfFocusRingClass
+    "group/button font-medium box-border inline-flex shrink-0 items-center justify-center rounded-(--radius-button) border border-transparent bg-clip-padding p-0 whitespace-nowrap transition-[color,background-color,border-color,box-shadow,translate,opacity] select-none in-data-[slot=button-group]:rounded-md enabled-active:not-aria-[haspopup]:translate-y-px [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+    selfFocusRingClass,
+    nativeStateFaceClass,
+    dataStateFaceClass
   ),
   variants: {
     variant: {

@@ -18,6 +18,7 @@ import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import { compactCornerClass } from "../../styles/corner-radius";
 import { mergeClassName } from "../../styles/merge-class-name";
+import { withinStateFaceClass, withinStateFaceControlClass } from "../../styles/state-face";
 import { withinFocusRingClass, withinFocusRingControlClass } from "../../styles/utils";
 import { Button } from "../button/button";
 import { InputGroup } from "../input-group/input-group";
@@ -337,8 +338,9 @@ function ComboboxChips({
         // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- chip wrap gap and compact chip padding are layout, not a control rung
         className={mergeClassName(
           className,
-          "text-sm shadow-xs flex min-h-(--control-h-md) flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent bg-clip-padding px-(--control-px-md) py-1.5 transition-[color,box-shadow] has-aria-invalid:border-error has-aria-invalid:ring-3 has-aria-invalid:ring-error/20 has-data-[slot=combobox-chip]:px-1.5",
-          withinFocusRingClass
+          "text-sm shadow-xs flex min-h-(--control-h-md) flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent bg-clip-padding px-(--control-px-md) py-1.5 transition-[color,box-shadow] has-data-[slot=combobox-chip]:px-1.5",
+          withinFocusRingClass,
+          withinStateFaceClass
         )}
         {...props}
       />
@@ -403,7 +405,7 @@ function ComboboxChip({
       // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- chip chrome is compact token, not a control rung
       className={mergeClassName(
         className,
-        "text-xs font-medium flex h-[calc(--spacing(5.5))] w-fit items-center justify-center gap-1 rounded-sm bg-muted px-1.5 whitespace-nowrap text-foreground has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-50 has-data-[slot=combobox-chip-remove]:pr-0"
+        "text-xs font-medium flex h-[calc(--spacing(5.5))] w-fit items-center justify-center gap-1 rounded-sm bg-muted px-1.5 whitespace-nowrap text-foreground has-data-[slot=combobox-chip-remove]:pr-0"
       )}
       {...props}>
       {children}
@@ -444,7 +446,7 @@ function ComboboxChipRemove({ label }: { label: string }): ReactElement {
       render={<Button variant="ghost" size="icon-sm" aria-label={label} />}
       // The remove button sits inside a chip in the field box, so it takes the compact
       // corner instead of Button's `--radius-button`.
-      className={cn("-ml-1 opacity-50 hover:opacity-100", compactCornerClass)}
+      className={cn("-ml-1 opacity-50 enabled-hover:opacity-100", compactCornerClass)}
       aria-label={label}>
       <X className="pointer-events-none" />
     </ComboboxPrimitive.ChipRemove>
@@ -459,8 +461,16 @@ function ComboboxChipsInput({
     <ComboboxPrimitive.Input
       data-slot="combobox-chip-input"
       data-focus-ring-control=""
+      // The input carries no dim or ring of its own, so it needs no state-face control half:
+      // the chips box keys its face off this `data-focus-ring-control` input directly.
       // oxlint-disable-next-line elmera/no-local-focus-ring -- within-adapter control outline
-      className={mergeClassName(className, "min-w-16 flex-1 outline-none", withinFocusRingControlClass)}
+      className={mergeClassName(
+        className,
+        // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; ring comes from the shared within adapter
+        "min-w-16 flex-1 outline-none",
+        withinFocusRingControlClass,
+        withinStateFaceControlClass
+      )}
       {...props}
     />
   );

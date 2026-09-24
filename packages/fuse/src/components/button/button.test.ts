@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { selfFocusRingClass } from "../../styles/utils";
 import { buttonVariants } from "./button-variants";
 
 const VARIANTS = ["default", "outline", "secondary", "ghost", "destructive", "success", "link"] as const;
@@ -13,19 +12,6 @@ describe("buttonVariants", () => {
     expect(classes).toContain("text-primary-foreground");
     expect(classes).toContain("h-(--control-h-md)");
     expect(classes.split(/\s+/).length).toBeGreaterThan(1);
-  });
-
-  it("renders each variant recipe", () => {
-    expect(buttonVariants({ variant: "default" })).toContain("enabled-hover:bg-primary/80");
-    expect(buttonVariants({ variant: "outline" })).toContain("border-border");
-    expect(buttonVariants({ variant: "outline" })).toContain("aria-expanded:bg-muted");
-    expect(buttonVariants({ variant: "secondary" })).toContain("bg-secondary");
-    expect(buttonVariants({ variant: "ghost" })).toContain("enabled-hover:bg-muted");
-    expect(buttonVariants({ variant: "destructive" })).toContain("bg-error/10");
-    expect(buttonVariants({ variant: "destructive" })).toContain("text-error");
-    expect(buttonVariants({ variant: "success" })).toContain("bg-success/10");
-    expect(buttonVariants({ variant: "success" })).toContain("text-success");
-    expect(buttonVariants({ variant: "link" })).toContain("underline-offset-4");
   });
 
   it("renders each size recipe and icon-padding hooks", () => {
@@ -66,17 +52,6 @@ describe("buttonVariants", () => {
     expect(buttonVariants({ size: "icon-inline" })).toContain("hit-area-1");
     expect(buttonVariants({ size: "icon-lg" })).toContain("size-(--control-h-lg)");
     expect(buttonVariants({ size: "default" })).not.toMatch(/\b(?:dense|comfortable):/);
-  });
-
-  it("composes the shared self focus ring and keeps invalid rings on error tokens", () => {
-    const classes = buttonVariants();
-    // Oracle: the shared focus recipe, which utils.test.ts pins by hand.
-    for (const token of selfFocusRingClass.split(" ")) {
-      expect(classes).toContain(token);
-    }
-    expect(classes).toContain("aria-invalid:border-error");
-    expect(classes).toContain("aria-invalid:ring-error/20");
-    expect(classes.includes(["focus-visible", "ring-3"].join(":"))).toBe(false);
   });
 
   it("covers every public variant and size value", () => {

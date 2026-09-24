@@ -21,10 +21,13 @@ type ButtonSharedProps = ButtonPrimitiveProps &
     /** Extra classes, merged last through `cn`. */
     className?: string;
     /**
-     * Renders the disabled treatment (`opacity-70`), stamps `aria-disabled` (an explicit
-     * consumer value wins), and suppresses focus-on-press while the button stays fully
-     * interactive — click, keyboard and focus-visible all still work. For "looks disabled
-     * but explains itself on activation" flows.
+     * Stamps `aria-disabled` (an explicit consumer value wins), which renders the disabled
+     * treatment (`opacity-50`, the `not-allowed` cursor, no hover or press paint), and
+     * suppresses focus-on-press while the button stays fully interactive — click, keyboard
+     * and focus-visible all still work, and a Tooltip on it still opens. For "looks
+     * disabled but explains itself on activation" flows. The treatment keys off
+     * `aria-disabled`, so an explicit `aria-disabled={false}` also turns it off: the button
+     * then looks and announces enabled and only the focus-on-press suppression remains.
      */
     isVisuallyDisabled?: boolean;
     /**
@@ -80,7 +83,7 @@ export function Button({
       // Announced as unavailable without being disabled: the button still activates so
       // the flow that explains itself can run. An explicit consumer value wins.
       aria-disabled={isVisuallyDisabled || undefined}
-      className={cn(buttonVariants({ variant, size }), isVisuallyDisabled && "opacity-70", className)}
+      className={cn(buttonVariants({ variant, size }), className)}
       onMouseDown={(event) => {
         if (isVisuallyDisabled) {
           event.preventDefault();

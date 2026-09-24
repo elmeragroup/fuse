@@ -6,11 +6,16 @@
  * Height on `content` is the approved layout exception, owned once by the shared
  * `panelHeightTransition` constant (`styles/panel-height.ts`) against base-ui's
  * `--accordion-panel-height` — not a control-box rung.
+ *
+ * The trigger is a native button that Base UI also marks `data-disabled`, and a consumer may
+ * announce it `aria-disabled`, so it composes the `native` and `data` state faces (both
+ * carry the `aria-disabled` arm) and gates its hover underline behind `enabled-hover:`.
  */
 import { tv } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
 import { panelHeightTransition } from "../../styles/panel-height";
+import { dataStateFaceClass, nativeStateFaceClass } from "../../styles/state-face";
 import { selfFocusRingClass } from "../../styles/utils";
 
 export const accordionVariants = tv({
@@ -19,8 +24,10 @@ export const accordionVariants = tv({
     item: "p-4",
     header: "flex",
     trigger: cn(
-      "group/accordion-trigger font-medium flex flex-1 cursor-pointer items-center justify-between gap-2 hover:underline data-[panel-open]:pb-4",
-      selfFocusRingClass
+      "group/accordion-trigger font-medium flex flex-1 cursor-pointer items-center justify-between gap-2 data-[panel-open]:pb-4 enabled-hover:underline",
+      selfFocusRingClass,
+      nativeStateFaceClass,
+      dataStateFaceClass
     ),
     icon: "size-4 shrink-0 text-foreground transition-transform duration-200 group-data-[panel-open]/accordion-trigger:rotate-180",
     content: cn(panelHeightTransition, "h-(--accordion-panel-height)"),

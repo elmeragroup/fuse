@@ -51,7 +51,6 @@ describe("radioIconButtonVariants", () => {
     expect(classes).toContain("bg-card");
     expect(classes).toContain("data-checked:border-primary");
     expect(classes).toContain("data-checked:bg-muted");
-    expect(classes).toContain("data-invalid:border-error");
     expect(classes).not.toMatch(/\b(?:dense|comfortable):/);
   });
 

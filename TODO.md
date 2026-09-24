@@ -25,6 +25,8 @@
   upgrade and remove prerelease exclusions unless another exception is justified.
 - Retire repo-policy workarounds when upstream lint can require disable reasons
   and configure the focus-ring owner path.
+- Replace the `state faces` source contract with `elmera/no-local-state-face` once the
+  upstream plugin ships it with a configurable owner path and per-check allow lists.
 
 ## Figma token sync
 

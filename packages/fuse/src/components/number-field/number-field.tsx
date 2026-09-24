@@ -13,6 +13,7 @@ import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import { controlInsetMdClass } from "../../styles/control-inset";
 import { numberFieldGroupClass } from "../../styles/field-box";
+import { withinStateFaceControlClass } from "../../styles/state-face";
 import { withinFocusRingControlClass } from "../../styles/utils";
 import { FieldFrame } from "../field/field-frame";
 import { numberFieldStrings } from "./intl";
@@ -74,8 +75,12 @@ export type NumberFieldProps = {
   id?: string;
 };
 
+// A stepper is a part of the NumberField control, not a whole control: the group's
+// within-target state face dims the disabled field once, steppers included. A stepper
+// disabled on its own at a bound keeps the part look, a muted fill and caret with the
+// `not-allowed` cursor, and its hover fill sits behind the `enabled-hover:` gate.
 const stepperButton = cn(
-  "box-border flex flex-1 cursor-default items-center justify-center border-0 bg-background px-0.5 py-0 text-foreground transition-colors hover:bg-muted disabled:bg-muted disabled:opacity-50"
+  "box-border flex flex-1 cursor-default items-center justify-center border-0 bg-background px-0.5 py-0 text-foreground transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground enabled-hover:bg-muted"
 );
 
 /**
@@ -160,7 +165,8 @@ export function NumberField({
             className={cn(
               "box-border h-full w-full min-w-0 flex-1 border-0 bg-transparent py-0 tabular-nums",
               controlInsetMdClass,
-              withinFocusRingControlClass
+              withinFocusRingControlClass,
+              withinStateFaceControlClass
             )}
           />
           {denomination ? (

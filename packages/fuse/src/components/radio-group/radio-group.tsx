@@ -9,6 +9,7 @@ import type { VariantProps } from "tailwind-variants";
 
 import { SpinnerGap } from "../../icons/generated/spinner-gap";
 import { cn } from "../../styles/cn";
+import { dataStateFaceClass } from "../../styles/state-face";
 import { selfFocusRingClass } from "../../styles/utils";
 import { Field } from "../field/field";
 import { FieldFrame } from "../field/field-frame";
@@ -31,11 +32,14 @@ export function RadioGroupItem({
       data-slot="radio-group-item"
       className={(state) =>
         cn(
-          // The root is a <span>, which never matches `:disabled`, so the disabled dim keys
-          // off Base UI's `data-disabled` state attribute.
+          // The root is a <span>, which never matches `:disabled`, so the state face keys off
+          // Base UI's `data-disabled` and `data-invalid` attributes, plus a consumer's
+          // `aria-invalid`. A checked invalid radio keeps its primary border beside the ring.
           // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; ring comes from the shared adapter
-          "group/radio-group-item peer relative flex aspect-square size-4 shrink-0 rounded-full border border-input transition-[color,box-shadow] outline-none after:absolute after:-inset-x-3 after:-inset-y-2 after:content-[''] aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20 aria-invalid:aria-checked:border-primary data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground data-disabled:cursor-not-allowed data-disabled:opacity-50",
+          "group/radio-group-item peer relative flex aspect-square size-4 shrink-0 rounded-full border border-input transition-[color,box-shadow] outline-none after:absolute after:-inset-x-3 after:-inset-y-2 after:content-[''] data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground",
           selfFocusRingClass,
+          dataStateFaceClass,
+          "aria-invalid:aria-checked:border-primary data-invalid:aria-checked:border-primary",
           className instanceof Function ? className(state) : className
         )
       }

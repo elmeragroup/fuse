@@ -5,6 +5,7 @@ import type { ComponentProps, ReactElement } from "react";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import { withinStateFaceClass, withinStateFaceControlClass } from "../../styles/state-face";
 import { withinFocusRingClass, withinFocusRingControlClass } from "../../styles/utils";
 import { Button } from "../button/button";
 import { Input } from "../input/input";
@@ -49,13 +50,14 @@ export type InputGroupInputProps = ComponentProps<"input">;
 export type InputGroupTextareaProps = ComponentProps<"textarea">;
 
 /**
- * Chrome stripped off the embedded control: the Root owns border, radius, shadow, and rings, so the control
- * contributes nothing but its own box. The focus-visible neutralization comes
- * from the shared `focusRing` adapter, never a local literal.
+ * Chrome stripped off the embedded control: the Root owns border, radius, shadow, rings and
+ * the disabled dim, so the control contributes nothing but its own box. The focus-visible
+ * and state-face neutralizations come from the shared within adapters, never a local literal.
  */
 const CONTROL_CHROME = cn(
-  "flex-1 rounded-none border-0 bg-transparent shadow-none ring-0 disabled:bg-transparent aria-invalid:ring-0",
-  withinFocusRingControlClass
+  "flex-1 rounded-none border-0 bg-transparent shadow-none ring-0 disabled:bg-transparent",
+  withinFocusRingControlClass,
+  withinStateFaceControlClass
 );
 
 function InputGroupRoot({ className, ...props }: InputGroupRootProps): ReactElement {
@@ -66,9 +68,9 @@ function InputGroupRoot({ className, ...props }: InputGroupRootProps): ReactElem
       className={cn(
         // Single-height field box: pins the `md` control rung; block addons and textareas grow instead.
         "group/input-group shadow-xs relative box-border flex h-(--control-h-md) w-full min-w-0 items-center rounded-md border border-input transition-[color,border-color,box-shadow]",
-        "has-[[data-slot=input-group-control]:disabled]:bg-input/50 has-[[data-slot=input-group-control]:disabled]:opacity-50",
-        "has-[[data-slot=input-group-control]:focus-visible]:border-ring",
-        "has-[[data-slot][aria-invalid=true]]:border-error has-[[data-slot][aria-invalid=true]]:ring-3 has-[[data-slot][aria-invalid=true]]:ring-error/20",
+        "has-[[data-focus-ring-control]:disabled]:bg-input/50",
+        "has-[[data-focus-ring-control]:focus-visible]:border-ring",
+        withinStateFaceClass,
         "has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>textarea]:h-auto",
         "has-[>[data-align=block-end]]:[&>input]:pt-3 has-[>[data-align=block-start]]:[&>input]:pb-3 has-[>[data-align=inline-end]]:[&>input]:pr-1.5 has-[>[data-align=inline-start]]:[&>input]:pl-1.5",
         withinFocusRingClass,

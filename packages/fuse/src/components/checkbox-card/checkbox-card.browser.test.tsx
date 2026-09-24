@@ -162,7 +162,7 @@ describe("CheckboxCard", () => {
     const disabled = cardSurface("Disabled plan");
     expect(getComputedStyle(insurance).backgroundColor).toBe(cssVarColor(insurance, "--card"));
     expect(getComputedStyle(muted).backgroundColor).toBe(cssVarColor(muted, "--muted"));
-    expect(getComputedStyle(disabled).opacity).toBe("0.75");
+    expect(getComputedStyle(disabled).opacity).toBe("0.5");
   });
 
   it("crossfades the indicator icons with checked state", async () => {

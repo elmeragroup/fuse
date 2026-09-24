@@ -11,6 +11,7 @@ import { isTextNode } from "../../internal/is-text-node";
 import { cn } from "../../styles/cn";
 import { checkboxCornerClass } from "../../styles/corner-radius";
 import { mergeClassName } from "../../styles/merge-class-name";
+import { dataStateFaceClass } from "../../styles/state-face";
 import { selfFocusRingClass } from "../../styles/utils";
 import { FieldFrame } from "../field/field-frame";
 import { SelectionGroupLayout, SelectionItem, SelectionItemGroup } from "../selection-item/selection-item";
@@ -33,12 +34,15 @@ export function Checkbox({
       data-slot="checkbox"
       className={mergeClassName(
         className,
-        // The root is a <span>, which never matches `:disabled`, so the disabled dim keys off
-        // Base UI's `data-disabled` state attribute.
+        // The root is a <span>, which never matches `:disabled`, so the state face keys off
+        // Base UI's `data-disabled` and `data-invalid` attributes, plus a consumer's
+        // `aria-invalid`. A checked invalid box keeps its primary border beside the ring.
         // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; ring comes from the shared adapter
-        "peer shadow-xs ease-out relative flex size-4 max-w-4 shrink-0 items-center justify-center border border-input bg-card transition-[color,background-color,border-color,box-shadow] duration-150 outline-none after:absolute after:-inset-x-3 after:-inset-y-2 after:content-[''] data-disabled:cursor-not-allowed data-disabled:opacity-50 aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20 aria-invalid:aria-checked:border-primary data-indeterminate:border-primary data-indeterminate:bg-primary data-indeterminate:text-primary-foreground data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground",
+        "peer shadow-xs ease-out relative flex size-4 max-w-4 shrink-0 items-center justify-center border border-input bg-card transition-[color,background-color,border-color,box-shadow] duration-150 outline-none after:absolute after:-inset-x-3 after:-inset-y-2 after:content-[''] data-indeterminate:border-primary data-indeterminate:bg-primary data-indeterminate:text-primary-foreground data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground",
         checkboxCornerClass,
-        selfFocusRingClass
+        selfFocusRingClass,
+        dataStateFaceClass,
+        "aria-invalid:aria-checked:border-primary data-invalid:aria-checked:border-primary"
       )}
       {...props}>
       <CheckboxPrimitive.Indicator

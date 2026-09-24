@@ -8,6 +8,7 @@ import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
 import { linkVariants } from "../../styles/link";
+import { racDisabledStateFaceClass } from "../../styles/state-face";
 import { focusRing } from "../../styles/utils";
 
 /**
@@ -28,8 +29,10 @@ export type LinkProps = ComponentPropsWithoutRef<typeof ReactAriaLink> & Variant
  *
  * `className` is documented as a plain string merged after the recipe, but RAC's own
  * type also allows the render-prop form. Both are handled by `composeRenderProps`: the
- * recipe resolves first, the shared focus ring reads RAC's `isFocusVisible`, and the
- * caller's classes merge last so a Tailwind conflict resolves their way.
+ * recipe resolves first, the shared focus ring reads RAC's `isFocusVisible`, the rac-target
+ * state face reads `isDisabled`, and the caller's classes merge last so a Tailwind conflict
+ * resolves their way. The hover fade sits behind `enabled-hover:`, so a disabled link stays
+ * still under the pointer.
  */
 export function Link({
   variant,
@@ -45,10 +48,11 @@ export function Link({
       {...props}
       className={composeRenderProps(
         className,
-        (resolved: string | undefined, { isFocusVisible }: LinkRenderProps) =>
+        (resolved: string | undefined, { isFocusVisible, isDisabled }: LinkRenderProps) =>
           cn(
             linkVariants({ variant, leading, truncate, align, weight }),
             focusRing({ target: "state", isFocusVisible }).root(),
+            isDisabled && racDisabledStateFaceClass,
             resolved
           )
       )}
