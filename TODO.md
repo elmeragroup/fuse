@@ -3,7 +3,7 @@
 ## Design and accessibility review
 
 - Review GE dark semantics, Telinet's live collection, shared support roles,
-  chart ordering and syntax colors using the [token provenance](packages/fuse/src/theme/tokens/PROVENANCE.md).
+  chart ordering and syntax colors.
 - Check dark states, fixed-color artwork and chart distinction in product screens.
 - When design supplies ring colors or an audit escalates contrast, replace the
   shared violet where needed. Retain the [accepted contrast exceptions](<apps/docs/src/app/(docs)/accessibility/page.tsx>)

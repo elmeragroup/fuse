@@ -90,7 +90,7 @@ are separate from library development and release activation.
 Open distribution is already approved; there is no additional sign-off gate.
 The intended distribution is one public repository and public npm package.
 Package code is MIT; copied artwork keeps its own notices and licenses, including
-CC BY 4.0 Twemoji. See [reference sources](../packages/fuse/REFERENCE-SOURCES.md).
+CC BY 4.0 Twemoji.
 Logos ship publicly. Revisit their distribution if brand or legal owners object.
 Fonts remain app-supplied through font-family tokens; never ship font binaries,
 including commercially licensed Neo Sans, in this package.

@@ -8,7 +8,6 @@ import type { BrandCode, ThemeSegment } from "./themes";
 
 // Custom Figma color collections in Dark mode, read 2026-09-15.
 // Exact sRGB colors are retained in comments; OKLCH is the library's color format.
-// Source IDs, inferred role mappings and design follow-ups: PROVENANCE.md.
 export const EXTERNAL_DARK_PALETTES = {
   // NSsyvuE7xs3CcbbJggoN1b, collection 4006:10608, mode 4006:8.
   fkas: {

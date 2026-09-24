@@ -58,9 +58,6 @@ before trusting type tests, since incremental checks can retain old resolutions.
 ## Task references
 
 For release or changeset work, read [scripts/RELEASE.md](scripts/RELEASE.md).
-Before copying reference code or assets, read
-[REFERENCE-SOURCES.md](packages/fuse/REFERENCE-SOURCES.md).
-For palette changes, read [token provenance](packages/fuse/src/theme/tokens/PROVENANCE.md)
-and [consumer contrast exceptions](<apps/docs/src/app/(docs)/accessibility/page.tsx>).
+For palette changes, read the [consumer contrast exceptions](<apps/docs/src/app/(docs)/accessibility/page.tsx>).
 For theme vocabulary, read [CONTEXT.md](CONTEXT.md).
 For Figma variable sync, read [the fuse-figma README](packages/fuse-figma/README.md).
