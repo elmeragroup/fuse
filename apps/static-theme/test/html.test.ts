@@ -1,31 +1,57 @@
 import { describe, expect, it } from "vitest";
 
-import { isLightCanvas } from "./html";
+import { canvasScheme } from "./html";
 
-describe("isLightCanvas", () => {
-  it("accepts the near-white canvases Chromium computes, in each notation it serializes", () => {
+describe("canvasScheme", () => {
+  it("classifies the near-white canvases Chromium computes as light, in each notation it serializes", () => {
     for (const color of ["lab(100 0 0)", "rgb(255, 255, 255)", "oklch(1 0 0)", " oklch(1 0 0) "]) {
-      expect(isLightCanvas(color), color).toBe(true);
+      expect(canvasScheme(color), color).toBe("light");
     }
   });
 
-  it("draws the line at CIE L* 99, the threshold by definition", () => {
-    expect(isLightCanvas("lab(99 0 0)")).toBe(true);
-    expect(isLightCanvas("lab(98.9 0 0)")).toBe(false);
+  it("draws the light line at CIE L* 99, the threshold by definition", () => {
+    expect(canvasScheme("lab(99 0 0)")).toBe("light");
+    expect(canvasScheme("lab(98.9 0 0)")).toBeUndefined();
   });
 
-  it("refuses a dark canvas and a mid gray", () => {
-    expect(isLightCanvas("oklch(0.145 0 0)")).toBe(false);
-    expect(isLightCanvas("rgb(128, 128, 128)")).toBe(false);
+  it("classifies the dark canvases the themes paint as dark, in each notation Chromium serializes", () => {
+    for (const color of [
+      "oklch(0.145 0 0)",
+      "oklch(0.2029294 0.0334602 267.7195)",
+      "rgb(10, 10, 10)",
+      "lab(0 0 0)",
+      " lab(10 0 0) ",
+    ]) {
+      expect(canvasScheme(color), color).toBe("dark");
+    }
   });
 
-  it("refuses a translucent white, which shows whatever lies beneath it", () => {
-    expect(isLightCanvas("rgba(255, 255, 255, 0.5)")).toBe(false);
+  it("draws the dark line at CIE L* 20, the threshold by definition", () => {
+    expect(canvasScheme("lab(19.9 0 0)")).toBe("dark");
+    expect(canvasScheme("lab(20.1 0 0)")).toBeUndefined();
   });
 
-  it("refuses text that is not a color the parser reads", () => {
-    for (const color of ["", "white", "transparent", "not a color", "oklch(1 0)"]) {
-      expect(isLightCanvas(color), color).toBe(false);
+  it("classifies a mid gray as neither", () => {
+    expect(canvasScheme("rgb(128, 128, 128)")).toBeUndefined();
+  });
+
+  it("classifies a transparent or translucent canvas, which is what a missing stylesheet computes, as neither", () => {
+    expect(canvasScheme("rgba(0, 0, 0, 0)")).toBeUndefined();
+    expect(canvasScheme("rgba(0, 0, 0, 0.5)")).toBeUndefined();
+    expect(canvasScheme("rgba(255, 255, 255, 0.5)")).toBeUndefined();
+  });
+
+  it("classifies text that is not a color the parser reads as neither", () => {
+    for (const color of [
+      "",
+      "black",
+      "white",
+      "transparent",
+      "not a color",
+      "color(srgb 0 0 0)",
+      "oklch(0.1 0)",
+    ]) {
+      expect(canvasScheme(color), color).toBeUndefined();
     }
   });
 });

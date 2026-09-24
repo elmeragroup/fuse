@@ -189,19 +189,36 @@ const NEAR_WHITE_LUMINANCE = ((99 + 16) / 116) ** 3;
 // that Y, so the comparison allows 1e-9 of rounding. L* 98.9 sits 0.0025 lower and fails.
 const LUMINANCE_ROUNDING = 1e-9;
 
+// The first-paint suites call a canvas dark when its relative luminance is at most that of
+// CIE L* 20, Y = ((20 + 16) / 116) ^ 3 ≈ 0.0299 by the CIE L* definition above L* 8. Every
+// theme's dark background sits below 0.009, so the line leaves room for palette changes while
+// a transparent, missing or unreadable canvas still fails.
+const NEAR_BLACK_LUMINANCE = ((20 + 16) / 116) ** 3;
+
 /**
- * Whether a computed canvas color is near white: opaque, with a relative luminance at least
- * that of CIE L* 99. A translucent color, or a notation the color parser does not read, is
- * not a painted light canvas.
+ * Classify a computed canvas color by the scheme it paints. A canvas is light when it is
+ * opaque with a relative luminance at least that of CIE L* 99, and dark when it is opaque with
+ * a relative luminance at most that of CIE L* 20. A translucent color, an empty value, a
+ * notation the color parser does not read, or a luminance between the two lines is neither.
  *
  * @param color - A computed color, such as the body's `background-color`.
- * @returns True when the canvas is near white.
+ * @returns `"light"` or `"dark"` for a painted canvas of that scheme, otherwise `undefined`.
  */
-export function isLightCanvas(color: string): boolean {
+export function canvasScheme(color: string): "light" | "dark" | undefined {
   const parsed = CssColor.parse(color.trim());
   if (parsed._tag === "err") {
-    return false;
+    return undefined;
   }
   const canvas = CssColor.toSrgb(parsed.value);
-  return canvas.alpha === 1 && Wcag.relativeLuminance(canvas) >= NEAR_WHITE_LUMINANCE - LUMINANCE_ROUNDING;
+  if (canvas.alpha !== 1) {
+    return undefined;
+  }
+  const luminance = Wcag.relativeLuminance(canvas);
+  if (luminance >= NEAR_WHITE_LUMINANCE - LUMINANCE_ROUNDING) {
+    return "light";
+  }
+  if (luminance <= NEAR_BLACK_LUMINANCE) {
+    return "dark";
+  }
+  return undefined;
 }
