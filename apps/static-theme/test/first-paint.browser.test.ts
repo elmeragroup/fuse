@@ -6,7 +6,7 @@ import {
   DOCUMENT_BRAND,
   EXPECTED_BOOTSTRAP_MANIFEST,
   EXPECTED_FORCED_DARK_MANIFEST,
-  isLightCanvas,
+  canvasScheme,
 } from "./html";
 import type { ColorSchemeBootstrapManifest } from "./html";
 import { staticThemeBaseUrl } from "./server";
@@ -141,7 +141,7 @@ function expectDocumentDensity(
 
 function expectTokenCanvas(probe: FirstPaintProbe): void {
   const scheme = probe.dataTheme === "dark" ? "dark" : "light";
-  expect(isLightCanvas(probe.background)).toBe(scheme === "light");
+  expect(canvasScheme(probe.background), `canvas ${JSON.stringify(probe.background)}`).toBe(scheme);
   expect(probe.colorScheme).toBe("");
   expect(probe.computedColorScheme).toBe(scheme);
   expect(probe.brandElma.length).toBeGreaterThan(0);

@@ -1,0 +1,58 @@
+{
+  "name": "@elmeragroup/color",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Color parsing, conversion, mixing and contrast for the Fuse workspace. A dependency-free core, with an Effect bridge at ./effect.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./css-color": {
+      "types": "./src/css-color.ts",
+      "import": "./src/css-color.ts"
+    },
+    "./effect": {
+      "types": "./src/effect.ts",
+      "import": "./src/effect.ts"
+    },
+    "./hex": {
+      "types": "./src/hex.ts",
+      "import": "./src/hex.ts"
+    },
+    "./oklch": {
+      "types": "./src/oklch.ts",
+      "import": "./src/oklch.ts"
+    },
+    "./result": {
+      "types": "./src/result.ts",
+      "import": "./src/result.ts"
+    },
+    "./srgb": {
+      "types": "./src/srgb.ts",
+      "import": "./src/srgb.ts"
+    },
+    "./wcag": {
+      "types": "./src/wcag.ts",
+      "import": "./src/wcag.ts"
+    }
+  },
+  "scripts": {
+    "test": "vitest run",
+    "type-check": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "effect": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "effect": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@elmeragroup/typescript-config": "workspace:*",
+    "effect": "catalog:",
+    "fast-check": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

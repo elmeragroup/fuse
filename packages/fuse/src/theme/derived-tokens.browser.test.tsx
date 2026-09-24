@@ -5,8 +5,8 @@ import "../../dist/themes.css";
 import { render } from "../../test/browser-render";
 import { computedOklch, roleNamed } from "../../test/themed-browser-render";
 import { composeTheme } from "./compose-theme";
-import { parseOklch } from "./oklch";
 import { ThemeScope } from "./theme-scope";
+import { tokenOklch } from "./token-color";
 import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
 
 /** The color a background declaration computes to where `host` sits in the cascade. */
@@ -36,7 +36,7 @@ describe("derived roles", () => {
         );
         const host = roleNamed("group", "Probe");
         const context = `${scheme} ${themeSlug(theme)}`;
-        const literal = parseOklch(composeTheme(theme, scheme)["secondary-hover"]);
+        const literal = tokenOklch(composeTheme(theme, scheme)["secondary-hover"]);
         const mixed = computedOklch(
           computedBackground(host, "color-mix(in oklch, var(--secondary), var(--foreground) 5%)")
         );

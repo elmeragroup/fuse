@@ -4,6 +4,10 @@ import { TestClock, TestConsole } from "effect/testing";
 import { CliOutput } from "effect/unstable/cli";
 import { ChildProcessSpawner } from "effect/unstable/process";
 
+import * as Hex from "@elmeragroup/color/hex";
+import { getOrThrow } from "@elmeragroup/color/result";
+import * as Srgb from "@elmeragroup/color/srgb";
+
 import { runCli } from "../src/cli.ts";
 import { InMemoryFigma } from "./in-memory-figma.ts";
 
@@ -52,12 +56,7 @@ function reads(figma: InMemoryFigma): number {
 
 function hex(value: ReturnType<InMemoryFigma["resolve"]>): string {
   if (!(value instanceof Object)) throw new Error(`expected a color, got ${String(value)}`);
-  const byte = (channel: number) =>
-    Math.round(channel * 255)
-      .toString(16)
-      .padStart(2, "0")
-      .toUpperCase();
-  return `#${byte(value.r)}${byte(value.g)}${byte(value.b)}`;
+  return Hex.formatOpaque(getOrThrow(Srgb.make({ r: value.r, g: value.g, b: value.b, alpha: value.a })));
 }
 
 const light = (theme: string) => ({ "Fuse tokens": "Light", "Fuse themes": theme });

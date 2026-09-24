@@ -1,7 +1,10 @@
+import * as Oklch from "@elmeragroup/color/oklch";
+import { getOrThrow } from "@elmeragroup/color/result";
+import * as Wcag from "@elmeragroup/color/wcag";
+
 import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
-import { clipChannel, linearToSrgb, oklchToLinearSrgb, parseOklch } from "./oklch";
-import type { LinearRgb } from "./oklch";
+import { tokenOklch } from "./token-color";
 import type { TokenName } from "./tokens/contract";
 import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
 import type { ThemeSlug } from "./tokens/themes";
@@ -37,42 +40,16 @@ export type ContrastMatrix = {
   };
 };
 
-function srgbToLinear(channel: number): number {
-  return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
-}
-
-function compositeOver(foreground: LinearRgb, alpha: number, background: LinearRgb): LinearRgb {
-  const rest = 1 - alpha;
-  // CSS surface compositing happens in sRGB. Convert back to linear light only
-  // after blending, before calculating WCAG relative luminance.
-  const blend = (front: number, back: number): number =>
-    srgbToLinear(linearToSrgb(front) * alpha + linearToSrgb(back) * rest);
-  return {
-    r: blend(foreground.r, background.r),
-    g: blend(foreground.g, background.g),
-    b: blend(foreground.b, background.b),
-  };
-}
-
-export function relativeLuminance(color: LinearRgb): number {
-  return 0.2126 * clipChannel(color.r) + 0.7152 * clipChannel(color.g) + 0.0722 * clipChannel(color.b);
-}
-
 /**
- * The WCAG contrast ratio between two OKLCH values. A translucent foreground composites
- * over the background; the background itself is assumed opaque, which every surface the
- * theme contract measures satisfies — a translucent surface would need an explicit
- * backdrop to composite against.
+ * The WCAG contrast ratio between two `oklch()` token values. A translucent foreground
+ * composites over the background; the background must be opaque, which every surface the
+ * theme contract measures is. A translucent surface would need an explicit backdrop to
+ * composite against, so measuring one throws.
  */
 export function contrastRatio(foregroundValue: string, backgroundValue: string): number {
-  const foreground = parseOklch(foregroundValue);
-  const backgroundRgb = oklchToLinearSrgb(backgroundValue);
-  const foregroundRgb = oklchToLinearSrgb(foregroundValue);
-  const composited =
-    foreground.alpha === 1 ? foregroundRgb : compositeOver(foregroundRgb, foreground.alpha, backgroundRgb);
-  const lighter = Math.max(relativeLuminance(composited), relativeLuminance(backgroundRgb));
-  const darker = Math.min(relativeLuminance(composited), relativeLuminance(backgroundRgb));
-  return (lighter + 0.05) / (darker + 0.05);
+  const foreground = Oklch.toSrgb(tokenOklch(foregroundValue));
+  const background = Oklch.toSrgb(tokenOklch(backgroundValue));
+  return getOrThrow(Wcag.contrastRatio(foreground, background));
 }
 
 export function pairId(

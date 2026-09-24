@@ -8,7 +8,7 @@ import {
   COLOR_SCHEME_BOOTSTRAP_FAILURE_SENTINEL,
   DOCUMENT_BRAND,
   EXPECTED_BOOTSTRAP_MANIFEST,
-  isLightCanvas,
+  canvasScheme,
   stampBootstrapNonce,
   stripContentEncoding,
 } from "./html";
@@ -135,7 +135,9 @@ describe("docs first paint with hydration delayed", () => {
       expectDenseDocument(probe);
       expect(probe.dataTheme).toBe(expectedTheme);
       expect(probe.manifest).toEqual(EXPECTED_BOOTSTRAP_MANIFEST);
-      expect(isLightCanvas(probe.background)).toBe(expectedTheme === "light");
+      expect(canvasScheme(probe.background), `canvas ${JSON.stringify(probe.background)}`).toBe(
+        expectedTheme
+      );
       expect(probe.computedColorScheme).toBe(expectedTheme);
       expect(probe.colorScheme).toBe("");
       expect(probe.reactHydrated).toBe(false);
@@ -165,7 +167,7 @@ describe("docs JavaScript-disabled brand", () => {
     expect(brandElma.length).toBeGreaterThan(0);
     expect(brand).toBe(brandElma);
     expect(brand).not.toBe(brandNeutral);
-    expect(isLightCanvas(background)).toBe(true);
+    expect(canvasScheme(background), `canvas ${JSON.stringify(background)}`).toBe("light");
 
     await context.close();
   });

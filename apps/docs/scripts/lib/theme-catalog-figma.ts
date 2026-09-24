@@ -7,12 +7,16 @@
  * is no second, per-slug JSON serialisation.
  */
 
+import * as CssColor from "@elmeragroup/color/css-color";
+import * as Hex from "@elmeragroup/color/hex";
+import { getOrThrow } from "@elmeragroup/color/result";
+import * as Srgb from "@elmeragroup/color/srgb";
 import {
-  cssColorToSrgb,
   cssFirstFontFamily,
   cssLengthToPx,
   cssVarReference,
   PRIMITIVE_NAMES,
+  readTokenColor,
   TOKEN_KINDS,
 } from "@elmeragroup/fuse/theme-catalog";
 import type { TokenKind } from "@elmeragroup/fuse/theme-catalog";
@@ -55,17 +59,12 @@ function dtcgSlot(name: string): DtcgSlot {
   return { group: DTCG_GROUPS[kind], key };
 }
 
-function roundComponent(channel: number): number {
-  return Math.round(channel * 1_000_000) / 1_000_000;
-}
-
-function hexFromSrgb(r: number, g: number, b: number): string {
-  const byte = (channel: number): string =>
-    Math.round(channel * 255)
-      .toString(16)
-      .padStart(2, "0")
-      .toUpperCase();
-  return `#${byte(r)}${byte(g)}${byte(b)}`;
+/** Round each channel to 1e-6. Rounding keeps a channel inside `0..1`, so `make` accepts it. */
+function roundedSrgb(color: Srgb.Srgb): Srgb.Srgb {
+  const round = (channel: number) => Math.round(channel * 1_000_000) / 1_000_000;
+  return getOrThrow(
+    Srgb.make({ r: round(color.r), g: round(color.g), b: round(color.b), alpha: color.alpha })
+  );
 }
 
 function aliasOf(tokenName: string): `{${string}}` {
@@ -81,17 +80,17 @@ function dimensionFromCss(css: string): FigmaDimensionToken["$value"] {
   return { value: px, unit: "px" };
 }
 
+/**
+ * A token value that is not an `oklch()` or hex color is a defect in the theme catalog, so it
+ * throws. `hex` is built from the rounded `components`, so the two fields always agree.
+ */
 function colorFromCss(css: string): FigmaColorToken["$value"] {
-  const srgb = cssColorToSrgb(css);
-  if (srgb === undefined) {
-    throw new Error(`Expected an oklch() or hex color, received: ${css}`);
-  }
-  const components = [roundComponent(srgb.r), roundComponent(srgb.g), roundComponent(srgb.b)] as const;
+  const srgb = roundedSrgb(CssColor.toSrgb(getOrThrow(readTokenColor(css))));
   const color: FigmaSrgbColor = {
     colorSpace: "srgb",
-    components,
+    components: [srgb.r, srgb.g, srgb.b],
     alpha: srgb.alpha,
-    hex: hexFromSrgb(...components),
+    hex: Hex.formatOpaque(srgb),
   };
   return color;
 }

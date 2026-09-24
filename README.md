@@ -71,6 +71,7 @@ Package-scoped scripts worth knowing:
 | `apps/docs`           | `docs`                           | Next docs site, generated API reference, demo corpus, llms.txt                           |
 | `apps/static-theme`   | `static-theme`                   | Vite host proving standalone-CSS mode and first-paint theme attributes                   |
 | `packages/fuse-figma` | `@elmeragroup/fuse-figma`        | Private CLI that syncs the design tokens into a Figma file's variables                   |
+| `packages/color`      | `@elmeragroup/color`             | Private color parsing, conversion, mixing and WCAG contrast, shared by every workspace   |
 | `tooling/typescript`  | `@elmeragroup/typescript-config` | Shared tsconfig bases                                                                    |
 
 The API extractor and the `elmera/*` and `anti-slop/*` lint rules come from [`@elmeragroup/internal`](https://github.com/elmeragroup/internal). The workspace pins it once in the pnpm catalog.

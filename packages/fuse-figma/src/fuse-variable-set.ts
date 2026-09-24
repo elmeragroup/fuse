@@ -21,9 +21,11 @@
 
 import { Result, Schema } from "effect";
 
+import * as CssColor from "@elmeragroup/color/css-color";
+import type { InvalidColor } from "@elmeragroup/color/css-color";
+import * as ColorEffect from "@elmeragroup/color/effect";
 import {
   composeTheme,
-  cssColorToSrgb,
   cssFirstFontFamily,
   cssLengthToPx,
   cssVarReference,
@@ -34,6 +36,7 @@ import {
   PRIMITIVES,
   RADIUS_RUNG_NAMES,
   RADIUS_RUNGS,
+  readTokenColor,
   remToPx,
   themeSlug,
   TOKEN_KINDS,
@@ -110,33 +113,24 @@ export class UnsupportedTokenValue extends Schema.TaggedError<UnsupportedTokenVa
   }
 ) {}
 
+/** A value the sync's own readers refuse, with what they expected instead. */
+type Unreadable = { readonly _tag: "Unreadable"; readonly expected: string };
+
+/** Why the sync cannot read a token value. `unsupported` words each one. */
+type ReadFailure = InvalidColor | Unreadable;
+
 /** How one kind of token becomes a Figma variable. */
 type KindProjection = {
   readonly type: VariableType;
 
-  /** Read a literal CSS value, or return `undefined` when it is not in this kind's form. */
-  readonly literal: (css: string) => LiteralValue | undefined;
-
-  /** What the sync expects, for the message when `literal` refuses a value. */
-  readonly expected: string;
+  /** Read a literal CSS value, or fail with the reason the `UnsupportedTokenValue` reports. */
+  readonly literal: (css: string) => Result.Result<LiteralValue, ReadFailure>;
 };
 
 const KIND_PROJECTIONS = {
-  color: {
-    type: "COLOR",
-    literal: colorLiteral,
-    expected: "an oklch() or #rrggbb color",
-  },
-  dimension: {
-    type: "FLOAT",
-    literal: dimensionLiteral,
-    expected: "a rem or px length",
-  },
-  fontFamily: {
-    type: "STRING",
-    literal: fontFamilyLiteral,
-    expected: "a font stack that starts with a named family",
-  },
+  color: { type: "COLOR", literal: colorLiteral },
+  dimension: { type: "FLOAT", literal: dimensionLiteral },
+  fontFamily: { type: "STRING", literal: fontFamilyLiteral },
 } as const satisfies Record<TokenKind, KindProjection>;
 
 /** The tokens of the dimension kind. */
@@ -211,7 +205,7 @@ function contractVariable(token: TokenName): BoundVariable {
     type: projection.type,
     scopes: tokenScopes(token),
     webSyntax: `var(--${token})`,
-    valueIn: (tokens, reference) => tokenValue(token, tokens[token], projection, reference),
+    valueIn: (tokens, reference) => tokenValue(token, tokens[token], TOKEN_KINDS[token], reference),
   };
 }
 
@@ -251,7 +245,7 @@ function lengthInPx(
 ): Result.Result<number, UnsupportedTokenValue> {
   const px = cssLengthToPx(css);
   return px === undefined
-    ? unsupported(token, css, `a rem or px length to derive ${rung} from`)
+    ? Result.fail(unsupported(token, css, unreadable(`a rem or px length to derive ${rung} from`)))
     : Result.succeed(px);
 }
 
@@ -290,7 +284,7 @@ function primitivesCollection(): Result.Result<CollectionSpec, UnsupportedTokenV
     const projection = KIND_PROJECTIONS.color;
     const variables: VariableSpec[] = [];
     for (const name of PRIMITIVE_NAMES) {
-      const value = yield* tokenValue(name, PRIMITIVES[name], projection, primitiveReference);
+      const value = yield* tokenValue(name, PRIMITIVES[name], "color", primitiveReference);
       variables.push({
         name,
         type: projection.type,
@@ -404,49 +398,77 @@ function themeAlias(variable: string): AliasValue {
 function tokenValue(
   token: string,
   css: string,
-  projection: KindProjection,
+  kind: TokenKind,
   reference: ReferenceResolver
 ): Result.Result<VariableValue, UnsupportedTokenValue> {
   const referenced = cssVarReference(css);
   if (referenced !== undefined) {
     const alias = reference(referenced);
     return alias === undefined
-      ? unsupported(token, css, "a reference to a Fuse token or primitive")
+      ? Result.fail(unsupported(token, css, unreadable("a reference to a Fuse token or primitive")))
       : Result.succeed(alias);
   }
-  const literal = projection.literal(css);
-  return literal === undefined ? unsupported(token, css, projection.expected) : Result.succeed(literal);
+  return tokenLiteral(token, kind, css);
 }
 
-function colorLiteral(css: string): ColorValue | undefined {
-  const srgb = cssColorToSrgb(css);
-  return srgb === undefined
-    ? undefined
-    : { _tag: "Color", color: { r: srgb.r, g: srgb.g, b: srgb.b, a: srgb.alpha } };
+/**
+ * Read one literal token value as the Figma value of its kind. `fuseVariableSet` composes only
+ * the real themes, so this is the seam where a test feeds a malformed value.
+ *
+ * @param token - The token or primitive name, for the message.
+ * @param kind - The token's kind.
+ * @param css - The token's CSS value, not a `var()` reference.
+ * @returns The Figma literal, or the `UnsupportedTokenValue` the sync would fail with.
+ */
+export function tokenLiteral(
+  token: string,
+  kind: TokenKind,
+  css: string
+): Result.Result<LiteralValue, UnsupportedTokenValue> {
+  const projection: KindProjection = KIND_PROJECTIONS[kind];
+  return Result.mapError(projection.literal(css), (failure) => unsupported(token, css, failure));
+}
+
+function colorLiteral(css: string): Result.Result<ColorValue, InvalidColor> {
+  return Result.map(ColorEffect.toResult(readTokenColor(css)), (color): ColorValue => {
+    const srgb = CssColor.toSrgb(color);
+    return { _tag: "Color", color: { r: srgb.r, g: srgb.g, b: srgb.b, a: srgb.alpha } };
+  });
 }
 
 /** Figma dimensions are unitless pixels. */
-function dimensionLiteral(css: string): FloatValue | undefined {
+function dimensionLiteral(css: string): Result.Result<FloatValue, Unreadable> {
   const px = cssLengthToPx(css);
-  return px === undefined ? undefined : { _tag: "Float", value: px };
+  return px === undefined
+    ? Result.fail(unreadable("a rem or px length"))
+    : Result.succeed({ _tag: "Float", value: px });
 }
 
 /** Figma binds one family, so the first family of a CSS font stack is the designed one. */
-function fontFamilyLiteral(css: string): StringValue | undefined {
+function fontFamilyLiteral(css: string): Result.Result<StringValue, Unreadable> {
   const family = cssFirstFontFamily(css);
-  return family === undefined ? undefined : { _tag: "String", value: family };
+  return family === undefined
+    ? Result.fail(unreadable("a font stack that starts with a named family"))
+    : Result.succeed({ _tag: "String", value: family });
 }
 
-function unsupported(
-  token: string,
-  value: string,
-  expected: string
-): Result.Result<never, UnsupportedTokenValue> {
-  return Result.fail(
-    new UnsupportedTokenValue({
-      message: `Token "${token}" has the value "${value}", but the Figma sync expects ${expected}.`,
-      token,
-      value,
-    })
-  );
+function unreadable(expected: string): Unreadable {
+  return { _tag: "Unreadable", expected };
+}
+
+/**
+ * The one place that words a failure. The color parser's message already says what it reads
+ * and quotes the value, so it passes through as-is. The sync's own readers word theirs the
+ * same way.
+ */
+function unsupported(token: string, value: string, failure: ReadFailure): UnsupportedTokenValue {
+  const reason =
+    failure._tag === "InvalidColor"
+      ? failure.message
+      : `Expected ${failure.expected}, received ${JSON.stringify(value)}`;
+  return new UnsupportedTokenValue({
+    message: `The Figma sync cannot read token "${token}": ${reason}.`,
+    token,
+    value,
+  });
 }

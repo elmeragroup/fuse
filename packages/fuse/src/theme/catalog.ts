@@ -6,9 +6,10 @@
 
 export type { ResolvedColorScheme } from "./color-scheme-types";
 export { composeTheme } from "./compose-theme";
-export { cssColorToSrgb, cssFirstFontFamily, cssLengthToPx, cssVarReference, remToPx } from "./css-values";
+export { cssFirstFontFamily, cssLengthToPx, cssVarReference, remToPx } from "./css-values";
 export { defaultDensityForVariant, densityAttributes } from "./density";
 export { themeAttributes } from "./theme-attributes";
+export { readTokenColor } from "./token-color";
 export type { Density } from "./density";
 export { TOKEN_KINDS, TOKEN_NAMES } from "./tokens/contract";
 export type { TokenContract, TokenKind, TokenName } from "./tokens/contract";

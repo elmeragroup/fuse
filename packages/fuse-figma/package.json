@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@effect/platform-node": "catalog:",
+    "@elmeragroup/color": "workspace:*",
     "@elmeragroup/fuse": "workspace:*",
     "effect": "catalog:"
   },

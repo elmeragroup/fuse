@@ -23,6 +23,7 @@
     "tailwind-variants": "catalog:"
   },
   "devDependencies": {
+    "@elmeragroup/color": "workspace:*",
     "@elmeragroup/internal": "catalog:",
     "@elmeragroup/typescript-config": "workspace:*",
     "@mdx-js/loader": "catalog:",
