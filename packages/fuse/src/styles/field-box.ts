@@ -23,9 +23,10 @@ export const fieldBoxChromeClass = cn(
 /**
  * NumberField group chrome — same elevation as Input, `within` focus. The group box is the
  * control, so it takes the within-target state face: it dims once and shows the
- * `not-allowed` cursor when its `data-focus-ring-control` input is disabled, and the input
- * and steppers inside inherit that dim rather than painting their own. The group also
- * carries `aria-invalid` itself, so it takes the aria-target face for the invalid look.
+ * `not-allowed` cursor when its own `data-focus-ring-control` input, a direct child, is
+ * disabled, and the input and steppers inside inherit that dim rather than painting their
+ * own. The group also carries `aria-invalid` itself, so it takes the aria-target face for
+ * the invalid look.
  */
 export const numberFieldGroupClass = cn(
   fieldBoxChromeClass,

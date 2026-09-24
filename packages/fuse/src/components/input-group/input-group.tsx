@@ -12,7 +12,12 @@ import { Input } from "../input/input";
 import { Textarea } from "../textarea/textarea";
 import { inputGroupAddonVariants, inputGroupButtonVariants } from "./input-group-variants";
 
-/** Group chrome follows the disabled state of its input or textarea, independently of addon buttons. */
+/**
+ * Group chrome follows the disabled and invalid state of its own input or textarea,
+ * independently of addon buttons. Keep `InputGroup.Input` or `InputGroup.Textarea` a direct
+ * child of the root: the group reads its state from that child only, so a field nested in an
+ * addon, such as a NumberField, keeps its state to itself.
+ */
 export type InputGroupRootProps = ComponentProps<"div">;
 export type InputGroupAddonProps = ComponentProps<"div"> & VariantProps<typeof inputGroupAddonVariants>;
 
@@ -68,7 +73,7 @@ function InputGroupRoot({ className, ...props }: InputGroupRootProps): ReactElem
       className={cn(
         // Single-height field box: pins the `md` control rung; block addons and textareas grow instead.
         "group/input-group shadow-xs relative box-border flex h-(--control-h-md) w-full min-w-0 items-center rounded-md border border-input transition-[color,border-color,box-shadow]",
-        "has-[[data-focus-ring-control]:disabled]:bg-input/50",
+        "has-[>[data-focus-ring-control]:disabled]:bg-input/50",
         "has-[[data-focus-ring-control]:focus-visible]:border-ring",
         withinStateFaceClass,
         "has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>textarea]:h-auto",

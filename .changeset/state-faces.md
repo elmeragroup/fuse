@@ -17,19 +17,25 @@ Interactive controls now share one disabled and invalid look:
   `RadioIconButton`, which used to change its fill on hover and shrink on press while
   disabled. `aria-disabled` Sidebar rows (including link rows such as
   `Sidebar.MenuSubButton href=… aria-disabled`) and `aria-disabled` Tabs triggers no longer
-  block pointer events either, so they receive clicks and a link row navigates. Guard the
-  action yourself where an `aria-disabled` control must not act.
+  block pointer events either, so a Tooltip on them opens. The Sidebar rows guard themselves:
+  `Sidebar.MenuButton` and `Sidebar.MenuSubButton` with `aria-disabled="true"` cancel a click
+  or a keyboard Enter, so a link row does not navigate and the row's `onClick` does not run.
+  A middle-click on a link row opens no new tab either, and its `onAuxClick` does not run.
+  An `aria-disabled` Tabs trigger now receives clicks; use its `disabled` prop, the supported
+  way to disable a tab.
 - **Invalid.** Every invalid control paints an `--error` border and a 3px ring. `Toggle`
   and `RadioIconButton` now show that ring, and so do the React Aria date fields. A radio
   or checkbox inside an invalid group shows the same ring.
 - **Groups.** A disabled `InputGroup` dims once. Its input is no longer dimmed again inside
   the dimmed group. `InputGroup` now paints its invalid ring only when its input or textarea
   is invalid. An invalid addon, such as a Button or Select inside the group, no longer rings
-  the whole group. `Combobox.Chips` now dims as a whole when its input is disabled.
-  Each chip no longer dims itself. An `InputGroup` whose input is `aria-disabled="true"` dims
-  once as a whole too. A disabled `NumberField` now dims once as a whole and shows the
-  `not-allowed` cursor over its input and steppers. A stepper disabled at its bound no longer
-  dims on its own; it keeps its muted fill and shows a muted caret.
+  the whole group. The group reads its state from its own input or textarea, a direct child
+  of `InputGroup.Root`, so a disabled or invalid field nested in an addon, such as a
+  `NumberField`, does not dim or ring the group. `Combobox.Chips` now dims as a whole when
+  its input is disabled. Each chip no longer dims itself. An `InputGroup` whose input is
+  `aria-disabled="true"` dims once as a whole too. A disabled `NumberField` now dims once as
+  a whole and shows the `not-allowed` cursor over its input and steppers. A stepper disabled
+  at its bound no longer dims on its own; it keeps its muted fill and shows a muted caret.
 - **Other controls.** A disabled `Accordion.Trigger` and a disabled React Aria `Link` now
   dim, show the `not-allowed` cursor, and no longer underline or fade on hover. An
   `Accordion.Trigger`, `Select.Trigger`, `Input` or `Textarea` given `aria-disabled="true"`

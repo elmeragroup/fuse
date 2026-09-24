@@ -306,6 +306,45 @@ describe.each(DENSITIES)("state face at %s density", (density) => {
     }
   });
 
+  it("keeps an InputGroup's disabled face off a disabled NumberField nested in its addon", () => {
+    // The group owns only its own input. A disabled field nested in an addon is another
+    // owner's control, so it dims itself once and leaves the enabled group at rest.
+    renderStateFaces(
+      <InputGroup.Root aria-label="Order line">
+        <InputGroup.Input aria-label="Reference" />
+        <InputGroup.Addon align="block-end">
+          <NumberField label="Quantity" isDisabled defaultValue={2} />
+        </InputGroup.Addon>
+      </InputGroup.Root>
+    );
+
+    const group = roleNamed("group", "Order line");
+    const reference = roleNamed("textbox", "Reference");
+    const quantity = roleNamed("textbox", "Quantity");
+
+    expect.soft(effectiveOpacity(group), "outer group").toBe(1);
+    expect.soft(getComputedStyle(group).cursor, "outer group").not.toBe("not-allowed");
+    expect.soft(getComputedStyle(group).backgroundColor, "outer group fill").toBe("rgba(0, 0, 0, 0)");
+    expect.soft(effectiveOpacity(reference), "outer enabled input").toBe(1);
+    expect.soft(getComputedStyle(reference).cursor, "outer enabled input").not.toBe("not-allowed");
+    expect.soft(effectiveOpacity(groupAround(quantity)), "nested number field group").toBe(0.5);
+    expect.soft(effectiveOpacity(quantity), "nested number field input").toBe(0.5);
+  });
+
+  it("keeps an InputGroup's invalid ring off an invalid NumberField nested in its addon", () => {
+    renderStateFaces(
+      <InputGroup.Root aria-label="Order line">
+        <InputGroup.Input aria-label="Reference" />
+        <InputGroup.Addon align="block-end">
+          <NumberField label="Quantity" isInvalid defaultValue={2} />
+        </InputGroup.Addon>
+      </InputGroup.Root>
+    );
+
+    expectNoRing("outer group", roleNamed("group", "Order line"));
+    expectInvalidRing("nested number field group", groupAround(roleNamed("textbox", "Quantity")));
+  });
+
   it("still repaints the same controls under hover while they are enabled", async () => {
     renderStateFaces(
       <>

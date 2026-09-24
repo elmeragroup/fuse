@@ -461,9 +461,9 @@ function ComboboxChipsInput({
     <ComboboxPrimitive.Input
       data-slot="combobox-chip-input"
       data-focus-ring-control=""
-      // The chips box keys its face off this `data-focus-ring-control` input. The control half
-      // keeps the `not-allowed` cursor on the input and cancels its own ring, so only the chips
-      // box paints the face.
+      // The chips box keys its face off this `data-focus-ring-control` input while it is a
+      // direct child. The control half keeps the `not-allowed` cursor on the input and cancels
+      // its own ring, so only the chips box paints the face.
       className={mergeClassName(
         className,
         // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; ring comes from the shared within adapter
