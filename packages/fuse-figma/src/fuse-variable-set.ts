@@ -22,6 +22,7 @@
 import { Result, Schema } from "effect";
 
 import * as CssColor from "@elmeragroup/color/css-color";
+import type { InvalidColor } from "@elmeragroup/color/css-color";
 import * as ColorEffect from "@elmeragroup/color/effect";
 import {
   composeTheme,
@@ -110,12 +111,6 @@ export class UnsupportedTokenValue extends Schema.TaggedError<UnsupportedTokenVa
     value: Schema.String,
   }
 ) {}
-
-/**
- * The color parser's failure. The color package exports no subpath for the class, so the type
- * comes from the parser's return type.
- */
-type InvalidColor = Extract<ReturnType<typeof CssColor.parse>, { readonly _tag: "err" }>["error"];
 
 /** A value the sync's own readers refuse, with what they expected instead. */
 type Unreadable = { readonly _tag: "Unreadable"; readonly expected: string };

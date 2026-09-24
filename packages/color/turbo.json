@@ -1,0 +1,10 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    // The color tests are pure unit tests over src/, so they do not wait for the Fuse build
+    // that the root `test` task depends on for dist-reading suites.
+    "test": {
+      "dependsOn": []
+    }
+  }
+}

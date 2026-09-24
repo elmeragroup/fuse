@@ -15,6 +15,9 @@ import { getOrThrow } from "./result.ts";
 import type { Result } from "./result.ts";
 import * as Srgb from "./srgb.ts";
 
+export type { InvalidColor } from "./invalid-color.ts";
+export type { OutOfRange } from "./out-of-range.ts";
+
 // CSS leaves chroma unbounded, but no display gamut reaches 0.5. The conversion to sRGB cubes
 // sums of about 1.3 times the chroma and scales them by about 4, so a chroma of 1e6 keeps
 // every intermediate below 1e20, where overflow to infinity needs about 1e102. The bound sits

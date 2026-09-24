@@ -12,6 +12,9 @@ import { err } from "./result-constructors.ts";
 import type { Result } from "./result.ts";
 import * as Srgb from "./srgb.ts";
 
+export type { InvalidColor } from "./invalid-color.ts";
+export type { Lab, LabComponents } from "./lab.ts";
+
 /** A parsed CSS color, in the space its notation writes. Hex and `rgb()` are both sRGB. */
 export type CssColor = Lab.Lab | Oklch.Oklch | Srgb.Srgb;
 

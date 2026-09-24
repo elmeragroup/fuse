@@ -39,6 +39,8 @@ it("the merge checks schedule all required gates without browser work", () => {
     "@elmeragroup/fuse#test:types",
     "@elmeragroup/fuse#package:check",
     "@elmeragroup/fuse#size-limit",
+    "@elmeragroup/color#test",
+    "@elmeragroup/color#type-check",
     "docs#build",
     "docs#type-check",
     "docs#test",
@@ -71,40 +73,58 @@ it("splits the ci:checks aggregate exactly between the checks and browser jobs",
   expect([...scheduled].sort()).toEqual([...names].sort());
 }, 30_000);
 
-it("builds @elmeragroup/fuse before every test task, including the app overrides", () => {
-  // The root `test.dependsOn` names @elmeragroup/fuse#build, but both apps replace the array
-  // with their own `["build"]`; the density tripwires then rely on the transitive edge.
-  const tasks = turboTasks(["run", "test"]);
-  const dependenciesById = new Map(
-    tasks.map((task) => [
+/** @type {Map<string, string[]> | undefined} */
+let testGraph;
+
+/**
+ * Each task's direct dependencies in the `turbo run test` graph, resolved once per file.
+ * @param {string} taskId
+ * @returns {string[]}
+ */
+function testDependencies(taskId) {
+  testGraph ??= new Map(
+    turboTasks(["run", "test"]).map((task) => [
       asString(task.taskId, "task id"),
       Array.isArray(task.dependencies) ? task.dependencies.map((entry) => asString(entry, "dependency")) : [],
     ])
   );
-  /**
-   * @param {string} taskId
-   * @returns {boolean}
-   */
-  const reachesFuseBuild = (taskId) => {
-    const seen = new Set();
-    /**
-     * @param {string} currentId
-     * @returns {boolean}
-     */
-    const walk = (currentId) => {
-      if (seen.has(currentId)) return false;
-      seen.add(currentId);
-      for (const dependency of dependenciesById.get(currentId) ?? []) {
-        if (dependency === "@elmeragroup/fuse#build" || walk(dependency)) return true;
-      }
-      return false;
-    };
-    return walk(taskId);
-  };
+  const dependencies = testGraph.get(taskId);
+  if (dependencies === undefined) throw new Error(`${taskId} is not in the test graph`);
+  return dependencies;
+}
 
+/**
+ * Whether a task in the `turbo run test` graph transitively depends on @elmeragroup/fuse#build.
+ * @param {string} taskId
+ * @param {Set<string>} [seen]
+ * @returns {boolean}
+ */
+function reachesFuseBuild(taskId, seen = new Set()) {
+  if (seen.has(taskId)) return false;
+  seen.add(taskId);
+  return testDependencies(taskId).some(
+    (dependency) => dependency === "@elmeragroup/fuse#build" || reachesFuseBuild(dependency, seen)
+  );
+}
+
+it("builds @elmeragroup/fuse before the Fuse and app test tasks, including the app overrides", () => {
+  // The root `test.dependsOn` names @elmeragroup/fuse#build, but both apps replace the array
+  // with their own `["build"]`; the density tripwires then rely on the transitive edge.
+  // @elmeragroup/color opts out deliberately; the next test pins that.
   for (const taskId of ["@elmeragroup/fuse#test", "docs#test", "static-theme#test"]) {
     expect(reachesFuseBuild(taskId), `${taskId} must transitively build @elmeragroup/fuse`).toBe(true);
   }
+}, 30_000);
+
+it("runs the color package's unit tests without waiting on any other task", () => {
+  // packages/color/turbo.json clears the root test edge to @elmeragroup/fuse#build, because
+  // the color suites read only src/. Any edge would re-serialize them behind other work; the
+  // reachability check names the Fuse build as the regression that matters most.
+  expect(
+    reachesFuseBuild("@elmeragroup/color#test"),
+    "@elmeragroup/color#test must not wait for the Fuse build"
+  ).toBe(false);
+  expect(testDependencies("@elmeragroup/color#test")).toEqual([]);
 }, 30_000);
 
 it("runs docs build before type-check, not against the same .next", () => {

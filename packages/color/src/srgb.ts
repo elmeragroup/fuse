@@ -15,6 +15,9 @@ import { err, ok } from "./result-constructors.ts";
 import { getOrThrow } from "./result.ts";
 import type { Result } from "./result.ts";
 
+export type { InvalidColor } from "./invalid-color.ts";
+export type { OutOfRange } from "./out-of-range.ts";
+
 /** The channels and alpha of an sRGB color, in either encoding. */
 export type SrgbComponents = {
   readonly r: number;

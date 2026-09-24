@@ -8,6 +8,8 @@ import { getOrThrow } from "./result.ts";
 import type { Result } from "./result.ts";
 import * as Srgb from "./srgb.ts";
 
+export type { InvalidColor } from "./invalid-color.ts";
+
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
 /**
