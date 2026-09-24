@@ -9,8 +9,8 @@ Interactive controls now share one disabled and invalid look:
   `not-allowed` cursor and no longer changes on hover or press, but it still activates.
   A button with `aria-disabled="true"` looks the same. The look now comes from
   `aria-disabled`, so `isVisuallyDisabled` with an explicit `aria-disabled={false}` shows no
-  disabled look. A disabled `CheckboxCard` now dims
-  to 50% instead of 75% and shows the `not-allowed` cursor.
+  disabled look. A disabled `CheckboxCard` now dims to 50% instead of 75% and shows the
+  `not-allowed` cursor.
 - **Tooltips.** Disabled controls no longer turn off pointer events, so a Tooltip on a
   disabled control opens on hover. That includes a natively disabled `Button` or `Toggle`.
   A disabled control still does not repaint, move or scale under the pointer. This fixes
@@ -33,6 +33,5 @@ Interactive controls now share one disabled and invalid look:
 - **Other controls.** A disabled `Accordion.Trigger` and a disabled React Aria `Link` now
   dim, show the `not-allowed` cursor, and no longer underline or fade on hover. An
   `Accordion.Trigger`, `Select.Trigger`, `Input` or `Textarea` given `aria-disabled="true"`
-  now dims and shows the `not-allowed` cursor as well.
-  A disabled inline
-  `TextField` no longer shows its border and fill when hovered.
+  now dims and shows the `not-allowed` cursor as well. A disabled inline `TextField` no
+  longer shows its border and fill when hovered.

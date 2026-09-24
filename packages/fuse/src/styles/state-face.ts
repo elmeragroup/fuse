@@ -21,8 +21,8 @@ import { tv } from "tailwind-variants";
  * unavailable while it stays activatable, so every target that dims must dim for it too.
  * Keeping the arms in the recipe rather than at each call site means no control can take
  * the gate without the look.
- * - `rac` takes React Aria's `isDisabled` and `isInvalid` render props, for the interim
- *   tier's non-focusable wrappers.
+ * - `rac` takes the `isDisabled` and `isInvalid` arms of a recipe told the state through a
+ *   prop or render prop (React Aria wrappers, CheckboxCard's `isDisabled`).
  * - `within` keys off the embedded control marked `data-focus-ring-control` (`:disabled`,
  *   `aria-disabled="true"`, `aria-invalid`), for a group whose box is the control
  *   (InputGroup, Combobox chips, NumberField). Its `control` slot goes on the embedded
@@ -99,7 +99,7 @@ export const ariaStateFaceClass = stateFace({ target: "aria" }).root();
 
 /**
  * The rac-target disabled face, resolved once. A recipe puts it on its `isDisabled: true`
- * arm, because React Aria reports the state through a render prop, not a selector.
+ * arm, because a prop or render prop reports the state there, not a selector.
  */
 export const racDisabledStateFaceClass = stateFace({ target: "rac", isDisabled: true }).root();
 

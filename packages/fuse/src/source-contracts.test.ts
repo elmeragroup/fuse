@@ -506,6 +506,19 @@ function disabledArmDims(code: string): string[] {
   return dims;
 }
 
+/**
+ * The bare dims a component adds behind a disabled-named prop condition
+ * (`isVisuallyDisabled && "opacity-70"` or `isDisabled ? "opacity-50" : …`). The condition,
+ * not a selector or a `tv` arm, carries the state there.
+ */
+function disabledConditionDims(code: string): string[] {
+  const dims: string[] = [];
+  for (const match of code.matchAll(/\b\w*[Dd]isabled\w*\s*(?:&&|\?)\s*(["'`])([^"'`]*)\1/gu)) {
+    dims.push(...classTokens(match[2] ?? "").filter((token) => BARE_DISABLED_DIM.test(token)));
+  }
+  return dims;
+}
+
 /** Every flagged token per file, deduplicated and sorted, for files with at least one. */
 function flaggedTokensByFile(flagged: (code: string) => string[]) {
   return Object.fromEntries(
@@ -517,7 +530,11 @@ function flaggedTokensByFile(flagged: (code: string) => string[]) {
 }
 
 function localDisabledDims(code: string): string[] {
-  return [...classTokens(code).filter(isLocalDisabledDim), ...disabledArmDims(code)];
+  return [
+    ...classTokens(code).filter(isLocalDisabledDim),
+    ...disabledArmDims(code),
+    ...disabledConditionDims(code),
+  ];
 }
 
 function ungatedPointerFaces(code: string): string[] {
@@ -571,6 +588,14 @@ describe("state faces", () => {
     expect(
       disabledArmDims('variant: { muted: "opacity-50" }, isDisabled: { true: "cursor-not-allowed" }')
     ).toEqual([]);
+    // Button's old dim, added behind its prop rather than a selector or a `tv` arm.
+    expect(localDisabledDims('cn(base, isVisuallyDisabled && "opacity-70")')).toEqual(["opacity-70"]);
+    expect(disabledConditionDims('isDisabled ? "pointer-events-none" : "cursor-pointer"')).toEqual([
+      "pointer-events-none",
+    ]);
+    expect(localDisabledDims('isVisuallyDisabled && "cursor-not-allowed"')).toEqual([]);
+    expect(disabledConditionDims('isOpen && "opacity-0"')).toEqual([]);
+    expect(disabledConditionDims("isDisabled && racDisabledStateFaceClass")).toEqual([]);
   });
 
   it("dims a disabled control only through the state face", () => {
