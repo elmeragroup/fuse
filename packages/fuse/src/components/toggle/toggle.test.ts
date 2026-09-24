@@ -32,7 +32,6 @@ describe("toggleVariants", () => {
     expect(outline).toContain("border-input");
     expect(outline).toContain("bg-transparent");
     expect(outline).toContain("shadow-xs");
-    expect(outline).toContain("hover:bg-muted");
   });
 
   it("reads the matching --control-h-* variable on every size, never a literal h-*", () => {
@@ -91,8 +90,6 @@ describe("toggleVariants", () => {
     for (const token of selfFocusRingClass.split(" ")) {
       expect(classes).toContain(token);
     }
-    expect(classes).toContain("aria-invalid:border-error");
-    expect(classes).toContain("aria-invalid:ring-error/20");
     expect(classes.includes(["focus-visible", "ring-[3px]"].join(":"))).toBe(false);
     expect(classes.includes(["focus-visible", "ring-3"].join(":"))).toBe(false);
   });

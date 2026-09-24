@@ -10,6 +10,7 @@ import type { VariantProps } from "tailwind-variants";
 import { CheckCircle } from "../../icons/generated/check-circle";
 import { Circle } from "../../icons/generated/circle";
 import { cn } from "../../styles/cn";
+import { racDisabledStateFaceClass } from "../../styles/state-face";
 import {
   iconCrossfadeHidden,
   iconCrossfadeShown,
@@ -26,8 +27,10 @@ const checkboxCardStyles = tv({
       default: "bg-card",
       muted: "bg-muted",
     },
+    // The card is the whole control, so it takes the one disabled look on its `isDisabled`
+    // arm: the prop, not a selector, carries the state to the card.
     isDisabled: {
-      true: "opacity-75",
+      true: racDisabledStateFaceClass,
     },
   },
   defaultVariants: {
@@ -54,7 +57,8 @@ export type CheckboxCardProps = Omit<
     /** Trailing slot outside the label — clicks there do not toggle the checkbox. */
     rightContent?: ReactNode;
     /**
-     * Applies `opacity-75` on the card and `disabled` on the checkbox primitive.
+     * Dims the card with the shared disabled look (50% opacity, `not-allowed` cursor) and
+     * sets `disabled` on the checkbox primitive.
      * Primitive `disabled` is omitted from the pass-through.
      */
     isDisabled?: boolean;

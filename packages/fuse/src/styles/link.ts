@@ -18,7 +18,7 @@ import { typographyFragments } from "./typography-fragments";
 const { destructive: errorColorClass, ...linkColorClasses } = typographyFragments.variants.variant;
 
 export const linkVariants = tv({
-  base: "font-sans transition-opacity hover:opacity-80",
+  base: "font-sans transition-opacity enabled-hover:opacity-80",
   variants: {
     variant: {
       ...linkColorClasses,

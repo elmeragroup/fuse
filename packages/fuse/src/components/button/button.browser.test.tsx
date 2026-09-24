@@ -241,7 +241,7 @@ describe("Button", () => {
     await expect
       .element(page.getByRole("button", { name: "Looks off" }))
       .toHaveAttribute("aria-disabled", "true");
-    expect(Number.parseFloat(getComputedStyle(button).opacity)).toBeCloseTo(0.7);
+    expect(getComputedStyle(button).opacity).toBe("0.5");
     expect(button.hasAttribute("disabled")).toBe(false);
 
     other.focus();

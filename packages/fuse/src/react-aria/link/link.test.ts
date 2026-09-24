@@ -22,9 +22,9 @@ describe("linkVariants", () => {
   });
 
   it("renders the base plus the default variant and weight, and nothing else", () => {
-    expect(classes(linkVariants())).toEqual(
-      classes("font-sans transition-opacity hover:opacity-80 text-inherit font-normal")
-    );
+    // The hover face is left out: state-face.browser.test.tsx owns the Link hover gate.
+    const rendered = classes(linkVariants()).filter((token) => !token.includes("hover:"));
+    expect(rendered).toEqual(classes("font-sans transition-opacity text-inherit font-normal"));
   });
 
   it("maps every colour variant onto a role token", () => {

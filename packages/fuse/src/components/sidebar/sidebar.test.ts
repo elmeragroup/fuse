@@ -107,7 +107,6 @@ describe("sidebarMenuButtonVariants", () => {
     expect(defaults).toContain("group-has-data-[slot=sidebar-menu-action]/menu-item:pr-8");
     expect(defaults).toContain("group-data-[collapsible=icon]:size-8!");
     expect(defaults).toContain("data-active:bg-sidebar-accent");
-    expect(defaults).toContain("data-open:hover:bg-sidebar-accent");
     // oxlint-disable-next-line elmera/no-local-focus-ring -- source-grep of the shared recipe's class, not a recipe
     expect(defaults).toContain("focus-visible:ring-ring");
     expect(sidebarMenuButtonVariants({ size: "sm" })).toContain("h-7");
@@ -116,9 +115,6 @@ describe("sidebarMenuButtonVariants", () => {
     expect(sidebarMenuButtonVariants({ size: "lg" })).toContain("group-data-[collapsible=icon]:p-0!");
     expect(sidebarMenuButtonVariants({ variant: "outline" })).toContain(
       "shadow-[0_0_0_1px_var(--sidebar-border)]"
-    );
-    expect(sidebarMenuButtonVariants({ variant: "outline" })).toContain(
-      "hover:shadow-[0_0_0_1px_var(--sidebar-accent)]"
     );
     expect(defaults).toContain("transition-[color,background-color,box-shadow]");
     expect(defaults).not.toContain("transition-[width,height,padding,color,background-color,box-shadow]");

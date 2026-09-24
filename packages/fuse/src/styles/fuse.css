@@ -243,29 +243,35 @@
     @slot;
   }
 }
-/* Hover and press on a control that is neither `data-disabled` nor `:disabled`. A
-   `data-disabled` root keeps pointer events so a Tooltip on it still opens, and these
-   variants keep its paint and position still. tailwind-merge keeps a consumer's plain
-   `hover:` class beside these, and these rules sort after it. Every condition sits in
-   :where(), so each rule has the specificity of one class and the consumer's `hover:`
-   rule, with two, still wins. The [data-rac] branches match the selectors
-   tailwindcss-react-aria-components emits for hover and active. */
+/* A disabled control: `:disabled`, `data-disabled` or `aria-disabled="true"`. This is the
+   one disabled predicate. `enabled-hover` and `enabled-active` build on its negation, and
+   a part that repaints a whole control from another element's hover (the inline
+   TextField's `group-hover/inline-field:`) stacks `not-disabled-state:` directly. Stacked
+   that way it sorts with the `not-*` variants, ahead of `focus-visible:`, and `:not(:where())`
+   adds no specificity. The state face in styles/state-face.ts owns the matching disabled look. */
+@custom-variant disabled-state (&:where([data-disabled]:not([data-disabled="false"]), :disabled, [aria-disabled="true"]));
+/* Hover and press on an enabled control. A disabled control keeps pointer events, so a
+   Tooltip on it still opens, and these variants keep its paint and position still. An
+   `aria-disabled` control still activates; only its hover and press faces are gated.
+   tailwind-merge keeps a consumer's plain `hover:` class beside these, and these rules sort
+   after it. Every condition sits in :where() or :not(:where()), so each rule has the
+   specificity of one class and the consumer's `hover:` rule, with two, still wins. The
+   [data-rac] branches match the selectors tailwindcss-react-aria-components emits for
+   hover and active. */
 @custom-variant enabled-hover {
   @media (hover: hover) {
-    &:where(:not([data-disabled]:not([data-disabled="false"]), :disabled)):where(
-        [data-rac][data-hovered],
-        :not([data-rac]):hover
-      ) {
-      @slot;
+    @variant not-disabled-state {
+      &:where([data-rac][data-hovered], :not([data-rac]):hover) {
+        @slot;
+      }
     }
   }
 }
 @custom-variant enabled-active {
-  &:where(:not([data-disabled]:not([data-disabled="false"]), :disabled)):where(
-      [data-rac][data-active],
-      :not([data-rac]):active
-    ) {
-    @slot;
+  @variant not-disabled-state {
+    &:where([data-rac][data-active], :not([data-rac]):active) {
+      @slot;
+    }
   }
 }
 

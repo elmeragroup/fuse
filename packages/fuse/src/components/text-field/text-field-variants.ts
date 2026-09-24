@@ -35,8 +35,13 @@ export const textFieldVariants = tv({
       },
       inline: {
         base: "group/inline-field",
+        // The input is the whole control, so the wrapper's hover repaints it only while it is
+        // enabled: a disabled inline field keeps its resting border and fill (the state face).
+        // The gate negates fuse.css's one `disabled-state` predicate. `not-disabled-state:`
+        // adds no specificity and sorts with the `not-*` variants ahead of `focus-visible:`,
+        // so `focus-visible:border-ring` still wins on a hovered, focused field.
         fieldGroup:
-          "border-transparent bg-transparent group-focus-within/inline-field:bg-background group-hover/inline-field:border-input group-hover/inline-field:bg-background group-data-[invalid]/inline-field:border-error group-data-[invalid]/inline-field:bg-background focus-visible:border-ring",
+          "border-transparent bg-transparent group-focus-within/inline-field:bg-background group-hover/inline-field:not-disabled-state:border-input group-hover/inline-field:not-disabled-state:bg-background group-data-[invalid]/inline-field:border-error group-data-[invalid]/inline-field:bg-background focus-visible:border-ring",
       },
     },
     hidden: {

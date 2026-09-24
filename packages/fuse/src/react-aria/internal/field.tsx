@@ -16,6 +16,7 @@ import { tv } from "tailwind-variants";
 import { cn } from "../../styles/cn";
 import { controlInsetMdClass } from "../../styles/control-inset";
 import { fieldBoxChromeClass } from "../../styles/field-box";
+import { racDisabledStateFaceClass, racInvalidStateFaceClass } from "../../styles/state-face";
 import { stateFocusRingClass, stateFocusRingVisibleClass } from "../../styles/utils";
 import { composeTailwindRenderProps } from "./compose-tailwind-render-props";
 
@@ -24,7 +25,8 @@ import { composeTailwindRenderProps } from "./compose-tailwind-render-props";
  * control height without adding a size axis. Its shared `fieldBoxChromeClass` matches
  * Input's border, fill, radius, and shadow in mixed forms. The RAC Group is not focusable,
  * so it uses the shared state focus constants and receives disabled/invalid state through
- * render props. Descendant inputs borrow this surface instead of painting another fill.
+ * render props, which the rac-target state face turns into the shared disabled and invalid
+ * looks. Descendant inputs borrow this surface instead of painting another fill.
  */
 export const fieldGroupVariants = tv({
   base: cn(
@@ -42,11 +44,11 @@ export const fieldGroupVariants = tv({
       false: "",
     },
     isInvalid: {
-      true: "border-error",
+      true: racInvalidStateFaceClass,
       false: "",
     },
     isDisabled: {
-      true: "opacity-50",
+      true: racDisabledStateFaceClass,
       false: "",
     },
     isReadOnly: {

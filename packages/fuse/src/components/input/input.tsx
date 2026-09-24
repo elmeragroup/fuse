@@ -16,7 +16,7 @@ export function Input({ className, type, ...props }: InputProps): ReactElement {
       data-slot="input"
       className={cn(
         fieldBox(),
-        "file:text-sm file:font-medium min-w-0 file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-foreground disabled:pointer-events-none",
+        "file:text-sm file:font-medium min-w-0 file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-foreground",
         className
       )}
       {...props}

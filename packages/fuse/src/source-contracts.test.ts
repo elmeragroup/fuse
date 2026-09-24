@@ -430,3 +430,220 @@ describe("superseded local forms", () => {
     expect(filesContainingCode("[object String]")).toEqual([]);
   });
 });
+
+/** The class tokens in source code: every run between whitespace, quotes and backticks. */
+function classTokens(code: string): string[] {
+  return code.split(/[\s"'`]+/u).filter((token) => token.length > 0);
+}
+
+/** Split a class token into its variants and utility at the colons outside brackets. */
+function splitVariants(token: string) {
+  const variants: string[] = [];
+  let depth = 0;
+  let current = "";
+  for (const character of token) {
+    if (character === "[") depth += 1;
+    if (character === "]") depth -= 1;
+    if (character === ":" && depth === 0) {
+      variants.push(current);
+      current = "";
+      continue;
+    }
+    current += character;
+  }
+  return { variants, utility: current };
+}
+
+/** A variant that reads another element's state (`group-*`, `peer-*`, `in-*`) styles a part. */
+function readsAnotherElement(variant: string): boolean {
+  return /^(?:group|peer|in)-/u.test(variant);
+}
+
+/**
+ * A disabled dim or pointer-events drop the control writes on itself, rather than taking
+ * it from the state face.
+ */
+function isLocalDisabledDim(token: string): boolean {
+  const { variants, utility } = splitVariants(token);
+  if (!/^(?:opacity-\d+|pointer-events-none)$/u.test(utility)) return false;
+  if (variants.some(readsAnotherElement)) return false;
+  return variants.some(
+    (variant) =>
+      /^(?:disabled|data-disabled|aria-disabled|has-disabled|disabled-state)$/u.test(variant) ||
+      (/^(?:data|aria|has)-\[/u.test(variant) && variant.includes("disabled"))
+  );
+}
+
+/**
+ * A `hover:` or `active:` face with no `enabled-*` gate in front of it. A token with no
+ * utility after its last colon is an object key such as ScrollArea's `hover:` type, not a class.
+ */
+function isUngatedPointerFace(token: string): boolean {
+  const { variants, utility } = splitVariants(token);
+  return utility.length > 0 && (variants.includes("hover") || variants.includes("active"));
+}
+
+const BARE_DISABLED_DIM = /^(?:opacity-\d+|pointer-events-none)$/u;
+
+/**
+ * The bare dims a `tv` map writes inside a disabled-named variant arm (`isDisabled: { … }`
+ * or `disabled: { … }`). The arm, not a selector, carries the state there, so the dim has
+ * no `disabled:` variant for {@link isLocalDisabledDim} to see.
+ */
+function disabledArmDims(code: string): string[] {
+  const dims: string[] = [];
+  for (const match of code.matchAll(/\b(?:isDisabled|disabled)\s*:\s*\{/gu)) {
+    const open = match.index + match[0].length - 1;
+    let depth = 0;
+    let close = open;
+    for (; close < code.length; close += 1) {
+      if (code[close] === "{") depth += 1;
+      if (code[close] === "}") depth -= 1;
+      if (depth === 0) break;
+    }
+    dims.push(...classTokens(code.slice(open + 1, close)).filter((token) => BARE_DISABLED_DIM.test(token)));
+  }
+  return dims;
+}
+
+/**
+ * The bare dims a component adds behind a disabled-named prop condition
+ * (`isVisuallyDisabled && "opacity-70"` or `isDisabled ? "opacity-50" : …`). The condition,
+ * not a selector or a `tv` arm, carries the state there.
+ */
+function disabledConditionDims(code: string): string[] {
+  const dims: string[] = [];
+  for (const match of code.matchAll(/\b\w*[Dd]isabled\w*\s*(?:&&|\?)\s*(["'`])([^"'`]*)\1/gu)) {
+    dims.push(...classTokens(match[2] ?? "").filter((token) => BARE_DISABLED_DIM.test(token)));
+  }
+  return dims;
+}
+
+/** Every flagged token per file, deduplicated and sorted, for files with at least one. */
+function flaggedTokensByFile(flagged: (code: string) => string[]) {
+  return Object.fromEntries(
+    [...SOURCE_TREE.values()]
+      .map((record) => [record.relative, [...new Set(flagged(record.code))].toSorted()] as const)
+      .filter(([, tokens]) => tokens.length > 0)
+      .toSorted(([a], [b]) => a.localeCompare(b))
+  );
+}
+
+function localDisabledDims(code: string): string[] {
+  return [
+    ...classTokens(code).filter(isLocalDisabledDim),
+    ...disabledArmDims(code),
+    ...disabledConditionDims(code),
+  ];
+}
+
+function ungatedPointerFaces(code: string): string[] {
+  return classTokens(code).filter(isUngatedPointerFace);
+}
+
+describe("state faces", () => {
+  // Why not a lint rule: the `elmera` rules live in the external
+  // `@elmeragroup/internal/oxlint` package, so this repo cannot add a sibling of
+  // `no-local-focus-ring` in place, and that rule's owner path is not configurable yet
+  // (see the open-work list). The upstream proposal is `no-local-state-face`. Until it ships, this walk is
+  // the gate: `styles/state-face.ts` owns the disabled dim, and hover and press faces sit
+  // behind the `enabled-hover:` / `enabled-active:` variants from fuse.css.
+  it("recognizes a local disabled dim and an ungated pointer face, and not the gated forms", () => {
+    for (const token of [
+      "disabled:opacity-50",
+      "data-disabled:opacity-50",
+      "aria-disabled:pointer-events-none",
+      "has-disabled:opacity-50",
+      "has-[[data-slot=input-group-control]:disabled]:opacity-50",
+      "data-open:disabled:opacity-70",
+      "disabled-state:opacity-50",
+    ]) {
+      expect(isLocalDisabledDim(token), token).toBe(true);
+    }
+    for (const token of [
+      "group-data-disabled/field:opacity-50",
+      "peer-data-disabled:opacity-50",
+      "disabled:bg-muted",
+      "opacity-50",
+      "data-[hovering]:pointer-events-auto",
+    ]) {
+      expect(isLocalDisabledDim(token), token).toBe(false);
+    }
+    for (const token of [
+      "hover:bg-muted",
+      "active:scale-[0.96]",
+      "data-open:hover:bg-muted",
+      "*:[a]:hover:x",
+    ]) {
+      expect(isUngatedPointerFace(token), token).toBe(true);
+    }
+    for (const token of ["enabled-hover:bg-muted", "enabled-active:scale-[0.96]", "group-hover:bg-muted"]) {
+      expect(isUngatedPointerFace(token), token).toBe(false);
+    }
+    expect(disabledArmDims('isDisabled: { true: "opacity-75" }')).toEqual(["opacity-75"]);
+    expect(disabledArmDims('disabled: { true: { root: "cursor-not-allowed pointer-events-none" } }')).toEqual(
+      ["pointer-events-none"]
+    );
+    expect(disabledArmDims("isDisabled: { true: racDisabledStateFaceClass }")).toEqual([]);
+    expect(
+      disabledArmDims('variant: { muted: "opacity-50" }, isDisabled: { true: "cursor-not-allowed" }')
+    ).toEqual([]);
+    // Button's old dim, added behind its prop rather than a selector or a `tv` arm.
+    expect(localDisabledDims('cn(base, isVisuallyDisabled && "opacity-70")')).toEqual(["opacity-70"]);
+    expect(disabledConditionDims('isDisabled ? "pointer-events-none" : "cursor-pointer"')).toEqual([
+      "pointer-events-none",
+    ]);
+    expect(localDisabledDims('isVisuallyDisabled && "cursor-not-allowed"')).toEqual([]);
+    expect(disabledConditionDims('isOpen && "opacity-0"')).toEqual([]);
+    expect(disabledConditionDims("isDisabled && racDisabledStateFaceClass")).toEqual([]);
+  });
+
+  it("dims a disabled control only through the state face", () => {
+    // Reviewed exceptions, keyed by file and exact token so a new dim in a listed file still
+    // fails: option rows inside a popup list are parts, not whole controls. They keep
+    // `pointer-events-none` so the pointer never highlights a disabled option.
+    const { "styles/state-face.ts": _owner, ...copies } = flaggedTokensByFile(localDisabledDims);
+    expect(copies).toEqual({
+      "components/overlay/overlay-classes.ts": [
+        "data-disabled:opacity-50",
+        "data-disabled:pointer-events-none",
+      ],
+      "react-aria/date-picker/date-picker.tsx": ["data-disabled:pointer-events-none"],
+    });
+  });
+
+  it("gates every hover and press face on a control that can be disabled", () => {
+    // Reviewed exceptions, keyed by file and exact token, none of which paints a control
+    // that can be disabled. A new ungated token in a listed file still fails.
+    expect(flaggedTokensByFile(ungatedPointerFaces)).toEqual({
+      // The action Button's fill override; the action has no disabled state.
+      "components/alert/alert-variants.ts": [
+        "hover:bg-error/90",
+        "hover:bg-success/90",
+        "hover:bg-warning/90",
+      ],
+      // Links, which have no disabled state.
+      "components/breadcrumb/breadcrumb.tsx": ["hover:text-foreground"],
+      "components/dialog/dialog.tsx": ["*:[a]:hover:text-foreground"],
+      "components/item/item-variants.ts": ["[a]:hover:bg-muted"],
+      // The country trigger adds its hover and press faces only while the field is editable.
+      "components/phone-number-field/phone-number-field.tsx": ["active:scale-[0.97]", "hover:bg-muted"],
+      // The rail, an aria-hidden resize handle that is never disabled.
+      "components/sidebar/sidebar.tsx": [
+        "hover:after:bg-sidebar-border",
+        "hover:group-data-[collapsible=offcanvas]:bg-sidebar",
+      ],
+      // Rows, which are not controls.
+      "components/table/table.tsx": [
+        "hover:bg-muted/72",
+        "hover:bg-transparent",
+        "in-data-[slot=frame]:*:[tr]:hover:*:[td]:bg-transparent",
+        "in-data-[slot=frame]:*:[tr]:hover:bg-transparent",
+        "in-data-[slot=frame]:hover:bg-transparent",
+      ],
+      // Day cells and list rows, parts whose disabled face is muted text.
+      "styles/calendar.ts": ["hover:bg-muted", "hover:bg-transparent"],
+      "styles/grid-list.ts": ["hover:bg-muted", "hover:bg-muted/80"],
+    });
+  });
+});
