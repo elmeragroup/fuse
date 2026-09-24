@@ -88,13 +88,34 @@ describe("parse", () => {
     });
   });
 
-  it("bounds the quoted input in the message and keeps no copy of it on the error", () => {
-    const input = `oklch(${"9".repeat(500)}`;
-    const result = Oklch.parse(input);
-    if (result._tag === "ok") throw new Error("expected a failure");
-    expect(Object.values(result.error)).not.toContain(input);
-    expect(result.error.message.length).toBeLessThan(120);
-    expect(result.error.message.endsWith("…")).toBe(true);
+  it("quotes at most 64 characters of the input and keeps no copy of it on the error", () => {
+    // 64 characters: "oklch(" is 6, plus 58 nines.
+    const atLimit = `oklch(${"9".repeat(58)}`;
+    const pastLimit = `oklch(${"9".repeat(59)}`;
+    const long = `oklch(${"9".repeat(500)}`;
+    const failure = (input: string) => {
+      const result = Oklch.parse(input);
+      if (result._tag === "ok") throw new Error(`expected ${input} to fail`);
+      return result.error;
+    };
+    expect(failure(atLimit).message).toBe(`Expected an oklch() color, received "oklch(${"9".repeat(58)}"`);
+    expect(failure(pastLimit).message).toBe(`Expected an oklch() color, received "oklch(${"9".repeat(58)}"…`);
+    const error = failure(long);
+    expect(error.message).toBe(`Expected an oklch() color, received "oklch(${"9".repeat(58)}"…`);
+    // Every own property, enumerable or not (stack, message, name, _tag, notation). V8 installs
+    // `stack` as an accessor, whose descriptor has no `value`, so the getter is called instead.
+    // (`Reflect.get` would do the same, but lint bans it.)
+    for (const key of Reflect.ownKeys(error)) {
+      const descriptor = Object.getOwnPropertyDescriptor(error, key);
+      const value: unknown = descriptor?.get === undefined ? descriptor?.value : descriptor.get.call(error);
+      expect(String(value).includes(long), String(key)).toBe(false);
+    }
+  });
+
+  it("wraps a hue of exactly 360 and a negative zero hue to 0", () => {
+    expect(parsed("oklch(0.5 0.1 360)").h).toBe(0);
+    // Object.is tells -0 from 0, so this pins the positive zero.
+    expect(Object.is(parsed("oklch(0.5 0.1 -0)").h, 0)).toBe(true);
   });
 });
 
@@ -110,6 +131,17 @@ describe("make", () => {
     });
     expect(Oklch.make({ l: 0.5, c: 0.1, h: 30, alpha: Number.NaN })).toMatchObject({
       error: { quantity: "Oklch alpha" },
+    });
+  });
+
+  it("refuses an infinite chroma and a hue of 360, naming the range", () => {
+    expect(Oklch.make({ l: 0.5, c: Infinity, h: 0, alpha: 1 })).toMatchObject({
+      _tag: "err",
+      error: { message: "Oklch c must be a finite number in 0..1000000, received Infinity" },
+    });
+    expect(Oklch.make({ l: 0.5, c: 0.1, h: 360, alpha: 1 })).toMatchObject({
+      _tag: "err",
+      error: { message: "Oklch h must be a finite number in 0..360 exclusive, received 360" },
     });
   });
 
@@ -205,6 +237,19 @@ describe("mix", () => {
     expect(mixed("oklch(0.8 0.1 30 / 0.5)", "oklch(0.2 0.1 30)", 0.5)).toBe("oklch(0.4 0.1 30 / 0.75)");
   });
 
+  it("takes lightness and chroma from the opaque side when one endpoint is transparent", () => {
+    // alpha 0 * 0.5 + 1 * 0.5 = 0.5; L (0 * 0 * 0.5 + 0.8 * 1 * 0.5) / 0.5 = 0.8, and likewise
+    // C = 0.2. Hue is not premultiplied: the shorter arc from 0 to 120 at 0.5 is 60.
+    expect(mixed("oklch(0 0 0 / 0)", "oklch(0.8 0.2 120)", 0.5)).toBe("oklch(0.8 0.2 60 / 0.5)");
+  });
+
+  it("leaves a 180° hue difference unadjusted, as the shorter-arc rule does", () => {
+    // CSS Color 4 adjusts only a difference strictly above 180 or below -180, so both orders
+    // interpolate straight between 0 and 180: 90.
+    expect(mixed("oklch(0.5 0.1 0)", "oklch(0.5 0.1 180)", 0.5)).toBe("oklch(0.5 0.1 90)");
+    expect(mixed("oklch(0.5 0.1 180)", "oklch(0.5 0.1 0)", 0.5)).toBe("oklch(0.5 0.1 90)");
+  });
+
   it("mixes two transparent colors to transparent without dividing by zero", () => {
     expect(mixed("oklch(0.8 0.1 30 / 0)", "oklch(0.2 0.1 90 / 0)", 0.5)).toBe("oklch(0 0 60 / 0)");
   });
@@ -258,6 +303,22 @@ const SRGB_RED = "oklch(0.627955 0.257683 29.2339)";
 const SRGB_BLUE = "oklch(0.452014 0.313214 264.052)";
 
 describe("toSrgb", () => {
+  it("matches reference linear sRGB inside and outside the gamut", () => {
+    // colorjs.io 0.5.2 `to("srgb-linear")`, cross-checked with culori 4.0.1.
+    const references = [
+      ["oklch(0.4848 0.16637 35.92)", [0.3915711, 0.025188, -0.0000028]],
+      ["oklch(0.7 0.1 200)", [0.0516122, 0.4398431, 0.4726739]],
+      ["oklch(0.5 0.15 280)", [0.0915861, 0.0891842, 0.4652323]],
+      ["oklch(0.9 0.3 140)", [0.0696449, 1.0954845, -0.0189763]],
+    ] as const;
+    for (const [input, [r, g, b]] of references) {
+      const linear = Oklch.toLinearSrgb(parsed(input));
+      expect(linear.r, `${input} r`).toBeCloseTo(r, 5);
+      expect(linear.g, `${input} g`).toBeCloseTo(g, 5);
+      expect(linear.b, `${input} b`).toBeCloseTo(b, 5);
+    }
+  });
+
   it("maps the achromatic endpoints to sRGB black and white", () => {
     const white = Oklch.toSrgb(parsed("oklch(1 0 0)"));
     const black = Oklch.toSrgb(parsed("oklch(0 0 0)"));

@@ -2,6 +2,9 @@ import * as fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
 import * as CssColor from "./css-color.ts";
+import * as Hex from "./hex.ts";
+import * as Lab from "./lab.ts";
+import * as Oklch from "./oklch.ts";
 import { getOrThrow } from "./result.ts";
 import * as Srgb from "./srgb.ts";
 
@@ -26,6 +29,8 @@ describe("parse", () => {
     expect(parsed("rgb(255, 255, 255)")._tag).toBe("Srgb");
     expect(parsed("rgba(0, 0, 0, 0)")._tag).toBe("Srgb");
     expect(parsed("lab(100 0 0)")._tag).toBe("Lab");
+    expect(parsed("LAB(50 0 0)")._tag).toBe("Lab");
+    expect(parsed("RGBA(0, 0, 0, 0.5)")._tag).toBe("Srgb");
   });
 
   it("fails a malformed color with its notation's error", () => {
@@ -90,10 +95,14 @@ const colorText = fc.oneof(
 
 describe("toSrgb", () => {
   it("converts every color parse accepts, however large its components", () => {
+    let runs = 0;
+    let accepted = 0;
     fc.assert(
       fc.property(colorText, (input) => {
+        runs += 1;
         const result = CssColor.parse(input);
         if (result._tag === "ok") {
+          accepted += 1;
           const srgb = CssColor.toSrgb(result.value);
           for (const channel of [srgb.r, srgb.g, srgb.b, srgb.alpha]) {
             expect(channel).toBeGreaterThanOrEqual(0);
@@ -112,6 +121,41 @@ describe("toSrgb", () => {
         ],
       }
     );
+    // About three quarters of the generated text is in contract; the rest carries a chroma or
+    // an axis beyond 1e6, a Lab percentage alpha or an infinite hue, which parse must refuse.
+    // A parser that refused far more than that has regressed.
+    expect(accepted / runs).toBeGreaterThan(0.5);
+  });
+
+  it("accepts the extreme in-contract colors the property seeds", () => {
+    for (const input of [
+      "oklch(0 1e6 0)",
+      "oklch(1 1e6 200)",
+      "lab(0 1e6 -1e6)",
+      "lab(100 -1e6 1e6)",
+      "rgba(1e400, -1e400, 1e-400, 1e400)",
+    ]) {
+      expect(CssColor.parse(input)._tag, input).toBe("ok");
+    }
+  });
+
+  it("writes the reference hex of each notation after clipping", () => {
+    // colorjs.io 0.5.2 `to("srgb").toGamut({ method: "clip" })` hex, which culori 4.0.1 matches.
+    // The first row is the README's example.
+    const references = [
+      ["oklch(0.4848 0.16637 35.92)", "#A82C00"],
+      ["oklch(0.7 0.1 200)", "#40B1B7"],
+      ["oklch(0.5 0.15 280)", "#5554B6"],
+      ["oklch(0.9 0.3 140)", "#4BFF00"],
+      ["lab(50 20 -30)", "#856CAA"],
+      ["lab(40 -30 40)", "#366A11"],
+      ["lab(5 10 -10)", "#1A0B1F"],
+      ["lab(2 0 0)", "#070707"],
+      ["lab(30 80 -110)", "#4E00FD"],
+    ] as const;
+    for (const [input, hex] of references) {
+      expect(Hex.formatOpaque(CssColor.toSrgb(parsed(input))), input).toBe(hex);
+    }
   });
 
   it("passes an sRGB color through and converts an OKLCH one", () => {
@@ -121,5 +165,32 @@ describe("toSrgb", () => {
     expect(CssColor.toSrgb(getOrThrow(Srgb.make({ r: 0.1, g: 0.2, b: 0.3, alpha: 1 })))).toEqual(
       getOrThrow(Srgb.make({ r: 0.1, g: 0.2, b: 0.3, alpha: 1 }))
     );
+  });
+});
+
+describe("parse on long input", () => {
+  // At 50,000 characters each input below parses in about 1 ms, while the quadratic number
+  // pattern `[+-]?\d*\.?\d+` the CSS_NUMBER comment warns about takes 900 ms or more on every
+  // one of them (measured on Node 24). The 200 ms ceiling sits far from both, so it neither
+  // flakes on a slow machine nor passes a quadratic regex.
+  const digits = "9".repeat(50_000);
+  const cases = [
+    ["oklch", (input: string) => Oklch.parse(input), `oklch(${digits}`],
+    ["oklch", (input: string) => Oklch.parse(input), `oklch(0.5 ${digits}x`],
+    ["lab", (input: string) => Lab.parse(input), `lab(${digits}`],
+    ["lab", (input: string) => Lab.parse(input), `lab(50 ${digits}x`],
+    ["rgb", (input: string) => Srgb.parse(input), `rgb(${digits}`],
+    ["rgb", (input: string) => Srgb.parse(input), `rgb(1, ${digits}x`],
+    ["css-color", (input: string) => CssColor.parse(input), `oklch(${digits}`],
+  ] as const;
+
+  it("refuses a long malformed number run in linear time", () => {
+    for (const [notation, parse, input] of cases) {
+      const started = Date.now();
+      const result = parse(input);
+      const elapsed = Date.now() - started;
+      expect(result._tag, notation).toBe("err");
+      expect(elapsed, `${notation} ${input.slice(0, 12)}…`).toBeLessThan(200);
+    }
   });
 });

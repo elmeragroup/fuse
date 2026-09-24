@@ -29,6 +29,12 @@ describe("parse", () => {
     expect(channels(parsed("rgb(1e400, -1e400, 0)"))).toEqual([1, 0, 0, 1]);
   });
 
+  it("accepts rgb and rgba with either three or four arguments, as CSS aliases them", () => {
+    // CSS Color 4 makes rgba() a legacy alias of rgb() with the same grammar.
+    expect(channels(parsed("rgb(255, 0, 0, 0.5)"))).toEqual([1, 0, 0, 0.5]);
+    expect(channels(parsed("rgba(0, 255, 0)"))).toEqual([0, 1, 0, 1]);
+  });
+
   it("refuses the space form, percentages, none, missing channels and other notations", () => {
     for (const input of [
       "rgb(255 255 255)",

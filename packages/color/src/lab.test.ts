@@ -48,7 +48,43 @@ describe("parse", () => {
   });
 });
 
+describe("make", () => {
+  it("refuses components outside their ranges, naming the component", () => {
+    expect(Lab.make({ l: 101, a: 0, b: 0, alpha: 1 })).toMatchObject({
+      _tag: "err",
+      error: { message: "Lab l must be a finite number in 0..100, received 101" },
+    });
+    expect(Lab.make({ l: 50, a: 1_000_001, b: 0, alpha: 1 })).toMatchObject({
+      _tag: "err",
+      error: { message: "Lab a must be a finite number in -1000000..1000000, received 1000001" },
+    });
+    expect(Lab.make({ l: 50, a: 0, b: Number.NaN, alpha: 1 })).toMatchObject({
+      _tag: "err",
+      error: { message: "Lab b must be a finite number in -1000000..1000000, received NaN" },
+    });
+  });
+});
+
 describe("toSrgb", () => {
+  it("matches reference linear sRGB, including the dark linear branches and outside the gamut", () => {
+    // colorjs.io 0.5.2 `to("srgb-linear")`, cross-checked with culori 4.0.1. lab(5 10 -10) takes
+    // the L <= 8 linear y branch and the fx^3 <= epsilon linear x branch; lab(2 0 0) is a dark
+    // neutral on the linear y branch; lab(30 80 -110) is out of gamut with g below 0.
+    const references = [
+      ["lab(50 20 -30)", [0.2341466, 0.1500557, 0.4044469]],
+      ["lab(40 -30 40)", [0.0372282, 0.1449063, 0.0056957]],
+      ["lab(5 10 -10)", [0.0105459, 0.0032987, 0.0135948]],
+      ["lab(2 0 0)", [0.0022141, 0.0022141, 0.0022141]],
+      ["lab(30 80 -110)", [0.0768094, -0.0198143, 0.9810998]],
+    ] as const;
+    for (const [input, [r, g, b]] of references) {
+      const linear = Lab.toLinearSrgb(parsed(input));
+      expect(linear.r, `${input} r`).toBeCloseTo(r, 5);
+      expect(linear.g, `${input} g`).toBeCloseTo(g, 5);
+      expect(linear.b, `${input} b`).toBeCloseTo(b, 5);
+    }
+  });
+
   it("maps the D50 white and black points to sRGB white and black", () => {
     // Bradford adaptation carries the D50 white to D65, where sRGB's white sits.
     for (const channel of srgb("lab(100 0 0)").slice(0, 3)) {
