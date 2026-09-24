@@ -17,7 +17,6 @@ import {
   cssVarColor,
   effectiveOpacity,
   headingNamed,
-  px,
   renderThemed,
   stampDensity,
   textNamed,
@@ -26,19 +25,6 @@ import { Badge } from "../badge/badge";
 import { Radio, RadioGroup, RadioGroupItem, RadioIconButton, RadioItem, RadioItemGroup } from "./radio-group";
 
 const ICON_SIZES = ["icon-xxs", "icon-xs", "icon-sm", "icon", "icon-lg"] as const;
-
-const ICON_TO_RUNG = {
-  "icon-xxs": "xs",
-  "icon-xs": "xs",
-  "icon-sm": "sm",
-  icon: "md",
-  "icon-lg": "lg",
-} as const satisfies Record<(typeof ICON_SIZES)[number], "xs" | "sm" | "md" | "lg">;
-
-const ICON_BOX = {
-  dense: { xs: 24, sm: 32, md: 36, lg: 40 },
-  comfortable: { xs: 32, sm: 36, md: 44, lg: 48 },
-} as const;
 
 const ICON_SVG_PX = {
   "icon-xxs": 12,
@@ -589,7 +575,9 @@ describe("RadioIconButton", () => {
     expect(radioNamed("List", true).getAttribute("aria-checked")).toBe("true");
   });
 
-  it("renders every size's computed box and svg metrics with an accessible name", () => {
+  // control-size.browser.test.tsx measures each size's square against DENSITY_METRICS; the
+  // glyph size is RadioIconButton's own.
+  it("renders every size's glyph with an accessible name", () => {
     renderThemed(
       <RadioGroup label="Sizes">
         {ICON_SIZES.map((size) => (
@@ -604,9 +592,6 @@ describe("RadioIconButton", () => {
       stampDensity(density);
       for (const size of ICON_SIZES) {
         const button = radioNamed(size);
-        const box = ICON_BOX[density][ICON_TO_RUNG[size]];
-        expect(px(getComputedStyle(button).width), `${density} ${size} width`).toBe(box);
-        expect(px(getComputedStyle(button).height), `${density} ${size} height`).toBe(box);
         const svg = button.querySelector("svg");
         if (!(svg instanceof SVGElement)) {
           throw new Error(`expected an svg in ${size}`);

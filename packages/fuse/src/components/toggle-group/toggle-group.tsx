@@ -8,6 +8,7 @@ import { ToggleGroup as ToggleGroupPrimitive } from "@base-ui/react/toggle-group
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import { controlMetrics } from "../../styles/control-size";
 import { toggleVariants } from "../toggle/toggle-variants";
 
 type ToggleGroupContextValue = VariantProps<typeof toggleVariants> & {
@@ -78,6 +79,17 @@ function ToggleGroupRoot({
   );
 }
 
+/** The toggle sizes, keyed by their control size. */
+const CONTROL_SIZE_OF = { xs: "xs", sm: "sm", default: "md", lg: "lg" } as const;
+
+/**
+ * A segmented item's inset: the icon inset on both sides in place of the label inset, so
+ * the joined segments sit tighter than free-standing toggles.
+ */
+function segmentInset(size: keyof typeof CONTROL_SIZE_OF): string {
+  return controlMetrics({ size: CONTROL_SIZE_OF[size] }).iconInset();
+}
+
 /**
  * Group-aware toggle. Resolves `variant` / `size` as `itemProp ?? contextValue`
  * so an explicit item-level axis wins.
@@ -105,7 +117,7 @@ function ToggleGroupItem({
           variant: resolvedVariant,
           size: resolvedSize,
         }),
-        "group-data-[spacing=0]/toggle-group:data-[size=default]:px-(--control-px-icon-md) group-data-[spacing=0]/toggle-group:has-data-[icon=inline-end]:data-[size=default]:pr-(--control-px-icon-md) group-data-[spacing=0]/toggle-group:has-data-[icon=inline-start]:data-[size=default]:pl-(--control-px-icon-md) group-data-[spacing=0]/toggle-group:data-[size=lg]:px-(--control-px-icon-lg) group-data-[spacing=0]/toggle-group:has-data-[icon=inline-end]:data-[size=lg]:pr-(--control-px-icon-lg) group-data-[spacing=0]/toggle-group:has-data-[icon=inline-start]:data-[size=lg]:pl-(--control-px-icon-lg) group-data-[spacing=0]/toggle-group:data-[size=sm]:px-(--control-px-icon-sm) group-data-[spacing=0]/toggle-group:has-data-[icon=inline-end]:data-[size=sm]:pr-(--control-px-icon-sm) group-data-[spacing=0]/toggle-group:has-data-[icon=inline-start]:data-[size=sm]:pl-(--control-px-icon-sm) group-data-[spacing=0]/toggle-group:data-[size=xs]:px-(--control-px-icon-xs) group-data-[spacing=0]/toggle-group:has-data-[icon=inline-end]:data-[size=xs]:pr-(--control-px-icon-xs) group-data-[spacing=0]/toggle-group:has-data-[icon=inline-start]:data-[size=xs]:pl-(--control-px-icon-xs)",
+        context.spacing === 0 && segmentInset(resolvedSize ?? "default"),
         className
       )}
       {...props}>

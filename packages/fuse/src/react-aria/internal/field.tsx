@@ -14,7 +14,7 @@ import {
 import { tv } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
-import { controlInsetMdClass } from "../../styles/control-inset";
+import { controlMdInsetTypeClass } from "../../styles/control-size-md";
 import { fieldBoxChromeClass } from "../../styles/field-box";
 import { racDisabledStateFaceClass, racInvalidStateFaceClass } from "../../styles/state-face";
 import { stateFocusRingClass, stateFocusRingVisibleClass } from "../../styles/utils";
@@ -117,7 +117,7 @@ export function Input({ className, ...props }: InputProps): ReactElement {
         // paints a second one — that is what keeps the read-only `bg-muted` fill honest.
         cn(
           "min-w-0 flex-1 bg-transparent",
-          controlInsetMdClass,
+          controlMdInsetTypeClass,
           // oxlint-disable-next-line elmera/no-local-focus-ring -- within-adapter control outline
           "text-foreground outline-none placeholder:text-muted-foreground disabled:text-muted-foreground"
         )

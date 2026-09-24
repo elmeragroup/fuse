@@ -6,20 +6,10 @@ import { toggleVariants } from "./toggle-variants";
 
 const VARIANTS = ["default", "outline"] as const;
 const SIZES = ["xs", "sm", "default", "lg"] as const;
-const SIZE_TO_RUNG = {
-  xs: "xs",
-  sm: "sm",
-  default: "md",
-  lg: "lg",
-} as const;
 
 describe("toggleVariants", () => {
-  it("defaults to variant=default and size=default", () => {
-    const resolved = toggleVariants();
-    expect(resolved).toContain("bg-transparent");
-    expect(resolved).toContain("h-(--control-h-md)");
-    expect(resolved).toContain("gap-(--control-gap-md)");
-    expect(resolved.split(/\s+/).length).toBeGreaterThan(1);
+  it("defaults to variant=default", () => {
+    expect(toggleVariants()).toContain("bg-transparent");
   });
 
   it("renders each variant without leaking the other axis", () => {
@@ -32,54 +22,6 @@ describe("toggleVariants", () => {
     expect(outline).toContain("border-input");
     expect(outline).toContain("bg-transparent");
     expect(outline).toContain("shadow-xs");
-  });
-
-  it("reads the matching --control-h-* variable on every size, never a literal h-*", () => {
-    for (const size of SIZES) {
-      const rung = SIZE_TO_RUNG[size];
-      const resolved = toggleVariants({ size });
-      expect(resolved, size).toContain(`h-(--control-h-${rung})`);
-      expect(resolved, size).toContain(`min-w-(--control-h-${rung})`);
-      expect(resolved, size).toContain(`gap-(--control-gap-${rung})`);
-      expect(resolved, size).toContain(`px-(--control-px-${rung})`);
-      expect(resolved, size).not.toMatch(/(?:^|\s)h-\d/);
-      expect(resolved, size).not.toMatch(/(?:^|\s)min-w-\d/);
-      expect(resolved, size).not.toMatch(/(?:^|\s)gap-\d/);
-      expect(resolved, size).not.toMatch(/(?:^|\s)px-\d/);
-      for (const other of SIZES) {
-        if (other === size) {
-          continue;
-        }
-        expect(resolved, size).not.toContain(`h-(--control-h-${SIZE_TO_RUNG[other]})`);
-      }
-    }
-  });
-
-  it("keeps icon-padding hooks, size-owned type, and the control-type pair on the mapped rungs", () => {
-    const xs = toggleVariants({ size: "xs" });
-    expect(xs).toContain("text-xs");
-    expect(xs).toContain("has-data-[icon=inline-start]:pl-(--control-px-icon-xs)");
-    expect(xs).toContain("has-data-[icon=inline-end]:pr-(--control-px-icon-xs)");
-    expect(xs).toContain("[&_svg:not([class*='size-'])]:size-3");
-    expect(xs).not.toContain("[font-size:var(--control-text)]");
-
-    const sm = toggleVariants({ size: "sm" });
-    expect(sm).toContain("text-sm");
-    expect(sm).toContain("has-data-[icon=inline-start]:pl-(--control-px-icon-sm)");
-    expect(sm).toContain("has-data-[icon=inline-end]:pr-(--control-px-icon-sm)");
-    expect(sm).not.toContain("[font-size:var(--control-text)]");
-
-    const defaults = toggleVariants({ size: "default" });
-    expect(defaults).toContain("has-data-[icon=inline-start]:pl-(--control-px-icon-md)");
-    expect(defaults).toContain("has-data-[icon=inline-end]:pr-(--control-px-icon-md)");
-    expect(defaults).toContain("[font-size:var(--control-text)]");
-    expect(defaults).toContain("[line-height:var(--control-leading)]");
-
-    const lg = toggleVariants({ size: "lg" });
-    expect(lg).toContain("has-data-[icon=inline-start]:pl-(--control-px-icon-lg)");
-    expect(lg).toContain("has-data-[icon=inline-end]:pr-(--control-px-icon-lg)");
-    expect(lg).toContain("[font-size:var(--control-text)]");
-    expect(lg).toContain("[line-height:var(--control-leading)]");
   });
 
   it("keeps the doubled pressed selectors and composes the shared self focus ring", () => {

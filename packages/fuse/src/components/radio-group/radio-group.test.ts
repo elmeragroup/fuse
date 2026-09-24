@@ -24,25 +24,6 @@ describe("RadioItem namespace aliases", () => {
 });
 
 describe("radioIconButtonVariants", () => {
-  it("defaults to the icon size rung", () => {
-    const classes = radioIconButtonVariants();
-    expect(classes).toContain("size-(--control-h-md)");
-    expect(classes).toContain("[&_svg:not([class*='size-'])]:size-4");
-  });
-
-  it("renders each size rung", () => {
-    expect(radioIconButtonVariants({ size: "icon-xxs" })).toContain("size-(--control-h-xs)");
-    expect(radioIconButtonVariants({ size: "icon-xxs" })).toContain("[&_svg:not([class*='size-'])]:size-3");
-    expect(radioIconButtonVariants({ size: "icon-xs" })).toContain("size-(--control-h-xs)");
-    expect(radioIconButtonVariants({ size: "icon-xs" })).toContain("[&_svg:not([class*='size-'])]:size-3.5");
-    expect(radioIconButtonVariants({ size: "icon-sm" })).toContain("size-(--control-h-sm)");
-    expect(radioIconButtonVariants({ size: "icon-sm" })).toContain("[&_svg:not([class*='size-'])]:size-4");
-    expect(radioIconButtonVariants({ size: "icon" })).toContain("size-(--control-h-md)");
-    expect(radioIconButtonVariants({ size: "icon" })).toContain("[&_svg:not([class*='size-'])]:size-4");
-    expect(radioIconButtonVariants({ size: "icon-lg" })).toContain("size-(--control-h-lg)");
-    expect(radioIconButtonVariants({ size: "icon-lg" })).toContain("[&_svg:not([class*='size-'])]:size-5");
-  });
-
   it("puts the icon-button chrome on the recipe base", () => {
     const classes = radioIconButtonVariants();
     expect(classes).toContain("inline-flex");
@@ -58,8 +39,5 @@ describe("radioIconButtonVariants", () => {
     expect(Object.keys(radioIconButtonVariants.variants.size).toSorted()).toEqual(
       [...ICON_BUTTON_SIZES].toSorted()
     );
-    for (const size of ICON_BUTTON_SIZES) {
-      expect(radioIconButtonVariants({ size }), size).toContain("size-(--control-h-");
-    }
   });
 });

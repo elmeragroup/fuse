@@ -1,14 +1,15 @@
 import { tv } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import { controlSize } from "../../styles/control-size";
 import { dataStateFaceClass } from "../../styles/state-face";
 
 /**
  * Module-private recipe. Size axis for `RadioIconButton`; default
  * `icon`. Not exported from `@elmeragroup/fuse/radio-group`.
  *
- * Sizes read `size-(--control-h-*)` like Button's icon sizes. `icon-xxs` and `icon-xs`
- * share the `xs` height and differ only by glyph size. Svg sizes apply only to
+ * Each size is the control-size recipe's `square`, like Button's icon sizes. `icon-xxs` and
+ * `icon-xs` share the `xs` square and differ only by glyph size, which stays local. Svg sizes apply only to
  * `svg:not([class*='size-'])`. The radio root is a <span>, which never matches `:disabled`,
  * so the state face keys off Base UI's `data-disabled` and `data-invalid` attributes, plus a
  * consumer's `aria-invalid`. Hover and press sit behind the `enabled-*` gate, so a disabled
@@ -22,11 +23,15 @@ export const radioIconButtonVariants = tv({
   ),
   variants: {
     size: {
-      "icon-xxs": "size-(--control-h-xs) [&_svg:not([class*='size-'])]:size-3",
-      "icon-xs": "size-(--control-h-xs) [&_svg:not([class*='size-'])]:size-3.5",
-      "icon-sm": "size-(--control-h-sm) [&_svg:not([class*='size-'])]:size-4",
-      icon: "size-(--control-h-md) [&_svg:not([class*='size-'])]:size-4",
-      "icon-lg": "size-(--control-h-lg) [&_svg:not([class*='size-'])]:size-5",
+      "icon-xxs": controlSize({ size: "xs", fit: "square", class: "[&_svg:not([class*='size-'])]:size-3" }),
+      "icon-xs": controlSize({
+        size: "xs",
+        fit: "square",
+        class: "[&_svg:not([class*='size-'])]:size-3.5",
+      }),
+      "icon-sm": controlSize({ size: "sm", fit: "square", class: "[&_svg:not([class*='size-'])]:size-4" }),
+      icon: controlSize({ size: "md", fit: "square", class: "[&_svg:not([class*='size-'])]:size-4" }),
+      "icon-lg": controlSize({ size: "lg", fit: "square", class: "[&_svg:not([class*='size-'])]:size-5" }),
     },
   },
   defaultVariants: {

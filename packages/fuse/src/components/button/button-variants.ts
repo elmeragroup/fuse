@@ -1,6 +1,7 @@
 import { tv } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import { controlSize } from "../../styles/control-size";
 import { dataStateFaceClass, nativeStateFaceClass } from "../../styles/state-face";
 import { selfFocusRingClass } from "../../styles/utils";
 
@@ -13,6 +14,9 @@ import { selfFocusRingClass } from "../../styles/utils";
 // Hover and press styles use the `enabled-hover:` and `enabled-active:` variants from
 // fuse.css, so a disabled root never changes fill, border, text or position under the
 // pointer. `aria-expanded:` follows an open popup, not the pointer, so it has no gate.
+// The text and icon sizes take their box from the control-size recipe: `default` is the md
+// label, `icon*` the squares. The xs glyph size and `icon-inline`, a square as tall as the
+// surrounding line that follows no density, stay local.
 // Every size rounds with the theme's `--radius-button`. The arbitrary value keeps
 // tailwind-merge able to replace it with a consumer `rounded-*` class, which the custom
 // `rounded-button` utility would not be.
@@ -42,16 +46,15 @@ export const buttonVariants = tv({
       link: "text-primary underline-offset-4 enabled-hover:underline",
     },
     size: {
-      default:
-        "h-(--control-h-md) gap-(--control-gap-md) px-(--control-px-md) [font-size:var(--control-text)] [line-height:var(--control-leading)] has-data-[icon=inline-end]:pr-(--control-px-icon-md) has-data-[icon=inline-start]:pl-(--control-px-icon-md)",
-      xs: "text-xs h-(--control-h-xs) gap-(--control-gap-xs) px-(--control-px-xs) has-data-[icon=inline-end]:pr-(--control-px-icon-xs) has-data-[icon=inline-start]:pl-(--control-px-icon-xs) [&_svg:not([class*='size-'])]:size-3",
-      sm: "text-sm h-(--control-h-sm) gap-(--control-gap-sm) px-(--control-px-sm) has-data-[icon=inline-end]:pr-(--control-px-icon-sm) has-data-[icon=inline-start]:pl-(--control-px-icon-sm)",
-      lg: "h-(--control-h-lg) gap-(--control-gap-lg) px-(--control-px-lg) [font-size:var(--control-text)] [line-height:var(--control-leading)] has-data-[icon=inline-end]:pr-(--control-px-icon-lg) has-data-[icon=inline-start]:pl-(--control-px-icon-lg)",
-      icon: "size-(--control-h-md)",
-      "icon-xs": "size-(--control-h-xs) [&_svg:not([class*='size-'])]:size-3",
-      "icon-sm": "size-(--control-h-sm)",
+      default: controlSize({ size: "md", fit: "label" }),
+      xs: controlSize({ size: "xs", fit: "label", class: "[&_svg:not([class*='size-'])]:size-3" }),
+      sm: controlSize({ size: "sm", fit: "label" }),
+      lg: controlSize({ size: "lg", fit: "label" }),
+      icon: controlSize({ size: "md", fit: "square" }),
+      "icon-xs": controlSize({ size: "xs", fit: "square", class: "[&_svg:not([class*='size-'])]:size-3" }),
+      "icon-sm": controlSize({ size: "sm", fit: "square" }),
       "icon-inline": "hit-area-1 aspect-square h-lh w-auto",
-      "icon-lg": "size-(--control-h-lg)",
+      "icon-lg": controlSize({ size: "lg", fit: "square" }),
     },
   },
   defaultVariants: {
