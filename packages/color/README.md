@@ -36,7 +36,7 @@ if (parsed._tag === "ok") {
 
 Where a malformed value is a defect rather than input, such as a literal in a token module, unwrap it with `getOrThrow` from `@elmeragroup/color/result`. The call throws the `InvalidColor`.
 
-`@elmeragroup/color/effect` is the package's Effect adapter, the Effect-native boundary the workspace asked for. An Effect program converts there and recovers by tag.
+`@elmeragroup/color/effect` is the package's Effect adapter. An Effect program converts there and recovers by tag.
 
 ```ts
 import * as CssColor from "@elmeragroup/color/css-color";

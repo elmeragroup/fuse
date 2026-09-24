@@ -1,7 +1,7 @@
 import * as Oklch from "@elmeragroup/color/oklch";
 import { getOrThrow } from "@elmeragroup/color/result";
 
-import { tokenOklch } from "../token-oklch";
+import { tokenOklch } from "../token-color";
 import { DERIVED_ROLES } from "./contract";
 import type { DerivedTokenName, LayerTokens, TokenContract } from "./contract";
 

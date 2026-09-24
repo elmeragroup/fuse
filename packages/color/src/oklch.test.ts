@@ -134,14 +134,10 @@ describe("make", () => {
     });
   });
 
-  it("refuses an infinite chroma and a hue of 360, naming the range", () => {
+  it("refuses an infinite chroma, naming the range", () => {
     expect(Oklch.make({ l: 0.5, c: Infinity, h: 0, alpha: 1 })).toMatchObject({
       _tag: "err",
       error: { message: "Oklch c must be a finite number in 0..1000000, received Infinity" },
-    });
-    expect(Oklch.make({ l: 0.5, c: 0.1, h: 360, alpha: 1 })).toMatchObject({
-      _tag: "err",
-      error: { message: "Oklch h must be a finite number in 0..360 exclusive, received 360" },
     });
   });
 

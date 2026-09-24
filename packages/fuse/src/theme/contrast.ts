@@ -4,7 +4,7 @@ import * as Wcag from "@elmeragroup/color/wcag";
 
 import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
-import { tokenOklch } from "./token-oklch";
+import { tokenOklch } from "./token-color";
 import type { TokenName } from "./tokens/contract";
 import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
 import type { ThemeSlug } from "./tokens/themes";

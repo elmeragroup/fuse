@@ -6,7 +6,7 @@ import { render } from "../../test/browser-render";
 import { computedOklch, roleNamed } from "../../test/themed-browser-render";
 import { composeTheme } from "./compose-theme";
 import { ThemeScope } from "./theme-scope";
-import { tokenOklch } from "./token-oklch";
+import { tokenOklch } from "./token-color";
 import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
 
 /** The color a background declaration computes to where `host` sits in the cascade. */

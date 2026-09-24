@@ -116,7 +116,7 @@ export class UnsupportedTokenValue extends Schema.TaggedError<UnsupportedTokenVa
 /** A value the sync's own readers refuse, with what they expected instead. */
 type Unreadable = { readonly _tag: "Unreadable"; readonly expected: string };
 
-/** Why the sync cannot read a token value. `unsupportedTokenValue` words each one. */
+/** Why the sync cannot read a token value. `unsupported` words each one. */
 type ReadFailure = InvalidColor | Unreadable;
 
 /** How one kind of token becomes a Figma variable. */
@@ -205,7 +205,7 @@ function contractVariable(token: TokenName): BoundVariable {
     type: projection.type,
     scopes: tokenScopes(token),
     webSyntax: `var(--${token})`,
-    valueIn: (tokens, reference) => tokenValue(token, tokens[token], projection, reference),
+    valueIn: (tokens, reference) => tokenValue(token, tokens[token], TOKEN_KINDS[token], reference),
   };
 }
 
@@ -245,7 +245,7 @@ function lengthInPx(
 ): Result.Result<number, UnsupportedTokenValue> {
   const px = cssLengthToPx(css);
   return px === undefined
-    ? unsupported(token, css, unreadable(`a rem or px length to derive ${rung} from`))
+    ? Result.fail(unsupported(token, css, unreadable(`a rem or px length to derive ${rung} from`)))
     : Result.succeed(px);
 }
 
@@ -284,7 +284,7 @@ function primitivesCollection(): Result.Result<CollectionSpec, UnsupportedTokenV
     const projection = KIND_PROJECTIONS.color;
     const variables: VariableSpec[] = [];
     for (const name of PRIMITIVE_NAMES) {
-      const value = yield* tokenValue(name, PRIMITIVES[name], projection, primitiveReference);
+      const value = yield* tokenValue(name, PRIMITIVES[name], "color", primitiveReference);
       variables.push({
         name,
         type: projection.type,
@@ -398,22 +398,22 @@ function themeAlias(variable: string): AliasValue {
 function tokenValue(
   token: string,
   css: string,
-  projection: KindProjection,
+  kind: TokenKind,
   reference: ReferenceResolver
 ): Result.Result<VariableValue, UnsupportedTokenValue> {
   const referenced = cssVarReference(css);
   if (referenced !== undefined) {
     const alias = reference(referenced);
     return alias === undefined
-      ? unsupported(token, css, unreadable("a reference to a Fuse token or primitive"))
+      ? Result.fail(unsupported(token, css, unreadable("a reference to a Fuse token or primitive")))
       : Result.succeed(alias);
   }
-  return literalValue(token, css, projection);
+  return tokenLiteral(token, kind, css);
 }
 
 /**
- * Read one literal token value of a kind, through the same reader the sync uses. It is exported
- * so a test can feed a malformed value; `fuseVariableSet` composes only the real themes.
+ * Read one literal token value as the Figma value of its kind. `fuseVariableSet` composes only
+ * the real themes, so this is the seam where a test feeds a malformed value.
  *
  * @param token - The token or primitive name, for the message.
  * @param kind - The token's kind.
@@ -425,15 +425,8 @@ export function tokenLiteral(
   kind: TokenKind,
   css: string
 ): Result.Result<LiteralValue, UnsupportedTokenValue> {
-  return literalValue(token, css, KIND_PROJECTIONS[kind]);
-}
-
-function literalValue(
-  token: string,
-  css: string,
-  projection: KindProjection
-): Result.Result<LiteralValue, UnsupportedTokenValue> {
-  return Result.mapError(projection.literal(css), (failure) => unsupportedTokenValue(token, css, failure));
+  const projection: KindProjection = KIND_PROJECTIONS[kind];
+  return Result.mapError(projection.literal(css), (failure) => unsupported(token, css, failure));
 }
 
 function colorLiteral(css: string): Result.Result<ColorValue, InvalidColor> {
@@ -468,7 +461,7 @@ function unreadable(expected: string): Unreadable {
  * and quotes the value, so it passes through as-is. The sync's own readers word theirs the
  * same way.
  */
-function unsupportedTokenValue(token: string, value: string, failure: ReadFailure): UnsupportedTokenValue {
+function unsupported(token: string, value: string, failure: ReadFailure): UnsupportedTokenValue {
   const reason =
     failure._tag === "InvalidColor"
       ? failure.message
@@ -478,12 +471,4 @@ function unsupportedTokenValue(token: string, value: string, failure: ReadFailur
     token,
     value,
   });
-}
-
-function unsupported(
-  token: string,
-  value: string,
-  failure: ReadFailure
-): Result.Result<never, UnsupportedTokenValue> {
-  return Result.fail(unsupportedTokenValue(token, value, failure));
 }

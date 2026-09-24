@@ -1,9 +1,7 @@
 /**
- * The package's Effect adapter. The workspace asked for a color package that Effect code uses
- * natively, and this module is that boundary. It converts the core's own `Result` to Effect's
- * `Result` or to an `Effect`, whose failures `catchTag` recovers by tag. The Figma sync reads
- * token colors through `toResult`. Only this module imports `effect`, so a browser page that
- * parses colors does not load it.
+ * The package's Effect adapter. It converts the core's own `Result` to Effect's `Result` or to
+ * an `Effect`, whose failures `catchTag` recovers by tag. Only this module imports `effect`, so
+ * a browser page that parses colors does not load it.
  */
 
 import { Effect, Result } from "effect";
