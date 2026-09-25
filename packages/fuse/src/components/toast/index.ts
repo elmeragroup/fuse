@@ -28,15 +28,3 @@ export const Toast = {
   useToastManager,
   createToastManager,
 };
-
-export type {
-  CreateToastManagerReturnValue,
-  ToastCloseProps,
-  ToastManagerAddOptions,
-  ToastManagerPromiseOptions,
-  ToastManagerUpdateOptions,
-  ToastProviderProps,
-  ToastStatus,
-  ToastViewportProps,
-  UseToastManagerReturnValue,
-} from "./toast";

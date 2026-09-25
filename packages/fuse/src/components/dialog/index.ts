@@ -28,5 +28,3 @@ export const Dialog = {
   Title: DialogTitle,
   Description: DialogDescription,
 };
-
-export type { DialogContentProps, DialogFooterProps, DialogTitleProps } from "./dialog";

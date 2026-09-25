@@ -11,5 +11,3 @@ export const Tooltip = {
   Trigger: TooltipTrigger,
   Content: TooltipContent,
 };
-
-export type { TooltipContentProps, TooltipProviderProps, TooltipRootProps } from "./tooltip";

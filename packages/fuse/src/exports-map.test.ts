@@ -641,8 +641,8 @@ describe("exports map", () => {
       "SIDEBAR_WIDTH",
       "SIDEBAR_WIDTH_ICON",
       "SIDEBAR_WIDTH_MOBILE",
-      "Sidebar",
       "useSidebar",
+      "Sidebar",
     ]);
   });
 

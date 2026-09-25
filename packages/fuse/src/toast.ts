@@ -13,4 +13,4 @@ export type {
   ToastStatus,
   ToastViewportProps,
   UseToastManagerReturnValue,
-} from "./components/toast";
+} from "./components/toast/toast";

@@ -5,16 +5,17 @@
  * The part lists are the public namespace shape. They are not read from the
  * implementation: a missing or renamed part fails here even if the source still parses.
  *
- * Oracle: React Flight (`createClientModuleProxy` in the sibling loader). Dotting into
- * a client module throws "Cannot access X.Y on the server". A directive-free
- * namespace object is a real object, so each part is a client reference the
- * server may pass through. Alert's composed tree must render on the server: the
- * warning root is a div row (`data-slot` item, `role` alert), not a client reference.
+ * Oracle: React Flight (`createClientModuleProxy`, which the sibling loader installs for
+ * `"use client"` modules). Dotting into a client module throws "Cannot access X.Y on the
+ * server". A directive-free namespace object is a real object, so each client part is a
+ * client reference the server may pass through; the lists name the few directive-free
+ * markup parts, which must stay server components. Alert's composed tree must render on
+ * the server: the warning root is a div row (`data-slot` item, `role` alert), not a
+ * client reference.
  */
 import { createElement } from "react";
-import type { FunctionComponent, ReactElement, ReactNode } from "react";
+import type { ComponentType, ReactElement } from "react";
 
-import { createRequire } from "node:module";
 import { PassThrough } from "node:stream";
 
 import { Accordion } from "@elmeragroup/fuse/accordion";
@@ -42,12 +43,8 @@ import { Toast } from "@elmeragroup/fuse/toast";
 import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
-/**
- * A namespace member the server is allowed to pass through. Client parts are
- * functions; Toast's manager helpers are functions too. The value is not invoked
- * here — Flight serializes a client reference, and server markup renders itself.
- */
-type NamespacePart = (...args: never[]) => ReactNode | object;
+import { renderToPipeableStream } from "./rsc-flight-server.ts";
+import type { FlightManifest, FlightModuleRecord } from "./rsc-flight-server.ts";
 
 const ALERT_PARTS = ["Root", "Icon", "Title", "Description"] as const;
 
@@ -55,28 +52,67 @@ function byName(left: string, right: string): number {
   return left.localeCompare(right);
 }
 
-function elementFor(part: NamespacePart): ReactElement {
-  // SAFETY: each part is a component or a Flight client reference. renderToPipeableStream accepts both as element types.
-  return createElement(part as FunctionComponent);
+const CLIENT_REFERENCE = Symbol.for("react.client.reference");
+
+/** A client function that is not a component, such as Toast's manager hook and factory. */
+type ClientHelper = () => object;
+
+/** A namespace member as its public type declares it. */
+type NamespacePart = ComponentType<never> | ClientHelper;
+
+/**
+ * A Flight client reference: the server serializes it instead of running it.
+ * Reading `$$typeof` and `$$id` on a client-module proxy is allowed.
+ */
+function isClientReference(part: NamespacePart): boolean {
+  return "$$typeof" in part && part.$$typeof === CLIENT_REFERENCE && "$$id" in part;
 }
 
-function renderNamespace<Namespace extends { readonly [Part in keyof Namespace]: NamespacePart }>(
-  name: string,
-  namespace: Namespace,
-  parts: readonly (keyof Namespace & string)[]
-): ReactElement[] {
-  const elements: ReactElement[] = [];
-  // Read each part before comparing keys. On today's client-module object this throws
-  // "Cannot access X.Y on the server" instead of reporting an empty key list.
-  for (const key of parts) {
-    elements.push(elementFor(namespace[key]));
+/** Handwritten parts that are not client components. */
+type OtherParts<Server extends string, Helper extends string> = {
+  /** Directive-free markup components. The server runs them, so they must not be client references. */
+  readonly server?: readonly Server[];
+  /** Client functions that are not components (Toast's manager hook and factory). Checked, not rendered. */
+  readonly helpers?: readonly Helper[];
+};
+
+function unexpectedParts(name: string, problem: string, parts: readonly string[]): void {
+  if (parts.length > 0) {
+    throw new Error(`${name} parts ${problem}: ${parts.join(", ")}`);
   }
+}
+
+/**
+ * Check a namespace against its handwritten part lists and render its components.
+ * Client components and helpers must be Flight client references; server components must not be.
+ */
+function renderNamespace<Client extends string, Server extends string = never, Helper extends string = never>(
+  name: string,
+  namespace: Readonly<Record<NoInfer<Client | Server>, ComponentType<never>>> &
+    Readonly<Record<NoInfer<Helper>, ClientHelper>>,
+  client: readonly Client[],
+  { server = [], helpers = [] }: OtherParts<Server, Helper> = {}
+): ReactElement[] {
+  // Read each part before comparing keys. On a client-module object this throws
+  // "Cannot access X.Y on the server" instead of reporting an empty key list.
+  const references: readonly (Client | Helper)[] = [...client, ...helpers];
+  unexpectedParts(
+    name,
+    "are not client references",
+    references.filter((part) => !isClientReference(namespace[part]))
+  );
+  unexpectedParts(
+    name,
+    "are client references but should render on the server",
+    server.filter((part) => isClientReference(namespace[part]))
+  );
   const actual = Object.keys(namespace).toSorted(byName);
-  const expected = [...parts].toSorted(byName);
+  const expected = [...references, ...server].toSorted(byName);
   if (actual.join("\n") !== expected.join("\n")) {
     throw new Error(`${name} parts\nactual: ${actual.join(", ")}\nexpected: ${expected.join(", ")}`);
   }
-  return elements;
+  const components: readonly (Client | Server)[] = [...client, ...server];
+  return components.map((part) => createElement(namespace[part]));
 }
 
 function namespaceElements(): ReactElement[] {
@@ -158,18 +194,9 @@ function namespaceElements(): ReactElement[] {
       "Title",
     ]),
     ...renderNamespace("InputGroup", InputGroup, ["Root", "Addon", "Button", "Text", "Input", "Textarea"]),
-    ...renderNamespace("Item", Item, [
-      "Root",
-      "Media",
-      "Content",
-      "Actions",
-      "Group",
-      "Separator",
-      "Title",
-      "Description",
-      "Header",
-      "Footer",
-    ]),
+    ...renderNamespace("Item", Item, ["Root", "Group", "Separator"], {
+      server: ["Media", "Content", "Actions", "Title", "Description", "Header", "Footer"],
+    }),
     ...renderNamespace("Pagination", Pagination, [
       "Root",
       "Content",
@@ -193,14 +220,9 @@ function namespaceElements(): ReactElement[] {
       "ScrollUpButton",
       "ScrollDownButton",
     ]),
-    ...renderNamespace("SelectionItem", SelectionItem, [
-      "Shell",
-      "Title",
-      "Description",
-      "Content",
-      "Actions",
-      "SubSection",
-    ]),
+    ...renderNamespace("SelectionItem", SelectionItem, ["Shell", "Title", "Actions", "SubSection"], {
+      server: ["Description", "Content"],
+    }),
     ...renderNamespace("Sheet", Sheet, [
       "Root",
       "Trigger",
@@ -241,18 +263,12 @@ function namespaceElements(): ReactElement[] {
       "Icon",
     ]),
     ...renderNamespace("Tabs", Tabs, ["Root", "List", "Trigger", "Content"]),
-    ...renderNamespace("Toast", Toast, [
-      "Provider",
-      "Viewport",
-      "Root",
-      "Content",
-      "Title",
-      "Description",
-      "Action",
-      "Close",
-      "useToastManager",
-      "createToastManager",
-    ]),
+    ...renderNamespace(
+      "Toast",
+      Toast,
+      ["Provider", "Viewport", "Root", "Content", "Title", "Description", "Action", "Close"],
+      { helpers: ["useToastManager", "createToastManager"] }
+    ),
     ...renderNamespace("ToggleGroup", ToggleGroup, ["Root", "Item"]),
     ...renderNamespace("Tooltip", Tooltip, ["Provider", "Root", "Trigger", "Content"]),
   ];
@@ -280,34 +296,6 @@ function alertTree(): ReactElement {
 function Fixture(): ReactElement {
   return createElement("div", null, ...namespaceElements(), alertTree());
 }
-
-type FlightModuleRecord = {
-  id: string;
-  chunks: readonly string[];
-  name: "*";
-  async: false;
-};
-
-type FlightManifest = {
-  readonly [id: string]: FlightModuleRecord;
-};
-
-type FlightServer = {
-  renderToPipeableStream: (
-    node: ReactNode,
-    manifest: FlightManifest,
-    options?: { onError?: (error: Error) => void }
-  ) => { pipe: (destination: NodeJS.WritableStream) => void };
-};
-
-const require = createRequire(import.meta.url);
-
-function loadFlightServer(): FlightServer {
-  // SAFETY: Next ships this Flight server as untyped compiled CJS. The fixture only calls renderToPipeableStream.
-  return require("next/dist/compiled/react-server-dom-webpack/server.node.js") as FlightServer;
-}
-
-const { renderToPipeableStream } = loadFlightServer();
 
 function flightManifest() {
   const records: FlightManifest = {};

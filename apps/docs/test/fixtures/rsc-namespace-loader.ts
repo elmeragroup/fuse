@@ -13,7 +13,7 @@ import { parseSync } from "oxc-parser";
 import type { ParseResult } from "oxc-parser";
 import { transformSync } from "oxc-transform";
 
-const PROXY_URL = pathToFileURL(fileURLToPath(new URL("./rsc-client-proxy.ts", import.meta.url))).href;
+const FLIGHT_SERVER_URL = pathToFileURL(fileURLToPath(new URL("./rsc-flight-server.ts", import.meta.url))).href;
 const EXTENSIONS = [".ts", ".tsx", ".js", ".mjs"];
 
 function fail(file: string, verb: string, errors: readonly { readonly message: string }[]): never {
@@ -59,7 +59,7 @@ function runtimeExportNames(parsed: ParseResult): string[] {
 
 function clientStub(url: string, names: readonly string[]): string {
   const lines = [
-    `import { createClientModuleProxy } from ${JSON.stringify(PROXY_URL)};`,
+    `import { createClientModuleProxy } from ${JSON.stringify(FLIGHT_SERVER_URL)};`,
     `const proxy = createClientModuleProxy(${JSON.stringify(url)});`,
   ];
   for (const name of names) {

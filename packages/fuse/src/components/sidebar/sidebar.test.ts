@@ -13,9 +13,9 @@ import {
   SIDEBAR_WIDTH,
   SIDEBAR_WIDTH_ICON,
   SIDEBAR_WIDTH_MOBILE,
-  Sidebar,
   useSidebar,
-} from "./index";
+} from "./sidebar";
+import { Sidebar } from "./index";
 import { sidebarStrings } from "./intl";
 import { sidebarMenuButtonVariants, sidebarMenuSubButtonVariants } from "./sidebar-variants";
 
