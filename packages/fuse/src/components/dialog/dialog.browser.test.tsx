@@ -137,8 +137,9 @@ describe("Dialog", () => {
     }
     trigger.focus();
     await userEvent.keyboard("{Enter}");
+    // Base UI moves focus into the popup after it mounts, which can land a frame later.
+    await expect.element(page.getByRole("dialog")).toHaveFocus();
     const dialog = page.getByRole("dialog").element();
-    expect(document.activeElement).toBe(dialog);
     if (!(dialog instanceof HTMLElement)) {
       throw new Error("expected the popup");
     }
