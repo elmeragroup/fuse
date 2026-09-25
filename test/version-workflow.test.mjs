@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { asRecord, asString } from "./json-object.mjs";
-import { jobSteps, readWorkflow, requiredJobSteps, requiredRunStep } from "./workflow.mjs";
+import { jobSteps, readWorkflow, requiredJobSteps, requiredRunStep, requiredUsesStep } from "./workflow.mjs";
 
 describe("version workflow", () => {
   const workflow = readWorkflow("version-packages");
@@ -22,8 +22,7 @@ describe("version workflow", () => {
     expect(concurrency["cancel-in-progress"]).toBe(false);
     expect(concurrency.queue).toBe("max");
     const steps = requiredJobSteps(workflow, "version");
-    const action = steps.find((step) => step.uses === "changesets/action@v2");
-    if (action === undefined) throw new Error("version job does not use changesets/action@v2");
+    const action = requiredUsesStep(steps, "changesets/action");
     const guard = steps.find((step) => step.id === "current-main");
     if (guard === undefined) throw new Error("version job does not check the current main commit");
     expect(guard.if).toBeUndefined();

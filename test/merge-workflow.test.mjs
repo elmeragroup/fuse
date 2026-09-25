@@ -25,7 +25,7 @@ describe("merge workflow", () => {
         `turbo-${job}-\${{ github.sha }}-\${{ github.run_id }}-\${{ github.run_attempt }}`
       );
 
-      const restore = requiredUsesStep(steps, "actions/cache/restore@v4");
+      const restore = requiredUsesStep(steps, "actions/cache/restore");
       const restoreWith = asRecord(restore.with, `${job} restore with`);
       expect(restoreWith.path).toBe(".turbo/cache");
       expect(restoreWith.key).toBe("${{ env.TURBO_CACHE_KEY }}");
@@ -41,7 +41,7 @@ describe("merge workflow", () => {
       const prune = requiredRunStep(steps, "pnpm turbo-cache:prune");
       expect(prune.if).toBe(`\${{ always() && steps.${asString(gate.id, "gate id")}.outcome != 'skipped' }}`);
 
-      const save = requiredUsesStep(steps, "actions/cache/save@v4");
+      const save = requiredUsesStep(steps, "actions/cache/save");
       const saveWith = asRecord(save.with, `${job} save with`);
       expect(saveWith.path).toBe(".turbo/cache");
       expect(saveWith.key).toBe("${{ env.TURBO_CACHE_KEY }}");
