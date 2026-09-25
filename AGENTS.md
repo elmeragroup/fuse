@@ -50,8 +50,11 @@ Use unit tests for recipes and pure logic, browser tests for interaction, and
 public type tests for API constraints. Use the shared role/label browser helpers.
 Put necessary source contracts in the central suite with the reason lint or an
 existing gate cannot enforce them.
-Run affected checks, then `pnpm ci:checks` before review. Read versions, commands,
-budgets and task dependencies from their owning configuration and scripts.
+While editing, run `vitest related <changed files> --run` in the owning package for a
+tight loop. Direct Vitest skips the Fuse build, so dist tripwires stay silent there.
+Before review, run the touched turbo tasks with `--affected`, then `pnpm ci:checks`.
+Read versions, commands, budgets and task dependencies from their owning configuration
+and scripts.
 After dependency resolution changes, clear Vitest's `tsconfig.tmp.tsbuildinfo`
 before trusting type tests, since incremental checks can retain old resolutions.
 
