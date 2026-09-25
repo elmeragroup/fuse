@@ -4,8 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { packageRootFromScript } from "./paths";
-import { CommandAbortedError, combinedFailure, runCommandAsync } from "./run-command";
-import { removeDetached } from "./tarball";
+import { CommandAbortedError, removeDetached, runCommandAsync, settleAll } from "./run-command";
 
 const require = createRequire(import.meta.url);
 const packageRoot = packageRootFromScript(import.meta.url);
@@ -99,21 +98,5 @@ export async function checkPackedReactCompatibility(tarball: string, signal: Abo
   // One cutoff for the whole run: three consumers resolving against different instants
   // could disagree about which versions exist. `--before` mirrors pnpm's `minimumReleaseAge`
   const cutoff = releaseAgeCutoff(new Date());
-  const results = await Promise.allSettled(
-    reactPairs.map((pair) => checkReactPair(tarball, pair, cutoff, signal))
-  );
-  const probes: string[] = [];
-  const failures: unknown[] = [];
-  for (const result of results) {
-    if (result.status === "fulfilled") {
-      probes.push(result.value);
-    } else {
-      failures.push(result.reason);
-    }
-  }
-  const failure = combinedFailure(failures);
-  if (failure !== undefined) {
-    throw failure;
-  }
-  return probes;
+  return settleAll(reactPairs.map((pair) => checkReactPair(tarball, pair, cutoff, signal)));
 }

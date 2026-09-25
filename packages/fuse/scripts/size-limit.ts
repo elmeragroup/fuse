@@ -74,7 +74,18 @@ async function measure(extracted: string, work: string, budget: BundleBudget): P
   }
   let bundle: RolldownBuild | undefined;
   try {
-    bundle = await rolldown({ input, platform: "browser", external: PEER_EXTERNALS, logLevel: "silent" });
+    bundle = await rolldown({
+      input,
+      platform: "browser",
+      external: PEER_EXTERNALS,
+      // Rolldown leaves an unresolved import external, which silently shrinks the measured
+      // bundle, so it fails the budget; every other log stays quiet.
+      onLog(_level, log) {
+        if (log.code === "UNRESOLVED_IMPORT") {
+          throw new Error(log.message);
+        }
+      },
+    });
     const { output } = await bundle.generate({ format: "esm", minify: true });
     const chunks = output.filter((file) => file.type === "chunk");
     const [chunk] = chunks;

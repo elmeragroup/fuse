@@ -1,4 +1,4 @@
-import { spawn, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -95,18 +95,4 @@ export async function withExtractedTarballAsync<T>(
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }
-}
-
-/**
- * Deletes `directory` from a detached process that outlives this one, so the deletion also
- * finishes when the caller exits through `fail`. For npm-installed consumers only: each holds
- * about 28k files, and the React pairs finish together, so awaiting three such removals put
- * about 12.6s of disk time on the critical path of a result that no longer depends on them.
- */
-export function removeDetached(directory: string): void {
-  spawn(
-    process.execPath,
-    ["-e", "require('node:fs').rmSync(process.argv[1], { recursive: true, force: true })", directory],
-    { detached: true, stdio: "ignore" }
-  ).unref();
 }

@@ -17,7 +17,8 @@ import {
 } from "./package-check-packed";
 import { checkPackedReactCompatibility } from "./package-check-react";
 import { packageRootFromScript } from "./paths";
-import { combinedFailure, runCommandAsync } from "./run-command";
+import { combinedFailure, runCommandAsync, settleAll } from "./run-command";
+import type { CommandOutput } from "./run-command";
 import { fail, linkConsumerModules, withExtractedTarballAsync } from "./tarball";
 
 const packageRoot = packageRootFromScript(import.meta.url);
@@ -27,8 +28,8 @@ try {
     // The React matrix, publint and attw each read only the tarball. Every one of their child
     // processes is spawned synchronously here, before the in-process checks below block this
     // thread, so the installs and tools run while those checks do; the React probes follow their
-    // installs once the thread is free. Any failure aborts the rest, and every child settles
-    // (and its consumer is scheduled for removal) before the error propagates.
+    // installs once the thread is free. Any failure aborts the rest, and every child closes (and
+    // only then is its consumer scheduled for removal) before the error propagates.
     const controller = new AbortController();
     const abortOnFailure = <T>(task: Promise<T>): Promise<T> => {
       task.catch(() => {
@@ -58,35 +59,35 @@ try {
         { cwd: packageRoot, signal: controller.signal }
       )
     );
-    const tools = Promise.allSettled([reactProbes, publint, attw]);
+    // Each tool resolves to the printing of its output, deferred until every tool has passed.
+    const printOutput = (output: CommandOutput) => () => {
+      process.stdout.write(output.stdout);
+      process.stderr.write(output.stderr);
+    };
+    const tools = settleAll([
+      reactProbes.then((lines) => () => {
+        for (const line of lines) {
+          console.log(line);
+        }
+      }),
+      publint.then(printOutput),
+      attw.then(printOutput),
+    ]);
     try {
       runInProcessChecks(extracted);
     } catch (error) {
       controller.abort();
-      await tools;
-      throw error;
-    }
-    const [reactResult, publintResult, attwResult] = await tools;
-    const failures: unknown[] = [];
-    for (const result of [reactResult, publintResult, attwResult]) {
-      if (result.status === "rejected") {
-        failures.push(result.reason);
+      // Tools that failed on their own are reported beside this error; abort echoes drop out.
+      const failures: unknown[] = [error];
+      try {
+        await tools;
+      } catch (toolFailure) {
+        failures.push(toolFailure);
       }
+      throw combinedFailure(failures) ?? error;
     }
-    const failure = combinedFailure(failures);
-    if (failure !== undefined) {
-      throw failure;
-    }
-    if (reactResult.status === "fulfilled") {
-      for (const line of reactResult.value) {
-        console.log(line);
-      }
-    }
-    for (const result of [publintResult, attwResult]) {
-      if (result.status === "fulfilled") {
-        process.stdout.write(result.value.stdout);
-        process.stderr.write(result.value.stderr);
-      }
+    for (const print of await tools) {
+      print();
     }
   });
 } catch (error) {

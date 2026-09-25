@@ -6,11 +6,8 @@ import { pointerCommands } from "./test/pointer-commands.ts";
 
 const BROWSER_TESTS = ["src/**/*.browser.test.tsx"];
 
-/** Browser files that copy and paste through Chromium's shared clipboard. */
-const CLIPBOARD_FILES = [
-  "src/components/phone-number-field/phone-state.browser.test.tsx",
-  "src/components/text-field/text-field.browser.test.tsx",
-];
+/** Browser files that copy and paste through Chromium's shared clipboard, named by convention. */
+const CLIPBOARD_TESTS = "**/*.clipboard.browser.test.tsx";
 
 function browserProject(
   name: string,
@@ -71,13 +68,14 @@ export default defineConfig({
         },
       },
       browserProject("browser", {
-        exclude: CLIPBOARD_FILES,
+        exclude: [CLIPBOARD_TESTS],
       }),
       // Chromium keeps one clipboard for every file the browser project runs in parallel, so a
       // file that copies can overwrite what another is about to paste. The files that drive the
-      // real clipboard share their own project and run one at a time.
+      // real clipboard end in `.clipboard.browser.test.tsx`, share their own project and run one
+      // at a time.
       browserProject("browser-clipboard", {
-        include: CLIPBOARD_FILES,
+        include: [`src/${CLIPBOARD_TESTS}`],
         fileParallelism: false,
       }),
     ],

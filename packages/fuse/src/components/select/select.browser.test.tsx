@@ -102,18 +102,20 @@ function FruitSelect({
 }
 
 // The popup mounts after the opening event settles, so both openers wait for the listbox.
-async function openWithClick(name = "Fruit"): Promise<HTMLElement> {
-  await userEvent.click(comboboxNamed(name));
+async function openedListbox(): Promise<HTMLElement> {
   await expect.element(page.getByRole("listbox")).toBeInTheDocument();
   return listboxNamed();
 }
 
+async function openWithClick(name = "Fruit"): Promise<HTMLElement> {
+  await userEvent.click(comboboxNamed(name));
+  return openedListbox();
+}
+
 async function openWithArrowDown(name = "Fruit"): Promise<HTMLElement> {
-  const trigger = comboboxNamed(name);
-  trigger.focus();
+  comboboxNamed(name).focus();
   await userEvent.keyboard("{ArrowDown}");
-  await expect.element(page.getByRole("listbox")).toBeInTheDocument();
-  return listboxNamed();
+  return openedListbox();
 }
 
 describe("Select", () => {
@@ -137,16 +139,13 @@ describe("Select", () => {
 
   it("closes on Escape and returns focus to the trigger", async () => {
     renderThemed(<FruitSelect />);
-    const trigger = comboboxNamed("Fruit");
     await openWithClick();
 
     await userEvent.keyboard("{Escape}");
     await vi.waitFor(() => {
       expect(page.getByRole("listbox").query()).toBeNull();
     });
-    await vi.waitFor(() => {
-      expect(document.activeElement).toBe(trigger);
-    });
+    await expect.element(page.getByRole("combobox", { name: "Fruit", exact: true })).toHaveFocus();
   });
 
   it("selects via click, closes, and updates the trigger value", async () => {

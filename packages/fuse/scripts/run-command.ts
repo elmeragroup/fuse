@@ -49,13 +49,45 @@ export function combinedFailure(failures: readonly unknown[]): Error | undefined
   );
 }
 
+/**
+ * Awaits every task, then throws `combinedFailure` of the rejections, so no task is still
+ * running when the error propagates. Resolves with the values in task order otherwise.
+ */
+export async function settleAll<T>(tasks: readonly Promise<T>[]): Promise<T[]> {
+  const results = await Promise.allSettled(tasks);
+  const failure = combinedFailure(
+    results.flatMap((result): unknown[] => (result.status === "rejected" ? [result.reason] : []))
+  );
+  if (failure !== undefined) {
+    throw failure;
+  }
+  return results.flatMap((result) => (result.status === "fulfilled" ? [result.value] : []));
+}
+
+/**
+ * Deletes `directory` from a detached process that outlives this one, so the deletion also
+ * finishes when the caller exits through `fail`. For npm-installed consumers only: each holds
+ * about 28k files, and the React pairs finish together, so awaiting three such removals put
+ * about 12.6s of disk time on the critical path of a result that no longer depends on them.
+ */
+export function removeDetached(directory: string): void {
+  spawn(
+    process.execPath,
+    ["-e", "require('node:fs').rmSync(process.argv[1], { recursive: true, force: true })", directory],
+    { detached: true, stdio: "ignore" }
+  ).unref();
+}
+
 export type CommandOutput = { readonly stdout: string; readonly stderr: string };
 
 export type RunCommandAsyncOptions = {
   readonly cwd: string;
   /** Kills the child with SIGTERM once exceeded; the rejection says `timed out after <n>ms`. */
   readonly timeoutMs?: number;
-  /** Aborting kills the child with SIGTERM and rejects, so a failed sibling check stops this one. */
+  /**
+   * Aborting kills the child with SIGTERM, so a failed sibling check stops this one. The promise
+   * rejects with `CommandAbortedError` once the child has closed, not when the abort fires.
+   */
   readonly signal?: AbortSignal;
 };
 
@@ -92,16 +124,25 @@ export function runCommandAsync(
     child.stderr.setEncoding("utf8").on("data", (chunk: string) => {
       stderr += chunk;
     });
+    // Node reports an abort as an 'error' right after signalling the child, before it exits,
+    // so an aborted command settles only on 'close': a caller that removes the command's cwd once
+    // the promise settles cannot race writes the dying child still makes. Any other 'error' is a
+    // spawn failure, after which Node does not promise a 'close', so it rejects at once.
+    let aborted: CommandAbortedError | undefined;
     child.on("error", (error) => {
       clearTimeout(timer);
-      reject(
-        options.signal?.aborted === true
-          ? new CommandAbortedError(`${invocation} was aborted`, { cause: error })
-          : new Error(`${invocation} failed to spawn`, { cause: error })
-      );
+      if (error.name === "AbortError") {
+        aborted = new CommandAbortedError(`${invocation} was aborted`, { cause: error });
+        return;
+      }
+      reject(new Error(`${invocation} failed to spawn`, { cause: error }));
     });
     child.on("close", (status, signal) => {
       clearTimeout(timer);
+      if (aborted !== undefined) {
+        reject(aborted);
+        return;
+      }
       if (status === 0) {
         resolve({ stdout, stderr });
         return;
