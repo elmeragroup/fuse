@@ -9,5 +9,3 @@ export const ToggleGroup = {
   Root: ToggleGroupRoot,
   Item: ToggleGroupItem,
 };
-
-export type { ToggleGroupItemProps, ToggleGroupRootProps } from "./toggle-group";

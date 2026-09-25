@@ -10,5 +10,3 @@ export const ButtonGroup = {
   Separator: ButtonGroupSeparator,
   Text: ButtonGroupText,
 };
-
-export type { ButtonGroupRootProps, ButtonGroupSeparatorProps, ButtonGroupTextProps } from "./button-group";

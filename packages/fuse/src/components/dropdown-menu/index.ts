@@ -40,14 +40,3 @@ export const DropdownMenu = {
   SubTrigger: DropdownMenuSubTrigger,
   SubContent: DropdownMenuSubContent,
 };
-
-export type {
-  DropdownMenuCheckboxItemProps,
-  DropdownMenuContentProps,
-  DropdownMenuItemProps,
-  DropdownMenuLabelProps,
-  DropdownMenuRadioGroupProps,
-  DropdownMenuRadioItemProps,
-  DropdownMenuSubContentProps,
-  DropdownMenuSubTriggerProps,
-} from "./dropdown-menu";

@@ -7,5 +7,5 @@ export type {
   ButtonGroupRootProps,
   ButtonGroupSeparatorProps,
   ButtonGroupTextProps,
-} from "./components/button-group";
+} from "./components/button-group/button-group";
 export { buttonGroupVariants } from "./components/button-group/button-group-variants";

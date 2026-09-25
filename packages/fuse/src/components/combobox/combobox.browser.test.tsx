@@ -14,7 +14,8 @@ import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import { cssVarColor, px, renderThemed, roleNamed, stampDensity } from "../../../test/themed-browser-render";
 import { Field } from "../field";
 import { InputGroup } from "../input-group";
-import { Combobox, useComboboxAnchor } from "./index";
+import { useComboboxAnchor } from "./combobox";
+import { Combobox } from "./index";
 
 const FRUITS = ["Apple", "Banana", "Cherry", "Date"] as const;
 

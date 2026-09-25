@@ -23,5 +23,3 @@ export const SelectionItem = {
   Actions: SelectionItemActions,
   SubSection: SelectionItemSubSection,
 };
-
-export { SelectionGroupLayout, SelectionItemGroup } from "./selection-item";

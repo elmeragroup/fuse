@@ -28,5 +28,3 @@ export const Select = {
   ScrollUpButton: SelectScrollUpButton,
   ScrollDownButton: SelectScrollDownButton,
 };
-
-export type { SelectContentProps, SelectTriggerProps } from "./select";

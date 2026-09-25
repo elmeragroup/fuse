@@ -10,5 +10,3 @@ export const AlertDialog = {
   Trigger: AlertDialogTrigger,
   Content: AlertDialogContent,
 };
-
-export type { AlertDialogContentProps } from "./alert-dialog";

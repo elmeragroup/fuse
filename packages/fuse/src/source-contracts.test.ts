@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseSync } from "oxc-parser";
 import { describe, expect, it } from "vitest";
 
 import { overlayLayer } from "./components/overlay/overlay-classes";
@@ -205,6 +206,15 @@ function expectRsc(relativePath: string, rsc: RscStatus): void {
   expect(source, relativePath).not.toContain("'use client'");
 }
 
+/** Every name a module exports, with type-only exports prefixed `type `. */
+function exportedNames(relativePath: string): string[] {
+  const parsed = parseSync(relativePath, readSrc(relativePath));
+  expect(parsed.errors, relativePath).toEqual([]);
+  return parsed.module.staticExports.flatMap(({ entries }) =>
+    entries.map(({ exportName, isType }) => `${isType ? "type " : ""}${exportName.name ?? "default"}`),
+  );
+}
+
 describe("RSC classification", () => {
   // Why not a lint rule: server/client compatibility is a reviewed per-component
   // decision. Package-check checks packed directives against source; this independent
@@ -255,32 +265,37 @@ describe("RSC classification", () => {
 
   // Why not a lint rule: these files are the server-visible namespace. A directive
   // here would make `Dialog.Root` a client reference again, which lint cannot see.
+  // Each index also exports nothing but its namespace object: which module owns a
+  // hook, constant or prop type is a per-file ownership decision, not a syntax
+  // pattern, so the facade imports those from the implementation module directly.
   it.each([
-    "accordion",
-    "alert-dialog",
-    "avatar",
-    "breadcrumb",
-    "button-group",
-    "collapsible",
-    "combobox",
-    "dialog",
-    "dropdown-menu",
-    "field",
-    "input-group",
-    "item",
-    "pagination",
-    "popover",
-    "scroll-area",
-    "select",
-    "selection-item",
-    "sheet",
-    "sidebar",
-    "tabs",
-    "toast",
-    "toggle-group",
-    "tooltip",
-  ])("%s namespace index stays directive-free", (slug) => {
-    expectRsc(`components/${slug}/index.ts`, "server");
+    ["accordion", "Accordion"],
+    ["alert-dialog", "AlertDialog"],
+    ["avatar", "Avatar"],
+    ["breadcrumb", "Breadcrumb"],
+    ["button-group", "ButtonGroup"],
+    ["collapsible", "Collapsible"],
+    ["combobox", "Combobox"],
+    ["dialog", "Dialog"],
+    ["dropdown-menu", "DropdownMenu"],
+    ["field", "Field"],
+    ["input-group", "InputGroup"],
+    ["item", "Item"],
+    ["pagination", "Pagination"],
+    ["popover", "Popover"],
+    ["scroll-area", "ScrollArea"],
+    ["select", "Select"],
+    ["selection-item", "SelectionItem"],
+    ["sheet", "Sheet"],
+    ["sidebar", "Sidebar"],
+    ["tabs", "Tabs"],
+    ["toast", "Toast"],
+    ["toggle-group", "ToggleGroup"],
+    ["tooltip", "Tooltip"],
+  ])("%s namespace index stays directive-free and exports only %s", (slug, namespace) => {
+    const file = `components/${slug}/index.ts`;
+    expectRsc(file, "server");
+    expect(exportedNames(file), file).toEqual([namespace]);
   });
 });
 

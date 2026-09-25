@@ -6,4 +6,4 @@ export type {
   InputGroupRootProps,
   InputGroupTextareaProps,
   InputGroupTextProps,
-} from "./components/input-group";
+} from "./components/input-group/input-group";

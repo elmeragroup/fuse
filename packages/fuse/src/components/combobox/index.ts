@@ -40,12 +40,3 @@ export const Combobox = {
   ChipsInput: ComboboxChipsInput,
   Value: ComboboxValue,
 };
-
-export { useComboboxAnchor } from "./combobox";
-export type {
-  ComboboxChipProps,
-  ComboboxClearProps,
-  ComboboxContentProps,
-  ComboboxInputProps,
-  ComboboxRootProps,
-} from "./combobox";

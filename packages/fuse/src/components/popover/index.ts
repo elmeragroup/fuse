@@ -20,5 +20,3 @@ export const Popover = {
   Title: PopoverTitle,
   Description: PopoverDescription,
 };
-
-export type { PopoverContentProps } from "./popover";

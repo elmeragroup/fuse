@@ -8,4 +8,4 @@ export type {
   DropdownMenuRadioItemProps,
   DropdownMenuSubContentProps,
   DropdownMenuSubTriggerProps,
-} from "./components/dropdown-menu";
+} from "./components/dropdown-menu/dropdown-menu";

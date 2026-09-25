@@ -20,12 +20,3 @@ export const InputGroup = {
   Input: InputGroupInput,
   Textarea: InputGroupTextarea,
 };
-
-export type {
-  InputGroupAddonProps,
-  InputGroupButtonProps,
-  InputGroupInputProps,
-  InputGroupRootProps,
-  InputGroupTextProps,
-  InputGroupTextareaProps,
-} from "./input-group";

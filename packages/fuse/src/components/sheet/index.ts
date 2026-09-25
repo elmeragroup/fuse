@@ -30,5 +30,3 @@ export const Sheet = {
   Title: SheetTitle,
   Description: SheetDescription,
 };
-
-export type { SheetContentProps, SheetRootProps } from "./sheet";
