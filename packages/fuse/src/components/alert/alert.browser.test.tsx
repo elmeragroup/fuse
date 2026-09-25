@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
+import * as CssColor from "@elmeragroup/color/css-color";
+import { getOrThrow } from "@elmeragroup/color/result";
+import * as Srgb from "@elmeragroup/color/srgb";
+import * as Wcag from "@elmeragroup/color/wcag";
+
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import { headingNamed, renderThemed } from "../../../test/themed-browser-render";
 import { Alert } from "./alert";
 
@@ -37,6 +43,29 @@ function iconIn(root: HTMLElement): SVGSVGElement {
     throw new Error("expected alert-icon");
   }
   return icon;
+}
+
+/** WCAG AA for body-size text, the size the sm action label renders at. */
+const AA_TEXT_CONTRAST = 4.5;
+
+function computedSrgb(value: string): Srgb.Srgb {
+  return CssColor.toSrgb(getOrThrow(CssColor.parse(value)));
+}
+
+/**
+ * The action label's contrast against the fill a reader sees: the button's background
+ * composited over the alert surface beneath it. A transparent `rgba()` fill composites; an
+ * `oklab()` translucent fill throws until `CssColor` parses `oklab()` (TODO.md).
+ */
+function actionContrast(action: HTMLElement, root: HTMLElement): number {
+  const surface = computedSrgb(getComputedStyle(root).backgroundColor);
+  const fill = Srgb.compositeOver(computedSrgb(getComputedStyle(action).backgroundColor), surface);
+  return getOrThrow(Wcag.contrastRatio(computedSrgb(getComputedStyle(action).color), fill));
+}
+
+/** Let the action's color transition settle, so computed colors are the hover end state. */
+async function settled(element: HTMLElement): Promise<void> {
+  await Promise.all(element.getAnimations().map((animation) => animation.finished));
 }
 
 describe("Alert", () => {
@@ -115,6 +144,20 @@ describe("Alert", () => {
       </Alert.Root>
     );
     expect(page.getByRole("button").query()).toBeNull();
+  });
+
+  it("keeps the default action's label legible while hovered", async () => {
+    renderThemed(
+      <Alert.Root onAction={vi.fn()} actionLabel="Open report">
+        <Alert.Title>Report ready</Alert.Title>
+      </Alert.Root>
+    );
+    const action = buttonNamed("Open report");
+    const restFill = getComputedStyle(action).backgroundColor;
+    await userEvent.hover(action);
+    await settled(action);
+    expect(getComputedStyle(action).backgroundColor).not.toBe(restFill);
+    expect(actionContrast(action, alertNamed("default"))).toBeGreaterThanOrEqual(AA_TEXT_CONTRAST);
   });
 
   it("does not emit a variant attribute on Title or Description", () => {

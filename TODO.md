@@ -40,6 +40,11 @@
   so the attribute is discarded. Drop it, and fix any comment that claims the root carries a slot.
 - The docs `sheet-demos` browser test failed once during the RSC namespace work
   (2026-09-25, T3) and passed on every rerun. If it recurs, diagnose before raising any timeout.
+- `CssColor.parse` in `@elmeragroup/color` does not read `oklab()`, which is how Chromium
+  serializes every `color-mix(in oklab, …)` / Tailwind `/NN` computed fill. Browser contrast
+  checks over translucent fills, such as the Alert action's, throw `InvalidColor` until it
+  does. Also correct the notation list in `packages/color/src/css-color.ts`, which names only
+  `rgb()`, `oklch()` and `lab()` as Chromium's computed serializations.
 
 ## Control size
 
