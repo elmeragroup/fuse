@@ -18,6 +18,7 @@ import type { ExportBinding } from "./generate-exports";
 import {
   emittedDirectiveFailure,
   packedBareEntryRacDeclarationFailure,
+  packedDocsOnlyStylesheetFailure,
   packedValueExportFailure,
   parsePackedEvalJson,
 } from "./package-check-lib";
@@ -137,6 +138,13 @@ export function checkPackedExports(extracted: string, discovered: DiscoveredEntr
       continue;
     }
     throw new Error(`Unexpected export target for ${binding.key}: ${JSON.stringify(target)}`);
+  }
+}
+
+export function checkPackedDocsOnlyStylesheet(extracted: string): void {
+  const leak = packedDocsOnlyStylesheetFailure(extracted);
+  if (leak !== undefined) {
+    throw new Error(leak);
   }
 }
 

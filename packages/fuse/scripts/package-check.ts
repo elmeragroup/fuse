@@ -6,6 +6,7 @@ import {
   checkPackedBareEntryRacDeclarations,
   checkPackedBootstrap,
   checkPackedDirectives,
+  checkPackedDocsOnlyStylesheet,
   checkPackedExports,
   checkPackedFlags,
   checkPackedPeers,
@@ -52,7 +53,6 @@ try {
           "esm-only",
           "--exclude-entrypoints",
           "css",
-          "demo-stage-comfortable.css",
           "styles.css",
           "themes.css",
         ],
@@ -104,6 +104,7 @@ function runInProcessChecks(extracted: string): void {
     discovered.jsEntries.map((entry) => importSpecifier(entry.subpath))
   );
   checkPackedExports(extracted, discovered);
+  checkPackedDocsOnlyStylesheet(extracted);
   checkPackedPeers(extracted);
   checkPackedRuntimeExports(exported, discovered);
   checkPackedDirectives(extracted, discovered);

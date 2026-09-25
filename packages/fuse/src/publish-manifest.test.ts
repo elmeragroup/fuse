@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import {
   copyFileSync,
   mkdirSync,
@@ -14,6 +15,7 @@ import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { writePublishManifest, writeSourceExports } from "../scripts/generate-exports";
+import { packTarball } from "../scripts/pack";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const commit = "53d7c332e91b6755b2b3f546ed3a39320acf914f";
@@ -121,6 +123,22 @@ describe("publish manifest", () => {
     expect(manifest.version).toBe(workspace.version);
     expect(manifest.elmeraRelease).toBeUndefined();
   }, 20_000);
+});
+
+describe("packed tarball", () => {
+  it("leaves the docs-only demo-stage stylesheet out of the tarball", () => {
+    const root = scratchPackageRoot();
+    for (const file of ["themes.css", "demo-stage-comfortable.css"]) {
+      writeFileSync(join(root, "dist", file), ":root {}\n");
+    }
+    writePublishManifest(root);
+
+    const listing = spawnSync("tar", ["-tzf", packTarball(root)], { encoding: "utf8" });
+    expect(listing.status).toBe(0);
+    const files = listing.stdout.split("\n");
+    expect(files).toContain("package/themes.css");
+    expect(files).not.toContain("package/demo-stage-comfortable.css");
+  }, 30_000);
 });
 
 describe("source exports", () => {

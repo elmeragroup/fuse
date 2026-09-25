@@ -10,6 +10,7 @@ import {
   bareEntryRacDeclarationFailure,
   emittedDirectiveFailure,
   packedBareEntryRacDeclarationFailure,
+  packedDocsOnlyStylesheetFailure,
   packedValueExportFailure,
   parsePackedEvalJson,
   withDeclarationParser,
@@ -87,6 +88,28 @@ describe("artifacts directory single-sourcing", () => {
     const turbo = readFileSync(join(packageRoot, "../../turbo.json"), "utf8");
     const outputs = /"pack":\s*\{[\s\S]*?"outputs":\s*\[\s*"([^"]+)"\s*\]/.exec(turbo)?.[1];
     expect(outputs).toBe(`${ARTIFACTS_DIR}/**`);
+  });
+});
+
+describe("docs-only stylesheet gate", () => {
+  let extracted: string | undefined;
+
+  afterEach(() => {
+    if (extracted !== undefined) {
+      rmSync(extracted, { recursive: true, force: true });
+      extracted = undefined;
+    }
+  });
+
+  it("fails when the tarball contains demo-stage-comfortable.css and passes once it is gone", () => {
+    extracted = mkdtempSync(join(tmpdir(), "fuse-docs-only-css-"));
+    writeFileSync(join(extracted, "themes.css"), ":root {}\n");
+    expect(packedDocsOnlyStylesheetFailure(extracted)).toBeUndefined();
+
+    writeFileSync(join(extracted, "demo-stage-comfortable.css"), ":root {}\n");
+    expect(packedDocsOnlyStylesheetFailure(extracted)).toBe(
+      "Packed tarball ships docs-only demo-stage-comfortable.css"
+    );
   });
 });
 
