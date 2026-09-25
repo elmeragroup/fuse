@@ -135,6 +135,8 @@ describe("dark CSS", () => {
         </LocaleProvider>
       );
       await userEvent.click(page.getByRole("button", { name: "Open account details" }).element());
+      // Base UI mounts the popup a frame or more after the click.
+      await expect.element(page.getByRole("dialog", { name: "Account details" })).toBeInTheDocument();
       const dialog = page.getByRole("dialog", { name: "Account details" }).element();
       const scope = page.getByRole("region", { name: "Customer account" }).element();
       expect(scope.contains(dialog)).toBe(true);

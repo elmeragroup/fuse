@@ -34,13 +34,20 @@ function BasicPopover({
   );
 }
 
-async function openPopover(): Promise<HTMLElement> {
-  await userEvent.click(page.getByRole("button", { name: "Details", exact: true }).element());
-  const dialog = page.getByRole("dialog").element();
+/** Base UI mounts the popup a frame or more after the opening event, so wait for it. */
+async function mountedPopover(name?: string): Promise<HTMLElement> {
+  const locator = page.getByRole("dialog", name === undefined ? {} : { name });
+  await expect.element(locator).toBeInTheDocument();
+  const dialog = locator.element();
   if (!(dialog instanceof HTMLElement)) {
     throw new Error("expected the popup");
   }
   return dialog;
+}
+
+async function openPopover(): Promise<HTMLElement> {
+  await userEvent.click(page.getByRole("button", { name: "Details", exact: true }).element());
+  return mountedPopover();
 }
 
 describe("Popover", () => {
@@ -83,7 +90,7 @@ describe("Popover", () => {
     await vi.waitFor(() => {
       expect(page.getByRole("dialog").query()).toBeNull();
     });
-    expect(document.activeElement).toBe(trigger);
+    await expect.element(page.getByRole("button", { name: "Details", exact: true })).toHaveFocus();
 
     await userEvent.keyboard(" ");
     await vi.waitFor(() => {
@@ -94,14 +101,13 @@ describe("Popover", () => {
 
   it("closes on Escape and returns focus to the trigger", async () => {
     renderThemed(<BasicPopover />);
-    const trigger = page.getByRole("button", { name: "Details", exact: true }).element();
     await openPopover();
 
     await userEvent.keyboard("{Escape}");
     await vi.waitFor(() => {
       expect(page.getByRole("dialog").query()).toBeNull();
     });
-    expect(document.activeElement).toBe(trigger);
+    await expect.element(page.getByRole("button", { name: "Details", exact: true })).toHaveFocus();
   });
 
   it("closes on outside press and returns focus to the trigger", async () => {
@@ -111,20 +117,21 @@ describe("Popover", () => {
         <BasicPopover />
       </>
     );
-    const trigger = page.getByRole("button", { name: "Details", exact: true }).element();
     await openPopover();
 
     await userEvent.click(page.getByText("Outside the popup", { exact: true }).element());
     await vi.waitFor(() => {
       expect(page.getByRole("dialog").query()).toBeNull();
     });
-    expect(document.activeElement).toBe(trigger);
+    await expect.element(page.getByRole("button", { name: "Details", exact: true })).toHaveFocus();
   });
 
   it("moves focus into the popup on open", async () => {
     renderThemed(<BasicPopover />);
     const dialog = await openPopover();
-    expect(dialog.contains(document.activeElement)).toBe(true);
+    await vi.waitFor(() => {
+      expect(dialog.contains(document.activeElement)).toBe(true);
+    });
   });
 
   it("omits the arrow by default and renders it with matching data-side when showArrow is set", async () => {
@@ -137,11 +144,7 @@ describe("Popover", () => {
         <BasicPopover showArrow side="top" style={{ width: 96 }} />
       </div>
     );
-    await userEvent.click(page.getByRole("button", { name: "Details", exact: true }).element());
-    const withArrow = page.getByRole("dialog").element();
-    if (!(withArrow instanceof HTMLElement)) {
-      throw new Error("expected the popup");
-    }
+    const withArrow = await openPopover();
     const arrow = withArrow.querySelector("[data-side]");
     expect(arrow).not.toBeNull();
     expect(arrow?.getAttribute("data-side")).toBe(withArrow.getAttribute("data-side"));
@@ -168,7 +171,7 @@ describe("Popover", () => {
     expect([...document.body.children].includes(dialog)).toBe(false);
   });
 
-  it("portals into an explicit container element", () => {
+  it("portals into an explicit container element", async () => {
     function ExplicitContainer() {
       const [node, setNode] = useState<HTMLDivElement | null>(null);
       return (
@@ -185,7 +188,7 @@ describe("Popover", () => {
       );
     }
     renderThemed(<ExplicitContainer />);
-    const dialog = page.getByRole("dialog", { name: "Dimensions" }).element();
+    const dialog = await mountedPopover("Dimensions");
     const island = page.getByRole("region", { name: "Theme island", exact: true }).element();
     expect(island.contains(dialog)).toBe(true);
     expect([...document.body.children].includes(dialog)).toBe(false);
@@ -207,7 +210,7 @@ describe("Popover", () => {
     expect(page.getByRole("dialog").query()).toBeNull();
   });
 
-  it("does not paint the popup outside a ThemeScope element that has not attached yet", () => {
+  it("does not paint the popup outside a ThemeScope element that has not attached yet", async () => {
     renderThemed(
       <ThemeScope theme={{ variant: "external", brand: "fkas", segment: "private" }}>
         <Popover.Root open>
@@ -217,7 +220,7 @@ describe("Popover", () => {
         </Popover.Root>
       </ThemeScope>
     );
-    const dialog = page.getByRole("dialog").element();
+    const dialog = await mountedPopover();
     const scope = dialog.closest("[data-theme-variant=external]");
     expect(scope).not.toBeNull();
     expect([...document.body.children].includes(dialog)).toBe(false);
@@ -247,7 +250,7 @@ describe("Popover", () => {
 
     await userEvent.click(trigger);
     expect(onOpenChange).toHaveBeenLastCalledWith(true);
-    expect(page.getByRole("dialog").element()).toBeTruthy();
+    await expect.element(page.getByRole("dialog")).toBeInTheDocument();
 
     await userEvent.keyboard("{Escape}");
     await vi.waitFor(() => {
@@ -290,11 +293,8 @@ describe("Popover", () => {
     previous.focus();
     await userEvent.keyboard("{Tab}");
     await userEvent.keyboard("{Enter}");
-    const dialog = page.getByRole("dialog", { name: "Dimensions" }).element();
-    if (!(dialog instanceof HTMLElement)) {
-      throw new Error("expected the popup");
-    }
-    expect(document.activeElement).toBe(dialog);
+    const dialog = await mountedPopover("Dimensions");
+    await expect.element(page.getByRole("dialog", { name: "Dimensions" })).toHaveFocus();
     expect(dialog.matches(":focus-visible"), "keyboard open must land with :focus-visible").toBe(true);
     expectFocusRing(dialog, "keyboard-focused popup must paint the shared ring");
 

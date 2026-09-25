@@ -115,7 +115,10 @@ async function openWithClick(name = "Fruit"): Promise<HTMLElement> {
 async function openWithArrowDown(name = "Fruit"): Promise<HTMLElement> {
   comboboxNamed(name).focus();
   await userEvent.keyboard("{ArrowDown}");
-  return openedListbox();
+  const listbox = await openedListbox();
+  // Keyboard opening highlights an option once the list has registered its items.
+  await vi.waitFor(() => highlightedOption());
+  return listbox;
 }
 
 describe("Select", () => {
@@ -263,13 +266,13 @@ describe("Select", () => {
         </Select.Root>
       </>
     );
-    await userEvent.click(comboboxNamed("Aligned"));
+    await openWithClick("Aligned");
     expect(selectContent().getAttribute("data-align-trigger")).toBe("true");
     await userEvent.keyboard("{Escape}");
     await vi.waitFor(() => {
       expect(page.getByRole("listbox").query()).toBeNull();
     });
-    await userEvent.click(comboboxNamed("Unaligned"));
+    await openWithClick("Unaligned");
     expect(selectContent().getAttribute("data-align-trigger")).toBe("false");
   });
 
@@ -313,7 +316,7 @@ describe("Select", () => {
       </Select.Root>
     );
     await openWithClick("Grouped");
-    expect(page.getByRole("group", { name: "Citrus", exact: true }).element()).toBeTruthy();
+    await expect.element(page.getByRole("group", { name: "Citrus", exact: true })).toBeInTheDocument();
   });
 
   it("portals Content into the enclosing ThemeScope instead of the document body", async () => {
@@ -325,7 +328,7 @@ describe("Select", () => {
     expect([...document.body.children].includes(listbox)).toBe(false);
   });
 
-  it("portals Content into an explicit container element", () => {
+  it("portals Content into an explicit container element", async () => {
     function ExplicitContainer() {
       const [node, setNode] = useState<HTMLDivElement | null>(null);
       return (
@@ -345,7 +348,7 @@ describe("Select", () => {
       );
     }
     renderThemed(<ExplicitContainer />);
-    const listbox = listboxNamed();
+    const listbox = await openedListbox();
     const island = page.getByRole("region", { name: "Theme island", exact: true }).element();
     expect(island.contains(listbox)).toBe(true);
     expect([...document.body.children].includes(listbox)).toBe(false);
@@ -369,7 +372,7 @@ describe("Select", () => {
     expect(page.getByRole("listbox").query()).toBeNull();
   });
 
-  it("does not paint the popup outside a ThemeScope element that has not attached yet", () => {
+  it("does not paint the popup outside a ThemeScope element that has not attached yet", async () => {
     renderThemed(
       <ThemeScope theme={{ variant: "external", brand: "fkas", segment: "private" }}>
         <Select.Root open>
@@ -382,7 +385,7 @@ describe("Select", () => {
         </Select.Root>
       </ThemeScope>
     );
-    const listbox = listboxNamed();
+    const listbox = await openedListbox();
     const scope = listbox.closest("[data-theme-variant=external]");
     expect(scope).not.toBeNull();
     expect([...document.body.children].includes(listbox)).toBe(false);

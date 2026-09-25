@@ -11,20 +11,33 @@ import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
 import { DropdownMenu } from "./index";
 
-function menuNamed(name?: string): HTMLElement {
-  const locator = name === undefined ? page.getByRole("menu") : page.getByRole("menu", { name, exact: true });
-  const element = locator.element();
+type ItemRole = "menuitem" | "menuitemcheckbox" | "menuitemradio";
+
+/**
+ * Base UI mounts the menu popup and moves focus into it a frame or more after the
+ * opening event, so the open helpers wait for it before reading the element.
+ */
+async function openedMenu(): Promise<HTMLElement> {
+  await expect.element(page.getByRole("menu")).toBeInTheDocument();
+  const element = page.getByRole("menu").element();
   if (!(element instanceof HTMLElement)) {
     throw new Error("expected a menu");
   }
   return element;
 }
 
-function itemNamed(
-  name: string,
-  role: "menuitem" | "menuitemcheckbox" | "menuitemradio" = "menuitem"
-): HTMLElement {
-  const element = page.getByRole(role, { name, exact: true }).element();
+function itemLocator(name: string, role: ItemRole = "menuitem") {
+  return page.getByRole(role, { name, exact: true });
+}
+
+/** Waits for an item of an open-on-mount menu, which mounts after the first render. */
+async function mountedItem(name: string, role: ItemRole = "menuitem"): Promise<HTMLElement> {
+  await expect.element(itemLocator(name, role)).toBeInTheDocument();
+  return itemNamed(name, role);
+}
+
+function itemNamed(name: string, role: ItemRole = "menuitem"): HTMLElement {
+  const element = itemLocator(name, role).element();
   if (!(element instanceof HTMLElement)) {
     throw new Error(`expected ${role} ${name}`);
   }
@@ -58,7 +71,7 @@ function triggerButton(): HTMLElement {
 
 async function openWithClick(): Promise<HTMLElement> {
   await userEvent.click(page.getByRole("button", { name: "Open", exact: true }).element());
-  return menuNamed();
+  return openedMenu();
 }
 
 async function openWithArrowDown(): Promise<HTMLElement> {
@@ -68,7 +81,7 @@ async function openWithArrowDown(): Promise<HTMLElement> {
   }
   trigger.focus();
   await userEvent.keyboard("{ArrowDown}");
-  return menuNamed();
+  return openedMenu();
 }
 
 describe("DropdownMenu", () => {
@@ -86,7 +99,7 @@ describe("DropdownMenu", () => {
   it("opens from ArrowDown on the trigger and highlights the first item", async () => {
     renderThemed(<BasicMenu />);
     await openWithArrowDown();
-    expect(document.activeElement).toBe(itemNamed("Profile"));
+    await expect.element(itemLocator("Profile")).toHaveFocus();
   });
 
   it("opens from Enter and from Space on the trigger, highlighting the first item", async () => {
@@ -98,19 +111,19 @@ describe("DropdownMenu", () => {
     await vi.waitFor(() => {
       expect(page.getByRole("menu").query()).not.toBeNull();
     });
-    expect(document.activeElement).toBe(itemNamed("Profile"));
+    await expect.element(itemLocator("Profile")).toHaveFocus();
 
     await userEvent.keyboard("{Escape}");
     await vi.waitFor(() => {
       expect(page.getByRole("menu").query()).toBeNull();
     });
-    expect(document.activeElement).toBe(trigger);
+    await expect.element(page.getByRole("button", { name: "Open", exact: true })).toHaveFocus();
 
     await userEvent.keyboard(" ");
     await vi.waitFor(() => {
       expect(page.getByRole("menu").query()).not.toBeNull();
     });
-    expect(document.activeElement).toBe(itemNamed("Profile"));
+    await expect.element(itemLocator("Profile")).toHaveFocus();
   });
 
   it("opens to the last item from ArrowUp on the trigger", async () => {
@@ -121,7 +134,7 @@ describe("DropdownMenu", () => {
     await vi.waitFor(() => {
       expect(page.getByRole("menu").query()).not.toBeNull();
     });
-    expect(document.activeElement).toBe(itemNamed("Logout"));
+    await expect.element(itemLocator("Logout")).toHaveFocus();
   });
 
   it("lets arrows reach a disabled item but refuses to activate it", async () => {
@@ -139,14 +152,13 @@ describe("DropdownMenu", () => {
       </DropdownMenu.Root>
     );
     await openWithArrowDown();
-    expect(document.activeElement).toBe(itemNamed("Profile"));
+    await expect.element(itemLocator("Profile")).toHaveFocus();
 
     // base-ui keeps a disabled item in the roving sequence so a
     // screen-reader user hears that the option exists; it announces aria-disabled instead.
     await userEvent.keyboard("{ArrowDown}");
-    const settings = itemNamed("Settings");
-    expect(document.activeElement).toBe(settings);
-    expect(settings.getAttribute("aria-disabled")).toBe("true");
+    await expect.element(itemLocator("Settings")).toHaveFocus();
+    expect(itemNamed("Settings").getAttribute("aria-disabled")).toBe("true");
 
     await userEvent.keyboard("{Enter}");
     expect(onSettings, "Enter on a disabled item must not activate it").not.toHaveBeenCalled();
@@ -157,7 +169,7 @@ describe("DropdownMenu", () => {
     expect(page.getByRole("menu").query()).not.toBeNull();
 
     await userEvent.keyboard("{ArrowDown}");
-    expect(document.activeElement).toBe(itemNamed("Logout"));
+    await expect.element(itemLocator("Logout")).toHaveFocus();
   });
 
   it("activates the highlighted item with Enter and with Space, closing the menu", async () => {
@@ -177,18 +189,18 @@ describe("DropdownMenu", () => {
     renderThemed(<ActivatableMenu />);
 
     await openWithArrowDown();
-    expect(document.activeElement).toBe(itemNamed("Profile"));
+    await expect.element(itemLocator("Profile")).toHaveFocus();
     await userEvent.keyboard("{Enter}");
     await vi.waitFor(() => {
       expect(page.getByRole("menu").query()).toBeNull();
     });
     expect(onProfile).toHaveBeenCalledTimes(1);
     expect(onLogout).not.toHaveBeenCalled();
-    expect(document.activeElement).toBe(triggerButton());
+    await expect.element(page.getByRole("button", { name: "Open", exact: true })).toHaveFocus();
 
     await openWithArrowDown();
     await userEvent.keyboard("{ArrowDown}");
-    expect(document.activeElement).toBe(itemNamed("Logout"));
+    await expect.element(itemLocator("Logout")).toHaveFocus();
     await userEvent.keyboard(" ");
     await vi.waitFor(() => {
       expect(page.getByRole("menu").query()).toBeNull();
@@ -199,14 +211,13 @@ describe("DropdownMenu", () => {
 
   it("closes on Escape and returns focus to the trigger", async () => {
     renderThemed(<BasicMenu />);
-    const trigger = page.getByRole("button", { name: "Open", exact: true }).element();
     await openWithClick();
 
     await userEvent.keyboard("{Escape}");
     await vi.waitFor(() => {
       expect(page.getByRole("menu").query()).toBeNull();
     });
-    expect(document.activeElement).toBe(trigger);
+    await expect.element(page.getByRole("button", { name: "Open", exact: true })).toHaveFocus();
   });
 
   it("closes when an item is activated", async () => {
@@ -230,19 +241,19 @@ describe("DropdownMenu", () => {
       </DropdownMenu.Root>
     );
     await openWithArrowDown();
-    expect(document.activeElement).toBe(itemNamed("Profile"));
+    await expect.element(itemLocator("Profile")).toHaveFocus();
 
     await userEvent.keyboard("{ArrowDown}");
-    expect(document.activeElement).toBe(itemNamed("Billing"));
+    await expect.element(itemLocator("Billing")).toHaveFocus();
 
     await userEvent.keyboard("{ArrowUp}");
-    expect(document.activeElement).toBe(itemNamed("Profile"));
+    await expect.element(itemLocator("Profile")).toHaveFocus();
 
     await userEvent.keyboard("{End}");
-    expect(document.activeElement).toBe(itemNamed("Logout"));
+    await expect.element(itemLocator("Logout")).toHaveFocus();
 
     await userEvent.keyboard("{Home}");
-    expect(document.activeElement).toBe(itemNamed("Profile"));
+    await expect.element(itemLocator("Profile")).toHaveFocus();
   });
 
   it("dims disabled items via data-disabled", async () => {
@@ -257,7 +268,7 @@ describe("DropdownMenu", () => {
     renderThemed(<BasicMenu />);
     await openWithArrowDown();
     await userEvent.keyboard("l");
-    expect(document.activeElement).toBe(itemNamed("Logout"));
+    await expect.element(itemLocator("Logout")).toHaveFocus();
   });
 
   it("opens a submenu with ArrowRight and closes it with ArrowLeft", async () => {
@@ -276,22 +287,22 @@ describe("DropdownMenu", () => {
     );
     await openWithArrowDown();
     await userEvent.keyboard("{End}");
+    await expect.element(itemLocator("More")).toHaveFocus();
     const subTrigger = itemNamed("More");
-    expect(document.activeElement).toBe(subTrigger);
 
     await userEvent.keyboard("{ArrowRight}");
     await vi.waitFor(() => {
       expect(subTrigger.getAttribute("data-popup-open")).not.toBeNull();
     });
     expect(page.getByRole("menu").elements()).toHaveLength(2);
-    expect(document.activeElement).toBe(itemNamed("Team"));
+    await expect.element(itemLocator("Team")).toHaveFocus();
     expect(itemNamed("Team").closest('[role="menu"]')).not.toBeNull();
 
     await userEvent.keyboard("{ArrowLeft}");
     await vi.waitFor(() => {
       expect(subTrigger.getAttribute("data-popup-open")).toBeNull();
     });
-    expect(document.activeElement).toBe(subTrigger);
+    await expect.element(itemLocator("More")).toHaveFocus();
   });
 
   it("places the submenu beside its trigger with the lifted popup metrics", async () => {
@@ -314,7 +325,7 @@ describe("DropdownMenu", () => {
       expect(subTrigger.getAttribute("data-popup-open")).not.toBeNull();
     });
 
-    const submenu = itemNamed("Team").closest('[role="menu"]');
+    const submenu = (await mountedItem("Team")).closest('[role="menu"]');
     if (!(submenu instanceof HTMLElement)) {
       throw new Error("expected the submenu to be a menu");
     }
@@ -350,7 +361,6 @@ describe("DropdownMenu", () => {
         }
       />
     );
-    const trigger = page.getByRole("button", { name: "Open", exact: true }).element();
     await openWithArrowDown();
     await userEvent.keyboard("{End}{ArrowRight}");
     await vi.waitFor(() => {
@@ -361,7 +371,7 @@ describe("DropdownMenu", () => {
     await vi.waitFor(() => {
       expect(page.getByRole("menu").query()).toBeNull();
     });
-    expect(document.activeElement).toBe(trigger);
+    await expect.element(page.getByRole("button", { name: "Open", exact: true })).toHaveFocus();
   });
 
   it("toggles CheckboxItem and fires onCheckedChange", async () => {
@@ -385,7 +395,7 @@ describe("DropdownMenu", () => {
       );
     }
     renderThemed(<Checkboxes />);
-    const checkbox = itemNamed("Show toolbar", "menuitemcheckbox");
+    const checkbox = await mountedItem("Show toolbar", "menuitemcheckbox");
     expect(checkbox.getAttribute("aria-checked")).toBe("true");
     expect(checkbox.querySelector("svg")).not.toBeNull();
 
@@ -422,7 +432,7 @@ describe("DropdownMenu", () => {
       );
     }
     renderThemed(<Radios />);
-    expect(itemNamed("Status bar", "menuitemradio").getAttribute("aria-checked")).toBe("true");
+    expect((await mountedItem("Status bar", "menuitemradio")).getAttribute("aria-checked")).toBe("true");
     expect(itemNamed("Panel", "menuitemradio").getAttribute("aria-checked")).toBe("false");
 
     await userEvent.click(itemNamed("Panel", "menuitemradio"));
@@ -437,7 +447,7 @@ describe("DropdownMenu", () => {
     expect(itemNamed("Panel", "menuitemradio").querySelector("svg")).not.toBeNull();
   });
 
-  it("renders LinkItem as a menuitem backed by an anchor", () => {
+  it("renders LinkItem as a menuitem backed by an anchor", async () => {
     renderThemed(
       <DropdownMenu.Root defaultOpen>
         <DropdownMenu.Trigger>Open</DropdownMenu.Trigger>
@@ -447,7 +457,7 @@ describe("DropdownMenu", () => {
         </DropdownMenu.Content>
       </DropdownMenu.Root>
     );
-    const settings = itemNamed("Settings");
+    const settings = await mountedItem("Settings");
     expect(settings.tagName).toBe("A");
     expect(settings.getAttribute("href")).toBe("/settings");
     const billing = itemNamed("Billing");
@@ -455,7 +465,7 @@ describe("DropdownMenu", () => {
     expect(billing.getAttribute("href")).toBe("/billing");
   });
 
-  it("emits data-variant destructive and data-inset, with error-token classes", () => {
+  it("emits data-variant destructive and data-inset, with error-token classes", async () => {
     renderThemed(
       <DropdownMenu.Root defaultOpen>
         <DropdownMenu.Trigger>Open</DropdownMenu.Trigger>
@@ -466,7 +476,7 @@ describe("DropdownMenu", () => {
         </DropdownMenu.Content>
       </DropdownMenu.Root>
     );
-    const item = itemNamed("Delete");
+    const item = await mountedItem("Delete");
     expect(item.getAttribute("data-variant")).toBe("destructive");
     expect(item.getAttribute("data-inset")).toBe("true");
     expect(getComputedStyle(item).color).toBe(cssVarColor(item, "--error"));
@@ -481,7 +491,7 @@ describe("DropdownMenu", () => {
     expect([...document.body.children].includes(menu)).toBe(false);
   });
 
-  it("portals Content into an explicit container element", () => {
+  it("portals Content into an explicit container element", async () => {
     function ExplicitContainer() {
       const [node, setNode] = useState<HTMLDivElement | null>(null);
       return (
@@ -498,13 +508,13 @@ describe("DropdownMenu", () => {
       );
     }
     renderThemed(<ExplicitContainer />);
-    const menu = menuNamed();
+    const menu = await openedMenu();
     const island = page.getByRole("region", { name: "Theme island", exact: true }).element();
     expect(island.contains(menu)).toBe(true);
     expect([...document.body.children].includes(menu)).toBe(false);
   });
 
-  it("portals SubContent into an explicit container element", () => {
+  it("portals SubContent into an explicit container element", async () => {
     function ExplicitSubContainer() {
       const [node, setNode] = useState<HTMLDivElement | null>(null);
       return (
@@ -526,7 +536,7 @@ describe("DropdownMenu", () => {
       );
     }
     renderThemed(<ExplicitSubContainer />);
-    const team = itemNamed("Team");
+    const team = await mountedItem("Team");
     const island = page.getByRole("region", { name: "Sub island", exact: true }).element();
     expect(island.contains(team)).toBe(true);
   });
@@ -566,7 +576,7 @@ describe("DropdownMenu", () => {
     expect(page.getByRole("menuitem", { name: "Pending", exact: true }).query()).toBeNull();
   });
 
-  it("does not paint the popup outside a ThemeScope element that has not attached yet", () => {
+  it("does not paint the popup outside a ThemeScope element that has not attached yet", async () => {
     renderThemed(
       <ThemeScope theme={{ variant: "external", brand: "fkas", segment: "private" }}>
         <DropdownMenu.Root open>
@@ -576,7 +586,7 @@ describe("DropdownMenu", () => {
         </DropdownMenu.Root>
       </ThemeScope>
     );
-    const menu = menuNamed();
+    const menu = await openedMenu();
     const scope = menu.closest("[data-theme-variant=external]");
     expect(scope).not.toBeNull();
     expect([...document.body.children].includes(menu)).toBe(false);

@@ -108,12 +108,15 @@ function buttonNamed(name: string): HTMLElement {
  * Chips are focusable `div`s with no role of their own (base-ui), so a focused chip is
  * identified by the remove button it owns — an accessible name, not a slot.
  */
-function expectChipFocused(removeButtonName: string): void {
+async function expectChipFocused(removeButtonName: string): Promise<void> {
   // Identity, not `contains`: any ancestor up to <body> contains the button, so a
   // containment check would also pass if focus escaped the chip to its container.
-  expect(document.activeElement, `the chip owning ${removeButtonName} must hold focus`).toBe(
-    buttonNamed(removeButtonName).parentElement
-  );
+  // Waited for: after a removal the neighbouring chip takes focus once it re-renders.
+  await vi.waitFor(() => {
+    expect(document.activeElement, `the chip owning ${removeButtonName} must hold focus`).toBe(
+      buttonNamed(removeButtonName).parentElement
+    );
+  });
 }
 
 function inputGroupRoot(name = "Fruit"): HTMLElement {
@@ -165,16 +168,25 @@ function FruitCombobox({
   );
 }
 
+/** Base UI mounts the popup a frame or more after the opening event, so wait for it. */
+async function openedListbox(): Promise<HTMLElement> {
+  await expect.element(page.getByRole("listbox")).toBeInTheDocument();
+  return listboxNamed();
+}
+
 async function openWithClick(name = "Fruit"): Promise<HTMLElement> {
   await userEvent.click(comboboxNamed(name));
-  return listboxNamed();
+  return openedListbox();
 }
 
 async function openWithArrowDown(name = "Fruit"): Promise<HTMLElement> {
   const input = comboboxNamed(name);
   input.focus();
   await userEvent.keyboard("{ArrowDown}");
-  return listboxNamed();
+  const listbox = await openedListbox();
+  // Keyboard opening highlights an option once the list has registered its items.
+  await vi.waitFor(() => highlightedOption());
+  return listbox;
 }
 
 describe("Combobox", () => {
@@ -254,7 +266,7 @@ describe("Combobox", () => {
     }
     expect(trigger.closest("[data-popup-open]")).toBeNull();
     await userEvent.click(trigger);
-    expect(listboxNamed()).toBeTruthy();
+    await openedListbox();
     expect(trigger.closest("[data-popup-open]"), "trigger ancestry emits data-popup-open").not.toBeNull();
     await userEvent.click(trigger);
     await vi.waitFor(() => {
@@ -282,7 +294,7 @@ describe("Combobox", () => {
     await userEvent.click(clear);
     expect(onValueChange.mock.calls.at(-1)?.[0]).toBeNull();
     expect(comboboxNamed("Fruit").value).toBe("");
-    expect(document.activeElement).toBe(comboboxNamed("Fruit"));
+    await expect.element(page.getByRole("combobox", { name: "Fruit", exact: true })).toHaveFocus();
     await vi.waitFor(() => {
       expect(page.getByRole("button", { name: /clear/i }).query()).toBeNull();
     });
@@ -398,23 +410,23 @@ describe("Combobox", () => {
 
     comboboxNamed("Fruit").focus();
     await userEvent.keyboard("{ArrowLeft}");
-    expectChipFocused("Remove Banana");
+    await expectChipFocused("Remove Banana");
 
     await userEvent.keyboard("{ArrowLeft}");
-    expectChipFocused("Remove Apple");
+    await expectChipFocused("Remove Apple");
 
     await userEvent.keyboard("{ArrowRight}");
-    expectChipFocused("Remove Banana");
+    await expectChipFocused("Remove Banana");
 
     await userEvent.keyboard("{Delete}");
     await vi.waitFor(() => {
       expect(page.getByRole("button", { name: "Remove Banana", exact: true }).query()).toBeNull();
     });
     expect(onValueChange.mock.calls.at(-1)?.[0]).toEqual(["Apple"]);
-    expectChipFocused("Remove Apple");
+    await expectChipFocused("Remove Apple");
 
     await userEvent.keyboard("{ArrowRight}");
-    expect(document.activeElement).toBe(comboboxNamed("Fruit"));
+    await expect.element(page.getByRole("combobox", { name: "Fruit", exact: true })).toHaveFocus();
   });
 
   it("names the chip-remove button from itemToStringLabel for object items", () => {
@@ -574,7 +586,7 @@ describe("Combobox", () => {
     expect([...document.body.children].includes(listbox)).toBe(false);
   });
 
-  it("portals Content into an explicit container element", () => {
+  it("portals Content into an explicit container element", async () => {
     function ExplicitContainer() {
       const [node, setNode] = useState<HTMLDivElement | null>(null);
       return (
@@ -594,7 +606,7 @@ describe("Combobox", () => {
       );
     }
     renderCombobox(<ExplicitContainer />);
-    const listbox = listboxNamed();
+    const listbox = await openedListbox();
     const island = page.getByRole("region", { name: "Theme island", exact: true }).element();
     expect(island.contains(listbox)).toBe(true);
     expect([...document.body.children].includes(listbox)).toBe(false);
@@ -725,7 +737,7 @@ describe("Combobox", () => {
     expectNoFocusRing(inputGroupRoot(), "mouse focus on an addon button must not paint the group ring");
   });
 
-  it("pins a popup-embedded InputGroup to the sm control height at both densities", () => {
+  it("pins a popup-embedded InputGroup to the sm control height at both densities", async () => {
     renderCombobox(
       <Combobox.Root items={[...FRUITS]} defaultOpen>
         <Combobox.Input aria-label="Fruit" showTrigger={false} />
@@ -737,6 +749,9 @@ describe("Combobox", () => {
         </Combobox.Content>
       </Combobox.Root>
     );
+    await expect
+      .element(page.getByRole("combobox", { name: "Filter fruit", exact: true }))
+      .toBeInTheDocument();
     const filter = comboboxNamed("Filter fruit");
     const group = filter.closest('[role="group"]');
     if (!(group instanceof HTMLElement)) {

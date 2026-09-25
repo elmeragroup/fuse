@@ -61,6 +61,8 @@ function ConfirmDialog({
 
 async function openConfirm(): Promise<HTMLElement> {
   await userEvent.click(page.getByRole("button", { name: "Delete order", exact: true }).element());
+  // Base UI mounts the popup a frame or more after the click.
+  await expect.element(page.getByRole("alertdialog", { name: TITLE })).toBeInTheDocument();
   const dialog = page.getByRole("alertdialog", { name: TITLE }).element();
   if (!(dialog instanceof HTMLElement)) {
     throw new Error("expected the popup");
@@ -94,11 +96,9 @@ describe("AlertDialog", () => {
         </>
       )
     );
-    const trigger = page.getByRole("button", { name: "Delete order", exact: true }).element();
     const behind = page.getByRole("button", { name: "Behind", exact: true }).element();
     const dialog = await openConfirm();
-    const cancel = page.getByRole("button", { name: "Cancel", exact: true }).element();
-    expect(document.activeElement).toBe(cancel);
+    await expect.element(page.getByRole("button", { name: "Cancel", exact: true })).toHaveFocus();
 
     const tabbables = [...dialog.querySelectorAll<HTMLElement>("button")];
     expect(tabbables.length).toBeGreaterThan(1);
@@ -128,13 +128,13 @@ describe("AlertDialog", () => {
     await vi.waitFor(() => {
       expect(page.getByRole("alertdialog").query()).toBeNull();
     });
-    expect(document.activeElement).toBe(trigger);
+    await expect.element(page.getByRole("button", { name: "Delete order", exact: true })).toHaveFocus();
   });
 
   it("focuses the primary action for a neutral confirmation", async () => {
     renderThemed(withLocale("en-US", <ConfirmDialog variant="neutral" />));
     await openConfirm();
-    expect(document.activeElement).toBe(page.getByRole("button", { name: ACTION, exact: true }).element());
+    await expect.element(page.getByRole("button", { name: ACTION, exact: true })).toHaveFocus();
   });
 
   it("lets a caller's initialFocus win over the variant default", async () => {
@@ -154,7 +154,7 @@ describe("AlertDialog", () => {
     }
     renderThemed(withLocale("en-US", <CustomFocus />));
     await openConfirm();
-    expect(document.activeElement).toBe(page.getByText("Custom focus target", { exact: true }).element());
+    await expect.element(page.getByText("Custom focus target", { exact: true })).toHaveFocus();
   });
 
   it("fires onAction without closing by default, and closes when close-on-action is enabled", async () => {
@@ -310,7 +310,7 @@ describe("AlertDialog", () => {
     expect(page.getByRole("alertdialog").query()).toBeNull();
   });
 
-  it("does not paint the popup outside a ThemeScope element that has not attached yet", () => {
+  it("does not paint the popup outside a ThemeScope element that has not attached yet", async () => {
     renderThemed(
       withLocale(
         "en-US",
@@ -323,6 +323,7 @@ describe("AlertDialog", () => {
         </ThemeScope>
       )
     );
+    await expect.element(page.getByRole("alertdialog")).toBeInTheDocument();
     const dialog = page.getByRole("alertdialog").element();
     const scope = dialog.closest("[data-theme-variant=external]");
     expect(scope).not.toBeNull();
