@@ -1,5 +1,5 @@
 import { Schema } from "effect";
-import { readdirSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
 /**
@@ -10,7 +10,11 @@ import { join } from "node:path";
  * Usage: node scripts/prune-turbo-cache.ts <cache dir> <runs dir>
  */
 
-/** A cache entry is `<task hash>.tar.zst` plus `<task hash>-<kind>.json` sidecars. */
+/**
+ * A cache entry is `<task hash>.tar.zst` plus `<task hash>-<kind>.json` sidecars. Turbo writes
+ * `-meta.json`, and `-manifest.json` locally in worktrees; any lowercase kind matches so a
+ * future sidecar is pruned with its entry rather than stranded.
+ */
 const ENTRY = /^([0-9a-f]{16})(?:\.tar\.zst|-[a-z]+\.json)$/u;
 
 /** Cache files that no kept hash owns. Files outside the entry naming stay untouched. */
@@ -43,20 +47,33 @@ export function summarizedHashes(runsDir: string): Set<string> {
   return hashes;
 }
 
-function main([cacheDir, runsDir]: readonly (string | undefined)[]): void {
-  if (cacheDir === undefined || runsDir === undefined) {
-    throw new Error("Usage: node scripts/prune-turbo-cache.ts <cache dir> <runs dir>");
+/**
+ * Deletes the cache files of every task hash the run summaries in `runsDir` do not record, and
+ * returns how many hashes were kept and files removed. Missing or empty summaries throw rather
+ * than empty the whole cache.
+ */
+export function pruneTurboCache(cacheDir: string, runsDir: string) {
+  const unsummarized = `No task hashes in ${runsDir}; was TURBO_RUN_SUMMARY set?`;
+  if (!existsSync(runsDir)) {
+    throw new Error(unsummarized);
   }
   const keep = summarizedHashes(runsDir);
-  // An empty summary set would delete the whole cache; that means the run never summarized.
   if (keep.size === 0) {
-    throw new Error(`No task hashes in ${runsDir}; was TURBO_RUN_SUMMARY set?`);
+    throw new Error(unsummarized);
   }
   const stale = staleCacheFiles(readdirSync(cacheDir), keep);
   for (const file of stale) {
     rmSync(join(cacheDir, file), { force: true });
   }
-  console.log(`kept ${String(keep.size)} task hashes, removed ${String(stale.length)} cache files`);
+  return { kept: keep.size, removed: stale.length };
+}
+
+function main([cacheDir, runsDir]: readonly (string | undefined)[]): void {
+  if (cacheDir === undefined || runsDir === undefined) {
+    throw new Error("Usage: node scripts/prune-turbo-cache.ts <cache dir> <runs dir>");
+  }
+  const { kept, removed } = pruneTurboCache(cacheDir, runsDir);
+  console.log(`kept ${String(kept)} task hashes, removed ${String(removed)} cache files`);
 }
 
 if (import.meta.main) {

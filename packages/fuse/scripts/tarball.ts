@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -79,43 +79,34 @@ export type ExtractedTarball = {
   scratch: string;
 };
 
-function openScratch(packageRoot: string, prefix: string) {
-  const tarball = findTarball(packageRoot);
-  const scratch = mkdtempSync(join(tmpdir(), prefix));
-  return {
-    open: (): ExtractedTarball => ({
-      extracted: extractPackedPackage(tarball, scratch, packageRoot),
-      tarball,
-      scratch,
-    }),
-    dispose: () => rmSync(scratch, { recursive: true, force: true }),
-  };
-}
-
-export function withExtractedTarball<T>(
-  packageRoot: string,
-  prefix: string,
-  fn: (extracted: string, tarball: string, scratch: string) => T
-): T {
-  const handle = openScratch(packageRoot, prefix);
-  try {
-    const { extracted, tarball, scratch } = handle.open();
-    return fn(extracted, tarball, scratch);
-  } finally {
-    handle.dispose();
-  }
-}
-
-/** `withExtractedTarball` for checks that await a browser or a dev server. */
+/**
+ * Extracts the packed tarball into a fresh temporary directory, links its dependencies, and
+ * removes the directory once `fn` settles, whether it resolves or throws.
+ */
 export async function withExtractedTarballAsync<T>(
   packageRoot: string,
   prefix: string,
   fn: (extracted: ExtractedTarball) => Promise<T>
 ): Promise<T> {
-  const handle = openScratch(packageRoot, prefix);
+  const tarball = findTarball(packageRoot);
+  const scratch = mkdtempSync(join(tmpdir(), prefix));
   try {
-    return await fn(handle.open());
+    return await fn({ extracted: extractPackedPackage(tarball, scratch, packageRoot), tarball, scratch });
   } finally {
-    handle.dispose();
+    rmSync(scratch, { recursive: true, force: true });
   }
+}
+
+/**
+ * Deletes `directory` from a detached process that outlives this one, so the deletion also
+ * finishes when the caller exits through `fail`. For npm-installed consumers only: each holds
+ * about 28k files, and the React pairs finish together, so awaiting three such removals put
+ * about 12.6s of disk time on the critical path of a result that no longer depends on them.
+ */
+export function removeDetached(directory: string): void {
+  spawn(
+    process.execPath,
+    ["-e", "require('node:fs').rmSync(process.argv[1], { recursive: true, force: true })", directory],
+    { detached: true, stdio: "ignore" }
+  ).unref();
 }

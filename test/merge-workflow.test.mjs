@@ -7,8 +7,56 @@ import { readWorkflow, requiredJobSteps, requiredRunStep } from "./workflow.mjs"
 const activatedPush =
   "github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.RELEASE_ENABLED == 'true'";
 
+/**
+ * @param {Record<string, unknown>[]} steps
+ * @param {string} action
+ */
+function requiredUsesStep(steps, action) {
+  const matches = steps.filter((step) => step.uses === action);
+  expect(matches, `expected one ${action} step`).toHaveLength(1);
+  return matches[0];
+}
+
 describe("merge workflow", () => {
   const workflow = readWorkflow("merge");
+
+  it.each(["checks", "browser"])(
+    "%s restores turbo's cache before its gate except on main, and prunes then saves it even when red",
+    (job) => {
+      const steps = requiredJobSteps(workflow, job);
+      const gate = requiredRunStep(steps, "pnpm exec turbo run ");
+      // Pruning keeps only the hashes the run summaries record; without them it refuses to run.
+      expect(asRecord(gate.env, `${job} gate env`).TURBO_RUN_SUMMARY).toBe("true");
+
+      const restore = requiredUsesStep(steps, "actions/cache/restore@v4");
+      const restoreWith = asRecord(restore.with, `${job} restore with`);
+      expect(restoreWith.path).toBe(".turbo/cache");
+      // A push to main verifies cold, so under-declared task inputs cannot replay a false green.
+      expect(restore.if).toBe("${{ !(github.event_name == 'push' && github.ref == 'refs/heads/main') }}");
+
+      const prune = requiredRunStep(steps, "pnpm turbo-cache:prune");
+      expect(prune.if).toBe("${{ always() }}");
+
+      const save = requiredUsesStep(steps, "actions/cache/save@v4");
+      const saveWith = asRecord(save.with, `${job} save with`);
+      expect(saveWith.path).toBe(".turbo/cache");
+      expect(save.if).toBe(
+        `\${{ always() && steps.${asString(prune.id, "prune id")}.outcome == 'success' }}`
+      );
+      // Cache keys are immutable, so every attempt saves under its own key and restores by prefix.
+      const key = asString(saveWith.key, `${job} save key`);
+      expect(key).toContain("${{ github.run_id }}");
+      expect(key).toContain("${{ github.run_attempt }}");
+      expect(restoreWith.key).toBe(key);
+      expect(asString(restoreWith["restore-keys"], `${job} restore keys`).trim().split("\n")).toEqual([
+        "turbo-${{ github.job }}-${{ github.sha }}-",
+        "turbo-${{ github.job }}-",
+      ]);
+
+      const order = [restore, gate, prune, save].map((step) => steps.indexOf(step));
+      expect(order).toEqual([...order].sort((a, b) => a - b));
+    }
+  );
 
   it("runs formatting and installs Chromium in their required jobs", () => {
     const checks = requiredJobSteps(workflow, "checks");

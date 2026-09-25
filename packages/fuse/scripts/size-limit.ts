@@ -2,7 +2,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { availableParallelism } from "node:os";
 import { dirname, join } from "node:path";
 import { gzipSync } from "node:zlib";
-import { build } from "rolldown";
+import { rolldown } from "rolldown";
+import type { RolldownBuild } from "rolldown";
 
 import { flagPayload, listFlagFiles } from "./flag-assets.ts";
 import { packageRootFromScript } from "./paths.ts";
@@ -44,70 +45,61 @@ function reportBudget(name: string, bytes: number, ceiling: number, unit: string
   }
 }
 
+/** One bundle measurement: a packed entry, or one named export of it when `exportName` is set. */
+type BundleBudget = {
+  readonly name: string;
+  readonly entryFile: string;
+  readonly exportName?: string;
+  readonly ceilingGzip: number;
+};
+
+/** One measured bundle, reported in budget order once every bundle has settled. */
+type Measurement = { readonly name: string; readonly bytes: number; readonly ceilingGzip: number };
+
 /**
  * Bundles in-process through rolldown's JS API with the options the CLI form
- * (`rolldown <input> --format esm --minify --platform browser --file <output>`) sets. One
- * bundle per budget keeps every size attributable to its own entry.
+ * (`rolldown <input> --format esm --minify --platform browser --file <output>`) sets, and
+ * gzips the generated chunk in memory. One bundle per budget keeps every size attributable to
+ * its own entry.
  */
-async function rolldownBundle(input: string, output: string): Promise<void> {
+async function measure(extracted: string, work: string, budget: BundleBudget): Promise<Measurement> {
+  const entry = join(extracted, budget.entryFile);
+  if (!existsSync(entry)) {
+    throw new Error(`Packed entry ${budget.name} missing ${budget.entryFile}`);
+  }
+  let input = entry;
+  if (budget.exportName !== undefined) {
+    input = join(work, `${workStem(budget.name)}.fixture.js`);
+    writeFileSync(input, `export { ${budget.exportName} } from ${JSON.stringify(entry)};\n`);
+  }
+  let bundle: RolldownBuild | undefined;
   try {
-    await build({
-      input,
-      platform: "browser",
-      external: PEER_EXTERNALS,
-      logLevel: "silent",
-      output: { file: output, format: "esm", minify: true },
-    });
+    bundle = await rolldown({ input, platform: "browser", external: PEER_EXTERNALS, logLevel: "silent" });
+    const { output } = await bundle.generate({ format: "esm", minify: true });
+    const chunks = output.filter((file) => file.type === "chunk");
+    const [chunk] = chunks;
+    // `--file` rejects code splitting, so a measured bundle is exactly one chunk.
+    if (chunks.length !== 1 || chunk === undefined) {
+      throw new Error(`expected one chunk, got ${String(chunks.length)}`);
+    }
+    return { name: budget.name, bytes: gzipSize(Buffer.from(chunk.code)), ceilingGzip: budget.ceilingGzip };
   } catch (error) {
     throw new Error(
       `rolldown failed for ${input}:\n${error instanceof Error ? error.message : String(error)}`,
       { cause: error }
     );
+  } finally {
+    await bundle?.close();
   }
-}
-
-/** One measured bundle, reported in budget order once every bundle has settled. */
-type Measurement = { readonly name: string; readonly bytes: number; readonly ceilingGzip: number };
-
-async function measureJsEntry(
-  extracted: string,
-  work: string,
-  entryFile: string,
-  name: string,
-  ceilingGzip: number
-): Promise<Measurement> {
-  const input = join(extracted, entryFile);
-  if (!existsSync(input)) {
-    throw new Error(`Packed entry ${name} missing ${entryFile}`);
-  }
-  const output = join(work, `${workStem(name)}.js`);
-  await rolldownBundle(input, output);
-  return { name, bytes: gzipSize(readFileSync(output)), ceilingGzip };
-}
-
-async function measureNamedImport(
-  extracted: string,
-  work: string,
-  entryFile: string,
-  exportName: string,
-  name: string,
-  ceilingGzip: number
-): Promise<Measurement> {
-  const input = join(extracted, entryFile);
-  if (!existsSync(input)) {
-    throw new Error(`Packed entry ${name} missing ${entryFile}`);
-  }
-  const fixture = join(work, `${workStem(name)}.fixture.js`);
-  writeFileSync(fixture, `export { ${exportName} } from ${JSON.stringify(input)};\n`);
-  const output = join(work, `${workStem(name)}.js`);
-  await rolldownBundle(fixture, output);
-  return { name, bytes: gzipSize(readFileSync(output)), ceilingGzip };
 }
 
 /**
- * Runs `tasks` with at most `limit` in flight and resolves to their results in input order.
- * Rolldown parallelizes inside each build, so the cap stays below the core count.
+ * Rolldown parallelizes inside each build, so the number of bundles in flight stays below the
+ * core count.
  */
+const BUNDLE_CONCURRENCY = Math.max(1, Math.floor(availableParallelism() / 2));
+
+/** Runs `tasks` with at most `limit` in flight and resolves to their results in input order. */
 async function mapConcurrent<T>(tasks: readonly (() => Promise<T>)[], limit: number): Promise<T[]> {
   const results: T[] = Array.from({ length: tasks.length });
   // Workers share one iterator, so each task is claimed exactly once.
@@ -120,8 +112,6 @@ async function mapConcurrent<T>(tasks: readonly (() => Promise<T>)[], limit: num
   await Promise.all(Array.from({ length: Math.min(limit, tasks.length) }, worker));
   return results;
 }
-
-const BUNDLE_CONCURRENCY = Math.max(1, Math.floor(availableParallelism() / 2));
 
 function checkCss(extracted: string, file: string, name: string, ceilingGzip: number): void {
   const path = join(extracted, file);
@@ -145,22 +135,7 @@ try {
     const work = join(dirname(extracted), "work");
     mkdirSync(work);
     const measurements = await mapConcurrent(
-      [
-        ...JS_ENTRY_BUDGETS.map(
-          (budget) => () => measureJsEntry(extracted, work, budget.entryFile, budget.name, budget.ceilingGzip)
-        ),
-        ...NAMED_IMPORT_BUDGETS.map(
-          (budget) => () =>
-            measureNamedImport(
-              extracted,
-              work,
-              budget.entryFile,
-              budget.exportName,
-              budget.name,
-              budget.ceilingGzip
-            )
-        ),
-      ],
+      [...JS_ENTRY_BUDGETS, ...NAMED_IMPORT_BUDGETS].map((budget) => () => measure(extracted, work, budget)),
       BUNDLE_CONCURRENCY
     );
     for (const measurement of measurements) {

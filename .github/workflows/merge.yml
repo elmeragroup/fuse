@@ -41,13 +41,16 @@ jobs:
         run: pnpm exec oxfmt --check
 
       # Turbo's local cache persists per job, so unchanged packages replay their cached
-      # results. A PR restores from its own branch first and falls back to main's.
+      # results. A PR restores from its own branch first and falls back to main's. A push to
+      # main verifies cold, so an under-declared task input cannot replay a false green there.
       - name: Restore turbo cache
-        uses: actions/cache@v4
+        if: ${{ !(github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+        uses: actions/cache/restore@v4
         with:
           path: .turbo/cache
-          key: turbo-${{ github.job }}-${{ github.sha }}
+          key: turbo-${{ github.job }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
+            turbo-${{ github.job }}-${{ github.sha }}-
             turbo-${{ github.job }}-
 
       # turbo.json ci:checks minus browser checks — a docs/unit failure should not
@@ -57,9 +60,20 @@ jobs:
         env:
           TURBO_RUN_SUMMARY: "true"
 
-      # Turbo never evicts, so keep only the entries this run used before the cache saves.
+      # Turbo never evicts, so keep only the entries this run used before the cache saves. A
+      # red run still saves, so its successful tasks replay on the next attempt. The key is
+      # unique per attempt because a cache key is immutable once saved.
       - name: Prune turbo cache
-        run: node scripts/prune-turbo-cache.ts .turbo/cache .turbo/runs
+        id: prune-turbo-cache
+        if: ${{ always() }}
+        run: pnpm turbo-cache:prune
+
+      - name: Save turbo cache
+        if: ${{ always() && steps.prune-turbo-cache.outcome == 'success' }}
+        uses: actions/cache/save@v4
+        with:
+          path: .turbo/cache
+          key: turbo-${{ github.job }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       - name: Changeset presence
         if: ${{ github.event_name == 'pull_request' && env.IS_SELF_RELEASE_PR != 'true' && !contains(github.event.pull_request.labels.*.name, 'no-changeset') }}
@@ -93,13 +107,16 @@ jobs:
         run: pnpm --filter @elmeragroup/fuse exec playwright install --with-deps chromium
 
       # Turbo's local cache persists per job, so unchanged packages replay their cached
-      # results. A PR restores from its own branch first and falls back to main's.
+      # results. A PR restores from its own branch first and falls back to main's. A push to
+      # main verifies cold, so an under-declared task input cannot replay a false green there.
       - name: Restore turbo cache
-        uses: actions/cache@v4
+        if: ${{ !(github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+        uses: actions/cache/restore@v4
         with:
           path: .turbo/cache
-          key: turbo-${{ github.job }}-${{ github.sha }}
+          key: turbo-${{ github.job }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
+            turbo-${{ github.job }}-${{ github.sha }}-
             turbo-${{ github.job }}-
 
       - name: turbo browser checks
@@ -107,9 +124,20 @@ jobs:
         env:
           TURBO_RUN_SUMMARY: "true"
 
-      # Turbo never evicts, so keep only the entries this run used before the cache saves.
+      # Turbo never evicts, so keep only the entries this run used before the cache saves. A
+      # red run still saves, so its successful tasks replay on the next attempt. The key is
+      # unique per attempt because a cache key is immutable once saved.
       - name: Prune turbo cache
-        run: node scripts/prune-turbo-cache.ts .turbo/cache .turbo/runs
+        id: prune-turbo-cache
+        if: ${{ always() }}
+        run: pnpm turbo-cache:prune
+
+      - name: Save turbo cache
+        if: ${{ always() && steps.prune-turbo-cache.outcome == 'success' }}
+        uses: actions/cache/save@v4
+        with:
+          path: .turbo/cache
+          key: turbo-${{ github.job }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
 
   # Every activated push to main publishes a canary for the merged commit; a merged Version
   # Packages PR carries the stable bump and publishes the stable line.

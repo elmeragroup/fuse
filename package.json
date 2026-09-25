@@ -18,6 +18,7 @@
     "test:browser": "turbo run test:browser",
     "test:repo-policy": "vitest run --config test/vitest.config.mjs",
     "test:types": "turbo run test:types",
+    "turbo-cache:prune": "node scripts/prune-turbo-cache.ts .turbo/cache .turbo/runs",
     "type-check": "turbo run type-check",
     "type-check:scripts": "tsc --noEmit -p scripts/tsconfig.json"
   },

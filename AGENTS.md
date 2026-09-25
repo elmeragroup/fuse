@@ -50,8 +50,8 @@ Use unit tests for recipes and pure logic, browser tests for interaction, and
 public type tests for API constraints. Use the shared role/label browser helpers.
 Put necessary source contracts in the central suite with the reason lint or an
 existing gate cannot enforce them.
-While editing, run `vitest related <changed files> --run` in the owning package for a
-tight loop. Direct Vitest skips the Fuse build, so dist tripwires stay silent there.
+While editing, run `vitest related <files> --run --project unit` in the owning package
+(drop `--project` where none exist). Direct Vitest skips the Fuse build and dist tripwires.
 Before review, run the touched turbo tasks with `--affected`, then `pnpm ci:checks`.
 Read versions, commands, budgets and task dependencies from their owning configuration
 and scripts.
