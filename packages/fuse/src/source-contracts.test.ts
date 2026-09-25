@@ -211,7 +211,7 @@ function exportedNames(relativePath: string): string[] {
   const parsed = parseSync(relativePath, readSrc(relativePath));
   expect(parsed.errors, relativePath).toEqual([]);
   return parsed.module.staticExports.flatMap(({ entries }) =>
-    entries.map(({ exportName, isType }) => `${isType ? "type " : ""}${exportName.name ?? "default"}`),
+    entries.map(({ exportName, isType }) => `${isType ? "type " : ""}${exportName.name ?? "default"}`)
   );
 }
 

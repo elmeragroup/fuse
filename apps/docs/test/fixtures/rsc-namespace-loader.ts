@@ -13,7 +13,9 @@ import { parseSync } from "oxc-parser";
 import type { ParseResult } from "oxc-parser";
 import { transformSync } from "oxc-transform";
 
-const FLIGHT_SERVER_URL = pathToFileURL(fileURLToPath(new URL("./rsc-flight-server.ts", import.meta.url))).href;
+const FLIGHT_SERVER_URL = pathToFileURL(
+  fileURLToPath(new URL("./rsc-flight-server.ts", import.meta.url))
+).href;
 const EXTENSIONS = [".ts", ".tsx", ".js", ".mjs"];
 
 function fail(file: string, verb: string, errors: readonly { readonly message: string }[]): never {
