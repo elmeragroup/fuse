@@ -7,7 +7,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
+import { cssVarColor, overlayBackdropOf, renderThemed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
 import { AlertDialog } from "./index";
 
@@ -129,6 +129,24 @@ describe("AlertDialog", () => {
       expect(page.getByRole("alertdialog").query()).toBeNull();
     });
     await expect.element(page.getByRole("button", { name: "Delete order", exact: true })).toHaveFocus();
+  });
+
+  it("stays open on a backdrop click and still closes on Escape", async () => {
+    const onOpenChange = vi.fn<(open: boolean) => void>();
+    renderThemed(withLocale("en-US", <ConfirmDialog onOpenChange={onOpenChange} />));
+    const dialog = await openConfirm();
+    const backdrop = overlayBackdropOf(dialog);
+
+    // The corner sits clear of the centred popup, so the pointer lands on the backdrop.
+    await userEvent.click(backdrop, { position: { x: 2, y: 2 } });
+    expect(onOpenChange.mock.calls.map(([open]) => open)).toEqual([true]);
+    expect(dialog.hasAttribute("data-open")).toBe(true);
+
+    await userEvent.keyboard("{Escape}");
+    await vi.waitFor(() => {
+      expect(page.getByRole("alertdialog").query()).toBeNull();
+    });
+    expect(onOpenChange.mock.calls.map(([open]) => open)).toEqual([true, false]);
   });
 
   it("focuses the primary action for a neutral confirmation", async () => {

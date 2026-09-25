@@ -10,7 +10,7 @@ import {
   expectNoFocusRing,
 } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { overlayBackdropOf, renderThemed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
 import { Dialog } from "./index";
 
@@ -379,19 +379,7 @@ describe("Dialog", () => {
     if (!(dialog instanceof HTMLElement)) {
       throw new Error("expected the popup");
     }
-    let overlay: HTMLElement | null = null;
-    let sibling = dialog.previousElementSibling;
-    while (sibling) {
-      if (sibling instanceof HTMLElement && sibling.getAttribute("role") === "presentation") {
-        overlay = sibling;
-        break;
-      }
-      sibling = sibling.previousElementSibling;
-    }
-    if (overlay === null) {
-      throw new Error("expected the backdrop");
-    }
-    await userEvent.click(overlay, { position: { x: 2, y: 2 } });
+    await userEvent.click(overlayBackdropOf(dialog), { position: { x: 2, y: 2 } });
     expect(page.getByRole("dialog").element()).toBeTruthy();
   });
 
