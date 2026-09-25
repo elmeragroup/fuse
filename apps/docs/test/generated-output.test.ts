@@ -6,7 +6,7 @@
  * markdown endpoint for what it embeds — never a second copy of any of them.
  */
 
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -123,17 +123,24 @@ describe("component page manifest", () => {
     }
   });
 
-  it("renders every required demo scenario without adding unreviewed scenarios", () => {
+  it("lists exactly the demo files on disk for every reviewed page", () => {
+    // Unit under test: the reviewed inventory's demo lists. Oracle: each page's demos
+    // directory. Sorting both sides also rejects a file listed twice.
+    for (const [slug, reviewed] of COMPONENT_INVENTORY) {
+      // A demo file is a `.tsx` module, as the generator's never-rendered check counts them.
+      const onDisk = readdirSync(resolveComponentPaths(slug).demosDir).filter((entry) =>
+        entry.endsWith(".tsx")
+      );
+      expect(reviewed.demos.toSorted(), slug).toEqual(onDisk.toSorted());
+    }
+  });
+
+  it("renders exactly the reviewed demo files", () => {
+    // Unit under test: each authored page's demo list. Oracle: the reviewed inventory.
     for (const [slug, reviewed] of COMPONENT_INVENTORY) {
       expect(reviewed.demos.length, slug).toBeGreaterThan(0);
       const rendered = authoredPage(slug).parsed.demos.map((demo) => demo.file);
-      for (const file of rendered) {
-        expect(reviewed.demos, `${slug} renders an unreviewed scenario: ${file}`).toContain(file);
-      }
-      // A file named after the slug is required. Other listed files may be rendered.
-      for (const file of reviewed.demos.filter((demo) => demo.startsWith(`${slug}-`))) {
-        expect(rendered, `${slug} is missing required demo ${file}`).toContain(file);
-      }
+      expect(rendered.toSorted(), slug).toEqual(reviewed.demos.toSorted());
     }
   });
 

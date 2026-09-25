@@ -45,6 +45,8 @@
   checks over translucent fills, such as the Alert action's, throw `InvalidColor` until it
   does. Also correct the notation list in `packages/color/src/css-color.ts`, which names only
   `rgb()`, `oklch()` and `lab()` as Chromium's computed serializations.
+- No select demo shows `Select.Content alignItemWithTrigger`; only `select.browser.test.tsx`
+  exercises it. Add a demo beside the page and list it in the component inventory.
 
 ## Control size
 
