@@ -16,16 +16,16 @@ import {
   textNamed,
 } from "../../test/themed-browser-render";
 import { Badge } from "../components/badge/badge";
-import { ButtonGroup } from "../components/button-group/button-group";
+import { ButtonGroup } from "../components/button-group";
 import { Button } from "../components/button/button";
 import { Card } from "../components/card/card";
 import { Checkbox } from "../components/checkbox/checkbox";
-import { Combobox } from "../components/combobox/combobox";
+import { Combobox } from "../components/combobox";
 import { Frame } from "../components/frame/frame";
-import { InputGroup } from "../components/input-group/input-group";
+import { InputGroup } from "../components/input-group";
 import { Input } from "../components/input/input";
 import { PhoneNumberField } from "../components/phone-number-field/phone-number-field";
-import { Tabs } from "../components/tabs/tabs";
+import { Tabs } from "../components/tabs";
 import { Toggle } from "../components/toggle/toggle";
 import { Calendar } from "../react-aria/calendar/calendar";
 import {

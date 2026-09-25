@@ -8,7 +8,7 @@ import { Warning } from "../../icons/generated/warning";
 import { WarningOctagon } from "../../icons/generated/warning-octagon";
 import { cn } from "../../styles/cn";
 import { Button } from "../button/button";
-import { Item } from "../item/item";
+import { ItemActions, ItemContent, ItemDescription, ItemMedia, ItemRootElement } from "../item/item-markup";
 import { ITEM_TITLE_CLASSES } from "../item/item-title-classes";
 import { alertVariants } from "./alert-variants";
 
@@ -83,19 +83,19 @@ function AlertRoot({
   const { base, button } = alertVariants({ variant });
 
   return (
-    <Item.Root {...props} role="alert" variant="outline" size="sm" className={cn(base(), className)}>
-      <Item.Media>
+    <ItemRootElement {...props} role="alert" variant="outline" size="sm" className={cn(base(), className)}>
+      <ItemMedia>
         <AlertIcon variant={variant} />
-      </Item.Media>
-      <Item.Content>{children}</Item.Content>
+      </ItemMedia>
+      <ItemContent>{children}</ItemContent>
       {hasAction(onAction, actionLabel) ? (
-        <Item.Actions>
+        <ItemActions>
           <Button className={button()} size="sm" type="button" onClick={onAction}>
             {actionLabel}
           </Button>
-        </Item.Actions>
+        </ItemActions>
       ) : null}
-    </Item.Root>
+    </ItemRootElement>
   );
 }
 
@@ -119,7 +119,7 @@ function AlertTitle({ children, className, level = 3, ...props }: AlertTitleProp
 function AlertDescription({ className, ...props }: AlertDescriptionProps): ReactElement {
   const { description } = alertVariants();
 
-  return <Item.Description className={cn(description(), className)} {...props} />;
+  return <ItemDescription className={cn(description(), className)} {...props} />;
 }
 
 function hasAction(

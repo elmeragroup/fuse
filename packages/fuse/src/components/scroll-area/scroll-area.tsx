@@ -38,7 +38,7 @@ const SCROLLBAR_KEEP_MOUNTED = {
   hover: false,
 } as const satisfies Record<ScrollAreaType, boolean>;
 
-function ScrollAreaRoot({
+export function ScrollAreaRoot({
   className,
   children,
   orientation = "vertical",
@@ -61,7 +61,7 @@ function ScrollAreaRoot({
   );
 }
 
-function ScrollAreaBar({
+export function ScrollAreaBar({
   className,
   orientation = "vertical",
   type = "hover",
@@ -90,8 +90,3 @@ function ScrollAreaBar({
 
 ScrollAreaRoot.displayName = "ScrollArea.Root";
 ScrollAreaBar.displayName = "ScrollArea.Bar";
-
-export const ScrollArea = {
-  Root: ScrollAreaRoot,
-  Bar: ScrollAreaBar,
-};

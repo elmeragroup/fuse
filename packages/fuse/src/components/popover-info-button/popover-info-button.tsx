@@ -10,7 +10,7 @@ import { Info } from "../../icons/generated/info";
 import type { ButtonProps } from "../button/button";
 import { Button } from "../button/button";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
-import { Popover } from "../popover/popover";
+import { PopoverContent, PopoverRoot, PopoverTrigger } from "../popover/popover";
 import { popoverInfoButtonStrings } from "./intl";
 
 /** Recipe for the unit test. Not re-exported from the public entry. */
@@ -113,14 +113,14 @@ export function PopoverInfoButton({
   );
 
   return (
-    <Popover.Root>
-      <Popover.Trigger render={trigger}>
+    <PopoverRoot>
+      <PopoverTrigger render={trigger}>
         <Info aria-hidden="true" className={icon()} />
-      </Popover.Trigger>
-      <Popover.Content side="right" sideOffset={8} showArrow className={content()} container={container}>
+      </PopoverTrigger>
+      <PopoverContent side="right" sideOffset={8} showArrow className={content()} container={container}>
         {children}
-      </Popover.Content>
-    </Popover.Root>
+      </PopoverContent>
+    </PopoverRoot>
   );
 }
 

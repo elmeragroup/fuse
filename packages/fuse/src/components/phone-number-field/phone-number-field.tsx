@@ -18,9 +18,9 @@ import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import { fixedCornerClass } from "../../styles/corner-radius";
 import { selfFocusRingClass } from "../../styles/utils";
-import { Combobox } from "../combobox/combobox";
+import { ComboboxContent, ComboboxEmpty, ComboboxItem, ComboboxList } from "../combobox/combobox";
 import { FieldFrame, fieldFrameRootClass } from "../field/field-frame";
-import { InputGroup } from "../input-group/input-group";
+import { InputGroupAddon, InputGroupInput, InputGroupRoot } from "../input-group/input-group";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
 import { Flag } from "./flag";
 import { usePhoneNumberFieldState } from "./hooks/use-phone-number-field-state";
@@ -215,7 +215,7 @@ export function PhoneNumberField({
         label={label}
         description={description}
         errorMessage={errorMessage}>
-        <InputGroup.Root ref={inputGroupRef} aria-invalid={isInvalid || undefined}>
+        <InputGroupRoot ref={inputGroupRef} aria-invalid={isInvalid || undefined}>
           <ComboboxPrimitive.Root
             items={phone.countries}
             value={phone.selectedCountry}
@@ -245,7 +245,7 @@ export function PhoneNumberField({
             // `${name}-display-value`. The id names no rendered form on purpose
             form="fuse-phone-country-unbound"
             locale={locale}>
-            <InputGroup.Addon className="text-foreground" align="inline-start">
+            <InputGroupAddon className="text-foreground" align="inline-start">
               {/* role="button" overrides Base UI's default role="combobox" so the trigger keeps the
                   getByRole("button", {name}) contract the browser tests freeze; aria-labelledby is
                   cleared so the surrounding Field's label doesn't bleed onto it and aria-label wins.
@@ -269,18 +269,18 @@ export function PhoneNumberField({
                   </span>
                 </div>
               </ComboboxPrimitive.Trigger>
-            </InputGroup.Addon>
-            <Combobox.Content
+            </InputGroupAddon>
+            <ComboboxContent
               anchor={inputGroupRef}
               container={container}
               aria-label={resolvedSelectCountryLabel}>
-              <InputGroup.Root>
-                <InputGroup.Addon align="inline-start">
+              <InputGroupRoot>
+                <InputGroupAddon align="inline-start">
                   <MagnifyingGlass className="size-4 text-muted-foreground" />
-                </InputGroup.Addon>
+                </InputGroupAddon>
                 <ComboboxPrimitive.Input
                   render={
-                    <InputGroup.Input
+                    <InputGroupInput
                       aria-label={resolvedSearchCountriesLabel}
                       // Field.Label labelledby would win over aria-label; drop it so the
                       // search keeps dictionary `searchCountries`.
@@ -294,22 +294,22 @@ export function PhoneNumberField({
                   aria-autocomplete="none"
                   aria-haspopup="false"
                 />
-              </InputGroup.Root>
-              <Combobox.Empty>{resolvedNoCountriesFoundText}</Combobox.Empty>
-              <Combobox.List>
+              </InputGroupRoot>
+              <ComboboxEmpty>{resolvedNoCountriesFoundText}</ComboboxEmpty>
+              <ComboboxList>
                 {(country: PhoneNumberCountry) => (
-                  <Combobox.Item key={country.code} value={country}>
+                  <ComboboxItem key={country.code} value={country}>
                     <Flag country={country.code} />
                     <span className="text-sm leading-tight tabular-nums">{country.dialCode}</span>
                     <span className="text-sm leading-tight max-w-32 truncate text-ellipsis">
                       {phone.getCountryName(country.code)}
                     </span>
-                  </Combobox.Item>
+                  </ComboboxItem>
                 )}
-              </Combobox.List>
-            </Combobox.Content>
+              </ComboboxList>
+            </ComboboxContent>
           </ComboboxPrimitive.Root>
-          <InputGroup.Input
+          <InputGroupInput
             ref={numberInputRef}
             readOnly={isReadOnly}
             name={name ? `${name}-display-value` : "phone-number-display-value"}
@@ -331,7 +331,7 @@ export function PhoneNumberField({
             {...ariaProps}
           />
           {endContent}
-        </InputGroup.Root>
+        </InputGroupRoot>
       </FieldFrame>
       <input type="hidden" name={name} value={phone.outputValue} disabled={isDisabled} />
     </>

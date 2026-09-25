@@ -21,7 +21,10 @@ const GROUP_CLASSES = cn("flex -space-x-2 [:where(&>*)]:ring-2 [:where(&>*)]:rin
  * Client image-or-initials avatar. Base-ui Avatar owns image
  * loading state.
  */
-function AvatarRoot({ className, ...props }: ComponentProps<typeof AvatarPrimitive.Root>): ReactElement {
+export function AvatarRoot({
+  className,
+  ...props
+}: ComponentProps<typeof AvatarPrimitive.Root>): ReactElement {
   return (
     <AvatarPrimitive.Root data-slot="avatar" className={mergeClassName(className, ROOT_CLASSES)} {...props} />
   );
@@ -31,11 +34,14 @@ function AvatarRoot({ className, ...props }: ComponentProps<typeof AvatarPrimiti
  * Stacks its avatars and separates them with a background-coloured ring, so a group needs neither
  * negative spacing nor a ring on every child.
  */
-function AvatarGroup({ className, ...props }: ComponentProps<"div">): ReactElement {
+export function AvatarGroup({ className, ...props }: ComponentProps<"div">): ReactElement {
   return <div data-slot="avatar-group" className={cn(GROUP_CLASSES, className)} {...props} />;
 }
 
-function AvatarImage({ className, ...props }: ComponentProps<typeof AvatarPrimitive.Image>): ReactElement {
+export function AvatarImage({
+  className,
+  ...props
+}: ComponentProps<typeof AvatarPrimitive.Image>): ReactElement {
   return (
     <AvatarPrimitive.Image
       data-slot="avatar-image"
@@ -45,7 +51,7 @@ function AvatarImage({ className, ...props }: ComponentProps<typeof AvatarPrimit
   );
 }
 
-function AvatarFallback({
+export function AvatarFallback({
   className,
   ...props
 }: ComponentProps<typeof AvatarPrimitive.Fallback>): ReactElement {
@@ -62,10 +68,3 @@ AvatarRoot.displayName = "Avatar.Root";
 AvatarGroup.displayName = "Avatar.Group";
 AvatarImage.displayName = "Avatar.Image";
 AvatarFallback.displayName = "Avatar.Fallback";
-
-export const Avatar = {
-  Root: AvatarRoot,
-  Group: AvatarGroup,
-  Image: AvatarImage,
-  Fallback: AvatarFallback,
-};

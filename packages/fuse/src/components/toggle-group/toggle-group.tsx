@@ -45,7 +45,7 @@ export type ToggleGroupItemProps = Omit<ComponentProps<typeof TogglePrimitive>, 
  * Root publishes `variant` / `size` / `spacing` / `orientation` through
  * module-private context; Item borrows public `toggleVariants`.
  */
-function ToggleGroupRoot({
+export function ToggleGroupRoot({
   className,
   variant,
   size,
@@ -83,7 +83,7 @@ function ToggleGroupRoot({
  * Group-aware toggle. Resolves `variant` / `size` as `itemProp ?? contextValue`
  * so an explicit item-level axis wins.
  */
-function ToggleGroupItem({
+export function ToggleGroupItem({
   className,
   children,
   variant,
@@ -117,8 +117,3 @@ function ToggleGroupItem({
 
 ToggleGroupRoot.displayName = "ToggleGroup.Root";
 ToggleGroupItem.displayName = "ToggleGroup.Item";
-
-export const ToggleGroup = {
-  Root: ToggleGroupRoot,
-  Item: ToggleGroupItem,
-};

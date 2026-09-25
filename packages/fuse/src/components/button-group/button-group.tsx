@@ -29,7 +29,7 @@ export type ButtonGroupTextProps = useRender.ComponentProps<"div">;
  * children into one visual control. `orientation` defaults so
  * `data-orientation` is always emitted.
  */
-function ButtonGroupRoot({
+export function ButtonGroupRoot({
   className,
   orientation = "horizontal",
   ...props
@@ -50,7 +50,7 @@ function ButtonGroupRoot({
  * group `[data-slot]` join contract stays intact. Default is
  * `"vertical"` — a horizontal group needs a vertical hairline.
  */
-function ButtonGroupSeparator({
+export function ButtonGroupSeparator({
   className,
   orientation = "vertical",
   ...props
@@ -72,7 +72,7 @@ function ButtonGroupSeparator({
  * Static label/affix segment styled to sit flush with buttons. Polymorphism is
  * `render` via base-ui `useRender` + `mergeProps` — the convention exemplar
  */
-function ButtonGroupText({ className, render, ...props }: ButtonGroupTextProps): ReactElement {
+export function ButtonGroupText({ className, render, ...props }: ButtonGroupTextProps): ReactElement {
   return useRender({
     defaultTagName: "div",
     props: mergeProps<"div">(
@@ -94,9 +94,3 @@ function ButtonGroupText({ className, render, ...props }: ButtonGroupTextProps):
 ButtonGroupRoot.displayName = "ButtonGroup.Root";
 ButtonGroupSeparator.displayName = "ButtonGroup.Separator";
 ButtonGroupText.displayName = "ButtonGroup.Text";
-
-export const ButtonGroup = {
-  Root: ButtonGroupRoot,
-  Separator: ButtonGroupSeparator,
-  Text: ButtonGroupText,
-};

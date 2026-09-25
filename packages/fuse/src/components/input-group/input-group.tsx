@@ -65,7 +65,7 @@ const CONTROL_CHROME = cn(
   withinStateFaceControlClass
 );
 
-function InputGroupRoot({ className, ...props }: InputGroupRootProps): ReactElement {
+export function InputGroupRoot({ className, ...props }: InputGroupRootProps): ReactElement {
   return (
     <div
       data-slot="input-group"
@@ -86,7 +86,7 @@ function InputGroupRoot({ className, ...props }: InputGroupRootProps): ReactElem
   );
 }
 
-function InputGroupAddon({
+export function InputGroupAddon({
   className,
   align = "inline-start",
   onClick,
@@ -111,7 +111,7 @@ function InputGroupAddon({
   );
 }
 
-function InputGroupButton({
+export function InputGroupButton({
   className,
   type = "button",
   variant = "ghost",
@@ -131,7 +131,7 @@ function InputGroupButton({
   );
 }
 
-function InputGroupText({ className, ...props }: InputGroupTextProps): ReactElement {
+export function InputGroupText({ className, ...props }: InputGroupTextProps): ReactElement {
   return (
     <span
       // The reference omits the slot, which breaks the
@@ -147,7 +147,7 @@ function InputGroupText({ className, ...props }: InputGroupTextProps): ReactElem
   );
 }
 
-function InputGroupInput({ className, ...props }: InputGroupInputProps): ReactElement {
+export function InputGroupInput({ className, ...props }: InputGroupInputProps): ReactElement {
   return (
     <Input
       data-slot="input-group-control"
@@ -158,7 +158,7 @@ function InputGroupInput({ className, ...props }: InputGroupInputProps): ReactEl
   );
 }
 
-function InputGroupTextarea({ className, ...props }: InputGroupTextareaProps): ReactElement {
+export function InputGroupTextarea({ className, ...props }: InputGroupTextareaProps): ReactElement {
   return (
     <Textarea
       data-slot="input-group-control"
@@ -175,12 +175,3 @@ InputGroupButton.displayName = "InputGroup.Button";
 InputGroupText.displayName = "InputGroup.Text";
 InputGroupInput.displayName = "InputGroup.Input";
 InputGroupTextarea.displayName = "InputGroup.Textarea";
-
-export const InputGroup = {
-  Root: InputGroupRoot,
-  Addon: InputGroupAddon,
-  Button: InputGroupButton,
-  Text: InputGroupText,
-  Input: InputGroupInput,
-  Textarea: InputGroupTextarea,
-};

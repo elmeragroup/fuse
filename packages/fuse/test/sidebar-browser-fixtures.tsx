@@ -4,7 +4,8 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import { afterEach, beforeEach, vi } from "vitest";
 import { cdp, page } from "vitest/browser";
 
-import { Sidebar, useSidebar } from "../src/components/sidebar/sidebar";
+import { Sidebar } from "../src/components/sidebar";
+import { useSidebar } from "../src/components/sidebar/sidebar";
 import type {
   SidebarContextValue,
   SidebarProviderProps,

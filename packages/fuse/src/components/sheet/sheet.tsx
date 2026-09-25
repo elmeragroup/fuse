@@ -70,7 +70,7 @@ export type SheetRootProps = Omit<
   children?: ReactNode;
 };
 
-function SheetRoot({ side = "right", children, ...props }: SheetRootProps): ReactElement {
+export function SheetRoot({ side = "right", children, ...props }: SheetRootProps): ReactElement {
   return (
     <SheetSideContext value={side}>
       <SheetPrimitive.Root data-slot="sheet" swipeDirection={SIDE_TO_SWIPE_DIRECTION[side]} {...props}>
@@ -80,7 +80,10 @@ function SheetRoot({ side = "right", children, ...props }: SheetRootProps): Reac
   );
 }
 
-function SheetTrigger({ className, ...props }: ComponentProps<typeof SheetPrimitive.Trigger>): ReactElement {
+export function SheetTrigger({
+  className,
+  ...props
+}: ComponentProps<typeof SheetPrimitive.Trigger>): ReactElement {
   return (
     <SheetPrimitive.Trigger
       data-slot="sheet-trigger"
@@ -90,7 +93,10 @@ function SheetTrigger({ className, ...props }: ComponentProps<typeof SheetPrimit
   );
 }
 
-function SheetClose({ className, ...props }: ComponentProps<typeof SheetPrimitive.Close>): ReactElement {
+export function SheetClose({
+  className,
+  ...props
+}: ComponentProps<typeof SheetPrimitive.Close>): ReactElement {
   return (
     <SheetPrimitive.Close
       data-slot="sheet-close"
@@ -100,11 +106,14 @@ function SheetClose({ className, ...props }: ComponentProps<typeof SheetPrimitiv
   );
 }
 
-function SheetPortal(props: ComponentProps<typeof SheetPrimitive.Portal>): ReactElement {
+export function SheetPortal(props: ComponentProps<typeof SheetPrimitive.Portal>): ReactElement {
   return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />;
 }
 
-function SheetOverlay({ className, ...props }: ComponentProps<typeof SheetPrimitive.Backdrop>): ReactElement {
+export function SheetOverlay({
+  className,
+  ...props
+}: ComponentProps<typeof SheetPrimitive.Backdrop>): ReactElement {
   return (
     <SheetPrimitive.Backdrop
       data-slot="sheet-overlay"
@@ -134,7 +143,7 @@ export type SheetContentProps = ComponentProps<typeof SheetPrimitive.Popup> &
     closeLabel?: string;
   };
 
-function SheetContent({
+export function SheetContent({
   className,
   children,
   size,
@@ -175,13 +184,13 @@ function SheetContent({
   );
 }
 
-function SheetHeader({ className, ...props }: ComponentProps<"div">): ReactElement {
+export function SheetHeader({ className, ...props }: ComponentProps<"div">): ReactElement {
   return (
     <div data-slot="sheet-header" className={cn("flex flex-col gap-1.5 px-4 pt-4", className)} {...props} />
   );
 }
 
-function SheetBody({ className, ...props }: ComponentProps<"div">): ReactElement {
+export function SheetBody({ className, ...props }: ComponentProps<"div">): ReactElement {
   return (
     <div
       data-slot="sheet-body"
@@ -191,13 +200,16 @@ function SheetBody({ className, ...props }: ComponentProps<"div">): ReactElement
   );
 }
 
-function SheetFooter({ className, ...props }: ComponentProps<"div">): ReactElement {
+export function SheetFooter({ className, ...props }: ComponentProps<"div">): ReactElement {
   return (
     <div data-slot="sheet-footer" className={cn("mt-auto flex flex-col gap-2 p-4", className)} {...props} />
   );
 }
 
-function SheetTitle({ className, ...props }: ComponentProps<typeof SheetPrimitive.Title>): ReactElement {
+export function SheetTitle({
+  className,
+  ...props
+}: ComponentProps<typeof SheetPrimitive.Title>): ReactElement {
   return (
     <SheetPrimitive.Title
       data-slot="sheet-title"
@@ -207,7 +219,7 @@ function SheetTitle({ className, ...props }: ComponentProps<typeof SheetPrimitiv
   );
 }
 
-function SheetDescription({
+export function SheetDescription({
   className,
   ...props
 }: ComponentProps<typeof SheetPrimitive.Description>): ReactElement {
@@ -231,17 +243,3 @@ SheetBody.displayName = "Sheet.Body";
 SheetFooter.displayName = "Sheet.Footer";
 SheetTitle.displayName = "Sheet.Title";
 SheetDescription.displayName = "Sheet.Description";
-
-export const Sheet = {
-  Root: SheetRoot,
-  Trigger: SheetTrigger,
-  Close: SheetClose,
-  Portal: SheetPortal,
-  Overlay: SheetOverlay,
-  Content: SheetContent,
-  Header: SheetHeader,
-  Body: SheetBody,
-  Footer: SheetFooter,
-  Title: SheetTitle,
-  Description: SheetDescription,
-};

@@ -1,4 +1,4 @@
-export { InputGroup } from "./components/input-group/input-group";
+export { InputGroup } from "./components/input-group";
 export type {
   InputGroupAddonProps,
   InputGroupButtonProps,

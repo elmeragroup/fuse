@@ -5,7 +5,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { renderThemed } from "../../../test/themed-browser-render";
-import { ScrollArea } from "./scroll-area";
+import { ScrollArea } from "./index";
 
 afterEach(() => {
   // DOM audit: injected test styles have no role; remove them by the marker attribute.

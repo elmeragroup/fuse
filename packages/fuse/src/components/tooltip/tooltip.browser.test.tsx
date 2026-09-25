@@ -7,13 +7,16 @@ import "../../../dist/styles.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
-import { Tooltip } from "./tooltip";
+import { Tooltip } from "./index";
 
-async function hoverOpen(name: string, tooltipName = name): Promise<HTMLElement> {
+async function hoverOpen(name: string, tooltipName = name, timeout?: number): Promise<HTMLElement> {
   await userEvent.hover(roleNamed("button", name));
-  await vi.waitFor(() => {
-    expect(page.getByRole("tooltip", { name: tooltipName, exact: true }).query()).not.toBeNull();
-  });
+  await vi.waitFor(
+    () => {
+      expect(page.getByRole("tooltip", { name: tooltipName, exact: true }).query()).not.toBeNull();
+    },
+    { timeout }
+  );
   return roleNamed("tooltip", tooltipName);
 }
 
@@ -98,8 +101,9 @@ describe("Tooltip", () => {
   });
 
   it("opens a neighbor without re-waiting the delay inside one Provider group", async () => {
+    const delay = 1000;
     renderThemed(
-      <Tooltip.Provider delay={400}>
+      <Tooltip.Provider delay={delay}>
         <Tooltip.Root>
           <Tooltip.Trigger>First</Tooltip.Trigger>
           <Tooltip.Content>First tip</Tooltip.Content>
@@ -111,13 +115,14 @@ describe("Tooltip", () => {
       </Tooltip.Provider>
     );
 
-    await hoverOpen("First", "First tip");
+    await hoverOpen("First", "First tip", delay * 2);
     const started = performance.now();
     await userEvent.hover(roleNamed("button", "Second"));
     await vi.waitFor(() => {
       expect(page.getByRole("tooltip", { name: "Second tip", exact: true }).query()).not.toBeNull();
     });
-    expect(performance.now() - started).toBeLessThan(250);
+    // A grouped neighbor skips the provider delay, so it opens in less than one provider delay.
+    expect(performance.now() - started).toBeLessThan(delay);
   });
 
   it("does not open a per-tooltip delay Root before the delay, even after a grouped sibling", async () => {

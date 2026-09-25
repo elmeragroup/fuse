@@ -3,7 +3,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { ToggleGroup } from "./toggle-group";
+import { ToggleGroup } from "./index";
 
 describe("toggle-group spacing=0 cap rounding", () => {
   it("puts directional cap-rounding classes on first and last items", () => {

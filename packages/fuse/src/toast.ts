@@ -2,7 +2,7 @@
 // explicit named re-exports only — no `export *`, no local declarations, no directives.
 // The exports/barrel generators discover this file; never hand-edit package.json#exports
 // or src/index.ts. No public recipe — status chrome stays module-private.
-export { Toast } from "./components/toast/toast";
+export { Toast } from "./components/toast";
 export type {
   CreateToastManagerReturnValue,
   ToastCloseProps,

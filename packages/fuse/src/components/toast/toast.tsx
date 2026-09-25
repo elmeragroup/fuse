@@ -233,7 +233,7 @@ function wrapManagerMethods(manager: PrimitiveManager): CreateToastManagerReturn
  * Imperative toast manager for a tree under `Toast.Provider`. Returns the live
  * `toasts` array plus `add` / `update` / `close` / `promise`.
  */
-function useToastManager<Data extends object = object>(): UseToastManagerReturnValue<Data> {
+export function useToastManager<Data extends object = object>(): UseToastManagerReturnValue<Data> {
   const manager = ToastPrimitive.useToastManager<Data>();
   return useMemo(
     () => ({
@@ -252,7 +252,7 @@ function useToastManager<Data extends object = object>(): UseToastManagerReturnV
  * with no reactive `toasts` array. Pass the result to
  * `<Toast.Provider toastManager={…}>`.
  */
-function createToastManager<Data extends object = object>(): CreateToastManagerReturnValue<Data> {
+export function createToastManager<Data extends object = object>(): CreateToastManagerReturnValue<Data> {
   // SAFETY: createToastManager is the primitive emit face; wrapManagerMethods only
   // rebinds add/update/close/promise and preserves the private subscribe channel.
   return wrapManagerMethods(ToastPrimitive.createToastManager<Data>() as PrimitiveManager);
@@ -267,7 +267,7 @@ export type ToastProviderProps = Omit<ComponentProps<typeof ToastPrimitive.Provi
   toastManager?: CreateToastManagerReturnValue;
 };
 
-function ToastProvider({ toastManager, ...props }: ToastProviderProps): ReactElement {
+export function ToastProvider({ toastManager, ...props }: ToastProviderProps): ReactElement {
   return (
     <ToastPrimitive.Provider
       toastManager={
@@ -282,7 +282,7 @@ function ToastProvider({ toastManager, ...props }: ToastProviderProps): ReactEle
 
 export type ToastViewportProps = ComponentProps<typeof ToastPrimitive.Viewport> & OverlayContainerProps;
 
-function ToastViewport({
+export function ToastViewport({
   className,
   container,
   children,
@@ -305,7 +305,11 @@ function ToastViewport({
   );
 }
 
-function ToastRoot({ className, toast, ...props }: ComponentProps<typeof ToastPrimitive.Root>): ReactElement {
+export function ToastRoot({
+  className,
+  toast,
+  ...props
+}: ComponentProps<typeof ToastPrimitive.Root>): ReactElement {
   const status = statusFromType(toast.type);
   const { root } = STATUS_SLOTS[status];
   return (
@@ -319,7 +323,10 @@ function ToastRoot({ className, toast, ...props }: ComponentProps<typeof ToastPr
   );
 }
 
-function ToastContent({ className, ...props }: ComponentProps<typeof ToastPrimitive.Content>): ReactElement {
+export function ToastContent({
+  className,
+  ...props
+}: ComponentProps<typeof ToastPrimitive.Content>): ReactElement {
   return (
     <ToastPrimitive.Content
       data-slot="toast-content"
@@ -329,13 +336,16 @@ function ToastContent({ className, ...props }: ComponentProps<typeof ToastPrimit
   );
 }
 
-function ToastTitle({ className, ...props }: ComponentProps<typeof ToastPrimitive.Title>): ReactElement {
+export function ToastTitle({
+  className,
+  ...props
+}: ComponentProps<typeof ToastPrimitive.Title>): ReactElement {
   return (
     <ToastPrimitive.Title data-slot="toast-title" className={mergeClassName(className, title())} {...props} />
   );
 }
 
-function ToastDescription({
+export function ToastDescription({
   className,
   ...props
 }: ComponentProps<typeof ToastPrimitive.Description>): ReactElement {
@@ -348,7 +358,10 @@ function ToastDescription({
   );
 }
 
-function ToastAction({ className, ...props }: ComponentProps<typeof ToastPrimitive.Action>): ReactElement {
+export function ToastAction({
+  className,
+  ...props
+}: ComponentProps<typeof ToastPrimitive.Action>): ReactElement {
   return (
     <ToastPrimitive.Action
       data-slot="toast-action"
@@ -372,7 +385,7 @@ function hasVisibleChildren(children: ReactNode): boolean {
   return children != null && children !== false && children !== true && children !== "";
 }
 
-function ToastClose({ className, label, children, ...props }: ToastCloseProps): ReactElement {
+export function ToastClose({ className, label, children, ...props }: ToastCloseProps): ReactElement {
   const strings = useLocalizedStrings(overlayCloseStrings);
   const resolvedLabel = label ?? strings.format("close");
   const visible = hasVisibleChildren(children);
@@ -434,16 +447,3 @@ ToastTitle.displayName = "Toast.Title";
 ToastDescription.displayName = "Toast.Description";
 ToastAction.displayName = "Toast.Action";
 ToastClose.displayName = "Toast.Close";
-
-export const Toast = {
-  Provider: ToastProvider,
-  Viewport: ToastViewport,
-  Root: ToastRoot,
-  Content: ToastContent,
-  Title: ToastTitle,
-  Description: ToastDescription,
-  Action: ToastAction,
-  Close: ToastClose,
-  useToastManager,
-  createToastManager,
-};

@@ -2,4 +2,4 @@
 // explicit named re-exports only — no `export *`, no local declarations, no directives.
 // The exports/barrel generators discover this file; never hand-edit package.json#exports
 // or src/index.ts. No public recipe.
-export { Collapsible } from "./components/collapsible/collapsible";
+export { Collapsible } from "./components/collapsible";

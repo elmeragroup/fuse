@@ -17,12 +17,12 @@ import {
 } from "../../test/themed-browser-render";
 import type { ControlSizeName, QueryableRole } from "../../test/themed-browser-render";
 import { Button } from "../components/button/button";
-import { Combobox } from "../components/combobox/combobox";
+import { Combobox } from "../components/combobox";
 import { RadioGroup, RadioIconButton } from "../components/radio-group/radio-group";
-import { Select } from "../components/select/select";
-import { Sidebar } from "../components/sidebar/sidebar";
-import { Tabs } from "../components/tabs/tabs";
-import { ToggleGroup } from "../components/toggle-group/toggle-group";
+import { Select } from "../components/select";
+import { Sidebar } from "../components/sidebar";
+import { Tabs } from "../components/tabs";
+import { ToggleGroup } from "../components/toggle-group";
 import { Toggle } from "../components/toggle/toggle";
 import type { Density } from "../theme/density";
 import { ThemeScope } from "../theme/theme-scope";

@@ -2,5 +2,5 @@
 // explicit named re-exports only — no `export *`, no local declarations, no directives.
 // The exports/barrel generators discover this file; never hand-edit package.json#exports
 // or src/index.ts. No public recipe — Item borrows toggleVariants from /toggle.
-export { ToggleGroup } from "./components/toggle-group/toggle-group";
+export { ToggleGroup } from "./components/toggle-group";
 export type { ToggleGroupRootProps, ToggleGroupItemProps } from "./components/toggle-group/toggle-group";

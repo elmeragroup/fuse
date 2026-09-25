@@ -6,7 +6,7 @@ import { Check } from "../../icons/generated/check";
 import { SpinnerGap } from "../../icons/generated/spinner-gap";
 import { cn } from "../../styles/cn";
 import { iconCrossfadeHidden, iconCrossfadeShown, iconCrossfadeTransition } from "../../styles/utils";
-import { Field } from "./field";
+import { FieldDescription, FieldError, FieldLabel, FieldLegend, FieldRoot, FieldSet } from "./field";
 
 /**
  * Package-private FieldFrame layout. No axes — the frame
@@ -129,9 +129,9 @@ export function FieldFrame({
   const hasCrossfade = isPending || isSuccess;
   const headingClass = classNames?.label;
   const descriptionNode = description ? (
-    <Field.Description className={cn(fieldFrameDescriptionClass, classNames?.description)}>
+    <FieldDescription className={cn(fieldFrameDescriptionClass, classNames?.description)}>
       {description}
-    </Field.Description>
+    </FieldDescription>
   ) : null;
   const body =
     heading === "legend" ? (
@@ -151,11 +151,11 @@ export function FieldFrame({
       <div className={cn(fieldFrameLabelRowClass, classNames?.labelRow)}>
         {label ? (
           heading === "legend" ? (
-            <Field.Legend variant="label" className={headingClass}>
+            <FieldLegend variant="label" className={headingClass}>
               {label}
-            </Field.Legend>
+            </FieldLegend>
           ) : (
-            <Field.Label className={headingClass}>{label}</Field.Label>
+            <FieldLabel className={headingClass}>{label}</FieldLabel>
           )
         ) : null}
         {status}
@@ -185,14 +185,14 @@ export function FieldFrame({
     <>
       {headingRow}
       {content}
-      <Field.Error>{errorMessage}</Field.Error>
+      <FieldError>{errorMessage}</FieldError>
     </>
   );
 
   return (
-    <Field.Root name={name} invalid={invalid} disabled={disabled} className={className}>
-      {heading === "legend" ? <Field.Set>{framed}</Field.Set> : framed}
-    </Field.Root>
+    <FieldRoot name={name} invalid={invalid} disabled={disabled} className={className}>
+      {heading === "legend" ? <FieldSet>{framed}</FieldSet> : framed}
+    </FieldRoot>
   );
 }
 

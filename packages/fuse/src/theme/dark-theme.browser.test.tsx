@@ -7,7 +7,7 @@ import "../../dist/themes.css";
 import { render } from "../../test/browser-render";
 import { declaredThemeValue } from "../../test/theme-css-contract";
 import { snapshotDocumentTheme, stampDocumentTheme, stampTheme } from "../../test/themed-browser-render";
-import { Dialog } from "../components/dialog/dialog";
+import { Dialog } from "../components/dialog";
 import { LocaleProvider } from "../intl/locale-context";
 import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";

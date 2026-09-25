@@ -11,11 +11,11 @@ import { overlayPositionerClass, overlayTimedPopupClass } from "../overlay/overl
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
 
-function PopoverRoot(props: ComponentProps<typeof PopoverPrimitive.Root>): ReactElement {
+export function PopoverRoot(props: ComponentProps<typeof PopoverPrimitive.Root>): ReactElement {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;
 }
 
-function PopoverTrigger({
+export function PopoverTrigger({
   className,
   ...props
 }: ComponentProps<typeof PopoverPrimitive.Trigger>): ReactElement {
@@ -36,7 +36,7 @@ export type PopoverContentProps = ComponentProps<typeof PopoverPrimitive.Popup> 
     showArrow?: boolean;
   } & OverlayContainerProps;
 
-function PopoverContent({
+export function PopoverContent({
   className,
   align = "center",
   alignOffset = 0,
@@ -74,13 +74,16 @@ function PopoverContent({
   );
 }
 
-function PopoverHeader({ className, ...props }: ComponentProps<"div">): ReactElement {
+export function PopoverHeader({ className, ...props }: ComponentProps<"div">): ReactElement {
   return (
     <div data-slot="popover-header" className={cn("text-sm flex flex-col gap-1", className)} {...props} />
   );
 }
 
-function PopoverTitle({ className, ...props }: ComponentProps<typeof PopoverPrimitive.Title>): ReactElement {
+export function PopoverTitle({
+  className,
+  ...props
+}: ComponentProps<typeof PopoverPrimitive.Title>): ReactElement {
   return (
     <PopoverPrimitive.Title
       data-slot="popover-title"
@@ -90,7 +93,7 @@ function PopoverTitle({ className, ...props }: ComponentProps<typeof PopoverPrim
   );
 }
 
-function PopoverDescription({
+export function PopoverDescription({
   className,
   ...props
 }: ComponentProps<typeof PopoverPrimitive.Description>): ReactElement {
@@ -109,12 +112,3 @@ PopoverContent.displayName = "Popover.Content";
 PopoverHeader.displayName = "Popover.Header";
 PopoverTitle.displayName = "Popover.Title";
 PopoverDescription.displayName = "Popover.Description";
-
-export const Popover = {
-  Root: PopoverRoot,
-  Trigger: PopoverTrigger,
-  Content: PopoverContent,
-  Header: PopoverHeader,
-  Title: PopoverTitle,
-  Description: PopoverDescription,
-};

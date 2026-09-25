@@ -1,8 +1,7 @@
 "use client";
 
-// Owns a client boundary rather than state: it dots into `Dialog.Root`, a member of a
-// namespace compound exported from a client module, which a server component only sees
-// as an opaque client reference.
+// ThemeMatrix calls useColorScheme. Dialog.Root is readable from a server component;
+// the client boundary here is the color-scheme toggle.
 
 import type { ReactElement } from "react";
 

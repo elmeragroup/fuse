@@ -13,11 +13,11 @@ import { selfFocusRingClass } from "../../styles/utils";
  * open/close height transition on `Content` (`styles/panel-height.ts`), which consumers can
  * override through `className`; Accordion is the styled sibling.
  */
-function CollapsibleRoot(props: ComponentProps<typeof CollapsiblePrimitive.Root>): ReactElement {
+export function CollapsibleRoot(props: ComponentProps<typeof CollapsiblePrimitive.Root>): ReactElement {
   return <CollapsiblePrimitive.Root data-slot="collapsible" {...props} />;
 }
 
-function CollapsibleTrigger({
+export function CollapsibleTrigger({
   className,
   ...props
 }: ComponentProps<typeof CollapsiblePrimitive.Trigger>): ReactElement {
@@ -30,7 +30,7 @@ function CollapsibleTrigger({
   );
 }
 
-function CollapsibleContent({
+export function CollapsibleContent({
   className,
   ...props
 }: ComponentProps<typeof CollapsiblePrimitive.Panel>): ReactElement {
@@ -46,9 +46,3 @@ function CollapsibleContent({
 CollapsibleRoot.displayName = "Collapsible.Root";
 CollapsibleTrigger.displayName = "Collapsible.Trigger";
 CollapsibleContent.displayName = "Collapsible.Content";
-
-export const Collapsible = {
-  Root: CollapsibleRoot,
-  Trigger: CollapsibleTrigger,
-  Content: CollapsibleContent,
-};

@@ -10,9 +10,9 @@ export {
   SIDEBAR_WIDTH,
   SIDEBAR_WIDTH_ICON,
   SIDEBAR_WIDTH_MOBILE,
-  Sidebar,
   useSidebar,
 } from "./components/sidebar/sidebar";
+export { Sidebar } from "./components/sidebar";
 export type {
   SidebarContentProps,
   SidebarContextValue,

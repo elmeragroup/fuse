@@ -113,8 +113,8 @@
     },
     {
       "name": "SelectionItem.Description",
-      "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/item/item.tsx",
+      "rsc": "server",
+      "sourcePath": "packages/fuse/src/components/item/item-markup.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -123,8 +123,8 @@
     },
     {
       "name": "SelectionItem.Content",
-      "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/item/item.tsx",
+      "rsc": "server",
+      "sourcePath": "packages/fuse/src/components/item/item-markup.tsx",
       "forwardedFrom": [
         "@types/react"
       ],

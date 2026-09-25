@@ -4,7 +4,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
 import { px, renderThemed, stampDensity } from "../../../test/themed-browser-render";
-import { Field } from "../field/field";
+import { Field } from "../field";
 import { Switch } from "./switch";
 
 const TRACK = {

@@ -5,7 +5,7 @@ import type { ChangeEvent, ComponentProps, ReactElement, ReactNode } from "react
 
 import { useFormReset } from "../../hooks/use-form-reset";
 import { useMergedRefs } from "../../hooks/use-merged-refs";
-import { Field } from "../field/field";
+import { FieldControl } from "../field/field";
 import { FieldFrame } from "../field/field-frame";
 import { Textarea } from "../textarea/textarea";
 
@@ -94,7 +94,7 @@ export function TextareaField({
       }
       description={description}
       errorMessage={errorMessage}>
-      <Field.Control
+      <FieldControl
         render={
           <Textarea
             {...props}

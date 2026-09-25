@@ -9,8 +9,16 @@ import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { Info } from "../../icons/generated/info";
 import { WarningOctagon } from "../../icons/generated/warning-octagon";
 import { Button } from "../button/button";
+import {
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogRoot,
+  DialogTitle,
+  DialogTrigger,
+} from "../dialog/dialog";
 import type { DialogContentProps } from "../dialog/dialog";
-import { Dialog } from "../dialog/dialog";
 import { alertDialogStrings } from "./intl";
 
 /**
@@ -20,12 +28,12 @@ import { alertDialogStrings } from "./intl";
  * Each restamps its own `data-slot`: Dialog's parts write theirs before spreading the
  * rest, so the value passed here wins.
  */
-function AlertDialogRoot(props: ComponentProps<typeof DialogPrimitive.Root>): ReactElement {
-  return <Dialog.Root data-slot="alert-dialog" {...props} />;
+export function AlertDialogRoot(props: ComponentProps<typeof DialogPrimitive.Root>): ReactElement {
+  return <DialogRoot data-slot="alert-dialog" {...props} />;
 }
 
-function AlertDialogTrigger(props: ComponentProps<typeof DialogPrimitive.Trigger>): ReactElement {
-  return <Dialog.Trigger data-slot="alert-dialog-trigger" {...props} />;
+export function AlertDialogTrigger(props: ComponentProps<typeof DialogPrimitive.Trigger>): ReactElement {
+  return <DialogTrigger data-slot="alert-dialog-trigger" {...props} />;
 }
 
 export type AlertDialogContentProps = Omit<DialogContentProps, "showCloseButton" | "children"> & {
@@ -80,7 +88,7 @@ export type AlertDialogContentProps = Omit<DialogContentProps, "showCloseButton"
   isAutomaticallyCloseOnActionEnabled?: boolean;
 };
 
-function AlertDialogContent({
+export function AlertDialogContent({
   title,
   icon,
   variant = "destructive",
@@ -124,35 +132,29 @@ function AlertDialogContent({
   );
 
   return (
-    <Dialog.Content
+    <DialogContent
       className={className}
       initialFocus={initialFocus ?? fallbackFocus}
       {...props}
       role="alertdialog"
       showCloseButton={false}>
-      <Dialog.Header className="flex-row items-start justify-between gap-4">
-        <Dialog.Title className="text-balance">{title}</Dialog.Title>
+      <DialogHeader className="flex-row items-start justify-between gap-4">
+        <DialogTitle className="text-balance">{title}</DialogTitle>
         {icon ?? fallbackIcon}
-      </Dialog.Header>
-      <Dialog.Description>{children}</Dialog.Description>
-      <Dialog.Footer>
+      </DialogHeader>
+      <DialogDescription>{children}</DialogDescription>
+      <DialogFooter>
         <DialogPrimitive.Close
           render={<Button ref={cancelRef} size="sm" variant="ghost" data-dialog-action-type="secondary" />}
           onClick={onCancel}>
           {cancelLabel ?? strings.format("cancel")}
         </DialogPrimitive.Close>
         {isAutomaticallyCloseOnActionEnabled ? <DialogPrimitive.Close render={actionButton} /> : actionButton}
-      </Dialog.Footer>
-    </Dialog.Content>
+      </DialogFooter>
+    </DialogContent>
   );
 }
 
 AlertDialogRoot.displayName = "AlertDialog.Root";
 AlertDialogTrigger.displayName = "AlertDialog.Trigger";
 AlertDialogContent.displayName = "AlertDialog.Content";
-
-export const AlertDialog = {
-  Root: AlertDialogRoot,
-  Trigger: AlertDialogTrigger,
-  Content: AlertDialogContent,
-};

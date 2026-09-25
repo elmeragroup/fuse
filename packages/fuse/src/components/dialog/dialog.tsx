@@ -48,11 +48,11 @@ const dialogContentVariants = tv({
   },
 });
 
-function DialogRoot(props: ComponentProps<typeof DialogPrimitive.Root>): ReactElement {
+export function DialogRoot(props: ComponentProps<typeof DialogPrimitive.Root>): ReactElement {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
 }
 
-function DialogTrigger({
+export function DialogTrigger({
   className,
   ...props
 }: ComponentProps<typeof DialogPrimitive.Trigger>): ReactElement {
@@ -65,11 +65,14 @@ function DialogTrigger({
   );
 }
 
-function DialogPortal(props: ComponentProps<typeof DialogPrimitive.Portal>): ReactElement {
+export function DialogPortal(props: ComponentProps<typeof DialogPrimitive.Portal>): ReactElement {
   return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />;
 }
 
-function DialogClose({ className, ...props }: ComponentProps<typeof DialogPrimitive.Close>): ReactElement {
+export function DialogClose({
+  className,
+  ...props
+}: ComponentProps<typeof DialogPrimitive.Close>): ReactElement {
   return (
     <DialogPrimitive.Close
       data-slot="dialog-close"
@@ -79,7 +82,7 @@ function DialogClose({ className, ...props }: ComponentProps<typeof DialogPrimit
   );
 }
 
-function DialogOverlay({
+export function DialogOverlay({
   className,
   ...props
 }: ComponentProps<typeof DialogPrimitive.Backdrop>): ReactElement {
@@ -112,7 +115,7 @@ export type DialogContentProps = ComponentProps<typeof DialogPrimitive.Popup> &
     closeLabel?: string;
   };
 
-function DialogContent({
+export function DialogContent({
   className,
   children,
   showCloseButton = true,
@@ -140,7 +143,7 @@ function DialogContent({
   );
 }
 
-function DialogHeader({ className, ...props }: ComponentProps<"div">): ReactElement {
+export function DialogHeader({ className, ...props }: ComponentProps<"div">): ReactElement {
   return <div data-slot="dialog-header" className={cn("flex flex-col gap-2", className)} {...props} />;
 }
 
@@ -154,7 +157,7 @@ export type DialogFooterProps = ComponentProps<"div"> & {
   closeLabel?: string;
 };
 
-function DialogFooter({
+export function DialogFooter({
   className,
   showCloseButton = false,
   closeLabel,
@@ -182,7 +185,12 @@ export type DialogTitleProps = ComponentProps<typeof DialogPrimitive.Title> & {
   isFocusable?: boolean;
 };
 
-function DialogTitle({ className, isFocusable = false, tabIndex, ...props }: DialogTitleProps): ReactElement {
+export function DialogTitle({
+  className,
+  isFocusable = false,
+  tabIndex,
+  ...props
+}: DialogTitleProps): ReactElement {
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
@@ -194,7 +202,7 @@ function DialogTitle({ className, isFocusable = false, tabIndex, ...props }: Dia
   );
 }
 
-function DialogDescription({
+export function DialogDescription({
   className,
   ...props
 }: ComponentProps<typeof DialogPrimitive.Description>): ReactElement {
@@ -220,16 +228,3 @@ DialogHeader.displayName = "Dialog.Header";
 DialogFooter.displayName = "Dialog.Footer";
 DialogTitle.displayName = "Dialog.Title";
 DialogDescription.displayName = "Dialog.Description";
-
-export const Dialog = {
-  Root: DialogRoot,
-  Trigger: DialogTrigger,
-  Portal: DialogPortal,
-  Close: DialogClose,
-  Overlay: DialogOverlay,
-  Content: DialogContent,
-  Header: DialogHeader,
-  Footer: DialogFooter,
-  Title: DialogTitle,
-  Description: DialogDescription,
-};

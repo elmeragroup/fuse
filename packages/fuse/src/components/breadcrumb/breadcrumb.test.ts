@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { SUPPORTED_LOCALES } from "../../../test/locale-matrix";
-import { Breadcrumb } from "./breadcrumb";
+import { Breadcrumb } from "./index";
 import { breadcrumbStrings } from "./intl";
 
 const LANDMARK_COPY = {

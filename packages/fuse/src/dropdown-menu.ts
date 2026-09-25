@@ -1,4 +1,4 @@
-export { DropdownMenu } from "./components/dropdown-menu/dropdown-menu";
+export { DropdownMenu } from "./components/dropdown-menu";
 export type {
   DropdownMenuCheckboxItemProps,
   DropdownMenuContentProps,

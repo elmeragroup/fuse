@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { Toast } from "./toast";
+import { Toast } from "./index";
 
 describe("toast manager adapter", () => {
   it("createToastManager works from non-React code", () => {

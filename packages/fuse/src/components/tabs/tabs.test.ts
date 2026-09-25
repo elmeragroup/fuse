@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
-import { Tabs } from "./tabs";
+import { Tabs } from "./index";
 import { tabsListVariants } from "./tabs-variants";
 
 const VARIANTS = ["default", "line"] as const;

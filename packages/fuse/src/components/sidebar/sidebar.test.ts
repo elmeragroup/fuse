@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { SUPPORTED_LOCALES } from "../../../test/locale-matrix";
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { DESCRIPTION_COPY, TITLE_COPY, TOGGLE_COPY } from "../../../test/sidebar-contract";
+import { Sidebar } from "./index";
 import { sidebarStrings } from "./intl";
 import {
   SIDEBAR_COOKIE_MAX_AGE,
@@ -14,7 +15,6 @@ import {
   SIDEBAR_WIDTH,
   SIDEBAR_WIDTH_ICON,
   SIDEBAR_WIDTH_MOBILE,
-  Sidebar,
   useSidebar,
 } from "./sidebar";
 import { sidebarMenuButtonVariants, sidebarMenuSubButtonVariants } from "./sidebar-variants";

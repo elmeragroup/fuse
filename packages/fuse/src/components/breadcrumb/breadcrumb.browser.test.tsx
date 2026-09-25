@@ -8,7 +8,7 @@ import "../../../dist/themes.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
-import { Breadcrumb } from "./breadcrumb";
+import { Breadcrumb } from "./index";
 
 const LANDMARK_COPY = {
   "nb-NO": "Brødsmuler",
