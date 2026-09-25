@@ -1,0 +1,21 @@
+# The docs image builds from the repository root (apps/docs/Dockerfile). Keep host
+# installs and build output out of the context so the image compiles everything itself.
+**/node_modules
+**/.next
+**/.turbo
+**/dist
+**/.artifacts
+**/coverage
+**/.cache
+**/.vitest
+**/.vitest-attachments
+**/__screenshots__
+**/*.tsbuildinfo
+.git
+.github
+.claude
+.ref
+.scratch
+.pnpm-store
+.env
+**/.DS_Store

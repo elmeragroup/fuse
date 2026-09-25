@@ -1,0 +1,50 @@
+name: Push docs image
+description: >-
+  Build the docs image for linux/amd64 and push it to the Azure Container Registry, tagged
+  by commit SHA. The caller must already be logged in with azure/login.
+
+inputs:
+  registry:
+    description: Azure Container Registry name, without the .azurecr.io suffix.
+    required: true
+  sha:
+    description: Commit SHA the image is built from; becomes the image tag.
+    required: true
+
+outputs:
+  image:
+    description: Fully qualified image reference that was pushed.
+    value: ${{ steps.ref.outputs.image }}
+
+runs:
+  using: composite
+  steps:
+    - name: Image reference
+      id: ref
+      shell: bash
+      env:
+        REGISTRY: ${{ inputs.registry }}
+        SHA: ${{ inputs.sha }}
+      # Tags are immutable commit SHAs. `latest` is never pushed, so a revision always
+      # names exactly the code it runs.
+      run: echo "image=${REGISTRY}.azurecr.io/fuse-docs:${SHA}" >> "$GITHUB_OUTPUT"
+
+    - name: Log in to the registry
+      shell: bash
+      env:
+        REGISTRY: ${{ inputs.registry }}
+      run: az acr login --name "$REGISTRY"
+
+    - name: Set up Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build and push
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: apps/docs/Dockerfile
+        platforms: linux/amd64
+        push: true
+        tags: ${{ steps.ref.outputs.image }}
+        cache-from: type=gha,scope=fuse-docs
+        cache-to: type=gha,mode=max,scope=fuse-docs

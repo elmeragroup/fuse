@@ -105,3 +105,55 @@ jobs:
       pull-requests: write
       actions: write
     uses: ./.github/workflows/version-packages.yml
+
+  # Every push to main that passes both gates ships to production; there is no staging step
+  # between them (PR previews are the test surface, see preview.yml). The job stays skipped
+  # until the Azure repository variables exist, so this workflow is safe ahead of the infra.
+  #
+  # Only this job holds the production identity. Its federated credential trusts
+  # `repo:elmeragroup/fuse:ref:refs/heads/main`, so no pull_request run can obtain it.
+  deploy-prod:
+    needs: [checks, browser]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.AZURE_CLIENT_ID_PROD != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    # Serialize deploys without cancelling one mid-rollout. A newer push replaces any deploy
+    # still waiting, so production converges on the latest main.
+    concurrency:
+      group: deploy-prod
+      cancel-in-progress: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID_PROD }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Push image
+        id: image
+        uses: ./.github/actions/push-docs-image
+        with:
+          registry: ${{ vars.AZURE_ACR_NAME }}
+          sha: ${{ github.sha }}
+
+      # The production app runs in single revision mode: the new revision takes all traffic
+      # once healthy and Container Apps retires the previous one.
+      - name: Deploy revision
+        env:
+          APP: ${{ vars.PROD_CONTAINER_APP }}
+          RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+          IMAGE: ${{ steps.image.outputs.image }}
+          # Revision names are unique, so a re-run of the same commit needs a fresh suffix.
+          SUFFIX: ${{ format('{0}-{1}', github.run_id, github.run_attempt) }}
+        run: |
+          az containerapp update \
+            --name "$APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --image "$IMAGE" \
+            --revision-suffix "$SUFFIX"

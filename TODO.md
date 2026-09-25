@@ -68,6 +68,23 @@
 - Revisit Figma extended collections for brand theming if the two-collection mode
   pairing proves awkward for designers.
 
+## Docs hosting (NOSD-2469)
+
+- Set the repository variables once infra deploys `x-fuse-ui`: `AZURE_TENANT_ID`,
+  `AZURE_SUBSCRIPTION_ID`, `AZURE_RESOURCE_GROUP`, `AZURE_ACR_NAME`, `PROD_CONTAINER_APP`,
+  `PREVIEW_CONTAINER_APP`, `AZURE_CLIENT_ID_PROD` and `AZURE_CLIENT_ID_PREVIEW`. The deploy
+  jobs stay skipped until the client IDs are set.
+- Confirm with infra: the prod identity's federated subject is
+  `repo:elmeragroup/fuse:ref:refs/heads/main` and the preview identity's is
+  `repo:elmeragroup/fuse:pull_request`. Prod needs AcrPush and Container Apps Contributor on
+  the prod app. Preview needs AcrPush and Contributor on the preview app only. The prod app
+  runs in single revision mode. The preview app runs in multiple revision mode with its
+  traffic pinned to a revision no PR owns (not `latestRevision`), so PR revisions carry no
+  traffic and can be deactivated.
+- `test-fuse.elmeragroup.no` is unused for now; PR previews are the test surface. Wire it to
+  a revision if a stable VPN copy of main is wanted.
+- Front Door is deferred; prod goes through the public WAF. Revisit it if edge caching is needed.
+
 ## Product-triggered work
 
 - When Base UI offers suitable date primitives, migrate the interim React Aria tier.

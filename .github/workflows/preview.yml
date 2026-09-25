@@ -1,0 +1,183 @@
+name: Preview
+
+# Each pull request gets one live revision on the preview Container App, labeled `pr-<n>`,
+# so its URL (`<app>---pr-<n>.<environment domain>`) stays the same across pushes. A push
+# replaces the revision; closing the PR, merged or not, deactivates it. The preview app is
+# separate from production, and so is its identity: it can push images and manage the
+# preview app, never the production app. Preview URLs resolve only on the VPN.
+#
+# This must stay `pull_request`, never `pull_request_target`: the repo is public, and
+# `pull_request_target` would hand the preview identity to code from any fork. Fork PRs get
+# no OIDC token under `pull_request`, so they are skipped with a note instead.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+permissions: {}
+
+# One run per PR at a time. A newer push or the close event supersedes a deploy in flight.
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  APP: ${{ vars.PREVIEW_CONTAINER_APP }}
+  RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+  PR: ${{ github.event.pull_request.number }}
+  # Marks the one preview comment this workflow creates and then edits in place.
+  COMMENT_MARKER: "<!-- fuse-docs-preview -->"
+
+jobs:
+  fork:
+    if: github.event.action != 'closed' && github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Explain the skipped preview
+        run: |
+          {
+            echo "### No preview for fork pull requests"
+            echo "Forks receive no Azure OIDC token under \`pull_request\`, so this PR cannot deploy a preview."
+            echo "A maintainer can push the branch to elmeragroup/fuse to get one."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    if: >-
+      github.event.action != 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      vars.AZURE_CLIENT_ID_PREVIEW != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID_PREVIEW }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # `github.sha` is the PR's merge commit, so the preview shows what would land on main.
+      - name: Push image
+        id: image
+        uses: ./.github/actions/push-docs-image
+        with:
+          registry: ${{ vars.AZURE_ACR_NAME }}
+          sha: ${{ github.sha }}
+
+      - name: Deploy revision
+        id: deploy
+        env:
+          IMAGE: ${{ steps.image.outputs.image }}
+          SHA: ${{ github.sha }}
+          ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          # Every revision of this PR shares the `pr-<n>-` suffix prefix, which is how older
+          # ones are found and retired. Revision names are unique, hence the run attempt.
+          prefix="pr-${PR}-"
+          suffix="${prefix}${SHA::7}-${ATTEMPT}"
+          revision="${APP}--${suffix}"
+
+          az containerapp update \
+            --name "$APP" --resource-group "$RESOURCE_GROUP" \
+            --image "$IMAGE" --revision-suffix "$suffix" --output none
+
+          # Moving the label keeps the PR's URL stable while pointing it at the new revision.
+          az containerapp revision label add \
+            --name "$APP" --resource-group "$RESOURCE_GROUP" \
+            --revision "$revision" --label "pr-${PR}" --yes --output none
+
+          for old in $(az containerapp revision list \
+            --name "$APP" --resource-group "$RESOURCE_GROUP" \
+            --query "[?properties.active && starts_with(name, '${APP}--${prefix}') && name != '${revision}'].name" \
+            --output tsv); do
+            az containerapp revision deactivate \
+              --name "$APP" --resource-group "$RESOURCE_GROUP" --revision "$old" --output none
+          done
+
+          fqdn=$(az containerapp show \
+            --name "$APP" --resource-group "$RESOURCE_GROUP" \
+            --query properties.configuration.ingress.fqdn --output tsv)
+          echo "url=https://${APP}---pr-${PR}.${fqdn#*.}" >> "$GITHUB_OUTPUT"
+          echo "revision=${revision}" >> "$GITHUB_OUTPUT"
+
+      - name: Comment preview URL
+        uses: actions/github-script@v7
+        env:
+          URL: ${{ steps.deploy.outputs.url }}
+          REVISION: ${{ steps.deploy.outputs.revision }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        with:
+          script: |
+            const { URL, REVISION, SHA, COMMENT_MARKER } = process.env;
+            const body = [
+              COMMENT_MARKER,
+              `**Docs preview:** ${URL} (VPN only)`,
+              "",
+              `Built from ${SHA.slice(0, 7)} as revision \`${REVISION}\`. The revision is removed when this PR closes.`,
+            ].join("\n");
+            await upsertComment(github, context, COMMENT_MARKER, body);
+
+            async function upsertComment(github, context, marker, body) {
+              const issue = { ...context.repo, issue_number: context.issue.number };
+              const comments = await github.paginate(github.rest.issues.listComments, issue);
+              const existing = comments.find((comment) => comment.body?.startsWith(marker));
+              if (existing) {
+                await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body });
+              } else {
+                await github.rest.issues.createComment({ ...issue, body });
+              }
+            }
+
+  teardown:
+    if: >-
+      github.event.action == 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      vars.AZURE_CLIENT_ID_PREVIEW != ''
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      pull-requests: write
+    steps:
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID_PREVIEW }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deactivate revisions
+        run: |
+          set -euo pipefail
+          prefix="pr-${PR}-"
+          # The label may already be gone, e.g. if the first deploy was cancelled before it was added.
+          az containerapp revision label remove \
+            --name "$APP" --resource-group "$RESOURCE_GROUP" --label "pr-${PR}" --output none \
+            || echo "No pr-${PR} label to remove."
+
+          for revision in $(az containerapp revision list \
+            --name "$APP" --resource-group "$RESOURCE_GROUP" \
+            --query "[?properties.active && starts_with(name, '${APP}--${prefix}')].name" \
+            --output tsv); do
+            az containerapp revision deactivate \
+              --name "$APP" --resource-group "$RESOURCE_GROUP" --revision "$revision" --output none
+          done
+
+      - name: Mark preview comment removed
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { COMMENT_MARKER } = process.env;
+            const issue = { ...context.repo, issue_number: context.issue.number };
+            const comments = await github.paginate(github.rest.issues.listComments, issue);
+            const existing = comments.find((comment) => comment.body?.startsWith(COMMENT_MARKER));
+            if (existing) {
+              const body = `${COMMENT_MARKER}\n**Docs preview:** removed when this PR closed.`;
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body });
+            }
