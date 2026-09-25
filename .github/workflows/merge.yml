@@ -40,10 +40,26 @@ jobs:
       - name: oxfmt
         run: pnpm exec oxfmt --check
 
+      # Turbo's local cache persists per job, so unchanged packages replay their cached
+      # results. A PR restores from its own branch first and falls back to main's.
+      - name: Restore turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-${{ github.job }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ github.job }}-
+
       # turbo.json ci:checks minus browser checks — a docs/unit failure should not
       # wait on the Chromium suite.
       - name: turbo ci:checks (no browser)
         run: pnpm exec turbo run '//#lint' '//#test:repo-policy' '//#type-check:scripts' type-check test test:types build package:check size-limit
+        env:
+          TURBO_RUN_SUMMARY: "true"
+
+      # Turbo never evicts, so keep only the entries this run used before the cache saves.
+      - name: Prune turbo cache
+        run: node scripts/prune-turbo-cache.ts .turbo/cache .turbo/runs
 
       - name: Changeset presence
         if: ${{ github.event_name == 'pull_request' && env.IS_SELF_RELEASE_PR != 'true' && !contains(github.event.pull_request.labels.*.name, 'no-changeset') }}
@@ -76,8 +92,24 @@ jobs:
       - name: Install Playwright Chromium
         run: pnpm --filter @elmeragroup/fuse exec playwright install --with-deps chromium
 
+      # Turbo's local cache persists per job, so unchanged packages replay their cached
+      # results. A PR restores from its own branch first and falls back to main's.
+      - name: Restore turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-${{ github.job }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ github.job }}-
+
       - name: turbo browser checks
         run: pnpm exec turbo run test:browser test:packed-consumer
+        env:
+          TURBO_RUN_SUMMARY: "true"
+
+      # Turbo never evicts, so keep only the entries this run used before the cache saves.
+      - name: Prune turbo cache
+        run: node scripts/prune-turbo-cache.ts .turbo/cache .turbo/runs
 
   # Every activated push to main publishes a canary for the merged commit; a merged Version
   # Packages PR carries the stable bump and publishes the stable line.
