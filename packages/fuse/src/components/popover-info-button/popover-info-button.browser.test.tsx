@@ -23,13 +23,19 @@ function renderInfo(node: ReactNode, locale: (typeof SUPPORTED_LOCALES)[number] 
   return renderThemed(withLocale(locale, node));
 }
 
-async function openInfo(name = "More information"): Promise<HTMLElement> {
-  await userEvent.click(roleNamed("button", name));
+/** Base UI mounts the popup a frame or more after the opening event, so wait for it. */
+async function mountedInfo(): Promise<HTMLElement> {
+  await expect.element(page.getByRole("dialog")).toBeInTheDocument();
   const dialog = page.getByRole("dialog").element();
   if (!(dialog instanceof HTMLElement)) {
     throw new Error("expected the popup");
   }
   return dialog;
+}
+
+async function openInfo(name = "More information"): Promise<HTMLElement> {
+  await userEvent.click(roleNamed("button", name));
+  return mountedInfo();
 }
 
 describe("PopoverInfoButton", () => {
@@ -78,12 +84,12 @@ describe("PopoverInfoButton", () => {
     await vi.waitFor(() => {
       expect(page.getByRole("dialog").query()).toBeNull();
     });
-    expect(document.activeElement).toBe(trigger);
+    await expect.element(page.getByRole("button", { name: "More information", exact: true })).toHaveFocus();
     expect(trigger.getAttribute("aria-expanded")).not.toBe("true");
 
     trigger.focus();
     await userEvent.keyboard("{Enter}");
-    expect(page.getByRole("dialog").element().textContent).toContain(EXPLAINER);
+    expect((await mountedInfo()).textContent).toContain(EXPLAINER);
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
   });
 

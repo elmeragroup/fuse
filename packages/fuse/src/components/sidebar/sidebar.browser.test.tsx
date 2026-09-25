@@ -540,7 +540,7 @@ describe("Sidebar.Root branches", () => {
 
     await userEvent.click(roleNamed("button", "Close"));
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
-    expect(document.activeElement).toBe(roleNamed("button", "Toggle sidebar"));
+    await expect.element(page.getByRole("button", { name: "Toggle sidebar", exact: true })).toHaveFocus();
     expect(document.cookie).not.toContain("sidebar:state");
   });
 });

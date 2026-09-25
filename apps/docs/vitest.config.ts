@@ -4,7 +4,6 @@ const shared = {
   globalSetup: ["test/global-setup.ts"],
   testTimeout: 30_000,
   hookTimeout: 60_000,
-  fileParallelism: false,
 };
 
 export default defineConfig({
@@ -27,6 +26,9 @@ export default defineConfig({
           name: "browser",
           include: ["test/**/*.browser.test.ts"],
           ...shared,
+          // Browser files keep running one at a time against the shared `next start` server.
+          // Unit files only read that server and the filesystem, so they run in parallel.
+          fileParallelism: false,
         },
       },
     ],

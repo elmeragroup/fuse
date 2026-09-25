@@ -44,13 +44,19 @@ function BasicDialog({
   );
 }
 
-async function openDialog(): Promise<HTMLElement> {
-  await userEvent.click(page.getByRole("button", { name: "Open terms", exact: true }).element());
+/** Base UI mounts the popup a frame or more after the opening event, so wait for it. */
+async function mountedDialog(): Promise<HTMLElement> {
+  await expect.element(page.getByRole("dialog")).toBeInTheDocument();
   const dialog = page.getByRole("dialog").element();
   if (!(dialog instanceof HTMLElement)) {
     throw new Error("expected the popup");
   }
   return dialog;
+}
+
+async function openDialog(): Promise<HTMLElement> {
+  await userEvent.click(page.getByRole("button", { name: "Open terms", exact: true }).element());
+  return mountedDialog();
 }
 
 describe("Dialog", () => {
@@ -70,14 +76,13 @@ describe("Dialog", () => {
 
   it("closes on Escape and returns focus to the trigger", async () => {
     renderThemed(withLocale("en-US", <BasicDialog />));
-    const trigger = page.getByRole("button", { name: "Open terms", exact: true }).element();
     await openDialog();
 
     await userEvent.keyboard("{Escape}");
     await vi.waitFor(() => {
       expect(page.getByRole("dialog").query()).toBeNull();
     });
-    expect(document.activeElement).toBe(trigger);
+    await expect.element(page.getByRole("button", { name: "Open terms", exact: true })).toHaveFocus();
   });
 
   it("traps focus inside the popup and wraps in both directions", async () => {
@@ -92,7 +97,9 @@ describe("Dialog", () => {
     );
     const behind = page.getByRole("button", { name: "Behind", exact: true }).element();
     const dialog = await openDialog();
-    expect(dialog.contains(document.activeElement)).toBe(true);
+    await vi.waitFor(() => {
+      expect(dialog.contains(document.activeElement)).toBe(true);
+    });
 
     const tabbables = [...dialog.querySelectorAll<HTMLElement>("button")];
     expect(tabbables.length).toBeGreaterThan(1);
@@ -137,8 +144,10 @@ describe("Dialog", () => {
     }
     trigger.focus();
     await userEvent.keyboard("{Enter}");
-    const dialog = page.getByRole("dialog").element();
-    expect(document.activeElement).toBe(dialog);
+    // Base UI moves focus into the popup after it mounts, which can land a frame later.
+    const popup = page.getByRole("dialog");
+    await expect.element(popup).toHaveFocus();
+    const dialog = popup.element();
     if (!(dialog instanceof HTMLElement)) {
       throw new Error("expected the popup");
     }
@@ -168,6 +177,7 @@ describe("Dialog", () => {
       }
       trigger.focus();
       await userEvent.keyboard("{Enter}");
+      await mountedDialog();
       const heading = page.getByRole("heading", { name: "Full terms", exact: true }).element();
       if (!(heading instanceof HTMLElement)) {
         throw new Error("expected the title");
@@ -178,7 +188,8 @@ describe("Dialog", () => {
     const { rerender } = renderThemed(withLocale("en-US", <TitleDialog isFocusable />));
     const focusable = await openAtTitle();
     expect(focusable.getAttribute("tabindex")).toBe("-1");
-    expect(document.activeElement).toBe(focusable);
+    // Base UI moves focus into the popup after it mounts, which can land a frame later.
+    await expect.element(page.getByRole("heading", { name: "Full terms", exact: true })).toHaveFocus();
     expectFocusRing(focusable, "a focusable title paints the shared ring");
     await userEvent.keyboard("{Escape}");
     await vi.waitFor(() => {
@@ -247,6 +258,7 @@ describe("Dialog", () => {
       )
     );
     await userEvent.click(page.getByRole("button", { name: "Open invoice", exact: true }).element());
+    await mountedDialog();
     const footerClose = page.getByRole("button", { name: "Stäng", exact: true }).element();
     expect(footerClose.getAttribute("data-slot")).toBe("button");
     expect(footerClose.textContent).toBe("Stäng");
@@ -271,7 +283,7 @@ describe("Dialog", () => {
       )
     );
     await userEvent.click(page.getByRole("button", { name: "Open invoice", exact: true }).element());
-    expect(page.getByRole("button", { name: "Ikke nå", exact: true }).element()).toBeTruthy();
+    await expect.element(page.getByRole("button", { name: "Ikke nå", exact: true })).toBeInTheDocument();
   });
 
   it("maps the size axis onto the popup max-width", async () => {
@@ -317,7 +329,7 @@ describe("Dialog", () => {
     expect(page.getByRole("dialog").query()).toBeNull();
   });
 
-  it("does not paint the popup outside a ThemeScope element that has not attached yet", () => {
+  it("does not paint the popup outside a ThemeScope element that has not attached yet", async () => {
     // A ThemeScope publishes `null` until its callback ref runs; the render below is the
     // first commit, so the popup must not appear in the document body meanwhile.
     renderThemed(
@@ -332,7 +344,7 @@ describe("Dialog", () => {
         </ThemeScope>
       )
     );
-    const dialog = page.getByRole("dialog").element();
+    const dialog = await mountedDialog();
     const scope = dialog.closest("[data-theme-variant=external]");
     expect(scope).not.toBeNull();
     expect([...document.body.children].includes(dialog)).toBe(false);

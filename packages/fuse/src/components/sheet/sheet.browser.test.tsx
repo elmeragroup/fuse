@@ -147,12 +147,11 @@ describe("Sheet", () => {
 
   it("closes on Escape and returns focus to the trigger", async () => {
     renderThemed(withLocale("en-US", <BasicSheet />));
-    const trigger = page.getByRole("button", { name: "Open details", exact: true }).element();
     await openSheet();
 
     await userEvent.keyboard("{Escape}");
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
-    expect(document.activeElement).toBe(trigger);
+    await expect.element(page.getByRole("button", { name: "Open details", exact: true })).toHaveFocus();
   });
 
   it("traps focus inside the popup and wraps in both directions", async () => {
@@ -167,7 +166,9 @@ describe("Sheet", () => {
     );
     const behind = page.getByRole("button", { name: "Behind", exact: true }).element();
     const dialog = await openSheet();
-    expect(dialog.contains(document.activeElement)).toBe(true);
+    await vi.waitFor(() => {
+      expect(dialog.contains(document.activeElement)).toBe(true);
+    });
 
     const tabbables = [...dialog.querySelectorAll<HTMLElement>("button")];
     expect(tabbables.length).toBeGreaterThan(1);
@@ -328,7 +329,7 @@ describe("Sheet", () => {
     expect(page.getByRole("dialog").query()).toBeNull();
   });
 
-  it("does not paint the popup outside a ThemeScope element that has not attached yet", () => {
+  it("does not paint the popup outside a ThemeScope element that has not attached yet", async () => {
     renderThemed(
       withLocale(
         "en-US",
@@ -341,6 +342,7 @@ describe("Sheet", () => {
         </ThemeScope>
       )
     );
+    await expect.element(page.getByRole("dialog")).toBeInTheDocument();
     const dialog = page.getByRole("dialog").element();
     const scope = dialog.closest("[data-theme-variant=external]");
     expect(scope).not.toBeNull();

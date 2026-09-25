@@ -79,43 +79,20 @@ export type ExtractedTarball = {
   scratch: string;
 };
 
-function openScratch(packageRoot: string, prefix: string) {
-  const tarball = findTarball(packageRoot);
-  const scratch = mkdtempSync(join(tmpdir(), prefix));
-  return {
-    open: (): ExtractedTarball => ({
-      extracted: extractPackedPackage(tarball, scratch, packageRoot),
-      tarball,
-      scratch,
-    }),
-    dispose: () => rmSync(scratch, { recursive: true, force: true }),
-  };
-}
-
-export function withExtractedTarball<T>(
-  packageRoot: string,
-  prefix: string,
-  fn: (extracted: string, tarball: string, scratch: string) => T
-): T {
-  const handle = openScratch(packageRoot, prefix);
-  try {
-    const { extracted, tarball, scratch } = handle.open();
-    return fn(extracted, tarball, scratch);
-  } finally {
-    handle.dispose();
-  }
-}
-
-/** `withExtractedTarball` for checks that await a browser or a dev server. */
+/**
+ * Extracts the packed tarball into a fresh temporary directory, links its dependencies, and
+ * removes the directory once `fn` settles, whether it resolves or throws.
+ */
 export async function withExtractedTarballAsync<T>(
   packageRoot: string,
   prefix: string,
   fn: (extracted: ExtractedTarball) => Promise<T>
 ): Promise<T> {
-  const handle = openScratch(packageRoot, prefix);
+  const tarball = findTarball(packageRoot);
+  const scratch = mkdtempSync(join(tmpdir(), prefix));
   try {
-    return await fn(handle.open());
+    return await fn({ extracted: extractPackedPackage(tarball, scratch, packageRoot), tarball, scratch });
   } finally {
-    handle.dispose();
+    rmSync(scratch, { recursive: true, force: true });
   }
 }

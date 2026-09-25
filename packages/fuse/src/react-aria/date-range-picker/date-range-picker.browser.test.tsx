@@ -18,6 +18,7 @@ import {
   cellNumbered,
   dayNumbered,
   describedTextsFor,
+  focusLandsOnDay,
   navButtonNamed,
   segmentLocator,
   segmentNamed,
@@ -269,8 +270,9 @@ describe("DateRangePicker", () => {
     const onChange = rangeChangeSpy();
     renderPicker(<DateRangePicker label="Delivery window" defaultValue={julyWeek} onChange={onChange} />);
     await openPicker();
-    // RAC opens the grid with the range's start focused, so Enter anchors there.
-    expect(document.activeElement).toBe(dayNumbered(14));
+    // RAC opens the grid with the range's start focused, so Enter anchors there. The move
+    // lands from an effect after the popover mounts.
+    await focusLandsOnDay(14);
 
     // Anchoring auto-advances the focused day, so the arrows extend from the day after.
     await anchorAndExtend({ anchor: 14, arrows: 3, landsOn: 18 });

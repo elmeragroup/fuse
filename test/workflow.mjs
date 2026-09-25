@@ -64,3 +64,13 @@ export function requiredRunStep(steps, prefix) {
   expect(step["continue-on-error"]).toBeUndefined();
   return step;
 }
+
+/**
+ * @param {Record<string, unknown>[]} steps
+ * @param {string} action
+ */
+export function requiredUsesStep(steps, action) {
+  const matches = steps.filter((step) => step.uses === action);
+  expect(matches, `expected one ${action} step`).toHaveLength(1);
+  return matches[0];
+}

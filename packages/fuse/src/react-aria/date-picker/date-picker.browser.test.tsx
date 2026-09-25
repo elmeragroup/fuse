@@ -168,7 +168,8 @@ describe("DatePicker", () => {
     // The dialog keeps RAC's own name; an unnamed overlay would be an AT dead end.
     await expect.element(page.getByRole("dialog", { name: /calendar/i })).toBeVisible();
     expect(cellNamed(/Tuesday, March 10, 2026/i)).toHaveAttribute("aria-selected", "true");
-    expect(document.activeElement).toBe(dayNamed(/Tuesday, March 10, 2026/i));
+    // RAC moves focus onto the selected day from an effect after the popover mounts.
+    await expect.element(page.getByRole("button", { name: /Tuesday, March 10, 2026/i })).toHaveFocus();
 
     await userEvent.keyboard("{Enter}");
     expect(onChange).toHaveBeenCalledTimes(1);

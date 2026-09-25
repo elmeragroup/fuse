@@ -113,13 +113,19 @@ function PopoverFixture({ container }: { container?: React.RefObject<HTMLElement
   );
 }
 
-async function openPopover(): Promise<HTMLElement> {
-  await userEvent.click(page.getByRole("button", { name: "Choose date" }).element());
+/** RAC mounts the overlay after the opening commit, so wait for it before reading it. */
+async function mountedDialog(): Promise<HTMLElement> {
+  await expect.element(page.getByRole("dialog")).toBeInTheDocument();
   const dialog = page.getByRole("dialog").element();
   if (!(dialog instanceof HTMLElement)) {
     throw new Error("expected the popover dialog");
   }
   return dialog;
+}
+
+async function openPopover(): Promise<HTMLElement> {
+  await userEvent.click(page.getByRole("button", { name: "Choose date" }).element());
+  return mountedDialog();
 }
 
 describe("the internal RAC Popover", () => {
@@ -180,16 +186,16 @@ describe("the internal styled Dialog", () => {
         </DialogTrigger>
       )
     );
+    await expect.element(page.getByRole("button", { name: "Lukk" })).toBeInTheDocument();
     const close = page.getByRole("button", { name: "Lukk" }).element();
 
-    expect(close).not.toBeNull();
     await userEvent.click(close);
     await vi.waitFor(() => {
       expect(page.getByRole("dialog").query()).toBeNull();
     });
   });
 
-  it("omits the affordance entirely when closeButton is false", () => {
+  it("omits the affordance entirely when closeButton is false", async () => {
     renderThemed(
       withLocale(
         "en-US",
@@ -201,6 +207,8 @@ describe("the internal styled Dialog", () => {
         </DialogTrigger>
       )
     );
+    // Wait for the overlay first, so the absence below is judged on the mounted dialog.
+    await mountedDialog();
 
     expect(page.getByRole("button", { name: "Close" }).query()).toBeNull();
   });
@@ -218,7 +226,7 @@ describe("the internal styled Dialog", () => {
       )
     );
 
-    expect(page.getByRole("heading", { name: "Calendar", exact: true }).query()).not.toBeNull();
+    await expect.element(page.getByRole("heading", { name: "Calendar", exact: true })).toBeInTheDocument();
     await expect.element(page.getByRole("dialog", { name: "Calendar" })).toBeVisible();
     titled.unmount();
 
@@ -235,7 +243,7 @@ describe("the internal styled Dialog", () => {
         </DialogTrigger>
       )
     );
-    const untitled = page.getByRole("dialog").element();
+    const untitled = await mountedDialog();
 
     // No header element at all — not an empty one. An empty `<Heading slot="title">`
     // would resolve RAC's title slot and become the dialog's accessible name; with the

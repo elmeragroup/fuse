@@ -174,7 +174,8 @@ describe("PhoneNumberField", () => {
     expect(roleNamed("button", "Select country").textContent).toContain("+47");
     await selectCountry("Sweden");
     expect(roleNamed("button", "Select country").textContent).toContain("+46");
-    expect(document.activeElement).toBe(textboxNamed("Mobile"));
+    // Focus moves to the number input as the picker closes, which can land a frame later.
+    await expect.element(page.getByRole("textbox", { name: "Mobile", exact: true })).toHaveFocus();
   });
 
   it("submits E.164 from the hidden input and keeps the formatted display name", async () => {

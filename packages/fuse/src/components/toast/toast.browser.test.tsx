@@ -362,16 +362,17 @@ describe("Toast chrome", () => {
     expect(document.activeElement).toBe(start);
 
     await userEvent.keyboard("{F6}");
-    const viewport = page.getByRole("region", { name: "Notifications", exact: true }).element();
-    expect(document.activeElement).toBe(viewport);
+    await expect.element(page.getByRole("region", { name: "Notifications", exact: true })).toHaveFocus();
 
     await userEvent.keyboard("{Tab}");
     const root = toastRootNamed("Keyboard toast");
-    expect(root.contains(document.activeElement) || document.activeElement === root).toBe(true);
+    await vi.waitFor(() => {
+      expect(root.contains(document.activeElement)).toBe(true);
+    });
 
     await userEvent.keyboard("{Escape}");
     await waitForToastGone("Keyboard toast");
-    expect(document.activeElement).toBe(start);
+    await expect.element(page.getByRole("button", { name: "Focus start", exact: true })).toHaveFocus();
   });
 
   it("passes data-base-ui-swipe-ignore through on an inner element", async () => {

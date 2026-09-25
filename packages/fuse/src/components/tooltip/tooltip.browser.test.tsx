@@ -20,6 +20,17 @@ async function hoverOpen(name: string, tooltipName = name, timeout?: number): Pr
   return roleNamed("tooltip", tooltipName);
 }
 
+/** An open-on-mount tooltip still mounts its popup after the first commit, so wait for it. */
+async function mountedTooltip(name?: string): Promise<HTMLElement> {
+  const locator = page.getByRole("tooltip", name === undefined ? {} : { name, exact: true });
+  await expect.element(locator).toBeInTheDocument();
+  const element = locator.element();
+  if (!(element instanceof HTMLElement)) {
+    throw new Error("expected a tooltip");
+  }
+  return element;
+}
+
 describe("Tooltip", () => {
   it("opens on hover after the provider delay and hides on unhover", async () => {
     renderThemed(
@@ -166,7 +177,7 @@ describe("Tooltip", () => {
       </div>
     );
 
-    const tooltip = roleNamed("tooltip", "Add to library");
+    const tooltip = await mountedTooltip("Add to library");
     expect(tooltip.getAttribute("data-side")).toBe("top");
     const arrow = tooltip.querySelector("[data-side]");
     expect(arrow).not.toBeNull();
@@ -206,7 +217,7 @@ describe("Tooltip", () => {
     expect([...document.body.children].includes(tooltip)).toBe(false);
   });
 
-  it("portals into an explicit container element", () => {
+  it("portals into an explicit container element", async () => {
     function ExplicitContainer() {
       const [node, setNode] = useState<HTMLDivElement | null>(null);
       return (
@@ -223,7 +234,7 @@ describe("Tooltip", () => {
       );
     }
     renderThemed(<ExplicitContainer />);
-    const tooltip = roleNamed("tooltip", "Add to library");
+    const tooltip = await mountedTooltip("Add to library");
     const island = page.getByRole("region", { name: "Theme island", exact: true }).element();
     expect(island.contains(tooltip)).toBe(true);
     expect([...document.body.children].includes(tooltip)).toBe(false);
@@ -245,7 +256,7 @@ describe("Tooltip", () => {
     expect(page.getByRole("tooltip").query()).toBeNull();
   });
 
-  it("does not paint the popup outside a ThemeScope element that has not attached yet", () => {
+  it("does not paint the popup outside a ThemeScope element that has not attached yet", async () => {
     renderThemed(
       <ThemeScope theme={{ variant: "external", brand: "fkas", segment: "private" }}>
         <Tooltip.Provider>
@@ -255,7 +266,7 @@ describe("Tooltip", () => {
         </Tooltip.Provider>
       </ThemeScope>
     );
-    const tooltip = page.getByRole("tooltip").element();
+    const tooltip = await mountedTooltip();
     const scope = tooltip.closest("[data-theme-variant=external]");
     expect(scope).not.toBeNull();
     expect([...document.body.children].includes(tooltip)).toBe(false);

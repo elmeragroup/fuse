@@ -101,16 +101,24 @@ function FruitSelect({
   );
 }
 
-async function openWithClick(name = "Fruit"): Promise<HTMLElement> {
-  await userEvent.click(comboboxNamed(name));
+// The popup mounts after the opening event settles, so both openers wait for the listbox.
+async function openedListbox(): Promise<HTMLElement> {
+  await expect.element(page.getByRole("listbox")).toBeInTheDocument();
   return listboxNamed();
 }
 
+async function openWithClick(name = "Fruit"): Promise<HTMLElement> {
+  await userEvent.click(comboboxNamed(name));
+  return openedListbox();
+}
+
 async function openWithArrowDown(name = "Fruit"): Promise<HTMLElement> {
-  const trigger = comboboxNamed(name);
-  trigger.focus();
+  comboboxNamed(name).focus();
   await userEvent.keyboard("{ArrowDown}");
-  return listboxNamed();
+  const listbox = await openedListbox();
+  // Keyboard opening highlights an option once the list has registered its items.
+  await vi.waitFor(() => highlightedOption());
+  return listbox;
 }
 
 describe("Select", () => {
@@ -134,14 +142,13 @@ describe("Select", () => {
 
   it("closes on Escape and returns focus to the trigger", async () => {
     renderThemed(<FruitSelect />);
-    const trigger = comboboxNamed("Fruit");
     await openWithClick();
 
     await userEvent.keyboard("{Escape}");
     await vi.waitFor(() => {
       expect(page.getByRole("listbox").query()).toBeNull();
     });
-    expect(document.activeElement).toBe(trigger);
+    await expect.element(page.getByRole("combobox", { name: "Fruit", exact: true })).toHaveFocus();
   });
 
   it("selects via click, closes, and updates the trigger value", async () => {
@@ -259,13 +266,13 @@ describe("Select", () => {
         </Select.Root>
       </>
     );
-    await userEvent.click(comboboxNamed("Aligned"));
+    await openWithClick("Aligned");
     expect(selectContent().getAttribute("data-align-trigger")).toBe("true");
     await userEvent.keyboard("{Escape}");
     await vi.waitFor(() => {
       expect(page.getByRole("listbox").query()).toBeNull();
     });
-    await userEvent.click(comboboxNamed("Unaligned"));
+    await openWithClick("Unaligned");
     expect(selectContent().getAttribute("data-align-trigger")).toBe("false");
   });
 
@@ -309,7 +316,7 @@ describe("Select", () => {
       </Select.Root>
     );
     await openWithClick("Grouped");
-    expect(page.getByRole("group", { name: "Citrus", exact: true }).element()).toBeTruthy();
+    await expect.element(page.getByRole("group", { name: "Citrus", exact: true })).toBeInTheDocument();
   });
 
   it("portals Content into the enclosing ThemeScope instead of the document body", async () => {
@@ -321,7 +328,7 @@ describe("Select", () => {
     expect([...document.body.children].includes(listbox)).toBe(false);
   });
 
-  it("portals Content into an explicit container element", () => {
+  it("portals Content into an explicit container element", async () => {
     function ExplicitContainer() {
       const [node, setNode] = useState<HTMLDivElement | null>(null);
       return (
@@ -341,7 +348,7 @@ describe("Select", () => {
       );
     }
     renderThemed(<ExplicitContainer />);
-    const listbox = listboxNamed();
+    const listbox = await openedListbox();
     const island = page.getByRole("region", { name: "Theme island", exact: true }).element();
     expect(island.contains(listbox)).toBe(true);
     expect([...document.body.children].includes(listbox)).toBe(false);
@@ -365,7 +372,7 @@ describe("Select", () => {
     expect(page.getByRole("listbox").query()).toBeNull();
   });
 
-  it("does not paint the popup outside a ThemeScope element that has not attached yet", () => {
+  it("does not paint the popup outside a ThemeScope element that has not attached yet", async () => {
     renderThemed(
       <ThemeScope theme={{ variant: "external", brand: "fkas", segment: "private" }}>
         <Select.Root open>
@@ -378,7 +385,7 @@ describe("Select", () => {
         </Select.Root>
       </ThemeScope>
     );
-    const listbox = listboxNamed();
+    const listbox = await openedListbox();
     const scope = listbox.closest("[data-theme-variant=external]");
     expect(scope).not.toBeNull();
     expect([...document.body.children].includes(listbox)).toBe(false);

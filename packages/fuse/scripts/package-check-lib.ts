@@ -128,6 +128,11 @@ function collectModuleSpecifierNodes(sourceFile: SourceFile): string[] {
 
 export type DeclarationParser = {
   specifiers: (declaration: string) => string[];
+  /**
+   * `specifiers` of the file at `filePath`, parsed once per parser, since packed entries share
+   * most of their declaration graph.
+   */
+  fileSpecifiers: (filePath: string) => readonly string[];
 };
 
 type OwnedDeclarationParser = DeclarationParser & {
@@ -142,14 +147,24 @@ function createDeclarationParser(): OwnedDeclarationParser {
   }
   const api = new API({ cwd: process.cwd(), fs: virtualFs });
   let nextId = 0;
+  const parsedFiles = new Map<string, readonly string[]>();
+  const specifiers = (declaration: string): string[] => {
+    const fileName = `/declaration-${String(nextId)}.d.ts`;
+    nextId += 1;
+    writeFile(fileName, declaration);
+    const snapshot = api.updateSnapshot({ openFiles: [fileName] });
+    const sourceFile = snapshot.getDefaultProjectForFile(fileName)?.program.getSourceFile(fileName);
+    return sourceFile === undefined ? [] : collectModuleSpecifierNodes(sourceFile);
+  };
   return {
-    specifiers(declaration: string): string[] {
-      const fileName = `/declaration-${String(nextId)}.d.ts`;
-      nextId += 1;
-      writeFile(fileName, declaration);
-      const snapshot = api.updateSnapshot({ openFiles: [fileName] });
-      const sourceFile = snapshot.getDefaultProjectForFile(fileName)?.program.getSourceFile(fileName);
-      return sourceFile === undefined ? [] : collectModuleSpecifierNodes(sourceFile);
+    specifiers,
+    fileSpecifiers(filePath: string): readonly string[] {
+      let parsed = parsedFiles.get(filePath);
+      if (parsed === undefined) {
+        parsed = specifiers(readFileSync(filePath, "utf8"));
+        parsedFiles.set(filePath, parsed);
+      }
+      return parsed;
     },
     close() {
       api.close();
@@ -264,7 +279,7 @@ function collectReachableDeclarationLeaks(
     if (!isInsideExtracted(extracted, filePath) || !existsSync(filePath)) {
       continue;
     }
-    for (const specifier of parser.specifiers(readFileSync(filePath, "utf8"))) {
+    for (const specifier of parser.fileSpecifiers(filePath)) {
       if (isForbiddenRacSpecifier(specifier)) {
         pushUnique(leaks, specifier);
         continue;

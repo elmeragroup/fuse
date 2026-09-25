@@ -19,6 +19,11 @@ jobs:
       # compare against 'true' explicitly; a bare `env.IS_SELF_RELEASE_PR` would be truthy
       # even when its value is the string "false".
       IS_SELF_RELEASE_PR: ${{ github.head_ref == 'changeset-release/main' && github.event.pull_request.head.repo.full_name == github.repository }}
+      # A cache key is immutable once saved, so every attempt saves under its own key and
+      # restores by prefix. Under PR churn these per-attempt entries can evict main's from the
+      # 10GB repository cache (LRU); that only costs a cold run. The job id is spelled out
+      # because `github.job` is null outside a job's steps.
+      TURBO_CACHE_KEY: turbo-checks-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,10 +45,42 @@ jobs:
       - name: oxfmt
         run: pnpm exec oxfmt --check
 
+      # Turbo's local cache persists per job, so unchanged packages replay their cached
+      # results. A PR restores from its own branch first and falls back to main's. Every run on
+      # main (push or dispatch) verifies cold, so an under-declared task input cannot replay a
+      # false green there.
+      - name: Restore turbo cache
+        if: ${{ github.ref != 'refs/heads/main' }}
+        uses: actions/cache/restore@v4
+        with:
+          path: .turbo/cache
+          key: ${{ env.TURBO_CACHE_KEY }}
+          restore-keys: |
+            turbo-checks-${{ github.sha }}-
+            turbo-checks-
+
       # turbo.json ci:checks minus browser checks — a docs/unit failure should not
       # wait on the Chromium suite.
       - name: turbo ci:checks (no browser)
+        id: turbo-gate
         run: pnpm exec turbo run '//#lint' '//#test:repo-policy' '//#type-check:scripts' type-check test test:types build package:check size-limit
+        env:
+          TURBO_RUN_SUMMARY: "true"
+
+      # Turbo never evicts, so keep only the entries this run used before the cache saves. A
+      # red gate still saves, so its successful tasks replay on the next attempt; a run whose
+      # gate never started has nothing to prune or save.
+      - name: Prune turbo cache
+        id: prune-turbo-cache
+        if: ${{ always() && steps.turbo-gate.outcome != 'skipped' }}
+        run: pnpm turbo-cache:prune
+
+      - name: Save turbo cache
+        if: ${{ always() && steps.prune-turbo-cache.outcome == 'success' }}
+        uses: actions/cache/save@v4
+        with:
+          path: .turbo/cache
+          key: ${{ env.TURBO_CACHE_KEY }}
 
       - name: Changeset presence
         if: ${{ github.event_name == 'pull_request' && env.IS_SELF_RELEASE_PR != 'true' && !contains(github.event.pull_request.labels.*.name, 'no-changeset') }}
@@ -55,6 +92,12 @@ jobs:
 
   browser:
     runs-on: ubuntu-latest
+    env:
+      # A cache key is immutable once saved, so every attempt saves under its own key and
+      # restores by prefix. Under PR churn these per-attempt entries can evict main's from the
+      # 10GB repository cache (LRU); that only costs a cold run. The job id is spelled out
+      # because `github.job` is null outside a job's steps.
+      TURBO_CACHE_KEY: turbo-browser-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -76,8 +119,40 @@ jobs:
       - name: Install Playwright Chromium
         run: pnpm --filter @elmeragroup/fuse exec playwright install --with-deps chromium
 
+      # Turbo's local cache persists per job, so unchanged packages replay their cached
+      # results. A PR restores from its own branch first and falls back to main's. Every run on
+      # main (push or dispatch) verifies cold, so an under-declared task input cannot replay a
+      # false green there.
+      - name: Restore turbo cache
+        if: ${{ github.ref != 'refs/heads/main' }}
+        uses: actions/cache/restore@v4
+        with:
+          path: .turbo/cache
+          key: ${{ env.TURBO_CACHE_KEY }}
+          restore-keys: |
+            turbo-browser-${{ github.sha }}-
+            turbo-browser-
+
       - name: turbo browser checks
+        id: turbo-gate
         run: pnpm exec turbo run test:browser test:packed-consumer
+        env:
+          TURBO_RUN_SUMMARY: "true"
+
+      # Turbo never evicts, so keep only the entries this run used before the cache saves. A
+      # red gate still saves, so its successful tasks replay on the next attempt; a run whose
+      # gate never started has nothing to prune or save.
+      - name: Prune turbo cache
+        id: prune-turbo-cache
+        if: ${{ always() && steps.turbo-gate.outcome != 'skipped' }}
+        run: pnpm turbo-cache:prune
+
+      - name: Save turbo cache
+        if: ${{ always() && steps.prune-turbo-cache.outcome == 'success' }}
+        uses: actions/cache/save@v4
+        with:
+          path: .turbo/cache
+          key: ${{ env.TURBO_CACHE_KEY }}
 
   # Every activated push to main publishes a canary for the merged commit; a merged Version
   # Packages PR carries the stable bump and publishes the stable line.

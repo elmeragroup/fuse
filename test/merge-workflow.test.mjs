@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { asRecord, asString } from "./json-object.mjs";
-import { readWorkflow, requiredJobSteps, requiredRunStep } from "./workflow.mjs";
+import { readWorkflow, requiredJobSteps, requiredRunStep, requiredUsesStep } from "./workflow.mjs";
 
 /** Both release jobs run only for a push to main once publishing is activated. */
 const activatedPush =
@@ -9,6 +9,50 @@ const activatedPush =
 
 describe("merge workflow", () => {
   const workflow = readWorkflow("merge");
+
+  it.each(["checks", "browser"])(
+    "%s restores turbo's cache before its gate except on main, and prunes then saves it once the gate ran",
+    (job) => {
+      const steps = requiredJobSteps(workflow, job);
+      const gate = requiredRunStep(steps, "pnpm exec turbo run ");
+      // Pruning keeps only the hashes the run summaries record; without them it refuses to run.
+      expect(asRecord(gate.env, `${job} gate env`).TURBO_RUN_SUMMARY).toBe("true");
+
+      // `github.job` is null in job-level env, so the key spells out the job id. Cache keys are
+      // immutable, so every attempt saves under its own key and restores by prefix.
+      const jobEnv = asRecord(asRecord(asRecord(workflow.jobs, "merge jobs")[job], job).env, `${job} env`);
+      expect(jobEnv.TURBO_CACHE_KEY).toBe(
+        `turbo-${job}-\${{ github.sha }}-\${{ github.run_id }}-\${{ github.run_attempt }}`
+      );
+
+      const restore = requiredUsesStep(steps, "actions/cache/restore@v4");
+      const restoreWith = asRecord(restore.with, `${job} restore with`);
+      expect(restoreWith.path).toBe(".turbo/cache");
+      expect(restoreWith.key).toBe("${{ env.TURBO_CACHE_KEY }}");
+      expect(asString(restoreWith["restore-keys"], `${job} restore keys`).trim().split("\n")).toEqual([
+        `turbo-${job}-\${{ github.sha }}-`,
+        `turbo-${job}-`,
+      ]);
+      // Every run on main, pushed or dispatched, verifies cold, so under-declared task inputs
+      // cannot replay a false green there.
+      expect(restore.if).toBe("${{ github.ref != 'refs/heads/main' }}");
+
+      // A red gate still prunes and saves; a gate that never started has nothing to keep.
+      const prune = requiredRunStep(steps, "pnpm turbo-cache:prune");
+      expect(prune.if).toBe(`\${{ always() && steps.${asString(gate.id, "gate id")}.outcome != 'skipped' }}`);
+
+      const save = requiredUsesStep(steps, "actions/cache/save@v4");
+      const saveWith = asRecord(save.with, `${job} save with`);
+      expect(saveWith.path).toBe(".turbo/cache");
+      expect(saveWith.key).toBe("${{ env.TURBO_CACHE_KEY }}");
+      expect(save.if).toBe(
+        `\${{ always() && steps.${asString(prune.id, "prune id")}.outcome == 'success' }}`
+      );
+
+      const order = [restore, gate, prune, save].map((step) => steps.indexOf(step));
+      expect(order).toEqual([...order].sort((a, b) => a - b));
+    }
+  );
 
   it("runs formatting and installs Chromium in their required jobs", () => {
     const checks = requiredJobSteps(workflow, "checks");
