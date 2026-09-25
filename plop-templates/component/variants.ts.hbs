@@ -1,29 +1,42 @@
 /**
  * SCAFFOLD — define the public variant axes using AGENTS.md.
  *
- * The `size` axis below is the canonical control-box ladder: four rungs reading the
- * `--control-*` implementation variables. Keep it
- * only if {{pascalCase name}} encodes a control box. Delete it when the component's size axis is a
- * type-scale axis (Text/Heading), an overlay-width axis (Dialog/Sheet) or a decorative
- * size — those are not density rungs. A single-height field box pins the `md` rung and
- * grows no size axis at all.
+ * The `size` axis below maps the four control sizes through `controlSize`
+ * (`../../styles/control-size`), which reads the density-owned `--control-*` variables.
+ * Keep it only if {{pascalCase name}} encodes a control box, and pick the `ControlFit` from
+ * that module that matches its box, as Button's text sizes take `label`, Toggle takes
+ * `min-square` and Button's `icon*` sizes take `square`. The generated density tests
+ * assume `label`. With `square`, assert `size-(--control-h-md)` and a measured width equal
+ * to the height, and drop the padding and type assertions. Delete the axis when the
+ * component's size is a type-scale axis (Text/Heading), an overlay-width axis
+ * (Dialog/Sheet) or a decorative size; those are not control sizes. A single-height field
+ * box takes the md parts from `../../styles/control-size-md` and grows no size axis at all.
  *
  * Never write a literal `h-9` / `px-2.5` metric ladder here; density retargets the
  * variables on `:root[data-density="comfortable"]`.
+ *
+ * The base composes the `native` and `data` state faces, as Button and Toggle do. Replace
+ * them with the targets {{pascalCase name}}'s state arrives through (see `../../styles/state-face`).
+ * Delete the face, and its imports, when {{pascalCase name}} is not an interactive control.
  *
  * TODO({{name}}): fill `base`, and use the appropriate shared focus constant from
  * `../../styles/utils` if this component has a focus receiver.
  */
 import { tv } from "tailwind-variants";
 
+import { cn } from "../../styles/cn";
+import { controlSize } from "../../styles/control-size";
+import { dataStateFaceClass, nativeStateFaceClass } from "../../styles/state-face";
+
+/** The {{pascalCase name}} recipe: the state face plus one control size per `size`. */
 export const {{camelCase name}}Variants = tv({
-  base: "",
+  base: cn(nativeStateFaceClass, dataStateFaceClass),
   variants: {
     size: {
-      xs: "text-xs h-(--control-h-xs) gap-(--control-gap-xs) px-(--control-px-xs)",
-      sm: "text-sm h-(--control-h-sm) gap-(--control-gap-sm) px-(--control-px-sm)",
-      md: "h-(--control-h-md) gap-(--control-gap-md) px-(--control-px-md) [font-size:var(--control-text)] [line-height:var(--control-leading)]",
-      lg: "h-(--control-h-lg) gap-(--control-gap-lg) px-(--control-px-lg) [font-size:var(--control-text)] [line-height:var(--control-leading)]",
+      xs: controlSize({ size: "xs", fit: "label" }),
+      sm: controlSize({ size: "sm", fit: "label" }),
+      md: controlSize({ size: "md", fit: "label" }),
+      lg: controlSize({ size: "lg", fit: "label" }),
     },
   },
   defaultVariants: {
