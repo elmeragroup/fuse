@@ -32,6 +32,8 @@ catalog:
   fast-check: 4.10.2
   "libphonenumber-js": 1.13.13
   next: 16.3.5
+  oxc-parser: 0.148.0
+  oxc-transform: 0.148.0
   oxfmt: 0.68.0
   oxlint: 1.83.0
   oxlint-tsgolint: 7.0.2001
