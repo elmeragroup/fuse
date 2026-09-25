@@ -4,13 +4,15 @@ import { tv } from "tailwind-variants";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import { itemRootProps } from "./item-root-props";
 import { ITEM_TITLE_CLASSES } from "./item-title-classes";
-import { itemVariants } from "./item-variants";
+import type { itemVariants } from "./item-variants";
 
 /**
  * Out-of-group `Item.Root` element. No hooks and no `render` prop, so Alert can
  * render it from a server component. Public `Item.Root` stays client: it reads
- * group context and forwards `render` through `useRender`.
+ * group context and forwards `render` through `useRender`. Both take their
+ * attributes and classes from `itemRootProps`.
  */
 export function ItemRootElement({
   className,
@@ -18,15 +20,7 @@ export function ItemRootElement({
   size = "default",
   ...props
 }: ComponentProps<"div"> & VariantProps<typeof itemVariants>): ReactElement {
-  return (
-    <div
-      data-slot="item"
-      data-variant={variant}
-      data-size={size}
-      className={cn(itemVariants({ variant, size }), className)}
-      {...props}
-    />
-  );
+  return <div {...itemRootProps({ variant, size, className })} {...props} />;
 }
 
 const itemMediaVariants = tv({

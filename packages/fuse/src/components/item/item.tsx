@@ -10,7 +10,8 @@ import type { VariantProps } from "tailwind-variants";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { Separator } from "../separator/separator";
-import { itemVariants } from "./item-variants";
+import { itemRootProps } from "./item-root-props";
+import type { itemVariants } from "./item-variants";
 
 const ItemGroupContext = createContext(false);
 
@@ -49,21 +50,14 @@ export function ItemRoot({
   ...props
 }: useRender.ComponentProps<"div"> & VariantProps<typeof itemVariants>): ReactElement {
   const inGroup = useContext(ItemGroupContext);
-  const hostProps: ComponentProps<"div"> = {
-    className: cn(itemVariants({ variant, size }), className),
-  };
-  if (inGroup) {
-    hostProps.role = "listitem";
-  }
   return useRender({
     defaultTagName: "div",
-    props: mergeProps<"div">(hostProps, props),
+    props: mergeProps<"div">(
+      itemRootProps({ variant, size, className }),
+      inGroup ? { role: "listitem" } : undefined,
+      props
+    ),
     render,
-    state: {
-      slot: "item",
-      variant,
-      size,
-    },
   });
 }
 

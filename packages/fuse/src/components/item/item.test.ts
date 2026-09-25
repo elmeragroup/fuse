@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { selfFocusRingClass } from "../../styles/utils";
 import { Item } from "./index";
-import { ItemRootElement } from "./item-markup";
+import { itemRootProps } from "./item-root-props";
 import { ITEM_TITLE_CLASSES } from "./item-title-classes";
 import { itemVariants } from "./item-variants";
 
@@ -42,18 +42,33 @@ describe("ITEM_TITLE_CLASSES", () => {
   });
 });
 
-describe("ItemRootElement", () => {
-  it("matches Item.Root markup outside a group when no render prop is passed", () => {
-    const props = {
-      variant: "outline" as const,
-      size: "sm" as const,
-      role: "alert",
-      className: "bg-card",
-      children: "Sync delayed",
-    };
-    // Oracle: public Item.Root. ItemRootElement is the server-rendered twin Alert uses.
-    const oracle = renderToStaticMarkup(createElement(Item.Root, props));
-    expect(renderToStaticMarkup(createElement(ItemRootElement, props))).toBe(oracle);
+describe("itemRootProps", () => {
+  it("names the default variant and size in data attributes and classes", () => {
+    const props = itemRootProps({ variant: "default", size: "default" });
+    expect(props["data-slot"]).toBe("item");
+    expect(props["data-variant"]).toBe("default");
+    expect(props["data-size"]).toBe("default");
+    expect(props.className).toContain("border-transparent");
+    expect(props.className).toContain("px-4");
+  });
+
+  it("names the chosen variant and size in data attributes and classes", () => {
+    const props = itemRootProps({ variant: "outline", size: "sm" });
+    expect(props["data-variant"]).toBe("outline");
+    expect(props["data-size"]).toBe("sm");
+    expect(props.className).toContain("border-border");
+    expect(props.className).toContain("px-3");
+  });
+
+  it("lets a consumer class win a Tailwind conflict with the recipe", () => {
+    const tokens = itemRootProps({
+      variant: "default",
+      size: "sm",
+      className: "px-6 bg-card",
+    }).className.split(" ");
+    expect(tokens).toContain("px-6");
+    expect(tokens).toContain("bg-card");
+    expect(tokens).not.toContain("px-3");
   });
 });
 
