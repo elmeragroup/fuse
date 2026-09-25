@@ -249,7 +249,7 @@ function resolvePackedDeclaration(
 function collectReachableDeclarationLeaks(
   extracted: string,
   rootFile: string,
-  parser: DeclarationParser
+  specifiersOf: (filePath: string) => readonly string[]
 ): string[] {
   const leaks: string[] = [];
   const visited = new Set<string>();
@@ -264,7 +264,7 @@ function collectReachableDeclarationLeaks(
     if (!isInsideExtracted(extracted, filePath) || !existsSync(filePath)) {
       continue;
     }
-    for (const specifier of parser.specifiers(readFileSync(filePath, "utf8"))) {
+    for (const specifier of specifiersOf(filePath)) {
       if (isForbiddenRacSpecifier(specifier)) {
         pushUnique(leaks, specifier);
         continue;
@@ -289,12 +289,24 @@ export function packedBareEntryRacDeclarationFailure(
   jsEntries: readonly { readonly subpath: string; readonly sourceFile: string }[]
 ): string | undefined {
   return withDeclarationParser((parser) => {
+    // Entries share most of their declaration graph; parse each packed file once per run.
+    const parsed = new Map<string, readonly string[]>();
+    const specifiersOf = (filePath: string): readonly string[] => {
+      let specifiers = parsed.get(filePath);
+      if (specifiers === undefined) {
+        specifiers = parser.specifiers(readFileSync(filePath, "utf8"));
+        parsed.set(filePath, specifiers);
+      }
+      return specifiers;
+    };
     for (const entry of jsEntries) {
       if (entry.subpath.startsWith("react-aria/")) {
         continue;
       }
       const rootFile = join(extracted, publishedTypesFile(entry.sourceFile));
-      const leaks = existsSync(rootFile) ? collectReachableDeclarationLeaks(extracted, rootFile, parser) : [];
+      const leaks = existsSync(rootFile)
+        ? collectReachableDeclarationLeaks(extracted, rootFile, specifiersOf)
+        : [];
       if (leaks.length > 0) {
         return `${entryDeclarationKey(entry.subpath)} declaration references ${leaks.join(", ")}`;
       }

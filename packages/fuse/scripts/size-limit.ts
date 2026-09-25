@@ -1,7 +1,8 @@
-import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { availableParallelism } from "node:os";
 import { dirname, join } from "node:path";
 import { gzipSync } from "node:zlib";
+import { build } from "rolldown";
 
 import { flagPayload, listFlagFiles } from "./flag-assets.ts";
 import { packageRootFromScript } from "./paths.ts";
@@ -12,7 +13,7 @@ import {
   JS_ENTRY_BUDGETS,
   NAMED_IMPORT_BUDGETS,
 } from "./size-budgets.ts";
-import { fail, withExtractedTarball } from "./tarball.ts";
+import { fail, withExtractedTarballAsync } from "./tarball.ts";
 
 const packageRoot = packageRootFromScript(import.meta.url);
 const PEER_EXTERNALS = ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "tailwindcss"];
@@ -43,52 +44,55 @@ function reportBudget(name: string, bytes: number, ceiling: number, unit: string
   }
 }
 
-function rolldownBundle(input: string, output: string): void {
-  const args = [
-    "exec",
-    "rolldown",
-    input,
-    "--format",
-    "esm",
-    "--minify",
-    "--platform",
-    "browser",
-    "--file",
-    output,
-  ];
-  for (const external of PEER_EXTERNALS) {
-    args.push("--external", external);
-  }
-  const result = spawnSync("pnpm", args, { cwd: packageRoot, encoding: "utf8" });
-  if (result.status !== 0) {
-    throw new Error(`rolldown failed for ${input}:\n${result.stderr || result.stdout}`);
+/**
+ * Bundles in-process through rolldown's JS API with the options the CLI form
+ * (`rolldown <input> --format esm --minify --platform browser --file <output>`) sets. One
+ * bundle per budget keeps every size attributable to its own entry.
+ */
+async function rolldownBundle(input: string, output: string): Promise<void> {
+  try {
+    await build({
+      input,
+      platform: "browser",
+      external: PEER_EXTERNALS,
+      logLevel: "silent",
+      output: { file: output, format: "esm", minify: true },
+    });
+  } catch (error) {
+    throw new Error(
+      `rolldown failed for ${input}:\n${error instanceof Error ? error.message : String(error)}`,
+      { cause: error }
+    );
   }
 }
 
-function checkJsEntry(
+/** One measured bundle, reported in budget order once every bundle has settled. */
+type Measurement = { readonly name: string; readonly bytes: number; readonly ceilingGzip: number };
+
+async function measureJsEntry(
   extracted: string,
   work: string,
   entryFile: string,
   name: string,
   ceilingGzip: number
-): void {
+): Promise<Measurement> {
   const input = join(extracted, entryFile);
   if (!existsSync(input)) {
     throw new Error(`Packed entry ${name} missing ${entryFile}`);
   }
   const output = join(work, `${workStem(name)}.js`);
-  rolldownBundle(input, output);
-  reportBudget(name, gzipSize(readFileSync(output)), ceilingGzip, "gzip bytes");
+  await rolldownBundle(input, output);
+  return { name, bytes: gzipSize(readFileSync(output)), ceilingGzip };
 }
 
-function checkNamedImport(
+async function measureNamedImport(
   extracted: string,
   work: string,
   entryFile: string,
   exportName: string,
   name: string,
   ceilingGzip: number
-): void {
+): Promise<Measurement> {
   const input = join(extracted, entryFile);
   if (!existsSync(input)) {
     throw new Error(`Packed entry ${name} missing ${entryFile}`);
@@ -96,9 +100,28 @@ function checkNamedImport(
   const fixture = join(work, `${workStem(name)}.fixture.js`);
   writeFileSync(fixture, `export { ${exportName} } from ${JSON.stringify(input)};\n`);
   const output = join(work, `${workStem(name)}.js`);
-  rolldownBundle(fixture, output);
-  reportBudget(name, gzipSize(readFileSync(output)), ceilingGzip, "gzip bytes");
+  await rolldownBundle(fixture, output);
+  return { name, bytes: gzipSize(readFileSync(output)), ceilingGzip };
 }
+
+/**
+ * Runs `tasks` with at most `limit` in flight and resolves to their results in input order.
+ * Rolldown parallelizes inside each build, so the cap stays below the core count.
+ */
+async function mapConcurrent<T>(tasks: readonly (() => Promise<T>)[], limit: number): Promise<T[]> {
+  const results: T[] = Array.from({ length: tasks.length });
+  // Workers share one iterator, so each task is claimed exactly once.
+  const pending = tasks.entries();
+  async function worker(): Promise<void> {
+    for (const [index, task] of pending) {
+      results[index] = await task();
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, tasks.length) }, worker));
+  return results;
+}
+
+const BUNDLE_CONCURRENCY = Math.max(1, Math.floor(availableParallelism() / 2));
 
 function checkCss(extracted: string, file: string, name: string, ceilingGzip: number): void {
   const path = join(extracted, file);
@@ -118,14 +141,30 @@ function checkFlagRaw(extracted: string, name: string, ceilingBytes: number): vo
 }
 
 try {
-  withExtractedTarball(packageRoot, "fuse-size-", (extracted) => {
+  await withExtractedTarballAsync(packageRoot, "fuse-size-", async ({ extracted }) => {
     const work = join(dirname(extracted), "work");
     mkdirSync(work);
-    for (const budget of JS_ENTRY_BUDGETS) {
-      checkJsEntry(extracted, work, budget.entryFile, budget.name, budget.ceilingGzip);
-    }
-    for (const budget of NAMED_IMPORT_BUDGETS) {
-      checkNamedImport(extracted, work, budget.entryFile, budget.exportName, budget.name, budget.ceilingGzip);
+    const measurements = await mapConcurrent(
+      [
+        ...JS_ENTRY_BUDGETS.map(
+          (budget) => () => measureJsEntry(extracted, work, budget.entryFile, budget.name, budget.ceilingGzip)
+        ),
+        ...NAMED_IMPORT_BUDGETS.map(
+          (budget) => () =>
+            measureNamedImport(
+              extracted,
+              work,
+              budget.entryFile,
+              budget.exportName,
+              budget.name,
+              budget.ceilingGzip
+            )
+        ),
+      ],
+      BUNDLE_CONCURRENCY
+    );
+    for (const measurement of measurements) {
+      reportBudget(measurement.name, measurement.bytes, measurement.ceilingGzip, "gzip bytes");
     }
     for (const budget of CSS_BUDGETS) {
       checkCss(extracted, budget.file, budget.name, budget.ceilingGzip);
