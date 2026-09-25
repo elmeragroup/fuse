@@ -12,8 +12,8 @@ import {
 } from "./selection-item";
 
 /**
- * Shared selectable card row. `CheckboxItem` / `RadioItem` alias these part objects in
- * later tickets so `child.type` partitioning keeps working across spellings.
+ * Shared selectable card row. `CheckboxItem` / `RadioItem` alias these part objects so
+ * `child.type` partitioning keeps working across spellings.
  */
 export const SelectionItem = {
   Shell: SelectionItemShell,
