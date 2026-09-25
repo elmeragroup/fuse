@@ -146,16 +146,3 @@ BreadcrumbLink.displayName = "Breadcrumb.Link";
 BreadcrumbPage.displayName = "Breadcrumb.Page";
 BreadcrumbSeparator.displayName = "Breadcrumb.Separator";
 BreadcrumbEllipsis.displayName = "Breadcrumb.Ellipsis";
-
-// Client callers import this object from the implementation module.
-// The package entry rebuilds the same parts in index.ts, which has no directive,
-// so a server component can read each part.
-export const Breadcrumb = {
-  Root: BreadcrumbRoot,
-  List: BreadcrumbList,
-  Item: BreadcrumbItem,
-  Link: BreadcrumbLink,
-  Page: BreadcrumbPage,
-  Separator: BreadcrumbSeparator,
-  Ellipsis: BreadcrumbEllipsis,
-};

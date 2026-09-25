@@ -17,7 +17,7 @@ import {
   roleNamed,
 } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
-import { Tooltip } from "../tooltip/tooltip";
+import { Tooltip } from "../tooltip";
 import { Button } from "./button";
 
 const VARIANTS = ["default", "outline", "secondary", "ghost", "destructive", "success", "link"] as const;

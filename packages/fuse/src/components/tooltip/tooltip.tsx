@@ -152,13 +152,3 @@ TooltipProvider.displayName = "Tooltip.Provider";
 TooltipRoot.displayName = "Tooltip.Root";
 TooltipTrigger.displayName = "Tooltip.Trigger";
 TooltipContent.displayName = "Tooltip.Content";
-
-// Client callers import this object from the implementation module.
-// The package entry rebuilds the same parts in index.ts, which has no directive,
-// so a server component can read each part.
-export const Tooltip = {
-  Provider: TooltipProvider,
-  Root: TooltipRoot,
-  Trigger: TooltipTrigger,
-  Content: TooltipContent,
-};

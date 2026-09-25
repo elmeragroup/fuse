@@ -68,13 +68,3 @@ AvatarRoot.displayName = "Avatar.Root";
 AvatarGroup.displayName = "Avatar.Group";
 AvatarImage.displayName = "Avatar.Image";
 AvatarFallback.displayName = "Avatar.Fallback";
-
-// Client callers import this object from the implementation module.
-// The package entry rebuilds the same parts in index.ts, which has no directive,
-// so a server component can read each part.
-export const Avatar = {
-  Root: AvatarRoot,
-  Group: AvatarGroup,
-  Image: AvatarImage,
-  Fallback: AvatarFallback,
-};

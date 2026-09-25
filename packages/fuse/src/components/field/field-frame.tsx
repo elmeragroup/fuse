@@ -6,9 +6,7 @@ import { Check } from "../../icons/generated/check";
 import { SpinnerGap } from "../../icons/generated/spinner-gap";
 import { cn } from "../../styles/cn";
 import { iconCrossfadeHidden, iconCrossfadeShown, iconCrossfadeTransition } from "../../styles/utils";
-// Named parts from the client module. The server namespace barrel would load
-// beside every labeled composite in the browser suite.
-import { FieldDescription, FieldError, FieldLabel, FieldLegend, FieldRoot, FieldSet } from "./field";
+import { Field } from "./index";
 
 /**
  * Package-private FieldFrame layout. No axes — the frame
@@ -131,9 +129,9 @@ export function FieldFrame({
   const hasCrossfade = isPending || isSuccess;
   const headingClass = classNames?.label;
   const descriptionNode = description ? (
-    <FieldDescription className={cn(fieldFrameDescriptionClass, classNames?.description)}>
+    <Field.Description className={cn(fieldFrameDescriptionClass, classNames?.description)}>
       {description}
-    </FieldDescription>
+    </Field.Description>
   ) : null;
   const body =
     heading === "legend" ? (
@@ -153,11 +151,11 @@ export function FieldFrame({
       <div className={cn(fieldFrameLabelRowClass, classNames?.labelRow)}>
         {label ? (
           heading === "legend" ? (
-            <FieldLegend variant="label" className={headingClass}>
+            <Field.Legend variant="label" className={headingClass}>
               {label}
-            </FieldLegend>
+            </Field.Legend>
           ) : (
-            <FieldLabel className={headingClass}>{label}</FieldLabel>
+            <Field.Label className={headingClass}>{label}</Field.Label>
           )
         ) : null}
         {status}
@@ -187,14 +185,14 @@ export function FieldFrame({
     <>
       {headingRow}
       {content}
-      <FieldError>{errorMessage}</FieldError>
+      <Field.Error>{errorMessage}</Field.Error>
     </>
   );
 
   return (
-    <FieldRoot name={name} invalid={invalid} disabled={disabled} className={className}>
-      {heading === "legend" ? <FieldSet>{framed}</FieldSet> : framed}
-    </FieldRoot>
+    <Field.Root name={name} invalid={invalid} disabled={disabled} className={className}>
+      {heading === "legend" ? <Field.Set>{framed}</Field.Set> : framed}
+    </Field.Root>
   );
 }
 

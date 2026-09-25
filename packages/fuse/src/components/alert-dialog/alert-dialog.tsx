@@ -9,7 +9,7 @@ import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { Info } from "../../icons/generated/info";
 import { WarningOctagon } from "../../icons/generated/warning-octagon";
 import { Button } from "../button/button";
-import { Dialog } from "../dialog/dialog";
+import { Dialog } from "../dialog";
 import type { DialogContentProps } from "../dialog/dialog";
 import { alertDialogStrings } from "./intl";
 
@@ -150,12 +150,3 @@ export function AlertDialogContent({
 AlertDialogRoot.displayName = "AlertDialog.Root";
 AlertDialogTrigger.displayName = "AlertDialog.Trigger";
 AlertDialogContent.displayName = "AlertDialog.Content";
-
-// Client callers import this object from the implementation module.
-// The package entry rebuilds the same parts in index.ts, which has no directive,
-// so a server component can read each part.
-export const AlertDialog = {
-  Root: AlertDialogRoot,
-  Trigger: AlertDialogTrigger,
-  Content: AlertDialogContent,
-};

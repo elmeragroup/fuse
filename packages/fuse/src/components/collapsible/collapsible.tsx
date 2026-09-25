@@ -46,12 +46,3 @@ export function CollapsibleContent({
 CollapsibleRoot.displayName = "Collapsible.Root";
 CollapsibleTrigger.displayName = "Collapsible.Trigger";
 CollapsibleContent.displayName = "Collapsible.Content";
-
-// Client callers import this object from the implementation module.
-// The package entry rebuilds the same parts in index.ts, which has no directive,
-// so a server component can read each part.
-export const Collapsible = {
-  Root: CollapsibleRoot,
-  Trigger: CollapsibleTrigger,
-  Content: CollapsibleContent,
-};

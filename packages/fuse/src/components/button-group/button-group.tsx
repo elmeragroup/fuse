@@ -94,12 +94,3 @@ export function ButtonGroupText({ className, render, ...props }: ButtonGroupText
 ButtonGroupRoot.displayName = "ButtonGroup.Root";
 ButtonGroupSeparator.displayName = "ButtonGroup.Separator";
 ButtonGroupText.displayName = "ButtonGroup.Text";
-
-// Client callers import this object from the implementation module.
-// The package entry rebuilds the same parts in index.ts, which has no directive,
-// so a server component can read each part.
-export const ButtonGroup = {
-  Root: ButtonGroupRoot,
-  Separator: ButtonGroupSeparator,
-  Text: ButtonGroupText,
-};

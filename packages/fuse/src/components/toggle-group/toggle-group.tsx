@@ -117,11 +117,3 @@ export function ToggleGroupItem({
 
 ToggleGroupRoot.displayName = "ToggleGroup.Root";
 ToggleGroupItem.displayName = "ToggleGroup.Item";
-
-// Client callers import this object from the implementation module.
-// The package entry rebuilds the same parts in index.ts, which has no directive,
-// so a server component can read each part.
-export const ToggleGroup = {
-  Root: ToggleGroupRoot,
-  Item: ToggleGroupItem,
-};

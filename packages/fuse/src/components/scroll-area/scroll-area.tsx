@@ -90,11 +90,3 @@ export function ScrollAreaBar({
 
 ScrollAreaRoot.displayName = "ScrollArea.Root";
 ScrollAreaBar.displayName = "ScrollArea.Bar";
-
-// Client callers import this object from the implementation module.
-// The package entry rebuilds the same parts in index.ts, which has no directive,
-// so a server component can read each part.
-export const ScrollArea = {
-  Root: ScrollAreaRoot,
-  Bar: ScrollAreaBar,
-};

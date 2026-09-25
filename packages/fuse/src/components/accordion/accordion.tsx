@@ -106,14 +106,3 @@ AccordionItem.displayName = "Accordion.Item";
 AccordionHeader.displayName = "Accordion.Header";
 AccordionTrigger.displayName = "Accordion.Trigger";
 AccordionContent.displayName = "Accordion.Content";
-
-// Client callers import this object from the implementation module.
-// The package entry rebuilds the same parts in index.ts, which has no directive,
-// so a server component can read each part.
-export const Accordion = {
-  Root: AccordionRoot,
-  Item: AccordionItem,
-  Header: AccordionHeader,
-  Trigger: AccordionTrigger,
-  Content: AccordionContent,
-};

@@ -7,7 +7,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
-import { Pagination } from "./pagination";
+import { Pagination } from "./index";
 
 const LANDMARK_COPY = {
   "nb-NO": "Sidenavigasjon",

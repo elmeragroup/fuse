@@ -9,7 +9,7 @@ import "../../../dist/themes.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
-import { DropdownMenu } from "./dropdown-menu";
+import { DropdownMenu } from "./index";
 
 function menuNamed(name?: string): HTMLElement {
   const locator = name === undefined ? page.getByRole("menu") : page.getByRole("menu", { name, exact: true });

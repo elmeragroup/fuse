@@ -175,15 +175,3 @@ InputGroupButton.displayName = "InputGroup.Button";
 InputGroupText.displayName = "InputGroup.Text";
 InputGroupInput.displayName = "InputGroup.Input";
 InputGroupTextarea.displayName = "InputGroup.Textarea";
-
-// Client callers import this object from the implementation module.
-// The package entry rebuilds the same parts in index.ts, which has no directive,
-// so a server component can read each part.
-export const InputGroup = {
-  Root: InputGroupRoot,
-  Addon: InputGroupAddon,
-  Button: InputGroupButton,
-  Text: InputGroupText,
-  Input: InputGroupInput,
-  Textarea: InputGroupTextarea,
-};

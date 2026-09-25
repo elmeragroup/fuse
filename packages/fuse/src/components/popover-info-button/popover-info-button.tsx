@@ -10,7 +10,7 @@ import { Info } from "../../icons/generated/info";
 import type { ButtonProps } from "../button/button";
 import { Button } from "../button/button";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
-import { Popover } from "../popover/popover";
+import { Popover } from "../popover";
 import { popoverInfoButtonStrings } from "./intl";
 
 /** Recipe for the unit test. Not re-exported from the public entry. */
