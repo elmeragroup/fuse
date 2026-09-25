@@ -98,6 +98,15 @@ describe("Sidebar toggle paths", () => {
     await userEvent.click(rail);
     expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
   });
+
+  it("runs the caller's Rail onClick and still toggles", async () => {
+    const clicks: string[] = [];
+    renderThemed(<Frame rail={<Sidebar.Rail onClick={() => clicks.push("rail")} />} />);
+
+    await userEvent.click(railNamed("Toggle sidebar"));
+    expect(clicks).toEqual(["rail"]);
+    expect(sidebarRoot().getAttribute("data-state")).toBe("collapsed");
+  });
 });
 
 describe("Sidebar callback stability", () => {
@@ -542,6 +551,61 @@ describe("Sidebar.Root branches", () => {
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
     await expect.element(page.getByRole("button", { name: "Toggle sidebar", exact: true })).toHaveFocus();
     expect(document.cookie).not.toContain("sidebar:state");
+  });
+
+  it("forwards the caller's element props and style to the mobile dialog", async () => {
+    await page.viewport(MOBILE.width, MOBILE.height);
+    renderThemed(
+      <Frame
+        root={{
+          id: "app-sidebar",
+          "aria-label": "Main navigation",
+          // @ts-expect-error -- data-* props are valid JSX attributes but not part of the div props type.
+          "data-tour": "sidebar",
+          style: { color: "rgb(1, 2, 3)" },
+        }}
+      />
+    );
+
+    await userEvent.click(roleNamed("button", "Toggle sidebar"));
+    await expect.element(page.getByRole("dialog")).toBeVisible();
+    const dialog = sidebarRoot();
+    expect(dialog.id).toBe("app-sidebar");
+    expect(dialog.getAttribute("aria-label")).toBe("Main navigation");
+    expect(dialog.getAttribute("data-tour")).toBe("sidebar");
+    expect(dialog.style.color).toBe("rgb(1, 2, 3)");
+    expect(dialog.style.getPropertyValue("--sidebar-width")).toBe("18rem");
+  });
+
+  it("keeps the mobile dialog's name, description and role when ARIA props are undefined", async () => {
+    await page.viewport(MOBILE.width, MOBILE.height);
+    renderThemed(
+      <Frame root={{ "aria-labelledby": undefined, "aria-describedby": undefined, role: undefined }} />
+    );
+
+    await userEvent.click(roleNamed("button", "Toggle sidebar"));
+    const dialog = page.getByRole("dialog", { name: TITLE_COPY["en-US"], exact: true });
+    await expect.element(dialog).toBeVisible();
+    await expect.element(dialog).toHaveAccessibleDescription(DESCRIPTION_COPY["en-US"]);
+  });
+
+  it("shows the sheet and hides the rail at 767px", async () => {
+    await page.viewport(767, 800);
+    renderThemed(<Frame />);
+
+    await userEvent.click(roleNamed("button", "Toggle sidebar"));
+    await expect.element(page.getByRole("dialog", { name: "Sidebar" })).toBeVisible();
+    await expect.element(railNamed("Toggle sidebar")).not.toBeVisible();
+  });
+
+  it("toggles the rail instead of opening a sheet at 768px", async () => {
+    await page.viewport(768, 800);
+    renderThemed(<Frame />);
+
+    await userEvent.click(roleNamed("button", "Toggle sidebar"));
+    expect(page.getByRole("dialog").query()).toBeNull();
+    expect(sidebarRoot().getAttribute("data-state")).toBe("collapsed");
+    await expect.element(railNamed("Toggle sidebar")).toBeVisible();
   });
 });
 

@@ -1,15 +1,22 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { page } from "vitest/browser";
 
+import "../../dist/styles.css";
 import { render } from "../../test/browser-render";
 import { useIsMobile } from "./use-is-mobile";
 
-const MOBILE_MEDIA_QUERY = "(max-width: 767px)";
+const MOBILE_MEDIA_QUERY = "(width < 48rem)";
 
 function Probe({ onRender }: { onRender: (isMobile: boolean) => void }) {
   const isMobile = useIsMobile();
   onRender(isMobile);
   return <output aria-label="Viewport">{isMobile ? "mobile" : "desktop"}</output>;
+}
+
+function nestedRules(rules: CSSRuleList): CSSRule[] {
+  return [...rules].flatMap((rule) =>
+    rule instanceof CSSGroupingRule ? [rule, ...nestedRules(rule.cssRules)] : [rule]
+  );
 }
 
 function viewportStatus() {
@@ -80,5 +87,40 @@ describe("useIsMobile", () => {
     const removeListener = vi.spyOn(MediaQueryList.prototype, "removeEventListener");
     unmount();
     expect(removeListener).toHaveBeenCalledWith("change", expect.any(Function));
+  });
+
+  it("queries the same rem breakpoint that md: starts at", async () => {
+    await page.viewport(1024, 768);
+    // Pass-through spy: matchMedia still answers, the spy only observes the query string.
+    const queries: string[] = [];
+    const matchMedia = window.matchMedia.bind(window);
+    vi.spyOn(window, "matchMedia").mockImplementation((query) => {
+      queries.push(query);
+      return matchMedia(query);
+    });
+    const seen: boolean[] = [];
+    render(
+      <Probe
+        onRender={(value) => {
+          seen.push(value);
+        }}
+      />
+    );
+    expect(seen).toEqual([false]);
+    expect(new Set(queries)).toEqual(new Set(["(width < 48rem)"]));
+
+    const mdConditions = new Set(
+      [...document.styleSheets]
+        .flatMap((sheet) => nestedRules(sheet.cssRules))
+        .filter(
+          (rule): rule is CSSMediaRule =>
+            rule instanceof CSSMediaRule &&
+            [...rule.cssRules].some(
+              (inner) => inner instanceof CSSStyleRule && inner.selectorText === ".md\\:flex"
+            )
+        )
+        .map((rule) => rule.conditionText)
+    );
+    expect(mdConditions).toEqual(new Set(["(width >= 48rem)"]));
   });
 });
