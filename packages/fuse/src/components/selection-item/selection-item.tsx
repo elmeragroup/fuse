@@ -7,8 +7,8 @@ import { Field as FieldPrimitive } from "@base-ui/react/field";
 
 import { cn } from "../../styles/cn";
 import { disabledHatch } from "../../styles/utils";
-import { Field } from "../field/field";
-import { Item } from "../item/item";
+import { Field } from "../field";
+import { Item } from "../item";
 import { itemVariants } from "../item/item-variants";
 import { selectionGroupOrientationVariants } from "./selection-item-variants";
 import type { SelectionItemGroupOrientation } from "./selection-item-variants";
@@ -74,11 +74,14 @@ export function SelectionItemGroup({
   );
 }
 
-function SelectionItemTitle({ className, ...props }: ComponentProps<typeof Item.Title>): ReactElement {
+export function SelectionItemTitle({ className, ...props }: ComponentProps<typeof Item.Title>): ReactElement {
   return <Item.Title className={cn("font-normal", className)} {...props} />;
 }
 
-function SelectionItemActions({ className, ...props }: ComponentProps<typeof Item.Actions>): ReactElement {
+export function SelectionItemActions({
+  className,
+  ...props
+}: ComponentProps<typeof Item.Actions>): ReactElement {
   return <Item.Actions className={cn("-translate-y-0.5 items-start", className)} {...props} />;
 }
 
@@ -88,7 +91,7 @@ function SelectionItemActions({ className, ...props }: ComponentProps<typeof Ite
  * Fragment, wrapper, or HOC hides the part from that filter and it stays inside the
  * label, so clicks would toggle the control.
  */
-function SelectionItemSubSection({
+export function SelectionItemSubSection({
   children,
   className,
   mode = "default",
@@ -152,7 +155,7 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof Field.Item>, "classNam
  * collapse and no checked negative margin. Checked selectors are scoped to the
  * private control slot so a checked descendant in SubSection cannot repaint the shell.
  */
-function SelectionItemShell({
+export function SelectionItemShell({
   dataSlot,
   control,
   controlPosition = "start",
@@ -239,16 +242,3 @@ SelectionItemShell.displayName = "SelectionItem.Shell";
 SelectionItemTitle.displayName = "SelectionItem.Title";
 SelectionItemActions.displayName = "SelectionItem.Actions";
 SelectionItemSubSection.displayName = "SelectionItem.SubSection";
-
-/**
- * Shared selectable card row. `CheckboxItem` / `RadioItem` alias these part objects in
- * later tickets so `child.type` partitioning keeps working across spellings.
- */
-export const SelectionItem = {
-  Shell: SelectionItemShell,
-  Title: SelectionItemTitle,
-  Description: Item.Description,
-  Content: Item.Content,
-  Actions: SelectionItemActions,
-  SubSection: SelectionItemSubSection,
-};

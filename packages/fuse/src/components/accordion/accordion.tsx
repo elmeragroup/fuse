@@ -32,7 +32,7 @@ function useAccordion(): AccordionVariantProps {
  * open-item state; `variant` / `radius` publish through module-private context so
  * parts style themselves.
  */
-function AccordionRoot<Value = unknown>({
+export function AccordionRoot<Value = unknown>({
   className,
   variant = "default",
   radius = "none",
@@ -48,7 +48,7 @@ function AccordionRoot<Value = unknown>({
   );
 }
 
-function AccordionItem({
+export function AccordionItem({
   className,
   ...props
 }: WithSlotClassName<ComponentProps<typeof AccordionPrimitive.Item>>): ReactElement {
@@ -58,7 +58,7 @@ function AccordionItem({
   return <AccordionPrimitive.Item data-slot="accordion-item" className={item({ className })} {...props} />;
 }
 
-function AccordionHeader({
+export function AccordionHeader({
   className,
   ...props
 }: WithSlotClassName<ComponentProps<typeof AccordionPrimitive.Header>>): ReactElement {
@@ -70,7 +70,7 @@ function AccordionHeader({
   );
 }
 
-function AccordionTrigger({
+export function AccordionTrigger({
   className,
   children,
   ...props
@@ -86,7 +86,7 @@ function AccordionTrigger({
   );
 }
 
-function AccordionContent({
+export function AccordionContent({
   className,
   children,
   ...props
@@ -106,11 +106,3 @@ AccordionItem.displayName = "Accordion.Item";
 AccordionHeader.displayName = "Accordion.Header";
 AccordionTrigger.displayName = "Accordion.Trigger";
 AccordionContent.displayName = "Accordion.Content";
-
-export const Accordion = {
-  Root: AccordionRoot,
-  Item: AccordionItem,
-  Header: AccordionHeader,
-  Trigger: AccordionTrigger,
-  Content: AccordionContent,
-};

@@ -104,7 +104,7 @@ export type PaginationEllipsisProps = Omit<ComponentProps<"span">, "children"> &
  * the borrowed public `buttonVariants`; landmark, Previous/Next, and ellipsis
  * copy come from the provider dictionary.
  */
-function PaginationRoot({
+export function PaginationRoot({
   className,
   label,
   "aria-label": ariaLabel,
@@ -123,15 +123,20 @@ function PaginationRoot({
   );
 }
 
-function PaginationContent({ className, ...props }: PaginationContentProps): ReactElement {
+export function PaginationContent({ className, ...props }: PaginationContentProps): ReactElement {
   return <ul data-slot="pagination-content" className={cn(content(), className)} {...props} />;
 }
 
-function PaginationItem({ className, ...props }: PaginationItemProps): ReactElement {
+export function PaginationItem({ className, ...props }: PaginationItemProps): ReactElement {
   return <li data-slot="pagination-item" className={className} {...props} />;
 }
 
-function PaginationLink({ className, isActive, size = "icon", ...props }: PaginationLinkProps): ReactElement {
+export function PaginationLink({
+  className,
+  isActive,
+  size = "icon",
+  ...props
+}: PaginationLinkProps): ReactElement {
   return (
     <a
       data-slot="pagination-link"
@@ -169,15 +174,15 @@ function PaginationEdge({
   );
 }
 
-function PaginationPrevious({ size = "default", ...props }: PaginationPreviousProps): ReactElement {
+export function PaginationPrevious({ size = "default", ...props }: PaginationPreviousProps): ReactElement {
   return <PaginationEdge direction="previous" size={size} {...props} />;
 }
 
-function PaginationNext({ size = "default", ...props }: PaginationNextProps): ReactElement {
+export function PaginationNext({ size = "default", ...props }: PaginationNextProps): ReactElement {
   return <PaginationEdge direction="next" size={size} {...props} />;
 }
 
-function PaginationEllipsis({ className, label, ...props }: PaginationEllipsisProps): ReactElement {
+export function PaginationEllipsis({ className, label, ...props }: PaginationEllipsisProps): ReactElement {
   const strings = useLocalizedStrings(paginationStrings);
 
   return (
@@ -195,13 +200,3 @@ PaginationLink.displayName = "Pagination.Link";
 PaginationPrevious.displayName = "Pagination.Previous";
 PaginationNext.displayName = "Pagination.Next";
 PaginationEllipsis.displayName = "Pagination.Ellipsis";
-
-export const Pagination = {
-  Root: PaginationRoot,
-  Content: PaginationContent,
-  Item: PaginationItem,
-  Link: PaginationLink,
-  Previous: PaginationPrevious,
-  Next: PaginationNext,
-  Ellipsis: PaginationEllipsis,
-};

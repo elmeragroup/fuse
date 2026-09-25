@@ -25,7 +25,7 @@ import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
 import { selectTriggerSize } from "./select-variants";
 
-function SelectRoot<Value = unknown, Multiple extends boolean | undefined = false>(
+export function SelectRoot<Value = unknown, Multiple extends boolean | undefined = false>(
   props: SelectRootType.Props<Value, Multiple>
 ): ReactElement {
   return <SelectPrimitive.Root {...props} />;
@@ -40,7 +40,7 @@ export type SelectTriggerProps = ComponentProps<typeof SelectPrimitive.Trigger> 
   size?: "sm" | "default";
 };
 
-function SelectTrigger({
+export function SelectTrigger({
   className,
   size = "default",
   children,
@@ -72,7 +72,10 @@ function SelectTrigger({
   );
 }
 
-function SelectValue({ className, ...props }: ComponentProps<typeof SelectPrimitive.Value>): ReactElement {
+export function SelectValue({
+  className,
+  ...props
+}: ComponentProps<typeof SelectPrimitive.Value>): ReactElement {
   return (
     <SelectPrimitive.Value
       data-slot="select-value"
@@ -92,7 +95,7 @@ export type SelectContentProps = ComponentProps<typeof SelectPrimitive.Popup> &
     alignItemWithTrigger?: ComponentProps<typeof SelectPrimitive.Positioner>["alignItemWithTrigger"];
   } & OverlayContainerProps;
 
-function SelectContent({
+export function SelectContent({
   className,
   children,
   side = "bottom",
@@ -130,7 +133,7 @@ function SelectContent({
   );
 }
 
-function SelectItem({
+export function SelectItem({
   className,
   children,
   ...props
@@ -156,7 +159,10 @@ function SelectItem({
   );
 }
 
-function SelectGroup({ className, ...props }: ComponentProps<typeof SelectPrimitive.Group>): ReactElement {
+export function SelectGroup({
+  className,
+  ...props
+}: ComponentProps<typeof SelectPrimitive.Group>): ReactElement {
   return (
     <SelectPrimitive.Group
       data-slot="select-group"
@@ -166,7 +172,7 @@ function SelectGroup({ className, ...props }: ComponentProps<typeof SelectPrimit
   );
 }
 
-function SelectLabel({
+export function SelectLabel({
   className,
   ...props
 }: ComponentProps<typeof SelectPrimitive.GroupLabel>): ReactElement {
@@ -179,7 +185,7 @@ function SelectLabel({
   );
 }
 
-function SelectSeparator({
+export function SelectSeparator({
   className,
   ...props
 }: ComponentProps<typeof SelectPrimitive.Separator>): ReactElement {
@@ -192,7 +198,7 @@ function SelectSeparator({
   );
 }
 
-function SelectScrollUpButton({
+export function SelectScrollUpButton({
   className,
   ...props
 }: ComponentProps<typeof SelectPrimitive.ScrollUpArrow>): ReactElement {
@@ -209,7 +215,7 @@ function SelectScrollUpButton({
   );
 }
 
-function SelectScrollDownButton({
+export function SelectScrollDownButton({
   className,
   ...props
 }: ComponentProps<typeof SelectPrimitive.ScrollDownArrow>): ReactElement {
@@ -236,16 +242,3 @@ SelectLabel.displayName = "Select.Label";
 SelectSeparator.displayName = "Select.Separator";
 SelectScrollUpButton.displayName = "Select.ScrollUpButton";
 SelectScrollDownButton.displayName = "Select.ScrollDownButton";
-
-export const Select = {
-  Root: SelectRoot,
-  Trigger: SelectTrigger,
-  Value: SelectValue,
-  Content: SelectContent,
-  Item: SelectItem,
-  Group: SelectGroup,
-  Label: SelectLabel,
-  Separator: SelectSeparator,
-  ScrollUpButton: SelectScrollUpButton,
-  ScrollDownButton: SelectScrollDownButton,
-};

@@ -12,7 +12,7 @@ export {
   SIDEBAR_WIDTH_MOBILE,
   Sidebar,
   useSidebar,
-} from "./components/sidebar/sidebar";
+} from "./components/sidebar";
 export type {
   SidebarContentProps,
   SidebarContextValue,
@@ -40,4 +40,4 @@ export type {
   SidebarRootProps,
   SidebarSeparatorProps,
   SidebarTriggerProps,
-} from "./components/sidebar/sidebar";
+} from "./components/sidebar";

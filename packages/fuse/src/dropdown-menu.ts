@@ -1,4 +1,4 @@
-export { DropdownMenu } from "./components/dropdown-menu/dropdown-menu";
+export { DropdownMenu } from "./components/dropdown-menu";
 export type {
   DropdownMenuCheckboxItemProps,
   DropdownMenuContentProps,
@@ -8,4 +8,4 @@ export type {
   DropdownMenuRadioItemProps,
   DropdownMenuSubContentProps,
   DropdownMenuSubTriggerProps,
-} from "./components/dropdown-menu/dropdown-menu";
+} from "./components/dropdown-menu";

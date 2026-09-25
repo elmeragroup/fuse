@@ -6,8 +6,8 @@ import { describe, expect, it } from "vitest";
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { panelHeightTransition } from "../../styles/panel-height";
 import { selfFocusRingClass } from "../../styles/utils";
-import { Accordion } from "./accordion";
 import { accordionVariants } from "./accordion-variants";
+import { Accordion } from "./index";
 
 const VARIANTS = ["default", "card", "infodropdown"] as const;
 const RADII = ["none", "lg", "xl"] as const;

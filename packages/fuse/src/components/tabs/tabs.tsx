@@ -16,7 +16,7 @@ import { tabsListVariants } from "./tabs-variants";
  * stamps `data-orientation` pre-hydration so the `data-horizontal:flex-col`
  * layout applies on first paint.
  */
-function TabsRoot({
+export function TabsRoot({
   className,
   orientation = "horizontal",
   ...props
@@ -37,7 +37,7 @@ function TabsRoot({
  * `false`): arrow keys move focus and activate in one step, with
  * `activateOnFocus={false}` as the manual-activation opt-out.
  */
-function TabsList({
+export function TabsList({
   className,
   variant = "default",
   activateOnFocus = true,
@@ -54,7 +54,7 @@ function TabsList({
   );
 }
 
-function TabsTrigger({ className, ...props }: ComponentProps<typeof TabsPrimitive.Tab>): ReactElement {
+export function TabsTrigger({ className, ...props }: ComponentProps<typeof TabsPrimitive.Tab>): ReactElement {
   return (
     <TabsPrimitive.Tab
       data-slot="tabs-trigger"
@@ -77,7 +77,10 @@ function TabsTrigger({ className, ...props }: ComponentProps<typeof TabsPrimitiv
   );
 }
 
-function TabsContent({ className, ...props }: ComponentProps<typeof TabsPrimitive.Panel>): ReactElement {
+export function TabsContent({
+  className,
+  ...props
+}: ComponentProps<typeof TabsPrimitive.Panel>): ReactElement {
   return (
     <TabsPrimitive.Panel
       data-slot="tabs-content"
@@ -91,10 +94,3 @@ TabsRoot.displayName = "Tabs.Root";
 TabsList.displayName = "Tabs.List";
 TabsTrigger.displayName = "Tabs.Trigger";
 TabsContent.displayName = "Tabs.Content";
-
-export const Tabs = {
-  Root: TabsRoot,
-  List: TabsList,
-  Trigger: TabsTrigger,
-  Content: TabsContent,
-};

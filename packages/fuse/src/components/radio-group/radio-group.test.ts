@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { SelectionItem } from "../selection-item/selection-item";
+import { SelectionItem } from "../selection-item";
 import { Radio, RadioGroup, RadioGroupItem, RadioIconButton, RadioItem, RadioItemGroup } from "./radio-group";
 import { radioIconButtonVariants } from "./radio-group-variants";
 

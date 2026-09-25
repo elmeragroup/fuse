@@ -9,8 +9,8 @@ import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { Info } from "../../icons/generated/info";
 import { WarningOctagon } from "../../icons/generated/warning-octagon";
 import { Button } from "../button/button";
+import { Dialog } from "../dialog";
 import type { DialogContentProps } from "../dialog/dialog";
-import { Dialog } from "../dialog/dialog";
 import { alertDialogStrings } from "./intl";
 
 /**
@@ -20,11 +20,11 @@ import { alertDialogStrings } from "./intl";
  * Each restamps its own `data-slot`: Dialog's parts write theirs before spreading the
  * rest, so the value passed here wins.
  */
-function AlertDialogRoot(props: ComponentProps<typeof DialogPrimitive.Root>): ReactElement {
+export function AlertDialogRoot(props: ComponentProps<typeof DialogPrimitive.Root>): ReactElement {
   return <Dialog.Root data-slot="alert-dialog" {...props} />;
 }
 
-function AlertDialogTrigger(props: ComponentProps<typeof DialogPrimitive.Trigger>): ReactElement {
+export function AlertDialogTrigger(props: ComponentProps<typeof DialogPrimitive.Trigger>): ReactElement {
   return <Dialog.Trigger data-slot="alert-dialog-trigger" {...props} />;
 }
 
@@ -80,7 +80,7 @@ export type AlertDialogContentProps = Omit<DialogContentProps, "showCloseButton"
   isAutomaticallyCloseOnActionEnabled?: boolean;
 };
 
-function AlertDialogContent({
+export function AlertDialogContent({
   title,
   icon,
   variant = "destructive",
@@ -150,9 +150,3 @@ function AlertDialogContent({
 AlertDialogRoot.displayName = "AlertDialog.Root";
 AlertDialogTrigger.displayName = "AlertDialog.Trigger";
 AlertDialogContent.displayName = "AlertDialog.Content";
-
-export const AlertDialog = {
-  Root: AlertDialogRoot,
-  Trigger: AlertDialogTrigger,
-  Content: AlertDialogContent,
-};

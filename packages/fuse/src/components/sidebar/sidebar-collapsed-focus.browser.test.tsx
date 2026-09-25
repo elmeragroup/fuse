@@ -17,8 +17,8 @@ import {
   sidebarRoot,
 } from "../../../test/sidebar-browser-fixtures";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { Sidebar } from "./index";
 import type { SidebarContextValue } from "./sidebar";
-import { Sidebar } from "./sidebar";
 
 setupSidebarBrowser();
 

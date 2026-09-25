@@ -2,5 +2,5 @@
 // explicit named re-exports only — no `export *`, no local declarations, no directives.
 // The exports/barrel generators discover this file; never hand-edit package.json#exports
 // or src/index.ts.
-export { Pagination } from "./components/pagination/pagination";
+export { Pagination } from "./components/pagination";
 export { paginationVariants } from "./components/pagination/pagination-variants";

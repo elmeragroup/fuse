@@ -38,7 +38,7 @@ export type BreadcrumbEllipsisProps = Omit<ComponentProps<"span">, "children"> &
  * exemplar for `useRender` + `state.slot → data-slot`. Landmark and ellipsis copy
  * come from the provider dictionary.
  */
-function BreadcrumbRoot({
+export function BreadcrumbRoot({
   className,
   label,
   "aria-label": ariaLabel,
@@ -56,7 +56,7 @@ function BreadcrumbRoot({
   );
 }
 
-function BreadcrumbList({ className, ...props }: BreadcrumbListProps): ReactElement {
+export function BreadcrumbList({ className, ...props }: BreadcrumbListProps): ReactElement {
   return (
     <ol
       data-slot="breadcrumb-list"
@@ -69,7 +69,7 @@ function BreadcrumbList({ className, ...props }: BreadcrumbListProps): ReactElem
   );
 }
 
-function BreadcrumbItem({ className, ...props }: BreadcrumbItemProps): ReactElement {
+export function BreadcrumbItem({ className, ...props }: BreadcrumbItemProps): ReactElement {
   return (
     <li
       data-slot="breadcrumb-item"
@@ -79,7 +79,7 @@ function BreadcrumbItem({ className, ...props }: BreadcrumbItemProps): ReactElem
   );
 }
 
-function BreadcrumbLink({ className, render, ...props }: BreadcrumbLinkProps): ReactElement {
+export function BreadcrumbLink({ className, render, ...props }: BreadcrumbLinkProps): ReactElement {
   return useRender({
     defaultTagName: "a",
     props: mergeProps<"a">(
@@ -95,7 +95,7 @@ function BreadcrumbLink({ className, render, ...props }: BreadcrumbLinkProps): R
   });
 }
 
-function BreadcrumbPage({ className, ...props }: BreadcrumbPageProps): ReactElement {
+export function BreadcrumbPage({ className, ...props }: BreadcrumbPageProps): ReactElement {
   return (
     <span
       data-slot="breadcrumb-page"
@@ -108,7 +108,11 @@ function BreadcrumbPage({ className, ...props }: BreadcrumbPageProps): ReactElem
   );
 }
 
-function BreadcrumbSeparator({ children, className, ...props }: BreadcrumbSeparatorProps): ReactElement {
+export function BreadcrumbSeparator({
+  children,
+  className,
+  ...props
+}: BreadcrumbSeparatorProps): ReactElement {
   return (
     <li
       data-slot="breadcrumb-separator"
@@ -121,7 +125,7 @@ function BreadcrumbSeparator({ children, className, ...props }: BreadcrumbSepara
   );
 }
 
-function BreadcrumbEllipsis({ className, label, ...props }: BreadcrumbEllipsisProps): ReactElement {
+export function BreadcrumbEllipsis({ className, label, ...props }: BreadcrumbEllipsisProps): ReactElement {
   const strings = useLocalizedStrings(breadcrumbStrings);
 
   return (
@@ -142,13 +146,3 @@ BreadcrumbLink.displayName = "Breadcrumb.Link";
 BreadcrumbPage.displayName = "Breadcrumb.Page";
 BreadcrumbSeparator.displayName = "Breadcrumb.Separator";
 BreadcrumbEllipsis.displayName = "Breadcrumb.Ellipsis";
-
-export const Breadcrumb = {
-  Root: BreadcrumbRoot,
-  List: BreadcrumbList,
-  Item: BreadcrumbItem,
-  Link: BreadcrumbLink,
-  Page: BreadcrumbPage,
-  Separator: BreadcrumbSeparator,
-  Ellipsis: BreadcrumbEllipsis,
-};

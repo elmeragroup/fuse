@@ -6,7 +6,7 @@ import { Check } from "../../icons/generated/check";
 import { SpinnerGap } from "../../icons/generated/spinner-gap";
 import { cn } from "../../styles/cn";
 import { iconCrossfadeHidden, iconCrossfadeShown, iconCrossfadeTransition } from "../../styles/utils";
-import { Field } from "./field";
+import { Field } from "./index";
 
 /**
  * Package-private FieldFrame layout. No axes — the frame

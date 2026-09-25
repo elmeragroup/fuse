@@ -7,9 +7,9 @@ import { assertHorizontalItemList, radiusToken } from "../../../test/assert-sele
 import { headingNamed, renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
 import { disabledHatch } from "../../styles/utils";
 import { Checkbox as UiCheckbox, CheckboxGroup, CheckboxItem, CheckboxItemGroup } from "../checkbox/checkbox";
-import { Field } from "../field/field";
+import { Field } from "../field";
 import { Radio, RadioGroup, RadioItem, RadioItemGroup } from "../radio-group/radio-group";
-import { SelectionItem } from "./selection-item";
+import { SelectionItem } from "./index";
 
 function checkboxNamed(name: string, checked?: boolean): HTMLElement {
   const element = page.getByRole("checkbox", { name, exact: true, checked }).element();

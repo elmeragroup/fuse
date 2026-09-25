@@ -8,7 +8,7 @@ import "../../../dist/styles.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
-import { Select } from "./select";
+import { Select } from "./index";
 
 function comboboxNamed(name?: string): HTMLElement {
   const locator =

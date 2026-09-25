@@ -30,7 +30,7 @@ import {
   renderThemed,
   stampDensity,
 } from "../../../test/themed-browser-render";
-import { Dialog } from "../../components/dialog/dialog";
+import { Dialog } from "../../components/dialog";
 import { ThemeScope } from "../../theme/theme-scope";
 import { UiProviders } from "../ui-providers/ui-providers";
 import { DateRangePicker } from "./date-range-picker";

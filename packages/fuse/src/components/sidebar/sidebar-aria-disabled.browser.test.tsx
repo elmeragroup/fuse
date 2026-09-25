@@ -7,8 +7,8 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { Frame, OrdersLink, setupSidebarBrowser } from "../../../test/sidebar-browser-fixtures";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
-import { Tooltip } from "../tooltip/tooltip";
-import { Sidebar } from "./sidebar";
+import { Tooltip } from "../tooltip";
+import { Sidebar } from "./index";
 
 setupSidebarBrowser();
 

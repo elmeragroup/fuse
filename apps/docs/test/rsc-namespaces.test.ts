@@ -15,7 +15,12 @@ describe("server components can render Fuse namespaces", () => {
   it("renders every namespace part and a server Alert", () => {
     const output = execFileSync(
       process.execPath,
-      ["--conditions=react-server", "--import", join(fixtures, "rsc-namespace-register.mjs"), join(fixtures, "rsc-namespace-run.mjs")],
+      [
+        "--conditions=react-server",
+        "--import",
+        join(fixtures, "rsc-namespace-register.mjs"),
+        join(fixtures, "rsc-namespace-run.mjs"),
+      ],
       { cwd: fixtures, encoding: "utf8" }
     );
     expect(output).toContain("RSC_OK");

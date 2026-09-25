@@ -10,7 +10,7 @@ import {
   stampDensity,
   textboxNamed,
 } from "../../../test/themed-browser-render";
-import { Field } from "../field/field";
+import { Field } from "../field";
 import { Textarea } from "./textarea";
 
 describe("Textarea", () => {

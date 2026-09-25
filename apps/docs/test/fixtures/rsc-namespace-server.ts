@@ -7,12 +7,13 @@
  *
  * Oracle: React Flight (`createClientModuleProxy` in the sibling loader). Dotting into
  * a client module throws "Cannot access X.Y on the server". A directive-free
- * `export * as` namespace is a real object, so each part is a client reference the
- * server may pass through. Alert's composed tree must render on the server, which
- * means its markup is in this payload and no Item or Button client module is.
+ * namespace object is a real object, so each part is a client reference the
+ * server may pass through. Alert's composed tree must render on the server: the
+ * warning root is a div row (`data-slot` item, `role` alert), not a client reference.
  */
 import { createElement } from "react";
 import type { ReactElement, ReactNode } from "react";
+
 import { createRequire } from "node:module";
 import { PassThrough } from "node:stream";
 
@@ -70,7 +71,11 @@ const NAMESPACES: ReadonlyArray<readonly [string, object, readonly string[]]> = 
       "Value",
     ],
   ],
-  ["Dialog", Dialog, ["Root", "Trigger", "Portal", "Close", "Overlay", "Content", "Header", "Footer", "Title", "Description"]],
+  [
+    "Dialog",
+    Dialog,
+    ["Root", "Trigger", "Portal", "Close", "Overlay", "Content", "Header", "Footer", "Title", "Description"],
+  ],
   [
     "DropdownMenu",
     DropdownMenu,
@@ -96,20 +101,64 @@ const NAMESPACES: ReadonlyArray<readonly [string, object, readonly string[]]> = 
   [
     "Field",
     Field,
-    ["Root", "Label", "Description", "Error", "Control", "Item", "Content", "Group", "Set", "Legend", "Separator", "Title"],
+    [
+      "Root",
+      "Label",
+      "Description",
+      "Error",
+      "Control",
+      "Item",
+      "Content",
+      "Group",
+      "Set",
+      "Legend",
+      "Separator",
+      "Title",
+    ],
   ],
   ["InputGroup", InputGroup, ["Root", "Addon", "Button", "Text", "Input", "Textarea"]],
-  ["Item", Item, ["Root", "Media", "Content", "Actions", "Group", "Separator", "Title", "Description", "Header", "Footer"]],
+  [
+    "Item",
+    Item,
+    ["Root", "Media", "Content", "Actions", "Group", "Separator", "Title", "Description", "Header", "Footer"],
+  ],
   ["Pagination", Pagination, ["Root", "Content", "Item", "Link", "Previous", "Next", "Ellipsis"]],
   ["Popover", Popover, ["Root", "Trigger", "Content", "Header", "Title", "Description"]],
   ["ScrollArea", ScrollArea, ["Root", "Bar"]],
   [
     "Select",
     Select,
-    ["Root", "Trigger", "Value", "Content", "Item", "Group", "Label", "Separator", "ScrollUpButton", "ScrollDownButton"],
+    [
+      "Root",
+      "Trigger",
+      "Value",
+      "Content",
+      "Item",
+      "Group",
+      "Label",
+      "Separator",
+      "ScrollUpButton",
+      "ScrollDownButton",
+    ],
   ],
   ["SelectionItem", SelectionItem, ["Shell", "Title", "Description", "Content", "Actions", "SubSection"]],
-  ["Sheet", Sheet, ["Root", "Trigger", "Close", "Portal", "Overlay", "Content", "Header", "Body", "Footer", "Title", "Description"]],
+  [
+    "Sheet",
+    Sheet,
+    [
+      "Root",
+      "Trigger",
+      "Close",
+      "Portal",
+      "Overlay",
+      "Content",
+      "Header",
+      "Body",
+      "Footer",
+      "Title",
+      "Description",
+    ],
+  ],
   [
     "Sidebar",
     Sidebar,
@@ -144,7 +193,18 @@ const NAMESPACES: ReadonlyArray<readonly [string, object, readonly string[]]> = 
   [
     "Toast",
     Toast,
-    ["Provider", "Viewport", "Root", "Content", "Title", "Description", "Action", "Close", "useToastManager", "createToastManager"],
+    [
+      "Provider",
+      "Viewport",
+      "Root",
+      "Content",
+      "Title",
+      "Description",
+      "Action",
+      "Close",
+      "useToastManager",
+      "createToastManager",
+    ],
   ],
   ["ToggleGroup", ToggleGroup, ["Root", "Item"]],
   ["Tooltip", Tooltip, ["Provider", "Root", "Trigger", "Content"]],
@@ -245,16 +305,26 @@ if (renderError !== undefined) {
 }
 
 const payload = Buffer.concat(chunks).toString("utf8");
-const alertStart = payload.indexOf("data-fixture");
-const alertPayload = alertStart === -1 ? payload : payload.slice(alertStart);
 if (!payload.includes("Sync delayed") || !payload.includes("Facility data is more than an hour old.")) {
   throw new Error(`Alert text missing from the server payload:\n${payload.slice(0, 1500)}`);
 }
-if (!alertPayload.includes("data-slot") || !alertPayload.includes("item")) {
-  throw new Error(`Alert chrome was not rendered on the server:\n${alertPayload.slice(0, 1500)}`);
+// Client parts are module references (`I["…/item.tsx#…"]`). A server-rendered
+// Alert root is a div row. Check that row: `selection-item.tsx` contains the
+// substring `item.tsx`, so a whole-payload search would not mean Item ran.
+const alertRoot = payload
+  .split("\n")
+  .find((line) => line.includes('data-slot":"item"') && line.includes('"role":"alert"'));
+if (
+  alertRoot === undefined ||
+  !alertRoot.includes('["$","div"') ||
+  !alertRoot.includes("bg-warning-soft") ||
+  alertRoot.includes("item.tsx") ||
+  alertRoot.includes("button.tsx")
+) {
+  throw new Error(`Alert chrome was not rendered on the server:\n${alertRoot ?? payload.slice(0, 1500)}`);
 }
-if (alertPayload.includes("item.tsx") || alertPayload.includes("button.tsx")) {
-  throw new Error(`Alert render crossed a client boundary:\n${alertPayload.slice(0, 1500)}`);
+if (payload.includes("button.tsx")) {
+  throw new Error("The no-action Alert rendered a client Button");
 }
 
 process.stdout.write("RSC_OK\n");

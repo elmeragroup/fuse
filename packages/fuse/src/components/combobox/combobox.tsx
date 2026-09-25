@@ -22,7 +22,7 @@ import { mergeClassName } from "../../styles/merge-class-name";
 import { withinStateFaceClass, withinStateFaceControlClass } from "../../styles/state-face";
 import { withinFocusRingClass, withinFocusRingControlClass } from "../../styles/utils";
 import { Button } from "../button/button";
-import { InputGroup } from "../input-group/input-group";
+import { InputGroup } from "../input-group";
 import {
   menuGroupLabelClass,
   menuItemClass,
@@ -50,7 +50,7 @@ export type ComboboxRootProps<Value = unknown, Multiple extends boolean | undefi
   "locale"
 >;
 
-function ComboboxRoot<Value = unknown, Multiple extends boolean | undefined = false>(
+export function ComboboxRoot<Value = unknown, Multiple extends boolean | undefined = false>(
   props: ComboboxRootProps<Value, Multiple>
 ): ReactElement {
   const { locale } = useLocale();
@@ -71,11 +71,11 @@ function ComboboxRoot<Value = unknown, Multiple extends boolean | undefined = fa
   );
 }
 
-function ComboboxValue({ ...props }: ComponentProps<typeof ComboboxPrimitive.Value>): ReactElement {
+export function ComboboxValue({ ...props }: ComponentProps<typeof ComboboxPrimitive.Value>): ReactElement {
   return <ComboboxPrimitive.Value data-slot="combobox-value" {...props} />;
 }
 
-function ComboboxTrigger({
+export function ComboboxTrigger({
   className,
   children,
   ...props
@@ -98,7 +98,7 @@ export type ComboboxClearProps = ComponentProps<typeof ComboboxPrimitive.Clear> 
   label?: string;
 };
 
-function ComboboxClear({ className, label, ...props }: ComboboxClearProps): ReactElement {
+export function ComboboxClear({ className, label, ...props }: ComboboxClearProps): ReactElement {
   const strings = useLocalizedStrings(comboboxStrings);
   const accessibleName = label ?? strings.format("clear");
   return (
@@ -148,7 +148,7 @@ export type ComboboxInputProps = Omit<
   clearLabel?: string;
 };
 
-function ComboboxInput({
+export function ComboboxInput({
   className,
   children,
   disabled = false,
@@ -192,7 +192,7 @@ export type ComboboxContentProps = ComponentProps<typeof ComboboxPrimitive.Popup
     anchor?: ComponentProps<typeof ComboboxPrimitive.Positioner>["anchor"];
   } & OverlayContainerProps;
 
-function ComboboxContent({
+export function ComboboxContent({
   className,
   side = "bottom",
   sideOffset = 6,
@@ -229,7 +229,10 @@ function ComboboxContent({
   );
 }
 
-function ComboboxList({ className, ...props }: ComponentProps<typeof ComboboxPrimitive.List>): ReactElement {
+export function ComboboxList({
+  className,
+  ...props
+}: ComponentProps<typeof ComboboxPrimitive.List>): ReactElement {
   return (
     <ComboboxPrimitive.List
       data-slot="combobox-list"
@@ -242,7 +245,7 @@ function ComboboxList({ className, ...props }: ComponentProps<typeof ComboboxPri
   );
 }
 
-function ComboboxItem({
+export function ComboboxItem({
   className,
   children,
   ...props
@@ -266,7 +269,7 @@ function ComboboxItem({
   );
 }
 
-function ComboboxGroup({
+export function ComboboxGroup({
   className,
   ...props
 }: ComponentProps<typeof ComboboxPrimitive.Group>): ReactElement {
@@ -275,7 +278,7 @@ function ComboboxGroup({
   );
 }
 
-function ComboboxLabel({
+export function ComboboxLabel({
   className,
   ...props
 }: ComponentProps<typeof ComboboxPrimitive.GroupLabel>): ReactElement {
@@ -288,11 +291,13 @@ function ComboboxLabel({
   );
 }
 
-function ComboboxCollection({ ...props }: ComponentProps<typeof ComboboxPrimitive.Collection>): ReactElement {
+export function ComboboxCollection({
+  ...props
+}: ComponentProps<typeof ComboboxPrimitive.Collection>): ReactElement {
   return <ComboboxPrimitive.Collection data-slot="combobox-collection" {...props} />;
 }
 
-function ComboboxEmpty({
+export function ComboboxEmpty({
   className,
   children,
   ...props
@@ -311,7 +316,7 @@ function ComboboxEmpty({
   );
 }
 
-function ComboboxSeparator({
+export function ComboboxSeparator({
   className,
   ...props
 }: ComponentProps<typeof ComboboxPrimitive.Separator>): ReactElement {
@@ -324,7 +329,7 @@ function ComboboxSeparator({
   );
 }
 
-function ComboboxChips({
+export function ComboboxChips({
   className,
   ...props
 }: ComponentProps<typeof ComboboxPrimitive.Chips>): ReactElement {
@@ -391,7 +396,7 @@ function stringifyChipValue(value: ReactNode, itemToStringLabel?: ComboboxItemLa
   return chipItemName(value);
 }
 
-function ComboboxChip({
+export function ComboboxChip({
   ref,
   className,
   children,
@@ -456,7 +461,7 @@ function ComboboxChipRemove({ label }: { label: string }): ReactElement {
   );
 }
 
-function ComboboxChipsInput({
+export function ComboboxChipsInput({
   className,
   ...props
 }: ComponentProps<typeof ComboboxPrimitive.Input>): ReactElement {
@@ -503,22 +508,3 @@ ComboboxChips.displayName = "Combobox.Chips";
 ComboboxChip.displayName = "Combobox.Chip";
 ComboboxChipsInput.displayName = "Combobox.ChipsInput";
 ComboboxValue.displayName = "Combobox.Value";
-
-export const Combobox = {
-  Root: ComboboxRoot,
-  Input: ComboboxInput,
-  Trigger: ComboboxTrigger,
-  Clear: ComboboxClear,
-  Content: ComboboxContent,
-  List: ComboboxList,
-  Item: ComboboxItem,
-  Group: ComboboxGroup,
-  Label: ComboboxLabel,
-  Collection: ComboboxCollection,
-  Empty: ComboboxEmpty,
-  Separator: ComboboxSeparator,
-  Chips: ComboboxChips,
-  Chip: ComboboxChip,
-  ChipsInput: ComboboxChipsInput,
-  Value: ComboboxValue,
-};

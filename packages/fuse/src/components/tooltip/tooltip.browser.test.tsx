@@ -7,7 +7,7 @@ import "../../../dist/styles.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
-import { Tooltip } from "./tooltip";
+import { Tooltip } from "./index";
 
 async function hoverOpen(name: string, tooltipName = name): Promise<HTMLElement> {
   await userEvent.hover(roleNamed("button", name));

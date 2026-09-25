@@ -30,7 +30,7 @@ export type TooltipProviderProps = Omit<ComponentProps<typeof TooltipPrimitive.P
   delay?: number;
 };
 
-function TooltipProvider({ delay = 0, ...props }: TooltipProviderProps): ReactElement {
+export function TooltipProvider({ delay = 0, ...props }: TooltipProviderProps): ReactElement {
   return <TooltipPrimitive.Provider data-slot="tooltip-provider" delay={delay} {...props} />;
 }
 
@@ -43,7 +43,7 @@ export type TooltipRootProps = ComponentProps<typeof TooltipPrimitive.Root> & {
   delay?: number;
 };
 
-function TooltipRoot({ delay, ...props }: TooltipRootProps): ReactElement {
+export function TooltipRoot({ delay, ...props }: TooltipRootProps): ReactElement {
   const generatedId = useId();
   const [mountedId, setMountedId] = useState<string | null>(null);
   const description = useMemo(() => ({ generatedId, mountedId, setMountedId }), [generatedId, mountedId]);
@@ -61,7 +61,7 @@ function TooltipRoot({ delay, ...props }: TooltipRootProps): ReactElement {
   return root;
 }
 
-function TooltipTrigger({
+export function TooltipTrigger({
   "aria-describedby": describedBy,
   className,
   ...props
@@ -93,7 +93,7 @@ export type TooltipContentProps = Omit<ComponentProps<typeof TooltipPrimitive.Po
     side?: ComponentProps<typeof TooltipPrimitive.Positioner>["side"];
   } & OverlayContainerProps;
 
-function TooltipContent({
+export function TooltipContent({
   id,
   ref,
   className,
@@ -152,10 +152,3 @@ TooltipProvider.displayName = "Tooltip.Provider";
 TooltipRoot.displayName = "Tooltip.Root";
 TooltipTrigger.displayName = "Tooltip.Trigger";
 TooltipContent.displayName = "Tooltip.Content";
-
-export const Tooltip = {
-  Provider: TooltipProvider,
-  Root: TooltipRoot,
-  Trigger: TooltipTrigger,
-  Content: TooltipContent,
-};

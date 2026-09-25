@@ -3,7 +3,7 @@
  *
  * `"use client"` modules become client-module proxies (`createClientModuleProxy`).
  * Every other TypeScript module is transpiled and evaluated, so a directive-free
- * `export * as` namespace stays a real object whose properties are client references.
+ * namespace object stays a real object whose properties are client references.
  */
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -100,7 +100,9 @@ function runtimeExportNames(file, source) {
       continue;
     }
     if (
-      (ts.isFunctionDeclaration(statement) || ts.isClassDeclaration(statement) || ts.isEnumDeclaration(statement)) &&
+      (ts.isFunctionDeclaration(statement) ||
+        ts.isClassDeclaration(statement) ||
+        ts.isEnumDeclaration(statement)) &&
       statement.name !== undefined
     ) {
       names.add(statement.name.text);
@@ -163,10 +165,15 @@ export async function resolve(specifier, context, nextResolve) {
   const nextContext = withReactServer(context);
   if ((specifier.startsWith(".") || specifier.startsWith("/")) && nextContext.parentURL !== undefined) {
     const base = fileFromParent(nextContext.parentURL, specifier);
-    const hasExtension = /\.[a-zA-Z0-9]+$/u.test(specifier);
-    const candidates = hasExtension
+    // `.parts` is a filename, not a module extension. Only skip the search when
+    // the specifier already ends in a file the loader can evaluate.
+    const hasKnownExtension = /\.(tsx|ts|mjs|cjs|js|json)$/u.test(specifier);
+    const candidates = hasKnownExtension
       ? [base]
-      : [...EXTENSIONS.map((extension) => `${base}${extension}`), ...EXTENSIONS.map((extension) => join(base, `index${extension}`))];
+      : [
+          ...EXTENSIONS.map((extension) => `${base}${extension}`),
+          ...EXTENSIONS.map((extension) => join(base, `index${extension}`)),
+        ];
     for (const candidate of candidates) {
       if (existsSync(candidate)) {
         return { url: pathToFileURL(candidate).href, shortCircuit: true };
@@ -208,6 +215,8 @@ export async function load(url, context, nextLoad) {
   const source = readFileSync(file, "utf8");
   const fuseSource = file.includes("/packages/fuse/src/");
   const output =
-    fuseSource && isUseClient(file, source) ? clientStub(url, runtimeExportNames(file, source)) : transpile(file, source);
+    fuseSource && isUseClient(file, source)
+      ? clientStub(url, runtimeExportNames(file, source))
+      : transpile(file, source);
   return { format: "module", source: output, shortCircuit: true };
 }

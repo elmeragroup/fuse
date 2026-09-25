@@ -1,1 +1,1 @@
-export { Field } from "./components/field/field";
+export { Field } from "./components/field";

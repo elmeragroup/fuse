@@ -4,7 +4,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { selfFocusRingClass } from "../../styles/utils";
-import { Item } from "./item";
+import { Item } from "./index";
+import { ItemRootElement } from "./item-markup";
 import { ITEM_TITLE_CLASSES } from "./item-title-classes";
 import { itemVariants } from "./item-variants";
 
@@ -38,6 +39,21 @@ describe("ITEM_TITLE_CLASSES", () => {
     expect(ITEM_TITLE_CLASSES).toContain("font-medium");
     expect(ITEM_TITLE_CLASSES).toContain("line-clamp-1");
     expect(ITEM_TITLE_CLASSES).toContain("underline-offset-4");
+  });
+});
+
+describe("ItemRootElement", () => {
+  it("matches Item.Root markup outside a group when no render prop is passed", () => {
+    const props = {
+      variant: "outline" as const,
+      size: "sm" as const,
+      role: "alert",
+      className: "bg-card",
+      children: "Sync delayed",
+    };
+    // Oracle: public Item.Root. ItemRootElement is the server-rendered twin Alert uses.
+    const oracle = renderToStaticMarkup(createElement(Item.Root, props));
+    expect(renderToStaticMarkup(createElement(ItemRootElement, props))).toBe(oracle);
   });
 });
 

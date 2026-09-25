@@ -246,6 +246,43 @@ describe("RSC classification", () => {
   it("leaves the shared field frame directive-free — it owns no state", () => {
     expectRsc("components/field/field-frame.tsx", "server");
   });
+
+  // Why not a lint rule: Alert's documented server render uses these parts.
+  // Item.Root stays in the client module because it calls useRender.
+  it("keeps Item markup directive-free so Alert can render it on the server", () => {
+    expectRsc("components/item/item-markup.tsx", "server");
+  });
+
+  // Why not a lint rule: these files are the server-visible namespace. A directive
+  // here would make `Dialog.Root` a client reference again, which lint cannot see.
+  it.each([
+    "accordion",
+    "alert-dialog",
+    "avatar",
+    "breadcrumb",
+    "button-group",
+    "collapsible",
+    "combobox",
+    "dialog",
+    "dropdown-menu",
+    "field",
+    "input-group",
+    "item",
+    "pagination",
+    "popover",
+    "scroll-area",
+    "select",
+    "selection-item",
+    "sheet",
+    "sidebar",
+    "tabs",
+    "toast",
+    "toggle-group",
+    "tooltip",
+  ])("%s namespace index stays directive-free", (slug) => {
+    expectRsc(`components/${slug}/index.ts`, "server");
+    expectRsc(`components/${slug}/index.parts.ts`, "server");
+  });
 });
 
 describe("no .ref/ in package source", () => {

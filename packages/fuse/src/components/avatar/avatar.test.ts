@@ -3,7 +3,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { Avatar } from "./avatar";
+import { Avatar } from "./index";
 
 describe("Avatar classes", () => {
   it("paints from muted tokens and never a raw gray palette class", () => {

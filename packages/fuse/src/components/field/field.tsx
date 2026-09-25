@@ -11,7 +11,7 @@ import { mergeClassName } from "../../styles/merge-class-name";
 import { Separator } from "../separator/separator";
 import { fieldVariants } from "./field-variants";
 
-function FieldRoot({
+export function FieldRoot({
   className,
   orientation = "vertical",
   ...props
@@ -26,7 +26,10 @@ function FieldRoot({
   );
 }
 
-function FieldSet({ className, ...props }: ComponentProps<typeof FieldsetPrimitive.Root>): ReactElement {
+export function FieldSet({
+  className,
+  ...props
+}: ComponentProps<typeof FieldsetPrimitive.Root>): ReactElement {
   return (
     <FieldsetPrimitive.Root
       data-slot="field-set"
@@ -39,7 +42,7 @@ function FieldSet({ className, ...props }: ComponentProps<typeof FieldsetPrimiti
   );
 }
 
-function FieldLegend({
+export function FieldLegend({
   className,
   variant = "legend",
   ...props
@@ -63,7 +66,7 @@ function FieldLegend({
   );
 }
 
-function FieldGroup({ className, ...props }: ComponentProps<"div">): ReactElement {
+export function FieldGroup({ className, ...props }: ComponentProps<"div">): ReactElement {
   return (
     <div
       data-slot="field-group"
@@ -76,7 +79,7 @@ function FieldGroup({ className, ...props }: ComponentProps<"div">): ReactElemen
   );
 }
 
-function FieldContent({ className, ...props }: ComponentProps<"div">): ReactElement {
+export function FieldContent({ className, ...props }: ComponentProps<"div">): ReactElement {
   return (
     <div
       data-slot="field-content"
@@ -93,7 +96,10 @@ const fieldHeadingClassName = fieldVariants().heading();
  * cursor. The heading weight is the same as any other label; a consumer `font-*` class wins through
  * the merge.
  */
-function FieldLabel({ className, ...props }: ComponentProps<typeof FieldPrimitive.Label>): ReactElement {
+export function FieldLabel({
+  className,
+  ...props
+}: ComponentProps<typeof FieldPrimitive.Label>): ReactElement {
   return (
     <FieldPrimitive.Label
       data-slot="field-label"
@@ -110,7 +116,7 @@ function FieldLabel({ className, ...props }: ComponentProps<typeof FieldPrimitiv
   );
 }
 
-function FieldTitle({ className, ...props }: ComponentProps<"div">): ReactElement {
+export function FieldTitle({ className, ...props }: ComponentProps<"div">): ReactElement {
   return (
     <div
       data-slot="field-title"
@@ -121,11 +127,11 @@ function FieldTitle({ className, ...props }: ComponentProps<"div">): ReactElemen
   );
 }
 
-function FieldControl(props: ComponentProps<typeof FieldPrimitive.Control>): ReactElement {
+export function FieldControl(props: ComponentProps<typeof FieldPrimitive.Control>): ReactElement {
   return <FieldPrimitive.Control data-slot="field-control" {...props} />;
 }
 
-function FieldDescription({
+export function FieldDescription({
   className,
   ...props
 }: ComponentProps<typeof FieldPrimitive.Description>): ReactElement {
@@ -141,11 +147,11 @@ function FieldDescription({
   );
 }
 
-function FieldItem(props: ComponentProps<typeof FieldPrimitive.Item>): ReactElement {
+export function FieldItem(props: ComponentProps<typeof FieldPrimitive.Item>): ReactElement {
   return <FieldPrimitive.Item data-slot="field-item" {...props} />;
 }
 
-function FieldSeparator({
+export function FieldSeparator({
   children,
   className,
   ...props
@@ -174,7 +180,7 @@ function FieldSeparator({
   );
 }
 
-function FieldError({
+export function FieldError({
   className,
   children,
   ...props
@@ -206,18 +212,3 @@ FieldSet.displayName = "Field.Set";
 FieldLegend.displayName = "Field.Legend";
 FieldSeparator.displayName = "Field.Separator";
 FieldTitle.displayName = "Field.Title";
-
-export const Field = {
-  Root: FieldRoot,
-  Label: FieldLabel,
-  Description: FieldDescription,
-  Error: FieldError,
-  Control: FieldControl,
-  Item: FieldItem,
-  Content: FieldContent,
-  Group: FieldGroup,
-  Set: FieldSet,
-  Legend: FieldLegend,
-  Separator: FieldSeparator,
-  Title: FieldTitle,
-};

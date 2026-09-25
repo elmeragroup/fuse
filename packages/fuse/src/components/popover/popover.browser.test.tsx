@@ -11,8 +11,8 @@ import {
 } from "../../../test/assert-focus-ring";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
+import { Popover } from "./index";
 import type { PopoverContentProps } from "./popover";
-import { Popover } from "./popover";
 
 function BasicPopover({
   onOpenChange,
