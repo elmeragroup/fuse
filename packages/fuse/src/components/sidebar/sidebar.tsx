@@ -30,9 +30,9 @@ import { Input } from "../input/input";
 import { OverlayCloseButton } from "../overlay/overlay-close-button";
 import { Separator } from "../separator/separator";
 import type { SeparatorProps } from "../separator/separator";
-import { Sheet } from "../sheet";
+import { Sheet } from "../sheet/sheet";
 import { Skeleton } from "../skeleton/skeleton";
-import { Tooltip } from "../tooltip";
+import { Tooltip } from "../tooltip/tooltip";
 import type { TooltipContentProps } from "../tooltip/tooltip";
 import { sidebarStrings } from "./intl";
 import { sidebarMenuButtonVariants, sidebarMenuSubButtonVariants } from "./sidebar-variants";
@@ -849,3 +849,33 @@ SidebarMenuSub.displayName = "Sidebar.MenuSub";
 SidebarMenuSubItem.displayName = "Sidebar.MenuSubItem";
 SidebarMenuSubButton.displayName = "Sidebar.MenuSubButton";
 SidebarIcon.displayName = "Sidebar.Icon";
+
+// Client callers import this object from the implementation module.
+// The package entry rebuilds the same parts in index.ts, which has no directive,
+// so a server component can read each part.
+export const Sidebar = {
+  Provider: SidebarProvider,
+  Root: SidebarRoot,
+  Trigger: SidebarTrigger,
+  Rail: SidebarRail,
+  Inset: SidebarInset,
+  Input: SidebarInput,
+  Header: SidebarHeader,
+  Footer: SidebarFooter,
+  Separator: SidebarSeparator,
+  Content: SidebarContent,
+  Group: SidebarGroup,
+  GroupLabel: SidebarGroupLabel,
+  GroupAction: SidebarGroupAction,
+  GroupContent: SidebarGroupContent,
+  Menu: SidebarMenu,
+  MenuItem: SidebarMenuItem,
+  MenuButton: SidebarMenuButton,
+  MenuAction: SidebarMenuAction,
+  MenuBadge: SidebarMenuBadge,
+  MenuSkeleton: SidebarMenuSkeleton,
+  MenuSub: SidebarMenuSub,
+  MenuSubItem: SidebarMenuSubItem,
+  MenuSubButton: SidebarMenuSubButton,
+  Icon: SidebarIcon,
+};

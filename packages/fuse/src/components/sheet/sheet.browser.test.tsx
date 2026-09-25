@@ -8,7 +8,7 @@ import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-foc
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import { px, renderThemed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
-import { Sheet } from "./index";
+import { Sheet } from "./sheet";
 
 /** Reads a theme token off the document root (`--container-*` are rem lengths). */
 function readToken(name: string): string {

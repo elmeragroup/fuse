@@ -22,7 +22,7 @@ import { mergeClassName } from "../../styles/merge-class-name";
 import { withinStateFaceClass, withinStateFaceControlClass } from "../../styles/state-face";
 import { withinFocusRingClass, withinFocusRingControlClass } from "../../styles/utils";
 import { Button } from "../button/button";
-import { InputGroup } from "../input-group";
+import { InputGroup } from "../input-group/input-group";
 import {
   menuGroupLabelClass,
   menuItemClass,
@@ -508,3 +508,25 @@ ComboboxChips.displayName = "Combobox.Chips";
 ComboboxChip.displayName = "Combobox.Chip";
 ComboboxChipsInput.displayName = "Combobox.ChipsInput";
 ComboboxValue.displayName = "Combobox.Value";
+
+// Client callers import this object from the implementation module.
+// The package entry rebuilds the same parts in index.ts, which has no directive,
+// so a server component can read each part.
+export const Combobox = {
+  Root: ComboboxRoot,
+  Input: ComboboxInput,
+  Trigger: ComboboxTrigger,
+  Clear: ComboboxClear,
+  Content: ComboboxContent,
+  List: ComboboxList,
+  Item: ComboboxItem,
+  Group: ComboboxGroup,
+  Label: ComboboxLabel,
+  Collection: ComboboxCollection,
+  Empty: ComboboxEmpty,
+  Separator: ComboboxSeparator,
+  Chips: ComboboxChips,
+  Chip: ComboboxChip,
+  ChipsInput: ComboboxChipsInput,
+  Value: ComboboxValue,
+};

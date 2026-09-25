@@ -12,7 +12,7 @@ import {
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
-import { Dialog } from "./index";
+import { Dialog } from "./dialog";
 
 const CLOSE_COPY = {
   "nb-NO": "Lukk",

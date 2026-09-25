@@ -35,8 +35,8 @@ import {
   stampDensity,
   textboxNamed,
 } from "../../../test/themed-browser-render";
-import { Tooltip } from "../tooltip";
-import { Sidebar } from "./index";
+import { Tooltip } from "../tooltip/tooltip";
+import { Sidebar } from "./sidebar";
 import type { SidebarContextValue } from "./sidebar";
 
 setupSidebarBrowser();

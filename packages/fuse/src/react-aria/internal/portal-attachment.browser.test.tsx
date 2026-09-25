@@ -7,7 +7,7 @@ import { page } from "vitest/browser";
 
 import { render } from "../../../test/browser-render";
 import { fkasPrivate as theme } from "../../../test/themed-browser-render";
-import { Popover } from "../../components/popover";
+import { Popover } from "../../components/popover/popover";
 import { ThemeScope } from "../../theme/theme-scope";
 import { useResolvedPortalContainer } from "../../theme/theme-scope-container";
 import { DatePicker } from "../date-picker/date-picker";

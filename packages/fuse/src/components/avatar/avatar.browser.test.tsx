@@ -4,7 +4,7 @@ import { page } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
-import { Avatar } from "./index";
+import { Avatar } from "./avatar";
 
 const PIXEL =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";

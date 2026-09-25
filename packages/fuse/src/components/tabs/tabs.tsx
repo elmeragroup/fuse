@@ -94,3 +94,13 @@ TabsRoot.displayName = "Tabs.Root";
 TabsList.displayName = "Tabs.List";
 TabsTrigger.displayName = "Tabs.Trigger";
 TabsContent.displayName = "Tabs.Content";
+
+// Client callers import this object from the implementation module.
+// The package entry rebuilds the same parts in index.ts, which has no directive,
+// so a server component can read each part.
+export const Tabs = {
+  Root: TabsRoot,
+  List: TabsList,
+  Trigger: TabsTrigger,
+  Content: TabsContent,
+};

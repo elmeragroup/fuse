@@ -11,9 +11,9 @@ import { SpinnerGap } from "../../icons/generated/spinner-gap";
 import { cn } from "../../styles/cn";
 import { dataStateFaceClass } from "../../styles/state-face";
 import { selfFocusRingClass } from "../../styles/utils";
-import { Field } from "../field";
+import { Field } from "../field/field";
 import { FieldFrame } from "../field/field-frame";
-import { SelectionGroupLayout, SelectionItem, SelectionItemGroup } from "../selection-item";
+import { SelectionGroupLayout, SelectionItem, SelectionItemGroup } from "../selection-item/selection-item";
 import { selectionGroupOrientationVariants } from "../selection-item/selection-item-variants";
 import { radioIconButtonVariants } from "./radio-group-variants";
 

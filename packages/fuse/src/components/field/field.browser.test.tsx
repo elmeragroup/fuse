@@ -12,7 +12,7 @@ import {
   textboxNamed,
 } from "../../../test/themed-browser-render";
 import { Checkbox } from "../checkbox/checkbox";
-import { Field } from "./index";
+import { Field } from "./field";
 
 describe("Field", () => {
   it("associates the label with a control fixture", () => {

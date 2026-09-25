@@ -242,3 +242,19 @@ SelectLabel.displayName = "Select.Label";
 SelectSeparator.displayName = "Select.Separator";
 SelectScrollUpButton.displayName = "Select.ScrollUpButton";
 SelectScrollDownButton.displayName = "Select.ScrollDownButton";
+
+// Client callers import this object from the implementation module.
+// The package entry rebuilds the same parts in index.ts, which has no directive,
+// so a server component can read each part.
+export const Select = {
+  Root: SelectRoot,
+  Trigger: SelectTrigger,
+  Value: SelectValue,
+  Content: SelectContent,
+  Item: SelectItem,
+  Group: SelectGroup,
+  Label: SelectLabel,
+  Separator: SelectSeparator,
+  ScrollUpButton: SelectScrollUpButton,
+  ScrollDownButton: SelectScrollDownButton,
+};

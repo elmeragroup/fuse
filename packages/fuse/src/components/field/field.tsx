@@ -212,3 +212,21 @@ FieldSet.displayName = "Field.Set";
 FieldLegend.displayName = "Field.Legend";
 FieldSeparator.displayName = "Field.Separator";
 FieldTitle.displayName = "Field.Title";
+
+// Client callers import this object from the implementation module.
+// The package entry rebuilds the same parts in index.ts, which has no directive,
+// so a server component can read each part.
+export const Field = {
+  Root: FieldRoot,
+  Label: FieldLabel,
+  Description: FieldDescription,
+  Error: FieldError,
+  Control: FieldControl,
+  Item: FieldItem,
+  Content: FieldContent,
+  Group: FieldGroup,
+  Set: FieldSet,
+  Legend: FieldLegend,
+  Separator: FieldSeparator,
+  Title: FieldTitle,
+};

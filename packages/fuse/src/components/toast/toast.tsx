@@ -447,3 +447,19 @@ ToastTitle.displayName = "Toast.Title";
 ToastDescription.displayName = "Toast.Description";
 ToastAction.displayName = "Toast.Action";
 ToastClose.displayName = "Toast.Close";
+
+// Client callers import this object from the implementation module.
+// The package entry rebuilds the same parts in index.ts, which has no directive,
+// so a server component can read each part.
+export const Toast = {
+  Provider: ToastProvider,
+  Viewport: ToastViewport,
+  Root: ToastRoot,
+  Content: ToastContent,
+  Title: ToastTitle,
+  Description: ToastDescription,
+  Action: ToastAction,
+  Close: ToastClose,
+  useToastManager,
+  createToastManager,
+};

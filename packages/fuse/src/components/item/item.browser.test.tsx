@@ -4,7 +4,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
-import { Item } from "./index";
+import { Item } from "./item";
 
 function footerHost(name: string): HTMLElement {
   const host = textNamed(name).closest("[data-mode]");

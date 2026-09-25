@@ -17,7 +17,7 @@ import {
   stampDensity,
 } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme";
-import { Tabs } from "./index";
+import { Tabs } from "./tabs";
 
 function htmlTab(name: string): HTMLElement {
   const element = page.getByRole("tab", { name, exact: true }).element();

@@ -228,3 +228,19 @@ DialogHeader.displayName = "Dialog.Header";
 DialogFooter.displayName = "Dialog.Footer";
 DialogTitle.displayName = "Dialog.Title";
 DialogDescription.displayName = "Dialog.Description";
+
+// Client callers import this object from the implementation module.
+// The package entry rebuilds the same parts in index.ts, which has no directive,
+// so a server component can read each part.
+export const Dialog = {
+  Root: DialogRoot,
+  Trigger: DialogTrigger,
+  Portal: DialogPortal,
+  Close: DialogClose,
+  Overlay: DialogOverlay,
+  Content: DialogContent,
+  Header: DialogHeader,
+  Footer: DialogFooter,
+  Title: DialogTitle,
+  Description: DialogDescription,
+};

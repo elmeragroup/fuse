@@ -17,7 +17,7 @@ import {
   textboxNamed,
 } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme";
-import { InputGroup } from "./index";
+import { InputGroup } from "./input-group";
 
 function groupAround(start: HTMLElement): HTMLElement {
   const group = start.closest('[role="group"]');

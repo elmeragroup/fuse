@@ -7,7 +7,7 @@ import "../../../dist/styles.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { expectPanelHeightTransition, panelControlledBy } from "../../../test/panel-transition";
 import { renderThemed } from "../../../test/themed-browser-render";
-import { Collapsible } from "./index";
+import { Collapsible } from "./collapsible";
 
 function triggerNamed(name: string): HTMLElement {
   const element = page.getByRole("button", { name, exact: true }).element();

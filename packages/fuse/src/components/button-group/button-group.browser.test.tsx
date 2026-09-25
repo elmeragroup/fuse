@@ -5,7 +5,7 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { Button } from "../button/button";
-import { ButtonGroup } from "./index";
+import { ButtonGroup } from "./button-group";
 
 /** Browser suites load styles.css only; radius collapsing reads `--radius`. */
 const radiusToken = { "--radius": "8px" };

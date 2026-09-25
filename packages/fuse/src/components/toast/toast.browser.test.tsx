@@ -15,7 +15,7 @@ import {
   snapshotDocumentTheme,
   stampDocumentTheme,
 } from "../../../test/themed-browser-render";
-import { Toast } from "./index";
+import { Toast } from "./toast";
 
 const CLOSE_COPY = {
   "nb-NO": "Lukk",

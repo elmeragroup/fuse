@@ -9,7 +9,7 @@ import "../../../dist/themes.css";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
-import { AlertDialog } from "./index";
+import { AlertDialog } from "./alert-dialog";
 
 const CANCEL_COPY = {
   "nb-NO": "Avbryt",

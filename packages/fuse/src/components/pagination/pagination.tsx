@@ -200,3 +200,16 @@ PaginationLink.displayName = "Pagination.Link";
 PaginationPrevious.displayName = "Pagination.Previous";
 PaginationNext.displayName = "Pagination.Next";
 PaginationEllipsis.displayName = "Pagination.Ellipsis";
+
+// Client callers import this object from the implementation module.
+// The package entry rebuilds the same parts in index.ts, which has no directive,
+// so a server component can read each part.
+export const Pagination = {
+  Root: PaginationRoot,
+  Content: PaginationContent,
+  Item: PaginationItem,
+  Link: PaginationLink,
+  Previous: PaginationPrevious,
+  Next: PaginationNext,
+  Ellipsis: PaginationEllipsis,
+};

@@ -5,7 +5,7 @@ import type { ChangeEvent, ComponentProps, ReactElement, ReactNode } from "react
 
 import { useFormReset } from "../../hooks/use-form-reset";
 import { useMergedRefs } from "../../hooks/use-merged-refs";
-import { Field } from "../field";
+import { Field } from "../field/field";
 import { FieldFrame } from "../field/field-frame";
 import { Textarea } from "../textarea/textarea";
 

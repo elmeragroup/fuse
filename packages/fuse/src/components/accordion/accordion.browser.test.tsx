@@ -9,7 +9,7 @@ import "../../../dist/themes.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
 import { expectPanelHeightTransition } from "../../../test/panel-transition";
 import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
-import { Accordion } from "./index";
+import { Accordion } from "./accordion";
 
 function htmlControl(name: string): HTMLElement {
   const element = page.getByRole("button", { name, exact: true }).element();

@@ -243,3 +243,20 @@ SheetBody.displayName = "Sheet.Body";
 SheetFooter.displayName = "Sheet.Footer";
 SheetTitle.displayName = "Sheet.Title";
 SheetDescription.displayName = "Sheet.Description";
+
+// Client callers import this object from the implementation module.
+// The package entry rebuilds the same parts in index.ts, which has no directive,
+// so a server component can read each part.
+export const Sheet = {
+  Root: SheetRoot,
+  Trigger: SheetTrigger,
+  Close: SheetClose,
+  Portal: SheetPortal,
+  Overlay: SheetOverlay,
+  Content: SheetContent,
+  Header: SheetHeader,
+  Body: SheetBody,
+  Footer: SheetFooter,
+  Title: SheetTitle,
+  Description: SheetDescription,
+};

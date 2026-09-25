@@ -7,7 +7,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { segmentLocator } from "../../../test/rac-calendar-testing";
 import { renderThemed } from "../../../test/themed-browser-render";
-import { Pagination } from "../../components/pagination";
+import { Pagination } from "../../components/pagination/pagination";
 import { UiProviders } from "./ui-providers";
 
 function linkNamed(name: string): HTMLAnchorElement {

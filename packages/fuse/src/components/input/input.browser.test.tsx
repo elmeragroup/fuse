@@ -13,7 +13,7 @@ import {
   textboxNamed,
 } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme";
-import { Field } from "../field";
+import { Field } from "../field/field";
 import { Input } from "./input";
 
 describe("Input", () => {

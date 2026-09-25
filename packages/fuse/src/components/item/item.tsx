@@ -10,6 +10,15 @@ import type { VariantProps } from "tailwind-variants";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { Separator } from "../separator/separator";
+import {
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemFooter,
+  ItemHeader,
+  ItemMedia,
+  ItemTitle,
+} from "./item-markup";
 import { itemVariants } from "./item-variants";
 
 const ItemGroupContext = createContext(false);
@@ -70,3 +79,19 @@ export function ItemRoot({
 ItemRoot.displayName = "Item.Root";
 ItemGroup.displayName = "Item.Group";
 ItemSeparator.displayName = "Item.Separator";
+
+// Client callers import this object from the implementation module.
+// The package entry rebuilds the same parts in index.ts, which has no directive,
+// so a server component can read each part.
+export const Item = {
+  Root: ItemRoot,
+  Media: ItemMedia,
+  Content: ItemContent,
+  Actions: ItemActions,
+  Group: ItemGroup,
+  Separator: ItemSeparator,
+  Title: ItemTitle,
+  Description: ItemDescription,
+  Header: ItemHeader,
+  Footer: ItemFooter,
+};

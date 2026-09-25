@@ -17,7 +17,7 @@ import {
   headingNamed,
   renderThemed,
 } from "../../../test/themed-browser-render";
-import { Field } from "../field";
+import { Field } from "../field/field";
 import { Checkbox, CheckboxDescription, CheckboxGroup, CheckboxItem, CheckboxItemGroup } from "./checkbox";
 
 function checkboxNamed(name: string, checked?: boolean): HTMLElement {

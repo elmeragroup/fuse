@@ -395,3 +395,25 @@ DropdownMenuShortcut.displayName = "DropdownMenu.Shortcut";
 DropdownMenuSub.displayName = "DropdownMenu.Sub";
 DropdownMenuSubTrigger.displayName = "DropdownMenu.SubTrigger";
 DropdownMenuSubContent.displayName = "DropdownMenu.SubContent";
+
+// Client callers import this object from the implementation module.
+// The package entry rebuilds the same parts in index.ts, which has no directive,
+// so a server component can read each part.
+export const DropdownMenu = {
+  Root: DropdownMenuRoot,
+  Trigger: DropdownMenuTrigger,
+  Portal: DropdownMenuPortal,
+  Content: DropdownMenuContent,
+  Group: DropdownMenuGroup,
+  Label: DropdownMenuLabel,
+  Item: DropdownMenuItem,
+  LinkItem: DropdownMenuLinkItem,
+  CheckboxItem: DropdownMenuCheckboxItem,
+  RadioGroup: DropdownMenuRadioGroup,
+  RadioItem: DropdownMenuRadioItem,
+  Separator: DropdownMenuSeparator,
+  Shortcut: DropdownMenuShortcut,
+  Sub: DropdownMenuSub,
+  SubTrigger: DropdownMenuSubTrigger,
+  SubContent: DropdownMenuSubContent,
+};

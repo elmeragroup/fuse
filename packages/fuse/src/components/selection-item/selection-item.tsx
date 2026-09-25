@@ -7,8 +7,8 @@ import { Field as FieldPrimitive } from "@base-ui/react/field";
 
 import { cn } from "../../styles/cn";
 import { disabledHatch } from "../../styles/utils";
-import { Field } from "../field";
-import { Item } from "../item";
+import { Field } from "../field/field";
+import { Item } from "../item/item";
 import { itemVariants } from "../item/item-variants";
 import { selectionGroupOrientationVariants } from "./selection-item-variants";
 import type { SelectionItemGroupOrientation } from "./selection-item-variants";
@@ -242,3 +242,15 @@ SelectionItemShell.displayName = "SelectionItem.Shell";
 SelectionItemTitle.displayName = "SelectionItem.Title";
 SelectionItemActions.displayName = "SelectionItem.Actions";
 SelectionItemSubSection.displayName = "SelectionItem.SubSection";
+
+// Client callers import this object from the implementation module.
+// The package entry rebuilds the same parts in index.ts, which has no directive,
+// so a server component can read each part.
+export const SelectionItem = {
+  Shell: SelectionItemShell,
+  Title: SelectionItemTitle,
+  Description: Item.Description,
+  Content: Item.Content,
+  Actions: SelectionItemActions,
+  SubSection: SelectionItemSubSection,
+};

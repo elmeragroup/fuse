@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { render } from "../../test/browser-render";
-import { Sidebar } from "../components/sidebar";
+import { Sidebar } from "../components/sidebar/sidebar";
 import { LocaleProvider } from "../intl/locale-context";
 import { generateThemesCss } from "./generate-css";
 import { ThemeScope } from "./theme-scope";

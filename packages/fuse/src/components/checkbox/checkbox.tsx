@@ -14,7 +14,7 @@ import { mergeClassName } from "../../styles/merge-class-name";
 import { dataStateFaceClass } from "../../styles/state-face";
 import { selfFocusRingClass } from "../../styles/utils";
 import { FieldFrame } from "../field/field-frame";
-import { SelectionGroupLayout, SelectionItem, SelectionItemGroup } from "../selection-item";
+import { SelectionGroupLayout, SelectionItem, SelectionItemGroup } from "../selection-item/selection-item";
 import { selectionGroupOrientationVariants } from "../selection-item/selection-item-variants";
 
 /**
