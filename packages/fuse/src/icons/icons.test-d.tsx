@@ -31,6 +31,15 @@ test("public adapters accept regular and fill and reject other weights", () => {
   const _duotone: ElmeraIconProps = { weight: "duotone" };
 });
 
+test("public adapters are named by title, not Phosphor's alt", () => {
+  expectTypeOf<ElmeraIconProps["title"]>().toEqualTypeOf<string | undefined>();
+  expectTypeOf<ElmeraIconProps>().not.toHaveProperty("alt");
+
+  const _titled: ElmeraIconProps = { title: "Done" };
+  // @ts-expect-error alt is not a public icon prop; use title
+  const _alt: ElmeraIconProps = { alt: "Done" };
+});
+
 test("there is no Icon namespace on /icons or the root barrel", () => {
   expectTypeOf<typeof Icons>().not.toHaveProperty("Icon");
   expectTypeOf<typeof Root>().not.toHaveProperty("Icon");
