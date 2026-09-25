@@ -18,7 +18,6 @@ import {
   renderRootBarrel,
 } from "../scripts/generate-exports";
 import { parseFacadeValueExports } from "../scripts/parse-facade";
-import { BESPOKE_ICON_NAMES, LOGO_NAMES, PHOSPHOR_ICON_NAMES } from "./icons/roster";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -792,15 +791,10 @@ describe("exports map", () => {
     ]);
   });
 
-  it("keeps /icons as a subpath-only entry with the curated roster", () => {
+  it("keeps /icons as a subpath-only entry without a generic Icon export", () => {
     const icons = discovered.jsEntries.find((entry) => entry.subpath === "icons");
     expect(icons?.inRootBarrel).toBe(false);
-    expect(icons?.runtimeExports).toEqual([
-      ...PHOSPHOR_ICON_NAMES,
-      ...BESPOKE_ICON_NAMES,
-      ...LOGO_NAMES,
-      "BrandLogo",
-    ]);
+    // runtimeExports is the roster; the facade-level Icon guard is the barrel-generation throw test.
     expect(icons?.runtimeExports).not.toContain("Icon");
   });
 

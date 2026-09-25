@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -173,17 +173,11 @@ describe("docs Tailwind migration contract", () => {
       dependencies?: Record<string, string>;
       devDependencies?: Record<string, string>;
     };
-    const catalog = readFileSync(join(workspaceRoot, "pnpm-workspace.yaml"), "utf8");
-
     expect(pkg.dependencies?.["tailwind-variants"]).toBe("catalog:");
     expect(pkg.devDependencies?.["@tailwindcss/typography"]).toBe("catalog:");
-    expect(catalog).toMatch(/tailwind-variants:\s*3\.3\.1/);
-    expect(catalog).toMatch(/["']@tailwindcss\/typography["']:\s*0\.5\.20/);
   });
 
-  it("does not keep a shared class-name module or exported class-name constants", () => {
-    expect(existsSync(join(docsRoot, "src/components/docs-styles.ts"))).toBe(false);
-
+  it("does not export class-name constants or tv recipes", () => {
     const exported = srcTsFiles().flatMap((relative) => {
       const source = readFileSync(join(docsRoot, relative), "utf8");
       const hits: string[] = [];

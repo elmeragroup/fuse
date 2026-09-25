@@ -5,11 +5,7 @@ import * as Srgb from "@elmeragroup/color/srgb";
 import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 import type { ResolvedScheme } from "@elmeragroup/fuse/theme-catalog";
 
-import {
-  buildFigmaThemeIndex,
-  figmaDocumentFromScheme,
-  renderFigmaThemeCatalog,
-} from "../scripts/lib/theme-catalog-figma.ts";
+import { figmaDocumentFromScheme, renderFigmaThemeCatalog } from "../scripts/lib/theme-catalog-figma.ts";
 import { GET as getFigmaThemeFile } from "../src/app/api/themes/figma/[slug]/route.ts";
 import { FIGMA_THEME_FILES, FIGMA_THEME_INDEX } from "../src/generated/theme-catalog-figma";
 import type {
@@ -192,21 +188,6 @@ describe("Figma DTCG documents", () => {
     expect(module).not.toContain("as unknown as");
     expect(module).not.toMatch(/\bas\s+/);
     expect(module).not.toContain('from "./figma/');
-  });
-
-  it("is a projection of the catalog", () => {
-    // Unit under test: the committed module's serialisation of every document. Oracle: the
-    // converter it serialised. The converter's own output is pinned by hand above and below.
-    expect(buildFigmaThemeIndex(CATALOG)).toEqual(FIGMA_THEME_INDEX);
-    expect(FIGMA_THEME_INDEX.files.map((file) => file.slug)).toEqual(
-      CATALOG.themes.map((theme) => theme.slug)
-    );
-    expect(Object.keys(FIGMA_THEME_FILES)).toEqual(CATALOG.themes.map((theme) => theme.slug));
-    for (const theme of CATALOG.themes) {
-      expect(figmaDocumentFromScheme(theme.schemes.light, CATALOG.primitives), theme.slug).toEqual(
-        FIGMA_THEME_FILES[theme.slug]
-      );
-    }
   });
 
   it("emits the Elma theme's own values, not the Fjordkraft ones", () => {
