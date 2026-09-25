@@ -10,7 +10,22 @@ import { confirmButtonVariants } from "./confirm-button-variants";
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 
-export type ConfirmButtonProps = DistributiveOmit<ButtonProps, "onClick" | "children"> & {
+export type ConfirmButtonProps = DistributiveOmit<
+  ButtonProps,
+  "onClick" | "children" | "isVisuallyDisabled" | "isPending"
+> & {
+  /**
+   * Renders Button's disabled treatment and stamps `aria-disabled` while keeping Tab focus,
+   * focus-visible and any Tooltip; pointer presses do not move focus. Presses never arm or
+   * confirm, and turning it on disarms. The treatment keys off `aria-disabled`, so an explicit
+   * `aria-disabled={false}` hides it while presses stay ignored.
+   */
+  isVisuallyDisabled?: boolean;
+  /**
+   * Disables the element and stamps `data-pending`, blocking activation entirely.
+   * Turning it on disarms, so the button rests again once it clears.
+   */
+  isPending?: boolean;
   /** Called on the second press only, after the button disarms. */
   onConfirm: () => void;
   /** Resting label. */
@@ -24,12 +39,16 @@ export type ConfirmButtonProps = DistributiveOmit<ButtonProps, "onClick" | "chil
 /**
  * Two-press confirm wrapper over the library Button.
  * Client — owns armed state.
+ *
+ * Turning `disabled` on disarms it, so re-enabling never restores a stale armed state.
  */
 export function ConfirmButton({
   onConfirm,
   armedChildren,
   armedAriaLabel,
   disabled,
+  isPending,
+  isVisuallyDisabled,
   variant,
   className,
   children,
@@ -40,14 +59,20 @@ export function ConfirmButton({
 }: ConfirmButtonProps): ReactElement {
   const [isArmedRaw, setIsArmedRaw] = useState(false);
 
-  // Reset during render so re-enabling cannot restore a stale armed state.
-  if (disabled && isArmedRaw) {
+  // `isVisuallyDisabled` keeps Button activatable, so it must gate arming here too.
+  const inert = disabled === true || isPending === true || isVisuallyDisabled === true;
+
+  // Reset during render so leaving the inert state cannot restore a stale armed state.
+  if (inert && isArmedRaw) {
     setIsArmedRaw(false);
   }
 
-  const isArmed = isArmedRaw && !disabled;
+  const isArmed = isArmedRaw && !inert;
 
   function handlePress() {
+    if (inert) {
+      return;
+    }
     if (isArmed) {
       setIsArmedRaw(false);
       onConfirm();
@@ -68,6 +93,8 @@ export function ConfirmButton({
     ...rest,
     variant,
     disabled,
+    isPending,
+    isVisuallyDisabled,
     className: confirmButtonVariants({ variant, className }),
     "aria-label": resolvedAriaLabel,
     onKeyDown: (event) => {
