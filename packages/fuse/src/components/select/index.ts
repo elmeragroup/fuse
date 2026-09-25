@@ -4,29 +4,29 @@
  * so a server component can read each part instead of dotting into a client reference.
  */
 import {
-  Root,
-  Trigger,
-  Value,
-  Content,
-  Item,
-  Group,
-  Label,
-  Separator,
-  ScrollUpButton,
-  ScrollDownButton,
-} from "./index.parts";
+  SelectRoot,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+  SelectGroup,
+  SelectLabel,
+  SelectSeparator,
+  SelectScrollUpButton,
+  SelectScrollDownButton,
+} from "./select";
 
 export const Select = {
-  Root,
-  Trigger,
-  Value,
-  Content,
-  Item,
-  Group,
-  Label,
-  Separator,
-  ScrollUpButton,
-  ScrollDownButton,
+  Root: SelectRoot,
+  Trigger: SelectTrigger,
+  Value: SelectValue,
+  Content: SelectContent,
+  Item: SelectItem,
+  Group: SelectGroup,
+  Label: SelectLabel,
+  Separator: SelectSeparator,
+  ScrollUpButton: SelectScrollUpButton,
+  ScrollDownButton: SelectScrollDownButton,
 };
 
 export type { SelectContentProps, SelectTriggerProps } from "./select";

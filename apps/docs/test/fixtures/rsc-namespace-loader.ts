@@ -8,7 +8,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import type { LoadHook, ResolveHook } from "node:module";
-import { dirname, join } from "node:path";
+import { dirname, extname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const require = createRequire(import.meta.url);
@@ -274,15 +274,13 @@ export const resolve: ResolveHook = async (specifier, context, nextResolve) => {
   const nextContext = withReactServer(context);
   if ((specifier.startsWith(".") || specifier.startsWith("/")) && nextContext.parentURL !== undefined) {
     const base = fileFromParent(nextContext.parentURL, specifier);
-    // `.parts` is a filename, not a module extension. Only skip the search when
-    // the specifier already ends in a file the loader can evaluate.
-    const hasKnownExtension = /\.(tsx|ts|mjs|cjs|js|json)$/u.test(specifier);
-    const candidates = hasKnownExtension
-      ? [base]
-      : [
-          ...EXTENSIONS.map((extension) => `${base}${extension}`),
-          ...EXTENSIONS.map((extension) => join(base, `index${extension}`)),
-        ];
+    const candidates =
+      extname(specifier) !== ""
+        ? [base]
+        : [
+            ...EXTENSIONS.map((extension) => `${base}${extension}`),
+            ...EXTENSIONS.map((extension) => join(base, `index${extension}`)),
+          ];
     for (const candidate of candidates) {
       if (existsSync(candidate)) {
         return { url: pathToFileURL(candidate).href, shortCircuit: true };

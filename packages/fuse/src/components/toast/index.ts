@@ -4,27 +4,27 @@
  * so a server component can read each part instead of dotting into a client reference.
  */
 import {
-  Provider,
-  Viewport,
-  Root,
-  Content,
-  Title,
-  Description,
-  Action,
-  Close,
+  ToastProvider,
+  ToastViewport,
+  ToastRoot,
+  ToastContent,
+  ToastTitle,
+  ToastDescription,
+  ToastAction,
+  ToastClose,
   useToastManager,
   createToastManager,
-} from "./index.parts";
+} from "./toast";
 
 export const Toast = {
-  Provider,
-  Viewport,
-  Root,
-  Content,
-  Title,
-  Description,
-  Action,
-  Close,
+  Provider: ToastProvider,
+  Viewport: ToastViewport,
+  Root: ToastRoot,
+  Content: ToastContent,
+  Title: ToastTitle,
+  Description: ToastDescription,
+  Action: ToastAction,
+  Close: ToastClose,
   useToastManager,
   createToastManager,
 };

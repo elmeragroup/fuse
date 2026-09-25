@@ -7,8 +7,9 @@ import { Field as FieldPrimitive } from "@base-ui/react/field";
 
 import { cn } from "../../styles/cn";
 import { disabledHatch } from "../../styles/utils";
-import { Field } from "../field";
-import { Item } from "../item";
+import { FieldItem } from "../field/field";
+import { ItemGroup } from "../item/item";
+import { ItemActions, ItemFooter, ItemMedia, ItemTitle } from "../item/item-markup";
 import { itemVariants } from "../item/item-variants";
 import { selectionGroupOrientationVariants } from "./selection-item-variants";
 import type { SelectionItemGroupOrientation } from "./selection-item-variants";
@@ -67,22 +68,22 @@ export function SelectionItemGroup({
   const value = useMemo(() => ({ orientation, list: true }), [orientation]);
   return (
     <SelectionItemGroupContext.Provider value={value}>
-      <Item.Group className={cn("select-none", selectionGroupOrientationVariants({ orientation }).list())}>
+      <ItemGroup className={cn("select-none", selectionGroupOrientationVariants({ orientation }).list())}>
         {children}
-      </Item.Group>
+      </ItemGroup>
     </SelectionItemGroupContext.Provider>
   );
 }
 
-export function SelectionItemTitle({ className, ...props }: ComponentProps<typeof Item.Title>): ReactElement {
-  return <Item.Title className={cn("font-normal", className)} {...props} />;
+export function SelectionItemTitle({ className, ...props }: ComponentProps<typeof ItemTitle>): ReactElement {
+  return <ItemTitle className={cn("font-normal", className)} {...props} />;
 }
 
 export function SelectionItemActions({
   className,
   ...props
-}: ComponentProps<typeof Item.Actions>): ReactElement {
-  return <Item.Actions className={cn("-translate-y-0.5 items-start", className)} {...props} />;
+}: ComponentProps<typeof ItemActions>): ReactElement {
+  return <ItemActions className={cn("-translate-y-0.5 items-start", className)} {...props} />;
 }
 
 /**
@@ -96,18 +97,18 @@ export function SelectionItemSubSection({
   className,
   mode = "default",
   ...props
-}: ComponentProps<typeof Item.Footer>): ReactElement | null {
+}: ComponentProps<typeof ItemFooter>): ReactElement | null {
   if (Children.toArray(children).length === 0) {
     return null;
   }
   return (
-    <Item.Footer mode={mode} className={className} {...props}>
+    <ItemFooter mode={mode} className={className} {...props}>
       {children}
-    </Item.Footer>
+    </ItemFooter>
   );
 }
 
-type SelectionItemShellProps = Omit<ComponentProps<typeof Field.Item>, "className" | "children"> & {
+type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className" | "children"> & {
   /**
    * Emitted as `data-slot` on the `Field.Item` root. Typical values are
    * `"checkbox-item"` and `"radio-item"`.
@@ -178,16 +179,16 @@ export function SelectionItemShell({
   const controlAtEnd = controlPosition === "end";
 
   const controlSlot = (
-    <Item.Media variant="icon" data-slot="selection-item-control">
+    <ItemMedia variant="icon" data-slot="selection-item-control">
       {control}
-    </Item.Media>
+    </ItemMedia>
   );
   const rowCluster = <div className="flex min-w-0 items-start gap-2.5">{rowChildren}</div>;
   const spacer = <span aria-hidden />;
   const subCluster = <div className="min-w-0">{subSections}</div>;
 
   return (
-    <Field.Item
+    <FieldItem
       {...(inItemGroup ? { role: "listitem" as const } : null)}
       {...props}
       data-slot={dataSlot}
@@ -234,7 +235,7 @@ export function SelectionItemShell({
           )}
         </div>
       ) : null}
-    </Field.Item>
+    </FieldItem>
   );
 }
 

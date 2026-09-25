@@ -3,28 +3,26 @@
  * The implementation stays a client module; this file has no directive,
  * so a server component can read each part instead of dotting into a client reference.
  */
+import { ItemRoot, ItemGroup, ItemSeparator } from "./item";
 import {
-  Root,
-  Media,
-  Content,
-  Actions,
-  Group,
-  Separator,
-  Title,
-  Description,
-  Header,
-  Footer,
-} from "./index.parts";
+  ItemMedia,
+  ItemContent,
+  ItemActions,
+  ItemTitle,
+  ItemDescription,
+  ItemHeader,
+  ItemFooter,
+} from "./item-markup";
 
 export const Item = {
-  Root,
-  Media,
-  Content,
-  Actions,
-  Group,
-  Separator,
-  Title,
-  Description,
-  Header,
-  Footer,
+  Root: ItemRoot,
+  Media: ItemMedia,
+  Content: ItemContent,
+  Actions: ItemActions,
+  Group: ItemGroup,
+  Separator: ItemSeparator,
+  Title: ItemTitle,
+  Description: ItemDescription,
+  Header: ItemHeader,
+  Footer: ItemFooter,
 };

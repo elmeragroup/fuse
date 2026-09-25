@@ -281,7 +281,6 @@ describe("RSC classification", () => {
     "tooltip",
   ])("%s namespace index stays directive-free", (slug) => {
     expectRsc(`components/${slug}/index.ts`, "server");
-    expectRsc(`components/${slug}/index.parts.ts`, "server");
   });
 });
 

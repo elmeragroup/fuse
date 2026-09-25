@@ -22,7 +22,12 @@ import { mergeClassName } from "../../styles/merge-class-name";
 import { withinStateFaceClass, withinStateFaceControlClass } from "../../styles/state-face";
 import { withinFocusRingClass, withinFocusRingControlClass } from "../../styles/utils";
 import { Button } from "../button/button";
-import { InputGroup } from "../input-group";
+import {
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+  InputGroupRoot,
+} from "../input-group/input-group";
 import {
   menuGroupLabelClass,
   menuItemClass,
@@ -104,7 +109,7 @@ export function ComboboxClear({ className, label, ...props }: ComboboxClearProps
   return (
     <ComboboxPrimitive.Clear
       data-slot="combobox-clear"
-      render={<InputGroup.Button variant="ghost" size="icon-sm" aria-label={accessibleName} />}
+      render={<InputGroupButton variant="ghost" size="icon-sm" aria-label={accessibleName} />}
       aria-label={accessibleName}
       className={mergeClassName(className)}
       {...props}>
@@ -159,11 +164,11 @@ export function ComboboxInput({
 }: ComboboxInputProps): ReactElement {
   const strings = useLocalizedStrings(comboboxStrings);
   return (
-    <InputGroup.Root className={cn("w-auto", className)}>
-      <ComboboxPrimitive.Input render={<InputGroup.Input disabled={disabled} />} {...props} />
-      <InputGroup.Addon align="inline-end">
+    <InputGroupRoot className={cn("w-auto", className)}>
+      <ComboboxPrimitive.Input render={<InputGroupInput disabled={disabled} />} {...props} />
+      <InputGroupAddon align="inline-end">
         {showTrigger ? (
-          <InputGroup.Button
+          <InputGroupButton
             size="icon-sm"
             variant="ghost"
             aria-label={strings.format("toggle")}
@@ -177,9 +182,9 @@ export function ComboboxInput({
           />
         ) : null}
         {showClear ? <ComboboxClear disabled={disabled} label={clearLabel} /> : null}
-      </InputGroup.Addon>
+      </InputGroupAddon>
       {children}
-    </InputGroup.Root>
+    </InputGroupRoot>
   );
 }
 

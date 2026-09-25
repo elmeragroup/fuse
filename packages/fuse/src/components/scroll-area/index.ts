@@ -3,9 +3,9 @@
  * The implementation stays a client module; this file has no directive,
  * so a server component can read each part instead of dotting into a client reference.
  */
-import { Root, Bar } from "./index.parts";
+import { ScrollAreaRoot, ScrollAreaBar } from "./scroll-area";
 
 export const ScrollArea = {
-  Root,
-  Bar,
+  Root: ScrollAreaRoot,
+  Bar: ScrollAreaBar,
 };

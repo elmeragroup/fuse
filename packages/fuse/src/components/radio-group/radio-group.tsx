@@ -11,9 +11,14 @@ import { SpinnerGap } from "../../icons/generated/spinner-gap";
 import { cn } from "../../styles/cn";
 import { dataStateFaceClass } from "../../styles/state-face";
 import { selfFocusRingClass } from "../../styles/utils";
-import { Field } from "../field";
+import { FieldItem } from "../field/field";
 import { FieldFrame } from "../field/field-frame";
-import { SelectionGroupLayout, SelectionItem, SelectionItemGroup } from "../selection-item";
+import { SelectionItem } from "../selection-item";
+import {
+  SelectionGroupLayout,
+  SelectionItemGroup,
+  SelectionItemShell,
+} from "../selection-item/selection-item";
 import { selectionGroupOrientationVariants } from "../selection-item/selection-item-variants";
 import { radioIconButtonVariants } from "./radio-group-variants";
 
@@ -193,7 +198,7 @@ export type RadioProps = {
  */
 export function Radio({ value, isDisabled, className, children }: RadioProps): ReactElement {
   return (
-    <Field.Item className={cn("flex", className)}>
+    <FieldItem className={cn("flex", className)}>
       <FieldPrimitive.Label className="text-sm flex cursor-pointer items-center gap-2 has-disabled:cursor-not-allowed">
         <RadioGroupItem value={value} disabled={isDisabled} />
         {/* The span keeps the label's flex row for its children, so text and a badge stay
@@ -201,7 +206,7 @@ export function Radio({ value, isDisabled, className, children }: RadioProps): R
             `peer`, so the control is not dimmed twice. */}
         <span className="flex items-center gap-2 peer-data-disabled:opacity-50">{children}</span>
       </FieldPrimitive.Label>
-    </Field.Item>
+    </FieldItem>
   );
 }
 
@@ -238,14 +243,14 @@ export function RadioItem({
   children,
 }: RadioItemProps): ReactElement {
   return (
-    <SelectionItem.Shell
+    <SelectionItemShell
       dataSlot="radio-item"
       isDisabled={isDisabled}
       controlPosition={controlPosition}
       className={className}
       control={<RadioGroupItem value={value} disabled={isDisabled} />}>
       {children}
-    </SelectionItem.Shell>
+    </SelectionItemShell>
   );
 }
 

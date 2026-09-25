@@ -14,7 +14,12 @@ import { mergeClassName } from "../../styles/merge-class-name";
 import { dataStateFaceClass } from "../../styles/state-face";
 import { selfFocusRingClass } from "../../styles/utils";
 import { FieldFrame } from "../field/field-frame";
-import { SelectionGroupLayout, SelectionItem, SelectionItemGroup } from "../selection-item";
+import { SelectionItem } from "../selection-item";
+import {
+  SelectionGroupLayout,
+  SelectionItemGroup,
+  SelectionItemShell,
+} from "../selection-item/selection-item";
 import { selectionGroupOrientationVariants } from "../selection-item/selection-item-variants";
 
 /**
@@ -243,7 +248,7 @@ export function CheckboxItem({
   children,
 }: CheckboxItemProps): ReactElement {
   return (
-    <SelectionItem.Shell
+    <SelectionItemShell
       dataSlot="checkbox-item"
       isDisabled={isDisabled}
       controlPosition={controlPosition}
@@ -256,7 +261,7 @@ export function CheckboxItem({
         )
       }>
       {children}
-    </SelectionItem.Shell>
+    </SelectionItemShell>
   );
 }
 

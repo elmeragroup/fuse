@@ -30,9 +30,16 @@ import { Input } from "../input/input";
 import { OverlayCloseButton } from "../overlay/overlay-close-button";
 import { Separator } from "../separator/separator";
 import type { SeparatorProps } from "../separator/separator";
-import { Sheet } from "../sheet";
+import {
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetRoot,
+  SheetTitle,
+} from "../sheet/sheet";
 import { Skeleton } from "../skeleton/skeleton";
-import { Tooltip } from "../tooltip";
+import { TooltipContent, TooltipRoot, TooltipTrigger } from "../tooltip/tooltip";
 import type { TooltipContentProps } from "../tooltip/tooltip";
 import { sidebarStrings } from "./intl";
 import { sidebarMenuButtonVariants, sidebarMenuSubButtonVariants } from "./sidebar-variants";
@@ -287,28 +294,28 @@ export function SidebarRoot({
 
   if (isMobile) {
     return (
-      <Sheet.Root side={side} open={openMobile} onOpenChange={setOpenMobile} {...props}>
-        <Sheet.Content
+      <SheetRoot side={side} open={openMobile} onOpenChange={setOpenMobile} {...props}>
+        <SheetContent
           dir={dir}
           data-slot="sidebar"
           data-mobile="true"
           showCloseButton={false}
           className={cn("w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground", className)}
           style={{ "--sidebar-width": SIDEBAR_WIDTH_MOBILE }}>
-          <Sheet.Header className="sr-only">
-            <Sheet.Title>{labels.title}</Sheet.Title>
-            <Sheet.Description>{labels.description}</Sheet.Description>
-          </Sheet.Header>
+          <SheetHeader className="sr-only">
+            <SheetTitle>{labels.title}</SheetTitle>
+            <SheetDescription>{labels.description}</SheetDescription>
+          </SheetHeader>
           <div className="flex h-full w-full flex-col">
             {/* The close sits in a normal-flow header row rather than absolute over the
                 content, so no section reserves a magic offset for it. */}
             <div className="flex shrink-0 justify-end p-2">
-              <Sheet.Close render={<OverlayCloseButton />} />
+              <SheetClose render={<OverlayCloseButton />} />
             </div>
             <div className="flex min-h-0 w-full flex-1 flex-col">{children}</div>
           </div>
-        </Sheet.Content>
-      </Sheet.Root>
+        </SheetContent>
+      </SheetRoot>
     );
   }
 
@@ -621,7 +628,7 @@ function SidebarMenuButtonTooltip(contentProps: TooltipContentProps): ReactEleme
     return null;
   }
 
-  return <Tooltip.Content side="right" align="center" {...contentProps} />;
+  return <TooltipContent side="right" align="center" {...contentProps} />;
 }
 
 export function SidebarMenuButton({
@@ -640,7 +647,7 @@ export function SidebarMenuButton({
       props,
       ariaDisabledRowGuard
     ),
-    render: tooltip === undefined ? render : <Tooltip.Trigger render={render} />,
+    render: tooltip === undefined ? render : <TooltipTrigger render={render} />,
     state: { slot: "sidebar-menu-button", size, active: isActive },
   });
 
@@ -652,10 +659,10 @@ export function SidebarMenuButton({
   const contentProps: TooltipContentProps = typeof tooltip === "string" ? { children: tooltip } : tooltip;
 
   return (
-    <Tooltip.Root>
+    <TooltipRoot>
       {button}
       <SidebarMenuButtonTooltip {...contentProps} />
-    </Tooltip.Root>
+    </TooltipRoot>
   );
 }
 

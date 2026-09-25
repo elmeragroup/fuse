@@ -3,15 +3,22 @@
  * The implementation stays a client module; this file has no directive,
  * so a server component can read each part instead of dotting into a client reference.
  */
-import { Root, Addon, Button, Text, Input, Textarea } from "./index.parts";
+import {
+  InputGroupRoot,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupText,
+  InputGroupInput,
+  InputGroupTextarea,
+} from "./input-group";
 
 export const InputGroup = {
-  Root,
-  Addon,
-  Button,
-  Text,
-  Input,
-  Textarea,
+  Root: InputGroupRoot,
+  Addon: InputGroupAddon,
+  Button: InputGroupButton,
+  Text: InputGroupText,
+  Input: InputGroupInput,
+  Textarea: InputGroupTextarea,
 };
 
 export type {

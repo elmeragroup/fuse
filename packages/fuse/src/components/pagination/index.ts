@@ -3,14 +3,22 @@
  * The implementation stays a client module; this file has no directive,
  * so a server component can read each part instead of dotting into a client reference.
  */
-import { Root, Content, Item, Link, Previous, Next, Ellipsis } from "./index.parts";
+import {
+  PaginationRoot,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationPrevious,
+  PaginationNext,
+  PaginationEllipsis,
+} from "./pagination";
 
 export const Pagination = {
-  Root,
-  Content,
-  Item,
-  Link,
-  Previous,
-  Next,
-  Ellipsis,
+  Root: PaginationRoot,
+  Content: PaginationContent,
+  Item: PaginationItem,
+  Link: PaginationLink,
+  Previous: PaginationPrevious,
+  Next: PaginationNext,
+  Ellipsis: PaginationEllipsis,
 };
