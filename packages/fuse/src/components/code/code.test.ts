@@ -6,8 +6,7 @@ import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { PUBLISHED_DEPENDENCY_RANGES } from "../../../scripts/entries";
-import { publishedDependencies } from "../../../scripts/generate-exports";
+import { publishedDependencies } from "../../../scripts/published-dependencies";
 import { cn } from "../../styles/cn";
 import { Code } from "./code";
 
@@ -28,18 +27,9 @@ describe("code sugar-high pin", () => {
     // SAFETY: this test only reads the workspace sugar-high dependency pin.
     const pkg = parsed as { dependencies: Record<string, string> };
     expect(pkg.dependencies["sugar-high"]).toBe("catalog:");
-    expect(PUBLISHED_DEPENDENCY_RANGES["sugar-high"]).toBe("^2.4.0");
-    expect(
-      publishedDependencies({
-        "@base-ui/react": "catalog:",
-        clsx: "catalog:",
-        "sugar-high": "catalog:",
-        "tailwind-merge": "catalog:",
-        "tailwind-variants": "catalog:",
-        "tailwindcss-react-aria-components": "catalog:",
-        "tw-animate-css": "catalog:",
-      })["sugar-high"]
-    ).toBe("^2.4.0");
+    expect(publishedDependencies({ "sugar-high": "catalog:" }, new Map([["sugar-high", "2.4.1"]]))).toEqual({
+      "sugar-high": "^2.4.0",
+    });
     expect(readFileSync(join(packageRoot, "../../pnpm-workspace.yaml"), "utf8")).toContain(
       '"sugar-high": 2.4.1'
     );

@@ -4,7 +4,7 @@
 
 ## Tailwind v4
 
-Published code is not scanned by a consumer Tailwind pipeline unless you point `@source` at the **installed package root** (there is no nested `dist/` folder after install):
+Requires Tailwind CSS 4.1 or newer. Published code is not scanned by a consumer Tailwind pipeline unless you point `@source` at the **installed package root** (there is no nested `dist/` folder after install):
 
 ```css
 @import "tailwindcss";

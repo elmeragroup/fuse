@@ -146,11 +146,27 @@ export function checkPackedPeers(extracted: string): void {
   if (peers.react !== "^19" || peers["react-dom"] !== "^19") {
     throw new Error(`Packed react peer ranges must be ^19, got ${JSON.stringify(peers)}`);
   }
-  if (peers.tailwindcss !== "^4") {
-    throw new Error(`Packed tailwindcss peer range must be ^4, got ${JSON.stringify(peers.tailwindcss)}`);
+  if (peers.tailwindcss !== "^4.1") {
+    throw new Error(`Packed tailwindcss peer range must be ^4.1, got ${JSON.stringify(peers.tailwindcss)}`);
   }
   if (packedText.includes("catalog:")) {
     throw new Error("Packed package.json leaked catalog: pins");
+  }
+}
+
+/** The packed manifest publishes exactly the dependency names the workspace manifest declares. */
+export function checkPackedDependencies(extracted: string): void {
+  const { packed } = packedManifest(extracted);
+  // SAFETY: the workspace package.json is the I/O boundary, and only its dependency names are read.
+  const workspace = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8")) as {
+    readonly dependencies?: Readonly<Record<string, string>>;
+  };
+  const expected = Object.keys(workspace.dependencies ?? {}).toSorted();
+  const actual = Object.keys(packed.dependencies ?? {}).toSorted();
+  if (expected.length === 0 || JSON.stringify(actual) !== JSON.stringify(expected)) {
+    throw new Error(
+      `Packed dependencies ${JSON.stringify(actual)} must equal the workspace dependencies ${JSON.stringify(expected)}`
+    );
   }
 }
 

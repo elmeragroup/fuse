@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { RELEASE_AGE_MINUTES, releaseAgeCutoff } from "../scripts/package-check-react";
+import { RELEASE_AGE_MINUTES, releaseAgeCutoff } from "../scripts/packed-consumer";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 

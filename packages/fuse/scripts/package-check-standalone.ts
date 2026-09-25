@@ -4,6 +4,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
 
+import { packedTailwindSource } from "./packed-consumer";
 import { packageRootFromScript } from "./paths";
 import { linkConsumerModules, withExtractedTarballAsync } from "./tarball";
 
@@ -27,10 +28,7 @@ try {
       );
       const rendered = spawnSync(process.execPath, ["render.ts"], { cwd: scratch, encoding: "utf8" });
       assert.equal(rendered.status, 0, rendered.stderr);
-      writeFileSync(
-        join(scratch, "source.css"),
-        '@import "tailwindcss" source(none);\n@import "@elmeragroup/fuse/css";\n@import "@elmeragroup/fuse/themes.css";\n@source "./package";\n'
-      );
+      writeFileSync(join(scratch, "source.css"), packedTailwindSource("./package"));
       const compiled = spawnSync(
         "pnpm",
         [

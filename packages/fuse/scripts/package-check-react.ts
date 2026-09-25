@@ -1,21 +1,13 @@
-import { copyFileSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { withPackedConsumer } from "./packed-consumer";
 import { packageRootFromScript } from "./paths";
-import { CommandAbortedError, removeDetached, runCommandAsync, settleAll } from "./run-command";
+import { runCommandAsync, settleAll } from "./run-command";
 
 const require = createRequire(import.meta.url);
 const packageRoot = packageRootFromScript(import.meta.url);
-
-/** Mirrors `minimumReleaseAge` in pnpm-workspace.yaml. */
-export const RELEASE_AGE_MINUTES = 4320;
-
-/** UTC ISO instant exactly RELEASE_AGE_MINUTES before `now`, for npm's `--before`. */
-export function releaseAgeCutoff(now: Date): string {
-  return new Date(now.getTime() - RELEASE_AGE_MINUTES * 60_000).toISOString();
-}
 
 function installedVersion(name: string): string {
   // SAFETY: Node resolves the installed dependency's package manifest.
@@ -27,59 +19,31 @@ function installedVersion(name: string): string {
 
 type ReactPair = { readonly react: string; readonly reactDom: string };
 
-/**
- * Sets the consumer up synchronously, so `npm install` is spawned before the caller's next
- * synchronous work starts; only the probe waits for the install.
- */
-async function checkReactPair(
+function checkReactPair(
   tarball: string,
   pair: ReactPair,
   cutoff: string,
   signal: AbortSignal
 ): Promise<string> {
-  const consumer = mkdtempSync(join(tmpdir(), "elmera-packed-react-"));
-  try {
-    // The tarball installs by path next to one real React pair.
-    writeFileSync(
-      join(consumer, "package.json"),
-      JSON.stringify({
-        private: true,
-        type: "module",
-        dependencies: {
-          "@elmeragroup/fuse": `file:${tarball}`,
-          react: pair.react,
-          "react-dom": pair.reactDom,
-        },
-      })
-    );
-    copyFileSync(join(packageRoot, "test/packed-consumer/react-probe.ts"), join(consumer, "probe.ts"));
-    await runCommandAsync(
-      "npm",
-      [
-        "install",
-        "--ignore-scripts",
-        "--no-audit",
-        "--no-fund",
-        "--package-lock=false",
-        `--before=${cutoff}`,
-      ],
-      { cwd: consumer, timeoutMs: 180_000, signal }
-    );
-    const probe = await runCommandAsync(process.execPath, ["probe.ts", pair.react, pair.reactDom], {
-      cwd: consumer,
-      timeoutMs: 30_000,
+  return withPackedConsumer(
+    {
+      tarball,
+      prefix: "elmera-packed-react-",
+      label: `React ${pair.react}/${pair.reactDom}`,
+      dependencies: { react: pair.react, "react-dom": pair.reactDom },
+      cutoff,
       signal,
-    });
-    return probe.stdout.trim();
-  } catch (error) {
-    if (error instanceof CommandAbortedError) {
-      throw error;
+    },
+    async (consumer) => {
+      copyFileSync(join(packageRoot, "test/packed-consumer/react-probe.ts"), join(consumer, "probe.ts"));
+      const probe = await runCommandAsync(process.execPath, ["probe.ts", pair.react, pair.reactDom], {
+        cwd: consumer,
+        timeoutMs: 30_000,
+        signal,
+      });
+      return probe.stdout.trim();
     }
-    const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Packed React ${pair.react}/${pair.reactDom}: ${message}`, { cause: error });
-  } finally {
-    removeDetached(consumer);
-  }
+  );
 }
 
 /**
@@ -87,16 +51,22 @@ async function checkReactPair(
  * install into separate consumers concurrently, since install I/O dominates the run; every
  * install is spawned before this returns. Probe output is returned in pair order, and one
  * error names every failing pair.
+ *
+ * @param tarball - The packed Fuse tarball.
+ * @param cutoff - The run's one `releaseAgeCutoff`, shared with every other packed consumer.
+ * @param signal - Aborts the installs and probes when a sibling check fails.
+ * @returns The probe output lines, in pair order.
  */
-export async function checkPackedReactCompatibility(tarball: string, signal: AbortSignal): Promise<string[]> {
+export async function checkPackedReactCompatibility(
+  tarball: string,
+  cutoff: string,
+  signal: AbortSignal
+): Promise<string[]> {
   // The oldest supported React, one interim release, and the workspace's own version.
   const reactPairs: readonly ReactPair[] = [
     { react: "19.0.0", reactDom: "19.0.0" },
     { react: "19.1.1", reactDom: "19.1.1" },
     { react: installedVersion("react"), reactDom: installedVersion("react-dom") },
   ];
-  // One cutoff for the whole run: three consumers resolving against different instants
-  // could disagree about which versions exist. `--before` mirrors pnpm's `minimumReleaseAge`
-  const cutoff = releaseAgeCutoff(new Date());
   return settleAll(reactPairs.map((pair) => checkReactPair(tarball, pair, cutoff, signal)));
 }

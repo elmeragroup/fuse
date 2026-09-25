@@ -128,23 +128,9 @@ export const runtimeDependencies = [
 export const PUBLISHED_PEER_RANGES = {
   react: "^19",
   "react-dom": "^19",
-  tailwindcss: "^4",
-} as const;
-
-export const PUBLISHED_DEPENDENCY_RANGES = {
-  "@base-ui/react": "1.8.0",
-  clsx: "^2.1.1",
-  "tailwind-merge": "^3.6.0",
-  "tailwind-variants": "^3.2.2",
-  "tailwindcss-react-aria-components": "2.2.0",
-  "tw-animate-css": "^1.4.0",
-  "react-aria-components": "1.21.1",
-  "react-aria": "3.52.1",
-  "@internationalized/date": "^3.12.2",
-  "@phosphor-icons/react": "2.1.10",
-  "@internationalized/string": "^3.2.10",
-  "libphonenumber-js": "^1.13.9",
-  "sugar-high": "^2.4.0",
+  // Shipped classes use the 4.1 utilities `wrap-anywhere` and `wrap-break-word`. package:check
+  // compiles the packed CSS with this floor's first release.
+  tailwindcss: "^4.1",
 } as const;
 
 function isBareComponent(subpath: string): boolean {
