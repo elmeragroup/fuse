@@ -138,6 +138,36 @@ function ControlledPicker(): ReactElement {
   return <DatePicker label="Invoice date" onChange={setValue} value={value} />;
 }
 
+/**
+ * A controlled picker whose single preset drives the value from inside the open popover.
+ * A preset is the only way to change the value with the popover open, so this is the
+ * fixture for the value-change resync rather than the per-open initializer.
+ */
+function PresetDrivenPicker({
+  next,
+  presetLabel,
+  ...pickerProps
+}: {
+  next: CalendarDate | null;
+  presetLabel: string;
+  placeholderValue?: CalendarDate;
+}): ReactElement {
+  const [value, setValue] = useState<CalendarDate | null>(july14);
+  return (
+    <DatePicker
+      {...pickerProps}
+      label="Invoice date"
+      onChange={setValue}
+      presetGroup={
+        <DatePickerPresetGroup onChange={() => setValue(next)}>
+          <DatePickerPresetItem value="preset">{presetLabel}</DatePickerPresetItem>
+        </DatePickerPresetGroup>
+      }
+      value={value}
+    />
+  );
+}
+
 describe("DatePicker", () => {
   it("names the field group from the label, exposes segment spinbuttons and a named collapsed trigger", async () => {
     renderPicker(<DatePicker label="Invoice date" description="Billing date." defaultValue={july14} />);
@@ -245,24 +275,37 @@ describe("DatePicker", () => {
     expect(calendarGrid().getAttribute("aria-label")).toBe(currentMonth);
   });
 
+  it("opens on the placeholder's month when there is no value", async () => {
+    renderPicker(<DatePicker label="Birth date" placeholderValue={new CalendarDate(1990, 1, 1)} />);
+    await openPicker();
+
+    expect(calendarGrid().getAttribute("aria-label")).toMatch(/January\s+1990/i);
+  });
+
+  it("opens on the value's month over the placeholder's", async () => {
+    renderPicker(
+      <DatePicker label="Birth date" placeholderValue={new CalendarDate(1990, 1, 1)} value={march10} />
+    );
+    await openPicker();
+
+    expect(calendarGrid().getAttribute("aria-label")).toMatch(/March\s+2026/i);
+  });
+
+  it("returns to the placeholder's month when the value is cleared with the dialog open", async () => {
+    renderPicker(
+      <PresetDrivenPicker next={null} presetLabel="No date" placeholderValue={new CalendarDate(1990, 1, 1)} />
+    );
+    await openPicker();
+    expect(calendarGrid().getAttribute("aria-label")).toMatch(/July\s+2026/i);
+
+    await userEvent.click(presetTargetNamed("No date"));
+    await expect.element(page.getByRole("dialog")).toBeVisible();
+    expect(calendarGrid().getAttribute("aria-label")).toMatch(/January\s+1990/i);
+  });
+
   it("follows a value change to its month while the dialog stays open", async () => {
     const november3 = new CalendarDate(2026, 11, 3);
-    function PresetDriven(): ReactElement {
-      const [value, setValue] = useState<CalendarDate | null>(july14);
-      return (
-        <DatePicker
-          label="Invoice date"
-          onChange={setValue}
-          presetGroup={
-            <DatePickerPresetGroup onChange={() => setValue(november3)}>
-              <DatePickerPresetItem value="november">Early November</DatePickerPresetItem>
-            </DatePickerPresetGroup>
-          }
-          value={value}
-        />
-      );
-    }
-    renderPicker(<PresetDriven />);
+    renderPicker(<PresetDrivenPicker next={november3} presetLabel="Early November" />);
     await openPicker();
     expect(calendarGrid().getAttribute("aria-label")).toMatch(/July\s+2026/i);
 
