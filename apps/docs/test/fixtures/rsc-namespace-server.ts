@@ -12,7 +12,7 @@
  * warning root is a div row (`data-slot` item, `role` alert), not a client reference.
  */
 import { createElement } from "react";
-import type { ReactElement, ReactNode } from "react";
+import type { FunctionComponent, ReactElement, ReactNode } from "react";
 
 import { createRequire } from "node:module";
 import { PassThrough } from "node:stream";
@@ -42,17 +42,60 @@ import { Toast } from "@elmeragroup/fuse/toast";
 import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
-const NAMESPACES: ReadonlyArray<readonly [string, object, readonly string[]]> = [
-  ["Accordion", Accordion, ["Root", "Item", "Header", "Trigger", "Content"]],
-  ["AlertDialog", AlertDialog, ["Root", "Trigger", "Content"]],
-  ["Avatar", Avatar, ["Root", "Group", "Image", "Fallback"]],
-  ["Breadcrumb", Breadcrumb, ["Root", "List", "Item", "Link", "Page", "Separator", "Ellipsis"]],
-  ["ButtonGroup", ButtonGroup, ["Root", "Separator", "Text"]],
-  ["Collapsible", Collapsible, ["Root", "Trigger", "Content"]],
-  [
-    "Combobox",
-    Combobox,
-    [
+/**
+ * A namespace member the server is allowed to pass through. Client parts are
+ * functions; Toast's manager helpers are functions too. The value is not invoked
+ * here — Flight serializes a client reference, and server markup renders itself.
+ */
+type NamespacePart = (...args: never[]) => ReactNode | object;
+
+const ALERT_PARTS = ["Root", "Icon", "Title", "Description"] as const;
+
+function byName(left: string, right: string): number {
+  return left.localeCompare(right);
+}
+
+function elementFor(part: NamespacePart): ReactElement {
+  // SAFETY: each part is a component or a Flight client reference. renderToPipeableStream accepts both as element types.
+  return createElement(part as FunctionComponent);
+}
+
+function renderNamespace<Namespace extends { readonly [Part in keyof Namespace]: NamespacePart }>(
+  name: string,
+  namespace: Namespace,
+  parts: readonly (keyof Namespace & string)[]
+): ReactElement[] {
+  const elements: ReactElement[] = [];
+  // Read each part before comparing keys. On today's client-module object this throws
+  // "Cannot access X.Y on the server" instead of reporting an empty key list.
+  for (const key of parts) {
+    elements.push(elementFor(namespace[key]));
+  }
+  const actual = Object.keys(namespace).toSorted(byName);
+  const expected = [...parts].toSorted(byName);
+  if (actual.join("\n") !== expected.join("\n")) {
+    throw new Error(`${name} parts\nactual: ${actual.join(", ")}\nexpected: ${expected.join(", ")}`);
+  }
+  return elements;
+}
+
+function namespaceElements(): ReactElement[] {
+  return [
+    ...renderNamespace("Accordion", Accordion, ["Root", "Item", "Header", "Trigger", "Content"]),
+    ...renderNamespace("AlertDialog", AlertDialog, ["Root", "Trigger", "Content"]),
+    ...renderNamespace("Avatar", Avatar, ["Root", "Group", "Image", "Fallback"]),
+    ...renderNamespace("Breadcrumb", Breadcrumb, [
+      "Root",
+      "List",
+      "Item",
+      "Link",
+      "Page",
+      "Separator",
+      "Ellipsis",
+    ]),
+    ...renderNamespace("ButtonGroup", ButtonGroup, ["Root", "Separator", "Text"]),
+    ...renderNamespace("Collapsible", Collapsible, ["Root", "Trigger", "Content"]),
+    ...renderNamespace("Combobox", Combobox, [
       "Root",
       "Input",
       "Trigger",
@@ -69,17 +112,20 @@ const NAMESPACES: ReadonlyArray<readonly [string, object, readonly string[]]> = 
       "Chip",
       "ChipsInput",
       "Value",
-    ],
-  ],
-  [
-    "Dialog",
-    Dialog,
-    ["Root", "Trigger", "Portal", "Close", "Overlay", "Content", "Header", "Footer", "Title", "Description"],
-  ],
-  [
-    "DropdownMenu",
-    DropdownMenu,
-    [
+    ]),
+    ...renderNamespace("Dialog", Dialog, [
+      "Root",
+      "Trigger",
+      "Portal",
+      "Close",
+      "Overlay",
+      "Content",
+      "Header",
+      "Footer",
+      "Title",
+      "Description",
+    ]),
+    ...renderNamespace("DropdownMenu", DropdownMenu, [
       "Root",
       "Trigger",
       "Portal",
@@ -96,12 +142,8 @@ const NAMESPACES: ReadonlyArray<readonly [string, object, readonly string[]]> = 
       "Sub",
       "SubTrigger",
       "SubContent",
-    ],
-  ],
-  [
-    "Field",
-    Field,
-    [
+    ]),
+    ...renderNamespace("Field", Field, [
       "Root",
       "Label",
       "Description",
@@ -114,21 +156,32 @@ const NAMESPACES: ReadonlyArray<readonly [string, object, readonly string[]]> = 
       "Legend",
       "Separator",
       "Title",
-    ],
-  ],
-  ["InputGroup", InputGroup, ["Root", "Addon", "Button", "Text", "Input", "Textarea"]],
-  [
-    "Item",
-    Item,
-    ["Root", "Media", "Content", "Actions", "Group", "Separator", "Title", "Description", "Header", "Footer"],
-  ],
-  ["Pagination", Pagination, ["Root", "Content", "Item", "Link", "Previous", "Next", "Ellipsis"]],
-  ["Popover", Popover, ["Root", "Trigger", "Content", "Header", "Title", "Description"]],
-  ["ScrollArea", ScrollArea, ["Root", "Bar"]],
-  [
-    "Select",
-    Select,
-    [
+    ]),
+    ...renderNamespace("InputGroup", InputGroup, ["Root", "Addon", "Button", "Text", "Input", "Textarea"]),
+    ...renderNamespace("Item", Item, [
+      "Root",
+      "Media",
+      "Content",
+      "Actions",
+      "Group",
+      "Separator",
+      "Title",
+      "Description",
+      "Header",
+      "Footer",
+    ]),
+    ...renderNamespace("Pagination", Pagination, [
+      "Root",
+      "Content",
+      "Item",
+      "Link",
+      "Previous",
+      "Next",
+      "Ellipsis",
+    ]),
+    ...renderNamespace("Popover", Popover, ["Root", "Trigger", "Content", "Header", "Title", "Description"]),
+    ...renderNamespace("ScrollArea", ScrollArea, ["Root", "Bar"]),
+    ...renderNamespace("Select", Select, [
       "Root",
       "Trigger",
       "Value",
@@ -139,13 +192,16 @@ const NAMESPACES: ReadonlyArray<readonly [string, object, readonly string[]]> = 
       "Separator",
       "ScrollUpButton",
       "ScrollDownButton",
-    ],
-  ],
-  ["SelectionItem", SelectionItem, ["Shell", "Title", "Description", "Content", "Actions", "SubSection"]],
-  [
-    "Sheet",
-    Sheet,
-    [
+    ]),
+    ...renderNamespace("SelectionItem", SelectionItem, [
+      "Shell",
+      "Title",
+      "Description",
+      "Content",
+      "Actions",
+      "SubSection",
+    ]),
+    ...renderNamespace("Sheet", Sheet, [
       "Root",
       "Trigger",
       "Close",
@@ -157,12 +213,8 @@ const NAMESPACES: ReadonlyArray<readonly [string, object, readonly string[]]> = 
       "Footer",
       "Title",
       "Description",
-    ],
-  ],
-  [
-    "Sidebar",
-    Sidebar,
-    [
+    ]),
+    ...renderNamespace("Sidebar", Sidebar, [
       "Provider",
       "Root",
       "Trigger",
@@ -187,13 +239,9 @@ const NAMESPACES: ReadonlyArray<readonly [string, object, readonly string[]]> = 
       "MenuSubItem",
       "MenuSubButton",
       "Icon",
-    ],
-  ],
-  ["Tabs", Tabs, ["Root", "List", "Trigger", "Content"]],
-  [
-    "Toast",
-    Toast,
-    [
+    ]),
+    ...renderNamespace("Tabs", Tabs, ["Root", "List", "Trigger", "Content"]),
+    ...renderNamespace("Toast", Toast, [
       "Provider",
       "Viewport",
       "Root",
@@ -204,42 +252,15 @@ const NAMESPACES: ReadonlyArray<readonly [string, object, readonly string[]]> = 
       "Close",
       "useToastManager",
       "createToastManager",
-    ],
-  ],
-  ["ToggleGroup", ToggleGroup, ["Root", "Item"]],
-  ["Tooltip", Tooltip, ["Provider", "Root", "Trigger", "Content"]],
-];
-
-const ALERT_PARTS = ["Root", "Icon", "Title", "Description"] as const;
-
-function part(namespace: object, name: string, key: string): ReactElement {
-  const value = Reflect.get(namespace, key);
-  if (typeof value !== "function") {
-    throw new Error(`${name}.${key} is ${typeof value}, expected a component`);
-  }
-  return createElement(value);
-}
-
-function namespaceElements(): ReactElement[] {
-  const elements: ReactElement[] = [];
-  for (const [name, namespace, parts] of NAMESPACES) {
-    // Read each part before comparing keys. On today's client-module object this throws
-    // "Cannot access X.Y on the server" instead of reporting an empty key list.
-    for (const key of parts) {
-      elements.push(part(namespace, name, key));
-    }
-    const actual = Object.keys(namespace).toSorted();
-    const expected = [...parts].toSorted();
-    if (actual.join("\n") !== expected.join("\n")) {
-      throw new Error(`${name} parts\nactual: ${actual.join(", ")}\nexpected: ${expected.join(", ")}`);
-    }
-  }
-  return elements;
+    ]),
+    ...renderNamespace("ToggleGroup", ToggleGroup, ["Root", "Item"]),
+    ...renderNamespace("Tooltip", Tooltip, ["Provider", "Root", "Trigger", "Content"]),
+  ];
 }
 
 function alertTree(): ReactElement {
-  const actual = Object.keys(Alert).toSorted();
-  const expected = [...ALERT_PARTS].toSorted();
+  const actual = Object.keys(Alert).toSorted(byName);
+  const expected = [...ALERT_PARTS].toSorted(byName);
   if (actual.join("\n") !== expected.join("\n")) {
     throw new Error(`Alert parts\nactual: ${actual.join(", ")}\nexpected: ${expected.join(", ")}`);
   }
@@ -260,29 +281,52 @@ function Fixture(): ReactElement {
   return createElement("div", null, ...namespaceElements(), alertTree());
 }
 
-const require = createRequire(import.meta.url);
-const { renderToPipeableStream } = require("next/dist/compiled/react-server-dom-webpack/server.node.js") as {
+type FlightModuleRecord = {
+  id: string;
+  chunks: readonly string[];
+  name: "*";
+  async: false;
+};
+
+type FlightManifest = {
+  readonly [id: string]: FlightModuleRecord;
+};
+
+type FlightServer = {
   renderToPipeableStream: (
     node: ReactNode,
-    manifest: object,
-    options?: { onError?: (error: unknown) => void }
+    manifest: FlightManifest,
+    options?: { onError?: (error: Error) => void }
   ) => { pipe: (destination: NodeJS.WritableStream) => void };
 };
 
-const manifest = new Proxy(
-  {},
-  {
-    get(_target, property) {
-      if (typeof property !== "string" || property === "then") {
+const require = createRequire(import.meta.url);
+
+function loadFlightServer(): FlightServer {
+  // SAFETY: Next ships this Flight server as untyped compiled CJS. The fixture only calls renderToPipeableStream.
+  return require("next/dist/compiled/react-server-dom-webpack/server.node.js") as FlightServer;
+}
+
+const { renderToPipeableStream } = loadFlightServer();
+
+function flightManifest() {
+  const records: FlightManifest = {};
+  return new Proxy(records, {
+    get(_target, property): FlightModuleRecord | undefined {
+      const id = String(property);
+      // `then` would make the manifest a thenable. Symbol keys are not module ids.
+      if (id === "then" || id.startsWith("Symbol(")) {
         return undefined;
       }
-      return { id: property, chunks: [], name: "*", async: false };
+      return { id, chunks: [], name: "*", async: false };
     },
-  }
-);
+  });
+}
+
+const manifest = flightManifest();
 
 const chunks: Buffer[] = [];
-let renderError: unknown;
+let renderError: Error | undefined;
 const destination = new PassThrough();
 const finished = new Promise<void>((resolve, reject) => {
   destination.on("data", (chunk: Buffer | string) => {
@@ -295,7 +339,7 @@ const finished = new Promise<void>((resolve, reject) => {
 });
 const stream = renderToPipeableStream(createElement(Fixture), manifest, {
   onError(error) {
-    renderError = error;
+    renderError = error instanceof Error ? error : new Error(String(error));
   },
 });
 stream.pipe(destination);

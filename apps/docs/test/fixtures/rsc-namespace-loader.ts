@@ -7,39 +7,148 @@
  */
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { createRequire } from "node:module";
+import type { LoadHook, ResolveHook } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const require = createRequire(import.meta.url);
 
+type SyntaxNode = {
+  readonly kind: number;
+};
+
+type IdentifierNode = SyntaxNode & {
+  readonly text: string;
+};
+
+type StringLiteralNode = SyntaxNode & {
+  readonly text: string;
+};
+
+type ExpressionStatementNode = SyntaxNode & {
+  readonly expression: SyntaxNode;
+};
+
+type BindingPatternNode = SyntaxNode & {
+  readonly elements: readonly SyntaxNode[];
+};
+
+type BindingElementNode = SyntaxNode & {
+  readonly name: SyntaxNode;
+};
+
+type ExportSpecifierNode = SyntaxNode & {
+  readonly isTypeOnly: boolean;
+  readonly name: IdentifierNode;
+};
+
+type NamedExportsNode = SyntaxNode & {
+  readonly elements: readonly ExportSpecifierNode[];
+};
+
+type NamespaceExportNode = SyntaxNode & {
+  readonly name: IdentifierNode;
+};
+
+type ExportDeclarationNode = SyntaxNode & {
+  readonly isTypeOnly: boolean;
+  readonly exportClause: NamedExportsNode | NamespaceExportNode | undefined;
+};
+
+type NamedDeclarationNode = SyntaxNode & {
+  readonly name: IdentifierNode | undefined;
+};
+
+type VariableDeclarationNode = SyntaxNode & {
+  readonly name: SyntaxNode;
+};
+
+type VariableStatementNode = SyntaxNode & {
+  readonly declarationList: {
+    readonly declarations: readonly VariableDeclarationNode[];
+  };
+};
+
+type SourceFileNode = SyntaxNode & {
+  readonly statements: readonly SyntaxNode[];
+};
+
+type ModifierNode = SyntaxNode & {
+  readonly kind: number;
+};
+
+type TranspileOptions = {
+  readonly fileName: string;
+  readonly compilerOptions: {
+    readonly module: number;
+    readonly target: number;
+    readonly jsx: number;
+    readonly verbatimModuleSyntax: boolean;
+  };
+};
+
 /**
- * TypeScript 7's package root only exposes a version stub. The 5.x compiler
- * that already ships for tsdown still has `transpileModule`, which is all this
- * loader needs to evaluate directive-free source.
+ * The subset of the TypeScript 5 compiler this loader calls. TypeScript 7's
+ * package root only exposes a version stub, so the compiler is loaded from the
+ * 5.x build that already ships for tsdown.
  */
-function loadTypeScript() {
+type TypeScriptCompiler = {
+  readonly ScriptKind: { readonly TS: number; readonly TSX: number };
+  readonly ScriptTarget: { readonly Latest: number; readonly ES2022: number };
+  readonly ModuleKind: { readonly ESNext: number };
+  readonly JsxEmit: { readonly ReactJSX: number };
+  readonly SyntaxKind: { readonly ExportKeyword: number };
+  createSourceFile(
+    fileName: string,
+    source: string,
+    languageVersion: number,
+    setParentNodes: boolean,
+    scriptKind: number
+  ): SourceFileNode;
+  isExpressionStatement(node: SyntaxNode): node is ExpressionStatementNode;
+  isStringLiteral(node: SyntaxNode): node is StringLiteralNode;
+  isIdentifier(node: SyntaxNode): node is IdentifierNode;
+  isObjectBindingPattern(node: SyntaxNode): node is BindingPatternNode;
+  isArrayBindingPattern(node: SyntaxNode): node is BindingPatternNode;
+  isBindingElement(node: SyntaxNode): node is BindingElementNode;
+  isExportDeclaration(node: SyntaxNode): node is ExportDeclarationNode;
+  isNamespaceExport(node: SyntaxNode): node is NamespaceExportNode;
+  isExportAssignment(node: SyntaxNode): boolean;
+  canHaveModifiers(node: SyntaxNode): boolean;
+  getModifiers(node: SyntaxNode): readonly ModifierNode[] | undefined;
+  isTypeAliasDeclaration(node: SyntaxNode): boolean;
+  isInterfaceDeclaration(node: SyntaxNode): boolean;
+  isFunctionDeclaration(node: SyntaxNode): node is NamedDeclarationNode;
+  isClassDeclaration(node: SyntaxNode): node is NamedDeclarationNode;
+  isEnumDeclaration(node: SyntaxNode): node is NamedDeclarationNode;
+  isVariableStatement(node: SyntaxNode): node is VariableStatementNode;
+  transpileModule(source: string, options: TranspileOptions): { readonly outputText: string };
+};
+
+function loadTypeScript(): TypeScriptCompiler {
   const pnpmDir = fileURLToPath(new URL("../../../../node_modules/.pnpm", import.meta.url));
   const entry = readdirSync(pnpmDir).find((name) => name.startsWith("typescript@5."));
   if (entry === undefined) {
     throw new Error("typescript@5 was not found in node_modules/.pnpm");
   }
-  return require(join(pnpmDir, entry, "node_modules/typescript/lib/typescript.js"));
+  // SAFETY: typescript.js is untyped CJS. TypeScriptCompiler names only the calls below.
+  return require(join(pnpmDir, entry, "node_modules/typescript/lib/typescript.js")) as TypeScriptCompiler;
 }
 
 const ts = loadTypeScript();
 
-const PROXY_URL = pathToFileURL(fileURLToPath(new URL("./rsc-client-proxy.mjs", import.meta.url))).href;
+const PROXY_URL = pathToFileURL(fileURLToPath(new URL("./rsc-client-proxy.ts", import.meta.url))).href;
 const EXTENSIONS = [".ts", ".tsx", ".js", ".mjs"];
 
-function scriptKind(file) {
+function scriptKind(file: string): number {
   return file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
 }
 
-function sourceFile(file, source) {
+function sourceFile(file: string, source: string): SourceFileNode {
   return ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, scriptKind(file));
 }
 
-function isUseClient(file, source) {
+function isUseClient(file: string, source: string): boolean {
   const parsed = sourceFile(file, source);
   for (const statement of parsed.statements) {
     if (!ts.isExpressionStatement(statement) || !ts.isStringLiteral(statement.expression)) {
@@ -52,7 +161,7 @@ function isUseClient(file, source) {
   return false;
 }
 
-function collectBindingNames(name, names) {
+function collectBindingNames(name: SyntaxNode, names: Set<string>): void {
   if (ts.isIdentifier(name)) {
     names.add(name.text);
     return;
@@ -66,9 +175,9 @@ function collectBindingNames(name, names) {
   }
 }
 
-function runtimeExportNames(file, source) {
+function runtimeExportNames(file: string, source: string): string[] {
   const parsed = sourceFile(file, source);
-  const names = new Set();
+  const names = new Set<string>();
   for (const statement of parsed.statements) {
     if (ts.isExportDeclaration(statement)) {
       if (statement.isTypeOnly || statement.exportClause === undefined) {
@@ -116,7 +225,7 @@ function runtimeExportNames(file, source) {
   return [...names];
 }
 
-function clientStub(url, names) {
+function clientStub(url: string, names: readonly string[]): string {
   const lines = [
     `import { createClientModuleProxy } from ${JSON.stringify(PROXY_URL)};`,
     `const proxy = createClientModuleProxy(${JSON.stringify(url)});`,
@@ -133,7 +242,7 @@ function clientStub(url, names) {
   return `${lines.join("\n")}\n`;
 }
 
-function transpile(file, source) {
+function transpile(file: string, source: string): string {
   const result = ts.transpileModule(source, {
     fileName: file,
     compilerOptions: {
@@ -146,22 +255,22 @@ function transpile(file, source) {
   return result.outputText;
 }
 
-function withReactServer(context) {
-  const conditions = context.conditions ?? [];
-  if (conditions.includes("react-server")) {
+function withReactServer(context: Parameters<ResolveHook>[1]): Parameters<ResolveHook>[1] {
+  if (context.conditions.includes("react-server")) {
     return context;
   }
-  return { ...context, conditions: [...conditions, "react-server"] };
+  return { ...context, conditions: [...context.conditions, "react-server"] };
 }
 
-function fileFromParent(parentURL, specifier) {
-  if (parentURL === undefined) {
-    return specifier;
-  }
+function fileFromParent(parentURL: string, specifier: string): string {
   return join(dirname(fileURLToPath(parentURL)), specifier);
 }
 
-export async function resolve(specifier, context, nextResolve) {
+function isModuleNotFound(error: Error): boolean {
+  return "code" in error && error.code === "ERR_MODULE_NOT_FOUND";
+}
+
+export const resolve: ResolveHook = async (specifier, context, nextResolve) => {
   const nextContext = withReactServer(context);
   if ((specifier.startsWith(".") || specifier.startsWith("/")) && nextContext.parentURL !== undefined) {
     const base = fileFromParent(nextContext.parentURL, specifier);
@@ -188,8 +297,7 @@ export async function resolve(specifier, context, nextResolve) {
     if (
       nextContext.parentURL !== undefined &&
       error instanceof Error &&
-      "code" in error &&
-      error.code === "ERR_MODULE_NOT_FOUND" &&
+      isModuleNotFound(error) &&
       (specifier.endsWith(".ts") || specifier.endsWith(".tsx"))
     ) {
       const candidate = fileFromParent(nextContext.parentURL, specifier);
@@ -199,9 +307,9 @@ export async function resolve(specifier, context, nextResolve) {
     }
     throw error;
   }
-}
+};
 
-export async function load(url, context, nextLoad) {
+export const load: LoadHook = async (url, context, nextLoad) => {
   if (!url.startsWith("file:")) {
     return nextLoad(url, context);
   }
@@ -219,4 +327,4 @@ export async function load(url, context, nextLoad) {
       ? clientStub(url, runtimeExportNames(file, source))
       : transpile(file, source);
   return { format: "module", source: output, shortCircuit: true };
-}
+};

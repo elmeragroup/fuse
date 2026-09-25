@@ -1,3 +1,3 @@
 import { register } from "node:module";
 
-register("./rsc-namespace-loader.mjs", import.meta.url);
+register("./rsc-namespace-loader.ts", import.meta.url);
