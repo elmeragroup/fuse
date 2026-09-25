@@ -45,8 +45,8 @@
     },
     {
       "name": "Item.Media",
-      "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/item/item.tsx",
+      "rsc": "server",
+      "sourcePath": "packages/fuse/src/components/item/item-markup.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -65,8 +65,8 @@
     },
     {
       "name": "Item.Content",
-      "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/item/item.tsx",
+      "rsc": "server",
+      "sourcePath": "packages/fuse/src/components/item/item-markup.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -75,8 +75,8 @@
     },
     {
       "name": "Item.Actions",
-      "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/item/item.tsx",
+      "rsc": "server",
+      "sourcePath": "packages/fuse/src/components/item/item-markup.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -151,8 +151,8 @@
     },
     {
       "name": "Item.Title",
-      "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/item/item.tsx",
+      "rsc": "server",
+      "sourcePath": "packages/fuse/src/components/item/item-markup.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -161,8 +161,8 @@
     },
     {
       "name": "Item.Description",
-      "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/item/item.tsx",
+      "rsc": "server",
+      "sourcePath": "packages/fuse/src/components/item/item-markup.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -171,8 +171,8 @@
     },
     {
       "name": "Item.Header",
-      "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/item/item.tsx",
+      "rsc": "server",
+      "sourcePath": "packages/fuse/src/components/item/item-markup.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
@@ -181,8 +181,8 @@
     },
     {
       "name": "Item.Footer",
-      "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/item/item.tsx",
+      "rsc": "server",
+      "sourcePath": "packages/fuse/src/components/item/item-markup.tsx",
       "forwardedFrom": [
         "@types/react"
       ],
