@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { parseSync } from "oxc-parser";
 import { describe, expect, it } from "vitest";
 
+import { walkImportedSourceFiles } from "../scripts/entries";
 import { overlayLayer } from "./components/overlay/overlay-classes";
 
 /**
@@ -189,51 +190,6 @@ function ownedBy(owner: string, needle: string): string[] {
   return restating;
 }
 
-/** The source-tree file a relative specifier from `importer` names; throws when none does. */
-function resolveRelativeImport(importer: string, specifier: string): string {
-  const base = join(dirname(join(SRC_ROOT, importer)), specifier);
-  for (const candidate of [
-    base,
-    `${base}.ts`,
-    `${base}.tsx`,
-    join(base, "index.ts"),
-    join(base, "index.tsx"),
-  ]) {
-    const record = SOURCE_TREE.get(candidate);
-    if (record !== undefined) {
-      return record.relative;
-    }
-  }
-  throw new Error(`${importer} imports ${specifier}, which resolves to no source file`);
-}
-
-/** The entry files plus every source file they reach through relative imports and re-exports. */
-function relativeImportClosure(entries: readonly string[]): string[] {
-  const seen = new Set<string>();
-  const pending = [...entries];
-  for (let file = pending.pop(); file !== undefined; file = pending.pop()) {
-    if (seen.has(file)) {
-      continue;
-    }
-    seen.add(file);
-    const parsed = parseSync(file, readSrc(file));
-    expect(parsed.errors, file).toEqual([]);
-    const specifiers = [
-      ...parsed.module.staticImports.map(({ moduleRequest }) => moduleRequest.value),
-      ...parsed.module.staticExports.flatMap(({ entries: exported }) =>
-        exported.flatMap(({ moduleRequest }) => (moduleRequest === null ? [] : [moduleRequest.value]))
-      ),
-    ];
-    for (const specifier of specifiers) {
-      if (!specifier.startsWith(".")) {
-        continue;
-      }
-      pending.push(resolveRelativeImport(file, specifier));
-    }
-  }
-  return [...seen].toSorted();
-}
-
 function filesContainingCode(needle: string): string[] {
   const hits: string[] = [];
   for (const record of SOURCE_TREE.values()) {
@@ -402,7 +358,10 @@ describe("density stays out of subtree theming", () => {
   const DENSITY_OWNERS = ["theme/density.ts", "theme/tokens/density-metrics.ts"];
 
   it("keeps the density owners and the data-density stamp off the ThemeProvider and ThemeScope graph", () => {
-    const graph = relativeImportClosure(["theme/theme-provider.tsx", "theme/theme-scope.tsx"]);
+    const graph = walkImportedSourceFiles(PACKAGE_ROOT, [
+      "src/theme/theme-provider.tsx",
+      "src/theme/theme-scope.tsx",
+    ]).map((file) => file.replace(/^src\//, ""));
     // Neither entry imports validate-theme.ts directly, so reaching it proves the walk is
     // transitive. Re-pin a depth-2-only file if an entry ever imports it.
     expect(graph).toEqual(expect.arrayContaining(["theme/theme-attributes.ts", "theme/validate-theme.ts"]));

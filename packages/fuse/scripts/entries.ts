@@ -343,7 +343,15 @@ function uniqueBarrelRuntimeExports(jsEntries: readonly JsExportEntry[]): string
   return names.toSorted((left, right) => left.localeCompare(right));
 }
 
-function walkImportedSourceFiles(packageRoot: string, entryFiles: readonly string[]): string[] {
+/**
+ * Walk the source graph from `entryFiles` through relative imports and re-exports.
+ *
+ * @param packageRoot - The package directory every path is relative to.
+ * @param entryFiles - Package-relative source files to start from, such as `src/index.ts`.
+ * @returns The sorted package-relative closure, entries included, minus tests and demos.
+ * @throws When an entry is missing or a relative specifier resolves to no source file.
+ */
+export function walkImportedSourceFiles(packageRoot: string, entryFiles: readonly string[]): string[] {
   const pending = [...entryFiles];
   const seen = new Set<string>();
 
