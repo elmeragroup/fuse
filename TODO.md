@@ -47,6 +47,13 @@
   `rgb()`, `oklch()` and `lab()` as Chromium's computed serializations.
 - No select demo shows `Select.Content alignItemWithTrigger`; only `select.browser.test.tsx`
   exercises it. Add a demo beside the page and list it in the component inventory.
+- A server component that renders `SelectionItem.Shell` with direct `SelectionItem.SubSection`
+  children still loses the partition: Flight revives the SubSection's client reference as a
+  lazy wrapper, so the shell's `child.type` filter misses it and the band renders inside the
+  label. `CheckboxItem` and `RadioItem` partition on the server and pass `subSections`. Decide
+  whether direct Shell use documents `subSections` for server trees or gets a server-side row.
+  The same applies when a client component renders `CheckboxItem`/`RadioItem` around
+  SubSection children it received from a server component.
 
 ## Control size
 

@@ -18,7 +18,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Direct children are partitioned: `SelectionItem.SubSection` nodes render outside the label so interactive content does not toggle the control. Everything else renders in the label row. Wrapping a SubSection in a Fragment, another component, or an HOC hides it from `child.type === SelectionItem.SubSection` and it stays inside the label.",
+          "description": "Direct children are partitioned: `SelectionItem.SubSection` nodes render outside the label so interactive content does not toggle the control. Everything else renders in the label row. Wrapping a SubSection in a Fragment, another component, or an HOC hides it from `child.type === SelectionItem.SubSection` and it stays inside the label. Server-authored trees should pass SubSections through `subSections`; see that prop.",
           "required": false
         },
         {
@@ -97,6 +97,15 @@
           "shortType": "function",
           "defaultValue": null,
           "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "subSections",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Sub-sections the caller already partitioned out of its row children, rendered outside the label with any direct `SelectionItem.SubSection` children. `CheckboxItem` and `RadioItem` pass them here because they partition where the element was created: a server-authored SubSection reaches the client as a lazy reference, which the `child.type` filter below cannot recognise.",
           "required": false
         }
       ]

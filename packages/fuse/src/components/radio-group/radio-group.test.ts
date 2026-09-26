@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { SelectionItem } from "../selection-item";
-import { Radio, RadioGroup, RadioGroupItem, RadioIconButton, RadioItem, RadioItemGroup } from "./radio-group";
+import { Radio, RadioGroup, RadioGroupItem, RadioIconButton, RadioItemGroup } from "./radio-group";
 import { radioIconButtonVariants } from "./radio-group-variants";
+import { RadioItem } from "./radio-item";
 
 const ICON_BUTTON_SIZES = ["icon", "icon-xxs", "icon-xs", "icon-sm", "icon-lg"] as const;
 

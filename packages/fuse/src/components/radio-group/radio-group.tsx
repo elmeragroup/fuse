@@ -13,12 +13,7 @@ import { dataStateFaceClass } from "../../styles/state-face";
 import { selfFocusRingClass } from "../../styles/utils";
 import { FieldItem } from "../field/field";
 import { FieldFrame } from "../field/field-frame";
-import { SelectionItem } from "../selection-item";
-import {
-  SelectionGroupLayout,
-  SelectionItemGroup,
-  SelectionItemShell,
-} from "../selection-item/selection-item";
+import { SelectionGroupLayout, SelectionItemGroup } from "../selection-item/selection-item";
 import { selectionGroupOrientationVariants } from "../selection-item/selection-item-variants";
 import { radioIconButtonVariants } from "./radio-group-variants";
 
@@ -210,50 +205,6 @@ export function Radio({ value, isDisabled, className, children }: RadioProps): R
   );
 }
 
-export type RadioItemProps = {
-  /** Member value in the group. Forwarded to the inner `RadioGroupItem`. */
-  value: string;
-  /** Forwards `disabled` to the inner control and applies disabled hatch styling on the shell. */
-  isDisabled?: boolean;
-  /**
-   * Where the control sits in the labelled row. Forwarded to `SelectionItem.Shell`.
-   * Default `"start"`.
-   */
-  controlPosition?: "start" | "end";
-  /** Extra classes, merged onto the shell via `cn`. */
-  className?: string;
-  /**
-   * Row children, partitioned by the shell. Direct `RadioItem.SubSection` (the
-   * same object as `SelectionItem.SubSection`) children render outside the label.
-   */
-  children?: ReactNode;
-};
-
-/**
- * Labeled selection row over `SelectionItem.Shell`. Client component, because it wires
- * Field.Item and the label. The namespace aliases `Title`, `Description`, `Content`,
- * `Actions` and `SubSection` are the exact `SelectionItem.*` objects, so `child.type`
- * partitioning works with either spelling.
- */
-export function RadioItem({
-  value,
-  isDisabled,
-  controlPosition = "start",
-  className,
-  children,
-}: RadioItemProps): ReactElement {
-  return (
-    <SelectionItemShell
-      dataSlot="radio-item"
-      isDisabled={isDisabled}
-      controlPosition={controlPosition}
-      className={className}
-      control={<RadioGroupItem value={value} disabled={isDisabled} />}>
-      {children}
-    </SelectionItemShell>
-  );
-}
-
 export type RadioIconButtonProps = Omit<
   ComponentProps<typeof RadioPrimitive.Root>,
   "value" | "disabled" | "className" | "children" | "aria-label"
@@ -307,11 +258,4 @@ RadioGroupItem.displayName = "RadioGroupItem";
 RadioGroup.displayName = "RadioGroup";
 RadioItemGroup.displayName = "RadioItemGroup";
 Radio.displayName = "Radio";
-RadioItem.displayName = "RadioItem";
 RadioIconButton.displayName = "RadioIconButton";
-
-RadioItem.Title = SelectionItem.Title;
-RadioItem.Description = SelectionItem.Description;
-RadioItem.Content = SelectionItem.Content;
-RadioItem.Actions = SelectionItem.Actions;
-RadioItem.SubSection = SelectionItem.SubSection;

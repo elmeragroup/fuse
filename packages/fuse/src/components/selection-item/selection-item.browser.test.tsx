@@ -1,14 +1,16 @@
 import { Checkbox } from "@base-ui/react/checkbox";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { assertHorizontalItemList, radiusToken } from "../../../test/assert-selection-item-group-layout";
 import { headingNamed, renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
 import { disabledHatch } from "../../styles/utils";
-import { Checkbox as UiCheckbox, CheckboxGroup, CheckboxItem, CheckboxItemGroup } from "../checkbox/checkbox";
+import { Checkbox as UiCheckbox, CheckboxGroup, CheckboxItemGroup } from "../checkbox/checkbox";
+import { CheckboxItem } from "../checkbox/checkbox-item";
 import { Field } from "../field";
-import { Radio, RadioGroup, RadioItem, RadioItemGroup } from "../radio-group/radio-group";
+import { Radio, RadioGroup, RadioItemGroup } from "../radio-group/radio-group";
+import { RadioItem } from "../radio-group/radio-item";
 import { SelectionItem } from "./index";
 
 function checkboxNamed(name: string, checked?: boolean): HTMLElement {
@@ -174,6 +176,67 @@ describe("SelectionItem", () => {
 
     await userEvent.click(page.getByRole("button", { name: "Details", exact: true }));
     expect(checkboxNamed("Fixed price", true).getAttribute("aria-checked")).toBe("true");
+  });
+
+  it("renders sub-sections passed through the subSections prop outside the label", async () => {
+    renderThemed(
+      <Field.Root>
+        <SelectionItem.Shell
+          dataSlot="checkbox-item"
+          control={<Checkbox.Root />}
+          subSections={
+            <SelectionItem.SubSection>
+              <button type="button">Passed details</button>
+            </SelectionItem.SubSection>
+          }>
+          <SelectionItem.Content>
+            <RowTitle>Fixed price</RowTitle>
+          </SelectionItem.Content>
+        </SelectionItem.Shell>
+      </Field.Root>
+    );
+
+    const details = page.getByRole("button", { name: "Passed details", exact: true }).element();
+    expect(details.closest("label")).toBeNull();
+    await userEvent.click(page.getByRole("button", { name: "Passed details", exact: true }));
+    expect(page.getByRole("checkbox", { checked: true }).query()).toBeNull();
+  });
+
+  it("renders passed and direct sub-sections outside the label, passed first, without key collisions", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      renderThemed(
+        <Field.Root>
+          <SelectionItem.Shell
+            dataSlot="checkbox-item"
+            control={<Checkbox.Root />}
+            subSections={
+              <SelectionItem.SubSection>
+                <button type="button">Passed details</button>
+              </SelectionItem.SubSection>
+            }>
+            <SelectionItem.SubSection>
+              <button type="button">Direct details</button>
+            </SelectionItem.SubSection>
+            <SelectionItem.Content>
+              <RowTitle>Fixed price</RowTitle>
+            </SelectionItem.Content>
+          </SelectionItem.Shell>
+        </Field.Root>
+      );
+
+      const passed = page.getByRole("button", { name: "Passed details", exact: true }).element();
+      const direct = page.getByRole("button", { name: "Direct details", exact: true }).element();
+      expect(passed.closest("label")).toBeNull();
+      expect(direct.closest("label")).toBeNull();
+      expect(passed.compareDocumentPosition(direct)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+      const keyWarnings = error.mock.calls.filter((args) =>
+        args.some((arg) => String(arg).includes("same key"))
+      );
+      expect(keyWarnings).toEqual([]);
+    } finally {
+      error.mockRestore();
+    }
   });
 
   it("keeps a Fragment-wrapped SubSection inside the label", () => {

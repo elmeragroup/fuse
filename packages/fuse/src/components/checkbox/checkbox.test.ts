@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { SelectionItem } from "../selection-item";
-import { CheckboxDescription, CheckboxGroup, CheckboxItem, CheckboxItemGroup, Checkbox } from "./checkbox";
+import { CheckboxDescription, CheckboxGroup, CheckboxItemGroup, Checkbox } from "./checkbox";
+import { CheckboxItem } from "./checkbox-item";
 
 describe("CheckboxItem namespace aliases", () => {
   it("are the exact SelectionItem part objects", () => {
