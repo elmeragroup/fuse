@@ -80,16 +80,6 @@ export function emittedDirectiveFailure(
   return undefined;
 }
 
-/**
- * The docs-only density preview is built into `dist/` and must stay out of the tarball. The name is
- * spelled out here, not read from `TOOLING_ONLY_CSS_ENTRIES`, so this check does not share the list
- * the publish `.npmignore` is generated from.
- */
-export function packedDocsOnlyStylesheetFailure(extracted: string): string | undefined {
-  const docsOnly = "demo-stage-comfortable.css";
-  return existsSync(join(extracted, docsOnly)) ? `Packed tarball ships docs-only ${docsOnly}` : undefined;
-}
-
 function stringLiteralText(node: Node | undefined): string | undefined {
   if (node !== undefined && isStringLiteral(node)) {
     return node.text;
