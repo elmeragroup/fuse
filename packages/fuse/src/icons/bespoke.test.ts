@@ -8,6 +8,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import {
+  Check,
   Contract,
   ElmeraGroupLogo,
   FjordkraftLogo,
@@ -38,6 +39,19 @@ const logosByName = {
   TrondelagkraftLogo,
   TrumfLogo,
 } satisfies Record<LogoName, (props: LogoProps) => ReactElement>;
+
+/** The naming props both icon families accept; each satisfies this structurally. */
+type NamedSvg = (props: {
+  title?: string;
+  role?: "img";
+  "aria-hidden"?: boolean;
+  "aria-label"?: string;
+}) => ReactElement;
+
+const svgFamilies: ReadonlyArray<readonly [string, NamedSvg]> = [
+  ["Vipps", Vipps],
+  ["Check", Check],
+];
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -72,13 +86,17 @@ function assetSources(): AssetSource[] {
 }
 
 describe("bespoke icons", () => {
-  it("renders a titled SVG as role=img and an untitled or empty-titled SVG as aria-hidden", () => {
-    expectTitled(renderToStaticMarkup(createElement(Vipps, { title: "Vipps" })), "Vipps");
-    expectDecorative(renderToStaticMarkup(createElement(Vipps)));
-    expectDecorative(renderToStaticMarkup(createElement(Vipps, { title: "" })));
-    // Nonempty means meaningful: whitespace-only is still a titled image, not decorative.
-    expectTitled(renderToStaticMarkup(createElement(Vipps, { title: " " })), " ");
-  });
+  // One contract for both families: bespoke artwork (Vipps) and the Phosphor adapter (Check).
+  it.each(svgFamilies)(
+    "renders a titled %s as role=img and an untitled or empty-titled one as aria-hidden",
+    (_, Icon) => {
+      expectTitled(renderToStaticMarkup(createElement(Icon, { title: "Done" })), "Done");
+      expectDecorative(renderToStaticMarkup(createElement(Icon)));
+      expectDecorative(renderToStaticMarkup(createElement(Icon, { title: "" })));
+      // Nonempty means meaningful: whitespace-only is still a titled image, not decorative.
+      expectTitled(renderToStaticMarkup(createElement(Icon, { title: " " })), " ");
+    }
+  );
 
   // Each logo spells the guard twice — `decorativeSvgProps(title)` and its own
   // `{title ? <title>…</title> : null}` — so the two can only stay in step by being
@@ -92,21 +110,20 @@ describe("bespoke icons", () => {
     expectTitled(renderToStaticMarkup(createElement(Logo, { title: " " })), " ", name);
   });
 
-  it("lets caller SVG attributes override decorativeSvgProps", () => {
+  it.each(svgFamilies)("lets caller SVG attributes override %s's naming defaults", (_, Icon) => {
     const hiddenWhileTitled = renderToStaticMarkup(
-      createElement(Vipps, { title: "Vipps", "aria-hidden": true })
+      createElement(Icon, { title: "Done", "aria-hidden": true })
     );
     expect(hiddenWhileTitled).toContain('role="img"');
     expect(hiddenWhileTitled).toContain('aria-hidden="true"');
 
-    const visibleWhileDecorative = renderToStaticMarkup(createElement(Vipps, { "aria-hidden": false }));
+    const visibleWhileDecorative = renderToStaticMarkup(createElement(Icon, { "aria-hidden": false }));
     expect(visibleWhileDecorative).toContain('aria-hidden="false"');
 
-    const labeledUntitled = renderToStaticMarkup(
-      createElement(Vipps, { "aria-label": "Pay with Vipps", role: "img" })
-    );
+    // aria-label is not a naming prop: an untitled icon stays hidden even when labelled.
+    const labeledUntitled = renderToStaticMarkup(createElement(Icon, { "aria-label": "Done", role: "img" }));
     expect(labeledUntitled).toContain('role="img"');
-    expect(labeledUntitled).toContain('aria-label="Pay with Vipps"');
+    expect(labeledUntitled).toContain('aria-label="Done"');
     expect(labeledUntitled).toContain('aria-hidden="true"');
   });
 

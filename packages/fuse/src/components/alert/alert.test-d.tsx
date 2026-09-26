@@ -48,6 +48,8 @@ test("parts take the public API: required icon variant, heading level, no varian
 
   // @ts-expect-error Icon requires the status variant
   const _iconNeedsVariant = <Alert.Icon />;
+  // @ts-expect-error the status glyph is always decorative; the alert text names it
+  const _iconTitle = <Alert.Icon variant="success" title="Success" />;
   // @ts-expect-error Title has no variant axis
   const _titleVariant = <Alert.Title variant="warning">Title</Alert.Title>;
   // @ts-expect-error Description has no variant axis

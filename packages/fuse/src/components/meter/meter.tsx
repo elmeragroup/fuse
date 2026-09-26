@@ -64,11 +64,11 @@ function MeterIcon({
   successName: string;
 }): ReactElement | null {
   if (icon === "warning") {
-    return <Warning aria-label={warningName} className={className} />;
+    return <Warning title={warningName} className={className} />;
   }
 
   if (icon === "success") {
-    return <CheckCircle aria-label={successName} className={className} />;
+    return <CheckCircle title={successName} className={className} />;
   }
 
   return null;

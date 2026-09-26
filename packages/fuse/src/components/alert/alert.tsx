@@ -44,7 +44,7 @@ const ALERT_ICONS = {
 
 export type AlertRootProps = ComponentProps<"div"> & VariantProps<typeof alertVariants> & AlertActionProps;
 
-export type AlertIconProps = Omit<ComponentProps<typeof Info>, "weight"> & {
+export type AlertIconProps = Omit<ComponentProps<typeof Info>, "title" | "weight"> & {
   /**
    * Status glyph. `default → Info`, `warning → Warning`, `destructive → WarningOctagon`,
    * `success → CheckCircle`.
