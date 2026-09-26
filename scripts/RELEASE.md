@@ -90,10 +90,13 @@ is public and the engine supports OIDC promotion. Configure the trusted publishe
 for `publish-release.yml`, request `id-token: write`, enable provenance, then delete
 `NPM_TOKEN` and update this runbook.
 
-Pending consumer fixtures are `fixtures/next-app-router`, using the packed tarball
-in Tailwind-source mode with a server page and client island, and `fixtures/vite`,
-using the tarball in standalone-CSS mode. Both must build and resolve flag SVGs.
-Add them to the publish gate when complete. The existing `apps/docs` and
+The Next App Router fixture is `packages/fuse/scripts/package-check-next-consumer.ts`
+over `packages/fuse/test/packed-consumer/next-app-router/`. It installs the packed
+tarball in Tailwind-source mode and checks a server page rendering namespace parts,
+a client island and flag SVGs. The Vite fixture is the `phone` scenario of
+`packages/fuse/scripts/package-check-flags-consumer.ts`. It builds the packed tarball
+in standalone-CSS mode under a non-root base and checks the flag SVGs stay external.
+Both run inside the `test:packed-consumer` publish gate. The existing `apps/docs` and
 `apps/static-theme` first-paint proofs do not replace these fixtures.
 
 Set up the Vercel docs project with PR previews and enable pkg-pr-new for ephemeral
