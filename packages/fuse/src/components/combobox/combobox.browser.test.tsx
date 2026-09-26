@@ -330,9 +330,42 @@ describe("Combobox", () => {
       </Combobox.Root>
     );
     expect(comboboxNamed("Fruit")).toHaveProperty("disabled", true);
+    expect(comboboxNamed("Fruit").hasAttribute("data-disabled")).toBe(true);
     for (const button of page.getByRole("button").elements()) {
       expect(button).toHaveProperty("disabled", true);
     }
+  });
+
+  it("disables the input from Combobox.Root disabled and skips it in the Tab order", async () => {
+    renderCombobox(
+      <>
+        <button type="button">Before</button>
+        <Combobox.Root items={[...FRUITS]} defaultValue="Apple" disabled>
+          <Combobox.Input aria-label="Fruit" showClear />
+          <Combobox.Content>
+            <Combobox.List>
+              <Combobox.Item value="Apple">Apple</Combobox.Item>
+            </Combobox.List>
+          </Combobox.Content>
+        </Combobox.Root>
+        <button type="button">After</button>
+      </>
+    );
+    await expect.element(page.getByRole("combobox", { name: "Fruit", exact: true })).toBeDisabled();
+
+    buttonNamed("Before").focus();
+    await userEvent.tab();
+    await expect.element(page.getByRole("button", { name: "After", exact: true })).toHaveFocus();
+  });
+
+  it("disables the input from Field.Root disabled", async () => {
+    renderCombobox(
+      <Field.Root disabled>
+        <Field.Label>Fruit</Field.Label>
+        <FruitCombobox />
+      </Field.Root>
+    );
+    await expect.element(page.getByRole("combobox", { name: "Fruit", exact: true })).toBeDisabled();
   });
 
   it("appends chips in multiple mode, keeps the popup open, and removes via chip button and Backspace", async () => {

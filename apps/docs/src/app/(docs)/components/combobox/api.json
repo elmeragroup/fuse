@@ -452,7 +452,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Whether the component should ignore user interaction. Forwarded to the inner `InputGroup.Input` and to the trigger/clear buttons.",
+          "description": "Whether the component should ignore user interaction. Disables the input and the trigger/clear buttons. Combines with `disabled` on `Combobox.Root` and `Field.Root`: any of the three disables the input.",
           "required": false
         },
         {

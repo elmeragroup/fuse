@@ -134,7 +134,8 @@ export type ComboboxInputProps = Omit<
    */
   showClear?: boolean;
   /**
-   * Forwarded to the inner `InputGroup.Input` and to the trigger/clear buttons.
+   * Disables the input and the trigger/clear buttons. Combines with `disabled` on
+   * `Combobox.Root` and `Field.Root`: any of the three disables the input.
    * @default false
    */
   disabled?: boolean;
@@ -165,7 +166,7 @@ export function ComboboxInput({
   const strings = useLocalizedStrings(comboboxStrings);
   return (
     <InputGroupRoot className={cn("w-auto", className)}>
-      <ComboboxPrimitive.Input render={<InputGroupInput disabled={disabled} />} {...props} />
+      <ComboboxPrimitive.Input disabled={disabled} render={<InputGroupInput />} {...props} />
       <InputGroupAddon align="inline-end">
         {showTrigger ? (
           <InputGroupButton
