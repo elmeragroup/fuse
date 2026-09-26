@@ -5,53 +5,30 @@
     "demos": [
       "accordion-basic.tsx",
       "accordion-multiple.tsx",
-      "multiple.tsx",
-      "defaultValue.tsx",
       "accordion-variants.tsx",
-      "default.tsx",
-      "card.tsx",
-      "infodropdown.tsx",
-      "radius.tsx",
       "accordion-controlled.tsx",
-      "value.tsx",
-      "onValueChange.tsx",
-      "accordion-hidden-until-found.tsx",
-      "hiddenUntilFound.tsx"
+      "accordion-hidden-until-found.tsx"
     ]
   },
   "alert": {
     "title": "Alert",
     "rsc": "server",
-    "demos": [
-      "alert-variants.tsx",
-      "alert-action.tsx",
-      "onAction.tsx",
-      "actionLabel.tsx",
-      "alert-title-only.tsx",
-      "alert-heading-level.tsx",
-      "level.tsx"
-    ]
+    "demos": ["alert-variants.tsx", "alert-action.tsx", "alert-title-only.tsx", "alert-heading-level.tsx"]
   },
   "alert-dialog": {
     "title": "Alert Dialog",
     "rsc": "client",
     "demos": [
       "alert-dialog-destructive.tsx",
-      "onAction.tsx",
       "alert-dialog-neutral.tsx",
-      "isAutomaticallyCloseOnActionEnabled.tsx",
       "alert-dialog-pending.tsx",
-      "isPerformingAction.tsx",
-      "isActionDisabled.tsx",
-      "alert-dialog-custom-icon.tsx",
-      "icon.tsx",
-      "cancelLabel.tsx"
+      "alert-dialog-custom-icon.tsx"
     ]
   },
   "avatar": {
     "title": "Avatar",
     "rsc": "client",
-    "demos": ["avatar-basic.tsx", "avatar-fallback.tsx", "delay.tsx", "avatar-sizes.tsx", "avatar-group.tsx"]
+    "demos": ["avatar-basic.tsx", "avatar-fallback.tsx", "avatar-sizes.tsx", "avatar-group.tsx"]
   },
   "badge": {
     "title": "Badge",
@@ -65,8 +42,7 @@
       "breadcrumb-basic.tsx",
       "breadcrumb-custom-separator.tsx",
       "breadcrumb-ellipsis.tsx",
-      "breadcrumb-render-link.tsx",
-      "render.tsx"
+      "breadcrumb-render-link.tsx"
     ]
   },
   "button": {
@@ -76,13 +52,8 @@
       "button-variant-matrix.tsx",
       "button-sizes.tsx",
       "button-pending.tsx",
-      "isPending.tsx",
-      "SpinnerGap.tsx",
       "button-visually-disabled.tsx",
-      "isVisuallyDisabled.tsx",
-      "button-predictive-intent.tsx",
-      "onIntent.tsx",
-      "predictionZoneSize.tsx"
+      "button-predictive-intent.tsx"
     ]
   },
   "button-group": {
@@ -92,13 +63,8 @@
       "button-group-basic.tsx",
       "button-group-vertical.tsx",
       "button-group-split-button.tsx",
-      "CaretDown.tsx",
-      "aria-expanded.tsx",
       "button-group-text.tsx",
-      "render.tsx",
-      "label.tsx",
-      "button-group-nested.tsx",
-      "gap-2.tsx"
+      "button-group-nested.tsx"
     ]
   },
   "calendar": {
@@ -129,15 +95,9 @@
     "demos": [
       "checkbox-basic.tsx",
       "checkbox-group.tsx",
-      "Checkbox.tsx",
       "checkbox-item-group.tsx",
       "checkbox-tristate.tsx",
-      "allValues.tsx",
-      "CheckboxItemGroup.tsx",
-      "inert.tsx",
-      "checkbox-description.tsx",
-      "CheckboxDescription.tsx",
-      "describedBy.tsx"
+      "checkbox-description.tsx"
     ]
   },
   "checkbox-card": {
@@ -146,33 +106,20 @@
     "demos": [
       "checkbox-card-basic.tsx",
       "checkbox-card-tags.tsx",
-      "children.tsx",
       "checkbox-card-right-content.tsx",
-      "rightContent.tsx",
       "checkbox-card-variants.tsx",
-      "default.tsx",
-      "muted.tsx",
-      "isDisabled.tsx",
       "checkbox-card-group.tsx"
     ]
   },
   "code": {
     "title": "Code",
     "rsc": "server",
-    "demos": ["code-basic.tsx", "code-scroll.tsx", "max-h-160.tsx", "aria-label.tsx"]
+    "demos": ["code-basic.tsx", "code-scroll.tsx"]
   },
   "collapsible": {
     "title": "Collapsible",
     "rsc": "client",
-    "demos": [
-      "collapsible-basic.tsx",
-      "defaultOpen.tsx",
-      "--collapsible-panel-height.tsx",
-      "collapsible-controlled.tsx",
-      "open.tsx",
-      "collapsible-hidden-until-found.tsx",
-      "hiddenUntilFound.tsx"
-    ]
+    "demos": ["collapsible-basic.tsx", "collapsible-controlled.tsx", "collapsible-hidden-until-found.tsx"]
   },
   "combobox": {
     "title": "Combobox",
@@ -181,21 +128,13 @@
       "combobox-basic.tsx",
       "combobox-groups.tsx",
       "combobox-multi-chips.tsx",
-      "multiple.tsx",
-      "useComboboxAnchor.tsx",
       "combobox-input-group-anchor.tsx"
     ]
   },
   "confirm-button": {
     "title": "Confirm Button",
     "rsc": "client",
-    "demos": [
-      "confirm-button-destructive.tsx",
-      "armedChildren.tsx",
-      "confirm-button-success.tsx",
-      "confirm-button-icon.tsx",
-      "armedAriaLabel.tsx"
-    ]
+    "demos": ["confirm-button-destructive.tsx", "confirm-button-success.tsx", "confirm-button-icon.tsx"]
   },
   "date-field": {
     "title": "Date Field",
@@ -204,10 +143,8 @@
       "date-field-basic.tsx",
       "date-field-validation.tsx",
       "date-field-granularity.tsx",
-      "hourCycle.tsx",
       "date-field-states.tsx",
-      "date-field-date-input.tsx",
-      "DateInput.tsx"
+      "date-field-date-input.tsx"
     ]
   },
   "date-picker": {
@@ -217,7 +154,6 @@
       "date-picker-basic.tsx",
       "date-picker-controlled.tsx",
       "date-picker-presets.tsx",
-      "isCloseDialogOnDoubleClick.tsx",
       "date-picker-validation.tsx",
       "date-picker-states.tsx",
       "date-picker-in-modal.tsx"
@@ -250,10 +186,8 @@
       "dialog-basic.tsx",
       "dialog-sizes.tsx",
       "dialog-footer-close.tsx",
-      "showCloseButton.tsx",
       "dialog-no-close-button.tsx",
-      "dialog-scrolling.tsx",
-      "max-h.tsx"
+      "dialog-scrolling.tsx"
     ]
   },
   "dropdown-menu": {
@@ -265,22 +199,13 @@
       "dropdown-menu-radio-group.tsx",
       "dropdown-menu-submenu.tsx",
       "dropdown-menu-links.tsx",
-      "render.tsx",
       "dropdown-menu-destructive.tsx"
     ]
   },
   "emoji": {
     "title": "Emoji",
     "rsc": "server",
-    "demos": [
-      "emoji-faces.tsx",
-      "size-8.tsx",
-      "emoji-labeled.tsx",
-      "label.tsx",
-      "emoji-sizing.tsx",
-      "size-4.tsx",
-      "size-5.tsx"
-    ]
+    "demos": ["emoji-faces.tsx", "emoji-labeled.tsx", "emoji-sizing.tsx"]
   },
   "empty": {
     "title": "Empty",
@@ -308,12 +233,7 @@
   "file-trigger": {
     "title": "File Trigger",
     "rsc": "client",
-    "demos": [
-      "file-trigger-basic.tsx",
-      "acceptedFileTypes.tsx",
-      "allowsMultiple.tsx",
-      "file-trigger-modes.tsx"
-    ]
+    "demos": ["file-trigger-basic.tsx", "file-trigger-modes.tsx"]
   },
   "focusable": {
     "title": "Focusable",
@@ -323,18 +243,12 @@
   "frame": {
     "title": "Frame",
     "rsc": "server",
-    "demos": [
-      "frame-basic.tsx",
-      "frame-stacked-panels.tsx",
-      "stackedPanels.tsx",
-      "frame-with-table.tsx",
-      "table-in-frame.tsx"
-    ]
+    "demos": ["frame-basic.tsx", "frame-stacked-panels.tsx", "frame-with-table.tsx"]
   },
   "grid-list": {
     "title": "Grid List",
     "rsc": "client",
-    "demos": ["grid-list-selection.tsx", "grid-list-empty.tsx", "renderEmptyState.tsx"]
+    "demos": ["grid-list-selection.tsx", "grid-list-empty.tsx"]
   },
   "heading": {
     "title": "Heading",
@@ -352,8 +266,6 @@
     "demos": [
       "input-group-icons.tsx",
       "input-group-buttons.tsx",
-      "xs.tsx",
-      "icon-xs.tsx",
       "input-group-block.tsx",
       "input-group-textarea.tsx",
       "input-group-invalid.tsx",
@@ -376,12 +288,12 @@
   "link": {
     "title": "Link",
     "rsc": "client",
-    "demos": ["link-variants.tsx", "truncate.tsx", "weight.tsx", "link-router.tsx"]
+    "demos": ["link-variants.tsx", "link-router.tsx"]
   },
   "loader": {
     "title": "Loader",
     "rsc": "server",
-    "demos": ["loader-sizes.tsx", "loader-inline.tsx", "aria-label.tsx"]
+    "demos": ["loader-sizes.tsx", "loader-inline.tsx"]
   },
   "meter": {
     "title": "Meter",
@@ -390,10 +302,7 @@
       "meter-basic.tsx",
       "meter-modes.tsx",
       "meter-value-label.tsx",
-      "valueLabel.tsx",
       "meter-range.tsx",
-      "minValue.tsx",
-      "maxValue.tsx",
       "meter-neutral.tsx"
     ]
   },
@@ -404,7 +313,6 @@
       "number-field-basic.tsx",
       "number-field-denomination.tsx",
       "number-field-format.tsx",
-      "formatOptions.tsx",
       "number-field-error.tsx",
       "number-field-states.tsx",
       "number-field-uncontrolled.tsx"
@@ -413,7 +321,7 @@
   "pagination": {
     "title": "Pagination",
     "rsc": "client",
-    "demos": ["pagination-basic.tsx", "pagination-ellipsis.tsx", "pagination-controlled.tsx", "isActive.tsx"]
+    "demos": ["pagination-basic.tsx", "pagination-ellipsis.tsx", "pagination-controlled.tsx"]
   },
   "phone-number-field": {
     "title": "Phone Number Field",
@@ -430,13 +338,7 @@
   "popover": {
     "title": "Popover",
     "rsc": "client",
-    "demos": [
-      "popover-basic.tsx",
-      "popover-arrow.tsx",
-      "showArrow.tsx",
-      "popover-placement.tsx",
-      "popover-controlled.tsx"
-    ]
+    "demos": ["popover-basic.tsx", "popover-arrow.tsx", "popover-placement.tsx", "popover-controlled.tsx"]
   },
   "popover-info-button": {
     "title": "Popover Info Button",
@@ -444,9 +346,7 @@
     "demos": [
       "popover-info-button-basic.tsx",
       "popover-info-button-sizes.tsx",
-      "contentSize.tsx",
-      "popover-info-button-i18n.tsx",
-      "label.tsx"
+      "popover-info-button-i18n.tsx"
     ]
   },
   "radio-group": {
@@ -454,17 +354,10 @@
     "rsc": "client",
     "demos": [
       "radio-group-basic.tsx",
-      "Radio.tsx",
       "radio-group-pending.tsx",
-      "isPending.tsx",
       "radio-item-group.tsx",
-      "RadioItemGroup.tsx",
-      "mode.tsx",
-      "inert.tsx",
       "radio-icon-button.tsx",
-      "radio-controlled-null.tsx",
-      "value.tsx",
-      "null.tsx"
+      "radio-controlled-null.tsx"
     ]
   },
   "range-calendar": {
@@ -491,7 +384,7 @@
   "search-field": {
     "title": "Search Field",
     "rsc": "client",
-    "demos": ["search-field-basic.tsx", "search-field-validation.tsx", "isRequired.tsx", "errorMessage.tsx"]
+    "demos": ["search-field-basic.tsx", "search-field-validation.tsx"]
   },
   "select": {
     "title": "Select",
@@ -501,7 +394,6 @@
       "select-groups.tsx",
       "select-sizes.tsx",
       "select-scrolling.tsx",
-      "alignItemWithTrigger.tsx",
       "select-invalid.tsx"
     ]
   },
@@ -511,11 +403,7 @@
     "demos": [
       "selection-item-basic.tsx",
       "selection-item-subsection.tsx",
-      "mode.tsx",
-      "visible.tsx",
-      "hidden.tsx",
       "selection-item-control-end.tsx",
-      "control.tsx",
       "selection-item-stacked.tsx",
       "selection-item-disabled.tsx"
     ]
@@ -523,7 +411,7 @@
   "separator": {
     "title": "Separator",
     "rsc": "client",
-    "demos": ["separator-horizontal.tsx", "separator-vertical.tsx", "self-stretch.tsx"]
+    "demos": ["separator-horizontal.tsx", "separator-vertical.tsx"]
   },
   "sheet": {
     "title": "Sheet",
@@ -531,9 +419,7 @@
     "demos": [
       "sheet-basic.tsx",
       "sheet-sides.tsx",
-      "side.tsx",
       "sheet-sizes.tsx",
-      "top.tsx",
       "sheet-form.tsx",
       "sheet-scrolling.tsx"
     ]
@@ -548,32 +434,16 @@
     "rsc": "client",
     "demos": [
       "sidebar-app-frame.tsx",
-      "defaultOpen.tsx",
       "sidebar-icon-collapse.tsx",
-      "tooltip.tsx",
       "sidebar-mobile-sheet.tsx",
       "sidebar-inset-variant.tsx",
-      "sidebar-menu-rich.tsx",
-      "MenuBadge.tsx",
-      "isActive.tsx",
-      "MenuSub.tsx",
-      "MenuSubItem.tsx",
-      "MenuSubButton.tsx",
-      "MenuSkeleton.tsx"
+      "sidebar-menu-rich.tsx"
     ]
   },
   "skeleton": {
     "title": "Skeleton",
     "rsc": "server",
-    "demos": [
-      "skeleton-basic.tsx",
-      "h-4.tsx",
-      "aria-busy.tsx",
-      "aria-hidden.tsx",
-      "skeleton-card.tsx",
-      "vertical-table-data.tsx",
-      "isLoading.tsx"
-    ]
+    "demos": ["skeleton-basic.tsx", "skeleton-card.tsx"]
   },
   "span": {
     "title": "Span",
@@ -586,8 +456,6 @@
     "demos": [
       "switch-basic.tsx",
       "switch-sizes.tsx",
-      "sm.tsx",
-      "default.tsx",
       "switch-states.tsx",
       "switch-in-field.tsx",
       "switch-form.tsx"
@@ -598,10 +466,8 @@
     "rsc": "server",
     "demos": [
       "table-basic.tsx",
-      "data-state.tsx",
       "table-in-frame.tsx",
       "vertical-table-data.tsx",
-      "data.tsx",
       "vertical-table-compact.tsx"
     ]
   },
@@ -644,7 +510,7 @@
   "textarea": {
     "title": "Textarea",
     "rsc": "server",
-    "demos": ["textarea-basic.tsx", "textarea-states.tsx", "textarea-in-field.tsx", "TextareaField.tsx"]
+    "demos": ["textarea-basic.tsx", "textarea-states.tsx", "textarea-in-field.tsx"]
   },
   "textarea-field": {
     "title": "Textarea Field",
@@ -665,16 +531,7 @@
   "toast": {
     "title": "Toast",
     "rsc": "client",
-    "demos": [
-      "toast-statuses.tsx",
-      "toast-action.tsx",
-      "actionProps.tsx",
-      "toast-promise.tsx",
-      "promise.tsx",
-      "SpinnerGap.tsx",
-      "toast-stacking.tsx",
-      "limit.tsx"
-    ]
+    "demos": ["toast-statuses.tsx", "toast-action.tsx", "toast-promise.tsx", "toast-stacking.tsx"]
   },
   "toggle": {
     "title": "Toggle",
@@ -684,7 +541,6 @@
       "toggle-variants.tsx",
       "toggle-sizes.tsx",
       "toggle-icon-only.tsx",
-      "data-icon.tsx",
       "toggle-controlled.tsx"
     ]
   },
@@ -702,24 +558,11 @@
   "tooltip": {
     "title": "Tooltip",
     "rsc": "client",
-    "demos": [
-      "tooltip-basic.tsx",
-      "tooltip-sides.tsx",
-      "tooltip-delay.tsx",
-      "delay.tsx",
-      "tooltip-controlled.tsx",
-      "open.tsx"
-    ]
+    "demos": ["tooltip-basic.tsx", "tooltip-sides.tsx", "tooltip-delay.tsx", "tooltip-controlled.tsx"]
   },
   "ui-providers": {
     "title": "UI Providers",
     "rsc": "client",
-    "demos": [
-      "ui-providers-basic.tsx",
-      "navigate.tsx",
-      "locale.tsx",
-      "Link.tsx",
-      "ui-providers-locale-switch.tsx"
-    ]
+    "demos": ["ui-providers-basic.tsx", "ui-providers-locale-switch.tsx"]
   }
 }
