@@ -76,11 +76,16 @@ export type DatePickerProps<T extends DateValue> = {
 } & Omit<AriaDatePickerProps<T>, "defaultValue" | "shouldForceLeadingZeros">;
 
 /**
- * The month the popover opens on: the selected date's month, or the current month when
- * there is no value (the today-fallback is kept from the reference).
+ * The month the popover opens on: the selected date's month, else the caller's
+ * `placeholderValue` month, else the current month (the today-fallback is kept from the
+ * reference). The controlled `focusedValue` below beats the `defaultFocusedValue` RAC
+ * derives from `placeholderValue`, so the placeholder has to be honoured here.
  */
-function focusedMonthFor<T extends DateValue>(value: T | null | undefined): CalendarDate {
-  return toCalendarDate(value ?? today(getLocalTimeZone()));
+function focusedMonthFor(
+  value: DateValue | null | undefined,
+  placeholderValue: DateValue | null | undefined
+): CalendarDate {
+  return toCalendarDate(value ?? placeholderValue ?? today(getLocalTimeZone()));
 }
 
 /**
@@ -107,15 +112,21 @@ function isRenderableNode(node: ReactNode): boolean {
  * first sees the new value rather than in an effect after paint, and the compare
  * guard keeps a fresh, equal `CalendarDate` from committing anything.
  */
-function PickerCalendar({ className }: { className: string }): ReactElement {
+function PickerCalendar({
+  className,
+  placeholderValue,
+}: {
+  className: string;
+  placeholderValue: DateValue | null | undefined;
+}): ReactElement {
   const state = use(DatePickerStateContext);
   const value = state?.value;
-  const [focusedValue, setFocusedValue] = useState(() => focusedMonthFor(value));
+  const [focusedValue, setFocusedValue] = useState(() => focusedMonthFor(value, placeholderValue));
   const [lastValue, setLastValue] = useState(value);
 
   if (value !== lastValue) {
     setLastValue(value);
-    const month = focusedMonthFor(value);
+    const month = focusedMonthFor(value, placeholderValue);
     if (focusedValue.compare(month) !== 0) {
       setFocusedValue(month);
     }
@@ -131,6 +142,7 @@ export function DatePicker<T extends DateValue>({
   errorMessage,
   isReadOnly,
   label,
+  placeholderValue,
   presetGroup,
   shouldForceLeadingZeros = true,
   ...props
@@ -143,6 +155,7 @@ export function DatePicker<T extends DateValue>({
     <AriaDatePicker
       {...props}
       isReadOnly={isReadOnly}
+      placeholderValue={placeholderValue}
       shouldForceLeadingZeros={shouldForceLeadingZeros}
       className={composeTailwindRenderProps(className, base())}>
       <PickerShell
@@ -154,7 +167,7 @@ export function DatePicker<T extends DateValue>({
         popover={
           <div className={pane()}>
             {presetGroup}
-            <PickerCalendar className={calendar()} />
+            <PickerCalendar className={calendar()} placeholderValue={placeholderValue} />
           </div>
         }>
         <DateInput className={input()} />
