@@ -118,9 +118,6 @@ describe("exports map", () => {
 
   it("always includes the CSS dual-mode entries and /theme", () => {
     expect(exportBindingTarget(sourceExports, "./css")).toBe("./src/styles/fuse.css");
-    expect(exportBindingTarget(sourceExports, "./demo-stage-comfortable.css")).toBe(
-      "./dist/demo-stage-comfortable.css"
-    );
     expect(exportBindingTarget(sourceExports, "./themes.css")).toBe("./dist/themes.css");
     expect(exportBindingTarget(sourceExports, "./styles.css")).toBe("./dist/styles.css");
     expect(exportBindingTarget(sourceExports, "./theme")).toEqual({
@@ -383,9 +380,7 @@ describe("exports map", () => {
       import: "./illustrations.js",
     });
     expect(exportBindingTarget(publishExports, "./css")).toBe("./styles/fuse.css");
-    expect(exportBindingTarget(publishExports, "./demo-stage-comfortable.css")).toBe(
-      "./demo-stage-comfortable.css"
-    );
+    expect(exportBindingTarget(publishExports, "./demo-stage-comfortable.css")).toBeUndefined();
     expect(exportBindingTarget(publishExports, "./themes.css")).toBe("./themes.css");
     expect(exportBindingTarget(publishExports, "./styles.css")).toBe("./styles.css");
     expect(JSON.stringify(publishExports)).not.toContain("/dist/");
@@ -431,6 +426,12 @@ describe("exports map", () => {
     expect(root?.runtimeExports).toContain("ThemeProvider");
     expect(root?.runtimeExports).toContain("LEGAL_THEMES");
     expect(root?.runtimeExports).not.toContain("composeTheme");
+  });
+
+  it("resolves the docs-only demo-stage stylesheet from the workspace export map", () => {
+    expect(exportBindingTarget(sourceExports, "./demo-stage-comfortable.css")).toBe(
+      "./dist/demo-stage-comfortable.css"
+    );
   });
 
   it("exposes a workspace-only theme-catalog tooling entry that is not published", () => {

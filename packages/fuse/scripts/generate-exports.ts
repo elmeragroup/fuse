@@ -10,6 +10,7 @@ import {
   publishExportTarget,
   sourceCssTarget,
   sourceExportTarget,
+  TOOLING_ONLY_CSS_ENTRIES,
   TOOLING_ONLY_JS_ENTRIES,
 } from "./entries";
 import type { CssExportEntry, DiscoveredEntries, ExportCondition, JsExportEntry } from "./entries";
@@ -99,6 +100,9 @@ function pushToolingOnlyBindings(bindings: ExportBinding[]): void {
   for (const entry of TOOLING_ONLY_JS_ENTRIES) {
     const target = `./${entry.sourceFile}`;
     bindings.push({ key: exportKey(entry.subpath), target: { types: target, import: target } });
+  }
+  for (const entry of TOOLING_ONLY_CSS_ENTRIES) {
+    bindings.push({ key: exportKey(entry.subpath), target: `./dist/${entry.distFile}` });
   }
 }
 
@@ -346,6 +350,12 @@ export function writePublishManifest(packageRoot: string, release?: ReleaseStamp
   }
   writeFileSync(
     join(packageRoot, "dist/.npmignore"),
-    `# published package root — include the built tree\n${ARTIFACTS_DIR}\n`
+    [
+      "# published package root — include the built tree",
+      ARTIFACTS_DIR,
+      "# tooling-only CSS the build writes beside the published files",
+      ...TOOLING_ONLY_CSS_ENTRIES.map((entry) => entry.distFile),
+      "",
+    ].join("\n")
   );
 }

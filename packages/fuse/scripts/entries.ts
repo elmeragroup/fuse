@@ -97,7 +97,16 @@ export const TOOLING_ONLY_JS_ENTRIES = [
   { subpath: "theme-catalog", sourceFile: "src/theme/catalog.ts" },
 ] as const;
 
-export const CSS_ENTRY_NAMES = ["css", "demo-stage-comfortable.css", "styles.css", "themes.css"] as const;
+/**
+ * In-repo `package.json#exports` only. `build-css` writes each `distFile` into `dist/` beside the
+ * published CSS, and the publish `.npmignore` lists the same `distFile`s to keep them out of the tarball.
+ */
+export const TOOLING_ONLY_CSS_ENTRIES = [
+  // The docs' demo stage previews comfortable density; no consumer surface depends on it.
+  { subpath: "demo-stage-comfortable.css", distFile: "demo-stage-comfortable.css" },
+] as const;
+
+export const CSS_ENTRY_NAMES = ["css", "styles.css", "themes.css"] as const;
 
 /** Runtime packages that published JS is allowed to import. */
 export const runtimeDependencies = [
@@ -394,11 +403,6 @@ function cssEntries(packageRoot: string): CssExportEntry[] {
   }
   return [
     { subpath: "css", sourceFile: rawCss, publishFile: "styles/fuse.css" },
-    {
-      subpath: "demo-stage-comfortable.css",
-      sourceFile: "dist/demo-stage-comfortable.css",
-      publishFile: "demo-stage-comfortable.css",
-    },
     { subpath: "styles.css", sourceFile: "dist/styles.css", publishFile: "styles.css" },
     { subpath: "themes.css", sourceFile: "dist/themes.css", publishFile: "themes.css" },
   ];
