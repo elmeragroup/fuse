@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect } from "vitest";
 import { parse } from "yaml";
@@ -7,12 +7,37 @@ import { parse } from "yaml";
 import { asRecord, asRecordArray, asString } from "./json-object.mjs";
 import { repoRoot } from "./repo-tree.mjs";
 
+/** The directory every GitHub Actions workflow lives in. */
+const WORKFLOW_DIRECTORY = new URL("../.github/workflows/", import.meta.url);
+
+/**
+ * Lists every workflow by the name `readWorkflow` and `readWorkflowText` take. GitHub also runs
+ * `.yaml` files, so any other entry fails here instead of escaping the sweeps.
+ *
+ * @returns {string[]} Workflow file names without the `.yml` extension.
+ */
+export function workflowNames() {
+  const files = readdirSync(WORKFLOW_DIRECTORY);
+  expect(
+    files.filter((file) => !file.endsWith(".yml")),
+    "workflows use the .yml extension"
+  ).toEqual([]);
+  return files.map((file) => file.slice(0, -".yml".length));
+}
+
+/**
+ * Reads a workflow's raw YAML, for checks on comments the parser drops.
+ *
+ * @param {string} name - Workflow file name without the `.yml` extension.
+ * @returns {string} The workflow source text.
+ */
+export function readWorkflowText(name) {
+  return readFileSync(new URL(`${name}.yml`, WORKFLOW_DIRECTORY), "utf8");
+}
+
 /** @param {string} name */
 export function readWorkflow(name) {
-  return asRecord(
-    parse(readFileSync(new URL(`../.github/workflows/${name}.yml`, import.meta.url), "utf8")),
-    name
-  );
+  return asRecord(parse(readWorkflowText(name)), name);
 }
 
 /**
@@ -66,11 +91,15 @@ export function requiredRunStep(steps, prefix) {
 }
 
 /**
+ * Finds the single step that runs `action` at any ref. The ref itself is the pin sweep's concern
+ * (`action-pins.test.mjs`), so a second step with the same action fails here as a duplicate.
  * @param {Record<string, unknown>[]} steps
- * @param {string} action
+ * @param {string} action The action path without a ref, such as `actions/checkout`.
  */
 export function requiredUsesStep(steps, action) {
-  const matches = steps.filter((step) => step.uses === action);
+  const matches = steps.filter(
+    (step) => step.uses !== undefined && asString(step.uses, "step uses").startsWith(`${action}@`)
+  );
   expect(matches, `expected one ${action} step`).toHaveLength(1);
   return matches[0];
 }

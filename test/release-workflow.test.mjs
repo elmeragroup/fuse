@@ -8,7 +8,7 @@ import { PUBLISH_GATES } from "../packages/fuse/scripts/release-pack.ts";
 import { USAGE } from "../scripts/release.ts";
 import { asRecord, asString, readJsonObject } from "./json-object.mjs";
 import { repoRoot } from "./repo-tree.mjs";
-import { jobSteps, readWorkflow, requiredRunStep, turboTasks } from "./workflow.mjs";
+import { jobSteps, readWorkflow, requiredRunStep, requiredUsesStep, turboTasks } from "./workflow.mjs";
 
 function rootScripts() {
   return asRecord(readJsonObject(join(repoRoot, "package.json")).scripts, "scripts");
@@ -147,8 +147,7 @@ describe("release wiring", () => {
     });
     // The engine publishes the checked commit or restores the recorded one, so the checkout must
     // fetch full history for that commit without leaving credentialed state for later steps.
-    const checkout = steps.find((step) => step.uses === "actions/checkout@v4");
-    if (checkout === undefined) throw new Error("publish job does not check out the source");
+    const checkout = requiredUsesStep(steps, "actions/checkout");
     expect(asRecord(checkout.with, "checkout inputs")).toEqual({
       ref: "${{ inputs.source_commit || github.sha }}",
       "fetch-depth": 0,
