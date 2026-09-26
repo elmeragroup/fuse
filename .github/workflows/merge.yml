@@ -198,8 +198,9 @@ jobs:
   # Gating versioning too matters: a Version Packages PR merged while publishing is off would
   # land its stable bump and consume its changesets, and the skipped release job would never
   # publish that version.
+  # Both merge jobs gate publishing: a commit whose cold browser run failed must not ship a canary.
   release:
-    needs: checks
+    needs: [checks, browser]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.RELEASE_ENABLED == 'true'
     permissions:
       contents: write
@@ -211,7 +212,7 @@ jobs:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   version:
-    needs: checks
+    needs: [checks, browser]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.RELEASE_ENABLED == 'true'
     permissions:
       contents: write

@@ -16,7 +16,8 @@ Publishing and version-PR creation are disabled until the repository variable
    policy that avoids collisions with internal packages. The last check was 2026-09-13.
 3. Make this repository public in the Elmera GitHub organization and enable Actions.
    Allow Actions to create and approve pull requests. Require branches to be current
-   before merging so an outdated Version Packages PR cannot merge.
+   before merging so an outdated Version Packages PR cannot merge. Enable Dependabot
+   alerts and Dependabot security updates.
 4. Set the granular, organization-scoped `NPM_TOKEN` repository secret, then set
    `RELEASE_ENABLED=true`. Rotate the token when maintainers change.
 5. Verify that the next push to `main` publishes a canary, sets the `canary` dist-tag
@@ -49,16 +50,30 @@ A stale PR that leaves notes behind fails the stable gate after landing its vers
 bump; retrying the same commit cannot fix it. Fix release-PR errors on `main` and let
 the bot refresh. Manually prepared version bumps are not a stable release path.
 
+Fuse publishes some dependencies at exact versions
+([published-dependencies.ts](../packages/fuse/scripts/published-dependencies.ts)), so consumers
+receive an upstream security fix only through a Fuse release. A Dependabot security PR for one of
+them ships with a patch changeset. If the fixed version is younger than `minimumReleaseAge`, add
+it to `minimumReleaseAgeExclude` by exact version in the same PR.
+
 ## Publish gates and recovery
 
 Publishing runs only in CI. The
 [publish workflow](../.github/workflows/publish-release.yml) calls
-`pnpm release publish <commit>` after the non-browser merge checks pass.
+`pnpm release publish <commit>` after both merge jobs, checks and browser, pass.
 The pack adapter builds with the release identity, packs once, and checks those
 exact bytes. [PUBLISH_GATES](../packages/fuse/scripts/release-pack.ts) owns the gate
 list; [turbo.json](../turbo.json) owns the merge dependencies. The publish adapter
-reruns its Chromium packed-consumer checks. It does not wait on the merge browser job.
+reruns its Chromium packed-consumer checks. It runs them again against the exact
+publish bytes even though the merge browser job has passed.
 Local `pnpm ci:checks` includes both browser and packed-consumer tasks.
+
+The adapter builds and runs its gates with the publish credentials removed from the
+environment ([release-credentials.ts](../packages/fuse/scripts/release-credentials.ts)); the
+engine holds its GitHub token from before packing and npm reads its token only at publication.
+This stops code that reads its environment, not a targeted process, which can still read any
+ancestor process's `/proc/<pid>/environ`; full isolation needs a publish job that never builds,
+which waits on a prepare-only engine operation.
 
 If publication fails after an archive was recorded, dispatch **Publish Release**
 on `main` with the record tag, `v<version>` or `canary-<full commit SHA>`.

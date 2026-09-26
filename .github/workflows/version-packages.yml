@@ -16,7 +16,8 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      actions: write
+    outputs:
+      pr-number: ${{ steps.changesets.outputs.pr-number }}
     steps:
       # The guard runs before checkout and install: a superseded job has no work to do, and
       # `gh` is preinstalled on the runner, so nothing is gained by provisioning the repo first.
@@ -32,10 +33,13 @@ jobs:
             echo "Skipping version preparation for superseded commit $GITHUB_SHA"
           fi
 
+      # changesets/action commits and force-updates the release branch through the GitHub API
+      # with its `github-token` (`push-with-git-cli` is off), so the checkout keeps no token.
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
@@ -62,9 +66,17 @@ jobs:
           commit-message: "chore: version packages"
           github-token: ${{ github.token }}
 
-      # The PR was opened with GITHUB_TOKEN, so its push did not start a merge run; dispatch one.
+  # Only this job can dispatch workflows; the version job, which installs dependencies,
+  # cannot. The PR was opened with GITHUB_TOKEN, so its push did not start a merge run.
+  dispatch-checks:
+    needs: version
+    if: needs.version.outputs.pr-number
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
       - name: Run checks on the bot-created release PR
-        if: steps.changesets.outputs.pr-number
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run merge.yml --ref changeset-release/main
+        run: gh workflow run merge.yml --repo "$GITHUB_REPOSITORY" --ref changeset-release/main
