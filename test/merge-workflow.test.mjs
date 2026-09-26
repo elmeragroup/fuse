@@ -61,11 +61,33 @@ describe("merge workflow", () => {
     expect(format.run).toBe("pnpm exec oxfmt --check");
 
     const browser = requiredJobSteps(workflow, "browser");
-    const install = requiredRunStep(browser, "pnpm --filter @elmeragroup/fuse exec playwright");
-    expect(install.if).toBeUndefined();
+    // The version step's script does not start with its pnpm command, so find it by id.
+    const version = browser.find((step) => step.id === "playwright");
+    if (version === undefined) throw new Error("browser job does not resolve the Playwright version");
+    expect(asString(version.run, "version run")).toContain(
+      "pnpm --filter @elmeragroup/fuse exec playwright --version"
+    );
+    const cache = requiredUsesStep(browser, "actions/cache");
+    expect(asRecord(cache.with, "playwright cache inputs")).toEqual({
+      path: "~/.cache/ms-playwright",
+      key: `playwright-chromium-\${{ runner.os }}-\${{ steps.${asString(version.id, "version id")}.outputs.version }}`,
+    });
+    const hit = `steps.${asString(cache.id, "cache id")}.outputs.cache-hit`;
+    const install = requiredRunStep(
+      browser,
+      "pnpm --filter @elmeragroup/fuse exec playwright install --with-deps"
+    );
     expect(install.run).toBe("pnpm --filter @elmeragroup/fuse exec playwright install --with-deps chromium");
+    expect(install.if).toBe(`${hit} != 'true'`);
+    const deps = requiredRunStep(browser, "pnpm --filter @elmeragroup/fuse exec playwright install-deps");
+    expect(deps.run).toBe("pnpm --filter @elmeragroup/fuse exec playwright install-deps chromium");
+    expect(deps.if).toBe(`${hit} == 'true'`);
     const gate = requiredRunStep(browser, "pnpm exec turbo run ");
-    expect(browser.indexOf(install)).toBeLessThan(browser.indexOf(gate));
+    const order = [version, cache, install, gate].map((step) => browser.indexOf(step));
+    expect(order).toEqual([...order].sort((a, b) => a - b));
+    // A deps step above the cache reads an unset cache-hit and never runs on a hit.
+    expect(browser.indexOf(cache)).toBeLessThan(browser.indexOf(deps));
+    expect(browser.indexOf(deps)).toBeLessThan(browser.indexOf(gate));
   });
 
   it("validates the stable release PR in the merge checks", () => {
@@ -107,12 +129,14 @@ describe("merge workflow", () => {
   it("runs dependency code with a read-only token that the checkouts do not persist", () => {
     // Job-level grants replace this default, so release and version keep their own (asserted below).
     expect(workflow.permissions).toEqual({ contents: "read" });
-    for (const job of ["checks", "browser"]) {
+    // Only checks reads history (changeset status --since), so only it clones deeply.
+    const checkoutInputs = {
+      checks: { "fetch-depth": 0, "persist-credentials": false },
+      browser: { "persist-credentials": false },
+    };
+    for (const [job, inputs] of Object.entries(checkoutInputs)) {
       const checkout = requiredUsesStep(requiredJobSteps(workflow, job), "actions/checkout");
-      expect(asRecord(checkout.with, `${job} checkout inputs`)).toEqual({
-        "fetch-depth": 0,
-        "persist-credentials": false,
-      });
+      expect(asRecord(checkout.with, `${job} checkout inputs`)).toEqual(inputs);
       const definition = asRecord(asRecord(workflow.jobs, "merge jobs")[job], job);
       expect(definition["timeout-minutes"], `${job} timeout`).toBe(45);
     }
