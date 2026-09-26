@@ -14,6 +14,7 @@ import type { FlagAssetCode } from "../../flags";
 import { useFormReset } from "../../hooks/use-form-reset";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { MagnifyingGlass } from "../../icons/generated/magnifying-glass";
+import { definedProps } from "../../internal/defined-props";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import { fixedCornerClass } from "../../styles/corner-radius";
@@ -134,12 +135,6 @@ export type PhoneNumberFieldProps = {
   /** Description reference forwarded to the visible input when defined. */
   "aria-describedby"?: ComponentProps<"input">["aria-describedby"];
 };
-
-function definedProps<T extends object>(props: T): { [K in keyof T]?: Exclude<T[K], undefined> } {
-  const defined = Object.fromEntries(Object.entries(props).filter((entry) => entry[1] !== undefined));
-  // SAFETY: Object.entries loses key/value correlation; the filter is the omission contract.
-  return defined as { [K in keyof T]?: Exclude<T[K], undefined> };
-}
 
 /**
  * Labeled phone composite over Field + InputGroup. The country popup is the library

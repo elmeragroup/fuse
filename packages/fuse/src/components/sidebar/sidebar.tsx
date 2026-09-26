@@ -20,6 +20,7 @@ import type { VariantProps } from "tailwind-variants";
 import { useIsMobile } from "../../hooks/use-is-mobile";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { SidebarSimple } from "../../icons/generated/sidebar-simple";
+import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { nativeStateFaceClass } from "../../styles/state-face";
@@ -260,11 +261,20 @@ export type SidebarRootProps = ComponentProps<"div"> & {
   dir?: string;
 };
 
+/**
+ * The sidebar surface. Its element props (`id`, `aria-*`, `data-*`, handlers, `style`)
+ * land on a different element per branch:
+ * - desktop: the fixed `sidebar-container`;
+ * - mobile: the sheet dialog, with `style` merged over the mobile `--sidebar-width`, so a
+ *   caller's `style` can override the width;
+ * - `collapsible="none"`: the static root div.
+ */
 export function SidebarRoot({
   side = "left",
   variant = "sidebar",
   collapsible = "offcanvas",
   className,
+  style,
   children,
   dir,
   ...props
@@ -286,6 +296,7 @@ export function SidebarRoot({
           "group peer flex h-full w-(--sidebar-width) flex-col bg-sidebar text-sidebar-foreground",
           className
         )}
+        style={style}
         {...props}>
         {children}
       </div>
@@ -294,14 +305,17 @@ export function SidebarRoot({
 
   if (isMobile) {
     return (
-      <SheetRoot side={side} open={openMobile} onOpenChange={setOpenMobile} {...props}>
+      // SheetRoot renders only a provider; the popup wires its own dialog ARIA, which an
+      // undefined key would erase, so only defined props are spread.
+      <SheetRoot side={side} open={openMobile} onOpenChange={setOpenMobile}>
         <SheetContent
           dir={dir}
           data-slot="sidebar"
           data-mobile="true"
           showCloseButton={false}
           className={cn("w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground", className)}
-          style={{ "--sidebar-width": SIDEBAR_WIDTH_MOBILE }}>
+          {...definedProps(props)}
+          style={{ "--sidebar-width": SIDEBAR_WIDTH_MOBILE, ...style }}>
           <SheetHeader className="sr-only">
             <SheetTitle>{labels.title}</SheetTitle>
             <SheetDescription>{labels.description}</SheetDescription>
@@ -348,6 +362,7 @@ export function SidebarRoot({
             : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
           className
         )}
+        style={style}
         {...props}>
         <div
           data-slot="sidebar-inner"
@@ -412,10 +427,9 @@ export function SidebarRail({ className, ...props }: SidebarRailProps): ReactEle
       data-slot="sidebar-rail"
       aria-hidden
       tabIndex={-1}
-      onClick={value.toggleSidebar}
       title={labels.toggle}
       className={cn(
-        "sm:flex visible absolute inset-y-0 z-20 hidden w-4 group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:start-1/2 after:w-[2px] after:transition-colors hover:after:bg-sidebar-border ltr:-translate-x-1/2 rtl:-translate-x-1/2",
+        "md:flex visible absolute inset-y-0 z-20 hidden w-4 group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:start-1/2 after:w-[2px] after:transition-colors hover:after:bg-sidebar-border ltr:-translate-x-1/2 rtl:-translate-x-1/2",
         "in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize",
         "[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize",
         "group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full hover:group-data-[collapsible=offcanvas]:bg-sidebar",
@@ -423,7 +437,7 @@ export function SidebarRail({ className, ...props }: SidebarRailProps): ReactEle
         "[[data-side=right][data-collapsible=offcanvas]_&]:-left-2",
         className
       )}
-      {...props}
+      {...mergeProps<"button">({ onClick: value.toggleSidebar }, props)}
     />
   );
 }
