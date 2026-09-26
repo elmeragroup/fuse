@@ -10,13 +10,14 @@ import { jobSteps, readWorkflow, requiredJobSteps, requiredRunStep, requiredUses
 describe("version workflow", () => {
   const workflow = readWorkflow("version-packages");
 
-  it("versions through the root script and triggers the release PR checks", () => {
+  it("versions through the root script and exposes the release PR number", () => {
     // Checks can finish out of push order. An older job must neither cancel a running update
     // nor replace a queued one; the job checks main again before it writes the release branch.
     const job = asRecord(asRecord(workflow.jobs, "version jobs").version, "version job");
-    // The job writes the bot PR and dispatches merge.yml for its checks; a dropped grant would
-    // stay invisible until activation.
-    expect(job.permissions).toEqual({ contents: "write", "pull-requests": "write", actions: "write" });
+    // The job writes the bot PR; only the separate dispatch-checks job may dispatch merge.yml. A
+    // dropped or widened grant would stay invisible until activation.
+    expect(job.permissions).toEqual({ contents: "write", "pull-requests": "write" });
+    expect(job.outputs).toEqual({ "pr-number": "${{ steps.changesets.outputs.pr-number }}" });
     const concurrency = asRecord(job.concurrency, "version concurrency");
     expect(asString(concurrency.group, "concurrency group")).toBe("version-packages");
     expect(concurrency["cancel-in-progress"]).toBe(false);
@@ -34,8 +35,24 @@ describe("version workflow", () => {
     expect(withInput["version-script"]).toBe("pnpm release:version");
     // The release engine is the only publisher; a `publish-script` would bypass its records and gates.
     expect(withInput["publish-script"]).toBeUndefined();
+    // The action writes the release branch through the API, so the checkout persists no token.
+    expect(withInput["push-with-git-cli"]).toBeUndefined();
+  });
+
+  it("dispatches the release PR checks from a job that installs nothing", () => {
+    // The bot PR was opened with GITHUB_TOKEN, so its push started no merge run.
+    const job = asRecord(asRecord(workflow.jobs, "version jobs")["dispatch-checks"], "dispatch-checks job");
+    expect(job.needs).toBe("version");
+    expect(job.if).toBe("needs.version.outputs.pr-number");
+    expect(job.permissions).toEqual({ actions: "write" });
+    // A checkout added later would bring a working tree into the only job that can dispatch.
+    const steps = jobSteps(workflow, "dispatch-checks");
+    expect(steps).toHaveLength(1);
     const dispatch = requiredRunStep(steps, "gh workflow run merge.yml");
-    expect(dispatch.if).toBe("steps.changesets.outputs.pr-number");
+    expect(asString(dispatch.run, "dispatch run").trim()).toBe(
+      'gh workflow run merge.yml --repo "$GITHUB_REPOSITORY" --ref changeset-release/main'
+    );
+    expect(dispatch.env).toEqual({ GH_TOKEN: "${{ github.token }}" });
   });
 
   it.each([
