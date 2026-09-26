@@ -18,6 +18,7 @@ import {
 import type { ControlSizeName, QueryableRole } from "../../test/themed-browser-render";
 import { Button } from "../components/button/button";
 import { Combobox } from "../components/combobox";
+import { NumberField } from "../components/number-field/number-field";
 import { RadioGroup, RadioIconButton } from "../components/radio-group/radio-group";
 import { Select } from "../components/select";
 import { Sidebar } from "../components/sidebar";
@@ -347,12 +348,15 @@ describe("control size: square fit", () => {
             <svg aria-hidden viewBox="0 0 1 1" />
           </RadioIconButton>
         </RadioGroup>
+        {withLocale("en-US", <NumberField label="Smallest number" defaultValue={1} />)}
       </>
     );
     for (const [role, name] of [
       ["button", "smallest button"],
       ["button", "smallest toggle"],
       ["radio", "smallest radio"],
+      ["button", "Increase"],
+      ["button", "Decrease"],
     ] as const) {
       const box = measure(role, name);
       expect(box.height, `${density} ${name} height`).toBeGreaterThanOrEqual(24);

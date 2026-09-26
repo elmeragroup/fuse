@@ -12,6 +12,7 @@ import {
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import {
   CONTROL_MD,
+  CONTROL_XS,
   fieldRootFrom,
   fkasExternal,
   px,
@@ -447,12 +448,12 @@ describe("NumberField", () => {
     renderField(<NumberField label="Quantity" defaultValue={1} />);
     const group = groupFrom("Quantity");
     const chrome = getComputedStyle(group).borderTopColor;
-    const column = stepperIn("Quantity", "Increase").parentElement;
-    if (!(column instanceof HTMLElement)) {
-      throw new Error("expected stepper column");
+    for (const name of ["Decrease", "Increase"] as const) {
+      const stepper = getComputedStyle(stepperIn("Quantity", name));
+      expect(stepper.borderInlineStartColor, `${name} divider color`).toBe(chrome);
+      expect(stepper.borderInlineStartWidth, `${name} divider width`).toBe("1px");
     }
-    expect(getComputedStyle(column).borderInlineStartColor).toBe(chrome);
-    expect(getComputedStyle(stepperIn("Quantity", "Increase")).borderBottomColor).toBe(chrome);
+    expect(getComputedStyle(stepperIn("Quantity", "Increase")).borderBottomWidth).toBe("0px");
     expect(getComputedStyle(stepperIn("Quantity", "Increase")).backgroundColor).toBe(
       getComputedStyle(group).backgroundColor
     );
@@ -480,5 +481,17 @@ describe("NumberField density metrics", () => {
       </ThemeScope>
     );
     expect(px(getComputedStyle(groupFrom("Meter")).height)).toBe(CONTROL_MD.dense.height);
+  });
+
+  it("sizes each stepper to the xs control height wide and the full group tall at both densities", () => {
+    renderField(<NumberField label="Meter" defaultValue={1} />);
+    for (const density of ["dense", "comfortable"] as const) {
+      stampDensity(density);
+      for (const name of ["Decrease", "Increase"] as const) {
+        const stepper = getComputedStyle(stepperIn("Meter", name));
+        expect(px(stepper.width), `${density} ${name} width`).toBe(CONTROL_XS[density].height);
+        expect(px(stepper.height), `${density} ${name} height`).toBeGreaterThanOrEqual(24);
+      }
+    }
   });
 });
