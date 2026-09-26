@@ -96,10 +96,26 @@ describe("merge workflow", () => {
       "${{ github.head_ref == 'changeset-release/main' && github.event.pull_request.head.repo.full_name == github.repository }}"
     );
     const step = requiredRunStep(requiredJobSteps(workflow, "checks"), "pnpm exec changeset status");
-    expect(step.run).toBe("pnpm exec changeset status --since=origin/${{ github.base_ref }}");
+    // The base ref reaches the shell through env, never through an inline expression.
+    expect(step.env).toEqual({ BASE_REF: "${{ github.base_ref }}" });
+    expect(step.run).toBe('pnpm exec changeset status --since="origin/$BASE_REF"');
     expect(asString(step.if, "changeset condition").replace(/\s+/g, " ").trim()).toBe(
       "${{ github.event_name == 'pull_request' && env.IS_SELF_RELEASE_PR != 'true' && !contains(github.event.pull_request.labels.*.name, 'no-changeset') }}"
     );
+  });
+
+  it("runs dependency code with a read-only token that the checkouts do not persist", () => {
+    // Job-level grants replace this default, so release and version keep their own (asserted below).
+    expect(workflow.permissions).toEqual({ contents: "read" });
+    for (const job of ["checks", "browser"]) {
+      const checkout = requiredUsesStep(requiredJobSteps(workflow, job), "actions/checkout");
+      expect(asRecord(checkout.with, `${job} checkout inputs`)).toEqual({
+        "fetch-depth": 0,
+        "persist-credentials": false,
+      });
+      const definition = asRecord(asRecord(workflow.jobs, "merge jobs")[job], job);
+      expect(definition["timeout-minutes"], `${job} timeout`).toBe(45);
+    }
   });
 
   it("publishes and prepares the version PR only from an activated push to main", () => {

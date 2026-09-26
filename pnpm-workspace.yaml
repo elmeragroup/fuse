@@ -69,8 +69,6 @@ overrides:
   "@effect/platform-node-shared": 4.0.0-rc.115
 
 allowBuilds:
-  esbuild: true
-  "@swc/core": true
   "@parcel/watcher": true
 
 minimumReleaseAge: 4320
