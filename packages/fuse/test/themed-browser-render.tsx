@@ -196,6 +196,29 @@ export function roleNamed(role: QueryableRole, name: string): HTMLElement {
   return element;
 }
 
+/**
+ * The styled backdrop behind an open overlay popup, found as the popup's nearest preceding
+ * `role="presentation"` sibling. Base UI also renders an inert internal backdrop with that
+ * role further back, which never receives the pointer, so the walk stops at the first match
+ * rather than querying the role. Suites cannot select the styled one by `data-slot` instead.
+ *
+ * @param popup - The open dialog or alert-dialog popup.
+ * @returns The backdrop a pointer click outside the popup lands on.
+ * @throws When no presentation sibling precedes the popup, which is a defect in the suite.
+ */
+export function overlayBackdropOf(popup: HTMLElement): HTMLElement {
+  for (
+    let sibling = popup.previousElementSibling;
+    sibling !== null;
+    sibling = sibling.previousElementSibling
+  ) {
+    if (sibling instanceof HTMLElement && sibling.getAttribute("role") === "presentation") {
+      return sibling;
+    }
+  }
+  throw new Error("expected a backdrop before the popup");
+}
+
 export function textboxNamed(name: string): HTMLElement {
   return roleNamed("textbox", name);
 }

@@ -1,3 +1,5 @@
+import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog";
+import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { expectTypeOf, test } from "vitest";
 
 import type { AlertDialog as RootAlertDialog } from "@elmeragroup/fuse";
@@ -67,4 +69,28 @@ test("the public namespace is three parts and Content omits showCloseButton", ()
 
   // @ts-expect-error polymorphism is never an `as` prop
   const _noAs = <AlertDialog.Trigger as="div" />;
+});
+
+test("Root is always modal and never opts back into pointer dismissal", () => {
+  // @ts-expect-error an alert dialog cannot be made non-modal
+  const _noModal = <AlertDialog.Root modal={false} />;
+
+  // @ts-expect-error a backdrop click can never dismiss an alert dialog
+  const _noPointerDismissal = <AlertDialog.Root disablePointerDismissal={false} />;
+
+  const _controlled = <AlertDialog.Root open onOpenChange={(_open: boolean) => undefined} />;
+});
+
+test("Trigger takes the same alert-dialog handle as Root, never a plain dialog handle", () => {
+  const alertHandle = AlertDialogPrimitive.createHandle();
+  const _shared = (
+    <>
+      <AlertDialog.Root handle={alertHandle} />
+      <AlertDialog.Trigger handle={alertHandle}>Delete</AlertDialog.Trigger>
+    </>
+  );
+
+  const dialogHandle = DialogPrimitive.createHandle();
+  // @ts-expect-error no AlertDialog.Root accepts a plain dialog handle, so neither does Trigger
+  const _dialogHandle = <AlertDialog.Trigger handle={dialogHandle}>Delete</AlertDialog.Trigger>;
 });

@@ -35,6 +35,9 @@
   reports nothing, while `oxlint apps/docs` reports `typescript(no-unsafe-call)` at line 3. Find
   which root or tsconfig makes the difference so the fixture directory is not silently unlinted,
   then fix or explicitly allow the call.
+- `DialogRoot` (`components/dialog/dialog.tsx`) stamps `data-slot="dialog"` on Base UI's
+  `Dialog.Root`, which renders no DOM: `useRenderDialogRoot` destructures only its named props,
+  so the attribute is discarded. Drop it, and fix any comment that claims the root carries a slot.
 - The docs `sheet-demos` browser test failed once during the RSC namespace work
   (2026-09-25, T3) and passed on every rerun. If it recurs, diagnose before raising any timeout.
 

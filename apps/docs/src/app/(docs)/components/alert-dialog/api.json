@@ -19,7 +19,7 @@
           "type": "RefObject<DialogRootActions | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "A ref to imperative actions. - `unmount`: Manually unmounts the dialog. Call this after any externally controlled closing animation finishes. - `close`: Closes the dialog imperatively when called.",
+          "description": "A ref to imperative actions. - `unmount`: Manually unmounts the alert dialog. Call this after any externally controlled closing animation finishes. - `close`: Closes the alert dialog imperatively when called.",
           "required": false
         },
         {
@@ -56,36 +56,14 @@
           "required": false
         },
         {
-          "name": "disablePointerDismissal",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": "false",
-          "description": "Whether to prevent the dialog from closing on outside presses. For non-modal dialogs, this also prevents the dialog from closing when focus moves outside of it.",
-          "required": false
-        },
-        {
           "name": "handle",
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "DialogHandle<unknown> | undefined",
+          "type": "AlertDialogHandle<unknown> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "A handle to associate the dialog with a trigger. If specified, allows external triggers to control the dialog's open state. Can be created with the Dialog.createHandle() method.",
-          "required": false
-        },
-        {
-          "name": "modal",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "\"trap-focus\" | boolean | undefined",
-          "shortType": "Union",
-          "defaultValue": "true",
-          "description": "Determines if the dialog enters a modal state when open. - `true`: user interaction is limited to just the dialog: focus is trapped, document page scroll is locked, and pointer interactions on outside elements are disabled. - `false`: user interaction with the rest of the document is allowed. - `'trap-focus'`: focus is trapped inside the dialog, but document page scroll is not locked and pointer interactions outside of it remain enabled. When `modal` is `true` or `'trap-focus'`, render `<Dialog.Close>` inside `<Dialog.Popup>` so touch screen readers can escape the popup.",
+          "description": "A handle to associate the alert dialog with a trigger. If specified, allows external triggers to control the alert dialog's open state. Can be created with the AlertDialog.createHandle() method.",
           "required": false
         },
         {
@@ -93,10 +71,10 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((open: boolean, eventDetails: DialogRootChangeEventDetails) => void) | undefined",
+          "type": "((open: boolean, eventDetails: AlertDialogRootChangeEventDetails) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Event handler called when the dialog is opened or closed.",
+          "description": "Event handler called when the alert dialog is opened or closed.",
           "required": false
         },
         {
@@ -160,10 +138,10 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "DialogHandle<unknown> | undefined",
+          "type": "AlertDialogHandle<unknown> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "A handle to associate the trigger with a dialog. Can be created with the Dialog.createHandle() method.",
+          "description": "A handle to associate the trigger with an alert dialog. Can be created with the AlertDialog.createHandle() method.",
           "required": false
         },
         {

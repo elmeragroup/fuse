@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
-import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
+import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog";
 
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { Info } from "../../icons/generated/info";
@@ -14,7 +14,6 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogRoot,
   DialogTitle,
   DialogTrigger,
 } from "../dialog/dialog";
@@ -22,17 +21,22 @@ import type { DialogContentProps } from "../dialog/dialog";
 import { alertDialogStrings } from "./intl";
 
 /**
- * AlertDialog is Dialog machinery with `role="alertdialog"`, so
- * Root and Trigger render through the public Dialog parts rather than reaching for the
- * primitive again — the self-focus ring and every other Dialog behaviour come with them.
- * Each restamps its own `data-slot`: Dialog's parts write theirs before spreading the
- * rest, so the value passed here wins.
+ * Root runs Base UI's alert-dialog mode, which is always modal and ignores backdrop
+ * clicks: a destructive confirmation must be answered, not dismissed by a stray pointer.
+ * Escape still closes it. Its props type omits `modal` and `disablePointerDismissal`, so
+ * neither can be opted back in. The rest is Dialog machinery with `role="alertdialog"`:
+ * Trigger and Content render through the public Dialog parts, which read the same root
+ * context, so the self-focus ring and every other Dialog behaviour come with them.
  */
-export function AlertDialogRoot(props: ComponentProps<typeof DialogPrimitive.Root>): ReactElement {
-  return <DialogRoot data-slot="alert-dialog" {...props} />;
+export function AlertDialogRoot(props: ComponentProps<typeof AlertDialogPrimitive.Root>): ReactElement {
+  return <AlertDialogPrimitive.Root {...props} />;
 }
 
-export function AlertDialogTrigger(props: ComponentProps<typeof DialogPrimitive.Trigger>): ReactElement {
+/**
+ * Trigger restamps its own `data-slot`: Dialog's parts write theirs before spreading the
+ * rest, so the value passed here wins.
+ */
+export function AlertDialogTrigger(props: ComponentProps<typeof AlertDialogPrimitive.Trigger>): ReactElement {
   return <DialogTrigger data-slot="alert-dialog-trigger" {...props} />;
 }
 
@@ -144,12 +148,16 @@ export function AlertDialogContent({
       </DialogHeader>
       <DialogDescription>{children}</DialogDescription>
       <DialogFooter>
-        <DialogPrimitive.Close
+        <AlertDialogPrimitive.Close
           render={<Button ref={cancelRef} size="sm" variant="ghost" data-dialog-action-type="secondary" />}
           onClick={onCancel}>
           {cancelLabel ?? strings.format("cancel")}
-        </DialogPrimitive.Close>
-        {isAutomaticallyCloseOnActionEnabled ? <DialogPrimitive.Close render={actionButton} /> : actionButton}
+        </AlertDialogPrimitive.Close>
+        {isAutomaticallyCloseOnActionEnabled ? (
+          <AlertDialogPrimitive.Close render={actionButton} />
+        ) : (
+          actionButton
+        )}
       </DialogFooter>
     </DialogContent>
   );
