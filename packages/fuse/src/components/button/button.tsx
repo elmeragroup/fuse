@@ -7,6 +7,7 @@ import type { VariantProps } from "tailwind-variants";
 
 import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { usePredictedEvents } from "../../hooks/use-predicted-events";
+import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { buttonVariants } from "./button-variants";
 
@@ -66,6 +67,7 @@ export function Button({
   onIntent,
   onMouseDown,
   ref,
+  "aria-disabled": ariaDisabled,
   ...props
 }: ButtonProps): ReactElement {
   const { ref: predictedRef } = usePredictedEvents({
@@ -81,8 +83,10 @@ export function Button({
       data-pending={isPending || undefined}
       disabled={disabled || isPending}
       // Announced as unavailable without being disabled: the button still activates so
-      // the flow that explains itself can run. An explicit consumer value wins.
-      aria-disabled={isVisuallyDisabled || undefined}
+      // the flow that explains itself can run. An explicit consumer value wins; an absent
+      // or forwarded-undefined one is omitted, not undefined, so Base UI's own
+      // aria-disabled (focusableWhenDisabled, non-native disabled) survives the merge.
+      {...definedProps({ "aria-disabled": ariaDisabled ?? (isVisuallyDisabled || undefined) })}
       className={cn(buttonVariants({ variant, size }), className)}
       onMouseDown={(event) => {
         if (isVisuallyDisabled) {
@@ -90,6 +94,8 @@ export function Button({
         }
         onMouseDown?.(event);
       }}
+      // Raw on purpose: wrappers pass undefined to erase wiring, like Combobox's caret
+      // dropping Field's aria-labelledby.
       {...props}
       ref={mergedRef}
     />

@@ -275,6 +275,41 @@ describe("Button", () => {
     expect(roleNamed("button", "Plain").getAttribute("aria-disabled")).toBe("true");
   });
 
+  it("keeps Base UI's aria-disabled on focusable-disabled, pending and non-native disabled buttons", () => {
+    renderThemed(
+      <>
+        <Button disabled focusableWhenDisabled>
+          Focusable
+        </Button>
+        <Button isPending focusableWhenDisabled>
+          Pending
+        </Button>
+        <Button render={<a href="/docs" />} nativeButton={false} disabled>
+          Anchor
+        </Button>
+        <Button disabled focusableWhenDisabled aria-disabled="false">
+          Overridden
+        </Button>
+      </>
+    );
+
+    // WAI-ARIA: an element that is not natively disabled announces unavailability through aria-disabled.
+    expect(roleNamed("button", "Focusable").getAttribute("aria-disabled")).toBe("true");
+    expect(roleNamed("button", "Pending").getAttribute("aria-disabled")).toBe("true");
+    expect(roleNamed("button", "Anchor").getAttribute("aria-disabled")).toBe("true");
+    // An explicit consumer value still wins, as the isVisuallyDisabled JSDoc promises.
+    expect(roleNamed("button", "Overridden").getAttribute("aria-disabled")).toBe("false");
+  });
+
+  it("keeps Base UI's aria-disabled when a wrapper forwards aria-disabled as undefined", () => {
+    renderThemed(
+      <Button disabled focusableWhenDisabled aria-disabled={undefined}>
+        Forwarded
+      </Button>
+    );
+    expect(roleNamed("button", "Forwarded").getAttribute("aria-disabled")).toBe("true");
+  });
+
   it("forwards a predicted path to onIntent only while live: not disabled, pending, or visually disabled", () => {
     const live = vi.fn();
     const disabled = vi.fn();
