@@ -83,7 +83,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Stamps `aria-disabled` (an explicit consumer value wins), which renders the disabled treatment (`opacity-50`, the `not-allowed` cursor, no hover or press paint), and suppresses focus-on-press while the button stays fully interactive — click, keyboard and focus-visible all still work, and a Tooltip on it still opens. For \"looks disabled but explains itself on activation\" flows. The treatment keys off `aria-disabled`, so an explicit `aria-disabled={false}` also turns it off: the button then looks and announces enabled and only the focus-on-press suppression remains.",
+          "description": "Renders Button's disabled treatment and stamps `aria-disabled` while keeping Tab focus, focus-visible and any Tooltip; pointer presses do not move focus. Presses never arm or confirm, and turning it on disarms. The treatment keys off `aria-disabled`, so an explicit `aria-disabled={false}` hides it while presses stay ignored.",
           "required": false
         },
         {
