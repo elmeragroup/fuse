@@ -16,6 +16,8 @@ import {
   importSpecifier,
 } from "./package-check-packed";
 import { checkPackedReactCompatibility } from "./package-check-react";
+import { checkPackedTailwindFloor } from "./package-check-tailwind";
+import { releaseAgeCutoff } from "./packed-consumer";
 import { packageRootFromScript } from "./paths";
 import { combinedFailure, runCommandAsync, settleAll } from "./run-command";
 import type { CommandOutput } from "./run-command";
@@ -25,11 +27,12 @@ const packageRoot = packageRootFromScript(import.meta.url);
 
 try {
   await withExtractedTarballAsync(packageRoot, "fuse-pack-", async ({ extracted, tarball }) => {
-    // The React matrix, publint and attw each read only the tarball. Every one of their child
-    // processes is spawned synchronously here, before the in-process checks below block this
-    // thread, so the installs and tools run while those checks do; the React probes follow their
-    // installs once the thread is free. Any failure aborts the rest, and every child closes (and
-    // only then is its consumer scheduled for removal) before the error propagates.
+    // The React matrix, the Tailwind floor compile, publint and attw each read only the tarball.
+    // Every one of their child processes is spawned synchronously here, before the in-process
+    // checks below block this thread, so the installs and tools run while those checks do; the
+    // React probes and the Tailwind compile follow their installs once the thread is free. Any
+    // failure aborts the rest, and every child closes (and only then is its consumer scheduled
+    // for removal) before the error propagates.
     const controller = new AbortController();
     const abortOnFailure = <T>(task: Promise<T>): Promise<T> => {
       task.catch(() => {
@@ -37,7 +40,11 @@ try {
       });
       return task;
     };
-    const reactProbes = abortOnFailure(checkPackedReactCompatibility(tarball, controller.signal));
+    // One cutoff for the whole run: consumers resolving against different instants could
+    // disagree about which versions exist. `--before` mirrors pnpm's `minimumReleaseAge`.
+    const cutoff = releaseAgeCutoff(new Date());
+    const reactProbes = abortOnFailure(checkPackedReactCompatibility(tarball, cutoff, controller.signal));
+    const tailwindFloor = abortOnFailure(checkPackedTailwindFloor(tarball, cutoff, controller.signal));
     const publint = abortOnFailure(
       runCommandAsync("pnpm", ["exec", "publint", tarball], { cwd: packageRoot, signal: controller.signal })
     );
@@ -68,6 +75,9 @@ try {
         for (const line of lines) {
           console.log(line);
         }
+      }),
+      tailwindFloor.then((line) => () => {
+        console.log(line);
       }),
       publint.then(printOutput),
       attw.then(printOutput),

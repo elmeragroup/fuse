@@ -4,7 +4,6 @@ import { join } from "node:path";
 import {
   discoverEntries,
   exportKey,
-  PUBLISHED_DEPENDENCY_RANGES,
   PUBLISHED_PEER_RANGES,
   publishCssTarget,
   publishExportTarget,
@@ -14,6 +13,8 @@ import {
   TOOLING_ONLY_JS_ENTRIES,
 } from "./entries";
 import type { CssExportEntry, DiscoveredEntries, ExportCondition, JsExportEntry } from "./entries";
+import { publishedDependencies, readWorkspaceCatalog } from "./published-dependencies";
+import type { Dependencies } from "./published-dependencies";
 import { ARTIFACTS_DIR } from "./tarball";
 import { copyTwemojiNotices } from "./twemoji-notices";
 
@@ -29,22 +30,6 @@ type WorkspacePeers = {
   "react-dom": string;
   tailwindcss: string;
   recharts?: string;
-};
-
-type WorkspaceDependencies = {
-  "@base-ui/react": string;
-  clsx: string;
-  "tailwind-merge": string;
-  "tailwind-variants": string;
-  "tailwindcss-react-aria-components": string;
-  "tw-animate-css": string;
-  "react-aria-components"?: string;
-  "react-aria"?: string;
-  "@internationalized/date"?: string;
-  "@phosphor-icons/react"?: string;
-  "@internationalized/string"?: string;
-  "libphonenumber-js"?: string;
-  "sugar-high"?: string;
 };
 
 /** npm registry metadata. Carried verbatim from the workspace manifest into the published one. */
@@ -63,7 +48,7 @@ type WorkspaceManifest = PackageMetadata & {
   license: string;
   sideEffects: string[];
   peerDependenciesMeta: { tailwindcss: { optional: boolean }; recharts?: { optional: boolean } };
-  dependencies: WorkspaceDependencies;
+  dependencies: Dependencies;
 };
 
 function sortExportKeys(left: string, right: string): number {
@@ -202,8 +187,8 @@ function readWorkspaceManifest(path: string): WorkspaceManifest {
   // SAFETY: workspace package.json is the I/O boundary. Every field stays optional until a check
   // below rejects its absence; the checks test presence, not JSON type, so each present value is
   // trusted to have its declared type. That trust reaches the publish manifest unchanged for the
-  // scalar fields, `sideEffects` and `peerDependenciesMeta`; `dependencies` is read only for which
-  // names it declares, since `publishedDependencies` replaces every range.
+  // scalar fields, `sideEffects` and `peerDependenciesMeta`; `dependencies` contributes only its names
+  // and their `catalog:` specifiers, since `publishedDependencies` derives every range from the catalog.
   const raw = readManifestObject(path) as Partial<WorkspaceManifest>;
   return {
     name: requiredString(raw.name, "name"),
@@ -246,7 +231,7 @@ type PublishManifest = PackageMetadata & {
   exports: ReturnType<typeof exportBindingsObject>;
   peerDependencies: WorkspacePeers;
   peerDependenciesMeta: WorkspaceManifest["peerDependenciesMeta"];
-  dependencies: WorkspaceDependencies;
+  dependencies: Dependencies;
   publishConfig: { access: "public" };
   elmeraRelease?: ReleaseSource;
 };
@@ -257,20 +242,6 @@ function publishedPeerDependencies(): WorkspacePeers {
     "react-dom": PUBLISHED_PEER_RANGES["react-dom"],
     tailwindcss: PUBLISHED_PEER_RANGES.tailwindcss,
   };
-}
-
-export function publishedDependencies(declared: WorkspaceDependencies): WorkspaceDependencies {
-  const dependencies: Partial<WorkspaceDependencies> = {};
-  for (const name of Object.keys(PUBLISHED_DEPENDENCY_RANGES)) {
-    // SAFETY: Object.keys of the published-range const object yields that object's keys.
-    const key = name as keyof typeof PUBLISHED_DEPENDENCY_RANGES;
-    if (declared[key] !== undefined) {
-      dependencies[key] = PUBLISHED_DEPENDENCY_RANGES[key];
-    }
-  }
-  // SAFETY: every WorkspaceDependencies key that the workspace manifest declares is
-  // copied from PUBLISHED_DEPENDENCY_RANGES; required keys are always on that manifest.
-  return dependencies as WorkspaceDependencies;
 }
 
 const ROOT_BARREL_BANNER = `/**
@@ -335,7 +306,7 @@ export function writePublishManifest(packageRoot: string, release?: ReleaseStamp
     exports: exportBindingsObject(buildPublishExportMap(discovered)),
     peerDependencies: publishedPeerDependencies(),
     peerDependenciesMeta: workspace.peerDependenciesMeta,
-    dependencies: publishedDependencies(workspace.dependencies),
+    dependencies: publishedDependencies(workspace.dependencies, readWorkspaceCatalog()),
     publishConfig: { access: "public" },
   };
   if (release !== undefined) {

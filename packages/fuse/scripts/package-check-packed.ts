@@ -146,8 +146,8 @@ export function checkPackedPeers(extracted: string): void {
   if (peers.react !== "^19" || peers["react-dom"] !== "^19") {
     throw new Error(`Packed react peer ranges must be ^19, got ${JSON.stringify(peers)}`);
   }
-  if (peers.tailwindcss !== "^4") {
-    throw new Error(`Packed tailwindcss peer range must be ^4, got ${JSON.stringify(peers.tailwindcss)}`);
+  if (peers.tailwindcss !== "^4.1") {
+    throw new Error(`Packed tailwindcss peer range must be ^4.1, got ${JSON.stringify(peers.tailwindcss)}`);
   }
   if (packedText.includes("catalog:")) {
     throw new Error("Packed package.json leaked catalog: pins");
