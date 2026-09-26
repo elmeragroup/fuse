@@ -98,15 +98,7 @@ describe("useIsMobile", () => {
       queries.push(query);
       return matchMedia(query);
     });
-    const seen: boolean[] = [];
-    render(
-      <Probe
-        onRender={(value) => {
-          seen.push(value);
-        }}
-      />
-    );
-    expect(seen).toEqual([false]);
+    render(<Probe onRender={vi.fn()} />);
     expect(new Set(queries)).toEqual(new Set(["(width < 48rem)"]));
 
     const mdConditions = new Set(

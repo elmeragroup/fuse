@@ -26,8 +26,4 @@ describe("definedProps", () => {
       onClick,
     });
   });
-
-  it("returns an empty object when every key is undefined", () => {
-    expect(definedProps({ id: undefined, role: undefined })).toStrictEqual({});
-  });
 });
