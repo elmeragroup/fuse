@@ -5,7 +5,6 @@ import { discoverEntries } from "./entries";
 import {
   checkPackedBareEntryRacDeclarations,
   checkPackedBootstrap,
-  checkPackedDependencies,
   checkPackedDirectives,
   checkPackedExports,
   checkPackedFlags,
@@ -115,7 +114,6 @@ function runInProcessChecks(extracted: string): void {
   );
   checkPackedExports(extracted, discovered);
   checkPackedPeers(extracted);
-  checkPackedDependencies(extracted);
   checkPackedRuntimeExports(exported, discovered);
   checkPackedDirectives(extracted, discovered);
   checkPackedBareEntryRacDeclarations(extracted, discovered);

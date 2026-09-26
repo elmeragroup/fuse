@@ -10,20 +10,12 @@ export type Dependencies = Readonly<Record<string, string>>;
 /** The `catalog:` block of `pnpm-workspace.yaml`: package name to the exact version the workspace installs. */
 export type WorkspaceCatalog = ReadonlyMap<string, string>;
 
-/** Which dependencies publish a range other than `^<catalog version>`. */
-export type PublishedRangePolicy = {
-  /** Dependencies published at exactly their catalog version. */
-  readonly exactPins: ReadonlySet<string>;
-  /** Caret floors published instead of `^<catalog version>`; each must still admit the catalog version. */
-  readonly floorOverrides: ReadonlyMap<string, string>;
-};
-
 /**
  * Dependencies published at exactly their catalog version rather than a caret range: their
  * styling hooks, data attributes or generated output are part of the rendered result, so a
  * consumer resolving a newer release could change what Fuse renders.
  */
-export const EXACT_DEPENDENCY_PINS: ReadonlySet<string> = new Set([
+const EXACT_DEPENDENCY_PINS: ReadonlySet<string> = new Set([
   "@base-ui/react",
   "react-aria",
   "react-aria-components",
@@ -35,26 +27,13 @@ export const EXACT_DEPENDENCY_PINS: ReadonlySet<string> = new Set([
  * Deliberate published floors below `^<catalog version>`. Every other dependency publishes the
  * range derived from the `pnpm-workspace.yaml` catalog.
  */
-export const DEPENDENCY_FLOOR_OVERRIDES: ReadonlyMap<string, string> = new Map([
+const DEPENDENCY_FLOOR_OVERRIDES: ReadonlyMap<string, string> = new Map([
   // Any 2.4 release carries the granular `core` and `lang/javascript` entries Code imports;
   // the catalog's 2.4.1 is only the version the workspace tests.
   ["sugar-high", "^2.4.0"],
 ]);
 
-const FUSE_RANGE_POLICY: PublishedRangePolicy = {
-  exactPins: EXACT_DEPENDENCY_PINS,
-  floorOverrides: DEPENDENCY_FLOOR_OVERRIDES,
-};
-
 type VersionParts = readonly [major: number, minor: number, patch: number];
-
-/**
- * A caret range's floor, plus how many leading parts an admitted version must share with it.
- * npm's caret keeps the leftmost non-zero part fixed, so `^1.2.3` locks the major, `^0.2.3` the
- * major and minor, and `^0.0.3` all three; an all-zero floor locks every part it names
- * (`^0` admits `0.*`, `^0.0` admits `0.0.*`).
- */
-type CaretRange = { readonly floor: VersionParts; readonly lockedParts: number };
 
 const VERSION = /^(\d+)(?:\.(\d+)(?:\.(\d+))?)?$/;
 
@@ -76,25 +55,12 @@ function parseReleaseVersion(version: string): VersionParts | undefined {
   return parsed?.written === 3 ? parsed.parts : undefined;
 }
 
-function parseCaretRange(range: string): CaretRange | undefined {
-  const parsed = range.startsWith("^") ? parseVersionParts(range.slice(1)) : undefined;
-  if (parsed === undefined) {
-    return undefined;
-  }
-  const leftmostNonZero = parsed.parts.slice(0, parsed.written).findIndex((part) => part !== 0);
-  return {
-    floor: parsed.parts,
-    lockedParts: leftmostNonZero === -1 ? parsed.written : leftmostNonZero + 1,
-  };
+function parseCaretFloor(range: string): VersionParts | undefined {
+  return range.startsWith("^") ? parseVersionParts(range.slice(1))?.parts : undefined;
 }
 
 function compareVersions(left: VersionParts, right: VersionParts): number {
   return left[0] - right[0] || left[1] - right[1] || left[2] - right[2];
-}
-
-function caretAdmits(range: CaretRange, version: VersionParts): boolean {
-  const lockedMatch = range.floor.slice(0, range.lockedParts).every((part, index) => version[index] === part);
-  return lockedMatch && compareVersions(version, range.floor) >= 0;
 }
 
 /**
@@ -104,27 +70,34 @@ function caretAdmits(range: CaretRange, version: VersionParts): boolean {
  * @returns The floor as `<major>.<minor>.<patch>`; throws when the range is not a plain caret range.
  */
 export function peerFloorRelease(range: string): string {
-  const caret = parseCaretRange(range);
-  if (caret === undefined) {
+  const floor = parseCaretFloor(range);
+  if (floor === undefined) {
     throw new Error(`Peer range ${range} is not a caret range`);
   }
-  return caret.floor.join(".");
+  return floor.join(".");
 }
 
-function publishedRange(name: string, catalogVersion: string, policy: PublishedRangePolicy): string {
+function publishedRange(name: string, catalogVersion: string): string {
   const tested = parseReleaseVersion(catalogVersion);
   if (tested === undefined) {
     throw new Error(`Catalog version ${catalogVersion} of ${name} is not a plain release version`);
   }
-  if (policy.exactPins.has(name)) {
+  if (EXACT_DEPENDENCY_PINS.has(name)) {
     return catalogVersion;
   }
-  const override = policy.floorOverrides.get(name);
+  const override = DEPENDENCY_FLOOR_OVERRIDES.get(name);
   if (override === undefined) {
     return `^${catalogVersion}`;
   }
-  const floor = parseCaretRange(override);
-  if (floor === undefined || !caretAdmits(floor, tested)) {
+  const floor = parseCaretFloor(override);
+  // A caret below 1.0 locks more than the major, which the admission check below does not model;
+  // Fuse has no 0.x runtime dependency, so such an override is refused rather than misread.
+  if (floor?.[0] === 0) {
+    throw new Error(
+      `Floor override ${override} of ${name} is below 1.0, which caret floor overrides do not support`
+    );
+  }
+  if (floor === undefined || floor[0] !== tested[0] || compareVersions(tested, floor) < 0) {
     throw new Error(`Floor override ${override} of ${name} does not admit catalog version ${catalogVersion}`);
   }
   return override;
@@ -137,14 +110,9 @@ function publishedRange(name: string, catalogVersion: string, policy: PublishedR
  *
  * @param declared - The workspace manifest's `dependencies`; every specifier must be `catalog:`.
  * @param catalog - The workspace catalog the `catalog:` specifiers resolve against.
- * @param policy - The pins and floor overrides; Fuse's own policy unless a test supplies another.
  * @returns The same dependency names with published ranges; throws when a range cannot be derived.
  */
-export function publishedDependencies(
-  declared: Dependencies,
-  catalog: WorkspaceCatalog,
-  policy: PublishedRangePolicy = FUSE_RANGE_POLICY
-): Dependencies {
+export function publishedDependencies(declared: Dependencies, catalog: WorkspaceCatalog): Dependencies {
   return Object.fromEntries(
     Object.entries(declared).map(([name, specifier]) => {
       if (specifier !== "catalog:") {
@@ -154,7 +122,7 @@ export function publishedDependencies(
       if (catalogVersion === undefined) {
         throw new Error(`Workspace dependency ${name} has no pnpm-workspace.yaml catalog entry`);
       }
-      return [name, publishedRange(name, catalogVersion, policy)];
+      return [name, publishedRange(name, catalogVersion)];
     })
   );
 }

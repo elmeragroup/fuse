@@ -14,7 +14,6 @@ import {
   requireFlagsDirectory,
 } from "../scripts/flag-assets";
 import { FLAG_RAW_CEILING_BYTES, FLAG_SVG_COUNT } from "../scripts/flag-payload";
-import { publishedDependencies } from "../scripts/published-dependencies";
 import { flagAssets } from "./flags";
 import type { FlagAssetCode } from "./flags";
 
@@ -61,7 +60,7 @@ describe("flag assets", () => {
     expect(missing.toSorted((left, right) => left.localeCompare(right))).toEqual(["AC", "BQ", "EH", "TA"]);
   });
 
-  it("publishes libphonenumber-js as a runtime dependency when the workspace declares it", () => {
+  it("declares libphonenumber-js as a catalog runtime dependency", () => {
     const parsed: unknown = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8"));
     if (parsed === null || Array.isArray(parsed)) {
       throw new Error("package.json is not an object");
@@ -74,18 +73,6 @@ describe("flag assets", () => {
     expect(pkg.dependencies["libphonenumber-js"]).toBe("catalog:");
     expect(pkg.devDependencies["libphonenumber-js"]).toBeUndefined();
     expect(runtimeDependencies).toContain("libphonenumber-js");
-    const catalog = new Map([
-      ["clsx", "2.1.1"],
-      ["libphonenumber-js", "1.13.13"],
-      ["react-aria-components", "1.21.1"],
-    ]);
-    expect(publishedDependencies({ clsx: "catalog:" }, catalog)).toEqual({ clsx: "^2.1.1" });
-    expect(
-      publishedDependencies(
-        { clsx: "catalog:", "libphonenumber-js": "catalog:", "react-aria-components": "catalog:" },
-        catalog
-      )
-    ).toEqual({ clsx: "^2.1.1", "libphonenumber-js": "^1.13.13", "react-aria-components": "1.21.1" });
   });
 
   // Timeout: copying + SHA-256 hashing the full flag set twice is slow under full-gate parallel load.

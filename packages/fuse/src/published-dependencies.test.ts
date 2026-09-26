@@ -65,46 +65,6 @@ describe("published dependency ranges", () => {
   });
 });
 
-describe("caret floor overrides below 1.0", () => {
-  const declared = { pre: "catalog:" };
-  const withFloor = (floor: string) => ({
-    exactPins: new Set<string>(),
-    floorOverrides: new Map([["pre", floor]]),
-  });
-
-  it("keeps the minor fixed for a ^0.y.z floor", () => {
-    expect(publishedDependencies(declared, new Map([["pre", "0.2.7"]]), withFloor("^0.2.0"))).toEqual({
-      pre: "^0.2.0",
-    });
-    for (const version of ["0.3.0", "1.2.0", "0.1.9"]) {
-      expect(() => publishedDependencies(declared, new Map([["pre", version]]), withFloor("^0.2.0"))).toThrow(
-        `Floor override ^0.2.0 of pre does not admit catalog version ${version}`
-      );
-    }
-  });
-
-  it("admits only the floor itself for a ^0.0.z floor", () => {
-    expect(publishedDependencies(declared, new Map([["pre", "0.0.3"]]), withFloor("^0.0.3"))).toEqual({
-      pre: "^0.0.3",
-    });
-    expect(() => publishedDependencies(declared, new Map([["pre", "0.0.4"]]), withFloor("^0.0.3"))).toThrow(
-      "Floor override ^0.0.3 of pre does not admit catalog version 0.0.4"
-    );
-  });
-
-  it("keeps every written part fixed for an all-zero floor", () => {
-    expect(publishedDependencies(declared, new Map([["pre", "0.9.1"]]), withFloor("^0"))).toEqual({
-      pre: "^0",
-    });
-    expect(publishedDependencies(declared, new Map([["pre", "0.0.9"]]), withFloor("^0.0"))).toEqual({
-      pre: "^0.0",
-    });
-    expect(() => publishedDependencies(declared, new Map([["pre", "0.1.0"]]), withFloor("^0.0"))).toThrow(
-      "Floor override ^0.0 of pre does not admit catalog version 0.1.0"
-    );
-  });
-});
-
 describe("peer floor release", () => {
   it("names the first release a caret peer range admits", () => {
     expect(peerFloorRelease("^4.1")).toBe("4.1.0");
