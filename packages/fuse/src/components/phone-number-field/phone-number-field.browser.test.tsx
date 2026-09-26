@@ -20,7 +20,13 @@ import {
   selectCountry,
 } from "../../../test/phone-browser-queries";
 import { EXCLUDED_PRODUCT_COUNTRY_CODES, FLAG_GAP_COUNTRY_CODES } from "../../../test/phone-picker-contract";
-import { renderThemed, roleNamed, textboxNamed } from "../../../test/themed-browser-render";
+import {
+  fieldRootFrom,
+  formNamed,
+  renderThemed,
+  roleNamed,
+  textboxNamed,
+} from "../../../test/themed-browser-render";
 import { flagAssets } from "../../flags";
 import { resetCountryNameCache } from "./country-names";
 
@@ -200,6 +206,29 @@ describe("PhoneNumberField", () => {
     await userEvent.click(page.getByRole("button", { name: "Save", exact: true }));
     expect(hiddenNamed("phone").value).toBe("+4741234567");
     expect(submitted).toEqual([{ phone: "+4741234567", display: "41234567" }]);
+  });
+
+  it("blocks an empty required submit and allows it once filled", async () => {
+    renderField(
+      <form aria-label="Phone form">
+        <PhoneNumberField label="Mobile" name="phone" isRequired />
+      </form>
+    );
+    expect(fieldRootFrom("Mobile").hasAttribute("data-invalid")).toBe(false);
+    expect(textboxNamed("Mobile")).toHaveProperty("required", true);
+    expect(formNamed("Phone form").checkValidity()).toBe(false);
+    await userEvent.fill(page.getByRole("textbox", { name: "Mobile", exact: true }), "41234567");
+    expect(formNamed("Phone form").checkValidity()).toBe(true);
+  });
+
+  it("submits no display-value key when name is unset", async () => {
+    renderField(
+      <form aria-label="Phone form">
+        <PhoneNumberField label="Mobile" />
+      </form>
+    );
+    await userEvent.fill(page.getByRole("textbox", { name: "Mobile", exact: true }), "41234567");
+    expect([...new FormData(formNamed("Phone form")).keys()]).toEqual([]);
   });
 
   it("auto-detects SE from +46 and strips the prefix in national mode", async () => {

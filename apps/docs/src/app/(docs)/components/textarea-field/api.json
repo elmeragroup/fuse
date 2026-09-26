@@ -17,7 +17,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged onto the inner `Textarea`.",
+          "description": "Extra classes, merged onto the root via `cn`.",
           "required": false
         },
         {
@@ -99,6 +99,15 @@
           "shortType": "function",
           "defaultValue": null,
           "description": "Called with the string value, not the native event.",
+          "required": false
+        },
+        {
+          "name": "textareaClassName",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged onto the inner `Textarea`.",
           "required": false
         },
         {

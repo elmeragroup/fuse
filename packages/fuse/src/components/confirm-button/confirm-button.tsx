@@ -36,6 +36,8 @@ export type ConfirmButtonProps = DistributiveOmit<
  * Client — owns armed state.
  *
  * Turning `disabled` or `isPending` on disarms it, so re-enabling never restores a stale armed state.
+ * Escape disarms without confirming; while armed the button consumes the key, so inside a Dialog,
+ * Sheet or Popover the first Escape disarms and a second one closes the overlay.
  */
 export function ConfirmButton({
   onConfirm,
@@ -95,6 +97,8 @@ export function ConfirmButton({
     onKeyDown: (event) => {
       if (event.key === "Escape" && isArmed) {
         event.preventDefault();
+        // Consume the Escape: Base UI's overlay dismiss ignores defaultPrevented, so an armed button must stop it reaching the popup and the document.
+        event.stopPropagation();
         setIsArmedRaw(false);
       }
       onKeyDown?.(event);

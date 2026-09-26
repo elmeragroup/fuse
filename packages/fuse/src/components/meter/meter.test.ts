@@ -63,34 +63,33 @@ const SUCCESS_COPY = {
 
 describe("getMeterLevel", () => {
   it("treats percentage at or below 80 as LOW, including the 80 boundary", () => {
-    expect(getMeterLevel(0, undefined, 0)).toBe(METER_CONSTANTS.LEVELS.LOW);
-    expect(getMeterLevel(80, undefined, 80)).toBe(METER_CONSTANTS.LEVELS.LOW);
+    expect(getMeterLevel(0, 100, 0)).toBe(METER_CONSTANTS.LEVELS.LOW);
+    expect(getMeterLevel(80, 100, 80)).toBe(METER_CONSTANTS.LEVELS.LOW);
   });
 
   it("treats percentage strictly between 80 and 100 as MEDIUM", () => {
-    expect(getMeterLevel(81, undefined, 81)).toBe(METER_CONSTANTS.LEVELS.MEDIUM);
-    expect(getMeterLevel(99, undefined, 99)).toBe(METER_CONSTANTS.LEVELS.MEDIUM);
+    expect(getMeterLevel(81, 100, 81)).toBe(METER_CONSTANTS.LEVELS.MEDIUM);
+    expect(getMeterLevel(99, 100, 99)).toBe(METER_CONSTANTS.LEVELS.MEDIUM);
   });
 
-  it("treats percentage 100 as FULL when maxValue is not exceeded", () => {
-    expect(getMeterLevel(100, undefined, 100)).toBe(METER_CONSTANTS.LEVELS.FULL);
+  it("treats percentage 100 as FULL when max is not exceeded", () => {
     expect(getMeterLevel(100, 100, 100)).toBe(METER_CONSTANTS.LEVELS.FULL);
   });
 
-  it("returns EXCEEDED_MAX_VALUE only when maxValue is explicit and value exceeds it", () => {
+  it("returns EXCEEDED_MAX_VALUE when value exceeds max", () => {
     expect(getMeterLevel(101, 100, 100)).toBe(METER_CONSTANTS.LEVELS.EXCEEDED_MAX_VALUE);
     expect(getMeterLevel(150, 120, 100)).toBe(METER_CONSTANTS.LEVELS.EXCEEDED_MAX_VALUE);
   });
 
-  it("never returns EXCEEDED_MAX_VALUE when maxValue is omitted", () => {
-    expect(getMeterLevel(150, undefined, 100)).toBe(METER_CONSTANTS.LEVELS.FULL);
-    expect(getMeterLevel(200, undefined, 100)).not.toBe(METER_CONSTANTS.LEVELS.EXCEEDED_MAX_VALUE);
+  it("returns EXCEEDED_MAX_VALUE above the default max of 100", () => {
+    expect(getMeterLevel(150, 100, 100)).toBe(METER_CONSTANTS.LEVELS.EXCEEDED_MAX_VALUE);
+    expect(getMeterLevel(100, 100, 100)).toBe(METER_CONSTANTS.LEVELS.FULL);
   });
 
   it("maps max <= min to percentage 0 and LOW", () => {
     expect(meterPercentage(50, 100, 100)).toBe(0);
     expect(meterPercentage(50, 100, 50)).toBe(0);
-    expect(getMeterLevel(50, undefined, meterPercentage(50, 100, 50))).toBe(METER_CONSTANTS.LEVELS.LOW);
+    expect(getMeterLevel(50, 50, meterPercentage(50, 100, 50))).toBe(METER_CONSTANTS.LEVELS.LOW);
   });
 });
 
@@ -141,8 +140,8 @@ describe("METER_TONE_TABLE", () => {
 
   it("moves the glyph and the fill across the > 80 boundary in the same cell", () => {
     for (const mode of MODES) {
-      const atEighty = meterToneCell(mode, getMeterLevel(80, undefined, meterPercentage(80, 0, 100)));
-      const pastEighty = meterToneCell(mode, getMeterLevel(81, undefined, meterPercentage(81, 0, 100)));
+      const atEighty = meterToneCell(mode, getMeterLevel(80, 100, meterPercentage(80, 0, 100)));
+      const pastEighty = meterToneCell(mode, getMeterLevel(81, 100, meterPercentage(81, 0, 100)));
       expect(atEighty, mode).toEqual(MATRIX[mode].LOW);
       expect(pastEighty, mode).toEqual(MATRIX[mode].MEDIUM);
     }

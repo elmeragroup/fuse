@@ -5,8 +5,8 @@ export function meterPercentage(value: number, min: number, max: number): number
   return max > min ? Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100)) : 0;
 }
 
-export function getMeterLevel(value: number, maxValue: number | undefined, percentage: number): MeterLevel {
-  if (maxValue !== undefined && value > maxValue) {
+export function getMeterLevel(value: number, max: number, percentage: number): MeterLevel {
+  if (value > max) {
     return METER_CONSTANTS.LEVELS.EXCEEDED_MAX_VALUE;
   }
 

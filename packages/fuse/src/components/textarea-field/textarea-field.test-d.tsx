@@ -29,6 +29,7 @@ test("TextareaFieldProps is the composite is* face plus remaining native textare
   expectTypeOf<TextareaFieldProps>().toHaveProperty("rows");
   expectTypeOf<TextareaFieldProps>().toHaveProperty("readOnly");
   expectTypeOf<TextareaFieldProps>().toHaveProperty("className");
+  expectTypeOf<TextareaFieldProps["textareaClassName"]>().toEqualTypeOf<string | undefined>();
   expectTypeOf<TextareaFieldProps>().not.toHaveProperty("as");
   expectTypeOf<TextareaFieldProps>().not.toHaveProperty("disabled");
   expectTypeOf<TextareaFieldProps>().not.toHaveProperty("required");

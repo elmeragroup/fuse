@@ -31,8 +31,10 @@ export type TextareaFieldProps = {
   isInvalid?: boolean;
   /** Forwards `disabled` to `Field.Root` and the inner textarea. */
   isDisabled?: boolean;
-  /** Extra classes, merged onto the inner `Textarea`. */
+  /** Extra classes, merged onto the root via `cn`. */
   className?: string;
+  /** Extra classes, merged onto the inner `Textarea`. */
+  textareaClassName?: string;
 } & Omit<
   ComponentProps<typeof Textarea>,
   "value" | "defaultValue" | "onChange" | "disabled" | "required" | "className"
@@ -55,6 +57,7 @@ export function TextareaField({
   isInvalid = false,
   isDisabled = false,
   className,
+  textareaClassName,
   ref,
   ...props
 }: TextareaFieldProps): ReactElement {
@@ -85,6 +88,7 @@ export function TextareaField({
       invalid={isInvalid}
       disabled={isDisabled}
       label={label}
+      className={className}
       classNames={{ labelRow: "gap-2" }}
       status={
         maxLength === undefined ? undefined : (
@@ -100,7 +104,7 @@ export function TextareaField({
           <Textarea
             {...definedProps(props)}
             ref={mergedRef}
-            className={className}
+            className={textareaClassName}
             value={isControlled ? value : undefined}
             defaultValue={isControlled ? undefined : defaultValue}
             maxLength={maxLength}

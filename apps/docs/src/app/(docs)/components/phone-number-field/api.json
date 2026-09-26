@@ -195,7 +195,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Sets `aria-required` on the visible input.",
+          "description": "Forwards `required` to the visible input, so native constraint validation blocks an empty submit.",
           "required": false
         },
         {
@@ -222,7 +222,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Hidden input gets `name`; the visible input gets `${name}-display-value` (default `\"phone-number-display-value\"`).",
+          "description": "Hidden input gets `name`; the visible input gets `${name}-display-value`. Unset, neither input submits.",
           "required": false
         },
         {
