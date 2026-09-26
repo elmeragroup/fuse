@@ -97,7 +97,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name for the preset pane. Defaults to the `datePicker.presets` row of the locale dictionary; an explicit string wins.",
+          "description": "Accessible name for the preset pane. An explicit `aria-label` wins over it, and either wins over the `datePicker.presets` row of the locale dictionary.",
           "required": false
         }
       ]

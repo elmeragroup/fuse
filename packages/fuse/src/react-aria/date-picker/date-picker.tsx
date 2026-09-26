@@ -178,8 +178,8 @@ export function DatePicker<T extends DateValue>({
 
 export type DatePickerPresetGroupProps = ComponentProps<typeof AriaRadioGroup> & {
   /**
-   * Accessible name for the preset pane. Defaults to the `datePicker.presets` row of
-   * the locale dictionary; an explicit string wins.
+   * Accessible name for the preset pane. An explicit `aria-label` wins over it, and
+   * either wins over the `datePicker.presets` row of the locale dictionary.
    */
   label?: string;
 };
@@ -192,6 +192,7 @@ export type DatePickerPresetGroupProps = ComponentProps<typeof AriaRadioGroup> &
 export function DatePickerPresetGroup({
   className,
   label,
+  "aria-label": ariaLabel,
   ...props
 }: DatePickerPresetGroupProps): ReactElement {
   const strings = useLocalizedStrings(datePickerStrings);
@@ -200,7 +201,7 @@ export function DatePickerPresetGroup({
     <AriaRadioGroup
       data-slot="date-picker-preset-group"
       {...props}
-      aria-label={label ?? strings.format("presets")}
+      aria-label={ariaLabel ?? label ?? strings.format("presets")}
       className={composeTailwindRenderProps(className, "flex flex-col gap-2 px-3")}
     />
   );

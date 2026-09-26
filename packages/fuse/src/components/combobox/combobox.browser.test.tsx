@@ -744,6 +744,35 @@ describe("Combobox", () => {
     );
     expect(page.getByRole("button", { name: "Drop Apple", exact: true }).query()).not.toBeNull();
     unmount();
+
+    const explicitClear = renderCombobox(
+      <Combobox.Root items={["Apple"]} defaultValue="Apple" defaultInputValue="Apple">
+        <Combobox.Input aria-label="Fruit" showTrigger={false} />
+        <Combobox.Clear aria-label="Clear fruit" />
+      </Combobox.Root>
+    );
+    expect(page.getByRole("button", { name: "Clear fruit", exact: true }).query()).not.toBeNull();
+    expect(page.getByRole("button", { name: CLEAR_COPY["en-US"], exact: true }).query()).toBeNull();
+    explicitClear.unmount();
+
+    const ariaLabelOverLabel = renderCombobox(
+      <Combobox.Root items={["Apple"]} defaultValue="Apple" defaultInputValue="Apple">
+        <Combobox.Input aria-label="Fruit" showTrigger={false} />
+        <Combobox.Clear label="Wipe" aria-label="Clear fruit" />
+      </Combobox.Root>
+    );
+    expect(page.getByRole("button", { name: "Clear fruit", exact: true }).query()).not.toBeNull();
+    expect(page.getByRole("button", { name: "Wipe", exact: true }).query()).toBeNull();
+    ariaLabelOverLabel.unmount();
+
+    const triggerOverride = renderCombobox(
+      <Combobox.Root items={["Apple"]}>
+        <Combobox.Input aria-label="Fruit" triggerLabel="Show fruit" />
+      </Combobox.Root>
+    );
+    expect(page.getByRole("button", { name: "Show fruit", exact: true }).query()).not.toBeNull();
+    expect(page.getByRole("button", { name: TOGGLE_COPY["en-US"], exact: true }).query()).toBeNull();
+    triggerOverride.unmount();
   });
 
   it("paints the InputGroup within ring on keyboard focus and not on an addon button", async () => {

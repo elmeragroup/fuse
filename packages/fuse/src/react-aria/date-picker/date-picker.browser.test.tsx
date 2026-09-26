@@ -419,6 +419,44 @@ describe("DatePicker presets", () => {
     expect(pickerDialog().contains(calendarGrid())).toBe(true);
   });
 
+  it("names the radiogroup by an explicit aria-label instead of the dictionary", async () => {
+    renderPicker(
+      <DatePicker
+        label="Invoice date"
+        value={march10}
+        presetGroup={
+          <DatePickerPresetGroup aria-label="Quick dates">
+            <DatePickerPresetItem value="today">Today</DatePickerPresetItem>
+            <DatePickerPresetItem value="in-a-week">In a week</DatePickerPresetItem>
+          </DatePickerPresetGroup>
+        }
+      />
+    );
+    await openPicker();
+
+    await expect.element(page.getByRole("radiogroup", { name: "Quick dates", exact: true })).toBeVisible();
+    expect(page.getByRole("radiogroup", { name: "Date presets", exact: true }).query()).toBeNull();
+  });
+
+  it("lets an explicit aria-label win over label", async () => {
+    renderPicker(
+      <DatePicker
+        label="Invoice date"
+        value={march10}
+        presetGroup={
+          <DatePickerPresetGroup label="Shortcuts" aria-label="Quick dates">
+            <DatePickerPresetItem value="today">Today</DatePickerPresetItem>
+            <DatePickerPresetItem value="in-a-week">In a week</DatePickerPresetItem>
+          </DatePickerPresetGroup>
+        }
+      />
+    );
+    await openPicker();
+
+    await expect.element(page.getByRole("radiogroup", { name: "Quick dates", exact: true })).toBeVisible();
+    expect(page.getByRole("radiogroup", { name: "Shortcuts", exact: true }).query()).toBeNull();
+  });
+
   it("selects on a single click and leaves the dialog open", async () => {
     renderPicker(<DatePicker label="Invoice date" value={march10} presetGroup={presets()} />);
     await openPicker();
