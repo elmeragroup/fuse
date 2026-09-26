@@ -12,7 +12,7 @@ type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K>
 
 export type ConfirmButtonProps = DistributiveOmit<
   ButtonProps,
-  "onClick" | "children" | "isVisuallyDisabled" | "isPending"
+  "onClick" | "children" | "isVisuallyDisabled"
 > & {
   /**
    * Renders Button's disabled treatment and stamps `aria-disabled` while keeping Tab focus,
@@ -21,11 +21,6 @@ export type ConfirmButtonProps = DistributiveOmit<
    * `aria-disabled={false}` hides it while presses stay ignored.
    */
   isVisuallyDisabled?: boolean;
-  /**
-   * Disables the element and stamps `data-pending`, blocking activation entirely.
-   * Turning it on disarms, so the button rests again once it clears.
-   */
-  isPending?: boolean;
   /** Called on the second press only, after the button disarms. */
   onConfirm: () => void;
   /** Resting label. */
@@ -40,7 +35,7 @@ export type ConfirmButtonProps = DistributiveOmit<
  * Two-press confirm wrapper over the library Button.
  * Client — owns armed state.
  *
- * Turning `disabled` on disarms it, so re-enabling never restores a stale armed state.
+ * Turning `disabled` or `isPending` on disarms it, so re-enabling never restores a stale armed state.
  */
 export function ConfirmButton({
   onConfirm,

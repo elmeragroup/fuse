@@ -74,7 +74,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Disables the element and stamps `data-pending`, blocking activation entirely. Turning it on disarms, so the button rests again once it clears.",
+          "description": "Disables the element and stamps `data-pending`, blocking activation entirely. Effective disabled is `disabled || isPending`.",
           "required": false
         },
         {

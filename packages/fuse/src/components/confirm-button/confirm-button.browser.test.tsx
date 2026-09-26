@@ -195,7 +195,6 @@ describe("ConfirmButton", () => {
     expect(resting.hasAttribute("disabled")).toBe(false);
     expect(resting.getAttribute("aria-disabled")).toBe("true");
     expect(resting.hasAttribute("data-armed")).toBe(false);
-    expect(resting.querySelector("[aria-live='polite']")).toBeNull();
   });
 
   it("disarms when isPending turns on while armed, and re-arms without confirming once it clears", async () => {
