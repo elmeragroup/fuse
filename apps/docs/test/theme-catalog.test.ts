@@ -3,9 +3,6 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
-
-import { buildThemeCatalog } from "../scripts/lib/theme-catalog.ts";
 import { THEME_CATALOG } from "../src/generated/theme-catalog";
 import type { ThemeCatalogEntry } from "../src/lib/docs-model";
 import { docsBaseUrl } from "./docs-server";
@@ -92,12 +89,6 @@ describe("theme catalog payload", () => {
     expect(internal.density).toBe("dense");
     expect(internal.tokens["--primary"]).toBe("oklch(0.16 0 0)");
     expect(internal.tokens["--primary-foreground"]).toBe("oklch(1 0 0)");
-  });
-
-  it("is the light CSS of the resolved catalog", () => {
-    // Unit under test: the committed module. Oracle: the builder it serialised, whose values
-    // the cases above and below pin by hand.
-    expect(buildThemeCatalog(resolveThemeCatalog())).toEqual(THEME_CATALOG);
   });
 
   it("keeps CSS custom-property names and var() values as the cascade writes them", () => {

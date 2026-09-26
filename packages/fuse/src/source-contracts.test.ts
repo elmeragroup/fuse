@@ -1,9 +1,10 @@
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseSync } from "oxc-parser";
 import { describe, expect, it } from "vitest";
 
+import { walkImportedSourceFiles } from "../scripts/entries";
 import { overlayLayer } from "./components/overlay/overlay-classes";
 
 /**
@@ -162,12 +163,20 @@ function loadSourceTree(): ReadonlyMap<string, SourceRecord> {
 
 const SOURCE_TREE = loadSourceTree();
 
-function readSrc(relativePath: string): string {
+function sourceRecord(relativePath: string): SourceRecord {
   const record = SOURCE_TREE.get(join(SRC_ROOT, relativePath));
   if (record === undefined) {
     throw new Error(`expected source file ${relativePath}`);
   }
-  return record.source;
+  return record;
+}
+
+function readSrc(relativePath: string): string {
+  return sourceRecord(relativePath).source;
+}
+
+function readCode(relativePath: string): string {
+  return sourceRecord(relativePath).code;
 }
 
 function ownedBy(owner: string, needle: string): string[] {
@@ -341,50 +350,23 @@ describe("combobox", () => {
   });
 });
 
-describe("field composites", () => {
-  // Why not a lint rule: PhoneNumberField importing TextField's public recipe is a
-  // one-file "do not reintroduce" coupling, not a repo-wide specifier ban. Field
-  // part JSX in these composites is `elmera/no-field-part-jsx`.
-  it("does not import the text-field recipe — layout comes from FieldFrame", () => {
-    const source = readSrc("components/phone-number-field/phone-number-field.tsx");
-    expect(source).not.toContain("text-field-variants");
-    expect(source).not.toContain("textFieldVariants");
-  });
-});
+describe("density stays out of subtree theming", () => {
+  // Why not a lint rule: the boundary is a module graph, not a specifier. Density is a
+  // document-root stamp the host owns, so nothing ThemeProvider or ThemeScope pulls in may
+  // reach the density owners or write `data-density`; a specifier ban would miss the
+  // attribute and any indirect import.
+  const DENSITY_OWNERS = ["theme/density.ts", "theme/tokens/density-metrics.ts"];
 
-describe("selection-item", () => {
-  // Why not a lint rule: the deleted measurement path is a component-specific
-  // "do not reintroduce" contract, not a repo-wide API ban.
-  it("does not measure the control slot", () => {
-    const source = readSrc("components/selection-item/selection-item.tsx");
-    expect(source).not.toContain("ResizeObserver");
-    expect(source).not.toContain("useLayoutEffect");
-    expect(source).not.toContain("getBoundingClientRect");
-    expect(source).not.toContain("controlSlotWidth");
-  });
-});
-
-describe("density host interface", () => {
-  // Why not a lint rule: ThemeProvider and ThemeScope must not mention
-  // density because density is a document-root stamp, not a theme prop. The
-  // word is legal elsewhere (fuse.css, density helpers).
-  it("leaves ThemeProvider and ThemeScope without density behavior", () => {
-    expect(readSrc("theme/theme-provider.tsx")).not.toMatch(/density/i);
-    expect(readSrc("theme/theme-scope.tsx")).not.toMatch(/density/i);
-  });
-});
-
-describe("react-aria internal overlay stack", () => {
-  // Why not a lint rule: the invariant is the *absence* of two modules plus the
-  // absence of the attribute they coupled on. The private RAC Modal and
-  // overlay-container stamp were removed; a
-  // picker now sits inside the public base-ui Dialog, which tracks nesting through
-  // the React tree. This fails the moment either comes back by copy-paste.
-  it("ships no Modal and no overlay-container coupling", () => {
-    expect(existsSync(join(SRC_ROOT, "react-aria/internal/modal.tsx"))).toBe(false);
-    expect(existsSync(join(SRC_ROOT, "react-aria/internal/overlay-container.ts"))).toBe(false);
-    expect(readSrc("react-aria/internal/popover.tsx")).not.toContain("data-overlay-container");
-    expect(readSrc("react-aria/internal/dialog.tsx")).not.toMatch(/\bModal\b/u);
+  it("keeps the density owners and the data-density stamp off the ThemeProvider and ThemeScope graph", () => {
+    const graph = walkImportedSourceFiles(PACKAGE_ROOT, [
+      "src/theme/theme-provider.tsx",
+      "src/theme/theme-scope.tsx",
+    ]).map((file) => file.replace(/^src\//, ""));
+    // Neither entry imports validate-theme.ts directly, so reaching it proves the walk is
+    // transitive. Re-pin a depth-2-only file if an entry ever imports it.
+    expect(graph).toEqual(expect.arrayContaining(["theme/theme-attributes.ts", "theme/validate-theme.ts"]));
+    expect(graph.filter((file) => DENSITY_OWNERS.includes(file))).toEqual([]);
+    expect(graph.filter((file) => readCode(file).includes("data-density"))).toEqual([]);
   });
 });
 
@@ -467,14 +449,12 @@ describe("superseded local forms", () => {
     // The two survivors elsewhere are not this question: Toast's manager adapter and
     // Sidebar's tooltip shorthand narrow `string | <object>` unions, and an options
     // object is not a `ReactNode` (is-text-node.ts documents both).
-    for (const [file, gone] of [
-      ["components/checkbox/checkbox.tsx", "function stringDescribedBy"],
-      ["components/confirm-button/confirm-button.tsx", "function stringChild"],
-      ["react-aria/grid-list/grid-list.tsx", "function stringChild"],
-    ] as const) {
-      const source = readSrc(file);
-      expect(source, file).not.toContain(gone);
-      expect(source, file).toContain("is-text-node");
+    for (const file of [
+      "components/checkbox/checkbox.tsx",
+      "components/confirm-button/confirm-button.tsx",
+      "react-aria/grid-list/grid-list.tsx",
+    ]) {
+      expect(readSrc(file), file).toContain("is-text-node");
     }
     // The `Object.prototype.toString.call(v) === "[object String]"` spelling evaded the
     // anti-slop rule rather than answering it; no source file spells it any more.

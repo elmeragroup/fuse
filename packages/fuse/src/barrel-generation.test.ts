@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { discoverJsEntriesFromAllowlist } from "../scripts/entries";
 import { buildSourceExportMap, exportBindingTarget, renderRootBarrel } from "../scripts/generate-exports";
+import { BESPOKE_ICON_NAMES, LOGO_NAMES, PHOSPHOR_ICON_NAMES } from "./icons/roster";
 
 const scratchDirs: string[] = [];
 
@@ -64,6 +65,22 @@ describe("barrel generation", () => {
 
     expect(() => discoverJsEntriesFromAllowlist(packageRoot, [".", "theme", "badge", "button"])).toThrow(
       /Duplicate barrel export Shared from badge and button/
+    );
+  });
+
+  it.each([
+    ["exports a subset of the roster", ["ArrowLeft"]],
+    [
+      "adds a generic Icon to the full roster",
+      [...PHOSPHOR_ICON_NAMES, ...BESPOKE_ICON_NAMES, ...LOGO_NAMES, "BrandLogo", "Icon"],
+    ],
+  ])("fails generation when the icons facade %s", (_drift, names) => {
+    const packageRoot = scratchPackage({
+      "src/icons.ts": `export { ${names.join(", ")} } from "./icons/generated";\n`,
+    });
+
+    expect(() => discoverJsEntriesFromAllowlist(packageRoot, [".", "theme", "icons"])).toThrow(
+      /src\/icons\.ts facade exports do not match the icons roster/
     );
   });
 

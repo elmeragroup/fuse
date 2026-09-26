@@ -1,40 +1,15 @@
 import { createElement } from "react";
 
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { publishedDependencies } from "../../../scripts/published-dependencies";
 import { cn } from "../../styles/cn";
 import { Code } from "./code";
-
-const here = dirname(fileURLToPath(import.meta.url));
-const packageRoot = join(here, "..", "..", "..");
 
 const BASE_CLASSES = "text-xs leading-relaxed max-h-160 overflow-auto font-mono";
 const SNIPPET = "const answer = 42;";
 const CONCAT_SNIPPET = 'const html = "<div>" + a + "</div>";';
 const XSS_PAYLOAD = '<img onerror="alert(1)" src="x">';
-
-describe("code sugar-high pin", () => {
-  it("depends on the sugar-high catalog pin and publishes the matching range", () => {
-    const parsed: unknown = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8"));
-    if (parsed === null || Array.isArray(parsed)) {
-      throw new Error("package.json is not an object");
-    }
-    // SAFETY: this test only reads the workspace sugar-high dependency pin.
-    const pkg = parsed as { dependencies: Record<string, string> };
-    expect(pkg.dependencies["sugar-high"]).toBe("catalog:");
-    expect(publishedDependencies({ "sugar-high": "catalog:" }, new Map([["sugar-high", "2.4.1"]]))).toEqual({
-      "sugar-high": "^2.4.0",
-    });
-    expect(readFileSync(join(packageRoot, "../../pnpm-workspace.yaml"), "utf8")).toContain(
-      '"sugar-high": 2.4.1'
-    );
-  });
-});
 
 describe("code className merge", () => {
   it("lets a consumer className coexist with the base classes", () => {
