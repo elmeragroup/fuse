@@ -12,7 +12,8 @@ import { stateFocusRingClass, stateFocusRingVisibleClass } from "./utils";
  * dialog supplies the chrome.
  *
  * Every axis lives on the inner pill; `body` and `outerCell` are invariant, so the
- * component resolves them once and re-resolves only `cell` per date.
+ * component resolves them once and re-resolves only `cell` per date. `isUnavailable`
+ * paints only through `compoundVariants`, outside the range.
  */
 export const rangeCalendarVariants = tv({
   slots: {
@@ -58,9 +59,27 @@ export const rangeCalendarVariants = tv({
     isDisabled: {
       true: { cell: "text-muted-foreground" },
     },
+    /** RAC `isUnavailable`: `isDateUnavailable` blocked the day. Painted only outside the range (see compoundVariants). */
+    isUnavailable: {
+      true: { cell: "" },
+      false: { cell: "" },
+    },
     isFocusVisible: {
       true: { cell: stateFocusRingVisibleClass },
       false: { cell: "" },
     },
   },
+  compoundVariants: [
+    {
+      // Same face as Calendar's unavailable day (styles/calendar.ts). A selected unavailable
+      // endpoint keeps its cap/middle fill so its text stays legible on bg-primary/bg-error.
+      // The hover/pressed suppression is defensive parity with Calendar: RAC already skips
+      // hover and press on unavailable cells.
+      isUnavailable: true,
+      selectionState: "none",
+      class: {
+        cell: "text-muted-foreground group-hover:bg-transparent group-pressed:bg-transparent forced-colors:text-[GrayText]",
+      },
+    },
+  ],
 });

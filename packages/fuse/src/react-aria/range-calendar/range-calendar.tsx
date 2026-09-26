@@ -74,11 +74,13 @@ export function RangeCalendar<T extends DateValue>({
                 isSelectionEnd,
                 isFocusVisible,
                 isDisabled,
+                isUnavailable,
               }) => (
                 <span
                   className={rangeCalendarVariants({
                     selectionState: getSelectionState(isSelected, isSelectionStart, isSelectionEnd),
                     isDisabled,
+                    isUnavailable,
                     isFocusVisible,
                   }).cell()}>
                   {formattedDate}

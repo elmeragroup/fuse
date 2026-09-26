@@ -14,8 +14,10 @@ function everyEmittedClass(): string {
   const invariant = rangeCalendarVariants();
   const faces = (["none", "middle", "cap"] as const).flatMap((selectionState) =>
     [false, true].flatMap((isDisabled) =>
-      [false, true].map((isFocusVisible) =>
-        rangeCalendarVariants({ selectionState, isDisabled, isFocusVisible }).cell()
+      [false, true].flatMap((isUnavailable) =>
+        [false, true].map((isFocusVisible) =>
+          rangeCalendarVariants({ selectionState, isDisabled, isUnavailable, isFocusVisible }).cell()
+        )
       )
     )
   );
@@ -36,7 +38,7 @@ describe("rangeCalendarVariants", () => {
     expect(everyEmittedClass()).not.toContain("--control-");
     expect(everyEmittedClass()).not.toMatch(RAW_PALETTE_RE);
     expect(rangeCalendarVariants.variantKeys).toEqual(
-      expect.arrayContaining(["selectionState", "isDisabled"])
+      expect.arrayContaining(["selectionState", "isDisabled", "isUnavailable"])
     );
     expect(rangeCalendarVariants.variantKeys).not.toContain("size");
   });
