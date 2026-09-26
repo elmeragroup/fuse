@@ -11,9 +11,19 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# Jobs without their own grant (checks, browser) run dependency code on every PR and push,
+# so their token is read-only. The release and version jobs declare their own permissions,
+# which replace this default for those jobs.
+permissions:
+  contents: read
+
 jobs:
   checks:
     runs-on: ubuntu-latest
+    # GitHub's default is 360 minutes; a hung `next start` or Playwright session would hold the
+    # runner that long. 45 leaves headroom over a cold main run (publish-release.yml allows 40
+    # for build, gates and publish).
+    timeout-minutes: 45
     env:
       # This repo's changesets bot branch. GitHub stringifies job env values, so the steps
       # compare against 'true' explicitly; a bare `env.IS_SELF_RELEASE_PR` would be truthy
@@ -29,6 +39,7 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
@@ -84,7 +95,9 @@ jobs:
 
       - name: Changeset presence
         if: ${{ github.event_name == 'pull_request' && env.IS_SELF_RELEASE_PR != 'true' && !contains(github.event.pull_request.labels.*.name, 'no-changeset') }}
-        run: pnpm exec changeset status --since=origin/${{ github.base_ref }}
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: pnpm exec changeset status --since="origin/$BASE_REF"
 
       - name: Validate stable release PR
         if: env.IS_SELF_RELEASE_PR == 'true' || github.ref == 'refs/heads/changeset-release/main'
@@ -92,6 +105,7 @@ jobs:
 
   browser:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     env:
       # A cache key is immutable once saved, so every attempt saves under its own key and
       # restores by prefix. Under PR churn these per-attempt entries can evict main's from the
@@ -103,6 +117,7 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
