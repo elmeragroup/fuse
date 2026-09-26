@@ -127,20 +127,12 @@ describe("component page manifest", () => {
     // Unit under test: the reviewed inventory's demo lists. Oracle: each page's demos
     // directory. Sorting both sides also rejects a file listed twice.
     for (const [slug, reviewed] of COMPONENT_INVENTORY) {
+      expect(reviewed.demos.length, slug).toBeGreaterThan(0);
       // A demo file is a `.tsx` module, as the generator's never-rendered check counts them.
       const onDisk = readdirSync(resolveComponentPaths(slug).demosDir).filter((entry) =>
         entry.endsWith(".tsx")
       );
       expect(reviewed.demos.toSorted(), slug).toEqual(onDisk.toSorted());
-    }
-  });
-
-  it("renders exactly the reviewed demo files", () => {
-    // Unit under test: each authored page's demo list. Oracle: the reviewed inventory.
-    for (const [slug, reviewed] of COMPONENT_INVENTORY) {
-      expect(reviewed.demos.length, slug).toBeGreaterThan(0);
-      const rendered = authoredPage(slug).parsed.demos.map((demo) => demo.file);
-      expect(rendered.toSorted(), slug).toEqual(reviewed.demos.toSorted());
     }
   });
 

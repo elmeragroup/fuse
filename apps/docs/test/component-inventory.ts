@@ -7,7 +7,10 @@ export type InventoryEntry = {
   readonly title: string;
   /** The page's RSC status, reviewed by hand rather than read from source. */
   readonly rsc: RscStatus;
-  /** Exactly the `.tsx` files in the page's demos directory; the page renders every one. */
+  /**
+   * Exactly the `.tsx` files in the page's demos directory. Generation fails unless the page
+   * renders every one.
+   */
   readonly demos: readonly string[];
 };
 
