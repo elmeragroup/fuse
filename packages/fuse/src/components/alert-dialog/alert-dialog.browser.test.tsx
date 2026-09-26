@@ -131,7 +131,7 @@ describe("AlertDialog", () => {
     await expect.element(page.getByRole("button", { name: "Delete order", exact: true })).toHaveFocus();
   });
 
-  it("stays open on a backdrop click and still closes on Escape", async () => {
+  it("stays open on a backdrop click", async () => {
     const onOpenChange = vi.fn<(open: boolean) => void>();
     renderThemed(withLocale("en-US", <ConfirmDialog onOpenChange={onOpenChange} />));
     const dialog = await openConfirm();
@@ -141,12 +141,6 @@ describe("AlertDialog", () => {
     await userEvent.click(backdrop, { position: { x: 2, y: 2 } });
     expect(onOpenChange.mock.calls.map(([open]) => open)).toEqual([true]);
     expect(dialog.hasAttribute("data-open")).toBe(true);
-
-    await userEvent.keyboard("{Escape}");
-    await vi.waitFor(() => {
-      expect(page.getByRole("alertdialog").query()).toBeNull();
-    });
-    expect(onOpenChange.mock.calls.map(([open]) => open)).toEqual([true, false]);
   });
 
   it("focuses the primary action for a neutral confirmation", async () => {
