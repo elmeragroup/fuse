@@ -23,18 +23,6 @@ export type ExportBinding = {
   target: ExportCondition | string;
 };
 
-type WorkspaceScripts = {
-  build: string;
-  "ci:checks": string;
-  pack: string;
-  "package:check": string;
-  "size-limit": string;
-  test: string;
-  "test:browser": string;
-  "test:types": string;
-  "type-check": string;
-};
-
 type WorkspacePeers = {
   react: string;
   "react-dom": string;
@@ -58,49 +46,23 @@ type WorkspaceDependencies = {
   "sugar-high"?: string;
 };
 
-type WorkspaceDevDependencies = {
-  "@arethetypeswrong/cli": string;
-  "@arethetypeswrong/core": string;
-  "@elmeragroup/typescript-config": string;
-  "@tailwindcss/cli": string;
-  "@types/node": string;
-  "@types/react": string;
-  "@types/react-dom": string;
-  "@vitest/browser-playwright": string;
-  "libphonenumber-js": string;
-  playwright: string;
-  publint: string;
-  rolldown: string;
-  react: string;
-  "react-dom": string;
-  tailwindcss: string;
-  tsdown: string;
-  typescript: string;
-  vitest: string;
-};
-
 /** npm registry metadata. Carried verbatim from the workspace manifest into the published one. */
 type PackageMetadata = {
   description: string;
   keywords: string[];
   homepage: string;
+  bugs: { url: string };
   repository: { type: string; url: string; directory: string };
 };
 
+/** The workspace manifest fields the publish manifest is built from. */
 type WorkspaceManifest = PackageMetadata & {
   name: string;
   version: string;
-  private: boolean;
   license: string;
-  type: string;
   sideEffects: string[];
-  exports: ExportBinding[];
-  publishConfig: { directory: string; access: string; linkDirectory: false };
-  scripts: WorkspaceScripts;
-  peerDependencies: WorkspacePeers;
   peerDependenciesMeta: { tailwindcss: { optional: boolean }; recharts?: { optional: boolean } };
   dependencies: WorkspaceDependencies;
-  devDependencies: WorkspaceDevDependencies;
 };
 
 function sortExportKeys(left: string, right: string): number {
@@ -186,6 +148,14 @@ function requiredStringArray(value: string[] | undefined, field: string): string
   return value;
 }
 
+/** Rejects a missing, null or array-valued field; the object's entries keep their declared type. */
+function requiredObject<T extends object>(value: T | undefined, field: string): T {
+  if (!(value instanceof Object) || Array.isArray(value)) {
+    throw new Error(`package.json missing object field ${field}`);
+  }
+  return value;
+}
+
 /**
  * The npm metadata block, validated at the one boundary that reads it and spread into both
  * manifests. Every field carries the same presence guarantee the other required fields do: an
@@ -197,6 +167,8 @@ function packageMetadata(raw: Partial<PackageMetadata>): PackageMetadata {
     description: requiredString(raw.description, "description"),
     keywords: requiredStringArray(raw.keywords, "keywords"),
     homepage: requiredString(raw.homepage, "homepage"),
+    // Reading through the field also rejects a missing or string-valued `bugs`.
+    bugs: { url: requiredString(raw.bugs?.url, "bugs.url") },
     // Reading through the three fields also rejects a missing or string-valued `repository`.
     repository: {
       type: requiredString(raw.repository?.type, "repository.type"),
@@ -206,36 +178,38 @@ function packageMetadata(raw: Partial<PackageMetadata>): PackageMetadata {
   };
 }
 
-function readWorkspaceManifest(path: string): WorkspaceManifest {
+type JsonValue = string | number | boolean | null | readonly JsonValue[] | JsonObject;
+
+type JsonObject = { readonly [key: string]: JsonValue };
+
+function readManifestObject(path: string): JsonObject {
   const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
-  if (parsed === null || Array.isArray(parsed)) {
+  // `instanceof Object` rejects `null` and JSON's primitive roots (`42`, `"x"`, `true`) in one test,
+  // so a corrupt manifest fails here instead of being spread into a near-empty rewrite.
+  if (!(parsed instanceof Object) || Array.isArray(parsed)) {
     throw new Error(`${path} must be a JSON object`);
   }
-  // SAFETY: workspace package.json is the I/O boundary; exports are always regenerated.
-  const raw = parsed as Omit<WorkspaceManifest, "exports">;
+  // SAFETY: workspace package.json is the I/O boundary. JSON.parse yields only JSON values, and the
+  // guard above rejected every root that is not a plain object.
+  return parsed as JsonObject;
+}
+
+function readWorkspaceManifest(path: string): WorkspaceManifest {
+  // SAFETY: workspace package.json is the I/O boundary. Every field stays optional until a check
+  // below rejects its absence; the checks test presence, not JSON type, so each present value is
+  // trusted to have its declared type. That trust reaches the publish manifest unchanged for the
+  // scalar fields, `sideEffects` and `peerDependenciesMeta`; `dependencies` is read only for which
+  // names it declares, since `publishedDependencies` replaces every range.
+  const raw = readManifestObject(path) as Partial<WorkspaceManifest>;
   return {
     name: requiredString(raw.name, "name"),
     version: requiredString(raw.version, "version"),
-    private: raw.private,
     ...packageMetadata(raw),
     license: requiredString(raw.license, "license"),
-    type: requiredString(raw.type, "type"),
-    sideEffects: raw.sideEffects,
-    exports: [],
-    publishConfig: raw.publishConfig,
-    scripts: raw.scripts,
-    peerDependencies: raw.peerDependencies,
-    peerDependenciesMeta: raw.peerDependenciesMeta,
-    dependencies: raw.dependencies,
-    devDependencies: raw.devDependencies,
+    sideEffects: requiredStringArray(raw.sideEffects, "sideEffects"),
+    peerDependenciesMeta: requiredObject(raw.peerDependenciesMeta, "peerDependenciesMeta"),
+    dependencies: requiredObject(raw.dependencies, "dependencies"),
   };
-}
-
-function writeWorkspacePackageJson(path: string, manifest: WorkspaceManifest): void {
-  writeFileSync(
-    path,
-    `${JSON.stringify({ ...manifest, exports: exportBindingsObject(manifest.exports) }, null, 2)}\n`
-  );
 }
 
 function writePublishPackageJson(path: string, manifest: PublishManifest): void {
@@ -322,10 +296,14 @@ export function writeSourceExports(packageRoot: string): DiscoveredEntries {
   const discovered = discoverEntries(packageRoot);
   writeFileSync(join(packageRoot, "src/index.ts"), renderRootBarrel(discovered));
   const packageJsonPath = join(packageRoot, "package.json");
-  const pkg = readWorkspaceManifest(packageJsonPath);
-  pkg.exports = buildSourceExportMap(discovered);
-  pkg.publishConfig = { directory: "dist", access: "public", linkDirectory: false };
-  writeWorkspacePackageJson(packageJsonPath, pkg);
+  // Patch only the generated fields into the parsed manifest, so every other field, known to
+  // this script or not, keeps its value and position.
+  const pkg = {
+    ...readManifestObject(packageJsonPath),
+    exports: exportBindingsObject(buildSourceExportMap(discovered)),
+    publishConfig: { directory: "dist", access: "public", linkDirectory: false },
+  };
+  writeFileSync(packageJsonPath, `${JSON.stringify(pkg, null, 2)}\n`);
   return discovered;
 }
 
@@ -349,7 +327,7 @@ export function writePublishManifest(packageRoot: string, release?: ReleaseStamp
     ...packageMetadata(workspace),
     license: workspace.license,
     type: "module",
-    sideEffects: ["**/*.css"],
+    sideEffects: workspace.sideEffects,
     exports: exportBindingsObject(buildPublishExportMap(discovered)),
     peerDependencies: publishedPeerDependencies(),
     peerDependenciesMeta: workspace.peerDependenciesMeta,

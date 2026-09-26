@@ -31,10 +31,6 @@
   InputGroup's focus border still match any descendant `data-focus-ring-control`, so a
   focused NumberField nested in an InputGroup addon also rings the outer group. The state
   face already reads only a direct child (`styles/state-face.ts`).
-- `generate:exports` drops `package.json#bugs`: `scripts/generate-exports.ts` carries npm metadata
-  through a fixed `PackageMetadata` list (`description`, `keywords`, `homepage`, `repository`) that
-  predates the field. Add `bugs` to the type and `packageMetadata()`, and a test that the
-  regenerated manifest keeps every metadata key of the workspace manifest.
 - `pnpm lint` never type-checks `apps/docs/test/fixtures/rsc-namespace-register.mjs`: `oxlint .`
   reports nothing, while `oxlint apps/docs` reports `typescript(no-unsafe-call)` at line 3. Find
   which root or tsconfig makes the difference so the fixture directory is not silently unlinted,
