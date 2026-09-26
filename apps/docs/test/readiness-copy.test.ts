@@ -46,7 +46,10 @@ describe("release readiness copy", () => {
       html,
       "releases must frame packed-consumer checks as intended gates, not an active release workflow"
     ).toContain("intended publish gates, not an active release workflow");
-    expect(html, "releases must separate pending gates from active ones").toContain("Pending gates");
+    expect(html, "releases must list the packed Next fixture as an active gate").toContain(
+      "A packed Next App Router app renders server namespace parts, hydrates a client island and styles package classes through Tailwind source scanning."
+    );
+    expect(html, "releases must not keep an empty pending-gates section").not.toContain("Pending gates");
     expect(
       html,
       "releases must not list the merge-suite theme contract as a packed-artifact gate"

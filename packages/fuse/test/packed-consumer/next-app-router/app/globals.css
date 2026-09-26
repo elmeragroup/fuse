@@ -1,0 +1,5 @@
+@import "tailwindcss" source(none);
+@import "@elmeragroup/fuse/css";
+@import "@elmeragroup/fuse/themes.css";
+@source ".";
+@source "../node_modules/@elmeragroup/fuse";
