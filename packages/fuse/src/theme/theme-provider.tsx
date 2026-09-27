@@ -20,6 +20,7 @@ import {
   parseColorScheme,
   readStoredColorScheme,
   resolveColorSchemeOptions,
+  subscribeToSystemScheme,
 } from "./color-scheme";
 import type { ColorScheme, ColorSchemeOptions, ColorSchemeScriptElementProps } from "./color-scheme";
 import { ColorSchemeContext, ColorSchemeControllerContext } from "./color-scheme-context";
@@ -127,12 +128,13 @@ function DocumentThemeWriter({
       store.bumpSystem();
     };
 
-    const media = options.enableSystem ? window.matchMedia("(prefers-color-scheme: dark)") : null;
     window.addEventListener("storage", onStorage);
-    media?.addEventListener("change", onMedia);
+    // Hosts without matchMedia (jsdom, some webviews) or with only the legacy
+    // addListener API must still mount; system tracking is best-effort there.
+    const unsubscribeMedia = options.enableSystem ? subscribeToSystemScheme(onMedia) : () => undefined;
     return () => {
       window.removeEventListener("storage", onStorage);
-      media?.removeEventListener("change", onMedia);
+      unsubscribeMedia();
     };
   }, [options.defaultColorScheme, options.enableSystem, options.storageKey, store]);
 

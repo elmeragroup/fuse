@@ -403,6 +403,7 @@ describe("runtime listeners and layout motion", () => {
       "hooks/use-form-reset.ts",
       "hooks/use-is-mobile.ts",
       "hooks/use-predicted-events.ts",
+      "theme/color-scheme.ts",
       "theme/theme-provider.tsx",
     ]);
   });

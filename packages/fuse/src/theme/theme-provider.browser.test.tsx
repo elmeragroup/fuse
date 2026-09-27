@@ -252,6 +252,21 @@ describe("ThemeProvider / ThemeScope", () => {
     expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
   });
 
+  it("rethrows the validator error for an illegal pinned ThemeScope theme", () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    // @ts-expect-error untyped CMS/env input is the runtime boundary
+    const illegalPinned: ThemeInput = { variant: "internal", brand: "fkab", segment: "private" };
+    const { host } = render(
+      <ValidatorErrorBoundary>
+        <ThemeScope theme={illegalPinned}>
+          <span>child</span>
+        </ThemeScope>
+      </ValidatorErrorBoundary>
+    );
+
+    expect(host.textContent).toBe("Invalid theme: fkab is pinned to company.");
+  });
+
   it("throws the validator error for an unknown nested brand without a hooks-count mismatch", () => {
     stampDocumentBrand(fkasPrivate);
     // @ts-expect-error untyped CMS/env input is the runtime boundary
@@ -463,5 +478,62 @@ describe("ThemeProvider equal-axis theme identity", () => {
     expect(document.documentElement.getAttribute("data-theme-variant")).toBe("internal");
     expect(document.documentElement.getAttribute("data-theme-brand")).toBe("tkas");
     expect(document.documentElement.getAttribute("data-theme-segment")).toBe("private");
+  });
+});
+
+describe("ThemeProvider system scheme subscription", () => {
+  it("mounts when matchMedia throws", () => {
+    vi.spyOn(window, "matchMedia").mockImplementation(() => {
+      throw new Error("unsupported");
+    });
+
+    const { host } = render(
+      <ThemeProvider theme={fkasPrivate}>
+        <span>ready</span>
+      </ThemeProvider>
+    );
+
+    expect(host.textContent).toBe("ready");
+  });
+
+  it("follows system changes through the legacy addListener API", async () => {
+    let matches = false;
+    const listeners: Array<() => void> = [];
+    const removed: Array<() => void> = [];
+    // SAFETY: Safari < 14 MediaQueryList double: legacy listener methods and no addEventListener.
+    const legacyMedia = {
+      get matches() {
+        return matches;
+      },
+      media: "(prefers-color-scheme: dark)",
+      addListener(listener: () => void) {
+        listeners.push(listener);
+      },
+      removeListener(listener: () => void) {
+        removed.push(listener);
+      },
+    } as MediaQueryList;
+    const nativeMatchMedia = window.matchMedia.bind(window);
+    vi.spyOn(window, "matchMedia").mockImplementation((query) =>
+      query === "(prefers-color-scheme: dark)" ? legacyMedia : nativeMatchMedia(query)
+    );
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "system");
+
+    const { unmount } = render(
+      <ThemeProvider theme={fkasPrivate}>
+        <span>ready</span>
+      </ThemeProvider>
+    );
+    await expect.poll(() => document.documentElement.getAttribute("data-theme")).toBe("light");
+    expect(listeners).toHaveLength(1);
+
+    matches = true;
+    for (const listener of listeners) {
+      listener();
+    }
+    await expect.poll(() => document.documentElement.getAttribute("data-theme")).toBe("dark");
+
+    unmount();
+    expect(removed).toEqual(listeners);
   });
 });

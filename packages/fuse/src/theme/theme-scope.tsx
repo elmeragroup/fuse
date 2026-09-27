@@ -5,9 +5,8 @@ import { useCallback, useState } from "react";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
-import { themeAttributes } from "./theme-attributes";
 import type { ThemeAttributes } from "./theme-attributes";
-import { ThemeContext, useResolvedTheme } from "./theme-context";
+import { ThemeContext, useResolvedThemeResult } from "./theme-context";
 import { ThemeScopeContainerContext } from "./theme-scope-container";
 import type { ThemeInput } from "./tokens/themes";
 
@@ -24,12 +23,14 @@ export function ThemeScope({ theme, render, ref, children, ...rest }: ThemeScope
     setElement(node);
   }, []);
 
-  let attributes: ThemeAttributes | undefined;
-  try {
-    attributes = themeAttributes(theme);
-  } catch {
-    // Do not abort useRender; useResolvedTheme rethrows after every hook.
-  }
+  const resolved = useResolvedThemeResult(theme);
+  const attributes: ThemeAttributes | undefined = resolved.ok
+    ? {
+        "data-theme-variant": resolved.theme.variant,
+        "data-theme-brand": resolved.theme.brand,
+        "data-theme-segment": resolved.theme.segment,
+      }
+    : undefined;
 
   const rendered = useRender({
     defaultTagName: "div",
@@ -41,7 +42,9 @@ export function ThemeScope({ theme, render, ref, children, ...rest }: ThemeScope
     }),
   });
 
-  const value = useResolvedTheme(theme);
+  // Rethrow only after every hook has registered, so hook order is stable across renders.
+  if (!resolved.ok) throw resolved.error;
+  const value = resolved.theme;
 
   return (
     <ThemeContext.Provider value={value}>

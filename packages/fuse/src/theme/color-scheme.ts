@@ -109,6 +109,22 @@ export function resolveSystemColorScheme(): ResolvedColorScheme {
   }
 }
 
+/** Subscribes to system scheme changes; returns a no-op when the platform cannot. */
+export function subscribeToSystemScheme(onChange: () => void): () => void {
+  try {
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    // oxlint-disable-next-line anti-slop/no-runtime-typeof -- Safari < 14 MediaQueryList has only addListener
+    if (typeof media.addEventListener === "function") {
+      media.addEventListener("change", onChange);
+      return () => media.removeEventListener("change", onChange);
+    }
+    media.addListener(onChange);
+    return () => media.removeListener(onChange);
+  } catch {
+    return () => undefined;
+  }
+}
+
 export function resolveColorScheme(preference: ColorScheme, enableSystem: boolean): ResolvedColorScheme {
   if (preference === "light" || preference === "dark") {
     return preference;
