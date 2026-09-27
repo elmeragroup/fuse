@@ -69,7 +69,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Upper bound, forwarded as base-ui `max`. Also drives `EXCEEDED_MAX_VALUE` when provided.",
+          "description": "Upper bound, forwarded as base-ui `max`. A `value` above it — including the default 100 — resolves to `EXCEEDED_MAX_VALUE`.",
           "required": false
         },
         {

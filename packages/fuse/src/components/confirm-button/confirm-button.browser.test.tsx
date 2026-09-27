@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
-import { renderThemed } from "../../../test/themed-browser-render";
+import "../../../dist/styles.css";
+import { withLocale } from "../../../test/locale-matrix";
+import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { Dialog } from "../dialog";
 import { ConfirmButton } from "./confirm-button";
 
 function buttonNamed(name: string): HTMLElement {
@@ -61,6 +64,42 @@ describe("ConfirmButton", () => {
     expect(onConfirm).not.toHaveBeenCalled();
     expect(onKeyDown).toHaveBeenCalled();
     expect(buttonNamed("Delete").hasAttribute("data-armed")).toBe(false);
+  });
+
+  it("disarms on the first Escape inside a Dialog and closes the Dialog on the second", async () => {
+    const onConfirm = vi.fn();
+    renderThemed(
+      withLocale(
+        "en-US",
+        <Dialog.Root>
+          <Dialog.Trigger>Open</Dialog.Trigger>
+          <Dialog.Content>
+            <Dialog.Title>Remove meter</Dialog.Title>
+            <ConfirmButton onConfirm={onConfirm} armedChildren="Confirm remove">
+              Remove
+            </ConfirmButton>
+          </Dialog.Content>
+        </Dialog.Root>
+      )
+    );
+
+    // The open modal marks the trigger inert, so keep it to read its open state later.
+    const trigger = roleNamed("button", "Open");
+    await userEvent.click(trigger);
+    await expect.element(page.getByRole("dialog")).toBeInTheDocument();
+
+    await userEvent.click(roleNamed("button", "Remove"));
+    expect(roleNamed("button", "Confirm remove").getAttribute("data-armed")).toBe("true");
+
+    await userEvent.keyboard("{Escape}");
+    expect(roleNamed("button", "Remove").hasAttribute("data-armed")).toBe(false);
+    expect(page.getByRole("dialog").query()).not.toBeNull();
+    expect(trigger.getAttribute("aria-expanded")).toBe("true");
+    expect(onConfirm).not.toHaveBeenCalled();
+
+    await userEvent.keyboard("{Escape}");
+    expect(trigger.getAttribute("aria-expanded")).toBe("false");
+    await expect.poll(() => page.getByRole("dialog").query()).toBeNull();
   });
 
   it("disarms on blur when tabbing away, and stays resting on refocus", async () => {

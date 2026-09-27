@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { renderThemed, textboxNamed } from "../../../test/themed-browser-render";
+import { fieldRootFrom, renderThemed, textboxNamed } from "../../../test/themed-browser-render";
 import { TextareaField } from "./textarea-field";
 
 describe("TextareaField", () => {
@@ -33,6 +33,14 @@ describe("TextareaField", () => {
     renderThemed(<TextareaField label="Bio" id={undefined} aria-labelledby={undefined} />);
     const area = textboxNamed("Bio");
     expect(area.id).not.toBe("");
+  });
+
+  it("merges className onto the field root and textareaClassName onto the textarea", () => {
+    renderThemed(<TextareaField label="Bio" className="root-marker" textareaClassName="control-marker" />);
+    expect(textboxNamed("Bio").classList.contains("control-marker")).toBe(true);
+    expect(textboxNamed("Bio").classList.contains("root-marker")).toBe(false);
+    expect(fieldRootFrom("Bio").classList.contains("root-marker")).toBe(true);
+    expect(fieldRootFrom("Bio").classList.contains("control-marker")).toBe(false);
   });
 
   it("omits the alert when errorMessage is absent", () => {

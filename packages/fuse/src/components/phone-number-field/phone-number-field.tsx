@@ -93,11 +93,11 @@ export type PhoneNumberFieldProps = {
    * @default false
    */
   isReadOnly?: boolean;
-  /** Sets `aria-required` on the visible input. */
+  /** Forwards `required` to the visible input, so native constraint validation blocks an empty submit. */
   isRequired?: boolean;
   /**
-   * Hidden input gets `name`; the visible input gets `${name}-display-value`
-   * (default `"phone-number-display-value"`).
+   * Hidden input gets `name`; the visible input gets `${name}-display-value`.
+   * Unset, neither input submits.
    */
   name?: string;
   /** Extra classes, merged onto the root via `cn`. */
@@ -307,7 +307,7 @@ export function PhoneNumberField({
           <InputGroupInput
             ref={numberInputRef}
             readOnly={isReadOnly}
-            name={name ? `${name}-display-value` : "phone-number-display-value"}
+            name={name ? `${name}-display-value` : undefined}
             value={phone.displayValue}
             onChange={(event) => {
               if (isEditable) phone.handleInputChange(event.currentTarget.value);
@@ -321,7 +321,7 @@ export function PhoneNumberField({
             inputMode={inputMode}
             enterKeyHint={enterKeyHint}
             autoComplete={autoComplete}
-            aria-required={isRequired ? true : undefined}
+            required={isRequired}
             className="shrink tabular-nums"
             {...ariaProps}
           />

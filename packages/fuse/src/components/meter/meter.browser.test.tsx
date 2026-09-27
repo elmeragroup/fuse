@@ -89,10 +89,12 @@ describe("Meter", () => {
       { mode: "inverted", value: 85, fill: "bg-warning" },
       { mode: "inverted", value: 100, fill: "bg-success" },
       { mode: "inverted", value: 150, maxValue: 120, fill: "bg-error" },
+      { mode: "inverted", value: 150, fill: "bg-error" },
       { mode: "success-only-when-full", value: 50, fill: "bg-error" },
       { mode: "success-only-when-full", value: 85, fill: "bg-error" },
       { mode: "success-only-when-full", value: 100, fill: "bg-success" },
       { mode: "success-only-when-full", value: 150, maxValue: 120, fill: "bg-error" },
+      { mode: "success-only-when-full", value: 150, fill: "bg-error" },
       { mode: "neutral", value: 50, fill: "bg-primary" },
       { mode: "neutral", value: 85, fill: "bg-primary" },
       { mode: "neutral", value: 100, fill: "bg-primary" },
@@ -106,6 +108,12 @@ describe("Meter", () => {
       expect(slot("meter-bar-fill").className.split(/\s+/), `${row.mode} ${row.value}`).toContain(row.fill);
       unmount();
     }
+  });
+
+  it("shows the warning glyph above the default max in success-only-when-full mode", () => {
+    renderMeter(<Meter label="Quota" value={150} mode="success-only-when-full" />);
+    expect(statusIcon("Warning")).not.toBeNull();
+    expect(statusIcon("Success")).toBeNull();
   });
 
   it("shows Warning at 85% in default mode and no icon at 79%", () => {

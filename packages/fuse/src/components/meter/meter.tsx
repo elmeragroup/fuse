@@ -32,7 +32,7 @@ export type MeterProps = {
    */
   minValue?: number;
   /**
-   * Upper bound, forwarded as base-ui `max`. Also drives `EXCEEDED_MAX_VALUE` when provided.
+   * Upper bound, forwarded as base-ui `max`. A `value` above it — including the default 100 — resolves to `EXCEEDED_MAX_VALUE`.
    * @default 100
    */
   maxValue?: number;
@@ -95,7 +95,7 @@ export function Meter({
   const min = minValue ?? 0;
   const max = maxValue ?? 100;
   const percentage = meterPercentage(value, min, max);
-  const level = getMeterLevel(value, maxValue, percentage);
+  const level = getMeterLevel(value, max, percentage);
   const warningName = warningLabel ?? strings.format("warning");
   const successName = successLabel ?? strings.format("success");
 
