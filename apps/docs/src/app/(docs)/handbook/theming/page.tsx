@@ -239,9 +239,9 @@ export default function ThemingPage(): ReactElement {
       <p>
         Light and dark are separate from the three theme axes. Colour-scheme state lives on the document
         writer; scopes do not fork it. Emit <code>ColorSchemeScript</code> in <code>&lt;head&gt;</code> ahead
-        of anything paintable so the stored preference applies before first paint, and pass{" "}
-        <code>injectColorSchemeScript={"{false}"}</code> to the provider so the bootstrap is emitted exactly
-        once.
+        of anything paintable so the stored preference applies before first paint, and leave the
+        provider&apos;s <code>injectColorSchemeScript</code> at its default, <code>false</code>, so the
+        bootstrap is emitted exactly once.
       </p>
 
       <h2 id="first-paint">First paint in your framework</h2>
@@ -285,10 +285,10 @@ export default function ThemingPage(): ReactElement {
       <h2 id="next-app-router">Next App Router</h2>
       <p>
         The Quick start layout puts ColorSchemeScript in head. This also avoids the hidden streaming preamble
-        Next can insert at the start of body. Set <code>injectColorSchemeScript</code> to false on the
-        provider. A forced route needs a route-group layout or other document that supplies the same force to
-        both. React Aria consumers use UiProviders instead of nesting it with LocaleProvider. Put its
-        function-valued navigate prop in an app-owned client wrapper that calls useRouter and passes
+        Next can insert at the start of body. Leave the provider&apos;s <code>injectColorSchemeScript</code>{" "}
+        at its default, false. A forced route needs a route-group layout or other document that supplies the
+        same force to both. React Aria consumers use UiProviders instead of nesting it with LocaleProvider.
+        Put its function-valued navigate prop in an app-owned client wrapper that calls useRouter and passes
         router.push.
       </p>
 
@@ -344,9 +344,9 @@ export default function ThemingPage(): ReactElement {
           the global stylesheet.
         </li>
         <li>
-          Mount ThemeProvider with matching options and injectColorSchemeScript set to false. A bundling
-          config loader can rewrite Function.prototype.toString and break the closed IIFE. The fixture uses
-          the native config loader with the built theme module.
+          Mount ThemeProvider with matching options, leaving injectColorSchemeScript at its default, false. A
+          bundling config loader can rewrite Function.prototype.toString and break the closed IIFE. The
+          fixture uses the native config loader with the built theme module.
         </li>
         <li>
           For route-specific forced first paint, use a separate HTML entry or a transform that resolves the

@@ -71,8 +71,9 @@ export default function AboutPage(): ReactElement {
         Component pages are thin authored shells. Everything below the prose — the demo frames, the API
         tables, the tokens-consumed list, the markdown endpoint — is generated from library source at docs
         build. One authored demo file currently feeds the live stage you see and the{" "}
-        <Link href="/handbook/llms-txt">markdown endpoint</Link> an AI reads. The same demo corpus is ready to
-        become input to the planned visual-regression suite.
+        <Link href="/handbook/llms-txt">markdown endpoint</Link> an AI reads. The same demo corpus could feed
+        visual-regression coverage, which is added when behavioral tests miss a visual regression or manual
+        theme review stops scaling.
       </p>
       <p>
         Generation is strict on purpose. An unresolvable type or a public prop without a description fails the

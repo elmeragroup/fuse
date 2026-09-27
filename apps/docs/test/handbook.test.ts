@@ -121,4 +121,23 @@ describe("quick start page", () => {
     expect(html).toContain("lang=");
     expect(html).toContain("Hopp til innholdet");
   });
+
+  it("offers both CSS modes and a snippet that uses a real Button variant", async () => {
+    const html = await fetchText("/quick-start");
+    // React escapes quotes and angle brackets in text children, so snippet code renders as entities.
+    // The prose also names `@source`, so the Tailwind and Button checks match snippet-only strings.
+    expect(html, "the Tailwind-source snippet must import the Fuse CSS entry").toContain(
+      "@import &quot;@elmeragroup/fuse/css&quot;"
+    );
+    expect(html, "the Tailwind-source snippet must point @source at the package").toContain(
+      "@source &quot;../node_modules/@elmeragroup/fuse&quot;"
+    );
+    expect(html, "standalone mode must be shown").toContain("@elmeragroup/fuse/styles.css");
+    expect(html, "the quick-start Button snippet must be shown").toContain(
+      "&lt;Button&gt;Lagre&lt;/Button&gt;"
+    );
+    expect(html, "the quick-start Button snippet must not use a variant Button lacks").not.toContain(
+      "variant=&quot;primary&quot;"
+    );
+  });
 });

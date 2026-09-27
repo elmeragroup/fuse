@@ -8,7 +8,13 @@ export const metadata = pageMetadata(HREF);
 
 const INSTALL = `pnpm add @elmeragroup/fuse`;
 
-const STYLES = `// app/layout.tsx — once, at the document root
+const STYLES_TAILWIND = `/* app/globals.css — Tailwind v4.1 or newer */
+@import "tailwindcss";
+@import "@elmeragroup/fuse/css";
+@import "@elmeragroup/fuse/themes.css";
+@source "../node_modules/@elmeragroup/fuse";`;
+
+const STYLES_STANDALONE = `// app/layout.tsx — apps without Tailwind, once at the document root
 import "@elmeragroup/fuse/styles.css";
 import "@elmeragroup/fuse/themes.css";`;
 
@@ -47,7 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 const USAGE = `import { Button } from "@elmeragroup/fuse/button";
 
 export function SaveButton() {
-  return <Button variant="primary">Lagre</Button>;
+  return <Button>Lagre</Button>;
 }`;
 
 export default function QuickStartPage(): ReactElement {
@@ -62,9 +68,21 @@ export default function QuickStartPage(): ReactElement {
       <pre>
         <code>{INSTALL}</code>
       </pre>
-      <p>Import the two stylesheets once, at the document root:</p>
+      <p>
+        Tailwind v4 apps compile Fuse&apos;s classes with their own build: import{" "}
+        <code>@elmeragroup/fuse/css</code> and <code>themes.css</code>, and point <code>@source</code> at the
+        installed package root. Adjust the <code>@source</code> path only when the stylesheet is not one
+        directory below the app root.
+      </p>
       <pre>
-        <code>{STYLES}</code>
+        <code>{STYLES_TAILWIND}</code>
+      </pre>
+      <p>
+        Apps without Tailwind import the prebuilt standalone stylesheet and <code>themes.css</code>. It
+        includes the library utilities without Tailwind&apos;s preflight, so keep your own reset.
+      </p>
+      <pre>
+        <code>{STYLES_STANDALONE}</code>
       </pre>
 
       <h2 id="page-scaffold">The page scaffold</h2>
@@ -89,8 +107,9 @@ export default function QuickStartPage(): ReactElement {
           <strong>
             <code>ColorSchemeScript</code>
           </strong>{" "}
-          in <code>&lt;head&gt;</code>, ahead of anything paintable, with{" "}
-          <code>injectColorSchemeScript={"{false}"}</code> on the provider so the bootstrap is emitted once.
+          in <code>&lt;head&gt;</code>, ahead of anything paintable, and leave the provider&apos;s{" "}
+          <code>injectColorSchemeScript</code> at its default, <code>false</code>, so the bootstrap is emitted
+          once.
         </li>
         <li>
           <strong>A skip link</strong> as the first focusable element in <code>&lt;body&gt;</code>, targeting

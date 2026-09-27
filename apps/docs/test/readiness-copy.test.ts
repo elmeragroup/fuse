@@ -21,9 +21,7 @@ describe("release readiness copy", () => {
       "gated on activation"
     );
     expect(html, "releases must name the activation switch").toContain("RELEASE_ENABLED");
-    expect(html, "releases must explain how pending notes are applied").toContain(
-      "pnpm exec changeset version"
-    );
+    expect(html, "releases must explain how pending notes are applied").toContain("pnpm release:version");
     expect(html, "releases must say activated ordinary merges publish canaries").toContain(
       "every ordinary merge publishes a canary"
     );
@@ -48,6 +46,11 @@ describe("release readiness copy", () => {
       html,
       "releases must frame packed-consumer checks as intended gates, not an active release workflow"
     ).toContain("intended publish gates, not an active release workflow");
+    expect(html, "releases must separate pending gates from active ones").toContain("Pending gates");
+    expect(
+      html,
+      "releases must not list the merge-suite theme contract as a packed-artifact gate"
+    ).not.toContain("theme-contract test");
     expect(
       html,
       "releases must frame Trusted Publishing/OIDC and provenance as pending target controls"
@@ -75,13 +78,12 @@ describe("release readiness copy", () => {
 
 describe("visual-regression readiness copy", () => {
   it.each(["/about", "/handbook/llms-txt"] as const)(
-    "%s describes visual regression as planned, not a live consumer",
+    "%s describes visual regression as trigger-based, not a live consumer",
     async (pathname) => {
       const html = await fetchText(pathname);
-      expect(
-        html,
-        `${pathname} must describe the demo corpus as ready for a planned visual-regression suite`
-      ).toContain("ready to become input to the planned visual-regression suite");
+      expect(html, `${pathname} must describe visual-regression coverage as trigger-based`).toContain(
+        "added when behavioral tests miss a visual regression"
+      );
       expect(html, `${pathname} must not claim authored demos currently feed three consumers`).not.toContain(
         "feeds three consumers"
       );

@@ -20,7 +20,9 @@ export const metadata = componentMetadata("input-group");
   <InputGroupIcons />
 </Demo>
 
-Disabling an addon button leaves an editable field enabled. Disable `InputGroup.Input` or `InputGroup.Textarea` when the entire field is unavailable. The group reads its disabled and invalid state from that input or textarea alone, so keep it a direct child of `InputGroup.Root`. A field nested in an addon, such as a `NumberField`, shows its own state without dimming or ringing the group.
+Disabling an addon button leaves an editable field enabled. Disable `InputGroup.Input` or `InputGroup.Textarea` when the entire field is unavailable. The group reads its disabled and invalid state from that input or textarea alone, so keep it a direct child of `InputGroup.Root`. A field nested in an addon, such as a `NumberField`, shows its own disabled and invalid state without dimming the group. Focus is not scoped the same way yet: a focused nested field also rings the group.
+
+{/* Revisit when TODO.md "Scope the within-target focus faces to the group's own control" lands. */}
 
 <Demo slug="input-group" id="buttons" title="Button addons" file="input-group-buttons.tsx">
   <InputGroupButtons />

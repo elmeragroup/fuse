@@ -27,9 +27,9 @@ export default function ReleasesPage(): ReactElement {
         including API, styles, tokens, types, and shipped strings. Internal-only PRs use the{" "}
         <code>no-changeset</code> label instead. Pending notes accumulate on <code>main</code>. Once
         publishing is activated, every push publishes a canary and the bot opens or updates the Version
-        Packages PR by applying the pending notes (<code>pnpm exec changeset version</code>); merging that PR
-        publishes the stable line. The changelog is generated and never hand-edited; the rest of the procedure
-        lives in the{" "}
+        Packages PR by applying the pending notes (<code>pnpm release:version</code>,{" "}
+        <code>changeset version</code> plus a lockfile refresh); merging that PR publishes the stable line.
+        The changelog is generated and never hand-edited; the rest of the procedure lives in the{" "}
         <Link href="https://github.com/elmeragroup/fuse/blob/main/scripts/RELEASE.md" rel="noreferrer">
           release runbook
         </Link>
@@ -68,35 +68,53 @@ export default function ReleasesPage(): ReactElement {
 
       <h2 id="publish-gates">Publish gates</h2>
       <p>
-        Once activated, the release workflow publishes only when all of these hold against the packed
-        artifact:
+        Once activated, the release workflow packs the tarball once and publishes only when these gates pass
+        against those exact bytes. Nothing publishes today; see{" "}
+        <Link href="#current-readiness">Current readiness</Link>. Until activation these are intended publish
+        gates, not an active release workflow.
       </p>
+
+      <h3 id="active-gates">Active publish gates</h3>
       <ul>
         <li>
-          <strong>publint</strong> and <strong>arethetypeswrong</strong> — the published package shape and its
-          type resolution across module modes.
+          <strong>
+            <code>package:check</code>
+          </strong>{" "}
+          — publint and arethetypeswrong, the exports map resolving against the published shape,
+          emitted-directive parity, peer ranges, runtime exports, the React compatibility matrix, the Tailwind
+          floor compile and packaged flag assets.
         </li>
         <li>
-          <strong>exports-map test</strong> — every generated subpath resolves against the published shape,
-          not just the in-repo one.
+          <strong>
+            <code>size-limit</code>
+          </strong>{" "}
+          — every ceiling on the <Link href="/handbook/tokens">Tokens</Link> page holds.
         </li>
         <li>
-          <strong>emitted-directive parity</strong> — all and only the source modules with a leading{" "}
-          <code>&quot;use client&quot;</code> keep it in the packed JavaScript.
-        </li>
-        <li>
-          <strong>size-limit budgets</strong> — every ceiling on the{" "}
-          <Link href="/handbook/tokens">Tokens</Link> page holds.
-        </li>
-        <li>
-          <strong>theme-contract test</strong> — the 20-theme token contract holds in the built CSS.
-        </li>
-        <li>
-          <strong>Packed consumer fixtures</strong> — the tarball installs and builds in both a Next App
-          Router app and a Vite app, with flag assets resolving. These checks are intended publish gates, not
-          an active release workflow today.
+          <strong>
+            <code>test:packed-consumer</code>
+          </strong>{" "}
+          — the tarball renders controls at the documented geometry in both the standalone-CSS and
+          Tailwind-source modes, and a Vite production build of the tarball in standalone-CSS mode serves its
+          flag SVGs as external assets.
         </li>
       </ul>
+
+      <h3 id="merge-gates">Merge gates</h3>
+      <p>
+        The 20-theme token contract and the unit, type and browser suites run on every merge to{" "}
+        <code>main</code>, not against the packed tarball.
+      </p>
+
+      <h3 id="pending-gates">Pending gates</h3>
+      <p>
+        A packed Next App Router fixture — Tailwind-source mode, a server page and a client island — is
+        designed but not yet built. The{" "}
+        <Link href="https://github.com/elmeragroup/fuse/blob/main/scripts/RELEASE.md" rel="noreferrer">
+          release runbook
+        </Link>{" "}
+        tracks it.
+      </p>
 
       <h2 id="supply-chain">Provenance</h2>
       <p>
