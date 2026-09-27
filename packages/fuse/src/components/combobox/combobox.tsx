@@ -98,14 +98,21 @@ export function ComboboxTrigger({
 
 export type ComboboxClearProps = ComponentProps<typeof ComboboxPrimitive.Clear> & {
   /**
-   * Accessible name for the icon-only clear button. Defaults to the locale dictionary.
+   * Accessible name for the icon-only clear button. An explicit `aria-label` wins over it;
+   * both default to the locale dictionary.
    */
   label?: string;
 };
 
-export function ComboboxClear({ className, label, ...props }: ComboboxClearProps): ReactElement {
+export function ComboboxClear({
+  className,
+  label,
+  "aria-label": ariaLabel,
+  ...props
+}: ComboboxClearProps): ReactElement {
   const strings = useLocalizedStrings(comboboxStrings);
-  const accessibleName = label ?? strings.format("clear");
+  // The render element's props win in Base UI's merge, so the resolved name must live there.
+  const accessibleName = ariaLabel ?? label ?? strings.format("clear");
   return (
     <ComboboxPrimitive.Clear
       data-slot="combobox-clear"
@@ -152,6 +159,11 @@ export type ComboboxInputProps = Omit<
    * the locale dictionary.
    */
   clearLabel?: string;
+  /**
+   * Accessible name for the auto-rendered caret trigger when `showTrigger`. Defaults to
+   * the locale dictionary.
+   */
+  triggerLabel?: string;
 };
 
 export function ComboboxInput({
@@ -161,6 +173,7 @@ export function ComboboxInput({
   showTrigger = true,
   showClear = false,
   clearLabel,
+  triggerLabel,
   ...props
 }: ComboboxInputProps): ReactElement {
   const strings = useLocalizedStrings(comboboxStrings);
@@ -172,7 +185,7 @@ export function ComboboxInput({
           <InputGroupButton
             size="icon-sm"
             variant="ghost"
-            aria-label={strings.format("toggle")}
+            aria-label={triggerLabel ?? strings.format("toggle")}
             // Field.Label labelledby would win over aria-label; drop it so the
             // caret stays dictionary `toggle`.
             aria-labelledby={undefined}

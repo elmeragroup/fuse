@@ -5,6 +5,7 @@ import type { ChangeEvent, ComponentProps, ReactElement, ReactNode } from "react
 
 import { useFormReset } from "../../hooks/use-form-reset";
 import { useMergedRefs } from "../../hooks/use-merged-refs";
+import { definedProps } from "../../internal/defined-props";
 import { FieldControl } from "../field/field";
 import { FieldFrame } from "../field/field-frame";
 import { Textarea } from "../textarea/textarea";
@@ -97,7 +98,7 @@ export function TextareaField({
       <FieldControl
         render={
           <Textarea
-            {...props}
+            {...definedProps(props)}
             ref={mergedRef}
             className={className}
             value={isControlled ? value : undefined}

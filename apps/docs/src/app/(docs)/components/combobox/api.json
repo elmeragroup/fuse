@@ -494,6 +494,15 @@
           "defaultValue": null,
           "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
           "required": false
+        },
+        {
+          "name": "triggerLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name for the auto-rendered caret trigger when `showTrigger`. Defaults to the locale dictionary.",
+          "required": false
         }
       ]
     },
@@ -613,7 +622,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name for the icon-only clear button. Defaults to the locale dictionary.",
+          "description": "Accessible name for the icon-only clear button. An explicit `aria-label` wins over it; both default to the locale dictionary.",
           "required": false
         },
         {
