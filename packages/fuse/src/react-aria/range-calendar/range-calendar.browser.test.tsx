@@ -253,6 +253,36 @@ describe("RangeCalendar", () => {
     expect(cellNumbered(18).getAttribute("aria-selected")).not.toBe("true");
   });
 
+  it("mutes an unavailable day's pill with the muted-foreground token", async () => {
+    renderRangeCalendar(
+      <RangeCalendar defaultFocusedValue={july14} isDateUnavailable={(date) => isSameDay(date, july16)} />
+    );
+    await expect.element(page.getByRole("grid")).toBeVisible();
+    expect(dayNumbered(16)).toHaveAttribute("data-unavailable");
+
+    const unavailable = pillOf(dayNumbered(16));
+    expect(getComputedStyle(unavailable).color).toBe(cssVarColor(unavailable, "--muted-foreground"));
+    const bookable = pillOf(dayNumbered(15));
+    expect(getComputedStyle(bookable).color).toBe(cssVarColor(bookable, "--foreground"));
+  });
+
+  it("gets no hover fill on an unavailable day (RAC skips hover on unavailable cells)", async () => {
+    renderRangeCalendar(
+      <RangeCalendar defaultFocusedValue={july14} isDateUnavailable={(date) => isSameDay(date, july16)} />
+    );
+    await expect.element(page.getByRole("grid")).toBeVisible();
+
+    // RAC disables useHover/usePress for unavailable cells, so group-hover never fires today;
+    // the compound's suppression classes only matter if an upgrade changes that.
+    await userEvent.hover(dayNumbered(16));
+    expect(getComputedStyle(pillOf(dayNumbered(16))).backgroundColor).toBe("rgba(0, 0, 0, 0)");
+
+    await userEvent.hover(dayNumbered(15));
+    const bookable = pillOf(dayNumbered(15));
+    expect(getComputedStyle(bookable).backgroundColor).toBe(cssVarColor(bookable, "--muted"));
+    await parkPointerOffGrid();
+  });
+
   it("keeps a keyboard range contiguous across an unavailable date by default", async () => {
     const onChange = rangeChangeSpy();
     renderRangeCalendar(
@@ -322,6 +352,9 @@ describe("RangeCalendar", () => {
     expect(calendarRoot()).toHaveAttribute("data-invalid");
     expect(dayNumbered(18)).toHaveAttribute("data-invalid");
     expect(cellNumbered(18)).toHaveAttribute("aria-disabled", "true");
+    // A selected unavailable endpoint keeps the cap's text, not the unavailable face.
+    const endpoint = pillOf(dayNumbered(18));
+    expect(getComputedStyle(endpoint).color).toBe(cssVarColor(endpoint, "--primary-foreground"));
 
     const textHost = errorNode.parentElement;
     if (!(textHost instanceof HTMLElement)) {
