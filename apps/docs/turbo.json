@@ -20,7 +20,10 @@
       ]
     },
     "build": {
-      "dependsOn": ["generate"]
+      "dependsOn": ["generate"],
+      // A replay needs the compiled app, not Next's build cache or a local `next dev` cache;
+      // archiving those put about 3.9 GB into every local docs#build cache entry.
+      "outputs": [".next/**", "!.next/cache/**", "!.next/dev/**"]
     },
     // `next build` deletes everything in .next except cache/dev/lock/trace before it
     // compiles, while `next typegen` creates .next/types and then writes into it. Running

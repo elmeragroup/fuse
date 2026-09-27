@@ -113,10 +113,10 @@ jobs:
       # because `github.job` is null outside a job's steps.
       TURBO_CACHE_KEY: turbo-browser-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
+      # The browser gate reads no git history; only the checks job needs it (changeset status --since).
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
-          fetch-depth: 0
           persist-credentials: false
 
       - name: Setup pnpm
@@ -131,8 +131,31 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      # The browser download is keyed on the Playwright version pnpm resolved, so a catalog bump
+      # misses once and every other run restores it. System packages are not cached; a hit
+      # still installs them. An unparsable version fails here rather than becoming a constant key
+      # that restores stale browsers after every bump.
+      - name: Resolve Playwright version
+        id: playwright
+        run: |
+          version="$(pnpm --filter @elmeragroup/fuse exec playwright --version | awk '{print $2}')"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::unexpected playwright --version output: $version"; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
       - name: Install Playwright Chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: pnpm --filter @elmeragroup/fuse exec playwright install --with-deps chromium
+
+      - name: Install Playwright system dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm --filter @elmeragroup/fuse exec playwright install-deps chromium
 
       # Turbo's local cache persists per job, so unchanged packages replay their cached
       # results. A PR restores from its own branch first and falls back to main's. Every run on
