@@ -1,7 +1,11 @@
-# Keeps the SHA-pinned third-party actions current. There is no npm ecosystem: several tests pin
-# catalog versions and would fail on every dependency bump. The 3-day cooldown mirrors
-# `minimumReleaseAge` in `pnpm-workspace.yaml`, so a compromised release has time to be pulled
-# before it is proposed. Workflow-only bumps carry no changeset, hence the `no-changeset` label.
+# Keeps the SHA-pinned third-party actions current and raises npm security advisories.
+# Actions: the 3-day cooldown mirrors `minimumReleaseAge` in `pnpm-workspace.yaml`, so a
+# compromised release has time to be pulled before it is proposed. Workflow-only bumps carry no
+# changeset, hence the `no-changeset` label.
+# npm: security updates only. `open-pull-requests-limit: 0` turns version updates off, because
+# dependencies are catalog-pinned and published at exact versions, and a bump is a deliberate
+# change with its own changeset. An advisory PR on a published dependency still needs a patch
+# changeset (scripts/RELEASE.md).
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -16,3 +20,8 @@ updates:
       github-actions:
         patterns:
           - "*"
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0

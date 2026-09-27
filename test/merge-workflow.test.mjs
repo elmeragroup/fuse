@@ -145,7 +145,7 @@ describe("merge workflow", () => {
   it("publishes and prepares the version PR only from an activated push to main", () => {
     const jobs = asRecord(workflow.jobs, "merge jobs");
     const release = asRecord(jobs.release, "release job");
-    expect(release.needs).toBe("checks");
+    expect(release.needs).toEqual(["checks", "browser"]);
     expect(release.if).toBe(activatedPush);
     expect(release.uses).toBe("./.github/workflows/publish-release.yml");
     // The called workflow cannot hold more than the caller grants; the engine records its
@@ -158,7 +158,7 @@ describe("merge workflow", () => {
     const releaseSecrets = asRecord(release.secrets, "release secrets");
     expect(releaseSecrets.NPM_TOKEN).toBe("${{ secrets.NPM_TOKEN }}");
     const version = asRecord(jobs.version, "version job");
-    expect(version.needs).toBe("checks");
+    expect(version.needs).toEqual(["checks", "browser"]);
     expect(version.if).toBe(activatedPush);
     expect(version.uses).toBe("./.github/workflows/version-packages.yml");
     // The version job writes the bot PR and dispatches merge.yml for its checks.
