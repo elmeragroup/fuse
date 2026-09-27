@@ -22,7 +22,8 @@ import {
   textNamed,
 } from "../../../test/themed-browser-render";
 import { Badge } from "../badge/badge";
-import { Radio, RadioGroup, RadioGroupItem, RadioIconButton, RadioItem, RadioItemGroup } from "./radio-group";
+import { Radio, RadioGroup, RadioGroupItem, RadioIconButton, RadioItemGroup } from "./radio-group";
+import { RadioItem } from "./radio-item";
 
 const ICON_SIZES = ["icon-xxs", "icon-xs", "icon-sm", "icon", "icon-lg"] as const;
 

@@ -24,6 +24,7 @@ import { AlertDialog } from "@elmeragroup/fuse/alert-dialog";
 import { Avatar } from "@elmeragroup/fuse/avatar";
 import { Breadcrumb } from "@elmeragroup/fuse/breadcrumb";
 import { ButtonGroup } from "@elmeragroup/fuse/button-group";
+import { CheckboxItem } from "@elmeragroup/fuse/checkbox";
 import { Collapsible } from "@elmeragroup/fuse/collapsible";
 import { Combobox } from "@elmeragroup/fuse/combobox";
 import { Dialog } from "@elmeragroup/fuse/dialog";
@@ -33,6 +34,7 @@ import { InputGroup } from "@elmeragroup/fuse/input-group";
 import { Item } from "@elmeragroup/fuse/item";
 import { Pagination } from "@elmeragroup/fuse/pagination";
 import { Popover } from "@elmeragroup/fuse/popover";
+import { RadioItem } from "@elmeragroup/fuse/radio-group";
 import { ScrollArea } from "@elmeragroup/fuse/scroll-area";
 import { Select } from "@elmeragroup/fuse/select";
 import { SelectionItem } from "@elmeragroup/fuse/selection-item";
@@ -293,8 +295,75 @@ function alertTree(): ReactElement {
   );
 }
 
+const CHECKBOX_BAND = "Includes a price-freeze guarantee.";
+const RADIO_BAND = "Price follows the hourly market.";
+
+/** CheckboxItem and RadioItem are hook-free rows; the server runs them and reads their parts. */
+function selectionItemTrees(): ReactElement {
+  const rows: readonly (readonly [string, NamespacePart])[] = [
+    ["CheckboxItem", CheckboxItem],
+    ["RadioItem", RadioItem],
+  ];
+  for (const [name, row] of rows) {
+    if (isClientReference(row)) {
+      throw new Error(`${name} is a client reference; the server must run it to read its parts`);
+    }
+  }
+  return createElement(
+    "section",
+    { "data-fixture": "selection-items" },
+    createElement(
+      CheckboxItem,
+      { value: "fixed" },
+      createElement(
+        CheckboxItem.Content,
+        null,
+        createElement(CheckboxItem.Title, null, "Fixed price"),
+        createElement(CheckboxItem.Description, null, "Locked for 12 months.")
+      ),
+      createElement(CheckboxItem.Actions, null, "Recommended"),
+      createElement(CheckboxItem.SubSection, null, CHECKBOX_BAND)
+    ),
+    createElement(
+      RadioItem,
+      { value: "spot" },
+      createElement(RadioItem.Content, null, createElement(RadioItem.Title, null, "Spot price")),
+      createElement(RadioItem.SubSection, null, RADIO_BAND)
+    )
+  );
+}
+
+/** A value in a Flight model row, which is JSON. */
+type FlightJson = string | number | boolean | null | readonly FlightJson[] | FlightObject;
+
+type FlightObject = { readonly [key: string]: FlightJson };
+
+/** The JSON model rows of a Flight payload (`<hex id>:[…]` or `<hex id>:{…}`). */
+function flightModelRows(payload: string): FlightJson[] {
+  return payload.split("\n").flatMap((line) => {
+    const body = /^[0-9a-f]+:(.*)$/u.exec(line)?.[1];
+    // SAFETY: Flight model rows are the I/O boundary. The body starts with `[` or `{`, and
+    // JSON.parse yields only JSON values, so the result is a FlightJson array or object.
+    return body !== undefined && (body.startsWith("[") || body.startsWith("{"))
+      ? [JSON.parse(body) as FlightJson]
+      : [];
+  });
+}
+
+/** Every key path from `value` to a string equal to `text`. Array indices appear as strings. */
+function pathsTo(value: FlightJson, text: string, path: readonly string[] = []): string[][] {
+  if (value === text) {
+    return [[...path]];
+  }
+  // `instanceof Object` keeps arrays and objects and drops `null` and the other primitives.
+  if (!(value instanceof Object)) {
+    return [];
+  }
+  return Object.entries(value).flatMap(([key, item]) => pathsTo(item, text, [...path, key]));
+}
+
 function Fixture(): ReactElement {
-  return createElement("div", null, ...namespaceElements(), alertTree());
+  return createElement("div", null, ...namespaceElements(), alertTree(), selectionItemTrees());
 }
 
 function flightManifest() {
@@ -357,6 +426,23 @@ if (
 }
 if (payload.includes("button.tsx")) {
   throw new Error("The no-action Alert rendered a client Button");
+}
+
+// The shell partitions on the client by `child.type`, which a server-authored element cannot
+// satisfy: Flight revives each client reference as a new lazy wrapper. The rows must hand
+// SubSections over through the shell's `subSections` prop, so each band's only path runs
+// through that prop, never through the shell's `children`.
+const models = flightModelRows(payload);
+for (const band of [CHECKBOX_BAND, RADIO_BAND]) {
+  const paths = models.flatMap((model) => pathsTo(model, band));
+  if (paths.length !== 1 || paths[0]?.includes("subSections") !== true) {
+    throw new Error(`${band} is not passed through the shell's subSections prop: ${JSON.stringify(paths)}`);
+  }
+}
+for (const text of ["Fixed price", "Locked for 12 months.", "Spot price"]) {
+  if (models.flatMap((model) => pathsTo(model, text)).some((path) => path.includes("subSections"))) {
+    throw new Error(`${text} left the row label`);
+  }
 }
 
 process.stdout.write("RSC_OK\n");

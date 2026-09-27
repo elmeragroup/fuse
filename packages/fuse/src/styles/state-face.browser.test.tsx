@@ -12,7 +12,8 @@ import { effectiveOpacity, renderThemed, roleNamed, stampDensity } from "../../t
 import { Accordion } from "../components/accordion";
 import { Button } from "../components/button/button";
 import { CheckboxCard } from "../components/checkbox-card/checkbox-card";
-import { Checkbox, CheckboxGroup, CheckboxItem } from "../components/checkbox/checkbox";
+import { Checkbox, CheckboxGroup } from "../components/checkbox/checkbox";
+import { CheckboxItem } from "../components/checkbox/checkbox-item";
 import { Combobox } from "../components/combobox";
 import { InputGroup } from "../components/input-group";
 import { Input } from "../components/input/input";

@@ -133,11 +133,20 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
   /** Extra classes, merged last through `cn`. */
   className?: string;
   /**
+   * Sub-sections the caller already partitioned out of its row children, rendered outside
+   * the label with any direct `SelectionItem.SubSection` children. `CheckboxItem` and
+   * `RadioItem` pass them here because they partition where the element was created: a
+   * server-authored SubSection reaches the client as a lazy reference, which the
+   * `child.type` filter below cannot recognise.
+   */
+  subSections?: ReactNode;
+  /**
    * Direct children are partitioned: `SelectionItem.SubSection` nodes render outside
    * the label so interactive content does not toggle the control. Everything else
    * renders in the label row. Wrapping a SubSection in a Fragment, another component,
    * or an HOC hides it from `child.type === SelectionItem.SubSection` and it stays
-   * inside the label.
+   * inside the label. Server-authored trees should pass SubSections through
+   * `subSections`; see that prop.
    */
   children?: ReactNode;
 };
@@ -162,6 +171,7 @@ export function SelectionItemShell({
   controlPosition = "start",
   isDisabled,
   className,
+  subSections: passedSubSections,
   children,
   ...props
 }: SelectionItemShellProps): ReactElement {
@@ -169,13 +179,13 @@ export function SelectionItemShell({
   const inItemGroup = groupLayout !== false && groupLayout.list;
   const connectedStack = groupLayout === false || groupLayout.orientation !== "horizontal";
   const childArray = Children.toArray(children);
-  const subSections = childArray.filter(
+  const directSubSections = childArray.filter(
     (child) => isValidElement(child) && child.type === SelectionItemSubSection
   );
   const rowChildren = childArray.filter(
     (child) => !(isValidElement(child) && child.type === SelectionItemSubSection)
   );
-  const hasSubSection = subSections.length > 0;
+  const hasSubSection = Children.toArray(passedSubSections).length > 0 || directSubSections.length > 0;
   const controlAtEnd = controlPosition === "end";
 
   const controlSlot = (
@@ -185,7 +195,14 @@ export function SelectionItemShell({
   );
   const rowCluster = <div className="flex min-w-0 items-start gap-2.5">{rowChildren}</div>;
   const spacer = <span aria-hidden />;
-  const subCluster = <div className="min-w-0">{subSections}</div>;
+  // Separate child positions give each source its own key space; one merged array
+  // would repeat the `.0` keys that the two `Children.toArray` calls assign independently.
+  const subCluster = (
+    <div className="min-w-0">
+      {passedSubSections}
+      {directSubSections}
+    </div>
+  );
 
   return (
     <FieldItem

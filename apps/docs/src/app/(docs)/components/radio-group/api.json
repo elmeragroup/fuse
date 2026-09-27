@@ -313,8 +313,8 @@
     },
     {
       "name": "RadioItem",
-      "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/radio-group/radio-group.tsx",
+      "rsc": "server",
+      "sourcePath": "packages/fuse/src/components/radio-group/radio-item.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -324,7 +324,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Row children, partitioned by the shell. Direct `RadioItem.SubSection` (the same object as `SelectionItem.SubSection`) children render outside the label.",
+          "description": "Row children, partitioned by the row. Direct `RadioItem.SubSection` (the same object as `SelectionItem.SubSection`) children render outside the label.",
           "required": false
         },
         {

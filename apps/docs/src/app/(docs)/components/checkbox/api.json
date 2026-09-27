@@ -349,8 +349,8 @@
     },
     {
       "name": "CheckboxItem",
-      "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/checkbox/checkbox.tsx",
+      "rsc": "server",
+      "sourcePath": "packages/fuse/src/components/checkbox/checkbox-item.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -360,7 +360,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Row children, partitioned by the shell. Direct `CheckboxItem.SubSection` (the same object as `SelectionItem.SubSection`) children render outside the label.",
+          "description": "Row children, partitioned by the row. Direct `CheckboxItem.SubSection` (the same object as `SelectionItem.SubSection`) children render outside the label.",
           "required": false
         },
         {

@@ -272,6 +272,15 @@ describe("RSC classification", () => {
     expectRsc("components/item/item-markup.tsx", "server");
   });
 
+  // Why not a lint rule: whether a hook-free row may run on the server is a reviewed
+  // boundary decision. A directive on these files makes `CheckboxItem.Title` throw on the
+  // server and moves SubSection partitioning back to the client, where it cannot work.
+  it("keeps CheckboxItem, RadioItem and their SubSection partition directive-free", () => {
+    expectRsc("components/checkbox/checkbox-item.tsx", "server");
+    expectRsc("components/radio-group/radio-item.tsx", "server");
+    expectRsc("components/selection-item/partition-sub-sections.ts", "server");
+  });
+
   // Why not a lint rule: these files are the server-visible namespace. A directive
   // here would make `Dialog.Root` a client reference again, which lint cannot see.
   // Each index also exports nothing but its namespace object: which module owns a

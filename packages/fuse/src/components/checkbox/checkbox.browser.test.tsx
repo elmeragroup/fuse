@@ -18,7 +18,8 @@ import {
   renderThemed,
 } from "../../../test/themed-browser-render";
 import { Field } from "../field";
-import { Checkbox, CheckboxDescription, CheckboxGroup, CheckboxItem, CheckboxItemGroup } from "./checkbox";
+import { Checkbox, CheckboxDescription, CheckboxGroup, CheckboxItemGroup } from "./checkbox";
+import { CheckboxItem } from "./checkbox-item";
 
 function checkboxNamed(name: string, checked?: boolean): HTMLElement {
   const element = page.getByRole("checkbox", { name, exact: true, checked }).element();
