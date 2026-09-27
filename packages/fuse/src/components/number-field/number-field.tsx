@@ -7,8 +7,8 @@ import { NumberField as NumberFieldPrimitive } from "@base-ui/react/number-field
 
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { useResetRemount } from "../../hooks/use-reset-remount";
-import { CaretDown } from "../../icons/generated/caret-down";
-import { CaretUp } from "../../icons/generated/caret-up";
+import { Minus } from "../../icons/generated/minus";
+import { Plus } from "../../icons/generated/plus";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import { controlMdInsetTypeClass } from "../../styles/control-size-md";
@@ -77,10 +77,13 @@ export type NumberFieldProps = {
 
 // A stepper is a part of the NumberField control, not a whole control: the group's
 // within-target state face dims the disabled field once, steppers included. A stepper
-// disabled on its own at a bound keeps the part look, a muted fill and caret with the
+// disabled on its own at a bound keeps the part look, a muted fill and glyph with the
 // `not-allowed` cursor, and its hover fill sits behind the `enabled-hover:` gate.
+// Each stepper is a full-height column `--control-h-xs` wide, so its target meets the
+// 24px floor at both densities (stacked steppers cannot fit two 24px targets in the
+// dense control height).
 const stepperButton = cn(
-  "box-border flex flex-1 cursor-default items-center justify-center border-0 bg-background px-0.5 py-0 text-foreground transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground enabled-hover:bg-muted"
+  "box-border flex h-full w-(--control-h-xs) shrink-0 cursor-default items-center justify-center border-0 border-s bg-background p-0 text-foreground transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground enabled-hover:bg-muted"
 );
 
 /**
@@ -172,17 +175,17 @@ export function NumberField({
           {denomination ? (
             <div className="text-sm px-2 py-1 text-muted-foreground">{denomination}</div>
           ) : null}
-          <div className="flex h-full flex-col border-s">
-            <NumberFieldPrimitive.Increment
-              className={cn(stepperButton, "border-b")}
-              aria-label={increaseLabel ?? strings.format("increase")}>
-              <CaretUp aria-hidden className="size-4" />
-            </NumberFieldPrimitive.Increment>
+          <div className="flex h-full">
             <NumberFieldPrimitive.Decrement
               className={stepperButton}
               aria-label={decreaseLabel ?? strings.format("decrease")}>
-              <CaretDown aria-hidden className="size-4" />
+              <Minus aria-hidden className="size-4" />
             </NumberFieldPrimitive.Decrement>
+            <NumberFieldPrimitive.Increment
+              className={stepperButton}
+              aria-label={increaseLabel ?? strings.format("increase")}>
+              <Plus aria-hidden className="size-4" />
+            </NumberFieldPrimitive.Increment>
           </div>
         </NumberFieldPrimitive.Group>
       </NumberFieldPrimitive.Root>
