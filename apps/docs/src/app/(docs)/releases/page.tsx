@@ -96,7 +96,8 @@ export default function ReleasesPage(): ReactElement {
           </strong>{" "}
           — the tarball renders controls at the documented geometry in both the standalone-CSS and
           Tailwind-source modes, and a Vite production build of the tarball in standalone-CSS mode serves its
-          flag SVGs as external assets.
+          flag SVGs as external assets. A packed Next App Router app renders server namespace parts, hydrates
+          a client island and styles package classes through Tailwind source scanning.
         </li>
       </ul>
 
@@ -104,16 +105,6 @@ export default function ReleasesPage(): ReactElement {
       <p>
         The 20-theme token contract and the unit, type and browser suites run on every merge to{" "}
         <code>main</code>, not against the packed tarball.
-      </p>
-
-      <h3 id="pending-gates">Pending gates</h3>
-      <p>
-        A packed Next App Router fixture — Tailwind-source mode, a server page and a client island — is
-        designed but not yet built. The{" "}
-        <Link href="https://github.com/elmeragroup/fuse/blob/main/scripts/RELEASE.md" rel="noreferrer">
-          release runbook
-        </Link>{" "}
-        tracks it.
       </p>
 
       <h2 id="supply-chain">Provenance</h2>
