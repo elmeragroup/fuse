@@ -76,6 +76,36 @@ describe("Field", () => {
     expect(alert.textContent).toBe("Required");
   });
 
+  it("keeps the label, description and error wiring when a wrapper forwards id and ARIA props as undefined", async () => {
+    renderThemed(
+      <Field.Root invalid>
+        <Field.Label id={undefined}>Email</Field.Label>
+        <Field.Control
+          render={<input />}
+          id={undefined}
+          aria-labelledby={undefined}
+          aria-describedby={undefined}
+        />
+        <Field.Description id={undefined}>Work address preferred.</Field.Description>
+        <Field.Error id={undefined}>Required</Field.Error>
+      </Field.Root>
+    );
+    // The label's `for` also names the input, so the wiring is read off `aria-labelledby`.
+    expect(textboxNamed("Email").getAttribute("aria-labelledby")).toBe(textNamed("Email").id);
+    await expect
+      .element(textboxNamed("Email"))
+      .toHaveAccessibleDescription("Work address preferred. Required");
+  });
+
+  it("keeps the fieldset named by its legend when a wrapper forwards ARIA props and id as undefined", async () => {
+    renderThemed(
+      <Field.Set aria-labelledby={undefined}>
+        <Field.Legend id={undefined}>Contact</Field.Legend>
+      </Field.Set>
+    );
+    await expect.element(page.getByRole("group", { name: "Contact", exact: true })).toBeInTheDocument();
+  });
+
   it("cascades disabled from Root onto the control", () => {
     renderThemed(
       <Field.Root disabled>

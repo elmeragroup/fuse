@@ -318,6 +318,57 @@ describe("Combobox", () => {
     }
   });
 
+  it("keeps the Field label and description on the inputs when a wrapper forwards id and ARIA props as undefined", async () => {
+    renderCombobox(
+      <>
+        <Field.Root>
+          <Field.Label>Fruit</Field.Label>
+          <Combobox.Root items={[...FRUITS]}>
+            <Combobox.Input id={undefined} aria-labelledby={undefined} aria-describedby={undefined} />
+          </Combobox.Root>
+          <Field.Description>Pick one.</Field.Description>
+        </Field.Root>
+        <Field.Root>
+          <Field.Label>Basket</Field.Label>
+          <Combobox.Root items={[...FRUITS]} multiple>
+            <Combobox.Chips>
+              <Combobox.ChipsInput id={undefined} aria-labelledby={undefined} aria-describedby={undefined} />
+            </Combobox.Chips>
+          </Combobox.Root>
+          <Field.Description>Pick several.</Field.Description>
+        </Field.Root>
+      </>
+    );
+    // Each label's `for` also names its input, so the wiring is read off `aria-labelledby`.
+    for (const name of ["Fruit", "Basket"]) {
+      expect(comboboxNamed(name).getAttribute("aria-labelledby"), name).toBe(
+        page.getByText(name, { exact: true }).element().id
+      );
+    }
+    await expect.element(comboboxNamed("Fruit")).toHaveAccessibleDescription("Pick one.");
+    await expect.element(comboboxNamed("Basket")).toHaveAccessibleDescription("Pick several.");
+    expect(page.getByRole("button", { name: TOGGLE_COPY["en-US"], exact: true }).query()).not.toBeNull();
+  });
+
+  it("keeps the Field label on a standalone trigger when a wrapper forwards id and aria-labelledby as undefined", () => {
+    renderCombobox(
+      <Field.Root>
+        <Field.Label>Fruit</Field.Label>
+        <Combobox.Root items={[...FRUITS]}>
+          <Combobox.Trigger id={undefined} aria-labelledby={undefined}>
+            <Combobox.Value placeholder="Pick a fruit" />
+          </Combobox.Trigger>
+        </Combobox.Root>
+      </Field.Root>
+    );
+    // With no input outside the popup, the trigger takes the combobox role. Its label's
+    // `for` also names it, so the wiring is read off `aria-labelledby` directly.
+    const trigger = page.getByRole("combobox", { name: "Fruit", exact: true }).element();
+    const labelId = page.getByText("Fruit", { exact: true }).element().id;
+    expect(labelId).not.toBe("");
+    expect(trigger.getAttribute("aria-labelledby")).toBe(labelId);
+  });
+
   it("disables the input, trigger, and clear from Combobox.Input disabled", () => {
     renderCombobox(
       <Combobox.Root items={[...FRUITS]} defaultValue="Apple">

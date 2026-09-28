@@ -4,6 +4,7 @@ import type { ComponentProps, ReactElement } from "react";
 
 import { Input as InputPrimitive } from "@base-ui/react/input";
 
+import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { fieldBox } from "../../styles/field-box";
 
@@ -19,7 +20,7 @@ export function Input({ className, type, ...props }: InputProps): ReactElement {
         "file:text-sm file:font-medium min-w-0 file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-foreground",
         className
       )}
-      {...props}
+      {...definedProps(props)}
     />
   );
 }

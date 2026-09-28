@@ -13,6 +13,7 @@ import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { CaretDown } from "../../icons/generated/caret-down";
 import { Check } from "../../icons/generated/check";
 import { X } from "../../icons/generated/x";
+import { definedProps } from "../../internal/defined-props";
 import { isTextValueNode } from "../../internal/is-text-node";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
@@ -89,7 +90,7 @@ export function ComboboxTrigger({
     <ComboboxPrimitive.Trigger
       data-slot="combobox-trigger"
       className={mergeClassName(className, "[&_svg:not([class*='size-'])]:size-4")}
-      {...props}>
+      {...definedProps(props)}>
       {children}
       <CaretDown className="ease-in-out pointer-events-none size-4 text-muted-foreground transition-transform duration-200 in-data-popup-open:rotate-180" />
     </ComboboxPrimitive.Trigger>
@@ -119,7 +120,7 @@ export function ComboboxClear({
       render={<InputGroupButton variant="ghost" size="icon-sm" aria-label={accessibleName} />}
       aria-label={accessibleName}
       className={mergeClassName(className)}
-      {...props}>
+      {...definedProps(props)}>
       <X className="pointer-events-none" />
     </ComboboxPrimitive.Clear>
   );
@@ -179,16 +180,16 @@ export function ComboboxInput({
   const strings = useLocalizedStrings(comboboxStrings);
   return (
     <InputGroupRoot className={cn("w-auto", className)}>
-      <ComboboxPrimitive.Input disabled={disabled} render={<InputGroupInput />} {...props} />
+      <ComboboxPrimitive.Input disabled={disabled} render={<InputGroupInput />} {...definedProps(props)} />
       <InputGroupAddon align="inline-end">
         {showTrigger ? (
           <InputGroupButton
             size="icon-sm"
             variant="ghost"
             aria-label={triggerLabel ?? strings.format("toggle")}
-            // Field.Label labelledby would win over aria-label; drop it so the
-            // caret stays dictionary `toggle`.
-            aria-labelledby={undefined}
+            // Field.Label labelledby would win over aria-label. An empty list overrides it,
+            // so the caret stays dictionary `toggle`.
+            aria-labelledby=""
             render={<ComboboxTrigger />}
             data-slot="input-group-button"
             className="group-has-data-[slot=combobox-clear]/input-group:hidden data-pressed:bg-transparent"
@@ -498,7 +499,7 @@ export function ComboboxChipsInput({
         withinFocusRingControlClass,
         withinStateFaceControlClass
       )}
-      {...props}
+      {...definedProps(props)}
     />
   );
 }

@@ -6,6 +6,7 @@ import { Field as FieldPrimitive } from "@base-ui/react/field";
 import { Fieldset as FieldsetPrimitive } from "@base-ui/react/fieldset";
 import type { VariantProps } from "tailwind-variants";
 
+import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { Separator } from "../separator/separator";
@@ -37,7 +38,7 @@ export function FieldSet({
         className,
         "flex flex-col gap-6 has-[>[data-slot=checkbox-group]]:gap-3 has-[>[data-slot=radio-group]]:gap-3"
       )}
-      {...props}
+      {...definedProps(props)}
     />
   );
 }
@@ -61,7 +62,7 @@ export function FieldLegend({
         className,
         "font-medium data-[variant=label]:text-sm data-[variant=legend]:text-base mb-3 text-balance"
       )}
-      {...props}
+      {...definedProps(props)}
     />
   );
 }
@@ -111,7 +112,7 @@ export function FieldLabel({
         "has-[>[data-slot=checkbox]]:items-center has-[>[data-slot=checkbox]]:cursor-pointer",
         fieldHeadingClassName
       )}
-      {...props}
+      {...definedProps(props)}
     />
   );
 }
@@ -128,7 +129,7 @@ export function FieldTitle({ className, ...props }: ComponentProps<"div">): Reac
 }
 
 export function FieldControl(props: ComponentProps<typeof FieldPrimitive.Control>): ReactElement {
-  return <FieldPrimitive.Control data-slot="field-control" {...props} />;
+  return <FieldPrimitive.Control data-slot="field-control" {...definedProps(props)} />;
 }
 
 export function FieldDescription({
@@ -142,7 +143,7 @@ export function FieldDescription({
         className,
         "text-sm leading-normal font-normal text-left text-pretty text-muted-foreground group-has-data-horizontal/field:text-balance last:mt-0 [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary [[data-variant=legend]+&]:-mt-1.5"
       )}
-      {...props}
+      {...definedProps(props)}
     />
   );
 }
@@ -194,7 +195,7 @@ export function FieldError({
       role="alert"
       data-slot="field-error"
       className={mergeClassName(className, "text-sm font-normal text-error")}
-      {...props}>
+      {...definedProps(props)}>
       {children}
     </FieldPrimitive.Error>
   );

@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import type { ChangeEvent, ComponentProps, ReactElement, ReactNode } from "react";
 
-import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { isThemeDevelopment } from "../../theme/validate-theme";
 import { FieldFrame } from "../field/field-frame";
@@ -169,7 +168,7 @@ export function TextField({
           inputMode={inputMode ?? (isNumeric ? "numeric" : undefined)}
           // fieldGroup's default would override the input's w-full.
           className={cn(input(), variant ? fieldGroup() : null)}
-          {...definedProps(props)}
+          {...props}
           readOnly={isReadOnly}
           required={isRequired}
           hidden={hidden}

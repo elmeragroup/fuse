@@ -65,6 +65,22 @@ describe("CheckboxCard", () => {
     expect(fieldItemFor("Insurance").getAttribute("data-slot")).toBeNull();
   });
 
+  it("keeps the title name when a wrapper forwards id and ARIA props as undefined", () => {
+    renderThemed(
+      <CheckboxGroup>
+        <CheckboxCard
+          value="insurance"
+          title="Insurance"
+          description="Covers everything."
+          id={undefined}
+          aria-labelledby={undefined}
+          aria-describedby={undefined}
+        />
+      </CheckboxGroup>
+    );
+    expect(checkboxNamed("Insurance", false).getAttribute("aria-checked")).toBe("false");
+  });
+
   it("toggles from the title and description and isolates rightContent clicks", async () => {
     renderThemed(
       <CheckboxGroup>

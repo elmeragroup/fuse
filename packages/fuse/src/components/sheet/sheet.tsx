@@ -7,6 +7,7 @@ import { Drawer as SheetPrimitive } from "@base-ui/react/drawer";
 import { tv } from "tailwind-variants";
 import type { VariantProps } from "tailwind-variants";
 
+import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
@@ -166,7 +167,7 @@ export function SheetContent({
           data-slot="sheet-content"
           data-side={side}
           className={mergeClassName(className, sheetContentVariants({ size }))}
-          {...props}>
+          {...definedProps(props)}>
           <SheetPrimitive.Content
             data-slot="sheet-content-inner"
             className="flex h-full w-full flex-col gap-4">

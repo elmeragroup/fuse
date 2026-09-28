@@ -22,6 +22,7 @@ import {
   textNamed,
 } from "../../../test/themed-browser-render";
 import { Badge } from "../badge/badge";
+import { Field } from "../field";
 import { Radio, RadioGroup, RadioGroupItem, RadioIconButton, RadioItemGroup } from "./radio-group";
 import { RadioItem } from "./radio-item";
 
@@ -109,6 +110,20 @@ describe("RadioGroup", () => {
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange.mock.calls[0]?.[0]).toBe("fixed");
     expect(radioNamed("Fixed", true).getAttribute("aria-checked")).toBe("true");
+  });
+
+  it("keeps a member's Field label when a wrapper forwards id and aria-labelledby as undefined", () => {
+    renderThemed(
+      <RadioGroup label="Contract">
+        <Field.Item>
+          <Field.Label>
+            <RadioGroupItem value="fixed" id={undefined} aria-labelledby={undefined} />
+            Fixed
+          </Field.Label>
+        </Field.Item>
+      </RadioGroup>
+    );
+    expect(radioNamed("Fixed", false).getAttribute("data-slot")).toBe("radio-group-item");
   });
 
   it("keeps a controlled string value when clicks have no onChange feedback", async () => {

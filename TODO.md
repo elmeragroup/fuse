@@ -64,6 +64,11 @@
   than ping-pong, but neither sees the other's `setColorScheme`: a document gets no `storage`
   event for its own writes. Decide whether `ColorSchemeRoot` warns in development when a second
   runtime connects to the same document.
+- `PopoverInfoButton` (`components/popover-info-button/popover-info-button.tsx`) spreads
+  consumer props onto its `trigger` Button, which renders as `PopoverTrigger render={trigger}`.
+  Render-element props beat the part, so a forwarded `aria-expanded={undefined}` or `disabled`
+  overrides `Popover.Trigger`'s own value. Route the state and ARIA props through
+  `PopoverTrigger` and keep only presentation on the Button.
 
 ## Control size
 

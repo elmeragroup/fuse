@@ -22,6 +22,7 @@ import {
   textboxNamed,
 } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme";
+import { Field } from "../field";
 import { NumberField } from "./number-field";
 
 const INCREASE_COPY = { "nb-NO": "Øk", "sv-SE": "Öka", "en-US": "Increase", "fi-FI": "Lisää" } as const;
@@ -76,6 +77,20 @@ describe("NumberField", () => {
         .map((id) => document.getElementById(id)?.textContent)
         .includes("Whole packs.")
     ).toBe(true);
+  });
+
+  it("keeps the Field label when a wrapper forwards id and aria-label as undefined", () => {
+    renderField(<NumberField label="Amount" id={undefined} aria-label={undefined} />);
+    expect(textboxNamed("Amount").getAttribute("aria-roledescription")).toBe("Number field");
+  });
+
+  it("disables the input inside a disabled Field.Set", () => {
+    renderField(
+      <Field.Set disabled>
+        <NumberField label="Amount" />
+      </Field.Set>
+    );
+    expect(textboxNamed("Amount")).toHaveProperty("disabled", true);
   });
 
   it("steps with ArrowUp/ArrowDown and clamps Home/End to min/max", async () => {

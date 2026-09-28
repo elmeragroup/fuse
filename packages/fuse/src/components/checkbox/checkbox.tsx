@@ -7,6 +7,7 @@ import { CheckboxGroup as CheckboxGroupPrimitive } from "@base-ui/react/checkbox
 
 import { Check } from "../../icons/generated/check";
 import { Minus } from "../../icons/generated/minus";
+import { definedProps } from "../../internal/defined-props";
 import { isTextNode } from "../../internal/is-text-node";
 import { cn } from "../../styles/cn";
 import { checkboxCornerClass } from "../../styles/corner-radius";
@@ -44,7 +45,7 @@ export function Checkbox({
         dataStateFaceClass,
         "aria-invalid:aria-checked:border-primary data-invalid:aria-checked:border-primary"
       )}
-      {...props}>
+      {...definedProps(props)}>
       <CheckboxPrimitive.Indicator
         data-slot="checkbox-indicator"
         className="grid place-content-center text-current transition-none [&>svg]:size-3.5"
