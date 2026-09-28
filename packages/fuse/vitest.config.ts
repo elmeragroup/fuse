@@ -9,6 +9,9 @@ const BROWSER_TESTS = ["src/**/*.browser.test.tsx"];
 /** Browser files that copy and paste through Chromium's shared clipboard, named by convention. */
 const CLIPBOARD_TESTS = "**/*.clipboard.browser.test.tsx";
 
+/** Browser files that exercise production-only behavior, named by convention. */
+const PRODUCTION_TESTS = "**/*.production.browser.test.tsx";
+
 function browserProject(
   name: string,
   files: { include?: string[]; exclude?: string[]; fileParallelism?: boolean }
@@ -68,8 +71,18 @@ export default defineConfig({
         },
       },
       browserProject("browser", {
-        exclude: [CLIPBOARD_TESTS],
+        exclude: [CLIPBOARD_TESTS, PRODUCTION_TESTS],
       }),
+      // Vite replaces `process.env.NODE_ENV` at transform time, so `vi.stubEnv` cannot reach
+      // production-only branches in the browser. This project compiles its files, their source
+      // and React as a production build, with the matching non-development JSX runtime.
+      {
+        ...browserProject("browser-production", {
+          include: [`src/${PRODUCTION_TESTS}`],
+        }),
+        define: { "process.env.NODE_ENV": JSON.stringify("production") },
+        oxc: { jsx: { runtime: "automatic", development: false } },
+      },
       // Chromium keeps one clipboard for every file the browser project runs in parallel, so a
       // file that copies can overwrite what another is about to paste. The files that drive the
       // real clipboard end in `.clipboard.browser.test.tsx`, share their own project and run one

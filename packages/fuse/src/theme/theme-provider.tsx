@@ -29,10 +29,8 @@ import { diagnoseColorSchemeBootstrap } from "./color-scheme-diagnostics";
 import { createColorSchemeRuntimeStore } from "./color-scheme-runtime";
 import type { ColorSchemeRuntimeConfig } from "./color-scheme-runtime";
 import { InjectedColorSchemeScript } from "./color-scheme-script";
-import { DocumentWriterContext, echoDocumentBrandAttributes } from "./document-writer";
-import { themeAttributes } from "./theme-attributes";
-import { themeAxisDeps } from "./theme-axes";
-import { ThemeContext, useResolvedTheme } from "./theme-context";
+import { DocumentWriterContext, syncDocumentBrand } from "./document-brand";
+import { ThemeContext, useResolvedTheme, useResolvedThemeResult } from "./theme-context";
 import type { Theme } from "./theme-context";
 import type { ThemeInput } from "./tokens/themes";
 
@@ -74,7 +72,8 @@ function DocumentThemeWriter({
   scriptProps,
 }: ThemeProviderProps) {
   const diagnosed = useRef(false);
-  const [themeVariant, themeBrand, themeSegment] = themeAxisDeps(theme);
+  const resolved = useResolvedThemeResult(theme);
+  const attributes = resolved.ok ? resolved.attributes : undefined;
   const options = useMemo(
     () =>
       resolveColorSchemeOptions({
@@ -100,19 +99,19 @@ function DocumentThemeWriter({
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot);
 
   useInsertionEffect(() => {
+    // An invalid theme throws below before this render commits.
+    if (attributes === undefined) return;
     store.commitConfig(runtimeConfig);
-    const attributes = themeAttributes(theme);
     const shouldDiagnose = !diagnosed.current;
     diagnosed.current = true;
     // Insertion runs before descendant useLayoutEffect so children never measure stale brand.
-    echoDocumentBrandAttributes(attributes, shouldDiagnose);
+    syncDocumentBrand(attributes, { diagnose: shouldDiagnose });
     if (shouldDiagnose) {
       diagnoseColorSchemeBootstrap(options, injectColorSchemeScript);
     }
     // Skip unforced preference writes until mounted so the host bootstrap is not overwritten.
     store.applyDocument();
-    // oxlint-disable-next-line react-hooks/exhaustive-deps -- axis primitives are the equality key; equal inline theme literals must not rewrite the document
-  }, [injectColorSchemeScript, options, runtimeConfig, store, themeVariant, themeBrand, themeSegment]);
+  }, [injectColorSchemeScript, options, runtimeConfig, store, attributes]);
 
   useEffect(() => {
     store.markMounted();
@@ -159,7 +158,9 @@ function DocumentThemeWriter({
     };
   }, [setColorScheme, snapshot]);
 
-  const value = useResolvedTheme(theme);
+  // Rethrow only after every hook has registered, so hook order is stable across renders.
+  if (!resolved.ok) throw resolved.error;
+  const value = resolved.theme;
 
   return (
     <DocumentWriterContext.Provider value={true}>

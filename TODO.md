@@ -54,6 +54,11 @@
   whether direct Shell use documents `subSections` for server trees or gets a server-side row.
   The same applies when a client component renders `CheckboxItem`/`RadioItem` around
   SubSection children it received from a server component.
+- Move `isThemeDevelopment` from `theme/validate-theme.ts` to its own module in `src/internal/`.
+  It is blocked because `elmera/restrict-process-env` in `@elmeragroup/internal` allows
+  `process.env` only in `src/theme/validate-theme.ts`. Once the rule accepts the new owner, point
+  `checkValidateThemeEnv` in `packages/fuse/scripts/package-check-packed.ts` at the new packed
+  module.
 
 ## Control size
 
