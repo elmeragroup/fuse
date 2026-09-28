@@ -3,8 +3,8 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { evaluateColorSchemeBootstrapScript } from "../../scripts/color-scheme-bootstrap-harness";
 import { DEFAULT_BOOTSTRAP_MANIFEST } from "../../test/color-scheme-contract";
+import { runColorSchemeBootstrap } from "../../test/memory-color-scheme-platform";
 import {
   COLOR_SCHEME_BOOTSTRAP_SOURCE_DESCRIPTION,
   COLOR_SCHEME_BOOTSTRAP_SOURCE_DUPLICATE,
@@ -50,6 +50,10 @@ function bootstrapSource(
   return undefined;
 }
 
+function storedDefault(value: string) {
+  return { "elmera-color-scheme": value };
+}
+
 function scriptInnerHtml(markup: string): string {
   const prefix = "<script";
   const suffix = "</script>";
@@ -63,147 +67,158 @@ function scriptInnerHtml(markup: string): string {
 describe("colorSchemeScriptSource resolution", () => {
   it("resolves stored light, dark, and system preferences", () => {
     expect(
-      evaluateColorSchemeBootstrapScript(colorSchemeScriptSource(), {
-        storedValue: "light",
+      runColorSchemeBootstrap(colorSchemeScriptSource(), {
+        stored: storedDefault("light"),
         prefersDark: true,
-      }).attributes["data-theme"]
+      }).state.root
     ).toBe("light");
     expect(
-      evaluateColorSchemeBootstrapScript(colorSchemeScriptSource(), {
-        storedValue: "dark",
+      runColorSchemeBootstrap(colorSchemeScriptSource(), {
+        stored: storedDefault("dark"),
         prefersDark: false,
-      }).attributes["data-theme"]
+      }).state.root
     ).toBe("dark");
     expect(
-      evaluateColorSchemeBootstrapScript(colorSchemeScriptSource(), {
-        storedValue: "system",
+      runColorSchemeBootstrap(colorSchemeScriptSource(), {
+        stored: storedDefault("system"),
         prefersDark: true,
-      }).attributes["data-theme"]
+      }).state.root
     ).toBe("dark");
     expect(
-      evaluateColorSchemeBootstrapScript(colorSchemeScriptSource(), {
-        storedValue: "system",
+      runColorSchemeBootstrap(colorSchemeScriptSource(), {
+        stored: storedDefault("system"),
         prefersDark: false,
-      }).attributes["data-theme"]
+      }).state.root
     ).toBe("light");
   });
 
   it("ignores missing and invalid storage and uses the default", () => {
-    const missing = evaluateColorSchemeBootstrapScript(colorSchemeScriptSource(), {
-      storedValue: null,
-      prefersDark: true,
-    });
-    expect(missing.attributes["data-theme"]).toBe("dark");
-    expect(missing.storageReads).toEqual(["elmera-color-scheme"]);
+    const missing = runColorSchemeBootstrap(colorSchemeScriptSource(), { prefersDark: true });
+    expect(missing.state.root).toBe("dark");
+    expect(missing.state.storageReads).toEqual(["elmera-color-scheme"]);
 
     expect(
-      evaluateColorSchemeBootstrapScript(colorSchemeScriptSource(), {
-        storedValue: "nope",
+      runColorSchemeBootstrap(colorSchemeScriptSource(), {
+        stored: storedDefault("nope"),
         prefersDark: false,
-      }).attributes["data-theme"]
+      }).state.root
     ).toBe("light");
     expect(
-      evaluateColorSchemeBootstrapScript(colorSchemeScriptSource({ defaultColorScheme: "dark" }), {
-        storedValue: "",
+      runColorSchemeBootstrap(colorSchemeScriptSource({ defaultColorScheme: "dark" }), {
+        stored: storedDefault(""),
         prefersDark: false,
-      }).attributes["data-theme"]
+      }).state.root
     ).toBe("dark");
   });
 
   it("resolves system to light when system support is disabled", () => {
     const source = colorSchemeScriptSource({ enableSystem: false });
     expect(
-      evaluateColorSchemeBootstrapScript(source, { storedValue: "system", prefersDark: true }).attributes[
-        "data-theme"
-      ]
+      runColorSchemeBootstrap(source, { stored: storedDefault("system"), prefersDark: true }).state.root
     ).toBe("light");
+    expect(runColorSchemeBootstrap(source, { prefersDark: true }).state.root).toBe("light");
     expect(
-      evaluateColorSchemeBootstrapScript(source, { storedValue: null, prefersDark: true }).attributes[
-        "data-theme"
-      ]
-    ).toBe("light");
-    expect(
-      evaluateColorSchemeBootstrapScript(source, { storedValue: "dark", prefersDark: false }).attributes[
-        "data-theme"
-      ]
+      runColorSchemeBootstrap(source, { stored: storedDefault("dark"), prefersDark: false }).state.root
     ).toBe("dark");
   });
 
   it("applies document-level forced light, dark, and system without reading storage", () => {
-    const storedLight = { storedValue: "light" as const, prefersDark: true };
+    const storedLight = { stored: storedDefault("light"), prefersDark: true };
 
-    const forcedDark = evaluateColorSchemeBootstrapScript(
+    const forcedDark = runColorSchemeBootstrap(
       colorSchemeScriptSource({ forcedColorScheme: "dark" }),
       storedLight
     );
-    expect(forcedDark.attributes["data-theme"]).toBe("dark");
-    expect(forcedDark.storageReads).toEqual([]);
+    expect(forcedDark.state.root).toBe("dark");
+    expect(forcedDark.state.storageReads).toEqual([]);
 
-    const forcedLight = evaluateColorSchemeBootstrapScript(
-      colorSchemeScriptSource({ forcedColorScheme: "light" }),
-      { storedValue: "dark", prefersDark: true }
-    );
-    expect(forcedLight.attributes["data-theme"]).toBe("light");
-    expect(forcedLight.storageReads).toEqual([]);
+    const forcedLight = runColorSchemeBootstrap(colorSchemeScriptSource({ forcedColorScheme: "light" }), {
+      stored: storedDefault("dark"),
+      prefersDark: true,
+    });
+    expect(forcedLight.state.root).toBe("light");
+    expect(forcedLight.state.storageReads).toEqual([]);
 
-    const forcedSystem = evaluateColorSchemeBootstrapScript(
+    const forcedSystem = runColorSchemeBootstrap(
       colorSchemeScriptSource({ forcedColorScheme: "system" }),
-      { storedValue: "light", prefersDark: true }
+      storedLight
     );
-    expect(forcedSystem.attributes["data-theme"]).toBe("dark");
-    expect(forcedSystem.storageReads).toEqual([]);
+    expect(forcedSystem.state.root).toBe("dark");
+    expect(forcedSystem.state.storageReads).toEqual([]);
 
-    const forcedSystemDisabled = evaluateColorSchemeBootstrapScript(
+    const forcedSystemDisabled = runColorSchemeBootstrap(
       colorSchemeScriptSource({ forcedColorScheme: "system", enableSystem: false }),
-      { storedValue: "dark", prefersDark: true }
+      { stored: storedDefault("dark"), prefersDark: true }
     );
-    expect(forcedSystemDisabled.attributes["data-theme"]).toBe("light");
-    expect(forcedSystemDisabled.storageReads).toEqual([]);
+    expect(forcedSystemDisabled.state.root).toBe("light");
+    expect(forcedSystemDisabled.state.storageReads).toEqual([]);
+  });
+
+  it("resolves the default when storage or the media query is unavailable", () => {
+    expect(
+      runColorSchemeBootstrap(colorSchemeScriptSource({ defaultColorScheme: "dark" }), {
+        stored: storedDefault("light"),
+        storage: "blocked",
+      }).state.root
+    ).toBe("dark");
+    expect(
+      runColorSchemeBootstrap(colorSchemeScriptSource(), { prefersDark: true, media: "missing" }).state.root
+    ).toBe("light");
+    expect(
+      runColorSchemeBootstrap(colorSchemeScriptSource(), { prefersDark: true, media: "throwing" }).state.root
+    ).toBe("light");
   });
 
   it("writes only resolved data-theme and overwrites the private manifest", () => {
-    const first = evaluateColorSchemeBootstrapScript(colorSchemeScriptSource(), { storedValue: "light" });
-    expect(first.attributes).toEqual({ "data-theme": "light" });
-    expect(first.style).toEqual({});
-    expect(first.createdElements).toEqual([]);
-    expect(first.manifest).toEqual(DEFAULT_BOOTSTRAP_MANIFEST);
+    const first = runColorSchemeBootstrap(colorSchemeScriptSource(), { stored: storedDefault("light") });
+    expect(first.state.attributes).toEqual({ "data-theme": "light" });
+    expect(first.state.rootStyle).toEqual({});
+    expect(first.state.createdElements).toEqual([]);
+    expect(first.state.storageWrites).toEqual([]);
+    expect(first.host.__ELMERA_COLOR_SCHEME_BOOTSTRAP__).toEqual(DEFAULT_BOOTSTRAP_MANIFEST);
 
-    const second = evaluateColorSchemeBootstrapScript(
+    const second = runColorSchemeBootstrap(
       colorSchemeScriptSource({
         storageKey: "app-color-scheme",
         defaultColorScheme: "light",
         enableSystem: false,
         forcedColorScheme: "dark",
       }),
-      { existingManifest: first.manifest, storedValue: "light" }
+      { stored: { "app-color-scheme": "light" } },
+      first.host.__ELMERA_COLOR_SCHEME_BOOTSTRAP__
     );
-    expect(second.attributes["data-theme"]).toBe("dark");
-    expect(second.manifest).toEqual({
+    expect(second.state.root).toBe("dark");
+    expect(second.host.__ELMERA_COLOR_SCHEME_BOOTSTRAP__).toEqual({
       storageKey: "app-color-scheme",
       defaultColorScheme: "light",
       enableSystem: false,
       forcedColorScheme: "dark",
     });
-    expect(second.storageReads).toEqual([]);
-    expect(bootstrapSource(first.manifest)).toBeUndefined();
+    expect(second.state.storageReads).toEqual([]);
+    expect(bootstrapSource(first.host.__ELMERA_COLOR_SCHEME_BOOTSTRAP__)).toBeUndefined();
   });
 
   it("tags a provider-owned inject as self-inject and a second run as duplicate", () => {
-    const first = evaluateColorSchemeBootstrapScript(injectedColorSchemeScriptSource(), {
-      storedValue: "light",
+    const first = runColorSchemeBootstrap(injectedColorSchemeScriptSource(), {
+      stored: storedDefault("light"),
     });
-    expect(first.manifest).toEqual(DEFAULT_BOOTSTRAP_MANIFEST);
-    expect(bootstrapSource(first.manifest)).toBe(COLOR_SCHEME_BOOTSTRAP_SOURCE_PROVIDER);
+    expect(first.host.__ELMERA_COLOR_SCHEME_BOOTSTRAP__).toEqual(DEFAULT_BOOTSTRAP_MANIFEST);
+    expect(bootstrapSource(first.host.__ELMERA_COLOR_SCHEME_BOOTSTRAP__)).toBe(
+      COLOR_SCHEME_BOOTSTRAP_SOURCE_PROVIDER
+    );
 
-    const second = evaluateColorSchemeBootstrapScript(injectedColorSchemeScriptSource(), {
-      existingManifest: first.manifest,
-      storedValue: "light",
-    });
-    expect(bootstrapSource(second.manifest)).toBe(COLOR_SCHEME_BOOTSTRAP_SOURCE_DUPLICATE);
+    const second = runColorSchemeBootstrap(
+      injectedColorSchemeScriptSource(),
+      { stored: storedDefault("light") },
+      first.host.__ELMERA_COLOR_SCHEME_BOOTSTRAP__
+    );
+    expect(bootstrapSource(second.host.__ELMERA_COLOR_SCHEME_BOOTSTRAP__)).toBe(
+      COLOR_SCHEME_BOOTSTRAP_SOURCE_DUPLICATE
+    );
   });
 
   it("fails closed evaluation when the source has a free identifier", () => {
-    expect(() => evaluateColorSchemeBootstrapScript("themeAttributes()", {})).toThrow(/themeAttributes/);
+    expect(() => runColorSchemeBootstrap("themeAttributes()")).toThrow(/themeAttributes/);
   });
 
   it("does not write brand attributes, CSS color-scheme, or a color-scheme meta tag", () => {
@@ -212,12 +227,11 @@ describe("colorSchemeScriptSource resolution", () => {
     expect(source).not.toMatch(/style\.colorScheme|name=["']color-scheme["']/);
     expect(source).not.toMatch(/createElement|\bmeta\b|themeAttributes|validateTheme|process\.env/);
 
-    const result = evaluateColorSchemeBootstrapScript(source, { storedValue: "light" });
-    expect(result.attributes["data-theme-brand"]).toBeUndefined();
-    expect(result.attributes["data-theme-variant"]).toBeUndefined();
-    expect(result.attributes["data-theme-segment"]).toBeUndefined();
-    expect(result.style.colorScheme).toBeUndefined();
-    expect(result.createdElements).toEqual([]);
+    const result = runColorSchemeBootstrap(source, { stored: storedDefault("light") });
+    expect(result.state.attributes).toEqual({ "data-theme": "dark" });
+    expect(result.state.rootStyle).toEqual({});
+    expect(result.state.createdElements).toEqual([]);
+    expect(result.state.storageWrites).toEqual([]);
   });
 });
 
@@ -237,10 +251,10 @@ describe("colorSchemeScriptSource serialization", () => {
     expect(source).not.toContain("&amp;");
     expect(serializeScriptData(storageKey)).toBe(`"\\u003c/script>\\"&'\\u2028\\u2029"`);
 
-    const result = evaluateColorSchemeBootstrapScript(source, { storedValue: "dark" });
-    expect(result.attributes["data-theme"]).toBe("dark");
-    expect(result.storageReads).toEqual([storageKey]);
-    expect(result.manifest?.storageKey).toBe(storageKey);
+    const result = runColorSchemeBootstrap(source, { stored: { [storageKey]: "dark" } });
+    expect(result.state.root).toBe("dark");
+    expect(result.state.storageReads).toEqual([storageKey]);
+    expect(result.host.__ELMERA_COLOR_SCHEME_BOOTSTRAP__?.storageKey).toBe(storageKey);
   });
 });
 
@@ -258,8 +272,8 @@ describe("ColorSchemeScript", () => {
     expect(markup).toContain('data-cfasync="false"');
     expect(markup).not.toContain("type=");
     expect(markup).not.toContain("src=");
-    const result = evaluateColorSchemeBootstrapScript(scriptInnerHtml(markup), { storedValue: "dark" });
-    expect(result.attributes["data-theme"]).toBe("dark");
+    const result = runColorSchemeBootstrap(scriptInnerHtml(markup), { stored: storedDefault("dark") });
+    expect(result.state.root).toBe("dark");
   });
 
   it("rejects or overrides forbidden script props", () => {
@@ -286,14 +300,14 @@ describe("ColorSchemeScript", () => {
     expect(markup).not.toContain("src=");
     expect(markup).not.toContain("https://evil.example/theme.js");
     expect(markup).not.toContain("__ELMERA_FORBIDDEN");
-    const result = evaluateColorSchemeBootstrapScript(scriptInnerHtml(markup));
-    expect(result.attributes["data-theme"]).toBe("light");
+    const result = runColorSchemeBootstrap(scriptInnerHtml(markup));
+    expect(result.state.root).toBe("light");
   });
 
   it("forwards forcedColorScheme into the generated body", () => {
     const forced: ColorScheme = "dark";
     const markup = renderToStaticMarkup(createElement(ColorSchemeScript, { forcedColorScheme: forced }));
-    const result = evaluateColorSchemeBootstrapScript(scriptInnerHtml(markup), { storedValue: "light" });
-    expect(result.attributes["data-theme"]).toBe("dark");
+    const result = runColorSchemeBootstrap(scriptInnerHtml(markup), { stored: storedDefault("light") });
+    expect(result.state.root).toBe("dark");
   });
 });

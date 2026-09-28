@@ -3,7 +3,7 @@
 import { use } from "react";
 
 import type { UseColorSchemeResult } from "./color-scheme";
-import { ColorSchemeContext } from "./color-scheme-context";
+import { ColorSchemeContext } from "./color-scheme-root";
 
 export function useColorScheme(): UseColorSchemeResult {
   const value = use(ColorSchemeContext);

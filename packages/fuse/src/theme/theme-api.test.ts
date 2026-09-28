@@ -3,7 +3,6 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { evaluateColorSchemeBootstrapScript } from "../../scripts/color-scheme-bootstrap-harness";
 import {
   DEFAULT_BOOTSTRAP_MANIFEST,
   DUPLICATE_BOOTSTRAP_MESSAGE,
@@ -11,6 +10,7 @@ import {
   MISMATCHED_BOOTSTRAP_MANIFEST,
   MISSING_BOOTSTRAP_MESSAGE,
 } from "../../test/color-scheme-contract";
+import { runColorSchemeBootstrap } from "../../test/memory-color-scheme-platform";
 import { fkasPrivate } from "../../test/theme-fixtures";
 import { LEGAL_THEMES as PUBLIC_LEGAL_THEMES, THEME_SEGMENTS, THEME_VARIANTS } from "../theme";
 import {
@@ -366,9 +366,9 @@ describe("ThemeProvider server snapshot", () => {
     expect(injected.startsWith("<script>")).toBe(true);
     expect(injected.endsWith("</script><span>child</span>")).toBe(true);
     const body = injected.slice("<script>".length, injected.indexOf("</script>"));
-    const bootstrap = evaluateColorSchemeBootstrapScript(body, { storedValue: "dark" });
-    expect(bootstrap.attributes).toEqual({ "data-theme": "dark" });
-    expect(bootstrap.manifest).toEqual(DEFAULT_BOOTSTRAP_MANIFEST);
+    const bootstrap = runColorSchemeBootstrap(body, { stored: { "elmera-color-scheme": "dark" } });
+    expect(bootstrap.state.attributes).toEqual({ "data-theme": "dark" });
+    expect(bootstrap.host.__ELMERA_COLOR_SCHEME_BOOTSTRAP__).toEqual(DEFAULT_BOOTSTRAP_MANIFEST);
 
     const plain = renderToStaticMarkup(
       createElement(ThemeProvider, { theme, children: createElement("span", null, "child") })

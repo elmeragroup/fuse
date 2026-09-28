@@ -403,9 +403,24 @@ describe("runtime listeners and layout motion", () => {
       "hooks/use-form-reset.ts",
       "hooks/use-is-mobile.ts",
       "hooks/use-predicted-events.ts",
-      "theme/color-scheme.ts",
-      "theme/theme-provider.tsx",
+      "theme/color-scheme-browser-platform.ts",
     ]);
+  });
+
+  // Why not a lint rule: the rule is "the adapter is the only owner", a closed list that a
+  // ban-with-exemptions rule cannot state as complete. The closed bootstrap is the one
+  // exception, because it is serialized into the page and runs before the bundle. Outside
+  // theme/, use-is-mobile owns its own query.
+  it("touches matchMedia, localStorage and data-theme in theme/ only through the browser adapter", () => {
+    const inTheme = (needle: string) =>
+      filesContainingCode(needle)
+        .filter((file) => file.startsWith("theme/"))
+        .toSorted();
+    const owners = ["theme/color-scheme-browser-platform.ts", "theme/color-scheme-script.tsx"];
+    expect(inTheme("matchMedia")).toEqual(owners);
+    expect(inTheme("localStorage")).toEqual(owners);
+    // The closing quote keeps `data-theme-variant` and the other data-theme-* attributes out.
+    expect(inTheme('"data-theme"')).toEqual(owners);
   });
 
   it("transitions layout properties only in the reviewed places", () => {

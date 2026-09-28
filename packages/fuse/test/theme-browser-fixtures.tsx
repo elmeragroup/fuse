@@ -88,19 +88,6 @@ export function emitStorageChange(key: string, value: string) {
   );
 }
 
-/** Clears local storage and dispatches the whole-store `storage` event (`key` is `null`). */
-export function emitStorageClear() {
-  window.localStorage.clear();
-  window.dispatchEvent(
-    new StorageEvent("storage", {
-      key: null,
-      oldValue: null,
-      newValue: null,
-      storageArea: window.localStorage,
-    })
-  );
-}
-
 export function stubPrefersColorScheme(prefersDark: boolean) {
   let matches = prefersDark;
   const listeners = new Set<(event: MediaQueryListEvent) => void>();

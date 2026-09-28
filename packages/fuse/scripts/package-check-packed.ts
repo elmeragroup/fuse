@@ -1,9 +1,13 @@
+// Checks the packed tarball the way a consumer installs it. It consumes test support from
+// `test/` (the memory color-scheme platform) because it is itself a test of the tarball.
+
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { evaluateColorSchemeBootstrapScript } from "./color-scheme-bootstrap-harness";
+import { COLOR_SCHEME_BOOTSTRAP_MANIFEST_KEY } from "../src/theme/color-scheme";
+import { runColorSchemeBootstrap } from "../test/memory-color-scheme-platform";
 import { exportKey } from "./entries";
 import type { DiscoveredEntries } from "./entries";
 import {
@@ -302,26 +306,30 @@ export function checkPackedBootstrap(consumerRoot: string, themeNames: readonly 
     throw new Error("Packed bootstrap lost raw quotes or ampersands");
   }
 
-  const result = evaluateColorSchemeBootstrapScript(source, { storedValue: "light", prefersDark: false });
-  if (result.attributes["data-theme"] !== "dark") {
-    throw new Error(`Packed forced bootstrap wrote data-theme=${String(result.attributes["data-theme"])}`);
+  const forced = runColorSchemeBootstrap(source, { stored: { [primitives.storageKey]: "light" } });
+  if (forced.state.root !== "dark") {
+    throw new Error(`Packed forced bootstrap wrote data-theme=${String(forced.state.root)}`);
   }
-  if (result.storageReads.length > 0) {
+  if (forced.state.storageReads.length > 0) {
     throw new Error("Packed forced bootstrap read storage");
   }
-  if (JSON.stringify(result.manifest) !== JSON.stringify(primitives)) {
-    throw new Error(`Packed bootstrap manifest mismatch: ${JSON.stringify(result.manifest)}`);
+  const manifest = forced.host[COLOR_SCHEME_BOOTSTRAP_MANIFEST_KEY];
+  if (JSON.stringify(manifest) !== JSON.stringify(primitives)) {
+    throw new Error(`Packed bootstrap manifest mismatch: ${JSON.stringify(manifest)}`);
   }
-  if (result.style.colorScheme !== undefined || result.createdElements.length > 0) {
+  if (Object.keys(forced.state.rootStyle).length > 0 || forced.state.createdElements.length > 0) {
     throw new Error("Packed bootstrap wrote CSS color-scheme or created elements");
   }
 
-  const systemSource = packedColorSchemeScriptSource(consumerRoot, `{ enableSystem: false }`);
-  const systemResult = evaluateColorSchemeBootstrapScript(systemSource, {
-    storedValue: "system",
+  const systemSource = packedColorSchemeScriptSource(
+    consumerRoot,
+    JSON.stringify({ storageKey: primitives.storageKey, enableSystem: false })
+  );
+  const system = runColorSchemeBootstrap(systemSource, {
+    stored: { [primitives.storageKey]: "system" },
     prefersDark: true,
   });
-  if (systemResult.attributes["data-theme"] !== "light") {
+  if (system.state.root !== "light") {
     throw new Error("Packed bootstrap did not resolve disabled system to light");
   }
 }

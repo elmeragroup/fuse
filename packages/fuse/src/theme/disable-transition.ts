@@ -27,8 +27,39 @@
 const TRANSITION_DISABLE_CSS =
   "*,*::before,*::after{-webkit-transition:none!important;-moz-transition:none!important;-o-transition:none!important;-ms-transition:none!important;transition:none!important}";
 
-export function disableColorSchemeTransitions(nonce: string | undefined): () => void {
+/** The window members transition suppression touches. `globalThis` satisfies it structurally. */
+export type TransitionHost = {
+  /** Receives the style; absent during a server render or in a document-less sandbox. */
+  readonly document?: {
+    /** Receives the temporary transition-suppression style. */
+    readonly head: Pick<HTMLHeadElement, "append">;
+    /** Creates the transition-suppression style. */
+    createElement(tagName: "style"): HTMLStyleElement;
+    /** Creates the style's text. */
+    createTextNode(data: string): Text;
+    /** Finds the body whose style read flushes the suppression. */
+    querySelector(selectors: "body"): Element | null;
+  };
+  /** Flushes styles so the suppression applies before its removal. */
+  getComputedStyle(element: Element): void;
+  /** Schedules the suppression's removal. Required, so the style can never stay on. */
+  setTimeout(callback: () => void, ms: number): void;
+};
+
+/**
+ * Suppresses CSS transitions for one synchronous `data-theme` write: it appends a nonce'd
+ * style, and the returned restore flushes styles and removes it on the next task.
+ *
+ * @param host - The browser-shaped host whose document receives the style.
+ * @param nonce - The CSP nonce for the style, when the host sets one.
+ * @returns The restore to call right after the write; a no-op when the host has no document.
+ */
+export function disableColorSchemeTransitions(host: TransitionHost, nonce: string | undefined): () => void {
   try {
+    const document = host.document;
+    if (document === undefined) {
+      return () => undefined;
+    }
     const css = document.createElement("style");
     if (nonce !== undefined) {
       css.setAttribute("nonce", nonce);
@@ -40,12 +71,12 @@ export function disableColorSchemeTransitions(nonce: string | undefined): () => 
       try {
         const body = document.querySelector("body");
         if (body !== null) {
-          window.getComputedStyle(body);
+          host.getComputedStyle(body);
         }
       } catch {
         // body may be absent during runtime writes
       }
-      window.setTimeout(() => {
+      host.setTimeout(() => {
         css.remove();
       }, 1);
     };

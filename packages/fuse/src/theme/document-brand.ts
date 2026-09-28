@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext } from "react";
+import { createContext, useInsertionEffect, useRef } from "react";
 
 import { THEME_ATTRIBUTE_NAMES } from "./theme-attributes";
 import type { ThemeAttributeName, ThemeAttributes } from "./theme-attributes";
@@ -15,12 +15,16 @@ function readSnapshot(root: Element): DocumentBrandSnapshot {
   return THEME_ATTRIBUTE_NAMES.map((name) => [name, root.getAttribute(name)] as const);
 }
 
+function differs(found: DocumentBrandSnapshot, expected: ThemeAttributes): boolean {
+  return found.some(([name, value]) => value !== expected[name]);
+}
+
 // A document without any brand attribute has no server opinion to disagree with.
 function disagrees(found: DocumentBrandSnapshot, expected: ThemeAttributes): boolean {
   if (found.every(([, value]) => value === null)) {
     return false;
   }
-  return found.some(([name, value]) => value !== expected[name]);
+  return differs(found, expected);
 }
 
 function mismatchMessage(found: DocumentBrandSnapshot, expected: ThemeAttributes): string {
@@ -40,19 +44,29 @@ function write(root: Element, attributes: ThemeAttributes): void {
 }
 
 /**
- * Writes a resolved theme's brand attributes to the document element. With `diagnose`, it
- * first warns in development when server-rendered attributes disagree with them.
+ * Keeps the document element's brand attributes on a resolved theme. The first commit warns in
+ * development when server-rendered attributes disagree, then writes them. Every later commit
+ * restores attributes that differ, so host code that overwrote them is corrected even when
+ * only color-scheme props changed; a later commit whose document already matches writes nothing.
  *
  * @param attributes - The validated theme's `data-theme-*` attributes.
- * @param options - `diagnose` compares the existing document attributes before writing.
  */
-export function syncDocumentBrand(attributes: ThemeAttributes, options: { diagnose: boolean }): void {
-  const root = document.documentElement;
-  if (options.diagnose && isThemeDevelopment()) {
+export function useDocumentBrand(attributes: ThemeAttributes): void {
+  const diagnosed = useRef(false);
+
+  // No dependency list on purpose, like ColorSchemeRoot's configure: every commit compares.
+  // Insertion runs before descendant useLayoutEffect so children never measure stale brand.
+  useInsertionEffect(() => {
+    const root = document.documentElement;
     const found = readSnapshot(root);
-    if (disagrees(found, attributes)) {
-      console.warn(mismatchMessage(found, attributes));
+    if (!diagnosed.current) {
+      diagnosed.current = true;
+      if (isThemeDevelopment() && disagrees(found, attributes)) {
+        console.warn(mismatchMessage(found, attributes));
+      }
+      write(root, attributes);
+    } else if (differs(found, attributes)) {
+      write(root, attributes);
     }
-  }
-  write(root, attributes);
+  });
 }
