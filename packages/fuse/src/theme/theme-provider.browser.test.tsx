@@ -9,6 +9,7 @@ import {
   fkasPrivate,
   guenPrivate,
   readDocumentBrand,
+  resetThemeDocument,
   stampDocumentBrand,
   tkasCompany,
   writeManifest,
@@ -24,17 +25,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  document.documentElement.removeAttribute("data-theme");
-  document.documentElement.removeAttribute("data-theme-variant");
-  document.documentElement.removeAttribute("data-theme-brand");
-  document.documentElement.removeAttribute("data-theme-segment");
-  document.documentElement.style.removeProperty("color-scheme");
-  for (const meta of document.querySelectorAll('meta[name="color-scheme"]')) {
-    meta.remove();
-  }
-  writeManifest(undefined);
-  window.localStorage.clear();
-  window.sessionStorage.clear();
+  resetThemeDocument();
   vi.unstubAllEnvs();
   vi.restoreAllMocks();
 });
@@ -216,8 +207,43 @@ describe("ThemeProvider / ThemeScope", () => {
     );
 
     expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
-    expect(warn).toHaveBeenCalled();
-    expect(String(warn.mock.calls[0]?.[0])).toMatch(/Recovering to the validated controlled theme/);
+    expect(warn.mock.calls).toEqual([
+      [
+        'ThemeProvider controlled theme does not match document brand attributes. Expected data-theme-variant="internal" data-theme-brand="fkas" data-theme-segment="private", found data-theme-variant="external" data-theme-brand="tkas" data-theme-segment="company". Recovering to the validated controlled theme.',
+      ],
+    ]);
+  });
+
+  it("does not warn about document brand attributes on a blank document", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ThemeProbe />
+      </ThemeProvider>
+    );
+
+    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("diagnoses a partially stamped document and recovers to the validated theme", () => {
+    document.documentElement.setAttribute("data-theme-variant", "internal");
+    document.documentElement.setAttribute("data-theme-segment", "private");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ThemeProbe />
+      </ThemeProvider>
+    );
+
+    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
+    expect(warn.mock.calls).toEqual([
+      [
+        'ThemeProvider controlled theme does not match document brand attributes. Expected data-theme-variant="internal" data-theme-brand="fkas" data-theme-segment="private", found data-theme-variant="internal" data-theme-brand="null" data-theme-segment="private". Recovering to the validated controlled theme.',
+      ],
+    ]);
   });
 
   it("does not let a nested provider compete for the document", () => {

@@ -48,6 +48,8 @@ composed theme map, a recipe's slots against the upstream recipe it forwards).
 
 Use unit tests for recipes and pure logic, browser tests for interaction, and
 public type tests for API constraints. Use the shared role/label browser helpers.
+Put production-only behavior in `*.production.browser.test.tsx`, which runs in
+the `browser-production` project.
 Put necessary source contracts in the central suite with the reason lint or an
 existing gate cannot enforce them.
 While editing, run `vitest related <files> --run --project unit` in the owning package

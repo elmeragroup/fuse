@@ -5,7 +5,6 @@ import { useCallback, useState } from "react";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
-import type { ThemeAttributes } from "./theme-attributes";
 import { ThemeContext, useResolvedThemeResult } from "./theme-context";
 import { ThemeScopeContainerContext } from "./theme-scope-container";
 import type { ThemeInput } from "./tokens/themes";
@@ -24,13 +23,7 @@ export function ThemeScope({ theme, render, ref, children, ...rest }: ThemeScope
   }, []);
 
   const resolved = useResolvedThemeResult(theme);
-  const attributes: ThemeAttributes | undefined = resolved.ok
-    ? {
-        "data-theme-variant": resolved.theme.variant,
-        "data-theme-brand": resolved.theme.brand,
-        "data-theme-segment": resolved.theme.segment,
-      }
-    : undefined;
+  const attributes = resolved.ok ? resolved.attributes : undefined;
 
   const rendered = useRender({
     defaultTagName: "div",

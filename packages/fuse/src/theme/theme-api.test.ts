@@ -11,6 +11,7 @@ import {
   MISMATCHED_BOOTSTRAP_MANIFEST,
   MISSING_BOOTSTRAP_MESSAGE,
 } from "../../test/color-scheme-contract";
+import { fkasPrivate } from "../../test/theme-fixtures";
 import { LEGAL_THEMES as PUBLIC_LEGAL_THEMES, THEME_SEGMENTS, THEME_VARIANTS } from "../theme";
 import {
   COLOR_SCHEME_BOOTSTRAP_SOURCE_DUPLICATE,
@@ -21,8 +22,7 @@ import {
 import type { ColorSchemeBootstrapManifest } from "./color-scheme";
 import { diagnoseColorSchemeBootstrap } from "./color-scheme-diagnostics";
 import { colorSchemeScriptSource } from "./color-scheme-script";
-import { documentBrandDisagrees, warnDocumentBrandMismatch } from "./document-brand";
-import { themeAttributes } from "./theme-attributes";
+import { THEME_ATTRIBUTE_NAMES, themeAttributes } from "./theme-attributes";
 import { ThemeProvider, useTheme } from "./theme-provider";
 import { BRANDS, LEGAL_THEMES, parseThemeSlug, themeSlug } from "./tokens/themes";
 import type { ThemeInput } from "./tokens/themes";
@@ -161,54 +161,6 @@ describe("validateTheme", () => {
   });
 });
 
-describe("document brand mismatch", () => {
-  const expected = themeAttributes({ variant: "internal", brand: "fkas", segment: "private" });
-  const matching = {
-    "data-theme-variant": "internal",
-    "data-theme-brand": "fkas",
-    "data-theme-segment": "private",
-  } as const;
-  const mismatching = {
-    "data-theme-variant": "external",
-    "data-theme-brand": "tkas",
-    "data-theme-segment": "company",
-  } as const;
-  const missing = {
-    "data-theme-variant": null,
-    "data-theme-brand": null,
-    "data-theme-segment": null,
-  };
-
-  it("treats missing server attributes as no disagreement", () => {
-    expect(documentBrandDisagrees(missing, expected)).toBe(false);
-    expect(documentBrandDisagrees(matching, expected)).toBe(false);
-    expect(documentBrandDisagrees(mismatching, expected)).toBe(true);
-    expect(documentBrandDisagrees({ ...matching, "data-theme-brand": null }, expected)).toBe(true);
-  });
-
-  it("warns in development and stays silent in production", () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-
-    vi.stubEnv("NODE_ENV", "development");
-    expect(isThemeDevelopment()).toBe(true);
-    warnDocumentBrandMismatch(mismatching, expected);
-    expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn.mock.calls[0]?.[0]).toBe(
-      'ThemeProvider controlled theme does not match document brand attributes. Expected data-theme-variant="internal" data-theme-brand="fkas" data-theme-segment="private", found data-theme-variant="external" data-theme-brand="tkas" data-theme-segment="company". Recovering to the validated controlled theme.'
-    );
-
-    warn.mockClear();
-    warnDocumentBrandMismatch(matching, expected);
-    warnDocumentBrandMismatch(missing, expected);
-    expect(warn).not.toHaveBeenCalled();
-
-    vi.stubEnv("NODE_ENV", "production");
-    expect(isThemeDevelopment()).toBe(false);
-    warnDocumentBrandMismatch(mismatching, expected);
-    expect(warn).not.toHaveBeenCalled();
-  });
-});
-
 describe("themeAttributes", () => {
   it("returns the three data attributes for a validated theme", () => {
     expect(themeAttributes({ variant: "external", brand: "fkas", segment: "private" })).toEqual({
@@ -226,6 +178,11 @@ describe("themeAttributes", () => {
       "data-theme-brand": "elma",
       "data-theme-segment": "company",
     });
+  });
+
+  it("lists every attribute the projection stamps, in write order", () => {
+    // Unit under test: THEME_ATTRIBUTE_NAMES. Oracle: the keys TypeScript forces themeAttributes to return.
+    expect(THEME_ATTRIBUTE_NAMES).toEqual(Object.keys(themeAttributes(fkasPrivate)));
   });
 
   it("validates untyped input before returning attributes", () => {

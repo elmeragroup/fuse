@@ -1,57 +1,58 @@
-import type { ThemeAttributes } from "./theme-attributes";
+"use client";
+
+import { createContext } from "react";
+
+import { THEME_ATTRIBUTE_NAMES } from "./theme-attributes";
+import type { ThemeAttributeName, ThemeAttributes } from "./theme-attributes";
 import { isThemeDevelopment } from "./validate-theme";
 
-export type DocumentBrandSnapshot = {
-  "data-theme-variant": string | null;
-  "data-theme-brand": string | null;
-  "data-theme-segment": string | null;
-};
+type DocumentBrandSnapshot = ReadonlyArray<readonly [ThemeAttributeName, string | null]>;
 
-export function readDocumentBrandSnapshot(root: Element): DocumentBrandSnapshot {
-  return {
-    "data-theme-variant": root.getAttribute("data-theme-variant"),
-    "data-theme-brand": root.getAttribute("data-theme-brand"),
-    "data-theme-segment": root.getAttribute("data-theme-segment"),
-  };
+/** True below the ThemeProvider that owns the document's brand attributes. */
+export const DocumentWriterContext = createContext(false);
+
+function readSnapshot(root: Element): DocumentBrandSnapshot {
+  return THEME_ATTRIBUTE_NAMES.map((name) => [name, root.getAttribute(name)] as const);
 }
 
-export function writeDocumentBrandAttributes(root: Element, attributes: ThemeAttributes): void {
-  root.setAttribute("data-theme-variant", attributes["data-theme-variant"]);
-  root.setAttribute("data-theme-brand", attributes["data-theme-brand"]);
-  root.setAttribute("data-theme-segment", attributes["data-theme-segment"]);
-}
-
-export function documentBrandDisagrees(found: DocumentBrandSnapshot, expected: ThemeAttributes): boolean {
-  if (
-    found["data-theme-variant"] === null &&
-    found["data-theme-brand"] === null &&
-    found["data-theme-segment"] === null
-  ) {
+// A document without any brand attribute has no server opinion to disagree with.
+function disagrees(found: DocumentBrandSnapshot, expected: ThemeAttributes): boolean {
+  if (found.every(([, value]) => value === null)) {
     return false;
   }
-  return (
-    found["data-theme-variant"] !== expected["data-theme-variant"] ||
-    found["data-theme-brand"] !== expected["data-theme-brand"] ||
-    found["data-theme-segment"] !== expected["data-theme-segment"]
-  );
+  return found.some(([name, value]) => value !== expected[name]);
 }
 
-function documentBrandMismatchMessage(found: DocumentBrandSnapshot, expected: ThemeAttributes): string {
+function mismatchMessage(found: DocumentBrandSnapshot, expected: ThemeAttributes): string {
+  const expectedList = THEME_ATTRIBUTE_NAMES.map((name) => `${name}="${expected[name]}"`).join(" ");
+  const foundList = found.map(([name, value]) => `${name}="${value}"`).join(" ");
   return (
     "ThemeProvider controlled theme does not match document brand attributes. " +
-    `Expected data-theme-variant="${expected["data-theme-variant"]}" ` +
-    `data-theme-brand="${expected["data-theme-brand"]}" ` +
-    `data-theme-segment="${expected["data-theme-segment"]}", ` +
-    `found data-theme-variant="${found["data-theme-variant"]}" ` +
-    `data-theme-brand="${found["data-theme-brand"]}" ` +
-    `data-theme-segment="${found["data-theme-segment"]}". ` +
+    `Expected ${expectedList}, found ${foundList}. ` +
     "Recovering to the validated controlled theme."
   );
 }
 
-export function warnDocumentBrandMismatch(found: DocumentBrandSnapshot, expected: ThemeAttributes): void {
-  if (!isThemeDevelopment() || !documentBrandDisagrees(found, expected)) {
-    return;
+function write(root: Element, attributes: ThemeAttributes): void {
+  for (const name of THEME_ATTRIBUTE_NAMES) {
+    root.setAttribute(name, attributes[name]);
   }
-  console.warn(documentBrandMismatchMessage(found, expected));
+}
+
+/**
+ * Writes a resolved theme's brand attributes to the document element. With `diagnose`, it
+ * first warns in development when server-rendered attributes disagree with them.
+ *
+ * @param attributes - The validated theme's `data-theme-*` attributes.
+ * @param options - `diagnose` compares the existing document attributes before writing.
+ */
+export function syncDocumentBrand(attributes: ThemeAttributes, options: { diagnose: boolean }): void {
+  const root = document.documentElement;
+  if (options.diagnose && isThemeDevelopment()) {
+    const found = readSnapshot(root);
+    if (disagrees(found, attributes)) {
+      console.warn(mismatchMessage(found, attributes));
+    }
+  }
+  write(root, attributes);
 }

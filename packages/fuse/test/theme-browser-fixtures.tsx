@@ -28,6 +28,26 @@ export function readDocumentBrand() {
   };
 }
 
+/**
+ * Restores the document, bootstrap manifest and web storage a theme browser test may have
+ * written, so the next test starts from a blank host page.
+ */
+export function resetThemeDocument() {
+  const root = document.documentElement;
+  root.removeAttribute("data-theme");
+  root.removeAttribute("data-theme-variant");
+  root.removeAttribute("data-theme-brand");
+  root.removeAttribute("data-theme-segment");
+  root.style.removeProperty("color-scheme");
+  // DOM audit: the color-scheme bootstrap writes a role-less <meta> in the head.
+  for (const meta of document.querySelectorAll('meta[name="color-scheme"]')) {
+    meta.remove();
+  }
+  writeManifest(undefined);
+  window.localStorage.clear();
+  window.sessionStorage.clear();
+}
+
 export function ColorSchemeOutput() {
   const theme = useTheme();
   const { colorScheme, resolvedColorScheme } = useColorScheme();
