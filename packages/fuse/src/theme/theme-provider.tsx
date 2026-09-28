@@ -1,36 +1,13 @@
 "use client";
 
-import {
-  use,
-  useCallback,
-  useEffect,
-  useInsertionEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { use } from "react";
 import type { ReactNode } from "react";
 
-import {
-  DEFAULT_COLOR_SCHEME,
-  DEFAULT_COLOR_SCHEME_STORAGE_KEY,
-  DEFAULT_ENABLE_SYSTEM,
-  isColorSchemeStorageEvent,
-  parseColorScheme,
-  readStoredColorScheme,
-  resolveColorSchemeOptions,
-  subscribeToSystemScheme,
-} from "./color-scheme";
-import type { ColorScheme, ColorSchemeOptions, ColorSchemeScriptElementProps } from "./color-scheme";
-import { ColorSchemeContext, ColorSchemeControllerContext } from "./color-scheme-context";
-import type { ColorSchemeController } from "./color-scheme-context";
-import { diagnoseColorSchemeBootstrap } from "./color-scheme-diagnostics";
-import { createColorSchemeRuntimeStore } from "./color-scheme-runtime";
-import type { ColorSchemeRuntimeConfig } from "./color-scheme-runtime";
-import { InjectedColorSchemeScript } from "./color-scheme-script";
-import { DocumentWriterContext, syncDocumentBrand } from "./document-brand";
-import { ThemeContext, useResolvedTheme, useResolvedThemeResult } from "./theme-context";
+import type { ColorSchemeOptions, ColorSchemeScriptElementProps } from "./color-scheme";
+import { ColorSchemeRoot } from "./color-scheme-root";
+import { DocumentWriterContext, useDocumentBrand } from "./document-brand";
+import type { ThemeAttributes } from "./theme-attributes";
+import { ThemeContext, useResolvedTheme } from "./theme-context";
 import type { Theme } from "./theme-context";
 import type { ThemeInput } from "./tokens/themes";
 
@@ -59,128 +36,31 @@ function NestedThemeValidator({ theme, children }: { theme: ThemeInput; children
   return children;
 }
 
-function DocumentThemeWriter({
+// The throw for an invalid theme directly follows the one hook it depends on; everything the
+// writer does with a valid theme lives in DocumentBrandWriter and ColorSchemeRoot below.
+function DocumentThemeWriter({ theme, children, ...colorScheme }: ThemeProviderProps) {
+  const resolved = useResolvedTheme(theme);
+  return (
+    <DocumentBrandWriter theme={resolved.theme} attributes={resolved.attributes}>
+      <ColorSchemeRoot {...colorScheme}>{children}</ColorSchemeRoot>
+    </DocumentBrandWriter>
+  );
+}
+
+function DocumentBrandWriter({
   theme,
+  attributes,
   children,
-  storageKey = DEFAULT_COLOR_SCHEME_STORAGE_KEY,
-  defaultColorScheme = DEFAULT_COLOR_SCHEME,
-  enableSystem = DEFAULT_ENABLE_SYSTEM,
-  forcedColorScheme,
-  disableTransitionOnChange = false,
-  injectColorSchemeScript = false,
-  nonce,
-  scriptProps,
-}: ThemeProviderProps) {
-  const diagnosed = useRef(false);
-  const resolved = useResolvedThemeResult(theme);
-  const attributes = resolved.ok ? resolved.attributes : undefined;
-  const options = useMemo(
-    () =>
-      resolveColorSchemeOptions({
-        storageKey,
-        defaultColorScheme,
-        enableSystem,
-        forcedColorScheme,
-      }),
-    [defaultColorScheme, enableSystem, forcedColorScheme, storageKey]
-  );
-  const runtimeConfig = useMemo(
-    (): ColorSchemeRuntimeConfig => ({
-      storageKey: options.storageKey,
-      defaultColorScheme: options.defaultColorScheme,
-      enableSystem: options.enableSystem,
-      mountForce: options.forcedColorScheme,
-      disableTransitionOnChange,
-      nonce,
-    }),
-    [disableTransitionOnChange, nonce, options]
-  );
-  const [store] = useState(() => createColorSchemeRuntimeStore(runtimeConfig));
-  const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot);
-
-  useInsertionEffect(() => {
-    // An invalid theme throws below before this render commits.
-    if (attributes === undefined) return;
-    store.commitConfig(runtimeConfig);
-    const shouldDiagnose = !diagnosed.current;
-    diagnosed.current = true;
-    // Insertion runs before descendant useLayoutEffect so children never measure stale brand.
-    syncDocumentBrand(attributes, { diagnose: shouldDiagnose });
-    if (shouldDiagnose) {
-      diagnoseColorSchemeBootstrap(options, injectColorSchemeScript);
-    }
-    // Skip unforced preference writes until mounted so the host bootstrap is not overwritten.
-    store.applyDocument();
-  }, [injectColorSchemeScript, options, runtimeConfig, store, attributes]);
-
-  useEffect(() => {
-    store.markMounted();
-    store.hydratePreference(readStoredColorScheme(options.storageKey, options.defaultColorScheme));
-    store.recoverDocument();
-
-    const onStorage = (event: StorageEvent) => {
-      if (!isColorSchemeStorageEvent(event, options.storageKey)) return;
-      store.receivePreference(parseColorScheme(event.newValue, options.defaultColorScheme));
-    };
-
-    const onMedia = () => {
-      store.bumpSystem();
-    };
-
-    window.addEventListener("storage", onStorage);
-    // Hosts without matchMedia (jsdom, some webviews) or with only the legacy
-    // addListener API must still mount; system tracking is best-effort there.
-    const unsubscribeMedia = options.enableSystem ? subscribeToSystemScheme(onMedia) : () => undefined;
-    return () => {
-      window.removeEventListener("storage", onStorage);
-      unsubscribeMedia();
-    };
-  }, [options.defaultColorScheme, options.enableSystem, options.storageKey, store]);
-
-  const setColorScheme = useCallback(
-    (value: ColorScheme) => {
-      store.setPreference(value);
-    },
-    [store]
-  );
-
-  const controller = useMemo((): ColorSchemeController => {
-    return {
-      setRuntimeForce: store.setRuntimeForce,
-    };
-  }, [store]);
-
-  const colorSchemeValue = useMemo(() => {
-    return {
-      colorScheme: snapshot.preference,
-      resolvedColorScheme: snapshot.resolvedColorScheme,
-      setColorScheme,
-    };
-  }, [setColorScheme, snapshot]);
-
-  // Rethrow only after every hook has registered, so hook order is stable across renders.
-  if (!resolved.ok) throw resolved.error;
-  const value = resolved.theme;
+}: {
+  theme: Theme;
+  attributes: ThemeAttributes;
+  children: ReactNode;
+}) {
+  useDocumentBrand(attributes);
 
   return (
     <DocumentWriterContext.Provider value={true}>
-      <ThemeContext.Provider value={value}>
-        <ColorSchemeContext.Provider value={colorSchemeValue}>
-          <ColorSchemeControllerContext.Provider value={controller}>
-            {injectColorSchemeScript ? (
-              <InjectedColorSchemeScript
-                storageKey={options.storageKey}
-                defaultColorScheme={options.defaultColorScheme}
-                enableSystem={options.enableSystem}
-                forcedColorScheme={options.forcedColorScheme}
-                nonce={nonce}
-                scriptProps={scriptProps}
-              />
-            ) : null}
-            {children}
-          </ColorSchemeControllerContext.Provider>
-        </ColorSchemeContext.Provider>
-      </ThemeContext.Provider>
+      <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>
     </DocumentWriterContext.Provider>
   );
 }

@@ -59,6 +59,11 @@
   `process.env` only in `src/theme/validate-theme.ts`. Once the rule accepts the new owner, point
   `checkValidateThemeEnv` in `packages/fuse/scripts/package-check-packed.ts` at the new packed
   module.
+- Two separate React roots on one document, each with its own `ThemeProvider`, each get a
+  color-scheme runtime. They reconcile against the live `data-theme`, so they converge rather
+  than ping-pong, but neither sees the other's `setColorScheme`: a document gets no `storage`
+  event for its own writes. Decide whether `ColorSchemeRoot` warns in development when a second
+  runtime connects to the same document.
 
 ## Control size
 

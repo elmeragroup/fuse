@@ -31,6 +31,7 @@ import {
   useColorScheme,
 } from "../theme";
 import type * as ThemeApi from "../theme";
+import type { ColorSchemeRootProps } from "./color-scheme-root";
 
 test("ThemeInput and ThemeSlug reject illegal pinned-brand permutations", () => {
   expectTypeOf<{
@@ -196,4 +197,10 @@ test("ForceColorScheme is a runtime-only color-scheme lock", () => {
 
   // @ts-expect-error force is color-scheme only
   const _brand: ForceColorSchemeProps = { value: "fkas" };
+});
+
+test("ColorSchemeRoot accepts every ThemeProvider color-scheme prop", () => {
+  // ThemeProvider spreads everything but `theme` onto the internal ColorSchemeRoot.
+  expectTypeOf<Omit<ThemeProviderProps, "theme">>().toExtend<ColorSchemeRootProps>();
+  expectTypeOf<keyof ColorSchemeRootProps>().toEqualTypeOf<Exclude<keyof ThemeProviderProps, "theme">>();
 });

@@ -3,7 +3,8 @@ import type { ScriptHTMLAttributes } from "react";
 import { COLOR_SCHEMES } from "./color-scheme-types";
 import type { ColorScheme, ResolvedColorScheme } from "./color-scheme-types";
 
-// Types live in ./color-scheme-types so the Node-only scripts program never pulls in this DOM module.
+// The axis lives in ./color-scheme-types so theme composition and CSS generation can read it
+// without depending on this React-facing bootstrap module.
 export type { ColorScheme, ResolvedColorScheme } from "./color-scheme-types";
 
 export const COLOR_SCHEME_BOOTSTRAP_MANIFEST_KEY = "__ELMERA_COLOR_SCHEME_BOOTSTRAP__";
@@ -99,98 +100,4 @@ export function serializeScriptData(value: string | boolean): string {
 
 export function parseColorScheme(value: string | null | undefined, fallback: ColorScheme): ColorScheme {
   return closedColorScheme(value) ?? fallback;
-}
-
-export function resolveSystemColorScheme(): ResolvedColorScheme {
-  try {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  } catch {
-    return "light";
-  }
-}
-
-/** Subscribes to system scheme changes; returns a no-op when the platform cannot. */
-export function subscribeToSystemScheme(onChange: () => void): () => void {
-  try {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    // oxlint-disable-next-line anti-slop/no-runtime-typeof -- Safari < 14 MediaQueryList has only addListener
-    if (typeof media.addEventListener === "function") {
-      media.addEventListener("change", onChange);
-      return () => media.removeEventListener("change", onChange);
-    }
-    media.addListener(onChange);
-    return () => media.removeListener(onChange);
-  } catch {
-    return () => undefined;
-  }
-}
-
-export function resolveColorScheme(preference: ColorScheme, enableSystem: boolean): ResolvedColorScheme {
-  if (preference === "light" || preference === "dark") {
-    return preference;
-  }
-  if (!enableSystem) {
-    return "light";
-  }
-  return resolveSystemColorScheme();
-}
-
-/**
- * Runs `operation` against `window.localStorage`, returning `undefined` when the area is
- * unreachable or the operation throws. The property access can throw `SecurityError`
- * when storage is blocked, and `setItem` can throw `QuotaExceededError` on an
- * otherwise readable area (quota full; legacy Safari private mode), so the try/catch
- * has to wrap the operation, not just the access.
- */
-function withLocalStorage<T>(operation: (area: Storage) => T): T | undefined {
-  try {
-    return operation(window.localStorage);
-  } catch {
-    return undefined;
-  }
-}
-
-/**
- * Whether a `storage` event should be read as a change to the color-scheme preference:
- * it comes from `localStorage` and names the key, or is a whole-store clear (`key` is
- * `null`), which affects the preference too. `event.newValue` then carries the change.
- */
-export function isColorSchemeStorageEvent(event: StorageEvent, storageKey: string): boolean {
-  if (event.key !== null && event.key !== storageKey) {
-    return false;
-  }
-  return withLocalStorage((area) => event.storageArea === area) === true;
-}
-
-export function readStoredColorScheme(storageKey: string, fallback: ColorScheme): ColorScheme {
-  return parseColorScheme(
-    withLocalStorage((area) => area.getItem(storageKey)),
-    fallback
-  );
-}
-
-export function writeStoredColorScheme(storageKey: string, value: ColorScheme): void {
-  withLocalStorage((area) => {
-    area.setItem(storageKey, value);
-  });
-}
-
-export function readDocumentColorScheme(): ResolvedColorScheme | undefined {
-  try {
-    const value = document.documentElement.getAttribute("data-theme");
-    if (value === "light" || value === "dark") {
-      return value;
-    }
-    return undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-export function writeDocumentColorScheme(value: ResolvedColorScheme): void {
-  try {
-    document.documentElement.setAttribute("data-theme", value);
-  } catch {
-    // document unavailable
-  }
 }

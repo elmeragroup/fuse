@@ -12,18 +12,24 @@ import {
 } from "../../test/color-scheme-contract";
 import {
   ColorSchemeOutput,
+  ColorSchemeSetter,
   emitStorageChange,
   fkasPrivate,
   mountedColorScheme,
-  stubPrefersColorScheme,
+  readDocumentBrand,
+  tkasCompany,
   writeManifest,
 } from "../../test/theme-browser-fixtures";
+import { roleNamed } from "../../test/themed-browser-render";
 import { DEFAULT_COLOR_SCHEME_STORAGE_KEY, resolveColorSchemeOptions } from "./color-scheme";
-import { createColorSchemeRuntimeStore } from "./color-scheme-runtime";
-import type { ColorSchemeRuntimeConfig } from "./color-scheme-runtime";
 import { colorSchemeScriptSource, injectedColorSchemeScriptSource } from "./color-scheme-script";
-import { ForceColorScheme } from "./force-color-scheme";
 import { ThemeProvider } from "./theme-provider";
+
+function transitionStyles(): HTMLStyleElement[] {
+  return [...document.head.querySelectorAll("style")].filter((style) =>
+    style.textContent.includes("transition:none")
+  );
+}
 
 function runBootstrap(source: string) {
   const script = document.createElement("script");
@@ -51,18 +57,6 @@ afterEach(() => {
   vi.unstubAllEnvs();
   vi.restoreAllMocks();
 });
-
-function runtimeConfig(overrides: Partial<ColorSchemeRuntimeConfig> = {}): ColorSchemeRuntimeConfig {
-  return {
-    storageKey: DEFAULT_COLOR_SCHEME_STORAGE_KEY,
-    defaultColorScheme: "light",
-    enableSystem: false,
-    mountForce: undefined,
-    disableTransitionOnChange: false,
-    nonce: undefined,
-    ...overrides,
-  };
-}
 
 describe("color-scheme bootstrap diagnostics", () => {
   it("diagnoses missing, mismatched, matching, and duplicate bootstrap configurations", () => {
@@ -128,24 +122,6 @@ describe("color-scheme bootstrap diagnostics", () => {
   });
 });
 
-describe("color-scheme store committed updates", () => {
-  it("writes committed force changes and restores the hidden preference when removed", () => {
-    document.documentElement.setAttribute("data-theme", "light");
-    const store = createColorSchemeRuntimeStore(runtimeConfig());
-    store.markMounted();
-
-    store.commitConfig(runtimeConfig({ mountForce: "dark" }));
-    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-    expect(store.getSnapshot().resolvedColorScheme).toBe("dark");
-
-    store.setPreference("light");
-    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-    store.commitConfig(runtimeConfig());
-    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
-    expect(store.getSnapshot().resolvedColorScheme).toBe("light");
-  });
-});
-
 describe("ThemeProvider committed color-scheme options", () => {
   it("ignores suspended configuration in document writes and later storage events", async () => {
     writeManifest(resolveColorSchemeOptions({ defaultColorScheme: "light", enableSystem: false }));
@@ -199,72 +175,114 @@ describe("ThemeProvider committed color-scheme options", () => {
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
     await mountedColorScheme(host, "internal-fkas-private:light/dark");
   });
+});
 
-  it("updates document and consumer resolvedColorScheme when committed options change", async () => {
-    writeManifest(resolveColorSchemeOptions({ forcedColorScheme: "dark", enableSystem: false }));
-    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "light");
-
+describe("ThemeProvider data-theme recovery", () => {
+  it("corrects an external data-theme overwrite when the provider re-renders with a new brand", async () => {
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "dark");
     const { host, rerender } = render(
-      <ThemeProvider theme={fkasPrivate} forcedColorScheme="dark" enableSystem={false}>
+      <ThemeProvider theme={fkasPrivate}>
         <ColorSchemeOutput />
       </ThemeProvider>
     );
-    await mountedColorScheme(host, "internal-fkas-private:light/dark");
-    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    await mountedColorScheme(host, "internal-fkas-private:dark/dark");
 
+    document.documentElement.setAttribute("data-theme", "light");
     rerender(
-      <ThemeProvider theme={fkasPrivate} forcedColorScheme="light" enableSystem={false}>
+      <ThemeProvider theme={tkasCompany}>
         <ColorSchemeOutput />
       </ThemeProvider>
     );
+
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    expect(readDocumentBrand()).toEqual({ variant: "external", brand: "tkas", segment: "company" });
+  });
+
+  it("corrects an external data-theme overwrite on an identical-props re-render", async () => {
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "dark");
+    const { host, rerender } = render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ColorSchemeOutput />
+      </ThemeProvider>
+    );
+    await mountedColorScheme(host, "internal-fkas-private:dark/dark");
+
+    document.documentElement.setAttribute("data-theme", "light");
+    rerender(
+      <ThemeProvider theme={fkasPrivate}>
+        <ColorSchemeOutput />
+      </ThemeProvider>
+    );
+
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+  });
+});
+
+describe("ThemeProvider transition suppression", () => {
+  it("wraps a setter's write in one nonce'd transition lock and removes it afterwards", async () => {
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "light");
+    document.documentElement.setAttribute("data-theme", "light");
+    const { host } = render(
+      <ThemeProvider theme={fkasPrivate} disableTransitionOnChange nonce="csp">
+        <ColorSchemeOutput />
+        <ColorSchemeSetter value="dark" />
+      </ThemeProvider>
+    );
+    await mountedColorScheme(host, "internal-fkas-private:light/light");
+    expect(transitionStyles()).toEqual([]);
+
+    roleNamed("button", "set").click();
+
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    expect(transitionStyles().map((style) => style.getAttribute("nonce"))).toEqual(["csp"]);
+    await expect.poll(() => transitionStyles()).toEqual([]);
+  });
+});
+
+describe("ThemeProvider on the real browser platform", () => {
+  it("round-trips the preference through localStorage and applies another document's storage event", async () => {
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "light");
+    const { host } = render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ColorSchemeOutput />
+        <ColorSchemeSetter value="dark" />
+      </ThemeProvider>
+    );
+    await mountedColorScheme(host, "internal-fkas-private:light/light");
+
+    roleNamed("button", "set").click();
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    expect(window.localStorage.getItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY)).toBe("dark");
+    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
+    expect(document.documentElement.style.colorScheme).toBe("");
+    await mountedColorScheme(host, "internal-fkas-private:dark/dark");
+
+    emitStorageChange(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "light");
     expect(document.documentElement.getAttribute("data-theme")).toBe("light");
     await mountedColorScheme(host, "internal-fkas-private:light/light");
   });
 
-  it("does not call matchMedia during a post-mount ThemeProvider render to compute resolvedColorScheme", async () => {
-    stubPrefersColorScheme(true);
+  it("resolves system from the real media query and removes its listener on unmount", async () => {
     window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "system");
+    const expected = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    const added = vi.spyOn(MediaQueryList.prototype, "addEventListener");
+    const removed = vi.spyOn(MediaQueryList.prototype, "removeEventListener");
 
-    const { host, rerender } = render(
+    const { host, unmount } = render(
       <ThemeProvider theme={fkasPrivate}>
         <ColorSchemeOutput />
       </ThemeProvider>
     );
-    await mountedColorScheme(host, "internal-fkas-private:system/dark");
+    await mountedColorScheme(host, `internal-fkas-private:system/${expected}`);
+    expect(document.documentElement.getAttribute("data-theme")).toBe(expected);
+    const changeListeners = added.mock.calls
+      .filter(([type]) => type === "change")
+      .map(([, listener]) => listener);
+    expect(changeListeners).toHaveLength(1);
 
-    const matchMedia = vi.mocked(window.matchMedia);
-    matchMedia.mockClear();
-    rerender(
-      <ThemeProvider theme={fkasPrivate}>
-        <ColorSchemeOutput />
-        <span>extra</span>
-      </ThemeProvider>
+    unmount();
+    expect(removed.mock.calls.filter(([type]) => type === "change").map(([, listener]) => listener)).toEqual(
+      changeListeners
     );
-    expect(host.querySelector("output")?.textContent).toBe("internal-fkas-private:system/dark");
-    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-    expect(matchMedia).not.toHaveBeenCalled();
-  });
-
-  it("updates snapshot-owned resolvedColorScheme when runtime force changes", async () => {
-    writeManifest(resolveColorSchemeOptions({ enableSystem: false }));
-    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "light");
-    document.documentElement.setAttribute("data-theme", "light");
-
-    const { host, rerender } = render(
-      <ThemeProvider theme={fkasPrivate} enableSystem={false}>
-        <ColorSchemeOutput />
-      </ThemeProvider>
-    );
-    await mountedColorScheme(host, "internal-fkas-private:light/light");
-
-    rerender(
-      <ThemeProvider theme={fkasPrivate} enableSystem={false}>
-        <ForceColorScheme value="dark">
-          <ColorSchemeOutput />
-        </ForceColorScheme>
-      </ThemeProvider>
-    );
-    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-    await mountedColorScheme(host, "internal-fkas-private:light/dark");
   });
 });

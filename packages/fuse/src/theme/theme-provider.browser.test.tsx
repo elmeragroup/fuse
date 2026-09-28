@@ -336,6 +336,47 @@ describe("ThemeProvider / ThemeScope", () => {
     expect(setAttribute).not.toHaveBeenCalled();
   });
 
+  it("restores an overwritten document brand on commits that change only color-scheme props", () => {
+    const { rerender } = render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ThemeProbe />
+      </ThemeProvider>
+    );
+
+    document.documentElement.setAttribute("data-theme-brand", "tkas");
+    rerender(
+      <ThemeProvider theme={fkasPrivate} forcedColorScheme="dark">
+        <ThemeProbe />
+      </ThemeProvider>
+    );
+    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
+
+    document.documentElement.setAttribute("data-theme-brand", "tkas");
+    rerender(
+      <ThemeProvider theme={fkasPrivate} forcedColorScheme="dark" nonce="nonce-2">
+        <ThemeProbe />
+      </ThemeProvider>
+    );
+    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
+  });
+
+  it("writes no brand attribute on a commit whose document brand already matches", () => {
+    const { rerender } = render(
+      <ThemeProvider theme={fkasPrivate}>
+        <ThemeProbe />
+      </ThemeProvider>
+    );
+
+    const setAttribute = vi.spyOn(document.documentElement, "setAttribute");
+    rerender(
+      <ThemeProvider theme={fkasPrivate} nonce="nonce-2">
+        <ThemeProbe />
+      </ThemeProvider>
+    );
+
+    expect(brandAttributeWrites(setAttribute.mock.calls)).toEqual([]);
+  });
+
   it("owns the document when mounted inside a lone ThemeScope", () => {
     const { host } = render(
       <ThemeScope theme={tkasCompany}>
@@ -504,62 +545,5 @@ describe("ThemeProvider equal-axis theme identity", () => {
     expect(document.documentElement.getAttribute("data-theme-variant")).toBe("internal");
     expect(document.documentElement.getAttribute("data-theme-brand")).toBe("tkas");
     expect(document.documentElement.getAttribute("data-theme-segment")).toBe("private");
-  });
-});
-
-describe("ThemeProvider system scheme subscription", () => {
-  it("mounts when matchMedia throws", () => {
-    vi.spyOn(window, "matchMedia").mockImplementation(() => {
-      throw new Error("unsupported");
-    });
-
-    const { host } = render(
-      <ThemeProvider theme={fkasPrivate}>
-        <span>ready</span>
-      </ThemeProvider>
-    );
-
-    expect(host.textContent).toBe("ready");
-  });
-
-  it("follows system changes through the legacy addListener API", async () => {
-    let matches = false;
-    const listeners: Array<() => void> = [];
-    const removed: Array<() => void> = [];
-    // SAFETY: Safari < 14 MediaQueryList double: legacy listener methods and no addEventListener.
-    const legacyMedia = {
-      get matches() {
-        return matches;
-      },
-      media: "(prefers-color-scheme: dark)",
-      addListener(listener: () => void) {
-        listeners.push(listener);
-      },
-      removeListener(listener: () => void) {
-        removed.push(listener);
-      },
-    } as MediaQueryList;
-    const nativeMatchMedia = window.matchMedia.bind(window);
-    vi.spyOn(window, "matchMedia").mockImplementation((query) =>
-      query === "(prefers-color-scheme: dark)" ? legacyMedia : nativeMatchMedia(query)
-    );
-    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "system");
-
-    const { unmount } = render(
-      <ThemeProvider theme={fkasPrivate}>
-        <span>ready</span>
-      </ThemeProvider>
-    );
-    await expect.poll(() => document.documentElement.getAttribute("data-theme")).toBe("light");
-    expect(listeners).toHaveLength(1);
-
-    matches = true;
-    for (const listener of listeners) {
-      listener();
-    }
-    await expect.poll(() => document.documentElement.getAttribute("data-theme")).toBe("dark");
-
-    unmount();
-    expect(removed).toEqual(listeners);
   });
 });
