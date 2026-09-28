@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import { render } from "../../test/browser-render";
+import { roleNamed } from "../../test/themed-browser-render";
 import { BRAND_CODES, BRANDS } from "../theme/tokens/themes";
 import type { ThemeInput } from "../theme/tokens/themes";
 import { BrandLogo } from "./brand-logo";
@@ -33,6 +34,24 @@ describe("BrandLogo", () => {
     expect(img.textContent).toBe("Elmera");
     expect(img.querySelector("svg")).toBeNull();
     expect(img.querySelector("path")).toBeNull();
+  });
+
+  it("lets an explicit aria-label win over the title and the display name", () => {
+    render(
+      <>
+        <BrandLogo brand="fkas" aria-label="Home" />
+        <BrandLogo brand="elma" title="Elmera Group" aria-label="Group home" />
+      </>
+    );
+    expect(roleNamed("img", "Home").getAttribute("data-variant")).toBe("full");
+    expect(roleNamed("img", "Group home").textContent).toBe("Elmera");
+    expect(page.getByRole("img", { name: "Fjordkraft", exact: true }).query()).toBeNull();
+    expect(page.getByRole("img", { name: "Elmera Group", exact: true }).query()).toBeNull();
+  });
+
+  it("keeps the display name when aria-label is undefined", () => {
+    render(<BrandLogo brand="fkas" aria-label={undefined} />);
+    expect(roleNamed("img", "Fjordkraft").getAttribute("data-variant")).toBe("full");
   });
 
   it("names every brand by its display name and defaults to the full variant", () => {

@@ -374,9 +374,9 @@ export function ToastAction({
 
 export type ToastCloseProps = ComponentProps<typeof ToastPrimitive.Close> & {
   /**
-   * Accessible name for the close button. Defaults to the locale dictionary
-   * `toast.close`. Icon-only Close sets it as `aria-label`; visible children
-   * replace the icon face and name the control themselves.
+   * Accessible name for the icon-only close button. An explicit `aria-label` wins over
+   * it; both default to the locale dictionary `toast.close`. Visible children replace
+   * the icon face and name the control themselves.
    */
   label?: string;
 };
@@ -387,21 +387,29 @@ function hasVisibleChildren(children: ReactNode): boolean {
 
 export function ToastClose({ className, label, children, ...props }: ToastCloseProps): ReactElement {
   const strings = useLocalizedStrings(overlayCloseStrings);
-  const resolvedLabel = label ?? strings.format("close");
-  const visible = hasVisibleChildren(children);
-  const closeButton = visible ? (
-    <Button variant="ghost" size="sm" />
-  ) : (
-    <Button variant="ghost" size="icon-sm" aria-label={resolvedLabel} />
-  );
-
+  const closeClassName = mergeClassName(className, "absolute top-2 right-2 text-muted-foreground");
+  if (hasVisibleChildren(children)) {
+    return (
+      <ToastPrimitive.Close
+        data-slot="toast-close"
+        className={closeClassName}
+        render={<Button variant="ghost" size="sm" />}
+        {...props}>
+        {children}
+      </ToastPrimitive.Close>
+    );
+  }
+  // The render element's props win in Base UI's merge, and Button's icon sizes require
+  // aria-label, so the icon face repeats the part's resolved accessible name.
+  const accessibleName = props["aria-label"] ?? label ?? strings.format("close");
   return (
     <ToastPrimitive.Close
       data-slot="toast-close"
-      className={mergeClassName(className, "absolute top-2 right-2 text-muted-foreground")}
-      render={closeButton}
+      aria-label={accessibleName}
+      className={closeClassName}
+      render={<Button variant="ghost" size="icon-sm" aria-label={accessibleName} />}
       {...props}>
-      {visible ? children : <X aria-hidden="true" />}
+      <X aria-hidden="true" />
     </ToastPrimitive.Close>
   );
 }
