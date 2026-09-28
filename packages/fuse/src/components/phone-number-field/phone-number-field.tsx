@@ -14,7 +14,6 @@ import type { FlagAssetCode } from "../../flags";
 import { useFormReset } from "../../hooks/use-form-reset";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { MagnifyingGlass } from "../../icons/generated/magnifying-glass";
-import { definedProps } from "../../internal/defined-props";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import { fixedCornerClass } from "../../styles/corner-radius";
@@ -189,15 +188,6 @@ export function PhoneNumberField({
   });
   useFormReset(numberInputRef, phone.onReset);
 
-  // Base UI Input is a Field.Control; a present-but-undefined ARIA key clobbers the
-  // auto-wired label/description via mergeProps (no undefined-guard). Forward only defined keys.
-  const ariaProps = definedProps({
-    id,
-    "aria-label": ariaLabel,
-    "aria-labelledby": ariaLabelledby,
-    "aria-describedby": ariaDescribedby,
-  });
-
   // Every native edit path honors both flags together.
   const isEditable = !isDisabled && !isReadOnly;
 
@@ -212,6 +202,9 @@ export function PhoneNumberField({
         errorMessage={errorMessage}>
         <InputGroupRoot ref={inputGroupRef} aria-invalid={isInvalid || undefined}>
           <ComboboxPrimitive.Root
+            autoComplete={autoComplete}
+            disabled={isDisabled}
+            readOnly={isReadOnly}
             items={phone.countries}
             value={phone.selectedCountry}
             onValueChange={(next) => {
@@ -232,9 +225,6 @@ export function PhoneNumberField({
                 countryPickerOpenRef.current = true;
               }
             }}
-            disabled={isDisabled}
-            readOnly={isReadOnly}
-            autoComplete={autoComplete}
             // Detach the country Combobox from the host form so base-ui's own hidden
             // country input never reaches FormData beside `${name}` and
             // `${name}-display-value`. The id names no rendered form on purpose
@@ -243,12 +233,13 @@ export function PhoneNumberField({
             <InputGroupAddon className="text-foreground" align="inline-start">
               {/* role="button" overrides Base UI's default role="combobox" so the trigger keeps the
                   getByRole("button", {name}) contract the browser tests freeze; aria-labelledby is
-                  cleared so the surrounding Field's label doesn't bleed onto it and aria-label wins.
-                  Don't "simplify" either without updating the browser tests. */}
+                  an empty IDREF list, which overrides the surrounding Field's label and names
+                  nothing, so aria-label wins. Don't "simplify" either without updating the browser
+                  tests. */}
               <ComboboxPrimitive.Trigger
                 role="button"
                 aria-label={resolvedSelectCountryLabel}
-                aria-labelledby={undefined}
+                aria-labelledby=""
                 className={cn(
                   selfFocusRingClass,
                   fixedCornerClass,
@@ -277,9 +268,10 @@ export function PhoneNumberField({
                   render={
                     <InputGroupInput
                       aria-label={resolvedSearchCountriesLabel}
-                      // Field.Label labelledby would win over aria-label; drop it so the
-                      // search keeps dictionary `searchCountries`.
-                      aria-labelledby={undefined}
+                      // Field.Label labelledby would win over aria-label. An empty IDREF list
+                      // overrides it and names nothing, so the search keeps dictionary
+                      // `searchCountries`; Input's handoff keeps the defined value.
+                      aria-labelledby=""
                       autoComplete="one-time-code"
                       // An empty name keeps the search box out of autofill heuristics and
                       // out of any FormData: a nameless control is never submitted
@@ -323,7 +315,11 @@ export function PhoneNumberField({
             autoComplete={autoComplete}
             required={isRequired}
             className="shrink tabular-nums"
-            {...ariaProps}
+            // Input's handoff drops these when undefined, so they can't erase Field's wiring on the control.
+            id={id}
+            aria-label={ariaLabel}
+            aria-labelledby={ariaLabelledby}
+            aria-describedby={ariaDescribedby}
           />
           {endContent}
         </InputGroupRoot>

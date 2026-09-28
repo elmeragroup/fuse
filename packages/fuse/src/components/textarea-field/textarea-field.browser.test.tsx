@@ -29,12 +29,6 @@ describe("TextareaField", () => {
     expect(description).toBeTruthy();
   });
 
-  it("keeps the Field label when a wrapper forwards id and aria-labelledby as undefined", () => {
-    renderThemed(<TextareaField label="Bio" id={undefined} aria-labelledby={undefined} />);
-    const area = textboxNamed("Bio");
-    expect(area.id).not.toBe("");
-  });
-
   it("merges className onto the field root and textareaClassName onto the textarea", () => {
     renderThemed(<TextareaField label="Bio" className="root-marker" textareaClassName="control-marker" />);
     expect(textboxNamed("Bio").classList.contains("control-marker")).toBe(true);

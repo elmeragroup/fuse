@@ -18,7 +18,7 @@ import { SpinnerGap } from "../../icons/generated/spinner-gap";
 import { Warning } from "../../icons/generated/warning";
 import { WarningOctagon } from "../../icons/generated/warning-octagon";
 import { X } from "../../icons/generated/x";
-import { mergeClassName } from "../../styles/merge-class-name";
+import { handoff } from "../../internal/part-handoff";
 import { selfFocusRingClass } from "../../styles/utils";
 import { Button } from "../button/button";
 import { overlayCloseStrings } from "../overlay/intl";
@@ -270,104 +270,84 @@ export type ToastProviderProps = Omit<ComponentProps<typeof ToastPrimitive.Provi
 export function ToastProvider({ toastManager, ...props }: ToastProviderProps): ReactElement {
   return (
     <ToastPrimitive.Provider
-      toastManager={
+      {...handoff({
+        ...props,
+        // The consumer's manager can be undefined, so it rides the consumer argument, and an
+        // absent one stays absent: the Provider then creates its own.
         // SAFETY: our adapter is a drop-in for the primitive manager; the private
         // subscribe channel is preserved by wrapManagerMethods' object spread.
-        toastManager as ComponentProps<typeof ToastPrimitive.Provider>["toastManager"]
-      }
-      {...props}
+        toastManager: toastManager as ComponentProps<typeof ToastPrimitive.Provider>["toastManager"],
+      })}
     />
   );
 }
 
 export type ToastViewportProps = ComponentProps<typeof ToastPrimitive.Viewport> & OverlayContainerProps;
 
-export function ToastViewport({
-  className,
-  container,
-  children,
-  ...props
-}: ToastViewportProps): ReactElement | null {
+export function ToastViewport({ container, children, ...props }: ToastViewportProps): ReactElement | null {
   return (
     <OverlayPortal portal={ToastPrimitive.Portal} container={container}>
       <ToastPrimitive.Viewport
-        data-slot="toast-viewport"
-        className={mergeClassName(
-          className,
-          "sm:right-8 sm:bottom-8 sm:w-[340px] fixed top-auto right-4 bottom-4 isolate mx-auto flex w-[calc(100%-2rem)]",
-          overlayLayer,
-          selfFocusRingClass
-        )}
-        {...props}>
+        {...handoff(props, {
+          defaults: { "data-slot": "toast-viewport" },
+          classes: [
+            "sm:right-8 sm:bottom-8 sm:w-[340px] fixed top-auto right-4 bottom-4 isolate mx-auto flex w-[calc(100%-2rem)]",
+            overlayLayer,
+            selfFocusRingClass,
+          ],
+        })}>
         {children ?? <ToastList />}
       </ToastPrimitive.Viewport>
     </OverlayPortal>
   );
 }
 
-export function ToastRoot({
-  className,
-  toast,
-  ...props
-}: ComponentProps<typeof ToastPrimitive.Root>): ReactElement {
+export function ToastRoot({ toast, ...props }: ComponentProps<typeof ToastPrimitive.Root>): ReactElement {
   const status = statusFromType(toast.type);
   const { root } = STATUS_SLOTS[status];
   return (
     <ToastPrimitive.Root
-      data-slot="toast-root"
-      data-status={status}
+      {...handoff(props, {
+        defaults: { "data-slot": "toast-root", "data-status": status },
+        classes: [root()],
+      })}
       toast={toast}
-      className={mergeClassName(className, root())}
-      {...props}
     />
   );
 }
 
-export function ToastContent({
-  className,
-  ...props
-}: ComponentProps<typeof ToastPrimitive.Content>): ReactElement {
+export function ToastContent(props: ComponentProps<typeof ToastPrimitive.Content>): ReactElement {
   return (
     <ToastPrimitive.Content
-      data-slot="toast-content"
-      className={mergeClassName(className, content())}
-      {...props}
+      {...handoff(props, { defaults: { "data-slot": "toast-content" }, classes: [content()] })}
     />
   );
 }
 
-export function ToastTitle({
-  className,
-  ...props
-}: ComponentProps<typeof ToastPrimitive.Title>): ReactElement {
+export function ToastTitle(props: ComponentProps<typeof ToastPrimitive.Title>): ReactElement {
   return (
-    <ToastPrimitive.Title data-slot="toast-title" className={mergeClassName(className, title())} {...props} />
+    <ToastPrimitive.Title
+      {...handoff(props, { defaults: { "data-slot": "toast-title" }, classes: [title()] })}
+    />
   );
 }
 
-export function ToastDescription({
-  className,
-  ...props
-}: ComponentProps<typeof ToastPrimitive.Description>): ReactElement {
+export function ToastDescription(props: ComponentProps<typeof ToastPrimitive.Description>): ReactElement {
   return (
     <ToastPrimitive.Description
-      data-slot="toast-description"
-      className={mergeClassName(className, description())}
-      {...props}
+      {...handoff(props, { defaults: { "data-slot": "toast-description" }, classes: [description()] })}
     />
   );
 }
 
-export function ToastAction({
-  className,
-  ...props
-}: ComponentProps<typeof ToastPrimitive.Action>): ReactElement {
+export function ToastAction(props: ComponentProps<typeof ToastPrimitive.Action>): ReactElement {
   return (
     <ToastPrimitive.Action
-      data-slot="toast-action"
-      className={mergeClassName(className, "mt-2 w-fit")}
-      render={<Button size="sm" variant="outline" />}
-      {...props}
+      {...handoff(props, {
+        defaults: { "data-slot": "toast-action" },
+        classes: ["mt-2 w-fit"],
+        as: (partProps) => <Button size="sm" variant="outline" {...partProps} />,
+      })}
     />
   );
 }
@@ -385,22 +365,25 @@ function hasVisibleChildren(children: ReactNode): boolean {
   return children != null && children !== false && children !== true && children !== "";
 }
 
-export function ToastClose({ className, label, children, ...props }: ToastCloseProps): ReactElement {
+export function ToastClose({ label, children, ...props }: ToastCloseProps): ReactElement {
   const strings = useLocalizedStrings(overlayCloseStrings);
   const resolvedLabel = label ?? strings.format("close");
   const visible = hasVisibleChildren(children);
-  const closeButton = visible ? (
-    <Button variant="ghost" size="sm" />
-  ) : (
-    <Button variant="ghost" size="icon-sm" aria-label={resolvedLabel} />
-  );
 
   return (
     <ToastPrimitive.Close
-      data-slot="toast-close"
-      className={mergeClassName(className, "absolute top-2 right-2 text-muted-foreground")}
-      render={closeButton}
-      {...props}>
+      {...handoff(props, {
+        defaults: { "data-slot": "toast-close" },
+        classes: ["absolute top-2 right-2 text-muted-foreground"],
+        as: (partProps) =>
+          visible ? (
+            <Button variant="ghost" size="sm" {...partProps} />
+          ) : (
+            // The dictionary name sits after the part props, where the render element put it,
+            // so it still wins over a consumer aria-label (the accessible-name policy owns that).
+            <Button variant="ghost" size="icon-sm" {...partProps} aria-label={resolvedLabel} />
+          ),
+      })}>
       {visible ? children : <X aria-hidden="true" />}
     </ToastPrimitive.Close>
   );

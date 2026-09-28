@@ -8,6 +8,7 @@ import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { Info } from "../../icons/generated/info";
 import { WarningOctagon } from "../../icons/generated/warning-octagon";
+import { handoff } from "../../internal/part-handoff";
 import { Button } from "../button/button";
 import {
   DialogContent,
@@ -29,7 +30,7 @@ import { alertDialogStrings } from "./intl";
  * context, so the self-focus ring and every other Dialog behaviour come with them.
  */
 export function AlertDialogRoot(props: ComponentProps<typeof AlertDialogPrimitive.Root>): ReactElement {
-  return <AlertDialogPrimitive.Root {...props} />;
+  return <AlertDialogPrimitive.Root {...handoff(props)} />;
 }
 
 /**
@@ -149,8 +150,14 @@ export function AlertDialogContent({
       <DialogDescription>{children}</DialogDescription>
       <DialogFooter>
         <AlertDialogPrimitive.Close
-          render={<Button ref={cancelRef} size="sm" variant="ghost" data-dialog-action-type="secondary" />}
-          onClick={onCancel}>
+          {...handoff(
+            { onClick: onCancel },
+            {
+              defaults: { "data-dialog-action-type": "secondary" },
+              as: (partProps) => <Button size="sm" variant="ghost" {...partProps} />,
+            }
+          )}
+          ref={cancelRef}>
           {cancelLabel ?? strings.format("cancel")}
         </AlertDialogPrimitive.Close>
         {isAutomaticallyCloseOnActionEnabled ? (

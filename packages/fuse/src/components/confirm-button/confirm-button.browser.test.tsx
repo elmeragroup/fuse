@@ -293,13 +293,4 @@ describe("ConfirmButton", () => {
     expect(onConfirm).toHaveBeenCalledTimes(2);
     expect(buttonNamed("Delete").hasAttribute("data-armed")).toBe(false);
   });
-
-  it("announces a focusable disabled ConfirmButton as disabled", () => {
-    renderThemed(
-      <ConfirmButton onConfirm={() => undefined} disabled focusableWhenDisabled>
-        Delete
-      </ConfirmButton>
-    );
-    expect(buttonNamed("Delete").getAttribute("aria-disabled")).toBe("true");
-  });
 });

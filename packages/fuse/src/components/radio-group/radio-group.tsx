@@ -8,6 +8,7 @@ import { RadioGroup as RadioGroupPrimitive } from "@base-ui/react/radio-group";
 import type { VariantProps } from "tailwind-variants";
 
 import { SpinnerGap } from "../../icons/generated/spinner-gap";
+import { handoff } from "../../internal/part-handoff";
 import { cn } from "../../styles/cn";
 import { dataStateFaceClass } from "../../styles/state-face";
 import { selfFocusRingClass } from "../../styles/utils";
@@ -23,15 +24,12 @@ import { radioIconButtonVariants } from "./radio-group-variants";
  * usage composes `Radio` or `RadioItem`. A disabled item dims to 50% on its own, also
  * outside a label.
  */
-export function RadioGroupItem({
-  className,
-  ...props
-}: ComponentProps<typeof RadioPrimitive.Root>): ReactElement {
+export function RadioGroupItem(props: ComponentProps<typeof RadioPrimitive.Root>): ReactElement {
   return (
     <RadioPrimitive.Root
-      data-slot="radio-group-item"
-      className={(state) =>
-        cn(
+      {...handoff(props, {
+        defaults: { "data-slot": "radio-group-item" },
+        classes: [
           // The root is a <span>, which never matches `:disabled`, so the state face keys off
           // Base UI's `data-disabled` and `data-invalid` attributes, plus a consumer's
           // `aria-invalid`. A checked invalid radio keeps its primary border beside the ring.
@@ -40,10 +38,8 @@ export function RadioGroupItem({
           selfFocusRingClass,
           dataStateFaceClass,
           "aria-invalid:aria-checked:border-primary data-invalid:aria-checked:border-primary",
-          className instanceof Function ? className(state) : className
-        )
-      }
-      {...props}>
+        ],
+      })}>
       <RadioPrimitive.Indicator
         data-slot="radio-group-indicator"
         className="flex size-4 items-center justify-center">
@@ -146,7 +142,7 @@ export function RadioGroup({
         id={id}
         value={value}
         defaultValue={defaultValue}
-        onValueChange={onChange ? (next) => onChange(String(next)) : undefined}
+        onValueChange={(next) => onChange?.(String(next))}
         disabled={isDisabled}
         readOnly={isReadOnly}
         required={isRequired}
@@ -235,20 +231,20 @@ export type RadioIconButtonProps = Omit<
  * Client — base-ui Radio owns checked state.
  */
 export function RadioIconButton({
-  value,
   isDisabled,
   size = "icon",
-  className,
   children,
   ...props
 }: RadioIconButtonProps): ReactElement {
   return (
     <RadioPrimitive.Root
-      data-slot="radio-icon-button"
-      value={value}
-      disabled={isDisabled}
-      className={cn(radioIconButtonVariants({ size }), selfFocusRingClass, className)}
-      {...props}>
+      {...handoff(
+        { ...props, disabled: isDisabled },
+        {
+          defaults: { "data-slot": "radio-icon-button" },
+          classes: [radioIconButtonVariants({ size }), selfFocusRingClass],
+        }
+      )}>
       {children}
     </RadioPrimitive.Root>
   );

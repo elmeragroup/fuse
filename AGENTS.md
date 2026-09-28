@@ -10,7 +10,9 @@ Preserve the React peer lower bound when choosing runtime APIs.
 Use Base UI namespace parts and `render` composition through `useRender` and
 `mergeProps`. Keep primitive prop names and the existing labeled-composite API.
 Evaluate inherited `className` callbacks before merging classes.
-Guard conditional aria spreads so `undefined` cannot erase automatic wiring.
+Hand consumer props to Base UI parts only through `internal/part-handoff`.
+Elsewhere never let a forwarded `undefined` overwrite a library default or
+automatic wiring.
 
 ## Styling and accessibility
 

@@ -7,7 +7,7 @@ import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
 import { ToggleGroup as ToggleGroupPrimitive } from "@base-ui/react/toggle-group";
 import type { VariantProps } from "tailwind-variants";
 
-import { cn } from "../../styles/cn";
+import { handoff } from "../../internal/part-handoff";
 import { toggleVariants } from "../toggle/toggle-variants";
 import { segmentedItemInset } from "./toggle-group-variants";
 
@@ -46,7 +46,6 @@ export type ToggleGroupItemProps = Omit<ComponentProps<typeof TogglePrimitive>, 
  * module-private context; Item borrows public `toggleVariants`.
  */
 export function ToggleGroupRoot({
-  className,
   variant,
   size,
   spacing = 2,
@@ -62,18 +61,20 @@ export function ToggleGroupRoot({
 
   return (
     <ToggleGroupPrimitive
-      data-slot="toggle-group"
-      data-variant={variant}
-      data-size={size}
-      data-spacing={spacing}
-      data-orientation={orientation}
-      style={{ "--gap": spacing, ...style }}
-      className={cn(
-        "group/toggle-group data-[spacing=0]:data-[variant=outline]:shadow-xs flex w-fit flex-row items-center gap-[--spacing(var(--gap))] rounded-md data-vertical:flex-col data-vertical:items-stretch",
-        className
-      )}
+      {...handoff(props, {
+        defaults: {
+          "data-slot": "toggle-group",
+          "data-variant": variant,
+          "data-size": size,
+          "data-spacing": spacing,
+          "data-orientation": orientation,
+        },
+        classes: [
+          "group/toggle-group data-[spacing=0]:data-[variant=outline]:shadow-xs flex w-fit flex-row items-center gap-[--spacing(var(--gap))] rounded-md data-vertical:flex-col data-vertical:items-stretch",
+        ],
+      })}
       orientation={orientation}
-      {...props}>
+      style={{ "--gap": spacing, ...style }}>
       <ToggleGroupContext.Provider value={contextValue}>{children}</ToggleGroupContext.Provider>
     </ToggleGroupPrimitive>
   );
@@ -83,33 +84,29 @@ export function ToggleGroupRoot({
  * Group-aware toggle. Resolves `variant` / `size` as `itemProp ?? contextValue`
  * so an explicit item-level axis wins.
  */
-export function ToggleGroupItem({
-  className,
-  children,
-  variant,
-  size,
-  ...props
-}: ToggleGroupItemProps): ReactElement {
+export function ToggleGroupItem({ children, variant, size, ...props }: ToggleGroupItemProps): ReactElement {
   const context = useContext(ToggleGroupContext);
   const resolvedVariant = variant ?? context.variant;
   const resolvedSize = size ?? context.size;
 
   return (
     <TogglePrimitive
-      data-slot="toggle-group-item"
-      data-variant={resolvedVariant ?? "default"}
-      data-size={resolvedSize ?? "default"}
-      data-spacing={context.spacing}
-      className={cn(
-        "shrink-0 group-data-[spacing=0]/toggle-group:rounded-none group-data-[spacing=0]/toggle-group:shadow-none focus:z-10 focus-visible:z-10 group-data-horizontal/toggle-group:data-[spacing=0]:first:rounded-l-md group-data-vertical/toggle-group:data-[spacing=0]:first:rounded-t-md group-data-horizontal/toggle-group:data-[spacing=0]:last:rounded-r-md group-data-vertical/toggle-group:data-[spacing=0]:last:rounded-b-md group-data-horizontal/toggle-group:data-[spacing=0]:data-[variant=outline]:border-l-0 group-data-vertical/toggle-group:data-[spacing=0]:data-[variant=outline]:border-t-0 group-data-horizontal/toggle-group:data-[spacing=0]:data-[variant=outline]:first:border-l group-data-vertical/toggle-group:data-[spacing=0]:data-[variant=outline]:first:border-t group-data-[spacing=0]/toggle-group:enabled-active:scale-100",
-        toggleVariants({
-          variant: resolvedVariant,
-          size: resolvedSize,
-        }),
-        context.spacing === 0 && segmentedItemInset({ size: resolvedSize }),
-        className
-      )}
-      {...props}>
+      {...handoff(props, {
+        defaults: {
+          "data-slot": "toggle-group-item",
+          "data-variant": resolvedVariant ?? "default",
+          "data-size": resolvedSize ?? "default",
+          "data-spacing": context.spacing,
+        },
+        classes: [
+          "shrink-0 group-data-[spacing=0]/toggle-group:rounded-none group-data-[spacing=0]/toggle-group:shadow-none focus:z-10 focus-visible:z-10 group-data-horizontal/toggle-group:data-[spacing=0]:first:rounded-l-md group-data-vertical/toggle-group:data-[spacing=0]:first:rounded-t-md group-data-horizontal/toggle-group:data-[spacing=0]:last:rounded-r-md group-data-vertical/toggle-group:data-[spacing=0]:last:rounded-b-md group-data-horizontal/toggle-group:data-[spacing=0]:data-[variant=outline]:border-l-0 group-data-vertical/toggle-group:data-[spacing=0]:data-[variant=outline]:border-t-0 group-data-horizontal/toggle-group:data-[spacing=0]:data-[variant=outline]:first:border-l group-data-vertical/toggle-group:data-[spacing=0]:data-[variant=outline]:first:border-t group-data-[spacing=0]/toggle-group:enabled-active:scale-100",
+          toggleVariants({
+            variant: resolvedVariant,
+            size: resolvedSize,
+          }),
+          context.spacing === 0 && segmentedItemInset({ size: resolvedSize }),
+        ],
+      })}>
       {children}
     </TogglePrimitive>
   );

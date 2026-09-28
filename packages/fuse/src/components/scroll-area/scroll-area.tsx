@@ -5,8 +5,8 @@ import type { ComponentProps, ReactElement } from "react";
 import { ScrollArea as ScrollAreaPrimitive } from "@base-ui/react/scroll-area";
 import type { VariantProps } from "tailwind-variants";
 
+import { handoff } from "../../internal/part-handoff";
 import { cn } from "../../styles/cn";
-import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
 import { scrollbarTypeVariants } from "./scroll-area-variants";
 
@@ -39,7 +39,6 @@ const SCROLLBAR_KEEP_MOUNTED = {
 } as const satisfies Record<ScrollAreaType, boolean>;
 
 export function ScrollAreaRoot({
-  className,
   children,
   orientation = "vertical",
   type = "hover",
@@ -47,9 +46,10 @@ export function ScrollAreaRoot({
 }: ScrollAreaRootProps): ReactElement {
   return (
     <ScrollAreaPrimitive.Root
-      data-slot="scroll-area"
-      className={mergeClassName(className, "relative overflow-hidden")}
-      {...props}>
+      {...handoff(props, {
+        defaults: { "data-slot": "scroll-area" },
+        classes: ["relative overflow-hidden"],
+      })}>
       <ScrollAreaPrimitive.Viewport
         data-slot="scroll-area-viewport"
         className={cn("size-full rounded-[inherit] transition-[color,box-shadow]", selfFocusRingClass)}>
@@ -62,22 +62,21 @@ export function ScrollAreaRoot({
 }
 
 export function ScrollAreaBar({
-  className,
   orientation = "vertical",
   type = "hover",
   ...props
 }: ScrollAreaBarProps): ReactElement {
   return (
     <ScrollAreaPrimitive.Scrollbar
-      data-slot="scroll-area-scrollbar"
-      className={mergeClassName(
-        className,
-        "flex touch-none p-px select-none",
-        orientation === "vertical" && "w-2.5 border-l border-l-transparent",
-        orientation === "horizontal" && "h-2.5 flex-col border-t border-t-transparent",
-        scrollbarTypeVariants({ type })
-      )}
-      {...props}
+      {...handoff(props, {
+        defaults: { "data-slot": "scroll-area-scrollbar" },
+        classes: [
+          "flex touch-none p-px select-none",
+          orientation === "vertical" && "w-2.5 border-l border-l-transparent",
+          orientation === "horizontal" && "h-2.5 flex-col border-t border-t-transparent",
+          scrollbarTypeVariants({ type }),
+        ],
+      })}
       orientation={orientation}
       keepMounted={SCROLLBAR_KEEP_MOUNTED[type]}>
       <ScrollAreaPrimitive.Thumb

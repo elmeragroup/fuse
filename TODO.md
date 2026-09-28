@@ -45,6 +45,17 @@
   checks over translucent fills, such as the Alert action's, throw `InvalidColor` until it
   does. Also correct the notation list in `packages/color/src/css-color.ts`, which names only
   `rgb()`, `oklch()` and `lab()` as Chromium's computed serializations.
+- Three icon sub-controls keep their dictionary name over a surrounding Field label with an
+  interim `aria-labelledby=""` (an empty IDREF list overrides Field's id and names nothing):
+  the Combobox caret and the phone country trigger and search input. `handoff`
+  (`internal/part-handoff.ts`) keeps a defined value, so this survives where the old
+  forwarded `undefined` no longer does. Replace them with the accessible-name policy's detach.
+  Toast.Close still places its dictionary name after the consumer's props, so a consumer
+  `aria-label` loses to it; the same policy owns that order.
+- Field.Control treats a controlled TextareaField as uncontrolled: the value props go on the
+  textarea, so Field's dirty and validity state follow the DOM rather than `value`.
+- Let Fuse `Textarea` render `FieldPrimitive.Control` the way `Input` renders Base UI `Input`,
+  so TextareaField spreads raw onto it and drops its `as` target and `FieldControlProps` cast.
 - No select demo shows `Select.Content alignItemWithTrigger`; only `select.browser.test.tsx`
   exercises it. Add a demo beside the page and list it in the component inventory.
 - A server component that renders `SelectionItem.Shell` with direct `SelectionItem.SubSection`

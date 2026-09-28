@@ -319,7 +319,7 @@ describe("Collapsible settle override (collapsible/page.mdx)", () => {
     ),
     readOne(
       "packages/fuse/src/components/collapsible/collapsible.tsx",
-      /mergeClassName\(className, panelHeightTransition, "([^"]+)"\)/
+      /classes: \[panelHeightTransition, "([^"]+)"\]/
     ),
   ].join(" ");
 

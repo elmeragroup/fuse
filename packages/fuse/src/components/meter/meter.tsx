@@ -7,6 +7,7 @@ import { Meter as MeterPrimitive } from "@base-ui/react/meter";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { CheckCircle } from "../../icons/generated/check-circle";
 import { Warning } from "../../icons/generated/warning";
+import { handoff } from "../../internal/part-handoff";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import { getMeterLevel, meterPercentage } from "./get-meter-level";
@@ -87,7 +88,6 @@ export function Meter({
   valueLabel,
   warningLabel,
   successLabel,
-  className,
   ...props
 }: MeterProps): ReactElement {
   const { locale } = useLocale();
@@ -104,13 +104,11 @@ export function Meter({
 
   return (
     <MeterPrimitive.Root
-      data-slot="meter"
+      {...handoff(props, { defaults: { "data-slot": "meter" }, classes: [root()] })}
       value={value}
       min={min}
       max={max}
-      locale={locale}
-      className={cn(root(), className)}
-      {...props}>
+      locale={locale}>
       <div className={labelContainer()}>
         <MeterPrimitive.Label data-slot="meter-label" className="text-sm font-medium w-fit">
           {label}

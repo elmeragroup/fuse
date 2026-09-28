@@ -6,44 +6,39 @@ import { Field as FieldPrimitive } from "@base-ui/react/field";
 import { Fieldset as FieldsetPrimitive } from "@base-ui/react/fieldset";
 import type { VariantProps } from "tailwind-variants";
 
+import { handoff } from "../../internal/part-handoff";
 import { cn } from "../../styles/cn";
-import { mergeClassName } from "../../styles/merge-class-name";
 import { Separator } from "../separator/separator";
 import { fieldVariants } from "./field-variants";
 
 export function FieldRoot({
-  className,
   orientation = "vertical",
   ...props
 }: ComponentProps<typeof FieldPrimitive.Root> & VariantProps<typeof fieldVariants>): ReactElement {
   return (
     <FieldPrimitive.Root
-      data-slot="field"
-      data-orientation={orientation}
-      className={mergeClassName(className, fieldVariants({ orientation }).root())}
-      {...props}
+      {...handoff(props, {
+        defaults: { "data-slot": "field", "data-orientation": orientation },
+        classes: [fieldVariants({ orientation }).root()],
+      })}
     />
   );
 }
 
-export function FieldSet({
-  className,
-  ...props
-}: ComponentProps<typeof FieldsetPrimitive.Root>): ReactElement {
+export function FieldSet(props: ComponentProps<typeof FieldsetPrimitive.Root>): ReactElement {
   return (
     <FieldsetPrimitive.Root
-      data-slot="field-set"
-      className={mergeClassName(
-        className,
-        "flex flex-col gap-6 has-[>[data-slot=checkbox-group]]:gap-3 has-[>[data-slot=radio-group]]:gap-3"
-      )}
-      {...props}
+      {...handoff(props, {
+        defaults: { "data-slot": "field-set" },
+        classes: [
+          "flex flex-col gap-6 has-[>[data-slot=checkbox-group]]:gap-3 has-[>[data-slot=radio-group]]:gap-3",
+        ],
+      })}
     />
   );
 }
 
 export function FieldLegend({
-  className,
   variant = "legend",
   ...props
 }: ComponentProps<typeof FieldsetPrimitive.Legend> & {
@@ -55,13 +50,12 @@ export function FieldLegend({
 }): ReactElement {
   return (
     <FieldsetPrimitive.Legend
-      data-slot="field-legend"
-      data-variant={variant}
-      className={mergeClassName(
-        className,
-        "font-medium data-[variant=label]:text-sm data-[variant=legend]:text-base mb-3 text-balance"
-      )}
-      {...props}
+      {...handoff(props, {
+        defaults: { "data-slot": "field-legend", "data-variant": variant },
+        classes: [
+          "font-medium data-[variant=label]:text-sm data-[variant=legend]:text-base mb-3 text-balance",
+        ],
+      })}
     />
   );
 }
@@ -96,22 +90,18 @@ const fieldHeadingClassName = fieldVariants().heading();
  * cursor. The heading weight is the same as any other label; a consumer `font-*` class wins through
  * the merge.
  */
-export function FieldLabel({
-  className,
-  ...props
-}: ComponentProps<typeof FieldPrimitive.Label>): ReactElement {
+export function FieldLabel(props: ComponentProps<typeof FieldPrimitive.Label>): ReactElement {
   return (
     <FieldPrimitive.Label
-      data-slot="field-label"
-      data-field-heading=""
-      className={mergeClassName(
-        className,
-        "group/field-label peer/field-label leading-snug has-data-checked:border-primary/30 has-[>[data-slot=field]]:rounded-md has-[>[data-slot=field]]:border *:data-[slot=field]:p-3",
-        "has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col",
-        "has-[>[data-slot=checkbox]]:items-center has-[>[data-slot=checkbox]]:cursor-pointer",
-        fieldHeadingClassName
-      )}
-      {...props}
+      {...handoff(props, {
+        defaults: { "data-slot": "field-label", "data-field-heading": "" },
+        classes: [
+          "group/field-label peer/field-label leading-snug has-data-checked:border-primary/30 has-[>[data-slot=field]]:rounded-md has-[>[data-slot=field]]:border *:data-[slot=field]:p-3",
+          "has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col",
+          "has-[>[data-slot=checkbox]]:items-center has-[>[data-slot=checkbox]]:cursor-pointer",
+          fieldHeadingClassName,
+        ],
+      })}
     />
   );
 }
@@ -128,27 +118,24 @@ export function FieldTitle({ className, ...props }: ComponentProps<"div">): Reac
 }
 
 export function FieldControl(props: ComponentProps<typeof FieldPrimitive.Control>): ReactElement {
-  return <FieldPrimitive.Control data-slot="field-control" {...props} />;
+  return <FieldPrimitive.Control {...handoff(props, { defaults: { "data-slot": "field-control" } })} />;
 }
 
-export function FieldDescription({
-  className,
-  ...props
-}: ComponentProps<typeof FieldPrimitive.Description>): ReactElement {
+export function FieldDescription(props: ComponentProps<typeof FieldPrimitive.Description>): ReactElement {
   return (
     <FieldPrimitive.Description
-      data-slot="field-description"
-      className={mergeClassName(
-        className,
-        "text-sm leading-normal font-normal text-left text-pretty text-muted-foreground group-has-data-horizontal/field:text-balance last:mt-0 [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary [[data-variant=legend]+&]:-mt-1.5"
-      )}
-      {...props}
+      {...handoff(props, {
+        defaults: { "data-slot": "field-description" },
+        classes: [
+          "text-sm leading-normal font-normal text-left text-pretty text-muted-foreground group-has-data-horizontal/field:text-balance last:mt-0 [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary [[data-variant=legend]+&]:-mt-1.5",
+        ],
+      })}
     />
   );
 }
 
 export function FieldItem(props: ComponentProps<typeof FieldPrimitive.Item>): ReactElement {
-  return <FieldPrimitive.Item data-slot="field-item" {...props} />;
+  return <FieldPrimitive.Item {...handoff(props, { defaults: { "data-slot": "field-item" } })} />;
 }
 
 export function FieldSeparator({
@@ -181,7 +168,6 @@ export function FieldSeparator({
 }
 
 export function FieldError({
-  className,
   children,
   ...props
 }: ComponentProps<typeof FieldPrimitive.Error>): ReactElement | null {
@@ -190,11 +176,10 @@ export function FieldError({
   }
   return (
     <FieldPrimitive.Error
-      match
-      role="alert"
-      data-slot="field-error"
-      className={mergeClassName(className, "text-sm font-normal text-error")}
-      {...props}>
+      {...handoff(props, {
+        defaults: { match: true, role: "alert", "data-slot": "field-error" },
+        classes: ["text-sm font-normal text-error"],
+      })}>
       {children}
     </FieldPrimitive.Error>
   );

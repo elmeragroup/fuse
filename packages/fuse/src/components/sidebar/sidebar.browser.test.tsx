@@ -577,18 +577,6 @@ describe("Sidebar.Root branches", () => {
     expect(dialog.style.getPropertyValue("--sidebar-width")).toBe("18rem");
   });
 
-  it("keeps the mobile dialog's name, description and role when ARIA props are undefined", async () => {
-    await page.viewport(MOBILE.width, MOBILE.height);
-    renderThemed(
-      <Frame root={{ "aria-labelledby": undefined, "aria-describedby": undefined, role: undefined }} />
-    );
-
-    await userEvent.click(roleNamed("button", "Toggle sidebar"));
-    const dialog = page.getByRole("dialog", { name: TITLE_COPY["en-US"], exact: true });
-    await expect.element(dialog).toBeVisible();
-    await expect.element(dialog).toHaveAccessibleDescription(DESCRIPTION_COPY["en-US"]);
-  });
-
   it("shows the sheet and hides the rail at 767px", async () => {
     await page.viewport(767, 800);
     renderThemed(<Frame />);

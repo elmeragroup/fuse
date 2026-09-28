@@ -5,10 +5,18 @@ import type { ChangeEvent, ComponentProps, ReactElement, ReactNode } from "react
 
 import { useFormReset } from "../../hooks/use-form-reset";
 import { useMergedRefs } from "../../hooks/use-merged-refs";
-import { definedProps } from "../../internal/defined-props";
+import { handoff } from "../../internal/part-handoff";
 import { FieldControl } from "../field/field";
 import { FieldFrame } from "../field/field-frame";
 import { Textarea } from "../textarea/textarea";
+
+type FieldControlProps = ComponentProps<typeof FieldControl>;
+
+/** The textarea props TextareaField hands to Field.Control for its render target. */
+type TextareaControlProps = Omit<
+  ComponentProps<typeof Textarea>,
+  "value" | "defaultValue" | "disabled" | "ref"
+>;
 
 export type TextareaFieldProps = {
   /** Visible label, rendered as `Field.Label`. */
@@ -83,6 +91,29 @@ export function TextareaField({
     onChange?.(next);
   }
 
+  // Field.Root gets `isDisabled` through FieldFrame, and Field.Control computes the
+  // textarea's `disabled` from it (a disabled Fieldset included), so nothing sets it here.
+  const controlProps = handoff<TextareaControlProps>(
+    { ...props, maxLength },
+    {
+      // TextareaField's value-not-event adapter. Field.Control chains any onChange in its
+      // props with its own change tracking.
+      defaults: { onChange: handleChange },
+      classes: [textareaClassName],
+      // Field.Control tracks a `value` it is given for dirty and validity state. It isn't
+      // given one yet (deferred in the repo root's open-work list), so the value props go
+      // on the textarea, after the props Field.Control hands it, and Field.Control treats
+      // the textarea as uncontrolled.
+      as: (partProps) => (
+        <Textarea
+          {...partProps}
+          value={isControlled ? value : undefined}
+          defaultValue={isControlled ? undefined : defaultValue}
+        />
+      ),
+    }
+  );
+
   return (
     <FieldFrame
       invalid={isInvalid}
@@ -100,19 +131,11 @@ export function TextareaField({
       description={description}
       errorMessage={errorMessage}>
       <FieldControl
-        render={
-          <Textarea
-            {...definedProps(props)}
-            ref={mergedRef}
-            className={textareaClassName}
-            value={isControlled ? value : undefined}
-            defaultValue={isControlled ? undefined : defaultValue}
-            maxLength={maxLength}
-            required={isRequired}
-            disabled={isDisabled}
-            onChange={handleChange}
-          />
-        }
+        // SAFETY: handoff checked these props against the textarea they reach through `as`;
+        // Field.Control forwards them unchanged, but Base UI types its handlers for <input>.
+        {...(controlProps as FieldControlProps)}
+        required={isRequired}
+        ref={mergedRef}
       />
     </FieldFrame>
   );

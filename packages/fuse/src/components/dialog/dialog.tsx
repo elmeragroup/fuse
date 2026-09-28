@@ -7,8 +7,8 @@ import { tv } from "tailwind-variants";
 import type { VariantProps } from "tailwind-variants";
 
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
+import { handoff } from "../../internal/part-handoff";
 import { cn } from "../../styles/cn";
-import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
 import { overlayCloseStrings } from "../overlay/intl";
 import {
@@ -49,53 +49,40 @@ const dialogContentVariants = tv({
 });
 
 export function DialogRoot(props: ComponentProps<typeof DialogPrimitive.Root>): ReactElement {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />;
+  return <DialogPrimitive.Root {...handoff(props, { defaults: { "data-slot": "dialog" } })} />;
 }
 
-export function DialogTrigger({
-  className,
-  ...props
-}: ComponentProps<typeof DialogPrimitive.Trigger>): ReactElement {
+export function DialogTrigger(props: ComponentProps<typeof DialogPrimitive.Trigger>): ReactElement {
   return (
     <DialogPrimitive.Trigger
-      data-slot="dialog-trigger"
-      className={mergeClassName(className, selfFocusRingClass)}
-      {...props}
+      {...handoff(props, { defaults: { "data-slot": "dialog-trigger" }, classes: [selfFocusRingClass] })}
     />
   );
 }
 
 export function DialogPortal(props: ComponentProps<typeof DialogPrimitive.Portal>): ReactElement {
-  return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />;
+  return <DialogPrimitive.Portal {...handoff(props, { defaults: { "data-slot": "dialog-portal" } })} />;
 }
 
-export function DialogClose({
-  className,
-  ...props
-}: ComponentProps<typeof DialogPrimitive.Close>): ReactElement {
+export function DialogClose(props: ComponentProps<typeof DialogPrimitive.Close>): ReactElement {
   return (
     <DialogPrimitive.Close
-      data-slot="dialog-close"
-      className={mergeClassName(className, selfFocusRingClass)}
-      {...props}
+      {...handoff(props, { defaults: { "data-slot": "dialog-close" }, classes: [selfFocusRingClass] })}
     />
   );
 }
 
-export function DialogOverlay({
-  className,
-  ...props
-}: ComponentProps<typeof DialogPrimitive.Backdrop>): ReactElement {
+export function DialogOverlay(props: ComponentProps<typeof DialogPrimitive.Backdrop>): ReactElement {
   return (
     <DialogPrimitive.Backdrop
-      data-slot="dialog-overlay"
-      className={mergeClassName(
-        className,
-        overlayScrimClass,
-        "fixed inset-0 isolate duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
-        overlayLayer
-      )}
-      {...props}
+      {...handoff(props, {
+        defaults: { "data-slot": "dialog-overlay" },
+        classes: [
+          overlayScrimClass,
+          "fixed inset-0 isolate duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+          overlayLayer,
+        ],
+      })}
     />
   );
 }
@@ -116,7 +103,6 @@ export type DialogContentProps = ComponentProps<typeof DialogPrimitive.Popup> &
   };
 
 export function DialogContent({
-  className,
   children,
   showCloseButton = true,
   size,
@@ -128,14 +114,21 @@ export function DialogContent({
     <OverlayPortal portal={DialogPortal} container={container}>
       <DialogOverlay />
       <DialogPrimitive.Popup
-        data-slot="dialog-content"
-        className={mergeClassName(className, dialogContentVariants({ size }))}
-        {...props}>
+        {...handoff(props, {
+          defaults: { "data-slot": "dialog-content" },
+          classes: [dialogContentVariants({ size })],
+        })}>
         {children}
         {showCloseButton ? (
           <DialogPrimitive.Close
-            data-slot="dialog-close"
-            render={<OverlayCloseButton label={closeLabel} className={overlayCornerCloseClass} />}
+            {...handoff(
+              {},
+              {
+                defaults: { "data-slot": "dialog-close" },
+                classes: [overlayCornerCloseClass],
+                as: (partProps) => <OverlayCloseButton label={closeLabel} {...partProps} />,
+              }
+            )}
           />
         ) : null}
       </DialogPrimitive.Popup>
@@ -170,7 +163,11 @@ export function DialogFooter({
   return (
     <div data-slot="dialog-footer" className={cn(overlayFooterClass, className)} {...props}>
       {children}
-      {showCloseButton ? <DialogPrimitive.Close render={<OverlayFooterCloseButton label={label} />} /> : null}
+      {showCloseButton ? (
+        <DialogPrimitive.Close
+          {...handoff({}, { as: (partProps) => <OverlayFooterCloseButton label={label} {...partProps} /> })}
+        />
+      ) : null}
     </div>
   );
 }
@@ -185,35 +182,31 @@ export type DialogTitleProps = ComponentProps<typeof DialogPrimitive.Title> & {
   isFocusable?: boolean;
 };
 
-export function DialogTitle({
-  className,
-  isFocusable = false,
-  tabIndex,
-  ...props
-}: DialogTitleProps): ReactElement {
+export function DialogTitle({ isFocusable = false, tabIndex, ...props }: DialogTitleProps): ReactElement {
   return (
     <DialogPrimitive.Title
-      data-slot="dialog-title"
-      className={mergeClassName(className, overlayTitleClass, isFocusable && selfFocusRingClass)}
-      {...props}
-      // isFocusable owns the tab stop when set; otherwise the caller's tabIndex stands.
-      tabIndex={isFocusable ? -1 : tabIndex}
+      {...handoff(
+        // isFocusable owns the tab stop when set; otherwise the caller's tabIndex stands. It
+        // can be undefined, so it rides the consumer argument by handoff's channel rule.
+        { ...props, tabIndex: isFocusable ? -1 : tabIndex },
+        {
+          defaults: { "data-slot": "dialog-title" },
+          classes: [overlayTitleClass, isFocusable && selfFocusRingClass],
+        }
+      )}
     />
   );
 }
 
-export function DialogDescription({
-  className,
-  ...props
-}: ComponentProps<typeof DialogPrimitive.Description>): ReactElement {
+export function DialogDescription(props: ComponentProps<typeof DialogPrimitive.Description>): ReactElement {
   return (
     <DialogPrimitive.Description
-      data-slot="dialog-description"
-      className={mergeClassName(
-        className,
-        "text-sm text-pretty text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground"
-      )}
-      {...props}
+      {...handoff(props, {
+        defaults: { "data-slot": "dialog-description" },
+        classes: [
+          "text-sm text-pretty text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
+        ],
+      })}
     />
   );
 }

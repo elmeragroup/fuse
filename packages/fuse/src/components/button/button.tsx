@@ -1,14 +1,13 @@
 "use client";
 
-import type { ComponentProps, ReactElement } from "react";
+import type { ComponentProps, MouseEvent, ReactElement } from "react";
 
 import { Button as ButtonPrimitive } from "@base-ui/react/button";
 import type { VariantProps } from "tailwind-variants";
 
 import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { usePredictedEvents } from "../../hooks/use-predicted-events";
-import { definedProps } from "../../internal/defined-props";
-import { cn } from "../../styles/cn";
+import { handoff } from "../../internal/part-handoff";
 import { buttonVariants } from "./button-variants";
 
 type ButtonSize = NonNullable<VariantProps<typeof buttonVariants>["size"]>;
@@ -45,6 +44,11 @@ type ButtonSharedProps = ButtonPrimitiveProps &
     onIntent?: () => void;
   };
 
+/** Keeps a visually disabled button from taking focus on press; it still activates. */
+function preventPressFocus(event: MouseEvent<HTMLElement>): void {
+  event.preventDefault();
+}
+
 export type ButtonProps =
   | (ButtonSharedProps & {
       /** Recipe size axis. The `icon*` sizes are square and additionally require an `aria-label`. */
@@ -57,7 +61,6 @@ export type ButtonProps =
     });
 
 export function Button({
-  className,
   variant,
   size,
   isVisuallyDisabled = false,
@@ -65,9 +68,7 @@ export function Button({
   isPending = false,
   predictionZoneSize = 30,
   onIntent,
-  onMouseDown,
   ref,
-  "aria-disabled": ariaDisabled,
   ...props
 }: ButtonProps): ReactElement {
   const { ref: predictedRef } = usePredictedEvents({
@@ -79,24 +80,20 @@ export function Button({
 
   return (
     <ButtonPrimitive
-      data-slot="button"
-      data-pending={isPending || undefined}
+      {...handoff(props, {
+        defaults: {
+          "data-slot": "button",
+          "data-pending": isPending || undefined,
+          // Announced as unavailable without being disabled: the button still activates so
+          // the flow that explains itself can run. Undefined unless visually disabled, so
+          // Base UI's own aria-disabled (focusableWhenDisabled, non-native disabled) survives;
+          // a consumer value, false included, wins.
+          "aria-disabled": isVisuallyDisabled || undefined,
+          onMouseDown: isVisuallyDisabled ? preventPressFocus : undefined,
+        },
+        classes: [buttonVariants({ variant, size })],
+      })}
       disabled={disabled || isPending}
-      // Announced as unavailable without being disabled: the button still activates so
-      // the flow that explains itself can run. An explicit consumer value wins; an absent
-      // or forwarded-undefined one is omitted, not undefined, so Base UI's own
-      // aria-disabled (focusableWhenDisabled, non-native disabled) survives the merge.
-      {...definedProps({ "aria-disabled": ariaDisabled ?? (isVisuallyDisabled || undefined) })}
-      className={cn(buttonVariants({ variant, size }), className)}
-      onMouseDown={(event) => {
-        if (isVisuallyDisabled) {
-          event.preventDefault();
-        }
-        onMouseDown?.(event);
-      }}
-      // Raw on purpose: wrappers pass undefined to erase wiring, like Combobox's caret
-      // dropping Field's aria-labelledby.
-      {...props}
       ref={mergedRef}
     />
   );

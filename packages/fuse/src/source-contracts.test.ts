@@ -5,6 +5,7 @@ import { parseSync } from "oxc-parser";
 import { describe, expect, it } from "vitest";
 
 import { walkImportedSourceFiles } from "../scripts/entries";
+import { handoffOffenders } from "../test/handoff-offenders";
 import { overlayLayer } from "./components/overlay/overlay-classes";
 
 /**
@@ -356,6 +357,77 @@ describe("combobox", () => {
     const source = readSrc("components/combobox/combobox.tsx");
     expect(source).toContain('from "@base-ui/react"');
     expect(source).not.toContain('from "@base-ui/react/combobox"');
+  });
+});
+
+const HANDOFF_OFFENDERS = [...SOURCE_TREE.values()]
+  .filter((record) => record.relative.endsWith(".tsx"))
+  .map(handoffOffenders);
+
+describe("Base UI parts receive consumer props only through handoff", () => {
+  // Why: a file the parser cannot read yields no spreads or attributes, so every other
+  // list below would pass it unchecked.
+  it("parses every component file the handoff checks read", () => {
+    expect(HANDOFF_OFFENDERS.flatMap((offenders) => offenders.parseErrors)).toEqual([]);
+  });
+
+  // Why not a lint rule: oxlint has no rule that ties a spread to the import its JSX tag
+  // came from, and no existing gate sees spread order. Base UI's merge copies `undefined`
+  // and a library prop on a render element beats the consumer's, so a raw spread on a part
+  // can erase Field wiring or bury a consumer prop; `internal/part-handoff.ts` owns that
+  // handoff, and its browser suite pins the behaviour.
+  it("spreads nothing but a handoff(…) result onto a Base UI part", () => {
+    expect(HANDOFF_OFFENDERS.flatMap((offenders) => offenders.rawSpreads)).toEqual([]);
+  });
+
+  // Why: a render element's own props beat the part's in Base UI's merge, so consumer props
+  // spread there sit under library props and `undefined` erases wiring. That was
+  // TextareaField's shape before handoff; library render targets go through `as`.
+  it("spreads nothing into a JSX element given as a Base UI part's render", () => {
+    expect(HANDOFF_OFFENDERS.flatMap((offenders) => offenders.renderElementSpreads)).toEqual([]);
+  });
+
+  // Why: an attribute after the parameter spread in an `as` target beats both the consumer
+  // and the part's Root/Field state, the burying handoff exists to prevent. Presentational
+  // props go before the spread. The list pins today's exceptions.
+  it("writes no attribute after the part props inside an as target, outside the pinned sites", () => {
+    expect(HANDOFF_OFFENDERS.flatMap((offenders) => offenders.afterTargetSpread)).toEqual([
+      // The Combobox clear's dictionary name wins over a consumer aria-label. PR2's
+      // accessible-name policy empties this entry.
+      "components/combobox/combobox.tsx <InputGroupButton> aria-label",
+      // TextareaField's value props stay on the textarea until Field.Control is given them.
+      // PR2 leaves these two entries; the deferred controlled-TextareaField item in the
+      // repo root's open-work list empties them.
+      "components/textarea-field/textarea-field.tsx <Textarea> value",
+      "components/textarea-field/textarea-field.tsx <Textarea> defaultValue",
+      // Toast.Close's dictionary name wins over a consumer aria-label. PR2's
+      // accessible-name policy empties this entry.
+      "components/toast/toast.tsx <Button> aria-label",
+    ]);
+  });
+
+  // Why: the after-target check reads only an inline spec object, without spreads, whose
+  // `as` is an arrow with a named parameter. Any other form (a spec held in a variable, a
+  // spread, a method, a destructured parameter) would skip that check silently, so it
+  // fails here instead.
+  it("writes every handoff spec and as target in the shape the after-target check reads", () => {
+    expect(HANDOFF_OFFENDERS.flatMap((offenders) => offenders.unreadableSpecs)).toEqual([]);
+  });
+
+  it("leaves no undefined-erasing escape hatch in component source", () => {
+    expect(filesContainingCode("definedProps")).toEqual([]);
+    // Why an AST match: the object form `"aria-labelledby": undefined` erases Field's
+    // label as surely as the JSX attribute, and a substring match misses it.
+    expect(HANDOFF_OFFENDERS.flatMap((offenders) => offenders.undefinedLabelledBy)).toEqual([]);
+  });
+
+  // Why: the empty IDREF list is the interim erase idiom for an icon sub-control's
+  // dictionary name, and nothing else limits it. PR2's detach flips this list to `[]`.
+  it('keeps aria-labelledby="" to the two files with interim icon names', () => {
+    expect(filesContainingCode('aria-labelledby=""')).toEqual([
+      "components/combobox/combobox.tsx",
+      "components/phone-number-field/phone-number-field.tsx",
+    ]);
   });
 });
 

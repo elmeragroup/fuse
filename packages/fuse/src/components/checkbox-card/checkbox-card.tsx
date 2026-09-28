@@ -9,6 +9,7 @@ import type { VariantProps } from "tailwind-variants";
 
 import { CheckCircle } from "../../icons/generated/check-circle";
 import { Circle } from "../../icons/generated/circle";
+import { handoff } from "../../internal/part-handoff";
 import { cn } from "../../styles/cn";
 import { racDisabledStateFaceClass } from "../../styles/state-face";
 import {
@@ -79,7 +80,6 @@ export function CheckboxCard({
   variant = "default",
   rightContent,
   isDisabled,
-  value,
   ...other
 }: CheckboxCardProps): ReactElement {
   return (
@@ -89,35 +89,38 @@ export function CheckboxCard({
           {/* oxlint-disable-next-line elmera/no-local-focus-ring -- label is not the focus target; the checkbox owns the adapter */}
           <FieldPrimitive.Label className="group flex grow cursor-pointer items-center gap-3 bg-clip-padding outline-hidden has-disabled:cursor-not-allowed">
             <CheckboxPrimitive.Root
-              value={value}
-              disabled={isDisabled}
-              className={cn(
-                // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; ring comes from the shared adapter
-                "flex shrink-0 items-center rounded-full text-foreground outline-hidden select-none",
-                selfFocusRingClass
+              {...handoff(
+                { ...other, disabled: isDisabled },
+                {
+                  classes: [
+                    // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; ring comes from the shared adapter
+                    "flex shrink-0 items-center rounded-full text-foreground outline-hidden select-none",
+                    selfFocusRingClass,
+                    "relative inline-grid size-6",
+                  ],
+                  as: (partProps, state: CheckboxPrimitive.Root.State) => (
+                    <span {...partProps}>
+                      <Circle
+                        aria-hidden
+                        className={cn(
+                          "col-start-1 row-start-1 size-6 text-foreground",
+                          iconCrossfadeTransition,
+                          state.checked ? iconCrossfadeHidden : iconCrossfadeShown
+                        )}
+                      />
+                      <CheckCircle
+                        aria-hidden
+                        weight="fill"
+                        className={cn(
+                          "col-start-1 row-start-1 size-6 text-success",
+                          iconCrossfadeTransition,
+                          state.checked ? iconCrossfadeShown : iconCrossfadeHidden
+                        )}
+                      />
+                    </span>
+                  ),
+                }
               )}
-              render={(props, state) => (
-                <span {...props} className={cn(props.className, "relative inline-grid size-6")}>
-                  <Circle
-                    aria-hidden
-                    className={cn(
-                      "col-start-1 row-start-1 size-6 text-foreground",
-                      iconCrossfadeTransition,
-                      state.checked ? iconCrossfadeHidden : iconCrossfadeShown
-                    )}
-                  />
-                  <CheckCircle
-                    aria-hidden
-                    weight="fill"
-                    className={cn(
-                      "col-start-1 row-start-1 size-6 text-success",
-                      iconCrossfadeTransition,
-                      state.checked ? iconCrossfadeShown : iconCrossfadeHidden
-                    )}
-                  />
-                </span>
-              )}
-              {...other}
             />
             <div>
               <div className="flex flex-1 flex-col">

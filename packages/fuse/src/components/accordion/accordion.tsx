@@ -8,6 +8,7 @@ import type { AccordionRoot as AccordionRootType } from "@base-ui/react/accordio
 import type { VariantProps } from "tailwind-variants";
 
 import { CaretDown } from "../../icons/generated/caret-down";
+import { handoff } from "../../internal/part-handoff";
 import { accordionVariants } from "./accordion-variants";
 
 type AccordionVariantProps = VariantProps<typeof accordionVariants>;
@@ -33,7 +34,6 @@ function useAccordion(): AccordionVariantProps {
  * parts style themselves.
  */
 export function AccordionRoot<Value = unknown>({
-  className,
   variant = "default",
   radius = "none",
   ...props
@@ -43,35 +43,40 @@ export function AccordionRoot<Value = unknown>({
 
   return (
     <AccordionContext.Provider value={variants}>
-      <AccordionPrimitive.Root data-slot="accordion" className={base({ className })} {...props} />
+      <AccordionPrimitive.Root
+        {...handoff(props, { defaults: { "data-slot": "accordion" }, classes: [base()] })}
+      />
     </AccordionContext.Provider>
   );
 }
 
-export function AccordionItem({
-  className,
-  ...props
-}: WithSlotClassName<ComponentProps<typeof AccordionPrimitive.Item>>): ReactElement {
+export function AccordionItem(
+  props: WithSlotClassName<ComponentProps<typeof AccordionPrimitive.Item>>
+): ReactElement {
   const variants = useAccordion();
   const { item } = accordionVariants(variants);
 
-  return <AccordionPrimitive.Item data-slot="accordion-item" className={item({ className })} {...props} />;
+  return (
+    <AccordionPrimitive.Item
+      {...handoff(props, { defaults: { "data-slot": "accordion-item" }, classes: [item()] })}
+    />
+  );
 }
 
-export function AccordionHeader({
-  className,
-  ...props
-}: WithSlotClassName<ComponentProps<typeof AccordionPrimitive.Header>>): ReactElement {
+export function AccordionHeader(
+  props: WithSlotClassName<ComponentProps<typeof AccordionPrimitive.Header>>
+): ReactElement {
   const variants = useAccordion();
   const { header } = accordionVariants(variants);
 
   return (
-    <AccordionPrimitive.Header data-slot="accordion-header" className={header({ className })} {...props} />
+    <AccordionPrimitive.Header
+      {...handoff(props, { defaults: { "data-slot": "accordion-header" }, classes: [header()] })}
+    />
   );
 }
 
 export function AccordionTrigger({
-  className,
   children,
   ...props
 }: WithSlotClassName<ComponentProps<typeof AccordionPrimitive.Trigger>>): ReactElement {
@@ -79,7 +84,8 @@ export function AccordionTrigger({
   const { trigger, icon } = accordionVariants(variants);
 
   return (
-    <AccordionPrimitive.Trigger data-slot="accordion-trigger" className={trigger({ className })} {...props}>
+    <AccordionPrimitive.Trigger
+      {...handoff(props, { defaults: { "data-slot": "accordion-trigger" }, classes: [trigger()] })}>
       {children}
       <CaretDown aria-hidden="true" className={icon()} />
     </AccordionPrimitive.Trigger>
@@ -95,7 +101,8 @@ export function AccordionContent({
   const { content, contentInner } = accordionVariants(variants);
 
   return (
-    <AccordionPrimitive.Panel data-slot="accordion-content" className={content()} {...props}>
+    <AccordionPrimitive.Panel
+      {...handoff(props, { defaults: { "data-slot": "accordion-content" }, classes: [content()] })}>
       <div className={contentInner({ className })}>{children}</div>
     </AccordionPrimitive.Panel>
   );

@@ -7,8 +7,8 @@ import { Drawer as SheetPrimitive } from "@base-ui/react/drawer";
 import { tv } from "tailwind-variants";
 import type { VariantProps } from "tailwind-variants";
 
+import { handoff } from "../../internal/part-handoff";
 import { cn } from "../../styles/cn";
-import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
 import {
   overlayLayer,
@@ -73,57 +73,46 @@ export type SheetRootProps = Omit<
 export function SheetRoot({ side = "right", children, ...props }: SheetRootProps): ReactElement {
   return (
     <SheetSideContext value={side}>
-      <SheetPrimitive.Root data-slot="sheet" swipeDirection={SIDE_TO_SWIPE_DIRECTION[side]} {...props}>
+      <SheetPrimitive.Root
+        {...handoff(props, { defaults: { "data-slot": "sheet" } })}
+        swipeDirection={SIDE_TO_SWIPE_DIRECTION[side]}>
         <SheetPrimitive.VirtualKeyboardProvider>{children}</SheetPrimitive.VirtualKeyboardProvider>
       </SheetPrimitive.Root>
     </SheetSideContext>
   );
 }
 
-export function SheetTrigger({
-  className,
-  ...props
-}: ComponentProps<typeof SheetPrimitive.Trigger>): ReactElement {
+export function SheetTrigger(props: ComponentProps<typeof SheetPrimitive.Trigger>): ReactElement {
   return (
     <SheetPrimitive.Trigger
-      data-slot="sheet-trigger"
-      className={mergeClassName(className, selfFocusRingClass)}
-      {...props}
+      {...handoff(props, { defaults: { "data-slot": "sheet-trigger" }, classes: [selfFocusRingClass] })}
     />
   );
 }
 
-export function SheetClose({
-  className,
-  ...props
-}: ComponentProps<typeof SheetPrimitive.Close>): ReactElement {
+export function SheetClose(props: ComponentProps<typeof SheetPrimitive.Close>): ReactElement {
   return (
     <SheetPrimitive.Close
-      data-slot="sheet-close"
-      className={mergeClassName(className, selfFocusRingClass)}
-      {...props}
+      {...handoff(props, { defaults: { "data-slot": "sheet-close" }, classes: [selfFocusRingClass] })}
     />
   );
 }
 
 export function SheetPortal(props: ComponentProps<typeof SheetPrimitive.Portal>): ReactElement {
-  return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />;
+  return <SheetPrimitive.Portal {...handoff(props, { defaults: { "data-slot": "sheet-portal" } })} />;
 }
 
-export function SheetOverlay({
-  className,
-  ...props
-}: ComponentProps<typeof SheetPrimitive.Backdrop>): ReactElement {
+export function SheetOverlay(props: ComponentProps<typeof SheetPrimitive.Backdrop>): ReactElement {
   return (
     <SheetPrimitive.Backdrop
-      data-slot="sheet-overlay"
-      className={mergeClassName(
-        className,
-        overlayScrimClass,
-        "fixed inset-0 transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0 data-swiping:transition-none",
-        overlayLayer
-      )}
-      {...props}
+      {...handoff(props, {
+        defaults: { "data-slot": "sheet-overlay" },
+        classes: [
+          overlayScrimClass,
+          "fixed inset-0 transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0 data-swiping:transition-none",
+          overlayLayer,
+        ],
+      })}
     />
   );
 }
@@ -144,7 +133,6 @@ export type SheetContentProps = ComponentProps<typeof SheetPrimitive.Popup> &
   };
 
 export function SheetContent({
-  className,
   children,
   size,
   showCloseButton = true,
@@ -163,18 +151,24 @@ export function SheetContent({
         // Viewport, so it does not stamp a third overlay layer.
         className={cn("pointer-events-none fixed inset-0", overlayLayer)}>
         <SheetPrimitive.Popup
-          data-slot="sheet-content"
-          data-side={side}
-          className={mergeClassName(className, sheetContentVariants({ size }))}
-          {...props}>
+          {...handoff(props, {
+            defaults: { "data-slot": "sheet-content", "data-side": side },
+            classes: [sheetContentVariants({ size })],
+          })}>
           <SheetPrimitive.Content
             data-slot="sheet-content-inner"
             className="flex h-full w-full flex-col gap-4">
             {children}
             {showCloseButton ? (
               <SheetPrimitive.Close
-                data-slot="sheet-close"
-                render={<OverlayCloseButton label={closeLabel} className={overlayCornerCloseClass} />}
+                {...handoff(
+                  {},
+                  {
+                    defaults: { "data-slot": "sheet-close" },
+                    classes: [overlayCornerCloseClass],
+                    as: (partProps) => <OverlayCloseButton label={closeLabel} {...partProps} />,
+                  }
+                )}
               />
             ) : null}
           </SheetPrimitive.Content>
@@ -206,28 +200,24 @@ export function SheetFooter({ className, ...props }: ComponentProps<"div">): Rea
   );
 }
 
-export function SheetTitle({
-  className,
-  ...props
-}: ComponentProps<typeof SheetPrimitive.Title>): ReactElement {
+export function SheetTitle(props: ComponentProps<typeof SheetPrimitive.Title>): ReactElement {
   return (
     <SheetPrimitive.Title
-      data-slot="sheet-title"
-      className={mergeClassName(className, "text-xl font-medium font-heading text-balance text-foreground")}
-      {...props}
+      {...handoff(props, {
+        defaults: { "data-slot": "sheet-title" },
+        classes: ["text-xl font-medium font-heading text-balance text-foreground"],
+      })}
     />
   );
 }
 
-export function SheetDescription({
-  className,
-  ...props
-}: ComponentProps<typeof SheetPrimitive.Description>): ReactElement {
+export function SheetDescription(props: ComponentProps<typeof SheetPrimitive.Description>): ReactElement {
   return (
     <SheetPrimitive.Description
-      data-slot="sheet-description"
-      className={mergeClassName(className, "text-base text-pretty text-muted-foreground")}
-      {...props}
+      {...handoff(props, {
+        defaults: { "data-slot": "sheet-description" },
+        classes: ["text-base text-pretty text-muted-foreground"],
+      })}
     />
   );
 }

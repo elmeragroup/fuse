@@ -9,6 +9,7 @@ import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { useResetRemount } from "../../hooks/use-reset-remount";
 import { Minus } from "../../icons/generated/minus";
 import { Plus } from "../../icons/generated/plus";
+import { handoff } from "../../internal/part-handoff";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import { controlMdInsetTypeClass } from "../../styles/control-size-md";
@@ -159,18 +160,21 @@ export function NumberField({
             "bg-muted": isDisabled || isReadOnly,
           })}>
           <NumberFieldPrimitive.Input
+            {...handoff(
+              { "aria-label": ariaLabel, autoFocus: autoFocus && reset.isInitialMount },
+              {
+                defaults: { "data-focus-ring-control": "" },
+                classes: [
+                  "box-border h-full w-full min-w-0 flex-1 border-0 bg-transparent py-0 tabular-nums",
+                  controlMdInsetTypeClass,
+                  withinFocusRingControlClass,
+                  withinStateFaceControlClass,
+                ],
+              }
+            )}
             // The reset hook needs the visible control; Root's `inputRef` prop is the
             // validation input, not this one.
             ref={numberInputRef}
-            aria-label={ariaLabel}
-            autoFocus={autoFocus && reset.isInitialMount}
-            data-focus-ring-control=""
-            className={cn(
-              "box-border h-full w-full min-w-0 flex-1 border-0 bg-transparent py-0 tabular-nums",
-              controlMdInsetTypeClass,
-              withinFocusRingControlClass,
-              withinStateFaceControlClass
-            )}
           />
           {denomination ? (
             <div className="text-sm px-2 py-1 text-muted-foreground">{denomination}</div>

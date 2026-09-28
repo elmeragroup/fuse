@@ -6,7 +6,7 @@ import type { ComponentProps, ReactElement } from "react";
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 
 import { useMergedRefs } from "../../hooks/use-merged-refs";
-import { mergeClassName } from "../../styles/merge-class-name";
+import { handoff } from "../../internal/part-handoff";
 import { selfFocusRingClass } from "../../styles/utils";
 import { overlayPopupMotionClass, overlayPositionerClass } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
@@ -31,7 +31,12 @@ export type TooltipProviderProps = Omit<ComponentProps<typeof TooltipPrimitive.P
 };
 
 export function TooltipProvider({ delay = 0, ...props }: TooltipProviderProps): ReactElement {
-  return <TooltipPrimitive.Provider data-slot="tooltip-provider" delay={delay} {...props} />;
+  return (
+    <TooltipPrimitive.Provider
+      {...handoff(props, { defaults: { "data-slot": "tooltip-provider" } })}
+      delay={delay}
+    />
+  );
 }
 
 export type TooltipRootProps = ComponentProps<typeof TooltipPrimitive.Root> & {
@@ -51,7 +56,7 @@ export function TooltipRoot({ delay, ...props }: TooltipRootProps): ReactElement
   // intentional: this tooltip opts out of the outer Provider's skip-delay hand-off.
   const root = (
     <TooltipDescriptionContext.Provider value={description}>
-      <TooltipPrimitive.Root data-slot="tooltip" {...props} />
+      <TooltipPrimitive.Root {...handoff(props, { defaults: { "data-slot": "tooltip" } })} />
     </TooltipDescriptionContext.Provider>
   );
   if (delay !== undefined) {
@@ -63,7 +68,6 @@ export function TooltipRoot({ delay, ...props }: TooltipRootProps): ReactElement
 
 export function TooltipTrigger({
   "aria-describedby": describedBy,
-  className,
   ...props
 }: ComponentProps<typeof TooltipPrimitive.Trigger>): ReactElement {
   const description = use(TooltipDescriptionContext);
@@ -75,10 +79,12 @@ export function TooltipTrigger({
   ].join(" ");
   return (
     <TooltipPrimitive.Trigger
-      data-slot="tooltip-trigger"
-      aria-describedby={descriptionIds || undefined}
-      className={mergeClassName(className, selfFocusRingClass)}
-      {...props}
+      {...handoff(
+        // The merged description list can be undefined, so it rides the consumer argument
+        // by handoff's channel rule.
+        { ...props, "aria-describedby": descriptionIds || undefined },
+        { defaults: { "data-slot": "tooltip-trigger" }, classes: [selfFocusRingClass] }
+      )}
     />
   );
 }
@@ -96,7 +102,6 @@ export type TooltipContentProps = Omit<ComponentProps<typeof TooltipPrimitive.Po
 export function TooltipContent({
   id,
   ref,
-  className,
   side = "top",
   sideOffset = 4,
   align = "center",
@@ -126,20 +131,23 @@ export function TooltipContent({
         sideOffset={sideOffset}
         className={overlayPositionerClass}>
         <TooltipPrimitive.Popup
-          data-slot="tooltip-content"
-          ref={mergedRef}
-          id={tooltipId ?? undefined}
-          role="tooltip"
-          // Tooltip takes the shared motion set but neither the composed popup surface
-          // nor the timing rung: it inverts the fill and flies frameless,
-          // and `ring-0` could not subtract the surface's `ring-foreground/10` — width and
-          // colour are separate tailwind-merge conflict groups. Untimed is deliberate.
-          className={mergeClassName(
-            className,
-            overlayPopupMotionClass,
-            "max-w-xs text-xs inline-flex w-fit items-center gap-1.5 rounded-md bg-foreground px-3 py-1.5 text-pretty text-background"
+          {...handoff(
+            // The popup id (`id ?? generatedId`) can be undefined, so it rides the consumer
+            // argument by handoff's channel rule.
+            { ...props, id: tooltipId },
+            {
+              defaults: { "data-slot": "tooltip-content", role: "tooltip" },
+              // Tooltip takes the shared motion set but neither the composed popup surface
+              // nor the timing rung: it inverts the fill and flies frameless,
+              // and `ring-0` could not subtract the surface's `ring-foreground/10` — width and
+              // colour are separate tailwind-merge conflict groups. Untimed is deliberate.
+              classes: [
+                overlayPopupMotionClass,
+                "max-w-xs text-xs inline-flex w-fit items-center gap-1.5 rounded-md bg-foreground px-3 py-1.5 text-pretty text-background",
+              ],
+            }
           )}
-          {...props}>
+          ref={mergedRef}>
           {children}
           <TooltipPrimitive.Arrow className="size-2.5 translate-y-[calc(-50%-2px)] rotate-45 rounded-[2px] bg-foreground fill-foreground data-[side=bottom]:top-1 data-[side=inline-end]:top-1/2! data-[side=inline-end]:-left-1 data-[side=inline-end]:-translate-y-1/2 data-[side=inline-start]:top-1/2! data-[side=inline-start]:-right-1 data-[side=inline-start]:-translate-y-1/2 data-[side=left]:top-1/2! data-[side=left]:-right-1 data-[side=left]:-translate-y-1/2 data-[side=right]:top-1/2! data-[side=right]:-left-1 data-[side=right]:-translate-y-1/2 data-[side=top]:-bottom-2.5" />
         </TooltipPrimitive.Popup>

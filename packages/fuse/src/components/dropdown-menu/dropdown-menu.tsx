@@ -7,8 +7,8 @@ import type { MenuRadioGroupChangeEventDetails } from "@base-ui/react/menu";
 
 import { CaretRight } from "../../icons/generated/caret-right";
 import { Check } from "../../icons/generated/check";
+import { handoff } from "../../internal/part-handoff";
 import { cn } from "../../styles/cn";
-import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
 import {
   menuGroupLabelClass,
@@ -26,7 +26,7 @@ const dropdownMenuSlots = dropdownMenuVariants();
 const dropdownMenuItemClassName = dropdownMenuSlots.item();
 
 export function DropdownMenuPortal(props: ComponentProps<typeof MenuPrimitive.Portal>): ReactElement {
-  return <MenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />;
+  return <MenuPrimitive.Portal {...handoff(props, { defaults: { "data-slot": "dropdown-menu-portal" } })} />;
 }
 
 /**
@@ -36,7 +36,6 @@ export function DropdownMenuPortal(props: ComponentProps<typeof MenuPrimitive.Po
  * and one class string. Both callers resolve their own positioner defaults.
  */
 function DropdownMenuPopup({
-  className,
   popupClassName,
   dataSlot,
   align,
@@ -61,9 +60,10 @@ function DropdownMenuPopup({
         side={side}
         sideOffset={sideOffset}>
         <MenuPrimitive.Popup
-          data-slot={dataSlot}
-          className={mergeClassName(className, overlayTimedPopupClass, popupClassName)}
-          {...props}
+          {...handoff(props, {
+            defaults: { "data-slot": dataSlot },
+            classes: [overlayTimedPopupClass, popupClassName],
+          })}
         />
       </MenuPrimitive.Positioner>
     </OverlayPortal>
@@ -71,18 +71,16 @@ function DropdownMenuPopup({
 }
 
 export function DropdownMenuRoot(props: ComponentProps<typeof MenuPrimitive.Root>): ReactElement {
-  return <MenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
+  return <MenuPrimitive.Root {...handoff(props, { defaults: { "data-slot": "dropdown-menu" } })} />;
 }
 
-export function DropdownMenuTrigger({
-  className,
-  ...props
-}: ComponentProps<typeof MenuPrimitive.Trigger>): ReactElement {
+export function DropdownMenuTrigger(props: ComponentProps<typeof MenuPrimitive.Trigger>): ReactElement {
   return (
     <MenuPrimitive.Trigger
-      data-slot="dropdown-menu-trigger"
-      className={mergeClassName(className, selfFocusRingClass)}
-      {...props}
+      {...handoff(props, {
+        defaults: { "data-slot": "dropdown-menu-trigger" },
+        classes: [selfFocusRingClass],
+      })}
     />
   );
 }
@@ -120,7 +118,7 @@ export function DropdownMenuContent({
 }
 
 export function DropdownMenuGroup(props: ComponentProps<typeof MenuPrimitive.Group>): ReactElement {
-  return <MenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />;
+  return <MenuPrimitive.Group {...handoff(props, { defaults: { "data-slot": "dropdown-menu-group" } })} />;
 }
 
 export type DropdownMenuLabelProps = ComponentProps<typeof MenuPrimitive.GroupLabel> & {
@@ -130,13 +128,13 @@ export type DropdownMenuLabelProps = ComponentProps<typeof MenuPrimitive.GroupLa
   inset?: boolean;
 };
 
-export function DropdownMenuLabel({ className, inset, ...props }: DropdownMenuLabelProps): ReactElement {
+export function DropdownMenuLabel({ inset, ...props }: DropdownMenuLabelProps): ReactElement {
   return (
     <MenuPrimitive.GroupLabel
-      data-slot="dropdown-menu-label"
-      data-inset={inset ? true : undefined}
-      className={mergeClassName(className, menuGroupLabelClass, "font-medium data-inset:pl-8")}
-      {...props}
+      {...handoff(props, {
+        defaults: { "data-slot": "dropdown-menu-label", "data-inset": inset ? true : undefined },
+        classes: [menuGroupLabelClass, "font-medium data-inset:pl-8"],
+      })}
     />
   );
 }
@@ -155,31 +153,31 @@ export type DropdownMenuItemProps = ComponentProps<typeof MenuPrimitive.Item> & 
 };
 
 export function DropdownMenuItem({
-  className,
   inset,
   variant = "default",
   ...props
 }: DropdownMenuItemProps): ReactElement {
   return (
     <MenuPrimitive.Item
-      data-slot="dropdown-menu-item"
-      data-inset={inset ? true : undefined}
-      data-variant={variant}
-      className={mergeClassName(className, dropdownMenuItemClassName)}
-      {...props}
+      {...handoff(props, {
+        defaults: {
+          "data-slot": "dropdown-menu-item",
+          "data-inset": inset ? true : undefined,
+          "data-variant": variant,
+        },
+        classes: [dropdownMenuItemClassName],
+      })}
     />
   );
 }
 
-export function DropdownMenuLinkItem({
-  className,
-  ...props
-}: ComponentProps<typeof MenuPrimitive.LinkItem>): ReactElement {
+export function DropdownMenuLinkItem(props: ComponentProps<typeof MenuPrimitive.LinkItem>): ReactElement {
   return (
     <MenuPrimitive.LinkItem
-      data-slot="dropdown-menu-link-item"
-      className={mergeClassName(className, dropdownMenuItemClassName)}
-      {...props}
+      {...handoff(props, {
+        defaults: { "data-slot": "dropdown-menu-link-item" },
+        classes: [dropdownMenuItemClassName],
+      })}
     />
   );
 }
@@ -192,19 +190,16 @@ export type DropdownMenuCheckboxItemProps = ComponentProps<typeof MenuPrimitive.
 };
 
 export function DropdownMenuCheckboxItem({
-  className,
   children,
-  checked,
   inset,
   ...props
 }: DropdownMenuCheckboxItemProps): ReactElement {
   return (
     <MenuPrimitive.CheckboxItem
-      data-slot="dropdown-menu-checkbox-item"
-      data-inset={inset ? true : undefined}
-      className={mergeClassName(className, dropdownMenuItemClassName, "pr-8")}
-      checked={checked}
-      {...props}>
+      {...handoff(props, {
+        defaults: { "data-slot": "dropdown-menu-checkbox-item", "data-inset": inset ? true : undefined },
+        classes: [dropdownMenuItemClassName, "pr-8"],
+      })}>
       <span className={menuItemIndicatorClass} data-slot="dropdown-menu-checkbox-item-indicator">
         <MenuPrimitive.CheckboxItemIndicator>
           <Check />
@@ -245,7 +240,11 @@ export type DropdownMenuRadioGroupProps<T extends string> = Omit<
 export function DropdownMenuRadioGroup<T extends string>(
   props: DropdownMenuRadioGroupProps<T>
 ): ReactElement {
-  return <MenuPrimitive.RadioGroup data-slot="dropdown-menu-radio-group" {...props} />;
+  return (
+    <MenuPrimitive.RadioGroup
+      {...handoff(props, { defaults: { "data-slot": "dropdown-menu-radio-group" } })}
+    />
+  );
 }
 
 export type DropdownMenuRadioItemProps = ComponentProps<typeof MenuPrimitive.RadioItem> & {
@@ -256,17 +255,16 @@ export type DropdownMenuRadioItemProps = ComponentProps<typeof MenuPrimitive.Rad
 };
 
 export function DropdownMenuRadioItem({
-  className,
   children,
   inset,
   ...props
 }: DropdownMenuRadioItemProps): ReactElement {
   return (
     <MenuPrimitive.RadioItem
-      data-slot="dropdown-menu-radio-item"
-      data-inset={inset ? true : undefined}
-      className={mergeClassName(className, dropdownMenuItemClassName, "pr-8")}
-      {...props}>
+      {...handoff(props, {
+        defaults: { "data-slot": "dropdown-menu-radio-item", "data-inset": inset ? true : undefined },
+        classes: [dropdownMenuItemClassName, "pr-8"],
+      })}>
       <span className={menuItemIndicatorClass} data-slot="dropdown-menu-radio-item-indicator">
         <MenuPrimitive.RadioItemIndicator>
           <Check />
@@ -277,15 +275,13 @@ export function DropdownMenuRadioItem({
   );
 }
 
-export function DropdownMenuSeparator({
-  className,
-  ...props
-}: ComponentProps<typeof MenuPrimitive.Separator>): ReactElement {
+export function DropdownMenuSeparator(props: ComponentProps<typeof MenuPrimitive.Separator>): ReactElement {
   return (
     <MenuPrimitive.Separator
-      data-slot="dropdown-menu-separator"
-      className={mergeClassName(className, menuSeparatorClass)}
-      {...props}
+      {...handoff(props, {
+        defaults: { "data-slot": "dropdown-menu-separator" },
+        classes: [menuSeparatorClass],
+      })}
     />
   );
 }
@@ -304,7 +300,11 @@ export function DropdownMenuShortcut({ className, ...props }: ComponentProps<"sp
 }
 
 export function DropdownMenuSub(props: ComponentProps<typeof MenuPrimitive.SubmenuRoot>): ReactElement {
-  return <MenuPrimitive.SubmenuRoot data-slot="dropdown-menu-sub" closeParentOnEsc {...props} />;
+  return (
+    <MenuPrimitive.SubmenuRoot
+      {...handoff(props, { defaults: { "data-slot": "dropdown-menu-sub", closeParentOnEsc: true } })}
+    />
+  );
 }
 
 export type DropdownMenuSubTriggerProps = ComponentProps<typeof MenuPrimitive.SubmenuTrigger> & {
@@ -315,21 +315,19 @@ export type DropdownMenuSubTriggerProps = ComponentProps<typeof MenuPrimitive.Su
 };
 
 export function DropdownMenuSubTrigger({
-  className,
   inset,
   children,
   ...props
 }: DropdownMenuSubTriggerProps): ReactElement {
   return (
     <MenuPrimitive.SubmenuTrigger
-      data-slot="dropdown-menu-sub-trigger"
-      data-inset={inset ? true : undefined}
-      className={mergeClassName(
-        className,
-        dropdownMenuItemClassName,
-        "data-popup-open:bg-accent data-popup-open:text-accent-foreground data-open:bg-accent data-open:text-accent-foreground"
-      )}
-      {...props}>
+      {...handoff(props, {
+        defaults: { "data-slot": "dropdown-menu-sub-trigger", "data-inset": inset ? true : undefined },
+        classes: [
+          dropdownMenuItemClassName,
+          "data-popup-open:bg-accent data-popup-open:text-accent-foreground data-open:bg-accent data-open:text-accent-foreground",
+        ],
+      })}>
       {children}
       <CaretRight className="ml-auto" />
     </MenuPrimitive.SubmenuTrigger>

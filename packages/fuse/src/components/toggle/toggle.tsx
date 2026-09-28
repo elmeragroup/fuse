@@ -5,7 +5,7 @@ import type { ComponentProps, ReactElement } from "react";
 import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
 import type { VariantProps } from "tailwind-variants";
 
-import { cn } from "../../styles/cn";
+import { handoff } from "../../internal/part-handoff";
 import { toggleVariants } from "./toggle-variants";
 
 export type ToggleProps = Omit<ComponentProps<typeof TogglePrimitive>, "className"> & {
@@ -17,17 +17,13 @@ export type ToggleProps = Omit<ComponentProps<typeof TogglePrimitive>, "classNam
  * Two-state pressed button. Client — base-ui Toggle owns
  * pressed state.
  */
-export function Toggle({
-  className,
-  variant = "default",
-  size = "default",
-  ...props
-}: ToggleProps): ReactElement {
+export function Toggle({ variant = "default", size = "default", ...props }: ToggleProps): ReactElement {
   return (
     <TogglePrimitive
-      data-slot="toggle"
-      className={cn(toggleVariants({ variant, size, className }))}
-      {...props}
+      {...handoff(props, {
+        defaults: { "data-slot": "toggle" },
+        classes: [toggleVariants({ variant, size })],
+      })}
     />
   );
 }

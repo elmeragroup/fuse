@@ -14,11 +14,11 @@ import { CaretDown } from "../../icons/generated/caret-down";
 import { Check } from "../../icons/generated/check";
 import { X } from "../../icons/generated/x";
 import { isTextValueNode } from "../../internal/is-text-node";
+import { handoff } from "../../internal/part-handoff";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import { controlMd } from "../../styles/control-size-md";
 import { compactCornerClass } from "../../styles/corner-radius";
-import { mergeClassName } from "../../styles/merge-class-name";
 import { withinStateFaceClass, withinStateFaceControlClass } from "../../styles/state-face";
 import { withinFocusRingClass, withinFocusRingControlClass } from "../../styles/utils";
 import { Button } from "../button/button";
@@ -71,25 +71,25 @@ export function ComboboxRoot<Value = unknown, Multiple extends boolean | undefin
               return itemToStringLabel(itemValue as Value);
             }
       }>
-      <ComboboxPrimitive.Root {...props} locale={locale} />
+      <ComboboxPrimitive.Root {...handoff(props)} locale={locale} />
     </ComboboxItemToStringLabelContext.Provider>
   );
 }
 
-export function ComboboxValue({ ...props }: ComponentProps<typeof ComboboxPrimitive.Value>): ReactElement {
-  return <ComboboxPrimitive.Value data-slot="combobox-value" {...props} />;
+export function ComboboxValue(props: ComponentProps<typeof ComboboxPrimitive.Value>): ReactElement {
+  return <ComboboxPrimitive.Value {...handoff(props, { defaults: { "data-slot": "combobox-value" } })} />;
 }
 
 export function ComboboxTrigger({
-  className,
   children,
   ...props
 }: ComponentProps<typeof ComboboxPrimitive.Trigger>): ReactElement {
   return (
     <ComboboxPrimitive.Trigger
-      data-slot="combobox-trigger"
-      className={mergeClassName(className, "[&_svg:not([class*='size-'])]:size-4")}
-      {...props}>
+      {...handoff(props, {
+        defaults: { "data-slot": "combobox-trigger" },
+        classes: ["[&_svg:not([class*='size-'])]:size-4"],
+      })}>
       {children}
       <CaretDown className="ease-in-out pointer-events-none size-4 text-muted-foreground transition-transform duration-200 in-data-popup-open:rotate-180" />
     </ComboboxPrimitive.Trigger>
@@ -105,21 +105,22 @@ export type ComboboxClearProps = ComponentProps<typeof ComboboxPrimitive.Clear> 
 };
 
 export function ComboboxClear({
-  className,
   label,
   "aria-label": ariaLabel,
   ...props
 }: ComboboxClearProps): ReactElement {
   const strings = useLocalizedStrings(comboboxStrings);
-  // The render element's props win in Base UI's merge, so the resolved name must live there.
   const accessibleName = ariaLabel ?? label ?? strings.format("clear");
   return (
     <ComboboxPrimitive.Clear
-      data-slot="combobox-clear"
-      render={<InputGroupButton variant="ghost" size="icon-sm" aria-label={accessibleName} />}
-      aria-label={accessibleName}
-      className={mergeClassName(className)}
-      {...props}>
+      {...handoff(props, {
+        defaults: { "data-slot": "combobox-clear" },
+        // The resolved name goes after the part props, where the render element put it.
+        as: (partProps) => (
+          <InputGroupButton variant="ghost" size="icon-sm" {...partProps} aria-label={accessibleName} />
+        ),
+      })}
+      aria-label={accessibleName}>
       <X className="pointer-events-none" />
     </ComboboxPrimitive.Clear>
   );
@@ -179,16 +180,20 @@ export function ComboboxInput({
   const strings = useLocalizedStrings(comboboxStrings);
   return (
     <InputGroupRoot className={cn("w-auto", className)}>
-      <ComboboxPrimitive.Input disabled={disabled} render={<InputGroupInput />} {...props} />
+      <ComboboxPrimitive.Input
+        {...handoff(props, { as: (partProps) => <InputGroupInput {...partProps} /> })}
+        disabled={disabled}
+      />
       <InputGroupAddon align="inline-end">
         {showTrigger ? (
           <InputGroupButton
             size="icon-sm"
             variant="ghost"
             aria-label={triggerLabel ?? strings.format("toggle")}
-            // Field.Label labelledby would win over aria-label; drop it so the
-            // caret stays dictionary `toggle`.
-            aria-labelledby={undefined}
+            // Field.Label labelledby would win over aria-label. An empty IDREF list overrides
+            // it and names nothing, so the caret stays dictionary `toggle`; handoff keeps
+            // the defined value where it would drop `undefined`.
+            aria-labelledby=""
             render={<ComboboxTrigger />}
             data-slot="input-group-button"
             className="group-has-data-[slot=combobox-clear]/input-group:hidden data-pressed:bg-transparent"
@@ -212,7 +217,6 @@ export type ComboboxContentProps = ComponentProps<typeof ComboboxPrimitive.Popup
   } & OverlayContainerProps;
 
 export function ComboboxContent({
-  className,
   side = "bottom",
   sideOffset = 6,
   align = "start",
@@ -231,55 +235,50 @@ export function ComboboxContent({
         anchor={anchor}
         className={overlayPositionerClass}>
         <ComboboxPrimitive.Popup
-          data-slot="combobox-content"
-          data-external-anchor={anchor ? "true" : "false"}
-          className={mergeClassName(
-            className,
-            overlayTimedPopupClass,
-            // Popup padding insets a search group; a child margin plus the group's w-full
-            // overflowed the box. Scope it to popups that directly own one, so a plain list
-            // keeps the menu family's single p-1 inset instead of double-insetting.
-            "group/combobox-content relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] overflow-hidden has-[>[data-slot=input-group]]:px-1 has-[>[data-slot=input-group]]:pt-1.5 data-[external-anchor=true]:min-w-(--anchor-width) *:data-[slot=input-group]:h-(--control-h-sm) *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none"
-          )}
-          {...props}
+          {...handoff(props, {
+            defaults: { "data-slot": "combobox-content", "data-external-anchor": anchor ? "true" : "false" },
+            classes: [
+              overlayTimedPopupClass,
+              // Popup padding insets a search group; a child margin plus the group's w-full
+              // overflowed the box. Scope it to popups that directly own one, so a plain list
+              // keeps the menu family's single p-1 inset instead of double-insetting.
+              "group/combobox-content relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] overflow-hidden has-[>[data-slot=input-group]]:px-1 has-[>[data-slot=input-group]]:pt-1.5 data-[external-anchor=true]:min-w-(--anchor-width) *:data-[slot=input-group]:h-(--control-h-sm) *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none",
+            ],
+          })}
         />
       </ComboboxPrimitive.Positioner>
     </OverlayPortal>
   );
 }
 
-export function ComboboxList({
-  className,
-  ...props
-}: ComponentProps<typeof ComboboxPrimitive.List>): ReactElement {
+export function ComboboxList(props: ComponentProps<typeof ComboboxPrimitive.List>): ReactElement {
   return (
     <ComboboxPrimitive.List
-      data-slot="combobox-list"
-      className={mergeClassName(
-        className,
-        "no-scrollbar max-h-[min(calc(--spacing(72)---spacing(9)),calc(var(--available-height)---spacing(9)))] scroll-py-1 overflow-y-auto overscroll-contain p-1 data-empty:p-0"
-      )}
-      {...props}
+      {...handoff(props, {
+        defaults: { "data-slot": "combobox-list" },
+        classes: [
+          "no-scrollbar max-h-[min(calc(--spacing(72)---spacing(9)),calc(var(--available-height)---spacing(9)))] scroll-py-1 overflow-y-auto overscroll-contain p-1 data-empty:p-0",
+        ],
+      })}
     />
   );
 }
 
 export function ComboboxItem({
-  className,
   children,
   ...props
 }: ComponentProps<typeof ComboboxPrimitive.Item>): ReactElement {
   return (
     <ComboboxPrimitive.Item
-      data-slot="combobox-item"
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- option padding is menu layout, not a control rung
-      className={mergeClassName(
-        className,
-        menuItemClass,
-        // oxlint-disable-next-line elmera/no-local-focus-ring -- the highlight face menuItemClass leaves to the family; base-ui spells it `data-highlighted:` on listbox options
-        "w-full pr-8 pl-2 data-highlighted:bg-accent data-highlighted:text-accent-foreground data-highlighted:**:text-accent-foreground"
-      )}
-      {...props}>
+      {...handoff(props, {
+        defaults: { "data-slot": "combobox-item" },
+        // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- option padding is menu layout, not a control rung
+        classes: [
+          menuItemClass,
+          // oxlint-disable-next-line elmera/no-local-focus-ring -- the highlight face menuItemClass leaves to the family; base-ui spells it `data-highlighted:` on listbox options
+          "w-full pr-8 pl-2 data-highlighted:bg-accent data-highlighted:text-accent-foreground data-highlighted:**:text-accent-foreground",
+        ],
+      })}>
       {children}
       <ComboboxPrimitive.ItemIndicator render={<span className={cn(menuItemIndicatorClass, "size-4")} />}>
         <Check className="pointer-events-none" />
@@ -288,70 +287,51 @@ export function ComboboxItem({
   );
 }
 
-export function ComboboxGroup({
-  className,
-  ...props
-}: ComponentProps<typeof ComboboxPrimitive.Group>): ReactElement {
-  return (
-    <ComboboxPrimitive.Group data-slot="combobox-group" className={mergeClassName(className)} {...props} />
-  );
+export function ComboboxGroup(props: ComponentProps<typeof ComboboxPrimitive.Group>): ReactElement {
+  return <ComboboxPrimitive.Group {...handoff(props, { defaults: { "data-slot": "combobox-group" } })} />;
 }
 
-export function ComboboxLabel({
-  className,
-  ...props
-}: ComponentProps<typeof ComboboxPrimitive.GroupLabel>): ReactElement {
+export function ComboboxLabel(props: ComponentProps<typeof ComboboxPrimitive.GroupLabel>): ReactElement {
   return (
     <ComboboxPrimitive.GroupLabel
-      data-slot="combobox-label"
-      className={mergeClassName(className, menuGroupLabelClass)}
-      {...props}
+      {...handoff(props, { defaults: { "data-slot": "combobox-label" }, classes: [menuGroupLabelClass] })}
     />
   );
 }
 
-export function ComboboxCollection({
-  ...props
-}: ComponentProps<typeof ComboboxPrimitive.Collection>): ReactElement {
-  return <ComboboxPrimitive.Collection data-slot="combobox-collection" {...props} />;
+export function ComboboxCollection(props: ComponentProps<typeof ComboboxPrimitive.Collection>): ReactElement {
+  return (
+    <ComboboxPrimitive.Collection {...handoff(props, { defaults: { "data-slot": "combobox-collection" } })} />
+  );
 }
 
 export function ComboboxEmpty({
-  className,
   children,
   ...props
 }: ComponentProps<typeof ComboboxPrimitive.Empty>): ReactElement {
   const strings = useLocalizedStrings(comboboxStrings);
   return (
     <ComboboxPrimitive.Empty
-      data-slot="combobox-empty"
-      className={mergeClassName(
-        className,
-        "text-sm hidden w-full justify-center py-2 text-center text-muted-foreground group-data-empty/combobox-content:flex"
-      )}
-      {...props}>
+      {...handoff(props, {
+        defaults: { "data-slot": "combobox-empty" },
+        classes: [
+          "text-sm hidden w-full justify-center py-2 text-center text-muted-foreground group-data-empty/combobox-content:flex",
+        ],
+      })}>
       {children ?? strings.format("empty")}
     </ComboboxPrimitive.Empty>
   );
 }
 
-export function ComboboxSeparator({
-  className,
-  ...props
-}: ComponentProps<typeof ComboboxPrimitive.Separator>): ReactElement {
+export function ComboboxSeparator(props: ComponentProps<typeof ComboboxPrimitive.Separator>): ReactElement {
   return (
     <ComboboxPrimitive.Separator
-      data-slot="combobox-separator"
-      className={mergeClassName(className, menuSeparatorClass)}
-      {...props}
+      {...handoff(props, { defaults: { "data-slot": "combobox-separator" }, classes: [menuSeparatorClass] })}
     />
   );
 }
 
-export function ComboboxChips({
-  className,
-  ...props
-}: ComponentProps<typeof ComboboxPrimitive.Chips>): ReactElement {
+export function ComboboxChips(props: ComponentProps<typeof ComboboxPrimitive.Chips>): ReactElement {
   const [registry] = useState(createChipIndexRegistry);
   return (
     <ChipIndexContext.Provider value={registry}>
@@ -359,17 +339,17 @@ export function ComboboxChips({
         {(selected: ReactNode) => <ChipIndexCommit selected={selected} />}
       </ComboboxPrimitive.Value>
       <ComboboxPrimitive.Chips
-        data-slot="combobox-chips"
-        // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- chip wrap gap and compact chip padding are layout, not a control rung
-        className={mergeClassName(
-          className,
-          controlMd.minHeight(),
-          controlMd.inset(),
-          "text-sm shadow-xs flex flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent bg-clip-padding py-1.5 transition-[color,box-shadow] has-data-[slot=combobox-chip]:px-1.5",
-          withinFocusRingClass,
-          withinStateFaceClass
-        )}
-        {...props}
+        {...handoff(props, {
+          defaults: { "data-slot": "combobox-chips" },
+          // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- chip wrap gap and compact chip padding are layout, not a control rung
+          classes: [
+            controlMd.minHeight(),
+            controlMd.inset(),
+            "text-sm shadow-xs flex flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent bg-clip-padding py-1.5 transition-[color,box-shadow] has-data-[slot=combobox-chip]:px-1.5",
+            withinFocusRingClass,
+            withinStateFaceClass,
+          ],
+        })}
       />
     </ChipIndexContext.Provider>
   );
@@ -417,7 +397,6 @@ function stringifyChipValue(value: ReactNode, itemToStringLabel?: ComboboxItemLa
 
 export function ComboboxChip({
   ref,
-  className,
   children,
   showRemove = true,
   removeLabel,
@@ -427,14 +406,14 @@ export function ComboboxChip({
   const mergedRef = useMergedRefs(ref, indexRef);
   return (
     <ComboboxPrimitive.Chip
-      ref={mergedRef}
-      data-slot="combobox-chip"
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- chip chrome is compact token, not a control rung
-      className={mergeClassName(
-        className,
-        "text-xs font-medium flex h-[calc(--spacing(5.5))] w-fit items-center justify-center gap-1 rounded-sm bg-muted px-1.5 whitespace-nowrap text-foreground has-data-[slot=combobox-chip-remove]:pr-0"
-      )}
-      {...props}>
+      {...handoff(props, {
+        defaults: { "data-slot": "combobox-chip" },
+        // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- chip chrome is compact token, not a control rung
+        classes: [
+          "text-xs font-medium flex h-[calc(--spacing(5.5))] w-fit items-center justify-center gap-1 rounded-sm bg-muted px-1.5 whitespace-nowrap text-foreground has-data-[slot=combobox-chip-remove]:pr-0",
+        ],
+      })}
+      ref={mergedRef}>
       {children}
       {showRemove ? (
         <ComboboxChipRemoveLabel removeLabel={removeLabel} chipChildren={children} index={index} />
@@ -480,25 +459,21 @@ function ComboboxChipRemove({ label }: { label: string }): ReactElement {
   );
 }
 
-export function ComboboxChipsInput({
-  className,
-  ...props
-}: ComponentProps<typeof ComboboxPrimitive.Input>): ReactElement {
+export function ComboboxChipsInput(props: ComponentProps<typeof ComboboxPrimitive.Input>): ReactElement {
   return (
     <ComboboxPrimitive.Input
-      data-slot="combobox-chip-input"
-      data-focus-ring-control=""
-      // The chips box keys its face off this `data-focus-ring-control` input while it is a
-      // direct child. The control half keeps the `not-allowed` cursor on the input and cancels
-      // its own ring, so only the chips box paints the face.
-      className={mergeClassName(
-        className,
-        // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; ring comes from the shared within adapter
-        "min-w-16 flex-1 outline-none",
-        withinFocusRingControlClass,
-        withinStateFaceControlClass
-      )}
-      {...props}
+      {...handoff(props, {
+        defaults: { "data-slot": "combobox-chip-input", "data-focus-ring-control": "" },
+        // The chips box keys its face off this `data-focus-ring-control` input while it is a
+        // direct child. The control half keeps the `not-allowed` cursor on the input and cancels
+        // its own ring, so only the chips box paints the face.
+        classes: [
+          // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; ring comes from the shared within adapter
+          "min-w-16 flex-1 outline-none",
+          withinFocusRingControlClass,
+          withinStateFaceControlClass,
+        ],
+      })}
     />
   );
 }
