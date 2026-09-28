@@ -12,6 +12,7 @@ import {
   cssVarColor,
   fkasPrivate,
   renderThemed,
+  roleNamed,
   snapshotDocumentTheme,
   stampDocumentTheme,
 } from "../../../test/themed-browser-render";
@@ -97,6 +98,20 @@ async function expandViewport(): Promise<HTMLElement> {
   }
   await userEvent.keyboard("{F6}");
   return viewport;
+}
+
+function LabelledClose({ close }: { close: ReactNode }) {
+  const { toasts } = Toast.useToastManager();
+  return (
+    <Toast.Viewport>
+      {toasts.map((toast) => (
+        <Toast.Root key={toast.id} toast={toast}>
+          <Toast.Title />
+          {close}
+        </Toast.Root>
+      ))}
+    </Toast.Viewport>
+  );
 }
 
 describe("Toast manager", () => {
@@ -325,26 +340,40 @@ describe("Toast chrome", () => {
       unmount();
     }
 
-    function OverrideClose() {
-      const { toasts } = Toast.useToastManager();
-      return (
-        <Toast.Viewport>
-          {toasts.map((toast) => (
-            <Toast.Root key={toast.id} toast={toast}>
-              <Toast.Title />
-              <Toast.Close label="Dismiss toast" />
-            </Toast.Root>
-          ))}
-        </Toast.Viewport>
-      );
-    }
-
-    const { manager } = renderToast(<OverrideClose />);
+    const { manager } = renderToast(<LabelledClose close={<Toast.Close label="Dismiss toast" />} />);
     manager.add({ title: "Override", timeout: 0 });
     await waitForToast("Override");
     await expandViewport();
     expect(page.getByRole("button", { name: "Dismiss toast", exact: true }).query()).not.toBeNull();
     expect(page.getByRole("button", { name: "Close", exact: true }).query()).toBeNull();
+  });
+
+  it("names a Close by an explicit aria-label over label and the dictionary", async () => {
+    const iconOnly = renderToast(<LabelledClose close={<Toast.Close aria-label="Dismiss" />} />);
+    iconOnly.manager.add({ title: "Labelled", timeout: 0 });
+    await waitForToast("Labelled");
+    await expandViewport();
+    expect(roleNamed("button", "Dismiss").textContent).toBe("");
+    expect(page.getByRole("button", { name: "Close", exact: true }).query()).toBeNull();
+    iconOnly.unmount();
+
+    const overLabel = renderToast(
+      <LabelledClose close={<Toast.Close label="Dismiss toast" aria-label="Dismiss" />} />
+    );
+    overLabel.manager.add({ title: "Over label", timeout: 0 });
+    await waitForToast("Over label");
+    await expandViewport();
+    expect(roleNamed("button", "Dismiss").textContent).toBe("");
+    expect(page.getByRole("button", { name: "Dismiss toast", exact: true }).query()).toBeNull();
+    overLabel.unmount();
+
+    const visible = renderToast(
+      <LabelledClose close={<Toast.Close aria-label="Dismiss">Close</Toast.Close>} />
+    );
+    visible.manager.add({ title: "Visible", timeout: 0 });
+    await waitForToast("Visible");
+    await expandViewport();
+    expect(roleNamed("button", "Dismiss").textContent).toBe("Close");
   });
 
   it("F6 moves focus into the viewport and Escape restores the prior element", async () => {

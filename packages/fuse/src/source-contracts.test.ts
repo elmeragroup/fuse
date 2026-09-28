@@ -838,6 +838,7 @@ describe("Base UI prop wiring", () => {
         "ComboboxPrimitive.Clear > InputGroupButton aria-label",
         "ComboboxPrimitive.ChipRemove > Button aria-label",
       ],
+      "components/toast/toast.tsx": ["ToastPrimitive.Close > Button aria-label"],
     });
   });
 

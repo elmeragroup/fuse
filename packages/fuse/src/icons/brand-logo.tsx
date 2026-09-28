@@ -11,6 +11,7 @@ import { TrondelagkraftLogo } from "./bespoke/trondelagkraft-logo";
 export type BrandLogoProps = Omit<ComponentPropsWithoutRef<"span">, "children"> & {
   brand: BrandCode;
   variant?: "full" | "mark";
+  /** Accessible name. Defaults to the brand display name; an explicit `aria-label` wins. */
   title?: string;
 };
 
@@ -27,7 +28,7 @@ export function BrandLogo({
   brand,
   variant = "full",
   title,
-  className,
+  "aria-label": ariaLabel,
   ...rest
 }: BrandLogoProps): ReactElement {
   // SAFETY: BrandCode is a compile-time contract; a JS consumer can pass an unknown code.
@@ -37,7 +38,7 @@ export function BrandLogo({
   }
   const Mark = BRAND_MARKS[brand];
   return (
-    <span {...rest} className={className} data-variant={variant} role="img" aria-label={title ?? displayName}>
+    <span aria-label={ariaLabel ?? title ?? displayName} {...rest} data-variant={variant} role="img">
       {Mark === null ? displayName : <Mark variant={variant} />}
     </span>
   );

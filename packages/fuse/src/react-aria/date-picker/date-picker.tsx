@@ -200,8 +200,8 @@ export function DatePickerPresetGroup({
   return (
     <AriaRadioGroup
       data-slot="date-picker-preset-group"
-      {...props}
       aria-label={ariaLabel ?? label ?? strings.format("presets")}
+      {...props}
       className={composeTailwindRenderProps(className, "flex flex-col gap-2 px-3")}
     />
   );

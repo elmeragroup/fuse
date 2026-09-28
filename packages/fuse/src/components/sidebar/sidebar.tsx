@@ -393,10 +393,10 @@ export function SidebarTrigger({
   return (
     <Button
       data-slot="sidebar-trigger"
+      aria-label={ariaLabel ?? labels.toggle}
       {...props}
       variant={variant}
       size="icon-sm"
-      aria-label={ariaLabel ?? labels.toggle}
       className={cn("hit-area-1", className)}
       onClick={(event) => {
         onClick?.(event);
