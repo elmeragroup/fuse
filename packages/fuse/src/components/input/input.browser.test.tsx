@@ -11,6 +11,7 @@ import {
   roleNamed,
   stampDensity,
   textboxNamed,
+  textNamed,
 } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme";
 import { Field } from "../field";
@@ -41,6 +42,19 @@ describe("Input", () => {
     const input = textboxNamed("Email");
     const describedBy = input.getAttribute("aria-describedby");
     expect(describedBy).toBeTruthy();
+  });
+
+  it("keeps the Field label and description when a wrapper forwards id and ARIA props as undefined", async () => {
+    renderThemed(
+      <Field.Root>
+        <Field.Label>Email</Field.Label>
+        <Input id={undefined} aria-labelledby={undefined} aria-describedby={undefined} />
+        <Field.Description>Work address preferred.</Field.Description>
+      </Field.Root>
+    );
+    // The label's `for` also names the input, so the wiring is read off `aria-labelledby`.
+    expect(textboxNamed("Email").getAttribute("aria-labelledby")).toBe(textNamed("Email").id);
+    await expect.element(textboxNamed("Email")).toHaveAccessibleDescription("Work address preferred.");
   });
 
   it("is removed from tab order when disabled and stamps aria-invalid from Field", async () => {

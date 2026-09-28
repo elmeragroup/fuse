@@ -1,7 +1,8 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
-import { parseSync } from "oxc-parser";
+import { parseSync, Visitor } from "oxc-parser";
+import type { Expression, JSXElementName, JSXOpeningElement } from "oxc-parser";
 import { describe, expect, it } from "vitest";
 
 import { walkImportedSourceFiles } from "../scripts/entries";
@@ -702,4 +703,153 @@ describe("state faces", () => {
       "styles/grid-list.ts": ["hover:bg-muted", "hover:bg-muted/80"],
     });
   });
+});
+
+/** A JSX tag as written, such as `ComboboxPrimitive.Input`. */
+function tagName(name: JSXElementName): string {
+  if (name.type === "JSXIdentifier") return name.name;
+  if (name.type === "JSXNamespacedName") return `${name.namespace.name}:${name.name.name}`;
+  return `${tagName(name.object)}.${name.property.name}`;
+}
+
+function openingElements(relativePath: string, source: string): JSXOpeningElement[] {
+  const parsed = parseSync(relativePath, source);
+  expect(parsed.errors, relativePath).toEqual([]);
+  const elements: JSXOpeningElement[] = [];
+  new Visitor({ JSXOpeningElement: (element) => void elements.push(element) }).visit(parsed.program);
+  return elements;
+}
+
+const STATE_OR_WIRING_ATTRIBUTE = /^(?:disabled|readOnly|required|id|value|aria-.+)$/u;
+
+/** `Part > RenderTag attribute` for each state or wiring attribute, or spread, on an inline render element. */
+function renderElementWiring(relativePath: string, source: string): string[] {
+  return openingElements(relativePath, source).flatMap((element) =>
+    element.attributes.flatMap((attribute) => {
+      if (attribute.type !== "JSXAttribute" || attribute.name.name !== "render") return [];
+      if (attribute.value?.type !== "JSXExpressionContainer") return [];
+      if (attribute.value.expression.type !== "JSXElement") return [];
+      const rendered = attribute.value.expression.openingElement;
+      const prefix = `${tagName(element.name)} > ${tagName(rendered.name)}`;
+      return rendered.attributes.flatMap((item) => {
+        if (item.type === "JSXSpreadAttribute") return [`${prefix} {...}`];
+        const name = tagName(item.name);
+        return STATE_OR_WIRING_ATTRIBUTE.test(name) ? [`${prefix} ${name}`] : [];
+      });
+    })
+  );
+}
+
+function isDefinedPropsCall(expression: Expression): boolean {
+  return (
+    expression.type === "CallExpression" &&
+    expression.callee.type === "Identifier" &&
+    expression.callee.name === "definedProps"
+  );
+}
+
+/** Each listed part in the source, with `raw` for every spread that skips `definedProps(…)`. */
+function wiringPartSpreads(relativePath: string, source: string, parts: ReadonlySet<string>): string[] {
+  return openingElements(relativePath, source).flatMap((element) => {
+    const tag = tagName(element.name);
+    if (!parts.has(tag)) return [];
+    const raw = element.attributes.filter(
+      (attribute) => attribute.type === "JSXSpreadAttribute" && !isDefinedPropsCall(attribute.argument)
+    );
+    return [raw.length === 0 ? tag : `${tag} raw`];
+  });
+}
+
+/**
+ * The Base UI parts that read Field or Labelable context, plus Button (aria-disabled) and
+ * the Sheet popup (dialog ARIA), keyed by the module that renders each one.
+ */
+const WIRING_PARTS = {
+  "components/button/button.tsx": ["ButtonPrimitive"],
+  "components/checkbox-card/checkbox-card.tsx": ["FieldPrimitive.Label", "CheckboxPrimitive.Root"],
+  "components/checkbox/checkbox.tsx": ["CheckboxPrimitive.Root", "CheckboxGroupPrimitive"],
+  "components/combobox/combobox.tsx": [
+    "ComboboxPrimitive.Trigger",
+    "ComboboxPrimitive.Clear",
+    "ComboboxPrimitive.Input",
+  ],
+  "components/field/field.tsx": [
+    "FieldsetPrimitive.Root",
+    "FieldsetPrimitive.Legend",
+    "FieldPrimitive.Label",
+    "FieldPrimitive.Control",
+    "FieldPrimitive.Description",
+    "FieldPrimitive.Error",
+  ],
+  "components/input/input.tsx": ["InputPrimitive"],
+  "components/number-field/number-field.tsx": [
+    "NumberFieldPrimitive.Root",
+    "NumberFieldPrimitive.Input",
+    "NumberFieldPrimitive.Decrement",
+    "NumberFieldPrimitive.Increment",
+  ],
+  "components/phone-number-field/phone-number-field.tsx": [
+    "ComboboxPrimitive.Trigger",
+    "ComboboxPrimitive.Input",
+  ],
+  "components/radio-group/radio-group.tsx": [
+    "RadioPrimitive.Root",
+    "RadioGroupPrimitive",
+    "FieldPrimitive.Label",
+  ],
+  "components/selection-item/selection-item.tsx": ["FieldPrimitive.Label"],
+  "components/sheet/sheet.tsx": ["SheetPrimitive.Popup"],
+  "components/switch/switch.tsx": ["SwitchPrimitive.Root"],
+} as const satisfies Readonly<Record<string, readonly string[]>>;
+
+describe("Base UI prop wiring", () => {
+  // Why not a lint rule: both checks read what a JSX element renders and which parts wire
+  // themselves. Oxlint has no rule for either, and the `elmera` rules live in the external
+  // `@elmeragroup/internal/oxlint` package.
+  it("recognizes state and wiring on a render element, and a raw spread on a wiring part", () => {
+    expect(
+      renderElementWiring(
+        "probe.tsx",
+        "<P.Input render={<Group disabled={false} aria-label={x} className={c} />} />"
+      )
+    ).toEqual(["P.Input > Group disabled", "P.Input > Group aria-label"]);
+    expect(renderElementWiring("probe.tsx", "<Control render={<Textarea {...props} />} />")).toEqual([
+      "Control > Textarea {...}",
+    ]);
+    expect(renderElementWiring("probe.tsx", '<P.Icon render={<span className="x" />} />')).toEqual([]);
+    const parts = new Set(["S.Root"]);
+    expect(wiringPartSpreads("probe.tsx", "<S.Root {...props} />", parts)).toEqual(["S.Root raw"]);
+    expect(wiringPartSpreads("probe.tsx", "<S.Root {...definedProps(props)} />", parts)).toEqual(["S.Root"]);
+    expect(wiringPartSpreads("probe.tsx", "<S.Thumb {...props} />", parts)).toEqual([]);
+  });
+
+  it("keeps state and wiring off every inline render element", () => {
+    // A render element's props beat the part's own props and Root or Field state, so a
+    // `disabled={false}` there re-enabled a disabled Combobox.Root (#49). The exceptions
+    // repeat the part's own name because Button's icon sizes require `aria-label`.
+    const flagged = Object.fromEntries(
+      [...SOURCE_TREE.values()]
+        .filter((record) => record.relative.startsWith("components/") && record.relative.endsWith(".tsx"))
+        .map((record) => [record.relative, renderElementWiring(record.relative, record.source)] as const)
+        .filter(([, sites]) => sites.length > 0)
+    );
+    expect(flagged).toEqual({
+      "components/combobox/combobox.tsx": [
+        "ComboboxPrimitive.Clear > InputGroupButton aria-label",
+        "ComboboxPrimitive.ChipRemove > Button aria-label",
+      ],
+    });
+  });
+
+  it.each(Object.entries(WIRING_PARTS))(
+    "%s spreads consumer props onto its wiring parts only through definedProps",
+    (file, parts) => {
+      // Base UI's mergeProps copies a present undefined over the part's own value, so a
+      // forwarded `aria-labelledby={undefined}` erased Field's label (#62). The module that
+      // renders the part filters; the wrappers above it spread raw.
+      const found = wiringPartSpreads(file, readSrc(file), new Set(parts));
+      expect(found.filter((site) => site.endsWith(" raw"))).toEqual([]);
+      expect(new Set(found)).toEqual(new Set(parts));
+    }
+  );
 });

@@ -1,11 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { ChangeEvent, ComponentProps, ReactElement, ReactNode } from "react";
+import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { useFormReset } from "../../hooks/use-form-reset";
 import { useMergedRefs } from "../../hooks/use-merged-refs";
-import { definedProps } from "../../internal/defined-props";
 import { FieldControl } from "../field/field";
 import { FieldFrame } from "../field/field-frame";
 import { Textarea } from "../textarea/textarea";
@@ -74,9 +73,12 @@ export function TextareaField({
         }
   );
   const currentLength = value === undefined ? uncontrolledLength : value.length;
+  // SAFETY: Base UI types Field.Control's props for an <input>. It forwards every prop to
+  // the rendered Textarea, so textarea-only attributes such as rows, cols and wrap, and
+  // each handler's textarea event, reach the element their types describe.
+  const controlProps = props as ComponentProps<typeof FieldControl>;
 
-  function handleChange(event: ChangeEvent<HTMLTextAreaElement>): void {
-    const next = event.currentTarget.value;
+  function handleValueChange(next: string): void {
     if (!isControlled) {
       setUncontrolledLength(next.length);
     }
@@ -99,20 +101,16 @@ export function TextareaField({
       }
       description={description}
       errorMessage={errorMessage}>
+      {/* State goes on the part: render-element props would beat a disabled Field.Set. */}
       <FieldControl
-        render={
-          <Textarea
-            {...definedProps(props)}
-            ref={mergedRef}
-            className={textareaClassName}
-            value={isControlled ? value : undefined}
-            defaultValue={isControlled ? undefined : defaultValue}
-            maxLength={maxLength}
-            required={isRequired}
-            disabled={isDisabled}
-            onChange={handleChange}
-          />
-        }
+        value={value}
+        defaultValue={isControlled ? undefined : defaultValue}
+        onValueChange={handleValueChange}
+        maxLength={maxLength}
+        required={isRequired}
+        disabled={isDisabled}
+        {...controlProps}
+        render={<Textarea ref={mergedRef} className={textareaClassName} />}
       />
     </FieldFrame>
   );

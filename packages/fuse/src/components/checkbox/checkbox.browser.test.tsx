@@ -66,6 +66,17 @@ describe("Checkbox", () => {
     expect(box.getAttribute("aria-checked")).toBe("false");
   });
 
+  it("keeps the Field label and description when a wrapper forwards id and ARIA props as undefined", async () => {
+    renderThemed(
+      <Field.Root orientation="horizontal">
+        <Checkbox id={undefined} aria-labelledby={undefined} aria-describedby={undefined} />
+        <Field.Label>Accept terms</Field.Label>
+        <Field.Description>Required to continue.</Field.Description>
+      </Field.Root>
+    );
+    await expect.element(checkboxNamed("Accept terms")).toHaveAccessibleDescription("Required to continue.");
+  });
+
   it("toggles from Tab focus with Space", async () => {
     renderThemed(
       <>

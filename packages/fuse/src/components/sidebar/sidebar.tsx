@@ -20,7 +20,6 @@ import type { VariantProps } from "tailwind-variants";
 import { useIsMobile } from "../../hooks/use-is-mobile";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { SidebarSimple } from "../../icons/generated/sidebar-simple";
-import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { nativeStateFaceClass } from "../../styles/state-face";
@@ -305,8 +304,7 @@ export function SidebarRoot({
 
   if (isMobile) {
     return (
-      // SheetRoot renders only a provider; the popup wires its own dialog ARIA, which an
-      // undefined key would erase, so only defined props are spread.
+      // SheetRoot renders only a provider, so the element props go to the popup.
       <SheetRoot side={side} open={openMobile} onOpenChange={setOpenMobile}>
         <SheetContent
           dir={dir}
@@ -314,7 +312,7 @@ export function SidebarRoot({
           data-mobile="true"
           showCloseButton={false}
           className={cn("w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground", className)}
-          {...definedProps(props)}
+          {...props}
           style={{ "--sidebar-width": SIDEBAR_WIDTH_MOBILE, ...style }}>
           <SheetHeader className="sr-only">
             <SheetTitle>{labels.title}</SheetTitle>

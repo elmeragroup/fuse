@@ -136,6 +136,25 @@ describe("Sheet", () => {
     expect(dialog.getAttribute("aria-describedby")).toBe(description.id);
   });
 
+  it("keeps the dialog's name, description and role when a wrapper forwards them as undefined", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <Sheet.Root>
+          <Sheet.Trigger>Open details</Sheet.Trigger>
+          <Sheet.Content aria-labelledby={undefined} aria-describedby={undefined} role={undefined}>
+            <Sheet.Title>Meter details</Sheet.Title>
+            <Sheet.Description>Readings for this address.</Sheet.Description>
+          </Sheet.Content>
+        </Sheet.Root>
+      )
+    );
+    await userEvent.click(page.getByRole("button", { name: "Open details", exact: true }));
+    const dialog = page.getByRole("dialog", { name: "Meter details", exact: true });
+    await expect.element(dialog).toBeVisible();
+    await expect.element(dialog).toHaveAccessibleDescription("Readings for this address.");
+  });
+
   it("maps Root side onto the popup data-side for every edge", async () => {
     for (const side of ["top", "right", "bottom", "left"] as const) {
       const { unmount } = renderThemed(withLocale("en-US", <BasicSheet side={side} />));

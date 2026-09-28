@@ -9,6 +9,7 @@ import type { VariantProps } from "tailwind-variants";
 
 import { CheckCircle } from "../../icons/generated/check-circle";
 import { Circle } from "../../icons/generated/circle";
+import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { racDisabledStateFaceClass } from "../../styles/state-face";
 import {
@@ -117,7 +118,7 @@ export function CheckboxCard({
                   />
                 </span>
               )}
-              {...other}
+              {...definedProps(other)}
             />
             <div>
               <div className="flex flex-1 flex-col">

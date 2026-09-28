@@ -109,6 +109,20 @@ describe("PhoneNumberField", () => {
     expect(textboxNamed("Mobile")).toHaveProperty("inputMode", "tel");
   });
 
+  it("keeps the Field label and description when a wrapper forwards id and ARIA props as undefined", async () => {
+    renderField(
+      <PhoneNumberField
+        label="Mobile"
+        description="Used for delivery updates."
+        id={undefined}
+        aria-label={undefined}
+        aria-labelledby={undefined}
+        aria-describedby={undefined}
+      />
+    );
+    await expect.element(textboxNamed("Mobile")).toHaveAccessibleDescription("Used for delivery updates.");
+  });
+
   it("names the country search independently of the Field label and opts it out of autofill", async () => {
     renderField(<PhoneNumberField label="Mobile" />);
     await openPicker();

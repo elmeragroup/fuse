@@ -10,7 +10,11 @@ Preserve the React peer lower bound when choosing runtime APIs.
 Use Base UI namespace parts and `render` composition through `useRender` and
 `mergeProps`. Keep primitive prop names and the existing labeled-composite API.
 Evaluate inherited `className` callbacks before merging classes.
-Guard conditional aria spreads so `undefined` cannot erase automatic wiring.
+Write pure wrappers: defaults and `data-slot`, then `className`, then `{...props}`.
+Put state and wiring on the part, presentation on its `render` element. Spread
+optional props; write an attribute only when its value is always defined. Wrappers
+spread raw; a module that renders a Field or Labelable reader, Button or the Sheet
+popup spreads `definedProps(props)` so `undefined` cannot erase automatic wiring.
 
 ## Styling and accessibility
 

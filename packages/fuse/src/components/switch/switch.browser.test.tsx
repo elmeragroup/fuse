@@ -139,6 +139,17 @@ describe("Switch", () => {
     await expect.element(page.getByRole("switch", { name: "Open", checked: false })).toBeInTheDocument();
   });
 
+  it("keeps the Field label and description when a wrapper forwards id and ARIA props as undefined", async () => {
+    renderThemed(
+      <Field.Root>
+        <Field.Label>Notifications</Field.Label>
+        <Switch id={undefined} aria-labelledby={undefined} aria-describedby={undefined} />
+        <Field.Description>Sent by email.</Field.Description>
+      </Field.Root>
+    );
+    await expect.element(switchNamed("Notifications")).toHaveAccessibleDescription("Sent by email.");
+  });
+
   it("takes its accessible name from Field.Label and stamps aria-invalid from Field", () => {
     renderThemed(
       <>

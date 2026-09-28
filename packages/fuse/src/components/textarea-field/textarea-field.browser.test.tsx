@@ -3,6 +3,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { fieldRootFrom, renderThemed, textboxNamed } from "../../../test/themed-browser-render";
+import { Field } from "../field";
 import { TextareaField } from "./textarea-field";
 
 describe("TextareaField", () => {
@@ -33,6 +34,15 @@ describe("TextareaField", () => {
     renderThemed(<TextareaField label="Bio" id={undefined} aria-labelledby={undefined} />);
     const area = textboxNamed("Bio");
     expect(area.id).not.toBe("");
+  });
+
+  it("disables the textarea inside a disabled Field.Set", () => {
+    renderThemed(
+      <Field.Set disabled>
+        <TextareaField label="Bio" />
+      </Field.Set>
+    );
+    expect(textboxNamed("Bio")).toHaveProperty("disabled", true);
   });
 
   it("merges className onto the field root and textareaClassName onto the textarea", () => {

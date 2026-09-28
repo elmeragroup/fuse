@@ -8,6 +8,7 @@ import { RadioGroup as RadioGroupPrimitive } from "@base-ui/react/radio-group";
 import type { VariantProps } from "tailwind-variants";
 
 import { SpinnerGap } from "../../icons/generated/spinner-gap";
+import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { dataStateFaceClass } from "../../styles/state-face";
 import { selfFocusRingClass } from "../../styles/utils";
@@ -25,11 +26,13 @@ import { radioIconButtonVariants } from "./radio-group-variants";
  */
 export function RadioGroupItem({
   className,
+  value,
   ...props
 }: ComponentProps<typeof RadioPrimitive.Root>): ReactElement {
   return (
     <RadioPrimitive.Root
       data-slot="radio-group-item"
+      value={value}
       className={(state) =>
         cn(
           // The root is a <span>, which never matches `:disabled`, so the state face keys off
@@ -43,7 +46,7 @@ export function RadioGroupItem({
           className instanceof Function ? className(state) : className
         )
       }
-      {...props}>
+      {...definedProps(props)}>
       <RadioPrimitive.Indicator
         data-slot="radio-group-indicator"
         className="flex size-4 items-center justify-center">
@@ -248,7 +251,7 @@ export function RadioIconButton({
       value={value}
       disabled={isDisabled}
       className={cn(radioIconButtonVariants({ size }), selfFocusRingClass, className)}
-      {...props}>
+      {...definedProps(props)}>
       {children}
     </RadioPrimitive.Root>
   );

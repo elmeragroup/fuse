@@ -310,6 +310,21 @@ describe("Button", () => {
     expect(roleNamed("button", "Forwarded").getAttribute("aria-disabled")).toBe("true");
   });
 
+  it("keeps Base UI's aria-disabled on pending and non-native buttons when a wrapper forwards it as undefined", () => {
+    renderThemed(
+      <>
+        <Button isPending focusableWhenDisabled aria-disabled={undefined}>
+          Pending
+        </Button>
+        <Button render={<a href="/docs" />} nativeButton={false} disabled aria-disabled={undefined}>
+          Anchor
+        </Button>
+      </>
+    );
+    expect(roleNamed("button", "Pending").getAttribute("aria-disabled")).toBe("true");
+    expect(roleNamed("button", "Anchor").getAttribute("aria-disabled")).toBe("true");
+  });
+
   it("forwards a predicted path to onIntent only while live: not disabled, pending, or visually disabled", () => {
     const live = vi.fn();
     const disabled = vi.fn();
