@@ -8,7 +8,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { withLocale } from "../../../test/locale-matrix";
+import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import {
   calendarGrid,
   calendarRoot,
@@ -414,7 +414,26 @@ describe("DatePicker presets", () => {
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("lets an explicit label override the dictionary default", async () => {
+  it("names the preset pane from the dictionary in every shipped locale, below an explicit label", async () => {
+    const expected = {
+      "nb-NO": "Datoforvalg",
+      "sv-SE": "Datumalternativ",
+      "en-US": "Date presets",
+      "fi-FI": "Päivämäärän pikavalinnat",
+    } as const;
+    for (const locale of SUPPORTED_LOCALES) {
+      const { unmount } = renderThemed(
+        withLocale(
+          locale,
+          <DatePickerPresetGroup>
+            <DatePickerPresetItem value="today">Today</DatePickerPresetItem>
+          </DatePickerPresetGroup>
+        )
+      );
+      await expect.element(page.getByRole("radiogroup", { name: expected[locale] })).toBeVisible();
+      unmount();
+    }
+
     renderThemed(
       withLocale(
         "nb-NO",

@@ -31,6 +31,9 @@ its place.
 - A **test-only seam** is an export, parameter, flag, global, reset hook,
   wrapper, or code path whose only callers are tests.
 - A test goes **red** when it fails for the reason it claims to guard.
+- A **lane** is the slice of a test suite that one production owner boundary
+  owns, including that owner's cases in shared suites. Audits and campaigns
+  divide their work by lane.
 
 ## Authoring gate
 
@@ -124,12 +127,14 @@ keep:
 - a guard that keeps a retired public API from returning;
 - call ordering when order is observable behavior;
 - a regression with a credible failure mode;
-- source inspection, in the central suite or beside its owner, when it is the
-  cheapest independent guard. It goes red on a contract change (a directive,
-  an import boundary, a public key) and survives an identifier-only refactor;
-- a retained test that fails on the baseline. Treat it as a possible product
-  bug: reproduce it, then fix the owner in its own commit with a changeset.
+- source inspection in the central suite
+  (`packages/fuse/src/source-contracts.test.ts`), when it is the cheapest
+  independent guard and the test states why lint or an existing gate cannot
+  enforce it. It goes red on a contract change (a directive, an import
+  boundary, a public key) and survives an identifier-only refactor;
+- a retained test that fails on the baseline. Handle it as
+  [CAMPAIGN.md §7](CAMPAIGN.md#7-product-defects) says.
 
 A test that is static, slow, or shaped like the implementation can still be a
-contract's only proof. Show that a keeper goes red on the same regression
-before removing it.
+contract's only proof. Before removing it, prove a keeper goes red on the same
+regression, as [AUDIT.md §2](AUDIT.md#2-candidate-evidence) describes.

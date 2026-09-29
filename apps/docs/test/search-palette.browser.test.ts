@@ -116,6 +116,7 @@ describe("docs ⌘K palette", () => {
         const a = active.getBoundingClientRect();
         const l = list.getBoundingClientRect();
         return {
+          id: active.id,
           visible: a.top >= l.top - 1 && a.bottom <= l.bottom + 1,
           optionTop: a.top,
           optionBottom: a.bottom,
@@ -132,12 +133,15 @@ describe("docs ⌘K palette", () => {
         };
       });
     expect((await geometry()).overflow).toBe(true);
+    const visited: { id: string; first: boolean; last: boolean }[] = [];
+    let previous = (await geometry()).id;
     for (const key of [
       "End",
       "Home",
       "ArrowUp",
       "ArrowDown",
       ...Array.from({ length: 15 }, () => "ArrowDown"),
+      "ArrowUp",
     ]) {
       await page.keyboard.press(key);
       await expect.poll(geometry).toMatchObject({ visible: true });
@@ -150,7 +154,16 @@ describe("docs ⌘K palette", () => {
         expect(current.scrollTop).toBeGreaterThan(0);
       }
       if (key === "Home") expect(current.first).toBe(true);
+      if (key.startsWith("Arrow")) expect(current.id).not.toBe(previous);
+      visited.push({ id: current.id, first: current.first, last: current.last });
+      previous = current.id;
     }
+    const [, home, wrappedUp, wrappedDown] = visited;
+    // ArrowUp from the first option wraps to the last, and ArrowDown wraps back.
+    expect(wrappedUp).toMatchObject({ last: true });
+    expect(wrappedDown).toEqual(home);
+    // The closing ArrowUp undoes the last ArrowDown.
+    expect(visited.at(-1)).toEqual(visited.at(-3));
     await page.locator(FIELD).fill("theme mat");
     await waitForOptionCount(page, 1);
     await expect.poll(geometry).toMatchObject({ visible: true });

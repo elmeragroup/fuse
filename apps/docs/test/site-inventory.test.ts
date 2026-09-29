@@ -44,9 +44,8 @@ describe("SideNav inventory", () => {
 
 describe("llms.txt", () => {
   it("is served as plain text from the site root, indexing every nav destination and the home page, each with a description and component markdown links", async () => {
-    const response = await fetchOk("/llms.txt");
+    const { response, text } = await fetchOk("/llms.txt");
     expect(response.headers.get("content-type")).toContain("text/plain");
-    const text = await fetchText("/llms.txt");
     expect(text).toContain(`](${HOME_PAGE.href}): ${HOME_PAGE.description}`);
     for (const page of STATIC_PAGES) {
       expect(text, page.href).toContain(`[${page.label}](${page.href}): ${page.description}`);
@@ -62,8 +61,8 @@ describe("llms.txt", () => {
 describe("markdown endpoints", () => {
   // Every endpoint takes the same Next static-file path, and generated-output checks each
   // file's content on disk, so one row proves the serving.
-  it.each(["/components/button.md"])("serves the View-as-Markdown target %s", async (markdownUrl) => {
-    const markdown = await fetchText(markdownUrl);
+  it("serves the View-as-Markdown target /components/button.md", async () => {
+    const markdown = await fetchText("/components/button.md");
     expect(markdown.startsWith("# ")).toBe(true);
     expect(markdown).toContain("## API reference");
   });

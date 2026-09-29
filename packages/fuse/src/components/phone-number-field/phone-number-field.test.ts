@@ -115,28 +115,25 @@ describe("phone-number-field picker set", () => {
 });
 
 describe("phone number international identity", () => {
-  it.each([["0024712345", "+24712345"]])(
-    "preserves the full input %s through detection and output",
-    (input, expected) => {
-      const countries = getCountries();
-      const currentCountry = resolveSelectedCountry(countries, "NO");
-      const next = processInputWithDetection({
-        input,
-        currentCountry,
-        countries,
-        autoDetectCountry: true,
-        international: false,
-        metadata: defaultMetadata,
-      });
-      const values = resolvePhoneFieldValues({
-        digits: next.digits,
-        country: next.country.code,
-        metadata: defaultMetadata,
-        outputFormat: "e164",
-        international: false,
-        formatOnType: false,
-      });
-      expect(values.outputValue).toBe(expected);
-    }
-  );
+  it("preserves the full input 0024712345 through detection and output", () => {
+    const countries = getCountries();
+    const currentCountry = resolveSelectedCountry(countries, "NO");
+    const next = processInputWithDetection({
+      input: "0024712345",
+      currentCountry,
+      countries,
+      autoDetectCountry: true,
+      international: false,
+      metadata: defaultMetadata,
+    });
+    const values = resolvePhoneFieldValues({
+      digits: next.digits,
+      country: next.country.code,
+      metadata: defaultMetadata,
+      outputFormat: "e164",
+      international: false,
+      formatOnType: false,
+    });
+    expect(values.outputValue).toBe("+24712345");
+  });
 });

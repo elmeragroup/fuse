@@ -133,17 +133,18 @@ export function docsBaseUrl(): string {
   return url;
 }
 
-/** Fetches a site-relative path off the running server, asserting a non-error response. */
-export async function fetchOk(pathname: string): Promise<Response> {
+/**
+ * Fetches a site-relative path off the running server and reads its body as text,
+ * then asserts a non-error response.
+ */
+export async function fetchOk(pathname: string): Promise<{ response: Response; text: string }> {
   const response = await fetch(new URL(pathname, docsBaseUrl()));
-  await response.arrayBuffer();
+  const text = await response.text();
   expect(response.ok, `${pathname} responded ${String(response.status)}`).toBe(true);
-  return response;
+  return { response, text };
 }
 
-/** The same fetch, returning the response body as text. */
+/** The same fetch, returning only the response body. */
 export async function fetchText(pathname: string): Promise<string> {
-  const response = await fetch(new URL(pathname, docsBaseUrl()));
-  expect(response.ok, `${pathname} responded ${String(response.status)}`).toBe(true);
-  return await response.text();
+  return (await fetchOk(pathname)).text;
 }

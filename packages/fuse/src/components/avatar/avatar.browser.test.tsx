@@ -3,7 +3,7 @@ import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
+import { cssVarColor, renderThemed, textNamed } from "../../../test/themed-browser-render";
 import { Avatar } from "./index";
 
 const PIXEL =
@@ -73,10 +73,7 @@ describe("Avatar", () => {
           <Avatar.Fallback>AL</Avatar.Fallback>
         </Avatar.Root>
       );
-      const fallback = page.getByText("AL", { exact: true }).element();
-      if (!(fallback instanceof HTMLElement)) {
-        throw new Error("expected the fallback");
-      }
+      const fallback = textNamed("AL");
       const avatar = fallback.parentElement;
       if (!(avatar instanceof HTMLElement)) {
         throw new Error("expected the avatar root");

@@ -18,8 +18,7 @@ const ILLEGAL_SLUGS = [
 ] as const;
 
 /** The grid itself, without the prose around it. */
-async function matrixGrid(): Promise<string> {
-  const html = await fetchText("/handbook/theme-matrix");
+function matrixGrid(html: string): string {
   const start = html.indexOf("data-theme-matrix");
   const end = html.indexOf('id="overlays"');
   expect(start).toBeGreaterThan(-1);
@@ -38,7 +37,7 @@ describe("theme matrix", () => {
       expect(html, slug).not.toContain(slug);
     }
     // No density axis: the grid is 20 cells, not 20 × 2.
-    expect(await matrixGrid()).not.toContain("comfortable");
+    expect(matrixGrid(html)).not.toContain("comfortable");
   });
 
   it("scopes each cell rather than stamping the document", async () => {
@@ -52,7 +51,8 @@ describe("theme matrix", () => {
   });
 
   it("puts an overlay inside every cell, so the portal target is the cell's scope", async () => {
-    expect([...(await matrixGrid()).matchAll(/>Overlay</g)]).toHaveLength(20);
+    const html = await fetchText("/handbook/theme-matrix");
+    expect([...matrixGrid(html).matchAll(/>Overlay</g)]).toHaveLength(20);
   });
 });
 

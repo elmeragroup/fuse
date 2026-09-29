@@ -3,24 +3,26 @@
 A campaign prunes one subsystem's whole test suite in one PR. A subsystem is a
 component family with its docs demos (`components/sidebar`), the `react-aria/`
 quarantine, the `theme/` runtime, or a workspace such as `packages/fuse-figma`.
-[SKILL.md](SKILL.md) owns the value bar, and [AUDIT.md](AUDIT.md) owns the
-candidate evidence, validation and handoff for every lane. This file adds the
-order of work. Each step ends on its completion criterion, and the next step
-starts only once it holds.
+[SKILL.md](SKILL.md) owns the value bar and its terms. [AUDIT.md](AUDIT.md)
+owns candidate evidence (§2), validation (§4) and handoff (§6) for every lane.
+The steps below replace AUDIT.md's discovery (§1), edit (§3) and
+one-batch-at-a-time landing (§5), so the whole subsystem lands in one PR. Each
+step ends on its completion criterion, and the next step starts only once it
+holds.
 
 ## 1. Baseline
 
 Record the subsystem's test and test-support line counts and every in-scope
 test file's pass/fail state at a pinned `main` SHA. Keep baseline failures in
-their own list. Each one is a possible product bug until you reproduce it.
+their own list for [step 7](#7-product-defects).
 
 Done when every in-scope test file has a recorded baseline result.
 
 ## 2. Lanes and inventory
 
-Split the suite into **lanes** along production owner boundaries, not file
-prefixes. For `theme/`, that could be composition, CSS emission, the
-color-scheme runtime and script, density, contrast, and the provider. Include
+Split the suite into [lanes](SKILL.md#terms). For `theme/`, the lanes could be
+composition, CSS emission, the color-scheme runtime and script, density,
+contrast, and the provider. Include
 the subsystem's cases in shared suites (`source-contracts.test.ts`, the docs
 demo browser tests, the packed-consumer checks) and its support files in
 `packages/fuse/test/`. A shared suite's cases go to the lane of the owner they
@@ -70,9 +72,10 @@ assertions to carry into keepers, and the test-only seams it unlocks.
 Edit lane by lane. Route every change to shared support in
 `packages/fuse/test/` through one owner, one change at a time. With each lane,
 remove the test-only seams it unlocks. A moved suite keeps the filename suffix
-that routes it to its project in the owning `vitest.config.ts`. Update the reviewed inventories that list moved or deleted suites. Record the
-durable test-ownership rules this campaign's mistakes taught in the Tests
-section of `AGENTS.md`, and unresolved gaps in `TODO.md`.
+that routes it to its project in the owning `vitest.config.ts`. Update the
+reviewed inventories that list moved or deleted suites. Record the durable
+test-ownership rules this campaign's mistakes taught in the Tests section of
+`AGENTS.md`, and unresolved gaps in `TODO.md`.
 
 Done when every lane plan is applied and each lane's keepers pass.
 
@@ -80,12 +83,12 @@ Done when every lane plan is applied and each lane's keepers pass.
 
 Before claiming completion, have independent reviewers compare deleted
 coverage against the keepers, one reviewer per lane or group of neighboring
-lanes. They look for
-contracts that lost their only proof. They also look for new assertions that
-cannot go red, such as a rejection row the production code never reaches.
+lanes. They look for contracts that lost their only proof. They also look for
+new assertions that cannot go red, such as a rejection row the production code
+never reaches.
 
-For each restored contract, make one deliberate **mutation** of the production
-owner and confirm the keeper goes red. Then restore the source byte for byte.
+Prove each restored contract's keeper with the mutation
+[AUDIT.md §2](AUDIT.md#2-candidate-evidence) describes.
 
 Done when every reported gap is restored or rejected with source evidence, and
 every restored contract has a caught mutation.

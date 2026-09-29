@@ -7,13 +7,13 @@ file adds the order of work.
 
 ## 1. Discovery
 
-Discovery is read-only. For a broad scope, run parallel read-only lanes when
-subagents are available, one per workspace plus a cross-cutting sweep for a
-single junk pattern:
+Discovery is read-only. For a broad scope, give each
+[lane](SKILL.md#terms) its own read-only agent when subagents are available,
+plus one cross-cutting sweep for a single junk pattern. Draw the lanes from
+these test trees:
 
-- `packages/fuse`, split by top-level `src/` directory when the scope is
-  large, with its root `src/*.test.ts` package gates, its type tests, and its
-  `test/` support and packed-consumer checks;
+- `packages/fuse`: its `src/` suites, root `src/*.test.ts` package gates, type
+  tests, and `test/` support and packed-consumer checks;
 - `packages/color` and `packages/fuse-figma`;
 - `apps/docs/test` and `apps/static-theme/test`;
 - the repo-policy suite in `test/`.
@@ -79,9 +79,10 @@ a changeset. Read [scripts/RELEASE.md](../../../scripts/RELEASE.md) first.
 ## 5. Landing
 
 Commit, push, or open a PR only when the user authorizes it. A PR that
-changes only tests and test support carries the `no-changeset` label, and a
-product fix brings its own changeset. Land one batch at a time. After it
-merges, refresh from `main` and rerun discovery for the next batch.
+changes only tests and test support carries the `no-changeset` label. Handle a
+baseline failure as [CAMPAIGN.md §7](CAMPAIGN.md#7-product-defects) says. Land
+one batch at a time. After it merges, refresh from `main` and rerun discovery
+for the next batch.
 
 ## 6. Handoff
 

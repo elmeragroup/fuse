@@ -7,7 +7,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
-import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
+import { cssVarColor, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { DropdownMenu } from "./index";
 
 type ItemRole = "menuitem" | "menuitemcheckbox" | "menuitemradio";
@@ -504,7 +504,7 @@ describe("DropdownMenu", () => {
     }
     renderThemed(<ExplicitSubContainer />);
     const team = await mountedItem("Team");
-    const subIsland = page.getByRole("region", { name: "Sub island", exact: true }).element();
+    const subIsland = roleNamed("region", "Sub island");
     expect(subIsland.contains(team)).toBe(true);
   });
 

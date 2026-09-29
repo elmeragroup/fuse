@@ -2,13 +2,13 @@
  * RAC interim dependencies, plus the scoped packages
  * those entries pull in (`@react-aria/*`, `@react-stately/*`).
  *
- * One owner, imported by `entries.ts` (package-check) and
- * `elmera/no-rac-outside-quarantine` (lint). A hand-copied array in either
- * consumer is a divergence.
+ * `package-check-lib.ts` reads it through `isForbiddenRacSpecifier`.
+ * `elmera/no-rac-outside-quarantine` keeps its own copy of this list in
+ * `@elmeragroup/internal`, so a change here must be mirrored there.
  *
  * @type {readonly string[]}
  */
-export const FORBIDDEN_RAC_PACKAGES = Object.freeze([
+const FORBIDDEN_RAC_PACKAGES = Object.freeze([
   "react-aria-components",
   "react-aria",
   "@internationalized/date",

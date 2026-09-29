@@ -4,7 +4,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import { px, renderThemed } from "../../../test/themed-browser-render";
+import { px, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Sheet } from "./index";
 
 /** Reads a theme token off the document root (`--container-*` are rem lengths). */
@@ -226,8 +226,7 @@ describe("Sheet", () => {
     rerender(withLocale("en-US", <BasicSheet showCloseButton={false} />));
     await openSheet();
     expect(page.getByRole("button", { name: "Close", exact: true }).query()).toBeNull();
-    expect(page.getByRole("button", { name: "Done", exact: true }).element()).toBeTruthy();
-    await userEvent.click(page.getByRole("button", { name: "Done", exact: true }).element());
+    await userEvent.click(roleNamed("button", "Done"));
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
   });
 

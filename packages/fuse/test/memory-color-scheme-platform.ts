@@ -31,7 +31,7 @@ export type MemoryPlatformInit = {
 };
 
 /** Which storage area a simulated `storage` event reports; `none` is a `null` area. */
-export type MemoryStorageArea = "local" | "session" | "none";
+type MemoryStorageArea = "local" | "session" | "none";
 
 /** One recorded `data-theme` write. */
 export type MemoryRootWrite = { value: string; transition: ColorSchemeTransition };

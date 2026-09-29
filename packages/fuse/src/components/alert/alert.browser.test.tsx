@@ -8,7 +8,7 @@ import * as Wcag from "@elmeragroup/color/wcag";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { headingNamed, renderThemed } from "../../../test/themed-browser-render";
+import { headingNamed, renderThemed, textNamed } from "../../../test/themed-browser-render";
 import { Alert } from "./alert";
 
 const VARIANTS = ["default", "destructive", "warning", "success"] as const;
@@ -85,7 +85,7 @@ describe("Alert", () => {
       expect(root.contains(title)).toBe(true);
       expect(root.textContent).toContain(`${variant} body`);
       // The variant stays on Root: Title and Description emit no variant attribute.
-      const description = page.getByText(`${variant} body`, { exact: true }).element();
+      const description = textNamed(`${variant} body`);
       expect(title.getAttribute("variant"), variant).toBeNull();
       expect(description.getAttribute("variant"), variant).toBeNull();
       expect(description.tagName, variant).toBe("P");

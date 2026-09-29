@@ -116,6 +116,12 @@ describe("make", () => {
         message: "Oklch h must be a finite number in 0..360 exclusive, received 360",
       },
     });
+    expect(Oklch.make({ l: 0.5, c: Infinity, h: 0, alpha: 1 })).toMatchObject({
+      error: {
+        quantity: "Oklch c",
+        message: "Oklch c must be a finite number in 0..1000000, received Infinity",
+      },
+    });
     expect(Oklch.make({ l: 0.5, c: 0.1, h: 30, alpha: Number.NaN })).toMatchObject({
       error: { quantity: "Oklch alpha" },
     });

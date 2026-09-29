@@ -18,6 +18,7 @@ import {
   effectiveOpacity,
   headingNamed,
   renderThemed,
+  roleNamed,
   stampDensity,
   textNamed,
 } from "../../../test/themed-browser-render";
@@ -396,11 +397,7 @@ describe("Radio", () => {
           {group}
         </>
       );
-      const previous = page.getByRole("button", { name: "Before", exact: true }).element();
-      if (!(previous instanceof HTMLElement)) {
-        throw new Error("expected before button");
-      }
-      await assertFocusRingAtBothDensities(previous, radioNamed(name));
+      await assertFocusRingAtBothDensities(roleNamed("button", "Before"), radioNamed(name));
     }
   );
 });

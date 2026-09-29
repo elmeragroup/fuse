@@ -132,7 +132,7 @@ export function cellNamed(name: string | RegExp): HTMLElement {
 }
 
 /** Every day band in the grid — RAC gives each one `role="button"`. */
-export function dayBands(): HTMLElement[] {
+function dayBands(): HTMLElement[] {
   const grid = calendarGrid();
   return page
     .getByRole("button")

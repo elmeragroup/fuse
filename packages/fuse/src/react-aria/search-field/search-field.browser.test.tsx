@@ -6,7 +6,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { assertStateFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
-import { withLocale } from "../../../test/locale-matrix";
+import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import { describedTextsFor } from "../../../test/rac-calendar-testing";
 import { CONTROL_MD, px, renderThemed, roleNamed, stampDensity } from "../../../test/themed-browser-render";
 import { UiProviders } from "../ui-providers/ui-providers";
@@ -151,7 +151,21 @@ describe("SearchField", () => {
     }
   });
 
-  it("lets an explicit label override the dictionary default", async () => {
+  it("names the clear button from the dictionary in every shipped locale, below an explicit label", async () => {
+    const expected = {
+      "nb-NO": "Tøm søket",
+      "sv-SE": "Rensa sökningen",
+      "en-US": "Clear search",
+      "fi-FI": "Tyhjennä haku",
+    } as const;
+    for (const locale of SUPPORTED_LOCALES) {
+      const { unmount } = renderThemed(
+        withLocale(locale, <SearchField label="Meter search" defaultValue="735999123" />)
+      );
+      await expect.element(page.getByRole("button", { name: expected[locale] })).toBeVisible();
+      unmount();
+    }
+
     renderThemed(
       withLocale(
         "nb-NO",

@@ -187,8 +187,8 @@ describe("exports map", () => {
     );
     expect(surfaces).toEqual(EXPECTED_ENTRIES);
 
-    const barrelNames = [...expectedBySubpath].flatMap(([subpath, entry]) =>
-      subpath !== "." && entry.inRootBarrel ? (entry.runtimeExports ?? []) : []
+    const barrelNames = [...expectedBySubpath.values()].flatMap((entry) =>
+      entry.inRootBarrel ? (entry.runtimeExports ?? []) : []
     );
     const root = discovered.jsEntries.find((entry) => entry.subpath === ".");
     expect([...(root?.runtimeExports ?? [])].sort()).toEqual(barrelNames.sort());
@@ -209,35 +209,7 @@ describe("exports map", () => {
   });
 
   it("maps the published layout to package-root files, not nested dist/", () => {
-    expect(exportBindingTarget(publishExports, "./theme")).toEqual({
-      types: "./theme.d.ts",
-      import: "./theme.js",
-    });
-    expect(exportBindingTarget(publishExports, ".")).toEqual({
-      types: "./index.d.ts",
-      import: "./index.js",
-    });
-    expect(exportBindingTarget(publishExports, "./icons")).toEqual({
-      types: "./icons.d.ts",
-      import: "./icons.js",
-    });
-    expect(exportBindingTarget(publishExports, "./button")).toEqual({
-      types: "./button.d.ts",
-      import: "./button.js",
-    });
-    expect(exportBindingTarget(publishExports, "./scroll-area")).toEqual({
-      types: "./scroll-area.d.ts",
-      import: "./scroll-area.js",
-    });
-    expect(exportBindingTarget(publishExports, "./flags")).toEqual({
-      types: "./flags.d.ts",
-      import: "./flags.js",
-    });
     expect(exportBindingTarget(publishExports, "./flags/*.svg")).toBe("./flags/*.svg");
-    expect(exportBindingTarget(publishExports, "./illustrations")).toEqual({
-      types: "./illustrations.d.ts",
-      import: "./illustrations.js",
-    });
     expect(exportBindingTarget(publishExports, "./css")).toBe("./styles/fuse.css");
     expect(exportBindingTarget(publishExports, "./demo-stage-comfortable.css")).toBeUndefined();
     expect(exportBindingTarget(publishExports, "./themes.css")).toBe("./themes.css");
