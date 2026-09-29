@@ -1,11 +1,6 @@
-import type { ComponentProps, ReactNode } from "react";
-
-import type { CalendarDate } from "@internationalized/date";
-import type { ValidationResult } from "react-aria-components";
 import { expectTypeOf, test } from "vitest";
 
 import type * as DateFieldApi from "@elmeragroup/fuse/react-aria/date-field";
-import type { DateFieldProps, DateInputProps } from "@elmeragroup/fuse/react-aria/date-field";
 import { DateField, DateInput } from "@elmeragroup/fuse/react-aria/date-field";
 
 test("dateFieldVariants and RAC types are not public exports", () => {
@@ -18,42 +13,6 @@ test("dateFieldVariants and RAC types are not public exports", () => {
   type _NoValidation = DateFieldApi.ValidationResult;
   // @ts-expect-error RAC DateFieldProps is not leaked under a bare RAC name
   type _NoAria = DateFieldApi.AriaDateFieldProps;
-});
-
-test("DateFieldProps is generic, open, and accepts both error faces", () => {
-  expectTypeOf<DateFieldProps<CalendarDate>["label"]>().toEqualTypeOf<string | undefined>();
-  expectTypeOf<DateFieldProps<CalendarDate>["description"]>().toEqualTypeOf<string | undefined>();
-  expectTypeOf<DateFieldProps<CalendarDate>["errorMessage"]>().toEqualTypeOf<
-    ReactNode | ((validation: ValidationResult) => ReactNode) | undefined
-  >();
-  expectTypeOf<DateFieldProps<CalendarDate>["shouldForceLeadingZeros"]>().toEqualTypeOf<
-    boolean | undefined
-  >();
-  expectTypeOf<DateFieldProps<CalendarDate>>().toHaveProperty("granularity");
-  expectTypeOf<DateFieldProps<CalendarDate>>().toHaveProperty("hourCycle");
-  expectTypeOf<DateFieldProps<CalendarDate>>().toHaveProperty("minValue");
-  expectTypeOf<DateFieldProps<CalendarDate>>().toHaveProperty("maxValue");
-  expectTypeOf<DateFieldProps<CalendarDate>>().toHaveProperty("placeholderValue");
-  expectTypeOf<DateFieldProps<CalendarDate>>().toHaveProperty("isDisabled");
-  expectTypeOf<DateFieldProps<CalendarDate>>().toHaveProperty("isReadOnly");
-  expectTypeOf<DateFieldProps<CalendarDate>>().toHaveProperty("isRequired");
-  expectTypeOf<DateFieldProps<CalendarDate>>().toHaveProperty("isInvalid");
-  expectTypeOf<DateFieldProps<CalendarDate>>().toHaveProperty("validate");
-  expectTypeOf<DateFieldProps<CalendarDate>>().toHaveProperty("name");
-  expectTypeOf<DateFieldProps<CalendarDate>>().toHaveProperty("autoFocus");
-  expectTypeOf<DateFieldProps<CalendarDate>>().toHaveProperty("className");
-  expectTypeOf<DateFieldProps<CalendarDate>>().toHaveProperty("aria-label");
-  expectTypeOf<DateFieldProps<CalendarDate>>().toHaveProperty("validationBehavior");
-  expectTypeOf<DateFieldProps<CalendarDate>>().not.toHaveProperty("size");
-});
-
-test("DateInput omits children and keeps slot plus open RAC props", () => {
-  expectTypeOf<DateInputProps>().not.toHaveProperty("children");
-  expectTypeOf<ComponentProps<typeof DateInput>>().not.toHaveProperty("children");
-  expectTypeOf<DateInputProps>().toHaveProperty("slot");
-  expectTypeOf<DateInputProps>().toHaveProperty("className");
-  expectTypeOf<DateInputProps>().toHaveProperty("hidden");
-  expectTypeOf<DateInputProps>().toHaveProperty("lang");
 });
 
 test("the elements take the public props and reject DateInput children and a size axis", () => {

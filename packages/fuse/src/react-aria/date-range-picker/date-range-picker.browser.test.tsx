@@ -200,29 +200,26 @@ describe("DateRangePicker", () => {
     expect(committed).not.toBeInstanceOf(Event);
   });
 
-  it("renders leading zeros on day and month in both rows by default", async () => {
-    renderPicker(<DateRangePicker label="Delivery window" defaultValue={{ start: july4, end: july9 }} />);
-    await expect.element(segmentLocator("month, Start Date")).toBeVisible();
-
-    expect(segmentNamed("month, Start Date").textContent).toBe("07");
-    expect(segmentNamed("day, Start Date").textContent).toBe("04");
-    expect(segmentNamed("month, End Date").textContent).toBe("07");
-    expect(segmentNamed("day, End Date").textContent).toBe("09");
-  });
-
-  it("drops the leading zeros when a caller turns them off", async () => {
+  it.each([
+    [
+      "renders leading zeros on day and month in both rows by default",
+      {},
+      { "month, Start Date": "07", "day, Start Date": "04", "month, End Date": "07", "day, End Date": "09" },
+    ],
+    [
+      "drops the leading zeros when a caller turns them off",
+      { shouldForceLeadingZeros: false },
+      { "month, Start Date": "7", "day, Start Date": "4", "day, End Date": "9" },
+    ],
+  ] as const)("%s", async (_title, props, segments) => {
     renderPicker(
-      <DateRangePicker
-        label="Delivery window"
-        defaultValue={{ start: july4, end: july9 }}
-        shouldForceLeadingZeros={false}
-      />
+      <DateRangePicker label="Delivery window" defaultValue={{ start: july4, end: july9 }} {...props} />
     );
     await expect.element(segmentLocator("month, Start Date")).toBeVisible();
 
-    expect(segmentNamed("month, Start Date").textContent).toBe("7");
-    expect(segmentNamed("day, Start Date").textContent).toBe("4");
-    expect(segmentNamed("day, End Date").textContent).toBe("9");
+    for (const [segment, text] of Object.entries(segments)) {
+      expect(segmentNamed(segment).textContent, segment).toBe(text);
+    }
   });
 
   it("opens a named dialog holding the range grid and commits two clicked endpoints", async () => {

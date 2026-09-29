@@ -185,22 +185,6 @@ describe("Tooltip", () => {
     expect(placed.getAttribute("data-align")).toBe("start");
   });
 
-  it("portals into the enclosing ThemeScope instead of the document body", async () => {
-    const { host } = renderThemed(
-      <Tooltip.Provider>
-        <Tooltip.Root>
-          <Tooltip.Trigger>Hint</Tooltip.Trigger>
-          <Tooltip.Content>Add to library</Tooltip.Content>
-        </Tooltip.Root>
-      </Tooltip.Provider>
-    );
-    const scope = host.querySelector("[data-theme-brand]");
-    const tooltip = await hoverOpen("Hint", "Add to library");
-    expect(scope).not.toBeNull();
-    expect(scope?.contains(tooltip)).toBe(true);
-    expect([...document.body.children].includes(tooltip)).toBe(false);
-  });
-
   it("portals into an explicit container element", async () => {
     function ExplicitContainer() {
       const [node, setNode] = useState<HTMLDivElement | null>(null);

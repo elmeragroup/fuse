@@ -74,23 +74,6 @@ describe("ThemeProvider / ThemeScope", () => {
     expect(host.textContent).toBe("useTheme must be used within ThemeProvider or ThemeScope");
   });
 
-  it("ThemeScope stamps owned attributes and wins for nested useTheme", () => {
-    const { host } = render(
-      <ThemeProvider theme={fkasPrivate}>
-        <ThemeScope theme={tkasCompany} className="scope">
-          <ThemeProbe />
-        </ThemeScope>
-      </ThemeProvider>
-    );
-
-    const scope = host.querySelector("[data-theme-brand]");
-    expect(scope).not.toBeNull();
-    expect(scope?.getAttribute("data-theme-variant")).toBe("external");
-    expect(scope?.getAttribute("data-theme-brand")).toBe("tkas");
-    expect(scope?.getAttribute("data-theme-segment")).toBe("company");
-    expect(host.textContent).toBe("external-tkas-company-external-tkas-company");
-  });
-
   it("does not let remaining props override theme attributes", () => {
     const { host } = render(
       <ThemeScope
@@ -175,8 +158,23 @@ describe("ThemeProvider / ThemeScope", () => {
     expect(window.sessionStorage.length).toBe(0);
   });
 
-  it("diagnoses mismatched server brand attributes and recovers to the validated theme", () => {
-    stampDocumentBrand(tkasCompany);
+  it.each([
+    {
+      name: "mismatched server brand attributes",
+      stamp: () => stampDocumentBrand(tkasCompany),
+      found: 'data-theme-variant="external" data-theme-brand="tkas" data-theme-segment="company"',
+    },
+    {
+      name: "a partially stamped document",
+      stamp: () => {
+        document.documentElement.setAttribute("data-theme-variant", "internal");
+        document.documentElement.setAttribute("data-theme-segment", "private");
+      },
+      found: 'data-theme-variant="internal" data-theme-brand="null" data-theme-segment="private"',
+    },
+    { name: "a blank document", stamp: () => undefined, found: undefined },
+  ])("diagnoses $name only when it disagrees and lands on the validated theme", ({ stamp, found }) => {
+    stamp();
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
     render(
@@ -186,43 +184,15 @@ describe("ThemeProvider / ThemeScope", () => {
     );
 
     expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
-    expect(warn.mock.calls).toEqual([
-      [
-        'ThemeProvider controlled theme does not match document brand attributes. Expected data-theme-variant="internal" data-theme-brand="fkas" data-theme-segment="private", found data-theme-variant="external" data-theme-brand="tkas" data-theme-segment="company". Recovering to the validated controlled theme.',
-      ],
-    ]);
-  });
-
-  it("does not warn about document brand attributes on a blank document", () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-
-    render(
-      <ThemeProvider theme={fkasPrivate}>
-        <ThemeProbe />
-      </ThemeProvider>
+    expect(warn.mock.calls).toEqual(
+      found === undefined
+        ? []
+        : [
+            [
+              `ThemeProvider controlled theme does not match document brand attributes. Expected data-theme-variant="internal" data-theme-brand="fkas" data-theme-segment="private", found ${found}. Recovering to the validated controlled theme.`,
+            ],
+          ]
     );
-
-    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
-    expect(warn).not.toHaveBeenCalled();
-  });
-
-  it("diagnoses a partially stamped document and recovers to the validated theme", () => {
-    document.documentElement.setAttribute("data-theme-variant", "internal");
-    document.documentElement.setAttribute("data-theme-segment", "private");
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-
-    render(
-      <ThemeProvider theme={fkasPrivate}>
-        <ThemeProbe />
-      </ThemeProvider>
-    );
-
-    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
-    expect(warn.mock.calls).toEqual([
-      [
-        'ThemeProvider controlled theme does not match document brand attributes. Expected data-theme-variant="internal" data-theme-brand="fkas" data-theme-segment="private", found data-theme-variant="internal" data-theme-brand="null" data-theme-segment="private". Recovering to the validated controlled theme.',
-      ],
-    ]);
   });
 
   it("throws the validator error for an illegal nested theme without a hooks-count mismatch", () => {

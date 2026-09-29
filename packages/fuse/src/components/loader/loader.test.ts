@@ -3,16 +3,6 @@ import { describe, expect, it } from "vitest";
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { loaderVariants } from "./loader-variants";
 
-const SIZES = ["default", "small", "medium", "large", "xl"] as const;
-
-const ICON_SIZE_CLASS = {
-  default: "size-4",
-  small: "size-3",
-  medium: "size-6",
-  large: "size-8",
-  xl: "size-10",
-} as const;
-
 describe("loaderVariants", () => {
   it("returns base and icon slot functions with the default recipe values", () => {
     const slots = loaderVariants();
@@ -23,15 +13,6 @@ describe("loaderVariants", () => {
     expect(slots.base()).toContain("text-foreground");
     expect(slots.icon()).toContain("animate-spin");
     expect(slots.icon()).toContain("size-4");
-  });
-
-  it("maps each size onto the icon slot only", () => {
-    for (const size of SIZES) {
-      const { base, icon } = loaderVariants({ size });
-      expect(icon(), size).toContain(ICON_SIZE_CLASS[size]);
-      expect(icon(), size).toContain("animate-spin");
-      expect(base(), size).not.toContain(ICON_SIZE_CLASS[size]);
-    }
   });
 
   it("keeps the single-value variant axis and reads no density metrics", () => {

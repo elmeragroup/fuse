@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { createMemoryColorSchemePlatform } from "../../test/memory-color-scheme-platform";
-import type { MemoryPlatformInit, MemoryStorageArea } from "../../test/memory-color-scheme-platform";
+import type { MemoryColorSchemePlatform, MemoryPlatformInit } from "../../test/memory-color-scheme-platform";
 import { createBrowserColorSchemePlatform } from "./color-scheme-browser-platform";
 
 // Unit under test: createBrowserColorSchemePlatform over the memory host's window-shaped
@@ -101,24 +101,19 @@ describe("browser adapter storage", () => {
     expect(delivered).toEqual(["dark", null]);
   });
 
-  it.each<{ name: string; key: string; area: MemoryStorageArea }>([
-    { name: "an unrelated key", key: "other-key", area: "local" },
-    { name: "the session area reusing the key", key: KEY, area: "session" },
-    { name: "a null storage area", key: KEY, area: "none" },
-  ])("ignores an event from $name", ({ key, area }) => {
+  it.each<{ name: string; event: (memory: MemoryColorSchemePlatform) => void }>([
+    { name: "an unrelated key", event: (memory) => memory.control.remoteWrite("other-key", "dark", "local") },
+    {
+      name: "the session area reusing the key",
+      event: (memory) => memory.control.remoteWrite(KEY, "dark", "session"),
+    },
+    { name: "a null storage area", event: (memory) => memory.control.remoteWrite(KEY, "dark", "none") },
+    { name: "a session-area clear", event: (memory) => memory.control.remoteClear("session") },
+  ])("ignores an event from $name", ({ event }) => {
     const { memory, browser } = adapt();
     const { delivered } = recordStorage((onChange) => browser.storage.subscribe(KEY, onChange));
 
-    memory.control.remoteWrite(key, "dark", area);
-
-    expect(delivered).toEqual([]);
-  });
-
-  it("ignores a session-area clear", () => {
-    const { memory, browser } = adapt();
-    const { delivered } = recordStorage((onChange) => browser.storage.subscribe(KEY, onChange));
-
-    memory.control.remoteClear("session");
+    event(memory);
 
     expect(delivered).toEqual([]);
   });

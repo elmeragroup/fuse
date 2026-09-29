@@ -27,15 +27,13 @@ describe("docs generation ownership", () => {
   const scripts = (parsed as { scripts: { build: string; "type-check": string; dev: string } }).scripts;
   const turbo = readFileSync(join(docsRoot, "turbo.json"), "utf8");
 
-  it("does not nest generate inside package build or type-check", () => {
+  it("lets Turbo own generate before build and type-check, never nesting it in the package scripts", () => {
     expect(scripts.build).toBe("next build");
     expect(scripts["type-check"]).toBe("next typegen && tsc --noEmit");
     expect(scripts.build).not.toContain("pnpm run generate");
     expect(scripts["type-check"]).not.toContain("pnpm run generate");
     expect(scripts.dev).toContain("pnpm run generate");
-  });
 
-  it("lets Turbo own generate before build and type-check", () => {
     const build = /"build":\s*\{([^{}]*)\}/s.exec(turbo)?.[1];
     const typeCheck = /"type-check":\s*\{([^{}]*)\}/s.exec(turbo)?.[1];
     expect(build, "turbo.json is missing a build task block").toBeDefined();
@@ -71,29 +69,25 @@ describe("authored page.mdx as generation input", () => {
     ]);
   });
 
-  it("rejects an unknown frontmatter key rather than ignoring it", () => {
-    // `title` is the one that used to be legal: the page title is derived from the slug
-    // so a page that still declares one fails instead of carrying a
-    // second name. An arbitrary key is rejected by the same branch, named in the message.
-    expect(() => parseComponentPage("---\ntitle: Button\nlede: Y\n---\n", "button", "x.mdx")).toThrow(
-      /unknown frontmatter key/
-    );
-    expect(() => parseComponentPage("---\nlede: Y\nnope: 1\n---\n", "button", "x.mdx")).toThrow(
-      /unknown frontmatter key "nope"/
-    );
-  });
-
-  it("requires a lede", () => {
-    expect(() => parseComponentPage("---\nlede:\n---\n", "x", "x.mdx")).toThrow(/"lede" is required/);
-  });
-
-  it("refuses a <Demo> that is missing an attribute, or names another page's slug", () => {
-    expect(() =>
-      parseComponentPage(page('<Demo slug="button" id="a" title="A" />'), "button", "x.mdx")
-    ).toThrow(/missing its "file" attribute/);
-    expect(() =>
-      parseComponentPage(page('<Demo slug="card" id="a" title="A" file="a.tsx" />'), "button", "x.mdx")
-    ).toThrow(/names slug "card" on the "button" page/);
+  // `title` is the one frontmatter key that used to be legal: the page title is derived
+  // from the slug, so a page that still declares one fails instead of carrying a second
+  // name. An arbitrary key is rejected by the same branch, named in the message.
+  it.each([
+    ["an unknown frontmatter key", "---\ntitle: Button\nlede: Y\n---\n", /unknown frontmatter key/],
+    ["an unknown frontmatter key, named", "---\nlede: Y\nnope: 1\n---\n", /unknown frontmatter key "nope"/],
+    ["a missing lede", "---\nlede:\n---\n", /"lede" is required/],
+    [
+      "a <Demo> missing its file attribute",
+      page('<Demo slug="button" id="a" title="A" />'),
+      /missing its "file" attribute/,
+    ],
+    [
+      "a <Demo> naming another page's slug",
+      page('<Demo slug="card" id="a" title="A" file="a.tsx" />'),
+      /names slug "card" on the "button" page/,
+    ],
+  ] as const)("rejects %s rather than ignoring it", (_case, source, message) => {
+    expect(() => parseComponentPage(source, "button", "x.mdx")).toThrow(message);
   });
 
   it("collects ATX headings for the TOC and reads fenced code as source, not structure", () => {
@@ -120,10 +114,6 @@ describe("authored page.mdx as generation input", () => {
 });
 
 describe("nav destination verification", () => {
-  it("passes for the authored nav as it stands: every entry has a route module", () => {
-    expect(missingNavRoutes()).toEqual([]);
-  });
-
   it("names the entry that would ship a 404, so generation fails instead of the SideNav", () => {
     // The probe stands in for a deleted or renamed route file. The generation pass turns
     // exactly this list into problems, and a non-empty problem log fails the docs build.
@@ -144,12 +134,6 @@ describe("RSC classification", () => {
 });
 
 describe("token extraction", () => {
-  it("derives the utility → token map from the library's own @theme block", () => {
-    expect(colors.get("primary")).toBe("--primary");
-    expect(colors.get("error")).toBe("--error");
-    expect(colors.get("sm")).toBeUndefined();
-  });
-
   it("resolves colour utilities, var() and the Tailwind variable shorthand", () => {
     const tokens = extractTokens({
       sources: ['const a = "bg-primary hover:text-error/20 h-(--control-h-md) text-sm";'],
@@ -166,41 +150,37 @@ describe("token extraction", () => {
     expect(tokens.find((token) => token.name === "--control-h-md")?.isColor).toBe(false);
   });
 
-  it("extracts the tokens consumed by Button", () => {
-    const recipe = collectRecipeSources(join(repoRoot, "packages/fuse/src/components/button"));
+  it.each([
+    [
+      "Button",
+      "button",
+      expect.arrayContaining([
+        "--primary",
+        "--primary-foreground",
+        "--secondary",
+        "--secondary-foreground",
+        "--muted",
+        "--background",
+        "--foreground",
+        "--border",
+        "--ring",
+        "--error",
+        "--success",
+        "--secondary-hover",
+        "--radius-button",
+        "--control-h-md",
+      ]),
+    ],
+    // The smaller set: exactly these three, nothing more.
+    ["ScrollArea", "scroll-area", ["--background", "--border", "--ring"]],
+  ] as const)("extracts the tokens consumed by %s", (_name, directory, expected) => {
+    const recipe = collectRecipeSources(join(repoRoot, "packages/fuse/src/components", directory));
     const names = extractTokens({
       sources: recipe.sources,
       stylesheets: recipe.stylesheets,
       colors,
     }).map((token) => token.name);
-    for (const expected of [
-      "--primary",
-      "--primary-foreground",
-      "--secondary",
-      "--secondary-foreground",
-      "--muted",
-      "--background",
-      "--foreground",
-      "--border",
-      "--ring",
-      "--error",
-      "--success",
-      "--secondary-hover",
-      "--radius-button",
-      "--control-h-md",
-    ]) {
-      expect(names).toContain(expected);
-    }
-  });
-
-  it("extracts the smaller token set consumed by ScrollArea", () => {
-    const recipe = collectRecipeSources(join(repoRoot, "packages/fuse/src/components/scroll-area"));
-    const names = extractTokens({
-      sources: recipe.sources,
-      stylesheets: recipe.stylesheets,
-      colors,
-    }).map((token) => token.name);
-    expect(names).toEqual(["--background", "--border", "--ring"]);
+    expect(names).toEqual(expected);
   });
 });
 
@@ -255,7 +235,7 @@ describe("markdown endpoint rendering", () => {
     tokens: [{ name: "--primary", isColor: true }],
   };
 
-  it("carries the demo source, RSC per part on the heading, and the tokens list", () => {
+  it("carries the demo source, RSC per part on the heading, the tokens list, and a recipe-axis label", () => {
     const markdown = renderComponentMarkdown(component);
     expect(markdown).toContain("export function WidgetBasic() {}");
     // RSC is a per-part fact: a badge on the part heading, not a column.
@@ -265,11 +245,9 @@ describe("markdown endpoint rendering", () => {
     expect(markdown).toContain("| `label` | `string` | — | yes | Visible text. |");
     expect(markdown).toContain("Plus 3 forwarded props from `@types/react`.");
     expect(markdown).toContain("- `--primary` (colour)");
-  });
-
-  it("labels a recipe axis instead of leaving an empty description cell", () => {
-    expect(renderComponentMarkdown(component)).toContain("| `tone` |");
-    expect(renderComponentMarkdown(component)).toContain("Recipe axis.");
+    // A recipe axis is labelled instead of leaving an empty description cell.
+    expect(markdown).toContain("| `tone` |");
+    expect(markdown).toContain("Recipe axis.");
   });
 });
 

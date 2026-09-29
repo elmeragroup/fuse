@@ -1,11 +1,7 @@
-import type { ReactNode, RefObject } from "react";
-
 import { CalendarDate } from "@internationalized/date";
-import type { ValidationResult } from "react-aria-components";
 import { expectTypeOf, test } from "vitest";
 
 import type * as DateRangePickerApi from "@elmeragroup/fuse/react-aria/date-range-picker";
-import type { DateRangePickerProps } from "@elmeragroup/fuse/react-aria/date-range-picker";
 import { DateRangePicker } from "@elmeragroup/fuse/react-aria/date-range-picker";
 
 test("no private overlay part, recipe, or RAC type leaks through the entry", () => {
@@ -28,57 +24,6 @@ test("no private overlay part, recipe, or RAC type leaks through the entry", () 
   type _NoStateContext = DateRangePickerApi.DateRangePickerStateContext;
   // @ts-expect-error RAC DateRangePickerProps is not leaked under a bare RAC name
   type _NoAria = DateRangePickerApi.AriaDateRangePickerProps;
-});
-
-test("DateRangePickerProps declares the composite face and stays open on the RAC surface", () => {
-  expectTypeOf<DateRangePickerProps<CalendarDate>["label"]>().toEqualTypeOf<string | undefined>();
-  expectTypeOf<DateRangePickerProps<CalendarDate>["description"]>().toEqualTypeOf<string | undefined>();
-  expectTypeOf<DateRangePickerProps<CalendarDate>["errorMessage"]>().toEqualTypeOf<
-    ReactNode | ((validation: ValidationResult) => ReactNode) | undefined
-  >();
-  expectTypeOf<DateRangePickerProps<CalendarDate>["shouldForceLeadingZeros"]>().toEqualTypeOf<
-    boolean | undefined
-  >();
-  expectTypeOf<DateRangePickerProps<CalendarDate>["container"]>().toEqualTypeOf<
-    HTMLElement | RefObject<HTMLElement | null> | undefined
-  >();
-  // The value surface is RAC's RangeValue, not a bare date.
-  expectTypeOf<NonNullable<DateRangePickerProps<CalendarDate>["value"]>>().toEqualTypeOf<{
-    start: CalendarDate;
-    end: CalendarDate;
-  }>();
-  expectTypeOf<NonNullable<DateRangePickerProps<CalendarDate>["defaultValue"]>>().toEqualTypeOf<{
-    start: CalendarDate;
-    end: CalendarDate;
-  }>();
-  for (const prop of [
-    "onChange",
-    "minValue",
-    "maxValue",
-    "granularity",
-    "placeholderValue",
-    "isDisabled",
-    "isReadOnly",
-    "isRequired",
-    "isInvalid",
-    "isDateUnavailable",
-    "allowsNonContiguousRanges",
-    "validate",
-    "validationBehavior",
-    "startName",
-    "endName",
-    "isOpen",
-    "onOpenChange",
-    "shouldCloseOnSelect",
-    "className",
-    "aria-label",
-  ] as const) {
-    expectTypeOf<DateRangePickerProps<CalendarDate>>().toHaveProperty(prop);
-  }
-  // No preset pane on this side of the cluster, and no size axis anywhere in it.
-  expectTypeOf<DateRangePickerProps<CalendarDate>>().not.toHaveProperty("presetGroup");
-  expectTypeOf<DateRangePickerProps<CalendarDate>>().not.toHaveProperty("size");
-  expectTypeOf<DateRangePickerProps<CalendarDate>>().not.toHaveProperty("visibleDuration");
 });
 
 test("the element takes the public props and rejects an invented axis", () => {

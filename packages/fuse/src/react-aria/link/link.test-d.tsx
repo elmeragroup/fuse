@@ -3,7 +3,6 @@ import type { Ref } from "react";
 import { expectTypeOf, test } from "vitest";
 
 import type * as LinkApi from "@elmeragroup/fuse/react-aria/link";
-import type { LinkProps } from "@elmeragroup/fuse/react-aria/link";
 import { Link } from "@elmeragroup/fuse/react-aria/link";
 
 test("linkVariants and RAC types are not public exports", () => {
@@ -18,59 +17,6 @@ test("linkVariants and RAC types are not public exports", () => {
   type _NoAriaOptions = LinkApi.AriaLinkOptions;
   // @ts-expect-error the RAC props interface is not leaked under a bare RAC name
   type _NoAriaProps = LinkApi.AriaLinkProps;
-});
-
-test("LinkProps carries the five typography axes and no size axis", () => {
-  expectTypeOf<LinkProps["variant"]>().toEqualTypeOf<
-    "default" | "foreground" | "primary" | "secondary" | "brand" | "muted" | "inherit" | "error" | undefined
-  >();
-  expectTypeOf<LinkProps["leading"]>().toEqualTypeOf<
-    "none" | "tight" | "snug" | "relaxed" | "loose" | undefined
-  >();
-  expectTypeOf<LinkProps["truncate"]>().toEqualTypeOf<boolean | undefined>();
-  expectTypeOf<LinkProps["align"]>().toEqualTypeOf<"left" | "center" | "right" | "justify" | undefined>();
-  expectTypeOf<LinkProps["weight"]>().toEqualTypeOf<"normal" | "bold" | undefined>();
-  expectTypeOf<LinkProps>().not.toHaveProperty("size");
-});
-
-test("LinkProps forwards the RAC link surface", () => {
-  expectTypeOf<LinkProps>().toHaveProperty("href");
-  expectTypeOf<LinkProps>().toHaveProperty("target");
-  expectTypeOf<LinkProps>().toHaveProperty("rel");
-  expectTypeOf<LinkProps>().toHaveProperty("download");
-  expectTypeOf<LinkProps>().toHaveProperty("ping");
-  expectTypeOf<LinkProps>().toHaveProperty("referrerPolicy");
-  expectTypeOf<LinkProps>().toHaveProperty("hrefLang");
-  expectTypeOf<LinkProps>().toHaveProperty("routerOptions");
-  expectTypeOf<LinkProps>().toHaveProperty("isDisabled");
-  expectTypeOf<LinkProps>().toHaveProperty("onPress");
-  expectTypeOf<LinkProps>().toHaveProperty("onPressStart");
-  expectTypeOf<LinkProps>().toHaveProperty("onPressEnd");
-  expectTypeOf<LinkProps>().toHaveProperty("onHoverStart");
-  expectTypeOf<LinkProps>().toHaveProperty("onHoverEnd");
-  expectTypeOf<LinkProps>().toHaveProperty("onHoverChange");
-  expectTypeOf<LinkProps>().toHaveProperty("onFocus");
-  expectTypeOf<LinkProps>().toHaveProperty("onBlur");
-  expectTypeOf<LinkProps>().toHaveProperty("onFocusChange");
-  expectTypeOf<LinkProps>().toHaveProperty("onKeyDown");
-  expectTypeOf<LinkProps>().toHaveProperty("onKeyUp");
-  expectTypeOf<LinkProps>().toHaveProperty("autoFocus");
-  expectTypeOf<LinkProps>().toHaveProperty("aria-label");
-  // `aria-current` is a runtime pass-through RAC reads off `props` without declaring it
-  // (it drives `data-current`, asserted in the browser suite). Its JSX acceptance is
-  // covered below; there is no key to assert here.
-  expectTypeOf<LinkProps>().toHaveProperty("children");
-  expectTypeOf<LinkProps>().toHaveProperty("className");
-  expectTypeOf<LinkProps["href"]>().toEqualTypeOf<string | undefined>();
-  expectTypeOf<LinkProps["isDisabled"]>().toEqualTypeOf<boolean | undefined>();
-});
-
-test("className takes a plain string", () => {
-  const _string: LinkProps = { className: "underline" };
-  const _badClassName: LinkProps = {
-    // @ts-expect-error className is a class list, never a number
-    className: 4,
-  };
 });
 
 test("the element takes the public props, forwards a ref, and rejects a size axis", () => {

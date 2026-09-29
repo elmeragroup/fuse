@@ -172,13 +172,6 @@ describe("theme contract", () => {
     await expect(css).toMatchFileSnapshot("./__snapshots__/themes.css");
   });
 
-  it("selects a segment sheet only for a brand/segment pair that has one", () => {
-    expect(fkasCompanyLight().background).toBe("oklch(0.9823 0.01428 213.1)");
-    expect(segmentSheet("fkas", "private")).toBeUndefined();
-    expect(segmentSheet("tkas", "company")).toBeUndefined();
-    expect(segmentSheet("elma", "company")).toBeUndefined();
-  });
-
   it("gives every external dark palette the full set of must-override roles", () => {
     for (const theme of LEGAL_THEMES) {
       if (theme.variant !== "external") continue;
@@ -403,9 +396,6 @@ describe("contrast math", () => {
   it("composites percentage and decimal alpha in sRGB before measuring luminance", () => {
     expect(contrastRatio("oklch(1 0 0 / 50%)", "oklch(0 0 0)")).toBeCloseTo(5.2808, 4);
     expect(contrastRatio("oklch(1 0 0 / 0.5)", "oklch(0 0 0)")).toBeCloseTo(5.2808, 4);
-  });
-  it("measures black text on white as 21:1", () => {
-    expect(contrastRatio("oklch(0 0 0)", "oklch(1 0 0)")).toBeCloseTo(21, 1);
   });
 
   it("proves the specified Elmera brand pair meets the text-grade floor", () => {

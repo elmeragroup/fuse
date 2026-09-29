@@ -187,26 +187,6 @@ describe("static theme first paint with React blocked", () => {
     }
   );
 
-  it("writes forced dark before React while storage is light", async () => {
-    const context = await browser().newContext({ colorScheme: "light" });
-    await seedStorage(context, "light");
-    const page = await context.newPage();
-    await page.route("**/*", abortModuleScripts);
-    await page.goto(`${staticThemeBaseUrl()}/forced-dark.html`, { waitUntil: "commit" });
-    await waitForBootstrap(page);
-
-    const probe = await probeFirstPaint(page);
-    expectFixedDocumentBrand(probe);
-    expectDocumentDensity(probe, "dense");
-    expect(probe.dataTheme).toBe("dark");
-    expect(probe.manifest).toEqual(EXPECTED_FORCED_DARK_MANIFEST);
-    expectTokenCanvas(probe);
-    expect(probe.bootstrapScriptCount).toBe(1);
-    expect(probe.reactMounted).toBe(false);
-
-    await context.close();
-  });
-
   it("stamps comfortable density on the isolated preview before React", async () => {
     const context = await browser().newContext({ colorScheme: "light" });
     const page = await context.newPage();

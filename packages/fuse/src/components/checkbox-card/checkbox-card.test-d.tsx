@@ -5,7 +5,7 @@ import { expectTypeOf, test } from "vitest";
 import type { CheckboxCardProps } from "@elmeragroup/fuse/checkbox-card";
 import { CheckboxCard } from "@elmeragroup/fuse/checkbox-card";
 
-test("CheckboxCardProps is the labeled-composite face with render and className omitted", () => {
+test("CheckboxCardProps is the labeled-composite face and the element rejects render, disabled, className, and as", () => {
   expectTypeOf<CheckboxCardProps["title"]>().toEqualTypeOf<ReactNode>();
   expectTypeOf<CheckboxCardProps["description"]>().toEqualTypeOf<string>();
   expectTypeOf<CheckboxCardProps["tags"]>().toEqualTypeOf<string[] | undefined>();
@@ -20,9 +20,7 @@ test("CheckboxCardProps is the labeled-composite face with render and className 
   expectTypeOf<CheckboxCardProps>().not.toHaveProperty("disabled");
   expectTypeOf<CheckboxCardProps>().not.toHaveProperty("className");
   expectTypeOf<CheckboxCardProps>().not.toHaveProperty("as");
-});
 
-test("the element takes the public props and rejects render, disabled, className, and as", () => {
   const _basic = <CheckboxCard value="insurance" title="Insurance" description="Covers everything." />;
   const _full = (
     <CheckboxCard

@@ -16,8 +16,8 @@ describe("BrandLogo", () => {
     expect(img.querySelector("path")).toBeNull();
   });
 
-  it("lets an explicit aria-label win over the title and the display name", () => {
-    render(
+  it("lets an explicit aria-label win over the title and the display name, and keeps the display name when aria-label is undefined", () => {
+    const { unmount } = render(
       <>
         <BrandLogo brand="fkas" aria-label="Home" />
         <BrandLogo brand="elma" title="Elmera Group" aria-label="Group home" />
@@ -27,9 +27,8 @@ describe("BrandLogo", () => {
     expect(roleNamed("img", "Group home").textContent).toBe("Elmera");
     expect(page.getByRole("img", { name: "Fjordkraft", exact: true }).query()).toBeNull();
     expect(page.getByRole("img", { name: "Elmera Group", exact: true }).query()).toBeNull();
-  });
+    unmount();
 
-  it("keeps the display name when aria-label is undefined", () => {
     render(<BrandLogo brand="fkas" aria-label={undefined} />);
     expect(roleNamed("img", "Fjordkraft").getAttribute("data-variant")).toBe("full");
   });

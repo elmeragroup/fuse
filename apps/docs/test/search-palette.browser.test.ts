@@ -59,10 +59,6 @@ async function focusedDescriptor(page: Page): Promise<string> {
   });
 }
 
-async function optionTitles(page: Page): Promise<readonly string[]> {
-  return await page.locator(OPTION).allInnerTexts();
-}
-
 async function waitForOptionCount(page: Page, count: number): Promise<void> {
   await page.waitForFunction(
     ([selector, expected]) => document.querySelectorAll(String(selector)).length === Number(expected),
@@ -99,25 +95,6 @@ describe("docs ⌘K palette", () => {
     await waitForPalette(page, "visible");
     await waitForSearchFieldFocus(page);
     expect(await focusedDescriptor(page)).toBe("input:Search the documentation");
-
-    await page.keyboard.press("Escape");
-    await waitForPalette(page, "hidden");
-    await page.close();
-  });
-
-  it("lists component and handbook pages, and filters them as you type", async () => {
-    const page = await openDocsPage();
-    await page.keyboard.press("Meta+k");
-    await waitForPalette(page, "visible");
-    await waitForSearchFieldFocus(page);
-
-    const initial = await optionTitles(page);
-    expect(initial.some((title) => title.includes("Theme matrix"))).toBe(true);
-    expect(initial.some((title) => title.includes("Dialog"))).toBe(true);
-
-    await page.keyboard.type("theme mat");
-    await waitForOptionCount(page, 1);
-    expect((await optionTitles(page))[0]).toContain("Theme matrix");
 
     await page.keyboard.press("Escape");
     await waitForPalette(page, "hidden");

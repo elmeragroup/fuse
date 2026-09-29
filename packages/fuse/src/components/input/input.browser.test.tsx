@@ -65,8 +65,20 @@ describe("Input", () => {
     expect(document.activeElement).toBe(roleNamed("button", "After"));
   });
 
-  it("matches the signed md rung at both densities and does not rescope under ThemeScope", () => {
-    const { rerender } = renderThemed(<Input aria-label="Meter" />);
+  it("matches the signed md rung at both densities and ignores a nested data-density stamp or ThemeScope", () => {
+    const { rerender } = renderThemed(
+      <>
+        <Input aria-label="Meter" />
+        <div data-density="comfortable">
+          <Input aria-label="Nested comfortable" />
+        </div>
+        <div data-density="dense">
+          <Input aria-label="Nested dense" />
+        </div>
+      </>
+    );
+    // Density is a document-root axis: `fuse.css` keys the comfortable block on
+    // `:root[data-density="comfortable"]`, so a nested attribute rescopes nothing.
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);
       const input = textboxNamed("Meter");
@@ -75,6 +87,10 @@ describe("Input", () => {
       expect(px(style.paddingInlineStart)).toBe(CONTROL_MD[density].px);
       expect(px(style.fontSize)).toBe(CONTROL_MD[density].font);
       expect(px(style.lineHeight)).toBe(CONTROL_MD[density].leading);
+      expect(px(getComputedStyle(textboxNamed("Nested comfortable")).height)).toBe(
+        CONTROL_MD[density].height
+      );
+      expect(px(getComputedStyle(textboxNamed("Nested dense")).height)).toBe(CONTROL_MD[density].height);
     }
 
     stampDensity("dense");
@@ -84,30 +100,6 @@ describe("Input", () => {
       </ThemeScope>
     );
     expect(px(getComputedStyle(textboxNamed("Meter")).height)).toBe(CONTROL_MD.dense.height);
-  });
-
-  it("ignores a nested data-density stamp in both directions", () => {
-    renderThemed(
-      <>
-        <Input aria-label="Root" />
-        <div data-density="comfortable">
-          <Input aria-label="Nested comfortable" />
-        </div>
-        <div data-density="dense">
-          <Input aria-label="Nested dense" />
-        </div>
-      </>
-    );
-
-    // Density is a document-root axis: `fuse.css` keys the comfortable block on
-    // `:root[data-density="comfortable"]`, so a nested attribute rescopes nothing.
-    for (const density of ["dense", "comfortable"] as const) {
-      stampDensity(density);
-      const rung = CONTROL_MD[density].height;
-      expect(px(getComputedStyle(textboxNamed("Root")).height)).toBe(rung);
-      expect(px(getComputedStyle(textboxNamed("Nested comfortable")).height)).toBe(rung);
-      expect(px(getComputedStyle(textboxNamed("Nested dense")).height)).toBe(rung);
-    }
   });
 
   it("paints the shared ring on keyboard focus-visible at both densities", async () => {

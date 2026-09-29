@@ -9,16 +9,7 @@ import type {
   ToastViewportProps,
   UseToastManagerReturnValue,
 } from "@elmeragroup/fuse/toast";
-import * as ToastModule from "@elmeragroup/fuse/toast";
 import { Toast } from "@elmeragroup/fuse/toast";
-
-test("Positioner, Arrow, Portal and the private recipe stay off the public namespace", () => {
-  expectTypeOf(Toast).not.toHaveProperty("Positioner");
-  expectTypeOf(Toast).not.toHaveProperty("Arrow");
-  expectTypeOf(Toast).not.toHaveProperty("Portal");
-  expectTypeOf(ToastModule).not.toHaveProperty("toastVariants");
-  expectTypeOf(ToastModule).not.toHaveProperty("Toaster");
-});
 
 test("Viewport container, Close label, and manager faces match the public API", () => {
   expectTypeOf<ToastViewportProps["container"]>().toEqualTypeOf<

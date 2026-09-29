@@ -27,16 +27,13 @@ describe("parse", () => {
     expect(parsed("RGBA(0, 0, 0, 0.5)")._tag).toBe("Srgb");
   });
 
-  it("fails a malformed color with its notation's error", () => {
+  it("fails a malformed color with its notation's error, and names and other functions with the combined one", () => {
     const result = CssColor.parse("oklch(0.5 0.1)");
     expect(result._tag === "err" && result.error.notation).toBe("oklch");
     const rgb = CssColor.parse("rgb(1 2)");
     expect(rgb._tag === "err" && rgb.error.notation).toBe("rgb");
     const lab = CssColor.parse("lab(50 0)");
     expect(lab._tag === "err" && lab.error.notation).toBe("lab");
-  });
-
-  it("refuses names and other color functions with the combined notation's error", () => {
     for (const input of [
       "white",
       "transparent",
@@ -87,8 +84,20 @@ const colorText = fc.oneof(
   hexDigits.map((digits) => `#${digits}`)
 );
 
+/** The extreme in-contract colors the property seeds, which parse must accept. */
+const EXTREMES = [
+  "oklch(0 1e6 0)",
+  "oklch(1 1e6 200)",
+  "lab(0 1e6 -1e6)",
+  "lab(100 -1e6 1e6)",
+  "rgba(1e400, -1e400, 1e-400, 1e400)",
+];
+
 describe("toSrgb", () => {
-  it("converts every color parse accepts, however large its components", () => {
+  it("converts every color parse accepts, however large its components, from the accepted extremes on", () => {
+    for (const input of EXTREMES) {
+      expect(CssColor.parse(input)._tag, input).toBe("ok");
+    }
     let runs = 0;
     let accepted = 0;
     fc.assert(
@@ -106,31 +115,13 @@ describe("toSrgb", () => {
       }),
       {
         numRuns: 2000,
-        examples: [
-          ["oklch(0 1e6 0)"],
-          ["oklch(1 1e6 200)"],
-          ["lab(0 1e6 -1e6)"],
-          ["lab(100 -1e6 1e6)"],
-          ["rgba(1e400, -1e400, 1e-400, 1e400)"],
-        ],
+        examples: EXTREMES.map((input) => [input]),
       }
     );
     // About three quarters of the generated text is in contract; the rest carries a chroma or
     // an axis beyond 1e6, a Lab percentage alpha or an infinite hue, which parse must refuse.
     // A parser that refused far more than that has regressed.
     expect(accepted / runs).toBeGreaterThan(0.5);
-  });
-
-  it("accepts the extreme in-contract colors the property seeds", () => {
-    for (const input of [
-      "oklch(0 1e6 0)",
-      "oklch(1 1e6 200)",
-      "lab(0 1e6 -1e6)",
-      "lab(100 -1e6 1e6)",
-      "rgba(1e400, -1e400, 1e-400, 1e400)",
-    ]) {
-      expect(CssColor.parse(input)._tag, input).toBe("ok");
-    }
   });
 
   it("writes the reference hex of each notation after clipping", () => {

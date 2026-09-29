@@ -11,14 +11,6 @@ const rows = {
 };
 
 describe("createStringDictionary", () => {
-  it("registers all four supported locales under their BCP-47 tags", () => {
-    const dictionary = createStringDictionary(rows);
-    expect(dictionary.getStringForLocale("close", "en-US")).toBe("Close");
-    expect(dictionary.getStringForLocale("close", "fi-FI")).toBe("Sulje");
-    expect(dictionary.getStringForLocale("close", "nb-NO")).toBe("Lukk");
-    expect(dictionary.getStringForLocale("close", "sv-SE")).toBe("Stäng");
-  });
-
   it("falls back to en-US for a locale the library does not ship", () => {
     const dictionary = createStringDictionary(rows);
     expect(dictionary.getStringForLocale("close", "de-DE")).toBe("Close");

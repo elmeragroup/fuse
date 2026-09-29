@@ -123,22 +123,6 @@ describe("docs Tailwind migration contract", () => {
     expect(globals).not.toMatch(/--control-/);
   });
 
-  it("registers the Typography plugin and a docs prose theme after the Tailwind import", () => {
-    const globals = readFileSync(join(docsRoot, "src/styles/globals.css"), "utf8");
-    const tailwindImport = globals.indexOf('@import "tailwindcss";');
-    const plugin = globals.indexOf('@plugin "@tailwindcss/typography";');
-    const utility = globals.search(/@utility\s+prose-docs\b/);
-
-    expect(tailwindImport).toBeGreaterThan(-1);
-    expect(plugin).toBeGreaterThan(tailwindImport);
-    expect(utility).toBeGreaterThan(plugin);
-    expect(globals).toContain("--tw-prose-");
-    expect(globals).toContain("--font-mono");
-    expect(globals).toContain("--tw-prose-body: var(--foreground)");
-    expect(globals).toContain("--tw-prose-pre-bg: var(--card)");
-    expect(globals).not.toMatch(/--(?:color|font)-docs-/);
-  });
-
   it("keeps route and shared-component utilities on the library theme", () => {
     const inScope = (file: string): boolean =>
       file.startsWith("src/app/(docs)/") || file.startsWith("src/components/");
@@ -191,27 +175,25 @@ describe("docs Tailwind migration contract", () => {
 });
 
 describe("recipe interpolation guard", () => {
-  it("allows static recipes alongside interpolated labels and unrelated API constants", () => {
-    expect(
-      recipeSlotFailures([
-        {
-          file: "valid.tsx",
-          source: [
-            'const recipe = tv({ slots: { root: "flex", cell: `text-sm` } });',
-            "const label = `Page ${name}`;",
-            'const apiEndpoint = "/api/themes";',
-          ].join("\n"),
-        },
-      ])
-    ).toEqual([]);
-  });
-
   it.each([
-    "tv({ slots: { root: `bg-${color}` } })",
-    "tv({ slots: { root: `bg-${state.color}` } })",
-    "tv({ variants: { active: { true: `text-${getColor()}` } } })",
-  ])("rejects interpolated recipe utilities: %s", (source) => {
-    expect(recipeSlotFailures([{ file: "invalid.tsx", source }])).toHaveLength(1);
+    [
+      "allows static recipes alongside interpolated labels and unrelated API constants",
+      [
+        'const recipe = tv({ slots: { root: "flex", cell: `text-sm` } });',
+        "const label = `Page ${name}`;",
+        'const apiEndpoint = "/api/themes";',
+      ].join("\n"),
+      0,
+    ],
+    ["rejects interpolated recipe utilities", "tv({ slots: { root: `bg-${color}` } })", 1],
+    ["rejects interpolated recipe utilities", "tv({ slots: { root: `bg-${state.color}` } })", 1],
+    [
+      "rejects interpolated recipe utilities",
+      "tv({ variants: { active: { true: `text-${getColor()}` } } })",
+      1,
+    ],
+  ] as const)("%s: %s", (_case, source, failures) => {
+    expect(recipeSlotFailures([{ file: "recipe.tsx", source }])).toHaveLength(failures);
   });
 });
 

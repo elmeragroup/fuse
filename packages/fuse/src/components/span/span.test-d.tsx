@@ -3,7 +3,7 @@ import { expectTypeOf, test } from "vitest";
 import type { SpanProps } from "@elmeragroup/fuse/span";
 import { Span } from "@elmeragroup/fuse/span";
 
-test("SpanProps is native span props plus the recipe axes and render", () => {
+test("SpanProps is native span props plus the recipe axes and render; the element rejects as, slot and elementType", () => {
   expectTypeOf<SpanProps["variant"]>().toEqualTypeOf<
     | "default"
     | "foreground"
@@ -30,9 +30,7 @@ test("SpanProps is native span props plus the recipe axes and render", () => {
   expectTypeOf<SpanProps>().not.toHaveProperty("slot");
   expectTypeOf<SpanProps>().not.toHaveProperty("as");
   expectTypeOf<SpanProps>().not.toHaveProperty("elementType");
-});
 
-test("the element takes the public props, render, and no as, slot, or elementType", () => {
   const _basic = <Span>4 of 12</Span>;
   const _styled = (
     <Span size="sm" variant="muted" align="right" weight="bold" leading="tight" truncate>

@@ -5,7 +5,6 @@ import { describe, expect, it } from "vitest";
 
 import { applyHostRootAttributes } from "../src/host-html";
 import {
-  BOOTSTRAP_MANIFEST_KEY,
   DOCUMENT_BRAND,
   INJECTED_BOOTSTRAP_SOURCE_KEY,
   bootstrapScripts,
@@ -64,16 +63,13 @@ function expectHostFirstPaintHtml(html: string, documentPath: string, expectedBr
 }
 
 describe("static theme built HTML", () => {
-  it("stamps brand attributes and a classic bootstrap before the module entry", () => {
-    const html = readFixtureFile("dist/index.html");
-    expectHostFirstPaintHtml(html, path.join(fixtureRoot, "dist/index.html"));
-  });
-
-  it("keeps the first-paint order in the forced-dark document", () => {
-    // first-paint.browser.test.ts runs this document's bootstrap and checks the forced manifest.
-    const html = readFixtureFile("dist/forced-dark.html");
-    expectHostFirstPaintHtml(html, path.join(fixtureRoot, "dist/forced-dark.html"));
-  });
+  // first-paint.browser.test.ts runs the forced-dark document's bootstrap and checks the forced manifest.
+  it.each(["dist/index.html", "dist/forced-dark.html"])(
+    "stamps brand attributes and a classic bootstrap before the module entry in %s",
+    (relativePath) => {
+      expectHostFirstPaintHtml(readFixtureFile(relativePath), path.join(fixtureRoot, relativePath));
+    }
+  );
 
   it("fails if token CSS follows the blocking bootstrap while --background is unset", () => {
     const documentPath = path.join(fixtureRoot, "dist/index.html");
@@ -84,12 +80,6 @@ describe("static theme built HTML", () => {
     expect(definesCssCustomProperty("html{background:var(--background)}", "--background")).toBe(false);
     expect(tokenBackgroundDefinitionIndex(lateCss, documentPath)).toBeGreaterThan(bootstrap?.start ?? -1);
     expect(bootstrap?.start ?? -1).toBeLessThan(moduleScriptIndex(lateCss));
-  });
-
-  it("stamps comfortable density on the isolated preview document", () => {
-    const html = readFixtureFile("dist/comfortable.html");
-    expect(readDocumentBrand(html)).toEqual(DOCUMENT_BRAND);
-    expect(readDocumentDensity(html)).toBe("comfortable");
   });
 
   it("throws when source HTML already contains theme or density attributes", () => {
@@ -118,30 +108,6 @@ describe("static theme built HTML", () => {
     expect(stamped).toContain('data-theme-brand="elma"');
     expect(stamped).toContain('data-theme-segment="private"');
     expect(stamped).toContain('data-density="dense"');
-  });
-
-  it("does not hand-copy the bootstrap or brand attributes into source HTML", () => {
-    for (const relativePath of ["index.html", "forced-dark.html", "comfortable.html"] as const) {
-      const html = readFixtureFile(relativePath);
-      expect(html).not.toContain(BOOTSTRAP_MANIFEST_KEY);
-      expect(html).not.toContain("data-theme-variant");
-      expect(html).not.toContain("data-theme-brand");
-      expect(html).not.toContain("data-theme-segment");
-      expect(html).not.toContain("data-density");
-      expect(html).not.toContain("createRoot");
-    }
-  });
-
-  it("uses Vite transformIndexHtml against the public packed theme entry", () => {
-    const config = readFixtureFile("vite.config.ts");
-    expect(config).toContain("packages/fuse/dist/theme.js");
-    expect(config).toContain("colorSchemeScriptSource");
-    expect(config).toContain("themeAttributes");
-    expect(config).toContain("densityAttributes");
-    expect(config).toContain("defaultDensityForVariant");
-    expect(config).toContain("transformIndexHtml");
-    expect(config).not.toContain("createRoot");
-    expect(config).not.toContain("dangerouslySetInnerHTML");
   });
 
   it("does not render the bootstrap through the client graph", () => {

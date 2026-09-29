@@ -12,16 +12,14 @@ import type {
 import * as ComboboxModule from "@elmeragroup/fuse/combobox";
 import { Combobox, useComboboxAnchor } from "@elmeragroup/fuse/combobox";
 
-test("Portal, Positioner and Popup stay off the public namespace", () => {
+test("Portal, Positioner and Popup stay off the public namespace, Input, Content, Chip and Clear take the public extra props, and Root omits locale", () => {
   expectTypeOf(Combobox).not.toHaveProperty("Portal");
   expectTypeOf(Combobox).not.toHaveProperty("Positioner");
   expectTypeOf(Combobox).not.toHaveProperty("Popup");
   expectTypeOf(ComboboxModule).not.toHaveProperty("comboboxVariants");
   expectTypeOf(ComboboxModule).not.toHaveProperty("ComboboxInput");
   expectTypeOf(ComboboxModule).not.toHaveProperty("ComboboxClear");
-});
 
-test("Input, Content, Chip and Clear take the public extra props and Root omits locale", () => {
   expectTypeOf<ComboboxInputProps["showTrigger"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<ComboboxInputProps["showClear"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<ComboboxInputProps["clearLabel"]>().toEqualTypeOf<string | undefined>();

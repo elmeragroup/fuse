@@ -32,97 +32,73 @@ function cycle(collections: readonly CollectionSpec[]): readonly string[] | unde
 }
 
 describe("makeVariableSet", () => {
-  it("accepts collections whose values cover every mode and alias a variable of the same type", () => {
+  it("accepts values that cover every mode and alias a variable of the same type, and refuses the rest", () => {
     const red = variable("red", "COLOR", { Light: RED, Dark: RED });
     const danger = variable("danger", "COLOR", { Light: toRed, Dark: toRed });
     expect(failure([palette([red, danger])])).toBeUndefined();
-  });
 
-  it("refuses a variable without a value for every mode of its collection", () => {
+    // A value for every mode of its collection, and none for a mode it does not have.
     expect(failure([palette([variable("red", "COLOR", { Light: RED })])])).toBe(
       'The Figma variable set is invalid: "Palette/red" has no value for mode "Dark".'
     );
     expect(failure([palette([variable("red", "COLOR", { Light: RED, Dark: RED, Sepia: RED })])])).toBe(
       'The Figma variable set is invalid: "Palette/red" has a value for a mode its collection does not have.'
     );
-  });
 
-  it("refuses an alias to a missing variable or one of another type", () => {
-    const danger = variable("danger", "COLOR", { Light: toRed, Dark: toRed });
+    // An alias to a missing variable or one of another type.
     expect(failure([palette([danger])])).toBe(
       'The Figma variable set is invalid: "Palette/danger" aliases "Palette/red", which the set does not define.'
     );
-
-    const red = variable("red", "COLOR", { Light: RED, Dark: RED });
     const radius = variable("radius", "FLOAT", { Light: toRed, Dark: toRed });
     expect(failure([palette([red, radius])])).toBe(
       'The Figma variable set is invalid: "Palette/radius" is a FLOAT variable but aliases the COLOR variable "Palette/red".'
     );
-  });
 
-  it("refuses a literal of another type", () => {
-    const radius = variable("radius", "COLOR", { Light: RED, Dark: { _tag: "Float", value: 6 } });
-    expect(failure([palette([radius])])).toBe(
+    // A literal of another type.
+    const mistyped = variable("radius", "COLOR", { Light: RED, Dark: { _tag: "Float", value: 6 } });
+    expect(failure([palette([mistyped])])).toBe(
       'The Figma variable set is invalid: "Palette/radius" is a COLOR variable but holds a FLOAT value in mode "Dark".'
     );
   });
 
-  it("refuses a scope that does not apply to the variable's type", () => {
-    const six: VariableValue = { _tag: "Float", value: 6 };
-    const scoped = (type: VariableSpec["type"], scopes: VariableSpec["scopes"], value: VariableValue) => ({
-      ...variable("probe", type, { Light: value, Dark: value }),
-      scopes,
-    });
-    expect(failure([palette([scoped("FLOAT", ["WIDTH_HEIGHT", "GAP"], six)])])).toBeUndefined();
-    expect(failure([palette([scoped("COLOR", ["GAP"], RED)])])).toBe(
-      'The Figma variable set is invalid: "Palette/probe" is a COLOR variable but has the scope GAP.'
-    );
-    expect(failure([palette([scoped("FLOAT", ["ALL_SCOPES", "CORNER_RADIUS"], six)])])).toBe(
-      'The Figma variable set is invalid: "Palette/probe" combines ALL_SCOPES with other scopes.'
-    );
-  });
-
-  // The rules below come from https://developers.figma.com/docs/rest-api/variables-types/.
-  it("applies FONT_VARIATIONS to STRING variables only and TEXT_CONTENT to FLOAT and STRING", () => {
+  // The scope rules come from https://developers.figma.com/docs/rest-api/variables-types/.
+  it("refuses a scope that does not fit the variable's type, ALL_SCOPES beside another, and ALL_FILLS beside a fill scope", () => {
     const six: VariableValue = { _tag: "Float", value: 6 };
     const text: VariableValue = { _tag: "String", value: "Roboto" };
     const scoped = (type: VariableSpec["type"], scopes: VariableSpec["scopes"], value: VariableValue) => ({
       ...variable("probe", type, { Light: value, Dark: value }),
       scopes,
     });
-    expect(failure([palette([scoped("STRING", ["FONT_STYLE", "FONT_VARIATIONS"], text)])])).toBeUndefined();
-    expect(failure([palette([scoped("STRING", ["TEXT_CONTENT"], text)])])).toBeUndefined();
-    expect(failure([palette([scoped("FLOAT", ["TEXT_CONTENT"], six)])])).toBeUndefined();
-    expect(failure([palette([scoped("FLOAT", ["FONT_VARIATIONS"], six)])])).toBe(
-      'The Figma variable set is invalid: "Palette/probe" is a FLOAT variable but has the scope FONT_VARIATIONS.'
-    );
+    const refusal = (reason: string) => `The Figma variable set is invalid: "Palette/probe" ${reason}.`;
+    const rows: readonly [VariableSpec["type"], VariableSpec["scopes"], VariableValue, string | undefined][] =
+      [
+        ["FLOAT", ["WIDTH_HEIGHT", "GAP"], six, undefined],
+        ["COLOR", ["GAP"], RED, refusal("is a COLOR variable but has the scope GAP")],
+        ["FLOAT", ["ALL_SCOPES", "CORNER_RADIUS"], six, refusal("combines ALL_SCOPES with other scopes")],
+        // FONT_VARIATIONS applies to STRING variables only, and TEXT_CONTENT to FLOAT and STRING.
+        ["STRING", ["FONT_STYLE", "FONT_VARIATIONS"], text, undefined],
+        ["STRING", ["TEXT_CONTENT"], text, undefined],
+        ["FLOAT", ["TEXT_CONTENT"], six, undefined],
+        ["FLOAT", ["FONT_VARIATIONS"], six, refusal("is a FLOAT variable but has the scope FONT_VARIATIONS")],
+        // ALL_FILLS may sit beside a stroke or effect scope, but not beside another fill scope.
+        ["COLOR", ["ALL_FILLS", "STROKE_COLOR", "EFFECT_COLOR"], RED, undefined],
+        ["COLOR", ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"], RED, undefined],
+        ["COLOR", ["ALL_FILLS", "FRAME_FILL"], RED, refusal("combines ALL_FILLS with other fill scopes")],
+        ["COLOR", ["TEXT_FILL", "ALL_FILLS"], RED, refusal("combines ALL_FILLS with other fill scopes")],
+      ];
+    for (const [type, scopes, value, expected] of rows) {
+      expect(failure([palette([scoped(type, scopes, value)])]), `${type} ${scopes.join(" ")}`).toBe(expected);
+    }
   });
 
-  it("refuses ALL_FILLS beside another fill scope but not beside a stroke or effect scope", () => {
-    const scoped = (scopes: VariableSpec["scopes"]) => ({
-      ...variable("probe", "COLOR", { Light: RED, Dark: RED }),
-      scopes,
-    });
-    expect(failure([palette([scoped(["ALL_FILLS", "STROKE_COLOR", "EFFECT_COLOR"])])])).toBeUndefined();
-    expect(failure([palette([scoped(["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"])])])).toBeUndefined();
-    expect(failure([palette([scoped(["ALL_FILLS", "FRAME_FILL"])])])).toBe(
-      'The Figma variable set is invalid: "Palette/probe" combines ALL_FILLS with other fill scopes.'
-    );
-    expect(failure([palette([scoped(["TEXT_FILL", "ALL_FILLS"])])])).toBe(
-      'The Figma variable set is invalid: "Palette/probe" combines ALL_FILLS with other fill scopes.'
-    );
-  });
-
-  it("refuses duplicate names and a collection without modes", () => {
+  it("refuses duplicate names, a collection without modes, and more modes or longer mode names than Figma allows", () => {
     expect(failure([palette([]), palette([])])).toBe(
       'The Figma variable set is invalid: "Palette" appears twice.'
     );
     expect(failure([{ name: "Empty", modes: [], variables: [] }])).toBe(
       'The Figma variable set is invalid: "Empty" has no modes.'
     );
-  });
 
-  it("refuses more modes or longer mode names than Figma allows", () => {
     const modes = (count: number) => Array.from({ length: count }, (_, index) => `theme-${index}`);
     expect(failure([{ name: "Themes", modes: modes(40), variables: [] }])).toBeUndefined();
     expect(failure([{ name: "Themes", modes: modes(41), variables: [] }])).toBe(

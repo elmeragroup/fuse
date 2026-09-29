@@ -129,29 +129,21 @@ function RowTitle({ children }: { children: string }) {
 }
 
 describe("SelectionItem", () => {
-  it("renders data-slot from the dataSlot prop", () => {
+  it.each([
+    { host: "the default host", title: "Fixed price", render: undefined, tag: "DIV" },
+    { host: "a render host", title: "Article row", render: <article />, tag: "ARTICLE" },
+  ])("renders data-slot from the dataSlot prop on $host", ({ title, render, tag }) => {
     renderThemed(
       <Field.Root>
-        <SelectionItem.Shell dataSlot="checkbox-item" control={<Checkbox.Root />}>
-          <RowTitle>Fixed price</RowTitle>
+        <SelectionItem.Shell dataSlot="checkbox-item" control={<Checkbox.Root />} render={render}>
+          <RowTitle>{title}</RowTitle>
         </SelectionItem.Shell>
       </Field.Root>
     );
-    expect(shellFrom("Fixed price").getAttribute("data-slot")).toBe("checkbox-item");
-    expect(controlSlot(shellFrom("Fixed price")).getAttribute("data-slot")).toBe("selection-item-control");
-    expect(checkboxNamed("Fixed price").getAttribute("aria-checked")).toBe("false");
-  });
-
-  it("keeps data-slot on a render host", () => {
-    renderThemed(
-      <Field.Root>
-        <SelectionItem.Shell dataSlot="checkbox-item" control={<Checkbox.Root />} render={<article />}>
-          <RowTitle>Article row</RowTitle>
-        </SelectionItem.Shell>
-      </Field.Root>
-    );
-    const article = headingNamed("Article row").closest("article");
-    expect(article?.getAttribute("data-slot")).toBe("checkbox-item");
+    expect(shellFrom(title).getAttribute("data-slot")).toBe("checkbox-item");
+    expect(controlSlot(shellFrom(title)).getAttribute("data-slot")).toBe("selection-item-control");
+    expect(shellFrom(title).tagName).toBe(tag);
+    expect(checkboxNamed(title).getAttribute("aria-checked")).toBe("false");
   });
 
   it("toggles from row text and isolates subsection clicks", async () => {

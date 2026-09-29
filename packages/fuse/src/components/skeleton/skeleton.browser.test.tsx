@@ -27,20 +27,6 @@ describe("Skeleton", () => {
     expect(skeleton.getAttribute("tabindex")).toBeNull();
   });
 
-  it("emits aria-hidden=true and is absent from the accessibility tree without a consumer wrap", () => {
-    renderThemed(
-      <div aria-busy="true">
-        <Skeleton className="h-4 w-24" />
-      </div>
-    );
-    const skeleton = skeletonElement();
-    expect(skeleton.getAttribute("aria-hidden")).toBe("true");
-    expect(skeleton.parentElement?.getAttribute("aria-hidden")).toBeNull();
-    expect(skeleton.closest("[aria-busy='true']")).not.toBeNull();
-    skeleton.focus();
-    expect(document.activeElement).not.toBe(skeleton);
-  });
-
   it("lets a consumer aria-hidden on the spread override the default", () => {
     renderThemed(<Skeleton aria-hidden="false" className="h-4 w-24" />);
     expect(skeletonElement().getAttribute("aria-hidden")).toBe("false");

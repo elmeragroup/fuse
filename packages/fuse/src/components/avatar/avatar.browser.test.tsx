@@ -62,50 +62,31 @@ describe("Avatar", () => {
     expect(page.getByText("AL", { exact: true }).query()).toBeNull();
   });
 
-  it("emits data-slot values on every rendered part", () => {
-    renderThemed(
-      <Avatar.Root>
-        <Avatar.Fallback>AL</Avatar.Fallback>
-      </Avatar.Root>
-    );
-    expect(slot("avatar").getAttribute("data-slot")).toBe("avatar");
-    expect(slot("avatar-fallback").getAttribute("data-slot")).toBe("avatar-fallback");
-  });
-
-  it("paints the root from the muted token and sizes it as a control box", () => {
-    renderThemed(
-      <Avatar.Root>
-        <Avatar.Fallback>AL</Avatar.Fallback>
-      </Avatar.Root>
-    );
-    const fallback = page.getByText("AL", { exact: true }).element();
-    if (!(fallback instanceof HTMLElement)) {
-      throw new Error("expected the fallback");
+  it.each([
+    [undefined, "32px"],
+    ["size-10", "40px"],
+  ] as const)(
+    "paints the root from the muted token and sizes it as a control box, className %s winning",
+    (className, width) => {
+      renderThemed(
+        <Avatar.Root className={className}>
+          <Avatar.Fallback>AL</Avatar.Fallback>
+        </Avatar.Root>
+      );
+      const fallback = page.getByText("AL", { exact: true }).element();
+      if (!(fallback instanceof HTMLElement)) {
+        throw new Error("expected the fallback");
+      }
+      const avatar = fallback.parentElement;
+      if (!(avatar instanceof HTMLElement)) {
+        throw new Error("expected the avatar root");
+      }
+      expect(slot("avatar")).toBe(avatar);
+      expect(slot("avatar-fallback")).toBe(fallback);
+      expect(getComputedStyle(avatar).backgroundColor).toBe(cssVarColor(avatar, "--muted"));
+      expect(getComputedStyle(avatar).width).toBe(width);
     }
-    const avatar = fallback.parentElement;
-    if (!(avatar instanceof HTMLElement)) {
-      throw new Error("expected the avatar root");
-    }
-    expect(getComputedStyle(avatar).backgroundColor).toBe(cssVarColor(avatar, "--muted"));
-    expect(getComputedStyle(avatar).width).toBe("32px");
-  });
-
-  it("lets className size-10 beat the default size-8", () => {
-    renderThemed(
-      <Avatar.Root className="size-10">
-        <Avatar.Fallback>AL</Avatar.Fallback>
-      </Avatar.Root>
-    );
-    const fallback = page.getByText("AL", { exact: true }).element();
-    if (!(fallback instanceof HTMLElement)) {
-      throw new Error("expected the fallback");
-    }
-    const avatar = fallback.parentElement;
-    if (!(avatar instanceof HTMLElement)) {
-      throw new Error("expected the avatar root");
-    }
-    expect(getComputedStyle(avatar).width).toBe("40px");
-  });
+  );
 
   it("stacks group avatars with a background-coloured separating ring", () => {
     renderThemed(

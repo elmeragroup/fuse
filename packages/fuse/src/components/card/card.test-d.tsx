@@ -2,16 +2,14 @@ import { expectTypeOf, test } from "vitest";
 
 import { Card, cardVariants } from "@elmeragroup/fuse/card";
 
-test("cardVariants is public and slotted with a single direction axis", () => {
+test("cardVariants is public and slotted with a single direction axis, and parts take it with no polymorphic as prop", () => {
   expectTypeOf(cardVariants).toBeFunction();
   expectTypeOf(cardVariants({ direction: "horizontal" }).base()).toBeString();
   expectTypeOf(cardVariants().cardHeader()).toBeString();
 
   // @ts-expect-error the external ref's surface axes are decomposed away
   cardVariants({ variant: "bright" });
-});
 
-test("parts take the shared direction axis and no polymorphic as prop", () => {
   const _root = <Card.Root direction="horizontal" />;
   const _title = (
     <Card.Title level={2} size="xl" icon={<svg aria-hidden />}>

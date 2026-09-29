@@ -51,7 +51,7 @@ async function openPopover(): Promise<HTMLElement> {
 }
 
 describe("Popover", () => {
-  it("opens from the trigger, is named by its Title, and exposes the Description", async () => {
+  it("opens from the trigger, is named by its Title, exposes the Description, and moves focus into the popup", async () => {
     const onOpenChange = vi.fn();
     renderThemed(<BasicPopover onOpenChange={onOpenChange} />);
 
@@ -63,6 +63,9 @@ describe("Popover", () => {
     await expect
       .element(page.getByRole("dialog"))
       .toHaveAccessibleDescription("Set the dimensions for the layer.");
+    await vi.waitFor(() => {
+      expect(dialog.contains(document.activeElement)).toBe(true);
+    });
   });
 
   it("opens from Enter and from Space on the trigger", async () => {
@@ -113,14 +116,6 @@ describe("Popover", () => {
       expect(page.getByRole("dialog").query()).toBeNull();
     });
     await expect.element(page.getByRole("button", { name: "Details", exact: true })).toHaveFocus();
-  });
-
-  it("moves focus into the popup on open", async () => {
-    renderThemed(<BasicPopover />);
-    const dialog = await openPopover();
-    await vi.waitFor(() => {
-      expect(dialog.contains(document.activeElement)).toBe(true);
-    });
   });
 
   it("omits the arrow by default and renders it with matching data-side when showArrow is set", async () => {

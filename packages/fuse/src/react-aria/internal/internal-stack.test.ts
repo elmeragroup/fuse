@@ -15,18 +15,31 @@ function resolveClassName(
 }
 
 describe("composeTailwindRenderProps", () => {
-  it("merges the recipe classes underneath a plain string", () => {
-    const composed = composeTailwindRenderProps<HoverState>("px-8", "px-2 rounded-md");
-    expect(resolveClassName(composed, { isHovered: false })).toBe("rounded-md px-8");
-  });
-
-  it("resolves the render-prop function form before merging", () => {
-    const composed = composeTailwindRenderProps<HoverState>(
-      (renderProps) => (renderProps.isHovered ? "px-8" : ""),
-      "px-2"
-    );
-    expect(resolveClassName(composed, { isHovered: true })).toBe("px-8");
-    expect(resolveClassName(composed, { isHovered: false })).toBe("px-2");
+  it.each([
+    [
+      "merges the recipe classes underneath a plain string",
+      "px-8",
+      "px-2 rounded-md",
+      false,
+      "rounded-md px-8",
+    ],
+    [
+      "resolves the render-prop function form before merging (hovered)",
+      (renderProps: HoverState) => (renderProps.isHovered ? "px-8" : ""),
+      "px-2",
+      true,
+      "px-8",
+    ],
+    [
+      "resolves the render-prop function form before merging (not hovered)",
+      (renderProps: HoverState) => (renderProps.isHovered ? "px-8" : ""),
+      "px-2",
+      false,
+      "px-2",
+    ],
+  ] as const)("%s", (_title, className, recipe, isHovered, expected) => {
+    const composed = composeTailwindRenderProps<HoverState>(className, recipe);
+    expect(resolveClassName(composed, { isHovered })).toBe(expected);
   });
 });
 
@@ -62,15 +75,12 @@ describe("field-box chrome parity", () => {
 });
 
 describe("checkboxVariants", () => {
-  it("keeps the private recipe on role tokens after retokenization", () => {
+  it("keeps the private recipe on role tokens, with error in place of the reference's destructive", () => {
     const { base, box, icon } = checkboxVariants({ isSelected: true });
     const rendered = `${base()} ${box()} ${icon()}`;
     expect(rendered).not.toContain("theme(colors");
     expect(rendered).not.toContain("destructive");
     expect(rendered).toContain("var(--primary)");
-  });
-
-  it("swaps the reference's destructive vocabulary for error", () => {
     expect(checkboxVariants({ isInvalid: true }).box()).toContain("var(--error)");
   });
 });

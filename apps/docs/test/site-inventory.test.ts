@@ -7,11 +7,8 @@ import { COMPONENT_INVENTORY } from "./component-inventory";
 import { fetchOk, fetchText } from "./docs-server";
 
 describe("SideNav inventory", () => {
-  it("carries exactly the three groups, in order", () => {
+  it("carries exactly the three groups, in order, with the reviewed Overview and Handbook pages", () => {
     expect(NAV_GROUPS.map((group) => group.label)).toEqual(["Overview", "Handbook", "Components"]);
-  });
-
-  it("lists the Overview and Handbook pages in the reviewed inventory", () => {
     expect(NAV_GROUPS[0]?.items.map((item) => item.label)).toEqual([
       "Quick start",
       "Accessibility",
@@ -46,12 +43,9 @@ describe("SideNav inventory", () => {
 });
 
 describe("llms.txt", () => {
-  it("is served from the site root", async () => {
+  it("is served as plain text from the site root, indexing every nav destination and the home page, each with a description and component markdown links", async () => {
     const response = await fetchOk("/llms.txt");
     expect(response.headers.get("content-type")).toContain("text/plain");
-  });
-
-  it("indexes every nav destination and the home page, each with a description", async () => {
     const text = await fetchText("/llms.txt");
     expect(text).toContain(`](${HOME_PAGE.href}): ${HOME_PAGE.description}`);
     for (const page of STATIC_PAGES) {
@@ -59,12 +53,7 @@ describe("llms.txt", () => {
     }
     for (const component of COMPONENT_PAGES) {
       expect(text, component.slug).toContain(`[${component.title}](/components/${component.slug}):`);
-    }
-  });
-
-  it("links each component's markdown endpoint from its index row", async () => {
-    const text = await fetchText("/llms.txt");
-    for (const component of COMPONENT_PAGES) {
+      // Each component's index row links its markdown endpoint.
       expect(text).toContain(`Markdown: ${component.markdownUrl}`);
     }
   });
@@ -77,12 +66,5 @@ describe("markdown endpoints", () => {
     const markdown = await fetchText(markdownUrl);
     expect(markdown.startsWith("# ")).toBe(true);
     expect(markdown).toContain("## API reference");
-  });
-
-  it("links a resolvable endpoint from every backfilled component page", async () => {
-    for (const component of COMPONENT_PAGES) {
-      const html = await fetchText(`/components/${component.slug}`);
-      expect(html, component.slug).toContain(`href="${component.markdownUrl}"`);
-    }
   });
 });

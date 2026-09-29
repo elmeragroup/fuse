@@ -11,14 +11,9 @@ const PRESETS_COPY = {
 } as const;
 
 describe("date-picker dictionary", () => {
-  it("owns the locked datePicker.presets copy in all four locales", () => {
+  it("owns the locked datePicker.presets copy, and no other key, in all four locales", () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(datePickerStrings.getStringForLocale("presets", locale), locale).toBe(PRESETS_COPY[locale]);
-    }
-  });
-
-  it("carries no key beyond the single row owned by DatePicker", () => {
-    for (const locale of SUPPORTED_LOCALES) {
       expect(Object.keys(datePickerStrings.getStringsForLocale(locale)), locale).toEqual(["presets"]);
     }
   });

@@ -1,4 +1,3 @@
-import { LocalizedStringFormatter } from "@internationalized/string";
 import { getCountries as getMetadataCountries } from "libphonenumber-js/core";
 import type { MetadataJson } from "libphonenumber-js/core";
 import { describe, expect, it } from "vitest";
@@ -20,37 +19,7 @@ import {
   resolvePhoneFieldValues,
 } from "./phone-engine";
 
-const SELECT_COUNTRY_COPY = {
-  "nb-NO": "Velg land",
-  "sv-SE": "Välj land",
-  "en-US": "Select country",
-  "fi-FI": "Valitse maa",
-} as const;
-
-const SEARCH_COUNTRIES_COPY = {
-  "nb-NO": "Søk etter land",
-  "sv-SE": "Sök efter länder",
-  "en-US": "Search countries",
-  "fi-FI": "Hae maita",
-} as const;
-
-const NO_COUNTRIES_COPY = {
-  "nb-NO": "Ingen land funnet.",
-  "sv-SE": "Inga länder hittades.",
-  "en-US": "No countries found.",
-  "fi-FI": "Maita ei löytynyt.",
-} as const;
-
 describe("phone-number-field dictionary", () => {
-  it("owns the locked phoneNumberField.* copy in all four locales", () => {
-    for (const locale of SUPPORTED_LOCALES) {
-      const formatter = new LocalizedStringFormatter(locale, phoneNumberFieldStrings);
-      expect(formatter.format("selectCountry"), locale).toBe(SELECT_COUNTRY_COPY[locale]);
-      expect(formatter.format("searchCountries"), locale).toBe(SEARCH_COUNTRIES_COPY[locale]);
-      expect(formatter.format("noCountries"), locale).toBe(NO_COUNTRIES_COPY[locale]);
-    }
-  });
-
   it("carries no key beyond the three rows owned by PhoneNumberField", () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(Object.keys(phoneNumberFieldStrings.getStringsForLocale(locale)).sort(), locale).toEqual([

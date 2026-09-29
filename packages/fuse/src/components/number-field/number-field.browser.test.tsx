@@ -354,7 +354,7 @@ describe("NumberField", () => {
     expect(getComputedStyle(doneFace).animationName).toBe("none");
   });
 
-  it("paints the within ring on the group for keyboard focus, at both densities", async () => {
+  it("paints the within ring on the group for keyboard focus at both densities, and not for mouse focus on a stepper", async () => {
     renderField(
       <>
         <button type="button">Before</button>
@@ -370,25 +370,13 @@ describe("NumberField", () => {
       textboxNamed("Quantity"),
       groupFrom("Quantity")
     );
-  });
 
-  it("leaves the group ring unpainted for mouse focus on a stepper", async () => {
-    renderField(
-      <>
-        <button type="button">Before</button>
-        <NumberField label="Quantity" defaultValue={1} />
-      </>
-    );
     // Chromium always matches :focus-visible on a clicked text field, so the
     // mouse arm is probed on a stepper — the non-editable receiver. Clicking
     // the stepper focuses the input (base-ui); a prior mouse click sets the
     // modality so focusing the button itself is not :focus-visible.
-    const before = page.getByRole("button", { name: "Before", exact: true }).element();
-    if (!(before instanceof HTMLElement)) {
-      throw new Error("expected before");
-    }
-    await userEvent.click(before);
-    expect(before.matches(":focus-visible")).toBe(false);
+    await userEvent.click(previous);
+    expect(previous.matches(":focus-visible")).toBe(false);
 
     const increment = roleNamed("button", "Increase");
     increment.focus();
@@ -397,7 +385,7 @@ describe("NumberField", () => {
     expectNoFocusRing(groupFrom("Quantity"), "mouse focus on a stepper must not paint the group ring");
   });
 
-  it("names the steppers from the provider locale and updates them on locale rerender", () => {
+  it("names the steppers from the provider locale, updates them on locale rerender, and lets increaseLabel and decreaseLabel override independently", () => {
     for (const locale of SUPPORTED_LOCALES) {
       const { unmount } = renderField(<NumberField label="Quantity" defaultValue={2} />, locale);
       expect(
@@ -411,7 +399,10 @@ describe("NumberField", () => {
       unmount();
     }
 
-    const { rerender } = renderField(<NumberField label="Amount" defaultValue={1234.5} />, "en-US");
+    const { rerender, unmount: unmountLocaleField } = renderField(
+      <NumberField label="Amount" defaultValue={1234.5} />,
+      "en-US"
+    );
     expect(page.getByRole("button", { name: INCREASE_COPY["en-US"], exact: true }).query()).toBeTruthy();
     expect(page.getByRole("button", { name: DECREASE_COPY["en-US"], exact: true }).query()).toBeTruthy();
     expect(textboxNamed("Amount")).toHaveProperty("value", "1,234.5");
@@ -420,10 +411,9 @@ describe("NumberField", () => {
     expect(page.getByRole("button", { name: INCREASE_COPY["nb-NO"], exact: true }).query()).toBeTruthy();
     expect(page.getByRole("button", { name: DECREASE_COPY["nb-NO"], exact: true }).query()).toBeTruthy();
     expect(textboxNamed("Amount")).toHaveProperty("value", "1\u00a0234,5");
-  });
+    unmountLocaleField();
 
-  it("lets increaseLabel and decreaseLabel override dictionary names and survive a locale change", () => {
-    const { rerender } = renderField(
+    const { rerender: rerenderOverride, unmount } = renderField(
       <NumberField label="Quantity" defaultValue={2} increaseLabel="Add one" decreaseLabel="Remove one" />,
       "nb-NO"
     );
@@ -432,7 +422,7 @@ describe("NumberField", () => {
     expect(page.getByRole("button", { name: "Øk", exact: true }).query()).toBeNull();
     expect(page.getByRole("button", { name: "Reduser", exact: true }).query()).toBeNull();
 
-    rerender(
+    rerenderOverride(
       withLocale(
         "fi-FI",
         <NumberField label="Quantity" defaultValue={2} increaseLabel="Add one" decreaseLabel="Remove one" />
@@ -442,9 +432,8 @@ describe("NumberField", () => {
     expect(page.getByRole("button", { name: "Remove one", exact: true }).query()).toBeTruthy();
     expect(page.getByRole("button", { name: "Lisää", exact: true }).query()).toBeNull();
     expect(page.getByRole("button", { name: "Vähennä", exact: true }).query()).toBeNull();
-  });
+    unmount();
 
-  it("overrides stepper names independently", () => {
     renderField(<NumberField label="Quantity" defaultValue={2} increaseLabel="Add one" />, "sv-SE");
     expect(page.getByRole("button", { name: "Add one", exact: true }).query()).toBeTruthy();
     expect(page.getByRole("button", { name: DECREASE_COPY["sv-SE"], exact: true }).query()).toBeTruthy();
@@ -467,8 +456,8 @@ describe("NumberField", () => {
 });
 
 describe("NumberField density metrics", () => {
-  it("pins the field box to the signed md rung at both densities and does not rescope", () => {
-    const { rerender } = renderField(<NumberField label="Meter" defaultValue={1} />);
+  it("pins the field box to the signed md rung and sizes each stepper xs-wide and full-height at both densities, without rescoping", () => {
+    const { rerender, unmount: unmountMetrics } = renderField(<NumberField label="Meter" defaultValue={1} />);
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);
       expect(px(getComputedStyle(groupFrom("Meter")).height)).toBe(CONTROL_MD[density].height);
@@ -487,9 +476,8 @@ describe("NumberField density metrics", () => {
       </ThemeScope>
     );
     expect(px(getComputedStyle(groupFrom("Meter")).height)).toBe(CONTROL_MD.dense.height);
-  });
+    unmountMetrics();
 
-  it("sizes each stepper to the xs control height wide and the full group tall at both densities", () => {
     renderField(<NumberField label="Meter" defaultValue={1} />);
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);

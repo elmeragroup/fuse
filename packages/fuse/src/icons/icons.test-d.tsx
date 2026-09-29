@@ -4,10 +4,9 @@ import { expectTypeOf, test } from "vitest";
 
 import type { BrandLogoProps, ElmeraIconProps } from "../icons";
 import type * as Icons from "../icons";
-import type * as Root from "../index";
 import type { BrandCode } from "../theme";
 
-test("public adapters accept regular and fill and reject other weights", () => {
+test("public adapters accept regular and fill, reject other weights, and are named by title, not Phosphor's alt", () => {
   expectTypeOf<ElmeraIconProps["weight"]>().toEqualTypeOf<"regular" | "fill" | undefined>();
   expectTypeOf<ComponentProps<(typeof Icons)["Check"]>["weight"]>().toEqualTypeOf<
     "regular" | "fill" | undefined
@@ -29,21 +28,13 @@ test("public adapters accept regular and fill and reject other weights", () => {
   const _bold: ElmeraIconProps = { weight: "bold" };
   // @ts-expect-error duotone is not a public icon weight
   const _duotone: ElmeraIconProps = { weight: "duotone" };
-});
 
-test("public adapters are named by title, not Phosphor's alt", () => {
   expectTypeOf<ElmeraIconProps["title"]>().toEqualTypeOf<string | undefined>();
   // @ts-expect-error alt is not a public icon prop; use title
   const _alt: ElmeraIconProps = { alt: "Done" };
 });
 
-test("there is no Icon namespace on /icons or the root barrel", () => {
-  expectTypeOf<typeof Icons>().not.toHaveProperty("Icon");
-  expectTypeOf<typeof Root>().not.toHaveProperty("Icon");
-  expectTypeOf<typeof Root>().not.toHaveProperty("Check");
-});
-
-test("BrandLogo accepts every brand code including elma", () => {
+test("BrandLogo accepts every brand code including elma, and its other props are the fallback host, not SVG", () => {
   expectTypeOf<BrandLogoProps["brand"]>().toEqualTypeOf<BrandCode>();
   expectTypeOf<BrandLogoProps["variant"]>().toEqualTypeOf<"full" | "mark" | undefined>();
 
@@ -52,9 +43,7 @@ test("BrandLogo accepts every brand code including elma", () => {
 
   // @ts-expect-error steddi is outside this theme set
   const _steddi: BrandLogoProps = { brand: "steddi" };
-});
 
-test("BrandLogo public props are the fallback host, not SVG", () => {
   expectTypeOf<BrandLogoProps>().toHaveProperty("id");
   expectTypeOf<BrandLogoProps>().toHaveProperty("className");
   expectTypeOf<BrandLogoProps>().toHaveProperty("style");

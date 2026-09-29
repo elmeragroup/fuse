@@ -128,7 +128,7 @@ describe("component page manifest", () => {
     }
   });
 
-  it("carries every demo the page renders into the manifest, in the order it renders them", () => {
+  it("carries every demo the page renders into the manifest, in order, each with a unique URL-safe ID and a nonempty title", () => {
     // Unit under test: the generator's copy of each page's demos into the manifest. Oracle:
     // the parsed page. The parser itself is tested against literal pages in docs-pipeline.
     for (const entry of COMPONENT_PAGES) {
@@ -141,11 +141,6 @@ describe("component page manifest", () => {
         entry.demos.map((demo) => demo.title),
         entry.slug
       ).toEqual(authored.demos.map((demo) => demo.title));
-    }
-  });
-
-  it("gives each generated demo a unique URL-safe ID and a nonempty title", () => {
-    for (const entry of COMPONENT_PAGES) {
       expect(new Set(entry.demos.map((demo) => demo.id)).size, entry.slug).toBe(entry.demos.length);
       for (const demo of entry.demos) {
         expect(demo.id, `${entry.slug}.${demo.id}`).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
@@ -234,7 +229,7 @@ describe("committed api.json", () => {
     expect(dateInput?.forwardedFrom).toEqual(expect.arrayContaining(["react-aria-components"]));
   });
 
-  it("never leaves a documented prop without a description or an unresolved type", () => {
+  it("never leaves a documented prop without a description or an unresolved type, and publishes only documented dependency props", () => {
     for (const entry of COMPONENT_PAGES) {
       for (const part of api(entry.slug).parts) {
         for (const prop of part.props) {
@@ -242,15 +237,7 @@ describe("committed api.json", () => {
           if (prop.origin === "declared") {
             expect(prop.description, `${part.name}.${prop.name}`).not.toBe("");
           }
-        }
-      }
-    }
-  });
-
-  it("publishes only dependency props that carry dependency-authored documentation", () => {
-    for (const entry of COMPONENT_PAGES) {
-      for (const part of api(entry.slug).parts) {
-        for (const prop of part.props) {
+          // A dependency prop is published only when its dependency documents it.
           const packageName = dependencyPackageName(prop.origin);
           if (packageName !== null) {
             expect(packageName).toBe("@base-ui/react");

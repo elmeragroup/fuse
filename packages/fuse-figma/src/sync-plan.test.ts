@@ -160,11 +160,9 @@ describe("planSync", () => {
     ]);
   });
 
-  it("changes nothing when the file already matches", () => {
+  it("changes nothing on a matching file or float round-trip noise, but writes a real color change against the existing ids", () => {
     expect(plan({ collections: [syncedPalette()] }).changes).toEqual([]);
-  });
 
-  it("ignores float round-trip noise but writes a real color change against the existing ids", () => {
     const noisy: FileValue = { _tag: "Color", color: { r: 0.99995, g: 0.00005, b: 0, a: 1 } };
     expect(plan({ collections: [syncedPalette([LIGHT, DARK], noisy)] }).changes).toEqual([]);
 

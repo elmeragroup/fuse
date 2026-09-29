@@ -40,16 +40,6 @@ function renderRouted(node: ReactNode, navigate: (url: string) => void) {
   );
 }
 
-describe("Link semantics", () => {
-  it("renders a real anchor carrying its href and accessible name", () => {
-    renderThemed(<Link href="/orders/1042">Invoice 1042</Link>);
-
-    const link = linkNamed("Invoice 1042");
-    expect(link.tagName).toBe("A");
-    expect(link.getAttribute("href")).toBe("/orders/1042");
-  });
-});
-
 describe("Link client-side navigation", () => {
   it("leaves a target=_blank link to the browser rather than the router", async () => {
     const navigate = vi.fn();

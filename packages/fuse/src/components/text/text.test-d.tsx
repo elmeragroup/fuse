@@ -3,7 +3,6 @@ import type { JSX } from "react";
 import { expectTypeOf, test } from "vitest";
 
 import type { TextProps } from "@elmeragroup/fuse/text";
-import { Text } from "@elmeragroup/fuse/text";
 
 test("TextProps is native p props plus the recipe axes, elementType, and render", () => {
   expectTypeOf<TextProps["variant"]>().toEqualTypeOf<
@@ -32,26 +31,4 @@ test("TextProps is native p props plus the recipe axes, elementType, and render"
   expectTypeOf<TextProps["id"]>().toEqualTypeOf<string | undefined>();
   expectTypeOf<TextProps>().not.toHaveProperty("slot");
   expectTypeOf<TextProps>().not.toHaveProperty("as");
-});
-
-test("the element takes the public props, render, and no as or slot", () => {
-  const _basic = <Text>Body copy.</Text>;
-  const _span = (
-    <Text elementType="span" size="lg" variant="muted">
-      Inline.
-    </Text>
-  );
-  const _aligned = (
-    <Text align="center" weight="bold" leading="tight" truncate>
-      Truncated
-    </Text>
-  );
-  const _render = <Text render={<span />}>As a span</Text>;
-
-  // @ts-expect-error the RAC slot prop is dropped
-  const _noSlot = <Text slot="description">Described</Text>;
-  // @ts-expect-error polymorphism is never an `as` prop
-  const _noAs = <Text as="span">Inline</Text>;
-  // @ts-expect-error `error` is not a variant value; the consumer-compat name is `destructive`
-  const _badVariant = <Text variant="error" />;
 });

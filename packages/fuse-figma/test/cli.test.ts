@@ -14,6 +14,9 @@ import { InMemoryFigma } from "./in-memory-figma.ts";
 const FILE_KEY = "FuseFile123";
 const TOKEN = "figd_test-token";
 
+/** A value as a designer stores it in the fake file. */
+type StoredValue = Parameters<InMemoryFigma["setValue"]>[3];
+
 const cliEnvironment = Layer.mergeAll(
   FileSystem.layerNoop({}),
   Path.layer,
@@ -192,6 +195,13 @@ describe("fuse-figma sync", () => {
       });
       assert.deepStrictEqual(figma.metadata("Fuse themes", "light/primary"), { scopes: [], codeSyntax: {} });
       // The built CSS defines no --radius-sm and most other rungs, so the rungs carry the calc().
+      assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius-xs").codeSyntax, {
+        WEB: "calc(var(--radius) - 3 * var(--radius-step))",
+      });
+      assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius-sm"), {
+        scopes: ["CORNER_RADIUS"],
+        codeSyntax: { WEB: "calc(var(--radius) - 2 * var(--radius-step))" },
+      });
       assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius-md"), {
         scopes: ["CORNER_RADIUS"],
         codeSyntax: { WEB: "calc(var(--radius) - var(--radius-step))" },
@@ -328,13 +338,26 @@ describe("fuse-figma sync", () => {
     })
   );
 
-  it.effect("repairs a drifted value in place, keeping every variable id", () =>
+  it.effect.each([
+    { value: "a drifted value", drift: (): StoredValue => ({ r: 1, g: 0, b: 0, a: 1 }) },
+    {
+      value: "a composed color",
+      drift: (figma: InMemoryFigma): StoredValue => ({
+        color: { type: "VARIABLE_ALIAS", id: figma.variableIds().get("Fuse primitives/brand-fkas") ?? "" },
+        opacity: 50,
+      }),
+    },
+    {
+      value: "a value newer than the sync",
+      drift: (): StoredValue => ({ type: "FUTURE_VALUE", payload: "mix" }),
+    },
+  ])("rewrites $value in a variable it owns in place, keeping every variable id", ({ drift }) =>
     Effect.gen(function* () {
       const figma = new InMemoryFigma(FILE_KEY, TOKEN);
       yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
       const idsBefore = figma.variableIds();
       const synced = hex(figma.resolve("Fuse tokens", "primary", light("external-fkas-private")));
-      figma.setValue("Fuse themes", "light/primary", "external-fkas-private", { r: 1, g: 0, b: 0, a: 1 });
+      figma.setValue("Fuse themes", "light/primary", "external-fkas-private", drift(figma));
 
       yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
 
@@ -342,27 +365,6 @@ describe("fuse-figma sync", () => {
       const repair = figma.acceptedWrites.at(-1);
       assert.deepStrictEqual(repair?.variableModeValues?.length, 1);
       assert.strictEqual(repair?.variables?.length ?? 0, 0);
-      assert.strictEqual(
-        hex(figma.resolve("Fuse tokens", "primary", light("external-fkas-private"))),
-        synced
-      );
-    })
-  );
-
-  it.effect("rewrites a composed color in a variable it owns", () =>
-    Effect.gen(function* () {
-      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
-      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
-      const synced = hex(figma.resolve("Fuse tokens", "primary", light("external-fkas-private")));
-      const accent = figma.variableIds().get("Fuse primitives/brand-fkas") ?? "";
-      figma.setValue("Fuse themes", "light/primary", "external-fkas-private", {
-        color: { type: "VARIABLE_ALIAS", id: accent },
-        opacity: 50,
-      });
-
-      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
-
-      assert.strictEqual(figma.acceptedWrites.at(-1)?.variableModeValues?.length, 1);
       assert.strictEqual(
         hex(figma.resolve("Fuse tokens", "primary", light("external-fkas-private"))),
         synced
@@ -540,26 +542,6 @@ describe("fuse-figma sync", () => {
     })
   );
 
-  it.effect("rewrites a value newer than the sync in a variable it owns", () =>
-    Effect.gen(function* () {
-      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
-      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
-      const synced = hex(figma.resolve("Fuse tokens", "primary", light("external-fkas-private")));
-      figma.setValue("Fuse themes", "light/primary", "external-fkas-private", {
-        type: "FUTURE_VALUE",
-        payload: "mix",
-      });
-
-      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
-
-      assert.strictEqual(figma.acceptedWrites.at(-1)?.variableModeValues?.length, 1);
-      assert.strictEqual(
-        hex(figma.resolve("Fuse tokens", "primary", light("external-fkas-private"))),
-        synced
-      );
-    })
-  );
-
   it.effect("refuses to take over a variable whose type is newer than the sync", () =>
     Effect.gen(function* () {
       const figma = new InMemoryFigma(FILE_KEY, TOKEN);
@@ -704,10 +686,16 @@ describe("fuse-figma talking to Figma", () => {
     })
   );
 
-  it.effect("retries a read that hit a server error", () =>
+  it.effect.each([
+    {
+      fault: "hit a server error",
+      inject: (figma: InMemoryFigma) => figma.script({ method: "GET", status: 503 }),
+    },
+    { fault: "whose connection dropped", inject: (figma: InMemoryFigma) => figma.dropNextConnection("GET") },
+  ])("retries a read that $fault", ({ inject }) =>
     Effect.gen(function* () {
       const figma = new InMemoryFigma(FILE_KEY, TOKEN);
-      figma.script({ method: "GET", status: 503 });
+      inject(figma);
 
       const fiber = yield* Effect.forkChild(run(figma, ["--file-key", FILE_KEY, "sync"]));
       yield* TestClock.adjust("1 minute");
@@ -716,20 +704,6 @@ describe("fuse-figma talking to Figma", () => {
       // The failed read, its retry, and the read-back after the write.
       assert.strictEqual(reads(figma), 3);
       assert.strictEqual(writes(figma), 1);
-      assert.include(yield* output, "reading it back matches the tokens");
-    })
-  );
-
-  it.effect("retries a read whose connection dropped", () =>
-    Effect.gen(function* () {
-      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
-      figma.dropNextConnection("GET");
-
-      const fiber = yield* Effect.forkChild(run(figma, ["--file-key", FILE_KEY, "sync"]));
-      yield* TestClock.adjust("1 minute");
-      yield* Fiber.join(fiber);
-
-      assert.strictEqual(reads(figma), 3);
       assert.include(yield* output, "reading it back matches the tokens");
     })
   );

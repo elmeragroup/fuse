@@ -211,7 +211,7 @@ describe("Sheet", () => {
     expect(behind.contains(document.activeElement)).toBe(false);
   });
 
-  it("closes from the corner button and drops it when showCloseButton is false", async () => {
+  it("closes from the corner button, drops it when showCloseButton is false, and closes from an explicit Sheet.Close", async () => {
     const { rerender } = renderThemed(withLocale("en-US", <BasicSheet />));
     await openSheet();
     const corner = page.getByRole("button", { name: "Close", exact: true }).element();
@@ -227,6 +227,8 @@ describe("Sheet", () => {
     await openSheet();
     expect(page.getByRole("button", { name: "Close", exact: true }).query()).toBeNull();
     expect(page.getByRole("button", { name: "Done", exact: true }).element()).toBeTruthy();
+    await userEvent.click(page.getByRole("button", { name: "Done", exact: true }).element());
+    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("renders the corner close button in every locale and lets closeLabel win", async () => {
@@ -245,13 +247,6 @@ describe("Sheet", () => {
     expect(page.getByRole("button", { name: "Avslutt", exact: true }).element()).toBeTruthy();
     expect(page.getByRole("button", { name: "Lukk", exact: true }).query()).toBeNull();
     unmount();
-  });
-
-  it("closes from an explicit Sheet.Close", async () => {
-    renderThemed(withLocale("en-US", <BasicSheet showCloseButton={false} />));
-    await openSheet();
-    await userEvent.click(page.getByRole("button", { name: "Done", exact: true }).element());
-    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("keeps Body as the scroll container and stamps the layout slots", async () => {
@@ -298,7 +293,7 @@ describe("Sheet", () => {
     }
   });
 
-  it("leaves the size axis inert on the top and bottom sides", async () => {
+  it("leaves the size axis inert on the top and bottom sides, and below the sm breakpoint where the panel is full-width", async () => {
     await page.viewport(1024, 768);
     for (const side of ["top", "bottom"] as const) {
       const { unmount } = renderThemed(withLocale("en-US", <BasicSheet side={side} size="sm" />));
@@ -306,9 +301,7 @@ describe("Sheet", () => {
       expect(getComputedStyle(dialog).maxWidth, side).toBe("none");
       unmount();
     }
-  });
 
-  it("leaves the size axis inert below the sm breakpoint, where the panel is full-width", async () => {
     // The `sm:` half of the gate: `size` only caps a left/right panel once the viewport
     // is wide enough, and `w-full` owns the width below that.
     await page.viewport(500, 768);

@@ -55,9 +55,12 @@ function relativeDemo(file: string): string {
 }
 
 describe("demos import only what a consumer could", () => {
-  it("keeps every non-public specifier inside the carve-out", () => {
+  it("keeps every non-public specifier of the whole demo inventory inside the carve-out", () => {
     const offenders: string[] = [];
-    for (const file of demoFiles()) {
+    const files = demoFiles();
+    // The inventory must be the real one, so the check is not vacuous.
+    expect(files.length).toBeGreaterThan(250);
+    for (const file of files) {
       const allowed = CARVE_OUTS.get(relativeDemo(file)) ?? [];
       for (const specifier of specifiersOf(file)) {
         const isConsumer = CONSUMER_SPECIFIERS.some((pattern) => pattern.test(specifier));
@@ -76,9 +79,5 @@ describe("demos import only what a consumer could", () => {
         expect(imported, demo).toContain(specifier);
       }
     }
-  });
-
-  it("sees the whole demo inventory, so the check is not vacuous", () => {
-    expect(demoFiles().length).toBeGreaterThan(250);
   });
 });

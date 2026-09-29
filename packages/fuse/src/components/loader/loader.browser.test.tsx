@@ -35,26 +35,21 @@ function statusIcon(status: HTMLElement): SVGElement {
 }
 
 describe("Loader", () => {
-  it("is found by role=status and named from a consumer aria-label", () => {
-    renderThemed(<Loader aria-label="Laster" />);
+  it("is found by role=status, named only from a consumer aria-label, and hides the spinning icon from the accessibility tree", () => {
+    const { unmount } = renderThemed(<Loader aria-label="Laster" />);
     const loader = statusElement("Laster");
     expect(loader.tagName).toBe("DIV");
     expect(loader.getAttribute("data-slot")).toBe("loader");
     expect(loader.getAttribute("role")).toBe("status");
-  });
-
-  it("is found by role=status with no accessible name when aria-label is omitted", () => {
-    renderThemed(<Loader />);
-    const loader = statusElement();
-    expect(loader.getAttribute("aria-label")).toBeNull();
-    expect(page.getByRole("status", { name: "Loading" }).query()).toBeNull();
-  });
-
-  it("hides the spinning icon from the accessibility tree", () => {
-    renderThemed(<Loader aria-label="Laster" />);
-    const icon = statusIcon(statusElement("Laster"));
+    const icon = statusIcon(loader);
     expect(icon.getAttribute("aria-hidden")).toBe("true");
     expect(getComputedStyle(icon).animationName).not.toBe("none");
+    unmount();
+
+    renderThemed(<Loader />);
+    const unnamed = statusElement();
+    expect(unnamed.getAttribute("aria-label")).toBeNull();
+    expect(page.getByRole("status", { name: "Loading" }).query()).toBeNull();
   });
 
   it("maps each size onto the icon and merges className onto the wrapper", () => {
@@ -68,7 +63,11 @@ describe("Loader", () => {
     for (const size of SIZES) {
       const loader = statusElement(size);
       expect(getComputedStyle(loader).display).toBe("flex");
-      expect(px(getComputedStyle(statusIcon(loader)).width)).toBe(ICON_SIZE_PX[size]);
+      const icon = statusIcon(loader);
+      expect(px(getComputedStyle(icon).width)).toBe(ICON_SIZE_PX[size]);
+      expect(getComputedStyle(icon).animationName, size).not.toBe("none");
+      // The size axis lands on the icon only, never on the wrapper.
+      expect(px(getComputedStyle(loader).width), size).not.toBe(ICON_SIZE_PX[size]);
     }
   });
 

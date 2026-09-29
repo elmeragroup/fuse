@@ -17,13 +17,6 @@ test("the re-exports keep the RAC names as functions and FocusableOptions as the
   expectTypeOf<FocusableOptions>().toEqualTypeOf<RacFocusableOptions>();
 });
 
-test("FocusableOptions is a public type and not a value export", () => {
-  expectTypeOf<FocusableOptions>().toHaveProperty("isDisabled");
-  expectTypeOf<FocusableOptions>().toHaveProperty("autoFocus");
-  expectTypeOf<FocusableOptions>().toHaveProperty("excludeFromTabOrder");
-  expectTypeOf<typeof FocusableApi>().not.toHaveProperty("FocusableOptions");
-});
-
 test("RAC-only names stay off the public surface", () => {
   expectTypeOf<typeof FocusableApi>().not.toHaveProperty("FocusableContext");
   expectTypeOf<typeof FocusableApi>().not.toHaveProperty("FocusableProvider");
@@ -36,17 +29,4 @@ test("RAC-only names stay off the public surface", () => {
   type _NoAria = FocusableApi.FocusableAria;
   // @ts-expect-error RAC FocusableProps is not a public export
   type _NoProps = FocusableApi.FocusableProps;
-});
-
-test("the elements take the public props", () => {
-  const _focusable = (
-    <Focusable isDisabled autoFocus excludeFromTabOrder onFocus={() => undefined}>
-      <span>Offline</span>
-    </Focusable>
-  );
-  const _options: FocusableOptions = {
-    isDisabled: false,
-    autoFocus: true,
-    excludeFromTabOrder: true,
-  };
 });

@@ -4,7 +4,6 @@ import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { confirmButtonVariants } from "./confirm-button-variants";
 
 const EMPTY_VARIANTS = ["default", "outline", "secondary", "ghost", "link"] as const;
-const ARMED_VARIANTS = ["destructive", "success"] as const;
 
 describe("confirmButtonVariants", () => {
   it("adds nothing when variant is undefined and keeps empty alignment keys empty", () => {
@@ -15,25 +14,19 @@ describe("confirmButtonVariants", () => {
     }
   });
 
-  it("escalates armed fills on the locked destructive and success values with error/success tokens", () => {
-    expect(confirmButtonVariants({ variant: "destructive" })).toContain("data-[armed=true]:bg-error");
-    expect(confirmButtonVariants({ variant: "destructive" })).toContain(
-      "data-[armed=true]:text-error-foreground"
-    );
-    expect(confirmButtonVariants({ variant: "success" })).toContain("data-[armed=true]:bg-success");
-    expect(confirmButtonVariants({ variant: "success" })).toContain(
-      "data-[armed=true]:text-success-foreground"
-    );
-  });
-
-  it("covers every Button-aligned variant without raw palette, dark, density, or destructive classes", () => {
-    for (const variant of ARMED_VARIANTS) {
+  it.each([
+    ["destructive", "error"],
+    ["success", "success"],
+  ] as const)(
+    "escalates the armed %s fill onto %s tokens without raw palette, dark, density, or destructive classes",
+    (variant, token) => {
       const resolved = confirmButtonVariants({ variant });
-      expect(resolved.length, variant).toBeGreaterThan(0);
+      expect(resolved).toContain(`data-[armed=true]:bg-${token}`);
+      expect(resolved).toContain(`data-[armed=true]:text-${token}-foreground`);
       expect(resolved, variant).not.toContain("dark:");
       expect(resolved, variant).not.toMatch(RAW_PALETTE_RE);
       expect(resolved, variant).not.toMatch(/\b(?:dense|comfortable):/);
       expect(resolved, variant).not.toMatch(/bg-destructive|text-destructive|border-destructive/);
     }
-  });
+  );
 });

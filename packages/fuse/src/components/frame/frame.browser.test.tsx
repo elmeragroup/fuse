@@ -65,8 +65,8 @@ describe("Frame", () => {
     expect(page.getByRole("contentinfo").elements()).toEqual([]);
   });
 
-  it("separates adjacent panels with a 4px muted gutter by default", () => {
-    renderThemed(
+  it("separates adjacent panels with a 4px muted gutter by default and fuses them at stackedPanels", () => {
+    const { unmount } = renderThemed(
       <Frame.Root>
         <Frame.Panel>March</Frame.Panel>
         <Frame.Panel>April</Frame.Panel>
@@ -75,9 +75,8 @@ describe("Frame", () => {
     const second = textNamed("April");
     expect(getComputedStyle(second).marginTop).toBe("4px");
     expect(getComputedStyle(second).borderTopWidth).not.toBe("0px");
-  });
+    unmount();
 
-  it("fuses adjacent panels at stackedPanels with no inner radius or double border", () => {
     renderThemed(
       <Frame.Root stackedPanels>
         <Frame.Panel>March</Frame.Panel>
@@ -85,13 +84,13 @@ describe("Frame", () => {
       </Frame.Root>
     );
     const first = textNamed("March");
-    const second = textNamed("April");
+    const fused = textNamed("April");
     expect(getComputedStyle(first).borderBottomLeftRadius).toBe("0px");
     expect(getComputedStyle(first).borderBottomRightRadius).toBe("0px");
-    expect(getComputedStyle(second).borderTopLeftRadius).toBe("0px");
-    expect(getComputedStyle(second).borderTopRightRadius).toBe("0px");
-    expect(getComputedStyle(second).borderTopWidth).toBe("0px");
-    expect(getComputedStyle(second).marginTop).toBe("0px");
+    expect(getComputedStyle(fused).borderTopLeftRadius).toBe("0px");
+    expect(getComputedStyle(fused).borderTopRightRadius).toBe("0px");
+    expect(getComputedStyle(fused).borderTopWidth).toBe("0px");
+    expect(getComputedStyle(fused).marginTop).toBe("0px");
     expect(getComputedStyle(first, "::before").display).toBe("none");
   });
 

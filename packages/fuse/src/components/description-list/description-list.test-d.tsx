@@ -12,7 +12,7 @@ import type {
 import * as DescriptionListModule from "@elmeragroup/fuse/description-list";
 import { DescriptionList } from "@elmeragroup/fuse/description-list";
 
-test("public API exports only the namespace and part prop types", () => {
+test("public API exports only the namespace and part prop types, with native attributes, Heading render, and no as prop", () => {
   expectTypeOf<DescriptionListRootProps>().toEqualTypeOf<ComponentProps<"div">>();
   expectTypeOf<DescriptionListContentProps>().toEqualTypeOf<ComponentProps<"dl">>();
   expectTypeOf<DescriptionListTermProps>().toEqualTypeOf<ComponentProps<"dt">>();
@@ -25,9 +25,7 @@ test("public API exports only the namespace and part prop types", () => {
   expectTypeOf(DescriptionListModule).not.toHaveProperty("DescriptionListHeading");
   expectTypeOf(DescriptionListModule).not.toHaveProperty("DescriptionTerm");
   expectTypeOf(DescriptionListModule).not.toHaveProperty("DescriptionDetails");
-});
 
-test("parts take native attributes, Heading render, and no polymorphic as prop", () => {
   const _root = (
     <DescriptionList.Root className="max-w-md" id="customer">
       <DescriptionList.Heading>Customer</DescriptionList.Heading>

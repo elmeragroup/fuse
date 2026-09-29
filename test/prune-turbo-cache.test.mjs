@@ -21,22 +21,26 @@ afterEach(() => {
 });
 
 describe("turbo cache pruning", () => {
-  it("keeps the cache and names the missing run summary when the runs directory is absent", () => {
+  it.each([
+    {
+      case: "names the missing run summary when the runs directory is absent",
+      runs: (/** @type {string} */ cache) => join(cache, "runs"),
+      error: (/** @type {string} */ runs) => `No task hashes in ${runs}; was TURBO_RUN_SUMMARY set?`,
+    },
+    {
+      case: "rejects a runs file that is not a turbo summary",
+      runs: () => {
+        const runs = scratch();
+        writeFileSync(join(runs, "a.json"), JSON.stringify({ tasks: [{ taskId: "docs#build" }] }));
+        return runs;
+      },
+      error: () => "a.json is not a turbo run summary",
+    },
+  ])("$case and leaves the cache alone", ({ runs: runsFor, error }) => {
     const cache = scratch();
     writeFileSync(join(cache, "4c0f8df7825fb4da.tar.zst"), "");
-    const runs = join(cache, "runs");
-    expect(() => pruneTurboCache(cache, runs)).toThrow(
-      `No task hashes in ${runs}; was TURBO_RUN_SUMMARY set?`
-    );
-    expect(readdirSync(cache)).toEqual(["4c0f8df7825fb4da.tar.zst"]);
-  });
-
-  it("rejects a runs file that is not a turbo summary and leaves the cache alone", () => {
-    const cache = scratch();
-    const runs = scratch();
-    writeFileSync(join(cache, "4c0f8df7825fb4da.tar.zst"), "");
-    writeFileSync(join(runs, "a.json"), JSON.stringify({ tasks: [{ taskId: "docs#build" }] }));
-    expect(() => pruneTurboCache(cache, runs)).toThrow("a.json is not a turbo run summary");
+    const runs = runsFor(cache);
+    expect(() => pruneTurboCache(cache, runs)).toThrow(error(runs));
     expect(readdirSync(cache)).toEqual(["4c0f8df7825fb4da.tar.zst"]);
   });
 

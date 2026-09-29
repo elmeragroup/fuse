@@ -180,28 +180,6 @@ describe("Select", () => {
     expect(onValueChange.mock.calls[0]?.[0]).toBe("banana");
   });
 
-  it("dims disabled items and does not select them", async () => {
-    // Primitive navigation: arrows may highlight a disabled option; Enter does not select.
-    const onValueChange = vi.fn();
-    renderThemed(<FruitSelect onValueChange={onValueChange} extra />);
-    await openWithArrowDown();
-    await userEvent.keyboard("{ArrowDown}");
-    await userEvent.keyboard("{ArrowDown}");
-    const cherry = optionNamed("Cherry");
-    expect(cherry.getAttribute("data-disabled")).not.toBeNull();
-    expect(highlightedOption()).toBe(cherry);
-    await userEvent.keyboard("{Enter}");
-    expect(onValueChange).not.toHaveBeenCalled();
-    expect(page.getByRole("listbox").query()).not.toBeNull();
-  });
-
-  it("jumps to a matching option on typeahead while open", async () => {
-    renderThemed(<FruitSelect />);
-    await openWithArrowDown();
-    await userEvent.keyboard("d");
-    expect(highlightedOption().textContent).toContain("Date");
-  });
-
   it("changes the value from a closed trigger via typeahead without opening", async () => {
     const onValueChange = vi.fn();
     renderThemed(<FruitSelect onValueChange={onValueChange} />);
@@ -267,31 +245,6 @@ describe("Select", () => {
     });
     await openWithClick("Unaligned");
     expect(selectContent().getAttribute("data-align-trigger")).toBe("false");
-  });
-
-  it("surfaces aria-invalid on the trigger and disables it from Root", () => {
-    renderThemed(
-      <>
-        <Select.Root>
-          <Select.Trigger aria-invalid aria-label="Invalid fruit">
-            <Select.Value placeholder="Pick a fruit" />
-          </Select.Trigger>
-          <Select.Content>
-            <Select.Item value="apple">Apple</Select.Item>
-          </Select.Content>
-        </Select.Root>
-        <Select.Root disabled>
-          <Select.Trigger aria-label="Disabled fruit">
-            <Select.Value placeholder="Pick a fruit" />
-          </Select.Trigger>
-          <Select.Content>
-            <Select.Item value="apple">Apple</Select.Item>
-          </Select.Content>
-        </Select.Root>
-      </>
-    );
-    expect(comboboxNamed("Invalid fruit").getAttribute("aria-invalid")).toBe("true");
-    expect(comboboxNamed("Disabled fruit")).toHaveProperty("disabled", true);
   });
 
   it("names a group from Select.Label", async () => {

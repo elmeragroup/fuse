@@ -33,15 +33,13 @@ test("CheckboxGroupProps is the labeled-composite face", () => {
   expectTypeOf<CheckboxGroupProps>().not.toHaveProperty("invalid");
 });
 
-test("CheckboxItemProps is the parent-vs-value discriminated union", () => {
+test("CheckboxItemProps is the parent-vs-value discriminated union and the elements reject invalid combinations", () => {
   expectTypeOf<CheckboxItemProps["isDisabled"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<CheckboxItemProps["isReadOnly"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<CheckboxItemProps["controlPosition"]>().toEqualTypeOf<"start" | "end" | undefined>();
   expectTypeOf<CheckboxDescriptionProps["describedBy"]>().toEqualTypeOf<string | ReactNode | undefined>();
   expectTypeOf<CheckboxItemProps>().not.toHaveProperty("as");
-});
 
-test("the elements take the public props and reject invalid combinations", () => {
   const _primitive = <Checkbox aria-label="Accept" defaultChecked />;
   const _group = (
     <CheckboxGroup

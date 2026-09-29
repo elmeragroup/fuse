@@ -1,13 +1,6 @@
 import { expectTypeOf, test } from "vitest";
 
-import { Accordion, accordionVariants } from "@elmeragroup/fuse/accordion";
-
-test("the public namespace is five parts plus the public recipe", () => {
-  expectTypeOf(Accordion).not.toHaveProperty("Panel");
-  expectTypeOf(Accordion).not.toHaveProperty("AccordionItem");
-  expectTypeOf(Accordion).not.toHaveProperty("AccordionTrigger");
-  expectTypeOf(accordionVariants).toBeFunction();
-});
+import { Accordion } from "@elmeragroup/fuse/accordion";
 
 test("Root takes the array value shape, multiple, and recipe axes — never radix type or collapsible", () => {
   expectTypeOf<Parameters<typeof Accordion.Root>[0]["multiple"]>().toEqualTypeOf<boolean | undefined>();

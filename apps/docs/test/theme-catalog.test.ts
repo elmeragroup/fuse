@@ -73,7 +73,7 @@ describe("theme catalog payload", () => {
     }
   });
 
-  it("names the variant on the same object as that theme's token values", () => {
+  it("names the variant on the same object as that theme's token values, as the cascade writes them", () => {
     const external = catalogTheme("external-fkas-private");
     expect(external.variant).toBe("external");
     expect(external.brand).toBe("fkas");
@@ -89,20 +89,18 @@ describe("theme catalog payload", () => {
     expect(internal.density).toBe("dense");
     expect(internal.tokens["--primary"]).toBe("oklch(0.16 0 0)");
     expect(internal.tokens["--primary-foreground"]).toBe("oklch(1 0 0)");
-  });
 
-  it("keeps CSS custom-property names and var() values as the cascade writes them", () => {
-    const theme = catalogTheme("external-fkas-private");
-    expect(theme.attributes).toEqual({
+    // CSS custom-property names and var() values stay as the cascade writes them.
+    expect(external.attributes).toEqual({
       "data-theme-variant": "external",
       "data-theme-brand": "fkas",
       "data-theme-segment": "private",
       "data-density": "comfortable",
     });
-    expect(theme.tokens["--brand"]).toBe("var(--brand-fkas)");
-    expect(theme.tokens["--brand-foreground"]).toBe("var(--brand-fkas-foreground)");
-    expect(theme.tokens["--destructive"]).toBe("var(--error)");
-    expect(theme.tokens["--sidebar-brand"]).toBe("var(--brand)");
+    expect(external.tokens["--brand"]).toBe("var(--brand-fkas)");
+    expect(external.tokens["--brand-foreground"]).toBe("var(--brand-fkas-foreground)");
+    expect(external.tokens["--destructive"]).toBe("var(--error)");
+    expect(external.tokens["--sidebar-brand"]).toBe("var(--brand)");
 
     expect(THEME_CATALOG.primitives["--brand-fkas"]).toBe("oklch(0.68 0.21747 38.8)");
     expect(THEME_CATALOG.primitives["--brand-fkab"]).toBe("var(--brand-fkas)");

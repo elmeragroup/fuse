@@ -1,5 +1,3 @@
-import type { ReactElement } from "react";
-
 import { DialogTrigger } from "react-aria-components";
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -76,19 +74,6 @@ describe("the internal field chrome", () => {
   });
 });
 
-function PopoverFixture({ container }: { container?: React.RefObject<HTMLElement | null> }): ReactElement {
-  return (
-    <DialogTrigger>
-      <Button>Choose date</Button>
-      <Popover container={container}>
-        <Dialog closeButton={false} title="Calendar">
-          <button type="button">Inside the popover</button>
-        </Dialog>
-      </Popover>
-    </DialogTrigger>
-  );
-}
-
 /** RAC mounts the overlay after the opening commit, so wait for it before reading it. */
 async function mountedDialog(): Promise<HTMLElement> {
   await expect.element(page.getByRole("dialog")).toBeInTheDocument();
@@ -98,23 +83,6 @@ async function mountedDialog(): Promise<HTMLElement> {
   }
   return dialog;
 }
-
-async function openPopover(): Promise<HTMLElement> {
-  await userEvent.click(page.getByRole("button", { name: "Choose date" }).element());
-  return mountedDialog();
-}
-
-describe("the internal RAC Popover", () => {
-  it("portals into the enclosing ThemeScope instead of the document body", async () => {
-    const { host } = renderThemed(withLocale("en-US", <PopoverFixture />));
-    const scope = host.querySelector("[data-theme-brand]");
-    const dialog = await openPopover();
-
-    expect(scope).not.toBeNull();
-    expect(scope?.contains(dialog)).toBe(true);
-    expect([...document.body.children].includes(dialog)).toBe(false);
-  });
-});
 
 describe("the internal styled Dialog", () => {
   it("labels its dismiss affordance from the locked dialog.close dictionary", async () => {

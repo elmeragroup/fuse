@@ -63,7 +63,7 @@ test("the public namespace is three parts and Content omits showCloseButton", ()
   const _noAs = <AlertDialog.Trigger as="div" />;
 });
 
-test("Root is always modal and never opts back into pointer dismissal", () => {
+test("Root is always modal, never opts back into pointer dismissal, and shares only an alert-dialog handle with Trigger", () => {
   // @ts-expect-error an alert dialog cannot be made non-modal
   const _noModal = <AlertDialog.Root modal={false} />;
 
@@ -71,9 +71,7 @@ test("Root is always modal and never opts back into pointer dismissal", () => {
   const _noPointerDismissal = <AlertDialog.Root disablePointerDismissal={false} />;
 
   const _controlled = <AlertDialog.Root open onOpenChange={(_open: boolean) => undefined} />;
-});
 
-test("Trigger takes the same alert-dialog handle as Root, never a plain dialog handle", () => {
   const alertHandle = AlertDialogPrimitive.createHandle();
   const _shared = (
     <>

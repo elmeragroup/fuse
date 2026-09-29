@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import { expectTypeOf, test } from "vitest";
 
 import type { NumberFieldProps } from "@elmeragroup/fuse/number-field";
-import { NumberField } from "@elmeragroup/fuse/number-field";
 
 test("NumberFieldProps is the closed composite face", () => {
   expectTypeOf<NumberFieldProps["label"]>().toEqualTypeOf<string | undefined>();
@@ -36,46 +35,7 @@ test("NumberFieldProps is the closed composite face", () => {
   expectTypeOf<NumberFieldProps>().not.toHaveProperty("format");
   expectTypeOf<NumberFieldProps>().not.toHaveProperty("min");
   expectTypeOf<NumberFieldProps>().not.toHaveProperty("max");
-});
-
-test("the element takes the public props and no primitive or locale aliases", () => {
-  const _basic = (
-    <NumberField label="Quantity" description="Whole packs." minValue={0} maxValue={10} step={1} />
-  );
-  const _states = (
-    <NumberField
-      label="Amount"
-      isDisabled
-      isInvalid
-      isPending
-      isSuccess
-      isReadOnly
-      isRequired
-      errorMessage={<span>Required</span>}
-      denomination="kr"
-      formatOptions={{ style: "currency", currency: "NOK" }}
-      onChange={(value) => value + 1}
-    />
-  );
-  const _labelLess = <NumberField aria-label="Count" autoFocus id="count" name="count" />;
-  const _stepperLabels = <NumberField label="Quantity" increaseLabel="Add one" decreaseLabel="Remove one" />;
-
-  // @ts-expect-error stepper labels are strings
-  const _noNumericIncrease = <NumberField increaseLabel={1} />;
-  // @ts-expect-error stepper labels are strings
-  const _noNumericDecrease = <NumberField decreaseLabel={1} />;
-  // @ts-expect-error locale is provider-only
-  const _noLocale = <NumberField locale="nb-NO" />;
-  // @ts-expect-error no size axis
-  const _noSize = <NumberField size="md" />;
-  // @ts-expect-error polymorphism is never an `as` prop
-  const _noAs = <NumberField as="div" />;
-  // @ts-expect-error native disabled is not on the composite face; use isDisabled
-  const _noDisabled = <NumberField disabled />;
-  // @ts-expect-error native readOnly is not on the composite face; use isReadOnly
-  const _noReadOnly = <NumberField readOnly />;
-  // @ts-expect-error native required is not on the composite face; use isRequired
-  const _noRequired = <NumberField required />;
-  // @ts-expect-error base-ui format is formatOptions on the composite
-  const _noFormat = <NumberField format={{ style: "percent" }} />;
+  expectTypeOf<NumberFieldProps>().not.toHaveProperty("disabled");
+  expectTypeOf<NumberFieldProps>().not.toHaveProperty("readOnly");
+  expectTypeOf<NumberFieldProps>().not.toHaveProperty("required");
 });

@@ -50,17 +50,16 @@ describe("search matching", () => {
     expect(results[0]?.href).toBe("/");
   });
 
-  it("ranks a title prefix above a body mention", () => {
-    const results = matchSearchEntries("token");
-    expect(results[0]?.href).toBe("/handbook/tokens");
-  });
-
-  it("finds a component page by its title", () => {
-    expect(matchSearchEntries("dialog")[0]?.href).toBe("/components/dialog");
-  });
-
-  it("finds a component page by its import specifier", () => {
-    expect(matchSearchEntries("@elmeragroup/fuse/scroll-area")[0]?.href).toBe("/components/scroll-area");
+  it.each([
+    ["ranks a title prefix above a body mention", "token", "/handbook/tokens"],
+    ["finds a component page by its title", "dialog", "/components/dialog"],
+    [
+      "finds a component page by its import specifier",
+      "@elmeragroup/fuse/scroll-area",
+      "/components/scroll-area",
+    ],
+  ] as const)("%s: %s → %s", (_case, query, href) => {
+    expect(matchSearchEntries(query)[0]?.href).toBe(href);
   });
 
   it("narrows on every token rather than widening", () => {

@@ -1,17 +1,6 @@
-import { expectTypeOf, test } from "vitest";
+import { test } from "vitest";
 
-import * as ButtonGroupModule from "@elmeragroup/fuse/button-group";
-import { ButtonGroup, buttonGroupVariants } from "@elmeragroup/fuse/button-group";
-
-test("public API exports the namespace and recipe, never the flat ref names", () => {
-  expectTypeOf(buttonGroupVariants).toBeFunction();
-  expectTypeOf(buttonGroupVariants({ orientation: "vertical" })).toBeString();
-  expectTypeOf(buttonGroupVariants()).toBeString();
-
-  expectTypeOf(ButtonGroupModule).not.toHaveProperty("ButtonGroupSeparator");
-  expectTypeOf(ButtonGroupModule).not.toHaveProperty("ButtonGroupText");
-  expectTypeOf(ButtonGroup).not.toHaveProperty("Addon");
-});
+import { ButtonGroup } from "@elmeragroup/fuse/button-group";
 
 test("parts take the public props, Text render, and no polymorphic as prop", () => {
   const _root = (

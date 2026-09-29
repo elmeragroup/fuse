@@ -33,7 +33,7 @@ describe("rangeCalendarVariants", () => {
     expect(rangeCalendarVariants().body()).toContain("[&_td]:px-0");
   });
 
-  it("paints the range band, its caps and the row-edge rounding on the outer band", () => {
+  it("paints the range band, its caps, the row-edge rounding and the forced-colors fallbacks on the outer band", () => {
     const outerCell = rangeCalendarVariants().outerCell();
     expect(outerCell).toContain("group");
     expect(outerCell).toContain("size-9");
@@ -44,35 +44,43 @@ describe("rangeCalendarVariants", () => {
     expect(outerCell).toContain("[td:first-child_&]:rounded-s-full");
     expect(outerCell).toContain("[td:last-child_&]:rounded-e-full");
     expect(outerCell).toContain("outside-month:text-muted-foreground");
-  });
-
-  it("keeps the forced-colors fallbacks the reference had", () => {
-    const outerCell = rangeCalendarVariants().outerCell();
+    // The forced-colors fallbacks the reference had.
     expect(outerCell).toContain("forced-colors:selected:bg-[Highlight]");
     expect(outerCell).toContain("forced-colors:invalid:selected:bg-[Mark]");
   });
 
-  it("gives an un-selected pill the muted/accent interaction family", () => {
-    const cell = rangeCalendarVariants({ selectionState: "none" }).cell();
-    expect(cell).toContain("rounded-full");
-    expect(cell).toContain("text-foreground");
-    expect(cell).toContain("group-hover:bg-muted");
-    expect(cell).toContain("group-pressed:bg-accent");
-    expect(cell).not.toContain("bg-primary");
-  });
-
-  it("steps the middle band's pressed fill one stop above its hover fill", () => {
-    const cell = rangeCalendarVariants({ selectionState: "middle" }).cell();
-    expect(cell).toContain("group-hover:bg-primary/30");
-    expect(cell).toContain("group-pressed:bg-primary/40");
-    expect(cell).toContain("group-hover:group-invalid:bg-error/20");
-    expect(cell).toContain("group-invalid:group-pressed:bg-error/30");
-  });
-
-  it("fills the end caps with primary, and with error while invalid", () => {
-    const cell = rangeCalendarVariants({ selectionState: "cap" }).cell();
-    expect(cell).toContain("bg-primary");
-    expect(cell).toContain("text-primary-foreground");
-    expect(cell).toContain("group-invalid:bg-error");
+  it("gives each selection face its own pill fill family", () => {
+    const faces = {
+      // An un-selected pill takes the muted/accent interaction family.
+      none: {
+        present: ["rounded-full", "text-foreground", "group-hover:bg-muted", "group-pressed:bg-accent"],
+        absent: ["bg-primary"],
+      },
+      // The middle band's pressed fill steps one stop above its hover fill.
+      middle: {
+        present: [
+          "group-hover:bg-primary/30",
+          "group-pressed:bg-primary/40",
+          "group-hover:group-invalid:bg-error/20",
+          "group-invalid:group-pressed:bg-error/30",
+        ],
+        absent: [],
+      },
+      // The end caps fill with primary, and with error while invalid.
+      cap: {
+        present: ["bg-primary", "text-primary-foreground", "group-invalid:bg-error"],
+        absent: [],
+      },
+    } as const;
+    for (const [selectionState, { present, absent }] of Object.entries(faces)) {
+      // SAFETY: the keys above are exactly the recipe's own `selectionState` values.
+      const cell = rangeCalendarVariants({ selectionState: selectionState as keyof typeof faces }).cell();
+      for (const token of present) {
+        expect(cell, selectionState).toContain(token);
+      }
+      for (const token of absent) {
+        expect(cell, selectionState).not.toContain(token);
+      }
+    }
   });
 });

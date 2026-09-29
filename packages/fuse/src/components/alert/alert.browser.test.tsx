@@ -81,8 +81,14 @@ describe("Alert", () => {
       expect(root.getAttribute("data-slot")).toBe("item");
       expect(root.getAttribute("data-variant")).toBe("outline");
       expect(root.getAttribute("data-size")).toBe("sm");
-      expect(root.contains(headingNamed(`${variant} title`, 3))).toBe(true);
+      const title = headingNamed(`${variant} title`, 3);
+      expect(root.contains(title)).toBe(true);
       expect(root.textContent).toContain(`${variant} body`);
+      // The variant stays on Root: Title and Description emit no variant attribute.
+      const description = page.getByText(`${variant} body`, { exact: true }).element();
+      expect(title.getAttribute("variant"), variant).toBeNull();
+      expect(description.getAttribute("variant"), variant).toBeNull();
+      expect(description.tagName, variant).toBe("P");
       unmount();
     }
   });
@@ -158,22 +164,5 @@ describe("Alert", () => {
     await settled(action);
     expect(getComputedStyle(action).backgroundColor).not.toBe(restFill);
     expect(actionContrast(action, alertNamed("default"))).toBeGreaterThanOrEqual(AA_TEXT_CONTRAST);
-  });
-
-  it("does not emit a variant attribute on Title or Description", () => {
-    renderThemed(
-      <Alert.Root variant="destructive">
-        <Alert.Title>Outage</Alert.Title>
-        <Alert.Description>Two meters are offline.</Alert.Description>
-      </Alert.Root>
-    );
-    const title = headingNamed("Outage", 3);
-    const description = page.getByText("Two meters are offline.", { exact: true }).element();
-    if (!(description instanceof HTMLElement)) {
-      throw new Error("expected the description");
-    }
-    expect(title.getAttribute("variant")).toBeNull();
-    expect(description.getAttribute("variant")).toBeNull();
-    expect(description.tagName).toBe("P");
   });
 });

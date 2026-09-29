@@ -179,38 +179,28 @@ describe("Calendar", () => {
     expect(describedBy?.split(/\s+/)).toContain(textHost.id);
   });
 
-  it("passes a caller's aria-describedby through to the RAC root", async () => {
-    renderCalendar(
-      <>
-        <p id="calendar-hint">Weekdays only.</p>
-        <Calendar aria-describedby="calendar-hint" defaultValue={july14} />
-      </>
-    );
-    await expect.element(page.getByRole("grid")).toBeVisible();
-
-    expect(calendarRoot().getAttribute("aria-describedby")).toBe("calendar-hint");
-  });
-
-  it("paints the shared self ring on previous navigation at both densities", async () => {
-    renderCalendar(
-      <>
-        <button type="button">Before</button>
-        <Calendar defaultValue={july14} defaultFocusedValue={july14} />
-      </>
-    );
-    await expect.element(navButtonNamed(/previous/i)).toBeVisible();
-    await assertFocusRingAtBothDensities(buttonNamed("Before"), navButtonNamed(/previous/i));
-  });
-
-  it("paints the shared state ring on the focused day at both densities", async () => {
+  it.each([
+    [
+      "the shared self ring on previous navigation",
+      {},
+      () => navButtonNamed(/previous/i),
+      () => navButtonNamed(/previous/i),
+    ],
+    [
+      "the shared state ring on the focused day",
+      { minValue: july1, maxValue: july31 },
+      () => page.getByRole("button", { name: /Tuesday, July 14, 2026/i }),
+      () => dayNamed(/Tuesday, July 14, 2026/i),
+    ],
+  ] as const)("paints %s at both densities", async (_case, bounds, visible, target) => {
     renderCalendar(
       <>
         <button type="button">Before</button>
-        <Calendar defaultValue={july14} defaultFocusedValue={july14} minValue={july1} maxValue={july31} />
+        <Calendar defaultValue={july14} defaultFocusedValue={july14} {...bounds} />
       </>
     );
-    await expect.element(page.getByRole("button", { name: /Tuesday, July 14, 2026/i })).toBeVisible();
-    await assertFocusRingAtBothDensities(buttonNamed("Before"), dayNamed(/Tuesday, July 14, 2026/i));
+    await expect.element(visible()).toBeVisible();
+    await assertFocusRingAtBothDensities(buttonNamed("Before"), target());
   });
 
   it("composes a stateful className under the calendar surface classes", async () => {

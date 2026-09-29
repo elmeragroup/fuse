@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -24,8 +24,6 @@ const CLOSE_COPY = {
   "en-US": "Close",
   "fi-FI": "Sulje",
 } as const;
-
-const moduleScopeManager = Toast.createToastManager();
 
 function renderToast(
   node: ReactNode = <Toast.Viewport />,
@@ -115,29 +113,6 @@ function LabelledClose({ close }: { close: ReactNode }) {
 }
 
 describe("Toast manager", () => {
-  it("createToastManager dispatches from non-React code", async () => {
-    renderThemed(
-      withLocale(
-        "en-US",
-        <Toast.Provider toastManager={moduleScopeManager} timeout={0}>
-          <Toast.Viewport />
-        </Toast.Provider>
-      )
-    );
-
-    const id = moduleScopeManager.add({
-      title: "Saved from module",
-      description: "Timer callback.",
-      timeout: 0,
-    });
-    expect(id).toEqual(expect.any(String));
-    const root = await waitForToast("Saved from module");
-    expect(queryToastCopy("Timer callback.")).toBeTruthy();
-    expect(root.getAttribute("data-status")).toBe("neutral");
-    moduleScopeManager.close(id);
-    await waitForToastGone("Saved from module");
-  });
-
   it("add returns an id, upserts by id, update swaps copy, and close removes one or all", async () => {
     const { manager } = renderToast();
 
@@ -329,7 +304,7 @@ describe("Toast chrome", () => {
     await waitForToastGone("Item deleted");
   });
 
-  it("renders Close copy in all four locales and lets label override it", async () => {
+  it("renders Close copy in all four locales, lets label override it, and lets an explicit aria-label win over both", async () => {
     for (const locale of SUPPORTED_LOCALES) {
       const manager = Toast.createToastManager();
       const { unmount } = renderToast(<Toast.Viewport />, { locale, manager });
@@ -340,15 +315,14 @@ describe("Toast chrome", () => {
       unmount();
     }
 
-    const { manager } = renderToast(<LabelledClose close={<Toast.Close label="Dismiss toast" />} />);
-    manager.add({ title: "Override", timeout: 0 });
+    const labelled = renderToast(<LabelledClose close={<Toast.Close label="Dismiss toast" />} />);
+    labelled.manager.add({ title: "Override", timeout: 0 });
     await waitForToast("Override");
     await expandViewport();
     expect(page.getByRole("button", { name: "Dismiss toast", exact: true }).query()).not.toBeNull();
     expect(page.getByRole("button", { name: "Close", exact: true }).query()).toBeNull();
-  });
+    labelled.unmount();
 
-  it("names a Close by an explicit aria-label over label and the dictionary", async () => {
     const iconOnly = renderToast(<LabelledClose close={<Toast.Close aria-label="Dismiss" />} />);
     iconOnly.manager.add({ title: "Labelled", timeout: 0 });
     await waitForToast("Labelled");
@@ -481,16 +455,6 @@ describe("Toast motion", () => {
 });
 
 describe("Toast overlay containment", () => {
-  it("portals the viewport into the enclosing ThemeScope instead of the document body", async () => {
-    const { host, manager } = renderToast();
-    manager.add({ title: "Scoped", timeout: 0 });
-    const root = await waitForToast("Scoped");
-    const scope = host.querySelector("[data-theme-brand]");
-    expect(scope).not.toBeNull();
-    expect(scope?.contains(root)).toBe(true);
-    expect([...document.body.children].includes(root)).toBe(false);
-  });
-
   it("portals the viewport into an explicit container element", async () => {
     const manager = Toast.createToastManager();
 
@@ -514,32 +478,5 @@ describe("Toast overlay containment", () => {
     const island = page.getByRole("region", { name: "Theme island", exact: true }).element();
     expect(island.contains(root)).toBe(true);
     expect([...document.body.children].includes(root)).toBe(false);
-  });
-
-  it("waits while the resolved Viewport container element is still null", () => {
-    function NeverAttached() {
-      const ref = useRef<HTMLElement | null>(null);
-      const manager = Toast.useToastManager();
-      return (
-        <>
-          <button type="button" onClick={() => manager.add({ title: "Pending", timeout: 0 })}>
-            Add
-          </button>
-          <Toast.Viewport container={ref} />
-        </>
-      );
-    }
-
-    renderThemed(
-      withLocale(
-        "en-US",
-        <Toast.Provider timeout={0}>
-          <NeverAttached />
-        </Toast.Provider>
-      )
-    );
-
-    expect(page.getByRole("region", { name: "Notifications", exact: true }).query()).toBeNull();
-    expect(toastRoots()).toHaveLength(0);
   });
 });

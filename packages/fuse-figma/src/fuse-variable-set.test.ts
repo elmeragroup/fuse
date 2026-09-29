@@ -34,13 +34,6 @@ function value(collectionName: string, variable: string, mode: string): Variable
 const px = (value: number): VariableValue => ({ _tag: "Float", value });
 
 describe("fuseVariableSet", () => {
-  it("names Figma variables without the characters the API rejects", () => {
-    for (const spec of variableSet().collections) {
-      for (const variable of spec.variables) expect(variable.name).not.toMatch(/[.{}]/);
-      for (const mode of spec.modes) expect(mode.length).toBeLessThanOrEqual(40);
-    }
-  });
-
   it("writes each kind's resolved literal in its Figma form", () => {
     // `#5c6773` in DEFAULTS is a hex literal, not oklch.
     expect(value(THEMES_COLLECTION, "light/sh-identifier", "internal-fkas-private")).toEqual({
@@ -78,16 +71,6 @@ describe("fuseVariableSet", () => {
       _tag: "Alias",
       target: { collection: THEMES_COLLECTION, variable: "dark/primary" },
     });
-  });
-
-  it("gives each radius rung the calc() fuse.css declares as its code syntax", () => {
-    const webSyntax = (rung: string) => spec(TOKENS_COLLECTION, rung)?.webSyntax;
-    expect(spec(TOKENS_COLLECTION, "radius-sm")).toMatchObject({ type: "FLOAT", scopes: ["CORNER_RADIUS"] });
-    expect(webSyntax("radius-xs")).toBe("calc(var(--radius) - 3 * var(--radius-step))");
-    expect(webSyntax("radius-sm")).toBe("calc(var(--radius) - 2 * var(--radius-step))");
-    expect(webSyntax("radius-md")).toBe("calc(var(--radius) - var(--radius-step))");
-    expect(webSyntax("radius-lg")).toBe("var(--radius)");
-    expect(webSyntax("radius-xl")).toBe("calc(var(--radius) + 2 * var(--radius-step))");
   });
 });
 

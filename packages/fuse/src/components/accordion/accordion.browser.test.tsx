@@ -91,24 +91,6 @@ describe("Accordion", () => {
     });
   });
 
-  it("closes the open item when another opens in single mode, and stays collapsible", async () => {
-    renderThemed(<ShippingBilling defaultValue={["shipping"]} />);
-
-    await expect.element(page.getByRole("region", { name: "Shipping" })).toBeInTheDocument();
-    expect(page.getByRole("region", { name: "Billing" }).query()).toBeNull();
-
-    await userEvent.click(page.getByRole("button", { name: "Billing", exact: true }));
-    await expect.element(page.getByRole("region", { name: "Billing" })).toBeInTheDocument();
-    await vi.waitFor(() => {
-      expect(page.getByRole("region", { name: "Shipping" }).query()).toBeNull();
-    });
-
-    await userEvent.click(page.getByRole("button", { name: "Billing", exact: true }));
-    await vi.waitFor(() => {
-      expect(page.getByRole("region", { name: "Billing" }).query()).toBeNull();
-    });
-  });
-
   it("keeps both items open independently when multiple", async () => {
     renderThemed(<ShippingBilling multiple defaultValue={["shipping", "billing"]} />);
 

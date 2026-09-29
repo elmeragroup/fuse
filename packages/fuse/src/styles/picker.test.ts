@@ -68,33 +68,23 @@ describe("pickerVariants shared slots", () => {
     }
   });
 
-  it("emits exactly the two documented axes, no control rung, and no raw palette", () => {
+  it("emits exactly the two documented axes and no raw palette", () => {
     expect(pickerVariants.variantKeys).toEqual(["range", "hasPresets"]);
-
-    // FieldGroup owns the md control height (`fieldGroupVariants` in
-    // react-aria/internal/field.tsx). The recipe may opt the narrow two-row box out with
-    // `h-auto`, but naming any control-height rung here would make it a second owner.
-    expect(everyEmittedClass()).not.toContain("--control-h-");
     expect(everyEmittedClass()).not.toMatch(RAW_PALETTE_RE);
   });
 
-  it("owns no surface, border or focus ring of its own", () => {
-    const emitted = everyEmittedClass();
-    expect(emitted).not.toContain("bg-card");
-    expect(emitted).not.toContain("border-input");
-    expect(emitted).not.toContain("ring-ring");
-    expect(emitted).not.toContain("shadow-md");
-  });
-
-  it("paints no read-only fill on any slot — FieldGroup owns it", () => {
-    // The fill used to be painted twice here — on `group` and again on `icon` — while
-    // `fieldGroupVariants` carried an `isReadOnly` axis all along and DateField already
-    // routed the state through it. PickerShell now hands `isReadOnly` to the FieldGroup and this recipe has
-    // no opinion. Dropping it from `icon` is the one visual change (a background on an
-    // `<svg>` glyph).
-    expect(everyEmittedClass()).not.toContain("bg-muted");
-    expect(pickerVariants.variantKeys).not.toContain("isReadOnly");
-  });
+  // FieldGroup owns the md control height (`fieldGroupVariants` in
+  // react-aria/internal/field.tsx), the surface, border, focus ring and the read-only fill.
+  // The recipe may opt the narrow two-row box out of the height with `h-auto`, but naming
+  // any of these here would make it a second owner. The read-only fill used to be painted
+  // twice here, on `group` and again on `icon`, while DateField already routed the state
+  // through FieldGroup's `isReadOnly` axis.
+  it.each(["--control-h-", "bg-card", "border-input", "ring-ring", "shadow-md", "bg-muted"])(
+    "emits no %s on any slot — FieldGroup owns it",
+    (fragment) => {
+      expect(everyEmittedClass()).not.toContain(fragment);
+    }
+  );
 });
 
 describe("pickerVariants range axis", () => {

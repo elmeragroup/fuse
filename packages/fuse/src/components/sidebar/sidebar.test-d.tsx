@@ -20,7 +20,7 @@ import type {
   SidebarRootProps,
 } from "@elmeragroup/fuse/sidebar";
 
-test("Sidebar, useSidebar and the six constants ship from the sidebar entry and the root barrel", () => {
+test("Sidebar, useSidebar and the six constants ship from both entries; private names stay off the surface", () => {
   expectTypeOf<typeof Sidebar>().toEqualTypeOf<typeof RootSidebar>();
   expectTypeOf(Sidebar.Provider).toBeFunction();
   expectTypeOf(Sidebar.Root).toBeFunction();
@@ -53,9 +53,7 @@ test("Sidebar, useSidebar and the six constants ship from the sidebar entry and 
   expectTypeOf<typeof SIDEBAR_WIDTH_MOBILE>().toEqualTypeOf<"18rem">();
   expectTypeOf<typeof SIDEBAR_WIDTH_ICON>().toEqualTypeOf<"3rem">();
   expectTypeOf<typeof SIDEBAR_KEYBOARD_SHORTCUT>().toEqualTypeOf<"b">();
-});
 
-test("useIsMobile, the private recipe and the flat ref names stay off the public surface", () => {
   expectTypeOf(SidebarModule).not.toHaveProperty("useIsMobile");
   expectTypeOf(SidebarModule).not.toHaveProperty("sidebarMenuButtonVariants");
   expectTypeOf(SidebarModule).not.toHaveProperty("SidebarProvider");

@@ -366,21 +366,43 @@ describe("Radio", () => {
     expect(effectiveOpacity(badge)).toBe(0.5);
   });
 
-  it("paints the shared ring on keyboard focus-visible and not on mouse focus, at both densities", async () => {
-    renderThemed(
-      <>
-        <button type="button">Before</button>
+  it.each([
+    {
+      control: "Radio",
+      name: "Fixed",
+      group: (
         <RadioGroup label="Contract">
           <Radio value="fixed">Fixed</Radio>
         </RadioGroup>
-      </>
-    );
-    const previous = page.getByRole("button", { name: "Before", exact: true }).element();
-    if (!(previous instanceof HTMLElement)) {
-      throw new Error("expected before button");
+      ),
+    },
+    {
+      control: "RadioIconButton",
+      name: "List",
+      group: (
+        <RadioGroup label="View">
+          <RadioIconButton value="list" aria-label="List">
+            <Glyph />
+          </RadioIconButton>
+        </RadioGroup>
+      ),
+    },
+  ])(
+    "paints the shared ring on a $control on keyboard focus-visible and not on mouse focus, at both densities",
+    async ({ name, group }) => {
+      renderThemed(
+        <>
+          <button type="button">Before</button>
+          {group}
+        </>
+      );
+      const previous = page.getByRole("button", { name: "Before", exact: true }).element();
+      if (!(previous instanceof HTMLElement)) {
+        throw new Error("expected before button");
+      }
+      await assertFocusRingAtBothDensities(previous, radioNamed(name));
     }
-    await assertFocusRingAtBothDensities(previous, radioNamed("Fixed"));
-  });
+  );
 });
 
 describe("RadioItem", () => {
@@ -450,56 +472,53 @@ describe("RadioItem", () => {
 });
 
 describe("RadioItemGroup", () => {
-  it("exposes stacked RadioItems as listitems that stay direct siblings", () => {
-    renderThemed(
-      <div style={radiusToken}>
-        <RadioItemGroup label="Plans" defaultValue="hourly">
-          <RadioItem value="fixed">
-            <RadioItem.Title role="heading" aria-level={3}>
-              Fixed price
-            </RadioItem.Title>
-          </RadioItem>
-          <RadioItem value="hourly">
-            <RadioItem.Title role="heading" aria-level={3}>
-              Hourly
-            </RadioItem.Title>
-          </RadioItem>
-        </RadioItemGroup>
-      </div>
-    );
+  // Vertical: stacked RadioItems stay direct-sibling listitems in one connected list.
+  // Horizontal: a wrapping-gap item list of independent card shells.
+  it.each([
+    {
+      layout: "stacked (default vertical)",
+      orientation: undefined,
+      label: "Plans",
+      assertLayout: (list: HTMLElement, first: HTMLElement, second: HTMLElement) => {
+        assertConnectedVerticalList(list, first, second);
+      },
+    },
+    {
+      layout: "horizontal",
+      orientation: "horizontal",
+      label: "Horizontal plans",
+      assertLayout: (list: HTMLElement, first: HTMLElement, second: HTMLElement) => {
+        assertHorizontalItemList(list, [first, second]);
+      },
+    },
+  ] as const)(
+    "exposes $layout RadioItems as direct-sibling listitems with that layout",
+    ({ orientation, label, assertLayout }) => {
+      renderThemed(
+        <div style={radiusToken}>
+          <RadioItemGroup label={label} orientation={orientation} defaultValue="hourly">
+            <RadioItem value="fixed">
+              <RadioItem.Title role="heading" aria-level={3}>
+                Fixed price
+              </RadioItem.Title>
+            </RadioItem>
+            <RadioItem value="hourly">
+              <RadioItem.Title role="heading" aria-level={3}>
+                Hourly
+              </RadioItem.Title>
+            </RadioItem>
+          </RadioItemGroup>
+        </div>
+      );
 
-    const [first, second] = listitemHosts();
-    const list = assertDirectSiblingList(first, second);
-    expect(first.contains(radioNamed("Fixed price", false))).toBe(true);
-    expect(second.contains(radioNamed("Hourly", true))).toBe(true);
-    assertConnectedVerticalList(list, first, second);
-  });
-
-  it("lays out a horizontal item list with wrapping gap and independent card shells", () => {
-    renderThemed(
-      <div style={radiusToken}>
-        <RadioItemGroup label="Horizontal plans" orientation="horizontal" defaultValue="hourly">
-          <RadioItem value="fixed">
-            <RadioItem.Title role="heading" aria-level={3}>
-              Fixed price
-            </RadioItem.Title>
-          </RadioItem>
-          <RadioItem value="hourly">
-            <RadioItem.Title role="heading" aria-level={3}>
-              Hourly
-            </RadioItem.Title>
-          </RadioItem>
-        </RadioItemGroup>
-      </div>
-    );
-
-    expect(radiogroupNamed("Horizontal plans")).toBeTruthy();
-    const [first, second] = listitemHosts();
-    const list = assertDirectSiblingList(first, second);
-    expect(first.contains(radioNamed("Fixed price", false))).toBe(true);
-    expect(second.contains(radioNamed("Hourly", true))).toBe(true);
-    assertHorizontalItemList(list, [first, second]);
-  });
+      expect(radiogroupNamed(label)).toBeTruthy();
+      const [first, second] = listitemHosts();
+      const list = assertDirectSiblingList(first, second);
+      expect(first.contains(radioNamed("Fixed price", false))).toBe(true);
+      expect(second.contains(radioNamed("Hourly", true))).toBe(true);
+      assertLayout(list, first, second);
+    }
+  );
 });
 
 describe("RadioIconButton", () => {
@@ -556,24 +575,6 @@ describe("RadioIconButton", () => {
         expect(Number.parseFloat(getComputedStyle(svg).height)).toBe(ICON_SVG_PX[size]);
       }
     }
-  });
-
-  it("paints the shared ring on keyboard focus-visible and not on mouse focus, at both densities", async () => {
-    renderThemed(
-      <>
-        <button type="button">Before</button>
-        <RadioGroup label="View">
-          <RadioIconButton value="list" aria-label="List">
-            <Glyph />
-          </RadioIconButton>
-        </RadioGroup>
-      </>
-    );
-    const previous = page.getByRole("button", { name: "Before", exact: true }).element();
-    if (!(previous instanceof HTMLElement)) {
-      throw new Error("expected before button");
-    }
-    await assertFocusRingAtBothDensities(previous, radioNamed("List"));
   });
 });
 

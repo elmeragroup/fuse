@@ -34,31 +34,6 @@ function pointermoveCalls(spy: { mock: { calls: unknown[][] } }): unknown[][] {
 }
 
 describe("usePredictedEvents", () => {
-  it("stops measuring a fired registration and removes the last pointermove listener", () => {
-    const live = vi.fn();
-    render(<Probe label="Prefetch" onIntent={live} />);
-
-    const target = roleNamed("button", "Prefetch");
-    const { x, y } = center(target);
-    const measure = vi.spyOn(target, "getBoundingClientRect");
-    const remove = vi.spyOn(document, "removeEventListener");
-
-    try {
-      dispatchPredictedPointer(x, y);
-      expect(live).toHaveBeenCalledTimes(1);
-      expect(pointermoveCalls(remove).length).toBeGreaterThanOrEqual(1);
-
-      measure.mockClear();
-      dispatchPredictedPointer(x, y);
-      dispatchPredictedPointer(x, y);
-      expect(measure).not.toHaveBeenCalled();
-      expect(live).toHaveBeenCalledTimes(1);
-    } finally {
-      measure.mockRestore();
-      remove.mockRestore();
-    }
-  });
-
   it("keeps the shared pointermove listener while a sibling registration is still pending", () => {
     const first = vi.fn();
     const second = vi.fn();

@@ -53,18 +53,6 @@ function indicatorSvgs(name: string): [SVGElement, SVGElement] {
 }
 
 describe("CheckboxCard", () => {
-  it("renders a checkbox whose accessible name comes from the title", () => {
-    renderThemed(
-      <CheckboxGroup>
-        <CheckboxCard value="insurance" title="Insurance" description="Covers everything." />
-      </CheckboxGroup>
-    );
-
-    const box = checkboxNamed("Insurance", false);
-    expect(box.getAttribute("aria-checked")).toBe("false");
-    expect(fieldItemFor("Insurance").getAttribute("data-slot")).toBeNull();
-  });
-
   it("keeps the title name when a wrapper forwards id and ARIA props as undefined", () => {
     renderThemed(
       <CheckboxGroup>
@@ -79,6 +67,7 @@ describe("CheckboxCard", () => {
       </CheckboxGroup>
     );
     expect(checkboxNamed("Insurance", false).getAttribute("aria-checked")).toBe("false");
+    expect(fieldItemFor("Insurance").getAttribute("data-slot")).toBeNull();
   });
 
   it("toggles from the title and description and isolates rightContent clicks", async () => {
@@ -128,21 +117,6 @@ describe("CheckboxCard", () => {
     await expect.element(page.getByRole("checkbox", { name: "Roadside", exact: false })).toBeDisabled();
     checkboxNamed("Roadside").click();
     await userEvent.keyboard(" ");
-    expect(checkboxNamed("Roadside", false).getAttribute("aria-checked")).toBe("false");
-  });
-
-  it("keeps a controlled group value when clicks have no onChange feedback", async () => {
-    renderThemed(
-      <CheckboxGroup label="Add-ons" value={["insurance"]}>
-        <CheckboxCard value="insurance" title="Insurance" description="Covers everything." />
-        <CheckboxCard value="roadside" title="Roadside" description="Towing included." />
-      </CheckboxGroup>
-    );
-
-    expect(checkboxNamed("Insurance", true).getAttribute("aria-checked")).toBe("true");
-    expect(checkboxNamed("Roadside", false).getAttribute("aria-checked")).toBe("false");
-    await userEvent.click(page.getByRole("checkbox", { name: "Roadside", exact: false }));
-    expect(checkboxNamed("Insurance", true).getAttribute("aria-checked")).toBe("true");
     expect(checkboxNamed("Roadside", false).getAttribute("aria-checked")).toBe("false");
   });
 

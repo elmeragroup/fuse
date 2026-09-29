@@ -95,20 +95,15 @@ describe("publish manifest", () => {
     expect(manifest.publishConfig).toEqual({ access: "public" });
   }, 20_000);
 
-  it("carries the bug tracker and the CSS side effects into the publish manifest", () => {
+  it("carries the bug tracker, the CSS side effects and exactly the workspace dependencies", () => {
     const root = scratchPackageRoot();
     writePublishManifest(root);
 
     const manifest = readManifestFields(join(root, "dist/package.json"));
     expect(manifest.bugs).toEqual({ url: "https://github.com/elmeragroup/fuse/issues" });
     expect(manifest.sideEffects).toEqual(["**/*.css"]);
-  }, 20_000);
 
-  it("publishes every workspace dependency and no other", () => {
-    const root = scratchPackageRoot();
-    writePublishManifest(root);
-
-    const published = Object.keys(readManifestFields(join(root, "dist/package.json")).dependencies ?? {});
+    const published = Object.keys(manifest.dependencies ?? {});
     const workspace = Object.keys(readManifestFields(join(packageRoot, "package.json")).dependencies ?? {});
     expect(workspace).not.toEqual([]);
     expect(published.toSorted()).toEqual(workspace.toSorted());

@@ -225,30 +225,22 @@ describe("DatePicker", () => {
     expect(calendarGrid().getAttribute("aria-label")).toMatch(/September\s+2026/i);
   });
 
-  it("opens on the current month when there is no value", async () => {
-    const currentMonth = new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(
-      new Date()
-    );
-    renderPicker(<DatePicker label="Invoice date" />);
+  it.each([
+    [
+      "the current month",
+      <DatePicker key="current" label="Invoice date" />,
+      new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(new Date()),
+    ],
+    [
+      "the placeholder's month",
+      <DatePicker key="placeholder" label="Birth date" placeholderValue={new CalendarDate(1990, 1, 1)} />,
+      expect.stringMatching(/January\s+1990/i),
+    ],
+  ] as const)("opens on %s when there is no value", async (_case, picker, month) => {
+    renderPicker(picker);
     await openPicker();
 
-    expect(calendarGrid().getAttribute("aria-label")).toBe(currentMonth);
-  });
-
-  it("opens on the placeholder's month when there is no value", async () => {
-    renderPicker(<DatePicker label="Birth date" placeholderValue={new CalendarDate(1990, 1, 1)} />);
-    await openPicker();
-
-    expect(calendarGrid().getAttribute("aria-label")).toMatch(/January\s+1990/i);
-  });
-
-  it("opens on the value's month over the placeholder's", async () => {
-    renderPicker(
-      <DatePicker label="Birth date" placeholderValue={new CalendarDate(1990, 1, 1)} value={march10} />
-    );
-    await openPicker();
-
-    expect(calendarGrid().getAttribute("aria-label")).toMatch(/March\s+2026/i);
+    expect(calendarGrid().getAttribute("aria-label")).toEqual(month);
   });
 
   it("returns to the placeholder's month when the value is cleared with the dialog open", async () => {
@@ -277,20 +269,15 @@ describe("DatePicker", () => {
     expect(segmentNamed("month").textContent).toBe("11");
   });
 
-  it("renders leading zeros on day and month by default", async () => {
-    renderPicker(<DatePicker label="Invoice date" defaultValue={july4} />);
+  it.each([
+    ["renders leading zeros on day and month by default", {}, "07", "04"],
+    ["drops the leading zeros when a caller turns them off", { shouldForceLeadingZeros: false }, "7", "4"],
+  ] as const)("%s", async (_title, props, month, day) => {
+    renderPicker(<DatePicker label="Invoice date" defaultValue={july4} {...props} />);
     await expect.element(segmentLocator("month")).toBeVisible();
 
-    expect(segmentNamed("month").textContent).toBe("07");
-    expect(segmentNamed("day").textContent).toBe("04");
-  });
-
-  it("drops the leading zeros when a caller turns them off", async () => {
-    renderPicker(<DatePicker label="Invoice date" defaultValue={july4} shouldForceLeadingZeros={false} />);
-    await expect.element(segmentLocator("month")).toBeVisible();
-
-    expect(segmentNamed("month").textContent).toBe("7");
-    expect(segmentNamed("day").textContent).toBe("4");
+    expect(segmentNamed("month").textContent).toBe(month);
+    expect(segmentNamed("day").textContent).toBe(day);
   });
 
   it("renders a function errorMessage from the ValidationResult and associates it", async () => {

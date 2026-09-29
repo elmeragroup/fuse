@@ -16,15 +16,8 @@ const LEVEL_NAMES = {
 } as const;
 
 describe("Heading", () => {
-  it("defaults to heading level 2 with data-slot=heading", () => {
-    renderThemed(<Heading>Order overview</Heading>);
-    const heading = headingNamed("Order overview", 2);
-    expect(heading.tagName).toBe("H2");
-    expect(heading.getAttribute("data-slot")).toBe("heading");
-  });
-
-  it("renders each level as the matching heading tag", () => {
-    renderThemed(
+  it("defaults to heading level 2 with data-slot=heading and renders each level as the matching heading tag", () => {
+    const { unmount } = renderThemed(
       <>
         {LEVELS.map((level) => (
           <Heading key={level} level={level}>
@@ -37,6 +30,12 @@ describe("Heading", () => {
       const heading = headingNamed(LEVEL_NAMES[level], level);
       expect(heading.tagName).toBe(`H${level}`);
     }
+    unmount();
+
+    renderThemed(<Heading>Order overview</Heading>);
+    const heading = headingNamed("Order overview", 2);
+    expect(heading.tagName).toBe("H2");
+    expect(heading.getAttribute("data-slot")).toBe("heading");
   });
 
   it("maps auto size from level and lets an explicit size win", () => {
@@ -64,13 +63,17 @@ describe("Heading", () => {
       <>
         <Heading noMargin>Flush</Heading>
         <Heading uppercase>Shout</Heading>
+        <Heading align="left">Left</Heading>
         <Heading align="center">Centered</Heading>
+        <Heading align="right">Right</Heading>
         <Heading className="text-primary">Tinted</Heading>
       </>
     );
     expect(getComputedStyle(headingNamed("Flush")).marginBottom).toBe("0px");
     expect(getComputedStyle(headingNamed("Shout")).textTransform).toBe("uppercase");
+    expect(getComputedStyle(headingNamed("Left")).textAlign).toBe("left");
     expect(getComputedStyle(headingNamed("Centered")).textAlign).toBe("center");
+    expect(getComputedStyle(headingNamed("Right")).textAlign).toBe("right");
     const tinted = headingNamed("Tinted");
     expect(getComputedStyle(tinted).color).toBe(cssVarColor(tinted, "--primary"));
   });

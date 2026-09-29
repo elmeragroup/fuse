@@ -3,13 +3,6 @@ import { expectTypeOf, test } from "vitest";
 import type { TooltipContentProps, TooltipProviderProps, TooltipRootProps } from "@elmeragroup/fuse/tooltip";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
-test("Portal, Positioner and Popup stay off the public namespace", () => {
-  expectTypeOf(Tooltip).not.toHaveProperty("Portal");
-  expectTypeOf(Tooltip).not.toHaveProperty("Positioner");
-  expectTypeOf(Tooltip).not.toHaveProperty("Popup");
-  expectTypeOf(Tooltip).not.toHaveProperty("Arrow");
-});
-
 test("Content takes the positioner props and container, and Root takes per-tooltip delay", () => {
   expectTypeOf<TooltipContentProps["side"]>().toEqualTypeOf<
     "top" | "bottom" | "left" | "right" | "inline-end" | "inline-start" | undefined

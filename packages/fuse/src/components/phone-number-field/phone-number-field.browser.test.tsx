@@ -348,6 +348,10 @@ describe("PhoneNumberField", () => {
         expect(page.getByRole("listbox").query()).not.toBeNull();
       });
       expect(countrySearch(SEARCH_COUNTRIES_COPY[locale])).toBeTruthy();
+      await userEvent.fill(countrySearch(SEARCH_COUNTRIES_COPY[locale]), "zzzz");
+      await vi.waitFor(() => {
+        expect(page.getByText(NO_COUNTRIES_COPY[locale], { exact: true }).query(), locale).not.toBeNull();
+      });
       unmount();
     }
 
@@ -367,15 +371,6 @@ describe("PhoneNumberField", () => {
     await userEvent.fill(countrySearch("Filter countries"), "zzzz");
     await vi.waitFor(() => {
       expect(page.getByText("Nothing here.", { exact: true }).query()).not.toBeNull();
-    });
-  });
-
-  it("shows the empty-search copy for the active locale", async () => {
-    renderField(<PhoneNumberField label="Mobile" />);
-    await openPicker();
-    await userEvent.fill(countrySearch(), "zzzz");
-    await vi.waitFor(() => {
-      expect(page.getByText(NO_COUNTRIES_COPY["en-US"], { exact: true }).query()).not.toBeNull();
     });
   });
 
@@ -449,22 +444,19 @@ describe("PhoneNumberField", () => {
     expect(list.clientHeight).toBeLessThan(window.innerHeight);
   });
 
-  it("paints the within ring on the group for keyboard focus, at both densities", async () => {
-    renderField(<PhoneNumberField label="Mobile" />);
-    await assertWithinKeyboardFocusRingAtBothDensities(
-      roleNamed("button", "Select country"),
-      textboxNamed("Mobile"),
-      inputGroupRoot("Mobile")
-    );
-  });
-
-  it("leaves the group ring unpainted for mouse focus on the country trigger", async () => {
+  it("paints the within ring on the group for keyboard focus at both densities, and not for mouse focus on the trigger", async () => {
     renderField(
       <>
         <button type="button">Before</button>
         <PhoneNumberField label="Mobile" />
       </>
     );
+    await assertWithinKeyboardFocusRingAtBothDensities(
+      roleNamed("button", "Select country"),
+      textboxNamed("Mobile"),
+      inputGroupRoot("Mobile")
+    );
+
     const before = page.getByRole("button", { name: "Before", exact: true }).element();
     if (!(before instanceof HTMLElement)) {
       throw new Error("expected before");
@@ -490,34 +482,42 @@ function ControlledField(props: Omit<PhoneNumberFieldProps, "value" | "onChange"
 }
 
 describe("PhoneNumberField controlled value", () => {
-  it("emits the national format without rewriting what was typed", async () => {
-    renderField(<ControlledField label="Mobile" name="phone" outputFormat="national" />);
-    await userEvent.fill(page.getByRole("textbox", { name: "Mobile", exact: true }), "41234567");
-    await expect.poll(() => hiddenNamed("phone").value).toBe("41 23 45 67");
-    expect(textboxNamed("Mobile")).toHaveProperty("value", "41234567");
-  });
-
-  it("shows what was entered in international mode and stores the full number", async () => {
-    renderField(<ControlledField label="Mobile" name="phone" international />);
-    await userEvent.fill(page.getByRole("textbox", { name: "Mobile", exact: true }), "41234567");
-    await expect.poll(() => hiddenNamed("phone").value).toBe("+4741234567");
-    // The display follows the entry in controlled and uncontrolled use alike. Before
-    // this ticket a controlled field rewrote itself to "+4741234567" once the number became
-    // valid, and an uncontrolled one never did.
-    expect(textboxNamed("Mobile")).toHaveProperty("value", "41234567");
-  });
-
-  it("keeps a typed international prefix in international mode", async () => {
-    renderField(<ControlledField label="Mobile" name="phone" international />);
-    await userEvent.fill(page.getByRole("textbox", { name: "Mobile", exact: true }), "+4741234567");
-    await expect.poll(() => hiddenNamed("phone").value).toBe("+4741234567");
-    expect(textboxNamed("Mobile")).toHaveProperty("value", "+4741234567");
-  });
-
-  it("formats as you type when formatOnType is set", async () => {
-    renderField(<ControlledField label="Mobile" name="phone" formatOnType />);
-    await userEvent.fill(page.getByRole("textbox", { name: "Mobile", exact: true }), "41234567");
-    await expect.poll(() => hiddenNamed("phone").value).toBe("+4741234567");
-    expect(textboxNamed("Mobile")).toHaveProperty("value", "41 23 45 67");
+  // In international mode the display follows the entry in controlled and uncontrolled use
+  // alike. Before this ticket a controlled field rewrote itself to "+4741234567" once the
+  // number became valid, and an uncontrolled one never did.
+  it.each([
+    [
+      "emits the national format without rewriting what was typed",
+      { outputFormat: "national" as const },
+      "41234567",
+      "41 23 45 67",
+      "41234567",
+    ],
+    [
+      "shows what was entered in international mode and stores the full number",
+      { international: true },
+      "41234567",
+      "+4741234567",
+      "41234567",
+    ],
+    [
+      "keeps a typed international prefix in international mode",
+      { international: true },
+      "+4741234567",
+      "+4741234567",
+      "+4741234567",
+    ],
+    [
+      "formats as you type when formatOnType is set",
+      { formatOnType: true },
+      "41234567",
+      "+4741234567",
+      "41 23 45 67",
+    ],
+  ])("%s", async (_name, fieldProps, typed, stored, display) => {
+    renderField(<ControlledField label="Mobile" name="phone" {...fieldProps} />);
+    await userEvent.fill(page.getByRole("textbox", { name: "Mobile", exact: true }), typed);
+    await expect.poll(() => hiddenNamed("phone").value).toBe(stored);
+    expect(textboxNamed("Mobile")).toHaveProperty("value", display);
   });
 });

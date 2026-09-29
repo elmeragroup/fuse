@@ -216,16 +216,11 @@ describe("docs enforcing nonce", () => {
     await page.close();
   });
 
-  it("leaves the failure sentinel when the nonce is missing", async () => {
-    const page = await openWithCsp(null, "elmera-docs-bootstrap");
-    const probe = await probeFirstPaint(page);
-    expect(probe.manifest).toBe(COLOR_SCHEME_BOOTSTRAP_FAILURE_SENTINEL.manifest);
-    expect(probe.dataTheme).toBe(COLOR_SCHEME_BOOTSTRAP_FAILURE_SENTINEL.dataTheme);
-    await page.close();
-  });
-
-  it("leaves the failure sentinel when the nonce is wrong", async () => {
-    const page = await openWithCsp("wrong-nonce", "elmera-docs-bootstrap");
+  it.each([
+    ["missing", null],
+    ["wrong", "wrong-nonce"],
+  ] as const)("leaves the failure sentinel when the nonce is %s", async (_case, scriptNonce) => {
+    const page = await openWithCsp(scriptNonce, "elmera-docs-bootstrap");
     const probe = await probeFirstPaint(page);
     expect(probe.manifest).toBe(COLOR_SCHEME_BOOTSTRAP_FAILURE_SENTINEL.manifest);
     expect(probe.dataTheme).toBe(COLOR_SCHEME_BOOTSTRAP_FAILURE_SENTINEL.dataTheme);

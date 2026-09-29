@@ -11,14 +11,9 @@ const DRAG_COPY = {
 } as const;
 
 describe("grid-list dictionary", () => {
-  it("owns the locked gridList.drag copy in all four locales", () => {
+  it("owns the locked gridList.drag copy, and no other key, in all four locales", () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(gridListStrings.getStringForLocale("drag", locale), locale).toBe(DRAG_COPY[locale]);
-    }
-  });
-
-  it("carries no key beyond the one row owned by GridList", () => {
-    for (const locale of SUPPORTED_LOCALES) {
       expect(Object.keys(gridListStrings.getStringsForLocale(locale)), locale).toEqual(["drag"]);
     }
   });

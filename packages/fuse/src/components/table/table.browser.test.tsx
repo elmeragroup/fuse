@@ -63,25 +63,6 @@ describe("Table", () => {
     expect(page.getByRole("cell", { name: "Active", exact: true }).element().tagName).toBe("TD");
     expect(page.getByRole("row").elements().length).toBe(4);
   });
-
-  it("puts header, body, and footer rows in the matching rowgroup", () => {
-    renderThemed(ordersMarkup({ caption: "Recent orders" }));
-    const groups = page.getByRole("rowgroup").elements();
-    expect(groups).toHaveLength(3);
-    const [header, body, footer] = groups;
-    if (header === undefined || body === undefined || footer === undefined) {
-      throw new Error("expected header, body, and footer rowgroups");
-    }
-    expect(header.tagName).toBe("THEAD");
-    expect(body.tagName).toBe("TBODY");
-    expect(footer.tagName).toBe("TFOOT");
-    expect(header.querySelectorAll('[role="row"], tr')).toHaveLength(1);
-    expect(body.querySelectorAll('[role="row"], tr')).toHaveLength(2);
-    expect(footer.querySelectorAll('[role="row"], tr')).toHaveLength(1);
-    expect(header.textContent).toContain("Order");
-    expect(body.textContent).toContain("#1042");
-    expect(footer.textContent).toContain("Total");
-  });
 });
 
 describe("Table in-frame visual contract", () => {

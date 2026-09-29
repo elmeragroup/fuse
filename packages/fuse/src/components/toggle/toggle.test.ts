@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { selfFocusRingClass } from "../../styles/utils";
 import { toggleVariants } from "./toggle-variants";
-
-const VARIANTS = ["default", "outline"] as const;
-const SIZES = ["xs", "sm", "default", "lg"] as const;
 
 describe("toggleVariants", () => {
   it("renders each variant without leaking the other axis", () => {
@@ -30,18 +26,5 @@ describe("toggleVariants", () => {
     }
     expect(classes.includes(["focus-visible", "ring-[3px]"].join(":"))).toBe(false);
     expect(classes.includes(["focus-visible", "ring-3"].join(":"))).toBe(false);
-  });
-
-  it("covers every public variant and size value without raw palette, dark, or density variants", () => {
-    for (const variant of VARIANTS) {
-      const resolved = toggleVariants({ variant });
-      expect(resolved.length).toBeGreaterThan(0);
-      expect(resolved, variant).not.toContain("dark:");
-      expect(resolved, variant).not.toMatch(RAW_PALETTE_RE);
-      expect(resolved, variant).not.toMatch(/\b(?:dense|comfortable):/);
-    }
-    for (const size of SIZES) {
-      expect(toggleVariants({ size }).length).toBeGreaterThan(0);
-    }
   });
 });

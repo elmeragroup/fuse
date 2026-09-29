@@ -3,7 +3,7 @@ import { expectTypeOf, test } from "vitest";
 import type { HeadingProps } from "@elmeragroup/fuse/heading";
 import { Heading } from "@elmeragroup/fuse/heading";
 
-test("HeadingProps is native heading props plus the recipe axes and level", () => {
+test("HeadingProps is native heading props plus the recipe axes and level, and the element takes them with no polymorphic as prop", () => {
   expectTypeOf<HeadingProps["level"]>().toEqualTypeOf<1 | 2 | 3 | 4 | 5 | 6 | undefined>();
   expectTypeOf<HeadingProps["variant"]>().toEqualTypeOf<
     | "default"
@@ -22,9 +22,7 @@ test("HeadingProps is native heading props plus the recipe axes and level", () =
   expectTypeOf<HeadingProps["font"]>().toEqualTypeOf<"default" | "normal" | "semi-bold" | undefined>();
   expectTypeOf<HeadingProps["align"]>().toEqualTypeOf<"left" | "center" | "right" | undefined>();
   expectTypeOf<HeadingProps["className"]>().toEqualTypeOf<string | undefined>();
-});
 
-test("the element takes the public props and no polymorphic as prop", () => {
   const _basic = <Heading>Order overview</Heading>;
   const _levelled = (
     <Heading level={1} size="sm" variant="muted" align="center">

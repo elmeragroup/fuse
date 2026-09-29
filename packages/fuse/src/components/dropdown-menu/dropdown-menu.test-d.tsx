@@ -7,12 +7,10 @@ import type {
 } from "@elmeragroup/fuse/dropdown-menu";
 import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 
-test("Positioner and Popup stay off the public namespace", () => {
+test("Positioner and Popup stay off the public namespace because Content and SubContent take positioner props and container, and Item takes inset and variant", () => {
   expectTypeOf(DropdownMenu).not.toHaveProperty("Positioner");
   expectTypeOf(DropdownMenu).not.toHaveProperty("Popup");
-});
 
-test("Content and SubContent take positioner props and container, Item takes inset and variant", () => {
   expectTypeOf<DropdownMenuContentProps["side"]>().toEqualTypeOf<
     "top" | "bottom" | "left" | "right" | "inline-end" | "inline-start" | undefined
   >();

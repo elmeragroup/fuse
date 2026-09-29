@@ -38,30 +38,38 @@ function FooterTree({ mode, inert }: { mode: "hidden" | "visible" | "default"; i
 }
 
 describe("Item", () => {
-  it("keeps data-slot, data-variant, and data-size on a link render", () => {
-    renderThemed(
-      <Item.Root variant="outline" size="sm" render={<a href="#order" />}>
-        <Item.Title>Order</Item.Title>
-      </Item.Root>
-    );
-    const link = roleNamed("link", "Order");
-    expect(link.tagName).toBe("A");
-    expect(link.getAttribute("data-slot")).toBe("item");
-    expect(link.getAttribute("data-variant")).toBe("outline");
-    expect(link.getAttribute("data-size")).toBe("sm");
-  });
-
-  it("keeps state attributes on a button render", () => {
-    renderThemed(
-      <Item.Root render={<button type="button" />}>
-        <Item.Title>Activate</Item.Title>
-      </Item.Root>
-    );
-    const button = roleNamed("button", "Activate");
-    expect(button.getAttribute("data-slot")).toBe("item");
-    expect(button.getAttribute("data-variant")).toBe("default");
-    expect(button.getAttribute("data-size")).toBe("default");
-  });
+  it.each([
+    {
+      render: "link",
+      props: { variant: "outline", size: "sm", render: <a href="#order" /> },
+      name: "Order",
+      tagName: "A",
+      variant: "outline",
+      size: "sm",
+    },
+    {
+      render: "button",
+      props: { render: <button type="button" /> },
+      name: "Activate",
+      tagName: "BUTTON",
+      variant: "default",
+      size: "default",
+    },
+  ] as const)(
+    "keeps data-slot, data-variant, and data-size on a $render render",
+    ({ render, props, name, tagName, variant, size }) => {
+      renderThemed(
+        <Item.Root {...props}>
+          <Item.Title>{name}</Item.Title>
+        </Item.Root>
+      );
+      const element = roleNamed(render, name);
+      expect(element.tagName).toBe(tagName);
+      expect(element.getAttribute("data-slot")).toBe("item");
+      expect(element.getAttribute("data-variant")).toBe(variant);
+      expect(element.getAttribute("data-size")).toBe(size);
+    }
+  );
 
   it("defaults group children to listitem and lets an explicit role win", () => {
     renderThemed(
@@ -111,8 +119,8 @@ describe("Item", () => {
     expect(getComputedStyle(visible).pointerEvents).not.toBe("none");
   });
 
-  it("removes hidden footer content from tab order and programmatic focus", async () => {
-    const { rerender } = renderThemed(<FooterTree mode="hidden" />);
+  it("removes hidden footer content from tab order and programmatic focus, and keeps default and visible footers in it", async () => {
+    const { rerender, unmount } = renderThemed(<FooterTree mode="hidden" />);
     const nestedButton = footerButton("Nested");
 
     roleNamed("button", "Before").focus();
@@ -128,15 +136,15 @@ describe("Item", () => {
     roleNamed("button", "Before").focus();
     await userEvent.keyboard("{Tab}");
     expect(document.activeElement, "a visible footer must return to tab order").toBe(nestedButton);
-  });
 
-  it("keeps default and visible footer controls in tab order", async () => {
+    unmount();
+
     for (const mode of ["default", "visible"] as const) {
-      const { unmount } = renderThemed(<FooterTree mode={mode} />);
+      const fresh = renderThemed(<FooterTree mode={mode} />);
       roleNamed("button", "Before").focus();
       await userEvent.keyboard("{Tab}");
       expect(document.activeElement, mode).toBe(roleNamed("button", "Nested"));
-      unmount();
+      fresh.unmount();
     }
   });
 

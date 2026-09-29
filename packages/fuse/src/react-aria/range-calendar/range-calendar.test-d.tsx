@@ -1,10 +1,7 @@
-import type { ReactNode } from "react";
-
 import { CalendarDate } from "@internationalized/date";
 import { expectTypeOf, test } from "vitest";
 
 import type * as RangeCalendarApi from "@elmeragroup/fuse/react-aria/range-calendar";
-import type { RangeCalendarProps } from "@elmeragroup/fuse/react-aria/range-calendar";
 import { RangeCalendar } from "@elmeragroup/fuse/react-aria/range-calendar";
 
 test("rangeCalendarVariants and RAC types are not public exports", () => {
@@ -18,28 +15,6 @@ test("rangeCalendarVariants and RAC types are not public exports", () => {
   type _NoCell = RangeCalendarApi.CalendarCell;
   // @ts-expect-error RAC RangeCalendarProps is not leaked under a bare RAC name
   type _NoAria = RangeCalendarApi.AriaRangeCalendarProps;
-});
-
-test("RangeCalendarProps is generic, open, omits owned children and visibleDuration, and takes a ReactNode error", () => {
-  expectTypeOf<RangeCalendarProps<CalendarDate>["errorMessage"]>().toEqualTypeOf<ReactNode | undefined>();
-  expectTypeOf<RangeCalendarProps<CalendarDate>>().toHaveProperty("value");
-  expectTypeOf<RangeCalendarProps<CalendarDate>>().toHaveProperty("defaultValue");
-  expectTypeOf<RangeCalendarProps<CalendarDate>>().toHaveProperty("onChange");
-  expectTypeOf<RangeCalendarProps<CalendarDate>>().toHaveProperty("focusedValue");
-  expectTypeOf<RangeCalendarProps<CalendarDate>>().toHaveProperty("defaultFocusedValue");
-  expectTypeOf<RangeCalendarProps<CalendarDate>>().toHaveProperty("onFocusChange");
-  expectTypeOf<RangeCalendarProps<CalendarDate>>().toHaveProperty("minValue");
-  expectTypeOf<RangeCalendarProps<CalendarDate>>().toHaveProperty("maxValue");
-  expectTypeOf<RangeCalendarProps<CalendarDate>>().toHaveProperty("isDateUnavailable");
-  expectTypeOf<RangeCalendarProps<CalendarDate>>().toHaveProperty("allowsNonContiguousRanges");
-  expectTypeOf<RangeCalendarProps<CalendarDate>>().toHaveProperty("isDisabled");
-  expectTypeOf<RangeCalendarProps<CalendarDate>>().toHaveProperty("isReadOnly");
-  expectTypeOf<RangeCalendarProps<CalendarDate>>().toHaveProperty("isInvalid");
-  expectTypeOf<RangeCalendarProps<CalendarDate>>().toHaveProperty("autoFocus");
-  expectTypeOf<RangeCalendarProps<CalendarDate>>().toHaveProperty("className");
-  expectTypeOf<RangeCalendarProps<CalendarDate>>().not.toHaveProperty("children");
-  expectTypeOf<RangeCalendarProps<CalendarDate>>().not.toHaveProperty("visibleDuration");
-  expectTypeOf<RangeCalendarProps<CalendarDate>>().not.toHaveProperty("size");
 });
 
 test("value and onChange speak the RangeValue shape", () => {

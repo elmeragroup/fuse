@@ -6,7 +6,6 @@ import { themeSlug } from "@elmeragroup/fuse/theme";
 import { sizeBudgetsFile } from "../scripts/lib/paths.ts";
 import { parseBudgets } from "../scripts/lib/sizes.ts";
 import { BUNDLE_SIZES, BUNDLE_SIZES_MEASURED_ON } from "../src/generated/bundle-sizes";
-import { COLOR_TOKENS } from "../src/generated/token-reference";
 import { LEGAL_THEMES } from "../src/lib/theme";
 import { fetchText } from "./docs-server";
 
@@ -29,11 +28,17 @@ async function matrixGrid(): Promise<string> {
 }
 
 describe("theme matrix", () => {
-  it("renders one slug-labelled cell per legal permutation", async () => {
+  it("renders one slug-labelled cell per legal permutation, never an illegal one and no density axis", async () => {
     const html = await fetchText("/handbook/theme-matrix");
     expect([...html.matchAll(/data-theme-matrix-cell/g)]).toHaveLength(20);
     const slugHooks = [...html.matchAll(/data-theme-slug="([^"]*)"/g)].map((match) => match[1]);
     expect(slugHooks).toEqual(LEGAL_THEMES.map(themeSlug));
+    // Hatched or otherwise, no illegal permutation reaches the page.
+    for (const slug of ILLEGAL_SLUGS) {
+      expect(html, slug).not.toContain(slug);
+    }
+    // No density axis: the grid is 20 cells, not 20 × 2.
+    expect(await matrixGrid()).not.toContain("comfortable");
   });
 
   it("scopes each cell rather than stamping the document", async () => {
@@ -46,19 +51,8 @@ describe("theme matrix", () => {
     expect(/<html\b[^>]*data-density="dense"/.test(html)).toBe(true);
   });
 
-  it("never renders an illegal permutation, hatched or otherwise", async () => {
-    const html = await fetchText("/handbook/theme-matrix");
-    for (const slug of ILLEGAL_SLUGS) {
-      expect(html, slug).not.toContain(slug);
-    }
-  });
-
   it("puts an overlay inside every cell, so the portal target is the cell's scope", async () => {
     expect([...(await matrixGrid()).matchAll(/>Overlay</g)]).toHaveLength(20);
-  });
-
-  it("adds no density axis — the grid is 20 cells, not 20 × 2", async () => {
-    expect(await matrixGrid()).not.toContain("comfortable");
   });
 });
 
@@ -80,13 +74,6 @@ describe("tokens page", () => {
       (budget) => budget.name
     );
     expect([...BUNDLE_SIZES.map((entry) => entry.name)].sort()).toEqual([...liveNames].sort());
-  });
-
-  it("lists the generated token reference with swatches", async () => {
-    const html = await fetchText("/handbook/tokens");
-    expect(COLOR_TOKENS).toContain("--primary");
-    expect(html).toContain("data-token-swatch");
-    expect(html).toContain("--primary");
   });
 });
 

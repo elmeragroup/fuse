@@ -5,15 +5,13 @@ import { expectTypeOf, test } from "vitest";
 import type { CodeProps } from "@elmeragroup/fuse/code";
 import { Code } from "@elmeragroup/fuse/code";
 
-test("CodeProps is pre props without children plus the required code string", () => {
+test("CodeProps is pre props without children plus the required code string, and no namespace or as prop", () => {
   expectTypeOf<CodeProps["code"]>().toEqualTypeOf<string>();
   expectTypeOf<CodeProps["className"]>().toEqualTypeOf<string | undefined>();
   expectTypeOf<CodeProps["id"]>().toEqualTypeOf<string | undefined>();
   expectTypeOf<CodeProps["ref"]>().toEqualTypeOf<ComponentProps<"pre">["ref"]>();
   expectTypeOf<CodeProps>().not.toHaveProperty("children");
-});
 
-test("the element takes native pre props and no namespace, children, or as prop", () => {
   const _basic = <Code code="const answer = 42;" />;
   const _labelled = <Code code="const answer = 42;" id="answer" aria-label="Answer snippet" />;
   const _ref = <Code ref={null} code="const answer = 42;" />;

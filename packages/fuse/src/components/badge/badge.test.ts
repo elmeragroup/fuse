@@ -52,30 +52,22 @@ describe("badgeVariants", () => {
     }
   });
 
-  it("renames the destructive-named variants onto the canonical error tokens", () => {
-    const filled = badgeVariants({ variant: "destructive" });
-    expect(filled).toContain("bg-error");
-    expect(filled).toContain("text-error-foreground");
-    expect(filled).not.toContain("destructive");
-
-    const outline = badgeVariants({ variant: "outline-destructive" });
-    expect(outline).toContain("border-error");
-    expect(outline).toContain("text-error");
-    expect(outline).not.toContain("destructive");
-  });
-
-  it("pairs the info soft surface with its foreground", () => {
-    const resolved = badgeVariants({ variant: "info" });
-    expect(resolved).toContain("bg-info-soft");
-    expect(resolved).toContain("border-info/20");
-    expect(resolved).toContain("text-info-soft-foreground");
-  });
-
-  it("gives outline its bare border and foreground text", () => {
-    const resolved = badgeVariants({ variant: "outline" });
-    expect(resolved).toContain("text-foreground");
-    expect(resolved).toContain("border");
-    expect(resolved).not.toContain("bg-");
+  it.each([
+    // The destructive-named variants rename onto the canonical error tokens.
+    ["destructive", ["bg-error", "text-error-foreground"], ["destructive"]],
+    ["outline-destructive", ["border-error", "text-error"], ["destructive"]],
+    // info pairs its soft surface with its foreground.
+    ["info", ["bg-info-soft", "border-info/20", "text-info-soft-foreground"], []],
+    // outline keeps a bare border and foreground text.
+    ["outline", ["text-foreground", "border"], ["bg-"]],
+  ] as const)("maps variant=%s onto its token classes", (variant, present, absent) => {
+    const resolved = badgeVariants({ variant });
+    for (const token of present) {
+      expect(resolved).toContain(token);
+    }
+    for (const token of absent) {
+      expect(resolved).not.toContain(token);
+    }
   });
 
   it("carries the padding, type, and span-normalizing classes on every size", () => {

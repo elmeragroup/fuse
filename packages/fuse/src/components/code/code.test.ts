@@ -20,15 +20,21 @@ describe("Code highlight output", () => {
     expect(html.replaceAll(/<[^>]+>/g, "")).toBe(SNIPPET);
   });
 
-  it("pins v2's property classification of a bare name beside string concatenation", () => {
-    const html = renderToStaticMarkup(createElement(Code, { code: CONCAT_SNIPPET }));
-    // sugar-high v2 reclassifies `a` here; v1 rendered it as `sh__token--identifier`.
-    expect(html).toMatch(/<span class="sh__token--property"[^>]*>a<\/span>/);
-  });
-
-  it("keeps the identifier classification for an ordinary declaration", () => {
-    const html = renderToStaticMarkup(createElement(Code, { code: SNIPPET }));
-    expect(html).toMatch(/<span class="sh__token--identifier"[^>]*>answer<\/span>/);
+  // sugar-high v2 reclassifies `a` beside string concatenation; v1 rendered it as `sh__token--identifier`.
+  it.each([
+    [
+      "a bare name beside string concatenation as a property",
+      CONCAT_SNIPPET,
+      /<span class="sh__token--property"[^>]*>a<\/span>/,
+    ],
+    [
+      "an ordinary declaration's name as an identifier",
+      SNIPPET,
+      /<span class="sh__token--identifier"[^>]*>answer<\/span>/,
+    ],
+  ] as const)("pins v2's classification of %s", (_case, code, token) => {
+    const html = renderToStaticMarkup(createElement(Code, { code }));
+    expect(html).toMatch(token);
   });
 
   it("merges className onto the pre and forwards id and aria-label", () => {

@@ -29,36 +29,27 @@ afterEach(async () => {
 });
 
 describe("useIsMobile", () => {
-  it("reads mql.matches on the first client render below the breakpoint", async () => {
-    await page.viewport(767, 800);
-    expect(window.matchMedia(MOBILE_MEDIA_QUERY).matches).toBe(true);
-    const seen: boolean[] = [];
-    render(
-      <Probe
-        onRender={(value) => {
-          seen.push(value);
-        }}
-      />
-    );
-    expect(seen[0]).toBe(true);
-    expect(seen).not.toContain(false);
-    await expect.element(viewportStatus()).toHaveTextContent("mobile");
-  });
-
-  it("reads mql.matches on the first client render at the breakpoint", async () => {
-    await page.viewport(768, 800);
-    expect(window.matchMedia(MOBILE_MEDIA_QUERY).matches).toBe(false);
-    const seen: boolean[] = [];
-    render(
-      <Probe
-        onRender={(value) => {
-          seen.push(value);
-        }}
-      />
-    );
-    expect(seen[0]).toBe(false);
-    await expect.element(viewportStatus()).toHaveTextContent("desktop");
-  });
+  it.each([
+    { name: "below", width: 767, isMobile: true, text: "mobile" },
+    { name: "at", width: 768, isMobile: false, text: "desktop" },
+  ])(
+    "reads mql.matches on the first client render $name the breakpoint",
+    async ({ width, isMobile, text }) => {
+      await page.viewport(width, 800);
+      expect(window.matchMedia(MOBILE_MEDIA_QUERY).matches).toBe(isMobile);
+      const seen: boolean[] = [];
+      render(
+        <Probe
+          onRender={(value) => {
+            seen.push(value);
+          }}
+        />
+      );
+      expect(seen[0]).toBe(isMobile);
+      expect(seen).not.toContain(!isMobile);
+      await expect.element(viewportStatus()).toHaveTextContent(text);
+    }
+  );
 
   it("re-renders on MQL change events in both directions and stops after unmount", async () => {
     await page.viewport(1024, 768);

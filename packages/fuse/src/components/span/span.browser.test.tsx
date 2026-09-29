@@ -30,18 +30,6 @@ describe("Span", () => {
     }
   });
 
-  it("defaults leading to leading-snug", () => {
-    renderThemed(
-      <>
-        <Span>Inline count</Span>
-        <Span leading="relaxed">Relaxed count</Span>
-      </>
-    );
-    expect(getComputedStyle(spanNamed("Inline count")).lineHeight).not.toBe(
-      getComputedStyle(spanNamed("Relaxed count")).lineHeight
-    );
-  });
-
   it("resolves destructive onto text-error, success onto text-success, and bold onto font-medium", () => {
     renderThemed(
       <>

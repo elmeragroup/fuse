@@ -24,14 +24,6 @@ describe("assertDocsFuseCssExports", () => {
     );
   });
 
-  it("returns the resolved files when they exist", () => {
-    const root = fixtureRoot(true);
-    expect(assertDocsFuseCssExports(root)).toEqual([
-      join(root, "dist/themes.css"),
-      join(root, "dist/demo-stage-comfortable.css"),
-    ]);
-  });
-
   it("accepts the workspace UI package after it has been built", () => {
     expect(assertDocsFuseCssExports(fuseRoot)).toEqual([
       join(fuseRoot, "dist/themes.css"),

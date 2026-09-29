@@ -11,14 +11,9 @@ const CLEAR_COPY = {
 } as const;
 
 describe("search-field dictionary", () => {
-  it("owns the locked searchField.clear copy in all four locales", () => {
+  it("owns the locked searchField.clear copy, and no other key, in all four locales", () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(searchFieldStrings.getStringForLocale("clear", locale), locale).toBe(CLEAR_COPY[locale]);
-    }
-  });
-
-  it("carries no key beyond the single row owned by SearchField", () => {
-    for (const locale of SUPPORTED_LOCALES) {
       expect(Object.keys(searchFieldStrings.getStringsForLocale(locale)), locale).toEqual(["clear"]);
     }
   });

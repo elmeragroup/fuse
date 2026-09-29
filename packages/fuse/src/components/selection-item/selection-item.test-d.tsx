@@ -6,7 +6,7 @@ import type { SelectionItem as RootSelectionItem } from "@elmeragroup/fuse";
 import { Item } from "@elmeragroup/fuse/item";
 import { SelectionItem } from "@elmeragroup/fuse/selection-item";
 
-test("the namespace ships all six parts from the selection-item entry and the root barrel", () => {
+test("the namespace ships all six parts from both entries, reusing Item's Description and Content", () => {
   expectTypeOf<typeof SelectionItem>().toEqualTypeOf<typeof RootSelectionItem>();
   expectTypeOf(SelectionItem).toHaveProperty("Shell");
   expectTypeOf(SelectionItem).toHaveProperty("Title");
@@ -14,14 +14,12 @@ test("the namespace ships all six parts from the selection-item entry and the ro
   expectTypeOf(SelectionItem).toHaveProperty("Content");
   expectTypeOf(SelectionItem).toHaveProperty("Actions");
   expectTypeOf(SelectionItem).toHaveProperty("SubSection");
-});
-
-test("Description and Content are the Item parts so later aliasing keeps object identity", () => {
+  // Description and Content are the Item parts so later aliasing keeps object identity.
   expectTypeOf(SelectionItem.Description).toEqualTypeOf(Item.Description);
   expectTypeOf(SelectionItem.Content).toEqualTypeOf(Item.Content);
 });
 
-test("Shell takes the public API and no polymorphic as prop", () => {
+test("Shell takes the public API, passes Field.Item props through, and has no polymorphic as prop", () => {
   expectTypeOf<Parameters<typeof SelectionItem.Shell>[0]["dataSlot"]>().toEqualTypeOf<string>();
   expectTypeOf<Parameters<typeof SelectionItem.Shell>[0]["controlPosition"]>().toEqualTypeOf<
     "start" | "end" | undefined
@@ -61,9 +59,8 @@ test("Shell takes the public API and no polymorphic as prop", () => {
   );
   // @ts-expect-error polymorphism is never an as prop
   const _noAs = <SelectionItem.Shell dataSlot="checkbox-item" control={<span />} as="section" />;
-});
 
-test("Shell passes Field.Item props through except className and children", () => {
+  // Shell passes Field.Item props through except className and children.
   type ShellProps = Parameters<typeof SelectionItem.Shell>[0];
   expectTypeOf<ShellProps>().toHaveProperty("render");
   expectTypeOf<ShellProps>().toHaveProperty("id");

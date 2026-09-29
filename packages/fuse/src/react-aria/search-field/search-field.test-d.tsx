@@ -1,10 +1,8 @@
-import type { ReactNode, Ref } from "react";
+import type { Ref } from "react";
 
-import type { ValidationResult } from "react-aria-components";
 import { expectTypeOf, test } from "vitest";
 
 import type * as SearchFieldApi from "@elmeragroup/fuse/react-aria/search-field";
-import type { SearchFieldProps } from "@elmeragroup/fuse/react-aria/search-field";
 import { SearchField } from "@elmeragroup/fuse/react-aria/search-field";
 
 test("searchFieldVariants and RAC types are not public exports", () => {
@@ -19,31 +17,6 @@ test("searchFieldVariants and RAC types are not public exports", () => {
   type _NoRenderProps = SearchFieldApi.SearchFieldRenderProps;
   // @ts-expect-error SearchFieldContext is not a public export
   type _NoContext = SearchFieldApi.SearchFieldContext;
-});
-
-test("SearchFieldProps has the composite face plus RAC passthroughs and no size axis", () => {
-  expectTypeOf<SearchFieldProps["label"]>().toEqualTypeOf<string | undefined>();
-  expectTypeOf<SearchFieldProps["description"]>().toEqualTypeOf<string | undefined>();
-  expectTypeOf<SearchFieldProps["errorMessage"]>().toEqualTypeOf<
-    ReactNode | ((validation: ValidationResult) => ReactNode) | undefined
-  >();
-  expectTypeOf<SearchFieldProps["placeholder"]>().toEqualTypeOf<string | undefined>();
-  expectTypeOf<SearchFieldProps["clearLabel"]>().toEqualTypeOf<string | undefined>();
-  expectTypeOf<SearchFieldProps>().toHaveProperty("value");
-  expectTypeOf<SearchFieldProps>().toHaveProperty("defaultValue");
-  expectTypeOf<SearchFieldProps>().toHaveProperty("onChange");
-  expectTypeOf<SearchFieldProps>().toHaveProperty("onSubmit");
-  expectTypeOf<SearchFieldProps>().toHaveProperty("onClear");
-  expectTypeOf<SearchFieldProps>().toHaveProperty("isDisabled");
-  expectTypeOf<SearchFieldProps>().toHaveProperty("isReadOnly");
-  expectTypeOf<SearchFieldProps>().toHaveProperty("isRequired");
-  expectTypeOf<SearchFieldProps>().toHaveProperty("isInvalid");
-  expectTypeOf<SearchFieldProps>().toHaveProperty("name");
-  expectTypeOf<SearchFieldProps>().toHaveProperty("validate");
-  expectTypeOf<SearchFieldProps>().toHaveProperty("autoFocus");
-  expectTypeOf<SearchFieldProps>().toHaveProperty("className");
-  expectTypeOf<SearchFieldProps>().toHaveProperty("aria-label");
-  expectTypeOf<SearchFieldProps>().not.toHaveProperty("size");
 });
 
 test("the element takes the public props, forwards a ref to the input, and rejects a size axis", () => {

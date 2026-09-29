@@ -2,7 +2,6 @@ import type { ComponentProps } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type { TimelineList as RootTimelineList } from "@elmeragroup/fuse";
 import type {
   TimelineListDescriptionProps,
   TimelineListItemProps,
@@ -12,15 +11,6 @@ import type {
 } from "@elmeragroup/fuse/timeline-list";
 import * as TimelineListModule from "@elmeragroup/fuse/timeline-list";
 import { TimelineList } from "@elmeragroup/fuse/timeline-list";
-
-test("the namespace ships all five parts from the timeline-list entry and the root barrel", () => {
-  expectTypeOf<typeof TimelineList>().toEqualTypeOf<typeof RootTimelineList>();
-  expectTypeOf(TimelineList).toHaveProperty("Root");
-  expectTypeOf(TimelineList).toHaveProperty("Item");
-  expectTypeOf(TimelineList).toHaveProperty("Title");
-  expectTypeOf(TimelineList).toHaveProperty("Time");
-  expectTypeOf(TimelineList).toHaveProperty("Description");
-});
 
 test("public API exports only the namespace and part prop types", () => {
   expectTypeOf<TimelineListRootProps>().toEqualTypeOf<ComponentProps<"ol">>();

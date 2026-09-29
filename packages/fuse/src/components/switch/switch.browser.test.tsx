@@ -45,8 +45,8 @@ afterEach(() => {
 });
 
 describe("Switch", () => {
-  it("renders a switch whose aria-checked reflects state", () => {
-    renderThemed(
+  it("renders a switch whose aria-checked reflects state, controlled by checked or uncontrolled from defaultChecked", async () => {
+    const { unmount: unmountDefaults } = renderThemed(
       <>
         <Switch aria-label="Off" />
         <Switch aria-label="On" defaultChecked />
@@ -59,17 +59,25 @@ describe("Switch", () => {
     expect(on.getAttribute("aria-checked")).toBe("true");
     expect(off.getAttribute("data-slot")).toBe("switch");
     expect(off.getAttribute("data-size")).toBe("default");
-  });
+    unmountDefaults();
 
-  it("toggles on click and fires onCheckedChange with the new checked value", async () => {
     const onCheckedChange = vi.fn();
-    renderThemed(<Switch aria-label="Alerts" onCheckedChange={onCheckedChange} />);
+    renderThemed(
+      <>
+        <Switch checked={false} onCheckedChange={onCheckedChange} aria-label="Held" />
+        <Switch defaultChecked aria-label="Open" />
+      </>
+    );
 
-    await expect.element(page.getByRole("switch", { name: "Alerts", checked: false })).toBeInTheDocument();
-    await userEvent.click(page.getByRole("switch", { name: "Alerts", exact: true }));
-    await expect.element(page.getByRole("switch", { name: "Alerts", checked: true })).toBeInTheDocument();
-    expect(onCheckedChange).toHaveBeenCalledTimes(1);
+    await expect.element(page.getByRole("switch", { name: "Held", checked: false })).toBeInTheDocument();
+    await expect.element(page.getByRole("switch", { name: "Open", checked: true })).toBeInTheDocument();
+
+    await userEvent.click(page.getByRole("switch", { name: "Held", exact: true }));
     expect(onCheckedChange).toHaveBeenNthCalledWith(1, true, expect.anything());
+    await expect.element(page.getByRole("switch", { name: "Held", checked: false })).toBeInTheDocument();
+
+    await userEvent.click(page.getByRole("switch", { name: "Open", exact: true }));
+    await expect.element(page.getByRole("switch", { name: "Open", checked: false })).toBeInTheDocument();
   });
 
   it("toggles from Tab focus with Space and with Enter", async () => {
@@ -117,26 +125,6 @@ describe("Switch", () => {
     page.getByRole("button", { name: "Before" }).element().focus();
     await userEvent.keyboard("{Tab}");
     expect(document.activeElement).toBe(page.getByRole("button", { name: "After" }).element());
-  });
-
-  it("supports controlled checked and uncontrolled defaultChecked", async () => {
-    const onCheckedChange = vi.fn();
-    renderThemed(
-      <>
-        <Switch checked={false} onCheckedChange={onCheckedChange} aria-label="Held" />
-        <Switch defaultChecked aria-label="Open" />
-      </>
-    );
-
-    await expect.element(page.getByRole("switch", { name: "Held", checked: false })).toBeInTheDocument();
-    await expect.element(page.getByRole("switch", { name: "Open", checked: true })).toBeInTheDocument();
-
-    await userEvent.click(page.getByRole("switch", { name: "Held", exact: true }));
-    expect(onCheckedChange).toHaveBeenNthCalledWith(1, true, expect.anything());
-    await expect.element(page.getByRole("switch", { name: "Held", checked: false })).toBeInTheDocument();
-
-    await userEvent.click(page.getByRole("switch", { name: "Open", exact: true }));
-    await expect.element(page.getByRole("switch", { name: "Open", checked: false })).toBeInTheDocument();
   });
 
   it("keeps the Field label and description when a wrapper forwards id and ARIA props as undefined", async () => {

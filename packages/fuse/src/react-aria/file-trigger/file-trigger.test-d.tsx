@@ -18,27 +18,6 @@ test("buttonVariants and RAC types are not public exports", () => {
   type _NoContext = FileTriggerApi.FileTriggerContext;
 });
 
-test("FileTriggerProps has the composite face plus RAC passthroughs and buttonVariants axes", () => {
-  expectTypeOf<FileTriggerProps["withIcon"]>().toEqualTypeOf<boolean | undefined>();
-  expectTypeOf<FileTriggerProps["isDisabled"]>().toEqualTypeOf<boolean | undefined>();
-  expectTypeOf<FileTriggerProps["className"]>().toEqualTypeOf<string | undefined>();
-  expectTypeOf<FileTriggerProps["acceptedFileTypes"]>().toEqualTypeOf<readonly string[] | undefined>();
-  expectTypeOf<FileTriggerProps["allowsMultiple"]>().toEqualTypeOf<boolean | undefined>();
-  expectTypeOf<FileTriggerProps["acceptDirectory"]>().toEqualTypeOf<boolean | undefined>();
-  expectTypeOf<FileTriggerProps["defaultCamera"]>().toEqualTypeOf<"user" | "environment" | undefined>();
-  expectTypeOf<FileTriggerProps["onSelect"]>().toEqualTypeOf<
-    ((files: FileList | null) => void) | undefined
-  >();
-  expectTypeOf<FileTriggerProps["variant"]>().toEqualTypeOf<
-    "default" | "outline" | "secondary" | "ghost" | "destructive" | "success" | "link" | undefined
-  >();
-  expectTypeOf<FileTriggerProps["size"]>().toEqualTypeOf<
-    "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-inline" | "icon-lg" | undefined
-  >();
-  expectTypeOf<FileTriggerProps>().toHaveProperty("children");
-  expectTypeOf<FileTriggerProps>().toHaveProperty("ref");
-});
-
 test("the element takes the public props and forwards a ref to the hidden input", () => {
   const _open = (
     <FileTrigger

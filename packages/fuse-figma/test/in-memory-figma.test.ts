@@ -42,38 +42,40 @@ function createWithScopes(resolvedType: "COLOR" | "FLOAT" | "STRING", scopes: re
 
 // The expectations come from https://developers.figma.com/docs/rest-api/variables-types/.
 describe("the in-memory Figma file's scope rules", () => {
-  it.effect("accepts FONT_VARIATIONS on a STRING variable and refuses it on a FLOAT one", () =>
+  it.effect.each([
+    {
+      rule: "accepts FONT_VARIATIONS on a STRING variable",
+      type: "STRING",
+      scopes: ["FONT_FAMILY", "FONT_VARIATIONS"],
+      reply: { status: 200, message: undefined },
+    },
+    {
+      rule: "refuses FONT_VARIATIONS on a FLOAT variable",
+      type: "FLOAT",
+      scopes: ["FONT_VARIATIONS"],
+      reply: { status: 400, message: "Scope FONT_VARIATIONS does not apply to a FLOAT variable" },
+    },
+    {
+      rule: "accepts ALL_FILLS beside a stroke scope",
+      type: "COLOR",
+      scopes: ["ALL_FILLS", "STROKE_COLOR"],
+      reply: { status: 200, message: undefined },
+    },
+    {
+      rule: "refuses ALL_FILLS beside another fill scope",
+      type: "COLOR",
+      scopes: ["ALL_FILLS", "FRAME_FILL"],
+      reply: { status: 400, message: "ALL_FILLS cannot combine with other fill scopes" },
+    },
+    {
+      rule: "refuses ALL_SCOPES beside any other scope",
+      type: "FLOAT",
+      scopes: ["ALL_SCOPES", "GAP"],
+      reply: { status: 400, message: "ALL_SCOPES cannot combine with other scopes" },
+    },
+  ] as const)("$rule", ({ type, scopes, reply }) =>
     Effect.gen(function* () {
-      assert.deepStrictEqual(yield* createWithScopes("STRING", ["FONT_FAMILY", "FONT_VARIATIONS"]), {
-        status: 200,
-        message: undefined,
-      });
-      assert.deepStrictEqual(yield* createWithScopes("FLOAT", ["FONT_VARIATIONS"]), {
-        status: 400,
-        message: "Scope FONT_VARIATIONS does not apply to a FLOAT variable",
-      });
-    })
-  );
-
-  it.effect("refuses ALL_FILLS beside another fill scope but not beside a stroke scope", () =>
-    Effect.gen(function* () {
-      assert.deepStrictEqual(yield* createWithScopes("COLOR", ["ALL_FILLS", "STROKE_COLOR"]), {
-        status: 200,
-        message: undefined,
-      });
-      assert.deepStrictEqual(yield* createWithScopes("COLOR", ["ALL_FILLS", "FRAME_FILL"]), {
-        status: 400,
-        message: "ALL_FILLS cannot combine with other fill scopes",
-      });
-    })
-  );
-
-  it.effect("refuses ALL_SCOPES beside any other scope", () =>
-    Effect.gen(function* () {
-      assert.deepStrictEqual(yield* createWithScopes("FLOAT", ["ALL_SCOPES", "GAP"]), {
-        status: 400,
-        message: "ALL_SCOPES cannot combine with other scopes",
-      });
+      assert.deepStrictEqual(yield* createWithScopes(type, scopes), reply);
     })
   );
 });

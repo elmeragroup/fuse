@@ -4,7 +4,7 @@ import { expectTypeOf, test } from "vitest";
 
 import { Avatar } from "@elmeragroup/fuse/avatar";
 
-test("parts take the primitive passthrough surface and no as prop", () => {
+test("parts take the primitive passthrough surface and no as prop, and Group is a plain div part with no primitive props", () => {
   const _root = (
     <Avatar.Root className="size-10" aria-label="Ada Lovelace">
       <Avatar.Image src="/ada.png" alt="Ada Lovelace" onLoadingStatusChange={() => undefined} />
@@ -22,9 +22,7 @@ test("parts take the primitive passthrough surface and no as prop", () => {
 
   // @ts-expect-error polymorphism is never an as prop
   const _noAs = <Avatar.Root as="div" />;
-});
 
-test("Group is a plain div part with no primitive props", () => {
   const _group = (
     <Avatar.Group className="pl-4" aria-label="Team">
       <Avatar.Root>
@@ -32,7 +30,7 @@ test("Group is a plain div part with no primitive props", () => {
       </Avatar.Root>
     </Avatar.Group>
   );
-  const _ref = <Avatar.Group ref={null} />;
+  const _groupRef = <Avatar.Group ref={null} />;
 
   expectTypeOf<ComponentProps<typeof Avatar.Group>>().toEqualTypeOf<ComponentProps<"div">>();
 

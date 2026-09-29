@@ -48,23 +48,16 @@ const TONE_CLASSES = {
 } satisfies Record<MeterTone, { barFill: string; labelValue: string }>;
 
 describe("getMeterLevel", () => {
-  it("treats percentage at or below 80 as LOW, including the 80 boundary", () => {
-    expect(getMeterLevel(0, 100, 0)).toBe(METER_CONSTANTS.LEVELS.LOW);
-    expect(getMeterLevel(80, 100, 80)).toBe(METER_CONSTANTS.LEVELS.LOW);
-  });
-
-  it("treats percentage strictly between 80 and 100 as MEDIUM", () => {
-    expect(getMeterLevel(81, 100, 81)).toBe(METER_CONSTANTS.LEVELS.MEDIUM);
-    expect(getMeterLevel(99, 100, 99)).toBe(METER_CONSTANTS.LEVELS.MEDIUM);
-  });
-
-  it("treats percentage 100 as FULL when max is not exceeded", () => {
-    expect(getMeterLevel(100, 100, 100)).toBe(METER_CONSTANTS.LEVELS.FULL);
-  });
-
-  it("returns EXCEEDED_MAX_VALUE when value exceeds max", () => {
-    expect(getMeterLevel(101, 100, 100)).toBe(METER_CONSTANTS.LEVELS.EXCEEDED_MAX_VALUE);
-    expect(getMeterLevel(150, 120, 100)).toBe(METER_CONSTANTS.LEVELS.EXCEEDED_MAX_VALUE);
+  it.each([
+    ["at or below 80 is LOW, including the 80 boundary", 0, 100, 0, "LOW"],
+    ["at or below 80 is LOW, including the 80 boundary", 80, 100, 80, "LOW"],
+    ["strictly between 80 and 100 is MEDIUM", 81, 100, 81, "MEDIUM"],
+    ["strictly between 80 and 100 is MEDIUM", 99, 100, 99, "MEDIUM"],
+    ["100 is FULL when max is not exceeded", 100, 100, 100, "FULL"],
+    ["a value above max is EXCEEDED_MAX_VALUE", 101, 100, 100, "EXCEEDED_MAX_VALUE"],
+    ["a value above max is EXCEEDED_MAX_VALUE", 150, 120, 100, "EXCEEDED_MAX_VALUE"],
+  ] as const)("percentage %s (value %d, max %d, percentage %d)", (_case, value, max, percentage, level) => {
+    expect(getMeterLevel(value, max, percentage)).toBe(METER_CONSTANTS.LEVELS[level]);
   });
 
   it("maps max <= min to percentage 0 and LOW", () => {

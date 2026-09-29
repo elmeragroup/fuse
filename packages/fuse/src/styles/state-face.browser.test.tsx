@@ -267,17 +267,7 @@ describe("state face at dense density", () => {
     }
   });
 
-  it("shows the not-allowed cursor on every disabled control", async () => {
-    renderStateFaces(<DisabledControls />);
-
-    for (const [label, find] of DISABLED_CONTROLS) {
-      const control = find();
-      await userEvent.hover(page.elementLocator(control), { force: true });
-      expect.soft(getComputedStyle(control).cursor, label).toBe("not-allowed");
-    }
-  });
-
-  it("dims every disabled control to half opacity once", () => {
+  it("dims every disabled control to half opacity once and shows the not-allowed cursor", async () => {
     renderStateFaces(<DisabledControls />);
 
     for (const [label, find] of DISABLED_CONTROLS) {
@@ -285,6 +275,8 @@ describe("state face at dense density", () => {
       // A control inside a group (an input, a stepper) is dimmed by the group, so it paints
       // at the group's 0.5 rather than a doubled 0.25.
       expect.soft(effectiveOpacity(control), label).toBe(0.5);
+      await userEvent.hover(page.elementLocator(control), { force: true });
+      expect.soft(getComputedStyle(control).cursor, label).toBe("not-allowed");
     }
   });
 

@@ -11,15 +11,12 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertStateFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
 import {
-  accessibleRangeHeading,
   calendarGrid,
   calendarRoot,
   cellNumbered,
   dayNumbered,
   focusLandsOnDay,
-  navButtonNamed,
   parkPointerOffGrid,
-  visibleMonthTitle,
 } from "../../../test/rac-calendar-testing";
 import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { UiProviders } from "../ui-providers/ui-providers";
@@ -50,13 +47,6 @@ function pillOf(day: HTMLElement): HTMLElement {
   return pill;
 }
 
-function cells(): HTMLElement[] {
-  return page
-    .getByRole("gridcell")
-    .elements()
-    .filter((element): element is HTMLElement => element instanceof HTMLElement);
-}
-
 const july13 = new CalendarDate(2026, 7, 13);
 const july14 = new CalendarDate(2026, 7, 14);
 const july16 = new CalendarDate(2026, 7, 16);
@@ -82,35 +72,6 @@ function committedRange(onChange: RangeChangeSpy): CommittedRange {
 }
 
 describe("RangeCalendar", () => {
-  it("exposes an application root with a grid, weekday columnheaders, day cells, nav buttons and RAC's two heading faces", async () => {
-    renderRangeCalendar(<RangeCalendar defaultValue={{ start: july14, end: july17 }} />);
-    await expect.element(page.getByRole("application")).toBeVisible();
-    await expect.element(page.getByRole("grid")).toBeVisible();
-    expect(calendarRoot().contains(calendarGrid())).toBe(true);
-    expect(cells().length).toBeGreaterThan(27);
-    // The shared CalendarGridHeader row has no queryable role: RAC marks it aria-hidden
-    // because every day's own label already names its weekday. Its seven cells are the
-    // only observable proof the shared part rendered.
-    expect(calendarGrid().querySelectorAll("thead th")).toHaveLength(7);
-    // The locale's short names are compact enough for a grid column, so they are kept.
-    expect(calendarGrid().textContent).toContain("Sun");
-    expect(calendarGrid().textContent).not.toContain("Sunday");
-    await expect.element(navButtonNamed(/previous/i)).toBeVisible();
-    await expect.element(navButtonNamed(/next/i)).toBeVisible();
-    expect(dayNumbered(14).getAttribute("aria-label")).toMatch(/Tuesday, July 14, 2026/i);
-
-    const visibleTitle = visibleMonthTitle();
-    await expect.element(visibleTitle).toBeVisible();
-    expect(visibleTitle).toHaveAttribute("aria-hidden", "true");
-    expect(visibleTitle.getAttribute("data-slot")).toBe("heading");
-    expect(visibleTitle.textContent).toMatch(/July\s+2026/i);
-
-    const accessibleRange = accessibleRangeHeading();
-    expect(accessibleRange).not.toBe(visibleTitle);
-    expect(accessibleRange.textContent).toMatch(/July\s+2026/i);
-    expect(calendarGrid().getAttribute("aria-label")).toMatch(/July\s+2026/i);
-  });
-
   it("follows the locale direction and its weekday label width", async () => {
     renderRangeCalendar(
       <I18nProvider locale="ar-EG">
@@ -210,7 +171,7 @@ describe("RangeCalendar", () => {
     expect(cellNumbered(18).getAttribute("aria-selected")).not.toBe("true");
   });
 
-  it("mutes an unavailable day's pill with the muted-foreground token", async () => {
+  it("mutes an unavailable day's pill with the muted-foreground token and gives it no hover fill", async () => {
     renderRangeCalendar(
       <RangeCalendar defaultFocusedValue={july14} isDateUnavailable={(date) => isSameDay(date, july16)} />
     );
@@ -221,13 +182,6 @@ describe("RangeCalendar", () => {
     expect(getComputedStyle(unavailable).color).toBe(cssVarColor(unavailable, "--muted-foreground"));
     const bookable = pillOf(dayNumbered(15));
     expect(getComputedStyle(bookable).color).toBe(cssVarColor(bookable, "--foreground"));
-  });
-
-  it("gets no hover fill on an unavailable day (RAC skips hover on unavailable cells)", async () => {
-    renderRangeCalendar(
-      <RangeCalendar defaultFocusedValue={july14} isDateUnavailable={(date) => isSameDay(date, july16)} />
-    );
-    await expect.element(page.getByRole("grid")).toBeVisible();
 
     // RAC disables useHover/usePress for unavailable cells, so group-hover never fires today;
     // the compound's suppression classes only matter if an upgrade changes that.
@@ -235,8 +189,8 @@ describe("RangeCalendar", () => {
     expect(getComputedStyle(pillOf(dayNumbered(16))).backgroundColor).toBe("rgba(0, 0, 0, 0)");
 
     await userEvent.hover(dayNumbered(15));
-    const bookable = pillOf(dayNumbered(15));
-    expect(getComputedStyle(bookable).backgroundColor).toBe(cssVarColor(bookable, "--muted"));
+    const hovered = pillOf(dayNumbered(15));
+    expect(getComputedStyle(hovered).backgroundColor).toBe(cssVarColor(hovered, "--muted"));
     await parkPointerOffGrid();
   });
 

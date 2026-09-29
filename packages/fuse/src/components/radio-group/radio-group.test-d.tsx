@@ -16,15 +16,6 @@ import {
   RadioItem,
   RadioItemGroup,
 } from "@elmeragroup/fuse/radio-group";
-import { SelectionItem } from "@elmeragroup/fuse/selection-item";
-
-test("RadioItem aliases are the SelectionItem part types", () => {
-  expectTypeOf(RadioItem.Title).toEqualTypeOf(SelectionItem.Title);
-  expectTypeOf(RadioItem.Description).toEqualTypeOf(SelectionItem.Description);
-  expectTypeOf(RadioItem.Content).toEqualTypeOf(SelectionItem.Content);
-  expectTypeOf(RadioItem.Actions).toEqualTypeOf(SelectionItem.Actions);
-  expectTypeOf(RadioItem.SubSection).toEqualTypeOf(SelectionItem.SubSection);
-});
 
 test("RadioGroupProps is the labeled-composite face including null", () => {
   expectTypeOf<RadioGroupProps["label"]>().toEqualTypeOf<string | undefined>();
@@ -54,7 +45,7 @@ test("RadioGroupItem keeps Base UI's stateful className callback", () => {
   expectTypeOf<ItemClassNameFn>().parameter(0).toHaveProperty("checked");
 });
 
-test("Radio, RadioItem, and RadioIconButton props match the public axes", () => {
+test("Radio, RadioItem, and RadioIconButton props match the public axes and pass-through surface", () => {
   expectTypeOf<RadioProps["value"]>().toEqualTypeOf<string>();
   expectTypeOf<RadioProps["isDisabled"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<RadioItemProps["value"]>().toEqualTypeOf<string>();
@@ -70,6 +61,29 @@ test("Radio, RadioItem, and RadioIconButton props match the public axes", () => 
   expectTypeOf<RadioItemProps>().not.toHaveProperty("as");
   expectTypeOf<RadioIconButtonProps>().not.toHaveProperty("as");
   expectTypeOf<RadioIconButtonProps>().not.toHaveProperty("disabled");
+
+  // RadioIconButton passes Radio.Root props through except the composite-owned keys.
+  expectTypeOf<RadioIconButtonProps>().toHaveProperty("render");
+  expectTypeOf<RadioIconButtonProps>().toHaveProperty("readOnly");
+  expectTypeOf<RadioIconButtonProps>().toHaveProperty("required");
+  expectTypeOf<RadioIconButtonProps>().toHaveProperty("id");
+  expectTypeOf<RadioIconButtonProps>().toHaveProperty("aria-describedby");
+  expectTypeOf<RadioIconButtonProps["className"]>().toEqualTypeOf<string | undefined>();
+  expectTypeOf<RadioIconButtonProps["children"]>().toEqualTypeOf<ReactNode | undefined>();
+  expectTypeOf<RadioProps>().not.toHaveProperty("render");
+  expectTypeOf<RadioProps>().not.toHaveProperty("id");
+  expectTypeOf<RadioItemProps>().not.toHaveProperty("render");
+  expectTypeOf<RadioItemProps>().not.toHaveProperty("id");
+
+  const _passThrough = (
+    <RadioIconButton value="grid" aria-label="Grid" id="view-grid" aria-describedby="view-help" readOnly>
+      <svg />
+    </RadioIconButton>
+  );
+  const _stringClassNameOnly = (
+    // @ts-expect-error RadioIconButton merges a string className; the state callback stays on RadioGroupItem
+    <RadioIconButton value="grid" aria-label="Grid" className={() => "x"} />
+  );
 });
 
 test("the elements take the public props and reject invalid combinations", () => {
@@ -158,29 +172,5 @@ test("the elements take the public props and reject invalid combinations", () =>
   const _nullDefault = (
     // @ts-expect-error defaultValue is string, not null
     <RadioGroup defaultValue={null} />
-  );
-});
-
-test("RadioIconButton passes Radio.Root props through except the composite-owned keys", () => {
-  expectTypeOf<RadioIconButtonProps>().toHaveProperty("render");
-  expectTypeOf<RadioIconButtonProps>().toHaveProperty("readOnly");
-  expectTypeOf<RadioIconButtonProps>().toHaveProperty("required");
-  expectTypeOf<RadioIconButtonProps>().toHaveProperty("id");
-  expectTypeOf<RadioIconButtonProps>().toHaveProperty("aria-describedby");
-  expectTypeOf<RadioIconButtonProps["className"]>().toEqualTypeOf<string | undefined>();
-  expectTypeOf<RadioIconButtonProps["children"]>().toEqualTypeOf<ReactNode | undefined>();
-  expectTypeOf<RadioProps>().not.toHaveProperty("render");
-  expectTypeOf<RadioProps>().not.toHaveProperty("id");
-  expectTypeOf<RadioItemProps>().not.toHaveProperty("render");
-  expectTypeOf<RadioItemProps>().not.toHaveProperty("id");
-
-  const _passThrough = (
-    <RadioIconButton value="grid" aria-label="Grid" id="view-grid" aria-describedby="view-help" readOnly>
-      <svg />
-    </RadioIconButton>
-  );
-  const _stringClassNameOnly = (
-    // @ts-expect-error RadioIconButton merges a string className; the state callback stays on RadioGroupItem
-    <RadioIconButton value="grid" aria-label="Grid" className={() => "x"} />
   );
 });

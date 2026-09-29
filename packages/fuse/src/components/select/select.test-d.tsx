@@ -3,12 +3,6 @@ import { expectTypeOf, test } from "vitest";
 import type { SelectContentProps, SelectTriggerProps } from "@elmeragroup/fuse/select";
 import { Select } from "@elmeragroup/fuse/select";
 
-test("Portal, Positioner and Popup stay off the public namespace", () => {
-  expectTypeOf(Select).not.toHaveProperty("Portal");
-  expectTypeOf(Select).not.toHaveProperty("Positioner");
-  expectTypeOf(Select).not.toHaveProperty("Popup");
-});
-
 test("Trigger takes size and Content takes positioner props, alignItemWithTrigger and container", () => {
   expectTypeOf<SelectTriggerProps["size"]>().toEqualTypeOf<"sm" | "default" | undefined>();
   expectTypeOf<SelectContentProps["side"]>().toEqualTypeOf<

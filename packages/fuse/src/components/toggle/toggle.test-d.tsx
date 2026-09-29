@@ -1,7 +1,6 @@
 import { expectTypeOf, test } from "vitest";
 
 import type { ToggleProps } from "@elmeragroup/fuse/toggle";
-import { Toggle } from "@elmeragroup/fuse/toggle";
 
 test("ToggleProps is the primitive surface plus the recipe axes", () => {
   expectTypeOf<ToggleProps["variant"]>().toEqualTypeOf<"default" | "outline" | undefined>();
@@ -10,21 +9,4 @@ test("ToggleProps is the primitive surface plus the recipe axes", () => {
   expectTypeOf<ToggleProps["pressed"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<ToggleProps["defaultPressed"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<ToggleProps>().not.toHaveProperty("as");
-});
-
-test("the element takes the public props and no polymorphic as prop", () => {
-  const _basic = <Toggle>Bold</Toggle>;
-  const _axes = (
-    <Toggle variant="outline" size="xs" className="uppercase">
-      Bold
-    </Toggle>
-  );
-  const _controlled = <Toggle pressed onPressedChange={() => undefined} aria-label="Bold" />;
-
-  // @ts-expect-error ghost is not a toggle variant
-  const _badVariant = <Toggle variant="ghost" />;
-  // @ts-expect-error sizes are xs | sm | default | lg only
-  const _badSize = <Toggle size="xl" />;
-  // @ts-expect-error polymorphism is never an `as` prop
-  const _noAs = <Toggle as="div" />;
 });

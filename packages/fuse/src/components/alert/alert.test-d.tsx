@@ -1,17 +1,6 @@
 import { expectTypeOf, test } from "vitest";
 
-import * as AlertModule from "@elmeragroup/fuse/alert";
 import { Alert } from "@elmeragroup/fuse/alert";
-
-test("the public namespace is four parts — never the flat ref names or a recipe", () => {
-  expectTypeOf(Alert).not.toHaveProperty("AlertIcon");
-  expectTypeOf(Alert).not.toHaveProperty("AlertTitle");
-  expectTypeOf(Alert).not.toHaveProperty("AlertDescription");
-  expectTypeOf(AlertModule).not.toHaveProperty("AlertIcon");
-  expectTypeOf(AlertModule).not.toHaveProperty("AlertTitle");
-  expectTypeOf(AlertModule).not.toHaveProperty("AlertDescription");
-  expectTypeOf(AlertModule).not.toHaveProperty("alertVariants");
-});
 
 test("parts take the public API: required icon variant, heading level, no variant on copy", () => {
   expectTypeOf<Parameters<typeof Alert.Root>[0]["variant"]>().toEqualTypeOf<

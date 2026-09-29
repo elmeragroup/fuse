@@ -34,6 +34,15 @@ function scratchPackage(files: Record<string, string>): string {
   return packageRoot;
 }
 
+/** A scratch package generation must refuse, and the message naming the fault. */
+type RefusedPackage = {
+  name: string;
+  files: Record<string, string>;
+  allow: readonly string[];
+  deferred?: readonly string[];
+  message: RegExp;
+};
+
 describe("barrel generation", () => {
   it("picks up an allowlisted scratch facade without editing shared files", () => {
     const packageRoot = scratchPackage({
@@ -57,41 +66,41 @@ describe("barrel generation", () => {
     expect(jsEntries.find((entry) => entry.subpath === ".")?.runtimeExports).toContain("Badge");
   });
 
-  it("fails generation when two barrel facades export the same value name", () => {
-    const packageRoot = scratchPackage({
-      "src/badge.ts": `export { Shared } from "./components/badge/badge";\n`,
-      "src/button.ts": `export { Shared } from "./components/button/button";\n`,
-    });
+  it.each<RefusedPackage>([
+    {
+      name: "two barrel facades export the same value name",
+      files: {
+        "src/badge.ts": `export { Shared } from "./components/badge/badge";\n`,
+        "src/button.ts": `export { Shared } from "./components/button/button";\n`,
+      },
+      allow: [".", "theme", "badge", "button"],
+      message: /Duplicate barrel export Shared from badge and button/,
+    },
+    ...(
+      [
+        ["exports a subset of the roster", ["ArrowLeft"]],
+        [
+          "adds a generic Icon to the full roster",
+          [...PHOSPHOR_ICON_NAMES, ...BESPOKE_ICON_NAMES, ...LOGO_NAMES, "BrandLogo", "Icon"],
+        ],
+      ] satisfies ReadonlyArray<readonly [string, readonly string[]]>
+    ).map(([drift, names]) => ({
+      name: `the icons facade ${drift}`,
+      files: { "src/icons.ts": `export { ${names.join(", ")} } from "./icons/generated";\n` },
+      allow: [".", "theme", "icons"],
+      message: /src\/icons\.ts facade exports do not match the icons roster/,
+    })),
+    {
+      name: "a non-deferred allowlisted entry has no source, naming the entry",
+      files: { "src/theme/theme-provider.ts": `export const ThemeProvider = 1;\n` },
+      allow: [".", "theme", "button"],
+      deferred: ["chart"],
+      message: /Missing source entry for button/,
+    },
+  ])("fails generation when $name", ({ files, allow, deferred, message }) => {
+    const packageRoot = scratchPackage(files);
 
-    expect(() => discoverJsEntriesFromAllowlist(packageRoot, [".", "theme", "badge", "button"])).toThrow(
-      /Duplicate barrel export Shared from badge and button/
-    );
-  });
-
-  it.each([
-    ["exports a subset of the roster", ["ArrowLeft"]],
-    [
-      "adds a generic Icon to the full roster",
-      [...PHOSPHOR_ICON_NAMES, ...BESPOKE_ICON_NAMES, ...LOGO_NAMES, "BrandLogo", "Icon"],
-    ],
-  ])("fails generation when the icons facade %s", (_drift, names) => {
-    const packageRoot = scratchPackage({
-      "src/icons.ts": `export { ${names.join(", ")} } from "./icons/generated";\n`,
-    });
-
-    expect(() => discoverJsEntriesFromAllowlist(packageRoot, [".", "theme", "icons"])).toThrow(
-      /src\/icons\.ts facade exports do not match the icons roster/
-    );
-  });
-
-  it("throws with the entry name when a non-deferred allowlisted entry has no source", () => {
-    const packageRoot = scratchPackage({
-      "src/theme/theme-provider.ts": `export const ThemeProvider = 1;\n`,
-    });
-
-    expect(() => discoverJsEntriesFromAllowlist(packageRoot, [".", "theme", "button"], ["chart"])).toThrow(
-      /Missing source entry for button/
-    );
+    expect(() => discoverJsEntriesFromAllowlist(packageRoot, allow, deferred)).toThrow(message);
   });
 
   it("omits a deferred entry from the produced map and counts allowlist minus deferred", () => {

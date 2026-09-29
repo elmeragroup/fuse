@@ -38,23 +38,23 @@ describe("overlayPopupSurfaceClass", () => {
     );
   });
 
-  it("yields the radius rung to a consumer that overrides it", () => {
-    expect(tokens(cn(overlayPopupSurfaceClass, "rounded-lg"))).not.toContain("rounded-md");
-    expect(tokens(cn(overlayPopupSurfaceClass, "rounded-lg"))).toContain("rounded-lg");
-  });
-
-  it("yields the elevation rung to a consumer that overrides it", () => {
-    const merged = tokens(cn(overlayPopupSurfaceClass, "shadow-lg"));
-    expect(merged).not.toContain("shadow-md");
-    expect(merged).toContain("shadow-lg");
-  });
-
-  it("yields the fill to a consumer that overrides both halves of it", () => {
-    const merged = tokens(cn(overlayPopupSurfaceClass, "bg-foreground text-background"));
-    expect(merged).not.toContain("bg-popover");
-    expect(merged).not.toContain("text-popover-foreground");
-    expect(merged).toContain("bg-foreground");
-    expect(merged).toContain("text-background");
+  it.each([
+    ["radius rung", "rounded-lg", ["rounded-md"], ["rounded-lg"]],
+    ["elevation rung", "shadow-lg", ["shadow-md"], ["shadow-lg"]],
+    [
+      "fill, both halves of it",
+      "bg-foreground text-background",
+      ["bg-popover", "text-popover-foreground"],
+      ["bg-foreground", "text-background"],
+    ],
+  ])("yields the %s to a consumer that overrides it", (_rung, override, yielded, kept) => {
+    const merged = tokens(cn(overlayPopupSurfaceClass, override));
+    for (const token of yielded) {
+      expect(merged).not.toContain(token);
+    }
+    for (const token of kept) {
+      expect(merged).toContain(token);
+    }
   });
 
   it("does NOT let a consumer subtract the ring — the reason Tooltip composes the parts", () => {

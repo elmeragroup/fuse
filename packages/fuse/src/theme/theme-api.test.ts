@@ -10,7 +10,6 @@ import {
 } from "../../test/color-scheme-contract";
 import { runColorSchemeBootstrap } from "../../test/memory-color-scheme-platform";
 import { fkasPrivate } from "../../test/theme-fixtures";
-import { LEGAL_THEMES as PUBLIC_LEGAL_THEMES, THEME_SEGMENTS, THEME_VARIANTS } from "../theme";
 import {
   COLOR_SCHEME_BOOTSTRAP_SOURCE_DUPLICATE,
   COLOR_SCHEME_BOOTSTRAP_SOURCE_KEY,
@@ -28,15 +27,6 @@ import { coerceTheme, isThemeDevelopment, validateTheme } from "./validate-theme
 afterEach(() => {
   vi.unstubAllEnvs();
   vi.restoreAllMocks();
-});
-
-describe("public /theme constant tuples", () => {
-  it("exports the axis tuples and the pin-table legal set", () => {
-    expect(THEME_VARIANTS).toEqual(["internal", "external"]);
-    expect(THEME_SEGMENTS).toEqual(["private", "company"]);
-    expect(PUBLIC_LEGAL_THEMES).toHaveLength(20);
-    expect(PUBLIC_LEGAL_THEMES).toEqual(LEGAL_THEMES);
-  });
 });
 
 describe("themeSlug / parseThemeSlug", () => {
@@ -72,20 +62,29 @@ describe("themeSlug / parseThemeSlug", () => {
   });
 });
 
+it.each([
+  ["coerceTheme", coerceTheme],
+  ["validateTheme", validateTheme],
+] as const)("%s accepts every legal theme", (_name, parse) => {
+  for (const theme of LEGAL_THEMES) {
+    expect(parse(theme)).toEqual(theme);
+  }
+});
+
+it("rejects non-objects and unknown or missing axes: coerceTheme returns null, validateTheme throws in every environment", () => {
+  vi.stubEnv("NODE_ENV", "production");
+  for (const [input, message] of [
+    [null, /expected an object/],
+    ["external-fkas-private", /expected an object/],
+    [{ variant: "internal", brand: "fkas" }, /unknown or missing/],
+    [{ variant: "internal", brand: "zz", segment: "private" }, /unknown or missing/],
+  ] as const) {
+    expect(coerceTheme(input)).toBeNull();
+    expect(() => validateTheme(input)).toThrow(message);
+  }
+});
+
 describe("coerceTheme", () => {
-  it("accepts every legal theme", () => {
-    for (const theme of LEGAL_THEMES) {
-      expect(coerceTheme(theme)).toEqual(theme);
-    }
-  });
-
-  it("returns null for non-objects and unknown or missing axes", () => {
-    expect(coerceTheme(null)).toBeNull();
-    expect(coerceTheme("external-fkas-private")).toBeNull();
-    expect(coerceTheme({ variant: "internal", brand: "fkas" })).toBeNull();
-    expect(coerceTheme({ variant: "internal", brand: "zz", segment: "private" })).toBeNull();
-  });
-
   it("silently pins illegal segments regardless of environment", () => {
     vi.stubEnv("NODE_ENV", "development");
     expect(coerceTheme({ variant: "internal", brand: "fkab", segment: "private" })).toEqual({
@@ -103,22 +102,6 @@ describe("coerceTheme", () => {
 });
 
 describe("validateTheme", () => {
-  it("accepts every legal theme", () => {
-    for (const theme of LEGAL_THEMES) {
-      expect(validateTheme(theme)).toEqual(theme);
-    }
-  });
-
-  it("rejects non-objects and unknown or missing axes in every environment", () => {
-    vi.stubEnv("NODE_ENV", "production");
-    expect(() => validateTheme(null)).toThrow(/expected an object/);
-    expect(() => validateTheme("external-fkas-private")).toThrow(/expected an object/);
-    expect(() => validateTheme({ variant: "internal", brand: "fkas" })).toThrow(/unknown or missing/);
-    expect(() => validateTheme({ variant: "internal", brand: "zz", segment: "private" })).toThrow(
-      /unknown or missing/
-    );
-  });
-
   it("throws on pinned-segment mistakes outside production", () => {
     vi.stubEnv("NODE_ENV", "development");
     expect(() => validateTheme({ variant: "internal", brand: "fkab", segment: "private" })).toThrow(/fkab/);

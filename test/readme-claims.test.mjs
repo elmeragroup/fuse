@@ -41,7 +41,7 @@ function packageMapRows() {
 describe("README script claims", () => {
   const rootScripts = packageScripts(".");
 
-  it("names only root scripts that exist", () => {
+  it("names only scripts that exist, at the root or in the filtered workspace", () => {
     const rootClaims = claimedCommands().filter((command) => !command.startsWith("--filter"));
     for (const claim of rootClaims) {
       const [script] = claim.split(/\s+/);
@@ -50,9 +50,7 @@ describe("README script claims", () => {
       }
       expect(Object.keys(rootScripts), `README claims \`pnpm ${claim}\``).toContain(script);
     }
-  });
 
-  it("names only filtered workspace scripts that exist in that workspace", () => {
     const workspaceDirectoryByName = new Map(
       packageMapRows().map((row) => /** @type {const} */ ([row.name, row.path]))
     );

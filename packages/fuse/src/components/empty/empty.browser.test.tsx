@@ -17,20 +17,9 @@ describe("Empty", () => {
       </Empty.Root>
     );
     expect(textNamed("No orders yet").tagName).toBe("DIV");
+    expect(page.getByRole("heading").elements()).toHaveLength(0);
     expect(textNamed("Orders you create will show up here.").tagName).toBe("P");
     expect(textNamed("Create order").tagName).toBe("DIV");
-  });
-
-  it("does not emit a heading role from Title", () => {
-    renderThemed(
-      <Empty.Root>
-        <Empty.Header>
-          <Empty.Title>No orders yet</Empty.Title>
-        </Empty.Header>
-      </Empty.Root>
-    );
-    expect(page.getByRole("heading").elements()).toHaveLength(0);
-    expect(textNamed("No orders yet").tagName).toBe("DIV");
   });
 
   it("emits empty-media and data-variant on Media", () => {

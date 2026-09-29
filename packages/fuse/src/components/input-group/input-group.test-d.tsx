@@ -3,20 +3,16 @@ import { expectTypeOf, test } from "vitest";
 import { InputGroup } from "@elmeragroup/fuse/input-group";
 import type { InputGroupAddonProps, InputGroupButtonProps } from "@elmeragroup/fuse/input-group";
 
-test("the addon align axis is the four public values", () => {
+test("the parts take the four-value addon align axis, the compact non-submitting button, and no polymorphic as prop", () => {
   expectTypeOf<InputGroupAddonProps["align"]>().toEqualTypeOf<
     "inline-start" | "inline-end" | "block-start" | "block-end" | undefined
   >();
-});
 
-test("the button takes the local compact size subset and a non-submitting type", () => {
   expectTypeOf<InputGroupButtonProps["size"]>().toEqualTypeOf<
     "xs" | "sm" | "icon-xs" | "icon-sm" | undefined
   >();
   expectTypeOf<InputGroupButtonProps["type"]>().toEqualTypeOf<"button" | "submit" | "reset" | undefined>();
-});
 
-test("the parts take the public props and no polymorphic as prop", () => {
   const _grouped = (
     <InputGroup.Root>
       <InputGroup.Addon align="inline-start">

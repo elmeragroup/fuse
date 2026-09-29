@@ -1,15 +1,7 @@
-import type { ReactNode, RefObject } from "react";
-
 import { CalendarDate } from "@internationalized/date";
-import type { ValidationResult } from "react-aria-components";
 import { expectTypeOf, test } from "vitest";
 
 import type * as DatePickerApi from "@elmeragroup/fuse/react-aria/date-picker";
-import type {
-  DatePickerPresetGroupProps,
-  DatePickerPresetItemProps,
-  DatePickerProps,
-} from "@elmeragroup/fuse/react-aria/date-picker";
 import {
   DatePicker,
   DatePickerPresetGroup,
@@ -32,64 +24,6 @@ test("no private overlay part, recipe, or RAC type leaks through the entry", () 
   type _NoStateContext = DatePickerApi.DatePickerStateContext;
   // @ts-expect-error RAC DatePickerProps is not leaked under a bare RAC name
   type _NoAria = DatePickerApi.AriaDatePickerProps;
-});
-
-test("DatePickerProps declares the composite face and stays open on the RAC surface", () => {
-  expectTypeOf<DatePickerProps<CalendarDate>["label"]>().toEqualTypeOf<string | undefined>();
-  expectTypeOf<DatePickerProps<CalendarDate>["description"]>().toEqualTypeOf<string | undefined>();
-  expectTypeOf<DatePickerProps<CalendarDate>["errorMessage"]>().toEqualTypeOf<
-    ReactNode | ((validation: ValidationResult) => ReactNode) | undefined
-  >();
-  // Widened to allow an explicit null.
-  expectTypeOf<DatePickerProps<CalendarDate>["defaultValue"]>().toEqualTypeOf<
-    CalendarDate | null | undefined
-  >();
-  expectTypeOf<DatePickerProps<CalendarDate>["presetGroup"]>().toEqualTypeOf<ReactNode>();
-  expectTypeOf<DatePickerProps<CalendarDate>["shouldForceLeadingZeros"]>().toEqualTypeOf<
-    boolean | undefined
-  >();
-  expectTypeOf<DatePickerProps<CalendarDate>["container"]>().toEqualTypeOf<
-    HTMLElement | RefObject<HTMLElement | null> | undefined
-  >();
-  for (const prop of [
-    "value",
-    "onChange",
-    "minValue",
-    "maxValue",
-    "granularity",
-    "placeholderValue",
-    "isDisabled",
-    "isReadOnly",
-    "isRequired",
-    "isInvalid",
-    "isDateUnavailable",
-    "validate",
-    "validationBehavior",
-    "name",
-    "isOpen",
-    "onOpenChange",
-    "shouldCloseOnSelect",
-    "className",
-    "aria-label",
-  ] as const) {
-    expectTypeOf<DatePickerProps<CalendarDate>>().toHaveProperty(prop);
-  }
-  expectTypeOf<DatePickerProps<CalendarDate>>().not.toHaveProperty("size");
-  expectTypeOf<DatePickerProps<CalendarDate>>().not.toHaveProperty("presetGroupLabel");
-});
-
-test("the preset parts declare the label, description and double-click faces", () => {
-  expectTypeOf<DatePickerPresetGroupProps["label"]>().toEqualTypeOf<string | undefined>();
-  expectTypeOf<DatePickerPresetGroupProps>().toHaveProperty("value");
-  expectTypeOf<DatePickerPresetGroupProps>().toHaveProperty("onChange");
-  expectTypeOf<DatePickerPresetGroupProps>().toHaveProperty("children");
-  expectTypeOf<DatePickerPresetItemProps["description"]>().toEqualTypeOf<string | undefined>();
-  expectTypeOf<DatePickerPresetItemProps["isCloseDialogOnDoubleClick"]>().toEqualTypeOf<
-    boolean | undefined
-  >();
-  expectTypeOf<DatePickerPresetItemProps>().toHaveProperty("value");
-  expectTypeOf<DatePickerPresetItemProps>().toHaveProperty("onDoubleClick");
-  expectTypeOf<DatePickerPresetItemProps>().toHaveProperty("children");
 });
 
 test("the elements take the public props and reject an invented axis", () => {

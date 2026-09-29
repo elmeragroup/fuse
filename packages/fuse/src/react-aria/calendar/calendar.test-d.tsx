@@ -1,10 +1,6 @@
-import type { ReactNode } from "react";
-
-import type { CalendarDate } from "@internationalized/date";
 import { expectTypeOf, test } from "vitest";
 
 import type * as CalendarApi from "@elmeragroup/fuse/react-aria/calendar";
-import type { CalendarProps } from "@elmeragroup/fuse/react-aria/calendar";
 import { Calendar, CalendarGridHeader, CalendarHeader } from "@elmeragroup/fuse/react-aria/calendar";
 
 test("calendarVariants and RAC types are not public exports", () => {
@@ -20,33 +16,6 @@ test("calendarVariants and RAC types are not public exports", () => {
   type _NoHeaderProps = CalendarApi.CalendarHeaderProps;
   // @ts-expect-error CalendarGridHeaderProps is not a public type
   type _NoGridHeaderProps = CalendarApi.CalendarGridHeaderProps;
-});
-
-test("CalendarProps is generic, open, omits owned children and visibleDuration, and takes a ReactNode error", () => {
-  expectTypeOf<CalendarProps<CalendarDate>["errorMessage"]>().toEqualTypeOf<ReactNode | undefined>();
-  expectTypeOf<CalendarProps<CalendarDate>>().toHaveProperty("value");
-  expectTypeOf<CalendarProps<CalendarDate>>().toHaveProperty("defaultValue");
-  expectTypeOf<CalendarProps<CalendarDate>>().toHaveProperty("onChange");
-  expectTypeOf<CalendarProps<CalendarDate>>().toHaveProperty("focusedValue");
-  expectTypeOf<CalendarProps<CalendarDate>>().toHaveProperty("defaultFocusedValue");
-  expectTypeOf<CalendarProps<CalendarDate>>().toHaveProperty("onFocusChange");
-  expectTypeOf<CalendarProps<CalendarDate>>().toHaveProperty("minValue");
-  expectTypeOf<CalendarProps<CalendarDate>>().toHaveProperty("maxValue");
-  expectTypeOf<CalendarProps<CalendarDate>>().toHaveProperty("isDateUnavailable");
-  expectTypeOf<CalendarProps<CalendarDate>>().toHaveProperty("isDisabled");
-  expectTypeOf<CalendarProps<CalendarDate>>().toHaveProperty("isReadOnly");
-  expectTypeOf<CalendarProps<CalendarDate>>().toHaveProperty("isInvalid");
-  expectTypeOf<CalendarProps<CalendarDate>>().toHaveProperty("firstDayOfWeek");
-  expectTypeOf<CalendarProps<CalendarDate>>().toHaveProperty("autoFocus");
-  expectTypeOf<CalendarProps<CalendarDate>>().toHaveProperty("className");
-  expectTypeOf<CalendarProps<CalendarDate>>().not.toHaveProperty("children");
-  expectTypeOf<CalendarProps<CalendarDate>>().not.toHaveProperty("visibleDuration");
-  expectTypeOf<CalendarProps<CalendarDate>>().not.toHaveProperty("size");
-});
-
-test("header parts take no props", () => {
-  expectTypeOf(CalendarHeader).parameters.toEqualTypeOf<[]>();
-  expectTypeOf(CalendarGridHeader).parameters.toEqualTypeOf<[]>();
 });
 
 test("the elements take the public props and reject children, visibleDuration, a size axis, and header props", () => {

@@ -208,8 +208,8 @@ describe("Dialog", () => {
     });
   });
 
-  it("closes from the corner button and drops it when showCloseButton is false", async () => {
-    const { rerender } = renderThemed(withLocale("en-US", <BasicDialog />));
+  it("closes from the corner button, drops it when showCloseButton is false, names it in every locale, and lets closeLabel win", async () => {
+    const { rerender, unmount: unmountBasic } = renderThemed(withLocale("en-US", <BasicDialog />));
     await openDialog();
     const corner = page.getByRole("button", { name: "Close", exact: true }).element();
     expect(corner.getAttribute("data-slot")).toBe("dialog-close");
@@ -223,9 +223,8 @@ describe("Dialog", () => {
     rerender(withLocale("en-US", <BasicDialog showCloseButton={false} />));
     await openDialog();
     expect(page.getByRole("button", { name: "Close", exact: true }).query()).toBeNull();
-  });
+    unmountBasic();
 
-  it("renders the corner close button in every locale and lets closeLabel win", async () => {
     for (const locale of SUPPORTED_LOCALES) {
       const { unmount } = renderThemed(withLocale(locale, <BasicDialog />));
       await openDialog();
@@ -243,8 +242,8 @@ describe("Dialog", () => {
     unmount();
   });
 
-  it("renders the Footer close action with the locale label and closes with it", async () => {
-    renderThemed(
+  it("renders the Footer close action with the locale label, closes with it, and lets closeLabel win", async () => {
+    const { unmount } = renderThemed(
       withLocale(
         "sv-SE",
         <Dialog.Root>
@@ -266,9 +265,8 @@ describe("Dialog", () => {
     await vi.waitFor(() => {
       expect(page.getByRole("dialog").query()).toBeNull();
     });
-  });
+    unmount();
 
-  it("overrides the Footer close label from closeLabel", async () => {
     renderThemed(
       withLocale(
         "nb-NO",

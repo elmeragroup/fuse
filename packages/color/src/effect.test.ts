@@ -6,17 +6,14 @@ import * as ColorEffect from "./effect.ts";
 import { InvalidColor } from "./invalid-color.ts";
 
 describe("toEffect", () => {
-  it("fails an Effect program with a tagged error it can recover from", () => {
-    const program = Effect.gen(function* () {
+  it("succeeds with the parsed color and fails with a tagged error a program can recover from", () => {
+    const success = Effect.map(ColorEffect.toEffect(CssColor.parse("#5c6773")), CssColor.toSrgb);
+    expect(Effect.runSync(success)).toMatchObject({ r: 92 / 255, g: 103 / 255, b: 115 / 255, alpha: 1 });
+    const failure = Effect.gen(function* () {
       const color = yield* ColorEffect.toEffect(CssColor.parse("oklch(0.5 0.1)"));
       return CssColor.toSrgb(color);
     }).pipe(Effect.catchTag("InvalidColor", (error) => Effect.succeed(error.notation)));
-    expect(Effect.runSyncExit(program)).toEqual(Exit.succeed("oklch"));
-  });
-
-  it("succeeds with the parsed color", () => {
-    const program = Effect.map(ColorEffect.toEffect(CssColor.parse("#5c6773")), CssColor.toSrgb);
-    expect(Effect.runSync(program)).toMatchObject({ r: 92 / 255, g: 103 / 255, b: 115 / 255, alpha: 1 });
+    expect(Effect.runSyncExit(failure)).toEqual(Exit.succeed("oklch"));
   });
 });
 

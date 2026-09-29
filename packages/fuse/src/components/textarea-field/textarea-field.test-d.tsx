@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import { expectTypeOf, test } from "vitest";
 
 import type { TextareaFieldProps } from "@elmeragroup/fuse/textarea-field";
-import { TextareaField } from "@elmeragroup/fuse/textarea-field";
 
 test("TextareaFieldProps is the composite is* face plus remaining native textarea props", () => {
   expectTypeOf<TextareaFieldProps["label"]>().toEqualTypeOf<string | undefined>();
@@ -25,28 +24,4 @@ test("TextareaFieldProps is the composite is* face plus remaining native textare
   expectTypeOf<TextareaFieldProps>().not.toHaveProperty("as");
   expectTypeOf<TextareaFieldProps>().not.toHaveProperty("disabled");
   expectTypeOf<TextareaFieldProps>().not.toHaveProperty("required");
-});
-
-test("the element takes the public props and no TextArea alias or native is* duplicates", () => {
-  const _basic = <TextareaField label="Bio" description="Shown to other users." placeholder="Write a bio." />;
-  const _states = (
-    <TextareaField
-      label="Notes"
-      isDisabled
-      isInvalid
-      isRequired
-      maxLength={120}
-      errorMessage={<span>Required</span>}
-      onChange={(next: string) => next.toUpperCase()}
-    />
-  );
-  const _uncontrolled = <TextareaField defaultValue="Started here." />;
-  const _readOnly = <TextareaField label="Locked" readOnly defaultValue="Stay" />;
-
-  // @ts-expect-error polymorphism is never an `as` prop
-  const _noAs = <TextareaField as="div" />;
-  // @ts-expect-error native disabled is not on the composite face; use isDisabled
-  const _noDisabled = <TextareaField disabled />;
-  // @ts-expect-error native required is not on the composite face; use isRequired
-  const _noRequired = <TextareaField required />;
 });

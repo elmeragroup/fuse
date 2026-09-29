@@ -9,7 +9,7 @@ const OLD_RELEASE_CLAIMS = [
 ] as const;
 
 describe("release readiness copy", () => {
-  it("marks automated publishing and previews as pending target state", async () => {
+  it("marks automated publishing and previews as pending target state, without the old unconditional claims", async () => {
     const html = await fetchText("/releases");
     expect(html, "releases must say automated publish/preview infrastructure is not active yet").toContain(
       "not active yet"
@@ -58,10 +58,6 @@ describe("release readiness copy", () => {
       html,
       "releases must frame Trusted Publishing/OIDC and provenance as pending target controls"
     ).toContain("pending target controls");
-  });
-
-  it("does not keep the old unconditional publish, preview, or Trusted Publisher claims", async () => {
-    const html = await fetchText("/releases");
     expect(html, "releases must not claim that merging a release PR publishes today").not.toContain(
       OLD_RELEASE_CLAIMS[0]
     );

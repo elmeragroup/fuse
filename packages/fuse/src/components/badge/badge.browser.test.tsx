@@ -44,6 +44,8 @@ describe("Badge", () => {
     expect(badge.tagName).toBe("DIV");
     expect(badge.textContent).toBe("Active");
     expect(badge.getAttribute("data-slot")).toBe("badge");
+    expect(getComputedStyle(badge).display).toBe("inline-flex");
+    expect(getComputedStyle(badge).borderTopWidth).toBe("1px");
   });
 
   it("stays non-interactive: no role, no tabindex, no focus ring", () => {
@@ -54,13 +56,14 @@ describe("Badge", () => {
     expect(getComputedStyle(badge).boxShadow).not.toContain("inset");
   });
 
-  it("paints the default variant from the primary role token", () => {
-    renderThemed(<Badge>Active</Badge>);
+  it.each([
+    ["default", undefined, "--primary", "--primary-foreground"],
+    ["destructive", "destructive", "--error", "--error-foreground"],
+  ] as const)("paints the %s variant from its role tokens", (_label, variant, background, foreground) => {
+    renderThemed(<Badge variant={variant}>Active</Badge>);
     const badge = badgeNamed("Active");
-    expect(getComputedStyle(badge).backgroundColor).toBe(cssVarColor(badge, "--primary"));
-    expect(getComputedStyle(badge).color).toBe(cssVarColor(badge, "--primary-foreground"));
-    expect(getComputedStyle(badge).display).toBe("inline-flex");
-    expect(getComputedStyle(badge).borderTopWidth).toBe("1px");
+    expect(getComputedStyle(badge).backgroundColor).toBe(cssVarColor(badge, background));
+    expect(getComputedStyle(badge).color).toBe(cssVarColor(badge, foreground));
   });
 
   it("pairs the info variant's soft surface and foreground", () => {
@@ -71,13 +74,6 @@ describe("Badge", () => {
     expect(styles.borderTopColor).not.toBe("rgba(0, 0, 0, 0)");
     expect(styles.backgroundColor).not.toBe(styles.borderTopColor);
     expect(styles.color).toBe(cssVarColor(badge, "--info-soft-foreground"));
-  });
-
-  it("renders the destructive variant on the error token", () => {
-    renderThemed(<Badge variant="destructive">Cancelled</Badge>);
-    const badge = badgeNamed("Cancelled");
-    expect(getComputedStyle(badge).backgroundColor).toBe(cssVarColor(badge, "--error"));
-    expect(getComputedStyle(badge).color).toBe(cssVarColor(badge, "--error-foreground"));
   });
 
   it("scales padding and type across the three decorative sizes", () => {
