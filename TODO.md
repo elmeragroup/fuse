@@ -21,10 +21,6 @@
 - Add first-paint fixtures for the written Next Pages, TanStack Start and React Router recipes.
 - Finish release activation, packed Next/Vite fixtures and authentication work in
   [the release runbook](scripts/RELEASE.md).
-- Ask `@elmeragroup/internal` to accept Changesets plan entries without `newVersion`.
-  Changesets omits it for an unversioned private package, and the engine decodes every
-  entry before keeping the public one, so the first canary publish failed until `apps/docs`
-  and `apps/static-theme` gained `"version": "0.0.0"`.
 - After upstream tooling uses stable Effect 4 and the release-age guard admits it,
   upgrade and remove prerelease exclusions unless another exception is justified.
 - Retire repo-policy workarounds when upstream lint can require disable reasons
