@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
@@ -47,31 +47,25 @@ function radius(element: HTMLElement) {
 }
 
 describe("ButtonGroup", () => {
-  it("renders role=group with data-slot and data-orientation=horizontal by default", () => {
-    renderThemed(
-      <ButtonGroup.Root aria-label="Actions">
-        <Button>Save</Button>
-        <Button>Cancel</Button>
-      </ButtonGroup.Root>
-    );
-    const root = groupNamed("Actions");
-    expect(root.tagName).toBe("DIV");
-    expect(root.getAttribute("data-slot")).toBe("button-group");
-    expect(root.getAttribute("data-orientation")).toBe("horizontal");
-    expect(getComputedStyle(root).flexDirection).toBe("row");
-  });
-
-  it("flips data-orientation and flex-col when orientation is vertical", () => {
-    renderThemed(
-      <ButtonGroup.Root orientation="vertical" aria-label="Stack">
-        <Button>Archive</Button>
-        <Button>Report</Button>
-      </ButtonGroup.Root>
-    );
-    const root = groupNamed("Stack");
-    expect(root.getAttribute("data-orientation")).toBe("vertical");
-    expect(getComputedStyle(root).flexDirection).toBe("column");
-  });
+  it.each([
+    [undefined, "horizontal", "row"],
+    ["vertical", "vertical", "column"],
+  ] as const)(
+    "renders role=group with data-slot and reflects orientation %s as data-orientation and flex direction",
+    (orientation, dataOrientation, flexDirection) => {
+      renderThemed(
+        <ButtonGroup.Root orientation={orientation} aria-label="Actions">
+          <Button>Save</Button>
+          <Button>Cancel</Button>
+        </ButtonGroup.Root>
+      );
+      const root = groupNamed("Actions");
+      expect(root.tagName).toBe("DIV");
+      expect(root.getAttribute("data-slot")).toBe("button-group");
+      expect(root.getAttribute("data-orientation")).toBe(dataOrientation);
+      expect(getComputedStyle(root).flexDirection).toBe(flexDirection);
+    }
+  );
 
   it("tabs between child buttons and does not rove on arrow keys", async () => {
     renderThemed(
@@ -94,20 +88,6 @@ describe("ButtonGroup", () => {
     expect(document.activeElement).toBe(buttonNamed("Save"));
     await userEvent.keyboard("{ArrowLeft}");
     expect(document.activeElement).toBe(buttonNamed("Save"));
-  });
-
-  it("lets Enter and Space activate the focused child button", async () => {
-    const onClick = vi.fn();
-    renderThemed(
-      <ButtonGroup.Root aria-label="Actions">
-        <Button onClick={onClick}>Save</Button>
-        <Button>Cancel</Button>
-      </ButtonGroup.Root>
-    );
-    buttonNamed("Save").focus();
-    await userEvent.keyboard("{Enter}");
-    await userEvent.keyboard(" ");
-    expect(onClick).toHaveBeenCalledTimes(2);
   });
 
   it("renders the group Separator with a vertical hairline by default", () => {

@@ -18,7 +18,7 @@ test("the namespace ships all ten parts from the dialog entry and the root barre
   expectTypeOf(Dialog).toHaveProperty("Description");
 });
 
-test("Content carries the 13-value overlay width axis and the close affordance props", () => {
+test("Content carries the 13-value overlay width axis and the close affordance props, and parts take useRender's render prop but never a polymorphic as prop", () => {
   expectTypeOf<DialogContentProps["size"]>().toEqualTypeOf<
     | "sm"
     | "md"
@@ -48,9 +48,7 @@ test("Content carries the 13-value overlay width axis and the close affordance p
   const _badSize = <Dialog.Content size="xs" />;
   // @ts-expect-error dialogContentVariants is package-private; no recipe prop leaks
   const _noVariant = <Dialog.Content variant="ghost" />;
-});
 
-test("parts take useRender's render prop and never a polymorphic as prop", () => {
   const _trigger = <Dialog.Trigger render={<button type="button" />} />;
   const _title = <Dialog.Title render={<h2 />} />;
 

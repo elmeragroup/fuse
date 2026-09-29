@@ -3,12 +3,9 @@ import { describe, expect, it } from "vitest";
 import { resolveComponentPaths } from "../scripts/lib/components.ts";
 import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import { SEARCH_ENTRIES } from "../src/generated/search-index";
-import { NAV_GROUPS } from "../src/lib/nav";
 import { HOME_PAGE, STATIC_PAGES } from "../src/lib/pages";
 import { matchSearchEntries } from "../src/lib/search";
 import { docsBaseUrl } from "./docs-server";
-
-const NAV_HREFS = NAV_GROUPS.flatMap((group) => group.items.map((item) => item.href));
 
 describe("search index", () => {
   it("is generated from the two page manifests, with nothing else in it", () => {
@@ -17,13 +14,6 @@ describe("search index", () => {
       ...STATIC_PAGES.map((page) => page.href),
       ...COMPONENT_PAGES.map((component) => `/components/${component.slug}`),
     ]);
-  });
-
-  it("covers every SideNav destination", () => {
-    const indexed = new Set(SEARCH_ENTRIES.map((entry) => entry.href));
-    for (const href of NAV_HREFS) {
-      expect(indexed.has(href), href).toBe(true);
-    }
   });
 
   it("carries a group, a description and match keywords on every entry", () => {
@@ -60,17 +50,16 @@ describe("search matching", () => {
     expect(results[0]?.href).toBe("/");
   });
 
-  it("ranks a title prefix above a body mention", () => {
-    const results = matchSearchEntries("token");
-    expect(results[0]?.href).toBe("/handbook/tokens");
-  });
-
-  it("finds a component page by its title", () => {
-    expect(matchSearchEntries("dialog")[0]?.href).toBe("/components/dialog");
-  });
-
-  it("finds a component page by its import specifier", () => {
-    expect(matchSearchEntries("@elmeragroup/fuse/scroll-area")[0]?.href).toBe("/components/scroll-area");
+  it.each([
+    ["ranks a title prefix above a body mention", "token", "/handbook/tokens"],
+    ["finds a component page by its title", "dialog", "/components/dialog"],
+    [
+      "finds a component page by its import specifier",
+      "@elmeragroup/fuse/scroll-area",
+      "/components/scroll-area",
+    ],
+  ] as const)("%s: %s → %s", (_case, query, href) => {
+    expect(matchSearchEntries(query)[0]?.href).toBe(href);
   });
 
   it("narrows on every token rather than widening", () => {

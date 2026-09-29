@@ -18,7 +18,7 @@ import { join } from "node:path";
 const ENTRY = /^([0-9a-f]{16})(?:\.tar\.zst|-[a-z]+\.json)$/u;
 
 /** Cache files that no kept hash owns. Files outside the entry naming stay untouched. */
-export function staleCacheFiles(files: readonly string[], keep: ReadonlySet<string>): string[] {
+function staleCacheFiles(files: readonly string[], keep: ReadonlySet<string>): string[] {
   return files.filter((file) => {
     const hash = ENTRY.exec(file)?.[1];
     return hash !== undefined && !keep.has(hash);
@@ -29,7 +29,7 @@ export function staleCacheFiles(files: readonly string[], keep: ReadonlySet<stri
 const RunSummary = Schema.Struct({ tasks: Schema.Array(Schema.Struct({ hash: Schema.String })) });
 
 /** Every task hash recorded by the run summaries in `runsDir`. */
-export function summarizedHashes(runsDir: string): Set<string> {
+function summarizedHashes(runsDir: string): Set<string> {
   const hashes = new Set<string>();
   for (const file of readdirSync(runsDir).filter((name) => name.endsWith(".json"))) {
     let summary: typeof RunSummary.Type;

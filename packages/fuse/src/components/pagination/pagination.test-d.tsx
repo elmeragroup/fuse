@@ -1,20 +1,7 @@
 import { expectTypeOf, test } from "vitest";
 
-import type { Pagination as RootPagination } from "@elmeragroup/fuse";
 import * as PaginationModule from "@elmeragroup/fuse/pagination";
-import { Pagination, paginationVariants } from "@elmeragroup/fuse/pagination";
-
-test("Pagination and paginationVariants ship from the pagination entry and the root barrel", () => {
-  expectTypeOf<typeof Pagination>().toEqualTypeOf<typeof RootPagination>();
-  expectTypeOf(Pagination.Root).toBeFunction();
-  expectTypeOf(Pagination.Content).toBeFunction();
-  expectTypeOf(Pagination.Item).toBeFunction();
-  expectTypeOf(Pagination.Link).toBeFunction();
-  expectTypeOf(Pagination.Previous).toBeFunction();
-  expectTypeOf(Pagination.Next).toBeFunction();
-  expectTypeOf(Pagination.Ellipsis).toBeFunction();
-  expectTypeOf(paginationVariants).toBeFunction();
-});
+import { Pagination } from "@elmeragroup/fuse/pagination";
 
 test("the public namespace is seven parts plus the public recipe — never the flat ref names", () => {
   expectTypeOf(Pagination).not.toHaveProperty("PaginationContent");
@@ -103,10 +90,4 @@ test("parts take the public API: no locale, no consumer direction, no as prop", 
   const _nextChildren = <Pagination.Next href="#">nope</Pagination.Next>;
   // @ts-expect-error Ellipsis owns its children
   const _ellipsisChildren = <Pagination.Ellipsis>nope</Pagination.Ellipsis>;
-});
-
-test("paginationVariants is public and returns slotted class builders", () => {
-  expectTypeOf(paginationVariants().base()).toBeString();
-  expectTypeOf(paginationVariants({ direction: "previous" }).link()).toBeString();
-  expectTypeOf(paginationVariants({ direction: "next" }).link()).toBeString();
 });

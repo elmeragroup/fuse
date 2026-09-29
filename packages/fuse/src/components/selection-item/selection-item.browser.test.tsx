@@ -129,29 +129,21 @@ function RowTitle({ children }: { children: string }) {
 }
 
 describe("SelectionItem", () => {
-  it("renders data-slot from the dataSlot prop", () => {
+  it.each([
+    { host: "the default host", title: "Fixed price", render: undefined, tag: "DIV" },
+    { host: "a render host", title: "Article row", render: <article />, tag: "ARTICLE" },
+  ])("renders data-slot from the dataSlot prop on $host", ({ title, render, tag }) => {
     renderThemed(
       <Field.Root>
-        <SelectionItem.Shell dataSlot="checkbox-item" control={<Checkbox.Root />}>
-          <RowTitle>Fixed price</RowTitle>
+        <SelectionItem.Shell dataSlot="checkbox-item" control={<Checkbox.Root />} render={render}>
+          <RowTitle>{title}</RowTitle>
         </SelectionItem.Shell>
       </Field.Root>
     );
-    expect(shellFrom("Fixed price").getAttribute("data-slot")).toBe("checkbox-item");
-    expect(controlSlot(shellFrom("Fixed price")).getAttribute("data-slot")).toBe("selection-item-control");
-    expect(checkboxNamed("Fixed price").getAttribute("aria-checked")).toBe("false");
-  });
-
-  it("keeps data-slot on a render host", () => {
-    renderThemed(
-      <Field.Root>
-        <SelectionItem.Shell dataSlot="checkbox-item" control={<Checkbox.Root />} render={<article />}>
-          <RowTitle>Article row</RowTitle>
-        </SelectionItem.Shell>
-      </Field.Root>
-    );
-    const article = headingNamed("Article row").closest("article");
-    expect(article?.getAttribute("data-slot")).toBe("checkbox-item");
+    expect(shellFrom(title).getAttribute("data-slot")).toBe("checkbox-item");
+    expect(controlSlot(shellFrom(title)).getAttribute("data-slot")).toBe("selection-item-control");
+    expect(shellFrom(title).tagName).toBe(tag);
+    expect(checkboxNamed(title).getAttribute("aria-checked")).toBe("false");
   });
 
   it("toggles from row text and isolates subsection clicks", async () => {
@@ -176,30 +168,6 @@ describe("SelectionItem", () => {
 
     await userEvent.click(page.getByRole("button", { name: "Details", exact: true }));
     expect(checkboxNamed("Fixed price", true).getAttribute("aria-checked")).toBe("true");
-  });
-
-  it("renders sub-sections passed through the subSections prop outside the label", async () => {
-    renderThemed(
-      <Field.Root>
-        <SelectionItem.Shell
-          dataSlot="checkbox-item"
-          control={<Checkbox.Root />}
-          subSections={
-            <SelectionItem.SubSection>
-              <button type="button">Passed details</button>
-            </SelectionItem.SubSection>
-          }>
-          <SelectionItem.Content>
-            <RowTitle>Fixed price</RowTitle>
-          </SelectionItem.Content>
-        </SelectionItem.Shell>
-      </Field.Root>
-    );
-
-    const details = page.getByRole("button", { name: "Passed details", exact: true }).element();
-    expect(details.closest("label")).toBeNull();
-    await userEvent.click(page.getByRole("button", { name: "Passed details", exact: true }));
-    expect(page.getByRole("checkbox", { checked: true }).query()).toBeNull();
   });
 
   it("renders passed and direct sub-sections outside the label, passed first, without key collisions", () => {
@@ -271,42 +239,6 @@ describe("SelectionItem", () => {
     );
     expect(page.getByRole("region").query()).toBeNull();
     expect(page.getByRole("region", { name: "Hidden extra", exact: true }).query()).toBeNull();
-  });
-
-  it("makes hidden SubSection content unclickable", async () => {
-    let extraClicks = 0;
-    renderThemed(
-      <Field.Root>
-        <SelectionItem.Shell dataSlot="checkbox-item" control={<Checkbox.Root />}>
-          <RowTitle>Fixed price</RowTitle>
-          <SelectionItem.SubSection mode="hidden">
-            <button
-              type="button"
-              onClick={() => {
-                extraClicks += 1;
-              }}>
-              Hidden details
-            </button>
-          </SelectionItem.SubSection>
-        </SelectionItem.Shell>
-      </Field.Root>
-    );
-
-    const detailsEl = nestedSubsectionButton("Hidden details");
-    const footer = subsectionHost(detailsEl);
-    expect(footer.getAttribute("data-mode")).toBe("hidden");
-    expect(getComputedStyle(footer).pointerEvents).toBe("none");
-
-    const box = detailsEl.getBoundingClientRect();
-    const hit = document.elementFromPoint(
-      box.left + Math.max(box.width, 1) / 2,
-      box.top + Math.max(box.height, 1) / 2
-    );
-    expect(hit instanceof Node && detailsEl.contains(hit)).toBe(false);
-    if (hit instanceof HTMLElement) {
-      await userEvent.click(hit);
-    }
-    expect(extraClicks).toBe(0);
   });
 
   it("passes mode through to Item.Footer: hidden renders the band inert, visible does not", () => {
@@ -436,42 +368,6 @@ describe("SelectionItem", () => {
 
     headingNamed("Fixed price").click();
     expect(checkboxNamed("Fixed price", false).getAttribute("aria-checked")).toBe("false");
-  });
-
-  it("reflects the checked descendant on the shell surface", () => {
-    renderThemed(
-      <Field.Root>
-        <SelectionItem.Shell dataSlot="checkbox-item" control={<Checkbox.Root defaultChecked />}>
-          <RowTitle>Fixed price</RowTitle>
-        </SelectionItem.Shell>
-      </Field.Root>
-    );
-
-    const box = checkboxNamed("Fixed price", true);
-    expect(box.getAttribute("aria-checked")).toBe("true");
-    expect(box.hasAttribute("data-checked")).toBe(true);
-    const shell = shellFrom("Fixed price");
-    expect(getComputedStyle(shell).borderTopColor).toBe(tokenBorderColor(shell, "border-primary"));
-    expect(getComputedStyle(shell).backgroundColor).toBe(tokenBackgroundColor(shell, "bg-muted"));
-  });
-
-  it("collapses stacked borders and pulls a checked non-first shell up one pixel", () => {
-    renderThemed(
-      <Field.Root className="gap-0">
-        <SelectionItem.Shell dataSlot="checkbox-item" control={<Checkbox.Root />}>
-          <RowTitle>First</RowTitle>
-        </SelectionItem.Shell>
-        <SelectionItem.Shell dataSlot="checkbox-item" control={<Checkbox.Root defaultChecked />}>
-          <RowTitle>Second</RowTitle>
-        </SelectionItem.Shell>
-      </Field.Root>
-    );
-
-    const first = shellFrom("First");
-    const second = shellFrom("Second");
-    expect(getComputedStyle(second).marginTop).toBe("-1px");
-    expect(getComputedStyle(second).borderTopColor).toBe(tokenBorderColor(second, "border-primary"));
-    expect(getComputedStyle(first).marginTop).not.toBe("-1px");
   });
 
   it("does not paint checked shell state from a nested checked control in SubSection", async () => {

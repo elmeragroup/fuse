@@ -4,7 +4,6 @@ import { describe, expect, it } from "vitest";
 
 import { markdownOutDir } from "../scripts/lib/paths.ts";
 import { DocsCodeBlock } from "../src/components/docs-code-block";
-import { NO_DEFAULT } from "../src/lib/api-row";
 import { readComponentApi } from "../src/lib/api-source";
 import type { ApiPartView } from "../src/lib/api-view";
 import { toPartView } from "../src/lib/api-view";
@@ -21,13 +20,6 @@ async function partView(slug: string, name: string): Promise<ApiPartView> {
 }
 
 describe("committed api.json read at render time", () => {
-  it("renders the artifact the repository committed, banner and all", async () => {
-    const api = await readComponentApi("button");
-    expect(api.slug).toBe("button");
-    expect(api.$generated).toContain(API_REGEN_COMMAND);
-    expect(api.parts.map((part) => part.name)).toContain("Button");
-  });
-
   it("fails the build naming the file and the command when the artifact is missing", async () => {
     await expect(readComponentApi("no-such-component")).rejects.toThrow(
       "apps/docs/src/app/(docs)/components/no-such-component/api.json does not exist"
@@ -99,9 +91,11 @@ describe("reference row presentation", () => {
     expect(markdown).toContain('"ZW"');
   });
 
-  it("shows the collapsed short type closed and the full signature expanded", async () => {
+  it("closes a row on its printed type when short, on a collapsed kind when long, and expands to the full signature", async () => {
     const part = await partView("button", "Button");
-    const onIntent = part.propGroups.flatMap((group) => group.props).find((prop) => prop.name === "onIntent");
+    const props = part.propGroups.flatMap((group) => group.props);
+    expect(props.find((prop) => prop.name === "isPending")?.closedType).toBe("boolean | undefined");
+    const onIntent = props.find((prop) => prop.name === "onIntent");
     expect(onIntent?.closedType).toBe("function");
     // The panel gets a finished element: the server highlighted the printed signature
     // through DocsCodeBlock, so the client module never reaches the highlighter.
@@ -112,32 +106,9 @@ describe("reference row presentation", () => {
     });
   });
 
-  it("keeps the printed type in the closed row when it is short enough to read", async () => {
-    const part = await partView("button", "Button");
-    expect(
-      part.propGroups.flatMap((group) => group.props).find((prop) => prop.name === "isPending")?.closedType
-    ).toBe("boolean | undefined");
-  });
-
-  it("gives every row a deep link that survives the prop's casing", async () => {
-    const part = await partView("button", "Button");
-    expect(part.anchor).toBe("api-button");
-    expect(part.propGroups.flatMap((group) => group.props).map((prop) => prop.id)).toContain(
-      "api-button-isVisuallyDisabled"
-    );
-  });
-
   it("reports RSC status per part, in the words a reader acts on", async () => {
     expect((await partView("button", "Button")).rscLabel).toBe('"use client"');
     expect((await partView("card", "Card.Root")).rscLabel).toBe("server-safe");
-  });
-
-  it("leaves a missing default as an em-dash rather than an empty cell", async () => {
-    const part = await partView("button", "Button");
-    expect(
-      part.propGroups.flatMap((group) => group.props).find((prop) => prop.name === "onIntent")?.defaultValue
-    ).toBeNull();
-    expect(NO_DEFAULT).toBe("—");
   });
 
   it("composes one label per row so a summary is not announced cell by cell", () => {

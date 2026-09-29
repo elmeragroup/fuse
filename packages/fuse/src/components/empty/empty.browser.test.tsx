@@ -17,44 +17,9 @@ describe("Empty", () => {
       </Empty.Root>
     );
     expect(textNamed("No orders yet").tagName).toBe("DIV");
+    expect(page.getByRole("heading").elements()).toHaveLength(0);
     expect(textNamed("Orders you create will show up here.").tagName).toBe("P");
     expect(textNamed("Create order").tagName).toBe("DIV");
-  });
-
-  it("reaches actions inside Content via button and link roles", () => {
-    renderThemed(
-      <Empty.Root>
-        <Empty.Content>
-          <button type="button">Create order</button>
-          <a href="/orders">View orders</a>
-        </Empty.Content>
-      </Empty.Root>
-    );
-    expect(roleNamed("button", "Create order")).toBeDefined();
-    expect(roleNamed("link", "View orders")).toBeDefined();
-  });
-
-  it("does not emit a heading role from Title", () => {
-    renderThemed(
-      <Empty.Root>
-        <Empty.Header>
-          <Empty.Title>No orders yet</Empty.Title>
-        </Empty.Header>
-      </Empty.Root>
-    );
-    expect(page.getByRole("heading").elements()).toHaveLength(0);
-    expect(textNamed("No orders yet").tagName).toBe("DIV");
-  });
-
-  it("renders Description as a p", () => {
-    renderThemed(
-      <Empty.Root>
-        <Empty.Header>
-          <Empty.Description>Orders you create will show up here.</Empty.Description>
-        </Empty.Header>
-      </Empty.Root>
-    );
-    expect(textNamed("Orders you create will show up here.").tagName).toBe("P");
   });
 
   it("emits empty-media and data-variant on Media", () => {

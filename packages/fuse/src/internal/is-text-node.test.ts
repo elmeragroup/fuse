@@ -1,43 +1,40 @@
 import { createElement } from "react";
+import type { ReactNode } from "react";
 
 import { describe, expect, it } from "vitest";
 
 import { isTextNode, isTextValueNode } from "./is-text-node";
 
 describe("isTextNode", () => {
-  it("accepts a plain string, including the empty one", () => {
-    expect(isTextNode("Remove")).toBe(true);
-    expect(isTextNode("")).toBe(true);
-  });
-
-  it("rejects every non-string ReactNode", () => {
-    expect(isTextNode(42)).toBe(false);
-    expect(isTextNode(null)).toBe(false);
-    expect(isTextNode(undefined)).toBe(false);
-    expect(isTextNode(false)).toBe(false);
-    expect(isTextNode(["Remove", "Ada"])).toBe(false);
-    expect(isTextNode(createElement("span", null, "Remove"))).toBe(false);
+  // A plain string, including the empty one, is text; every other ReactNode is not.
+  it.each<[string, ReactNode, boolean]>([
+    ["a string", "Remove", true],
+    ["the empty string", "", true],
+    ["a number", 42, false],
+    ["null", null, false],
+    ["undefined", undefined, false],
+    ["false", false, false],
+    ["an array of strings", ["Remove", "Ada"], false],
+    ["an element", createElement("span", null, "Remove"), false],
+  ])("classifies %s as %s", (_name, node, expected) => {
+    expect(isTextNode(node)).toBe(expected);
   });
 });
 
 describe("isTextValueNode", () => {
-  it("accepts the nodes that render as their own text", () => {
-    expect(isTextValueNode("Remove")).toBe(true);
-    expect(isTextValueNode("")).toBe(true);
-    expect(isTextValueNode(42)).toBe(true);
-    expect(isTextValueNode(0)).toBe(true);
-  });
-
-  it("rejects everything else, so a node still has to be rendered to read it", () => {
-    expect(isTextValueNode(null)).toBe(false);
-    expect(isTextValueNode(undefined)).toBe(false);
-    expect(isTextValueNode(false)).toBe(false);
-    expect(isTextValueNode(["Remove", 42])).toBe(false);
-    expect(isTextValueNode(createElement("span", null, "Remove"))).toBe(false);
-  });
-
-  it("differs from isTextNode only on the number arm", () => {
-    expect(isTextNode(42)).toBe(false);
-    expect(isTextValueNode(42)).toBe(true);
+  // The nodes that render as their own text are accepted; everything else still has to be
+  // rendered to read it.
+  it.each<[string, ReactNode, boolean]>([
+    ["a string", "Remove", true],
+    ["the empty string", "", true],
+    ["a number", 42, true],
+    ["zero", 0, true],
+    ["null", null, false],
+    ["undefined", undefined, false],
+    ["false", false, false],
+    ["an array", ["Remove", 42], false],
+    ["an element", createElement("span", null, "Remove"), false],
+  ])("classifies %s as %s", (_name, node, expected) => {
+    expect(isTextValueNode(node)).toBe(expected);
   });
 });

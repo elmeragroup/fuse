@@ -8,7 +8,7 @@ import * as Wcag from "@elmeragroup/color/wcag";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { headingNamed, renderThemed } from "../../../test/themed-browser-render";
+import { headingNamed, renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
 import { Alert } from "./alert";
 
 const VARIANTS = ["default", "destructive", "warning", "success"] as const;
@@ -24,14 +24,6 @@ function alertNamed(name: string): HTMLElement {
   const element = page.getByRole("alert").element();
   if (!(element instanceof HTMLElement)) {
     throw new Error(`expected alert ${name}`);
-  }
-  return element;
-}
-
-function buttonNamed(name: string): HTMLElement {
-  const element = page.getByRole("button", { name, exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected button ${name}`);
   }
   return element;
 }
@@ -81,8 +73,14 @@ describe("Alert", () => {
       expect(root.getAttribute("data-slot")).toBe("item");
       expect(root.getAttribute("data-variant")).toBe("outline");
       expect(root.getAttribute("data-size")).toBe("sm");
-      expect(root.contains(headingNamed(`${variant} title`, 3))).toBe(true);
+      const title = headingNamed(`${variant} title`, 3);
+      expect(root.contains(title)).toBe(true);
       expect(root.textContent).toContain(`${variant} body`);
+      // The variant stays on Root: Title and Description emit no variant attribute.
+      const description = textNamed(`${variant} body`);
+      expect(title.getAttribute("variant"), variant).toBeNull();
+      expect(description.getAttribute("variant"), variant).toBeNull();
+      expect(description.tagName, variant).toBe("P");
       unmount();
     }
   });
@@ -132,7 +130,7 @@ describe("Alert", () => {
         <Alert.Description>Facility data is more than an hour old.</Alert.Description>
       </Alert.Root>
     );
-    const action = buttonNamed("Retry");
+    const action = roleNamed("button", "Retry");
     expect(action.getAttribute("type")).toBe("button");
     await userEvent.click(action);
     expect(onAction).toHaveBeenCalledOnce();
@@ -152,28 +150,11 @@ describe("Alert", () => {
         <Alert.Title>Report ready</Alert.Title>
       </Alert.Root>
     );
-    const action = buttonNamed("Open report");
+    const action = roleNamed("button", "Open report");
     const restFill = getComputedStyle(action).backgroundColor;
     await userEvent.hover(action);
     await settled(action);
     expect(getComputedStyle(action).backgroundColor).not.toBe(restFill);
     expect(actionContrast(action, alertNamed("default"))).toBeGreaterThanOrEqual(AA_TEXT_CONTRAST);
-  });
-
-  it("does not emit a variant attribute on Title or Description", () => {
-    renderThemed(
-      <Alert.Root variant="destructive">
-        <Alert.Title>Outage</Alert.Title>
-        <Alert.Description>Two meters are offline.</Alert.Description>
-      </Alert.Root>
-    );
-    const title = headingNamed("Outage", 3);
-    const description = page.getByText("Two meters are offline.", { exact: true }).element();
-    if (!(description instanceof HTMLElement)) {
-      throw new Error("expected the description");
-    }
-    expect(title.getAttribute("variant")).toBeNull();
-    expect(description.getAttribute("variant")).toBeNull();
-    expect(description.tagName).toBe("P");
   });
 });

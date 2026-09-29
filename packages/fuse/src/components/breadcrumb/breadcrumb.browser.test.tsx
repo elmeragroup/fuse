@@ -65,13 +65,6 @@ function BasicTrail() {
 }
 
 describe("Breadcrumb", () => {
-  it("is a navigation landmark named Breadcrumb in en-US, with links by name", () => {
-    renderBreadcrumb(<BasicTrail />);
-    expect(navNamed("Breadcrumb").getAttribute("data-slot")).toBe("breadcrumb");
-    expect(linkNamed("Home").getAttribute("href")).toBe("#home");
-    expect(linkNamed("Orders").getAttribute("href")).toBe("#orders");
-  });
-
   it("exposes the current page as a disabled current link and keeps it off the tab order", () => {
     renderBreadcrumb(<BasicTrail />);
     const current = page.getByRole("link", { name: "Invoice 1042", exact: true }).element();
@@ -151,6 +144,9 @@ describe("Breadcrumb", () => {
   it("renders an ordered list with one li per item plus separators", () => {
     renderBreadcrumb(<BasicTrail />);
     const nav = navNamed("Breadcrumb");
+    expect(nav.getAttribute("data-slot")).toBe("breadcrumb");
+    expect(linkNamed("Home").getAttribute("href")).toBe("#home");
+    expect(linkNamed("Orders").getAttribute("href")).toBe("#orders");
     const list = nav.querySelector("ol");
     if (!(list instanceof HTMLOListElement)) {
       throw new Error("expected ol");
@@ -165,30 +161,6 @@ describe("Breadcrumb", () => {
       "breadcrumb-separator",
       "breadcrumb-item",
     ]);
-  });
-
-  it("lets an explicit aria-label win over the label prop and the dictionary", () => {
-    const { unmount: unmountDefault } = renderBreadcrumb(<BasicTrail />);
-    expect(navNamed("Breadcrumb")).toBeTruthy();
-    unmountDefault();
-
-    const { unmount: unmountLabel } = renderBreadcrumb(
-      <Breadcrumb.Root label="Trail">
-        <Breadcrumb.List />
-      </Breadcrumb.Root>
-    );
-    expect(navNamed("Trail")).toBeTruthy();
-    expect(page.getByRole("navigation", { name: "Breadcrumb", exact: true }).query()).toBeNull();
-    unmountLabel();
-
-    renderBreadcrumb(
-      <Breadcrumb.Root label="Trail" aria-label="Invoice trail">
-        <Breadcrumb.List />
-      </Breadcrumb.Root>
-    );
-    expect(navNamed("Invoice trail")).toBeTruthy();
-    expect(page.getByRole("navigation", { name: "Trail", exact: true }).query()).toBeNull();
-    expect(page.getByRole("navigation", { name: "Breadcrumb", exact: true }).query()).toBeNull();
   });
 
   it("resolves landmark and more copy in every locale and lets overrides win", () => {
@@ -208,7 +180,7 @@ describe("Breadcrumb", () => {
       unmount();
     }
 
-    renderBreadcrumb(
+    const { unmount: unmountOverrides } = renderBreadcrumb(
       <Breadcrumb.Root label="Trail">
         <Breadcrumb.List>
           <Breadcrumb.Item>
@@ -222,6 +194,17 @@ describe("Breadcrumb", () => {
     expect(page.getByRole("navigation", { name: "Brødsmuler", exact: true }).query()).toBeNull();
     expect(page.getByText("Hidden crumbs", { exact: true }).element()).toBeTruthy();
     expect(page.getByText("Mer", { exact: true }).query()).toBeNull();
+    unmountOverrides();
+
+    // An explicit aria-label wins over both the label prop and the dictionary.
+    renderBreadcrumb(
+      <Breadcrumb.Root label="Trail" aria-label="Invoice trail">
+        <Breadcrumb.List />
+      </Breadcrumb.Root>
+    );
+    expect(navNamed("Invoice trail")).toBeTruthy();
+    expect(page.getByRole("navigation", { name: "Trail", exact: true }).query()).toBeNull();
+    expect(page.getByRole("navigation", { name: "Breadcrumb", exact: true }).query()).toBeNull();
   });
 
   it("lets children replace the default separator glyph", () => {

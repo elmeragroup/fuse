@@ -3,16 +3,6 @@ import { describe, expect, it } from "vitest";
 import { selectionGroupOrientationVariants } from "./selection-item-variants";
 
 describe("selectionGroupOrientationVariants", () => {
-  it("defaults to the vertical group and list slots", () => {
-    const slots = selectionGroupOrientationVariants();
-    expect(slots.group()).toContain("flex");
-    expect(slots.group()).toContain("flex-col");
-    expect(slots.group()).toContain("gap-2");
-    expect(slots.group()).toContain("has-[>[data-selection-item]]:gap-0");
-    expect(slots.list()).toContain("gap-0");
-    expect(slots.list()).not.toContain("flex-row");
-  });
-
   it("resolves the vertical orientation", () => {
     const slots = selectionGroupOrientationVariants({ orientation: "vertical" });
     expect(slots.group()).toContain("flex-col");

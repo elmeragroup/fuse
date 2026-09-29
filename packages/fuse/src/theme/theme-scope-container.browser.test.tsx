@@ -13,7 +13,7 @@ function Probe({
   container,
   onResolve,
 }: {
-  container?: HTMLElement | RefObject<HTMLElement | null>;
+  container?: HTMLElement | RefObject<HTMLElement | null> | undefined;
   onResolve: (resolved: Resolved) => void;
 }): ReactNode {
   onResolve(useResolvedPortalContainer(container));
@@ -31,23 +31,28 @@ function resolutions(node: (record: (resolved: Resolved) => void) => ReactNode):
 }
 
 describe("useResolvedPortalContainer", () => {
-  it("returns an explicit element unchanged", () => {
-    const target = document.createElement("div");
-    const seen = resolutions((record) => <Probe container={target} onResolve={record} />);
-    expect(seen.at(-1)).toBe(target);
-  });
+  const target = document.createElement("div");
 
-  it("reads an explicit ref's current element", () => {
-    const target = document.createElement("div");
-    const ref: RefObject<HTMLElement | null> = { current: target };
-    const seen = resolutions((record) => <Probe container={ref} onResolve={record} />);
-    expect(seen.at(-1)).toBe(target);
-  });
-
-  it("waits with null while an explicit ref is still unattached", () => {
-    const ref: RefObject<HTMLElement | null> = { current: null };
-    const seen = resolutions((record) => <Probe container={ref} onResolve={record} />);
-    expect(seen.at(-1)).toBeNull();
+  it.each<{
+    name: string;
+    container: HTMLElement | RefObject<HTMLElement | null> | undefined;
+    expected: Resolved;
+  }>([
+    { name: "returns an explicit element unchanged", container: target, expected: target },
+    { name: "reads an explicit ref's current element", container: { current: target }, expected: target },
+    {
+      name: "waits with null while an explicit ref is still unattached",
+      container: { current: null },
+      expected: null,
+    },
+    {
+      name: "leaves the primitive default in place when there is no scope and no container",
+      container: undefined,
+      expected: undefined,
+    },
+  ])("$name", ({ container, expected }) => {
+    const seen = resolutions((record) => <Probe container={container} onResolve={record} />);
+    expect(seen.at(-1)).toBe(expected);
   });
 
   it("falls back to the nearest ThemeScope element once it is attached", () => {
@@ -62,11 +67,6 @@ describe("useResolvedPortalContainer", () => {
       throw new Error("expected the scope element");
     }
     expect(resolved.getAttribute("data-theme-brand")).toBe("fkas");
-  });
-
-  it("leaves the primitive default in place when there is no scope and no container", () => {
-    const seen = resolutions((record) => <Probe onResolve={record} />);
-    expect(seen.at(-1)).toBeUndefined();
   });
 
   it("prefers an explicit container over an enclosing ThemeScope", () => {

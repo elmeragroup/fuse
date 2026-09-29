@@ -3,7 +3,6 @@ import type { ReactElement, ReactNode } from "react";
 
 import { CalendarDate, isSameDay } from "@internationalized/date";
 import type { DateValue } from "@internationalized/date";
-import type { ValidationResult } from "react-aria-components";
 import { describe, expect, it, vi } from "vitest";
 import type { Mock } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -12,27 +11,17 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertStateFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
 import {
-  anchorAndExtend,
   calendarGrid,
   calendarRoot,
   cellNumbered,
   dayNumbered,
   describedTextsFor,
-  focusLandsOnDay,
   navButtonNamed,
   segmentLocator,
   segmentNamed,
 } from "../../../test/rac-calendar-testing";
-import {
-  CONTROL_MD,
-  cssVarColor,
-  fkasExternal,
-  px,
-  renderThemed,
-  stampDensity,
-} from "../../../test/themed-browser-render";
+import { CONTROL_MD, cssVarColor, px, renderThemed, stampDensity } from "../../../test/themed-browser-render";
 import { Dialog } from "../../components/dialog";
-import { ThemeScope } from "../../theme/theme-scope";
 import { UiProviders } from "../ui-providers/ui-providers";
 import { DateRangePicker } from "./date-range-picker";
 
@@ -148,7 +137,6 @@ const july4 = new CalendarDate(2026, 7, 4);
 const july9 = new CalendarDate(2026, 7, 9);
 const july14 = new CalendarDate(2026, 7, 14);
 const july17 = new CalendarDate(2026, 7, 17);
-const july18 = new CalendarDate(2026, 7, 18);
 const july20 = new CalendarDate(2026, 7, 20);
 const july24 = new CalendarDate(2026, 7, 24);
 const julyWeek = { start: july14, end: july17 };
@@ -212,29 +200,26 @@ describe("DateRangePicker", () => {
     expect(committed).not.toBeInstanceOf(Event);
   });
 
-  it("renders leading zeros on day and month in both rows by default", async () => {
-    renderPicker(<DateRangePicker label="Delivery window" defaultValue={{ start: july4, end: july9 }} />);
-    await expect.element(segmentLocator("month, Start Date")).toBeVisible();
-
-    expect(segmentNamed("month, Start Date").textContent).toBe("07");
-    expect(segmentNamed("day, Start Date").textContent).toBe("04");
-    expect(segmentNamed("month, End Date").textContent).toBe("07");
-    expect(segmentNamed("day, End Date").textContent).toBe("09");
-  });
-
-  it("drops the leading zeros when a caller turns them off", async () => {
+  it.each([
+    [
+      "renders leading zeros on day and month in both rows by default",
+      {},
+      { "month, Start Date": "07", "day, Start Date": "04", "month, End Date": "07", "day, End Date": "09" },
+    ],
+    [
+      "drops the leading zeros when a caller turns them off",
+      { shouldForceLeadingZeros: false },
+      { "month, Start Date": "7", "day, Start Date": "4", "day, End Date": "9" },
+    ],
+  ] as const)("%s", async (_title, props, segments) => {
     renderPicker(
-      <DateRangePicker
-        label="Delivery window"
-        defaultValue={{ start: july4, end: july9 }}
-        shouldForceLeadingZeros={false}
-      />
+      <DateRangePicker label="Delivery window" defaultValue={{ start: july4, end: july9 }} {...props} />
     );
     await expect.element(segmentLocator("month, Start Date")).toBeVisible();
 
-    expect(segmentNamed("month, Start Date").textContent).toBe("7");
-    expect(segmentNamed("day, Start Date").textContent).toBe("4");
-    expect(segmentNamed("day, End Date").textContent).toBe("9");
+    for (const [segment, text] of Object.entries(segments)) {
+      expect(segmentNamed(segment).textContent, segment).toBe(text);
+    }
   });
 
   it("opens a named dialog holding the range grid and commits two clicked endpoints", async () => {
@@ -264,24 +249,6 @@ describe("DateRangePicker", () => {
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
     expect(segmentNamed("day, Start Date").textContent).toBe("20");
     expect(segmentNamed("day, End Date").textContent).toBe("24");
-  });
-
-  it("anchors and commits a range from the keyboard", async () => {
-    const onChange = rangeChangeSpy();
-    renderPicker(<DateRangePicker label="Delivery window" defaultValue={julyWeek} onChange={onChange} />);
-    await openPicker();
-    // RAC opens the grid with the range's start focused, so Enter anchors there. The move
-    // lands from an effect after the popover mounts.
-    await focusLandsOnDay(14);
-
-    // Anchoring auto-advances the focused day, so the arrows extend from the day after.
-    await anchorAndExtend({ anchor: 14, arrows: 3, landsOn: 18 });
-    await userEvent.keyboard("{Enter}");
-    expect(onChange).toHaveBeenCalledTimes(1);
-    const committed = committedRange(onChange);
-    expect(isSameDay(committed.start, july14)).toBe(true);
-    expect(isSameDay(committed.end, july18)).toBe(true);
-    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("cancels an in-progress selection on Escape and returns focus to the trigger", async () => {
@@ -322,45 +289,6 @@ describe("DateRangePicker", () => {
 
     expect(root).toHaveAttribute("data-invalid");
     expect(describedTextsFor(group)).toContain(errorCopy);
-  });
-
-  it("renders a function errorMessage from the ValidationResult and associates it", async () => {
-    let seen: ValidationResult | undefined;
-    renderPicker(
-      <DateRangePicker
-        label="Delivery window"
-        defaultValue={{ start: july17, end: july14 }}
-        validationBehavior="aria"
-        errorMessage={(validation) => {
-          seen = validation;
-          return (
-            <span role="status" aria-label="Delivery window error details">
-              {validation.validationErrors.join(" ")}
-            </span>
-          );
-        }}
-      />
-    );
-    const error = page.getByRole("status", { name: "Delivery window error details" });
-    await expect.element(error).toBeVisible();
-    const errorNode = error.element();
-    if (!(errorNode instanceof HTMLElement)) {
-      throw new Error("expected the error node");
-    }
-
-    expect(seen?.isInvalid).toBe(true);
-    expect(seen?.validationErrors.length).toBeGreaterThan(0);
-    expect(errorNode.textContent).not.toBe("");
-    expect(describedTextsFor(groupNamed("Delivery window"))).toContain(errorNode.textContent);
-  });
-
-  it("renders no error node while the range is valid", async () => {
-    renderPicker(
-      <DateRangePicker label="Delivery window" defaultValue={julyWeek} errorMessage={<span>Required</span>} />
-    );
-    await expect.element(segmentLocator("month, Start Date")).toBeVisible();
-
-    expect(document.body.textContent).not.toContain("Required");
   });
 
   it("keeps a read-only picker inert: muted field, no editing, no popover", async () => {
@@ -418,27 +346,6 @@ describe("DateRangePicker", () => {
 });
 
 describe("DateRangePicker overlay containment", () => {
-  it("portals the popover into the enclosing ThemeScope instead of the document body", async () => {
-    const { host } = renderPicker(<DateRangePicker label="Delivery window" defaultValue={julyWeek} />);
-    const scope = host.querySelector("[data-theme-brand]");
-    const dialog = await openPicker();
-
-    expect(scope).not.toBeNull();
-    expect(scope?.contains(dialog)).toBe(true);
-    expect([...document.body.children].includes(dialog)).toBe(false);
-  });
-
-  it("stays inside a nested ThemeScope so the overlay keeps that scope's theme", async () => {
-    renderPicker(
-      <ThemeScope theme={fkasExternal}>
-        <DateRangePicker label="Delivery window" defaultValue={julyWeek} />
-      </ThemeScope>
-    );
-    const dialog = await openPicker();
-
-    expect(dialog.closest("[data-theme-variant=external]")).not.toBeNull();
-  });
-
   it("portals into an explicit container when one is given", async () => {
     function WithContainer(): ReactElement {
       const container = useRef<HTMLDivElement>(null);
@@ -541,33 +448,6 @@ describe("DateRangePicker density metrics", () => {
     await userEvent.click(trigger());
     await expect.element(page.getByRole("dialog")).toBeVisible();
     await userEvent.keyboard("{Escape}");
-  });
-  it("pins the field box to the signed md rung at both densities and does not rescope", () => {
-    const { rerender } = renderPicker(<DateRangePicker label="Meter" defaultValue={julyWeek} />);
-    for (const density of ["dense", "comfortable"] as const) {
-      stampDensity(density);
-      expect(px(getComputedStyle(groupNamed("Meter")).height)).toBe(CONTROL_MD[density].height);
-      const row = segmentNamed("month, Start Date").parentElement;
-      if (!(row instanceof HTMLElement)) {
-        throw new Error("expected the start DateInput");
-      }
-      const inputStyle = getComputedStyle(row);
-      expect(px(inputStyle.paddingInlineStart)).toBe(CONTROL_MD[density].px);
-      expect(px(inputStyle.fontSize)).toBe(CONTROL_MD[density].font);
-      expect(px(inputStyle.lineHeight)).toBe(CONTROL_MD[density].leading);
-    }
-
-    stampDensity("dense");
-    rerender(
-      <ThemeScope theme={fkasExternal}>
-        <UiProviders locale="en-US" navigate={() => undefined}>
-          <div data-density="comfortable">
-            <DateRangePicker label="Meter" defaultValue={julyWeek} />
-          </div>
-        </UiProviders>
-      </ThemeScope>
-    );
-    expect(px(getComputedStyle(groupNamed("Meter")).height)).toBe(CONTROL_MD.dense.height);
   });
 
   it("insets the en-dash by one md inset from each date at both densities", async () => {

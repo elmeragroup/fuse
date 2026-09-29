@@ -56,7 +56,7 @@ describe("useResetRemount", () => {
 
     form.reset();
     await vi.waitFor(() => {
-      expect(current().key).toBe(1);
+      expect(current()).toEqual({ key: 1, isInitialMount: false });
     });
 
     form.reset();
@@ -126,15 +126,5 @@ describe("useResetRemount", () => {
     });
 
     expect(document.activeElement).not.toBe(inputNamed("Field"));
-  });
-
-  it("reports the initial mount as over once a reset has remounted", async () => {
-    const { current, form } = mountProbe(true);
-    expect(current().isInitialMount).toBe(true);
-
-    form.reset();
-    await vi.waitFor(() => {
-      expect(current().isInitialMount).toBe(false);
-    });
   });
 });

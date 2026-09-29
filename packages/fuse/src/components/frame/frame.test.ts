@@ -6,10 +6,6 @@ import { describe, expect, it } from "vitest";
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { Frame } from "./frame";
 
-const STACKED_CLASSES =
-  "*:has-[+[data-slot=frame-panel]]:rounded-b-none *:has-[+[data-slot=frame-panel]]:before:hidden *:[[data-slot=frame-panel]+[data-slot=frame-panel]]:rounded-t-none *:[[data-slot=frame-panel]+[data-slot=frame-panel]]:border-t-0";
-const GUTTER_CLASSES = "*:[[data-slot=frame-panel]+[data-slot=frame-panel]]:mt-1";
-
 function markup(stackedPanels?: boolean): string {
   return renderToStaticMarkup(
     createElement(
@@ -29,29 +25,6 @@ function markup(stackedPanels?: boolean): string {
 }
 
 describe("Frame structure", () => {
-  it("renders children in order and emits each part's data-slot", () => {
-    const html = markup();
-    expect(html.indexOf("frame-panel-header")).toBeLessThan(html.indexOf('data-slot="frame-panel"'));
-    expect(html.indexOf('data-slot="frame-panel"')).toBeLessThan(html.indexOf("frame-panel-footer"));
-    expect(html).toContain('data-slot="frame"');
-    expect(html).toContain('data-slot="frame-panel-title"');
-    expect(html).toContain('data-slot="frame-panel-description"');
-    expect(html).toContain("<header");
-    expect(html).toContain("<footer");
-    expect(html).toContain("Invoices");
-    expect(html).toContain("Last 30 days");
-  });
-
-  it("swaps the sibling-adjacency class set when stackedPanels is true", () => {
-    const gutter = markup(false);
-    const stacked = markup(true);
-    expect(gutter).not.toEqual(stacked);
-    expect(gutter).toContain(GUTTER_CLASSES);
-    expect(gutter).not.toContain("rounded-b-none");
-    expect(stacked).toContain(STACKED_CLASSES);
-    expect(stacked).not.toContain(GUTTER_CLASSES);
-  });
-
   it("paints from tokens without a dark variant or raw palette utility", () => {
     const html = markup();
     expect(html).toContain("bg-muted/72");

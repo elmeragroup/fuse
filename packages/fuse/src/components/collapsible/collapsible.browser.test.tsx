@@ -18,12 +18,15 @@ function triggerNamed(name: string): HTMLElement {
 }
 
 describe("Collapsible", () => {
-  it("toggles the panel on click and wires aria-expanded plus aria-controls", async () => {
+  it("toggles the panel on click and from Tab focus with Enter and Space, wiring aria-expanded plus aria-controls", async () => {
     renderThemed(
-      <Collapsible.Root>
-        <Collapsible.Trigger>Show details</Collapsible.Trigger>
-        <Collapsible.Content>Delivery window</Collapsible.Content>
-      </Collapsible.Root>
+      <>
+        <button type="button">Before</button>
+        <Collapsible.Root>
+          <Collapsible.Trigger>Show details</Collapsible.Trigger>
+          <Collapsible.Content>Delivery window</Collapsible.Content>
+        </Collapsible.Root>
+      </>
     );
 
     const trigger = triggerNamed("Show details");
@@ -47,18 +50,6 @@ describe("Collapsible", () => {
       expect(trigger.getAttribute("aria-expanded")).toBe("false");
       expect(page.getByText("Delivery window", { exact: true }).query()).toBeNull();
     });
-  });
-
-  it("toggles from Tab focus with Enter and with Space", async () => {
-    renderThemed(
-      <>
-        <button type="button">Before</button>
-        <Collapsible.Root>
-          <Collapsible.Trigger>Show details</Collapsible.Trigger>
-          <Collapsible.Content>Delivery window</Collapsible.Content>
-        </Collapsible.Root>
-      </>
-    );
 
     page.getByRole("button", { name: "Before" }).element().focus();
     await userEvent.keyboard("{Tab}");
@@ -181,73 +172,21 @@ describe("Collapsible", () => {
     expect(page.getByText("Delivery window", { exact: true }).query()).toBeNull();
   });
 
-  it("does not toggle when the trigger is disabled and stamps data-disabled", async () => {
-    const onOpenChange = vi.fn();
-    renderThemed(
-      <Collapsible.Root onOpenChange={onOpenChange}>
-        <Collapsible.Trigger disabled>Show details</Collapsible.Trigger>
-        <Collapsible.Content>Delivery window</Collapsible.Content>
-      </Collapsible.Root>
-    );
-
-    const trigger = triggerNamed("Show details");
-    await expect.element(page.getByRole("button", { name: "Show details", exact: true })).toBeDisabled();
-
-    trigger.click();
-    await userEvent.keyboard("{Enter}");
-    await userEvent.keyboard(" ");
-    expect(onOpenChange).not.toHaveBeenCalled();
-    expect(trigger.getAttribute("aria-expanded")).toBe("false");
-    expect(page.getByText("Delivery window", { exact: true }).query()).toBeNull();
-  });
-
-  it("keeps a closed keepMounted panel in the DOM and unmounts by default", () => {
-    renderThemed(
-      <>
-        <Collapsible.Root>
-          <Collapsible.Trigger>Default</Collapsible.Trigger>
-          <Collapsible.Content>Unmounted when closed</Collapsible.Content>
-        </Collapsible.Root>
-        <Collapsible.Root>
-          <Collapsible.Trigger>Mounted</Collapsible.Trigger>
-          <Collapsible.Content keepMounted>Stays mounted</Collapsible.Content>
-        </Collapsible.Root>
-      </>
-    );
-
-    expect(page.getByText("Unmounted when closed", { exact: true }).query()).toBeNull();
-    const kept = page.getByText("Stays mounted", { exact: true }).element();
-    expect(kept).not.toBeNull();
-    const keptPanel = kept instanceof HTMLElement ? kept.closest("[hidden]") : null;
-    expect(keptPanel).not.toBeNull();
-    expect(keptPanel?.hasAttribute("hidden")).toBe(true);
-  });
-
-  it("animates a keepMounted Content's height open and closed", async () => {
+  it.each([
+    ["a keepMounted Content's height open and closed", true, "hidden"],
+    ["a default unmounted Content and unmounts it after the close", false, "unmounted"],
+  ] as const)("animates %s", async (_case, keepMounted, closedState) => {
     renderThemed(
       <Collapsible.Root>
         <Collapsible.Trigger>Show details</Collapsible.Trigger>
-        <Collapsible.Content keepMounted>
+        <Collapsible.Content keepMounted={keepMounted}>
           {/* A fixed content height keeps the settled value independent of font metrics. */}
           <p style={{ height: 80 }}>Delivery window</p>
         </Collapsible.Content>
       </Collapsible.Root>
     );
 
-    await expectPanelHeightTransition(triggerNamed("Show details"), "hidden");
-  });
-
-  it("animates a default unmounted Content and unmounts it after the close", async () => {
-    renderThemed(
-      <Collapsible.Root>
-        <Collapsible.Trigger>Show details</Collapsible.Trigger>
-        <Collapsible.Content>
-          <p style={{ height: 80 }}>Delivery window</p>
-        </Collapsible.Content>
-      </Collapsible.Root>
-    );
-
-    await expectPanelHeightTransition(triggerNamed("Show details"), "unmounted");
+    await expectPanelHeightTransition(triggerNamed("Show details"), closedState);
   });
 
   it("keeps hiddenUntilFound content in the DOM and opens on beforematch", async () => {

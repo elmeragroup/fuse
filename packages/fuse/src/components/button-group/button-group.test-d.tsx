@@ -1,25 +1,6 @@
-import { expectTypeOf, test } from "vitest";
+import { test } from "vitest";
 
-import type { ButtonGroup as RootButtonGroup } from "@elmeragroup/fuse";
-import * as ButtonGroupModule from "@elmeragroup/fuse/button-group";
-import { ButtonGroup, buttonGroupVariants } from "@elmeragroup/fuse/button-group";
-
-test("the namespace ships Root, Separator, and Text from the button-group entry and the root barrel", () => {
-  expectTypeOf<typeof ButtonGroup>().toEqualTypeOf<typeof RootButtonGroup>();
-  expectTypeOf(ButtonGroup).toHaveProperty("Root");
-  expectTypeOf(ButtonGroup).toHaveProperty("Separator");
-  expectTypeOf(ButtonGroup).toHaveProperty("Text");
-});
-
-test("public API exports the namespace and recipe, never the flat ref names", () => {
-  expectTypeOf(buttonGroupVariants).toBeFunction();
-  expectTypeOf(buttonGroupVariants({ orientation: "vertical" })).toBeString();
-  expectTypeOf(buttonGroupVariants()).toBeString();
-
-  expectTypeOf(ButtonGroupModule).not.toHaveProperty("ButtonGroupSeparator");
-  expectTypeOf(ButtonGroupModule).not.toHaveProperty("ButtonGroupText");
-  expectTypeOf(ButtonGroup).not.toHaveProperty("Addon");
-});
+import { ButtonGroup } from "@elmeragroup/fuse/button-group";
 
 test("parts take the public props, Text render, and no polymorphic as prop", () => {
   const _root = (

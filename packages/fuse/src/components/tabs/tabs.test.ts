@@ -3,11 +3,8 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { Tabs } from "./index";
 import { tabsListVariants } from "./tabs-variants";
-
-const VARIANTS = ["default", "line"] as const;
 
 describe("tabsListVariants", () => {
   it("defaults to variant=default and the field-box md rung", () => {
@@ -20,6 +17,7 @@ describe("tabsListVariants", () => {
     expect(resolved).toContain("p-[3px]");
     expect(resolved).not.toContain("gap-1");
     expect(resolved).not.toContain("bg-transparent");
+    expect(resolved).not.toContain("destructive");
   });
 
   it("maps line onto the underline track without the filled pill", () => {
@@ -28,18 +26,8 @@ describe("tabsListVariants", () => {
     expect(line).toContain("bg-transparent");
     expect(line).not.toContain("bg-muted");
     expect(line).toContain("data-[variant=line]:rounded-none");
-  });
-
-  it("covers every public variant without raw palette, dark, or density variants", () => {
-    for (const variant of VARIANTS) {
-      const resolved = tabsListVariants({ variant });
-      expect(resolved.length, variant).toBeGreaterThan(0);
-      expect(resolved, variant).not.toContain("dark:");
-      expect(resolved, variant).not.toMatch(RAW_PALETTE_RE);
-      expect(resolved, variant).not.toMatch(/\b(?:dense|comfortable):/);
-      expect(resolved, variant).not.toContain("h-9");
-      expect(resolved, variant).not.toContain("destructive");
-    }
+    expect(line).not.toContain("h-9");
+    expect(line).not.toContain("destructive");
   });
 });
 

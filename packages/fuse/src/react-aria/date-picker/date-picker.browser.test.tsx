@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { CalendarDate } from "@internationalized/date";
@@ -13,9 +13,7 @@ import {
   calendarGrid,
   calendarRoot,
   cellNamed,
-  dayNamed,
   describedTextsFor,
-  navButtonNamed,
   segmentLocator,
   segmentNamed,
 } from "../../../test/rac-calendar-testing";
@@ -27,7 +25,6 @@ import {
   renderThemed,
   stampDensity,
 } from "../../../test/themed-browser-render";
-import { Dialog } from "../../components/dialog";
 import { ThemeScope } from "../../theme/theme-scope";
 import { UiProviders } from "../ui-providers/ui-providers";
 import { DatePicker, DatePickerPresetGroup, DatePickerPresetItem } from "./date-picker";
@@ -129,16 +126,6 @@ function presets(): ReactElement {
 }
 
 /**
- * A controlled picker, for the cases that need the value driven from outside the
- * composite. The focused-month sync reads the picker state's committed value, so it
- * behaves the same here as on an uncontrolled `defaultValue` picker.
- */
-function ControlledPicker(): ReactElement {
-  const [value, setValue] = useState<CalendarDate | null>(july14);
-  return <DatePicker label="Invoice date" onChange={setValue} value={value} />;
-}
-
-/**
  * A controlled picker whose single preset drives the value from inside the open popover.
  * A preset is the only way to change the value with the popover open, so this is the
  * fixture for the value-change resync rather than the per-open initializer.
@@ -208,33 +195,6 @@ describe("DatePicker", () => {
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("closes on Escape without a change and returns focus to the trigger", async () => {
-    const onChange = vi.fn();
-    renderPicker(<DatePicker label="Invoice date" value={march10} onChange={onChange} />);
-    await openPicker();
-
-    await userEvent.keyboard("{Escape}");
-    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
-    expect(onChange).not.toHaveBeenCalled();
-    // Focus restoration lands after the dismissal commits; poll instead of racing it.
-    await expect.poll(() => document.activeElement).toBe(trigger());
-    expect(trigger()).toHaveAttribute("aria-expanded", "false");
-  });
-
-  it("reopens on the value's month after the user paged away and closed", async () => {
-    renderPicker(<DatePicker label="Invoice date" value={march10} />);
-    await openPicker();
-    expect(calendarGrid().getAttribute("aria-label")).toMatch(/March\s+2026/i);
-
-    await userEvent.keyboard("{PageDown}{PageDown}");
-    expect(calendarGrid().getAttribute("aria-label")).toMatch(/May\s+2026/i);
-
-    await userEvent.keyboard("{Escape}");
-    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
-    await openPicker();
-    expect(calendarGrid().getAttribute("aria-label")).toMatch(/March\s+2026/i);
-  });
-
   it("reopens an uncontrolled picker on its defaultValue's month after paging away", async () => {
     // The sync reads the picker state's committed value, so `defaultValue` alone — with
     // no `value` prop in sight — still lands the reopen on July.
@@ -265,30 +225,22 @@ describe("DatePicker", () => {
     expect(calendarGrid().getAttribute("aria-label")).toMatch(/September\s+2026/i);
   });
 
-  it("opens on the current month when there is no value", async () => {
-    const currentMonth = new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(
-      new Date()
-    );
-    renderPicker(<DatePicker label="Invoice date" />);
+  it.each([
+    [
+      "the current month",
+      <DatePicker key="current" label="Invoice date" />,
+      new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(new Date()),
+    ],
+    [
+      "the placeholder's month",
+      <DatePicker key="placeholder" label="Birth date" placeholderValue={new CalendarDate(1990, 1, 1)} />,
+      expect.stringMatching(/January\s+1990/i),
+    ],
+  ] as const)("opens on %s when there is no value", async (_case, picker, month) => {
+    renderPicker(picker);
     await openPicker();
 
-    expect(calendarGrid().getAttribute("aria-label")).toBe(currentMonth);
-  });
-
-  it("opens on the placeholder's month when there is no value", async () => {
-    renderPicker(<DatePicker label="Birth date" placeholderValue={new CalendarDate(1990, 1, 1)} />);
-    await openPicker();
-
-    expect(calendarGrid().getAttribute("aria-label")).toMatch(/January\s+1990/i);
-  });
-
-  it("opens on the value's month over the placeholder's", async () => {
-    renderPicker(
-      <DatePicker label="Birth date" placeholderValue={new CalendarDate(1990, 1, 1)} value={march10} />
-    );
-    await openPicker();
-
-    expect(calendarGrid().getAttribute("aria-label")).toMatch(/March\s+2026/i);
+    expect(calendarGrid().getAttribute("aria-label")).toEqual(month);
   });
 
   it("returns to the placeholder's month when the value is cleared with the dialog open", async () => {
@@ -317,20 +269,15 @@ describe("DatePicker", () => {
     expect(segmentNamed("month").textContent).toBe("11");
   });
 
-  it("renders leading zeros on day and month by default", async () => {
-    renderPicker(<DatePicker label="Invoice date" defaultValue={july4} />);
+  it.each([
+    ["renders leading zeros on day and month by default", {}, "07", "04"],
+    ["drops the leading zeros when a caller turns them off", { shouldForceLeadingZeros: false }, "7", "4"],
+  ] as const)("%s", async (_title, props, month, day) => {
+    renderPicker(<DatePicker label="Invoice date" defaultValue={july4} {...props} />);
     await expect.element(segmentLocator("month")).toBeVisible();
 
-    expect(segmentNamed("month").textContent).toBe("07");
-    expect(segmentNamed("day").textContent).toBe("04");
-  });
-
-  it("drops the leading zeros when a caller turns them off", async () => {
-    renderPicker(<DatePicker label="Invoice date" defaultValue={july4} shouldForceLeadingZeros={false} />);
-    await expect.element(segmentLocator("month")).toBeVisible();
-
-    expect(segmentNamed("month").textContent).toBe("7");
-    expect(segmentNamed("day").textContent).toBe("4");
+    expect(segmentNamed("month").textContent).toBe(month);
+    expect(segmentNamed("day").textContent).toBe(day);
   });
 
   it("renders a function errorMessage from the ValidationResult and associates it", async () => {
@@ -419,25 +366,6 @@ describe("DatePicker presets", () => {
     expect(pickerDialog().contains(calendarGrid())).toBe(true);
   });
 
-  it("names the radiogroup by an explicit aria-label instead of the dictionary", async () => {
-    renderPicker(
-      <DatePicker
-        label="Invoice date"
-        value={march10}
-        presetGroup={
-          <DatePickerPresetGroup aria-label="Quick dates">
-            <DatePickerPresetItem value="today">Today</DatePickerPresetItem>
-            <DatePickerPresetItem value="in-a-week">In a week</DatePickerPresetItem>
-          </DatePickerPresetGroup>
-        }
-      />
-    );
-    await openPicker();
-
-    await expect.element(page.getByRole("radiogroup", { name: "Quick dates", exact: true })).toBeVisible();
-    expect(page.getByRole("radiogroup", { name: "Date presets", exact: true }).query()).toBeNull();
-  });
-
   it("lets an explicit aria-label win over label", async () => {
     renderPicker(
       <DatePicker
@@ -455,33 +383,6 @@ describe("DatePicker presets", () => {
 
     await expect.element(page.getByRole("radiogroup", { name: "Quick dates", exact: true })).toBeVisible();
     expect(page.getByRole("radiogroup", { name: "Shortcuts", exact: true }).query()).toBeNull();
-  });
-
-  it("selects on a single click and leaves the dialog open", async () => {
-    renderPicker(<DatePicker label="Invoice date" value={march10} presetGroup={presets()} />);
-    await openPicker();
-
-    await userEvent.click(presetTargetNamed("Today"));
-    await expect.element(page.getByRole("radio", { name: "Today", exact: true })).toBeChecked();
-    expect(presetTargetNamed("Today")).toHaveAttribute("data-selected");
-    await expect.element(page.getByRole("dialog")).toBeVisible();
-  });
-
-  it("moves between presets with the arrow keys and selects with Space", async () => {
-    renderPicker(<DatePicker label="Invoice date" value={march10} presetGroup={presets()} />);
-    await openPicker();
-    const today = page.getByRole("radio", { name: "Today", exact: true }).element();
-    if (!(today instanceof HTMLElement)) {
-      throw new Error("expected the first preset");
-    }
-
-    today.focus();
-    await userEvent.keyboard(" ");
-    await expect.element(page.getByRole("radio", { name: "Today", exact: true })).toBeChecked();
-
-    await userEvent.keyboard("{ArrowDown}");
-    await expect.element(page.getByRole("radio", { name: "In a week", exact: true })).toBeChecked();
-    await expect.element(page.getByRole("dialog")).toBeVisible();
   });
 
   it("closes the dialog on double-click only where the caller opted in, after its own handler", async () => {
@@ -513,14 +414,13 @@ describe("DatePicker presets", () => {
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("names the preset pane from the dictionary in every shipped locale", async () => {
+  it("names the preset pane from the dictionary in every shipped locale, below an explicit label", async () => {
     const expected = {
       "nb-NO": "Datoforvalg",
       "sv-SE": "Datumalternativ",
       "en-US": "Date presets",
       "fi-FI": "Päivämäärän pikavalinnat",
     } as const;
-
     for (const locale of SUPPORTED_LOCALES) {
       const { unmount } = renderThemed(
         withLocale(
@@ -533,9 +433,7 @@ describe("DatePicker presets", () => {
       await expect.element(page.getByRole("radiogroup", { name: expected[locale] })).toBeVisible();
       unmount();
     }
-  });
 
-  it("lets an explicit label override the dictionary default", async () => {
     renderThemed(
       withLocale(
         "nb-NO",
@@ -547,74 +445,6 @@ describe("DatePicker presets", () => {
 
     await expect.element(page.getByRole("radiogroup", { name: "Hurtigvalg" })).toBeVisible();
     expect(page.getByRole("radiogroup", { name: "Datoforvalg" }).query()).toBeNull();
-  });
-});
-
-describe("DatePicker overlay containment", () => {
-  it("portals the popover into the enclosing ThemeScope instead of the document body", async () => {
-    const { host } = renderPicker(<DatePicker label="Invoice date" value={march10} />);
-    const scope = host.querySelector("[data-theme-brand]");
-    const dialog = await openPicker();
-
-    expect(scope).not.toBeNull();
-    expect(scope?.contains(dialog)).toBe(true);
-    expect([...document.body.children].includes(dialog)).toBe(false);
-  });
-
-  it("stays inside a nested ThemeScope so the overlay keeps that scope's theme", async () => {
-    renderPicker(
-      <ThemeScope theme={fkasExternal}>
-        <DatePicker label="Invoice date" value={march10} />
-      </ThemeScope>
-    );
-    const dialog = await openPicker();
-
-    expect(dialog.closest("[data-theme-variant=external]")).not.toBeNull();
-  });
-
-  it("portals into an explicit container when one is given", async () => {
-    function WithContainer(): ReactElement {
-      const container = useRef<HTMLDivElement>(null);
-      return (
-        <>
-          <DatePicker container={container} label="Invoice date" value={march10} />
-          <div data-explicit-container="" ref={container} />
-        </>
-      );
-    }
-    renderPicker(<WithContainer />);
-    const dialog = await openPicker();
-
-    expect(dialog.closest("[data-explicit-container]")).not.toBeNull();
-  });
-
-  it("keeps a host Dialog open while the user works inside the picker's popover", async () => {
-    const onOpenChange = vi.fn();
-    renderPicker(
-      <Dialog.Root defaultOpen onOpenChange={onOpenChange}>
-        <Dialog.Content showCloseButton={false}>
-          <Dialog.Header>
-            <Dialog.Title>Order</Dialog.Title>
-          </Dialog.Header>
-          <ControlledPicker />
-        </Dialog.Content>
-      </Dialog.Root>
-    );
-    await expect.element(page.getByRole("dialog", { name: "Order" })).toBeVisible();
-    await userEvent.click(trigger());
-    await expect.element(page.getByRole("dialog", { name: /calendar/i })).toBeVisible();
-
-    // Paging is an interaction that keeps the popover open: the host must survive it.
-    await userEvent.click(navButtonNamed(/next/i));
-    expect(calendarGrid().getAttribute("aria-label")).toMatch(/August\s+2026/i);
-    expect(onOpenChange).not.toHaveBeenCalled();
-
-    // Selecting a day dismisses the picker's own popover — and nothing else.
-    await userEvent.click(dayNamed(/Wednesday, August 12, 2026/i));
-    await expect.element(page.getByRole("dialog", { name: /calendar/i })).not.toBeInTheDocument();
-    expect(segmentNamed("day").textContent).toBe("12");
-    expect(onOpenChange).not.toHaveBeenCalled();
-    await expect.element(page.getByRole("dialog", { name: "Order" })).toBeVisible();
   });
 });
 

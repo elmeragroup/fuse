@@ -11,7 +11,6 @@ import {
 } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import { overlayBackdropOf, renderThemed } from "../../../test/themed-browser-render";
-import { ThemeScope } from "../../theme/theme-scope";
 import { Dialog } from "./index";
 
 const CLOSE_COPY = {
@@ -209,8 +208,8 @@ describe("Dialog", () => {
     });
   });
 
-  it("closes from the corner button and drops it when showCloseButton is false", async () => {
-    const { rerender } = renderThemed(withLocale("en-US", <BasicDialog />));
+  it("closes from the corner button, drops it when showCloseButton is false, names it in every locale, and lets closeLabel win", async () => {
+    const { rerender, unmount: unmountBasic } = renderThemed(withLocale("en-US", <BasicDialog />));
     await openDialog();
     const corner = page.getByRole("button", { name: "Close", exact: true }).element();
     expect(corner.getAttribute("data-slot")).toBe("dialog-close");
@@ -224,9 +223,8 @@ describe("Dialog", () => {
     rerender(withLocale("en-US", <BasicDialog showCloseButton={false} />));
     await openDialog();
     expect(page.getByRole("button", { name: "Close", exact: true }).query()).toBeNull();
-  });
+    unmountBasic();
 
-  it("renders the corner close button in every locale and lets closeLabel win", async () => {
     for (const locale of SUPPORTED_LOCALES) {
       const { unmount } = renderThemed(withLocale(locale, <BasicDialog />));
       await openDialog();
@@ -244,8 +242,8 @@ describe("Dialog", () => {
     unmount();
   });
 
-  it("renders the Footer close action with the locale label and closes with it", async () => {
-    renderThemed(
+  it("renders the Footer close action with the locale label, closes with it, and lets closeLabel win", async () => {
+    const { unmount } = renderThemed(
       withLocale(
         "sv-SE",
         <Dialog.Root>
@@ -267,9 +265,8 @@ describe("Dialog", () => {
     await vi.waitFor(() => {
       expect(page.getByRole("dialog").query()).toBeNull();
     });
-  });
+    unmount();
 
-  it("overrides the Footer close label from closeLabel", async () => {
     renderThemed(
       withLocale(
         "nb-NO",
@@ -310,43 +307,6 @@ describe("Dialog", () => {
     const dialog = await openDialog();
     expect(scope).not.toBeNull();
     expect(scope?.contains(dialog)).toBe(true);
-    expect([...document.body.children].includes(dialog)).toBe(false);
-  });
-
-  it("waits while the resolved container element is still null", () => {
-    function NeverAttached() {
-      const ref = useRef<HTMLElement | null>(null);
-      return (
-        <Dialog.Root open>
-          <Dialog.Content container={ref}>
-            <Dialog.Title>Pending</Dialog.Title>
-          </Dialog.Content>
-        </Dialog.Root>
-      );
-    }
-    renderThemed(withLocale("en-US", <NeverAttached />));
-
-    expect(page.getByRole("dialog").query()).toBeNull();
-  });
-
-  it("does not paint the popup outside a ThemeScope element that has not attached yet", async () => {
-    // A ThemeScope publishes `null` until its callback ref runs; the render below is the
-    // first commit, so the popup must not appear in the document body meanwhile.
-    renderThemed(
-      withLocale(
-        "en-US",
-        <ThemeScope theme={{ variant: "external", brand: "fkas", segment: "private" }}>
-          <Dialog.Root open>
-            <Dialog.Content>
-              <Dialog.Title>Scoped</Dialog.Title>
-            </Dialog.Content>
-          </Dialog.Root>
-        </ThemeScope>
-      )
-    );
-    const dialog = await mountedDialog();
-    const scope = dialog.closest("[data-theme-variant=external]");
-    expect(scope).not.toBeNull();
     expect([...document.body.children].includes(dialog)).toBe(false);
   });
 

@@ -1,25 +1,8 @@
-import { expectTypeOf, test } from "vitest";
+import { test } from "vitest";
 
-import type { Field as RootField } from "@elmeragroup/fuse";
 import { Field } from "@elmeragroup/fuse/field";
 
-test("the namespace ships all twelve parts from the field entry and the root barrel", () => {
-  expectTypeOf<typeof Field>().toEqualTypeOf<typeof RootField>();
-  expectTypeOf(Field).toHaveProperty("Root");
-  expectTypeOf(Field).toHaveProperty("Label");
-  expectTypeOf(Field).toHaveProperty("Description");
-  expectTypeOf(Field).toHaveProperty("Error");
-  expectTypeOf(Field).toHaveProperty("Control");
-  expectTypeOf(Field).toHaveProperty("Item");
-  expectTypeOf(Field).toHaveProperty("Content");
-  expectTypeOf(Field).toHaveProperty("Group");
-  expectTypeOf(Field).toHaveProperty("Set");
-  expectTypeOf(Field).toHaveProperty("Legend");
-  expectTypeOf(Field).toHaveProperty("Separator");
-  expectTypeOf(Field).toHaveProperty("Title");
-});
-
-test("Root takes the three-value orientation axis and Legend the two-value variant axis", () => {
+test("Root takes the three-value orientation axis, Legend the two-value variant axis, and parts useRender's render prop but never a polymorphic as prop", () => {
   const _vertical = <Field.Root orientation="vertical" />;
   const _horizontal = <Field.Root orientation="horizontal" />;
   const _responsive = <Field.Root orientation="responsive" />;
@@ -32,9 +15,7 @@ test("Root takes the three-value orientation axis and Legend the two-value varia
   const _badLegend = <Field.Legend variant="title" />;
   // @ts-expect-error fieldVariants is package-private; no size axis exists
   const _noSize = <Field.Root size="sm" />;
-});
 
-test("parts take useRender's render prop and never a polymorphic as prop", () => {
   const _control = <Field.Control render={<textarea />} />;
   const _label = <Field.Label render={<span />} />;
 

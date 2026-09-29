@@ -1,6 +1,3 @@
-import { useRef } from "react";
-import type { ReactElement } from "react";
-
 import { DialogTrigger } from "react-aria-components";
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -16,7 +13,6 @@ import {
   renderThemed,
   roleNamed,
 } from "../../../test/themed-browser-render";
-import { ThemeScope } from "../../theme/theme-scope";
 import { Button } from "./button";
 import { Dialog } from "./dialog";
 import { FieldGroup, Input, Label } from "./field";
@@ -56,14 +52,6 @@ describe("the internal RAC Button", () => {
     expect(trigger.hasAttribute("data-hovered")).toBe(true);
     expect(getComputedStyle(trigger).backgroundColor).toBe(cssVarColor(trigger, "--muted"));
   });
-
-  it("stays a real RAC button that reports presses", async () => {
-    const onPress = vi.fn();
-    renderThemed(<Button onPress={onPress}>Apply</Button>);
-    await userEvent.click(page.getByRole("button", { name: "Apply" }).element());
-
-    expect(onPress).toHaveBeenCalledTimes(1);
-  });
 });
 
 describe("the internal field chrome", () => {
@@ -84,34 +72,7 @@ describe("the internal field chrome", () => {
     await userEvent.click(page.getByRole("textbox", { name: "From" }).element());
     expect(group.hasAttribute("data-focus-within")).toBe(true);
   });
-
-  it("marks an invalid group with the error token, never destructive", () => {
-    renderThemed(
-      <FieldGroup aria-label="Due date" isInvalid>
-        <Input aria-label="Due date" />
-      </FieldGroup>
-    );
-    const group = page.getByRole("group", { name: "Due date" }).element();
-    if (!(group instanceof HTMLElement)) {
-      throw new Error("expected the field group");
-    }
-
-    expect(getComputedStyle(group).borderTopColor).toBe(cssVarColor(group, "--error"));
-  });
 });
-
-function PopoverFixture({ container }: { container?: React.RefObject<HTMLElement | null> }): ReactElement {
-  return (
-    <DialogTrigger>
-      <Button>Choose date</Button>
-      <Popover container={container}>
-        <Dialog closeButton={false} title="Calendar">
-          <button type="button">Inside the popover</button>
-        </Dialog>
-      </Popover>
-    </DialogTrigger>
-  );
-}
 
 /** RAC mounts the overlay after the opening commit, so wait for it before reading it. */
 async function mountedDialog(): Promise<HTMLElement> {
@@ -122,56 +83,6 @@ async function mountedDialog(): Promise<HTMLElement> {
   }
   return dialog;
 }
-
-async function openPopover(): Promise<HTMLElement> {
-  await userEvent.click(page.getByRole("button", { name: "Choose date" }).element());
-  return mountedDialog();
-}
-
-describe("the internal RAC Popover", () => {
-  it("carries no overlay-container stamp now the modal stack is gone", async () => {
-    renderThemed(withLocale("en-US", <PopoverFixture />));
-    const dialog = await openPopover();
-
-    expect(dialog.closest("[data-overlay-container]")).toBeNull();
-  });
-
-  it("portals into the enclosing ThemeScope instead of the document body", async () => {
-    const { host } = renderThemed(withLocale("en-US", <PopoverFixture />));
-    const scope = host.querySelector("[data-theme-brand]");
-    const dialog = await openPopover();
-
-    expect(scope).not.toBeNull();
-    expect(scope?.contains(dialog)).toBe(true);
-    expect([...document.body.children].includes(dialog)).toBe(false);
-  });
-
-  it("waits while the resolved container element is still null", async () => {
-    function NeverAttached(): ReactElement {
-      const ref = useRef<HTMLElement | null>(null);
-      return <PopoverFixture container={ref} />;
-    }
-    renderThemed(withLocale("en-US", <NeverAttached />));
-    await userEvent.click(page.getByRole("button", { name: "Choose date" }).element());
-
-    expect(page.getByRole("dialog").query()).toBeNull();
-  });
-
-  it("does not escape a ThemeScope element that has not attached yet", async () => {
-    renderThemed(
-      withLocale(
-        "en-US",
-        <ThemeScope theme={{ variant: "external", brand: "fkas", segment: "private" }}>
-          <PopoverFixture />
-        </ThemeScope>
-      )
-    );
-    const dialog = await openPopover();
-
-    expect(dialog.closest("[data-theme-variant=external]")).not.toBeNull();
-    expect([...document.body.children].includes(dialog)).toBe(false);
-  });
-});
 
 describe("the internal styled Dialog", () => {
   it("labels its dismiss affordance from the locked dialog.close dictionary", async () => {

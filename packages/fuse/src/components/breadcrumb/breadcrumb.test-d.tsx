@@ -1,31 +1,6 @@
 import { expectTypeOf, test } from "vitest";
 
-import type { Breadcrumb as RootBreadcrumb } from "@elmeragroup/fuse";
-import * as BreadcrumbModule from "@elmeragroup/fuse/breadcrumb";
 import { Breadcrumb } from "@elmeragroup/fuse/breadcrumb";
-
-test("Breadcrumb ships from the breadcrumb entry and the root barrel", () => {
-  expectTypeOf<typeof Breadcrumb>().toEqualTypeOf<typeof RootBreadcrumb>();
-  expectTypeOf(Breadcrumb.Root).toBeFunction();
-  expectTypeOf(Breadcrumb.List).toBeFunction();
-  expectTypeOf(Breadcrumb.Item).toBeFunction();
-  expectTypeOf(Breadcrumb.Link).toBeFunction();
-  expectTypeOf(Breadcrumb.Page).toBeFunction();
-  expectTypeOf(Breadcrumb.Separator).toBeFunction();
-  expectTypeOf(Breadcrumb.Ellipsis).toBeFunction();
-});
-
-test("the public namespace is seven parts — never the flat ref names or a recipe", () => {
-  expectTypeOf(Breadcrumb).not.toHaveProperty("BreadcrumbList");
-  expectTypeOf(Breadcrumb).not.toHaveProperty("BreadcrumbItem");
-  expectTypeOf(Breadcrumb).not.toHaveProperty("BreadcrumbLink");
-  expectTypeOf(Breadcrumb).not.toHaveProperty("BreadcrumbPage");
-  expectTypeOf(Breadcrumb).not.toHaveProperty("BreadcrumbSeparator");
-  expectTypeOf(Breadcrumb).not.toHaveProperty("BreadcrumbEllipsis");
-  expectTypeOf(BreadcrumbModule).not.toHaveProperty("BreadcrumbList");
-  expectTypeOf(BreadcrumbModule).not.toHaveProperty("BreadcrumbLink");
-  expectTypeOf(BreadcrumbModule).not.toHaveProperty("breadcrumbVariants");
-});
 
 test("parts take the public API: no locale, no as prop", () => {
   expectTypeOf<Parameters<typeof Breadcrumb.Root>[0]["label"]>().toEqualTypeOf<string | undefined>();

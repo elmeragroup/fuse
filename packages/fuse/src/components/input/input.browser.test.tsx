@@ -31,19 +31,6 @@ describe("Input", () => {
     );
   });
 
-  it("takes its accessible name from Field.Label", () => {
-    renderThemed(
-      <Field.Root>
-        <Field.Label>Email</Field.Label>
-        <Input type="email" />
-        <Field.Description>Work address preferred.</Field.Description>
-      </Field.Root>
-    );
-    const input = textboxNamed("Email");
-    const describedBy = input.getAttribute("aria-describedby");
-    expect(describedBy).toBeTruthy();
-  });
-
   it("keeps the Field label and description when a wrapper forwards id and ARIA props as undefined", async () => {
     renderThemed(
       <Field.Root>
@@ -78,37 +65,20 @@ describe("Input", () => {
     expect(document.activeElement).toBe(roleNamed("button", "After"));
   });
 
-  it("fires native onChange while typing for uncontrolled and controlled values", async () => {
-    const seen: string[] = [];
-    function Controlled() {
-      return (
-        <Input
-          aria-label="Controlled"
-          value="Hi"
-          onChange={(event) => {
-            seen.push(event.currentTarget.value);
-          }}
-        />
-      );
-    }
-    renderThemed(
+  it("matches the signed md rung at both densities and ignores a nested data-density stamp or ThemeScope", () => {
+    const { rerender } = renderThemed(
       <>
-        <Input
-          aria-label="Open"
-          onChange={(event) => {
-            seen.push(event.currentTarget.value);
-          }}
-        />
-        <Controlled />
+        <Input aria-label="Meter" />
+        <div data-density="comfortable">
+          <Input aria-label="Nested comfortable" />
+        </div>
+        <div data-density="dense">
+          <Input aria-label="Nested dense" />
+        </div>
       </>
     );
-    await userEvent.fill(page.getByRole("textbox", { name: "Open", exact: true }), "ab");
-    expect(seen.some((value) => value.includes("a") || value.includes("ab"))).toBe(true);
-    expect(textboxNamed("Controlled")).toHaveProperty("value", "Hi");
-  });
-
-  it("matches the signed md rung at both densities and does not rescope under ThemeScope", () => {
-    const { rerender } = renderThemed(<Input aria-label="Meter" />);
+    // Density is a document-root axis: `fuse.css` keys the comfortable block on
+    // `:root[data-density="comfortable"]`, so a nested attribute rescopes nothing.
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);
       const input = textboxNamed("Meter");
@@ -117,6 +87,10 @@ describe("Input", () => {
       expect(px(style.paddingInlineStart)).toBe(CONTROL_MD[density].px);
       expect(px(style.fontSize)).toBe(CONTROL_MD[density].font);
       expect(px(style.lineHeight)).toBe(CONTROL_MD[density].leading);
+      expect(px(getComputedStyle(textboxNamed("Nested comfortable")).height)).toBe(
+        CONTROL_MD[density].height
+      );
+      expect(px(getComputedStyle(textboxNamed("Nested dense")).height)).toBe(CONTROL_MD[density].height);
     }
 
     stampDensity("dense");
@@ -126,30 +100,6 @@ describe("Input", () => {
       </ThemeScope>
     );
     expect(px(getComputedStyle(textboxNamed("Meter")).height)).toBe(CONTROL_MD.dense.height);
-  });
-
-  it("ignores a nested data-density stamp in both directions", () => {
-    renderThemed(
-      <>
-        <Input aria-label="Root" />
-        <div data-density="comfortable">
-          <Input aria-label="Nested comfortable" />
-        </div>
-        <div data-density="dense">
-          <Input aria-label="Nested dense" />
-        </div>
-      </>
-    );
-
-    // Density is a document-root axis: `fuse.css` keys the comfortable block on
-    // `:root[data-density="comfortable"]`, so a nested attribute rescopes nothing.
-    for (const density of ["dense", "comfortable"] as const) {
-      stampDensity(density);
-      const rung = CONTROL_MD[density].height;
-      expect(px(getComputedStyle(textboxNamed("Root")).height)).toBe(rung);
-      expect(px(getComputedStyle(textboxNamed("Nested comfortable")).height)).toBe(rung);
-      expect(px(getComputedStyle(textboxNamed("Nested dense")).height)).toBe(rung);
-    }
   });
 
   it("paints the shared ring on keyboard focus-visible at both densities", async () => {

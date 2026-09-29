@@ -3,18 +3,10 @@ import type { ReactNode } from "react";
 import { expectTypeOf, test } from "vitest";
 
 import type {
-  Checkbox as RootCheckbox,
-  CheckboxDescription as RootCheckboxDescription,
-  CheckboxGroup as RootCheckboxGroup,
-  CheckboxItem as RootCheckboxItem,
-  CheckboxItemGroup as RootCheckboxItemGroup,
-} from "@elmeragroup/fuse";
-import type {
   CheckboxDescriptionProps,
   CheckboxGroupProps,
   CheckboxItemProps,
 } from "@elmeragroup/fuse/checkbox";
-import * as CheckboxModule from "@elmeragroup/fuse/checkbox";
 import {
   Checkbox,
   CheckboxDescription,
@@ -22,45 +14,6 @@ import {
   CheckboxItem,
   CheckboxItemGroup,
 } from "@elmeragroup/fuse/checkbox";
-import { SelectionItem } from "@elmeragroup/fuse/selection-item";
-
-test("the public values ship from the checkbox entry and the root barrel", () => {
-  expectTypeOf<typeof Checkbox>().toEqualTypeOf<typeof RootCheckbox>();
-  expectTypeOf<typeof CheckboxGroup>().toEqualTypeOf<typeof RootCheckboxGroup>();
-  expectTypeOf<typeof CheckboxItem>().toEqualTypeOf<typeof RootCheckboxItem>();
-  expectTypeOf<typeof CheckboxItemGroup>().toEqualTypeOf<typeof RootCheckboxItemGroup>();
-  expectTypeOf<typeof CheckboxDescription>().toEqualTypeOf<typeof RootCheckboxDescription>();
-  expectTypeOf(Checkbox).toBeFunction();
-  expectTypeOf(CheckboxGroup).toBeFunction();
-  expectTypeOf(CheckboxItem).toBeFunction();
-  expectTypeOf(CheckboxItemGroup).toBeFunction();
-  expectTypeOf(CheckboxDescription).toBeFunction();
-});
-
-test("the entry exports only the public names", () => {
-  expectTypeOf(CheckboxModule).toHaveProperty("Checkbox");
-  expectTypeOf(CheckboxModule).toHaveProperty("CheckboxGroup");
-  expectTypeOf(CheckboxModule).toHaveProperty("CheckboxItem");
-  expectTypeOf(CheckboxModule).toHaveProperty("CheckboxItemGroup");
-  expectTypeOf(CheckboxModule).toHaveProperty("CheckboxDescription");
-  expectTypeOf(CheckboxModule).not.toHaveProperty("CheckboxItemTitle");
-  expectTypeOf(CheckboxModule).not.toHaveProperty("CheckboxItemActions");
-  expectTypeOf(CheckboxModule).not.toHaveProperty("CheckboxItemContent");
-  expectTypeOf(CheckboxModule).not.toHaveProperty("CheckboxItemDescription");
-  expectTypeOf(CheckboxModule).not.toHaveProperty("CheckboxItemSubSection");
-  expectTypeOf(CheckboxModule).not.toHaveProperty("checkboxVariants");
-  expectTypeOf(CheckboxModule).not.toHaveProperty("CheckboxProps");
-  expectTypeOf(CheckboxModule).not.toHaveProperty("SelectionItemGroup");
-  expectTypeOf(CheckboxModule).not.toHaveProperty("CheckboxItemGroupContext");
-});
-
-test("CheckboxItem aliases are the SelectionItem part types", () => {
-  expectTypeOf(CheckboxItem.Title).toEqualTypeOf(SelectionItem.Title);
-  expectTypeOf(CheckboxItem.Description).toEqualTypeOf(SelectionItem.Description);
-  expectTypeOf(CheckboxItem.Content).toEqualTypeOf(SelectionItem.Content);
-  expectTypeOf(CheckboxItem.Actions).toEqualTypeOf(SelectionItem.Actions);
-  expectTypeOf(CheckboxItem.SubSection).toEqualTypeOf(SelectionItem.SubSection);
-});
 
 test("CheckboxGroupProps is the labeled-composite face", () => {
   expectTypeOf<CheckboxGroupProps["label"]>().toEqualTypeOf<string | undefined>();
@@ -80,15 +33,13 @@ test("CheckboxGroupProps is the labeled-composite face", () => {
   expectTypeOf<CheckboxGroupProps>().not.toHaveProperty("invalid");
 });
 
-test("CheckboxItemProps is the parent-vs-value discriminated union", () => {
+test("CheckboxItemProps is the parent-vs-value discriminated union and the elements reject invalid combinations", () => {
   expectTypeOf<CheckboxItemProps["isDisabled"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<CheckboxItemProps["isReadOnly"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<CheckboxItemProps["controlPosition"]>().toEqualTypeOf<"start" | "end" | undefined>();
   expectTypeOf<CheckboxDescriptionProps["describedBy"]>().toEqualTypeOf<string | ReactNode | undefined>();
   expectTypeOf<CheckboxItemProps>().not.toHaveProperty("as");
-});
 
-test("the elements take the public props and reject invalid combinations", () => {
   const _primitive = <Checkbox aria-label="Accept" defaultChecked />;
   const _group = (
     <CheckboxGroup

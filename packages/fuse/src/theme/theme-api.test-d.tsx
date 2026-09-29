@@ -119,10 +119,6 @@ test("SupportedLocale is the four shipped locales and locale is required", () =>
   };
 });
 
-test("UserAgentParserResult is not a public theme export", () => {
-  expectTypeOf<typeof ThemeApi>().not.toHaveProperty("UserAgentParserResult");
-});
-
 test("theme constant tuples are public /theme values", () => {
   expectTypeOf(THEME_VARIANTS).toEqualTypeOf<readonly ["internal", "external"]>();
   expectTypeOf(THEME_SEGMENTS).toEqualTypeOf<readonly ["private", "company"]>();

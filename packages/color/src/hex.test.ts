@@ -47,14 +47,12 @@ describe("parse", () => {
 });
 
 describe("formatOpaque", () => {
-  it("writes uppercase #RRGGBB and leaves the alpha out", () => {
+  it("writes uppercase #RRGGBB, rounding each channel to the nearest of 256 steps, and leaves the alpha out", () => {
     expect(
       Hex.formatOpaque(getOrThrow(Srgb.make({ r: 92 / 255, g: 103 / 255, b: 115 / 255, alpha: 0.4 })))
     ).toBe("#5C6773");
     expect(Hex.formatOpaque(getOrThrow(Srgb.make({ r: 0, g: 0, b: 0, alpha: 1 })))).toBe("#000000");
-  });
-
-  it("rounds each channel to the nearest of 256 steps", () => {
+    // Each channel rounds to the nearest of 256 steps.
     // 0.5 * 255 = 127.5, which rounds to 128 (0x80); 0.498 * 255 = 126.99, which rounds to 127.
     expect(Hex.formatOpaque(getOrThrow(Srgb.make({ r: 0.5, g: 0.498, b: 1, alpha: 1 })))).toBe("#807FFF");
   });

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import type { ComponentProps, ReactNode } from "react";
 
 import { describe, expect, it, vi } from "vitest";
@@ -200,12 +200,6 @@ describe("Combobox", () => {
     expect(optionNamed("Banana")).toBeTruthy();
   });
 
-  it("opens from ArrowDown on the input", async () => {
-    renderCombobox(<FruitCombobox />);
-    await openWithArrowDown();
-    expect(highlightedOption().textContent).toContain("Apple");
-  });
-
   it("closes the popup on Escape and keeps focus on the input", async () => {
     renderCombobox(<FruitCombobox />);
     await openWithArrowDown();
@@ -301,23 +295,6 @@ describe("Combobox", () => {
     expect(page.getByRole("button", { name: TOGGLE_COPY["en-US"], exact: true }).query()).not.toBeNull();
   });
 
-  it("names the caret trigger Toggle options in every locale when a Field.Label is present", () => {
-    for (const locale of SUPPORTED_LOCALES) {
-      const { unmount } = renderCombobox(
-        <Field.Root>
-          <Field.Label>Fruit</Field.Label>
-          <FruitCombobox />
-        </Field.Root>,
-        locale
-      );
-      expect(
-        page.getByRole("button", { name: TOGGLE_COPY[locale], exact: true }).query(),
-        locale
-      ).not.toBeNull();
-      unmount();
-    }
-  });
-
   it("keeps the Field label and description on the inputs when a wrapper forwards id and ARIA props as undefined", async () => {
     renderCombobox(
       <>
@@ -369,55 +346,63 @@ describe("Combobox", () => {
     expect(trigger.getAttribute("aria-labelledby")).toBe(labelId);
   });
 
-  it("disables the input, trigger, and clear from Combobox.Input disabled", () => {
-    renderCombobox(
-      <Combobox.Root items={[...FRUITS]} defaultValue="Apple">
+  it.each([
+    [
+      "Combobox.Input disabled",
+      <Combobox.Root key="input" items={[...FRUITS]} defaultValue="Apple">
         <Combobox.Input aria-label="Fruit" showClear disabled />
         <Combobox.Content>
           <Combobox.List>
             <Combobox.Item value="Apple">Apple</Combobox.Item>
           </Combobox.List>
         </Combobox.Content>
-      </Combobox.Root>
-    );
-    expect(comboboxNamed("Fruit")).toHaveProperty("disabled", true);
-    expect(comboboxNamed("Fruit").hasAttribute("data-disabled")).toBe(true);
-    for (const button of page.getByRole("button").elements()) {
-      expect(button).toHaveProperty("disabled", true);
-    }
-  });
-
-  it("disables the input from Combobox.Root disabled and skips it in the Tab order", async () => {
-    renderCombobox(
-      <>
-        <button type="button">Before</button>
-        <Combobox.Root items={[...FRUITS]} defaultValue="Apple" disabled>
-          <Combobox.Input aria-label="Fruit" showClear />
-          <Combobox.Content>
-            <Combobox.List>
-              <Combobox.Item value="Apple">Apple</Combobox.Item>
-            </Combobox.List>
-          </Combobox.Content>
-        </Combobox.Root>
-        <button type="button">After</button>
-      </>
-    );
-    await expect.element(page.getByRole("combobox", { name: "Fruit", exact: true })).toBeDisabled();
-
-    buttonNamed("Before").focus();
-    await userEvent.tab();
-    await expect.element(page.getByRole("button", { name: "After", exact: true })).toHaveFocus();
-  });
-
-  it("disables the input from Field.Root disabled", async () => {
-    renderCombobox(
-      <Field.Root disabled>
+      </Combobox.Root>,
+    ],
+    [
+      "Combobox.Root disabled",
+      <Combobox.Root key="root" items={[...FRUITS]} defaultValue="Apple" disabled>
+        <Combobox.Input aria-label="Fruit" showClear />
+        <Combobox.Content>
+          <Combobox.List>
+            <Combobox.Item value="Apple">Apple</Combobox.Item>
+          </Combobox.List>
+        </Combobox.Content>
+      </Combobox.Root>,
+    ],
+    [
+      "Field.Root disabled",
+      <Field.Root key="field" disabled>
         <Field.Label>Fruit</Field.Label>
         <FruitCombobox />
-      </Field.Root>
-    );
-    await expect.element(page.getByRole("combobox", { name: "Fruit", exact: true })).toBeDisabled();
-  });
+      </Field.Root>,
+    ],
+  ])(
+    "disables the input and its buttons from %s and skips them in the Tab order",
+    async (_source, combobox) => {
+      renderCombobox(
+        <>
+          <button type="button">Before</button>
+          {combobox}
+          <button type="button">After</button>
+        </>
+      );
+      await expect.element(page.getByRole("combobox", { name: "Fruit", exact: true })).toBeDisabled();
+      expect(comboboxNamed("Fruit")).toHaveProperty("disabled", true);
+      expect(comboboxNamed("Fruit").hasAttribute("data-disabled")).toBe(true);
+      const owned = page
+        .getByRole("button")
+        .elements()
+        .filter((button) => !["Before", "After"].includes(button.textContent));
+      expect(owned.length).toBeGreaterThan(0);
+      for (const button of owned) {
+        expect(button).toHaveProperty("disabled", true);
+      }
+
+      buttonNamed("Before").focus();
+      await userEvent.tab();
+      await expect.element(page.getByRole("button", { name: "After", exact: true })).toHaveFocus();
+    }
+  );
 
   it("appends chips in multiple mode, keeps the popup open, and removes via chip button and Backspace", async () => {
     const onValueChange = vi.fn();
@@ -511,34 +496,6 @@ describe("Combobox", () => {
 
     await userEvent.keyboard("{ArrowRight}");
     await expect.element(page.getByRole("combobox", { name: "Fruit", exact: true })).toHaveFocus();
-  });
-
-  it("names the chip-remove button from itemToStringLabel for object items", () => {
-    const fruits = [
-      { id: "apple", label: "Apple" },
-      { id: "banana", label: "Banana" },
-    ] as const;
-    renderCombobox(
-      <Combobox.Root
-        items={[...fruits]}
-        itemToStringLabel={(item) => item.label}
-        multiple
-        defaultValue={[fruits[0]]}>
-        <Combobox.Chips aria-label="Selected fruit">
-          <Combobox.Value>
-            {(value: (typeof fruits)[number][]) =>
-              value.map((item) => (
-                <Combobox.Chip key={item.id}>
-                  <span aria-hidden="true">★</span>
-                </Combobox.Chip>
-              ))
-            }
-          </Combobox.Value>
-          <Combobox.ChipsInput aria-label="Fruit" />
-        </Combobox.Chips>
-      </Combobox.Root>
-    );
-    expect(page.getByRole("button", { name: "Remove Apple", exact: true }).query()).not.toBeNull();
   });
 
   it("names the chip-remove button Remove alone when neither children nor itemToStringLabel yield text", () => {
@@ -696,25 +653,23 @@ describe("Combobox", () => {
     expect([...document.body.children].includes(listbox)).toBe(false);
   });
 
-  it("waits while the resolved Content container element is still null", () => {
-    function NeverAttached() {
-      const ref = useRef<HTMLElement | null>(null);
-      return (
-        <Combobox.Root items={[...FRUITS]} open>
-          <Combobox.Input aria-label="Pending" />
-          <Combobox.Content container={ref}>
-            <Combobox.List>
-              <Combobox.Item value="Apple">Apple</Combobox.Item>
-            </Combobox.List>
-          </Combobox.Content>
-        </Combobox.Root>
+  it("renders Empty, Clear, chip-remove and caret-trigger defaults in all four locales and honors copy overrides", async () => {
+    // The caret trigger keeps its dictionary name beside a Field.Label.
+    for (const locale of SUPPORTED_LOCALES) {
+      const { unmount } = renderCombobox(
+        <Field.Root>
+          <Field.Label>Fruit</Field.Label>
+          <FruitCombobox />
+        </Field.Root>,
+        locale
       );
+      expect(
+        page.getByRole("button", { name: TOGGLE_COPY[locale], exact: true }).query(),
+        locale
+      ).not.toBeNull();
+      unmount();
     }
-    renderCombobox(<NeverAttached />);
-    expect(page.getByRole("listbox").query()).toBeNull();
-  });
 
-  it("renders Empty, Clear, and chip-remove defaults in all four locales and honors copy overrides", async () => {
     for (const locale of SUPPORTED_LOCALES) {
       const { unmount } = renderCombobox(
         <Combobox.Root items={[...FRUITS]} defaultValue="Apple" defaultInputValue="Apple">

@@ -41,8 +41,6 @@ import { UiProviders } from "../react-aria/ui-providers/ui-providers";
  * paints its border with the `--error` role and a 3px ring of that role at 20% alpha.
  */
 
-const DENSITIES = ["dense", "comfortable"] as const;
-
 /** What hover or press could change on a control. */
 function pointerPaint(element: Element) {
   const style = getComputedStyle(element);
@@ -245,9 +243,11 @@ const DISABLED_CONTROLS = [
   ["link", () => roleNamed("link", "Disabled link")],
 ] as const;
 
-describe.each(DENSITIES)("state face at %s density", (density) => {
+// Density declares only --control-* metrics (density-css.test.ts), and nothing here reads one,
+// so one density covers the paint, cursor, opacity and ring contracts.
+describe("state face at dense density", () => {
   beforeEach(() => {
-    stampDensity(density);
+    stampDensity("dense");
   });
 
   it("keeps every disabled control's paint and position still under hover and press", async () => {
@@ -267,17 +267,7 @@ describe.each(DENSITIES)("state face at %s density", (density) => {
     }
   });
 
-  it("shows the not-allowed cursor on every disabled control", async () => {
-    renderStateFaces(<DisabledControls />);
-
-    for (const [label, find] of DISABLED_CONTROLS) {
-      const control = find();
-      await userEvent.hover(page.elementLocator(control), { force: true });
-      expect.soft(getComputedStyle(control).cursor, label).toBe("not-allowed");
-    }
-  });
-
-  it("dims every disabled control to half opacity once", () => {
+  it("dims every disabled control to half opacity once and shows the not-allowed cursor", async () => {
     renderStateFaces(<DisabledControls />);
 
     for (const [label, find] of DISABLED_CONTROLS) {
@@ -285,6 +275,8 @@ describe.each(DENSITIES)("state face at %s density", (density) => {
       // A control inside a group (an input, a stepper) is dimmed by the group, so it paints
       // at the group's 0.5 rather than a doubled 0.25.
       expect.soft(effectiveOpacity(control), label).toBe(0.5);
+      await userEvent.hover(page.elementLocator(control), { force: true });
+      expect.soft(getComputedStyle(control).cursor, label).toBe("not-allowed");
     }
   });
 

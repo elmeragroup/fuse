@@ -1,13 +1,25 @@
 {
   "extends": ["//"],
   "tasks": {
+    // The suites re-export helpers from apps/docs/test, and docs is not a dependency, so those
+    // files must be listed for an edit to them to miss this package's cache.
     "test": {
       "dependsOn": ["build"],
-      "env": ["STATIC_THEME_BASE_URL"]
+      "env": ["STATIC_THEME_BASE_URL"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/apps/docs/test/html.ts",
+        "$TURBO_ROOT$/apps/docs/test/suite-browser.ts"
+      ]
     },
     "test:browser": {
       "dependsOn": ["build"],
-      "env": ["STATIC_THEME_BASE_URL"]
+      "env": ["STATIC_THEME_BASE_URL"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/apps/docs/test/html.ts",
+        "$TURBO_ROOT$/apps/docs/test/suite-browser.ts"
+      ]
     }
   }
 }

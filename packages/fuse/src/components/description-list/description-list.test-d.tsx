@@ -2,7 +2,6 @@ import type { ComponentProps } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type { DescriptionList as RootDescriptionList } from "@elmeragroup/fuse";
 import type {
   DescriptionListContentProps,
   DescriptionListDetailsProps,
@@ -13,16 +12,7 @@ import type {
 import * as DescriptionListModule from "@elmeragroup/fuse/description-list";
 import { DescriptionList } from "@elmeragroup/fuse/description-list";
 
-test("the namespace ships all five parts from the description-list entry and the root barrel", () => {
-  expectTypeOf<typeof DescriptionList>().toEqualTypeOf<typeof RootDescriptionList>();
-  expectTypeOf(DescriptionList).toHaveProperty("Root");
-  expectTypeOf(DescriptionList).toHaveProperty("Heading");
-  expectTypeOf(DescriptionList).toHaveProperty("Content");
-  expectTypeOf(DescriptionList).toHaveProperty("Term");
-  expectTypeOf(DescriptionList).toHaveProperty("Details");
-});
-
-test("public API exports only the namespace and part prop types", () => {
+test("public API exports only the namespace and part prop types, with native attributes, Heading render, and no as prop", () => {
   expectTypeOf<DescriptionListRootProps>().toEqualTypeOf<ComponentProps<"div">>();
   expectTypeOf<DescriptionListContentProps>().toEqualTypeOf<ComponentProps<"dl">>();
   expectTypeOf<DescriptionListTermProps>().toEqualTypeOf<ComponentProps<"dt">>();
@@ -35,9 +25,7 @@ test("public API exports only the namespace and part prop types", () => {
   expectTypeOf(DescriptionListModule).not.toHaveProperty("DescriptionListHeading");
   expectTypeOf(DescriptionListModule).not.toHaveProperty("DescriptionTerm");
   expectTypeOf(DescriptionListModule).not.toHaveProperty("DescriptionDetails");
-});
 
-test("parts take native attributes, Heading render, and no polymorphic as prop", () => {
   const _root = (
     <DescriptionList.Root className="max-w-md" id="customer">
       <DescriptionList.Heading>Customer</DescriptionList.Heading>

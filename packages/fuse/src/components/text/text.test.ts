@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
-import { cn } from "../../styles/cn";
 import { typographyFragments } from "../../styles/typography-fragments";
 import { textVariants } from "./text-variants";
 
@@ -44,21 +43,6 @@ describe("textVariants", () => {
     expect(resolved, variant).not.toMatch(RAW_PALETTE_RE);
   });
 
-  it("adds a success variant on the success role token", () => {
-    expect(textVariants({ variant: "success" }).split(/\s+/)).toContain("text-success");
-  });
-
-  it("renames destructive onto the error token and keeps the value name", () => {
-    const resolved = textVariants({ variant: "destructive" });
-    expect(resolved.split(/\s+/)).toContain("text-error");
-    expect(resolved).not.toContain("text-destructive");
-    expect(resolved).not.toContain("destructive");
-  });
-
-  it("resolves success onto text-success", () => {
-    expect(textVariants({ variant: "success" }).split(/\s+/)).toContain("text-success");
-  });
-
   it("cascades each type-scale size onto the host and descendants", () => {
     for (const size of SIZES) {
       const token = SIZE_TOKEN[size];
@@ -74,42 +58,32 @@ describe("textVariants", () => {
     expect(textVariants({ size: "sm" })).toContain("**:text-sm");
   });
 
-  it("maps weight bold onto font-medium, matching the ref cap", () => {
-    expect(textVariants({ weight: "bold" }).split(/\s+/)).toContain("font-medium");
-    expect(textVariants({ weight: "bold" })).not.toContain("font-bold");
-    expect(textVariants({ weight: "medium" }).split(/\s+/)).toContain("font-medium");
-    expect(textVariants({ weight: "normal" }).split(/\s+/)).toContain("font-normal");
-  });
-
-  it("defaults leading to leading-relaxed and covers the ladder", () => {
-    expect(textVariants().split(/\s+/)).toContain("leading-relaxed");
-    expect(textVariants({ leading: "none" }).split(/\s+/)).toContain("leading-none");
-    expect(textVariants({ leading: "tight" }).split(/\s+/)).toContain("leading-tight");
-    expect(textVariants({ leading: "snug" }).split(/\s+/)).toContain("leading-snug");
-    expect(textVariants({ leading: "loose" }).split(/\s+/)).toContain("leading-loose");
-  });
-
-  it("adds truncate when the boolean axis is true", () => {
-    expect(textVariants({ truncate: true }).split(/\s+/)).toContain("truncate");
-    expect(textVariants().split(/\s+/)).not.toContain("truncate");
-  });
-
-  it("surfaces align as a first-class axis", () => {
-    expect(textVariants({ align: "left" }).split(/\s+/)).toContain("text-left");
-    expect(textVariants({ align: "center" }).split(/\s+/)).toContain("text-center");
-    expect(textVariants({ align: "right" }).split(/\s+/)).toContain("text-right");
-    expect(textVariants({ align: "justify" }).split(/\s+/)).toContain("text-justify");
-    expect(textVariants().split(/\s+/)).not.toContain("text-left");
-  });
-
-  it("lets a className merge win over a conflicting recipe class through cn", () => {
-    const merged = cn(
-      textVariants({ variant: "primary", size: "lg" }),
-      "text-sm text-muted-foreground"
-    ).split(/\s+/);
-    expect(merged).toContain("text-muted-foreground");
-    expect(merged).not.toContain("text-primary");
-    expect(merged).toContain("text-sm");
-    expect(merged).not.toContain("text-lg");
-  });
+  it.each<
+    [string, Parameters<typeof textVariants>[0], { has?: string; lacksToken?: string; lacksText?: string }]
+  >([
+    // weight bold is capped at font-medium, matching the ref
+    ["weight bold", { weight: "bold" }, { has: "font-medium", lacksText: "font-bold" }],
+    ["weight medium", { weight: "medium" }, { has: "font-medium" }],
+    ["weight normal", { weight: "normal" }, { has: "font-normal" }],
+    ["default leading", undefined, { has: "leading-relaxed" }],
+    ["leading none", { leading: "none" }, { has: "leading-none" }],
+    ["leading tight", { leading: "tight" }, { has: "leading-tight" }],
+    ["leading snug", { leading: "snug" }, { has: "leading-snug" }],
+    ["leading loose", { leading: "loose" }, { has: "leading-loose" }],
+    ["truncate", { truncate: true }, { has: "truncate" }],
+    ["no truncate by default", undefined, { lacksToken: "truncate" }],
+    ["align left", { align: "left" }, { has: "text-left" }],
+    ["align center", { align: "center" }, { has: "text-center" }],
+    ["align right", { align: "right" }, { has: "text-right" }],
+    ["align justify", { align: "justify" }, { has: "text-justify" }],
+    ["no align by default", undefined, { lacksToken: "text-left" }],
+  ])(
+    "resolves %s on the weight, leading, truncate, and align axes",
+    (_row, props, { has, lacksToken, lacksText }) => {
+      const resolved = textVariants(props);
+      if (has !== undefined) expect(resolved.split(/\s+/)).toContain(has);
+      if (lacksToken !== undefined) expect(resolved.split(/\s+/)).not.toContain(lacksToken);
+      if (lacksText !== undefined) expect(resolved).not.toContain(lacksText);
+    }
+  );
 });

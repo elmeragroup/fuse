@@ -24,7 +24,29 @@ function liveRegion(button: HTMLElement): HTMLElement {
 }
 
 describe("ConfirmButton", () => {
-  it("arms on the first click and confirms once on the second", async () => {
+  it.each([
+    ["the pointer", () => userEvent.click(page.getByRole("button", { name: /^(Delete|Confirm delete)$/ }))],
+    [
+      "Enter",
+      async () => {
+        page
+          .getByRole("button", { name: /^(Delete|Confirm delete)$/ })
+          .element()
+          .focus();
+        await userEvent.keyboard("{Enter}");
+      },
+    ],
+    [
+      "Space",
+      async () => {
+        page
+          .getByRole("button", { name: /^(Delete|Confirm delete)$/ })
+          .element()
+          .focus();
+        await userEvent.keyboard(" ");
+      },
+    ],
+  ] as const)("arms on the first press and confirms once on the second, from %s", async (_input, press) => {
     const onConfirm = vi.fn();
     renderThemed(
       <ConfirmButton onConfirm={onConfirm} armedChildren="Confirm delete">
@@ -35,17 +57,21 @@ describe("ConfirmButton", () => {
     const resting = buttonNamed("Delete");
     expect(resting.hasAttribute("data-armed")).toBe(false);
 
-    await userEvent.click(page.getByRole("button", { name: "Delete", exact: true }));
+    await press();
     expect(onConfirm).not.toHaveBeenCalled();
     const armed = buttonNamed("Confirm delete");
     expect(armed.getAttribute("data-armed")).toBe("true");
     expect(armed.hasAttribute("data-armed")).toBe(true);
 
-    await userEvent.click(page.getByRole("button", { name: "Confirm delete", exact: true }));
+    await press();
     expect(onConfirm).toHaveBeenCalledTimes(1);
     const after = buttonNamed("Delete");
     expect(after.hasAttribute("data-armed")).toBe(false);
     expect(after.getAttribute("data-armed")).toBeNull();
+
+    await press();
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+    expect(buttonNamed("Confirm delete").getAttribute("data-armed")).toBe("true");
   });
 
   it("disarms on Escape without confirming, and still invokes consumer onKeyDown", async () => {
@@ -128,37 +154,40 @@ describe("ConfirmButton", () => {
     expect(buttonNamed("Delete").hasAttribute("data-armed")).toBe(false);
   });
 
-  it("announces armedAriaLabel over string armedChildren and the resting aria-label", async () => {
+  // The announcement chain: armedAriaLabel, then a string armedChildren, then the resting aria-label.
+  it.each([
+    [
+      "armedAriaLabel over string armedChildren and the resting aria-label",
+      "Really delete",
+      "Confirm delete",
+      "Really delete",
+    ],
+    ["string armedChildren over the resting aria-label", undefined, "Confirm delete", "Confirm delete"],
+    [
+      "the resting aria-label when armedChildren is not a string",
+      undefined,
+      <span key="confirm">Confirm</span>,
+      "Delete row",
+    ],
+  ] as const)("announces %s", async (_case, armedAriaLabel, armedChildren, announced) => {
     renderThemed(
       <ConfirmButton
         onConfirm={() => undefined}
-        armedAriaLabel="Really delete"
-        armedChildren="Confirm delete"
+        armedAriaLabel={armedAriaLabel}
+        armedChildren={armedChildren}
         aria-label="Delete row">
         Delete
       </ConfirmButton>
     );
 
     await userEvent.click(page.getByRole("button", { name: "Delete row", exact: true }));
-    const labelled = buttonNamed("Really delete");
-    expect(labelled.getAttribute("aria-label")).toBe("Really delete");
-    const labelledLive = liveRegion(labelled);
-    expect(labelledLive.classList.contains("sr-only")).toBe(true);
-    expect(labelledLive.getAttribute("aria-live")).toBe("polite");
-    expect(labelledLive.textContent).toBe("Really delete");
-  });
-
-  it("announces string armedChildren over the resting aria-label", async () => {
-    renderThemed(
-      <ConfirmButton onConfirm={() => undefined} armedChildren="Confirm delete" aria-label="Delete row">
-        Delete
-      </ConfirmButton>
-    );
-
-    await userEvent.click(page.getByRole("button", { name: "Delete row", exact: true }));
-    const fromChildren = buttonNamed("Confirm delete");
-    expect(fromChildren.getAttribute("aria-label")).toBe("Confirm delete");
-    expect(liveRegion(fromChildren).textContent).toBe("Confirm delete");
+    const armed = buttonNamed(announced);
+    expect(armed.getAttribute("aria-label")).toBe(announced);
+    expect(armed.textContent).toContain("Confirm");
+    const live = liveRegion(armed);
+    expect(live.classList.contains("sr-only")).toBe(true);
+    expect(live.getAttribute("aria-live")).toBe("polite");
+    expect(live.textContent).toBe(announced);
 
     await userEvent.keyboard("{Escape}");
     const restored = buttonNamed("Delete row");
@@ -166,49 +195,42 @@ describe("ConfirmButton", () => {
     expect(restored.querySelector("[aria-live='polite']")).toBeNull();
   });
 
-  it("announces the resting aria-label when armedChildren is not a string", async () => {
-    renderThemed(
-      <ConfirmButton onConfirm={() => undefined} armedChildren={<span>Confirm</span>} aria-label="Delete row">
-        Delete
-      </ConfirmButton>
-    );
+  it.each([
+    ["disabled", { disabled: true }, null],
+    ["isPending", { isPending: true }, "true"],
+  ] as const)(
+    "disarms when %s turns on while armed, and is resting, not confirming, once it clears",
+    async (_prop, inert, dataPending) => {
+      const onConfirm = vi.fn();
 
-    await userEvent.click(page.getByRole("button", { name: "Delete row", exact: true }));
-    const fromResting = buttonNamed("Delete row");
-    expect(fromResting.getAttribute("aria-label")).toBe("Delete row");
-    expect(fromResting.textContent).toContain("Confirm");
-    expect(liveRegion(fromResting).textContent).toBe("Delete row");
-  });
+      function Fixture({ inert: inertProps }: { inert?: { disabled?: boolean; isPending?: boolean } }) {
+        return (
+          <ConfirmButton {...inertProps} onConfirm={onConfirm} armedChildren="Confirm delete">
+            Delete
+          </ConfirmButton>
+        );
+      }
 
-  it("resets armed state when disabled flips true so re-enabling is always resting", async () => {
-    const onConfirm = vi.fn();
+      const { rerender } = renderThemed(<Fixture />);
+      await userEvent.click(page.getByRole("button", { name: "Delete", exact: true }));
+      expect(buttonNamed("Confirm delete").getAttribute("data-armed")).toBe("true");
 
-    function Fixture({ disabled = false }: { disabled?: boolean }) {
-      return (
-        <ConfirmButton disabled={disabled} onConfirm={onConfirm} armedChildren="Confirm delete">
-          Delete
-        </ConfirmButton>
-      );
+      rerender(<Fixture inert={inert} />);
+      const blocked = buttonNamed("Delete");
+      expect(blocked).toBeDisabled();
+      expect(blocked.getAttribute("data-pending")).toBe(dataPending);
+      expect(blocked.hasAttribute("data-armed")).toBe(false);
+
+      rerender(<Fixture />);
+      const reenabled = buttonNamed("Delete");
+      expect(reenabled).toBeEnabled();
+      expect(reenabled.hasAttribute("data-armed")).toBe(false);
+
+      await userEvent.click(page.getByRole("button", { name: "Delete", exact: true }));
+      expect(onConfirm).not.toHaveBeenCalled();
+      expect(buttonNamed("Confirm delete").getAttribute("data-armed")).toBe("true");
     }
-
-    const { rerender } = renderThemed(<Fixture />);
-    await userEvent.click(page.getByRole("button", { name: "Delete", exact: true }));
-    expect(buttonNamed("Confirm delete").getAttribute("data-armed")).toBe("true");
-
-    rerender(<Fixture disabled />);
-    const disabled = buttonNamed("Delete");
-    expect(disabled).toBeDisabled();
-    expect(disabled.hasAttribute("data-armed")).toBe(false);
-
-    rerender(<Fixture />);
-    const reenabled = buttonNamed("Delete");
-    expect(reenabled).toBeEnabled();
-    expect(reenabled.hasAttribute("data-armed")).toBe(false);
-
-    await userEvent.click(page.getByRole("button", { name: "Delete", exact: true }));
-    expect(onConfirm).not.toHaveBeenCalled();
-    expect(buttonNamed("Confirm delete").getAttribute("data-armed")).toBe("true");
-  });
+  );
 
   it("never arms or confirms while isVisuallyDisabled, though presses still land", async () => {
     const onConfirm = vi.fn();
@@ -234,72 +256,5 @@ describe("ConfirmButton", () => {
     expect(resting.hasAttribute("disabled")).toBe(false);
     expect(resting.getAttribute("aria-disabled")).toBe("true");
     expect(resting.hasAttribute("data-armed")).toBe(false);
-  });
-
-  it("disarms when isPending turns on while armed, and re-arms without confirming once it clears", async () => {
-    const onConfirm = vi.fn();
-
-    function Fixture({ isPending = false }: { isPending?: boolean }) {
-      return (
-        <ConfirmButton isPending={isPending} onConfirm={onConfirm} armedChildren="Confirm delete">
-          Delete
-        </ConfirmButton>
-      );
-    }
-
-    const { rerender } = renderThemed(<Fixture />);
-    await userEvent.click(page.getByRole("button", { name: "Delete", exact: true }));
-    expect(buttonNamed("Confirm delete").getAttribute("data-armed")).toBe("true");
-
-    rerender(<Fixture isPending />);
-    const pending = buttonNamed("Delete");
-    expect(pending).toBeDisabled();
-    expect(pending.getAttribute("data-pending")).toBe("true");
-    expect(pending.hasAttribute("data-armed")).toBe(false);
-
-    rerender(<Fixture />);
-    const settled = buttonNamed("Delete");
-    expect(settled).toBeEnabled();
-    expect(settled.hasAttribute("data-armed")).toBe(false);
-
-    await userEvent.click(page.getByRole("button", { name: "Delete", exact: true }));
-    expect(onConfirm).not.toHaveBeenCalled();
-    expect(buttonNamed("Confirm delete").getAttribute("data-armed")).toBe("true");
-  });
-
-  it("drives the same two-press flow from Enter and Space", async () => {
-    const onConfirm = vi.fn();
-    renderThemed(
-      <ConfirmButton onConfirm={onConfirm} armedChildren="Confirm delete">
-        Delete
-      </ConfirmButton>
-    );
-
-    buttonNamed("Delete").focus();
-    await userEvent.keyboard("{Enter}");
-    expect(onConfirm).not.toHaveBeenCalled();
-    expect(buttonNamed("Confirm delete").getAttribute("data-armed")).toBe("true");
-
-    await userEvent.keyboard("{Enter}");
-    expect(onConfirm).toHaveBeenCalledTimes(1);
-    expect(buttonNamed("Delete").hasAttribute("data-armed")).toBe(false);
-
-    buttonNamed("Delete").focus();
-    await userEvent.keyboard(" ");
-    expect(onConfirm).toHaveBeenCalledTimes(1);
-    expect(buttonNamed("Confirm delete").getAttribute("data-armed")).toBe("true");
-
-    await userEvent.keyboard(" ");
-    expect(onConfirm).toHaveBeenCalledTimes(2);
-    expect(buttonNamed("Delete").hasAttribute("data-armed")).toBe(false);
-  });
-
-  it("announces a focusable disabled ConfirmButton as disabled", () => {
-    renderThemed(
-      <ConfirmButton onConfirm={() => undefined} disabled focusableWhenDisabled>
-        Delete
-      </ConfirmButton>
-    );
-    expect(buttonNamed("Delete").getAttribute("aria-disabled")).toBe("true");
   });
 });

@@ -85,15 +85,12 @@ describe("toSrgb", () => {
     }
   });
 
-  it("maps the D50 white and black points to sRGB white and black", () => {
+  it("maps the D50 white and black points to sRGB white and black, and recovers sRGB red", () => {
     // Bradford adaptation carries the D50 white to D65, where sRGB's white sits.
     for (const channel of srgb("lab(100 0 0)").slice(0, 3)) {
       expect(channel).toBeCloseTo(1, 6);
     }
     expect(srgb("lab(0 0 0)")).toEqual([0, 0, 0, 1]);
-  });
-
-  it("recovers sRGB red from its published CIE Lab coordinates", () => {
     // CSS Color 4 gives sRGB red as lab(54.29 80.8 69.89) under D50.
     const [r = 0, g = 0, b = 0] = srgb("lab(54.29 80.8 69.89)");
     expect(r).toBeCloseTo(1, 3);

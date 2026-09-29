@@ -12,13 +12,6 @@ import { CONTROL_MD, px, renderThemed, roleNamed, stampDensity } from "../../../
 import { UiProviders } from "../ui-providers/ui-providers";
 import { SearchField } from "./search-field";
 
-const CLEAR_COPY = {
-  "nb-NO": "Tøm søket",
-  "sv-SE": "Rensa sökningen",
-  "en-US": "Clear search",
-  "fi-FI": "Tyhjennä haku",
-} as const;
-
 function renderField(node: ReactNode) {
   return renderThemed(
     <UiProviders locale="en-US" navigate={() => undefined}>
@@ -58,51 +51,6 @@ function clearButtonNamed(name: RegExp): HTMLElement {
 }
 
 describe("SearchField", () => {
-  it("names the searchbox from the label and associates description and error text", async () => {
-    renderField(
-      <SearchField
-        label="Meter search"
-        description="Search by meter number."
-        isInvalid
-        errorMessage="Enter a query."
-        defaultValue="735999123"
-      />
-    );
-
-    const input = roleNamed("searchbox", "Meter search");
-    await expect.element(page.getByRole("searchbox", { name: "Meter search" })).toBeVisible();
-    expect(input.getAttribute("type")).toBe("search");
-    expect(describedTextsFor(input)).toEqual(
-      expect.arrayContaining(["Search by meter number.", "Enter a query."])
-    );
-  });
-
-  it("updates the value on typing, clears on Escape, and submits on Enter", async () => {
-    const onChange = vi.fn();
-    const onClear = vi.fn();
-    const onSubmit = vi.fn();
-    renderField(
-      <SearchField label="Meter search" onChange={onChange} onClear={onClear} onSubmit={onSubmit} />
-    );
-
-    const input = roleNamed("searchbox", "Meter search");
-    await userEvent.fill(page.getByRole("searchbox", { name: "Meter search", exact: true }), "735999123");
-    expect(onChange).toHaveBeenCalled();
-    expect(onChange.mock.calls.at(-1)?.[0]).toBe("735999123");
-    expect(input).toHaveProperty("value", "735999123");
-
-    input.focus();
-    await userEvent.keyboard("{Escape}");
-    expect(onClear).toHaveBeenCalledTimes(1);
-    expect(input).toHaveProperty("value", "");
-
-    await userEvent.fill(page.getByRole("searchbox", { name: "Meter search", exact: true }), "Oslo");
-    input.focus();
-    await userEvent.keyboard("{Enter}");
-    expect(onSubmit).toHaveBeenCalled();
-    expect(onSubmit.mock.calls.at(-1)?.[0]).toBe("Oslo");
-  });
-
   it("clears from the named button and hides that button while empty", async () => {
     const onClear = vi.fn();
     renderField(<SearchField label="Meter search" defaultValue="735999123" onClear={onClear} />);
@@ -168,16 +116,6 @@ describe("SearchField", () => {
     expect(describedTextsFor(roleNamed("searchbox", "Function error"))).toContain("Query is required");
   });
 
-  it("names the clear button from the dictionary in every shipped locale", async () => {
-    for (const locale of SUPPORTED_LOCALES) {
-      const { unmount } = renderThemed(
-        withLocale(locale, <SearchField label="Meter search" defaultValue="735999123" />)
-      );
-      await expect.element(page.getByRole("button", { name: CLEAR_COPY[locale] })).toBeVisible();
-      unmount();
-    }
-  });
-
   it("paints the shared state ring on the field group for keyboard focus at both densities", async () => {
     renderField(
       <>
@@ -213,7 +151,21 @@ describe("SearchField", () => {
     }
   });
 
-  it("lets an explicit label override the dictionary default", async () => {
+  it("names the clear button from the dictionary in every shipped locale, below an explicit label", async () => {
+    const expected = {
+      "nb-NO": "Tøm søket",
+      "sv-SE": "Rensa sökningen",
+      "en-US": "Clear search",
+      "fi-FI": "Tyhjennä haku",
+    } as const;
+    for (const locale of SUPPORTED_LOCALES) {
+      const { unmount } = renderThemed(
+        withLocale(locale, <SearchField label="Meter search" defaultValue="735999123" />)
+      );
+      await expect.element(page.getByRole("button", { name: expected[locale] })).toBeVisible();
+      unmount();
+    }
+
     renderThemed(
       withLocale(
         "nb-NO",

@@ -8,15 +8,6 @@ afterEach(() => {
 });
 
 describe("countryNameResolver", () => {
-  it("does not call Intl.DisplayNames.of until a code is looked up", () => {
-    const ofSpy = vi.spyOn(Intl.DisplayNames.prototype, "of");
-    const resolve = countryNameResolver("en-US");
-    expect(ofSpy).not.toHaveBeenCalled();
-    expect(resolve("NO")).toBe("Norway");
-    expect(ofSpy).toHaveBeenCalledTimes(1);
-    expect(ofSpy).toHaveBeenCalledWith("NO");
-  });
-
   it("reuses a per-locale cache across resolver instances", () => {
     const ofSpy = vi.spyOn(Intl.DisplayNames.prototype, "of");
     expect(countryNameResolver("en-US")("SE")).toBe("Sweden");

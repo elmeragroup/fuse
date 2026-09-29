@@ -13,17 +13,6 @@ function toggleNamed(name: string, pressed?: boolean): HTMLElement {
 }
 
 describe("Toggle", () => {
-  it("renders an unpressed button, flips on click, and fires onPressedChange(true)", async () => {
-    const onPressedChange = vi.fn();
-    renderThemed(<Toggle onPressedChange={onPressedChange}>Bold</Toggle>);
-
-    await expect.element(page.getByRole("button", { name: "Bold", pressed: false })).toBeInTheDocument();
-    await userEvent.click(page.getByRole("button", { name: "Bold", exact: true }));
-    await expect.element(page.getByRole("button", { name: "Bold", pressed: true })).toBeInTheDocument();
-    expect(onPressedChange).toHaveBeenCalledTimes(1);
-    expect(onPressedChange).toHaveBeenNthCalledWith(1, true, expect.anything());
-  });
-
   it("toggles from Tab focus with Space and with Enter", async () => {
     const onPressedChange = vi.fn();
     renderThemed(
@@ -86,6 +75,10 @@ describe("Toggle", () => {
 
     await expect.element(page.getByRole("button", { name: "Held", pressed: false })).toBeInTheDocument();
     await expect.element(page.getByRole("button", { name: "Open", pressed: true })).toBeInTheDocument();
+    const open = toggleNamed("Open", true);
+    expect(open.getAttribute("aria-pressed")).toBe("true");
+    expect(open.hasAttribute("data-pressed")).toBe(true);
+    expect(open.getAttribute("data-slot")).toBe("toggle");
 
     await userEvent.click(page.getByRole("button", { name: "Held", exact: true }));
     expect(onPressedChange).toHaveBeenNthCalledWith(1, true, expect.anything());
@@ -93,34 +86,5 @@ describe("Toggle", () => {
 
     await userEvent.click(page.getByRole("button", { name: "Open", exact: true }));
     await expect.element(page.getByRole("button", { name: "Open", pressed: false })).toBeInTheDocument();
-  });
-
-  it("stamps data-pressed and aria-pressed when on", () => {
-    renderThemed(<Toggle defaultPressed>Bold</Toggle>);
-    const toggle = toggleNamed("Bold", true);
-    expect(toggle.getAttribute("aria-pressed")).toBe("true");
-    expect(toggle.hasAttribute("data-pressed")).toBe(true);
-    expect(toggle.getAttribute("data-slot")).toBe("toggle");
-  });
-
-  it("stamps data-slot=toggle on each face and keeps the icon-start hook", () => {
-    renderThemed(
-      <>
-        <Toggle variant="default">Default</Toggle>
-        <Toggle variant="outline" size="lg">
-          Outline
-        </Toggle>
-        <Toggle>
-          <span data-icon="inline-start" aria-hidden>
-            *
-          </span>
-          Icon
-        </Toggle>
-      </>
-    );
-
-    expect(toggleNamed("Default").getAttribute("data-slot")).toBe("toggle");
-    expect(toggleNamed("Outline").getAttribute("data-slot")).toBe("toggle");
-    expect(toggleNamed("Icon").querySelector("[data-icon=inline-start]")).not.toBeNull();
   });
 });

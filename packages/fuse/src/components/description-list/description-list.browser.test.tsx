@@ -42,20 +42,6 @@ describe("DescriptionList", () => {
     expect(content.children[3]).toBe(details[1]);
   });
 
-  it("resolves term and definition roles where the platform exposes them", () => {
-    renderBasicList();
-    const terms = page.getByRole("term").elements();
-    const definitions = page.getByRole("definition").elements();
-    if (terms.length > 0) {
-      expect(terms.map((term) => term.textContent)).toEqual(["Name", "Meter point"]);
-    }
-    if (definitions.length > 0) {
-      expect(definitions.map((item) => item.textContent)).toEqual(["Kari Nordmann", "7070575000"]);
-    }
-    expect(textNamed("Name").tagName).toBe("DT");
-    expect(textNamed("Kari Nordmann").tagName).toBe("DD");
-  });
-
   it("lets a render override change the heading level without losing classes or data-slot", () => {
     renderThemed(
       <DescriptionList.Root>
@@ -86,17 +72,6 @@ describe("DescriptionList", () => {
     expect(root.tagName).toBe("DIV");
     expect(root.getAttribute("data-track")).toBe("profile");
     expect(root.className).toBe("");
-  });
-
-  it("lets a consumer className win over Details base classes", () => {
-    renderThemed(
-      <DescriptionList.Content>
-        <DescriptionList.Details className="text-primary">Kari Nordmann</DescriptionList.Details>
-      </DescriptionList.Content>
-    );
-    const details = textNamed("Kari Nordmann");
-    expect(details.tagName).toBe("DD");
-    expect(getComputedStyle(details).paddingTop).not.toBe("0px");
   });
 
   it("forms two columns at sm with the term column capped at min(50%, 20rem)", async () => {

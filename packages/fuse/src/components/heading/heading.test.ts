@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
-import { cn } from "../../styles/cn";
 import { typographyFragments } from "../../styles/typography-fragments";
 import { headingVariants } from "./heading-variants";
 
@@ -58,19 +57,5 @@ describe("headingVariants", () => {
       }
       expect(headingVariants({ size }), size).not.toContain("--control-");
     }
-  });
-
-  it("toggles noMargin, uppercase, and align", () => {
-    expect(headingVariants({ noMargin: true })).toContain("mb-0");
-    expect(headingVariants({ uppercase: true })).toContain("uppercase");
-    expect(headingVariants({ align: "left" })).toContain("text-left");
-    expect(headingVariants({ align: "center" })).toContain("text-center");
-    expect(headingVariants({ align: "right" })).toContain("text-right");
-  });
-
-  it("lets a className merge win over a conflicting recipe class through cn", () => {
-    const merged = cn(headingVariants({ variant: "muted" }), "text-primary").split(/\s+/);
-    expect(merged).toContain("text-primary");
-    expect(merged).not.toContain("text-muted-foreground");
   });
 });

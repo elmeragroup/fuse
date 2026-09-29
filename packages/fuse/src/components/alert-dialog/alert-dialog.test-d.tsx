@@ -2,16 +2,8 @@ import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { expectTypeOf, test } from "vitest";
 
-import type { AlertDialog as RootAlertDialog } from "@elmeragroup/fuse";
 import type { AlertDialogContentProps } from "@elmeragroup/fuse/alert-dialog";
 import { AlertDialog } from "@elmeragroup/fuse/alert-dialog";
-
-test("AlertDialog ships from the alert-dialog entry and the root barrel", () => {
-  expectTypeOf<typeof AlertDialog>().toEqualTypeOf<typeof RootAlertDialog>();
-  expectTypeOf(AlertDialog.Root).toBeFunction();
-  expectTypeOf(AlertDialog.Trigger).toBeFunction();
-  expectTypeOf(AlertDialog.Content).toBeFunction();
-});
 
 test("the public namespace is three parts and Content omits showCloseButton", () => {
   expectTypeOf(AlertDialog).not.toHaveProperty("Portal");
@@ -71,7 +63,7 @@ test("the public namespace is three parts and Content omits showCloseButton", ()
   const _noAs = <AlertDialog.Trigger as="div" />;
 });
 
-test("Root is always modal and never opts back into pointer dismissal", () => {
+test("Root is always modal, never opts back into pointer dismissal, and shares only an alert-dialog handle with Trigger", () => {
   // @ts-expect-error an alert dialog cannot be made non-modal
   const _noModal = <AlertDialog.Root modal={false} />;
 
@@ -79,9 +71,7 @@ test("Root is always modal and never opts back into pointer dismissal", () => {
   const _noPointerDismissal = <AlertDialog.Root disablePointerDismissal={false} />;
 
   const _controlled = <AlertDialog.Root open onOpenChange={(_open: boolean) => undefined} />;
-});
 
-test("Trigger takes the same alert-dialog handle as Root, never a plain dialog handle", () => {
   const alertHandle = AlertDialogPrimitive.createHandle();
   const _shared = (
     <>

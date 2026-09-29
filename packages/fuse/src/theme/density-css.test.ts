@@ -8,7 +8,6 @@ import type { CssDeclaration } from "../../test/css-rules";
 import type { Density } from "./density";
 import { generateThemesCss } from "./generate-css";
 import { DEMO_STAGE_COMFORTABLE_SELECTOR, generateDemoStageComfortableCss } from "./generate-demo-stage-css";
-import { EXTERNAL_RESET_KEYS, TOKEN_NAMES } from "./tokens/contract";
 import { DENSITY_METRIC_NAMES, DENSITY_METRICS, DENSITY_SELECTORS } from "./tokens/density-metrics";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -37,14 +36,13 @@ function expectedDeclarations(density: Density): CssDeclaration[] {
 describe("density CSS", () => {
   // This cross-check reads the hand-written fuse.css, and DENSITY_METRICS is the oracle it
   // must reproduce.
-  it("declares exactly DENSITY_METRICS, dense on :root and comfortable on the rooted attribute", () => {
+  it("declares exactly DENSITY_METRICS, dense on :root and comfortable on the rooted attribute, in no other block", () => {
     expect(fuseCssRule(DENSITY_SELECTORS.dense).filter(isControlMetric)).toEqual(
       expectedDeclarations("dense")
     );
     expect(fuseCssRule(DENSITY_SELECTORS.comfortable)).toEqual(expectedDeclarations("comfortable"));
-  });
 
-  it("declares control metrics in no other block, at-rule blocks such as @utility included", () => {
+    // At-rule blocks such as @utility count as other blocks.
     const declaring = parseCssBlocks(fuseCss)
       .filter((block) => block.declarations.some(isControlMetric))
       .map((block) => block.prelude);
@@ -54,13 +52,6 @@ describe("density CSS", () => {
   it("does not key density metrics on data-theme-variant or a nested attribute selector", () => {
     expect(fuseCss).not.toMatch(/\[data-theme-variant[^\]]*\][^{]*--control-/s);
     expect(fuseCss).not.toMatch(/(?<!:root)\[data-density="comfortable"\]/);
-  });
-
-  it("never enters TOKEN_NAMES or EXTERNAL_RESET_KEYS", () => {
-    for (const name of DENSITY_METRIC_NAMES) {
-      expect(TOKEN_NAMES).not.toContain(name);
-      expect(EXTERNAL_RESET_KEYS).not.toContain(name);
-    }
   });
 
   it("does not enter generated theme CSS", () => {

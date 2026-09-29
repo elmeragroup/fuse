@@ -135,7 +135,14 @@ describe("flag source", { timeout: FIXTURE_TIMEOUT }, () => {
   });
 
   describe("assertFlagSourceCheckout", () => {
-    it("accepts a clean checkout at the expected commit", () => {
+    it.each<[string, () => void]>([
+      ["a clean checkout at the expected commit", () => undefined],
+      [
+        "an unrelated README edit",
+        () => writeFileSync(join(fixture.sourceRoot, "README.md"), "still unrelated\n"),
+      ],
+    ])("accepts %s", (_case, arrange) => {
+      arrange();
       expect(() => assertFlagSourceCheckout(fixture.sourceRoot, fixture.head)).not.toThrow();
     });
 
@@ -149,42 +156,49 @@ describe("flag source", { timeout: FIXTURE_TIMEOUT }, () => {
       expect(() => assertFlagSourceCheckout(fixture.sourceRoot, fixture.head)).toThrow(fixture.head);
     });
 
-    it("rejects an unstaged svg edit", () => {
-      writeFileSync(join(fixture.sourceRoot, "svg/AA.svg"), `${FIXTURE_SVG}<!--edit-->`);
-      expect(() => assertFlagSourceCheckout(fixture.sourceRoot, fixture.head)).toThrow(/local changes/);
-    });
-
-    it("rejects a staged svg edit", () => {
-      writeFileSync(join(fixture.sourceRoot, "svg/AA.svg"), `${FIXTURE_SVG}<!--staged-->`);
-      runFixtureGit(fixture.sourceRoot, ["add", "svg/AA.svg"]);
-      expect(() => assertFlagSourceCheckout(fixture.sourceRoot, fixture.head)).toThrow(/local changes/);
-    });
-
-    it("rejects a LICENSE edit", () => {
-      writeFileSync(join(fixture.sourceRoot, "LICENSE"), "changed\n");
-      expect(() => assertFlagSourceCheckout(fixture.sourceRoot, fixture.head)).toThrow(/local changes/);
-    });
-
-    it("rejects an untracked svg", () => {
-      writeFileSync(join(fixture.sourceRoot, "svg/ZZ.svg"), FIXTURE_SVG);
-      expect(() => assertFlagSourceCheckout(fixture.sourceRoot, fixture.head)).toThrow(/local changes/);
-    });
-
-    it("ignores an unrelated README edit", () => {
-      writeFileSync(join(fixture.sourceRoot, "README.md"), "still unrelated\n");
-      expect(() => assertFlagSourceCheckout(fixture.sourceRoot, fixture.head)).not.toThrow();
-    });
-
-    it("rejects a nested directory that is not the checkout root", () => {
-      expect(() =>
-        assertFlagSourceCheckout(join(fixture.repoRoot, ".ref/flag-icons/svg"), fixture.head)
-      ).toThrow(/not the root of a Git checkout/);
-    });
-
-    it("rejects a missing source root", () => {
-      expect(() => assertFlagSourceCheckout(join(fixture.sourceRoot, "missing"), fixture.head)).toThrow(
-        /is missing/
-      );
+    it.each<[string, () => string, RegExp]>([
+      [
+        "an unstaged svg edit",
+        () => {
+          writeFileSync(join(fixture.sourceRoot, "svg/AA.svg"), `${FIXTURE_SVG}<!--edit-->`);
+          return fixture.sourceRoot;
+        },
+        /local changes/,
+      ],
+      [
+        "a staged svg edit",
+        () => {
+          writeFileSync(join(fixture.sourceRoot, "svg/AA.svg"), `${FIXTURE_SVG}<!--staged-->`);
+          runFixtureGit(fixture.sourceRoot, ["add", "svg/AA.svg"]);
+          return fixture.sourceRoot;
+        },
+        /local changes/,
+      ],
+      [
+        "a LICENSE edit",
+        () => {
+          writeFileSync(join(fixture.sourceRoot, "LICENSE"), "changed\n");
+          return fixture.sourceRoot;
+        },
+        /local changes/,
+      ],
+      [
+        "an untracked svg",
+        () => {
+          writeFileSync(join(fixture.sourceRoot, "svg/ZZ.svg"), FIXTURE_SVG);
+          return fixture.sourceRoot;
+        },
+        /local changes/,
+      ],
+      [
+        "a nested directory that is not the checkout root",
+        () => join(fixture.repoRoot, ".ref/flag-icons/svg"),
+        /not the root of a Git checkout/,
+      ],
+      ["a missing source root", () => join(fixture.sourceRoot, "missing"), /is missing/],
+    ])("rejects %s", (_case, arrange, message) => {
+      const sourceRoot = arrange();
+      expect(() => assertFlagSourceCheckout(sourceRoot, fixture.head)).toThrow(message);
     });
   });
 

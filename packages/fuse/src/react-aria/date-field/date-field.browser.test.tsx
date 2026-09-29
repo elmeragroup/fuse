@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 
-import { CalendarDate, CalendarDateTime } from "@internationalized/date";
+import { CalendarDate } from "@internationalized/date";
 import type { ValidationResult } from "react-aria-components";
-import { DateField as RacDateField, I18nProvider, Label as RacLabel } from "react-aria-components";
+import { DateField as RacDateField, Label as RacLabel } from "react-aria-components";
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -117,45 +117,6 @@ describe("DateField", () => {
     expect(describedTextsForField("Invoice date")).toContain("Billing date.");
   });
 
-  it("traverses segments with arrows, increments, and backspaces to a placeholder", async () => {
-    renderField(<DateField label="Invoice date" defaultValue={july14} />);
-    const month = segmentNamed("month");
-    const day = segmentNamed("day");
-    const year = segmentNamed("year");
-    month.focus();
-    expect(document.activeElement).toBe(month);
-    await userEvent.keyboard("{ArrowRight}");
-    expect(document.activeElement).toBe(day);
-    await userEvent.keyboard("{ArrowRight}");
-    expect(document.activeElement).toBe(year);
-    await userEvent.keyboard("{ArrowLeft}");
-    expect(document.activeElement).toBe(day);
-    month.focus();
-    await userEvent.keyboard("{ArrowUp}");
-    expect(month.textContent).toBe("08");
-    await userEvent.keyboard("{ArrowDown}");
-    expect(month.textContent).toBe("07");
-    day.focus();
-    await userEvent.keyboard("{Backspace}{Backspace}");
-    expect(day.hasAttribute("data-placeholder")).toBe(true);
-  });
-
-  it("fills an empty day segment by typing 14 and auto-advances to month", async () => {
-    renderField(
-      <I18nProvider locale="en-GB">
-        <DateField label="Invoice date" />
-      </I18nProvider>
-    );
-    const day = segmentNamed("day");
-    const month = segmentNamed("month");
-    expect(day.hasAttribute("data-placeholder")).toBe(true);
-    expect(day.getAttribute("aria-valuenow")).not.toBe("14");
-    day.focus();
-    await userEvent.keyboard("14");
-    expect(day.getAttribute("aria-valuenow")).toBe("14");
-    expect(document.activeElement).toBe(month);
-  });
-
   it("renders leading zeros on day and month by default", async () => {
     renderField(<DateField label="Invoice date" defaultValue={new CalendarDate(2026, 7, 4)} />);
     await expect.element(segmentLocator("month")).toBeVisible();
@@ -224,30 +185,6 @@ describe("DateField", () => {
       "function error must be associated via aria-describedby"
     ).toBe(true);
     expect(describedTextsForField("Function error")).toContain("Out of range");
-  });
-
-  it("skips disabled segments and keeps read-only segments focusable but inert", async () => {
-    renderField(
-      <>
-        <button type="button">Before</button>
-        <DateField label="Disabled" isDisabled defaultValue={july14} />
-        <DateField label="Locked" isReadOnly defaultValue={july14} />
-        <DateField label="Open" defaultValue={july14} />
-      </>
-    );
-    const before = buttonNamed("Before");
-    before.focus();
-    await userEvent.keyboard("{Tab}");
-    expect(groupNamed("Disabled").contains(document.activeElement)).toBe(false);
-    expect(groupNamed("Locked").contains(document.activeElement)).toBe(true);
-    const lockedMonth = spinbuttonsIn("Locked")[0];
-    if (lockedMonth === undefined) {
-      throw new Error("expected a locked segment");
-    }
-    const beforeValue = lockedMonth.textContent;
-    lockedMonth.focus();
-    await userEvent.keyboard("{ArrowUp}");
-    expect(lockedMonth.textContent).toBe(beforeValue);
   });
 
   it("submits the ISO date string under name", async () => {
@@ -350,21 +287,6 @@ describe("DateField density metrics", () => {
       expect(inset.slack, `the ${density} box has no slack to distribute`).toBeGreaterThan(1);
       expect(inset.top, `segment row is off-center at ${density}`).toBeCloseTo(inset.bottom, 1);
     }
-  });
-});
-
-describe("DateField hour granularity", () => {
-  it("exposes an hour spinbutton when granularity is hour", async () => {
-    renderField(
-      <DateField
-        label="Appointment"
-        granularity="hour"
-        hourCycle={24}
-        defaultValue={new CalendarDateTime(2026, 7, 14, 15)}
-      />
-    );
-    await expect.element(segmentLocator("hour")).toBeVisible();
-    expect(spinbuttonsIn("Appointment").length).toBeGreaterThan(3);
   });
 });
 

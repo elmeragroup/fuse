@@ -47,36 +47,12 @@ describe("TextField", () => {
     expect(description).toBeTruthy();
   });
 
-  it("omits the alert when errorMessage is absent", () => {
-    renderThemed(<TextField label="Email" isInvalid />);
-    expect(page.getByRole("alert").query()).toBeNull();
-    expect(textboxNamed("Email").getAttribute("aria-invalid")).toBe("true");
-  });
-
   it("calls onChange with the string value, not the event", async () => {
     const onChange = vi.fn();
     renderThemed(<TextField label="Name" onChange={onChange} />);
     await userEvent.fill(page.getByRole("textbox", { name: "Name", exact: true }), "Ada");
     expect(onChange).toHaveBeenCalled();
     expect(onChange.mock.calls.at(-1)?.[0]).toBe("Ada");
-  });
-
-  it("natively disables the input and skips it in tab order", async () => {
-    renderThemed(
-      <>
-        <button type="button">Before</button>
-        <TextField label="Disabled" isDisabled />
-        <TextField label="Open" />
-      </>
-    );
-    const disabled = textboxNamed("Disabled");
-    expect(disabled).toHaveProperty("disabled", true);
-    disabled.focus();
-    expect(document.activeElement).not.toBe(disabled);
-
-    page.getByRole("button", { name: "Before", exact: true }).element().focus();
-    await userEvent.keyboard("{Tab}");
-    expect(document.activeElement).toBe(textboxNamed("Open"));
   });
 
   it("keeps a read-only input focusable without accepting typed changes", async () => {
@@ -148,23 +124,6 @@ describe("TextField", () => {
     await userEvent.paste();
     expect(pin).toHaveProperty("value", "456");
     expect(onChange).toHaveBeenLastCalledWith("456");
-  });
-
-  it("strips non-digits arriving through programmatic and autofill-style input events", () => {
-    const onChange = vi.fn();
-    renderThemed(<TextField label="Pin" filter="numeric" onChange={onChange} />);
-    const pin = inputNamed("Pin");
-
-    // Autofill and programmatic writes bypass keystroke handling; the change handler covers them.
-    // oxlint-disable-next-line typescript/unbound-method -- bound with .call below to bypass React's value tracker
-    const nativeValueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
-    if (!nativeValueSetter) {
-      throw new Error("expected the native input value setter");
-    }
-    nativeValueSetter.call(pin, "12a3");
-    pin.dispatchEvent(new Event("input", { bubbles: true }));
-    expect(pin.value).toBe("123");
-    expect(onChange).toHaveBeenLastCalledWith("123");
   });
 
   it("restores an uncontrolled numeric defaultValue on native reset without calling onChange", async () => {

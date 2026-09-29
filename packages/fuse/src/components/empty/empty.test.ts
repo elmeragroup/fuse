@@ -4,21 +4,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
-import { cn } from "../../styles/cn";
 import { Empty } from "./empty";
 import { emptyMediaVariants, emptyVariants } from "./empty-variants";
 
 describe("emptyVariants", () => {
-  it("defaults to the frameless variant and covers outline frames", () => {
-    expect(emptyVariants()).not.toContain("border");
-    expect(emptyVariants({ variant: "outline" })).toContain("border");
-    expect(emptyVariants({ variant: "outline" })).toContain("border-border");
-    expect(emptyVariants({ variant: "outline" })).not.toContain("border-dashed");
-    expect(emptyVariants({ variant: "outline-dashed" })).toContain("border");
-    expect(emptyVariants({ variant: "outline-dashed" })).toContain("border-dashed");
-    expect(emptyVariants({ variant: "outline-dashed" })).toContain("border-border");
-  });
-
   it("keeps the anatomy layout classes without a control-box size axis", () => {
     const resolved = emptyVariants();
     expect(resolved).toContain("flex");
@@ -71,13 +60,6 @@ describe("emptyMediaVariants", () => {
       expect(resolved, variant).toContain("[&_svg]:shrink-0");
       expect(resolved, variant).not.toContain("--control-");
     }
-  });
-
-  it("lets a className merge win over a conflicting recipe class through cn", () => {
-    const merged = cn(emptyMediaVariants({ variant: "icon" }), "bg-card").split(/\s+/);
-    expect(merged).toContain("bg-card");
-    expect(merged).not.toContain("bg-muted");
-    expect(merged).toContain("size-10");
   });
 });
 

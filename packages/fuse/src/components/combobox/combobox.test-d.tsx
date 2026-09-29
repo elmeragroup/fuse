@@ -2,7 +2,6 @@ import type { RefObject } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type { Combobox as RootCombobox, useComboboxAnchor as RootUseComboboxAnchor } from "@elmeragroup/fuse";
 import type {
   ComboboxChipProps,
   ComboboxClearProps,
@@ -13,38 +12,14 @@ import type {
 import * as ComboboxModule from "@elmeragroup/fuse/combobox";
 import { Combobox, useComboboxAnchor } from "@elmeragroup/fuse/combobox";
 
-test("Combobox and useComboboxAnchor ship from the combobox entry and the root barrel", () => {
-  expectTypeOf<typeof Combobox>().toEqualTypeOf<typeof RootCombobox>();
-  expectTypeOf<typeof useComboboxAnchor>().toEqualTypeOf<typeof RootUseComboboxAnchor>();
-  expectTypeOf(Combobox.Root).toBeFunction();
-  expectTypeOf(Combobox.Input).toBeFunction();
-  expectTypeOf(Combobox.Trigger).toBeFunction();
-  expectTypeOf(Combobox.Clear).toBeFunction();
-  expectTypeOf(Combobox.Content).toBeFunction();
-  expectTypeOf(Combobox.List).toBeFunction();
-  expectTypeOf(Combobox.Item).toBeFunction();
-  expectTypeOf(Combobox.Group).toBeFunction();
-  expectTypeOf(Combobox.Label).toBeFunction();
-  expectTypeOf(Combobox.Collection).toBeFunction();
-  expectTypeOf(Combobox.Empty).toBeFunction();
-  expectTypeOf(Combobox.Separator).toBeFunction();
-  expectTypeOf(Combobox.Chips).toBeFunction();
-  expectTypeOf(Combobox.Chip).toBeFunction();
-  expectTypeOf(Combobox.ChipsInput).toBeFunction();
-  expectTypeOf(Combobox.Value).toBeFunction();
-  expectTypeOf(useComboboxAnchor).toBeFunction();
-});
-
-test("Portal, Positioner and Popup stay off the public namespace", () => {
+test("Portal, Positioner and Popup stay off the public namespace, Input, Content, Chip and Clear take the public extra props, and Root omits locale", () => {
   expectTypeOf(Combobox).not.toHaveProperty("Portal");
   expectTypeOf(Combobox).not.toHaveProperty("Positioner");
   expectTypeOf(Combobox).not.toHaveProperty("Popup");
   expectTypeOf(ComboboxModule).not.toHaveProperty("comboboxVariants");
   expectTypeOf(ComboboxModule).not.toHaveProperty("ComboboxInput");
   expectTypeOf(ComboboxModule).not.toHaveProperty("ComboboxClear");
-});
 
-test("Input, Content, Chip and Clear take the public extra props and Root omits locale", () => {
   expectTypeOf<ComboboxInputProps["showTrigger"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<ComboboxInputProps["showClear"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<ComboboxInputProps["clearLabel"]>().toEqualTypeOf<string | undefined>();

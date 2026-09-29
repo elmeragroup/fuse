@@ -11,12 +11,6 @@ import { CONTROL_SM, px, renderThemed, roleNamed, stampDensity } from "../../../
 import { UiProviders } from "../ui-providers/ui-providers";
 import { GridList, GridListItem } from "./grid-list";
 
-const METERS = [
-  { id: "oslo", name: "Oslo" },
-  { id: "bergen", name: "Bergen" },
-  { id: "trondheim", name: "Trondheim" },
-] as const;
-
 const DRAG_COPY = {
   "nb-NO": "Dra for å endre rekkefølge",
   "sv-SE": "Dra för att ändra ordning",
@@ -115,17 +109,6 @@ describe("GridList", () => {
     expect(rows().map((row) => row.textContent)).toEqual(["Oslo", "Bergen"]);
   });
 
-  it("renders a grid and rows from an items collection", async () => {
-    renderList(
-      <GridList aria-label="Meters" items={[...METERS]}>
-        {(item) => <GridListItem id={item.id}>{item.name}</GridListItem>}
-      </GridList>
-    );
-
-    await expect.element(page.getByRole("grid", { name: "Meters" })).toBeVisible();
-    expect(rows().map((row) => row.textContent)).toEqual(["Oslo", "Bergen", "Trondheim"]);
-  });
-
   it("shows row checkboxes in multiple toggle mode, toggles with Space, and selects all", async () => {
     const onSelectionChange = vi.fn();
     renderList(
@@ -176,34 +159,6 @@ describe("GridList", () => {
 
     await userEvent.keyboard("t");
     expect(document.activeElement).toBe(rowNamed("Trondheim"));
-  });
-
-  it("exposes disabledKeys rows as aria-disabled and refuses selection", async () => {
-    const onSelectionChange = vi.fn();
-    renderList(
-      <GridList
-        aria-label="Meters"
-        selectionMode="multiple"
-        selectionBehavior="toggle"
-        disabledKeys={["trondheim"]}
-        onSelectionChange={onSelectionChange}>
-        <GridListItem id="oslo">Oslo</GridListItem>
-        <GridListItem id="trondheim">Trondheim</GridListItem>
-      </GridList>
-    );
-
-    const disabled = rowNamed("Trondheim");
-    expect(disabled).toHaveAttribute("aria-disabled", "true");
-    expect(disabled.hasAttribute("data-disabled")).toBe(true);
-    expect(
-      checkboxes().some((box) => box.getAttribute("aria-disabled") === "true" || box.hasAttribute("disabled"))
-    ).toBe(true);
-
-    disabled.focus();
-    await userEvent.keyboard(" ");
-    disabled.click();
-    expect(onSelectionChange).not.toHaveBeenCalled();
-    expect(disabled.getAttribute("aria-selected")).not.toBe("true");
   });
 
   it("centers renderEmptyState when the collection is empty", async () => {

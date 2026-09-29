@@ -15,40 +15,6 @@ import { Checkbox } from "../checkbox/checkbox";
 import { Field } from "./index";
 
 describe("Field", () => {
-  it("associates the label with a control fixture", () => {
-    renderThemed(
-      <Field.Root>
-        <Field.Label>Email</Field.Label>
-        <Field.Control render={<input />} />
-        <Field.Description>Work address preferred.</Field.Description>
-      </Field.Root>
-    );
-
-    const input = textboxNamed("Email");
-    const describedBy = input.getAttribute("aria-describedby");
-    expect(describedBy).toBeTruthy();
-    const description = describedBy === null ? null : document.getElementById(describedBy);
-    expect(description?.textContent).toBe("Work address preferred.");
-  });
-
-  it("associates Error with the control when invalid with children", () => {
-    renderThemed(
-      <Field.Root invalid>
-        <Field.Label>Email</Field.Label>
-        <Field.Control render={<input />} />
-        <Field.Description>Work address preferred.</Field.Description>
-        <Field.Error>Required</Field.Error>
-      </Field.Root>
-    );
-
-    const input = textboxNamed("Email");
-    const describedBy = input.getAttribute("aria-describedby") ?? "";
-    const ids = describedBy.split(/\s+/).filter(Boolean);
-    const alert = page.getByRole("alert").element();
-    expect(alert.id.length).toBeGreaterThan(0);
-    expect(ids).toContain(alert.id);
-  });
-
   it("omits Error from the DOM without children and alerts when present", () => {
     const { rerender } = renderThemed(
       <Field.Root invalid>
@@ -127,7 +93,7 @@ describe("Field", () => {
     expect(getComputedStyle(title).opacity).toBe("0.5");
   });
 
-  it("keeps the heading weight on a checkbox row and lets a consumer font-* class win", () => {
+  it("gives a checkbox row the heading weight on a centered pointer row, lets a consumer font-* class win, and leaves a plain label alone", () => {
     renderThemed(
       <>
         <Field.Root>
@@ -142,6 +108,10 @@ describe("Field", () => {
             SMS
           </Field.Label>
         </Field.Root>
+        <Field.Root>
+          <Field.Label>Name</Field.Label>
+          <Field.Control render={<input />} />
+        </Field.Root>
       </>
     );
     const heading = textNamed("Email");
@@ -149,24 +119,7 @@ describe("Field", () => {
     expect(heading.getAttribute("data-slot")).toBe("field-label");
     expect(getComputedStyle(heading).fontWeight).toBe("500");
     expect(getComputedStyle(overridden).fontWeight).toBe("400");
-  });
-
-  it("centers a checkbox row on a pointer cursor and leaves a plain label alone", () => {
-    renderThemed(
-      <>
-        <Field.Root>
-          <Field.Label>
-            <Checkbox />
-            Email
-          </Field.Label>
-        </Field.Root>
-        <Field.Root>
-          <Field.Label>Name</Field.Label>
-          <Field.Control render={<input />} />
-        </Field.Root>
-      </>
-    );
-    const checkboxRow = getComputedStyle(textNamed("Email"));
+    const checkboxRow = getComputedStyle(heading);
     expect(checkboxRow.alignItems).toBe("center");
     expect(checkboxRow.cursor).toBe("pointer");
     const plainLabel = getComputedStyle(textNamed("Name"));

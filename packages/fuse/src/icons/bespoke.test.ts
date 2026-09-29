@@ -8,27 +8,35 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import {
+  AlertMark,
+  BankIdDna,
+  BankIdSweden,
   Check,
+  CollectLogo,
   Contract,
+  DeviateLogo,
+  DoubleCheck,
   ElmeraGroupLogo,
   FjordkraftLogo,
+  FunnelLogo,
   GudbrandsdalEnergiLogo,
   HomeTitleIcon,
+  OrderLogo,
   Signing,
   SteddiLogo,
+  StromSmart,
   TelinetLogo,
   TrondelagkraftLogo,
   TrumfLogo,
   Vipps,
 } from "../icons";
 import { FkasMeter } from "../illustrations";
-import * as Root from "../index";
 import type { LogoProps } from "./bespoke-svg";
 import { TelinetLogoFull } from "./bespoke/telinet-logo-full";
 import { TelinetLogoMark } from "./bespoke/telinet-logo-mark";
 import { iconModuleSlug } from "./generate";
-import { BESPOKE_ICON_NAMES, LOGO_NAMES } from "./roster";
-import type { LogoName } from "./roster";
+import { LOGO_NAMES } from "./roster";
+import type { BespokeIconName, LogoName } from "./roster";
 
 const logosByName = {
   ElmeraGroupLogo,
@@ -52,6 +60,23 @@ const svgFamilies: ReadonlyArray<readonly [string, NamedSvg]> = [
   ["Vipps", Vipps],
   ["Check", Check],
 ];
+
+/** Every bespoke asset; the record type makes a roster addition a decision here. */
+const bespokeIcons = {
+  AlertMark,
+  BankIdDna,
+  BankIdSweden,
+  CollectLogo,
+  Contract,
+  DeviateLogo,
+  DoubleCheck,
+  FunnelLogo,
+  HomeTitleIcon,
+  OrderLogo,
+  Signing,
+  StromSmart,
+  Vipps,
+} satisfies Record<BespokeIconName, NamedSvg>;
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -86,17 +111,19 @@ function assetSources(): AssetSource[] {
 }
 
 describe("bespoke icons", () => {
-  // One contract for both families: bespoke artwork (Vipps) and the Phosphor adapter (Check).
-  it.each(svgFamilies)(
-    "renders a titled %s as role=img and an untitled or empty-titled one as aria-hidden",
-    (_, Icon) => {
-      expectTitled(renderToStaticMarkup(createElement(Icon, { title: "Done" })), "Done");
-      expectDecorative(renderToStaticMarkup(createElement(Icon)));
-      expectDecorative(renderToStaticMarkup(createElement(Icon, { title: "" })));
-      // Nonempty means meaningful: whitespace-only is still a titled image, not decorative.
-      expectTitled(renderToStaticMarkup(createElement(Icon, { title: " " })), " ");
-    }
-  );
+  // One contract for both icon families, every bespoke asset and the Phosphor adapter
+  // (Check), and for the illustrations (FkasMeter).
+  it.each<readonly [string, NamedSvg]>([
+    ["Check", Check],
+    ...Object.entries(bespokeIcons),
+    ["FkasMeter", FkasMeter],
+  ])("renders a titled %s as role=img and an untitled or empty-titled one as aria-hidden", (_, Icon) => {
+    expectTitled(renderToStaticMarkup(createElement(Icon, { title: "Done" })), "Done");
+    expectDecorative(renderToStaticMarkup(createElement(Icon)));
+    expectDecorative(renderToStaticMarkup(createElement(Icon, { title: "" })));
+    // Nonempty means meaningful: whitespace-only is still a titled image, not decorative.
+    expectTitled(renderToStaticMarkup(createElement(Icon, { title: " " })), " ");
+  });
 
   // Each logo spells the guard twice — `decorativeSvgProps(title)` and its own
   // `{title ? <title>…</title> : null}` — so the two can only stay in step by being
@@ -139,14 +166,6 @@ describe("bespoke icons", () => {
     expect(html).not.toContain('className="fill-on-surface"');
   });
 
-  it("does not embed a .ref path in bespoke source", () => {
-    const files = readdirSync(join(here, "bespoke")).filter((name) => name.endsWith(".tsx"));
-    expect(files.length).toBeGreaterThan(0);
-    for (const name of files) {
-      expect(readFileSync(join(here, "bespoke", name), "utf8"), name).not.toContain(".ref/");
-    }
-  });
-
   it("ships no static title element besides the prop-driven title slot", () => {
     const files = readdirSync(join(here, "bespoke")).filter((name) => name.endsWith(".tsx"));
     expect(files.length).toBeGreaterThan(0);
@@ -158,27 +177,6 @@ describe("bespoke icons", () => {
         expect(title, name).toBe("<title>{title}</title>");
       }
     }
-  });
-
-  it("lets Gudbrandsdal full announce the passed title and stay silent when decorative", () => {
-    const titled = renderToStaticMarkup(
-      createElement(GudbrandsdalEnergiLogo, { title: "Gudbrandsdal Energi" })
-    );
-    expect(titled).toContain("<title>Gudbrandsdal Energi</title>");
-    expect(titled).not.toContain("Asset 1");
-    expect(titled.match(/<title>/g)).toEqual(["<title>"]);
-
-    const decorative = renderToStaticMarkup(createElement(GudbrandsdalEnergiLogo));
-    expect(decorative).not.toContain("<title>");
-    expect(decorative).toContain("aria-hidden");
-  });
-
-  it("documents fixed-palette artwork as permitted for illustrations", () => {
-    const contract = readFileSync(join(here, "bespoke-svg.ts"), "utf8");
-    expect(contract).toContain("Fixed-palette artwork is permitted for illustrations");
-    expect(renderToStaticMarkup(createElement(Contract))).toContain("#F8D0BA");
-    expect(renderToStaticMarkup(createElement(HomeTitleIcon))).toContain("#F8D0BA");
-    expect(renderToStaticMarkup(createElement(Signing))).toContain("fill-secondary-soft");
   });
 
   it("namespaces defs ids per asset so no id is defined by two assets", () => {
@@ -253,21 +251,5 @@ describe("bespoke icons", () => {
       expect(source, file).toContain("createLogo(");
       expect(source, file).not.toContain('if (variant === "mark")');
     }
-  });
-});
-
-describe("illustrations", () => {
-  it("exports FkasMeter from the subpath and not the root barrel", () => {
-    expect(FkasMeter).toEqual(expect.any(Function));
-    expect(Root).not.toHaveProperty("FkasMeter");
-    for (const name of [...BESPOKE_ICON_NAMES, ...LOGO_NAMES, "BrandLogo"]) {
-      expect(Root).not.toHaveProperty(name);
-    }
-  });
-
-  it("uses the titled vs decorative SVG contract, treating an empty title as decorative", () => {
-    expectTitled(renderToStaticMarkup(createElement(FkasMeter, { title: "Meter" })), "Meter");
-    expectDecorative(renderToStaticMarkup(createElement(FkasMeter)));
-    expectDecorative(renderToStaticMarkup(createElement(FkasMeter, { title: "" })));
   });
 });

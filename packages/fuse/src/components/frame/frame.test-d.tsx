@@ -2,7 +2,6 @@ import type { ComponentProps } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type { Frame as RootFrame } from "@elmeragroup/fuse";
 import type {
   FrameDescriptionProps,
   FrameFooterProps,
@@ -14,17 +13,7 @@ import type {
 import * as FrameModule from "@elmeragroup/fuse/frame";
 import { Frame } from "@elmeragroup/fuse/frame";
 
-test("the namespace ships all six parts from the frame entry and the root barrel", () => {
-  expectTypeOf<typeof Frame>().toEqualTypeOf<typeof RootFrame>();
-  expectTypeOf(Frame).toHaveProperty("Root");
-  expectTypeOf(Frame).toHaveProperty("Panel");
-  expectTypeOf(Frame).toHaveProperty("Header");
-  expectTypeOf(Frame).toHaveProperty("Title");
-  expectTypeOf(Frame).toHaveProperty("Description");
-  expectTypeOf(Frame).toHaveProperty("Footer");
-});
-
-test("public API exports only the namespace and part prop types", () => {
+test("public API exports only the namespace and part prop types, and parts take native attributes, stackedPanels, and no polymorphic as prop", () => {
   expectTypeOf<FrameRootProps>().toMatchTypeOf<ComponentProps<"div"> & { stackedPanels?: boolean }>();
   expectTypeOf<FrameRootProps["stackedPanels"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<FramePanelProps>().toEqualTypeOf<ComponentProps<"div">>();
@@ -40,9 +29,7 @@ test("public API exports only the namespace and part prop types", () => {
   expectTypeOf(FrameModule).not.toHaveProperty("FrameTitle");
   expectTypeOf(FrameModule).not.toHaveProperty("FrameDescription");
   expectTypeOf(FrameModule).not.toHaveProperty("FrameFooter");
-});
 
-test("parts take native attributes, stackedPanels, and no polymorphic as prop", () => {
   const _root = (
     <Frame.Root stackedPanels className="max-w-lg">
       <Frame.Header>

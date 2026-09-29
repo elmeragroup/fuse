@@ -30,6 +30,10 @@ describe("published dependency ranges", () => {
       "tw-animate-css": "^1.4.0",
       "sugar-high": "^2.4.0",
     });
+    // A floor override stays while the catalog version still clears it.
+    expect(publishedDependencies({ "sugar-high": "catalog:" }, new Map([["sugar-high", "2.9.0"]]))).toEqual({
+      "sugar-high": "^2.4.0",
+    });
   });
 
   it("publishes only the dependencies the workspace declares", () => {
@@ -38,30 +42,28 @@ describe("published dependency ranges", () => {
     });
   });
 
-  it("refuses a specifier the catalog cannot range", () => {
-    expect(() => publishedDependencies({ "tailwind-merge": "^3.0.0" }, catalog)).toThrow(
-      "Workspace dependency tailwind-merge must use catalog:, got ^3.0.0"
-    );
-    expect(() => publishedDependencies({ clsx: "catalog:" }, catalog)).toThrow(
-      "Workspace dependency clsx has no pnpm-workspace.yaml catalog entry"
-    );
-  });
-
-  it("refuses a catalog version that is not a plain release", () => {
-    expect(() =>
-      publishedDependencies({ "tailwind-merge": "catalog:" }, new Map([["tailwind-merge", "4.0.0-beta.1"]]))
-    ).toThrow("Catalog version 4.0.0-beta.1 of tailwind-merge is not a plain release version");
-  });
-
-  it("refuses a floor override the catalog version has left behind", () => {
-    for (const version of ["3.0.0", "2.3.9"]) {
-      expect(() =>
-        publishedDependencies({ "sugar-high": "catalog:" }, new Map([["sugar-high", version]]))
-      ).toThrow(`Floor override ^2.4.0 of sugar-high does not admit catalog version ${version}`);
-    }
-    expect(publishedDependencies({ "sugar-high": "catalog:" }, new Map([["sugar-high", "2.9.0"]]))).toEqual({
-      "sugar-high": "^2.4.0",
-    });
+  it.each<[Record<string, string>, ReadonlyMap<string, string>, string]>([
+    // A specifier the catalog cannot range.
+    [
+      { "tailwind-merge": "^3.0.0" },
+      catalog,
+      "Workspace dependency tailwind-merge must use catalog:, got ^3.0.0",
+    ],
+    [{ clsx: "catalog:" }, catalog, "Workspace dependency clsx has no pnpm-workspace.yaml catalog entry"],
+    // A catalog version that is not a plain release.
+    [
+      { "tailwind-merge": "catalog:" },
+      new Map([["tailwind-merge", "4.0.0-beta.1"]]),
+      "Catalog version 4.0.0-beta.1 of tailwind-merge is not a plain release version",
+    ],
+    // A floor override the catalog version has left behind, above or below it.
+    ...["3.0.0", "2.3.9"].map((version): [Record<string, string>, ReadonlyMap<string, string>, string] => [
+      { "sugar-high": "catalog:" },
+      new Map([["sugar-high", version]]),
+      `Floor override ^2.4.0 of sugar-high does not admit catalog version ${version}`,
+    ]),
+  ])("refuses %j against its catalog", (declared, versions, message) => {
+    expect(() => publishedDependencies(declared, versions)).toThrow(message);
   });
 });
 
@@ -90,18 +92,12 @@ describe("workspace catalog", () => {
     ]);
   });
 
-  it("rejects a workspace file without a catalog mapping", () => {
-    expect(() => parseWorkspaceCatalog("packages:\n  - packages/*\n")).toThrow(
-      "pnpm-workspace.yaml has no catalog mapping"
-    );
-    expect(() => parseWorkspaceCatalog("catalog:\n  - clsx\n")).toThrow(
-      "pnpm-workspace.yaml has no catalog mapping"
-    );
-  });
-
-  it("rejects a catalog entry YAML reads as a number", () => {
-    expect(() => parseWorkspaceCatalog("catalog:\n  clsx: 2.1\n")).toThrow(
-      "pnpm-workspace.yaml catalog entry clsx must be a version string"
-    );
+  it.each([
+    ["packages:\n  - packages/*\n", "pnpm-workspace.yaml has no catalog mapping"],
+    ["catalog:\n  - clsx\n", "pnpm-workspace.yaml has no catalog mapping"],
+    // YAML reads `2.1` as a number.
+    ["catalog:\n  clsx: 2.1\n", "pnpm-workspace.yaml catalog entry clsx must be a version string"],
+  ])("rejects the workspace file %j", (workspace, message) => {
+    expect(() => parseWorkspaceCatalog(workspace)).toThrow(message);
   });
 });

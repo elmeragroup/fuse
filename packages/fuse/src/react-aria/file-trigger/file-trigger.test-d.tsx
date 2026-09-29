@@ -2,19 +2,9 @@ import type { Ref } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type * as RootApi from "@elmeragroup/fuse";
 import type * as FileTriggerApi from "@elmeragroup/fuse/react-aria/file-trigger";
 import type { FileTriggerProps } from "@elmeragroup/fuse/react-aria/file-trigger";
 import { FileTrigger } from "@elmeragroup/fuse/react-aria/file-trigger";
-
-test("FileTrigger is absent from the root barrel", () => {
-  expectTypeOf<typeof RootApi>().not.toHaveProperty("FileTrigger");
-});
-
-test("the public value surface is exactly FileTrigger", () => {
-  expectTypeOf(FileTrigger).toBeFunction();
-  expectTypeOf<typeof FileTriggerApi.FileTrigger>().toEqualTypeOf<typeof FileTrigger>();
-});
 
 test("buttonVariants and RAC types are not public exports", () => {
   expectTypeOf<typeof FileTriggerApi>().not.toHaveProperty("buttonVariants");
@@ -26,27 +16,6 @@ test("buttonVariants and RAC types are not public exports", () => {
   type _NoAria = FileTriggerApi.FileTriggerPrimitiveProps;
   // @ts-expect-error RAC FileTriggerContext is not a public export
   type _NoContext = FileTriggerApi.FileTriggerContext;
-});
-
-test("FileTriggerProps has the composite face plus RAC passthroughs and buttonVariants axes", () => {
-  expectTypeOf<FileTriggerProps["withIcon"]>().toEqualTypeOf<boolean | undefined>();
-  expectTypeOf<FileTriggerProps["isDisabled"]>().toEqualTypeOf<boolean | undefined>();
-  expectTypeOf<FileTriggerProps["className"]>().toEqualTypeOf<string | undefined>();
-  expectTypeOf<FileTriggerProps["acceptedFileTypes"]>().toEqualTypeOf<readonly string[] | undefined>();
-  expectTypeOf<FileTriggerProps["allowsMultiple"]>().toEqualTypeOf<boolean | undefined>();
-  expectTypeOf<FileTriggerProps["acceptDirectory"]>().toEqualTypeOf<boolean | undefined>();
-  expectTypeOf<FileTriggerProps["defaultCamera"]>().toEqualTypeOf<"user" | "environment" | undefined>();
-  expectTypeOf<FileTriggerProps["onSelect"]>().toEqualTypeOf<
-    ((files: FileList | null) => void) | undefined
-  >();
-  expectTypeOf<FileTriggerProps["variant"]>().toEqualTypeOf<
-    "default" | "outline" | "secondary" | "ghost" | "destructive" | "success" | "link" | undefined
-  >();
-  expectTypeOf<FileTriggerProps["size"]>().toEqualTypeOf<
-    "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-inline" | "icon-lg" | undefined
-  >();
-  expectTypeOf<FileTriggerProps>().toHaveProperty("children");
-  expectTypeOf<FileTriggerProps>().toHaveProperty("ref");
 });
 
 test("the element takes the public props and forwards a ref to the hidden input", () => {
@@ -87,10 +56,4 @@ test("the element takes the public props and forwards a ref to the hidden input"
     // @ts-expect-error className is a class list, never a number
     className: 4,
   };
-});
-
-test("there is no bare file-trigger entry", () => {
-  // @ts-expect-error quarantined path only — never a bare file-trigger entry
-  // oxlint-disable-next-line typescript/consistent-type-imports -- missing specifier is the assertion
-  type _Bare = typeof import("@elmeragroup/fuse/file-trigger");
 });

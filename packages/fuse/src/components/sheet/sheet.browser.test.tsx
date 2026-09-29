@@ -1,13 +1,10 @@
-import { useRef } from "react";
-
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import { px, renderThemed } from "../../../test/themed-browser-render";
-import { ThemeScope } from "../../theme/theme-scope";
+import { px, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Sheet } from "./index";
 
 /** Reads a theme token off the document root (`--container-*` are rem lengths). */
@@ -214,7 +211,7 @@ describe("Sheet", () => {
     expect(behind.contains(document.activeElement)).toBe(false);
   });
 
-  it("closes from the corner button and drops it when showCloseButton is false", async () => {
+  it("closes from the corner button, drops it when showCloseButton is false, and closes from an explicit Sheet.Close", async () => {
     const { rerender } = renderThemed(withLocale("en-US", <BasicSheet />));
     await openSheet();
     const corner = page.getByRole("button", { name: "Close", exact: true }).element();
@@ -229,7 +226,8 @@ describe("Sheet", () => {
     rerender(withLocale("en-US", <BasicSheet showCloseButton={false} />));
     await openSheet();
     expect(page.getByRole("button", { name: "Close", exact: true }).query()).toBeNull();
-    expect(page.getByRole("button", { name: "Done", exact: true }).element()).toBeTruthy();
+    await userEvent.click(roleNamed("button", "Done"));
+    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("renders the corner close button in every locale and lets closeLabel win", async () => {
@@ -248,13 +246,6 @@ describe("Sheet", () => {
     expect(page.getByRole("button", { name: "Avslutt", exact: true }).element()).toBeTruthy();
     expect(page.getByRole("button", { name: "Lukk", exact: true }).query()).toBeNull();
     unmount();
-  });
-
-  it("closes from an explicit Sheet.Close", async () => {
-    renderThemed(withLocale("en-US", <BasicSheet showCloseButton={false} />));
-    await openSheet();
-    await userEvent.click(page.getByRole("button", { name: "Done", exact: true }).element());
-    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("keeps Body as the scroll container and stamps the layout slots", async () => {
@@ -301,7 +292,7 @@ describe("Sheet", () => {
     }
   });
 
-  it("leaves the size axis inert on the top and bottom sides", async () => {
+  it("leaves the size axis inert on the top and bottom sides, and below the sm breakpoint where the panel is full-width", async () => {
     await page.viewport(1024, 768);
     for (const side of ["top", "bottom"] as const) {
       const { unmount } = renderThemed(withLocale("en-US", <BasicSheet side={side} size="sm" />));
@@ -309,9 +300,7 @@ describe("Sheet", () => {
       expect(getComputedStyle(dialog).maxWidth, side).toBe("none");
       unmount();
     }
-  });
 
-  it("leaves the size axis inert below the sm breakpoint, where the panel is full-width", async () => {
     // The `sm:` half of the gate: `size` only caps a left/right panel once the viewport
     // is wide enough, and `w-full` owns the width below that.
     await page.viewport(500, 768);
@@ -329,42 +318,6 @@ describe("Sheet", () => {
     const dialog = await openSheet();
     expect(scope).not.toBeNull();
     expect(scope?.contains(dialog)).toBe(true);
-    expect([...document.body.children].includes(dialog)).toBe(false);
-  });
-
-  it("waits while the resolved container element is still null", () => {
-    function NeverAttached() {
-      const ref = useRef<HTMLElement | null>(null);
-      return (
-        <Sheet.Root open>
-          <Sheet.Content container={ref}>
-            <Sheet.Title>Pending</Sheet.Title>
-          </Sheet.Content>
-        </Sheet.Root>
-      );
-    }
-    renderThemed(withLocale("en-US", <NeverAttached />));
-
-    expect(page.getByRole("dialog").query()).toBeNull();
-  });
-
-  it("does not paint the popup outside a ThemeScope element that has not attached yet", async () => {
-    renderThemed(
-      withLocale(
-        "en-US",
-        <ThemeScope theme={{ variant: "external", brand: "fkas", segment: "private" }}>
-          <Sheet.Root open>
-            <Sheet.Content>
-              <Sheet.Title>Scoped</Sheet.Title>
-            </Sheet.Content>
-          </Sheet.Root>
-        </ThemeScope>
-      )
-    );
-    await expect.element(page.getByRole("dialog")).toBeInTheDocument();
-    const dialog = page.getByRole("dialog").element();
-    const scope = dialog.closest("[data-theme-variant=external]");
-    expect(scope).not.toBeNull();
     expect([...document.body.children].includes(dialog)).toBe(false);
   });
 

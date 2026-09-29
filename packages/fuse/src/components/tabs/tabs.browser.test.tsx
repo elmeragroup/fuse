@@ -95,7 +95,10 @@ describe("Tabs", () => {
     expect(htmlTab("Password").getAttribute("aria-selected")).toBe("true");
     expect(htmlTab("Account").getAttribute("aria-selected")).toBe("false");
     await expect.element(page.getByRole("tabpanel", { name: "Password", exact: true })).toBeInTheDocument();
-    expect(page.getByRole("tabpanel", { name: "Account", exact: true }).query()).toBeNull();
+    // Base UI unmounts the closing panel a frame after the switch, once its exit animations finish.
+    await expect
+      .element(page.getByRole("tabpanel", { name: "Account", exact: true }))
+      .not.toBeInTheDocument();
   });
 
   it("moves and activates tabs with Arrow keys, Home, and End", async () => {
@@ -186,21 +189,6 @@ describe("Tabs", () => {
     expect(htmlTab("Account").getAttribute("aria-selected")).toBe("true");
     expect(htmlTab("Password").getAttribute("aria-selected")).toBe("false");
     await expect.element(page.getByRole("tabpanel", { name: "Account", exact: true })).toBeInTheDocument();
-  });
-
-  it("tabs from the active trigger into the open panel", async () => {
-    renderThemed(
-      <>
-        <button type="button">Before</button>
-        <AccountPassword />
-      </>
-    );
-
-    htmlControl("Before").focus();
-    await userEvent.keyboard("{Tab}");
-    expect(document.activeElement).toBe(htmlTab("Account"));
-    await userEvent.keyboard("{Tab}");
-    expect(document.activeElement).toBe(htmlPanel("Account"));
   });
 
   it("paints the shared ring on the trigger and the open panel at both densities", async () => {

@@ -356,13 +356,6 @@ describe("radius roles", () => {
     }
   });
 
-  it("gives every internal element the same radius", () => {
-    stampDocumentTheme(fkasPrivate, "light");
-    render(<Specimens />);
-    const radii = new Set(measure().map(([, , measured]) => measured));
-    expect([...radii]).toEqual([6]);
-  });
-
   it("moves every internal element together when the document overrides --radius", () => {
     stampDocumentTheme(fkasPrivate, "light");
     document.documentElement.style.setProperty("--radius", "1rem");

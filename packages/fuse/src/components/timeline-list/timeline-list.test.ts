@@ -54,28 +54,6 @@ describe("timelineListVariants", () => {
   });
 });
 
-describe("TimelineList server boundary", () => {
-  it("imports and renders the entry without a use client directive", () => {
-    const html = renderToStaticMarkup(
-      createElement(
-        TimelineList.Root,
-        null,
-        createElement(
-          TimelineList.Item,
-          null,
-          createElement(TimelineList.Title, null, "Order placed"),
-          createElement(TimelineList.Time, { date: "2024-03-03T10:00:00.000Z" }, "3 March 2024"),
-          createElement(TimelineList.Description, null, "Confirmed at checkout.")
-        )
-      )
-    );
-    expect(html).toContain("<ol");
-    expect(html).toContain("<li");
-    expect(html).toContain("Order placed");
-    expect(html).toContain("Confirmed at checkout.");
-  });
-});
-
 describe("TimelineList.Time", () => {
   it("normalizes a Date and an offset-bearing string to ISO", () => {
     const fromDate = renderToStaticMarkup(

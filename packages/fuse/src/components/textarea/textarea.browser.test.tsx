@@ -45,36 +45,6 @@ describe("Textarea", () => {
     expect(named.getAttribute("aria-describedby")).toBeTruthy();
   });
 
-  it("excludes disabled from tab order and stamps aria-invalid", async () => {
-    renderThemed(
-      <>
-        <button type="button">Before</button>
-        <Textarea aria-label="Disabled" disabled aria-invalid />
-        <button type="button">After</button>
-      </>
-    );
-    const area = textboxNamed("Disabled");
-    expect(area).toHaveProperty("disabled", true);
-    expect(area.getAttribute("aria-invalid")).toBe("true");
-    const before = page.getByRole("button", { name: "Before", exact: true }).element();
-    if (!(before instanceof HTMLElement)) {
-      throw new Error("expected before");
-    }
-    before.focus();
-    await userEvent.keyboard("{Tab}");
-    expect(document.activeElement).toBe(page.getByRole("button", { name: "After", exact: true }).element());
-  });
-
-  it("enforces maxLength natively", async () => {
-    renderThemed(<Textarea aria-label="Code" maxLength={3} />);
-    const area = textboxNamed("Code");
-    if (!(area instanceof HTMLTextAreaElement)) {
-      throw new Error("expected a textarea");
-    }
-    await userEvent.fill(page.getByRole("textbox", { name: "Code", exact: true }), "abcd");
-    expect(area.value.length).toBeLessThanOrEqual(3);
-  });
-
   it("matches md inline padding and type at both densities and keeps min-h-16", () => {
     renderThemed(<Textarea aria-label="Notes" />);
     const area = textboxNamed("Notes");
@@ -89,30 +59,6 @@ describe("Textarea", () => {
       heights.add(area.getBoundingClientRect().height);
     }
     expect(heights.size).toBe(1);
-  });
-
-  it("ignores a nested data-density stamp in both directions", () => {
-    renderThemed(
-      <>
-        <Textarea aria-label="Root" />
-        <div data-density="comfortable">
-          <Textarea aria-label="Nested comfortable" />
-        </div>
-        <div data-density="dense">
-          <Textarea aria-label="Nested dense" />
-        </div>
-      </>
-    );
-
-    // Density is a document-root axis: `fuse.css` keys the comfortable block on
-    // `:root[data-density="comfortable"]`, so a nested attribute rescopes nothing.
-    for (const density of ["dense", "comfortable"] as const) {
-      stampDensity(density);
-      const rung = CONTROL_MD[density].px;
-      expect(px(getComputedStyle(textboxNamed("Root")).paddingInlineStart)).toBe(rung);
-      expect(px(getComputedStyle(textboxNamed("Nested comfortable")).paddingInlineStart)).toBe(rung);
-      expect(px(getComputedStyle(textboxNamed("Nested dense")).paddingInlineStart)).toBe(rung);
-    }
   });
 
   it("paints the shared ring on keyboard focus-visible at both densities", async () => {

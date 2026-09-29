@@ -3,7 +3,7 @@ import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
+import { cssVarColor, renderThemed, textNamed } from "../../../test/themed-browser-render";
 import { Avatar } from "./index";
 
 const PIXEL =
@@ -62,64 +62,28 @@ describe("Avatar", () => {
     expect(page.getByText("AL", { exact: true }).query()).toBeNull();
   });
 
-  it("renders getByRole img with the given alt", async () => {
-    renderThemed(
-      <Avatar.Root>
-        <Avatar.Image src={PIXEL} alt="Portrait of Ada Lovelace" />
-        <Avatar.Fallback>AL</Avatar.Fallback>
-      </Avatar.Root>
-    );
-
-    await vi.waitFor(() => {
-      expect(page.getByRole("img", { name: "Portrait of Ada Lovelace" }).query()).not.toBeNull();
-    });
-    expect(page.getByRole("img", { name: "Portrait of Ada Lovelace" }).element().tagName).toBe("IMG");
-  });
-
-  it("emits data-slot values on every rendered part", () => {
-    renderThemed(
-      <Avatar.Root>
-        <Avatar.Fallback>AL</Avatar.Fallback>
-      </Avatar.Root>
-    );
-    expect(slot("avatar").getAttribute("data-slot")).toBe("avatar");
-    expect(slot("avatar-fallback").getAttribute("data-slot")).toBe("avatar-fallback");
-  });
-
-  it("paints the root from the muted token and sizes it as a control box", () => {
-    renderThemed(
-      <Avatar.Root>
-        <Avatar.Fallback>AL</Avatar.Fallback>
-      </Avatar.Root>
-    );
-    const fallback = page.getByText("AL", { exact: true }).element();
-    if (!(fallback instanceof HTMLElement)) {
-      throw new Error("expected the fallback");
+  it.each([
+    [undefined, "32px"],
+    ["size-10", "40px"],
+  ] as const)(
+    "paints the root from the muted token and sizes it as a control box, className %s winning",
+    (className, width) => {
+      renderThemed(
+        <Avatar.Root className={className}>
+          <Avatar.Fallback>AL</Avatar.Fallback>
+        </Avatar.Root>
+      );
+      const fallback = textNamed("AL");
+      const avatar = fallback.parentElement;
+      if (!(avatar instanceof HTMLElement)) {
+        throw new Error("expected the avatar root");
+      }
+      expect(slot("avatar")).toBe(avatar);
+      expect(slot("avatar-fallback")).toBe(fallback);
+      expect(getComputedStyle(avatar).backgroundColor).toBe(cssVarColor(avatar, "--muted"));
+      expect(getComputedStyle(avatar).width).toBe(width);
     }
-    const avatar = fallback.parentElement;
-    if (!(avatar instanceof HTMLElement)) {
-      throw new Error("expected the avatar root");
-    }
-    expect(getComputedStyle(avatar).backgroundColor).toBe(cssVarColor(avatar, "--muted"));
-    expect(getComputedStyle(avatar).width).toBe("32px");
-  });
-
-  it("lets className size-10 beat the default size-8", () => {
-    renderThemed(
-      <Avatar.Root className="size-10">
-        <Avatar.Fallback>AL</Avatar.Fallback>
-      </Avatar.Root>
-    );
-    const fallback = page.getByText("AL", { exact: true }).element();
-    if (!(fallback instanceof HTMLElement)) {
-      throw new Error("expected the fallback");
-    }
-    const avatar = fallback.parentElement;
-    if (!(avatar instanceof HTMLElement)) {
-      throw new Error("expected the avatar root");
-    }
-    expect(getComputedStyle(avatar).width).toBe("40px");
-  });
+  );
 
   it("stacks group avatars with a background-coloured separating ring", () => {
     renderThemed(

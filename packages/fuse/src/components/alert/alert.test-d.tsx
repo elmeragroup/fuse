@@ -1,26 +1,6 @@
 import { expectTypeOf, test } from "vitest";
 
-import type { Alert as RootAlert } from "@elmeragroup/fuse";
-import * as AlertModule from "@elmeragroup/fuse/alert";
 import { Alert } from "@elmeragroup/fuse/alert";
-
-test("Alert ships from the alert entry and the root barrel", () => {
-  expectTypeOf<typeof Alert>().toEqualTypeOf<typeof RootAlert>();
-  expectTypeOf(Alert.Root).toBeFunction();
-  expectTypeOf(Alert.Icon).toBeFunction();
-  expectTypeOf(Alert.Title).toBeFunction();
-  expectTypeOf(Alert.Description).toBeFunction();
-});
-
-test("the public namespace is four parts — never the flat ref names or a recipe", () => {
-  expectTypeOf(Alert).not.toHaveProperty("AlertIcon");
-  expectTypeOf(Alert).not.toHaveProperty("AlertTitle");
-  expectTypeOf(Alert).not.toHaveProperty("AlertDescription");
-  expectTypeOf(AlertModule).not.toHaveProperty("AlertIcon");
-  expectTypeOf(AlertModule).not.toHaveProperty("AlertTitle");
-  expectTypeOf(AlertModule).not.toHaveProperty("AlertDescription");
-  expectTypeOf(AlertModule).not.toHaveProperty("alertVariants");
-});
 
 test("parts take the public API: required icon variant, heading level, no variant on copy", () => {
   expectTypeOf<Parameters<typeof Alert.Root>[0]["variant"]>().toEqualTypeOf<

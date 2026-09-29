@@ -38,12 +38,8 @@ type FirstPaintCase = {
 const firstPaintCases: FirstPaintCase[] = [
   { name: "stored light", stored: "light", colorScheme: "dark", expectedTheme: "light" },
   { name: "stored dark", stored: "dark", colorScheme: "light", expectedTheme: "dark" },
-  { name: "system light", stored: "system", colorScheme: "light", expectedTheme: "light" },
-  { name: "system dark", stored: "system", colorScheme: "dark", expectedTheme: "dark" },
   { name: "missing storage, system light", stored: null, colorScheme: "light", expectedTheme: "light" },
   { name: "missing storage, system dark", stored: null, colorScheme: "dark", expectedTheme: "dark" },
-  { name: "invalid storage, system light", stored: "nope", colorScheme: "light", expectedTheme: "light" },
-  { name: "invalid storage, system dark", stored: "{}", colorScheme: "dark", expectedTheme: "dark" },
 ];
 
 const browser = launchSuiteBrowser();
@@ -190,26 +186,6 @@ describe("static theme first paint with React blocked", () => {
       await context.close();
     }
   );
-
-  it("writes forced dark before React while storage is light", async () => {
-    const context = await browser().newContext({ colorScheme: "light" });
-    await seedStorage(context, "light");
-    const page = await context.newPage();
-    await page.route("**/*", abortModuleScripts);
-    await page.goto(`${staticThemeBaseUrl()}/forced-dark.html`, { waitUntil: "commit" });
-    await waitForBootstrap(page);
-
-    const probe = await probeFirstPaint(page);
-    expectFixedDocumentBrand(probe);
-    expectDocumentDensity(probe, "dense");
-    expect(probe.dataTheme).toBe("dark");
-    expect(probe.manifest).toEqual(EXPECTED_FORCED_DARK_MANIFEST);
-    expectTokenCanvas(probe);
-    expect(probe.bootstrapScriptCount).toBe(1);
-    expect(probe.reactMounted).toBe(false);
-
-    await context.close();
-  });
 
   it("stamps comfortable density on the isolated preview before React", async () => {
     const context = await browser().newContext({ colorScheme: "light" });

@@ -21,20 +21,19 @@ function Wrapper({ dataSlot, ...props }: ComponentProps<typeof Separator> & { da
 }
 
 describe("Separator", () => {
-  it("defaults to a horizontal separator with data-slot", () => {
-    renderThemed(<Separator />);
-    const separator = separatorNamed();
-    expect(separator.getAttribute("data-slot")).toBe("separator");
-    expect(separator.getAttribute("data-orientation")).toBe("horizontal");
-    expect(separator.getAttribute("aria-orientation")).toBe("horizontal");
-  });
-
-  it("emits vertical orientation on the role and data attribute", () => {
-    renderThemed(<Separator orientation="vertical" />);
-    const separator = separatorNamed();
-    expect(separator.getAttribute("data-orientation")).toBe("vertical");
-    expect(separator.getAttribute("aria-orientation")).toBe("vertical");
-  });
+  it.each([
+    { orientation: undefined, expected: "horizontal" },
+    { orientation: "vertical", expected: "vertical" },
+  ] as const)(
+    "emits $expected orientation (prop: $orientation) on the role and data attribute, with data-slot",
+    ({ orientation, expected }) => {
+      renderThemed(<Separator orientation={orientation} />);
+      const separator = separatorNamed();
+      expect(separator.getAttribute("data-slot")).toBe("separator");
+      expect(separator.getAttribute("data-orientation")).toBe(expected);
+      expect(separator.getAttribute("aria-orientation")).toBe(expected);
+    }
+  );
 
   it("lets a wrapper override data-slot via later-spread props", () => {
     renderThemed(<Wrapper dataSlot="custom" />);

@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { discoverEntries } from "../scripts/entries";
-import { FORBIDDEN_RAC_PACKAGES, isForbiddenRacSpecifier } from "../scripts/forbidden-rac-packages.js";
+import { isForbiddenRacSpecifier } from "../scripts/forbidden-rac-packages.js";
 import {
   bareEntryRacDeclarationFailure,
   emittedDirectiveFailure,
@@ -18,18 +18,6 @@ import { ARTIFACTS_DIR } from "../scripts/tarball";
 import { copyTwemojiNotices, TWEMOJI_LICENSE_FILE, TWEMOJI_NOTICE_FILE } from "../scripts/twemoji-notices";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-
-describe("shared script helpers", () => {
-  it("exports one RAC forbidden list consumed by package-check and the lint rule", () => {
-    expect(FORBIDDEN_RAC_PACKAGES).toEqual([
-      "react-aria-components",
-      "react-aria",
-      "@internationalized/date",
-      "@react-aria",
-      "@react-stately",
-    ]);
-  });
-});
 
 describe("Twemoji notice copying", () => {
   const scratchDirs: string[] = [];
@@ -91,20 +79,27 @@ describe("artifacts directory single-sourcing", () => {
 });
 
 describe("packed value-export gate", () => {
-  it("fails extra names that are not in the expected set", () => {
-    const message = packedValueExportFailure("./theme", ["BRANDS", "SneakyExtra"], ["BRANDS"]);
-    expect(message).toBe("./theme unexpected runtime exports: SneakyExtra");
-  });
-
-  it("fails missing names that the expected set requires", () => {
-    const message = packedValueExportFailure("./theme", ["BRANDS"], ["BRANDS", "isBrandCode"]);
-    expect(message).toBe("./theme missing runtime exports: isBrandCode");
-  });
-
-  it("passes when packed names equal the expected set", () => {
-    expect(
-      packedValueExportFailure("./theme", ["BRANDS", "isBrandCode"], ["isBrandCode", "BRANDS"])
-    ).toBeUndefined();
+  it.each([
+    [
+      "fails extra names that are not in the expected set",
+      ["BRANDS", "SneakyExtra"],
+      ["BRANDS"],
+      "./theme unexpected runtime exports: SneakyExtra",
+    ],
+    [
+      "fails missing names that the expected set requires",
+      ["BRANDS"],
+      ["BRANDS", "isBrandCode"],
+      "./theme missing runtime exports: isBrandCode",
+    ],
+    [
+      "passes when packed names equal the expected set",
+      ["BRANDS", "isBrandCode"],
+      ["isBrandCode", "BRANDS"],
+      undefined,
+    ],
+  ] as const)("%s", (_case, packed, expected, failure) => {
+    expect(packedValueExportFailure("./theme", packed, expected)).toBe(failure);
   });
 });
 
@@ -168,79 +163,34 @@ describe("bare-entry RAC declaration quarantine", () => {
     return dir;
   }
 
-  it("passes when only quarantined react-aria entries mention RAC packages", () => {
-    expect(
-      bareEntryRacDeclarationFailure([
-        { subpath: ".", declaration: 'export { Button } from "./button";\n' },
-        {
-          subpath: "theme",
-          declaration: 'export type { SupportedLocale } from "./intl/locale-context";\n',
-        },
-        { subpath: "button", declaration: 'export { Button } from "./components/button/button";\n' },
-        {
-          subpath: "react-aria/ui-providers",
-          declaration: 'import { I18nProvider } from "react-aria-components";\n',
-        },
-      ])
-    ).toBeUndefined();
-  });
-
-  it("does not treat our react-aria subpath or tailwindcss-react-aria-components as a leak", () => {
-    expect(
-      bareEntryRacDeclarationFailure([
-        { subpath: "theme", declaration: 'export {} from "tailwindcss-react-aria-components";\n' },
-        { subpath: ".", declaration: 'export type { UiProvidersProps } from "./react-aria/ui-providers";\n' },
-        { subpath: "button", declaration: 'import "tailwindcss-react-aria-components";\n' },
-      ])
-    ).toBeUndefined();
-  });
-
-  it("fails when a bare entry declaration imports react-aria-components", () => {
-    expect(
-      bareEntryRacDeclarationFailure([
-        { subpath: "button", declaration: 'export type { ButtonProps } from "react-aria-components";\n' },
-      ])
-    ).toBe("./button declaration references react-aria-components");
-  });
-
-  it("fails on a bare-entry side-effect import and ignores one in a quarantined entry", () => {
-    expect(
-      bareEntryRacDeclarationFailure([
-        { subpath: "button", declaration: 'import "react-aria-components";\n' },
-      ])
-    ).toBe("./button declaration references react-aria-components");
-    expect(
-      bareEntryRacDeclarationFailure([{ subpath: "theme", declaration: 'import "react-aria";\n' }])
-    ).toBe("./theme declaration references react-aria");
-    expect(
-      bareEntryRacDeclarationFailure([{ subpath: ".", declaration: 'import "@react-aria/i18n";\n' }])
-    ).toBe(". declaration references @react-aria/i18n");
-    expect(
-      bareEntryRacDeclarationFailure([
-        { subpath: "button", declaration: 'import "@react-stately/select";\n' },
-      ])
-    ).toBe("./button declaration references @react-stately/select");
-    expect(
-      bareEntryRacDeclarationFailure([
-        {
-          subpath: "react-aria/ui-providers",
-          declaration: 'import "react-aria-components";\n',
-        },
-      ])
-    ).toBeUndefined();
-  });
-
-  it("fails on bare react-aria and @react-aria/* in root and theme declarations", () => {
-    expect(
-      bareEntryRacDeclarationFailure([
-        { subpath: ".", declaration: 'export type { Locale } from "react-aria";\n' },
-      ])
-    ).toBe(". declaration references react-aria");
-    expect(
-      bareEntryRacDeclarationFailure([
-        { subpath: "theme", declaration: 'import type { I18n } from "@react-aria/i18n";\n' },
-      ])
-    ).toBe("./theme declaration references @react-aria/i18n");
+  it.each([
+    // Our react-aria subpath and tailwindcss-react-aria-components are not leaks.
+    [{ subpath: "theme", declaration: 'export {} from "tailwindcss-react-aria-components";\n' }, undefined],
+    [
+      { subpath: ".", declaration: 'export type { UiProvidersProps } from "./react-aria/ui-providers";\n' },
+      undefined,
+    ],
+    [{ subpath: "button", declaration: 'import "tailwindcss-react-aria-components";\n' }, undefined],
+    // A bare-entry side-effect import fails; one in a quarantined entry is ignored.
+    [
+      { subpath: "button", declaration: 'import "react-aria-components";\n' },
+      "./button declaration references react-aria-components",
+    ],
+    [
+      { subpath: "theme", declaration: 'import "react-aria";\n' },
+      "./theme declaration references react-aria",
+    ],
+    [
+      { subpath: ".", declaration: 'import "@react-aria/i18n";\n' },
+      ". declaration references @react-aria/i18n",
+    ],
+    [
+      { subpath: "button", declaration: 'import "@react-stately/select";\n' },
+      "./button declaration references @react-stately/select",
+    ],
+    [{ subpath: "react-aria/ui-providers", declaration: 'import "react-aria-components";\n' }, undefined],
+  ] as const)("classifies %j as %s", (entry, failure) => {
+    expect(bareEntryRacDeclarationFailure([entry])).toBe(failure);
   });
 
   it("reads packed .d.ts paths and skips quarantined react-aria entries", () => {
@@ -310,182 +260,106 @@ describe("bare-entry RAC declaration quarantine", () => {
     expect(isForbiddenRacSpecifier("./react-aria/ui-providers")).toBe(false);
   });
 
-  it("fails named imports and import() forms, and ignores comments and string literals", () => {
-    expect(
-      bareEntryRacDeclarationFailure([
-        { subpath: "button", declaration: 'import { Button } from "react-aria-components";\n' },
-      ])
-    ).toBe("./button declaration references react-aria-components");
-    expect(
-      bareEntryRacDeclarationFailure([
-        { subpath: "theme", declaration: 'type Locale = import("react-aria").Locale;\n' },
-      ])
-    ).toBe("./theme declaration references react-aria");
-    expect(
-      bareEntryRacDeclarationFailure([
-        {
-          subpath: "button",
-          declaration:
-            '// import { X } from "react-aria-components";\nconst hint = "react-aria";\nexport declare const ok: 1;\n',
-        },
-      ])
-    ).toBeUndefined();
-  });
+  const BUTTON = { subpath: "button", sourceFile: "src/button.ts" } as const;
+  const UI_PROVIDERS = {
+    subpath: "react-aria/ui-providers",
+    sourceFile: "src/react-aria/ui-providers.ts",
+  } as const;
 
-  it("fails exact and subpath @internationalized/date in bare declarations", () => {
-    expect(
-      bareEntryRacDeclarationFailure([
-        { subpath: "button", declaration: 'export type { DateValue } from "@internationalized/date";\n' },
-      ])
-    ).toBe("./button declaration references @internationalized/date");
-    expect(
-      bareEntryRacDeclarationFailure([
-        {
-          subpath: "theme",
-          declaration: 'import type { Calendar } from "@internationalized/date/calendar";\n',
-        },
-      ])
-    ).toBe("./theme declaration references @internationalized/date/calendar");
-    expect(
-      bareEntryRacDeclarationFailure([
-        { subpath: ".", declaration: 'export type { LocalizedString } from "@internationalized/string";\n' },
-      ])
-    ).toBeUndefined();
-  });
-
-  it("passes a clean multi-hop packed declaration graph", () => {
-    const extracted = scratch();
-    mkdirSync(join(extracted, "components/button/nested"), { recursive: true });
-    writeFileSync(
-      join(extracted, "button.d.ts"),
-      `export { Button } from "./components/button/button.js";\n`
-    );
-    writeFileSync(join(extracted, "components/button/button.d.ts"), `export { Button } from "./nested";\n`);
-    writeFileSync(
-      join(extracted, "components/button/nested/index.d.ts"),
-      `export { Button } from "../impl.d.ts";\n`
-    );
-    writeFileSync(
-      join(extracted, "components/button/impl.d.ts"),
-      `export declare function Button(): void;\n`
-    );
-    expect(
-      packedBareEntryRacDeclarationFailure(extracted, [{ subpath: "button", sourceFile: "src/button.ts" }])
-    ).toBeUndefined();
-  });
-
-  it("fails when a nested implementation declaration imports a RAC package", () => {
-    const extracted = scratch();
-    mkdirSync(join(extracted, "components/button"), { recursive: true });
-    writeFileSync(join(extracted, "button.d.ts"), `export { Button } from "./components/button/button";\n`);
-    writeFileSync(
-      join(extracted, "components/button/button.d.ts"),
-      `export type { ButtonProps } from "react-aria-components";\n`
-    );
-    expect(
-      packedBareEntryRacDeclarationFailure(extracted, [
-        { subpath: "button", sourceFile: "src/button.ts" },
-        { subpath: "react-aria/ui-providers", sourceFile: "src/react-aria/ui-providers.ts" },
-      ])
-    ).toBe("./button declaration references react-aria-components");
-  });
-
-  it("fails when a bare entry reaches a packed react-aria declaration", () => {
-    const extracted = scratch();
-    mkdirSync(join(extracted, "react-aria"), { recursive: true });
-    writeFileSync(
-      join(extracted, "index.d.ts"),
-      `export type { UiProvidersProps } from "./react-aria/ui-providers";\n`
-    );
-    writeFileSync(
-      join(extracted, "react-aria/ui-providers.d.ts"),
-      `export type UiProvidersProps = object;\n`
-    );
-    expect(
-      packedBareEntryRacDeclarationFailure(extracted, [{ subpath: ".", sourceFile: "src/index.ts" }])
-    ).toBe(". declaration references ./react-aria/ui-providers");
-  });
-
-  it("terminates cycles in the packed declaration graph", () => {
-    const extracted = scratch();
-    writeFileSync(join(extracted, "button.d.ts"), `export type { A } from "./a";\n`);
-    writeFileSync(join(extracted, "a.d.ts"), `export type { B } from "./b";\n`);
-    writeFileSync(join(extracted, "b.d.ts"), `export type { A } from "./a";\n`);
-    expect(
-      packedBareEntryRacDeclarationFailure(extracted, [{ subpath: "button", sourceFile: "src/button.ts" }])
-    ).toBeUndefined();
-  });
-
-  it("skips quarantined react-aria entries as graph roots", () => {
-    const extracted = scratch();
-    mkdirSync(join(extracted, "react-aria"), { recursive: true });
-    writeFileSync(join(extracted, "button.d.ts"), `export declare function Button(): void;\n`);
-    writeFileSync(
-      join(extracted, "react-aria/ui-providers.d.ts"),
-      `import { I18nProvider } from "react-aria-components";\nexport type { DateValue } from "@internationalized/date";\n`
-    );
-    expect(
-      packedBareEntryRacDeclarationFailure(extracted, [
-        { subpath: "button", sourceFile: "src/button.ts" },
-        { subpath: "react-aria/ui-providers", sourceFile: "src/react-aria/ui-providers.ts" },
-      ])
-    ).toBeUndefined();
-  });
-
-  it("does not follow relative specifiers that escape the extracted package", () => {
+  it.each<{
+    name: string;
+    files: Record<string, string>;
+    extractedDir?: string;
+    entries: readonly { subpath: string; sourceFile: string }[];
+    failure: string | undefined;
+  }>([
+    {
+      name: "passes a clean multi-hop packed declaration graph",
+      files: {
+        "button.d.ts": `export { Button } from "./components/button/button.js";\n`,
+        "components/button/button.d.ts": `export { Button } from "./nested";\n`,
+        "components/button/nested/index.d.ts": `export { Button } from "../impl.d.ts";\n`,
+        "components/button/impl.d.ts": `export declare function Button(): void;\n`,
+      },
+      entries: [BUTTON],
+      failure: undefined,
+    },
+    {
+      name: "fails when a nested implementation declaration imports a RAC package",
+      files: {
+        "button.d.ts": `export { Button } from "./components/button/button";\n`,
+        "components/button/button.d.ts": `export type { ButtonProps } from "react-aria-components";\n`,
+      },
+      entries: [BUTTON, UI_PROVIDERS],
+      failure: "./button declaration references react-aria-components",
+    },
+    {
+      name: "fails when a bare entry reaches a packed react-aria declaration",
+      files: {
+        "index.d.ts": `export type { UiProvidersProps } from "./react-aria/ui-providers";\n`,
+        "react-aria/ui-providers.d.ts": `export type UiProvidersProps = object;\n`,
+      },
+      entries: [{ subpath: ".", sourceFile: "src/index.ts" }],
+      failure: ". declaration references ./react-aria/ui-providers",
+    },
+    {
+      name: "terminates cycles in the packed declaration graph",
+      files: {
+        "button.d.ts": `export type { A } from "./a";\n`,
+        "a.d.ts": `export type { B } from "./b";\n`,
+        "b.d.ts": `export type { A } from "./a";\n`,
+      },
+      entries: [BUTTON],
+      failure: undefined,
+    },
+    {
+      name: "does not follow relative specifiers that escape the extracted package",
+      extractedDir: "pkg",
+      files: {
+        "pkg/button.d.ts": `export type { Leaked } from "../outside";\n`,
+        "outside.d.ts": `export type { Leaked } from "react-aria-components";\n`,
+      },
+      entries: [BUTTON],
+      failure: undefined,
+    },
+    {
+      name: "fails when a packed graph hops through exact . to a same-directory index with a RAC package",
+      files: {
+        "button.d.ts": `export { Button } from "./components/button/button";\n`,
+        "components/button/button.d.ts": `export { Button } from ".";\n`,
+        "components/button/index.d.ts": `export type { ButtonProps } from "react-aria-components";\n`,
+      },
+      entries: [BUTTON, UI_PROVIDERS],
+      failure: "./button declaration references react-aria-components",
+    },
+    {
+      name: "fails when a packed graph hops through exact .. to a parent index with a RAC package",
+      files: {
+        "button.d.ts": `export { Button } from "./components/button/nested";\n`,
+        "components/button/nested/index.d.ts": `export { Button } from "..";\n`,
+        "components/button/index.d.ts": `export type { ButtonProps } from "react-aria-components";\n`,
+      },
+      entries: [BUTTON, UI_PROVIDERS],
+      failure: "./button declaration references react-aria-components",
+    },
+    {
+      name: "passes a packed graph that hops through exact . and .. to clean indexes",
+      files: {
+        "button.d.ts": `export { Button } from "./deep/nested/leaf";\n`,
+        "deep/nested/leaf.d.ts": `export { Button } from ".";\n`,
+        "deep/nested/index.d.ts": `export { Button } from "..";\n`,
+        "deep/index.d.ts": `export declare function Button(): void;\n`,
+      },
+      entries: [BUTTON],
+      failure: undefined,
+    },
+  ])("$name", ({ files, extractedDir, entries, failure }) => {
     const root = scratch();
-    const extracted = join(root, "pkg");
-    mkdirSync(extracted);
-    writeFileSync(join(extracted, "button.d.ts"), `export type { Leaked } from "../outside";\n`);
-    writeFileSync(join(root, "outside.d.ts"), `export type { Leaked } from "react-aria-components";\n`);
-    expect(
-      packedBareEntryRacDeclarationFailure(extracted, [{ subpath: "button", sourceFile: "src/button.ts" }])
-    ).toBeUndefined();
-  });
-
-  it("fails when a packed graph hops through exact . to a same-directory index with a RAC package", () => {
-    const extracted = scratch();
-    mkdirSync(join(extracted, "components/button"), { recursive: true });
-    writeFileSync(join(extracted, "button.d.ts"), `export { Button } from "./components/button/button";\n`);
-    writeFileSync(join(extracted, "components/button/button.d.ts"), `export { Button } from ".";\n`);
-    writeFileSync(
-      join(extracted, "components/button/index.d.ts"),
-      `export type { ButtonProps } from "react-aria-components";\n`
-    );
-    expect(
-      packedBareEntryRacDeclarationFailure(extracted, [
-        { subpath: "button", sourceFile: "src/button.ts" },
-        { subpath: "react-aria/ui-providers", sourceFile: "src/react-aria/ui-providers.ts" },
-      ])
-    ).toBe("./button declaration references react-aria-components");
-  });
-
-  it("fails when a packed graph hops through exact .. to a parent index with a RAC package", () => {
-    const extracted = scratch();
-    mkdirSync(join(extracted, "components/button/nested"), { recursive: true });
-    writeFileSync(join(extracted, "button.d.ts"), `export { Button } from "./components/button/nested";\n`);
-    writeFileSync(join(extracted, "components/button/nested/index.d.ts"), `export { Button } from "..";\n`);
-    writeFileSync(
-      join(extracted, "components/button/index.d.ts"),
-      `export type { ButtonProps } from "react-aria-components";\n`
-    );
-    expect(
-      packedBareEntryRacDeclarationFailure(extracted, [
-        { subpath: "button", sourceFile: "src/button.ts" },
-        { subpath: "react-aria/ui-providers", sourceFile: "src/react-aria/ui-providers.ts" },
-      ])
-    ).toBe("./button declaration references react-aria-components");
-  });
-
-  it("passes a packed graph that hops through exact . and .. to clean indexes", () => {
-    const extracted = scratch();
-    mkdirSync(join(extracted, "deep/nested"), { recursive: true });
-    writeFileSync(join(extracted, "button.d.ts"), `export { Button } from "./deep/nested/leaf";\n`);
-    writeFileSync(join(extracted, "deep/nested/leaf.d.ts"), `export { Button } from ".";\n`);
-    writeFileSync(join(extracted, "deep/nested/index.d.ts"), `export { Button } from "..";\n`);
-    writeFileSync(join(extracted, "deep/index.d.ts"), `export declare function Button(): void;\n`);
-    expect(
-      packedBareEntryRacDeclarationFailure(extracted, [{ subpath: "button", sourceFile: "src/button.ts" }])
-    ).toBeUndefined();
+    for (const [file, contents] of Object.entries(files)) {
+      mkdirSync(dirname(join(root, file)), { recursive: true });
+      writeFileSync(join(root, file), contents);
+    }
+    const extracted = extractedDir === undefined ? root : join(root, extractedDir);
+    expect(packedBareEntryRacDeclarationFailure(extracted, entries)).toBe(failure);
   });
 });

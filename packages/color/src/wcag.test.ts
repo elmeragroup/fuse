@@ -23,20 +23,15 @@ describe("relativeLuminance", () => {
     // #767676, the 4.5:1 gray on white: channel 118 / 255 decodes to
     // ((0.462745 + 0.055) / 1.055) ^ 2.4 = 0.181164, and a gray's weights sum to 1.
     expect(Wcag.relativeLuminance(hex("#767676"))).toBeCloseTo(0.181164, 6);
-  });
-
-  it("ignores alpha", () => {
+    // Alpha plays no part: transparent white is as luminous as white.
     expect(Wcag.relativeLuminance(getOrThrow(Srgb.make({ r: 1, g: 1, b: 1, alpha: 0 })))).toBeCloseTo(1, 12);
   });
 });
 
 describe("contrastRatio", () => {
-  it("spans 1 for a color on itself to 21 for black on white", () => {
+  it("spans 1 for a color on itself to 21 for black on white, and matches published reference pairs", () => {
     expect(ratio(hex("#000000"), hex("#ffffff"))).toBeCloseTo(21, 10);
     expect(ratio(hex("#5c6773"), hex("#5c6773"))).toBe(1);
-  });
-
-  it("matches published WCAG reference pairs", () => {
     // #767676 is the lightest gray that passes 4.5:1 on white, at 4.54:1; #777777 fails.
     expect(ratio(hex("#767676"), hex("#ffffff"))).toBeCloseTo(4.54, 2);
     expect(ratio(hex("#777777"), hex("#ffffff"))).toBeLessThan(4.5);

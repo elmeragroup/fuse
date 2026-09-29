@@ -8,26 +8,6 @@ import type { ThemeInput } from "../theme/tokens/themes";
 import { BrandLogo } from "./brand-logo";
 
 describe("BrandLogo", () => {
-  it("renders an accessible display-name fallback for elma full and mark", () => {
-    render(
-      <>
-        <BrandLogo brand="elma" variant="full" />
-        <BrandLogo brand="elma" variant="mark" title="Elmera mark" />
-      </>
-    );
-
-    const full = page.getByRole("img", { name: "Elmera", exact: true }).element();
-    const mark = page.getByRole("img", { name: "Elmera mark", exact: true }).element();
-    expect(full.tagName).toBe("SPAN");
-    expect(full.getAttribute("data-variant")).toBe("full");
-    expect(full.textContent).toBe("Elmera");
-    expect(mark.tagName).toBe("SPAN");
-    expect(mark.getAttribute("data-variant")).toBe("mark");
-    expect(mark.textContent).toBe("Elmera");
-    expect(full.querySelector("svg")).toBeNull();
-    expect(mark.querySelector("svg")).toBeNull();
-  });
-
   it("uses an explicit title as the accessible name without inventing a mark", () => {
     render(<BrandLogo brand="elma" variant="mark" title="Elmera Group" />);
     const img = page.getByRole("img", { name: "Elmera Group", exact: true }).element();
@@ -36,8 +16,8 @@ describe("BrandLogo", () => {
     expect(img.querySelector("path")).toBeNull();
   });
 
-  it("lets an explicit aria-label win over the title and the display name", () => {
-    render(
+  it("lets an explicit aria-label win over the title and the display name, and keeps the display name when aria-label is undefined", () => {
+    const { unmount } = render(
       <>
         <BrandLogo brand="fkas" aria-label="Home" />
         <BrandLogo brand="elma" title="Elmera Group" aria-label="Group home" />
@@ -47,9 +27,8 @@ describe("BrandLogo", () => {
     expect(roleNamed("img", "Group home").textContent).toBe("Elmera");
     expect(page.getByRole("img", { name: "Fjordkraft", exact: true }).query()).toBeNull();
     expect(page.getByRole("img", { name: "Elmera Group", exact: true }).query()).toBeNull();
-  });
+    unmount();
 
-  it("keeps the display name when aria-label is undefined", () => {
     render(<BrandLogo brand="fkas" aria-label={undefined} />);
     expect(roleNamed("img", "Fjordkraft").getAttribute("data-variant")).toBe("full");
   });

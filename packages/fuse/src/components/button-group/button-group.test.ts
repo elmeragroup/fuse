@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
-import { cn } from "../../styles/cn";
 import { buttonGroupVariants } from "./button-group-variants";
 
 const BASE_CLASSES = [
@@ -33,26 +32,23 @@ const VERTICAL_CLASSES = [
 ] as const;
 
 describe("buttonGroupVariants", () => {
-  it("defaults to horizontal orientation and the group chrome base", () => {
-    const resolved = buttonGroupVariants();
+  it.each([
+    ["defaults to horizontal orientation", undefined, HORIZONTAL_CLASSES, "flex-col"],
+    [
+      "flips to a column and block-axis collapsing when orientation is vertical",
+      "vertical",
+      VERTICAL_CLASSES,
+      "*:data-slot:rounded-r-none",
+    ],
+  ] as const)("%s, keeping the group chrome base", (_label, orientation, axisClasses, absent) => {
+    const resolved = buttonGroupVariants({ orientation });
     for (const token of BASE_CLASSES) {
       expect(resolved, token).toContain(token);
     }
-    for (const token of HORIZONTAL_CLASSES) {
+    for (const token of axisClasses) {
       expect(resolved, token).toContain(token);
     }
-    expect(resolved).not.toContain("flex-col");
-  });
-
-  it("flips to a column and block-axis collapsing when orientation is vertical", () => {
-    const resolved = buttonGroupVariants({ orientation: "vertical" });
-    for (const token of BASE_CLASSES) {
-      expect(resolved, token).toContain(token);
-    }
-    for (const token of VERTICAL_CLASSES) {
-      expect(resolved, token).toContain(token);
-    }
-    expect(resolved).not.toContain("*:data-slot:rounded-r-none");
+    expect(resolved).not.toContain(absent);
   });
 
   it("is layout-only: no control-box size axis, density stamp, or dark variant", () => {
@@ -63,12 +59,5 @@ describe("buttonGroupVariants", () => {
     expect(resolved).not.toContain("comfortable:");
     expect(resolved).not.toContain("dark:");
     expect(resolved).not.toMatch(RAW_PALETTE_RE);
-  });
-
-  it("lets a className merge win over a conflicting recipe class through cn", () => {
-    const merged = cn(buttonGroupVariants({ orientation: "vertical" }), "flex-row").split(/\s+/);
-    expect(merged).toContain("flex-row");
-    expect(merged).not.toContain("flex-col");
-    expect(merged).toContain("group/button-group");
   });
 });

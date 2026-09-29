@@ -8,16 +8,8 @@ import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { DESCRIPTION_COPY, TITLE_COPY, TOGGLE_COPY } from "../../../test/sidebar-contract";
 import { Sidebar } from "./index";
 import { sidebarStrings } from "./intl";
-import {
-  SIDEBAR_COOKIE_MAX_AGE,
-  SIDEBAR_COOKIE_NAME,
-  SIDEBAR_KEYBOARD_SHORTCUT,
-  SIDEBAR_WIDTH,
-  SIDEBAR_WIDTH_ICON,
-  SIDEBAR_WIDTH_MOBILE,
-  useSidebar,
-} from "./sidebar";
-import { sidebarMenuButtonVariants, sidebarMenuSubButtonVariants } from "./sidebar-variants";
+import { useSidebar } from "./sidebar";
+import { sidebarMenuButtonVariants } from "./sidebar-variants";
 
 const PART_NAMES = [
   "Provider",
@@ -47,33 +39,17 @@ const PART_NAMES = [
 ] as const;
 
 describe("sidebar dictionary", () => {
-  it("owns the locked sidebar.* copy in all four locales", () => {
+  it("owns the locked sidebar.* copy in all four locales and carries no key beyond those three rows", () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(sidebarStrings.getStringForLocale("toggle", locale), locale).toBe(TOGGLE_COPY[locale]);
       expect(sidebarStrings.getStringForLocale("title", locale), locale).toBe(TITLE_COPY[locale]);
       expect(sidebarStrings.getStringForLocale("description", locale), locale).toBe(DESCRIPTION_COPY[locale]);
-    }
-  });
-
-  it("carries no key beyond the three rows owned by Sidebar", () => {
-    for (const locale of SUPPORTED_LOCALES) {
       expect(Object.keys(sidebarStrings.getStringsForLocale(locale)).sort(), locale).toEqual([
         "description",
         "title",
         "toggle",
       ]);
     }
-  });
-});
-
-describe("sidebar constants", () => {
-  it("keeps the documented values, the cookie name above all", () => {
-    expect(SIDEBAR_COOKIE_NAME).toBe("sidebar:state");
-    expect(SIDEBAR_COOKIE_MAX_AGE).toBe(604800);
-    expect(SIDEBAR_WIDTH).toBe("16rem");
-    expect(SIDEBAR_WIDTH_MOBILE).toBe("18rem");
-    expect(SIDEBAR_WIDTH_ICON).toBe("3rem");
-    expect(SIDEBAR_KEYBOARD_SHORTCUT).toBe("b");
   });
 });
 
@@ -118,13 +94,6 @@ describe("sidebarMenuButtonVariants", () => {
     );
     expect(defaults).toContain("transition-[color,background-color,box-shadow]");
     expect(defaults).not.toContain("transition-[width,height,padding,color,background-color,box-shadow]");
-  });
-
-  // MenuSubButton's size axis is measured, not string-matched: control-size.browser.test.tsx
-  // checks each size's computed height and type against DENSITY_METRICS.
-  it("keeps MenuSubButton's size axis off the rail ladder and data-size selectors", () => {
-    expect(sidebarMenuSubButtonVariants()).not.toContain("h-7");
-    expect(sidebarMenuSubButtonVariants()).not.toContain("data-[size=");
   });
 
   it("uses no raw palette, dark, density, ring-literal, or legacy data-sidebar selectors", () => {

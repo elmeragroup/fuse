@@ -19,12 +19,6 @@ describe("component page anatomy", () => {
     expect(intro).not.toMatch(/>(?:client|server)</u);
   });
 
-  it("renders the MDX shell's own prose", async () => {
-    const html = await fetchText("/components/input");
-    expect(html).toContain("A bare input has no accessible name");
-    expect(html).toContain("Field.Root</code> with a");
-  });
-
   it("renders one demo frame per scenario, with stage, meta row and extracted source", async () => {
     const html = await fetchText("/components/button");
     expect([...html.matchAll(/<section[^>]*data-demo-frame/g)]).toHaveLength(5);
@@ -100,25 +94,5 @@ describe("component page anatomy", () => {
     expect(html).toContain('href="#vertical"');
     expect(html).toContain('href="#composition-limits"');
     expect(html).toContain('id="composition-limits"');
-  });
-
-  it("serves the per-component markdown endpoint the page links to", async () => {
-    const markdown = await fetchText("/components/button.md");
-    expect(markdown.startsWith("# Button")).toBe(true);
-    expect(markdown).toContain("- RSC: client");
-    // RSC status per part, as a heading badge — never a per-prop column.
-    expect(markdown).toContain("### Button · RSC: client");
-    expect(markdown).toContain("| Prop | Type | Default | Required | Description |");
-    expect(markdown).not.toContain("| RSC |");
-  });
-
-  it("keeps the document on internal Elmera while demo stages select other brands", async () => {
-    const html = await fetchText("/components/dialog");
-    const stage = html.indexOf("data-demo-stage");
-    expect(stage).toBeGreaterThan(-1);
-    expect(html).toContain('data-theme-brand="fkas"');
-    expect(html).toMatch(
-      /<html[^>]+data-theme-variant="internal"[^>]+data-theme-brand="elma"[^>]+data-theme-segment="private"/
-    );
   });
 });

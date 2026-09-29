@@ -102,40 +102,47 @@ function lockedField(props: Partial<PhoneNumberFieldProps>) {
   return { change, countryChange, field };
 }
 
-it("clears a read-only uncontrolled field on programmatic reset", async () => {
-  const { change, countryChange, field } = lockedField({ isReadOnly: true });
-  const { rerender } = render(field(false));
-  await userEvent.fill(phoneInput(), "41234567");
-  const changeCalls = change.mock.calls.length;
-  const countryCalls = countryChange.mock.calls.length;
-  rerender(field(true));
+it.each([
+  {
+    lock: "read-only",
+    props: { isReadOnly: true },
+    settled: async () => {
+      await expect.poll(() => snapshot()).toEqual(emptySnapshot);
+    },
+    afterUnlock: undefined,
+  },
+  {
+    lock: "disabled",
+    props: { isDisabled: true },
+    settled: async () => {
+      await expect.poll(() => phoneInput().value).toBe("");
+    },
+    // A disabled field owns no submittable value until it is enabled again.
+    afterUnlock: { lockedHasPhone: false, unlockedPhone: "" },
+  },
+] as const)(
+  "clears a $lock uncontrolled field on programmatic reset",
+  async ({ props, settled, afterUnlock }) => {
+    const { change, countryChange, field } = lockedField(props);
+    const { rerender } = render(field(false));
+    await userEvent.fill(phoneInput(), "41234567");
+    const changeCalls = change.mock.calls.length;
+    const countryCalls = countryChange.mock.calls.length;
+    rerender(field(true));
 
-  phoneForm().reset();
+    phoneForm().reset();
 
-  await expect.poll(() => snapshot()).toEqual(emptySnapshot);
-  expect(change).toHaveBeenCalledTimes(changeCalls);
-  expect(countryChange).toHaveBeenCalledTimes(countryCalls);
-});
-
-it("clears a disabled uncontrolled field on programmatic reset", async () => {
-  const { change, countryChange, field } = lockedField({ isDisabled: true });
-  const { rerender } = render(field(false));
-  await userEvent.fill(phoneInput(), "41234567");
-  const changeCalls = change.mock.calls.length;
-  const countryCalls = countryChange.mock.calls.length;
-  rerender(field(true));
-
-  phoneForm().reset();
-
-  await expect.poll(() => phoneInput().value).toBe("");
-  // The reset task has landed; the counts now prove it stayed silent.
-  expect(change).toHaveBeenCalledTimes(changeCalls);
-  expect(countryChange).toHaveBeenCalledTimes(countryCalls);
-  // A disabled field owns no submittable value until it is enabled again.
-  expect(phoneSubmission().has("phone")).toBe(false);
-  rerender(field(false));
-  expect(phoneSubmission().get("phone")).toBe("");
-});
+    await settled();
+    // The reset task has landed; the counts now prove it stayed silent.
+    expect(change).toHaveBeenCalledTimes(changeCalls);
+    expect(countryChange).toHaveBeenCalledTimes(countryCalls);
+    if (afterUnlock !== undefined) {
+      expect(phoneSubmission().has("phone")).toBe(afterUnlock.lockedHasPhone);
+      rerender(field(false));
+      expect(phoneSubmission().get("phone")).toBe(afterUnlock.unlockedPhone);
+    }
+  }
+);
 
 it.each([
   { international: true },

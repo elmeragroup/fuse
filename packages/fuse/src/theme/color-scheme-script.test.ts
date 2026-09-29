@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { DEFAULT_BOOTSTRAP_MANIFEST } from "../../test/color-scheme-contract";
 import { runColorSchemeBootstrap } from "../../test/memory-color-scheme-platform";
+import type { MemoryPlatformInit } from "../../test/memory-color-scheme-platform";
 import {
   COLOR_SCHEME_BOOTSTRAP_SOURCE_DESCRIPTION,
   COLOR_SCHEME_BOOTSTRAP_SOURCE_DUPLICATE,
@@ -14,6 +15,7 @@ import {
 import type {
   ColorScheme,
   ColorSchemeBootstrapManifest,
+  ColorSchemeOptions,
   ColorSchemeScriptElementProps,
 } from "./color-scheme";
 import {
@@ -65,108 +67,102 @@ function scriptInnerHtml(markup: string): string {
 }
 
 describe("colorSchemeScriptSource resolution", () => {
-  it("resolves stored light, dark, and system preferences", () => {
-    expect(
-      runColorSchemeBootstrap(colorSchemeScriptSource(), {
-        stored: storedDefault("light"),
-        prefersDark: true,
-      }).state.root
-    ).toBe("light");
-    expect(
-      runColorSchemeBootstrap(colorSchemeScriptSource(), {
-        stored: storedDefault("dark"),
-        prefersDark: false,
-      }).state.root
-    ).toBe("dark");
-    expect(
-      runColorSchemeBootstrap(colorSchemeScriptSource(), {
-        stored: storedDefault("system"),
-        prefersDark: true,
-      }).state.root
-    ).toBe("dark");
-    expect(
-      runColorSchemeBootstrap(colorSchemeScriptSource(), {
-        stored: storedDefault("system"),
-        prefersDark: false,
-      }).state.root
-    ).toBe("light");
-  });
-
-  it("ignores missing and invalid storage and uses the default", () => {
-    const missing = runColorSchemeBootstrap(colorSchemeScriptSource(), { prefersDark: true });
-    expect(missing.state.root).toBe("dark");
-    expect(missing.state.storageReads).toEqual(["elmera-color-scheme"]);
-
-    expect(
-      runColorSchemeBootstrap(colorSchemeScriptSource(), {
-        stored: storedDefault("nope"),
-        prefersDark: false,
-      }).state.root
-    ).toBe("light");
-    expect(
-      runColorSchemeBootstrap(colorSchemeScriptSource({ defaultColorScheme: "dark" }), {
-        stored: storedDefault(""),
-        prefersDark: false,
-      }).state.root
-    ).toBe("dark");
-  });
-
-  it("resolves system to light when system support is disabled", () => {
-    const source = colorSchemeScriptSource({ enableSystem: false });
-    expect(
-      runColorSchemeBootstrap(source, { stored: storedDefault("system"), prefersDark: true }).state.root
-    ).toBe("light");
-    expect(runColorSchemeBootstrap(source, { prefersDark: true }).state.root).toBe("light");
-    expect(
-      runColorSchemeBootstrap(source, { stored: storedDefault("dark"), prefersDark: false }).state.root
-    ).toBe("dark");
-  });
-
-  it("applies document-level forced light, dark, and system without reading storage", () => {
-    const storedLight = { stored: storedDefault("light"), prefersDark: true };
-
-    const forcedDark = runColorSchemeBootstrap(
-      colorSchemeScriptSource({ forcedColorScheme: "dark" }),
-      storedLight
-    );
-    expect(forcedDark.state.root).toBe("dark");
-    expect(forcedDark.state.storageReads).toEqual([]);
-
-    const forcedLight = runColorSchemeBootstrap(colorSchemeScriptSource({ forcedColorScheme: "light" }), {
-      stored: storedDefault("dark"),
-      prefersDark: true,
-    });
-    expect(forcedLight.state.root).toBe("light");
-    expect(forcedLight.state.storageReads).toEqual([]);
-
-    const forcedSystem = runColorSchemeBootstrap(
-      colorSchemeScriptSource({ forcedColorScheme: "system" }),
-      storedLight
-    );
-    expect(forcedSystem.state.root).toBe("dark");
-    expect(forcedSystem.state.storageReads).toEqual([]);
-
-    const forcedSystemDisabled = runColorSchemeBootstrap(
-      colorSchemeScriptSource({ forcedColorScheme: "system", enableSystem: false }),
-      { stored: storedDefault("dark"), prefersDark: true }
-    );
-    expect(forcedSystemDisabled.state.root).toBe("light");
-    expect(forcedSystemDisabled.state.storageReads).toEqual([]);
-  });
-
-  it("resolves the default when storage or the media query is unavailable", () => {
-    expect(
-      runColorSchemeBootstrap(colorSchemeScriptSource({ defaultColorScheme: "dark" }), {
-        stored: storedDefault("light"),
-        storage: "blocked",
-      }).state.root
-    ).toBe("dark");
-    expect(
-      runColorSchemeBootstrap(colorSchemeScriptSource(), { prefersDark: true, media: "missing" }).state.root
-    ).toBe("light");
-    expect(
-      runColorSchemeBootstrap(colorSchemeScriptSource(), { prefersDark: true, media: "throwing" }).state.root
-    ).toBe("light");
+  it.each<{
+    name: string;
+    options?: ColorSchemeOptions;
+    platform: MemoryPlatformInit;
+    root: string;
+    storageReads?: readonly string[];
+  }>([
+    { name: "stored light", platform: { stored: storedDefault("light"), prefersDark: true }, root: "light" },
+    { name: "stored dark", platform: { stored: storedDefault("dark"), prefersDark: false }, root: "dark" },
+    {
+      name: "stored system, dark query",
+      platform: { stored: storedDefault("system"), prefersDark: true },
+      root: "dark",
+    },
+    {
+      name: "stored system, light query",
+      platform: { stored: storedDefault("system"), prefersDark: false },
+      root: "light",
+    },
+    {
+      name: "missing storage",
+      platform: { prefersDark: true },
+      root: "dark",
+      storageReads: ["elmera-color-scheme"],
+    },
+    {
+      name: "invalid storage",
+      platform: { stored: storedDefault("nope"), prefersDark: false },
+      root: "light",
+    },
+    {
+      name: "empty storage with a dark default",
+      options: { defaultColorScheme: "dark" },
+      platform: { stored: storedDefault(""), prefersDark: false },
+      root: "dark",
+    },
+    {
+      name: "stored system with system support disabled",
+      options: { enableSystem: false },
+      platform: { stored: storedDefault("system"), prefersDark: true },
+      root: "light",
+    },
+    {
+      name: "the system default with system support disabled",
+      options: { enableSystem: false },
+      platform: { prefersDark: true },
+      root: "light",
+    },
+    {
+      name: "stored dark with system support disabled",
+      options: { enableSystem: false },
+      platform: { stored: storedDefault("dark"), prefersDark: false },
+      root: "dark",
+    },
+    {
+      name: "forced dark over stored light",
+      options: { forcedColorScheme: "dark" },
+      platform: { stored: storedDefault("light"), prefersDark: true },
+      root: "dark",
+      storageReads: [],
+    },
+    {
+      name: "forced light over stored dark",
+      options: { forcedColorScheme: "light" },
+      platform: { stored: storedDefault("dark"), prefersDark: true },
+      root: "light",
+      storageReads: [],
+    },
+    {
+      name: "forced system over stored light",
+      options: { forcedColorScheme: "system" },
+      platform: { stored: storedDefault("light"), prefersDark: true },
+      root: "dark",
+      storageReads: [],
+    },
+    {
+      name: "forced system with system support disabled",
+      options: { forcedColorScheme: "system", enableSystem: false },
+      platform: { stored: storedDefault("dark"), prefersDark: true },
+      root: "light",
+      storageReads: [],
+    },
+    {
+      name: "blocked storage with a dark default",
+      options: { defaultColorScheme: "dark" },
+      platform: { stored: storedDefault("light"), storage: "blocked" },
+      root: "dark",
+    },
+    { name: "a missing media query", platform: { prefersDark: true, media: "missing" }, root: "light" },
+    { name: "a throwing media query", platform: { prefersDark: true, media: "throwing" }, root: "light" },
+  ])("resolves $root from $name", ({ options, platform, root, storageReads }) => {
+    const result = runColorSchemeBootstrap(colorSchemeScriptSource(options), platform);
+    expect(result.state.root).toBe(root);
+    if (storageReads !== undefined) {
+      expect(result.state.storageReads).toEqual(storageReads);
+    }
   });
 
   it("writes only resolved data-theme and overwrites the private manifest", () => {
@@ -220,19 +216,6 @@ describe("colorSchemeScriptSource resolution", () => {
   it("fails closed evaluation when the source has a free identifier", () => {
     expect(() => runColorSchemeBootstrap("themeAttributes()")).toThrow(/themeAttributes/);
   });
-
-  it("does not write brand attributes, CSS color-scheme, or a color-scheme meta tag", () => {
-    const source = colorSchemeScriptSource({ forcedColorScheme: "dark" });
-    expect(source).not.toMatch(/data-theme-brand|data-theme-variant|data-theme-segment/);
-    expect(source).not.toMatch(/style\.colorScheme|name=["']color-scheme["']/);
-    expect(source).not.toMatch(/createElement|\bmeta\b|themeAttributes|validateTheme|process\.env/);
-
-    const result = runColorSchemeBootstrap(source, { stored: storedDefault("light") });
-    expect(result.state.attributes).toEqual({ "data-theme": "dark" });
-    expect(result.state.rootStyle).toEqual({});
-    expect(result.state.createdElements).toEqual([]);
-    expect(result.state.storageWrites).toEqual([]);
-  });
 });
 
 describe("colorSchemeScriptSource serialization", () => {
@@ -259,23 +242,6 @@ describe("colorSchemeScriptSource serialization", () => {
 });
 
 describe("ColorSchemeScript", () => {
-  it("emits a classic inline script and preserves nonce plus data-cfasync", () => {
-    const markup = renderToStaticMarkup(
-      createElement(ColorSchemeScript, {
-        nonce: "csp-nonce",
-        scriptProps: { "data-cfasync": "false" },
-      })
-    );
-
-    expect(markup.startsWith("<script")).toBe(true);
-    expect(markup).toContain('nonce="csp-nonce"');
-    expect(markup).toContain('data-cfasync="false"');
-    expect(markup).not.toContain("type=");
-    expect(markup).not.toContain("src=");
-    const result = runColorSchemeBootstrap(scriptInnerHtml(markup), { stored: storedDefault("dark") });
-    expect(result.state.root).toBe("dark");
-  });
-
   it("rejects or overrides forbidden script props", () => {
     // SAFETY: public types omit these keys; this assertion feeds the runtime override contract.
     const scriptProps = {

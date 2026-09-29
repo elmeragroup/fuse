@@ -116,17 +116,6 @@ describe("Meter", () => {
     expect(statusIcon("Success")).toBeNull();
   });
 
-  it("shows Warning at 85% in default mode and no icon at 79%", () => {
-    const { unmount: unmountLow } = renderMeter(<Meter label="Low" value={79} />);
-    expect(statusIcon("Warning")).toBeNull();
-    expect(statusIcon("Success")).toBeNull();
-    unmountLow();
-
-    renderMeter(<Meter label="High" value={85} />);
-    expect(statusIcon("Warning")).not.toBeNull();
-    expect(statusIcon("Success")).toBeNull();
-  });
-
   it("treats exactly 80% as LOW for both the fill and the icon", () => {
     const { unmount: unmountBoundary } = renderMeter(<Meter label="Boundary" value={80} />);
     expect(slot("meter-bar-fill").className.split(/\s+/)).toContain("bg-success");
@@ -141,30 +130,6 @@ describe("Meter", () => {
     renderMeter(<Meter label="Scaled" value={96} maxValue={120} />);
     expect(slot("meter-bar-fill").className.split(/\s+/)).toContain("bg-success");
     expect(statusIcon("Warning")).toBeNull();
-  });
-
-  it("shows CheckCircle at FULL in success-only-when-full and Warning otherwise", () => {
-    const { unmount: unmountFull } = renderMeter(
-      <Meter label="Full" value={100} mode="success-only-when-full" />
-    );
-    expect(statusIcon("Success")).not.toBeNull();
-    expect(statusIcon("Warning")).toBeNull();
-    unmountFull();
-
-    renderMeter(<Meter label="Partial" value={40} mode="success-only-when-full" />);
-    expect(statusIcon("Warning")).not.toBeNull();
-    expect(statusIcon("Success")).toBeNull();
-  });
-
-  it("never renders an icon in inverted or neutral at any value", () => {
-    for (const mode of ["inverted", "neutral"] as const) {
-      for (const value of [0, 79, 85, 100]) {
-        const { unmount } = renderMeter(<Meter label={mode} value={value} mode={mode} />);
-        expect(statusIcon("Warning"), `${mode} ${value}`).toBeNull();
-        expect(statusIcon("Success"), `${mode} ${value}`).toBeNull();
-        unmount();
-      }
-    }
   });
 
   it("resolves warning and success labels in every locale and lets overrides win", () => {

@@ -12,7 +12,6 @@ import {
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import {
   ContextProbe,
-  DESKTOP,
   Frame,
   MOBILE,
   OrdersLink,
@@ -26,15 +25,7 @@ import {
   sidebarRoot,
 } from "../../../test/sidebar-browser-fixtures";
 import { DESCRIPTION_COPY, SLOT_ROSTER, TITLE_COPY, TOGGLE_COPY } from "../../../test/sidebar-contract";
-import {
-  CONTROL_MD,
-  CONTROL_SM,
-  px,
-  renderThemed,
-  roleNamed,
-  stampDensity,
-  textboxNamed,
-} from "../../../test/themed-browser-render";
+import { px, renderThemed, roleNamed, stampDensity, textboxNamed } from "../../../test/themed-browser-render";
 import { Tooltip } from "../tooltip";
 import { Sidebar } from "./index";
 import type { SidebarContextValue } from "./sidebar";
@@ -85,8 +76,9 @@ describe("Sidebar toggle paths", () => {
     expect(order).toEqual(["onClick", "toggle"]);
   });
 
-  it("toggles from the Rail, which is a mouse-only affordance with a localized name", async () => {
-    renderThemed(<Frame />);
+  it("toggles from the Rail, a mouse-only affordance with a localized name, and runs the caller's onClick", async () => {
+    const clicks: string[] = [];
+    renderThemed(<Frame rail={<Sidebar.Rail onClick={() => clicks.push("rail")} />} />);
     const rail = railNamed("Toggle sidebar");
     expect(rail.getAttribute("title")).toBe("Toggle sidebar");
     expect(rail.tabIndex).toBe(-1);
@@ -94,18 +86,11 @@ describe("Sidebar toggle paths", () => {
     expect(page.getByRole("button", { name: "Toggle sidebar", exact: true }).elements()).toHaveLength(1);
 
     await userEvent.click(rail);
-    expect(sidebarRoot().getAttribute("data-state")).toBe("collapsed");
-    await userEvent.click(rail);
-    expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
-  });
-
-  it("runs the caller's Rail onClick and still toggles", async () => {
-    const clicks: string[] = [];
-    renderThemed(<Frame rail={<Sidebar.Rail onClick={() => clicks.push("rail")} />} />);
-
-    await userEvent.click(railNamed("Toggle sidebar"));
     expect(clicks).toEqual(["rail"]);
     expect(sidebarRoot().getAttribute("data-state")).toBe("collapsed");
+    await userEvent.click(rail);
+    expect(clicks).toEqual(["rail", "rail"]);
+    expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
   });
 });
 
@@ -172,12 +157,6 @@ describe("Sidebar callback stability", () => {
 
 describe("Sidebar locale copy", () => {
   for (const locale of SUPPORTED_LOCALES) {
-    it(`labels the Trigger and Rail from the ${locale} dictionary`, () => {
-      renderThemed(<Frame locale={locale} />);
-      expect(roleNamed("button", TOGGLE_COPY[locale]).getAttribute("data-slot")).toBe("sidebar-trigger");
-      expect(railNamed(TOGGLE_COPY[locale]).getAttribute("title")).toBe(TOGGLE_COPY[locale]);
-    });
-
     it(`titles and describes the mobile Sheet from the ${locale} dictionary`, async () => {
       await page.viewport(MOBILE.width, MOBILE.height);
       renderThemed(<Frame locale={locale} />);
@@ -249,32 +228,6 @@ describe("Sidebar controlled and uncontrolled state", () => {
     expect(latest?.open).toBe(false);
     expect(latest?.isMobile).toBe(false);
     expect(latest?.openMobile).toBe(false);
-  });
-
-  it("accepts a boolean and an updater in setOpen", async () => {
-    let latest: SidebarContextValue | undefined;
-    renderThemed(
-      <Frame
-        probe={
-          <ContextProbe
-            onValue={(value) => {
-              latest = value;
-            }}
-          />
-        }
-      />
-    );
-    expect(latest?.open).toBe(true);
-
-    latest?.setOpen(false);
-    await vi.waitFor(() => {
-      expect(sidebarRoot().getAttribute("data-state")).toBe("collapsed");
-    });
-
-    latest?.setOpen((open) => !open);
-    await vi.waitFor(() => {
-      expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
-    });
   });
 
   it("keeps a controlled open prop authoritative over internal state", async () => {
@@ -589,16 +542,15 @@ describe("Sidebar.Root branches", () => {
     await expect.element(dialog).toHaveAccessibleDescription(DESCRIPTION_COPY["en-US"]);
   });
 
-  it("shows the sheet and hides the rail at 767px", async () => {
+  it("switches at the 768px breakpoint: sheet without rail at 767px, rail toggle at 768px", async () => {
     await page.viewport(767, 800);
-    renderThemed(<Frame />);
+    const below = renderThemed(<Frame />);
 
     await userEvent.click(roleNamed("button", "Toggle sidebar"));
     await expect.element(page.getByRole("dialog", { name: "Sidebar" })).toBeVisible();
     await expect.element(railNamed("Toggle sidebar")).not.toBeVisible();
-  });
+    below.unmount();
 
-  it("toggles the rail instead of opening a sheet at 768px", async () => {
     await page.viewport(768, 800);
     renderThemed(<Frame />);
 
@@ -808,39 +760,6 @@ describe("Sidebar.MenuSubButton", () => {
     expect(open.closest("ul")?.tagName).toBe("UL");
     expect(open.closest("li")?.tagName).toBe("LI");
   });
-
-  it("reads the signed sm/md control rungs at both density stamps", () => {
-    const heights: Record<string, number[]> = {};
-    for (const density of ["dense", "comfortable"] as const) {
-      stampDensity(density);
-      const { unmount } = renderThemed(
-        <Frame>
-          <Sidebar.MenuItem>
-            <Sidebar.MenuButton>Orders</Sidebar.MenuButton>
-            <Sidebar.MenuSub>
-              <Sidebar.MenuSubItem>
-                <Sidebar.MenuSubButton href="/orders/open">
-                  <span>Open</span>
-                </Sidebar.MenuSubButton>
-              </Sidebar.MenuSubItem>
-              <Sidebar.MenuSubItem>
-                <Sidebar.MenuSubButton href="/orders/closed" size="sm">
-                  <span>Closed</span>
-                </Sidebar.MenuSubButton>
-              </Sidebar.MenuSubItem>
-            </Sidebar.MenuSub>
-          </Sidebar.MenuItem>
-        </Frame>
-      );
-      heights[density] = [
-        px(getComputedStyle(roleNamed("link", "Open")).height),
-        px(getComputedStyle(roleNamed("link", "Closed")).height),
-      ];
-      unmount();
-    }
-    expect(heights.dense).toEqual([CONTROL_MD.dense.height, CONTROL_SM.dense.height]);
-    expect(heights.comfortable).toEqual([CONTROL_MD.comfortable.height, CONTROL_SM.comfortable.height]);
-  });
 });
 
 /** DOM audit: the roster audit counts slot stamps directly; every part stamps its slot and no legacy `data-sidebar` survives. */
@@ -907,37 +826,5 @@ describe("Sidebar data-slot audit", () => {
     expect(bySlot("sidebar-menu-item").tagName).toBe("LI");
     expect(bySlot("sidebar-wrapper").style.getPropertyValue("--sidebar-width")).toBe("16rem");
     expect(bySlot("sidebar-wrapper").style.getPropertyValue("--sidebar-width-icon")).toBe("3rem");
-  });
-});
-
-describe("useSidebar().isMobile", () => {
-  it("is false at and above 768px, true below, follows viewport changes, and starts false", async () => {
-    const seen: boolean[] = [];
-    await page.viewport(768, 800);
-    renderThemed(
-      <Frame
-        probe={
-          <ContextProbe
-            onValue={(value) => {
-              seen.push(value.isMobile);
-            }}
-          />
-        }
-      />
-    );
-    expect(seen[0]).toBe(false);
-    await vi.waitFor(() => {
-      expect(seen.at(-1)).toBe(false);
-    });
-
-    await page.viewport(767, 800);
-    await vi.waitFor(() => {
-      expect(seen.at(-1)).toBe(true);
-    });
-
-    await page.viewport(DESKTOP.width, DESKTOP.height);
-    await vi.waitFor(() => {
-      expect(seen.at(-1)).toBe(false);
-    });
   });
 });

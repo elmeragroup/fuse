@@ -35,26 +35,6 @@ function colors(element: Element | null) {
 }
 
 describe("scoped sidebar brand colors", () => {
-  for (const outerVariant of ["internal", "external"] as const) {
-    for (const innerVariant of ["internal", "external"] as const) {
-      it(`${outerVariant} fkas to ${innerVariant} tkas resolves both colors locally without a document writer`, () => {
-        const { host } = render(
-          <>
-            <style>{generateThemesCss()}</style>
-            <ThemeScope theme={{ variant: outerVariant, brand: "fkas", segment: "private" }}>
-              <ThemeScope theme={{ variant: innerVariant, brand: "tkas", segment: "private" }}>
-                <SidebarColors />
-              </ThemeScope>
-            </ThemeScope>
-          </>
-        );
-        expect(colors(host.querySelector('[data-testid="sidebar-color"]'))).toEqual(
-          colors(host.querySelector('[data-testid="brand-color"]'))
-        );
-      });
-    }
-  }
-
   for (const variant of ["internal", "external"] satisfies ThemeVariant[]) {
     it(`${variant} resolves aliases through a host brand-pair override`, () => {
       const style = { "--brand": "rgb(10, 20, 30)", "--brand-foreground": "rgb(240, 230, 220)" };

@@ -251,35 +251,28 @@ describe("RSC classification", () => {
     expectRsc(file, "client");
   });
 
-  // Why not a lint rule: "does this module own client state?" is a judgment the reviewed
-  // table answers per module, not a syntactic pattern. The shared overlay close button
-  // resolves its own label from the overlay dictionary, so it owns client state and
-  // carries the directive; Dialog, Sheet and Sidebar were already client modules.
-  it("keeps the shared overlay close button client-side — it resolves its own label", () => {
-    expectRsc("components/overlay/overlay-close-button.tsx", "client");
-  });
-
-  // Why not a lint rule: same judgment as the close button above. FieldFrame holds no
-  // state either, and its six consumers (TextField, NumberField, TextareaField,
-  // PhoneNumberField, CheckboxGroup, RadioGroup) are client modules already, so a
-  // directive would only widen the client graph.
-  it("leaves the shared field frame directive-free — it owns no state", () => {
-    expectRsc("components/field/field-frame.tsx", "server");
-  });
-
-  // Why not a lint rule: Alert's documented server render uses these parts.
-  // Item.Root stays in the client module because it calls useRender.
-  it("keeps Item markup directive-free so Alert can render it on the server", () => {
-    expectRsc("components/item/item-markup.tsx", "server");
-  });
-
-  // Why not a lint rule: whether a hook-free row may run on the server is a reviewed
-  // boundary decision. A directive on these files makes `CheckboxItem.Title` throw on the
-  // server and moves SubSection partitioning back to the client, where it cannot work.
-  it("keeps CheckboxItem, RadioItem and their SubSection partition directive-free", () => {
-    expectRsc("components/checkbox/checkbox-item.tsx", "server");
-    expectRsc("components/radio-group/radio-item.tsx", "server");
-    expectRsc("components/selection-item/partition-sub-sections.ts", "server");
+  // Why not a lint rule: "does this module own client state?" and whether a hook-free
+  // module may run on the server are judgments the reviewed table answers per module, not a
+  // syntactic pattern.
+  it.each([
+    // The shared overlay close button resolves its own label from the overlay dictionary, so it
+    // owns client state and carries the directive; Dialog, Sheet and Sidebar were already
+    // client modules.
+    ["components/overlay/overlay-close-button.tsx", "client"],
+    // FieldFrame holds no state, and its six consumers (TextField, NumberField, TextareaField,
+    // PhoneNumberField, CheckboxGroup, RadioGroup) are client modules already, so a directive
+    // would only widen the client graph.
+    ["components/field/field-frame.tsx", "server"],
+    // Alert's documented server render uses the Item markup. Item.Root stays in the client
+    // module because it calls useRender.
+    ["components/item/item-markup.tsx", "server"],
+    // A directive on these files makes `CheckboxItem.Title` throw on the server and moves
+    // SubSection partitioning back to the client, where it cannot work.
+    ["components/checkbox/checkbox-item.tsx", "server"],
+    ["components/radio-group/radio-item.tsx", "server"],
+    ["components/selection-item/partition-sub-sections.ts", "server"],
+  ] as const)("keeps the shared module %s %s", (file, rsc) => {
+    expectRsc(file, rsc);
   });
 
   // Why not a lint rule: these files are the server-visible namespace. A directive

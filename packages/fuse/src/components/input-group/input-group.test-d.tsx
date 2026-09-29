@@ -1,33 +1,18 @@
 import { expectTypeOf, test } from "vitest";
 
-import type { InputGroup as RootInputGroup } from "@elmeragroup/fuse";
 import { InputGroup } from "@elmeragroup/fuse/input-group";
 import type { InputGroupAddonProps, InputGroupButtonProps } from "@elmeragroup/fuse/input-group";
 
-test("InputGroup ships from the input-group entry and the root barrel", () => {
-  expectTypeOf<typeof InputGroup>().toEqualTypeOf<typeof RootInputGroup>();
-  expectTypeOf(InputGroup.Root).toBeFunction();
-  expectTypeOf(InputGroup.Addon).toBeFunction();
-  expectTypeOf(InputGroup.Button).toBeFunction();
-  expectTypeOf(InputGroup.Text).toBeFunction();
-  expectTypeOf(InputGroup.Input).toBeFunction();
-  expectTypeOf(InputGroup.Textarea).toBeFunction();
-});
-
-test("the addon align axis is the four public values", () => {
+test("the parts take the four-value addon align axis, the compact non-submitting button, and no polymorphic as prop", () => {
   expectTypeOf<InputGroupAddonProps["align"]>().toEqualTypeOf<
     "inline-start" | "inline-end" | "block-start" | "block-end" | undefined
   >();
-});
 
-test("the button takes the local compact size subset and a non-submitting type", () => {
   expectTypeOf<InputGroupButtonProps["size"]>().toEqualTypeOf<
     "xs" | "sm" | "icon-xs" | "icon-sm" | undefined
   >();
   expectTypeOf<InputGroupButtonProps["type"]>().toEqualTypeOf<"button" | "submit" | "reset" | undefined>();
-});
 
-test("the parts take the public props and no polymorphic as prop", () => {
   const _grouped = (
     <InputGroup.Root>
       <InputGroup.Addon align="inline-start">

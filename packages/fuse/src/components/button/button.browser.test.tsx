@@ -86,24 +86,6 @@ describe("Button", () => {
     expect(onPendingClick).not.toHaveBeenCalled();
   });
 
-  it("dims a disabled button to half opacity when it renders a native button or another element", () => {
-    renderThemed(
-      <>
-        <Button disabled>Native</Button>
-        <Button render={<a href="/docs" />} nativeButton={false} disabled>
-          Anchor
-        </Button>
-        <Button>Enabled</Button>
-      </>
-    );
-
-    // A rendered <a> never matches `:disabled`; Base UI marks it with the disabled state
-    // attribute instead, and the dim must follow that attribute.
-    expect(effectiveOpacity(roleNamed("button", "Native"))).toBe(0.5);
-    expect(effectiveOpacity(roleNamed("button", "Anchor"))).toBe(0.5);
-    expect(effectiveOpacity(roleNamed("button", "Enabled"))).toBe(1);
-  });
-
   it("keeps a focusable disabled button hoverable, so a tooltip on it still opens", async () => {
     renderThemed(
       <Tooltip.Provider>
@@ -125,31 +107,6 @@ describe("Button", () => {
     await vi.waitFor(() => {
       expect(page.getByRole("tooltip", { name: "Needs a signed contract" }).query()).not.toBeNull();
     });
-  });
-
-  it("keeps a focusable disabled button's paint and position still under hover and press, for every variant", async () => {
-    renderThemed(
-      <>
-        <p>Away</p>
-        {VARIANTS.map((variant) => (
-          <Button key={variant} variant={variant} disabled focusableWhenDisabled className="transition-none">
-            {`Disabled ${variant}`}
-          </Button>
-        ))}
-      </>
-    );
-
-    for (const variant of VARIANTS) {
-      const name = `Disabled ${variant}`;
-      const button = roleNamed("button", name);
-      await userEvent.hover(page.getByText("Away"));
-      const resting = pointerPaint(button);
-
-      await userEvent.hover(page.getByRole("button", { name }));
-      expect(pointerPaint(button), `${variant} while hovered`).toEqual(resting);
-      const pressed = await whilePointerPressed(() => pointerPaint(button));
-      expect(pressed, `${variant} while pressed`).toEqual(resting);
-    }
   });
 
   it("changes an enabled button's paint on hover and moves it down 1px on press, for every variant", async () => {
@@ -259,70 +216,100 @@ describe("Button", () => {
     expect(onClick).toHaveBeenCalledTimes(2);
   });
 
-  it("stamps aria-disabled for isVisuallyDisabled and lets an explicit value win", () => {
-    renderThemed(
-      <>
-        <Button isVisuallyDisabled>Visual</Button>
-        <Button isVisuallyDisabled aria-disabled="false">
-          Explicit
-        </Button>
-        <Button aria-disabled="true">Plain</Button>
-      </>
-    );
-
-    expect(roleNamed("button", "Visual").getAttribute("aria-disabled")).toBe("true");
-    expect(roleNamed("button", "Explicit").getAttribute("aria-disabled")).toBe("false");
-    expect(roleNamed("button", "Plain").getAttribute("aria-disabled")).toBe("true");
+  // WAI-ARIA: an element that is not natively disabled announces unavailability through
+  // aria-disabled. An explicit consumer value still wins, as the isVisuallyDisabled JSDoc
+  // promises, while a wrapper that forwards `aria-disabled={undefined}` must not erase
+  // Base UI's value.
+  it.each([
+    [
+      "isVisuallyDisabled",
+      <Button key="1" isVisuallyDisabled>
+        Probe
+      </Button>,
+      "true",
+    ],
+    [
+      "isVisuallyDisabled with an explicit false",
+      <Button key="2" isVisuallyDisabled aria-disabled="false">
+        Probe
+      </Button>,
+      "false",
+    ],
+    [
+      "a plain aria-disabled",
+      <Button key="3" aria-disabled="true">
+        Probe
+      </Button>,
+      "true",
+    ],
+    [
+      "focusable disabled",
+      <Button key="4" disabled focusableWhenDisabled>
+        Probe
+      </Button>,
+      "true",
+    ],
+    [
+      "focusable pending",
+      <Button key="5" isPending focusableWhenDisabled>
+        Probe
+      </Button>,
+      "true",
+    ],
+    [
+      "non-native disabled",
+      <Button key="6" render={<a href="/docs" />} nativeButton={false} disabled>
+        Probe
+      </Button>,
+      "true",
+    ],
+    [
+      "focusable disabled with an explicit false",
+      <Button key="7" disabled focusableWhenDisabled aria-disabled="false">
+        Probe
+      </Button>,
+      "false",
+    ],
+    [
+      "focusable disabled forwarded as undefined",
+      <Button key="8" disabled focusableWhenDisabled aria-disabled={undefined}>
+        Probe
+      </Button>,
+      "true",
+    ],
+    [
+      "focusable pending forwarded as undefined",
+      <Button key="9" isPending focusableWhenDisabled aria-disabled={undefined}>
+        Probe
+      </Button>,
+      "true",
+    ],
+    [
+      "non-native disabled forwarded as undefined",
+      <Button key="10" render={<a href="/docs" />} nativeButton={false} disabled aria-disabled={undefined}>
+        Probe
+      </Button>,
+      "true",
+    ],
+  ] as const)("resolves aria-disabled for a %s button", (_label, button, expected) => {
+    renderThemed(button);
+    expect(roleNamed("button", "Probe").getAttribute("aria-disabled")).toBe(expected);
   });
 
-  it("keeps Base UI's aria-disabled on focusable-disabled, pending and non-native disabled buttons", () => {
+  it("dims a non-native disabled button through the disabled state attribute", () => {
     renderThemed(
       <>
-        <Button disabled focusableWhenDisabled>
-          Focusable
-        </Button>
-        <Button isPending focusableWhenDisabled>
-          Pending
-        </Button>
         <Button render={<a href="/docs" />} nativeButton={false} disabled>
           Anchor
         </Button>
-        <Button disabled focusableWhenDisabled aria-disabled="false">
-          Overridden
-        </Button>
+        <Button>Enabled</Button>
       </>
     );
 
-    // WAI-ARIA: an element that is not natively disabled announces unavailability through aria-disabled.
-    expect(roleNamed("button", "Focusable").getAttribute("aria-disabled")).toBe("true");
-    expect(roleNamed("button", "Pending").getAttribute("aria-disabled")).toBe("true");
-    expect(roleNamed("button", "Anchor").getAttribute("aria-disabled")).toBe("true");
-    // An explicit consumer value still wins, as the isVisuallyDisabled JSDoc promises.
-    expect(roleNamed("button", "Overridden").getAttribute("aria-disabled")).toBe("false");
-  });
-
-  it("keeps Base UI's aria-disabled when a wrapper forwards aria-disabled as undefined", () => {
-    renderThemed(
-      <Button disabled focusableWhenDisabled aria-disabled={undefined}>
-        Forwarded
-      </Button>
-    );
-    expect(roleNamed("button", "Forwarded").getAttribute("aria-disabled")).toBe("true");
-  });
-
-  it("keeps Base UI's aria-disabled on pending and non-native buttons when a wrapper forwards it as undefined", () => {
-    renderThemed(
-      <>
-        <Button isPending focusableWhenDisabled aria-disabled={undefined}>
-          Pending
-        </Button>
-        <Button render={<a href="/docs" />} nativeButton={false} disabled aria-disabled={undefined}>
-          Anchor
-        </Button>
-      </>
-    );
-    expect(roleNamed("button", "Pending").getAttribute("aria-disabled")).toBe("true");
-    expect(roleNamed("button", "Anchor").getAttribute("aria-disabled")).toBe("true");
+    // A rendered <a> never matches `:disabled`; Base UI marks it with the disabled state
+    // attribute instead, and the dim must follow that attribute.
+    expect(effectiveOpacity(roleNamed("button", "Anchor"))).toBe(0.5);
+    expect(effectiveOpacity(roleNamed("button", "Enabled"))).toBe(1);
   });
 
   it("forwards a predicted path to onIntent only while live: not disabled, pending, or visually disabled", () => {

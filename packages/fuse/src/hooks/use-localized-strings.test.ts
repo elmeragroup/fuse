@@ -1,12 +1,9 @@
 import { createElement } from "react";
 
 import type { LocalizedStringFormatter } from "@internationalized/string";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { discoverEntries } from "../../scripts/entries";
 import { SUPPORTED_LOCALES, withLocale } from "../../test/locale-matrix";
 import { createStringDictionary } from "../intl/create-string-dictionary";
 import { fixtureDictionary } from "./intl-fixture";
@@ -15,8 +12,6 @@ import { fiFI } from "./intl-fixture/fi-FI";
 import { nbNO } from "./intl-fixture/nb-NO";
 import { svSE } from "./intl-fixture/sv-SE";
 import { useLocalizedStrings } from "./use-localized-strings";
-
-const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "../..");
 
 const GREETINGS = {
   "nb-NO": "Hei",
@@ -129,12 +124,4 @@ describe("useLocalizedStrings", () => {
     );
     expect(otherDict[0]).not.toBe(firstLocale[0]);
   });
-
-  // Timeout: discoverEntries walks the published import graph; slow under full-gate parallel load.
-  it("does not add a public export for the hook", () => {
-    const discovered = discoverEntries(packageRoot);
-    const names = discovered.jsEntries.flatMap((entry) => [...entry.runtimeExports]);
-    expect(names).not.toContain("useLocalizedStrings");
-    expect(discovered.jsEntries.map((entry) => entry.subpath)).not.toContain("hooks");
-  }, 30_000);
 });

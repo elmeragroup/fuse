@@ -26,7 +26,7 @@ const quantity = () => page.getByRole("textbox", { name: "Quantity", exact: true
  * `use-form-reset.browser.test.tsx`. NumberField remounts its base-ui root on reset, so these
  * cases prove the remount restores the committed value and never moves focus.
  */
-it("restores an uncontrolled defaultValue on native reset and steps from it", async () => {
+it("restores an uncontrolled defaultValue on native reset, keeps focus in the field, and steps from it", async () => {
   const onChange = vi.fn();
   renderThemed(
     withLocale(
@@ -45,11 +45,14 @@ it("restores an uncontrolled defaultValue on native reset and steps from it", as
   );
   await replaceValue("Quantity", "9");
   await expect.element(quantity()).toHaveValue("9");
+  expect(document.activeElement).toBe(inputNamed("Quantity"));
   const edits = onChange.mock.calls.length;
 
   formNamed("Quantity form").reset();
 
   await expect.element(quantity()).toHaveValue("5");
+  // The fresh mount must not drop the focus the native reset would have kept.
+  expect(document.activeElement).toBe(inputNamed("Quantity"));
   expect(onChange, "native reset does not call onChange").toHaveBeenCalledTimes(edits);
   expect(new FormData(formNamed("Quantity form")).get("quantity")).toBe("5");
 
@@ -73,25 +76,6 @@ it("resets an uncontrolled field with no defaultValue to empty", async () => {
 
   await expect.element(quantity()).toHaveValue("");
   expect(new FormData(formNamed("Quantity form")).get("quantity")).toBe("");
-});
-
-it("keeps focus in the field on a programmatic reset", async () => {
-  renderThemed(
-    withLocale(
-      "en-US",
-      <form aria-label="Quantity form">
-        <NumberField label="Quantity" defaultValue={5} minValue={0} maxValue={20} />
-      </form>
-    )
-  );
-  await replaceValue("Quantity", "9");
-  expect(document.activeElement).toBe(inputNamed("Quantity"));
-
-  formNamed("Quantity form").reset();
-
-  await expect.element(quantity()).toHaveValue("5");
-  // The fresh mount must not drop the focus the native reset would have kept.
-  expect(document.activeElement).toBe(inputNamed("Quantity"));
 });
 
 it("does not let the reset remount steal focus through autoFocus", async () => {

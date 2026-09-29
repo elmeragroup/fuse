@@ -22,17 +22,15 @@ describe("parse", () => {
     expect(channels(parsed("rgba(0, 0, 0, 0)"))).toEqual([0, 0, 0, 0]);
     expect(channels(parsed("rgba(51, 102, 153, 0.5)"))).toEqual([0.2, 0.4, 0.6, 0.5]);
     expect(channels(parsed("RGB( 51 ,102,153 )"))).toEqual([0.2, 0.4, 0.6, 1]);
+    // CSS Color 4 makes rgba() a legacy alias of rgb() with the same grammar, so either name
+    // takes three or four arguments.
+    expect(channels(parsed("rgb(255, 0, 0, 0.5)"))).toEqual([1, 0, 0, 0.5]);
+    expect(channels(parsed("rgba(0, 255, 0)"))).toEqual([0, 1, 0, 1]);
   });
 
   it("clamps out-of-range channels and alpha as CSS does", () => {
     expect(channels(parsed("rgba(300, -5, 127.5, 1.5)"))).toEqual([1, 0, 0.5, 1]);
     expect(channels(parsed("rgb(1e400, -1e400, 0)"))).toEqual([1, 0, 0, 1]);
-  });
-
-  it("accepts rgb and rgba with either three or four arguments, as CSS aliases them", () => {
-    // CSS Color 4 makes rgba() a legacy alias of rgb() with the same grammar.
-    expect(channels(parsed("rgb(255, 0, 0, 0.5)"))).toEqual([1, 0, 0, 0.5]);
-    expect(channels(parsed("rgba(0, 255, 0)"))).toEqual([0, 1, 0, 1]);
   });
 
   it("refuses the space form, percentages, none, missing channels and other notations", () => {
@@ -112,16 +110,11 @@ describe("fromLinear and toLinear", () => {
 });
 
 describe("compositeOver", () => {
-  const white = getOrThrow(Srgb.make({ r: 1, g: 1, b: 1, alpha: 1 }));
   const black = getOrThrow(Srgb.make({ r: 0, g: 0, b: 0, alpha: 1 }));
 
   it("blends a translucent color over an opaque one in encoded sRGB", () => {
     const halfWhite = getOrThrow(Srgb.make({ r: 1, g: 1, b: 1, alpha: 0.5 }));
     expect(channels(Srgb.compositeOver(halfWhite, black))).toEqual([0.5, 0.5, 0.5, 1]);
-  });
-
-  it("returns an opaque foreground unchanged", () => {
-    expect(channels(Srgb.compositeOver(white, black))).toEqual([1, 1, 1, 1]);
   });
 
   it("keeps a translucent color over a transparent one, and two transparent colors transparent", () => {

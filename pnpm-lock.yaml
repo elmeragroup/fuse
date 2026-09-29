@@ -331,9 +331,6 @@ importers:
         specifier: 'catalog:'
         version: 19.3.0(react@19.3.0)
     devDependencies:
-      '@elmeragroup/color':
-        specifier: workspace:*
-        version: link:../../packages/color
       '@elmeragroup/typescript-config':
         specifier: workspace:*
         version: link:../../tooling/typescript

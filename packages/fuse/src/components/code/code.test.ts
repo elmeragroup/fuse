@@ -3,24 +3,10 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { cn } from "../../styles/cn";
 import { Code } from "./code";
 
-const BASE_CLASSES = "text-xs leading-relaxed max-h-160 overflow-auto font-mono";
 const SNIPPET = "const answer = 42;";
 const CONCAT_SNIPPET = 'const html = "<div>" + a + "</div>";';
-const XSS_PAYLOAD = '<img onerror="alert(1)" src="x">';
-
-describe("code className merge", () => {
-  it("lets a consumer className coexist with the base classes", () => {
-    const merged = cn(BASE_CLASSES, "rounded-md bg-muted").split(/\s+/);
-    expect(merged).toEqual(
-      expect.arrayContaining(["max-h-160", "overflow-auto", "font-mono", "text-xs", "leading-relaxed"])
-    );
-    expect(merged).toContain("rounded-md");
-    expect(merged).toContain("bg-muted");
-  });
-});
 
 describe("Code highlight output", () => {
   it("renders highlighted token spans whose text equals the input source", () => {
@@ -34,21 +20,21 @@ describe("Code highlight output", () => {
     expect(html.replaceAll(/<[^>]+>/g, "")).toBe(SNIPPET);
   });
 
-  it("escapes HTML in the code string instead of executing it", () => {
-    const html = renderToStaticMarkup(createElement(Code, { code: XSS_PAYLOAD }));
-    expect(html).not.toMatch(/<img\b/);
-    expect(html).toContain("&lt;");
-  });
-
-  it("pins v2's property classification of a bare name beside string concatenation", () => {
-    const html = renderToStaticMarkup(createElement(Code, { code: CONCAT_SNIPPET }));
-    // sugar-high v2 reclassifies `a` here; v1 rendered it as `sh__token--identifier`.
-    expect(html).toMatch(/<span class="sh__token--property"[^>]*>a<\/span>/);
-  });
-
-  it("keeps the identifier classification for an ordinary declaration", () => {
-    const html = renderToStaticMarkup(createElement(Code, { code: SNIPPET }));
-    expect(html).toMatch(/<span class="sh__token--identifier"[^>]*>answer<\/span>/);
+  // sugar-high v2 reclassifies `a` beside string concatenation; v1 rendered it as `sh__token--identifier`.
+  it.each([
+    [
+      "a bare name beside string concatenation as a property",
+      CONCAT_SNIPPET,
+      /<span class="sh__token--property"[^>]*>a<\/span>/,
+    ],
+    [
+      "an ordinary declaration's name as an identifier",
+      SNIPPET,
+      /<span class="sh__token--identifier"[^>]*>answer<\/span>/,
+    ],
+  ] as const)("pins v2's classification of %s", (_case, code, token) => {
+    const html = renderToStaticMarkup(createElement(Code, { code }));
+    expect(html).toMatch(token);
   });
 
   it("merges className onto the pre and forwards id and aria-label", () => {

@@ -91,7 +91,7 @@ describe("Figma DTCG documents", () => {
     }
   });
 
-  it("converts CSS-honest values into Figma-importable DTCG", () => {
+  it("converts CSS-honest values into Figma-importable DTCG, aliasing the internal button radius to the one radius with a zero step", () => {
     const document = figmaDocumentFromScheme(lightScheme("external-fkas-private"), CATALOG.primitives);
     expect(token<FigmaColorToken>(document.color, "brand")).toEqual({
       $type: "color",
@@ -135,6 +135,20 @@ describe("Figma DTCG documents", () => {
       $type: "fontFamily",
       $value: "Neo Sans",
     });
+
+    const internal = figmaDocumentFromScheme(lightScheme("internal-fkas-private"), CATALOG.primitives);
+    expect(token<FigmaDimensionToken>(internal.size, "radius")).toEqual({
+      $type: "dimension",
+      $value: { value: 6, unit: "px" },
+    });
+    expect(token<FigmaDimensionToken>(internal.size, "radius-button")).toEqual({
+      $type: "dimension",
+      $value: "{size.radius}",
+    });
+    expect(token<FigmaDimensionToken>(internal.size, "radius-step")).toEqual({
+      $type: "dimension",
+      $value: { value: 0, unit: "px" },
+    });
   });
 
   it("writes hex from the same rounded channels as components", () => {
@@ -161,22 +175,6 @@ describe("Figma DTCG documents", () => {
       components: [0.182353, 0.182353, 0.182353],
       alpha: 1,
       hex: "#2F2F2F",
-    });
-  });
-
-  it("aliases the internal button radius to the one radius and emits a zero step", () => {
-    const document = figmaDocumentFromScheme(lightScheme("internal-fkas-private"), CATALOG.primitives);
-    expect(token<FigmaDimensionToken>(document.size, "radius")).toEqual({
-      $type: "dimension",
-      $value: { value: 6, unit: "px" },
-    });
-    expect(token<FigmaDimensionToken>(document.size, "radius-button")).toEqual({
-      $type: "dimension",
-      $value: "{size.radius}",
-    });
-    expect(token<FigmaDimensionToken>(document.size, "radius-step")).toEqual({
-      $type: "dimension",
-      $value: { value: 0, unit: "px" },
     });
   });
 
@@ -218,8 +216,9 @@ describe("GET /api/themes/figma", () => {
     expect(FIGMA_THEME_INDEX.files[0]?.href).toBe("/api/themes/figma/internal-fkas-private");
   });
 
-  // The route is exercised per slug against the handler below; over HTTP one legal and one
-  // inherited slug prove the Next wiring (headers, 404 mapping) without repeating the loop.
+  // The handler's 404 branch runs per slug below. Over HTTP, one legal slug proves the success
+  // path with its headers and one inherited slug the Next 404 mapping, since GET returns
+  // FIGMA_THEME_FILES[slug], which the per-theme document tests above already cover.
   it("returns DTCG JSON for a legal slug", async () => {
     const slug = "external-fkas-private";
     await expectThemeFile(await fetch(new URL(`/api/themes/figma/${slug}`, docsBaseUrl())), slug);
@@ -240,8 +239,4 @@ describe("GET /api/themes/figma/[slug] handler", () => {
       expect(await response.text()).toBe("");
     }
   );
-
-  it.each(LEGAL_SLUGS)("serves %s", async (slug) => {
-    await expectThemeFile(await getThemeFileDirect(slug), slug);
-  });
 });

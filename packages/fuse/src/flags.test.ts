@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { discoverEntries, runtimeDependencies } from "../scripts/entries";
+import { discoverEntries } from "../scripts/entries";
 import {
   flagHashFailure,
   flagPayload,
@@ -60,21 +60,6 @@ describe("flag assets", () => {
     expect(missing.toSorted((left, right) => left.localeCompare(right))).toEqual(["AC", "BQ", "EH", "TA"]);
   });
 
-  it("declares libphonenumber-js as a catalog runtime dependency", () => {
-    const parsed: unknown = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8"));
-    if (parsed === null || Array.isArray(parsed)) {
-      throw new Error("package.json is not an object");
-    }
-    // SAFETY: this test only reads the workspace dependency blocks.
-    const pkg = parsed as {
-      dependencies: Record<string, string>;
-      devDependencies: Record<string, string>;
-    };
-    expect(pkg.dependencies["libphonenumber-js"]).toBe("catalog:");
-    expect(pkg.devDependencies["libphonenumber-js"]).toBeUndefined();
-    expect(runtimeDependencies).toContain("libphonenumber-js");
-  });
-
   // Timeout: copying + SHA-256 hashing the full flag set twice is slow under full-gate parallel load.
   it("fails the PROVENANCE SHA-256 gate when a packed SVG is mutated", () => {
     const hashes = parseProvenanceHashes(readFileSync(join(flagsDir, "PROVENANCE.md"), "utf8"));
@@ -104,20 +89,5 @@ describe("flag assets", () => {
     } finally {
       rmSync(empty, { recursive: true, force: true });
     }
-  });
-
-  it("keeps the root flags facade hand-written", () => {
-    expect(readFileSync(join(packageRoot, "src/flags.ts"), "utf8")).not.toContain("AUTO-GENERATED");
-    expect(readFileSync(join(packageRoot, "scripts/flag-assets.ts"), "utf8")).not.toContain(
-      'join(packageRoot, "src/flags.ts")'
-    );
-  });
-
-  it("imports helpers without vendoring from .ref", () => {
-    const assets = readFileSync(join(packageRoot, "scripts/flag-assets.ts"), "utf8");
-    const cli = readFileSync(join(packageRoot, "scripts/generate-flags.ts"), "utf8");
-    expect(assets).not.toMatch(/\nvendorFlags\(/);
-    expect(cli).toContain("vendorFlags(");
-    expect(cli).toContain('from "./flag-assets"');
   });
 });

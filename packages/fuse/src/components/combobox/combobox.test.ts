@@ -40,18 +40,7 @@ const TOGGLE_COPY = {
 } as const;
 
 describe("combobox dictionary", () => {
-  it("owns the locked combobox.* copy in all four locales", () => {
-    for (const locale of SUPPORTED_LOCALES) {
-      const formatter = new LocalizedStringFormatter(locale, comboboxStrings);
-      expect(formatter.format("empty"), locale).toBe(EMPTY_COPY[locale]);
-      expect(formatter.format("clear"), locale).toBe(CLEAR_COPY[locale]);
-      expect(formatter.format("removeItem", { item: "Apple" }), locale).toBe(REMOVE_APPLE_COPY[locale]);
-      expect(formatter.format("removeItem", { item: "" }), locale).toBe(REMOVE_COPY[locale]);
-      expect(formatter.format("toggle"), locale).toBe(TOGGLE_COPY[locale]);
-    }
-  });
-
-  it("carries no key beyond the four rows owned by Combobox", () => {
+  it("owns exactly the four locked combobox.* rows in all four locales", () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(Object.keys(comboboxStrings.getStringsForLocale(locale)).sort(), locale).toEqual([
         "clear",
@@ -59,6 +48,12 @@ describe("combobox dictionary", () => {
         "removeItem",
         "toggle",
       ]);
+      const formatter = new LocalizedStringFormatter(locale, comboboxStrings);
+      expect(formatter.format("empty"), locale).toBe(EMPTY_COPY[locale]);
+      expect(formatter.format("clear"), locale).toBe(CLEAR_COPY[locale]);
+      expect(formatter.format("removeItem", { item: "Apple" }), locale).toBe(REMOVE_APPLE_COPY[locale]);
+      expect(formatter.format("removeItem", { item: "" }), locale).toBe(REMOVE_COPY[locale]);
+      expect(formatter.format("toggle"), locale).toBe(TOGGLE_COPY[locale]);
     }
   });
 });

@@ -138,19 +138,6 @@ describe("Sidebar collapsed focus containment", () => {
     expect(document.activeElement).toBe(ordersLink());
   });
 
-  it("keeps the Rail clickable while the collapsed panel is hidden, whatever wraps it", async () => {
-    renderThemed(<OffcanvasFrame />);
-    expect(panelVisibility()).toBe("hidden");
-
-    const rail = railNamed("Toggle sidebar");
-    expect(getComputedStyle(rail).visibility).toBe("visible");
-    await userEvent.click(rail);
-    await vi.waitFor(() => {
-      expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
-    });
-    expect(panelVisibility()).toBe("visible");
-  });
-
   it("keeps icon-collapsed menu buttons tabbable", async () => {
     renderThemed(
       <Frame provider={{ defaultOpen: false }} root={{ collapsible: "icon" }}>

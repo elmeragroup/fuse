@@ -1,15 +1,9 @@
 import { expectTypeOf, test } from "vitest";
 
-import type { Switch as RootSwitch } from "@elmeragroup/fuse";
 import type { SwitchProps } from "@elmeragroup/fuse/switch";
 import { Switch } from "@elmeragroup/fuse/switch";
 
-test("Switch ships from the switch entry and the root barrel", () => {
-  expectTypeOf<typeof Switch>().toEqualTypeOf<typeof RootSwitch>();
-  expectTypeOf(Switch).toBeFunction();
-});
-
-test("SwitchProps is the primitive surface plus the optical size axis", () => {
+test("SwitchProps is the primitive surface plus the optical size axis, and the element takes it without as", () => {
   expectTypeOf<SwitchProps["size"]>().toEqualTypeOf<"sm" | "default" | undefined>();
   expectTypeOf<SwitchProps["className"]>().toEqualTypeOf<string | undefined>();
   expectTypeOf<SwitchProps["checked"]>().toEqualTypeOf<boolean | undefined>();
@@ -25,9 +19,7 @@ test("SwitchProps is the primitive surface plus the optical size axis", () => {
   expectTypeOf<SwitchProps>().toHaveProperty("render");
   expectTypeOf<SwitchProps>().not.toHaveProperty("as");
   expectTypeOf<SwitchProps>().not.toHaveProperty("onChange");
-});
 
-test("the element takes the public props and no polymorphic as prop", () => {
   const _basic = <Switch aria-label="Notifications" />;
   const _sized = <Switch size="sm" className="ms-1" aria-label="Compact" />;
   const _controlled = <Switch checked onCheckedChange={() => undefined} aria-label="Held" />;

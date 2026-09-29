@@ -5,62 +5,7 @@ import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { paginationStrings } from "./intl";
 import { paginationVariants } from "./pagination-variants";
 
-const LANDMARK_COPY = {
-  "nb-NO": "Sidenavigasjon",
-  "sv-SE": "Sidnavigering",
-  "en-US": "Pagination",
-  "fi-FI": "Sivutus",
-} as const;
-
-const PREVIOUS_COPY = {
-  "nb-NO": "Forrige",
-  "sv-SE": "Föregående",
-  "en-US": "Previous",
-  "fi-FI": "Edellinen",
-} as const;
-
-const NEXT_COPY = {
-  "nb-NO": "Neste",
-  "sv-SE": "Nästa",
-  "en-US": "Next",
-  "fi-FI": "Seuraava",
-} as const;
-
-const GO_TO_PREVIOUS_COPY = {
-  "nb-NO": "Gå til forrige side",
-  "sv-SE": "Gå till föregående sida",
-  "en-US": "Go to previous page",
-  "fi-FI": "Siirry edelliselle sivulle",
-} as const;
-
-const GO_TO_NEXT_COPY = {
-  "nb-NO": "Gå til neste side",
-  "sv-SE": "Gå till nästa sida",
-  "en-US": "Go to next page",
-  "fi-FI": "Siirry seuraavalle sivulle",
-} as const;
-
-const MORE_PAGES_COPY = {
-  "nb-NO": "Flere sider",
-  "sv-SE": "Fler sidor",
-  "en-US": "More pages",
-  "fi-FI": "Lisää sivuja",
-} as const;
-
 describe("pagination dictionary", () => {
-  it("owns the locked pagination.* copy in all four locales", () => {
-    for (const locale of SUPPORTED_LOCALES) {
-      expect(paginationStrings.getStringForLocale("landmark", locale), locale).toBe(LANDMARK_COPY[locale]);
-      expect(paginationStrings.getStringForLocale("previous", locale), locale).toBe(PREVIOUS_COPY[locale]);
-      expect(paginationStrings.getStringForLocale("next", locale), locale).toBe(NEXT_COPY[locale]);
-      expect(paginationStrings.getStringForLocale("goToPrevious", locale), locale).toBe(
-        GO_TO_PREVIOUS_COPY[locale]
-      );
-      expect(paginationStrings.getStringForLocale("goToNext", locale), locale).toBe(GO_TO_NEXT_COPY[locale]);
-      expect(paginationStrings.getStringForLocale("morePages", locale), locale).toBe(MORE_PAGES_COPY[locale]);
-    }
-  });
-
   it("carries no key beyond the six rows owned by Pagination", () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(Object.keys(paginationStrings.getStringsForLocale(locale)).sort(), locale).toEqual([

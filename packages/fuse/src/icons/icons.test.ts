@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import * as Icons from "../icons";
+import { FkasMeter } from "../illustrations";
 import * as Root from "../index";
 import { generatedAdapterSource, generatedFacadeSource, iconModuleSlug } from "./generate";
 import { BESPOKE_ICON_NAMES, LOGO_NAMES, PHOSPHOR_ICON_NAMES } from "./roster";
@@ -29,7 +30,7 @@ describe("Phosphor adapters", () => {
     expect(Icons).not.toHaveProperty("Icon");
   });
 
-  it("does not re-export icons from the root barrel", () => {
+  it("does not re-export icons or illustrations from the root barrel", () => {
     const rootEntries = new Map(Object.entries(Root));
     // `Sidebar` is both a Phosphor glyph and the Appendix A component namespace the barrel
     // must publish; the barrel value has to be the component, never the icon adapter.
@@ -42,6 +43,11 @@ describe("Phosphor adapters", () => {
     expect(Root.Sidebar).toHaveProperty("Provider");
     expect(Root).not.toHaveProperty("Icon");
     expect(Root).not.toHaveProperty("BrandLogo");
+    expect(FkasMeter).toEqual(expect.any(Function));
+    expect(Root).not.toHaveProperty("FkasMeter");
+    for (const name of [...BESPOKE_ICON_NAMES, ...LOGO_NAMES]) {
+      expect(Root).not.toHaveProperty(name);
+    }
   });
 
   it("keeps generated modules and the facade in lock-step with the roster", () => {

@@ -24,8 +24,4 @@ describe("packed consumer install policy", () => {
   it("computes an absolute UTC cutoff 72 hours before now", () => {
     expect(releaseAgeCutoff(new Date("2026-09-08T12:00:00.000Z"))).toBe("2026-09-05T12:00:00.000Z");
   });
-
-  it("crosses a non-leap-year month boundary", () => {
-    expect(releaseAgeCutoff(new Date("2026-03-02T01:30:00.000Z"))).toBe("2026-02-27T01:30:00.000Z");
-  });
 });

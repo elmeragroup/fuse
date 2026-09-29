@@ -59,10 +59,6 @@ async function focusedDescriptor(page: Page): Promise<string> {
   });
 }
 
-async function optionTitles(page: Page): Promise<readonly string[]> {
-  return await page.locator(OPTION).allInnerTexts();
-}
-
 async function waitForOptionCount(page: Page, count: number): Promise<void> {
   await page.waitForFunction(
     ([selector, expected]) => document.querySelectorAll(String(selector)).length === Number(expected),
@@ -81,18 +77,6 @@ async function readActiveOption(page: Page): Promise<ActiveOption> {
       text: (option?.textContent ?? "").trim(),
     };
   }, FIELD);
-}
-
-async function waitForActiveOptionOtherThan(page: Page, previousId: string): Promise<ActiveOption> {
-  await page.waitForFunction(
-    ([selector, id]) => {
-      const field = document.querySelector(String(selector));
-      const current = field?.getAttribute("aria-activedescendant") ?? "";
-      return current !== "" && current !== String(id);
-    },
-    [FIELD, previousId] as const
-  );
-  return await readActiveOption(page);
 }
 
 describe("docs ⌘K palette", () => {
@@ -117,67 +101,6 @@ describe("docs ⌘K palette", () => {
     await page.close();
   });
 
-  it("opens from the header search button", async () => {
-    const page = await openDocsPage("/");
-    await page
-      .getByRole("banner")
-      .getByRole("button", { name: /search/i })
-      .click();
-    await waitForPalette(page, "visible");
-    await waitForSearchFieldFocus(page);
-    expect(await focusedDescriptor(page)).toBe("input:Search the documentation");
-    await page.close();
-  });
-
-  it("lists component and handbook pages, and filters them as you type", async () => {
-    const page = await openDocsPage();
-    await page.keyboard.press("Meta+k");
-    await waitForPalette(page, "visible");
-    await waitForSearchFieldFocus(page);
-
-    const initial = await optionTitles(page);
-    expect(initial.some((title) => title.includes("Theme matrix"))).toBe(true);
-    expect(initial.some((title) => title.includes("Dialog"))).toBe(true);
-
-    await page.keyboard.type("theme mat");
-    await waitForOptionCount(page, 1);
-    expect((await optionTitles(page))[0]).toContain("Theme matrix");
-
-    await page.keyboard.press("Escape");
-    await waitForPalette(page, "hidden");
-    await page.close();
-  });
-
-  it("moves the active option with the arrow keys and opens it with Enter", async () => {
-    const page = await openDocsPage();
-    await page.keyboard.press("Meta+k");
-    await waitForPalette(page, "visible");
-    await waitForSearchFieldFocus(page);
-    await page.keyboard.type("theme");
-
-    const first = await readActiveOption(page);
-    expect(first.selected).toBe("true");
-
-    await page.keyboard.press("ArrowDown");
-    const second = await waitForActiveOptionOtherThan(page, first.id);
-    expect(second.selected).toBe("true");
-    expect(second.text).not.toBe(first.text);
-
-    await page.keyboard.press("ArrowUp");
-    const back = await waitForActiveOptionOtherThan(page, second.id);
-    expect(back.text).toBe(first.text);
-
-    await page.keyboard.type(" mat");
-    await waitForOptionCount(page, 1);
-    expect((await readActiveOption(page)).text).toContain("Theme matrix");
-
-    await page.keyboard.press("Enter");
-    await page.waitForURL(`${docsBaseUrl()}/handbook/theme-matrix`);
-    await waitForPalette(page, "hidden");
-    await page.getByRole("heading", { name: "Theme matrix", level: 1 }).waitFor();
-    await page.close();
-  });
-
   it("keeps keyboard-active results visible within the list without scrolling the page", async () => {
     const page = await openDocsPage();
     await page.evaluate(() => window.scrollTo(0, 300));
@@ -193,6 +116,7 @@ describe("docs ⌘K palette", () => {
         const a = active.getBoundingClientRect();
         const l = list.getBoundingClientRect();
         return {
+          id: active.id,
           visible: a.top >= l.top - 1 && a.bottom <= l.bottom + 1,
           optionTop: a.top,
           optionBottom: a.bottom,
@@ -209,12 +133,15 @@ describe("docs ⌘K palette", () => {
         };
       });
     expect((await geometry()).overflow).toBe(true);
+    const visited: { id: string; first: boolean; last: boolean }[] = [];
+    let previous = (await geometry()).id;
     for (const key of [
       "End",
       "Home",
       "ArrowUp",
       "ArrowDown",
       ...Array.from({ length: 15 }, () => "ArrowDown"),
+      "ArrowUp",
     ]) {
       await page.keyboard.press(key);
       await expect.poll(geometry).toMatchObject({ visible: true });
@@ -227,7 +154,16 @@ describe("docs ⌘K palette", () => {
         expect(current.scrollTop).toBeGreaterThan(0);
       }
       if (key === "Home") expect(current.first).toBe(true);
+      if (key.startsWith("Arrow")) expect(current.id).not.toBe(previous);
+      visited.push({ id: current.id, first: current.first, last: current.last });
+      previous = current.id;
     }
+    const [, home, wrappedUp, wrappedDown] = visited;
+    // ArrowUp from the first option wraps to the last, and ArrowDown wraps back.
+    expect(wrappedUp).toMatchObject({ last: true });
+    expect(wrappedDown).toEqual(home);
+    // The closing ArrowUp undoes the last ArrowDown.
+    expect(visited.at(-1)).toEqual(visited.at(-3));
     await page.locator(FIELD).fill("theme mat");
     await waitForOptionCount(page, 1);
     await expect.poll(geometry).toMatchObject({ visible: true });

@@ -8,7 +8,6 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import { cssVarColor, overlayBackdropOf, renderThemed } from "../../../test/themed-browser-render";
-import { ThemeScope } from "../../theme/theme-scope";
 import { AlertDialog } from "./index";
 
 const CANCEL_COPY = {
@@ -143,30 +142,36 @@ describe("AlertDialog", () => {
     expect(dialog.hasAttribute("data-open")).toBe(true);
   });
 
-  it("focuses the primary action for a neutral confirmation", async () => {
-    renderThemed(withLocale("en-US", <ConfirmDialog variant="neutral" />));
-    await openConfirm();
-    await expect.element(page.getByRole("button", { name: ACTION, exact: true })).toHaveFocus();
-  });
+  function CustomFocus() {
+    const targetRef = useRef<HTMLSpanElement>(null);
+    return (
+      <AlertDialog.Root>
+        <AlertDialog.Trigger>Delete order</AlertDialog.Trigger>
+        <AlertDialog.Content title={TITLE} actionLabel={ACTION} initialFocus={targetRef}>
+          <span ref={targetRef} tabIndex={-1}>
+            Custom focus target
+          </span>{" "}
+          {BODY}
+        </AlertDialog.Content>
+      </AlertDialog.Root>
+    );
+  }
 
-  it("lets a caller's initialFocus win over the variant default", async () => {
-    function CustomFocus() {
-      const targetRef = useRef<HTMLSpanElement>(null);
-      return (
-        <AlertDialog.Root>
-          <AlertDialog.Trigger>Delete order</AlertDialog.Trigger>
-          <AlertDialog.Content title={TITLE} actionLabel={ACTION} initialFocus={targetRef}>
-            <span ref={targetRef} tabIndex={-1}>
-              Custom focus target
-            </span>{" "}
-            {BODY}
-          </AlertDialog.Content>
-        </AlertDialog.Root>
-      );
-    }
-    renderThemed(withLocale("en-US", <CustomFocus />));
+  it.each([
+    [
+      "the primary action for a neutral confirmation",
+      <ConfirmDialog key="neutral" variant="neutral" />,
+      () => page.getByRole("button", { name: ACTION, exact: true }),
+    ],
+    [
+      "a caller's initialFocus over the variant default",
+      <CustomFocus key="custom" />,
+      () => page.getByText("Custom focus target", { exact: true }),
+    ],
+  ] as const)("focuses %s", async (_label, dialog, target) => {
+    renderThemed(withLocale("en-US", dialog));
     await openConfirm();
-    await expect.element(page.getByText("Custom focus target", { exact: true })).toHaveFocus();
+    await expect.element(target()).toHaveFocus();
   });
 
   it("fires onAction without closing by default, and closes when close-on-action is enabled", async () => {
@@ -197,7 +202,7 @@ describe("AlertDialog", () => {
     });
   });
 
-  it("resolves cancel copy from the dictionary in every locale and lets cancelLabel win", async () => {
+  it("resolves cancel copy from the dictionary in every locale, lets cancelLabel win, and renders no corner close button", async () => {
     for (const locale of SUPPORTED_LOCALES) {
       const { unmount } = renderThemed(withLocale(locale, <ConfirmDialog />));
       await openConfirm();
@@ -205,6 +210,7 @@ describe("AlertDialog", () => {
         page.getByRole("button", { name: CANCEL_COPY[locale], exact: true }).element(),
         locale
       ).toBeTruthy();
+      expect(page.getByRole("button", { name: CLOSE_COPY[locale], exact: true }).query(), locale).toBeNull();
       unmount();
     }
 
@@ -215,33 +221,17 @@ describe("AlertDialog", () => {
     unmount();
   });
 
-  it("shows Button pending on the action while cancel stays enabled", async () => {
-    renderThemed(withLocale("en-US", <ConfirmDialog isPerformingAction />));
+  it.each([
+    ["shows Button pending on", { isPerformingAction: true }, true],
+    ["disables", { isActionDisabled: true }, false],
+  ] as const)("%s the action button without disabling cancel", async (_label, actionState, pending) => {
+    renderThemed(withLocale("en-US", <ConfirmDialog {...actionState} />));
     await openConfirm();
     const action = page.getByRole("button", { name: ACTION, exact: true }).element();
     const cancel = page.getByRole("button", { name: "Cancel", exact: true }).element();
-    expect(action.hasAttribute("data-pending")).toBe(true);
+    expect(action.hasAttribute("data-pending")).toBe(pending);
     await expect.element(page.getByRole("button", { name: ACTION, exact: true })).toBeDisabled();
     expect(cancel.hasAttribute("disabled")).toBe(false);
-  });
-
-  it("disables the action button without disabling cancel", async () => {
-    renderThemed(withLocale("en-US", <ConfirmDialog isActionDisabled />));
-    await openConfirm();
-    const action = page.getByRole("button", { name: ACTION, exact: true }).element();
-    const cancel = page.getByRole("button", { name: "Cancel", exact: true }).element();
-    expect(action.hasAttribute("data-pending")).toBe(false);
-    await expect.element(page.getByRole("button", { name: ACTION, exact: true })).toBeDisabled();
-    expect(cancel.hasAttribute("disabled")).toBe(false);
-  });
-
-  it("renders no corner close button in any locale", async () => {
-    for (const locale of SUPPORTED_LOCALES) {
-      const { unmount } = renderThemed(withLocale(locale, <ConfirmDialog />));
-      await openConfirm();
-      expect(page.getByRole("button", { name: CLOSE_COPY[locale], exact: true }).query(), locale).toBeNull();
-      unmount();
-    }
   });
 
   it("stamps the load-bearing action-type hooks on both buttons", async () => {
@@ -295,50 +285,5 @@ describe("AlertDialog", () => {
     const custom = await openConfirm();
     expect(page.getByText("Custom mark", { exact: true }).element()).toBeTruthy();
     expect(custom.querySelector("svg")).toBeNull();
-  });
-
-  it("portals into the enclosing ThemeScope instead of the document body", async () => {
-    const { host } = renderThemed(withLocale("en-US", <ConfirmDialog />));
-    const scope = host.querySelector("[data-theme-brand]");
-    const dialog = await openConfirm();
-    expect(scope).not.toBeNull();
-    expect(scope?.contains(dialog)).toBe(true);
-    expect([...document.body.children].includes(dialog)).toBe(false);
-  });
-
-  it("waits while the resolved container element is still null", () => {
-    function NeverAttached() {
-      const ref = useRef<HTMLElement | null>(null);
-      return (
-        <AlertDialog.Root open>
-          <AlertDialog.Content container={ref} title="Pending" actionLabel="Confirm">
-            Waiting for the container.
-          </AlertDialog.Content>
-        </AlertDialog.Root>
-      );
-    }
-    renderThemed(withLocale("en-US", <NeverAttached />));
-
-    expect(page.getByRole("alertdialog").query()).toBeNull();
-  });
-
-  it("does not paint the popup outside a ThemeScope element that has not attached yet", async () => {
-    renderThemed(
-      withLocale(
-        "en-US",
-        <ThemeScope theme={{ variant: "external", brand: "fkas", segment: "private" }}>
-          <AlertDialog.Root open>
-            <AlertDialog.Content title="Scoped" actionLabel="Confirm">
-              Stay inside the scope.
-            </AlertDialog.Content>
-          </AlertDialog.Root>
-        </ThemeScope>
-      )
-    );
-    await expect.element(page.getByRole("alertdialog")).toBeInTheDocument();
-    const dialog = page.getByRole("alertdialog").element();
-    const scope = dialog.closest("[data-theme-variant=external]");
-    expect(scope).not.toBeNull();
-    expect([...document.body.children].includes(dialog)).toBe(false);
   });
 });

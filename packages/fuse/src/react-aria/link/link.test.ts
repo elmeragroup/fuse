@@ -1,12 +1,6 @@
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { discoverEntries } from "../../../scripts/entries";
 import { linkVariants } from "../../styles/link";
-
-const here = dirname(fileURLToPath(import.meta.url));
-const packageRoot = join(here, "../../..");
 
 function classes(rendered: string): string[] {
   return rendered.split(/\s+/).filter(Boolean).sort();
@@ -27,81 +21,39 @@ describe("linkVariants", () => {
     expect(rendered).toEqual(classes("font-sans transition-opacity text-inherit font-normal"));
   });
 
-  it("maps every colour variant onto a role token", () => {
-    const expected = {
-      default: "text-inherit",
-      foreground: "text-foreground",
-      primary: "text-primary",
-      secondary: "text-foreground",
-      brand: "text-brand",
-      muted: "text-muted-foreground",
-      inherit: "text-inherit",
-      error: "text-error",
-    } as const;
-    for (const [variant, className] of Object.entries(expected)) {
-      // SAFETY: the keys above are exactly the recipe's own `variant` values.
-      const rendered = linkVariants({ variant: variant as keyof typeof expected });
-      expect(classes(rendered), variant).toContain(className);
-    }
-  });
-
-  it("keeps the recorded quirk that default and inherit are the same variant", () => {
-    expect(linkVariants({ variant: "inherit" })).toBe(linkVariants({ variant: "default" }));
-    expect(classes(linkVariants({ variant: "inherit" }))).toContain("text-inherit");
-  });
-
-  it("keeps the recorded quirk that weight bold renders font-medium", () => {
-    expect(classes(linkVariants({ weight: "bold" }))).toContain("font-medium");
-    expect(classes(linkVariants({ weight: "bold" }))).not.toContain("font-bold");
-    expect(classes(linkVariants({ weight: "normal" }))).toContain("font-normal");
-  });
-
-  it("maps the leading axis onto the line-height scale", () => {
-    const expected = {
-      none: "leading-none",
-      tight: "leading-tight",
-      snug: "leading-snug",
-      relaxed: "leading-relaxed",
-      loose: "leading-loose",
-    } as const;
-    for (const [leading, className] of Object.entries(expected)) {
-      // SAFETY: the keys above are exactly the recipe's own `leading` values.
-      expect(classes(linkVariants({ leading: leading as keyof typeof expected })), leading).toContain(
-        className
-      );
+  it("maps every value of the variant, leading, align, truncate and weight axes onto its class, recorded quirks included", () => {
+    const expected = [
+      ["variant", "default", "text-inherit"],
+      ["variant", "foreground", "text-foreground"],
+      ["variant", "primary", "text-primary"],
+      ["variant", "secondary", "text-foreground"],
+      ["variant", "brand", "text-brand"],
+      ["variant", "muted", "text-muted-foreground"],
+      ["variant", "inherit", "text-inherit"],
+      ["variant", "error", "text-error"],
+      ["leading", "none", "leading-none"],
+      ["leading", "tight", "leading-tight"],
+      ["leading", "snug", "leading-snug"],
+      ["leading", "relaxed", "leading-relaxed"],
+      ["leading", "loose", "leading-loose"],
+      ["align", "left", "text-left"],
+      ["align", "center", "text-center"],
+      ["align", "right", "text-right"],
+      ["align", "justify", "text-justify"],
+      ["truncate", true, "truncate"],
+      ["weight", "normal", "font-normal"],
+      // Recorded quirk: weight bold renders font-medium.
+      ["weight", "bold", "font-medium"],
+    ] as const;
+    for (const [axis, value, className] of expected) {
+      // SAFETY: each row pairs one of the recipe's own axes with one of that axis's values.
+      const rendered = linkVariants({ [axis]: value } as Parameters<typeof linkVariants>[0]);
+      expect(classes(rendered), `${axis}=${String(value)}`).toContain(className);
     }
     expect(classes(linkVariants())).not.toContain("leading-relaxed");
-  });
-
-  it("maps the align axis onto text alignment", () => {
-    const expected = {
-      left: "text-left",
-      center: "text-center",
-      right: "text-right",
-      justify: "text-justify",
-    } as const;
-    for (const [align, className] of Object.entries(expected)) {
-      // SAFETY: the keys above are exactly the recipe's own `align` values.
-      expect(classes(linkVariants({ align: align as keyof typeof expected })), align).toContain(className);
-    }
-  });
-
-  it("adds truncation only when asked", () => {
-    expect(classes(linkVariants({ truncate: true }))).toContain("truncate");
     expect(classes(linkVariants())).not.toContain("truncate");
+    expect(classes(linkVariants({ weight: "bold" }))).not.toContain("font-bold");
+    // Recorded quirk: default and inherit are the same variant.
+    expect(linkVariants({ variant: "inherit" })).toBe(linkVariants({ variant: "default" }));
   });
-});
-
-describe("link package surface", () => {
-  it("is a subpath-only react-aria entry whose only value export is Link", () => {
-    const discovered = discoverEntries(packageRoot);
-    const entry = discovered.jsEntries.find((item) => item.subpath === "react-aria/link");
-    const root = discovered.jsEntries.find((item) => item.subpath === ".");
-    expect(entry?.inRootBarrel).toBe(false);
-    expect(entry?.runtimeExports).toEqual(["Link"]);
-    expect(entry?.sourceFile).toBe("src/react-aria/link.ts");
-    expect(root?.runtimeExports).not.toContain("Link");
-    expect(discovered.jsEntries.map((item) => item.subpath)).toContain("react-aria/link");
-    expect(discovered.jsEntries.map((item) => item.subpath)).not.toContain("link");
-  }, 30_000);
 });

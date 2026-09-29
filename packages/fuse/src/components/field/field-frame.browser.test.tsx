@@ -23,8 +23,8 @@ function nestedOrientationStamps(root: HTMLElement): Element[] {
 }
 
 describe("FieldFrame", () => {
-  it("names the control and links the description and the error", () => {
-    renderThemed(
+  it("names the control, links the description and the error, and omits the error when the message is falsy", () => {
+    const { unmount } = renderThemed(
       <FieldFrame label="Email" description="Work address preferred." errorMessage="Required" invalid>
         <Input />
       </FieldFrame>
@@ -38,9 +38,8 @@ describe("FieldFrame", () => {
       .map((id) => document.getElementById(id)?.textContent);
     expect(described).toContain("Work address preferred.");
     expect(page.getByRole("alert").element().textContent).toBe("Required");
-  });
+    unmount();
 
-  it("omits the error when the message is falsy", () => {
     renderThemed(
       <FieldFrame label="Email">
         <Input />
@@ -49,7 +48,7 @@ describe("FieldFrame", () => {
     expect(page.getByRole("alert").query()).toBeNull();
   });
 
-  it("omits the label row entirely when there is no label, status, or crossfade", () => {
+  it("omits the label row without a label, status, or crossfade, and the legend element without a label", () => {
     renderThemed(
       <FieldFrame description="Only a description.">
         <Input aria-label="Bare" />
@@ -57,6 +56,16 @@ describe("FieldFrame", () => {
     );
     expect(fieldRootFrom("Bare").querySelectorAll("label")).toHaveLength(0);
     expect(page.getByText("Only a description.").query()).toBeTruthy();
+
+    renderThemed(
+      <FieldFrame heading="legend" status={<span>busy</span>}>
+        <Input aria-label="Bare options" />
+      </FieldFrame>
+    );
+    const root = fieldRootFrom("Bare options");
+    expect(root.querySelectorAll("legend")).toHaveLength(0);
+    expect(root.querySelectorAll("label")).toHaveLength(0);
+    expect(page.getByText("busy").query()).toBeTruthy();
   });
 
   it("renders a component-owned status face in the label row and forces the row to exist", () => {
@@ -102,11 +111,16 @@ describe("FieldFrame", () => {
     expect(getComputedStyle(doneFace).animationName).toBe("none");
   });
 
-  it("groups the control with the description when a content class is given", () => {
+  it("groups the control with the description only when a content class is given", () => {
     renderThemed(
-      <FieldFrame label="Email" description="Grouped." classNames={{ content: "flex flex-row" }}>
-        <Input />
-      </FieldFrame>
+      <>
+        <FieldFrame label="Email" description="Grouped." classNames={{ content: "flex flex-row" }}>
+          <Input />
+        </FieldFrame>
+        <FieldFrame label="Phone" description="Ungrouped.">
+          <Input />
+        </FieldFrame>
+      </>
     );
     const description = page.getByText("Grouped.").element();
     const wrapper = description.parentElement;
@@ -116,16 +130,8 @@ describe("FieldFrame", () => {
     expect(wrapper.contains(textboxNamed("Email"))).toBe(true);
     expect(getComputedStyle(wrapper).display).toBe("flex");
     expect(getComputedStyle(wrapper).flexDirection).toBe("row");
-  });
 
-  it("leaves the control and the description as siblings without a content class", () => {
-    renderThemed(
-      <FieldFrame label="Email" description="Ungrouped.">
-        <Input />
-      </FieldFrame>
-    );
-    const description = page.getByText("Ungrouped.").element();
-    expect(description.parentElement).toBe(fieldRootFrom("Email"));
+    expect(page.getByText("Ungrouped.").element().parentElement).toBe(fieldRootFrom("Phone"));
   });
 
   it("renders Field.Set and Field.Legend when heading is legend", () => {
@@ -140,32 +146,13 @@ describe("FieldFrame", () => {
     expect(page.getByText("Options", { exact: true }).element().textContent).toBe("Options");
     expect(page.getByRole("alert").element().textContent).toBe("Required");
     expect(nestedOrientationStamps(fieldRootFrom("Choice"))).toHaveLength(0);
-  });
 
-  it("renders the legend description before the options", () => {
-    renderThemed(
-      <FieldFrame heading="legend" label="Options" description="Pick one.">
-        <Input aria-label="Choice" />
-      </FieldFrame>
-    );
-
+    // The legend description renders before the options.
     const description = page.getByText("Pick one.").element();
     const control = page.getByRole("textbox", { name: "Choice", exact: true }).element();
     expect(description.compareDocumentPosition(control) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
     );
-  });
-
-  it("omits the legend element when heading is legend and there is no label", () => {
-    renderThemed(
-      <FieldFrame heading="legend" status={<span>busy</span>}>
-        <Input aria-label="Bare options" />
-      </FieldFrame>
-    );
-    const root = fieldRootFrom("Bare options");
-    expect(root.querySelectorAll("legend")).toHaveLength(0);
-    expect(root.querySelectorAll("label")).toHaveLength(0);
-    expect(page.getByText("busy").query()).toBeTruthy();
   });
 
   it("renders one Field.Root per labeled composite so the nested-root trap cannot return", () => {

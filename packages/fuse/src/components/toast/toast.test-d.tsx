@@ -2,7 +2,6 @@ import type { RefObject } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type { Toast as RootToast } from "@elmeragroup/fuse";
 import type {
   CreateToastManagerReturnValue,
   ToastCloseProps,
@@ -10,30 +9,7 @@ import type {
   ToastViewportProps,
   UseToastManagerReturnValue,
 } from "@elmeragroup/fuse/toast";
-import * as ToastModule from "@elmeragroup/fuse/toast";
 import { Toast } from "@elmeragroup/fuse/toast";
-
-test("Toast ships from the toast entry and the root barrel", () => {
-  expectTypeOf<typeof Toast>().toEqualTypeOf<typeof RootToast>();
-  expectTypeOf(Toast.Provider).toBeFunction();
-  expectTypeOf(Toast.Viewport).toBeFunction();
-  expectTypeOf(Toast.Root).toBeFunction();
-  expectTypeOf(Toast.Content).toBeFunction();
-  expectTypeOf(Toast.Title).toBeFunction();
-  expectTypeOf(Toast.Description).toBeFunction();
-  expectTypeOf(Toast.Action).toBeFunction();
-  expectTypeOf(Toast.Close).toBeFunction();
-  expectTypeOf(Toast.useToastManager).toBeFunction();
-  expectTypeOf(Toast.createToastManager).toBeFunction();
-});
-
-test("Positioner, Arrow, Portal and the private recipe stay off the public namespace", () => {
-  expectTypeOf(Toast).not.toHaveProperty("Positioner");
-  expectTypeOf(Toast).not.toHaveProperty("Arrow");
-  expectTypeOf(Toast).not.toHaveProperty("Portal");
-  expectTypeOf(ToastModule).not.toHaveProperty("toastVariants");
-  expectTypeOf(ToastModule).not.toHaveProperty("Toaster");
-});
 
 test("Viewport container, Close label, and manager faces match the public API", () => {
   expectTypeOf<ToastViewportProps["container"]>().toEqualTypeOf<

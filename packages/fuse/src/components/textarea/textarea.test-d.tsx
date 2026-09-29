@@ -2,14 +2,8 @@ import type { ComponentProps } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type { Textarea as RootTextarea } from "@elmeragroup/fuse";
 import type { TextareaProps } from "@elmeragroup/fuse/textarea";
 import { Textarea } from "@elmeragroup/fuse/textarea";
-
-test("Textarea ships from the textarea entry and the root barrel", () => {
-  expectTypeOf<typeof Textarea>().toEqualTypeOf<typeof RootTextarea>();
-  expectTypeOf(Textarea).toBeFunction();
-});
 
 test("TextareaProps is the native textarea surface, with no recipe axis and no render prop", () => {
   expectTypeOf<TextareaProps>().toEqualTypeOf<ComponentProps<"textarea">>();

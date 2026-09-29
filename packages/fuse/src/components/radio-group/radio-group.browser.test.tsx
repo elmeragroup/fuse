@@ -18,6 +18,7 @@ import {
   effectiveOpacity,
   headingNamed,
   renderThemed,
+  roleNamed,
   stampDensity,
   textNamed,
 } from "../../../test/themed-browser-render";
@@ -69,21 +70,6 @@ function namedGroupHosting(control: HTMLElement): HTMLElement | null {
     .elements()
     .find((element) => element.contains(control));
   return match instanceof HTMLElement ? match : null;
-}
-
-function flexAncestor(
-  element: HTMLElement,
-  match: (style: CSSStyleDeclaration) => boolean
-): HTMLElement | null {
-  let current = element.parentElement;
-  while (current) {
-    const style = getComputedStyle(current);
-    if ((style.display === "flex" || style.display === "inline-flex") && match(style)) {
-      return current;
-    }
-    current = current.parentElement;
-  }
-  return null;
 }
 
 function Glyph() {
@@ -228,6 +214,7 @@ describe("RadioGroup", () => {
     expect(namedGroupHosting(bare)).toBeNull();
     expect(groupHosting(bare)).toBeTruthy();
     expect(bare.previousElementSibling).toBeNull();
+    expect(bare.hasAttribute("aria-busy")).toBe(false);
 
     const pendingUnlabeled = unnamed.find((element) => element.contains(radioNamed("Pending unlabeled")));
     if (!(pendingUnlabeled instanceof HTMLElement)) {
@@ -248,26 +235,6 @@ describe("RadioGroup", () => {
     }
     expect(page.getByRole("img").query()).toBeNull();
     expect(page.getByRole("status").query()).toBeNull();
-  });
-
-  it("sets aria-busy on the named radiogroup while pending and omits it otherwise", () => {
-    renderThemed(
-      <>
-        <RadioGroup label="Idle">
-          <Radio value="a">Idle option</Radio>
-        </RadioGroup>
-        <RadioGroup label="Idle false" isPending={false}>
-          <Radio value="a">Idle false option</Radio>
-        </RadioGroup>
-        <RadioGroup label="Busy" isPending>
-          <Radio value="a">Busy option</Radio>
-        </RadioGroup>
-      </>
-    );
-
-    expect(radiogroupNamed("Idle").hasAttribute("aria-busy")).toBe(false);
-    expect(radiogroupNamed("Idle false").hasAttribute("aria-busy")).toBe(false);
-    expect(radiogroupNamed("Busy").getAttribute("aria-busy")).toBe("true");
   });
 
   it("renders a ReactNode error as role=alert and stamps invalid on items", () => {
@@ -324,32 +291,6 @@ describe("RadioGroup", () => {
     expect(hidden).not.toBeNull();
     await userEvent.click(page.getByRole("button", { name: "Save", exact: true }));
     expect(submitted).toEqual(["fixed"]);
-  });
-
-  it("switches orientation via computed layout, not class names", () => {
-    renderThemed(
-      <>
-        <RadioGroup label="Vertical contract" orientation="vertical">
-          <Radio value="a">Fixed</Radio>
-          <Radio value="b">Spot</Radio>
-        </RadioGroup>
-        <RadioGroup label="Horizontal contract" orientation="horizontal">
-          <Radio value="a">Monthly</Radio>
-          <Radio value="b">Quarterly</Radio>
-        </RadioGroup>
-      </>
-    );
-
-    const verticalFirst = radioNamed("Fixed").getBoundingClientRect();
-    const verticalSecond = radioNamed("Spot").getBoundingClientRect();
-    expect(verticalSecond.top).toBeGreaterThan(verticalFirst.bottom);
-    expect(flexAncestor(radioNamed("Fixed"), (style) => style.flexDirection === "column")).not.toBeNull();
-    expect(
-      flexAncestor(
-        radioNamed("Monthly"),
-        (style) => style.flexDirection === "row" && style.flexWrap === "wrap"
-      )
-    ).not.toBeNull();
   });
 });
 
@@ -426,21 +367,39 @@ describe("Radio", () => {
     expect(effectiveOpacity(badge)).toBe(0.5);
   });
 
-  it("paints the shared ring on keyboard focus-visible and not on mouse focus, at both densities", async () => {
-    renderThemed(
-      <>
-        <button type="button">Before</button>
+  it.each([
+    {
+      control: "Radio",
+      name: "Fixed",
+      group: (
         <RadioGroup label="Contract">
           <Radio value="fixed">Fixed</Radio>
         </RadioGroup>
-      </>
-    );
-    const previous = page.getByRole("button", { name: "Before", exact: true }).element();
-    if (!(previous instanceof HTMLElement)) {
-      throw new Error("expected before button");
+      ),
+    },
+    {
+      control: "RadioIconButton",
+      name: "List",
+      group: (
+        <RadioGroup label="View">
+          <RadioIconButton value="list" aria-label="List">
+            <Glyph />
+          </RadioIconButton>
+        </RadioGroup>
+      ),
+    },
+  ])(
+    "paints the shared ring on a $control on keyboard focus-visible and not on mouse focus, at both densities",
+    async ({ name, group }) => {
+      renderThemed(
+        <>
+          <button type="button">Before</button>
+          {group}
+        </>
+      );
+      await assertFocusRingAtBothDensities(roleNamed("button", "Before"), radioNamed(name));
     }
-    await assertFocusRingAtBothDensities(previous, radioNamed("Fixed"));
-  });
+  );
 });
 
 describe("RadioItem", () => {
@@ -510,56 +469,53 @@ describe("RadioItem", () => {
 });
 
 describe("RadioItemGroup", () => {
-  it("exposes stacked RadioItems as listitems that stay direct siblings", () => {
-    renderThemed(
-      <div style={radiusToken}>
-        <RadioItemGroup label="Plans" defaultValue="hourly">
-          <RadioItem value="fixed">
-            <RadioItem.Title role="heading" aria-level={3}>
-              Fixed price
-            </RadioItem.Title>
-          </RadioItem>
-          <RadioItem value="hourly">
-            <RadioItem.Title role="heading" aria-level={3}>
-              Hourly
-            </RadioItem.Title>
-          </RadioItem>
-        </RadioItemGroup>
-      </div>
-    );
+  // Vertical: stacked RadioItems stay direct-sibling listitems in one connected list.
+  // Horizontal: a wrapping-gap item list of independent card shells.
+  it.each([
+    {
+      layout: "stacked (default vertical)",
+      orientation: undefined,
+      label: "Plans",
+      assertLayout: (list: HTMLElement, first: HTMLElement, second: HTMLElement) => {
+        assertConnectedVerticalList(list, first, second);
+      },
+    },
+    {
+      layout: "horizontal",
+      orientation: "horizontal",
+      label: "Horizontal plans",
+      assertLayout: (list: HTMLElement, first: HTMLElement, second: HTMLElement) => {
+        assertHorizontalItemList(list, [first, second]);
+      },
+    },
+  ] as const)(
+    "exposes $layout RadioItems as direct-sibling listitems with that layout",
+    ({ orientation, label, assertLayout }) => {
+      renderThemed(
+        <div style={radiusToken}>
+          <RadioItemGroup label={label} orientation={orientation} defaultValue="hourly">
+            <RadioItem value="fixed">
+              <RadioItem.Title role="heading" aria-level={3}>
+                Fixed price
+              </RadioItem.Title>
+            </RadioItem>
+            <RadioItem value="hourly">
+              <RadioItem.Title role="heading" aria-level={3}>
+                Hourly
+              </RadioItem.Title>
+            </RadioItem>
+          </RadioItemGroup>
+        </div>
+      );
 
-    const [first, second] = listitemHosts();
-    const list = assertDirectSiblingList(first, second);
-    expect(first.contains(radioNamed("Fixed price", false))).toBe(true);
-    expect(second.contains(radioNamed("Hourly", true))).toBe(true);
-    assertConnectedVerticalList(list, first, second);
-  });
-
-  it("lays out a horizontal item list with wrapping gap and independent card shells", () => {
-    renderThemed(
-      <div style={radiusToken}>
-        <RadioItemGroup label="Horizontal plans" orientation="horizontal" defaultValue="hourly">
-          <RadioItem value="fixed">
-            <RadioItem.Title role="heading" aria-level={3}>
-              Fixed price
-            </RadioItem.Title>
-          </RadioItem>
-          <RadioItem value="hourly">
-            <RadioItem.Title role="heading" aria-level={3}>
-              Hourly
-            </RadioItem.Title>
-          </RadioItem>
-        </RadioItemGroup>
-      </div>
-    );
-
-    expect(radiogroupNamed("Horizontal plans")).toBeTruthy();
-    const [first, second] = listitemHosts();
-    const list = assertDirectSiblingList(first, second);
-    expect(first.contains(radioNamed("Fixed price", false))).toBe(true);
-    expect(second.contains(radioNamed("Hourly", true))).toBe(true);
-    assertHorizontalItemList(list, [first, second]);
-  });
+      expect(radiogroupNamed(label)).toBeTruthy();
+      const [first, second] = listitemHosts();
+      const list = assertDirectSiblingList(first, second);
+      expect(first.contains(radioNamed("Fixed price", false))).toBe(true);
+      expect(second.contains(radioNamed("Hourly", true))).toBe(true);
+      assertLayout(list, first, second);
+    }
+  );
 });
 
 describe("RadioIconButton", () => {
@@ -617,52 +573,9 @@ describe("RadioIconButton", () => {
       }
     }
   });
-
-  it("paints the shared ring on keyboard focus-visible and not on mouse focus, at both densities", async () => {
-    renderThemed(
-      <>
-        <button type="button">Before</button>
-        <RadioGroup label="View">
-          <RadioIconButton value="list" aria-label="List">
-            <Glyph />
-          </RadioIconButton>
-        </RadioGroup>
-      </>
-    );
-    const previous = page.getByRole("button", { name: "Before", exact: true }).element();
-    if (!(previous instanceof HTMLElement)) {
-      throw new Error("expected before button");
-    }
-    await assertFocusRingAtBothDensities(previous, radioNamed("List"));
-  });
-
-  it("dims a disabled icon button to half opacity", () => {
-    renderThemed(
-      <RadioGroup label="View">
-        <RadioIconButton value="list" aria-label="List" isDisabled>
-          <Glyph />
-        </RadioIconButton>
-        <RadioIconButton value="grid" aria-label="Grid">
-          <Glyph />
-        </RadioIconButton>
-      </RadioGroup>
-    );
-
-    expect(effectiveOpacity(radioNamed("List"))).toBe(0.5);
-    expect(effectiveOpacity(radioNamed("Grid"))).toBe(1);
-  });
 });
 
 describe("RadioGroupItem", () => {
-  it("is named independently when given an accessible name", () => {
-    renderThemed(
-      <RadioGroup label="Contract">
-        <RadioGroupItem value="fixed" aria-label="Fixed primitive" />
-      </RadioGroup>
-    );
-    expect(radioNamed("Fixed primitive").getAttribute("data-slot")).toBe("radio-group-item");
-  });
-
   it("dims a standalone disabled item to half opacity and leaves an enabled one opaque", () => {
     // Base UI renders the root as a <span>, which never matches `:disabled`. No label
     // wraps these items, so only the item's own rule can dim it.

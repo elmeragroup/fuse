@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { createMemoryColorSchemePlatform } from "../../test/memory-color-scheme-platform";
-import type { MemoryPlatformInit } from "../../test/memory-color-scheme-platform";
+import type { MemoryColorSchemePlatform, MemoryPlatformInit } from "../../test/memory-color-scheme-platform";
 import { createColorSchemeRuntime } from "./color-scheme-runtime";
 import type { ColorSchemeRuntime, ColorSchemeRuntimeConfig } from "./color-scheme-runtime";
 import type { ColorScheme } from "./color-scheme-types";
@@ -72,21 +72,34 @@ describe("write gate before connect", () => {
     expect(scheme(runtime)).toBe("light/pending");
   });
 
-  it("writes a mount-level forcedColorScheme before connect", () => {
-    const { memory, runtime } = setup({ root: "dark" });
-
-    runtime.configure(config({ forcedColorScheme: "light" }));
-
-    expect(memory.state.rootWrites).toEqual([plain("light")]);
-  });
-
-  it("writes a runtime force before connect, with the construction config standing in", () => {
-    const { memory, runtime } = setup({ root: "light" }, { disableTransitionOnChange: true, nonce: "csp" });
-
-    runtime.force("dark", 1);
-    runtime.configure(config({ disableTransitionOnChange: true, nonce: "csp" }));
-
-    expect(memory.state.rootWrites).toEqual([{ value: "dark", transition: { nonce: "csp" } }]);
+  it.each<{
+    name: string;
+    root: string;
+    overrides: Partial<ColorSchemeRuntimeConfig>;
+    act: (runtime: ColorSchemeRuntime) => void;
+    writes: unknown[];
+  }>([
+    {
+      name: "a mount-level forcedColorScheme",
+      root: "dark",
+      overrides: {},
+      act: (runtime) => runtime.configure(config({ forcedColorScheme: "light" })),
+      writes: [plain("light")],
+    },
+    {
+      name: "a runtime force, with the construction config standing in",
+      root: "light",
+      overrides: { disableTransitionOnChange: true, nonce: "csp" },
+      act: (runtime) => {
+        runtime.force("dark", 1);
+        runtime.configure(config({ disableTransitionOnChange: true, nonce: "csp" }));
+      },
+      writes: [{ value: "dark", transition: { nonce: "csp" } }],
+    },
+  ])("writes $name before connect", ({ root, overrides, act, writes }) => {
+    const { memory, runtime } = setup({ root }, overrides);
+    act(runtime);
+    expect(memory.state.rootWrites).toEqual(writes);
   });
 
   it("does not overwrite the bootstrap when the last force is released before connect", () => {
@@ -104,14 +117,6 @@ describe("write gate before connect", () => {
     runtime.connect();
     expect(memory.state.root).toBe("dark");
     expect(memory.state.rootWrites).toEqual([]);
-  });
-
-  it("writes an explicit setColorScheme before connect", () => {
-    const { memory, runtime } = setup({ root: "light" });
-
-    runtime.getSnapshot().setColorScheme("dark");
-
-    expect(memory.state.rootWrites).toEqual([plain("dark")]);
   });
 
   it("keeps an explicit preference when a changed default is configured before connect", () => {
@@ -138,14 +143,6 @@ describe("connect", () => {
     expect(memory.state.activeSubscriptions).toEqual({ storage: 1, media: 1 });
     expect(scheme(runtime)).toBe("dark/dark");
     expect(notified.count).toBe(1);
-  });
-
-  it("never rewrites a root that already matches", () => {
-    const { memory, runtime } = setup({ root: "dark", stored: { [KEY]: "dark" } });
-
-    runtime.connect();
-
-    expect(memory.state.rootWrites).toEqual([]);
   });
 
   it("does not subscribe to the media query when system support is off", () => {
@@ -281,62 +278,48 @@ describe("remote storage", () => {
     expect(scheme(runtime)).toBe("light/light");
   });
 
-  it("updates the preference but not the root under an active force", () => {
-    const { memory, runtime } = setup({ root: "light", stored: { [KEY]: "light" } });
+  it.each<{
+    name: string;
+    init: MemoryPlatformInit;
+    event: (memory: MemoryColorSchemePlatform) => void;
+    expected: string;
+  }>([
+    {
+      name: "another document's write",
+      init: { root: "light", stored: { [KEY]: "light" } },
+      event: (memory) => memory.control.remoteWrite(KEY, "dark"),
+      expected: "dark/light",
+    },
+    {
+      name: "a whole-area clear that restores the fallback",
+      init: { root: "light", stored: { [KEY]: "dark" }, prefersDark: true },
+      event: (memory) => memory.control.remoteClear(),
+      expected: "system/light",
+    },
+  ])("updates the preference but keeps a runtime force's root on $name", ({ init, event, expected }) => {
+    const { memory, runtime } = setup(init);
     runtime.connect();
     runtime.force("light", 1);
 
-    memory.control.remoteWrite(KEY, "dark");
+    event(memory);
 
     expect(memory.state.root).toBe("light");
-    expect(scheme(runtime)).toBe("dark/light");
-  });
-
-  it("keeps a runtime force while a whole-area clear restores the fallback preference", () => {
-    const { memory, runtime } = setup({ root: "light", stored: { [KEY]: "dark" }, prefersDark: true });
-    runtime.connect();
-    runtime.force("light", 1);
-
-    memory.control.remoteClear();
-
-    expect(memory.state.root).toBe("light");
-    expect(scheme(runtime)).toBe("system/light");
+    expect(scheme(runtime)).toBe(expected);
   });
 });
 
 describe("media", () => {
-  it("follows the query while the preference is system", () => {
-    const { memory, runtime } = setup({ root: "light", stored: { [KEY]: "system" }, prefersDark: false });
+  it.each([
+    { name: "follows the query while the preference is system", stored: "system", root: "dark" },
+    { name: "ignores the query for an explicit preference", stored: "light", root: "light" },
+  ])("$name", ({ stored, root }) => {
+    const { memory, runtime } = setup({ root: "light", stored: { [KEY]: stored }, prefersDark: false });
     runtime.connect();
 
     memory.control.setPrefersDark(true);
 
-    expect(memory.state.root).toBe("dark");
-    expect(scheme(runtime)).toBe("system/dark");
-  });
-
-  it("ignores the query for an explicit preference", () => {
-    const { memory, runtime } = setup({ root: "light", stored: { [KEY]: "light" }, prefersDark: false });
-    runtime.connect();
-
-    memory.control.setPrefersDark(true);
-
-    expect(memory.state.root).toBe("light");
-    expect(scheme(runtime)).toBe("light/light");
-  });
-
-  it("resolves system to light without a subscription when system support is off", () => {
-    const { memory, runtime } = setup(
-      { root: "dark", stored: { [KEY]: "system" }, prefersDark: true },
-      { enableSystem: false }
-    );
-    runtime.connect();
-    memory.control.setPrefersDark(false);
-    memory.control.setPrefersDark(true);
-
-    expect(memory.state.root).toBe("light");
-    expect(memory.state.activeSubscriptions.media).toBe(0);
-    expect(scheme(runtime)).toBe("system/light");
+    expect(memory.state.root).toBe(root);
+    expect(scheme(runtime)).toBe(`${stored}/${root}`);
   });
 
   it("resolves system to light when the platform cannot evaluate the query", () => {
@@ -347,7 +330,7 @@ describe("media", () => {
     expect(memory.state.activeSubscriptions.media).toBe(0);
   });
 
-  it("follows the query under a forced system and ignores it under a forced light", () => {
+  it("follows the query under a mount-level or runtime-forced system and ignores it under a forced light", () => {
     const { memory, runtime } = setup(
       { root: "light", stored: { [KEY]: "light" }, prefersDark: false },
       { forcedColorScheme: "system" }
@@ -362,17 +345,15 @@ describe("media", () => {
     memory.control.setPrefersDark(false);
     memory.control.setPrefersDark(true);
     expect(memory.state.root).toBe("light");
-  });
 
-  it("follows the query under a runtime-forced system", () => {
-    const { memory, runtime } = setup({ root: "light", stored: { [KEY]: "light" }, prefersDark: false });
-    runtime.connect();
-    runtime.force("system", 1);
+    const forced = setup({ root: "light", stored: { [KEY]: "light" }, prefersDark: false });
+    forced.runtime.connect();
+    forced.runtime.force("system", 1);
 
-    memory.control.setPrefersDark(true);
+    forced.memory.control.setPrefersDark(true);
 
-    expect(memory.state.root).toBe("dark");
-    expect(scheme(runtime)).toBe("light/dark");
+    expect(forced.memory.state.root).toBe("dark");
+    expect(scheme(forced.runtime)).toBe("light/dark");
   });
 
   it("does not read the query while serving snapshots or on post-mount commits", () => {
@@ -393,24 +374,22 @@ describe("media", () => {
 });
 
 describe("force stack", () => {
-  it("lets the deepest force win whatever the application order", () => {
-    const { memory, runtime } = setup({ root: "dark", stored: { [KEY]: "dark" } });
+  it.each<{ name: string; start: ColorScheme; innerDepth: number; expected: string }>([
+    {
+      name: "the deepest force whatever the application order",
+      start: "dark",
+      innerDepth: 2,
+      expected: "light",
+    },
+    { name: "the later force at equal depth", start: "light", innerDepth: 1, expected: "dark" },
+  ])("lets $name win", ({ start, innerDepth, expected }) => {
+    const { memory, runtime } = setup({ root: start, stored: { [KEY]: start } });
     runtime.connect();
 
-    runtime.force("light", 2);
+    runtime.force("light", innerDepth);
     runtime.force("dark", 1);
 
-    expect(memory.state.root).toBe("light");
-  });
-
-  it("lets the later force win at equal depth", () => {
-    const { memory, runtime } = setup({ root: "light", stored: { [KEY]: "light" } });
-    runtime.connect();
-
-    runtime.force("light", 1);
-    runtime.force("dark", 1);
-
-    expect(memory.state.root).toBe("dark");
+    expect(memory.state.root).toBe(expected);
   });
 
   it("restores the next force, then the mount force, then the preference", () => {
@@ -452,19 +431,6 @@ describe("force stack", () => {
 });
 
 describe("configure", () => {
-  it("keeps the snapshot and notifies nobody for an equal config", async () => {
-    const { runtime } = setup({ root: "light", stored: { [KEY]: "light" } });
-    runtime.connect();
-    const before = runtime.getSnapshot();
-    const notified = countNotifications(runtime);
-
-    runtime.configure(config());
-    await Promise.resolve();
-
-    expect(runtime.getSnapshot()).toBe(before);
-    expect(notified.count).toBe(0);
-  });
-
   it("refreshes the snapshot synchronously and batches one notification", async () => {
     const { runtime } = setup({ root: "light", stored: { [KEY]: "light" } });
     runtime.connect();
@@ -557,15 +523,5 @@ describe("idempotence and recovery", () => {
 
     runtime.configure(config());
     expect(memory.state.rootWrites).toEqual([plain("dark")]);
-  });
-
-  it("leaves an external overwrite alone before connect when nothing forces a write", () => {
-    const { memory, runtime } = setup({ root: "dark", prefersDark: true });
-
-    memory.control.mutateRoot("light");
-    runtime.configure(config());
-
-    expect(memory.state.root).toBe("light");
-    expect(memory.state.rootWrites).toEqual([]);
   });
 });

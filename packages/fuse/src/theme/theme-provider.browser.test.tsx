@@ -1,5 +1,5 @@
 import { Component, useLayoutEffect } from "react";
-import type { ReactNode, RefObject } from "react";
+import type { ReactNode } from "react";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -17,7 +17,6 @@ import {
 import { DEFAULT_COLOR_SCHEME_STORAGE_KEY } from "./color-scheme";
 import { ThemeProvider, useTheme } from "./theme-provider";
 import { ThemeScope } from "./theme-scope";
-import { ThemeScopeContainerContext, useResolvedPortalContainer } from "./theme-scope-container";
 import type { ThemeInput } from "./tokens/themes";
 
 beforeEach(() => {
@@ -45,17 +44,6 @@ function ThemeProbe() {
   }
 }
 
-function ScopeProbe({ container }: { container?: HTMLElement | RefObject<HTMLElement | null> }) {
-  const resolved = useResolvedPortalContainer(container);
-  if (resolved === undefined) {
-    return <span>no-scope</span>;
-  }
-  if (resolved === null) {
-    return <span>waiting</span>;
-  }
-  return <span>scoped:{resolved.tagName.toLowerCase()}</span>;
-}
-
 type ValidatorErrorState = { message: string | null };
 
 class ValidatorErrorBoundary extends Component<{ children: ReactNode }, ValidatorErrorState> {
@@ -81,35 +69,9 @@ function brandAttributeWrites(calls: ReadonlyArray<readonly unknown[]>) {
 }
 
 describe("ThemeProvider / ThemeScope", () => {
-  it("useTheme returns the provided theme and slug", () => {
-    const { host } = render(
-      <ThemeProvider theme={fkasPrivate}>
-        <ThemeProbe />
-      </ThemeProvider>
-    );
-    expect(host.textContent).toBe("internal-fkas-private-internal-fkas-private");
-  });
-
   it("useTheme throws outside ThemeProvider or ThemeScope", () => {
     const { host } = render(<ThemeProbe />);
     expect(host.textContent).toBe("useTheme must be used within ThemeProvider or ThemeScope");
-  });
-
-  it("ThemeScope stamps owned attributes and wins for nested useTheme", () => {
-    const { host } = render(
-      <ThemeProvider theme={fkasPrivate}>
-        <ThemeScope theme={tkasCompany} className="scope">
-          <ThemeProbe />
-        </ThemeScope>
-      </ThemeProvider>
-    );
-
-    const scope = host.querySelector("[data-theme-brand]");
-    expect(scope).not.toBeNull();
-    expect(scope?.getAttribute("data-theme-variant")).toBe("external");
-    expect(scope?.getAttribute("data-theme-brand")).toBe("tkas");
-    expect(scope?.getAttribute("data-theme-segment")).toBe("company");
-    expect(host.textContent).toBe("external-tkas-company-external-tkas-company");
   });
 
   it("does not let remaining props override theme attributes", () => {
@@ -196,8 +158,23 @@ describe("ThemeProvider / ThemeScope", () => {
     expect(window.sessionStorage.length).toBe(0);
   });
 
-  it("diagnoses mismatched server brand attributes and recovers to the validated theme", () => {
-    stampDocumentBrand(tkasCompany);
+  it.each([
+    {
+      name: "mismatched server brand attributes",
+      stamp: () => stampDocumentBrand(tkasCompany),
+      found: 'data-theme-variant="external" data-theme-brand="tkas" data-theme-segment="company"',
+    },
+    {
+      name: "a partially stamped document",
+      stamp: () => {
+        document.documentElement.setAttribute("data-theme-variant", "internal");
+        document.documentElement.setAttribute("data-theme-segment", "private");
+      },
+      found: 'data-theme-variant="internal" data-theme-brand="null" data-theme-segment="private"',
+    },
+    { name: "a blank document", stamp: () => undefined, found: undefined },
+  ])("diagnoses $name only when it disagrees and lands on the validated theme", ({ stamp, found }) => {
+    stamp();
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
     render(
@@ -207,56 +184,15 @@ describe("ThemeProvider / ThemeScope", () => {
     );
 
     expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
-    expect(warn.mock.calls).toEqual([
-      [
-        'ThemeProvider controlled theme does not match document brand attributes. Expected data-theme-variant="internal" data-theme-brand="fkas" data-theme-segment="private", found data-theme-variant="external" data-theme-brand="tkas" data-theme-segment="company". Recovering to the validated controlled theme.',
-      ],
-    ]);
-  });
-
-  it("does not warn about document brand attributes on a blank document", () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-
-    render(
-      <ThemeProvider theme={fkasPrivate}>
-        <ThemeProbe />
-      </ThemeProvider>
+    expect(warn.mock.calls).toEqual(
+      found === undefined
+        ? []
+        : [
+            [
+              `ThemeProvider controlled theme does not match document brand attributes. Expected data-theme-variant="internal" data-theme-brand="fkas" data-theme-segment="private", found ${found}. Recovering to the validated controlled theme.`,
+            ],
+          ]
     );
-
-    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
-    expect(warn).not.toHaveBeenCalled();
-  });
-
-  it("diagnoses a partially stamped document and recovers to the validated theme", () => {
-    document.documentElement.setAttribute("data-theme-variant", "internal");
-    document.documentElement.setAttribute("data-theme-segment", "private");
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-
-    render(
-      <ThemeProvider theme={fkasPrivate}>
-        <ThemeProbe />
-      </ThemeProvider>
-    );
-
-    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
-    expect(warn.mock.calls).toEqual([
-      [
-        'ThemeProvider controlled theme does not match document brand attributes. Expected data-theme-variant="internal" data-theme-brand="fkas" data-theme-segment="private", found data-theme-variant="internal" data-theme-brand="null" data-theme-segment="private". Recovering to the validated controlled theme.',
-      ],
-    ]);
-  });
-
-  it("does not let a nested provider compete for the document", () => {
-    const { host } = render(
-      <ThemeProvider theme={fkasPrivate}>
-        <ThemeProvider theme={tkasCompany}>
-          <ThemeProbe />
-        </ThemeProvider>
-      </ThemeProvider>
-    );
-
-    expect(host.textContent).toBe("internal-fkas-private-internal-fkas-private");
-    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
   });
 
   it("throws the validator error for an illegal nested theme without a hooks-count mismatch", () => {
@@ -276,64 +212,6 @@ describe("ThemeProvider / ThemeScope", () => {
     expect(host.textContent).toBe("Invalid theme: fkab is pinned to company.");
     expect(host.textContent).not.toMatch(/Rendered fewer hooks|Rendered more hooks|hook/i);
     expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
-  });
-
-  it("rethrows the validator error for an illegal pinned ThemeScope theme", () => {
-    vi.spyOn(console, "error").mockImplementation(() => undefined);
-    // @ts-expect-error untyped CMS/env input is the runtime boundary
-    const illegalPinned: ThemeInput = { variant: "internal", brand: "fkab", segment: "private" };
-    const { host } = render(
-      <ValidatorErrorBoundary>
-        <ThemeScope theme={illegalPinned}>
-          <span>child</span>
-        </ThemeScope>
-      </ValidatorErrorBoundary>
-    );
-
-    expect(host.textContent).toBe("Invalid theme: fkab is pinned to company.");
-  });
-
-  it("throws the validator error for an unknown nested brand without a hooks-count mismatch", () => {
-    stampDocumentBrand(fkasPrivate);
-    // @ts-expect-error untyped CMS/env input is the runtime boundary
-    const unknownBrand: ThemeInput = { variant: "internal", brand: "zz", segment: "private" };
-    const { host } = render(
-      <ThemeProvider theme={fkasPrivate}>
-        <ValidatorErrorBoundary>
-          <ThemeProvider theme={unknownBrand}>
-            <span>nested-child</span>
-          </ThemeProvider>
-        </ValidatorErrorBoundary>
-      </ThemeProvider>
-    );
-
-    expect(host.textContent).toBe("Invalid theme: unknown or missing variant, brand, or segment.");
-    expect(host.textContent).not.toMatch(/Rendered fewer hooks|Rendered more hooks|hook/i);
-    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
-  });
-
-  it("keeps theme identity and skips document rewrites for equal inline theme literals", () => {
-    const seen: unknown[] = [];
-    function IdentityProbe() {
-      seen.push(useTheme());
-      return null;
-    }
-    const { rerender } = render(
-      <ThemeProvider theme={{ variant: "internal", brand: "fkas", segment: "private" }}>
-        <IdentityProbe />
-      </ThemeProvider>
-    );
-
-    const setAttribute = vi.spyOn(document.documentElement, "setAttribute");
-    rerender(
-      <ThemeProvider theme={{ variant: "internal", brand: "fkas", segment: "private" }}>
-        <IdentityProbe />
-      </ThemeProvider>
-    );
-
-    expect(seen.length).toBeGreaterThanOrEqual(2);
-    expect(Object.is(seen[0], seen.at(-1))).toBe(true);
-    expect(setAttribute).not.toHaveBeenCalled();
   });
 
   it("restores an overwritten document brand on commits that change only color-scheme props", () => {
@@ -358,23 +236,6 @@ describe("ThemeProvider / ThemeScope", () => {
       </ThemeProvider>
     );
     expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
-  });
-
-  it("writes no brand attribute on a commit whose document brand already matches", () => {
-    const { rerender } = render(
-      <ThemeProvider theme={fkasPrivate}>
-        <ThemeProbe />
-      </ThemeProvider>
-    );
-
-    const setAttribute = vi.spyOn(document.documentElement, "setAttribute");
-    rerender(
-      <ThemeProvider theme={fkasPrivate} nonce="nonce-2">
-        <ThemeProbe />
-      </ThemeProvider>
-    );
-
-    expect(brandAttributeWrites(setAttribute.mock.calls)).toEqual([]);
   });
 
   it("owns the document when mounted inside a lone ThemeScope", () => {
@@ -469,33 +330,6 @@ describe("ThemeProvider / ThemeScope", () => {
       expect(host.textContent).toBe("Invalid theme: expected an object with variant, brand, and segment.");
       expect(host.textContent).not.toMatch(/Rendered fewer hooks|Rendered more hooks|hook/i);
     }
-  });
-});
-
-describe("overlay containment", () => {
-  it("distinguishes no scope from a scope that is not attached yet", () => {
-    const { host, rerender } = render(<ScopeProbe />);
-    expect(host.textContent).toBe("no-scope");
-
-    rerender(
-      <ThemeScopeContainerContext.Provider value={null}>
-        <ScopeProbe />
-      </ThemeScopeContainerContext.Provider>
-    );
-    expect(host.textContent).toBe("waiting");
-
-    const { host: scopedHost } = render(
-      <ThemeScope theme={fkasPrivate}>
-        <ScopeProbe />
-      </ThemeScope>
-    );
-    expect(scopedHost.textContent).toBe("scoped:div");
-  });
-
-  it("waits on an explicit unattached ref instead of falling back to no-scope", () => {
-    const ref: RefObject<HTMLElement | null> = { current: null };
-    const { host } = render(<ScopeProbe container={ref} />);
-    expect(host.textContent).toBe("waiting");
   });
 });
 

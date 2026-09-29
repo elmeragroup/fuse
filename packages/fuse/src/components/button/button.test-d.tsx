@@ -1,8 +1,7 @@
 import { expectTypeOf, test } from "vitest";
 
-import type { Button as RootButton } from "@elmeragroup/fuse";
 import type { ButtonProps } from "@elmeragroup/fuse/button";
-import { Button, buttonVariants } from "@elmeragroup/fuse/button";
+import { Button } from "@elmeragroup/fuse/button";
 
 test("icon-only sizes require an accessible name", () => {
   ({ size: "icon", "aria-label": "Close" }) satisfies ButtonProps;
@@ -21,11 +20,5 @@ test("icon-only sizes require an accessible name", () => {
   const _missingIconInline: ButtonProps = { size: "icon-inline" };
 
   const _ok = <Button size="icon" aria-label="Delete" />;
-});
-
-test("polymorphism is render, not as, and the public recipe is exported", () => {
   expectTypeOf<ButtonProps>().not.toHaveProperty("as");
-  expectTypeOf<typeof Button>().toEqualTypeOf<typeof RootButton>();
-  expectTypeOf(buttonVariants).toBeFunction();
-  expectTypeOf(buttonVariants({ variant: "destructive", size: "sm" })).toBeString();
 });

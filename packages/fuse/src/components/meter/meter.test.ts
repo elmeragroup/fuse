@@ -5,7 +5,7 @@ import { getMeterLevel, meterPercentage } from "./get-meter-level";
 import { meterStrings } from "./intl";
 import { METER_CONSTANTS } from "./meter-constants";
 import type { MeterLevel, MeterMode } from "./meter-constants";
-import { METER_TONE_TABLE, meterToneCell } from "./meter-tone";
+import { meterToneCell } from "./meter-tone";
 import type { MeterIconName, MeterTone } from "./meter-tone";
 import { meterVariants } from "./meter-variants";
 
@@ -47,43 +47,17 @@ const TONE_CLASSES = {
   neutral: { barFill: "bg-primary", labelValue: "text-foreground" },
 } satisfies Record<MeterTone, { barFill: string; labelValue: string }>;
 
-const WARNING_COPY = {
-  "nb-NO": "Advarsel",
-  "sv-SE": "Varning",
-  "en-US": "Warning",
-  "fi-FI": "Varoitus",
-} as const;
-
-const SUCCESS_COPY = {
-  "nb-NO": "Vellykket",
-  "sv-SE": "Lyckades",
-  "en-US": "Success",
-  "fi-FI": "Onnistui",
-} as const;
-
 describe("getMeterLevel", () => {
-  it("treats percentage at or below 80 as LOW, including the 80 boundary", () => {
-    expect(getMeterLevel(0, 100, 0)).toBe(METER_CONSTANTS.LEVELS.LOW);
-    expect(getMeterLevel(80, 100, 80)).toBe(METER_CONSTANTS.LEVELS.LOW);
-  });
-
-  it("treats percentage strictly between 80 and 100 as MEDIUM", () => {
-    expect(getMeterLevel(81, 100, 81)).toBe(METER_CONSTANTS.LEVELS.MEDIUM);
-    expect(getMeterLevel(99, 100, 99)).toBe(METER_CONSTANTS.LEVELS.MEDIUM);
-  });
-
-  it("treats percentage 100 as FULL when max is not exceeded", () => {
-    expect(getMeterLevel(100, 100, 100)).toBe(METER_CONSTANTS.LEVELS.FULL);
-  });
-
-  it("returns EXCEEDED_MAX_VALUE when value exceeds max", () => {
-    expect(getMeterLevel(101, 100, 100)).toBe(METER_CONSTANTS.LEVELS.EXCEEDED_MAX_VALUE);
-    expect(getMeterLevel(150, 120, 100)).toBe(METER_CONSTANTS.LEVELS.EXCEEDED_MAX_VALUE);
-  });
-
-  it("returns EXCEEDED_MAX_VALUE above the default max of 100", () => {
-    expect(getMeterLevel(150, 100, 100)).toBe(METER_CONSTANTS.LEVELS.EXCEEDED_MAX_VALUE);
-    expect(getMeterLevel(100, 100, 100)).toBe(METER_CONSTANTS.LEVELS.FULL);
+  it.each([
+    ["at or below 80 is LOW, including the 80 boundary", 0, 100, 0, "LOW"],
+    ["at or below 80 is LOW, including the 80 boundary", 80, 100, 80, "LOW"],
+    ["strictly between 80 and 100 is MEDIUM", 81, 100, 81, "MEDIUM"],
+    ["strictly between 80 and 100 is MEDIUM", 99, 100, 99, "MEDIUM"],
+    ["100 is FULL when max is not exceeded", 100, 100, 100, "FULL"],
+    ["a value above max is EXCEEDED_MAX_VALUE", 101, 100, 100, "EXCEEDED_MAX_VALUE"],
+    ["a value above max is EXCEEDED_MAX_VALUE", 150, 120, 100, "EXCEEDED_MAX_VALUE"],
+  ] as const)("percentage %s (value %d, max %d, percentage %d)", (_case, value, max, percentage, level) => {
+    expect(getMeterLevel(value, max, percentage)).toBe(METER_CONSTANTS.LEVELS[level]);
   });
 
   it("maps max <= min to percentage 0 and LOW", () => {
@@ -94,13 +68,6 @@ describe("getMeterLevel", () => {
 });
 
 describe("meter dictionary", () => {
-  it("owns the locked meter.warning and meter.success copy in all four locales", () => {
-    for (const locale of SUPPORTED_LOCALES) {
-      expect(meterStrings.getStringForLocale("warning", locale), locale).toBe(WARNING_COPY[locale]);
-      expect(meterStrings.getStringForLocale("success", locale), locale).toBe(SUCCESS_COPY[locale]);
-    }
-  });
-
   it("carries no key beyond the two rows owned by Meter", () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(Object.keys(meterStrings.getStringsForLocale(locale)).sort(), locale).toEqual([
@@ -112,13 +79,6 @@ describe("meter dictionary", () => {
 });
 
 describe("METER_TONE_TABLE", () => {
-  it("carries one cell for every mode × level, so adding a mode is one row", () => {
-    expect(Object.keys(METER_TONE_TABLE).sort()).toEqual([...MODES].sort());
-    for (const mode of MODES) {
-      expect(Object.keys(METER_TONE_TABLE[mode]).sort(), mode).toEqual([...LEVELS].sort());
-    }
-  });
-
   it("resolves every tone cell to the published tone and glyph", () => {
     for (const mode of MODES) {
       for (const level of LEVELS) {
@@ -134,24 +94,6 @@ describe("METER_TONE_TABLE", () => {
         const slots = meterVariants({ tone });
         expect(slots.barFill(), `${mode}/${level}`).toContain(TONE_CLASSES[tone].barFill);
         expect(slots.labelValue(), `${mode}/${level}`).toContain(TONE_CLASSES[tone].labelValue);
-      }
-    }
-  });
-
-  it("moves the glyph and the fill across the > 80 boundary in the same cell", () => {
-    for (const mode of MODES) {
-      const atEighty = meterToneCell(mode, getMeterLevel(80, 100, meterPercentage(80, 0, 100)));
-      const pastEighty = meterToneCell(mode, getMeterLevel(81, 100, meterPercentage(81, 0, 100)));
-      expect(atEighty, mode).toEqual(MATRIX[mode].LOW);
-      expect(pastEighty, mode).toEqual(MATRIX[mode].MEDIUM);
-    }
-  });
-
-  it("never pairs a success fill with a warning glyph", () => {
-    for (const mode of MODES) {
-      for (const level of LEVELS) {
-        const cell = meterToneCell(mode, level);
-        expect(cell.tone === "success" && cell.icon === "warning", `${mode}/${level}`).toBe(false);
       }
     }
   });

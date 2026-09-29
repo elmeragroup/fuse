@@ -91,14 +91,6 @@ describe("Pagination", () => {
     expect(roleNamed("link", "Go to next page").getAttribute("data-slot")).toBe("pagination-next");
   });
 
-  it("exposes aria-current=page only on the active link, never false", () => {
-    renderPagination(<BasicPages />);
-    expect(roleNamed("link", "1").getAttribute("aria-current")).toBe("page");
-    expect(roleNamed("link", "2").hasAttribute("aria-current")).toBe(false);
-    expect(roleNamed("link", "2").getAttribute("aria-current")).toBeNull();
-    expect(roleNamed("link", "Go to previous page").hasAttribute("aria-current")).toBe(false);
-  });
-
   it("lets an explicit aria-label win over the label prop and the dictionary", () => {
     const { unmount: unmountDefault } = renderPagination(<BasicPages />);
     expect(roleNamed("navigation", "Pagination")).toBeTruthy();

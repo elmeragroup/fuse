@@ -57,6 +57,13 @@ async function expectNoDeferredReset(onReset: Mock, act: () => void): Promise<vo
   }
 }
 
+/** A reset that must never reach the callback: the form handler, then what the test does. */
+type SilentResetCase = {
+  name: string;
+  onFormReset?: (event: FormEvent<HTMLFormElement>) => void;
+  act: (probe: { form: HTMLFormElement; unmount: () => void }) => void;
+};
+
 describe("useFormReset", () => {
   it("ignores a reset when the control belongs to no form", async () => {
     const onReset = vi.fn();
@@ -78,30 +85,15 @@ describe("useFormReset", () => {
     });
   });
 
-  it("does not subscribe when the callback is null", () => {
-    const add = vi.spyOn(document, "addEventListener");
-    mountProbe({ onReset: null });
-    expect(resetCalls(add)).toEqual([]);
-  });
-
-  it("subscribes on the first commit without a state-driven extra render", () => {
+  it.each([
+    { name: "no reset listener for a null callback", onReset: null, listeners: 0 },
+    { name: "one reset listener for a callback", onReset: () => undefined, listeners: 1 },
+  ])("adds $name on the first commit without a state-driven extra render", ({ onReset, listeners }) => {
     const add = vi.spyOn(document, "addEventListener");
     const onRender = vi.fn();
-    mountProbe({ onReset: () => undefined, onRender });
+    mountProbe({ onReset, onRender });
     expect(onRender).toHaveBeenCalledTimes(1);
-    expect(resetCalls(add)).toHaveLength(1);
-  });
-
-  it("invokes the callback after native form.reset()", async () => {
-    const onReset = vi.fn();
-    const { form, input } = mountProbe({ onReset, defaultValue: "start" });
-    input.value = "edited";
-    form.reset();
-    expect(onReset).not.toHaveBeenCalled();
-    expect(input.value).toBe("start");
-    await vi.waitFor(() => {
-      expect(onReset).toHaveBeenCalledTimes(1);
-    });
+    expect(resetCalls(add)).toHaveLength(listeners);
   });
 
   it("invokes the callback after a reset button's default action has restored the control", async () => {
@@ -183,17 +175,28 @@ describe("useFormReset", () => {
     expect(input.value).toBe("start");
   });
 
-  it("does not invoke the callback when reset is canceled", async () => {
-    const onReset = vi.fn();
-    const { form } = mountProbe({
-      onReset,
-      defaultValue: "start",
+  it.each<SilentResetCase>([
+    {
+      name: "reset is canceled",
       onFormReset: (event) => {
         event.preventDefault();
       },
-    });
+      act: ({ form }) => {
+        form.reset();
+      },
+    },
+    {
+      name: "unmounted before the deferred task",
+      act: ({ form, unmount }) => {
+        form.reset();
+        unmount();
+      },
+    },
+  ])("does not invoke the callback when $name", async ({ onFormReset, act }) => {
+    const onReset = vi.fn();
+    const probe = mountProbe({ onReset, defaultValue: "start", onFormReset });
     await expectNoDeferredReset(onReset, () => {
-      form.reset();
+      act(probe);
     });
   });
 
@@ -216,15 +219,6 @@ describe("useFormReset", () => {
     }
     expect(input.value, "the native reset still applied").toBe("start");
     expect(onReset).toHaveBeenCalledTimes(1);
-  });
-
-  it("does not invoke the callback when unmounted before the deferred task", async () => {
-    const onReset = vi.fn();
-    const { form, unmount } = mountProbe({ onReset, defaultValue: "start" });
-    await expectNoDeferredReset(onReset, () => {
-      form.reset();
-      unmount();
-    });
   });
 
   it("follows the control's form association without resubscribing", async () => {

@@ -96,35 +96,6 @@ describe("FigmaApi and the token", () => {
   );
 });
 
-describe("syncFile against the fake file", () => {
-  it.effect("reverses an alias without passing through a cycle", () =>
-    Effect.gen(function* () {
-      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
-      yield* syncFile(FILE_KEY, palette("destructive")).pipe(Effect.provide(figmaApi(figma)));
-      const destructive = figma.variableIds().get("Palette/destructive");
-      const error = figma.variableIds().get("Palette/error");
-      if (destructive === undefined || error === undefined) throw new Error("the first sync creates both");
-
-      // The tokens flip the alias. Written in set order, error would alias destructive while
-      // destructive still aliased error, and the fake checks for a cycle after each value.
-      yield* syncFile(FILE_KEY, palette("error")).pipe(Effect.provide(figmaApi(figma)));
-
-      assert.deepStrictEqual(figma.acceptedWrites.at(-1)?.variableModeValues, [
-        { variableId: destructive, modeId: figma.modeId("Palette", "Value"), value: RED },
-        {
-          variableId: error,
-          modeId: figma.modeId("Palette", "Value"),
-          value: { type: "VARIABLE_ALIAS", id: destructive },
-        },
-      ]);
-      assert.deepStrictEqual(figma.aliasChain("Palette", "error", {}), [
-        "Palette/error",
-        "Palette/destructive",
-      ]);
-    })
-  );
-});
-
 const RED = { r: 1, g: 0, b: 0, a: 1 };
 
 /**

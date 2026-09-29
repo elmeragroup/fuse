@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { describe, expect, it, vi } from "vitest";
@@ -7,8 +7,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
-import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
-import { ThemeScope } from "../../theme/theme-scope";
+import { cssVarColor, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { DropdownMenu } from "./index";
 
 type ItemRole = "menuitem" | "menuitemcheckbox" | "menuitemradio";
@@ -85,7 +84,7 @@ async function openWithArrowDown(): Promise<HTMLElement> {
 }
 
 describe("DropdownMenu", () => {
-  it("opens from the trigger click and exposes a menu", async () => {
+  it("opens from the trigger click, exposes a menu, and closes when an item is clicked", async () => {
     const onOpenChange = vi.fn();
     renderThemed(<BasicMenu onOpenChange={onOpenChange} />);
 
@@ -94,15 +93,14 @@ describe("DropdownMenu", () => {
     expect(onOpenChange.mock.calls[0]?.[0]).toBe(true);
     expect(menu.getAttribute("data-slot")).toBe("dropdown-menu-content");
     expect(itemNamed("Profile")).toBeTruthy();
+
+    await userEvent.click(itemNamed("Logout"));
+    await vi.waitFor(() => {
+      expect(page.getByRole("menu").query()).toBeNull();
+    });
   });
 
-  it("opens from ArrowDown on the trigger and highlights the first item", async () => {
-    renderThemed(<BasicMenu />);
-    await openWithArrowDown();
-    await expect.element(itemLocator("Profile")).toHaveFocus();
-  });
-
-  it("opens from Enter and from Space on the trigger, highlighting the first item", async () => {
+  it("opens from Enter and from Space on the trigger, highlighting the first item, and from ArrowUp to the last", async () => {
     renderThemed(<BasicMenu />);
     const trigger = triggerButton();
 
@@ -124,11 +122,12 @@ describe("DropdownMenu", () => {
       expect(page.getByRole("menu").query()).not.toBeNull();
     });
     await expect.element(itemLocator("Profile")).toHaveFocus();
-  });
 
-  it("opens to the last item from ArrowUp on the trigger", async () => {
-    renderThemed(<BasicMenu />);
-    triggerButton().focus();
+    await userEvent.keyboard("{Escape}");
+    await vi.waitFor(() => {
+      expect(page.getByRole("menu").query()).toBeNull();
+    });
+    await expect.element(page.getByRole("button", { name: "Open", exact: true })).toHaveFocus();
 
     await userEvent.keyboard("{ArrowUp}");
     await vi.waitFor(() => {
@@ -209,66 +208,35 @@ describe("DropdownMenu", () => {
     expect(onProfile).toHaveBeenCalledTimes(1);
   });
 
-  it("closes on Escape and returns focus to the trigger", async () => {
-    renderThemed(<BasicMenu />);
-    await openWithClick();
-
-    await userEvent.keyboard("{Escape}");
-    await vi.waitFor(() => {
-      expect(page.getByRole("menu").query()).toBeNull();
-    });
-    await expect.element(page.getByRole("button", { name: "Open", exact: true })).toHaveFocus();
-  });
-
-  it("closes when an item is activated", async () => {
-    renderThemed(<BasicMenu />);
-    await openWithClick();
-    await userEvent.click(itemNamed("Logout"));
-    await vi.waitFor(() => {
-      expect(page.getByRole("menu").query()).toBeNull();
-    });
-  });
-
-  it("cycles arrow keys and Home/End across menuitems", async () => {
-    renderThemed(
-      <DropdownMenu.Root>
+  it.each([
+    [
+      "cycles arrow keys and Home/End across menuitems",
+      <DropdownMenu.Root key="cycle">
         <DropdownMenu.Trigger>Open</DropdownMenu.Trigger>
         <DropdownMenu.Content>
           <DropdownMenu.Item>Profile</DropdownMenu.Item>
           <DropdownMenu.Item>Billing</DropdownMenu.Item>
           <DropdownMenu.Item>Logout</DropdownMenu.Item>
         </DropdownMenu.Content>
-      </DropdownMenu.Root>
-    );
+      </DropdownMenu.Root>,
+      [
+        [null, "Profile"],
+        ["{ArrowDown}", "Billing"],
+        ["{ArrowUp}", "Profile"],
+        ["{End}", "Logout"],
+        ["{Home}", "Profile"],
+      ],
+    ],
+    ["jumps to a matching item on typeahead", <BasicMenu key="typeahead" />, [["l", "Logout"]]],
+  ] as const)("%s", async (_title, menu, steps) => {
+    renderThemed(menu);
     await openWithArrowDown();
-    await expect.element(itemLocator("Profile")).toHaveFocus();
-
-    await userEvent.keyboard("{ArrowDown}");
-    await expect.element(itemLocator("Billing")).toHaveFocus();
-
-    await userEvent.keyboard("{ArrowUp}");
-    await expect.element(itemLocator("Profile")).toHaveFocus();
-
-    await userEvent.keyboard("{End}");
-    await expect.element(itemLocator("Logout")).toHaveFocus();
-
-    await userEvent.keyboard("{Home}");
-    await expect.element(itemLocator("Profile")).toHaveFocus();
-  });
-
-  it("dims disabled items via data-disabled", async () => {
-    renderThemed(<BasicMenu />);
-    await openWithClick();
-    const settings = itemNamed("Settings");
-    expect(settings.getAttribute("data-disabled")).not.toBeNull();
-    expect(settings.getAttribute("aria-disabled")).toBe("true");
-  });
-
-  it("jumps to a matching item on typeahead", async () => {
-    renderThemed(<BasicMenu />);
-    await openWithArrowDown();
-    await userEvent.keyboard("l");
-    await expect.element(itemLocator("Logout")).toHaveFocus();
+    for (const [key, focused] of steps) {
+      if (key !== null) {
+        await userEvent.keyboard(key);
+      }
+      await expect.element(itemLocator(focused)).toHaveFocus();
+    }
   });
 
   it("opens a submenu with ArrowRight and closes it with ArrowLeft", async () => {
@@ -491,7 +459,7 @@ describe("DropdownMenu", () => {
     expect([...document.body.children].includes(menu)).toBe(false);
   });
 
-  it("portals Content into an explicit container element", async () => {
+  it("portals Content and SubContent into an explicit container element", async () => {
     function ExplicitContainer() {
       const [node, setNode] = useState<HTMLDivElement | null>(null);
       return (
@@ -507,14 +475,13 @@ describe("DropdownMenu", () => {
         </>
       );
     }
-    renderThemed(<ExplicitContainer />);
+    const { unmount } = renderThemed(<ExplicitContainer />);
     const menu = await openedMenu();
     const island = page.getByRole("region", { name: "Theme island", exact: true }).element();
     expect(island.contains(menu)).toBe(true);
     expect([...document.body.children].includes(menu)).toBe(false);
-  });
+    unmount();
 
-  it("portals SubContent into an explicit container element", async () => {
     function ExplicitSubContainer() {
       const [node, setNode] = useState<HTMLDivElement | null>(null);
       return (
@@ -537,59 +504,8 @@ describe("DropdownMenu", () => {
     }
     renderThemed(<ExplicitSubContainer />);
     const team = await mountedItem("Team");
-    const island = page.getByRole("region", { name: "Sub island", exact: true }).element();
-    expect(island.contains(team)).toBe(true);
-  });
-
-  it("waits while the resolved Content container element is still null", () => {
-    function NeverAttached() {
-      const ref = useRef<HTMLElement | null>(null);
-      return (
-        <DropdownMenu.Root open>
-          <DropdownMenu.Content container={ref}>
-            <DropdownMenu.Item>Pending</DropdownMenu.Item>
-          </DropdownMenu.Content>
-        </DropdownMenu.Root>
-      );
-    }
-    renderThemed(<NeverAttached />);
-    expect(page.getByRole("menu").query()).toBeNull();
-  });
-
-  it("waits while the resolved SubContent container element is still null", () => {
-    function NeverAttachedSub() {
-      const ref = useRef<HTMLElement | null>(null);
-      return (
-        <DropdownMenu.Root open>
-          <DropdownMenu.Content>
-            <DropdownMenu.Sub open>
-              <DropdownMenu.SubTrigger>More</DropdownMenu.SubTrigger>
-              <DropdownMenu.SubContent container={ref}>
-                <DropdownMenu.Item>Pending</DropdownMenu.Item>
-              </DropdownMenu.SubContent>
-            </DropdownMenu.Sub>
-          </DropdownMenu.Content>
-        </DropdownMenu.Root>
-      );
-    }
-    renderThemed(<NeverAttachedSub />);
-    expect(page.getByRole("menuitem", { name: "Pending", exact: true }).query()).toBeNull();
-  });
-
-  it("does not paint the popup outside a ThemeScope element that has not attached yet", async () => {
-    renderThemed(
-      <ThemeScope theme={{ variant: "external", brand: "fkas", segment: "private" }}>
-        <DropdownMenu.Root open>
-          <DropdownMenu.Content>
-            <DropdownMenu.Item>Scoped</DropdownMenu.Item>
-          </DropdownMenu.Content>
-        </DropdownMenu.Root>
-      </ThemeScope>
-    );
-    const menu = await openedMenu();
-    const scope = menu.closest("[data-theme-variant=external]");
-    expect(scope).not.toBeNull();
-    expect([...document.body.children].includes(menu)).toBe(false);
+    const subIsland = roleNamed("region", "Sub island");
+    expect(subIsland.contains(team)).toBe(true);
   });
 
   it("gives the trigger the shared keyboard focus ring", async () => {

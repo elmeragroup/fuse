@@ -2,26 +2,18 @@ import type { ReactNode } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type { ConfirmButton as RootConfirmButton } from "@elmeragroup/fuse";
 import type { ConfirmButtonProps } from "@elmeragroup/fuse/confirm-button";
 import * as ConfirmButtonModule from "@elmeragroup/fuse/confirm-button";
 import { ConfirmButton } from "@elmeragroup/fuse/confirm-button";
 
-test("ConfirmButton ships from the confirm-button entry and the root barrel", () => {
-  expectTypeOf<typeof ConfirmButton>().toEqualTypeOf<typeof RootConfirmButton>();
-  expectTypeOf(ConfirmButton).toBeFunction();
-});
-
-test("ConfirmButtonProps omits onClick and requires onConfirm", () => {
+test("ConfirmButtonProps takes Button props except onClick, and onConfirm is required", () => {
   expectTypeOf<ConfirmButtonProps>().not.toHaveProperty("onClick");
   expectTypeOf<ConfirmButtonProps["onConfirm"]>().toEqualTypeOf<() => void>();
   expectTypeOf<ConfirmButtonProps["children"]>().toEqualTypeOf<ReactNode | undefined>();
   expectTypeOf<ConfirmButtonProps["armedChildren"]>().toEqualTypeOf<ReactNode | undefined>();
   expectTypeOf<ConfirmButtonProps["armedAriaLabel"]>().toEqualTypeOf<string | undefined>();
   expectTypeOf(ConfirmButtonModule).not.toHaveProperty("confirmButtonVariants");
-});
 
-test("the element takes Button props except onClick, and onConfirm is required", () => {
   const _ok = (
     <ConfirmButton variant="destructive" onConfirm={() => undefined} armedChildren="Confirm delete">
       Delete

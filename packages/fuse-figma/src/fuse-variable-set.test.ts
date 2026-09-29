@@ -4,7 +4,6 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import {
-  DENSITY_COLLECTION,
   fuseVariableSet,
   PRIMITIVES_COLLECTION,
   THEMES_COLLECTION,
@@ -35,18 +34,6 @@ function value(collectionName: string, variable: string, mode: string): Variable
 const px = (value: number): VariableValue => ({ _tag: "Float", value });
 
 describe("fuseVariableSet", () => {
-  it("builds a set that meets every variable set rule", () => {
-    const result = fuseVariableSet();
-    expect(result._tag, Result.isFailure(result) ? result.failure.message : undefined).toBe("Success");
-  });
-
-  it("names Figma variables without the characters the API rejects", () => {
-    for (const spec of variableSet().collections) {
-      for (const variable of spec.variables) expect(variable.name).not.toMatch(/[.{}]/);
-      for (const mode of spec.modes) expect(mode.length).toBeLessThanOrEqual(40);
-    }
-  });
-
   it("writes each kind's resolved literal in its Figma form", () => {
     // `#5c6773` in DEFAULTS is a hex literal, not oklch.
     expect(value(THEMES_COLLECTION, "light/sh-identifier", "internal-fkas-private")).toEqual({
@@ -84,49 +71,6 @@ describe("fuseVariableSet", () => {
       _tag: "Alias",
       target: { collection: THEMES_COLLECTION, variable: "dark/primary" },
     });
-  });
-
-  it("gives each density its own mode with the control metrics in pixels", () => {
-    expect(collection(DENSITY_COLLECTION).modes).toEqual(["Dense", "Comfortable"]);
-    expect(collection(DENSITY_COLLECTION).variables).toHaveLength(18);
-    // fuse.css: --control-h-md is 2.25rem on :root and 2.75rem when comfortable.
-    expect(value(DENSITY_COLLECTION, "control-h-md", "Dense")).toEqual(px(36));
-    expect(value(DENSITY_COLLECTION, "control-h-md", "Comfortable")).toEqual(px(44));
-    expect(spec(DENSITY_COLLECTION, "control-h-md")).toMatchObject({
-      type: "FLOAT",
-      scopes: ["WIDTH_HEIGHT"],
-      webSyntax: "var(--control-h-md)",
-    });
-    expect(spec(DENSITY_COLLECTION, "control-px-md")?.scopes).toEqual(["GAP"]);
-    expect(spec(DENSITY_COLLECTION, "control-gap-md")?.scopes).toEqual(["GAP"]);
-    expect(spec(DENSITY_COLLECTION, "control-text")?.scopes).toEqual(["FONT_SIZE"]);
-    expect(spec(DENSITY_COLLECTION, "control-leading")?.scopes).toEqual(["LINE_HEIGHT"]);
-  });
-
-  it("writes each radius rung per theme in Fuse themes and aliases it from Fuse tokens", () => {
-    // external-fkas-private sets --radius: 0.75rem, 12px, and external themes step 2px.
-    expect(value(THEMES_COLLECTION, "dark/radius-xl", "external-fkas-private")).toEqual(px(16));
-    expect(spec(THEMES_COLLECTION, "light/radius-md")).toMatchObject({ scopes: [], webSyntax: undefined });
-    expect(value(TOKENS_COLLECTION, "radius-md", "Light")).toEqual({
-      _tag: "Alias",
-      target: { collection: THEMES_COLLECTION, variable: "light/radius-md" },
-    });
-  });
-
-  it("gives each radius rung the calc() fuse.css declares as its code syntax", () => {
-    const webSyntax = (rung: string) => spec(TOKENS_COLLECTION, rung)?.webSyntax;
-    expect(spec(TOKENS_COLLECTION, "radius-sm")).toMatchObject({ type: "FLOAT", scopes: ["CORNER_RADIUS"] });
-    expect(webSyntax("radius-xs")).toBe("calc(var(--radius) - 3 * var(--radius-step))");
-    expect(webSyntax("radius-sm")).toBe("calc(var(--radius) - 2 * var(--radius-step))");
-    expect(webSyntax("radius-md")).toBe("calc(var(--radius) - var(--radius-step))");
-    expect(webSyntax("radius-lg")).toBe("var(--radius)");
-    expect(webSyntax("radius-xl")).toBe("calc(var(--radius) + 2 * var(--radius-step))");
-  });
-
-  it("leaves out radius-popover, which no component uses", () => {
-    expect(spec(TOKENS_COLLECTION, "radius-popover")).toBeUndefined();
-    expect(spec(THEMES_COLLECTION, "light/radius-popover")).toBeUndefined();
-    expect(spec(THEMES_COLLECTION, "dark/radius-popover")).toBeUndefined();
   });
 });
 

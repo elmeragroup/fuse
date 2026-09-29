@@ -10,12 +10,9 @@ function tokens(classes: string): string[] {
 }
 
 describe("inputGroupAddonVariants", () => {
-  it("defaults to the inline-start rail", () => {
+  it("defaults to the inline-start rail and resolves every align value with the shared rail base", () => {
     expect(inputGroupAddonVariants()).toContain("order-first");
     expect(inputGroupAddonVariants()).toContain("pl-2");
-  });
-
-  it("resolves every align value with the shared rail base", () => {
     for (const align of ALIGNMENTS) {
       const resolved = inputGroupAddonVariants({ align });
       expect(resolved, align).toContain("cursor-text");
@@ -30,24 +27,19 @@ describe("inputGroupAddonVariants", () => {
 });
 
 describe("inputGroupButtonVariants", () => {
-  it("defaults to the compact xs addon size", () => {
+  it("defaults to the compact xs addon size, squares the icon values, and leaves Button's sm metrics untouched", () => {
     expect(tokens(inputGroupButtonVariants())).toContain("h-6");
-  });
 
-  it("lets Button's own sm metrics pass through untouched", () => {
-    const base = inputGroupButtonVariants({ size: "sm" });
-    for (const token of tokens(base)) {
-      expect(token, token).not.toMatch(/^(?:h|size|px)-/);
-    }
-  });
-
-  it("gives the icon values a square box and no padding", () => {
     expect(tokens(inputGroupButtonVariants({ size: "icon-xs" }))).toEqual(
       expect.arrayContaining(["size-6", "p-0"])
     );
     expect(tokens(inputGroupButtonVariants({ size: "icon-sm" }))).toEqual(
       expect.arrayContaining(["size-8", "p-0"])
     );
+
+    for (const token of tokens(inputGroupButtonVariants({ size: "sm" }))) {
+      expect(token, token).not.toMatch(/^(?:h|size|px)-/);
+    }
   });
 
   it("is a shell-local exemption: no --control-* rung and no density variants", () => {

@@ -8,25 +8,24 @@ import { PRIMITIVES } from "./tokens/primitives";
 import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
 
 describe("readTokenColor", () => {
-  it("reads the oklch() and hex literals token modules write", () => {
-    expect(readTokenColor("oklch(0.5 0.1 30)")).toMatchObject({
-      _tag: "ok",
-      value: { _tag: "Oklch", l: 0.5 },
-    });
-    expect(readTokenColor("#5c6773")).toMatchObject({ _tag: "ok", value: { _tag: "Srgb", r: 92 / 255 } });
-  });
-
-  it("refuses the notations the theme pipeline cannot compose", () => {
-    const refusals: ReadonlyArray<readonly [string, string]> = [
-      ["rgb(1, 2, 3)", 'Expected an oklch() color, received "rgb(1, 2, 3)"'],
-      ["lab(50 0 0)", 'Expected an oklch() color, received "lab(50 0 0)"'],
-      ["white", 'Expected an oklch() color, received "white"'],
-      ["oklch(0.5 0.1)", 'Expected an oklch() color, received "oklch(0.5 0.1)"'],
-      ["#fff", 'Expected a #rrggbb hex color, received "#fff"'],
-    ];
-    for (const [input, message] of refusals) {
-      expect(readTokenColor(input), input).toMatchObject({ _tag: "err", error: { message } });
-    }
+  it.each<readonly [string, object]>([
+    // The oklch() and hex literals token modules write.
+    ["oklch(0.5 0.1 30)", { _tag: "ok", value: { _tag: "Oklch", l: 0.5 } }],
+    ["#5c6773", { _tag: "ok", value: { _tag: "Srgb", r: 92 / 255 } }],
+    // The notations the theme pipeline cannot compose.
+    [
+      "rgb(1, 2, 3)",
+      { _tag: "err", error: { message: 'Expected an oklch() color, received "rgb(1, 2, 3)"' } },
+    ],
+    ["lab(50 0 0)", { _tag: "err", error: { message: 'Expected an oklch() color, received "lab(50 0 0)"' } }],
+    ["white", { _tag: "err", error: { message: 'Expected an oklch() color, received "white"' } }],
+    [
+      "oklch(0.5 0.1)",
+      { _tag: "err", error: { message: 'Expected an oklch() color, received "oklch(0.5 0.1)"' } },
+    ],
+    ["#fff", { _tag: "err", error: { message: 'Expected a #rrggbb hex color, received "#fff"' } }],
+  ])("reads %j as %j", (input, expected) => {
+    expect(readTokenColor(input)).toMatchObject(expected);
   });
 
   it("accepts every color literal in every composed theme and in the primitives", () => {

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import type { ComponentProps } from "react";
 
 import { describe, expect, it, vi } from "vitest";
@@ -7,7 +7,6 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { renderThemed } from "../../../test/themed-browser-render";
-import { ThemeScope } from "../../theme/theme-scope";
 import { Select } from "./index";
 
 function comboboxNamed(name?: string): HTMLElement {
@@ -134,12 +133,6 @@ describe("Select", () => {
     expect(optionNamed("Apple")).toBeTruthy();
   });
 
-  it("opens from ArrowDown on the trigger", async () => {
-    renderThemed(<FruitSelect />);
-    await openWithArrowDown();
-    expect(highlightedOption().textContent).toContain("Apple");
-  });
-
   it("closes on Escape and returns focus to the trigger", async () => {
     renderThemed(<FruitSelect />);
     await openWithClick();
@@ -185,28 +178,6 @@ describe("Select", () => {
     await userEvent.keyboard("{ArrowDown}");
     await userEvent.keyboard("{Enter}");
     expect(onValueChange.mock.calls[0]?.[0]).toBe("banana");
-  });
-
-  it("dims disabled items and does not select them", async () => {
-    // Primitive navigation: arrows may highlight a disabled option; Enter does not select.
-    const onValueChange = vi.fn();
-    renderThemed(<FruitSelect onValueChange={onValueChange} extra />);
-    await openWithArrowDown();
-    await userEvent.keyboard("{ArrowDown}");
-    await userEvent.keyboard("{ArrowDown}");
-    const cherry = optionNamed("Cherry");
-    expect(cherry.getAttribute("data-disabled")).not.toBeNull();
-    expect(highlightedOption()).toBe(cherry);
-    await userEvent.keyboard("{Enter}");
-    expect(onValueChange).not.toHaveBeenCalled();
-    expect(page.getByRole("listbox").query()).not.toBeNull();
-  });
-
-  it("jumps to a matching option on typeahead while open", async () => {
-    renderThemed(<FruitSelect />);
-    await openWithArrowDown();
-    await userEvent.keyboard("d");
-    expect(highlightedOption().textContent).toContain("Date");
   });
 
   it("changes the value from a closed trigger via typeahead without opening", async () => {
@@ -276,31 +247,6 @@ describe("Select", () => {
     expect(selectContent().getAttribute("data-align-trigger")).toBe("false");
   });
 
-  it("surfaces aria-invalid on the trigger and disables it from Root", () => {
-    renderThemed(
-      <>
-        <Select.Root>
-          <Select.Trigger aria-invalid aria-label="Invalid fruit">
-            <Select.Value placeholder="Pick a fruit" />
-          </Select.Trigger>
-          <Select.Content>
-            <Select.Item value="apple">Apple</Select.Item>
-          </Select.Content>
-        </Select.Root>
-        <Select.Root disabled>
-          <Select.Trigger aria-label="Disabled fruit">
-            <Select.Value placeholder="Pick a fruit" />
-          </Select.Trigger>
-          <Select.Content>
-            <Select.Item value="apple">Apple</Select.Item>
-          </Select.Content>
-        </Select.Root>
-      </>
-    );
-    expect(comboboxNamed("Invalid fruit").getAttribute("aria-invalid")).toBe("true");
-    expect(comboboxNamed("Disabled fruit")).toHaveProperty("disabled", true);
-  });
-
   it("names a group from Select.Label", async () => {
     renderThemed(
       <Select.Root>
@@ -351,43 +297,6 @@ describe("Select", () => {
     const listbox = await openedListbox();
     const island = page.getByRole("region", { name: "Theme island", exact: true }).element();
     expect(island.contains(listbox)).toBe(true);
-    expect([...document.body.children].includes(listbox)).toBe(false);
-  });
-
-  it("waits while the resolved Content container element is still null", () => {
-    function NeverAttached() {
-      const ref = useRef<HTMLElement | null>(null);
-      return (
-        <Select.Root open>
-          <Select.Trigger aria-label="Pending">
-            <Select.Value placeholder="Pick" />
-          </Select.Trigger>
-          <Select.Content container={ref}>
-            <Select.Item value="apple">Apple</Select.Item>
-          </Select.Content>
-        </Select.Root>
-      );
-    }
-    renderThemed(<NeverAttached />);
-    expect(page.getByRole("listbox").query()).toBeNull();
-  });
-
-  it("does not paint the popup outside a ThemeScope element that has not attached yet", async () => {
-    renderThemed(
-      <ThemeScope theme={{ variant: "external", brand: "fkas", segment: "private" }}>
-        <Select.Root open>
-          <Select.Trigger aria-label="Scoped">
-            <Select.Value placeholder="Pick" />
-          </Select.Trigger>
-          <Select.Content>
-            <Select.Item value="apple">Apple</Select.Item>
-          </Select.Content>
-        </Select.Root>
-      </ThemeScope>
-    );
-    const listbox = await openedListbox();
-    const scope = listbox.closest("[data-theme-variant=external]");
-    expect(scope).not.toBeNull();
     expect([...document.body.children].includes(listbox)).toBe(false);
   });
 

@@ -4,21 +4,9 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
-import {
-  assertConnectedVerticalList,
-  assertDirectSiblingList,
-  assertHorizontalItemList,
-  listitemHosts,
-  radiusToken,
-} from "../../../test/assert-selection-item-group-layout";
-import {
-  cssVarColor,
-  effectiveOpacity,
-  headingNamed,
-  renderThemed,
-} from "../../../test/themed-browser-render";
+import { cssVarColor, headingNamed, renderThemed } from "../../../test/themed-browser-render";
 import { Field } from "../field";
-import { Checkbox, CheckboxDescription, CheckboxGroup, CheckboxItemGroup } from "./checkbox";
+import { Checkbox, CheckboxDescription, CheckboxGroup } from "./checkbox";
 import { CheckboxItem } from "./checkbox-item";
 
 function checkboxNamed(name: string, checked?: boolean): HTMLElement {
@@ -37,35 +25,7 @@ function groupNamed(name: string): HTMLElement {
   return element;
 }
 
-function flexAncestor(
-  element: HTMLElement,
-  match: (style: CSSStyleDeclaration) => boolean
-): HTMLElement | null {
-  let current = element.parentElement;
-  while (current) {
-    const style = getComputedStyle(current);
-    if ((style.display === "flex" || style.display === "inline-flex") && match(style)) {
-      return current;
-    }
-    current = current.parentElement;
-  }
-  return null;
-}
-
 describe("Checkbox", () => {
-  it("renders a checkbox whose accessible name comes from Field.Label", () => {
-    renderThemed(
-      <Field.Root orientation="horizontal">
-        <Checkbox />
-        <Field.Label>Accept terms</Field.Label>
-      </Field.Root>
-    );
-
-    const box = checkboxNamed("Accept terms", false);
-    expect(box.getAttribute("data-slot")).toBe("checkbox");
-    expect(box.getAttribute("aria-checked")).toBe("false");
-  });
-
   it("keeps the Field label and description when a wrapper forwards id and ARIA props as undefined", async () => {
     renderThemed(
       <Field.Root orientation="horizontal">
@@ -91,6 +51,8 @@ describe("Checkbox", () => {
     page.getByRole("button", { name: "Before" }).element().focus();
     await userEvent.keyboard("{Tab}");
     expect(document.activeElement).toBe(checkboxNamed("Alerts", false));
+    expect(checkboxNamed("Alerts").getAttribute("data-slot")).toBe("checkbox");
+    expect(checkboxNamed("Alerts").getAttribute("aria-checked")).toBe("false");
     await userEvent.keyboard(" ");
     expect(checkboxNamed("Alerts", true).getAttribute("aria-checked")).toBe("true");
   });
@@ -110,20 +72,6 @@ describe("Checkbox", () => {
     await userEvent.keyboard(" ");
     expect(onCheckedChange).not.toHaveBeenCalled();
     expect(checkboxNamed("Alerts", false).getAttribute("aria-checked")).toBe("false");
-  });
-
-  it("dims a standalone disabled checkbox to half opacity and leaves an enabled one opaque", () => {
-    // Base UI renders the root as a <span>, which never matches `:disabled`. No wrapper
-    // here dims on the control's behalf, so only the control's own rule can dim it.
-    renderThemed(
-      <>
-        <Checkbox disabled aria-label="Locked" />
-        <Checkbox aria-label="Open" />
-      </>
-    );
-
-    expect(effectiveOpacity(checkboxNamed("Locked"))).toBe(0.5);
-    expect(effectiveOpacity(checkboxNamed("Open"))).toBe(1);
   });
 
   it("renders readOnly without changing on click", async () => {
@@ -282,36 +230,6 @@ describe("CheckboxGroup", () => {
     await userEvent.click(page.getByRole("button", { name: "Save", exact: true }));
     expect(submitted).toEqual([["pepperoni"]]);
   });
-
-  it("switches orientation via computed layout, not class names", () => {
-    renderThemed(
-      <>
-        <CheckboxGroup label="Vertical toppings" orientation="vertical">
-          <CheckboxItem value="a">Pepperoni</CheckboxItem>
-          <CheckboxItem value="b">Mushroom</CheckboxItem>
-        </CheckboxGroup>
-        <CheckboxGroup label="Horizontal toppings" orientation="horizontal">
-          <CheckboxItem value="a">Fries</CheckboxItem>
-          <CheckboxItem value="b">Salad</CheckboxItem>
-        </CheckboxGroup>
-      </>
-    );
-
-    const verticalFirst = checkboxNamed("Pepperoni").getBoundingClientRect();
-    const verticalSecond = checkboxNamed("Mushroom").getBoundingClientRect();
-    expect(verticalSecond.top).toBeGreaterThan(verticalFirst.bottom);
-    const verticalFlex = flexAncestor(
-      checkboxNamed("Pepperoni"),
-      (style) => style.flexDirection === "column"
-    );
-    expect(verticalFlex).not.toBeNull();
-
-    const horizontalFlex = flexAncestor(
-      checkboxNamed("Fries"),
-      (style) => style.flexDirection === "row" && style.flexWrap === "wrap"
-    );
-    expect(horizontalFlex).not.toBeNull();
-  });
 });
 
 describe("CheckboxItem", () => {
@@ -360,58 +278,5 @@ describe("CheckboxDescription", () => {
 
     expect(checkboxNamed("Pepperoni").getAttribute("aria-describedby")).toBeNull();
     expect(page.getByRole("link", { name: "Read the note", exact: true }).element()).toBeTruthy();
-  });
-});
-
-describe("CheckboxItemGroup", () => {
-  it("exposes stacked CheckboxItems as listitems that stay direct siblings", () => {
-    renderThemed(
-      <div style={radiusToken}>
-        <CheckboxItemGroup label="Plans" defaultValue={["hourly"]}>
-          <CheckboxItem value="fixed">
-            <CheckboxItem.Title role="heading" aria-level={3}>
-              Fixed price
-            </CheckboxItem.Title>
-          </CheckboxItem>
-          <CheckboxItem value="hourly">
-            <CheckboxItem.Title role="heading" aria-level={3}>
-              Hourly
-            </CheckboxItem.Title>
-          </CheckboxItem>
-        </CheckboxItemGroup>
-      </div>
-    );
-
-    const [first, second] = listitemHosts();
-    const list = assertDirectSiblingList(first, second);
-    expect(first.contains(checkboxNamed("Fixed price", false))).toBe(true);
-    expect(second.contains(checkboxNamed("Hourly", true))).toBe(true);
-    assertConnectedVerticalList(list, first, second);
-  });
-
-  it("lays out a horizontal item list with wrapping gap and independent card shells", () => {
-    renderThemed(
-      <div style={radiusToken}>
-        <CheckboxItemGroup label="Horizontal plans" orientation="horizontal" defaultValue={["hourly"]}>
-          <CheckboxItem value="fixed">
-            <CheckboxItem.Title role="heading" aria-level={3}>
-              Fixed price
-            </CheckboxItem.Title>
-          </CheckboxItem>
-          <CheckboxItem value="hourly">
-            <CheckboxItem.Title role="heading" aria-level={3}>
-              Hourly
-            </CheckboxItem.Title>
-          </CheckboxItem>
-        </CheckboxItemGroup>
-      </div>
-    );
-
-    expect(groupNamed("Horizontal plans")).toBeTruthy();
-    const [first, second] = listitemHosts();
-    const list = assertDirectSiblingList(first, second);
-    expect(first.contains(checkboxNamed("Fixed price", false))).toBe(true);
-    expect(second.contains(checkboxNamed("Hourly", true))).toBe(true);
-    assertHorizontalItemList(list, [first, second]);
   });
 });

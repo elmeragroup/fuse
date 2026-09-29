@@ -113,32 +113,22 @@ describe("Card", () => {
     expect(getComputedStyle(withoutAction).gridTemplateColumns.split(/\s+/)).toHaveLength(1);
   });
 
-  it("lays the root out as a row for direction=horizontal and a column by default", () => {
-    renderThemed(
-      <Card.Root direction="horizontal">
-        <Card.Content direction="horizontal">Body</Card.Content>
-      </Card.Root>
-    );
-    const root = slot("card");
-    if (!(root instanceof HTMLElement)) {
-      throw new Error("expected the card root");
+  it.each([
+    ["horizontal", "row"],
+    [undefined, "column"],
+  ] as const)(
+    "lays the root out as a flex box for direction=%s in the %s direction",
+    (direction, flexDirection) => {
+      renderThemed(
+        <Card.Root direction={direction}>
+          <Card.Content direction={direction}>Body</Card.Content>
+        </Card.Root>
+      );
+      const root = slot("card");
+      expect(getComputedStyle(root).display).toBe("flex");
+      expect(getComputedStyle(root).flexDirection).toBe(flexDirection);
     }
-    expect(getComputedStyle(root).flexDirection).toBe("row");
-  });
-
-  it("lays the root out as a column by default", () => {
-    renderThemed(
-      <Card.Root>
-        <Card.Content>Body</Card.Content>
-      </Card.Root>
-    );
-    const root = slot("card");
-    if (!(root instanceof HTMLElement)) {
-      throw new Error("expected the card root");
-    }
-    expect(getComputedStyle(root).display).toBe("flex");
-    expect(getComputedStyle(root).flexDirection).toBe("column");
-  });
+  );
 
   it("renders the title icon before the text with the icon gap", () => {
     renderThemed(

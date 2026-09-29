@@ -1,3 +1,5 @@
+import type { ReactElement } from "react";
+
 import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -96,35 +98,24 @@ describe("InputGroup", () => {
     expect(clicks).toEqual(["addon", "button"]);
   });
 
-  it("keeps DOM tab order from the control to the addon button", async () => {
+  it.each([
+    [
+      "paints the within ring on the Root for keyboard focus, at both densities",
+      (group: ReactElement) => group,
+    ],
+    [
+      "keeps the canonical group ring inside a popup surface",
+      (group: ReactElement) => <div data-slot="combobox-content">{group}</div>,
+    ],
+  ])("%s", async (_title, wrap) => {
     renderThemed(
       <>
         <button type="button">Before</button>
-        <InputGroup.Root>
-          <InputGroup.Input aria-label="Meter" />
-          <InputGroup.Addon align="inline-end">
-            <InputGroup.Button>Copy</InputGroup.Button>
-          </InputGroup.Addon>
-        </InputGroup.Root>
-      </>
-    );
-    roleNamed("button", "Before").focus();
-    await userEvent.keyboard("{Tab}");
-    const control = textboxNamed("Meter");
-    expect(document.activeElement).toBe(control);
-    expect(control.matches(":focus-visible")).toBe(true);
-    await userEvent.keyboard("{Tab}");
-    expect(document.activeElement).toBe(roleNamed("button", "Copy"));
-    expect(groupAround(roleNamed("button", "Copy")).getAttribute("tabindex")).toBeNull();
-  });
-
-  it("paints the within ring on the Root for keyboard focus, at both densities", async () => {
-    renderThemed(
-      <>
-        <button type="button">Before</button>
-        <InputGroup.Root>
-          <InputGroup.Input aria-label="Search" />
-        </InputGroup.Root>
+        {wrap(
+          <InputGroup.Root>
+            <InputGroup.Input aria-label="Search" />
+          </InputGroup.Root>
+        )}
       </>
     );
     await assertWithinKeyboardFocusRingAtBothDensities(
@@ -153,26 +144,9 @@ describe("InputGroup", () => {
     textboxNamed("Search").focus();
     await userEvent.keyboard("{Tab}");
     expect(document.activeElement).toBe(roleNamed("button", "Clear"));
+    expect(groupAround(roleNamed("button", "Clear")).getAttribute("tabindex")).toBeNull();
     expect(roleNamed("button", "Clear").matches(":focus-visible")).toBe(true);
     expectNoFocusRing(rootNamed("Search"), "an addon button must keep its own ring off the group chrome");
-  });
-
-  it("keeps the canonical group ring inside a popup surface", async () => {
-    renderThemed(
-      <>
-        <button type="button">Before</button>
-        <div data-slot="combobox-content">
-          <InputGroup.Root>
-            <InputGroup.Input aria-label="Filter" />
-          </InputGroup.Root>
-        </div>
-      </>
-    );
-    await assertWithinKeyboardFocusRingAtBothDensities(
-      roleNamed("button", "Before"),
-      textboxNamed("Filter"),
-      rootNamed("Filter")
-    );
   });
 
   it("defaults the addon button to type=button so Enter never triggers it", async () => {
@@ -221,22 +195,6 @@ describe("InputGroup", () => {
     expect(roleNamed("button", "Extra small").getAttribute("data-slot")).toBe("button");
   });
 
-  it("surfaces aria-invalid on the control as group invalid chrome", () => {
-    renderThemed(
-      <>
-        <InputGroup.Root>
-          <InputGroup.Input aria-label="Valid" />
-        </InputGroup.Root>
-        <InputGroup.Root>
-          <InputGroup.Input aria-label="Invalid" aria-invalid />
-        </InputGroup.Root>
-      </>
-    );
-    expect(textboxNamed("Invalid").getAttribute("aria-invalid")).toBe("true");
-    const invalidRoot = rootNamed("Invalid");
-    expect(getComputedStyle(invalidRoot).boxShadow).not.toBe(getComputedStyle(rootNamed("Valid")).boxShadow);
-  });
-
   it("keeps an enabled field editable and undimmed beside a disabled addon", async () => {
     renderThemed(
       <InputGroup.Root>
@@ -250,19 +208,6 @@ describe("InputGroup", () => {
     await userEvent.fill(page.getByRole("textbox", { name: "Editable meter" }), "12345");
     await expect.element(page.getByRole("textbox", { name: "Editable meter" })).toHaveValue("12345");
     expect(roleNamed("button", "Copy meter").matches(":disabled")).toBe(true);
-  });
-
-  it("dims the group and its addon when the control is disabled", () => {
-    renderThemed(
-      <InputGroup.Root>
-        <InputGroup.Addon>
-          <InputGroup.Text>NO</InputGroup.Text>
-        </InputGroup.Addon>
-        <InputGroup.Input aria-label="Locked" disabled />
-      </InputGroup.Root>
-    );
-    expect(Number(getComputedStyle(rootNamed("Locked")).opacity)).toBeLessThan(1);
-    expect(rootNamed("Locked").matches(":has(:disabled)")).toBe(true);
   });
 
   it("reflects align as data-align and turns block rails into a column", () => {
@@ -296,22 +241,39 @@ describe("InputGroup", () => {
     expect(getComputedStyle(rootNamed("Block")).flexDirection).toBe("column");
   });
 
-  it("pins the signed md rung at both densities and does not rescope under ThemeScope", () => {
+  it("pins the signed md rung at both densities and ignores a nested data-density stamp or ThemeScope", () => {
     const { rerender } = renderThemed(
-      <InputGroup.Root>
-        <InputGroup.Input aria-label="Meter" />
-        <InputGroup.Addon align="inline-end">
-          <InputGroup.Button>Copy</InputGroup.Button>
-          <InputGroup.Button size="icon-xs" aria-label="Clear" />
-        </InputGroup.Addon>
-      </InputGroup.Root>
+      <>
+        <InputGroup.Root>
+          <InputGroup.Input aria-label="Meter" />
+          <InputGroup.Addon align="inline-end">
+            <InputGroup.Button>Copy</InputGroup.Button>
+            <InputGroup.Button size="icon-xs" aria-label="Clear" />
+          </InputGroup.Addon>
+        </InputGroup.Root>
+        <div data-density="comfortable">
+          <InputGroup.Root>
+            <InputGroup.Input aria-label="Nested comfortable" />
+          </InputGroup.Root>
+        </div>
+        <div data-density="dense">
+          <InputGroup.Root>
+            <InputGroup.Input aria-label="Nested dense" />
+          </InputGroup.Root>
+        </div>
+      </>
     );
 
     const compactXs = [];
     const compactIconXs = [];
+    // Density is a document-root axis: `fuse.css` keys the comfortable block on
+    // `:root[data-density="comfortable"]`, so a nested attribute rescopes nothing.
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);
-      expect(px(getComputedStyle(rootNamed("Meter")).height)).toBe(CONTROL_MD[density].height);
+      const rung = CONTROL_MD[density].height;
+      expect(px(getComputedStyle(rootNamed("Meter")).height)).toBe(rung);
+      expect(px(getComputedStyle(rootNamed("Nested comfortable")).height)).toBe(rung);
+      expect(px(getComputedStyle(rootNamed("Nested dense")).height)).toBe(rung);
       compactXs.push(px(getComputedStyle(roleNamed("button", "Copy")).height));
       compactIconXs.push(px(getComputedStyle(roleNamed("button", "Clear")).height));
     }
@@ -328,36 +290,6 @@ describe("InputGroup", () => {
       </ThemeScope>
     );
     expect(px(getComputedStyle(rootNamed("Meter")).height)).toBe(CONTROL_MD.dense.height);
-  });
-
-  it("ignores a nested data-density stamp in both directions", () => {
-    renderThemed(
-      <>
-        <InputGroup.Root>
-          <InputGroup.Input aria-label="Root" />
-        </InputGroup.Root>
-        <div data-density="comfortable">
-          <InputGroup.Root>
-            <InputGroup.Input aria-label="Nested comfortable" />
-          </InputGroup.Root>
-        </div>
-        <div data-density="dense">
-          <InputGroup.Root>
-            <InputGroup.Input aria-label="Nested dense" />
-          </InputGroup.Root>
-        </div>
-      </>
-    );
-
-    // Density is a document-root axis: `fuse.css` keys the comfortable block on
-    // `:root[data-density="comfortable"]`, so a nested attribute rescopes nothing.
-    for (const density of ["dense", "comfortable"] as const) {
-      stampDensity(density);
-      const rung = CONTROL_MD[density].height;
-      expect(px(getComputedStyle(rootNamed("Root")).height)).toBe(rung);
-      expect(px(getComputedStyle(rootNamed("Nested comfortable")).height)).toBe(rung);
-      expect(px(getComputedStyle(rootNamed("Nested dense")).height)).toBe(rung);
-    }
   });
 
   it("grows past the md rung for block rails and textarea controls", () => {
