@@ -7,10 +7,9 @@ file adds the order of work.
 
 ## 1. Discovery
 
-Discovery is read-only. For a broad scope, give each
-[lane](SKILL.md#terms) its own read-only agent when subagents are available,
-plus one cross-cutting sweep for a single junk pattern. Draw the lanes from
-these test trees:
+Discovery is read-only. For a broad scope, give each [lane](SKILL.md#terms)
+its own read-only agent when subagents are available, plus one cross-cutting
+sweep for a single junk pattern. Draw the lanes from these test trees:
 
 - `packages/fuse`: its `src/` suites, root `src/*.test.ts` package gates, type
   tests, and `test/` support and packed-consumer checks;

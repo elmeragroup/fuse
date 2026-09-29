@@ -8,7 +8,7 @@ import * as Wcag from "@elmeragroup/color/wcag";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { headingNamed, renderThemed, textNamed } from "../../../test/themed-browser-render";
+import { headingNamed, renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
 import { Alert } from "./alert";
 
 const VARIANTS = ["default", "destructive", "warning", "success"] as const;
@@ -24,14 +24,6 @@ function alertNamed(name: string): HTMLElement {
   const element = page.getByRole("alert").element();
   if (!(element instanceof HTMLElement)) {
     throw new Error(`expected alert ${name}`);
-  }
-  return element;
-}
-
-function buttonNamed(name: string): HTMLElement {
-  const element = page.getByRole("button", { name, exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected button ${name}`);
   }
   return element;
 }
@@ -138,7 +130,7 @@ describe("Alert", () => {
         <Alert.Description>Facility data is more than an hour old.</Alert.Description>
       </Alert.Root>
     );
-    const action = buttonNamed("Retry");
+    const action = roleNamed("button", "Retry");
     expect(action.getAttribute("type")).toBe("button");
     await userEvent.click(action);
     expect(onAction).toHaveBeenCalledOnce();
@@ -158,7 +150,7 @@ describe("Alert", () => {
         <Alert.Title>Report ready</Alert.Title>
       </Alert.Root>
     );
-    const action = buttonNamed("Open report");
+    const action = roleNamed("button", "Open report");
     const restFill = getComputedStyle(action).backgroundColor;
     await userEvent.hover(action);
     await settled(action);

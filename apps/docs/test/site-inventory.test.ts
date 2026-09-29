@@ -60,7 +60,7 @@ describe("llms.txt", () => {
 
 describe("markdown endpoints", () => {
   // Every endpoint takes the same Next static-file path, and generated-output checks each
-  // file's content on disk, so one row proves the serving.
+  // file's content on disk, so one endpoint proves the serving.
   it("serves the View-as-Markdown target /components/button.md", async () => {
     const markdown = await fetchText("/components/button.md");
     expect(markdown.startsWith("# ")).toBe(true);

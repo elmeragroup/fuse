@@ -2,13 +2,13 @@
 
 A campaign prunes one subsystem's whole test suite in one PR. A subsystem is a
 component family with its docs demos (`components/sidebar`), the `react-aria/`
-quarantine, the `theme/` runtime, or a workspace such as `packages/fuse-figma`.
-[SKILL.md](SKILL.md) owns the value bar and its terms. [AUDIT.md](AUDIT.md)
-owns candidate evidence (§2), validation (§4) and handoff (§6) for every lane.
-The steps below replace AUDIT.md's discovery (§1), edit (§3) and
-one-batch-at-a-time landing (§5), so the whole subsystem lands in one PR. Each
-step ends on its completion criterion, and the next step starts only once it
-holds.
+quarantine, the `theme/` runtime, or a workspace such as
+`packages/fuse-figma`. [SKILL.md](SKILL.md) owns the value bar and its terms.
+[AUDIT.md](AUDIT.md) owns candidate evidence (§2), validation (§4) and handoff
+(§6) for every lane. The steps below replace AUDIT.md's discovery (§1), edit
+(§3) and one-batch-at-a-time landing (§5), so the whole subsystem lands in one
+PR. Each step ends on its completion criterion, and the next step starts only
+once it holds.
 
 ## 1. Baseline
 
@@ -22,11 +22,10 @@ Done when every in-scope test file has a recorded baseline result.
 
 Split the suite into [lanes](SKILL.md#terms). For `theme/`, the lanes could be
 composition, CSS emission, the color-scheme runtime and script, density,
-contrast, and the provider. Include
-the subsystem's cases in shared suites (`source-contracts.test.ts`, the docs
-demo browser tests, the packed-consumer checks) and its support files in
-`packages/fuse/test/`. A shared suite's cases go to the lane of the owner they
-test.
+contrast, and the provider. Include the subsystem's cases in shared suites
+(`source-contracts.test.ts`, the docs demo browser tests, the packed-consumer
+checks) and its support files in `packages/fuse/test/`. A shared suite's cases
+go to the lane of the owner they test.
 
 Done when every test file and shared-suite case the subsystem owns belongs to
 exactly one lane.
