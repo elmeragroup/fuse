@@ -95,7 +95,8 @@ describe("Tabs", () => {
     expect(htmlTab("Password").getAttribute("aria-selected")).toBe("true");
     expect(htmlTab("Account").getAttribute("aria-selected")).toBe("false");
     await expect.element(page.getByRole("tabpanel", { name: "Password", exact: true })).toBeInTheDocument();
-    expect(page.getByRole("tabpanel", { name: "Account", exact: true }).query()).toBeNull();
+    // Base UI unmounts the closing panel a frame after the switch, once its exit animations finish.
+    await expect.element(page.getByRole("tabpanel", { name: "Account", exact: true })).not.toBeInTheDocument();
   });
 
   it("moves and activates tabs with Arrow keys, Home, and End", async () => {
