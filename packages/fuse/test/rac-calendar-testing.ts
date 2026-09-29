@@ -199,31 +199,6 @@ export async function parkPointerOffGrid(): Promise<void> {
   await userEvent.hover(visibleMonthTitle());
 }
 
-/**
- * Anchor the highlighted range on the focused `anchor` day and extend it with `arrows`
- * ArrowRight presses, waiting out RAC's asynchronous focus moves on both ends. `landsOn`
- * is the day the focus ends on: normally `anchor + 1 + arrows`, but fewer when RAC
- * disables the days past an unavailable one. Committing the highlight with a second Enter
- * is left to the caller.
- */
-export async function anchorAndExtend({
-  anchor,
-  arrows,
-  landsOn,
-}: {
-  anchor: number;
-  arrows: number;
-  landsOn: number;
-}): Promise<void> {
-  await parkPointerOffGrid();
-  await userEvent.keyboard("{Enter}");
-  // RAC auto-advances the focused day once the anchor is set, so the arrows extend the
-  // highlight from the day after the anchor.
-  await focusLandsOnDay(anchor + 1);
-  await userEvent.keyboard("{ArrowRight}".repeat(arrows));
-  await focusLandsOnDay(landsOn);
-}
-
 /** The distinct, non-empty texts an element's `aria-describedby` points at. */
 export function describedTextsFor(element: HTMLElement): string[] {
   const ids = (element.getAttribute("aria-describedby") ?? "").split(/\s+/).filter(Boolean);

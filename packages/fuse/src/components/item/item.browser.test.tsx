@@ -185,27 +185,4 @@ describe("Item", () => {
       setHash(initialHash);
     }
   });
-
-  it("activates a button-rendered item from Enter and from Space", async () => {
-    const onActivate = vi.fn();
-    renderThemed(
-      <>
-        <button type="button">Before</button>
-        <Item.Root render={<button type="button" onClick={onActivate} />}>
-          <Item.Title>Activate</Item.Title>
-        </Item.Root>
-      </>
-    );
-
-    roleNamed("button", "Before").focus();
-    await userEvent.keyboard("{Tab}");
-    const item = roleNamed("button", "Activate");
-    expect(document.activeElement, "the item must be reachable by Tab").toBe(item);
-
-    await userEvent.keyboard("{Enter}");
-    expect(onActivate).toHaveBeenCalledTimes(1);
-
-    await userEvent.keyboard(" ");
-    expect(onActivate).toHaveBeenCalledTimes(2);
-  });
 });

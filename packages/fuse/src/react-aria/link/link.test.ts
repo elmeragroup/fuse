@@ -1,12 +1,6 @@
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { discoverEntries } from "../../../scripts/entries";
 import { linkVariants } from "../../styles/link";
-
-const here = dirname(fileURLToPath(import.meta.url));
-const packageRoot = join(here, "../../..");
 
 function classes(rendered: string): string[] {
   return rendered.split(/\s+/).filter(Boolean).sort();
@@ -90,18 +84,4 @@ describe("linkVariants", () => {
     expect(classes(linkVariants({ truncate: true }))).toContain("truncate");
     expect(classes(linkVariants())).not.toContain("truncate");
   });
-});
-
-describe("link package surface", () => {
-  it("is a subpath-only react-aria entry whose only value export is Link", () => {
-    const discovered = discoverEntries(packageRoot);
-    const entry = discovered.jsEntries.find((item) => item.subpath === "react-aria/link");
-    const root = discovered.jsEntries.find((item) => item.subpath === ".");
-    expect(entry?.inRootBarrel).toBe(false);
-    expect(entry?.runtimeExports).toEqual(["Link"]);
-    expect(entry?.sourceFile).toBe("src/react-aria/link.ts");
-    expect(root?.runtimeExports).not.toContain("Link");
-    expect(discovered.jsEntries.map((item) => item.subpath)).toContain("react-aria/link");
-    expect(discovered.jsEntries.map((item) => item.subpath)).not.toContain("link");
-  }, 30_000);
 });

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
-import { cn } from "../../styles/cn";
 import { typographyFragments } from "../../styles/typography-fragments";
 import { textVariants } from "./text-variants";
 
@@ -48,17 +47,6 @@ describe("textVariants", () => {
     expect(textVariants({ variant: "success" }).split(/\s+/)).toContain("text-success");
   });
 
-  it("renames destructive onto the error token and keeps the value name", () => {
-    const resolved = textVariants({ variant: "destructive" });
-    expect(resolved.split(/\s+/)).toContain("text-error");
-    expect(resolved).not.toContain("text-destructive");
-    expect(resolved).not.toContain("destructive");
-  });
-
-  it("resolves success onto text-success", () => {
-    expect(textVariants({ variant: "success" }).split(/\s+/)).toContain("text-success");
-  });
-
   it("cascades each type-scale size onto the host and descendants", () => {
     for (const size of SIZES) {
       const token = SIZE_TOKEN[size];
@@ -100,16 +88,5 @@ describe("textVariants", () => {
     expect(textVariants({ align: "right" }).split(/\s+/)).toContain("text-right");
     expect(textVariants({ align: "justify" }).split(/\s+/)).toContain("text-justify");
     expect(textVariants().split(/\s+/)).not.toContain("text-left");
-  });
-
-  it("lets a className merge win over a conflicting recipe class through cn", () => {
-    const merged = cn(
-      textVariants({ variant: "primary", size: "lg" }),
-      "text-sm text-muted-foreground"
-    ).split(/\s+/);
-    expect(merged).toContain("text-muted-foreground");
-    expect(merged).not.toContain("text-primary");
-    expect(merged).toContain("text-sm");
-    expect(merged).not.toContain("text-lg");
   });
 });

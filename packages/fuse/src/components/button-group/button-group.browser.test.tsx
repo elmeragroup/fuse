@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
@@ -94,20 +94,6 @@ describe("ButtonGroup", () => {
     expect(document.activeElement).toBe(buttonNamed("Save"));
     await userEvent.keyboard("{ArrowLeft}");
     expect(document.activeElement).toBe(buttonNamed("Save"));
-  });
-
-  it("lets Enter and Space activate the focused child button", async () => {
-    const onClick = vi.fn();
-    renderThemed(
-      <ButtonGroup.Root aria-label="Actions">
-        <Button onClick={onClick}>Save</Button>
-        <Button>Cancel</Button>
-      </ButtonGroup.Root>
-    );
-    buttonNamed("Save").focus();
-    await userEvent.keyboard("{Enter}");
-    await userEvent.keyboard(" ");
-    expect(onClick).toHaveBeenCalledTimes(2);
   });
 
   it("renders the group Separator with a vertical hairline by default", () => {

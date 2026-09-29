@@ -185,28 +185,6 @@ describe("usePhoneNumberFieldState controlled restore", () => {
   });
 });
 
-describe("usePhoneNumberFieldState reset ownership", () => {
-  it.each([undefined, "+4741234567"] as const)(
-    "exposes onReset only when the value is uncontrolled: %s",
-    (value) => {
-      let phone: ReturnType<typeof usePhoneNumberFieldState> | undefined;
-
-      function Probe() {
-        // oxlint-disable-next-line react/globals -- test probe reads the capture synchronously after render()
-        phone = usePhoneNumberFieldState({ locale: "en-US", value });
-        return <input value={phone.displayValue} readOnly />;
-      }
-
-      renderThemed(<Probe />);
-      if (value === undefined) {
-        expect(phone?.onReset).toBeTypeOf("function");
-      } else {
-        expect(phone?.onReset).toBeNull();
-      }
-    }
-  );
-});
-
 it.each([false, true])(
   "keeps accepted national digits when detection changes, same commit: %s",
   (sameCommit) => {

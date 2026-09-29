@@ -241,7 +241,9 @@ describe("GET /api/themes/figma/[slug] handler", () => {
     }
   );
 
-  it.each(LEGAL_SLUGS)("serves %s", async (slug) => {
+  // The other legal slugs only vary data: GET returns FIGMA_THEME_FILES[slug], which the
+  // per-theme document tests above already cover.
+  it.each(["external-fkas-private"])("serves %s", async (slug) => {
     await expectThemeFile(await getThemeFileDirect(slug), slug);
   });
 });

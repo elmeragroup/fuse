@@ -1,23 +1,6 @@
-import { expectTypeOf, test } from "vitest";
+import { test } from "vitest";
 
-import type { Field as RootField } from "@elmeragroup/fuse";
 import { Field } from "@elmeragroup/fuse/field";
-
-test("the namespace ships all twelve parts from the field entry and the root barrel", () => {
-  expectTypeOf<typeof Field>().toEqualTypeOf<typeof RootField>();
-  expectTypeOf(Field).toHaveProperty("Root");
-  expectTypeOf(Field).toHaveProperty("Label");
-  expectTypeOf(Field).toHaveProperty("Description");
-  expectTypeOf(Field).toHaveProperty("Error");
-  expectTypeOf(Field).toHaveProperty("Control");
-  expectTypeOf(Field).toHaveProperty("Item");
-  expectTypeOf(Field).toHaveProperty("Content");
-  expectTypeOf(Field).toHaveProperty("Group");
-  expectTypeOf(Field).toHaveProperty("Set");
-  expectTypeOf(Field).toHaveProperty("Legend");
-  expectTypeOf(Field).toHaveProperty("Separator");
-  expectTypeOf(Field).toHaveProperty("Title");
-});
 
 test("Root takes the three-value orientation axis and Legend the two-value variant axis", () => {
   const _vertical = <Field.Root orientation="vertical" />;

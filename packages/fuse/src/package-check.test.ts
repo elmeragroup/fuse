@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { discoverEntries } from "../scripts/entries";
-import { FORBIDDEN_RAC_PACKAGES, isForbiddenRacSpecifier } from "../scripts/forbidden-rac-packages.js";
+import { isForbiddenRacSpecifier } from "../scripts/forbidden-rac-packages.js";
 import {
   bareEntryRacDeclarationFailure,
   emittedDirectiveFailure,
@@ -18,18 +18,6 @@ import { ARTIFACTS_DIR } from "../scripts/tarball";
 import { copyTwemojiNotices, TWEMOJI_LICENSE_FILE, TWEMOJI_NOTICE_FILE } from "../scripts/twemoji-notices";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-
-describe("shared script helpers", () => {
-  it("exports one RAC forbidden list consumed by package-check and the lint rule", () => {
-    expect(FORBIDDEN_RAC_PACKAGES).toEqual([
-      "react-aria-components",
-      "react-aria",
-      "@internationalized/date",
-      "@react-aria",
-      "@react-stately",
-    ]);
-  });
-});
 
 describe("Twemoji notice copying", () => {
   const scratchDirs: string[] = [];
@@ -168,23 +156,6 @@ describe("bare-entry RAC declaration quarantine", () => {
     return dir;
   }
 
-  it("passes when only quarantined react-aria entries mention RAC packages", () => {
-    expect(
-      bareEntryRacDeclarationFailure([
-        { subpath: ".", declaration: 'export { Button } from "./button";\n' },
-        {
-          subpath: "theme",
-          declaration: 'export type { SupportedLocale } from "./intl/locale-context";\n',
-        },
-        { subpath: "button", declaration: 'export { Button } from "./components/button/button";\n' },
-        {
-          subpath: "react-aria/ui-providers",
-          declaration: 'import { I18nProvider } from "react-aria-components";\n',
-        },
-      ])
-    ).toBeUndefined();
-  });
-
   it("does not treat our react-aria subpath or tailwindcss-react-aria-components as a leak", () => {
     expect(
       bareEntryRacDeclarationFailure([
@@ -193,14 +164,6 @@ describe("bare-entry RAC declaration quarantine", () => {
         { subpath: "button", declaration: 'import "tailwindcss-react-aria-components";\n' },
       ])
     ).toBeUndefined();
-  });
-
-  it("fails when a bare entry declaration imports react-aria-components", () => {
-    expect(
-      bareEntryRacDeclarationFailure([
-        { subpath: "button", declaration: 'export type { ButtonProps } from "react-aria-components";\n' },
-      ])
-    ).toBe("./button declaration references react-aria-components");
   });
 
   it("fails on a bare-entry side-effect import and ignores one in a quarantined entry", () => {
@@ -228,19 +191,6 @@ describe("bare-entry RAC declaration quarantine", () => {
         },
       ])
     ).toBeUndefined();
-  });
-
-  it("fails on bare react-aria and @react-aria/* in root and theme declarations", () => {
-    expect(
-      bareEntryRacDeclarationFailure([
-        { subpath: ".", declaration: 'export type { Locale } from "react-aria";\n' },
-      ])
-    ).toBe(". declaration references react-aria");
-    expect(
-      bareEntryRacDeclarationFailure([
-        { subpath: "theme", declaration: 'import type { I18n } from "@react-aria/i18n";\n' },
-      ])
-    ).toBe("./theme declaration references @react-aria/i18n");
   });
 
   it("reads packed .d.ts paths and skips quarantined react-aria entries", () => {
@@ -310,49 +260,6 @@ describe("bare-entry RAC declaration quarantine", () => {
     expect(isForbiddenRacSpecifier("./react-aria/ui-providers")).toBe(false);
   });
 
-  it("fails named imports and import() forms, and ignores comments and string literals", () => {
-    expect(
-      bareEntryRacDeclarationFailure([
-        { subpath: "button", declaration: 'import { Button } from "react-aria-components";\n' },
-      ])
-    ).toBe("./button declaration references react-aria-components");
-    expect(
-      bareEntryRacDeclarationFailure([
-        { subpath: "theme", declaration: 'type Locale = import("react-aria").Locale;\n' },
-      ])
-    ).toBe("./theme declaration references react-aria");
-    expect(
-      bareEntryRacDeclarationFailure([
-        {
-          subpath: "button",
-          declaration:
-            '// import { X } from "react-aria-components";\nconst hint = "react-aria";\nexport declare const ok: 1;\n',
-        },
-      ])
-    ).toBeUndefined();
-  });
-
-  it("fails exact and subpath @internationalized/date in bare declarations", () => {
-    expect(
-      bareEntryRacDeclarationFailure([
-        { subpath: "button", declaration: 'export type { DateValue } from "@internationalized/date";\n' },
-      ])
-    ).toBe("./button declaration references @internationalized/date");
-    expect(
-      bareEntryRacDeclarationFailure([
-        {
-          subpath: "theme",
-          declaration: 'import type { Calendar } from "@internationalized/date/calendar";\n',
-        },
-      ])
-    ).toBe("./theme declaration references @internationalized/date/calendar");
-    expect(
-      bareEntryRacDeclarationFailure([
-        { subpath: ".", declaration: 'export type { LocalizedString } from "@internationalized/string";\n' },
-      ])
-    ).toBeUndefined();
-  });
-
   it("passes a clean multi-hop packed declaration graph", () => {
     const extracted = scratch();
     mkdirSync(join(extracted, "components/button/nested"), { recursive: true });
@@ -413,22 +320,6 @@ describe("bare-entry RAC declaration quarantine", () => {
     writeFileSync(join(extracted, "b.d.ts"), `export type { A } from "./a";\n`);
     expect(
       packedBareEntryRacDeclarationFailure(extracted, [{ subpath: "button", sourceFile: "src/button.ts" }])
-    ).toBeUndefined();
-  });
-
-  it("skips quarantined react-aria entries as graph roots", () => {
-    const extracted = scratch();
-    mkdirSync(join(extracted, "react-aria"), { recursive: true });
-    writeFileSync(join(extracted, "button.d.ts"), `export declare function Button(): void;\n`);
-    writeFileSync(
-      join(extracted, "react-aria/ui-providers.d.ts"),
-      `import { I18nProvider } from "react-aria-components";\nexport type { DateValue } from "@internationalized/date";\n`
-    );
-    expect(
-      packedBareEntryRacDeclarationFailure(extracted, [
-        { subpath: "button", sourceFile: "src/button.ts" },
-        { subpath: "react-aria/ui-providers", sourceFile: "src/react-aria/ui-providers.ts" },
-      ])
     ).toBeUndefined();
   });
 

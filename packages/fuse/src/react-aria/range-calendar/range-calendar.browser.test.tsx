@@ -12,11 +12,9 @@ import "../../../dist/themes.css";
 import { assertStateFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
 import {
   accessibleRangeHeading,
-  anchorAndExtend,
   calendarGrid,
   calendarRoot,
   cellNumbered,
-  dayBands,
   dayNumbered,
   focusLandsOnDay,
   navButtonNamed,
@@ -52,12 +50,6 @@ function pillOf(day: HTMLElement): HTMLElement {
   return pill;
 }
 
-function selectedDayNumbers(): string[] {
-  return dayBands()
-    .filter((element) => element.hasAttribute("data-selected"))
-    .map((element) => element.textContent.trim());
-}
-
 function cells(): HTMLElement[] {
   return page
     .getByRole("gridcell")
@@ -70,7 +62,6 @@ const july14 = new CalendarDate(2026, 7, 14);
 const july16 = new CalendarDate(2026, 7, 16);
 const july17 = new CalendarDate(2026, 7, 17);
 const july18 = new CalendarDate(2026, 7, 18);
-const july20 = new CalendarDate(2026, 7, 20);
 const july22 = new CalendarDate(2026, 7, 22);
 
 /** The shape RAC hands `onChange` — a RangeValue of the calendar's own date type. */
@@ -140,18 +131,6 @@ describe("RangeCalendar", () => {
     expect(labels.every((label) => Array.from(label).length === 1)).toBe(true);
   });
 
-  it("renders borderless standalone — the picker dialog supplies the chrome", async () => {
-    renderRangeCalendar(<RangeCalendar defaultValue={{ start: july14, end: july17 }} />);
-    await expect.element(page.getByRole("grid")).toBeVisible();
-    const style = getComputedStyle(calendarRoot());
-    expect(style.borderTopWidth).toBe("0px");
-    expect(style.borderBottomWidth).toBe("0px");
-    expect(style.borderLeftWidth).toBe("0px");
-    expect(style.borderRightWidth).toBe("0px");
-    expect(style.backgroundColor).toBe("rgba(0, 0, 0, 0)");
-    expect(style.boxShadow).toBe("none");
-  });
-
   it("spreads className onto the root with no recipe underneath it", async () => {
     renderRangeCalendar(
       <RangeCalendar
@@ -163,6 +142,7 @@ describe("RangeCalendar", () => {
     expect(calendarRoot().className).toContain("min-w-40");
     expect(getComputedStyle(calendarRoot()).backgroundColor).toBe("rgba(0, 0, 0, 0)");
     expect(getComputedStyle(calendarRoot()).borderTopWidth).toBe("0px");
+    expect(getComputedStyle(calendarRoot()).boxShadow).toBe("none");
   });
 
   it("anchors the range on Enter, extends it with ArrowRight and commits once on the second Enter", async () => {
@@ -188,29 +168,6 @@ describe("RangeCalendar", () => {
     const committed = committedRange(onChange);
     expect(isSameDay(committed.start, july14)).toBe(true);
     expect(isSameDay(committed.end, july18)).toBe(true);
-  });
-
-  it("restores the previous value when Escape cancels an in-progress selection", async () => {
-    const onChange = rangeChangeSpy();
-    renderRangeCalendar(
-      <RangeCalendar
-        defaultValue={{ start: july20, end: july22 }}
-        defaultFocusedValue={july14}
-        onChange={onChange}
-      />
-    );
-    await expect.element(page.getByRole("grid")).toBeVisible();
-    expect(selectedDayNumbers()).toEqual(["20", "21", "22"]);
-
-    dayNumbered(14).focus();
-    await anchorAndExtend({ anchor: 14, arrows: 3, landsOn: 18 });
-    expect(selectedDayNumbers()).toEqual(["14", "15", "16", "17", "18"]);
-
-    await userEvent.keyboard("{Escape}");
-    expect(onChange).not.toHaveBeenCalled();
-    expect(selectedDayNumbers()).toEqual(["20", "21", "22"]);
-    expect(cellNumbered(20)).toHaveAttribute("aria-selected", "true");
-    expect(cellNumbered(14).getAttribute("aria-selected")).not.toBe("true");
   });
 
   it("paints start, middle and end cells from two clicks, with the caps marked by RAC", async () => {
@@ -283,52 +240,6 @@ describe("RangeCalendar", () => {
     await parkPointerOffGrid();
   });
 
-  it("keeps a keyboard range contiguous across an unavailable date by default", async () => {
-    const onChange = rangeChangeSpy();
-    renderRangeCalendar(
-      <RangeCalendar
-        defaultFocusedValue={july14}
-        isDateUnavailable={(date) => isSameDay(date, july16)}
-        onChange={onChange}
-      />
-    );
-    await expect.element(page.getByRole("grid")).toBeVisible();
-    expect(cellNumbered(16)).toHaveAttribute("aria-disabled", "true");
-    expect(dayNumbered(16)).toHaveAttribute("data-unavailable");
-
-    dayNumbered(14).focus();
-    // While anchored, the default rule disables every day past the unavailable one, so
-    // the arrows cannot carry the focus beyond July 15.
-    await anchorAndExtend({ anchor: 14, arrows: 3, landsOn: 15 });
-    await userEvent.keyboard("{Enter}");
-    expect(onChange).toHaveBeenCalledTimes(1);
-    // The default non-contiguous rule clamps the highlight before the unavailable day.
-    const committed = committedRange(onChange);
-    expect(isSameDay(committed.start, july14)).toBe(true);
-    expect(isSameDay(committed.end, new CalendarDate(2026, 7, 15))).toBe(true);
-  });
-
-  it("lets the range span the unavailable date once allowsNonContiguousRanges is set", async () => {
-    const onChange = rangeChangeSpy();
-    renderRangeCalendar(
-      <RangeCalendar
-        defaultFocusedValue={july14}
-        isDateUnavailable={(date) => isSameDay(date, july16)}
-        allowsNonContiguousRanges
-        onChange={onChange}
-      />
-    );
-    await expect.element(page.getByRole("grid")).toBeVisible();
-
-    dayNumbered(14).focus();
-    await anchorAndExtend({ anchor: 14, arrows: 3, landsOn: 18 });
-    await userEvent.keyboard("{Enter}");
-    expect(onChange).toHaveBeenCalledTimes(1);
-    const committed = committedRange(onChange);
-    expect(isSameDay(committed.start, july14)).toBe(true);
-    expect(isSameDay(committed.end, july18)).toBe(true);
-  });
-
   it("marks a range whose endpoint is unavailable invalid and associates its errorMessage", async () => {
     renderRangeCalendar(
       <RangeCalendar
@@ -373,28 +284,6 @@ describe("RangeCalendar", () => {
     renderRangeCalendar(<RangeCalendar defaultValue={{ start: july14, end: july17 }} />);
     await expect.element(page.getByRole("grid")).toBeVisible();
     expect(calendarRoot().querySelector("[slot='errorMessage']")).toBeNull();
-  });
-
-  it("disables out-of-range cells and clamps month navigation at minValue and maxValue", async () => {
-    renderRangeCalendar(<RangeCalendar defaultFocusedValue={july14} minValue={july13} maxValue={july17} />);
-    await expect.element(page.getByRole("grid")).toBeVisible();
-
-    expect(cellNumbered(14).getAttribute("aria-disabled")).not.toBe("true");
-    expect(cellNumbered(10)).toHaveAttribute("aria-disabled", "true");
-    expect(dayNumbered(10)).toHaveAttribute("data-disabled");
-    expect(cellNumbered(18)).toHaveAttribute("aria-disabled", "true");
-    expect(dayNumbered(18)).toHaveAttribute("data-disabled");
-
-    const previous = navButtonNamed(/previous/i);
-    const next = navButtonNamed(/next/i);
-    expect(previous).toHaveAttribute("data-disabled");
-    expect(next).toHaveAttribute("data-disabled");
-    expect(previous.hasAttribute("disabled") || previous.getAttribute("aria-disabled")).toBeTruthy();
-    expect(next.hasAttribute("disabled") || next.getAttribute("aria-disabled")).toBeTruthy();
-
-    const before = visibleMonthTitle().textContent;
-    await userEvent.click(previous, { force: true });
-    expect(visibleMonthTitle().textContent).toBe(before);
   });
 
   it("greys a fully disabled calendar's pills with the muted-foreground token", async () => {

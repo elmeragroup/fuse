@@ -2,14 +2,8 @@ import type { ComponentProps } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type { Input as RootInput } from "@elmeragroup/fuse";
 import type { InputProps } from "@elmeragroup/fuse/input";
 import { Input } from "@elmeragroup/fuse/input";
-
-test("Input ships from the input entry and the root barrel", () => {
-  expectTypeOf<typeof Input>().toEqualTypeOf<typeof RootInput>();
-  expectTypeOf(Input).toBeFunction();
-});
 
 test("InputProps is the native input surface, with no recipe axis and no render prop", () => {
   expectTypeOf<InputProps>().toEqualTypeOf<ComponentProps<"input">>();

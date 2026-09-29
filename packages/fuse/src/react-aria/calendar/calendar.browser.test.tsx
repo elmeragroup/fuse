@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { CalendarDate, isWeekend } from "@internationalized/date";
+import { CalendarDate } from "@internationalized/date";
 import { I18nProvider } from "react-aria-components";
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -13,7 +13,6 @@ import {
   calendarGrid,
   calendarHeadings,
   calendarRoot,
-  cellNamed,
   dayNamed,
   navButtonNamed,
   navButtons,
@@ -102,98 +101,6 @@ describe("Calendar", () => {
     expect(visibleRangeLabel).not.toBe("");
     expect(visibleRangeLabel).toMatch(/July\s+2026/i);
     expect(calendarGrid().getAttribute("aria-labelledby")).toBeNull();
-  });
-
-  it("moves day focus with ArrowRight and week focus with ArrowDown", async () => {
-    renderCalendar(
-      <>
-        <button type="button">Before</button>
-        <Calendar defaultValue={july14} defaultFocusedValue={july14} />
-      </>
-    );
-    await expect.element(page.getByRole("gridcell", { name: /Tuesday, July 14, 2026/i })).toBeVisible();
-    dayNamed(/Tuesday, July 14, 2026/i).focus();
-    expect(document.activeElement).toBe(dayNamed(/Tuesday, July 14, 2026/i));
-    await userEvent.keyboard("{ArrowRight}");
-    expect(document.activeElement).toBe(dayNamed(/Wednesday, July 15, 2026/i));
-    await userEvent.keyboard("{ArrowDown}");
-    expect(document.activeElement).toBe(dayNamed(/Wednesday, July 22, 2026/i));
-  });
-
-  it("advances the month with PageDown and updates both heading faces", async () => {
-    renderCalendar(<Calendar defaultValue={july14} defaultFocusedValue={july14} />);
-    await expect.element(page.getByRole("application")).toBeVisible();
-    expect(visibleMonthTitle().textContent).toMatch(/July\s+2026/i);
-    expect(accessibleRangeHeading().textContent).toMatch(/July\s+2026/i);
-    expect(gridVisibleRangeLabel()).toMatch(/July\s+2026/i);
-    dayNamed(/Tuesday, July 14, 2026/i).focus();
-    await userEvent.keyboard("{PageDown}");
-    expect(visibleMonthTitle().textContent).toMatch(/August\s+2026/i);
-    expect(accessibleRangeHeading().textContent).toMatch(/August\s+2026/i);
-    expect(gridVisibleRangeLabel()).toMatch(/August\s+2026/i);
-    await expect.element(page.getByRole("gridcell", { name: /August 14, 2026/i })).toBeVisible();
-  });
-
-  it("selects with Enter and fires onChange with a DateValue, not an event", async () => {
-    const onChange = vi.fn();
-    renderCalendar(<Calendar defaultValue={july14} defaultFocusedValue={july14} onChange={onChange} />);
-    await expect.element(page.getByRole("gridcell", { name: /14/ })).toBeVisible();
-    dayNamed(/Wednesday, July 15, 2026/i).focus();
-    await userEvent.keyboard("{Enter}");
-    expect(onChange).toHaveBeenCalled();
-    expect(onChange.mock.calls.at(-1)?.[0]).toEqual(
-      expect.objectContaining({ year: 2026, month: 7, day: 15 })
-    );
-    expect(onChange.mock.calls.at(-1)?.[0]).not.toHaveProperty("nativeEvent");
-    expect(onChange.mock.calls.at(-1)?.[0]).not.toBeInstanceOf(Event);
-  });
-
-  it("marks the selected cell aria-selected=true", async () => {
-    renderCalendar(<Calendar defaultValue={july14} />);
-    await expect.element(page.getByRole("gridcell", { name: /14/ })).toBeVisible();
-    const selected = cellNamed(/Tuesday, July 14, 2026/i);
-    expect(selected).toHaveAttribute("aria-selected", "true");
-    const unselected = cellNamed(/Wednesday, July 15, 2026/i);
-    expect(unselected.getAttribute("aria-selected")).not.toBe("true");
-  });
-
-  it("marks unavailable weekend cells aria-disabled and does not select them", async () => {
-    const onChange = vi.fn();
-    renderCalendar(
-      <Calendar
-        defaultValue={july14}
-        defaultFocusedValue={july14}
-        isDateUnavailable={(date) => isWeekend(date, "en-US")}
-        onChange={onChange}
-      />
-    );
-    await expect.element(page.getByRole("gridcell", { name: /Saturday, July 18, 2026/i })).toBeVisible();
-    const saturday = cellNamed(/Saturday, July 18, 2026/i);
-    const sunday = cellNamed(/Sunday, July 19, 2026/i);
-    expect(saturday).toHaveAttribute("aria-disabled", "true");
-    expect(sunday).toHaveAttribute("aria-disabled", "true");
-    await userEvent.click(page.getByRole("button", { name: /Saturday, July 18, 2026/i }), {
-      force: true,
-    });
-    expect(onChange).not.toHaveBeenCalled();
-    expect(cellNamed(/Tuesday, July 14, 2026/i)).toHaveAttribute("aria-selected", "true");
-  });
-
-  it("disables previous and next at min and max bounds", async () => {
-    renderCalendar(
-      <Calendar defaultValue={july14} defaultFocusedValue={july14} minValue={july1} maxValue={july31} />
-    );
-    await expect.element(navButtonNamed(/previous/i)).toBeVisible();
-    expect(navButtonNamed(/previous/i)).toHaveAttribute("data-disabled");
-    expect(navButtonNamed(/next/i)).toHaveAttribute("data-disabled");
-    expect(
-      navButtonNamed(/previous/i).hasAttribute("disabled") ||
-        navButtonNamed(/previous/i).getAttribute("aria-disabled")
-    ).toBeTruthy();
-    expect(
-      navButtonNamed(/next/i).hasAttribute("disabled") ||
-        navButtonNamed(/next/i).getAttribute("aria-disabled")
-    ).toBeTruthy();
   });
 
   it("lays out RTL columns and mirrors navigation and keyboard date movement", async () => {

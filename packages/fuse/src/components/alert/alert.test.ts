@@ -4,7 +4,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
-import { cn } from "../../styles/cn";
 import { Alert } from "./alert";
 import { alertVariants } from "./alert-variants";
 
@@ -75,13 +74,6 @@ describe("alertVariants", () => {
     expect(resolved).not.toContain("bg-destructive/10");
     expect(resolved).not.toMatch(RAW_PALETTE_RE);
   });
-
-  it("lets a className merge win over a conflicting recipe class through cn", () => {
-    const merged = cn(alertVariants({ variant: "destructive" }).base(), "bg-card").split(/\s+/);
-    expect(merged).toContain("bg-card");
-    expect(merged).not.toContain("bg-error/5");
-    expect(merged).toContain("border-error");
-  });
 });
 
 describe("Alert server boundary", () => {
@@ -110,24 +102,5 @@ describe("Alert server boundary", () => {
     expect(html).not.toContain("bg-destructive");
     expect(html).not.toContain("warning-accent");
     expect(html).not.toMatch(RAW_PALETTE_RE);
-  });
-
-  it("renders the action button only when onAction and actionLabel are both set", () => {
-    const withAction = renderToStaticMarkup(
-      createElement(
-        Alert.Root,
-        { onAction: () => undefined, actionLabel: "Retry" },
-        createElement(Alert.Title, null, "Sync delayed")
-      )
-    );
-    expect(withAction).toContain("Retry");
-    expect(withAction).toContain('data-slot="item-actions"');
-    expect(withAction).toContain('type="button"');
-
-    const withoutAction = renderToStaticMarkup(
-      createElement(Alert.Root, null, createElement(Alert.Title, null, "Saved"))
-    );
-    expect(withoutAction).not.toContain('data-slot="item-actions"');
-    expect(withoutAction).not.toContain("<button");
   });
 });

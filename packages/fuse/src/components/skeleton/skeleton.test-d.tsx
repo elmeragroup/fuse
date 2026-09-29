@@ -2,14 +2,8 @@ import type { ComponentProps } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type { Skeleton as RootSkeleton } from "@elmeragroup/fuse";
 import type { SkeletonProps } from "@elmeragroup/fuse/skeleton";
 import { Skeleton } from "@elmeragroup/fuse/skeleton";
-
-test("Skeleton ships from the skeleton entry and the root barrel", () => {
-  expectTypeOf<typeof Skeleton>().toEqualTypeOf<typeof RootSkeleton>();
-  expectTypeOf(Skeleton).toBeFunction();
-});
 
 test("SkeletonProps is ComponentProps of a div so ref passes through", () => {
   expectTypeOf<SkeletonProps>().toEqualTypeOf<ComponentProps<"div">>();

@@ -53,31 +53,6 @@ describe("DescriptionList server boundary", () => {
 });
 
 describe("DescriptionList structure", () => {
-  it("renders a dl containing alternating dt/dd in DOM order", () => {
-    const html = markup();
-    const dlStart = html.indexOf("<dl");
-    const dt1 = html.indexOf("<dt", dlStart);
-    const dd1 = html.indexOf("<dd", dt1);
-    const dt2 = html.indexOf("<dt", dd1);
-    const dd2 = html.indexOf("<dd", dt2);
-    expect(dt1).toBeGreaterThan(dlStart);
-    expect(dd1).toBeGreaterThan(dt1);
-    expect(dt2).toBeGreaterThan(dd1);
-    expect(dd2).toBeGreaterThan(dt2);
-    expect(html.indexOf("Name")).toBeLessThan(html.indexOf("Kari Nordmann"));
-    expect(html.indexOf("Meter point")).toBeLessThan(html.indexOf("7070575000"));
-  });
-
-  it("passes Root attributes through and adds no classes of its own", () => {
-    const html = renderToStaticMarkup(
-      createElement(DescriptionList.Root, { id: "customer", "aria-label": "profile" }, "x")
-    );
-    expect(html).toContain('data-slot="description-list"');
-    expect(html).toContain('id="customer"');
-    expect(html).toContain('aria-label="profile"');
-    expect(html).not.toMatch(/class=/);
-  });
-
   it("lets a consumer className win over Details base classes through cn", () => {
     const merged = cn(DETAILS_CLASSES, "text-primary").split(/\s+/);
     expect(merged).toContain("text-primary");

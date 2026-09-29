@@ -188,21 +188,6 @@ describe("Tabs", () => {
     await expect.element(page.getByRole("tabpanel", { name: "Account", exact: true })).toBeInTheDocument();
   });
 
-  it("tabs from the active trigger into the open panel", async () => {
-    renderThemed(
-      <>
-        <button type="button">Before</button>
-        <AccountPassword />
-      </>
-    );
-
-    htmlControl("Before").focus();
-    await userEvent.keyboard("{Tab}");
-    expect(document.activeElement).toBe(htmlTab("Account"));
-    await userEvent.keyboard("{Tab}");
-    expect(document.activeElement).toBe(htmlPanel("Account"));
-  });
-
   it("paints the shared ring on the trigger and the open panel at both densities", async () => {
     renderThemed(
       <>

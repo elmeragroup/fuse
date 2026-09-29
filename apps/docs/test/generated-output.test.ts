@@ -17,20 +17,12 @@ import { parseComponentPage } from "../scripts/lib/page-source.ts";
 import type { ComponentPageSource } from "../scripts/lib/page-source.ts";
 import { repoRelative, repoRoot } from "../scripts/lib/paths.ts";
 import { COMPONENT_PAGES } from "../src/generated/component-pages";
-import type { ComponentApiArtifact, ComponentPageEntry } from "../src/lib/docs-model";
+import type { ComponentApiArtifact } from "../src/lib/docs-model";
 import { dependencyPackageName } from "../src/lib/docs-model";
 import { COMPONENT_INVENTORY } from "./component-inventory";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const docsRoot = join(here, "..");
-
-function page(slug: string): ComponentPageEntry {
-  const found = COMPONENT_PAGES.find((entry) => entry.slug === slug);
-  if (found === undefined) {
-    throw new Error(`the generated manifest has no "${slug}" page`);
-  }
-  return found;
-}
 
 type AuthoredPage = {
   text: string;
@@ -160,13 +152,6 @@ describe("component page manifest", () => {
         expect(demo.title.trim(), `${entry.slug}.${demo.id}`).not.toBe("");
       }
     }
-  });
-
-  it("links View source at the implementation on the repo host", () => {
-    expect(page("button").sourceUrl).toBe(
-      "https://github.com/elmeragroup/fuse/blob/main/packages/fuse/src/components/button/button.tsx"
-    );
-    expect(page("button").markdownUrl).toBe("/components/button.md");
   });
 
   it("reports per-part directives and the reviewed page RSC status", () => {

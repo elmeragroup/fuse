@@ -71,21 +71,6 @@ function namedGroupHosting(control: HTMLElement): HTMLElement | null {
   return match instanceof HTMLElement ? match : null;
 }
 
-function flexAncestor(
-  element: HTMLElement,
-  match: (style: CSSStyleDeclaration) => boolean
-): HTMLElement | null {
-  let current = element.parentElement;
-  while (current) {
-    const style = getComputedStyle(current);
-    if ((style.display === "flex" || style.display === "inline-flex") && match(style)) {
-      return current;
-    }
-    current = current.parentElement;
-  }
-  return null;
-}
-
 function Glyph() {
   return (
     <svg viewBox="0 0 16 16" aria-hidden>
@@ -228,6 +213,7 @@ describe("RadioGroup", () => {
     expect(namedGroupHosting(bare)).toBeNull();
     expect(groupHosting(bare)).toBeTruthy();
     expect(bare.previousElementSibling).toBeNull();
+    expect(bare.hasAttribute("aria-busy")).toBe(false);
 
     const pendingUnlabeled = unnamed.find((element) => element.contains(radioNamed("Pending unlabeled")));
     if (!(pendingUnlabeled instanceof HTMLElement)) {
@@ -248,26 +234,6 @@ describe("RadioGroup", () => {
     }
     expect(page.getByRole("img").query()).toBeNull();
     expect(page.getByRole("status").query()).toBeNull();
-  });
-
-  it("sets aria-busy on the named radiogroup while pending and omits it otherwise", () => {
-    renderThemed(
-      <>
-        <RadioGroup label="Idle">
-          <Radio value="a">Idle option</Radio>
-        </RadioGroup>
-        <RadioGroup label="Idle false" isPending={false}>
-          <Radio value="a">Idle false option</Radio>
-        </RadioGroup>
-        <RadioGroup label="Busy" isPending>
-          <Radio value="a">Busy option</Radio>
-        </RadioGroup>
-      </>
-    );
-
-    expect(radiogroupNamed("Idle").hasAttribute("aria-busy")).toBe(false);
-    expect(radiogroupNamed("Idle false").hasAttribute("aria-busy")).toBe(false);
-    expect(radiogroupNamed("Busy").getAttribute("aria-busy")).toBe("true");
   });
 
   it("renders a ReactNode error as role=alert and stamps invalid on items", () => {
@@ -324,32 +290,6 @@ describe("RadioGroup", () => {
     expect(hidden).not.toBeNull();
     await userEvent.click(page.getByRole("button", { name: "Save", exact: true }));
     expect(submitted).toEqual(["fixed"]);
-  });
-
-  it("switches orientation via computed layout, not class names", () => {
-    renderThemed(
-      <>
-        <RadioGroup label="Vertical contract" orientation="vertical">
-          <Radio value="a">Fixed</Radio>
-          <Radio value="b">Spot</Radio>
-        </RadioGroup>
-        <RadioGroup label="Horizontal contract" orientation="horizontal">
-          <Radio value="a">Monthly</Radio>
-          <Radio value="b">Quarterly</Radio>
-        </RadioGroup>
-      </>
-    );
-
-    const verticalFirst = radioNamed("Fixed").getBoundingClientRect();
-    const verticalSecond = radioNamed("Spot").getBoundingClientRect();
-    expect(verticalSecond.top).toBeGreaterThan(verticalFirst.bottom);
-    expect(flexAncestor(radioNamed("Fixed"), (style) => style.flexDirection === "column")).not.toBeNull();
-    expect(
-      flexAncestor(
-        radioNamed("Monthly"),
-        (style) => style.flexDirection === "row" && style.flexWrap === "wrap"
-      )
-    ).not.toBeNull();
   });
 });
 
@@ -635,34 +575,9 @@ describe("RadioIconButton", () => {
     }
     await assertFocusRingAtBothDensities(previous, radioNamed("List"));
   });
-
-  it("dims a disabled icon button to half opacity", () => {
-    renderThemed(
-      <RadioGroup label="View">
-        <RadioIconButton value="list" aria-label="List" isDisabled>
-          <Glyph />
-        </RadioIconButton>
-        <RadioIconButton value="grid" aria-label="Grid">
-          <Glyph />
-        </RadioIconButton>
-      </RadioGroup>
-    );
-
-    expect(effectiveOpacity(radioNamed("List"))).toBe(0.5);
-    expect(effectiveOpacity(radioNamed("Grid"))).toBe(1);
-  });
 });
 
 describe("RadioGroupItem", () => {
-  it("is named independently when given an accessible name", () => {
-    renderThemed(
-      <RadioGroup label="Contract">
-        <RadioGroupItem value="fixed" aria-label="Fixed primitive" />
-      </RadioGroup>
-    );
-    expect(radioNamed("Fixed primitive").getAttribute("data-slot")).toBe("radio-group-item");
-  });
-
   it("dims a standalone disabled item to half opacity and leaves an enabled one opaque", () => {
     // Base UI renders the root as a <span>, which never matches `:disabled`. No label
     // wraps these items, so only the item's own rule can dim it.

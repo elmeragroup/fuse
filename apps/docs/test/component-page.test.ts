@@ -102,16 +102,6 @@ describe("component page anatomy", () => {
     expect(html).toContain('id="composition-limits"');
   });
 
-  it("serves the per-component markdown endpoint the page links to", async () => {
-    const markdown = await fetchText("/components/button.md");
-    expect(markdown.startsWith("# Button")).toBe(true);
-    expect(markdown).toContain("- RSC: client");
-    // RSC status per part, as a heading badge — never a per-prop column.
-    expect(markdown).toContain("### Button · RSC: client");
-    expect(markdown).toContain("| Prop | Type | Default | Required | Description |");
-    expect(markdown).not.toContain("| RSC |");
-  });
-
   it("keeps the document on internal Elmera while demo stages select other brands", async () => {
     const html = await fetchText("/components/dialog");
     const stage = html.indexOf("data-demo-stage");

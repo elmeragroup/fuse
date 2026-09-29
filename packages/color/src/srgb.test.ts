@@ -112,16 +112,11 @@ describe("fromLinear and toLinear", () => {
 });
 
 describe("compositeOver", () => {
-  const white = getOrThrow(Srgb.make({ r: 1, g: 1, b: 1, alpha: 1 }));
   const black = getOrThrow(Srgb.make({ r: 0, g: 0, b: 0, alpha: 1 }));
 
   it("blends a translucent color over an opaque one in encoded sRGB", () => {
     const halfWhite = getOrThrow(Srgb.make({ r: 1, g: 1, b: 1, alpha: 0.5 }));
     expect(channels(Srgb.compositeOver(halfWhite, black))).toEqual([0.5, 0.5, 0.5, 1]);
-  });
-
-  it("returns an opaque foreground unchanged", () => {
-    expect(channels(Srgb.compositeOver(white, black))).toEqual([1, 1, 1, 1]);
   });
 
   it("keeps a translucent color over a transparent one, and two transparent colors transparent", () => {

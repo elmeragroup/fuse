@@ -32,18 +32,6 @@ describe("@elmeragroup/internal", () => {
     }
   });
 
-  it("names the pinned canary in the release-age exclusion list, and nothing else of its own", () => {
-    // A canary is younger than the 72-hour guard by definition; the exclusion is per exact
-    // version so a bump has to be written down here too, next to the catalog pin.
-    const exclusions = workspace.minimumReleaseAgeExclude;
-    if (!Array.isArray(exclusions)) throw new Error("minimumReleaseAgeExclude is not an array");
-    const internalExclusions = exclusions
-      .filter(isString)
-      .filter((entry) => entry.startsWith("@elmeragroup/internal@"))
-      .map((entry) => entry.slice("@elmeragroup/internal@".length));
-    expect(internalExclusions).toEqual([catalogEntry("@elmeragroup/internal")]);
-  });
-
   it("pins effect to the exact version the engine declares", () => {
     const engine = asRecord(
       readJsonObject(join(repoRoot, "node_modules", "@elmeragroup", "internal", "package.json")).dependencies,

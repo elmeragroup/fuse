@@ -4,22 +4,9 @@ import type { CalendarDate } from "@internationalized/date";
 import type { ValidationResult } from "react-aria-components";
 import { expectTypeOf, test } from "vitest";
 
-import type * as RootApi from "@elmeragroup/fuse";
 import type * as DateFieldApi from "@elmeragroup/fuse/react-aria/date-field";
 import type { DateFieldProps, DateInputProps } from "@elmeragroup/fuse/react-aria/date-field";
 import { DateField, DateInput } from "@elmeragroup/fuse/react-aria/date-field";
-
-test("DateField and DateInput are absent from the root barrel", () => {
-  expectTypeOf<typeof RootApi>().not.toHaveProperty("DateField");
-  expectTypeOf<typeof RootApi>().not.toHaveProperty("DateInput");
-});
-
-test("the public value surface is exactly DateField and DateInput", () => {
-  expectTypeOf(DateField).toBeFunction();
-  expectTypeOf(DateInput).toBeFunction();
-  expectTypeOf<typeof DateFieldApi.DateField>().toEqualTypeOf<typeof DateField>();
-  expectTypeOf<typeof DateFieldApi.DateInput>().toEqualTypeOf<typeof DateInput>();
-});
 
 test("dateFieldVariants and RAC types are not public exports", () => {
   expectTypeOf<typeof DateFieldApi>().not.toHaveProperty("dateFieldVariants");
@@ -104,10 +91,4 @@ test("the elements take the public props and reject DateInput children and a siz
   const _noChildren = <DateInput>{() => null}</DateInput>;
   // @ts-expect-error no size axis
   const _noSize = <DateField size="md" />;
-});
-
-test("there is no bare date-field entry", () => {
-  // @ts-expect-error quarantined path only — never a bare date-field entry
-  // oxlint-disable-next-line typescript/consistent-type-imports -- missing specifier is the assertion
-  type _Bare = typeof import("@elmeragroup/fuse/date-field");
 });

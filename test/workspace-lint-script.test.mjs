@@ -26,15 +26,6 @@ describe("workspace lint script", () => {
     expect(lint).not.toContain("--quiet");
   });
 
-  it("runs repo-policy tests from the root vitest project in ci:checks", () => {
-    const turbo = readFileSync(join(repoRoot, "turbo.json"), "utf8");
-    expect(turbo).toContain('"//#test:repo-policy"');
-    const parsed = readJsonObject(join(repoRoot, "package.json"));
-    expect(asString(asRecord(parsed.scripts, "scripts")["test:repo-policy"], "test:repo-policy")).toMatch(
-      /\bvitest\b/
-    );
-  });
-
   it("keeps the previously warning-level rules enabled", () => {
     const parsed = readJsonObject(join(repoRoot, ".oxlintrc.json"));
     const rules = asRecord(parsed.rules, "rules");

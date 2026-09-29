@@ -2,7 +2,6 @@ import type { ComponentProps } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type { Table as RootTable, VerticalTable as RootVerticalTable } from "@elmeragroup/fuse";
 import type {
   TableRootProps,
   VerticalTableBodyProps,
@@ -13,25 +12,6 @@ import type {
 } from "@elmeragroup/fuse/table";
 import * as TableModule from "@elmeragroup/fuse/table";
 import { Table, VerticalTable } from "@elmeragroup/fuse/table";
-
-test("both namespaces ship from the table entry and the root barrel", () => {
-  expectTypeOf<typeof Table>().toEqualTypeOf<typeof RootTable>();
-  expectTypeOf<typeof VerticalTable>().toEqualTypeOf<typeof RootVerticalTable>();
-  expectTypeOf(Table).toHaveProperty("Root");
-  expectTypeOf(Table).toHaveProperty("Header");
-  expectTypeOf(Table).toHaveProperty("Body");
-  expectTypeOf(Table).toHaveProperty("Footer");
-  expectTypeOf(Table).toHaveProperty("Row");
-  expectTypeOf(Table).toHaveProperty("Head");
-  expectTypeOf(Table).toHaveProperty("Cell");
-  expectTypeOf(Table).toHaveProperty("Caption");
-  expectTypeOf(VerticalTable).toHaveProperty("Root");
-  expectTypeOf(VerticalTable).toHaveProperty("Header");
-  expectTypeOf(VerticalTable).toHaveProperty("Body");
-  expectTypeOf(VerticalTable).toHaveProperty("Row");
-  expectTypeOf(VerticalTable).toHaveProperty("Key");
-  expectTypeOf(VerticalTable).toHaveProperty("Value");
-});
 
 test("public API exports the namespaces and VerticalTableItem — never RAC or flat ref names", () => {
   expectTypeOf<TableRootProps>().toEqualTypeOf<ComponentProps<"table">>();

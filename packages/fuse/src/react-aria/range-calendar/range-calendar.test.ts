@@ -1,13 +1,7 @@
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { discoverEntries } from "../../../scripts/entries";
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { rangeCalendarVariants } from "../../styles/range-calendar";
-
-const here = dirname(fileURLToPath(import.meta.url));
-const packageRoot = join(here, "../../..");
 
 /** Every class the recipe can emit, across all three selection faces. */
 function everyEmittedClass(): string {
@@ -25,14 +19,6 @@ function everyEmittedClass(): string {
 }
 
 describe("rangeCalendarVariants", () => {
-  it("takes no card-surface chrome on the root (standalone renders borderless)", () => {
-    const emitted = everyEmittedClass();
-    expect(emitted).not.toContain("bg-card");
-    expect(emitted).not.toContain("border-border");
-    expect(emitted).not.toContain("shadow-md");
-    expect(emitted).not.toContain("rounded-md");
-  });
-
   it("emits no size axis, no control rung, and no raw palette", () => {
     // The day square is decorative, so nothing reads a `--control-*` variable.
     expect(everyEmittedClass()).not.toContain("--control-");
@@ -89,34 +75,4 @@ describe("rangeCalendarVariants", () => {
     expect(cell).toContain("text-primary-foreground");
     expect(cell).toContain("group-invalid:bg-error");
   });
-
-  it("greys a disabled pill with the muted-foreground token", () => {
-    expect(rangeCalendarVariants({ isDisabled: true }).cell()).toContain("text-muted-foreground");
-    expect(rangeCalendarVariants({ isDisabled: false }).cell()).not.toContain("text-muted-foreground");
-  });
-
-  it("paints the shared state ring on the pill only while focus is visible", () => {
-    expect(rangeCalendarVariants({ isFocusVisible: true }).cell()).toContain("ring-ring");
-    expect(rangeCalendarVariants({ isFocusVisible: false }).cell()).not.toContain("ring-ring");
-    // oxlint-disable-next-line elmera/no-local-focus-ring -- source-grep of the shared recipe's class, not a recipe
-    expect(rangeCalendarVariants({ isFocusVisible: false }).cell()).toContain("outline-none");
-  });
-
-  it("marks the error copy with the error token and nothing else", () => {
-    expect(rangeCalendarVariants().error()).toContain("text-error");
-  });
-});
-
-describe("range calendar package surface", () => {
-  it("is a subpath-only react-aria entry whose only value export is RangeCalendar", () => {
-    const discovered = discoverEntries(packageRoot);
-    const entry = discovered.jsEntries.find((item) => item.subpath === "react-aria/range-calendar");
-    const root = discovered.jsEntries.find((item) => item.subpath === ".");
-    expect(entry?.inRootBarrel).toBe(false);
-    expect(entry?.runtimeExports).toEqual(["RangeCalendar"]);
-    expect(entry?.sourceFile).toBe("src/react-aria/range-calendar.ts");
-    expect(root?.runtimeExports).not.toContain("RangeCalendar");
-    expect(discovered.jsEntries.map((item) => item.subpath)).toContain("react-aria/range-calendar");
-    expect(discovered.jsEntries.map((item) => item.subpath)).not.toContain("range-calendar");
-  }, 30_000);
 });

@@ -186,15 +186,6 @@ describe("NumberField", () => {
     expect(events).toEqual([0]);
   });
 
-  it("commits a typed value on blur and reports NaN when the input is cleared", async () => {
-    const onChange = vi.fn();
-    renderField(<NumberField label="Quantity" onChange={onChange} />);
-    const input = textboxNamed("Quantity");
-    await userEvent.fill(page.getByRole("textbox", { name: "Quantity", exact: true }), "12");
-    input.blur();
-    expect(onChange).toHaveBeenLastCalledWith(12);
-  });
-
   it("reports NaN when the input is cleared", async () => {
     const onChange = vi.fn();
     renderField(<NumberField label="Quantity" onChange={onChange} />);

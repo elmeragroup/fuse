@@ -2,16 +2,8 @@ import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { expectTypeOf, test } from "vitest";
 
-import type { AlertDialog as RootAlertDialog } from "@elmeragroup/fuse";
 import type { AlertDialogContentProps } from "@elmeragroup/fuse/alert-dialog";
 import { AlertDialog } from "@elmeragroup/fuse/alert-dialog";
-
-test("AlertDialog ships from the alert-dialog entry and the root barrel", () => {
-  expectTypeOf<typeof AlertDialog>().toEqualTypeOf<typeof RootAlertDialog>();
-  expectTypeOf(AlertDialog.Root).toBeFunction();
-  expectTypeOf(AlertDialog.Trigger).toBeFunction();
-  expectTypeOf(AlertDialog.Content).toBeFunction();
-});
 
 test("the public namespace is three parts and Content omits showCloseButton", () => {
   expectTypeOf(AlertDialog).not.toHaveProperty("Portal");

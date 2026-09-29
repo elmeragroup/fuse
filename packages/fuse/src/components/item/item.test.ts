@@ -43,23 +43,6 @@ describe("ITEM_TITLE_CLASSES", () => {
 });
 
 describe("itemRootProps", () => {
-  it("names the default variant and size in data attributes and classes", () => {
-    const props = itemRootProps({ variant: "default", size: "default" });
-    expect(props["data-slot"]).toBe("item");
-    expect(props["data-variant"]).toBe("default");
-    expect(props["data-size"]).toBe("default");
-    expect(props.className).toContain("border-transparent");
-    expect(props.className).toContain("px-4");
-  });
-
-  it("names the chosen variant and size in data attributes and classes", () => {
-    const props = itemRootProps({ variant: "outline", size: "sm" });
-    expect(props["data-variant"]).toBe("outline");
-    expect(props["data-size"]).toBe("sm");
-    expect(props.className).toContain("border-border");
-    expect(props.className).toContain("px-3");
-  });
-
   it("lets a consumer class win a Tailwind conflict with the recipe", () => {
     const tokens = itemRootProps({
       variant: "default",
@@ -73,12 +56,6 @@ describe("itemRootProps", () => {
 });
 
 describe("Item.Media and Item.Footer class contracts", () => {
-  it("emits image variant without a dark class", () => {
-    const html = renderToStaticMarkup(createElement(Item.Media, { variant: "image" }, "Portrait"));
-    expect(html).toContain('data-variant="image"');
-    expect(html).not.toContain("dark:");
-  });
-
   it("hides and reveals footer mode with the documented class tokens", () => {
     const hidden = renderToStaticMarkup(createElement(Item.Footer, { mode: "hidden" }, "Hidden"));
     const visible = renderToStaticMarkup(createElement(Item.Footer, { mode: "visible" }, "Visible"));

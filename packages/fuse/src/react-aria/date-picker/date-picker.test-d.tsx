@@ -4,7 +4,6 @@ import { CalendarDate } from "@internationalized/date";
 import type { ValidationResult } from "react-aria-components";
 import { expectTypeOf, test } from "vitest";
 
-import type * as RootApi from "@elmeragroup/fuse";
 import type * as DatePickerApi from "@elmeragroup/fuse/react-aria/date-picker";
 import type {
   DatePickerPresetGroupProps,
@@ -16,23 +15,6 @@ import {
   DatePickerPresetGroup,
   DatePickerPresetItem,
 } from "@elmeragroup/fuse/react-aria/date-picker";
-
-test("the date-picker family is absent from the root barrel", () => {
-  expectTypeOf<typeof RootApi>().not.toHaveProperty("DatePicker");
-  expectTypeOf<typeof RootApi>().not.toHaveProperty("DatePickerPresetGroup");
-  expectTypeOf<typeof RootApi>().not.toHaveProperty("DatePickerPresetItem");
-  expectTypeOf<typeof RootApi>().not.toHaveProperty("DatePickerProps");
-  expectTypeOf<typeof RootApi>().not.toHaveProperty("datePickerVariants");
-});
-
-test("the public value surface is exactly the three documented names", () => {
-  expectTypeOf(DatePicker).toBeFunction();
-  expectTypeOf(DatePickerPresetGroup).toBeFunction();
-  expectTypeOf(DatePickerPresetItem).toBeFunction();
-  expectTypeOf<typeof DatePickerApi.DatePicker>().toEqualTypeOf<typeof DatePicker>();
-  expectTypeOf<typeof DatePickerApi.DatePickerPresetGroup>().toEqualTypeOf<typeof DatePickerPresetGroup>();
-  expectTypeOf<typeof DatePickerApi.DatePickerPresetItem>().toEqualTypeOf<typeof DatePickerPresetItem>();
-});
 
 test("no private overlay part, recipe, or RAC type leaks through the entry", () => {
   expectTypeOf<typeof DatePickerApi>().not.toHaveProperty("datePickerVariants");
@@ -167,10 +149,4 @@ test("the elements take the public props and reject an invented axis", () => {
   const _noCallbackFlag = <DatePickerPresetItem isCloseDialogOnDoubleClick={() => undefined} value="x" />;
   // @ts-expect-error container takes an element or a ref, never a selector
   const _noSelector = <DatePicker container="#overlays" label="Invoice date" />;
-});
-
-test("there is no bare date-picker entry", () => {
-  // @ts-expect-error quarantined path only — never a bare date-picker entry
-  // oxlint-disable-next-line typescript/consistent-type-imports -- missing specifier is the assertion
-  type _Bare = typeof import("@elmeragroup/fuse/date-picker");
 });

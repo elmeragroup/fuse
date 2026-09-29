@@ -4,21 +4,9 @@ import { CalendarDate } from "@internationalized/date";
 import type { ValidationResult } from "react-aria-components";
 import { expectTypeOf, test } from "vitest";
 
-import type * as RootApi from "@elmeragroup/fuse";
 import type * as DateRangePickerApi from "@elmeragroup/fuse/react-aria/date-range-picker";
 import type { DateRangePickerProps } from "@elmeragroup/fuse/react-aria/date-range-picker";
 import { DateRangePicker } from "@elmeragroup/fuse/react-aria/date-range-picker";
-
-test("DateRangePicker is absent from the root barrel", () => {
-  expectTypeOf<typeof RootApi>().not.toHaveProperty("DateRangePicker");
-  expectTypeOf<typeof RootApi>().not.toHaveProperty("DateRangePickerProps");
-  expectTypeOf<typeof RootApi>().not.toHaveProperty("dateRangePickerVariants");
-});
-
-test("the public value surface is exactly the one documented name", () => {
-  expectTypeOf(DateRangePicker).toBeFunction();
-  expectTypeOf<typeof DateRangePickerApi.DateRangePicker>().toEqualTypeOf<typeof DateRangePicker>();
-});
 
 test("no private overlay part, recipe, or RAC type leaks through the entry", () => {
   expectTypeOf<typeof DateRangePickerApi>().not.toHaveProperty("dateRangePickerVariants");
@@ -137,10 +125,4 @@ test("the element takes the public props and rejects an invented axis", () => {
   const _noSingleValue = <DateRangePicker label="Delivery window" value={new CalendarDate(2026, 7, 14)} />;
   // @ts-expect-error container takes an element or a ref, never a selector
   const _noSelector = <DateRangePicker container="#overlays" label="Delivery window" />;
-});
-
-test("there is no bare date-range-picker entry", () => {
-  // @ts-expect-error quarantined path only — never a bare date-range-picker entry
-  // oxlint-disable-next-line typescript/consistent-type-imports -- missing specifier is the assertion
-  type _Bare = typeof import("@elmeragroup/fuse/date-range-picker");
 });

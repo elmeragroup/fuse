@@ -3,7 +3,6 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { resolveComponentPaths } from "../scripts/lib/components.ts";
 import { readRscStatus } from "../scripts/lib/docs-inspection.ts";
 import { renderComponentMarkdown } from "../scripts/lib/markdown.ts";
 import { parseComponentPage } from "../scripts/lib/page-source.ts";
@@ -120,16 +119,6 @@ describe("authored page.mdx as generation input", () => {
   });
 });
 
-describe("component page titles", () => {
-  it("spells the slug as words a reader says, never the exported identifier", () => {
-    expect(resolveComponentPaths("button").title).toBe("Button");
-    expect(resolveComponentPaths("alert-dialog").title).toBe("Alert Dialog");
-    expect(resolveComponentPaths("date-range-picker").title).toBe("Date Range Picker");
-    // The fixed-casing part: the identifier is `UiProviders`, the label is `UI Providers`.
-    expect(resolveComponentPaths("ui-providers").title).toBe("UI Providers");
-  });
-});
-
 describe("nav destination verification", () => {
   it("passes for the authored nav as it stands: every entry has a route module", () => {
     expect(missingNavRoutes()).toEqual([]);
@@ -151,20 +140,6 @@ describe("RSC classification", () => {
     expect(readRscStatus('/** doc */\n"use strict";\n"use client";\n')).toBe("client");
     expect(readRscStatus('export const a = 1;\n"use client";\n')).toBe("server");
     expect(readRscStatus("export const a = 1;\n")).toBe("server");
-  });
-
-  it("matches the library sources it classifies", () => {
-    expect(
-      readRscStatus(readFileSync(join(repoRoot, "packages/fuse/src/components/button/button.tsx"), "utf8"))
-    ).toBe("client");
-    expect(
-      readRscStatus(readFileSync(join(repoRoot, "packages/fuse/src/components/badge/badge.tsx"), "utf8"))
-    ).toBe("server");
-    expect(
-      readRscStatus(
-        readFileSync(join(repoRoot, "packages/fuse/src/react-aria/focusable/focusable.tsx"), "utf8")
-      )
-    ).toBe("client");
   });
 });
 

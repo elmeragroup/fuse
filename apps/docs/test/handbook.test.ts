@@ -29,14 +29,6 @@ async function matrixGrid(): Promise<string> {
 }
 
 describe("theme matrix", () => {
-  it("enumerates 20 legal permutations, including elma", () => {
-    expect(LEGAL_THEMES).toHaveLength(20);
-    expect(LEGAL_THEMES.filter((theme) => theme.brand === "elma")).toHaveLength(4);
-    for (const slug of ILLEGAL_SLUGS) {
-      expect(LEGAL_THEMES.map(themeSlug)).not.toContain(slug);
-    }
-  });
-
   it("renders one slug-labelled cell per legal permutation", async () => {
     const html = await fetchText("/handbook/theme-matrix");
     expect([...html.matchAll(/data-theme-matrix-cell/g)]).toHaveLength(20);

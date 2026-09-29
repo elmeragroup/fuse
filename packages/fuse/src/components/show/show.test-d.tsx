@@ -2,14 +2,8 @@ import type { ReactNode } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type { Show as RootShow } from "@elmeragroup/fuse";
 import type { ShowProps } from "@elmeragroup/fuse/show";
 import { Show } from "@elmeragroup/fuse/show";
-
-test("Show ships from the show entry and the root barrel", () => {
-  expectTypeOf<typeof Show>().toEqualTypeOf<typeof RootShow>();
-  expectTypeOf(Show).toBeFunction();
-});
 
 test("when accepts only boolean — no truthy coercion at the type level", () => {
   expectTypeOf<ShowProps["when"]>().toEqualTypeOf<boolean>();

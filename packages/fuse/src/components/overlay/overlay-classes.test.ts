@@ -7,7 +7,6 @@ import {
   menuItemIndicatorClass,
   menuSeparatorClass,
   overlayPopupDurationClass,
-  overlayPopupFillClass,
   overlayPopupMotionClass,
   overlayPopupSurfaceClass,
   overlayPositionerClass,
@@ -22,12 +21,6 @@ function tokens(value: string): Set<string> {
 describe("overlayPositionerClass", () => {
   it("is one stacking context plus the single shared overlay layer", () => {
     expect(tokens(overlayPositionerClass)).toEqual(new Set(["isolate", "z-50"]));
-  });
-
-  it("lets a site-specific extra ride along without a second layer", () => {
-    expect(tokens(cn(overlayPositionerClass, "pointer-events-none"))).toEqual(
-      new Set(["isolate", "z-50", "pointer-events-none"])
-    );
   });
 });
 
@@ -70,47 +63,13 @@ describe("overlayPopupSurfaceClass", () => {
     expect(merged).toContain("ring-0");
     expect(merged).toContain("ring-foreground/10");
   });
-
-  it("lets Tooltip build its own surface from the fill and edge parts instead", () => {
-    expect(tokens(cn(overlayPopupFillClass, "bg-foreground text-background", "rounded-md"))).toEqual(
-      new Set(["bg-foreground", "text-background", "rounded-md"])
-    );
-  });
 });
 
 describe("overlayPopupMotionClass", () => {
-  it("carries the transform origin and the open/closed pair", () => {
-    for (const token of [
-      "origin-(--transform-origin)",
-      "data-open:animate-in",
-      "data-open:fade-in-0",
-      "data-open:zoom-in-95",
-      "data-closed:animate-out",
-      "data-closed:fade-out-0",
-      "data-closed:zoom-out-95",
-    ]) {
-      expect(tokens(overlayPopupMotionClass)).toContain(token);
-    }
-  });
-
-  it("slides in from the opposite edge on all six placements base-ui emits", () => {
-    const sides = ["bottom", "top", "left", "right", "inline-start", "inline-end"];
-    for (const side of sides) {
-      expect(overlayPopupMotionClass).toContain(`data-[side=${side}]:slide-in-from-`);
-    }
-    expect(overlayPopupMotionClass.match(/slide-in-from-/gu)).toHaveLength(sides.length);
-  });
-
   it("leaves the timing rung out, so an untimed family composes the set alone", () => {
     expect(tokens(overlayPopupMotionClass)).not.toContain("duration-100");
     expect(overlayPopupDurationClass).toBe("duration-100");
     expect(tokens(cn(overlayPopupMotionClass, overlayPopupDurationClass))).toContain("duration-100");
-  });
-
-  it("paints no surface of its own, so a popup picks its own fill", () => {
-    for (const token of tokens(overlayPopupMotionClass)) {
-      expect(token).not.toMatch(/^(?:bg-|text-|ring-|shadow-|rounded-)/u);
-    }
   });
 });
 

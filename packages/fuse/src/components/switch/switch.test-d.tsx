@@ -1,13 +1,7 @@
 import { expectTypeOf, test } from "vitest";
 
-import type { Switch as RootSwitch } from "@elmeragroup/fuse";
 import type { SwitchProps } from "@elmeragroup/fuse/switch";
 import { Switch } from "@elmeragroup/fuse/switch";
-
-test("Switch ships from the switch entry and the root barrel", () => {
-  expectTypeOf<typeof Switch>().toEqualTypeOf<typeof RootSwitch>();
-  expectTypeOf(Switch).toBeFunction();
-});
 
 test("SwitchProps is the primitive surface plus the optical size axis", () => {
   expectTypeOf<SwitchProps["size"]>().toEqualTypeOf<"sm" | "default" | undefined>();

@@ -2,21 +2,8 @@ import type { ReactNode } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type { CheckboxCard as RootCheckboxCard } from "@elmeragroup/fuse";
 import type { CheckboxCardProps } from "@elmeragroup/fuse/checkbox-card";
-import * as CheckboxCardModule from "@elmeragroup/fuse/checkbox-card";
 import { CheckboxCard } from "@elmeragroup/fuse/checkbox-card";
-
-test("CheckboxCard ships from the checkbox-card entry and the root barrel", () => {
-  expectTypeOf<typeof CheckboxCard>().toEqualTypeOf<typeof RootCheckboxCard>();
-  expectTypeOf(CheckboxCard).toBeFunction();
-});
-
-test("the entry exports only the public names", () => {
-  expectTypeOf(CheckboxCardModule).toHaveProperty("CheckboxCard");
-  expectTypeOf(CheckboxCardModule).not.toHaveProperty("checkboxCardStyles");
-  expectTypeOf(CheckboxCardModule).not.toHaveProperty("checkboxCardVariants");
-});
 
 test("CheckboxCardProps is the labeled-composite face with render and className omitted", () => {
   expectTypeOf<CheckboxCardProps["title"]>().toEqualTypeOf<ReactNode>();

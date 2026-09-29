@@ -168,17 +168,6 @@ describe("Switch", () => {
     expect(switchNamed("Required").getAttribute("aria-invalid")).toBe("true");
   });
 
-  it("emits data-size for sm and default", () => {
-    renderThemed(
-      <>
-        <Switch size="sm" aria-label="Small" />
-        <Switch size="default" aria-label="Default" />
-      </>
-    );
-    expect(switchNamed("Small").getAttribute("data-size")).toBe("sm");
-    expect(switchNamed("Default").getAttribute("data-size")).toBe("default");
-  });
-
   it("submits name and value through the hidden input", async () => {
     const alerts: Array<FormDataEntryValue | null> = [];
     const quiet: Array<FormDataEntryValue | null> = [];

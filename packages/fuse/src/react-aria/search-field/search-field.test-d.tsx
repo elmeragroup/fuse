@@ -3,19 +3,9 @@ import type { ReactNode, Ref } from "react";
 import type { ValidationResult } from "react-aria-components";
 import { expectTypeOf, test } from "vitest";
 
-import type * as RootApi from "@elmeragroup/fuse";
 import type * as SearchFieldApi from "@elmeragroup/fuse/react-aria/search-field";
 import type { SearchFieldProps } from "@elmeragroup/fuse/react-aria/search-field";
 import { SearchField } from "@elmeragroup/fuse/react-aria/search-field";
-
-test("SearchField is absent from the root barrel", () => {
-  expectTypeOf<typeof RootApi>().not.toHaveProperty("SearchField");
-});
-
-test("the public value surface is exactly SearchField", () => {
-  expectTypeOf(SearchField).toBeFunction();
-  expectTypeOf<typeof SearchFieldApi.SearchField>().toEqualTypeOf<typeof SearchField>();
-});
 
 test("searchFieldVariants and RAC types are not public exports", () => {
   expectTypeOf<typeof SearchFieldApi>().not.toHaveProperty("searchFieldVariants");
@@ -104,10 +94,4 @@ test("the element takes the public props, forwards a ref to the input, and rejec
 
   // @ts-expect-error no size axis
   const _noSize = <SearchField size="md" />;
-});
-
-test("there is no bare search-field entry", () => {
-  // @ts-expect-error quarantined path only — never a bare search-field entry
-  // oxlint-disable-next-line typescript/consistent-type-imports -- missing specifier is the assertion
-  type _Bare = typeof import("@elmeragroup/fuse/search-field");
 });

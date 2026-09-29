@@ -166,17 +166,6 @@ describe("docs Tailwind migration contract", () => {
     expect(srcCssFiles()).toEqual(["src/styles/globals.css"]);
   });
 
-  it("depends on tailwind-variants and the Typography plugin through the workspace catalog", () => {
-    // SAFETY: package.json is a JSON object with string-valued dependency maps; we only
-    // read the two catalog specifiers this contract names.
-    const pkg = JSON.parse(readFileSync(join(docsRoot, "package.json"), "utf8")) as {
-      dependencies?: Record<string, string>;
-      devDependencies?: Record<string, string>;
-    };
-    expect(pkg.dependencies?.["tailwind-variants"]).toBe("catalog:");
-    expect(pkg.devDependencies?.["@tailwindcss/typography"]).toBe("catalog:");
-  });
-
   it("does not export class-name constants or tv recipes", () => {
     const exported = srcTsFiles().flatMap((relative) => {
       const source = readFileSync(join(docsRoot, relative), "utf8");

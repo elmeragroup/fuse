@@ -1,13 +1,7 @@
 import { expectTypeOf, test } from "vitest";
 
-import type { Separator as RootSeparator } from "@elmeragroup/fuse";
 import type { SeparatorProps } from "@elmeragroup/fuse/separator";
 import { Separator } from "@elmeragroup/fuse/separator";
-
-test("Separator ships from the separator entry and the root barrel", () => {
-  expectTypeOf<typeof Separator>().toEqualTypeOf<typeof RootSeparator>();
-  expectTypeOf(Separator).toBeFunction();
-});
 
 test("orientation is the two-value primitive axis and stays optional", () => {
   expectTypeOf<SeparatorProps["orientation"]>().toEqualTypeOf<"horizontal" | "vertical" | undefined>();

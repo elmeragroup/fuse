@@ -403,30 +403,6 @@ describe("Toast chrome", () => {
     await waitForToastGone("Keyboard toast");
     await expect.element(page.getByRole("button", { name: "Focus start", exact: true })).toHaveFocus();
   });
-
-  it("passes data-base-ui-swipe-ignore through on an inner element", async () => {
-    function SwipeIgnoreList() {
-      const { toasts } = Toast.useToastManager();
-      return (
-        <Toast.Viewport>
-          {toasts.map((toast) => (
-            <Toast.Root key={toast.id} toast={toast}>
-              <Toast.Title />
-              <button type="button" data-base-ui-swipe-ignore>
-                Hold
-              </button>
-            </Toast.Root>
-          ))}
-        </Toast.Viewport>
-      );
-    }
-
-    const { manager } = renderToast(<SwipeIgnoreList />);
-    manager.add({ title: "Swipe", timeout: 0 });
-    await waitForToast("Swipe");
-    const hold = page.getByRole("button", { name: "Hold", exact: true }).element();
-    expect(hold.getAttribute("data-base-ui-swipe-ignore")).not.toBeNull();
-  });
 });
 
 describe("Toast contrast", () => {

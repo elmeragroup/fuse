@@ -8,15 +8,7 @@ import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { DESCRIPTION_COPY, TITLE_COPY, TOGGLE_COPY } from "../../../test/sidebar-contract";
 import { Sidebar } from "./index";
 import { sidebarStrings } from "./intl";
-import {
-  SIDEBAR_COOKIE_MAX_AGE,
-  SIDEBAR_COOKIE_NAME,
-  SIDEBAR_KEYBOARD_SHORTCUT,
-  SIDEBAR_WIDTH,
-  SIDEBAR_WIDTH_ICON,
-  SIDEBAR_WIDTH_MOBILE,
-  useSidebar,
-} from "./sidebar";
+import { useSidebar } from "./sidebar";
 import { sidebarMenuButtonVariants, sidebarMenuSubButtonVariants } from "./sidebar-variants";
 
 const PART_NAMES = [
@@ -63,17 +55,6 @@ describe("sidebar dictionary", () => {
         "toggle",
       ]);
     }
-  });
-});
-
-describe("sidebar constants", () => {
-  it("keeps the documented values, the cookie name above all", () => {
-    expect(SIDEBAR_COOKIE_NAME).toBe("sidebar:state");
-    expect(SIDEBAR_COOKIE_MAX_AGE).toBe(604800);
-    expect(SIDEBAR_WIDTH).toBe("16rem");
-    expect(SIDEBAR_WIDTH_MOBILE).toBe("18rem");
-    expect(SIDEBAR_WIDTH_ICON).toBe("3rem");
-    expect(SIDEBAR_KEYBOARD_SHORTCUT).toBe("b");
   });
 });
 

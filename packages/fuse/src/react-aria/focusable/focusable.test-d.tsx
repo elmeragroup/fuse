@@ -5,22 +5,9 @@ import { useFocusable as useRacFocusable } from "react-aria";
 import { Focusable as RacFocusable } from "react-aria-components";
 import { expectTypeOf, test } from "vitest";
 
-import type * as RootApi from "@elmeragroup/fuse";
 import type * as FocusableApi from "@elmeragroup/fuse/react-aria/focusable";
 import type { FocusableOptions } from "@elmeragroup/fuse/react-aria/focusable";
 import { Focusable, useFocusable } from "@elmeragroup/fuse/react-aria/focusable";
-
-test("Focusable and useFocusable are absent from the root barrel", () => {
-  expectTypeOf<typeof RootApi>().not.toHaveProperty("Focusable");
-  expectTypeOf<typeof RootApi>().not.toHaveProperty("useFocusable");
-});
-
-test("the public value surface is exactly Focusable and useFocusable", () => {
-  expectTypeOf(Focusable).toBeFunction();
-  expectTypeOf(useFocusable).toBeFunction();
-  expectTypeOf<typeof FocusableApi.Focusable>().toEqualTypeOf<typeof Focusable>();
-  expectTypeOf<typeof FocusableApi.useFocusable>().toEqualTypeOf<typeof useFocusable>();
-});
 
 test("the re-exports keep the RAC names as functions and FocusableOptions as the RAC type", () => {
   expectTypeOf(Focusable).toBeFunction();
@@ -62,10 +49,4 @@ test("the elements take the public props", () => {
     autoFocus: true,
     excludeFromTabOrder: true,
   };
-});
-
-test("there is no bare focusable entry", () => {
-  // @ts-expect-error quarantined path only — never a bare focusable entry
-  // oxlint-disable-next-line typescript/consistent-type-imports -- missing specifier is the assertion
-  type _Bare = typeof import("@elmeragroup/fuse/focusable");
 });

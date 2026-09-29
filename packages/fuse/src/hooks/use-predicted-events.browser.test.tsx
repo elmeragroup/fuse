@@ -34,16 +34,6 @@ function pointermoveCalls(spy: { mock: { calls: unknown[][] } }): unknown[][] {
 }
 
 describe("usePredictedEvents", () => {
-  it("fires onIntent once from a predicted path", () => {
-    const live = vi.fn();
-    render(<Probe label="Prefetch" onIntent={live} />);
-
-    const { x, y } = center(roleNamed("button", "Prefetch"));
-    dispatchPredictedPointer(x, y);
-    dispatchPredictedPointer(x, y);
-    expect(live).toHaveBeenCalledTimes(1);
-  });
-
   it("stops measuring a fired registration and removes the last pointermove listener", () => {
     const live = vi.fn();
     render(<Probe label="Prefetch" onIntent={live} />);

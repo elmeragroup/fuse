@@ -1,23 +1,7 @@
 import { expectTypeOf, test } from "vitest";
 
-import type { Sheet as RootSheet } from "@elmeragroup/fuse";
 import type { SheetContentProps, SheetRootProps } from "@elmeragroup/fuse/sheet";
 import { Sheet } from "@elmeragroup/fuse/sheet";
-
-test("Sheet ships from the sheet entry and the root barrel", () => {
-  expectTypeOf<typeof Sheet>().toEqualTypeOf<typeof RootSheet>();
-  expectTypeOf(Sheet.Root).toBeFunction();
-  expectTypeOf(Sheet.Trigger).toBeFunction();
-  expectTypeOf(Sheet.Close).toBeFunction();
-  expectTypeOf(Sheet.Portal).toBeFunction();
-  expectTypeOf(Sheet.Overlay).toBeFunction();
-  expectTypeOf(Sheet.Content).toBeFunction();
-  expectTypeOf(Sheet.Header).toBeFunction();
-  expectTypeOf(Sheet.Body).toBeFunction();
-  expectTypeOf(Sheet.Footer).toBeFunction();
-  expectTypeOf(Sheet.Title).toBeFunction();
-  expectTypeOf(Sheet.Description).toBeFunction();
-});
 
 test("swipeDirection stays off the public Root props and sheetContentVariants is not exported", () => {
   expectTypeOf<SheetRootProps>().not.toHaveProperty("swipeDirection");

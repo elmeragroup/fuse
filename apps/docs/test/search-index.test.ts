@@ -3,12 +3,9 @@ import { describe, expect, it } from "vitest";
 import { resolveComponentPaths } from "../scripts/lib/components.ts";
 import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import { SEARCH_ENTRIES } from "../src/generated/search-index";
-import { NAV_GROUPS } from "../src/lib/nav";
 import { HOME_PAGE, STATIC_PAGES } from "../src/lib/pages";
 import { matchSearchEntries } from "../src/lib/search";
 import { docsBaseUrl } from "./docs-server";
-
-const NAV_HREFS = NAV_GROUPS.flatMap((group) => group.items.map((item) => item.href));
 
 describe("search index", () => {
   it("is generated from the two page manifests, with nothing else in it", () => {
@@ -17,13 +14,6 @@ describe("search index", () => {
       ...STATIC_PAGES.map((page) => page.href),
       ...COMPONENT_PAGES.map((component) => `/components/${component.slug}`),
     ]);
-  });
-
-  it("covers every SideNav destination", () => {
-    const indexed = new Set(SEARCH_ENTRIES.map((entry) => entry.href));
-    for (const href of NAV_HREFS) {
-      expect(indexed.has(href), href).toBe(true);
-    }
   });
 
   it("carries a group, a description and match keywords on every entry", () => {

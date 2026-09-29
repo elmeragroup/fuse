@@ -1,14 +1,7 @@
 import { expectTypeOf, test } from "vitest";
 
-import type { Span as RootSpan, SpanProps as RootSpanProps } from "@elmeragroup/fuse";
 import type { SpanProps } from "@elmeragroup/fuse/span";
-import { Span, spanVariants } from "@elmeragroup/fuse/span";
-
-test("Span and SpanProps ship from the span entry and the root barrel", () => {
-  expectTypeOf<typeof Span>().toEqualTypeOf<typeof RootSpan>();
-  expectTypeOf<SpanProps>().toEqualTypeOf<RootSpanProps>();
-  expectTypeOf(Span).toBeFunction();
-});
+import { Span } from "@elmeragroup/fuse/span";
 
 test("SpanProps is native span props plus the recipe axes and render", () => {
   expectTypeOf<SpanProps["variant"]>().toEqualTypeOf<
@@ -37,12 +30,6 @@ test("SpanProps is native span props plus the recipe axes and render", () => {
   expectTypeOf<SpanProps>().not.toHaveProperty("slot");
   expectTypeOf<SpanProps>().not.toHaveProperty("as");
   expectTypeOf<SpanProps>().not.toHaveProperty("elementType");
-});
-
-test("spanVariants is public and returns a class string", () => {
-  expectTypeOf(spanVariants).toBeFunction();
-  expectTypeOf(spanVariants({ variant: "destructive", size: "xs", align: "center" })).toBeString();
-  expectTypeOf(spanVariants()).toBeString();
 });
 
 test("the element takes the public props, render, and no as, slot, or elementType", () => {

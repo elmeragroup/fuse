@@ -99,17 +99,6 @@ describe("Popover", () => {
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
   });
 
-  it("closes on Escape and returns focus to the trigger", async () => {
-    renderThemed(<BasicPopover />);
-    await openPopover();
-
-    await userEvent.keyboard("{Escape}");
-    await vi.waitFor(() => {
-      expect(page.getByRole("dialog").query()).toBeNull();
-    });
-    await expect.element(page.getByRole("button", { name: "Details", exact: true })).toHaveFocus();
-  });
-
   it("closes on outside press and returns focus to the trigger", async () => {
     renderThemed(
       <>

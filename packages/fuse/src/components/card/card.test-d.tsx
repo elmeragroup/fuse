@@ -1,20 +1,6 @@
 import { expectTypeOf, test } from "vitest";
 
-import type { Card as RootCard } from "@elmeragroup/fuse";
-import * as CardModule from "@elmeragroup/fuse/card";
 import { Card, cardVariants } from "@elmeragroup/fuse/card";
-
-test("the namespace ships all eight parts from the card entry and the root barrel", () => {
-  expectTypeOf<typeof Card>().toEqualTypeOf<typeof RootCard>();
-  expectTypeOf(Card).toHaveProperty("Root");
-  expectTypeOf(Card).toHaveProperty("Header");
-  expectTypeOf(Card).toHaveProperty("Tag");
-  expectTypeOf(Card).toHaveProperty("Title");
-  expectTypeOf(Card).toHaveProperty("Description");
-  expectTypeOf(Card).toHaveProperty("Action");
-  expectTypeOf(Card).toHaveProperty("Content");
-  expectTypeOf(Card).toHaveProperty("Footer");
-});
 
 test("cardVariants is public and slotted with a single direction axis", () => {
   expectTypeOf(cardVariants).toBeFunction();
@@ -23,11 +9,6 @@ test("cardVariants is public and slotted with a single direction axis", () => {
 
   // @ts-expect-error the external ref's surface axes are decomposed away
   cardVariants({ variant: "bright" });
-});
-
-test("title and description size recipes stay module-private", () => {
-  expectTypeOf(CardModule).not.toHaveProperty("cardTitleVariants");
-  expectTypeOf(CardModule).not.toHaveProperty("cardDescriptionVariants");
 });
 
 test("parts take the shared direction axis and no polymorphic as prop", () => {

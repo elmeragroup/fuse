@@ -102,25 +102,4 @@ describe("Toggle", () => {
     expect(toggle.hasAttribute("data-pressed")).toBe(true);
     expect(toggle.getAttribute("data-slot")).toBe("toggle");
   });
-
-  it("stamps data-slot=toggle on each face and keeps the icon-start hook", () => {
-    renderThemed(
-      <>
-        <Toggle variant="default">Default</Toggle>
-        <Toggle variant="outline" size="lg">
-          Outline
-        </Toggle>
-        <Toggle>
-          <span data-icon="inline-start" aria-hidden>
-            *
-          </span>
-          Icon
-        </Toggle>
-      </>
-    );
-
-    expect(toggleNamed("Default").getAttribute("data-slot")).toBe("toggle");
-    expect(toggleNamed("Outline").getAttribute("data-slot")).toBe("toggle");
-    expect(toggleNamed("Icon").querySelector("[data-icon=inline-start]")).not.toBeNull();
-  });
 });

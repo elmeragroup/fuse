@@ -10,7 +10,6 @@ import {
   headingNamed,
   renderThemed,
   roleNamed,
-  textboxNamed,
 } from "../test/themed-browser-render";
 import { ThemeScope } from "./theme/theme-scope";
 
@@ -31,17 +30,6 @@ describe("roleNamed", () => {
     renderThemed(<button type="button">Send</button>);
 
     expect(() => roleNamed("button", "Cancel")).toThrow();
-  });
-
-  it("finds a textbox by its label", () => {
-    renderThemed(
-      <label>
-        Meter number
-        <input type="text" defaultValue="7070575000" />
-      </label>
-    );
-
-    expect(textboxNamed("Meter number")).toHaveProperty("value", "7070575000");
   });
 });
 

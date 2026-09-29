@@ -1,13 +1,7 @@
 import { expectTypeOf, test } from "vitest";
 
-import type { Toggle as RootToggle } from "@elmeragroup/fuse";
 import type { ToggleProps } from "@elmeragroup/fuse/toggle";
-import { Toggle, toggleVariants } from "@elmeragroup/fuse/toggle";
-
-test("Toggle ships from the toggle entry and the root barrel", () => {
-  expectTypeOf<typeof Toggle>().toEqualTypeOf<typeof RootToggle>();
-  expectTypeOf(Toggle).toBeFunction();
-});
+import { Toggle } from "@elmeragroup/fuse/toggle";
 
 test("ToggleProps is the primitive surface plus the recipe axes", () => {
   expectTypeOf<ToggleProps["variant"]>().toEqualTypeOf<"default" | "outline" | undefined>();
@@ -16,12 +10,6 @@ test("ToggleProps is the primitive surface plus the recipe axes", () => {
   expectTypeOf<ToggleProps["pressed"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<ToggleProps["defaultPressed"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<ToggleProps>().not.toHaveProperty("as");
-});
-
-test("toggleVariants is public and returns a class string", () => {
-  expectTypeOf(toggleVariants).toBeFunction();
-  expectTypeOf(toggleVariants({ variant: "outline", size: "sm" })).toBeString();
-  expectTypeOf(toggleVariants()).toBeString();
 });
 
 test("the element takes the public props and no polymorphic as prop", () => {

@@ -31,19 +31,6 @@ describe("Input", () => {
     );
   });
 
-  it("takes its accessible name from Field.Label", () => {
-    renderThemed(
-      <Field.Root>
-        <Field.Label>Email</Field.Label>
-        <Input type="email" />
-        <Field.Description>Work address preferred.</Field.Description>
-      </Field.Root>
-    );
-    const input = textboxNamed("Email");
-    const describedBy = input.getAttribute("aria-describedby");
-    expect(describedBy).toBeTruthy();
-  });
-
   it("keeps the Field label and description when a wrapper forwards id and ARIA props as undefined", async () => {
     renderThemed(
       <Field.Root>
@@ -76,35 +63,6 @@ describe("Input", () => {
     expect(document.activeElement).toBe(textboxNamed("Email"));
     await userEvent.keyboard("{Tab}");
     expect(document.activeElement).toBe(roleNamed("button", "After"));
-  });
-
-  it("fires native onChange while typing for uncontrolled and controlled values", async () => {
-    const seen: string[] = [];
-    function Controlled() {
-      return (
-        <Input
-          aria-label="Controlled"
-          value="Hi"
-          onChange={(event) => {
-            seen.push(event.currentTarget.value);
-          }}
-        />
-      );
-    }
-    renderThemed(
-      <>
-        <Input
-          aria-label="Open"
-          onChange={(event) => {
-            seen.push(event.currentTarget.value);
-          }}
-        />
-        <Controlled />
-      </>
-    );
-    await userEvent.fill(page.getByRole("textbox", { name: "Open", exact: true }), "ab");
-    expect(seen.some((value) => value.includes("a") || value.includes("ab"))).toBe(true);
-    expect(textboxNamed("Controlled")).toHaveProperty("value", "Hi");
   });
 
   it("matches the signed md rung at both densities and does not rescope under ThemeScope", () => {

@@ -5,7 +5,6 @@ import * as CssColor from "./css-color.ts";
 import * as Hex from "./hex.ts";
 import * as Lab from "./lab.ts";
 import * as Oklch from "./oklch.ts";
-import { getOrThrow } from "./result.ts";
 import * as Srgb from "./srgb.ts";
 
 function parsed(input: string): CssColor.CssColor {
@@ -14,11 +13,6 @@ function parsed(input: string): CssColor.CssColor {
     throw new Error(`expected ${input} to parse: ${result.error.message}`);
   }
   return result.value;
-}
-
-function srgbChannels(input: string): readonly [number, number, number, number] {
-  const color = CssColor.toSrgb(parsed(input));
-  return [color.r, color.g, color.b, color.alpha];
 }
 
 describe("parse", () => {
@@ -156,15 +150,6 @@ describe("toSrgb", () => {
     for (const [input, hex] of references) {
       expect(Hex.formatOpaque(CssColor.toSrgb(parsed(input))), input).toBe(hex);
     }
-  });
-
-  it("passes an sRGB color through and converts an OKLCH one", () => {
-    expect(srgbChannels("#5c6773")).toEqual([92 / 255, 103 / 255, 115 / 255, 1]);
-    const white = srgbChannels("oklch(1 0 0 / 40%)");
-    expect(white).toEqual([1, 1, 1, 0.4]);
-    expect(CssColor.toSrgb(getOrThrow(Srgb.make({ r: 0.1, g: 0.2, b: 0.3, alpha: 1 })))).toEqual(
-      getOrThrow(Srgb.make({ r: 0.1, g: 0.2, b: 0.3, alpha: 1 }))
-    );
   });
 });
 

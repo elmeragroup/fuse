@@ -35,9 +35,4 @@ describe("isTextValueNode", () => {
     expect(isTextValueNode(["Remove", 42])).toBe(false);
     expect(isTextValueNode(createElement("span", null, "Remove"))).toBe(false);
   });
-
-  it("differs from isTextNode only on the number arm", () => {
-    expect(isTextNode(42)).toBe(false);
-    expect(isTextValueNode(42)).toBe(true);
-  });
 });

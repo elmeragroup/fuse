@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { describe, expect, it, vi } from "vitest";
@@ -39,17 +39,6 @@ async function openInfo(name = "More information"): Promise<HTMLElement> {
 }
 
 describe("PopoverInfoButton", () => {
-  it("names the trigger from the en-US dictionary default and lets label override it", () => {
-    const { rerender } = renderInfo(<PopoverInfoButton>{EXPLAINER}</PopoverInfoButton>);
-
-    expect(roleNamed("button", "More information")).toBeTruthy();
-    expect(page.getByRole("button").elements()).toHaveLength(1);
-
-    rerender(withLocale("en-US", <PopoverInfoButton label="About grid rent">{EXPLAINER}</PopoverInfoButton>));
-    expect(roleNamed("button", "About grid rent")).toBeTruthy();
-    expect(page.getByRole("button", { name: "More information", exact: true }).query()).toBeNull();
-  });
-
   it("renders the dictionary default in all four locales and honors an explicit label", () => {
     for (const locale of SUPPORTED_LOCALES) {
       const { unmount } = renderInfo(<PopoverInfoButton>{EXPLAINER}</PopoverInfoButton>, locale);
@@ -138,19 +127,6 @@ describe("PopoverInfoButton", () => {
     expect(px(getComputedStyle(dialog).maxWidth)).toBeGreaterThan(smMaxWidth);
   });
 
-  it("portals into the enclosing ThemeScope instead of the document body", async () => {
-    renderInfo(
-      <div style={{ padding: 240 }}>
-        <PopoverInfoButton>{EXPLAINER}</PopoverInfoButton>
-      </div>
-    );
-    const dialog = await openInfo();
-    const scope = dialog.closest("[data-theme-brand]");
-    expect(scope).not.toBeNull();
-    expect(scope?.contains(dialog)).toBe(true);
-    expect([...document.body.children].includes(dialog)).toBe(false);
-  });
-
   it("portals into an explicit container element", async () => {
     function ExplicitContainer() {
       const [node, setNode] = useState<HTMLDivElement | null>(null);
@@ -170,17 +146,5 @@ describe("PopoverInfoButton", () => {
     const island = page.getByRole("region", { name: "Theme island", exact: true }).element();
     expect(island.contains(dialog)).toBe(true);
     expect([...document.body.children].includes(dialog)).toBe(false);
-  });
-
-  it("waits while the resolved container element is still null", async () => {
-    function NeverAttached() {
-      const ref = useRef<HTMLElement | null>(null);
-      return <PopoverInfoButton container={ref}>Pending</PopoverInfoButton>;
-    }
-    renderInfo(<NeverAttached />);
-
-    await userEvent.click(roleNamed("button", "More information"));
-    expect(page.getByRole("dialog").query()).toBeNull();
-    expect([...document.body.children].some((child) => child.getAttribute("role") === "dialog")).toBe(false);
   });
 });

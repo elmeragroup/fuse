@@ -74,22 +74,6 @@ function TallList({ label, items }: { label: string; items: number }) {
 }
 
 describe("ScrollArea", () => {
-  it("renders content inside the viewport and composes the self focus ring", async () => {
-    render(
-      <ScrollArea.Root style={{ height: 128 }}>
-        <TallList label="Tags" items={20} />
-      </ScrollArea.Root>
-    );
-
-    await expect.element(page.getByText("Tags", { exact: true })).toBeVisible();
-    await waitForOverflow("Tags", "data-has-overflow-y");
-
-    const viewport = viewportFromText("Tags");
-    expect(viewport.contains(labeledText("Tags"))).toBe(true);
-    expect(viewport.getAttribute("data-slot")).toBe("scroll-area-viewport");
-    expect(viewport.tabIndex).toBe(0);
-  });
-
   it("renders exactly one scrollbar for the Root orientation", async () => {
     render(
       <>

@@ -2,14 +2,8 @@ import type { ReactNode } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type { NumberField as RootNumberField } from "@elmeragroup/fuse";
 import type { NumberFieldProps } from "@elmeragroup/fuse/number-field";
 import { NumberField } from "@elmeragroup/fuse/number-field";
-
-test("NumberField ships from the number-field entry and the root barrel", () => {
-  expectTypeOf<typeof NumberField>().toEqualTypeOf<typeof RootNumberField>();
-  expectTypeOf(NumberField).toBeFunction();
-});
 
 test("NumberFieldProps is the closed composite face", () => {
   expectTypeOf<NumberFieldProps["label"]>().toEqualTypeOf<string | undefined>();

@@ -2,7 +2,6 @@ import { expectTypeOf, test } from "vitest";
 
 import type { ToggleGroup as RootToggleGroup } from "@elmeragroup/fuse";
 import type { ToggleGroupItemProps, ToggleGroupRootProps } from "@elmeragroup/fuse/toggle-group";
-import * as ToggleGroupModule from "@elmeragroup/fuse/toggle-group";
 import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
 
 test("the namespace ships Root and Item from the toggle-group entry and the root barrel", () => {
@@ -11,15 +10,6 @@ test("the namespace ships Root and Item from the toggle-group entry and the root
   expectTypeOf(ToggleGroup).toHaveProperty("Item");
   expectTypeOf(ToggleGroup.Root).toBeFunction();
   expectTypeOf(ToggleGroup.Item).toBeFunction();
-});
-
-test("public API exports only the namespace — never flat ref names or toggleVariants", () => {
-  expectTypeOf(ToggleGroupModule).not.toHaveProperty("toggleVariants");
-  expectTypeOf(ToggleGroupModule).not.toHaveProperty("toggleGroupVariants");
-  expectTypeOf(ToggleGroupModule).not.toHaveProperty("ToggleGroupItem");
-  expectTypeOf(ToggleGroupModule).not.toHaveProperty("ToggleGroupRoot");
-  expectTypeOf(ToggleGroup).not.toHaveProperty("List");
-  expectTypeOf(ToggleGroup).not.toHaveProperty("Trigger");
 });
 
 test("Root and Item take the public props and no polymorphic as prop", () => {

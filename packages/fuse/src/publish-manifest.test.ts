@@ -114,16 +114,6 @@ describe("publish manifest", () => {
     expect(published.toSorted()).toEqual(workspace.toSorted());
   }, 20_000);
 
-  it("keeps the workspace version and no release identity for an ordinary build", () => {
-    const root = scratchPackageRoot();
-    writePublishManifest(root);
-
-    const manifest = readManifestFields(join(root, "dist/package.json"));
-    const workspace = readManifestFields(join(packageRoot, "package.json"));
-    expect(manifest.version).toBe(workspace.version);
-    expect(manifest.elmeraRelease).toBeUndefined();
-  }, 20_000);
-
   it("an unstamped write never carries a stale release identity", () => {
     const root = scratchPackageRoot();
     writePublishManifest(root, { version: "0.2.0-canary.1", commit, channel });

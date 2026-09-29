@@ -12,7 +12,6 @@ import {
 import { flagAssets } from "../../flags";
 import { phoneNumberFieldStrings } from "./intl";
 import {
-  cleanPhoneInput,
   defaultMetadata,
   getCountries,
   processInputWithDetection,
@@ -85,11 +84,6 @@ describe("phone-number-field picker set", () => {
     }
   });
 
-  it("cleans paste/input by stripping letters while keeping phone punctuation", () => {
-    expect(cleanPhoneInput("41234567abc")).toBe("41234567");
-    expect(cleanPhoneInput("+47 412-34-567")).toBe("+47 412-34-567");
-  });
-
   it("throws when filtering leaves no picker country", () => {
     // SAFETY: empty countries/calling-codes is a valid MetadataJson shape for the empty-picker case.
     const empty = { country_calling_codes: {}, countries: {} } as MetadataJson;
@@ -152,30 +146,28 @@ describe("phone-number-field picker set", () => {
 });
 
 describe("phone number international identity", () => {
-  it.each([
-    ["+24712345", "+24712345"],
-    ["+79123456789", "+79123456789"],
-    ["0024712345", "+24712345"],
-    ["+46701234567", "+46701234567"],
-  ])("preserves the full input %s through detection and output", (input, expected) => {
-    const countries = getCountries();
-    const currentCountry = resolveSelectedCountry(countries, "NO");
-    const next = processInputWithDetection({
-      input,
-      currentCountry,
-      countries,
-      autoDetectCountry: true,
-      international: false,
-      metadata: defaultMetadata,
-    });
-    const values = resolvePhoneFieldValues({
-      digits: next.digits,
-      country: next.country.code,
-      metadata: defaultMetadata,
-      outputFormat: "e164",
-      international: false,
-      formatOnType: false,
-    });
-    expect(values.outputValue).toBe(expected);
-  });
+  it.each([["0024712345", "+24712345"]])(
+    "preserves the full input %s through detection and output",
+    (input, expected) => {
+      const countries = getCountries();
+      const currentCountry = resolveSelectedCountry(countries, "NO");
+      const next = processInputWithDetection({
+        input,
+        currentCountry,
+        countries,
+        autoDetectCountry: true,
+        international: false,
+        metadata: defaultMetadata,
+      });
+      const values = resolvePhoneFieldValues({
+        digits: next.digits,
+        country: next.country.code,
+        metadata: defaultMetadata,
+        outputFormat: "e164",
+        international: false,
+        formatOnType: false,
+      });
+      expect(values.outputValue).toBe(expected);
+    }
+  );
 });

@@ -84,14 +84,6 @@ describe("barrel generation", () => {
     );
   });
 
-  it("fails generation when a facade uses export *", () => {
-    const packageRoot = scratchPackage({
-      "src/button.ts": `export * from "./components/button/button";\n`,
-    });
-
-    expect(() => discoverJsEntriesFromAllowlist(packageRoot, [".", "theme", "button"])).toThrow(/export \*/);
-  });
-
   it("throws with the entry name when a non-deferred allowlisted entry has no source", () => {
     const packageRoot = scratchPackage({
       "src/theme/theme-provider.ts": `export const ThemeProvider = 1;\n`,

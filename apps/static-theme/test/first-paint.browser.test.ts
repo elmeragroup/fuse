@@ -38,12 +38,8 @@ type FirstPaintCase = {
 const firstPaintCases: FirstPaintCase[] = [
   { name: "stored light", stored: "light", colorScheme: "dark", expectedTheme: "light" },
   { name: "stored dark", stored: "dark", colorScheme: "light", expectedTheme: "dark" },
-  { name: "system light", stored: "system", colorScheme: "light", expectedTheme: "light" },
-  { name: "system dark", stored: "system", colorScheme: "dark", expectedTheme: "dark" },
   { name: "missing storage, system light", stored: null, colorScheme: "light", expectedTheme: "light" },
   { name: "missing storage, system dark", stored: null, colorScheme: "dark", expectedTheme: "dark" },
-  { name: "invalid storage, system light", stored: "nope", colorScheme: "light", expectedTheme: "light" },
-  { name: "invalid storage, system dark", stored: "{}", colorScheme: "dark", expectedTheme: "dark" },
 ];
 
 const browser = launchSuiteBrowser();

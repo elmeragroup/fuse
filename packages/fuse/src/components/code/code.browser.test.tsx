@@ -19,30 +19,11 @@ function codeRegion(name: string): HTMLElement {
 }
 
 describe("Code", () => {
-  it("renders highlighted source whose accessible text equals the input code", () => {
-    renderThemed(<Code code={SNIPPET} aria-label="Answer snippet" />);
-    const region = codeRegion("Answer snippet");
-    expect(region.tagName).toBe("PRE");
-    expect(region.getAttribute("data-slot")).toBe("code");
-    expect(region.textContent).toBe(SNIPPET);
-    expect(region.querySelector("code")).not.toBeNull();
-  });
-
   it("escapes HTML in the code string so the payload renders as text", () => {
     renderThemed(<Code code={XSS_PAYLOAD} aria-label="Unsafe payload" />);
     const region = codeRegion("Unsafe payload");
     expect(region.querySelector("img")).toBeNull();
     expect(region.textContent).toBe(XSS_PAYLOAD);
-  });
-
-  it("merges className onto the pre and forwards id and aria-label", () => {
-    renderThemed(
-      <Code code={SNIPPET} className="rounded-md bg-muted" id="answer" aria-label="Answer snippet" />
-    );
-    const region = codeRegion("Answer snippet");
-    expect(region.id).toBe("answer");
-    expect(getComputedStyle(region).overflow).toBe("auto");
-    expect(getComputedStyle(region).fontFamily).not.toBe("");
   });
 
   it("exposes a focusable scroll region with role=region and tabIndex 0", () => {

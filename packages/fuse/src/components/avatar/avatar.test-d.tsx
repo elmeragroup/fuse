@@ -2,25 +2,7 @@ import type { ComponentProps } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type { Avatar as RootAvatar } from "@elmeragroup/fuse";
-import * as AvatarModule from "@elmeragroup/fuse/avatar";
 import { Avatar } from "@elmeragroup/fuse/avatar";
-
-test("the namespace ships all four parts from the avatar entry and the root barrel", () => {
-  expectTypeOf<typeof Avatar>().toEqualTypeOf<typeof RootAvatar>();
-  expectTypeOf(Avatar).toHaveProperty("Root");
-  expectTypeOf(Avatar).toHaveProperty("Group");
-  expectTypeOf(Avatar).toHaveProperty("Image");
-  expectTypeOf(Avatar).toHaveProperty("Fallback");
-});
-
-test("public API exports only the namespace — flat parts stay private", () => {
-  expectTypeOf(AvatarModule).not.toHaveProperty("AvatarRoot");
-  expectTypeOf(AvatarModule).not.toHaveProperty("AvatarGroup");
-  expectTypeOf(AvatarModule).not.toHaveProperty("AvatarImage");
-  expectTypeOf(AvatarModule).not.toHaveProperty("AvatarFallback");
-  expectTypeOf(AvatarModule).not.toHaveProperty("AvatarProps");
-});
 
 test("parts take the primitive passthrough surface and no as prop", () => {
   const _root = (

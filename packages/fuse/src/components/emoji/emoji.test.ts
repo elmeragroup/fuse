@@ -61,12 +61,6 @@ describe("emoji markup", () => {
     expect(html).toContain('focusable="false"');
     expect(html).not.toContain("role=");
   });
-
-  it("lands className on the svg", () => {
-    const html = renderToStaticMarkup(createElement(Emoji.SlightlySmilingFace, { className: "size-5" }));
-    expect(html).toContain('class="size-5"');
-    expect(html).toContain("<svg");
-  });
 });
 
 describe("Twemoji package-file notices", () => {

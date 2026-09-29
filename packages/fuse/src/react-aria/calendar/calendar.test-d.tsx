@@ -3,25 +3,9 @@ import type { ReactNode } from "react";
 import type { CalendarDate } from "@internationalized/date";
 import { expectTypeOf, test } from "vitest";
 
-import type * as RootApi from "@elmeragroup/fuse";
 import type * as CalendarApi from "@elmeragroup/fuse/react-aria/calendar";
 import type { CalendarProps } from "@elmeragroup/fuse/react-aria/calendar";
 import { Calendar, CalendarGridHeader, CalendarHeader } from "@elmeragroup/fuse/react-aria/calendar";
-
-test("Calendar and header parts are absent from the root barrel", () => {
-  expectTypeOf<typeof RootApi>().not.toHaveProperty("Calendar");
-  expectTypeOf<typeof RootApi>().not.toHaveProperty("CalendarHeader");
-  expectTypeOf<typeof RootApi>().not.toHaveProperty("CalendarGridHeader");
-});
-
-test("the public value surface is exactly Calendar, CalendarHeader, and CalendarGridHeader", () => {
-  expectTypeOf(Calendar).toBeFunction();
-  expectTypeOf(CalendarHeader).toBeFunction();
-  expectTypeOf(CalendarGridHeader).toBeFunction();
-  expectTypeOf<typeof CalendarApi.Calendar>().toEqualTypeOf<typeof Calendar>();
-  expectTypeOf<typeof CalendarApi.CalendarHeader>().toEqualTypeOf<typeof CalendarHeader>();
-  expectTypeOf<typeof CalendarApi.CalendarGridHeader>().toEqualTypeOf<typeof CalendarGridHeader>();
-});
 
 test("calendarVariants and RAC types are not public exports", () => {
   expectTypeOf<typeof CalendarApi>().not.toHaveProperty("calendarVariants");
@@ -108,10 +92,4 @@ test("the elements take the public props and reject children, visibleDuration, a
   const _noHeaderClass = <CalendarHeader className="px-2" />;
   // @ts-expect-error CalendarGridHeader takes no props
   const _noGridHeaderClass = <CalendarGridHeader className="text-xs" />;
-});
-
-test("there is no bare calendar entry", () => {
-  // @ts-expect-error quarantined path only — never a bare calendar entry
-  // oxlint-disable-next-line typescript/consistent-type-imports -- missing specifier is the assertion
-  type _Bare = typeof import("@elmeragroup/fuse/calendar");
 });

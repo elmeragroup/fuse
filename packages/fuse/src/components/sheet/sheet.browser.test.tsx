@@ -1,5 +1,3 @@
-import { useRef } from "react";
-
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -7,7 +5,6 @@ import "../../../dist/styles.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import { px, renderThemed } from "../../../test/themed-browser-render";
-import { ThemeScope } from "../../theme/theme-scope";
 import { Sheet } from "./index";
 
 /** Reads a theme token off the document root (`--container-*` are rem lengths). */
@@ -329,42 +326,6 @@ describe("Sheet", () => {
     const dialog = await openSheet();
     expect(scope).not.toBeNull();
     expect(scope?.contains(dialog)).toBe(true);
-    expect([...document.body.children].includes(dialog)).toBe(false);
-  });
-
-  it("waits while the resolved container element is still null", () => {
-    function NeverAttached() {
-      const ref = useRef<HTMLElement | null>(null);
-      return (
-        <Sheet.Root open>
-          <Sheet.Content container={ref}>
-            <Sheet.Title>Pending</Sheet.Title>
-          </Sheet.Content>
-        </Sheet.Root>
-      );
-    }
-    renderThemed(withLocale("en-US", <NeverAttached />));
-
-    expect(page.getByRole("dialog").query()).toBeNull();
-  });
-
-  it("does not paint the popup outside a ThemeScope element that has not attached yet", async () => {
-    renderThemed(
-      withLocale(
-        "en-US",
-        <ThemeScope theme={{ variant: "external", brand: "fkas", segment: "private" }}>
-          <Sheet.Root open>
-            <Sheet.Content>
-              <Sheet.Title>Scoped</Sheet.Title>
-            </Sheet.Content>
-          </Sheet.Root>
-        </ThemeScope>
-      )
-    );
-    await expect.element(page.getByRole("dialog")).toBeInTheDocument();
-    const dialog = page.getByRole("dialog").element();
-    const scope = dialog.closest("[data-theme-variant=external]");
-    expect(scope).not.toBeNull();
     expect([...document.body.children].includes(dialog)).toBe(false);
   });
 

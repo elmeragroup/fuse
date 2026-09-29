@@ -2,19 +2,9 @@ import type { Ref } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type * as RootApi from "@elmeragroup/fuse";
 import type * as LinkApi from "@elmeragroup/fuse/react-aria/link";
 import type { LinkProps } from "@elmeragroup/fuse/react-aria/link";
 import { Link } from "@elmeragroup/fuse/react-aria/link";
-
-test("Link is absent from the root barrel", () => {
-  expectTypeOf<typeof RootApi>().not.toHaveProperty("Link");
-});
-
-test("the public value surface is exactly Link", () => {
-  expectTypeOf(Link).toBeFunction();
-  expectTypeOf<typeof LinkApi.Link>().toEqualTypeOf<typeof Link>();
-});
 
 test("linkVariants and RAC types are not public exports", () => {
   expectTypeOf<typeof LinkApi>().not.toHaveProperty("linkVariants");
@@ -123,10 +113,4 @@ test("the element takes the public props, forwards a ref, and rejects a size axi
   const _noDestructive = <Link variant="destructive" href="/orders" />;
   // @ts-expect-error `medium` is Text's weight value, not Link's two-value axis
   const _noMediumWeight = <Link weight="medium" href="/orders" />;
-});
-
-test("there is no bare link entry", () => {
-  // @ts-expect-error quarantined path only — never a bare link entry
-  // oxlint-disable-next-line typescript/consistent-type-imports -- missing specifier is the assertion
-  type _Bare = typeof import("@elmeragroup/fuse/link");
 });

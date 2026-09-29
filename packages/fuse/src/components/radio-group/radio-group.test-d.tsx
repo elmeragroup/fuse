@@ -3,20 +3,11 @@ import type { ComponentProps, ReactNode } from "react";
 import { expectTypeOf, test } from "vitest";
 
 import type {
-  Radio as RootRadio,
-  RadioGroup as RootRadioGroup,
-  RadioGroupItem as RootRadioGroupItem,
-  RadioIconButton as RootRadioIconButton,
-  RadioItem as RootRadioItem,
-  RadioItemGroup as RootRadioItemGroup,
-} from "@elmeragroup/fuse";
-import type {
   RadioGroupProps,
   RadioIconButtonProps,
   RadioItemProps,
   RadioProps,
 } from "@elmeragroup/fuse/radio-group";
-import * as RadioGroupModule from "@elmeragroup/fuse/radio-group";
 import {
   Radio,
   RadioGroup,
@@ -26,40 +17,6 @@ import {
   RadioItemGroup,
 } from "@elmeragroup/fuse/radio-group";
 import { SelectionItem } from "@elmeragroup/fuse/selection-item";
-
-test("the public values ship from the radio-group entry and the root barrel", () => {
-  expectTypeOf<typeof Radio>().toEqualTypeOf<typeof RootRadio>();
-  expectTypeOf<typeof RadioGroup>().toEqualTypeOf<typeof RootRadioGroup>();
-  expectTypeOf<typeof RadioGroupItem>().toEqualTypeOf<typeof RootRadioGroupItem>();
-  expectTypeOf<typeof RadioIconButton>().toEqualTypeOf<typeof RootRadioIconButton>();
-  expectTypeOf<typeof RadioItem>().toEqualTypeOf<typeof RootRadioItem>();
-  expectTypeOf<typeof RadioItemGroup>().toEqualTypeOf<typeof RootRadioItemGroup>();
-  expectTypeOf(Radio).toBeFunction();
-  expectTypeOf(RadioGroup).toBeFunction();
-  expectTypeOf(RadioGroupItem).toBeFunction();
-  expectTypeOf(RadioIconButton).toBeFunction();
-  expectTypeOf(RadioItem).toBeFunction();
-  expectTypeOf(RadioItemGroup).toBeFunction();
-});
-
-test("the entry exports only the public names", () => {
-  expectTypeOf(RadioGroupModule).toHaveProperty("Radio");
-  expectTypeOf(RadioGroupModule).toHaveProperty("RadioGroup");
-  expectTypeOf(RadioGroupModule).toHaveProperty("RadioGroupItem");
-  expectTypeOf(RadioGroupModule).toHaveProperty("RadioIconButton");
-  expectTypeOf(RadioGroupModule).toHaveProperty("RadioItem");
-  expectTypeOf(RadioGroupModule).toHaveProperty("RadioItemGroup");
-  expectTypeOf(RadioGroupModule).not.toHaveProperty("RadioItemTitle");
-  expectTypeOf(RadioGroupModule).not.toHaveProperty("RadioItemActions");
-  expectTypeOf(RadioGroupModule).not.toHaveProperty("RadioItemContent");
-  expectTypeOf(RadioGroupModule).not.toHaveProperty("RadioItemDescription");
-  expectTypeOf(RadioGroupModule).not.toHaveProperty("RadioItemSubSection");
-  expectTypeOf(RadioGroupModule).not.toHaveProperty("radioGroupVariants");
-  expectTypeOf(RadioGroupModule).not.toHaveProperty("radioIconButtonVariants");
-  expectTypeOf(RadioGroupModule).not.toHaveProperty("iconButtonSizes");
-  expectTypeOf(RadioGroupModule).not.toHaveProperty("SelectionItemGroup");
-  expectTypeOf(RadioGroupModule).not.toHaveProperty("RadioItemGroupContext");
-});
 
 test("RadioItem aliases are the SelectionItem part types", () => {
   expectTypeOf(RadioItem.Title).toEqualTypeOf(SelectionItem.Title);

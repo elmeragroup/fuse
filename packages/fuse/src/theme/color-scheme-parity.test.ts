@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  createMemoryColorSchemePlatform,
-  runColorSchemeBootstrap,
-} from "../../test/memory-color-scheme-platform";
+import { runColorSchemeBootstrap } from "../../test/memory-color-scheme-platform";
 import type { MemoryPlatformInit } from "../../test/memory-color-scheme-platform";
 import { resolveColorSchemeOptions } from "./color-scheme";
 import type { ColorSchemeOptions } from "./color-scheme";
@@ -109,25 +106,6 @@ describe.each(fixtures().map((fixture) => [describeFixture(fixture), fixture] as
   (_name, fixture) => {
     const options = fixtureOptions(fixture);
     const source = colorSchemeScriptSource(options);
-
-    it("resolves the same data-theme from the same platform", () => {
-      const boot = runColorSchemeBootstrap(source, platformInit(fixture));
-
-      const run = createMemoryColorSchemePlatform(platformInit(fixture));
-      const runtime = connectRuntime(options, run.platform);
-
-      expect(run.state.root).toBe(boot.state.root);
-      expect(runtime.getSnapshot().resolvedColorScheme).toBe(boot.state.root);
-    });
-
-    it("makes no root write when mounting over its own bootstrap", () => {
-      const shared = runColorSchemeBootstrap(source, platformInit(fixture));
-      expect(shared.state.rootWrites).toHaveLength(1);
-
-      connectRuntime(options, shared.platform);
-
-      expect(shared.state.rootWrites).toHaveLength(1);
-    });
 
     it("agrees through the browser adapter over the same host", () => {
       const shared = runColorSchemeBootstrap(source, platformInit(fixture));

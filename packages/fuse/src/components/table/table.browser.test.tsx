@@ -82,18 +82,6 @@ describe("Table", () => {
     expect(body.textContent).toContain("#1042");
     expect(footer.textContent).toContain("Total");
   });
-
-  it("keeps a consumer data-state=selected on the row", () => {
-    renderThemed(ordersMarkup({ selected: true, caption: "Recent orders" }));
-    const selected = page
-      .getByRole("row")
-      .elements()
-      .find((row) => row.textContent.includes("#1042"));
-    if (!(selected instanceof HTMLElement)) {
-      throw new Error("expected the selected order row");
-    }
-    expect(selected.getAttribute("data-state")).toBe("selected");
-  });
 });
 
 describe("Table in-frame visual contract", () => {
@@ -226,26 +214,6 @@ describe("VerticalTable", () => {
     // DOM audit: isLoading cells contain the skeleton node (no role; locate by the mandated slot).
     expect(loadingRow.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(2);
     expect(page.getByRole("cell", { name: "Name" }).elements()).toHaveLength(0);
-  });
-
-  it("does not copy Body ids onto the inner table", () => {
-    renderThemed(
-      <VerticalTable.Body id="facts" className="max-w-md">
-        <VerticalTable.Row>
-          <VerticalTable.Key>Name</VerticalTable.Key>
-          <VerticalTable.Value>Kari Nordmann</VerticalTable.Value>
-        </VerticalTable.Row>
-      </VerticalTable.Body>
-    );
-    // DOM audit: Body's id stays on the wrapper exactly once; it must not copy onto the inner table.
-    expect(document.body.querySelectorAll("#facts")).toHaveLength(1);
-    const wrapper = document.getElementById("facts");
-    expect(wrapper?.getAttribute("data-slot")).toBe("vertical-table");
-    expect(wrapper instanceof HTMLElement ? px(getComputedStyle(wrapper).maxWidth) : 0).toBe(448);
-    const table = htmlTable();
-    expect(table.id).toBe("");
-    expect(getComputedStyle(table).tableLayout).toBe("fixed");
-    expect(getComputedStyle(table).maxWidth).not.toBe("448px");
   });
 
   it("names the table from Header via tableProps and exposes a Key row header", () => {

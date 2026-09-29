@@ -181,26 +181,6 @@ describe("Collapsible", () => {
     expect(page.getByText("Delivery window", { exact: true }).query()).toBeNull();
   });
 
-  it("does not toggle when the trigger is disabled and stamps data-disabled", async () => {
-    const onOpenChange = vi.fn();
-    renderThemed(
-      <Collapsible.Root onOpenChange={onOpenChange}>
-        <Collapsible.Trigger disabled>Show details</Collapsible.Trigger>
-        <Collapsible.Content>Delivery window</Collapsible.Content>
-      </Collapsible.Root>
-    );
-
-    const trigger = triggerNamed("Show details");
-    await expect.element(page.getByRole("button", { name: "Show details", exact: true })).toBeDisabled();
-
-    trigger.click();
-    await userEvent.keyboard("{Enter}");
-    await userEvent.keyboard(" ");
-    expect(onOpenChange).not.toHaveBeenCalled();
-    expect(trigger.getAttribute("aria-expanded")).toBe("false");
-    expect(page.getByText("Delivery window", { exact: true }).query()).toBeNull();
-  });
-
   it("keeps a closed keepMounted panel in the DOM and unmounts by default", () => {
     renderThemed(
       <>

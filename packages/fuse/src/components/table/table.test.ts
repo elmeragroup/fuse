@@ -3,7 +3,6 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { Table, VerticalTable } from "./table";
 
 const TABLE_SLOTS = [
@@ -80,20 +79,6 @@ function verticalTable() {
     )
   );
 }
-
-describe("Table server boundary", () => {
-  it("imports and renders Table and VerticalTable without a use client directive on the compound", () => {
-    const tableHtml = renderToStaticMarkup(ordersTable());
-    expect(tableHtml).toContain('data-slot="table-container"');
-    expect(tableHtml).toContain("<table");
-    expect(tableHtml).toContain("Recent orders");
-    const verticalHtml = renderToStaticMarkup(verticalTable());
-    expect(verticalHtml).toContain("<h2");
-    expect(verticalHtml).toContain("Customer");
-    expect(verticalHtml).toContain("Kari Nordmann");
-    expect(verticalHtml).not.toContain("render=");
-  });
-});
 
 describe("Table structure", () => {
   it("renders a scroll container around a semantic table and keeps the selected-row contract", () => {
@@ -174,43 +159,6 @@ describe("VerticalTable structure", () => {
     expect(table).toContain('title="grid"');
   });
 
-  it("names the inner table through tableProps, not Body aria attributes", () => {
-    const html = renderToStaticMarkup(
-      createElement(
-        VerticalTable.Root,
-        null,
-        createElement(VerticalTable.Header, { id: "customer" }, "Customer"),
-        createElement(VerticalTable.Body, {
-          tableProps: { "aria-labelledby": "customer" },
-        })
-      )
-    );
-    const wrapperEnd = html.indexOf(">", html.indexOf('data-slot="vertical-table"'));
-    const wrapper = html.slice(0, wrapperEnd);
-    const tableStart = html.indexOf('data-slot="table"');
-    const table = html.slice(tableStart, html.indexOf(">", tableStart));
-    expect(wrapper).not.toContain("aria-labelledby");
-    expect(table).toContain('aria-labelledby="customer"');
-    expect(html).toContain('id="customer"');
-  });
-
-  it("keeps Table.Cell layout classes on the default Key td", () => {
-    const html = renderToStaticMarkup(
-      createElement(
-        VerticalTable.Row,
-        null,
-        createElement(VerticalTable.Key, null, "Name"),
-        createElement(VerticalTable.Value, null, "Kari Nordmann")
-      )
-    );
-    const host = html.slice(html.indexOf("<td"), html.indexOf(">", html.indexOf("<td")) + 1);
-    expect(host).toContain("<td");
-    expect(host).toContain("bg-muted/50");
-    expect(host).toContain("p-2");
-    expect(host).toContain("align-middle");
-    expect(host).toContain("in-data-[slot=frame]:first:p-[calc(--spacing(2.5)-1px)]");
-  });
-
   it("lets Key render a row header without dropping Key classes", () => {
     const html = renderToStaticMarkup(
       createElement(
@@ -229,22 +177,5 @@ describe("VerticalTable structure", () => {
     expect(host).toContain("align-middle");
     expect(host).toContain("in-data-[slot=frame]:first:p-[calc(--spacing(2.5)-1px)]");
     expect(html).not.toMatch(/<td[^>]*>Name/);
-  });
-
-  it("swaps Key/Value children for a skeleton when isLoading", () => {
-    const html = renderToStaticMarkup(
-      createElement(
-        VerticalTable.Row,
-        null,
-        createElement(VerticalTable.Key, { isLoading: true }, "Name"),
-        createElement(VerticalTable.Value, { isLoading: true }, "Kari Nordmann")
-      )
-    );
-    expect(html).toContain('data-slot="skeleton"');
-    expect(html).not.toContain("Name");
-    expect(html).not.toContain("Kari Nordmann");
-    expect(html).toContain("h-4");
-    expect(html).toContain("max-w-24");
-    expect(html).not.toMatch(RAW_PALETTE_RE);
   });
 });

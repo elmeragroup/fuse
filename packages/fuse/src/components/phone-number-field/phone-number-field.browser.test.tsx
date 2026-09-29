@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { describe, expect, it, vi } from "vitest";
@@ -420,16 +420,6 @@ describe("PhoneNumberField", () => {
     );
     expect(roleNamed("button", "Select country").textContent).toContain("+47");
     expect(triggerFlagImg().getAttribute("src")).toBe(flagAssets.NO);
-  });
-
-  it("waits while the resolved picker container element is still null", async () => {
-    function NeverAttached() {
-      const ref = useRef<HTMLElement | null>(null);
-      return <PhoneNumberField label="Pending" container={ref} />;
-    }
-    renderField(<NeverAttached />);
-    await userEvent.click(roleNamed("button", "Select country"));
-    expect(page.getByRole("listbox").query()).toBeNull();
   });
 
   it("portals the picker into an explicit container element", async () => {

@@ -1,16 +1,6 @@
 import { expectTypeOf, test } from "vitest";
 
-import type { Accordion as RootAccordion } from "@elmeragroup/fuse";
 import { Accordion, accordionVariants } from "@elmeragroup/fuse/accordion";
-
-test("Accordion ships from the accordion entry and the root barrel", () => {
-  expectTypeOf<typeof Accordion>().toEqualTypeOf<typeof RootAccordion>();
-  expectTypeOf(Accordion.Root).toBeFunction();
-  expectTypeOf(Accordion.Item).toBeFunction();
-  expectTypeOf(Accordion.Header).toBeFunction();
-  expectTypeOf(Accordion.Trigger).toBeFunction();
-  expectTypeOf(Accordion.Content).toBeFunction();
-});
 
 test("the public namespace is five parts plus the public recipe", () => {
   expectTypeOf(Accordion).not.toHaveProperty("Panel");
@@ -74,9 +64,4 @@ test("Root takes the array value shape, multiple, and recipe axes — never radi
   const _badRadius = <Accordion.Root radius="md" />;
   // @ts-expect-error polymorphism is never an `as` prop
   const _noAs = <Accordion.Trigger as="div" />;
-});
-
-test("accordionVariants is public and returns slot functions", () => {
-  expectTypeOf(accordionVariants({ variant: "card", radius: "xl" }).item()).toBeString();
-  expectTypeOf(accordionVariants().contentInner()).toBeString();
 });

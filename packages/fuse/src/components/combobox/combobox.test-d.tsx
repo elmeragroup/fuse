@@ -2,7 +2,6 @@ import type { RefObject } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type { Combobox as RootCombobox, useComboboxAnchor as RootUseComboboxAnchor } from "@elmeragroup/fuse";
 import type {
   ComboboxChipProps,
   ComboboxClearProps,
@@ -12,28 +11,6 @@ import type {
 } from "@elmeragroup/fuse/combobox";
 import * as ComboboxModule from "@elmeragroup/fuse/combobox";
 import { Combobox, useComboboxAnchor } from "@elmeragroup/fuse/combobox";
-
-test("Combobox and useComboboxAnchor ship from the combobox entry and the root barrel", () => {
-  expectTypeOf<typeof Combobox>().toEqualTypeOf<typeof RootCombobox>();
-  expectTypeOf<typeof useComboboxAnchor>().toEqualTypeOf<typeof RootUseComboboxAnchor>();
-  expectTypeOf(Combobox.Root).toBeFunction();
-  expectTypeOf(Combobox.Input).toBeFunction();
-  expectTypeOf(Combobox.Trigger).toBeFunction();
-  expectTypeOf(Combobox.Clear).toBeFunction();
-  expectTypeOf(Combobox.Content).toBeFunction();
-  expectTypeOf(Combobox.List).toBeFunction();
-  expectTypeOf(Combobox.Item).toBeFunction();
-  expectTypeOf(Combobox.Group).toBeFunction();
-  expectTypeOf(Combobox.Label).toBeFunction();
-  expectTypeOf(Combobox.Collection).toBeFunction();
-  expectTypeOf(Combobox.Empty).toBeFunction();
-  expectTypeOf(Combobox.Separator).toBeFunction();
-  expectTypeOf(Combobox.Chips).toBeFunction();
-  expectTypeOf(Combobox.Chip).toBeFunction();
-  expectTypeOf(Combobox.ChipsInput).toBeFunction();
-  expectTypeOf(Combobox.Value).toBeFunction();
-  expectTypeOf(useComboboxAnchor).toBeFunction();
-});
 
 test("Portal, Positioner and Popup stay off the public namespace", () => {
   expectTypeOf(Combobox).not.toHaveProperty("Portal");

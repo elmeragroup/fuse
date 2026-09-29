@@ -5,22 +5,9 @@ import { describe, expect, it } from "vitest";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const docsRoot = join(here, "..");
-const globalsCss = readFileSync(join(docsRoot, "src/styles/globals.css"), "utf8");
 const artifactPath = join(docsRoot, "../../packages/fuse/dist/demo-stage-comfortable.css");
 
 describe("DemoStage comfortable density", () => {
-  it("imports the generated library artifact and carries no hand-copied metrics", () => {
-    expect(globalsCss).toMatch(/@import\s+"@elmeragroup\/fuse\/demo-stage-comfortable\.css"/);
-    expect(globalsCss).not.toMatch(/--control-/);
-    expect(existsSync(join(docsRoot, "src/components/DemoFrame.comfortable.css"))).toBe(false);
-    expect(existsSync(join(docsRoot, "scripts/elmera-demo-stage-density.ts"))).toBe(false);
-  });
-
-  it("does not wire a docs PostCSS density plugin", () => {
-    const config = readFileSync(join(docsRoot, "postcss.config.mjs"), "utf8");
-    expect(config).not.toMatch(/elmera-demo-stage-density|DemoFrame\.css/);
-  });
-
   it("the imported artifact exists after the ui build", () => {
     // apps/docs/turbo.json shadows the root `test` task, so the guarantee is transitive:
     // docs#test -> docs#build -> docs#generate -> ^build -> @elmeragroup/fuse#build, through

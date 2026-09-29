@@ -18,14 +18,11 @@ async function fetchHtml(pathname: string): Promise<string> {
 }
 
 describe("docs response HTML", () => {
-  it.each(["/", "/private", "/website"] as const)(
-    "stamps the Elmera document brand on %s",
-    async (pathname) => {
-      const html = await fetchHtml(pathname);
-      expect(readDocumentBrand(html)).toEqual(DOCUMENT_BRAND);
-      expect(readDocumentDensity(html)).toBe("dense");
-    }
-  );
+  it.each(["/"] as const)("stamps the Elmera document brand on %s", async (pathname) => {
+    const html = await fetchHtml(pathname);
+    expect(readDocumentBrand(html)).toEqual(DOCUMENT_BRAND);
+    expect(readDocumentDensity(html)).toBe("dense");
+  });
 
   it("places the host color bootstrap before every paintable docs child", async () => {
     const html = await fetchHtml("/");

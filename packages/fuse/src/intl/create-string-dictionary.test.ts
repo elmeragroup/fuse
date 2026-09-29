@@ -1,4 +1,3 @@
-import { LocalizedStringFormatter } from "@internationalized/string";
 import type { Variables } from "@internationalized/string";
 import { describe, expect, it } from "vitest";
 
@@ -18,16 +17,6 @@ describe("createStringDictionary", () => {
     expect(dictionary.getStringForLocale("close", "fi-FI")).toBe("Sulje");
     expect(dictionary.getStringForLocale("close", "nb-NO")).toBe("Lukk");
     expect(dictionary.getStringForLocale("close", "sv-SE")).toBe("Stäng");
-  });
-
-  it("keeps parameterized rows formattable in each locale", () => {
-    const dictionary = createStringDictionary(rows);
-    expect(new LocalizedStringFormatter("nb-NO", dictionary).format("greet", { name: "Ada" })).toBe(
-      "Hei Ada"
-    );
-    expect(new LocalizedStringFormatter("sv-SE", dictionary).format("greet", { name: "Ada" })).toBe(
-      "Hej Ada"
-    );
   });
 
   it("falls back to en-US for a locale the library does not ship", () => {

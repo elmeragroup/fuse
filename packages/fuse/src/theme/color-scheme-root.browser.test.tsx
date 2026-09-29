@@ -197,25 +197,6 @@ describe("ThemeProvider data-theme recovery", () => {
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
     expect(readDocumentBrand()).toEqual({ variant: "external", brand: "tkas", segment: "company" });
   });
-
-  it("corrects an external data-theme overwrite on an identical-props re-render", async () => {
-    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "dark");
-    const { host, rerender } = render(
-      <ThemeProvider theme={fkasPrivate}>
-        <ColorSchemeOutput />
-      </ThemeProvider>
-    );
-    await mountedColorScheme(host, "internal-fkas-private:dark/dark");
-
-    document.documentElement.setAttribute("data-theme", "light");
-    rerender(
-      <ThemeProvider theme={fkasPrivate}>
-        <ColorSchemeOutput />
-      </ThemeProvider>
-    );
-
-    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-  });
 });
 
 describe("ThemeProvider transition suppression", () => {

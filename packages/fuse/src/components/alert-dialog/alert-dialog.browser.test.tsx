@@ -8,7 +8,6 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import { cssVarColor, overlayBackdropOf, renderThemed } from "../../../test/themed-browser-render";
-import { ThemeScope } from "../../theme/theme-scope";
 import { AlertDialog } from "./index";
 
 const CANCEL_COPY = {
@@ -303,42 +302,6 @@ describe("AlertDialog", () => {
     const dialog = await openConfirm();
     expect(scope).not.toBeNull();
     expect(scope?.contains(dialog)).toBe(true);
-    expect([...document.body.children].includes(dialog)).toBe(false);
-  });
-
-  it("waits while the resolved container element is still null", () => {
-    function NeverAttached() {
-      const ref = useRef<HTMLElement | null>(null);
-      return (
-        <AlertDialog.Root open>
-          <AlertDialog.Content container={ref} title="Pending" actionLabel="Confirm">
-            Waiting for the container.
-          </AlertDialog.Content>
-        </AlertDialog.Root>
-      );
-    }
-    renderThemed(withLocale("en-US", <NeverAttached />));
-
-    expect(page.getByRole("alertdialog").query()).toBeNull();
-  });
-
-  it("does not paint the popup outside a ThemeScope element that has not attached yet", async () => {
-    renderThemed(
-      withLocale(
-        "en-US",
-        <ThemeScope theme={{ variant: "external", brand: "fkas", segment: "private" }}>
-          <AlertDialog.Root open>
-            <AlertDialog.Content title="Scoped" actionLabel="Confirm">
-              Stay inside the scope.
-            </AlertDialog.Content>
-          </AlertDialog.Root>
-        </ThemeScope>
-      )
-    );
-    await expect.element(page.getByRole("alertdialog")).toBeInTheDocument();
-    const dialog = page.getByRole("alertdialog").element();
-    const scope = dialog.closest("[data-theme-variant=external]");
-    expect(scope).not.toBeNull();
     expect([...document.body.children].includes(dialog)).toBe(false);
   });
 });

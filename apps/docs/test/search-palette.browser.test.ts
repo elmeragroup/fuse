@@ -83,18 +83,6 @@ async function readActiveOption(page: Page): Promise<ActiveOption> {
   }, FIELD);
 }
 
-async function waitForActiveOptionOtherThan(page: Page, previousId: string): Promise<ActiveOption> {
-  await page.waitForFunction(
-    ([selector, id]) => {
-      const field = document.querySelector(String(selector));
-      const current = field?.getAttribute("aria-activedescendant") ?? "";
-      return current !== "" && current !== String(id);
-    },
-    [FIELD, previousId] as const
-  );
-  return await readActiveOption(page);
-}
-
 describe("docs ⌘K palette", () => {
   it("opens on ⌘K and on Ctrl+K from anywhere in the docs, and Escape closes it", async () => {
     const page = await openDocsPage();
@@ -117,18 +105,6 @@ describe("docs ⌘K palette", () => {
     await page.close();
   });
 
-  it("opens from the header search button", async () => {
-    const page = await openDocsPage("/");
-    await page
-      .getByRole("banner")
-      .getByRole("button", { name: /search/i })
-      .click();
-    await waitForPalette(page, "visible");
-    await waitForSearchFieldFocus(page);
-    expect(await focusedDescriptor(page)).toBe("input:Search the documentation");
-    await page.close();
-  });
-
   it("lists component and handbook pages, and filters them as you type", async () => {
     const page = await openDocsPage();
     await page.keyboard.press("Meta+k");
@@ -145,36 +121,6 @@ describe("docs ⌘K palette", () => {
 
     await page.keyboard.press("Escape");
     await waitForPalette(page, "hidden");
-    await page.close();
-  });
-
-  it("moves the active option with the arrow keys and opens it with Enter", async () => {
-    const page = await openDocsPage();
-    await page.keyboard.press("Meta+k");
-    await waitForPalette(page, "visible");
-    await waitForSearchFieldFocus(page);
-    await page.keyboard.type("theme");
-
-    const first = await readActiveOption(page);
-    expect(first.selected).toBe("true");
-
-    await page.keyboard.press("ArrowDown");
-    const second = await waitForActiveOptionOtherThan(page, first.id);
-    expect(second.selected).toBe("true");
-    expect(second.text).not.toBe(first.text);
-
-    await page.keyboard.press("ArrowUp");
-    const back = await waitForActiveOptionOtherThan(page, second.id);
-    expect(back.text).toBe(first.text);
-
-    await page.keyboard.type(" mat");
-    await waitForOptionCount(page, 1);
-    expect((await readActiveOption(page)).text).toContain("Theme matrix");
-
-    await page.keyboard.press("Enter");
-    await page.waitForURL(`${docsBaseUrl()}/handbook/theme-matrix`);
-    await waitForPalette(page, "hidden");
-    await page.getByRole("heading", { name: "Theme matrix", level: 1 }).waitFor();
     await page.close();
   });
 

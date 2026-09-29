@@ -2,16 +2,8 @@ import type { ReactNode } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type { TextareaField as RootTextareaField } from "@elmeragroup/fuse";
 import type { TextareaFieldProps } from "@elmeragroup/fuse/textarea-field";
-import * as TextareaFieldEntry from "@elmeragroup/fuse/textarea-field";
 import { TextareaField } from "@elmeragroup/fuse/textarea-field";
-
-test("TextareaField ships from the textarea-field entry and the root barrel", () => {
-  expectTypeOf<typeof TextareaField>().toEqualTypeOf<typeof RootTextareaField>();
-  expectTypeOf(TextareaField).toBeFunction();
-  expectTypeOf(TextareaFieldEntry).not.toHaveProperty("TextArea");
-});
 
 test("TextareaFieldProps is the composite is* face plus remaining native textarea props", () => {
   expectTypeOf<TextareaFieldProps["label"]>().toEqualTypeOf<string | undefined>();

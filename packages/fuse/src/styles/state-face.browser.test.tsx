@@ -41,8 +41,6 @@ import { UiProviders } from "../react-aria/ui-providers/ui-providers";
  * paints its border with the `--error` role and a 3px ring of that role at 20% alpha.
  */
 
-const DENSITIES = ["dense", "comfortable"] as const;
-
 /** What hover or press could change on a control. */
 function pointerPaint(element: Element) {
   const style = getComputedStyle(element);
@@ -245,9 +243,11 @@ const DISABLED_CONTROLS = [
   ["link", () => roleNamed("link", "Disabled link")],
 ] as const;
 
-describe.each(DENSITIES)("state face at %s density", (density) => {
+// Density declares only --control-* metrics (density-css.test.ts), and nothing here reads one,
+// so one density covers the paint, cursor, opacity and ring contracts.
+describe("state face at dense density", () => {
   beforeEach(() => {
-    stampDensity(density);
+    stampDensity("dense");
   });
 
   it("keeps every disabled control's paint and position still under hover and press", async () => {

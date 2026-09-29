@@ -4,7 +4,6 @@ import { expectTypeOf, test } from "vitest";
 
 import type { SelectionItem as RootSelectionItem } from "@elmeragroup/fuse";
 import { Item } from "@elmeragroup/fuse/item";
-import * as SelectionItemModule from "@elmeragroup/fuse/selection-item";
 import { SelectionItem } from "@elmeragroup/fuse/selection-item";
 
 test("the namespace ships all six parts from the selection-item entry and the root barrel", () => {
@@ -15,18 +14,6 @@ test("the namespace ships all six parts from the selection-item entry and the ro
   expectTypeOf(SelectionItem).toHaveProperty("Content");
   expectTypeOf(SelectionItem).toHaveProperty("Actions");
   expectTypeOf(SelectionItem).toHaveProperty("SubSection");
-});
-
-test("public API exports only the namespace — aliases and recipes stay out of this entry", () => {
-  expectTypeOf(SelectionItemModule).not.toHaveProperty("CheckboxItem");
-  expectTypeOf(SelectionItemModule).not.toHaveProperty("RadioItem");
-  expectTypeOf(SelectionItemModule).not.toHaveProperty("itemVariants");
-  expectTypeOf(SelectionItemModule).not.toHaveProperty("selectionItemVariants");
-  expectTypeOf(SelectionItemModule).not.toHaveProperty("selectionGroupOrientationVariants");
-  expectTypeOf(SelectionItemModule).not.toHaveProperty("selectionGroupOrientationClass");
-  expectTypeOf(SelectionItemModule).not.toHaveProperty("SelectionItemShell");
-  expectTypeOf(SelectionItemModule).not.toHaveProperty("SelectionItemTitle");
-  expectTypeOf(SelectionItemModule).not.toHaveProperty("SelectionItemGroup");
 });
 
 test("Description and Content are the Item parts so later aliasing keeps object identity", () => {

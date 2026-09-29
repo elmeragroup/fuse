@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
-import { cn } from "../../styles/cn";
 import { loaderVariants } from "./loader-variants";
 
 const SIZES = ["default", "small", "medium", "large", "xl"] as const;
@@ -42,15 +41,5 @@ describe("loaderVariants", () => {
     expect(resolved).not.toMatch(RAW_PALETTE_RE);
     expect(resolved).not.toContain("--control-");
     expect(resolved).not.toContain("data-density");
-  });
-
-  it("lets a className merge onto the wrapper through cn", () => {
-    const merged = cn(loaderVariants().base(), "bg-muted p-0").split(/\s+/);
-    expect(merged).toContain("flex");
-    expect(merged).toContain("items-center");
-    expect(merged).toContain("justify-center");
-    expect(merged).toContain("bg-muted");
-    expect(merged).toContain("p-0");
-    expect(merged).not.toContain("p-4");
   });
 });

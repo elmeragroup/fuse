@@ -1,6 +1,5 @@
 import { expectTypeOf, test } from "vitest";
 
-import type { DropdownMenu as RootDropdownMenu } from "@elmeragroup/fuse";
 import type {
   DropdownMenuContentProps,
   DropdownMenuItemProps,
@@ -8,33 +7,9 @@ import type {
 } from "@elmeragroup/fuse/dropdown-menu";
 import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 
-test("DropdownMenu ships from the dropdown-menu entry and the root barrel", () => {
-  expectTypeOf<typeof DropdownMenu>().toEqualTypeOf<typeof RootDropdownMenu>();
-  expectTypeOf(DropdownMenu.Root).toBeFunction();
-  expectTypeOf(DropdownMenu.Trigger).toBeFunction();
-  expectTypeOf(DropdownMenu.Portal).toBeFunction();
-  expectTypeOf(DropdownMenu.Content).toBeFunction();
-  expectTypeOf(DropdownMenu.Group).toBeFunction();
-  expectTypeOf(DropdownMenu.Label).toBeFunction();
-  expectTypeOf(DropdownMenu.Item).toBeFunction();
-  expectTypeOf(DropdownMenu.LinkItem).toBeFunction();
-  expectTypeOf(DropdownMenu.CheckboxItem).toBeFunction();
-  expectTypeOf(DropdownMenu.RadioGroup).toBeFunction();
-  expectTypeOf(DropdownMenu.RadioItem).toBeFunction();
-  expectTypeOf(DropdownMenu.Separator).toBeFunction();
-  expectTypeOf(DropdownMenu.Shortcut).toBeFunction();
-  expectTypeOf(DropdownMenu.Sub).toBeFunction();
-  expectTypeOf(DropdownMenu.SubTrigger).toBeFunction();
-  expectTypeOf(DropdownMenu.SubContent).toBeFunction();
-});
-
 test("Positioner and Popup stay off the public namespace", () => {
   expectTypeOf(DropdownMenu).not.toHaveProperty("Positioner");
   expectTypeOf(DropdownMenu).not.toHaveProperty("Popup");
-});
-
-test("dropdownMenuItemClassName is not a public export", () => {
-  expectTypeOf(DropdownMenu).not.toHaveProperty("dropdownMenuItemClassName");
 });
 
 test("Content and SubContent take positioner props and container, Item takes inset and variant", () => {

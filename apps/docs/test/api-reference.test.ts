@@ -21,13 +21,6 @@ async function partView(slug: string, name: string): Promise<ApiPartView> {
 }
 
 describe("committed api.json read at render time", () => {
-  it("renders the artifact the repository committed, banner and all", async () => {
-    const api = await readComponentApi("button");
-    expect(api.slug).toBe("button");
-    expect(api.$generated).toContain(API_REGEN_COMMAND);
-    expect(api.parts.map((part) => part.name)).toContain("Button");
-  });
-
   it("fails the build naming the file and the command when the artifact is missing", async () => {
     await expect(readComponentApi("no-such-component")).rejects.toThrow(
       "apps/docs/src/app/(docs)/components/no-such-component/api.json does not exist"

@@ -30,21 +30,6 @@ function assignFiles(input: HTMLInputElement, files: File[]): void {
 }
 
 describe("FileTrigger", () => {
-  it("renders a named button and a hidden file input that receives accept and multiple", () => {
-    renderThemed(
-      <FileTrigger acceptedFileTypes={["image/png", ".pdf"]} allowsMultiple>
-        Attach files
-      </FileTrigger>
-    );
-
-    const button = roleNamed("button", "Attach files");
-    const input = fileInputFor(button);
-    expect(input.getAttribute("type")).toBe("file");
-    expect(getComputedStyle(input).display).toBe("none");
-    expect(input.getAttribute("accept")).toBe("image/png,.pdf");
-    expect(input.hasAttribute("multiple")).toBe(true);
-  });
-
   it("clicks the hidden input from the button and from Enter, and fires onSelect from a change", async () => {
     const onSelect = vi.fn<(files: FileList | null) => void>();
     renderThemed(

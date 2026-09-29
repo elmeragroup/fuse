@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
-import { cn } from "../../styles/cn";
 import { badgeVariants } from "./badge-variants";
 
 const VARIANTS = [
@@ -89,21 +88,6 @@ describe("badgeVariants", () => {
     expect(badgeVariants({ size: "lg" })).toContain("[&>span]:text-sm");
     for (const size of ["sm", "default", "lg"] as const) {
       expect(badgeVariants({ size }), size).toContain("[&>span]:font-medium");
-    }
-  });
-
-  it("lets a className merge win over a conflicting recipe class through cn", () => {
-    const merged = cn(badgeVariants({ variant: "success", size: "lg" }), "text-xs bg-muted").split(/\s+/);
-    expect(merged).toContain("bg-muted");
-    expect(merged).not.toContain("bg-success");
-    expect(merged).toContain("text-xs");
-    expect(merged).not.toContain("text-sm");
-  });
-
-  it("reads no --control-* variable: the size axis is decorative, not a density rung", () => {
-    for (const size of ["sm", "default", "lg"] as const) {
-      expect(badgeVariants({ size }), size).not.toContain("--control-");
-      expect(badgeVariants({ size }), size).not.toContain("data-density");
     }
   });
 });

@@ -1,15 +1,7 @@
 import { expectTypeOf, test } from "vitest";
 
-import type { ButtonGroup as RootButtonGroup } from "@elmeragroup/fuse";
 import * as ButtonGroupModule from "@elmeragroup/fuse/button-group";
 import { ButtonGroup, buttonGroupVariants } from "@elmeragroup/fuse/button-group";
-
-test("the namespace ships Root, Separator, and Text from the button-group entry and the root barrel", () => {
-  expectTypeOf<typeof ButtonGroup>().toEqualTypeOf<typeof RootButtonGroup>();
-  expectTypeOf(ButtonGroup).toHaveProperty("Root");
-  expectTypeOf(ButtonGroup).toHaveProperty("Separator");
-  expectTypeOf(ButtonGroup).toHaveProperty("Text");
-});
 
 test("public API exports the namespace and recipe, never the flat ref names", () => {
   expectTypeOf(buttonGroupVariants).toBeFunction();

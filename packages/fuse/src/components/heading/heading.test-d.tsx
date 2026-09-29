@@ -1,13 +1,7 @@
 import { expectTypeOf, test } from "vitest";
 
-import type { Heading as RootHeading } from "@elmeragroup/fuse";
 import type { HeadingProps } from "@elmeragroup/fuse/heading";
-import { Heading, headingVariants } from "@elmeragroup/fuse/heading";
-
-test("Heading ships from the heading entry and the root barrel", () => {
-  expectTypeOf<typeof Heading>().toEqualTypeOf<typeof RootHeading>();
-  expectTypeOf(Heading).toBeFunction();
-});
+import { Heading } from "@elmeragroup/fuse/heading";
 
 test("HeadingProps is native heading props plus the recipe axes and level", () => {
   expectTypeOf<HeadingProps["level"]>().toEqualTypeOf<1 | 2 | 3 | 4 | 5 | 6 | undefined>();
@@ -28,12 +22,6 @@ test("HeadingProps is native heading props plus the recipe axes and level", () =
   expectTypeOf<HeadingProps["font"]>().toEqualTypeOf<"default" | "normal" | "semi-bold" | undefined>();
   expectTypeOf<HeadingProps["align"]>().toEqualTypeOf<"left" | "center" | "right" | undefined>();
   expectTypeOf<HeadingProps["className"]>().toEqualTypeOf<string | undefined>();
-});
-
-test("headingVariants is public and returns a class string", () => {
-  expectTypeOf(headingVariants).toBeFunction();
-  expectTypeOf(headingVariants({ variant: "destructive", size: "4xl" })).toBeString();
-  expectTypeOf(headingVariants()).toBeString();
 });
 
 test("the element takes the public props and no polymorphic as prop", () => {

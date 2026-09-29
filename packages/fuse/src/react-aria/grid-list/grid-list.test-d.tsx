@@ -2,22 +2,9 @@ import type { Ref } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type * as RootApi from "@elmeragroup/fuse";
 import type * as GridListApi from "@elmeragroup/fuse/react-aria/grid-list";
 import type { GridListItemProps, GridListProps } from "@elmeragroup/fuse/react-aria/grid-list";
 import { GridList, GridListItem } from "@elmeragroup/fuse/react-aria/grid-list";
-
-test("GridList and GridListItem are absent from the root barrel", () => {
-  expectTypeOf<typeof RootApi>().not.toHaveProperty("GridList");
-  expectTypeOf<typeof RootApi>().not.toHaveProperty("GridListItem");
-});
-
-test("the public value surface is exactly GridList and GridListItem", () => {
-  expectTypeOf(GridList).toBeFunction();
-  expectTypeOf(GridListItem).toBeFunction();
-  expectTypeOf<typeof GridListApi.GridList>().toEqualTypeOf<typeof GridList>();
-  expectTypeOf<typeof GridListApi.GridListItem>().toEqualTypeOf<typeof GridListItem>();
-});
 
 test("itemStyles, checkboxVariants, and RAC types are not public exports", () => {
   expectTypeOf<typeof GridListApi>().not.toHaveProperty("itemStyles");
@@ -109,10 +96,4 @@ test("the elements take the public props, forward a ref, and reject a size axis"
   const _noSize = <GridList aria-label="Meters" size="md" />;
   // @ts-expect-error GridListItem has no size axis
   const _noItemSize = <GridListItem size="md">Oslo</GridListItem>;
-});
-
-test("there is no bare grid-list entry", () => {
-  // @ts-expect-error quarantined path only — never a bare grid-list entry
-  // oxlint-disable-next-line typescript/consistent-type-imports -- missing specifier is the assertion
-  type _Bare = typeof import("@elmeragroup/fuse/grid-list");
 });

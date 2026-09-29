@@ -2,7 +2,6 @@ import type { ComponentProps } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type { DescriptionList as RootDescriptionList } from "@elmeragroup/fuse";
 import type {
   DescriptionListContentProps,
   DescriptionListDetailsProps,
@@ -12,15 +11,6 @@ import type {
 } from "@elmeragroup/fuse/description-list";
 import * as DescriptionListModule from "@elmeragroup/fuse/description-list";
 import { DescriptionList } from "@elmeragroup/fuse/description-list";
-
-test("the namespace ships all five parts from the description-list entry and the root barrel", () => {
-  expectTypeOf<typeof DescriptionList>().toEqualTypeOf<typeof RootDescriptionList>();
-  expectTypeOf(DescriptionList).toHaveProperty("Root");
-  expectTypeOf(DescriptionList).toHaveProperty("Heading");
-  expectTypeOf(DescriptionList).toHaveProperty("Content");
-  expectTypeOf(DescriptionList).toHaveProperty("Term");
-  expectTypeOf(DescriptionList).toHaveProperty("Details");
-});
 
 test("public API exports only the namespace and part prop types", () => {
   expectTypeOf<DescriptionListRootProps>().toEqualTypeOf<ComponentProps<"div">>();

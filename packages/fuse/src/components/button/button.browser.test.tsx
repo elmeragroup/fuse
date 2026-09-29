@@ -301,18 +301,12 @@ describe("Button", () => {
     expect(roleNamed("button", "Overridden").getAttribute("aria-disabled")).toBe("false");
   });
 
-  it("keeps Base UI's aria-disabled when a wrapper forwards aria-disabled as undefined", () => {
-    renderThemed(
-      <Button disabled focusableWhenDisabled aria-disabled={undefined}>
-        Forwarded
-      </Button>
-    );
-    expect(roleNamed("button", "Forwarded").getAttribute("aria-disabled")).toBe("true");
-  });
-
-  it("keeps Base UI's aria-disabled on pending and non-native buttons when a wrapper forwards it as undefined", () => {
+  it("keeps Base UI's aria-disabled on disabled, pending and non-native buttons when a wrapper forwards it as undefined", () => {
     renderThemed(
       <>
+        <Button disabled focusableWhenDisabled aria-disabled={undefined}>
+          Forwarded
+        </Button>
         <Button isPending focusableWhenDisabled aria-disabled={undefined}>
           Pending
         </Button>
@@ -321,6 +315,7 @@ describe("Button", () => {
         </Button>
       </>
     );
+    expect(roleNamed("button", "Forwarded").getAttribute("aria-disabled")).toBe("true");
     expect(roleNamed("button", "Pending").getAttribute("aria-disabled")).toBe("true");
     expect(roleNamed("button", "Anchor").getAttribute("aria-disabled")).toBe("true");
   });

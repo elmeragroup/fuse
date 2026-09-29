@@ -237,32 +237,6 @@ describe("planSync", () => {
     expect(new Set(steps.at(-1))).toEqual(new Set(set));
   });
 
-  it("owns only the web syntax it sets and sends the other platforms back unchanged", () => {
-    const file = syncedPalette();
-    const [red, danger] = file.variables;
-    if (red === undefined || danger === undefined) throw new Error("fixture has two variables");
-    const edited = {
-      ...file,
-      variables: [
-        { ...red, codeSyntax: { WEB: "var(--old-red)", ANDROID: "R.color.red", iOS: "Color.red" } },
-        { ...danger, scopes: ["ALL_SCOPES"], codeSyntax: { WEB: "var(--designer-note)" } },
-      ],
-    };
-
-    const { batch } = plan({ collections: [edited] });
-    expect(batch.variables).toEqual([
-      {
-        _tag: "UpdateVariable",
-        id: "VariableID:1:10",
-        metadata: {
-          scopes: ["ALL_SCOPES"],
-          codeSyntax: { WEB: "var(--red)", ANDROID: "R.color.red", iOS: "Color.red" },
-        },
-      },
-      { _tag: "UpdateVariable", id: "VariableID:1:11", metadata: { scopes: [], codeSyntax: undefined } },
-    ]);
-  });
-
   it("writes an alias target's value before the value that aliases it", () => {
     // error comes first and aliases destructive, which the file still points at error.
     const result = makeVariableSet([
@@ -320,23 +294,6 @@ describe("planSync", () => {
     ]);
   });
 
-  it("reports a type newer than the sync by the name Figma gave it", () => {
-    const file = syncedPalette();
-    const [red, danger] = file.variables;
-    if (red === undefined || danger === undefined) throw new Error("fixture has two variables");
-    const retyped = planSync(variableSet(), {
-      collections: [
-        { ...file, variables: [{ ...red, type: { _tag: "UnknownType", name: "GRADIENT" } }, danger] },
-      ],
-    });
-
-    expect(Result.isFailure(retyped) && retyped.failure).toMatchObject({
-      _tag: "VariableTypeConflict",
-      fileType: "GRADIENT",
-      wantedType: "COLOR",
-    });
-  });
-
   it("refuses to plan when a collection name is ambiguous or a type would change", () => {
     const duplicate = planSync(variableSet(), { collections: [syncedPalette(), syncedPalette()] });
     expect(Result.isFailure(duplicate) && duplicate.failure._tag).toBe("DuplicateCollection");
@@ -347,6 +304,14 @@ describe("planSync", () => {
     const retyped = planSync(variableSet(), {
       collections: [{ ...file, variables: [{ ...red, type: "FLOAT" }, danger] }],
     });
-    expect(Result.isFailure(retyped) && retyped.failure._tag).toBe("VariableTypeConflict");
+    if (Result.isSuccess(retyped)) throw new Error("a retyped variable must not plan");
+    expect(retyped.failure).toMatchObject({
+      _tag: "VariableTypeConflict",
+      fileType: "FLOAT",
+      wantedType: "COLOR",
+    });
+    expect(retyped.failure.message).toContain(
+      '"Palette/red" is a FLOAT variable in Figma but the tokens define a COLOR.'
+    );
   });
 });

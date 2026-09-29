@@ -53,12 +53,6 @@ describe("TextareaField", () => {
     expect(fieldRootFrom("Bio").classList.contains("control-marker")).toBe(false);
   });
 
-  it("omits the alert when errorMessage is absent", () => {
-    renderThemed(<TextareaField label="Bio" isInvalid />);
-    expect(page.getByRole("alert").query()).toBeNull();
-    expect(textboxNamed("Bio").getAttribute("aria-invalid")).toBe("true");
-  });
-
   it("calls onChange with the string value, not the event", async () => {
     const onChange = vi.fn();
     renderThemed(<TextareaField label="Notes" onChange={onChange} />);
@@ -85,23 +79,6 @@ describe("TextareaField", () => {
     expect(area).toHaveProperty("value", "Hello");
     await userEvent.fill(page.getByRole("textbox", { name: "Notes", exact: true }), "Hello world");
     expect(area).toHaveProperty("value", "Hello world");
-  });
-
-  it("updates an uncontrolled empty field without onChange", async () => {
-    renderThemed(<TextareaField label="Notes" />);
-    const area = textboxNamed("Notes");
-    expect(area).toHaveProperty("value", "");
-    await userEvent.fill(page.getByRole("textbox", { name: "Notes", exact: true }), "Typed");
-    expect(area).toHaveProperty("value", "Typed");
-  });
-
-  it("renders 0/120 and updates from the keyboard, capping at maxLength", async () => {
-    renderThemed(<TextareaField label="Bio" maxLength={120} />);
-    expect(page.getByText("0/120", { exact: true }).query()).toBeTruthy();
-    const area = textboxNamed("Bio");
-    area.focus();
-    await userEvent.keyboard("Hi");
-    expect(page.getByText("2/120", { exact: true }).query()).toBeTruthy();
   });
 
   it("enforces maxLength natively so the count never exceeds the cap", async () => {

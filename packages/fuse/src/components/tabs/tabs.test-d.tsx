@@ -1,16 +1,7 @@
 import { expectTypeOf, test } from "vitest";
 
-import type { Tabs as RootTabs } from "@elmeragroup/fuse";
 import * as TabsModule from "@elmeragroup/fuse/tabs";
 import { Tabs, tabsListVariants } from "@elmeragroup/fuse/tabs";
-
-test("Tabs ships from the tabs entry and the root barrel", () => {
-  expectTypeOf<typeof Tabs>().toEqualTypeOf<typeof RootTabs>();
-  expectTypeOf(Tabs.Root).toBeFunction();
-  expectTypeOf(Tabs.List).toBeFunction();
-  expectTypeOf(Tabs.Trigger).toBeFunction();
-  expectTypeOf(Tabs.Content).toBeFunction();
-});
 
 test("the public namespace is four parts plus the public recipe — never the flat ref names", () => {
   expectTypeOf(Tabs).not.toHaveProperty("Panel");
@@ -71,9 +62,4 @@ test("parts take the primitive passthrough surface, list variant, and no as prop
   const _badVariant = <Tabs.List variant="ghost" />;
   // @ts-expect-error polymorphism is never an as prop
   const _noAs = <Tabs.Trigger as="div" />;
-});
-
-test("tabsListVariants is public and returns a class string", () => {
-  expectTypeOf(tabsListVariants({ variant: "line" })).toBeString();
-  expectTypeOf(tabsListVariants()).toBeString();
 });

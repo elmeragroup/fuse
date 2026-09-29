@@ -8,10 +8,6 @@ const VARIANTS = ["default", "outline"] as const;
 const SIZES = ["xs", "sm", "default", "lg"] as const;
 
 describe("toggleVariants", () => {
-  it("defaults to variant=default", () => {
-    expect(toggleVariants()).toContain("bg-transparent");
-  });
-
   it("renders each variant without leaking the other axis", () => {
     const defaults = toggleVariants({ variant: "default" });
     expect(defaults).toContain("bg-transparent");

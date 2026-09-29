@@ -2,22 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { defaultDensityForVariant, densityAttributes } from "./density";
 import type { Density } from "./density";
-import { LEGAL_THEMES } from "./tokens/themes";
 import type { ThemeVariant } from "./tokens/themes";
 
 describe("defaultDensityForVariant", () => {
   it("maps internal to dense and external to comfortable", () => {
     expect(defaultDensityForVariant("internal")).toBe("dense");
     expect(defaultDensityForVariant("external")).toBe("comfortable");
-  });
-
-  it("ignores brand and segment across all 20 legal themes", () => {
-    expect(LEGAL_THEMES).toHaveLength(20);
-    for (const theme of LEGAL_THEMES) {
-      expect(defaultDensityForVariant(theme.variant)).toBe(
-        theme.variant === "internal" ? "dense" : "comfortable"
-      );
-    }
   });
 
   it("rejects an unknown untyped variant", () => {

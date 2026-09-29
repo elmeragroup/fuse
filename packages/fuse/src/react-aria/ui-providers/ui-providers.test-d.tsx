@@ -2,15 +2,10 @@ import type { ReactNode } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type * as RootApi from "@elmeragroup/fuse";
 import type * as UiProvidersApi from "@elmeragroup/fuse/react-aria/ui-providers";
 import type { UiProvidersProps } from "@elmeragroup/fuse/react-aria/ui-providers";
 import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
 import type { SupportedLocale } from "@elmeragroup/fuse/theme";
-
-test("UiProviders is absent from the root barrel", () => {
-  expectTypeOf<typeof RootApi>().not.toHaveProperty("UiProviders");
-});
 
 test("UserAgentParserResult is not a public ui-providers export", () => {
   // @ts-expect-error UserAgentParserResult is not a public type export

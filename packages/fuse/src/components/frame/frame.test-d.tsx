@@ -2,7 +2,6 @@ import type { ComponentProps } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type { Frame as RootFrame } from "@elmeragroup/fuse";
 import type {
   FrameDescriptionProps,
   FrameFooterProps,
@@ -13,16 +12,6 @@ import type {
 } from "@elmeragroup/fuse/frame";
 import * as FrameModule from "@elmeragroup/fuse/frame";
 import { Frame } from "@elmeragroup/fuse/frame";
-
-test("the namespace ships all six parts from the frame entry and the root barrel", () => {
-  expectTypeOf<typeof Frame>().toEqualTypeOf<typeof RootFrame>();
-  expectTypeOf(Frame).toHaveProperty("Root");
-  expectTypeOf(Frame).toHaveProperty("Panel");
-  expectTypeOf(Frame).toHaveProperty("Header");
-  expectTypeOf(Frame).toHaveProperty("Title");
-  expectTypeOf(Frame).toHaveProperty("Description");
-  expectTypeOf(Frame).toHaveProperty("Footer");
-});
 
 test("public API exports only the namespace and part prop types", () => {
   expectTypeOf<FrameRootProps>().toMatchTypeOf<ComponentProps<"div"> & { stackedPanels?: boolean }>();

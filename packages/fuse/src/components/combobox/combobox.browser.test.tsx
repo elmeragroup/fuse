@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import type { ComponentProps, ReactNode } from "react";
 
 import { describe, expect, it, vi } from "vitest";
@@ -198,12 +198,6 @@ describe("Combobox", () => {
     expect(content.getAttribute("data-external-anchor")).toBe("false");
     expect(optionNamed("Apple")).toBeTruthy();
     expect(optionNamed("Banana")).toBeTruthy();
-  });
-
-  it("opens from ArrowDown on the input", async () => {
-    renderCombobox(<FruitCombobox />);
-    await openWithArrowDown();
-    expect(highlightedOption().textContent).toContain("Apple");
   });
 
   it("closes the popup on Escape and keeps focus on the input", async () => {
@@ -513,34 +507,6 @@ describe("Combobox", () => {
     await expect.element(page.getByRole("combobox", { name: "Fruit", exact: true })).toHaveFocus();
   });
 
-  it("names the chip-remove button from itemToStringLabel for object items", () => {
-    const fruits = [
-      { id: "apple", label: "Apple" },
-      { id: "banana", label: "Banana" },
-    ] as const;
-    renderCombobox(
-      <Combobox.Root
-        items={[...fruits]}
-        itemToStringLabel={(item) => item.label}
-        multiple
-        defaultValue={[fruits[0]]}>
-        <Combobox.Chips aria-label="Selected fruit">
-          <Combobox.Value>
-            {(value: (typeof fruits)[number][]) =>
-              value.map((item) => (
-                <Combobox.Chip key={item.id}>
-                  <span aria-hidden="true">★</span>
-                </Combobox.Chip>
-              ))
-            }
-          </Combobox.Value>
-          <Combobox.ChipsInput aria-label="Fruit" />
-        </Combobox.Chips>
-      </Combobox.Root>
-    );
-    expect(page.getByRole("button", { name: "Remove Apple", exact: true }).query()).not.toBeNull();
-  });
-
   it("names the chip-remove button Remove alone when neither children nor itemToStringLabel yield text", () => {
     renderCombobox(
       <Combobox.Root multiple defaultValue={[{ id: "anon" }]}>
@@ -694,24 +660,6 @@ describe("Combobox", () => {
     const island = page.getByRole("region", { name: "Theme island", exact: true }).element();
     expect(island.contains(listbox)).toBe(true);
     expect([...document.body.children].includes(listbox)).toBe(false);
-  });
-
-  it("waits while the resolved Content container element is still null", () => {
-    function NeverAttached() {
-      const ref = useRef<HTMLElement | null>(null);
-      return (
-        <Combobox.Root items={[...FRUITS]} open>
-          <Combobox.Input aria-label="Pending" />
-          <Combobox.Content container={ref}>
-            <Combobox.List>
-              <Combobox.Item value="Apple">Apple</Combobox.Item>
-            </Combobox.List>
-          </Combobox.Content>
-        </Combobox.Root>
-      );
-    }
-    renderCombobox(<NeverAttached />);
-    expect(page.getByRole("listbox").query()).toBeNull();
   });
 
   it("renders Empty, Clear, and chip-remove defaults in all four locales and honors copy overrides", async () => {

@@ -11,7 +11,6 @@ import {
 } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import { overlayBackdropOf, renderThemed } from "../../../test/themed-browser-render";
-import { ThemeScope } from "../../theme/theme-scope";
 import { Dialog } from "./index";
 
 const CLOSE_COPY = {
@@ -310,43 +309,6 @@ describe("Dialog", () => {
     const dialog = await openDialog();
     expect(scope).not.toBeNull();
     expect(scope?.contains(dialog)).toBe(true);
-    expect([...document.body.children].includes(dialog)).toBe(false);
-  });
-
-  it("waits while the resolved container element is still null", () => {
-    function NeverAttached() {
-      const ref = useRef<HTMLElement | null>(null);
-      return (
-        <Dialog.Root open>
-          <Dialog.Content container={ref}>
-            <Dialog.Title>Pending</Dialog.Title>
-          </Dialog.Content>
-        </Dialog.Root>
-      );
-    }
-    renderThemed(withLocale("en-US", <NeverAttached />));
-
-    expect(page.getByRole("dialog").query()).toBeNull();
-  });
-
-  it("does not paint the popup outside a ThemeScope element that has not attached yet", async () => {
-    // A ThemeScope publishes `null` until its callback ref runs; the render below is the
-    // first commit, so the popup must not appear in the document body meanwhile.
-    renderThemed(
-      withLocale(
-        "en-US",
-        <ThemeScope theme={{ variant: "external", brand: "fkas", segment: "private" }}>
-          <Dialog.Root open>
-            <Dialog.Content>
-              <Dialog.Title>Scoped</Dialog.Title>
-            </Dialog.Content>
-          </Dialog.Root>
-        </ThemeScope>
-      )
-    );
-    const dialog = await mountedDialog();
-    const scope = dialog.closest("[data-theme-variant=external]");
-    expect(scope).not.toBeNull();
     expect([...document.body.children].includes(dialog)).toBe(false);
   });
 

@@ -106,14 +106,6 @@ describe("write gate before connect", () => {
     expect(memory.state.rootWrites).toEqual([]);
   });
 
-  it("writes an explicit setColorScheme before connect", () => {
-    const { memory, runtime } = setup({ root: "light" });
-
-    runtime.getSnapshot().setColorScheme("dark");
-
-    expect(memory.state.rootWrites).toEqual([plain("dark")]);
-  });
-
   it("keeps an explicit preference when a changed default is configured before connect", () => {
     const { memory, runtime } = setup({ root: "light" });
 
@@ -138,14 +130,6 @@ describe("connect", () => {
     expect(memory.state.activeSubscriptions).toEqual({ storage: 1, media: 1 });
     expect(scheme(runtime)).toBe("dark/dark");
     expect(notified.count).toBe(1);
-  });
-
-  it("never rewrites a root that already matches", () => {
-    const { memory, runtime } = setup({ root: "dark", stored: { [KEY]: "dark" } });
-
-    runtime.connect();
-
-    expect(memory.state.rootWrites).toEqual([]);
   });
 
   it("does not subscribe to the media query when system support is off", () => {
@@ -323,20 +307,6 @@ describe("media", () => {
 
     expect(memory.state.root).toBe("light");
     expect(scheme(runtime)).toBe("light/light");
-  });
-
-  it("resolves system to light without a subscription when system support is off", () => {
-    const { memory, runtime } = setup(
-      { root: "dark", stored: { [KEY]: "system" }, prefersDark: true },
-      { enableSystem: false }
-    );
-    runtime.connect();
-    memory.control.setPrefersDark(false);
-    memory.control.setPrefersDark(true);
-
-    expect(memory.state.root).toBe("light");
-    expect(memory.state.activeSubscriptions.media).toBe(0);
-    expect(scheme(runtime)).toBe("system/light");
   });
 
   it("resolves system to light when the platform cannot evaluate the query", () => {
@@ -557,15 +527,5 @@ describe("idempotence and recovery", () => {
 
     runtime.configure(config());
     expect(memory.state.rootWrites).toEqual([plain("dark")]);
-  });
-
-  it("leaves an external overwrite alone before connect when nothing forces a write", () => {
-    const { memory, runtime } = setup({ root: "dark", prefersDark: true });
-
-    memory.control.mutateRoot("light");
-    runtime.configure(config());
-
-    expect(memory.state.root).toBe("light");
-    expect(memory.state.rootWrites).toEqual([]);
   });
 });

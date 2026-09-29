@@ -2,15 +2,9 @@ import type { ReactNode } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type { ConfirmButton as RootConfirmButton } from "@elmeragroup/fuse";
 import type { ConfirmButtonProps } from "@elmeragroup/fuse/confirm-button";
 import * as ConfirmButtonModule from "@elmeragroup/fuse/confirm-button";
 import { ConfirmButton } from "@elmeragroup/fuse/confirm-button";
-
-test("ConfirmButton ships from the confirm-button entry and the root barrel", () => {
-  expectTypeOf<typeof ConfirmButton>().toEqualTypeOf<typeof RootConfirmButton>();
-  expectTypeOf(ConfirmButton).toBeFunction();
-});
 
 test("ConfirmButtonProps omits onClick and requires onConfirm", () => {
   expectTypeOf<ConfirmButtonProps>().not.toHaveProperty("onClick");

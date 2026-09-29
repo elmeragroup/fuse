@@ -252,19 +252,6 @@ describe("InputGroup", () => {
     expect(roleNamed("button", "Copy meter").matches(":disabled")).toBe(true);
   });
 
-  it("dims the group and its addon when the control is disabled", () => {
-    renderThemed(
-      <InputGroup.Root>
-        <InputGroup.Addon>
-          <InputGroup.Text>NO</InputGroup.Text>
-        </InputGroup.Addon>
-        <InputGroup.Input aria-label="Locked" disabled />
-      </InputGroup.Root>
-    );
-    expect(Number(getComputedStyle(rootNamed("Locked")).opacity)).toBeLessThan(1);
-    expect(rootNamed("Locked").matches(":has(:disabled)")).toBe(true);
-  });
-
   it("reflects align as data-align and turns block rails into a column", () => {
     renderThemed(
       <>

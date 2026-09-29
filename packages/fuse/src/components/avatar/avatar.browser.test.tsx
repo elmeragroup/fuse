@@ -62,20 +62,6 @@ describe("Avatar", () => {
     expect(page.getByText("AL", { exact: true }).query()).toBeNull();
   });
 
-  it("renders getByRole img with the given alt", async () => {
-    renderThemed(
-      <Avatar.Root>
-        <Avatar.Image src={PIXEL} alt="Portrait of Ada Lovelace" />
-        <Avatar.Fallback>AL</Avatar.Fallback>
-      </Avatar.Root>
-    );
-
-    await vi.waitFor(() => {
-      expect(page.getByRole("img", { name: "Portrait of Ada Lovelace" }).query()).not.toBeNull();
-    });
-    expect(page.getByRole("img", { name: "Portrait of Ada Lovelace" }).element().tagName).toBe("IMG");
-  });
-
   it("emits data-slot values on every rendered part", () => {
     renderThemed(
       <Avatar.Root>

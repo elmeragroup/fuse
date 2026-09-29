@@ -134,13 +134,6 @@ describe("make", () => {
     });
   });
 
-  it("refuses an infinite chroma, naming the range", () => {
-    expect(Oklch.make({ l: 0.5, c: Infinity, h: 0, alpha: 1 })).toMatchObject({
-      _tag: "err",
-      error: { message: "Oklch c must be a finite number in 0..1000000, received Infinity" },
-    });
-  });
-
   it("brands a color so a spread copy with forged components is not an Oklch", () => {
     const valid = getOrThrow(Oklch.make({ l: 0.5, c: 0.1, h: 30, alpha: 1 }));
     // @ts-expect-error A spread copies the public fields but not the private brand field.

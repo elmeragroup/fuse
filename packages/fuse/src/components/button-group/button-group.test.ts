@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
-import { cn } from "../../styles/cn";
 import { buttonGroupVariants } from "./button-group-variants";
 
 const BASE_CLASSES = [
@@ -63,12 +62,5 @@ describe("buttonGroupVariants", () => {
     expect(resolved).not.toContain("comfortable:");
     expect(resolved).not.toContain("dark:");
     expect(resolved).not.toMatch(RAW_PALETTE_RE);
-  });
-
-  it("lets a className merge win over a conflicting recipe class through cn", () => {
-    const merged = cn(buttonGroupVariants({ orientation: "vertical" }), "flex-row").split(/\s+/);
-    expect(merged).toContain("flex-row");
-    expect(merged).not.toContain("flex-col");
-    expect(merged).toContain("group/button-group");
   });
 });

@@ -1,13 +1,7 @@
 import { expectTypeOf, test } from "vitest";
 
-import type { Badge as RootBadge } from "@elmeragroup/fuse";
 import type { BadgeProps } from "@elmeragroup/fuse/badge";
-import { Badge, badgeVariants } from "@elmeragroup/fuse/badge";
-
-test("Badge ships from the badge entry and the root barrel", () => {
-  expectTypeOf<typeof Badge>().toEqualTypeOf<typeof RootBadge>();
-  expectTypeOf(Badge).toBeFunction();
-});
+import { Badge } from "@elmeragroup/fuse/badge";
 
 test("BadgeProps is native div props plus the recipe axes", () => {
   expectTypeOf<BadgeProps["variant"]>().toEqualTypeOf<
@@ -30,12 +24,6 @@ test("BadgeProps is native div props plus the recipe axes", () => {
   expectTypeOf<BadgeProps["size"]>().toEqualTypeOf<"sm" | "default" | "lg" | undefined>();
   expectTypeOf<BadgeProps["className"]>().toEqualTypeOf<string | undefined>();
   expectTypeOf<BadgeProps["id"]>().toEqualTypeOf<string | undefined>();
-});
-
-test("badgeVariants is public and returns a class string", () => {
-  expectTypeOf(badgeVariants).toBeFunction();
-  expectTypeOf(badgeVariants({ variant: "outline-destructive", size: "lg" })).toBeString();
-  expectTypeOf(badgeVariants()).toBeString();
 });
 
 test("the element takes the public props and no polymorphic as prop", () => {

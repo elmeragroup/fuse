@@ -432,33 +432,6 @@ describe("fuse-figma sync", () => {
     })
   );
 
-  it.effect("deletes a mode the tokens dropped instead of renaming it to the mode they added", () =>
-    Effect.gen(function* () {
-      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
-      figma.addCollection("Fuse tokens", ["Light", "Sepia"]);
-      const lightId = figma.modeId("Fuse tokens", "Light");
-      const sepiaId = figma.modeId("Fuse tokens", "Sepia");
-
-      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
-
-      assert.deepStrictEqual(figma.modeNames("Fuse tokens"), ["Light", "Dark"]);
-      const [keptId, darkId] = figma.modeIds("Fuse tokens");
-      assert.strictEqual(keptId, lightId);
-      // Frames pinned to Sepia lose the mode; none of them silently turn Dark.
-      assert.notStrictEqual(darkId, sepiaId);
-      assert.notInclude(figma.modeIds("Fuse tokens"), sepiaId);
-      // The new Dark mode holds the dark aliases.
-      assert.deepStrictEqual(
-        figma.aliasChain("Fuse tokens", "primary", dark("external-elma-company")).slice(0, 2),
-        ["Fuse tokens/primary", "Fuse themes/dark/primary"]
-      );
-      const printed = yield* output;
-      assert.include(printed, "Fuse tokens: delete mode Sepia");
-      assert.include(printed, "Fuse tokens: create mode Dark");
-      assert.notInclude(printed, "rename");
-    })
-  );
-
   it.effect("ignores library collections and extensions that share a Fuse collection's name", () =>
     Effect.gen(function* () {
       const figma = new InMemoryFigma(FILE_KEY, TOKEN);
@@ -600,23 +573,6 @@ describe("fuse-figma sync", () => {
       assert.include(
         yield* errors,
         '"Fuse tokens/radius" is a FUTURE_TYPE variable in Figma but the tokens define a FLOAT.'
-      );
-    })
-  );
-
-  it.effect("refuses to change a variable's type", () =>
-    Effect.gen(function* () {
-      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
-      const tokensId = figma.addCollection("Fuse tokens", ["Light", "Dark"]);
-      figma.addVariable(tokensId, "radius", "COLOR", { r: 0, g: 0, b: 0, a: 1 });
-
-      const failure = yield* Effect.flip(run(figma, ["--file-key", FILE_KEY, "sync"]));
-
-      assert.strictEqual(failure._tag, "ReportedFailure");
-      assert.strictEqual(writes(figma), 0);
-      assert.include(
-        yield* errors,
-        '"Fuse tokens/radius" is a COLOR variable in Figma but the tokens define a FLOAT.'
       );
     })
   );

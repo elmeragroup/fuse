@@ -8,26 +8,6 @@ import type { ThemeInput } from "../theme/tokens/themes";
 import { BrandLogo } from "./brand-logo";
 
 describe("BrandLogo", () => {
-  it("renders an accessible display-name fallback for elma full and mark", () => {
-    render(
-      <>
-        <BrandLogo brand="elma" variant="full" />
-        <BrandLogo brand="elma" variant="mark" title="Elmera mark" />
-      </>
-    );
-
-    const full = page.getByRole("img", { name: "Elmera", exact: true }).element();
-    const mark = page.getByRole("img", { name: "Elmera mark", exact: true }).element();
-    expect(full.tagName).toBe("SPAN");
-    expect(full.getAttribute("data-variant")).toBe("full");
-    expect(full.textContent).toBe("Elmera");
-    expect(mark.tagName).toBe("SPAN");
-    expect(mark.getAttribute("data-variant")).toBe("mark");
-    expect(mark.textContent).toBe("Elmera");
-    expect(full.querySelector("svg")).toBeNull();
-    expect(mark.querySelector("svg")).toBeNull();
-  });
-
   it("uses an explicit title as the accessible name without inventing a mark", () => {
     render(<BrandLogo brand="elma" variant="mark" title="Elmera Group" />);
     const img = page.getByRole("img", { name: "Elmera Group", exact: true }).element();

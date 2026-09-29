@@ -1,16 +1,7 @@
 import { expectTypeOf, test } from "vitest";
 
-import type { Tooltip as RootTooltip } from "@elmeragroup/fuse";
 import type { TooltipContentProps, TooltipProviderProps, TooltipRootProps } from "@elmeragroup/fuse/tooltip";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
-
-test("Tooltip ships from the tooltip entry and the root barrel", () => {
-  expectTypeOf<typeof Tooltip>().toEqualTypeOf<typeof RootTooltip>();
-  expectTypeOf(Tooltip.Provider).toBeFunction();
-  expectTypeOf(Tooltip.Root).toBeFunction();
-  expectTypeOf(Tooltip.Trigger).toBeFunction();
-  expectTypeOf(Tooltip.Content).toBeFunction();
-});
 
 test("Portal, Positioner and Popup stay off the public namespace", () => {
   expectTypeOf(Tooltip).not.toHaveProperty("Portal");

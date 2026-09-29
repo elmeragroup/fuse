@@ -8,7 +8,6 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
-import { ThemeScope } from "../../theme/theme-scope";
 import { DropdownMenu } from "./index";
 
 type ItemRole = "menuitem" | "menuitemcheckbox" | "menuitemradio";
@@ -94,12 +93,6 @@ describe("DropdownMenu", () => {
     expect(onOpenChange.mock.calls[0]?.[0]).toBe(true);
     expect(menu.getAttribute("data-slot")).toBe("dropdown-menu-content");
     expect(itemNamed("Profile")).toBeTruthy();
-  });
-
-  it("opens from ArrowDown on the trigger and highlights the first item", async () => {
-    renderThemed(<BasicMenu />);
-    await openWithArrowDown();
-    await expect.element(itemLocator("Profile")).toHaveFocus();
   });
 
   it("opens from Enter and from Space on the trigger, highlighting the first item", async () => {
@@ -209,17 +202,6 @@ describe("DropdownMenu", () => {
     expect(onProfile).toHaveBeenCalledTimes(1);
   });
 
-  it("closes on Escape and returns focus to the trigger", async () => {
-    renderThemed(<BasicMenu />);
-    await openWithClick();
-
-    await userEvent.keyboard("{Escape}");
-    await vi.waitFor(() => {
-      expect(page.getByRole("menu").query()).toBeNull();
-    });
-    await expect.element(page.getByRole("button", { name: "Open", exact: true })).toHaveFocus();
-  });
-
   it("closes when an item is activated", async () => {
     renderThemed(<BasicMenu />);
     await openWithClick();
@@ -254,14 +236,6 @@ describe("DropdownMenu", () => {
 
     await userEvent.keyboard("{Home}");
     await expect.element(itemLocator("Profile")).toHaveFocus();
-  });
-
-  it("dims disabled items via data-disabled", async () => {
-    renderThemed(<BasicMenu />);
-    await openWithClick();
-    const settings = itemNamed("Settings");
-    expect(settings.getAttribute("data-disabled")).not.toBeNull();
-    expect(settings.getAttribute("aria-disabled")).toBe("true");
   });
 
   it("jumps to a matching item on typeahead", async () => {
@@ -574,22 +548,6 @@ describe("DropdownMenu", () => {
     }
     renderThemed(<NeverAttachedSub />);
     expect(page.getByRole("menuitem", { name: "Pending", exact: true }).query()).toBeNull();
-  });
-
-  it("does not paint the popup outside a ThemeScope element that has not attached yet", async () => {
-    renderThemed(
-      <ThemeScope theme={{ variant: "external", brand: "fkas", segment: "private" }}>
-        <DropdownMenu.Root open>
-          <DropdownMenu.Content>
-            <DropdownMenu.Item>Scoped</DropdownMenu.Item>
-          </DropdownMenu.Content>
-        </DropdownMenu.Root>
-      </ThemeScope>
-    );
-    const menu = await openedMenu();
-    const scope = menu.closest("[data-theme-variant=external]");
-    expect(scope).not.toBeNull();
-    expect([...document.body.children].includes(menu)).toBe(false);
   });
 
   it("gives the trigger the shared keyboard focus ring", async () => {

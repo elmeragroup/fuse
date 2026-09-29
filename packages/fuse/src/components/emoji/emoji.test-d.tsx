@@ -2,26 +2,8 @@ import type { ComponentProps } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type { Emoji as RootEmoji, SlightlySmilingFace as RootSlightlySmilingFace } from "@elmeragroup/fuse";
 import type { EmojiProps } from "@elmeragroup/fuse/emoji";
-import {
-  Emoji,
-  LoudlyCryingFace,
-  NeutralFace,
-  PartyingFace,
-  SlightlyFrowningFace,
-  SlightlySmilingFace,
-} from "@elmeragroup/fuse/emoji";
-
-test("Emoji and the five named faces ship from the emoji entry and the root barrel", () => {
-  expectTypeOf<typeof Emoji>().toEqualTypeOf<typeof RootEmoji>();
-  expectTypeOf<typeof SlightlySmilingFace>().toEqualTypeOf<typeof RootSlightlySmilingFace>();
-  expectTypeOf(Emoji.SlightlyFrowningFace).toEqualTypeOf(SlightlyFrowningFace);
-  expectTypeOf(Emoji.SlightlySmilingFace).toEqualTypeOf(SlightlySmilingFace);
-  expectTypeOf(Emoji.NeutralFace).toEqualTypeOf(NeutralFace);
-  expectTypeOf(Emoji.LoudlyCryingFace).toEqualTypeOf(LoudlyCryingFace);
-  expectTypeOf(Emoji.PartyingFace).toEqualTypeOf(PartyingFace);
-});
+import { Emoji, SlightlySmilingFace } from "@elmeragroup/fuse/emoji";
 
 test("EmojiProps is svg props plus optional label so ref passes through", () => {
   expectTypeOf<EmojiProps["label"]>().toEqualTypeOf<string | undefined>();

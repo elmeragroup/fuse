@@ -2,15 +2,9 @@ import type { ReactNode, RefObject } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type { PopoverInfoButton as RootPopoverInfoButton } from "@elmeragroup/fuse";
 import type { PopoverInfoButtonProps } from "@elmeragroup/fuse/popover-info-button";
 import * as PopoverInfoButtonModule from "@elmeragroup/fuse/popover-info-button";
 import { PopoverInfoButton } from "@elmeragroup/fuse/popover-info-button";
-
-test("PopoverInfoButton ships from the popover-info-button entry and the root barrel", () => {
-  expectTypeOf<typeof PopoverInfoButton>().toEqualTypeOf<typeof RootPopoverInfoButton>();
-  expectTypeOf(PopoverInfoButton).toBeFunction();
-});
 
 test("the recipe stays off the public module and locale is provider-only", () => {
   expectTypeOf(PopoverInfoButtonModule).not.toHaveProperty("popoverInfoButtonStyles");

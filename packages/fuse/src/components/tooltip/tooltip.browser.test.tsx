@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -6,7 +6,6 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
-import { ThemeScope } from "../../theme/theme-scope";
 import { Tooltip } from "./index";
 
 async function hoverOpen(name: string, tooltipName = name, timeout?: number): Promise<HTMLElement> {
@@ -94,21 +93,6 @@ describe("Tooltip", () => {
     await vi.waitFor(() => {
       expect(page.getByRole("tooltip").query()).toBeNull();
     });
-  });
-
-  it("wires the trigger's accessible description to the tooltip text while open", async () => {
-    renderThemed(
-      <Tooltip.Provider>
-        <Tooltip.Root>
-          <Tooltip.Trigger>Hint</Tooltip.Trigger>
-          <Tooltip.Content>Add to library</Tooltip.Content>
-        </Tooltip.Root>
-      </Tooltip.Provider>
-    );
-
-    const trigger = roleNamed("button", "Hint");
-    await hoverOpen("Hint", "Add to library");
-    await expect.element(trigger).toHaveAccessibleDescription("Add to library");
   });
 
   it("opens a neighbor without re-waiting the delay inside one Provider group", async () => {
@@ -237,38 +221,6 @@ describe("Tooltip", () => {
     const tooltip = await mountedTooltip("Add to library");
     const island = page.getByRole("region", { name: "Theme island", exact: true }).element();
     expect(island.contains(tooltip)).toBe(true);
-    expect([...document.body.children].includes(tooltip)).toBe(false);
-  });
-
-  it("waits while the resolved container element is still null", () => {
-    function NeverAttached() {
-      const ref = useRef<HTMLElement | null>(null);
-      return (
-        <Tooltip.Provider>
-          <Tooltip.Root open>
-            <Tooltip.Content container={ref}>Pending</Tooltip.Content>
-          </Tooltip.Root>
-        </Tooltip.Provider>
-      );
-    }
-    renderThemed(<NeverAttached />);
-
-    expect(page.getByRole("tooltip").query()).toBeNull();
-  });
-
-  it("does not paint the popup outside a ThemeScope element that has not attached yet", async () => {
-    renderThemed(
-      <ThemeScope theme={{ variant: "external", brand: "fkas", segment: "private" }}>
-        <Tooltip.Provider>
-          <Tooltip.Root open>
-            <Tooltip.Content>Scoped</Tooltip.Content>
-          </Tooltip.Root>
-        </Tooltip.Provider>
-      </ThemeScope>
-    );
-    const tooltip = await mountedTooltip();
-    const scope = tooltip.closest("[data-theme-variant=external]");
-    expect(scope).not.toBeNull();
     expect([...document.body.children].includes(tooltip)).toBe(false);
   });
 

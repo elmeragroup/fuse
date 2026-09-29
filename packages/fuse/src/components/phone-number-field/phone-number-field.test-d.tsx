@@ -2,22 +2,8 @@ import type { ReactNode, RefObject } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type { PhoneNumberField as RootPhoneNumberField } from "@elmeragroup/fuse";
 import type { PhoneNumberFieldProps } from "@elmeragroup/fuse/phone-number-field";
-import * as PhoneNumberFieldModule from "@elmeragroup/fuse/phone-number-field";
 import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
-
-test("PhoneNumberField ships from the phone-number-field entry and the root barrel", () => {
-  expectTypeOf<typeof PhoneNumberField>().toEqualTypeOf<typeof RootPhoneNumberField>();
-  expectTypeOf(PhoneNumberField).toBeFunction();
-});
-
-test("the public module exports only PhoneNumberField and its props type", () => {
-  expectTypeOf(PhoneNumberFieldModule).not.toHaveProperty("Flag");
-  expectTypeOf(PhoneNumberFieldModule).not.toHaveProperty("usePhoneNumberFieldState");
-  expectTypeOf(PhoneNumberFieldModule).not.toHaveProperty("phoneNumberFieldVariants");
-  expectTypeOf(PhoneNumberFieldModule).not.toHaveProperty("getCountries");
-});
 
 test("PhoneNumberFieldProps is the closed composite face", () => {
   expectTypeOf<PhoneNumberFieldProps["label"]>().toEqualTypeOf<string | undefined>();

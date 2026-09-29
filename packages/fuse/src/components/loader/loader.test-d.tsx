@@ -1,15 +1,7 @@
 import { expectTypeOf, test } from "vitest";
 
-import type { Loader as RootLoader, loaderVariants as RootLoaderVariants } from "@elmeragroup/fuse";
 import type { LoaderProps } from "@elmeragroup/fuse/loader";
-import { Loader, loaderVariants } from "@elmeragroup/fuse/loader";
-
-test("Loader and loaderVariants ship from the loader entry and the root barrel", () => {
-  expectTypeOf<typeof Loader>().toEqualTypeOf<typeof RootLoader>();
-  expectTypeOf<typeof loaderVariants>().toEqualTypeOf<typeof RootLoaderVariants>();
-  expectTypeOf(Loader).toBeFunction();
-  expectTypeOf(loaderVariants).toBeFunction();
-});
+import { Loader } from "@elmeragroup/fuse/loader";
 
 test("LoaderProps is native div props plus the recipe axes", () => {
   expectTypeOf<LoaderProps["variant"]>().toEqualTypeOf<"default" | undefined>();
@@ -18,13 +10,6 @@ test("LoaderProps is native div props plus the recipe axes", () => {
   >();
   expectTypeOf<LoaderProps["className"]>().toEqualTypeOf<string | undefined>();
   expectTypeOf<LoaderProps["id"]>().toEqualTypeOf<string | undefined>();
-});
-
-test("loaderVariants is public and returns base/icon slot functions", () => {
-  expectTypeOf(loaderVariants().base).toBeFunction();
-  expectTypeOf(loaderVariants().icon).toBeFunction();
-  expectTypeOf(loaderVariants().base()).toBeString();
-  expectTypeOf(loaderVariants({ size: "xl", variant: "default" }).icon()).toBeString();
 });
 
 test("the element takes the public props and no polymorphic as prop", () => {

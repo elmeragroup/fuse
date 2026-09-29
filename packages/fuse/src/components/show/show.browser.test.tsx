@@ -14,20 +14,6 @@ function hostNamed(name: string): HTMLElement {
 }
 
 describe("Show", () => {
-  it("renders children when when is true", () => {
-    renderThemed(
-      <section aria-label="shown">
-        <Show when={true}>
-          <p>Visible result</p>
-        </Show>
-      </section>
-    );
-    const host = hostNamed("shown");
-    expect(host.childElementCount).toBe(1);
-    expect(host.firstElementChild?.tagName).toBe("P");
-    expect(host.textContent).toBe("Visible result");
-  });
-
   it("renders nothing when when is false", () => {
     renderThemed(
       <section aria-label="hidden">

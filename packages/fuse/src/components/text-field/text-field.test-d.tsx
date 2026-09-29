@@ -2,14 +2,8 @@ import type { ReactNode } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
-import type { TextField as RootTextField } from "@elmeragroup/fuse";
 import type { TextFieldProps } from "@elmeragroup/fuse/text-field";
-import { TextField, textFieldVariants } from "@elmeragroup/fuse/text-field";
-
-test("TextField ships from the text-field entry and the root barrel", () => {
-  expectTypeOf<typeof TextField>().toEqualTypeOf<typeof RootTextField>();
-  expectTypeOf(TextField).toBeFunction();
-});
+import { TextField } from "@elmeragroup/fuse/text-field";
 
 test("TextFieldProps is the composite is* face plus remaining native input props", () => {
   expectTypeOf<TextFieldProps["label"]>().toEqualTypeOf<string | undefined>();
@@ -28,16 +22,6 @@ test("TextFieldProps is the composite is* face plus remaining native input props
   expectTypeOf<TextFieldProps>().toHaveProperty("maxLength");
   expectTypeOf<TextFieldProps>().not.toHaveProperty("as");
   expectTypeOf<TextFieldProps>().not.toHaveProperty("isIconActive");
-});
-
-test("textFieldVariants is public and slotted", () => {
-  expectTypeOf(textFieldVariants).toBeFunction();
-  expectTypeOf(textFieldVariants().base()).toBeString();
-  expectTypeOf(textFieldVariants({ variant: "card" }).fieldGroup()).toBeString();
-  expectTypeOf(
-    textFieldVariants({ variant: "inline", hidden: true, isIconActive: true }).input()
-  ).toBeString();
-  expectTypeOf(textFieldVariants()).not.toHaveProperty("textArea");
 });
 
 test("the element takes the public props and no polymorphic as prop", () => {

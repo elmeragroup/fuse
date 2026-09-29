@@ -1,18 +1,7 @@
 import { expectTypeOf, test } from "vitest";
 
-import type { InputGroup as RootInputGroup } from "@elmeragroup/fuse";
 import { InputGroup } from "@elmeragroup/fuse/input-group";
 import type { InputGroupAddonProps, InputGroupButtonProps } from "@elmeragroup/fuse/input-group";
-
-test("InputGroup ships from the input-group entry and the root barrel", () => {
-  expectTypeOf<typeof InputGroup>().toEqualTypeOf<typeof RootInputGroup>();
-  expectTypeOf(InputGroup.Root).toBeFunction();
-  expectTypeOf(InputGroup.Addon).toBeFunction();
-  expectTypeOf(InputGroup.Button).toBeFunction();
-  expectTypeOf(InputGroup.Text).toBeFunction();
-  expectTypeOf(InputGroup.Input).toBeFunction();
-  expectTypeOf(InputGroup.Textarea).toBeFunction();
-});
 
 test("the addon align axis is the four public values", () => {
   expectTypeOf<InputGroupAddonProps["align"]>().toEqualTypeOf<

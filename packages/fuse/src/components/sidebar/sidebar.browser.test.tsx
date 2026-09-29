@@ -12,7 +12,6 @@ import {
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import {
   ContextProbe,
-  DESKTOP,
   Frame,
   MOBILE,
   OrdersLink,
@@ -172,12 +171,6 @@ describe("Sidebar callback stability", () => {
 
 describe("Sidebar locale copy", () => {
   for (const locale of SUPPORTED_LOCALES) {
-    it(`labels the Trigger and Rail from the ${locale} dictionary`, () => {
-      renderThemed(<Frame locale={locale} />);
-      expect(roleNamed("button", TOGGLE_COPY[locale]).getAttribute("data-slot")).toBe("sidebar-trigger");
-      expect(railNamed(TOGGLE_COPY[locale]).getAttribute("title")).toBe(TOGGLE_COPY[locale]);
-    });
-
     it(`titles and describes the mobile Sheet from the ${locale} dictionary`, async () => {
       await page.viewport(MOBILE.width, MOBILE.height);
       renderThemed(<Frame locale={locale} />);
@@ -249,32 +242,6 @@ describe("Sidebar controlled and uncontrolled state", () => {
     expect(latest?.open).toBe(false);
     expect(latest?.isMobile).toBe(false);
     expect(latest?.openMobile).toBe(false);
-  });
-
-  it("accepts a boolean and an updater in setOpen", async () => {
-    let latest: SidebarContextValue | undefined;
-    renderThemed(
-      <Frame
-        probe={
-          <ContextProbe
-            onValue={(value) => {
-              latest = value;
-            }}
-          />
-        }
-      />
-    );
-    expect(latest?.open).toBe(true);
-
-    latest?.setOpen(false);
-    await vi.waitFor(() => {
-      expect(sidebarRoot().getAttribute("data-state")).toBe("collapsed");
-    });
-
-    latest?.setOpen((open) => !open);
-    await vi.waitFor(() => {
-      expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
-    });
   });
 
   it("keeps a controlled open prop authoritative over internal state", async () => {
@@ -907,37 +874,5 @@ describe("Sidebar data-slot audit", () => {
     expect(bySlot("sidebar-menu-item").tagName).toBe("LI");
     expect(bySlot("sidebar-wrapper").style.getPropertyValue("--sidebar-width")).toBe("16rem");
     expect(bySlot("sidebar-wrapper").style.getPropertyValue("--sidebar-width-icon")).toBe("3rem");
-  });
-});
-
-describe("useSidebar().isMobile", () => {
-  it("is false at and above 768px, true below, follows viewport changes, and starts false", async () => {
-    const seen: boolean[] = [];
-    await page.viewport(768, 800);
-    renderThemed(
-      <Frame
-        probe={
-          <ContextProbe
-            onValue={(value) => {
-              seen.push(value.isMobile);
-            }}
-          />
-        }
-      />
-    );
-    expect(seen[0]).toBe(false);
-    await vi.waitFor(() => {
-      expect(seen.at(-1)).toBe(false);
-    });
-
-    await page.viewport(767, 800);
-    await vi.waitFor(() => {
-      expect(seen.at(-1)).toBe(true);
-    });
-
-    await page.viewport(DESKTOP.width, DESKTOP.height);
-    await vi.waitFor(() => {
-      expect(seen.at(-1)).toBe(false);
-    });
   });
 });

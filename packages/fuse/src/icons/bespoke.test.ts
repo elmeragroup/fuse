@@ -160,19 +160,6 @@ describe("bespoke icons", () => {
     }
   });
 
-  it("lets Gudbrandsdal full announce the passed title and stay silent when decorative", () => {
-    const titled = renderToStaticMarkup(
-      createElement(GudbrandsdalEnergiLogo, { title: "Gudbrandsdal Energi" })
-    );
-    expect(titled).toContain("<title>Gudbrandsdal Energi</title>");
-    expect(titled).not.toContain("Asset 1");
-    expect(titled.match(/<title>/g)).toEqual(["<title>"]);
-
-    const decorative = renderToStaticMarkup(createElement(GudbrandsdalEnergiLogo));
-    expect(decorative).not.toContain("<title>");
-    expect(decorative).toContain("aria-hidden");
-  });
-
   it("documents fixed-palette artwork as permitted for illustrations", () => {
     const contract = readFileSync(join(here, "bespoke-svg.ts"), "utf8");
     expect(contract).toContain("Fixed-palette artwork is permitted for illustrations");

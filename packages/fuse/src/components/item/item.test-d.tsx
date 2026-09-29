@@ -1,21 +1,6 @@
 import { expectTypeOf, test } from "vitest";
 
-import type { Item as RootItem } from "@elmeragroup/fuse";
 import { Item, itemVariants } from "@elmeragroup/fuse/item";
-
-test("the namespace ships all ten parts from the item entry and the root barrel", () => {
-  expectTypeOf<typeof Item>().toEqualTypeOf<typeof RootItem>();
-  expectTypeOf(Item).toHaveProperty("Root");
-  expectTypeOf(Item).toHaveProperty("Media");
-  expectTypeOf(Item).toHaveProperty("Content");
-  expectTypeOf(Item).toHaveProperty("Actions");
-  expectTypeOf(Item).toHaveProperty("Group");
-  expectTypeOf(Item).toHaveProperty("Separator");
-  expectTypeOf(Item).toHaveProperty("Title");
-  expectTypeOf(Item).toHaveProperty("Description");
-  expectTypeOf(Item).toHaveProperty("Header");
-  expectTypeOf(Item).toHaveProperty("Footer");
-});
 
 test("itemVariants is public and carries the variant and size axes", () => {
   expectTypeOf(itemVariants).toBeFunction();

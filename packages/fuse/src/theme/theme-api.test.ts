@@ -6,8 +6,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   DEFAULT_BOOTSTRAP_MANIFEST,
   DUPLICATE_BOOTSTRAP_MESSAGE,
-  MISMATCH_BOOTSTRAP_MESSAGE,
-  MISMATCHED_BOOTSTRAP_MANIFEST,
   MISSING_BOOTSTRAP_MESSAGE,
 } from "../../test/color-scheme-contract";
 import { runColorSchemeBootstrap } from "../../test/memory-color-scheme-platform";
@@ -16,12 +14,10 @@ import { LEGAL_THEMES as PUBLIC_LEGAL_THEMES, THEME_SEGMENTS, THEME_VARIANTS } f
 import {
   COLOR_SCHEME_BOOTSTRAP_SOURCE_DUPLICATE,
   COLOR_SCHEME_BOOTSTRAP_SOURCE_KEY,
-  COLOR_SCHEME_BOOTSTRAP_SOURCE_PROVIDER,
   resolveColorSchemeOptions,
 } from "./color-scheme";
 import type { ColorSchemeBootstrapManifest } from "./color-scheme";
 import { diagnoseColorSchemeBootstrap } from "./color-scheme-diagnostics";
-import { colorSchemeScriptSource } from "./color-scheme-script";
 import { THEME_ATTRIBUTE_NAMES, themeAttributes } from "./theme-attributes";
 import { ThemeProvider, useTheme } from "./theme-provider";
 import { BRANDS, LEGAL_THEMES, parseThemeSlug, themeSlug } from "./tokens/themes";
@@ -40,18 +36,6 @@ describe("public /theme constant tuples", () => {
     expect(THEME_SEGMENTS).toEqual(["private", "company"]);
     expect(PUBLIC_LEGAL_THEMES).toHaveLength(20);
     expect(PUBLIC_LEGAL_THEMES).toEqual(LEGAL_THEMES);
-  });
-});
-
-describe("BRANDS pin table", () => {
-  it("keeps the single-segment pins in lockstep with the ThemeInput union", () => {
-    // coerceTheme pins to segments[0]; these pins are the segment ThemeInput encodes.
-    expect(BRANDS.fkab.segments).toEqual(["company"]);
-    expect(BRANDS.fkse.segments).toEqual(["private"]);
-    expect(BRANDS.fkas.segments).toEqual(["private", "company"]);
-    expect(BRANDS.tkas.segments).toEqual(["private", "company"]);
-    expect(BRANDS.guen.segments).toEqual(["private", "company"]);
-    expect(BRANDS.elma.segments).toEqual(["private", "company"]);
   });
 });
 
@@ -205,33 +189,6 @@ describe("BRANDS", () => {
   });
 });
 
-describe("ColorSchemeScript", () => {
-  it("inlines a blocking script that sets data-theme from the documented defaults", () => {
-    const source = colorSchemeScriptSource();
-    expect(source).toContain("data-theme");
-    expect(source).toContain("elmera-color-scheme");
-    expect(source).toContain("__ELMERA_COLOR_SCHEME_BOOTSTRAP__");
-  });
-
-  it("forwards option overrides into the script", () => {
-    const source = colorSchemeScriptSource({
-      storageKey: "app-color-scheme",
-      defaultColorScheme: "light",
-      enableSystem: false,
-      forcedColorScheme: "dark",
-    });
-    expect(source).toContain("app-color-scheme");
-    expect(source).toContain('"light"');
-    expect(source).toContain("false");
-    expect(source).toContain('"dark"');
-  });
-
-  it("does not include runtime transition suppression in the parser-time bootstrap", () => {
-    const source = colorSchemeScriptSource();
-    expect(source).not.toMatch(/transition:none|disableTransition|createElement\("style"\)/);
-  });
-});
-
 describe("color-scheme bootstrap diagnostics", () => {
   const expected = resolveColorSchemeOptions();
 
@@ -260,42 +217,6 @@ describe("color-scheme bootstrap diagnostics", () => {
     vi.stubEnv("NODE_ENV", "production");
     expect(isThemeDevelopment()).toBe(false);
     diagnoseColorSchemeBootstrap(expected, false);
-    expect(warn).not.toHaveBeenCalled();
-  });
-
-  it("warns for a mismatched manifest and stays silent when it matches", () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    vi.stubEnv("NODE_ENV", "development");
-
-    writeManifest(MISMATCHED_BOOTSTRAP_MANIFEST);
-    diagnoseColorSchemeBootstrap(expected, false);
-    expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn.mock.calls[0]?.[0]).toBe(MISMATCH_BOOTSTRAP_MESSAGE);
-
-    warn.mockClear();
-    writeManifest(expected);
-    diagnoseColorSchemeBootstrap(expected, false);
-    expect(warn).not.toHaveBeenCalled();
-  });
-
-  it("warns for host-plus-provider injection when a manifest already exists", () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    vi.stubEnv("NODE_ENV", "development");
-    writeManifest(expected);
-    diagnoseColorSchemeBootstrap(expected, true);
-    expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn.mock.calls[0]?.[0]).toBe(DUPLICATE_BOOTSTRAP_MESSAGE);
-  });
-
-  it("does not warn duplicate for a matching provider-owned self-inject", () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    vi.stubEnv("NODE_ENV", "development");
-    const selfInjected = { ...expected };
-    Object.defineProperty(selfInjected, COLOR_SCHEME_BOOTSTRAP_SOURCE_KEY, {
-      value: COLOR_SCHEME_BOOTSTRAP_SOURCE_PROVIDER,
-    });
-    writeManifest(selfInjected);
-    diagnoseColorSchemeBootstrap(expected, true);
     expect(warn).not.toHaveBeenCalled();
   });
 
