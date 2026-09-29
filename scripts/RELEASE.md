@@ -13,7 +13,7 @@ Publishing and version-PR creation are disabled until the repository variable
 
 1. Require 2FA for all members of the npm `@elmeragroup` organization.
 2. Recheck availability of `@elmeragroup/fuse` on public npm and record a reserved-name
-   policy that avoids collisions with internal packages. The last check was 2026-09-13.
+   policy that avoids collisions with internal packages. The last check was 2026-09-29.
 3. Make this repository public in the Elmera GitHub organization and enable Actions.
    Allow Actions to create and approve pull requests. Require branches to be current
    before merging so an outdated Version Packages PR cannot merge. Enable Dependabot
