@@ -148,7 +148,12 @@ export type CreateFuseTableHookResult<
   Merge<FuseHeaderComponents<TFeatures>, THeaderComponents>
 >;
 
-const FUSE_TABLE_COMPONENTS = {
+/**
+ * Erased to the registry constraint: the parts are typed over every stock feature, which TypeScript
+ * cannot compare with the app's `TFeatures`, so the factory retypes them with one cast.
+ */
+// oxlint-disable-next-line anti-slop/no-known-value-widening -- deliberate erasure; see above
+const FUSE_TABLE_COMPONENTS: ComponentRegistry = {
   Content: RegisteredContent,
   Row: RegisteredRow,
   Pagination: RegisteredPagination,
@@ -157,17 +162,22 @@ const FUSE_TABLE_COMPONENTS = {
 
 const FUSE_HEADER_COMPONENTS = { SortButton: RegisteredSortButton };
 
-const FUSE_CELL_COMPONENTS = { TextCell, NumberCell, CurrencyCell, DateCell, DateTimeCell };
+const FUSE_CELL_COMPONENTS: FuseCellComponents = {
+  TextCell,
+  NumberCell,
+  CurrencyCell,
+  DateCell,
+  DateTimeCell,
+};
 
-/**
- * Fuse's parts first, then the app's, so the app wins by key at runtime. The result is erased to
- * the registry constraint: Fuse's parts are typed over every stock feature and the public types
- * over the app's `TFeatures`, which TypeScript cannot compare, so the factory retypes each merged
- * registry with one cast.
- */
-function mergeRegistry(fuse: ComponentRegistry, app: ComponentRegistry | undefined): ComponentRegistry {
-  // oxlint-disable-next-line anti-slop/no-known-value-widening -- deliberate erasure; see above
-  return { ...fuse, ...app };
+/** Fuse's parts first, then the app's, so the app wins by key at runtime, as `Merge` describes. */
+function mergeRegistry<TFuse extends ComponentRegistry, TApp extends ComponentRegistry>(
+  fuse: TFuse,
+  app: TApp | undefined
+): Merge<TFuse, TApp> {
+  // SAFETY: an omitted registry option leaves `TApp` at its `NoComponents` default, which the
+  // empty registry is. Only explicit type arguments without the option break this.
+  return { ...fuse, ...(app ?? ({} as TApp)) };
 }
 
 /**
@@ -207,22 +217,21 @@ export function createFuseTableHook<
 >(
   options: CreateFuseTableHookOptions<TFeatures, TTableComponents, TCellComponents, THeaderComponents>
 ): CreateFuseTableHookResult<TFeatures, TTableComponents, TCellComponents, THeaderComponents> {
-  const tableComponents = mergeRegistry(FUSE_TABLE_COMPONENTS, options.tableComponents);
-  const cellComponents = mergeRegistry(FUSE_CELL_COMPONENTS, options.cellComponents);
-  const headerComponents = mergeRegistry(FUSE_HEADER_COMPONENTS, options.headerComponents);
+  // SAFETY: Fuse's parts read the context table typed over every stock feature, and a registered
+  // part reads a feature's members only when its public type is present. The public type lists
+  // Pagination and ColumnToggle only with their feature and types rows and columns over the app's
+  // `TFeatures`, which TanStack's feature-mapped `Row` and `Column` keep TypeScript from relating
+  // to the stock features.
+  const fuseTableComponents = FUSE_TABLE_COMPONENTS as FuseTableComponents<TFeatures>;
+  // The header part's props name no feature, so it satisfies either branch of `WithFeature`.
+  const fuseHeaderComponents: FuseHeaderComponents<TFeatures> = FUSE_HEADER_COMPONENTS;
   return createTableHook({
     ...options,
     tableContext: fuseTableContexts.tableContext,
     cellContext: fuseTableContexts.cellContext,
     headerContext: fuseTableContexts.headerContext,
-    // SAFETY: each registry is Fuse's parts spread under the app's, which is what `Merge`
-    // describes. Fuse's parts are typed over every stock feature at runtime; the public type lists
-    // Pagination, ColumnToggle and SortButton only with their feature and types rows with the
-    // app's features.
-    tableComponents: tableComponents as Merge<FuseTableComponents<TFeatures>, TTableComponents>,
-    // SAFETY: as above, for the cell registry.
-    cellComponents: cellComponents as Merge<FuseCellComponents, TCellComponents>,
-    // SAFETY: as above, for the header registry.
-    headerComponents: headerComponents as Merge<FuseHeaderComponents<TFeatures>, THeaderComponents>,
+    tableComponents: mergeRegistry(fuseTableComponents, options.tableComponents),
+    cellComponents: mergeRegistry(FUSE_CELL_COMPONENTS, options.cellComponents),
+    headerComponents: mergeRegistry(fuseHeaderComponents, options.headerComponents),
   });
 }

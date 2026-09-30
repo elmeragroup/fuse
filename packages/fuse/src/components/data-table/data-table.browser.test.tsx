@@ -475,6 +475,24 @@ describe("DataTable registered row override", () => {
 
     expect(roleNamed("cell", "Bergen").closest("tr")?.getAttribute("data-testid")).toBe("app-row");
   });
+
+  const plain = createFuseTableHook({ features: rowFeatures });
+
+  function PlainContentInOverrideTable(): ReactElement {
+    const plainTable = plain.useAppTable({ columns: rowColumns, data: ORDERS });
+    const table = withRow.useAppTable({ columns: rowColumns, data: ORDERS });
+    return (
+      <table.AppTable>
+        <plainTable.Content />
+      </table.AppTable>
+    );
+  }
+
+  it("renders through the Row registered on the table in context, whichever factory built Content", () => {
+    renderInEnglish(<PlainContentInOverrideTable />);
+
+    expect(roleNamed("cell", "Bergen").closest("tr")?.getAttribute("data-testid")).toBe("app-row");
+  });
 });
 
 /** One pressable row of `ORDERS` over the given columns. */

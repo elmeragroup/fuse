@@ -2,7 +2,7 @@
 
 import type { ReactElement, ReactNode } from "react";
 
-import type { AppReactTable, Row, RowData, StockFeatures, TableState } from "@tanstack/react-table";
+import type { AppReactTable, Column, Row, RowData, StockFeatures, TableState } from "@tanstack/react-table";
 
 import { ContentTable, RowCells } from "./data-table";
 import type { DataTableContentProps, DataTableRowProps } from "./data-table";
@@ -34,11 +34,14 @@ import type { NoComponents } from "./data-table-source";
 /** A row of any table built through `createFuseTableHook`, as the registered parts read it. */
 type ContextRow = Row<StockFeatures, RowData>;
 
+/** A column of any table built through `createFuseTableHook`, as the registered parts read it. */
+type ContextColumn = Column<StockFeatures, RowData, unknown>;
+
 /**
  * The table the Fuse context carries, with the `App*` wrappers `useAppTable` attaches and the
- * registered `Row`, Fuse's or an app's compatible replacement.
+ * current registry's `Row`, Fuse's or an app's compatible replacement.
  */
-type ContextTable = AppReactTable<
+type AppContextTable = AppReactTable<
   StockFeatures,
   RowData,
   TableState<StockFeatures>,
@@ -47,12 +50,19 @@ type ContextTable = AppReactTable<
   NoComponents
 >;
 
-function useContextTable(): ContextTable {
-  // SAFETY: only the AppTable that `createFuseTableHook`'s `useAppTable` returns provides this
-  // context, and its value is that table with AppTable, AppHeader, AppCell and AppFooter attached,
-  // and with the merged table registry, which always holds a `Row`: Fuse's, or an app's that
-  // `createFuseTableHook`'s `TableRegistry` constraint holds to `RegisteredRowProps`.
-  return fuseTableContexts.useTableContext() as ContextTable;
+/**
+ * The context table with the `App*` wrappers and the current registry's `Row`. Only the parts that
+ * render through them read it; the rest read `fuseTableContexts.useTableContext()` uncast. Reading
+ * `Row` from the table in context, not from the factory that built the part, keeps a part rendered
+ * under another Fuse table's `AppTable` consistent with that table.
+ */
+function useAppContextTable(): AppContextTable {
+  // SAFETY: `fuseTableContexts` is private to Fuse, so only the AppTable of a
+  // `createFuseTableHook` table provides this context, and its value is that table. TanStack
+  // attaches AppTable, AppHeader, AppCell and AppFooter, and the merged table registry, which
+  // always holds a `Row`: Fuse's, or an app's that the `TableRegistry` constraint holds to
+  // `RegisteredRowProps`.
+  return fuseTableContexts.useTableContext() as AppContextTable;
 }
 
 /** Props of the registered `table.Row`. */
@@ -67,7 +77,7 @@ export type RegisteredRowProps<TRow> = Omit<DataTableRowProps<never>, "table" | 
  * store subscription re-renders every row, so it subscribes to nothing itself.
  */
 export function RegisteredRow({ row, ...props }: RegisteredRowProps<ContextRow>): ReactElement {
-  const table = useContextTable();
+  const table = useAppContextTable();
   return (
     <RowCells
       row={row}
@@ -90,7 +100,7 @@ export type RegisteredContentProps<TRow> = Omit<DataTableContentProps<never, nev
  * and stays current when the app's `useFuseTable` selector narrows `table.state`.
  */
 export function RegisteredContent({ children, ...props }: RegisteredContentProps<ContextRow>): ReactElement {
-  const table = useContextTable();
+  const table = useAppContextTable();
   return (
     <table.Subscribe source={table.store} selector={(state) => state}>
       {() => (
@@ -115,7 +125,7 @@ export type RegisteredPaginationProps = Omit<DataTablePaginationProps, "table">;
  * count. Filtering changes the count without a pagination update when the page index is already 0.
  */
 export function RegisteredPagination(props: RegisteredPaginationProps): ReactElement {
-  const table = useContextTable();
+  const table = fuseTableContexts.useTableContext();
   return (
     <table.Subscribe
       source={table.store}
@@ -135,10 +145,8 @@ export type RegisteredColumnToggleProps<TColumn> = Omit<
 };
 
 /** `table.ColumnToggle`: `DataTable.ColumnToggle`, subscribed to the visibility state. */
-export function RegisteredColumnToggle(
-  props: RegisteredColumnToggleProps<ReturnType<ContextTable["getAllLeafColumns"]>[number]>
-): ReactElement {
-  const table = useContextTable();
+export function RegisteredColumnToggle(props: RegisteredColumnToggleProps<ContextColumn>): ReactElement {
+  const table = fuseTableContexts.useTableContext();
   return (
     <table.Subscribe source={table.atoms.columnVisibility}>
       {() => <DataTableColumnToggle table={table} {...props} />}
@@ -151,7 +159,7 @@ export type RegisteredSortButtonProps = Omit<DataTableSortButtonProps, "column">
 
 /** `header.SortButton`: `DataTable.SortButton` for the header in context, subscribed to sorting. */
 export function RegisteredSortButton(props: RegisteredSortButtonProps): ReactElement {
-  const table = useContextTable();
+  const table = fuseTableContexts.useTableContext();
   const header = fuseTableContexts.useHeaderContext();
   return (
     <table.Subscribe source={table.atoms.sorting}>
