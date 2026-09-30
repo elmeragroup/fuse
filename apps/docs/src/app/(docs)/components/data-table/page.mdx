@@ -8,6 +8,7 @@ import { DataTableClientPaged } from "./demos/data-table-client-paged";
 import { DataTableServerPaged } from "./demos/data-table-server-paged";
 import { DataTableCellOverride } from "./demos/data-table-cell-override";
 import { DataTableSelection } from "./demos/data-table-selection";
+import { DataTableInventory } from "./demos/data-table-inventory";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -27,7 +28,9 @@ There are three layers. The plain `DataTable.*` parts take an explicit `table`, 
 
 Pass `total` to `Pagination` when the server pages the rows. `{ kind: "known", pageCount }` shows "Page N of M". `{ kind: "unknown", hasMore }` shows "Page N" and disables Last. A page-size change calls `table.setPageSize` and keeps the page index; reset it in `onPaginationChange` if your data needs that.
 
-`Row`'s `onPress` makes a row clickable without changing its role, and ignores clicks on links, buttons and other controls inside it. Give keyboard users the same action through a link or button in the row.
+`Row`'s `onPress` makes a row clickable without changing its role, and ignores clicks on links, buttons and other controls inside it. It also ignores clicks inside a menu or popover the row opens. Give keyboard users the same action through a link or button in the row.
+
+`actionsColumn(columnHelper, { getRowName, items })` adds a row-actions menu to each row. Fuse sets the accessible parts. Each trigger's accessible name comes from the row, as in "Actions for USB-C Docking Station", the header is named "Actions" without visible text, the column is neither sortable nor hideable, it shrinks to the trigger, and a click in the open menu never presses the row. The app supplies the row's name and the `DropdownMenu` items, including `variant="destructive"` items, separators and disabled states. Render `DataTable.RowActions` with your own `label` for a menu outside the column helper.
 
 </Prose>
 
@@ -49,6 +52,14 @@ Pass `total` to `Pagination` when the server pages the rows. `{ kind: "known", p
 
 <Demo slug="data-table" id="selection" title="Selection and row press" file="data-table-selection.tsx">
   <DataTableSelection />
+</Demo>
+
+<Demo
+  slug="data-table"
+  id="inventory"
+  title="Inventory with filters and row actions"
+  file="data-table-inventory.tsx">
+  <DataTableInventory />
 </Demo>
 
 <ApiReference slug="data-table" />

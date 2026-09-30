@@ -24,6 +24,9 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { withLocale } from "../../../test/locale-matrix";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { Button } from "../button/button";
+import { DropdownMenu } from "../dropdown-menu";
+import { actionsColumn } from "./actions-column";
 import { createFuseTableHook } from "./create-fuse-table-hook";
 import { NumberCell } from "./data-table-registered";
 import type { NumberCellProps } from "./data-table-registered";
@@ -422,6 +425,168 @@ describe("DataTable row press", () => {
     expect(row?.hasAttribute("role")).toBe(false);
     expect(row?.hasAttribute("tabindex")).toBe(false);
     expect(page.getByRole("row").elements()).toContain(row);
+  });
+});
+
+describe("DataTable row press through a portal", () => {
+  const menuColumns = appColumns.columns([
+    appColumns.accessor("customer", { header: "Customer", cell: ({ cell }) => <cell.TextCell /> }),
+    appColumns.display({
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => (
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger
+            render={<Button variant="ghost" size="icon-sm" aria-label="Order actions" />}
+          />
+          <DropdownMenu.Content>
+            <DropdownMenu.Item
+              onClick={() => {
+                archived.push(row.original.id);
+              }}>
+              Archive
+            </DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
+      ),
+    }),
+  ]);
+
+  const archived: number[] = [];
+
+  function MenuTable({ onPress }: { readonly onPress: (id: number) => void }): ReactElement {
+    const table = useFuseTable({ columns: menuColumns, data: ORDERS.slice(0, 1) });
+    return (
+      <table.AppTable>
+        <table.Content<Order>>
+          {(row) => (
+            <table.Row
+              row={row}
+              onPress={() => {
+                onPress(row.original.id);
+              }}
+            />
+          )}
+        </table.Content>
+      </table.AppTable>
+    );
+  }
+
+  it("runs a portaled menu item on click and on Enter without pressing the row", async () => {
+    archived.length = 0;
+    const pressed: number[] = [];
+    renderInEnglish(
+      <MenuTable
+        onPress={(id) => {
+          pressed.push(id);
+        }}
+      />
+    );
+
+    await userEvent.click(roleNamed("button", "Order actions"));
+    const item = roleNamed("menuitem", "Archive");
+    expect(item.closest("tr")).toBeNull();
+    await userEvent.click(item);
+    expect(archived).toEqual([1]);
+    expect(pressed).toEqual([]);
+
+    await userEvent.click(roleNamed("button", "Order actions"));
+    const again = roleNamed("menuitem", "Archive");
+    again.focus();
+    await userEvent.keyboard("{Enter}");
+    expect(archived).toEqual([1, 1]);
+    expect(pressed).toEqual([]);
+  });
+});
+
+describe("DataTable row actions", () => {
+  const log: string[] = [];
+
+  const actionColumns = appColumns.columns([
+    appColumns.accessor("customer", {
+      header: ({ header }) => <header.SortButton>Customer</header.SortButton>,
+      cell: ({ cell }) => <cell.TextCell />,
+    }),
+    actionsColumn(appColumns, {
+      getRowName: (order) => order.customer,
+      items: (order) => (
+        <>
+          <DropdownMenu.Item
+            onClick={() => {
+              log.push(`Edited ${order.customer}`);
+            }}>
+            Edit
+          </DropdownMenu.Item>
+          <DropdownMenu.Separator />
+          <DropdownMenu.Item
+            variant="destructive"
+            onClick={() => {
+              log.push(`Archived ${order.customer}`);
+            }}>
+            Archive
+          </DropdownMenu.Item>
+        </>
+      ),
+    }),
+  ]);
+
+  function ActionsTable(): ReactElement {
+    const table = useFuseTable({ columns: actionColumns, data: ORDERS });
+    return (
+      <table.AppTable>
+        <table.ColumnToggle />
+        <table.Content />
+      </table.AppTable>
+    );
+  }
+
+  it("gives every trigger its own name", () => {
+    renderInEnglish(<ActionsTable />);
+
+    const triggers = ["Bergen", "Alta", "Oslo"].map((name) => roleNamed("button", `Actions for ${name}`));
+    expect(new Set(triggers).size).toBe(3);
+  });
+
+  it("names the actions header without visible text and offers no sort or hide control", async () => {
+    renderInEnglish(<ActionsTable />);
+
+    const header = columnHeader("Actions");
+    const name = header.firstElementChild;
+    if (name === null) {
+      throw new Error("expected the header's hidden name");
+    }
+    expect(name.getBoundingClientRect().width).toBeLessThanOrEqual(1);
+    expect(name.getBoundingClientRect().height).toBeLessThanOrEqual(1);
+    expect(header.hasAttribute("aria-sort")).toBe(false);
+    expect(header.querySelector("button")).toBeNull();
+
+    await userEvent.click(roleNamed("button", "Columns"));
+    await expect.element(page.getByRole("menuitemcheckbox", { name: "customer" })).toBeVisible();
+    expect(page.getByRole("menuitemcheckbox").elements()).toHaveLength(1);
+  });
+
+  it("opens the menu aligned to the trigger's end and runs an item's handler", async () => {
+    log.length = 0;
+    renderInEnglish(<ActionsTable />);
+
+    const trigger = roleNamed("button", "Actions for Alta");
+    await userEvent.click(trigger);
+    const menu = roleNamed("menu", "Actions for Alta");
+    await expect.element(page.getByRole("menu")).toBeVisible();
+    expect(Math.abs(menu.getBoundingClientRect().right - trigger.getBoundingClientRect().right)).toBeLessThan(
+      1
+    );
+
+    await userEvent.click(roleNamed("menuitem", "Edit"));
+    expect(log).toEqual(["Edited Alta"]);
+  });
+
+  it("marks a destructive item with the destructive variant", async () => {
+    renderInEnglish(<ActionsTable />);
+
+    await userEvent.click(roleNamed("button", "Actions for Oslo"));
+    expect(roleNamed("menuitem", "Archive").getAttribute("data-variant")).toBe("destructive");
+    expect(roleNamed("menuitem", "Edit").getAttribute("data-variant")).toBe("default");
   });
 });
 

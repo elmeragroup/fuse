@@ -12,4 +12,6 @@ export const svSE = {
   goToLastPage: "Gå till sista sidan",
   columns: "Kolumner",
   selectAllOnPage: "Markera alla rader på den här sidan",
+  actions: "Åtgärder",
+  actionsFor: (vars: Variables) => `Åtgärder för ${String(vars?.name)}`,
 };

@@ -129,9 +129,18 @@ describe("dataTable dictionary", () => {
     "fi-FI": "Sivu 2/5",
   } as const;
 
-  it("owns the same rows in all four locales and interpolates the page status", () => {
+  const ACTIONS = {
+    "nb-NO": ["Handlinger", "Handlinger for Kontorstol"],
+    "sv-SE": ["Åtgärder", "Åtgärder för Kontorstol"],
+    "en-US": ["Actions", "Actions for Kontorstol"],
+    "fi-FI": ["Toiminnot", "Toiminnot: Kontorstol"],
+  } as const;
+
+  it("owns the same rows in all four locales and interpolates the page status and the row name", () => {
     for (const locale of ["nb-NO", "sv-SE", "en-US", "fi-FI"] as const) {
       expect(Object.keys(dataTableStrings.getStringsForLocale(locale)).toSorted(), locale).toEqual([
+        "actions",
+        "actionsFor",
         "columns",
         "goToFirstPage",
         "goToLastPage",
@@ -145,6 +154,10 @@ describe("dataTable dictionary", () => {
       ]);
       const formatter = new LocalizedStringFormatter(locale, dataTableStrings);
       expect(formatter.format("pageOf", { page: 2, pageCount: 5 }), locale).toBe(PAGE_OF[locale]);
+      expect(
+        [formatter.format("actions"), formatter.format("actionsFor", { name: "Kontorstol" })],
+        locale
+      ).toEqual(ACTIONS[locale]);
     }
   });
 });

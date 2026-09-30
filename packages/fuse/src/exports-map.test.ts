@@ -85,6 +85,7 @@ const EXPECTED_ENTRIES = {
       "DataTable",
       "createFuseTableHook",
       "selectColumn",
+      "actionsColumn",
       "CurrencyCell",
       "DateCell",
       "DateTimeCell",

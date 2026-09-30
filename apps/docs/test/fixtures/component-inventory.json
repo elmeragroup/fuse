@@ -143,7 +143,8 @@
       "data-table-client-paged.tsx",
       "data-table-server-paged.tsx",
       "data-table-cell-override.tsx",
-      "data-table-selection.tsx"
+      "data-table-selection.tsx",
+      "data-table-inventory.tsx"
     ]
   },
   "date-field": {

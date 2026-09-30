@@ -15,7 +15,7 @@ import {
 } from "@tanstack/react-table";
 import { expectTypeOf, test } from "vitest";
 
-import { createFuseTableHook, DataTable, selectColumn } from "@elmeragroup/fuse/data-table";
+import { actionsColumn, createFuseTableHook, DataTable, selectColumn } from "@elmeragroup/fuse/data-table";
 
 type Order = {
   readonly id: number;
@@ -174,6 +174,23 @@ test("selectColumn requires rowSelectionFeature and a row label typed from the r
   selectColumn(fullColumns, { getRowLabel: (order) => order.sku }); // oxlint-disable-line typescript/no-unsafe-return -- the deliberate type error under test is error-typed
   // @ts-expect-error -- the helper's table lacks rowSelectionFeature
   selectColumn(bareColumns, { getRowLabel: (order) => `Select order ${String(order.id)}` });
+});
+
+test("actionsColumn requires a row name and items, both typed from the row data", () => {
+  const bareColumns = bare.createAppColumnHelper<Order>();
+
+  actionsColumn(bareColumns, {
+    getRowName: (order) => order.customer,
+    items: (order) => <span>{order.amount}</span>,
+  });
+  // @ts-expect-error -- `getRowName` is required so every trigger has its own name
+  actionsColumn(bareColumns, { items: () => null });
+  // @ts-expect-error -- `items` is required: Fuse ships no default actions
+  actionsColumn(bareColumns, { getRowName: (order) => order.customer });
+  // @ts-expect-error -- `order` is an Order, which has no `name`
+  actionsColumn(bareColumns, { getRowName: (order) => order.name, items: () => null }); // oxlint-disable-line typescript/no-unsafe-return -- the deliberate type error under test is error-typed
+  // @ts-expect-error -- `order` is an Order, which has no `sku`
+  actionsColumn(bareColumns, { getRowName: (order) => order.customer, items: (order) => order.sku }); // oxlint-disable-line typescript/no-unsafe-return -- the deliberate type error under test is error-typed
 });
 
 test("an app override replaces the Fuse props rather than overloading them", () => {

@@ -18,6 +18,12 @@ export type {
   SelectColumnHelper,
   SelectColumnOptions,
 } from "./components/data-table/select-column";
+export { actionsColumn } from "./components/data-table/actions-column";
+export type {
+  ActionsColumnDef,
+  ActionsColumnHelper,
+  ActionsColumnOptions,
+} from "./components/data-table/actions-column";
 export type {
   DataTableBodyProps,
   DataTableContentProps,
@@ -53,6 +59,7 @@ export type {
   RegisteredSortButtonProps,
   TextCellProps,
 } from "./components/data-table/data-table-registered";
+export type { DataTableRowActionsProps } from "./components/data-table/data-table-row-actions";
 export type {
   DataTableSelectAllProps,
   DataTableSelectRowProps,

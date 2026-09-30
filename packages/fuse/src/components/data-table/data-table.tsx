@@ -21,7 +21,7 @@ import type {
 import { dataTableVariants } from "./data-table-variants";
 import { dataTableStrings } from "./intl";
 
-const { emptyCell, skeleton } = dataTableVariants();
+const { emptyCell, head, skeleton } = dataTableVariants();
 
 /** The cell type a row's `getAllCells()` returns. */
 type CellOf<TRow> = TRow extends RowSource<infer TCell> ? TCell : never;
@@ -47,18 +47,20 @@ const INTERACTIVE_DESCENDANT = [
 ].join(",");
 
 /**
- * Whether a click landed on an interactive element inside the row, which owns that click.
+ * Whether a click on a row presses it. React bubbles a click from a portal, such as an open menu,
+ * to the `<tr>` that owns it in the React tree, though its DOM sits outside the row; such a click
+ * never presses the row. Inside the row, an interactive element owns its click.
  *
  * @param target - The click's target.
  * @param row - The `<tr>` that received the click.
- * @returns `true` when the target is, or sits inside, an interactive element within the row.
+ * @returns `true` when the target sits inside the row's DOM and outside every interactive element in it.
  */
-export function isInteractiveDescendant(target: EventTarget | null, row: Element): boolean {
-  if (!(target instanceof Element)) {
+function pressesRow(target: EventTarget | null, row: Element): boolean {
+  if (!(target instanceof Element) || !row.contains(target)) {
     return false;
   }
   const interactive = target.closest(INTERACTIVE_DESCENDANT);
-  return interactive !== null && interactive !== row && row.contains(interactive);
+  return interactive === null || interactive === row || !row.contains(interactive);
 }
 
 function ariaSort(column: HeaderSource["column"]): "ascending" | "descending" | "none" | undefined {
@@ -85,7 +87,11 @@ export function HeaderRows<THeader extends HeaderSource>({
           {group.headers.map((header) => {
             const sort = ariaSort(header.column);
             return (
-              <Table.Head key={header.id} colSpan={header.colSpan} {...definedProps({ "aria-sort": sort })}>
+              <Table.Head
+                key={header.id}
+                colSpan={header.colSpan}
+                className={head()}
+                {...definedProps({ "aria-sort": sort })}>
                 {header.isPlaceholder ? null : renderHeader(header)}
               </Table.Head>
             );
@@ -170,10 +176,12 @@ export function RowCells<TCell extends CellSource>({
       className={cn(dataTableVariants({ pressable: onPress !== undefined }).row(), className)}
       onClick={(event) => {
         onClick?.(event);
-        if (onPress !== undefined && !event.defaultPrevented) {
-          if (!isInteractiveDescendant(event.target, event.currentTarget)) {
-            onPress(event);
-          }
+        if (
+          onPress !== undefined &&
+          !event.defaultPrevented &&
+          pressesRow(event.target, event.currentTarget)
+        ) {
+          onPress(event);
         }
       }}
       {...props}>
@@ -301,7 +309,8 @@ export type DataTableRowProps<TCell extends CellSource> = ComponentProps<"tr"> &
   /**
    * Makes the whole row clickable without changing its role: the `<tr>` gets no `role="button"`
    * and no `tabIndex`, so table navigation keeps working. Clicks on a link, button, input or other
-   * interactive element in the row do not press it. Keyboard users need the same action through a
+   * interactive element in the row do not press it, and neither do clicks inside a portal the row
+   * renders, such as an open menu. Keyboard users need the same action through a
    * focusable primary action in the row, such as a link in its first cell.
    */
   onPress?: (event: MouseEvent<HTMLTableRowElement>) => void;

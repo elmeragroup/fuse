@@ -51,6 +51,7 @@ const CLIENT_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
       "components/data-table/data-table-contexts.ts",
       "components/data-table/data-table-pagination.tsx",
       "components/data-table/data-table-registered.tsx",
+      "components/data-table/data-table-row-actions.tsx",
       "components/data-table/data-table-selection.tsx",
       "components/data-table/data-table-sort-button.tsx",
       "components/data-table/create-fuse-table-hook.ts",
@@ -285,9 +286,10 @@ describe("RSC classification", () => {
     ["components/checkbox/checkbox-item.tsx", "server"],
     ["components/radio-group/radio-item.tsx", "server"],
     ["components/selection-item/partition-sub-sections.ts", "server"],
-    // selectColumn builds a column definition and calls no hook; the parts it renders are
+    // selectColumn and actionsColumn build a column definition and call no hook; the parts they render are
     // client modules of their own.
     ["components/data-table/select-column.tsx", "server"],
+    ["components/data-table/actions-column.tsx", "server"],
   ] as const)("keeps the shared module %s %s", (file, rsc) => {
     expectRsc(file, rsc);
   });
@@ -886,6 +888,7 @@ describe("Base UI prop wiring", () => {
         "ComboboxPrimitive.Clear > InputGroupButton aria-label",
         "ComboboxPrimitive.ChipRemove > Button aria-label",
       ],
+      "components/data-table/data-table-row-actions.tsx": ["DropdownMenuTrigger > Button aria-label"],
       "components/toast/toast.tsx": ["ToastPrimitive.Close > Button aria-label"],
     });
   });

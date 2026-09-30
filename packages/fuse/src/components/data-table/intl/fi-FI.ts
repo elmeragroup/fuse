@@ -12,4 +12,6 @@ export const fiFI = {
   goToLastPage: "Siirry viimeiselle sivulle",
   columns: "Sarakkeet",
   selectAllOnPage: "Valitse kaikki tämän sivun rivit",
+  actions: "Toiminnot",
+  actionsFor: (vars: Variables) => `Toiminnot: ${String(vars?.name)}`,
 };

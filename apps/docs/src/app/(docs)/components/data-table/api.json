@@ -131,7 +131,7 @@
           "type": "((event: MouseEvent<HTMLTableRowElement, MouseEvent>) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Makes the whole row clickable without changing its role: the `<tr>` gets no `role=\"button\"` and no `tabIndex`, so table navigation keeps working. Clicks on a link, button, input or other interactive element in the row do not press it. Keyboard users need the same action through a focusable primary action in the row, such as a link in its first cell.",
+          "description": "Makes the whole row clickable without changing its role: the `<tr>` gets no `role=\"button\"` and no `tabIndex`, so table navigation keeps working. Clicks on a link, button, input or other interactive element in the row do not press it, and neither do clicks inside a portal the row renders, such as an open menu. Keyboard users need the same action through a focusable primary action in the row, such as a link in its first cell.",
           "required": false
         },
         {
@@ -885,6 +885,135 @@
           "shortType": null,
           "defaultValue": null,
           "description": "The checkbox's value. Identifies it within a [Checkbox Group](https://base-ui.com/react/components/checkbox-group), falling back to `name` when omitted. When submitting a form, a checked box submits `value`; with no `value`, it submits the native \"on\".",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DataTable.RowActions",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table/data-table-row-actions.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 283,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The menu's items: `DropdownMenu.Item`, including `variant=\"destructive\"`, and separators.",
+          "required": true
+        },
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: MenuTriggerState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "closeDelay",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "0",
+          "description": "How long to wait before closing the menu that was opened on hover. Specified in milliseconds. Requires the `openOnHover` prop.",
+          "required": false
+        },
+        {
+          "name": "delay",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "100",
+          "description": "How long to wait before the menu may be opened on hover. Specified in milliseconds. Requires the `openOnHover` prop.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component should ignore user interaction.",
+          "required": false
+        },
+        {
+          "name": "handle",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "MenuHandle<unknown> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A handle to associate the trigger with a menu.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The trigger's accessible name, distinct per row, such as \"Actions for order 4711\".",
+          "required": true
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
+          "required": false
+        },
+        {
+          "name": "openOnHover",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether the menu should also open when the trigger is hovered.",
+          "required": false
+        },
+        {
+          "name": "payload",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "unknown",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "A payload to pass to the menu when it is opened.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: MenuTriggerState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
           "required": false
         }
       ]

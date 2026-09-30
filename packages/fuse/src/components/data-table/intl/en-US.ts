@@ -12,4 +12,6 @@ export const enUS = {
   goToLastPage: "Go to last page",
   columns: "Columns",
   selectAllOnPage: "Select all rows on this page",
+  actions: "Actions",
+  actionsFor: (vars: Variables) => `Actions for ${String(vars?.name)}`,
 };

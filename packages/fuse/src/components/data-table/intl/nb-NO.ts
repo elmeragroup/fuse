@@ -12,4 +12,6 @@ export const nbNO = {
   goToLastPage: "Gå til siste side",
   columns: "Kolonner",
   selectAllOnPage: "Velg alle rader på denne siden",
+  actions: "Handlinger",
+  actionsFor: (vars: Variables) => `Handlinger for ${String(vars?.name)}`,
 };

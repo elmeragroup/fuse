@@ -162,6 +162,7 @@ function namespaceElements(): ReactElement[] {
       "ColumnToggle",
       "SelectAll",
       "SelectRow",
+      "RowActions",
       "Text",
       "Number",
       "Date",
