@@ -1081,7 +1081,7 @@
       "forwardedFrom": [
         "@typescript/typescript-darwin-arm64"
       ],
-      "forwardedCount": 2,
+      "forwardedCount": 1,
       "props": [
         {
           "name": "className",
@@ -1090,6 +1090,15 @@
           "shortType": null,
           "defaultValue": null,
           "description": "Extra classes, merged last through `cn`.",
+          "required": false
+        },
+        {
+          "name": "timeZone",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The IANA time zone, such as `\"Europe/Oslo\"`. Defaults to the runtime's local time zone. A table that renders on the server and hydrates in the browser must pass it, or the server and browser text can differ.",
           "required": false
         },
         {
@@ -1110,7 +1119,7 @@
       "forwardedFrom": [
         "@typescript/typescript-darwin-arm64"
       ],
-      "forwardedCount": 3,
+      "forwardedCount": 2,
       "props": [
         {
           "name": "className",
@@ -1119,6 +1128,15 @@
           "shortType": null,
           "defaultValue": null,
           "description": "Extra classes, merged last through `cn`.",
+          "required": false
+        },
+        {
+          "name": "timeZone",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The IANA time zone, such as `\"Europe/Oslo\"`. Defaults to the runtime's local time zone. A table that renders on the server and hydrates in the browser must pass it, or the server and browser text can differ.",
           "required": false
         },
         {

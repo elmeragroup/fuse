@@ -5,7 +5,7 @@ import { parseSync, Visitor } from "oxc-parser";
 import type { Expression, JSXElementName, JSXOpeningElement } from "oxc-parser";
 import { describe, expect, it } from "vitest";
 
-import { walkImportedSourceFiles } from "../scripts/entries";
+import { OPTIONAL_PEER_ENTRIES, walkImportedSourceFiles } from "../scripts/entries";
 import { overlayLayer } from "./components/overlay/overlay-classes";
 
 /**
@@ -14,7 +14,7 @@ import { overlayLayer } from "./components/overlay/overlay-classes";
  * `no-hardcoded-density-metrics`, `no-primitive-colors`, `no-local-focus-ring`,
  * `restrict-focus-ring-call`, `restrict-browser-helper-copy`, `no-field-part-jsx`,
  * `no-tailwind-dark-variant`, `restrict-process-env`, `no-restricted-imports` for
- * `LocalizedStringDictionary`)
+ * `LocalizedStringDictionary` and for runtime values of `@tanstack/react-table`)
  * or an exports/package-check gate. Each describe documents why the contract is
  * not a lint rule.
  */
@@ -331,41 +331,19 @@ describe("RSC classification", () => {
   });
 });
 
-describe("data-table and its optional peer", () => {
-  // Why not a lint rule: which modules may import a runtime value from the optional
-  // `@tanstack/react-table` peer is a layering decision, and the root-barrel boundary is a module
-  // graph, not a specifier. The plain parts render through `table.FlexRender` and read slices, so
-  // they need no runtime import; only the contexts and the factory call into TanStack.
-  const TANSTACK = "@tanstack/react-table";
+describe("optional peers and the root barrel", () => {
+  // Why not a lint rule: the root-barrel boundary is a module graph, not a specifier. A lint ban
+  // on the peer would miss an indirect import through a file the root barrel reaches.
+  const reached = walkImportedSourceFiles(PACKAGE_ROOT, ["src/index.ts"]).map((file) =>
+    file.replace(/^src\//, "")
+  );
 
-  function tanstackImports(relativePath: string): { readonly kind: "type" | "value" }[] {
-    const parsed = parseSync(relativePath, readSrc(relativePath));
-    expect(parsed.errors, relativePath).toEqual([]);
-    return parsed.module.staticImports
-      .filter((entry) => entry.moduleRequest.value === TANSTACK)
-      .map((entry) => ({
-        kind: entry.entries.length > 0 && entry.entries.every((binding) => binding.isType) ? "type" : "value",
-      }));
-  }
-
-  it("imports runtime TanStack values only from the contexts and the factory", () => {
-    const valueImporters = [...SOURCE_TREE.values()]
-      .filter((record) => record.relative.startsWith("components/data-table/"))
-      .filter((record) => tanstackImports(record.relative).some((entry) => entry.kind === "value"))
-      .map((record) => record.relative)
-      .toSorted();
-    expect(valueImporters).toEqual([
-      "components/data-table/create-fuse-table-hook.ts",
-      "components/data-table/data-table-contexts.ts",
-    ]);
-  });
-
-  it("keeps the peer out of everything the root barrel reaches", () => {
-    const reached = walkImportedSourceFiles(PACKAGE_ROOT, ["src/index.ts"]).filter((file) =>
-      readFileSync(join(PACKAGE_ROOT, file), "utf8").includes(TANSTACK)
-    );
-    expect(reached).toEqual([]);
-  });
+  it.each(Object.values(OPTIONAL_PEER_ENTRIES))(
+    "keeps %s out of everything the root barrel reaches",
+    (peer) => {
+      expect(reached.filter((file) => readCode(file).includes(peer))).toEqual([]);
+    }
+  );
 });
 
 describe("no .ref/ in package source", () => {

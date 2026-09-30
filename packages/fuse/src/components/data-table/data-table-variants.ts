@@ -25,7 +25,6 @@ export const dataTableVariants = tv({
   variants: {
     pressable: {
       true: { row: "cursor-pointer" },
-      false: {},
     },
   },
   defaultVariants: {

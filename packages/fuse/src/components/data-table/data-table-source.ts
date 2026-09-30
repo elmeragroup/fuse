@@ -22,6 +22,17 @@ import type {
   TableFeatures,
 } from "@tanstack/react-table";
 
+/** An empty component registry: the default when an app registers no components of a kind. */
+export type NoComponents = Record<never, never>;
+
+/**
+ * The `display` member of a TanStack column helper, from `createColumnHelper` or a table hook,
+ * as the prebuilt display columns call it.
+ */
+export type DisplayColumnHelper<TDef, TColumn> = {
+  readonly display: (column: TDef) => TColumn;
+};
+
 /** A column's sorting members, present when `rowSortingFeature` is registered. */
 export type SortColumnSource = Pick<
   Column_RowSorting<TableFeatures, RowData>,

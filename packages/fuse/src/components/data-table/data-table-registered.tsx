@@ -4,9 +4,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import type { AppReactTable, Row, RowData, StockFeatures, TableState } from "@tanstack/react-table";
 
-import { definedProps } from "../../internal/defined-props";
-import { Table } from "../table/table";
-import { BodyRows, HeaderRows, pageSizeOf, RowCells, visibleColumnCount } from "./data-table";
+import { ContentTable, RowCells } from "./data-table";
 import type { DataTableContentProps, DataTableRowProps } from "./data-table";
 import {
   DataTableCurrency,
@@ -31,25 +29,29 @@ import { DataTablePagination } from "./data-table-pagination";
 import type { DataTablePaginationProps } from "./data-table-pagination";
 import { DataTableSortButton } from "./data-table-sort-button";
 import type { DataTableSortButtonProps } from "./data-table-sort-button";
-
-type NoComponents = Record<never, never>;
-
-/** The table the Fuse context carries, with the `App*` wrappers `useAppTable` attaches. */
-type ContextTable = AppReactTable<
-  StockFeatures,
-  RowData,
-  TableState<StockFeatures>,
-  NoComponents,
-  NoComponents,
-  NoComponents
->;
+import type { NoComponents } from "./data-table-source";
 
 /** A row of any table built through `createFuseTableHook`, as the registered parts read it. */
 type ContextRow = Row<StockFeatures, RowData>;
 
+/**
+ * The table the Fuse context carries, with the `App*` wrappers `useAppTable` attaches and the
+ * registered `Row`, Fuse's or an app's compatible replacement.
+ */
+type ContextTable = AppReactTable<
+  StockFeatures,
+  RowData,
+  TableState<StockFeatures>,
+  { Row: (props: RegisteredRowProps<ContextRow>) => ReactNode },
+  NoComponents,
+  NoComponents
+>;
+
 function useContextTable(): ContextTable {
   // SAFETY: only the AppTable that `createFuseTableHook`'s `useAppTable` returns provides this
-  // context, and its value is that table with AppTable, AppHeader, AppCell and AppFooter attached.
+  // context, and its value is that table with AppTable, AppHeader, AppCell and AppFooter attached,
+  // and with the merged table registry, which always holds a `Row`: Fuse's, or an app's that
+  // `createFuseTableHook`'s `TableRegistry` constraint holds to `RegisteredRowProps`.
   return fuseTableContexts.useTableContext() as ContextTable;
 }
 
@@ -87,32 +89,19 @@ export type RegisteredContentProps<TRow> = Omit<DataTableContentProps<never, nev
  * registered cells. The row model depends on every state slice, so it subscribes to all of them
  * and stays current when the app's `useFuseTable` selector narrows `table.state`.
  */
-export function RegisteredContent({
-  loading = false,
-  empty,
-  children,
-  ...props
-}: RegisteredContentProps<ContextRow>): ReactElement {
+export function RegisteredContent({ children, ...props }: RegisteredContentProps<ContextRow>): ReactElement {
   const table = useContextTable();
   return (
     <table.Subscribe source={table.store} selector={(state) => state}>
       {() => (
-        <Table.Root {...definedProps({ "aria-busy": loading || undefined })} {...props}>
-          <HeaderRows
-            headerGroups={table.getHeaderGroups()}
-            renderHeader={(header) => (
-              <table.AppHeader header={header}>{(appHeader) => <appHeader.FlexRender />}</table.AppHeader>
-            )}
-          />
-          <BodyRows
-            rows={table.getRowModel().rows}
-            columnCount={visibleColumnCount(table)}
-            pageSize={pageSizeOf(table)}
-            loading={loading}
-            empty={empty}
-            renderRow={children ?? ((row) => <RegisteredRow row={row} />)}
-          />
-        </Table.Root>
+        <ContentTable
+          table={table}
+          renderHeader={(header) => (
+            <table.AppHeader header={header}>{(appHeader) => <appHeader.FlexRender />}</table.AppHeader>
+          )}
+          renderRow={children ?? ((row) => <table.Row row={row} />)}
+          {...props}
+        />
       )}
     </table.Subscribe>
   );
@@ -121,11 +110,16 @@ export function RegisteredContent({
 /** Props of the registered `table.Pagination`. */
 export type RegisteredPaginationProps = Omit<DataTablePaginationProps, "table">;
 
-/** `table.Pagination`: `DataTable.Pagination`, subscribed to the pagination state. */
+/**
+ * `table.Pagination`: `DataTable.Pagination`, subscribed to the pagination state and the page
+ * count. Filtering changes the count without a pagination update when the page index is already 0.
+ */
 export function RegisteredPagination(props: RegisteredPaginationProps): ReactElement {
   const table = useContextTable();
   return (
-    <table.Subscribe source={table.atoms.pagination}>
+    <table.Subscribe
+      source={table.store}
+      selector={(state) => ({ pagination: state.pagination, pageCount: table.getPageCount() })}>
       {() => <DataTablePagination table={table} {...props} />}
     </table.Subscribe>
   );
@@ -201,6 +195,11 @@ function useCellValue(): CellValue {
   }
 }
 
+/** A cell value of another kind than the cell formats, as its raw text. */
+function RawText({ cell, className }: { cell: CellValue; className?: string }): ReactElement {
+  return <DataTableText value={cellValueText(cell)} className={className} />;
+}
+
 /** `cell.TextCell`: the cell value as text. */
 export function TextCell(props: TextCellProps): ReactElement {
   return <DataTableText value={cellValueText(useCellValue())} {...props} />;
@@ -217,7 +216,7 @@ export function NumberCell(props: NumberCellProps): ReactElement {
   return cell.kind === "number" ? (
     <DataTableNumber value={cell.value} {...props} />
   ) : (
-    <DataTableText value={cellValueText(cell)} className={props.className} />
+    <RawText cell={cell} className={props.className} />
   );
 }
 
@@ -227,7 +226,7 @@ export function CurrencyCell(props: CurrencyCellProps): ReactElement {
   return cell.kind === "number" ? (
     <DataTableCurrency value={cell.value} {...props} />
   ) : (
-    <DataTableText value={cellValueText(cell)} className={props.className} />
+    <RawText cell={cell} className={props.className} />
   );
 }
 
@@ -237,7 +236,7 @@ export function DateCell(props: DateCellProps): ReactElement {
   return cell.kind === "date" ? (
     <DataTableDate value={cell.value} {...props} />
   ) : (
-    <DataTableText value={cellValueText(cell)} className={props.className} />
+    <RawText cell={cell} className={props.className} />
   );
 }
 
@@ -247,7 +246,7 @@ export function DateTimeCell(props: DateTimeCellProps): ReactElement {
   return cell.kind === "date" ? (
     <DataTableDateTime value={cell.value} {...props} />
   ) : (
-    <DataTableText value={cellValueText(cell)} className={props.className} />
+    <RawText cell={cell} className={props.className} />
   );
 }
 

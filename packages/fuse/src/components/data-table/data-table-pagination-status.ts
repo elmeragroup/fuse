@@ -62,22 +62,3 @@ export function pageStatus(pageIndex: number, total: PaginationTotal): PageStatu
     canNext: index < pageCount - 1,
   };
 }
-
-/** Skeleton rows never exceed this, whatever the page size. */
-const MAX_SKELETON_ROWS = 10;
-
-/** Skeleton rows for a table without pagination. */
-const DEFAULT_SKELETON_ROWS = 5;
-
-/**
- * The number of skeleton rows a loading table shows.
- *
- * @param pageSize - The table's page size, or `undefined` without `rowPaginationFeature`.
- * @returns The page size clamped to one through ten, or five without a page size.
- */
-export function skeletonRowCount(pageSize: number | undefined): number {
-  if (pageSize === undefined || Number.isNaN(pageSize)) {
-    return DEFAULT_SKELETON_ROWS;
-  }
-  return Math.min(MAX_SKELETON_ROWS, Math.max(1, Math.floor(pageSize)));
-}

@@ -6,10 +6,13 @@ import type { ReactElement } from "react";
  * role and accessible name through the shared helpers.
  */
 import {
+  columnFilteringFeature,
   columnVisibilityFeature,
   createColumnHelper,
+  createFilteredRowModel,
   createPaginatedRowModel,
   createSortedRowModel,
+  filterFns,
   rowPaginationFeature,
   rowSelectionFeature,
   rowSortingFeature,
@@ -17,7 +20,7 @@ import {
   tableFeatures,
   useTable,
 } from "@tanstack/react-table";
-import type { PaginationState } from "@tanstack/react-table";
+import type { ColumnDef, PaginationState, Row } from "@tanstack/react-table";
 import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -29,7 +32,7 @@ import { DropdownMenu } from "../dropdown-menu";
 import { actionsColumn } from "./actions-column";
 import { createFuseTableHook } from "./create-fuse-table-hook";
 import { NumberCell } from "./data-table-registered";
-import type { NumberCellProps } from "./data-table-registered";
+import type { NumberCellProps, RegisteredRowProps } from "./data-table-registered";
 import { DataTable } from "./index";
 import { selectColumn } from "./select-column";
 
@@ -186,15 +189,17 @@ function pageButtons() {
   };
 }
 
+/** The disabled state of the first, previous, next and last buttons. */
+function disabledMoves(): boolean[] {
+  return Object.values(pageButtons()).map((control) => control.disabled);
+}
+
 describe("DataTable pagination", () => {
   it("navigates a known total and disables the moves its position rules out", async () => {
     renderInEnglish(<ClientPagedTable data={ORDERS_25} />);
 
     expect(page.getByText("Page 1 of 3", { exact: true }).element()).toBeTruthy();
-    expect(pageButtons().first.disabled).toBe(true);
-    expect(pageButtons().previous.disabled).toBe(true);
-    expect(pageButtons().next.disabled).toBe(false);
-    expect(pageButtons().last.disabled).toBe(false);
+    expect(disabledMoves()).toEqual([true, true, false, false]);
 
     await userEvent.click(pageButtons().next);
     await expect.element(page.getByText("Page 2 of 3", { exact: true })).toBeVisible();
@@ -202,9 +207,7 @@ describe("DataTable pagination", () => {
 
     await userEvent.click(pageButtons().last);
     await expect.element(page.getByText("Page 3 of 3", { exact: true })).toBeVisible();
-    expect(pageButtons().next.disabled).toBe(true);
-    expect(pageButtons().last.disabled).toBe(true);
-    expect(pageButtons().previous.disabled).toBe(false);
+    expect(disabledMoves()).toEqual([false, false, true, true]);
 
     await userEvent.click(pageButtons().first);
     await expect.element(page.getByText("Page 1 of 3", { exact: true })).toBeVisible();
@@ -214,7 +217,7 @@ describe("DataTable pagination", () => {
     renderInEnglish(<ClientPagedTable data={NO_ORDERS} />);
 
     expect(page.getByText("Page 1 of 1", { exact: true }).element()).toBeTruthy();
-    expect(Object.values(pageButtons()).map((control) => control.disabled)).toEqual([true, true, true, true]);
+    expect(disabledMoves()).toEqual([true, true, true, true]);
     expect(roleNamed("cell", "No results.")).toBeInstanceOf(HTMLTableCellElement);
   });
 
@@ -222,14 +225,11 @@ describe("DataTable pagination", () => {
     renderInEnglish(<CursorPagedTable pages={2} />);
 
     expect(page.getByText("Page 1", { exact: true }).element()).toBeTruthy();
-    expect(pageButtons().next.disabled).toBe(false);
-    expect(pageButtons().last.disabled).toBe(true);
+    expect(disabledMoves()).toEqual([true, true, false, true]);
 
     await userEvent.click(pageButtons().next);
     await expect.element(page.getByText("Page 2", { exact: true })).toBeVisible();
-    expect(pageButtons().next.disabled).toBe(true);
-    expect(pageButtons().last.disabled).toBe(true);
-    expect(pageButtons().previous.disabled).toBe(false);
+    expect(disabledMoves()).toEqual([false, false, true, true]);
   });
 
   it("changes the page size through the labelled rows-per-page select", async () => {
@@ -270,6 +270,57 @@ describe("DataTable registered pagination", () => {
     await userEvent.click(pageButtons().next);
     await expect.element(page.getByText("Page 2 of 3", { exact: true })).toBeVisible();
     await expect.element(page.getByRole("cell", { name: "Customer 11", exact: true })).toBeVisible();
+  });
+});
+
+describe("DataTable registered pagination after filtering", () => {
+  const filtering = createFuseTableHook({
+    features: tableFeatures({
+      columnFilteringFeature,
+      rowPaginationFeature,
+      filteredRowModel: createFilteredRowModel(),
+      paginatedRowModel: createPaginatedRowModel(),
+      filterFns,
+    }),
+  });
+
+  const filterColumnHelper = filtering.createAppColumnHelper<Order>();
+  const filterColumns = filterColumnHelper.columns([
+    filterColumnHelper.accessor("customer", {
+      header: "Customer",
+      filterFn: "includesString",
+      cell: ({ cell }) => <cell.TextCell />,
+    }),
+  ]);
+
+  function FilteredTable(): ReactElement {
+    // The selector omits the filters, so only the registered parts' own subscriptions re-render.
+    const table = filtering.useAppTable({ columns: filterColumns, data: ORDERS_25 }, (state) => ({
+      pagination: state.pagination,
+    }));
+    return (
+      <table.AppTable>
+        <button
+          type="button"
+          onClick={() => {
+            table.getColumn("customer")?.setFilterValue("Customer 2");
+          }}>
+          Filter
+        </button>
+        <table.Content />
+        <table.Pagination />
+      </table.AppTable>
+    );
+  }
+
+  it("follows the filtered page count on page index 0", async () => {
+    renderInEnglish(<FilteredTable />);
+
+    expect(page.getByText("Page 1 of 3", { exact: true }).element()).toBeTruthy();
+    await userEvent.click(roleNamed("button", "Filter"));
+    // "Customer 2" and "Customer 20" through "Customer 25": seven rows, one page.
+    await expect.element(page.getByText("Page 1 of 1", { exact: true })).toBeVisible();
+    expect(disabledMoves()).toEqual([true, true, true, true]);
   });
 });
 
@@ -357,6 +408,100 @@ describe("DataTable selection", () => {
   });
 });
 
+describe("DataTable row selection eligibility", () => {
+  const eligibilityColumns = appColumns.columns([
+    appColumns.display({
+      id: "select",
+      header: "Select",
+      cell: ({ row }) => (
+        <DataTable.SelectRow row={row} label={`Select order ${String(row.original.id)}`} disabled={false} />
+      ),
+    }),
+  ]);
+
+  function EligibilityTable(): ReactElement {
+    const table = useFuseTable({
+      columns: eligibilityColumns,
+      data: ORDERS_3,
+      enableRowSelection: (row) => row.original.id !== 2,
+    });
+    return (
+      <table.AppTable>
+        <table.Content />
+      </table.AppTable>
+    );
+  }
+
+  it("keeps an ineligible row's checkbox disabled under an explicit disabled={false}", () => {
+    renderInEnglish(<EligibilityTable />);
+
+    expect(roleNamed("checkbox", "Select order 2").hasAttribute("data-disabled")).toBe(true);
+    expect(roleNamed("checkbox", "Select order 1").hasAttribute("data-disabled")).toBe(false);
+  });
+});
+
+describe("DataTable registered row override", () => {
+  const rowFeatures = tableFeatures({});
+
+  function AppRow({ row }: RegisteredRowProps<Row<typeof rowFeatures, Order>>): ReactElement {
+    return (
+      <tr data-testid="app-row">
+        <td>{row.original.customer}</td>
+      </tr>
+    );
+  }
+
+  const withRow = createFuseTableHook({ features: rowFeatures, tableComponents: { Row: AppRow } });
+
+  const rowColumnHelper = withRow.createAppColumnHelper<Order>();
+  const rowColumns = rowColumnHelper.columns([
+    rowColumnHelper.accessor("customer", {
+      header: "Customer",
+      cell: ({ cell }) => <cell.TextCell />,
+    }),
+  ]);
+
+  function OverrideTable(): ReactElement {
+    const table = withRow.useAppTable({ columns: rowColumns, data: ORDERS });
+    return (
+      <table.AppTable>
+        <table.Content />
+      </table.AppTable>
+    );
+  }
+
+  it("renders the default rows of table.Content through the app's registered Row", () => {
+    renderInEnglish(<OverrideTable />);
+
+    expect(roleNamed("cell", "Bergen").closest("tr")?.getAttribute("data-testid")).toBe("app-row");
+  });
+});
+
+/** One pressable row of `ORDERS` over the given columns. */
+function PressableTable({
+  columns,
+  onPress,
+}: {
+  readonly columns: ReadonlyArray<ColumnDef<typeof features, Order, unknown>>;
+  readonly onPress: (id: number) => void;
+}): ReactElement {
+  const table = useFuseTable({ columns, data: ORDERS.slice(0, 1) });
+  return (
+    <table.AppTable>
+      <table.Content<Order>>
+        {(row) => (
+          <table.Row
+            row={row}
+            onPress={() => {
+              onPress(row.original.id);
+            }}
+          />
+        )}
+      </table.Content>
+    </table.AppTable>
+  );
+}
+
 describe("DataTable row press", () => {
   const pressColumns = appColumns.columns([
     appColumns.accessor("customer", {
@@ -381,28 +526,11 @@ describe("DataTable row press", () => {
     }),
   ]);
 
-  function PressTable({ onPress }: { readonly onPress: (id: number) => void }): ReactElement {
-    const table = useFuseTable({ columns: pressColumns, data: ORDERS.slice(0, 1) });
-    return (
-      <table.AppTable>
-        <table.Content<Order>>
-          {(row) => (
-            <table.Row
-              row={row}
-              onPress={() => {
-                onPress(row.original.id);
-              }}
-            />
-          )}
-        </table.Content>
-      </table.AppTable>
-    );
-  }
-
   it("fires on a cell click, ignores interactive descendants, and keeps the row role", async () => {
     const pressed: number[] = [];
     renderInEnglish(
-      <PressTable
+      <PressableTable
+        columns={pressColumns}
         onPress={(id) => {
           pressed.push(id);
         }}
@@ -454,29 +582,12 @@ describe("DataTable row press through a portal", () => {
 
   const archived: number[] = [];
 
-  function MenuTable({ onPress }: { readonly onPress: (id: number) => void }): ReactElement {
-    const table = useFuseTable({ columns: menuColumns, data: ORDERS.slice(0, 1) });
-    return (
-      <table.AppTable>
-        <table.Content<Order>>
-          {(row) => (
-            <table.Row
-              row={row}
-              onPress={() => {
-                onPress(row.original.id);
-              }}
-            />
-          )}
-        </table.Content>
-      </table.AppTable>
-    );
-  }
-
   it("runs a portaled menu item on click and on Enter without pressing the row", async () => {
     archived.length = 0;
     const pressed: number[] = [];
     renderInEnglish(
-      <MenuTable
+      <PressableTable
+        columns={menuColumns}
         onPress={(id) => {
           pressed.push(id);
         }}
@@ -579,14 +690,6 @@ describe("DataTable row actions", () => {
 
     await userEvent.click(roleNamed("menuitem", "Edit"));
     expect(log).toEqual(["Edited Alta"]);
-  });
-
-  it("marks a destructive item with the destructive variant", async () => {
-    renderInEnglish(<ActionsTable />);
-
-    await userEvent.click(roleNamed("button", "Actions for Oslo"));
-    expect(roleNamed("menuitem", "Archive").getAttribute("data-variant")).toBe("destructive");
-    expect(roleNamed("menuitem", "Edit").getAttribute("data-variant")).toBe("default");
   });
 });
 

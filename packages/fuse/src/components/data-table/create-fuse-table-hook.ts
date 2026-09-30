@@ -37,13 +37,20 @@ import type {
   RegisteredSortButtonProps,
   TextCellProps,
 } from "./data-table-registered";
+import type { NoComponents } from "./data-table-source";
 
 /** A registry of named components, as `createTableHook` accepts them. */
 // oxlint-disable-next-line typescript/no-explicit-any -- SAFETY: createTableHook's own registry constraint; a component's props are contravariant, so only `any` admits every component
 type ComponentRegistry = Record<string, ComponentType<any>>;
 
-/** An empty registry: the default when the app registers no components of a kind. */
-type NoComponents = Record<never, never>;
+/**
+ * The app's table registry. A replacement `Row` must accept the props `table.Content` renders its
+ * default rows with, since the registered parts call it with only those.
+ */
+type TableRegistry<TFeatures extends TableFeatures> = ComponentRegistry & {
+  // oxlint-disable-next-line typescript/no-explicit-any -- SAFETY: the app's row data type is bound per column helper, not per hook, so the constraint admits a Row typed over any of them
+  readonly Row?: ComponentType<RegisteredRowProps<Row<TFeatures, any>>>;
+};
 
 /**
  * The app's registry wins by key, and a replaced Fuse component's props are gone. An intersection
@@ -116,7 +123,7 @@ export type FuseCellComponents = {
  */
 export type CreateFuseTableHookOptions<
   TFeatures extends TableFeatures,
-  TTableComponents extends ComponentRegistry,
+  TTableComponents extends TableRegistry<TFeatures>,
   TCellComponents extends ComponentRegistry,
   THeaderComponents extends ComponentRegistry,
 > = CreateTableHookOptions<TFeatures, TTableComponents, TCellComponents, THeaderComponents> & {
@@ -131,7 +138,7 @@ export type CreateFuseTableHookOptions<
 /** What `createFuseTableHook` returns: `createTableHook`'s result over the merged registries. */
 export type CreateFuseTableHookResult<
   TFeatures extends TableFeatures,
-  TTableComponents extends ComponentRegistry,
+  TTableComponents extends TableRegistry<TFeatures>,
   TCellComponents extends ComponentRegistry,
   THeaderComponents extends ComponentRegistry,
 > = CreateTableHookResult<
@@ -194,7 +201,7 @@ function mergeRegistry(fuse: ComponentRegistry, app: ComponentRegistry | undefin
  */
 export function createFuseTableHook<
   TFeatures extends TableFeatures,
-  const TTableComponents extends ComponentRegistry = NoComponents,
+  const TTableComponents extends TableRegistry<TFeatures> = NoComponents,
   const TCellComponents extends ComponentRegistry = NoComponents,
   const THeaderComponents extends ComponentRegistry = NoComponents,
 >(

@@ -13,9 +13,11 @@ import {
   tableFeatures,
   useTable,
 } from "@tanstack/react-table";
+import type { Row } from "@tanstack/react-table";
 import { expectTypeOf, test } from "vitest";
 
 import { actionsColumn, createFuseTableHook, DataTable, selectColumn } from "@elmeragroup/fuse/data-table";
+import type { RegisteredRowProps } from "@elmeragroup/fuse/data-table";
 
 type Order = {
   readonly id: number;
@@ -205,6 +207,25 @@ test("an app override replaces the Fuse props rather than overloading them", () 
   });
   columns.accessor("placed", {
     cell: ({ cell }) => <cell.DateTimeCell dateStyle="short" timeStyle="short" />,
+  });
+});
+
+test("an app Row must accept the props table.Content renders its default rows with", () => {
+  type OrderRowProps = RegisteredRowProps<Row<typeof coreOnly, Order>>;
+
+  function OrderRow(_props: OrderRowProps): ReactElement {
+    return <tr />;
+  }
+
+  function TonedRow(_props: OrderRowProps & { readonly tone: "muted" }): ReactElement {
+    return <tr />;
+  }
+
+  createFuseTableHook({ features: coreOnly, tableComponents: { Row: OrderRow } });
+  createFuseTableHook({
+    features: coreOnly,
+    // @ts-expect-error -- table.Content renders the registered Row without `tone`
+    tableComponents: { Row: TonedRow },
   });
 });
 

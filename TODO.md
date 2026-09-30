@@ -116,6 +116,10 @@
   expands mapped `Intl` types.
 - Faceted filters, toolbars, search, URL state, editable cells, virtualization, column resizing,
   pinning, grouping and expanding are out of the first entry.
+- `packages/fuse/scripts/generate-exports.ts` repeats the peer list by hand in `WorkspacePeers`,
+  the `peerDependenciesMeta` type and `publishedPeerDependencies()`, and
+  `packages/fuse/scripts/size-limit.ts` repeats it in `PEER_EXTERNALS`. Derive all four from
+  `PUBLISHED_PEER_RANGES`.
 
 ## Product-triggered work
 

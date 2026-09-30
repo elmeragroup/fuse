@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { RowActionsCell, RowActionsHeader } from "./data-table-row-actions";
+import type { DisplayColumnHelper } from "./data-table-source";
 
 /** The cell render context the actions column reads. */
 type ActionsCellContext<TData> = { readonly row: { readonly original: TData } };
@@ -17,10 +18,8 @@ export type ActionsColumnDef<TData> = {
   readonly cell: (context: ActionsCellContext<TData>) => ReactNode;
 };
 
-/** The `display` member of a TanStack column helper, from `createColumnHelper` or a table hook. */
-export type ActionsColumnHelper<TData, TColumn> = {
-  readonly display: (column: ActionsColumnDef<TData>) => TColumn;
-};
+/** `DisplayColumnHelper` for `actionsColumn`. */
+export type ActionsColumnHelper<TData, TColumn> = DisplayColumnHelper<ActionsColumnDef<TData>, TColumn>;
 
 /** Options for `actionsColumn`. */
 export type ActionsColumnOptions<TData> = {

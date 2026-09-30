@@ -8,7 +8,6 @@ import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { Skeleton } from "../skeleton/skeleton";
 import { Table } from "../table/table";
-import { skeletonRowCount } from "./data-table-pagination-status";
 import type {
   CellRenderSource,
   CellSource,
@@ -71,8 +70,8 @@ function ariaSort(column: HeaderSource["column"]): "ascending" | "descending" | 
   return sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : "none";
 }
 
-/** Package-private header rows over any header renderer. The registered parts pass `table.AppHeader`. */
-export function HeaderRows<THeader extends HeaderSource>({
+/** Header rows over any header renderer. */
+function HeaderRows<THeader extends HeaderSource>({
   headerGroups,
   renderHeader,
   ...props
@@ -113,28 +112,55 @@ type BodyState = {
   empty?: ReactNode;
 };
 
-/** Package-private body over any row renderer. The registered parts pass `table.Row`. */
-export function BodyRows<TRow extends { readonly id: string }>({
-  rows,
-  columnCount,
-  pageSize,
-  loading = false,
+/** Skeleton rows never exceed this, whatever the page size. */
+const MAX_SKELETON_ROWS = 10;
+
+/** Skeleton rows for a table without pagination. */
+const DEFAULT_SKELETON_ROWS = 5;
+
+/**
+ * The number of skeleton rows a loading table shows.
+ *
+ * @param pageSize - The table's page size, or `undefined` without `rowPaginationFeature`.
+ * @returns The page size clamped to one through ten, or five without a page size.
+ */
+export function skeletonRowCount(pageSize: number | undefined): number {
+  if (pageSize === undefined || Number.isNaN(pageSize)) {
+    return DEFAULT_SKELETON_ROWS;
+  }
+  return Math.min(MAX_SKELETON_ROWS, Math.max(1, Math.floor(pageSize)));
+}
+
+/** The number of columns a full-width row spans: the visible leaf columns. */
+function visibleColumnCount(table: RowsSource<unknown>): number {
+  return (table.getVisibleLeafColumns?.() ?? table.getAllLeafColumns()).length;
+}
+
+/** The page size, or `undefined` for a table without `rowPaginationFeature`. */
+function pageSizeOf(table: RowsSource<unknown>): number | undefined {
+  return table.atoms.pagination?.get().pageSize;
+}
+
+/** The body of a table's current row model over any row renderer. */
+function BodyRows<TRow extends { readonly id: string }>({
+  table,
+  loading,
   empty,
   renderRow,
   ...props
 }: ComponentProps<"tbody"> &
   BodyState & {
-    rows: ReadonlyArray<TRow>;
-    columnCount: number;
-    pageSize: number | undefined;
+    table: RowsSource<TRow>;
     renderRow: (row: TRow) => ReactNode;
   }): ReactElement {
   const strings = useLocalizedStrings(dataTableStrings);
+  const { rows } = table.getRowModel();
+  const columnCount = visibleColumnCount(table);
   let content: ReactNode;
   if (rows.length > 0) {
     content = rows.map((row) => <Fragment key={row.id}>{renderRow(row)}</Fragment>);
   } else if (loading) {
-    content = Array.from({ length: skeletonRowCount(pageSize) }, (_, index) => (
+    content = Array.from({ length: skeletonRowCount(pageSizeOf(table)) }, (_, index) => (
       <Table.Row key={index} data-slot="data-table-skeleton-row">
         {Array.from({ length: columnCount }, (_cell, column) => (
           <Table.Cell key={column}>
@@ -192,14 +218,30 @@ export function RowCells<TCell extends CellSource>({
   );
 }
 
-/** The number of columns a full-width row spans: the visible leaf columns. */
-export function visibleColumnCount(table: RowsSource<unknown>): number {
-  return (table.getVisibleLeafColumns?.() ?? table.getAllLeafColumns()).length;
-}
-
-/** The page size, or `undefined` for a table without `rowPaginationFeature`. */
-export function pageSizeOf(table: RowsSource<unknown>): number | undefined {
-  return table.atoms.pagination?.get().pageSize;
+/**
+ * Package-private whole table over any header and row renderer: `DataTable.Content` passes
+ * `table.FlexRender` and `DataTable.Row`, the registered `table.Content` passes `table.AppHeader`
+ * and `table.Row`. While `loading` the table carries `aria-busy`.
+ */
+export function ContentTable<THeader extends HeaderSource, TRow extends { readonly id: string }>({
+  table,
+  loading,
+  empty,
+  renderHeader,
+  renderRow,
+  ...props
+}: Omit<ComponentProps<"table">, "children"> &
+  BodyState & {
+    table: HeaderGroupsSource<THeader> & RowsSource<TRow>;
+    renderHeader: (header: THeader) => ReactNode;
+    renderRow: (row: TRow) => ReactNode;
+  }): ReactElement {
+  return (
+    <Table.Root {...definedProps({ "aria-busy": loading === true || undefined })} {...props}>
+      <HeaderRows headerGroups={table.getHeaderGroups()} renderHeader={renderHeader} />
+      <BodyRows table={table} loading={loading} empty={empty} renderRow={renderRow} />
+    </Table.Root>
+  );
 }
 
 /** Props for `DataTable.Header`. */
@@ -250,9 +292,7 @@ export function DataTableBody<TRow extends RowSource<TCell>, TCell extends CellS
 }: DataTableBodyProps<TRow, TCell>): ReactElement {
   return (
     <BodyRows
-      rows={table.getRowModel().rows}
-      columnCount={visibleColumnCount(table)}
-      pageSize={pageSizeOf(table)}
+      table={table}
       renderRow={children ?? ((row) => <DataTableRow table={table} row={row} />)}
       {...props}
     />
@@ -276,27 +316,23 @@ export type DataTableContentProps<
   };
 
 /**
- * A whole table on Fuse `Table`: `DataTable.Header` and `DataTable.Body` in `Table.Root`. While
- * `loading` the table carries `aria-busy`. Pass `children` to render each row yourself.
+ * A whole table on Fuse `Table`: the shared content table with `table.FlexRender` headers and
+ * `DataTable.Row` rows. While `loading` the table carries `aria-busy`. Pass `children` to render
+ * each row yourself.
  */
 export function DataTableContent<
   THeader extends HeaderSource,
   TRow extends RowSource<TCell>,
   TCell extends CellSource = CellOf<TRow>,
->({
-  table,
-  loading = false,
-  empty,
-  children,
-  ...props
-}: DataTableContentProps<THeader, TRow, TCell>): ReactElement {
+>({ table, loading = false, children, ...props }: DataTableContentProps<THeader, TRow, TCell>): ReactElement {
   return (
-    <Table.Root {...definedProps({ "aria-busy": loading || undefined })} {...props}>
-      <DataTableHeader table={table} />
-      <DataTableBody<TRow, TCell> table={table} loading={loading} empty={empty}>
-        {children}
-      </DataTableBody>
-    </Table.Root>
+    <ContentTable
+      table={table}
+      loading={loading}
+      renderHeader={(header) => <table.FlexRender header={header} />}
+      renderRow={children ?? ((row) => <DataTableRow table={table} row={row} />)}
+      {...props}
+    />
   );
 }
 

@@ -7,8 +7,10 @@
 import { LocalizedStringFormatter } from "@internationalized/string";
 import { describe, expect, it } from "vitest";
 
+import { SUPPORTED_LOCALES } from "../../../test/locale-matrix";
+import { skeletonRowCount } from "./data-table";
 import { cellValueText, formatCurrencyCell, formatDateCell, formatNumberCell } from "./data-table-format";
-import { pageStatus, skeletonRowCount } from "./data-table-pagination-status";
+import { pageStatus } from "./data-table-pagination-status";
 import { dataTableVariants } from "./data-table-variants";
 import { dataTableStrings } from "./intl";
 
@@ -137,7 +139,7 @@ describe("dataTable dictionary", () => {
   } as const;
 
   it("owns the same rows in all four locales and interpolates the page status and the row name", () => {
-    for (const locale of ["nb-NO", "sv-SE", "en-US", "fi-FI"] as const) {
+    for (const locale of SUPPORTED_LOCALES) {
       expect(Object.keys(dataTableStrings.getStringsForLocale(locale)).toSorted(), locale).toEqual([
         "actions",
         "actionsFor",

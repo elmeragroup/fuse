@@ -65,7 +65,7 @@ export function DataTableSelectRow({
       data-slot="data-table-select-row"
       aria-label={label}
       checked={row.getIsSelected()}
-      disabled={disabled ?? !row.getCanSelect()}
+      disabled={disabled === true || !row.getCanSelect()}
       onCheckedChange={(checked) => {
         row.toggleSelected(checked);
       }}

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 import { DataTableSelectAll, DataTableSelectRow } from "./data-table-selection";
-import type { SelectAllSource, SelectRowSource } from "./data-table-source";
+import type { DisplayColumnHelper, SelectAllSource, SelectRowSource } from "./data-table-source";
 
 /** The header render context the selection column reads. */
 type SelectHeaderContext = { readonly table: SelectAllSource };
@@ -21,10 +21,8 @@ export type SelectColumnDef<TData> = {
   readonly cell: (context: SelectCellContext<TData>) => ReactNode;
 };
 
-/** The `display` member of a TanStack column helper, from `createColumnHelper` or a table hook. */
-export type SelectColumnHelper<TData, TColumn> = {
-  readonly display: (column: SelectColumnDef<TData>) => TColumn;
-};
+/** `DisplayColumnHelper` for `selectColumn`. */
+export type SelectColumnHelper<TData, TColumn> = DisplayColumnHelper<SelectColumnDef<TData>, TColumn>;
 
 /** Options for `selectColumn`. */
 export type SelectColumnOptions<TData> = {

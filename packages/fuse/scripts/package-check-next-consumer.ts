@@ -9,7 +9,7 @@ import { chromium } from "playwright";
 
 import { releaseAgeCutoff, withPackedConsumer } from "./packed-consumer";
 import { packageRootFromScript } from "./paths";
-import { readWorkspaceCatalog } from "./published-dependencies";
+import { catalogVersion, readWorkspaceCatalog } from "./published-dependencies";
 import { runCommandAsync } from "./run-command";
 import { findTarball } from "./tarball";
 
@@ -32,15 +32,10 @@ type NextServer = {
 const packageRoot = packageRootFromScript(import.meta.url);
 const cutoff = releaseAgeCutoff(new Date());
 const catalog = readWorkspaceCatalog();
-const catalogVersion = (name: (typeof CONSUMER_DEPENDENCIES)[number]): string => {
-  const version = catalog.get(name);
-  if (version === undefined) {
-    throw new Error(`Next consumer: pnpm-workspace.yaml catalog has no ${name}`);
-  }
-  return version;
-};
-const dependencies = Object.fromEntries(CONSUMER_DEPENDENCIES.map((name) => [name, catalogVersion(name)]));
-const nextVersion = catalogVersion("next");
+const dependencies = Object.fromEntries(
+  CONSUMER_DEPENDENCIES.map((name) => [name, catalogVersion(catalog, name)])
+);
+const nextVersion = catalogVersion(catalog, "next");
 
 const controller = new AbortController();
 const summary = await withPackedConsumer(

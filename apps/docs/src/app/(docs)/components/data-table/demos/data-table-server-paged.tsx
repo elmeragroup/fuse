@@ -31,6 +31,9 @@ const COLUMNS = columns.columns([
 
 const TOTAL_READINGS = 32;
 
+// A stable empty page while loading: TanStack rebuilds the row model whenever `data` changes identity.
+const NO_READINGS: Reading[] = [];
+
 /** Stands in for a cursor API: it returns one page and whether another follows, never a count. */
 function fetchReadings({ pageIndex, pageSize }: PaginationState): Promise<ReadingPage> {
   const start = pageIndex * pageSize;
@@ -75,7 +78,7 @@ export function DataTableServerPaged() {
 
   const table = useFuseTable({
     columns: COLUMNS,
-    data: result?.rows ?? [],
+    data: result?.rows ?? NO_READINGS,
     state: { pagination },
     // The state owner resets to the first page when the page size changes.
     onPaginationChange: (updater) => {

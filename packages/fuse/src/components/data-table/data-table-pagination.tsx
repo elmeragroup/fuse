@@ -77,8 +77,34 @@ export function DataTablePagination({
     (status.kind === "known"
       ? strings.format("pageOf", { page: status.page, pageCount: status.pageCount })
       : strings.format("page", { page: status.page }));
-  const lastPageIndex = status.kind === "known" ? status.pageCount - 1 : undefined;
   const sizes = pageSizeChoices(pageSizes, state.pageSize);
+  // Each move's target page index, or `undefined` when the move is unavailable.
+  const moves = [
+    {
+      key: "first",
+      label: firstPageLabel ?? strings.format("goToFirstPage"),
+      Icon: CaretDoubleLeft,
+      target: status.canPrevious ? 0 : undefined,
+    },
+    {
+      key: "previous",
+      label: previousPageLabel ?? strings.format("goToPreviousPage"),
+      Icon: CaretLeft,
+      target: status.canPrevious ? status.page - 2 : undefined,
+    },
+    {
+      key: "next",
+      label: nextPageLabel ?? strings.format("goToNextPage"),
+      Icon: CaretRight,
+      target: status.canNext ? status.page : undefined,
+    },
+    {
+      key: "last",
+      label: lastPageLabel ?? strings.format("goToLastPage"),
+      Icon: CaretDoubleRight,
+      target: status.kind === "known" && status.canNext ? status.pageCount - 1 : undefined,
+    },
+  ];
 
   return (
     <div data-slot="data-table-pagination" className={cn(pagination(), className)} {...props}>
@@ -111,48 +137,23 @@ export function DataTablePagination({
         {statusText}
       </span>
       <div data-slot="data-table-page-controls" className={pageControls()}>
-        <Button
-          variant="outline"
-          size="icon-sm"
-          aria-label={firstPageLabel ?? strings.format("goToFirstPage")}
-          disabled={!status.canPrevious}
-          onClick={() => {
-            table.setPageIndex(0);
-          }}>
-          <CaretDoubleLeft />
-        </Button>
-        <Button
-          variant="outline"
-          size="icon-sm"
-          aria-label={previousPageLabel ?? strings.format("goToPreviousPage")}
-          disabled={!status.canPrevious}
-          onClick={() => {
-            table.setPageIndex(status.page - 2);
-          }}>
-          <CaretLeft />
-        </Button>
-        <Button
-          variant="outline"
-          size="icon-sm"
-          aria-label={nextPageLabel ?? strings.format("goToNextPage")}
-          disabled={!status.canNext}
-          onClick={() => {
-            table.setPageIndex(status.page);
-          }}>
-          <CaretRight />
-        </Button>
-        <Button
-          variant="outline"
-          size="icon-sm"
-          aria-label={lastPageLabel ?? strings.format("goToLastPage")}
-          disabled={lastPageIndex === undefined || !status.canNext}
-          onClick={() => {
-            if (lastPageIndex !== undefined) {
-              table.setPageIndex(lastPageIndex);
-            }
-          }}>
-          <CaretDoubleRight />
-        </Button>
+        {moves.map(({ key, label, Icon, target }) => (
+          <Button
+            key={key}
+            variant="outline"
+            size="icon-sm"
+            aria-label={label}
+            disabled={target === undefined}
+            onClick={
+              target === undefined
+                ? undefined
+                : () => {
+                    table.setPageIndex(target);
+                  }
+            }>
+            <Icon />
+          </Button>
+        ))}
       </div>
     </div>
   );
