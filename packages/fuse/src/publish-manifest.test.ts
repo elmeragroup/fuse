@@ -69,6 +69,8 @@ type ManifestFields = {
   sideEffects?: string[];
   funding?: string;
   dependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
+  peerDependenciesMeta?: Record<string, { optional: boolean }>;
   exports?: Record<string, string | { types: string; import: string }>;
   publishConfig?: { access: string; directory?: string; linkDirectory?: boolean };
   elmeraRelease?: { commit: string; channel: string };
@@ -107,6 +109,20 @@ describe("publish manifest", () => {
     const workspace = Object.keys(readManifestFields(join(packageRoot, "package.json")).dependencies ?? {});
     expect(workspace).not.toEqual([]);
     expect(published.toSorted()).toEqual(workspace.toSorted());
+  }, 20_000);
+
+  it("publishes @tanstack/react-table as an optional peer, never a dependency", () => {
+    const root = scratchPackageRoot();
+    writePublishManifest(root);
+
+    const manifest = readManifestFields(join(root, "dist/package.json"));
+    expect(manifest.peerDependencies?.["@tanstack/react-table"]).toBe("^9.2");
+    expect(manifest.peerDependenciesMeta?.["@tanstack/react-table"]).toEqual({ optional: true });
+    expect(manifest.dependencies).not.toHaveProperty("@tanstack/react-table");
+    expect(manifest.exports?.["./data-table"]).toEqual({
+      types: "./data-table.d.ts",
+      import: "./data-table.js",
+    });
   }, 20_000);
 
   it("an unstamped write never carries a stale release identity", () => {

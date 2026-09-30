@@ -1,0 +1,1045 @@
+{
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate. Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "data-table",
+  "parts": [
+    {
+      "name": "DataTable.Content",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table/data-table.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 288,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "((row: TRow) => ReactNode) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Takes over row rendering, for example to render `DataTable.Row` with `onPress`.",
+          "required": false
+        },
+        {
+          "name": "empty",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Replaces the localized \"No results.\" text of the empty row.",
+          "required": false
+        },
+        {
+          "name": "loading",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Renders skeleton rows while there are no rows yet, and marks the table busy through `Content`.",
+          "required": false
+        },
+        {
+          "name": "table",
+          "origin": "declared",
+          "type": "HeaderGroupsSource<THeader> & HeaderRenderSource<THeader> & RowsSource<TRow> & CellRenderSource<TCell>",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The table to render, typically from `useTable`.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "DataTable.Header",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table/data-table.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "table",
+          "origin": "declared",
+          "type": "HeaderGroupsSource<THeader> & HeaderRenderSource<THeader>",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The table whose header groups render, typically from `useTable`.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "DataTable.Body",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table/data-table.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "((row: TRow) => ReactNode) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Takes over row rendering, for example to render `DataTable.Row` with `onPress`.",
+          "required": false
+        },
+        {
+          "name": "empty",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Replaces the localized \"No results.\" text of the empty row.",
+          "required": false
+        },
+        {
+          "name": "loading",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Renders skeleton rows while there are no rows yet, and marks the table busy through `Content`.",
+          "required": false
+        },
+        {
+          "name": "table",
+          "origin": "declared",
+          "type": "RowsSource<TRow> & CellRenderSource<TCell>",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The table whose current row model renders, typically from `useTable`.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "DataTable.Row",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table/data-table.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "onPress",
+          "origin": "declared",
+          "type": "((event: MouseEvent<HTMLTableRowElement, MouseEvent>) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Makes the whole row clickable without changing its role: the `<tr>` gets no `role=\"button\"` and no `tabIndex`, so table navigation keeps working. Clicks on a link, button, input or other interactive element in the row do not press it. Keyboard users need the same action through a focusable primary action in the row, such as a link in its first cell.",
+          "required": false
+        },
+        {
+          "name": "row",
+          "origin": "declared",
+          "type": "RowSource<TCell>",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The row to render.",
+          "required": true
+        },
+        {
+          "name": "table",
+          "origin": "declared",
+          "type": "CellRenderSource<TCell>",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The table that renders the cell templates.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "DataTable.Pagination",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table/data-table-pagination.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "firstPageLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name of the first-page button. Defaults to the locale dictionary.",
+          "required": false
+        },
+        {
+          "name": "formatStatus",
+          "origin": "declared",
+          "type": "((status: PageStatus) => string) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Formats the page status. Defaults to the locale dictionary's \"Page N of M\" and \"Page N\".",
+          "required": false
+        },
+        {
+          "name": "lastPageLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name of the last-page button. Defaults to the locale dictionary.",
+          "required": false
+        },
+        {
+          "name": "nextPageLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name of the next-page button. Defaults to the locale dictionary.",
+          "required": false
+        },
+        {
+          "name": "pageSizes",
+          "origin": "declared",
+          "type": "readonly number[] | undefined",
+          "shortType": null,
+          "defaultValue": "DEFAULT_PAGE_SIZES",
+          "description": "The rows-per-page choices. The current page size is always offered. Defaults to 10, 25, 50, 100.",
+          "required": false
+        },
+        {
+          "name": "previousPageLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name of the previous-page button. Defaults to the locale dictionary.",
+          "required": false
+        },
+        {
+          "name": "rowsPerPageLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Label of the rows-per-page select. Defaults to the locale dictionary.",
+          "required": false
+        },
+        {
+          "name": "table",
+          "origin": "declared",
+          "type": "PaginationSource",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The paginated table, from `useTable` with `rowPaginationFeature`.",
+          "required": true
+        },
+        {
+          "name": "total",
+          "origin": "declared",
+          "type": "PaginationTotal | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The page total. It is the only source of Next and Last. Without it the table's own page count is the known total. Pass `{ kind: \"unknown\", hasMore }` for a cursor API: the status then reads \"Page N\" and Last stays disabled.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DataTable.SortButton",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table/data-table-sort-button.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 282,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The column label.",
+          "required": true
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged last through `cn`.",
+          "required": false
+        },
+        {
+          "name": "column",
+          "origin": "declared",
+          "type": "SortColumnSource",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The header's column, from a table with `rowSortingFeature`.",
+          "required": true
+        },
+        {
+          "name": "focusableWhenDisabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the button should be focusable when disabled.",
+          "required": false
+        },
+        {
+          "name": "isPending",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Disables the element and stamps `data-pending`, blocking activation entirely. Effective disabled is `disabled || isPending`.",
+          "required": false
+        },
+        {
+          "name": "isVisuallyDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Stamps `aria-disabled` (an explicit consumer value wins), which renders the disabled treatment (`opacity-50`, the `not-allowed` cursor, no hover or press paint), and suppresses focus-on-press while the button stays fully interactive — click, keyboard and focus-visible all still work, and a Tooltip on it still opens. For \"looks disabled but explains itself on activation\" flows. The treatment keys off `aria-disabled`, so an explicit `aria-disabled={false}` also turns it off: the button then looks and announces enabled and only the focus-on-press suppression remains.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
+          "required": false
+        },
+        {
+          "name": "onIntent",
+          "origin": "declared",
+          "type": "(() => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Predictive-prefetch callback. Fires once when the pointer's predicted trajectory lands inside the inflated hit rect; browsers without the prediction API fail soft.",
+          "required": false
+        },
+        {
+          "name": "predictionZoneSize",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pixels the hit rect is inflated on every side when predicting pointer intent.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, ButtonState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ButtonState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"ghost\"",
+          "description": "",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DataTable.ColumnToggle",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table/data-table-column-toggle.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 283,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: MenuTriggerState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "closeDelay",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "0",
+          "description": "How long to wait before closing the menu that was opened on hover. Specified in milliseconds. Requires the `openOnHover` prop.",
+          "required": false
+        },
+        {
+          "name": "delay",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "100",
+          "description": "How long to wait before the menu may be opened on hover. Specified in milliseconds. Requires the `openOnHover` prop.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component should ignore user interaction.",
+          "required": false
+        },
+        {
+          "name": "getLabel",
+          "origin": "declared",
+          "type": "((column: TColumn) => ReactNode) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "A column's menu label. Defaults to the column id. Fuse reads no `columnDef.meta` field, since augmenting TanStack's global `ColumnMeta` would clash with an app's own declaration.",
+          "required": false
+        },
+        {
+          "name": "handle",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "MenuHandle<unknown> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A handle to associate the trigger with a menu.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The trigger's visible text. Defaults to the locale dictionary.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
+          "required": false
+        },
+        {
+          "name": "openOnHover",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether the menu should also open when the trigger is hovered.",
+          "required": false
+        },
+        {
+          "name": "payload",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "unknown",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "A payload to pass to the menu when it is opened.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: MenuTriggerState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "table",
+          "origin": "declared",
+          "type": "ColumnToggleSource<TColumn>",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The table, from `useTable` with `columnVisibilityFeature`.",
+          "required": true
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"outline\"",
+          "description": "The trigger button's look. Defaults to `\"outline\"`.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DataTable.SelectAll",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table/data-table-selection.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 273,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: CheckboxRootState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component should ignore user interaction.",
+          "required": false
+        },
+        {
+          "name": "form",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Identifies the form that owns the hidden input. Useful when the checkbox is rendered outside the form.",
+          "required": false
+        },
+        {
+          "name": "id",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The id of the input element.",
+          "required": false
+        },
+        {
+          "name": "inputRef",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "Ref<HTMLInputElement> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A ref to access the hidden `<input>` element.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name. Defaults to the locale dictionary.",
+          "required": false
+        },
+        {
+          "name": "name",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": "undefined",
+          "description": "Identifies the field when a form is submitted.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `true` if the rendered element is a native button.",
+          "required": false
+        },
+        {
+          "name": "parent",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the checkbox controls a group of child checkboxes. Must be used in a [Checkbox Group](https://base-ui.com/react/components/checkbox-group).",
+          "required": false
+        },
+        {
+          "name": "readOnly",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the user should be unable to tick or untick the checkbox.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, CheckboxRootState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "required",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the user must tick the checkbox before submitting a form.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: CheckboxRootState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "table",
+          "origin": "declared",
+          "type": "SelectAllSource",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The table, from `useTable` with `rowSelectionFeature`.",
+          "required": true
+        },
+        {
+          "name": "uncheckedValue",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The value submitted with the form when the checkbox is unchecked. By default, unchecked checkboxes do not submit any value, matching native checkbox behavior.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The checkbox's value. Identifies it within a [Checkbox Group](https://base-ui.com/react/components/checkbox-group), falling back to `name` when omitted. When submitting a form, a checked box submits `value`; with no `value`, it submits the native \"on\".",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DataTable.SelectRow",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table/data-table-selection.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 272,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: CheckboxRootState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component should ignore user interaction.",
+          "required": false
+        },
+        {
+          "name": "form",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Identifies the form that owns the hidden input. Useful when the checkbox is rendered outside the form.",
+          "required": false
+        },
+        {
+          "name": "id",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The id of the input element.",
+          "required": false
+        },
+        {
+          "name": "inputRef",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "Ref<HTMLInputElement> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A ref to access the hidden `<input>` element.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name, distinct per row, such as \"Select order 4711\".",
+          "required": true
+        },
+        {
+          "name": "name",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": "undefined",
+          "description": "Identifies the field when a form is submitted.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `true` if the rendered element is a native button.",
+          "required": false
+        },
+        {
+          "name": "parent",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the checkbox controls a group of child checkboxes. Must be used in a [Checkbox Group](https://base-ui.com/react/components/checkbox-group).",
+          "required": false
+        },
+        {
+          "name": "readOnly",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the user should be unable to tick or untick the checkbox.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, CheckboxRootState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "required",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the user must tick the checkbox before submitting a form.",
+          "required": false
+        },
+        {
+          "name": "row",
+          "origin": "declared",
+          "type": "SelectRowSource",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The row, from a table with `rowSelectionFeature`.",
+          "required": true
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: CheckboxRootState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "uncheckedValue",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The value submitted with the form when the checkbox is unchecked. By default, unchecked checkboxes do not submit any value, matching native checkbox behavior.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The checkbox's value. Identifies it within a [Checkbox Group](https://base-ui.com/react/components/checkbox-group), falling back to `name` when omitted. When submitting a form, a checked box submits `value`; with no `value`, it submits the native \"on\".",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DataTable.Text",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table/data-table-cells.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged last through `cn`.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The text to render.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "DataTable.Number",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table/data-table-cells.tsx",
+      "forwardedFrom": [
+        "@typescript/typescript-darwin-arm64"
+      ],
+      "forwardedCount": 19,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged last through `cn`.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "number",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The number to format for the active locale.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "DataTable.Date",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table/data-table-cells.tsx",
+      "forwardedFrom": [
+        "@typescript/typescript-darwin-arm64"
+      ],
+      "forwardedCount": 2,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged last through `cn`.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "Date",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The date to format for the active locale.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "DataTable.DateTime",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table/data-table-cells.tsx",
+      "forwardedFrom": [
+        "@typescript/typescript-darwin-arm64"
+      ],
+      "forwardedCount": 3,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged last through `cn`.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "Date",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The date and time to format for the active locale.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "DataTable.Currency",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table/data-table-cells.tsx",
+      "forwardedFrom": [
+        "@typescript/typescript-darwin-arm64"
+      ],
+      "forwardedCount": 19,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged last through `cn`.",
+          "required": false
+        },
+        {
+          "name": "currency",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The ISO 4217 currency code, such as `\"NOK\"`. Required: there is no sensible default.",
+          "required": true
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "number",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The amount to format for the active locale.",
+          "required": true
+        }
+      ]
+    }
+  ]
+}

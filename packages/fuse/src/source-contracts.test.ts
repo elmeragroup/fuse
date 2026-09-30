@@ -42,6 +42,20 @@ const CLIENT_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["collapsible", ["components/collapsible/collapsible.tsx"]],
   ["combobox", ["components/combobox/combobox.tsx"]],
   ["confirm-button", ["components/confirm-button/confirm-button.tsx"]],
+  [
+    "data-table",
+    [
+      "components/data-table/data-table.tsx",
+      "components/data-table/data-table-cells.tsx",
+      "components/data-table/data-table-column-toggle.tsx",
+      "components/data-table/data-table-contexts.ts",
+      "components/data-table/data-table-pagination.tsx",
+      "components/data-table/data-table-registered.tsx",
+      "components/data-table/data-table-selection.tsx",
+      "components/data-table/data-table-sort-button.tsx",
+      "components/data-table/create-fuse-table-hook.ts",
+    ],
+  ],
   ["date-field", ["react-aria/date-field/date-field.tsx"]],
   ["date-picker", ["react-aria/date-picker/date-picker.tsx"]],
   ["date-range-picker", ["react-aria/date-range-picker/date-range-picker.tsx"]],
@@ -271,6 +285,9 @@ describe("RSC classification", () => {
     ["components/checkbox/checkbox-item.tsx", "server"],
     ["components/radio-group/radio-item.tsx", "server"],
     ["components/selection-item/partition-sub-sections.ts", "server"],
+    // selectColumn builds a column definition and calls no hook; the parts it renders are
+    // client modules of their own.
+    ["components/data-table/select-column.tsx", "server"],
   ] as const)("keeps the shared module %s %s", (file, rsc) => {
     expectRsc(file, rsc);
   });
@@ -288,6 +305,7 @@ describe("RSC classification", () => {
     ["button-group", "ButtonGroup"],
     ["collapsible", "Collapsible"],
     ["combobox", "Combobox"],
+    ["data-table", "DataTable"],
     ["dialog", "Dialog"],
     ["dropdown-menu", "DropdownMenu"],
     ["field", "Field"],
@@ -308,6 +326,43 @@ describe("RSC classification", () => {
     const file = `components/${slug}/index.ts`;
     expectRsc(file, "server");
     expect(exportedNames(file), file).toEqual([namespace]);
+  });
+});
+
+describe("data-table and its optional peer", () => {
+  // Why not a lint rule: which modules may import a runtime value from the optional
+  // `@tanstack/react-table` peer is a layering decision, and the root-barrel boundary is a module
+  // graph, not a specifier. The plain parts render through `table.FlexRender` and read slices, so
+  // they need no runtime import; only the contexts and the factory call into TanStack.
+  const TANSTACK = "@tanstack/react-table";
+
+  function tanstackImports(relativePath: string): { readonly kind: "type" | "value" }[] {
+    const parsed = parseSync(relativePath, readSrc(relativePath));
+    expect(parsed.errors, relativePath).toEqual([]);
+    return parsed.module.staticImports
+      .filter((entry) => entry.moduleRequest.value === TANSTACK)
+      .map((entry) => ({
+        kind: entry.entries.length > 0 && entry.entries.every((binding) => binding.isType) ? "type" : "value",
+      }));
+  }
+
+  it("imports runtime TanStack values only from the contexts and the factory", () => {
+    const valueImporters = [...SOURCE_TREE.values()]
+      .filter((record) => record.relative.startsWith("components/data-table/"))
+      .filter((record) => tanstackImports(record.relative).some((entry) => entry.kind === "value"))
+      .map((record) => record.relative)
+      .toSorted();
+    expect(valueImporters).toEqual([
+      "components/data-table/create-fuse-table-hook.ts",
+      "components/data-table/data-table-contexts.ts",
+    ]);
+  });
+
+  it("keeps the peer out of everything the root barrel reaches", () => {
+    const reached = walkImportedSourceFiles(PACKAGE_ROOT, ["src/index.ts"]).filter((file) =>
+      readFileSync(join(PACKAGE_ROOT, file), "utf8").includes(TANSTACK)
+    );
+    expect(reached).toEqual([]);
   });
 });
 

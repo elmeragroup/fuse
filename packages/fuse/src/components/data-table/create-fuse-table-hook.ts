@@ -1,0 +1,221 @@
+"use client";
+
+import type { ComponentType, ReactElement } from "react";
+
+import { createTableHook } from "@tanstack/react-table";
+import type {
+  Column,
+  CreateTableHookOptions,
+  CreateTableHookResult,
+  Row,
+  RowData,
+  TableFeatures,
+} from "@tanstack/react-table";
+
+import { fuseTableContexts } from "./data-table-contexts";
+import {
+  CurrencyCell,
+  DateCell,
+  DateTimeCell,
+  NumberCell,
+  RegisteredColumnToggle,
+  RegisteredContent,
+  RegisteredPagination,
+  RegisteredRow,
+  RegisteredSortButton,
+  TextCell,
+} from "./data-table-registered";
+import type {
+  CurrencyCellProps,
+  DateCellProps,
+  DateTimeCellProps,
+  NumberCellProps,
+  RegisteredColumnToggleProps,
+  RegisteredContentProps,
+  RegisteredPaginationProps,
+  RegisteredRowProps,
+  RegisteredSortButtonProps,
+  TextCellProps,
+} from "./data-table-registered";
+
+/** A registry of named components, as `createTableHook` accepts them. */
+// oxlint-disable-next-line typescript/no-explicit-any -- SAFETY: createTableHook's own registry constraint; a component's props are contravariant, so only `any` admits every component
+type ComponentRegistry = Record<string, ComponentType<any>>;
+
+/** An empty registry: the default when the app registers no components of a kind. */
+type NoComponents = Record<never, never>;
+
+/**
+ * The app's registry wins by key, and a replaced Fuse component's props are gone. An intersection
+ * would overload the two and keep accepting the replaced props.
+ */
+type Merge<TFuse, TApp> = Omit<TFuse, keyof TApp> & TApp;
+
+/** Includes `TPart` exactly when `TFeatures` registers `TFeature`. */
+type WithFeature<TFeatures, TFeature extends string, TPart> = TFeature extends keyof TFeatures
+  ? TPart
+  : NoComponents;
+
+/**
+ * The table parts Fuse registers on the table `useFuseTable` returns. `Pagination` and
+ * `ColumnToggle` appear only with their feature.
+ */
+export type FuseTableComponents<TFeatures extends TableFeatures> = {
+  /** The whole table, rendered through the registered header and cell wrappers. */
+  Content: <TData extends RowData = RowData>(
+    props: RegisteredContentProps<Row<TFeatures, TData>>
+  ) => ReactElement;
+  /** One row. It renders inside `Content`'s row takeover, which keeps it current. */
+  Row: <TData extends RowData = RowData>(props: RegisteredRowProps<Row<TFeatures, TData>>) => ReactElement;
+} & WithFeature<
+  TFeatures,
+  "rowPaginationFeature",
+  {
+    /** Rows-per-page select, page status and page buttons. */
+    Pagination: (props: RegisteredPaginationProps) => ReactElement;
+  }
+> &
+  WithFeature<
+    TFeatures,
+    "columnVisibilityFeature",
+    {
+      /** The column visibility menu. */
+      ColumnToggle: <TData extends RowData = RowData>(
+        props: RegisteredColumnToggleProps<Column<TFeatures, TData, unknown>>
+      ) => ReactElement;
+    }
+  >;
+
+/** The header parts Fuse registers. `SortButton` appears only with `rowSortingFeature`. */
+export type FuseHeaderComponents<TFeatures extends TableFeatures> = WithFeature<
+  TFeatures,
+  "rowSortingFeature",
+  {
+    /** The header's sort toggle. */
+    SortButton: (props: RegisteredSortButtonProps) => ReactElement;
+  }
+>;
+
+/** The default cells Fuse registers. An app replaces one by registering its own under the key. */
+export type FuseCellComponents = {
+  /** The cell value as text. */
+  TextCell: (props: TextCellProps) => ReactElement;
+  /** A number, formatted for the locale. */
+  NumberCell: (props: NumberCellProps) => ReactElement;
+  /** An amount in a required currency, formatted for the locale. */
+  CurrencyCell: (props: CurrencyCellProps) => ReactElement;
+  /** A date, formatted for the locale. */
+  DateCell: (props: DateCellProps) => ReactElement;
+  /** A date and time, formatted for the locale. */
+  DateTimeCell: (props: DateTimeCellProps) => ReactElement;
+};
+
+/**
+ * Options for `createFuseTableHook`: every `createTableHook` option except the contexts, which
+ * Fuse owns.
+ */
+export type CreateFuseTableHookOptions<
+  TFeatures extends TableFeatures,
+  TTableComponents extends ComponentRegistry,
+  TCellComponents extends ComponentRegistry,
+  THeaderComponents extends ComponentRegistry,
+> = CreateTableHookOptions<TFeatures, TTableComponents, TCellComponents, THeaderComponents> & {
+  /** Fuse owns the table context. */
+  readonly tableContext?: never;
+  /** Fuse owns the cell context. */
+  readonly cellContext?: never;
+  /** Fuse owns the header context. */
+  readonly headerContext?: never;
+};
+
+/** What `createFuseTableHook` returns: `createTableHook`'s result over the merged registries. */
+export type CreateFuseTableHookResult<
+  TFeatures extends TableFeatures,
+  TTableComponents extends ComponentRegistry,
+  TCellComponents extends ComponentRegistry,
+  THeaderComponents extends ComponentRegistry,
+> = CreateTableHookResult<
+  TFeatures,
+  Merge<FuseTableComponents<TFeatures>, TTableComponents>,
+  Merge<FuseCellComponents, TCellComponents>,
+  Merge<FuseHeaderComponents<TFeatures>, THeaderComponents>
+>;
+
+const FUSE_TABLE_COMPONENTS = {
+  Content: RegisteredContent,
+  Row: RegisteredRow,
+  Pagination: RegisteredPagination,
+  ColumnToggle: RegisteredColumnToggle,
+};
+
+const FUSE_HEADER_COMPONENTS = { SortButton: RegisteredSortButton };
+
+const FUSE_CELL_COMPONENTS = { TextCell, NumberCell, CurrencyCell, DateCell, DateTimeCell };
+
+/**
+ * Fuse's parts first, then the app's, so the app wins by key at runtime. The result is erased to
+ * the registry constraint: Fuse's parts are typed over every stock feature and the public types
+ * over the app's `TFeatures`, which TypeScript cannot compare, so the factory retypes each merged
+ * registry with one cast.
+ */
+function mergeRegistry(fuse: ComponentRegistry, app: ComponentRegistry | undefined): ComponentRegistry {
+  // oxlint-disable-next-line anti-slop/no-known-value-widening -- deliberate erasure; see above
+  return { ...fuse, ...app };
+}
+
+/**
+ * Bind an app's table features, default options and components into one `useFuseTable` hook, with
+ * Fuse's parts registered: `table.Content`, `table.Row`, `table.Pagination`,
+ * `table.ColumnToggle`, `header.SortButton` and the default cells `TextCell`, `NumberCell`,
+ * `CurrencyCell`, `DateCell` and `DateTimeCell`.
+ *
+ * It wraps TanStack's `createTableHook` and passes `features` and every default option through
+ * untouched; Fuse adds no features of its own. The app's components are registered after Fuse's,
+ * so registering `cellComponents: { NumberCell }` replaces Fuse's `NumberCell`, props included. A
+ * registered part appears in the types only when its feature is in `features`: `Pagination` needs
+ * `rowPaginationFeature`, `ColumnToggle` `columnVisibilityFeature` and `SortButton`
+ * `rowSortingFeature`. Render the registered table parts inside `<table.AppTable>`.
+ *
+ * @example
+ * ```tsx
+ * export const { useAppTable: useFuseTable, createAppColumnHelper } = createFuseTableHook({
+ *   features: tableFeatures({ rowPaginationFeature, rowSortingFeature }),
+ *   enableSortingRemoval: false,
+ *   cellComponents: { OrderIdCell },
+ * });
+ * ```
+ *
+ * @template TFeatures - The app's `tableFeatures({...})` object.
+ * @template TTableComponents - The app's table components.
+ * @template TCellComponents - The app's cell components.
+ * @template THeaderComponents - The app's header components.
+ * @param options - Features, default table options and the app's components.
+ * @returns TanStack's table hook result, typed with Fuse's parts merged under the app's.
+ */
+export function createFuseTableHook<
+  TFeatures extends TableFeatures,
+  const TTableComponents extends ComponentRegistry = NoComponents,
+  const TCellComponents extends ComponentRegistry = NoComponents,
+  const THeaderComponents extends ComponentRegistry = NoComponents,
+>(
+  options: CreateFuseTableHookOptions<TFeatures, TTableComponents, TCellComponents, THeaderComponents>
+): CreateFuseTableHookResult<TFeatures, TTableComponents, TCellComponents, THeaderComponents> {
+  const tableComponents = mergeRegistry(FUSE_TABLE_COMPONENTS, options.tableComponents);
+  const cellComponents = mergeRegistry(FUSE_CELL_COMPONENTS, options.cellComponents);
+  const headerComponents = mergeRegistry(FUSE_HEADER_COMPONENTS, options.headerComponents);
+  return createTableHook({
+    ...options,
+    tableContext: fuseTableContexts.tableContext,
+    cellContext: fuseTableContexts.cellContext,
+    headerContext: fuseTableContexts.headerContext,
+    // SAFETY: each registry is Fuse's parts spread under the app's, which is what `Merge`
+    // describes. Fuse's parts are typed over every stock feature at runtime; the public type lists
+    // Pagination, ColumnToggle and SortButton only with their feature and types rows with the
+    // app's features.
+    tableComponents: tableComponents as Merge<FuseTableComponents<TFeatures>, TTableComponents>,
+    // SAFETY: as above, for the cell registry.
+    cellComponents: cellComponents as Merge<FuseCellComponents, TCellComponents>,
+    // SAFETY: as above, for the header registry.
+    headerComponents: headerComponents as Merge<FuseHeaderComponents<TFeatures>, THeaderComponents>,
+  });
+}

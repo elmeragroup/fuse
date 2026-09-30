@@ -27,6 +27,7 @@ import { ButtonGroup } from "@elmeragroup/fuse/button-group";
 import { CheckboxItem } from "@elmeragroup/fuse/checkbox";
 import { Collapsible } from "@elmeragroup/fuse/collapsible";
 import { Combobox } from "@elmeragroup/fuse/combobox";
+import { DataTable } from "@elmeragroup/fuse/data-table";
 import { Dialog } from "@elmeragroup/fuse/dialog";
 import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 import { Field } from "@elmeragroup/fuse/field";
@@ -150,6 +151,22 @@ function namespaceElements(): ReactElement[] {
       "Chip",
       "ChipsInput",
       "Value",
+    ]),
+    ...renderNamespace("DataTable", DataTable, [
+      "Content",
+      "Header",
+      "Body",
+      "Row",
+      "Pagination",
+      "SortButton",
+      "ColumnToggle",
+      "SelectAll",
+      "SelectRow",
+      "Text",
+      "Number",
+      "Date",
+      "DateTime",
+      "Currency",
     ]),
     ...renderNamespace("Dialog", Dialog, [
       "Root",
@@ -424,7 +441,9 @@ if (
 ) {
   throw new Error(`Alert chrome was not rendered on the server:\n${alertRoot ?? payload.slice(0, 1500)}`);
 }
-if (payload.includes("button.tsx")) {
+// Button's own module path: other client parts, such as `data-table-sort-button.tsx`, end in
+// `button.tsx` too.
+if (payload.includes("/components/button/button.tsx")) {
   throw new Error("The no-action Alert rendered a client Button");
 }
 

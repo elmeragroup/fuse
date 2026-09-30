@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import { withPackedConsumer } from "./packed-consumer";
 import { packageRootFromScript } from "./paths";
+import { readWorkspaceCatalog } from "./published-dependencies";
 import { runCommandAsync, settleAll } from "./run-command";
 
 const require = createRequire(import.meta.url);
@@ -19,6 +20,18 @@ function installedVersion(name: string): string {
 
 type ReactPair = { readonly react: string; readonly reactDom: string };
 
+/**
+ * The optional table peer, installed at the version the workspace tests so the probe renders the
+ * data-table entry against the consumer's own copy.
+ */
+function tanstackTableVersion(): string {
+  const version = readWorkspaceCatalog().get("@tanstack/react-table");
+  if (version === undefined) {
+    throw new Error("pnpm-workspace.yaml catalog has no @tanstack/react-table");
+  }
+  return version;
+}
+
 function checkReactPair(
   tarball: string,
   pair: ReactPair,
@@ -30,7 +43,11 @@ function checkReactPair(
       tarball,
       prefix: "elmera-packed-react-",
       label: `React ${pair.react}/${pair.reactDom}`,
-      dependencies: { react: pair.react, "react-dom": pair.reactDom },
+      dependencies: {
+        react: pair.react,
+        "react-dom": pair.reactDom,
+        "@tanstack/react-table": tanstackTableVersion(),
+      },
       cutoff,
       signal,
     },

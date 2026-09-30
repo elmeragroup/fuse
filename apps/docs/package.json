@@ -17,6 +17,7 @@
     "@elmeragroup/fuse": "workspace:*",
     "@internationalized/date": "catalog:",
     "@next/mdx": "catalog:",
+    "@tanstack/react-table": "catalog:",
     "next": "catalog:",
     "react": "catalog:",
     "react-aria-components": "catalog:",
