@@ -40,11 +40,11 @@ function stockStatus(stock: number): StockStatus {
 function StockBadge({ status }: { readonly status: StockStatus }) {
   switch (status) {
     case "in-stock":
-      return <Badge variant="outline-success">In Stock</Badge>;
+      return <Badge variant="success">In Stock</Badge>;
     case "low-stock":
-      return <Badge variant="outline-warning">Low Stock</Badge>;
+      return <Badge variant="warning">Low Stock</Badge>;
     case "out-of-stock":
-      return <Badge variant="outline-destructive">Out of Stock</Badge>;
+      return <Badge variant="destructive">Out of Stock</Badge>;
   }
 }
 
