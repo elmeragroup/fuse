@@ -1,17 +1,21 @@
 import { describe, expect, it } from "vitest";
 
 import { asRecord, asRecordArray, asString } from "./json-object.mjs";
-import { readWorkflow, workflowNames } from "./workflow.mjs";
+import { compositeActions, readWorkflow, workflowNames } from "./workflow.mjs";
 
-/** Every step of every job in every workflow, with its "<name>.yml <job>" site. */
+/** Workflow and local composite-action steps, with the site each failure should name. */
 function workflowSteps() {
-  return workflowNames().flatMap((name) =>
+  const workflows = workflowNames().flatMap((name) =>
     Object.entries(asRecord(readWorkflow(name).jobs, `${name} jobs`)).flatMap(([job, value]) => {
       const steps = asRecord(value, job).steps;
       if (steps === undefined) return [];
       return asRecordArray(steps, `${job} steps`).map((step) => ({ site: `${name}.yml ${job}`, step }));
     })
   );
+  return [
+    ...workflows,
+    ...compositeActions().flatMap(({ name, steps }) => steps.map((step) => ({ site: name, step }))),
+  ];
 }
 
 // An expression inside `run:` is spliced into the script before the shell parses it, so a

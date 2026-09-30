@@ -103,3 +103,21 @@ export function requiredUsesStep(steps, action) {
   expect(matches, `expected one ${action} step`).toHaveLength(1);
   return matches[0];
 }
+
+/**
+ * Local composite actions execute steps with the caller's token permissions, so the same
+ * pin and shell/token checks that inspect workflows must inspect their steps too.
+ */
+export function compositeActions() {
+  const directory = new URL("../.github/actions/", import.meta.url);
+  return readdirSync(directory, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .flatMap((entry) => {
+      const name = `.github/actions/${entry.name}/action.yml`;
+      const text = readFileSync(new URL(`${entry.name}/action.yml`, directory), "utf8");
+      const action = asRecord(parse(text), name);
+      const runs = asRecord(action.runs, `${name} runs`);
+      if (runs.using !== "composite") return [];
+      return [{ name, text, steps: asRecordArray(runs.steps, `${name} steps`) }];
+    });
+}

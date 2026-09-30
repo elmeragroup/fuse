@@ -219,3 +219,56 @@ jobs:
       pull-requests: write
       actions: write
     uses: ./.github/workflows/version-packages.yml
+
+  # Every push to main that passes both gates ships to production; there is no staging step
+  # between them (PR previews are the test surface, see preview.yml). The job stays skipped
+  # until the Azure repository variables exist, so this workflow is safe ahead of the infra.
+  #
+  # Only this job holds the production identity. Its federated credential trusts
+  # `repo:elmeragroup/fuse:ref:refs/heads/main`, so no pull_request run can obtain it.
+  deploy-prod:
+    needs: [checks, browser]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.AZURE_CLIENT_ID_PROD != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+    # Serialize deploys without cancelling one mid-rollout. A newer push replaces any deploy
+    # still waiting, so production converges on the latest main.
+    concurrency:
+      group: deploy-prod
+      cancel-in-progress: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Azure login
+        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2.3.1
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID_PROD }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID_PROD }}
+
+      - name: Push image
+        id: image
+        uses: ./.github/actions/push-docs-image
+        with:
+          registry: ${{ vars.AZURE_ACR_NAME_PROD }}
+          sha: ${{ github.sha }}
+
+      # The production app runs in single revision mode: the new revision takes all traffic
+      # once healthy and Container Apps retires the previous one.
+      - name: Deploy revision
+        env:
+          APP: ${{ vars.PROD_CONTAINER_APP }}
+          RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP_PROD }}
+          IMAGE: ${{ steps.image.outputs.image }}
+          ENVIRONMENT: ${{ vars.AZURE_CONTAINER_APPS_ENVIRONMENT_PROD }}
+          REGISTRY: ${{ vars.AZURE_ACR_NAME_PROD }}
+          MANAGED_IDENTITY_ID: ${{ vars.AZURE_MANAGED_IDENTITY_ID_PROD }}
+          # Revision names are unique, so a re-run of the same commit needs a fresh suffix.
+          SUFFIX: ${{ format('r-{0}-{1}', github.run_id, github.run_attempt) }}
+        run: bash .github/scripts/docs-container-app.sh prod
