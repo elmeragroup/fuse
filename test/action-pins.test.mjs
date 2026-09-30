@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import { asRecord, asRecordArray, asString } from "./json-object.mjs";
-import { readWorkflow, readWorkflowText, workflowNames } from "./workflow.mjs";
+import { compositeActions, readWorkflow, readWorkflowText, workflowNames } from "./workflow.mjs";
 
 // Parsed workflows are the only gate that sees every `uses` ref: oxlint reads no YAML, and the
 // per-workflow tests look up only the steps they assert on, so an unguarded step could drift back
 // to a tag. This sweep owns the pin rule for every job and step instead.
 
-/** A reusable workflow in this repository, the only local ref form in use. */
-const LOCAL_WORKFLOW = /^\.\/\.github\/workflows\/[\w.-]+\.yml$/;
+/** Reusable workflows and composite actions whose steps are inspected locally. */
+const LOCAL_REF = /^\.\/\.github\/(?:workflows\/[\w.-]+\.yml|actions\/[\w.-]+)$/;
 
 /** A third-party action pinned to a full commit SHA. */
 const PINNED_ACTION = /^[\w.-]+\/[\w./-]+@[0-9a-f]{40}$/;
@@ -45,21 +45,32 @@ describe("action pins", () => {
   it("pins every third-party action to a commit SHA", () => {
     const offenders = workflowNames().flatMap((name) =>
       usesRefs(readWorkflow(name))
-        .filter(({ ref }) => !LOCAL_WORKFLOW.test(ref) && !PINNED_ACTION.test(ref))
+        .filter(({ ref }) => !LOCAL_REF.test(ref) && !PINNED_ACTION.test(ref))
         .map(({ site, ref }) => `${name}.yml ${site}: ${ref}`)
     );
+    for (const { name, steps } of compositeActions()) {
+      steps.forEach((step, index) => {
+        if (step.uses === undefined) return;
+        const ref = asString(step.uses, `${name} step uses`);
+        if (!LOCAL_REF.test(ref) && !PINNED_ACTION.test(ref)) {
+          offenders.push(`${name} step ${String(index + 1)}: ${ref}`);
+        }
+      });
+    }
     expect(offenders, `every uses ref is local or owner/path@<40-hex>\n${offenders.join("\n")}`).toEqual([]);
   });
 
   it("marks every pinned action with its version comment", () => {
-    const offenders = workflowNames().flatMap((name) =>
-      readWorkflowText(name)
-        .split("\n")
-        .flatMap((line, index) => {
-          const match = USES_LINE.exec(line);
-          if (match === null || LOCAL_WORKFLOW.test(match[1]) || VERSION_COMMENT.test(line)) return [];
-          return [`${name}.yml:${String(index + 1)} ${line.trim()}`];
-        })
+    const sources = [
+      ...workflowNames().map((name) => ({ name: `${name}.yml`, text: readWorkflowText(name) })),
+      ...compositeActions(),
+    ];
+    const offenders = sources.flatMap(({ name, text }) =>
+      text.split("\n").flatMap((line, index) => {
+        const match = USES_LINE.exec(line);
+        if (match === null || LOCAL_REF.test(match[1]) || VERSION_COMMENT.test(line)) return [];
+        return [`${name}:${String(index + 1)} ${line.trim()}`];
+      })
     );
     expect(offenders, `every pinned uses line ends in \`# vX.Y.Z\`\n${offenders.join("\n")}`).toEqual([]);
   });
