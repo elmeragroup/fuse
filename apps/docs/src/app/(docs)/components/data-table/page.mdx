@@ -1,0 +1,69 @@
+---
+lede: >
+  Accessible TanStack Table v9 tables on Fuse Table, with pagination, sorting, column
+  visibility, selection and locale-formatted cells. The app keeps its features and state.
+---
+
+import { DataTableClientPaged } from "./demos/data-table-client-paged";
+import { DataTableServerPaged } from "./demos/data-table-server-paged";
+import { DataTableCellOverride } from "./demos/data-table-cell-override";
+import { DataTableSelection } from "./demos/data-table-selection";
+import { DataTableInventory } from "./demos/data-table-inventory";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("data-table");
+
+<ComponentIntro slug="data-table" />
+
+<Prose>
+
+Import from `@elmeragroup/fuse/data-table` and install `@tanstack/react-table` 9.2 or later beside Fuse. The entry is not in the root barrel, so apps without TanStack never resolve it.
+
+Fuse owns the markup, `aria-sort`, pagination, the column menu, selection checkboxes and default cells. The app owns the `features` object, every table option, state, fetching and its toolbars. Fuse never adds a feature: registering `rowPaginationFeature` alone paginates to ten rows, so the choice stays with the app.
+
+There are three layers. The plain `DataTable.*` parts take an explicit `table`, `column`, `row` or `value` and work with a plain `useTable` table. The registered parts, such as `table.Content`, `header.SortButton` and `cell.NumberCell`, are the same parts read from the table, header and cell in context. Render them inside `<table.AppTable>`. `createFuseTableHook` wraps TanStack's `createTableHook` and registers them. A registered part appears in the types only when its feature is in `features`: `table.Pagination` needs `rowPaginationFeature`, `table.ColumnToggle` needs `columnVisibilityFeature`, and `header.SortButton` needs `rowSortingFeature`.
+
+`table.Content` subscribes to the whole table state and re-renders the rows and cells inside it, and `table.Pagination`, `table.ColumnToggle` and `header.SortButton` subscribe to the state they read, so every registered part stays current when your `useFuseTable` selector narrows `table.state`. Keep `data` stable between renders: TanStack resets the page index when `data` changes identity.
+
+Pass `total` to `Pagination` when the server pages the rows. `{ kind: "known", pageCount }` shows "Page N of M". `{ kind: "unknown", hasMore }` shows "Page N" and disables Last. A page-size change calls `table.setPageSize` and keeps the page index; reset it in `onPaginationChange` if your data needs that.
+
+Date and date-time cells format in the runtime's local time zone, so a table that renders on the server and hydrates in the browser must pass `timeZone` to them, or the server and browser text can differ.
+
+`Row`'s `onPress` makes a row clickable without changing its role, and ignores clicks on links, buttons and other controls inside it. It also ignores clicks inside a menu or popover the row opens. Give keyboard users the same action through a link or button in the row.
+
+`actionsColumn(columnHelper, { getRowName, items })` adds a row-actions menu to each row. Fuse sets the accessible parts. Each trigger's accessible name comes from the row, as in "Actions for USB-C Docking Station", the header is named "Actions" without visible text, the column is neither sortable nor hideable, it shrinks to the trigger, and a click in the open menu never presses the row. The app supplies the row's name and the `DropdownMenu` items, including `variant="destructive"` items, separators and disabled states. Render `DataTable.RowActions` with your own `label` for a menu outside the column helper.
+
+</Prose>
+
+<Demo slug="data-table" id="client-paged" title="Client-paged" file="data-table-client-paged.tsx">
+  <DataTableClientPaged />
+</Demo>
+
+<Demo
+  slug="data-table"
+  id="server-paged"
+  title="Server-paged, unknown total"
+  file="data-table-server-paged.tsx">
+  <DataTableServerPaged />
+</Demo>
+
+<Demo slug="data-table" id="cell-override" title="Cell overrides" file="data-table-cell-override.tsx">
+  <DataTableCellOverride />
+</Demo>
+
+<Demo slug="data-table" id="selection" title="Selection and row press" file="data-table-selection.tsx">
+  <DataTableSelection />
+</Demo>
+
+<Demo
+  slug="data-table"
+  id="inventory"
+  title="Inventory with filters and row actions"
+  file="data-table-inventory.tsx">
+  <DataTableInventory />
+</Demo>
+
+<ApiReference slug="data-table" />
+
+<ComponentTokens slug="data-table" />

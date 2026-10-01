@@ -49,7 +49,7 @@ describe("published dependency ranges", () => {
       catalog,
       "Workspace dependency tailwind-merge must use catalog:, got ^3.0.0",
     ],
-    [{ clsx: "catalog:" }, catalog, "Workspace dependency clsx has no pnpm-workspace.yaml catalog entry"],
+    [{ clsx: "catalog:" }, catalog, "pnpm-workspace.yaml catalog has no clsx"],
     // A catalog version that is not a plain release.
     [
       { "tailwind-merge": "catalog:" },

@@ -24,6 +24,7 @@ export const BARE_COMPONENT_ENTRIES = [
   "collapsible",
   "combobox",
   "confirm-button",
+  "data-table",
   "description-list",
   "dialog",
   "dropdown-menu",
@@ -123,7 +124,18 @@ export const runtimeDependencies = [
   "@internationalized/string",
   "sugar-high",
   "libphonenumber-js",
+  // Optional peer. Only OPTIONAL_PEER_ENTRIES import it.
+  "@tanstack/react-table",
 ] as const;
+
+/**
+ * Bare component entries that import an optional peer, keyed to that peer. They stay out of the
+ * root barrel, like icons and react-aria/*, so `import { Button } from "@elmeragroup/fuse"` never
+ * resolves a package the consumer may not have installed.
+ */
+export const OPTIONAL_PEER_ENTRIES = {
+  "data-table": "@tanstack/react-table",
+} as const;
 
 export const PUBLISHED_PEER_RANGES = {
   react: "^19",
@@ -131,7 +143,14 @@ export const PUBLISHED_PEER_RANGES = {
   // Shipped classes use the 4.1 utilities `wrap-anywhere` and `wrap-break-word`. package:check
   // compiles the packed CSS with this floor's first release.
   tailwindcss: "^4.1",
+  // Optional. The data-table entry shares the consumer's copy, because TanStack's contexts and
+  // feature objects must be the same instances on both sides.
+  "@tanstack/react-table": "^9.2",
 } as const;
+
+function isOptionalPeerEntry(subpath: string): boolean {
+  return Object.hasOwn(OPTIONAL_PEER_ENTRIES, subpath);
+}
 
 function isBareComponent(subpath: string): boolean {
   for (const name of BARE_COMPONENT_ENTRIES) {
@@ -442,7 +461,7 @@ export function discoverJsEntriesFromAllowlist(
       subpath,
       sourceFile,
       runtimeExports: facadeRuntimeExports(subpath, sourceFile, packageRoot),
-      inRootBarrel: subpath === "theme" || isBareComponent(subpath),
+      inRootBarrel: subpath === "theme" || (isBareComponent(subpath) && !isOptionalPeerEntry(subpath)),
     });
   }
 

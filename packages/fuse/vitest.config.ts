@@ -32,6 +32,7 @@ function browserProject(
         "@base-ui/react/toggle-group",
         "@base-ui/react",
         "@base-ui/react/toast",
+        "@tanstack/react-table",
         "clsx",
         "tailwind-merge",
         "tailwind-variants",

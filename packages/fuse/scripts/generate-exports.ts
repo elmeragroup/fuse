@@ -26,6 +26,7 @@ export type ExportBinding = {
 };
 
 type WorkspacePeers = {
+  "@tanstack/react-table": string;
   react: string;
   "react-dom": string;
   tailwindcss: string;
@@ -47,7 +48,11 @@ type WorkspaceManifest = PackageMetadata & {
   version: string;
   license: string;
   sideEffects: string[];
-  peerDependenciesMeta: { tailwindcss: { optional: boolean }; recharts?: { optional: boolean } };
+  peerDependenciesMeta: {
+    "@tanstack/react-table": { optional: boolean };
+    tailwindcss: { optional: boolean };
+    recharts?: { optional: boolean };
+  };
   dependencies: Dependencies;
 };
 
@@ -238,6 +243,7 @@ type PublishManifest = PackageMetadata & {
 
 function publishedPeerDependencies(): WorkspacePeers {
   return {
+    "@tanstack/react-table": PUBLISHED_PEER_RANGES["@tanstack/react-table"],
     react: PUBLISHED_PEER_RANGES.react,
     "react-dom": PUBLISHED_PEER_RANGES["react-dom"],
     tailwindcss: PUBLISHED_PEER_RANGES.tailwindcss,
@@ -248,7 +254,7 @@ const ROOT_BARREL_BANNER = `/**
  * AUTO-GENERATED FILE — DO NOT EDIT DIRECTLY.
  *
  * Root barrel of bare component entries plus /theme.
- * Icons, illustrations, flags, and react-aria/* stay subpath-only.
+ * Icons, illustrations, flags, react-aria/* and optional-peer entries stay subpath-only.
  */
 
 `;

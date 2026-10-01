@@ -136,6 +136,17 @@
     "rsc": "client",
     "demos": ["confirm-button-destructive.tsx", "confirm-button-success.tsx", "confirm-button-icon.tsx"]
   },
+  "data-table": {
+    "title": "Data Table",
+    "rsc": "client",
+    "demos": [
+      "data-table-client-paged.tsx",
+      "data-table-server-paged.tsx",
+      "data-table-cell-override.tsx",
+      "data-table-selection.tsx",
+      "data-table-inventory.tsx"
+    ]
+  },
   "date-field": {
     "title": "Date Field",
     "rsc": "client",

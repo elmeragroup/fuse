@@ -17,7 +17,14 @@ import {
 import { fail, withExtractedTarballAsync } from "./tarball.ts";
 
 const packageRoot = packageRootFromScript(import.meta.url);
-const PEER_EXTERNALS = ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "tailwindcss"];
+const PEER_EXTERNALS = [
+  "react",
+  "react-dom",
+  "react/jsx-runtime",
+  "react/jsx-dev-runtime",
+  "tailwindcss",
+  "@tanstack/react-table",
+];
 
 function gzipSize(bytes: Uint8Array): number {
   return gzipSync(bytes).byteLength;

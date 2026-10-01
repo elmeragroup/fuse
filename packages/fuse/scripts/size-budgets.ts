@@ -77,6 +77,9 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // `pnpm gen component` appends a 0-ceiling row below this marker, so a brand-new packed
   // entry cannot slip through unbudgeted. Replace the 0 with measured × 1.5.
   // plop:js-entry-budget
+  // 2026-09-30: new entry. It composes Select, DropdownMenu, Checkbox, Field and Button; the
+  // optional @tanstack/react-table peer is external.
+  { name: "data-table", entryFile: "data-table.js", measuredGzip: 95534, ceilingGzip: 143301 },
   { name: "sidebar", entryFile: "sidebar.js", measuredGzip: 82769, ceilingGzip: 123748 },
   { name: "toast", entryFile: "toast.js", measuredGzip: 43158, ceilingGzip: 63440 },
   {

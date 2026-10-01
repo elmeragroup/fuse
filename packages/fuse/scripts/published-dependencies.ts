@@ -77,17 +77,17 @@ export function peerFloorRelease(range: string): string {
   return floor.join(".");
 }
 
-function publishedRange(name: string, catalogVersion: string): string {
-  const tested = parseReleaseVersion(catalogVersion);
+function publishedRange(name: string, version: string): string {
+  const tested = parseReleaseVersion(version);
   if (tested === undefined) {
-    throw new Error(`Catalog version ${catalogVersion} of ${name} is not a plain release version`);
+    throw new Error(`Catalog version ${version} of ${name} is not a plain release version`);
   }
   if (EXACT_DEPENDENCY_PINS.has(name)) {
-    return catalogVersion;
+    return version;
   }
   const override = DEPENDENCY_FLOOR_OVERRIDES.get(name);
   if (override === undefined) {
-    return `^${catalogVersion}`;
+    return `^${version}`;
   }
   const floor = parseCaretFloor(override);
   // A caret below 1.0 locks more than the major, which the admission check below does not model;
@@ -98,7 +98,7 @@ function publishedRange(name: string, catalogVersion: string): string {
     );
   }
   if (floor === undefined || floor[0] !== tested[0] || compareVersions(tested, floor) < 0) {
-    throw new Error(`Floor override ${override} of ${name} does not admit catalog version ${catalogVersion}`);
+    throw new Error(`Floor override ${override} of ${name} does not admit catalog version ${version}`);
   }
   return override;
 }
@@ -118,11 +118,7 @@ export function publishedDependencies(declared: Dependencies, catalog: Workspace
       if (specifier !== "catalog:") {
         throw new Error(`Workspace dependency ${name} must use catalog:, got ${specifier}`);
       }
-      const catalogVersion = catalog.get(name);
-      if (catalogVersion === undefined) {
-        throw new Error(`Workspace dependency ${name} has no pnpm-workspace.yaml catalog entry`);
-      }
-      return [name, publishedRange(name, catalogVersion)];
+      return [name, publishedRange(name, catalogVersion(catalog, name))];
     })
   );
 }
@@ -167,4 +163,19 @@ export function parseWorkspaceCatalog(source: string): WorkspaceCatalog {
 export function readWorkspaceCatalog(): WorkspaceCatalog {
   const workspaceRoot = join(packageRootFromScript(import.meta.url), "../..");
   return parseWorkspaceCatalog(readFileSync(join(workspaceRoot, "pnpm-workspace.yaml"), "utf8"));
+}
+
+/**
+ * The catalog version of a package a check installs.
+ *
+ * @param catalog - The workspace catalog.
+ * @param name - The package name.
+ * @returns The exact version the workspace installs; throws when the catalog has no entry.
+ */
+export function catalogVersion(catalog: WorkspaceCatalog, name: string): string {
+  const version = catalog.get(name);
+  if (version === undefined) {
+    throw new Error(`pnpm-workspace.yaml catalog has no ${name}`);
+  }
+  return version;
 }

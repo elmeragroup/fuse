@@ -5,7 +5,7 @@ import { parseSync, Visitor } from "oxc-parser";
 import type { Expression, JSXElementName, JSXOpeningElement } from "oxc-parser";
 import { describe, expect, it } from "vitest";
 
-import { walkImportedSourceFiles } from "../scripts/entries";
+import { OPTIONAL_PEER_ENTRIES, walkImportedSourceFiles } from "../scripts/entries";
 import { overlayLayer } from "./components/overlay/overlay-classes";
 
 /**
@@ -14,7 +14,7 @@ import { overlayLayer } from "./components/overlay/overlay-classes";
  * `no-hardcoded-density-metrics`, `no-primitive-colors`, `no-local-focus-ring`,
  * `restrict-focus-ring-call`, `restrict-browser-helper-copy`, `no-field-part-jsx`,
  * `no-tailwind-dark-variant`, `restrict-process-env`, `no-restricted-imports` for
- * `LocalizedStringDictionary`)
+ * `LocalizedStringDictionary` and for runtime values of `@tanstack/react-table`)
  * or an exports/package-check gate. Each describe documents why the contract is
  * not a lint rule.
  */
@@ -42,6 +42,21 @@ const CLIENT_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["collapsible", ["components/collapsible/collapsible.tsx"]],
   ["combobox", ["components/combobox/combobox.tsx"]],
   ["confirm-button", ["components/confirm-button/confirm-button.tsx"]],
+  [
+    "data-table",
+    [
+      "components/data-table/data-table.tsx",
+      "components/data-table/data-table-cells.tsx",
+      "components/data-table/data-table-column-toggle.tsx",
+      "components/data-table/data-table-contexts.ts",
+      "components/data-table/data-table-pagination.tsx",
+      "components/data-table/data-table-registered.tsx",
+      "components/data-table/data-table-row-actions.tsx",
+      "components/data-table/data-table-selection.tsx",
+      "components/data-table/data-table-sort-button.tsx",
+      "components/data-table/create-fuse-table-hook.ts",
+    ],
+  ],
   ["date-field", ["react-aria/date-field/date-field.tsx"]],
   ["date-picker", ["react-aria/date-picker/date-picker.tsx"]],
   ["date-range-picker", ["react-aria/date-range-picker/date-range-picker.tsx"]],
@@ -271,6 +286,10 @@ describe("RSC classification", () => {
     ["components/checkbox/checkbox-item.tsx", "server"],
     ["components/radio-group/radio-item.tsx", "server"],
     ["components/selection-item/partition-sub-sections.ts", "server"],
+    // selectColumn and actionsColumn build a column definition and call no hook; the parts they render are
+    // client modules of their own.
+    ["components/data-table/select-column.tsx", "server"],
+    ["components/data-table/actions-column.tsx", "server"],
   ] as const)("keeps the shared module %s %s", (file, rsc) => {
     expectRsc(file, rsc);
   });
@@ -288,6 +307,7 @@ describe("RSC classification", () => {
     ["button-group", "ButtonGroup"],
     ["collapsible", "Collapsible"],
     ["combobox", "Combobox"],
+    ["data-table", "DataTable"],
     ["dialog", "Dialog"],
     ["dropdown-menu", "DropdownMenu"],
     ["field", "Field"],
@@ -309,6 +329,21 @@ describe("RSC classification", () => {
     expectRsc(file, "server");
     expect(exportedNames(file), file).toEqual([namespace]);
   });
+});
+
+describe("optional peers and the root barrel", () => {
+  // Why not a lint rule: the root-barrel boundary is a module graph, not a specifier. A lint ban
+  // on the peer would miss an indirect import through a file the root barrel reaches.
+  const reached = walkImportedSourceFiles(PACKAGE_ROOT, ["src/index.ts"]).map((file) =>
+    file.replace(/^src\//, "")
+  );
+
+  it.each(Object.values(OPTIONAL_PEER_ENTRIES))(
+    "keeps %s out of everything the root barrel reaches",
+    (peer) => {
+      expect(reached.filter((file) => readCode(file).includes(peer))).toEqual([]);
+    }
+  );
 });
 
 describe("no .ref/ in package source", () => {
@@ -831,6 +866,7 @@ describe("Base UI prop wiring", () => {
         "ComboboxPrimitive.Clear > InputGroupButton aria-label",
         "ComboboxPrimitive.ChipRemove > Button aria-label",
       ],
+      "components/data-table/data-table-row-actions.tsx": ["DropdownMenuTrigger > Button aria-label"],
       "components/toast/toast.tsx": ["ToastPrimitive.Close > Button aria-label"],
     });
   });

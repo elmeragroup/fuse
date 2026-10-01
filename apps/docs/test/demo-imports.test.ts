@@ -6,8 +6,16 @@ import { docsRoot } from "../scripts/lib/paths.ts";
 
 const componentsDir = path.join(docsRoot, "src/app/(docs)/components");
 
-/** Specifiers any consumer writes: React, the public entries, and the date-cluster value type. */
-const CONSUMER_SPECIFIERS = [/^react$/u, /^@elmeragroup\/fuse\//u, /^@internationalized\/date$/u];
+/**
+ * Specifiers any consumer writes: React, the public entries, the date-cluster value type, and the
+ * optional table peer every `@elmeragroup/fuse/data-table` consumer installs.
+ */
+const CONSUMER_SPECIFIERS = [
+  /^react$/u,
+  /^@elmeragroup\/fuse\//u,
+  /^@internationalized\/date$/u,
+  /^@tanstack\/react-table$/u,
+];
 
 /**
  * Reviewed demos whose scenarios the public API cannot express, with the allowed
