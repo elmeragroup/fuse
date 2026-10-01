@@ -11,9 +11,14 @@ import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { buttonVariants } from "./button-variants";
 
-type ButtonSize = NonNullable<VariantProps<typeof buttonVariants>["size"]>;
-type IconButtonSize = Extract<ButtonSize, `icon${string}`>;
-type LabelButtonSize = Exclude<ButtonSize, IconButtonSize>;
+/** Every `size` the Button recipe knows: the label sizes plus the square `icon*` sizes. */
+export type ButtonSize = NonNullable<VariantProps<typeof buttonVariants>["size"]>;
+
+/** The square icon-only sizes. A button at one of these requires an `aria-label`. */
+export type IconButtonSize = Extract<ButtonSize, `icon${string}`>;
+
+/** The label sizes: `xs`, `sm`, `default` and `lg`. */
+export type LabelButtonSize = Exclude<ButtonSize, IconButtonSize>;
 
 type ButtonPrimitiveProps = Omit<ComponentProps<typeof ButtonPrimitive>, "className">;
 
@@ -45,16 +50,32 @@ type ButtonSharedProps = ButtonPrimitiveProps &
     onIntent?: () => void;
   };
 
-export type ButtonProps =
-  | (ButtonSharedProps & {
-      /** Recipe size axis. The `icon*` sizes are square and additionally require an `aria-label`. */
-      size?: LabelButtonSize;
-    })
-  | (ButtonSharedProps & {
-      /** Recipe size axis. The `icon*` sizes are square and additionally require an `aria-label`. */
-      size: IconButtonSize;
-      "aria-label": string;
-    });
+/**
+ * The props of a button with a visible label: every size except the square `icon*` ones, so
+ * an accessible name is optional. A wrapper that supplies its own label types its props as
+ * `Omit<LabelButtonProps, "children">` and keeps the size union in sync with the recipe.
+ */
+export type LabelButtonProps = ButtonSharedProps & {
+  /** Recipe size axis. The `icon*` sizes are square and additionally require an `aria-label`. */
+  size?: LabelButtonSize;
+};
+
+/**
+ * The props of a square icon-only button: one of the `icon*` sizes plus the `aria-label` that
+ * names it, since the icon is the whole content.
+ */
+export type IconButtonProps = ButtonSharedProps & {
+  /** Recipe size axis. The `icon*` sizes are square and additionally require an `aria-label`. */
+  size: IconButtonSize;
+  "aria-label": string;
+};
+
+/**
+ * `LabelButtonProps | IconButtonProps`. `Omit` on this union collapses it and lets an icon
+ * size through without its name; omit from {@link LabelButtonProps} or
+ * {@link IconButtonProps} instead, or distribute the omit over the union.
+ */
+export type ButtonProps = LabelButtonProps | IconButtonProps;
 
 export function Button({
   className,
