@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+import { COMPONENT_INVENTORY } from "./component-inventory";
 import { fetchText } from "./docs-server";
+
+/** The reviewed demo files of the Button page, the oracle for how many frames it renders. */
+const BUTTON_DEMOS = COMPONENT_INVENTORY.get("button")?.demos ?? [];
 
 describe("component page anatomy", () => {
   it("renders H1, lede and the two meta links", async () => {
@@ -21,7 +25,8 @@ describe("component page anatomy", () => {
 
   it("renders one demo frame per scenario, with stage, meta row and extracted source", async () => {
     const html = await fetchText("/components/button");
-    expect([...html.matchAll(/<section[^>]*data-demo-frame/g)]).toHaveLength(5);
+    expect(BUTTON_DEMOS.length).toBeGreaterThan(0);
+    expect([...html.matchAll(/<section[^>]*data-demo-frame/g)]).toHaveLength(BUTTON_DEMOS.length);
     expect(html).toContain("data-demo-stage");
     expect(html).toContain("data-demo-slug");
     expect(html).toContain("data-demo-density");
