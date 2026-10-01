@@ -1050,7 +1050,7 @@
       "rsc": "client",
       "sourcePath": "packages/fuse/src/components/data-table/data-table-cells.tsx",
       "forwardedFrom": [
-        "@typescript/typescript-darwin-arm64"
+        "typescript"
       ],
       "forwardedCount": 19,
       "props": [
@@ -1079,7 +1079,7 @@
       "rsc": "client",
       "sourcePath": "packages/fuse/src/components/data-table/data-table-cells.tsx",
       "forwardedFrom": [
-        "@typescript/typescript-darwin-arm64"
+        "typescript"
       ],
       "forwardedCount": 1,
       "props": [
@@ -1117,7 +1117,7 @@
       "rsc": "client",
       "sourcePath": "packages/fuse/src/components/data-table/data-table-cells.tsx",
       "forwardedFrom": [
-        "@typescript/typescript-darwin-arm64"
+        "typescript"
       ],
       "forwardedCount": 2,
       "props": [
@@ -1155,7 +1155,7 @@
       "rsc": "client",
       "sourcePath": "packages/fuse/src/components/data-table/data-table-cells.tsx",
       "forwardedFrom": [
-        "@typescript/typescript-darwin-arm64"
+        "typescript"
       ],
       "forwardedCount": 19,
       "props": [
