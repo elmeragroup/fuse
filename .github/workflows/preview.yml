@@ -6,6 +6,10 @@ name: Preview
 # separate from production, and so is its identity: it can push images and manage the
 # preview app, never the production app. Preview URLs resolve only on the VPN.
 #
+# A PR that leaves the docs site unchanged (Markdown, CI, tests) can carry the `no-preview`
+# label; its pushes then deploy nothing. A revision deployed before the label stays live until
+# the PR closes.
+#
 # This must stay `pull_request`, never `pull_request_target`: the repo is public, and
 # `pull_request_target` would hand the preview identity to code from any fork. Fork PRs get
 # no OIDC token under `pull_request`, so they are skipped with a note instead.
@@ -42,11 +46,36 @@ jobs:
             echo "A maintainer can push the branch to elmeragroup/fuse to get one."
           } >> "$GITHUB_STEP_SUMMARY"
 
-  deploy:
+  # The label is read live, not from the event payload: `gh pr create --label` applies labels
+  # after the PR exists, so the `opened` payload lacks them. A failed lookup fails the job, which
+  # skips the deploy visibly instead of guessing.
+  preview-opt-out:
     if: >-
       github.event.action != 'closed' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       vars.AZURE_CLIENT_ID_PREVIEW != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    outputs:
+      skip: ${{ steps.labels.outputs.skip }}
+    steps:
+      - name: Read the PR's labels
+        id: labels
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          skip="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq '[.labels[].name] | any(. == "no-preview")')"
+          echo "skip=$skip" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: preview-opt-out
+    if: >-
+      github.event.action != 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      vars.AZURE_CLIENT_ID_PREVIEW != '' &&
+      needs.preview-opt-out.outputs.skip != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
