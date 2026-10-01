@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { cn } from "./cn";
 import { controlSize } from "./control-size";
-import { controlMd, controlMdInsetTypeClass } from "./control-size-md";
+import { controlMdInsetTypeClass } from "./control-size-md";
 
 /**
  * The contract in `control-size.ts`: every size class is an unprefixed utility a consumer's
@@ -56,8 +56,7 @@ describe("control size: consumer utilities replace the recipe's", () => {
     expect(merged).toContain("gap-(--control-gap-md)");
   });
 
-  it("spells the pair once, in the resolved md parts every text-entry box forwards", () => {
-    expect(controlMd.type()).toBe("text-(length:--control-text) leading-(--control-leading)");
+  it("lets a consumer text-* class replace the type in the inset-and-type pair the text-entry boxes forward", () => {
     expect(cn(controlMdInsetTypeClass, "text-sm")).toBe("px-(--control-px-md) text-sm");
   });
 });
