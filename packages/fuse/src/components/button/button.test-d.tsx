@@ -90,3 +90,15 @@ test("a wrapper omits children from the label props without collapsing the union
   // @ts-expect-error the icon wrapper still needs the accessible name
   const _unnamed = <IconLink icon="x" size="icon-sm" />;
 });
+
+test("pendingIndicator takes a node, null or false on both arms and keeps the icon name rule", () => {
+  ({ isPending: true, pendingIndicator: null, children: "Save" }) satisfies ButtonProps;
+  ({ isPending: true, pendingIndicator: false, children: "Save" }) satisfies ButtonProps;
+  ({ isPending: true, pendingIndicator: <svg />, children: "Save" }) satisfies ButtonProps;
+  ({ size: "icon", "aria-label": "Refresh", pendingIndicator: null }) satisfies ButtonProps;
+
+  // @ts-expect-error an icon size still requires its accessible name
+  const _unnamed: ButtonProps = { size: "icon", pendingIndicator: null };
+  // @ts-expect-error a component function is not a node; pass the element
+  const _fn: ButtonProps = { pendingIndicator: () => <svg /> };
+});

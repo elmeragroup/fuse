@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentProps, ReactElement } from "react";
+import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { Button as ButtonPrimitive } from "@base-ui/react/button";
 import type { VariantProps } from "tailwind-variants";
@@ -41,14 +41,22 @@ type ButtonSharedProps = ButtonPrimitiveProps &
      * The in-flight state of an async action. Stamps `data-pending` and `aria-busy`, blocks
      * activation (effective disabled is `disabled || isPending`) and renders the disabled
      * treatment, but keeps the button in the focus order like `focusableWhenDisabled`, so a
-     * keyboard user who activated it is still on it when the result arrives. Shows a spinning
-     * `SpinnerGap` in the leading icon position and hides any direct SVG child meanwhile, so the
-     * spinner takes an icon's place and a hand-placed spinner is not doubled. An explicit
+     * keyboard user who activated it is still on it when the result arrives. Shows the
+     * `pendingIndicator` in the leading icon position meanwhile. An explicit
      * `focusableWhenDisabled={false}` restores the native `disabled` attribute while pending.
      * `aria-busy` announces nothing by itself: say what is happening through the label
-     * ("Saving") or a `role="status"` region.
+     * ("Saving") or a `role="status"` region outside the button.
      */
     isPending?: boolean;
+    /**
+     * What the button shows while pending. Omitted: a spinning `SpinnerGap` in the leading icon
+     * position, and the button's own leading and bare SVG children hide so the spinner takes
+     * their place (a trailing `data-icon="inline-end"` icon stays). A node: rendered in that same
+     * place instead of the spinner, as a decorative `aria-hidden` slot; animate it yourself. `null`
+     * or `false`: no indicator and nothing hidden, so the call site owns the pending markup, for
+     * example a brand button that keeps its logo and centres its own spinner over it.
+     */
+    pendingIndicator?: ReactNode;
     /** Pixels the hit rect is inflated on every side when predicting pointer intent. */
     predictionZoneSize?: number;
     /**
@@ -92,6 +100,7 @@ export function Button({
   isVisuallyDisabled = false,
   disabled = false,
   isPending = false,
+  pendingIndicator,
   predictionZoneSize = 30,
   onIntent,
   onMouseDown,
@@ -105,11 +114,17 @@ export function Button({
     enabled: !disabled && !isPending && !isVisuallyDisabled && onIntent !== undefined,
   });
   const mergedRef = useMergedRefs(ref, onIntent === undefined ? null : predictedRef);
+  // `null` and `false` opt out of the indicator and of the icon swap; every other value, `0`
+  // included, is a node to show, and `undefined` is the default spinner.
+  const showsIndicator = isPending && pendingIndicator !== null && pendingIndicator !== false;
 
   return (
     <ButtonPrimitive
       data-slot="button"
       data-pending={isPending || undefined}
+      // Present only while an indicator renders: the recipe's icon swap keys off it, so a
+      // `null` indicator hides nothing.
+      data-pending-indicator={showsIndicator || undefined}
       disabled={disabled || isPending}
       // A pending button stays in the focus order and announces busy: Base UI then drops the
       // native `disabled`, stamps `aria-disabled` and `data-disabled` and still cancels click
@@ -137,16 +152,20 @@ export function Button({
       // such as aria-disabled, type and role.
       {...definedProps(props)}
       ref={mergedRef}>
-      {isPending ? (
-        // Decorative: the state is announced through aria-busy and the label. The spinner is a
+      {showsIndicator ? (
+        // Decorative: the state is announced through aria-busy and the label. The slot is a
         // leading icon, so the icon edge tightens the start inset as for any inline-start child,
-        // and the recipe hides the other direct SVG children while it shows.
-        <SpinnerGap
+        // and the recipe hides the button's own leading and bare SVG children while it shows. A
+        // consumer's node rides in the same slot, so it gets the same place and the same
+        // aria-hidden; only the default spinner animates. `null` never reaches this branch, so
+        // the coalescing only fills in `undefined`.
+        <span
           data-slot="button-pending-indicator"
           data-icon="inline-start"
           aria-hidden
-          className="animate-spin"
-        />
+          className="pointer-events-none inline-flex shrink-0 items-center justify-center">
+          {pendingIndicator ?? <SpinnerGap className="animate-spin" />}
+        </span>
       ) : null}
       {children}
     </ButtonPrimitive>
