@@ -199,9 +199,31 @@ jobs:
   # land its stable bump and consume its changesets, and the skipped release job would never
   # publish that version.
   # Both merge jobs gate publishing: a commit whose cold browser run failed must not ship a canary.
-  release:
-    needs: [checks, browser]
+  # A `no-canary` label on the merged PR skips publication; the next published canary still
+  # carries the commit. The bot release PR is exempt, because skipping its merge would land the
+  # stable bump without publishing it.
+  canary-opt-out:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.RELEASE_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    outputs:
+      skip: ${{ steps.labels.outputs.skip }}
+    steps:
+      # A push event carries no labels, so read them from the PR that merged as this commit. A
+      # failed lookup fails the job, which skips publication visibly instead of guessing.
+      - name: Read the merged PR's labels
+        id: labels
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          skip="$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" --jq '[.[] | select(.merge_commit_sha == $ENV.GITHUB_SHA and .head.ref != "changeset-release/main") | .labels[].name] | any(. == "no-canary")')"
+          echo "skip=$skip" >> "$GITHUB_OUTPUT"
+
+  release:
+    needs: [checks, browser, canary-opt-out]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.RELEASE_ENABLED == 'true' && needs.canary-opt-out.outputs.skip != 'true'
     permissions:
       contents: write
       pull-requests: read

@@ -1,7 +1,11 @@
+import { spawnSync } from "node:child_process";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { asRecord, asString } from "./json-object.mjs";
-import { readWorkflow, requiredJobSteps, requiredRunStep, requiredUsesStep } from "./workflow.mjs";
+import { jobSteps, readWorkflow, requiredJobSteps, requiredRunStep, requiredUsesStep } from "./workflow.mjs";
 
 /** Both release jobs run only for a push to main once publishing is activated. */
 const activatedPush =
@@ -145,8 +149,12 @@ describe("merge workflow", () => {
   it("publishes and prepares the version PR only from an activated push to main", () => {
     const jobs = asRecord(workflow.jobs, "merge jobs");
     const release = asRecord(jobs.release, "release job");
-    expect(release.needs).toEqual(["checks", "browser"]);
-    expect(release.if).toBe(activatedPush);
+    expect(release.needs).toEqual(["checks", "browser", "canary-opt-out"]);
+    expect(release.if).toBe(`${activatedPush} && needs.canary-opt-out.outputs.skip != 'true'`);
+    const optOut = asRecord(jobs["canary-opt-out"], "canary-opt-out job");
+    expect(optOut.if).toBe(activatedPush);
+    expect(optOut.permissions).toEqual({ "pull-requests": "read" });
+    expect(optOut.outputs).toEqual({ skip: "${{ steps.labels.outputs.skip }}" });
     expect(release.uses).toBe("./.github/workflows/publish-release.yml");
     // The called workflow cannot hold more than the caller grants; the engine records its
     // publication with `contents: write` and reads the release PR with `pull-requests: read`.
@@ -168,4 +176,99 @@ describe("merge workflow", () => {
       actions: "write",
     });
   });
+
+  // The commit-pulls API lists every PR containing the commit; only the one merged as it counts.
+  const sha = "a".repeat(40);
+  /**
+   * A PR merged as `sha`, shaped like the commit-pulls API response.
+   * @param {string[]} labels
+   * @param {string} [head]
+   */
+  const merged = (labels, head = "feature") => ({
+    merge_commit_sha: sha,
+    head: { ref: head },
+    labels: labels.map((name) => ({ name })),
+  });
+  it.each([
+    {
+      name: "skips a canary for a merged PR labelled no-canary",
+      pulls: [merged(["no-changeset", "no-canary"])],
+      skip: "true",
+    },
+    { name: "publishes for a merged PR without the label", pulls: [merged(["no-changeset"])], skip: "false" },
+    { name: "publishes for a direct push with no PR", pulls: [], skip: "false" },
+    {
+      name: "ignores the label on an open PR that also contains the commit",
+      pulls: [merged([]), { ...merged(["no-canary"]), merge_commit_sha: "b".repeat(40) }],
+      skip: "false",
+    },
+    {
+      name: "never skips the stable release PR's merge",
+      pulls: [merged(["no-canary"], "changeset-release/main")],
+      skip: "false",
+    },
+  ])("$name", ({ pulls, skip }) => {
+    const result = runOptOut(JSON.stringify(pulls), 0);
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.args).toMatch(/^api repos\/elmeragroup\/fuse\/commits\/a{40}\/pulls --jq /);
+    expect(result.outputs).toEqual([`skip=${skip}`]);
+  });
+
+  it("fails the opt-out job, and so skips publication, when GitHub cannot list the PRs", () => {
+    const result = runOptOut("[]", 1);
+    expect(result.status).toBe(1);
+    expect(result.outputs).toEqual([]);
+  });
+
+  /**
+   * Executes the opt-out job's actual shell step with only GitHub's transport replaced: the fake
+   * `gh` applies the step's `--jq` filter to the given API response, as `gh api --jq` does.
+   * @param {string} response
+   * @param {number} status
+   */
+  function runOptOut(response, status) {
+    const step = jobSteps(workflow, "canary-opt-out").find((candidate) => candidate.id === "labels");
+    if (step === undefined) throw new Error("canary-opt-out job does not read the PR labels");
+    expect(step.env).toEqual({ GH_TOKEN: "${{ github.token }}" });
+    const scratch = mkdtempSync(join(tmpdir(), "elmera-merge-workflow-"));
+    const output = join(scratch, "output");
+    const args = join(scratch, "gh-args");
+    try {
+      const result = spawnSync(
+        "bash",
+        [
+          "-e",
+          "-c",
+          `gh() {
+            printf '%s\\n' "$*" > "$TEST_GH_ARGS"
+            [ "$TEST_GH_STATUS" = 0 ] || return "$TEST_GH_STATUS"
+            printf '%s' "$TEST_RESPONSE" | jq -r "\${@: -1}"
+          }
+          ${asString(step.run, "opt-out run")}`,
+        ],
+        {
+          encoding: "utf8",
+          timeout: 5_000,
+          env: {
+            ...process.env,
+            GITHUB_REPOSITORY: "elmeragroup/fuse",
+            GITHUB_SHA: sha,
+            GITHUB_OUTPUT: output,
+            TEST_GH_ARGS: args,
+            TEST_RESPONSE: response,
+            TEST_GH_STATUS: String(status),
+          },
+        }
+      );
+      expect(result.error).toBeUndefined();
+      return {
+        status: result.status,
+        stderr: result.stderr,
+        args: readFileSync(args, "utf8").trim(),
+        outputs: existsSync(output) ? readFileSync(output, "utf8").split("\n").filter(Boolean) : [],
+      };
+    } finally {
+      rmSync(scratch, { recursive: true, force: true });
+    }
+  }
 });
