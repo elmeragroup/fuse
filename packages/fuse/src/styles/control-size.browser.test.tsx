@@ -291,6 +291,108 @@ describe("control size: label and min-square fits", () => {
   );
 });
 
+describe("control size: wrap fit", () => {
+  /** The box a wrapping label is constrained to. Inline styles, because the standalone stylesheet compiles only the library's own classes. */
+  const NARROW = { width: 176 } as const;
+  const LONG_LABEL = "Send the signed contract to my email address and continue to the next step";
+
+  it.each(DENSITIES)(
+    "measures a one-line wrapping label like the fixed label, for every size, at %s",
+    (density) => {
+      stampDensity(density);
+      renderThemed(
+        <>
+          {(["xs", "sm", "md", "lg"] as const).map((size) => (
+            <div key={size}>
+              <Button size={BUTTON_LABEL_SIZES[size]} aria-label={`fixed ${size}`}>
+                {iconChildren("start")}
+              </Button>
+              <Button size={BUTTON_LABEL_SIZES[size]} wrap aria-label={`wrap ${size}`}>
+                {iconChildren("start")}
+              </Button>
+            </div>
+          ))}
+        </>
+      );
+
+      for (const size of ["xs", "sm", "md", "lg"] as const) {
+        const expected = expectedMetrics(size, density);
+        const fixed = measure("button", `fixed ${size}`);
+        const wrap = measure("button", `wrap ${size}`);
+        expect(wrap.height, `${density} ${size} height`).toBe(expected.height);
+        expect(wrap.height, `${density} ${size} matches the fixed label`).toBe(fixed.height);
+        expect(wrap.width, `${density} ${size} width`).toBe(fixed.width);
+        expect(wrap.minHeight, `${density} ${size} min-height`).toBe(`${String(expected.height)}px`);
+        expect(wrap.paddingStart, `${density} ${size} icon edge`).toBe(expected.pxIcon);
+        expect(wrap.paddingEnd, `${density} ${size} far edge`).toBe(expected.px);
+        expect(px(wrap.font), `${density} ${size} font`).toBe(expected.font);
+        expect(px(wrap.leading), `${density} ${size} leading`).toBe(expected.leading);
+      }
+    }
+  );
+
+  it.each(DENSITIES)("grows a wrapped label one line height per line at %s", (density) => {
+    stampDensity(density);
+    renderThemed(
+      <>
+        {(["xs", "sm", "md", "lg"] as const).map((size) => (
+          <div key={size} style={NARROW}>
+            <Button size={BUTTON_LABEL_SIZES[size]} wrap aria-label={`two lines ${size}`}>
+              First line
+              <br />
+              Second line
+            </Button>
+            <Button size={BUTTON_LABEL_SIZES[size]} wrap aria-label={`long ${size}`}>
+              {LONG_LABEL}
+            </Button>
+            <Button size={BUTTON_LABEL_SIZES[size]} aria-label={`fixed long ${size}`}>
+              {LONG_LABEL}
+            </Button>
+          </div>
+        ))}
+      </>
+    );
+
+    for (const size of ["xs", "sm", "md", "lg"] as const) {
+      const expected = expectedMetrics(size, density);
+      // Two forced lines: the floor plus exactly one line, so the inset math holds.
+      const twoLines = measure("button", `two lines ${size}`);
+      expect(twoLines.height, `${density} ${size} two lines`).toBe(expected.height + expected.leading);
+
+      // A long label in a narrow box breaks on its own and grows by whole lines.
+      const long = roleNamed("button", `long ${size}`);
+      const longBox = measureElement(long);
+      expect(longBox.width, `${density} ${size} long width`).toBeLessThanOrEqual(NARROW.width);
+      expect(longBox.height, `${density} ${size} long height`).toBeGreaterThan(expected.height);
+      expect((longBox.height - expected.height) % expected.leading, `${density} ${size} whole lines`).toBe(0);
+      expect(long.scrollWidth, `${density} ${size} no overflow`).toBeLessThanOrEqual(long.clientWidth);
+
+      // Without wrap the same label keeps the fixed height and overflows the box instead.
+      const fixed = roleNamed("button", `fixed long ${size}`);
+      expect(measureElement(fixed).height, `${density} ${size} fixed height`).toBe(expected.height);
+      expect(fixed.getBoundingClientRect().width, `${density} ${size} fixed overflow`).toBeGreaterThan(
+        NARROW.width
+      );
+    }
+  });
+
+  it("ignores wrap on the squares", () => {
+    stampDensity("comfortable");
+    renderThemed(
+      <div style={NARROW}>
+        <Button size="icon" aria-label="square" />
+        <Button size="icon" aria-label="square wrap" wrap />
+      </div>
+    );
+    const side = expectedMetrics("md", "comfortable").height;
+    for (const name of ["square", "square wrap"]) {
+      const box = measure("button", name);
+      expect(box.height, `${name} height`).toBe(side);
+      expect(box.width, `${name} width`).toBe(side);
+    }
+  });
+});
+
 describe("control size: square fit", () => {
   const BUTTON_SQUARES = [
     ["icon-xs", "xs"],

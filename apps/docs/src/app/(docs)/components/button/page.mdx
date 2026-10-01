@@ -5,6 +5,7 @@ lede: >
 
 import { ButtonVariantMatrix } from "./demos/button-variant-matrix";
 import { ButtonSizes } from "./demos/button-sizes";
+import { ButtonWrap } from "./demos/button-wrap";
 import { ButtonPending } from "./demos/button-pending";
 import { ButtonVisuallyDisabled } from "./demos/button-visually-disabled";
 import { ButtonPredictiveIntent } from "./demos/button-predictive-intent";
@@ -21,6 +22,10 @@ export const metadata = componentMetadata("button");
 
 <Demo slug="button" id="sizes" title="Sizes" file="button-sizes.tsx">
   <ButtonSizes />
+</Demo>
+
+<Demo slug="button" id="wrap" title="Wrapping labels" file="button-wrap.tsx">
+  <ButtonWrap />
 </Demo>
 
 <Demo slug="button" id="pending" title="Pending" file="button-pending.tsx">
