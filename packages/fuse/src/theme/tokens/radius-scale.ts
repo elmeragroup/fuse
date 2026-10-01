@@ -1,6 +1,6 @@
 /**
  * The radius rungs `fuse.css` derives from the theme's `--radius` and `--radius-step` in its
- * `@theme` block, such as `--radius-md: calc(var(--radius) - var(--radius-step))`. The CSS
+ * `@theme` block, such as `--radius-md: calc(var(--radius) - var(--radius-step, 0px))`. The CSS
  * keeps the arithmetic. Themes set only `--radius`, and the variant sets `--radius-step`.
  * The resolved theme catalog reads the step counts here to compute each rung in px for
  * tooling without `calc()`, and `radius-scale-css.test.ts` requires `fuse.css` to declare
@@ -34,6 +34,13 @@ type RadiusRung = {
 };
 
 /**
+ * The step length every stepped rung reads. The fallback is the library's own root default,
+ * so a host that imports `fuse.css` without `themes.css` and keeps its own `--radius` gets
+ * every rung at that radius instead of an invalid `border-radius`.
+ */
+export const RADIUS_STEP_CSS = "var(--radius-step, 0px)";
+
+/**
  * The CSS a rung `steps` lengths from `--radius` declares, written the way `fuse.css` writes
  * it: no `calc()` at zero, and no count for a single step.
  */
@@ -42,7 +49,7 @@ function rungCss(steps: number): string {
     return "var(--radius)";
   }
   const count = Math.abs(steps);
-  const stepLength = count === 1 ? "var(--radius-step)" : `${String(count)} * var(--radius-step)`;
+  const stepLength = count === 1 ? RADIUS_STEP_CSS : `${String(count)} * ${RADIUS_STEP_CSS}`;
   return `calc(var(--radius) ${steps < 0 ? "-" : "+"} ${stepLength})`;
 }
 
