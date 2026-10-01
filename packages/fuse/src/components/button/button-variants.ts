@@ -27,9 +27,13 @@ import { selfFocusRingClass } from "../../styles/utils";
 // Accordion trigger and the selection labels. The state face's `disabled:`,
 // `data-disabled:` and `aria-disabled:` cursors are variants, so they sort after this
 // plain utility and a disabled button keeps `not-allowed`.
+// While pending, Button renders its own spinner first and the recipe hides every other
+// direct SVG child, so the spinner takes a leading icon's place, an icon-only square shows
+// the spinner alone, and a spinner a consumer still places by hand is not doubled. A
+// non-SVG child, such as text, stays.
 export const buttonVariants = tv({
   base: cn(
-    "group/button font-medium box-border inline-flex shrink-0 cursor-pointer items-center justify-center rounded-(--radius-button) border border-transparent bg-clip-padding p-0 whitespace-nowrap transition-[color,background-color,border-color,box-shadow,translate,opacity] select-none in-data-[slot=button-group]:rounded-md enabled-active:not-aria-[haspopup]:translate-y-px [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+    "group/button font-medium box-border inline-flex shrink-0 cursor-pointer items-center justify-center rounded-(--radius-button) border border-transparent bg-clip-padding p-0 whitespace-nowrap transition-[color,background-color,border-color,box-shadow,translate,opacity] select-none in-data-[slot=button-group]:rounded-md enabled-active:not-aria-[haspopup]:translate-y-px [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-pending:[&>svg:not([data-slot=button-pending-indicator])]:hidden",
     selfFocusRingClass,
     nativeStateFaceClass,
     dataStateFaceClass

@@ -45,6 +45,18 @@ SVGR often arrive that way, because SVGO's default `removeViewBox` strips the at
   <ButtonPending />
 </Demo>
 
+<Prose>
+
+`isPending` blocks the button, dims it, stamps `aria-busy` and shows a spinner in the leading icon
+position; the button's own icons hide meanwhile so the spinner takes their place. The button stays in
+the focus order, so a keyboard user who activated it is still on it when the result arrives. Pass
+`focusableWhenDisabled={false}` to take it out of the focus order instead.
+
+`aria-busy` alone announces nothing. Say what is happening by changing the label ("Saving") or through
+a `role="status"` region near the button, and put the outcome there when the action settles.
+
+</Prose>
+
 <Demo slug="button" id="visually-disabled" title="Visually disabled" file="button-visually-disabled.tsx">
   <ButtonVisuallyDisabled />
 </Demo>

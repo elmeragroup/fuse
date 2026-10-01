@@ -230,7 +230,10 @@ describe("AlertDialog", () => {
     const action = page.getByRole("button", { name: ACTION, exact: true }).element();
     const cancel = page.getByRole("button", { name: "Cancel", exact: true }).element();
     expect(action.hasAttribute("data-pending")).toBe(pending);
-    await expect.element(page.getByRole("button", { name: ACTION, exact: true })).toBeDisabled();
+    // Pending keeps the action focusable and blocks it through aria-disabled; a plain
+    // disabled action is natively disabled, which needs no aria-disabled.
+    expect(action.hasAttribute("disabled")).toBe(!pending);
+    expect(action.getAttribute("aria-disabled")).toBe(pending ? "true" : null);
     expect(cancel.hasAttribute("disabled")).toBe(false);
   });
 

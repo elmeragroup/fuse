@@ -13,6 +13,7 @@ import {
   effectiveOpacity,
   fkasPrivate,
   computedOklch,
+  px,
   renderThemed,
   roleNamed,
 } from "../../../test/themed-browser-render";
@@ -71,7 +72,10 @@ describe("Button", () => {
     const pending = roleNamed("button", "Saving");
 
     await expect.element(page.getByRole("button", { name: "Disabled" })).toBeDisabled();
-    await expect.element(page.getByRole("button", { name: "Saving" })).toBeDisabled();
+    // A pending button is unavailable to assistive tech and blocked, but not natively
+    // disabled: it stays in the focus order (see the pending suite below).
+    expect(pending.hasAttribute("disabled")).toBe(false);
+    expect(pending.getAttribute("aria-disabled")).toBe("true");
     expect(pending.hasAttribute("data-pending")).toBe(true);
     expect(disabled.hasAttribute("data-pending")).toBe(false);
 
@@ -84,6 +88,110 @@ describe("Button", () => {
 
     expect(onDisabledClick).not.toHaveBeenCalled();
     expect(onPendingClick).not.toHaveBeenCalled();
+  });
+
+  describe("pending", () => {
+    it("keeps focus on the button that started the action and announces busy", async () => {
+      function Fixture({ pending }: { pending: boolean }) {
+        return (
+          <Button isPending={pending} className="transition-none" onClick={() => undefined}>
+            Save
+          </Button>
+        );
+      }
+      const { rerender } = renderThemed(<Fixture pending={false} />);
+      const button = roleNamed("button", "Save");
+      button.focus();
+      expect(document.activeElement).toBe(button);
+
+      rerender(<Fixture pending />);
+      // The same element: no native `disabled`, so focus never fell to <body>.
+      expect(document.activeElement).toBe(button);
+      expect(button.hasAttribute("disabled")).toBe(false);
+      expect(button.tabIndex).toBe(0);
+      expect(button.getAttribute("aria-busy")).toBe("true");
+      expect(button.getAttribute("aria-disabled")).toBe("true");
+      // The disabled treatment still paints once.
+      expect(effectiveOpacity(button)).toBe(0.5);
+      expect(getComputedStyle(button).cursor).toBe("not-allowed");
+
+      // Tab still leaves it, so a user is not trapped on a busy control.
+      await userEvent.keyboard("{Tab}");
+      expect(document.activeElement).not.toBe(button);
+
+      rerender(<Fixture pending={false} />);
+      expect(button.hasAttribute("aria-busy")).toBe(false);
+      expect(button.hasAttribute("aria-disabled")).toBe(false);
+      expect(button.hasAttribute("data-pending")).toBe(false);
+    });
+
+    it("restores the native disabled attribute when a consumer opts out of staying focusable", async () => {
+      renderThemed(
+        <Button isPending focusableWhenDisabled={false}>
+          Saving
+        </Button>
+      );
+      await expect.element(page.getByRole("button", { name: "Saving" })).toBeDisabled();
+      expect(roleNamed("button", "Saving").hasAttribute("aria-busy")).toBe(true);
+    });
+
+    it("shows one spinning indicator in the leading icon position and hides the button's own icons", () => {
+      renderThemed(
+        <>
+          <Button isPending>
+            <svg data-testid="own-icon" data-icon="inline-start" aria-hidden viewBox="0 0 1 1" />
+            Saving
+          </Button>
+          <Button isPending size="icon" aria-label="Refreshing">
+            <svg data-testid="square-icon" aria-hidden viewBox="0 0 1 1" />
+          </Button>
+          <Button>
+            <svg data-testid="resting-icon" data-icon="inline-start" aria-hidden viewBox="0 0 1 1" />
+            Save
+          </Button>
+        </>
+      );
+
+      const saving = roleNamed("button", "Saving");
+      // DOM audit: the pending indicator is decorative (aria-hidden), so it has no role; locate
+      // it by its mandated slot, which is also the hook the recipe keeps visible.
+      const spinners = saving.querySelectorAll("svg[data-slot=button-pending-indicator]");
+      expect(spinners).toHaveLength(1);
+      const spinner = spinners[0];
+      if (!(spinner instanceof SVGElement)) {
+        throw new Error("expected an SVG pending indicator");
+      }
+      // Decorative, leading, spinning, and sized by the recipe's 16px icon rule.
+      expect(spinner.getAttribute("aria-hidden")).toBe("true");
+      expect(spinner.getAttribute("data-icon")).toBe("inline-start");
+      expect(saving.firstElementChild).toBe(spinner);
+      expect(getComputedStyle(spinner).animationName).toBe("spin");
+      expect(getComputedStyle(spinner).width).toBe("16px");
+      expect(getComputedStyle(spinner).display).not.toBe("none");
+      // The leading edge takes the icon inset, as for any inline-start child.
+      const edge = getComputedStyle(saving);
+      expect(px(edge.paddingInlineStart)).toBeLessThan(px(edge.paddingInlineEnd));
+
+      // The button's own icon makes way for the spinner; the label stays.
+      const ownIcon = saving.querySelector("[data-testid=own-icon]");
+      expect(ownIcon === null ? null : getComputedStyle(ownIcon).display).toBe("none");
+      expect(saving.textContent).toContain("Saving");
+
+      // A square shows the spinner alone and keeps its square.
+      // DOM audit: the indicator has no role, so the square's one spinner is counted by slot.
+      const square = roleNamed("button", "Refreshing");
+      const squareIcon = square.querySelector("[data-testid=square-icon]");
+      expect(squareIcon === null ? null : getComputedStyle(squareIcon).display).toBe("none");
+      expect(square.querySelectorAll("svg[data-slot=button-pending-indicator]")).toHaveLength(1);
+      expect(getComputedStyle(square).width).toBe(getComputedStyle(square).height);
+
+      // At rest nothing is hidden and no indicator renders.
+      // DOM audit: absence of the role-less indicator can only be read off its slot.
+      const resting = roleNamed("button", "Save");
+      expect(resting.querySelector("svg[data-slot=button-pending-indicator]")).toBeNull();
+      const restingIcon = resting.querySelector("[data-testid=resting-icon]");
+      expect(restingIcon === null ? null : getComputedStyle(restingIcon).display).not.toBe("none");
+    });
   });
 
   it("keeps a focusable disabled button hoverable, so a tooltip on it still opens", async () => {

@@ -7,6 +7,7 @@ import type { VariantProps } from "tailwind-variants";
 
 import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { usePredictedEvents } from "../../hooks/use-predicted-events";
+import { SpinnerGap } from "../../icons/generated/spinner-gap";
 import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { buttonVariants } from "./button-variants";
@@ -37,8 +38,15 @@ type ButtonSharedProps = ButtonPrimitiveProps &
      */
     isVisuallyDisabled?: boolean;
     /**
-     * Disables the element and stamps `data-pending`, blocking activation entirely.
-     * Effective disabled is `disabled || isPending`.
+     * The in-flight state of an async action. Stamps `data-pending` and `aria-busy`, blocks
+     * activation (effective disabled is `disabled || isPending`) and renders the disabled
+     * treatment, but keeps the button in the focus order like `focusableWhenDisabled`, so a
+     * keyboard user who activated it is still on it when the result arrives. Shows a spinning
+     * `SpinnerGap` in the leading icon position and hides any direct SVG child meanwhile, so the
+     * spinner takes an icon's place and a hand-placed spinner is not doubled. An explicit
+     * `focusableWhenDisabled={false}` restores the native `disabled` attribute while pending.
+     * `aria-busy` announces nothing by itself: say what is happening through the label
+     * ("Saving") or a `role="status"` region.
      */
     isPending?: boolean;
     /** Pixels the hit rect is inflated on every side when predicting pointer intent. */
@@ -87,6 +95,7 @@ export function Button({
   predictionZoneSize = 30,
   onIntent,
   onMouseDown,
+  children,
   ref,
   ...props
 }: ButtonProps): ReactElement {
@@ -102,6 +111,15 @@ export function Button({
       data-slot="button"
       data-pending={isPending || undefined}
       disabled={disabled || isPending}
+      // A pending button stays in the focus order and announces busy: Base UI then drops the
+      // native `disabled`, stamps `aria-disabled` and `data-disabled` and still cancels click
+      // and keyboard activation. Both keys are omitted, not undefined, when not pending, so a
+      // consumer's own `focusableWhenDisabled` for a plain `disabled` button flows through the
+      // later {...definedProps(props)} spread, where an explicit value also wins while pending.
+      {...definedProps({
+        focusableWhenDisabled: isPending || undefined,
+        "aria-busy": isPending || undefined,
+      })}
       // Announced as unavailable without being disabled: the button still activates so
       // the flow that explains itself can run. An explicit consumer value wins through the
       // later {...definedProps(props)} spread. When not visually disabled the key is omitted,
@@ -118,8 +136,20 @@ export function Button({
       // Filtered so a forwarded undefined cannot erase what Base UI's Button sets itself,
       // such as aria-disabled, type and role.
       {...definedProps(props)}
-      ref={mergedRef}
-    />
+      ref={mergedRef}>
+      {isPending ? (
+        // Decorative: the state is announced through aria-busy and the label. The spinner is a
+        // leading icon, so the icon edge tightens the start inset as for any inline-start child,
+        // and the recipe hides the other direct SVG children while it shows.
+        <SpinnerGap
+          data-slot="button-pending-indicator"
+          data-icon="inline-start"
+          aria-hidden
+          className="animate-spin"
+        />
+      ) : null}
+      {children}
+    </ButtonPrimitive>
   );
 }
 

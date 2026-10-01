@@ -196,11 +196,12 @@ describe("ConfirmButton", () => {
   });
 
   it.each([
-    ["disabled", { disabled: true }, null],
-    ["isPending", { isPending: true }, "true"],
+    ["disabled", { disabled: true }, null, true],
+    // Pending keeps the button focusable, so it is blocked through aria-disabled instead.
+    ["isPending", { isPending: true }, "true", false],
   ] as const)(
     "disarms when %s turns on while armed, and is resting, not confirming, once it clears",
-    async (_prop, inert, dataPending) => {
+    async (_prop, inert, dataPending, nativelyDisabled) => {
       const onConfirm = vi.fn();
 
       function Fixture({ inert: inertProps }: { inert?: { disabled?: boolean; isPending?: boolean } }) {
@@ -217,7 +218,8 @@ describe("ConfirmButton", () => {
 
       rerender(<Fixture inert={inert} />);
       const blocked = buttonNamed("Delete");
-      expect(blocked).toBeDisabled();
+      expect(blocked.hasAttribute("disabled")).toBe(nativelyDisabled);
+      expect(blocked.getAttribute("aria-disabled")).toBe(nativelyDisabled ? null : "true");
       expect(blocked.getAttribute("data-pending")).toBe(dataPending);
       expect(blocked.hasAttribute("data-armed")).toBe(false);
 
