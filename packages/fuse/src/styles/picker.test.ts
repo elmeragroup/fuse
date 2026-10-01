@@ -60,8 +60,8 @@ describe("pickerVariants shared slots", () => {
     for (const range of [false, true]) {
       const input = pickerVariants({ range }).input();
       expect(input).toContain("px-(--control-px-md)");
-      expect(input).toContain("[font-size:var(--control-text)]");
-      expect(input).toContain("[line-height:var(--control-leading)]");
+      expect(input).toContain("text-(length:--control-text)");
+      expect(input).toContain("leading-(--control-leading)");
       expect(input).not.toContain("py-");
       expect(input).not.toContain("text-sm");
       expect(input).not.toContain("px-2");
