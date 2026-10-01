@@ -506,7 +506,7 @@ function PressableTable({
   const table = useFuseTable({ columns, data: ORDERS.slice(0, 1) });
   return (
     <table.AppTable>
-      <table.Content<Order>>
+      <table.Content>
         {(row) => (
           <table.Row
             row={row}

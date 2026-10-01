@@ -4,12 +4,15 @@ import type { ComponentType, ReactElement } from "react";
 
 import { createTableHook } from "@tanstack/react-table";
 import type {
+  AppReactTable,
   Column,
   CreateTableHookOptions,
   CreateTableHookResult,
   Row,
   RowData,
   TableFeatures,
+  TableOptions,
+  TableState,
 } from "@tanstack/react-table";
 
 import { fuseTableContexts } from "./data-table-contexts";
@@ -64,16 +67,21 @@ type WithFeature<TFeatures, TFeature extends string, TPart> = TFeature extends k
   : NoComponents;
 
 /**
- * The table parts Fuse registers on the table `useFuseTable` returns. `Pagination` and
- * `ColumnToggle` appear only with their feature.
+ * The table parts Fuse registers on the table `useFuseTable` returns. One registry serves every
+ * table the hook creates, so each part is generic over the row data and defaults it to `TData`, the
+ * row data of the table it is read from: `table.Content`'s row takeover receives `Row<TFeatures,
+ * TData>`, while `table.Row` takes any row it is given. `Pagination` and `ColumnToggle` appear only
+ * with their feature.
  */
-export type FuseTableComponents<TFeatures extends TableFeatures> = {
+export type FuseTableComponents<TFeatures extends TableFeatures, TData extends RowData = RowData> = {
   /** The whole table, rendered through the registered header and cell wrappers. */
-  Content: <TData extends RowData = RowData>(
-    props: RegisteredContentProps<Row<TFeatures, TData>>
+  Content: <TRowData extends RowData = TData>(
+    props: RegisteredContentProps<Row<TFeatures, TRowData>>
   ) => ReactElement;
   /** One row. It renders inside `Content`'s row takeover, which keeps it current. */
-  Row: <TData extends RowData = RowData>(props: RegisteredRowProps<Row<TFeatures, TData>>) => ReactElement;
+  Row: <TRowData extends RowData = TData>(
+    props: RegisteredRowProps<Row<TFeatures, TRowData>>
+  ) => ReactElement;
 } & WithFeature<
   TFeatures,
   "rowPaginationFeature",
@@ -87,8 +95,8 @@ export type FuseTableComponents<TFeatures extends TableFeatures> = {
     "columnVisibilityFeature",
     {
       /** The column visibility menu. */
-      ColumnToggle: <TData extends RowData = RowData>(
-        props: RegisteredColumnToggleProps<Column<TFeatures, TData, unknown>>
+      ColumnToggle: <TRowData extends RowData = TData>(
+        props: RegisteredColumnToggleProps<Column<TFeatures, TRowData, unknown>>
       ) => ReactElement;
     }
   >;
@@ -135,18 +143,61 @@ export type CreateFuseTableHookOptions<
   readonly headerContext?: never;
 };
 
-/** What `createFuseTableHook` returns: `createTableHook`'s result over the merged registries. */
+/** A table from `useAppTable` or `useTableContext`, with Fuse's parts defaulted to its row data. */
+type FuseAppTable<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+  TSelected,
+  TTableComponents extends TableRegistry<TFeatures>,
+  TCellComponents extends ComponentRegistry,
+  THeaderComponents extends ComponentRegistry,
+> = AppReactTable<
+  TFeatures,
+  TData,
+  TSelected,
+  Merge<FuseTableComponents<TFeatures, TData>, TTableComponents>,
+  Merge<FuseCellComponents, TCellComponents>,
+  Merge<FuseHeaderComponents<TFeatures>, THeaderComponents>
+>;
+
+/**
+ * What `createFuseTableHook` returns: `createTableHook`'s result over the merged registries.
+ * `useAppTable` and `useTableContext` default Fuse's table parts to the table's row data, which
+ * TanStack's result cannot express: it types the registry once, for every table.
+ */
 export type CreateFuseTableHookResult<
   TFeatures extends TableFeatures,
   TTableComponents extends TableRegistry<TFeatures>,
   TCellComponents extends ComponentRegistry,
   THeaderComponents extends ComponentRegistry,
-> = CreateTableHookResult<
-  TFeatures,
-  Merge<FuseTableComponents<TFeatures>, TTableComponents>,
-  Merge<FuseCellComponents, TCellComponents>,
-  Merge<FuseHeaderComponents<TFeatures>, THeaderComponents>
->;
+> = Omit<
+  CreateTableHookResult<
+    TFeatures,
+    Merge<FuseTableComponents<TFeatures>, TTableComponents>,
+    Merge<FuseCellComponents, TCellComponents>,
+    Merge<FuseHeaderComponents<TFeatures>, THeaderComponents>
+  >,
+  "useAppTable" | "useTableContext"
+> & {
+  /** `createTableHook`'s `useAppTable`, with Fuse's table parts defaulted to the table's row data. */
+  useAppTable: <TData extends RowData, TSelected = TableState<TFeatures>>(
+    tableOptions: Omit<TableOptions<TFeatures, TData>, "features">,
+    selector?: (state: TableState<TFeatures>) => TSelected
+  ) => FuseAppTable<TFeatures, TData, TSelected, TTableComponents, TCellComponents, THeaderComponents>;
+  /**
+   * `createTableHook`'s `useTableContext`, with Fuse's table parts defaulted to `TData`. Pass the
+   * row data type to type `table.Content`'s row takeover in a component that reads the table from
+   * context.
+   */
+  useTableContext: <TData extends RowData = RowData, TSelected = TableState<TFeatures>>() => FuseAppTable<
+    TFeatures,
+    TData,
+    TSelected,
+    TTableComponents,
+    TCellComponents,
+    THeaderComponents
+  >;
+};
 
 /**
  * Erased to the registry constraint: the parts are typed over every stock feature, which TypeScript

@@ -44,7 +44,7 @@ export function DataTableSelection() {
   return (
     <table.AppTable>
       <div className="flex flex-col gap-4">
-        <table.Content<Customer> aria-label="Customers">
+        <table.Content aria-label="Customers">
           {(row) => (
             <table.Row
               row={row}

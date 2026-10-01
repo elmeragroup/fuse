@@ -13,7 +13,7 @@ import {
   tableFeatures,
   useTable,
 } from "@tanstack/react-table";
-import type { Row } from "@tanstack/react-table";
+import type { Column, Row } from "@tanstack/react-table";
 import { expectTypeOf, test } from "vitest";
 
 import { actionsColumn, createFuseTableHook, DataTable, selectColumn } from "@elmeragroup/fuse/data-table";
@@ -148,6 +148,69 @@ test("feature-conditional registered table parts exist only with their feature",
   }
 
   expectTypeOf(BareToggle).toBeFunction();
+});
+
+test("the registered table parts default to the row data of the table they are read from", () => {
+  type OrderTable = ReturnType<typeof full.useTableContext<Order>>;
+
+  function customerNames(table: OrderTable): string[] {
+    return table.getRowModel().rows.map((row) => row.original.customer);
+  }
+
+  function OrdersTable(): ReactElement {
+    const table = full.useAppTable({ columns: [], data: orders });
+    customerNames(table);
+    return (
+      <table.AppTable>
+        <table.Content>
+          {(row) => {
+            expectTypeOf(row.original).toEqualTypeOf<Order>();
+            return <table.Row row={row} />;
+          }}
+        </table.Content>
+        <table.ColumnToggle
+          getLabel={(column) => {
+            expectTypeOf(column).toEqualTypeOf<Column<typeof everyFeature, Order, unknown>>();
+            return column.id;
+          }}
+        />
+      </table.AppTable>
+    );
+  }
+
+  function ContextOrders(): ReactElement {
+    const table = full.useTableContext<Order>();
+    return (
+      <table.Content>
+        {(row) => {
+          expectTypeOf(row.original).toEqualTypeOf<Order>();
+          return <table.Row row={row} />;
+        }}
+      </table.Content>
+    );
+  }
+
+  expectTypeOf(OrdersTable).toBeFunction();
+  expectTypeOf(ContextOrders).toBeFunction();
+});
+
+test("a context reader without a row data type renders any row through table.Row", () => {
+  function OrderRows({
+    rows,
+  }: {
+    readonly rows: ReadonlyArray<Row<typeof everyFeature, Order>>;
+  }): ReactElement {
+    const table = full.useTableContext();
+    return (
+      <>
+        {rows.map((row) => (
+          <table.Row key={row.id} row={row} />
+        ))}
+      </>
+    );
+  }
+
+  expectTypeOf(OrderRows).toBeFunction();
 });
 
 test("the sort button is a registered header part only with rowSortingFeature", () => {

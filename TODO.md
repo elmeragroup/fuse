@@ -108,9 +108,6 @@
 
 ## Data table
 
-- `table.Content`'s row takeover types each row with the app's features but not its row data, so
-  `row.original` is `unknown` unless the caller writes `<table.Content<Order>>`. Find a registry
-  typing that carries `TData` from `useFuseTable` to the registered parts.
 - The docs API reference lists only `value` and `className` for the default cells: the generator
   collapses their `Intl` option spreads. Document the formatting options once the generator
   expands mapped `Intl` types.
