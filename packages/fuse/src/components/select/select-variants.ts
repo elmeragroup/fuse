@@ -10,8 +10,8 @@ import { controlLabel } from "../../styles/control-size";
 export const selectTriggerSize = tv({
   variants: {
     size: {
-      sm: controlLabel("sm", { iconEdge: "omit" }),
-      default: controlLabel("md", { iconEdge: "omit" }),
+      sm: controlLabel("sm", { iconEdge: "omit", inset: "control" }),
+      default: controlLabel("md", { iconEdge: "omit", inset: "control" }),
     },
   },
   defaultVariants: {

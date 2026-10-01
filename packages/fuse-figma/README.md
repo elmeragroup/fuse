@@ -8,10 +8,10 @@ The sync owns four variable collections, matched by name.
 
 | Collection        | Modes                  | Variables                                                                                                                                                  |
 | ----------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Fuse tokens`     | `Light`, `Dark`        | 84 variables, one per contract token such as `primary` or `radius` and one per radius rung such as `radius-md`. Designers bind these.                      |
-| `Fuse themes`     | One per theme slug, 20 | 168 variables, `light/<token>` and `dark/<token>` for each `Fuse tokens` variable. They are hidden from pickers and only feed `Fuse tokens`.               |
+| `Fuse tokens`     | `Light`, `Dark`        | 86 variables, one per contract token such as `primary` or `radius` and one per radius rung such as `radius-md`. Designers bind these.                      |
+| `Fuse themes`     | One per theme slug, 20 | 172 variables, `light/<token>` and `dark/<token>` for each `Fuse tokens` variable. They are hidden from pickers and only feed `Fuse tokens`.               |
 | `Fuse primitives` | `Value`                | 23 variables, the neutral ramp and the brand accents. Primitive tokens are public API with the same value in every theme, so designers can bind these too. |
-| `Fuse density`    | `Dense`, `Comfortable` | 18 variables, one per control metric such as `control-h-md`. Designers bind these.                                                                         |
+| `Fuse density`    | `Dense`, `Comfortable` | 22 variables, one per control metric such as `control-h-md`. Designers bind these.                                                                         |
 
 To preview a theme, a designer sets three modes on a frame. `Fuse themes` gets the theme slug, such as `external-fkas-private`, `Fuse tokens` gets `Light` or `Dark`, and `Fuse density` gets `Dense` or `Comfortable`. Figma resolves each alias with the frame's mode for the target collection, which is how the independent choices combine. A frame that sets no density mode gets `Dense`, the first mode. Apps default internal themes to dense and external themes to comfortable, so set `Comfortable` on frames that preview an external theme.
 
@@ -26,7 +26,7 @@ The token values come from `resolveThemeCatalog` in `@elmeragroup/fuse/theme-cat
 - A derived role, such as `secondary-hover`, becomes the literal color that composition computes, because Figma variables cannot mix colors.
 - The `Fuse tokens`, `Fuse primitives` and `Fuse density` variables carry web code syntax. A token, primitive or metric carries its `var()`, such as `var(--primary)`. A radius rung carries the `calc()` that `fuse.css` declares, such as `calc(var(--radius) - 3 * var(--radius-step, 0px))`. `fuse.css` declares the rungs in `@theme inline`, so Tailwind inlines them into its utilities, and the built CSS declares no `--radius-sm` property. A test requires every `var()` in the code syntax to name a property that the built `styles.css` or `themes.css` declares.
 - Colors and font families appear in every picker. Figma's REST documentation says scopes currently apply only to FLOAT and COLOR variables, so font families do not get the font picker scope yet.
-- Each length token names its picker scope in a table in `fuse-variable-set.ts`, so a new length token does not compile until someone picks one. `radius`, `radius-button` and the radius rungs get the corner radius picker.
+- Each length token names its picker scope in a table in `fuse-variable-set.ts`, so a new length token does not compile until someone picks one. `radius`, `radius-button` and the radius rungs get the corner radius picker, and `button-outline-width` gets the stroke picker.
 - `radius-step` gets no picker scope. It is a length, but it spaces the radius rungs and switches between the internal and external variants, so no layer rounds with it. It keeps its code syntax, `var(--radius-step)`.
 
 ## Running it

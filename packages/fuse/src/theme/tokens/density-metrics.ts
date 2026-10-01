@@ -14,11 +14,18 @@ export type DensityMetricKind = "height" | "padding" | "gap" | "fontSize" | "lin
 /** The control sizes a sized family has one metric for, in `fuse.css` order. */
 const CONTROL_SIZES = ["xs", "sm", "md", "lg"] as const;
 
-/** The families with one metric per control size, such as `control-h-md`, in `fuse.css` order. */
+/**
+ * The families with one metric per control size, such as `control-h-md`, in `fuse.css` order.
+ * `control-px-button` is Button's label inset. Dense matches `control-px`. Comfortable, the
+ * external default, takes the side padding of the customer-facing reference button: 1rem at
+ * sm and 2rem at md and lg. xs keeps the `control-px` value until design picks one. Only
+ * Button reads the family, so fields, Select and Toggle keep `control-px`.
+ */
 const SIZED_FAMILIES = [
   { family: "control-h", kind: "height" },
   { family: "control-px", kind: "padding" },
   { family: "control-px-icon", kind: "padding" },
+  { family: "control-px-button", kind: "padding" },
   { family: "control-gap", kind: "gap" },
 ] as const satisfies readonly { family: string; kind: DensityMetricKind }[];
 
@@ -79,6 +86,10 @@ export const DENSITY_METRICS = {
   "control-px-icon-sm": { dense: "0.375rem", comfortable: "0.625rem" },
   "control-px-icon-md": { dense: "0.5rem", comfortable: "0.75rem" },
   "control-px-icon-lg": { dense: "0.5rem", comfortable: "0.75rem" },
+  "control-px-button-xs": { dense: "0.5rem", comfortable: "0.75rem" },
+  "control-px-button-sm": { dense: "0.625rem", comfortable: "1rem" },
+  "control-px-button-md": { dense: "0.625rem", comfortable: "2rem" },
+  "control-px-button-lg": { dense: "0.625rem", comfortable: "2rem" },
   "control-gap-xs": { dense: "0.25rem", comfortable: "0.375rem" },
   "control-gap-sm": { dense: "0.25rem", comfortable: "0.375rem" },
   "control-gap-md": { dense: "0.375rem", comfortable: "0.5rem" },

@@ -11,6 +11,7 @@ import { dispatchPredictedPointer } from "../../../test/predicted-pointer";
 import {
   cssVarColor,
   effectiveOpacity,
+  fkasExternal,
   fkasPrivate,
   computedOklch,
   px,
@@ -34,6 +35,40 @@ function pointerPaint(element: Element) {
     transform: style.transform,
     translate: style.translate,
   };
+}
+
+/** One outer box-shadow layer's lengths in px. */
+type ShadowLengths = {
+  readonly x: number;
+  readonly y: number;
+  readonly blur: number;
+  readonly spread: number;
+};
+
+/** One computed box-shadow layer, as Chromium serializes it and as its lengths. */
+type ShadowLayer = { readonly css: string; readonly lengths: ShadowLengths };
+
+/**
+ * The `--tw-shadow` layer of an element's computed box-shadow, the last of the layers Tailwind
+ * composes behind the ring layers. Chromium serializes each layer as its color, then x, y,
+ * blur and spread.
+ */
+function ownShadow(element: Element): ShadowLayer {
+  const layers = getComputedStyle(element).boxShadow.split(/,(?![^(]*\))/);
+  const css = layers.at(-1)?.trim() ?? "";
+  const lengths = css
+    .replace(/^\S+\([^)]*\)\s*/, "")
+    .split(/\s+/)
+    .map(Number.parseFloat);
+  const [x = Number.NaN, y = Number.NaN, blur = Number.NaN, spread = Number.NaN] = lengths;
+  return { css, lengths: { x, y, blur, spread } };
+}
+
+/** Whether an outer shadow reaches past every edge of its element's border box. */
+function paintsOutsideBorderBox({ x, y, blur, spread }: ShadowLengths): boolean {
+  // The shadow is the border box grown by the spread, moved by the offset and blurred over
+  // the blur radius. An outer shadow never paints inside the border box.
+  return spread + blur + Math.max(Math.abs(x), Math.abs(y)) > 0;
 }
 
 describe("Button", () => {
@@ -598,6 +633,50 @@ describe("Button", () => {
     expect(trigger).toBe(roleNamed("button", "Trigger"));
     unmount();
     expect(trigger).toBeNull();
+  });
+
+  it("draws the internal outline as a 1px border hairline with the xs shadow", () => {
+    renderThemed(<Button variant="outline">Hairline</Button>);
+    const button = roleNamed("button", "Hairline");
+    const style = getComputedStyle(button);
+
+    for (const side of ["Top", "Right", "Bottom", "Left"] as const) {
+      expect(style[`border${side}Width`], side).toBe("1px");
+    }
+    expect(style.borderTopColor).toBe(cssVarColor(button, "--border"));
+    // Tailwind's shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05).
+    expect(ownShadow(button).css).toBe("rgba(0, 0, 0, 0.05) 0px 1px 2px 0px");
+  });
+
+  it.each(["light", "dark"] as const)(
+    "rings the external %s outline 2px in the text color and casts no shadow",
+    (colorScheme) => {
+      render(
+        <div data-theme={colorScheme}>
+          <ThemeScope theme={fkasExternal}>
+            <Button variant="outline">Ring</Button>
+          </ThemeScope>
+        </div>
+      );
+      const button = roleNamed("button", "Ring");
+      const style = getComputedStyle(button);
+
+      for (const side of ["Top", "Right", "Bottom", "Left"] as const) {
+        expect(style[`border${side}Width`], side).toBe("2px");
+      }
+      expect(style.borderTopColor).toBe(cssVarColor(button, "--foreground"));
+      expect(style.borderTopColor).not.toBe(cssVarColor(button, "--border"));
+      expect(paintsOutsideBorderBox(ownShadow(button).lengths), ownShadow(button).css).toBe(false);
+    }
+  );
+
+  it("lets a consumer shadow class replace the outline shadow", () => {
+    renderThemed(
+      <Button variant="outline" className="shadow-none">
+        Flat
+      </Button>
+    );
+    expect(paintsOutsideBorderBox(ownShadow(roleNamed("button", "Flat")).lengths)).toBe(false);
   });
 
   it("renders variant and size recipe classes and keeps role when render swaps the tag", () => {

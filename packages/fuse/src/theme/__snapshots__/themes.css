@@ -75,6 +75,7 @@
   --border: oklch(0.9219 0 0);
   --input: oklch(0.9219 0 0);
   --ring: oklch(0.4844 0.20509 296.29);
+  --button-outline: var(--border);
   --sidebar: oklch(0.9851 0 0);
   --sidebar-foreground: oklch(0.16 0 0);
   --sidebar-accent: oklch(0.9219 0 0);
@@ -105,6 +106,7 @@
   --radius: 0.375rem;
   --radius-button: var(--radius);
   --radius-step: 0px;
+  --button-outline-width: 1px;
   --font-sans: Roboto, ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-sans);
 }
@@ -174,9 +176,11 @@
   --feature-foreground: oklch(0.16 0 0);
   --border: oklch(0.9219 0 0);
   --input: oklch(0.9219 0 0);
+  --button-outline: var(--border);
   --radius: 0.375rem;
   --radius-button: var(--radius);
   --radius-step: 0px;
+  --button-outline-width: 1px;
   --font-heading: var(--font-sans);
   color-scheme: light;
 }
@@ -204,9 +208,11 @@
   --feature-foreground: oklch(0.80097 0.10434 49.42);
   --border: oklch(0.9232 0.0026 48.72);
   --input: oklch(0.9232 0.0026 48.72);
+  --button-outline: var(--foreground);
   --radius: 0.75rem;
   --radius-button: 1.8125rem;
   --radius-step: 2px;
+  --button-outline-width: 2px;
   --font-heading: "Neo Sans", var(--font-sans);
   color-scheme: light;
 }
@@ -254,9 +260,11 @@
   --feature-foreground: oklch(0.90178 0.09399 190.62);
   --border: oklch(0.929 0.0126 255.53);
   --input: oklch(0.929 0.0126 255.53);
+  --button-outline: var(--foreground);
   --radius: 0.95rem;
   --radius-button: 0.95rem;
   --radius-step: 2px;
+  --button-outline-width: 2px;
   --font-heading: var(--font-sans);
   color-scheme: light;
 }
@@ -284,9 +292,11 @@
   --feature-foreground: oklch(0.84919 0.07412 279.64);
   --border: oklch(0.929 0.0126 255.53);
   --input: oklch(0.929 0.0126 255.53);
+  --button-outline: var(--foreground);
   --radius: 0.5rem;
   --radius-button: 0.5rem;
   --radius-step: 2px;
+  --button-outline-width: 2px;
   --font-heading: var(--font-sans);
   color-scheme: light;
 }
@@ -314,9 +324,11 @@
   --feature-foreground: oklch(0.80097 0.10434 49.42);
   --border: oklch(0.9232 0.0026 48.72);
   --input: oklch(0.9232 0.0026 48.72);
+  --button-outline: var(--foreground);
   --radius: 0.75rem;
   --radius-button: 1.8125rem;
   --radius-step: 2px;
+  --button-outline-width: 2px;
   --font-heading: "Neo Sans", var(--font-sans);
   color-scheme: light;
 }
@@ -344,9 +356,11 @@
   --feature-foreground: oklch(0.90492 0.09477 206.46);
   --border: oklch(0.9232 0.0026 48.72);
   --input: oklch(0.9232 0.0026 48.72);
+  --button-outline: var(--foreground);
   --radius: 0.75rem;
   --radius-button: 1.8125rem;
   --radius-step: 2px;
+  --button-outline-width: 2px;
   --font-heading: var(--font-sans);
   color-scheme: light;
 }
@@ -374,9 +388,11 @@
   --feature-foreground: oklch(0.9094 0.046626 220.6);
   --border: oklch(0.9219 0 0);
   --input: oklch(0.9219 0 0);
+  --button-outline: var(--foreground);
   --radius: 0.375rem;
   --radius-button: 0.375rem;
   --radius-step: 2px;
+  --button-outline-width: 2px;
   --font-heading: var(--font-sans);
   color-scheme: light;
 }
@@ -428,6 +444,7 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 40%);
   --ring: oklch(0.556 0 0);
+  --button-outline: var(--border);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.269 0 0);
@@ -456,6 +473,7 @@
   --radius: 0.375rem;
   --radius-button: var(--radius);
   --radius-step: 0px;
+  --button-outline-width: 1px;
   --font-heading: var(--font-sans);
   color-scheme: dark;
 }
@@ -507,6 +525,7 @@
   --border: oklch(0.3956915 0.0031178 164.9356);
   --input: oklch(0.6543689 0.0037291 145.5328);
   --ring: oklch(0.8299788 0.0546884 280.5235);
+  --button-outline: var(--foreground);
   --sidebar: oklch(0.1749487 0.003804 164.5613);
   --sidebar-foreground: oklch(0.9604175 0.0214022 46.9889);
   --sidebar-accent: oklch(0.2661671 0.0034366 164.8011);
@@ -535,6 +554,7 @@
   --radius: 0.75rem;
   --radius-button: 1.8125rem;
   --radius-step: 2px;
+  --button-outline-width: 2px;
   --font-heading: "Neo Sans", var(--font-sans);
   color-scheme: dark;
 }
@@ -586,6 +606,7 @@
   --border: oklch(0.3956915 0.0031178 164.9356);
   --input: oklch(0.6543689 0.0037291 145.5328);
   --ring: oklch(0.8299788 0.0546884 280.5235);
+  --button-outline: var(--foreground);
   --sidebar: oklch(0.1749487 0.003804 164.5613);
   --sidebar-foreground: oklch(0.9822955 0.0142785 213.0969);
   --sidebar-accent: oklch(0.2661671 0.0034366 164.8011);
@@ -614,6 +635,7 @@
   --radius: 0.75rem;
   --radius-button: 1.8125rem;
   --radius-step: 2px;
+  --button-outline-width: 2px;
   --font-heading: "Neo Sans", var(--font-sans);
   color-scheme: dark;
 }
@@ -665,6 +687,7 @@
   --border: oklch(0.3956915 0.0031178 164.9356);
   --input: oklch(0.6543689 0.0037291 145.5328);
   --ring: oklch(0.8299788 0.0546884 280.5235);
+  --button-outline: var(--foreground);
   --sidebar: oklch(0.1749487 0.003804 164.5613);
   --sidebar-foreground: oklch(0.9790218 0.0292767 188.8731);
   --sidebar-accent: oklch(0.2661671 0.0034366 164.8011);
@@ -693,6 +716,7 @@
   --radius: 0.95rem;
   --radius-button: 0.95rem;
   --radius-step: 2px;
+  --button-outline-width: 2px;
   --font-heading: var(--font-sans);
   color-scheme: dark;
 }
@@ -744,6 +768,7 @@
   --border: oklch(0.3956915 0.0031178 164.9356);
   --input: oklch(0.6543689 0.0037291 145.5328);
   --ring: oklch(0.8299788 0.0546884 280.5235);
+  --button-outline: var(--foreground);
   --sidebar: oklch(0.2029294 0.0334602 267.7195);
   --sidebar-foreground: oklch(0.9592915 0.0326656 74.8018);
   --sidebar-accent: oklch(0.2717674 0.038702 268.9648);
@@ -772,6 +797,7 @@
   --radius: 0.5rem;
   --radius-button: 0.5rem;
   --radius-step: 2px;
+  --button-outline-width: 2px;
   --font-heading: var(--font-sans);
   color-scheme: dark;
 }
@@ -823,6 +849,7 @@
   --border: oklch(0.3956915 0.0031178 164.9356);
   --input: oklch(0.6543689 0.0037291 145.5328);
   --ring: oklch(0.8299788 0.0546884 280.5235);
+  --button-outline: var(--foreground);
   --sidebar: oklch(0.1749487 0.003804 164.5613);
   --sidebar-foreground: oklch(0.9604175 0.0214022 46.9889);
   --sidebar-accent: oklch(0.2661671 0.0034366 164.8011);
@@ -851,6 +878,7 @@
   --radius: 0.75rem;
   --radius-button: 1.8125rem;
   --radius-step: 2px;
+  --button-outline-width: 2px;
   --font-heading: "Neo Sans", var(--font-sans);
   color-scheme: dark;
 }
@@ -902,6 +930,7 @@
   --border: oklch(0.3956915 0.0031178 164.9356);
   --input: oklch(0.6543689 0.0037291 145.5328);
   --ring: oklch(0.8299788 0.0546884 280.5235);
+  --button-outline: var(--foreground);
   --sidebar: oklch(0.1842633 0.0454734 244.0362);
   --sidebar-foreground: oklch(0.9801435 0.0172884 210.1893);
   --sidebar-accent: oklch(0.2250318 0.0601105 247.6754);
@@ -930,6 +959,7 @@
   --radius: 0.75rem;
   --radius-button: 1.8125rem;
   --radius-step: 2px;
+  --button-outline-width: 2px;
   --font-heading: var(--font-sans);
   color-scheme: dark;
 }
@@ -981,6 +1011,7 @@
   --border: oklch(0.3956915 0.0031178 164.9356);
   --input: oklch(0.6543689 0.0037291 145.5328);
   --ring: oklch(0.8299788 0.0546884 280.5235);
+  --button-outline: var(--foreground);
   --sidebar: oklch(0.176932 0.0026206 247.9754);
   --sidebar-foreground: oklch(0.9817745 0.0118616 223.5201);
   --sidebar-accent: oklch(0.2675764 0.0014668 197.0689);
@@ -1009,6 +1040,7 @@
   --radius: 0.375rem;
   --radius-button: 0.375rem;
   --radius-step: 2px;
+  --button-outline-width: 2px;
   --font-heading: var(--font-sans);
   color-scheme: dark;
 }

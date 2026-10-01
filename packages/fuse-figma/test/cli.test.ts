@@ -89,11 +89,11 @@ describe("fuse-figma sync", () => {
         "external-fkse-private",
       ]);
       assert.notInclude(themeModes, "external-fkab-private");
-      // 79 contract tokens plus 5 radius rungs, and each of those per scheme in Fuse themes.
-      assert.strictEqual(figma.variableNames("Fuse tokens").length, 84);
-      assert.strictEqual(figma.variableNames("Fuse themes").length, 168);
+      // 81 contract tokens plus 5 radius rungs, and each of those per scheme in Fuse themes.
+      assert.strictEqual(figma.variableNames("Fuse tokens").length, 86);
+      assert.strictEqual(figma.variableNames("Fuse themes").length, 172);
       assert.strictEqual(figma.variableNames("Fuse primitives").length, 23);
-      assert.strictEqual(figma.variableNames("Fuse density").length, 18);
+      assert.strictEqual(figma.variableNames("Fuse density").length, 22);
       assert.strictEqual(writes(figma), 1);
       assert.include(yield* output, "reading it back matches the tokens");
     })
@@ -287,6 +287,10 @@ describe("fuse-figma sync", () => {
       assert.strictEqual(metric("control-px-md", "Comfortable"), 14);
       assert.strictEqual(metric("control-px-icon-sm", "Dense"), 6);
       assert.strictEqual(metric("control-px-icon-lg", "Comfortable"), 12);
+      // Button's own inset: 0.625rem dense, and the reference's 1rem at sm and 2rem at md.
+      assert.strictEqual(metric("control-px-button-md", "Dense"), 10);
+      assert.strictEqual(metric("control-px-button-sm", "Comfortable"), 16);
+      assert.strictEqual(metric("control-px-button-md", "Comfortable"), 32);
       assert.strictEqual(metric("control-gap-sm", "Dense"), 4);
       assert.strictEqual(metric("control-gap-md", "Comfortable"), 8);
       assert.strictEqual(metric("control-text", "Dense"), 14);
@@ -451,7 +455,7 @@ describe("fuse-figma sync", () => {
         "Fuse tokens",
         "Fuse density",
       ]);
-      assert.strictEqual(figma.variableNames("Fuse themes").length, 168);
+      assert.strictEqual(figma.variableNames("Fuse themes").length, 172);
       assert.deepStrictEqual(figma.variableById(libraryPrimary).values, [
         { r: 0, g: 0, b: 0, a: 1 },
         { r: 0, g: 0, b: 0, a: 1 },
@@ -576,9 +580,9 @@ describe("fuse-figma check", () => {
       assert.include(printed, "Fuse tokens: create mode Dark");
       assert.include(printed, "Fuse themes: create mode ×20");
       assert.notInclude(printed, "Fuse themes: create mode external-elma-company");
-      assert.include(printed, "Fuse themes: create variable ×168");
+      assert.include(printed, "Fuse themes: create variable ×172");
       assert.include(printed, "Fuse density: create mode Comfortable");
-      assert.include(printed, "Fuse density: create variable ×18");
+      assert.include(printed, "Fuse density: create variable ×22");
     })
   );
 

@@ -10,6 +10,10 @@
   until reviewed replacements exist, including internal and Telinet light muted copy.
 - Ask design for an external secondary hover tone. Every external palette sets `secondary`
   equal to `foreground`, so `--secondary-hover` equals `--secondary` and the hover is invisible.
+- Confirm the external Button numbers with design. They come from the sales flow's own button
+  recipe, not a published brand spec: the comfortable label inset of 16px at `sm` and 32px at
+  `md` and `lg` (`theme/tokens/density-metrics.ts`) and the 2px outline in `--foreground`
+  (`EXTERNAL_VARIANT_LAYER`). Pick a comfortable `xs` inset, which keeps the 12px control inset.
 - Ask design whether external themes keep the reference's 4px corner on the `Checkbox`,
   the phone country trigger and the standalone `Calendar` (`styles/corner-radius.ts`), or
   round them from the brand radius. Internal themes round them with `--radius`.
@@ -85,9 +89,13 @@
 
 ## Control size
 
-- Docs token extraction is file-granular: Select lists xs/lg control metrics and the
-  text-entry family lists gap-md/px-icon-md they don't bind; resolve per recipe (from
-  built CSS, or aware of tv calls) instead of per file.
+- Docs token extraction is file-granular: Select lists xs/lg control metrics, Select, Toggle
+  and RadioIconButton list Button's `--control-px-button-*` inset, and the text-entry family
+  lists gap-md/px-icon-md they don't bind; resolve per recipe (from built CSS, or aware of tv
+  calls) instead of per file.
+- `InputGroup.Button size="sm"` passes Button's md label through, so at comfortable density it
+  takes the 32px button inset inside the field. Decide whether addon buttons keep the control
+  inset, as they keep the field corner instead of `--radius-button`.
 - Move the segmented ToggleGroup item's remaining rounded-none, shadow-none and scale-100
   classes from `group-data-[spacing=0]/toggle-group:` (any ancestor group) onto the
   item's own `data-[spacing=0]:`, which it already stamps, so they follow the nearest

@@ -45,6 +45,7 @@ type SizeMetrics = {
   readonly height: number;
   readonly px: number;
   readonly pxIcon: number;
+  readonly pxButton: number;
   readonly gap: number;
   readonly font: number;
   readonly leading: number;
@@ -83,6 +84,8 @@ type LabelProbe = {
   readonly role: QueryableRole;
   readonly size: ControlSizeName;
   readonly fit: "label" | "min-square";
+  /** The label inset the consumer takes: the control inset, or Button's own. */
+  readonly inset: "control" | "button";
   /** Whether the consumer maps `data-icon="inline-*"` children onto the icon-edge inset. */
   readonly iconEdges: boolean;
   readonly render: (name: string, icon: "none" | "start" | "end") => ReactNode;
@@ -123,6 +126,7 @@ const LABEL_PROBES: readonly LabelProbe[] = [
     role: "button",
     size,
     fit: "label",
+    inset: "button",
     iconEdges: true,
     render: (name, icon) => (
       <Button size={BUTTON_LABEL_SIZES[size]} aria-label={name}>
@@ -135,6 +139,7 @@ const LABEL_PROBES: readonly LabelProbe[] = [
     role: "button",
     size,
     fit: "min-square",
+    inset: "control",
     iconEdges: true,
     render: (name, icon) => (
       <Toggle size={TOGGLE_SIZES[size]} aria-label={name}>
@@ -147,6 +152,7 @@ const LABEL_PROBES: readonly LabelProbe[] = [
     role: "button",
     size,
     fit: "min-square",
+    inset: "control",
     iconEdges: true,
     render: (name, icon) => (
       <ToggleGroup.Root aria-label={`${name} group`} size={TOGGLE_SIZES[size]}>
@@ -161,6 +167,7 @@ const LABEL_PROBES: readonly LabelProbe[] = [
     role: "combobox",
     size,
     fit: "label",
+    inset: "control",
     // The trigger has never mapped icon children onto the icon edge, so its padding stays
     // the label inset with an icon child too.
     iconEdges: false,
@@ -210,6 +217,7 @@ describe("control size: label and min-square fits", () => {
       expect(comfortable.height, size).not.toBe(dense.height);
       expect(comfortable.px, size).not.toBe(dense.px);
       expect(comfortable.pxIcon, size).not.toBe(dense.pxIcon);
+      expect(comfortable.pxButton, size).not.toBe(dense.pxButton);
       expect(comfortable.gap, size).not.toBe(dense.gap);
     }
     expect(CONTROL_MD.comfortable.font).not.toBe(CONTROL_MD.dense.font);
@@ -232,11 +240,12 @@ describe("control size: label and min-square fits", () => {
 
     for (const probe of LABEL_PROBES) {
       const expected = expectedMetrics(probe.size, density);
+      const inset = probe.inset === "button" ? expected.pxButton : expected.px;
       const label = `${density} ${probe.consumer} ${probe.size}`;
       const bare = measure(probe.role, probeName(probe, "none", density));
       expect(bare.height, `${label} height`).toBe(expected.height);
-      expect(bare.paddingStart, `${label} padding start`).toBe(expected.px);
-      expect(bare.paddingEnd, `${label} padding end`).toBe(expected.px);
+      expect(bare.paddingStart, `${label} padding start`).toBe(inset);
+      expect(bare.paddingEnd, `${label} padding end`).toBe(inset);
       expect(px(bare.gap), `${label} gap`).toBe(expected.gap);
       expect(px(bare.font), `${label} font`).toBe(expected.font);
       expect(px(bare.leading), `${label} leading`).toBe(expected.leading);
@@ -244,13 +253,13 @@ describe("control size: label and min-square fits", () => {
         expect(bare.minWidth, `${label} min-width`).toBe(`${String(expected.height)}px`);
       }
 
-      const edge = probe.iconEdges ? expected.pxIcon : expected.px;
+      const edge = probe.iconEdges ? expected.pxIcon : inset;
       const start = measure(probe.role, probeName(probe, "start", density));
       expect(start.paddingStart, `${label} icon-start edge`).toBe(edge);
-      expect(start.paddingEnd, `${label} icon-start far edge`).toBe(expected.px);
+      expect(start.paddingEnd, `${label} icon-start far edge`).toBe(inset);
       const end = measure(probe.role, probeName(probe, "end", density));
       expect(end.paddingEnd, `${label} icon-end edge`).toBe(edge);
-      expect(end.paddingStart, `${label} icon-end far edge`).toBe(expected.px);
+      expect(end.paddingStart, `${label} icon-end far edge`).toBe(inset);
     }
   });
 
@@ -484,6 +493,49 @@ describe("control size: the resolved md parts", () => {
   });
 });
 
+describe("control size: Button's label inset", () => {
+  // The customer-facing reference button pads 16px at sm and 32px at md and lg, whatever the
+  // brand. Comfortable density takes those values and dense keeps the control inset, so dense
+  // renders do not move. xs keeps the control inset at both densities. The pixels are written
+  // from the reference by hand rather than read from DENSITY_METRICS.
+  const REFERENCE_INSET = {
+    dense: { xs: 8, sm: 10, md: 10, lg: 10 },
+    comfortable: { xs: 12, sm: 16, md: 32, lg: 32 },
+  } as const;
+  // The control inset fields, Select and Toggle keep: 10px dense and 14px comfortable at md.
+  const CONTROL_INSET_MD = { dense: 10, comfortable: 14 } as const;
+
+  it.each(DENSITIES)(
+    "pads Button labels like the reference at %s and keeps the control inset elsewhere",
+    (density) => {
+      stampDensity(density);
+      renderThemed(
+        <>
+          {(["xs", "sm", "md", "lg"] as const).map((size) => (
+            <Button key={size} size={BUTTON_LABEL_SIZES[size]}>{`reference ${size}`}</Button>
+          ))}
+          <Toggle aria-label="reference toggle">Label</Toggle>
+          <Select.Root>
+            <Select.Trigger aria-label="reference select">
+              <Select.Value placeholder="Pick" />
+            </Select.Trigger>
+          </Select.Root>
+        </>
+      );
+
+      for (const size of ["xs", "sm", "md", "lg"] as const) {
+        const box = measure("button", `reference ${size}`);
+        expect(box.paddingStart, `${density} button ${size} padding start`).toBe(
+          REFERENCE_INSET[density][size]
+        );
+        expect(box.paddingEnd, `${density} button ${size} padding end`).toBe(REFERENCE_INSET[density][size]);
+      }
+      expect(measure("button", "reference toggle").paddingStart).toBe(CONTROL_INSET_MD[density]);
+      expect(measure("combobox", "reference select").paddingStart).toBe(CONTROL_INSET_MD[density]);
+    }
+  );
+});
+
 describe("control size: density scope", () => {
   it("follows the document stamp, not a nested data-density or ThemeScope", () => {
     stampDensity("dense");
@@ -523,6 +575,14 @@ describe("control size: density scope", () => {
 });
 
 describe("control size: consumer overrides", () => {
+  it("lets a className inset win over Button's comfortable inset", () => {
+    stampDensity("comfortable");
+    renderThemed(<Button className="px-4">narrow button</Button>);
+    // Tailwind's `px-4` is 1rem, 16px at the 16px root, where the comfortable md inset is 32px.
+    expect(measure("button", "narrow button").paddingStart).toBe(16);
+    expect(measure("button", "narrow button").paddingEnd).toBe(16);
+  });
+
   it("lets a className size utility win on Select and on a segmented ToggleGroup item", () => {
     stampDensity("dense");
     renderThemed(

@@ -108,6 +108,7 @@ const DIMENSION_SCOPES = {
   radius: ["CORNER_RADIUS"],
   "radius-button": ["CORNER_RADIUS"],
   "radius-step": [],
+  "button-outline-width": ["STROKE_FLOAT"],
 } as const satisfies Record<DimensionTokenName, readonly VariableScope[]>;
 
 /**

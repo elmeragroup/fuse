@@ -45,6 +45,11 @@ export default function TokensPage(): ReactElement {
         cascade decides colour, the root decides sizing, and no scope nests a second density. Both values are
         stamped explicitly, including <code>dense</code>.
       </p>
+      <p>
+        Button pads its labels with its own <code>--control-px-button-*</code> family. Dense matches the other
+        controls, and comfortable widens it to 16px at <code>sm</code> and 32px at <code>default</code> and{" "}
+        <code>lg</code>, so text fields, Select and Toggle keep their narrower inset.
+      </p>
 
       <h2 id="bundle-sizes">Measured bundle sizes</h2>
       <p>

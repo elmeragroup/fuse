@@ -33,9 +33,15 @@ function fkasCompanyLight(): TokenLayer {
 
 /**
  * The light reset keys a brand palette does not assign. Composition derives the secondary
- * hover, and the external variant layer sets the radius step for every brand.
+ * hover, and the external variant layer sets the radius step and the button outline for
+ * every brand.
  */
-const NOT_IN_BRAND_PALETTES = ["secondary-hover", "radius-step"] as const;
+const NOT_IN_BRAND_PALETTES = [
+  "secondary-hover",
+  "radius-step",
+  "button-outline",
+  "button-outline-width",
+] as const;
 
 type BrandPaletteKey = Exclude<(typeof EXTERNAL_RESET_KEYS)[number], (typeof NOT_IN_BRAND_PALETTES)[number]>;
 
@@ -260,7 +266,15 @@ describe("theme contract", () => {
       expect(dark.brand).toBe(light.brand);
       expect(dark["sidebar-brand"]).toBe(light["sidebar-brand"]);
       expect(dark["sidebar-brand-foreground"]).toBe(light["sidebar-brand-foreground"]);
-      for (const key of ["radius", "radius-button", "radius-step", "font-sans", "font-heading"] as const) {
+      for (const key of [
+        "radius",
+        "radius-button",
+        "radius-step",
+        "button-outline",
+        "button-outline-width",
+        "font-sans",
+        "font-heading",
+      ] as const) {
         expect(dark[key]).toBe(light[key]);
       }
     }
@@ -374,6 +388,30 @@ describe("radius roles", () => {
     for (const brand of ["fkas", "tkas", "guen", "fkab", "fkse", "elma"]) {
       const selector = `[data-theme-variant="external"][data-theme-brand="${brand}"]`;
       expect(declaration(rules, selector, "radius-step"), selector).toBe("2px");
+    }
+  });
+});
+
+describe("button outline roles", () => {
+  const rules = parseStyleRules(generateThemesCss());
+
+  it("draws the reference's 2px text-color ring for every external brand and the 1px border hairline elsewhere", () => {
+    for (const [brand, palette] of Object.entries(EXTERNAL_PALETTES)) {
+      expect(palette, brand).not.toHaveProperty("button-outline");
+      expect(palette, brand).not.toHaveProperty("button-outline-width");
+    }
+    for (const brand of ["fkas", "tkas", "guen", "fkab", "fkse", "elma"]) {
+      const selector = `[data-theme-variant="external"][data-theme-brand="${brand}"]`;
+      expect(declaration(rules, selector, "button-outline"), selector).toBe("var(--foreground)");
+      expect(declaration(rules, selector, "button-outline-width"), selector).toBe("2px");
+      // The dark rule declares the alias again beside the dark foreground, so the ring
+      // follows the dark text color.
+      const dark = `[data-theme="dark"]${selector}`;
+      expect(declaration(rules, dark, "button-outline"), dark).toBe("var(--foreground)");
+    }
+    for (const selector of [":root", '[data-theme-variant="internal"]']) {
+      expect(declaration(rules, selector, "button-outline"), selector).toBe("var(--border)");
+      expect(declaration(rules, selector, "button-outline-width"), selector).toBe("1px");
     }
   });
 });
