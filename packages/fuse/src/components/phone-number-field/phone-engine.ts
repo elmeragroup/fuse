@@ -145,7 +145,7 @@ function parsePhoneNumber(
 }
 
 /** Digits entered with their own `+` prefix carry an identity independent of the picker country. */
-export function hasInternationalDigits(digits: string): boolean {
+function hasInternationalDigits(digits: string): boolean {
   return digits.startsWith(INTERNATIONAL_PREFIX);
 }
 

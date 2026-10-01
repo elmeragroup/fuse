@@ -38,7 +38,7 @@ export function apiPropAnchor(partName: string, propName: string): string {
 
 const COMPONENTS_PREFIX = "/components/";
 
-export function componentHref(slug: string): string {
+function componentHref(slug: string): string {
   return `${COMPONENTS_PREFIX}${slug}`;
 }
 
@@ -70,7 +70,7 @@ export function componentBySlug(slug: string): ComponentPageEntry | undefined {
   return COMPONENT_PAGES.find((component) => component.slug === slug);
 }
 
-export function componentForPath(pathname: string): ComponentPageEntry | undefined {
+function componentForPath(pathname: string): ComponentPageEntry | undefined {
   if (!pathname.startsWith(COMPONENTS_PREFIX)) {
     return undefined;
   }
@@ -78,7 +78,7 @@ export function componentForPath(pathname: string): ComponentPageEntry | undefin
 }
 
 /** The on-page TOC of a component page: prose headings, demos, API parts, tokens. */
-export function tocForComponent(component: ComponentPageEntry): readonly TocItem[] {
+function tocForComponent(component: ComponentPageEntry): readonly TocItem[] {
   return [
     ...component.headings
       .filter((heading) => heading.depth === 2)

@@ -28,7 +28,7 @@ import { controlMd } from "./control-size-md";
  */
 
 /** A control size. Each has one metric per sized family in `DENSITY_METRICS`. */
-export type ControlSize = "xs" | "sm" | "md" | "lg";
+type ControlSize = "xs" | "sm" | "md" | "lg";
 
 /**
  * A control size's fit: how the control's box fits its content. `label` is a padded box
@@ -36,7 +36,7 @@ export type ControlSize = "xs" | "sm" | "md" | "lg";
  * never narrower than it is tall, as Toggle is. `square` is a fixed square of the control
  * height for icon-only controls, with no padding or type of its own.
  */
-export type ControlFit = "label" | "square" | "min-square";
+type ControlFit = "label" | "square" | "min-square";
 
 /**
  * The metric parts of each control size, one slot per metric family.
@@ -106,7 +106,7 @@ export const controlMetrics = tv({
 });
 
 /** Options for {@link controlLabel}. */
-export type ControlLabelOptions = {
+type ControlLabelOptions = {
   /**
    * Whether the label maps a `data-icon="inline-start"` or `"inline-end"` child onto the
    * icon edge. `"omit"` is for a control that has never tightened its inset around an

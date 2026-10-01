@@ -17,9 +17,10 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { API_REGEN_COMMAND, generateDocsApiArtifacts, STALE_HINT } from "../scripts/lib/api-artifact.ts";
+import { generateDocsApiArtifacts, STALE_HINT } from "../scripts/lib/api-artifact.ts";
 import { componentSlugs, resolveComponentPaths } from "../scripts/lib/components.ts";
 import { API_ARTIFACTS_REWRITTEN } from "../src/generated/api-drift";
+import { API_REGEN_COMMAND } from "../src/lib/docs-model.ts";
 
 describe("committed api.json", () => {
   // The long timeout is the regeneration itself: the package opens a full TypeScript

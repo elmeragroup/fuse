@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 
 import { tv } from "tailwind-variants";
 
-export type MetaLinksProps = {
+type MetaLinksProps = {
   /** The per-component markdown endpoint. */
   markdownUrl: string;
   /** The component's source file on the repo host. */

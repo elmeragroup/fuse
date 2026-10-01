@@ -6,14 +6,6 @@ import type {
   ThemeVariant,
 } from "@elmeragroup/fuse/theme";
 
-export {
-  BRAND_CODES as THEME_BRANDS,
-  COLOR_SCHEMES,
-  LEGAL_THEMES,
-  THEME_SEGMENTS,
-  THEME_VARIANTS,
-} from "@elmeragroup/fuse/theme";
-
 export const DOCUMENT_THEME = {
   variant: "internal",
   brand: "elma",

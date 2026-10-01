@@ -7,7 +7,7 @@ import { DemoStage } from "./demo-stage";
 import { DocsCodeBlock } from "./docs-code-block";
 import { DocsSectionHeading } from "./docs-section-heading";
 
-export type DemoFrameProps = {
+type DemoFrameProps = {
   /** Slug of the component page this demo belongs to; locates the `demos/` directory. */
   slug: string;
   /** Anchor id, unique inside the page; the on-page TOC links to it. */

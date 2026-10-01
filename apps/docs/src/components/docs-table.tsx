@@ -30,13 +30,13 @@ const docsTable = tv({
 
 const { wrap, root, caption } = docsTable();
 
-export type DocsTableWrapProps = ComponentProps<"div">;
-export type DocsTableRootProps = ComponentProps<"table">;
-export type DocsTableCaptionProps = ComponentProps<"caption">;
-export type DocsTableHeaderCellProps = ThHTMLAttributes<HTMLTableCellElement> & {
+type DocsTableWrapProps = ComponentProps<"div">;
+type DocsTableRootProps = ComponentProps<"table">;
+type DocsTableCaptionProps = ComponentProps<"caption">;
+type DocsTableHeaderCellProps = ThHTMLAttributes<HTMLTableCellElement> & {
   numeric?: boolean;
 };
-export type DocsTableBodyCellProps = TdHTMLAttributes<HTMLTableCellElement> & {
+type DocsTableBodyCellProps = TdHTMLAttributes<HTMLTableCellElement> & {
   numeric?: boolean;
 };
 

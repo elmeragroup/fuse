@@ -367,9 +367,6 @@ importers:
       '@elmeragroup/typescript-config':
         specifier: workspace:*
         version: link:../../tooling/typescript
-      effect:
-        specifier: 'catalog:'
-        version: 4.0.0-rc.115
       fast-check:
         specifier: 'catalog:'
         version: 4.10.2

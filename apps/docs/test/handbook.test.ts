@@ -1,12 +1,11 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { themeSlug } from "@elmeragroup/fuse/theme";
+import { LEGAL_THEMES, themeSlug } from "@elmeragroup/fuse/theme";
 
 import { sizeBudgetsFile } from "../scripts/lib/paths.ts";
 import { parseBudgets } from "../scripts/lib/sizes.ts";
 import { BUNDLE_SIZES, BUNDLE_SIZES_MEASURED_ON } from "../src/generated/bundle-sizes";
-import { LEGAL_THEMES } from "../src/lib/theme";
 import { fetchText } from "./docs-server";
 
 /** The four permutations the pin table forbids; none may reach the DOM. */

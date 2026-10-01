@@ -36,7 +36,7 @@ export function extractTarball(tarball: string, destination: string): string {
   return extracted;
 }
 
-export function extractPackedPackage(tarball: string, destination: string, packageRoot: string): string {
+function extractPackedPackage(tarball: string, destination: string, packageRoot: string): string {
   const extracted = extractTarball(tarball, destination);
   const extractedModules = join(extracted, "node_modules");
   if (!existsSync(extractedModules)) {

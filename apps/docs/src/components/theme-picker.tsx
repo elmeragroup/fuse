@@ -8,19 +8,18 @@ import { Button } from "@elmeragroup/fuse/button";
 import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 import type { DropdownMenuRadioGroupProps } from "@elmeragroup/fuse/dropdown-menu";
 import { ArrowsClockwise, SlidersHorizontal } from "@elmeragroup/fuse/icons";
-import { BRANDS, coerceTheme, useColorScheme } from "@elmeragroup/fuse/theme";
-import type { ThemeInput, ThemeSegment } from "@elmeragroup/fuse/theme";
-
 import {
-  COLOR_SCHEME_LABELS,
+  BRAND_CODES,
+  BRANDS,
   COLOR_SCHEMES,
-  DEFAULT_THEME,
-  SEGMENT_LABELS,
-  THEME_BRANDS,
   THEME_SEGMENTS,
   THEME_VARIANTS,
-  VARIANT_LABELS,
-} from "../lib/theme";
+  coerceTheme,
+  useColorScheme,
+} from "@elmeragroup/fuse/theme";
+import type { ThemeInput, ThemeSegment } from "@elmeragroup/fuse/theme";
+
+import { COLOR_SCHEME_LABELS, DEFAULT_THEME, SEGMENT_LABELS, VARIANT_LABELS } from "../lib/theme";
 
 const themePicker = tv({
   slots: {
@@ -81,7 +80,7 @@ function PickerRadioGroup<T extends string>({
   );
 }
 
-export type ThemePickerProps = {
+type ThemePickerProps = {
   theme: ThemeInput;
   onThemeChange: (theme: ThemeInput) => void;
 };
@@ -125,7 +124,7 @@ export function ThemePicker({ theme, onThemeChange }: ThemePickerProps): ReactEl
         <PickerRadioGroup
           label="Brand"
           value={theme.brand}
-          options={THEME_BRANDS}
+          options={BRAND_CODES}
           optionLabel={(brand) => BRANDS[brand].displayName}
           onValueChange={(brand) => commitTheme({ ...theme, brand }, onThemeChange)}
         />
