@@ -23,6 +23,14 @@ export function packedTailwindSource(sourceDir: string): string {
   return `@import "tailwindcss" source(none);\n@import "@elmeragroup/fuse/css";\n@import "@elmeragroup/fuse/themes.css";\n@source "${sourceDir}";\n`;
 }
 
+/**
+ * A consumer stylesheet that scans one entry's published files only, through the
+ * `@elmeragroup/fuse/source/<entry>.css` export.
+ */
+export function packedComponentTailwindSource(subpath: string): string {
+  return `@import "tailwindcss" source(none);\n@import "@elmeragroup/fuse/css";\n@import "@elmeragroup/fuse/themes.css";\n@import "@elmeragroup/fuse/source/${subpath}.css";\n`;
+}
+
 /** One throwaway npm consumer of the packed tarball. */
 export type PackedConsumer = {
   /** The tarball installed by path as `@elmeragroup/fuse`. */

@@ -5,6 +5,7 @@ import { discoverEntries } from "./entries";
 import {
   checkPackedBareEntryRacDeclarations,
   checkPackedBootstrap,
+  checkPackedComponentSources,
   checkPackedDirectives,
   checkPackedExports,
   checkPackedFlags,
@@ -113,6 +114,7 @@ function runInProcessChecks(extracted: string): void {
     discovered.jsEntries.map((entry) => importSpecifier(entry.subpath))
   );
   checkPackedExports(extracted, discovered);
+  checkPackedComponentSources(extracted, discovered);
   checkPackedPeers(extracted);
   checkPackedRuntimeExports(exported, discovered);
   checkPackedDirectives(extracted, discovered);

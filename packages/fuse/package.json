@@ -265,6 +265,7 @@
       "types": "./src/skeleton.ts",
       "import": "./src/skeleton.ts"
     },
+    "./source/*.css": "./dist/source/*.css",
     "./span": {
       "types": "./src/span.ts",
       "import": "./src/span.ts"

@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 
 import { COLOR_SCHEME_BOOTSTRAP_MANIFEST_KEY } from "../src/theme/color-scheme";
 import { runColorSchemeBootstrap } from "../test/memory-color-scheme-platform";
+import { componentSourceEntries, declaredSources } from "./component-sources";
 import { exportKey } from "./entries";
 import type { DiscoveredEntries } from "./entries";
 import {
@@ -143,6 +144,34 @@ export function checkPackedExports(extracted: string, discovered: DiscoveredEntr
       continue;
     }
     throw new Error(`Unexpected export target for ${binding.key}: ${JSON.stringify(target)}`);
+  }
+}
+
+/**
+ * Each packed `source/<entry>.css` must scan exactly the published files its entry reaches,
+ * no more and no fewer. Fewer means a class can go missing from a consumer's build after a
+ * refactor; more means the consumer compiles another entry's classes. The expected set is
+ * the import graph of the extracted tarball, so a stylesheet built from a stale `dist/`, a
+ * file the publish ignore list drops, or a wrong relative path all fail here.
+ */
+export function checkPackedComponentSources(extracted: string, discovered: DiscoveredEntries): void {
+  const failures: string[] = [];
+  for (const entry of componentSourceEntries(extracted, discovered.jsEntries)) {
+    if (!existsSync(join(extracted, entry.distFile))) {
+      failures.push(`${entry.distFile} is missing for ${importSpecifier(entry.subpath)}`);
+      continue;
+    }
+    const declared = declaredSources(extracted, entry.distFile);
+    const missing = entry.publishedFiles.filter((file) => !declared.includes(file));
+    const extra = declared.filter((file) => !entry.publishedFiles.includes(file));
+    if (missing.length > 0 || extra.length > 0) {
+      failures.push(`${entry.distFile}: missing ${JSON.stringify(missing)}, extra ${JSON.stringify(extra)}`);
+    }
+  }
+  if (failures.length > 0) {
+    throw new Error(
+      `Packed Tailwind source stylesheets do not match the packed import graph:\n${failures.join("\n")}`
+    );
   }
 }
 

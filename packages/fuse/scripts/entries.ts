@@ -421,6 +421,20 @@ function cssEntries(packageRoot: string): CssExportEntry[] {
   ];
 }
 
+/** The subpath directory the generated per-entry Tailwind source stylesheets publish under. */
+export const COMPONENT_SOURCE_DIR = "source";
+
+/**
+ * The `./source/*.css` export: one generated stylesheet per JS entry (see
+ * `component-sources.ts`), so a consumer scans one entry's published files instead of the
+ * whole package. Published and in-repo targets are the built files, as for `styles.css`.
+ */
+const COMPONENT_SOURCE_PATTERN: AssetPatternExport = {
+  subpath: `${COMPONENT_SOURCE_DIR}/*.css`,
+  sourceFile: `dist/${COMPONENT_SOURCE_DIR}/*.css`,
+  publishFile: `${COMPONENT_SOURCE_DIR}/*.css`,
+};
+
 function flagAssetPattern(packageRoot: string): AssetPatternExport | undefined {
   if (requireFlagsDirectory(join(packageRoot, "src/flags")) === "missing") {
     return undefined;
@@ -502,7 +516,7 @@ export function discoverEntries(packageRoot: string): DiscoveredEntries {
   return {
     jsEntries,
     cssEntries: css,
-    assetPatterns: assetPatterns === undefined ? [] : [assetPatterns],
+    assetPatterns: [...(assetPatterns === undefined ? [] : [assetPatterns]), COMPONENT_SOURCE_PATTERN],
     sourceFiles,
   };
 }

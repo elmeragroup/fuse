@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { PUBLISHED_PEER_RANGES } from "./entries";
-import { packedTailwindSource, withPackedConsumer } from "./packed-consumer";
+import { packedComponentTailwindSource, packedTailwindSource, withPackedConsumer } from "./packed-consumer";
 import { peerFloorRelease } from "./published-dependencies";
 import { runCommandAsync } from "./run-command";
 
@@ -17,6 +17,17 @@ const FLOOR_MARKERS = [
   { source: "tw-animate-css", rule: "@keyframes enter" },
   { source: "tailwindcss-react-aria-components", rule: "[data-outside-month]" },
 ] as const;
+
+/**
+ * A consumer that imports only `@elmeragroup/fuse/source/button.css`: Button's own classes
+ * compile, and a class only another entry spells does not. `h-(--control-h-md)` is the md
+ * control height Button's label fit binds; `animate-pulse` is Skeleton's and reaches no file
+ * Button imports.
+ */
+const BUTTON_ONLY_MARKERS = {
+  present: [{ source: "the Button label fit", rule: "height: var(--control-h-md)" }],
+  absent: [{ source: "Skeleton's animate-pulse", rule: ".animate-pulse" }],
+} as const;
 
 /**
  * Installs the tarball beside the first Tailwind release its peer range admits, then compiles
@@ -59,7 +70,24 @@ export async function checkPackedTailwindFloor(
           `compiled CSS is missing ${missing.map((marker) => `${marker.rule} (${marker.source})`).join(", ")}`
         );
       }
-      return `Packed CSS compiles with tailwindcss ${floor} (${FLOOR_MARKERS.map((marker) => marker.source).join(", ")})`;
+
+      // The per-entry source stylesheet, resolved through the package exports and its own
+      // relative `@source` lines, scans Button's published files and nothing else.
+      writeFileSync(join(consumer, "button.css"), packedComponentTailwindSource("button"));
+      await runCommandAsync(
+        join(consumer, "node_modules/.bin/tailwindcss"),
+        ["-i", "button.css", "-o", "button-compiled.css"],
+        { cwd: consumer, timeoutMs: 60_000, signal }
+      );
+      const buttonOnly = readFileSync(join(consumer, "button-compiled.css"), "utf8");
+      const buttonMissing = BUTTON_ONLY_MARKERS.present.filter((marker) => !buttonOnly.includes(marker.rule));
+      const buttonExtra = BUTTON_ONLY_MARKERS.absent.filter((marker) => buttonOnly.includes(marker.rule));
+      if (buttonMissing.length > 0 || buttonExtra.length > 0) {
+        throw new Error(
+          `source/button.css compiled CSS is missing ${JSON.stringify(buttonMissing.map((marker) => marker.rule))} and includes ${JSON.stringify(buttonExtra.map((marker) => marker.rule))}`
+        );
+      }
+      return `Packed CSS compiles with tailwindcss ${floor} (${FLOOR_MARKERS.map((marker) => marker.source).join(", ")}); source/button.css scans Button alone`;
     }
   );
 }

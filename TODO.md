@@ -59,6 +59,13 @@
   `process.env` only in `src/theme/validate-theme.ts`. Once the rule accepts the new owner, point
   `checkValidateThemeEnv` in `packages/fuse/scripts/package-check-packed.ts` at the new packed
   module.
+- `walkImportedSourceFiles` in `packages/fuse/scripts/entries.ts` reads single-line import
+  clauses only (its specifier regex excludes newlines), so a multi-line `import { … } from`
+  such as the one in `components/accordion/index.ts` is not followed. The tsdown entry list
+  and the optional-peer walk in `source-contracts.test.ts` under-count because of it, while
+  tsdown still emits the missed modules through their importers. The per-entry Tailwind source
+  stylesheets walk the published JavaScript instead. Fix the regex once the effect on the
+  tsdown entry list is reviewed.
 - Two separate React roots on one document, each with its own `ThemeProvider`, each get a
   color-scheme runtime. They reconcile against the live `data-theme`, so they converge rather
   than ping-pong, but neither sees the other's `setColorScheme`: a document gets no `storage`

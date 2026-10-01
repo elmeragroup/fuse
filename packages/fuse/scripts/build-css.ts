@@ -1,9 +1,10 @@
-import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { copyFileSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 
 import { generateThemesCss } from "../src/theme/generate-css";
 import { generateDemoStageComfortableCss } from "../src/theme/generate-demo-stage-css";
-import { TOOLING_ONLY_CSS_ENTRIES } from "./entries";
+import { componentSourceEntries, renderComponentSourceCss } from "./component-sources";
+import { COMPONENT_SOURCE_DIR, discoverEntries, TOOLING_ONLY_CSS_ENTRIES } from "./entries";
 import { packageRootFromScript } from "./paths";
 import { runCommand } from "./run-command";
 
@@ -27,6 +28,7 @@ export function buildCss(packageRoot: string): void {
     writeFileSync(join(distDir, entry.distFile), TOOLING_ONLY_CSS_GENERATORS[entry.distFile]());
   }
   copyFileSync(fuseCssPath, join(distDir, "styles/fuse.css"));
+  writeComponentSources(packageRoot, distDir);
 
   runCommand(
     "pnpm",
@@ -40,6 +42,22 @@ export function buildCss(packageRoot: string): void {
     ],
     packageRoot
   );
+}
+
+/**
+ * Writes `dist/source/<entry>.css` for every JS entry: the `@source` lines that scan exactly
+ * the published files the entry reaches, read from the JavaScript tsdown has already written
+ * to `dist/`. The directory is rebuilt from scratch so a removed entry leaves no stale
+ * stylesheet behind.
+ */
+function writeComponentSources(packageRoot: string, distDir: string): void {
+  const sourceDir = join(distDir, COMPONENT_SOURCE_DIR);
+  rmSync(sourceDir, { recursive: true, force: true });
+  for (const entry of componentSourceEntries(distDir, discoverEntries(packageRoot).jsEntries)) {
+    const target = join(distDir, entry.distFile);
+    mkdirSync(dirname(target), { recursive: true });
+    writeFileSync(target, renderComponentSourceCss(entry));
+  }
 }
 
 if (import.meta.main) {

@@ -15,6 +15,20 @@ Requires Tailwind CSS 4.1 or newer. Published code is not scanned by a consumer 
 
 Adjust the `@source` path only when the stylesheet is not one directory below the app root.
 
+### Scanning one component at a time
+
+Pointing `@source` at the package root generates CSS for the whole library. An app that adopts one component at a time can import that component's generated source stylesheet instead, which declares `@source` for exactly the published files the entry's classes live in, shared style owners included:
+
+```css
+@import "tailwindcss";
+@import "@elmeragroup/fuse/css";
+@import "@elmeragroup/fuse/themes.css";
+@import "@elmeragroup/fuse/source/button.css";
+@import "@elmeragroup/fuse/source/dialog.css";
+```
+
+There is one `@elmeragroup/fuse/source/<entry>.css` per component subpath, `theme`, `icons`, `illustrations`, `flags` and `react-aria/<entry>`, generated at build time from each entry's import graph and checked against the packed package. A refactor that moves a class into another file moves the `@source` line with it, so nothing depends on knowing the package layout. The package-root `@source` stays the default for apps that use most of the library.
+
 ## Non-Tailwind
 
 ```css

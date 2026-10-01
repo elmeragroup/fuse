@@ -225,6 +225,8 @@ describe("exports map", () => {
 
   it("maps the published layout to package-root files, not nested dist/", () => {
     expect(exportBindingTarget(publishExports, "./flags/*.svg")).toBe("./flags/*.svg");
+    expect(exportBindingTarget(publishExports, "./source/*.css")).toBe("./source/*.css");
+    expect(exportBindingTarget(sourceExports, "./source/*.css")).toBe("./dist/source/*.css");
     expect(exportBindingTarget(publishExports, "./css")).toBe("./styles/fuse.css");
     expect(exportBindingTarget(publishExports, "./demo-stage-comfortable.css")).toBeUndefined();
     expect(exportBindingTarget(publishExports, "./themes.css")).toBe("./themes.css");

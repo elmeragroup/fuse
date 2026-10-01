@@ -14,6 +14,13 @@ const STYLES_TAILWIND = `/* app/globals.css — Tailwind v4.1 or newer */
 @import "@elmeragroup/fuse/themes.css";
 @source "../node_modules/@elmeragroup/fuse";`;
 
+const STYLES_PER_COMPONENT = `/* app/globals.css — scan only the components you use */
+@import "tailwindcss";
+@import "@elmeragroup/fuse/css";
+@import "@elmeragroup/fuse/themes.css";
+@import "@elmeragroup/fuse/source/button.css";
+@import "@elmeragroup/fuse/source/dialog.css";`;
+
 const STYLES_STANDALONE = `// app/layout.tsx — apps without Tailwind, once at the document root
 import "@elmeragroup/fuse/styles.css";
 import "@elmeragroup/fuse/themes.css";`;
@@ -76,6 +83,16 @@ export default function QuickStartPage(): ReactElement {
       </p>
       <pre>
         <code>{STYLES_TAILWIND}</code>
+      </pre>
+      <p>
+        An app that adopts one component at a time can import that component&apos;s generated source
+        stylesheet, <code>@elmeragroup/fuse/source/&lt;entry&gt;.css</code>, instead of scanning the package
+        root. Each one declares <code>@source</code> for exactly the published files the entry&apos;s classes
+        live in, shared style owners included, so the compiled CSS covers the components you import and no
+        others, and a later release that moves a class between files moves the source line with it.
+      </p>
+      <pre>
+        <code>{STYLES_PER_COMPONENT}</code>
       </pre>
       <p>
         Apps without Tailwind import the prebuilt standalone stylesheet and <code>themes.css</code>. It
