@@ -11,7 +11,7 @@ import { FieldDescription, FieldError, FieldLabel, FieldLegend, FieldRoot, Field
 /**
  * Package-private FieldFrame layout. No axes — the frame
  * has one layout; TextField's public recipe composes these slots under its own
- * names. The four exported class names below are the same slots, resolved once.
+ * names. The class names below are the same slots, resolved once.
  */
 export const fieldFrameVariants = tv({
   slots: {
@@ -31,17 +31,14 @@ export const fieldFrameRootClass = fieldFrameSlots.root();
  * The heading row's own layout. Composites append their own classes (TextareaField the
  * counter gap) through {@link FieldFrameClassNames.labelRow}.
  */
-export const fieldFrameLabelRowClass = fieldFrameSlots.labelRow();
-
-/** Default wrapper around control + description when that wrapper is opted into. */
-export const fieldFrameContentClass = fieldFrameSlots.content();
+const fieldFrameLabelRowClass = fieldFrameSlots.labelRow();
 
 /**
  * Default `Field.Description` class. `text-pretty` lives here, not on TextField's public
  * slot: Field.Description already paints it, and PhoneNumberField must not import
  * TextField's recipe to re-state it.
  */
-export const fieldFrameDescriptionClass = fieldFrameSlots.description();
+const fieldFrameDescriptionClass = fieldFrameSlots.description();
 
 /**
  * One class argument per part the frame paints. `content` opts into the
@@ -62,7 +59,7 @@ export type FieldFrameClassNames = {
   description?: string;
 };
 
-export type FieldFrameHeading = "label" | "legend";
+type FieldFrameHeading = "label" | "legend";
 
 export type FieldFrameProps = {
   /**

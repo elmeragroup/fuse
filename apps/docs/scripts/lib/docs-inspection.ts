@@ -53,7 +53,7 @@ export type DocsApiComponent = {
 };
 
 /** A slug with its resolved inputs — what the API inventory is built from. */
-export type ResolvedComponent = {
+type ResolvedComponent = {
   readonly slug: string;
   readonly paths: ComponentPaths;
 };
@@ -97,7 +97,7 @@ export function docsApiInventory(
 }
 
 /** Resolves and parses one route-local component page without writing artifacts. */
-export function inspectComponent(slug: string): ComponentInspection {
+function inspectComponent(slug: string): ComponentInspection {
   const paths = resolveComponentPaths(slug);
   return {
     slug,

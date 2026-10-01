@@ -3,7 +3,7 @@ import type { ReactElement } from "react";
 
 import { DocsInlineCode } from "./docs-inline-code";
 
-export type InlineCodeProps = {
+type InlineCodeProps = {
   text: string;
 };
 

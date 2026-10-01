@@ -4,7 +4,8 @@ import Link from "next/link";
 
 import { BundleSizes } from "../../../../components/bundle-sizes";
 import { DocsPage, pageMetadata } from "../../../../components/docs-page";
-import { TokenReference } from "../../../../components/token-reference";
+import { TokenSwatchList } from "../../../../components/token-swatch-list";
+import { COLOR_TOKENS } from "../../../../generated/token-reference";
 
 const HREF = "/handbook/tokens";
 
@@ -25,7 +26,9 @@ export default function TokensPage(): ReactElement {
         which token a utility such as <code>bg-primary</code> actually reads — so it cannot fall out of step
         with the stylesheet.
       </p>
-      <TokenReference />
+      {/* Swatches render inside a `ThemeScope` on the header picker's theme, so the list shows
+          real values for whichever of the twenty themes is selected. */}
+      <TokenSwatchList tokens={COLOR_TOKENS.map((name) => ({ name, isColor: true }))} />
 
       <h2 id="what-a-component-reads">What a component reads</h2>
       <p>

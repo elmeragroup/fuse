@@ -9,7 +9,6 @@
  */
 
 import { tv } from "tailwind-variants";
-import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
 
@@ -57,9 +56,6 @@ export const overlaySizeVariants = tv({
     size: "md",
   },
 });
-
-/** The keys of {@link overlaySizeVariants}'s `size` axis — the shared overlay width axis. */
-export type OverlaySize = NonNullable<VariantProps<typeof overlaySizeVariants>["size"]>;
 
 /**
  * Popup-surface slots. Fill and edge stay separate
@@ -124,9 +120,9 @@ export const overlayTitleClass = overlayPopupSlots.title();
 export const overlayFooterClass = overlayPopupSlots.footer();
 export const overlayPositionerClass = overlayPopupSlots.positioner();
 export const overlayPopupFillClass = overlayPopupSlots.fill();
-export const overlayPopupEdgeClass = overlayPopupSlots.edge();
+const overlayPopupEdgeClass = overlayPopupSlots.edge();
 export const overlayPopupMotionClass = overlayPopupSlots.motion();
-export const overlayPopupDurationClass = overlayPopupSlots.duration();
+const overlayPopupDurationClass = overlayPopupSlots.duration();
 
 /**
  * Fill + edge + the `md` radius rung: the whole surface of a popup that sits on the

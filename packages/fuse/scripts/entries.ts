@@ -161,7 +161,7 @@ function isBareComponent(subpath: string): boolean {
   return false;
 }
 
-export function isDeferredEntry(subpath: string, deferred: readonly string[] = DEFERRED_ENTRIES): boolean {
+function isDeferredEntry(subpath: string, deferred: readonly string[] = DEFERRED_ENTRIES): boolean {
   return deferred.includes(subpath);
 }
 const IMPLEMENTATION_DIRECTORIES = new Set(["components", "hooks", "icons", "styles", "theme", "react-aria"]);
@@ -287,7 +287,7 @@ function collectUnexpectedJsFiles(
   return unexpected;
 }
 
-export function unexpectedJsEntryFiles(packageRoot: string): string[] {
+function unexpectedJsEntryFiles(packageRoot: string): string[] {
   const allow = canonicalJsAllowlist();
   return [
     ...collectUnexpectedJsFiles(

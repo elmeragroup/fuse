@@ -35,9 +35,6 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".next/**"]
     },
-    "lint": {
-      "inputs": ["$TURBO_DEFAULT$"]
-    },
     "type-check": {
       "dependsOn": ["^build"]
     },

@@ -21,7 +21,7 @@ export function pageMetadata(href: string): Metadata {
   return { title: page.label, description: page.description };
 }
 
-export type DocsPageProps = {
+type DocsPageProps = {
   /** The manifest href of this route. */
   href: string;
   children: ReactNode;

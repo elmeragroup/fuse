@@ -1,5 +1,14 @@
 {
-  "extends": "@elmeragroup/typescript-config/react-library.json",
+  "extends": "@elmeragroup/typescript-config/base.json",
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "ESNext",
+    "target": "es2022",
+    "jsx": "react-jsx",
+    "noEmit": true,
+    "composite": true,
+    "declarationMap": true
+  },
   "include": ["src", "scripts", "test", "tsdown.config.ts", "vitest.config.ts", "vitest.types.config.ts"],
   "exclude": ["dist", "build", "node_modules", ".artifacts"]
 }

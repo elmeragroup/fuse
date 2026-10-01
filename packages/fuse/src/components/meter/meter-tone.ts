@@ -8,7 +8,7 @@ export type MeterTone = "success" | "warning" | "error" | "neutral";
 export type MeterIconName = "none" | "warning" | "success";
 
 /** One `mode` × `level` outcome: the recipe arm plus the glyph that goes with it. */
-export type MeterToneCell = {
+type MeterToneCell = {
   tone: MeterTone;
   icon: MeterIconName;
 };
@@ -20,7 +20,7 @@ const { MODES, LEVELS } = METER_CONSTANTS;
  * color arm and the status glyph are read from the same cell, so the two cannot cross
  * the `> 80` boundary at different points. Adding a mode is one row.
  */
-export const METER_TONE_TABLE = {
+const METER_TONE_TABLE = {
   [MODES.DEFAULT]: {
     [LEVELS.LOW]: { tone: "success", icon: "none" },
     [LEVELS.MEDIUM]: { tone: "warning", icon: "warning" },

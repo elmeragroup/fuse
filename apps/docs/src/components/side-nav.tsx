@@ -9,7 +9,6 @@ import { tv } from "tailwind-variants";
 import { ScrollArea } from "@elmeragroup/fuse/scroll-area";
 
 import { NAV_GROUPS } from "../lib/nav";
-import { docsNavList } from "./docs-nav-list";
 
 const sideNav = tv({
   slots: {
@@ -17,12 +16,12 @@ const sideNav = tv({
     scroll: "h-auto max-h-48 min-[45rem]:h-full min-[45rem]:max-h-none",
     section: "mb-[1.4rem]",
     heading: "text-sm font-normal mb-[0.4rem] block pl-2.5 text-muted-foreground",
+    list: "m-0 list-none p-0",
     link: "data-active:font-medium block rounded-lg px-2.5 py-1 text-muted-foreground no-underline hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring data-active:bg-accent data-active:text-accent-foreground",
   },
 });
 
-const { root, scroll, section, heading, link } = sideNav();
-const { list } = docsNavList();
+const { root, scroll, section, heading, list, link } = sideNav();
 
 export function SideNav(): ReactElement {
   const pathname = usePathname();

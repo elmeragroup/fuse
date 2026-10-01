@@ -31,8 +31,9 @@ import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 import type { ResolvedThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 import type { ApiArtifactDiagnostic, GeneratedApiComponent } from "@elmeragroup/internal";
 
-import type { DocsComponent, DocsDemo, ThemeCatalog } from "../src/lib/docs-model.ts";
-import { API_REGEN_COMMAND, generateDocsApiArtifacts } from "./lib/api-artifact.ts";
+import type { ComponentPageEntry, DocsComponent, DocsDemo, ThemeCatalog } from "../src/lib/docs-model.ts";
+import { API_REGEN_COMMAND } from "../src/lib/docs-model.ts";
+import { generateDocsApiArtifacts } from "./lib/api-artifact.ts";
 import {
   componentInspections,
   docsApiInventory,
@@ -43,7 +44,6 @@ import {
 import type { ComponentInspection } from "./lib/docs-inspection.ts";
 import { ProblemLog } from "./lib/errors.ts";
 import { renderLlmsTxt } from "./lib/llms.ts";
-import { renderComponentPages } from "./lib/manifest.ts";
 import { renderComponentMarkdown } from "./lib/markdown.ts";
 import {
   generatedDir,
@@ -131,9 +131,40 @@ function buildComponent(
   };
 }
 
-/** The component-page manifest the site imports. */
+/** The manifest entry of a component the generation pass just described. */
+function toPageEntry(component: DocsComponent): ComponentPageEntry {
+  return {
+    slug: component.slug,
+    title: component.title,
+    lede: component.lede,
+    sourcePath: component.sourcePath,
+    sourceUrl: component.sourceUrl,
+    markdownUrl: component.markdownUrl,
+    headings: component.headings,
+    demos: component.demos.map((demo) => ({ id: demo.id, title: demo.title })),
+    partNames: component.parts.map((part) => part.name),
+    tokens: component.tokens,
+  };
+}
+
+/**
+ * The component-page manifest: the one module the *site* imports about its component pages —
+ * what the SideNav lists, what a page's intro and `metadata` say, what the QuickNav outlines,
+ * and which tokens the Tokens-consumed section shows. It is a manifest, not content: the prose
+ * comes from the authored `page.mdx`, each demo's source is read from the demo file at render
+ * time, and the API reference reads the committed `api.json`. So a page's *substance* has
+ * exactly one source, and this carries only the metadata none of those files owns.
+ */
 function emitComponentPages(components: readonly DocsComponent[]): void {
-  writeFile(path.join(generatedDir, "component-pages.ts"), `${BANNER}${renderComponentPages(components)}`);
+  const entries: readonly ComponentPageEntry[] = components.map(toPageEntry);
+  writeFile(
+    path.join(generatedDir, "component-pages.ts"),
+    `${BANNER}import type { ComponentPageEntry } from "../lib/docs-model";
+
+/** Every component page the site serves, in route order. */
+export const COMPONENT_PAGES: readonly ComponentPageEntry[] = ${JSON.stringify(entries, null, 2)};
+`
+  );
 }
 
 /**

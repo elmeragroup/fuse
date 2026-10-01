@@ -9,7 +9,7 @@ import { SEARCH_ENTRIES } from "../generated/search-index";
 import type { SearchEntry } from "./docs-model";
 
 /** How many hits the palette lists at once. */
-export const SEARCH_RESULT_LIMIT = 20;
+const SEARCH_RESULT_LIMIT = 20;
 
 type Fields = {
   title: string;

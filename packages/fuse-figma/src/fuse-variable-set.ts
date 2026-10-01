@@ -63,7 +63,7 @@ export const THEMES_COLLECTION = "Fuse themes";
 export const PRIMITIVES_COLLECTION = "Fuse primitives";
 
 /** The collection with the control metrics and one mode per density. */
-export const DENSITY_COLLECTION = "Fuse density";
+const DENSITY_COLLECTION = "Fuse density";
 
 const PRIMITIVES_MODE = "Value";
 

@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { parseStyleRules } from "../../test/css-rules";
 import { declaredThemeValue, SECONDARY_HOVER_CSS } from "../../test/theme-css-contract";
-import { assertMustOverrideCoverage, composeTheme, coverageSchemes } from "./compose-theme";
+import { assertMustOverrideCoverage, composeTheme } from "./compose-theme";
 import { contrastRatio } from "./contrast";
 import { cssVarReference } from "./css-values";
 import { generateThemesCss } from "./generate-css";
@@ -183,11 +183,9 @@ describe("theme contract", () => {
     expect(MUST_OVERRIDE_DARK.filter((key) => !internal.has(key))).toEqual([]);
   });
 
-  it("gates the light layers on dark compositions too", () => {
-    expect(coverageSchemes("light")).toEqual(["light"]);
-    expect(coverageSchemes("dark")).toEqual(["light", "dark"]);
-    // The dark layer alone never names the light-only geometry roles, so this is the set a
-    // dark composition carries if it skips the light gate; the light gate rejects it.
+  it("fails the light coverage gate for a dark-only token set", () => {
+    // The brand pointer and dark palette layers never name the light-only geometry roles,
+    // so the light gate must reject the set they supply on their own.
     const theme = { variant: "external", brand: "fkas", segment: "private" } as const;
     const darkOnly = new Set<TokenName>([
       ...assignedTokenNames(brandPointer(theme.brand)),

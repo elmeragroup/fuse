@@ -1,10 +1,10 @@
 import { spawn } from "node:child_process";
 import type { ChildProcess } from "node:child_process";
-import { createServer } from "node:net";
-import type { AddressInfo } from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect } from "vitest";
+
+import { reservePort } from "./tcp-port";
 
 const docsRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const nextBin = path.join(docsRoot, "node_modules/next/dist/bin/next");
@@ -13,29 +13,6 @@ export type DocsServer = {
   url: string;
   close: () => Promise<void>;
 };
-
-async function reservePort(): Promise<number> {
-  const server = createServer();
-  return await new Promise<number>((resolve, reject) => {
-    server.once("error", reject);
-    server.listen(0, "127.0.0.1", () => {
-      const address = server.address();
-      const port = listeningPort(address);
-      if (port === null) {
-        server.close();
-        reject(new Error("Could not reserve a TCP port"));
-        return;
-      }
-      server.close((error) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        resolve(port);
-      });
-    });
-  });
-}
 
 async function waitForServer(url: string, child: ChildProcess): Promise<void> {
   const deadline = Date.now() + 30_000;
@@ -112,17 +89,6 @@ export async function startDocsProductionServer(): Promise<DocsServer> {
       });
     },
   };
-}
-
-function listeningPort(address: AddressInfo | string | null): number | null {
-  if (address === null || !isAddressInfo(address)) {
-    return null;
-  }
-  return address.port;
-}
-
-function isAddressInfo(address: AddressInfo | string): address is AddressInfo {
-  return address instanceof Object && Object.hasOwn(address, "port");
 }
 
 export function docsBaseUrl(): string {

@@ -42,7 +42,7 @@ import type {
 export type { ApiPart, ApiProp, ApiPropOrigin, ComponentApiArtifact, RscStatus };
 
 /** Dependency deliberately selected for production API-reference enrichment. */
-export const BASE_UI_PACKAGE_NAME = "@base-ui/react";
+const BASE_UI_PACKAGE_NAME = "@base-ui/react";
 
 /** The command that rewrites every committed `api.json` — named by the artifact's own banner
  * and by every failure that blames a stale or missing one. */
@@ -59,7 +59,7 @@ export type TokenRef = {
  * and a label, and nothing more. The frame itself is the `<Demo>` element the page authored,
  * and the source it shows is read from the demo file at render time (`demo-source.ts`).
  */
-export type DemoRef = {
+type DemoRef = {
   /** Stable anchor id, unique inside the page. */
   id: string;
   title: string;
@@ -152,22 +152,6 @@ export type DocsComponent = Omit<ComponentPageEntry, "demos" | "partNames"> & {
   parts: readonly ApiPart[];
 };
 
-/** The manifest entry of a component the generation pass just described. */
-export function toPageEntry(component: DocsComponent): ComponentPageEntry {
-  return {
-    slug: component.slug,
-    title: component.title,
-    lede: component.lede,
-    sourcePath: component.sourcePath,
-    sourceUrl: component.sourceUrl,
-    markdownUrl: component.markdownUrl,
-    headings: component.headings,
-    demos: component.demos.map((demo) => ({ id: demo.id, title: demo.title })),
-    partNames: component.parts.map((part) => part.name),
-    tokens: component.tokens,
-  };
-}
-
 /** Which SideNav group a search hit belongs to; the palette shows it next to the title. */
 export type SearchGroup = "Overview" | "Handbook" | "Components";
 
@@ -251,7 +235,7 @@ export type FigmaThemeDocument = {
   };
 };
 
-export type FigmaThemeIndexFile = {
+type FigmaThemeIndexFile = {
   slug: string;
   href: string;
 };
@@ -294,12 +278,12 @@ export function propDescription(prop: ApiProp): string {
 }
 
 /** The dependency that owns a prop, or `null` for library-authored and recipe props. */
-export function dependencyPackageName(origin: ApiPropOrigin): string | null {
+function dependencyPackageName(origin: ApiPropOrigin): string | null {
   return origin === "declared" || origin === "recipe-axis" ? null : origin.packageName;
 }
 
 /** One source group shared by the HTML and Markdown API-reference consumers. */
-export type ApiPropGroup = {
+type ApiPropGroup = {
   key: string;
   label: string | null;
   props: readonly ApiProp[];
