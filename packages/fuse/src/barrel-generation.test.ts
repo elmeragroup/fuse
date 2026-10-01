@@ -66,6 +66,29 @@ describe("barrel generation", () => {
     expect(jsEntries.find((entry) => entry.subpath === ".")?.runtimeExports).toContain("Badge");
   });
 
+  it("keeps an optional-peer entry out of the root barrel while publishing its subpath", () => {
+    const packageRoot = scratchPackage({
+      "src/badge.ts": `export { Badge } from "./components/badge/badge";\n`,
+      "src/data-table.ts": `export { DataTable } from "./components/data-table";\n`,
+      "src/theme/theme-provider.ts": `export const ThemeProvider = 1;\n`,
+      "src/components/badge/badge.ts": `export const Badge = 1;\n`,
+      "src/components/data-table/index.ts": `export const DataTable = 1;\n`,
+    });
+
+    const jsEntries = discoverJsEntriesFromAllowlist(packageRoot, [".", "theme", "badge", "data-table"]);
+    const discovered = { jsEntries, cssEntries: [], assetPatterns: [], sourceFiles: [] };
+    expect(jsEntries.find((entry) => entry.subpath === "data-table")?.inRootBarrel).toBe(false);
+    expect(renderRootBarrel(discovered)).not.toContain("data-table");
+    expect(jsEntries.find((entry) => entry.subpath === ".")?.runtimeExports).toEqual([
+      "Badge",
+      "ThemeProvider",
+    ]);
+    expect(exportBindingTarget(buildSourceExportMap(discovered), "./data-table")).toEqual({
+      types: "./src/data-table.ts",
+      import: "./src/data-table.ts",
+    });
+  });
+
   it.each<RefusedPackage>([
     {
       name: "two barrel facades export the same value name",

@@ -78,6 +78,21 @@ const EXPECTED_ENTRIES = {
   collapsible: { inRootBarrel: true, runtimeExports: ["Collapsible"] },
   combobox: { inRootBarrel: true, runtimeExports: ["Combobox", "useComboboxAnchor"] },
   "confirm-button": { inRootBarrel: true, runtimeExports: ["ConfirmButton"] },
+  // Subpath-only: it imports the optional @tanstack/react-table peer.
+  "data-table": {
+    inRootBarrel: false,
+    runtimeExports: [
+      "DataTable",
+      "createFuseTableHook",
+      "selectColumn",
+      "actionsColumn",
+      "CurrencyCell",
+      "DateCell",
+      "DateTimeCell",
+      "NumberCell",
+      "TextCell",
+    ],
+  },
   "description-list": { inRootBarrel: true, runtimeExports: ["DescriptionList"] },
   dialog: { inRootBarrel: true, runtimeExports: ["Dialog"] },
   "dropdown-menu": { inRootBarrel: true, runtimeExports: ["DropdownMenu"] },

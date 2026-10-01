@@ -208,6 +208,11 @@
                 "importNames": ["LocalizedStringDictionary"],
                 "allowTypeImports": true,
                 "message": "Assemble dictionaries with createStringDictionary; do not construct LocalizedStringDictionary outside the factory."
+              },
+              {
+                "name": "@tanstack/react-table",
+                "allowTypeImports": true,
+                "message": "Import only types from the optional TanStack peer. Plain parts render through table.FlexRender and read structural slices; only the data-table contexts, the table hook factory and their tests call into TanStack."
               }
             ]
           }
@@ -336,6 +341,16 @@
     },
     {
       "files": ["packages/fuse/src/intl/create-string-dictionary.ts"],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    },
+    {
+      "files": [
+        "packages/fuse/src/components/data-table/data-table-contexts.ts",
+        "packages/fuse/src/components/data-table/create-fuse-table-hook.ts",
+        "packages/fuse/src/components/data-table/*.test*.{ts,tsx}"
+      ],
       "rules": {
         "no-restricted-imports": "off"
       }

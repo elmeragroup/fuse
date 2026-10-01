@@ -55,6 +55,7 @@ describe("size-limit harness", () => {
       "input-group",
       "textarea",
       "flags",
+      "data-table",
       "sidebar",
       "toast",
       "phone-number-field",

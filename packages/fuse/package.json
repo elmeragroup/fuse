@@ -95,6 +95,10 @@
       "import": "./src/confirm-button.ts"
     },
     "./css": "./src/styles/fuse.css",
+    "./data-table": {
+      "types": "./src/data-table.ts",
+      "import": "./src/data-table.ts"
+    },
     "./demo-stage-comfortable.css": "./dist/demo-stage-comfortable.css",
     "./description-list": {
       "types": "./src/description-list.ts",
@@ -343,11 +347,15 @@
     "type-check": "tsc --noEmit"
   },
   "peerDependencies": {
+    "@tanstack/react-table": "^9.2",
     "react": "catalog:",
     "react-dom": "catalog:",
     "tailwindcss": "catalog:"
   },
   "peerDependenciesMeta": {
+    "@tanstack/react-table": {
+      "optional": true
+    },
     "tailwindcss": {
       "optional": true
     }
@@ -374,6 +382,7 @@
     "@elmeragroup/internal": "catalog:",
     "@elmeragroup/typescript-config": "workspace:*",
     "@tailwindcss/cli": "catalog:",
+    "@tanstack/react-table": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",

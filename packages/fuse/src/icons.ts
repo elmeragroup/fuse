@@ -18,6 +18,8 @@ export { Bug } from "./icons/generated/bug";
 export { Calculator } from "./icons/generated/calculator";
 export { CalendarBlank } from "./icons/generated/calendar-blank";
 export { Camera } from "./icons/generated/camera";
+export { CaretDoubleLeft } from "./icons/generated/caret-double-left";
+export { CaretDoubleRight } from "./icons/generated/caret-double-right";
 export { CaretDown } from "./icons/generated/caret-down";
 export { CaretLeft } from "./icons/generated/caret-left";
 export { CaretRight } from "./icons/generated/caret-right";

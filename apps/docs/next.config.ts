@@ -6,6 +6,12 @@ import { fileURLToPath } from "node:url";
 const workspaceRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
 const nextConfig: NextConfig = {
+  /**
+   * The container image runs `node apps/docs/server.js` from `.next/standalone` (see
+   * `Dockerfile`). Tracing from the workspace root keeps the linked workspace packages in
+   * that bundle instead of leaving them behind as pnpm symlinks.
+   */
+  output: "standalone",
   outputFileTracingRoot: workspaceRoot,
   /** Component pages are authored as `page.mdx` route files. */
   pageExtensions: ["ts", "tsx", "mdx"],

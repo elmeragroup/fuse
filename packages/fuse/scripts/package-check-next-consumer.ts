@@ -9,12 +9,19 @@ import { chromium } from "playwright";
 
 import { releaseAgeCutoff, withPackedConsumer } from "./packed-consumer";
 import { packageRootFromScript } from "./paths";
-import { readWorkspaceCatalog } from "./published-dependencies";
+import { catalogVersion, readWorkspaceCatalog } from "./published-dependencies";
 import { runCommandAsync } from "./run-command";
 import { findTarball } from "./tarball";
 
 /** The consumer's dependencies beside the tarball, each installed at its workspace catalog version. */
-const CONSUMER_DEPENDENCIES = ["next", "react", "react-dom", "tailwindcss", "@tailwindcss/postcss"] as const;
+const CONSUMER_DEPENDENCIES = [
+  "next",
+  "react",
+  "react-dom",
+  "tailwindcss",
+  "@tailwindcss/postcss",
+  "@tanstack/react-table",
+] as const;
 
 /** A running `next start` and the way to stop it. */
 type NextServer = {
@@ -25,15 +32,10 @@ type NextServer = {
 const packageRoot = packageRootFromScript(import.meta.url);
 const cutoff = releaseAgeCutoff(new Date());
 const catalog = readWorkspaceCatalog();
-const catalogVersion = (name: (typeof CONSUMER_DEPENDENCIES)[number]): string => {
-  const version = catalog.get(name);
-  if (version === undefined) {
-    throw new Error(`Next consumer: pnpm-workspace.yaml catalog has no ${name}`);
-  }
-  return version;
-};
-const dependencies = Object.fromEntries(CONSUMER_DEPENDENCIES.map((name) => [name, catalogVersion(name)]));
-const nextVersion = catalogVersion("next");
+const dependencies = Object.fromEntries(
+  CONSUMER_DEPENDENCIES.map((name) => [name, catalogVersion(catalog, name)])
+);
+const nextVersion = catalogVersion(catalog, "next");
 
 const controller = new AbortController();
 const summary = await withPackedConsumer(
@@ -73,6 +75,7 @@ async function checkServerHtml(url: string): Promise<void> {
     ["Rendered on the server", "the server page's Item.Title text is missing"],
     ['data-theme-brand="fkas"', "the server HTML lacks the theme brand attribute"],
     ['data-density="comfortable"', "the server HTML lacks the density attribute"],
+    ['aria-label="Orders"', "the server HTML lacks the data-table client island"],
   ] as const) {
     assert.ok(html.includes(marker), `Next consumer: ${meaning}`);
   }
@@ -132,6 +135,15 @@ async function checkInBrowser(url: string): Promise<string[]> {
     await waitOrFail(
       page.getByRole("tabpanel").filter({ hasText: "Second panel" }).waitFor(),
       "Next consumer: the Tabs did not hydrate"
+    );
+
+    await page.getByRole("button", { name: "Customer" }).click();
+    await waitOrFail(
+      page
+        .getByRole("columnheader", { name: "Customer" })
+        .and(page.locator('[aria-sort="ascending"]'))
+        .waitFor(),
+      "Next consumer: the data table did not hydrate with the optional TanStack peer"
     );
 
     await waitOrFail(

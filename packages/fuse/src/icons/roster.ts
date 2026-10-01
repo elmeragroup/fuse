@@ -13,6 +13,8 @@ export const PHOSPHOR_ICON_NAMES = [
   "Calculator",
   "CalendarBlank",
   "Camera",
+  "CaretDoubleLeft",
+  "CaretDoubleRight",
   "CaretDown",
   "CaretLeft",
   "CaretRight",

@@ -1,0 +1,154 @@
+name: Preview
+
+# Each pull request gets one live revision on the preview Container App, labeled `pr-<n>`,
+# so its URL (`<app>---pr-<n>.<environment domain>`) stays the same across pushes. A push
+# replaces the revision; closing the PR, merged or not, deactivates it. The preview app is
+# separate from production, and so is its identity: it can push images and manage the
+# preview app, never the production app. Preview URLs resolve only on the VPN.
+#
+# This must stay `pull_request`, never `pull_request_target`: the repo is public, and
+# `pull_request_target` would hand the preview identity to code from any fork. Fork PRs get
+# no OIDC token under `pull_request`, so they are skipped with a note instead.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+permissions: {}
+
+# One run per PR at a time. A newer push or the close event supersedes a deploy in flight.
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  APP: ${{ vars.PREVIEW_CONTAINER_APP }}
+  RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP_PREVIEW }}
+  PR: ${{ github.event.pull_request.number }}
+  # Marks the one preview comment this workflow creates and then edits in place.
+  COMMENT_MARKER: "<!-- fuse-docs-preview -->"
+
+jobs:
+  fork:
+    if: github.event.action != 'closed' && github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Explain the skipped preview
+        run: |
+          {
+            echo "### No preview for fork pull requests"
+            echo "Forks receive no Azure OIDC token under \`pull_request\`, so this PR cannot deploy a preview."
+            echo "A maintainer can push the branch to elmeragroup/fuse to get one."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    if: >-
+      github.event.action != 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      vars.AZURE_CLIENT_ID_PREVIEW != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Azure login
+        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2.3.1
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID_PREVIEW }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID_PREVIEW }}
+
+      # `github.sha` is the PR's merge commit, so the preview shows what would land on main.
+      - name: Push image
+        id: image
+        uses: ./.github/actions/push-docs-image
+        with:
+          registry: ${{ vars.AZURE_ACR_NAME_PREVIEW }}
+          sha: ${{ github.sha }}
+
+      - name: Deploy revision
+        id: deploy
+        env:
+          IMAGE: ${{ steps.image.outputs.image }}
+          ENVIRONMENT: ${{ vars.AZURE_CONTAINER_APPS_ENVIRONMENT_PREVIEW }}
+          REGISTRY: ${{ vars.AZURE_ACR_NAME_PREVIEW }}
+          MANAGED_IDENTITY_ID: ${{ vars.AZURE_MANAGED_IDENTITY_ID_PREVIEW }}
+          # Run ID also changes on reopen, even if the merge SHA is unchanged.
+          SUFFIX: ${{ format('pr-{0}-{1}-{2}', github.event.pull_request.number, github.run_id, github.run_attempt) }}
+        run: bash .github/scripts/docs-container-app.sh preview
+
+      - name: Comment preview URL
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        env:
+          URL: ${{ steps.deploy.outputs.url }}
+          REVISION: ${{ steps.deploy.outputs.revision }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        with:
+          script: |
+            const { URL, REVISION, SHA, COMMENT_MARKER } = process.env;
+            const body = [
+              COMMENT_MARKER,
+              `**Docs preview:** ${URL} (VPN only)`,
+              "",
+              `Built from ${SHA.slice(0, 7)} as revision \`${REVISION}\`. The revision is removed when this PR closes.`,
+            ].join("\n");
+            await upsertComment(github, context, COMMENT_MARKER, body);
+
+            async function upsertComment(github, context, marker, body) {
+              const issue = { ...context.repo, issue_number: context.issue.number };
+              const comments = await github.paginate(github.rest.issues.listComments, issue);
+              const existing = comments.find((comment) => comment.body?.startsWith(marker));
+              if (existing) {
+                await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body });
+              } else {
+                await github.rest.issues.createComment({ ...issue, body });
+              }
+            }
+
+  teardown:
+    if: >-
+      github.event.action == 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      vars.AZURE_CLIENT_ID_PREVIEW != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Azure login
+        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2.3.1
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID_PREVIEW }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID_PREVIEW }}
+
+      - name: Deactivate revisions
+        run: bash .github/scripts/docs-container-app.sh teardown
+
+      - name: Mark preview comment removed
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        with:
+          script: |
+            const { COMMENT_MARKER } = process.env;
+            const issue = { ...context.repo, issue_number: context.issue.number };
+            const comments = await github.paginate(github.rest.issues.listComments, issue);
+            const existing = comments.find((comment) => comment.body?.startsWith(COMMENT_MARKER));
+            if (existing) {
+              const body = `${COMMENT_MARKER}\n**Docs preview:** removed when this PR closed.`;
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body });
+            }

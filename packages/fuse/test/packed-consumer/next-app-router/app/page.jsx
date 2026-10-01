@@ -2,6 +2,7 @@ import { Item } from "@elmeragroup/fuse/item";
 import { Tabs } from "@elmeragroup/fuse/tabs";
 
 import { ClientIsland } from "./client-island";
+import { OrdersTable } from "./orders-table";
 
 export default function Page() {
   return (
@@ -20,6 +21,7 @@ export default function Page() {
         <Tabs.Content value="second">Second panel</Tabs.Content>
       </Tabs.Root>
       <ClientIsland />
+      <OrdersTable />
     </main>
   );
 }
