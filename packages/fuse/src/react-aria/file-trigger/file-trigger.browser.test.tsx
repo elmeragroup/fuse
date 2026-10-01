@@ -162,7 +162,7 @@ describe("FileTrigger", () => {
     expect(getComputedStyle(outline).borderTopWidth).not.toBe("0px");
     expect(defaults.className).toContain("bg-primary");
     expect(fileInputFor(defaults).className).not.toContain("bg-primary");
-    expect(outline.className).toContain("border-border");
-    expect(fileInputFor(outline).className).not.toContain("border-border");
+    expect(outline.className).toContain("border-button-outline");
+    expect(fileInputFor(outline).className).not.toContain("border-button-outline");
   });
 });

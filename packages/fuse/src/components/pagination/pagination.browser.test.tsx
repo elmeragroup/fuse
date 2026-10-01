@@ -5,6 +5,8 @@ import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+// The outline shadow follows the theme's --button-outline-width, which themes.css declares.
+import "../../../dist/themes.css";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Pagination } from "./index";
