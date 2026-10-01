@@ -150,13 +150,17 @@
      value reads a rung through --theme(--radius-md), which inlines the formula so it resolves
      in the element's own theme scope. var(--radius-md) would read the value the document root
      computed. The corners that leave this scale in external themes live in
-     styles/corner-radius.ts, so they add no public rounded-* utility. */
-  --radius-xs: calc(var(--radius) - 3 * var(--radius-step));
-  --radius-sm: calc(var(--radius) - 2 * var(--radius-step));
-  --radius-md: calc(var(--radius) - var(--radius-step));
+     styles/corner-radius.ts, so they add no public rounded-* utility.
+     The step falls back to 0px, the library's own root default, so a host that imports this
+     file without themes.css and keeps its own --radius still gets every rung at that radius
+     instead of an invalid border-radius. --radius has no fallback: a host that owns its tokens
+     owns the radius too, and themes.css supplies it otherwise. */
+  --radius-xs: calc(var(--radius) - 3 * var(--radius-step, 0px));
+  --radius-sm: calc(var(--radius) - 2 * var(--radius-step, 0px));
+  --radius-md: calc(var(--radius) - var(--radius-step, 0px));
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 2 * var(--radius-step));
-  --radius-popover: calc(var(--radius) - 4 * var(--radius-step));
+  --radius-xl: calc(var(--radius) + 2 * var(--radius-step, 0px));
+  --radius-popover: calc(var(--radius) - 4 * var(--radius-step, 0px));
   --breakpoint-xs: 574px;
   --breakpoint-lg: 60rem;
   --breakpoint-3xl: 1920px;
