@@ -11,7 +11,7 @@ import { BrandPicker } from "./brand-picker";
 import { LandingDensity } from "./landing-density";
 import { LandingHero } from "./landing-hero";
 import { LandingInstall } from "./landing-install";
-import { LandingNav } from "./landing-nav";
+import { LandingNav, SchemeSwitch } from "./landing-nav";
 import { LandingSpecs } from "./landing-specs";
 import { LandingThemeProvider } from "./landing-theme";
 import { ProductShot } from "./product-shot";
@@ -23,6 +23,8 @@ const landingPage = tv({
     footerInner:
       "text-sm sm:flex-row sm:items-center sm:px-6 max-w-landing pb-footer-end mx-auto flex w-full flex-col gap-4 px-4 py-8 text-muted-foreground lg:px-12",
     footerLinks: "sm:ml-auto flex gap-5",
+    // The nav has no room for the scheme switch on phones, so it lives here instead.
+    footerScheme: "sm:hidden",
     footerLink: "underline-offset-4 hover:text-foreground hover:underline",
   },
 });
@@ -47,6 +49,9 @@ export function LandingPage(): ReactElement {
             <div className={styles.footerInner()}>
               <span>
                 Fuse is built by Elmera Group for Fjordkraft, TrøndelagKraft, Gudbrandsdal Energi and Telinet.
+              </span>
+              <span className={styles.footerScheme()}>
+                <SchemeSwitch />
               </span>
               <span className={styles.footerLinks()}>
                 <Link href="/" className={styles.footerLink()}>

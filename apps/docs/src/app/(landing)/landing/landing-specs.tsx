@@ -2,6 +2,8 @@ import type { ReactElement } from "react";
 
 import { tv } from "tailwind-variants";
 
+import { FACTS } from "./landing-facts";
+
 const landingSpecs = tv({
   slots: {
     section: "sm:px-6 sm:py-30 border-t border-border px-4 py-16 lg:px-20",
@@ -22,18 +24,24 @@ const landingSpecs = tv({
 
 const styles = landingSpecs();
 
-const SPECS = [
-  { value: "67", label: "Components", note: "Built on Base UI. Date components use React Aria." },
-  { value: "20", label: "Themes", note: "Six brands × two segments × two variants." },
-  { value: "4", label: "Locales", note: "Norwegian, Swedish, Finnish and English." },
-  { value: "2", label: "Densities", note: "Dense for internal tools, comfortable for customer apps." },
+type Spec = { value: number; unit?: string; label: string; note: string };
+
+const SPECS: readonly Spec[] = [
+  { value: FACTS.components, label: "Components", note: "Built on Base UI. Date components use React Aria." },
   {
-    value: "24",
+    value: FACTS.themes,
+    label: "Themes",
+    note: `${String(FACTS.variants)} variants × ${String(FACTS.brandSegmentPairs)} brand and segment pairs.`,
+  },
+  { value: FACTS.locales, label: "Locales", note: `${FACTS.localeNames}.` },
+  { value: FACTS.densities, label: "Densities", note: `Medium controls at ${FACTS.mediumControlPx}.` },
+  {
+    value: FACTS.minTargetPx,
     unit: "px",
     label: "Minimum target",
-    note: "At both densities. Reduced motion is set in one place.",
+    note: "The smallest control at any density. Reduced motion is set in one place.",
   },
-] as const;
+];
 
 export function LandingSpecs(): ReactElement {
   return (
@@ -54,7 +62,7 @@ export function LandingSpecs(): ReactElement {
               <dt className={styles.label()}>{spec.label}</dt>
               <dd className={styles.value()}>
                 {spec.value}
-                {"unit" in spec ? <span className={styles.unit()}>{spec.unit}</span> : null}
+                {spec.unit === undefined ? null : <span className={styles.unit()}>{spec.unit}</span>}
               </dd>
               <dd className={styles.note()}>{spec.note}</dd>
             </div>

@@ -7,6 +7,11 @@ import { tv } from "tailwind-variants";
 
 import { Button } from "@elmeragroup/fuse/button";
 import { ElmeraGroupLogo } from "@elmeragroup/fuse/icons";
+import { COLOR_SCHEMES } from "@elmeragroup/fuse/theme";
+import type { ColorScheme } from "@elmeragroup/fuse/theme";
+import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
+
+import { useLandingTheme } from "./landing-theme";
 
 const landingNav = tv({
   slots: {
@@ -18,11 +23,44 @@ const landingNav = tv({
     links: "text-sm md:flex hidden items-center gap-1",
     link: "rounded-md px-2.5 py-1.5 text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring",
     end: "ml-auto flex items-center gap-4",
-    version: "text-xs sm:inline hidden font-mono text-muted-foreground",
+    version: "text-xs hidden font-mono text-muted-foreground lg:inline",
+    scheme: "sm:inline-flex hidden",
   },
 });
 
 const styles = landingNav();
+
+const SCHEME_LABELS = {
+  light: "Light",
+  dark: "Dark",
+  system: "System",
+} as const satisfies Record<ColorScheme, string>;
+
+/** Light, dark or the operating system's choice, under the same reveal as a brand change. */
+export function SchemeSwitch(): ReactElement {
+  const { colorScheme, changeColorScheme } = useLandingTheme();
+
+  return (
+    <ToggleGroup.Root
+      aria-label="Colour scheme"
+      variant="outline"
+      size="sm"
+      spacing={0}
+      value={[colorScheme]}
+      onValueChange={(next) => {
+        const picked = COLOR_SCHEMES.find((scheme) => scheme === next[0]);
+        if (picked !== undefined) {
+          changeColorScheme(picked);
+        }
+      }}>
+      {COLOR_SCHEMES.map((scheme) => (
+        <ToggleGroup.Item key={scheme} value={scheme}>
+          {SCHEME_LABELS[scheme]}
+        </ToggleGroup.Item>
+      ))}
+    </ToggleGroup.Root>
+  );
+}
 
 const LINKS = [
   { href: "/components/button", label: "Components" },
@@ -48,6 +86,9 @@ export function LandingNav(): ReactElement {
         </nav>
         <div className={styles.end()}>
           <span className={styles.version()}>v1.0</span>
+          <span className={styles.scheme()}>
+            <SchemeSwitch />
+          </span>
           <Button size="sm" render={<Link href="/quick-start" />} nativeButton={false}>
             Get started
           </Button>

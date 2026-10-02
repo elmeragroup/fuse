@@ -1,9 +1,8 @@
 "use client";
 
-import { Fragment, useState } from "react";
-import type { CSSProperties, ReactElement, ReactNode } from "react";
+import { useState } from "react";
+import type { CSSProperties, ReactElement } from "react";
 
-import Link from "next/link";
 import { tv } from "tailwind-variants";
 
 import { Avatar } from "@elmeragroup/fuse/avatar";
@@ -19,6 +18,9 @@ import { Tabs } from "@elmeragroup/fuse/tabs";
 import { Toast } from "@elmeragroup/fuse/toast";
 import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
 
+import { Labelled } from "./product-parts";
+import { AgreementsTab, InvoicesTab, MetersTab } from "./product-tabs";
+
 const productShot = tv({
   slots: {
     section: "sm:py-34 sm:gap-18 flex flex-col items-center gap-12 border-t border-border py-16 lg:px-20",
@@ -26,18 +28,18 @@ const productShot = tv({
     eyebrow: "text-xs tracking-landing-eyebrow font-mono text-primary uppercase",
     title: "text-4xl sm:text-landing-h2 tracking-landing-h2 font-semibold font-heading text-balance",
     lede: "text-base sm:text-lg leading-relaxed text-pretty text-muted-foreground",
-    window:
-      "sm:mx-6 rounded-2xl shadow-2xl sm:w-auto w-full max-w-245 overflow-hidden border border-border bg-background lg:mx-0",
-    header: "sm:px-6 flex h-15 items-center gap-6 border-b border-border px-4",
+    // The window keeps one width and a floor height, so switching tabs never resizes it.
+    frame: "sm:px-6 w-full max-w-257 px-4 lg:px-0",
+    window: "rounded-2xl shadow-2xl w-full overflow-hidden border border-border bg-background",
+    header: "sm:px-6 sm:gap-6 flex h-15 items-center gap-3 border-b border-border px-2",
     headerMark: "sm:block hidden size-4 shrink-0 text-foreground",
-    // Phones scroll the tab row instead of clipping it.
-    headerTabs: "min-w-0 flex-1 overflow-x-auto",
-    body: "sm:p-6 md:grid-cols-[minmax(0,26fr)_minmax(0,19fr)] grid grid-cols-1 gap-6 p-4",
+    // Phones give the avatar's room to the tabs.
+    headerAvatar: "sm:flex hidden size-8 shrink-0",
+    headerTab: "px-2",
+    // Phones scroll the tab row like a native tab bar instead of clipping it.
+    headerTabs: "landing-rail min-w-0 flex-1 overflow-x-auto",
+    body: "sm:p-6 md:grid-cols-[minmax(0,26fr)_minmax(0,19fr)] md:min-h-170 grid grid-cols-1 content-start gap-6 p-4",
     column: "flex min-w-0 flex-col gap-6",
-    // The labels name the components each card is built from and link to their docs.
-    parts:
-      "text-2xs tracking-landing-caption mb-2 flex flex-wrap gap-x-1.5 font-mono text-muted-foreground uppercase",
-    part: "underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-ring",
     usageHead: "flex flex-wrap items-start justify-between gap-3",
     figureRow: "mt-4 flex flex-wrap items-center gap-3",
     figure: "text-5xl font-semibold tracking-tight font-heading leading-none tabular-nums",
@@ -47,6 +49,8 @@ const productShot = tv({
     axis: "text-xs mt-2 flex justify-between font-mono text-muted-foreground tabular-nums",
     meter: "mt-6 border-t border-border pt-5",
     stack: "flex flex-col gap-4",
+    // Content without a Card.Header above it gets the header's top padding back.
+    headless: "pt-6",
     switchRow: "items-start",
   },
 });
@@ -60,34 +64,6 @@ const usageBar = tv({
     current: { true: "bg-primary", false: "bg-primary/30" },
   },
 });
-
-type Part = { name: string; slug: string };
-
-function Parts({ parts }: { parts: readonly Part[] }): ReactElement {
-  return (
-    <p className={styles.parts()}>
-      {parts.map((part, index) => (
-        <Fragment key={part.slug}>
-          {index > 0 ? <span aria-hidden>·</span> : null}
-          <Link href={`/components/${part.slug}`} className={styles.part()}>
-            {part.name}
-          </Link>
-        </Fragment>
-      ))}
-    </p>
-  );
-}
-
-type LabelledProps = { parts: readonly Part[]; children: ReactNode };
-
-function Labelled({ parts, children }: LabelledProps): ReactElement {
-  return (
-    <div>
-      <Parts parts={parts} />
-      {children}
-    </div>
-  );
-}
 
 const USAGE = {
   day: {
@@ -143,7 +119,7 @@ function UsageCard(): ReactElement {
         { name: "Meter", slug: "meter" },
       ]}>
       <Card.Root>
-        <Card.Content>
+        <Card.Content className={styles.headless()}>
           <div className={styles.usageHead()}>
             <div>
               <Card.Title>Usage</Card.Title>
@@ -296,7 +272,7 @@ function NotificationsCard(): ReactElement {
         { name: "Switch", slug: "switch" },
       ]}>
       <Card.Root>
-        <Card.Content className={styles.stack()}>
+        <Card.Content className={styles.stack({ className: styles.headless() })}>
           {ALERTS.map((alert) => (
             <Field.Root key={alert.id} orientation="horizontal" className={styles.switchRow()}>
               <Field.Content>
@@ -322,42 +298,46 @@ export function ProductShot(): ReactElement {
         </h2>
         <p className={styles.lede()}>Every control below is a Fuse component in the current theme.</p>
       </div>
-      <Tabs.Root defaultValue="overview" className={styles.window()}>
-        <div className={styles.header()}>
-          <ElmeraGroupLogo variant="mark" className={styles.headerMark()} aria-hidden />
-          <Tabs.List variant="line" className={styles.headerTabs()}>
-            <Tabs.Trigger value="overview">Overview</Tabs.Trigger>
-            <Tabs.Trigger value="invoices">Invoices</Tabs.Trigger>
-            <Tabs.Trigger value="agreements">Agreements</Tabs.Trigger>
-            <Tabs.Trigger value="meters">Meters</Tabs.Trigger>
-          </Tabs.List>
-          <Avatar.Root className="size-8">
-            <Avatar.Fallback>KN</Avatar.Fallback>
-          </Avatar.Root>
-        </div>
-        <Tabs.Content value="overview" className={styles.body()}>
-          <UsageCard />
-          <div className={styles.column()}>
-            <PriceModelCard />
-            <NotificationsCard />
+      <div className={styles.frame()}>
+        <Tabs.Root defaultValue="overview" className={styles.window()}>
+          <div className={styles.header()}>
+            <ElmeraGroupLogo variant="mark" className={styles.headerMark()} aria-hidden />
+            <Tabs.List variant="line" className={styles.headerTabs()}>
+              <Tabs.Trigger value="overview" className={styles.headerTab()}>
+                Overview
+              </Tabs.Trigger>
+              <Tabs.Trigger value="invoices" className={styles.headerTab()}>
+                Invoices
+              </Tabs.Trigger>
+              <Tabs.Trigger value="agreements" className={styles.headerTab()}>
+                Agreements
+              </Tabs.Trigger>
+              <Tabs.Trigger value="meters" className={styles.headerTab()}>
+                Meters
+              </Tabs.Trigger>
+            </Tabs.List>
+            <Avatar.Root className={styles.headerAvatar()}>
+              <Avatar.Fallback>KN</Avatar.Fallback>
+            </Avatar.Root>
           </div>
-        </Tabs.Content>
-        <Tabs.Content value="invoices" className={styles.body()}>
-          <Card.Root>
-            <Card.Content>Invoice 4821 for September is paid.</Card.Content>
-          </Card.Root>
-        </Tabs.Content>
-        <Tabs.Content value="agreements" className={styles.body()}>
-          <Card.Root>
-            <Card.Content>Spot price at Storgata 1, Bergen since March 2024.</Card.Content>
-          </Card.Root>
-        </Tabs.Content>
-        <Tabs.Content value="meters" className={styles.body()}>
-          <Card.Root>
-            <Card.Content>Meter 7070575000, read remotely every hour.</Card.Content>
-          </Card.Root>
-        </Tabs.Content>
-      </Tabs.Root>
+          <Tabs.Content value="overview" className={styles.body()}>
+            <UsageCard />
+            <div className={styles.column()}>
+              <PriceModelCard />
+              <NotificationsCard />
+            </div>
+          </Tabs.Content>
+          <Tabs.Content value="invoices" className={styles.body()}>
+            <InvoicesTab />
+          </Tabs.Content>
+          <Tabs.Content value="agreements" className={styles.body()}>
+            <AgreementsTab />
+          </Tabs.Content>
+          <Tabs.Content value="meters" className={styles.body()}>
+            <MetersTab />
+          </Tabs.Content>
+        </Tabs.Root>
+      </div>
     </section>
   );
 }

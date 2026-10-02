@@ -7,17 +7,11 @@ import { flushSync } from "react-dom";
 
 import * as CssColor from "@elmeragroup/color/css-color";
 import * as Hex from "@elmeragroup/color/hex";
-import {
-  coerceTheme,
-  densityAttributes,
-  LocaleProvider,
-  ThemeProvider,
-  useColorScheme,
-} from "@elmeragroup/fuse/theme";
-import type { ColorScheme, Density, ThemeInput } from "@elmeragroup/fuse/theme";
+import { coerceTheme, LocaleProvider, ThemeProvider, useColorScheme } from "@elmeragroup/fuse/theme";
+import type { ColorScheme, ThemeInput } from "@elmeragroup/fuse/theme";
 
 import { DOCUMENT_COLOR_SCHEME } from "../../../lib/theme";
-import { LANDING_DENSITY, LANDING_THEME } from "./landing-theme-defaults";
+import { LANDING_THEME } from "./landing-theme-defaults";
 
 /** Where a re-theme was triggered, so the reveal can grow out of the finger or cursor. */
 export type RevealOrigin = { x: number; y: number };
@@ -30,10 +24,8 @@ type AxisChange = Partial<{
 
 type LandingThemeValue = {
   theme: ThemeInput;
-  density: Density;
   /** Moves one or more theme axes; a pinned brand drags its segment along through `coerceTheme`. */
   changeTheme: (change: AxisChange, origin?: RevealOrigin) => void;
-  changeDensity: (density: Density, origin?: RevealOrigin) => void;
   changeColorScheme: (scheme: ColorScheme, origin?: RevealOrigin) => void;
   colorScheme: ColorScheme;
 };
@@ -97,7 +89,6 @@ type LandingThemeStateProps = {
 
 function LandingThemeState({ theme, setTheme, children }: LandingThemeStateProps): ReactElement {
   const { colorScheme, resolvedColorScheme, setColorScheme } = useColorScheme();
-  const [density, setDensity] = useState<Density>(LANDING_DENSITY);
 
   const changeTheme = useCallback(
     (change: AxisChange, origin?: RevealOrigin) => {
@@ -111,23 +102,6 @@ function LandingThemeState({ theme, setTheme, children }: LandingThemeStateProps
       revealUpdate(() => setTheme(next), origin);
     },
     [theme, setTheme]
-  );
-
-  const changeDensity = useCallback(
-    (next: Density, origin?: RevealOrigin) => {
-      if (next === density) {
-        return;
-      }
-      // Density is a document-level axis, so it is stamped on <html>, never on a subtree.
-      revealUpdate(() => {
-        const [name, value] = Object.entries(densityAttributes(next))[0] ?? [];
-        if (name !== undefined && value !== undefined) {
-          document.documentElement.setAttribute(name, value);
-        }
-        setDensity(next);
-      }, origin);
-    },
-    [density]
   );
 
   const changeColorScheme = useCallback(
@@ -146,13 +120,11 @@ function LandingThemeState({ theme, setTheme, children }: LandingThemeStateProps
   const value = useMemo(
     (): LandingThemeValue => ({
       theme,
-      density,
       changeTheme,
-      changeDensity,
       changeColorScheme,
       colorScheme,
     }),
-    [theme, density, changeTheme, changeDensity, changeColorScheme, colorScheme]
+    [theme, changeTheme, changeColorScheme, colorScheme]
   );
 
   return <LandingThemeContext.Provider value={value}>{children}</LandingThemeContext.Provider>;

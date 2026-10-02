@@ -9,6 +9,7 @@ import { Button } from "@elmeragroup/fuse/button";
 import { useColorScheme } from "@elmeragroup/fuse/theme";
 
 import { BrandHeatmap } from "./brand-heatmap";
+import { FACTS } from "./landing-facts";
 import { useLandingTheme } from "./landing-theme";
 
 const landingHero = tv({
@@ -46,7 +47,7 @@ export function LandingHero(): ReactElement {
           <span className={styles.titleAccent()}>Every brand.</span>
         </h1>
         <p className={styles.lede()}>
-          67 React components for six brands, two segments and two variants. One attribute sets the theme.
+          {`${String(FACTS.components)} React components for ${String(FACTS.brands)} brands, ${String(FACTS.segments)} segments and ${String(FACTS.variants)} variants. One attribute sets the theme.`}
         </p>
         <div className={styles.actions()}>
           <Button

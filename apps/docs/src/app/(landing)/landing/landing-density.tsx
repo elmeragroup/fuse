@@ -1,5 +1,6 @@
 "use client";
 
+import { useLayoutEffect, useRef, useState } from "react";
 import type { ReactElement } from "react";
 
 import { tv } from "tailwind-variants";
@@ -11,7 +12,7 @@ import { TextField } from "@elmeragroup/fuse/text-field";
 import type { Density } from "@elmeragroup/fuse/theme";
 import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
 
-import { useLandingTheme } from "./landing-theme";
+import { applyDensity, DENSITIES, mediumControlPx } from "./landing-facts";
 
 const landingDensity = tv({
   slots: {
@@ -30,17 +31,25 @@ const landingDensity = tv({
 
 const styles = landingDensity();
 
-const DENSITIES = {
-  dense: { label: "Dense", note: "Internal tools · 36 px controls" },
-  comfortable: { label: "Comfortable", note: "Customer apps · 44 px controls" },
-} as const satisfies Record<Density, { label: string; note: string }>;
+const DENSITY_LABELS = {
+  dense: { label: "Dense", use: "Internal tools" },
+  comfortable: { label: "Comfortable", use: "Customer apps" },
+} as const satisfies Record<Density, { label: string; use: string }>;
 
 /**
- * Density is a document axis, so the toggle switches the whole page instead of rendering the
- * two densities side by side in one document.
+ * A product sets density once, on the document. This demo stage is the exception: it sets the
+ * control metrics on its own card, so the toggle resizes the form without re-laying the page.
  */
 export function LandingDensity(): ReactElement {
-  const { density, changeDensity } = useLandingTheme();
+  // The document deploys comfortable, so the stage starts there and the first paint matches.
+  const [density, setDensity] = useState<Density>("comfortable");
+  const stage = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (stage.current !== null) {
+      applyDensity(stage.current, density);
+    }
+  }, [density]);
 
   return (
     <section className={styles.section()} aria-labelledby="landing-density">
@@ -55,39 +64,47 @@ export function LandingDensity(): ReactElement {
           spacing={0}
           value={[density]}
           onValueChange={(next) => {
-            if (next[0] === "dense" || next[0] === "comfortable") {
-              changeDensity(next[0]);
+            const picked = DENSITIES.find((option) => option === next[0]);
+            if (picked !== undefined) {
+              setDensity(picked);
             }
           }}>
-          {(["dense", "comfortable"] as const).map((option) => (
+          {DENSITIES.map((option) => (
             <ToggleGroup.Item key={option} value={option}>
-              {DENSITIES[option].label}
+              {DENSITY_LABELS[option].label}
             </ToggleGroup.Item>
           ))}
         </ToggleGroup.Root>
-        <p className={styles.note()}>{DENSITIES[density].note}</p>
+        <p className={styles.note()}>
+          {`${DENSITY_LABELS[density].use} · ${String(mediumControlPx(density))} px controls`}
+        </p>
       </div>
-      <Card.Root className={styles.card()}>
-        <Card.Content>
-          <form
-            className={styles.form()}
-            onSubmit={(event) => {
-              event.preventDefault();
-            }}>
-            <TextField label="Meter number" filter="numeric" defaultValue="7070575000" />
-            <div className={styles.row()}>
-              <NumberField label="Reading" denomination="kWh" minValue={0} defaultValue={48213} />
-              <TextField label="Date" defaultValue="02.10.2026" />
-            </div>
-            <div className={styles.actions()}>
-              <Button type="submit">Save reading</Button>
-              <Button type="reset" variant="ghost">
-                Cancel
-              </Button>
-            </div>
-          </form>
-        </Card.Content>
-      </Card.Root>
+      <div ref={stage} className={styles.card()}>
+        <Card.Root>
+          <Card.Header>
+            <Card.Title>Meter reading</Card.Title>
+          </Card.Header>
+          <Card.Content>
+            <form
+              className={styles.form()}
+              onSubmit={(event) => {
+                event.preventDefault();
+              }}>
+              <TextField label="Meter number" filter="numeric" defaultValue="7070575000" />
+              <div className={styles.row()}>
+                <NumberField label="Reading" denomination="kWh" minValue={0} defaultValue={48213} />
+                <TextField label="Date" defaultValue="02.10.2026" />
+              </div>
+              <div className={styles.actions()}>
+                <Button type="submit">Save reading</Button>
+                <Button type="reset" variant="ghost">
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </Card.Content>
+        </Card.Root>
+      </div>
     </section>
   );
 }

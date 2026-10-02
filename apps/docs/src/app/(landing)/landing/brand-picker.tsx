@@ -4,14 +4,10 @@ import type { ReactElement } from "react";
 
 import { tv } from "tailwind-variants";
 
-import type { BrandCode } from "@elmeragroup/fuse/theme";
-
 import { BrandHeatmap } from "./brand-heatmap";
 import { BrandWordmark } from "./brand-wordmark";
+import { PICKER_BRANDS } from "./landing-facts";
 import { useLandingTheme } from "./landing-theme";
-
-/** The brands the picker offers; Fjordkraft Företag shares Fjordkraft's mark, so it is left out. */
-const PICKER_BRANDS = ["elma", "fkas", "tkas", "guen", "fkse"] as const satisfies readonly BrandCode[];
 
 const brandPicker = tv({
   slots: {
@@ -20,7 +16,7 @@ const brandPicker = tv({
     title: "text-4xl sm:text-landing-h2 tracking-landing-h2 font-semibold font-heading text-balance",
     titleAccent: "block text-primary",
     lede: "text-base sm:text-lg leading-relaxed text-pretty text-muted-foreground",
-    rail: "landing-rail sm:grid sm:grid-cols-5 sm:overflow-visible sm:px-6 max-w-landing sm:gap-4 flex w-full scroll-px-6 gap-3 overflow-x-auto px-6 pb-2 lg:px-0",
+    rail: "landing-rail sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-6 max-w-landing sm:gap-4 flex w-full scroll-px-6 gap-3 overflow-x-auto px-6 pb-2 lg:grid-cols-6 lg:px-0",
     tile: "landing-press group sm:w-auto flex w-70 shrink-0 cursor-pointer flex-col gap-4 rounded-xl text-left outline-none",
     shot: "aspect-4/3 overflow-hidden rounded-xl bg-card ring-1 ring-border transition-shadow group-focus-visible:ring-3 group-focus-visible:ring-ring/50 group-aria-pressed:ring-2 group-aria-pressed:ring-primary group-aria-pressed:ring-offset-2 group-aria-pressed:ring-offset-background",
     shader: "size-full",
