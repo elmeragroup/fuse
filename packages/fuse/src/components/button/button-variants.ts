@@ -1,7 +1,7 @@
 import { tv } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
-import { controlLabel, controlSize } from "../../styles/control-size";
+import { controlSize } from "../../styles/control-size";
 import { dataStateFaceClass, nativeStateFaceClass } from "../../styles/state-face";
 import { selfFocusRingClass } from "../../styles/utils";
 
@@ -15,10 +15,11 @@ import { selfFocusRingClass } from "../../styles/utils";
 // fuse.css, so a disabled root never changes fill, border, text or position under the
 // pointer. `aria-expanded:` follows an open popup, not the pointer, so it has no gate.
 // The text and icon sizes take their box from the control-size recipe: `default` is the md
-// label, `icon*` the squares. The labels take Button's own inset, `--control-px-button-*`,
-// which comfortable density widens to the customer-facing reference's side padding while
-// fields, Select and Toggle keep the control inset. The xs glyph size and `icon-inline`, a
-// square as tall as the surrounding line that follows no density, stay local.
+// label, `icon*` the squares. The labels replace the control inset with Button's own,
+// `--control-px-button-*`, which comfortable density widens to the customer-facing
+// reference's side padding while fields, Select and Toggle keep the control inset. The xs
+// glyph size and `icon-inline`, a square as tall as the surrounding line that follows no
+// density, stay local.
 // Every size rounds with the theme's `--radius-button`. The arbitrary value keeps
 // tailwind-merge able to replace it with a consumer `rounded-*` class, which the custom
 // `rounded-button` utility would not be.
@@ -37,11 +38,14 @@ import { selfFocusRingClass } from "../../styles/utils";
 // `pendingIndicator={null}` the attribute is absent and nothing hides.
 // The outline border reads the theme's `--button-outline` at `--button-outline-width`: a 1px
 // `--border` hairline in internal themes and the reference's 2px ring in the text color in
-// external ones. Only the hairline keeps `shadow-xs`, so the shadow is written out to follow
-// the width. At 1px it equals `shadow-xs`. From 2px its blur is 0 and its spread -2px, which
-// keeps it inside the border box, where an outer shadow never paints. It starts with two
-// plain lengths, so tailwind-merge still files it as a shadow, and a consumer's own
-// `shadow-*` utility replaces it.
+// external ones. A host without themes.css declares neither, so both fall back to the 1px
+// `--border` hairline. Only the hairline casts `shadow-xs`, so the shadow spells out
+// Tailwind's `shadow-xs` value as a function of the width, which a host `--shadow-xs`
+// override does not reach. It equals `shadow-xs` at 1px. From 2px its blur is 0 and its
+// spread plus blur plus y offset is negative, so it stays inside the border box, where an
+// outer shadow never paints. It
+// starts with two plain lengths, so tailwind-merge still files it as a shadow, and a
+// consumer's own `shadow-*` utility replaces it.
 export const buttonVariants = tv({
   base: cn(
     "group/button font-medium box-border inline-flex shrink-0 cursor-pointer items-center justify-center rounded-(--radius-button) border border-transparent bg-clip-padding p-0 whitespace-nowrap transition-[color,background-color,border-color,box-shadow,translate,opacity] select-none in-data-[slot=button-group]:rounded-md enabled-active:not-aria-[haspopup]:translate-y-px [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[pending-indicator]:[&>svg:not([data-icon=inline-end])]:hidden",
@@ -53,7 +57,7 @@ export const buttonVariants = tv({
     variant: {
       default: "bg-primary text-primary-foreground enabled-hover:bg-primary/80",
       outline:
-        "border-[length:var(--button-outline-width)] border-button-outline bg-background shadow-[0_1px_max(0px,4px-2*var(--button-outline-width))_min(0px,2px-2*var(--button-outline-width))_rgb(0_0_0/0.05)] aria-expanded:bg-muted aria-expanded:text-foreground enabled-hover:bg-muted enabled-hover:text-foreground",
+        "border-[length:var(--button-outline-width,1px)] border-button-outline bg-background shadow-[0_1px_max(0px,4px-2*var(--button-outline-width,1px))_min(0px,2px-2*var(--button-outline-width,1px))_rgb(0_0_0/0.05)] aria-expanded:bg-muted aria-expanded:text-foreground enabled-hover:bg-muted enabled-hover:text-foreground",
       secondary:
         "bg-secondary text-secondary-foreground aria-expanded:bg-secondary aria-expanded:text-secondary-foreground enabled-hover:bg-secondary-hover",
       ghost:
@@ -65,13 +69,14 @@ export const buttonVariants = tv({
       link: "text-primary underline-offset-4 enabled-hover:underline",
     },
     size: {
-      default: controlLabel("md", { iconEdge: "include", inset: "button" }),
-      xs: cn(
-        controlLabel("xs", { iconEdge: "include", inset: "button" }),
-        "[&_svg:not([class*='size-'])]:size-3"
-      ),
-      sm: controlLabel("sm", { iconEdge: "include", inset: "button" }),
-      lg: controlLabel("lg", { iconEdge: "include", inset: "button" }),
+      default: controlSize({ size: "md", fit: "label", class: "px-(--control-px-button-md)" }),
+      xs: controlSize({
+        size: "xs",
+        fit: "label",
+        class: "px-(--control-px-button-xs) [&_svg:not([class*='size-'])]:size-3",
+      }),
+      sm: controlSize({ size: "sm", fit: "label", class: "px-(--control-px-button-sm)" }),
+      lg: controlSize({ size: "lg", fit: "label", class: "px-(--control-px-button-lg)" }),
       icon: controlSize({ size: "md", fit: "square" }),
       "icon-xs": controlSize({ size: "xs", fit: "square", class: "[&_svg:not([class*='size-'])]:size-3" }),
       "icon-sm": controlSize({ size: "sm", fit: "square" }),

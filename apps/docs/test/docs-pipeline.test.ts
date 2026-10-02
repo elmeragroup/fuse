@@ -155,6 +155,16 @@ describe("token extraction", () => {
     expect(tokens.find((token) => token.name === "--control-h-md")?.isColor).toBe(false);
   });
 
+  it("maps a colour utility with a fallback to its first token", () => {
+    const map = readColorTokenMap(
+      "@theme inline {\n  --color-ring: var(--ring);\n  --color-edge: var(--edge, var(--border));\n}\n"
+    );
+    expect([...map]).toEqual([
+      ["ring", "--ring"],
+      ["edge", "--edge"],
+    ]);
+  });
+
   it.each([
     [
       "Button",

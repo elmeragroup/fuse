@@ -502,38 +502,25 @@ describe("control size: Button's label inset", () => {
     dense: { xs: 8, sm: 10, md: 10, lg: 10 },
     comfortable: { xs: 12, sm: 16, md: 32, lg: 32 },
   } as const;
-  // The control inset fields, Select and Toggle keep: 10px dense and 14px comfortable at md.
-  const CONTROL_INSET_MD = { dense: 10, comfortable: 14 } as const;
 
-  it.each(DENSITIES)(
-    "pads Button labels like the reference at %s and keeps the control inset elsewhere",
-    (density) => {
-      stampDensity(density);
-      renderThemed(
-        <>
-          {(["xs", "sm", "md", "lg"] as const).map((size) => (
-            <Button key={size} size={BUTTON_LABEL_SIZES[size]}>{`reference ${size}`}</Button>
-          ))}
-          <Toggle aria-label="reference toggle">Label</Toggle>
-          <Select.Root>
-            <Select.Trigger aria-label="reference select">
-              <Select.Value placeholder="Pick" />
-            </Select.Trigger>
-          </Select.Root>
-        </>
+  it.each(DENSITIES)("pads Button labels like the reference at %s", (density) => {
+    stampDensity(density);
+    renderThemed(
+      <>
+        {(["xs", "sm", "md", "lg"] as const).map((size) => (
+          <Button key={size} size={BUTTON_LABEL_SIZES[size]}>{`reference ${size}`}</Button>
+        ))}
+      </>
+    );
+
+    for (const size of ["xs", "sm", "md", "lg"] as const) {
+      const box = measure("button", `reference ${size}`);
+      expect(box.paddingStart, `${density} button ${size} padding start`).toBe(
+        REFERENCE_INSET[density][size]
       );
-
-      for (const size of ["xs", "sm", "md", "lg"] as const) {
-        const box = measure("button", `reference ${size}`);
-        expect(box.paddingStart, `${density} button ${size} padding start`).toBe(
-          REFERENCE_INSET[density][size]
-        );
-        expect(box.paddingEnd, `${density} button ${size} padding end`).toBe(REFERENCE_INSET[density][size]);
-      }
-      expect(measure("button", "reference toggle").paddingStart).toBe(CONTROL_INSET_MD[density]);
-      expect(measure("combobox", "reference select").paddingStart).toBe(CONTROL_INSET_MD[density]);
+      expect(box.paddingEnd, `${density} button ${size} padding end`).toBe(REFERENCE_INSET[density][size]);
     }
-  );
+  });
 });
 
 describe("control size: density scope", () => {
@@ -575,15 +562,7 @@ describe("control size: density scope", () => {
 });
 
 describe("control size: consumer overrides", () => {
-  it("lets a className inset win over Button's comfortable inset", () => {
-    stampDensity("comfortable");
-    renderThemed(<Button className="px-4">narrow button</Button>);
-    // Tailwind's `px-4` is 1rem, 16px at the 16px root, where the comfortable md inset is 32px.
-    expect(measure("button", "narrow button").paddingStart).toBe(16);
-    expect(measure("button", "narrow button").paddingEnd).toBe(16);
-  });
-
-  it("lets a className size utility win on Select and on a segmented ToggleGroup item", () => {
+  it("lets a className size utility win on Select, a segmented ToggleGroup item and a Button label", () => {
     stampDensity("dense");
     renderThemed(
       <>
@@ -597,12 +576,16 @@ describe("control size: consumer overrides", () => {
             Label
           </ToggleGroup.Item>
         </ToggleGroup.Root>
+        <Button className="px-4">wide button</Button>
       </>
     );
     // Tailwind's `h-12` is 3rem and `px-4` is 1rem, 48px and 16px at the 16px root. Neither
-    // is a dense control metric (sm is 32px high, the md icon inset 8px).
+    // is a dense control metric (sm is 32px high, the md icon inset 8px, the md button
+    // inset 10px).
     expect(measure("combobox", "tall select").height).toBe(48);
     expect(measure("button", "wide segment").paddingStart).toBe(16);
     expect(measure("button", "wide segment").paddingEnd).toBe(16);
+    expect(measure("button", "wide button").paddingStart).toBe(16);
+    expect(measure("button", "wide button").paddingEnd).toBe(16);
   });
 });

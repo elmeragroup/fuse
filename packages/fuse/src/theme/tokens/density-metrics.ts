@@ -16,10 +16,10 @@ const CONTROL_SIZES = ["xs", "sm", "md", "lg"] as const;
 
 /**
  * The families with one metric per control size, such as `control-h-md`, in `fuse.css` order.
- * `control-px-button` is Button's label inset. Dense matches `control-px`. Comfortable, the
- * external default, takes the side padding of the customer-facing reference button: 1rem at
- * sm and 2rem at md and lg. xs keeps the `control-px` value until design picks one. Only
- * Button reads the family, so fields, Select and Toggle keep `control-px`.
+ * `control-px-button` is Button's label inset. Dense matches `control-px`, and comfortable,
+ * the external default, takes the side padding of the customer-facing reference button,
+ * except at xs, which keeps `control-px` until design picks one. Only Button reads the
+ * family, so fields, Select and Toggle keep `control-px`.
  */
 const SIZED_FAMILIES = [
   { family: "control-h", kind: "height" },

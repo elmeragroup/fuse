@@ -11,7 +11,7 @@ import { cssVarReference } from "./css-values";
 import { generateThemesCss } from "./generate-css";
 import { brandPointer } from "./tokens/brand-pointers";
 import { assignedTokenNames, EXTERNAL_RESET_KEYS, MUST_OVERRIDE_DARK, TOKEN_NAMES } from "./tokens/contract";
-import type { TokenLayer, TokenName } from "./tokens/contract";
+import type { ExternalResetKey, TokenLayer, TokenName } from "./tokens/contract";
 import { DEFAULTS } from "./tokens/defaults";
 import { externalDarkPalette } from "./tokens/external-dark-palettes";
 import { EXTERNAL_PALETTES, EXTERNAL_VARIANT_LAYER } from "./tokens/external-palettes";
@@ -32,22 +32,13 @@ function fkasCompanyLight(): TokenLayer {
 }
 
 /**
- * The light reset keys a brand palette does not assign. Composition derives the secondary
- * hover, and the external variant layer sets the radius step and the button outline for
- * every brand.
+ * The light reset keys every external brand palette assigns itself. Composition derives the
+ * secondary hover, and the external variant layer sets its keys for every brand.
  */
-const NOT_IN_BRAND_PALETTES = [
-  "secondary-hover",
-  "radius-step",
-  "button-outline",
-  "button-outline-width",
-] as const;
+type BrandPaletteKey = Exclude<ExternalResetKey, "secondary-hover" | keyof typeof EXTERNAL_VARIANT_LAYER>;
 
-type BrandPaletteKey = Exclude<(typeof EXTERNAL_RESET_KEYS)[number], (typeof NOT_IN_BRAND_PALETTES)[number]>;
-
-/** The light reset keys every external brand palette assigns itself. */
 const BRAND_PALETTE_KEYS = EXTERNAL_RESET_KEYS.filter(
-  (key): key is BrandPaletteKey => !NOT_IN_BRAND_PALETTES.some((excluded) => excluded === key)
+  (key): key is BrandPaletteKey => key !== "secondary-hover" && !(key in EXTERNAL_VARIANT_LAYER)
 );
 
 /** One declaration of the rule whose first selector is `selector`. */
@@ -378,37 +369,27 @@ describe("derived roles", () => {
   });
 });
 
-describe("radius roles", () => {
+describe("external variant layer roles", () => {
   const rules = parseStyleRules(generateThemesCss());
 
-  it("sets the radius step once for the external variant, not in each brand palette", () => {
+  it("sets the radius step and the reference's 2px text-color outline once for the external variant", () => {
+    const external = {
+      "radius-step": "2px",
+      "button-outline": "var(--foreground)",
+      "button-outline-width": "2px",
+    } as const;
     for (const [brand, palette] of Object.entries(EXTERNAL_PALETTES)) {
-      expect(palette, brand).not.toHaveProperty("radius-step");
+      for (const key of Object.keys(external)) {
+        expect(palette, brand).not.toHaveProperty(key);
+      }
     }
     for (const brand of ["fkas", "tkas", "guen", "fkab", "fkse", "elma"]) {
       const selector = `[data-theme-variant="external"][data-theme-brand="${brand}"]`;
-      expect(declaration(rules, selector, "radius-step"), selector).toBe("2px");
+      for (const [key, value] of Object.entries(external)) {
+        expect(declaration(rules, selector, key), `${selector} ${key}`).toBe(value);
+      }
     }
-  });
-});
-
-describe("button outline roles", () => {
-  const rules = parseStyleRules(generateThemesCss());
-
-  it("draws the reference's 2px text-color ring for every external brand and the 1px border hairline elsewhere", () => {
-    for (const [brand, palette] of Object.entries(EXTERNAL_PALETTES)) {
-      expect(palette, brand).not.toHaveProperty("button-outline");
-      expect(palette, brand).not.toHaveProperty("button-outline-width");
-    }
-    for (const brand of ["fkas", "tkas", "guen", "fkab", "fkse", "elma"]) {
-      const selector = `[data-theme-variant="external"][data-theme-brand="${brand}"]`;
-      expect(declaration(rules, selector, "button-outline"), selector).toBe("var(--foreground)");
-      expect(declaration(rules, selector, "button-outline-width"), selector).toBe("2px");
-      // The dark rule declares the alias again beside the dark foreground, so the ring
-      // follows the dark text color.
-      const dark = `[data-theme="dark"]${selector}`;
-      expect(declaration(rules, dark, "button-outline"), dark).toBe("var(--foreground)");
-    }
+    // Internal themes and the root keep the 1px border hairline.
     for (const selector of [":root", '[data-theme-variant="internal"]']) {
       expect(declaration(rules, selector, "button-outline"), selector).toBe("var(--border)");
       expect(declaration(rules, selector, "button-outline-width"), selector).toBe("1px");

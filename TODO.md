@@ -89,10 +89,9 @@
 
 ## Control size
 
-- Docs token extraction is file-granular: Select lists xs/lg control metrics, Select, Toggle
-  and RadioIconButton list Button's `--control-px-button-*` inset, and the text-entry family
-  lists gap-md/px-icon-md they don't bind; resolve per recipe (from built CSS, or aware of tv
-  calls) instead of per file.
+- Docs token extraction is file-granular: Select lists xs/lg control metrics and the
+  text-entry family lists gap-md/px-icon-md they don't bind; resolve per recipe (from
+  built CSS, or aware of tv calls) instead of per file.
 - `InputGroup.Button size="sm"` passes Button's md label through, so at comfortable density it
   takes the 32px button inset inside the field. Decide whether addon buttons keep the control
   inset, as they keep the field corner instead of `--radius-button`.

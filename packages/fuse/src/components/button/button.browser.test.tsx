@@ -5,6 +5,8 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { shadowLayerLengths, shadowLayers } from "../../../test/assert-invalid-ring";
+import type { ShadowLengths } from "../../../test/assert-invalid-ring";
 import { render } from "../../../test/browser-render";
 import { whilePointerPressed } from "../../../test/pointer-press";
 import { dispatchPredictedPointer } from "../../../test/predicted-pointer";
@@ -37,31 +39,18 @@ function pointerPaint(element: Element) {
   };
 }
 
-/** One outer box-shadow layer's lengths in px. */
-type ShadowLengths = {
-  readonly x: number;
-  readonly y: number;
-  readonly blur: number;
-  readonly spread: number;
-};
-
-/** One computed box-shadow layer, as Chromium serializes it and as its lengths. */
-type ShadowLayer = { readonly css: string; readonly lengths: ShadowLengths };
-
 /**
  * The `--tw-shadow` layer of an element's computed box-shadow, the last of the layers Tailwind
- * composes behind the ring layers. Chromium serializes each layer as its color, then x, y,
- * blur and spread.
+ * composes behind the ring layers. A layer without exactly four lengths fails the read.
  */
-function ownShadow(element: Element): ShadowLayer {
-  const layers = getComputedStyle(element).boxShadow.split(/,(?![^(]*\))/);
-  const css = layers.at(-1)?.trim() ?? "";
-  const lengths = css
-    .replace(/^\S+\([^)]*\)\s*/, "")
-    .split(/\s+/)
-    .map(Number.parseFloat);
-  const [x = Number.NaN, y = Number.NaN, blur = Number.NaN, spread = Number.NaN] = lengths;
-  return { css, lengths: { x, y, blur, spread } };
+function ownShadow(element: Element): ShadowLengths & { readonly css: string } {
+  const boxShadow = getComputedStyle(element).boxShadow;
+  const css = shadowLayers(boxShadow).at(-1);
+  const lengths = css === undefined ? undefined : shadowLayerLengths(css);
+  if (css === undefined || lengths === undefined) {
+    throw new Error(`expected a box-shadow layer of four lengths, got ${boxShadow}`);
+  }
+  return { css, ...lengths };
 }
 
 /** Whether an outer shadow reaches past every edge of its element's border box. */
@@ -666,7 +655,8 @@ describe("Button", () => {
       }
       expect(style.borderTopColor).toBe(cssVarColor(button, "--foreground"));
       expect(style.borderTopColor).not.toBe(cssVarColor(button, "--border"));
-      expect(paintsOutsideBorderBox(ownShadow(button).lengths), ownShadow(button).css).toBe(false);
+      const shadow = ownShadow(button);
+      expect(paintsOutsideBorderBox(shadow), shadow.css).toBe(false);
     }
   );
 
@@ -676,7 +666,8 @@ describe("Button", () => {
         Flat
       </Button>
     );
-    expect(paintsOutsideBorderBox(ownShadow(roleNamed("button", "Flat")).lengths)).toBe(false);
+    const shadow = ownShadow(roleNamed("button", "Flat"));
+    expect(paintsOutsideBorderBox(shadow), shadow.css).toBe(false);
   });
 
   it("renders variant and size recipe classes and keeps role when render swaps the tag", () => {

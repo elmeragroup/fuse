@@ -4,6 +4,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
 import { CONTROL_SM, px, renderThemed, roleNamed, stampDensity } from "../../../test/themed-browser-render";
+import { buttonVariants } from "../../components/button/button-variants";
 import { FileTrigger } from "./file-trigger";
 
 function fileInputFor(button: HTMLElement): HTMLInputElement {
@@ -159,10 +160,16 @@ describe("FileTrigger", () => {
     const outline = roleNamed("button", "Outline large");
     expect(px(getComputedStyle(defaults).height)).toBe(CONTROL_SM.dense.height);
     expect(px(getComputedStyle(outline).height)).toBeGreaterThan(px(getComputedStyle(defaults).height));
-    expect(getComputedStyle(outline).borderTopWidth).not.toBe("0px");
+    // This suite loads no themes.css, so the outline takes its 1px hairline fallback.
+    expect(getComputedStyle(outline).borderTopWidth).toBe("1px");
     expect(defaults.className).toContain("bg-primary");
     expect(fileInputFor(defaults).className).not.toContain("bg-primary");
-    expect(outline.className).toContain("border-button-outline");
-    expect(fileInputFor(outline).className).not.toContain("border-button-outline");
+    // Unit under test: FileTrigger's routing of variant and size. Oracle: Button's recipe for
+    // the same pair, which the visible button carries whole and the hidden input not at all,
+    // plus the `gap-x-2` the `withIcon` JSDoc documents for the default icon.
+    const recipe = buttonVariants({ variant: "outline", size: "lg" });
+    expect(outline.className).toBe(`${recipe} gap-x-2`);
+    const inputClasses = new Set(fileInputFor(outline).classList);
+    expect(recipe.split(" ").filter((name) => inputClasses.has(name))).toEqual([]);
   });
 });

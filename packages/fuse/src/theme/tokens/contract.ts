@@ -328,10 +328,9 @@ const LIGHT_ONLY_KEYS: ReadonlySet<TokenName> = new Set([
 ]);
 
 /**
- * The roles every dark palette must override. Geometry, typography and the button outline
- * alias (`button-outline`, `radius`, `radius-button`, `radius-step`, `button-outline-width`,
- * `font-heading`) keep their light values, and composition computes each derived role, so
- * those are the only `EXTERNAL_RESET_KEYS` entries a dark palette need not name.
+ * The roles every dark palette must override. The `LIGHT_ONLY_KEYS` keep their light
+ * values, and composition computes each derived role, so those are the only
+ * `EXTERNAL_RESET_KEYS` entries a dark palette need not name.
  */
 export const MUST_OVERRIDE_DARK = EXTERNAL_RESET_KEYS.filter(
   (key): key is Extract<ExternalResetKey, LayerTokenName> =>

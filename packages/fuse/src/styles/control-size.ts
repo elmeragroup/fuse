@@ -5,12 +5,11 @@ import { controlMd } from "./control-size-md";
 
 /**
  * Control size: the size × fit mapping of the density-owned control metrics (`--control-*`
- * in `fuse.css`, mirrored by `theme/tokens/density-metrics.ts`) onto a control. Toggle and
- * ToggleGroup, RadioIconButton and Button's squares take their size classes from
- * {@link controlSize}. Button's label sizes and Select's trigger take their label from
- * {@link controlLabel}, and a segmented ToggleGroup item takes its inset from the
- * {@link controlMetrics} slots. Controls without a size axis take the md parts from
- * `control-size-md.ts`.
+ * in `fuse.css`, mirrored by `theme/tokens/density-metrics.ts`) onto a control. Button,
+ * Toggle and ToggleGroup, and RadioIconButton take their size classes from
+ * {@link controlSize}. Select's trigger takes its label from {@link controlLabel}, and a
+ * segmented ToggleGroup item takes its inset from the {@link controlMetrics} slots. Controls
+ * without a size axis take the md parts from `control-size-md.ts`.
  *
  * Two rules live here and nowhere else. xs and sm set a fixed `text-xs` / `text-sm` that
  * does not follow density, while md and lg bind the density's `--control-text` /
@@ -43,8 +42,7 @@ type ControlFit = "label" | "square" | "min-square";
  * The metric parts of each control size, one slot per metric family.
  * {@link controlSize} assembles the fits from these parts. `iconInset` is the icon inset on
  * both sides, which a segmented ToggleGroup item takes in place of the label inset.
- * `buttonInset` is Button's label inset, which {@link controlLabel} takes in place of the
- * label inset when asked. Sidebar's sub-button reads the parts it binds.
+ * Sidebar's sub-button reads the parts it binds.
  */
 export const controlMetrics = tv({
   slots: {
@@ -54,7 +52,6 @@ export const controlMetrics = tv({
     gap: "",
     inset: "",
     iconInset: "",
-    buttonInset: "",
     iconEdge: "",
     type: "",
   },
@@ -67,7 +64,6 @@ export const controlMetrics = tv({
         gap: "gap-(--control-gap-xs)",
         inset: "px-(--control-px-xs)",
         iconInset: "px-(--control-px-icon-xs)",
-        buttonInset: "px-(--control-px-button-xs)",
         iconEdge:
           "has-data-[icon=inline-end]:pr-(--control-px-icon-xs) has-data-[icon=inline-start]:pl-(--control-px-icon-xs)",
         type: "text-xs",
@@ -79,7 +75,6 @@ export const controlMetrics = tv({
         gap: "gap-(--control-gap-sm)",
         inset: "px-(--control-px-sm)",
         iconInset: "px-(--control-px-icon-sm)",
-        buttonInset: "px-(--control-px-button-sm)",
         iconEdge:
           "has-data-[icon=inline-end]:pr-(--control-px-icon-sm) has-data-[icon=inline-start]:pl-(--control-px-icon-sm)",
         type: "text-sm",
@@ -91,9 +86,6 @@ export const controlMetrics = tv({
         gap: controlMd.gap(),
         inset: controlMd.inset(),
         iconInset: controlMd.iconInset(),
-        // Only Button reads the button inset, and Button has a size axis, so its md literal
-        // stays here instead of reaching every text-entry box through `control-size-md.ts`.
-        buttonInset: "px-(--control-px-button-md)",
         iconEdge: controlMd.iconEdge(),
         type: controlMd.type(),
       },
@@ -104,7 +96,6 @@ export const controlMetrics = tv({
         gap: "gap-(--control-gap-lg)",
         inset: "px-(--control-px-lg)",
         iconInset: "px-(--control-px-icon-lg)",
-        buttonInset: "px-(--control-px-button-lg)",
         iconEdge:
           "has-data-[icon=inline-end]:pr-(--control-px-icon-lg) has-data-[icon=inline-start]:pl-(--control-px-icon-lg)",
         // The density type pair is one metric for every size, so lg binds md's.
@@ -122,34 +113,26 @@ type ControlLabelOptions = {
    * icon child, as Select's trigger.
    */
   readonly iconEdge: "include" | "omit";
-
-  /**
-   * Which inline inset the label takes. `"control"` is the size's control inset, which
-   * every label box shares. `"button"` is Button's own inset, which is wider at comfortable
-   * density.
-   */
-  readonly inset: "control" | "button";
 };
 
 /**
  * The `label` fit of one control size: height, gap, inset and type, then the icon edge
  * unless the options omit it. {@link controlSize} builds its `label` and `min-square`
- * fits from this with the control inset, and a control that composes its own size axis
- * takes it too, so a new label part reaches every label box. Button's label sizes take it
- * with the button inset.
+ * fits from this, and a control that composes its own size axis takes it too, so a new
+ * label part reaches every label box.
  *
  * @param size - The control size.
- * @param options - Whether the label includes the icon edge, and which inset it takes.
+ * @param options - Whether the label includes the icon edge.
  * @returns The label's size classes.
  * @example
- * controlLabel("sm", { iconEdge: "omit", inset: "control" })
+ * controlLabel("sm", { iconEdge: "omit" })
  */
 export function controlLabel(size: ControlSize, options: ControlLabelOptions): string {
   const parts = controlMetrics({ size });
   return cn(
     parts.height(),
     parts.gap(),
-    options.inset === "button" ? parts.buttonInset() : parts.inset(),
+    parts.inset(),
     parts.type(),
     options.iconEdge === "include" && parts.iconEdge()
   );
@@ -165,7 +148,7 @@ type ControlSizeCell = {
 /** The three fits of one size, as compound variants of {@link controlSize}. */
 function fitsOf(size: ControlSize): readonly ControlSizeCell[] {
   const parts = controlMetrics({ size });
-  const label = controlLabel(size, { iconEdge: "include", inset: "control" });
+  const label = controlLabel(size, { iconEdge: "include" });
   return [
     { size, fit: "label", class: label },
     { size, fit: "min-square", class: cn(label, parts.minWidth()) },
