@@ -68,8 +68,8 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "unknown",
-          "shortType": null,
+          "type": "Value | null | undefined",
+          "shortType": "Union",
           "defaultValue": "null",
           "description": "The uncontrolled value of the item that should be initially selected. To render a controlled navigation menu, use the `value` prop instead.",
           "required": false
@@ -110,7 +110,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((value: unknown, eventDetails: NavigationMenuRootChangeEventDetails) => void) | undefined",
+          "type": "((value: Value | null, eventDetails: NavigationMenuRootChangeEventDetails) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Callback fired when the value changes.",
@@ -163,8 +163,8 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "unknown",
-          "shortType": null,
+          "type": "Value | null | undefined",
+          "shortType": "Union",
           "defaultValue": "null",
           "description": "The controlled value of the navigation menu item that should be currently open. When non-nullish, the menu will be open. When nullish, the menu will be closed. To render an uncontrolled navigation menu, use the `defaultValue` prop instead.",
           "required": false

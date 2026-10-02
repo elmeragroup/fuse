@@ -94,6 +94,8 @@
   group as its inset does.
 - Sweep the older "not a control rung" lint-disable reasons and other "rung" wording on
   control metrics to "control size"; "rung" is reserved for radius rungs.
+- Give the trigger caret's base classes one owner. Select, Combobox and NavigationMenu each
+  spell out its size, muted colour and rotate transition by hand.
 
 ## Figma token sync
 

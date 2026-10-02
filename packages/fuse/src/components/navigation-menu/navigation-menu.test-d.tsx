@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import { expectTypeOf, test } from "vitest";
 
 import type { NavigationMenuRootProps } from "@elmeragroup/fuse/navigation-menu";
@@ -32,6 +34,26 @@ test("Positioner and Popup stay off the namespace because Root owns them and tak
   const _submenu = <NavigationMenu.Root orientation="vertical" side="right" align="end" />;
   // @ts-expect-error Root places the popup; the offsets are fixed
   const _noOffset = <NavigationMenu.Root sideOffset={4} />;
+});
+
+test("Root keeps Base UI's generic value, so a controlled string value and its setter type-check", () => {
+  function Controlled() {
+    const [value, setValue] = useState<string | null>(null);
+    return <NavigationMenu.Root value={value} onValueChange={setValue} />;
+  }
+  const _controlled = <Controlled />;
+
+  const _inferred = (
+    <NavigationMenu.Root
+      defaultValue="products"
+      onValueChange={(next) => {
+        expectTypeOf(next).toEqualTypeOf<string | null>();
+      }}
+    />
+  );
+
+  // @ts-expect-error a numeric value conflicts with the string the default value fixes
+  const _mismatch = <NavigationMenu.Root defaultValue="products" value={1} />;
 });
 
 test("an inline Root takes a Viewport and no popup placement", () => {

@@ -58,6 +58,15 @@ async function openedLink(name: string): Promise<HTMLElement> {
   return roleNamed("link", name);
 }
 
+/** The caret a trigger renders after its label. DOM audit: the caret is aria-hidden, so it has no role. */
+function caretOf(trigger: HTMLElement): SVGElement {
+  const caret = trigger.querySelector("svg");
+  if (!(caret instanceof SVGElement)) {
+    throw new Error(`expected the ${trigger.textContent} trigger's caret`);
+  }
+  return caret;
+}
+
 describe("NavigationMenu", () => {
   it("renders a named navigation landmark whose trigger starts collapsed", () => {
     renderThemed(<SiteMenu />);
@@ -82,7 +91,7 @@ describe("NavigationMenu", () => {
     const link = await openedLink("Electricity");
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
 
-    const controlled = document.getElementById(trigger.getAttribute("aria-controls") ?? "");
+    const controlled = panelControlledBy(trigger);
     expect(controlled?.contains(link)).toBe(true);
     expect(roleNamed("region", "Portal host").contains(controlled)).toBe(true);
     expect(roleNamed("navigation", "Site").contains(controlled)).toBe(false);
@@ -109,10 +118,10 @@ describe("NavigationMenu", () => {
       const trigger = roleNamed("button", "Catalogue");
       await userEvent.click(trigger);
       const link = await openedLink("Wide");
-      const popup = document.getElementById(trigger.getAttribute("aria-controls") ?? "");
+      const popup = panelControlledBy(trigger);
       // DOM audit: the content panel has no role, so the scroll container is found by its slot.
       const content = link.closest("[data-slot='navigation-menu-content']");
-      if (!(popup instanceof HTMLElement) || !(content instanceof HTMLElement) || !popup.contains(content)) {
+      if (popup === null || !(content instanceof HTMLElement) || !popup.contains(content)) {
         throw new Error("expected the trigger to control the popup that holds the content panel");
       }
 
@@ -333,6 +342,7 @@ describe("nested NavigationMenu", () => {
       throw new Error("expected the default content inside a viewport inside the outer content's popup");
     }
     expect(outerPopup.contains(outerContent)).toBe(true);
+    expect(viewport.classList.contains("viewport-extra")).toBe(true);
     expect(roleNamed("button", "Homes").getAttribute("aria-expanded")).toBe("true");
     // The only landmarks are the Site root and the outer popup Base UI renders as a <nav>.
     for (const landmark of page.getByRole("navigation").elements()) {
@@ -431,10 +441,7 @@ describe("nested NavigationMenu", () => {
     await expect.element(page.getByRole("button", { name: "Tariffs", exact: true })).toBeVisible();
 
     const trigger = roleNamed("button", "Tariffs");
-    const caret = trigger.querySelector("svg");
-    if (!(caret instanceof SVGElement)) {
-      throw new Error("expected the bar trigger's caret");
-    }
+    const caret = caretOf(trigger);
     const box = trigger.getBoundingClientRect();
     const next = roleNamed("button", "Plans").getBoundingClientRect();
     expect(box.height).toBe(CONTROL_MD.dense.height);
@@ -449,14 +456,6 @@ describe("nested NavigationMenu", () => {
     await vi.waitFor(() => {
       expect(getComputedStyle(caret).rotate).toBe("180deg");
     });
-  });
-
-  it("puts the Viewport's data-slot and the consumer className on the rendered element", async () => {
-    renderThemed(<InlineMenu />);
-    await userEvent.click(roleNamed("button", "Audiences"));
-    // DOM audit: the viewport has no role, so it is found by its slot.
-    const viewport = (await openedLink("Spot price")).closest("[data-slot='navigation-menu-viewport']");
-    expect(viewport?.classList.contains("viewport-extra")).toBe(true);
   });
 });
 
@@ -515,6 +514,8 @@ describe("NavigationMenu trigger density metrics", () => {
       expect(px(getComputedStyle(link).paddingInlineStart), `${density} link padding`).toBe(
         CONTROL_MD[density].px
       );
+      expect(px(getComputedStyle(link).columnGap), `${density} link gap`).toBe(CONTROL_MD[density].gap);
+      expect(px(getComputedStyle(trigger).columnGap), `${density} trigger gap`).toBe(CONTROL_MD[density].gap);
     }
   });
 
@@ -667,10 +668,7 @@ describe("NavigationMenu trigger density metrics", () => {
     if (!(trigger instanceof HTMLElement)) {
       throw new Error("expected the Homes trigger");
     }
-    const caret = trigger.querySelector("svg");
-    if (!(caret instanceof SVGElement)) {
-      throw new Error("expected the trigger's caret");
-    }
+    const caret = caretOf(trigger);
     const box = trigger.getBoundingClientRect();
     expect(box.width).toBe(240);
     expect(box.height).toBeGreaterThan(CONTROL_MD.dense.height);
@@ -724,10 +722,7 @@ describe("NavigationMenu trigger density metrics", () => {
           </DirectionProvider>
         );
         const trigger = roleNamed("button", label);
-        const caret = trigger.querySelector("svg");
-        if (!(caret instanceof SVGElement)) {
-          throw new Error(`expected the ${label} trigger's caret`);
-        }
+        const caret = caretOf(trigger);
         expect(getComputedStyle(caret).rotate, label).toBe(rotate);
 
         await userEvent.click(trigger);
@@ -755,10 +750,7 @@ describe("NavigationMenu trigger density metrics", () => {
   it("turns a bar trigger's caret from down to up while its panel is open", async () => {
     renderThemed(<SiteMenu />);
     const trigger = roleNamed("button", "Products");
-    const caret = trigger.querySelector("svg");
-    if (!(caret instanceof SVGElement)) {
-      throw new Error("expected the trigger's caret");
-    }
+    const caret = caretOf(trigger);
     expect(getComputedStyle(caret).rotate).toBe("none");
 
     await userEvent.click(trigger);

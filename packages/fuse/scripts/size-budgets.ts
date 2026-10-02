@@ -77,9 +77,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // `pnpm gen component` appends a 0-ceiling row below this marker, so a brand-new packed
   // entry cannot slip through unbudgeted. Replace the 0 with measured × 1.5.
   // plop:js-entry-budget
-  // 2026-10-02: new entry. Base UI's navigation menu brings its floating positioner, as Popover does.
-  // 2026-10-02: re-measured at 59084 (+213) after Root took `side` and `inline`, the entry
-  // exported `Viewport` and each Root passed its placement to its parts; the ceiling stays.
+  // 2026-10-02: new entry, measured at 59084. Base UI's navigation menu brings its floating positioner, as Popover does.
   { name: "navigation-menu", entryFile: "navigation-menu.js", measuredGzip: 59084, ceilingGzip: 88307 },
   // 2026-09-30: new entry. It composes Select, DropdownMenu, Checkbox, Field and Button; the
   // optional @tanstack/react-table peer is external.

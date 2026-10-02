@@ -16,6 +16,19 @@ import { overlayPopupSurfaceClass, overlayPositionerClass } from "../overlay/ove
 const contentRowClass = cn("text-sm box-border min-h-(--control-h-xs) gap-2 rounded-sm px-2 py-1.5");
 
 /**
+ * The box and type of a bar trigger and of a link directly in a horizontal List. It is the md
+ * control rung, so a bar that mixes links and triggers lines up with other controls.
+ */
+const barBoxClass = cn(
+  controlMd.height(),
+  controlMd.minHeight(),
+  controlMd.gap(),
+  controlMd.inset(),
+  controlMd.type(),
+  "font-medium rounded-md"
+);
+
+/**
  * NavigationMenu's part classes, one slot per rendered part.
  *
  * The popup animates its size and position through transitions on the `--popup-*` and
@@ -27,15 +40,8 @@ const contentRowClass = cn("text-sm box-border min-h-(--control-h-xs) gap-2 roun
  * than the space under the trigger scrolls inside the content instead of being clipped by
  * the viewport.
  *
- * The link's `box` axis follows its nearest List or Content: a link directly in a horizontal
- * List takes the bar box, and a link in a vertical List or in any Content is a content row.
- *
- * Root, List and Trigger each write their nearest Root's `data-orientation`, which Base UI
- * does not, so a horizontal Root nested in a vertical one keeps its bar styles. The
- * trigger's `orientation` axis follows its Root: a bar trigger takes the md control rung, and
- * a trigger in a vertical Root is a full-width, start-aligned content row that can hold a
- * title and a description. The caret writes its Root's popup `data-side` and points there: physical
- * sides stay put in RTL and logical sides flip. Only a `bottom` caret turns while open.
+ * Only Root and List write `data-orientation`; the trigger's `orientation` axis and the link's
+ * `box` axis come from their parts.
  *
  * The central reduced-motion rule keeps only opacity and colour transitions, which turns
  * the resize, the slide and the caret rotation off together.
@@ -52,6 +58,8 @@ export const navigationMenuVariants = tv({
       // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; the ring comes from the shared adapter
       "group/navigation-menu-trigger relative inline-flex cursor-pointer items-center border-0 bg-transparent text-inherit outline-none select-none data-popup-open:bg-muted enabled-hover:bg-muted",
     ],
+    // The caret writes its Root's popup `data-side` and points there: physical sides stay put
+    // in RTL and logical sides flip. Only a `bottom` caret turns while open.
     triggerIcon: [
       "ease-in-out pointer-events-none size-4 shrink-0 text-muted-foreground transition-transform duration-200",
       "data-[side=bottom]:group-data-popup-open/navigation-menu-trigger:rotate-180 data-[side=left]:rotate-90 data-[side=right]:-rotate-90 data-[side=top]:rotate-180",
@@ -87,33 +95,17 @@ export const navigationMenuVariants = tv({
   },
   variants: {
     orientation: {
-      // A bar trigger is a control: it takes the md rung, so a bar lines up with other controls.
-      horizontal: {
-        trigger: [
-          controlMd.height(),
-          controlMd.minHeight(),
-          controlMd.gap(),
-          controlMd.inset(),
-          controlMd.type(),
-          "font-medium w-max justify-center rounded-md",
-        ],
-      },
-      // A vertical trigger is one more row in its content's list, so it takes the link's row.
+      horizontal: { trigger: [barBoxClass, "w-max justify-center"] },
+      // A vertical trigger is full width and start-aligned, so it can hold a title and a description.
       vertical: {
         trigger: [contentRowClass, "h-auto w-full justify-between text-start font-[number:inherit]"],
       },
     },
-    // A link in a bar takes the bar trigger's box, so a bar that mixes links and triggers
-    // lines up. Every other link is a content row, like a vertical trigger beside it.
     box: {
-      bar: {
-        link: [controlMd.height(), controlMd.inset(), controlMd.type(), "font-medium gap-2 rounded-md"],
-      },
+      bar: { link: barBoxClass },
       row: { link: contentRowClass },
     },
   },
-  defaultVariants: {
-    orientation: "horizontal",
-    box: "row",
-  },
+  // Trigger and Link always pass their axis, so neither has a default.
+  defaultVariants: {},
 });

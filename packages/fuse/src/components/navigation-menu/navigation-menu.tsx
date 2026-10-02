@@ -80,7 +80,7 @@ type NavigationMenuInlineProps = {
 };
 
 /** Props for `NavigationMenu.Root`. */
-export type NavigationMenuRootProps = ComponentProps<typeof NavigationMenuPrimitive.Root> &
+export type NavigationMenuRootProps<Value = unknown> = NavigationMenuPrimitive.Root.Props<Value> &
   (NavigationMenuPopupPlacementProps | NavigationMenuInlineProps);
 
 /**
@@ -90,7 +90,7 @@ export type NavigationMenuRootProps = ComponentProps<typeof NavigationMenuPrimit
  * its own. An `inline` Root renders none and shows its content in a `NavigationMenu.Viewport`.
  * Name the landmark with `aria-label`.
  */
-export function NavigationMenuRoot({
+export function NavigationMenuRoot<Value = unknown>({
   align = "start",
   side = "bottom",
   inline = false,
@@ -99,14 +99,15 @@ export function NavigationMenuRoot({
   className,
   children,
   ...props
-}: NavigationMenuRootProps): ReactElement {
+}: NavigationMenuRootProps<Value>): ReactElement {
   const caret = inline ? "none" : side;
   const placement = useMemo((): NavigationMenuPlacement => ({ orientation, caret }), [orientation, caret]);
   return (
     <NavigationMenuPlacementContext.Provider value={placement}>
       <NavigationMenuPrimitive.Root
         data-slot="navigation-menu"
-        // Base UI writes no orientation attribute; the Root, List and Trigger style from their own.
+        // Base UI writes no orientation attribute. Root and List write their own Root's, so a
+        // horizontal Root nested in a vertical one keeps its bar styles.
         data-orientation={orientation}
         orientation={orientation}
         className={mergeClassName(className, slots.root())}
@@ -177,7 +178,6 @@ export function NavigationMenuTrigger({
   return (
     <NavigationMenuPrimitive.Trigger
       data-slot="navigation-menu-trigger"
-      data-orientation={orientation}
       className={mergeClassName(className, slots.trigger({ orientation }))}
       {...props}>
       {children}
