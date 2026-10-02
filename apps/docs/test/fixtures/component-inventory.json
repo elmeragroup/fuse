@@ -318,6 +318,11 @@
       "meter-neutral.tsx"
     ]
   },
+  "navigation-menu": {
+    "title": "Navigation Menu",
+    "rsc": "client",
+    "demos": ["navigation-menu-basic.tsx", "navigation-menu-links.tsx"]
+  },
   "number-field": {
     "title": "Number Field",
     "rsc": "client",

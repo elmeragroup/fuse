@@ -1,0 +1,41 @@
+---
+lede: >
+  A site navigation bar whose triggers open link panels in one shared popup.
+  Use it for top-level site sections, not for app actions.
+---
+
+import { NavigationMenuBasic } from "./demos/navigation-menu-basic";
+import { NavigationMenuLinks } from "./demos/navigation-menu-links";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("navigation-menu");
+
+<ComponentIntro slug="navigation-menu" />
+
+<Prose>
+
+`NavigationMenu.Root` renders a `<nav>` landmark, so name it with `aria-label`. It also
+renders the popup that every `NavigationMenu.Content` opens into. Moving between triggers
+resizes that one popup rather than opening a second, and `align` places it under the open
+trigger.
+
+A trigger opens on hover, on click, and on Enter or ArrowDown. Escape closes the panel
+and returns focus to the trigger. Mark the current page's link with `active`, which sets
+`aria-current="page"`. For a router link, pass it through `render`.
+
+For a menu of actions, use DropdownMenu.
+
+</Prose>
+
+<Demo slug="navigation-menu" id="basic" title="Basic" file="navigation-menu-basic.tsx">
+  <NavigationMenuBasic />
+</Demo>
+
+<Demo slug="navigation-menu" id="links" title="Links only" file="navigation-menu-links.tsx">
+  <NavigationMenuLinks />
+</Demo>
+
+<ApiReference slug="navigation-menu" />
+
+<ComponentTokens slug="navigation-menu" />
