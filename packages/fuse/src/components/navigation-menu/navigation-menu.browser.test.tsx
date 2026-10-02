@@ -9,6 +9,7 @@ import "../../../dist/styles.css";
 import { panelControlledBy } from "../../../test/panel-transition";
 import {
   CONTROL_MD,
+  CONTROL_XS,
   fkasExternal,
   px,
   renderThemed,
@@ -517,6 +518,130 @@ describe("NavigationMenu trigger density metrics", () => {
     }
   });
 
+  it("renders a link in a vertical Root's list at its sibling trigger's row metrics at both density stamps", () => {
+    for (const density of ["dense", "comfortable"] as const) {
+      stampDensity(density);
+      const { unmount } = renderThemed(
+        <NavigationMenu.Root aria-label={`${density} audiences`} orientation="vertical" side="right">
+          <NavigationMenu.List>
+            <NavigationMenu.Item>
+              <NavigationMenu.Trigger>{`Homes ${density}`}</NavigationMenu.Trigger>
+              <NavigationMenu.Content>
+                <NavigationMenu.Link href="#spot">Spot price</NavigationMenu.Link>
+              </NavigationMenu.Content>
+            </NavigationMenu.Item>
+            <NavigationMenu.Item>
+              <NavigationMenu.Link href="#business">{`Business ${density}`}</NavigationMenu.Link>
+            </NavigationMenu.Item>
+          </NavigationMenu.List>
+        </NavigationMenu.Root>
+      );
+      const link = getComputedStyle(roleNamed("link", `Business ${density}`));
+      const trigger = getComputedStyle(roleNamed("button", `Homes ${density}`));
+
+      // The vertical trigger is the oracle: both are rows in the same list.
+      for (const property of ["fontSize", "paddingInlineStart", "minHeight"] as const) {
+        expect(link[property], `${density} ${property}`).toBe(trigger[property]);
+      }
+      unmount();
+    }
+  });
+
+  it("renders a link in a bar's content as a content row, not at the bar's md box, at both density stamps", async () => {
+    for (const density of ["dense", "comfortable"] as const) {
+      stampDensity(density);
+      const { unmount } = renderThemed(
+        <NavigationMenu.Root aria-label={`${density} bar`}>
+          <NavigationMenu.List>
+            <NavigationMenu.Item>
+              <NavigationMenu.Trigger>{`Products ${density}`}</NavigationMenu.Trigger>
+              <NavigationMenu.Content>
+                <NavigationMenu.Link href="#spot">{`Spot ${density}`}</NavigationMenu.Link>
+              </NavigationMenu.Content>
+            </NavigationMenu.Item>
+          </NavigationMenu.List>
+        </NavigationMenu.Root>
+      );
+      await userEvent.click(roleNamed("button", `Products ${density}`));
+      const link = getComputedStyle(await openedLink(`Spot ${density}`));
+
+      // A content row: the xs floor, `px-2` and `text-sm` at the 16px root.
+      expect(px(link.minHeight), `${density} minHeight`).toBe(CONTROL_XS[density].height);
+      expect(px(link.paddingInlineStart), `${density} paddingInlineStart`).toBe(8);
+      expect(px(link.fontSize), `${density} fontSize`).toBe(14);
+      unmount();
+    }
+  });
+
+  it("renders a nested vertical trigger at its sibling content link's row metrics at both density stamps", async () => {
+    for (const density of ["dense", "comfortable"] as const) {
+      stampDensity(density);
+      const { unmount } = renderThemed(
+        <NavigationMenu.Root aria-label={`${density} rows`}>
+          <NavigationMenu.List>
+            <NavigationMenu.Item>
+              <NavigationMenu.Trigger>{`Electricity ${density}`}</NavigationMenu.Trigger>
+              <NavigationMenu.Content>
+                <NavigationMenu.Link href="#spot">{`Spot price ${density}`}</NavigationMenu.Link>
+                <NavigationMenu.Root orientation="vertical" side="right">
+                  <NavigationMenu.List>
+                    <NavigationMenu.Item>
+                      <NavigationMenu.Trigger>{`Electric car ${density}`}</NavigationMenu.Trigger>
+                      <NavigationMenu.Content>
+                        <NavigationMenu.Link href="#charging">Charging</NavigationMenu.Link>
+                      </NavigationMenu.Content>
+                    </NavigationMenu.Item>
+                  </NavigationMenu.List>
+                </NavigationMenu.Root>
+              </NavigationMenu.Content>
+            </NavigationMenu.Item>
+          </NavigationMenu.List>
+        </NavigationMenu.Root>
+      );
+      await userEvent.click(roleNamed("button", `Electricity ${density}`));
+      const link = getComputedStyle(await openedLink(`Spot price ${density}`));
+      const triggerElement = roleNamed("button", `Electric car ${density}`);
+      const trigger = getComputedStyle(triggerElement);
+      expect(triggerElement.getBoundingClientRect().height, `${density} target size`).toBeGreaterThanOrEqual(
+        24
+      );
+
+      // The content link is the oracle: the nested trigger is one more row in its list.
+      const properties = [
+        "fontSize",
+        "lineHeight",
+        "fontWeight",
+        "paddingInlineStart",
+        "paddingInlineEnd",
+        "paddingBlockStart",
+        "minHeight",
+        "borderTopLeftRadius",
+      ] as const;
+      for (const property of properties) {
+        expect(trigger[property], `${density} ${property}`).toBe(link[property]);
+      }
+      unmount();
+    }
+  });
+
+  it("lets a consumer weight class replace a vertical trigger's inherited weight", () => {
+    renderThemed(
+      <NavigationMenu.Root aria-label="Weighted audiences" orientation="vertical" side="right">
+        <NavigationMenu.List>
+          <NavigationMenu.Item>
+            <NavigationMenu.Trigger className="font-medium">Homes</NavigationMenu.Trigger>
+            <NavigationMenu.Content>
+              <NavigationMenu.Link href="#spot">Spot price</NavigationMenu.Link>
+            </NavigationMenu.Content>
+          </NavigationMenu.Item>
+        </NavigationMenu.List>
+      </NavigationMenu.Root>
+    );
+
+    // `font-medium` is weight 500.
+    expect(getComputedStyle(roleNamed("button", "Homes")).fontWeight).toBe("500");
+  });
+
   it("lays a vertical Root's trigger out as a full-width, start-aligned row whose caret points to its side='right' popup", async () => {
     stampDensity("dense");
     renderThemed(
@@ -550,12 +675,16 @@ describe("NavigationMenu trigger density metrics", () => {
     expect(box.width).toBe(240);
     expect(box.height).toBeGreaterThan(CONTROL_MD.dense.height);
     expect(getComputedStyle(trigger).textAlign).toBe("start");
-    expect(caret.getBoundingClientRect().right).toBeCloseTo(box.right - CONTROL_MD.dense.px, 0);
     expect(getComputedStyle(caret).rotate).toBe("-90deg");
 
     // Opening a side panel keeps the caret on its side instead of flipping it.
     await userEvent.click(trigger);
-    await openedLink("Spot price");
+    const link = await openedLink("Spot price");
+    // The caret sits at the row's end inset, which the content link's row defines.
+    expect(caret.getBoundingClientRect().right).toBeCloseTo(
+      box.right - px(getComputedStyle(link).paddingInlineEnd),
+      0
+    );
     await vi.waitFor(() => {
       expect(getComputedStyle(caret).rotate).toBe("-90deg");
     });

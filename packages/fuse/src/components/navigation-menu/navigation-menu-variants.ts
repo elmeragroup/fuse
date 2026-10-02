@@ -1,9 +1,19 @@
 import { tv } from "tailwind-variants";
 
+import { cn } from "../../styles/cn";
 import { controlMd } from "../../styles/control-size-md";
 import { nativeStateFaceClass } from "../../styles/state-face";
 import { selfFocusRingClass } from "../../styles/utils";
 import { overlayPopupSurfaceClass, overlayPositionerClass } from "../overlay/overlay-classes";
+
+/**
+ * The box and type of a row in a content panel's list: a link outside a bar, or a trigger in
+ * a vertical Root. Both slots take it, so a nested trigger cannot drift from the links beside it. The xs
+ * control height is the density-owned 24px floor: 24px dense, 32px comfortable. The padding
+ * and type stay put across densities, as menu layout rather than a control rung.
+ */
+// oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- row padding and type are menu layout, not a control rung
+const contentRowClass = cn("text-sm box-border min-h-(--control-h-xs) gap-2 rounded-sm px-2 py-1.5");
 
 /**
  * NavigationMenu's part classes, one slot per rendered part.
@@ -17,10 +27,14 @@ import { overlayPopupSurfaceClass, overlayPositionerClass } from "../overlay/ove
  * than the space under the trigger scrolls inside the content instead of being clipped by
  * the viewport.
  *
+ * The link's `box` axis follows its nearest List or Content: a link directly in a horizontal
+ * List takes the bar box, and a link in a vertical List or in any Content is a content row.
+ *
  * Root, List and Trigger each write their nearest Root's `data-orientation`, which Base UI
- * does not, so a horizontal Root nested in a vertical one keeps its bar styles. A trigger in
- * a vertical Root is a full-width, start-aligned row that can hold a title and a
- * description. The caret writes its Root's popup `data-side` and points there: physical
+ * does not, so a horizontal Root nested in a vertical one keeps its bar styles. The
+ * trigger's `orientation` axis follows its Root: a bar trigger takes the md control rung, and
+ * a trigger in a vertical Root is a full-width, start-aligned content row that can hold a
+ * title and a description. The caret writes its Root's popup `data-side` and points there: physical
  * sides stay put in RTL and logical sides flip. Only a `bottom` caret turns while open.
  *
  * The central reduced-motion rule keeps only opacity and colour transitions, which turns
@@ -35,15 +49,8 @@ export const navigationMenuVariants = tv({
     trigger: [
       selfFocusRingClass,
       nativeStateFaceClass,
-      controlMd.height(),
-      controlMd.gap(),
-      controlMd.inset(),
-      controlMd.type(),
       // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; the ring comes from the shared adapter
-      "group/navigation-menu-trigger font-medium relative inline-flex w-max cursor-pointer items-center justify-center rounded-md border-0 bg-transparent text-inherit outline-none select-none data-popup-open:bg-muted enabled-hover:bg-muted",
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- the block padding lets a two-line row grow past the md floor; it is list layout, not a control rung
-      "data-[orientation=vertical]:h-auto data-[orientation=vertical]:w-full data-[orientation=vertical]:justify-between data-[orientation=vertical]:py-2 data-[orientation=vertical]:text-start",
-      controlMd.minHeight(),
+      "group/navigation-menu-trigger relative inline-flex cursor-pointer items-center border-0 bg-transparent text-inherit outline-none select-none data-popup-open:bg-muted enabled-hover:bg-muted",
     ],
     triggerIcon: [
       "ease-in-out pointer-events-none size-4 shrink-0 text-muted-foreground transition-transform duration-200",
@@ -67,20 +74,46 @@ export const navigationMenuVariants = tv({
       "data-starting-style:data-[activation-direction=left]:-translate-x-1/2 data-starting-style:data-[activation-direction=right]:translate-x-1/2",
       "data-ending-style:data-[activation-direction=left]:translate-x-1/2 data-ending-style:data-[activation-direction=right]:-translate-x-1/2",
     ],
-    // The xs control height is the density-owned 24px floor: 24px dense, 32px comfortable.
-    // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- row padding and type are menu layout, not a control rung
     link: [
       selfFocusRingClass,
       // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; the ring comes from the shared adapter
-      "text-sm data-active:font-medium box-border flex min-h-(--control-h-xs) items-center gap-2 rounded-sm px-2 py-1.5 text-inherit no-underline outline-none hover:bg-muted data-active:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-      // A link in the bar (the popup portals out of the list) takes the trigger's box, so a
-      // bar that mixes links and triggers lines up.
-      "in-data-[slot=navigation-menu-list]:font-medium in-data-[slot=navigation-menu-list]:h-(--control-h-md) in-data-[slot=navigation-menu-list]:rounded-md in-data-[slot=navigation-menu-list]:px-(--control-px-md) in-data-[slot=navigation-menu-list]:py-0 in-data-[slot=navigation-menu-list]:[font-size:var(--control-text)] in-data-[slot=navigation-menu-list]:[line-height:var(--control-leading)]",
+      "data-active:font-medium flex items-center text-inherit no-underline outline-none hover:bg-muted data-active:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
     ],
     indicator:
       // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- the arrow is decorative geometry, not a control rung
       "pointer-events-none absolute inset-x-0 top-full flex h-1.5 items-end justify-center overflow-hidden opacity-0 transition-opacity duration-200 data-popup-open:opacity-100",
     // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- the arrow is decorative geometry, not a control rung
     indicatorArrow: "relative top-[60%] size-2 rotate-45 rounded-tl-sm bg-border",
+  },
+  variants: {
+    orientation: {
+      // A bar trigger is a control: it takes the md rung, so a bar lines up with other controls.
+      horizontal: {
+        trigger: [
+          controlMd.height(),
+          controlMd.minHeight(),
+          controlMd.gap(),
+          controlMd.inset(),
+          controlMd.type(),
+          "font-medium w-max justify-center rounded-md",
+        ],
+      },
+      // A vertical trigger is one more row in its content's list, so it takes the link's row.
+      vertical: {
+        trigger: [contentRowClass, "h-auto w-full justify-between text-start font-[number:inherit]"],
+      },
+    },
+    // A link in a bar takes the bar trigger's box, so a bar that mixes links and triggers
+    // lines up. Every other link is a content row, like a vertical trigger beside it.
+    box: {
+      bar: {
+        link: [controlMd.height(), controlMd.inset(), controlMd.type(), "font-medium gap-2 rounded-md"],
+      },
+      row: { link: contentRowClass },
+    },
+  },
+  defaultVariants: {
+    orientation: "horizontal",
+    box: "row",
   },
 });

@@ -11,7 +11,7 @@ import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
 import { navigationMenuVariants } from "./navigation-menu-variants";
 
-/** Resolved once at module scope — the recipe has no axes (no per-render work). */
+/** Resolved once at module scope; the Trigger and Link resolve their slots per call. */
 const slots = navigationMenuVariants();
 
 type PositionerProps = ComponentProps<typeof NavigationMenuPrimitive.Positioner>;
@@ -39,6 +39,15 @@ function useNavigationMenuPlacement(part: string): NavigationMenuPlacement {
   }
   return placement;
 }
+
+/**
+ * Which box a link takes: `"bar"` directly in a horizontal List, `"row"` anywhere else. Each
+ * List provides its own and each Content resets it, because context crosses the popup's
+ * portal and a link in a bar's Content would otherwise read the bar's.
+ */
+type NavigationMenuLinkBox = "bar" | "row";
+
+const NavigationMenuLinkBoxContext = createContext<NavigationMenuLinkBox>("row");
 
 /** Placement of the built-in popup, which only a Root that renders one takes. */
 type NavigationMenuPopupPlacementProps = OverlayContainerProps & {
@@ -128,12 +137,14 @@ export function NavigationMenuList({
 }: ComponentProps<typeof NavigationMenuPrimitive.List>): ReactElement {
   const { orientation } = useNavigationMenuPlacement("List");
   return (
-    <NavigationMenuPrimitive.List
-      data-slot="navigation-menu-list"
-      data-orientation={orientation}
-      className={mergeClassName(className, slots.list())}
-      {...props}
-    />
+    <NavigationMenuLinkBoxContext.Provider value={orientation === "horizontal" ? "bar" : "row"}>
+      <NavigationMenuPrimitive.List
+        data-slot="navigation-menu-list"
+        data-orientation={orientation}
+        className={mergeClassName(className, slots.list())}
+        {...props}
+      />
+    </NavigationMenuLinkBoxContext.Provider>
   );
 }
 
@@ -167,7 +178,7 @@ export function NavigationMenuTrigger({
     <NavigationMenuPrimitive.Trigger
       data-slot="navigation-menu-trigger"
       data-orientation={orientation}
-      className={mergeClassName(className, slots.trigger())}
+      className={mergeClassName(className, slots.trigger({ orientation }))}
       {...props}>
       {children}
       {caret === "none" ? null : (
@@ -183,11 +194,13 @@ export function NavigationMenuContent({
   ...props
 }: ComponentProps<typeof NavigationMenuPrimitive.Content>): ReactElement {
   return (
-    <NavigationMenuPrimitive.Content
-      data-slot="navigation-menu-content"
-      className={mergeClassName(className, slots.content())}
-      {...props}
-    />
+    <NavigationMenuLinkBoxContext.Provider value="row">
+      <NavigationMenuPrimitive.Content
+        data-slot="navigation-menu-content"
+        className={mergeClassName(className, slots.content())}
+        {...props}
+      />
+    </NavigationMenuLinkBoxContext.Provider>
   );
 }
 
@@ -200,10 +213,11 @@ export function NavigationMenuLink({
   className,
   ...props
 }: ComponentProps<typeof NavigationMenuPrimitive.Link>): ReactElement {
+  const box = useContext(NavigationMenuLinkBoxContext);
   return (
     <NavigationMenuPrimitive.Link
       data-slot="navigation-menu-link"
-      className={mergeClassName(className, slots.link())}
+      className={mergeClassName(className, slots.link({ box }))}
       {...props}
     />
   );

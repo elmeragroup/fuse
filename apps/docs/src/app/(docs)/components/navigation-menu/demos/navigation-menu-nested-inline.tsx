@@ -50,9 +50,9 @@ export function NavigationMenuNestedInline() {
                     {audiences.map((audience) => (
                       <NavigationMenu.Item key={audience.value} value={audience.value}>
                         <NavigationMenu.Trigger>
-                          <span className="flex flex-col gap-1">
-                            <span>{audience.label}</span>
-                            <span className="font-normal text-muted-foreground">{audience.hint}</span>
+                          <span className="flex flex-col gap-1 py-1">
+                            <span className="font-medium">{audience.label}</span>
+                            <span className="text-muted-foreground">{audience.hint}</span>
                           </span>
                         </NavigationMenu.Trigger>
                         <NavigationMenu.Content>

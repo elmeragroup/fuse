@@ -36,11 +36,9 @@ export function NavigationMenuNested() {
                   <NavigationMenu.List>
                     <NavigationMenu.Item>
                       <NavigationMenu.Trigger>
-                        <span className="flex flex-col gap-1">
-                          <span>Electric car</span>
-                          <span className="font-normal text-muted-foreground">
-                            Charging at home and away.
-                          </span>
+                        <span className="flex flex-col gap-1 py-1">
+                          <span className="font-medium">Electric car</span>
+                          <span className="text-muted-foreground">Charging at home and away.</span>
                         </span>
                       </NavigationMenu.Trigger>
                       <NavigationMenu.Content>
