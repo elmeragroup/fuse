@@ -627,4 +627,19 @@ describe("control size: consumer overrides", () => {
     expect(measure("button", "wide button").paddingStart).toBe(16);
     expect(measure("button", "wide button").paddingEnd).toBe(16);
   });
+
+  it("lets a className px utility replace a comfortable Button's label inset but not its icon edge", () => {
+    stampDensity("comfortable");
+    renderThemed(
+      <Button className="px-4" aria-label="padded icon button">
+        {iconChildren("start")}
+      </Button>
+    );
+    // `px-4` is 16px and replaces the 32px md label inset. The leading icon keeps the 24px
+    // comfortable md icon edge: its `has-data-[icon=inline-start]:` class is another modifier,
+    // so tailwind-merge keeps it, and its `:has()` selector outranks `px-4`.
+    const box = measure("button", "padded icon button");
+    expect(box.paddingStart).toBe(24);
+    expect(box.paddingEnd).toBe(16);
+  });
 });

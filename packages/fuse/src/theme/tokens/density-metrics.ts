@@ -20,9 +20,10 @@ const CONTROL_SIZES = ["xs", "sm", "md", "lg"] as const;
  * the external default, takes the side padding of the customer-facing reference button,
  * except at xs, which keeps `control-px` until design picks one. `control-px-button-icon` is
  * the edge beside a leading or trailing icon on those labels. Dense matches `control-px-icon`,
- * and comfortable keeps it at three quarters of the label inset, so the icon and its gap
- * balance the label side. Only Button reads the two families, so fields, Select and Toggle
- * keep `control-px` and `control-px-icon`.
+ * and comfortable, from sm up, keeps it at three quarters of the label inset, so the icon and
+ * its gap balance the label side; xs keeps `control-px-icon` until design picks one. Only
+ * Button reads the two families, so fields, Select and Toggle keep `control-px` and
+ * `control-px-icon`.
  */
 const SIZED_FAMILIES = [
   { family: "control-h", kind: "height" },

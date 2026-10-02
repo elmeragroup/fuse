@@ -28,7 +28,9 @@ export const metadata = componentMetadata("button");
 
 The label sizes pad with Button's own inset. At comfortable density, the external default, that is 16px at `sm`
 and 32px at `default` and `lg`, and 12px and 24px on the side of a `data-icon="inline-start"` or `"inline-end"`
-icon. Dense matches the other controls. A `px-*` class in `className` replaces it.
+icon. Dense matches the other controls. A `px-*` class in `className` replaces the label padding only: the icon
+side keeps its icon padding, which a `has-data-[icon=inline-start]:pl-*` or `has-data-[icon=inline-end]:pr-*`
+class replaces.
 
 The `outline` variant takes its border from the theme. Internal themes draw a 1px `--border` hairline with a
 small shadow, and external themes a 2px ring in the text colour with no shadow.

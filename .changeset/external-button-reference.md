@@ -10,7 +10,8 @@ of a leading or trailing icon pads 12px at `sm` and 24px at `default` and `lg`, 
 other controls, so dense buttons do not move, and `xs` keeps its comfortable values. Text fields, `Select`,
 `Toggle` and `InputGroup.Button` keep their padding. Components that borrow the Button recipe move too,
 including `Pagination` Previous/Next, the `DatePicker` presets and `FileTrigger`. A `px-*` class in
-`className` still replaces the inset.
+`className` still replaces the label inset, but not the side of an icon, which keeps its icon padding; a
+`has-data-[icon=inline-start]:pl-*` or `has-data-[icon=inline-end]:pr-*` class replaces that.
 
 The `outline` variant takes its border from two new theme roles, `--button-outline` and
 `--button-outline-width`. External themes draw a 2px ring in `--foreground` with no shadow, in light and dark.

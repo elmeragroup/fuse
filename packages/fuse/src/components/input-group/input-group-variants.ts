@@ -39,8 +39,8 @@ export const inputGroupAddonVariants = tv({
  * fifth `--control-*` rung. InputGroup.Button applies the values as extra classes over
  * Button's default size, the md label. Every size swaps Button's own icon edge back to the
  * md control icon edge, and `sm`, which keeps that label's box, also swaps Button's inset
- * back to the md control inset, the field's own padding. Button's wider comfortable inset and
- * icon edge so never reach a field. An addon button sits inside the field box, so it pads and
+ * back to the md control inset, the field's own padding, so Button's wider comfortable inset
+ * and icon edge never reach a field. An addon button sits inside the field box, so it pads and
  * rounds like the field chrome and never takes Button's `--radius-button`. The `sm` sizes keep
  * `rounded-md`, and the `xs` sizes take the kbd's inset corner.
  */
