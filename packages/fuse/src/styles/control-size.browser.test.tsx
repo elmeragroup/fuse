@@ -298,10 +298,11 @@ describe("control size: label and min-square fits", () => {
     const tall = measure("button", "md tall");
     expect(px(tall.font), `${density} tall font`).toBe(md.font);
     expect(px(tall.leading), `${density} tall leading`).toBe(md.font * 2);
-    // The box metrics are untouched: a compact label keeps the size's height and inset.
+    // The box metrics are untouched: a compact label keeps the size's height and Button's
+    // own label inset.
     const compact = measure("button", "md compact");
     expect(compact.height, `${density} compact height`).toBe(md.height);
-    expect(compact.paddingStart, `${density} compact padding`).toBe(md.px);
+    expect(compact.paddingStart, `${density} compact padding`).toBe(md.pxButton);
   });
 
   it.each(DENSITIES)(
