@@ -165,6 +165,10 @@
       "types": "./src/meter.ts",
       "import": "./src/meter.ts"
     },
+    "./navigation-menu": {
+      "types": "./src/navigation-menu.ts",
+      "import": "./src/navigation-menu.ts"
+    },
     "./number-field": {
       "types": "./src/number-field.ts",
       "import": "./src/number-field.ts"
