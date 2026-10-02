@@ -292,7 +292,7 @@ describe("InputGroup", () => {
     expect(px(getComputedStyle(rootNamed("Meter")).height)).toBe(CONTROL_MD.dense.height);
   });
 
-  it("pads the sm addon button like the field, not like a standalone Button", () => {
+  it("pads addon buttons like the field, not like a standalone Button", () => {
     renderThemed(
       <InputGroup.Root>
         <InputGroup.Input aria-label="Query" />
@@ -304,12 +304,25 @@ describe("InputGroup", () => {
             </span>
             Find
           </InputGroup.Button>
+          <InputGroup.Button>
+            <span data-icon="inline-start" aria-hidden>
+              *
+            </span>
+            Lead
+          </InputGroup.Button>
+          <InputGroup.Button>
+            Trail
+            <span data-icon="inline-end" aria-hidden>
+              *
+            </span>
+          </InputGroup.Button>
         </InputGroup.Addon>
       </InputGroup.Root>
     );
 
     // The field's own md control inset and icon edge: 10px and 8px dense, 14px and 12px
-    // comfortable. A standalone md Button pads 32px and 24px at comfortable density.
+    // comfortable. A standalone md Button pads 32px and 24px at comfortable density. The
+    // default xs addon keeps its compact 6px (`px-1.5`) inset and the same md icon edge.
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);
       const bare = getComputedStyle(roleNamed("button", "Search"));
@@ -318,6 +331,12 @@ describe("InputGroup", () => {
       const icon = getComputedStyle(roleNamed("button", "Find"));
       expect(px(icon.paddingInlineStart), `${density} icon edge`).toBe(CONTROL_MD[density].pxIcon);
       expect(px(icon.paddingInlineEnd), `${density} far edge`).toBe(CONTROL_MD[density].px);
+      const lead = getComputedStyle(roleNamed("button", "Lead"));
+      expect(px(lead.paddingInlineStart), `${density} xs leading icon edge`).toBe(CONTROL_MD[density].pxIcon);
+      expect(px(lead.paddingInlineEnd), `${density} xs far edge`).toBe(6);
+      const trail = getComputedStyle(roleNamed("button", "Trail"));
+      expect(px(trail.paddingInlineEnd), `${density} xs trailing icon edge`).toBe(CONTROL_MD[density].pxIcon);
+      expect(px(trail.paddingInlineStart), `${density} xs far edge`).toBe(6);
     }
   });
 

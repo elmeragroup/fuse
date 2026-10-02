@@ -43,25 +43,27 @@ describe("inputGroupButtonVariants", () => {
     }
   });
 
-  it("pads the sm addon with the md control inset and icon edge, not Button's own", () => {
-    // Unit under test: the sm addon's padding. Oracle: the md control parts the field box and
-    // Button's md label share, which the sm addon forwards whole.
-    const sm = tokens(inputGroupButtonVariants({ size: "sm" }));
-    expect(sm).toEqual(
-      expect.arrayContaining([...tokens(controlMd.inset()), ...tokens(controlMd.iconEdge())])
+  it("pads every addon with the md control icon edge and sm with the md inset, not Button's own", () => {
+    // Unit under test: the addon padding. Oracle: the md control parts the field box and
+    // Button's md label share, which the addon forwards whole.
+    for (const size of BUTTON_SIZES) {
+      const resolved = tokens(inputGroupButtonVariants({ size }));
+      expect(resolved, size).toEqual(expect.arrayContaining(tokens(controlMd.iconEdge())));
+      expect(resolved.join(" "), size).not.toContain("--control-px-button");
+    }
+    expect(tokens(inputGroupButtonVariants({ size: "sm" }))).toEqual(
+      expect.arrayContaining(tokens(controlMd.inset()))
     );
-    expect(sm.join(" ")).not.toContain("--control-px-button");
   });
 
   it("is a shell-local exemption: no control size of its own and no density variants", () => {
     for (const size of BUTTON_SIZES) {
       const resolved = inputGroupButtonVariants({ size });
-      // Only sm reads control metrics, and only the md inset and icon edge it shares with the
-      // field box. The compact sizes read none.
-      const metrics = [...resolved.matchAll(/--control-[a-z-]+/gu)].map(([name]) => name);
-      expect(metrics, size).toEqual(
-        size === "sm" ? ["--control-px-md", "--control-px-icon-md", "--control-px-icon-md"] : []
-      );
+      // The addon reads only the md control parts it shares with the field box: the icon edge
+      // at every size, and the inset at sm.
+      const metrics = new Set([...resolved.matchAll(/--control-[a-z-]+/gu)].map(([name]) => name));
+      const allowed = size === "sm" ? ["--control-px-icon-md", "--control-px-md"] : ["--control-px-icon-md"];
+      expect([...metrics].toSorted(), size).toEqual(allowed);
       expect(resolved, size).not.toContain("dense:");
       expect(resolved, size).not.toContain("comfortable:");
       expect(resolved, size).not.toContain("data-density");

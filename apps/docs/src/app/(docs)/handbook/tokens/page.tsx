@@ -51,7 +51,7 @@ export default function TokensPage(): ReactElement {
         <code>lg</code>, so text fields, Select and Toggle keep their narrower inset. The edge beside a
         leading or trailing icon has its own <code>--control-px-button-icon-*</code> family, 12px at{" "}
         <code>sm</code> and 24px at <code>default</code> and <code>lg</code> when comfortable, so the icon
-        does not sit tight against one end. A button inside an input group keeps the field&apos;s padding.
+        does not sit tight against one end. An input group&apos;s addon buttons keep their own padding.
       </p>
 
       <h2 id="bundle-sizes">Measured bundle sizes</h2>
