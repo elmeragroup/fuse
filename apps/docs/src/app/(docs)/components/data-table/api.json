@@ -371,15 +371,6 @@
           "defaultValue": "\"ghost\"",
           "description": "",
           "required": false
-        },
-        {
-          "name": "wrap",
-          "origin": "declared",
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "Lets a long label wrap onto more lines. The size's height becomes a minimum, so a one-line label measures as without `wrap` and a longer label grows one line height per line, centered, instead of overflowing the button. Off by default: a label keeps to one line and the fixed height. The square `icon*` sizes have no label and ignore it.",
-          "required": false
         }
       ]
     },

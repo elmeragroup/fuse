@@ -291,38 +291,6 @@ describe("control size: label and min-square fits", () => {
   );
 });
 
-describe("control size: a consumer className that wraps a label", () => {
-  /**
-   * The recipe the Button page documents for a label that may break onto more lines: the
-   * fixed height becomes a minimum, the vertical inset is half the height minus one line and
-   * the 1px border, and the text may wrap. Every class is an unprefixed utility, so the size's
-   * `h-*` and the base `whitespace-nowrap` are replaced through `cn`, which is the contract
-   * this suite exists for.
-   */
-  const WRAP_MD = "h-auto min-h-(--control-h-md) py-[calc((var(--control-h-md)-1lh)/2-1px)] text-center whitespace-normal";
-
-  it.each(DENSITIES)("keeps a one-line label at the fixed height and grows by one line per line at %s", (density) => {
-    stampDensity(density);
-    renderThemed(
-      <>
-        <Button aria-label="fixed">Label</Button>
-        <Button className={WRAP_MD} aria-label="one line">
-          Label
-        </Button>
-        <Button className={WRAP_MD} aria-label="two lines">
-          First line
-          <br />
-          Second line
-        </Button>
-      </>
-    );
-    const md = expectedMetrics("md", density);
-    expect(measure("button", "fixed").height, `${density} fixed`).toBe(md.height);
-    expect(measure("button", "one line").height, `${density} one line`).toBe(md.height);
-    expect(measure("button", "two lines").height, `${density} two lines`).toBe(md.height + md.leading);
-  });
-});
-
 describe("control size: square fit", () => {
   const BUTTON_SQUARES = [
     ["icon-xs", "xs"],

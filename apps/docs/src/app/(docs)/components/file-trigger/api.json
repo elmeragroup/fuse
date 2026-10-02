@@ -65,15 +65,6 @@
           "defaultValue": "true",
           "description": "Leading icon on/off. Defaults to on, and adds `gap-x-2` between the icon and the label when on.",
           "required": false
-        },
-        {
-          "name": "wrap",
-          "origin": "recipe-axis",
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "",
-          "required": false
         }
       ]
     }
