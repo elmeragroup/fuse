@@ -23,7 +23,7 @@ export type StaticPage = {
 
 /** The site root. Reachable from the wordmark, indexed by `llms.txt`, not in a nav group. */
 export const HOME_PAGE = {
-  href: "/",
+  href: "/docs",
   label: "Fuse",
   description: "Overview of the Fuse docs site: what the library is and how the docs are generated.",
 } as const;

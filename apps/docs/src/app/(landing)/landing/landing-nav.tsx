@@ -63,6 +63,7 @@ export function SchemeSwitch(): ReactElement {
 }
 
 const LINKS = [
+  { href: "/docs", label: "Docs" },
   { href: "/components/button", label: "Components" },
   { href: "/quick-start", label: "Quick start" },
   { href: "/accessibility", label: "Accessibility" },
@@ -73,7 +74,7 @@ export function LandingNav(): ReactElement {
   return (
     <header className={styles.bar()}>
       <div className={styles.inner()}>
-        <Link href="/landing" className={styles.wordmark()}>
+        <Link href="/" className={styles.wordmark()}>
           <ElmeraGroupLogo variant="mark" className={styles.mark()} aria-hidden />
           Fuse
         </Link>

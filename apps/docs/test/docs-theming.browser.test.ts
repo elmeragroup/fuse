@@ -25,7 +25,7 @@ async function expectRole(page: Page, selector: string, property: string, token:
   expect(result.actual, `${selector} ${property} uses --${token}`).toBe(result.expected);
 }
 
-it.each(["/", "/handbook/theming", "/handbook/theme-matrix", "/components/button"])(
+it.each(["/docs", "/handbook/theming", "/handbook/theme-matrix", "/components/button"])(
   "paints %s from internal Elmera tokens when data-theme changes manually",
   async (path) => {
     const page = await browser().newPage({ colorScheme: "light" });

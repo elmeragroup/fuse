@@ -54,7 +54,7 @@ export function LandingPage(): ReactElement {
                 <SchemeSwitch />
               </span>
               <span className={styles.footerLinks()}>
-                <Link href="/" className={styles.footerLink()}>
+                <Link href="/docs" className={styles.footerLink()}>
                   Docs
                 </Link>
                 <Link href="/releases" className={styles.footerLink()}>

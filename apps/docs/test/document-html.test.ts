@@ -19,7 +19,7 @@ async function fetchHtml(pathname: string): Promise<string> {
 
 describe("docs response HTML", () => {
   it("places the host color bootstrap before every paintable docs child", async () => {
-    const html = await fetchHtml("/");
+    const html = await fetchHtml("/docs");
     const bootstraps = bootstrapScripts(html);
     expect(bootstraps).toHaveLength(1);
     const bootstrap = bootstraps[0];
