@@ -5,13 +5,14 @@ import { tv } from "tailwind-variants";
 
 import { Button } from "@elmeragroup/fuse/button";
 
+import { FunnelWindow } from "./app-shell/funnel-window";
 import { BrandWordmark } from "./brand-wordmark";
 import { BROWSE_COMPONENTS, LANDING_SUMMARY, PICKER_BRANDS, QUICK_START } from "./landing-facts";
 
 const landingHero = tv({
   slots: {
     section: "sm:pb-30 flex flex-col items-center pb-18",
-    copy: "sm:px-6 flex flex-col items-center gap-6 px-4 pt-16 text-center lg:pt-28",
+    copy: "sm:px-6 flex flex-col items-center gap-6 px-4 pt-16 text-center lg:gap-5",
     eyebrow: "text-xs tracking-landing-eyebrow font-mono text-primary uppercase",
     title:
       "text-5xl sm:text-7xl tracking-landing-hero lg:text-landing-hero font-semibold font-heading text-balance text-foreground",
@@ -19,9 +20,13 @@ const landingHero = tv({
     lede: "text-base leading-relaxed sm:text-xl max-w-180 text-pretty text-muted-foreground",
     actions: "sm:flex-row sm:w-auto sm:gap-6 flex w-full flex-col items-center gap-3",
     primary: "sm:w-auto w-full",
+    // The window sits between the actions and the brand strip, as wide as the page allows, and
+    // close enough under them that 40% of it shows in a 1440×900 first viewport.
+    shot: "flex w-full justify-center pt-12 lg:pt-8",
+    strip: "sm:px-6 flex w-full justify-center px-4",
     // Every brand in one ink, quieter than the copy above it.
     brands:
-      "sm:gap-x-12 sm:pt-16 max-w-landing m-0 flex list-none flex-wrap items-center justify-center gap-x-7 gap-y-6 p-0 pt-8 text-muted-foreground",
+      "sm:gap-x-12 sm:pt-12 max-w-landing m-0 flex list-none flex-wrap items-center justify-center gap-x-7 gap-y-6 p-0 pt-8 text-muted-foreground",
     brand: "flex",
   },
 });
@@ -50,6 +55,11 @@ export function LandingHero(): ReactElement {
             Browse components ›
           </Button>
         </div>
+      </div>
+      <div className={styles.shot()}>
+        <FunnelWindow />
+      </div>
+      <div className={styles.strip()}>
         <ul aria-label="Brands" className={styles.brands()}>
           {PICKER_BRANDS.map((brand) => (
             <li key={brand} className={styles.brand()}>

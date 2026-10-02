@@ -139,6 +139,32 @@
   `packages/fuse/scripts/size-limit.ts` repeats it in `PEER_EXTERNALS`. Derive all four from
   `PUBLISHED_PEER_RANGES`.
 
+## Landing app-shell stand-ins
+
+The hero's Funnel window (`apps/docs/src/app/(landing)/landing/app-shell/`) composes these
+pieces locally because Fuse has no part for them. Replace each stand-in once Fuse ships the part.
+
+- Add a `Kbd` part. `app-shell/kbd.tsx` draws the shortcut caps in the sidebar, tooltips and
+  palette.
+- Add a `Command` palette part. `app-shell/command-palette.tsx` builds one from `Dialog` and the
+  ARIA combobox pattern, as the docs search (`apps/docs/src/components/search-palette.tsx`) does.
+- Add a floating action bar for row selections. `app-shell/bulk-toolbar.tsx` positions its own
+  `role="toolbar"` over the list.
+- Add a list and detail split that becomes a Sheet below a breakpoint. `app-shell/funnel-main.tsx`
+  switches between an `aside` and a `Sheet`, and `app-shell/funnel-window.tsx` reads its own
+  `(width >= 80rem)` query.
+- Let `Sidebar` live in a bounded container. `Sidebar.Provider` sets `min-h-svh`, the desktop
+  rail is `fixed` and `h-svh`, `setOpen` writes the `sidebar:state` cookie even when controlled,
+  and a window listener toggles on ⌘B from anywhere. `app-shell/funnel-window.tsx` makes the
+  window the rail's containing block with `transform`, keeps the open state in memory and stops
+  ⌘B in the capture phase; `app-shell/funnel-sidebar.tsx` sets the rail to `h-full`.
+- Let `ScrollArea` content truncate. Base UI gives the content `min-width: fit-content`, so a
+  child never narrows below its longest line. `app-shell/order-list.tsx` and
+  `app-shell/order-detail.tsx` add `contain-inline-size` to their scrolled content.
+- Let `Sidebar.Inset` render an element other than `<main>`. A page that already has a `main`
+  landmark cannot use it, so `app-shell/funnel-main.tsx` copies its inset classes onto a `div`
+  next to the `inset` rail.
+
 ## Product-triggered work
 
 - When Base UI offers suitable date primitives, migrate the interim React Aria tier.

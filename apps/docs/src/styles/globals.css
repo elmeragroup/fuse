@@ -164,6 +164,50 @@
   }
 }
 
+/* The hero window fades into the page at rest, like a product shot, and shows its whole
+   height while it is hovered or holds focus. A registered property, so the stop interpolates. */
+@property --landing-fade {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 100%;
+}
+
+@utility landing-fade {
+  --landing-fade: 78%;
+  mask-image: linear-gradient(to bottom, black var(--landing-fade), transparent);
+  transition: --landing-fade 360ms var(--ease-snap);
+
+  &:focus-within {
+    --landing-fade: 100%;
+  }
+
+  @media (hover: hover) {
+    &:hover {
+      --landing-fade: 100%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+/* A floating bar that rises into place when it mounts, and simply appears under reduced motion. */
+@utility landing-rise {
+  transition:
+    opacity 180ms var(--ease-snap),
+    translate 180ms var(--ease-snap);
+
+  @starting-style {
+    opacity: 0;
+    translate: 0 6px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
 /* A phone carousel: native momentum and snap, no visible scrollbar, no scroll chaining. */
 @utility landing-rail {
   scroll-snap-type: x mandatory;

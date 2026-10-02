@@ -3,38 +3,10 @@ import { describe, expect, it } from "vitest";
 
 import * as Hex from "@elmeragroup/color/hex";
 
-import { DESKTOP_VIEWPORT, expectInside, launchSuiteBrowser, readThemeAttributes } from "./demo-page";
-import { docsBaseUrl } from "./docs-server";
+import { DESKTOP_VIEWPORT, expectInside, readThemeAttributes } from "./demo-page";
+import { launchLandingSuite, TARGET_FLOOR_PX } from "./landing-page";
 
-const browser = launchSuiteBrowser();
-
-/** WCAG 2.2 target size (minimum), the floor AGENTS.md holds every control to. */
-const TARGET_FLOOR_PX = 24;
-
-/**
- * Opens the landing in a fresh context. `prepare` runs before navigation, for routes, clocks,
- * permissions and init scripts. No test checks motion, so every context reduces motion.
- *
- * Unless `shaders` is set, the brand marks are refused, so the closing shader never draws and the
- * picker's mark masks stay empty. Processing a mark blurs a large canvas on the main thread, which
- * on a slow runner held a brand pick back for seconds (measured with six shaders on the page: 2.8s
- * at 4x CPU throttling, 0.1s with the marks refused), and only the shader tests look at a shader.
- */
-async function openLanding(
-  viewport: { width: number; height: number },
-  { shaders = false, prepare }: { shaders?: boolean; prepare?: (page: Page) => Promise<void> } = {}
-): Promise<Page> {
-  const context = await browser().newContext({ viewport, reducedMotion: "reduce" });
-  const page = await context.newPage();
-  page.setDefaultTimeout(5000);
-  if (!shaders) {
-    await page.route("**/landing/marks/**", async (route) => route.abort());
-  }
-  await prepare?.(page);
-  await page.goto(`${docsBaseUrl()}/`, { waitUntil: "load" });
-  await page.getByRole("heading", { level: 1 }).waitFor();
-  return page;
-}
+const { openLanding } = launchLandingSuite();
 
 /** Every unhandled error and rejection the page raises, collected from now on. */
 function collectPageErrors(page: Page): string[] {
