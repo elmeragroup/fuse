@@ -138,6 +138,14 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
     pairs: FEATURE_TEXT_PAIRS,
     floor: 4.5,
   },
+  {
+    // A menu row's hover tint over its popup. It is not a text pair, but a tint equal to the
+    // popup hides which row is highlighted; 1.1:1 sits under the light default's 1.12:1.
+    schemes: ["light", "dark"],
+    matches: () => true,
+    pairs: [["accent", "popover"]],
+    floor: 1.1,
+  },
   { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(CHART_ROLES), floor: 3 },
   { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(SYNTAX_ROLES), floor: 4.5 },
   { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(["input", "ring"]), floor: 3 },

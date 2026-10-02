@@ -6,15 +6,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+// Role tokens live in themes.css only; the dark highlight test reads them.
+import "../../../dist/themes.css";
+import { render } from "../../../test/browser-render";
 import { panelControlledBy } from "../../../test/panel-transition";
 import {
   CONTROL_MD,
   CONTROL_XS,
+  computedOklch,
   fkasExternal,
   px,
   renderThemed,
   roleNamed,
+  snapshotDocumentTheme,
   stampDensity,
+  stampDocumentTheme,
 } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme";
 import { NavigationMenu } from "./index";
@@ -385,6 +391,40 @@ describe("nested NavigationMenu", () => {
     await expect.element(page.getByRole("button", { name: "Homes", exact: true })).toHaveFocus();
     await userEvent.keyboard(" ");
     await openedLink("Spot price");
+  });
+
+  describe("in external fkas dark, whose card, popover and muted are one color", () => {
+    let restoreDocumentTheme: () => void;
+
+    beforeEach(() => {
+      restoreDocumentTheme = snapshotDocumentTheme();
+      stampDocumentTheme(fkasExternal, "dark");
+    });
+
+    afterEach(() => {
+      restoreDocumentTheme();
+    });
+
+    it("paints an open inline row and a hovered link row in a color the popup does not have", async () => {
+      // The document carries the theme, so the portalled popup takes it with the bar.
+      render(<InlineMenu />);
+      const outerTrigger = roleNamed("button", "Audiences");
+      await userEvent.click(outerTrigger);
+      const spot = await openedLink("Spot price");
+      const popup = panelControlledBy(outerTrigger);
+      if (popup === null) {
+        throw new Error("expected the Audiences popup");
+      }
+      const popupColor = getComputedStyle(popup).backgroundColor;
+      // An opaque surface, so a row color that differs from it is one the user can see.
+      expect(computedOklch(popupColor).l).toBeGreaterThan(0);
+
+      expect(getComputedStyle(roleNamed("button", "Homes")).backgroundColor).not.toBe(popupColor);
+      await userEvent.hover(spot);
+      await vi.waitFor(() => {
+        expect(getComputedStyle(spot).backgroundColor).not.toBe(popupColor);
+      });
+    });
   });
 
   it("renders no caret on an inline Root's trigger, whose content is already beside its list", async () => {

@@ -1,5 +1,6 @@
 import type { TokenLayer } from "./contract";
 import { DARK_DEFAULTS } from "./dark-defaults";
+import { mixOklchLiteral } from "./derived-tokens";
 import type { ExternalDarkSheet } from "./external-dark-sheet";
 import { paletteBrand } from "./external-palettes";
 import type { ExternalBrandCode } from "./external-palettes";
@@ -111,6 +112,9 @@ const EXTERNAL_DARK_PALETTES = {
   },
 } as const satisfies Record<ExternalBrandCode, ExternalDarkSheet>;
 
+/** The share of foreground in the dark hover tint, matching internal dark's popover-to-accent step. */
+const ACCENT_LIFT_PERCENT = 8;
+
 /** The dark sheet for one brand and segment, preferring a segment sheet over the brand base. */
 function darkSheet(brand: BrandCode, segment: ThemeSegment): ExternalDarkSheet {
   return segmentSheet(brand, segment)?.dark ?? EXTERNAL_DARK_PALETTES[paletteBrand(brand)];
@@ -124,14 +128,18 @@ function darkSheet(brand: BrandCode, segment: ThemeSegment): ExternalDarkSheet {
  */
 export function externalDarkPalette(brand: BrandCode, segment: ThemeSegment): TokenLayer {
   const palette = darkSheet(brand, segment);
+  const popover = palette.popover ?? palette.card;
   return {
     ...DARK_DEFAULTS,
     ...palette,
     // Carry the brand's dark surfaces into roles the Figma sheets do not name.
-    popover: palette.popover ?? palette.card,
+    popover,
     "popover-foreground": palette["popover-foreground"] ?? palette["card-foreground"],
     muted: palette.muted ?? palette.card,
-    accent: palette.accent ?? palette["primary-soft"],
+    // Menus paint a highlighted row with `accent` over the popover. Most sheets set
+    // `primary-soft` to their card, which is the popover, so the tint lifts the popover
+    // toward the foreground instead: the step internal dark takes from popover to accent.
+    accent: palette.accent ?? mixOklchLiteral(popover, palette.foreground, ACCENT_LIFT_PERCENT),
     "accent-foreground": palette["accent-foreground"] ?? palette["primary-soft-foreground"],
     sidebar: palette.sidebar ?? palette.background,
     "sidebar-foreground": palette["sidebar-foreground"] ?? palette.foreground,
