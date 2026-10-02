@@ -2,7 +2,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import { DocsProse } from "./docs-prose";
 
-export type ProseProps = {
+type ProseProps = {
   children: ReactNode;
 };
 

@@ -1,6 +1,7 @@
 import type { BrowserContext, ConsoleMessage, Page, Route } from "playwright";
 import { describe, expect, it } from "vitest";
 
+import { launchSuiteBrowser } from "../../docs/test/suite-browser";
 import { DOCUMENT_COLOR_SCHEME } from "../src/theme";
 import {
   DOCUMENT_BRAND,
@@ -10,7 +11,6 @@ import {
 } from "./html";
 import type { ColorSchemeBootstrapManifest } from "./html";
 import { staticThemeBaseUrl } from "./server";
-import { launchSuiteBrowser } from "./suite-browser";
 
 type FirstPaintProbe = {
   variant: string | null;

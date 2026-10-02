@@ -1,9 +1,8 @@
 /**
  * The result every fallible function in this package returns. The package has no
- * dependencies, so it owns this small tagged union rather than importing one; the `effect`
- * subpath converts it to Effect's `Result` for Effect programs. Only the package constructs
- * results, so this public module exports the types and `getOrThrow` and keeps the
- * constructors in an internal module.
+ * dependencies, so it owns this small tagged union rather than importing one. Only the
+ * package constructs results, so this public module exports the types and `getOrThrow` and
+ * keeps the constructors in an internal module.
  */
 
 /** A success carrying its value. */

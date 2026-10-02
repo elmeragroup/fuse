@@ -1,4 +1,7 @@
-import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
 
@@ -130,6 +133,88 @@ describe("PR preview", () => {
       true
     );
   });
+
+  it("skips the deploy when the opt-out job finds the no-preview label", () => {
+    const deploy = job(preview, "deploy");
+    expect(deploy.needs).toBe("preview-opt-out");
+    expect(asString(deploy.if, "deploy condition")).toContain("needs.preview-opt-out.outputs.skip != 'true'");
+    const optOut = job(preview, "preview-opt-out");
+    // The opt-out job runs exactly when the deploy would, so a skipped lookup never skips a deploy.
+    expect(asString(deploy.if, "deploy condition")).toContain(asString(optOut.if, "opt-out condition"));
+    expect(optOut.permissions).toEqual({ "pull-requests": "read" });
+    expect(optOut.outputs).toEqual({ skip: "${{ steps.labels.outputs.skip }}" });
+    expect(yamlText(optOut)).not.toContain("azure/login");
+  });
+
+  it.each([
+    { name: "skips a PR labelled no-preview", labels: ["no-changeset", "no-preview"], skip: "true" },
+    { name: "deploys a PR with other labels", labels: ["no-changeset", "no-canary"], skip: "false" },
+    { name: "deploys a PR with no labels", labels: [], skip: "false" },
+  ])("$name", ({ labels, skip }) => {
+    const result = runOptOut(JSON.stringify({ number: 7, labels: labels.map((name) => ({ name })) }), 0);
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.args).toMatch(/^api repos\/elmeragroup\/fuse\/pulls\/7 --jq /);
+    expect(result.outputs).toEqual([`skip=${skip}`]);
+  });
+
+  it("fails the opt-out job, and so skips the deploy, when GitHub cannot return the PR", () => {
+    const result = runOptOut("{}", 1);
+    expect(result.status).toBe(1);
+    expect(result.outputs).toEqual([]);
+  });
+
+  /**
+   * Executes the opt-out job's actual shell step with only GitHub's transport replaced: the fake
+   * `gh` applies the step's `--jq` filter to the given API response, as `gh api --jq` does.
+   * @param {string} response
+   * @param {number} status
+   */
+  function runOptOut(response, status) {
+    const step = jobSteps(preview, "preview-opt-out").find((candidate) => candidate.id === "labels");
+    if (step === undefined) throw new Error("preview-opt-out job does not read the PR labels");
+    expect(step.env).toEqual({ GH_TOKEN: "${{ github.token }}" });
+    const scratch = mkdtempSync(join(tmpdir(), "elmera-preview-workflow-"));
+    const output = join(scratch, "output");
+    const args = join(scratch, "gh-args");
+    try {
+      const result = spawnSync(
+        "bash",
+        [
+          "-e",
+          "-c",
+          `gh() {
+            printf '%s\\n' "$*" > "$TEST_GH_ARGS"
+            [ "$TEST_GH_STATUS" = 0 ] || return "$TEST_GH_STATUS"
+            printf '%s' "$TEST_RESPONSE" | jq -r "\${@: -1}"
+          }
+          ${asString(step.run, "opt-out run")}`,
+        ],
+        {
+          encoding: "utf8",
+          timeout: 5_000,
+          env: {
+            ...process.env,
+            GITHUB_REPOSITORY: "elmeragroup/fuse",
+            GITHUB_OUTPUT: output,
+            // The workflow-level env the step reads.
+            PR: "7",
+            TEST_GH_ARGS: args,
+            TEST_RESPONSE: response,
+            TEST_GH_STATUS: String(status),
+          },
+        }
+      );
+      expect(result.error).toBeUndefined();
+      return {
+        status: result.status,
+        stderr: result.stderr,
+        args: readFileSync(args, "utf8").trim(),
+        outputs: existsSync(output) ? readFileSync(output, "utf8").split("\n").filter(Boolean) : [],
+      };
+    } finally {
+      rmSync(scratch, { recursive: true, force: true });
+    }
+  }
 
   it("gives fork PRs no Azure identity", () => {
     const fork = job(preview, "fork");

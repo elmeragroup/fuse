@@ -15,7 +15,7 @@ const docsProse = tv({
   },
 });
 
-export type DocsProseProps = ComponentProps<"div"> & {
+type DocsProseProps = ComponentProps<"div"> & {
   /** Component pages need a little space under the intro; handbook pages do not. */
   context?: "page" | "component";
 };

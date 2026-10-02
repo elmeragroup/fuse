@@ -12,7 +12,7 @@ export type ColorSchemeRuntimeConfig = ColorSchemeBootstrapManifest & {
 };
 
 /** A ready-made `useColorScheme` value: stable identity between changes, stable setter. */
-export type ColorSchemeRuntimeSnapshot = UseColorSchemeResult;
+type ColorSchemeRuntimeSnapshot = UseColorSchemeResult;
 
 /**
  * The document's color-scheme state machine. It owns hydration, the platform subscriptions,

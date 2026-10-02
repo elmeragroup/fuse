@@ -31,10 +31,10 @@ export const docsRouteGroup = path.join(docsRoot, "src/app/(docs)");
  * The component route directories. Each holds the component's authored `page.mdx` and
  * its co-located `demos/`.
  *
- * The frame encodes the same `src/app/(docs)/components/<slug>/demos/<file>` layout as a
- * cwd-relative path (`COMPONENT_ROUTES` in `src/lib/demo-source.ts`), because it resolves
- * demos at render time rather than from this module's URL. Moving the route group means
- * changing both.
+ * `src/lib/component-route-files.ts` encodes the same `src/app/(docs)/components/<slug>/`
+ * layout as a cwd-relative path (`COMPONENT_ROUTES`), because it resolves route files at
+ * render time rather than from this module's URL. Moving the route group means changing
+ * both.
  */
 export const componentRoutesDir = path.join(docsRouteGroup, "components");
 
@@ -49,12 +49,4 @@ export const REPO_BLOB_BASE = "https://github.com/elmeragroup/fuse/blob/main";
 
 export function repoRelative(absolutePath: string): string {
   return path.relative(repoRoot, absolutePath).split(path.sep).join("/");
-}
-
-/**
- * `NodeHandle.path` is a canonicalised path (lower-cased on case-insensitive
- * filesystems), so comparisons against real paths have to be case-insensitive too.
- */
-export function isLibrarySourcePath(candidate: string): boolean {
-  return candidate.toLowerCase().includes("/packages/fuse/src/");
 }

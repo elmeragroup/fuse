@@ -1,21 +1,18 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
-export const BOOTSTRAP_MANIFEST_KEY = "__ELMERA_COLOR_SCHEME_BOOTSTRAP__";
-export const INJECTED_BOOTSTRAP_SOURCE_KEY = "elmera.colorScheme.bootstrapSource";
+import { BOOTSTRAP_MANIFEST_KEY, INJECTED_BOOTSTRAP_SOURCE_KEY, inlineScripts } from "../../docs/test/html";
 
-export const DOCUMENT_BRAND = {
-  variant: "internal",
-  brand: "elma",
-  segment: "private",
-} as const;
-
-export const EXPECTED_BOOTSTRAP_MANIFEST = {
-  storageKey: "elmera-color-scheme",
-  defaultColorScheme: "system",
-  enableSystem: true,
-  forcedColorScheme: undefined,
-} as const;
+// The tag readers, document constants and canvas classifier are the docs suite's; only the
+// manifest types and the host-bootstrap predicate differ per app.
+export {
+  DOCUMENT_BRAND,
+  EXPECTED_BOOTSTRAP_MANIFEST,
+  INJECTED_BOOTSTRAP_SOURCE_KEY,
+  canvasScheme,
+  readDocumentBrand,
+  readDocumentDensity,
+} from "../../docs/test/html";
 
 export const EXPECTED_FORCED_DARK_MANIFEST = {
   storageKey: "elmera-color-scheme",
@@ -24,66 +21,12 @@ export const EXPECTED_FORCED_DARK_MANIFEST = {
   forcedColorScheme: "dark",
 } as const;
 
-export type DocumentBrand = {
-  variant: string | null;
-  brand: string | null;
-  segment: string | null;
-};
-
 export type ColorSchemeBootstrapManifest = {
   storageKey: string;
   defaultColorScheme: string;
   enableSystem: boolean;
   forcedColorScheme: string | undefined;
 };
-
-export function openTag(html: string, tagName: string): string | null {
-  const match = new RegExp(`<${tagName}\\b[^>]*>`, "i").exec(html);
-  return match?.[0] ?? null;
-}
-
-export function tagAttribute(open: string, name: string): string | null {
-  const match = new RegExp(`\\s${name}="([^"]*)"`, "i").exec(open);
-  return match?.[1] ?? null;
-}
-
-export function readDocumentBrand(html: string): DocumentBrand {
-  const htmlTag = openTag(html, "html");
-  if (htmlTag === null) {
-    return { variant: null, brand: null, segment: null };
-  }
-  return {
-    variant: tagAttribute(htmlTag, "data-theme-variant"),
-    brand: tagAttribute(htmlTag, "data-theme-brand"),
-    segment: tagAttribute(htmlTag, "data-theme-segment"),
-  };
-}
-
-export function readDocumentDensity(html: string): string | null {
-  const htmlTag = openTag(html, "html");
-  if (htmlTag === null) {
-    return null;
-  }
-  return tagAttribute(htmlTag, "data-density");
-}
-
-export function inlineScripts(html: string): Array<{ start: number; attrs: string; source: string }> {
-  const scripts: Array<{ start: number; attrs: string; source: string }> = [];
-  const pattern = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
-  let match = pattern.exec(html);
-  while (match) {
-    const attrs = match[1] ?? "";
-    if (!/\ssrc\s*=/i.test(attrs)) {
-      scripts.push({
-        start: match.index,
-        attrs,
-        source: match[2] ?? "",
-      });
-    }
-    match = pattern.exec(html);
-  }
-  return scripts;
-}
 
 export function isHostBootstrapSource(source: string): boolean {
   return (
@@ -173,5 +116,3 @@ export function isClassicScript(attrs: string): boolean {
   }
   return false;
 }
-
-export { canvasScheme } from "../../docs/test/html";

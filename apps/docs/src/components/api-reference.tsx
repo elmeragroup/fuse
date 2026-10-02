@@ -9,7 +9,7 @@ import { API_SECTION_ID } from "../lib/nav";
 import { ApiPropRows } from "./api-prop-rows";
 import { DocsSectionHeading } from "./docs-section-heading";
 
-export type ApiReferenceProps = {
+type ApiReferenceProps = {
   slug: string;
 };
 

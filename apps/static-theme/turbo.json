@@ -1,7 +1,7 @@
 {
   "extends": ["//"],
   "tasks": {
-    // The suites re-export helpers from apps/docs/test, and docs is not a dependency, so those
+    // The suites import helpers from apps/docs/test, and docs is not a dependency, so those
     // files must be listed for an edit to them to miss this package's cache.
     "test": {
       "dependsOn": ["build"],
@@ -9,7 +9,8 @@
       "inputs": [
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/apps/docs/test/html.ts",
-        "$TURBO_ROOT$/apps/docs/test/suite-browser.ts"
+        "$TURBO_ROOT$/apps/docs/test/suite-browser.ts",
+        "$TURBO_ROOT$/apps/docs/test/tcp-port.ts"
       ]
     },
     "test:browser": {
@@ -18,7 +19,8 @@
       "inputs": [
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/apps/docs/test/html.ts",
-        "$TURBO_ROOT$/apps/docs/test/suite-browser.ts"
+        "$TURBO_ROOT$/apps/docs/test/suite-browser.ts",
+        "$TURBO_ROOT$/apps/docs/test/tcp-port.ts"
       ]
     }
   }

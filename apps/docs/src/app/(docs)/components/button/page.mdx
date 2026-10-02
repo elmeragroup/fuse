@@ -5,6 +5,7 @@ lede: >
 
 import { ButtonVariantMatrix } from "./demos/button-variant-matrix";
 import { ButtonSizes } from "./demos/button-sizes";
+import { ButtonIcons } from "./demos/button-icons";
 import { ButtonWrap } from "./demos/button-wrap";
 import { ButtonPending } from "./demos/button-pending";
 import { ButtonVisuallyDisabled } from "./demos/button-visually-disabled";
@@ -23,6 +24,23 @@ export const metadata = componentMetadata("button");
 <Demo slug="button" id="sizes" title="Sizes" file="button-sizes.tsx">
   <ButtonSizes />
 </Demo>
+
+<Demo slug="button" id="icons" title="Icons" file="button-icons.tsx">
+  <ButtonIcons />
+</Demo>
+
+<Prose>
+
+Button sizes every SVG child without a `size-*` class to 16px, and the `xs` and `icon-xs` sizes to 12px. Any
+`size-*` class opts out, `size-auto` included; `w-*` and `h-*` on their own do not, because the rule matches
+the class name. Mark a leading or trailing icon with `data-icon="inline-start"` or `"inline-end"` so the
+button tightens that edge's inset.
+
+An SVG without a `viewBox` clips instead of scaling when the rule forces it to 16px. Logos that go through
+SVGR often arrive that way, because SVGO's default `removeViewBox` strips the attribute. Give such an icon
+`size-auto` to keep its intrinsic `width` and `height`, or restore the `viewBox` so it scales.
+
+</Prose>
 
 <Demo slug="button" id="wrap" title="Wrapping labels" file="button-wrap.tsx">
   <ButtonWrap />

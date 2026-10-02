@@ -15,6 +15,39 @@ Requires Tailwind CSS 4.1 or newer. Published code is not scanned by a consumer 
 
 Adjust the `@source` path only when the stylesheet is not one directory below the app root.
 
+### What `fuse/css` changes in your theme
+
+`@elmeragroup/fuse/css` is not only the components' variants and control metrics. Importing it into a Tailwind build also changes these parts of the host theme, whether or not `themes.css` is imported:
+
+- **Role and primitive colours.** Its `@theme inline` block maps every role token (`--color-primary` → `var(--primary)` and so on) and remaps Tailwind's `neutral-50` to `neutral-950` palette onto `--neutral-*`. `themes.css` defines those; without it, `bg-neutral-200` and the other stock neutral utilities resolve to an undefined colour until you define `--neutral-*` yourself.
+- **Radius scale.** `rounded-xs` to `rounded-xl` become whole `--radius-step` multiples from `--radius` instead of Tailwind's fixed rems. The step falls back to `0px`, so with your own `--radius` and no `themes.css` every rung is that one radius; `--radius` itself has no fallback. Button rounds with `--radius-button`, which `themes.css` sets per theme; define it (`--radius-button: var(--radius)`) when you skip `themes.css`.
+- **State variants.** It declares `data-open`, `data-closed`, `data-checked`, `data-unchecked`, `data-selected`, `data-disabled`, `data-active`, `data-horizontal` and `data-vertical` as static variants, wrapped in `:where()`. They replace Tailwind's functional `data-*` variants of the same name in your own classes too: their specificity drops to one class, so a plain `hover:` rule beats a `data-selected:` rule, `data-open:` and the like also match Radix-style `data-state` values, and `data-selected:` matches only `data-selected="true"`. Other `data-*` names are untouched.
+- **Also:** `enabled-hover:`, `enabled-active:`, `disabled-state:`, `hit-area-*`, `no-scrollbar`, the `rounded-button`, `font-sans`, `font-heading` and `font-mono` utilities, the `xs`, `lg` and `3xl` breakpoints, `--spacing: 0.25rem`, the `overshoot` easing, `tw-animate-css`, the React Aria Tailwind plugin, and a reduced-motion rule that switches off transform and layout transitions document-wide.
+
+### Keeping your own tokens
+
+A host that migrates one component at a time can keep its own design tokens and skip `themes.css`:
+
+```css
+@import "tailwindcss";
+@import "@elmeragroup/fuse/css";
+@source "../node_modules/@elmeragroup/fuse";
+
+@theme {
+  /* Your tokens. This block comes after fuse/css, so where both define a theme variable, yours wins. */
+}
+
+:root {
+  /* Map the role tokens the components you use read, in any colour notation. */
+  --primary: var(--your-brand);
+  --primary-foreground: #fff;
+  --radius: 0.5rem;
+  --radius-button: var(--radius);
+}
+```
+
+Import `fuse/css` before your own `@theme` so your values win where both define one. Each component page in the docs lists the tokens that component reads under "Tokens consumed"; map those, and add the next component's list when you adopt it. Role tokens are whole colours (`oklch()`, `hsl()`, hex), not channel triplets.
+
 ## Non-Tailwind
 
 ```css

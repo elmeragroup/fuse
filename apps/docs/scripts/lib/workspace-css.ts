@@ -10,7 +10,7 @@ import path from "node:path";
  * not. Fail here — generate runs before every `next dev` / `next build` — so
  * Next cannot cache a Tailwind resolve error against an empty `dist/`.
  */
-export const DOCS_FUSE_DIST_CSS = [
+const DOCS_FUSE_DIST_CSS = [
   { exportKey: "./themes.css", relative: "dist/themes.css" },
   { exportKey: "./demo-stage-comfortable.css", relative: "dist/demo-stage-comfortable.css" },
 ] as const;
