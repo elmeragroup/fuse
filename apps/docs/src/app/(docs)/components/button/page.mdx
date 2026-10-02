@@ -6,6 +6,7 @@ lede: >
 import { ButtonVariantMatrix } from "./demos/button-variant-matrix";
 import { ButtonSizes } from "./demos/button-sizes";
 import { ButtonIcons } from "./demos/button-icons";
+import { ButtonWrap } from "./demos/button-wrap";
 import { ButtonPending } from "./demos/button-pending";
 import { ButtonVisuallyDisabled } from "./demos/button-visually-disabled";
 import { ButtonPredictiveIntent } from "./demos/button-predictive-intent";
@@ -38,6 +39,22 @@ button tightens that edge's inset.
 An SVG without a `viewBox` clips instead of scaling when the rule forces it to 16px. Logos that go through
 SVGR often arrive that way, because SVGO's default `removeViewBox` strips the attribute. Give such an icon
 `size-auto` to keep its intrinsic `width` and `height`, or restore the `viewBox` so it scales.
+
+</Prose>
+
+<Demo slug="button" id="wrap" title="Wrapping labels" file="button-wrap.tsx">
+  <ButtonWrap />
+</Demo>
+
+<Prose>
+
+Labels keep to one line and the size's fixed height. To let a long call to action wrap on a narrow
+screen, override the size through `className`: `h-auto` and `min-h-(--control-h-md)` make the height
+a minimum, `py-[calc((var(--control-h-md)-1lh)/2-1px)]` keeps a one-line button exactly as tall as a
+plain one (half the height minus one line and the 1px border), `whitespace-normal` lets the text break
+and `text-center` centres the lines. Every size class is an unprefixed utility, so these replace the
+recipe's through `cn`. Use the `--control-h-*` token of the size in use (`xs`, `sm`, `md` for the default
+size, `lg`); the tokens follow density, so the height stays exact at both.
 
 </Prose>
 

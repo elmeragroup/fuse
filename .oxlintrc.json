@@ -319,6 +319,22 @@
       }
     },
     {
+      "files": ["apps/docs/src/app/(docs)/components/button/demos/button-wrap.tsx"],
+      "rules": {
+        "shadcn/no-restyle": ["error", { "allow": ["layout", "spacing"] }],
+        "shadcn/no-arbitrary-values": [
+          "error",
+          {
+            "allow": [
+              "layout",
+              "py-[calc((var(--control-h-md)-1lh)/2-1px)]",
+              "py-[calc((var(--control-h-sm)-1lh)/2-1px)]"
+            ]
+          }
+        ]
+      }
+    },
+    {
       "files": ["**/*.test.{ts,tsx}", "**/*.test-d.{ts,tsx}"],
       "rules": {
         "shadcn/no-inline-styles": "off",

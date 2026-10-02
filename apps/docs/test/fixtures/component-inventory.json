@@ -52,6 +52,7 @@
       "button-variant-matrix.tsx",
       "button-sizes.tsx",
       "button-icons.tsx",
+      "button-wrap.tsx",
       "button-pending.tsx",
       "button-visually-disabled.tsx",
       "button-predictive-intent.tsx"
