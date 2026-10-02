@@ -72,6 +72,7 @@ const CLIENT_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["item", ["components/item/item.tsx"]],
   ["link", ["react-aria/link/link.tsx"]],
   ["meter", ["components/meter/meter.tsx"]],
+  ["navigation-menu", ["components/navigation-menu/navigation-menu.tsx"]],
   ["number-field", ["components/number-field/number-field.tsx"]],
   ["pagination", ["components/pagination/pagination.tsx"]],
   [
@@ -313,6 +314,7 @@ describe("RSC classification", () => {
     ["field", "Field"],
     ["input-group", "InputGroup"],
     ["item", "Item"],
+    ["navigation-menu", "NavigationMenu"],
     ["pagination", "Pagination"],
     ["popover", "Popover"],
     ["scroll-area", "ScrollArea"],
@@ -463,6 +465,8 @@ describe("runtime listeners and layout motion", () => {
     expect(owners.toSorted()).toEqual([
       "components/accordion/accordion-variants.ts",
       "components/meter/meter-variants.ts",
+      // Base UI sizes and places the shared popup through its --popup-* and --positioner-* variables.
+      "components/navigation-menu/navigation-menu-variants.ts",
       "components/sidebar/sidebar.tsx",
       "styles/panel-height.ts",
     ]);
@@ -711,6 +715,7 @@ describe("state faces", () => {
       "components/breadcrumb/breadcrumb.tsx": ["hover:text-foreground"],
       "components/dialog/dialog.tsx": ["*:[a]:hover:text-foreground"],
       "components/item/item-variants.ts": ["[a]:hover:bg-muted"],
+      "components/navigation-menu/navigation-menu-variants.ts": ["hover:bg-muted"],
       // The country trigger adds its hover and press faces only while the field is editable.
       "components/phone-number-field/phone-number-field.tsx": ["active:scale-[0.97]", "hover:bg-muted"],
       // The rail, an aria-hidden resize handle that is never disabled.
