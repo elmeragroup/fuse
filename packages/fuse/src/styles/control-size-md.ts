@@ -26,7 +26,6 @@ export const controlMd = tv({
     iconInset: "px-(--control-px-icon-md)",
     iconEdge:
       "has-data-[icon=inline-end]:pr-(--control-px-icon-md) has-data-[icon=inline-start]:pl-(--control-px-icon-md)",
-    wrapInset: "py-[calc((var(--control-h-md)-1lh)/2-1px)]",
     type: "[font-size:var(--control-text)] [line-height:var(--control-leading)]",
   },
 })();

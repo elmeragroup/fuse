@@ -28,6 +28,18 @@ export const metadata = componentMetadata("button");
   <ButtonWrap />
 </Demo>
 
+<Prose>
+
+Labels keep to one line and the size's fixed height. To let a long call to action wrap on a narrow
+screen, override the size through `className`: `h-auto` and `min-h-(--control-h-md)` make the height
+a minimum, `py-[calc((var(--control-h-md)-1lh)/2-1px)]` keeps a one-line button exactly as tall as a
+fixed one (half the height minus one line and the 1px border), and `whitespace-normal` lets the text
+break. Every size class is an unprefixed utility, so these replace the recipe's through `cn`. Use the
+`--control-h-*` token of the size in use (`xs`, `sm`, `md` for the default size, `lg`); the tokens
+follow density, so the height stays exact at both.
+
+</Prose>
+
 <Demo slug="button" id="pending" title="Pending" file="button-pending.tsx">
   <ButtonPending />
 </Demo>

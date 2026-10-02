@@ -22,13 +22,3 @@ test("icon-only sizes require an accessible name", () => {
   const _ok = <Button size="icon" aria-label="Delete" />;
   expectTypeOf<ButtonProps>().not.toHaveProperty("as");
 });
-
-test("wrap is a boolean on every arm, so a wrapper can spread it through", () => {
-  ({ wrap: true, children: "A long call to action" }) satisfies ButtonProps;
-  ({ size: "xs", wrap: true, children: "Back" }) satisfies ButtonProps;
-  ({ size: "icon", "aria-label": "Close", wrap: false }) satisfies ButtonProps;
-
-  // @ts-expect-error wrap is a boolean, not a mode name
-  const _mode: ButtonProps = { wrap: "normal" };
-  const _rendered = <Button wrap>Continue</Button>;
-});

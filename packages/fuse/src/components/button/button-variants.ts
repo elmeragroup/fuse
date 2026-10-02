@@ -23,13 +23,6 @@ import { selfFocusRingClass } from "../../styles/utils";
 // Inside a ButtonGroup a button keeps the group radius, `rounded-md`, not the button role.
 // The group joins its buttons edge to edge, often with inputs and text, into one bar that
 // rounds like a field, and a pill button would bulge out of that outline.
-// `wrap` swaps a label size's `label` fit for the control-size `wrap` fit, so a long label
-// breaks onto more lines and the button grows one line at a time instead of overflowing. A
-// one-line wrapping button measures exactly like the fixed one. The two axes meet in compound
-// variants because a label fit and a wrap fit disagree on height, not on a class
-// tailwind-merge could replace. The squares and `icon-inline` ignore it. The wrapped text is
-// centered, as a native button centers its label, so a button rendered as another element
-// reads the same.
 export const buttonVariants = tv({
   base: cn(
     "group/button font-medium box-border inline-flex shrink-0 items-center justify-center rounded-(--radius-button) border border-transparent bg-clip-padding p-0 whitespace-nowrap transition-[color,background-color,border-color,box-shadow,translate,opacity] select-none in-data-[slot=button-group]:rounded-md enabled-active:not-aria-[haspopup]:translate-y-px [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
@@ -53,34 +46,19 @@ export const buttonVariants = tv({
       link: "text-primary underline-offset-4 enabled-hover:underline",
     },
     size: {
-      default: "",
-      xs: "[&_svg:not([class*='size-'])]:size-3",
-      sm: "",
-      lg: "",
+      default: controlSize({ size: "md", fit: "label" }),
+      xs: controlSize({ size: "xs", fit: "label", class: "[&_svg:not([class*='size-'])]:size-3" }),
+      sm: controlSize({ size: "sm", fit: "label" }),
+      lg: controlSize({ size: "lg", fit: "label" }),
       icon: controlSize({ size: "md", fit: "square" }),
       "icon-xs": controlSize({ size: "xs", fit: "square", class: "[&_svg:not([class*='size-'])]:size-3" }),
       "icon-sm": controlSize({ size: "sm", fit: "square" }),
       "icon-inline": "hit-area-1 aspect-square h-lh w-auto",
       "icon-lg": controlSize({ size: "lg", fit: "square" }),
     },
-    wrap: {
-      true: "",
-      false: "",
-    },
   },
-  compoundVariants: [
-    { size: "default", wrap: false, class: controlSize({ size: "md", fit: "label" }) },
-    { size: "default", wrap: true, class: controlSize({ size: "md", fit: "wrap", class: "text-center" }) },
-    { size: "xs", wrap: false, class: controlSize({ size: "xs", fit: "label" }) },
-    { size: "xs", wrap: true, class: controlSize({ size: "xs", fit: "wrap", class: "text-center" }) },
-    { size: "sm", wrap: false, class: controlSize({ size: "sm", fit: "label" }) },
-    { size: "sm", wrap: true, class: controlSize({ size: "sm", fit: "wrap", class: "text-center" }) },
-    { size: "lg", wrap: false, class: controlSize({ size: "lg", fit: "label" }) },
-    { size: "lg", wrap: true, class: controlSize({ size: "lg", fit: "wrap", class: "text-center" }) },
-  ],
   defaultVariants: {
     variant: "default",
     size: "default",
-    wrap: false,
   },
 });

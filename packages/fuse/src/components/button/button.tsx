@@ -18,16 +18,9 @@ type LabelButtonSize = Exclude<ButtonSize, IconButtonSize>;
 type ButtonPrimitiveProps = Omit<ComponentProps<typeof ButtonPrimitive>, "className">;
 
 type ButtonSharedProps = ButtonPrimitiveProps &
-  Omit<VariantProps<typeof buttonVariants>, "size" | "wrap"> & {
+  Omit<VariantProps<typeof buttonVariants>, "size"> & {
     /** Extra classes, merged last through `cn`. */
     className?: string;
-    /**
-     * Lets a long label wrap onto more lines. The size's height becomes a minimum, so a
-     * one-line label measures as without `wrap` and a longer label grows one line height
-     * per line, centered, instead of overflowing the button. Off by default: a label keeps
-     * to one line and the fixed height. The square `icon*` sizes have no label and ignore it.
-     */
-    wrap?: boolean;
     /**
      * Stamps `aria-disabled` (an explicit consumer value wins), which renders the disabled
      * treatment (`opacity-50`, the `not-allowed` cursor, no hover or press paint), and
@@ -67,7 +60,6 @@ export function Button({
   className,
   variant,
   size,
-  wrap = false,
   isVisuallyDisabled = false,
   disabled = false,
   isPending = false,
@@ -95,7 +87,7 @@ export function Button({
       // not undefined, so Base UI's own aria-disabled (focusableWhenDisabled, non-native
       // disabled) survives.
       {...definedProps({ "aria-disabled": isVisuallyDisabled || undefined })}
-      className={cn(buttonVariants({ variant, size, wrap }), className)}
+      className={cn(buttonVariants({ variant, size }), className)}
       onMouseDown={(event) => {
         if (isVisuallyDisabled) {
           event.preventDefault();
