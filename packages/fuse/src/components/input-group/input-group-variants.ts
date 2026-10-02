@@ -1,6 +1,7 @@
 import { tv } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import { controlMd } from "../../styles/control-size-md";
 import { insetCornerClass, kbdInsetCornerClass } from "../../styles/corner-radius";
 
 /**
@@ -35,11 +36,13 @@ export const inputGroupAddonVariants = tv({
  * four values are addon chrome inside the group, NOT the four-rung control box
  * (`xs`/`sm`/`md`/`lg`), so they are an explicit shell-local exemption from the
  * density ladder and must never grow a
- * fifth `--control-*` rung. `sm` stays empty so Button's own `sm` metrics pass
- * through. InputGroup.Button applies the values as extra classes over Button's default
- * size. An addon button sits inside the field box, so it rounds like the field chrome and
- * never takes Button's `--radius-button`. The `sm` sizes keep `rounded-md`, and the `xs`
- * sizes take the kbd's inset corner.
+ * fifth `--control-*` rung. InputGroup.Button applies the values as extra classes over
+ * Button's default size, the md label. `sm` keeps that label's box but swaps Button's own
+ * inset and icon edge back to the md control inset and icon edge, the field's own padding,
+ * so Button's wider comfortable inset never reaches a field. An addon button sits inside the
+ * field box, so it pads and rounds like the field chrome and never takes Button's
+ * `--radius-button`. The `sm` sizes keep `rounded-md`, and the `xs` sizes take the kbd's
+ * inset corner.
  */
 export const inputGroupButtonVariants = tv({
   base: "text-sm flex items-center gap-2 rounded-md shadow-none",
@@ -47,7 +50,7 @@ export const inputGroupButtonVariants = tv({
     size: {
       // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- compact addon chrome, not a control rung
       xs: "h-6 gap-1 px-1.5 [&>svg:not([class*='size-'])]:size-3.5",
-      sm: "",
+      sm: cn(controlMd.inset(), controlMd.iconEdge()),
       // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- compact addon chrome, not a control rung
       "icon-xs": "size-6 p-0 has-[>svg]:p-0",
       // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- compact addon chrome, not a control rung

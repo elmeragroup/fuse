@@ -11,7 +11,7 @@ The sync owns four variable collections, matched by name.
 | `Fuse tokens`     | `Light`, `Dark`        | 86 variables, one per contract token such as `primary` or `radius` and one per radius rung such as `radius-md`. Designers bind these.                      |
 | `Fuse themes`     | One per theme slug, 20 | 172 variables, `light/<token>` and `dark/<token>` for each `Fuse tokens` variable. They are hidden from pickers and only feed `Fuse tokens`.               |
 | `Fuse primitives` | `Value`                | 23 variables, the neutral ramp and the brand accents. Primitive tokens are public API with the same value in every theme, so designers can bind these too. |
-| `Fuse density`    | `Dense`, `Comfortable` | 22 variables, one per control metric such as `control-h-md`. Designers bind these.                                                                         |
+| `Fuse density`    | `Dense`, `Comfortable` | 26 variables, one per control metric such as `control-h-md`. Designers bind these.                                                                         |
 
 To preview a theme, a designer sets three modes on a frame. `Fuse themes` gets the theme slug, such as `external-fkas-private`, `Fuse tokens` gets `Light` or `Dark`, and `Fuse density` gets `Dense` or `Comfortable`. Figma resolves each alias with the frame's mode for the target collection, which is how the independent choices combine. A frame that sets no density mode gets `Dense`, the first mode. Apps default internal themes to dense and external themes to comfortable, so set `Comfortable` on frames that preview an external theme.
 

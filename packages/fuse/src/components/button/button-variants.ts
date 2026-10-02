@@ -17,7 +17,9 @@ import { selfFocusRingClass } from "../../styles/utils";
 // The text and icon sizes take their box from the control-size recipe: `default` is the md
 // label, `icon*` the squares. The labels replace the control inset with Button's own,
 // `--control-px-button-*`, which comfortable density widens to the customer-facing
-// reference's side padding while fields, Select and Toggle keep the control inset. The xs
+// reference's side padding while fields, Select and Toggle keep the control inset. The icon
+// edge follows it: `--control-px-button-icon-*` replaces the control icon edge, so a leading
+// or trailing icon does not sit tight against one end of a wide button. The xs
 // glyph size and `icon-inline`, a square as tall as the surrounding line that follows no
 // density, stay local.
 // Every size rounds with the theme's `--radius-button`. The arbitrary value keeps
@@ -69,14 +71,30 @@ export const buttonVariants = tv({
       link: "text-primary underline-offset-4 enabled-hover:underline",
     },
     size: {
-      default: controlSize({ size: "md", fit: "label", class: "px-(--control-px-button-md)" }),
+      default: controlSize({
+        size: "md",
+        fit: "label",
+        class:
+          "px-(--control-px-button-md) has-data-[icon=inline-end]:pr-(--control-px-button-icon-md) has-data-[icon=inline-start]:pl-(--control-px-button-icon-md)",
+      }),
       xs: controlSize({
         size: "xs",
         fit: "label",
-        class: "px-(--control-px-button-xs) [&_svg:not([class*='size-'])]:size-3",
+        class:
+          "px-(--control-px-button-xs) has-data-[icon=inline-end]:pr-(--control-px-button-icon-xs) has-data-[icon=inline-start]:pl-(--control-px-button-icon-xs) [&_svg:not([class*='size-'])]:size-3",
       }),
-      sm: controlSize({ size: "sm", fit: "label", class: "px-(--control-px-button-sm)" }),
-      lg: controlSize({ size: "lg", fit: "label", class: "px-(--control-px-button-lg)" }),
+      sm: controlSize({
+        size: "sm",
+        fit: "label",
+        class:
+          "px-(--control-px-button-sm) has-data-[icon=inline-end]:pr-(--control-px-button-icon-sm) has-data-[icon=inline-start]:pl-(--control-px-button-icon-sm)",
+      }),
+      lg: controlSize({
+        size: "lg",
+        fit: "label",
+        class:
+          "px-(--control-px-button-lg) has-data-[icon=inline-end]:pr-(--control-px-button-icon-lg) has-data-[icon=inline-start]:pl-(--control-px-button-icon-lg)",
+      }),
       icon: controlSize({ size: "md", fit: "square" }),
       "icon-xs": controlSize({ size: "xs", fit: "square", class: "[&_svg:not([class*='size-'])]:size-3" }),
       "icon-sm": controlSize({ size: "sm", fit: "square" }),

@@ -29,7 +29,7 @@ export type ControlSizeName = "xs" | "sm" | "md" | "lg";
 /**
  * One control size's box metrics in pixels at a density, read from `DENSITY_METRICS`: the
  * height (also the square side), the label inset, the icon-edge inset, Button's label inset
- * and the gap.
+ * and icon edge, and the gap.
  */
 function controlBox(size: ControlSizeName, density: Density) {
   return {
@@ -37,6 +37,7 @@ function controlBox(size: ControlSizeName, density: Density) {
     px: metricPx(`control-px-${size}`, density),
     pxIcon: metricPx(`control-px-icon-${size}`, density),
     pxButton: metricPx(`control-px-button-${size}`, density),
+    pxButtonIcon: metricPx(`control-px-button-icon-${size}`, density),
     gap: metricPx(`control-gap-${size}`, density),
   };
 }

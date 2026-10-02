@@ -93,7 +93,7 @@ describe("fuse-figma sync", () => {
       assert.strictEqual(figma.variableNames("Fuse tokens").length, 86);
       assert.strictEqual(figma.variableNames("Fuse themes").length, 172);
       assert.strictEqual(figma.variableNames("Fuse primitives").length, 23);
-      assert.strictEqual(figma.variableNames("Fuse density").length, 22);
+      assert.strictEqual(figma.variableNames("Fuse density").length, 26);
       assert.strictEqual(writes(figma), 1);
       assert.include(yield* output, "reading it back matches the tokens");
     })
@@ -291,6 +291,9 @@ describe("fuse-figma sync", () => {
       assert.strictEqual(metric("control-px-button-md", "Dense"), 10);
       assert.strictEqual(metric("control-px-button-sm", "Comfortable"), 16);
       assert.strictEqual(metric("control-px-button-md", "Comfortable"), 32);
+      // Its icon edge: 0.5rem dense, three quarters of the label inset comfortable.
+      assert.strictEqual(metric("control-px-button-icon-md", "Dense"), 8);
+      assert.strictEqual(metric("control-px-button-icon-md", "Comfortable"), 24);
       assert.strictEqual(metric("control-gap-sm", "Dense"), 4);
       assert.strictEqual(metric("control-gap-md", "Comfortable"), 8);
       assert.strictEqual(metric("control-text", "Dense"), 14);
@@ -582,7 +585,7 @@ describe("fuse-figma check", () => {
       assert.notInclude(printed, "Fuse themes: create mode external-elma-company");
       assert.include(printed, "Fuse themes: create variable ×172");
       assert.include(printed, "Fuse density: create mode Comfortable");
-      assert.include(printed, "Fuse density: create variable ×22");
+      assert.include(printed, "Fuse density: create variable ×26");
     })
   );
 

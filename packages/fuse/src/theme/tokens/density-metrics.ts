@@ -18,14 +18,18 @@ const CONTROL_SIZES = ["xs", "sm", "md", "lg"] as const;
  * The families with one metric per control size, such as `control-h-md`, in `fuse.css` order.
  * `control-px-button` is Button's label inset. Dense matches `control-px`, and comfortable,
  * the external default, takes the side padding of the customer-facing reference button,
- * except at xs, which keeps `control-px` until design picks one. Only Button reads the
- * family, so fields, Select and Toggle keep `control-px`.
+ * except at xs, which keeps `control-px` until design picks one. `control-px-button-icon` is
+ * the edge beside a leading or trailing icon on those labels. Dense matches `control-px-icon`,
+ * and comfortable keeps it at three quarters of the label inset, so the icon and its gap
+ * balance the label side. Only Button reads the two families, so fields, Select and Toggle
+ * keep `control-px` and `control-px-icon`.
  */
 const SIZED_FAMILIES = [
   { family: "control-h", kind: "height" },
   { family: "control-px", kind: "padding" },
   { family: "control-px-icon", kind: "padding" },
   { family: "control-px-button", kind: "padding" },
+  { family: "control-px-button-icon", kind: "padding" },
   { family: "control-gap", kind: "gap" },
 ] as const satisfies readonly { family: string; kind: DensityMetricKind }[];
 
@@ -90,6 +94,10 @@ export const DENSITY_METRICS = {
   "control-px-button-sm": { dense: "0.625rem", comfortable: "1rem" },
   "control-px-button-md": { dense: "0.625rem", comfortable: "2rem" },
   "control-px-button-lg": { dense: "0.625rem", comfortable: "2rem" },
+  "control-px-button-icon-xs": { dense: "0.375rem", comfortable: "0.625rem" },
+  "control-px-button-icon-sm": { dense: "0.375rem", comfortable: "0.75rem" },
+  "control-px-button-icon-md": { dense: "0.5rem", comfortable: "1.5rem" },
+  "control-px-button-icon-lg": { dense: "0.5rem", comfortable: "1.5rem" },
   "control-gap-xs": { dense: "0.25rem", comfortable: "0.375rem" },
   "control-gap-sm": { dense: "0.25rem", comfortable: "0.375rem" },
   "control-gap-md": { dense: "0.375rem", comfortable: "0.5rem" },

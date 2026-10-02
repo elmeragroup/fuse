@@ -46,6 +46,7 @@ type SizeMetrics = {
   readonly px: number;
   readonly pxIcon: number;
   readonly pxButton: number;
+  readonly pxButtonIcon: number;
   readonly gap: number;
   readonly font: number;
   readonly leading: number;
@@ -218,6 +219,7 @@ describe("control size: label and min-square fits", () => {
       expect(comfortable.px, size).not.toBe(dense.px);
       expect(comfortable.pxIcon, size).not.toBe(dense.pxIcon);
       expect(comfortable.pxButton, size).not.toBe(dense.pxButton);
+      expect(comfortable.pxButtonIcon, size).not.toBe(dense.pxButtonIcon);
       expect(comfortable.gap, size).not.toBe(dense.gap);
     }
     expect(CONTROL_MD.comfortable.font).not.toBe(CONTROL_MD.dense.font);
@@ -253,7 +255,8 @@ describe("control size: label and min-square fits", () => {
         expect(bare.minWidth, `${label} min-width`).toBe(`${String(expected.height)}px`);
       }
 
-      const edge = probe.iconEdges ? expected.pxIcon : inset;
+      const iconEdge = probe.inset === "button" ? expected.pxButtonIcon : expected.pxIcon;
+      const edge = probe.iconEdges ? iconEdge : inset;
       const start = measure(probe.role, probeName(probe, "start", density));
       expect(start.paddingStart, `${label} icon-start edge`).toBe(edge);
       expect(start.paddingEnd, `${label} icon-start far edge`).toBe(inset);
@@ -502,6 +505,13 @@ describe("control size: Button's label inset", () => {
     dense: { xs: 8, sm: 10, md: 10, lg: 10 },
     comfortable: { xs: 12, sm: 16, md: 32, lg: 32 },
   } as const;
+  // The edge beside a leading or trailing icon. Dense keeps the control icon edge, and
+  // comfortable is three quarters of the label inset from sm up, so the icon and its gap
+  // balance the label side instead of sitting 12px from one end of a 32px-padded button.
+  const REFERENCE_ICON_EDGE = {
+    dense: { xs: 6, sm: 6, md: 8, lg: 8 },
+    comfortable: { xs: 10, sm: 12, md: 24, lg: 24 },
+  } as const;
 
   it.each(DENSITIES)("pads Button labels like the reference at %s", (density) => {
     stampDensity(density);
@@ -519,6 +529,35 @@ describe("control size: Button's label inset", () => {
         REFERENCE_INSET[density][size]
       );
       expect(box.paddingEnd, `${density} button ${size} padding end`).toBe(REFERENCE_INSET[density][size]);
+    }
+  });
+
+  it.each(DENSITIES)("balances a Button label's icon edge against its label side at %s", (density) => {
+    stampDensity(density);
+    renderThemed(
+      <>
+        {(["xs", "sm", "md", "lg"] as const).flatMap((size) =>
+          (["start", "end"] as const).map((icon) => (
+            <Button
+              key={`${size}-${icon}`}
+              size={BUTTON_LABEL_SIZES[size]}
+              aria-label={`icon ${icon} ${size}`}>
+              {iconChildren(icon)}
+            </Button>
+          ))
+        )}
+      </>
+    );
+
+    for (const size of ["xs", "sm", "md", "lg"] as const) {
+      const edge = REFERENCE_ICON_EDGE[density][size];
+      const label = REFERENCE_INSET[density][size];
+      const start = measure("button", `icon start ${size}`);
+      expect(start.paddingStart, `${density} ${size} leading icon edge`).toBe(edge);
+      expect(start.paddingEnd, `${density} ${size} label side`).toBe(label);
+      const end = measure("button", `icon end ${size}`);
+      expect(end.paddingEnd, `${density} ${size} trailing icon edge`).toBe(edge);
+      expect(end.paddingStart, `${density} ${size} label side`).toBe(label);
     }
   });
 });

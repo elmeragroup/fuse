@@ -292,6 +292,35 @@ describe("InputGroup", () => {
     expect(px(getComputedStyle(rootNamed("Meter")).height)).toBe(CONTROL_MD.dense.height);
   });
 
+  it("pads the sm addon button like the field, not like a standalone Button", () => {
+    renderThemed(
+      <InputGroup.Root>
+        <InputGroup.Input aria-label="Query" />
+        <InputGroup.Addon align="inline-end">
+          <InputGroup.Button size="sm">Search</InputGroup.Button>
+          <InputGroup.Button size="sm">
+            <span data-icon="inline-start" aria-hidden>
+              *
+            </span>
+            Find
+          </InputGroup.Button>
+        </InputGroup.Addon>
+      </InputGroup.Root>
+    );
+
+    // The field's own md control inset and icon edge: 10px and 8px dense, 14px and 12px
+    // comfortable. A standalone md Button pads 32px and 24px at comfortable density.
+    for (const density of ["dense", "comfortable"] as const) {
+      stampDensity(density);
+      const bare = getComputedStyle(roleNamed("button", "Search"));
+      expect(px(bare.paddingInlineStart), `${density} start`).toBe(CONTROL_MD[density].px);
+      expect(px(bare.paddingInlineEnd), `${density} end`).toBe(CONTROL_MD[density].px);
+      const icon = getComputedStyle(roleNamed("button", "Find"));
+      expect(px(icon.paddingInlineStart), `${density} icon edge`).toBe(CONTROL_MD[density].pxIcon);
+      expect(px(icon.paddingInlineEnd), `${density} far edge`).toBe(CONTROL_MD[density].px);
+    }
+  });
+
   it("grows past the md rung for block rails and textarea controls", () => {
     renderThemed(
       <InputGroup.Root>
