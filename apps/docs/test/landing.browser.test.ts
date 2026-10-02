@@ -13,16 +13,23 @@ const TARGET_FLOOR_PX = 24;
 
 /**
  * Opens the landing in a fresh context. `prepare` runs before navigation, for routes, clocks,
- * permissions and init scripts. No test checks motion, and animated shaders cost about 200ms of
- * main thread a frame at desktop widths, so every context reduces motion to hold them still.
+ * permissions and init scripts. No test checks motion, so every context reduces motion.
+ *
+ * Unless `shaders` is set, the brand marks are refused, so no shader draws. Processing the six
+ * marks blurs large canvases on the main thread at load. On a slow runner that holds a brand
+ * pick back for seconds (measured: 2.8s at 4x CPU throttling, 0.1s with the marks refused), and
+ * only the shader tests look at a shader.
  */
 async function openLanding(
   viewport: { width: number; height: number },
-  prepare?: (page: Page) => Promise<void>
+  { shaders = false, prepare }: { shaders?: boolean; prepare?: (page: Page) => Promise<void> } = {}
 ): Promise<Page> {
   const context = await browser().newContext({ viewport, reducedMotion: "reduce" });
   const page = await context.newPage();
   page.setDefaultTimeout(5000);
+  if (!shaders) {
+    await page.route("**/landing/marks/**", async (route) => route.abort());
+  }
   await prepare?.(page);
   await page.goto(`${docsBaseUrl()}/`, { waitUntil: "load" });
   await page.getByRole("heading", { level: 1 }).waitFor();
@@ -68,10 +75,14 @@ describe("landing page", () => {
   it("keeps the page working when the brand marks fail to load", async () => {
     let errors: string[] = [];
     const failed = new Set<string>();
-    const page = await openLanding(DESKTOP_VIEWPORT, async (target) => {
-      errors = collectPageErrors(target);
-      target.on("requestfailed", (request) => failed.add(request.url()));
-      await target.route("**/landing/marks/**", async (route) => route.abort());
+    const page = await openLanding(DESKTOP_VIEWPORT, {
+      // The test refuses the marks itself, so it can count the failed requests.
+      shaders: true,
+      prepare: async (target) => {
+        errors = collectPageErrors(target);
+        target.on("requestfailed", (request) => failed.add(request.url()));
+        await target.route("**/landing/marks/**", async (route) => route.abort());
+      },
     });
 
     // Every brand's mark is requested once, then shared by the shaders that show it.
@@ -92,27 +103,27 @@ describe("landing page", () => {
   });
 
   it("keeps the hero's shader canvas mounted when a brand is picked", async () => {
-    const page = await openLanding(DESKTOP_VIEWPORT);
+    const page = await openLanding(DESKTOP_VIEWPORT, { shaders: true });
     // DOM audit: a shader canvas has no role.
     const canvas = page.getByRole("region", { name: /One system/u }).locator("canvas");
     await expect.poll(async () => canvas.count(), { timeout: 10_000 }).toBe(1);
     const before = await canvas.elementHandle();
 
     await page.getByRole("button").filter({ hasText: 'data-theme-brand="fkas"' }).click();
-    await expect.poll(async () => (await readThemeAttributes(page.locator("html"))).brand).toBe("fkas");
+    // The other brands' marks may still be processing; give the pick the page's 5s budget.
+    await expect
+      .poll(async () => (await readThemeAttributes(page.locator("html"))).brand, { timeout: 5000 })
+      .toBe("fkas");
 
     expect(await canvas.evaluate((current, original) => current === original, before)).toBe(true);
     await page.context().close();
   });
 
   it("never scrolls sideways, and draws every wordmark at its full height inside its slot", async () => {
-    // The shaders stall the main thread while they process their marks, long enough for a box
-    // read to outlast the containment poll. Their canvas is absolutely positioned with
-    // `contain: strict`, so it cannot change the page width or a wordmark's box: the marks are
-    // refused and no shader draws.
-    const page = await openLanding({ width: 768, height: 900 }, async (target) => {
-      await target.route("**/landing/marks/**", async (route) => route.abort());
-    });
+    // The marks are refused (openLanding's default), so no shader draws. Their canvas is
+    // absolutely positioned with `contain: strict`, so it could not change the page width or a
+    // wordmark's box anyway.
+    const page = await openLanding({ width: 768, height: 900 });
     const picker = page.getByRole("region", { name: /Pick a brand/u });
     const tiles = picker.getByRole("button");
     await expect.poll(async () => tiles.count()).toBe(6);
@@ -183,11 +194,13 @@ describe("landing page", () => {
 
   it("reports a refused clipboard write instead of raising an unhandled rejection", async () => {
     let errors: string[] = [];
-    const page = await openLanding(DESKTOP_VIEWPORT, async (target) => {
-      errors = collectPageErrors(target);
-      await target.addInitScript(() => {
-        navigator.clipboard.writeText = () => Promise.reject(new DOMException("denied", "NotAllowedError"));
-      });
+    const page = await openLanding(DESKTOP_VIEWPORT, {
+      prepare: async (target) => {
+        errors = collectPageErrors(target);
+        await target.addInitScript(() => {
+          navigator.clipboard.writeText = () => Promise.reject(new DOMException("denied", "NotAllowedError"));
+        });
+      },
     });
 
     await page.getByRole("button", { name: "Copy", exact: true }).click();
@@ -198,9 +211,11 @@ describe("landing page", () => {
   });
 
   it("confirms a copy, then restores the Copy label", async () => {
-    const page = await openLanding(DESKTOP_VIEWPORT, async (target) => {
-      await target.context().grantPermissions(["clipboard-read", "clipboard-write"]);
-      await target.clock.install();
+    const page = await openLanding(DESKTOP_VIEWPORT, {
+      prepare: async (target) => {
+        await target.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+        await target.clock.install();
+      },
     });
     // A paused clock keeps "Copied" up until the test moves time on, however busy the page is.
     await page.clock.pauseAt(Date.now() + 1000);
