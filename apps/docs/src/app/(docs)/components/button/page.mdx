@@ -45,6 +45,28 @@ SVGR often arrive that way, because SVGO's default `removeViewBox` strips the at
   <ButtonPending />
 </Demo>
 
+<Prose>
+
+`isPending` blocks the button, dims it, stamps `aria-busy` and shows a spinner in the leading icon
+position; the button's own leading and bare icons hide meanwhile so the spinner takes their place, and
+a trailing `data-icon="inline-end"` icon stays. The button stays in the focus order, so a keyboard user
+who activated it is still on it when the result arrives. Pass `focusableWhenDisabled={false}` to take
+it out of the focus order instead.
+
+`pendingIndicator` changes what shows. A node replaces the spinner in the same decorative slot, for
+a brand spinner, and is not animated for you. `null` renders no indicator and hides nothing, so the
+call site owns the pending markup. The brand button above does that: `relative` on the button, the
+content kept in flow and faded with `group-data-pending/button:opacity-0`, and the spinner centred
+with `absolute inset-0 m-auto hidden group-data-pending/button:block`. Fade with opacity, never
+`invisible`, which would drop the label from the accessible name, and give the overlay no `data-icon`,
+which would tighten an inset. Pending buttons also dim like disabled ones; a brand that forbids that
+overrides the dim on its own wrapper.
+
+`aria-busy` alone announces nothing. Say what is happening by changing the label ("Saving") or through
+a `role="status"` region outside the button, and put the outcome there when the action settles.
+
+</Prose>
+
 <Demo slug="button" id="visually-disabled" title="Visually disabled" file="button-visually-disabled.tsx">
   <ButtonVisuallyDisabled />
 </Demo>

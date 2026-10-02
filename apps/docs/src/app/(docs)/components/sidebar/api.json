@@ -141,7 +141,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Disables the element and stamps `data-pending`, blocking activation entirely. Effective disabled is `disabled || isPending`.",
+          "description": "The in-flight state of an async action. Stamps `data-pending` and `aria-busy`, blocks activation (effective disabled is `disabled || isPending`) and renders the disabled treatment, but keeps the button in the focus order like `focusableWhenDisabled`, so a keyboard user who activated it is still on it when the result arrives. Shows the `pendingIndicator` in the leading icon position meanwhile. An explicit `focusableWhenDisabled={false}` restores the native `disabled` attribute while pending. `aria-busy` announces nothing by itself: say what is happening through the label (\"Saving\") or a `role=\"status\"` region outside the button.",
           "required": false
         },
         {
@@ -171,6 +171,15 @@
           "shortType": "function",
           "defaultValue": null,
           "description": "Predictive-prefetch callback. Fires once when the pointer's predicted trajectory lands inside the inflated hit rect; browsers without the prediction API fail soft.",
+          "required": false
+        },
+        {
+          "name": "pendingIndicator",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "What the button shows while pending. Omitted: a spinning `SpinnerGap` in the leading icon position, and the button's own leading and bare SVG children hide so the spinner takes their place (a trailing `data-icon=\"inline-end\"` icon stays). A node: rendered in that same place instead of the spinner, as a decorative `aria-hidden` slot; animate it yourself. `null` or `false`: no indicator and nothing hidden, so the call site owns the pending markup, for example a brand button that keeps its logo and centres its own spinner over it.",
           "required": false
         },
         {

@@ -1,12 +1,13 @@
 "use client";
 
-import type { ComponentProps, ReactElement } from "react";
+import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { Button as ButtonPrimitive } from "@base-ui/react/button";
 import type { VariantProps } from "tailwind-variants";
 
 import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { usePredictedEvents } from "../../hooks/use-predicted-events";
+import { SpinnerGap } from "../../icons/generated/spinner-gap";
 import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { buttonVariants } from "./button-variants";
@@ -37,10 +38,25 @@ type ButtonSharedProps = ButtonPrimitiveProps &
      */
     isVisuallyDisabled?: boolean;
     /**
-     * Disables the element and stamps `data-pending`, blocking activation entirely.
-     * Effective disabled is `disabled || isPending`.
+     * The in-flight state of an async action. Stamps `data-pending` and `aria-busy`, blocks
+     * activation (effective disabled is `disabled || isPending`) and renders the disabled
+     * treatment, but keeps the button in the focus order like `focusableWhenDisabled`, so a
+     * keyboard user who activated it is still on it when the result arrives. Shows the
+     * `pendingIndicator` in the leading icon position meanwhile. An explicit
+     * `focusableWhenDisabled={false}` restores the native `disabled` attribute while pending.
+     * `aria-busy` announces nothing by itself: say what is happening through the label
+     * ("Saving") or a `role="status"` region outside the button.
      */
     isPending?: boolean;
+    /**
+     * What the button shows while pending. Omitted: a spinning `SpinnerGap` in the leading icon
+     * position, and the button's own leading and bare SVG children hide so the spinner takes
+     * their place (a trailing `data-icon="inline-end"` icon stays). A node: rendered in that same
+     * place instead of the spinner, as a decorative `aria-hidden` slot; animate it yourself. `null`
+     * or `false`: no indicator and nothing hidden, so the call site owns the pending markup, for
+     * example a brand button that keeps its logo and centres its own spinner over it.
+     */
+    pendingIndicator?: ReactNode;
     /** Pixels the hit rect is inflated on every side when predicting pointer intent. */
     predictionZoneSize?: number;
     /**
@@ -84,9 +100,11 @@ export function Button({
   isVisuallyDisabled = false,
   disabled = false,
   isPending = false,
+  pendingIndicator,
   predictionZoneSize = 30,
   onIntent,
   onMouseDown,
+  children,
   ref,
   ...props
 }: ButtonProps): ReactElement {
@@ -96,12 +114,27 @@ export function Button({
     enabled: !disabled && !isPending && !isVisuallyDisabled && onIntent !== undefined,
   });
   const mergedRef = useMergedRefs(ref, onIntent === undefined ? null : predictedRef);
+  // `null` and `false` opt out of the indicator and of the icon swap; every other value, `0`
+  // included, is a node to show, and `undefined` is the default spinner.
+  const showsIndicator = isPending && pendingIndicator !== null && pendingIndicator !== false;
 
   return (
     <ButtonPrimitive
       data-slot="button"
       data-pending={isPending || undefined}
+      // Present only while an indicator renders: the recipe's icon swap keys off it, so a
+      // `null` indicator hides nothing.
+      data-pending-indicator={showsIndicator || undefined}
       disabled={disabled || isPending}
+      // A pending button stays in the focus order and announces busy: Base UI then drops the
+      // native `disabled`, stamps `aria-disabled` and `data-disabled` and still cancels click
+      // and keyboard activation. Both keys are omitted, not undefined, when not pending, so a
+      // consumer's own `focusableWhenDisabled` for a plain `disabled` button flows through the
+      // later {...definedProps(props)} spread, where an explicit value also wins while pending.
+      {...definedProps({
+        focusableWhenDisabled: isPending || undefined,
+        "aria-busy": isPending || undefined,
+      })}
       // Announced as unavailable without being disabled: the button still activates so
       // the flow that explains itself can run. An explicit consumer value wins through the
       // later {...definedProps(props)} spread. When not visually disabled the key is omitted,
@@ -118,8 +151,24 @@ export function Button({
       // Filtered so a forwarded undefined cannot erase what Base UI's Button sets itself,
       // such as aria-disabled, type and role.
       {...definedProps(props)}
-      ref={mergedRef}
-    />
+      ref={mergedRef}>
+      {showsIndicator ? (
+        // Decorative: the state is announced through aria-busy and the label. The slot is a
+        // leading icon, so the icon edge tightens the start inset as for any inline-start child,
+        // and the recipe hides the button's own leading and bare SVG children while it shows. A
+        // consumer's node rides in the same slot, so it gets the same place and the same
+        // aria-hidden; only the default spinner animates. `null` never reaches this branch, so
+        // the coalescing only fills in `undefined`.
+        <span
+          data-slot="button-pending-indicator"
+          data-icon="inline-start"
+          aria-hidden
+          className="pointer-events-none inline-flex shrink-0 items-center justify-center">
+          {pendingIndicator ?? <SpinnerGap className="animate-spin" />}
+        </span>
+      ) : null}
+      {children}
+    </ButtonPrimitive>
   );
 }
 

@@ -209,7 +209,8 @@ describe("docs ⌘K palette", () => {
     await waitForSearchFieldFocus(page);
     await page.keyboard.type("zzzz-no-such-page");
     await waitForOptionCount(page, 0);
-    expect(await page.locator('[role="status"]').innerText()).toContain("No pages match");
+    // Scoped to the palette: the Button page's pending demo has a status region of its own.
+    expect(await page.locator(`${DIALOG} [role="status"]`).innerText()).toContain("No pages match");
     await page.close();
   });
 });
