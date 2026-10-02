@@ -14,7 +14,7 @@ describe("{{camelCase name}}Variants", () => {
     const md = {{camelCase name}}Variants({ size: "md" });
     expect(md).toContain("h-(--control-h-md)");
     expect(md).toContain("px-(--control-px-md)");
-    expect(md).toContain("[font-size:var(--control-text)]");
+    expect(md).toContain("text-(length:--control-text)");
     expect(md).not.toMatch(/(?:^|\s)h-\d/);
     expect(md).not.toMatch(/(?:^|\s)px-\d/);
   });

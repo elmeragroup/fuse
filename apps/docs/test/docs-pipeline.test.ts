@@ -136,12 +136,17 @@ describe("RSC classification", () => {
 describe("token extraction", () => {
   it("resolves colour utilities, var() and the Tailwind variable shorthand", () => {
     const tokens = extractTokens({
-      sources: ['const a = "bg-primary hover:text-error/20 h-(--control-h-md) text-sm";'],
+      sources: [
+        'const a = "bg-primary hover:text-error/20 h-(--control-h-md) text-sm";',
+        'const b = "text-(length:--control-text) leading-(--control-leading)";',
+      ],
       stylesheets: [".x { color: var(--foreground); }"],
       colors,
     });
     expect(tokens.map((token) => token.name)).toEqual([
       "--control-h-md",
+      "--control-leading",
+      "--control-text",
       "--error",
       "--foreground",
       "--primary",
