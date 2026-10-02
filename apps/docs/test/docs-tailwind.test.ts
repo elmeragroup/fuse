@@ -120,7 +120,9 @@ describe("docs Tailwind migration contract", () => {
     expect(globals).toContain('@source "../../../../packages/fuse/src";');
     expect(globals).toContain('@source "../../src";');
     expect(globals).not.toContain("@apply");
-    expect(globals).not.toMatch(/--control-/);
+    // Fuse owns the control metrics: the docs may read one (the landing's iOS zoom floor does)
+    // but never declare one.
+    expect(globals).not.toMatch(/--control-[\w-]+\s*:/);
   });
 
   it("keeps route and shared-component utilities on the library theme", () => {

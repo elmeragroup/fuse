@@ -21,9 +21,9 @@ export type StaticPage = {
   group: StaticNavGroup;
 };
 
-/** The site root. Reachable from the wordmark, indexed by `llms.txt`, not in a nav group. */
+/** The docs overview. Reachable from the wordmark, indexed by `llms.txt`, not in a nav group. */
 export const HOME_PAGE = {
-  href: "/",
+  href: "/docs",
   label: "Fuse",
   description: "Overview of the Fuse docs site: what the library is and how the docs are generated.",
 } as const;
@@ -108,6 +108,22 @@ export function staticPagesIn(group: StaticNavGroup): readonly StaticPage[] {
   return STATIC_PAGES.filter((page) => page.group === group);
 }
 
-export function staticPageFor(href: string): StaticPage | undefined {
-  return STATIC_PAGES.find((page) => page.href === href);
+/** The static page at `href`; throws when the manifest has none, so a stale route fails the build. */
+export function requireStaticPage(href: string): StaticPage {
+  const page = STATIC_PAGES.find((candidate) => candidate.href === href);
+  if (page === undefined) {
+    throw new Error(`${href} is not in the docs page manifest (src/lib/pages.ts)`);
+  }
+  return page;
+}
+
+/** The route prefix every component docs page lives under. */
+export const COMPONENTS_PREFIX = "/components/";
+
+/**
+ * The route of a component's docs page. It lives here rather than in `nav.ts`, which imports the
+ * whole component-page manifest, so client modules can build the link without shipping it.
+ */
+export function componentHref(slug: string): string {
+  return `${COMPONENTS_PREFIX}${slug}`;
 }

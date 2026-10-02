@@ -715,7 +715,11 @@ describe("state faces", () => {
       "components/breadcrumb/breadcrumb.tsx": ["hover:text-foreground"],
       "components/dialog/dialog.tsx": ["*:[a]:hover:text-foreground"],
       "components/item/item-variants.ts": ["[a]:hover:bg-muted"],
-      "components/navigation-menu/navigation-menu-variants.ts": ["hover:bg-muted"],
+      "components/navigation-menu/navigation-menu-variants.ts": [
+        "hover:bg-accent",
+        "hover:bg-muted",
+        "hover:text-accent-foreground",
+      ],
       // The country trigger adds its hover and press faces only while the field is editable.
       "components/phone-number-field/phone-number-field.tsx": ["active:scale-[0.97]", "hover:bg-muted"],
       // The rail, an aria-hidden resize handle that is never disabled.

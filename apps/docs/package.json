@@ -17,6 +17,7 @@
     "@elmeragroup/fuse": "workspace:*",
     "@internationalized/date": "catalog:",
     "@next/mdx": "catalog:",
+    "@paper-design/shaders-react": "catalog:",
     "@tanstack/react-table": "catalog:",
     "next": "catalog:",
     "react": "catalog:",

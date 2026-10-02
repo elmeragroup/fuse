@@ -39,6 +39,9 @@ catalogs:
     '@next/mdx':
       specifier: 16.3.5
       version: 16.3.5
+    '@paper-design/shaders-react':
+      specifier: 0.0.81
+      version: 0.0.81
     '@phosphor-icons/react':
       specifier: 2.1.10
       version: 2.1.10
@@ -251,6 +254,9 @@ importers:
       '@next/mdx':
         specifier: 'catalog:'
         version: 16.3.5(@mdx-js/loader@3.1.1(supports-color@7.2.0))
+      '@paper-design/shaders-react':
+        specifier: 'catalog:'
+        version: 0.0.81(@types/react@19.3.0)(react@19.3.0)
       '@tanstack/react-table':
         specifier: 'catalog:'
         version: 9.2.4(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -1569,6 +1575,18 @@ packages:
   '@oxlint/plugins@1.82.0':
     resolution: {integrity: sha512-IDF4UXBNOaCeLoEpVxf5Bg85KOWdeuBEkbo1rGzS2vXcbD+GT1asBSeeTC+5BgW6NFTHVByd6N5giHsFPGtwAA==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
+
+  '@paper-design/shaders-react@0.0.81':
+    resolution: {integrity: sha512-3FMkeZqj9sSvK/WkgekGu3crnOQd4R2iH8IT+jVBuQmq1m8p88VFvxh63s9bSt2exBwjBNaRfSo0FSCeNxqh3w==}
+    peerDependencies:
+      '@types/react': ^18 || ^19
+      react: ^18 || ^19
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+
+  '@paper-design/shaders@0.0.81':
+    resolution: {integrity: sha512-jeGdyjMscZ2bxmQdo8lhwUufHUf4iq3s1ayjh8PXU7Go42Rw8E3I0It1FZdc3HuWt5J82m//DRWaxsRqRfA4Gg==}
 
   '@parcel/watcher-android-arm64@2.5.1':
     resolution: {integrity: sha512-KF8+j9nNbUN8vzOFDpRMsaKBHZ/mcjEjMToVMJOhTozkDonQFFrRcfdLWn6yWKCmJKmdVxSgHiYvTCef4/qcBA==}
@@ -5089,6 +5107,15 @@ snapshots:
     optional: true
 
   '@oxlint/plugins@1.82.0': {}
+
+  '@paper-design/shaders-react@0.0.81(@types/react@19.3.0)(react@19.3.0)':
+    dependencies:
+      '@paper-design/shaders': 0.0.81
+      react: 19.3.0
+    optionalDependencies:
+      '@types/react': 19.3.0
+
+  '@paper-design/shaders@0.0.81': {}
 
   '@parcel/watcher-android-arm64@2.5.1':
     optional: true

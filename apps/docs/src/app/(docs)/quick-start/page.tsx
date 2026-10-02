@@ -1,12 +1,11 @@
 import type { ReactElement } from "react";
 
 import { DocsPage, pageMetadata } from "../../../components/docs-page";
+import { INSTALL_COMMAND } from "../../../lib/docs-model";
 
 const HREF = "/quick-start";
 
 export const metadata = pageMetadata(HREF);
-
-const INSTALL = `pnpm add @elmeragroup/fuse`;
 
 const STYLES_TAILWIND = `/* app/globals.css — Tailwind v4.1 or newer */
 @import "tailwindcss";
@@ -66,7 +65,7 @@ export default function QuickStartPage(): ReactElement {
         <code>Button</code> never pays for anything else.
       </p>
       <pre>
-        <code>{INSTALL}</code>
+        <code>{INSTALL_COMMAND}</code>
       </pre>
       <p>
         Tailwind v4 apps compile Fuse&apos;s classes with their own build: import{" "}

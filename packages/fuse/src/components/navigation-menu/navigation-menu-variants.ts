@@ -56,7 +56,7 @@ export const navigationMenuVariants = tv({
       selfFocusRingClass,
       nativeStateFaceClass,
       // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; the ring comes from the shared adapter
-      "group/navigation-menu-trigger relative inline-flex cursor-pointer items-center border-0 bg-transparent text-inherit outline-none select-none data-popup-open:bg-muted enabled-hover:bg-muted",
+      "group/navigation-menu-trigger relative inline-flex cursor-pointer items-center border-0 bg-transparent text-inherit outline-none select-none",
     ],
     // The caret writes its Root's popup `data-side` and points there: physical sides stay put
     // in RTL and logical sides flip. Only a `bottom` caret turns while open.
@@ -85,7 +85,7 @@ export const navigationMenuVariants = tv({
     link: [
       selfFocusRingClass,
       // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; the ring comes from the shared adapter
-      "data-active:font-medium flex items-center text-inherit no-underline outline-none hover:bg-muted data-active:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+      "data-active:font-medium flex items-center text-inherit no-underline outline-none data-active:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
     ],
     indicator:
       // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- the arrow is decorative geometry, not a control rung
@@ -93,17 +93,26 @@ export const navigationMenuVariants = tv({
     // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- the arrow is decorative geometry, not a control rung
     indicatorArrow: "relative top-[60%] size-2 rotate-45 rounded-tl-sm bg-border",
   },
+  // A bar sits on the page and highlights with `muted`. A row sits on the popover and
+  // highlights with `accent`, as menu items in Select, Combobox and DropdownMenu do, because
+  // `muted` can equal the popover.
   variants: {
     orientation: {
-      horizontal: { trigger: [barBoxClass, "w-max justify-center"] },
+      horizontal: {
+        trigger: [barBoxClass, "w-max justify-center data-popup-open:bg-muted enabled-hover:bg-muted"],
+      },
       // A vertical trigger is full width and start-aligned, so it can hold a title and a description.
       vertical: {
-        trigger: [contentRowClass, "h-auto w-full justify-between text-start font-[number:inherit]"],
+        trigger: [
+          contentRowClass,
+          "h-auto w-full justify-between text-start font-[number:inherit]",
+          "data-popup-open:bg-accent data-popup-open:text-accent-foreground enabled-hover:bg-accent enabled-hover:text-accent-foreground",
+        ],
       },
     },
     box: {
-      bar: { link: barBoxClass },
-      row: { link: contentRowClass },
+      bar: { link: [barBoxClass, "hover:bg-muted"] },
+      row: { link: [contentRowClass, "hover:bg-accent hover:text-accent-foreground"] },
     },
   },
   // Trigger and Link always pass their axis, so neither has a default.
