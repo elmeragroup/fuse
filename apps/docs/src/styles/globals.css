@@ -49,3 +49,156 @@
     font-family: var(--font-mono);
   }
 }
+
+/* The /landing prototype. Theme tokens and utilities only emit CSS where a class uses them,
+   and the platform rules below match only a document that holds [data-landing], so the docs
+   pages are unaffected. */
+:root:has([data-landing]) {
+  /* The browser's tap flash fights the press feedback every control already draws. */
+  -webkit-tap-highlight-color: transparent;
+  /* No font inflation when a phone turns to landscape. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Controls are controls: no 300 ms double-tap wait, no long-press text selection or callout.
+   Body copy, numbers and the install command stay selectable. */
+[data-landing] :is(button, [role="button"], [role="radio"], [role="switch"], [role="tab"], label) {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* iOS zooms into any focused field under 16px and never zooms back out. */
+@media (pointer: coarse) {
+  [data-landing] :is(input, textarea, select) {
+    font-size: 16px;
+  }
+}
+
+/* The re-theme reveal: the new snapshot is clipped by a growing circle (driven from
+   landing-theme.tsx), so the default cross-fade between snapshots is switched off. */
+:root:has([data-landing])::view-transition-old(root),
+:root:has([data-landing])::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+:root:has([data-landing])::view-transition-new(root) {
+  z-index: 1;
+}
+
+@theme {
+  --container-landing: 80rem;
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 0.875rem;
+  --text-landing-hero: 7rem;
+  --text-landing-hero--line-height: 6.5rem;
+  --text-landing-h2: 4rem;
+  --text-landing-h2--line-height: 4rem;
+  --text-landing-h3: 3.5rem;
+  --text-landing-h3--line-height: 3.625rem;
+  --text-landing-stat: 5rem;
+  --text-landing-stat--line-height: 5rem;
+  --tracking-landing-hero: -0.045em;
+  --tracking-landing-h2: -0.035em;
+  --tracking-landing-stat: -0.05em;
+  --tracking-landing-eyebrow: 0.14em;
+  --tracking-landing-caption: 0.1em;
+  --ease-snap: cubic-bezier(0.23, 1, 0.32, 1);
+  --spacing-safe-top: env(safe-area-inset-top, 0px);
+  --spacing-footer-end: calc(2rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* A press confirmed the moment a finger lands, not when it lifts. */
+@utility landing-press {
+  transition: scale 140ms var(--ease-snap);
+
+  &:active {
+    scale: 0.97;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+
+    &:active {
+      scale: none;
+    }
+  }
+}
+
+/* A value that just changed settles in from a blur, so old and new read as one thing
+   changing rather than two swapping. Pair it with a React `key` so each value remounts. */
+@utility landing-swap {
+  transition:
+    opacity 220ms var(--ease-snap),
+    filter 220ms var(--ease-snap),
+    translate 220ms var(--ease-snap);
+
+  @starting-style {
+    opacity: 0;
+    filter: blur(3px);
+    translate: 0 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: opacity 220ms ease;
+
+    @starting-style {
+      filter: none;
+      translate: none;
+    }
+  }
+}
+
+/* Usage bars grow from the baseline; `scale` only, so a period switch never relayouts. */
+@utility landing-bar {
+  transform-origin: bottom;
+  scale: 1 var(--bar-scale, 1);
+  transition: scale 320ms var(--ease-snap) var(--bar-delay, 0ms);
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+/* A phone carousel: native momentum and snap, no visible scrollbar, no scroll chaining. */
+@utility landing-rail {
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  & > * {
+    scroll-snap-align: start;
+  }
+}
+
+/* Monochrome brand logos as masks, filled with the text colour by `bg-current`. */
+@utility landing-logo-elma {
+  mask-image: url("/landing/logos/elma.svg");
+}
+
+@utility landing-logo-fkas {
+  mask-image: url("/landing/logos/fkas.svg");
+}
+
+@utility landing-logo-fkab {
+  mask-image: url("/landing/logos/fkab.svg");
+}
+
+@utility landing-logo-tkas {
+  mask-image: url("/landing/logos/tkas.svg");
+}
+
+@utility landing-logo-guen {
+  mask-image: url("/landing/logos/guen.svg");
+}
+
+@utility landing-logo-fkse {
+  mask-image: url("/landing/logos/fkse.svg");
+}
