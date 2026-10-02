@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { controlMd } from "../../styles/control-size-md";
 import { inputGroupAddonVariants, inputGroupButtonVariants } from "./input-group-variants";
 
 const ALIGNMENTS = ["inline-start", "inline-end", "block-start", "block-end"] as const;
@@ -27,7 +28,7 @@ describe("inputGroupAddonVariants", () => {
 });
 
 describe("inputGroupButtonVariants", () => {
-  it("defaults to the compact xs addon size, squares the icon values, and leaves Button's sm metrics untouched", () => {
+  it("defaults to the compact xs addon size, squares the icon values, and keeps Button's md box for sm", () => {
     expect(tokens(inputGroupButtonVariants())).toContain("h-6");
 
     expect(tokens(inputGroupButtonVariants({ size: "icon-xs" }))).toEqual(
@@ -38,14 +39,31 @@ describe("inputGroupButtonVariants", () => {
     );
 
     for (const token of tokens(inputGroupButtonVariants({ size: "sm" }))) {
-      expect(token, token).not.toMatch(/^(?:h|size|px)-/);
+      expect(token, token).not.toMatch(/^(?:h|size)-/);
     }
   });
 
-  it("is a shell-local exemption: no --control-* rung and no density variants", () => {
+  it("pads every addon with the md control icon edge and sm with the md inset, not Button's own", () => {
+    // Unit under test: the addon padding. Oracle: the md control parts the field box and
+    // Button's md label share, which the addon forwards whole.
+    for (const size of BUTTON_SIZES) {
+      const resolved = tokens(inputGroupButtonVariants({ size }));
+      expect(resolved, size).toEqual(expect.arrayContaining(tokens(controlMd.iconEdge())));
+      expect(resolved.join(" "), size).not.toContain("--control-px-button");
+    }
+    expect(tokens(inputGroupButtonVariants({ size: "sm" }))).toEqual(
+      expect.arrayContaining(tokens(controlMd.inset()))
+    );
+  });
+
+  it("is a shell-local exemption: no control size of its own and no density variants", () => {
     for (const size of BUTTON_SIZES) {
       const resolved = inputGroupButtonVariants({ size });
-      expect(resolved, size).not.toContain("--control-");
+      // The addon reads only the md control parts it shares with the field box: the icon edge
+      // at every size, and the inset at sm.
+      const metrics = new Set([...resolved.matchAll(/--control-[a-z-]+/gu)].map(([name]) => name));
+      const allowed = size === "sm" ? ["--control-px-icon-md", "--control-px-md"] : ["--control-px-icon-md"];
+      expect([...metrics].toSorted(), size).toEqual(allowed);
       expect(resolved, size).not.toContain("dense:");
       expect(resolved, size).not.toContain("comfortable:");
       expect(resolved, size).not.toContain("data-density");

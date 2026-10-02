@@ -24,16 +24,35 @@ export const metadata = componentMetadata("button");
   <ButtonSizes />
 </Demo>
 
+<Prose>
+
+The label sizes pad with Button's own inset. At comfortable density, the external default, that is 16px at `sm`
+and 32px at `default` and `lg`, and 12px and 24px on the side of a `data-icon="inline-start"` or `"inline-end"`
+icon. Dense matches the other controls. A `px-*` class in `className` replaces the label padding only: the icon
+side keeps its icon padding, which a `has-data-[icon=inline-start]:pl-*` or `has-data-[icon=inline-end]:pr-*`
+class replaces.
+
+The `outline` variant takes its border from the theme. Internal themes draw a 1px `--border` hairline with a
+small shadow, and external themes a 2px ring in the text colour with no shadow.
+
+</Prose>
+
 <Demo slug="button" id="icons" title="Icons" file="button-icons.tsx">
   <ButtonIcons />
 </Demo>
 
 <Prose>
 
+Mark every leading or trailing icon with `data-icon="inline-start"` or `"inline-end"`, as shadcn/ui's Button
+does. The attribute tells Button which side holds the icon, and that side takes the icon padding instead of the
+label padding, so the icon and its gap balance the text. Without it the icon side keeps the full label padding,
+32px at comfortable density, and the button looks too wide on that side. The rule matches the attribute in the
+DOM, so your own icon components must pass `data-icon` through to the element they render, as the
+`@elmeragroup/fuse/icons` components do.
+
 Button sizes every SVG child without a `size-*` class to 16px, and the `xs` and `icon-xs` sizes to 12px. Any
 `size-*` class opts out, `size-auto` included; `w-*` and `h-*` on their own do not, because the rule matches
-the class name. Mark a leading or trailing icon with `data-icon="inline-start"` or `"inline-end"` so the
-button tightens that edge's inset.
+the class name.
 
 An SVG without a `viewBox` clips instead of scaling when the rule forces it to 16px. Logos that go through
 SVGR often arrive that way, because SVGO's default `removeViewBox` strips the attribute. Give such an icon

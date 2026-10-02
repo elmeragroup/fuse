@@ -37,8 +37,9 @@ const SLUGS = [
   "external-elma-company",
 ] as const;
 
-// Counts the derived `secondary-hover` role and the `radius-step` rung spacing.
-const TOKEN_COUNT = 79;
+// Counts the derived `secondary-hover` role, the `radius-step` rung spacing and the two
+// outline Button roles.
+const TOKEN_COUNT = 81;
 
 // xs, sm, md, lg, xl and the unused popover rung.
 const RUNG_COUNT = 6;
@@ -134,6 +135,23 @@ describe("resolveThemeCatalog", () => {
     const sidebarBrand = light("external-fkas-private").tokens["sidebar-brand"];
     expect(sidebarBrand).toMatchObject({ css: "var(--brand)", reference: { space: "token", name: "brand" } });
     expect(sidebarBrand.value).toEqual(Oklch.toSrgb(fkasAccent));
+
+    // The external outline aliases the text color, so the dark hop lands on the dark
+    // foreground, #FFEEE6 in the fkas dark sheet.
+    const fkasDarkOutline = theme("external-fkas-private").schemes.dark.tokens["button-outline"];
+    expect(fkasDarkOutline).toMatchObject({
+      css: "var(--foreground)",
+      reference: { space: "token", name: "foreground" },
+    });
+    const fkasDarkForeground = getOrThrow(Oklch.parse("oklch(0.9604175 0.0214022 46.9889)"));
+    expect(fkasDarkOutline.value).toEqual(Oklch.toSrgb(fkasDarkForeground));
+    // Internal themes keep the hairline in the border role, oklch(0.9219 0 0) in light.
+    const internalOutline = light("internal-fkas-private").tokens["button-outline"];
+    expect(internalOutline).toMatchObject({
+      css: "var(--border)",
+      reference: { space: "token", name: "border" },
+    });
+    expect(internalOutline.value).toEqual(Oklch.toSrgb(getOrThrow(Oklch.parse("oklch(0.9219 0 0)"))));
   });
 
   it("reads colours as unrounded sRGB", () => {
@@ -149,6 +167,8 @@ describe("resolveThemeCatalog", () => {
   it("reads dimensions as px and fonts as the first family", () => {
     // 1.8125rem at the 16px root.
     expect(light("external-fkas-private").tokens["radius-button"].value).toBe(29);
+    expect(light("external-fkas-private").tokens["button-outline-width"].value).toBe(2);
+    expect(light("internal-fkas-private").tokens["button-outline-width"].value).toBe(1);
     expect(light("external-fkas-private").tokens["font-heading"]).toMatchObject({
       kind: "fontFamily",
       reference: undefined,
@@ -180,6 +200,13 @@ describe("resolveThemeCatalog", () => {
     expect(catalog.density.find((metric) => metric.name === "control-leading")).toMatchObject({
       metricKind: "lineHeight",
       px: { dense: 20, comfortable: 24 },
+    });
+    // Button's md inset is 0.625rem dense and the reference's 2rem comfortable.
+    expect(catalog.density.find((metric) => metric.name === "control-px-button-md")).toEqual({
+      name: "control-px-button-md",
+      metricKind: "padding",
+      codeSyntax: "var(--control-px-button-md)",
+      px: { dense: 10, comfortable: 32 },
     });
   });
 

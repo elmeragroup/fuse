@@ -10,6 +10,12 @@
   until reviewed replacements exist, including internal and Telinet light muted copy.
 - Ask design for an external secondary hover tone. Every external palette sets `secondary`
   equal to `foreground`, so `--secondary-hover` equals `--secondary` and the hover is invisible.
+- Confirm the external Button numbers with design. They come from the sales flow's own button
+  recipe, not a published brand spec: the comfortable label inset of 16px at `sm` and 32px at
+  `md` and `lg` (`theme/tokens/density-metrics.ts`) and the 2px outline in `--foreground`
+  (`EXTERNAL_VARIANT_LAYER`). Also confirm the comfortable icon edge, three quarters of that
+  inset (12px at `sm`, 24px at `md` and `lg`), and pick a comfortable `xs` inset and icon edge,
+  which keep the 12px and 10px control values.
 - Ask design whether external themes keep the reference's 4px corner on the `Checkbox`,
   the phone country trigger and the standalone `Calendar` (`styles/corner-radius.ts`), or
   round them from the brand radius. Internal themes round them with `--radius`.

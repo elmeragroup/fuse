@@ -5,6 +5,7 @@ import { page } from "vitest/browser";
 
 import "../../dist/styles.css";
 import "../../dist/themes.css";
+import { shadowLayers } from "../../test/assert-invalid-ring";
 import { render } from "../../test/browser-render";
 import { withLocale } from "../../test/locale-matrix";
 import { fkasExternal, fkasPrivate, tkasCompany } from "../../test/theme-fixtures";
@@ -36,6 +37,7 @@ import {
 import { SearchField } from "../react-aria/search-field/search-field";
 import { UiProviders } from "../react-aria/ui-providers/ui-providers";
 import { ThemeScope } from "./theme-scope";
+import { EXTERNAL_VARIANT_LAYER } from "./tokens/external-palettes";
 import { themeSlug } from "./tokens/themes";
 import type { ThemeInput } from "./tokens/themes";
 
@@ -230,11 +232,16 @@ function Specimens(): ReactElement {
 }
 
 /**
- * A host that keeps its own tokens: `--radius` is its own, and `--radius-step`, which only
- * themes.css sets, is not declared. `initial` resets the inherited step to the guaranteed
- * invalid value, so every `var(--radius-step, 0px)` takes its fallback here.
+ * A host that keeps its own tokens: `--radius` and `--border` are its own, and the
+ * variant-layer roles (`--radius-step` and the button outline roles), which only themes.css
+ * sets, are not declared. `initial` resets each inherited role to the guaranteed invalid
+ * value, so every `var(--radius-step, 0px)` and outline role read takes its fallback here.
  */
-const HOST_WITHOUT_THEMES = { "--radius": "8px", "--radius-step": "initial" } as const;
+const HOST_WITHOUT_THEMES = {
+  "--radius": "8px",
+  "--border": "rgb(10, 20, 30)",
+  ...Object.fromEntries(Object.keys(EXTERNAL_VARIANT_LAYER).map((key) => [`--${key}`, "initial"])),
+} as const;
 
 function HostSpecimens(): ReactElement {
   return withLocale(
@@ -245,6 +252,7 @@ function HostSpecimens(): ReactElement {
       <Frame.Root role="group" aria-label="Host frame" />
       <Checkbox aria-label="Host checkbox" />
       <Toggle size="xs">Host toggle xs</Toggle>
+      <Button variant="outline">Host outline</Button>
       <InputGroup.Root aria-label="Host input group">
         <InputGroup.Input aria-label="Host grouped input" />
         <InputGroup.Addon align="inline-end">
@@ -425,8 +433,8 @@ describe("radius roles", () => {
   });
 });
 
-describe("radius rungs without themes.css", () => {
-  it("round every rung and private corner with the host's own --radius when --radius-step is unset", () => {
+describe("a host without themes.css", () => {
+  it("rounds every rung and private corner with the host's own --radius when --radius-step is unset", () => {
     render(<HostSpecimens />);
     const host = px(HOST_WITHOUT_THEMES["--radius"]);
     // Across the scale: rounded-lg (card), rounded-md (input) and rounded-xl (frame) all
@@ -442,5 +450,15 @@ describe("radius rungs without themes.css", () => {
     ] as const) {
       expect(radius(element), label).toBe(host);
     }
+  });
+
+  it("draws the outline Button as the host's --border hairline with shadow-xs", () => {
+    render(<HostSpecimens />);
+    const style = getComputedStyle(roleNamed("button", "Host outline"));
+    expect(style.borderTopWidth).toBe("1px");
+    expect(style.borderTopColor).toBe(HOST_WITHOUT_THEMES["--border"]);
+    // Tailwind's shadow-xs, which the hairline casts, in the --tw-shadow layer behind the
+    // transparent ring layers.
+    expect(shadowLayers(style.boxShadow).at(-1)).toBe("rgba(0, 0, 0, 0.05) 0px 1px 2px 0px");
   });
 });

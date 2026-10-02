@@ -55,7 +55,9 @@ export type ColorTokenMap = ReadonlyMap<string, string>;
 /**
  * Reads the `--color-<utility>: var(--<token>)` pairs out of the library's
  * `@theme inline` block. The keys are Tailwind utility suffixes; the values are the
- * theme tokens those utilities actually read.
+ * theme tokens those utilities actually read. A mapping with a fallback,
+ * `var(--<token>, …)`, maps to its first token: the role a theme sets, which the utility
+ * reads in place of its fallback.
  */
 export function readColorTokenMap(fuseCssText: string): ColorTokenMap {
   const start = THEME_INLINE_START.exec(fuseCssText);
@@ -76,7 +78,7 @@ export function readColorTokenMap(fuseCssText: string): ColorTokenMap {
   }
   const block = fuseCssText.slice(from, cursor - 1);
   const map = new Map<string, string>();
-  const pattern = /--color-([a-z0-9-]+)\s*:\s*var\(\s*(--[a-z0-9-]+)\s*\)/gi;
+  const pattern = /--color-([a-z0-9-]+)\s*:\s*var\(\s*(--[a-z0-9-]+)\s*[,)]/gi;
   let match = pattern.exec(block);
   while (match !== null) {
     const utility = match[1];

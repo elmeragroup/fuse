@@ -45,6 +45,8 @@ type SizeMetrics = {
   readonly height: number;
   readonly px: number;
   readonly pxIcon: number;
+  readonly pxButton: number;
+  readonly pxButtonIcon: number;
   readonly gap: number;
   readonly font: number;
   readonly leading: number;
@@ -83,6 +85,8 @@ type LabelProbe = {
   readonly role: QueryableRole;
   readonly size: ControlSizeName;
   readonly fit: "label" | "min-square";
+  /** The label inset the consumer takes: the control inset, or Button's own. */
+  readonly inset: "control" | "button";
   /** Whether the consumer maps `data-icon="inline-*"` children onto the icon-edge inset. */
   readonly iconEdges: boolean;
   readonly render: (name: string, icon: "none" | "start" | "end") => ReactNode;
@@ -123,6 +127,7 @@ const LABEL_PROBES: readonly LabelProbe[] = [
     role: "button",
     size,
     fit: "label",
+    inset: "button",
     iconEdges: true,
     render: (name, icon) => (
       <Button size={BUTTON_LABEL_SIZES[size]} aria-label={name}>
@@ -135,6 +140,7 @@ const LABEL_PROBES: readonly LabelProbe[] = [
     role: "button",
     size,
     fit: "min-square",
+    inset: "control",
     iconEdges: true,
     render: (name, icon) => (
       <Toggle size={TOGGLE_SIZES[size]} aria-label={name}>
@@ -147,6 +153,7 @@ const LABEL_PROBES: readonly LabelProbe[] = [
     role: "button",
     size,
     fit: "min-square",
+    inset: "control",
     iconEdges: true,
     render: (name, icon) => (
       <ToggleGroup.Root aria-label={`${name} group`} size={TOGGLE_SIZES[size]}>
@@ -161,6 +168,7 @@ const LABEL_PROBES: readonly LabelProbe[] = [
     role: "combobox",
     size,
     fit: "label",
+    inset: "control",
     // The trigger has never mapped icon children onto the icon edge, so its padding stays
     // the label inset with an icon child too.
     iconEdges: false,
@@ -210,6 +218,8 @@ describe("control size: label and min-square fits", () => {
       expect(comfortable.height, size).not.toBe(dense.height);
       expect(comfortable.px, size).not.toBe(dense.px);
       expect(comfortable.pxIcon, size).not.toBe(dense.pxIcon);
+      expect(comfortable.pxButton, size).not.toBe(dense.pxButton);
+      expect(comfortable.pxButtonIcon, size).not.toBe(dense.pxButtonIcon);
       expect(comfortable.gap, size).not.toBe(dense.gap);
     }
     expect(CONTROL_MD.comfortable.font).not.toBe(CONTROL_MD.dense.font);
@@ -232,11 +242,12 @@ describe("control size: label and min-square fits", () => {
 
     for (const probe of LABEL_PROBES) {
       const expected = expectedMetrics(probe.size, density);
+      const inset = probe.inset === "button" ? expected.pxButton : expected.px;
       const label = `${density} ${probe.consumer} ${probe.size}`;
       const bare = measure(probe.role, probeName(probe, "none", density));
       expect(bare.height, `${label} height`).toBe(expected.height);
-      expect(bare.paddingStart, `${label} padding start`).toBe(expected.px);
-      expect(bare.paddingEnd, `${label} padding end`).toBe(expected.px);
+      expect(bare.paddingStart, `${label} padding start`).toBe(inset);
+      expect(bare.paddingEnd, `${label} padding end`).toBe(inset);
       expect(px(bare.gap), `${label} gap`).toBe(expected.gap);
       expect(px(bare.font), `${label} font`).toBe(expected.font);
       expect(px(bare.leading), `${label} leading`).toBe(expected.leading);
@@ -244,13 +255,14 @@ describe("control size: label and min-square fits", () => {
         expect(bare.minWidth, `${label} min-width`).toBe(`${String(expected.height)}px`);
       }
 
-      const edge = probe.iconEdges ? expected.pxIcon : expected.px;
+      const iconEdge = probe.inset === "button" ? expected.pxButtonIcon : expected.pxIcon;
+      const edge = probe.iconEdges ? iconEdge : inset;
       const start = measure(probe.role, probeName(probe, "start", density));
       expect(start.paddingStart, `${label} icon-start edge`).toBe(edge);
-      expect(start.paddingEnd, `${label} icon-start far edge`).toBe(expected.px);
+      expect(start.paddingEnd, `${label} icon-start far edge`).toBe(inset);
       const end = measure(probe.role, probeName(probe, "end", density));
       expect(end.paddingEnd, `${label} icon-end edge`).toBe(edge);
-      expect(end.paddingStart, `${label} icon-end far edge`).toBe(expected.px);
+      expect(end.paddingStart, `${label} icon-end far edge`).toBe(inset);
     }
   });
 
@@ -286,10 +298,11 @@ describe("control size: label and min-square fits", () => {
     const tall = measure("button", "md tall");
     expect(px(tall.font), `${density} tall font`).toBe(md.font);
     expect(px(tall.leading), `${density} tall leading`).toBe(md.font * 2);
-    // The box metrics are untouched: a compact label keeps the size's height and inset.
+    // The box metrics are untouched: a compact label keeps the size's height and Button's
+    // own label inset.
     const compact = measure("button", "md compact");
     expect(compact.height, `${density} compact height`).toBe(md.height);
-    expect(compact.paddingStart, `${density} compact padding`).toBe(md.px);
+    expect(compact.paddingStart, `${density} compact padding`).toBe(md.pxButton);
   });
 
   it.each(DENSITIES)(
@@ -484,6 +497,72 @@ describe("control size: the resolved md parts", () => {
   });
 });
 
+describe("control size: Button's label inset", () => {
+  // The customer-facing reference button pads 16px at sm and 32px at md and lg, whatever the
+  // brand. Comfortable density takes those values and dense keeps the control inset, so dense
+  // renders do not move. xs keeps the control inset at both densities. The pixels are written
+  // from the reference by hand rather than read from DENSITY_METRICS.
+  const REFERENCE_INSET = {
+    dense: { xs: 8, sm: 10, md: 10, lg: 10 },
+    comfortable: { xs: 12, sm: 16, md: 32, lg: 32 },
+  } as const;
+  // The edge beside a leading or trailing icon. Dense keeps the control icon edge, and
+  // comfortable is three quarters of the label inset from sm up, so the icon and its gap
+  // balance the label side instead of sitting 12px from one end of a 32px-padded button.
+  const REFERENCE_ICON_EDGE = {
+    dense: { xs: 6, sm: 6, md: 8, lg: 8 },
+    comfortable: { xs: 10, sm: 12, md: 24, lg: 24 },
+  } as const;
+
+  it.each(DENSITIES)("pads Button labels like the reference at %s", (density) => {
+    stampDensity(density);
+    renderThemed(
+      <>
+        {(["xs", "sm", "md", "lg"] as const).map((size) => (
+          <Button key={size} size={BUTTON_LABEL_SIZES[size]}>{`reference ${size}`}</Button>
+        ))}
+      </>
+    );
+
+    for (const size of ["xs", "sm", "md", "lg"] as const) {
+      const box = measure("button", `reference ${size}`);
+      expect(box.paddingStart, `${density} button ${size} padding start`).toBe(
+        REFERENCE_INSET[density][size]
+      );
+      expect(box.paddingEnd, `${density} button ${size} padding end`).toBe(REFERENCE_INSET[density][size]);
+    }
+  });
+
+  it.each(DENSITIES)("balances a Button label's icon edge against its label side at %s", (density) => {
+    stampDensity(density);
+    renderThemed(
+      <>
+        {(["xs", "sm", "md", "lg"] as const).flatMap((size) =>
+          (["start", "end"] as const).map((icon) => (
+            <Button
+              key={`${size}-${icon}`}
+              size={BUTTON_LABEL_SIZES[size]}
+              aria-label={`icon ${icon} ${size}`}>
+              {iconChildren(icon)}
+            </Button>
+          ))
+        )}
+      </>
+    );
+
+    for (const size of ["xs", "sm", "md", "lg"] as const) {
+      const edge = REFERENCE_ICON_EDGE[density][size];
+      const label = REFERENCE_INSET[density][size];
+      const start = measure("button", `icon start ${size}`);
+      expect(start.paddingStart, `${density} ${size} leading icon edge`).toBe(edge);
+      expect(start.paddingEnd, `${density} ${size} label side`).toBe(label);
+      const end = measure("button", `icon end ${size}`);
+      expect(end.paddingEnd, `${density} ${size} trailing icon edge`).toBe(edge);
+      expect(end.paddingStart, `${density} ${size} label side`).toBe(label);
+    }
+  });
+});
+
 describe("control size: density scope", () => {
   it("follows the document stamp, not a nested data-density or ThemeScope", () => {
     stampDensity("dense");
@@ -523,7 +602,7 @@ describe("control size: density scope", () => {
 });
 
 describe("control size: consumer overrides", () => {
-  it("lets a className size utility win on Select and on a segmented ToggleGroup item", () => {
+  it("lets a className size utility win on Select, a segmented ToggleGroup item and a Button label", () => {
     stampDensity("dense");
     renderThemed(
       <>
@@ -537,12 +616,31 @@ describe("control size: consumer overrides", () => {
             Label
           </ToggleGroup.Item>
         </ToggleGroup.Root>
+        <Button className="px-4">wide button</Button>
       </>
     );
     // Tailwind's `h-12` is 3rem and `px-4` is 1rem, 48px and 16px at the 16px root. Neither
-    // is a dense control metric (sm is 32px high, the md icon inset 8px).
+    // is a dense control metric (sm is 32px high, the md icon inset 8px, the md button
+    // inset 10px).
     expect(measure("combobox", "tall select").height).toBe(48);
     expect(measure("button", "wide segment").paddingStart).toBe(16);
     expect(measure("button", "wide segment").paddingEnd).toBe(16);
+    expect(measure("button", "wide button").paddingStart).toBe(16);
+    expect(measure("button", "wide button").paddingEnd).toBe(16);
+  });
+
+  it("lets a className px utility replace a comfortable Button's label inset but not its icon edge", () => {
+    stampDensity("comfortable");
+    renderThemed(
+      <Button className="px-4" aria-label="padded icon button">
+        {iconChildren("start")}
+      </Button>
+    );
+    // `px-4` is 16px and replaces the 32px md label inset. The leading icon keeps the 24px
+    // comfortable md icon edge: its `has-data-[icon=inline-start]:` class is another modifier,
+    // so tailwind-merge keeps it, and its `:has()` selector outranks `px-4`.
+    const box = measure("button", "padded icon button");
+    expect(box.paddingStart).toBe(24);
+    expect(box.paddingEnd).toBe(16);
   });
 });
