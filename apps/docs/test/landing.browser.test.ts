@@ -15,10 +15,10 @@ const TARGET_FLOOR_PX = 24;
  * Opens the landing in a fresh context. `prepare` runs before navigation, for routes, clocks,
  * permissions and init scripts. No test checks motion, so every context reduces motion.
  *
- * Unless `shaders` is set, the brand marks are refused, so no shader draws. Processing the six
- * marks blurs large canvases on the main thread at load. On a slow runner that holds a brand
- * pick back for seconds (measured: 2.8s at 4x CPU throttling, 0.1s with the marks refused), and
- * only the shader tests look at a shader.
+ * Unless `shaders` is set, the brand marks are refused, so the closing shader never draws and the
+ * picker's mark masks stay empty. Processing a mark blurs a large canvas on the main thread, which
+ * on a slow runner held a brand pick back for seconds (measured with six shaders on the page: 2.8s
+ * at 4x CPU throttling, 0.1s with the marks refused), and only the shader tests look at a shader.
  */
 async function openLanding(
   viewport: { width: number; height: number },
@@ -85,7 +85,7 @@ describe("landing page", () => {
       },
     });
 
-    // Every brand's mark is requested once, then shared by the shaders that show it.
+    // The picker's masks request every brand's mark; the closing shader shares the active one.
     await expect.poll(() => failed.size, { timeout: 10_000 }).toBe(6);
     // A rejected mark reaches its shader on React's next render; give that render time to land.
     await page.waitForTimeout(1000);
@@ -102,20 +102,59 @@ describe("landing page", () => {
     await page.context().close();
   });
 
-  it("keeps the hero's shader canvas mounted when a brand is picked", async () => {
+  it("keeps the closing shader's canvas mounted when a brand is picked", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT, { shaders: true });
     // DOM audit: a shader canvas has no role.
-    const canvas = page.getByRole("region", { name: /One system/u }).locator("canvas");
+    const canvas = page.getByRole("region", { name: /Install Fuse/u }).locator("canvas");
     await expect.poll(async () => canvas.count(), { timeout: 10_000 }).toBe(1);
     const before = await canvas.elementHandle();
 
     await page.getByRole("button").filter({ hasText: 'data-theme-brand="fkas"' }).click();
-    // The other brands' marks may still be processing; give the pick the page's 5s budget.
+    // The shader may still be processing its mark; give the pick the page's 5s budget.
     await expect
       .poll(async () => (await readThemeAttributes(page.locator("html"))).brand, { timeout: 5000 })
       .toBe("fkas");
 
     expect(await canvas.evaluate((current, original) => current === original, before)).toBe(true);
+    await page.context().close();
+  });
+
+  it("fills the picked brand's tile with that brand's primary and leaves the others on the card", async () => {
+    const page = await openLanding(DESKTOP_VIEWPORT);
+    const picker = page.getByRole("region", { name: /Pick a brand/u });
+    const tile = (brand: string) =>
+      picker.getByRole("button").filter({ hasText: `data-theme-brand="${brand}"` });
+
+    await tile("fkas").click();
+    await expect.poll(async () => tile("fkas").getAttribute("aria-pressed")).toBe("true");
+    // The oracle is the theme's own roles, read off probes that paint them, not the tile's classes.
+    const paint = async () =>
+      page.evaluate(() => {
+        const swatch = (role: string) => {
+          const probe = document.createElement("div");
+          probe.style.backgroundColor = `var(--${role})`;
+          document.body.append(probe);
+          const color = getComputedStyle(probe).backgroundColor;
+          probe.remove();
+          return color;
+        };
+        const shot = (brand: string) => {
+          const button = [...document.querySelectorAll("button")].find((candidate) =>
+            candidate.textContent.includes(`data-theme-brand="${brand}"`)
+          );
+          const surface = button?.firstElementChild;
+          return surface === null || surface === undefined
+            ? "missing"
+            : getComputedStyle(surface).backgroundColor;
+        };
+        return { primary: swatch("primary"), card: swatch("card"), fkas: shot("fkas"), elma: shot("elma") };
+      });
+    await expect
+      .poll(async () => {
+        const { primary, card, fkas, elma } = await paint();
+        return { fkas: fkas === primary, elma: elma === card };
+      })
+      .toEqual({ fkas: true, elma: true });
     await page.context().close();
   });
 

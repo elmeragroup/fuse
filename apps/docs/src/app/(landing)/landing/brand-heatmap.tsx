@@ -49,13 +49,12 @@ function useReducedMotion(): boolean {
 
 export type BrandHeatmapProps = {
   brand: BrandCode;
-  /** The surface under the shader; its colour becomes the shader's background. */
-  surface: "background" | "card";
 };
 
-export function BrandHeatmap({ brand, surface }: BrandHeatmapProps): ReactElement {
+/** The closing section's shader; the page background under it becomes its back colour. */
+export function BrandHeatmap({ brand }: BrandHeatmapProps): ReactElement {
   const host = useRef<HTMLDivElement>(null);
-  const heat = useHeat(host, brand, surface);
+  const heat = useHeat(host, brand);
   const reduced = useReducedMotion();
 
   return (

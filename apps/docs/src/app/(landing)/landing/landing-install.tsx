@@ -93,7 +93,7 @@ export function LandingInstall(): ReactElement {
         </div>
       </div>
       <div className={styles.stage()}>
-        <BrandHeatmap brand={theme.brand} surface="background" />
+        <BrandHeatmap brand={theme.brand} />
         <div aria-hidden className={styles.fade()} />
       </div>
     </section>

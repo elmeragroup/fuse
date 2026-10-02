@@ -203,3 +203,28 @@
 @utility landing-logo-fkse {
   mask-image: url("/landing/logos/fkse.svg");
 }
+
+/* Monochrome brand marks for the picker tiles, the artwork the closing shader also traces. */
+@utility landing-mark-elma {
+  mask-image: url("/landing/marks/elma.svg");
+}
+
+@utility landing-mark-fkas {
+  mask-image: url("/landing/marks/fkas.svg");
+}
+
+@utility landing-mark-fkab {
+  mask-image: url("/landing/marks/fkab.svg");
+}
+
+@utility landing-mark-tkas {
+  mask-image: url("/landing/marks/tkas.svg");
+}
+
+@utility landing-mark-guen {
+  mask-image: url("/landing/marks/guen.svg");
+}
+
+@utility landing-mark-fkse {
+  mask-image: url("/landing/marks/fkse.svg");
+}

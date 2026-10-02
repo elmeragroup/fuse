@@ -26,7 +26,7 @@ const RAMP_LENGTH = 7;
 export type Heat = {
   /** Hex colours for the shader, cold to hot for the active scheme. */
   colors: string[];
-  /** Hex colour of the surface the shader sits on, so its grain meets the page without a seam. */
+  /** Hex colour of the page background under the shader, so its grain meets it without a seam. */
   back: string;
 };
 
@@ -89,14 +89,10 @@ function readRamp(
 }
 
 /**
- * The heat ramp for `brand` and the hex of `surface` under `host`, re-read whenever the page
+ * The heat ramp for `brand` and the hex of the background under `host`, re-read whenever the page
  * re-themes or switches scheme. Undefined until the first client read.
  */
-export function useHeat(
-  host: RefObject<HTMLElement | null>,
-  brand: BrandCode,
-  surface: "background" | "card"
-): Heat | undefined {
+export function useHeat(host: RefObject<HTMLElement | null>, brand: BrandCode): Heat | undefined {
   const { theme } = useLandingTheme();
   const { resolvedColorScheme } = useColorScheme();
   const [heat, setHeat] = useState<Heat>();
@@ -104,18 +100,18 @@ export function useHeat(
   useEffect(() => {
     // ThemeProvider stamps <html> in an insertion effect, so the host already wears the new
     // theme here. The read still waits a frame: setting state from it synchronously would start
-    // a second render inside this commit, and every tile's read lands in the same frame.
+    // a second render inside this commit, and the read lands in the next frame.
     const frame = window.requestAnimationFrame(() => {
       const element = host.current;
       if (element === null) {
         return;
       }
       const scheme = resolvedColorScheme === "dark" ? "dark" : "light";
-      const back = toSwatch(resolveColor(element, surface));
+      const back = toSwatch(resolveColor(element, "background"));
       setHeat({ colors: readRamp(element, theme, brand, scheme), back: back?.hex ?? "#000000" });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [host, brand, surface, theme, resolvedColorScheme]);
+  }, [host, brand, theme, resolvedColorScheme]);
 
   return heat;
 }

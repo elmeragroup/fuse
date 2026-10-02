@@ -17,20 +17,40 @@ const brandWordmark = tv({
   base: "inline-block max-w-full shrink-0 bg-current mask-contain mask-center mask-no-repeat",
   variants: {
     brand: {
-      elma: "landing-logo-elma aspect-465/58 h-4",
-      fkas: "landing-logo-fkas aspect-257/54 h-5",
-      fkab: "landing-logo-fkab aspect-416/54 h-5",
-      tkas: "landing-logo-tkas aspect-534/88 h-4.5",
-      guen: "landing-logo-guen aspect-461/124 h-7",
-      fkse: "landing-logo-fkse aspect-260/35 h-4.5",
+      elma: "landing-logo-elma aspect-465/58",
+      fkas: "landing-logo-fkas aspect-257/54",
+      fkab: "landing-logo-fkab aspect-416/54",
+      tkas: "landing-logo-tkas aspect-534/88",
+      guen: "landing-logo-guen aspect-461/124",
+      fkse: "landing-logo-fkse aspect-260/35",
     } satisfies Record<BrandCode, string>,
+    // `tile` captions a brand tile; `strip` is the hero's row, a step larger from `sm`.
+    size: { tile: "", strip: "" },
   },
+  compoundVariants: [
+    { brand: "elma", size: "tile", class: "h-4" },
+    { brand: "fkas", size: "tile", class: "h-5" },
+    { brand: "fkab", size: "tile", class: "h-5" },
+    { brand: "tkas", size: "tile", class: "h-4.5" },
+    { brand: "guen", size: "tile", class: "h-7" },
+    { brand: "fkse", size: "tile", class: "h-4.5" },
+    { brand: "elma", size: "strip", class: "sm:h-4.5 h-3.5" },
+    { brand: "fkas", size: "strip", class: "sm:h-6 h-4.5" },
+    { brand: "fkab", size: "strip", class: "sm:h-6 h-4.5" },
+    { brand: "tkas", size: "strip", class: "sm:h-5 h-4" },
+    { brand: "guen", size: "strip", class: "sm:h-8 h-6" },
+    { brand: "fkse", size: "strip", class: "sm:h-5 h-4" },
+  ],
+  defaultVariants: { size: "tile" },
 });
 
 export type BrandWordmarkProps = {
   brand: BrandCode;
+  size?: "tile" | "strip";
 };
 
-export function BrandWordmark({ brand }: BrandWordmarkProps): ReactElement {
-  return <span role="img" aria-label={BRANDS[brand].displayName} className={brandWordmark({ brand })} />;
+export function BrandWordmark({ brand, size }: BrandWordmarkProps): ReactElement {
+  return (
+    <span role="img" aria-label={BRANDS[brand].displayName} className={brandWordmark({ brand, size })} />
+  );
 }
