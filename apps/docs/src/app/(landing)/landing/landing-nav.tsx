@@ -7,10 +7,14 @@ import { tv } from "tailwind-variants";
 
 import { Button } from "@elmeragroup/fuse/button";
 import { ElmeraGroupLogo } from "@elmeragroup/fuse/icons";
+import { NavigationMenu } from "@elmeragroup/fuse/navigation-menu";
 import { COLOR_SCHEMES } from "@elmeragroup/fuse/theme";
 import type { ColorScheme } from "@elmeragroup/fuse/theme";
 import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
 
+import { HOME_PAGE, staticPagesIn } from "../../../lib/pages";
+import type { StaticPage } from "../../../lib/pages";
+import { ComponentShowcase } from "./component-showcase";
 import { useLandingTheme } from "./landing-theme";
 
 const landingNav = tv({
@@ -20,8 +24,12 @@ const landingNav = tv({
     wordmark:
       "text-base font-semibold flex items-center gap-2.5 rounded-md text-foreground no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
     mark: "size-5",
-    links: "text-sm md:flex hidden items-center gap-1",
-    link: "rounded-md px-2.5 py-1.5 text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring",
+    // The bar has no room for the menu on phones.
+    menu: "md:flex hidden flex-none",
+    panel: "w-2xl m-0 grid list-none grid-cols-2 gap-1 p-0",
+    card: "flex flex-col gap-1 py-1",
+    cardTitle: "font-medium text-foreground",
+    cardDescription: "text-muted-foreground",
     end: "ml-auto flex items-center gap-4",
     version: "text-xs hidden font-mono text-muted-foreground lg:inline",
     scheme: "sm:inline-flex hidden",
@@ -62,13 +70,32 @@ export function SchemeSwitch(): ReactElement {
   );
 }
 
-const LINKS = [
-  { href: "/docs", label: "Docs" },
-  { href: "/components/button", label: "Components" },
-  { href: "/quick-start", label: "Quick start" },
-  { href: "/accessibility", label: "Accessibility" },
-  { href: "/releases", label: "Releases" },
-] as const;
+type MenuLink = { href: string; title: string; description: string };
+
+/** One titled link with its one-line description, as a panel row. */
+function MenuCard({ link }: { link: MenuLink }): ReactElement {
+  return (
+    <li>
+      <NavigationMenu.Link render={<Link href={link.href} />}>
+        <span className={styles.card()}>
+          <span className={styles.cardTitle()}>{link.title}</span>
+          <span className={styles.cardDescription()}>{link.description}</span>
+        </span>
+      </NavigationMenu.Link>
+    </li>
+  );
+}
+
+function pageLinks(pages: readonly StaticPage[]): readonly MenuLink[] {
+  return pages.map((page) => ({ href: page.href, title: page.label, description: page.description }));
+}
+
+const DOCS_LINKS: readonly MenuLink[] = [
+  { href: HOME_PAGE.href, title: "Overview", description: HOME_PAGE.description },
+  ...pageLinks(staticPagesIn("overview")),
+];
+
+const HANDBOOK_LINKS = pageLinks(staticPagesIn("handbook"));
 
 export function LandingNav(): ReactElement {
   return (
@@ -78,13 +105,36 @@ export function LandingNav(): ReactElement {
           <ElmeraGroupLogo variant="mark" className={styles.mark()} aria-hidden />
           Fuse
         </Link>
-        <nav aria-label="Primary" className={styles.links()}>
-          {LINKS.map((link) => (
-            <Link key={link.href} href={link.href} className={styles.link()}>
-              {link.label}
-            </Link>
-          ))}
-        </nav>
+        <NavigationMenu.Root aria-label="Primary" className={styles.menu()}>
+          <NavigationMenu.List>
+            <NavigationMenu.Item>
+              <NavigationMenu.Trigger>Docs</NavigationMenu.Trigger>
+              <NavigationMenu.Content>
+                <ul className={styles.panel()}>
+                  {DOCS_LINKS.map((link) => (
+                    <MenuCard key={link.href} link={link} />
+                  ))}
+                </ul>
+              </NavigationMenu.Content>
+            </NavigationMenu.Item>
+            <NavigationMenu.Item>
+              <NavigationMenu.Trigger>Handbook</NavigationMenu.Trigger>
+              <NavigationMenu.Content>
+                <ul className={styles.panel()}>
+                  {HANDBOOK_LINKS.map((link) => (
+                    <MenuCard key={link.href} link={link} />
+                  ))}
+                </ul>
+              </NavigationMenu.Content>
+            </NavigationMenu.Item>
+            <NavigationMenu.Item>
+              <NavigationMenu.Trigger>Components</NavigationMenu.Trigger>
+              <NavigationMenu.Content>
+                <ComponentShowcase />
+              </NavigationMenu.Content>
+            </NavigationMenu.Item>
+          </NavigationMenu.List>
+        </NavigationMenu.Root>
         <div className={styles.end()}>
           <span className={styles.version()}>v1.0</span>
           <span className={styles.scheme()}>
