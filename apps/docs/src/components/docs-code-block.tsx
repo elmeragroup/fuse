@@ -49,7 +49,7 @@ function highlight(source: string): string {
   return render(parse(source, { tokenize: (code) => tokenize(code, undefined) }));
 }
 
-export type DocsCodeBlockProps = Omit<ComponentProps<"pre">, "children"> & {
+type DocsCodeBlockProps = Omit<ComponentProps<"pre">, "children"> & {
   /** Raw source. Highlighted here, by the one highlighter the docs use. */
   source: string;
   /** MDX fence, demo-frame source region, or the API panel's full type signature. */

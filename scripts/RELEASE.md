@@ -36,6 +36,9 @@ the versioning flow; fix their source notes rather than editing generated histor
 
 Once activated, pushes to `main` publish `x.y.z-canary.N` under `canary`, except
 stable version commits and commits already covered by a stable or descendant canary.
+A PR whose change leaves the packed package unchanged (Markdown, CI, tests) can carry
+the `no-canary` label; its merge publishes nothing, and the next canary carries it.
+The label never applies to the bot's Version Packages PR, so a stable bump always publishes.
 The engine allocates canaries against the planned changeset version or next patch.
 Changesets pre-mode versions such as `-beta.N` are not supported.
 

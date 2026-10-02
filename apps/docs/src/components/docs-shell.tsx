@@ -21,7 +21,7 @@ const docsShell = tv({
 
 const { root, columns, main } = docsShell();
 
-export type DocsShellProps = {
+type DocsShellProps = {
   children: ReactNode;
 };
 

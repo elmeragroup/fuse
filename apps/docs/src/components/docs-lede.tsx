@@ -6,7 +6,7 @@ const docsLede = tv({
   base: "text-base leading-relaxed m-0 max-w-[56ch] text-foreground",
 });
 
-export type DocsLedeProps = ComponentProps<"p">;
+type DocsLedeProps = ComponentProps<"p">;
 
 /** One-paragraph description under the page title. */
 export function DocsLede({ className, ...props }: DocsLedeProps): ReactElement {

@@ -90,8 +90,8 @@ describe("resolveThemeCatalog", () => {
     expect(light("external-fkas-private").rungs["radius-md"]).toEqual({
       name: "radius-md",
       kind: "dimension",
-      css: "calc(var(--radius) - var(--radius-step))",
-      codeSyntax: "calc(var(--radius) - var(--radius-step))",
+      css: "calc(var(--radius) - var(--radius-step, 0px))",
+      codeSyntax: "calc(var(--radius) - var(--radius-step, 0px))",
       reference: undefined,
       value: 10,
     });
@@ -103,7 +103,7 @@ describe("resolveThemeCatalog", () => {
     expect(light("internal-elma-private").rungs["radius-xl"].value).toBe(6);
     // The popover rung steps four times below --radius: 12 - 4 * 2.
     expect(light("external-fkas-private").rungs["radius-popover"]).toMatchObject({
-      css: "calc(var(--radius) - 4 * var(--radius-step))",
+      css: "calc(var(--radius) - 4 * var(--radius-step, 0px))",
       value: 4,
     });
   });
@@ -164,7 +164,7 @@ describe("resolveThemeCatalog", () => {
   it("gives each token its var() and each rung its calc() as code syntax", () => {
     expect(light("external-fkas-private").tokens.primary.codeSyntax).toBe("var(--primary)");
     expect(light("external-fkas-private").rungs["radius-md"].codeSyntax).toBe(
-      "calc(var(--radius) - var(--radius-step))"
+      "calc(var(--radius) - var(--radius-step, 0px))"
     );
     expect(light("external-fkas-private").rungs["radius-lg"].codeSyntax).toBe("var(--radius)");
   });

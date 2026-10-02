@@ -6,6 +6,10 @@ name: Preview
 # separate from production, and so is its identity: it can push images and manage the
 # preview app, never the production app. Preview URLs resolve only on the VPN.
 #
+# A PR that leaves the docs site unchanged (Markdown, CI, tests) can carry the `no-preview`
+# label; its pushes then deploy nothing. A revision deployed before the label stays live until
+# the PR closes.
+#
 # This must stay `pull_request`, never `pull_request_target`: the repo is public, and
 # `pull_request_target` would hand the preview identity to code from any fork. Fork PRs get
 # no OIDC token under `pull_request`, so they are skipped with a note instead.
@@ -42,11 +46,36 @@ jobs:
             echo "A maintainer can push the branch to elmeragroup/fuse to get one."
           } >> "$GITHUB_STEP_SUMMARY"
 
-  deploy:
+  # The label is read live, not from the event payload: `gh pr create --label` applies labels
+  # after the PR exists, so the `opened` payload lacks them. A failed lookup fails the job, which
+  # skips the deploy visibly instead of guessing.
+  preview-opt-out:
     if: >-
       github.event.action != 'closed' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       vars.AZURE_CLIENT_ID_PREVIEW != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    outputs:
+      skip: ${{ steps.labels.outputs.skip }}
+    steps:
+      - name: Read the PR's labels
+        id: labels
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          skip="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq '[.labels[].name] | any(. == "no-preview")')"
+          echo "skip=$skip" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: preview-opt-out
+    if: >-
+      github.event.action != 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      vars.AZURE_CLIENT_ID_PREVIEW != '' &&
+      needs.preview-opt-out.outputs.skip != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -55,12 +84,12 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Azure login
-        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2.3.1
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID_PREVIEW }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
@@ -86,7 +115,7 @@ jobs:
         run: bash .github/scripts/docs-container-app.sh preview
 
       - name: Comment preview URL
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           URL: ${{ steps.deploy.outputs.url }}
           REVISION: ${{ steps.deploy.outputs.revision }}
@@ -126,12 +155,12 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Azure login
-        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2.3.1
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID_PREVIEW }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
@@ -141,7 +170,7 @@ jobs:
         run: bash .github/scripts/docs-container-app.sh teardown
 
       - name: Mark preview comment removed
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const { COMMENT_MARKER } = process.env;

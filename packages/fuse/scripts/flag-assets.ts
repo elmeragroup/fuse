@@ -75,7 +75,7 @@ export function requireFlagsDirectory(flagsDir: string): "missing" | "present" {
   return "present";
 }
 
-export function sha256(bytes: Uint8Array): string {
+function sha256(bytes: Uint8Array): string {
   return createHash("sha256").update(bytes).digest("hex");
 }
 
@@ -124,7 +124,7 @@ export function flagHashFailure(
   return undefined;
 }
 
-export function writeFlagManifest(packageRoot: string): void {
+function writeFlagManifest(packageRoot: string): void {
   const flagsDir = join(packageRoot, "src/flags");
   const files = listFlagFiles(flagsDir);
   const payload = flagPayload(flagsDir, files);

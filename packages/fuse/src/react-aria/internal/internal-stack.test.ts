@@ -41,6 +41,15 @@ describe("composeTailwindRenderProps", () => {
     const composed = composeTailwindRenderProps<HoverState>(className, recipe);
     expect(resolveClassName(composed, { isHovered })).toBe(expected);
   });
+
+  // RAC's mergeProps lets a callback className replace a context-supplied one, so the
+  // result must be a function even when the consumer passes a string or nothing.
+  it.each([
+    ["a string", "px-8"],
+    ["undefined", undefined],
+  ] as const)("returns a callback for %s className", (_title, className) => {
+    expect(composeTailwindRenderProps<HoverState>(className, "px-2")).toBeTypeOf("function");
+  });
 });
 
 describe("fieldGroupVariants", () => {

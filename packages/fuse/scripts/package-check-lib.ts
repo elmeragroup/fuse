@@ -53,7 +53,7 @@ export function packedValueExportFailure(
   return `${entryKey} ${parts.join("; ")}`;
 }
 
-export function leadingUseClient(source: string): boolean {
+function leadingUseClient(source: string): boolean {
   return /^["']use client["']\s*;?/.test(source.replace(/^\uFEFF/, "").trimStart());
 }
 

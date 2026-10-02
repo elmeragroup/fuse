@@ -9,7 +9,7 @@ export const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 export const SOURCE_TREES = ["apps", "packages", "scripts", "tooling", "test"];
 
 /** The JS/TS file kinds the source-level policy tests read. */
-export const SOURCE_EXTENSION = /\.[cm]?[jt]sx?$/;
+const SOURCE_EXTENSION = /\.[cm]?[jt]sx?$/;
 
 /**
  * Whether a file basename is a JS/TS source file the source-level policy tests read.

@@ -18,7 +18,6 @@ import type { ComponentPageSource } from "../scripts/lib/page-source.ts";
 import { repoRelative, repoRoot } from "../scripts/lib/paths.ts";
 import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import type { ComponentApiArtifact } from "../src/lib/docs-model";
-import { dependencyPackageName } from "../src/lib/docs-model";
 import { COMPONENT_INVENTORY } from "./component-inventory";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -237,10 +236,10 @@ describe("committed api.json", () => {
           if (prop.origin === "declared") {
             expect(prop.description, `${part.name}.${prop.name}`).not.toBe("");
           }
-          // A dependency prop is published only when its dependency documents it.
-          const packageName = dependencyPackageName(prop.origin);
-          if (packageName !== null) {
-            expect(packageName).toBe("@base-ui/react");
+          // A dependency prop is published only when its dependency documents it. The origin
+          // is read from the committed artifact's own discriminant, not the site's classifier.
+          if (prop.origin !== "declared" && prop.origin !== "recipe-axis") {
+            expect(prop.origin.packageName).toBe("@base-ui/react");
             expect(prop.description, `${part.name}.${prop.name}`).not.toBe("");
           }
         }

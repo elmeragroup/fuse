@@ -52,7 +52,7 @@ function fieldNumber(body: string, field: string): number | undefined {
 /**
  * Reads the recorded measurement date out of the budget module.
  */
-export function parseMeasuredOn(source: string, file: string): string {
+function parseMeasuredOn(source: string, file: string): string {
   const measuredOn = MEASURED_ON.exec(source)?.[1];
   if (measuredOn === undefined) {
     throw new Error(`${file}: no BUDGETS_MEASURED_ON date to read sizes from`);

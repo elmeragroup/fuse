@@ -14,7 +14,7 @@ export type PreviewThemeContextValue = {
 
 const PreviewThemeContext = createContext<PreviewThemeContextValue | undefined>(undefined);
 
-export type PreviewThemeProviderProps = {
+type PreviewThemeProviderProps = {
   children: ReactNode;
 };
 

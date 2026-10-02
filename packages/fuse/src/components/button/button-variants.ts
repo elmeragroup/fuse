@@ -23,9 +23,13 @@ import { selfFocusRingClass } from "../../styles/utils";
 // Inside a ButtonGroup a button keeps the group radius, `rounded-md`, not the button role.
 // The group joins its buttons edge to edge, often with inputs and text, into one bar that
 // rounds like a field, and a pill button would bulge out of that outline.
+// The pointer cursor is the library's policy for an interactive control, as on the
+// Accordion trigger and the selection labels. The state face's `disabled:`,
+// `data-disabled:` and `aria-disabled:` cursors are variants, so they sort after this
+// plain utility and a disabled button keeps `not-allowed`.
 export const buttonVariants = tv({
   base: cn(
-    "group/button font-medium box-border inline-flex shrink-0 items-center justify-center rounded-(--radius-button) border border-transparent bg-clip-padding p-0 whitespace-nowrap transition-[color,background-color,border-color,box-shadow,translate,opacity] select-none in-data-[slot=button-group]:rounded-md enabled-active:not-aria-[haspopup]:translate-y-px [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+    "group/button font-medium box-border inline-flex shrink-0 cursor-pointer items-center justify-center rounded-(--radius-button) border border-transparent bg-clip-padding p-0 whitespace-nowrap transition-[color,background-color,border-color,box-shadow,translate,opacity] select-none in-data-[slot=button-group]:rounded-md enabled-active:not-aria-[haspopup]:translate-y-px [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
     selfFocusRingClass,
     nativeStateFaceClass,
     dataStateFaceClass

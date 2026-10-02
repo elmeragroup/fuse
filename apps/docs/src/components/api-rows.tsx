@@ -53,27 +53,27 @@ const apiRowSlots = apiRows();
 /** The data column a summary `Cell` renders; header cells carry a different axis. */
 type ApiRowsColumn = "name" | "type" | "default";
 
-export type ApiRowsRootProps = ComponentProps<"div">;
-export type ApiRowsHeaderProps = ComponentProps<"div">;
-export type ApiRowsHeaderCellProps = ComponentProps<"span"> & {
+type ApiRowsRootProps = ComponentProps<"div">;
+type ApiRowsHeaderProps = ComponentProps<"div">;
+type ApiRowsHeaderCellProps = ComponentProps<"span"> & {
   column?: "prop" | "type" | "default";
 };
-export type ApiRowsRowProps = ComponentProps<"details">;
-export type ApiRowsSummaryProps = ComponentProps<"summary">;
-export type ApiRowsCellProps = ComponentProps<"span"> & {
+type ApiRowsRowProps = ComponentProps<"details">;
+type ApiRowsSummaryProps = ComponentProps<"summary">;
+type ApiRowsCellProps = ComponentProps<"span"> & {
   column?: ApiRowsColumn;
   /** The cell's code literal, or `null` when the cell renders no code element. */
   code: string | null;
 };
-export type ApiRowsPanelProps = ComponentProps<"div">;
-export type ApiRowsPanelListProps = ComponentProps<"dl">;
-export type ApiRowsPanelItemProps = ComponentProps<"div">;
-export type ApiRowsTermProps = ComponentProps<"dt">;
-export type ApiRowsDefinitionProps = ComponentProps<"dd">;
-export type ApiRowsChevronCellProps = ComponentProps<"span">;
-export type ApiRowsChevronProps = SVGProps<SVGSVGElement>;
-export type ApiRowsRequiredProps = ComponentProps<"sup">;
-export type ApiRowsNoDefaultProps = Omit<ComponentProps<"span">, "children">;
+type ApiRowsPanelProps = ComponentProps<"div">;
+type ApiRowsPanelListProps = ComponentProps<"dl">;
+type ApiRowsPanelItemProps = ComponentProps<"div">;
+type ApiRowsTermProps = ComponentProps<"dt">;
+type ApiRowsDefinitionProps = ComponentProps<"dd">;
+type ApiRowsChevronCellProps = ComponentProps<"span">;
+type ApiRowsChevronProps = SVGProps<SVGSVGElement>;
+type ApiRowsRequiredProps = ComponentProps<"sup">;
+type ApiRowsNoDefaultProps = Omit<ComponentProps<"span">, "children">;
 
 function ApiRowsRoot({ className, ...props }: ApiRowsRootProps): ReactElement {
   return <div className={apiRowSlots.root({ className })} {...props} />;

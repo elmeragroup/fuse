@@ -8,7 +8,7 @@ import { defaultDensityForVariant, densityAttributes, ThemeScope, themeSlug } fr
 
 import { usePreviewTheme } from "./preview-theme";
 
-export type DemoStageProps = {
+type DemoStageProps = {
   /** Repo-relative path of the demo file, printed at the end of the meta row. */
   sourcePath: string;
   children: ReactNode;

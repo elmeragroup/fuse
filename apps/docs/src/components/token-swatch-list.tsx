@@ -9,7 +9,7 @@ import { ThemeScope } from "@elmeragroup/fuse/theme";
 import type { TokenRef } from "../lib/docs-model";
 import { usePreviewTheme } from "./preview-theme";
 
-export type TokenSwatchListProps = {
+type TokenSwatchListProps = {
   tokens: readonly TokenRef[];
 };
 

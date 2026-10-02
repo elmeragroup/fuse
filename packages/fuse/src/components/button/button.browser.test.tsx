@@ -134,6 +134,44 @@ describe("Button", () => {
     }
   });
 
+  it("shows the pointer cursor on an enabled button and not-allowed on every disabled form", () => {
+    renderThemed(
+      <>
+        {VARIANTS.map((variant) => (
+          <Button key={variant} variant={variant}>
+            {`Enabled ${variant}`}
+          </Button>
+        ))}
+        <Button nativeButton={false} render={<a href="#go" />}>
+          Anchor
+        </Button>
+        <Button disabled>Disabled</Button>
+        <Button disabled focusableWhenDisabled>
+          Focusable disabled
+        </Button>
+        <Button isPending>Pending</Button>
+        <Button isVisuallyDisabled>Visually disabled</Button>
+        <Button nativeButton={false} render={<a href="#go" />} disabled>
+          Disabled anchor
+        </Button>
+      </>
+    );
+
+    for (const variant of VARIANTS) {
+      expect(getComputedStyle(roleNamed("button", `Enabled ${variant}`)).cursor, variant).toBe("pointer");
+    }
+    expect(getComputedStyle(roleNamed("button", "Anchor")).cursor).toBe("pointer");
+    for (const name of [
+      "Disabled",
+      "Focusable disabled",
+      "Pending",
+      "Visually disabled",
+      "Disabled anchor",
+    ]) {
+      expect(getComputedStyle(roleNamed("button", name)).cursor, name).toBe("not-allowed");
+    }
+  });
+
   it("lets a consumer hover class replace the recipe hover", async () => {
     renderThemed(<Button className="transition-none hover:bg-muted">Custom hover</Button>);
     const button = roleNamed("button", "Custom hover");

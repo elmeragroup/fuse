@@ -59,6 +59,14 @@
   `process.env` only in `src/theme/validate-theme.ts`. Once the rule accepts the new owner, point
   `checkValidateThemeEnv` in `packages/fuse/scripts/package-check-packed.ts` at the new packed
   module.
+- Decide whether `fuse.css` keeps its static `data-open`, `data-closed`, `data-checked`,
+  `data-unchecked`, `data-selected`, `data-disabled`, `data-active`, `data-horizontal` and
+  `data-vertical` variants, which replace Tailwind's functional `data-*` variants of the same
+  name in a host's own classes at `:where()` specificity (`data-selected:` also matches only
+  `="true"`), or namespaces them (`fuse-open:`) and moves the `neutral-*` palette remap into an
+  opt-in file so `fuse/css` carries only what components need. Both are breaking for consumers
+  that write Fuse's variants today, so they wait for a reviewed decision; the package README
+  documents the current behaviour under "What `fuse/css` changes in your theme".
 - Two separate React roots on one document, each with its own `ThemeProvider`, each get a
   color-scheme runtime. They reconcile against the live `data-theme`, so they converge rather
   than ping-pong, but neither sees the other's `setColorScheme`: a document gets no `storage`
@@ -132,7 +140,5 @@
 - The docs DTCG export still emits light modes only; the Figma sync in `packages/fuse-figma`
   writes both schemes. Retire the export after the first real Enterprise sync, once designers
   work from the synced variables.
-- Retire `toResult` from `@elmeragroup/color/effect` unless a consumer adopts it; the Figma
-  sync no longer reads token colors through it, and only its own test calls it.
 
 OrderModule application migrations remain outside this repository's work.

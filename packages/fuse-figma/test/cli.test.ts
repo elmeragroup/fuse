@@ -196,19 +196,19 @@ describe("fuse-figma sync", () => {
       assert.deepStrictEqual(figma.metadata("Fuse themes", "light/primary"), { scopes: [], codeSyntax: {} });
       // The built CSS defines no --radius-sm and most other rungs, so the rungs carry the calc().
       assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius-xs").codeSyntax, {
-        WEB: "calc(var(--radius) - 3 * var(--radius-step))",
+        WEB: "calc(var(--radius) - 3 * var(--radius-step, 0px))",
       });
       assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius-sm"), {
         scopes: ["CORNER_RADIUS"],
-        codeSyntax: { WEB: "calc(var(--radius) - 2 * var(--radius-step))" },
+        codeSyntax: { WEB: "calc(var(--radius) - 2 * var(--radius-step, 0px))" },
       });
       assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius-md"), {
         scopes: ["CORNER_RADIUS"],
-        codeSyntax: { WEB: "calc(var(--radius) - var(--radius-step))" },
+        codeSyntax: { WEB: "calc(var(--radius) - var(--radius-step, 0px))" },
       });
       assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius-lg").codeSyntax, { WEB: "var(--radius)" });
       assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius-xl").codeSyntax, {
-        WEB: "calc(var(--radius) + 2 * var(--radius-step))",
+        WEB: "calc(var(--radius) + 2 * var(--radius-step, 0px))",
       });
       assert.deepStrictEqual(figma.metadata("Fuse themes", "dark/radius-md"), { scopes: [], codeSyntax: {} });
       assert.deepStrictEqual(figma.metadata("Fuse density", "control-h-md"), {

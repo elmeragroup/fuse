@@ -105,6 +105,23 @@ export function RootDocument({ children }: { children: React.ReactNode }) {
   );
 }`;
 
+const OWN_TOKENS = `/* app/globals.css */
+@import "tailwindcss";
+@import "@elmeragroup/fuse/css";
+@source "../node_modules/@elmeragroup/fuse";
+
+@theme {
+  /* Your tokens. After fuse/css, so yours win where both define a theme variable. */
+}
+
+:root {
+  /* The role tokens the components you use read: whole colours, not channel triplets. */
+  --primary: var(--your-brand);
+  --primary-foreground: #fff;
+  --radius: 0.5rem;
+  --radius-button: var(--radius);
+}`;
+
 const REACT_ROUTER = `import { Links, Meta, Scripts, ScrollRestoration } from "react-router";
 import {
   ColorSchemeScript,
@@ -353,6 +370,27 @@ export default function ThemingPage(): ReactElement {
           route and passes the same force to bootstrap and provider.
         </li>
       </ol>
+
+      <h2 id="own-tokens">Keeping your own tokens</h2>
+      <p>
+        A host that adopts one component at a time can keep its own design tokens and skip{" "}
+        <code>themes.css</code>. Every component still needs <code>@elmeragroup/fuse/css</code> for its
+        variants and control metrics. Import it before your own <code>@theme</code> block, so your values win
+        where both define a theme variable, then map the role tokens the components you use read.
+      </p>
+      <pre>
+        <code>{OWN_TOKENS}</code>
+      </pre>
+      <p>
+        Each component page lists those tokens under &quot;Tokens consumed&quot;; map that list, and add the
+        next component&apos;s when you adopt it. Role tokens are whole colours in any notation, never channel
+        triplets. Three things in <code>fuse/css</code> reach your own utilities as well, and the package
+        README lists them in full: the <code>neutral-*</code> palette is remapped onto{" "}
+        <code>--neutral-*</code>, which only <code>themes.css</code> defines; the <code>rounded-*</code> rungs
+        become <code>--radius-step</code> multiples from <code>--radius</code>, with a 0px step fallback so
+        your one radius applies everywhere; and the <code>data-open</code>, <code>data-selected</code>,{" "}
+        <code>data-disabled</code> and related state variants are redeclared at one-class specificity.
+      </p>
 
       <h2 id="in-these-docs">In these docs</h2>
       <p>

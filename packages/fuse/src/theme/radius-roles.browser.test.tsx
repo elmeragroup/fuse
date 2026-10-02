@@ -229,6 +229,33 @@ function Specimens(): ReactElement {
   );
 }
 
+/**
+ * A host that keeps its own tokens: `--radius` is its own, and `--radius-step`, which only
+ * themes.css sets, is not declared. `initial` resets the inherited step to the guaranteed
+ * invalid value, so every `var(--radius-step, 0px)` takes its fallback here.
+ */
+const HOST_WITHOUT_THEMES = { "--radius": "8px", "--radius-step": "initial" } as const;
+
+function HostSpecimens(): ReactElement {
+  return withLocale(
+    "en-US",
+    <div style={HOST_WITHOUT_THEMES}>
+      <Card.Root role="group" aria-label="Host card" />
+      <Input aria-label="Host input" />
+      <Frame.Root role="group" aria-label="Host frame" />
+      <Checkbox aria-label="Host checkbox" />
+      <Toggle size="xs">Host toggle xs</Toggle>
+      <InputGroup.Root aria-label="Host input group">
+        <InputGroup.Input aria-label="Host grouped input" />
+        <InputGroup.Addon align="inline-end">
+          <kbd>K</kbd>
+          <InputGroup.Button size="xs">Host addon xs</InputGroup.Button>
+        </InputGroup.Addon>
+      </InputGroup.Root>
+    </div>
+  );
+}
+
 /** The one calendar root. React Aria appends the visible month to its accessible name. */
 function calendarRoot(): HTMLElement {
   const element = page.getByRole("application", { name: /^Calendar/ }).element();
@@ -394,6 +421,26 @@ describe("radius roles", () => {
       const { unmount } = render(host);
       expect(radius(roleNamed("group", "Host button")), themeSlug(theme)).toBe(expected);
       unmount();
+    }
+  });
+});
+
+describe("radius rungs without themes.css", () => {
+  it("round every rung and private corner with the host's own --radius when --radius-step is unset", () => {
+    render(<HostSpecimens />);
+    const host = px(HOST_WITHOUT_THEMES["--radius"]);
+    // Across the scale: rounded-lg (card), rounded-md (input) and rounded-xl (frame) all
+    // collapse onto the host radius at a 0px step, as the private corners do.
+    for (const [label, element] of [
+      ["card", roleNamed("group", "Host card")],
+      ["input", roleNamed("textbox", "Host input")],
+      ["frame", roleNamed("group", "Host frame")],
+      ["checkbox", roleNamed("checkbox", "Host checkbox")],
+      ["toggle xs", roleNamed("button", "Host toggle xs")],
+      ["input group", roleNamed("group", "Host input group")],
+      ["addon xs", roleNamed("button", "Host addon xs")],
+    ] as const) {
+      expect(radius(element), label).toBe(host);
     }
   });
 });

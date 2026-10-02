@@ -151,7 +151,7 @@ export function derivedRoleSources(name: DerivedTokenName): readonly [LayerToken
 }
 
 /** Every role a layer can assign, in `TOKEN_NAMES` order. */
-export const LAYER_TOKEN_NAMES: readonly LayerTokenName[] = TOKEN_NAMES.filter(isLayerTokenName);
+const LAYER_TOKEN_NAMES: readonly LayerTokenName[] = TOKEN_NAMES.filter(isLayerTokenName);
 
 /** What a token's CSS value holds, which decides how exporters translate it. */
 export type TokenKind = "color" | "dimension" | "fontFamily";
@@ -343,25 +343,6 @@ export function assignedTokenNames(layer: TokenLayer): LayerTokenName[] {
 }
 
 /**
- * Merge layers into one, a later layer's value replacing an earlier one's.
- *
- * @param layers - The layers in application order.
- * @returns One layer that assigns every role any input layer assigns.
- */
-export function mergeTokenLayers(...layers: TokenLayer[]): TokenLayer {
-  const merged: TokenLayer = {};
-  for (const layer of layers) {
-    for (const name of LAYER_TOKEN_NAMES) {
-      const value = layer[name];
-      if (value !== undefined) {
-        merged[name] = value;
-      }
-    }
-  }
-  return merged;
-}
-
-/**
  * Overlay layers on a complete base, a later layer's value replacing an earlier one's.
  *
  * @param base - A value for every layer role, such as `LAYER_DEFAULTS`.
@@ -369,5 +350,14 @@ export function mergeTokenLayers(...layers: TokenLayer[]): TokenLayer {
  * @returns Every layer role with its value after the overlay, before derivation.
  */
 export function overlayTokenLayers(base: LayerTokens, ...layers: TokenLayer[]): LayerTokens {
-  return { ...base, ...mergeTokenLayers(...layers) };
+  const overlaid: LayerTokens = { ...base };
+  for (const layer of layers) {
+    for (const name of LAYER_TOKEN_NAMES) {
+      const value = layer[name];
+      if (value !== undefined) {
+        overlaid[name] = value;
+      }
+    }
+  }
+  return overlaid;
 }
