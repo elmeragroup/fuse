@@ -165,6 +165,7 @@ const EXPECTED_ENTRIES = {
   toggle: { inRootBarrel: true, runtimeExports: ["Toggle", "toggleVariants"] },
   "toggle-group": { inRootBarrel: true, runtimeExports: ["ToggleGroup"] },
   tooltip: { inRootBarrel: true, runtimeExports: ["Tooltip"] },
+  "navigation-menu": { inRootBarrel: true, runtimeExports: ["NavigationMenu"] },
   "react-aria/calendar": {
     inRootBarrel: false,
     runtimeExports: ["Calendar", "CalendarHeader", "CalendarGridHeader"],
