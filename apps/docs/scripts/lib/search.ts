@@ -49,7 +49,7 @@ function componentEntry(component: DocsComponent): SearchEntry {
 }
 
 /** Every searchable destination, in SideNav order. */
-export function buildSearchIndex(components: readonly DocsComponent[]): readonly SearchEntry[] {
+function buildSearchIndex(components: readonly DocsComponent[]): readonly SearchEntry[] {
   return [
     pageEntry(HOME_PAGE, GROUP_LABELS.overview),
     ...staticPagesIn("overview").map((page) => pageEntry(page, GROUP_LABELS.overview)),

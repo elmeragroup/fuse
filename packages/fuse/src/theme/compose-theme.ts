@@ -14,14 +14,6 @@ import { paletteLayers } from "./tokens/palette-layers";
 import { themeSlug } from "./tokens/themes";
 import type { ThemeInput, ThemeVariant } from "./tokens/themes";
 
-/**
- * The coverage gates one composition must pass. The light layers always run — every
- * composition overlays them — and a dark composition adds the dark layers' gate.
- */
-export function coverageSchemes(colorScheme: ResolvedColorScheme): readonly ResolvedColorScheme[] {
-  return colorScheme === "dark" ? ["light", "dark"] : ["light"];
-}
-
 /** Every token name the brand pointer and the scheme's palette layers assign. */
 function suppliedTokenNames(theme: ThemeInput, colorScheme: ResolvedColorScheme): Set<TokenName> {
   const supplied = new Set<TokenName>(assignedTokenNames(brandPointer(theme.brand)));
@@ -33,10 +25,7 @@ function suppliedTokenNames(theme: ThemeInput, colorScheme: ResolvedColorScheme)
   return supplied;
 }
 
-export function mustOverrideKeys(
-  variant: ThemeVariant,
-  colorScheme: ResolvedColorScheme
-): readonly TokenName[] {
+function mustOverrideKeys(variant: ThemeVariant, colorScheme: ResolvedColorScheme): readonly TokenName[] {
   if (colorScheme === "dark") {
     return MUST_OVERRIDE_DARK;
   }
@@ -57,7 +46,10 @@ export function assertMustOverrideCoverage(
 
 export function composeTheme(theme: ThemeInput, colorScheme: ResolvedColorScheme = "light"): TokenContract {
   const slug = themeSlug(theme);
-  for (const gate of coverageSchemes(colorScheme)) {
+  // The light layers always run — every composition overlays them — and a dark composition
+  // adds the dark layers' gate.
+  const gates: readonly ResolvedColorScheme[] = colorScheme === "dark" ? ["light", "dark"] : ["light"];
+  for (const gate of gates) {
     assertMustOverrideCoverage(suppliedTokenNames(theme, gate), theme.variant, gate, slug);
   }
   const light = withDerivedTokens(

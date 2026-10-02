@@ -22,7 +22,7 @@ import { ApiRows } from "./api-rows";
 import { DocsInlineCode } from "./docs-inline-code";
 import { InlineCode } from "./inline-code";
 
-export type ApiPropRowsProps = {
+type ApiPropRowsProps = {
   /** Complete accessible name for this source group; only the group's label reads it. */
   partName: string;
   props: readonly ApiPropView[];

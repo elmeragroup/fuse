@@ -23,8 +23,6 @@ import { docsApiInventory } from "./docs-inspection.ts";
 import { DocsGenerationError } from "./errors.ts";
 import { repoRelative, repoRoot, fuseTsconfig } from "./paths.ts";
 
-export { API_REGEN_COMMAND };
-
 /** What every failure that blames a stale or missing `api.json` tells the reader to do. */
 export const STALE_HINT = `Run \`${API_REGEN_COMMAND}\` and commit the updated api.json files.`;
 
@@ -32,7 +30,7 @@ const GENERATED_BANNER =
   `Generated from packages/fuse types and JSDoc by ${API_REGEN_COMMAND}. ` +
   "Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.";
 
-export type GeneratedApi = {
+type GeneratedApi = {
   /** One artifact per inventory entry, keyed by slug. */
   readonly artifacts: ReadonlyMap<string, GeneratedApiComponent>;
   /** Warnings the package accepted rather than failed on; the generation pass prints them. */

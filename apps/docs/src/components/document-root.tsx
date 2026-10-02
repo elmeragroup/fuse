@@ -4,20 +4,18 @@ import { defaultDensityForVariant, densityAttributes, themeAttributes } from "@e
 
 import { DOCUMENT_THEME } from "../lib/theme";
 
-export type DocumentRootProps = {
+type DocumentRootProps = {
   children: ReactNode;
-  lang?: string;
   suppressHydrationWarning?: boolean;
 };
 
 export function DocumentRoot({
   children,
-  lang = "en",
   suppressHydrationWarning = false,
 }: DocumentRootProps): ReactElement {
   return (
     <html
-      lang={lang}
+      lang="en"
       className="bg-background text-foreground"
       {...themeAttributes(DOCUMENT_THEME)}
       {...densityAttributes(defaultDensityForVariant(DOCUMENT_THEME.variant))}

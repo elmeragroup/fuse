@@ -33,6 +33,7 @@ import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 import { Field } from "@elmeragroup/fuse/field";
 import { InputGroup } from "@elmeragroup/fuse/input-group";
 import { Item } from "@elmeragroup/fuse/item";
+import { NavigationMenu } from "@elmeragroup/fuse/navigation-menu";
 import { Pagination } from "@elmeragroup/fuse/pagination";
 import { Popover } from "@elmeragroup/fuse/popover";
 import { RadioItem } from "@elmeragroup/fuse/radio-group";
@@ -217,6 +218,16 @@ function namespaceElements(): ReactElement[] {
     ...renderNamespace("Item", Item, ["Root", "Group", "Separator"], {
       server: ["Media", "Content", "Actions", "Title", "Description", "Header", "Footer"],
     }),
+    ...renderNamespace("NavigationMenu", NavigationMenu, [
+      "Root",
+      "List",
+      "Item",
+      "Trigger",
+      "Content",
+      "Link",
+      "Viewport",
+      "Indicator",
+    ]),
     ...renderNamespace("Pagination", Pagination, [
       "Root",
       "Content",

@@ -13,7 +13,7 @@ export type Theme = ThemeInput & { slug: ThemeSlug };
 export const ThemeContext = createContext<Theme | undefined>(undefined);
 
 /** A validated theme and the `data-theme-*` attributes that stamp it. */
-export type ResolvedTheme = { theme: Theme; attributes: ThemeAttributes };
+type ResolvedTheme = { theme: Theme; attributes: ThemeAttributes };
 
 /**
  * Resolves a theme input once per axis change, so a production pinned-segment coercion warns

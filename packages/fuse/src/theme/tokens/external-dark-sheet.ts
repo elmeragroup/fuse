@@ -6,7 +6,7 @@ import type { TokenContract, TokenLayer } from "./contract";
  * are derived from these, so a sheet that omits one of these keys is a type error rather
  * than a silent fallback to the light composition.
  */
-export const EXTERNAL_DARK_SHEET_KEYS = [
+const EXTERNAL_DARK_SHEET_KEYS = [
   "background",
   "foreground",
   "card",

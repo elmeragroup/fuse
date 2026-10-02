@@ -7,19 +7,21 @@ import { cn } from "./cn";
 // in the external one, and the formulas support no other value. `--radius - 1000 * step`
 // equals `--radius` at a 0px step and lies 2000px below it at a 2px step. A `max()` with it
 // raises a cap to at least `--radius` internally and leaves the cap as written externally.
+// Each read of the step falls back to 0px, as the rungs in fuse.css do, so a host without
+// themes.css rounds these corners with its own `--radius` instead of losing them.
 // Tailwind generates a class only from its whole literal, so each class spells its value.
 
 /**
  * The corner of an xs button inside an InputGroup addon. External themes inset it 5px, or
  * 2.5 steps, inside the field's `--radius`, and internal themes inset it by 0.
  */
-export const insetCornerClass = cn("rounded-[calc(var(--radius)-2.5*var(--radius-step))]");
+export const insetCornerClass = cn("rounded-[calc(var(--radius)-2.5*var(--radius-step,0px))]");
 
 /**
  * The {@link insetCornerClass} corner on an addon's `<kbd>` child. The radius browser matrix
  * measures the kbd and an xs addon button against the same expected corner.
  */
-export const kbdInsetCornerClass = cn("[&>kbd]:rounded-[calc(var(--radius)-2.5*var(--radius-step))]");
+export const kbdInsetCornerClass = cn("[&>kbd]:rounded-[calc(var(--radius)-2.5*var(--radius-step,0px))]");
 
 /**
  * The corner of a compact button that sits in a field or a list, such as the xs Toggle, the
@@ -28,7 +30,7 @@ export const kbdInsetCornerClass = cn("[&>kbd]:rounded-[calc(var(--radius)-2.5*v
  * `--radius`.
  */
 export const compactCornerClass = cn(
-  "rounded-[min(--theme(--radius-md),max(10px,var(--radius)-1000*var(--radius-step)))]"
+  "rounded-[min(--theme(--radius-md),max(10px,var(--radius)-1000*var(--radius-step,0px)))]"
 );
 
 /**
@@ -36,7 +38,7 @@ export const compactCornerClass = cn(
  * internal themes with `--radius`.
  */
 export const checkboxCornerClass = cn(
-  "rounded-[min(--theme(--radius-md),max(4px,var(--radius)-1000*var(--radius-step)))]"
+  "rounded-[min(--theme(--radius-md),max(4px,var(--radius)-1000*var(--radius-step,0px)))]"
 );
 
 /**
@@ -46,5 +48,5 @@ export const checkboxCornerClass = cn(
  * 2px step, where the preferred 4px applies.
  */
 export const fixedCornerClass = cn(
-  "rounded-[clamp(var(--radius)-1000*var(--radius-step),4px,var(--radius)+1000*var(--radius-step))]"
+  "rounded-[clamp(var(--radius)-1000*var(--radius-step,0px),4px,var(--radius)+1000*var(--radius-step,0px))]"
 );

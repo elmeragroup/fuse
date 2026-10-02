@@ -7,7 +7,7 @@ import { InlineCode } from "./inline-code";
 import { MetaLinks } from "./meta-links";
 
 /** The page whose intro to render, named by its route slug. */
-export type ComponentIntroProps = {
+type ComponentIntroProps = {
   slug: string;
 };
 

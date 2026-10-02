@@ -59,6 +59,14 @@
   `process.env` only in `src/theme/validate-theme.ts`. Once the rule accepts the new owner, point
   `checkValidateThemeEnv` in `packages/fuse/scripts/package-check-packed.ts` at the new packed
   module.
+- Decide whether `fuse.css` keeps its static `data-open`, `data-closed`, `data-checked`,
+  `data-unchecked`, `data-selected`, `data-disabled`, `data-active`, `data-horizontal` and
+  `data-vertical` variants, which replace Tailwind's functional `data-*` variants of the same
+  name in a host's own classes at `:where()` specificity (`data-selected:` also matches only
+  `="true"`), or namespaces them (`fuse-open:`) and moves the `neutral-*` palette remap into an
+  opt-in file so `fuse/css` carries only what components need. Both are breaking for consumers
+  that write Fuse's variants today, so they wait for a reviewed decision; the package README
+  documents the current behaviour under "What `fuse/css` changes in your theme".
 - Two separate React roots on one document, each with its own `ThemeProvider`, each get a
   color-scheme runtime. They reconcile against the live `data-theme`, so they converge rather
   than ping-pong, but neither sees the other's `setColorScheme`: a document gets no `storage`
@@ -69,6 +77,11 @@
   Render-element props beat the part, so a forwarded `aria-expanded={undefined}` or `disabled`
   overrides `Popover.Trigger`'s own value. Route the state and ARIA props through
   `PopoverTrigger` and keep only presentation on the Button.
+- Give Base UI's `DirectionProvider` an owner and document RTL setup. `LocaleProvider` carries
+  only the locale, so a consumer must wrap the app in `DirectionProvider` and set `dir`, or
+  logical-side popups such as NavigationMenu's `inline-end` open on the LTR side. Also add
+  `@base-ui/react/direction-provider` to `optimizeDeps.include` in `packages/fuse/vitest.config.ts`;
+  until then the NavigationMenu browser test imports it from the `@base-ui/react` root entry.
 
 ## Control size
 
@@ -81,6 +94,8 @@
   group as its inset does.
 - Sweep the older "not a control rung" lint-disable reasons and other "rung" wording on
   control metrics to "control size"; "rung" is reserved for radius rungs.
+- Give the trigger caret's base classes one owner. Select, Combobox and NavigationMenu each
+  spell out its size, muted colour and rotate transition by hand.
 
 ## Figma token sync
 
@@ -132,7 +147,5 @@
 - The docs DTCG export still emits light modes only; the Figma sync in `packages/fuse-figma`
   writes both schemes. Retire the export after the first real Enterprise sync, once designers
   work from the synced variables.
-- Retire `toResult` from `@elmeragroup/color/effect` unless a consumer adopts it; the Figma
-  sync no longer reads token colors through it, and only its own test calls it.
 
 OrderModule application migrations remain outside this repository's work.

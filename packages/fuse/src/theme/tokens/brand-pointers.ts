@@ -9,12 +9,3 @@ export function brandPointer(code: BrandCode): BrandPointer {
     "brand-foreground": `var(--brand-${code}-foreground)`,
   };
 }
-
-export const BRAND_POINTERS = {
-  fkas: brandPointer("fkas"),
-  tkas: brandPointer("tkas"),
-  guen: brandPointer("guen"),
-  fkab: brandPointer("fkab"),
-  fkse: brandPointer("fkse"),
-  elma: brandPointer("elma"),
-} as const satisfies Record<BrandCode, BrandPointer>;

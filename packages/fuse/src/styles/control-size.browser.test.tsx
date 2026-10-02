@@ -254,6 +254,44 @@ describe("control size: label and min-square fits", () => {
     }
   });
 
+  it.each(DENSITIES)("lets a consumer text-* class replace the md and lg density type at %s", (density) => {
+    stampDensity(density);
+    renderThemed(
+      <>
+        <Button aria-label="md bare">Label</Button>
+        <Button aria-label="md compact" className="text-sm">
+          Label
+        </Button>
+        <Button size="lg" aria-label="lg compact" className="text-sm">
+          Label
+        </Button>
+        <Button aria-label="md tall" className="leading-loose">
+          Label
+        </Button>
+      </>
+    );
+
+    // The recipe's type is the density pair; a consumer's `text-sm` is Tailwind's fixed
+    // 14px / 20px, and `leading-loose` is twice the font size, neither read from density.
+    const md = expectedMetrics("md", density);
+    const bare = measure("button", "md bare");
+    expect(px(bare.font), `${density} bare font`).toBe(md.font);
+    expect(px(bare.leading), `${density} bare leading`).toBe(md.leading);
+
+    for (const name of ["md compact", "lg compact"]) {
+      const compact = measure("button", name);
+      expect(px(compact.font), `${density} ${name} font`).toBe(FIXED_TYPE.sm.font);
+      expect(px(compact.leading), `${density} ${name} leading`).toBe(FIXED_TYPE.sm.leading);
+    }
+    const tall = measure("button", "md tall");
+    expect(px(tall.font), `${density} tall font`).toBe(md.font);
+    expect(px(tall.leading), `${density} tall leading`).toBe(md.font * 2);
+    // The box metrics are untouched: a compact label keeps the size's height and inset.
+    const compact = measure("button", "md compact");
+    expect(compact.height, `${density} compact height`).toBe(md.height);
+    expect(compact.paddingStart, `${density} compact padding`).toBe(md.px);
+  });
+
   it.each(DENSITIES)(
     "insets a segmented toggle-group item by the icon edge on both sides at %s",
     (density) => {

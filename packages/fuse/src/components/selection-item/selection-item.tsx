@@ -17,8 +17,6 @@ import type { SelectionItemGroupOrientation } from "./selection-item-variants";
 /** Resolved once at module scope — the shell always borrows the `outline` arm. */
 const outlineItemClass = itemVariants({ variant: "outline" });
 
-export type { SelectionItemGroupOrientation };
-
 /**
  * What a shell sits in: `false` outside any selection group; otherwise the enclosing
  * group's `orientation` plus whether that group is the private `role="list"` card list

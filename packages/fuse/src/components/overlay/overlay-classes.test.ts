@@ -6,7 +6,6 @@ import {
   menuItemClass,
   menuItemIndicatorClass,
   menuSeparatorClass,
-  overlayPopupDurationClass,
   overlayPopupMotionClass,
   overlayPopupSurfaceClass,
   overlayPositionerClass,
@@ -68,8 +67,6 @@ describe("overlayPopupSurfaceClass", () => {
 describe("overlayPopupMotionClass", () => {
   it("leaves the timing rung out, so an untimed family composes the set alone", () => {
     expect(tokens(overlayPopupMotionClass)).not.toContain("duration-100");
-    expect(overlayPopupDurationClass).toBe("duration-100");
-    expect(tokens(cn(overlayPopupMotionClass, overlayPopupDurationClass))).toContain("duration-100");
   });
 });
 

@@ -3,11 +3,10 @@ import type { ReactElement } from "react";
 import Link from "next/link";
 import { tv } from "tailwind-variants";
 
-import { BRANDS, themeSlug } from "@elmeragroup/fuse/theme";
+import { BRAND_CODES, BRANDS, LEGAL_THEMES, themeSlug } from "@elmeragroup/fuse/theme";
 
 import { DocsPage, pageMetadata } from "../../../../components/docs-page";
 import { DocsTable } from "../../../../components/docs-table";
-import { LEGAL_THEMES, THEME_BRANDS } from "../../../../lib/theme";
 
 const HREF = "/handbook/brands-and-segments";
 
@@ -48,7 +47,7 @@ export default function BrandsAndSegmentsPage(): ReactElement {
             </tr>
           </thead>
           <tbody>
-            {THEME_BRANDS.map((code) => (
+            {BRAND_CODES.map((code) => (
               <tr key={code}>
                 <DocsTable.BodyCell>
                   <code>{code}</code>

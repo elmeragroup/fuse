@@ -14,6 +14,17 @@ import { cn } from "./cn";
  * file-granular, so it still lists every md part here, including ones the consumer does
  * not bind. Each slot is one metric family, so a consumer takes the parts it binds and
  * keeps its own geometry for the rest.
+ *
+ * The type pair is spelled as the typed variable utilities `text-(length:--control-text)`
+ * and `leading-(--control-leading)`, not as the arbitrary properties `[font-size:…]` and
+ * `[line-height:…]`. tailwind-merge groups the typed forms with `text-*` and `leading-*`,
+ * so a consumer's `text-sm` or `leading-5` in `className` removes them through `cn`, and
+ * only the consumer class reaches the element. That removal is the whole mechanism: Tailwind
+ * 4.3.3 orders these rules by property and emits `.text-(length:--control-text)` after
+ * `.text-sm`, so a recipe class left beside the consumer's would still win the cascade. An
+ * arbitrary property never reaches the merge, because tailwind-merge puts it in no
+ * font-size or line-height group, so `cn` kept both. The `length:` hint is required,
+ * because a bare `text-(--var)` could also be a colour.
  */
 export const controlMd = tv({
   slots: {
@@ -26,7 +37,7 @@ export const controlMd = tv({
     iconInset: "px-(--control-px-icon-md)",
     iconEdge:
       "has-data-[icon=inline-end]:pr-(--control-px-icon-md) has-data-[icon=inline-start]:pl-(--control-px-icon-md)",
-    type: "[font-size:var(--control-text)] [line-height:var(--control-leading)]",
+    type: "text-(length:--control-text) leading-(--control-leading)",
   },
 })();
 

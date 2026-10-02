@@ -120,7 +120,7 @@ export function figmaDocumentFromScheme(
  * @param catalog - The resolved theme catalog.
  * @returns The `/api/themes/figma` payload.
  */
-export function buildFigmaThemeIndex(catalog: ResolvedThemeCatalog): FigmaThemeIndex {
+function buildFigmaThemeIndex(catalog: ResolvedThemeCatalog): FigmaThemeIndex {
   return {
     format: "figma",
     files: catalog.themes.map((theme) => ({

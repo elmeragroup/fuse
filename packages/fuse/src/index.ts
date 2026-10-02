@@ -33,6 +33,7 @@ export * from "./input-group";
 export * from "./item";
 export * from "./loader";
 export * from "./meter";
+export * from "./navigation-menu";
 export * from "./number-field";
 export * from "./pagination";
 export * from "./phone-number-field";

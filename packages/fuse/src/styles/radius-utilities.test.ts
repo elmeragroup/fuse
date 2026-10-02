@@ -5,6 +5,8 @@ import { compile } from "tailwindcss";
 import reactAriaComponents from "tailwindcss-react-aria-components";
 import { describe, expect, it } from "vitest";
 
+import { RADIUS_RUNGS } from "../theme/tokens/radius-scale";
+
 const here = dirname(fileURLToPath(import.meta.url));
 const nodeModules = join(here, "../../node_modules");
 const compiledCssPath = join(here, "../../dist/styles.css");
@@ -77,5 +79,25 @@ describe("private corner classes", () => {
     const css = readFileSync(compiledCssPath, "utf8");
     expect(css).not.toMatch(PRIVATE_CORNER_SELECTOR);
     expect(css).not.toMatch(PRIVATE_CORNER_VARIABLE);
+  });
+});
+
+describe("radius rungs in a consumer build", () => {
+  // The unit under test is Tailwind's inlining of the `@theme inline` rungs into the
+  // `rounded-*` utilities. The oracle is `RADIUS_RUNGS`, whose CSS carries the 0px step
+  // fallback, so a host that imports fuse.css without themes.css and keeps its own --radius
+  // still rounds every rung with that radius.
+  it("inline each rung's formula, step fallback included, into its rounded-* utility", async () => {
+    const css = await consumerBuild(["rounded-xs", "rounded-sm", "rounded-md", "rounded-lg", "rounded-xl"]);
+    for (const [utility, rung] of [
+      ["rounded-xs", "radius-xs"],
+      ["rounded-sm", "radius-sm"],
+      ["rounded-md", "radius-md"],
+      ["rounded-lg", "radius-lg"],
+      ["rounded-xl", "radius-xl"],
+    ] as const) {
+      expect(css, utility).toContain(`.${utility} {\n  border-radius: ${RADIUS_RUNGS[rung].css};`);
+    }
+    expect(css).not.toContain("--radius-step)");
   });
 });

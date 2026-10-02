@@ -2,7 +2,7 @@
   "name": "@elmeragroup/color",
   "version": "0.0.0",
   "private": true,
-  "description": "Color parsing, conversion, mixing and contrast for the Fuse workspace. A dependency-free core, with an Effect bridge at ./effect.",
+  "description": "Color parsing, conversion, mixing and contrast for the Fuse workspace. A dependency-free core.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
@@ -10,10 +10,6 @@
     "./css-color": {
       "types": "./src/css-color.ts",
       "import": "./src/css-color.ts"
-    },
-    "./effect": {
-      "types": "./src/effect.ts",
-      "import": "./src/effect.ts"
     },
     "./hex": {
       "types": "./src/hex.ts",
@@ -40,17 +36,8 @@
     "test": "vitest run",
     "type-check": "tsc --noEmit"
   },
-  "peerDependencies": {
-    "effect": "catalog:"
-  },
-  "peerDependenciesMeta": {
-    "effect": {
-      "optional": true
-    }
-  },
   "devDependencies": {
     "@elmeragroup/typescript-config": "workspace:*",
-    "effect": "catalog:",
     "fast-check": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
