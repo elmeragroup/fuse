@@ -13,7 +13,7 @@
  *   • the tokens each component's recipe reads, and the site-wide token reference;
  *   • the `/api/themes` catalog of the 20 legal permutations, plus Figma DTCG files;
  *   • the measured bundle sizes the Tokens page publishes;
- *   • the locales and density metrics the landing page states;
+ *   • the locales, density metrics and component index the landing page states;
  *   • `/components/<slug>.md` — the markdown endpoint each page links to;
  *   • `llms.txt`, the site-root AI index;
  *   • the ⌘K search index;
@@ -240,8 +240,11 @@ function emitFigmaThemeCatalog(catalog: ResolvedThemeCatalog): void {
 }
 
 /** The library facts the landing page states that have no runtime export. */
-function emitLandingFacts(catalog: ResolvedThemeCatalog): void {
-  writeFile(path.join(generatedDir, "landing-facts.ts"), `${BANNER}${renderLandingFacts(catalog)}`);
+function emitLandingFacts(catalog: ResolvedThemeCatalog, components: readonly DocsComponent[]): void {
+  writeFile(
+    path.join(generatedDir, "landing-facts.ts"),
+    `${BANNER}${renderLandingFacts(catalog, components)}`
+  );
 }
 
 /** The ⌘K palette index. */
@@ -306,7 +309,7 @@ async function main(): Promise<void> {
   const catalog = resolveThemeCatalog();
   emitThemeCatalog(buildThemeCatalog(catalog));
   emitFigmaThemeCatalog(catalog);
-  emitLandingFacts(catalog);
+  emitLandingFacts(catalog, components);
   emitMarkdownEndpoints(components);
   emitSearchIndex(components);
   emitLlmsTxt(components);

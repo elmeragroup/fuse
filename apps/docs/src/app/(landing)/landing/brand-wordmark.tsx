@@ -12,7 +12,9 @@ import type { BrandCode } from "@elmeragroup/fuse/theme";
  * Heights are optical: a two-line lockup needs more height to carry the same weight.
  */
 const brandWordmark = tv({
-  base: "inline-block shrink-0 bg-current mask-contain mask-center mask-no-repeat",
+  // Every tile is wide enough for the widest lockup at its height; the width cap is only a guard,
+  // so a tile that ever gets narrower scales the artwork down instead of overflowing its slot.
+  base: "inline-block max-w-full shrink-0 bg-current mask-contain mask-center mask-no-repeat",
   variants: {
     brand: {
       elma: "landing-logo-elma aspect-465/58 h-4",
@@ -27,11 +29,8 @@ const brandWordmark = tv({
 
 export type BrandWordmarkProps = {
   brand: BrandCode;
-  className?: string;
 };
 
-export function BrandWordmark({ brand, className }: BrandWordmarkProps): ReactElement {
-  return (
-    <span role="img" aria-label={BRANDS[brand].displayName} className={brandWordmark({ brand, className })} />
-  );
+export function BrandWordmark({ brand }: BrandWordmarkProps): ReactElement {
+  return <span role="img" aria-label={BRANDS[brand].displayName} className={brandWordmark({ brand })} />;
 }

@@ -2,16 +2,17 @@ import type { ReactElement, ReactNode } from "react";
 
 import type { Metadata, Viewport } from "next";
 
-import { ColorSchemeScript, densityAttributes, themeAttributes } from "@elmeragroup/fuse/theme";
+import { ColorSchemeScript } from "@elmeragroup/fuse/theme";
 
+import { DocumentRoot } from "../../components/document-root";
 import { DOCUMENT_COLOR_SCHEME } from "../../lib/theme";
 import "../../styles/globals.css";
-import { LANDING_DENSITY, LANDING_THEME } from "./landing/landing-theme-defaults";
+import { LANDING_SUMMARY } from "./landing/landing-facts";
+import { LANDING_THEME } from "./landing/landing-theme-defaults";
 
 export const metadata: Metadata = {
   title: "Fuse · The Elmera Group design system",
-  description:
-    "67 React components for six brands, two segments and two variants. One attribute sets the theme.",
+  description: LANDING_SUMMARY,
 };
 
 // `viewport-fit=cover` lets the sticky nav and the footer paint under the notch and the home
@@ -35,12 +36,7 @@ export type LandingLayoutProps = {
 
 export default function LandingLayout({ children }: LandingLayoutProps): ReactElement {
   return (
-    <html
-      lang="en"
-      className="bg-background text-foreground"
-      {...themeAttributes(LANDING_THEME)}
-      {...densityAttributes(LANDING_DENSITY)}
-      suppressHydrationWarning>
+    <DocumentRoot theme={LANDING_THEME} suppressHydrationWarning>
       <head>
         <ColorSchemeScript
           storageKey={DOCUMENT_COLOR_SCHEME.storageKey}
@@ -49,6 +45,6 @@ export default function LandingLayout({ children }: LandingLayoutProps): ReactEl
         />
       </head>
       <body className="m-0 min-w-80 bg-background font-sans text-foreground antialiased">{children}</body>
-    </html>
+    </DocumentRoot>
   );
 }

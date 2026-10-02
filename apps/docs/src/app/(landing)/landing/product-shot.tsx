@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { CSSProperties, ReactElement } from "react";
 
-import { tv } from "tailwind-variants";
+import { cn, tv } from "tailwind-variants";
 
 import { Avatar } from "@elmeragroup/fuse/avatar";
 import { Badge } from "@elmeragroup/fuse/badge";
@@ -11,14 +11,12 @@ import { Button } from "@elmeragroup/fuse/button";
 import { Card } from "@elmeragroup/fuse/card";
 import { Field } from "@elmeragroup/fuse/field";
 import { ElmeraGroupLogo } from "@elmeragroup/fuse/icons";
-import { Meter } from "@elmeragroup/fuse/meter";
 import { RadioItem, RadioItemGroup } from "@elmeragroup/fuse/radio-group";
 import { Switch } from "@elmeragroup/fuse/switch";
 import { Tabs } from "@elmeragroup/fuse/tabs";
 import { Toast } from "@elmeragroup/fuse/toast";
-import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
 
-import { Labelled } from "./product-parts";
+import { BudgetMeter, Labelled, SingleToggle, stack } from "./product-parts";
 import { AgreementsTab, InvoicesTab, MetersTab } from "./product-tabs";
 
 const productShot = tv({
@@ -48,7 +46,6 @@ const productShot = tv({
     barSlot: "relative flex h-full min-w-0 flex-1 items-end",
     axis: "text-xs mt-2 flex justify-between font-mono text-muted-foreground tabular-nums",
     meter: "mt-6 border-t border-border pt-5",
-    stack: "flex flex-col gap-4",
     // Content without a Card.Header above it gets the header's top padding back.
     headless: "pt-6",
     switchRow: "items-start",
@@ -103,8 +100,6 @@ const PERIOD_LABELS = { day: "Day", week: "Week", month: "Month" } satisfies Rec
 /** The two custom properties the `landing-bar` utility reads; a period switch retargets them. */
 type BarStyle = CSSProperties & { "--bar-scale": string; "--bar-delay": string };
 
-const BAR_POOL = 31;
-
 function UsageCard(): ReactElement {
   const [period, setPeriod] = useState<Period>("month");
   const data = USAGE[period];
@@ -125,24 +120,14 @@ function UsageCard(): ReactElement {
               <Card.Title>Usage</Card.Title>
               <Card.Description>October · Storgata 1, Bergen</Card.Description>
             </div>
-            <ToggleGroup.Root
-              aria-label="Period"
-              variant="outline"
+            <SingleToggle
+              label="Period"
               size="sm"
-              spacing={0}
-              value={[period]}
-              onValueChange={(next) => {
-                const picked = PERIODS.find((option) => option === next[0]);
-                if (picked !== undefined) {
-                  setPeriod(picked);
-                }
-              }}>
-              {PERIODS.map((option) => (
-                <ToggleGroup.Item key={option} value={option}>
-                  {PERIOD_LABELS[option]}
-                </ToggleGroup.Item>
-              ))}
-            </ToggleGroup.Root>
+              options={PERIODS}
+              labels={PERIOD_LABELS}
+              value={period}
+              onValueChange={setPeriod}
+            />
           </div>
           <div className={styles.figureRow()}>
             <p className={styles.figure()}>
@@ -153,13 +138,8 @@ function UsageCard(): ReactElement {
             </p>
             <Badge variant="success">{data.delta}</Badge>
           </div>
-          {/* Bars are a fixed pool so a period switch retargets heights in place. */}
           <div className={styles.chart()} role="img" aria-label={`Usage this ${period}: ${data.total} kWh`}>
-            {Array.from({ length: BAR_POOL }, (_, index) => {
-              const value = data.values[index];
-              if (value === undefined) {
-                return null;
-              }
+            {data.values.map((value, index) => {
               const bar: BarStyle = {
                 "--bar-scale": String(Math.max(value / max, 0.04)),
                 "--bar-delay": `${index * 10}ms`,
@@ -180,7 +160,7 @@ function UsageCard(): ReactElement {
             ))}
           </div>
           <div className={styles.meter()}>
-            <Meter label="Monthly budget" value={864} maxValue={1200} valueLabel="NOK 864 of 1 200" />
+            <BudgetMeter />
           </div>
         </Card.Content>
       </Card.Root>
@@ -212,7 +192,7 @@ function PriceModelCard(): ReactElement {
           <Card.Title>Price model</Card.Title>
           <Card.Description>Change once a month, free of charge.</Card.Description>
         </Card.Header>
-        <Card.Content className={styles.stack()}>
+        <Card.Content className={stack}>
           <RadioItemGroup
             label="Price model"
             value={choice}
@@ -272,7 +252,7 @@ function NotificationsCard(): ReactElement {
         { name: "Switch", slug: "switch" },
       ]}>
       <Card.Root>
-        <Card.Content className={styles.stack({ className: styles.headless() })}>
+        <Card.Content className={cn(stack, styles.headless())}>
           {ALERTS.map((alert) => (
             <Field.Root key={alert.id} orientation="horizontal" className={styles.switchRow()}>
               <Field.Content>
@@ -287,6 +267,13 @@ function NotificationsCard(): ReactElement {
     </Labelled>
   );
 }
+
+const TABS = [
+  { value: "overview", label: "Overview" },
+  { value: "invoices", label: "Invoices" },
+  { value: "agreements", label: "Agreements" },
+  { value: "meters", label: "Meters" },
+] as const;
 
 export function ProductShot(): ReactElement {
   return (
@@ -303,18 +290,11 @@ export function ProductShot(): ReactElement {
           <div className={styles.header()}>
             <ElmeraGroupLogo variant="mark" className={styles.headerMark()} aria-hidden />
             <Tabs.List variant="line" className={styles.headerTabs()}>
-              <Tabs.Trigger value="overview" className={styles.headerTab()}>
-                Overview
-              </Tabs.Trigger>
-              <Tabs.Trigger value="invoices" className={styles.headerTab()}>
-                Invoices
-              </Tabs.Trigger>
-              <Tabs.Trigger value="agreements" className={styles.headerTab()}>
-                Agreements
-              </Tabs.Trigger>
-              <Tabs.Trigger value="meters" className={styles.headerTab()}>
-                Meters
-              </Tabs.Trigger>
+              {TABS.map((tab) => (
+                <Tabs.Trigger key={tab.value} value={tab.value} className={styles.headerTab()}>
+                  {tab.label}
+                </Tabs.Trigger>
+              ))}
             </Tabs.List>
             <Avatar.Root className={styles.headerAvatar()}>
               <Avatar.Fallback>KN</Avatar.Fallback>

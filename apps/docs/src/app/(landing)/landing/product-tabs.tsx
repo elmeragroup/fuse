@@ -23,14 +23,14 @@ import { Table } from "@elmeragroup/fuse/table";
 import { TimelineList } from "@elmeragroup/fuse/timeline-list";
 import { Toast } from "@elmeragroup/fuse/toast";
 
-import { Labelled } from "./product-parts";
+import { Labelled, stack } from "./product-parts";
 
 const productTabs = tv({
   slots: {
-    column: "flex min-w-0 flex-col gap-6",
-    stack: "flex flex-col gap-4",
+    // The text box is 14px tall; the hit area adds 6px above and below to clear the 24px floor
+    // without growing the row.
     invoiceLink:
-      "font-medium tabular-nums underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring",
+      "font-medium hit-area-1.5 tabular-nums underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring",
     amount: "text-right tabular-nums",
     actions: "flex flex-wrap gap-3",
   },
@@ -211,62 +211,62 @@ export function InvoicesTab(): ReactElement {
           </Card.Footer>
         </Card.Root>
       </Labelled>
-      <div className={styles.column()}>
-        <Labelled
-          parts={[
-            { name: "DescriptionList", slug: "description-list" },
-            { name: "TimelineList", slug: "timeline-list" },
-            { name: "Button", slug: "button" },
-          ]}>
-          <Card.Root>
-            <Card.Header>
-              <Card.Title>{`Invoice ${invoice.id}`}</Card.Title>
-              <Card.Description>{`${invoice.period} · ${String(invoice.usage)} kWh`}</Card.Description>
-            </Card.Header>
-            <Card.Content className={styles.stack()}>
-              <DescriptionList.Root>
-                <DescriptionList.Content>
-                  <DescriptionList.Term>Amount</DescriptionList.Term>
-                  <DescriptionList.Details>{`NOK ${nok.format(invoice.amount)}`}</DescriptionList.Details>
-                  <DescriptionList.Term>Due</DescriptionList.Term>
-                  <DescriptionList.Details>{invoice.due}</DescriptionList.Details>
-                  <DescriptionList.Term>Payment</DescriptionList.Term>
-                  <DescriptionList.Details>AvtaleGiro</DescriptionList.Details>
-                </DescriptionList.Content>
-              </DescriptionList.Root>
-              <TimelineList.Root>
-                <TimelineList.Item>
-                  <TimelineList.Title>Invoice issued</TimelineList.Title>
-                  <TimelineList.Time date={invoice.issued.date}>{invoice.issued.label}</TimelineList.Time>
-                </TimelineList.Item>
-                <TimelineList.Item>
-                  <TimelineList.Title>
-                    {invoice.status === "paid" ? "Paid by AvtaleGiro" : "Payment scheduled"}
-                  </TimelineList.Title>
-                  <TimelineList.Description>{`On ${invoice.due}.`}</TimelineList.Description>
-                </TimelineList.Item>
-              </TimelineList.Root>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  toastManager.add({
-                    type: "success",
-                    title: `Invoice ${invoice.id} downloaded`,
-                    description: `faktura-${invoice.id}.pdf`,
-                  });
-                }}>
-                <Download data-icon="inline-start" />
-                Download PDF
-              </Button>
-            </Card.Content>
-          </Card.Root>
-        </Labelled>
-      </div>
+      <Labelled
+        parts={[
+          { name: "DescriptionList", slug: "description-list" },
+          { name: "TimelineList", slug: "timeline-list" },
+          { name: "Button", slug: "button" },
+        ]}>
+        <Card.Root>
+          <Card.Header>
+            <Card.Title>{`Invoice ${invoice.id}`}</Card.Title>
+            <Card.Description>{`${invoice.period} · ${String(invoice.usage)} kWh`}</Card.Description>
+          </Card.Header>
+          <Card.Content className={stack}>
+            <DescriptionList.Root>
+              <DescriptionList.Content>
+                <DescriptionList.Term>Amount</DescriptionList.Term>
+                <DescriptionList.Details>{`NOK ${nok.format(invoice.amount)}`}</DescriptionList.Details>
+                <DescriptionList.Term>Due</DescriptionList.Term>
+                <DescriptionList.Details>{invoice.due}</DescriptionList.Details>
+                <DescriptionList.Term>Payment</DescriptionList.Term>
+                <DescriptionList.Details>AvtaleGiro</DescriptionList.Details>
+              </DescriptionList.Content>
+            </DescriptionList.Root>
+            <TimelineList.Root>
+              <TimelineList.Item>
+                <TimelineList.Title>Invoice issued</TimelineList.Title>
+                <TimelineList.Time date={invoice.issued.date}>{invoice.issued.label}</TimelineList.Time>
+              </TimelineList.Item>
+              <TimelineList.Item>
+                <TimelineList.Title>
+                  {invoice.status === "paid" ? "Paid by AvtaleGiro" : "Payment scheduled"}
+                </TimelineList.Title>
+                <TimelineList.Description>{`On ${invoice.due}.`}</TimelineList.Description>
+              </TimelineList.Item>
+            </TimelineList.Root>
+            <Button
+              variant="outline"
+              onClick={() => {
+                toastManager.add({
+                  type: "success",
+                  title: `Invoice ${invoice.id} downloaded`,
+                  description: `faktura-${invoice.id}.pdf`,
+                });
+              }}>
+              <Download data-icon="inline-start" />
+              Download PDF
+            </Button>
+          </Card.Content>
+        </Card.Root>
+      </Labelled>
     </>
   );
 }
 
-const ADD_ONS = [
+type AddOn = { value: string; title: string; description: string; tags?: string[] };
+
+const ADD_ONS: readonly AddOn[] = [
   {
     value: "cap",
     title: "Price cap",
@@ -275,7 +275,7 @@ const ADD_ONS = [
   },
   { value: "solar", title: "Solar buy-back", description: "Sell what your panels make at spot price." },
   { value: "insurance", title: "Electrical insurance", description: "Covers the wiring in your home." },
-] as const;
+];
 
 /** Agreements: the contract's terms, and add-ons the customer can change and save. */
 export function AgreementsTab(): ReactElement {
@@ -294,7 +294,7 @@ export function AgreementsTab(): ReactElement {
             <Card.Title>Spot price</Card.Title>
             <Card.Description>Storgata 1, Bergen. Since March 2024.</Card.Description>
           </Card.Header>
-          <Card.Content className={styles.stack()}>
+          <Card.Content className={stack}>
             <DescriptionList.Root>
               <DescriptionList.Content>
                 <DescriptionList.Term>Markup</DescriptionList.Term>
@@ -334,54 +334,65 @@ export function AgreementsTab(): ReactElement {
           </Card.Content>
         </Card.Root>
       </Labelled>
-      <div className={styles.column()}>
-        <Labelled
-          parts={[
-            { name: "CheckboxCard", slug: "checkbox-card" },
-            { name: "Button", slug: "button" },
-            { name: "Toast", slug: "toast" },
-          ]}>
-          <Card.Root>
-            <Card.Header>
-              <Card.Title>Add-ons</Card.Title>
-              <Card.Description>Changes apply from the next invoice.</Card.Description>
-            </Card.Header>
-            <Card.Content className={styles.stack()}>
-              <CheckboxGroup name="add-ons" label="Add-ons" value={addOns} onChange={setAddOns}>
-                {ADD_ONS.map((addOn) => (
-                  <CheckboxCard
-                    key={addOn.value}
-                    value={addOn.value}
-                    title={addOn.title}
-                    description={addOn.description}
-                    tags={"tags" in addOn ? [...addOn.tags] : undefined}
-                  />
-                ))}
-              </CheckboxGroup>
-              <Button
-                onClick={() => {
-                  toastManager.add({
-                    type: "success",
-                    title: "Add-ons saved",
-                    description: `${String(addOns.length)} active from 1 November.`,
-                  });
-                }}>
-                Save add-ons
-              </Button>
-            </Card.Content>
-          </Card.Root>
-        </Labelled>
-      </div>
+      <Labelled
+        parts={[
+          { name: "CheckboxCard", slug: "checkbox-card" },
+          { name: "Button", slug: "button" },
+          { name: "Toast", slug: "toast" },
+        ]}>
+        <Card.Root>
+          <Card.Header>
+            <Card.Title>Add-ons</Card.Title>
+            <Card.Description>Changes apply from the next invoice.</Card.Description>
+          </Card.Header>
+          <Card.Content className={stack}>
+            <CheckboxGroup name="add-ons" label="Add-ons" value={addOns} onChange={setAddOns}>
+              {ADD_ONS.map((addOn) => (
+                <CheckboxCard
+                  key={addOn.value}
+                  value={addOn.value}
+                  title={addOn.title}
+                  description={addOn.description}
+                  tags={addOn.tags}
+                />
+              ))}
+            </CheckboxGroup>
+            <Button
+              onClick={() => {
+                toastManager.add({
+                  type: "success",
+                  title: "Add-ons saved",
+                  description: `${String(addOns.length)} active from 1 November.`,
+                });
+              }}>
+              Save add-ons
+            </Button>
+          </Card.Content>
+        </Card.Root>
+      </Labelled>
     </>
   );
 }
 
-const METERS = {
-  home: { label: "Storgata 1 · 7070575000", remote: true, peak: 7.2 },
-  cabin: { label: "Hytta, Geilo · 7070575031", remote: false, peak: 3.1 },
-} as const;
+const METER_KEYS = ["home", "cabin"] as const;
 
-type MeterKey = keyof typeof METERS;
+type MeterKey = (typeof METER_KEYS)[number];
+
+const METERS = {
+  home: { label: "Storgata 1 · 7070575000", remote: true, peak: 7.2, grid: "BKK Nett", area: "NO5, West" },
+  cabin: {
+    label: "Hytta, Geilo · 7070575031",
+    remote: false,
+    peak: 3.1,
+    grid: "Hallingdal Kraftnett",
+    area: "NO1, East",
+  },
+} as const satisfies Record<
+  MeterKey,
+  { label: string; remote: boolean; peak: number; grid: string; area: string }
+>;
+
+const METER_ITEMS = Object.fromEntries(METER_KEYS.map((key) => [key, METERS[key].label]));
 
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => {
@@ -412,7 +423,7 @@ export function MetersTab(): ReactElement {
           </Card.Header>
           <Card.Content>
             <form
-              className={styles.stack()}
+              className={stack}
               onSubmit={(event) => {
                 event.preventDefault();
                 setPending(true);
@@ -440,19 +451,23 @@ export function MetersTab(): ReactElement {
               <Field.Root>
                 <Field.Label>Meter</Field.Label>
                 <Select.Root
-                  items={{ home: METERS.home.label, cabin: METERS.cabin.label }}
+                  items={METER_ITEMS}
                   value={meter}
                   onValueChange={(next) => {
-                    if (next === "home" || next === "cabin") {
-                      setMeter(next);
+                    const key = METER_KEYS.find((candidate) => candidate === next);
+                    if (key !== undefined) {
+                      setMeter(key);
                     }
                   }}>
                   <Select.Trigger className="w-full">
                     <Select.Value />
                   </Select.Trigger>
                   <Select.Content>
-                    <Select.Item value="home">{METERS.home.label}</Select.Item>
-                    <Select.Item value="cabin">{METERS.cabin.label}</Select.Item>
+                    {METER_KEYS.map((key) => (
+                      <Select.Item key={key} value={key}>
+                        {METERS[key].label}
+                      </Select.Item>
+                    ))}
                   </Select.Content>
                 </Select.Root>
               </Field.Root>
@@ -473,42 +488,36 @@ export function MetersTab(): ReactElement {
           </Card.Content>
         </Card.Root>
       </Labelled>
-      <div className={styles.column()}>
-        <Labelled
-          parts={[
-            { name: "DescriptionList", slug: "description-list" },
-            { name: "Meter", slug: "meter" },
-          ]}>
-          <Card.Root>
-            <Card.Header>
-              <Card.Title>{picked.label}</Card.Title>
-              <Card.Description>
-                {picked.remote ? "Smart meter, read hourly" : "Manual reading"}
-              </Card.Description>
-            </Card.Header>
-            <Card.Content className={styles.stack()}>
-              <DescriptionList.Root>
-                <DescriptionList.Content>
-                  <DescriptionList.Term>Grid company</DescriptionList.Term>
-                  <DescriptionList.Details>
-                    {meter === "home" ? "BKK Nett" : "Hallingdal Kraftnett"}
-                  </DescriptionList.Details>
-                  <DescriptionList.Term>Price area</DescriptionList.Term>
-                  <DescriptionList.Details>
-                    {meter === "home" ? "NO5, West" : "NO1, East"}
-                  </DescriptionList.Details>
-                </DescriptionList.Content>
-              </DescriptionList.Root>
-              <Meter
-                label="Peak load this month"
-                value={picked.peak}
-                maxValue={10}
-                valueLabel={`${String(picked.peak)} of 10 kW`}
-              />
-            </Card.Content>
-          </Card.Root>
-        </Labelled>
-      </div>
+      <Labelled
+        parts={[
+          { name: "DescriptionList", slug: "description-list" },
+          { name: "Meter", slug: "meter" },
+        ]}>
+        <Card.Root>
+          <Card.Header>
+            <Card.Title>{picked.label}</Card.Title>
+            <Card.Description>
+              {picked.remote ? "Smart meter, read hourly" : "Manual reading"}
+            </Card.Description>
+          </Card.Header>
+          <Card.Content className={stack}>
+            <DescriptionList.Root>
+              <DescriptionList.Content>
+                <DescriptionList.Term>Grid company</DescriptionList.Term>
+                <DescriptionList.Details>{picked.grid}</DescriptionList.Details>
+                <DescriptionList.Term>Price area</DescriptionList.Term>
+                <DescriptionList.Details>{picked.area}</DescriptionList.Details>
+              </DescriptionList.Content>
+            </DescriptionList.Root>
+            <Meter
+              label="Peak load this month"
+              value={picked.peak}
+              maxValue={10}
+              valueLabel={`${String(picked.peak)} of 10 kW`}
+            />
+          </Card.Content>
+        </Card.Root>
+      </Labelled>
     </>
   );
 }

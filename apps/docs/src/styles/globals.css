@@ -70,10 +70,11 @@
   -webkit-touch-callout: none;
 }
 
-/* iOS zooms into any focused field under 16px and never zooms back out. */
+/* iOS zooms into any focused field under 16px and never zooms back out. A floor, so it lifts
+   dense 14px control text and leaves comfortable 18px alone. */
 @media (pointer: coarse) {
   [data-landing] :is(input, textarea, select) {
-    font-size: 16px;
+    font-size: max(16px, var(--control-text));
   }
 }
 

@@ -1,5 +1,3 @@
-"use client";
-
 import type { ReactElement } from "react";
 
 import Link from "next/link";
@@ -7,6 +5,7 @@ import { tv } from "tailwind-variants";
 
 import { Toast } from "@elmeragroup/fuse/toast";
 
+import { HOME_PAGE, requireStaticPage } from "../../../lib/pages";
 import { BrandPicker } from "./brand-picker";
 import { LandingDensity } from "./landing-density";
 import { LandingHero } from "./landing-hero";
@@ -23,13 +22,19 @@ const landingPage = tv({
     footerInner:
       "text-sm sm:flex-row sm:items-center sm:px-6 max-w-landing pb-footer-end mx-auto flex w-full flex-col gap-4 px-4 py-8 text-muted-foreground lg:px-12",
     footerLinks: "sm:ml-auto flex gap-5",
-    // The nav has no room for the scheme switch on phones, so it lives here instead.
-    footerScheme: "sm:hidden",
+    // The nav has no room for the scheme switch below lg, so it lives here instead.
+    footerScheme: "lg:hidden",
     footerLink: "underline-offset-4 hover:text-foreground hover:underline",
   },
 });
 
 const styles = landingPage();
+
+const FOOTER_LINKS = [
+  { href: HOME_PAGE.href, label: "Docs" },
+  requireStaticPage("/releases"),
+  requireStaticPage("/accessibility"),
+];
 
 export function LandingPage(): ReactElement {
   return (
@@ -54,15 +59,11 @@ export function LandingPage(): ReactElement {
                 <SchemeSwitch />
               </span>
               <span className={styles.footerLinks()}>
-                <Link href="/docs" className={styles.footerLink()}>
-                  Docs
-                </Link>
-                <Link href="/releases" className={styles.footerLink()}>
-                  Releases
-                </Link>
-                <Link href="/accessibility" className={styles.footerLink()}>
-                  Accessibility
-                </Link>
+                {FOOTER_LINKS.map((link) => (
+                  <Link key={link.href} href={link.href} className={styles.footerLink()}>
+                    {link.label}
+                  </Link>
+                ))}
               </span>
             </div>
           </footer>

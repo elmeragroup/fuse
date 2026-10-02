@@ -6,10 +6,10 @@ import Link from "next/link";
 import { tv } from "tailwind-variants";
 
 import { Button } from "@elmeragroup/fuse/button";
-import { useColorScheme } from "@elmeragroup/fuse/theme";
+import { themeSlug, useColorScheme } from "@elmeragroup/fuse/theme";
 
 import { BrandHeatmap } from "./brand-heatmap";
-import { FACTS } from "./landing-facts";
+import { BROWSE_COMPONENTS, LANDING_SUMMARY, QUICK_START } from "./landing-facts";
 import { useLandingTheme } from "./landing-theme";
 
 const landingHero = tv({
@@ -24,7 +24,6 @@ const landingHero = tv({
     actions: "sm:flex-row sm:w-auto sm:gap-6 flex w-full flex-col items-center gap-3",
     primary: "sm:w-auto w-full",
     stage: "sm:-mt-12 sm:h-180 relative -mt-4 h-90 w-full",
-    shader: "size-full",
     // The shader's grain fades into the page so the copy above reads on a flat ground.
     fade: "sm:h-65 pointer-events-none absolute inset-x-0 top-0 h-30 bg-linear-to-b from-background to-transparent",
     caption:
@@ -46,27 +45,25 @@ export function LandingHero(): ReactElement {
           One system.
           <span className={styles.titleAccent()}>Every brand.</span>
         </h1>
-        <p className={styles.lede()}>
-          {`${String(FACTS.components)} React components for ${String(FACTS.brands)} brands, ${String(FACTS.segments)} segments and ${String(FACTS.variants)} variants. One attribute sets the theme.`}
-        </p>
+        <p className={styles.lede()}>{LANDING_SUMMARY}</p>
         <div className={styles.actions()}>
           <Button
             size="lg"
             className={styles.primary()}
-            render={<Link href="/quick-start" />}
+            render={<Link href={QUICK_START.href} />}
             nativeButton={false}>
             Get started
           </Button>
-          <Button variant="link" render={<Link href="/components/button" />} nativeButton={false}>
+          <Button variant="link" render={<Link href={BROWSE_COMPONENTS.href} />} nativeButton={false}>
             Browse components ›
           </Button>
         </div>
       </div>
       <div className={styles.stage()}>
-        <BrandHeatmap brand={theme.brand} surface="background" className={styles.shader()} />
+        <BrandHeatmap brand={theme.brand} surface="background" />
         <div aria-hidden className={styles.fade()} />
         <p aria-hidden className={styles.caption()}>
-          {`${theme.variant}-${theme.brand}-${theme.segment} · ${resolvedColorScheme ?? "light"}`}
+          {`${themeSlug(theme)} · ${resolvedColorScheme ?? "light"}`}
         </p>
       </div>
     </section>

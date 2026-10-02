@@ -1,8 +1,13 @@
 import { Fragment } from "react";
-import type { ReactElement, ReactNode } from "react";
+import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import Link from "next/link";
-import { tv } from "tailwind-variants";
+import { cn, tv } from "tailwind-variants";
+
+import { Meter } from "@elmeragroup/fuse/meter";
+import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
+
+import { landingComponent } from "./landing-facts";
 
 const productParts = tv({
   slots: {
@@ -15,6 +20,9 @@ const productParts = tv({
 
 const styles = productParts();
 
+/** The vertical stack the product cards, the tabs and the density form lay their content out with. */
+export const stack = cn("flex flex-col gap-4");
+
 export type Part = { name: string; slug: string };
 
 export type LabelledProps = {
@@ -22,7 +30,10 @@ export type LabelledProps = {
   children: ReactNode;
 };
 
-/** A card with the components it is built from named above it, each linking to its docs page. */
+/**
+ * A card with the components it is built from named above it, each linking to its docs page.
+ * A slug the site serves no page for throws, so a renamed component cannot leave a dead label.
+ */
 export function Labelled({ parts, children }: LabelledProps): ReactElement {
   return (
     <div>
@@ -30,7 +41,7 @@ export function Labelled({ parts, children }: LabelledProps): ReactElement {
         {parts.map((part, index) => (
           <Fragment key={part.slug}>
             {index > 0 ? <span aria-hidden>·</span> : null}
-            <Link href={`/components/${part.slug}`} className={styles.part()}>
+            <Link href={landingComponent(part.slug).href} className={styles.part()}>
               {part.name}
             </Link>
           </Fragment>
@@ -38,5 +49,54 @@ export function Labelled({ parts, children }: LabelledProps): ReactElement {
       </p>
       {children}
     </div>
+  );
+}
+
+/** The budget meter the usage card and the nav's Meter stage both show. */
+export function BudgetMeter(): ReactElement {
+  return <Meter label="Monthly budget" value={864} maxValue={1200} valueLabel="NOK 864 of 1 200" />;
+}
+
+type ToggleRootProps = ComponentProps<typeof ToggleGroup.Root>;
+
+export type SingleToggleProps<Option extends string> = Omit<
+  ToggleRootProps,
+  "value" | "defaultValue" | "onValueChange" | "children" | "aria-label"
+> & {
+  label: string;
+  options: readonly Option[];
+  labels: Readonly<Record<Option, ReactNode>>;
+  value: Option;
+  onValueChange: (next: Option) => void;
+};
+
+/** An outline toggle row where exactly one option is on; pressing the active one keeps it. */
+export function SingleToggle<Option extends string>({
+  label,
+  options,
+  labels,
+  value,
+  onValueChange,
+  ...props
+}: SingleToggleProps<Option>): ReactElement {
+  return (
+    <ToggleGroup.Root
+      aria-label={label}
+      variant="outline"
+      spacing={0}
+      {...props}
+      value={[value]}
+      onValueChange={(next) => {
+        const picked = options.find((option) => option === next[0]);
+        if (picked !== undefined) {
+          onValueChange(picked);
+        }
+      }}>
+      {options.map((option) => (
+        <ToggleGroup.Item key={option} value={option}>
+          {labels[option]}
+        </ToggleGroup.Item>
+      ))}
+    </ToggleGroup.Root>
   );
 }

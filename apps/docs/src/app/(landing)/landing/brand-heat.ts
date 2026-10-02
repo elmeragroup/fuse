@@ -3,13 +3,12 @@
 import { useEffect, useState } from "react";
 import type { RefObject } from "react";
 
-import * as CssColor from "@elmeragroup/color/css-color";
 import * as Hex from "@elmeragroup/color/hex";
 import * as Wcag from "@elmeragroup/color/wcag";
 import { coerceTheme, themeAttributes, useColorScheme } from "@elmeragroup/fuse/theme";
 import type { BrandCode, ThemeInput } from "@elmeragroup/fuse/theme";
 
-import { useLandingTheme } from "./landing-theme";
+import { computedSrgb, useLandingTheme } from "./landing-theme";
 
 /** The brand's tonal roles that make up its heat ramp, plus its accent primitive. */
 const HEAT_ROLES = [
@@ -46,12 +45,10 @@ function resolveColor(element: HTMLElement, token: string): string {
 }
 
 function toSwatch(value: string): Swatch | undefined {
-  const parsed = CssColor.parse(value.trim());
-  if (parsed._tag === "err") {
-    return undefined;
-  }
-  const srgb = CssColor.toSrgb(parsed.value);
-  return { hex: Hex.formatOpaque(srgb), luminance: Wcag.relativeLuminance(srgb) };
+  const srgb = computedSrgb(value);
+  return srgb === undefined
+    ? undefined
+    : { hex: Hex.formatOpaque(srgb), luminance: Wcag.relativeLuminance(srgb) };
 }
 
 /**
@@ -105,7 +102,9 @@ export function useHeat(
   const [heat, setHeat] = useState<Heat>();
 
   useEffect(() => {
-    // ThemeProvider stamps <html> in its own effect, which runs after this one; read a frame later.
+    // ThemeProvider stamps <html> in an insertion effect, so the host already wears the new
+    // theme here. The read still waits a frame: setting state from it synchronously would start
+    // a second render inside this commit, and every tile's read lands in the same frame.
     const frame = window.requestAnimationFrame(() => {
       const element = host.current;
       if (element === null) {

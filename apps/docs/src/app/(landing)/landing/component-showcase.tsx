@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import Link from "next/link";
@@ -8,26 +9,22 @@ import { tv } from "tailwind-variants";
 import { Badge } from "@elmeragroup/fuse/badge";
 import { Button } from "@elmeragroup/fuse/button";
 import { Field } from "@elmeragroup/fuse/field";
-import { Meter } from "@elmeragroup/fuse/meter";
 import { NavigationMenu } from "@elmeragroup/fuse/navigation-menu";
 import { Switch } from "@elmeragroup/fuse/switch";
 
-import { COMPONENT_PAGES } from "../../../generated/component-pages";
-import { componentBySlug } from "../../../lib/nav";
 import { HOME_PAGE } from "../../../lib/pages";
+import { FACTS, landingComponent } from "./landing-facts";
+import { BudgetMeter } from "./product-parts";
 
 const componentShowcase = tv({
   slots: {
     // Fixed-width list beside a fluid stage; the popup caps the whole panel at the viewport.
     layout: "w-2xl flex",
-    list: "w-60 flex-none border-e border-border pe-2",
-    entry: "flex flex-col gap-1 py-1",
-    entryTitle: "font-medium text-foreground",
-    entryLede: "text-muted-foreground",
-    viewport: "flex-1",
+    list: "m-0 flex w-60 flex-none list-none flex-col gap-1 border-e border-border p-0 pe-2",
     // One fixed height for every stage, so swapping components never resizes the popup. The
     // page background sets it off the popup in both schemes; dark `muted` matches the popup.
-    stage: "ms-2 flex h-80 items-center justify-center rounded-md border border-border bg-background p-6",
+    stage:
+      "ms-2 flex h-80 flex-1 items-center justify-center rounded-md border border-border bg-background p-6",
     stageRow: "flex flex-wrap items-center justify-center gap-2",
     stageField: "w-full",
     all: "mt-2 border-t border-border pt-2",
@@ -35,6 +32,35 @@ const componentShowcase = tv({
 });
 
 const styles = componentShowcase();
+
+/** An entry row; the one whose stage shows keeps the row highlight a hover gives the others. */
+const showcaseEntry = tv({
+  variants: {
+    shown: { true: "bg-accent text-accent-foreground" },
+  },
+});
+
+const menuCard = tv({
+  slots: {
+    body: "flex flex-col gap-1 py-1",
+    title: "font-medium text-foreground",
+    description: "text-muted-foreground",
+  },
+});
+
+const cardStyles = menuCard();
+
+export type MenuCardTextProps = { title: string; description: string };
+
+/** A panel row's title over its one-line description, for the nav's page cards and these entries. */
+export function MenuCardText({ title, description }: MenuCardTextProps): ReactElement {
+  return (
+    <span className={cardStyles.body()}>
+      <span className={cardStyles.title()}>{title}</span>
+      <span className={cardStyles.description()}>{description}</span>
+    </span>
+  );
+}
 
 /**
  * The components the menu shows, each with a stage small enough to run inside the popup. None
@@ -66,7 +92,7 @@ const SHOWCASE = [
     slug: "meter",
     stage: (
       <div className={styles.stageField()}>
-        <Meter label="Monthly budget" value={864} maxValue={1200} valueLabel="NOK 864 of 1 200" />
+        <BudgetMeter />
       </div>
     ),
   },
@@ -82,47 +108,39 @@ const SHOWCASE = [
   },
 ] as const satisfies readonly { slug: string; stage: ReactNode }[];
 
-const ENTRIES = SHOWCASE.map(({ slug, stage }) => {
-  const component = componentBySlug(slug);
-  if (component === undefined) {
-    throw new Error(`component showcase: no component page for "${slug}"`);
-  }
-  return { slug, stage, title: component.title, lede: component.lede, href: `/components/${slug}` };
-});
+const ENTRIES = SHOWCASE.map(({ slug, stage }) => ({ ...landingComponent(slug), stage }));
 
 /**
- * The Components panel of the landing nav: an inline submenu that swaps a live stage beside
- * the list as each component is hovered or focused, and a link to every component under it.
+ * The Components panel of the landing nav: a list of links to the components' docs, with a live
+ * stage beside it that shows whichever entry was last hovered or focused, and a link to every
+ * component under it. The stage is a visual preview like a docs demo stage, so it announces
+ * nothing as it swaps; each entry's own link names the component.
  */
 export function ComponentShowcase(): ReactElement {
+  const [active, setActive] = useState<string>(SHOWCASE[0].slug);
+  const shown = ENTRIES.find((entry) => entry.slug === active);
+
   return (
     <>
-      <NavigationMenu.Root orientation="vertical" inline defaultValue={SHOWCASE[0].slug}>
-        <div className={styles.layout()}>
-          <div className={styles.list()}>
-            <NavigationMenu.List>
-              {ENTRIES.map((entry) => (
-                <NavigationMenu.Item key={entry.slug} value={entry.slug}>
-                  {/* A link, so a click opens the docs; hover and focus still swap the stage. */}
-                  <NavigationMenu.Trigger nativeButton={false} render={<Link href={entry.href} />}>
-                    <span className={styles.entry()}>
-                      <span className={styles.entryTitle()}>{entry.title}</span>
-                      <span className={styles.entryLede()}>{entry.lede}</span>
-                    </span>
-                  </NavigationMenu.Trigger>
-                  <NavigationMenu.Content>
-                    <div className={styles.stage()}>{entry.stage}</div>
-                  </NavigationMenu.Content>
-                </NavigationMenu.Item>
-              ))}
-            </NavigationMenu.List>
-          </div>
-          <NavigationMenu.Viewport className={styles.viewport()} />
-        </div>
-      </NavigationMenu.Root>
+      <div className={styles.layout()}>
+        <ul className={styles.list()}>
+          {ENTRIES.map((entry) => (
+            <li key={entry.slug}>
+              <NavigationMenu.Link
+                render={<Link href={entry.href} />}
+                className={showcaseEntry({ shown: entry.slug === active })}
+                onPointerEnter={() => setActive(entry.slug)}
+                onFocus={() => setActive(entry.slug)}>
+                <MenuCardText title={entry.title} description={entry.lede} />
+              </NavigationMenu.Link>
+            </li>
+          ))}
+        </ul>
+        <div className={styles.stage()}>{shown?.stage}</div>
+      </div>
       <div className={styles.all()}>
         <NavigationMenu.Link render={<Link href={HOME_PAGE.href} />}>
-          {`View all ${String(COMPONENT_PAGES.length)} components`}
+          {`View all ${String(FACTS.components)} components`}
         </NavigationMenu.Link>
       </div>
     </>
