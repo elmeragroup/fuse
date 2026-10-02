@@ -6,6 +6,10 @@ lede: >
 
 import { NavigationMenuBasic } from "./demos/navigation-menu-basic";
 import { NavigationMenuLinks } from "./demos/navigation-menu-links";
+import { NavigationMenuLinkCards } from "./demos/navigation-menu-link-cards";
+import { NavigationMenuNested } from "./demos/navigation-menu-nested";
+import { NavigationMenuNestedInline } from "./demos/navigation-menu-nested-inline";
+import { NavigationMenuRouterLink } from "./demos/navigation-menu-router-link";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -17,8 +21,8 @@ export const metadata = componentMetadata("navigation-menu");
 
 `NavigationMenu.Root` renders a `<nav>` landmark, so name it with `aria-label`. It also
 renders the popup that every `NavigationMenu.Content` opens into. Moving between triggers
-resizes that one popup rather than opening a second, and `align` places it under the open
-trigger.
+resizes that one popup rather than opening a second. `side` and `align` place it against the
+open trigger, under it by default.
 
 A trigger opens on hover, on click, and on Enter or ArrowDown. Escape closes the panel
 and returns focus to the trigger. Mark the current page's link with `active`, which sets
@@ -35,6 +39,47 @@ For a menu of actions, use DropdownMenu.
 <Demo slug="navigation-menu" id="links" title="Links only" file="navigation-menu-links.tsx">
   <NavigationMenuLinks />
 </Demo>
+
+<Demo slug="navigation-menu" id="link-cards" title="Rich link cards" file="navigation-menu-link-cards.tsx">
+  <NavigationMenuLinkCards />
+</Demo>
+
+A link can hold more than a label. Give it a title and a one-line description, and lay a
+panel's links out in a grid.
+
+<Demo slug="navigation-menu" id="nested" title="Nested submenus" file="navigation-menu-nested.tsx">
+  <NavigationMenuNested />
+</Demo>
+
+A `NavigationMenu.Root` inside a `NavigationMenu.Content` is a submenu. It renders a `<div>`
+rather than a second landmark, and it opens its own popup. Set `orientation="vertical"` and
+`side="right"` so it opens beside its trigger while the outer panel stays open.
+
+<Demo
+  slug="navigation-menu"
+  id="nested-inline"
+  title="Nested inline submenus"
+  file="navigation-menu-nested-inline.tsx">
+  <NavigationMenuNestedInline />
+</Demo>
+
+An `inline` submenu renders no popup. Place a `NavigationMenu.Viewport` beside its list, and
+the open item's content shows there, so the panel swaps as the pointer moves down the list.
+The arrow keys move focus between triggers, and Enter or Space shows the focused trigger's
+content. Its triggers have no caret, because the content is always in view. `defaultValue`
+opens the first item with the outer panel. Below the `sm` breakpoint the list stacks above
+the viewport.
+
+<Demo
+  slug="navigation-menu"
+  id="router-link"
+  title="Custom router link"
+  file="navigation-menu-router-link.tsx">
+  <NavigationMenuRouterLink />
+</Demo>
+
+For client-side routing, pass your router's link to `NavigationMenu.Link` through `render`.
+The link keeps its `active` state and `aria-current`.
 
 <ApiReference slug="navigation-menu" />
 

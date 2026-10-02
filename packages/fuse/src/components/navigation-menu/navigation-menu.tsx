@@ -1,5 +1,6 @@
 "use client";
 
+import { createContext, useContext, useMemo } from "react";
 import type { ComponentProps, ReactElement } from "react";
 
 import { NavigationMenu as NavigationMenuPrimitive } from "@base-ui/react/navigation-menu";
@@ -13,45 +14,110 @@ import { navigationMenuVariants } from "./navigation-menu-variants";
 /** Resolved once at module scope — the recipe has no axes (no per-render work). */
 const slots = navigationMenuVariants();
 
-/** Props for `NavigationMenu.Root`. */
-export type NavigationMenuRootProps = ComponentProps<typeof NavigationMenuPrimitive.Root> &
-  OverlayContainerProps & {
-    /**
-     * How the shared popup aligns to the open trigger on the cross axis.
-     */
-    align?: ComponentProps<typeof NavigationMenuPrimitive.Positioner>["align"];
-  };
+type PositionerProps = ComponentProps<typeof NavigationMenuPrimitive.Positioner>;
+
+type NavigationMenuOrientation = NonNullable<
+  ComponentProps<typeof NavigationMenuPrimitive.Root>["orientation"]
+>;
 
 /**
- * The `<nav>` landmark of a site navigation menu. It renders the one popup every
- * `NavigationMenu.Content` opens into, placed under the open trigger, so a menu needs no
- * portal or positioner of its own. Name the landmark with `aria-label`.
+ * Where the nearest Root lays out its list and opens its content. Each Root provides its
+ * own, so a List or Trigger styles from its own Root rather than from any ancestor Root a
+ * group variant would match. `caret` is the popup's side, or `"none"` for an inline Root.
+ */
+type NavigationMenuPlacement = {
+  readonly orientation: NavigationMenuOrientation;
+  readonly caret: NonNullable<PositionerProps["side"]> | "none";
+};
+
+const NavigationMenuPlacementContext = createContext<NavigationMenuPlacement | null>(null);
+
+function useNavigationMenuPlacement(part: string): NavigationMenuPlacement {
+  const placement = useContext(NavigationMenuPlacementContext);
+  if (placement === null) {
+    throw new Error(`NavigationMenu.${part} must be used within NavigationMenu.Root`);
+  }
+  return placement;
+}
+
+/** Placement of the built-in popup, which only a Root that renders one takes. */
+type NavigationMenuPopupPlacementProps = OverlayContainerProps & {
+  /**
+   * How the shared popup aligns to the open trigger on the cross axis.
+   */
+  align?: PositionerProps["align"];
+  /**
+   * Which side of the open trigger the shared popup opens on. Keep the default `"bottom"`
+   * for a bar; a submenu nested in a `NavigationMenu.Content` opens to the side, usually
+   * `side="right"` with `orientation="vertical"` and `align="end"`.
+   */
+  side?: PositionerProps["side"];
+  /** A Root that renders its own popup is never inline. */
+  inline?: false;
+};
+
+/** An inline Root renders no popup, so the popup placement props cannot reach it. */
+type NavigationMenuInlineProps = {
+  /**
+   * Render no popup and show the open item's content in the `NavigationMenu.Viewport` you
+   * place inside this Root instead. Use it for a submenu nested in a
+   * `NavigationMenu.Content` that swaps the panel beside its list, such as a list of
+   * audiences with each audience's links next to it.
+   */
+  inline: true;
+  align?: never;
+  side?: never;
+  container?: never;
+};
+
+/** Props for `NavigationMenu.Root`. */
+export type NavigationMenuRootProps = ComponentProps<typeof NavigationMenuPrimitive.Root> &
+  (NavigationMenuPopupPlacementProps | NavigationMenuInlineProps);
+
+/**
+ * The `<nav>` landmark of a site navigation menu, or a `<div>` when nested in a
+ * `NavigationMenu.Content`. It renders the one popup every `NavigationMenu.Content` opens
+ * into, placed on `side` of the open trigger, so a menu needs no portal or positioner of
+ * its own. An `inline` Root renders none and shows its content in a `NavigationMenu.Viewport`.
+ * Name the landmark with `aria-label`.
  */
 export function NavigationMenuRoot({
   align = "start",
+  side = "bottom",
+  inline = false,
   container,
+  orientation = "horizontal",
   className,
   children,
   ...props
 }: NavigationMenuRootProps): ReactElement {
+  const caret = inline ? "none" : side;
+  const placement = useMemo((): NavigationMenuPlacement => ({ orientation, caret }), [orientation, caret]);
   return (
-    <NavigationMenuPrimitive.Root
-      data-slot="navigation-menu"
-      className={mergeClassName(className, slots.root())}
-      {...props}>
-      {children}
-      <OverlayPortal portal={NavigationMenuPrimitive.Portal} container={container}>
-        <NavigationMenuPrimitive.Positioner
-          side="bottom"
-          sideOffset={8}
-          align={align}
-          className={slots.positioner()}>
-          <NavigationMenuPrimitive.Popup className={slots.popup()}>
-            <NavigationMenuPrimitive.Viewport className={slots.viewport()} />
-          </NavigationMenuPrimitive.Popup>
-        </NavigationMenuPrimitive.Positioner>
-      </OverlayPortal>
-    </NavigationMenuPrimitive.Root>
+    <NavigationMenuPlacementContext.Provider value={placement}>
+      <NavigationMenuPrimitive.Root
+        data-slot="navigation-menu"
+        // Base UI writes no orientation attribute; the Root, List and Trigger style from their own.
+        data-orientation={orientation}
+        orientation={orientation}
+        className={mergeClassName(className, slots.root())}
+        {...props}>
+        {children}
+        {inline ? null : (
+          <OverlayPortal portal={NavigationMenuPrimitive.Portal} container={container}>
+            <NavigationMenuPrimitive.Positioner
+              side={side}
+              sideOffset={8}
+              align={align}
+              className={slots.positioner()}>
+              <NavigationMenuPrimitive.Popup className={slots.popup()}>
+                <NavigationMenuPrimitive.Viewport className={slots.viewport()} />
+              </NavigationMenuPrimitive.Popup>
+            </NavigationMenuPrimitive.Positioner>
+          </OverlayPortal>
+        )}
+      </NavigationMenuPrimitive.Root>
+    </NavigationMenuPlacementContext.Provider>
   );
 }
 
@@ -60,9 +126,11 @@ export function NavigationMenuList({
   className,
   ...props
 }: ComponentProps<typeof NavigationMenuPrimitive.List>): ReactElement {
+  const { orientation } = useNavigationMenuPlacement("List");
   return (
     <NavigationMenuPrimitive.List
       data-slot="navigation-menu-list"
+      data-orientation={orientation}
       className={mergeClassName(className, slots.list())}
       {...props}
     />
@@ -85,20 +153,26 @@ export function NavigationMenuItem({
 
 /**
  * The button that opens its item's content on hover, click, Enter or ArrowDown. A caret
- * after the label turns while the content is open.
+ * after the label points to the Root's `side`: in a bar it points down and turns while the
+ * content is open, and in a submenu it points to where the popup opens. A trigger in an
+ * `inline` Root has no caret, because its content already shows beside or below the list.
  */
 export function NavigationMenuTrigger({
   className,
   children,
   ...props
 }: ComponentProps<typeof NavigationMenuPrimitive.Trigger>): ReactElement {
+  const { orientation, caret } = useNavigationMenuPlacement("Trigger");
   return (
     <NavigationMenuPrimitive.Trigger
       data-slot="navigation-menu-trigger"
+      data-orientation={orientation}
       className={mergeClassName(className, slots.trigger())}
       {...props}>
       {children}
-      <CaretDown aria-hidden="true" className={slots.triggerIcon()} />
+      {caret === "none" ? null : (
+        <CaretDown aria-hidden="true" data-side={caret} className={slots.triggerIcon()} />
+      )}
     </NavigationMenuPrimitive.Trigger>
   );
 }
@@ -136,6 +210,23 @@ export function NavigationMenuLink({
 }
 
 /**
+ * Where an `inline` Root shows its open item's content. Place it inside that Root, beside
+ * its `NavigationMenu.List`; a Root that renders its own popup already has one.
+ */
+export function NavigationMenuViewport({
+  className,
+  ...props
+}: ComponentProps<typeof NavigationMenuPrimitive.Viewport>): ReactElement {
+  return (
+    <NavigationMenuPrimitive.Viewport
+      data-slot="navigation-menu-viewport"
+      className={mergeClassName(className, slots.inlineViewport())}
+      {...props}
+    />
+  );
+}
+
+/**
  * An arrow under the trigger that points at the open popup. Place it inside a
  * `NavigationMenu.Trigger`; it is hidden from assistive technology and shows only while
  * that item is open. `children` replaces the default arrow.
@@ -161,4 +252,5 @@ NavigationMenuItem.displayName = "NavigationMenu.Item";
 NavigationMenuTrigger.displayName = "NavigationMenu.Trigger";
 NavigationMenuContent.displayName = "NavigationMenu.Content";
 NavigationMenuLink.displayName = "NavigationMenu.Link";
+NavigationMenuViewport.displayName = "NavigationMenu.Viewport";
 NavigationMenuIndicator.displayName = "NavigationMenu.Indicator";

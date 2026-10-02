@@ -225,6 +225,7 @@ function namespaceElements(): ReactElement[] {
       "Trigger",
       "Content",
       "Link",
+      "Viewport",
       "Indicator",
     ]),
     ...renderNamespace("Pagination", Pagination, [

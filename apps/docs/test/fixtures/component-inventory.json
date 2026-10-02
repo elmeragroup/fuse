@@ -321,7 +321,14 @@
   "navigation-menu": {
     "title": "Navigation Menu",
     "rsc": "client",
-    "demos": ["navigation-menu-basic.tsx", "navigation-menu-links.tsx"]
+    "demos": [
+      "navigation-menu-basic.tsx",
+      "navigation-menu-links.tsx",
+      "navigation-menu-link-cards.tsx",
+      "navigation-menu-nested.tsx",
+      "navigation-menu-nested-inline.tsx",
+      "navigation-menu-router-link.tsx"
+    ]
   },
   "number-field": {
     "title": "Number Field",

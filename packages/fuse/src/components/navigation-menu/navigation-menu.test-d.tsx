@@ -3,13 +3,15 @@ import { expectTypeOf, test } from "vitest";
 import type { NavigationMenuRootProps } from "@elmeragroup/fuse/navigation-menu";
 import { NavigationMenu } from "@elmeragroup/fuse/navigation-menu";
 
-test("Positioner, Popup and Viewport stay off the namespace because Root owns them and takes align and container", () => {
+test("Positioner and Popup stay off the namespace because Root owns them and takes align, side and container", () => {
   expectTypeOf(NavigationMenu).not.toHaveProperty("Positioner");
   expectTypeOf(NavigationMenu).not.toHaveProperty("Popup");
-  expectTypeOf(NavigationMenu).not.toHaveProperty("Viewport");
   expectTypeOf(NavigationMenu).not.toHaveProperty("Portal");
 
   expectTypeOf<NavigationMenuRootProps["align"]>().toEqualTypeOf<"start" | "center" | "end" | undefined>();
+  expectTypeOf<NavigationMenuRootProps["side"]>().toEqualTypeOf<
+    "top" | "bottom" | "left" | "right" | "inline-end" | "inline-start" | undefined
+  >();
 
   const _tree = (
     <NavigationMenu.Root aria-label="Site" align="center" orientation="horizontal">
@@ -27,8 +29,26 @@ test("Positioner, Popup and Viewport stay off the namespace because Root owns th
     </NavigationMenu.Root>
   );
 
-  // @ts-expect-error Root aligns the popup; side and offsets are fixed
-  const _noSide = <NavigationMenu.Root side="top" />;
+  const _submenu = <NavigationMenu.Root orientation="vertical" side="right" align="end" />;
+  // @ts-expect-error Root places the popup; the offsets are fixed
+  const _noOffset = <NavigationMenu.Root sideOffset={4} />;
+});
+
+test("an inline Root takes a Viewport and no popup placement", () => {
+  const _inline = (
+    <NavigationMenu.Root inline orientation="vertical" defaultValue="homes">
+      <NavigationMenu.List />
+      <NavigationMenu.Viewport className="min-h-64" render={<section />} />
+    </NavigationMenu.Root>
+  );
+  const _stateClass = <NavigationMenu.Viewport className={() => "min-h-64"} />;
+
+  // @ts-expect-error an inline Root renders no popup to place
+  const _inlineSide = <NavigationMenu.Root inline side="right" />;
+  // @ts-expect-error an inline Root renders no popup to align
+  const _inlineAlign = <NavigationMenu.Root inline align="end" />;
+  // @ts-expect-error an inline Root renders no popup to portal
+  const _inlineContainer = <NavigationMenu.Root inline container={document.body} />;
 });
 
 test("Link takes active and composes through render, never an `as` prop", () => {

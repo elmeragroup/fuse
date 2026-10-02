@@ -10,6 +10,7 @@ import {
   NavigationMenuTrigger,
   NavigationMenuContent,
   NavigationMenuLink,
+  NavigationMenuViewport,
   NavigationMenuIndicator,
 } from "./navigation-menu";
 
@@ -20,5 +21,6 @@ export const NavigationMenu = {
   Trigger: NavigationMenuTrigger,
   Content: NavigationMenuContent,
   Link: NavigationMenuLink,
+  Viewport: NavigationMenuViewport,
   Indicator: NavigationMenuIndicator,
 };

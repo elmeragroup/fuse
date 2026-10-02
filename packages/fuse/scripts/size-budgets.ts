@@ -78,7 +78,9 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // entry cannot slip through unbudgeted. Replace the 0 with measured × 1.5.
   // plop:js-entry-budget
   // 2026-10-02: new entry. Base UI's navigation menu brings its floating positioner, as Popover does.
-  { name: "navigation-menu", entryFile: "navigation-menu.js", measuredGzip: 58871, ceilingGzip: 88307 },
+  // 2026-10-02: re-measured at 59084 (+213) after Root took `side` and `inline`, the entry
+  // exported `Viewport` and each Root passed its placement to its parts; the ceiling stays.
+  { name: "navigation-menu", entryFile: "navigation-menu.js", measuredGzip: 59084, ceilingGzip: 88307 },
   // 2026-09-30: new entry. It composes Select, DropdownMenu, Checkbox, Field and Button; the
   // optional @tanstack/react-table peer is external.
   { name: "data-table", entryFile: "data-table.js", measuredGzip: 95534, ceilingGzip: 143301 },
@@ -220,8 +222,10 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // 2026-09-15 record); no token values changed and the ceiling stays at 6416.
   // 2026-09-19: styles.css re-measured at 23421 (+456), within its standing ceiling of 24466
   // while themes.css is unchanged at 4472/6416.
+  // 2026-10-02: styles.css re-measured at 23905 (+484) with the NavigationMenu part classes,
+  // within its standing ceiling of 24466, which stays.
   { name: "themes.css", file: "themes.css", measuredGzip: 4472, ceilingGzip: 6416 },
-  { name: "styles.css", file: "styles.css", measuredGzip: 23421, ceilingGzip: 24466 },
+  { name: "styles.css", file: "styles.css", measuredGzip: 23905, ceilingGzip: 24466 },
 ] satisfies readonly Measured<CssBudget>[]);
 
 export const FLAG_RAW_BUDGETS: readonly FlagRawBudget[] = [
