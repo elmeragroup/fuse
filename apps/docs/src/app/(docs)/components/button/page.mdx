@@ -43,10 +43,16 @@ small shadow, and external themes a 2px ring in the text colour with no shadow.
 
 <Prose>
 
+Mark every leading or trailing icon with `data-icon="inline-start"` or `"inline-end"`, as shadcn/ui's Button
+does. The attribute tells Button which side holds the icon, and that side takes the icon padding instead of the
+label padding, so the icon and its gap balance the text. Without it the icon side keeps the full label padding,
+32px at comfortable density, and the button looks too wide on that side. The rule matches the attribute in the
+DOM, so your own icon components must pass `data-icon` through to the element they render, as the
+`@elmeragroup/fuse/icons` components do.
+
 Button sizes every SVG child without a `size-*` class to 16px, and the `xs` and `icon-xs` sizes to 12px. Any
 `size-*` class opts out, `size-auto` included; `w-*` and `h-*` on their own do not, because the rule matches
-the class name. Mark a leading or trailing icon with `data-icon="inline-start"` or `"inline-end"` so the
-button tightens that edge's inset.
+the class name.
 
 An SVG without a `viewBox` clips instead of scaling when the rule forces it to 16px. Logos that go through
 SVGR often arrive that way, because SVGO's default `removeViewBox` strips the attribute. Give such an icon

@@ -93,6 +93,11 @@ export type IconButtonProps = ButtonSharedProps & {
  */
 export type ButtonProps = LabelButtonProps | IconButtonProps;
 
+/**
+ * Triggers an action. Mark a leading or trailing icon child with `data-icon="inline-start"` or
+ * `data-icon="inline-end"`, on your own icon components too, so that side takes the icon
+ * padding instead of the wider label padding. The attribute must reach the rendered element.
+ */
 export function Button({
   className,
   variant,
