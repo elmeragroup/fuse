@@ -419,10 +419,13 @@ describe("nested NavigationMenu", () => {
       // An opaque surface, so a row color that differs from it is one the user can see.
       expect(computedOklch(popupColor).l).toBeGreaterThan(0);
 
-      expect(getComputedStyle(roleNamed("button", "Homes")).backgroundColor).not.toBe(popupColor);
+      // `computedOklch` throws on anything but an opaque oklch() color, so a transparent row,
+      // which would show the popup through it, fails before the comparison.
+      const openRow = getComputedStyle(roleNamed("button", "Homes")).backgroundColor;
+      expect(computedOklch(openRow)).not.toEqual(computedOklch(popupColor));
       await userEvent.hover(spot);
       await vi.waitFor(() => {
-        expect(getComputedStyle(spot).backgroundColor).not.toBe(popupColor);
+        expect(computedOklch(getComputedStyle(spot).backgroundColor)).not.toEqual(computedOklch(popupColor));
       });
     });
   });
