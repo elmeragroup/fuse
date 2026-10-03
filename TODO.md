@@ -53,6 +53,21 @@
   `rgb()`, `oklch()` and `lab()` as Chromium's computed serializations.
 - No select demo shows `Select.Content alignItemWithTrigger`; only `select.browser.test.tsx`
   exercises it. Add a demo beside the page and list it in the component inventory.
+- `Select.Content` measures its fixed-position containing block through a `ResizeObserver` on
+  its portal target: in the frame after it mounts, and when the target resizes
+  (`select/fixed-containing-block.ts`). Two cases miss item alignment's fallback. In the
+  first, a host transforms an ancestor after mount without resizing the target, and the popup
+  opens away from its trigger. In the second, a `defaultOpen` popup opens before the
+  probe runs, so it opens beside its trigger on an ordinary page. Measuring when the trigger
+  is pressed would cover both, but it needs the trigger and the content to share state.
+- React Aria 3.52.1 misjudges the room around a popover inside a positioned container. In
+  `react-aria/dist/private/overlays/calculatePosition.mjs`, `getOffset` (lines 363-371) measures
+  a boundary in page coordinates and adds the document scroll. `getPosition` (line 300)
+  measures the trigger relative to the popover's containing block. `getAvailableSpace` (line 213) adds the two, so a scope's page offset counts as free space and the popover never flips.
+  Fuse now picks the vertical side itself inside a portal target that clips its overflow, and
+  turns React Aria's flip off there (`react-aria/internal/popover.tsx`). Outside such targets
+  React Aria still flips on its own numbers. Report the coordinate mix upstream, then drop the
+  Fuse side choice once a fixed release is installed.
 - A server component that renders `SelectionItem.Shell` with direct `SelectionItem.SubSection`
   children still loses the partition: Flight revives the SubSection's client reference as a
   lazy wrapper, so the shell's `child.type` filter misses it and the band renders inside the

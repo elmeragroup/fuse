@@ -1,8 +1,15 @@
 "use client";
 
-import type { ReactElement, ReactNode } from "react";
+import { useCallback, useState } from "react";
+import type { ReactElement, ReactNode, RefObject } from "react";
 
-import { Popover as AriaPopover, OverlayArrow, composeRenderProps } from "react-aria-components";
+import {
+  Popover as AriaPopover,
+  OverlayArrow,
+  PopoverContext,
+  composeRenderProps,
+  useSlottedContext,
+} from "react-aria-components";
 import type { PopoverProps as AriaPopoverProps } from "react-aria-components";
 import { tv } from "tailwind-variants";
 
@@ -54,6 +61,50 @@ const popoverArrowSvgClass = popoverSlots.arrowSvg();
 const popoverEnteringClass = popoverSlots.entering();
 const popoverExitingClass = popoverSlots.exiting();
 
+type Placement = NonNullable<AriaPopoverProps["placement"]>;
+
+type Side = "top" | "bottom";
+
+const CROSS_ALIGNMENTS = ["left", "right", "start", "end"] as const;
+
+type CrossAlignment = (typeof CROSS_ALIGNMENTS)[number];
+
+function isCrossAlignment(value: string | undefined): value is CrossAlignment {
+  return CROSS_ALIGNMENTS.some((alignment) => alignment === value);
+}
+
+/** `placement` moved to `side`, keeping its cross-axis alignment. */
+function placementOnSide(placement: Placement, side: Side): Placement {
+  const cross = placement.split(" ")[1];
+  return isCrossAlignment(cross) ? `${side} ${cross}` : side;
+}
+
+/**
+ * The side of the trigger with room for `popover` inside the part of `container` the viewport
+ * shows, preferring bottom; the roomier side when neither fits. `undefined` when the trigger is
+ * not attached or `container` does not clip its overflow, so React Aria's own flip against the
+ * viewport stays in charge.
+ */
+function sideWithRoom(
+  triggerRef: RefObject<Element | null> | undefined,
+  container: Element,
+  popover: HTMLElement,
+  offset: number
+): Side | undefined {
+  const trigger = triggerRef?.current;
+  if (trigger == null || getComputedStyle(container).overflowY === "visible") {
+    return undefined;
+  }
+  const bounds = container.getBoundingClientRect();
+  const { top, bottom } = trigger.getBoundingClientRect();
+  const visibleTop = Math.max(bounds.top, 0);
+  const visibleBottom = Math.min(bounds.bottom, container.ownerDocument.documentElement.clientHeight);
+  const needed = popover.scrollHeight + offset;
+  const below = visibleBottom - bottom;
+  const above = top - visibleTop;
+  return below >= needed || below >= above ? "bottom" : "top";
+}
+
 export type PopoverProps = Omit<
   AriaPopoverProps,
   "children" | "containerPadding" | "UNSTABLE_portalContainer"
@@ -83,10 +134,43 @@ export function Popover({
   className,
   container,
   offset = 8,
+  placement,
   showArrow = true,
   ...props
 }: PopoverProps): ReactElement | null {
   const resolvedContainer = useResolvedPortalContainer(container);
+  const context = useSlottedContext(PopoverContext);
+  const triggerRef = context?.triggerRef;
+  const requested = placement ?? context?.placement ?? "bottom";
+  // React Aria 3.52.1's `calculatePosition` adds a boundary's page coordinates to the
+  // trigger's coordinates in the popover's containing block, so inside a positioned scope that
+  // clips its overflow it misjudges the room on each side and never flips. Fuse picks the
+  // vertical side itself there, as the popover mounts, and turns React Aria's flip off. The ref
+  // runs before React Aria's positioning layout effect, and the update lands before paint. The
+  // side is kept with the container it was measured in, so a changed or removed container
+  // returns the choice to React Aria until the next mount measures again.
+  const [measured, setMeasured] = useState<{ container: Element; side: Side | undefined }>();
+  const measureSide = useCallback(
+    (popover: HTMLElement | null) => {
+      if (popover !== null && resolvedContainer != null) {
+        setMeasured({
+          container: resolvedContainer,
+          side: sideWithRoom(triggerRef, resolvedContainer, popover, offset),
+        });
+      }
+    },
+    [offset, resolvedContainer, triggerRef]
+  );
+  const vertical = requested.startsWith("top") || requested.startsWith("bottom");
+  const chosen =
+    vertical && measured !== undefined && measured.container === resolvedContainer
+      ? measured.side
+      : undefined;
+  const positioning: Pick<AriaPopoverProps, "placement" | "shouldFlip"> = { placement: requested };
+  if (chosen !== undefined) {
+    positioning.placement = placementOnSide(requested, chosen);
+    positioning.shouldFlip = false;
+  }
 
   if (resolvedContainer === null) {
     return null;
@@ -97,6 +181,8 @@ export function Popover({
       offset={offset}
       UNSTABLE_portalContainer={resolvedContainer}
       {...props}
+      ref={measureSide}
+      {...positioning}
       containerPadding={CONTAINER_PADDING}
       className={composeRenderProps(className, (resolved: string | undefined, renderProps) =>
         cn(

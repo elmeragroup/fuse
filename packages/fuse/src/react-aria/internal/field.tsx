@@ -146,6 +146,9 @@ export function FieldError({ className, ...props }: FieldErrorProps): ReactEleme
   return (
     <AriaFieldError
       data-slot="field-error"
+      // Announce the error when it appears, as Fuse Field's error does. RAC's FieldError
+      // filters `role` out of its DOM props, so the role goes on through its element.
+      render={(domProps) => <span {...domProps} role="alert" />}
       className={composeTailwindRenderProps(className, "text-sm whitespace-break-spaces text-error")}
       {...props}
     />
