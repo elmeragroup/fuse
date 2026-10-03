@@ -1,6 +1,7 @@
 /**
- * What the Dashboard window's browser suites share: the window, its rows, Order search's table
- * and the fixture facts more than one suite asserts.
+ * What the hero window's browser suites share: the window and its Internal/External switch, the
+ * Dashboard and its rows, Order search's table, the brand sites, and the fixture facts more than
+ * one suite asserts.
  */
 import type { Locator, Page } from "playwright";
 import { expect } from "vitest";
@@ -17,9 +18,49 @@ export const WIDE_VIEWPORT = { width: 1440, height: 900 } as const;
  */
 export const OPEN_COUNTS = { "My orders": "26", Drafts: "12", "Establishment stopped": "12" } as const;
 
-/** The landing's Dashboard window. */
+/** The hero's live demo window: its chrome, the switch, and the side it shows. */
+export function liveDemo(page: Page): Locator {
+  return page.getByRole("region", { name: "Live demo", exact: true });
+}
+
+/**
+ * The window's description: the chrome's caption, which names what the window shows, such as
+ * the site's domain on the External side.
+ */
+export async function windowCaption(page: Page): Promise<string> {
+  // DOM audit: Playwright exposes no accessible description, so the read follows aria-describedby.
+  return liveDemo(page).evaluate(
+    (element) => document.getElementById(element.getAttribute("aria-describedby") ?? "")?.textContent ?? ""
+  );
+}
+
+/** The window's Dashboard, the Internal side. */
 export function dashboard(page: Page): Locator {
   return page.getByRole("region", { name: "Dashboard", exact: true });
+}
+
+/** A brand's website on the External side, named after the site: "Fjordkraft website". */
+export function brandSite(page: Page, site: string): Locator {
+  return page.getByRole("region", { name: `${site} website`, exact: true });
+}
+
+/** Presses one side of the window's Internal/External switch. */
+export async function showSide(page: Page, side: "Internal" | "External"): Promise<void> {
+  const demo = liveDemo(page);
+  await demo.scrollIntoViewIfNeeded();
+  await demo
+    .getByRole("group", { name: "Window content" })
+    .getByRole("button", { name: side, exact: true })
+    .click();
+}
+
+/** Picks `brand` in the landing's brand picker, the same action as any other brand control. */
+export async function pickBrand(page: Page, brand: string): Promise<void> {
+  await page
+    .getByRole("button")
+    .filter({ hasText: `data-theme-brand="${brand}"` })
+    .click();
+  await expect.poll(async () => page.locator("html").getAttribute("data-theme-brand")).toBe(brand);
 }
 
 /** The row button for `customer`; its accessible name starts with the order's customer. */

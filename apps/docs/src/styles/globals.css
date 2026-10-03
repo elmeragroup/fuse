@@ -208,6 +208,44 @@
   }
 }
 
+/* One side of the hero window. The Internal/External switch moves the sides with `data-shown`:
+   the outgoing side fades and drifts toward its end of the switch while the incoming one settles.
+   The exit fades and blurs in 120ms, all but gone in its first 60ms, and the entrance waits 100ms,
+   so one screen dominates every frame of the flip. Transitions, not keyframes, so flipping back
+   mid-way reverses from where the sides are.
+   Reduced motion swaps at once: `transition: none` also zeroes the durations, so the central
+   reduced-motion rule, which keeps opacity in `transition-property`, has nothing to run. */
+@utility landing-flip {
+  transition:
+    opacity 220ms var(--ease-snap) 100ms,
+    filter 220ms var(--ease-snap) 100ms,
+    translate 300ms var(--ease-snap),
+    scale 300ms var(--ease-snap);
+
+  &[data-shown="false"] {
+    filter: blur(3px);
+    transition-duration: 120ms, 120ms, 300ms, 300ms;
+    transition-delay: 0ms;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &,
+    &[data-shown="false"] {
+      transition: none;
+    }
+  }
+}
+
+/* The demo sites' dark-scheme surfaces. Fuse's dark external sheets turn `primary` and
+   `secondary` into light ink for text, so a band filled with them would end a dark site on light
+   stripes; a part that fills a band names its dark-scheme role through this variant. */
+@custom-variant landing-dark (&:where([data-theme="dark"] *));
+
+/* TrøndelagKraft's hero photo starts on a diagonal, cut out of its own box. */
+@utility landing-angle {
+  clip-path: polygon(14% 0, 100% 0, 100% 100%, 0 100%);
+}
+
 /* A phone carousel: native momentum and snap, no visible scrollbar, no scroll chaining. */
 @utility landing-rail {
   scroll-snap-type: x mandatory;

@@ -39,17 +39,17 @@ export type DashboardApi = {
   readonly splitView: boolean;
 };
 
-/** The window's API, provided by `DashboardWindow`. */
+/** The window's API, provided by `DashboardApp`. */
 export const DashboardContext = createContext<DashboardApi | undefined>(undefined);
 
 /**
  * @returns The window's state and actions.
- * @throws Outside `DashboardWindow`, a wiring defect.
+ * @throws Outside `DashboardApp`, a wiring defect.
  */
 export function useDashboard(): DashboardApi {
   const api = use(DashboardContext);
   if (api === undefined) {
-    throw new Error("useDashboard must be used within DashboardWindow");
+    throw new Error("useDashboard must be used within DashboardApp");
   }
   return api;
 }

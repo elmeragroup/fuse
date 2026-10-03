@@ -5,8 +5,8 @@ import { tv } from "tailwind-variants";
 
 import { Button } from "@elmeragroup/fuse/button";
 
-import { DashboardWindow } from "./app-shell/dashboard-window";
 import { BrandWordmark } from "./brand-wordmark";
+import { HeroWindow } from "./hero-window";
 import { BROWSE_COMPONENTS, LANDING_SUMMARY, PICKER_BRANDS, QUICK_START } from "./landing-facts";
 
 const landingHero = tv({
@@ -57,7 +57,7 @@ export function LandingHero(): ReactElement {
         </div>
       </div>
       <div className={styles.shot()}>
-        <DashboardWindow />
+        <HeroWindow />
       </div>
       <div className={styles.strip()}>
         <ul aria-label="Brands" className={styles.brands()}>

@@ -7,12 +7,10 @@ import { tv } from "tailwind-variants";
 
 import { Sidebar, useSidebar } from "@elmeragroup/fuse/sidebar";
 import { ThemeScope } from "@elmeragroup/fuse/theme";
-import type { ThemeVariant } from "@elmeragroup/fuse/theme";
 import { Toast } from "@elmeragroup/fuse/toast";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
 import { useLandingTheme } from "../landing-theme";
-import { SingleToggle } from "../product-parts";
 import { CommandPalette } from "./command-palette";
 import { DashboardContext } from "./dashboard-context";
 import type { DashboardApi, Navigation, Notice } from "./dashboard-context";
@@ -23,32 +21,18 @@ import { DashboardSidebar } from "./dashboard-sidebar";
 import { initialState, isQueue, reduce, visibleOrders } from "./dashboard-state";
 import { NewOrderSheet } from "./new-order-sheet";
 
-const dashboardWindow = tv({
+const dashboardApp = tv({
   slots: {
-    frame: "sm:px-6 w-full max-w-312 px-4 lg:px-8",
-    // The fade is a mask, so it is applied on a padded wrapper the shadow fits inside.
-    fade: "landing-fade sm:-mx-6 sm:px-6 -mx-4 px-4 pb-2",
-    window: "rounded-2xl shadow-2xl relative overflow-hidden border border-border bg-background text-left",
-    chrome: "text-sm sm:px-4 flex h-11 items-center gap-3 border-b border-border bg-muted/40 px-3",
-    chromeName: "font-semibold text-foreground",
-    chromeNote: "sm:inline hidden text-muted-foreground",
-    chromeEnd: "ml-auto",
-    // The scope is the window's containing block: `transform` makes the Sidebar's fixed rail,
+    // The scope is the app's containing block: `transform` makes the Sidebar's fixed rail,
     // every Sheet, Dialog and the toast viewport position against the window, not the viewport.
     // `overflow-clip`, not `overflow-hidden`: a hidden box still scrolls when focus or a popup
     // reaches past its edge, and fixed overlays inside it then scroll with it, short of its edges.
     provider: "h-full min-h-0",
-    scope: "sm:h-180 relative h-160 transform-gpu overflow-clip bg-background text-foreground lg:h-190",
+    scope: "relative h-full transform-gpu overflow-clip bg-background text-foreground",
   },
 });
 
-const styles = dashboardWindow();
-
-const VARIANTS = ["internal", "external"] as const satisfies readonly ThemeVariant[];
-const VARIANT_LABELS = { internal: "Internal", external: "External" } as const satisfies Record<
-  ThemeVariant,
-  string
->;
+const styles = dashboardApp();
 
 /** How long a view "fetches" before its rows replace the skeleton. */
 const FETCH_MS = 420;
@@ -325,14 +309,12 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
 }
 
 /**
- * The hero's product shot: Dashboard, an internal sales and back-office app, running live on Fuse inside a
- * fixed-height window. A `ThemeScope` wraps it, so the switch flips the window between the
- * internal and external variant of the brand the landing has picked while the page keeps its
- * own theme. Density stays the document's.
+ * Dashboard, an internal sales and back-office app, running live on Fuse: the Internal side of
+ * the hero window. A `ThemeScope` gives it the internal variant of the brand the landing has
+ * picked while the page keeps its own theme. Density stays the document's.
  */
-export function DashboardWindow(): ReactElement {
+export function DashboardApp(): ReactElement {
   const { theme } = useLandingTheme();
-  const [variant, setVariant] = useState<ThemeVariant>("internal");
   // The rail's open state lives here, in memory, never in the host's sidebar cookie.
   const [open, setOpenState] = useState(true);
   const scope = useRef<HTMLDivElement>(null);
@@ -341,37 +323,15 @@ export function DashboardWindow(): ReactElement {
   }, []);
 
   return (
-    <div className={styles.frame()}>
-      <div className={styles.fade()}>
-        <section aria-label="Dashboard" className={styles.window()}>
-          <div className={styles.chrome()}>
-            <span className={styles.chromeName()}>Live demo</span>
-            <span className={styles.chromeNote()}>
-              Dashboard: an internal sales and back-office app built with Fuse
-            </span>
-            <span className={styles.chromeEnd()}>
-              <SingleToggle
-                label="Theme variant"
-                size="sm"
-                options={VARIANTS}
-                labels={VARIANT_LABELS}
-                value={variant}
-                onValueChange={setVariant}
-              />
-            </span>
-          </div>
-          <ThemeScope ref={scope} theme={{ ...theme, variant }} className={styles.scope()}>
-            <Tooltip.Provider>
-              <Toast.Provider>
-                <Sidebar.Provider open={open} onOpenChange={setOpenState} className={styles.provider()}>
-                  <DashboardShell scope={scope} setOpen={setOpen} />
-                </Sidebar.Provider>
-                <Toast.Viewport aria-label="Dashboard notifications" />
-              </Toast.Provider>
-            </Tooltip.Provider>
-          </ThemeScope>
-        </section>
-      </div>
-    </div>
+    <ThemeScope ref={scope} theme={{ ...theme, variant: "internal" }} className={styles.scope()}>
+      <Tooltip.Provider>
+        <Toast.Provider>
+          <Sidebar.Provider open={open} onOpenChange={setOpenState} className={styles.provider()}>
+            <DashboardShell scope={scope} setOpen={setOpen} />
+          </Sidebar.Provider>
+          <Toast.Viewport aria-label="Dashboard notifications" />
+        </Toast.Provider>
+      </Tooltip.Provider>
+    </ThemeScope>
   );
 }

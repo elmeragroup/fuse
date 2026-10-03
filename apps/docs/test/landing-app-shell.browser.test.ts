@@ -1,7 +1,7 @@
 import type { Locator, Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
-import { DESKTOP_VIEWPORT, expectInside, readThemeAttributes } from "./demo-page";
+import { DESKTOP_VIEWPORT, expectInside } from "./demo-page";
 import {
   IDA_METER_POINT,
   OPEN_COUNTS,
@@ -13,7 +13,7 @@ import {
   row,
   searchTable,
 } from "./landing-dashboard";
-import { launchLandingSuite, TARGET_FLOOR_PX } from "./landing-page";
+import { auditTargets, expectTargets, launchLandingSuite } from "./landing-page";
 
 const { openLanding } = launchLandingSuite();
 
@@ -76,130 +76,6 @@ async function openView(page: Page, label: string): Promise<void> {
   await app.getByRole("button", { name: label, exact: true }).click();
   await expect.poll(async () => app.getByRole("status", { name: "Loading orders" }).count()).toBe(0);
   await app.getByRole("list", { name: "Orders" }).waitFor();
-}
-
-/** What the WCAG floor probe found inside one scenario's root. */
-type TargetAudit = { readonly targets: number; readonly misses: readonly string[] };
-
-/**
- * Every kind of control the window renders, including the items of open menus and the palette,
- * the date picker's segments and its calendar's days.
- */
-const CONTROLS =
-  "button, a[href], input, textarea, [role='button'], [role='spinbutton'], [role='checkbox'], [role='tab'], [role='combobox'], [role='option'], [role='menuitem'], [role='menuitemradio'], [role='menuitemcheckbox']";
-
-/** One probe that missed its control, with the offset from the control's centre it pressed at. */
-type ProbeMiss = {
-  readonly index: number;
-  readonly label: string;
-  readonly segment: boolean;
-  readonly dx: number;
-  readonly dy: number;
-  readonly at: string;
-};
-
-/**
- * Probes every visible control under `root`: a press 1/4px inside each edge of a 24px box
- * centred on the control must land on it.
- */
-async function auditTargets(root: Locator): Promise<TargetAudit> {
-  const controls = root.locator(CONTROLS);
-  const { targets, misses } = await controls.evaluateAll(
-    (elements, offset) => {
-      let targets = 0;
-      const misses = elements.flatMap((control, index) => {
-        // Base UI pairs each checkbox with an aria-hidden native input for forms; the visible
-        // role="checkbox" span is the target. A disabled control takes no press, and a disabled
-        // menu item lets the pointer through, so neither is a target.
-        if (
-          !(control instanceof HTMLElement) ||
-          control.closest("[aria-hidden='true']") !== null ||
-          control.matches(":disabled, [aria-disabled='true'], [data-disabled]") ||
-          !control.checkVisibility({ visibilityProperty: true })
-        ) {
-          return [];
-        }
-        control.scrollIntoView({ block: "center", inline: "center" });
-        const rect = control.getBoundingClientRect();
-        if (rect.width === 0 || rect.height === 0) {
-          return [];
-        }
-        targets += 1;
-        const x = rect.left + rect.width / 2;
-        const y = rect.top + rect.height / 2;
-        const offsets = [
-          [-offset, 0],
-          [offset, 0],
-          [0, -offset],
-          [0, offset],
-        ] as const;
-        return offsets.flatMap(([dx, dy]) => {
-          const hit = document.elementFromPoint(x + dx, y + dy);
-          return hit !== null && control.contains(hit)
-            ? []
-            : [
-                {
-                  index,
-                  label: control.getAttribute("aria-label") ?? control.textContent.trim(),
-                  segment: control.getAttribute("role") === "spinbutton",
-                  dx,
-                  dy,
-                  at: `${String(x + dx)},${String(y + dy)}`,
-                },
-              ];
-        });
-      });
-      return { targets, misses };
-    },
-    TARGET_FLOOR_PX / 2 - 0.25
-  );
-  const confirmed: string[] = [];
-  for (const miss of misses) {
-    if (!miss.segment || !(await pressFocuses(controls.nth(miss.index), miss))) {
-      confirmed.push(`${miss.label} at ${miss.at}`);
-    }
-  }
-  return { targets, misses: confirmed };
-}
-
-/**
- * Whether a real press at `miss`'s offset moves focus to the date segment. A segment's edge can
- * sit within a pixel of its literal's, where `elementFromPoint` reports the literal, but
- * react-aria hands that press to the segment, so the press still reaches it. Focus starts on
- * another segment of the same field, so only the press itself can put it on this one.
- */
-async function pressFocuses(segment: Locator, miss: ProbeMiss): Promise<boolean> {
-  const page = segment.page();
-  const scroll = await page.evaluate(() => ({ x: window.scrollX, y: window.scrollY }));
-  const elsewhere = await segment.evaluate((element) => {
-    const fields = element.closest("[role='group']")?.querySelectorAll("[role='spinbutton']") ?? [];
-    const other = [...fields].find((field) => field !== element);
-    if (!(other instanceof HTMLElement)) {
-      return false;
-    }
-    other.focus({ preventScroll: true });
-    return document.activeElement === other;
-  });
-  expect(elsewhere, `${miss.label}: focus starts on another segment`).toBe(true);
-  const centre = await segment.evaluate((element) => {
-    element.scrollIntoView({ block: "center", inline: "center" });
-    const rect = element.getBoundingClientRect();
-    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-  });
-  await page.mouse.click(centre.x + miss.dx, centre.y + miss.dy);
-  const focused = await segment.evaluate((element) => element === document.activeElement);
-  // Later scenarios open overlays from where the audit left the page.
-  await page.evaluate(({ x, y }) => {
-    window.scrollTo(x, y);
-  }, scroll);
-  return focused;
-}
-
-/** Asserts that `root` holds at least one control and that every one clears the floor. */
-async function expectTargets(root: Locator, scenario: string): Promise<void> {
-  const { targets, misses } = await auditTargets(root);
-  expect(targets, `${scenario}: controls probed`).toBeGreaterThan(0);
-  expect(misses, scenario).toEqual([]);
 }
 
 describe("landing Dashboard window", () => {
@@ -296,27 +172,6 @@ describe("landing Dashboard window", () => {
     // A row wider than the pane scrolls it sideways and parks the button under its scrollbar.
     expect(await pane.evaluate((viewport) => viewport.scrollWidth - viewport.clientWidth)).toBe(0);
     expect(await auditTargets(copy.locator(".."))).toEqual({ targets: 1, misses: [] });
-    await page.context().close();
-  });
-
-  it("flips the window between Internal and External while the document keeps its theme", async () => {
-    const page = await openLanding(DESKTOP_VIEWPORT);
-    const app = dashboard(page);
-    // DOM audit: ThemeScope's element has no role; it is the window's only themed element.
-    const scope = app.locator("[data-theme-variant]");
-    const documentTheme = await readThemeAttributes(page.locator("html"));
-    expect(documentTheme.variant).toBe("external");
-
-    expect((await readThemeAttributes(scope)).variant).toBe("internal");
-    await app.getByRole("button", { name: "External", exact: true }).click();
-    await expect.poll(async () => (await readThemeAttributes(scope)).variant).toBe("external");
-    await app.getByRole("button", { name: "Internal", exact: true }).click();
-    await expect.poll(async () => (await readThemeAttributes(scope)).variant).toBe("internal");
-
-    // The brand follows the landing's pick; the document's own axes never move.
-    await page.getByRole("button").filter({ hasText: 'data-theme-brand="tkas"' }).click();
-    await expect.poll(async () => (await readThemeAttributes(scope)).brand).toBe("tkas");
-    expect(await readThemeAttributes(page.locator("html"))).toEqual({ ...documentTheme, brand: "tkas" });
     await page.context().close();
   });
 

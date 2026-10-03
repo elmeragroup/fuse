@@ -24,8 +24,9 @@ const brandWordmark = tv({
       guen: "landing-logo-guen aspect-461/124",
       fkse: "landing-logo-fkse aspect-260/35",
     } satisfies Record<BrandCode, string>,
-    // `tile` captions a brand tile; `strip` is the hero's row, a step larger from `sm`.
-    size: { tile: "", strip: "" },
+    // `tile` captions a brand tile; `strip` is the hero's row, a step larger from `sm`; `site`
+    // takes its height from a demo site's logo slot.
+    size: { tile: "", strip: "", site: "" },
   },
   compoundVariants: [
     { brand: "elma", size: "tile", class: "h-4" },
@@ -46,7 +47,7 @@ const brandWordmark = tv({
 
 export type BrandWordmarkProps = {
   brand: BrandCode;
-  size?: "tile" | "strip";
+  size?: "tile" | "strip" | "site";
 };
 
 export function BrandWordmark({ brand, size }: BrandWordmarkProps): ReactElement {
