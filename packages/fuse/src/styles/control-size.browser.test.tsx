@@ -19,6 +19,7 @@ import type { ControlSizeName, QueryableRole } from "../../test/themed-browser-r
 import { Button } from "../components/button/button";
 import { Combobox } from "../components/combobox";
 import { NumberField } from "../components/number-field/number-field";
+import { PhoneNumberField } from "../components/phone-number-field/phone-number-field";
 import { RadioGroup, RadioIconButton } from "../components/radio-group/radio-group";
 import { Select } from "../components/select";
 import { Sidebar } from "../components/sidebar";
@@ -400,6 +401,7 @@ describe("control size: square fit", () => {
           </RadioIconButton>
         </RadioGroup>
         {withLocale("en-US", <NumberField label="Smallest number" defaultValue={1} />)}
+        {withLocale("en-US", <PhoneNumberField label="Smallest phone" />)}
       </>
     );
     for (const [role, name] of [
@@ -408,11 +410,22 @@ describe("control size: square fit", () => {
       ["radio", "smallest radio"],
       ["button", "Increase"],
       ["button", "Decrease"],
+      ["button", "Select country"],
     ] as const) {
       const box = measure(role, name);
       expect(box.height, `${density} ${name} height`).toBeGreaterThanOrEqual(24);
       expect(box.width, `${density} ${name} width`).toBeGreaterThanOrEqual(24);
     }
+    // The country trigger reaches the floor inside the field's md box, not by growing it.
+    const phoneGroup = roleNamed("textbox", "Smallest phone").closest<HTMLElement>(
+      "[data-slot='input-group']"
+    );
+    if (phoneGroup === null) {
+      throw new Error("expected the phone field's input group around its input");
+    }
+    expect(measureElement(phoneGroup).height, `${density} phone field height`).toBe(
+      expectedMetrics("md", density).height
+    );
   });
 
   it("keeps Button's icon-inline square out of the density metrics", () => {
