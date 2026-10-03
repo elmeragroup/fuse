@@ -51,3 +51,64 @@ export async function openOrderSearch(page: Page): Promise<Locator> {
   await expect.poll(async () => searchTable(app).getAttribute("aria-busy")).toBeNull();
   return app;
 }
+
+/** Opens New order from the window's sidebar and waits for its Sheet. */
+export async function openNewOrder(app: Locator): Promise<Locator> {
+  await app.getByRole("button", { name: /^New order/u }).click();
+  const sheet = app.page().getByRole("dialog", { name: "New order" });
+  await sheet.waitFor();
+  return sheet;
+}
+
+/** The window's theme scope: the box its Sheets fill and its popups stay in. */
+export function windowScope(app: Locator): Locator {
+  // DOM audit: ThemeScope's element has no role; it is the window's only themed element.
+  return app.locator("[data-theme-variant]");
+}
+
+/**
+ * Scrolls the page so the window's top sits above the viewport and its body part way up it, as a
+ * visitor sees it after scrolling past the hero's headline.
+ */
+export async function scrollWindowPartWay(page: Page): Promise<void> {
+  const top = await dashboard(page).evaluate(
+    (element) => element.getBoundingClientRect().top + window.scrollY
+  );
+  await page.evaluate((y) => {
+    window.scrollTo(0, y);
+  }, top + 80);
+  await expect.poll(async () => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+}
+
+/**
+ * How far a popup may sit from its trigger: Base UI popups sit 4px off and the react-aria
+ * popover 8px, plus slack for borders and subpixel rounding.
+ */
+const POPUP_GAP_PX = 12;
+
+/**
+ * Polls until `popup` opens next to `trigger`: within 8px of one of its sides, overlapping it on
+ * the other axis, and inside the window's scope.
+ */
+export async function expectBeside(popup: Locator, trigger: Locator, scope: Locator): Promise<void> {
+  await expect
+    .poll(async () => {
+      const [p, t, s] = await Promise.all([popup.boundingBox(), trigger.boundingBox(), scope.boundingBox()]);
+      if (p === null || t === null || s === null) {
+        return "not rendered";
+      }
+      const near = (gap: number) => gap >= -1 && gap <= POPUP_GAP_PX;
+      const crossesX = p.x < t.x + t.width && p.x + p.width > t.x;
+      const crossesY = p.y < t.y + t.height && p.y + p.height > t.y;
+      const beside =
+        (crossesX && (near(p.y - (t.y + t.height)) || near(t.y - (p.y + p.height)))) ||
+        (crossesY && (near(p.x - (t.x + t.width)) || near(t.x - (p.x + p.width))));
+      const inside =
+        p.x >= s.x - 1 &&
+        p.y >= s.y - 1 &&
+        p.x + p.width <= s.x + s.width + 1 &&
+        p.y + p.height <= s.y + s.height + 1;
+      return beside && inside ? "beside" : `popup ${JSON.stringify(p)}, trigger ${JSON.stringify(t)}`;
+    })
+    .toBe("beside");
+}

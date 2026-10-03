@@ -35,8 +35,10 @@ const dashboardWindow = tv({
     chromeEnd: "ml-auto",
     // The scope is the window's containing block: `transform` makes the Sidebar's fixed rail,
     // every Sheet, Dialog and the toast viewport position against the window, not the viewport.
+    // `overflow-clip`, not `overflow-hidden`: a hidden box still scrolls when focus or a popup
+    // reaches past its edge, and fixed overlays inside it then scroll with it, short of its edges.
     provider: "h-full min-h-0",
-    scope: "sm:h-180 relative h-160 transform-gpu overflow-hidden bg-background text-foreground lg:h-190",
+    scope: "sm:h-180 relative h-160 transform-gpu overflow-clip bg-background text-foreground lg:h-190",
   },
 });
 

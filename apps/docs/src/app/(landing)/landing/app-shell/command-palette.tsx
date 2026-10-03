@@ -8,6 +8,7 @@ import { tv } from "tailwind-variants";
 import { Dialog } from "@elmeragroup/fuse/dialog";
 import { MagnifyingGlass, Plus, SidebarSimple, SlidersHorizontal } from "@elmeragroup/fuse/icons";
 import type { ElmeraIconProps } from "@elmeragroup/fuse/icons";
+import { InputGroup } from "@elmeragroup/fuse/input-group";
 
 import { useDashboard } from "./dashboard-context";
 import { ORDER_STATUSES } from "./dashboard-orders";
@@ -20,10 +21,6 @@ const commandPalette = tv({
   slots: {
     // The palette sits high in the window, as Linear's does, and keeps one width.
     popup: "max-w-lg top-16 w-full translate-y-0",
-    field: "flex items-center gap-2 border-b border-border px-1 pb-3",
-    fieldIcon: "size-4 shrink-0 text-muted-foreground",
-    input:
-      "text-base min-h-6 w-full border-0 bg-transparent p-0 text-foreground outline-none placeholder:text-muted-foreground",
     list: "m-0 -mx-2 max-h-80 list-none overflow-y-auto p-0",
     groupList: "m-0 list-none p-0",
     group: "text-xs font-medium px-2 pt-3 pb-1 text-muted-foreground",
@@ -243,11 +240,12 @@ function PaletteSearch({
 
   return (
     <>
-      <div className={styles.field()}>
-        <MagnifyingGlass className={styles.fieldIcon()} />
-        <input
+      <InputGroup.Root>
+        <InputGroup.Addon>
+          <MagnifyingGlass aria-hidden />
+        </InputGroup.Addon>
+        <InputGroup.Input
           ref={input}
-          type="text"
           role="combobox"
           aria-label="Search orders, views and actions"
           aria-autocomplete="list"
@@ -256,7 +254,6 @@ function PaletteSearch({
           aria-activedescendant={current === undefined ? "" : optionId(active)}
           autoComplete="off"
           placeholder="Search orders, views and actions"
-          className={styles.input()}
           value={query}
           onChange={(event) => {
             setQuery(event.target.value);
@@ -264,7 +261,7 @@ function PaletteSearch({
           }}
           onKeyDown={onKeyDown}
         />
-      </div>
+      </InputGroup.Root>
       <ul id={listId} role="listbox" aria-label="Results" className={styles.list()}>
         {GROUPS.map((group) => {
           const members = results.filter((command) => command.group === group);

@@ -20,7 +20,7 @@ export type DraftFields = {
   readonly product: Product;
   readonly campaign: Campaign | "none";
   readonly startup: StartupType;
-  /** `yyyy-mm-dd` from the date input, or empty. */
+  /** `yyyy-mm-dd` from the date picker, or empty until every segment is in. */
   readonly startDate: string;
   /** Estimated kWh a year; `NaN` while the field is empty. */
   readonly annualKwh: number;
@@ -134,4 +134,23 @@ export function parseDraft(fields: DraftFields, today: string): DraftParse {
       note: fields.note.trim(),
     },
   };
+}
+
+/**
+ * The errors still due after an edit: each shown error whose field `fields` still fails. A fixed
+ * field drops its error at once, and an edit never raises a new one; that waits for a submit.
+ *
+ * @param shown - The errors on screen.
+ * @param fields - The form's values after the edit.
+ * @param today - The demo's date, `yyyy-mm-dd`.
+ * @returns The shown errors whose fields are still invalid.
+ */
+export function remainingErrors(
+  shown: ReadonlyMap<DraftField, string>,
+  fields: DraftFields,
+  today: string
+): ReadonlyMap<DraftField, string> {
+  const parsed = parseDraft(fields, today);
+  const failing = parsed._tag === "Invalid" ? parsed.errors : new Map<DraftField, string>();
+  return new Map([...shown].filter(([field]) => failing.has(field)));
 }

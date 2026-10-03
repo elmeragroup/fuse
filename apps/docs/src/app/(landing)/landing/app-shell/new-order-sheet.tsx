@@ -1,27 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { ReactElement } from "react";
 
+import { parseDate } from "@internationalized/date";
+import type { CalendarDate } from "@internationalized/date";
 import { tv } from "tailwind-variants";
 
 import { Button } from "@elmeragroup/fuse/button";
 import { Checkbox } from "@elmeragroup/fuse/checkbox";
 import { Field } from "@elmeragroup/fuse/field";
-import { Input } from "@elmeragroup/fuse/input";
 import { NumberField } from "@elmeragroup/fuse/number-field";
 import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
 import { Radio, RadioGroup, RadioItem, RadioItemGroup } from "@elmeragroup/fuse/radio-group";
+import { DatePicker } from "@elmeragroup/fuse/react-aria/date-picker";
+import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
 import { Select } from "@elmeragroup/fuse/select";
 import { Sheet } from "@elmeragroup/fuse/sheet";
 import { TextField } from "@elmeragroup/fuse/text-field";
-import { Textarea } from "@elmeragroup/fuse/textarea";
+import { TextareaField } from "@elmeragroup/fuse/textarea-field";
 
 import { useDashboard } from "./dashboard-context";
 import { CAMPAIGNS, osloDate, PRODUCTS, productPrice, STARTUP_TYPES } from "./dashboard-orders";
 import type { Campaign, Product, StartupType } from "./dashboard-orders";
 import { nextOrderId } from "./dashboard-state";
-import { ANNUAL_KWH_RANGE, parseDraft } from "./order-draft";
+import { ANNUAL_KWH_RANGE, parseDraft, remainingErrors } from "./order-draft";
 import type { DraftField, DraftFields } from "./order-draft";
 
 const newOrderSheet = tv({
@@ -66,19 +69,49 @@ function pick<T extends string>(options: readonly T[], value: string | null): T 
   return options.find((option) => option === value);
 }
 
+/** The picker's value for a `yyyy-mm-dd` field, which is empty until every segment is in. */
+function calendarDate(iso: string): CalendarDate | null {
+  return iso === "" ? null : parseDate(iso);
+}
+
+/**
+ * `fields` as the Start date picker shows them. React Aria keeps the date it last committed while
+ * a segment is empty, so a picker with an empty segment holds no date here. `data-placeholder` is
+ * React Aria's own mark of an empty segment.
+ */
+function withShownStartDate(fields: DraftFields, picker: HTMLElement | null): DraftFields {
+  const hasEmptySegment = picker !== null && picker.querySelector("[data-placeholder]") !== null;
+  return hasEmptySegment ? { ...fields, startDate: "" } : fields;
+}
+
 /**
  * The form. It mounts with the Sheet's popup, so every opening starts empty. Errors appear on
- * submit, through each control's Field, and stay until the next submit.
+ * submit, through each control's Field, and each one clears as soon as its field is valid.
  */
 function NewOrderForm({ onSaved }: { onSaved: () => void }): ReactElement {
   const { dispatch, now, notify } = useDashboard();
   const [fields, setFields] = useState<DraftFields>(EMPTY_FIELDS);
   const [errors, setErrors] = useState<ReadonlyMap<DraftField, string>>(new Map());
+  // The fields as last stored, ahead of the render that shows them. React Aria can commit a
+  // constrained date in the same blur that rechecks it, after this render's `fields` were read.
+  const latestFields = useRef(fields);
+  const startDatePicker = useRef<HTMLDivElement>(null);
+  // A new value on every render would make React Aria drop a segment edit still in progress.
+  const startDate = useMemo(() => calendarDate(fields.startDate), [fields.startDate]);
+  const today = osloDate(now());
+  /** Stores `next`, and drops each shown error that `checked` no longer fails. */
+  const update = (next: DraftFields, checked: DraftFields) => {
+    latestFields.current = next;
+    setFields(next);
+    if (errors.size > 0) {
+      setErrors(remainingErrors(errors, checked, today));
+    }
+  };
   const set = <K extends keyof DraftFields>(key: K, value: DraftFields[K]) => {
-    setFields((current) => ({ ...current, [key]: value }));
+    const next = { ...fields, [key]: value };
+    update(next, withShownStartDate(next, startDatePicker.current));
   };
   const error = (field: DraftField) => errors.get(field);
-  const today = osloDate(now());
 
   return (
     <form
@@ -87,7 +120,7 @@ function NewOrderForm({ onSaved }: { onSaved: () => void }): ReactElement {
       className={styles.form()}
       onSubmit={(event) => {
         event.preventDefault();
-        const parsed = parseDraft(fields, today);
+        const parsed = parseDraft(withShownStartDate(fields, startDatePicker.current), today);
         if (parsed._tag === "Invalid") {
           setErrors(parsed.errors);
           return;
@@ -241,18 +274,34 @@ function NewOrderForm({ onSaved }: { onSaved: () => void }): ReactElement {
               </Radio>
             ))}
           </RadioGroup>
-          <Field.Root invalid={error("startDate") !== undefined}>
-            <Field.Label>Start date</Field.Label>
-            <Input
-              type="date"
-              min={today}
-              value={fields.startDate}
-              onChange={(event) => {
-                set("startDate", event.target.value);
-              }}
-            />
-            <Field.Error>{error("startDate")}</Field.Error>
-          </Field.Root>
+          {/* Norwegian segments (dd.mm.yyyy) and calendar months, for Norwegian customers. The
+              demo's today bounds the calendar, so earlier days take no pick and it opens on that
+              month. Native validation stays silent in the noValidate form, so the parse's message
+              is the only one, shown on submit like every other field's. */}
+          <div ref={startDatePicker}>
+            <UiProviders locale="nb-NO" navigate={() => undefined}>
+              <DatePicker<CalendarDate>
+                label="Start date"
+                value={startDate}
+                onChange={(value) => {
+                  // A change means every segment is in, or every one is empty, so the value is
+                  // what the field shows. The segments on screen still predate this keystroke.
+                  const next = { ...fields, startDate: value === null ? "" : value.toString() };
+                  update(next, next);
+                }}
+                onBlur={() => {
+                  // Retyping the committed date is no change to React Aria, so recheck on leaving.
+                  // Only the errors: the fields may already hold a date committed in this blur.
+                  const checked = withShownStartDate(latestFields.current, startDatePicker.current);
+                  setErrors((shown) => (shown.size > 0 ? remainingErrors(shown, checked, today) : shown));
+                }}
+                minValue={parseDate(today)}
+                placeholderValue={parseDate(today)}
+                isInvalid={error("startDate") !== undefined}
+                errorMessage={error("startDate")}
+              />
+            </UiProviders>
+          </div>
           <Field.Root invalid={error("powerOfAttorney") !== undefined}>
             <Field.Item>
               <Field.Label>
@@ -267,16 +316,14 @@ function NewOrderForm({ onSaved }: { onSaved: () => void }): ReactElement {
             </Field.Item>
             <Field.Error>{error("powerOfAttorney")}</Field.Error>
           </Field.Root>
-          <Field.Root>
-            <Field.Label>Note for back office</Field.Label>
-            <Textarea
-              rows={3}
-              value={fields.note}
-              onChange={(event) => {
-                set("note", event.target.value);
-              }}
-            />
-          </Field.Root>
+          <TextareaField
+            label="Note for back office"
+            rows={3}
+            value={fields.note}
+            onChange={(value) => {
+              set("note", value);
+            }}
+          />
         </Field.Set>
       </Sheet.Body>
       <Sheet.Footer className={styles.footer()}>

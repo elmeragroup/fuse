@@ -81,19 +81,33 @@ async function openView(page: Page, label: string): Promise<void> {
 /** What the WCAG floor probe found inside one scenario's root. */
 type TargetAudit = { readonly targets: number; readonly misses: readonly string[] };
 
-/** Every kind of control the window renders, including the items of open menus and the palette. */
+/**
+ * Every kind of control the window renders, including the items of open menus and the palette,
+ * the date picker's segments and its calendar's days.
+ */
 const CONTROLS =
-  "button, a[href], input, textarea, [role='checkbox'], [role='tab'], [role='combobox'], [role='option'], [role='menuitem'], [role='menuitemradio'], [role='menuitemcheckbox']";
+  "button, a[href], input, textarea, [role='button'], [role='spinbutton'], [role='checkbox'], [role='tab'], [role='combobox'], [role='option'], [role='menuitem'], [role='menuitemradio'], [role='menuitemcheckbox']";
+
+/** One probe that missed its control, with the offset from the control's centre it pressed at. */
+type ProbeMiss = {
+  readonly index: number;
+  readonly label: string;
+  readonly segment: boolean;
+  readonly dx: number;
+  readonly dy: number;
+  readonly at: string;
+};
 
 /**
  * Probes every visible control under `root`: a press 1/4px inside each edge of a 24px box
  * centred on the control must land on it.
  */
 async function auditTargets(root: Locator): Promise<TargetAudit> {
-  return root.locator(CONTROLS).evaluateAll(
-    (controls, offset) => {
+  const controls = root.locator(CONTROLS);
+  const { targets, misses } = await controls.evaluateAll(
+    (elements, offset) => {
       let targets = 0;
-      const misses = controls.flatMap((control) => {
+      const misses = elements.flatMap((control, index) => {
         // Base UI pairs each checkbox with an aria-hidden native input for forms; the visible
         // role="checkbox" span is the target. A disabled control takes no press, and a disabled
         // menu item lets the pointer through, so neither is a target.
@@ -113,18 +127,25 @@ async function auditTargets(root: Locator): Promise<TargetAudit> {
         targets += 1;
         const x = rect.left + rect.width / 2;
         const y = rect.top + rect.height / 2;
-        const probes = [
-          [x - offset, y],
-          [x + offset, y],
-          [x, y - offset],
-          [x, y + offset],
+        const offsets = [
+          [-offset, 0],
+          [offset, 0],
+          [0, -offset],
+          [0, offset],
         ] as const;
-        return probes.flatMap(([px, py]) => {
-          const hit = document.elementFromPoint(px, py);
+        return offsets.flatMap(([dx, dy]) => {
+          const hit = document.elementFromPoint(x + dx, y + dy);
           return hit !== null && control.contains(hit)
             ? []
             : [
-                `${control.getAttribute("aria-label") ?? control.textContent.trim()} at ${String(px)},${String(py)}`,
+                {
+                  index,
+                  label: control.getAttribute("aria-label") ?? control.textContent.trim(),
+                  segment: control.getAttribute("role") === "spinbutton",
+                  dx,
+                  dy,
+                  at: `${String(x + dx)},${String(y + dy)}`,
+                },
               ];
         });
       });
@@ -132,6 +153,46 @@ async function auditTargets(root: Locator): Promise<TargetAudit> {
     },
     TARGET_FLOOR_PX / 2 - 0.25
   );
+  const confirmed: string[] = [];
+  for (const miss of misses) {
+    if (!miss.segment || !(await pressFocuses(controls.nth(miss.index), miss))) {
+      confirmed.push(`${miss.label} at ${miss.at}`);
+    }
+  }
+  return { targets, misses: confirmed };
+}
+
+/**
+ * Whether a real press at `miss`'s offset moves focus to the date segment. A segment's edge can
+ * sit within a pixel of its literal's, where `elementFromPoint` reports the literal, but
+ * react-aria hands that press to the segment, so the press still reaches it. Focus starts on
+ * another segment of the same field, so only the press itself can put it on this one.
+ */
+async function pressFocuses(segment: Locator, miss: ProbeMiss): Promise<boolean> {
+  const page = segment.page();
+  const scroll = await page.evaluate(() => ({ x: window.scrollX, y: window.scrollY }));
+  const elsewhere = await segment.evaluate((element) => {
+    const fields = element.closest("[role='group']")?.querySelectorAll("[role='spinbutton']") ?? [];
+    const other = [...fields].find((field) => field !== element);
+    if (!(other instanceof HTMLElement)) {
+      return false;
+    }
+    other.focus({ preventScroll: true });
+    return document.activeElement === other;
+  });
+  expect(elsewhere, `${miss.label}: focus starts on another segment`).toBe(true);
+  const centre = await segment.evaluate((element) => {
+    element.scrollIntoView({ block: "center", inline: "center" });
+    const rect = element.getBoundingClientRect();
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  });
+  await page.mouse.click(centre.x + miss.dx, centre.y + miss.dy);
+  const focused = await segment.evaluate((element) => element === document.activeElement);
+  // Later scenarios open overlays from where the audit left the page.
+  await page.evaluate(({ x, y }) => {
+    window.scrollTo(x, y);
+  }, scroll);
+  return focused;
 }
 
 /** Asserts that `root` holds at least one control and that every one clears the floor. */
@@ -477,6 +538,13 @@ describe("landing Dashboard window", () => {
     const newOrder = page.getByRole("dialog", { name: "New order" });
     await newOrder.waitFor();
     await expectTargets(newOrder, "New order Sheet");
+    await newOrder
+      .getByRole("group", { name: "Start date" })
+      .getByRole("button", { name: "Kalender" })
+      .click();
+    const calendar = page.getByRole("dialog").filter({ has: page.getByRole("grid") });
+    await calendar.waitFor();
+    await expectTargets(calendar, "Start date calendar");
     await page.context().close();
   });
 
