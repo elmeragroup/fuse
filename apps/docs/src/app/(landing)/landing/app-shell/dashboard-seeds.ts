@@ -3,8 +3,8 @@
  * orders with the activity log and Elhub answer each status implies. Fictional people; every
  * SSN, address and metering point ID is made up.
  */
-import { SELLERS } from "./funnel-orders";
-import type { ActivityEvent, ElhubCheck, Order, PriceArea, SellerId, StartupType } from "./funnel-orders";
+import { SELLERS } from "./dashboard-orders";
+import type { ActivityEvent, ElhubCheck, Order, PriceArea, SellerId, StartupType } from "./dashboard-orders";
 
 /** An order as the fixture writes it: the facility flat, and the common case left out. */
 type OrderSeed = Omit<
@@ -864,7 +864,7 @@ function later(iso: string, minutes: number): string {
 }
 
 /**
- * The activity log an order's status implies: what Funnel and Core wrote on the way there.
+ * The activity log an order's status implies: what the sales tool and Core wrote on the way there.
  * Derived so every order's log agrees with its status and Elhub answer.
  */
 function activityFor(seed: OrderSeed, elhub: ElhubCheck): readonly ActivityEvent[] {

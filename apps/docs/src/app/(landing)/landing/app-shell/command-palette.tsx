@@ -9,10 +9,10 @@ import { Dialog } from "@elmeragroup/fuse/dialog";
 import { MagnifyingGlass, Plus, SidebarSimple, SlidersHorizontal } from "@elmeragroup/fuse/icons";
 import type { ElmeraIconProps } from "@elmeragroup/fuse/icons";
 
-import { useFunnel } from "./funnel-context";
-import { ORDER_STATUSES } from "./funnel-orders";
-import type { OrderStatus } from "./funnel-orders";
-import { VIEW_ENTRIES } from "./funnel-views";
+import { useDashboard } from "./dashboard-context";
+import { ORDER_STATUSES } from "./dashboard-orders";
+import type { OrderStatus } from "./dashboard-orders";
+import { VIEW_ENTRIES } from "./dashboard-views";
 import { Kbd } from "./kbd";
 import { OrderStatusIcon } from "./order-status-icon";
 
@@ -59,7 +59,7 @@ const GROUPS = ["Actions", "Views", "Orders"] as const;
 const IDLE_ORDERS = 5;
 
 function useCommands(): readonly Command[] {
-  const { state, navigate, openOrder, openNewOrder, toggleSidebar, dispatch } = useFunnel();
+  const { state, navigate, openOrder, openNewOrder, toggleSidebar, dispatch } = useDashboard();
   return useMemo(() => {
     const actions: Command[] = [
       {

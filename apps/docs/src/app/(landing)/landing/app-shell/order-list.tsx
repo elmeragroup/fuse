@@ -12,19 +12,20 @@ import { Empty } from "@elmeragroup/fuse/empty";
 import { ScrollArea } from "@elmeragroup/fuse/scroll-area";
 import { Skeleton } from "@elmeragroup/fuse/skeleton";
 
-import { useFunnel } from "./funnel-context";
-import { ORDER_STATUSES, relativeDate, SELLERS } from "./funnel-orders";
-import type { Order } from "./funnel-orders";
-import { audienceOf, groupByStatus, isListView, visibleOrders } from "./funnel-state";
-import type { Audience, StatusGroup } from "./funnel-state";
-import { viewEntry } from "./funnel-views";
+import { useDashboard } from "./dashboard-context";
+import { ORDER_STATUSES, relativeDate, SELLERS } from "./dashboard-orders";
+import type { Order } from "./dashboard-orders";
+import { audienceOf, groupByStatus, visibleOrders } from "./dashboard-state";
+import type { Audience, StatusGroup } from "./dashboard-state";
 import { OrderStatusIcon } from "./order-status-icon";
 
 const orderList = tv({
   slots: {
     // The pane is a size container, so columns follow the window's width, not the viewport's.
     pane: "@container relative min-h-0 flex-1",
-    scroll: "h-full",
+    // The sticky group headers stack above the rows, so the scrollbar stacks above them; else
+    // each header covers the thumb and it draws in pieces.
+    scroll: "h-full *:data-[slot=scroll-area-scrollbar]:z-30",
     // ScrollArea's content is at least as wide as its children's widest line, so the list
     // contains its inline size to let rows truncate at the pane's width.
     list: "group/list m-0 list-none p-0 pb-24 contain-inline-size",
@@ -71,7 +72,7 @@ const styles = orderList();
 
 /** One order row: a checkbox beside a button that selects the order. */
 function OrderRow({ order, audience }: { order: Order; audience: Audience }): ReactElement {
-  const { state, dispatch, openOrder } = useFunnel();
+  const { state, dispatch, openOrder } = useDashboard();
   const current = state.selected === order.id;
   const seller = SELLERS[order.seller];
 
@@ -158,38 +159,8 @@ function LoadingRows(): ReactElement {
   );
 }
 
-/** A Funnel page the demo names in the sidebar but does not build. */
-function PlaceholderPage(): ReactElement {
-  const { state, navigate } = useFunnel();
-  const entry = viewEntry(state.view);
-  const Icon = entry.icon;
-  return (
-    <Empty.Root className={styles.empty()}>
-      <Empty.Header>
-        <Empty.Media variant="icon">
-          <Icon />
-        </Empty.Media>
-        <Empty.Title>{entry.label}</Empty.Title>
-        <Empty.Description>
-          This Funnel page is not part of the demo. Orders, deviations and order search are.
-        </Empty.Description>
-      </Empty.Header>
-      <Empty.Content>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            navigate({ _tag: "Open", view: "mine" });
-          }}>
-          Open My orders
-        </Button>
-      </Empty.Content>
-    </Empty.Root>
-  );
-}
-
 function EmptyList(): ReactElement {
-  const { state, navigate } = useFunnel();
+  const { state, navigate } = useDashboard();
   return (
     <Empty.Root className={styles.empty()}>
       <Empty.Header>
@@ -221,15 +192,7 @@ function EmptyList(): ReactElement {
  * and its count, then one row per order. Each group is a list named after its status.
  */
 export function OrderList(): ReactElement {
-  const { state, loading } = useFunnel();
-
-  if (!isListView(state.view)) {
-    return (
-      <div className={styles.pane()}>
-        <PlaceholderPage />
-      </div>
-    );
-  }
+  const { state, loading } = useDashboard();
 
   const orders = visibleOrders(state);
   const audience = audienceOf(state.view);

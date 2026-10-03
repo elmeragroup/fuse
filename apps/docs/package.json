@@ -19,6 +19,7 @@
     "@next/mdx": "catalog:",
     "@paper-design/shaders-react": "catalog:",
     "@tanstack/react-table": "catalog:",
+    "libphonenumber-js": "catalog:",
     "next": "catalog:",
     "react": "catalog:",
     "react-aria-components": "catalog:",

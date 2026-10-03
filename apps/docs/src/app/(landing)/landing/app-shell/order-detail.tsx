@@ -26,7 +26,7 @@ import { TimelineList } from "@elmeragroup/fuse/timeline-list";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
 import { useLandingTheme } from "../landing-theme";
-import { useFunnel } from "./funnel-context";
+import { useDashboard } from "./dashboard-context";
 import {
   canSendContractSms,
   canSendReceipt,
@@ -38,9 +38,9 @@ import {
   productPrice,
   SELLERS,
   STATUS_ORDER,
-} from "./funnel-orders";
-import type { ElhubCheck, Order } from "./funnel-orders";
-import { retryApplies } from "./funnel-state";
+} from "./dashboard-orders";
+import type { ElhubCheck, Order } from "./dashboard-orders";
+import { retryApplies } from "./dashboard-state";
 import { Kbd } from "./kbd";
 import { OrderStatusIcon } from "./order-status-icon";
 
@@ -108,7 +108,7 @@ const styles = orderDetail();
 const ELHUB_ROUND_TRIP_MS = 900;
 
 function CopyButton({ value, label }: { value: string; label: string }): ReactElement {
-  const { notify } = useFunnel();
+  const { notify } = useDashboard();
   return (
     <Tooltip.Root>
       <Tooltip.Trigger
@@ -141,7 +141,7 @@ function CopyButton({ value, label }: { value: string; label: string }): ReactEl
 }
 
 function StatusMenu({ order }: { order: Order }): ReactElement {
-  const { dispatch, now, notify } = useFunnel();
+  const { dispatch, now, notify } = useDashboard();
   const label = ORDER_STATUSES[order.status].label;
   return (
     <DropdownMenu.Root>
@@ -185,7 +185,7 @@ type ElhubRetry = { pending: boolean; retry: () => void };
  * dropped, toast and all, when the order's status moved while Elhub was asked.
  */
 function useElhubRetry(order: Order): ElhubRetry {
-  const { dispatch, now, notify } = useFunnel();
+  const { dispatch, now, notify } = useDashboard();
   const [pending, setPending] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   // The order as it is when the round trip ends, not as it was when the retry started.
@@ -239,7 +239,7 @@ function elhubNote(check: ElhubCheck): string {
     case "MeterPointNotFound":
       return `Elhub has no meter point with this ID. Checked ${dateTime(check.checkedAt)}.`;
     case "NotChecked":
-      return "Funnel asks Elhub when the order is sent.";
+      return "Elhub is asked when the order is sent.";
   }
 }
 
@@ -330,7 +330,7 @@ function properties(order: Order, brand: string): readonly Property[] {
 }
 
 function Activity({ order }: { order: Order }): ReactElement {
-  const { dispatch, now, notify } = useFunnel();
+  const { dispatch, now, notify } = useDashboard();
   const [draft, setDraft] = useState("");
   const submit = () => {
     const text = draft.trim();
@@ -398,7 +398,7 @@ function Activity({ order }: { order: Order }): ReactElement {
 }
 
 function MoreActions({ order, onCancel }: { order: Order; onCancel: () => void }): ReactElement {
-  const { dispatch, now, notify } = useFunnel();
+  const { dispatch, now, notify } = useDashboard();
   const closed = order.status === "Cancelled" || order.status === "Done";
   return (
     <DropdownMenu.Root>
@@ -464,7 +464,7 @@ export type OrderDetailProps = {
  * its activity log with a comment composer. Every action confirms through the window's toasts.
  */
 export function OrderDetail({ order, renderTitle, barEnd }: OrderDetailProps): ReactElement {
-  const { dispatch, now, notify } = useFunnel();
+  const { dispatch, now, notify } = useDashboard();
   const { theme } = useLandingTheme();
   const [confirming, setConfirming] = useState(false);
   const title = renderTitle?.(order.customer) ?? <h2 className={styles.title()}>{order.customer}</h2>;

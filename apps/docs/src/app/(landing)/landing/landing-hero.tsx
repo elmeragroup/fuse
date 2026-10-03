@@ -5,7 +5,7 @@ import { tv } from "tailwind-variants";
 
 import { Button } from "@elmeragroup/fuse/button";
 
-import { FunnelWindow } from "./app-shell/funnel-window";
+import { DashboardWindow } from "./app-shell/dashboard-window";
 import { BrandWordmark } from "./brand-wordmark";
 import { BROWSE_COMPONENTS, LANDING_SUMMARY, PICKER_BRANDS, QUICK_START } from "./landing-facts";
 
@@ -57,7 +57,7 @@ export function LandingHero(): ReactElement {
         </div>
       </div>
       <div className={styles.shot()}>
-        <FunnelWindow />
+        <DashboardWindow />
       </div>
       <div className={styles.strip()}>
         <ul aria-label="Brands" className={styles.brands()}>

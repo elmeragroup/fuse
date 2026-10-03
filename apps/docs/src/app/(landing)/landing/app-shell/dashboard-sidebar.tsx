@@ -7,26 +7,29 @@ import { tv } from "tailwind-variants";
 
 import { Avatar } from "@elmeragroup/fuse/avatar";
 import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
-import { CaretUpDown, FunnelLogo, MagnifyingGlass, Plus } from "@elmeragroup/fuse/icons";
+import { CaretUpDown, MagnifyingGlass, Plus } from "@elmeragroup/fuse/icons";
 import { Sidebar } from "@elmeragroup/fuse/sidebar";
 import { BRANDS } from "@elmeragroup/fuse/theme";
 
+import { BrandMark } from "../brand-mark";
 import { PICKER_BRANDS } from "../landing-facts";
 import { useLandingTheme } from "../landing-theme";
-import { useFunnel } from "./funnel-context";
-import { SIGNED_IN } from "./funnel-orders";
-import { isListView, openCount } from "./funnel-state";
-import { PRIMARY_VIEWS, VIEW_GROUPS } from "./funnel-views";
-import type { ViewEntry } from "./funnel-views";
+import { useDashboard } from "./dashboard-context";
+import { SIGNED_IN } from "./dashboard-orders";
+import { isQueue, openCount } from "./dashboard-state";
+import { PRIMARY_VIEWS, VIEW_GROUPS } from "./dashboard-views";
+import type { ViewEntry } from "./dashboard-views";
 import { Kbd } from "./kbd";
 
-const funnelSidebar = tv({
+const dashboardSidebar = tv({
   slots: {
     // The rail sits inside the window, not the viewport: the window is its containing block.
     root: "h-full",
     workspaceMark:
       "flex size-8 shrink-0 items-center justify-center rounded-md bg-sidebar-brand text-sidebar-brand-foreground",
-    workspaceLogo: "size-4",
+    // A step up from the 16px menu icon, so the mark carries the tile as an app icon does.
+    workspaceLogo: "h-5",
+    menuMark: "w-5 text-muted-foreground",
     workspaceText: "leading-tight grid min-w-0 flex-1 text-left",
     workspaceName: "text-sm font-semibold truncate",
     workspaceBrand: "text-xs truncate text-sidebar-foreground/70",
@@ -41,9 +44,12 @@ const funnelSidebar = tv({
   },
 });
 
-const styles = funnelSidebar();
+const styles = dashboardSidebar();
 
-/** The brand workspaces; picking one re-themes the whole landing, as the brand picker does. */
+/**
+ * The brand workspaces, each shown by its brand's mark; picking one re-themes the whole landing,
+ * as the brand picker does.
+ */
 function WorkspaceSwitcher(): ReactElement {
   const { theme, changeBrand } = useLandingTheme();
 
@@ -56,10 +62,10 @@ function WorkspaceSwitcher(): ReactElement {
               <Sidebar.MenuButton size="lg" aria-label={`Workspace: ${BRANDS[theme.brand].displayName}`} />
             }>
             <span className={styles.workspaceMark()}>
-              <FunnelLogo className={styles.workspaceLogo()} />
+              <BrandMark brand={theme.brand} size="icon" className={styles.workspaceLogo()} />
             </span>
             <span className={styles.workspaceText()}>
-              <span className={styles.workspaceName()}>Funnel</span>
+              <span className={styles.workspaceName()}>Dashboard</span>
               <span className={styles.workspaceBrand()}>{BRANDS[theme.brand].displayName}</span>
             </span>
             <CaretUpDown className={styles.caret()} />
@@ -75,7 +81,9 @@ function WorkspaceSwitcher(): ReactElement {
               }}>
               <DropdownMenu.Label>Workspaces</DropdownMenu.Label>
               {PICKER_BRANDS.map((brand) => (
-                <DropdownMenu.RadioItem key={brand} value={brand}>
+                // Switching workspace is done once picked, so the menu closes, as a link would.
+                <DropdownMenu.RadioItem key={brand} value={brand} closeOnClick>
+                  <BrandMark brand={brand} size="icon" className={styles.menuMark()} />
                   {BRANDS[brand].displayName}
                 </DropdownMenu.RadioItem>
               ))}
@@ -98,7 +106,7 @@ function TooltipKeys({ label, keys }: { label: string; keys: readonly string[] }
 }
 
 function QuickActions(): ReactElement {
-  const { openPalette, openNewOrder } = useFunnel();
+  const { openPalette, openNewOrder } = useDashboard();
 
   return (
     <Sidebar.Menu>
@@ -130,11 +138,11 @@ function QuickActions(): ReactElement {
   );
 }
 
-/** One sidebar entry; list views carry a live count of their open orders, as Linear counts open issues. */
+/** One sidebar entry; queues carry a live count of their open orders, as Linear counts open issues. */
 function ViewRow({ entry }: { entry: ViewEntry }): ReactElement {
-  const { state, navigate } = useFunnel();
+  const { state, navigate } = useDashboard();
   const active = state.view === entry.view;
-  const count = isListView(entry.view) ? openCount(state.orders, entry.view) : 0;
+  const count = isQueue(entry.view) ? openCount(state.orders, entry.view) : 0;
   const Icon = entry.icon;
 
   return (
@@ -155,7 +163,7 @@ function ViewRow({ entry }: { entry: ViewEntry }): ReactElement {
 }
 
 function SellerMenu(): ReactElement {
-  const { notify } = useFunnel();
+  const { notify } = useDashboard();
   const [beta, setBeta] = useState(false);
 
   return (
@@ -174,19 +182,21 @@ function SellerMenu(): ReactElement {
             <CaretUpDown className={styles.caret()} />
           </DropdownMenu.Trigger>
           <DropdownMenu.Content side="top" align="start" className={styles.menuWidth()}>
-            <DropdownMenu.Label>{SIGNED_IN.name}</DropdownMenu.Label>
-            <DropdownMenu.CheckboxItem
-              checked={beta}
-              onCheckedChange={(next) => {
-                setBeta(next);
-                notify({
-                  type: "info",
-                  title: next ? "Core beta mode on" : "Core beta mode off",
-                  description: next ? "New orders go to the Core beta API." : "New orders go to Core.",
-                });
-              }}>
-              Core beta mode
-            </DropdownMenu.CheckboxItem>
+            <DropdownMenu.Group>
+              <DropdownMenu.Label>{SIGNED_IN.name}</DropdownMenu.Label>
+              <DropdownMenu.CheckboxItem
+                checked={beta}
+                onCheckedChange={(next) => {
+                  setBeta(next);
+                  notify({
+                    type: "info",
+                    title: next ? "Core beta mode on" : "Core beta mode off",
+                    description: next ? "New orders go to the Core beta API." : "New orders go to Core.",
+                  });
+                }}>
+                Core beta mode
+              </DropdownMenu.CheckboxItem>
+            </DropdownMenu.Group>
           </DropdownMenu.Content>
         </DropdownMenu.Root>
       </Sidebar.MenuItem>
@@ -195,11 +205,11 @@ function SellerMenu(): ReactElement {
 }
 
 /**
- * Funnel's sidebar: the workspace switcher, search and New order, the primary queues, Funnel's
- * three groups and the signed-in seller. It collapses to icons on desktop and becomes the
+ * The Dashboard's sidebar: the workspace switcher, search and New order, the queues, the
+ * Deviations and Collect groups, and the signed-in seller. It collapses to icons on desktop and becomes the
  * Sidebar's own Sheet on phones.
  */
-export function FunnelSidebar(): ReactElement {
+export function DashboardSidebar(): ReactElement {
   return (
     <Sidebar.Root collapsible="icon" variant="inset" className={styles.root()}>
       <Sidebar.Header>

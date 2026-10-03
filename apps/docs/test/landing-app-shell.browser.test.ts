@@ -2,11 +2,20 @@ import type { Locator, Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
 import { DESKTOP_VIEWPORT, expectInside, readThemeAttributes } from "./demo-page";
+import {
+  IDA_METER_POINT,
+  OPEN_COUNTS,
+  PHONE_VIEWPORT,
+  WIDE_VIEWPORT,
+  dashboard,
+  focusedCustomer,
+  openOrderSearch,
+  row,
+  searchTable,
+} from "./landing-dashboard";
 import { launchLandingSuite, TARGET_FLOOR_PX } from "./landing-page";
 
 const { openLanding } = launchLandingSuite();
-
-const PHONE_VIEWPORT = { width: 390, height: 844 } as const;
 
 /**
  * The window opens on My orders with open work only, grouped by status. These are the
@@ -42,14 +51,8 @@ const MY_OPEN_ORDERS = [
   "Mona Isaksen",
 ] as const;
 
-/**
- * Open orders per sidebar entry as the fixture states them: the signed-in seller's 12 drafts and
- * 3 orders with telemarketing, and 12 orders with telemarketing in all.
- */
-const OPEN_COUNTS = { "My orders": "26", Drafts: "12", "Establishment stopped": "12" } as const;
-
-/** Every sidebar entry that lists orders. */
-const LIST_VIEWS = [
+/** Every sidebar entry that lists orders in a queue; Order search is a table. */
+const QUEUES = [
   "Inbox",
   "My orders",
   "Drafts",
@@ -57,19 +60,7 @@ const LIST_VIEWS = [
   "Establishment stopped",
   "Errors",
   "Deviations",
-  "Order search",
 ] as const;
-
-function funnel(page: Page): Locator {
-  return page.getByRole("region", { name: "Funnel", exact: true });
-}
-
-/** The row button for `customer`; its accessible name starts with the order's customer. */
-function row(scope: Locator, customer: string): Locator {
-  return scope
-    .getByRole("list", { name: "Orders" })
-    .getByRole("button", { name: new RegExp(`^${customer}`, "u") });
-}
 
 async function rowNames(scope: Locator): Promise<string[]> {
   const names = await scope
@@ -81,14 +72,10 @@ async function rowNames(scope: Locator): Promise<string[]> {
 
 /** Opens a sidebar entry and waits for its simulated fetch to finish. */
 async function openView(page: Page, label: string): Promise<void> {
-  const app = funnel(page);
+  const app = dashboard(page);
   await app.getByRole("button", { name: label, exact: true }).click();
   await expect.poll(async () => app.getByRole("status", { name: "Loading orders" }).count()).toBe(0);
   await app.getByRole("list", { name: "Orders" }).waitFor();
-}
-
-async function focusedCustomer(page: Page): Promise<string | null> {
-  return page.evaluate(() => document.activeElement?.getAttribute("data-customer") ?? null);
 }
 
 /** What the WCAG floor probe found inside one scenario's root. */
@@ -96,7 +83,7 @@ type TargetAudit = { readonly targets: number; readonly misses: readonly string[
 
 /** Every kind of control the window renders, including the items of open menus and the palette. */
 const CONTROLS =
-  "button, a[href], input, textarea, [role='checkbox'], [role='tab'], [role='combobox'], [role='option'], [role='menuitem'], [role='menuitemradio']";
+  "button, a[href], input, textarea, [role='checkbox'], [role='tab'], [role='combobox'], [role='option'], [role='menuitem'], [role='menuitemradio'], [role='menuitemcheckbox']";
 
 /**
  * Probes every visible control under `root`: a press 1/4px inside each edge of a 24px box
@@ -154,63 +141,10 @@ async function expectTargets(root: Locator, scenario: string): Promise<void> {
   expect(misses, scenario).toEqual([]);
 }
 
-/** Ida Hagen's metering point as the fixture states it. */
-const IDA_METER_POINT = "707057500050172948";
-
-/** A query that matches several orders, so the active option can move off the first. */
-const MULTI_RESULT_QUERY = "StrømSmart";
-
-/** Searches the open palette, moves the active option to the third result and checks it. */
-async function searchAndMoveActive(page: Page, palette: Locator): Promise<void> {
-  const field = palette.getByRole("combobox");
-  await field.fill(MULTI_RESULT_QUERY);
-  const third = palette.getByRole("option").nth(2);
-  await third.waitFor();
-  await page.keyboard.press("ArrowDown");
-  await page.keyboard.press("ArrowDown");
-  expect(await third.getAttribute("aria-selected")).toBe("true");
-  expect(await field.getAttribute("aria-activedescendant")).toBe(await third.getAttribute("id"));
-}
-
-/** Asserts an empty field with the first result active, as every opening starts. */
-async function expectFreshSearch(palette: Locator): Promise<void> {
-  const field = palette.getByRole("combobox");
-  await field.waitFor();
-  expect(await field.inputValue()).toBe("");
-  const first = palette.getByRole("option").first();
-  expect(await first.getAttribute("aria-selected")).toBe("true");
-  expect(await field.getAttribute("aria-activedescendant")).toBe(await first.getAttribute("id"));
-}
-
-/** Every way into the palette, each at the width where it shows. */
-const PALETTE_OPENERS = [
-  {
-    opener: "the sidebar Search",
-    viewport: DESKTOP_VIEWPORT,
-    open: async (page: Page) =>
-      funnel(page)
-        .getByRole("button", { name: /^Search/u })
-        .click(),
-  },
-  {
-    opener: "Control+K",
-    viewport: DESKTOP_VIEWPORT,
-    open: async (page: Page) => {
-      await row(funnel(page), "Jonas Eide").focus();
-      await page.keyboard.press("Control+k");
-    },
-  },
-  {
-    opener: "the header Search button",
-    viewport: PHONE_VIEWPORT,
-    open: async (page: Page) => funnel(page).getByRole("button", { name: "Search", exact: true }).click(),
-  },
-] as const;
-
-describe("landing Funnel window", () => {
+describe("landing Dashboard window", () => {
   it("drives the detail pane from a row click", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
-    const app = funnel(page);
+    const app = dashboard(page);
     const detail = app.getByRole("complementary", { name: "Order details" });
 
     await row(app, "Ola Nordmann").click();
@@ -223,7 +157,7 @@ describe("landing Funnel window", () => {
 
   it("moves with j and k only while focus is inside the window, and selects with Enter", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
-    const app = funnel(page);
+    const app = dashboard(page);
     const detail = app.getByRole("complementary", { name: "Order details" });
     expect(await rowNames(app)).toEqual([...MY_OPEN_ORDERS]);
 
@@ -245,7 +179,7 @@ describe("landing Funnel window", () => {
 
   it("moves an order to its new status group when its status changes", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
-    const app = funnel(page);
+    const app = dashboard(page);
     const detail = app.getByRole("complementary", { name: "Order details" });
     const inGroup = (group: string) =>
       app.getByRole("list", { name: group, exact: true }).getByRole("button", { name: /^Jonas Eide/u });
@@ -258,99 +192,15 @@ describe("landing Funnel window", () => {
     await expect.poll(async () => inGroup("In progress").count()).toBe(1);
     expect(await inGroup("Awaiting customer approval").count()).toBe(0);
     await app
-      .getByRole("region", { name: "Funnel notifications" })
+      .getByRole("region", { name: "Dashboard notifications" })
       .getByText("Moved to In progress")
       .waitFor();
     await page.context().close();
   });
 
-  it("opens the command palette from its button and from the keyboard, and jumps to an order", async () => {
-    const page = await openLanding(DESKTOP_VIEWPORT);
-    const app = funnel(page);
-    const palette = page.getByRole("dialog", { name: "Command palette" });
-
-    await app.getByRole("button", { name: /^Search/u }).click();
-    await palette.waitFor();
-    await page.keyboard.press("Escape");
-    await expect.poll(async () => palette.count()).toBe(0);
-
-    await row(app, "Jonas Eide").focus();
-    await page.keyboard.press("Control+k");
-    await palette.getByRole("combobox").fill("Henrik");
-    await palette.getByRole("option", { name: /Henrik Aasen/u }).waitFor();
-    await page.keyboard.press("Enter");
-
-    await expect.poll(async () => palette.count()).toBe(0);
-    const detail = app.getByRole("complementary", { name: "Order details" });
-    expect(await detail.getByRole("heading", { level: 2 }).textContent()).toBe("Henrik Aasen");
-    await page.context().close();
-  });
-
-  it("opens the detail Sheet for an order picked from the palette on a phone", async () => {
-    const page = await openLanding(PHONE_VIEWPORT);
-    const app = funnel(page);
-    await app.scrollIntoViewIfNeeded();
-    const palette = page.getByRole("dialog", { name: "Command palette" });
-
-    await app.getByRole("button", { name: "Search", exact: true }).click();
-    await palette.getByRole("combobox").fill("Henrik");
-    await palette.getByRole("option", { name: /Henrik Aasen/u }).waitFor();
-    await page.keyboard.press("Enter");
-
-    await expect.poll(async () => palette.count()).toBe(0);
-    await page.getByRole("dialog", { name: "Henrik Aasen" }).waitFor();
-    await page.context().close();
-  });
-
-  it.each(PALETTE_OPENERS)(
-    "reopens the palette from $opener with an empty search and the first result active",
-    async ({ viewport, open }) => {
-      const page = await openLanding(viewport);
-      await funnel(page).scrollIntoViewIfNeeded();
-      const palette = page.getByRole("dialog", { name: "Command palette" });
-
-      await open(page);
-      await searchAndMoveActive(page, palette);
-      await page.keyboard.press("Escape");
-      await expect.poll(async () => palette.count()).toBe(0);
-
-      await open(page);
-      await expectFreshSearch(palette);
-      await page.context().close();
-    }
-  );
-
-  it("starts a fresh search and returns focus to the row when the palette reopens before its exit animation ends", async () => {
-    const page = await openLanding(DESKTOP_VIEWPORT, { reducedMotion: "no-preference" });
-    // Slow every animation tenfold, so the popup's exit is still running when Control+K lands.
-    const cdp = await page.context().newCDPSession(page);
-    await cdp.send("Animation.enable");
-    await cdp.send("Animation.setPlaybackRate", { playbackRate: 0.1 });
-    const palette = page.getByRole("dialog", { name: "Command palette" });
-
-    await row(funnel(page), "Jonas Eide").focus();
-    await page.keyboard.press("Control+k");
-    await searchAndMoveActive(page, palette);
-    const popup = await palette.elementHandle();
-    await page.keyboard.press("Escape");
-    await expect.poll(async () => popup.getAttribute("data-closed")).toBe("");
-    await page.keyboard.press("Control+k");
-
-    // The same popup node: it never unmounted, so only a fresh opening can have reset the search.
-    expect(await popup.evaluate((node) => node.isConnected)).toBe(true);
-    await expectFreshSearch(palette);
-
-    // The reopen remounted the search field that held focus, so the row stays the invoker.
-    await cdp.send("Animation.setPlaybackRate", { playbackRate: 1 });
-    await page.keyboard.press("Escape");
-    await expect.poll(async () => palette.count()).toBe(0);
-    expect(await focusedCustomer(page)).toBe("Jonas Eide");
-    await page.context().close();
-  });
-
   it("starts another order's comment composer empty and logs nothing on the first", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
-    const app = funnel(page);
+    const app = dashboard(page);
     const detail = app.getByRole("complementary", { name: "Order details" });
     const composer = detail.getByRole("textbox", { name: "Comment" });
     const note = "Kunden ringer tilbake etter klokka 16";
@@ -369,7 +219,7 @@ describe("landing Funnel window", () => {
 
   it("keeps the metering point and its copy button inside the detail Sheet at 320px", async () => {
     const page = await openLanding({ width: 320, height: 720 });
-    const app = funnel(page);
+    const app = dashboard(page);
     await app.scrollIntoViewIfNeeded();
 
     await row(app, "Ida Hagen").click();
@@ -390,7 +240,7 @@ describe("landing Funnel window", () => {
 
   it("flips the window between Internal and External while the document keeps its theme", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
-    const app = funnel(page);
+    const app = dashboard(page);
     // DOM audit: ThemeScope's element has no role; it is the window's only themed element.
     const scope = app.locator("[data-theme-variant]");
     const documentTheme = await readThemeAttributes(page.locator("html"));
@@ -411,7 +261,7 @@ describe("landing Funnel window", () => {
 
   it("raises the bulk toolbar once two rows are checked", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
-    const app = funnel(page);
+    const app = dashboard(page);
     const toolbar = app.getByRole("toolbar", { name: "Bulk actions" });
     expect(await toolbar.count()).toBe(0);
 
@@ -430,7 +280,7 @@ describe("landing Funnel window", () => {
 
   it("collapses the sidebar with Control+B inside the window and never writes the host's sidebar cookie", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
-    const app = funnel(page);
+    const app = dashboard(page);
     // DOM audit: the rail's collapse state is the Sidebar's data-state; it has no role.
     const sidebar = app.locator("[data-slot='sidebar'][data-state]");
     expect(await sidebar.getAttribute("data-state")).toBe("expanded");
@@ -451,7 +301,7 @@ describe("landing Funnel window", () => {
 
   it("opens the sidebar and the detail as Sheets inside the window on a phone, without sideways scroll", async () => {
     const page = await openLanding(PHONE_VIEWPORT);
-    const app = funnel(page);
+    const app = dashboard(page);
     await app.scrollIntoViewIfNeeded();
     await app.getByRole("button", { name: "Toggle sidebar" }).click();
     const nav = page.getByRole("dialog").filter({ has: page.getByRole("button", { name: /^My orders/u }) });
@@ -472,9 +322,9 @@ describe("landing Funnel window", () => {
     await page.context().close();
   });
 
-  it("counts open orders in the sidebar, as the Active tab lists them", async () => {
+  it("counts open orders on the queues in the sidebar, as the Active tab lists them, and none on Order search", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
-    const app = funnel(page);
+    const app = dashboard(page);
     // DOM audit: Sidebar.MenuBadge is a sibling of the entry's button and has no role.
     const badge = (label: string) =>
       app
@@ -485,30 +335,32 @@ describe("landing Funnel window", () => {
     for (const [label, count] of Object.entries(OPEN_COUNTS)) {
       expect(await badge(label).textContent()).toBe(count);
     }
+    // Order search lists every status, so a count of open orders would not match its table.
+    expect(await badge("Order search").count()).toBe(0);
     expect(await rowNames(app)).toHaveLength(Number(OPEN_COUNTS["My orders"]));
     await page.context().close();
   });
 
   it("shows the seller only in views shared between sellers", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
-    const app = funnel(page);
+    const app = dashboard(page);
     // DOM audit: the seller is an Avatar, which has no role.
     const avatar = (customer: string) => row(app, customer).locator("[data-slot='avatar']");
 
     expect(await avatar("Jonas Eide").count()).toBe(0);
-    await openView(page, "Order search");
+    await openView(page, "Errors");
     expect(await avatar("Ingrid Haugland").textContent()).toBe("SG");
-    expect(await avatar("Jonas Eide").textContent()).toBe("RF");
+    expect(await avatar("Marius Kvam").textContent()).toBe("RF");
     await page.context().close();
   });
 
-  it("fills the list pane with rows in every list view", async () => {
+  it("fills the list pane with rows in every queue", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
-    const app = funnel(page);
+    const app = dashboard(page);
     await app.scrollIntoViewIfNeeded();
 
     const short: string[] = [];
-    for (const label of LIST_VIEWS) {
+    for (const label of QUEUES) {
       await openView(page, label);
       const list = app.getByRole("list", { name: "Orders" });
       // DOM audit: ScrollArea's viewport is the pane's visible box and has no role.
@@ -531,9 +383,46 @@ describe("landing Funnel window", () => {
     await page.context().close();
   });
 
+  it("opens every menu and popover in the window without a page error", async () => {
+    const page = await openLanding(DESKTOP_VIEWPORT);
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    const app = dashboard(page);
+    await app.scrollIntoViewIfNeeded();
+    const detail = app.getByRole("complementary", { name: "Order details" });
+    await row(app, "Jonas Eide").click();
+
+    const menu = page.getByRole("menu");
+    // A crashed menu never shows its items, so the poll settles on the first error instead.
+    const openMenu = async (name: string, trigger: Locator) => {
+      await trigger.click();
+      await expect.poll(async () => errors.length > 0 || (await menu.count()) > 0).toBe(true);
+      expect(errors, name).toEqual([]);
+      await page.keyboard.press("Escape");
+      await expect.poll(async () => menu.count()).toBe(0);
+    };
+    await openMenu("workspace switcher", app.getByRole("button", { name: /^Workspace:/u }));
+    await openMenu("seller menu", app.getByRole("button", { name: /^Signed in as/u }));
+    await openMenu("Display", app.getByRole("button", { name: "Display" }));
+    await openMenu("status menu", detail.getByRole("button", { name: /^Status/u }));
+    await openMenu("More actions", detail.getByRole("button", { name: "More actions" }));
+
+    await app.getByRole("checkbox", { name: "Select Jonas Eide" }).click();
+    await app.getByRole("checkbox", { name: "Select Ida Hagen" }).click();
+    await app
+      .getByRole("toolbar", { name: "Bulk actions" })
+      .getByRole("button", { name: "Change seller" })
+      .click();
+    const changeSeller = page.getByRole("dialog", { name: "Change seller" });
+    await changeSeller.getByRole("combobox", { name: "Seller" }).click();
+    await page.getByRole("option").first().waitFor();
+    expect(errors, "seller picker").toEqual([]);
+    await page.context().close();
+  });
+
   it("gives every control a target at least 24px in both directions, in the window and its open overlays", async () => {
-    const page = await openLanding({ width: 1440, height: 900 });
-    const app = funnel(page);
+    const page = await openLanding(WIDE_VIEWPORT);
+    const app = dashboard(page);
     await app.scrollIntoViewIfNeeded();
     const detail = app.getByRole("complementary", { name: "Order details" });
 
@@ -571,12 +460,29 @@ describe("landing Funnel window", () => {
     const changeSeller = page.getByRole("dialog", { name: "Change seller" });
     await changeSeller.waitFor();
     await expectTargets(changeSeller, "Change seller dialog");
+    await page.keyboard.press("Escape");
+    await expect.poll(async () => changeSeller.count()).toBe(0);
+    await page.keyboard.press("Escape");
+
+    await openOrderSearch(page);
+    await expectTargets(app, "Order search");
+    await app.getByRole("search", { name: "Order search" }).getByRole("button", { name: "Status" }).click();
+    const facetMenu = page.getByRole("menu");
+    await facetMenu.getByRole("menuitemcheckbox").first().waitFor();
+    await expectTargets(facetMenu, "Status filter menu");
+    await page.keyboard.press("Escape");
+    await expect.poll(async () => facetMenu.count()).toBe(0);
+
+    await app.getByRole("button", { name: /^New order/u }).click();
+    const newOrder = page.getByRole("dialog", { name: "New order" });
+    await newOrder.waitFor();
+    await expectTargets(newOrder, "New order Sheet");
     await page.context().close();
   });
 
   it("gives every control in the phone Sheets a target at least 24px in both directions", async () => {
     const page = await openLanding(PHONE_VIEWPORT);
-    const app = funnel(page);
+    const app = dashboard(page);
     await app.scrollIntoViewIfNeeded();
 
     await app.getByRole("button", { name: "Toggle sidebar" }).click();
@@ -590,6 +496,79 @@ describe("landing Funnel window", () => {
     const detail = page.getByRole("dialog", { name: "Ida Hagen" });
     await detail.waitFor();
     await expectTargets(detail, "detail Sheet");
+    await page.keyboard.press("Escape");
+    await expect.poll(async () => detail.count()).toBe(0);
+
+    await app.getByRole("button", { name: "Toggle sidebar" }).click();
+    await nav.getByRole("button", { name: /^New order/u }).click();
+    const newOrder = page.getByRole("dialog", { name: "New order" });
+    await newOrder.waitFor();
+    await expectTargets(newOrder, "New order Sheet");
+    // On a phone the Sheet fills the window's width. DOM audit: the window's theme scope, inside
+    // its border, has no role.
+    const scope = app.locator("[data-theme-variant]");
+    const [sheetBox, scopeBox] = await Promise.all([newOrder.boundingBox(), scope.boundingBox()]);
+    expect(sheetBox?.width).toBeCloseTo(scopeBox?.width ?? 0, 0);
+    await page.context().close();
+  });
+
+  it("opens a working view from every sidebar entry", async () => {
+    const page = await openLanding(DESKTOP_VIEWPORT);
+    const app = dashboard(page);
+    await app.scrollIntoViewIfNeeded();
+    // DOM audit: Sidebar.Content is the nav's scroll region below Search and New order; no role.
+    const entries = await app.locator("[data-slot='sidebar-content']").getByRole("button").allTextContents();
+    expect(entries.length).toBeGreaterThan(0);
+
+    const empty: string[] = [];
+    for (const label of entries) {
+      await app.getByRole("button", { name: label, exact: true }).click();
+      await expect.poll(async () => app.getByRole("status", { name: "Loading orders" }).count()).toBe(0);
+      // DOM audit: a loading table carries aria-busy, which no role query reads.
+      await expect.poll(async () => app.locator("table[aria-busy='true']").count()).toBe(0);
+      const rows =
+        (await app.getByRole("list", { name: "Orders" }).getByRole("button").count()) +
+        (await searchTable(app).getByRole("rowgroup").nth(1).getByRole("button").count());
+      if (rows === 0) {
+        empty.push(label);
+      }
+    }
+    expect(empty).toEqual([]);
+    await page.context().close();
+  });
+
+  it("draws the list's scrollbar above a stuck group header", async () => {
+    const page = await openLanding(DESKTOP_VIEWPORT);
+    const app = dashboard(page);
+    await app.scrollIntoViewIfNeeded();
+    // DOM audit: ScrollArea's viewport and scrollbar have no role.
+    const viewport = app.locator("[data-slot='scroll-area-viewport']", {
+      has: page.getByRole("list", { name: "Orders" }),
+    });
+    const scrollbar = app.locator("[data-slot='scroll-area-scrollbar']").first();
+    const box = await viewport.boundingBox();
+    expect(box).not.toBeNull();
+    if (box === null) {
+      return;
+    }
+    // Hovering the pane shows the scrollbar; scrolling sticks a group header to the pane's top.
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await viewport.evaluate((element) => {
+      element.scrollTop = 300;
+    });
+    await expect.poll(async () => scrollbar.getAttribute("data-hovering")).toBe("");
+
+    const bar = await scrollbar.boundingBox();
+    expect(bar).not.toBeNull();
+    if (bar === null) {
+      return;
+    }
+    // A point in the scrollbar's lane at the stuck header's height lands on the scrollbar.
+    const onBar = await scrollbar.evaluate(
+      (element, point) => element.contains(document.elementFromPoint(point.x, point.y)),
+      { x: bar.x + bar.width / 2, y: box.y + 18 }
+    );
+    expect(onBar).toBe(true);
     await page.context().close();
   });
 });

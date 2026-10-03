@@ -26,11 +26,11 @@ function docsSourceFiles(dir: string): string[] {
 }
 
 const SIDEBAR_ROUTE = "src/app/(docs)/components/sidebar/";
-/** The landing hero's Funnel window, a product demo built on the library Sidebar. */
+/** The landing hero's Dashboard window, a product demo built on the library Sidebar. */
 const LANDING_APP_SHELL = "src/app/(landing)/landing/app-shell/";
 
 /**
- * The Sidebar component page and its demos, and the landing's Funnel demo, are the places the
+ * The Sidebar component page and its demos, and the landing's Dashboard demo, are the places the
  * library Sidebar may be imported: they demonstrate the component, they are not docs chrome.
  */
 function isSidebarPage(file: string): boolean {

@@ -2,8 +2,8 @@ import type { ReactElement } from "react";
 
 import { tv } from "tailwind-variants";
 
-import { statusTone } from "./funnel-orders";
-import type { OrderStatus } from "./funnel-orders";
+import { statusTone } from "./dashboard-orders";
+import type { OrderStatus } from "./dashboard-orders";
 
 const statusIcon = tv({
   slots: {
@@ -59,7 +59,7 @@ export type OrderStatusIconProps = {
 };
 
 /**
- * One status as a 14px glyph in the tone Funnel paints it, every stroke 1.5px. Decorative: the
+ * One status as a 14px glyph in the tone the sales tool paints it, every stroke 1.5px. Decorative: the
  * row or menu item beside it names the status.
  */
 export function OrderStatusIcon({ status }: OrderStatusIconProps): ReactElement {

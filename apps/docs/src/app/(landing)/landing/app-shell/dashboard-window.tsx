@@ -14,16 +14,16 @@ import { Tooltip } from "@elmeragroup/fuse/tooltip";
 import { useLandingTheme } from "../landing-theme";
 import { SingleToggle } from "../product-parts";
 import { CommandPalette } from "./command-palette";
-import { FunnelContext } from "./funnel-context";
-import type { FunnelApi, Navigation, Notice } from "./funnel-context";
-import { FunnelMain } from "./funnel-main";
-import { DEMO_NOW } from "./funnel-orders";
-import type { OrderId } from "./funnel-orders";
-import { FunnelSidebar } from "./funnel-sidebar";
-import { initialState, reduce, visibleOrders } from "./funnel-state";
-import { NewOrderDialog } from "./new-order-dialog";
+import { DashboardContext } from "./dashboard-context";
+import type { DashboardApi, Navigation, Notice } from "./dashboard-context";
+import { DashboardMain } from "./dashboard-main";
+import { DEMO_NOW } from "./dashboard-orders";
+import type { OrderId } from "./dashboard-orders";
+import { DashboardSidebar } from "./dashboard-sidebar";
+import { initialState, isQueue, reduce, visibleOrders } from "./dashboard-state";
+import { NewOrderSheet } from "./new-order-sheet";
 
-const funnelWindow = tv({
+const dashboardWindow = tv({
   slots: {
     frame: "sm:px-6 w-full max-w-312 px-4 lg:px-8",
     // The fade is a mask, so it is applied on a padded wrapper the shadow fits inside.
@@ -40,7 +40,7 @@ const funnelWindow = tv({
   },
 });
 
-const styles = funnelWindow();
+const styles = dashboardWindow();
 
 const VARIANTS = ["internal", "external"] as const satisfies readonly ThemeVariant[];
 const VARIANT_LABELS = { internal: "Internal", external: "External" } as const satisfies Record<
@@ -97,9 +97,9 @@ type ShellProps = {
 
 /**
  * Everything inside the Sidebar provider: the state, the clock, the toasts, the overlays and
- * the keyboard map, provided to every part through `FunnelContext`.
+ * the keyboard map, provided to every part through `DashboardContext`.
  */
-function FunnelShell({ scope, setOpen }: ShellProps): ReactElement {
+function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
   const [state, dispatch] = useReducer(reduce, undefined, initialState);
   const [loading, setLoading] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -118,7 +118,9 @@ function FunnelShell({ scope, setOpen }: ShellProps): ReactElement {
   const palettePopup = useRef<HTMLDivElement>(null);
   const toasts = Toast.useToastManager();
   const { isMobile, setOpenMobile } = useSidebar();
-  const splitView = useSplitView();
+  // Only a queue sits beside its detail; Order search's table keeps the width at every size.
+  const wide = useSplitView();
+  const splitView = wide && isQueue(state.view);
 
   useEffect(() => () => clearTimeout(fetchTimer.current), []);
 
@@ -180,7 +182,7 @@ function FunnelShell({ scope, setOpen }: ShellProps): ReactElement {
   }, []);
 
   const api = useMemo(
-    (): FunnelApi => ({
+    (): DashboardApi => ({
       state,
       dispatch,
       navigate,
@@ -188,13 +190,15 @@ function FunnelShell({ scope, setOpen }: ShellProps): ReactElement {
       now: () => new Date(DEMO_NOW + (Date.now() - mountedAt)).toISOString(),
       notify,
       openOrder: (id: OrderId) => {
+        const shown = visibleOrders(state).some((order) => order.id === id);
         dispatch({ _tag: "Reveal", id });
-        if (!visibleOrders(state).some((order) => order.id === id)) {
+        if (!shown) {
           fetchList();
         }
         revealing.current = id;
         setRevealCount((count) => count + 1);
-        setSheetOpen(!splitView);
+        // A reveal the current list cannot show lands in Order search, which keeps no split.
+        setSheetOpen(!(wide && isQueue(shown ? state.view : "order-search")));
       },
       openPalette: () => {
         remember();
@@ -214,6 +218,7 @@ function FunnelShell({ scope, setOpen }: ShellProps): ReactElement {
       mountedAt,
       notify,
       toggleSidebar,
+      wide,
       splitView,
       remember,
       setPaletteOpen,
@@ -302,9 +307,9 @@ function FunnelShell({ scope, setOpen }: ShellProps): ReactElement {
   }, [scope, palette.open, setPaletteOpen, remember]);
 
   return (
-    <FunnelContext value={api}>
-      <FunnelSidebar />
-      <FunnelMain sheetOpen={sheetOpen && !splitView} onSheetOpenChange={setSheetOpen} />
+    <DashboardContext value={api}>
+      <DashboardSidebar />
+      <DashboardMain sheetOpen={sheetOpen && !splitView} onSheetOpenChange={setSheetOpen} />
       <CommandPalette
         open={palette.open}
         opening={palette.opening}
@@ -312,18 +317,18 @@ function FunnelShell({ scope, setOpen }: ShellProps): ReactElement {
         finalFocus={invoker}
         popup={palettePopup}
       />
-      <NewOrderDialog open={newOrderOpen} onOpenChange={setNewOrderOpen} />
-    </FunnelContext>
+      <NewOrderSheet open={newOrderOpen} onOpenChange={setNewOrderOpen} />
+    </DashboardContext>
   );
 }
 
 /**
- * The hero's product shot: Funnel, Elmera's internal sales tool, running live on Fuse inside a
+ * The hero's product shot: Dashboard, an internal sales and back-office app, running live on Fuse inside a
  * fixed-height window. A `ThemeScope` wraps it, so the switch flips the window between the
  * internal and external variant of the brand the landing has picked while the page keeps its
  * own theme. Density stays the document's.
  */
-export function FunnelWindow(): ReactElement {
+export function DashboardWindow(): ReactElement {
   const { theme } = useLandingTheme();
   const [variant, setVariant] = useState<ThemeVariant>("internal");
   // The rail's open state lives here, in memory, never in the host's sidebar cookie.
@@ -336,11 +341,11 @@ export function FunnelWindow(): ReactElement {
   return (
     <div className={styles.frame()}>
       <div className={styles.fade()}>
-        <section aria-label="Funnel" className={styles.window()}>
+        <section aria-label="Dashboard" className={styles.window()}>
           <div className={styles.chrome()}>
             <span className={styles.chromeName()}>Live demo</span>
             <span className={styles.chromeNote()}>
-              Funnel, Elmera's sales and back-office tool, built with Fuse
+              Dashboard: an internal sales and back-office app built with Fuse
             </span>
             <span className={styles.chromeEnd()}>
               <SingleToggle
@@ -357,9 +362,9 @@ export function FunnelWindow(): ReactElement {
             <Tooltip.Provider>
               <Toast.Provider>
                 <Sidebar.Provider open={open} onOpenChange={setOpenState} className={styles.provider()}>
-                  <FunnelShell scope={scope} setOpen={setOpen} />
+                  <DashboardShell scope={scope} setOpen={setOpen} />
                 </Sidebar.Provider>
-                <Toast.Viewport aria-label="Funnel notifications" />
+                <Toast.Viewport aria-label="Dashboard notifications" />
               </Toast.Provider>
             </Tooltip.Provider>
           </ThemeScope>

@@ -1,7 +1,7 @@
 /**
- * The orders the hero's Funnel window shows: Funnel, Elmera's internal sales and back-office tool,
+ * The orders the hero's Dashboard window shows: an internal sales and back-office app,
  * as a back-office agent sees it. This module owns what an order is, its statuses and the rules
- * and formatting over them; `funnel-seeds.ts` holds the fixture. Labels follow
+ * and formatting over them; `dashboard-seeds.ts` holds the fixture. Labels follow
  * `.ref/OrderModuleInternalWeb`, and every SSN is shown masked, the way the tool prints it.
  */
 
@@ -20,7 +20,7 @@ export type OrderStatus =
   | "Done"
   | "Cancelled";
 
-/** How a status reads at a glance: the three tones Funnel paints its status icons in. */
+/** How a status reads at a glance: the three tones the sales tool paints its status icons in. */
 export type StatusTone = "success" | "warning" | "destructive";
 
 type StatusFacts = {
@@ -57,7 +57,7 @@ export const STATUS_ORDER = [
 ] as const satisfies readonly OrderStatus[];
 
 /**
- * Funnel's colour rule (`components/order/order-status.tsx`): cancelled and every code from 400
+ * The sales tool's colour rule (`components/order/order-status.tsx`): cancelled and every code from 400
  * up are destructive, 101 to 199 and 301 are warning, and the rest are success.
  *
  * @param status - The status to classify.
@@ -75,7 +75,7 @@ export function statusTone(status: OrderStatus): StatusTone {
 }
 
 /**
- * Funnel sends the signing SMS only while the customer has yet to approve (SALGSL-4056). The
+ * The sales tool sends the signing SMS only while the customer has yet to approve (SALGSL-4056). The
  * detail's Resend contract and the bulk Send SMS share this rule.
  *
  * @param status - The order's status.
@@ -99,6 +99,9 @@ export function canSendReceipt(status: OrderStatus): boolean {
 /** The five Norwegian price areas. */
 export type PriceArea = "NO1" | "NO2" | "NO3" | "NO4" | "NO5";
 
+/** Every price area, south-east to west. */
+export const PRICE_AREAS = ["NO1", "NO2", "NO3", "NO4", "NO5"] as const satisfies readonly PriceArea[];
+
 const PRICE_AREA_NAMES = {
   NO1: "Øst-Norge",
   NO2: "Sør-Norge",
@@ -118,8 +121,24 @@ export function priceAreaLabel(area: PriceArea): string {
 /** The commission campaign an order was sold under (`order-info-details.tsx`). */
 export type SalesChannel = "New sales" | "Comeback" | "Winback" | "Leads" | "Backoffice";
 
+/** Every sales channel in the sales tool's order. */
+export const SALES_CHANNELS = [
+  "New sales",
+  "Comeback",
+  "Winback",
+  "Leads",
+  "Backoffice",
+] as const satisfies readonly SalesChannel[];
+
 /** How the facility changes supplier (`OrderStartupType` in the reference). */
 export type StartupType = "Change of supplier" | "Move" | "Renewal";
+
+/** Every startup type, the common case first. */
+export const STARTUP_TYPES = [
+  "Change of supplier",
+  "Move",
+  "Renewal",
+] as const satisfies readonly StartupType[];
 
 /** The people who sell and process orders. Fictional. */
 export type SellerId = "reodor" | "solan" | "mysil" | "kristine";
@@ -146,11 +165,14 @@ export const SIGNED_IN: Seller = SELLERS.reodor;
 /** Every seller in display order. */
 export const SELLER_LIST: readonly Seller[] = Object.values(SELLERS);
 
-/** An order number as Funnel prints it: Core's integer id. */
+/** An order number as the sales tool prints it: Core's integer id. */
 export type OrderId = number;
 
 /** The electricity products the demo sells, with the price elements they carry. */
 export type Product = "Spotpris" | "Fastpris 12 mnd" | "StrømSmart+";
+
+/** Every product the demo sells. */
+export const PRODUCTS = ["Spotpris", "Fastpris 12 mnd", "StrømSmart+"] as const satisfies readonly Product[];
 
 const PRODUCT_PRICES = {
   Spotpris: "Spot + 5 øre/kWh, 49 kr/mnd",
@@ -166,7 +188,13 @@ export function productPrice(product: Product): string {
   return PRODUCT_PRICES[product];
 }
 
-/** What Elhub answered when Funnel checked the facility's owner. */
+/** The campaigns a seller can sell under this autumn. */
+export const CAMPAIGNS = ["Høstkampanje", "3 måneder halv pris"] as const;
+
+/** A campaign from {@link CAMPAIGNS}. */
+export type Campaign = (typeof CAMPAIGNS)[number];
+
+/** What Elhub answered when asked who owns the facility. */
 export type ElhubCheck =
   | { readonly _tag: "Verified"; readonly checkedAt: string }
   | { readonly _tag: "OwnerMismatch"; readonly checkedAt: string; readonly registeredOwner: string }
@@ -273,6 +301,21 @@ export function relativeDate(iso: string): string {
     return `${String(Math.floor(minutes / (60 * 24)))}d`;
   }
   return dayMonth.format(Date.parse(iso));
+}
+
+const isoDay = new Intl.DateTimeFormat("en-CA", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  timeZone: "Europe/Oslo",
+});
+
+/**
+ * @param iso - The timestamp.
+ * @returns Its date in Oslo as `yyyy-mm-dd`, the form a date input reads and writes.
+ */
+export function osloDate(iso: string): string {
+  return isoDay.format(Date.parse(iso));
 }
 
 /**

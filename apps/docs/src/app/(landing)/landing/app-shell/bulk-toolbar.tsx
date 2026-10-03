@@ -11,19 +11,23 @@ import { Dialog } from "@elmeragroup/fuse/dialog";
 import { DeviceMobile, Receipt, Users, X } from "@elmeragroup/fuse/icons";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
-import { useFunnel } from "./funnel-context";
-import { canSendContractSms, canSendReceipt, SELLER_LIST } from "./funnel-orders";
-import type { Order, OrderStatus, Seller } from "./funnel-orders";
+import { useDashboard } from "./dashboard-context";
+import { canSendContractSms, canSendReceipt, SELLER_LIST } from "./dashboard-orders";
+import type { Order, OrderStatus, Seller } from "./dashboard-orders";
 
 const bulkToolbar = tv({
   slots: {
     // Floats over the list, clear of the window's faded bottom edge.
-    bar: "landing-rise shadow-lg absolute inset-x-0 bottom-6 z-30 mx-auto flex w-max max-w-[calc(100%-2rem)] items-center gap-1 rounded-xl border border-border bg-popover p-1.5 text-popover-foreground",
+    bar: "landing-rise shadow-lg absolute inset-x-0 z-30 mx-auto flex w-max max-w-[calc(100%-2rem)] items-center gap-1 rounded-xl border border-border bg-popover p-1.5 text-popover-foreground",
     count: "text-xs font-medium px-2 whitespace-nowrap tabular-nums",
     // A narrow list keeps the icons; each button names itself either way.
     label: "@md:inline hidden",
     divider: "mx-1 h-5 w-px bg-border",
     form: "flex flex-col gap-4",
+  },
+  variants: {
+    // Order search keeps its pagination along the bottom, so the bar floats above it.
+    above: { list: { bar: "bottom-6" }, pagination: { bar: "bottom-18" } },
   },
 });
 
@@ -46,7 +50,7 @@ function ChangeSellerDialog({
   onOpenChange: (open: boolean) => void;
   selection: readonly Order[];
 }): ReactElement {
-  const { dispatch, now, notify } = useFunnel();
+  const { dispatch, now, notify } = useDashboard();
   const [seller, setSeller] = useState<Seller | null>(null);
 
   return (
@@ -110,11 +114,11 @@ function ChangeSellerDialog({
 
 /**
  * The floating toolbar checked rows raise: send the signing SMS, send receipts or change seller
- * for the whole selection. Funnel plans these as SALGSL-4115; each reports how many of the
+ * for the whole selection. The sales tool plans these as SALGSL-4115; each reports how many of the
  * selection it reached.
  */
 export function BulkToolbar(): ReactElement | null {
-  const { state, dispatch, now, notify } = useFunnel();
+  const { state, dispatch, now, notify } = useDashboard();
   const [changing, setChanging] = useState(false);
   const selection = state.orders.filter((order) => state.checked.includes(order.id));
 
@@ -140,7 +144,10 @@ export function BulkToolbar(): ReactElement | null {
   return (
     <>
       {selection.length === 0 ? null : (
-        <div role="toolbar" aria-label="Bulk actions" className={styles.bar()}>
+        <div
+          role="toolbar"
+          aria-label="Bulk actions"
+          className={bulkToolbar({ above: state.view === "order-search" ? "pagination" : "list" }).bar()}>
           <span className={styles.count()}>{`${String(selection.length)} selected`}</span>
           <Tooltip.Root>
             <Tooltip.Trigger

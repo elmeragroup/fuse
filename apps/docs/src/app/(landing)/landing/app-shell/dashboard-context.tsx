@@ -2,11 +2,11 @@
 
 import { createContext, use } from "react";
 
-import type { OrderId } from "./funnel-orders";
-import type { FunnelAction, FunnelState } from "./funnel-state";
+import type { OrderId } from "./dashboard-orders";
+import type { DashboardAction, DashboardState } from "./dashboard-state";
 
 /** The actions that fetch a new list. Revealing an order goes through `openOrder` instead. */
-export type Navigation = Extract<FunnelAction, { _tag: "Open" | "Scope" }>;
+export type Navigation = Extract<DashboardAction, { _tag: "Open" | "Scope" }>;
 
 /** A toast the window raises inside its own viewport. */
 export type Notice = {
@@ -16,9 +16,9 @@ export type Notice = {
 };
 
 /** What every part of the window reads and calls; the window component owns it. */
-export type FunnelApi = {
-  readonly state: FunnelState;
-  readonly dispatch: (action: FunnelAction) => void;
+export type DashboardApi = {
+  readonly state: DashboardState;
+  readonly dispatch: (action: DashboardAction) => void;
   /** Opens a view, tab or order behind a short simulated fetch, so the list shows it loading. */
   readonly navigate: (action: Navigation) => void;
   /** True while the simulated fetch runs. */
@@ -39,17 +39,17 @@ export type FunnelApi = {
   readonly splitView: boolean;
 };
 
-/** The window's API, provided by `FunnelWindow`. */
-export const FunnelContext = createContext<FunnelApi | undefined>(undefined);
+/** The window's API, provided by `DashboardWindow`. */
+export const DashboardContext = createContext<DashboardApi | undefined>(undefined);
 
 /**
  * @returns The window's state and actions.
- * @throws Outside `FunnelWindow`, a wiring defect.
+ * @throws Outside `DashboardWindow`, a wiring defect.
  */
-export function useFunnel(): FunnelApi {
-  const api = use(FunnelContext);
+export function useDashboard(): DashboardApi {
+  const api = use(DashboardContext);
   if (api === undefined) {
-    throw new Error("useFunnel must be used within FunnelWindow");
+    throw new Error("useDashboard must be used within DashboardWindow");
   }
   return api;
 }

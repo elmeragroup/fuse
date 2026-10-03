@@ -15,15 +15,16 @@ import { Tooltip } from "@elmeragroup/fuse/tooltip";
 import { useLandingTheme } from "../landing-theme";
 import { SingleToggle } from "../product-parts";
 import { BulkToolbar } from "./bulk-toolbar";
-import { useFunnel } from "./funnel-context";
-import { isListView, visibleOrders } from "./funnel-state";
-import type { Grouping, Scope } from "./funnel-state";
-import { PRIMARY_VIEWS, VIEW_GROUPS, viewEntry } from "./funnel-views";
+import { useDashboard } from "./dashboard-context";
+import { visibleOrders } from "./dashboard-state";
+import type { Grouping, Scope } from "./dashboard-state";
+import { PRIMARY_VIEWS, VIEW_GROUPS, viewEntry } from "./dashboard-views";
 import { Kbd } from "./kbd";
 import { OrderDetail } from "./order-detail";
 import { OrderList } from "./order-list";
+import { OrderSearch } from "./order-search";
 
-const funnelMain = tv({
+const dashboardMain = tv({
   slots: {
     // A size container, so the breadcrumb follows the pane's width. Against the inset rail it
     // reads as a raised panel, the way Sidebar.Inset draws one; Sidebar.Inset itself renders a
@@ -45,7 +46,7 @@ const funnelMain = tv({
   },
 });
 
-const styles = funnelMain();
+const styles = dashboardMain();
 
 const SCOPES = ["active", "closed", "all"] as const satisfies readonly Scope[];
 const SCOPE_LABELS = { active: "Active", closed: "Closed", all: "All" } as const satisfies Record<
@@ -61,7 +62,7 @@ function groupLabelOf(view: ReturnType<typeof viewEntry>["view"]): string | unde
 }
 
 function SidebarToggle(): ReactElement {
-  const { toggleSidebar } = useFunnel();
+  const { toggleSidebar } = useDashboard();
   return (
     <Tooltip.Root>
       <Tooltip.Trigger
@@ -87,7 +88,7 @@ function SidebarToggle(): ReactElement {
 }
 
 function Crumbs(): ReactElement {
-  const { state } = useFunnel();
+  const { state } = useDashboard();
   const { theme } = useLandingTheme();
   const entry = viewEntry(state.view);
   const group = groupLabelOf(entry.view);
@@ -113,7 +114,7 @@ function Crumbs(): ReactElement {
 const GROUPINGS = { status: "Status", none: "No grouping" } as const satisfies Record<Grouping, string>;
 
 function DisplayMenu(): ReactElement {
-  const { state, dispatch } = useFunnel();
+  const { state, dispatch } = useDashboard();
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger render={<Button variant="outline" size="sm" />}>
@@ -138,9 +139,10 @@ function DisplayMenu(): ReactElement {
   );
 }
 
+/** The queues' tabs. Order search filters through its own toolbar instead. */
 function Filters(): ReactElement | null {
-  const { state, navigate } = useFunnel();
-  if (!isListView(state.view)) {
+  const { state, navigate } = useDashboard();
+  if (state.view === "order-search") {
     return null;
   }
   const shown = visibleOrders(state).length;
@@ -162,8 +164,9 @@ function Filters(): ReactElement | null {
 }
 
 /**
- * The detail beside the list, or a Sheet over it where the window is too narrow for both. Keyed by
- * order, so a comment draft or a pending Elhub retry never carries into another order.
+ * The detail beside a queue's list, or a Sheet over it in Order search and where the window is too
+ * narrow for both. Keyed by order, so a comment draft or a pending Elhub retry never carries into
+ * another order.
  */
 function Detail({
   sheetOpen,
@@ -172,7 +175,7 @@ function Detail({
   sheetOpen: boolean;
   onSheetOpenChange: (open: boolean) => void;
 }): ReactElement {
-  const { state, splitView } = useFunnel();
+  const { state, splitView } = useDashboard();
   const order = state.orders.find((candidate) => candidate.id === state.selected);
 
   if (splitView) {
@@ -207,14 +210,14 @@ function Detail({
   );
 }
 
-export type FunnelMainProps = {
+export type DashboardMainProps = {
   sheetOpen: boolean;
   onSheetOpenChange: (open: boolean) => void;
 };
 
 /** The pane beside the sidebar: header, tabs, the order list with its bulk toolbar, the detail. */
-export function FunnelMain({ sheetOpen, onSheetOpenChange }: FunnelMainProps): ReactElement {
-  const { openPalette } = useFunnel();
+export function DashboardMain({ sheetOpen, onSheetOpenChange }: DashboardMainProps): ReactElement {
+  const { state, openPalette } = useDashboard();
   return (
     <div className={styles.root()}>
       <header className={styles.header()}>
@@ -230,13 +233,14 @@ export function FunnelMain({ sheetOpen, onSheetOpenChange }: FunnelMainProps): R
             onClick={openPalette}>
             <MagnifyingGlass />
           </Button>
-          <DisplayMenu />
+          {/* Grouping is the queues' display; Order search has its table's column menu. */}
+          {state.view === "order-search" ? null : <DisplayMenu />}
         </div>
       </header>
       <Filters />
       <div className={styles.body()}>
         <div className={styles.listColumn()}>
-          <OrderList />
+          {state.view === "order-search" ? <OrderSearch /> : <OrderList />}
           <BulkToolbar />
         </div>
         <Detail sheetOpen={sheetOpen} onSheetOpenChange={onSheetOpenChange} />

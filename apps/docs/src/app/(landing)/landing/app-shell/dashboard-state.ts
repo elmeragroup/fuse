@@ -1,18 +1,23 @@
-import { ORDER_STATUSES, SELLERS, SIGNED_IN, STATUS_ORDER, statusTone } from "./funnel-orders";
-import type { ActivityEvent, Order, OrderId, OrderStatus, Product, SellerId } from "./funnel-orders";
-import { ORDERS } from "./funnel-seeds";
+import {
+  dateTime,
+  formatKwh,
+  ORDER_STATUSES,
+  SELLERS,
+  SIGNED_IN,
+  STATUS_ORDER,
+  statusTone,
+} from "./dashboard-orders";
+import type { ActivityEvent, Order, OrderId, OrderStatus, SellerId } from "./dashboard-orders";
+import { ORDERS } from "./dashboard-seeds";
+import type { DraftInput } from "./order-draft";
+import { EMPTY_QUERY, matchesQuery } from "./order-query";
+import type { OrderQuery } from "./order-query";
 
-/** What the New order dialog collects; everything else a draft starts with is fixed. */
-export type DraftInput = {
-  readonly customer: string;
-  readonly ssn: string;
-  readonly address: string;
-  readonly meterPointId: string;
-  readonly product: Product;
-};
-
-/** The sidebar entries that list orders, each a filter over the same orders. */
-export type ListView =
+/**
+ * The sidebar entries, each a filter over the same orders. Order search lists every order through
+ * its own query and shows them as a table; the others are queues.
+ */
+export type View =
   | "inbox"
   | "mine"
   | "drafts"
@@ -22,26 +27,13 @@ export type ListView =
   | "deviations"
   | "order-search";
 
-/** The sidebar entries Funnel has that this demo names but does not build. */
-export type PageView =
-  | "checkout"
-  | "statistics"
-  | "import"
-  | "competitor-price"
-  | "batch-search"
-  | "move-out"
-  | "meter-point-search";
-
-/** Every place the sidebar can open. */
-export type View = ListView | PageView;
-
 /**
  * Who a list view belongs to. A personal view holds only the signed-in seller's orders, the way
- * Funnel's My orders, Drafts and Sent do; a shared view holds every seller's.
+ * the sales tool's My orders, Drafts and Sent do; a shared view holds every seller's.
  */
 export type Audience = "personal" | "shared";
 
-type ListViewRule = { readonly audience: Audience; readonly holds: (order: Order) => boolean };
+type ViewRule = { readonly audience: Audience; readonly holds: (order: Order) => boolean };
 
 const LIST_VIEWS = {
   inbox: { audience: "personal", holds: (order) => order.unread },
@@ -58,22 +50,14 @@ const LIST_VIEWS = {
   },
   deviations: { audience: "shared", holds: (order) => statusTone(order.status) === "warning" },
   "order-search": { audience: "shared", holds: () => true },
-} as const satisfies Record<ListView, ListViewRule>;
+} as const satisfies Record<View, ViewRule>;
 
 /**
  * @param view - A list view.
  * @returns Whether it holds only the signed-in seller's orders or every seller's.
  */
-export function audienceOf(view: ListView): Audience {
+export function audienceOf(view: View): Audience {
   return LIST_VIEWS[view].audience;
-}
-
-/**
- * @param view - A sidebar entry.
- * @returns Whether it lists orders.
- */
-export function isListView(view: View): view is ListView {
-  return view in LIST_VIEWS;
 }
 
 /** The tabs above the list: open work, finished work, or both. */
@@ -86,22 +70,26 @@ const CLOSED: ReadonlySet<OrderStatus> = new Set(["Done", "Cancelled"]);
 export type Grouping = "status" | "none";
 
 /** The window's whole state. Selection and checks refer to orders by id. */
-export type FunnelState = {
+export type DashboardState = {
   readonly orders: readonly Order[];
   readonly view: View;
+  /** The queues' tab. Order search narrows through its query instead. */
   readonly scope: Scope;
   readonly grouping: Grouping;
+  /** Order search's text and facets, kept while other views are open. */
+  readonly query: OrderQuery;
   readonly selected: OrderId | undefined;
   readonly checked: readonly OrderId[];
 };
 
 /** The state the window opens in: My orders, open work, the first row selected. */
-export function initialState(): FunnelState {
-  const opening: FunnelState = {
+export function initialState(): DashboardState {
+  const opening: DashboardState = {
     orders: ORDERS,
     view: "mine",
     scope: "active",
     grouping: "status",
+    query: EMPTY_QUERY,
     selected: undefined,
     checked: [],
   };
@@ -115,11 +103,20 @@ export function initialState(): FunnelState {
  * @param view - A list view.
  * @returns The orders it holds.
  */
-export function ordersIn(orders: readonly Order[], view: ListView): readonly Order[] {
-  const rule: ListViewRule = LIST_VIEWS[view];
+export function ordersIn(orders: readonly Order[], view: View): readonly Order[] {
+  const rule: ViewRule = LIST_VIEWS[view];
   return orders.filter(
     (order) => (rule.audience === "shared" || order.seller === SIGNED_IN.id) && rule.holds(order)
   );
+}
+
+/**
+ * @param view - A sidebar entry.
+ * @returns Whether it is a queue of work. Order search is a search over every order instead: it
+ * carries no count, and its table keeps the pane's width with its detail in a Sheet.
+ */
+export function isQueue(view: View): boolean {
+  return view !== "order-search";
 }
 
 /**
@@ -129,7 +126,7 @@ export function ordersIn(orders: readonly Order[], view: ListView): readonly Ord
  * @param view - A list view.
  * @returns How many of its orders are still open.
  */
-export function openCount(orders: readonly Order[], view: ListView): number {
+export function openCount(orders: readonly Order[], view: View): number {
   return ordersIn(orders, view).filter((order) => inScope(order, "active")).length;
 }
 
@@ -147,21 +144,31 @@ function inScope(order: Order, scope: Scope): boolean {
 const byNewest = (left: Order, right: Order) => Date.parse(right.created) - Date.parse(left.created);
 
 /**
- * The rows the list shows, in display order: by status group, newest first inside each, or
- * newest first overall when grouping is off. Keyboard movement walks this order.
+ * The rows the view shows. A queue lists them by status group, newest first inside each, or
+ * newest first overall when grouping is off; keyboard movement walks this order. Order search
+ * lists every order its query matches, newest first, and its table sorts them from there.
  *
  * @param state - The window state.
- * @returns The visible orders, or none for a page view.
+ * @returns The visible orders.
  */
-export function visibleOrders(state: FunnelState): readonly Order[] {
-  if (!isListView(state.view)) {
-    return [];
+export function visibleOrders(state: DashboardState): readonly Order[] {
+  if (state.view === "order-search") {
+    return searchOrders(state.orders, state.query);
   }
   const rows = ordersIn(state.orders, state.view).filter((order) => inScope(order, state.scope));
   if (state.grouping === "none") {
     return rows.toSorted(byNewest);
   }
   return STATUS_ORDER.flatMap((status) => rows.filter((order) => order.status === status).toSorted(byNewest));
+}
+
+/**
+ * @param orders - Every order.
+ * @param query - Order search's query.
+ * @returns The orders it matches, newest first.
+ */
+export function searchOrders(orders: readonly Order[], query: OrderQuery): readonly Order[] {
+  return orders.filter((order) => matchesQuery(order, query)).toSorted(byNewest);
 }
 
 /** One status group as the list renders it. */
@@ -179,7 +186,7 @@ export function groupByStatus(orders: readonly Order[]): readonly StatusGroup[] 
 }
 
 /** Everything that changes the window's state. Timestamps come from the shell's clock. */
-export type FunnelAction =
+export type DashboardAction =
   | { readonly _tag: "Select"; readonly id: OrderId }
   | { readonly _tag: "Move"; readonly by: 1 | -1 }
   | { readonly _tag: "Open"; readonly view: View }
@@ -187,6 +194,8 @@ export type FunnelAction =
   | { readonly _tag: "Scope"; readonly scope: Scope }
   | { readonly _tag: "Group"; readonly grouping: Grouping }
   | { readonly _tag: "Toggle"; readonly id: OrderId }
+  | { readonly _tag: "Check"; readonly ids: readonly OrderId[] }
+  | { readonly _tag: "Query"; readonly query: OrderQuery }
   | { readonly _tag: "ClearChecks" }
   | { readonly _tag: "SetStatus"; readonly id: OrderId; readonly status: OrderStatus; readonly at: string }
   | { readonly _tag: "Comment"; readonly id: OrderId; readonly text: string; readonly at: string }
@@ -206,7 +215,11 @@ export type FunnelAction =
     }
   | { readonly _tag: "CreateDraft"; readonly draft: DraftInput; readonly at: string };
 
-function update(state: FunnelState, ids: readonly OrderId[], change: (order: Order) => Order): FunnelState {
+function update(
+  state: DashboardState,
+  ids: readonly OrderId[],
+  change: (order: Order) => Order
+): DashboardState {
   return { ...state, orders: state.orders.map((order) => (ids.includes(order.id) ? change(order) : order)) };
 }
 
@@ -216,7 +229,7 @@ function logged(order: Order, at: string, title: string, detail: string, author?
 }
 
 /** Keeps the selection on a visible row after the view or its filters change. */
-function settle(state: FunnelState): FunnelState {
+function settle(state: DashboardState): DashboardState {
   const rows = visibleOrders(state);
   if (rows.some((order) => order.id === state.selected)) {
     return state;
@@ -231,7 +244,19 @@ function settle(state: FunnelState): FunnelState {
  * @param action - What happened.
  * @returns The next state.
  */
-export function reduce(state: FunnelState, action: FunnelAction): FunnelState {
+export function reduce(state: DashboardState, action: DashboardAction): DashboardState {
+  const next = transition(state, action);
+  if (next.orders === state.orders && next.query === state.query) {
+    return next;
+  }
+  // Checks on rows a change hides would act unseen, so they drop with the rows. Every order
+  // mutation and every query change passes here, whichever action caused it.
+  const shown = new Set(visibleOrders(next).map((order) => order.id));
+  const checked = next.checked.filter((id) => shown.has(id));
+  return checked.length === next.checked.length ? next : { ...next, checked };
+}
+
+function transition(state: DashboardState, action: DashboardAction): DashboardState {
   switch (action._tag) {
     case "Select":
       return update({ ...state, selected: action.id }, [action.id], (order) => ({ ...order, unread: false }));
@@ -239,14 +264,15 @@ export function reduce(state: FunnelState, action: FunnelAction): FunnelState {
       const rows = visibleOrders(state);
       const index = rows.findIndex((order) => order.id === state.selected);
       const next = rows[Math.min(Math.max(index + action.by, 0), rows.length - 1)];
-      return next === undefined ? state : reduce(state, { _tag: "Select", id: next.id });
+      return next === undefined ? state : transition(state, { _tag: "Select", id: next.id });
     }
     case "Open":
       return settle({ ...state, view: action.view, checked: [] });
     case "Reveal": {
       const shown = visibleOrders(state).some((order) => order.id === action.id);
-      const opened = shown ? state : { ...state, view: "order-search" as const, scope: "all" as const };
-      return reduce(opened, { _tag: "Select", id: action.id });
+      // Order search with an empty query lists every order, so the reveal always finds its row.
+      const opened = shown ? state : { ...state, view: "order-search" as const, query: EMPTY_QUERY };
+      return transition(opened, { _tag: "Select", id: action.id });
     }
     case "Scope":
       return settle({ ...state, scope: action.scope });
@@ -259,8 +285,12 @@ export function reduce(state: FunnelState, action: FunnelAction): FunnelState {
           ? state.checked.filter((id) => id !== action.id)
           : [...state.checked, action.id],
       };
+    case "Check":
+      return { ...state, checked: action.ids };
     case "ClearChecks":
       return { ...state, checked: [] };
+    case "Query":
+      return settle({ ...state, query: action.query });
     case "SetStatus":
       return update(state, [action.id], (order) =>
         order.status === action.status
@@ -304,27 +334,45 @@ export function reduce(state: FunnelState, action: FunnelAction): FunnelState {
       );
     case "CreateDraft": {
       const id = nextOrderId(state.orders);
+      const { draft: input } = action;
+      const event = (key: string, title: string, detail: string): ActivityEvent => ({
+        id: `${String(id)}-${key}`,
+        at: action.at,
+        title,
+        detail,
+        author: SIGNED_IN.id,
+      });
       const draft: Order = {
-        ...action.draft,
         id,
         status: "Ready",
+        customer: input.customer,
+        ssn: input.ssn,
+        address: input.address,
+        meterPointId: input.meterPointId,
         facility: { _tag: "Pending" },
-        campaign: undefined,
+        product: input.product,
+        campaign: input.campaign,
         channel: "Backoffice",
-        startup: "Change of supplier",
+        startup: input.startup,
         salesType: "New sale",
         seller: SIGNED_IN.id,
         created: action.at,
         unread: false,
         elhub: { _tag: "NotChecked" },
         activity: [
-          {
-            id: `${String(id)}-draft`,
-            at: action.at,
-            title: "Draft saved",
-            detail: `${action.draft.product} for ${action.draft.customer}`,
-            author: SIGNED_IN.id,
-          },
+          event(
+            "draft",
+            "Draft saved",
+            `${input.product} for ${input.customer}, ${input.startup.toLocaleLowerCase("en-GB")} from ${startDay(input.startDate)}`
+          ),
+          event("contact", "Contact details", `${input.phone} · ${input.email}`),
+          event(
+            "estimate",
+            "Consumption estimate",
+            `${formatKwh(input.annualKwh)} a year, until Elhub answers`
+          ),
+          event("attorney", "Power of attorney", "Given by the customer"),
+          ...(input.note === "" ? [] : [event("note", "Comment", input.note)]),
         ],
       };
       return {
@@ -357,6 +405,11 @@ export function nextOrderId(orders: readonly Order[]): OrderId {
  */
 export function retryApplies(order: Order, expected: OrderStatus): boolean {
   return order.status === expected;
+}
+
+/** A `yyyy-mm-dd` start date as the activity log prints dates, such as "14 Oct". */
+function startDay(date: string): string {
+  return dateTime(`${date}T12:00:00+02:00`).split(",")[0] ?? date;
 }
 
 function statusChange(order: Order, status: OrderStatus): string {
