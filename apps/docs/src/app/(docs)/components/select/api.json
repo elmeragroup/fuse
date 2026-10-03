@@ -434,7 +434,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "true",
-          "description": "macOS-style: the selected item overlays the trigger. Emitted as `data-align-trigger`. Entrance animation is suppressed while this is on, so the popup appears in place.",
+          "description": "macOS-style: the selected item overlays the trigger. Emitted as `data-align-trigger`. Entrance animation is suppressed while this is on, so the popup appears in place. Item alignment places the popup in viewport coordinates, so it applies only while the viewport is the fixed-position containing block of the portal target: the enclosing `ThemeScope`, `container` or the body. When an ancestor of that target, such as a transformed one, contains fixed content instead, the popup opens beside its trigger, even when this is `true`. Fuse measures this in the frame after the content mounts and whenever the portal target resizes, so a popup open from the first render (`defaultOpen`) opens beside its trigger.",
           "required": false
         },
         {

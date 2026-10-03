@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import type { ComponentProps, ReactElement } from "react";
 
 import { Select as SelectPrimitive } from "@base-ui/react/select";
@@ -13,6 +14,7 @@ import { fieldBoxChromeClass } from "../../styles/field-box";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { dataStateFaceClass, nativeStateFaceClass } from "../../styles/state-face";
 import { selfFocusRingClass } from "../../styles/utils";
+import { useResolvedPortalContainer } from "../../theme/theme-scope-container";
 import {
   menuGroupLabelClass,
   menuItemClass,
@@ -23,6 +25,7 @@ import {
 } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
+import { fixedPositionsAgainstViewport } from "./fixed-containing-block";
 import { selectTriggerSize } from "./select-variants";
 
 export function SelectRoot<Value = unknown, Multiple extends boolean | undefined = false>(
@@ -90,6 +93,14 @@ export type SelectContentProps = ComponentProps<typeof SelectPrimitive.Popup> &
     /**
      * macOS-style: the selected item overlays the trigger. Emitted as `data-align-trigger`.
      * Entrance animation is suppressed while this is on, so the popup appears in place.
+     *
+     * Item alignment places the popup in viewport coordinates, so it applies only while
+     * the viewport is the fixed-position containing block of the portal target: the
+     * enclosing `ThemeScope`, `container` or the body. When an ancestor of that target,
+     * such as a transformed one, contains fixed content instead, the popup opens beside
+     * its trigger, even when this is `true`. Fuse measures this in the frame after the
+     * content mounts and whenever the portal target resizes, so a popup open from the
+     * first render (`defaultOpen`) opens beside its trigger.
      * @default true
      */
     alignItemWithTrigger?: ComponentProps<typeof SelectPrimitive.Positioner>["alignItemWithTrigger"];
@@ -106,18 +117,43 @@ export function SelectContent({
   container,
   ...props
 }: SelectContentProps): ReactElement | null {
+  const resolved = useResolvedPortalContainer(container);
+  // Base UI writes item-aligned coordinates from the viewport into a `position: fixed` box,
+  // which an ancestor holding fixed content would offset a second time. The observer reports
+  // in the frame after it starts, before a user can open the popup, and again when the target
+  // resizes; Base UI takes `alignItemWithTrigger` only while the popup is closed. Until the
+  // first report, the popup opens beside its trigger, which is always in place. Without a scope
+  // or `container`, Base UI portals into the body.
+  const [viewportContains, setViewportContains] = useState(false);
+  useEffect(() => {
+    if (resolved === null) {
+      return;
+    }
+    const target = resolved ?? document.body;
+    const observer = new ResizeObserver(() => {
+      setViewportContains(fixedPositionsAgainstViewport(target));
+    });
+    observer.observe(target);
+    return () => {
+      observer.disconnect();
+    };
+  }, [resolved]);
+  if (resolved === null) {
+    return null;
+  }
+  const aligned = alignItemWithTrigger && viewportContains;
   return (
-    <OverlayPortal portal={SelectPrimitive.Portal} container={container}>
+    <OverlayPortal portal={SelectPrimitive.Portal} container={resolved}>
       <SelectPrimitive.Positioner
         side={side}
         sideOffset={sideOffset}
         align={align}
         alignOffset={alignOffset}
-        alignItemWithTrigger={alignItemWithTrigger}
+        alignItemWithTrigger={aligned}
         className={overlayPositionerClass}>
         <SelectPrimitive.Popup
           data-slot="select-content"
-          data-align-trigger={alignItemWithTrigger ? "true" : "false"}
+          data-align-trigger={aligned ? "true" : "false"}
           className={mergeClassName(
             className,
             overlayTimedPopupClass,

@@ -1,12 +1,14 @@
 import { useState } from "react";
-import type { ComponentProps } from "react";
+import type { ComponentProps, CSSProperties } from "react";
 
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { render } from "../../../test/browser-render";
+import { fkasPrivate, renderThemed } from "../../../test/themed-browser-render";
+import { ThemeScope } from "../../theme/theme-scope";
 import { Select } from "./index";
 
 function comboboxNamed(name?: string): HTMLElement {
@@ -245,6 +247,109 @@ describe("Select", () => {
     });
     await openWithClick("Unaligned");
     expect(selectContent().getAttribute("data-align-trigger")).toBe("false");
+  });
+
+  describe("placement against the fixed containing block", () => {
+    // The scope sits away from the viewport origin, so a popup placed with viewport
+    // coordinates inside a transformed block lands that offset away from its trigger.
+    function OffsetScope({ ancestor }: { ancestor: CSSProperties }) {
+      return (
+        <div style={{ ...ancestor, marginTop: 160, marginLeft: 120 }}>
+          <ThemeScope theme={fkasPrivate}>
+            <FruitSelect />
+          </ThemeScope>
+        </div>
+      );
+    }
+
+    // A misplaced popup can scroll the page, and the scroll outlives its test.
+    beforeEach(() => {
+      window.scrollTo(0, 0);
+    });
+
+    async function openedContentAndTrigger(): Promise<{ content: DOMRect; trigger: DOMRect }> {
+      await openWithClick();
+      // The entrance slide shifts the popup until it settles in place.
+      await vi.waitFor(() => {
+        expect(selectContent().getAnimations()).toHaveLength(0);
+      });
+      return {
+        content: selectContent().getBoundingClientRect(),
+        trigger: comboboxNamed("Fruit").getBoundingClientRect(),
+      };
+    }
+
+    // Ancestors that make themselves the containing block for `position: fixed` content.
+    it.each([
+      ["a transformed", { transform: "translateZ(0)" }],
+      ["a content-visibility: auto", { contentVisibility: "auto" }],
+    ] satisfies [string, CSSProperties][])(
+      "opens below its trigger when %s ancestor contains the popup",
+      async (_, ancestor) => {
+        render(<OffsetScope ancestor={ancestor} />);
+        const { content, trigger } = await openedContentAndTrigger();
+
+        // Oracle: the default `side="bottom"` and `sideOffset={4}` place the popup's top 4px
+        // under the trigger, overlapping it horizontally.
+        expect(content.top - trigger.bottom).toBeGreaterThanOrEqual(0);
+        expect(content.top - trigger.bottom).toBeLessThanOrEqual(8);
+        expect(content.left).toBeLessThan(trigger.right);
+        expect(content.right).toBeGreaterThan(trigger.left);
+        expect(selectContent().getAttribute("data-align-trigger")).toBe("false");
+      }
+    );
+
+    // Ancestors that leave the viewport as the containing block, as a fixed probe measures them
+    // in the test browser.
+    it.each([
+      ["a plain", {}],
+      ["a container-type: inline-size", { containerType: "inline-size" }],
+    ] satisfies [string, CSSProperties][])(
+      "keeps item alignment when %s ancestor leaves the viewport containing the popup",
+      async (_, ancestor) => {
+        render(<OffsetScope ancestor={ancestor} />);
+        const { content, trigger } = await openedContentAndTrigger();
+
+        // Item alignment lays the popup over the trigger instead of under it.
+        expect(content.top).toBeLessThan(trigger.bottom);
+        expect(content.bottom).toBeGreaterThan(trigger.top);
+        expect(selectContent().getAttribute("data-align-trigger")).toBe("true");
+      }
+    );
+
+    it("opens below its trigger when a shorter transformed ancestor sits at the viewport origin", async () => {
+      // A long list makes Base UI's item alignment pin the positioner with `bottom: 0`, which
+      // resolves against this 200px block rather than the viewport.
+      const values = Array.from({ length: 40 }, (_, index) => `item-${index}`);
+      render(
+        <div
+          style={{ position: "fixed", top: 0, left: 0, height: 200, width: 320, transform: "translateZ(0)" }}>
+          <div style={{ paddingTop: 60, paddingLeft: 40 }}>
+            <ThemeScope theme={fkasPrivate}>
+              <Select.Root>
+                <Select.Trigger aria-label="Fruit">
+                  <Select.Value placeholder="Pick an item" />
+                </Select.Trigger>
+                <Select.Content>
+                  {values.map((value) => (
+                    <Select.Item key={value} value={value}>
+                      {value}
+                    </Select.Item>
+                  ))}
+                </Select.Content>
+              </Select.Root>
+            </ThemeScope>
+          </div>
+        </div>
+      );
+      const { content, trigger } = await openedContentAndTrigger();
+
+      // Oracle: the default `side="bottom"` and `sideOffset={4}` place the popup's top 4px
+      // under the trigger.
+      expect(content.top - trigger.bottom).toBeGreaterThanOrEqual(0);
+      expect(content.top - trigger.bottom).toBeLessThanOrEqual(8);
+      expect(selectContent().getAttribute("data-align-trigger")).toBe("false");
+    });
   });
 
   it("names a group from Select.Label", async () => {
