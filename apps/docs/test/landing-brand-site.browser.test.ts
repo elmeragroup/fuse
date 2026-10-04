@@ -76,6 +76,30 @@ async function wideFallbackFont(page: Page): Promise<void> {
   });
 }
 
+/**
+ * Opens `site`'s menu Sheet and checks that it holds every menu, utility link and search without
+ * a page error, each a target that clears the floor. Returns the open Sheet.
+ */
+async function openMenuSheet(
+  page: Page,
+  site: Locator,
+  facts: SiteFacts,
+  errors: readonly string[]
+): Promise<Locator> {
+  await site.getByRole("button", { name: facts.menuButton, exact: true }).click();
+  const sheet = page.getByRole("dialog", { name: facts.menuButton });
+  await sheet.waitFor();
+  expect(errors).toEqual([]);
+  for (const menu of facts.menus) {
+    expect(await sheet.getByText(menu, { exact: true }).count(), menu).toBeGreaterThan(0);
+  }
+  for (const link of [...facts.utility, ...(facts.search === null ? [] : [facts.search])]) {
+    expect(await sheet.getByRole("link", { name: link, exact: true }).count(), link).toBe(1);
+  }
+  await expectTargets(sheet, `${facts.site} menu Sheet at ${String(page.viewportSize()?.width)}px`);
+  return sheet;
+}
+
 /** Below this WCAG relative luminance a surface reads as dark: mid grey sits at 0.18. */
 const DARK_SURFACE_LUMINANCE = 0.18;
 
@@ -215,18 +239,26 @@ describe("landing hero window, External side", () => {
       const { page, site } = await openSite(facts, WIDE_VIEWPORT);
       const errors: string[] = [];
       page.on("pageerror", (error) => errors.push(error.message));
-      const nav = site.getByRole("navigation", { name: facts.nav });
-      for (const menu of facts.menus) {
-        await nav.getByRole("button", { name: menu, exact: true }).click();
-        // The panel portals into the side's scope, outside the nav landmark.
-        const panel = site.locator("[data-slot='navigation-menu-content']");
-        await expect
-          .poll(async () => errors.length > 0 || (await panel.getByRole("link").count()) > 0)
-          .toBe(true);
-        expect(errors, menu).toEqual([]);
-        await expectTargets(panel, `${facts.site} ${menu} panel`);
+      // A header whose copy is wider than its rows, as in a wide fallback font, folds into the
+      // menu Sheet, so its menus open there instead.
+      if (await site.getByRole("button", { name: facts.menuButton, exact: true }).isVisible()) {
+        const sheet = await openMenuSheet(page, site, facts, errors);
         await page.keyboard.press("Escape");
-        await expect.poll(async () => panel.count()).toBe(0);
+        await expect.poll(async () => sheet.count()).toBe(0);
+      } else {
+        const nav = site.getByRole("navigation", { name: facts.nav });
+        for (const menu of facts.menus) {
+          await nav.getByRole("button", { name: menu, exact: true }).click();
+          // The panel portals into the side's scope, outside the nav landmark.
+          const panel = site.locator("[data-slot='navigation-menu-content']");
+          await expect
+            .poll(async () => errors.length > 0 || (await panel.getByRole("link").count()) > 0)
+            .toBe(true);
+          expect(errors, menu).toEqual([]);
+          await expectTargets(panel, `${facts.site} ${menu} panel`);
+          await page.keyboard.press("Escape");
+          await expect.poll(async () => panel.count()).toBe(0);
+        }
       }
 
       const priceArea = site.getByRole("combobox", { name: /prisområde|Price area/u });
@@ -245,17 +277,7 @@ describe("landing hero window, External side", () => {
       const phone = await openSite(facts, PHONE_VIEWPORT);
       const phoneErrors: string[] = [];
       phone.page.on("pageerror", (error) => phoneErrors.push(error.message));
-      await phone.site.getByRole("button", { name: facts.menuButton, exact: true }).click();
-      const sheet = phone.page.getByRole("dialog", { name: facts.menuButton });
-      await sheet.waitFor();
-      expect(phoneErrors).toEqual([]);
-      for (const menu of facts.menus) {
-        expect(await sheet.getByText(menu, { exact: true }).count(), menu).toBeGreaterThan(0);
-      }
-      for (const link of [...facts.utility, ...(facts.search === null ? [] : [facts.search])]) {
-        expect(await sheet.getByRole("link", { name: link, exact: true }).count(), link).toBe(1);
-      }
-      await expectTargets(sheet, `${facts.site} menu Sheet`);
+      await openMenuSheet(phone.page, phone.site, facts, phoneErrors);
       await phone.page.context().close();
     }
   );
