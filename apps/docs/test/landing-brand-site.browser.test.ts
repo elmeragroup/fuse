@@ -61,20 +61,31 @@ async function outsideScroller(scroller: Locator, selector: string): Promise<str
 }
 
 /**
- * Sets the sites' text in one wide sans before the page parses. The theme names Roboto, which the
- * docs app does not load, so each platform draws its own fallback: macOS's system UI font, or
- * DejaVu Sans on a Linux runner, which sets the same copy wider. Verdana shares DejaVu's metrics
- * (both descend from Bitstream Vera), so every platform measures the header at the widest of them.
+ * Sets the sites' text in one sans before the page parses, tracked by `letterSpacing`. The theme
+ * names Roboto, which the docs app does not load, so each platform draws its own fallback: macOS's
+ * system UI font, or DejaVu Sans on a Linux runner, which sets the same copy wider. Verdana shares
+ * DejaVu's metrics (both descend from Bitstream Vera), so every platform measures the header alike.
  */
-async function wideFallbackFont(page: Page): Promise<void> {
-  await page.addInitScript(() => {
-    document.addEventListener("DOMContentLoaded", () => {
-      const style = document.createElement("style");
-      style.textContent = `[data-site-scroller], [data-site-scroller] * { font-family: Verdana, "DejaVu Sans", sans-serif }`;
-      document.head.append(style);
-    });
-  });
+function siteFont(letterSpacing: string): (page: Page) => Promise<void> {
+  return async (page) => {
+    await page.addInitScript((tracking) => {
+      document.addEventListener("DOMContentLoaded", () => {
+        const style = document.createElement("style");
+        style.textContent = `[data-site-scroller], [data-site-scroller] * { font-family: Verdana, "DejaVu Sans", sans-serif; letter-spacing: ${tracking} }`;
+        document.head.append(style);
+      });
+    }, letterSpacing);
+  };
 }
+
+/** The widest fallback any platform draws. */
+const wideFallbackFont = siteFont("normal");
+
+/**
+ * The same sans tracked in, so every header has room to spare. TrøndelagKraft's, the widest,
+ * fits from -0.06em at 1280 and 1440.
+ */
+const narrowFont = siteFont("-0.12em");
 
 /**
  * Opens `site`'s menu Sheet and checks that it holds every menu, utility link and search without
@@ -315,6 +326,25 @@ describe("landing hero window, External side", () => {
       const scroller = site.locator("[data-site-scroller]");
       expect(await header.locator(":is(a, button)").count()).toBeGreaterThan(0);
       expect(await outsideScroller(scroller, "header :is(a, button)")).toEqual([]);
+      await page.context().close();
+    }
+  );
+
+  it.each(
+    ALL_SITES.flatMap((facts) => [1280, 1440].map((width) => ({ facts, viewport: { width, height: 900 } })))
+  )(
+    "keeps the header of $facts.site expanded at $viewport.width px in a font it fits",
+    async ({ facts, viewport }) => {
+      const { page, site } = await openSite(facts, viewport, { prepare: narrowFont });
+      // The header measures its rows in a layout effect and again on resize; let both settle.
+      await page.evaluate(
+        async () =>
+          new Promise((resolve) => {
+            requestAnimationFrame(() => requestAnimationFrame(resolve));
+          })
+      );
+      expect(await site.getByRole("navigation", { name: facts.nav }).isVisible()).toBe(true);
+      expect(await site.getByRole("button", { name: facts.menuButton, exact: true }).isVisible()).toBe(false);
       await page.context().close();
     }
   );
