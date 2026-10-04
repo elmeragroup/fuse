@@ -7,10 +7,12 @@ import { ColorSchemeScript, ThemeProvider } from "@elmeragroup/fuse/theme";
 import { DocsShell } from "../../components/docs-shell";
 import { DocumentRoot } from "../../components/document-root";
 import { SkipNav } from "../../components/skip-nav";
+import { siteOrigin } from "../../lib/site-origin";
 import { DOCUMENT_COLOR_SCHEME, DOCUMENT_THEME } from "../../lib/theme";
 import "../../styles/globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: siteOrigin(),
   title: {
     template: "%s · Fuse",
     default: "Fuse",

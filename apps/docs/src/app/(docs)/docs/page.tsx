@@ -7,11 +7,18 @@ import { tv } from "tailwind-variants";
 import { DocsLede } from "../../../components/docs-lede";
 import { DocsPageTitle } from "../../../components/docs-page-title";
 import { NAV_GROUPS } from "../../../lib/nav";
+import { ogDocsPath, ogMetadata } from "../../../lib/og-metadata";
 import { HOME_PAGE } from "../../../lib/pages";
 
 export const metadata: Metadata = {
   title: "Overview",
   description: HOME_PAGE.description,
+  ...ogMetadata({
+    image: ogDocsPath(HOME_PAGE.href),
+    title: "Overview · Fuse",
+    description: HOME_PAGE.description,
+    alt: `The Fuse docs overview: ${HOME_PAGE.description}`,
+  }),
 };
 
 const docsHome = tv({

@@ -15,6 +15,7 @@ import type { Metadata } from "next";
 
 import type { ComponentPageEntry } from "./docs-model";
 import { componentBySlug } from "./nav";
+import { ogComponentPath, ogMetadata } from "./og-metadata";
 
 /** The manifest entry for one component page. Throws at build when the slug is unknown. */
 export function requireComponent(slug: string): ComponentPageEntry {
@@ -27,8 +28,20 @@ export function requireComponent(slug: string): ComponentPageEntry {
   return component;
 }
 
-/** Page metadata from the generated manifest: the slug-derived title and the lede. */
+/**
+ * Page metadata from the generated manifest: the slug-derived title, the lede, and a card that
+ * points at the component's specimen image.
+ */
 export function componentMetadata(slug: string): Metadata {
   const component = requireComponent(slug);
-  return { title: component.title, description: component.lede };
+  return {
+    title: component.title,
+    description: component.lede,
+    ...ogMetadata({
+      image: ogComponentPath(component.slug),
+      title: `${component.title} · Fuse`,
+      description: component.lede,
+      alt: `${component.title}, a Fuse component, drawn beside its description: ${component.lede}`,
+    }),
+  };
 }

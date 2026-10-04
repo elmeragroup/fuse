@@ -163,6 +163,12 @@ function emitComponentPages(components: readonly DocsComponent[]): void {
     path.join(generatedDir, "component-pages.ts"),
     `${BANNER}import type { ComponentPageEntry } from "../lib/docs-model";
 
+/**
+ * The slug of every component page, as a union, so a registry keyed by it (the OG specimens in
+ * \`src/og/specimens.tsx\`) fails to compile when a page has no entry.
+ */
+export type ComponentSlug = ${entries.map((entry) => JSON.stringify(entry.slug)).join(" | ")};
+
 /** Every component page the site serves, in route order. */
 export const COMPONENT_PAGES: readonly ComponentPageEntry[] = ${JSON.stringify(entries, null, 2)};
 `
