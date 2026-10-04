@@ -246,11 +246,11 @@ function settle(state: DashboardState): DashboardState {
  */
 export function reduce(state: DashboardState, action: DashboardAction): DashboardState {
   const next = transition(state, action);
-  if (next.orders === state.orders && next.query === state.query) {
+  if (next.orders === state.orders && next.query === state.query && next.scope === state.scope) {
     return next;
   }
   // Checks on rows a change hides would act unseen, so they drop with the rows. Every order
-  // mutation and every query change passes here, whichever action caused it.
+  // mutation, query change and scope change passes here, whichever action caused it.
   const shown = new Set(visibleOrders(next).map((order) => order.id));
   const checked = next.checked.filter((id) => shown.has(id));
   return checked.length === next.checked.length ? next : { ...next, checked };

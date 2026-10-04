@@ -195,6 +195,28 @@ describe("landing Dashboard window", () => {
     await page.context().close();
   });
 
+  it("drops the checks the Closed tab hides, so Send SMS reaches only the visible order", async () => {
+    const page = await openLanding(DESKTOP_VIEWPORT);
+    const app = dashboard(page);
+    const toolbar = app.getByRole("toolbar", { name: "Bulk actions" });
+
+    // Jonas Eide awaits customer approval, so an SMS would reach him. Hanne Vik's order is done.
+    await app.getByRole("checkbox", { name: "Select Jonas Eide" }).click();
+    await app.getByRole("checkbox", { name: "Select Ida Hagen" }).click();
+    await toolbar.waitFor();
+    await app.getByRole("group", { name: "Orders to show" }).getByRole("button", { name: "Closed" }).click();
+    await app.getByRole("checkbox", { name: "Select Hanne Vik" }).waitFor();
+    await expect.poll(async () => toolbar.count()).toBe(0);
+
+    await app.getByRole("checkbox", { name: "Select Hanne Vik" }).click();
+    await toolbar.getByRole("button", { name: "Send SMS" }).click();
+    await app
+      .getByRole("region", { name: "Dashboard notifications" })
+      .getByText("0 of 1 orders sent. 1 skipped: not awaiting customer approval.")
+      .waitFor();
+    await page.context().close();
+  });
+
   it("collapses the sidebar with Control+B inside the window and never writes the host's sidebar cookie", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
     const app = dashboard(page);

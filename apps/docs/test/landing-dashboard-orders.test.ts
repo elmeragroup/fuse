@@ -101,6 +101,14 @@ describe("Dashboard order statuses", () => {
     expect(moved.checked).toEqual([284117]);
   });
 
+  it("drops the checks on orders the Closed tab hides", () => {
+    // My orders opens on Active. Jonas Eide's 284130 awaits approval and Ida Hagen's 284081 is in
+    // progress, so neither is closed.
+    const checked = reduce(initialState(), { _tag: "Check", ids: [284130, 284081] });
+    const closed = reduce(checked, { _tag: "Scope", scope: "closed" });
+    expect(closed.checked).toEqual([]);
+  });
+
   it("counts a facet's option under the rest of the query, as a faceted search does", () => {
     // In the fixture, three New sales orders failed in Elhub: Ingrid Haugland, Marius Kvam and
     // Vilde Sæther. Picking Elhub failed itself does not narrow its own counts.
