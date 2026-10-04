@@ -96,7 +96,8 @@ async function expectReachable(page: Page, side: Locator, unlocked: string): Pro
       })
     )
     .toBeNull();
-  expect(await documentStyles(page)).toBe(unlocked);
+  // Base UI drops the lock a task after the last modal unmounts, so a slow runner reads it held.
+  await expect.poll(async () => documentStyles(page)).toBe(unlocked);
   // And a query by role reaches into the side.
   expect(await side.getByRole("button").count()).toBeGreaterThan(0);
 }
