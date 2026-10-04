@@ -4,7 +4,7 @@ import { css } from "./og-theme";
 import type { OgTheme } from "./og-theme";
 
 /** What the title block draws. */
-export type OgCopyProps = {
+type OgCopyProps = {
   readonly theme: OgTheme;
   readonly title: string;
   readonly lede: string;

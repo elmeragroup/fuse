@@ -18,28 +18,24 @@ import {
 } from "@elmeragroup/fuse/icons";
 
 import { glyph } from "../og-icons";
+import { compact } from "../satori-style";
 import {
   Badge,
+  Checkbox,
   Column,
-  compact,
-  controlText,
   Description,
   FieldBox,
+  fieldChrome,
+  hairline,
   MenuRow,
   Placeholder,
   Popup,
-  focusRingShadow,
   Row,
   shadow,
   text,
 } from "../specimen-kit";
 import type { SpecimenContext } from "../specimen-kit";
 import type { Specimen } from "./specimen";
-
-/** A hairline border in a role. */
-function hairline(ctx: SpecimenContext, color: string): string {
-  return `${String(ctx.px(1))}px solid ${color}`;
-}
 
 /** What a heading or message line takes. */
 type LineDrawing = {
@@ -72,32 +68,6 @@ type ControlDrawing = {
   readonly ctx: SpecimenContext;
   readonly checked: boolean;
 };
-
-/**
- * The 16px Checkbox box (`checkbox.tsx`): `border-input bg-card shadow-xs`, the checkbox corner
- * (the one radius in internal themes, capped at `--radius-md`), `--primary` when checked with
- * the regular `Check` at 14px in `--primary-foreground`.
- */
-function CheckboxBox({ ctx, checked }: ControlDrawing): ReactElement {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexShrink: 0,
-        boxSizing: "border-box",
-        width: ctx.px(16),
-        height: ctx.px(16),
-        borderRadius: Math.min(ctx.radius("md"), Math.max(ctx.px(4), ctx.radius("lg"))),
-        border: hairline(ctx, checked ? ctx.c("primary") : ctx.c("input")),
-        backgroundColor: checked ? ctx.c("primary") : ctx.c("card"),
-        boxShadow: shadow(ctx, "xs"),
-      }}>
-      {checked ? glyph(Check)(ctx.px(14), ctx.c("primary-foreground")) : null}
-    </div>
-  );
-}
 
 /**
  * The 16px radio (`radio-group.tsx`): a `rounded-full` `border-input` ring; checked, it fills
@@ -159,17 +129,13 @@ function GroupBox(drawing: GroupBoxDrawing): ReactElement {
       style={compact({
         display: "flex",
         alignItems: "center",
-        boxSizing: "border-box",
         width,
         height: ctx.metric("control-h-md"),
         overflow: "hidden",
-        borderRadius: ctx.radius("md"),
+        ...fieldChrome(ctx, focused ? "focused" : "rest"),
         // InputGroup's focus face also turns the hairline to `--ring` (`input-group.tsx`).
         border: hairline(ctx, focused ? ctx.c("ring") : ctx.c("input")),
         backgroundColor: ctx.c(fill),
-        boxShadow: focused ? focusRingShadow(ctx) : shadow(ctx, "xs"),
-        color: ctx.c("foreground"),
-        ...controlText(ctx),
         ...style,
       })}>
       {children}
@@ -253,7 +219,7 @@ export const checkbox: Specimen = {
   scale: 3,
   draw: (ctx) => (
     <Row gap={ctx.px(12)}>
-      <CheckboxBox ctx={ctx} checked />
+      <Checkbox ctx={ctx} state="on" />
       <FieldLabel ctx={ctx}>Email invoices</FieldLabel>
     </Row>
   ),

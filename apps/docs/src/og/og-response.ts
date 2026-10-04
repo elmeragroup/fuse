@@ -6,18 +6,24 @@ import { loadOgFonts } from "./og-assets";
 import { OG_SIZE } from "./og-frame";
 
 /**
- * Render an OG drawing to a 1200 × 630 PNG response with Roboto loaded. Each image renders per
- * request; a long cache header lets a CDN or the unfurler keep it, since a given URL only
- * changes with a deploy.
+ * The fonts, read once per server process on first use. Every response passes this same array,
+ * since Satori caches its parsed fonts by the array's identity.
+ */
+let fonts: ReturnType<typeof loadOgFonts> | undefined;
+
+/**
+ * Render an OG drawing to a 1200 × 630 PNG response with Roboto loaded. The component and docs
+ * images prerender at build; the landing image renders per request, and a long cache header lets
+ * a CDN or the unfurler keep it, since a given URL only changes with a deploy.
  *
  * @param element - The drawing, an `OgFrame` tree.
  * @returns The PNG response.
  */
 export async function ogResponse(element: ReactElement): Promise<ImageResponse> {
-  const fonts = await loadOgFonts();
+  fonts ??= loadOgFonts();
   return new ImageResponse(element, {
     ...OG_SIZE,
-    fonts: fonts.map((font) => ({ ...font })),
+    fonts: await fonts,
     headers: { "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400" },
   });
 }

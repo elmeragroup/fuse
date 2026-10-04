@@ -7,17 +7,20 @@
 import type { ReactElement } from "react";
 
 import { HOME_PAGE, STATIC_PAGES } from "../lib/pages";
-import type { StaticNavGroup } from "../lib/pages";
+import type { StaticHref, StaticNavGroup } from "../lib/pages";
 import type { OgKind } from "./og-frame";
 import type { OgTheme } from "./og-theme";
 
 /** A page's bespoke art, drawn into the docs image's art box. */
 export type DocsArt = (theme: OgTheme) => ReactElement | Promise<ReactElement>;
 
+/** The route of a docs page with an image: the docs index or an authored page. */
+export type OgDocsHref = typeof HOME_PAGE.href | StaticHref;
+
 /** One docs page as its image needs it. */
 export type OgDocsPage = {
   /** The page's route, as the manifest spells it. */
-  readonly href: string;
+  readonly href: OgDocsHref;
   readonly kind: OgKind;
   readonly title: string;
   readonly lede: string;

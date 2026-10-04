@@ -9,7 +9,8 @@ import type { CSSProperties, ReactElement, ReactNode } from "react";
 import { CaretLeft, CaretRight, Info, Paperclip, SpinnerGap, Star } from "@elmeragroup/fuse/icons";
 
 import { glyph } from "../og-icons";
-import { Button, compact, controlText, focusRingOutline, Popup, Row, shadow, text } from "../specimen-kit";
+import { compact } from "../satori-style";
+import { Button, controlText, focusRingOutline, hairline, Popup, Row, shadow, text } from "../specimen-kit";
 import type { SpecimenContext } from "../specimen-kit";
 import type { Specimen } from "./specimen";
 
@@ -135,7 +136,7 @@ export const toggleGroup: Specimen = {
             style={compact({
               paddingLeft: ctx.metric("control-px-icon-md"),
               paddingRight: ctx.metric("control-px-icon-md"),
-              border: `${String(ctx.px(1))}px solid ${ctx.c("input")}`,
+              border: hairline(ctx, ctx.c("input")),
               borderTopLeftRadius: index === 0 ? round : 0,
               borderBottomLeftRadius: index === 0 ? round : 0,
               borderTopRightRadius: index === items.length - 1 ? round : 0,
@@ -231,7 +232,7 @@ export const popoverInfoButton: Specimen = {
                 height: arrow,
                 boxSizing: "border-box",
                 transform: "rotate(45deg)",
-                border: `${String(ctx.px(1))}px solid ${ctx.c("border")}`,
+                border: hairline(ctx, ctx.c("border")),
                 backgroundColor: ctx.c("popover"),
               }}
             />

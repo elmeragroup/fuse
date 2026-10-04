@@ -18,8 +18,10 @@ import {
 } from "@elmeragroup/fuse/icons";
 
 import { glyph } from "../og-icons";
-import { Button, Column, Popup, Row, compact, controlText, shadow, text } from "../specimen-kit";
-import type { IconSlot, SpecimenContext } from "../specimen-kit";
+import type { IconSlot } from "../og-icons";
+import { compact } from "../satori-style";
+import { Button, Column, controlText, hairline, Popup, Row, shadow, text } from "../specimen-kit";
+import type { SpecimenContext } from "../specimen-kit";
 import type { Specimen } from "./specimen";
 
 /** `overlayScrimClass`: `bg-black/10`, a raw palette literal in the recipe too. */
@@ -72,7 +74,7 @@ function MiniPage({
   readonly height: number;
   readonly children: ReactNode;
 }): ReactElement {
-  const hairline = `${String(ctx.px(1))}px solid ${ctx.c("border")}`;
+  const rule = hairline(ctx, ctx.c("border"));
   return (
     <div
       style={{
@@ -83,7 +85,7 @@ function MiniPage({
         height: ctx.px(height),
         overflow: "hidden",
         borderRadius: ctx.radius("lg"),
-        border: hairline,
+        border: rule,
         backgroundColor: ctx.c("background"),
       }}>
       <Row
@@ -92,7 +94,7 @@ function MiniPage({
           height: ctx.px(24),
           paddingLeft: ctx.px(10),
           paddingRight: ctx.px(10),
-          borderBottom: hairline,
+          borderBottom: rule,
         }}>
         <div
           style={{
@@ -118,7 +120,7 @@ function MiniPage({
                 padding: ctx.px(8),
                 height: ctx.px(48),
                 borderRadius: ctx.radius("lg"),
-                border: hairline,
+                border: rule,
               }}>
               <Bar ctx={ctx} width={34} />
               <Bar ctx={ctx} width={52} tone="border" />
@@ -272,7 +274,7 @@ export const sheet: Specimen = {
           flexDirection: "column",
           width: ctx.px(184),
           gap: ctx.px(16),
-          borderLeft: `${String(ctx.px(1))}px solid ${ctx.c("border")}`,
+          borderLeft: hairline(ctx, ctx.c("border")),
           backgroundColor: ctx.c("popover"),
           color: ctx.c("popover-foreground"),
           boxShadow: shadow(ctx, "lg"),
@@ -656,7 +658,7 @@ export const alert: Specimen = {
         paddingTop: ctx.px(10),
         paddingBottom: ctx.px(10),
         borderRadius: ctx.radius("md"),
-        border: `${String(ctx.px(1))}px solid ${ctx.c("border")}`,
+        border: hairline(ctx, ctx.c("border")),
         backgroundColor: ctx.c("background"),
         color: ctx.c("foreground"),
         ...text(ctx, "sm"),
@@ -766,7 +768,7 @@ function TabTrigger({
         paddingLeft: ctx.metric("control-px-md"),
         paddingRight: ctx.metric("control-px-md"),
         borderRadius: ctx.radius("md"),
-        border: `${String(ctx.px(1))}px solid transparent`,
+        border: hairline(ctx, "transparent"),
         backgroundColor: active ? ctx.c("background") : "transparent",
         color: active ? ctx.c("foreground") : ctx.c("foreground", 0.6),
         whiteSpace: "nowrap",

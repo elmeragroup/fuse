@@ -5,7 +5,18 @@
 import { CaretDown, Check } from "@elmeragroup/fuse/icons";
 
 import { glyph } from "../og-icons";
-import { Badge, Button, Column, FieldBox, MenuRow, Placeholder, Popup, Row, shadow } from "../specimen-kit";
+import {
+  Badge,
+  Button,
+  Column,
+  FieldBox,
+  hairline,
+  MenuRow,
+  Placeholder,
+  Popup,
+  Row,
+  shadow,
+} from "../specimen-kit";
 import type { Specimen } from "./specimen";
 
 /** Button: the default (primary) variant at the default size, beside its outline sibling. */
@@ -56,7 +67,7 @@ export const switchSpecimen: Specimen = {
         width: ctx.px(32),
         height: ctx.px(18.4),
         borderRadius: 9999,
-        border: `${String(ctx.px(1))}px solid transparent`,
+        border: hairline(ctx, "transparent"),
         backgroundColor: ctx.c("primary"),
         boxShadow: shadow(ctx, "xs"),
       }}>

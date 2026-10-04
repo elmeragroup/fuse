@@ -27,18 +27,24 @@ import {
   User,
   Warning,
 } from "@elmeragroup/fuse/icons";
-import { BRAND_CODES, LEGAL_THEMES, THEME_SEGMENTS, themeSlug } from "@elmeragroup/fuse/theme";
+import {
+  BRAND_CODES,
+  LEGAL_THEMES,
+  THEME_SEGMENTS,
+  THEME_VARIANTS,
+  themeSlug,
+} from "@elmeragroup/fuse/theme";
 import type { BrandCode, ThemeSegment } from "@elmeragroup/fuse/theme";
 
 import { LANDING_FACTS } from "../generated/landing-facts";
+import type { OgColorRole } from "../generated/og-themes";
 import { SEGMENT_LABELS } from "../lib/theme";
-import type { DocsArt } from "./docs-pages";
+import { ART_BOX } from "./docs-image";
+import type { DocsArt, OgDocsHref } from "./docs-pages";
 import { loadBrandArtwork } from "./og-assets";
 import { glyph } from "./og-icons";
-import { css, requireOgTheme } from "./og-theme";
-import type { OgColorRole, OgTheme } from "./og-theme";
-
-const BOX = { width: 496, height: 430 } as const;
+import { css, ogTheme } from "./og-theme";
+import type { OgTheme } from "./og-theme";
 
 /** One theme as a cell: its background, a primary button at its own radius, three role chips. */
 function MatrixCell({ theme }: { readonly theme: OgTheme }): ReactElement {
@@ -55,7 +61,7 @@ function MatrixCell({ theme }: { readonly theme: OgTheme }): ReactElement {
         width: 90,
         height: 98,
         padding: 12,
-        borderRadius: Math.min(16, theme.radius + 4),
+        borderRadius: Math.min(16, theme.dimensions.radius + 4),
         border: `2px solid ${css(colors.border)}`,
         backgroundColor: css(colors.background),
       }}>
@@ -65,7 +71,7 @@ function MatrixCell({ theme }: { readonly theme: OgTheme }): ReactElement {
           display: "flex",
           height: 26,
           width: 64,
-          borderRadius: Math.min(13, theme.radiusButton),
+          borderRadius: Math.min(13, theme.dimensions["radius-button"]),
           backgroundColor: css(colors.primary),
         }}
       />
@@ -81,11 +87,11 @@ const themeMatrix: DocsArt = () => (
       flexWrap: "wrap",
       alignContent: "center",
       gap: 10,
-      width: BOX.width,
-      height: BOX.height,
+      width: ART_BOX.width,
+      height: ART_BOX.height,
     }}>
     {LEGAL_THEMES.map((theme) => (
-      <MatrixCell key={themeSlug(theme)} theme={requireOgTheme(themeSlug(theme))} />
+      <MatrixCell key={themeSlug(theme)} theme={ogTheme(themeSlug(theme))} />
     ))}
   </div>
 );
@@ -101,7 +107,7 @@ const brandsAndSegments: DocsArt = async (docs) => {
         if (legal === undefined) {
           return { brand, segment, theme: null, mark: null };
         }
-        const theme = requireOgTheme(themeSlug(legal));
+        const theme = ogTheme(themeSlug(legal));
         const mark = await loadBrandArtwork(brand, "marks", css(theme.colors.primary));
         return { brand, segment, theme, mark };
       })
@@ -167,8 +173,8 @@ const brandsAndSegments: DocsArt = async (docs) => {
         flexDirection: "column",
         justifyContent: "center",
         gap: 28,
-        width: BOX.width,
-        height: BOX.height,
+        width: ART_BOX.width,
+        height: ART_BOX.height,
       }}>
       {THEME_SEGMENTS.map(row)}
     </div>
@@ -206,8 +212,8 @@ const icons: DocsArt = (docs) => (
       flexWrap: "wrap",
       alignContent: "center",
       gap: 10,
-      width: BOX.width,
-      height: BOX.height,
+      width: ART_BOX.width,
+      height: ART_BOX.height,
     }}>
     {ICONS.map(([name, Icon], index) => (
       <div
@@ -245,8 +251,8 @@ const tokens: DocsArt = (docs) => (
       flexDirection: "column",
       justifyContent: "center",
       gap: 12,
-      width: BOX.width,
-      height: BOX.height,
+      width: ART_BOX.width,
+      height: ART_BOX.height,
     }}>
     {TOKEN_ROWS.map((role) => (
       <div
@@ -280,7 +286,7 @@ const tokens: DocsArt = (docs) => (
 /** Theming: the three axes as segmented choices, resolving to one theme painted in its primary. */
 const theming: DocsArt = (docs) => {
   const picked = { variant: "external", brand: "tkas", segment: "company" } as const;
-  const result = requireOgTheme(themeSlug(picked));
+  const result = ogTheme(themeSlug(picked));
   const axis = (label: string, options: readonly string[], selected: string) => (
     <div key={label} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <span style={{ fontSize: 24, fontWeight: 500, color: css(docs.colors["muted-foreground"]) }}>
@@ -323,12 +329,12 @@ const theming: DocsArt = (docs) => {
         flexDirection: "column",
         justifyContent: "center",
         gap: 22,
-        width: BOX.width,
-        height: BOX.height,
+        width: ART_BOX.width,
+        height: ART_BOX.height,
       }}>
-      {axis("Variant", ["internal", "external"], picked.variant)}
+      {axis("Variant", THEME_VARIANTS, picked.variant)}
       {axis("Brand", BRAND_CODES, picked.brand)}
-      {axis("Segment", ["private", "company"], picked.segment)}
+      {axis("Segment", THEME_SEGMENTS, picked.segment)}
     </div>
   );
 };
@@ -344,8 +350,8 @@ const localization: DocsArt = (docs) => (
       flexDirection: "column",
       justifyContent: "center",
       gap: 12,
-      width: BOX.width,
-      height: BOX.height,
+      width: ART_BOX.width,
+      height: ART_BOX.height,
     }}>
     {LANDING_FACTS.locales.map((locale) => (
       <div
@@ -382,15 +388,18 @@ const localization: DocsArt = (docs) => (
   </div>
 );
 
+/** The pages with bespoke art, by href; a renamed or removed page fails to compile. */
+type ArtByHref = { readonly [H in OgDocsHref]?: DocsArt };
+
 /** Bespoke art by page href. */
-const ART_BY_HREF = {
+const ART_BY_HREF: ArtByHref = {
   "/handbook/theme-matrix": themeMatrix,
   "/handbook/brands-and-segments": brandsAndSegments,
   "/handbook/icons": icons,
   "/handbook/tokens": tokens,
   "/handbook/theming": theming,
   "/handbook/localization": localization,
-} satisfies Record<string, DocsArt>;
+};
 
 /**
  * The bespoke art of a docs page.
@@ -398,6 +407,6 @@ const ART_BY_HREF = {
  * @param href - A docs page route.
  * @returns The page's art, or `undefined` when it draws the shared chart steps.
  */
-export function docsArt(href: string): DocsArt | undefined {
-  return Object.entries(ART_BY_HREF).find(([key]) => key === href)?.[1];
+export function docsArt(href: OgDocsHref): DocsArt | undefined {
+  return ART_BY_HREF[href];
 }

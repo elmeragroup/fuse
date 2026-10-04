@@ -17,22 +17,24 @@ import {
   CaretUpDown,
   Check,
   Lightning,
-  Minus,
 } from "@elmeragroup/fuse/icons";
 
 import { glyph } from "../og-icons";
+import type { IconSlot } from "../og-icons";
+import { compact } from "../satori-style";
 import {
   Button,
+  Checkbox,
   Column,
-  compact,
-  controlText,
+  fieldChrome,
   focusRingShadow,
+  hairline,
   Label,
   Row,
   shadow,
   text,
 } from "../specimen-kit";
-import type { IconSlot, SpecimenContext } from "../specimen-kit";
+import type { SpecimenContext } from "../specimen-kit";
 import type { Specimen } from "./specimen";
 
 /** En-US short weekday names, Sunday first, as RAC's `weekdayStyle: "short"` prints them. */
@@ -286,19 +288,6 @@ function dateParts(month: string, day: string, year: string): readonly string[] 
   return [month, "/", day, "/", year];
 }
 
-/** The field box chrome (`styles/field-box.ts`) a picker's FieldGroup paints. */
-function fieldChrome(ctx: SpecimenContext): CSSProperties {
-  return {
-    boxSizing: "border-box",
-    borderRadius: ctx.radius("md"),
-    border: `${String(ctx.px(1))}px solid ${ctx.c("input")}`,
-    backgroundColor: ctx.c("card"),
-    boxShadow: shadow(ctx, "xs"),
-    color: ctx.c("foreground"),
-    ...controlText(ctx),
-  };
-}
-
 /**
  * The picker's calendar trigger (`internal/picker-shell.tsx`): a ghost `icon-sm` Button with
  * CalendarBlank, rounded by `compactCornerClass` (the theme radius on internal themes).
@@ -329,7 +318,7 @@ function PickerPopover({ ctx, children }: Drawing): ReactElement {
         marginTop: ctx.px(8),
         padding: ctx.px(8),
         borderRadius: ctx.radius("md"),
-        border: `${String(ctx.px(1))}px solid ${ctx.c("border")}`,
+        border: hairline(ctx, ctx.c("border")),
         backgroundColor: ctx.c("popover"),
         color: ctx.c("popover-foreground"),
         boxShadow: shadow(ctx, "md"),
@@ -351,7 +340,7 @@ export const calendar: Specimen = {
           flexDirection: "column",
           padding: ctx.px(8),
           borderRadius: ctx.radius("lg"),
-          border: `${String(ctx.px(1))}px solid ${ctx.c("border")}`,
+          border: hairline(ctx, ctx.c("border")),
           backgroundColor: ctx.c("card"),
           color: ctx.c("card-foreground"),
           boxShadow: shadow(ctx, "md"),
@@ -517,7 +506,7 @@ function TableRow({
     <div
       style={compact({
         display: "flex",
-        borderBottom: last ? undefined : `${String(ctx.px(1))}px solid ${ctx.c("border")}`,
+        borderBottom: last ? undefined : hairline(ctx, ctx.c("border")),
         backgroundColor: selected ? ctx.c("muted", 0.72) : undefined,
         ...style,
       })}>
@@ -567,7 +556,7 @@ export const table: Specimen = {
           ctx={ctx}
           last
           style={{
-            borderTop: `${String(ctx.px(1))}px solid ${ctx.c("border")}`,
+            borderTop: hairline(ctx, ctx.c("border")),
             backgroundColor: ctx.c("muted", 0.72),
           }}>
           <Cell ctx={ctx} width={widths[0] + widths[1]} style={{ fontWeight: 500 }}>
@@ -581,39 +570,6 @@ export const table: Specimen = {
     );
   },
 };
-
-/**
- * Checkbox (`checkbox.tsx`): a 16px `border-input` box on `--card` with `shadow-xs`, filled with
- * `--primary` and a 14px check (or minus, indeterminate) when on.
- */
-function Checkbox({
-  ctx,
-  state,
-}: {
-  readonly ctx: SpecimenContext;
-  readonly state: "off" | "on" | "mixed";
-}): ReactElement {
-  const on = state !== "off";
-  const icon: IconSlot | undefined =
-    state === "on" ? glyph(Check) : state === "mixed" ? glyph(Minus) : undefined;
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        boxSizing: "border-box",
-        width: ctx.px(16),
-        height: ctx.px(16),
-        borderRadius: ctx.radius("md"),
-        border: `${String(ctx.px(1))}px solid ${on ? ctx.c("primary") : ctx.c("input")}`,
-        backgroundColor: on ? ctx.c("primary") : ctx.c("card"),
-        boxShadow: shadow(ctx, "xs"),
-      }}>
-      {icon?.(ctx.px(14), ctx.c("primary-foreground"))}
-    </div>
-  );
-}
 
 /** DataTable: a select column and sortable headers over Table, sorted by customer with a row picked. */
 export const dataTable: Specimen = {
@@ -686,7 +642,7 @@ export const descriptionList: Specimen = {
         display: "flex",
         paddingTop: ctx.px(8),
         paddingBottom: ctx.px(8),
-        borderTop: index === 0 ? undefined : `${String(ctx.px(1))}px solid ${ctx.c("border")}`,
+        borderTop: index === 0 ? undefined : hairline(ctx, ctx.c("border")),
         ...text(ctx, "sm"),
         lineHeight: `${String(ctx.px(24))}px`,
       });
@@ -738,8 +694,8 @@ export const gridList: Specimen = {
                 alignItems: "center",
                 gap: ctx.px(12),
                 padding: `${String(ctx.px(4))}px ${String(ctx.px(6))}px`,
-                border: row.selected ? `${String(ctx.px(1))}px solid ${ctx.c("border")}` : undefined,
-                borderTop: row.selected || first ? undefined : `${String(ctx.px(1))}px solid transparent`,
+                border: row.selected ? hairline(ctx, ctx.c("border")) : undefined,
+                borderTop: row.selected || first ? undefined : hairline(ctx, "transparent"),
                 borderTopLeftRadius: first ? corner : 0,
                 borderTopRightRadius: first ? corner : 0,
                 borderBottomLeftRadius: last ? corner : 0,
@@ -759,7 +715,10 @@ export const gridList: Specimen = {
                   width: ctx.px(18),
                   height: ctx.px(18),
                   borderRadius: ctx.radius("xs"),
-                  border: `${String(ctx.px(1))}px solid ${row.selected ? ctx.c("primary") : row.disabled ? ctx.c("muted") : ctx.c("border")}`,
+                  border: hairline(
+                    ctx,
+                    row.selected ? ctx.c("primary") : row.disabled ? ctx.c("muted") : ctx.c("border")
+                  ),
                   backgroundColor: row.selected
                     ? ctx.c("primary")
                     : row.disabled
@@ -859,7 +818,7 @@ export const item: Specimen = {
         gap: ctx.px(14),
         padding: `${String(ctx.px(14))}px ${String(ctx.px(16))}px`,
         borderRadius: ctx.radius("md"),
-        border: `${String(ctx.px(1))}px solid ${ctx.c("border")}`,
+        border: hairline(ctx, ctx.c("border")),
         backgroundColor: ctx.c("background"),
         color: ctx.c("foreground"),
       }}>

@@ -5,7 +5,7 @@ import { parseThemeQuery, THEME_QUERY } from "../../(landing)/landing/landing-th
 import { LandingImage } from "../../../og/landing-image";
 import { loadBrandArtwork } from "../../../og/og-assets";
 import { ogResponse } from "../../../og/og-response";
-import { css, requireOgTheme } from "../../../og/og-theme";
+import { css, ogTheme } from "../../../og/og-theme";
 
 /**
  * The landing's Open Graph image in the theme `?theme=` names. The landing's own parser reads
@@ -13,7 +13,7 @@ import { css, requireOgTheme } from "../../../og/og-theme";
  */
 export async function GET(request: Request): Promise<Response> {
   const values = new URL(request.url).searchParams.getAll(THEME_QUERY);
-  const theme = requireOgTheme(
+  const theme = ogTheme(
     themeSlug(parseThemeQuery(values.length === 0 ? undefined : values.length === 1 ? values[0] : values))
   );
   const { colors } = theme;

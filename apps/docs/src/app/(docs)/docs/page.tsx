@@ -15,8 +15,6 @@ export const metadata: Metadata = {
   description: HOME_PAGE.description,
   ...ogMetadata({
     image: ogDocsPath(HOME_PAGE.href),
-    title: "Overview · Fuse",
-    description: HOME_PAGE.description,
     alt: `The Fuse docs overview: ${HOME_PAGE.description}`,
   }),
 };

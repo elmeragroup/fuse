@@ -30,12 +30,12 @@ export class InvalidSiteOrigin extends Error {
 }
 
 /** A parsed site origin, or why the input is not one. */
-export type SiteOriginResult =
+type SiteOriginResult =
   | { readonly _tag: "ok"; readonly value: URL }
   | { readonly _tag: "err"; readonly error: InvalidSiteOrigin };
 
 /** The environment variables the origin reads. */
-export type SiteOriginEnv = {
+type SiteOriginEnv = {
   readonly DOCS_ORIGIN?: string | undefined;
   readonly PORT?: string | undefined;
 };

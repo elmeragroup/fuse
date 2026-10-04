@@ -24,7 +24,7 @@ const ROBOTO_DIR = "node_modules/@fontsource/roboto/files";
 const WEIGHTS = [400, 500, 600, 700] as const;
 
 /** A font as `ImageResponse` takes it. */
-export type OgFont = {
+type OgFont = {
   readonly name: string;
   readonly data: ArrayBuffer;
   readonly weight: (typeof WEIGHTS)[number];
@@ -46,9 +46,9 @@ async function readArrayBuffer(relative: string): Promise<ArrayBuffer> {
  * Roboto's Latin subset in the four weights the images use. Latin covers Norwegian and Swedish
  * letters and the × sign.
  *
- * @returns The fonts for `ImageResponse`.
+ * @returns The fonts for `ImageResponse`, a mutable array because its `fonts` option is one.
  */
-export async function loadOgFonts(): Promise<readonly OgFont[]> {
+export async function loadOgFonts(): Promise<OgFont[]> {
   return await Promise.all(
     WEIGHTS.map(async (weight) => ({
       name: OG_FONT_FAMILY,
@@ -60,7 +60,7 @@ export async function loadOgFonts(): Promise<readonly OgFont[]> {
 }
 
 /** A brand's monochrome artwork: the compact mark or the full logo. */
-export type BrandArtwork = "marks" | "logos";
+type BrandArtwork = "marks" | "logos";
 
 /** Artwork as Satori draws it: a data URI and the aspect ratio of its view box. */
 export type ArtworkImage = {

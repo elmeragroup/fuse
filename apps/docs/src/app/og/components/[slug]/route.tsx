@@ -8,18 +8,15 @@ import { DOCUMENT_THEME } from "../../../../lib/theme";
 import { ComponentImage } from "../../../../og/component-image";
 import { loadBrandArtwork } from "../../../../og/og-assets";
 import { ogResponse } from "../../../../og/og-response";
-import { css, requireOgTheme } from "../../../../og/og-theme";
+import { css, ogTheme } from "../../../../og/og-theme";
 import { specimenContext } from "../../../../og/specimen-kit";
 import { isComponentSlug, SPECIMENS } from "../../../../og/specimens";
 
-/** The component pages are a closed set; any other slug answers 404. */
-export const dynamicParams = false;
-
 /**
- * Images render per request rather than at build. `generateStaticParams` still names the closed
- * set, so a param outside it answers 404.
+ * The component pages are a closed set; any other slug answers 404. `next build` prerenders every
+ * image in it, so a specimen that throws fails the build rather than the first share.
  */
-export const dynamic = "force-dynamic";
+export const dynamicParams = false;
 
 /**
  * The handler's route context, written here rather than through Next's generated `RouteContext`,
@@ -42,7 +39,7 @@ export async function GET(_request: Request, { params }: ComponentImageContext):
   if (!isComponentSlug(slug)) {
     notFound();
   }
-  const theme = requireOgTheme(themeSlug(DOCUMENT_THEME));
+  const theme = ogTheme(themeSlug(DOCUMENT_THEME));
   const specimen = SPECIMENS[slug];
   const mark = await loadBrandArtwork("elma", "marks", css(theme.colors.foreground));
   return await ogResponse(

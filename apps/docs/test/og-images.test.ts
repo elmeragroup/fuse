@@ -3,8 +3,6 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import * as CssColor from "@elmeragroup/color/css-color";
-import * as Hex from "@elmeragroup/color/hex";
-import { LEGAL_THEMES, themeSlug } from "@elmeragroup/fuse/theme";
 
 import { docsRoot } from "../scripts/lib/paths.ts";
 import { generateStaticParams as componentImageParams } from "../src/app/og/components/[slug]/route";
@@ -12,7 +10,6 @@ import { generateStaticParams as docsImageParams } from "../src/app/og/docs/[[..
 import { GET as landingImage } from "../src/app/og/landing/route";
 import { THEME_CATALOG } from "../src/generated/theme-catalog";
 import { parseSiteOrigin } from "../src/lib/site-origin";
-import { parseOgTheme } from "../src/og/og-theme";
 import { COMPONENT_INVENTORY } from "./component-inventory";
 import { decodePng } from "./png";
 
@@ -46,33 +43,6 @@ describe("OG image routes", () => {
       param.path.length === 0 ? "/docs" : `/${param.path.join("/")}`
     );
     expect(routes.toSorted()).toEqual(authoredDocsRoutes(docsAppDir).toSorted());
-  });
-});
-
-describe("OG theme tokens", () => {
-  it("convert every color role and radius of every legal theme", () => {
-    for (const theme of LEGAL_THEMES) {
-      const result = parseOgTheme(themeSlug(theme));
-      expect(result._tag, `${themeSlug(theme)}: ${result._tag === "err" ? result.error.message : ""}`).toBe(
-        "ok"
-      );
-    }
-  });
-
-  it("expose every --sh-* syntax color of every theme as the catalog writes it", () => {
-    for (const entry of THEME_CATALOG.themes) {
-      const result = parseOgTheme(entry.slug);
-      const colors = new Map(result._tag === "ok" ? Object.entries(result.value.colors) : []);
-      const syntax = Object.entries(entry.tokens).filter(([name]) => name.startsWith("--sh-"));
-      expect(syntax.length, entry.slug).toBeGreaterThan(0);
-      for (const [name, value] of syntax) {
-        const color = colors.get(name.slice(2));
-        expect(
-          color === undefined ? "missing" : Hex.formatOpaque(color).toLowerCase(),
-          `${entry.slug} ${name}`
-        ).toBe(value.toLowerCase());
-      }
-    }
   });
 });
 

@@ -4,7 +4,6 @@ import type { ArtworkImage } from "./og-assets";
 import { OgCopy } from "./og-copy";
 import { chartBand, OG_INSET, OgFrame } from "./og-frame";
 import type { OgKind } from "./og-frame";
-import { css } from "./og-theme";
 import type { OgTheme } from "./og-theme";
 
 /** What a docs page image draws. */
@@ -15,10 +14,10 @@ export type DocsImageProps = {
   readonly title: string;
   readonly lede: string;
   /**
-   * Bespoke art for the right half, drawn in a 500 × 430 box. Without it the image draws the
-   * shared art, a rising run of the docs theme's chart colors.
+   * Bespoke art for the right half, drawn in the 496 × 430 {@link ART_BOX}. Without it the image
+   * draws the shared art, a rising run of the docs theme's chart colors.
    */
-  readonly art?: ReactElement;
+  readonly art: ReactElement | undefined;
 };
 
 /** The box bespoke art draws into, right of the copy column. */
@@ -26,17 +25,6 @@ export const ART_BOX = { left: 632, top: 132, width: 496, height: 430 } as const
 
 /** The shared art: the eight chart colors as rising bars, the docs theme's own data ramp. */
 function ChartSteps({ theme }: { readonly theme: OgTheme }): ReactElement {
-  const { colors } = theme;
-  const ramp = [
-    colors["chart-1"],
-    colors["chart-2"],
-    colors["chart-3"],
-    colors["chart-4"],
-    colors["chart-5"],
-    colors["chart-6"],
-    colors["chart-7"],
-    colors["chart-8"],
-  ];
   return (
     <div
       style={{
@@ -47,14 +35,14 @@ function ChartSteps({ theme }: { readonly theme: OgTheme }): ReactElement {
         alignItems: "flex-end",
         gap: 14,
       }}>
-      {ramp.map((color, index) => (
+      {chartBand(theme).map((color, index) => (
         <div
-          key={css(color)}
+          key={color}
           style={{
             width: 34,
             height: 72 + index * 38,
             borderRadius: 17,
-            backgroundColor: css(color),
+            backgroundColor: color,
           }}
         />
       ))}

@@ -20,14 +20,15 @@ import {
 import type { EmojiProps } from "@elmeragroup/fuse/emoji";
 import { CalendarBlank, ChartBar, Gear, House, Receipt, Users } from "@elmeragroup/fuse/icons";
 
+import type { OgColorRole } from "../../generated/og-themes";
 import { glyph } from "../og-icons";
-import type { OgColorRole } from "../og-theme";
+import { compact } from "../satori-style";
 import {
   Badge,
   Button,
   Column,
-  compact,
   FieldBox,
+  hairline,
   Row,
   shadow,
   TEXT,
@@ -109,7 +110,7 @@ export const card: Specimen = {
         flexDirection: "column",
         width: ctx.px(256),
         borderRadius: ctx.radius("lg"),
-        border: `${String(ctx.px(1))}px solid ${ctx.c("border")}`,
+        border: hairline(ctx, ctx.c("border")),
         backgroundColor: ctx.c("card"),
         color: ctx.c("card-foreground"),
         boxShadow: shadow(ctx, "xs"),
@@ -185,7 +186,7 @@ export const frame: Specimen = {
           gap: ctx.px(8),
           padding: ctx.px(20),
           borderRadius: ctx.radius("xl"),
-          border: `${String(ctx.px(1))}px solid ${ctx.c("border")}`,
+          border: hairline(ctx, ctx.c("border")),
           backgroundColor: ctx.c("background"),
           boxShadow: `0 ${String(ctx.px(1))}px 0 rgba(0, 0, 0, 0.06), 0 ${String(ctx.px(1))}px ${String(ctx.px(2))}px 0 rgba(0, 0, 0, 0.05)`,
         }}>
@@ -318,7 +319,7 @@ export const scrollArea: Specimen = {
         height: ctx.px(150),
         overflow: "hidden",
         borderRadius: ctx.radius("md"),
-        border: `${String(ctx.px(1))}px solid ${ctx.c("border")}`,
+        border: hairline(ctx, ctx.c("border")),
         backgroundColor: ctx.c("background"),
         color: ctx.c("foreground"),
       }}>
@@ -381,7 +382,7 @@ export const sidebar: Specimen = {
         display: "flex",
         overflow: "hidden",
         borderRadius: ctx.radius("lg"),
-        border: `${String(ctx.px(1))}px solid ${ctx.c("border")}`,
+        border: hairline(ctx, ctx.c("border")),
       }}>
       <div
         style={{
@@ -390,7 +391,7 @@ export const sidebar: Specimen = {
           width: ctx.px(256),
           padding: ctx.px(8),
           backgroundColor: ctx.c("sidebar"),
-          borderRight: `${String(ctx.px(1))}px solid ${ctx.c("sidebar-border")}`,
+          borderRight: hairline(ctx, ctx.c("sidebar-border")),
           color: ctx.c("sidebar-foreground"),
         }}>
         {NAV.map(({ label, icon, active }) => (

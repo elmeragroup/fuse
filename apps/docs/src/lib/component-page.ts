@@ -39,8 +39,6 @@ export function componentMetadata(slug: string): Metadata {
     description: component.lede,
     ...ogMetadata({
       image: ogComponentPath(component.slug),
-      title: `${component.title} · Fuse`,
-      description: component.lede,
       alt: `${component.title}, a Fuse component, drawn beside its description: ${component.lede}`,
     }),
   };

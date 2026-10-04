@@ -22,8 +22,6 @@ export function pageMetadata(href: string): Metadata {
     description: page.description,
     ...ogMetadata({
       image: ogDocsPath(href),
-      title: `${page.label} · Fuse`,
-      description: page.description,
       alt: `${page.label}, a Fuse docs page: ${page.description}`,
     }),
   };

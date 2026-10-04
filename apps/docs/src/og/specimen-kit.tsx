@@ -11,14 +11,23 @@
 
 import type { CSSProperties, ReactElement, ReactNode } from "react";
 
+import { Check, Minus } from "@elmeragroup/fuse/icons";
 import type { Density } from "@elmeragroup/fuse/theme";
+import type { DensityMetricName } from "@elmeragroup/fuse/theme-catalog";
 
 import { LANDING_FACTS } from "../generated/landing-facts";
+import type { OgColorRole } from "../generated/og-themes";
+import { glyph } from "./og-icons";
+import type { IconSlot } from "./og-icons";
 import { css } from "./og-theme";
-import type { OgColorRole, OgTheme } from "./og-theme";
+import type { OgTheme } from "./og-theme";
+import { compact } from "./satori-style";
 
 /** A control size rung, as Fuse names them. */
-export type ControlSize = "xs" | "sm" | "md" | "lg";
+type ControlSize = "xs" | "sm" | "md" | "lg";
+
+/** A corner a specimen rounds to: a radius rung, Button's own radius, or a pill. */
+type Corner = "xs" | "sm" | "md" | "lg" | "xl" | "popover" | "button" | "full";
 
 /** Everything a specimen reads: the theme, its scale and the density's control metrics. */
 export type SpecimenContext = {
@@ -29,17 +38,22 @@ export type SpecimenContext = {
   /** A role as a CSS color, optionally at an opacity like Tailwind's `/80`. */
   readonly c: (role: OgColorRole, alpha?: number) => string;
   /** A control metric (`control-h-md`, `control-px-button-sm`, …) in image pixels. */
-  readonly metric: (name: string) => number;
-  /** A radius rung in image pixels, from `--radius` and `--radius-step`. */
-  readonly radius: (rung: "xs" | "sm" | "md" | "lg" | "xl" | "popover" | "button" | "full") => number;
+  readonly metric: (name: DensityMetricName) => number;
+  /** A corner in image pixels: a radius rung, `--radius-button`, or a pill. */
+  readonly radius: (corner: Corner) => number;
 };
 
-function cssMetric(name: string, density: Density): number {
+function cssMetric(name: DensityMetricName, density: Density): number {
   const metric = LANDING_FACTS.metrics.find((candidate) => candidate.name === name);
   if (metric === undefined) {
     throw new Error(`No control metric named ${name} in the generated landing facts.`);
   }
   return metric.px[density];
+}
+
+/** A corner in CSS px, from the theme's rungs and `--radius-button`. */
+function cornerPx(theme: OgTheme, corner: Exclude<Corner, "full">): number {
+  return corner === "button" ? theme.dimensions["radius-button"] : theme.rungs[`radius-${corner}`];
 }
 
 /**
@@ -51,35 +65,24 @@ function cssMetric(name: string, density: Density): number {
  */
 export function specimenContext(theme: OgTheme, scale: number): SpecimenContext {
   const px = (cssPx: number): number => Math.round(cssPx * scale * 100) / 100;
-  const step = theme.radiusStep;
-  const rungs = {
-    xs: theme.radius - 3 * step,
-    sm: theme.radius - 2 * step,
-    md: theme.radius - step,
-    lg: theme.radius,
-    xl: theme.radius + 2 * step,
-    popover: theme.radius - 4 * step,
-    button: theme.radiusButton,
-    full: 9999,
-  };
   return {
     theme,
     px,
     c: (role, alpha) => css(theme.colors[role], alpha),
     metric: (name) => px(cssMetric(name, theme.density)),
-    radius: (rung) => (rung === "full" ? 9999 : px(Math.max(0, rungs[rung]))),
+    radius: (corner) => (corner === "full" ? 9999 : px(cornerPx(theme, corner))),
   };
 }
 
 /**
- * Drops the members whose value is `undefined`. Satori reads every key it is given and fails
- * on an `undefined` value, so a conditional style member must be absent rather than undefined.
+ * A hairline border, `border` in Tailwind, scaled.
  *
- * @param style - A style with optional members.
- * @returns The same style without the undefined members.
+ * @param ctx - The specimen context.
+ * @param color - The border color.
+ * @returns A `border` value.
  */
-export function compact(style: CSSProperties): CSSProperties {
-  return Object.fromEntries(Object.entries(style).filter(([, value]) => value !== undefined));
+export function hairline(ctx: SpecimenContext, color: string): string {
+  return `${String(ctx.px(1))}px solid ${color}`;
 }
 
 /** Tailwind's elevation rungs as the recipes spell them, scaled. */
@@ -138,7 +141,7 @@ export function focusRingOutline(ctx: SpecimenContext): CSSProperties {
  * @param ctx - The specimen context.
  * @returns A `box-shadow` value.
  */
-export function invalidRingShadow(ctx: SpecimenContext): string {
+function invalidRingShadow(ctx: SpecimenContext): string {
   return `0 0 0 ${String(ctx.px(3))}px ${ctx.c("error", 0.2)}, ${shadow(ctx, "xs")}`;
 }
 
@@ -171,18 +174,8 @@ export function controlText(ctx: SpecimenContext, weight: 400 | 500 | 600 = 400)
   };
 }
 
-/** A Fuse icon slot: the glyph is drawn by the caller at the slot's size and color. */
-export type IconSlot = (size: number, color: string) => ReactElement;
-
 /** Button's variants (`button-variants.ts`). */
-export type ButtonVariant =
-  | "default"
-  | "outline"
-  | "secondary"
-  | "ghost"
-  | "destructive"
-  | "success"
-  | "link";
+type ButtonVariant = "default" | "outline" | "secondary" | "ghost" | "destructive" | "success" | "link";
 
 /** What a Button drawing takes. */
 export type ButtonDrawing = {
@@ -217,43 +210,44 @@ function buttonInk(ctx: SpecimenContext, variant: ButtonVariant): string {
 }
 
 function buttonPaint(ctx: SpecimenContext, variant: ButtonVariant): CSSProperties {
-  const border = (color: string, width = ctx.px(1)): string => `${String(width)}px solid ${color}`;
   switch (variant) {
     case "default":
       return {
         backgroundColor: ctx.c("primary"),
         color: ctx.c("primary-foreground"),
-        border: border("transparent"),
+        border: hairline(ctx, "transparent"),
       };
-    case "outline":
+    case "outline": {
+      const width = ctx.theme.dimensions["button-outline-width"];
       return {
         backgroundColor: ctx.c("background"),
         color: ctx.c("foreground"),
-        border: border(ctx.c("button-outline"), ctx.px(ctx.theme.buttonOutlineWidth)),
-        boxShadow: ctx.theme.buttonOutlineWidth === 1 ? shadow(ctx, "xs") : undefined,
+        border: `${String(ctx.px(width))}px solid ${ctx.c("button-outline")}`,
+        boxShadow: width === 1 ? shadow(ctx, "xs") : undefined,
       };
+    }
     case "secondary":
       return {
         backgroundColor: ctx.c("secondary"),
         color: ctx.c("secondary-foreground"),
-        border: border("transparent"),
+        border: hairline(ctx, "transparent"),
       };
     case "ghost":
-      return { color: ctx.c("foreground"), border: border("transparent") };
+      return { color: ctx.c("foreground"), border: hairline(ctx, "transparent") };
     case "destructive":
       return {
         backgroundColor: ctx.c("error", 0.1),
         color: ctx.c("error"),
-        border: border(ctx.c("error", 0.2)),
+        border: hairline(ctx, ctx.c("error", 0.2)),
       };
     case "success":
       return {
         backgroundColor: ctx.c("success", 0.1),
         color: ctx.c("success"),
-        border: border(ctx.c("success", 0.2)),
+        border: hairline(ctx, ctx.c("success", 0.2)),
       };
     case "link":
-      return { color: ctx.c("primary"), border: border("transparent") };
+      return { color: ctx.c("primary"), border: hairline(ctx, "transparent") };
   }
 }
 
@@ -297,6 +291,35 @@ export function Button(drawing: ButtonDrawing): ReactElement {
   );
 }
 
+/** A field box's face: at rest, focused, or invalid. */
+export type FieldFace = "rest" | "focused" | "invalid";
+
+/**
+ * The field box chrome (`styles/field-box.ts`): `rounded-md`, a hairline `--input` border on
+ * `--card`, `shadow-xs` and the density's control type. Focused, the shared focus ring paints
+ * over it; invalid, the border turns `--error` under a 3px ring of `--error` at 20%.
+ *
+ * @param ctx - The specimen context.
+ * @param face - The face to paint.
+ * @returns Style members for the box.
+ */
+export function fieldChrome(ctx: SpecimenContext, face: FieldFace = "rest"): CSSProperties {
+  return {
+    boxSizing: "border-box",
+    borderRadius: ctx.radius("md"),
+    border: hairline(ctx, face === "invalid" ? ctx.c("error") : ctx.c("input")),
+    backgroundColor: ctx.c("card"),
+    boxShadow:
+      face === "invalid"
+        ? invalidRingShadow(ctx)
+        : face === "focused"
+          ? focusRingShadow(ctx)
+          : shadow(ctx, "xs"),
+    color: ctx.c("foreground"),
+    ...controlText(ctx),
+  };
+}
+
 /** What a field box drawing takes. */
 export type FieldBoxDrawing = {
   readonly ctx: SpecimenContext;
@@ -314,8 +337,7 @@ export type FieldBoxDrawing = {
 };
 
 /**
- * The field box chrome (`styles/field-box.ts`): `shadow-xs`, `rounded-md`, a hairline `--input`
- * border on `--card`, the md control height and inset, and the density's control type.
+ * The field box (`styles/field-box.ts`): the field chrome at the md control height and inset.
  */
 export function FieldBox(drawing: FieldBoxDrawing): ReactElement {
   const {
@@ -329,14 +351,12 @@ export function FieldBox(drawing: FieldBoxDrawing): ReactElement {
     box = "control",
     style,
   } = drawing;
-  const ring = invalid ? invalidRingShadow(ctx) : focused ? focusRingShadow(ctx) : shadow(ctx, "xs");
   const icon = ctx.px(16);
   return (
     <div
       style={compact({
         display: "flex",
         alignItems: box === "control" ? "center" : "flex-start",
-        boxSizing: "border-box",
         width,
         height: box === "control" ? ctx.metric("control-h-md") : undefined,
         minHeight: box === "content" ? ctx.px(64) : undefined,
@@ -345,12 +365,7 @@ export function FieldBox(drawing: FieldBoxDrawing): ReactElement {
         paddingTop: box === "content" ? ctx.px(8) : 0,
         paddingBottom: box === "content" ? ctx.px(8) : 0,
         gap: ctx.metric("control-gap-md"),
-        borderRadius: ctx.radius("md"),
-        border: `${String(ctx.px(1))}px solid ${invalid ? ctx.c("error") : ctx.c("input")}`,
-        backgroundColor: ctx.c("card"),
-        boxShadow: ring,
-        color: ctx.c("foreground"),
-        ...controlText(ctx),
+        ...fieldChrome(ctx, invalid ? "invalid" : focused ? "focused" : "rest"),
         ...style,
       })}>
       {start?.(icon, ctx.c("muted-foreground"))}
@@ -360,8 +375,48 @@ export function FieldBox(drawing: FieldBoxDrawing): ReactElement {
   );
 }
 
+/** A Checkbox's state: unchecked, checked, or indeterminate. */
+export type CheckboxState = "off" | "on" | "mixed";
+
+/** What a Checkbox drawing takes. */
+export type CheckboxDrawing = {
+  readonly ctx: SpecimenContext;
+  readonly state: CheckboxState;
+};
+
+/**
+ * The 16px Checkbox box (`checkbox.tsx`): `border-input bg-card shadow-xs`, filled with
+ * `--primary` and a 14px `Check` (or `Minus`, indeterminate) in `--primary-foreground` when on.
+ * Its corner is `checkboxCornerClass` (`styles/corner-radius.ts`):
+ * `min(--radius-md, max(4px, --radius - 1000 * --radius-step))`, the theme radius in internal
+ * themes and `min(md, 4px)` in external ones.
+ */
+export function Checkbox({ ctx, state }: CheckboxDrawing): ReactElement {
+  const on = state !== "off";
+  const { radius, "radius-step": step } = ctx.theme.dimensions;
+  const icon = state === "on" ? glyph(Check) : state === "mixed" ? glyph(Minus) : undefined;
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+        boxSizing: "border-box",
+        width: ctx.px(16),
+        height: ctx.px(16),
+        borderRadius: Math.min(ctx.radius("md"), ctx.px(Math.max(4, radius - 1000 * step))),
+        border: hairline(ctx, on ? ctx.c("primary") : ctx.c("input")),
+        backgroundColor: on ? ctx.c("primary") : ctx.c("card"),
+        boxShadow: shadow(ctx, "xs"),
+      }}>
+      {icon?.(ctx.px(14), ctx.c("primary-foreground"))}
+    </div>
+  );
+}
+
 /** A run of text in one of the field roles. */
-export type TextDrawing = {
+type TextDrawing = {
   readonly ctx: SpecimenContext;
   readonly children: ReactNode;
 };
@@ -462,7 +517,7 @@ export function MenuRow(drawing: MenuRowDrawing): ReactElement {
 }
 
 /** Badge's variants (`badge-variants.ts`), the ones specimens use. */
-export type BadgeVariant =
+type BadgeVariant =
   | "default"
   | "secondary"
   | "outline"
@@ -518,7 +573,7 @@ export function Badge({ ctx, variant = "default", children }: BadgeDrawing): Rea
         flexShrink: 0,
         padding: `${String(ctx.px(2))}px ${String(ctx.px(10))}px`,
         borderRadius: ctx.radius("lg"),
-        border: `${String(ctx.px(1))}px solid ${paint.border}`,
+        border: hairline(ctx, paint.border),
         backgroundColor: paint.fill,
         color: paint.color,
         whiteSpace: "nowrap",
@@ -530,7 +585,7 @@ export function Badge({ ctx, variant = "default", children }: BadgeDrawing): Rea
 }
 
 /** A flex line with a gap. */
-export type StackDrawing = {
+type StackDrawing = {
   readonly gap: number;
   readonly children: ReactNode;
   readonly style?: CSSProperties;

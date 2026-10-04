@@ -5,7 +5,6 @@ import type { Metadata } from "next";
 import { BRANDS } from "@elmeragroup/fuse/theme";
 
 import { ogLandingPath, ogMetadata } from "../../lib/og-metadata";
-import { LANDING_SUMMARY } from "./landing/landing-facts";
 import { LandingPage } from "./landing/landing-page";
 import { parseThemeQuery, THEME_QUERY } from "./landing/landing-theme-defaults";
 
@@ -24,8 +23,6 @@ export async function generateMetadata({ searchParams }: LandingRouteProps): Pro
   const theme = parseThemeQuery(query[THEME_QUERY]);
   return ogMetadata({
     image: ogLandingPath(theme),
-    title: "Fuse · The Elmera Group design system",
-    description: LANDING_SUMMARY,
     alt: `Fuse, the Elmera Group design system, in the ${BRANDS[theme.brand].displayName} theme: One system. Every brand.`,
   });
 }

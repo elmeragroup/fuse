@@ -4,7 +4,10 @@ import type { ReactElement, ReactNode } from "react";
 
 import type { ElmeraIconProps } from "@elmeragroup/fuse/icons";
 
-import type { IconSlot } from "./specimen-kit";
+import { compact } from "./satori-style";
+
+/** A Fuse icon slot: the glyph is drawn by the caller at the slot's size and color. */
+export type IconSlot = (size: number, color: string) => ReactElement;
 
 /** The shape of a `forwardRef` component object, which carries its render function. */
 type ForwardRefComponent = {
@@ -13,10 +16,6 @@ type ForwardRefComponent = {
 
 function isForwardRef(type: unknown): type is ForwardRefComponent {
   return typeof type === "object" && type !== null && "render" in type && typeof type.render === "function";
-}
-
-function withoutUndefined(props: object): Record<string, unknown> {
-  return Object.fromEntries(Object.entries(props).filter(([, value]) => value !== undefined));
 }
 
 /**
@@ -47,7 +46,7 @@ function intrinsic(node: ReactNode): ReactNode {
     return node;
   }
   const { children, ...attributes } = props;
-  return createElement(type, withoutUndefined(attributes), ...Children.toArray(children).map(intrinsic));
+  return createElement(type, compact(attributes), ...Children.toArray(children).map(intrinsic));
 }
 
 /**
