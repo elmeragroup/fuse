@@ -14,7 +14,7 @@ import {
   searchTable,
   DASHBOARD_FIRST,
 } from "./landing-dashboard";
-import { auditTargets, expectTargets, launchLandingSuite } from "./landing-page";
+import { auditTargets, collectPageErrors, expectTargets, launchLandingSuite } from "./landing-page";
 
 const { openLanding } = launchLandingSuite({ search: DASHBOARD_FIRST });
 
@@ -324,8 +324,7 @@ describe("landing Dashboard window", () => {
 
   it("opens every menu and popover in the window without a page error", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
-    const errors: string[] = [];
-    page.on("pageerror", (error) => errors.push(error.message));
+    const errors = collectPageErrors(page);
     const app = dashboard(page);
     await app.scrollIntoViewIfNeeded();
     const detail = app.getByRole("complementary", { name: "Order details" });

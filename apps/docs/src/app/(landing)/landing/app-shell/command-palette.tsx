@@ -141,8 +141,6 @@ function useActiveIntoView(activeId: string | undefined): void {
 
 export type CommandPaletteProps = {
   open: boolean;
-  /** Counts the palette's openings. Each new value mounts a fresh search. */
-  opening: number;
   onOpenChange: (open: boolean) => void;
   /** Where focus returns on close: the control that opened the palette. */
   finalFocus: RefObject<HTMLElement | null>;
@@ -155,14 +153,18 @@ export type CommandPaletteProps = {
  * part yet (TODO.md), so this composes Dialog with the ARIA combobox pattern the docs search
  * uses: focus stays in the field and the arrows move `aria-activedescendant`.
  */
-export function CommandPalette({
-  open,
-  opening,
-  onOpenChange,
-  finalFocus,
-  popup,
-}: CommandPaletteProps): ReactElement {
+export function CommandPalette({ open, onOpenChange, finalFocus, popup }: CommandPaletteProps): ReactElement {
   const input = useRef<HTMLInputElement>(null);
+  // Counts transitions to open. The search is keyed by it, because the popup stays mounted
+  // through its exit animation and a quick reopen would otherwise keep the search.
+  const [opening, setOpening] = useState(0);
+  const [wasOpen, setWasOpen] = useState(open);
+  if (wasOpen !== open) {
+    setWasOpen(open);
+    if (open) {
+      setOpening(opening + 1);
+    }
+  }
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Content

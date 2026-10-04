@@ -17,9 +17,10 @@ import {
   row,
   searchTable,
   showSide,
+  sideSwitch,
   windowCaption,
 } from "./landing-dashboard";
-import { launchLandingSuite } from "./landing-page";
+import { launchLandingSuite, settleFrames } from "./landing-page";
 
 const { openLanding } = launchLandingSuite({ search: DASHBOARD_FIRST });
 
@@ -110,9 +111,11 @@ async function expectReachable(page: Page, side: Locator, unlocked: string): Pro
  * would move focus to the switch before the modal closes and hide where the close sends it.
  */
 async function pressSwitchPastModal(page: Page, side: "Internal" | "External"): Promise<void> {
-  const button = liveDemo(page)
-    .getByRole("group", { name: "Window content", includeHidden: true })
-    .getByRole("button", { name: side, exact: true, includeHidden: true });
+  const button = sideSwitch(page, { includeHidden: true }).getByRole("button", {
+    name: side,
+    exact: true,
+    includeHidden: true,
+  });
   await button.evaluate((element) => {
     element.addEventListener("mousedown", (event) => event.preventDefault(), { once: true });
   });
@@ -128,16 +131,9 @@ async function pressSwitchPastModal(page: Page, side: "Internal" | "External"): 
  * button outside any inert subtree, rather than on a trigger on the side that went inert.
  */
 async function expectFocusOnSwitch(page: Page, side: "Internal" | "External"): Promise<void> {
-  const button = liveDemo(page)
-    .getByRole("group", { name: "Window content" })
-    .getByRole("button", { name: side, exact: true });
+  const button = sideSwitch(page).getByRole("button", { name: side, exact: true });
   // Base UI returns focus after the dialog unmounts; two frames let a late return land first.
-  await page.evaluate(
-    async () =>
-      new Promise((resolve) => {
-        requestAnimationFrame(() => requestAnimationFrame(resolve));
-      })
-  );
+  await settleFrames(page);
   expect(
     await button.evaluate((element) => ({
       focused: element === document.activeElement,

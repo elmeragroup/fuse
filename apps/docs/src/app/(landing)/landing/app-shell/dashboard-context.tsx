@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, use } from "react";
+import type { RefCallback } from "react";
 
 import type { OrderId } from "./dashboard-orders";
 import type { DashboardAction, DashboardState } from "./dashboard-state";
@@ -14,6 +15,12 @@ export type Notice = {
   readonly description: string;
   readonly type: "success" | "error" | "info";
 };
+
+/**
+ * An order a reveal asked for. Each reveal is a new request, so asking for the same order again
+ * turns Order search's page again.
+ */
+export type Reveal = { readonly id: OrderId };
 
 /** What every part of the window reads and calls; the window component owns it. */
 export type DashboardApi = {
@@ -32,6 +39,13 @@ export type DashboardApi = {
    * where the detail is a Sheet, opens it.
    */
   readonly openOrder: (id: OrderId) => void;
+  /**
+   * The pending reveal, which Order search turns its page to. It ends once its row has scrolled
+   * into view, or on any other navigation.
+   */
+  readonly revealing: Reveal | undefined;
+  /** The ref for the pending reveal's row: scrolls the row into view and ends the reveal. */
+  readonly revealed: RefCallback<HTMLElement>;
   readonly openPalette: () => void;
   readonly openNewOrder: () => void;
   readonly toggleSidebar: () => void;

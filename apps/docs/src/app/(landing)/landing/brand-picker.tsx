@@ -29,7 +29,7 @@ const brandPicker = tv({
 const styles = brandPicker();
 
 export function BrandPicker(): ReactElement {
-  const { theme, changeBrand } = useLandingTheme();
+  const { theme, changeTheme } = useLandingTheme();
 
   return (
     <section className={styles.section()} aria-labelledby="landing-brands">
@@ -47,7 +47,7 @@ export function BrandPicker(): ReactElement {
             type="button"
             aria-pressed={brand === theme.brand}
             className={styles.tile()}
-            onClick={() => changeBrand(brand)}>
+            onClick={() => changeTheme({ brand })}>
             <span className={styles.shot()}>
               <BrandMark brand={brand} />
             </span>

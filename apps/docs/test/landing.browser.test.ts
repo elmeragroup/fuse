@@ -1,19 +1,12 @@
-import type { Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
 import * as Hex from "@elmeragroup/color/hex";
 
-import { DESKTOP_VIEWPORT, expectInside, readThemeAttributes } from "./demo-page";
-import { launchLandingSuite, TARGET_FLOOR_PX } from "./landing-page";
+import { DESKTOP_VIEWPORT, expectInside } from "./demo-page";
+import { pickBrand } from "./landing-dashboard";
+import { collectPageErrors, launchLandingSuite, TARGET_FLOOR_PX } from "./landing-page";
 
 const { openLanding } = launchLandingSuite();
-
-/** Every unhandled error and rejection the page raises, collected from now on. */
-function collectPageErrors(page: Page): string[] {
-  const errors: string[] = [];
-  page.on("pageerror", (error) => errors.push(error.message));
-  return errors;
-}
 
 describe("landing page", () => {
   it("swaps the Components menu's stage as its entry links take hover or keyboard focus", async () => {
@@ -81,11 +74,8 @@ describe("landing page", () => {
     await expect.poll(async () => canvas.count(), { timeout: 10_000 }).toBe(1);
     const before = await canvas.elementHandle();
 
-    await page.getByRole("button").filter({ hasText: 'data-theme-brand="fkas"' }).click();
     // The shader may still be processing its mark; give the pick the page's 5s budget.
-    await expect
-      .poll(async () => (await readThemeAttributes(page.locator("html"))).brand, { timeout: 5000 })
-      .toBe("fkas");
+    await pickBrand(page, "fkas", { timeout: 5000 });
 
     expect(await canvas.evaluate((current, original) => current === original, before)).toBe(true);
     await page.context().close();
@@ -245,8 +235,7 @@ describe("landing page", () => {
   it("points both theme-color tags at the background of the brand just picked", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
 
-    await page.getByRole("button").filter({ hasText: 'data-theme-brand="fkas"' }).click();
-    await expect.poll(async () => (await readThemeAttributes(page.locator("html"))).brand).toBe("fkas");
+    await pickBrand(page, "fkas");
 
     // The canvas rasterises the computed background to sRGB bytes, independent of the page's
     // own colour parsing.

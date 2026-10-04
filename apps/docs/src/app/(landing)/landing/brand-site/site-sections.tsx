@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 
 import { tv } from "tailwind-variants";
 
+import { Card } from "@elmeragroup/fuse/card";
 import { ArrowRight, Star, TrendUp } from "@elmeragroup/fuse/icons";
 import type { BrandCode, SupportedLocale } from "@elmeragroup/fuse/theme";
 
@@ -26,7 +27,8 @@ const siteCards = tv({
       "ease-snap flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform duration-200 group-hover/story:translate-x-0.5",
     more: "self-center",
     share: "@3xl:grid-cols-2 grid gap-5",
-    quote: "shadow-xs flex flex-col gap-4 rounded-xl border border-border bg-card p-6 text-card-foreground",
+    // Fuse Card's surface; the slots add only where the share cards differ from it.
+    quote: "gap-4 rounded-xl border-border p-6",
     quoteTicker: "text-sm font-medium text-muted-foreground",
     quotePrice: "flex items-baseline gap-2",
     quoteValue: "text-5xl font-semibold tracking-tight tabular-nums",
@@ -37,8 +39,7 @@ const siteCards = tv({
     factLabel: "text-xs text-muted-foreground",
     factValue: "text-sm font-semibold m-0 tabular-nums",
     updated: "text-xs text-muted-foreground",
-    calendar:
-      "shadow-xs flex flex-col gap-1 rounded-xl border border-border bg-card p-6 text-card-foreground",
+    calendar: "gap-1 rounded-xl border-border p-6",
     calendarTitle: "text-sm font-medium pb-2 text-muted-foreground",
     events: "m-0 list-none p-0",
     eventText: "flex flex-col gap-0.5",
@@ -282,7 +283,7 @@ export function SiteSectionView({ section, site, onPickBrand }: SectionProps): R
       return (
         <Band {...band} lede={section.lede} actions={section.actions}>
           <div className={cards.share()}>
-            <div className={cards.quote()}>
+            <Card.Root className={cards.quote()}>
               <p className={cards.quoteTicker()}>{quote.ticker}</p>
               <p className={cards.quotePrice()}>
                 <span className={cards.quoteValue()}>
@@ -313,8 +314,8 @@ export function SiteSectionView({ section, site, onPickBrand }: SectionProps): R
                 ))}
               </dl>
               <p className={cards.updated()}>{quote.updated}</p>
-            </div>
-            <div className={cards.calendar()}>
+            </Card.Root>
+            <Card.Root className={cards.calendar()}>
               <h3 className={cards.calendarTitle()}>{calendar.title}</h3>
               <ol className={cards.events()}>
                 {calendar.events.map((event) => {
@@ -333,7 +334,7 @@ export function SiteSectionView({ section, site, onPickBrand }: SectionProps): R
                   );
                 })}
               </ol>
-            </div>
+            </Card.Root>
           </div>
         </Band>
       );

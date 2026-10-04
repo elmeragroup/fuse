@@ -7,7 +7,6 @@ export const FJORDKRAFT_FORETAG_SITE = {
   brand: "fkab",
   name: "Fjordkraft Företag",
   domain: "fjordkraft.se",
-  lang: "sv",
   locale: "sv-SE",
   headings: "center",
   logo: "brand",

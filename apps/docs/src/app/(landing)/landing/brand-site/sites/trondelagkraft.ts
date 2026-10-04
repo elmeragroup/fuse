@@ -7,7 +7,6 @@ export const TRONDELAGKRAFT_SITE = {
   brand: "tkas",
   name: "TrøndelagKraft",
   domain: "trondelagkraft.no",
-  lang: "nb",
   locale: "nb-NO",
   headings: "center",
   logo: "wordmark",

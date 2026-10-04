@@ -40,8 +40,6 @@ type LandingThemeValue = {
    * segment drags the segment along through `coerceTheme`.
    */
   changeTheme: (change: ThemeChange) => void;
-  /** `changeTheme` for the brand alone. */
-  changeBrand: (brand: BrandCode) => void;
   changeColorScheme: (scheme: ColorScheme) => void;
   colorScheme: ColorScheme;
 };
@@ -156,13 +154,6 @@ function LandingThemeState({ theme, setTheme, children }: LandingThemeStateProps
     [theme, setTheme, colorScheme]
   );
 
-  const changeBrand = useCallback(
-    (brand: BrandCode) => {
-      changeTheme({ brand });
-    },
-    [changeTheme]
-  );
-
   const changeColorScheme = useCallback(
     (next: ColorScheme) => {
       if (next === colorScheme) {
@@ -184,11 +175,10 @@ function LandingThemeState({ theme, setTheme, children }: LandingThemeStateProps
     (): LandingThemeValue => ({
       theme,
       changeTheme,
-      changeBrand,
       changeColorScheme,
       colorScheme,
     }),
-    [theme, changeTheme, changeBrand, changeColorScheme, colorScheme]
+    [theme, changeTheme, changeColorScheme, colorScheme]
   );
 
   return (

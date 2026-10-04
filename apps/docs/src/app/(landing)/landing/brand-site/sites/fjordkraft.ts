@@ -14,7 +14,6 @@ export const FJORDKRAFT_SITE = {
   brand: "fkas",
   name: "Fjordkraft",
   domain: "fjordkraft.no",
-  lang: "nb",
   locale: "nb-NO",
   headings: "center",
   logo: "brand",

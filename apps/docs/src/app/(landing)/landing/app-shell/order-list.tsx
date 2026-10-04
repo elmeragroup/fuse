@@ -72,7 +72,7 @@ const styles = orderList();
 
 /** One order row: a checkbox beside a button that selects the order. */
 function OrderRow({ order, audience }: { order: Order; audience: Audience }): ReactElement {
-  const { state, dispatch, openOrder } = useDashboard();
+  const { state, dispatch, openOrder, revealing, revealed } = useDashboard();
   const current = state.selected === order.id;
   const seller = SELLERS[order.seller];
 
@@ -89,6 +89,7 @@ function OrderRow({ order, audience }: { order: Order; audience: Audience }): Re
       </span>
       <button
         type="button"
+        ref={revealing?.id === order.id ? revealed : undefined}
         data-row
         data-order-id={order.id}
         data-customer={order.customer}

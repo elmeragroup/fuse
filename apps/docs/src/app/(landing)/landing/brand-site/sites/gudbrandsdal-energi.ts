@@ -7,7 +7,6 @@ export const GUDBRANDSDAL_ENERGI_SITE = {
   brand: "guen",
   name: "Gudbrandsdal Energi",
   domain: "ge.no",
-  lang: "nb",
   locale: "nb-NO",
   headings: "split",
   logo: "wordmark",

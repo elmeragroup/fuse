@@ -7,7 +7,6 @@ export const ELMERA_GROUP_SITE = {
   brand: "elma",
   name: "Elmera Group",
   domain: "elmeragroup.no",
-  lang: "en",
   locale: "en-US",
   headings: "split",
   logo: "elmera-group",

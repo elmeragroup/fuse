@@ -7,7 +7,7 @@ import { parseCssBlocks, parseStyleRules } from "../../test/css-rules";
 import type { CssDeclaration } from "../../test/css-rules";
 import type { Density } from "./density";
 import { generateThemesCss } from "./generate-css";
-import { DEMO_STAGE_COMFORTABLE_SELECTOR, generateDemoStageComfortableCss } from "./generate-demo-stage-css";
+import { generateDemoStageDensityCss } from "./generate-demo-stage-css";
 import { DENSITY_METRIC_NAMES, DENSITY_METRICS, DENSITY_SELECTORS } from "./tokens/density-metrics";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -75,25 +75,39 @@ describe("density CSS", () => {
   });
 });
 
-// The generator reads DENSITY_METRICS, so these tests take the hand-written fuse.css
-// comfortable block as the oracle the demo stage must reproduce under its own selector.
-describe("DemoStage comfortable density artifact", () => {
-  it("re-scopes the library comfortable block onto [data-demo-stage]", () => {
-    expect(parseStyleRules(generateDemoStageComfortableCss())).toEqual([
-      {
-        selector: '[data-demo-stage][data-density="comfortable"]',
-        declarations: fuseCssRule(DENSITY_SELECTORS.comfortable),
-      },
-    ]);
+/** The `fuse.css` rule a density's demo-stage block re-scopes: dense lives on `:root` beside other metrics. */
+function libraryDensityRule(density: Density): CssDeclaration[] {
+  return fuseCssRule(DENSITY_SELECTORS[density]).filter(isControlMetric);
+}
+
+/** The demo-stage blocks the hand-written fuse.css density rules require, in emitted order. */
+function expectedStageRules(): { selector: string; declarations: CssDeclaration[] }[] {
+  return [
+    { selector: '[data-demo-stage][data-density="dense"]', declarations: libraryDensityRule("dense") },
+    {
+      selector: '[data-demo-stage][data-density="comfortable"]',
+      declarations: libraryDensityRule("comfortable"),
+    },
+  ];
+}
+
+// The generator reads DENSITY_METRICS, so these tests take the hand-written fuse.css density
+// blocks as the oracle the demo stage must reproduce under its own selectors.
+describe("DemoStage density artifact", () => {
+  it("re-scopes the library dense and comfortable blocks onto [data-demo-stage]", () => {
+    expect(parseStyleRules(generateDemoStageDensityCss())).toEqual(expectedStageRules());
   });
 
-  it("is emitted next to themes.css with every comfortable metric", () => {
+  it("is emitted next to themes.css with every metric of both densities", () => {
     // Guaranteed by the root `test` task's direct `@elmeragroup/fuse#build` dependency.
     expect(existsSync(demoStageCssPath), demoStageCssPath).toBe(true);
     const rules = parseStyleRules(readFileSync(demoStageCssPath, "utf8"));
-    expect(rules.map((rule) => rule.selector)).toEqual([DEMO_STAGE_COMFORTABLE_SELECTOR]);
-    const declarations = rules[0]?.declarations ?? [];
-    expect(declarations).toEqual(fuseCssRule(DENSITY_SELECTORS.comfortable));
-    expect(declarations.find((declaration) => declaration.name === "control-h-md")?.value).toBe("2.75rem");
+    expect(rules).toEqual(expectedStageRules());
+    const metric = (density: Density) =>
+      rules
+        .find((rule) => rule.selector === `[data-demo-stage][data-density="${density}"]`)
+        ?.declarations.find((declaration) => declaration.name === "control-h-md")?.value;
+    expect(metric("dense")).toBe("2.25rem");
+    expect(metric("comfortable")).toBe("2.75rem");
   });
 });

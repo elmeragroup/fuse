@@ -55,9 +55,10 @@ const siteHeader = tv({
   },
   variants: {
     // A header that fits shows its rows from the window's `@5xl` width (64rem) up, which a 1024px
-    // viewport's window is not; one that overflows keeps everything in the menu Sheet.
+    // viewport's window is not; one that overflows keeps everything in the menu Sheet. Keyed by
+    // `HeaderFit`'s tag.
     fit: {
-      fits: {
+      Fits: {
         utility: "@5xl:block",
         segments: "@5xl:flex",
         navSingle: "@5xl:flex",
@@ -65,25 +66,18 @@ const siteHeader = tv({
         wide: "@5xl:inline-flex",
         menuTrigger: "@5xl:hidden",
       },
-      overflows: {},
+      Overflows: {},
     },
   },
 });
 
-const styles = siteHeader();
-
-/** Whether the header shows its rows or keeps them in the menu Sheet. */
-type Fit = "fits" | "overflows";
-
-/** The slots the fit decides, for each fit. */
-const fitStyles = {
-  fits: siteHeader({ fit: "fits" }),
-  overflows: siteHeader({ fit: "overflows" }),
-} as const satisfies Record<Fit, ReturnType<typeof siteHeader>>;
+/** The header's slots for its current fit, computed once in `SiteHeader`. */
+type HeaderStyles = ReturnType<typeof siteHeader>;
 
 /**
- * Whether the header's rows fit the window. `needs` is the header width an overflowing header
- * measured it would take to fit; the hidden rows cannot be measured until they show again.
+ * Whether the header's rows fit the window, so it shows them, or overflow it, so it keeps them in
+ * the menu Sheet. `needs` is the header width an overflowing header measured it would take to
+ * fit; the hidden rows cannot be measured until they show again.
  */
 type HeaderFit = { readonly _tag: "Fits" } | { readonly _tag: "Overflows"; readonly needs: number };
 
@@ -94,7 +88,7 @@ type HeaderFit = { readonly _tag: "Fits" } | { readonly _tag: "Overflows"; reado
  * then again whenever the header or a row's part resizes, as when a web font swaps in. A folded
  * header unfolds once the header is as wide as it measured it needs.
  */
-function useHeaderFit(header: RefObject<HTMLElement | null>): Fit {
+function useHeaderFit(header: RefObject<HTMLElement | null>): HeaderFit {
   const [fit, setFit] = useState<HeaderFit>({ _tag: "Fits" });
 
   useLayoutEffect(() => {
@@ -123,11 +117,11 @@ function useHeaderFit(header: RefObject<HTMLElement | null>): Fit {
     };
   }, [header]);
 
-  return fit._tag === "Fits" ? "fits" : "overflows";
+  return fit;
 }
 
 /** The logo artwork the config names, each one level inside the slot that sizes its SVG. */
-function SiteLogoArt({ site }: { site: Site }): ReactElement {
+function SiteLogoArt({ site, styles }: { site: Site; styles: HeaderStyles }): ReactElement {
   switch (site.logo) {
     case "elmera-group":
       // The group's teal is a light-scheme ink that sinks into a dark header, so the lockup draws
@@ -150,11 +144,11 @@ function SiteLogoArt({ site }: { site: Site }): ReactElement {
 }
 
 /** The site's logo, linking to the top of the site. */
-function SiteLogo({ site }: { site: Site }): ReactElement {
+function SiteLogo({ site, styles }: { site: Site; styles: HeaderStyles }): ReactElement {
   return (
     <a href="#top" className={styles.logo()}>
       <span className={styles.logoArt()}>
-        <SiteLogoArt site={site} />
+        <SiteLogoArt site={site} styles={styles} />
       </span>
     </a>
   );
@@ -164,11 +158,11 @@ function SiteLogo({ site }: { site: Site }): ReactElement {
 function Segments({
   header,
   place,
-  fit,
+  styles,
 }: {
   header: SiteHeaderConfig;
   place: "utility" | "bar";
-  fit: Fit;
+  styles: HeaderStyles;
 }): ReactElement | null {
   if (header.segments === undefined) {
     return null;
@@ -176,7 +170,7 @@ function Segments({
   return (
     <nav
       aria-label={header.segments.label}
-      className={place === "utility" ? styles.utilitySegments() : fitStyles[fit].segments()}>
+      className={place === "utility" ? styles.utilitySegments() : styles.segments()}>
       {header.segments.items.map((item, index) => (
         <a
           key={item.href}
@@ -191,7 +185,7 @@ function Segments({
 }
 
 /** The primary nav as a Fuse NavigationMenu: panels of described links, and plain links. */
-function SiteNav({ header }: { header: SiteHeaderConfig }): ReactElement {
+function SiteNav({ header, styles }: { header: SiteHeaderConfig; styles: HeaderStyles }): ReactElement {
   const [value, setValue] = useSideOverlay<string | null>(null);
   return (
     <NavigationMenu.Root aria-label={header.nav.label} value={value} onValueChange={setValue}>
@@ -234,11 +228,11 @@ function SiteNav({ header }: { header: SiteHeaderConfig }): ReactElement {
  * Below the window's `@5xl` width (64rem), or wherever the header overflows, search, the tabs,
  * the nav, the utility links and the actions fold into this Sheet.
  */
-function MenuSheet({ header, fit }: { header: SiteHeaderConfig; fit: Fit }): ReactElement {
+function MenuSheet({ header, styles }: { header: SiteHeaderConfig; styles: HeaderStyles }): ReactElement {
   const [open, setOpen] = useSideOverlay(false);
   return (
     <Sheet.Root open={open} onOpenChange={setOpen}>
-      <Sheet.Trigger render={<Button variant="ghost" className={fitStyles[fit].menuTrigger()} />}>
+      <Sheet.Trigger render={<Button variant="ghost" className={styles.menuTrigger()} />}>
         <List />
         {header.menu}
       </Sheet.Trigger>
@@ -322,13 +316,13 @@ export function SiteHeader({ site }: { site: Site }): ReactElement {
   const utilityRow = header.utility !== undefined;
   const element = useRef<HTMLElement>(null);
   const fit = useHeaderFit(element);
-  const fitted = fitStyles[fit];
+  const styles = siteHeader({ fit: fit._tag });
   return (
     <header ref={element} className={styles.header()}>
       {utilityRow ? (
-        <div className={fitted.utility()}>
+        <div className={styles.utility()}>
           <div data-header-row className={styles.utilityInner()}>
-            <Segments header={header} place="utility" fit={fit} />
+            <Segments header={header} place="utility" styles={styles} />
             <div className={styles.utilityEnd()}>
               {header.utility.map((link) => (
                 <a key={link.href} href={link.href} className={styles.utilityLink()}>
@@ -346,33 +340,33 @@ export function SiteHeader({ site }: { site: Site }): ReactElement {
         </div>
       ) : null}
       <div data-header-row className={styles.bar()}>
-        <SiteLogo site={site} />
-        {utilityRow ? null : <Segments header={header} place="bar" fit={fit} />}
+        <SiteLogo site={site} styles={styles} />
+        {utilityRow ? null : <Segments header={header} place="bar" styles={styles} />}
         {header.layout === "single" ? (
-          <div className={fitted.navSingle()}>
-            <SiteNav header={header} />
+          <div className={styles.navSingle()}>
+            <SiteNav header={header} styles={styles} />
           </div>
         ) : null}
         <div className={styles.end()}>
           {header.search === undefined ? null : (
-            <Button variant="ghost" className={fitted.wide()} render={<a href="#sok" />} nativeButton={false}>
+            <Button variant="ghost" className={styles.wide()} render={<a href="#sok" />} nativeButton={false}>
               <MagnifyingGlass />
               {header.search}
             </Button>
           )}
-          <SiteButton link={header.cta} variant="outline" className={fitted.wide()} />
+          <SiteButton link={header.cta} variant="outline" className={styles.wide()} />
           {header.signIn === undefined || utilityRow ? null : (
-            <SiteButton link={header.signIn} className={fitted.wide()}>
+            <SiteButton link={header.signIn} className={styles.wide()}>
               <User />
             </SiteButton>
           )}
-          <MenuSheet header={header} fit={fit} />
+          <MenuSheet header={header} styles={styles} />
         </div>
       </div>
       {header.layout === "stacked" ? (
-        <div className={fitted.navRow()}>
+        <div className={styles.navRow()}>
           <div data-header-row className={styles.navRowInner()}>
-            <SiteNav header={header} />
+            <SiteNav header={header} styles={styles} />
           </div>
         </div>
       ) : null}

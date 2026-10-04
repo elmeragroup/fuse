@@ -103,7 +103,7 @@ export function initialState(): DashboardState {
  * @param view - A list view.
  * @returns The orders it holds.
  */
-export function ordersIn(orders: readonly Order[], view: View): readonly Order[] {
+function ordersIn(orders: readonly Order[], view: View): readonly Order[] {
   const rule: ViewRule = LIST_VIEWS[view];
   return orders.filter(
     (order) => (rule.audience === "shared" || order.seller === SIGNED_IN.id) && rule.holds(order)
@@ -258,8 +258,13 @@ export function reduce(state: DashboardState, action: DashboardAction): Dashboar
 
 function transition(state: DashboardState, action: DashboardAction): DashboardState {
   switch (action._tag) {
-    case "Select":
-      return update({ ...state, selected: action.id }, [action.id], (order) => ({ ...order, unread: false }));
+    case "Select": {
+      const selected = { ...state, selected: action.id };
+      // A read order changes nothing, so the orders keep their identity and memos on them hold.
+      return state.orders.some((order) => order.id === action.id && order.unread)
+        ? update(selected, [action.id], (order) => ({ ...order, unread: false }))
+        : selected;
+    }
     case "Move": {
       const rows = visibleOrders(state);
       const index = rows.findIndex((order) => order.id === state.selected);

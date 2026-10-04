@@ -2,7 +2,14 @@ import type { Locator, Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
 import { DESKTOP_VIEWPORT } from "./demo-page";
-import { PHONE_VIEWPORT, dashboard, focusedCustomer, row, DASHBOARD_FIRST } from "./landing-dashboard";
+import {
+  PHONE_VIEWPORT,
+  dashboard,
+  focusedCustomer,
+  row,
+  searchTable,
+  DASHBOARD_FIRST,
+} from "./landing-dashboard";
 import { launchLandingSuite } from "./landing-page";
 
 const { openLanding } = launchLandingSuite({ search: DASHBOARD_FIRST });
@@ -83,6 +90,22 @@ describe("landing Dashboard command palette", () => {
     expect(
       await app.getByRole("button", { name: "Order search", exact: true }).getAttribute("aria-current")
     ).toBe("page");
+    // Henrik Aasen's order is older than the ten newest, so the table turned to the page holding it.
+    const henrik = searchTable(app)
+      .getByRole("row")
+      .filter({ has: page.getByRole("checkbox", { name: "Select Henrik Aasen" }) });
+    await expect.poll(async () => henrik.isVisible()).toBe(true);
+
+    // The reveal is served: a round trip through My orders reopens Order search on page one, which
+    // holds the ten newest orders and not Henrik Aasen's.
+    await app.getByRole("button", { name: /^My orders/u }).click();
+    await expect.poll(async () => searchTable(app).count()).toBe(0);
+    await app.getByRole("button", { name: "Order search", exact: true }).click();
+    await searchTable(app).waitFor();
+    await expect.poll(async () => searchTable(app).getAttribute("aria-busy")).toBeNull();
+    // A header row and the page's ten order rows.
+    expect(await searchTable(app).getByRole("row").count()).toBe(11);
+    expect(await henrik.count()).toBe(0);
     await page.context().close();
   });
 

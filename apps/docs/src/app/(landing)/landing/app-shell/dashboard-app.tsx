@@ -1,16 +1,7 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useReducer,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
-import type { ReactElement, RefObject } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "react";
+import type { Dispatch, ReactElement, RefObject, SetStateAction } from "react";
 
 import { tv } from "tailwind-variants";
 
@@ -20,10 +11,12 @@ import { Toast } from "@elmeragroup/fuse/toast";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
 import { useLandingTheme } from "../landing-theme";
+import { isTypingTarget } from "../typing-target";
+import { useMediaQuery } from "../use-media-query";
 import { useSideOverlay, useSideShown } from "../window-side";
 import { CommandPalette } from "./command-palette";
 import { DashboardContext } from "./dashboard-context";
-import type { DashboardApi, Navigation, Notice } from "./dashboard-context";
+import type { DashboardApi, Navigation, Notice, Reveal } from "./dashboard-context";
 import { DashboardMain } from "./dashboard-main";
 import { DEMO_NOW } from "./dashboard-orders";
 import type { OrderId } from "./dashboard-orders";
@@ -50,30 +43,8 @@ const FETCH_MS = 420;
 /** The window's own breakpoint for a detail pane beside the list. */
 const SPLIT_QUERY = "(width >= 80rem)";
 
-function subscribeSplit(onChange: () => void): () => void {
-  const query = window.matchMedia(SPLIT_QUERY);
-  query.addEventListener("change", onChange);
-  return () => {
-    query.removeEventListener("change", onChange);
-  };
-}
-
-function useSplitView(): boolean {
-  return useSyncExternalStore(
-    subscribeSplit,
-    () => window.matchMedia(SPLIT_QUERY).matches,
-    () => true
-  );
-}
-
-/** Keys typed into a field or an open overlay belong to it, not to the window's shortcuts. */
-function ownsKeys(target: EventTarget): boolean {
-  return (
-    target instanceof HTMLElement &&
-    (target.isContentEditable ||
-      target.closest("input, textarea, select, [role='dialog'], [role='menu'], [role='listbox']") !== null)
-  );
-}
+/** Open overlays keep their keys too, as fields do, out of the window's shortcuts. */
+const OVERLAYS = "[role='dialog'], [role='menu'], [role='listbox']";
 
 /** Moves focus one row along the list, from the focused row or else the selected one. */
 function moveRowFocus(scope: HTMLElement, by: 1 | -1): void {
@@ -88,7 +59,7 @@ function moveRowFocus(scope: HTMLElement, by: 1 | -1): void {
 
 type ShellProps = {
   scope: RefObject<HTMLDivElement | null>;
-  setOpen: (update: (open: boolean) => boolean) => void;
+  setOpen: Dispatch<SetStateAction<boolean>>;
 };
 
 /**
@@ -99,19 +70,7 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
   const [state, dispatch] = useReducer(reduce, undefined, initialState);
   const [loading, setLoading] = useState(false);
   const [sheetOpen, setSheetOpen] = useSideOverlay(false);
-  const [paletteOpen, setPaletteOpenState] = useSideOverlay(false);
-  // `opening` counts transitions to open. The palette keys its search by it, because the popup
-  // stays mounted through its exit animation and a quick reopen would otherwise keep the search.
-  const [paletteOpening, setPaletteOpening] = useState(0);
-  const setPaletteOpen = useCallback(
-    (open: boolean) => {
-      if (open && !paletteOpen) {
-        setPaletteOpening((count) => count + 1);
-      }
-      setPaletteOpenState(open);
-    },
-    [paletteOpen, setPaletteOpenState]
-  );
+  const [paletteOpen, setPaletteOpen] = useSideOverlay(false);
   const [newOrderOpen, setNewOrderOpen] = useSideOverlay(false);
   const [mountedAt] = useState(() => Date.now());
   const fetchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -120,7 +79,7 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
   const toasts = Toast.useToastManager();
   const { isMobile, setOpenMobile } = useSidebar();
   // Only a queue sits beside its detail; Order search's table keeps the width at every size.
-  const wide = useSplitView();
+  const wide = useMediaQuery(SPLIT_QUERY, true);
   const splitView = wide && isQueue(state.view);
 
   useEffect(() => () => clearTimeout(fetchTimer.current), []);
@@ -151,26 +110,27 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
     }, FETCH_MS);
   }, [setOpenMobile]);
 
+  // The pending reveal. The row it asks for takes `revealed` as its ref, which scrolls the row
+  // into view once it has rendered and retires the request: at once when the list already shows
+  // the order, or after the fetch when the reveal opened Order search, whose table turns to the
+  // row's page first. Any other navigation cancels it, so a view that mounts later never replays it.
+  const [revealing, setRevealing] = useState<Reveal | undefined>(undefined);
+  const revealed = useCallback((row: HTMLElement | null) => {
+    if (row === null) {
+      return;
+    }
+    row.scrollIntoView({ block: "nearest" });
+    setRevealing(undefined);
+  }, []);
+
   const navigate = useCallback(
     (action: Navigation) => {
+      setRevealing(undefined);
       dispatch(action);
       fetchList();
     },
     [fetchList]
   );
-
-  // The order a reveal asked for, scrolled to once its row has rendered: at once when the list
-  // already shows it, or after the fetch when the reveal opened Order search.
-  const revealing = useRef<OrderId | undefined>(undefined);
-  const [revealCount, setRevealCount] = useState(0);
-  useEffect(() => {
-    const id = revealing.current;
-    if (loading || id === undefined) {
-      return;
-    }
-    revealing.current = undefined;
-    scope.current?.querySelector(`[data-order-id="${String(id)}"]`)?.scrollIntoView({ block: "nearest" });
-  }, [loading, revealCount, scope]);
 
   const notify = useCallback(
     (notice: Notice) => {
@@ -191,6 +151,11 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
     invoker.current = active instanceof HTMLElement ? active : null;
   }, []);
 
+  const openPalette = useCallback(() => {
+    remember();
+    setPaletteOpen(true);
+  }, [remember, setPaletteOpen]);
+
   const api = useMemo(
     (): DashboardApi => ({
       state,
@@ -205,15 +170,13 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
         if (!shown) {
           fetchList();
         }
-        revealing.current = id;
-        setRevealCount((count) => count + 1);
+        setRevealing({ id });
         // A reveal the current list cannot show lands in Order search, which keeps no split.
         setSheetOpen(!(wide && isQueue(shown ? state.view : "order-search")));
       },
-      openPalette: () => {
-        remember();
-        setPaletteOpen(true);
-      },
+      revealing,
+      revealed,
+      openPalette,
       openNewOrder: () => {
         setNewOrderOpen(true);
       },
@@ -225,13 +188,14 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
       navigate,
       fetchList,
       loading,
+      revealing,
+      revealed,
       mountedAt,
       notify,
       toggleSidebar,
       wide,
       splitView,
-      remember,
-      setPaletteOpen,
+      openPalette,
       setSheetOpen,
       setNewOrderOpen,
     ]
@@ -270,13 +234,14 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
       }
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
-        if (!paletteOpen) {
-          remember();
+        if (paletteOpen) {
+          setPaletteOpen(false);
+        } else {
+          openPalette();
         }
-        setPaletteOpen(!paletteOpen);
         return;
       }
-      if (event.metaKey || event.ctrlKey || event.target === null || ownsKeys(event.target)) {
+      if (event.metaKey || event.ctrlKey || isTypingTarget(event.target, OVERLAYS)) {
         return;
       }
       const row =
@@ -304,8 +269,7 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
           return;
         case "/":
           event.preventDefault();
-          remember();
-          setPaletteOpen(true);
+          openPalette();
           return;
         case "Escape":
           dispatch({ _tag: "ClearChecks" });
@@ -316,7 +280,7 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
     return () => {
       element.removeEventListener("keydown", onKey);
     };
-  }, [scope, paletteOpen, setPaletteOpen, remember, setNewOrderOpen]);
+  }, [scope, paletteOpen, setPaletteOpen, openPalette, setNewOrderOpen]);
 
   return (
     <DashboardContext value={api}>
@@ -324,7 +288,6 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
       <DashboardMain sheetOpen={sheetOpen && !splitView} onSheetOpenChange={setSheetOpen} />
       <CommandPalette
         open={paletteOpen}
-        opening={paletteOpening}
         onOpenChange={setPaletteOpen}
         finalFocus={invoker}
         popup={palettePopup}
@@ -344,16 +307,13 @@ export function DashboardApp(): ReactElement {
   // The rail's open state lives here, in memory, never in the host's sidebar cookie.
   const [open, setOpenState] = useState(true);
   const scope = useRef<HTMLDivElement>(null);
-  const setOpen = useCallback((update: (open: boolean) => boolean) => {
-    setOpenState(update);
-  }, []);
 
   return (
     <ThemeScope ref={scope} theme={{ ...theme, variant: "internal" }} className={styles.scope()}>
       <Tooltip.Provider>
         <Toast.Provider>
           <Sidebar.Provider open={open} onOpenChange={setOpenState} className={styles.provider()}>
-            <DashboardShell scope={scope} setOpen={setOpen} />
+            <DashboardShell scope={scope} setOpen={setOpenState} />
           </Sidebar.Provider>
           <Toast.Viewport aria-label="Dashboard notifications" />
         </Toast.Provider>

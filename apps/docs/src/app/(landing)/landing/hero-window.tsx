@@ -62,7 +62,7 @@ type Side = ThemeVariant;
  * The site mounts the first time External shows, so its photos load only once a visitor asks.
  */
 export function HeroWindow(): ReactElement {
-  const { theme, changeBrand, changeTheme } = useLandingTheme();
+  const { theme, changeTheme } = useLandingTheme();
   const side = theme.variant;
   const [siteMounted, setSiteMounted] = useState(side === "external");
   if (side === "external" && !siteMounted) {
@@ -80,7 +80,7 @@ export function HeroWindow(): ReactElement {
   const pickFromCard = (brand: BrandCode) => {
     // The current brand's card keeps its site, and so its focus.
     cardPick.current = brand !== theme.brand;
-    changeBrand(brand);
+    changeTheme({ brand });
   };
   useEffect(() => {
     if (cardPick.current) {
@@ -147,7 +147,7 @@ export function HeroWindow(): ReactElement {
                 ref={siteSide}
                 role="region"
                 aria-label={`${site.name} website`}
-                lang={site.lang}
+                lang={site.locale}
                 data-shown={external}
                 inert={!external}
                 className={styles.side({ side: "external" })}>

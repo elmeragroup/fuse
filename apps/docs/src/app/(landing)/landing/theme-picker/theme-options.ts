@@ -1,12 +1,12 @@
-import { BRANDS, LEGAL_THEMES, THEME_SEGMENTS } from "@elmeragroup/fuse/theme";
+import { BRANDS } from "@elmeragroup/fuse/theme";
 import type { BrandCode, ColorScheme, ThemeInput, ThemeSegment } from "@elmeragroup/fuse/theme";
 
 import { COLOR_SCHEME_LABELS, SEGMENT_LABELS, VARIANT_LABELS } from "../../../../lib/theme";
 
 /**
  * The option data the theme picker renders: which combinations are legal, and how a theme reads
- * aloud and in a summary. Legality comes from Fuse's `LEGAL_THEMES`, so a
- * brand Fuse pins to one segment shows here without a list of its own.
+ * aloud and in a summary. Legality comes from the segments Fuse's `BRANDS` serves, so a brand
+ * Fuse pins to one segment shows here without a list of its own.
  */
 
 /** The audience a segment serves, for the reason a pinned brand gives. */
@@ -14,11 +14,6 @@ const SEGMENT_AUDIENCE = {
   private: "households",
   company: "businesses",
 } as const satisfies Record<ThemeSegment, string>;
-
-/** True when Fuse ships a theme for `brand` in `segment`. */
-function isLegal(brand: BrandCode, segment: ThemeSegment): boolean {
-  return LEGAL_THEMES.some((theme) => theme.brand === brand && theme.segment === segment);
-}
 
 /**
  * Why `brand` cannot take `segment`, or `undefined` when it can: "Fjordkraft Företag serves
@@ -29,10 +24,10 @@ function isLegal(brand: BrandCode, segment: ThemeSegment): boolean {
  * @returns The reason the segment is blocked, or `undefined` when the pair is legal.
  */
 export function segmentBlock(brand: BrandCode, segment: ThemeSegment): string | undefined {
-  if (isLegal(brand, segment)) {
+  const served: readonly ThemeSegment[] = BRANDS[brand].segments;
+  if (served.includes(segment)) {
     return undefined;
   }
-  const served = THEME_SEGMENTS.filter((candidate) => isLegal(brand, candidate));
   const audience = served.map((candidate) => SEGMENT_AUDIENCE[candidate]).join(" and ");
   return `${BRANDS[brand].displayName} serves ${audience} only`;
 }

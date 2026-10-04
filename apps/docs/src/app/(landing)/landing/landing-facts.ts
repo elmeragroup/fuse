@@ -76,13 +76,3 @@ export const QUICK_START = requireStaticPage("/quick-start");
 
 /** The page every "Browse components" action opens: the first component, Button. */
 export const BROWSE_COMPONENTS = landingComponent("button");
-
-/**
- * Writes one density's control metrics onto `element` as custom properties, so that subtree
- * shows the density while the document keeps its own.
- */
-export function applyDensity(element: HTMLElement, density: Density): void {
-  for (const metric of LANDING_FACTS.metrics) {
-    element.style.setProperty(`--${metric.name}`, `${String(metric.px[density])}px`);
-  }
-}

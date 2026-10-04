@@ -93,15 +93,16 @@ const siteHero = tv({
         media: "aspect-square rounded-lg",
       },
     },
+    /** An overlay tile's colours, each a contract pair of the theme. */
+    tone: {
+      secondary: {
+        tile: "landing-dark:bg-primary-soft/90 landing-dark:text-primary-soft-foreground landing-dark:hover:bg-primary-soft bg-secondary/90 text-secondary-foreground hover:bg-secondary",
+      },
+      primary: { tile: "bg-primary/90 text-primary-foreground hover:bg-primary" },
+      soft: { tile: "bg-primary-soft/90 text-primary-soft-foreground hover:bg-primary-soft" },
+    },
   },
 });
-
-/** One overlay tile's colours, in reading order, each a contract pair of the theme. */
-const TILE_TONES = [
-  "landing-dark:bg-primary-soft/90 landing-dark:text-primary-soft-foreground landing-dark:hover:bg-primary-soft bg-secondary/90 text-secondary-foreground hover:bg-secondary",
-  "bg-primary/90 text-primary-foreground hover:bg-primary",
-  "bg-primary-soft/90 text-primary-soft-foreground hover:bg-primary-soft",
-] as const;
 
 /** The site's hero: an `h1`, its supporting copy and actions, and the layout's photo or tiles. */
 export function SiteHero({ hero }: { hero: SiteHeroConfig }): ReactElement {
@@ -177,9 +178,9 @@ export function SiteHero({ hero }: { hero: SiteHeroConfig }): ReactElement {
           </div>
           <div className={styles.inner()}>
             <ul className={styles.tiles()}>
-              {hero.tiles.map((tile, index) => (
+              {hero.tiles.map((tile) => (
                 <li key={tile.href}>
-                  <a href={tile.href} className={styles.tile({ class: TILE_TONES[index] })}>
+                  <a href={tile.href} className={styles.tile({ tone: tile.tone })}>
                     <span className={styles.tileTitle()}>{tile.title}</span>
                     <span className={styles.tileText()}>{tile.text}</span>
                     <ArrowRight aria-hidden className={styles.tileArrow()} />

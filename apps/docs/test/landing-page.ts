@@ -84,6 +84,23 @@ export function launchLandingSuite({
   };
 }
 
+/** Every unhandled error and rejection the page raises, collected from now on. */
+export function collectPageErrors(page: Page): string[] {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  return errors;
+}
+
+/** Waits two animation frames, so work a layout effect or a late focus return queued has landed. */
+export async function settleFrames(page: Page): Promise<void> {
+  await page.evaluate(
+    async () =>
+      new Promise((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(resolve));
+      })
+  );
+}
+
 /** What the WCAG floor probe found inside one scenario's root. */
 export type TargetAudit = { readonly targets: number; readonly misses: readonly string[] };
 

@@ -5,8 +5,8 @@ import type { RefObject } from "react";
 
 import * as Hex from "@elmeragroup/color/hex";
 import * as Wcag from "@elmeragroup/color/wcag";
-import { coerceTheme, themeAttributes, useColorScheme } from "@elmeragroup/fuse/theme";
-import type { BrandCode, ThemeInput } from "@elmeragroup/fuse/theme";
+import { useColorScheme } from "@elmeragroup/fuse/theme";
+import type { BrandCode } from "@elmeragroup/fuse/theme";
 
 import { computedSrgb, useLandingTheme } from "./landing-theme";
 
@@ -52,30 +52,11 @@ function toSwatch(value: string): Swatch | undefined {
 }
 
 /**
- * Reads a brand's roles in the active scheme from a hidden probe that carries the brand's
- * theme attributes, so each tile can show a brand other than the page's own. Dark mode runs
- * dark to light, so the mark glows; light mode runs light to dark, so it inks.
+ * Reads the page brand's roles in the active scheme off `host`, which wears the page's theme.
+ * Dark mode runs dark to light, so the mark glows; light mode runs light to dark, so it inks.
  */
-function readRamp(
-  host: HTMLElement,
-  theme: ThemeInput,
-  brand: BrandCode,
-  scheme: "light" | "dark"
-): string[] {
-  const coerced = coerceTheme({ ...theme, brand });
-  if (coerced === null) {
-    return [];
-  }
-  const probe = document.createElement("div");
-  // Not `hidden`: a display:none element reports colours unresolved, in the source notation.
-  probe.style.position = "absolute";
-  probe.style.visibility = "hidden";
-  for (const [name, value] of Object.entries(themeAttributes(coerced))) {
-    probe.setAttribute(name, value);
-  }
-  host.append(probe);
-  const values = [...HEAT_ROLES, `brand-${brand}`].map((token) => resolveColor(probe, token));
-  probe.remove();
+function readRamp(host: HTMLElement, brand: BrandCode, scheme: "light" | "dark"): string[] {
+  const values = [...HEAT_ROLES, `brand-${brand}`].map((token) => resolveColor(host, token));
 
   const unique = new Map<string, Swatch>();
   for (const value of values) {
@@ -89,10 +70,10 @@ function readRamp(
 }
 
 /**
- * The heat ramp for `brand` and the hex of the background under `host`, re-read whenever the page
- * re-themes or switches scheme. Undefined until the first client read.
+ * The heat ramp for the page's brand and the hex of the background under `host`, re-read
+ * whenever the page re-themes or switches scheme. Undefined until the first client read.
  */
-export function useHeat(host: RefObject<HTMLElement | null>, brand: BrandCode): Heat | undefined {
+export function useHeat(host: RefObject<HTMLElement | null>): Heat | undefined {
   const { theme } = useLandingTheme();
   const { resolvedColorScheme } = useColorScheme();
   const [heat, setHeat] = useState<Heat>();
@@ -108,10 +89,10 @@ export function useHeat(host: RefObject<HTMLElement | null>, brand: BrandCode): 
       }
       const scheme = resolvedColorScheme === "dark" ? "dark" : "light";
       const back = toSwatch(resolveColor(element, "background"));
-      setHeat({ colors: readRamp(element, theme, brand, scheme), back: back?.hex ?? "#000000" });
+      setHeat({ colors: readRamp(element, theme.brand, scheme), back: back?.hex ?? "#000000" });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [host, brand, theme, resolvedColorScheme]);
+  }, [host, theme, resolvedColorScheme]);
 
   return heat;
 }

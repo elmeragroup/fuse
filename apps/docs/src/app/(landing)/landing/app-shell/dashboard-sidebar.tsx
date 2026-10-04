@@ -52,7 +52,7 @@ const styles = dashboardSidebar();
  * as the brand picker does.
  */
 function WorkspaceSwitcher(): ReactElement {
-  const { theme, changeBrand } = useLandingTheme();
+  const { theme, changeTheme } = useLandingTheme();
   const [open, setOpen] = useSideOverlay(false);
 
   return (
@@ -78,7 +78,7 @@ function WorkspaceSwitcher(): ReactElement {
               onValueChange={(value) => {
                 const brand = PICKER_BRANDS.find((code) => code === value);
                 if (brand !== undefined) {
-                  changeBrand(brand);
+                  changeTheme({ brand });
                 }
               }}>
               <DropdownMenu.Label>Workspaces</DropdownMenu.Label>

@@ -78,8 +78,9 @@ export type SiteChecklist = {
 /** The hero's two calls to action: the primary one and an optional quieter one. */
 export type SiteActions = readonly [SiteLink] | readonly [SiteLink, SiteLink];
 
-/** A tile laid over the overlay hero's photo. */
+/** A tile laid over the overlay hero's photo, filled with one of the theme's contract pairs. */
 export type SiteHeroTile = {
+  readonly tone: "secondary" | "primary" | "soft";
   readonly title: string;
   readonly text: string;
   readonly href: `#${string}`;
@@ -336,7 +337,6 @@ export type Site = {
   /** The site's owner, which names the window's region: "Fjordkraft website". */
   readonly name: string;
   readonly domain: string;
-  readonly lang: "en" | "nb" | "sv";
   readonly locale: SupportedLocale;
   /**
    * `elmera-group` is the group's lockup and `brand` the brand's own logo from Fuse.

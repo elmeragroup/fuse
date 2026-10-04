@@ -12,7 +12,6 @@ import { Toast } from "@elmeragroup/fuse/toast";
 import { INSTALL_COMMAND } from "../../../lib/docs-model";
 import { BrandHeatmap } from "./brand-heatmap";
 import { BROWSE_COMPONENTS, QUICK_START } from "./landing-facts";
-import { useLandingTheme } from "./landing-theme";
 
 const COPIED_MS = 1600;
 
@@ -71,8 +70,6 @@ function InstallCommand(): ReactElement {
 }
 
 export function LandingInstall(): ReactElement {
-  const { theme } = useLandingTheme();
-
   return (
     <section className={styles.section()} aria-labelledby="landing-install">
       <div className={styles.copy()}>
@@ -93,7 +90,7 @@ export function LandingInstall(): ReactElement {
         </div>
       </div>
       <div className={styles.stage()}>
-        <BrandHeatmap brand={theme.brand} />
+        <BrandHeatmap />
         <div aria-hidden className={styles.fade()} />
       </div>
     </section>

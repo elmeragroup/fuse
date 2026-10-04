@@ -15,6 +15,7 @@ import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
 import { Kbd } from "../app-shell/kbd";
 import { BrandMark } from "../brand-mark";
+import { isTypingTarget } from "../typing-target";
 import { SchemeGlyph, SchemeIcon } from "./scheme-icon";
 import { useIsPhone, useThemePicker } from "./use-theme-picker";
 import type { AxisOption } from "./use-theme-picker";
@@ -41,7 +42,7 @@ const themeChipPicker = tv({
     // `items-stretch` beats the group's `items-center`, so a two-line name never shortens its
     // neighbours.
     tiles: "grid w-full grid-cols-3 items-stretch gap-2",
-    tile: "landing-press text-xs h-auto min-h-16 flex-col gap-2 px-1 py-3 whitespace-normal data-pressed:border-foreground data-pressed:bg-foreground/12",
+    tile: "text-xs h-auto min-h-16 flex-col gap-2 px-1 py-3 whitespace-normal data-pressed:border-foreground data-pressed:bg-foreground/12",
     tileMark: "h-5",
   },
 });
@@ -54,7 +55,7 @@ const axisToggle = tv({
     group: "w-full",
     // Fuse's outline toggle marks the pressed option with `muted`, which sits one step off a
     // dark popover; the picker's options carry a foreground tint that reads in either scheme.
-    item: "landing-press flex-1 gap-1.5 aria-disabled:bg-transparent data-pressed:bg-foreground/12 data-pressed:text-foreground",
+    item: "flex-1 gap-1.5 aria-disabled:bg-transparent data-pressed:bg-foreground/12 data-pressed:text-foreground",
   },
 });
 
@@ -269,14 +270,6 @@ function isShortcut(event: KeyboardEvent): boolean {
   );
 }
 
-/** Keys typed into a field belong to it, so ⌘J stays with the field. */
-function isEditable(target: EventTarget | null): boolean {
-  return (
-    target instanceof HTMLElement &&
-    (target.isContentEditable || target.closest("input, textarea, select") !== null)
-  );
-}
-
 function subscribeNever(): () => void {
   return () => undefined;
 }
@@ -341,7 +334,7 @@ export function ThemeChipPicker(): ReactElement {
   });
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (isShortcut(event) && !event.repeat && !isEditable(event.target)) {
+      if (isShortcut(event) && !event.repeat && !isTypingTarget(event.target)) {
         // Ctrl+J opens the browser's downloads on Windows and Linux.
         event.preventDefault();
         onShortcut();

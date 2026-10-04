@@ -1,15 +1,14 @@
 "use client";
 
-import { Suspense, useRef, useSyncExternalStore } from "react";
+import { Suspense, useRef } from "react";
 import type { ReactElement } from "react";
 
 import dynamic from "next/dynamic";
 
-import type { BrandCode } from "@elmeragroup/fuse/theme";
-
 import { useHeat } from "./brand-heat";
 import { DecorationBoundary } from "./decoration-boundary";
-import { REDUCED_MOTION } from "./landing-theme";
+import { REDUCED_MOTION, useLandingTheme } from "./landing-theme";
+import { useMediaQuery } from "./use-media-query";
 
 // The shader is decoration that only draws on the client, so its code stays out of the server
 // render and the first-load bundle.
@@ -32,30 +31,16 @@ const HEATMAP = {
 
 const SPEED = 0.5;
 
-function subscribeReducedMotion(onChange: () => void): () => void {
-  const query = window.matchMedia(REDUCED_MOTION);
-  query.addEventListener("change", onChange);
-  return () => query.removeEventListener("change", onChange);
-}
-
-/** Reduced motion holds the shader still on its first frame; the server renders it still too. */
-function useReducedMotion(): boolean {
-  return useSyncExternalStore(
-    subscribeReducedMotion,
-    () => window.matchMedia(REDUCED_MOTION).matches,
-    () => true
-  );
-}
-
-export type BrandHeatmapProps = {
-  brand: BrandCode;
-};
-
-/** The closing section's shader; the page background under it becomes its back colour. */
-export function BrandHeatmap({ brand }: BrandHeatmapProps): ReactElement {
+/**
+ * The closing section's shader in the page's brand; the page background under it becomes its
+ * back colour.
+ */
+export function BrandHeatmap(): ReactElement {
+  const { brand } = useLandingTheme().theme;
   const host = useRef<HTMLDivElement>(null);
-  const heat = useHeat(host, brand);
-  const reduced = useReducedMotion();
+  const heat = useHeat(host);
+  // Reduced motion holds the shader still on its first frame; the server renders it still too.
+  const reduced = useMediaQuery(REDUCED_MOTION, true);
 
   return (
     <div ref={host} aria-hidden className="size-full">

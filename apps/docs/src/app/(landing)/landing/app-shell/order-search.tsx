@@ -106,10 +106,11 @@ const COLUMN_LABELS: ReadonlyMap<string, string> = new Map([
  * queue rows' wiring, so the window's `j`, `k`, `x` and Enter work on the table as on a queue.
  */
 function OpenOrder({ order }: { order: Order }): ReactElement {
-  const { state, openOrder } = useDashboard();
+  const { state, openOrder, revealing, revealed } = useDashboard();
   return (
     <button
       type="button"
+      ref={revealing?.id === order.id ? revealed : undefined}
       data-row
       data-order-id={order.id}
       data-customer={order.customer}
@@ -294,7 +295,7 @@ type Paging = { readonly query: OrderQuery; readonly pagination: PaginationState
  * order's detail, as a row in the queues does.
  */
 export function OrderSearch(): ReactElement {
-  const { state, dispatch, loading, openOrder } = useDashboard();
+  const { state, dispatch, loading, openOrder, revealing } = useDashboard();
   const { orders, query, checked } = state;
   // The Columns menu and the Rows per page Select keep their open state inside Fuse's DataTable,
   // out of `useSideOverlay`'s reach, so a hidden side remounts them, which closes them and drops
@@ -344,6 +345,15 @@ export function OrderSearch(): ReactElement {
       columnVisibility: { channel: false, priceArea: false, meterPointId: false, seller: false },
     },
   });
+  // A pending reveal turns the table to the page that holds its order in the current sort. The
+  // shell retires the request once the row has rendered and scrolled into view.
+  if (revealing !== undefined && !loading) {
+    const index = table.getPrePaginatedRowModel().rows.findIndex((row) => row.original.id === revealing.id);
+    const pageIndex = Math.floor(index / pagination.pageSize);
+    if (index !== -1 && pageIndex !== pagination.pageIndex) {
+      setPaging({ query, pagination: { ...pagination, pageIndex } });
+    }
+  }
 
   return (
     <div className={styles.root()}>

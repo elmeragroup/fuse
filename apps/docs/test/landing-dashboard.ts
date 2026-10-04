@@ -59,17 +59,19 @@ export async function isInert(side: Locator): Promise<boolean> {
 
 /** Presses one side of the window's Internal/External switch. */
 export async function showSide(page: Page, side: "Internal" | "External"): Promise<void> {
-  const demo = liveDemo(page);
-  await demo.scrollIntoViewIfNeeded();
-  await demo
-    .getByRole("group", { name: "Window content" })
-    .getByRole("button", { name: side, exact: true })
-    .click();
+  await liveDemo(page).scrollIntoViewIfNeeded();
+  await sideSwitch(page).getByRole("button", { name: side, exact: true }).click();
 }
 
-/** The window's Internal/External switch. */
-export function sideSwitch(page: Page): Locator {
-  return liveDemo(page).getByRole("group", { name: "Window content" });
+/**
+ * The window's Internal/External switch. `includeHidden` reaches it while an open modal hides
+ * everything outside itself from assistive technology.
+ */
+export function sideSwitch(
+  page: Page,
+  { includeHidden = false }: { readonly includeHidden?: boolean } = {}
+): Locator {
+  return liveDemo(page).getByRole("group", { name: "Window content", includeHidden });
 }
 
 /**
@@ -78,8 +80,7 @@ export function sideSwitch(page: Page): Locator {
  */
 export async function shownSide(page: Page): Promise<"Internal" | "External" | "mismatch"> {
   const pressed = (await sideSwitch(page).getByRole("button", { pressed: true }).textContent()) ?? "";
-  // DOM audit: an inert side has no role a query could reach, so the check reads the attribute.
-  const dashboardInert = await dashboard(page).evaluate((element) => element.closest("[inert]") !== null);
+  const dashboardInert = await isInert(dashboard(page));
   if (pressed === "Internal" && !dashboardInert) {
     return "Internal";
   }
@@ -89,13 +90,22 @@ export async function shownSide(page: Page): Promise<"Internal" | "External" | "
   return "mismatch";
 }
 
-/** Picks `brand` in the landing's brand picker, the same action as any other brand control. */
-export async function pickBrand(page: Page, brand: string): Promise<void> {
+/**
+ * Picks `brand` in the landing's brand picker, the same action as any other brand control, and
+ * waits for the document to wear it, within `timeout` when given.
+ */
+export async function pickBrand(
+  page: Page,
+  brand: string,
+  { timeout }: { readonly timeout?: number } = {}
+): Promise<void> {
   await page
     .getByRole("button")
     .filter({ hasText: `data-theme-brand="${brand}"` })
     .click();
-  await expect.poll(async () => page.locator("html").getAttribute("data-theme-brand")).toBe(brand);
+  await expect
+    .poll(async () => page.locator("html").getAttribute("data-theme-brand"), { timeout })
+    .toBe(brand);
 }
 
 /** The row button for `customer`; its accessible name starts with the order's customer. */
@@ -201,7 +211,7 @@ export const ELMERA = {
   site: "Elmera Group",
   brand: "elma",
   domain: "elmeragroup.no",
-  lang: "en",
+  lang: "en-US",
   logo: "Elmera Group",
   heading: "Preferred by more customers. Every day.",
   sections: ["The share", "Our brands", "What we do", "Work with us"],
@@ -219,7 +229,7 @@ export const FJORDKRAFT = {
   site: "Fjordkraft",
   brand: "fkas",
   domain: "fjordkraft.no",
-  lang: "nb",
+  lang: "nb-NO",
   logo: "Fjordkraft",
   heading: "Bytt strømleverandør raskt og enkelt",
   checklist: [
@@ -247,7 +257,7 @@ const TRONDELAGKRAFT = {
   site: "TrøndelagKraft",
   brand: "tkas",
   domain: "trondelagkraft.no",
-  lang: "nb",
+  lang: "nb-NO",
   logo: "TrøndelagKraft",
   heading: "Få en enkel strømavtale",
   sections: [
@@ -270,7 +280,7 @@ const GUDBRANDSDAL_ENERGI = {
   site: "Gudbrandsdal Energi",
   brand: "guen",
   domain: "ge.no",
-  lang: "nb",
+  lang: "nb-NO",
   logo: "Gudbrandsdal Energi",
   heading: "Høstkampanje på strømavtale",
   sections: ["Dette sier kundene våre", "Verv en venn"],
@@ -288,7 +298,7 @@ const TELINET = {
   site: "Telinet Energi",
   brand: "fkse",
   domain: "telinet.se",
-  lang: "sv",
+  lang: "sv-SE",
   logo: "Telinet",
   heading: "Det här är Telinet Energi",
   sections: [
@@ -311,7 +321,7 @@ const FJORDKRAFT_FORETAG = {
   site: "Fjordkraft Företag",
   brand: "fkab",
   domain: "fjordkraft.se",
-  lang: "sv",
+  lang: "sv-SE",
   logo: "Fjordkraft Företag",
   heading: "Dags att vintersäkra elen till ditt företag",
   sections: ["Våra kunder", "Varför välja Fjordkraft?", "Se elpriset i ditt område"],

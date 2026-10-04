@@ -1,5 +1,3 @@
-import { useSyncExternalStore } from "react";
-
 import { BRANDS, COLOR_SCHEMES, THEME_SEGMENTS, THEME_VARIANTS } from "@elmeragroup/fuse/theme";
 import type { BrandCode, ColorScheme, ThemeInput, ThemeSegment, ThemeVariant } from "@elmeragroup/fuse/theme";
 
@@ -7,6 +5,7 @@ import { COLOR_SCHEME_LABELS, SEGMENT_LABELS, VARIANT_LABELS } from "../../../..
 import { PICKER_BRANDS } from "../landing-facts";
 import { useLandingTheme } from "../landing-theme";
 import type { ThemeChange } from "../landing-theme";
+import { useMediaQuery } from "../use-media-query";
 import { segmentBlock, themeSummary } from "./theme-options";
 
 /** One option on one axis, with the reason it is blocked when the current brand cannot take it. */
@@ -62,23 +61,11 @@ export function useThemePicker(): ThemePicker {
 /** Below Tailwind's `sm`, where the picker opens in a bottom Sheet instead of a popover. */
 const PHONE_QUERY = "(width < 40rem)";
 
-function subscribePhone(onChange: () => void): () => void {
-  const query = window.matchMedia(PHONE_QUERY);
-  query.addEventListener("change", onChange);
-  return () => {
-    query.removeEventListener("change", onChange);
-  };
-}
-
 /**
  * True on a phone-width viewport. The server and the first client render say false, so the
  * markup hydrates as rendered; the trigger looks the same either way, and only what it opens
  * changes.
  */
 export function useIsPhone(): boolean {
-  return useSyncExternalStore(
-    subscribePhone,
-    () => window.matchMedia(PHONE_QUERY).matches,
-    () => false
-  );
+  return useMediaQuery(PHONE_QUERY, false);
 }

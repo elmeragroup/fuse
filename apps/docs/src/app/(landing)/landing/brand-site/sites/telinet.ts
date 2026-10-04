@@ -7,7 +7,6 @@ export const TELINET_SITE = {
   brand: "fkse",
   name: "Telinet Energi",
   domain: "telinet.se",
-  lang: "sv",
   locale: "sv-SE",
   headings: "center",
   logo: "wordmark",
@@ -62,16 +61,19 @@ export const TELINET_SITE = {
     title: "Det här är Telinet Energi",
     tiles: [
       {
+        tone: "secondary",
         title: "Teckna ett 100 % förnybart elavtal",
         text: "Välj ett fast eller rörligt elavtal med energi från solen, vinden och vattnet.",
         href: "#teckna",
       },
       {
+        tone: "primary",
         title: "Glöm inte elavtalet när du ska flytta",
         text: "Som befintlig Telinetkund får du flyttgåvor samtidigt som vi hjälper dig att flytta ditt elavtal.",
         href: "#flytta",
       },
       {
+        tone: "soft",
         title: "Skräddarsy din el med våra tillval",
         text: "Anpassa ditt elavtal med våra extratjänster och hitta de tillval som passar dig bäst.",
         href: "#tillval",

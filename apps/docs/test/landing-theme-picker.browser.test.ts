@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { DESKTOP_VIEWPORT, readThemeAttributes } from "./demo-page";
 import type { ThemeAttributes } from "./demo-page";
 import { brandSite, dashboard, PHONE_VIEWPORT, row, shownSide, showSide } from "./landing-dashboard";
-import { expectTargets, launchLandingSuite } from "./landing-page";
+import { expectTargets, launchLandingSuite, settleFrames } from "./landing-page";
 
 const { openLanding } = launchLandingSuite();
 
@@ -444,9 +444,7 @@ describe("landing theme picker shortcut", () => {
     await field.focus();
     await page.keyboard.press("ControlOrMeta+j");
     // Wait past a render, so a popover the shortcut opened would be in the tree.
-    await page.evaluate(
-      async () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
-    );
+    await settleFrames(page);
     expect(await pickerDialog(page).count()).toBe(0);
     expect(await isFocused(field)).toBe(true);
     await page.context().close();

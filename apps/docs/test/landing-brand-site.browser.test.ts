@@ -23,7 +23,7 @@ import {
   windowCaption,
 } from "./landing-dashboard";
 import type { SiteFacts } from "./landing-dashboard";
-import { expectTargets, launchLandingSuite } from "./landing-page";
+import { collectPageErrors, expectTargets, launchLandingSuite, settleFrames } from "./landing-page";
 import type { LandingOptions } from "./landing-page";
 
 const { openLanding } = launchLandingSuite({ search: DASHBOARD_FIRST });
@@ -248,8 +248,7 @@ describe("landing hero window, External side", () => {
     "opens every nav menu, any price select and the phone menu Sheet of $site without a page error",
     async (facts) => {
       const { page, site } = await openSite(facts, WIDE_VIEWPORT);
-      const errors: string[] = [];
-      page.on("pageerror", (error) => errors.push(error.message));
+      const errors = collectPageErrors(page);
       // A header whose copy is wider than its rows, as in a wide fallback font, folds into the
       // menu Sheet, so its menus open there instead.
       if (await site.getByRole("button", { name: facts.menuButton, exact: true }).isVisible()) {
@@ -286,8 +285,7 @@ describe("landing hero window, External side", () => {
       await page.context().close();
 
       const phone = await openSite(facts, PHONE_VIEWPORT);
-      const phoneErrors: string[] = [];
-      phone.page.on("pageerror", (error) => phoneErrors.push(error.message));
+      const phoneErrors = collectPageErrors(phone.page);
       await openMenuSheet(phone.page, phone.site, facts, phoneErrors);
       await phone.page.context().close();
     }
@@ -337,12 +335,7 @@ describe("landing hero window, External side", () => {
     async ({ facts, viewport }) => {
       const { page, site } = await openSite(facts, viewport, { prepare: narrowFont });
       // The header measures its rows in a layout effect and again on resize; let both settle.
-      await page.evaluate(
-        async () =>
-          new Promise((resolve) => {
-            requestAnimationFrame(() => requestAnimationFrame(resolve));
-          })
-      );
+      await settleFrames(page);
       expect(await site.getByRole("navigation", { name: facts.nav }).isVisible()).toBe(true);
       expect(await site.getByRole("button", { name: facts.menuButton, exact: true }).isVisible()).toBe(false);
       await page.context().close();
