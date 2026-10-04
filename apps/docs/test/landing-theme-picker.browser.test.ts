@@ -102,6 +102,16 @@ async function documentTheme(page: Page): Promise<ThemeAttributes> {
   return readThemeAttributes(page.locator("html"));
 }
 
+/**
+ * Waits until Next's router has hydrated. Until then the server's markup already wears the theme,
+ * but Next has not yet patched `history`, so a `pushState` reaches no one and hydration later
+ * starts from the pushed address. A visitor's link or address bar in that window loads afresh.
+ */
+async function routerHydrated(page: Page): Promise<void> {
+  // DOM audit: the router mounts its announcer on hydration, and it has no accessible name to query.
+  await page.locator("next-route-announcer").waitFor({ state: "attached" });
+}
+
 /** The query value the page's URL carries for `theme`, or null without one. */
 function urlTheme(page: Page): string | null {
   return new URL(page.url()).searchParams.get("theme");
@@ -239,6 +249,7 @@ describe("landing theme picker", () => {
 
     const page = await openLanding(DESKTOP_VIEWPORT, { search: `?theme=${shared.slug}` });
     await expect.poll(async () => documentTheme(page)).toEqual(shared.attributes);
+    await routerHydrated(page);
     // A second value that leaves the first unchanged, written through Next's patched history.
     await page.evaluate((search) => {
       window.history.pushState(null, "", `/${search}`);

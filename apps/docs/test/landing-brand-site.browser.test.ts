@@ -24,6 +24,7 @@ import {
 } from "./landing-dashboard";
 import type { SiteFacts } from "./landing-dashboard";
 import { expectTargets, launchLandingSuite } from "./landing-page";
+import type { LandingOptions } from "./landing-page";
 
 const { openLanding } = launchLandingSuite({ search: DASHBOARD_FIRST });
 
@@ -31,7 +32,7 @@ const { openLanding } = launchLandingSuite({ search: DASHBOARD_FIRST });
 async function openSite(
   facts: SiteFacts,
   viewport: { readonly width: number; readonly height: number },
-  options?: { readonly colorScheme: "light" | "dark" }
+  options?: LandingOptions
 ): Promise<{ page: Page; site: Locator }> {
   const page = await openLanding(viewport, options);
   if (facts.brand !== "elma") {
@@ -57,6 +58,22 @@ async function outsideScroller(scroller: Locator, selector: string): Promise<str
       .filter(({ rect }) => rect.width > 0 && (rect.left < box.left - 1 || rect.right > box.right + 1))
       .map(({ candidate }) => candidate.textContent.trim().slice(0, 40) || candidate.outerHTML.slice(0, 60));
   }, selector);
+}
+
+/**
+ * Sets the sites' text in one wide sans before the page parses. The theme names Roboto, which the
+ * docs app does not load, so each platform draws its own fallback: macOS's system UI font, or
+ * DejaVu Sans on a Linux runner, which sets the same copy wider. Verdana shares DejaVu's metrics
+ * (both descend from Bitstream Vera), so every platform measures the header at the widest of them.
+ */
+async function wideFallbackFont(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    document.addEventListener("DOMContentLoaded", () => {
+      const style = document.createElement("style");
+      style.textContent = `[data-site-scroller], [data-site-scroller] * { font-family: Verdana, "DejaVu Sans", sans-serif }`;
+      document.head.append(style);
+    });
+  });
 }
 
 /** Below this WCAG relative luminance a surface reads as dark: mid grey sits at 0.18. */
@@ -268,9 +285,9 @@ describe("landing hero window, External side", () => {
       [1024, 1280, 1440].map((width) => ({ facts, viewport: { width, height: 900 } }))
     )
   )(
-    "fits every header control of $facts.site inside the window at $viewport.width px",
+    "fits every header control of $facts.site inside the window at $viewport.width px in a wide fallback font",
     async ({ facts, viewport }) => {
-      const { page, site } = await openSite(facts, viewport);
+      const { page, site } = await openSite(facts, viewport, { prepare: wideFallbackFont });
       // DOM audit: the header sits inside the site's region, where it is not a banner landmark.
       const header = site.locator("header");
       const scroller = site.locator("[data-site-scroller]");
