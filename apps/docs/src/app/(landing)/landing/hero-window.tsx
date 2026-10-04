@@ -3,18 +3,19 @@
 import { useEffect, useId, useRef, useState } from "react";
 import type { ReactElement } from "react";
 
-import { flushSync } from "react-dom";
 import { tv } from "tailwind-variants";
 
 import { Lock } from "@elmeragroup/fuse/icons";
-import { ThemeScope } from "@elmeragroup/fuse/theme";
-import type { BrandCode } from "@elmeragroup/fuse/theme";
+import { THEME_VARIANTS, ThemeScope } from "@elmeragroup/fuse/theme";
+import type { BrandCode, ThemeVariant } from "@elmeragroup/fuse/theme";
 
+import { VARIANT_LABELS } from "../../../lib/theme";
 import { DashboardApp } from "./app-shell/dashboard-app";
 import { BrandSite } from "./brand-site/brand-site";
 import { SITES } from "./brand-site/sites";
 import { useLandingTheme } from "./landing-theme";
 import { SingleToggle } from "./product-parts";
+import { WindowSide } from "./window-side";
 
 const heroWindow = tv({
   slots: {
@@ -49,45 +50,26 @@ const heroWindow = tv({
 
 const styles = heroWindow();
 
-const SIDES = ["internal", "external"] as const;
-type Side = (typeof SIDES)[number];
-const SIDE_LABELS = { internal: "Internal", external: "External" } as const satisfies Record<Side, string>;
-
-/**
- * Closes the dialogs open on `side`, topmost first, before the side goes inert. A modal's
- * backdrop stops at the window's edge, so the switch stays pressable while one is open, and a
- * modal left open on the hidden side keeps its scroll lock and hides the shown side from
- * assistive technology. Escape is the one close every dialog in the window answers, and each
- * press commits before the next, so a nested dialog's parent sees itself as the topmost one.
- * The sides keep their state: only the dialogs close.
- */
-function closeDialogs(side: HTMLElement | null): void {
-  // Each side's dialogs portal into its theme scope, so the side holds them. An alert dialog
-  // ignores presses outside it but answers Escape as its Cancel does, so the order it confirms
-  // stays as it was.
-  const open = [
-    ...(side?.querySelectorAll("[role='dialog'][data-open], [role='alertdialog'][data-open]") ?? []),
-  ].reverse();
-  for (const dialog of open) {
-    flushSync(() => {
-      dialog.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
-    });
-  }
-}
+/** The window's sides are the theme's variants: the switch and the nav's picker move one value. */
+type Side = ThemeVariant;
 
 /**
  * The hero's live demo: one window, two sides. Internal runs Dashboard, the back-office app,
  * in the internal variant; External shows the picked brand's public website in the external
- * variant, behind a browser's address field. The switch flips the content and the variant
- * together; both sides stay mounted, so the Dashboard keeps its state through a round trip.
- * The site mounts on the first flip, so its photos load only once a visitor asks for it.
+ * variant, behind a browser's address field. The side is the landing theme's variant, so the
+ * window's switch and the nav's theme picker move the same value and re-theme the page together.
+ * Both sides stay mounted once shown, so the Dashboard keeps its state through a round trip.
+ * The site mounts the first time External shows, so its photos load only once a visitor asks.
  */
 export function HeroWindow(): ReactElement {
-  const { theme, changeBrand } = useLandingTheme();
-  const [side, setSide] = useState<Side>("internal");
-  const [siteMounted, setSiteMounted] = useState(false);
+  const { theme, changeBrand, changeTheme } = useLandingTheme();
+  const side = theme.variant;
+  const [siteMounted, setSiteMounted] = useState(side === "external");
+  if (side === "external" && !siteMounted) {
+    setSiteMounted(true);
+  }
   const captionId = useId();
-  const sides = useRef<Record<Side, HTMLDivElement | null>>({ internal: null, external: null });
+  const siteSide = useRef<HTMLDivElement>(null);
   const sideSwitch = useRef<HTMLSpanElement>(null);
   const site = SITES[theme.brand];
   const external = side === "external";
@@ -103,21 +85,18 @@ export function HeroWindow(): ReactElement {
   useEffect(() => {
     if (cardPick.current) {
       cardPick.current = false;
-      sides.current.external?.querySelector<HTMLElement>("h1")?.focus();
+      siteSide.current?.querySelector<HTMLElement>("h1")?.focus();
     }
   }, [site.brand]);
 
   const flip = (next: Side) => {
-    closeDialogs(sides.current[side]);
+    changeTheme({ variant: next });
     // A pointer press leaves focus where it was in Safari, which focuses no button on a click:
-    // in a closing dialog, whose focus return targets its trigger on the side going inert, or
-    // on that side itself. Focus moves to the pressed button first, so the return finds focus
-    // outside the dialog and leaves it there. The switch renders one button per side, in order.
-    sideSwitch.current?.querySelectorAll("button")[SIDES.indexOf(next)]?.focus();
-    setSide(next);
-    if (next === "external") {
-      setSiteMounted(true);
-    }
+    // in a closed dialog, whose focus return targets its trigger on the side going inert, or
+    // on that side itself. Focus moves to the pressed button before the return runs, so the
+    // return finds focus outside the dialog and leaves it there. The switch renders one button
+    // per side, in order.
+    sideSwitch.current?.querySelectorAll("button")[THEME_VARIANTS.indexOf(next)]?.focus();
   };
 
   return (
@@ -145,8 +124,8 @@ export function HeroWindow(): ReactElement {
               <SingleToggle
                 label="Window content"
                 size="sm"
-                options={SIDES}
-                labels={SIDE_LABELS}
+                options={THEME_VARIANTS}
+                labels={VARIANT_LABELS}
                 value={side}
                 onValueChange={flip}
               />
@@ -155,29 +134,28 @@ export function HeroWindow(): ReactElement {
           <div className={styles.stage()}>
             <div
               role="region"
-              ref={(element) => {
-                sides.current.internal = element;
-              }}
               aria-label="Dashboard"
               data-shown={!external}
               inert={external}
               className={styles.side({ side: "internal" })}>
-              <DashboardApp />
+              <WindowSide shown={!external}>
+                <DashboardApp />
+              </WindowSide>
             </div>
             {siteMounted ? (
               <div
-                ref={(element) => {
-                  sides.current.external = element;
-                }}
+                ref={siteSide}
                 role="region"
                 aria-label={`${site.name} website`}
                 lang={site.lang}
                 data-shown={external}
                 inert={!external}
                 className={styles.side({ side: "external" })}>
-                <ThemeScope theme={{ ...theme, variant: "external" }} className={styles.siteScope()}>
-                  <BrandSite key={site.brand} site={site} onPickBrand={pickFromCard} />
-                </ThemeScope>
+                <WindowSide shown={external}>
+                  <ThemeScope theme={{ ...theme, variant: "external" }} className={styles.siteScope()}>
+                    <BrandSite key={site.brand} site={site} onPickBrand={pickFromCard} />
+                  </ThemeScope>
+                </WindowSide>
               </div>
             ) : (
               // Until the first flip the side is an empty cell, so the site's photos wait for a visitor who asks for it.

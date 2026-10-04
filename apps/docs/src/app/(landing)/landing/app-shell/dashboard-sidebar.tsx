@@ -14,6 +14,7 @@ import { BRANDS } from "@elmeragroup/fuse/theme";
 import { BrandMark } from "../brand-mark";
 import { PICKER_BRANDS } from "../landing-facts";
 import { useLandingTheme } from "../landing-theme";
+import { useSideOverlay } from "../window-side";
 import { useDashboard } from "./dashboard-context";
 import { SIGNED_IN } from "./dashboard-orders";
 import { isQueue, openCount } from "./dashboard-state";
@@ -52,11 +53,12 @@ const styles = dashboardSidebar();
  */
 function WorkspaceSwitcher(): ReactElement {
   const { theme, changeBrand } = useLandingTheme();
+  const [open, setOpen] = useSideOverlay(false);
 
   return (
     <Sidebar.Menu>
       <Sidebar.MenuItem>
-        <DropdownMenu.Root>
+        <DropdownMenu.Root open={open} onOpenChange={setOpen}>
           <DropdownMenu.Trigger
             render={
               <Sidebar.MenuButton size="lg" aria-label={`Workspace: ${BRANDS[theme.brand].displayName}`} />
@@ -165,11 +167,12 @@ function ViewRow({ entry }: { entry: ViewEntry }): ReactElement {
 function SellerMenu(): ReactElement {
   const { notify } = useDashboard();
   const [beta, setBeta] = useState(false);
+  const [open, setOpen] = useSideOverlay(false);
 
   return (
     <Sidebar.Menu>
       <Sidebar.MenuItem>
-        <DropdownMenu.Root>
+        <DropdownMenu.Root open={open} onOpenChange={setOpen}>
           <DropdownMenu.Trigger
             render={<Sidebar.MenuButton size="lg" aria-label={`Signed in as ${SIGNED_IN.name}`} />}>
             <Avatar.Root className={styles.avatar()}>

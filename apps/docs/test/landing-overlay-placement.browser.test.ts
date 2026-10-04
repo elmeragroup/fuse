@@ -9,10 +9,11 @@ import {
   row,
   scrollWindowPartWay,
   windowScope,
+  DASHBOARD_FIRST,
 } from "./landing-dashboard";
 import { launchLandingSuite } from "./landing-page";
 
-const { openLanding } = launchLandingSuite();
+const { openLanding } = launchLandingSuite({ search: DASHBOARD_FIRST });
 
 /** The widths the visitor reported the misplaced popups at, and a common laptop width. */
 const VIEWPORTS = [

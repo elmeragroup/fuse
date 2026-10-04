@@ -14,6 +14,7 @@ import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
 import { useLandingTheme } from "../landing-theme";
 import { SingleToggle } from "../product-parts";
+import { useSideOverlay } from "../window-side";
 import { BulkToolbar } from "./bulk-toolbar";
 import { useDashboard } from "./dashboard-context";
 import { visibleOrders } from "./dashboard-state";
@@ -115,8 +116,9 @@ const GROUPINGS = { status: "Status", none: "No grouping" } as const satisfies R
 
 function DisplayMenu(): ReactElement {
   const { state, dispatch } = useDashboard();
+  const [open, setOpen] = useSideOverlay(false);
   return (
-    <DropdownMenu.Root>
+    <DropdownMenu.Root open={open} onOpenChange={setOpen}>
       <DropdownMenu.Trigger render={<Button variant="outline" size="sm" />}>
         <SlidersHorizontal data-icon="inline-start" />
         Display

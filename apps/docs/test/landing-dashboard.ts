@@ -18,6 +18,13 @@ export const WIDE_VIEWPORT = { width: 1440, height: 900 } as const;
  */
 export const OPEN_COUNTS = { "My orders": "26", Drafts: "12", "Establishment stopped": "12" } as const;
 
+/**
+ * The landing opens on the External side. A suite that exercises the Dashboard opens with this
+ * query instead: the opening brand and segment in the internal variant, so the window shows the
+ * Dashboard from the first paint.
+ */
+export const DASHBOARD_FIRST = "?theme=internal-elma-private";
+
 /** The hero's live demo window: its chrome, the switch, and the side it shows. */
 export function liveDemo(page: Page): Locator {
   return page.getByRole("region", { name: "Live demo", exact: true });
@@ -44,6 +51,12 @@ export function brandSite(page: Page, site: string): Locator {
   return page.getByRole("region", { name: `${site} website`, exact: true });
 }
 
+/** The DOM audit for a side the switch hid: the side sits in an inert subtree. */
+export async function isInert(side: Locator): Promise<boolean> {
+  // DOM audit: an inert side has no role a query could reach, so the check reads the attribute.
+  return side.evaluate((element) => element.closest("[inert]") !== null);
+}
+
 /** Presses one side of the window's Internal/External switch. */
 export async function showSide(page: Page, side: "Internal" | "External"): Promise<void> {
   const demo = liveDemo(page);
@@ -52,6 +65,28 @@ export async function showSide(page: Page, side: "Internal" | "External"): Promi
     .getByRole("group", { name: "Window content" })
     .getByRole("button", { name: side, exact: true })
     .click();
+}
+
+/** The window's Internal/External switch. */
+export function sideSwitch(page: Page): Locator {
+  return liveDemo(page).getByRole("group", { name: "Window content" });
+}
+
+/**
+ * The side the window shows: the switch's pressed button, checked against the side that is not
+ * inert, so a switch that disagrees with its window fails here.
+ */
+export async function shownSide(page: Page): Promise<"Internal" | "External" | "mismatch"> {
+  const pressed = (await sideSwitch(page).getByRole("button", { pressed: true }).textContent()) ?? "";
+  // DOM audit: an inert side has no role a query could reach, so the check reads the attribute.
+  const dashboardInert = await dashboard(page).evaluate((element) => element.closest("[inert]") !== null);
+  if (pressed === "Internal" && !dashboardInert) {
+    return "Internal";
+  }
+  if (pressed === "External" && dashboardInert) {
+    return "External";
+  }
+  return "mismatch";
 }
 
 /** Picks `brand` in the landing's brand picker, the same action as any other brand control. */
@@ -153,3 +188,159 @@ export async function expectBeside(popup: Locator, trigger: Locator, scope: Loca
     })
     .toBe("beside");
 }
+
+/**
+ * What each site states, as its reference writes it: the test's own copy, so a config change
+ * that drops a heading, the language or a menu fails here instead of passing. `sections` are
+ * the visible section headings below the hero, in page order; `labelled` are the sections the
+ * reference draws without a heading, which carry an accessible name instead. `utility` and
+ * `search` are the header's links that fold into the menu Sheet on a phone. `photos` counts the
+ * photos the reference shows.
+ */
+export const ELMERA = {
+  site: "Elmera Group",
+  brand: "elma",
+  domain: "elmeragroup.no",
+  lang: "en",
+  logo: "Elmera Group",
+  heading: "Preferred by more customers. Every day.",
+  sections: ["The share", "Our brands", "What we do", "Work with us"],
+  labelled: [],
+  nav: "Main",
+  menus: ["Our group", "Investors", "Sustainability"],
+  utility: [],
+  search: null,
+  menuButton: "Menu",
+  photos: 0,
+  priceArea: null,
+} as const;
+
+export const FJORDKRAFT = {
+  site: "Fjordkraft",
+  brand: "fkas",
+  domain: "fjordkraft.no",
+  lang: "nb",
+  logo: "Fjordkraft",
+  heading: "Bytt strømleverandør raskt og enkelt",
+  checklist: [
+    "Få hjelp til å spare i Fjordkraft-appen",
+    "Ingen skjulte gebyrer eller påslag",
+    "Strøm og nettleie samlet på én regning",
+  ],
+  sections: [
+    "Spørsmål om Norgespris?",
+    "Sjekk dagens strømpris",
+    "Følg strømmen med Einar",
+    "Hvordan kan vi hjelpe deg?",
+  ],
+  labelled: [],
+  nav: "Hovedmeny",
+  menus: ["Strøm", "Mobil", "Nettbutikk"],
+  utility: [],
+  search: "Søk",
+  menuButton: "Meny",
+  photos: 4,
+  priceArea: { label: "Velg prisområde", option: /^NO5/u, unit: /øre\/kWh/u },
+} as const;
+
+const TRONDELAGKRAFT = {
+  site: "TrøndelagKraft",
+  brand: "tkas",
+  domain: "trondelagkraft.no",
+  lang: "nb",
+  logo: "TrøndelagKraft",
+  heading: "Få en enkel strømavtale",
+  sections: [
+    "Spar penger i nettbutikken",
+    "Norgespris lønner seg i Trøndelag",
+    "Medlemsfordel på strøm",
+    "Hos oss har du mange kundefordeler",
+  ],
+  labelled: ["Snarveier", "Aktuelt", "Kontakt oss"],
+  nav: "Hovedmeny",
+  menus: ["Strømavtaler"],
+  utility: [],
+  search: null,
+  menuButton: "Meny",
+  photos: 8,
+  priceArea: null,
+} as const;
+
+const GUDBRANDSDAL_ENERGI = {
+  site: "Gudbrandsdal Energi",
+  brand: "guen",
+  domain: "ge.no",
+  lang: "nb",
+  logo: "Gudbrandsdal Energi",
+  heading: "Høstkampanje på strømavtale",
+  sections: ["Dette sier kundene våre", "Verv en venn"],
+  labelled: ["Snarveier"],
+  nav: "Hovedmeny",
+  menus: ["Strømavtaler"],
+  utility: [],
+  search: null,
+  menuButton: "Meny",
+  photos: 2,
+  priceArea: null,
+} as const;
+
+const TELINET = {
+  site: "Telinet Energi",
+  brand: "fkse",
+  domain: "telinet.se",
+  lang: "sv",
+  logo: "Telinet",
+  heading: "Det här är Telinet Energi",
+  sections: [
+    "Förnybar energi, idag och imorgon!",
+    "Vad händer på elmarknaden?",
+    "Kom igång med Telinet nu!",
+    "Bra partners ger bättre energi.",
+  ],
+  labelled: ["Kundservice och app"],
+  nav: "Huvudmeny",
+  menus: ["Elavtal", "Mina sidor"],
+  utility: ["Kundservice"],
+  search: "Sök",
+  menuButton: "Meny",
+  photos: 5,
+  priceArea: null,
+} as const;
+
+const FJORDKRAFT_FORETAG = {
+  site: "Fjordkraft Företag",
+  brand: "fkab",
+  domain: "fjordkraft.se",
+  lang: "sv",
+  logo: "Fjordkraft Företag",
+  heading: "Dags att vintersäkra elen till ditt företag",
+  sections: ["Våra kunder", "Varför välja Fjordkraft?", "Se elpriset i ditt område"],
+  labelled: ["Genvägar"],
+  nav: "Huvudmeny",
+  menus: ["Elavtal", "Energilösningar"],
+  utility: [],
+  search: "Sök",
+  menuButton: "Meny",
+  photos: 5,
+  priceArea: { label: "Välj prisområde", option: /^SE3/u, unit: /öre\/kWh/u },
+} as const;
+
+export type SiteFacts =
+  | typeof ELMERA
+  | typeof FJORDKRAFT
+  | typeof TRONDELAGKRAFT
+  | typeof GUDBRANDSDAL_ENERGI
+  | typeof TELINET
+  | typeof FJORDKRAFT_FORETAG;
+
+export const ALL_SITES: readonly SiteFacts[] = [
+  ELMERA,
+  FJORDKRAFT,
+  TRONDELAGKRAFT,
+  GUDBRANDSDAL_ENERGI,
+  TELINET,
+  FJORDKRAFT_FORETAG,
+];
+
+/** The sites with photos; Elmera Group's has none, its logos are inline SVG. */
+export const PHOTO_SITES = ALL_SITES.filter((facts) => facts.photos > 0);

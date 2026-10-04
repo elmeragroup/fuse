@@ -2,185 +2,30 @@ import type { Locator, Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
 import * as CssColor from "@elmeragroup/color/css-color";
+import * as Hex from "@elmeragroup/color/hex";
 import { getOrThrow } from "@elmeragroup/color/result";
 import type * as Srgb from "@elmeragroup/color/srgb";
 import { contrastRatio, relativeLuminance } from "@elmeragroup/color/wcag";
 
-import { DESKTOP_VIEWPORT, readThemeAttributes } from "./demo-page";
+import { DESKTOP_VIEWPORT } from "./demo-page";
 import {
+  ALL_SITES,
+  DASHBOARD_FIRST,
+  ELMERA,
+  FJORDKRAFT,
   PHONE_VIEWPORT,
+  PHOTO_SITES,
   brandSite,
-  dashboard,
-  liveDemo,
-  openNewOrder,
+  isInert,
   pickBrand,
-  row,
   showSide,
   WIDE_VIEWPORT,
   windowCaption,
 } from "./landing-dashboard";
+import type { SiteFacts } from "./landing-dashboard";
 import { expectTargets, launchLandingSuite } from "./landing-page";
 
-const { openLanding } = launchLandingSuite();
-
-/**
- * What each site states, as its reference writes it: the test's own copy, so a config change
- * that drops a heading, the language or a menu fails here instead of passing. `sections` are
- * the visible section headings below the hero, in page order; `labelled` are the sections the
- * reference draws without a heading, which carry an accessible name instead. `utility` and
- * `search` are the header's links that fold into the menu Sheet on a phone. `photos` counts the
- * photos the reference shows.
- */
-const ELMERA = {
-  site: "Elmera Group",
-  brand: "elma",
-  domain: "elmeragroup.no",
-  lang: "en",
-  logo: "Elmera Group",
-  heading: "Preferred by more customers. Every day.",
-  sections: ["The share", "Our brands", "What we do", "Work with us"],
-  labelled: [],
-  nav: "Main",
-  menus: ["Our group", "Investors", "Sustainability"],
-  utility: [],
-  search: null,
-  menuButton: "Menu",
-  photos: 0,
-  priceArea: null,
-} as const;
-
-const FJORDKRAFT = {
-  site: "Fjordkraft",
-  brand: "fkas",
-  domain: "fjordkraft.no",
-  lang: "nb",
-  logo: "Fjordkraft",
-  heading: "Bytt strømleverandør raskt og enkelt",
-  checklist: [
-    "Få hjelp til å spare i Fjordkraft-appen",
-    "Ingen skjulte gebyrer eller påslag",
-    "Strøm og nettleie samlet på én regning",
-  ],
-  sections: [
-    "Spørsmål om Norgespris?",
-    "Sjekk dagens strømpris",
-    "Følg strømmen med Einar",
-    "Hvordan kan vi hjelpe deg?",
-  ],
-  labelled: [],
-  nav: "Hovedmeny",
-  menus: ["Strøm", "Mobil", "Nettbutikk"],
-  utility: [],
-  search: "Søk",
-  menuButton: "Meny",
-  photos: 4,
-  priceArea: { label: "Velg prisområde", option: /^NO5/u, unit: /øre\/kWh/u },
-} as const;
-
-const TRONDELAGKRAFT = {
-  site: "TrøndelagKraft",
-  brand: "tkas",
-  domain: "trondelagkraft.no",
-  lang: "nb",
-  logo: "TrøndelagKraft",
-  heading: "Få en enkel strømavtale",
-  sections: [
-    "Spar penger i nettbutikken",
-    "Norgespris lønner seg i Trøndelag",
-    "Medlemsfordel på strøm",
-    "Hos oss har du mange kundefordeler",
-  ],
-  labelled: ["Snarveier", "Aktuelt", "Kontakt oss"],
-  nav: "Hovedmeny",
-  menus: ["Strømavtaler"],
-  utility: [],
-  search: null,
-  menuButton: "Meny",
-  photos: 8,
-  priceArea: null,
-} as const;
-
-const GUDBRANDSDAL_ENERGI = {
-  site: "Gudbrandsdal Energi",
-  brand: "guen",
-  domain: "ge.no",
-  lang: "nb",
-  logo: "Gudbrandsdal Energi",
-  heading: "Høstkampanje på strømavtale",
-  sections: ["Dette sier kundene våre", "Verv en venn"],
-  labelled: ["Snarveier"],
-  nav: "Hovedmeny",
-  menus: ["Strømavtaler"],
-  utility: [],
-  search: null,
-  menuButton: "Meny",
-  photos: 2,
-  priceArea: null,
-} as const;
-
-const TELINET = {
-  site: "Telinet Energi",
-  brand: "fkse",
-  domain: "telinet.se",
-  lang: "sv",
-  logo: "Telinet",
-  heading: "Det här är Telinet Energi",
-  sections: [
-    "Förnybar energi, idag och imorgon!",
-    "Vad händer på elmarknaden?",
-    "Kom igång med Telinet nu!",
-    "Bra partners ger bättre energi.",
-  ],
-  labelled: ["Kundservice och app"],
-  nav: "Huvudmeny",
-  menus: ["Elavtal", "Mina sidor"],
-  utility: ["Kundservice"],
-  search: "Sök",
-  menuButton: "Meny",
-  photos: 5,
-  priceArea: null,
-} as const;
-
-const FJORDKRAFT_FORETAG = {
-  site: "Fjordkraft Företag",
-  brand: "fkab",
-  domain: "fjordkraft.se",
-  lang: "sv",
-  logo: "Fjordkraft Företag",
-  heading: "Dags att vintersäkra elen till ditt företag",
-  sections: ["Våra kunder", "Varför välja Fjordkraft?", "Se elpriset i ditt område"],
-  labelled: ["Genvägar"],
-  nav: "Huvudmeny",
-  menus: ["Elavtal", "Energilösningar"],
-  utility: [],
-  search: "Sök",
-  menuButton: "Meny",
-  photos: 5,
-  priceArea: { label: "Välj prisområde", option: /^SE3/u, unit: /öre\/kWh/u },
-} as const;
-
-type SiteFacts =
-  | typeof ELMERA
-  | typeof FJORDKRAFT
-  | typeof TRONDELAGKRAFT
-  | typeof GUDBRANDSDAL_ENERGI
-  | typeof TELINET
-  | typeof FJORDKRAFT_FORETAG;
-
-const ALL_SITES: readonly SiteFacts[] = [
-  ELMERA,
-  FJORDKRAFT,
-  TRONDELAGKRAFT,
-  GUDBRANDSDAL_ENERGI,
-  TELINET,
-  FJORDKRAFT_FORETAG,
-];
-
-/** The sites with photos; Elmera Group's has none, its logos are inline SVG. */
-const PHOTO_SITES = ALL_SITES.filter((facts) => facts.photos > 0);
-
-/** The chrome's caption while the window shows the Dashboard. */
-const INTERNAL_CAPTION = "Dashboard: an internal sales and back-office app built with Fuse";
+const { openLanding } = launchLandingSuite({ search: DASHBOARD_FIRST });
 
 /** Opens the landing on `facts`' brand with the External side showing, and waits for its site. */
 async function openSite(
@@ -271,335 +116,42 @@ async function paintedBands(site: Locator): Promise<PaintedBand[]> {
   }));
 }
 
-/** The computed opacity of a window side, read as a number. */
-async function opacity(side: Locator): Promise<number> {
-  return Number(await side.evaluate((element) => getComputedStyle(element).opacity));
-}
+/** WCAG 1.4.11's floor for the parts of a graphic a visitor needs to recognise it. */
+const GRAPHIC_CONTRAST = 3;
+
+/** The header's logo as painted: the nearest opaque surface behind it and each ink it draws in. */
+type PaintedLogo = { readonly surface: Srgb.Srgb; readonly inks: readonly Srgb.Srgb[] };
 
 /**
- * Stops the page's animation clock: every transition holds its first frame until the test seeks
- * it, so a read never races the flip.
+ * Reads the computed paint of the header logo named `name`. An SVG logo draws in the fill of each
+ * of its shapes; a masked wordmark draws in its own background colour.
  */
-async function freezeAnimations(page: Page): Promise<void> {
-  const cdp = await page.context().newCDPSession(page);
-  await cdp.send("Animation.enable");
-  await cdp.send("Animation.setPlaybackRate", { playbackRate: 0 });
-}
-
-/** The properties of the CSS transitions running on a window side, sorted. */
-async function sideTransitions(side: Locator): Promise<string[]> {
-  return side.evaluate((element) =>
-    element
-      .getAnimations()
-      .flatMap((animation) => (animation instanceof CSSTransition ? [animation.transitionProperty] : []))
-      .toSorted()
-  );
-}
-
-/** Seeks every transition on a window side to `ms` into it, delay included. */
-async function seekSide(side: Locator, ms: number): Promise<void> {
-  await side.evaluate((element, time) => {
-    for (const animation of element.getAnimations()) {
-      animation.currentTime = time;
+async function paintedLogo(site: Locator, name: string): Promise<PaintedLogo> {
+  // DOM audit: the header sits inside the site's region, where it is not a banner landmark.
+  const logo = site.locator("header").getByRole("img", { name, exact: true }).first();
+  const read = await logo.evaluate((element) => {
+    const opaque = (color: string) => color !== "rgba(0, 0, 0, 0)" && !/^rgba|\/ /u.test(color);
+    let block = element.parentElement;
+    while (block !== null && !opaque(getComputedStyle(block).backgroundColor)) {
+      block = block.parentElement;
     }
-  }, ms);
-}
-
-/** Runs every transition on a window side to its end. */
-async function finishSide(side: Locator): Promise<void> {
-  await side.evaluate((element) => {
-    for (const animation of element.getAnimations()) {
-      animation.finish();
-    }
+    const drawn = [...element.querySelectorAll("path, circle, ellipse, rect, polygon, polyline")];
+    const inks =
+      drawn.length === 0
+        ? [getComputedStyle(element).backgroundColor]
+        : drawn.map((part) => getComputedStyle(part).fill).filter((fill) => fill !== "none");
+    return {
+      surface: block === null ? "" : getComputedStyle(block).backgroundColor,
+      inks: [...new Set(inks)],
+    };
   });
-}
-
-/** The DOM audit for a side the switch hid: the side sits in an inert subtree. */
-async function isInert(side: Locator): Promise<boolean> {
-  // DOM audit: an inert side has no role a query could reach, so the check reads the attribute.
-  return side.evaluate((element) => element.closest("[inert]") !== null);
-}
-
-/** The inline styles of `<html>` and `<body>`, where a modal's scroll lock writes. */
-async function documentStyles(page: Page): Promise<string> {
-  return page.evaluate(
-    () =>
-      `${document.documentElement.getAttribute("style") ?? ""}|${document.body.getAttribute("style") ?? ""}`
-  );
-}
-
-/** Both modal roles in the window: a dialog or Sheet, and an alert dialog's confirmation. */
-const MODAL = "[role='dialog'], [role='alertdialog']";
-
-/**
- * Waits until no dialog is open and `side` is in the accessibility tree: no ancestor hides it
- * from assistive technology or makes it inert, and the document has lost any scroll lock, so
- * its styles match `unlocked`, read before anything opened.
- */
-async function expectReachable(page: Page, side: Locator, unlocked: string): Promise<void> {
-  // DOM audit: an inert or aria-hidden dialog has no role a query could reach.
-  await expect.poll(async () => page.locator(MODAL).count()).toBe(0);
-  await expect
-    .poll(async () =>
-      side.evaluate((element) => {
-        const hider = element.closest("[aria-hidden='true'], [inert]");
-        return hider === null ? null : hider.outerHTML.slice(0, 80);
-      })
-    )
-    .toBeNull();
-  expect(await documentStyles(page)).toBe(unlocked);
-  // And a query by role reaches into the side.
-  expect(await side.getByRole("button").count()).toBeGreaterThan(0);
-}
-
-/**
- * Presses one side of the window's switch while a modal is open. The modal hides everything
- * outside it from assistive technology, but its backdrop stops at the window's edge, so a
- * pointer still reaches the switch in the window's chrome. The press leaves focus in the
- * modal, as Safari's does: WebKit focuses no button on a click, while Chromium's mousedown
- * would move focus to the switch before the modal closes and hide where the close sends it.
- */
-async function pressSwitchPastModal(page: Page, side: "Internal" | "External"): Promise<void> {
-  const button = liveDemo(page)
-    .getByRole("group", { name: "Window content", includeHidden: true })
-    .getByRole("button", { name: side, exact: true, includeHidden: true });
-  await button.evaluate((element) => {
-    element.addEventListener("mousedown", (event) => event.preventDefault(), { once: true });
-  });
-  // A modal moves focus in a frame after it opens.
-  await expect
-    .poll(async () => page.evaluate((modal) => document.activeElement?.closest(modal) !== null, MODAL))
-    .toBe(true);
-  await button.click();
-}
-
-/**
- * Waits for the close a flip started to settle, then expects focus on the switch's `side`
- * button outside any inert subtree, rather than on a trigger on the side that went inert.
- */
-async function expectFocusOnSwitch(page: Page, side: "Internal" | "External"): Promise<void> {
-  const button = liveDemo(page)
-    .getByRole("group", { name: "Window content" })
-    .getByRole("button", { name: side, exact: true });
-  // Base UI returns focus after the dialog unmounts; two frames let a late return land first.
-  await page.evaluate(
-    async () =>
-      new Promise((resolve) => {
-        requestAnimationFrame(() => requestAnimationFrame(resolve));
-      })
-  );
-  expect(
-    await button.evaluate((element) => ({
-      focused: element === document.activeElement,
-      inert: document.activeElement?.closest("[inert]") !== null,
-    }))
-  ).toEqual({ focused: true, inert: false });
+  return {
+    surface: CssColor.toSrgb(getOrThrow(CssColor.parse(read.surface))),
+    inks: read.inks.map((ink) => CssColor.toSrgb(getOrThrow(CssColor.parse(ink)))),
+  };
 }
 
 describe("landing hero window, External side", () => {
-  it("flips the content, the variant and the caption with the switch, and loads no site image before", async () => {
-    const siteImages: string[] = [];
-    const page = await openLanding(DESKTOP_VIEWPORT, {
-      prepare: (opening) => {
-        opening.on("request", (request) => {
-          if (request.url().includes("/landing/sites/")) {
-            siteImages.push(request.url());
-          }
-        });
-        return Promise.resolve();
-      },
-    });
-    const documentTheme = await readThemeAttributes(page.locator("html"));
-    expect(documentTheme.variant).toBe("external");
-
-    // DOM audit: ThemeScope's element has no role; each side's scope is its only themed element.
-    const internalScope = dashboard(page).locator("[data-theme-variant]");
-    expect(await readThemeAttributes(internalScope)).toEqual({
-      variant: "internal",
-      brand: "elma",
-      segment: "private",
-    });
-    expect(await windowCaption(page)).toBe(`Live demo${INTERNAL_CAPTION}`);
-    expect(await brandSite(page, ELMERA.site).count()).toBe(0);
-    expect(siteImages).toEqual([]);
-
-    // Fjordkraft's site has photos; picking it while Internal shows must not fetch them.
-    await pickBrand(page, FJORDKRAFT.brand);
-    expect(await brandSite(page, FJORDKRAFT.site).count()).toBe(0);
-    expect(siteImages).toEqual([]);
-
-    await showSide(page, "External");
-    const site = brandSite(page, FJORDKRAFT.site);
-    await site.getByRole("heading", { level: 1, name: FJORDKRAFT.heading }).waitFor();
-    // DOM audit: the hero's photo is the site's first `img`; the logo before it is an inline SVG.
-    const heroPhoto = site.locator("img").first();
-    await expect
-      .poll(async () =>
-        heroPhoto.evaluate(
-          (image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0
-        )
-      )
-      .toBe(true);
-    const heroSrc = await heroPhoto.evaluate((image) =>
-      image instanceof HTMLImageElement ? image.currentSrc : ""
-    );
-    expect(siteImages).toContain(heroSrc);
-    expect(await readThemeAttributes(site.locator("[data-theme-variant]"))).toEqual({
-      variant: "external",
-      brand: "fkas",
-      segment: "private",
-    });
-    expect(await windowCaption(page)).toBe(
-      `${FJORDKRAFT.domain}Fjordkraft's public website, built with Fuse`
-    );
-    expect(await isInert(dashboard(page))).toBe(true);
-
-    await showSide(page, "Internal");
-    await expect.poll(async () => isInert(site)).toBe(true);
-    expect(await windowCaption(page)).toBe(`Live demo${INTERNAL_CAPTION}`);
-    expect((await readThemeAttributes(internalScope)).variant).toBe("internal");
-    // The document's own axes follow only the brand pick.
-    expect(await readThemeAttributes(page.locator("html"))).toEqual({ ...documentTheme, brand: "fkas" });
-    await page.context().close();
-  });
-
-  it("keeps the Dashboard's selected order through a round trip to External", async () => {
-    const page = await openLanding(DESKTOP_VIEWPORT);
-    const app = dashboard(page);
-    await app.scrollIntoViewIfNeeded();
-    await row(app, "Jonas Eide").click();
-    expect(await row(app, "Jonas Eide").getAttribute("aria-current")).toBe("true");
-
-    await showSide(page, "External");
-    await brandSite(page, ELMERA.site).getByRole("heading", { level: 1 }).waitFor();
-    await showSide(page, "Internal");
-    await expect.poll(async () => isInert(app)).toBe(false);
-
-    expect(await row(app, "Jonas Eide").getAttribute("aria-current")).toBe("true");
-    expect(
-      await app.getByRole("complementary", { name: "Order details" }).getByText("Jonas Eide").count()
-    ).toBeGreaterThan(0);
-    await page.context().close();
-  });
-
-  it("closes the Dashboard's New order Sheet on a flip, so the site stays reachable", async () => {
-    const page = await openLanding(DESKTOP_VIEWPORT);
-    const unlocked = await documentStyles(page);
-    const app = dashboard(page);
-    await app.scrollIntoViewIfNeeded();
-    await row(app, "Jonas Eide").click();
-    await openNewOrder(app);
-
-    await pressSwitchPastModal(page, "External");
-    const site = brandSite(page, ELMERA.site);
-    await expectReachable(page, site, unlocked);
-    await site.getByRole("heading", { level: 1, name: ELMERA.heading }).waitFor();
-    await expectFocusOnSwitch(page, "External");
-
-    await showSide(page, "Internal");
-    await expect.poll(async () => isInert(app)).toBe(false);
-    expect(await row(app, "Jonas Eide").getAttribute("aria-current")).toBe("true");
-    await page.context().close();
-  });
-
-  it("dismisses the Dashboard's Cancel order confirmation on a flip and keeps the order", async () => {
-    const page = await openLanding(DESKTOP_VIEWPORT);
-    const unlocked = await documentStyles(page);
-    const app = dashboard(page);
-    const detail = app.getByRole("complementary", { name: "Order details" });
-    const status = detail.getByRole("button", { name: /^Status/u });
-    await app.scrollIntoViewIfNeeded();
-    await row(app, "Jonas Eide").click();
-    await detail.getByRole("button", { name: "More actions" }).click();
-    await page.getByRole("menuitem", { name: "Cancel order…" }).click();
-    await page.getByRole("alertdialog", { name: /^Cancel order/u }).waitFor();
-
-    await pressSwitchPastModal(page, "External");
-    const site = brandSite(page, ELMERA.site);
-    await expectReachable(page, site, unlocked);
-    await expectFocusOnSwitch(page, "External");
-
-    await showSide(page, "Internal");
-    await expect.poll(async () => isInert(app)).toBe(false);
-    // The seeds put Jonas Eide's order in Awaiting customer approval; a dismissal leaves it there.
-    expect(await status.getAttribute("aria-label")).toBe("Status: Awaiting customer approval");
-    await page.context().close();
-  });
-
-  it("closes the site's phone menu Sheet on a flip, so the Dashboard stays reachable", async () => {
-    const page = await openLanding(PHONE_VIEWPORT);
-    const unlocked = await documentStyles(page);
-    const app = dashboard(page);
-    await app.scrollIntoViewIfNeeded();
-    await row(app, "Jonas Eide").click();
-    // On a phone the order opens as a Sheet: the first flip closes it.
-    await page.getByRole("dialog").waitFor();
-
-    await pressSwitchPastModal(page, "External");
-    const site = brandSite(page, ELMERA.site);
-    await expectReachable(page, site, unlocked);
-    await expectFocusOnSwitch(page, "External");
-    await site.getByRole("button", { name: ELMERA.menuButton, exact: true }).click();
-    await page.getByRole("dialog", { name: ELMERA.menuButton }).waitFor();
-
-    await pressSwitchPastModal(page, "Internal");
-    await expectReachable(page, app, unlocked);
-    await expectFocusOnSwitch(page, "Internal");
-    expect(await row(app, "Jonas Eide").getAttribute("aria-current")).toBe("true");
-    await page.context().close();
-  });
-
-  it("swaps the sides at once under reduced motion", async () => {
-    const page = await openLanding(DESKTOP_VIEWPORT, { reducedMotion: "reduce" });
-    // A frozen clock holds any transition the flip starts, however late the reads below run.
-    await freezeAnimations(page);
-    await showSide(page, "External");
-    const site = brandSite(page, ELMERA.site);
-    await site.getByRole("heading", { level: 1 }).waitFor();
-    expect(await sideTransitions(dashboard(page))).toEqual([]);
-    expect(await sideTransitions(site)).toEqual([]);
-    expect(await opacity(site)).toBe(1);
-    expect(await opacity(dashboard(page))).toBe(0);
-    await page.context().close();
-  });
-
-  it("animates the flip without reduced motion and reverses a flip from where it is", async () => {
-    const page = await openLanding(DESKTOP_VIEWPORT, { reducedMotion: "no-preference" });
-    const app = dashboard(page);
-    await freezeAnimations(page);
-    await showSide(page, "External");
-    const site = brandSite(page, ELMERA.site);
-    // The negative control for the reduced-motion case: the flip runs its transitions.
-    expect(await sideTransitions(app)).toContain("opacity");
-
-    // A quarter of the way through the Dashboard's 120ms exit, it is part way gone.
-    await seekSide(app, 30);
-    const leaving = await opacity(app);
-    expect(leaving).toBeGreaterThan(0);
-    expect(leaving).toBeLessThan(1);
-
-    // The reversal starts from the opacity the exit reached: no jump in either direction.
-    await showSide(page, "Internal");
-    expect(await opacity(app)).toBeCloseTo(leaving, 5);
-
-    await finishSide(app);
-    await finishSide(site);
-    expect(await opacity(app)).toBe(1);
-    expect(await opacity(site)).toBe(0);
-    await page.context().close();
-  });
-
-  it("keeps the window's height through a flip", async () => {
-    const page = await openLanding(DESKTOP_VIEWPORT);
-    const demo = liveDemo(page);
-    const before = await demo.boundingBox();
-    await showSide(page, "External");
-    await brandSite(page, ELMERA.site).getByRole("heading", { level: 1 }).waitFor();
-    const after = await demo.boundingBox();
-    expect(after?.height).toBe(before?.height);
-    await page.context().close();
-  });
-
   it.each(ALL_SITES)("states $site's language, logo, hero and section headings", async (facts) => {
     const { page, site } = await openSite(facts, DESKTOP_VIEWPORT);
     expect(await site.getAttribute("lang")).toBe(facts.lang);
@@ -785,6 +337,24 @@ describe("landing hero window, External side", () => {
         expect(relativeLuminance(band.surface), `${band.name} surface`).toBeLessThan(DARK_SURFACE_LUMINANCE);
         const ratio = contrastRatio(band.text, band.surface);
         expect(ratio._tag === "ok" ? ratio.value : 0, `${band.name} text`).toBeGreaterThanOrEqual(4.5);
+      }
+      await page.context().close();
+    }
+  );
+
+  it.each(ALL_SITES)(
+    "draws $site's header logo in an ink that reads on the header in dark mode",
+    async (facts) => {
+      const { page, site } = await openSite(facts, WIDE_VIEWPORT, { colorScheme: "dark" });
+      const logo = await paintedLogo(site, facts.logo);
+      expect(logo.inks.length).toBeGreaterThan(0);
+      for (const ink of logo.inks) {
+        // Unit under test: the logo's computed paint. Oracle: WCAG contrast from @elmeragroup/color
+        // against the 3:1 floor WCAG 1.4.11 sets for graphics.
+        const ratio = contrastRatio(ink, logo.surface);
+        expect(ratio._tag === "ok" ? ratio.value : 0, Hex.formatOpaque(ink)).toBeGreaterThanOrEqual(
+          GRAPHIC_CONTRAST
+        );
       }
       await page.context().close();
     }

@@ -12,10 +12,11 @@ import {
   openOrderSearch,
   row,
   searchTable,
+  DASHBOARD_FIRST,
 } from "./landing-dashboard";
 import { auditTargets, expectTargets, launchLandingSuite } from "./landing-page";
 
-const { openLanding } = launchLandingSuite();
+const { openLanding } = launchLandingSuite({ search: DASHBOARD_FIRST });
 
 /**
  * The window opens on My orders with open work only, grouped by status. These are the

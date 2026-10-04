@@ -3,23 +3,44 @@
 import { createContext, use, useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
+import { useSearchParams } from "next/navigation";
 import { flushSync } from "react-dom";
 
 import * as CssColor from "@elmeragroup/color/css-color";
 import * as Hex from "@elmeragroup/color/hex";
 import type * as Srgb from "@elmeragroup/color/srgb";
-import { coerceTheme, LocaleProvider, ThemeProvider, useColorScheme } from "@elmeragroup/fuse/theme";
-import type { BrandCode, ColorScheme, ThemeInput } from "@elmeragroup/fuse/theme";
+import {
+  coerceTheme,
+  LocaleProvider,
+  ThemeProvider,
+  themeSlug,
+  useColorScheme,
+} from "@elmeragroup/fuse/theme";
+import type { BrandCode, ColorScheme, ThemeInput, ThemeSegment, ThemeVariant } from "@elmeragroup/fuse/theme";
 
 import { DOCUMENT_COLOR_SCHEME } from "../../../lib/theme";
-import { LANDING_THEME } from "./landing-theme-defaults";
+import { LANDING_THEME, parseThemeQuery, sameTheme, THEME_QUERY } from "./landing-theme-defaults";
+import { themeAnnouncement } from "./theme-picker/theme-options";
 
 /** Where a re-theme was triggered, so the reveal can grow out of the finger or cursor. */
 type RevealOrigin = { x: number; y: number };
 
+/** The axes one control moves; the rest keep their values. */
+export type ThemeChange = {
+  readonly variant?: ThemeVariant;
+  readonly brand?: BrandCode;
+  readonly segment?: ThemeSegment;
+};
+
 type LandingThemeValue = {
+  /** The theme the document wears, and the hero window's side through its variant. */
   theme: ThemeInput;
-  /** Moves the brand; a brand pinned to one segment drags the segment along through `coerceTheme`. */
+  /**
+   * Moves one or more axes under the circle reveal and announces the result. A brand pinned to one
+   * segment drags the segment along through `coerceTheme`.
+   */
+  changeTheme: (change: ThemeChange) => void;
+  /** `changeTheme` for the brand alone. */
   changeBrand: (brand: BrandCode) => void;
   changeColorScheme: (scheme: ColorScheme) => void;
   colorScheme: ColorScheme;
@@ -67,11 +88,33 @@ function revealUpdate(update: () => void): void {
 }
 
 type LandingThemeProviderProps = {
+  /** The theme the server read from the request's `?theme=`, which the first paint wears. */
+  routeTheme: ThemeInput;
   children: ReactNode;
 };
 
-export function LandingThemeProvider({ children }: LandingThemeProviderProps): ReactElement {
-  const [theme, setTheme] = useState<ThemeInput>(LANDING_THEME);
+/**
+ * Owns the landing's theme and colour scheme. It writes only the `data-theme-*` attributes:
+ * `data-density` stays as the layout stamped it from `LANDING_THEME`, so the internal variant keeps
+ * the landing's comfortable metrics. Hosts own density (AGENTS.md), and a density change would
+ * reflow the whole page under the visitor's cursor.
+ */
+export function LandingThemeProvider({ routeTheme, children }: LandingThemeProviderProps): ReactElement {
+  const [theme, setTheme] = useState<ThemeInput>(routeTheme);
+  // Next keeps client state across a navigation that changes only the query, and Back restores
+  // a picked entry with the page props it was first rendered with. So the landing wears whatever
+  // `?theme=` the address bar moves to, through a link, Back or Forward. A pick's own
+  // `replaceState` moves it to the theme already worn, and remounts nothing. Every value is read,
+  // in the shape Next gives the server's `searchParams`, so a repeated `theme` opens on the
+  // default here as it does on a fresh load. The comparison covers every value, so a second
+  // `theme` added after an unchanged first still counts as a change.
+  const values = useSearchParams().getAll(THEME_QUERY);
+  const query = JSON.stringify(values);
+  const [seenQuery, setSeenQuery] = useState(query);
+  if (seenQuery !== query) {
+    setSeenQuery(query);
+    setTheme(parseThemeQuery(values.length > 1 ? values : values[0]));
+  }
 
   return (
     <ThemeProvider
@@ -97,19 +140,27 @@ type LandingThemeStateProps = {
 
 function LandingThemeState({ theme, setTheme, children }: LandingThemeStateProps): ReactElement {
   const { colorScheme, resolvedColorScheme, setColorScheme } = useColorScheme();
+  const [announcement, setAnnouncement] = useState("");
+
+  const changeTheme = useCallback(
+    (change: ThemeChange) => {
+      const next = coerceTheme({ ...theme, ...change });
+      if (next === null || sameTheme(next, theme)) {
+        return;
+      }
+      revealUpdate(() => {
+        setTheme(next);
+        setAnnouncement(themeAnnouncement(next, colorScheme));
+      });
+    },
+    [theme, setTheme, colorScheme]
+  );
 
   const changeBrand = useCallback(
     (brand: BrandCode) => {
-      const next = coerceTheme({ ...theme, brand });
-      if (next === null) {
-        return;
-      }
-      if (next.brand === theme.brand && next.segment === theme.segment) {
-        return;
-      }
-      revealUpdate(() => setTheme(next));
+      changeTheme({ brand });
     },
-    [theme, setTheme]
+    [changeTheme]
   );
 
   const changeColorScheme = useCallback(
@@ -117,25 +168,62 @@ function LandingThemeState({ theme, setTheme, children }: LandingThemeStateProps
       if (next === colorScheme) {
         return;
       }
-      revealUpdate(() => setColorScheme(next));
+      revealUpdate(() => {
+        setColorScheme(next);
+        setAnnouncement(themeAnnouncement(theme, next));
+      });
     },
-    [colorScheme, setColorScheme]
+    [theme, colorScheme, setColorScheme]
   );
 
   usePointerOrigin();
   useStatusBarColor(theme, resolvedColorScheme);
+  useThemeQuery(theme);
 
   const value = useMemo(
     (): LandingThemeValue => ({
       theme,
+      changeTheme,
       changeBrand,
       changeColorScheme,
       colorScheme,
     }),
-    [theme, changeBrand, changeColorScheme, colorScheme]
+    [theme, changeTheme, changeBrand, changeColorScheme, colorScheme]
   );
 
-  return <LandingThemeContext.Provider value={value}>{children}</LandingThemeContext.Provider>;
+  return (
+    <LandingThemeContext.Provider value={value}>
+      {children}
+      {/* `role="status"` is polite already; the explicit attribute is what a modal's hiding
+          exempts, so the phone's Sheet leaves the announcements audible. */}
+      <p role="status" aria-live="polite" className="sr-only">
+        {announcement}
+      </p>
+    </LandingThemeContext.Provider>
+  );
+}
+
+/**
+ * Mirrors the theme in the address bar, so a visitor can share what they are looking at. It
+ * replaces the entry rather than pushing one, so Back leaves the page instead of stepping through
+ * every pick, and it keeps every other parameter. The opening theme drops the
+ * parameter, so the plain address stays plain.
+ */
+function useThemeQuery(theme: ThemeInput): void {
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (sameTheme(theme, LANDING_THEME)) {
+      url.searchParams.delete(THEME_QUERY);
+    } else {
+      url.searchParams.set(THEME_QUERY, themeSlug(theme));
+    }
+    if (url.href !== window.location.href) {
+      // No state of its own: Next then copies its router state into the entry and moves
+      // `useSearchParams` to the new address, so Back to this entry restores the picked theme.
+      // Handing over `window.history.state` would carry Next's marker and skip that sync.
+      window.history.replaceState(null, "", url);
+    }
+  }, [theme]);
 }
 
 /**

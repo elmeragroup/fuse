@@ -108,6 +108,7 @@
   --tracking-landing-eyebrow: 0.14em;
   --tracking-landing-caption: 0.1em;
   --ease-snap: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-swap: cubic-bezier(0.2, 0, 0, 1);
   --spacing-safe-top: env(safe-area-inset-top, 0px);
   --spacing-footer-end: calc(2rem + env(safe-area-inset-bottom, 0px));
 }
@@ -117,7 +118,7 @@
   transition: scale 140ms var(--ease-snap);
 
   &:active {
-    scale: 0.97;
+    scale: 0.96;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -149,6 +150,32 @@
     @starting-style {
       filter: none;
       translate: none;
+    }
+  }
+}
+
+/* One of several icons stacked in one grid cell, such as the theme picker's sun, moon and
+   monitor: the shown icon grows in from a quarter of its size out of a blur, and the one it
+   replaces leaves the same way. Every icon stays mounted, so a swap runs both ways and a quick
+   second change reverses from where the icons are. Reduced motion keeps only the fade. */
+@utility landing-icon-swap {
+  transition:
+    opacity 200ms var(--ease-swap),
+    scale 200ms var(--ease-swap),
+    filter 200ms var(--ease-swap);
+
+  &[data-shown="false"] {
+    opacity: 0;
+    scale: 0.25;
+    filter: blur(4px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: opacity 120ms ease;
+
+    &[data-shown="false"] {
+      scale: none;
+      filter: none;
     }
   }
 }

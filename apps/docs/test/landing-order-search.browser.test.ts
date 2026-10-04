@@ -10,10 +10,11 @@ import {
   focusedCustomer,
   openOrderSearch,
   searchTable,
+  DASHBOARD_FIRST,
 } from "./landing-dashboard";
 import { launchLandingSuite } from "./landing-page";
 
-const { openLanding } = launchLandingSuite();
+const { openLanding } = launchLandingSuite({ search: DASHBOARD_FIRST });
 
 /** The fixture's order count, which Order search lists with nothing narrowing it. */
 const ALL_ORDERS = 51;

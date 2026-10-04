@@ -1,6 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import type { ReactElement, RefObject } from "react";
 
 import { tv } from "tailwind-variants";
@@ -11,6 +20,7 @@ import { Toast } from "@elmeragroup/fuse/toast";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
 import { useLandingTheme } from "../landing-theme";
+import { useSideOverlay, useSideShown } from "../window-side";
 import { CommandPalette } from "./command-palette";
 import { DashboardContext } from "./dashboard-context";
 import type { DashboardApi, Navigation, Notice } from "./dashboard-context";
@@ -88,16 +98,21 @@ type ShellProps = {
 function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
   const [state, dispatch] = useReducer(reduce, undefined, initialState);
   const [loading, setLoading] = useState(false);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useSideOverlay(false);
+  const [paletteOpen, setPaletteOpenState] = useSideOverlay(false);
   // `opening` counts transitions to open. The palette keys its search by it, because the popup
   // stays mounted through its exit animation and a quick reopen would otherwise keep the search.
-  const [palette, setPalette] = useState({ open: false, opening: 0 });
-  const setPaletteOpen = useCallback((open: boolean) => {
-    setPalette((current) =>
-      open === current.open ? current : { open, opening: open ? current.opening + 1 : current.opening }
-    );
-  }, []);
-  const [newOrderOpen, setNewOrderOpen] = useState(false);
+  const [paletteOpening, setPaletteOpening] = useState(0);
+  const setPaletteOpen = useCallback(
+    (open: boolean) => {
+      if (open && !paletteOpen) {
+        setPaletteOpening((count) => count + 1);
+      }
+      setPaletteOpenState(open);
+    },
+    [paletteOpen, setPaletteOpenState]
+  );
+  const [newOrderOpen, setNewOrderOpen] = useSideOverlay(false);
   const [mountedAt] = useState(() => Date.now());
   const fetchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const invoker = useRef<HTMLElement | null>(null);
@@ -109,6 +124,15 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
   const splitView = wide && isQueue(state.view);
 
   useEffect(() => () => clearTimeout(fetchTimer.current), []);
+
+  // The phone's sidebar Sheet keeps its open state in Fuse's Sidebar provider, out of reach of a
+  // render-time reset, so it closes in the commit that hides the side, before the browser paints.
+  const shown = useSideShown();
+  useLayoutEffect(() => {
+    if (!shown) {
+      setOpenMobile(false);
+    }
+  }, [shown, setOpenMobile]);
 
   const toggleSidebar = useCallback(() => {
     if (isMobile) {
@@ -208,6 +232,8 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
       splitView,
       remember,
       setPaletteOpen,
+      setSheetOpen,
+      setNewOrderOpen,
     ]
   );
 
@@ -244,10 +270,10 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
       }
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
-        if (!palette.open) {
+        if (!paletteOpen) {
           remember();
         }
-        setPaletteOpen(!palette.open);
+        setPaletteOpen(!paletteOpen);
         return;
       }
       if (event.metaKey || event.ctrlKey || event.target === null || ownsKeys(event.target)) {
@@ -290,15 +316,15 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
     return () => {
       element.removeEventListener("keydown", onKey);
     };
-  }, [scope, palette.open, setPaletteOpen, remember]);
+  }, [scope, paletteOpen, setPaletteOpen, remember, setNewOrderOpen]);
 
   return (
     <DashboardContext value={api}>
       <DashboardSidebar />
       <DashboardMain sheetOpen={sheetOpen && !splitView} onSheetOpenChange={setSheetOpen} />
       <CommandPalette
-        open={palette.open}
-        opening={palette.opening}
+        open={paletteOpen}
+        opening={paletteOpening}
         onOpenChange={setPaletteOpen}
         finalFocus={invoker}
         popup={palettePopup}

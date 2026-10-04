@@ -2,10 +2,18 @@ import type { Locator, Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
 import { DESKTOP_VIEWPORT, expectInside } from "./demo-page";
-import { OPEN_COUNTS, dashboard, expectBeside, openNewOrder, row, windowScope } from "./landing-dashboard";
+import {
+  OPEN_COUNTS,
+  dashboard,
+  expectBeside,
+  openNewOrder,
+  row,
+  windowScope,
+  DASHBOARD_FIRST,
+} from "./landing-dashboard";
 import { launchLandingSuite } from "./landing-page";
 
-const { openLanding } = launchLandingSuite();
+const { openLanding } = launchLandingSuite({ search: DASHBOARD_FIRST });
 
 /** The error Start date shows for a missing or past date. */
 const START_DATE_ERROR = "Pick a start date from today on.";

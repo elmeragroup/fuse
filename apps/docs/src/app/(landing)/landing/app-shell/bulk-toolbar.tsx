@@ -11,6 +11,7 @@ import { Dialog } from "@elmeragroup/fuse/dialog";
 import { DeviceMobile, Receipt, Users, X } from "@elmeragroup/fuse/icons";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
+import { useSideOverlay } from "../window-side";
 import { useDashboard } from "./dashboard-context";
 import { canSendContractSms, canSendReceipt, SELLER_LIST } from "./dashboard-orders";
 import type { Order, OrderStatus, Seller } from "./dashboard-orders";
@@ -119,7 +120,7 @@ function ChangeSellerDialog({
  */
 export function BulkToolbar(): ReactElement | null {
   const { state, dispatch, now, notify } = useDashboard();
-  const [changing, setChanging] = useState(false);
+  const [changing, setChanging] = useSideOverlay(false);
   const selection = state.orders.filter((order) => state.checked.includes(order.id));
 
   if (selection.length === 0 && !changing) {

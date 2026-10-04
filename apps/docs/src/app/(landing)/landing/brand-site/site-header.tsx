@@ -1,3 +1,5 @@
+"use client";
+
 import type { ReactElement } from "react";
 
 import { tv } from "tailwind-variants";
@@ -8,6 +10,7 @@ import { NavigationMenu } from "@elmeragroup/fuse/navigation-menu";
 import { Sheet } from "@elmeragroup/fuse/sheet";
 
 import { BrandWordmark } from "../brand-wordmark";
+import { useSideOverlay } from "../window-side";
 import type { Site, SiteHeader as SiteHeaderConfig } from "./site-model";
 import { SiteButton } from "./site-parts";
 
@@ -57,8 +60,10 @@ const styles = siteHeader();
 function SiteLogoArt({ site }: { site: Site }): ReactElement {
   switch (site.logo) {
     case "elmera-group":
+      // The group's teal is a light-scheme ink that sinks into a dark header, so the lockup draws
+      // in the header's own foreground, as the wordmarks do.
       return (
-        <span>
+        <span className={styles.wordmark()}>
           <ElmeraGroupLogo title={site.name} />
         </span>
       );
@@ -115,11 +120,12 @@ function Segments({
 
 /** The primary nav as a Fuse NavigationMenu: panels of described links, and plain links. */
 function SiteNav({ header }: { header: SiteHeaderConfig }): ReactElement {
+  const [value, setValue] = useSideOverlay<string | null>(null);
   return (
-    <NavigationMenu.Root aria-label={header.nav.label}>
+    <NavigationMenu.Root aria-label={header.nav.label} value={value} onValueChange={setValue}>
       <NavigationMenu.List>
         {header.nav.items.map((item) => (
-          <NavigationMenu.Item key={item.label}>
+          <NavigationMenu.Item key={item.label} value={item.label}>
             {item._tag === "Menu" ? (
               <>
                 <NavigationMenu.Trigger className={styles.trigger()}>
@@ -157,8 +163,9 @@ function SiteNav({ header }: { header: SiteHeaderConfig }): ReactElement {
  * tabs, the nav, the utility links and the actions fold into this Sheet.
  */
 function MenuSheet({ header }: { header: SiteHeaderConfig }): ReactElement {
+  const [open, setOpen] = useSideOverlay(false);
   return (
-    <Sheet.Root>
+    <Sheet.Root open={open} onOpenChange={setOpen}>
       <Sheet.Trigger render={<Button variant="ghost" className={styles.menuTrigger()} />}>
         <List />
         {header.menu}

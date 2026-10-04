@@ -159,17 +159,24 @@
   the `peerDependenciesMeta` type and `publishedPeerDependencies()`, and
   `packages/fuse/scripts/size-limit.ts` repeats it in `PEER_EXTERNALS`. Derive all four from
   `PUBLISHED_PEER_RANGES`.
+- Give `DataTable.ColumnToggle` and `DataTable.Pagination`'s Rows per page Select a controlled
+  open state. Neither takes `open` or `onOpenChange`, so a host that must close their popups
+  remounts them, as the landing's Order search does
+  (`apps/docs/src/app/(landing)/landing/app-shell/order-search.tsx`).
 
 ## Landing stand-ins
 
-The hero window's Dashboard (`apps/docs/src/app/(landing)/landing/app-shell/`) and brand sites
-(`landing/brand-site/`) compose these pieces locally because Fuse has no part for them. Replace
+The hero window's Dashboard (`apps/docs/src/app/(landing)/landing/app-shell/`), the brand sites
+(`landing/brand-site/`) and the nav's theme picker (`landing/theme-picker/`) compose these pieces
+locally because Fuse has no part for them. Replace
 each stand-in once Fuse ships the part.
 
 - Add a `Kbd` part. `app-shell/kbd.tsx` draws the shortcut caps in the sidebar, tooltips and
   palette.
 - Add a `Command` palette part. `app-shell/command-palette.tsx` builds one from `Dialog` and the
   ARIA combobox pattern, as the docs search (`apps/docs/src/components/search-palette.tsx`) does.
+- Add Sun, Moon and Monitor to the icon roster. The nav's theme picker draws Phosphor's regular
+  paths for light, dark and system in `theme-picker/scheme-icon.tsx`.
 - Add a floating action bar for row selections. `app-shell/bulk-toolbar.tsx` positions its own
   `role="toolbar"` over the queues' list and over Order search's table.
 - Add a list and detail split that becomes a Sheet below a breakpoint. `app-shell/dashboard-main.tsx`
@@ -193,6 +200,11 @@ each stand-in once Fuse ships the part.
 - Let `Sidebar.Inset` render an element other than `<main>`. A page that already has a `main`
   landmark cannot use it, so `app-shell/dashboard-main.tsx` copies its inset classes onto a `div`
   next to the `inset` rail.
+
+Every overlay on a side of the hero window must close when that side hides, through
+`useSideOverlay` or `useSideRemountKey` in `landing/window-side.tsx`. Nothing enforces this, so a
+new overlay that skips both keeps its scroll lock after a flip. Add a lint rule, or a browser test
+that opens every overlay on a side before flipping the window.
 
 ## Product-triggered work
 

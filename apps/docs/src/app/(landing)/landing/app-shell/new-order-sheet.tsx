@@ -20,6 +20,7 @@ import { Sheet } from "@elmeragroup/fuse/sheet";
 import { TextField } from "@elmeragroup/fuse/text-field";
 import { TextareaField } from "@elmeragroup/fuse/textarea-field";
 
+import { useSideOverlay } from "../window-side";
 import { useDashboard } from "./dashboard-context";
 import { CAMPAIGNS, osloDate, PRODUCTS, productPrice, STARTUP_TYPES } from "./dashboard-orders";
 import type { Campaign, Product, StartupType } from "./dashboard-orders";
@@ -92,6 +93,7 @@ function NewOrderForm({ onSaved }: { onSaved: () => void }): ReactElement {
   const { dispatch, now, notify } = useDashboard();
   const [fields, setFields] = useState<DraftFields>(EMPTY_FIELDS);
   const [errors, setErrors] = useState<ReadonlyMap<DraftField, string>>(new Map());
+  const [campaignOpen, setCampaignOpen] = useSideOverlay(false);
   // The fields as last stored, ahead of the render that shows them. React Aria can commit a
   // constrained date in the same blur that rechecks it, after this render's `fields` were read.
   const latestFields = useRef(fields);
@@ -242,6 +244,8 @@ function NewOrderForm({ onSaved }: { onSaved: () => void }): ReactElement {
             <Field.Label>Campaign</Field.Label>
             <Select.Root<Campaign | "none">
               items={CAMPAIGN_ITEMS}
+              open={campaignOpen}
+              onOpenChange={setCampaignOpen}
               value={fields.campaign}
               onValueChange={(value) => {
                 set("campaign", value ?? "none");

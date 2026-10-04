@@ -26,6 +26,7 @@ import { TimelineList } from "@elmeragroup/fuse/timeline-list";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
 import { useLandingTheme } from "../landing-theme";
+import { useSideOverlay } from "../window-side";
 import { useDashboard } from "./dashboard-context";
 import {
   canSendContractSms,
@@ -143,8 +144,9 @@ function CopyButton({ value, label }: { value: string; label: string }): ReactEl
 function StatusMenu({ order }: { order: Order }): ReactElement {
   const { dispatch, now, notify } = useDashboard();
   const label = ORDER_STATUSES[order.status].label;
+  const [open, setOpen] = useSideOverlay(false);
   return (
-    <DropdownMenu.Root>
+    <DropdownMenu.Root open={open} onOpenChange={setOpen}>
       <DropdownMenu.Trigger render={<Button variant="outline" size="sm" aria-label={`Status: ${label}`} />}>
         <OrderStatusIcon status={order.status} />
         <span className={styles.statusLabel()}>{label}</span>
@@ -400,8 +402,9 @@ function Activity({ order }: { order: Order }): ReactElement {
 function MoreActions({ order, onCancel }: { order: Order; onCancel: () => void }): ReactElement {
   const { dispatch, now, notify } = useDashboard();
   const closed = order.status === "Cancelled" || order.status === "Done";
+  const [open, setOpen] = useSideOverlay(false);
   return (
-    <DropdownMenu.Root>
+    <DropdownMenu.Root open={open} onOpenChange={setOpen}>
       <DropdownMenu.Trigger render={<Button variant="ghost" size="icon-sm" aria-label="More actions" />}>
         <DotsThree />
       </DropdownMenu.Trigger>
@@ -466,7 +469,7 @@ export type OrderDetailProps = {
 export function OrderDetail({ order, renderTitle, barEnd }: OrderDetailProps): ReactElement {
   const { dispatch, now, notify } = useDashboard();
   const { theme } = useLandingTheme();
-  const [confirming, setConfirming] = useState(false);
+  const [confirming, setConfirming] = useSideOverlay(false);
   const title = renderTitle?.(order.customer) ?? <h2 className={styles.title()}>{order.customer}</h2>;
   const product = order.campaign === undefined ? order.product : `${order.product} · ${order.campaign}`;
 

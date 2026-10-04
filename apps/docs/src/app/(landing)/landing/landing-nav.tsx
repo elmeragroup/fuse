@@ -8,15 +8,12 @@ import { tv } from "tailwind-variants";
 import { Button } from "@elmeragroup/fuse/button";
 import { ElmeraGroupLogo } from "@elmeragroup/fuse/icons";
 import { NavigationMenu } from "@elmeragroup/fuse/navigation-menu";
-import { COLOR_SCHEMES } from "@elmeragroup/fuse/theme";
 
 import { HOME_PAGE, staticPagesIn } from "../../../lib/pages";
 import type { StaticPage } from "../../../lib/pages";
-import { COLOR_SCHEME_LABELS } from "../../../lib/theme";
 import { ComponentShowcase, MenuCardText } from "./component-showcase";
 import { QUICK_START } from "./landing-facts";
-import { useLandingTheme } from "./landing-theme";
-import { SingleToggle } from "./product-parts";
+import { ThemeChipPicker } from "./theme-picker/theme-chip-picker";
 
 const landingNav = tv({
   slots: {
@@ -25,33 +22,17 @@ const landingNav = tv({
     wordmark:
       "text-base font-semibold flex items-center gap-2.5 rounded-md text-foreground no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
     mark: "size-5",
-    // Below md the menu and the CTA do not fit in one bar; below lg the scheme switch moves to
-    // the footer to leave the menu room.
+    // Below md the menu and the CTA do not fit in one bar beside the theme picker.
     menu: "md:flex hidden flex-none",
     panel: "w-2xl m-0 grid list-none grid-cols-2 gap-1 p-0",
-    end: "ml-auto flex items-center gap-4",
-    version: "text-xs hidden font-mono text-muted-foreground lg:inline",
-    scheme: "hidden lg:inline-flex",
+    end: "sm:gap-4 ml-auto flex min-w-0 items-center gap-3",
+    // From `xl`: at `lg` the theme chip needs the room to show its whole summary.
+    version: "text-xs xl:inline hidden font-mono text-muted-foreground",
+    cta: "shrink-0",
   },
 });
 
 const styles = landingNav();
-
-/** Light, dark or the operating system's choice, under the same reveal as a brand change. */
-export function SchemeSwitch(): ReactElement {
-  const { colorScheme, changeColorScheme } = useLandingTheme();
-
-  return (
-    <SingleToggle
-      label="Colour scheme"
-      size="sm"
-      options={COLOR_SCHEMES}
-      labels={COLOR_SCHEME_LABELS}
-      value={colorScheme}
-      onValueChange={changeColorScheme}
-    />
-  );
-}
 
 type MenuPage = Pick<StaticPage, "href" | "label" | "description">;
 
@@ -104,10 +85,12 @@ export function LandingNav(): ReactElement {
         </NavigationMenu.Root>
         <div className={styles.end()}>
           <span className={styles.version()}>v1.0</span>
-          <span className={styles.scheme()}>
-            <SchemeSwitch />
-          </span>
-          <Button size="sm" render={<Link href={QUICK_START.href} />} nativeButton={false}>
+          <ThemeChipPicker />
+          <Button
+            size="sm"
+            className={styles.cta()}
+            render={<Link href={QUICK_START.href} />}
+            nativeButton={false}>
             Get started
           </Button>
         </div>

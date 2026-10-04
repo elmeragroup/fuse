@@ -17,6 +17,8 @@ export type LandingOptions = {
   readonly colorScheme?: "light" | "dark";
   /** Runs before navigation, for routes, clocks, permissions and init scripts. */
   readonly prepare?: (page: Page) => Promise<void>;
+  /** The query the landing opens with, such as `?theme=internal-fkas-private`. */
+  readonly search?: string;
 };
 
 /** The landing's opener for one suite file, bound to that file's browser. */
@@ -36,13 +38,17 @@ export type LandingSuite = {
  * picker's mark masks stay empty. Processing a mark blurs a large canvas on the main thread, which
  * on a slow runner held a brand pick back for seconds (measured with six shaders on the page: 2.8s
  * at 4x CPU throttling, 0.1s with the marks refused), and only the shader tests look at a shader.
+ *
+ * `search` is the query every opening of this suite uses unless a test passes its own.
  */
-export function launchLandingSuite(): LandingSuite {
+export function launchLandingSuite({
+  search: suiteSearch = "",
+}: { readonly search?: string } = {}): LandingSuite {
   const browser = launchSuiteBrowser();
   return {
     openLanding: async (
       viewport,
-      { shaders = false, reducedMotion = "reduce", colorScheme = "light", prepare } = {}
+      { shaders = false, reducedMotion = "reduce", colorScheme = "light", prepare, search = suiteSearch } = {}
     ) => {
       const context = await browser().newContext({ viewport, reducedMotion, colorScheme });
       const page = await context.newPage();
@@ -51,8 +57,9 @@ export function launchLandingSuite(): LandingSuite {
         await page.route("**/landing/marks/**", async (route) => route.abort());
       }
       await prepare?.(page);
-      await page.goto(`${docsBaseUrl()}/`, { waitUntil: "load" });
-      await page.getByRole("heading", { level: 1 }).waitFor();
+      await page.goto(`${docsBaseUrl()}/${search}`, { waitUntil: "load" });
+      // The hero window's site has a heading of its own, so the wait names the landing's.
+      await page.getByRole("heading", { level: 1, name: /^One system/u }).waitFor();
       return page;
     },
   };

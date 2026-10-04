@@ -2,10 +2,10 @@ import type { Locator, Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
 import { DESKTOP_VIEWPORT } from "./demo-page";
-import { PHONE_VIEWPORT, dashboard, focusedCustomer, row } from "./landing-dashboard";
+import { PHONE_VIEWPORT, dashboard, focusedCustomer, row, DASHBOARD_FIRST } from "./landing-dashboard";
 import { launchLandingSuite } from "./landing-page";
 
-const { openLanding } = launchLandingSuite();
+const { openLanding } = launchLandingSuite({ search: DASHBOARD_FIRST });
 
 /** A query that matches several orders, so the active option can move off the first. */
 const MULTI_RESULT_QUERY = "StrømSmart";

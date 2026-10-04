@@ -10,6 +10,7 @@ import { ShieldCheck } from "@elmeragroup/fuse/icons";
 import { Select } from "@elmeragroup/fuse/select";
 import type { SupportedLocale } from "@elmeragroup/fuse/theme";
 
+import { useSideOverlay } from "../window-side";
 import type { SitePriceArea as SitePriceAreaConfig, SiteSection } from "./site-model";
 
 const sitePriceArea = tv({
@@ -109,6 +110,7 @@ export function SitePriceArea({
   locale: SupportedLocale;
 }): ReactElement {
   const [code, setCode] = useState<string | null>(null);
+  const [open, setOpen] = useSideOverlay(false);
   const area = section.areas.find((candidate) => candidate.code === code);
   const price = new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const ceiling = Math.max(...section.areas.map((entry) => entry.high));
@@ -119,7 +121,7 @@ export function SitePriceArea({
       <div className={styles.card()}>
         <Field.Root>
           <Field.Label>{section.label}</Field.Label>
-          <Select.Root items={items} value={code} onValueChange={setCode}>
+          <Select.Root items={items} open={open} onOpenChange={setOpen} value={code} onValueChange={setCode}>
             <Select.Trigger>
               <Select.Value placeholder={section.placeholder} />
             </Select.Trigger>

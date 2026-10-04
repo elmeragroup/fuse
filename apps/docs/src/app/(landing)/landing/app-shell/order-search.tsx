@@ -27,6 +27,7 @@ import { CaretDown, MagnifyingGlass } from "@elmeragroup/fuse/icons";
 import { InputGroup } from "@elmeragroup/fuse/input-group";
 import { ScrollArea } from "@elmeragroup/fuse/scroll-area";
 
+import { useSideOverlay, useSideRemountKey } from "../window-side";
 import { useDashboard } from "./dashboard-context";
 import { ORDER_STATUSES, relativeDate, SELLERS, STATUS_ORDER } from "./dashboard-orders";
 import type { Order, OrderId } from "./dashboard-orders";
@@ -199,8 +200,9 @@ function FacetMenu<K extends FacetKey>({ facetKey }: { facetKey: K }): ReactElem
   const { state, dispatch } = useDashboard();
   const facet = FACETS[facetKey];
   const picked = state.query.picks[facetKey];
+  const [open, setOpen] = useSideOverlay(false);
   return (
-    <DropdownMenu.Root>
+    <DropdownMenu.Root open={open} onOpenChange={setOpen}>
       <DropdownMenu.Trigger
         render={
           <Button
@@ -294,6 +296,11 @@ type Paging = { readonly query: OrderQuery; readonly pagination: PaginationState
 export function OrderSearch(): ReactElement {
   const { state, dispatch, loading, openOrder } = useDashboard();
   const { orders, query, checked } = state;
+  // The Columns menu and the Rows per page Select keep their open state inside Fuse's DataTable,
+  // out of `useSideOverlay`'s reach, so a hidden side remounts them, which closes them and drops
+  // any scroll lock they hold. They stay in the layout through the flip. The table, owned here,
+  // keeps the visible columns, the page size and the page.
+  const controlsKey = useSideRemountKey();
   const rows = useMemo(() => searchOrders(orders, query), [orders, query]);
   const data = useMemo(() => (loading ? [] : [...rows]), [loading, rows]);
   const rowSelection = useMemo(() => selectionOf(checked), [checked]);
@@ -363,6 +370,7 @@ export function OrderSearch(): ReactElement {
           </p>
           <table.AppTable>
             <table.ColumnToggle
+              key={controlsKey}
               className={styles.columns()}
               getLabel={(column) => COLUMN_LABELS.get(column.id) ?? column.id}
             />
@@ -391,7 +399,7 @@ export function OrderSearch(): ReactElement {
             </table.Content>
           </div>
         </ScrollArea.Root>
-        <table.Pagination className={styles.pagination()} pageSizes={[10, 25, 50]} />
+        <table.Pagination key={controlsKey} className={styles.pagination()} pageSizes={[10, 25, 50]} />
       </table.AppTable>
     </div>
   );
