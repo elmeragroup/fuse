@@ -20,16 +20,23 @@ export const dynamicParams = false;
  */
 export const dynamic = "force-dynamic";
 
+/**
+ * The handler's route context, written here rather than through Next's generated `RouteContext`,
+ * which exists only after `next typegen` and so is an error type where lint runs on a fresh
+ * checkout. The optional catch-all is absent for the bare `/og/docs`.
+ */
+type DocsImageContext = {
+  /** The catch-all segments, as Next passes them to a route handler. */
+  readonly params: Promise<{ path?: string[] }>;
+};
+
 /** One image per authored docs page; the docs index draws at the bare `/og/docs`. */
 export function generateStaticParams(): { path: string[] }[] {
   return OG_DOCS_PAGES.map((page) => ({ path: page.href === "/docs" ? [] : page.href.slice(1).split("/") }));
 }
 
 /** An authored docs page's Open Graph image, drawn in the docs theme. */
-export async function GET(
-  _request: Request,
-  { params }: RouteContext<"/og/docs/[[...path]]">
-): Promise<Response> {
+export async function GET(_request: Request, { params }: DocsImageContext): Promise<Response> {
   const { path = [] } = await params;
   const page = ogDocsPage(docsHrefFromSegments(path));
   if (page === undefined) {

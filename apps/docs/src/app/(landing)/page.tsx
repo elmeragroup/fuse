@@ -19,7 +19,7 @@ export type LandingRouteProps = {
  * the raw parameter, so an illegal or repeated value previews the same fallback theme the page
  * opens in.
  */
-export async function generateMetadata({ searchParams }: PageProps<"/">): Promise<Metadata> {
+export async function generateMetadata({ searchParams }: LandingRouteProps): Promise<Metadata> {
   const query = await searchParams;
   const theme = parseThemeQuery(query[THEME_QUERY]);
   return ogMetadata({

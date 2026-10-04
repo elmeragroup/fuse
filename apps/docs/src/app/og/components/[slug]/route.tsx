@@ -21,16 +21,23 @@ export const dynamicParams = false;
  */
 export const dynamic = "force-dynamic";
 
+/**
+ * The handler's route context, written here rather than through Next's generated `RouteContext`,
+ * which exists only after `next typegen` and so is an error type where lint runs on a fresh
+ * checkout.
+ */
+type ComponentImageContext = {
+  /** The dynamic segment, as Next passes it to a route handler. */
+  readonly params: Promise<{ slug: string }>;
+};
+
 /** One image per component page in the generated manifest. */
 export function generateStaticParams(): { slug: string }[] {
   return COMPONENT_PAGES.map((component) => ({ slug: component.slug }));
 }
 
 /** A component page's Open Graph image, drawn in the docs theme. */
-export async function GET(
-  _request: Request,
-  { params }: RouteContext<"/og/components/[slug]">
-): Promise<Response> {
+export async function GET(_request: Request, { params }: ComponentImageContext): Promise<Response> {
   const { slug } = await params;
   if (!isComponentSlug(slug)) {
     notFound();
