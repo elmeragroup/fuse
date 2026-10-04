@@ -59,13 +59,10 @@
   `rgb()`, `oklch()` and `lab()` as Chromium's computed serializations.
 - No select demo shows `Select.Content alignItemWithTrigger`; only `select.browser.test.tsx`
   exercises it. Add a demo beside the page and list it in the component inventory.
-- `Select.Content` measures its fixed-position containing block through a `ResizeObserver` on
-  its portal target: in the frame after it mounts, and when the target resizes
-  (`select/fixed-containing-block.ts`). Two cases miss item alignment's fallback. In the
-  first, a host transforms an ancestor after mount without resizing the target, and the popup
-  opens away from its trigger. In the second, a `defaultOpen` popup opens before the
-  probe runs, so it opens beside its trigger on an ordinary page. Measuring when the trigger
-  is pressed would cover both, but it needs the trigger and the content to share state.
+- `Select.Content` measures its fixed-position containing block when it mounts, when its portal
+  target resizes and when Base UI reports an open request (`select/select.tsx`). A host that
+  sets `open` from its own code, without a trigger event, after it transforms an ancestor
+  of the target, gets the earlier measurement, and the popup opens away from its trigger.
 - React Aria 3.52.1 misjudges the room around a popover inside a positioned container. In
   `react-aria/dist/private/overlays/calculatePosition.mjs`, `getOffset` (lines 363-371) measures
   a boundary in page coordinates and adds the document scroll. `getPosition` (line 300)

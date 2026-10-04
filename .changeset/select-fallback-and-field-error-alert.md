@@ -12,6 +12,13 @@ corners. A shorter block at the viewport origin therefore falls back too. Query 
 item alignment. This also places the `DataTable` "Rows per page" list correctly
 inside a transformed `ThemeScope`.
 
+`Select.Content` also measures as the user opens it, so an ancestor a host transforms after the
+page loads now places the list beside its trigger at the next open. A `Select` that opens from
+its first render, through `defaultOpen` or `open`, waits for the first measurement before it
+shows its list, and then aligns the selected item with the trigger on an ordinary page. Before,
+it opened beside the trigger. `data-align-trigger` now always names the placement the list
+actually has.
+
 The react-aria fields' error message has `role="alert"`, like Fuse `Field`'s error. `DateField`,
 `DatePicker`, `DateRangePicker` and `SearchField` now announce an error when it appears, and
 `aria-describedby` still ties it to the field.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { createContext, use, useEffect, useMemo, useRef, useState } from "react";
 import type { ComponentProps, ReactElement } from "react";
 
 import { Select as SelectPrimitive } from "@base-ui/react/select";
@@ -28,10 +28,51 @@ import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/o
 import { fixedPositionsAgainstViewport } from "./fixed-containing-block";
 import { selectTriggerSize } from "./select-variants";
 
-export function SelectRoot<Value = unknown, Multiple extends boolean | undefined = false>(
-  props: SelectRootType.Props<Value, Multiple>
-): ReactElement {
-  return <SelectPrimitive.Root {...props} />;
+type SelectOpening = {
+  /**
+   * Registers the content's measurement of its fixed-position containing block, which the root
+   * runs as the user opens the popup. Returns the function that unregisters it.
+   */
+  readonly register: (measure: () => void) => () => void;
+  /** Whether the popup was open on the root's first render, before any measurement. */
+  readonly openAtMount: boolean;
+};
+
+const SelectOpeningContext = createContext<SelectOpening | null>(null);
+
+export function SelectRoot<Value = unknown, Multiple extends boolean | undefined = false>({
+  onOpenChange,
+  ...props
+}: SelectRootType.Props<Value, Multiple>): ReactElement {
+  const measure = useRef<(() => void) | null>(null);
+  const [openAtMount] = useState(props.open ?? props.defaultOpen ?? false);
+  const opening = useMemo(
+    (): SelectOpening => ({
+      register: (next) => {
+        measure.current = next;
+        return () => {
+          if (measure.current === next) {
+            measure.current = null;
+          }
+        };
+      },
+      openAtMount,
+    }),
+    [openAtMount]
+  );
+  return (
+    <SelectOpeningContext.Provider value={opening}>
+      <SelectPrimitive.Root
+        {...props}
+        onOpenChange={(open, eventDetails) => {
+          onOpenChange?.(open, eventDetails);
+          if (open && !eventDetails.isCanceled) {
+            measure.current?.();
+          }
+        }}
+      />
+    </SelectOpeningContext.Provider>
+  );
 }
 
 export type SelectTriggerProps = ComponentProps<typeof SelectPrimitive.Trigger> & {
@@ -98,9 +139,9 @@ export type SelectContentProps = ComponentProps<typeof SelectPrimitive.Popup> &
      * the viewport is the fixed-position containing block of the portal target: the
      * enclosing `ThemeScope`, `container` or the body. When an ancestor of that target,
      * such as a transformed one, contains fixed content instead, the popup opens beside
-     * its trigger, even when this is `true`. Fuse measures this in the frame after the
-     * content mounts and whenever the portal target resizes, so a popup open from the
-     * first render (`defaultOpen`) opens beside its trigger.
+     * its trigger, even when this is `true`. Fuse measures this after the content mounts,
+     * whenever the portal target resizes and each time the user opens the popup. A popup
+     * open from the first render (`defaultOpen`) appears once the first measurement lands.
      * @default true
      */
     alignItemWithTrigger?: ComponentProps<typeof SelectPrimitive.Positioner>["alignItemWithTrigger"];
@@ -118,53 +159,65 @@ export function SelectContent({
   ...props
 }: SelectContentProps): ReactElement | null {
   const resolved = useResolvedPortalContainer(container);
+  const opening = use(SelectOpeningContext);
   // Base UI writes item-aligned coordinates from the viewport into a `position: fixed` box,
-  // which an ancestor holding fixed content would offset a second time. The observer reports
-  // in the frame after it starts, before a user can open the popup, and again when the target
-  // resizes; Base UI takes `alignItemWithTrigger` only while the popup is closed. Until the
-  // first report, the popup opens beside its trigger, which is always in place. Without a scope
-  // or `container`, Base UI portals into the body.
-  const [viewportContains, setViewportContains] = useState(false);
+  // which an ancestor holding fixed content would offset a second time. Base UI copies
+  // `alignItemWithTrigger` when its positioner mounts and in renders where the popup is not yet
+  // mounted, which includes the render that opens it. So a popup open from the first render
+  // waits for the first measurement before its positioner mounts, and the root measures again
+  // as the user opens the popup, in the same update as the open state. The observer covers a
+  // popup a host opens through `open` without the trigger. Without a scope or `container`,
+  // Base UI portals into the body.
+  const [containingBlock, setContainingBlock] = useState<"unmeasured" | "viewport" | "ancestor">(
+    "unmeasured"
+  );
   useEffect(() => {
     if (resolved === null) {
       return;
     }
     const target = resolved ?? document.body;
-    const observer = new ResizeObserver(() => {
-      setViewportContains(fixedPositionsAgainstViewport(target));
-    });
+    const measure = () => {
+      setContainingBlock(fixedPositionsAgainstViewport(target) ? "viewport" : "ancestor");
+    };
+    const observer = new ResizeObserver(measure);
     observer.observe(target);
+    const unregister = opening?.register(measure);
     return () => {
       observer.disconnect();
+      unregister?.();
     };
-  }, [resolved]);
+  }, [resolved, opening]);
   if (resolved === null) {
     return null;
   }
-  const aligned = alignItemWithTrigger && viewportContains;
+  const aligned = alignItemWithTrigger && containingBlock === "viewport";
+  const awaitingMeasurement =
+    alignItemWithTrigger && containingBlock === "unmeasured" && opening?.openAtMount !== false;
   return (
     <OverlayPortal portal={SelectPrimitive.Portal} container={resolved}>
-      <SelectPrimitive.Positioner
-        side={side}
-        sideOffset={sideOffset}
-        align={align}
-        alignOffset={alignOffset}
-        alignItemWithTrigger={aligned}
-        className={overlayPositionerClass}>
-        <SelectPrimitive.Popup
-          data-slot="select-content"
-          data-align-trigger={aligned ? "true" : "false"}
-          className={mergeClassName(
-            className,
-            overlayTimedPopupClass,
-            "relative max-h-(--available-height) w-(--anchor-width) min-w-36 overflow-x-hidden overflow-y-auto rounded-lg data-[align-trigger=true]:animate-none"
-          )}
-          {...props}>
-          <SelectScrollUpButton />
-          <SelectPrimitive.List>{children}</SelectPrimitive.List>
-          <SelectScrollDownButton />
-        </SelectPrimitive.Popup>
-      </SelectPrimitive.Positioner>
+      {awaitingMeasurement ? null : (
+        <SelectPrimitive.Positioner
+          side={side}
+          sideOffset={sideOffset}
+          align={align}
+          alignOffset={alignOffset}
+          alignItemWithTrigger={aligned}
+          className={overlayPositionerClass}>
+          <SelectPrimitive.Popup
+            data-slot="select-content"
+            data-align-trigger={aligned ? "true" : "false"}
+            className={mergeClassName(
+              className,
+              overlayTimedPopupClass,
+              "relative max-h-(--available-height) w-(--anchor-width) min-w-36 overflow-x-hidden overflow-y-auto rounded-lg data-[align-trigger=true]:animate-none"
+            )}
+            {...props}>
+            <SelectScrollUpButton />
+            <SelectPrimitive.List>{children}</SelectPrimitive.List>
+            <SelectScrollDownButton />
+          </SelectPrimitive.Popup>
+        </SelectPrimitive.Positioner>
+      )}
     </OverlayPortal>
   );
 }
