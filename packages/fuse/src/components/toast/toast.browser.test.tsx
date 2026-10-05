@@ -16,6 +16,8 @@ import {
   snapshotDocumentTheme,
   stampDocumentTheme,
 } from "../../../test/themed-browser-render";
+import { Dialog } from "../dialog/index";
+import { Sheet } from "../sheet/index";
 import { Toast } from "./index";
 
 const CLOSE_COPY = {
@@ -479,4 +481,53 @@ describe("Toast overlay containment", () => {
     expect(island.contains(root)).toBe(true);
     expect([...document.body.children].includes(root)).toBe(false);
   });
+});
+
+describe("Toast layer", () => {
+  // A toast raised from inside an open modal must paint over it. The modal's portal mounts
+  // after the viewport's, so a shared z-index would let the modal win on DOM order.
+  for (const [family, modal] of [
+    [
+      "Sheet",
+      <Sheet.Root key="sheet">
+        <Sheet.Trigger>Open modal</Sheet.Trigger>
+        <Sheet.Content>
+          <Sheet.Title>Order details</Sheet.Title>
+        </Sheet.Content>
+      </Sheet.Root>,
+    ],
+    [
+      "Dialog",
+      <Dialog.Root key="dialog">
+        <Dialog.Trigger>Open modal</Dialog.Trigger>
+        <Dialog.Content>
+          <Dialog.Title>Order details</Dialog.Title>
+        </Dialog.Content>
+      </Dialog.Root>,
+    ],
+  ] as const) {
+    it(`paints a toast above an open ${family}`, async () => {
+      const { manager } = renderToast(
+        <>
+          <Toast.Viewport />
+          {modal}
+        </>
+      );
+      await userEvent.click(page.getByRole("button", { name: "Open modal", exact: true }));
+      await vi.waitFor(() => {
+        expect(page.getByRole("dialog", { name: "Order details", exact: true }).query()).toBeTruthy();
+      });
+
+      manager.add({ title: "Copied to clipboard", timeout: 0 });
+      const root = await waitForToast("Copied to clipboard");
+      await vi.waitFor(() => {
+        // DOM audit: paint order has no accessible role. The covering backdrop or popup
+        // panel has none either, so the failure message names it by its data-slot.
+        const box = root.getBoundingClientRect();
+        const topmost = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+        const covering = topmost?.closest("[data-slot]")?.getAttribute("data-slot");
+        expect(topmost !== null && root.contains(topmost), `covered by ${covering}`).toBe(true);
+      });
+    });
+  }
 });

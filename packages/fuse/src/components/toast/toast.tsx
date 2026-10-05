@@ -22,7 +22,7 @@ import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
 import { Button } from "../button/button";
 import { overlayCloseStrings } from "../overlay/intl";
-import { overlayLayer } from "../overlay/overlay-classes";
+import { toastLayer } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
 import { toastVariants } from "./toast-variants";
@@ -295,7 +295,7 @@ export function ToastViewport({
         className={mergeClassName(
           className,
           "sm:right-8 sm:bottom-8 sm:w-[340px] fixed top-auto right-4 bottom-4 isolate mx-auto flex w-[calc(100%-2rem)]",
-          overlayLayer,
+          toastLayer,
           selfFocusRingClass
         )}
         {...props}>
