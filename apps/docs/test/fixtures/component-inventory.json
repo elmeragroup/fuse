@@ -569,7 +569,13 @@
   "toast": {
     "title": "Toast",
     "rsc": "client",
-    "demos": ["toast-statuses.tsx", "toast-action.tsx", "toast-promise.tsx", "toast-stacking.tsx"]
+    "demos": [
+      "toast-statuses.tsx",
+      "toast-action.tsx",
+      "toast-promise.tsx",
+      "toast-stacking.tsx",
+      "toast-module-manager.tsx"
+    ]
   },
   "toggle": {
     "title": "Toggle",
