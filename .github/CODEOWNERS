@@ -1,2 +1,2 @@
-# One of these owners must approve every pull request into main (see the "Protect main" ruleset).
+# Only these owners can merge a pull request into main (see the "Protect main" ruleset). No approval is required.
 * @tommybarvaag @oddhus
