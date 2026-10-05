@@ -431,6 +431,8 @@ describe("runtime listeners and layout motion", () => {
   it("installs event listeners only from the reviewed owners", () => {
     expect(filesContainingCode(".addEventListener(").toSorted()).toEqual([
       "components/sidebar/sidebar.tsx",
+      // `beforeinput`, which React does not expose: the numeric filter strips a paste before maxlength.
+      "components/text-field/text-field.tsx",
       "hooks/use-form-reset.ts",
       "hooks/use-is-mobile.ts",
       "hooks/use-predicted-events.ts",

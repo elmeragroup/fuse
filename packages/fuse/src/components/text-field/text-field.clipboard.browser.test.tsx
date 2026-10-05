@@ -126,6 +126,96 @@ describe("TextField", () => {
     expect(onChange).toHaveBeenLastCalledWith("456");
   });
 
+  it("counts maxLength in digits under filter=numeric, so a pasted run with separators keeps its digits", async () => {
+    const onChange = vi.fn();
+    function ControlledPhone() {
+      const [value, setValue] = useState("");
+      return (
+        <TextField
+          label="Controlled phone"
+          filter="numeric"
+          maxLength={8}
+          value={value}
+          onChange={setValue}
+        />
+      );
+    }
+    renderThemed(
+      <>
+        <TextField aria-label="Clipboard source" />
+        <TextField label="Phone" filter="numeric" maxLength={8} onChange={onChange} />
+        <ControlledPhone />
+      </>
+    );
+    const source = inputNamed("Clipboard source");
+    const phone = inputNamed("Phone");
+    async function pasteInto(
+      target: HTMLInputElement,
+      text: string,
+      selection: [number, number]
+    ): Promise<void> {
+      source.value = text;
+      source.focus();
+      source.select();
+      await userEvent.copy();
+      target.focus();
+      target.setSelectionRange(...selection);
+      await userEvent.paste();
+    }
+    async function pasteIntoPhone(text: string, selection: [number, number]): Promise<void> {
+      await pasteInto(phone, text, selection);
+    }
+
+    await pasteIntoPhone("912 34 567", [0, 0]);
+    expect(phone).toHaveProperty("value", "91234567");
+    expect(onChange).toHaveBeenLastCalledWith("91234567");
+
+    // An over-long run keeps its leading digits, as the native limit keeps leading characters.
+    await pasteIntoPhone("1234 5678 9", [0, 8]);
+    expect(phone).toHaveProperty("value", "12345678");
+
+    // Into the middle: the digits land at the caret, and the caret ends after them.
+    await pasteIntoPhone("12", [0, 8]);
+    await pasteIntoPhone("3 4", [1, 1]);
+    expect(phone).toHaveProperty("value", "1342");
+    expect(phone.selectionStart).toBe(3);
+
+    // A full field takes nothing more.
+    await pasteIntoPhone("12345678", [0, 4]);
+    await pasteIntoPhone("9 9", [8, 8]);
+    expect(phone).toHaveProperty("value", "12345678");
+    expect(onChange).toHaveBeenLastCalledWith("12345678");
+
+    // A controlled field takes the digits through its own onChange.
+    const controlled = inputNamed("Controlled phone");
+    await pasteInto(controlled, "912 34 567", [0, 0]);
+    expect(controlled).toHaveProperty("value", "91234567");
+  });
+
+  it("removes the numeric insertion listener when the filter goes away", async () => {
+    const { rerender } = renderThemed(
+      <>
+        <TextField aria-label="Clipboard source" defaultValue="912 34 567" />
+        <TextField label="Phone" filter="numeric" maxLength={8} />
+      </>
+    );
+    rerender(
+      <>
+        <TextField aria-label="Clipboard source" defaultValue="912 34 567" />
+        <TextField label="Phone" maxLength={8} />
+      </>
+    );
+    const source = inputNamed("Clipboard source");
+    source.focus();
+    source.select();
+    await userEvent.copy();
+    const phone = inputNamed("Phone");
+    phone.focus();
+    await userEvent.paste();
+    // Unfiltered, the native limit keeps the first 8 characters, separators included.
+    expect(phone).toHaveProperty("value", "912 34 5");
+  });
+
   it("restores an uncontrolled numeric defaultValue on native reset without calling onChange", async () => {
     // The numeric filter is a change handler on a plain uncontrolled input: a native reset
     // restores the default on its own. The old controlled wrapper painted its state back over it.
