@@ -49,10 +49,11 @@ export type TextFieldProps = {
   /**
    * Digits-only guard (absorbs the external numeric-only wrapper). Non-digit characters are
    * stripped from every path — typing, paste, autofill — so only digits reach `onChange`.
-   * `maxLength` counts digits wherever the browser lets the filter step in first, a cancelable
-   * `beforeinput` on an input with a selection such as `text` or `tel`, so a pasted `912 34 567`
-   * fits `maxLength={8}` whole. Elsewhere, such as `type="email"` or autofill that sends no
-   * cancelable `beforeinput`, the browser cuts to `maxLength` before the strip.
+   * `maxLength` counts digits where the filter runs first: a cancelable `beforeinput` on an input
+   * type with a selection API (`text`, `tel`, `search`, `url`, `password`), so a pasted
+   * `912 34 567` fits `maxLength={8}` whole. Other paths keep the browser's own length handling
+   * and are stripped afterwards: `type="email"`, or autofill that sends no cancelable
+   * `beforeinput`, is cut to `maxLength` first.
    * Sets `inputMode="numeric"` unless the caller passes `inputMode` explicitly. An
    * uncontrolled numeric field restores its `defaultValue` on native form reset without
    * calling `onChange`.
@@ -81,10 +82,12 @@ function containsOnlyDigits(value: string): boolean {
  * pasted `912 34 567`, is replaced by its digits before the browser applies `maxlength`, so the
  * limit counts digits rather than separators. The digits that fit land at the caret, and the
  * caret ends after them. An insertion of digits only, or of no digits at all, keeps the native
- * path: `maxlength` still blocks a full field, and the change handler strips the rest. So does
- * a read-only or disabled input, which Chromium still sends `beforeinput` before it refuses the
- * edit, an input type without a selection, such as `email`, where `setRangeText` throws, and an
- * insertion another listener has already cancelled.
+ * path: `maxlength` still blocks a full field, and the change handler strips the rest. So do a
+ * read-only or disabled input, to which Chromium still sends `beforeinput` before it refuses the
+ * edit, an input type without a selection API, such as `email`, where `setRangeText` throws, and
+ * an insertion another listener has already cancelled. A host veto has to run before this
+ * listener, in the capture phase or on the input before it mounts: once this listener has run,
+ * the event is cancelled and the digits are in.
  */
 function insertDigitsOnly(event: InputEvent): void {
   const input = event.currentTarget;
