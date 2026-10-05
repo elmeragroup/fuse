@@ -7,6 +7,11 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
 import {
+  assertLegendVisuallyHidden,
+  bodyOffset,
+  legendFieldset,
+} from "../../../test/assert-group-label-hidden";
+import {
   assertConnectedVerticalList,
   assertDirectSiblingList,
   assertHorizontalItemList,
@@ -516,6 +521,29 @@ describe("RadioItemGroup", () => {
       assertLayout(list, first, second);
     }
   );
+});
+
+describe("isLabelHidden", () => {
+  it.each([
+    { part: "RadioGroup", Group: RadioGroup },
+    { part: "RadioItemGroup", Group: RadioItemGroup },
+  ])("keeps a pending $part's spinner visible while its legend is hidden", ({ Group }) => {
+    renderThemed(
+      <Group label="Pending contract" isLabelHidden isPending>
+        <RadioItem value="fixed">Pending fixed</RadioItem>
+      </Group>
+    );
+
+    const group = radiogroupNamed("Pending contract");
+    const fieldset = legendFieldset("Pending contract");
+    assertLegendVisuallyHidden(fieldset);
+    const spinner = fieldset.querySelector("svg");
+    if (spinner === null || group.contains(spinner)) {
+      throw new Error("expected the pending spinner above the radiogroup");
+    }
+    expect(spinner.getBoundingClientRect().width).toBeGreaterThan(1);
+    expect(bodyOffset(fieldset, group)).toBeGreaterThan(0);
+  });
 });
 
 describe("RadioIconButton", () => {

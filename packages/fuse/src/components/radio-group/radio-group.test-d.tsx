@@ -174,3 +174,8 @@ test("the elements take the public props and reject invalid combinations", () =>
     <RadioGroup defaultValue={null} />
   );
 });
+
+test("RadioGroup and RadioItemGroup accept isLabelHidden as an optional boolean", () => {
+  expectTypeOf<ComponentProps<typeof RadioGroup>["isLabelHidden"]>().toEqualTypeOf<boolean | undefined>();
+  expectTypeOf<ComponentProps<typeof RadioItemGroup>["isLabelHidden"]>().toEqualTypeOf<boolean | undefined>();
+});

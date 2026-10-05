@@ -60,6 +60,12 @@ export function Checkbox({
 export type CheckboxGroupProps = {
   /** Fieldset legend, rendered as `Field.Legend variant="label"`. The legend row is omitted when absent. */
   label?: string;
+  /**
+   * Hides the legend visually and keeps it as the group's accessible name, for a group
+   * under a heading that already names it. The first option moves up into the legend's
+   * place. Default `false`.
+   */
+  isLabelHidden?: boolean;
   /** Supporting copy, rendered as `Field.Description`. */
   description?: string;
   /**
@@ -109,6 +115,7 @@ export type CheckboxGroupProps = {
  */
 export function CheckboxGroup({
   label,
+  isLabelHidden = false,
   description,
   errorMessage,
   orientation = "vertical",
@@ -127,6 +134,7 @@ export function CheckboxGroup({
     <FieldFrame
       heading="legend"
       label={label}
+      isLabelHidden={isLabelHidden}
       description={description}
       errorMessage={errorMessage}
       name={name}

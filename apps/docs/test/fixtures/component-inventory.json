@@ -399,6 +399,7 @@
     "demos": [
       "radio-group-basic.tsx",
       "radio-group-pending.tsx",
+      "radio-group-label-hidden.tsx",
       "radio-item-group.tsx",
       "radio-icon-button.tsx",
       "radio-controlled-null.tsx"

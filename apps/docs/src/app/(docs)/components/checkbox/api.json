@@ -301,6 +301,15 @@
           "required": false
         },
         {
+          "name": "isLabelHidden",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Hides the legend visually and keeps it as the group's accessible name, for a group under a heading that already names it. The first option moves up into the legend's place. Default `false`.",
+          "required": false
+        },
+        {
           "name": "label",
           "origin": "declared",
           "type": "string | undefined",
@@ -505,6 +514,15 @@
           "shortType": null,
           "defaultValue": null,
           "description": "Forwards `invalid` to `Field.Root`.",
+          "required": false
+        },
+        {
+          "name": "isLabelHidden",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Hides the legend visually and keeps it as the group's accessible name, for a group under a heading that already names it. The first option moves up into the legend's place. Default `false`.",
           "required": false
         },
         {

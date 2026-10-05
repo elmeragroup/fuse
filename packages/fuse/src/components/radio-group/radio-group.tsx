@@ -59,6 +59,12 @@ export function RadioGroupItem({
 export type RadioGroupProps = {
   /** Fieldset legend, rendered as `Field.Legend variant="label"` in the header row. */
   label?: string;
+  /**
+   * Hides the legend visually and keeps it as the group's accessible name, for a group
+   * under a heading that already names it. The first option moves up into the legend's
+   * place; while `isPending`, the spinner row stays visible. Default `false`.
+   */
+  isLabelHidden?: boolean;
   /** Supporting copy, rendered as `Field.Description`. */
   description?: string;
   /**
@@ -122,6 +128,7 @@ export type RadioGroupProps = {
  */
 export function RadioGroup({
   label,
+  isLabelHidden = false,
   description,
   errorMessage,
   isPending,
@@ -142,6 +149,7 @@ export function RadioGroup({
     <FieldFrame
       heading="legend"
       label={label}
+      isLabelHidden={isLabelHidden}
       description={description}
       errorMessage={errorMessage}
       invalid={isInvalid}
