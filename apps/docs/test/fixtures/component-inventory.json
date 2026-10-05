@@ -253,6 +253,11 @@
     "rsc": "client",
     "demos": ["focusable-tooltip-trigger.tsx"]
   },
+  "form": {
+    "title": "Form",
+    "rsc": "client",
+    "demos": ["form-server-errors.tsx"]
+  },
   "frame": {
     "title": "Frame",
     "rsc": "server",

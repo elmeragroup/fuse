@@ -21,6 +21,7 @@ import { glyph } from "../og-icons";
 import { compact } from "../satori-style";
 import {
   Badge,
+  Button,
   Checkbox,
   Column,
   Description,
@@ -363,6 +364,28 @@ export const field: Specimen = {
         ada
       </FieldBox>
       <FieldError ctx={ctx}>Enter a work email.</FieldError>
+    </Column>
+  ),
+};
+
+/** Form (`form.tsx`): an error from a submit under the field's name, and the submit button. */
+export const form: Specimen = {
+  caption: "With an error from a submit",
+  scale: 2,
+  draw: (ctx) => (
+    <Column gap={ctx.px(16)} style={{ width: ctx.px(220) }}>
+      <Column gap={ctx.px(4)}>
+        <FieldLabel ctx={ctx} color={ctx.c("error")}>
+          Email
+        </FieldLabel>
+        <FieldBox ctx={ctx} width={ctx.px(220)} invalid>
+          ada@example.com
+        </FieldBox>
+        <FieldError ctx={ctx}>Already registered.</FieldError>
+      </Column>
+      <Row gap={0}>
+        <Button ctx={ctx}>Sign up</Button>
+      </Row>
     </Column>
   ),
 };
