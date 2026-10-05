@@ -180,16 +180,61 @@ describe("TextField", () => {
     expect(phone).toHaveProperty("value", "1342");
     expect(phone.selectionStart).toBe(3);
 
-    // A full field takes nothing more.
-    await pasteIntoPhone("12345678", [0, 4]);
+    // A partial selection frees only its own length: 8 - 8 + 3 leaves room for three digits.
+    await pasteIntoPhone("12345678", [0, 8]);
+    await pasteIntoPhone("9 9 9 9", [2, 5]);
+    expect(phone).toHaveProperty("value", "12999678");
+    expect(phone.selectionStart).toBe(5);
+
+    // A full field takes nothing more, and reports no change.
+    await pasteIntoPhone("12345678", [0, 8]);
+    const calls = onChange.mock.calls.length;
     await pasteIntoPhone("9 9", [8, 8]);
     expect(phone).toHaveProperty("value", "12345678");
-    expect(onChange).toHaveBeenLastCalledWith("12345678");
+    expect(onChange).toHaveBeenCalledTimes(calls);
 
     // A controlled field takes the digits through its own onChange.
     const controlled = inputNamed("Controlled phone");
     await pasteInto(controlled, "912 34 567", [0, 0]);
     expect(controlled).toHaveProperty("value", "91234567");
+  });
+
+  it("leaves a read-only numeric field and an input without a selection to the browser", async () => {
+    const onChange = vi.fn();
+    renderThemed(
+      <>
+        <TextField aria-label="Clipboard source" defaultValue="912 34 567" />
+        <TextField
+          label="Locked"
+          filter="numeric"
+          maxLength={8}
+          defaultValue="12"
+          isReadOnly
+          onChange={onChange}
+        />
+        <TextField label="Email digits" type="email" filter="numeric" maxLength={8} />
+      </>
+    );
+    // An IME commit or dictation reaches a read-only input as a cancelable `beforeinput`
+    // carrying the whole run. Real keys never carry mixed text and Playwright's fill refuses a
+    // read-only field, so the event is dispatched rather than typed.
+    const locked = inputNamed("Locked");
+    locked.dispatchEvent(
+      new InputEvent("beforeinput", { inputType: "insertText", data: "3 4", bubbles: true, cancelable: true })
+    );
+    expect(locked).toHaveProperty("value", "12");
+    expect(onChange).not.toHaveBeenCalled();
+
+    // `type="email"` has no selection API: the paste keeps the native path, so the browser
+    // cuts to maxlength first and the change handler strips what is left, as before this filter.
+    const source = inputNamed("Clipboard source");
+    source.focus();
+    source.select();
+    await userEvent.copy();
+    const email = page.getByRole("textbox", { name: "Email digits", exact: true });
+    await email.click();
+    await userEvent.paste();
+    await expect.element(email).toHaveValue("912345");
   });
 
   it("removes the numeric insertion listener when the filter goes away", async () => {
@@ -270,17 +315,22 @@ describe("TextField", () => {
   it("forwards object and callback refs to the inner input", () => {
     const objectRef = createRef<HTMLInputElement>();
     const callbackRef = vi.fn();
+    // The numeric filter merges its own listener ref with the consumer's.
+    const numericRef = createRef<HTMLInputElement>();
     const { unmount } = renderThemed(
       <>
         <TextField label="Object" defaultValue="123" ref={objectRef} />
         <TextField label="Callback" defaultValue="123" ref={callbackRef} />
+        <TextField label="Numeric" filter="numeric" defaultValue="123" ref={numericRef} />
       </>
     );
     expect(objectRef.current).toBeInstanceOf(HTMLInputElement);
     expect(callbackRef).toHaveBeenCalledWith(expect.any(HTMLInputElement));
+    expect(numericRef.current).toBe(inputNamed("Numeric"));
     unmount();
     expect(objectRef.current).toBeNull();
     expect(callbackRef).toHaveBeenCalledWith(null);
+    expect(numericRef.current).toBeNull();
   });
 
   it("renders the pending/success indicator row without a label, and success wins", () => {

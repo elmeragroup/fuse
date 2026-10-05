@@ -78,11 +78,18 @@ function containsOnlyDigits(value: string): boolean {
  * pasted `912 34 567`, is replaced by its digits before the browser applies `maxlength`, so the
  * limit counts digits rather than separators. The digits that fit land at the caret, and the
  * caret ends after them. An insertion of digits only, or of no digits at all, keeps the native
- * path: `maxlength` still blocks a full field, and the change handler strips the rest.
+ * path: `maxlength` still blocks a full field, and the change handler strips the rest. So does
+ * a read-only or disabled input, which Chromium still sends `beforeinput` before it refuses the
+ * edit, and an input type without a selection, such as `email`, where `setRangeText` throws.
  */
 function insertDigitsOnly(event: InputEvent): void {
   const input = event.currentTarget;
   if (!(input instanceof HTMLInputElement) || !event.cancelable || !event.inputType.startsWith("insert")) {
+    return;
+  }
+  const start = input.selectionStart;
+  const end = input.selectionEnd;
+  if (input.readOnly || input.disabled || start === null || end === null) {
     return;
   }
   const inserted = event.data ?? event.dataTransfer?.getData("text/plain") ?? "";
@@ -91,8 +98,6 @@ function insertDigitsOnly(event: InputEvent): void {
     return;
   }
   event.preventDefault();
-  const start = input.selectionStart ?? input.value.length;
-  const end = input.selectionEnd ?? start;
   const room = input.maxLength < 0 ? digits.length : input.maxLength - input.value.length + (end - start);
   const accepted = digits.slice(0, Math.max(0, room));
   if (accepted === "") {
@@ -100,9 +105,15 @@ function insertDigitsOnly(event: InputEvent): void {
   }
   input.setRangeText(accepted, start, end, "end");
   // setRangeText fires no input event; React and Base UI read the edit from this one.
-  input.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: event.inputType, data: accepted }));
+  input.dispatchEvent(
+    new InputEvent("input", { bubbles: true, composed: true, inputType: event.inputType, data: accepted })
+  );
 }
 
+/**
+ * Attaches {@link insertDigitsOnly} while the numeric filter is on. `source-contracts.test.ts`
+ * lists this module among the reviewed listener owners.
+ */
 function listenForMixedInsertions(input: HTMLInputElement | null): (() => void) | undefined {
   if (!input) {
     return undefined;
