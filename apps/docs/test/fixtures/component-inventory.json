@@ -236,6 +236,7 @@
     "demos": [
       "field-basic.tsx",
       "field-error.tsx",
+      "field-validation.tsx",
       "field-orientations.tsx",
       "field-set.tsx",
       "field-choice-card.tsx",

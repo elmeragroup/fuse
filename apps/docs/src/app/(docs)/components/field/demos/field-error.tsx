@@ -20,7 +20,7 @@ export function FieldErrorDemo() {
         }}
       />
       <Field.Description>Validation lives outside the field; the message is passed in.</Field.Description>
-      <Field.Error>{isInvalid ? "Enter a work email." : null}</Field.Error>
+      {isInvalid ? <Field.Error>Enter a work email.</Field.Error> : null}
     </Field.Root>
   );
 }

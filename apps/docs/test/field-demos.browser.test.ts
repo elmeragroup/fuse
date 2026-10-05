@@ -40,6 +40,32 @@ describe("Field demos", () => {
     await page.close();
   });
 
+  it("shows the field's own message: the browser's, then validate's, then none", async () => {
+    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT });
+    const demo = await openDemo(page, "field", "Built-in validation");
+    const input = demo.getByRole("textbox", { name: "Work email" });
+    const message = demo.getByRole("alert");
+
+    await input.fill("ada");
+    await input.press("Tab");
+    // The oracle is the browser's own message for the failed `type="email"` constraint.
+    const nativeMessage = await input.evaluate((element) =>
+      element instanceof HTMLInputElement ? element.validationMessage : ""
+    );
+    expect(nativeMessage).not.toBe("");
+    await expect.poll(async () => message.textContent()).toBe(nativeMessage);
+
+    await input.fill("ada@example.org");
+    await input.press("Tab");
+    await expect.poll(async () => message.textContent()).toBe("Use your example.com address.");
+
+    await input.fill("ada@example.com");
+    await input.press("Tab");
+    await expect.poll(async () => message.count()).toBe(0);
+
+    await page.close();
+  });
+
   it("groups the field set's library checkboxes under the legend", async () => {
     const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT });
     const demo = await openDemo(page, "field", "Field set");
