@@ -1,19 +1,127 @@
+import type { ReactElement } from "react";
+
 import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { withLocale } from "../../../test/locale-matrix";
-import { fieldRootFrom, renderThemed, roleNamed, textboxNamed } from "../../../test/themed-browser-render";
-import { CheckboxGroup } from "../checkbox/checkbox";
+import {
+  fieldRootFrom,
+  renderThemed,
+  roleNamed,
+  stampDensity,
+  textboxNamed,
+  textNamed,
+} from "../../../test/themed-browser-render";
+import { CheckboxGroup, CheckboxItemGroup } from "../checkbox/checkbox";
 import { CheckboxItem } from "../checkbox/checkbox-item";
 import { Form } from "../form/form";
 import { Input } from "../input/input";
 import { NumberField } from "../number-field/number-field";
 import { PhoneNumberField } from "../phone-number-field/phone-number-field";
-import { Radio, RadioGroup } from "../radio-group/radio-group";
+import { Radio, RadioGroup, RadioItemGroup } from "../radio-group/radio-group";
+import { RadioItem } from "../radio-group/radio-item";
 import { TextField } from "../text-field/text-field";
 import { TextareaField } from "../textarea-field/textarea-field";
 import { FieldFrame } from "./field-frame";
+
+const DENSITIES = ["dense", "comfortable"] as const;
+
+// Figma (funnel nodes 9160:36033 and 9160:36034): a group's description sits directly
+// under its label, the options follow at the fieldset's 12px group gap, and a group
+// without a description keeps 24px between label and options.
+const LEGEND_TO_DESCRIPTION_PX = 0;
+const DESCRIPTION_TO_OPTIONS_PX = 12;
+const LEGEND_TO_OPTIONS_PX = 24;
+// A pending RadioGroup without a label keeps a heading row for its spinner, and the
+// fieldset's group gap separates that row from the description.
+const STATUS_ROW_TO_DESCRIPTION_PX = 12;
+// TextField's label sits on the Field.Root's `gap-1` stack, at 4px from its control.
+const TEXT_FIELD_LABEL_TO_CONTROL_PX = 4;
+
+type GroupFixture = {
+  readonly name: string;
+  readonly render: (props: { readonly label?: string; readonly description?: string }) => ReactElement;
+};
+
+const GROUPS: ReadonlyArray<GroupFixture> = [
+  {
+    name: "CheckboxGroup",
+    render: ({ label, description }) => (
+      <CheckboxGroup label={label} description={description}>
+        <CheckboxItem value="a">Option</CheckboxItem>
+      </CheckboxGroup>
+    ),
+  },
+  {
+    name: "RadioGroup",
+    render: ({ label, description }) => (
+      <RadioGroup label={label} description={description}>
+        <Radio value="a">Option</Radio>
+      </RadioGroup>
+    ),
+  },
+  {
+    name: "CheckboxItemGroup",
+    render: ({ label, description }) => (
+      <CheckboxItemGroup label={label} description={description}>
+        <CheckboxItem value="a">Option</CheckboxItem>
+      </CheckboxItemGroup>
+    ),
+  },
+  {
+    name: "RadioItemGroup",
+    render: ({ label, description }) => (
+      <RadioItemGroup label={label} description={description}>
+        <RadioItem value="a">Option</RadioItem>
+      </RadioItemGroup>
+    ),
+  },
+];
+
+/**
+ * dist/styles.css ships without preflight, so the fieldset's and the description's
+ * user-agent padding, border and margins would space the boxes. A Tailwind host's
+ * preflight zeroes them in the base layer, below utilities.
+ */
+const preflightBoxReset = (
+  <style>{"@layer base { *, ::before, ::after { margin: 0; padding: 0; border: 0 solid; } }"}</style>
+);
+
+/** Pixels from the bottom of `upper`'s border box to the top of `lower`'s. */
+function verticalGap(upper: Element, lower: Element): number {
+  return lower.getBoundingClientRect().top - upper.getBoundingClientRect().bottom;
+}
+
+/** The group primitive, whose top edge is where the first option starts. */
+function optionsIn(root: Element): Element {
+  // DOM audit: the options box is the group primitive's layout container, which has no
+  // role of its own once the fieldset owns the group name, so it is reached by its slot.
+  const options = root.querySelector("[data-slot=checkbox-group], [data-slot=radio-group]");
+  if (options === null) {
+    throw new Error("expected a checkbox-group or radio-group");
+  }
+  return options;
+}
+
+/** The top of `element`'s content box, inside its border and padding. */
+function contentBoxTop(element: Element): number {
+  const style = getComputedStyle(element);
+  return (
+    element.getBoundingClientRect().top +
+    Number.parseFloat(style.borderTopWidth) +
+    Number.parseFloat(style.paddingTop)
+  );
+}
+
+function fieldsetIn(root: Element): Element {
+  // DOM audit: an unlabeled fieldset has no accessible name to query it by.
+  const fieldset = root.querySelector("fieldset");
+  if (fieldset === null) {
+    throw new Error("expected a fieldset");
+  }
+  return fieldset;
+}
 
 function statusSvgs(root: HTMLElement): SVGElement[] {
   return [...root.querySelectorAll("svg")];
@@ -214,5 +322,82 @@ describe("FieldFrame", () => {
       expect(nestedOrientationStamps(root)).toHaveLength(0);
     }
     expect(host.querySelectorAll("[data-orientation]")).toHaveLength(6);
+  });
+
+  describe.each(DENSITIES)("group spacing at %s density", (density) => {
+    it.each(GROUPS)("puts the $name description directly under its label", ({ render }) => {
+      stampDensity(density);
+      const { host } = renderThemed(
+        <>
+          {preflightBoxReset}
+          {render({ label: "Group", description: "Pick any." })}
+        </>
+      );
+      const legend = textNamed("Group");
+      const description = textNamed("Pick any.");
+
+      expect(verticalGap(legend, description)).toBeCloseTo(LEGEND_TO_DESCRIPTION_PX, 0);
+      expect(verticalGap(description, optionsIn(host))).toBeCloseTo(DESCRIPTION_TO_OPTIONS_PX, 0);
+    });
+
+    it.each(GROUPS)("keeps the $name label-to-options gap without a description", ({ render }) => {
+      stampDensity(density);
+      const { host } = renderThemed(
+        <>
+          {preflightBoxReset}
+          {render({ label: "Group" })}
+        </>
+      );
+
+      expect(verticalGap(textNamed("Group"), optionsIn(host))).toBeCloseTo(LEGEND_TO_OPTIONS_PX, 0);
+    });
+
+    it.each(GROUPS)("starts an unlabeled $name at its description", ({ render }) => {
+      stampDensity(density);
+      const { host } = renderThemed(
+        <>
+          {preflightBoxReset}
+          {render({ description: "Pick any." })}
+        </>
+      );
+      const description = textNamed("Pick any.");
+
+      expect(description.getBoundingClientRect().top - contentBoxTop(fieldsetIn(host))).toBeCloseTo(0, 0);
+      expect(verticalGap(description, optionsIn(host))).toBeCloseTo(DESCRIPTION_TO_OPTIONS_PX, 0);
+    });
+
+    it("keeps the group gap under an unlabeled pending RadioGroup's spinner row", () => {
+      stampDensity(density);
+      const { host } = renderThemed(
+        <>
+          {preflightBoxReset}
+          <RadioGroup isPending description="Pick one.">
+            <Radio value="a">Option</Radio>
+          </RadioGroup>
+        </>
+      );
+      const [spinner] = statusSvgs(host);
+      // The spinner is the row's only child, centred, and sets the row's height.
+      const statusRow = spinner?.parentElement;
+      if (statusRow == null) {
+        throw new Error("expected the pending spinner's heading row");
+      }
+
+      expect(verticalGap(statusRow, textNamed("Pick one."))).toBeCloseTo(STATUS_ROW_TO_DESCRIPTION_PX, 0);
+    });
+
+    it("leaves a TextField's label-to-control gap alone", () => {
+      stampDensity(density);
+      renderThemed(
+        <>
+          {preflightBoxReset}
+          <TextField label="Email" description="Work address." />
+        </>
+      );
+      expect(verticalGap(textNamed("Email"), textboxNamed("Email"))).toBeCloseTo(
+        TEXT_FIELD_LABEL_TO_CONTROL_PX,
+        0
+      );
+    });
   });
 });
