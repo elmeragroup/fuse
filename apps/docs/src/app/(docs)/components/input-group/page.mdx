@@ -9,6 +9,7 @@ import { InputGroupKbd } from "./demos/input-group-kbd";
 import { InputGroupBlock } from "./demos/input-group-block";
 import { InputGroupTextarea } from "./demos/input-group-textarea";
 import { InputGroupInvalid } from "./demos/input-group-invalid";
+import { InputGroupField } from "./demos/input-group-field";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -42,6 +43,12 @@ Disabling an addon button leaves an editable field enabled. Disable `InputGroup.
 
 <Demo slug="input-group" id="invalid" title="Invalid" file="input-group-invalid.tsx">
   <InputGroupInvalid />
+</Demo>
+
+InputGroup has no label of its own. For a labelled field with a prefix, a unit or a looked-up value, put the group in `Field.Root` with `Field.Label`, `Field.Description` and `Field.Error`, as with `Input`. `Field.Root` marks `InputGroup.Input` invalid, and the group paints the invalid state from it. A `Field.Description` inside an addon still describes the input, so a looked-up value such as the city is read with it.
+
+<Demo slug="input-group" id="field" title="In a field" file="input-group-field.tsx">
+  <InputGroupField />
 </Demo>
 
 <ApiReference slug="input-group" />

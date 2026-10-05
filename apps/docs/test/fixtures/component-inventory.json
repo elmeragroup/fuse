@@ -282,7 +282,8 @@
       "input-group-block.tsx",
       "input-group-textarea.tsx",
       "input-group-invalid.tsx",
-      "input-group-kbd.tsx"
+      "input-group-kbd.tsx",
+      "input-group-field.tsx"
     ]
   },
   "item": {

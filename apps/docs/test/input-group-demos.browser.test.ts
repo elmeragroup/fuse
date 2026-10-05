@@ -20,6 +20,38 @@ describe("InputGroup demos", () => {
     await context.close();
   });
 
+  it("labels, describes and invalidates the grouped inputs through Field", async () => {
+    const page = await browser().newPage();
+    const demo = await openDemo(page, "input-group", "In a field");
+    const describedBy = (name: string) =>
+      demo.getByRole("textbox", { name, exact: true }).evaluate((input) =>
+        (input.getAttribute("aria-describedby") ?? "")
+          .split(/\s+/u)
+          .filter(Boolean)
+          .map((id) => document.getElementById(id)?.textContent)
+          .join(" ")
+      );
+
+    const postalCode = demo.getByRole("textbox", { name: "Postal code", exact: true });
+    await expect.poll(() => describedBy("Postal code")).toBe("Bergen");
+    // The demo region also shows the source, so the city is found through the input's description.
+    const cityId = await postalCode.getAttribute("aria-describedby");
+    await page.locator(`[id="${cityId ?? ""}"]`).click();
+    await expect.poll(() => postalCode.evaluate((input) => input === document.activeElement)).toBe(true);
+
+    const mobile = demo.getByRole("textbox", { name: "Mobile number", exact: true });
+    await expect.poll(() => mobile.getAttribute("aria-invalid")).toBe("true");
+    await expect.poll(() => demo.getByRole("alert").textContent()).toBe("Enter 8 digits.");
+    await expect
+      .poll(() => describedBy("Mobile number"))
+      .toBe("We send the order confirmation here. Enter 8 digits.");
+
+    await mobile.fill("41234567");
+    await expect.poll(() => demo.getByRole("alert").count()).toBe(0);
+    await expect.poll(() => mobile.getAttribute("aria-invalid")).toBe(null);
+    await page.close();
+  });
+
   it("sends the Textarea demo's local message and resets the receipt", async () => {
     const page = await browser().newPage();
     const message = await openDemo(page, "input-group", "Textarea");
