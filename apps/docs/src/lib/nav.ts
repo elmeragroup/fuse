@@ -1,6 +1,6 @@
 import { COMPONENT_PAGES } from "../generated/component-pages";
 import type { ComponentPageEntry } from "./docs-model";
-import { staticPagesIn } from "./pages";
+import { COMPONENTS_PREFIX, componentHref, staticPagesIn } from "./pages";
 
 export type NavItem = {
   href: string;
@@ -34,12 +34,6 @@ export function apiPartAnchor(partName: string): string {
  */
 export function apiPropAnchor(partName: string, propName: string): string {
   return `${apiPartAnchor(partName)}-${propName}`;
-}
-
-const COMPONENTS_PREFIX = "/components/";
-
-function componentHref(slug: string): string {
-  return `${COMPONENTS_PREFIX}${slug}`;
 }
 
 /** Flat alphabetical list of every published component page. */

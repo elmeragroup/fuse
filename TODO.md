@@ -10,6 +10,10 @@
   until reviewed replacements exist, including internal and Telinet light muted copy.
 - Ask design for an external secondary hover tone. Every external palette sets `secondary`
   equal to `foreground`, so `--secondary-hover` equals `--secondary` and the hover is invisible.
+- Ask design for a text-grade foreground on dark `feature`, or lighter dark `feature` tones.
+  White text on dark `feature` measures 4.49:1 for tkas, 4.38:1 for fkse and 4.49:1 for elma,
+  under the 4.5:1 floor. Until design decides, the landing's brand sites fill strong bands and
+  the promo hero with `primary-soft` in dark mode (`landing/brand-site/site-band.tsx`).
 - Confirm the external Button numbers with design. They come from the sales flow's own button
   recipe, not a published brand spec: the comfortable label inset of 16px at `sm` and 32px at
   `md` and `lg` (`theme/tokens/density-metrics.ts`) and the 2px outline in `--foreground`
@@ -19,6 +23,8 @@
 - Ask design whether external themes keep the reference's 4px corner on the `Checkbox`,
   the phone country trigger and the standalone `Calendar` (`styles/corner-radius.ts`), or
   round them from the brand radius. Internal themes round them with `--radius`.
+- Decide whether `PhoneNumberField` and `NumberField` name their wrapper `group` from the field's
+  label or drop the role. The controls inside have names; the groups around them have none.
 - Confirm the shared overlay-close dictionary and the docs' client-demo rule and
   three non-public import exceptions with the owner; these remain implemented defaults.
 
@@ -53,6 +59,18 @@
   `rgb()`, `oklch()` and `lab()` as Chromium's computed serializations.
 - No select demo shows `Select.Content alignItemWithTrigger`; only `select.browser.test.tsx`
   exercises it. Add a demo beside the page and list it in the component inventory.
+- `Select.Content` measures its fixed-position containing block when it mounts, when its portal
+  target resizes and when Base UI reports an open request (`select/select.tsx`). A host that
+  sets `open` from its own code, without a trigger event, after it transforms an ancestor
+  of the target, gets the earlier measurement, and the popup opens away from its trigger.
+- React Aria 3.52.1 misjudges the room around a popover inside a positioned container. In
+  `react-aria/dist/private/overlays/calculatePosition.mjs`, `getOffset` (lines 363-371) measures
+  a boundary in page coordinates and adds the document scroll. `getPosition` (line 300)
+  measures the trigger relative to the popover's containing block. `getAvailableSpace` (line 213) adds the two, so a scope's page offset counts as free space and the popover never flips.
+  Fuse now picks the vertical side itself inside a portal target that clips its overflow, and
+  turns React Aria's flip off there (`react-aria/internal/popover.tsx`). Outside such targets
+  React Aria still flips on its own numbers. Report the coordinate mix upstream, then drop the
+  Fuse side choice once a fixed release is installed.
 - A server component that renders `SelectionItem.Shell` with direct `SelectionItem.SubSection`
   children still loses the partition: Flight revives the SubSection's client reference as a
   lazy wrapper, so the shell's `child.type` filter misses it and the band renders inside the
@@ -138,6 +156,52 @@
   the `peerDependenciesMeta` type and `publishedPeerDependencies()`, and
   `packages/fuse/scripts/size-limit.ts` repeats it in `PEER_EXTERNALS`. Derive all four from
   `PUBLISHED_PEER_RANGES`.
+- Give `DataTable.ColumnToggle` and `DataTable.Pagination`'s Rows per page Select a controlled
+  open state. Neither takes `open` or `onOpenChange`, so a host that must close their popups
+  remounts them, as the landing's Order search does
+  (`apps/docs/src/app/(landing)/landing/app-shell/order-search.tsx`).
+
+## Landing stand-ins
+
+The hero window's Dashboard (`apps/docs/src/app/(landing)/landing/app-shell/`), the brand sites
+(`landing/brand-site/`) and the nav's theme picker (`landing/theme-picker/`) compose these pieces
+locally because Fuse has no part for them. Replace
+each stand-in once Fuse ships the part.
+
+- Add a `Kbd` part. `app-shell/kbd.tsx` draws the shortcut caps in the sidebar, tooltips and
+  palette.
+- Add a `Command` palette part. `app-shell/command-palette.tsx` builds one from `Dialog` and the
+  ARIA combobox pattern, as the docs search (`apps/docs/src/components/search-palette.tsx`) does.
+- Add Sun, Moon and Monitor to the icon roster. The nav's theme picker draws Phosphor's regular
+  paths for light, dark and system in `theme-picker/scheme-icon.tsx`.
+- Add a floating action bar for row selections. `app-shell/bulk-toolbar.tsx` positions its own
+  `role="toolbar"` over the queues' list and over Order search's table.
+- Add a list and detail split that becomes a Sheet below a breakpoint. `app-shell/dashboard-main.tsx`
+  switches between an `aside` and a `Sheet`, and `app-shell/dashboard-app.tsx` reads its own
+  `(width >= 80rem)` query.
+- Let `Sidebar` live in a bounded container. `Sidebar.Provider` sets `min-h-svh`, the desktop
+  rail is `fixed` and `h-svh`, `setOpen` writes the `sidebar:state` cookie even when controlled,
+  and a window listener toggles on ⌘B from anywhere. `app-shell/dashboard-app.tsx` makes the
+  window the rail's containing block with `transform`, keeps the open state in memory and stops
+  ⌘B in the capture phase; `app-shell/dashboard-sidebar.tsx` sets the rail to `h-full`.
+- Let `ScrollArea` content truncate. Base UI gives the content `min-width: fit-content`, so a
+  child never narrows below its longest line. `app-shell/order-list.tsx` and
+  `app-shell/order-detail.tsx` add `contain-inline-size` to their scrolled content.
+- Give `TrondelagkraftLogo` and `GudbrandsdalEnergiLogo` full artwork for light surfaces, and
+  draw Telinet's "Energi" in `currentColor`. Their fixed fills (white, and navy in Telinet's)
+  vanish on one of the schemes, so those sites set `logo: "wordmark"` in `brand-site/sites/` and
+  draw the landing's one-ink `brand-wordmark.tsx`, as the Elmera site's brand grid does.
+- Give the outline `Button` the ink of the `background` it paints. It inherits the text colour,
+  so on a strong brand block its label is light on light. The promo hero in
+  `brand-site/site-hero.tsx` passes `quiet="ghost"` for its second action instead.
+- Let `Sidebar.Inset` render an element other than `<main>`. A page that already has a `main`
+  landmark cannot use it, so `app-shell/dashboard-main.tsx` copies its inset classes onto a `div`
+  next to the `inset` rail.
+
+Every overlay on a side of the hero window must close when that side hides, through
+`useSideOverlay` or `useSideRemountKey` in `landing/window-side.tsx`. Nothing enforces this, so a
+new overlay that skips both keeps its scroll lock after a flip. Add a lint rule, or a browser test
+that opens every overlay on a side before flipping the window.
 
 ## Product-triggered work
 

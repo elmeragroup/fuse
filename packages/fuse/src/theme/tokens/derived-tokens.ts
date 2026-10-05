@@ -11,15 +11,27 @@ import type { DerivedTokenName, LayerTokens, TokenContract } from "./contract";
  */
 type DerivedRole = (typeof DERIVED_ROLES)[DerivedTokenName];
 
-// `DERIVED_ROLES` is source, so a percent outside 0..100 is a defect and throws, as
-// `tokenOklch` does for a source role that is not an `oklch()` literal.
-function mixLiteral(tokens: LayerTokens, role: DerivedRole): string {
+/**
+ * Mix two `oklch()` token literals in OKLCH, as CSS `color-mix(in oklch, from, toward percent%)`
+ * does. Percents are source, so one outside 0..100 is a defect and throws, as `tokenOklch` does
+ * for a literal that is not `oklch()` notation.
+ *
+ * @param from - The literal the mix starts from.
+ * @param toward - The literal the mix moves toward.
+ * @param percent - The share of `toward`, in percent.
+ * @returns The mixed color as an `oklch()` literal.
+ */
+export function mixOklchLiteral(from: string, toward: string, percent: number): string {
   const mixed = Oklch.mix(
-    tokenOklch(tokens[role.from]),
-    tokenOklch(tokens[role.toward]),
-    getOrThrow(Oklch.makeMixWeight(role.percent / 100))
+    tokenOklch(from),
+    tokenOklch(toward),
+    getOrThrow(Oklch.makeMixWeight(percent / 100))
   );
   return Oklch.format(mixed);
+}
+
+function mixLiteral(tokens: LayerTokens, role: DerivedRole): string {
+  return mixOklchLiteral(tokens[role.from], tokens[role.toward], role.percent);
 }
 
 /**

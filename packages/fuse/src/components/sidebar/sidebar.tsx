@@ -632,15 +632,25 @@ export type SidebarMenuButtonProps = useRender.ComponentProps<"button"> &
 
 /**
  * The collapsed-rail tooltip. It — not `Sidebar.MenuButton` — is the context consumer,
- * so a menu button without a `tooltip` does not re-render when the rail toggles
+ * so a menu button without a `tooltip` does not re-render when the rail toggles. The root
+ * is disabled, not unmounted, while the rail is expanded or on mobile: Base UI then closes
+ * an open hover or focus state instead of keeping it for the collapse, and the trigger
+ * element, with its focus, survives the toggle.
  */
-function SidebarMenuButtonTooltip(contentProps: TooltipContentProps): ReactElement | null {
+function SidebarMenuButtonTooltip({
+  trigger,
+  content,
+}: {
+  trigger: ReactElement;
+  content: TooltipContentProps;
+}): ReactElement {
   const { isMobile, state } = useSidebar();
-  if (state !== "collapsed" || isMobile) {
-    return null;
-  }
-
-  return <TooltipContent side="right" align="center" {...contentProps} />;
+  return (
+    <TooltipRoot disabled={state !== "collapsed" || isMobile}>
+      {trigger}
+      <TooltipContent side="right" align="center" {...content} />
+    </TooltipRoot>
+  );
 }
 
 export function SidebarMenuButton({
@@ -670,12 +680,7 @@ export function SidebarMenuButton({
   // oxlint-disable-next-line anti-slop/no-runtime-typeof -- string tooltip shorthand is the documented contract
   const contentProps: TooltipContentProps = typeof tooltip === "string" ? { children: tooltip } : tooltip;
 
-  return (
-    <TooltipRoot>
-      {button}
-      <SidebarMenuButtonTooltip {...contentProps} />
-    </TooltipRoot>
-  );
+  return <SidebarMenuButtonTooltip trigger={button} content={contentProps} />;
 }
 
 export type SidebarMenuActionProps = useRender.ComponentProps<"button"> & {

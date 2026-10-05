@@ -4,10 +4,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { tv } from "tailwind-variants";
 
-import { DocsLede } from "../../components/docs-lede";
-import { DocsPageTitle } from "../../components/docs-page-title";
-import { NAV_GROUPS } from "../../lib/nav";
-import { HOME_PAGE } from "../../lib/pages";
+import { DocsLede } from "../../../components/docs-lede";
+import { DocsPageTitle } from "../../../components/docs-page-title";
+import { NAV_GROUPS } from "../../../lib/nav";
+import { HOME_PAGE } from "../../../lib/pages";
 
 export const metadata: Metadata = {
   title: "Overview",

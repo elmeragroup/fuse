@@ -103,3 +103,21 @@ describe("the docs client graph never reaches the highlighter", () => {
     expect(importsHighlighter(path.join(srcRoot, "components/docs-code-block.tsx"))).toBe(true);
   });
 });
+
+describe("the landing client graph never reaches the component-page manifest", () => {
+  const landingDir = path.join(srcRoot, "app/(landing)");
+  const manifest = path.join(srcRoot, "generated/component-pages.ts");
+
+  it("keeps the full manifest out of every landing client module", () => {
+    // The landing states a count and four titles; the generated landing index carries those.
+    // Shipping the manifest would hydrate every demo, heading and token list of every page.
+    const clients = sourceFiles(landingDir).filter((file) => isClientModule(readFileSync(file, "utf8")));
+    expect(clients.length).toBeGreaterThan(0);
+    const offenders = clients.filter((entry) => reachableFrom(entry).has(manifest));
+    expect(offenders.map((file) => path.relative(docsRoot, file))).toEqual([]);
+  });
+
+  it("still sees the manifest from a docs module that imports it", () => {
+    expect(reachableFrom(path.join(srcRoot, "lib/nav.ts")).has(manifest)).toBe(true);
+  });
+});

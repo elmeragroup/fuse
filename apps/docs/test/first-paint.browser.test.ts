@@ -128,7 +128,7 @@ describe("docs first paint with hydration delayed", () => {
       );
       const page = await context.newPage();
       await page.route("**/*", abortNextScripts);
-      await page.goto(`${docsBaseUrl()}/`, { waitUntil: "load" });
+      await page.goto(`${docsBaseUrl()}/docs`, { waitUntil: "load" });
 
       const probe = await probeFirstPaint(page);
       expectFixedDocumentBrand(probe);
@@ -152,7 +152,7 @@ describe("docs JavaScript-disabled brand", () => {
     const context = await browser().newContext({ javaScriptEnabled: false });
     const page = await context.newPage();
     // CDP reads can otherwise race the external stylesheet and see an empty brand.
-    await page.goto(`${docsBaseUrl()}/`, { waitUntil: "load" });
+    await page.goto(`${docsBaseUrl()}/docs`, { waitUntil: "load" });
 
     const html = page.locator("html");
     expect(await html.getAttribute("data-theme-variant")).toBe(DOCUMENT_BRAND.variant);
@@ -201,7 +201,7 @@ describe("docs enforcing nonce", () => {
         body,
       });
     });
-    await page.goto(`${docsBaseUrl()}/`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${docsBaseUrl()}/docs`, { waitUntil: "domcontentloaded" });
     return page;
   }
 
