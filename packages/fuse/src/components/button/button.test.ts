@@ -28,8 +28,8 @@ describe("buttonVariants: the Button page's wrap recipe", () => {
     for (const token of WRAP_MD.split(" ")) {
       expect(merged, token).toContain(token);
     }
-    expect(merged).toContain("px-(--control-px-md)");
+    expect(merged).toContain("px-(--control-px-button-md)");
     expect(merged).toContain("gap-(--control-gap-md)");
-    expect(merged).toContain("[line-height:var(--control-leading)]");
+    expect(merged).toContain("leading-(--control-leading)");
   });
 });
