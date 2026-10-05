@@ -89,7 +89,7 @@ The API extractor and the `elmera/*` and `anti-slop/*` lint rules come from [`@e
 1. **Scaffold** — `pnpm gen` for a new component; it writes the source, the entry facade, test files and demo stubs.
 2. **Implement** using [AGENTS.md](AGENTS.md) and the component's source and tests. Update public JSDoc and consumer docs when usage changes; keep implementation rationale beside its owner.
 3. **Tests and demos** ship in that same change. Record the title, RSC status and demo files in `apps/docs/test/fixtures/component-inventory.json` and regenerate API artifacts.
-4. **Changeset** — `pnpm changeset` for anything user-facing. Internal-only PRs (CI, docs site, tests) carry the `no-changeset` GitHub label instead, plus `no-canary` when the packed package is unchanged. Never edit an existing changeset to move a gate; edit one only to correct what it says shipped.
+4. **Changeset and labels** — `pnpm changeset` for anything user-facing. Internal-only PRs (CI, docs site, tests) carry the `no-changeset` GitHub label instead. Add `no-canary` when the packed package is unchanged and `no-preview` when the docs site is unchanged. A Markdown-only PR carries all three. Never edit an existing changeset to move a gate; edit one only to correct what it says shipped.
 5. **Gate** — `pnpm ci:checks` green locally before review. The merge workflow runs the same stages plus the label-aware changeset check.
 
 **After rebasing, regenerate the generated artifacts before running the gate**: `pnpm --filter docs generate` rewrites the committed per-component `api.json` files. They are derived from the library's public API, so a rebase that picks up an API change leaves them stale and fails the docs drift check on work that is otherwise correct.
