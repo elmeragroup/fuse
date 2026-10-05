@@ -186,7 +186,7 @@ export function FieldSeparator({
  *
  * Children are shown as given: the caller decides when the field is in error, and a `match`
  * narrows that to one validity state. Without children it falls through to Base UI's own
- * message, and renders nothing while the field has none: an error from Base UI's `Form` under
+ * message, and renders nothing while the field has none: an error from `Form`'s `errors` under
  * the field's name, a `validate` result or the native constraint message, which is in the
  * browser's language. Several messages render as a list.
  */

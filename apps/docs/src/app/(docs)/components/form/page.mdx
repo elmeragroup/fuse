@@ -14,9 +14,9 @@ export const metadata = componentMetadata("form");
 
 <Prose>
 
-`errors` maps the names of the controls to one message or several, typically what a server returned after a submit. A `Field.Error` without children shows the error under its control's name, and so does `TextField` when it gets no `errorMessage`. Editing a field clears its error, and a new `errors` object, such as the next response, shows them again. After a submit, `Form` focuses the first field the new errors mark.
+`errors` maps field names, the `name` on `Field.Root` or on the control inside it, to one message or several, typically what a server returned after a submit. A `Field.Error` without children shows the error under its control's name, and so does `TextField` when it gets no `errorMessage`. Editing a field clears its error, and a new `errors` object, such as the next response, shows them again. After a submit, `Form` focuses the first field the new errors mark.
 
-`onFormSubmit` receives the values of the fields inside the form and prevents the native submit; leave it out to submit natively or to a form action. The browser's own validation bubbles stay off: the fields show their constraint messages through `Field.Error` instead.
+`onFormSubmit` receives the values of the controls inside a `Field.Root`, such as `TextField`'s, and prevents the native submit; leave it out to submit natively or to a form action. The browser's own validation bubbles stay off: the fields show their constraint messages through `Field.Error` instead.
 
 </Prose>
 
@@ -26,7 +26,7 @@ export const metadata = componentMetadata("form");
 
 <Prose>
 
-The interim react-aria fields, such as `DatePicker`, read React Aria's own form context and do not see `errors`. Pass them `errorMessage` and `isInvalid`.
+The interim react-aria fields, such as `DatePicker`, read React Aria's own form context. They do not see `errors`, their values are not in `onFormSubmit`'s values, and their own validation, such as `isRequired`, does not stop a submit. Pass them `errorMessage` and `isInvalid`, and read their values from the form data.
 
 </Prose>
 

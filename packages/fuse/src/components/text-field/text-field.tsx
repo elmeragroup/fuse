@@ -17,7 +17,8 @@ export type TextFieldProps = {
   description?: string;
   /**
    * Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the
-   * field shows its own validation error instead, such as a native constraint message.
+   * field shows its own validation error instead, such as an error `Form` holds under its
+   * `name` or a native constraint message.
    */
   errorMessage?: ReactNode;
   /** Controlled value. */
