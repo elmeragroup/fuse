@@ -11,6 +11,7 @@ catalog:
   "@elmeragroup/internal": 0.2.0-canary.7
   "@arethetypeswrong/core": 0.18.5
   "@base-ui/react": 1.8.0
+  "@fontsource/roboto": 5.3.0
   "@internationalized/date": 3.12.4
   "@internationalized/string": 3.2.10
   "@paper-design/shaders-react": 0.0.81

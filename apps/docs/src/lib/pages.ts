@@ -28,7 +28,8 @@ export const HOME_PAGE = {
   description: "Overview of the Fuse docs site: what the library is and how the docs are generated.",
 } as const;
 
-export const STATIC_PAGES: readonly StaticPage[] = [
+/** Every authored Overview and Handbook page, in nav order. */
+export const STATIC_PAGES = [
   {
     href: "/quick-start",
     label: "Quick start",
@@ -102,7 +103,10 @@ export const STATIC_PAGES: readonly StaticPage[] = [
       "The AI-docs surface: the generated llms.txt index and the per-component markdown endpoints.",
     group: "handbook",
   },
-];
+] as const satisfies readonly StaticPage[];
+
+/** The route of an authored Overview or Handbook page. */
+export type StaticHref = (typeof STATIC_PAGES)[number]["href"];
 
 export function staticPagesIn(group: StaticNavGroup): readonly StaticPage[] {
   return STATIC_PAGES.filter((page) => page.group === group);

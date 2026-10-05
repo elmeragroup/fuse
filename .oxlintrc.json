@@ -241,6 +241,12 @@
       }
     },
     {
+      "files": ["apps/docs/src/og/**/*.{ts,tsx}", "apps/docs/src/app/og/**/*.{ts,tsx}"],
+      "rules": {
+        "shadcn/no-inline-styles": "off"
+      }
+    },
+    {
       "files": ["packages/fuse/src/**/*.{ts,tsx}"],
       "rules": {
         "shadcn/no-raw-colors": "error",

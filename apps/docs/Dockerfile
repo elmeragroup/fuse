@@ -28,11 +28,19 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store pnpm fetch --frozen-lockfile
 COPY . .
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store pnpm install --frozen-lockfile --offline
+# The public origin the image serves, which absolute og:image URLs need (src/lib/site-origin.ts).
+# Pages prerender here, so the build bakes it in; the workflows read it from the Container Apps
+# environment before building. Declared after the install layers so a new origin keeps their cache.
+ARG DOCS_ORIGIN
+ENV DOCS_ORIGIN=${DOCS_ORIGIN}
 # The docs build depends on `generate`, which depends on the Fuse build (apps/docs/turbo.json).
 RUN pnpm exec turbo run build --filter=docs
 
 FROM node:${NODE_VERSION}-bookworm-slim AS runtime
-ENV NODE_ENV=production \
+# The landing renders per request and reads the origin at runtime, so it must match the build's.
+ARG DOCS_ORIGIN
+ENV DOCS_ORIGIN=${DOCS_ORIGIN} \
+    NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     HOSTNAME=0.0.0.0 \
     PORT=3000

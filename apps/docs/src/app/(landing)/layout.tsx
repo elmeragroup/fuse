@@ -5,12 +5,14 @@ import type { Metadata, Viewport } from "next";
 import { ColorSchemeScript } from "@elmeragroup/fuse/theme";
 
 import { DocumentRoot } from "../../components/document-root";
+import { siteOrigin } from "../../lib/site-origin";
 import { DOCUMENT_COLOR_SCHEME } from "../../lib/theme";
 import "../../styles/globals.css";
 import { LANDING_SUMMARY } from "./landing/landing-facts";
 import { LANDING_THEME } from "./landing/landing-theme-defaults";
 
 export const metadata: Metadata = {
+  metadataBase: siteOrigin(),
   title: "Fuse · The Elmera Group design system",
   description: LANDING_SUMMARY,
 };
