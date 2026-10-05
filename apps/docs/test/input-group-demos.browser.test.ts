@@ -35,8 +35,8 @@ describe("InputGroup demos", () => {
     const postalCode = demo.getByRole("textbox", { name: "Postal code", exact: true });
     await expect.poll(() => describedBy("Postal code")).toBe("Bergen");
     // The demo region also shows the source, so the city is found through the input's description.
-    const cityId = await postalCode.getAttribute("aria-describedby");
-    await page.locator(`[id="${cityId ?? ""}"]`).click();
+    const [cityId = ""] = (await postalCode.getAttribute("aria-describedby"))?.split(/\s+/u) ?? [];
+    await page.locator(`[id="${cityId}"]`).click();
     await expect.poll(() => postalCode.evaluate((input) => input === document.activeElement)).toBe(true);
 
     const mobile = demo.getByRole("textbox", { name: "Mobile number", exact: true });
@@ -44,7 +44,7 @@ describe("InputGroup demos", () => {
     await expect.poll(() => demo.getByRole("alert").textContent()).toBe("Enter 8 digits.");
     await expect
       .poll(() => describedBy("Mobile number"))
-      .toBe("We send the order confirmation here. Enter 8 digits.");
+      .toBe("Eight digits after +47. We send the order confirmation here. Enter 8 digits.");
 
     await mobile.fill("41234567");
     await expect.poll(() => demo.getByRole("alert").count()).toBe(0);
