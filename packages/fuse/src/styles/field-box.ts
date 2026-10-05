@@ -8,8 +8,8 @@ import { selfFocusRingClass, withinFocusRingClass } from "./utils";
 /**
  * The field box chrome: elevation, radius, hairline border, fill and the transition that
  * animates them. {@link fieldBox} paints it for Input and Textarea. RAC
- * `fieldGroupVariants`, Select's trigger and NumberField's group paint it without being
- * `fieldBox` variants.
+ * `fieldGroupVariants`, Select's trigger, NumberField's group and InputGroup's root paint it
+ * without being `fieldBox` variants.
  *
  * `field-box.test.ts` pins the tokens. `internal-stack.test.ts` checks that each token
  * reaches every consumer's merged classes and that no consumer adds a second radius or

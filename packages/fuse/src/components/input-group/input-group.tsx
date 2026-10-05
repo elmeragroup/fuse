@@ -5,6 +5,7 @@ import type { ComponentProps, ReactElement } from "react";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import { fieldBoxChromeClass } from "../../styles/field-box";
 import { withinStateFaceClass, withinStateFaceControlClass } from "../../styles/state-face";
 import { withinFocusRingClass, withinFocusRingControlClass } from "../../styles/utils";
 import { Button } from "../button/button";
@@ -71,8 +72,10 @@ export function InputGroupRoot({ className, ...props }: InputGroupRootProps): Re
       data-slot="input-group"
       role="group"
       className={cn(
+        // The control is stripped of its own box, so the group paints the shared chrome, fill included.
+        fieldBoxChromeClass,
         // Single-height field box: pins the `md` control rung; block addons and textareas grow instead.
-        "group/input-group shadow-xs relative box-border flex h-(--control-h-md) w-full min-w-0 items-center rounded-md border border-input transition-[color,border-color,box-shadow]",
+        "group/input-group relative flex h-(--control-h-md) w-full min-w-0 items-center",
         "has-[>[data-focus-ring-control]:disabled]:bg-input/50",
         "has-[[data-focus-ring-control]:focus-visible]:border-ring",
         withinStateFaceClass,
