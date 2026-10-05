@@ -36,11 +36,6 @@ The rule has exceptions. An addition only one app needs today can still belong i
 when the need is general, such as a missing accessible control or a pattern the design
 system already specifies. Explain the general need in the PR.
 
-Before starting a new component, adding public API or changing public behavior, open
-an issue and agree on the scope with a code owner. Link the issue from the PR.
-A small fix that restores intended behavior can skip the issue. Explain the bug and
-the expected behavior in the PR instead.
-
 <a id="one-problem"></a>
 
 ## Solve one problem per PR

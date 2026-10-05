@@ -7,7 +7,7 @@ Use a conventional commit title in plain language, such as
 ## Problem
 
 <!-- The problem in a sentence or two: what happens, what should happen, and how to reproduce it.
-Link the issue that agreed the scope, or explain why this small bug fix needs none. -->
+Link a related issue if there is one. -->
 
 ## Change
 
