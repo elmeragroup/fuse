@@ -20,8 +20,8 @@ import { WindowSide } from "./window-side";
 const heroWindow = tv({
   slots: {
     frame: "sm:px-6 w-full max-w-312 px-4 lg:px-8",
-    // The fade is a mask, so it is applied on a padded wrapper the shadow fits inside.
-    fade: "landing-fade sm:-mx-6 sm:px-6 -mx-4 px-4 pb-2",
+    // The fade is a mask, so it is applied on a wrapper padded out to the shadow's reach.
+    fade: "landing-fade",
     window: "rounded-2xl shadow-2xl relative overflow-hidden border border-border bg-background text-left",
     chrome: "text-sm sm:px-4 flex h-11 items-center gap-3 border-b border-border bg-muted/40 px-3",
     caption: "landing-swap flex min-w-0 flex-1 items-center gap-3",

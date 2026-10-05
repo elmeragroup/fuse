@@ -6,7 +6,7 @@ import type { Dispatch, ReactElement, RefObject, SetStateAction } from "react";
 import { tv } from "tailwind-variants";
 
 import { Sidebar, useSidebar } from "@elmeragroup/fuse/sidebar";
-import { ThemeScope } from "@elmeragroup/fuse/theme";
+import { densityAttributes, ThemeScope } from "@elmeragroup/fuse/theme";
 import { Toast } from "@elmeragroup/fuse/toast";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
@@ -300,7 +300,9 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
 /**
  * Dashboard, an internal sales and back-office app, running live on Fuse: the Internal side of
  * the hero window. A `ThemeScope` gives it the internal variant of the brand the landing has
- * picked while the page keeps its own theme. Density stays the document's.
+ * picked while the page keeps its own theme. An internal app is dense, so the scope is also a
+ * demo stage, whose generated stylesheet sets the dense metrics on it while the page stays
+ * comfortable. Its overlays portal into the scope, so they are dense too.
  */
 export function DashboardApp(): ReactElement {
   const { theme } = useLandingTheme();
@@ -309,7 +311,12 @@ export function DashboardApp(): ReactElement {
   const scope = useRef<HTMLDivElement>(null);
 
   return (
-    <ThemeScope ref={scope} theme={{ ...theme, variant: "internal" }} className={styles.scope()}>
+    <ThemeScope
+      ref={scope}
+      theme={{ ...theme, variant: "internal" }}
+      className={styles.scope()}
+      data-demo-stage
+      {...densityAttributes("dense")}>
       <Tooltip.Provider>
         <Toast.Provider>
           <Sidebar.Provider open={open} onOpenChange={setOpenState} className={styles.provider()}>

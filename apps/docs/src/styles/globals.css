@@ -192,25 +192,49 @@
 }
 
 /* The hero window fades into the page at rest, like a product shot, and shows its whole
-   height while it is hovered or holds focus. A registered property, so the stop interpolates. */
+   height while it is hovered or holds focus. The mask clips everything outside this box, so the
+   box pads out as far as the window's `shadow-2xl` (0 25px 50px -12px) reaches, 13px above, 38px
+   to each side and 63px below, and cancels that room with negative margins, keeping 8px below the
+   window. At rest the mask ends at the window's foot, so the shadow beside the foot fades with
+   it; while the window shows in full, the mask fades across the room below it instead.
+   Registered properties, so the stops interpolate. */
 @property --landing-fade {
-  syntax: "<percentage>";
+  syntax: "<number>";
   inherits: false;
-  initial-value: 100%;
+  initial-value: 1;
+}
+
+@property --landing-fade-end {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
 }
 
 @utility landing-fade {
-  --landing-fade: 78%;
-  mask-image: linear-gradient(to bottom, black var(--landing-fade), transparent);
-  transition: --landing-fade 360ms var(--ease-snap);
+  /* The share of the window's height that shows solid, and how far above this box's bottom
+     edge the mask turns transparent. */
+  --landing-fade: 0.78;
+  --landing-fade-end: 3.5rem;
+  margin: -1rem -2.5rem -3.5rem;
+  padding: 1rem 2.5rem 4rem;
+  mask-image: linear-gradient(
+    to bottom,
+    black calc(1rem + (100% - 5rem) * var(--landing-fade)),
+    transparent calc(100% - var(--landing-fade-end))
+  );
+  transition:
+    --landing-fade 360ms var(--ease-snap),
+    --landing-fade-end 360ms var(--ease-snap);
 
   &:focus-within {
-    --landing-fade: 100%;
+    --landing-fade: 1;
+    --landing-fade-end: 0rem;
   }
 
   @media (hover: hover) {
     &:hover {
-      --landing-fade: 100%;
+      --landing-fade: 1;
+      --landing-fade-end: 0rem;
     }
   }
 

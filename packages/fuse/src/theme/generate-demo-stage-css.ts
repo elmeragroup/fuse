@@ -1,7 +1,7 @@
 import type { Density } from "./density";
 import { DENSITY_METRIC_NAMES, DENSITY_METRICS } from "./tokens/density-metrics";
 
-// Stamped by apps/docs/src/components/demo-stage.tsx and the landing's density stage; the docs browser first-paint test verifies the pairing against the shipped CSS.
+// Stamped by apps/docs/src/components/demo-stage.tsx, the landing's density stage and its Dashboard; the docs browser first-paint test verifies the pairing against the shipped CSS.
 const DEMO_STAGE_SELECTORS = {
   dense: '[data-demo-stage][data-density="dense"]',
   comfortable: '[data-demo-stage][data-density="comfortable"]',

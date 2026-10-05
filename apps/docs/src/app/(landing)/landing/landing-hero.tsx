@@ -21,8 +21,9 @@ const landingHero = tv({
     actions: "sm:flex-row sm:w-auto sm:gap-6 flex w-full flex-col items-center gap-3",
     primary: "sm:w-auto w-full",
     // The window sits between the actions and the brand strip, as wide as the page allows, and
-    // close enough under them that 40% of it shows in a 1440×900 first viewport.
-    shot: "flex w-full justify-center pt-12 lg:pt-8",
+    // close enough under them that 40% of it shows in a 1440×900 first viewport. Where the
+    // window's shadow reaches past the viewport, the clip cuts it at the screen's edge.
+    shot: "flex w-full justify-center overflow-x-clip pt-12 lg:pt-8",
     strip: "sm:px-6 flex w-full justify-center px-4",
     // Every brand in one ink, quieter than the copy above it.
     brands:

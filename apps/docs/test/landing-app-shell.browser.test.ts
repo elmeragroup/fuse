@@ -1,6 +1,8 @@
 import type { Locator, Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
+import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
+
 import { DESKTOP_VIEWPORT, expectInside } from "./demo-page";
 import {
   IDA_METER_POINT,
@@ -9,6 +11,7 @@ import {
   WIDE_VIEWPORT,
   dashboard,
   focusedCustomer,
+  openNewOrder,
   openOrderSearch,
   row,
   searchTable,
@@ -17,6 +20,15 @@ import {
 import { auditTargets, collectPageErrors, expectTargets, launchLandingSuite } from "./landing-page";
 
 const { openLanding } = launchLandingSuite({ search: DASHBOARD_FIRST });
+
+/** The md control height in px at the default 16px root, per density, as Fuse's metrics table states it. */
+const CONTROL_MD = (() => {
+  const metric = resolveThemeCatalog().density.find((entry) => entry.name === "control-h-md");
+  if (metric === undefined) {
+    throw new Error("The theme catalog has no control-h-md metric.");
+  }
+  return metric.px;
+})();
 
 /**
  * The window opens on My orders with open work only, grouped by status. These are the
@@ -422,6 +434,28 @@ describe("landing Dashboard window", () => {
     const calendar = page.getByRole("dialog").filter({ has: page.getByRole("grid") });
     await calendar.waitFor();
     await expectTargets(calendar, "Start date calendar");
+    await page.context().close();
+  });
+
+  it("renders the Dashboard and its New order Sheet dense while the page outside the window stays comfortable", async () => {
+    const page = await openLanding(WIDE_VIEWPORT);
+    // DOM audit: the document's density is an attribute, with no role to query.
+    expect(await page.evaluate(() => document.documentElement.dataset.density)).toBe("comfortable");
+    const height = async (control: Locator) =>
+      control.evaluate((element) => element.getBoundingClientRect().height);
+
+    const browse = page.getByRole("button", { name: "Browse components ›" }).first();
+    expect(await height(browse)).toBe(CONTROL_MD.comfortable);
+
+    const app = await openOrderSearch(page);
+    // DOM audit: the search field's md box is its input group, which has no role of its own.
+    const searchGroup = app
+      .getByRole("textbox", { name: "Search orders" })
+      .locator("xpath=ancestor::*[@data-slot='input-group'][1]");
+    expect(await height(searchGroup)).toBe(CONTROL_MD.dense);
+
+    const sheet = await openNewOrder(app);
+    expect(await height(sheet.getByRole("textbox", { name: "Name", exact: true }))).toBe(CONTROL_MD.dense);
     await page.context().close();
   });
 

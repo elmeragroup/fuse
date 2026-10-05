@@ -93,9 +93,10 @@ type LandingThemeProviderProps = {
 
 /**
  * Owns the landing's theme and colour scheme. It writes only the `data-theme-*` attributes:
- * `data-density` stays as the layout stamped it from `LANDING_THEME`, so the internal variant keeps
- * the landing's comfortable metrics. Hosts own density (AGENTS.md), and a density change would
- * reflow the whole page under the visitor's cursor.
+ * `data-density` stays as the layout stamped it from `LANDING_THEME`, so the page keeps its
+ * comfortable metrics in either variant. Hosts own density (AGENTS.md), and a density change would
+ * reflow the whole page under the visitor's cursor. The hero window's Dashboard is dense on its
+ * own demo stage.
  */
 export function LandingThemeProvider({ routeTheme, children }: LandingThemeProviderProps): ReactElement {
   const [theme, setTheme] = useState<ThemeInput>(routeTheme);

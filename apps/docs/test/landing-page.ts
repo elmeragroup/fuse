@@ -111,7 +111,7 @@ export type TargetAudit = { readonly targets: number; readonly misses: readonly 
 const CONTROLS =
   "button, a[href], input, textarea, [role='button'], [role='spinbutton'], [role='checkbox'], [role='tab'], [role='combobox'], [role='option'], [role='menuitem'], [role='menuitemradio'], [role='menuitemcheckbox']";
 
-/** One probe that missed its control, with the offset from the control's centre it pressed at. */
+/** One probe that missed its control, with the offset from the control's centre of the edge it tested. */
 type ProbeMiss = {
   readonly index: number;
   readonly label: string;
@@ -122,13 +122,40 @@ type ProbeMiss = {
 };
 
 /**
- * Probes every visible control under `root`: a press 1/4px inside each edge of a 24px box
- * centred on the control must land on it.
+ * How far a probe stays inside the edge it tests. Chromium hit-tests positions in 1/64px layout
+ * units, so a margin of a few units keeps a control exactly at the floor from losing an edge to
+ * rounding, and stays well short of the half pixel a control 1px short of the floor lacks.
+ */
+const PROBE_MARGIN_PX = 1 / 16;
+
+/**
+ * Probes every visible control under `root`: it must cover a 24px box centred on it, and a press
+ * just inside each edge of that box must land on it.
+ *
+ * Two measured Chromium behaviours shape the probes:
+ *
+ * - `elementFromPoint(x, y)` tests the 1px square whose top-left corner is the point, not the
+ *   point itself, and returns the topmost element the square touches. A box from x to x + w
+ *   answers every point strictly between x - 1 and x + w. So a square reaching past an edge can
+ *   return a neighbour flush against the control.
+ * - A box with a `border-radius` hit-tests only where it overlaps its own box snapped to whole
+ *   pixels, so a rounded control at a fractional position loses up to half a pixel at an edge:
+ *   a 24px button at x 100.36 answers only up to 124, and at x 100.5 only from 101.
+ *
+ * So the probes test the floor box trimmed the same way, to the whole pixels it would snap to,
+ * which a control exactly at the floor always covers. A control 1px short of the floor covers at
+ * most 23px, and the trimmed box is at least 23.5px wide, so it misses. Each edge takes two
+ * probes:
+ *
+ * - reach: the square just outside the edge, overlapping it by `PROBE_MARGIN_PX`, must have the
+ *   control in its `elementsFromPoint` stack, so the control reaches the edge whatever is drawn
+ *   beside it;
+ * - press: the square just inside the edge must return the control, so nothing covers it there.
  */
 export async function auditTargets(root: Locator): Promise<TargetAudit> {
   const controls = root.locator(CONTROLS);
   const { targets, misses } = await controls.evaluateAll(
-    (elements, offset) => {
+    (elements, { half, margin }) => {
       let targets = 0;
       const misses = elements.flatMap((control, index) => {
         // Base UI pairs each checkbox with an aria-hidden native input for forms; the visible
@@ -150,15 +177,28 @@ export async function auditTargets(root: Locator): Promise<TargetAudit> {
         targets += 1;
         const x = rect.left + rect.width / 2;
         const y = rect.top + rect.height / 2;
-        const offsets = [
-          [-offset, 0],
-          [offset, 0],
-          [0, -offset],
-          [0, offset],
+        // The floor box's edges, each moved inward to the whole pixel it would snap to.
+        const left = Math.max(x - half, Math.round(x - half)) - x;
+        const right = Math.min(x + half, Math.round(x + half)) - x;
+        const top = Math.max(y - half, Math.round(y - half)) - y;
+        const bottom = Math.min(y + half, Math.round(y + half)) - y;
+        // Per edge: the point inside it that the probes stand for, and the corners of the
+        // squares just outside (reach) and just inside (press) it.
+        const probes = [
+          { dx: left + margin, dy: 0, reach: [left - 1 + margin, 0], press: [left + margin, 0] },
+          { dx: right - margin, dy: 0, reach: [right - margin, 0], press: [right - 1 - margin, 0] },
+          { dx: 0, dy: top + margin, reach: [0, top - 1 + margin], press: [0, top + margin] },
+          {
+            dx: 0,
+            dy: bottom - margin,
+            reach: [0, bottom - margin],
+            press: [0, bottom - 1 - margin],
+          },
         ] as const;
-        return offsets.flatMap(([dx, dy]) => {
-          const hit = document.elementFromPoint(x + dx, y + dy);
-          return hit !== null && control.contains(hit)
+        return probes.flatMap(({ dx, dy, reach, press }) => {
+          const stack = document.elementsFromPoint(x + reach[0], y + reach[1]);
+          const hit = document.elementFromPoint(x + press[0], y + press[1]);
+          return stack.some((element) => control.contains(element)) && hit !== null && control.contains(hit)
             ? []
             : [
                 {
@@ -174,7 +214,7 @@ export async function auditTargets(root: Locator): Promise<TargetAudit> {
       });
       return { targets, misses };
     },
-    TARGET_FLOOR_PX / 2 - 0.25
+    { half: TARGET_FLOOR_PX / 2, margin: PROBE_MARGIN_PX }
   );
   const confirmed: string[] = [];
   for (const miss of misses) {

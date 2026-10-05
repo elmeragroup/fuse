@@ -18,6 +18,7 @@ import {
   searchTable,
   showSide,
   sideSwitch,
+  WIDE_VIEWPORT,
   windowCaption,
 } from "./landing-dashboard";
 import { launchLandingSuite, settleFrames } from "./landing-page";
@@ -506,6 +507,59 @@ describe("landing hero window, External side", () => {
     await brandSite(page, ELMERA.site).getByRole("heading", { level: 1 }).waitFor();
     const after = await demo.boundingBox();
     expect(after?.height).toBe(before?.height);
+    await page.context().close();
+  });
+});
+
+describe("landing hero window, frame", () => {
+  it("keeps the window's shadow inside every ancestor that clips it", async () => {
+    const page = await openLanding(WIDE_VIEWPORT);
+    const clips = await liveDemo(page).evaluate((demo) => {
+      // The shadow's reach past each edge of its box, from the computed outset shadows: the blur
+      // radius and the spread, moved by the offset (CSS Backgrounds 3, "box-shadow").
+      const reach = { top: 0, right: 0, bottom: 0, left: 0 };
+      for (const shadow of getComputedStyle(demo).boxShadow.split(/,(?![^(]*\))/u)) {
+        if (shadow.includes("inset")) {
+          continue;
+        }
+        const [x = 0, y = 0, blur = 0, spread = 0] = [...shadow.matchAll(/(-?[\d.]+)px/gu)].map((match) =>
+          Number(match[1])
+        );
+        reach.top = Math.max(reach.top, blur + spread - y);
+        reach.right = Math.max(reach.right, blur + spread + x);
+        reach.bottom = Math.max(reach.bottom, blur + spread + y);
+        reach.left = Math.max(reach.left, blur + spread - x);
+      }
+      const box = demo.getBoundingClientRect();
+      const painted = {
+        top: box.top - reach.top,
+        right: box.right + reach.right,
+        bottom: box.bottom + reach.bottom,
+        left: box.left - reach.left,
+      };
+      // DOM audit: a mask or a clipping overflow on an ancestor cuts what it paints outside its box.
+      const found: { clip: string; inside: boolean }[] = [];
+      for (let element = demo.parentElement; element !== null; element = element.parentElement) {
+        const style = getComputedStyle(element);
+        const masks = style.maskImage !== "none";
+        const clipsX = style.overflowX !== "visible";
+        const clipsY = style.overflowY !== "visible";
+        if (!masks && !clipsX && !clipsY) {
+          continue;
+        }
+        const rect = element.getBoundingClientRect();
+        const insideX = rect.left <= painted.left && painted.right <= rect.right;
+        const insideY = rect.top <= painted.top && painted.bottom <= rect.bottom;
+        found.push({
+          clip: `${element.tagName.toLowerCase()}.${element.className}`,
+          inside: (masks || clipsX ? insideX : true) && (masks || clipsY ? insideY : true),
+        });
+      }
+      return { reach, found };
+    });
+    expect(clips.reach.bottom, "the window casts a shadow").toBeGreaterThan(0);
+    expect(clips.found.length, "the fade's mask clips the window").toBeGreaterThan(0);
+    expect(clips.found.filter((clip) => !clip.inside)).toEqual([]);
     await page.context().close();
   });
 });
