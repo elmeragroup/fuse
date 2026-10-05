@@ -274,25 +274,16 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID_PROD }}
 
-      # The build bakes the production origin into its og:image URLs, so read it first.
-      - name: Production origin
-        id: origin
-        env:
-          APP: ${{ vars.PROD_CONTAINER_APP }}
-          RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP_PROD }}
-          ENVIRONMENT: ${{ vars.AZURE_CONTAINER_APPS_ENVIRONMENT_PROD }}
-        # A bare assignment keeps a failed lookup fatal; inside `echo` its status would be lost.
-        run: |
-          origin="$(bash .github/scripts/docs-container-app.sh origin-prod)"
-          echo "origin=$origin" >> "$GITHUB_OUTPUT"
-
       - name: Push image
         id: image
         uses: ./.github/actions/push-docs-image
         with:
           registry: ${{ vars.AZURE_ACR_NAME_PROD }}
           sha: ${{ github.sha }}
-          origin: ${{ steps.origin.outputs.origin }}
+          # The build bakes this origin into its og:image URLs. It is the public domain, not the
+          # app's URL on the Container Apps environment's default domain: that environment is
+          # internal and resolves to a private IP, so link-preview scrapers cannot fetch from it.
+          origin: https://fuse.elmeragroup.no
 
       # The production app runs in single revision mode: the new revision takes all traffic
       # once healthy and Container Apps retires the previous one.

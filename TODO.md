@@ -208,9 +208,6 @@ that opens every overlay on a side before flipping the window.
 
 ## Open Graph images
 
-- Check the first preview and production deploys after the origin change. The workflows read
-  `DOCS_ORIGIN` from `.github/scripts/docs-container-app.sh origin-preview|origin-prod`, and
-  no run has exercised that step yet. A preview's `og:image` should name its `---pr-<n>` host.
 - The component specimens in `apps/docs/src/og/specimens/` redraw each Fuse recipe from
   tokens by hand. A recipe change in `packages/fuse` does not reach them, and no test compares
   the two. Review the specimens when a recipe's radius, border, padding or default variant

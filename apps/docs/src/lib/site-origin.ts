@@ -5,10 +5,11 @@
  *
  * The origin comes from `DOCS_ORIGIN`. The docs and component pages prerender during
  * `next build`, so the build bakes the value into their HTML: `apps/docs/Dockerfile` takes it as
- * a build argument, and the preview and merge workflows read it from the Container Apps
- * environment first (`.github/scripts/docs-container-app.sh origin-preview|origin-prod`). The
- * landing renders per request and reads the same variable at runtime, which the Dockerfile's
- * runtime stage sets to the build's value, so one input decides the origin of every page.
+ * a build argument. The merge workflow passes the public domain `https://fuse.elmeragroup.no`;
+ * the preview workflow reads a preview's URL from the Container Apps environment first
+ * (`.github/scripts/docs-container-app.sh origin-preview`). The landing renders per request and
+ * reads the same variable at runtime, which the Dockerfile's runtime stage sets to the build's
+ * value, so one input decides the origin of every page.
  *
  * Unset, the origin falls back to `http://localhost:<PORT>` (3000 without `PORT`), so local
  * builds and the test server still emit absolute URLs. A set but malformed value fails the
