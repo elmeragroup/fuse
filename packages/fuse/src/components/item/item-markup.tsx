@@ -4,6 +4,7 @@ import { tv } from "tailwind-variants";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import { ITEM_DESCRIPTION_CLASSES } from "./item-description-classes";
 import { itemRootProps } from "./item-root-props";
 import { ITEM_TITLE_CLASSES } from "./item-title-classes";
 import type { itemVariants } from "./item-variants";
@@ -74,10 +75,7 @@ export function ItemDescription({ className, ...props }: ComponentProps<"p">): R
   return (
     <p
       data-slot="item-description"
-      className={cn(
-        "text-sm leading-normal font-normal group-data-[size=xs]/item:text-xs line-clamp-2 text-left text-pretty text-muted-foreground [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary",
-        className
-      )}
+      className={cn(ITEM_DESCRIPTION_CLASSES, "line-clamp-2", className)}
       {...props}
     />
   );

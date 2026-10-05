@@ -13,7 +13,13 @@
   "alert": {
     "title": "Alert",
     "rsc": "server",
-    "demos": ["alert-variants.tsx", "alert-action.tsx", "alert-title-only.tsx", "alert-heading-level.tsx"]
+    "demos": [
+      "alert-variants.tsx",
+      "alert-action.tsx",
+      "alert-title-only.tsx",
+      "alert-heading-level.tsx",
+      "alert-list.tsx"
+    ]
   },
   "alert-dialog": {
     "title": "Alert Dialog",
