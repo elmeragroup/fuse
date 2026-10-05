@@ -26,7 +26,7 @@ import { Button } from "../button/button";
 import {
   InputGroupAddon,
   InputGroupButton,
-  InputGroupInput,
+  InputGroupPlainInput,
   InputGroupRoot,
 } from "../input-group/input-group";
 import {
@@ -131,6 +131,11 @@ export type ComboboxInputProps = Omit<
   "children" | "className"
 > & {
   /**
+   * The input's id. Inside a `Field`, set `id` on `Combobox.Root` instead: the Root's id is the
+   * one `Field.Label` points at, so an id here leaves the label's `for` unmatched.
+   */
+  id?: string;
+  /**
    * Renders the caret trigger button in the inline-end addon.
    * Hidden at runtime whenever a clear button is present in the group.
    * @default true
@@ -180,7 +185,11 @@ export function ComboboxInput({
   const strings = useLocalizedStrings(comboboxStrings);
   return (
     <InputGroupRoot className={cn("w-auto", className)}>
-      <ComboboxPrimitive.Input disabled={disabled} render={<InputGroupInput />} {...definedProps(props)} />
+      <ComboboxPrimitive.Input
+        disabled={disabled}
+        render={<InputGroupPlainInput />}
+        {...definedProps(props)}
+      />
       <InputGroupAddon align="inline-end">
         {showTrigger ? (
           <InputGroupButton

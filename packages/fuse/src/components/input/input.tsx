@@ -101,6 +101,12 @@ function warnIfNotNumeric(prop: "value" | "defaultValue", value: InputProps["val
   }
 }
 
+/** Input's field box and file-input classes, for an element that paints Input's look. */
+export const inputClass = cn(
+  fieldBox(),
+  "file:text-sm file:font-medium min-w-0 file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-foreground"
+);
+
 export function Input({
   className,
   type,
@@ -137,11 +143,7 @@ export function Input({
     <InputPrimitive
       type={type}
       data-slot="input"
-      className={cn(
-        fieldBox(),
-        "file:text-sm file:font-medium min-w-0 file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-foreground",
-        className
-      )}
+      className={cn(inputClass, className)}
       {...definedProps({
         ...props,
         ref: inputRef,

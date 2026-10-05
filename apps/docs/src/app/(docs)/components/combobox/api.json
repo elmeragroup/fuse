@@ -417,7 +417,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 303,
+      "forwardedCount": 302,
       "props": [
         {
           "name": "children",
@@ -453,6 +453,15 @@
           "shortType": null,
           "defaultValue": "false",
           "description": "Whether the component should ignore user interaction. Disables the input and the trigger/clear buttons. Combines with `disabled` on `Combobox.Root` and `Field.Root`: any of the three disables the input.",
+          "required": false
+        },
+        {
+          "name": "id",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The input's id. Inside a `Field`, set `id` on `Combobox.Root` instead: the Root's id is the one `Field.Label` points at, so an id here leaves the label's `for` unmatched.",
           "required": false
         },
         {

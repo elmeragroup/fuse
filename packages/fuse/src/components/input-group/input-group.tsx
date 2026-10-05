@@ -9,7 +9,7 @@ import { inputGroupRootClass } from "../../styles/field-box";
 import { withinStateFaceControlClass } from "../../styles/state-face";
 import { withinFocusRingControlClass } from "../../styles/utils";
 import { Button } from "../button/button";
-import { Input } from "../input/input";
+import { Input, inputClass } from "../input/input";
 import type { InputProps } from "../input/input";
 import { Textarea } from "../textarea/textarea";
 import { inputGroupAddonVariants, inputGroupButtonVariants } from "./input-group-variants";
@@ -66,6 +66,8 @@ const CONTROL_CHROME = cn(
   withinFocusRingControlClass,
   withinStateFaceControlClass
 );
+
+const INPUT_CONTROL_CHROME = cn(CONTROL_CHROME, "max-h-full");
 
 export function InputGroupRoot({ className, ...props }: InputGroupRootProps): ReactElement {
   return (
@@ -139,7 +141,23 @@ export function InputGroupInput({ className, ...props }: InputGroupInputProps): 
     <Input
       data-slot="input-group-control"
       data-focus-ring-control=""
-      className={cn(CONTROL_CHROME, "max-h-full", className)}
+      className={cn(INPUT_CONTROL_CHROME, className)}
+      {...props}
+    />
+  );
+}
+
+/**
+ * `InputGroup.Input`'s look on a plain `<input>`, for a primitive that wires the Field itself,
+ * such as Base UI's `Combobox.Input`. `InputGroup.Input` renders `Field.Control`, which would
+ * name the input after the Field and submit its text beside the primitive's own hidden input.
+ */
+export function InputGroupPlainInput({ className, ...props }: ComponentProps<"input">): ReactElement {
+  return (
+    <input
+      data-slot="input-group-control"
+      data-focus-ring-control=""
+      className={cn(inputClass, INPUT_CONTROL_CHROME, className)}
       {...props}
     />
   );
@@ -161,4 +179,5 @@ InputGroupAddon.displayName = "InputGroup.Addon";
 InputGroupButton.displayName = "InputGroup.Button";
 InputGroupText.displayName = "InputGroup.Text";
 InputGroupInput.displayName = "InputGroup.Input";
+InputGroupPlainInput.displayName = "InputGroupPlainInput";
 InputGroupTextarea.displayName = "InputGroup.Textarea";
