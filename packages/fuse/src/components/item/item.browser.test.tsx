@@ -100,6 +100,133 @@ describe("Item", () => {
     expect(textNamed("Override").parentElement?.getAttribute("role")).toBe("presentation");
   });
 
+  it.each([
+    { role: "link", render: (key: string) => <a href={`#${key}`} /> },
+    { role: "button", render: () => <button type="button" /> },
+  ] as const)("keeps a grouped $role render's own role inside a listitem", ({ role, render }) => {
+    const names = ["Storgata 1", "Kirkeveien 22"];
+    renderThemed(
+      <Item.Group>
+        {names.map((name) => (
+          <Item.Root key={name} render={render(name)}>
+            <Item.Title>{name}</Item.Title>
+          </Item.Root>
+        ))}
+      </Item.Group>
+    );
+    for (const name of names) {
+      const element = roleNamed(role, name);
+      expect(element.getAttribute("data-slot")).toBe("item");
+      expect(element.parentElement?.getAttribute("role")).toBe("listitem");
+    }
+    expect(page.getByRole("list").getByRole("listitem").elements()).toHaveLength(names.length);
+  });
+
+  it("lets a grouped render with an explicit listitem role stand as the listitem itself", () => {
+    renderThemed(
+      <Item.Group>
+        <Item.Root role="listitem" render={<a href="#profile" />}>
+          <Item.Title>Profile</Item.Title>
+        </Item.Root>
+      </Item.Group>
+    );
+    const element = textNamed("Profile").closest("a");
+    expect(element?.getAttribute("role")).toBe("listitem");
+    expect(element?.parentElement?.getAttribute("data-slot")).toBe("item-group");
+    expect(page.getByRole("list").getByRole("listitem").elements()).toHaveLength(1);
+  });
+
+  it.each([
+    {
+      on: "root",
+      secret: (
+        <Item.Root hidden render={<a href="#secret" />}>
+          <Item.Title>Secret</Item.Title>
+        </Item.Root>
+      ),
+    },
+    {
+      on: "render element",
+      secret: (
+        <Item.Root render={<a href="#secret" hidden />}>
+          <Item.Title>Secret</Item.Title>
+        </Item.Root>
+      ),
+    },
+  ])("hides the listitem and its gap with hidden on the grouped $on", ({ secret }) => {
+    function gapBetween(first: string, last: string, group: string): number {
+      const scope = page.getByTestId(group);
+      const above = scope.getByRole("link", { name: first }).element().getBoundingClientRect();
+      const below = scope.getByRole("link", { name: last }).element().getBoundingClientRect();
+      return below.top - above.bottom;
+    }
+    renderThemed(
+      <>
+        <Item.Group data-testid="without">
+          <Item.Root render={<a href="#profile" />}>
+            <Item.Title>Profile</Item.Title>
+          </Item.Root>
+          <Item.Root render={<a href="#invoices" />}>
+            <Item.Title>Invoices</Item.Title>
+          </Item.Root>
+        </Item.Group>
+        <Item.Group data-testid="with">
+          <Item.Root render={<a href="#profile" />}>
+            <Item.Title>Profile</Item.Title>
+          </Item.Root>
+          {secret}
+          <Item.Root render={<a href="#invoices" />}>
+            <Item.Title>Invoices</Item.Title>
+          </Item.Root>
+        </Item.Group>
+      </>
+    );
+    expect(page.getByTestId("with").getByRole("listitem").elements()).toHaveLength(2);
+    expect(gapBetween("Profile", "Invoices", "with")).toBe(gapBetween("Profile", "Invoices", "without"));
+  });
+
+  it.each([
+    {
+      on: "root",
+      decor: (
+        <Item.Root aria-hidden="true" render={<a href="#decor" />}>
+          <Item.Title>Decor</Item.Title>
+        </Item.Root>
+      ),
+    },
+    {
+      on: "render element",
+      decor: (
+        <Item.Root render={<a href="#decor" aria-hidden="true" />}>
+          <Item.Title>Decor</Item.Title>
+        </Item.Root>
+      ),
+    },
+  ])("adds no accessible listitem with aria-hidden on the grouped $on", ({ decor }) => {
+    renderThemed(
+      <Item.Group>
+        <Item.Root render={<a href="#profile" />}>
+          <Item.Title>Profile</Item.Title>
+        </Item.Root>
+        {decor}
+      </Item.Group>
+    );
+    expect(page.getByRole("list").getByRole("listitem").elements()).toHaveLength(1);
+  });
+
+  it("keeps a grouped item listed when its render element overrides the root's hidden", () => {
+    renderThemed(
+      <Item.Group>
+        <Item.Root hidden render={<a href="#shown" hidden={false} />}>
+          <Item.Title>Shown</Item.Title>
+        </Item.Root>
+      </Item.Group>
+    );
+    const link = roleNamed("link", "Shown");
+    expect(link.parentElement?.getAttribute("role")).toBe("listitem");
+    expect(page.getByRole("list").getByRole("listitem").elements()).toHaveLength(1);
+  });
+
   it("emits media variant and footer mode without dark classes", () => {
     renderThemed(
       <Item.Root>

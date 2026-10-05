@@ -312,6 +312,7 @@
       "item-as-link.tsx",
       "item-as-button.tsx",
       "item-group.tsx",
+      "item-link-group.tsx",
       "item-media-variants.tsx",
       "item-footer-reveal.tsx",
       "item-sizes.tsx"
