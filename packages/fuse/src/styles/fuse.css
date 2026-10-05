@@ -17,6 +17,14 @@
   --control-px-icon-sm: 0.375rem;
   --control-px-icon-md: 0.5rem;
   --control-px-icon-lg: 0.5rem;
+  --control-px-button-xs: 0.5rem;
+  --control-px-button-sm: 0.625rem;
+  --control-px-button-md: 0.625rem;
+  --control-px-button-lg: 0.625rem;
+  --control-px-button-icon-xs: 0.375rem;
+  --control-px-button-icon-sm: 0.375rem;
+  --control-px-button-icon-md: 0.5rem;
+  --control-px-button-icon-lg: 0.5rem;
   --control-gap-xs: 0.25rem;
   --control-gap-sm: 0.25rem;
   --control-gap-md: 0.375rem;
@@ -38,6 +46,14 @@
   --control-px-icon-sm: 0.625rem;
   --control-px-icon-md: 0.75rem;
   --control-px-icon-lg: 0.75rem;
+  --control-px-button-xs: 0.75rem;
+  --control-px-button-sm: 1rem;
+  --control-px-button-md: 2rem;
+  --control-px-button-lg: 2rem;
+  --control-px-button-icon-xs: 0.625rem;
+  --control-px-button-icon-sm: 0.75rem;
+  --control-px-button-icon-md: 1.5rem;
+  --control-px-button-icon-lg: 1.5rem;
   --control-gap-xs: 0.375rem;
   --control-gap-sm: 0.375rem;
   --control-gap-md: 0.5rem;
@@ -94,6 +110,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-button-outline: var(--button-outline, var(--border));
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-accent: var(--sidebar-accent);

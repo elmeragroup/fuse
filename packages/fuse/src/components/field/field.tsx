@@ -181,20 +181,39 @@ export function FieldSeparator({
   );
 }
 
+/**
+ * The field's error message, announced as an alert.
+ *
+ * Children are shown as given: the caller decides when the field is in error, and a `match`
+ * narrows that to one validity state. Without children it falls through to Base UI's own
+ * message, and renders nothing while the field has none: an error from `Form`'s `errors` under
+ * the field's name, a `validate` result or the native constraint message, which is in the
+ * browser's language. Several messages render as a list.
+ */
 export function FieldError({
   className,
   children,
   ...props
-}: ComponentProps<typeof FieldPrimitive.Error>): ReactElement | null {
+}: ComponentProps<typeof FieldPrimitive.Error>): ReactElement {
+  const errorClassName = mergeClassName(className, "text-sm font-normal text-error");
+  // Two branches, not `match={children ? true : undefined}`: Base UI merges every present
+  // key, so a forwarded `children={undefined}` would erase the message it renders itself.
   if (!children) {
-    return null;
+    return (
+      <FieldPrimitive.Error
+        role="alert"
+        data-slot="field-error"
+        className={errorClassName}
+        {...definedProps(props)}
+      />
+    );
   }
   return (
     <FieldPrimitive.Error
       match
       role="alert"
       data-slot="field-error"
-      className={mergeClassName(className, "text-sm font-normal text-error")}
+      className={errorClassName}
       {...definedProps(props)}>
       {children}
     </FieldPrimitive.Error>

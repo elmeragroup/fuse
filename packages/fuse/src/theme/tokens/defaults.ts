@@ -61,6 +61,10 @@ export const LAYER_DEFAULTS = {
   border: NEUTRAL_LINE,
   input: NEUTRAL_LINE,
   ring: "oklch(0.4844 0.20509 296.29)",
+  // The outline Button's border. Internal themes draw it as a 1px hairline in the border
+  // role, and the external variant layer swaps both values for the reference's 2px ring
+  // in the text color.
+  "button-outline": "var(--border)",
   sidebar: "oklch(0.9851 0 0)",
   "sidebar-foreground": NEUTRAL_950,
   "sidebar-accent": NEUTRAL_LINE,
@@ -95,6 +99,7 @@ export const LAYER_DEFAULTS = {
   // set a brand button radius, and the external variant layer sets the step.
   "radius-button": "var(--radius)",
   "radius-step": "0px",
+  "button-outline-width": "1px",
   "font-sans": "Roboto, ui-sans-serif, system-ui, sans-serif",
   "font-heading": "var(--font-sans)",
 } as const satisfies LayerTokens;

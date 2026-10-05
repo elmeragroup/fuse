@@ -46,6 +46,7 @@ export const TOKEN_NAMES = [
   "border",
   "input",
   "ring",
+  "button-outline",
   "sidebar",
   "sidebar-foreground",
   "sidebar-accent",
@@ -76,6 +77,7 @@ export const TOKEN_NAMES = [
   "radius",
   "radius-button",
   "radius-step",
+  "button-outline-width",
   "font-sans",
   "font-heading",
 ] as const;
@@ -208,6 +210,7 @@ export const TOKEN_KINDS = {
   border: "color",
   input: "color",
   ring: "color",
+  "button-outline": "color",
   sidebar: "color",
   "sidebar-foreground": "color",
   "sidebar-accent": "color",
@@ -238,6 +241,7 @@ export const TOKEN_KINDS = {
   radius: "dimension",
   "radius-button": "dimension",
   "radius-step": "dimension",
+  "button-outline-width": "dimension",
   "font-sans": "fontFamily",
   "font-heading": "fontFamily",
 } as const satisfies Record<TokenName, TokenKind>;
@@ -269,9 +273,11 @@ export const EXTERNAL_RESET_KEYS = [
   "feature-foreground",
   "border",
   "input",
+  "button-outline",
   "radius",
   "radius-button",
   "radius-step",
+  "button-outline-width",
   "font-heading",
 ] as const;
 
@@ -307,19 +313,24 @@ export const MUST_OVERRIDE_EXTERNAL = [
 
 export const MUST_OVERRIDE_INTERNAL = ["brand", "brand-foreground"] as const;
 
-/** Geometry and typography a dark palette keeps from the light composition. */
+/**
+ * What a dark palette keeps from the light composition: geometry, typography and the
+ * outline Button's border color. That color is an alias, `var(--border)` or
+ * `var(--foreground)`, so it follows the dark role it names.
+ */
 const LIGHT_ONLY_KEYS: ReadonlySet<TokenName> = new Set([
+  "button-outline",
   "radius",
   "radius-button",
   "radius-step",
+  "button-outline-width",
   "font-heading",
 ]);
 
 /**
- * The roles every dark palette must override. Geometry and typography (`radius`,
- * `radius-button`, `radius-step`, `font-heading`) keep their light values, and composition
- * computes each derived role, so those are the only `EXTERNAL_RESET_KEYS` entries a dark
- * palette need not name.
+ * The roles every dark palette must override. The `LIGHT_ONLY_KEYS` keep their light
+ * values, and composition computes each derived role, so those are the only
+ * `EXTERNAL_RESET_KEYS` entries a dark palette need not name.
  */
 export const MUST_OVERRIDE_DARK = EXTERNAL_RESET_KEYS.filter(
   (key): key is Extract<ExternalResetKey, LayerTokenName> =>

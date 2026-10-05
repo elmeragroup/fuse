@@ -49,3 +49,315 @@
     font-family: var(--font-mono);
   }
 }
+
+/* The /landing prototype. Theme tokens and utilities only emit CSS where a class uses them,
+   and the platform rules below match only a document that holds [data-landing], so the docs
+   pages are unaffected. */
+:root:has([data-landing]) {
+  /* The browser's tap flash fights the press feedback every control already draws. */
+  -webkit-tap-highlight-color: transparent;
+  /* No font inflation when a phone turns to landscape. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Controls are controls: no 300 ms double-tap wait, no long-press text selection or callout.
+   Body copy, numbers and the install command stay selectable. */
+[data-landing] :is(button, [role="button"], [role="radio"], [role="switch"], [role="tab"], label) {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* iOS zooms into any focused field under 16px and never zooms back out. A floor, so it lifts
+   dense 14px control text and leaves comfortable 18px alone. */
+@media (pointer: coarse) {
+  [data-landing] :is(input, textarea, select) {
+    font-size: max(16px, var(--control-text));
+  }
+}
+
+/* The re-theme reveal: the new snapshot is clipped by a growing circle (driven from
+   landing-theme.tsx), so the default cross-fade between snapshots is switched off. */
+:root:has([data-landing])::view-transition-old(root),
+:root:has([data-landing])::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+:root:has([data-landing])::view-transition-new(root) {
+  z-index: 1;
+}
+
+@theme {
+  --container-landing: 80rem;
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 0.875rem;
+  --text-landing-hero: 7rem;
+  --text-landing-hero--line-height: 6.5rem;
+  --text-landing-h2: 4rem;
+  --text-landing-h2--line-height: 4rem;
+  --text-landing-h3: 3.5rem;
+  --text-landing-h3--line-height: 3.625rem;
+  --text-landing-stat: 5rem;
+  --text-landing-stat--line-height: 5rem;
+  --tracking-landing-hero: -0.045em;
+  --tracking-landing-h2: -0.035em;
+  --tracking-landing-stat: -0.05em;
+  --tracking-landing-eyebrow: 0.14em;
+  --tracking-landing-caption: 0.1em;
+  --ease-snap: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-swap: cubic-bezier(0.2, 0, 0, 1);
+  --spacing-safe-top: env(safe-area-inset-top, 0px);
+  --spacing-footer-end: calc(2rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* A press confirmed the moment a finger lands, not when it lifts. */
+@utility landing-press {
+  transition: scale 140ms var(--ease-snap);
+
+  &:active {
+    scale: 0.96;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+
+    &:active {
+      scale: none;
+    }
+  }
+}
+
+/* A value that just changed settles in from a blur, so old and new read as one thing
+   changing rather than two swapping. Pair it with a React `key` so each value remounts. */
+@utility landing-swap {
+  transition:
+    opacity 220ms var(--ease-snap),
+    filter 220ms var(--ease-snap),
+    translate 220ms var(--ease-snap);
+
+  @starting-style {
+    opacity: 0;
+    filter: blur(3px);
+    translate: 0 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: opacity 220ms ease;
+
+    @starting-style {
+      filter: none;
+      translate: none;
+    }
+  }
+}
+
+/* One of several icons stacked in one grid cell, such as the theme picker's sun, moon and
+   monitor: the shown icon grows in from a quarter of its size out of a blur, and the one it
+   replaces leaves the same way. Every icon stays mounted, so a swap runs both ways and a quick
+   second change reverses from where the icons are. Reduced motion keeps only the fade. */
+@utility landing-icon-swap {
+  transition:
+    opacity 200ms var(--ease-swap),
+    scale 200ms var(--ease-swap),
+    filter 200ms var(--ease-swap);
+
+  &[data-shown="false"] {
+    opacity: 0;
+    scale: 0.25;
+    filter: blur(4px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: opacity 120ms ease;
+
+    &[data-shown="false"] {
+      scale: none;
+      filter: none;
+    }
+  }
+}
+
+/* Usage bars grow from the baseline; `scale` only, so a period switch never relayouts. */
+@utility landing-bar {
+  transform-origin: bottom;
+  scale: 1 var(--bar-scale, 1);
+  transition: scale 320ms var(--ease-snap) var(--bar-delay, 0ms);
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+/* The hero window fades into the page at rest, like a product shot, and shows its whole
+   height while it is hovered or holds focus. The mask clips everything outside this box, so the
+   box pads out as far as the window's `shadow-2xl` (0 25px 50px -12px) reaches, 13px above, 38px
+   to each side and 63px below, and cancels that room with negative margins, keeping 8px below the
+   window. At rest the mask ends at the window's foot, so the shadow beside the foot fades with
+   it; while the window shows in full, the mask fades across the room below it instead.
+   Registered properties, so the stops interpolate. */
+@property --landing-fade {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+
+@property --landing-fade-end {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@utility landing-fade {
+  /* The share of the window's height that shows solid, and how far above this box's bottom
+     edge the mask turns transparent. */
+  --landing-fade: 0.78;
+  --landing-fade-end: 3.5rem;
+  margin: -1rem -2.5rem -3.5rem;
+  padding: 1rem 2.5rem 4rem;
+  mask-image: linear-gradient(
+    to bottom,
+    black calc(1rem + (100% - 5rem) * var(--landing-fade)),
+    transparent calc(100% - var(--landing-fade-end))
+  );
+  transition:
+    --landing-fade 360ms var(--ease-snap),
+    --landing-fade-end 360ms var(--ease-snap);
+
+  &:focus-within {
+    --landing-fade: 1;
+    --landing-fade-end: 0rem;
+  }
+
+  @media (hover: hover) {
+    &:hover {
+      --landing-fade: 1;
+      --landing-fade-end: 0rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+/* A floating bar that rises into place when it mounts, and simply appears under reduced motion. */
+@utility landing-rise {
+  transition:
+    opacity 180ms var(--ease-snap),
+    translate 180ms var(--ease-snap);
+
+  @starting-style {
+    opacity: 0;
+    translate: 0 6px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+/* One side of the hero window. The Internal/External switch moves the sides with `data-shown`:
+   the outgoing side fades and drifts toward its end of the switch while the incoming one settles.
+   The exit fades and blurs in 120ms, all but gone in its first 60ms, and the entrance waits 100ms,
+   so one screen dominates every frame of the flip. Transitions, not keyframes, so flipping back
+   mid-way reverses from where the sides are.
+   Reduced motion swaps at once: `transition: none` also zeroes the durations, so the central
+   reduced-motion rule, which keeps opacity in `transition-property`, has nothing to run. */
+@utility landing-flip {
+  transition:
+    opacity 220ms var(--ease-snap) 100ms,
+    filter 220ms var(--ease-snap) 100ms,
+    translate 300ms var(--ease-snap),
+    scale 300ms var(--ease-snap);
+
+  &[data-shown="false"] {
+    filter: blur(3px);
+    transition-duration: 120ms, 120ms, 300ms, 300ms;
+    transition-delay: 0ms;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &,
+    &[data-shown="false"] {
+      transition: none;
+    }
+  }
+}
+
+/* The demo sites' dark-scheme surfaces. Fuse's dark external sheets turn `primary` and
+   `secondary` into light ink for text, so a band filled with them would end a dark site on light
+   stripes; a part that fills a band names its dark-scheme role through this variant. */
+@custom-variant landing-dark (&:where([data-theme="dark"] *));
+
+/* TrøndelagKraft's hero photo starts on a diagonal, cut out of its own box. */
+@utility landing-angle {
+  clip-path: polygon(14% 0, 100% 0, 100% 100%, 0 100%);
+}
+
+/* A phone carousel: native momentum and snap, no visible scrollbar, no scroll chaining. */
+@utility landing-rail {
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  & > * {
+    scroll-snap-align: start;
+  }
+}
+
+/* Monochrome brand logos as masks, filled with the text colour by `bg-current`. */
+@utility landing-logo-elma {
+  mask-image: url("/landing/logos/elma.svg");
+}
+
+@utility landing-logo-fkas {
+  mask-image: url("/landing/logos/fkas.svg");
+}
+
+@utility landing-logo-fkab {
+  mask-image: url("/landing/logos/fkab.svg");
+}
+
+@utility landing-logo-tkas {
+  mask-image: url("/landing/logos/tkas.svg");
+}
+
+@utility landing-logo-guen {
+  mask-image: url("/landing/logos/guen.svg");
+}
+
+@utility landing-logo-fkse {
+  mask-image: url("/landing/logos/fkse.svg");
+}
+
+/* Monochrome brand marks for the picker tiles, the artwork the closing shader also traces. */
+@utility landing-mark-elma {
+  mask-image: url("/landing/marks/elma.svg");
+}
+
+@utility landing-mark-fkas {
+  mask-image: url("/landing/marks/fkas.svg");
+}
+
+@utility landing-mark-fkab {
+  mask-image: url("/landing/marks/fkab.svg");
+}
+
+@utility landing-mark-tkas {
+  mask-image: url("/landing/marks/tkas.svg");
+}
+
+@utility landing-mark-guen {
+  mask-image: url("/landing/marks/guen.svg");
+}
+
+@utility landing-mark-fkse {
+  mask-image: url("/landing/marks/fkse.svg");
+}

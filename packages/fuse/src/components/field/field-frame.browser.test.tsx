@@ -6,6 +6,7 @@ import { withLocale } from "../../../test/locale-matrix";
 import { fieldRootFrom, renderThemed, roleNamed, textboxNamed } from "../../../test/themed-browser-render";
 import { CheckboxGroup } from "../checkbox/checkbox";
 import { CheckboxItem } from "../checkbox/checkbox-item";
+import { Form } from "../form/form";
 import { Input } from "../input/input";
 import { NumberField } from "../number-field/number-field";
 import { PhoneNumberField } from "../phone-number-field/phone-number-field";
@@ -23,7 +24,7 @@ function nestedOrientationStamps(root: HTMLElement): Element[] {
 }
 
 describe("FieldFrame", () => {
-  it("names the control, links the description and the error, and omits the error when the message is falsy", () => {
+  it("names the control, links the description and the error, and omits the error when there is neither a message nor a validation error", () => {
     const { unmount } = renderThemed(
       <FieldFrame label="Email" description="Work address preferred." errorMessage="Required" invalid>
         <Input />
@@ -46,6 +47,30 @@ describe("FieldFrame", () => {
       </FieldFrame>
     );
     expect(page.getByRole("alert").query()).toBeNull();
+  });
+
+  it("shows each group's Form error under its name without errorMessage, and none while disabled", async () => {
+    const groups = (isDisabled: boolean) => (
+      <Form errors={{ toppings: "Pick a topping.", contract: "Pick a contract." }}>
+        <CheckboxGroup label="Toppings" name="toppings" isDisabled={isDisabled}>
+          <CheckboxItem value="pepperoni">Pepperoni</CheckboxItem>
+        </CheckboxGroup>
+        <RadioGroup label="Contract" name="contract" isDisabled={isDisabled}>
+          <Radio value="fixed">Fixed</Radio>
+        </RadioGroup>
+      </Form>
+    );
+    const { rerender } = renderThemed(groups(false));
+    expect(
+      page
+        .getByRole("alert")
+        .elements()
+        .map((alert) => alert.textContent)
+    ).toEqual(["Pick a topping.", "Pick a contract."]);
+
+    rerender(groups(true));
+    // Base UI unmounts a hidden error after its exit transition, a frame later.
+    await expect.poll(() => page.getByRole("alert").elements()).toHaveLength(0);
   });
 
   it("omits the label row without a label, status, or crossfade, and the legend element without a label", () => {

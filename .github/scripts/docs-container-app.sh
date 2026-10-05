@@ -3,14 +3,38 @@ set -euo pipefail
 
 # Called after azure/login in the target subscription. Infra owns environments and RBAC;
 # this script owns the docs apps and revisions, including their first deployment.
-mode="${1:?Usage: docs-container-app.sh prod|preview|teardown}"
+mode="${1:?Usage: docs-container-app.sh prod|preview|teardown|origin-preview}"
 : "${APP:?Set APP}"
 : "${RESOURCE_GROUP:?Set RESOURCE_GROUP}"
 case "$mode" in
   prod|preview) ;;
-  teardown) : "${PR:?Set PR}" ;;
+  teardown|origin-preview) : "${PR:?Set PR}" ;;
   *) echo "Unknown deployment mode: $mode" >&2; exit 1 ;;
 esac
+
+# origin-preview prints the origin a preview will serve, before the image is built: the docs
+# build bakes it in as DOCS_ORIGIN (apps/docs/Dockerfile) for absolute og:image URLs. It reads
+# the environment's default domain rather than the app's FQDN, because the first deploy builds
+# the image before the app exists. A preview is its `pr-<n>` label URL,
+# `<app>---pr-<n>.<domain>`, the same URL the preview mode reports. Production has no origin
+# mode: its public domain sits in front of the internal environment, so merge.yml states it.
+if [[ "$mode" == origin-preview ]]; then
+  : "${ENVIRONMENT:?Set ENVIRONMENT}"
+  # `az containerapp create --environment` takes a name in this resource group or a resource ID.
+  if [[ "$ENVIRONMENT" == /subscriptions/* ]]; then
+    environment_args=(--ids "$ENVIRONMENT")
+  else
+    environment_args=(--name "$ENVIRONMENT" --resource-group "$RESOURCE_GROUP")
+  fi
+  domain=$(az containerapp env show "${environment_args[@]}" \
+    --query properties.defaultDomain --output tsv --only-show-errors)
+  if [[ -z "$domain" ]]; then
+    echo "Container Apps environment $ENVIRONMENT reported no default domain." >&2
+    exit 1
+  fi
+  echo "https://${APP}---pr-${PR}.${domain}"
+  exit 0
+fi
 
 # A successful list with no match means absent. Auth, network and missing-RG errors fail
 # the job instead of being mistaken for an app that needs creating.

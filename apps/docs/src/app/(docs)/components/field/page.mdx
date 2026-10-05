@@ -5,6 +5,7 @@ lede: >
 
 import { FieldBasic } from "./demos/field-basic";
 import { FieldErrorDemo } from "./demos/field-error";
+import { FieldValidationDemo } from "./demos/field-validation";
 import { FieldOrientations } from "./demos/field-orientations";
 import { FieldSetDemo } from "./demos/field-set";
 import { FieldSeparatorDemo } from "./demos/field-separator";
@@ -28,6 +29,16 @@ Controls that need a visible label, description, or error get the wiring from `F
 
 <Demo slug="field" id="error" title="Error message" file="field-error.tsx">
   <FieldErrorDemo />
+</Demo>
+
+<Prose>
+
+`Field.Error` without children shows the field's own message instead: an error from `Form`'s `errors` under the field's name, a `validate` result, or the browser's constraint message, which is in the browser's language rather than the app's. Pass children, or a `validate` that returns your own copy, when the message has to be localized or validation lives outside the field.
+
+</Prose>
+
+<Demo slug="field" id="validation" title="Built-in validation" file="field-validation.tsx">
+  <FieldValidationDemo />
 </Demo>
 
 <Demo slug="field" id="orientations" title="Orientations" file="field-orientations.tsx">

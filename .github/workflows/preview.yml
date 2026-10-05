@@ -95,6 +95,16 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID_PREVIEW }}
 
+      # The build bakes the preview's label URL into its og:image URLs, so read it first.
+      - name: Preview origin
+        id: origin
+        env:
+          ENVIRONMENT: ${{ vars.AZURE_CONTAINER_APPS_ENVIRONMENT_PREVIEW }}
+        # A bare assignment keeps a failed lookup fatal; inside `echo` its status would be lost.
+        run: |
+          origin="$(bash .github/scripts/docs-container-app.sh origin-preview)"
+          echo "origin=$origin" >> "$GITHUB_OUTPUT"
+
       # `github.sha` is the PR's merge commit, so the preview shows what would land on main.
       - name: Push image
         id: image
@@ -102,6 +112,7 @@ jobs:
         with:
           registry: ${{ vars.AZURE_ACR_NAME_PREVIEW }}
           sha: ${{ github.sha }}
+          origin: ${{ steps.origin.outputs.origin }}
 
       - name: Deploy revision
         id: deploy

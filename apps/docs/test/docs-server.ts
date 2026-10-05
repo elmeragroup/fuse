@@ -9,6 +9,13 @@ import { reservePort } from "./tcp-port";
 const docsRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const nextBin = path.join(docsRoot, "node_modules/next/dist/bin/next");
 
+/**
+ * The origin the suite's server reads as `DOCS_ORIGIN` at runtime, which the landing's card URLs
+ * must carry. It is a reserved test host that resolves nowhere, so a card can only name it if the
+ * server took it from the environment.
+ */
+export const TEST_RUNTIME_ORIGIN = "https://og.fuse.test";
+
 export type DocsServer = {
   url: string;
   close: () => Promise<void>;
@@ -48,6 +55,7 @@ export async function startDocsProductionServer(): Promise<DocsServer> {
         ...process.env,
         NODE_ENV: "production",
         PORT: String(port),
+        DOCS_ORIGIN: TEST_RUNTIME_ORIGIN,
       },
       stdio: ["ignore", "pipe", "pipe"],
     }

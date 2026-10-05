@@ -50,6 +50,12 @@ describe("fuseVariableSet", () => {
     expect(spec(TOKENS_COLLECTION, "primary")).toMatchObject({ type: "COLOR", scopes: ["ALL_SCOPES"] });
     expect(spec(TOKENS_COLLECTION, "radius")).toMatchObject({ type: "FLOAT", scopes: ["CORNER_RADIUS"] });
     expect(spec(TOKENS_COLLECTION, "radius-step")).toMatchObject({ type: "FLOAT", scopes: [] });
+    expect(spec(TOKENS_COLLECTION, "button-outline-width")).toMatchObject({
+      type: "FLOAT",
+      scopes: ["STROKE_FLOAT"],
+    });
+    expect(value(THEMES_COLLECTION, "light/button-outline-width", "external-fkas-private")).toEqual(px(2));
+    expect(value(THEMES_COLLECTION, "light/button-outline-width", "internal-fkas-private")).toEqual(px(1));
     expect(spec(TOKENS_COLLECTION, "font-sans")).toMatchObject({ type: "STRING", scopes: ["ALL_SCOPES"] });
   });
 
@@ -70,6 +76,16 @@ describe("fuseVariableSet", () => {
     expect(value(TOKENS_COLLECTION, "primary", "Dark")).toEqual({
       _tag: "Alias",
       target: { collection: THEMES_COLLECTION, variable: "dark/primary" },
+    });
+    // The external outline Button rings in the text color, and internal themes keep the
+    // border role's hairline.
+    expect(value(THEMES_COLLECTION, "dark/button-outline", "external-tkas-private")).toEqual({
+      _tag: "Alias",
+      target: { collection: THEMES_COLLECTION, variable: "dark/foreground" },
+    });
+    expect(value(THEMES_COLLECTION, "light/button-outline", "internal-tkas-private")).toEqual({
+      _tag: "Alias",
+      target: { collection: THEMES_COLLECTION, variable: "light/border" },
     });
   });
 });

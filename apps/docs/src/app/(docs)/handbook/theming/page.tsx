@@ -216,6 +216,13 @@ export default function ThemingPage(): ReactElement {
         override reaches cards and fields, but buttons keep the button radius the theme element resolved.
         Nested internal surfaces share the radius instead of stepping inward, and dialogs round like cards.
       </p>
+      <p>
+        The outline button&apos;s border is part of the theme too. It reads <code>--button-outline</code> at{" "}
+        <code>--button-outline-width</code>. External themes draw a 2px ring in the text colour, so{" "}
+        <code>--button-outline</code> is <code>var(--foreground)</code>, and the button casts no shadow. The
+        internal variant keeps a 1px <code>var(--border)</code> hairline with a small shadow, which only a 1px
+        border casts.
+      </p>
 
       <h2 id="document-theme">The document theme</h2>
       <p>

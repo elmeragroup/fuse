@@ -71,7 +71,11 @@ export type PhoneNumberFieldProps = {
   label?: string;
   /** Supporting copy, rendered as `Field.Description`. */
   description?: string;
-  /** Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. */
+  /**
+   * Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the
+   * field shows the visible input's own constraint message. A Base UI `Form` error under
+   * `name` does not reach this field; pass it here.
+   */
   errorMessage?: ReactNode;
   /** Placeholder for the visible number input. */
   placeholder?: string;
@@ -238,11 +242,13 @@ export function PhoneNumberField({
             // `${name}-display-value`. The id names no rendered form on purpose
             form="fuse-phone-country-unbound"
             locale={locale}>
-            <InputGroupAddon className="text-foreground" align="inline-start">
+            <InputGroupAddon className="py-0 text-foreground" align="inline-start">
               {/* role="button" overrides Base UI's default role="combobox" so the trigger keeps the
                   getByRole("button", {name}) contract the browser tests freeze; an empty aria-labelledby
                   overrides the surrounding Field's label, so aria-label wins.
-                  Don't "simplify" either without updating the browser tests. */}
+                  Don't "simplify" either without updating the browser tests.
+                  min-h-6 is the 24px target floor. The addon drops its block padding, so the
+                  trigger fits the field's fixed md box at both densities without overflowing it. */}
               <ComboboxPrimitive.Trigger
                 role="button"
                 aria-label={resolvedSelectCountryLabel}
@@ -250,7 +256,7 @@ export function PhoneNumberField({
                 className={cn(
                   selfFocusRingClass,
                   fixedCornerClass,
-                  "flex min-h-5.5 shrink-0 items-center px-1 transition-[color,background-color,scale] duration-150",
+                  "flex min-h-6 shrink-0 items-center px-1 transition-[color,background-color,scale] duration-150",
                   isEditable
                     ? "cursor-pointer hover:bg-muted active:scale-[0.97] data-pressed:bg-muted"
                     : "cursor-default"

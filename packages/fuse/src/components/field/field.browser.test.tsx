@@ -6,16 +6,18 @@ import "../../../dist/themes.css";
 import {
   cssVarColor,
   fieldRootFrom,
+  inputNamed,
   renderThemed,
   roleNamed,
   textNamed,
   textboxNamed,
 } from "../../../test/themed-browser-render";
 import { Checkbox } from "../checkbox/checkbox";
+import { Form } from "../form/form";
 import { Field } from "./index";
 
 describe("Field", () => {
-  it("omits Error from the DOM without children and alerts when present", () => {
+  it("omits Error from the DOM when an invalid field has no message, and alerts with given children", () => {
     const { rerender } = renderThemed(
       <Field.Root invalid>
         <Field.Label>Email</Field.Label>
@@ -40,6 +42,88 @@ describe("Field", () => {
     const alert = page.getByRole("alert").element();
     expect(alert.getAttribute("data-slot")).toBe("field-error");
     expect(alert.textContent).toBe("Required");
+  });
+
+  it("shows the Form error under the control's name without children, as a list when there are several", async () => {
+    const { rerender } = renderThemed(
+      <Form errors={{ email: "Already registered." }}>
+        <Field.Root>
+          <Field.Label>Email</Field.Label>
+          <Field.Control name="email" render={<input />} />
+          <Field.Error />
+        </Field.Root>
+      </Form>
+    );
+    const alert = page.getByRole("alert").element();
+    expect(alert.getAttribute("data-slot")).toBe("field-error");
+    expect(alert.textContent).toBe("Already registered.");
+    expect(textboxNamed("Email").getAttribute("aria-invalid")).toBe("true");
+    await expect.element(textboxNamed("Email")).toHaveAccessibleDescription("Already registered.");
+
+    rerender(
+      <Form errors={{ email: ["Already registered.", "Use a work address."] }}>
+        <Field.Root>
+          <Field.Label>Email</Field.Label>
+          <Field.Control name="email" render={<input />} />
+          <Field.Error />
+        </Field.Root>
+      </Form>
+    );
+    const items = page
+      .getByRole("alert")
+      .getByRole("listitem")
+      .elements()
+      .map((item) => item.textContent);
+    expect(items).toEqual(["Already registered.", "Use a work address."]);
+  });
+
+  it("shows the validate result and the native constraint message without children", async () => {
+    renderThemed(
+      <>
+        <Field.Root
+          validationMode="onBlur"
+          validate={(value) => (String(value).length < 3 ? "Use at least 3 characters." : null)}>
+          <Field.Label>Name</Field.Label>
+          <Field.Control render={<input />} />
+          <Field.Error />
+        </Field.Root>
+        <Field.Root validationMode="onBlur">
+          <Field.Label>Email</Field.Label>
+          <Field.Control type="email" render={<input />} />
+          <Field.Error />
+        </Field.Root>
+      </>
+    );
+    expect(page.getByRole("alert").query()).toBeNull();
+
+    await userEvent.type(textboxNamed("Name"), "Al");
+    await userEvent.type(textboxNamed("Email"), "ada");
+    await userEvent.keyboard("{Tab}");
+
+    await expect.element(textboxNamed("Name")).toHaveAccessibleDescription("Use at least 3 characters.");
+    // The oracle is the browser's own message for the failed `type="email"` constraint.
+    const nativeMessage = inputNamed("Email").validationMessage;
+    expect(nativeMessage).not.toBe("");
+    await expect.element(textboxNamed("Email")).toHaveAccessibleDescription(nativeMessage);
+    expect(
+      page
+        .getByRole("alert")
+        .elements()
+        .map((alert) => alert.textContent)
+    ).toEqual(["Use at least 3 characters.", nativeMessage]);
+  });
+
+  it("shows given children instead of the field's own error", () => {
+    renderThemed(
+      <Form errors={{ email: "Already registered." }}>
+        <Field.Root>
+          <Field.Label>Email</Field.Label>
+          <Field.Control name="email" render={<input />} />
+          <Field.Error>Ask your administrator.</Field.Error>
+        </Field.Root>
+      </Form>
+    );
+    expect(page.getByRole("alert").element().textContent).toBe("Ask your administrator.");
   });
 
   it("keeps the label, description and error wiring when a wrapper forwards id and ARIA props as undefined", async () => {

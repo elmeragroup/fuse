@@ -47,7 +47,7 @@ describe("search matching", () => {
   it("lists the site in nav order for an empty query, capped at the result limit", () => {
     const results = matchSearchEntries("");
     expect(results.length).toBe(20);
-    expect(results[0]?.href).toBe("/");
+    expect(results[0]?.href).toBe(HOME_PAGE.href);
   });
 
   it.each([

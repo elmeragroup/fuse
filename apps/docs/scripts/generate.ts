@@ -13,6 +13,8 @@
  *   • the tokens each component's recipe reads, and the site-wide token reference;
  *   • the `/api/themes` catalog of the 20 legal permutations, plus Figma DTCG files;
  *   • the measured bundle sizes the Tokens page publishes;
+ *   • the locales, density metrics and component index the landing page states;
+ *   • the sRGB and px theme values the Open Graph images paint;
  *   • `/components/<slug>.md` — the markdown endpoint each page links to;
  *   • `llms.txt`, the site-root AI index;
  *   • the ⌘K search index;
@@ -43,8 +45,10 @@ import {
 } from "./lib/docs-inspection.ts";
 import type { ComponentInspection } from "./lib/docs-inspection.ts";
 import { ProblemLog } from "./lib/errors.ts";
+import { renderLandingFacts } from "./lib/landing-facts.ts";
 import { renderLlmsTxt } from "./lib/llms.ts";
 import { renderComponentMarkdown } from "./lib/markdown.ts";
+import { renderOgThemes } from "./lib/og-themes.ts";
 import {
   generatedDir,
   llmsTxtFile,
@@ -161,6 +165,12 @@ function emitComponentPages(components: readonly DocsComponent[]): void {
     path.join(generatedDir, "component-pages.ts"),
     `${BANNER}import type { ComponentPageEntry } from "../lib/docs-model";
 
+/**
+ * The slug of every component page, as a union, so a registry keyed by it (the OG specimens in
+ * \`src/og/specimens.tsx\`) fails to compile when a page has no entry.
+ */
+export type ComponentSlug = ${entries.map((entry) => JSON.stringify(entry.slug)).join(" | ")};
+
 /** Every component page the site serves, in route order. */
 export const COMPONENT_PAGES: readonly ComponentPageEntry[] = ${JSON.stringify(entries, null, 2)};
 `
@@ -237,6 +247,19 @@ function emitFigmaThemeCatalog(catalog: ResolvedThemeCatalog): void {
   );
 }
 
+/** The library facts the landing page states that have no runtime export. */
+function emitLandingFacts(catalog: ResolvedThemeCatalog, components: readonly DocsComponent[]): void {
+  writeFile(
+    path.join(generatedDir, "landing-facts.ts"),
+    `${BANNER}${renderLandingFacts(catalog, components)}`
+  );
+}
+
+/** The theme values the Open Graph images paint, as sRGB and px. */
+function emitOgThemes(catalog: ResolvedThemeCatalog): void {
+  writeFile(path.join(generatedDir, "og-themes.ts"), `${BANNER}${renderOgThemes(catalog)}`);
+}
+
 /** The ⌘K palette index. */
 function emitSearchIndex(components: readonly DocsComponent[]): void {
   writeFile(path.join(generatedDir, "search-index.ts"), `${BANNER}${renderSearchIndex(components)}`);
@@ -299,6 +322,8 @@ async function main(): Promise<void> {
   const catalog = resolveThemeCatalog();
   emitThemeCatalog(buildThemeCatalog(catalog));
   emitFigmaThemeCatalog(catalog);
+  emitLandingFacts(catalog, components);
+  emitOgThemes(catalog);
   emitMarkdownEndpoints(components);
   emitSearchIndex(components);
   emitLlmsTxt(components);

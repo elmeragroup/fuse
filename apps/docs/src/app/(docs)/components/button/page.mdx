@@ -25,16 +25,35 @@ export const metadata = componentMetadata("button");
   <ButtonSizes />
 </Demo>
 
+<Prose>
+
+The label sizes pad with Button's own inset. At comfortable density, the external default, that is 16px at `sm`
+and 32px at `default` and `lg`, and 12px and 24px on the side of a `data-icon="inline-start"` or `"inline-end"`
+icon. Dense matches the other controls. A `px-*` class in `className` replaces the label padding only: the icon
+side keeps its icon padding, which a `has-data-[icon=inline-start]:pl-*` or `has-data-[icon=inline-end]:pr-*`
+class replaces.
+
+The `outline` variant takes its border from the theme. Internal themes draw a 1px `--border` hairline with a
+small shadow, and external themes a 2px ring in the text colour with no shadow.
+
+</Prose>
+
 <Demo slug="button" id="icons" title="Icons" file="button-icons.tsx">
   <ButtonIcons />
 </Demo>
 
 <Prose>
 
+Mark every leading or trailing icon with `data-icon="inline-start"` or `"inline-end"`, as shadcn/ui's Button
+does. The attribute tells Button which side holds the icon, and that side takes the icon padding instead of the
+label padding, so the icon and its gap balance the text. Without it the icon side keeps the full label padding,
+32px at comfortable density, and the button looks too wide on that side. The rule matches the attribute in the
+DOM, so your own icon components must pass `data-icon` through to the element they render, as the
+`@elmeragroup/fuse/icons` components do.
+
 Button sizes every SVG child without a `size-*` class to 16px, and the `xs` and `icon-xs` sizes to 12px. Any
 `size-*` class opts out, `size-auto` included; `w-*` and `h-*` on their own do not, because the rule matches
-the class name. Mark a leading or trailing icon with `data-icon="inline-start"` or `"inline-end"` so the
-button tightens that edge's inset.
+the class name.
 
 An SVG without a `viewBox` clips instead of scaling when the rule forces it to 16px. Logos that go through
 SVGR often arrive that way, because SVGO's default `removeViewBox` strips the attribute. Give such an icon
@@ -61,6 +80,28 @@ size, `lg`); the tokens follow density, so the height stays exact at both.
 <Demo slug="button" id="pending" title="Pending" file="button-pending.tsx">
   <ButtonPending />
 </Demo>
+
+<Prose>
+
+`isPending` blocks the button, dims it, stamps `aria-busy` and shows a spinner in the leading icon
+position; the button's own leading and bare icons hide meanwhile so the spinner takes their place, and
+a trailing `data-icon="inline-end"` icon stays. The button stays in the focus order, so a keyboard user
+who activated it is still on it when the result arrives. Pass `focusableWhenDisabled={false}` to take
+it out of the focus order instead.
+
+`pendingIndicator` changes what shows. A node replaces the spinner in the same decorative slot, for
+a brand spinner, and is not animated for you. `null` renders no indicator and hides nothing, so the
+call site owns the pending markup. The brand button above does that: `relative` on the button, the
+content kept in flow and faded with `group-data-pending/button:opacity-0`, and the spinner centred
+with `absolute inset-0 m-auto hidden group-data-pending/button:block`. Fade with opacity, never
+`invisible`, which would drop the label from the accessible name, and give the overlay no `data-icon`,
+which would tighten an inset. Pending buttons also dim like disabled ones; a brand that forbids that
+overrides the dim on its own wrapper.
+
+`aria-busy` alone announces nothing. Say what is happening by changing the label ("Saving") or through
+a `role="status"` region outside the button, and put the outcome there when the action settles.
+
+</Prose>
 
 <Demo slug="button" id="visually-disabled" title="Visually disabled" file="button-visually-disabled.tsx">
   <ButtonVisuallyDisabled />

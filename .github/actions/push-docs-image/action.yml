@@ -10,6 +10,11 @@ inputs:
   sha:
     description: Commit SHA the image is built from; becomes the image tag.
     required: true
+  origin:
+    description: >-
+      Public origin the image will serve, such as https://app.example.io. The docs build bakes
+      it in as DOCS_ORIGIN for absolute og:image URLs, so an image serves one origin only.
+    required: true
 
 outputs:
   image:
@@ -46,5 +51,7 @@ runs:
         platforms: linux/amd64
         push: true
         tags: ${{ steps.ref.outputs.image }}
+        build-args: |
+          DOCS_ORIGIN=${{ inputs.origin }}
         cache-from: type=gha,scope=fuse-docs
         cache-to: type=gha,mode=max,scope=fuse-docs

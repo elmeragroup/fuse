@@ -65,6 +65,7 @@ const CLIENT_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["field", ["components/field/field.tsx"]],
   ["file-trigger", ["react-aria/file-trigger/file-trigger.tsx"]],
   ["focusable", ["react-aria/focusable/focusable.tsx"]],
+  ["form", ["components/form/form.tsx"]],
   ["grid-list", ["react-aria/grid-list/grid-list.tsx"]],
   ["heading", ["components/heading/heading.tsx"]],
   ["input", ["components/input/input.tsx"]],
@@ -430,6 +431,9 @@ describe("runtime listeners and layout motion", () => {
   // say the list is complete. Each owner's browser test covers its own cleanup.
   it("installs event listeners only from the reviewed owners", () => {
     expect(filesContainingCode(".addEventListener(").toSorted()).toEqual([
+      // Native `beforeinput`: React's `onBeforeInput` is a `textInput`/`keypress` polyfill that misses
+      // paste in Firefox. The numeric filter strips a paste before maxlength.
+      "components/input/input.tsx",
       "components/sidebar/sidebar.tsx",
       "hooks/use-form-reset.ts",
       "hooks/use-is-mobile.ts",
@@ -715,7 +719,11 @@ describe("state faces", () => {
       "components/breadcrumb/breadcrumb.tsx": ["hover:text-foreground"],
       "components/dialog/dialog.tsx": ["*:[a]:hover:text-foreground"],
       "components/item/item-variants.ts": ["[a]:hover:bg-muted"],
-      "components/navigation-menu/navigation-menu-variants.ts": ["hover:bg-muted"],
+      "components/navigation-menu/navigation-menu-variants.ts": [
+        "hover:bg-accent",
+        "hover:bg-muted",
+        "hover:text-accent-foreground",
+      ],
       // The country trigger adds its hover and press faces only while the field is editable.
       "components/phone-number-field/phone-number-field.tsx": ["active:scale-[0.97]", "hover:bg-muted"],
       // The rail, an aria-hidden resize handle that is never disabled.

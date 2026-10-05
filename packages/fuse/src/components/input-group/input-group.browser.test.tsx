@@ -4,12 +4,15 @@ import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+// Role tokens live in themes.css only; the fill parity test reads --card and --background.
+import "../../../dist/themes.css";
 import {
   assertWithinKeyboardFocusRingAtBothDensities,
   expectNoFocusRing,
 } from "../../../test/assert-focus-ring";
 import {
   CONTROL_MD,
+  cssVarColor,
   fkasExternal,
   px,
   renderThemed,
@@ -19,6 +22,7 @@ import {
   textboxNamed,
 } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme";
+import { Input } from "../input/input";
 import { InputGroup } from "./index";
 
 function groupAround(start: HTMLElement): HTMLElement {
@@ -51,6 +55,43 @@ describe("InputGroup", () => {
     expect(control.getAttribute("data-slot")).toBe("input-group-control");
     expect(control.hasAttribute("data-focus-ring-control")).toBe(true);
     expect(textNamed("NO").getAttribute("data-slot")).toBe("input-group-text");
+  });
+
+  it("paints Input's fill and chrome, enabled and disabled, where the card and page background differ", () => {
+    renderThemed(
+      <ThemeScope theme={fkasExternal}>
+        <Input aria-label="Plain" />
+        <InputGroup.Root>
+          <InputGroup.Addon>
+            <InputGroup.Text>kr</InputGroup.Text>
+          </InputGroup.Addon>
+          <InputGroup.Input aria-label="Grouped" />
+        </InputGroup.Root>
+        <Input aria-label="Plain disabled" disabled />
+        <InputGroup.Root>
+          <InputGroup.Input aria-label="Grouped disabled" disabled />
+        </InputGroup.Root>
+      </ThemeScope>
+    );
+    const plain = getComputedStyle(textboxNamed("Plain"));
+    const group = rootNamed("Grouped");
+    const grouped = getComputedStyle(group);
+    // The oracle is the theme's own --card, read where the group sits; the external theme
+    // tints --background, so an unfilled group would show a different colour.
+    const card = cssVarColor(group, "--card");
+    expect(card).not.toBe(cssVarColor(group, "--background"));
+    expect(grouped.backgroundColor).toBe(card);
+    expect(plain.backgroundColor).toBe(card);
+    // Unit: the root's computed chrome. Oracle: Input's, which composes the same recipe through
+    // fieldBox, so a merge cancellation on either side shows up as a difference.
+    expect(grouped.borderTopColor).toBe(plain.borderTopColor);
+    expect(grouped.borderTopLeftRadius).toBe(plain.borderTopLeftRadius);
+    expect(grouped.boxShadow).toBe(plain.boxShadow);
+    const disabledGroup = getComputedStyle(rootNamed("Grouped disabled"));
+    const disabledInput = getComputedStyle(textboxNamed("Plain disabled"));
+    expect(disabledGroup.backgroundColor).toBe(disabledInput.backgroundColor);
+    expect(disabledGroup.borderTopColor).toBe(disabledInput.borderTopColor);
+    expect(disabledGroup.boxShadow).toBe(disabledInput.boxShadow);
   });
 
   it("lets the Textarea control override the primitive slot too", () => {
@@ -147,6 +188,37 @@ describe("InputGroup", () => {
     expect(groupAround(roleNamed("button", "Clear")).getAttribute("tabindex")).toBeNull();
     expect(roleNamed("button", "Clear").matches(":focus-visible")).toBe(true);
     expectNoFocusRing(rootNamed("Search"), "an addon button must keep its own ring off the group chrome");
+  });
+
+  it("filters the input to digits beside a text addon, counting maxLength in digits", async () => {
+    renderThemed(
+      <InputGroup.Root>
+        <InputGroup.Addon>
+          <InputGroup.Text>+47</InputGroup.Text>
+        </InputGroup.Addon>
+        <InputGroup.Input aria-label="Phone" filter="numeric" maxLength={8} />
+      </InputGroup.Root>
+    );
+    const phone = textboxNamed("Phone");
+    if (!(phone instanceof HTMLInputElement)) {
+      throw new Error("expected an <input> named Phone");
+    }
+    expect(phone).toHaveProperty("inputMode", "numeric");
+
+    await userEvent.type(page.getByRole("textbox", { name: "Phone", exact: true }), "9a1");
+    expect(phone).toHaveProperty("value", "91");
+
+    // A dictated run with separators: six digits fit after the two typed ones.
+    phone.setSelectionRange(2, 2);
+    phone.dispatchEvent(
+      new InputEvent("beforeinput", {
+        inputType: "insertText",
+        data: "234 567 8",
+        bubbles: true,
+        cancelable: true,
+      })
+    );
+    expect(phone).toHaveProperty("value", "91234567");
   });
 
   it("defaults the addon button to type=button so Enter never triggers it", async () => {
@@ -290,6 +362,54 @@ describe("InputGroup", () => {
       </ThemeScope>
     );
     expect(px(getComputedStyle(rootNamed("Meter")).height)).toBe(CONTROL_MD.dense.height);
+  });
+
+  it("pads addon buttons like the field, not like a standalone Button", () => {
+    renderThemed(
+      <InputGroup.Root>
+        <InputGroup.Input aria-label="Query" />
+        <InputGroup.Addon align="inline-end">
+          <InputGroup.Button size="sm">Search</InputGroup.Button>
+          <InputGroup.Button size="sm">
+            <span data-icon="inline-start" aria-hidden>
+              *
+            </span>
+            Find
+          </InputGroup.Button>
+          <InputGroup.Button>
+            <span data-icon="inline-start" aria-hidden>
+              *
+            </span>
+            Lead
+          </InputGroup.Button>
+          <InputGroup.Button>
+            Trail
+            <span data-icon="inline-end" aria-hidden>
+              *
+            </span>
+          </InputGroup.Button>
+        </InputGroup.Addon>
+      </InputGroup.Root>
+    );
+
+    // The field's own md control inset and icon edge: 10px and 8px dense, 14px and 12px
+    // comfortable. A standalone md Button pads 32px and 24px at comfortable density. The
+    // default xs addon keeps its compact 6px (`px-1.5`) inset and the same md icon edge.
+    for (const density of ["dense", "comfortable"] as const) {
+      stampDensity(density);
+      const bare = getComputedStyle(roleNamed("button", "Search"));
+      expect(px(bare.paddingInlineStart), `${density} start`).toBe(CONTROL_MD[density].px);
+      expect(px(bare.paddingInlineEnd), `${density} end`).toBe(CONTROL_MD[density].px);
+      const icon = getComputedStyle(roleNamed("button", "Find"));
+      expect(px(icon.paddingInlineStart), `${density} icon edge`).toBe(CONTROL_MD[density].pxIcon);
+      expect(px(icon.paddingInlineEnd), `${density} far edge`).toBe(CONTROL_MD[density].px);
+      const lead = getComputedStyle(roleNamed("button", "Lead"));
+      expect(px(lead.paddingInlineStart), `${density} xs leading icon edge`).toBe(CONTROL_MD[density].pxIcon);
+      expect(px(lead.paddingInlineEnd), `${density} xs far edge`).toBe(6);
+      const trail = getComputedStyle(roleNamed("button", "Trail"));
+      expect(px(trail.paddingInlineEnd), `${density} xs trailing icon edge`).toBe(CONTROL_MD[density].pxIcon);
+      expect(px(trail.paddingInlineStart), `${density} xs far edge`).toBe(6);
+    }
   });
 
   it("grows past the md rung for block rails and textarea controls", () => {

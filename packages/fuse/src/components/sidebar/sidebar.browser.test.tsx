@@ -379,6 +379,15 @@ describe("Sidebar.MenuButton tooltip", () => {
     );
   }
 
+  /** Lets a stale open state paint: the delay is 0, so one frame pair is enough to reveal it. */
+  async function settleFrames(): Promise<void> {
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  }
+
+  function ordersTooltip() {
+    return page.getByRole("tooltip", { name: "Orders", exact: true }).query();
+  }
+
   it("renders no tooltip while expanded", async () => {
     renderThemed(<TooltipFrame defaultOpen tooltip="string" />);
     const link = roleNamed("link", "Orders");
@@ -386,13 +395,52 @@ describe("Sidebar.MenuButton tooltip", () => {
     await vi.waitFor(() => {
       expect(link.matches(":hover")).toBe(true);
     });
+    await settleFrames();
+    expect(link.hasAttribute("data-popup-open"), "the disabled root stays closed under the hover").toBe(
+      false
+    );
+    expect(ordersTooltip()).toBeNull();
+  });
+
+  it("keeps a tooltip hovered while expanded closed after the rail collapses, until the pointer returns", async () => {
+    renderThemed(<TooltipFrame defaultOpen tooltip="string" />);
+    const link = roleNamed("link", "Orders");
+    await userEvent.hover(link);
     await vi.waitFor(() => {
-      expect(
-        link.hasAttribute("data-popup-open"),
-        "the hover opens the root; only the content is withheld"
-      ).toBe(true);
+      expect(link.matches(":hover")).toBe(true);
     });
-    expect(page.getByRole("tooltip", { name: "Orders", exact: true }).query()).toBeNull();
+
+    await userEvent.keyboard("{Meta>}b{/Meta}");
+    expect(sidebarRoot().getAttribute("data-state")).toBe("collapsed");
+    await settleFrames();
+    expect(ordersTooltip(), "collapsing must not reveal the expanded rail's hover").toBeNull();
+
+    await userEvent.hover(roleNamed("button", "After"));
+    await userEvent.hover(link);
+    await vi.waitFor(() => {
+      expect(ordersTooltip()).not.toBeNull();
+    });
+  });
+
+  it("keeps a tooltip focused while expanded closed after ⌘B collapses the rail, until focus returns", async () => {
+    renderThemed(<TooltipFrame defaultOpen tooltip="string" />);
+    const link = roleNamed("link", "Orders");
+    roleNamed("button", "Toggle sidebar").focus();
+    await userEvent.keyboard("{Shift>}{Tab}{/Shift}");
+    expect(document.activeElement).toBe(link);
+
+    await userEvent.keyboard("{Meta>}b{/Meta}");
+    expect(sidebarRoot().getAttribute("data-state")).toBe("collapsed");
+    expect(document.activeElement, "the trigger stays mounted, so focus stays on it").toBe(link);
+    await settleFrames();
+    expect(ordersTooltip(), "collapsing must not reveal the expanded rail's focus").toBeNull();
+
+    await userEvent.keyboard("{Tab}");
+    await userEvent.keyboard("{Shift>}{Tab}{/Shift}");
+    expect(document.activeElement).toBe(link);
+    await vi.waitFor(() => {
+      expect(ordersTooltip()).not.toBeNull();
+    });
   });
 
   for (const form of ["string", "object"] as const) {

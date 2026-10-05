@@ -48,6 +48,15 @@ A host that migrates one component at a time can keep its own design tokens and 
 
 Import `fuse/css` before your own `@theme` so your values win where both define one. Each component page in the docs lists the tokens that component reads under "Tokens consumed"; map those, and add the next component's list when you adopt it. Role tokens are whole colours (`oklch()`, `hsl()`, hex), not channel triplets.
 
+Button's `outline` variant reads `--button-outline` and `--button-outline-width`. Without them it draws a 1px hairline in your `--border`, as internal themes do. For the external themes' outline, a 2px ring in the text colour with no shadow, set both:
+
+```css
+:root {
+  --button-outline: var(--foreground);
+  --button-outline-width: 2px;
+}
+```
+
 ## Non-Tailwind
 
 ```css

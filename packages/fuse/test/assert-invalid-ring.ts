@@ -12,7 +12,7 @@ type RingLayer = { readonly spread: string; readonly color: string };
 const INVALID_RING_COLOR = "color-mix(in oklab, var(--error) 20%, transparent)";
 
 /** Split a computed `box-shadow` into layers at the commas outside colour functions. */
-function shadowLayers(boxShadow: string): string[] {
+export function shadowLayers(boxShadow: string): string[] {
   if (boxShadow === "none") {
     return [];
   }
@@ -31,6 +31,33 @@ function shadowLayers(boxShadow: string): string[] {
   }
   layers.push(current.trim());
   return layers;
+}
+
+/** One box-shadow layer's lengths in px. */
+export type ShadowLengths = {
+  readonly x: number;
+  readonly y: number;
+  readonly blur: number;
+  readonly spread: number;
+};
+
+/**
+ * The lengths of one computed box-shadow layer. Chromium serializes a layer as its colour,
+ * then x, y, blur and spread, so a layer without exactly those four lengths has none.
+ */
+export function shadowLayerLengths(layer: string): ShadowLengths | undefined {
+  const lengths = layer.match(/-?[\d.]+px/gu)?.map(Number.parseFloat) ?? [];
+  const [x, y, blur, spread] = lengths;
+  if (
+    lengths.length !== 4 ||
+    x === undefined ||
+    y === undefined ||
+    blur === undefined ||
+    spread === undefined
+  ) {
+    return undefined;
+  }
+  return { x, y, blur, spread };
 }
 
 /**
@@ -54,15 +81,11 @@ function computedColor(host: HTMLElement, color: string): string {
  */
 function ringLayers(element: HTMLElement): RingLayer[] {
   return shadowLayers(getComputedStyle(element).boxShadow).flatMap((layer) => {
-    const lengths = layer.match(/-?[\d.]+px/gu) ?? [];
-    const [x, y, blur, spread] = lengths;
-    if (lengths.length !== 4 || x !== "0px" || y !== "0px" || blur !== "0px") {
+    const lengths = shadowLayerLengths(layer);
+    if (lengths?.x !== 0 || lengths.y !== 0 || lengths.blur !== 0 || lengths.spread === 0) {
       return [];
     }
-    if (spread === undefined || spread === "0px") {
-      return [];
-    }
-    return [{ spread, color: layer.replace(/(?:\s+-?[\d.]+px)+$/u, "") }];
+    return [{ spread: `${lengths.spread}px`, color: layer.replace(/(?:\s+-?[\d.]+px)+$/u, "") }];
   });
 }
 
