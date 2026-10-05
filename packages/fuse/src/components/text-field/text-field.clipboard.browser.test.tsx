@@ -237,6 +237,33 @@ describe("TextField", () => {
     await expect.element(email).toHaveValue("912345");
   });
 
+  it("leaves an insertion another listener cancelled alone", () => {
+    const onChange = vi.fn();
+    renderThemed(<TextField label="Pin" filter="numeric" defaultValue="12" onChange={onChange} />);
+    const pin = inputNamed("Pin");
+    pin.focus();
+    pin.setSelectionRange(2, 2);
+    const mixedRun = () =>
+      new InputEvent("beforeinput", {
+        inputType: "insertText",
+        data: "3 4",
+        bubbles: true,
+        cancelable: true,
+      });
+
+    // A host veto, as an earlier listener would leave it.
+    const vetoed = mixedRun();
+    vetoed.preventDefault();
+    pin.dispatchEvent(vetoed);
+    expect(pin).toHaveProperty("value", "12");
+    expect(onChange).not.toHaveBeenCalled();
+
+    // The same run, not cancelled, takes the filtered path.
+    pin.dispatchEvent(mixedRun());
+    expect(pin).toHaveProperty("value", "1234");
+    expect(onChange).toHaveBeenLastCalledWith("1234");
+  });
+
   it("removes the numeric insertion listener when the filter goes away", async () => {
     const { rerender } = renderThemed(
       <>

@@ -49,7 +49,10 @@ export type TextFieldProps = {
   /**
    * Digits-only guard (absorbs the external numeric-only wrapper). Non-digit characters are
    * stripped from every path — typing, paste, autofill — so only digits reach `onChange`.
-   * `maxLength` counts digits, so a pasted `912 34 567` fits `maxLength={8}` whole.
+   * `maxLength` counts digits wherever the browser lets the filter step in first, a cancelable
+   * `beforeinput` on an input with a selection such as `text` or `tel`, so a pasted `912 34 567`
+   * fits `maxLength={8}` whole. Elsewhere, such as `type="email"` or autofill that sends no
+   * cancelable `beforeinput`, the browser cuts to `maxLength` before the strip.
    * Sets `inputMode="numeric"` unless the caller passes `inputMode` explicitly. An
    * uncontrolled numeric field restores its `defaultValue` on native form reset without
    * calling `onChange`.
@@ -80,11 +83,17 @@ function containsOnlyDigits(value: string): boolean {
  * caret ends after them. An insertion of digits only, or of no digits at all, keeps the native
  * path: `maxlength` still blocks a full field, and the change handler strips the rest. So does
  * a read-only or disabled input, which Chromium still sends `beforeinput` before it refuses the
- * edit, and an input type without a selection, such as `email`, where `setRangeText` throws.
+ * edit, an input type without a selection, such as `email`, where `setRangeText` throws, and an
+ * insertion another listener has already cancelled.
  */
 function insertDigitsOnly(event: InputEvent): void {
   const input = event.currentTarget;
-  if (!(input instanceof HTMLInputElement) || !event.cancelable || !event.inputType.startsWith("insert")) {
+  if (
+    !(input instanceof HTMLInputElement) ||
+    !event.cancelable ||
+    event.defaultPrevented ||
+    !event.inputType.startsWith("insert")
+  ) {
     return;
   }
   const start = input.selectionStart;
