@@ -60,15 +60,6 @@ context. When an agent wrote the change, the person who directed it can review i
 The reviewer checks the complete proposed diff and relevant surrounding code against
 the agreed scope, this guide and [AGENTS.md](AGENTS.md).
 
-Resolve each finding with a fix or an explanation the reviewer accepts. Rerun the
-affected checks after fixes and repeat the review until the reviewer reports no
-unresolved issues requiring changes. If the author and reviewer cannot agree on a
-finding, ask a code owner to resolve it.
-
-In the PR, record who or what reviewed the change, which revision they reviewed,
-what they found and how you addressed it. Review again after any later change to
-source or tests, before merging.
-
 <a id="verification"></a>
 
 ## Show that it works
@@ -87,7 +78,7 @@ check.
 ## Merging and closing
 
 Before merging, a code owner checks the problem, the Fuse-or-consumer decision, the
-scope, the review record and the verification evidence.
+scope and the verification evidence.
 
 A code owner may close a PR or request changes when it belongs in a consumer app,
 solves several independent problems, lacks a completed review or lacks evidence.
