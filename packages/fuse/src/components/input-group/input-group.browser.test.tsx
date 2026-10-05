@@ -4,12 +4,15 @@ import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+// Role tokens live in themes.css only; the fill parity test reads --card and --background.
+import "../../../dist/themes.css";
 import {
   assertWithinKeyboardFocusRingAtBothDensities,
   expectNoFocusRing,
 } from "../../../test/assert-focus-ring";
 import {
   CONTROL_MD,
+  cssVarColor,
   fkasExternal,
   px,
   renderThemed,
@@ -19,6 +22,7 @@ import {
   textboxNamed,
 } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme";
+import { Input } from "../input/input";
 import { InputGroup } from "./index";
 
 function groupAround(start: HTMLElement): HTMLElement {
@@ -51,6 +55,43 @@ describe("InputGroup", () => {
     expect(control.getAttribute("data-slot")).toBe("input-group-control");
     expect(control.hasAttribute("data-focus-ring-control")).toBe(true);
     expect(textNamed("NO").getAttribute("data-slot")).toBe("input-group-text");
+  });
+
+  it("paints Input's fill and chrome, enabled and disabled, where the card and page background differ", () => {
+    renderThemed(
+      <ThemeScope theme={fkasExternal}>
+        <Input aria-label="Plain" />
+        <InputGroup.Root>
+          <InputGroup.Addon>
+            <InputGroup.Text>kr</InputGroup.Text>
+          </InputGroup.Addon>
+          <InputGroup.Input aria-label="Grouped" />
+        </InputGroup.Root>
+        <Input aria-label="Plain disabled" disabled />
+        <InputGroup.Root>
+          <InputGroup.Input aria-label="Grouped disabled" disabled />
+        </InputGroup.Root>
+      </ThemeScope>
+    );
+    const plain = getComputedStyle(textboxNamed("Plain"));
+    const group = rootNamed("Grouped");
+    const grouped = getComputedStyle(group);
+    // The oracle is the theme's own --card, read where the group sits; the external theme
+    // tints --background, so an unfilled group would show a different colour.
+    const card = cssVarColor(group, "--card");
+    expect(card).not.toBe(cssVarColor(group, "--background"));
+    expect(grouped.backgroundColor).toBe(card);
+    expect(plain.backgroundColor).toBe(card);
+    // Unit: the root's computed chrome. Oracle: Input's, which composes the same recipe through
+    // fieldBox, so a merge cancellation on either side shows up as a difference.
+    expect(grouped.borderTopColor).toBe(plain.borderTopColor);
+    expect(grouped.borderTopLeftRadius).toBe(plain.borderTopLeftRadius);
+    expect(grouped.boxShadow).toBe(plain.boxShadow);
+    const disabledGroup = getComputedStyle(rootNamed("Grouped disabled"));
+    const disabledInput = getComputedStyle(textboxNamed("Plain disabled"));
+    expect(disabledGroup.backgroundColor).toBe(disabledInput.backgroundColor);
+    expect(disabledGroup.borderTopColor).toBe(disabledInput.borderTopColor);
+    expect(disabledGroup.boxShadow).toBe(disabledInput.boxShadow);
   });
 
   it("lets the Textarea control override the primitive slot too", () => {
