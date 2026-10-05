@@ -331,19 +331,77 @@ describe("Select", () => {
       expect(selectContent().getAttribute("data-align-trigger")).toBe("true");
     });
 
-    it("opens below its trigger when an ancestor is transformed after mount", async () => {
-      render(<OffsetScope ancestor={{}} />);
-      // Let the first measurement land before the host changes the page under it.
-      await new Promise((resolve) => {
-        requestAnimationFrame(() => requestAnimationFrame(resolve));
-      });
-      // A transform changes the containing block without resizing anything.
-      const host = page.getByTestId("offset-host").element();
-      if (!(host instanceof HTMLElement)) {
-        throw new Error("expected the offset host");
+    it.each([
+      ["a click", openWithClick],
+      ["ArrowDown", openWithArrowDown],
+    ] satisfies [string, () => Promise<HTMLElement>][])(
+      "opens below its trigger from %s when an ancestor is transformed after mount",
+      async (_, open) => {
+        render(<OffsetScope ancestor={{}} />);
+        // Let the first measurement land before the host changes the page under it.
+        await new Promise((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(resolve));
+        });
+        // A transform changes the containing block without resizing anything.
+        const host = page.getByTestId("offset-host").element();
+        if (!(host instanceof HTMLElement)) {
+          throw new Error("expected the offset host");
+        }
+        host.style.transform = "translateZ(0)";
+        const { content, trigger } = await openedContentAndTrigger(open);
+
+        // Oracle: the default `side="bottom"` and `sideOffset={4}` place the popup's top 4px
+        // under the trigger.
+        expect(content.top - trigger.bottom).toBeGreaterThanOrEqual(0);
+        expect(content.top - trigger.bottom).toBeLessThanOrEqual(8);
+        expect(selectContent().getAttribute("data-align-trigger")).toBe("false");
       }
-      host.style.transform = "translateZ(0)";
-      const { content, trigger } = await openedContentAndTrigger();
+    );
+
+    // A host opens the popup through `open` from a control outside the Select, which fires no
+    // open change for the root to measure on.
+    function HostOpenedSelect({ ancestor }: { ancestor: CSSProperties }) {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <button type="button" onClick={() => setOpen(true)}>
+            Show fruit
+          </button>
+          <div style={{ ...ancestor, marginTop: 160, marginLeft: 120 }}>
+            <ThemeScope theme={fkasPrivate}>
+              <Select.Root items={FRUIT_ITEMS} open={open} onOpenChange={setOpen}>
+                <Select.Trigger aria-label="Fruit">
+                  <Select.Value placeholder="Pick a fruit" />
+                </Select.Trigger>
+                <Select.Content>
+                  <Select.Item value="apple">Apple</Select.Item>
+                  <Select.Item value="banana">Banana</Select.Item>
+                  <Select.Item value="date">Date</Select.Item>
+                </Select.Content>
+              </Select.Root>
+            </ThemeScope>
+          </div>
+        </>
+      );
+    }
+
+    async function openFromHost(): Promise<HTMLElement> {
+      await userEvent.click(page.getByRole("button", { name: "Show fruit", exact: true }));
+      return openedListbox();
+    }
+
+    it("keeps item alignment for a popup a host opens through open", async () => {
+      render(<HostOpenedSelect ancestor={{}} />);
+      const { content, trigger } = await openedContentAndTrigger(openFromHost);
+
+      expect(content.top).toBeLessThan(trigger.bottom);
+      expect(content.bottom).toBeGreaterThan(trigger.top);
+      expect(selectContent().getAttribute("data-align-trigger")).toBe("true");
+    });
+
+    it("opens below its trigger when a host opens it through open inside a transformed ancestor", async () => {
+      render(<HostOpenedSelect ancestor={{ transform: "translateZ(0)" }} />);
+      const { content, trigger } = await openedContentAndTrigger(openFromHost);
 
       // Oracle: the default `side="bottom"` and `sideOffset={4}` place the popup's top 4px
       // under the trigger.
