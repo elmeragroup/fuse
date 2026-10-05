@@ -190,6 +190,37 @@ describe("InputGroup", () => {
     expectNoFocusRing(rootNamed("Search"), "an addon button must keep its own ring off the group chrome");
   });
 
+  it("filters the input to digits beside a text addon, counting maxLength in digits", async () => {
+    renderThemed(
+      <InputGroup.Root>
+        <InputGroup.Addon>
+          <InputGroup.Text>+47</InputGroup.Text>
+        </InputGroup.Addon>
+        <InputGroup.Input aria-label="Phone" filter="numeric" maxLength={8} />
+      </InputGroup.Root>
+    );
+    const phone = textboxNamed("Phone");
+    if (!(phone instanceof HTMLInputElement)) {
+      throw new Error("expected an <input> named Phone");
+    }
+    expect(phone).toHaveProperty("inputMode", "numeric");
+
+    await userEvent.type(page.getByRole("textbox", { name: "Phone", exact: true }), "9a1");
+    expect(phone).toHaveProperty("value", "91");
+
+    // A dictated run with separators: six digits fit after the two typed ones.
+    phone.setSelectionRange(2, 2);
+    phone.dispatchEvent(
+      new InputEvent("beforeinput", {
+        inputType: "insertText",
+        data: "234 567 8",
+        bubbles: true,
+        cancelable: true,
+      })
+    );
+    expect(phone).toHaveProperty("value", "91234567");
+  });
+
   it("defaults the addon button to type=button so Enter never triggers it", async () => {
     const events: string[] = [];
     renderThemed(

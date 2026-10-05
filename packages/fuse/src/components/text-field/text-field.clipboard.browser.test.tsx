@@ -65,248 +65,36 @@ describe("TextField", () => {
     expect(input).toHaveProperty("value", "Stay");
   });
 
-  it("strips non-digits under filter=numeric and auto-sets inputMode", async () => {
+  it("forwards the numeric filter to the inner input, so digits reach onChange and maxLength counts digits", async () => {
+    // Input owns the filter and its own suite covers each path; this pins the forwarding.
     const onChange = vi.fn();
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     renderThemed(
       <>
-        <TextField label="Pin" filter="numeric" onChange={onChange} />
-        <TextField label="Phone" filter="numeric" inputMode="tel" />
-        <TextField label="Bad" filter="numeric" value="12a" />
-      </>
-    );
-
-    const pin = textboxNamed("Pin");
-    expect(pin).toHaveProperty("inputMode", "numeric");
-    expect(textboxNamed("Phone")).toHaveProperty("inputMode", "tel");
-
-    await userEvent.type(page.getByRole("textbox", { name: "Pin", exact: true }), "ab");
-    expect(onChange).toHaveBeenLastCalledWith("");
-    expect(pin).toHaveProperty("value", "");
-
-    await userEvent.fill(page.getByRole("textbox", { name: "Pin", exact: true }), "12a3");
-    expect(onChange).toHaveBeenLastCalledWith("123");
-    expect(pin).toHaveProperty("value", "123");
-
-    await userEvent.fill(page.getByRole("textbox", { name: "Pin", exact: true }), "123");
-    expect(onChange.mock.calls.at(-1)?.[0]).toBe("123");
-    expect(pin).toHaveProperty("value", "123");
-
-    expect(warn).toHaveBeenCalledWith("TextField: value is not a number");
-    warn.mockRestore();
-  });
-
-  it("strips a pasted mixed run under filter=numeric and accepts a digit run", async () => {
-    const onChange = vi.fn();
-    renderThemed(
-      <>
-        <TextField aria-label="Clipboard source" defaultValue="12a3" />
-        <TextField label="Pin" filter="numeric" onChange={onChange} />
-      </>
-    );
-    const source = inputNamed("Clipboard source");
-    source.focus();
-    source.select();
-    await userEvent.copy();
-
-    const pin = inputNamed("Pin");
-    pin.focus();
-    await userEvent.paste();
-    expect(pin).toHaveProperty("value", "123");
-    expect(onChange).toHaveBeenLastCalledWith("123");
-
-    source.value = "456";
-    source.focus();
-    source.select();
-    await userEvent.copy();
-    pin.focus();
-    pin.select();
-    await userEvent.paste();
-    expect(pin).toHaveProperty("value", "456");
-    expect(onChange).toHaveBeenLastCalledWith("456");
-  });
-
-  it("counts maxLength in digits under filter=numeric, so a pasted run with separators keeps its digits", async () => {
-    const onChange = vi.fn();
-    function ControlledPhone() {
-      const [value, setValue] = useState("");
-      return (
-        <TextField
-          label="Controlled phone"
-          filter="numeric"
-          maxLength={8}
-          value={value}
-          onChange={setValue}
-        />
-      );
-    }
-    renderThemed(
-      <>
-        <TextField aria-label="Clipboard source" />
+        <TextField aria-label="Clipboard source" defaultValue="912 34 567" />
         <TextField label="Phone" filter="numeric" maxLength={8} onChange={onChange} />
-        <ControlledPhone />
+        <TextField label="Bad" filter="numeric" value="12a" isReadOnly />
       </>
     );
-    const source = inputNamed("Clipboard source");
-    const phone = inputNamed("Phone");
-    async function pasteInto(
-      target: HTMLInputElement,
-      text: string,
-      selection: [number, number]
-    ): Promise<void> {
-      source.value = text;
-      source.focus();
-      source.select();
-      await userEvent.copy();
-      target.focus();
-      target.setSelectionRange(...selection);
-      await userEvent.paste();
-    }
-    async function pasteIntoPhone(text: string, selection: [number, number]): Promise<void> {
-      await pasteInto(phone, text, selection);
-    }
 
-    await pasteIntoPhone("912 34 567", [0, 0]);
+    const phone = inputNamed("Phone");
+    expect(phone).toHaveProperty("inputMode", "numeric");
+
+    await userEvent.type(page.getByRole("textbox", { name: "Phone", exact: true }), "ab");
+    expect(onChange).toHaveBeenLastCalledWith("");
+    expect(phone).toHaveProperty("value", "");
+
+    const source = inputNamed("Clipboard source");
+    source.focus();
+    source.select();
+    await userEvent.copy();
+    phone.focus();
+    await userEvent.paste();
     expect(phone).toHaveProperty("value", "91234567");
     expect(onChange).toHaveBeenLastCalledWith("91234567");
 
-    // An over-long run keeps its leading digits, as the native limit keeps leading characters.
-    await pasteIntoPhone("1234 5678 9", [0, 8]);
-    expect(phone).toHaveProperty("value", "12345678");
-
-    // Into the middle: the digits land at the caret, and the caret ends after them.
-    await pasteIntoPhone("12", [0, 8]);
-    await pasteIntoPhone("3 4", [1, 1]);
-    expect(phone).toHaveProperty("value", "1342");
-    expect(phone.selectionStart).toBe(3);
-
-    // A partial selection frees only its own length: 8 - 8 + 3 leaves room for three digits.
-    await pasteIntoPhone("12345678", [0, 8]);
-    await pasteIntoPhone("9 9 9 9", [2, 5]);
-    expect(phone).toHaveProperty("value", "12999678");
-    expect(phone.selectionStart).toBe(5);
-
-    // A full field takes nothing more, and reports no change.
-    await pasteIntoPhone("12345678", [0, 8]);
-    const calls = onChange.mock.calls.length;
-    await pasteIntoPhone("9 9", [8, 8]);
-    expect(phone).toHaveProperty("value", "12345678");
-    expect(onChange).toHaveBeenCalledTimes(calls);
-
-    // A controlled field takes the digits through its own onChange.
-    const controlled = inputNamed("Controlled phone");
-    await pasteInto(controlled, "912 34 567", [0, 0]);
-    expect(controlled).toHaveProperty("value", "91234567");
-  });
-
-  it("leaves a read-only numeric field and an input without a selection to the browser", async () => {
-    const onChange = vi.fn();
-    renderThemed(
-      <>
-        <TextField aria-label="Clipboard source" defaultValue="912 34 567" />
-        <TextField
-          label="Locked"
-          filter="numeric"
-          maxLength={8}
-          defaultValue="12"
-          isReadOnly
-          onChange={onChange}
-        />
-        <TextField label="Email digits" type="email" filter="numeric" maxLength={8} />
-      </>
-    );
-    // An IME commit or dictation reaches a read-only input as a cancelable `beforeinput`
-    // carrying the whole run. Real keys never carry mixed text and Playwright's fill refuses a
-    // read-only field, so the event is dispatched rather than typed.
-    const locked = inputNamed("Locked");
-    locked.dispatchEvent(
-      new InputEvent("beforeinput", { inputType: "insertText", data: "3 4", bubbles: true, cancelable: true })
-    );
-    expect(locked).toHaveProperty("value", "12");
-    expect(onChange).not.toHaveBeenCalled();
-
-    // `type="email"` has no selection API: the paste keeps the native path, so the browser
-    // cuts to maxlength first and the change handler strips what is left, as before this filter.
-    const source = inputNamed("Clipboard source");
-    source.focus();
-    source.select();
-    await userEvent.copy();
-    const email = page.getByRole("textbox", { name: "Email digits", exact: true });
-    await email.click();
-    await userEvent.paste();
-    await expect.element(email).toHaveValue("912345");
-  });
-
-  it("leaves an insertion another listener cancelled alone", () => {
-    const onChange = vi.fn();
-    renderThemed(<TextField label="Pin" filter="numeric" defaultValue="12" onChange={onChange} />);
-    const pin = inputNamed("Pin");
-    pin.focus();
-    pin.setSelectionRange(2, 2);
-    const mixedRun = () =>
-      new InputEvent("beforeinput", {
-        inputType: "insertText",
-        data: "3 4",
-        bubbles: true,
-        cancelable: true,
-      });
-
-    // A host veto, as an earlier listener would leave it.
-    const vetoed = mixedRun();
-    vetoed.preventDefault();
-    pin.dispatchEvent(vetoed);
-    expect(pin).toHaveProperty("value", "12");
-    expect(onChange).not.toHaveBeenCalled();
-
-    // The same run, not cancelled, takes the filtered path.
-    pin.dispatchEvent(mixedRun());
-    expect(pin).toHaveProperty("value", "1234");
-    expect(onChange).toHaveBeenLastCalledWith("1234");
-  });
-
-  it("removes the numeric insertion listener when the filter goes away", async () => {
-    const { rerender } = renderThemed(
-      <>
-        <TextField aria-label="Clipboard source" defaultValue="912 34 567" />
-        <TextField label="Phone" filter="numeric" maxLength={8} />
-      </>
-    );
-    rerender(
-      <>
-        <TextField aria-label="Clipboard source" defaultValue="912 34 567" />
-        <TextField label="Phone" maxLength={8} />
-      </>
-    );
-    const source = inputNamed("Clipboard source");
-    source.focus();
-    source.select();
-    await userEvent.copy();
-    const phone = inputNamed("Phone");
-    phone.focus();
-    await userEvent.paste();
-    // Unfiltered, the native limit keeps the first 8 characters, separators included.
-    expect(phone).toHaveProperty("value", "912 34 5");
-  });
-
-  it("restores an uncontrolled numeric defaultValue on native reset without calling onChange", async () => {
-    // The numeric filter is a change handler on a plain uncontrolled input: a native reset
-    // restores the default on its own. The old controlled wrapper painted its state back over it.
-    const onChange = vi.fn();
-    renderThemed(
-      <form aria-label="Pin form">
-        <TextField label="Pin" name="pin" filter="numeric" defaultValue="123" onChange={onChange} />
-      </form>
-    );
-    const pin = page.getByRole("textbox", { name: "Pin", exact: true });
-    await userEvent.fill(pin, "456");
-    await expect.element(pin).toHaveValue("456");
-    const edits = onChange.mock.calls.length;
-
-    formNamed("Pin form").reset();
-
-    await expect.element(pin).toHaveValue("123");
-    expect(new FormData(formNamed("Pin form")).get("pin")).toBe("123");
-    expect(onChange, "native reset does not call onChange").toHaveBeenCalledTimes(edits);
+    expect(warn).toHaveBeenCalledWith("Input: value is not a number");
+    warn.mockRestore();
   });
 
   it("keeps controlled digits and callbacks owned by the parent across native reset", async () => {

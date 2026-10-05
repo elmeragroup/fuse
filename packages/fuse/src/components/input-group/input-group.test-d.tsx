@@ -1,7 +1,11 @@
 import { expectTypeOf, test } from "vitest";
 
 import { InputGroup } from "@elmeragroup/fuse/input-group";
-import type { InputGroupAddonProps, InputGroupButtonProps } from "@elmeragroup/fuse/input-group";
+import type {
+  InputGroupAddonProps,
+  InputGroupButtonProps,
+  InputGroupInputProps,
+} from "@elmeragroup/fuse/input-group";
 
 test("the parts take the four-value addon align axis, the compact non-submitting button, and no polymorphic as prop", () => {
   expectTypeOf<InputGroupAddonProps["align"]>().toEqualTypeOf<
@@ -22,6 +26,17 @@ test("the parts take the four-value addon align axis, the compact non-submitting
       <InputGroup.Addon align="inline-end">
         <InputGroup.Button size="icon-xs" variant="ghost" aria-label="Clear" />
       </InputGroup.Addon>
+    </InputGroup.Root>
+  );
+
+  // The input takes Input's numeric filter, so a filtered field can carry addons.
+  expectTypeOf<InputGroupInputProps["filter"]>().toEqualTypeOf<"numeric" | undefined>();
+  const _numeric = (
+    <InputGroup.Root>
+      <InputGroup.Addon align="inline-start">
+        <InputGroup.Text>+47</InputGroup.Text>
+      </InputGroup.Addon>
+      <InputGroup.Input aria-label="Phone" filter="numeric" maxLength={8} />
     </InputGroup.Root>
   );
 

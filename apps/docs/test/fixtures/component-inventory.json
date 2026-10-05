@@ -271,7 +271,13 @@
   "input": {
     "title": "Input",
     "rsc": "client",
-    "demos": ["input-basic.tsx", "input-types.tsx", "input-states.tsx", "input-in-field.tsx"]
+    "demos": [
+      "input-basic.tsx",
+      "input-types.tsx",
+      "input-states.tsx",
+      "input-in-field.tsx",
+      "input-numeric.tsx"
+    ]
   },
   "input-group": {
     "title": "Input Group",
@@ -282,7 +288,8 @@
       "input-group-block.tsx",
       "input-group-textarea.tsx",
       "input-group-invalid.tsx",
-      "input-group-kbd.tsx"
+      "input-group-kbd.tsx",
+      "input-group-numeric.tsx"
     ]
   },
   "item": {
