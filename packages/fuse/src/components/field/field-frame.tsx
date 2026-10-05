@@ -81,7 +81,7 @@ export type FieldFrameProps = {
   isSuccess?: boolean;
   /** Supporting copy, rendered as `Field.Description` when truthy. */
   description?: ReactNode;
-  /** Error copy, rendered as `Field.Error`, which self-suppresses on falsy children. */
+  /** Error copy, rendered as `Field.Error`; falsy, the field shows its own validation error. */
   errorMessage?: ReactNode;
   /** Forwarded to `Field.Root`. */
   invalid?: boolean;

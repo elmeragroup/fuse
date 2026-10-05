@@ -71,7 +71,11 @@ export type PhoneNumberFieldProps = {
   label?: string;
   /** Supporting copy, rendered as `Field.Description`. */
   description?: string;
-  /** Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. */
+  /**
+   * Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the
+   * field shows the visible input's own constraint message. A Base UI `Form` error under
+   * `name` does not reach this field; pass it here.
+   */
   errorMessage?: ReactNode;
   /** Placeholder for the visible number input. */
   placeholder?: string;

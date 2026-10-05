@@ -62,7 +62,10 @@ export type CheckboxGroupProps = {
   label?: string;
   /** Supporting copy, rendered as `Field.Description`. */
   description?: string;
-  /** Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. */
+  /**
+   * Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the
+   * field shows its own validation error instead, such as a native constraint message.
+   */
   errorMessage?: ReactNode;
   /**
    * Layout of the group primitive, and of CheckboxItemGroup's stacked-card list.

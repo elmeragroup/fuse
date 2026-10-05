@@ -123,7 +123,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`.",
+          "description": "Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the field shows the visible input's own constraint message. A Base UI `Form` error under `name` does not reach this field; pass it here.",
           "required": false
         },
         {
