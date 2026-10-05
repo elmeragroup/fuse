@@ -11,21 +11,33 @@ import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { Separator } from "../separator/separator";
+import { itemGroupVariants } from "./item-group-variants";
+import type { ItemGroupVariant } from "./item-group-variants";
 import { itemRootProps } from "./item-root-props";
 import type { itemVariants } from "./item-variants";
 
-const ItemGroupContext = createContext(false);
+/** The enclosing group's variant, or `undefined` outside `Item.Group`. */
+const ItemGroupContext = createContext<ItemGroupVariant | undefined>(undefined);
 
-export function ItemGroup({ className, ...props }: ComponentProps<"div">): ReactElement {
+/**
+ * Props for `Item.Group`. `variant="compact"` draws the rows as one connected list: no gap,
+ * tighter rows, flush separators, and outline rows joined under one border with rounded
+ * outer corners.
+ */
+type ItemGroupProps = ComponentProps<"div"> & Pick<VariantProps<typeof itemGroupVariants>, "variant">;
+
+/**
+ * A list of Item rows. Every `Item.Root` and `Item.Separator` inside reads the group's
+ * `variant`, so the compact look needs no props on the rows.
+ */
+export function ItemGroup({ className, variant = "default", ...props }: ItemGroupProps): ReactElement {
   return (
-    <ItemGroupContext.Provider value={true}>
+    <ItemGroupContext.Provider value={variant}>
       <div
         role="list"
         data-slot="item-group"
-        className={cn(
-          "group/item-group flex w-full flex-col gap-4 has-data-[size=sm]:gap-2.5 has-data-[size=xs]:gap-2",
-          className
-        )}
+        data-variant={variant}
+        className={cn(itemGroupVariants({ variant }).root(), className)}
         {...props}
       />
     </ItemGroupContext.Provider>
@@ -33,11 +45,12 @@ export function ItemGroup({ className, ...props }: ComponentProps<"div">): React
 }
 
 export function ItemSeparator({ className, ...props }: ComponentProps<typeof Separator>): ReactElement {
+  const variant = useContext(ItemGroupContext);
   return (
     <Separator
       data-slot="item-separator"
       orientation="horizontal"
-      className={mergeClassName(className, "my-2")}
+      className={mergeClassName(className, itemGroupVariants({ variant }).separator())}
       {...props}
     />
   );
@@ -71,12 +84,14 @@ export function ItemRoot({
   render,
   ...props
 }: useRender.ComponentProps<"div"> & VariantProps<typeof itemVariants>): ReactElement {
-  const inGroup = useContext(ItemGroupContext);
+  const groupVariant = useContext(ItemGroupContext);
+  const inGroup = groupVariant !== undefined;
+  const groupClassName = inGroup ? itemGroupVariants({ variant: groupVariant, size }).item() : undefined;
   const wrapInListItem = inGroup && render !== undefined && props.role === undefined;
   const element = useRender({
     defaultTagName: "div",
     props: mergeProps<"div">(
-      itemRootProps({ variant, size, className }),
+      itemRootProps({ variant, size, className: cn(groupClassName, className) }),
       inGroup && render === undefined ? { role: "listitem" } : undefined,
       props
     ),
