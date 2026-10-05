@@ -7,6 +7,7 @@ import { InputBasic } from "./demos/input-basic";
 import { InputTypes } from "./demos/input-types";
 import { InputStates } from "./demos/input-states";
 import { InputInField } from "./demos/input-in-field";
+import { InputNumeric } from "./demos/input-numeric";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -34,6 +35,16 @@ A bare input has no accessible name; compose it under `Field.Root` with a `Field
 
 <Demo slug="input" id="in-field" title="In a Field" file="input-in-field.tsx">
   <InputInField />
+</Demo>
+
+<Prose>
+
+`filter="numeric"` keeps digits only, whether they are typed, pasted or autofilled. On text-like input types it counts `maxLength` in digits, so a pasted number with spaces fits whole; the API reference lists the paths where the browser's own length handling still applies. `TextField` and `InputGroup.Input` take the same prop.
+
+</Prose>
+
+<Demo slug="input" id="numeric" title="Numeric filter" file="input-numeric.tsx">
+  <InputNumeric />
 </Demo>
 
 <ApiReference slug="input" />

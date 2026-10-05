@@ -65,6 +65,7 @@ const CLIENT_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["field", ["components/field/field.tsx"]],
   ["file-trigger", ["react-aria/file-trigger/file-trigger.tsx"]],
   ["focusable", ["react-aria/focusable/focusable.tsx"]],
+  ["form", ["components/form/form.tsx"]],
   ["grid-list", ["react-aria/grid-list/grid-list.tsx"]],
   ["heading", ["components/heading/heading.tsx"]],
   ["input", ["components/input/input.tsx"]],
@@ -430,10 +431,10 @@ describe("runtime listeners and layout motion", () => {
   // say the list is complete. Each owner's browser test covers its own cleanup.
   it("installs event listeners only from the reviewed owners", () => {
     expect(filesContainingCode(".addEventListener(").toSorted()).toEqual([
-      "components/sidebar/sidebar.tsx",
       // Native `beforeinput`: React's `onBeforeInput` is a `textInput`/`keypress` polyfill that misses
       // paste in Firefox. The numeric filter strips a paste before maxlength.
-      "components/text-field/text-field.tsx",
+      "components/input/input.tsx",
+      "components/sidebar/sidebar.tsx",
       "hooks/use-form-reset.ts",
       "hooks/use-is-mobile.ts",
       "hooks/use-predicted-events.ts",

@@ -33,7 +33,7 @@ Controls that need a visible label, description, or error get the wiring from `F
 
 <Prose>
 
-`Field.Error` without children shows the field's own message instead: an error from Base UI's `Form` under the field's name, a `validate` result, or the browser's constraint message, which is in the browser's language rather than the app's. Pass children, or a `validate` that returns your own copy, when the message has to be localized or validation lives outside the field.
+`Field.Error` without children shows the field's own message instead: an error from `Form`'s `errors` under the field's name, a `validate` result, or the browser's constraint message, which is in the browser's language rather than the app's. Pass children, or a `validate` that returns your own copy, when the message has to be localized or validation lives outside the field.
 
 </Prose>
 
