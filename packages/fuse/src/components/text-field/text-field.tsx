@@ -1,13 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
 import type { ChangeEvent, ComponentProps, ReactElement, ReactNode } from "react";
 
-import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { cn } from "../../styles/cn";
-import { isThemeDevelopment } from "../../theme/validate-theme";
 import { FieldFrame } from "../field/field-frame";
 import { Input } from "../input/input";
+import type { InputProps } from "../input/input";
 import { textFieldVariants } from "./text-field-variants";
 
 export type TextFieldProps = {
@@ -48,18 +46,13 @@ export type TextFieldProps = {
   /** Trailing inline icon. Activates the `isIconActive` recipe axis. */
   icon?: ReactNode;
   /**
-   * Digits-only guard (absorbs the external numeric-only wrapper). Non-digit characters are
-   * stripped from every path — typing, paste, autofill — so only digits reach `onChange`.
-   * `maxLength` counts digits where the filter runs first: a cancelable `beforeinput` on an input
-   * type with a selection API (`text`, `tel`, `search`, `url`, `password`), so a pasted
-   * `912 34 567` fits `maxLength={8}` whole. Other paths keep the browser's own length handling
-   * and are stripped afterwards: `type="email"`, or autofill that sends no cancelable
-   * `beforeinput`, is cut to `maxLength` first.
-   * Sets `inputMode="numeric"` unless the caller passes `inputMode` explicitly. An
-   * uncontrolled numeric field restores its `defaultValue` on native form reset without
-   * calling `onChange`.
+   * Digits-only guard, forwarded to the inner `Input`. Non-digit characters are stripped from
+   * typing, paste and autofill, so only digits reach `onChange`, and `maxLength` counts digits,
+   * so a pasted `912 34 567` fits `maxLength={8}` whole. Sets `inputMode="numeric"` unless the
+   * caller passes `inputMode`. Input's `filter` lists the paths where the browser's own length
+   * handling still applies.
    */
-  filter?: "numeric";
+  filter?: InputProps["filter"];
   /** `card` composes `cardVariants`; `inline` restyles the input chrome. Unset is the plain Input. */
   variant?: "card" | "inline";
   /** Extra classes, merged onto the root via `cn`. */
@@ -69,86 +62,9 @@ export type TextFieldProps = {
   "value" | "defaultValue" | "onChange" | "name" | "className" | "disabled" | "readOnly" | "required"
 >;
 
-/** One normalizer for the warning guards and the change handler, so they cannot drift. */
-function stripNonDigits(value: string): string {
-  return value.replace(/\D/g, "");
-}
-
-function containsOnlyDigits(value: string): boolean {
-  return stripNonDigits(value) === value;
-}
-
-/**
- * Under the numeric filter, an insertion that mixes digits with other characters, such as a
- * pasted `912 34 567`, is replaced by its digits before the browser applies `maxlength`, so the
- * limit counts digits rather than separators. The digits that fit land at the caret, and the
- * caret ends after them. An insertion of digits only, or of no digits at all, keeps the native
- * path: `maxlength` still blocks a full field, and the change handler strips the rest. So do a
- * read-only or disabled input, to which Chromium still sends `beforeinput` before it refuses the
- * edit, an input type without a selection API, such as `email`, where `setRangeText` throws, and
- * an insertion another listener has already cancelled. A host veto has to run before this
- * listener, in the capture phase or on the input before it mounts: once this listener has run,
- * the event is cancelled and the digits are in.
- */
-function insertDigitsOnly(event: InputEvent): void {
-  const input = event.currentTarget;
-  if (
-    !(input instanceof HTMLInputElement) ||
-    !event.cancelable ||
-    event.defaultPrevented ||
-    !event.inputType.startsWith("insert")
-  ) {
-    return;
-  }
-  const start = input.selectionStart;
-  const end = input.selectionEnd;
-  if (input.readOnly || input.disabled || start === null || end === null) {
-    return;
-  }
-  const inserted = event.data ?? event.dataTransfer?.getData("text/plain") ?? "";
-  const digits = stripNonDigits(inserted);
-  if (digits === "" || digits === inserted) {
-    return;
-  }
-  event.preventDefault();
-  const room = input.maxLength < 0 ? digits.length : input.maxLength - input.value.length + (end - start);
-  const accepted = digits.slice(0, Math.max(0, room));
-  if (accepted === "") {
-    return;
-  }
-  input.setRangeText(accepted, start, end, "end");
-  // setRangeText fires no input event; React and Base UI read the edit from this one.
-  input.dispatchEvent(
-    new InputEvent("input", { bubbles: true, composed: true, inputType: event.inputType, data: accepted })
-  );
-}
-
-/**
- * Attaches {@link insertDigitsOnly} while the numeric filter is on. `source-contracts.test.ts`
- * lists this module among the reviewed listener owners.
- */
-function listenForMixedInsertions(input: HTMLInputElement | null): (() => void) | undefined {
-  if (!input) {
-    return undefined;
-  }
-  input.addEventListener("beforeinput", insertDigitsOnly);
-  return () => {
-    input.removeEventListener("beforeinput", insertDigitsOnly);
-  };
-}
-
-function warnIfNotNumeric(prop: "value" | "defaultValue", value: string | null | undefined): void {
-  if (!isThemeDevelopment()) {
-    return;
-  }
-  if (value && !containsOnlyDigits(value)) {
-    console.warn(`TextField: ${prop} is not a number`);
-  }
-}
-
 /**
  * Labeled single-line field composite over Field and Input. Client component, because its
- * change handler normalizes numeric input.
+ * change handler reads the input's value for `onChange`.
  */
 export function TextField({
   label,
@@ -167,24 +83,10 @@ export function TextField({
   isPending = false,
   isSuccess = false,
   icon,
-  filter,
   variant,
   className,
-  inputMode,
-  ref,
   ...props
 }: TextFieldProps): ReactElement {
-  const isNumeric = filter === "numeric";
-  const inputRef = useMergedRefs(ref, isNumeric ? listenForMixedInsertions : null);
-
-  useEffect(() => {
-    if (!isNumeric) {
-      return;
-    }
-    warnIfNotNumeric("defaultValue", defaultValue);
-    warnIfNotNumeric("value", value);
-  }, [isNumeric, defaultValue, value]);
-
   const {
     base,
     input,
@@ -200,18 +102,7 @@ export function TextField({
   });
 
   function handleChange(event: ChangeEvent<HTMLInputElement>): void {
-    const next = event.currentTarget.value;
-    if (!isNumeric) {
-      onChange?.(next);
-      return;
-    }
-    const digits = stripNonDigits(next);
-    if (digits !== next) {
-      // Hand the digits back to the input so an uncontrolled field drops the rejected
-      // characters even when the caller has no `onChange` to re-render it.
-      event.currentTarget.value = digits;
-    }
-    onChange?.(digits);
+    onChange?.(event.currentTarget.value);
   }
 
   return (
@@ -231,13 +122,11 @@ export function TextField({
       errorMessage={errorMessage}>
       <div className="relative">
         <Input
-          ref={inputRef}
           name={name}
           value={value}
           defaultValue={defaultValue ?? undefined}
           onChange={handleChange}
           placeholder={placeholder}
-          inputMode={inputMode ?? (isNumeric ? "numeric" : undefined)}
           // fieldGroup's default would override the input's w-full.
           className={cn(input(), variant ? fieldGroup() : null)}
           {...props}

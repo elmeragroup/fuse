@@ -10,6 +10,7 @@ import { withinStateFaceControlClass } from "../../styles/state-face";
 import { withinFocusRingControlClass } from "../../styles/utils";
 import { Button } from "../button/button";
 import { Input } from "../input/input";
+import type { InputProps } from "../input/input";
 import { Textarea } from "../textarea/textarea";
 import { inputGroupAddonVariants, inputGroupButtonVariants } from "./input-group-variants";
 
@@ -52,7 +53,7 @@ export type InputGroupButtonProps =
       "aria-label": string;
     });
 export type InputGroupTextProps = ComponentProps<"span">;
-export type InputGroupInputProps = ComponentProps<"input">;
+export type InputGroupInputProps = InputProps;
 export type InputGroupTextareaProps = ComponentProps<"textarea">;
 
 /**
