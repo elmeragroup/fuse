@@ -26,7 +26,7 @@ import { Button } from "../button/button";
 import {
   InputGroupAddon,
   InputGroupButton,
-  InputGroupInput,
+  InputGroupPlainInput,
   InputGroupRoot,
 } from "../input-group/input-group";
 import {
@@ -180,7 +180,12 @@ export function ComboboxInput({
   const strings = useLocalizedStrings(comboboxStrings);
   return (
     <InputGroupRoot className={cn("w-auto", className)}>
-      <ComboboxPrimitive.Input disabled={disabled} render={<InputGroupInput />} {...definedProps(props)} />
+      {/* A plain input: Combobox.Input is the Field control here, and its hidden input submits the value. */}
+      <ComboboxPrimitive.Input
+        disabled={disabled}
+        render={<InputGroupPlainInput />}
+        {...definedProps(props)}
+      />
       <InputGroupAddon align="inline-end">
         {showTrigger ? (
           <InputGroupButton

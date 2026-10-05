@@ -11,7 +11,14 @@ import {
   expectNoFocusRing,
 } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import { cssVarColor, px, renderThemed, roleNamed, stampDensity } from "../../../test/themed-browser-render";
+import {
+  cssVarColor,
+  formNamed,
+  px,
+  renderThemed,
+  roleNamed,
+  stampDensity,
+} from "../../../test/themed-browser-render";
 import { Field } from "../field";
 import { InputGroup } from "../input-group";
 import { useComboboxAnchor } from "./combobox";
@@ -325,6 +332,46 @@ describe("Combobox", () => {
     await expect.element(comboboxNamed("Fruit")).toHaveAccessibleDescription("Pick one.");
     await expect.element(comboboxNamed("Basket")).toHaveAccessibleDescription("Pick several.");
     expect(page.getByRole("button", { name: TOGGLE_COPY["en-US"], exact: true }).query()).not.toBeNull();
+  });
+
+  it("submits the selected value alone inside a Field, never the input's text", async () => {
+    type Product = { id: string; title: string };
+    const products: Product[] = [
+      { id: "spot", title: "Spot price" },
+      { id: "fixed", title: "Fixed price" },
+    ];
+    function ProductCombobox({ name }: { name?: string }) {
+      return (
+        <Combobox.Root
+          items={products}
+          defaultValue={products[1]}
+          name={name}
+          itemToStringLabel={(product: Product) => product.title}
+          itemToStringValue={(product: Product) => product.id}>
+          <Combobox.Input />
+        </Combobox.Root>
+      );
+    }
+    renderCombobox(
+      <>
+        <form aria-label="Field name">
+          <Field.Root name="product">
+            <Field.Label>Product</Field.Label>
+            <ProductCombobox />
+          </Field.Root>
+        </form>
+        <form aria-label="Combobox name">
+          <Field.Root>
+            <Field.Label>Plan</Field.Label>
+            <ProductCombobox name="plan" />
+          </Field.Root>
+        </form>
+      </>
+    );
+    await expect.element(comboboxNamed("Product")).toHaveValue("Fixed price");
+    await expect.element(comboboxNamed("Plan")).toHaveValue("Fixed price");
+    expect([...new FormData(formNamed("Field name")).entries()]).toEqual([["product", "fixed"]]);
+    expect([...new FormData(formNamed("Combobox name")).entries()]).toEqual([["plan", "fixed"]]);
   });
 
   it("keeps the Field label on a standalone trigger when a wrapper forwards id and aria-labelledby as undefined", () => {
