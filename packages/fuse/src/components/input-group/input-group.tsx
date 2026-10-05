@@ -178,5 +178,5 @@ InputGroupAddon.displayName = "InputGroup.Addon";
 InputGroupButton.displayName = "InputGroup.Button";
 InputGroupText.displayName = "InputGroup.Text";
 InputGroupInput.displayName = "InputGroup.Input";
-InputGroupPlainInput.displayName = "InputGroup.PlainInput";
+InputGroupPlainInput.displayName = "InputGroupPlainInput";
 InputGroupTextarea.displayName = "InputGroup.Textarea";

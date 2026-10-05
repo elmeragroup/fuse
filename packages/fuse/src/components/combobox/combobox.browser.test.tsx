@@ -372,6 +372,26 @@ describe("Combobox", () => {
     await expect.element(comboboxNamed("Plan")).toHaveValue("Fixed price");
     expect([...new FormData(formNamed("Field name")).entries()]).toEqual([["product", "fixed"]]);
     expect([...new FormData(formNamed("Combobox name")).entries()]).toEqual([["plan", "fixed"]]);
+
+    // A half-typed search over the selection stays out of the form too.
+    await userEvent.fill(comboboxNamed("Product"), "fix");
+    expect([...new FormData(formNamed("Field name")).entries()]).toEqual([["product", "fixed"]]);
+  });
+
+  it("points the Field label at the input through the id on Combobox.Root", async () => {
+    renderCombobox(
+      <Field.Root>
+        <Field.Label>Fruit</Field.Label>
+        <Combobox.Root id="fruit" items={[...FRUITS]}>
+          <Combobox.Input />
+        </Combobox.Root>
+      </Field.Root>
+    );
+    const label = page.getByText("Fruit", { exact: true }).element();
+    expect(label.getAttribute("for")).toBe("fruit");
+    expect(comboboxNamed("Fruit").id).toBe("fruit");
+    await userEvent.click(label);
+    expect(document.activeElement).toBe(comboboxNamed("Fruit"));
   });
 
   it("keeps the Field label on a standalone trigger when a wrapper forwards id and aria-labelledby as undefined", () => {
