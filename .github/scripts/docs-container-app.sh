@@ -3,21 +3,22 @@ set -euo pipefail
 
 # Called after azure/login in the target subscription. Infra owns environments and RBAC;
 # this script owns the docs apps and revisions, including their first deployment.
-mode="${1:?Usage: docs-container-app.sh prod|preview|teardown|origin-prod|origin-preview}"
+mode="${1:?Usage: docs-container-app.sh prod|preview|teardown|origin-preview}"
 : "${APP:?Set APP}"
 : "${RESOURCE_GROUP:?Set RESOURCE_GROUP}"
 case "$mode" in
-  prod|preview|origin-prod) ;;
+  prod|preview) ;;
   teardown|origin-preview) : "${PR:?Set PR}" ;;
   *) echo "Unknown deployment mode: $mode" >&2; exit 1 ;;
 esac
 
-# The origin modes print the public origin a deploy will serve, before the image is built: the
-# docs build bakes it in as DOCS_ORIGIN (apps/docs/Dockerfile) for absolute og:image URLs. They
-# read the environment's default domain rather than the app's FQDN, because the first deploy
-# builds the image before the app exists. Production is `<app>.<domain>`; a preview is its
-# `pr-<n>` label URL, `<app>---pr-<n>.<domain>`, the same URL the preview mode reports.
-if [[ "$mode" == origin-* ]]; then
+# origin-preview prints the origin a preview will serve, before the image is built: the docs
+# build bakes it in as DOCS_ORIGIN (apps/docs/Dockerfile) for absolute og:image URLs. It reads
+# the environment's default domain rather than the app's FQDN, because the first deploy builds
+# the image before the app exists. A preview is its `pr-<n>` label URL,
+# `<app>---pr-<n>.<domain>`, the same URL the preview mode reports. Production has no origin
+# mode: its public domain sits in front of the internal environment, so merge.yml states it.
+if [[ "$mode" == origin-preview ]]; then
   : "${ENVIRONMENT:?Set ENVIRONMENT}"
   # `az containerapp create --environment` takes a name in this resource group or a resource ID.
   if [[ "$ENVIRONMENT" == /subscriptions/* ]]; then
@@ -31,11 +32,7 @@ if [[ "$mode" == origin-* ]]; then
     echo "Container Apps environment $ENVIRONMENT reported no default domain." >&2
     exit 1
   fi
-  if [[ "$mode" == origin-prod ]]; then
-    echo "https://${APP}.${domain}"
-  else
-    echo "https://${APP}---pr-${PR}.${domain}"
-  fi
+  echo "https://${APP}---pr-${PR}.${domain}"
   exit 0
 fi
 
