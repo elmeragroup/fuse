@@ -37,6 +37,24 @@ export const numberFieldGroupClass = cn(
 );
 
 /**
+ * InputGroup root chrome — the whole field box around a stripped `InputGroup.Input` or
+ * `InputGroup.Textarea`, so it paints the shared chrome, fill included, once. It pins the md
+ * control rung, and block addons and textareas grow it instead. Like NumberField's group it
+ * takes the within-target state face from its own `data-focus-ring-control` control, a direct
+ * child, plus that control's disabled fill.
+ */
+export const inputGroupRootClass = cn(
+  fieldBoxChromeClass,
+  "group/input-group relative flex h-(--control-h-md) w-full min-w-0 items-center",
+  "has-[>[data-focus-ring-control]:disabled]:bg-input/50",
+  "has-[[data-focus-ring-control]:focus-visible]:border-ring",
+  withinStateFaceClass,
+  "has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>textarea]:h-auto",
+  "has-[>[data-align=block-end]]:[&>input]:pt-3 has-[>[data-align=block-start]]:[&>input]:pb-3 has-[>[data-align=inline-end]]:[&>input]:pr-1.5 has-[>[data-align=inline-start]]:[&>input]:pl-1.5",
+  withinFocusRingClass
+);
+
+/**
  * Package-private field-box chrome shared by Input and Textarea. Hosts add only
  * per-control deltas. The `box` axis picks the height model: `control` pins the
  * md control rung, `content` grows with its content — no host may cancel a

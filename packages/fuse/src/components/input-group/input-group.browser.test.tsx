@@ -82,12 +82,16 @@ describe("InputGroup", () => {
     expect(card).not.toBe(cssVarColor(group, "--background"));
     expect(grouped.backgroundColor).toBe(card);
     expect(plain.backgroundColor).toBe(card);
+    // Unit: the root's computed chrome. Oracle: Input's, which composes the same recipe through
+    // fieldBox, so a merge cancellation on either side shows up as a difference.
     expect(grouped.borderTopColor).toBe(plain.borderTopColor);
     expect(grouped.borderTopLeftRadius).toBe(plain.borderTopLeftRadius);
     expect(grouped.boxShadow).toBe(plain.boxShadow);
-    expect(getComputedStyle(rootNamed("Grouped disabled")).backgroundColor).toBe(
-      getComputedStyle(textboxNamed("Plain disabled")).backgroundColor
-    );
+    const disabledGroup = getComputedStyle(rootNamed("Grouped disabled"));
+    const disabledInput = getComputedStyle(textboxNamed("Plain disabled"));
+    expect(disabledGroup.backgroundColor).toBe(disabledInput.backgroundColor);
+    expect(disabledGroup.borderTopColor).toBe(disabledInput.borderTopColor);
+    expect(disabledGroup.boxShadow).toBe(disabledInput.boxShadow);
   });
 
   it("lets the Textarea control override the primitive slot too", () => {

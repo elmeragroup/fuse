@@ -5,9 +5,9 @@ import type { ComponentProps, ReactElement } from "react";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
-import { fieldBoxChromeClass } from "../../styles/field-box";
-import { withinStateFaceClass, withinStateFaceControlClass } from "../../styles/state-face";
-import { withinFocusRingClass, withinFocusRingControlClass } from "../../styles/utils";
+import { inputGroupRootClass } from "../../styles/field-box";
+import { withinStateFaceControlClass } from "../../styles/state-face";
+import { withinFocusRingControlClass } from "../../styles/utils";
 import { Button } from "../button/button";
 import { Input } from "../input/input";
 import { Textarea } from "../textarea/textarea";
@@ -68,24 +68,7 @@ const CONTROL_CHROME = cn(
 
 export function InputGroupRoot({ className, ...props }: InputGroupRootProps): ReactElement {
   return (
-    <div
-      data-slot="input-group"
-      role="group"
-      className={cn(
-        // The control is stripped of its own box, so the group paints the shared chrome, fill included.
-        fieldBoxChromeClass,
-        // Single-height field box: pins the `md` control rung; block addons and textareas grow instead.
-        "group/input-group relative flex h-(--control-h-md) w-full min-w-0 items-center",
-        "has-[>[data-focus-ring-control]:disabled]:bg-input/50",
-        "has-[[data-focus-ring-control]:focus-visible]:border-ring",
-        withinStateFaceClass,
-        "has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>textarea]:h-auto",
-        "has-[>[data-align=block-end]]:[&>input]:pt-3 has-[>[data-align=block-start]]:[&>input]:pb-3 has-[>[data-align=inline-end]]:[&>input]:pr-1.5 has-[>[data-align=inline-start]]:[&>input]:pl-1.5",
-        withinFocusRingClass,
-        className
-      )}
-      {...props}
-    />
+    <div data-slot="input-group" role="group" className={cn(inputGroupRootClass, className)} {...props} />
   );
 }
 

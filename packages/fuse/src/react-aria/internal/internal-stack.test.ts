@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { fieldBox, fieldBoxChromeClass, numberFieldGroupClass } from "../../styles/field-box";
+import {
+  fieldBox,
+  fieldBoxChromeClass,
+  inputGroupRootClass,
+  numberFieldGroupClass,
+} from "../../styles/field-box";
 import { checkboxVariants } from "./checkbox";
 import { composeTailwindRenderProps } from "./compose-tailwind-render-props";
 import { fieldGroupVariants } from "./field";
@@ -68,15 +73,22 @@ describe("field-box chrome parity", () => {
     const racBox = fieldGroupVariants().split(" ");
     const baseUiBox = fieldBox({ box: "control" }).split(" ");
     const numberFieldBox = numberFieldGroupClass.split(" ");
+    const inputGroupBox = inputGroupRootClass.split(" ");
     for (const token of tokens) {
       expect(racBox, `interim tier lost ${token}`).toContain(token);
       expect(baseUiBox, `base-ui tier lost ${token}`).toContain(token);
       expect(numberFieldBox, `NumberField group lost ${token}`).toContain(token);
+      expect(inputGroupBox, `InputGroup root lost ${token}`).toContain(token);
     }
   });
 
   it("leaves no field box a second radius or elevation rung to drift on", () => {
-    for (const rendered of [fieldGroupVariants(), fieldBox({ box: "control" }), numberFieldGroupClass]) {
+    for (const rendered of [
+      fieldGroupVariants(),
+      fieldBox({ box: "control" }),
+      numberFieldGroupClass,
+      inputGroupRootClass,
+    ]) {
       expect(rendered.match(/(?:^|\s)rounded-\S+/gu)).toHaveLength(1);
       expect(rendered.match(/(?:^|\s)shadow-\S+/gu)).toHaveLength(1);
     }
