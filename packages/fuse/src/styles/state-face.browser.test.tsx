@@ -8,7 +8,13 @@ import "../../dist/themes.css";
 import { expectInvalidRing, expectNoRing } from "../../test/assert-invalid-ring";
 import { withLocale } from "../../test/locale-matrix";
 import { whilePointerPressed } from "../../test/pointer-press";
-import { effectiveOpacity, renderThemed, roleNamed, stampDensity } from "../../test/themed-browser-render";
+import {
+  cssVarColor,
+  effectiveOpacity,
+  renderThemed,
+  roleNamed,
+  stampDensity,
+} from "../../test/themed-browser-render";
 import { Accordion } from "../components/accordion";
 import { Button } from "../components/button/button";
 import { CheckboxCard } from "../components/checkbox-card/checkbox-card";
@@ -317,7 +323,10 @@ describe("state face at dense density", () => {
 
     expect.soft(effectiveOpacity(group), "outer group").toBe(1);
     expect.soft(getComputedStyle(group).cursor, "outer group").not.toBe("not-allowed");
-    expect.soft(getComputedStyle(group).backgroundColor, "outer group fill").toBe("rgba(0, 0, 0, 0)");
+    // The group's resting field fill, not its disabled `bg-input/50`.
+    expect
+      .soft(getComputedStyle(group).backgroundColor, "outer group fill")
+      .toBe(cssVarColor(group, "--card"));
     expect.soft(effectiveOpacity(reference), "outer enabled input").toBe(1);
     expect.soft(getComputedStyle(reference).cursor, "outer enabled input").not.toBe("not-allowed");
     expect.soft(effectiveOpacity(groupAround(quantity)), "nested number field group").toBe(0.5);

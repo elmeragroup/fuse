@@ -109,21 +109,16 @@ type GroupBoxDrawing = {
   readonly children: ReactNode;
   /** Paints InputGroup's focus face: the shared focus ring and a `--ring` hairline. */
   readonly focused?: boolean;
-  /**
-   * The RAC FieldGroup and NumberField fill `--card`; InputGroup paints no fill of its own, so
-   * it shows the page `--background` it sits on.
-   */
-  readonly fill?: "card" | "background";
   readonly style?: CSSProperties;
 };
 
 /**
  * A grouped field box (`input-group.tsx`, RAC `fieldGroupVariants`, `numberFieldGroupClass`):
- * the field-box chrome at the md control height, with its parts laid in a row and no inset of
- * its own, since each part pads itself.
+ * the field-box chrome at the md control height, `--card` fill included, with its parts laid in a
+ * row and no inset of its own, since each part pads itself.
  */
 function GroupBox(drawing: GroupBoxDrawing): ReactElement {
-  const { ctx, width, children, focused = false, fill = "background", style } = drawing;
+  const { ctx, width, children, focused = false, style } = drawing;
   return (
     <div
       style={compact({
@@ -135,7 +130,7 @@ function GroupBox(drawing: GroupBoxDrawing): ReactElement {
         ...fieldChrome(ctx, focused ? "focused" : "rest"),
         // InputGroup's focus face also turns the hairline to `--ring` (`input-group.tsx`).
         border: hairline(ctx, focused ? ctx.c("ring") : ctx.c("input")),
-        backgroundColor: ctx.c(fill),
+        backgroundColor: ctx.c("card"),
         ...style,
       })}>
       {children}
@@ -455,7 +450,7 @@ export const searchField: Specimen = {
   caption: "With a query and clear button",
   scale: 2.2,
   draw: (ctx) => (
-    <GroupBox ctx={ctx} width={ctx.px(200)} fill="card">
+    <GroupBox ctx={ctx} width={ctx.px(200)}>
       <div style={{ display: "flex", marginLeft: ctx.px(8), flexShrink: 0 }}>
         {glyph(MagnifyingGlass)(ctx.px(16), ctx.c("foreground"))}
       </div>
@@ -507,7 +502,7 @@ export const numberField: Specimen = {
   draw: (ctx) => (
     <Column gap={ctx.px(4)}>
       <FieldLabel ctx={ctx}>Monthly usage</FieldLabel>
-      <GroupBox ctx={ctx} width={ctx.px(190)} fill="card">
+      <GroupBox ctx={ctx} width={ctx.px(190)}>
         <GroupInput ctx={ctx}>1 250</GroupInput>
         <span
           style={{
