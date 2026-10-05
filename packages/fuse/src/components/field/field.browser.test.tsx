@@ -1,5 +1,3 @@
-// The root entry, which the browser projects pre-bundle; a new subpath would load a second React.
-import { Form } from "@base-ui/react";
 import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -15,6 +13,7 @@ import {
   textboxNamed,
 } from "../../../test/themed-browser-render";
 import { Checkbox } from "../checkbox/checkbox";
+import { Form } from "../form/form";
 import { Field } from "./index";
 
 describe("Field", () => {

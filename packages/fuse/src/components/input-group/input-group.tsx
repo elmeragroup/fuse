@@ -10,6 +10,7 @@ import { withinStateFaceControlClass } from "../../styles/state-face";
 import { withinFocusRingControlClass } from "../../styles/utils";
 import { Button } from "../button/button";
 import { Input, inputClass } from "../input/input";
+import type { InputProps } from "../input/input";
 import { Textarea } from "../textarea/textarea";
 import { inputGroupAddonVariants, inputGroupButtonVariants } from "./input-group-variants";
 
@@ -52,7 +53,7 @@ export type InputGroupButtonProps =
       "aria-label": string;
     });
 export type InputGroupTextProps = ComponentProps<"span">;
-export type InputGroupInputProps = ComponentProps<"input">;
+export type InputGroupInputProps = InputProps;
 export type InputGroupTextareaProps = ComponentProps<"textarea">;
 
 /**
@@ -151,7 +152,7 @@ export function InputGroupInput({ className, ...props }: InputGroupInputProps): 
  * such as Base UI's `Combobox.Input`. `InputGroup.Input` renders `Field.Control`, which would
  * name the input after the Field and submit its text beside the primitive's own hidden input.
  */
-export function InputGroupPlainInput({ className, ...props }: InputGroupInputProps): ReactElement {
+export function InputGroupPlainInput({ className, ...props }: ComponentProps<"input">): ReactElement {
   return (
     <input
       data-slot="input-group-control"
