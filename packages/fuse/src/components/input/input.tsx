@@ -19,7 +19,8 @@ export type InputProps = ComponentProps<"input"> & {
    * type with a selection API (`text`, `tel`, `search`, `url`, `password`), so a pasted
    * `912 34 567` fits `maxLength={8}` whole. Other paths keep the browser's own length handling
    * and are stripped afterwards: `type="email"`, or autofill that sends no cancelable
-   * `beforeinput`, is cut to `maxLength` first.
+   * `beforeinput`, is cut to `maxLength` first. The filter is meant for text-like types:
+   * under `type="number"` it also strips the sign and the decimal separator.
    * Sets `inputMode="numeric"` unless the caller passes `inputMode` explicitly. An
    * uncontrolled numeric input restores its `defaultValue` on native form reset without
    * calling `onChange`.

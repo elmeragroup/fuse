@@ -33,11 +33,18 @@ describe("Input numeric filter", () => {
     expect(pin).toHaveProperty("inputMode", "numeric");
     expect(textboxNamed("Phone")).toHaveProperty("inputMode", "tel");
 
-    await userEvent.type(page.getByRole("textbox", { name: "Pin", exact: true }), "ab");
+    const pinBox = page.getByRole("textbox", { name: "Pin", exact: true });
+    await userEvent.type(pinBox, "ab");
     expect(changes).toHaveBeenLastCalledWith("");
     expect(pin).toHaveProperty("value", "");
 
-    await userEvent.fill(page.getByRole("textbox", { name: "Pin", exact: true }), "12a3");
+    // A typed letter carries no digit, so the beforeinput listener leaves it to the change
+    // handler. Validation reading `1` rather than `1a` shows that handler strips it first.
+    await userEvent.type(pinBox, "1a");
+    expect(changes).toHaveBeenLastCalledWith("1");
+    await expect.element(page.getByText("Saw 1", { exact: true })).toBeVisible();
+
+    await userEvent.fill(pinBox, "12a3");
     expect(changes).toHaveBeenLastCalledWith("123");
     expect(pin).toHaveProperty("value", "123");
     await expect.element(page.getByText("Saw 123", { exact: true })).toBeVisible();
