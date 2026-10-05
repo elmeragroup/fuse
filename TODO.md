@@ -33,6 +33,9 @@
 - Add first-paint fixtures for the written Next Pages, TanStack Start and React Router recipes.
 - Finish release activation, packed Next/Vite fixtures and authentication work in
   [the release runbook](scripts/RELEASE.md).
+- After the first stable release, decide whether a new component, public API or public
+  behavior change needs an issue with a code-owner-agreed scope before work starts, and
+  add that rule to [CONTRIBUTING.md](CONTRIBUTING.md).
 - After upstream tooling uses stable Effect 4 and the release-age guard admits it,
   upgrade and remove prerelease exclusions unless another exception is justified.
 - Retire repo-policy workarounds when upstream lint can require disable reasons
@@ -205,9 +208,6 @@ that opens every overlay on a side before flipping the window.
 
 ## Open Graph images
 
-- Check the first preview and production deploys after the origin change. The workflows read
-  `DOCS_ORIGIN` from `.github/scripts/docs-container-app.sh origin-preview|origin-prod`, and
-  no run has exercised that step yet. A preview's `og:image` should name its `---pr-<n>` host.
 - The component specimens in `apps/docs/src/og/specimens/` redraw each Fuse recipe from
   tokens by hand. A recipe change in `packages/fuse` does not reach them, and no test compares
   the two. Review the specimens when a recipe's radius, border, padding or default variant
