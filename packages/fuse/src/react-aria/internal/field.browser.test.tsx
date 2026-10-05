@@ -8,13 +8,13 @@ import { describedTextsFor } from "../../../test/rac-calendar-testing";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { DateField } from "../date-field/date-field";
 import { DatePicker } from "../date-picker/date-picker";
-import { DateRangePicker } from "../date-range-picker/date-range-picker";
 import { SearchField } from "../search-field/search-field";
 import { UiProviders } from "../ui-providers/ui-providers";
 
 const ERROR = "Enter a value.";
 
-// Every public field that renders the shared FieldError, with the element RAC describes.
+// Each place that renders the shared FieldError, with the element RAC describes. DatePicker
+// stands for the picker shell, which DateRangePicker renders its error through too.
 const FIELDS: ReadonlyArray<{ name: string; field: ReactElement; host: () => HTMLElement }> = [
   {
     name: "DateField",
@@ -24,11 +24,6 @@ const FIELDS: ReadonlyArray<{ name: string; field: ReactElement; host: () => HTM
   {
     name: "DatePicker",
     field: <DatePicker label="Due" isInvalid errorMessage={ERROR} />,
-    host: () => roleNamed("group", "Due"),
-  },
-  {
-    name: "DateRangePicker",
-    field: <DateRangePicker label="Due" isInvalid errorMessage={ERROR} />,
     host: () => roleNamed("group", "Due"),
   },
   {

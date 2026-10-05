@@ -155,25 +155,6 @@ describe("landing Dashboard Order search", () => {
     await page.context().close();
   });
 
-  it("sorts Order search by customer", async () => {
-    const page = await openLanding(DESKTOP_VIEWPORT);
-    const app = await openOrderSearch(page);
-    const header = searchTable(app).getByRole("columnheader", { name: "Customer" });
-
-    await header.getByRole("button").click();
-    await expect.poll(async () => header.getAttribute("aria-sort")).toBe("ascending");
-    expect((await tableCustomers(app)).slice(0, 3)).toEqual([
-      "Ahmed Hassan",
-      "Amalie Berntsen",
-      "Anders Lie",
-    ]);
-
-    await header.getByRole("button").click();
-    await expect.poll(async () => header.getAttribute("aria-sort")).toBe("descending");
-    expect((await tableCustomers(app))[0]).toBe("Øystein Rønning");
-    await page.context().close();
-  });
-
   it("raises the bulk toolbar from rows checked in Order search", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
     const app = await openOrderSearch(page);
@@ -250,12 +231,17 @@ describe("landing Dashboard Order search", () => {
     await page.context().close();
   });
 
-  it("moves through Order search's sorted rows with j and k, checks with x and opens with Enter", async () => {
+  it("sorts Order search by customer both ways, moves through the sorted rows with j and k, checks with x and opens with Enter", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
     const app = await openOrderSearch(page);
     const header = searchTable(app).getByRole("columnheader", { name: "Customer" });
     await header.getByRole("button").click();
     await expect.poll(async () => header.getAttribute("aria-sort")).toBe("ascending");
+    expect((await tableCustomers(app)).slice(0, 3)).toEqual([
+      "Ahmed Hassan",
+      "Amalie Berntsen",
+      "Anders Lie",
+    ]);
 
     // Focus sits on the sort button, inside the window and on no row: j starts at the first row.
     await page.keyboard.press("j");
@@ -274,7 +260,14 @@ describe("landing Dashboard Order search", () => {
       .toBe("true");
     await app.getByRole("toolbar", { name: "Bulk actions" }).getByText("1 selected").waitFor();
     await page.keyboard.press("Enter");
-    await page.getByRole("dialog", { name: "Amalie Berntsen" }).waitFor();
+    const detail = page.getByRole("dialog", { name: "Amalie Berntsen" });
+    await detail.waitFor();
+    await page.keyboard.press("Escape");
+    await expect.poll(async () => detail.count()).toBe(0);
+
+    await header.getByRole("button").click();
+    await expect.poll(async () => header.getAttribute("aria-sort")).toBe("descending");
+    expect((await tableCustomers(app))[0]).toBe("Øystein Rønning");
     await page.context().close();
   });
 

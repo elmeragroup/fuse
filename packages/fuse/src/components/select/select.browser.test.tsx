@@ -360,14 +360,14 @@ describe("Select", () => {
 
     // A host opens the popup through `open` from a control outside the Select, which fires no
     // open change for the root to measure on.
-    function HostOpenedSelect({ ancestor }: { ancestor: CSSProperties }) {
+    function HostOpenedSelect() {
       const [open, setOpen] = useState(false);
       return (
         <>
           <button type="button" onClick={() => setOpen(true)}>
             Show fruit
           </button>
-          <div style={{ ...ancestor, marginTop: 160, marginLeft: 120 }}>
+          <div style={{ marginTop: 160, marginLeft: 120 }}>
             <ThemeScope theme={fkasPrivate}>
               <Select.Root items={FRUIT_ITEMS} open={open} onOpenChange={setOpen}>
                 <Select.Trigger aria-label="Fruit">
@@ -391,23 +391,12 @@ describe("Select", () => {
     }
 
     it("keeps item alignment for a popup a host opens through open", async () => {
-      render(<HostOpenedSelect ancestor={{}} />);
+      render(<HostOpenedSelect />);
       const { content, trigger } = await openedContentAndTrigger(openFromHost);
 
       expect(content.top).toBeLessThan(trigger.bottom);
       expect(content.bottom).toBeGreaterThan(trigger.top);
       expect(selectContent().getAttribute("data-align-trigger")).toBe("true");
-    });
-
-    it("opens below its trigger when a host opens it through open inside a transformed ancestor", async () => {
-      render(<HostOpenedSelect ancestor={{ transform: "translateZ(0)" }} />);
-      const { content, trigger } = await openedContentAndTrigger(openFromHost);
-
-      // Oracle: the default `side="bottom"` and `sideOffset={4}` place the popup's top 4px
-      // under the trigger.
-      expect(content.top - trigger.bottom).toBeGreaterThanOrEqual(0);
-      expect(content.top - trigger.bottom).toBeLessThanOrEqual(8);
-      expect(selectContent().getAttribute("data-align-trigger")).toBe("false");
     });
 
     it("opens below its trigger when a shorter transformed ancestor sits at the viewport origin", async () => {

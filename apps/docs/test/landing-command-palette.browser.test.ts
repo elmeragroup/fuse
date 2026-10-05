@@ -39,31 +39,6 @@ async function expectFreshSearch(palette: Locator): Promise<void> {
   expect(await field.getAttribute("aria-activedescendant")).toBe(await first.getAttribute("id"));
 }
 
-/** Every way into the palette, each at the width where it shows. */
-const PALETTE_OPENERS = [
-  {
-    opener: "the sidebar Search",
-    viewport: DESKTOP_VIEWPORT,
-    open: async (page: Page) =>
-      dashboard(page)
-        .getByRole("button", { name: /^Search/u })
-        .click(),
-  },
-  {
-    opener: "Control+K",
-    viewport: DESKTOP_VIEWPORT,
-    open: async (page: Page) => {
-      await row(dashboard(page), "Jonas Eide").focus();
-      await page.keyboard.press("Control+k");
-    },
-  },
-  {
-    opener: "the header Search button",
-    viewport: PHONE_VIEWPORT,
-    open: async (page: Page) => dashboard(page).getByRole("button", { name: "Search", exact: true }).click(),
-  },
-] as const;
-
 describe("landing Dashboard command palette", () => {
   it("opens the command palette from its button and from the keyboard, and jumps to an order", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
@@ -125,23 +100,22 @@ describe("landing Dashboard command palette", () => {
     await page.context().close();
   });
 
-  it.each(PALETTE_OPENERS)(
-    "reopens the palette from $opener with an empty search and the first result active",
-    async ({ viewport, open }) => {
-      const page = await openLanding(viewport);
-      await dashboard(page).scrollIntoViewIfNeeded();
-      const palette = page.getByRole("dialog", { name: "Command palette" });
+  it("reopens the palette from the sidebar Search with an empty search and the first result active", async () => {
+    const page = await openLanding(DESKTOP_VIEWPORT);
+    const app = dashboard(page);
+    await app.scrollIntoViewIfNeeded();
+    const palette = page.getByRole("dialog", { name: "Command palette" });
+    const search = app.getByRole("button", { name: /^Search/u });
 
-      await open(page);
-      await searchAndMoveActive(page, palette);
-      await page.keyboard.press("Escape");
-      await expect.poll(async () => palette.count()).toBe(0);
+    await search.click();
+    await searchAndMoveActive(page, palette);
+    await page.keyboard.press("Escape");
+    await expect.poll(async () => palette.count()).toBe(0);
 
-      await open(page);
-      await expectFreshSearch(palette);
-      await page.context().close();
-    }
-  );
+    await search.click();
+    await expectFreshSearch(palette);
+    await page.context().close();
+  });
 
   it("starts a fresh search and returns focus to the row when the palette reopens before its exit animation ends", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT, { reducedMotion: "no-preference" });

@@ -10,15 +10,11 @@ import { contrastRatio, relativeLuminance } from "@elmeragroup/color/wcag";
 import { DESKTOP_VIEWPORT } from "./demo-page";
 import {
   ALL_SITES,
-  DASHBOARD_FIRST,
   ELMERA,
   FJORDKRAFT,
   PHONE_VIEWPORT,
-  PHOTO_SITES,
   brandSite,
   isInert,
-  pickBrand,
-  showSide,
   WIDE_VIEWPORT,
   windowCaption,
 } from "./landing-dashboard";
@@ -26,19 +22,24 @@ import type { SiteFacts } from "./landing-dashboard";
 import { collectPageErrors, expectTargets, launchLandingSuite, settleFrames } from "./landing-page";
 import type { LandingOptions } from "./landing-page";
 
-const { openLanding } = launchLandingSuite({ search: DASHBOARD_FIRST });
+const { openLanding } = launchLandingSuite();
 
-/** Opens the landing on `facts`' brand with the External side showing, and waits for its site. */
+/**
+ * Opens the landing on `facts`' brand with the External side showing, and waits for its site.
+ * The address names the theme, so the site renders from the server: the switch and the brand
+ * picker that also lead there keep their own tests in the hero window and theme picker suites.
+ */
 async function openSite(
   facts: SiteFacts,
   viewport: { readonly width: number; readonly height: number },
   options?: LandingOptions
 ): Promise<{ page: Page; site: Locator }> {
-  const page = await openLanding(viewport, options);
-  if (facts.brand !== "elma") {
-    await pickBrand(page, facts.brand);
-  }
-  await showSide(page, "External");
+  // Fjordkraft Företag serves businesses only, so its theme has no private segment.
+  const segment = facts.brand === "fkab" ? "company" : "private";
+  const page = await openLanding(viewport, {
+    ...options,
+    search: `?theme=external-${facts.brand}-${segment}`,
+  });
   const site = brandSite(page, facts.site);
   await site.getByRole("heading", { level: 1 }).waitFor();
   return { page, site };
@@ -83,7 +84,7 @@ const wideFallbackFont = siteFont("normal");
 
 /**
  * The same sans tracked in, so every header has room to spare. TrøndelagKraft's, the widest,
- * fits from -0.06em at 1280 and 1440.
+ * fits from -0.06em at 1280.
  */
 const narrowFont = siteFont("-0.12em");
 
@@ -204,20 +205,58 @@ async function paintedLogo(site: Locator, name: string): Promise<PaintedLogo> {
 }
 
 describe("landing hero window, External side", () => {
-  it.each(ALL_SITES)("states $site's language, logo, hero and section headings", async (facts) => {
-    const { page, site } = await openSite(facts, DESKTOP_VIEWPORT);
-    expect(await site.getAttribute("lang")).toBe(facts.lang);
-    expect(await windowCaption(page)).toContain(facts.domain);
-    await site.getByRole("img", { name: facts.logo, exact: true }).first().waitFor();
-    expect(await site.getByRole("heading", { level: 1 }).textContent()).toBe(facts.heading);
-    // The site sits inside the landing's main, so it draws no main of its own.
-    expect(await page.getByRole("main").count()).toBe(1);
-    expect(await site.getByRole("heading", { level: 2 }).allTextContents()).toEqual(facts.sections);
-    for (const name of facts.labelled) {
-      expect(await site.getByRole("region", { name, exact: true }).count(), name).toBe(1);
+  it.each(ALL_SITES)(
+    "states $site's language, logo, hero, checklist and section headings, and gives every image an alt text and its intrinsic size",
+    async (facts) => {
+      const { page, site } = await openSite(facts, DESKTOP_VIEWPORT);
+      expect(await site.getAttribute("lang")).toBe(facts.lang);
+      expect(await windowCaption(page)).toContain(facts.domain);
+      await site.getByRole("img", { name: facts.logo, exact: true }).first().waitFor();
+      expect(await site.getByRole("heading", { level: 1 }).textContent()).toBe(facts.heading);
+      // The site sits inside the landing's main, so it draws no main of its own.
+      expect(await page.getByRole("main").count()).toBe(1);
+      expect(await site.getByRole("heading", { level: 2 }).allTextContents()).toEqual(facts.sections);
+      for (const name of facts.labelled) {
+        expect(await site.getByRole("region", { name, exact: true }).count(), name).toBe(1);
+      }
+      if ("checklist" in facts) {
+        const checklist = site.getByRole("list", { name: "Fordeler" });
+        expect(await checklist.getByRole("listitem").allTextContents()).toEqual(facts.checklist);
+      }
+
+      // Last, since it makes every image load eagerly.
+      if (facts.photos > 0) {
+        const images = await site.locator("img").evaluateAll(async (elements) =>
+          Promise.all(
+            elements.map(async (element) => {
+              if (!(element instanceof HTMLImageElement)) {
+                return { src: "not an img" };
+              }
+              element.loading = "eager";
+              await element.decode().catch(() => undefined);
+              return {
+                src: element.getAttribute("src"),
+                alt: element.alt,
+                width: Number(element.getAttribute("width")),
+                height: Number(element.getAttribute("height")),
+                naturalWidth: element.naturalWidth,
+                naturalHeight: element.naturalHeight,
+              };
+            })
+          )
+        );
+        expect(images).toHaveLength(facts.photos);
+        for (const image of images) {
+          expect(image.alt, String(image.src)).not.toBe("");
+          expect([image.width, image.height], String(image.src)).toEqual([
+            image.naturalWidth,
+            image.naturalHeight,
+          ]);
+        }
+      }
+      await page.context().close();
     }
-    await page.context().close();
-  });
+  );
 
   it("re-themes the landing from a brand card on Elmera Group's site and moves focus into the new site", async () => {
     const { page, site } = await openSite(ELMERA, DESKTOP_VIEWPORT);
@@ -237,18 +276,13 @@ describe("landing hero window, External side", () => {
     await page.context().close();
   });
 
-  it("lists Fjordkraft's hero checklist", async () => {
-    const { page, site } = await openSite(FJORDKRAFT, DESKTOP_VIEWPORT);
-    const checklist = site.getByRole("list", { name: "Fordeler" });
-    expect(await checklist.getByRole("listitem").allTextContents()).toEqual(FJORDKRAFT.checklist);
-    await page.context().close();
-  });
-
   it.each(ALL_SITES)(
-    "opens every nav menu, any price select and the phone menu Sheet of $site without a page error",
+    "gives every control on $site a target of at least 24px, keeps its phone page from scrolling sideways or clipping copy, and opens every nav menu, any price select and the phone menu Sheet without a page error",
     async (facts) => {
       const { page, site } = await openSite(facts, WIDE_VIEWPORT);
       const errors = collectPageErrors(page);
+      // Before any menu opens: a modal would hide the site. Later clicks scroll their targets back.
+      await expectTargets(site, `${facts.site} at ${String(WIDE_VIEWPORT.width)}px`);
       // A header whose copy is wider than its rows, as in a wide fallback font, folds into the
       // menu Sheet, so its menus open there instead.
       if (await site.getByRole("button", { name: facts.menuButton, exact: true }).isVisible()) {
@@ -286,35 +320,28 @@ describe("landing hero window, External side", () => {
 
       const phone = await openSite(facts, PHONE_VIEWPORT);
       const phoneErrors = collectPageErrors(phone.page);
-      await openMenuSheet(phone.page, phone.site, facts, phoneErrors);
-      await phone.page.context().close();
-    }
-  );
-
-  it.each(ALL_SITES)(
-    "keeps the phone page from scrolling sideways or clipping copy on $site",
-    async (facts) => {
-      const { page, site } = await openSite(facts, PHONE_VIEWPORT);
-      const overflow = await page.evaluate(
+      const overflow = await phone.page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth
       );
       expect(overflow).toBe(0);
       // DOM audit: the site's scroller is the only element under the side that scrolls; it has no role.
-      const scroller = site.locator("[data-site-scroller]");
+      const scroller = phone.site.locator("[data-site-scroller]");
       expect(await scroller.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0);
       // The scroller clips sideways overflow, so also check that every piece of copy and every
       // control sits inside its width: clipped text is as lost as text scrolled out of view.
       expect(await outsideScroller(scroller, "h1, h2, h3, p, li, a, button, blockquote, figcaption")).toEqual(
         []
       );
-      await page.context().close();
+      // After the overflow reads, since the audit scrolls each control into view.
+      await expectTargets(phone.site, `${facts.site} at ${String(PHONE_VIEWPORT.width)}px`);
+      await openMenuSheet(phone.page, phone.site, facts, phoneErrors);
+      await phone.page.context().close();
     }
   );
 
+  // The window's frame stops growing at 1248px, so 1280 is the widest viewport a header meets.
   it.each(
-    ALL_SITES.flatMap((facts) =>
-      [1024, 1280, 1440].map((width) => ({ facts, viewport: { width, height: 900 } }))
-    )
+    ALL_SITES.flatMap((facts) => [1024, 1280].map((width) => ({ facts, viewport: { width, height: 900 } })))
   )(
     "fits every header control of $facts.site inside the window at $viewport.width px in a wide fallback font",
     async ({ facts, viewport }) => {
@@ -328,65 +355,17 @@ describe("landing hero window, External side", () => {
     }
   );
 
-  it.each(
-    ALL_SITES.flatMap((facts) => [1280, 1440].map((width) => ({ facts, viewport: { width, height: 900 } })))
-  )(
-    "keeps the header of $facts.site expanded at $viewport.width px in a font it fits",
-    async ({ facts, viewport }) => {
-      const { page, site } = await openSite(facts, viewport, { prepare: narrowFont });
-      // The header measures its rows in a layout effect and again on resize; let both settle.
-      await settleFrames(page);
-      expect(await site.getByRole("navigation", { name: facts.nav }).isVisible()).toBe(true);
-      expect(await site.getByRole("button", { name: facts.menuButton, exact: true }).isVisible()).toBe(false);
-      await page.context().close();
-    }
-  );
-
-  it.each(
-    ALL_SITES.flatMap((facts) => [
-      { facts, viewport: WIDE_VIEWPORT, at: "desktop" },
-      { facts, viewport: PHONE_VIEWPORT, at: "phone" },
-    ])
-  )("gives every control on $facts.site at $at a target of at least 24px", async ({ facts, viewport }) => {
-    const { page, site } = await openSite(facts, viewport);
-    await expectTargets(site, `${facts.site} at ${String(viewport.width)}px`);
-    await page.context().close();
-  });
-
-  it.each(PHOTO_SITES)("gives every image on $site an alt text and its intrinsic size", async (facts) => {
-    const { page, site } = await openSite(facts, DESKTOP_VIEWPORT);
-    const images = await site.locator("img").evaluateAll(async (elements) =>
-      Promise.all(
-        elements.map(async (element) => {
-          if (!(element instanceof HTMLImageElement)) {
-            return { src: "not an img" };
-          }
-          element.loading = "eager";
-          await element.decode().catch(() => undefined);
-          return {
-            src: element.getAttribute("src"),
-            alt: element.alt,
-            width: Number(element.getAttribute("width")),
-            height: Number(element.getAttribute("height")),
-            naturalWidth: element.naturalWidth,
-            naturalHeight: element.naturalHeight,
-          };
-        })
-      )
-    );
-    expect(images).toHaveLength(facts.photos);
-    for (const image of images) {
-      expect(image.alt, String(image.src)).not.toBe("");
-      expect([image.width, image.height], String(image.src)).toEqual([
-        image.naturalWidth,
-        image.naturalHeight,
-      ]);
-    }
+  it.each(ALL_SITES)("keeps the header of $site expanded at 1280px in a font it fits", async (facts) => {
+    const { page, site } = await openSite(facts, { width: 1280, height: 900 }, { prepare: narrowFont });
+    // The header measures its rows in a layout effect and again on resize; let both settle.
+    await settleFrames(page);
+    expect(await site.getByRole("navigation", { name: facts.nav }).isVisible()).toBe(true);
+    expect(await site.getByRole("button", { name: facts.menuButton, exact: true }).isVisible()).toBe(false);
     await page.context().close();
   });
 
   it.each(ALL_SITES)(
-    "keeps $site's hero and bands on dark surfaces with readable text in dark mode",
+    "keeps $site's hero, bands and header logo readable on dark surfaces in dark mode",
     async (facts) => {
       const { page, site } = await openSite(facts, WIDE_VIEWPORT, { colorScheme: "dark" });
       expect(await page.locator("html").getAttribute("data-theme")).toBe("dark");
@@ -400,14 +379,7 @@ describe("landing hero window, External side", () => {
         const ratio = contrastRatio(band.text, band.surface);
         expect(ratio._tag === "ok" ? ratio.value : 0, `${band.name} text`).toBeGreaterThanOrEqual(4.5);
       }
-      await page.context().close();
-    }
-  );
 
-  it.each(ALL_SITES)(
-    "draws $site's header logo in an ink that reads on the header in dark mode",
-    async (facts) => {
-      const { page, site } = await openSite(facts, WIDE_VIEWPORT, { colorScheme: "dark" });
       const logo = await paintedLogo(site, facts.logo);
       expect(logo.inks.length).toBeGreaterThan(0);
       for (const ink of logo.inks) {

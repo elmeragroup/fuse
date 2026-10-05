@@ -351,6 +351,3 @@ export const ALL_SITES: readonly SiteFacts[] = [
   TELINET,
   FJORDKRAFT_FORETAG,
 ];
-
-/** The sites with photos; Elmera Group's has none, its logos are inline SVG. */
-export const PHOTO_SITES = ALL_SITES.filter((facts) => facts.photos > 0);

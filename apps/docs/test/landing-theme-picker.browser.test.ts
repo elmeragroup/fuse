@@ -121,15 +121,22 @@ async function abortNextScripts(route: Route): Promise<void> {
 }
 
 describe("landing theme picker", () => {
-  it("moves the document's theme and the window's side with each axis", async () => {
+  it("moves the document's theme, the window's side and the URL with each axis, and announces each change politely", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
     expect(await documentTheme(page)).toEqual(OPENING.attributes);
     expect(await shownSide(page)).toBe(OPENING.variant);
+    expect(urlTheme(page)).toBeNull();
+    expect(await announcer(page).count()).toBe(0);
 
     for (const step of STEPS) {
       await choose(page, step);
       await expect.poll(async () => documentTheme(page)).toEqual(step.attributes);
       await expect.poll(async () => shownSide(page)).toBe(step.variant);
+      await expect.poll(() => urlTheme(page)).toBe(step.slug);
+      // Before any colour-scheme pick, which announces through its own callback.
+      await expect
+        .poll(async () => announcer(page).textContent())
+        .toBe(`Theme: ${step.brand}, ${step.segment.toLowerCase()}, ${step.variant.toLowerCase()}, system`);
     }
 
     // The context prefers light, so Dark comes first: a pick that moves nothing would prove nothing.
@@ -176,16 +183,9 @@ describe("landing theme picker", () => {
     await page.context().close();
   });
 
-  it("mirrors the theme in the URL and paints a fresh load of that URL in it", async () => {
-    const page = await openLanding(DESKTOP_VIEWPORT);
-    expect(urlTheme(page)).toBeNull();
-    for (const step of STEPS) {
-      await choose(page, step);
-      await expect.poll(() => urlTheme(page)).toBe(step.slug);
-    }
-    const shared = new URL(page.url()).search;
-    const last = STEPS.at(-1);
-    await page.context().close();
+  it("paints a fresh load of a theme's URL in that theme, before and after the app hydrates", async () => {
+    const last = STEPS.at(-1) ?? OPENING;
+    const shared = `?theme=${last.slug}`;
 
     // Without the app's scripts the page shows only what the server sent and the inline script set.
     const painted = await openLanding(DESKTOP_VIEWPORT, {
@@ -195,13 +195,13 @@ describe("landing theme picker", () => {
         await opening.route("**/*", abortNextScripts);
       },
     });
-    expect(await documentTheme(painted)).toEqual(last?.attributes);
-    expect(await shownSide(painted)).toBe(last?.variant);
+    expect(await documentTheme(painted)).toEqual(last.attributes);
+    expect(await shownSide(painted)).toBe(last.variant);
     await painted.context().close();
 
     const hydrated = await openLanding(DESKTOP_VIEWPORT, { search: shared });
-    await expect.poll(async () => documentTheme(hydrated)).toEqual(last?.attributes);
-    expect(await shownSide(hydrated)).toBe(last?.variant);
+    await expect.poll(async () => documentTheme(hydrated)).toEqual(last.attributes);
+    expect(await shownSide(hydrated)).toBe(last.variant);
     await hydrated.context().close();
   });
 
@@ -273,19 +273,6 @@ describe("landing theme picker", () => {
     await expect.poll(() => urlTheme(page)).toBeNull();
     await expect.poll(async () => documentTheme(page)).toEqual(OPENING.attributes);
     expect(await trigger(page).getAttribute("aria-label")).toBe("Theme: Elmera · Private · External");
-    await page.context().close();
-  });
-
-  it("announces each change politely", async () => {
-    const page = await openLanding(DESKTOP_VIEWPORT);
-    expect(await announcer(page).count()).toBe(0);
-    const step = STEPS[0];
-    if (step !== undefined) {
-      await choose(page, step);
-    }
-    await expect
-      .poll(async () => announcer(page).textContent())
-      .toBe("Theme: Fjordkraft, private, external, system");
     await page.context().close();
   });
 

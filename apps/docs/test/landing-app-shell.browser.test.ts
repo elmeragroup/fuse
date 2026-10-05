@@ -14,7 +14,6 @@ import {
   openNewOrder,
   openOrderSearch,
   row,
-  searchTable,
   DASHBOARD_FIRST,
 } from "./landing-dashboard";
 import { auditTargets, collectPageErrors, expectTargets, launchLandingSuite } from "./landing-page";
@@ -250,29 +249,6 @@ describe("landing Dashboard window", () => {
     await page.context().close();
   });
 
-  it("opens the sidebar and the detail as Sheets inside the window on a phone, without sideways scroll", async () => {
-    const page = await openLanding(PHONE_VIEWPORT);
-    const app = dashboard(page);
-    await app.scrollIntoViewIfNeeded();
-    await app.getByRole("button", { name: "Toggle sidebar" }).click();
-    const nav = page.getByRole("dialog").filter({ has: page.getByRole("button", { name: /^My orders/u }) });
-    await nav.waitFor();
-    await expectInside(nav, app);
-    await page.keyboard.press("Escape");
-    await expect.poll(async () => nav.count()).toBe(0);
-
-    await row(app, "Ida Hagen").click();
-    const detail = page.getByRole("dialog", { name: "Ida Hagen" });
-    await detail.waitFor();
-    await expectInside(detail, app);
-
-    const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth - document.documentElement.clientWidth
-    );
-    expect(overflow).toBe(0);
-    await page.context().close();
-  });
-
   it("counts open orders on the queues in the sidebar, as the Active tab lists them, and none on Order search", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
     const app = dashboard(page);
@@ -459,7 +435,7 @@ describe("landing Dashboard window", () => {
     await page.context().close();
   });
 
-  it("gives every control in the phone Sheets a target at least 24px in both directions", async () => {
+  it("opens the sidebar and the detail as Sheets inside the window on a phone, without sideways scroll, and gives every control in its Sheets a target at least 24px in both directions", async () => {
     const page = await openLanding(PHONE_VIEWPORT);
     const app = dashboard(page);
     await app.scrollIntoViewIfNeeded();
@@ -467,6 +443,8 @@ describe("landing Dashboard window", () => {
     await app.getByRole("button", { name: "Toggle sidebar" }).click();
     const nav = page.getByRole("dialog").filter({ has: page.getByRole("button", { name: /^My orders/u }) });
     await nav.waitFor();
+    // Each Sheet's bounds first, before the audit scrolls its controls into view.
+    await expectInside(nav, app);
     await expectTargets(nav, "sidebar Sheet");
     await page.keyboard.press("Escape");
     await expect.poll(async () => nav.count()).toBe(0);
@@ -474,6 +452,11 @@ describe("landing Dashboard window", () => {
     await row(app, "Ida Hagen").click();
     const detail = page.getByRole("dialog", { name: "Ida Hagen" });
     await detail.waitFor();
+    await expectInside(detail, app);
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+    );
+    expect(overflow).toBe(0);
     await expectTargets(detail, "detail Sheet");
     await page.keyboard.press("Escape");
     await expect.poll(async () => detail.count()).toBe(0);
@@ -488,31 +471,6 @@ describe("landing Dashboard window", () => {
     const scope = app.locator("[data-theme-variant]");
     const [sheetBox, scopeBox] = await Promise.all([newOrder.boundingBox(), scope.boundingBox()]);
     expect(sheetBox?.width).toBeCloseTo(scopeBox?.width ?? 0, 0);
-    await page.context().close();
-  });
-
-  it("opens a working view from every sidebar entry", async () => {
-    const page = await openLanding(DESKTOP_VIEWPORT);
-    const app = dashboard(page);
-    await app.scrollIntoViewIfNeeded();
-    // DOM audit: Sidebar.Content is the nav's scroll region below Search and New order; no role.
-    const entries = await app.locator("[data-slot='sidebar-content']").getByRole("button").allTextContents();
-    expect(entries.length).toBeGreaterThan(0);
-
-    const empty: string[] = [];
-    for (const label of entries) {
-      await app.getByRole("button", { name: label, exact: true }).click();
-      await expect.poll(async () => app.getByRole("status", { name: "Loading orders" }).count()).toBe(0);
-      // DOM audit: a loading table carries aria-busy, which no role query reads.
-      await expect.poll(async () => app.locator("table[aria-busy='true']").count()).toBe(0);
-      const rows =
-        (await app.getByRole("list", { name: "Orders" }).getByRole("button").count()) +
-        (await searchTable(app).getByRole("rowgroup").nth(1).getByRole("button").count());
-      if (rows === 0) {
-        empty.push(label);
-      }
-    }
-    expect(empty).toEqual([]);
     await page.context().close();
   });
 

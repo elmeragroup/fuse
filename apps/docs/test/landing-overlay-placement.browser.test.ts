@@ -37,7 +37,7 @@ async function expectMenuBeside(page: Page, app: Locator, trigger: Locator): Pro
 }
 
 describe.each(VIEWPORTS)("landing Dashboard overlays at $width×$height, scrolled", (viewport) => {
-  it("opens the Campaign list right under its trigger, aligned with it", async () => {
+  it("opens the Campaign list right under its trigger, aligned with it, while the New order Sheet fills the window's right edge and its backdrop covers the window", async () => {
     const { page, app } = await openScrolled(viewport);
     const sheet = await openNewOrder(app);
     const trigger = sheet.getByRole("combobox", { name: "Campaign" });
@@ -55,18 +55,10 @@ describe.each(VIEWPORTS)("landing Dashboard overlays at $width×$height, scrolle
       })
       .toMatchObject({ under: true, left: 0 });
     await expectBeside(list, trigger, windowScope(app));
-    await page.context().close();
-  });
 
-  it("fills the window's right edge with the New order Sheet and covers the window with its backdrop, with Campaign open", async () => {
-    const { page, app } = await openScrolled(viewport);
-    const sheet = await openNewOrder(app);
-    await sheet.getByRole("combobox", { name: "Campaign" }).click();
-    await page.getByRole("listbox").waitFor();
     const scope = windowScope(app);
     // DOM audit: the Sheet's backdrop is presentational and has no role.
     const backdrop = app.locator("[data-slot='sheet-overlay']");
-
     await expect
       .poll(async () => {
         const [s, b, w] = await Promise.all([

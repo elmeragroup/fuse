@@ -143,7 +143,7 @@ describe("landing Dashboard New order", () => {
     await page.context().close();
   });
 
-  it("shows each field's error on an empty New order submit and saves nothing", async () => {
+  it("shows each field's error on an empty New order submit, clears only the power-of-attorney error once its box is checked, and saves nothing", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
     const drafts = OPEN_COUNTS.Drafts;
     const { app, sheet } = await openScrolledNewOrder(page);
@@ -151,6 +151,13 @@ describe("landing Dashboard New order", () => {
 
     await expect.poll(async () => sheet.getByRole("alert").allTextContents()).toEqual(EMPTY_ALERTS);
     expect(await sheet.getByLabel("Name", { exact: true }).getAttribute("aria-invalid")).toBe("true");
+
+    await sheet.getByRole("checkbox", { name: /power of attorney/u }).click();
+    await expect
+      .poll(async () => sheet.getByRole("alert").allTextContents())
+      .toEqual(
+        EMPTY_ALERTS.filter((message) => message !== "The customer must give power of attorney first.")
+      );
     await page.keyboard.press("Escape");
     await expect.poll(async () => sheet.count()).toBe(0);
     // DOM audit: Sidebar.MenuBadge is a sibling of the entry's button and has no role.
@@ -212,11 +219,15 @@ describe("landing Dashboard New order", () => {
     await page.context().close();
   });
 
-  it("flags a Start date with a cleared day on submit and saves nothing", async () => {
+  it("keeps a cleared Start date day cleared while another field is edited, flags it on submit and saves nothing", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
     const { app, sheet } = await openScrolledNewOrder(page);
     await fillNewOrder(sheet, "912 34 567");
     await clearStartDay(sheet);
+
+    // A new value, so the edit renders the form again.
+    await sheet.getByLabel("Name", { exact: true }).fill("Turid Fjellheim Berg");
+    expect(await startDateText(sheet)).toEqual([START_DAY_PLACEHOLDER, "10", "2026"]);
     await sheet.getByRole("button", { name: "Save draft" }).click();
 
     await expect.poll(async () => sheet.getByRole("alert").allTextContents()).toEqual([START_DATE_ERROR]);
@@ -239,34 +250,6 @@ describe("landing Dashboard New order", () => {
     await expect.poll(async () => sheet.count()).toBe(0);
     const detail = app.getByRole("complementary", { name: "Order details" });
     await detail.getByText("StrømSmart+ for Turid Fjellheim, move from 30 Nov").waitFor();
-    await page.context().close();
-  });
-
-  it("keeps a cleared Start date day cleared while another field is edited", async () => {
-    const page = await openLanding(DESKTOP_VIEWPORT);
-    const { sheet } = await openScrolledNewOrder(page);
-    await typeStartDate(sheet, "20102026");
-    await clearStartDay(sheet);
-
-    await sheet.getByLabel("Name", { exact: true }).fill("Turid Fjellheim");
-
-    expect(await startDateText(sheet)).toEqual([START_DAY_PLACEHOLDER, "10", "2026"]);
-    await page.context().close();
-  });
-
-  it("clears the power-of-attorney error once the box is checked, and keeps the others", async () => {
-    const page = await openLanding(DESKTOP_VIEWPORT);
-    const { sheet } = await openScrolledNewOrder(page);
-    await sheet.getByRole("button", { name: "Save draft" }).click();
-    await expect.poll(async () => sheet.getByRole("alert").allTextContents()).toEqual(EMPTY_ALERTS);
-
-    await sheet.getByRole("checkbox", { name: /power of attorney/u }).click();
-
-    await expect
-      .poll(async () => sheet.getByRole("alert").allTextContents())
-      .toEqual(
-        EMPTY_ALERTS.filter((message) => message !== "The customer must give power of attorney first.")
-      );
     await page.context().close();
   });
 });

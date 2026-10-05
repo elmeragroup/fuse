@@ -26,9 +26,12 @@ export default defineConfig({
           name: "browser",
           include: ["test/**/*.browser.test.ts"],
           ...shared,
-          // Browser files keep running one at a time against the shared `next start` server.
-          // Unit files only read that server and the filesystem, so they run in parallel.
-          fileParallelism: false,
+          // Two browser files run at once against the one `next start` server global setup
+          // starts. Each file launches its own Chromium and each test opens its own context, so
+          // files share only that server. Two workers held over three full local runs; widen it
+          // only after the same check.
+          fileParallelism: true,
+          maxWorkers: 2,
         },
       },
     ],

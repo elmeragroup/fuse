@@ -144,7 +144,7 @@ async function expectFocusOnSwitch(page: Page, side: "Internal" | "External"): P
 }
 
 describe("landing hero window, External side", () => {
-  it("flips the content, the variant and the caption with the switch, and loads no site image before", async () => {
+  it("flips the content, the variant and the caption with the switch, keeps the window's height, and loads no site image before", async () => {
     const siteImages: string[] = [];
     const page = await openLanding(DESKTOP_VIEWPORT, {
       prepare: (opening) => {
@@ -178,9 +178,11 @@ describe("landing hero window, External side", () => {
     expect(await brandSite(page, FJORDKRAFT.site).count()).toBe(0);
     expect(siteImages).toEqual([]);
 
+    const before = await liveDemo(page).boundingBox();
     await showSide(page, "External");
     const site = brandSite(page, FJORDKRAFT.site);
     await site.getByRole("heading", { level: 1, name: FJORDKRAFT.heading }).waitFor();
+    expect((await liveDemo(page).boundingBox())?.height).toBe(before?.height);
     // DOM audit: the hero's photo is the site's first `img`; the logo before it is an inline SVG.
     const heroPhoto = site.locator("img").first();
     await expect
@@ -222,31 +224,13 @@ describe("landing hero window, External side", () => {
     await page.context().close();
   });
 
-  it("keeps the Dashboard's selected order through a round trip to External", async () => {
-    const page = await openLanding(DESKTOP_VIEWPORT);
-    const app = dashboard(page);
-    await app.scrollIntoViewIfNeeded();
-    await row(app, "Jonas Eide").click();
-    expect(await row(app, "Jonas Eide").getAttribute("aria-current")).toBe("true");
-
-    await showSide(page, "External");
-    await brandSite(page, ELMERA.site).getByRole("heading", { level: 1 }).waitFor();
-    await showSide(page, "Internal");
-    await expect.poll(async () => isInert(app)).toBe(false);
-
-    expect(await row(app, "Jonas Eide").getAttribute("aria-current")).toBe("true");
-    expect(
-      await app.getByRole("complementary", { name: "Order details" }).getByText("Jonas Eide").count()
-    ).toBeGreaterThan(0);
-    await page.context().close();
-  });
-
-  it("closes the Dashboard's New order Sheet on a flip, so the site stays reachable", async () => {
+  it("closes the Dashboard's New order Sheet on a flip, so the site stays reachable, and keeps the selected order through the round trip", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
     const unlocked = await documentStyles(page);
     const app = dashboard(page);
     await app.scrollIntoViewIfNeeded();
     await row(app, "Jonas Eide").click();
+    expect(await row(app, "Jonas Eide").getAttribute("aria-current")).toBe("true");
     await openNewOrder(app);
 
     await pressSwitchPastModal(page, "External");
@@ -258,6 +242,9 @@ describe("landing hero window, External side", () => {
     await showSide(page, "Internal");
     await expect.poll(async () => isInert(app)).toBe(false);
     expect(await row(app, "Jonas Eide").getAttribute("aria-current")).toBe("true");
+    expect(
+      await app.getByRole("complementary", { name: "Order details" }).getByText("Jonas Eide").count()
+    ).toBeGreaterThan(0);
     await page.context().close();
   });
 
@@ -496,17 +483,6 @@ describe("landing hero window, External side", () => {
     await finishSide(site);
     expect(await opacity(app)).toBe(1);
     expect(await opacity(site)).toBe(0);
-    await page.context().close();
-  });
-
-  it("keeps the window's height through a flip", async () => {
-    const page = await openLanding(DESKTOP_VIEWPORT);
-    const demo = liveDemo(page);
-    const before = await demo.boundingBox();
-    await showSide(page, "External");
-    await brandSite(page, ELMERA.site).getByRole("heading", { level: 1 }).waitFor();
-    const after = await demo.boundingBox();
-    expect(after?.height).toBe(before?.height);
     await page.context().close();
   });
 });
