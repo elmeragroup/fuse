@@ -476,6 +476,7 @@ export function MetersTab(): ReactElement {
                 description="The number on the display, without decimals."
                 denomination="kWh"
                 minValue={0}
+                step={1}
                 defaultValue={21480}
                 isDisabled={picked.remote}
               />

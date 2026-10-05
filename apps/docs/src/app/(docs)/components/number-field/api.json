@@ -213,7 +213,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Step amount for arrows and steppers. Omitted, they step by 1 and a typed value is held to no step grid. Given with `minValue`, a typed value must also land on the step grid counted from `minValue`, or native validation blocks submission, as with `<input type=\"number\" min step>`.",
+          "description": "Step amount for arrows and steppers. Omitted, they step by 1 and a typed value is held to no step grid. Given with `minValue`, a typed value must also land on the step grid counted from `minValue`, or native validation blocks submission, as with `<input type=\"number\" min step>`; pass `step={1}` to accept whole numbers only. Without `minValue`, a step never constrains a typed value.",
           "required": false
         },
         {

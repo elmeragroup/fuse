@@ -350,18 +350,24 @@ describe("NumberField", () => {
           event.preventDefault();
           submitted.push(new FormData(event.currentTarget).get("kwh"));
         }}>
-        <NumberField label="Annual use" name="kwh" minValue={500} step={100} />
+        <NumberField label="Annual use" name="kwh" minValue={550} step={100} />
         <button type="submit">Save</button>
       </form>
     );
     const save = page.getByRole("button", { name: "Save", exact: true });
-    await userEvent.fill(page.getByRole("textbox", { name: "Annual use", exact: true }), "12345");
+    const annualUse = page.getByRole("textbox", { name: "Annual use", exact: true });
+    await userEvent.fill(annualUse, "12345");
     await userEvent.click(save);
     expect(submitted).toEqual([]);
 
-    await userEvent.fill(page.getByRole("textbox", { name: "Annual use", exact: true }), "12300");
+    // On a grid counted from zero, but not on the one counted from minValue.
+    await userEvent.fill(annualUse, "12300");
     await userEvent.click(save);
-    expect(submitted).toEqual(["12300"]);
+    expect(submitted).toEqual([]);
+
+    await userEvent.fill(annualUse, "12350");
+    await userEvent.click(save);
+    expect(submitted).toEqual(["12350"]);
   });
 
   it("crossfades the pending and success faces in the label row, success winning", () => {

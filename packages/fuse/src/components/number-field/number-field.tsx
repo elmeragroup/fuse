@@ -61,7 +61,9 @@ export type NumberFieldProps = {
   /**
    * Step amount for arrows and steppers. Omitted, they step by 1 and a typed value is held to no
    * step grid. Given with `minValue`, a typed value must also land on the step grid counted from
-   * `minValue`, or native validation blocks submission, as with `<input type="number" min step>`.
+   * `minValue`, or native validation blocks submission, as with `<input type="number" min step>`;
+   * pass `step={1}` to accept whole numbers only. Without `minValue`, a step never constrains a
+   * typed value.
    */
   step?: number;
   /** Formatting options, forwarded as base-ui `format`. Locale comes from the provider. */
@@ -154,8 +156,8 @@ export function NumberField({
         min={minValue}
         max={maxValue}
         // base-ui defaults `step` to 1 and puts it on the hidden validation input, so with `min`
-        // an omitted step would reject every typed decimal. "any" still steps by 1 but leaves the
-        // typed value unconstrained.
+        // an omitted step would reject any typed value off the 1-step grid from `min`, such as
+        // 99.5 under a min of 1. "any" still steps by 1 but drops that step constraint.
         step={step ?? "any"}
         format={formatOptions}
         locale={locale}
