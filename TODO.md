@@ -33,6 +33,9 @@
 - Add first-paint fixtures for the written Next Pages, TanStack Start and React Router recipes.
 - Finish release activation, packed Next/Vite fixtures and authentication work in
   [the release runbook](scripts/RELEASE.md).
+- After the first stable release, decide whether a new component, public API or public
+  behavior change needs an issue with a code-owner-agreed scope before work starts, and
+  add that rule to [CONTRIBUTING.md](CONTRIBUTING.md).
 - After upstream tooling uses stable Effect 4 and the release-age guard admits it,
   upgrade and remove prerelease exclusions unless another exception is justified.
 - Retire repo-policy workarounds when upstream lint can require disable reasons
