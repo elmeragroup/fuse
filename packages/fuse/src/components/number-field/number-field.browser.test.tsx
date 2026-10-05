@@ -320,6 +320,50 @@ describe("NumberField", () => {
     expect(submitted).toEqual(["6"]);
   });
 
+  it("submits a typed decimal under minValue when no step is given, and still steps by one", async () => {
+    const submitted: Array<FormDataEntryValue | null> = [];
+    const onChange = vi.fn();
+    renderField(
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          submitted.push(new FormData(event.currentTarget).get("amount"));
+        }}>
+        <NumberField label="Amount" name="amount" minValue={1} onChange={onChange} />
+        <button type="submit">Save</button>
+      </form>
+    );
+    await userEvent.fill(page.getByRole("textbox", { name: "Amount", exact: true }), "99.5");
+    await userEvent.click(page.getByRole("button", { name: "Save", exact: true }));
+    expect(submitted).toEqual(["99.5"]);
+
+    textboxNamed("Amount").focus();
+    await userEvent.keyboard("{ArrowUp}");
+    expect(onChange).toHaveBeenLastCalledWith(100.5);
+  });
+
+  it("holds a typed value to an explicit step counted from minValue, as a native number input does", async () => {
+    const submitted: Array<FormDataEntryValue | null> = [];
+    renderField(
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          submitted.push(new FormData(event.currentTarget).get("kwh"));
+        }}>
+        <NumberField label="Annual use" name="kwh" minValue={500} step={100} />
+        <button type="submit">Save</button>
+      </form>
+    );
+    const save = page.getByRole("button", { name: "Save", exact: true });
+    await userEvent.fill(page.getByRole("textbox", { name: "Annual use", exact: true }), "12345");
+    await userEvent.click(save);
+    expect(submitted).toEqual([]);
+
+    await userEvent.fill(page.getByRole("textbox", { name: "Annual use", exact: true }), "12300");
+    await userEvent.click(save);
+    expect(submitted).toEqual(["12300"]);
+  });
+
   it("crossfades the pending and success faces in the label row, success winning", () => {
     renderField(
       <>
