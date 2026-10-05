@@ -283,6 +283,73 @@ describe("Toast manager", () => {
     expect(quiet.getAttribute("role")).toBe("dialog");
     expect(page.getByRole("alert").query()).toBeNull();
   });
+
+  it("promise keeps the type a success state returns", async () => {
+    const { manager } = renderToast();
+
+    const warned = manager.promise(Promise.resolve(3), {
+      loading: "Recalculating…",
+      success: (count) => ({ type: "warning", title: "Recalculated", description: `${count} warnings` }),
+      error: "Failed",
+    });
+    await expect(warned).resolves.toBe(3);
+    const warning = await waitForToast("Recalculated");
+    expect(warning.getAttribute("data-status")).toBe("warning");
+    expect(warning.getAttribute("role")).toBe("dialog");
+  });
+
+  it("promise derives priority from the type a success state returns", async () => {
+    const { manager } = renderToast();
+
+    const refused = manager.promise(Promise.resolve("refused"), {
+      loading: "Submitting…",
+      success: { type: "error", title: "Order refused" },
+      error: "Failed",
+    });
+    await expect(refused).resolves.toBe("refused");
+    const refusal = await waitForToast("Order refused");
+    expect(refusal.getAttribute("data-status")).toBe("error");
+    expect(refusal.getAttribute("role")).toBe("alertdialog");
+    expect(page.getByRole("alert").element()).toBeTruthy();
+  });
+
+  it("promise without loading shows nothing until the promise settles", async () => {
+    const { manager } = renderToast();
+
+    let resolveOk: (value: string) => void = () => {
+      throw new Error("unresolved");
+    };
+    const ok = new Promise<string>((resolve) => {
+      resolveOk = resolve;
+    });
+    const settled = manager.promise(ok, { success: "Synced", error: "Sync failed" });
+    // A toast added after promise() renders in the same pass as any toast promise() added.
+    manager.add({ title: "Sentinel" });
+    const sentinel = await waitForToast("Sentinel");
+    expect(toastRoots()).toEqual([sentinel]);
+
+    resolveOk("done");
+    await expect(settled).resolves.toBe("done");
+    const success = await waitForToast("Synced");
+    expect(success.getAttribute("data-status")).toBe("success");
+  });
+
+  it("promise moves to the error state when the success factory throws", async () => {
+    const { manager } = renderToast();
+
+    const broken = manager.promise(Promise.resolve("value"), {
+      loading: "Loading…",
+      success: () => {
+        throw new Error("render failed");
+      },
+      error: (cause) => ({ title: "Could not show the result", description: cause.message }),
+    });
+    await expect(broken).rejects.toThrow("render failed");
+    const errorRoot = await waitForToast("Could not show the result");
+    expect(errorRoot.getAttribute("data-status")).toBe("error");
+    expect(queryToastCopy("render failed")).toBeTruthy();
+    expect(queryToastCopy("Loading…")).toBeUndefined();
+  });
 });
 
 describe("Toast chrome", () => {

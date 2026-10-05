@@ -14,7 +14,7 @@ export const metadata = componentMetadata("toast");
 
 <ComponentIntro slug="toast" />
 
-These examples render notifications inside their own preview areas so different examples can run together. In an application, use one provider and viewport for the shared notification stack. Handle the promise returned by `toastManager.promise`; the error toast does not consume its rejection.
+These examples render notifications inside their own preview areas so different examples can run together. In an application, use one provider and viewport for the shared notification stack. Handle the promise returned by `toastManager.promise`; the error toast does not consume its rejection. A `type` returned from `success` or `error`, such as `"warning"`, sets the settled status and its priority. Omit `loading` to show no toast until the promise settles.
 
 <Demo slug="toast" id="statuses" title="Statuses" file="toast-statuses.tsx">
   <ToastStatuses />

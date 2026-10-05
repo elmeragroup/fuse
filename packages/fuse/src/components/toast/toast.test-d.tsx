@@ -31,6 +31,17 @@ test("Viewport container, Close label, and manager faces match the public API", 
   expectTypeOf(manager.promise).toBeFunction();
   expectTypeOf(manager).not.toHaveProperty("toasts");
 
+  void manager.promise(Promise.resolve(1), { success: "Saved", error: "Failed" });
+  void manager.promise(Promise.resolve(1), {
+    loading: "Saving…",
+    success: (count) => ({ type: "warning", description: `${count} warnings` }),
+    error: (cause) => cause.message,
+  });
+  // @ts-expect-error success is required
+  void manager.promise(Promise.resolve(1), { loading: "Saving…", error: "Failed" });
+  // @ts-expect-error error is required
+  void manager.promise(Promise.resolve(1), { loading: "Saving…", success: "Saved" });
+
   const container: RefObject<HTMLElement | null> = { current: null };
   const _tree = (
     <Toast.Provider toastManager={manager} limit={3} timeout={5000}>

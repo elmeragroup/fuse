@@ -6,7 +6,6 @@ import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { Toast as ToastPrimitive } from "@base-ui/react/toast";
 import type {
   ToastManagerAddOptions as PrimitiveAddOptions,
-  ToastManagerPromiseOptions as PrimitivePromiseOptions,
   ToastManagerUpdateOptions as PrimitiveUpdateOptions,
   ToastObject,
 } from "@base-ui/react/toast";
@@ -55,14 +54,20 @@ export type ToastManagerUpdateOptions<Data extends object = object> = Omit<
 };
 
 export type ToastManagerPromiseOptions<Value, Data extends object = object> = {
-  /** Loading state — a description string or a full options object. */
-  loading: string | ToastManagerUpdateOptions<Data>;
-  /** Success state after the promise resolves. */
+  /**
+   * Loading state — a description string or a full options object. Omit it to show
+   * nothing until the promise settles.
+   */
+  loading?: string | ToastManagerUpdateOptions<Data>;
+  /** Success state after the promise resolves. A returned `type` replaces `"success"`. */
   success:
     | string
     | ToastManagerUpdateOptions<Data>
     | ((result: Value) => string | ToastManagerUpdateOptions<Data>);
-  /** Error state after the promise rejects. Defaults high/assertive. */
+  /**
+   * Error state after the promise rejects. Defaults high/assertive. A returned `type`
+   * replaces `"error"`.
+   */
   error:
     | string
     | ToastManagerUpdateOptions<Data>
@@ -74,6 +79,17 @@ export type UseToastManagerReturnValue<Data extends object = object> = {
   add: <T extends Data = Data>(options: ToastManagerAddOptions<T>) => string;
   close: (toastId?: string) => void;
   update: <T extends Data = Data>(toastId: string, options: ToastManagerUpdateOptions<T>) => void;
+  /**
+   * Shows a toast for the life of `promise`. With `loading`, a loading toast appears at
+   * once and moves to the settled state; without it, the settled toast is the first one
+   * shown. The settled status is the `type` that `success` or `error` returns, else
+   * `"success"` or `"error"`, and priority derives from that status unless the state
+   * sets `priority`. A `success` factory that throws moves the toast to the error state.
+   * A loading toast the user closed stays closed when the promise settles.
+   *
+   * @returns The original promise's value, or a rejection with its error (or the error a
+   *   state factory threw). The error toast does not consume the rejection.
+   */
   promise: <Value, T extends Data = Data>(
     promise: Promise<Value>,
     options: ToastManagerPromiseOptions<Value, T>
@@ -166,65 +182,72 @@ function isPromiseStateFactory<Value, Data extends object>(
   return typeof value === "function";
 }
 
-function adaptResolvedPromiseState<Data extends object>(
-  resolved: string | ToastManagerUpdateOptions<Data>,
-  stateType: "loading" | "success" | "error"
-): PrimitiveUpdateOptions<Data> {
-  if (isShorthandDescription(resolved)) {
-    return { description: resolved, priority: derivedPriority(stateType) };
-  }
-  const { priority, ...rest } = resolved;
-  return {
-    ...rest,
-    priority: priority ?? derivedPriority(stateType),
-  };
+function stateOptions<Data extends object>(
+  state: string | ToastManagerUpdateOptions<Data>
+): ToastManagerUpdateOptions<Data> {
+  return isShorthandDescription(state) ? { description: state } : state;
 }
 
-function adaptPromiseOption<Value, Data extends object>(
-  option:
-    | string
-    | ToastManagerUpdateOptions<Data>
-    | ((result: Value) => string | ToastManagerUpdateOptions<Data>),
-  stateType: "loading" | "success" | "error"
-): PrimitiveUpdateOptions<Data> | ((result: Value) => PrimitiveUpdateOptions<Data>) {
-  if (isPromiseStateFactory<Value, Data>(option)) {
-    return (result: Value) => adaptResolvedPromiseState(option(result), stateType);
-  }
-  return adaptResolvedPromiseState(option, stateType);
+function settledStateOptions<Value, Data extends object>(
+  state: PromiseStateInput<Value, Data>,
+  settled: Value
+): ToastManagerUpdateOptions<Data> {
+  return stateOptions(isPromiseStateFactory(state) ? state(settled) : state);
 }
 
 type PrimitiveManager = {
   add: (options: PrimitiveAddOptions<object>) => string;
   update: (id: string, options: PrimitiveUpdateOptions<object>) => void;
   close: (id?: string) => void;
-  promise: <Value>(
-    promiseValue: Promise<Value>,
-    options: PrimitivePromiseOptions<Value, object>
-  ) => Promise<Value>;
 };
 
 function wrapManagerMethods(manager: PrimitiveManager): CreateToastManagerReturnValue {
+  const add: CreateToastManagerReturnValue["add"] = (options) => {
+    // SAFETY: the adapter only writes `priority`; custom `data` is forwarded unchanged.
+    return manager.add(adaptAddOptions(options));
+  };
+  const update: CreateToastManagerReturnValue["update"] = (id, options) => {
+    // SAFETY: the adapter only writes `priority` when `type` changes; other fields pass through.
+    manager.update(id, adaptUpdateOptions(options));
+  };
   return {
     ...manager,
-    add: (options) => {
-      // SAFETY: the adapter only writes `priority`; custom `data` is forwarded unchanged.
-      return manager.add(adaptAddOptions(options));
-    },
-    update: (id, options) => {
-      // SAFETY: the adapter only writes `priority` when `type` changes; other fields pass through.
-      manager.update(id, adaptUpdateOptions(options));
-    },
+    add,
+    update,
     close: (id) => {
       manager.close(id);
     },
+    // Base UI's promiseToast forces `type: "success" | "error"` over the state's own
+    // type, so the lifecycle runs over the wrapped add/update, which derive priority.
     promise: (promiseValue, options) => {
-      // SAFETY: each promise state is normalized to the primitive options shape with a
-      // type-aware priority default; the settled value is the original promise's value.
-      return manager.promise(promiseValue, {
-        loading: adaptResolvedPromiseState(options.loading, "loading"),
-        success: adaptPromiseOption(options.success, "success"),
-        error: adaptPromiseOption(options.error, "error"),
-      });
+      const loadingId =
+        options.loading === undefined
+          ? undefined
+          : add({ ...stateOptions(options.loading), type: "loading" });
+      const settle = <T extends object>(
+        state: ToastManagerUpdateOptions<T>,
+        fallback: "success" | "error"
+      ) => {
+        const type = state.type ?? fallback;
+        if (loadingId === undefined) {
+          add({ ...state, type });
+          return;
+        }
+        // Writing `timeout` even when undefined drops a timeout the loading state set,
+        // so the settled toast falls back to the provider default.
+        update(loadingId, { ...state, type, timeout: state.timeout });
+      };
+      return promiseValue
+        .then((value) => {
+          settle(settledStateOptions(options.success, value), "success");
+          return value;
+        })
+        .catch((cause: unknown) => {
+          // SAFETY: the public `error` factory has always received the rejection as an
+          // `Error`, as Base UI passed it through untyped; rejections are not re-parsed.
+          settle(settledStateOptions(options.error, cause as Error), "error");
+          return Promise.reject(cause);
+        });
     },
   };
 }
