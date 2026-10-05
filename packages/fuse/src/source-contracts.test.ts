@@ -63,6 +63,7 @@ const CLIENT_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["dialog", ["components/dialog/dialog.tsx"]],
   ["dropdown-menu", ["components/dropdown-menu/dropdown-menu.tsx"]],
   ["field", ["components/field/field.tsx"]],
+  ["form", ["components/form/form.tsx"]],
   ["file-trigger", ["react-aria/file-trigger/file-trigger.tsx"]],
   ["focusable", ["react-aria/focusable/focusable.tsx"]],
   ["grid-list", ["react-aria/grid-list/grid-list.tsx"]],
