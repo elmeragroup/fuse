@@ -431,6 +431,9 @@ describe("runtime listeners and layout motion", () => {
   it("installs event listeners only from the reviewed owners", () => {
     expect(filesContainingCode(".addEventListener(").toSorted()).toEqual([
       "components/sidebar/sidebar.tsx",
+      // Native `beforeinput`: React's `onBeforeInput` is a `textInput`/`keypress` polyfill that misses
+      // paste in Firefox. The numeric filter strips a paste before maxlength.
+      "components/text-field/text-field.tsx",
       "hooks/use-form-reset.ts",
       "hooks/use-is-mobile.ts",
       "hooks/use-predicted-events.ts",
