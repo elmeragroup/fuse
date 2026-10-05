@@ -129,6 +129,10 @@
       "import": "./src/flags.ts"
     },
     "./flags/*.svg": "./src/flags/*.svg",
+    "./form": {
+      "types": "./src/form.ts",
+      "import": "./src/form.ts"
+    },
     "./frame": {
       "types": "./src/frame.ts",
       "import": "./src/frame.ts"

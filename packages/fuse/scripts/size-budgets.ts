@@ -77,6 +77,8 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // `pnpm gen component` appends a 0-ceiling row below this marker, so a brand-new packed
   // entry cannot slip through unbudgeted. Replace the 0 with measured × 1.5.
   // plop:js-entry-budget
+  // 2026-10-05: new entry, measured at 2780. A pure wrapper over Base UI's Form.
+  { name: "form", entryFile: "form.js", measuredGzip: 2780, ceilingGzip: 4170 },
   // 2026-10-02: new entry, measured at 59084. Base UI's navigation menu brings its floating positioner, as Popover does.
   { name: "navigation-menu", entryFile: "navigation-menu.js", measuredGzip: 59084, ceilingGzip: 88307 },
   // 2026-09-30: new entry. It composes Select, DropdownMenu, Checkbox, Field and Button; the

@@ -1,0 +1,95 @@
+{
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate. Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "form",
+  "parts": [
+    {
+      "name": "Form",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/form/form.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 283,
+      "props": [
+        {
+          "name": "actionsRef",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "RefObject<FormActions | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A ref to imperative actions. - `validate`: Validates all fields when called. Optionally pass a field name to validate a single field.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: FormState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "errors",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "Errors | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Validation errors returned externally, typically after submission by a server or a form action. This should be an object where keys correspond to the `name` attribute on `<Field.Root>`, and values correspond to error(s) related to that field.",
+          "required": false
+        },
+        {
+          "name": "onFormSubmit",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((formValues: FormValues, eventDetails: { reason: \"none\"; event: Event; }) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Event handler called when the form is submitted. `preventDefault()` is called on the native submit event when used.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<DetailedHTMLProps<FormHTMLAttributes<HTMLFormElement>, HTMLFormElement>, FormState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: FormState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "validationMode",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "FormValidationMode | undefined",
+          "shortType": "Union",
+          "defaultValue": "'onSubmit'",
+          "description": "Determines when the form should be validated. The `validationMode` prop on `<Field.Root>` takes precedence over this. - `onSubmit` (default): validates the field when the form is submitted, afterwards fields will re-validate on change. - `onBlur`: validates a field when it loses focus. - `onChange`: validates the field on every change to its value.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

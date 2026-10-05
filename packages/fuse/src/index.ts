@@ -26,6 +26,7 @@ export * from "./dropdown-menu";
 export * from "./emoji";
 export * from "./empty";
 export * from "./field";
+export * from "./form";
 export * from "./frame";
 export * from "./heading";
 export * from "./input";
