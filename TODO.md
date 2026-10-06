@@ -140,9 +140,10 @@
   `display: none !important`. Decide whether `Item.Root`, and the other parts whose root sets
   `display`, carry a `hidden` reset.
 - Ask Base UI for a way to let a `Form` submit while its Fields are invalid. Its submit handler
-  validates every Field and calls neither `onSubmit` nor `onFormSubmit` while one is invalid,
-  so a schema-validated form, where a change elsewhere clears an error, cannot reach its
-  schema again. Fuse cannot add the opt-out as a pure wrapper. Until then the Form page sends
+  validates its enabled Fields and calls neither `onSubmit` nor `onFormSubmit` while one is
+  invalid, so a schema-validated form, where a change elsewhere clears an error, cannot reach
+  its schema again unless the consumer knows which `errors` key to drop. Fuse cannot add the
+  opt-out as a pure wrapper. Until then the Form page sends
   such forms to a plain `<form>` with `isInvalid` and `errorMessage`, which gives up the errors
   routed by name and the focus on new errors (#170).
 - The interim React Aria fields read React Aria's form context, not Fuse `Form`'s `errors`, so
