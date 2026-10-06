@@ -438,6 +438,9 @@ describe("runtime listeners and layout motion", () => {
       "hooks/use-form-reset.ts",
       "hooks/use-is-mobile.ts",
       "hooks/use-predicted-events.ts",
+      // Window `resize`: a fixed-height clipping scope taller than the viewport never resizes,
+      // yet a shorter viewport still takes room from the popover's side.
+      "react-aria/internal/popover.tsx",
       "theme/color-scheme-browser-platform.ts",
     ]);
   });

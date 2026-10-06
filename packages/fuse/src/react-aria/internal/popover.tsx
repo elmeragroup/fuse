@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import type { ReactElement, ReactNode, RefObject } from "react";
 
 import {
@@ -79,6 +79,40 @@ function placementOnSide(placement: Placement, side: Side): Placement {
   return isCrossAlignment(cross) ? `${side} ${cross}` : side;
 }
 
+/** The vertical sum of `top` and `bottom` lengths read from `style`, in px. */
+function verticalSum(style: CSSStyleDeclaration, top: string, bottom: string): number {
+  return Number.parseFloat(style.getPropertyValue(top)) + Number.parseFloat(style.getPropertyValue(bottom));
+}
+
+/** The private `Dialog` a picker renders as the popup's direct child, or `null` without one. */
+function dialogOf(popover: HTMLElement): HTMLElement | null {
+  return popover.querySelector<HTMLElement>(':scope > [data-slot="dialog"]');
+}
+
+/**
+ * The height `popover` needs to show its content whole, whichever side it sits on. React Aria
+ * limits the popover with an inline `max-height` sized to the room on its current side, so the
+ * popover's own height shrinks with that room; its `scrollHeight` also counts the arrow, which
+ * pokes out only on the top side. The dialog inherits the limit and scrolls instead, so its
+ * `scrollHeight` stays the content's full height; adding its border and the popover's padding
+ * and border gives the popup's natural height on either side. A popup without the dialog falls
+ * back to its own `scrollHeight`.
+ */
+function naturalHeight(popover: HTMLElement): number {
+  const dialog = dialogOf(popover);
+  const view = popover.ownerDocument.defaultView;
+  if (dialog === null || view === null) {
+    return popover.scrollHeight;
+  }
+  const popoverStyle = view.getComputedStyle(popover);
+  return (
+    dialog.scrollHeight +
+    verticalSum(view.getComputedStyle(dialog), "border-top-width", "border-bottom-width") +
+    verticalSum(popoverStyle, "padding-top", "padding-bottom") +
+    verticalSum(popoverStyle, "border-top-width", "border-bottom-width")
+  );
+}
+
 /**
  * The side of the trigger with room for `popover` inside the part of `container` the viewport
  * shows, preferring bottom; the roomier side when neither fits. `undefined` when the trigger is
@@ -99,7 +133,9 @@ function sideWithRoom(
   const { top, bottom } = trigger.getBoundingClientRect();
   const visibleTop = Math.max(bounds.top, 0);
   const visibleBottom = Math.min(bounds.bottom, container.ownerDocument.documentElement.clientHeight);
-  const needed = popover.scrollHeight + offset;
+  // React Aria clamps the popover to the room on its side less one `CONTAINER_PADDING` gutter,
+  // on either side, so the content shows whole only when the room also covers the gutter.
+  const needed = naturalHeight(popover) + offset + CONTAINER_PADDING;
   const below = visibleBottom - bottom;
   const above = top - visibleTop;
   return below >= needed || below >= above ? "bottom" : "top";
@@ -145,22 +181,43 @@ export function Popover({
   // React Aria 3.52.1's `calculatePosition` adds a boundary's page coordinates to the
   // trigger's coordinates in the popover's containing block, so inside a positioned scope that
   // clips its overflow it misjudges the room on each side and never flips. Fuse picks the
-  // vertical side itself there, as the popover mounts, and turns React Aria's flip off. The ref
-  // runs before React Aria's positioning layout effect, and the update lands before paint. The
-  // side is kept with the container it was measured in, so a changed or removed container
-  // returns the choice to React Aria until the next mount measures again.
+  // vertical side itself there and turns React Aria's flip off. The layout effect measures as
+  // the popover mounts, before paint, then again whenever the viewport, container, trigger,
+  // popup or dialog content changes size, so a shrinking viewport moves an open calendar to the
+  // side that still has room. State changes only when the side does; the side depends on the
+  // popup's natural height, which neither the room nor the placement changes, so a flip cannot
+  // measure its way back. The side is kept with the container it was measured in, so a changed
+  // or removed container returns the choice to React Aria until the effect measures again.
+  const [popover, setPopover] = useState<HTMLElement | null>(null);
   const [measured, setMeasured] = useState<{ container: Element; side: Side | undefined }>();
-  const measureSide = useCallback(
-    (popover: HTMLElement | null) => {
-      if (popover !== null && resolvedContainer != null) {
-        setMeasured({
-          container: resolvedContainer,
-          side: sideWithRoom(triggerRef, resolvedContainer, popover, offset),
-        });
+  useLayoutEffect(() => {
+    if (popover === null || resolvedContainer == null) {
+      return undefined;
+    }
+    const measure = () => {
+      const side = sideWithRoom(triggerRef, resolvedContainer, popover, offset);
+      setMeasured((previous) =>
+        previous?.container === resolvedContainer && previous.side === side
+          ? previous
+          : { container: resolvedContainer, side }
+      );
+    };
+    measure();
+    const view = popover.ownerDocument.defaultView;
+    const observer = new ResizeObserver(measure);
+    // The dialog's content box grows with the content even while the clamped popup cannot.
+    const content = dialogOf(popover)?.firstElementChild;
+    for (const element of [resolvedContainer, triggerRef?.current, popover, content]) {
+      if (element != null) {
+        observer.observe(element);
       }
-    },
-    [offset, resolvedContainer, triggerRef]
-  );
+    }
+    view?.addEventListener("resize", measure);
+    return () => {
+      observer.disconnect();
+      view?.removeEventListener("resize", measure);
+    };
+  }, [offset, popover, resolvedContainer, triggerRef]);
   const vertical = requested.startsWith("top") || requested.startsWith("bottom");
   const chosen =
     vertical && measured !== undefined && measured.container === resolvedContainer
@@ -181,7 +238,7 @@ export function Popover({
       offset={offset}
       UNSTABLE_portalContainer={resolvedContainer}
       {...props}
-      ref={measureSide}
+      ref={setPopover}
       {...positioning}
       containerPadding={CONTAINER_PADDING}
       className={composeRenderProps(className, (resolved: string | undefined, renderProps) =>
