@@ -238,11 +238,8 @@ each stand-in once Fuse ships the part.
 - Let `ScrollArea` content truncate. Base UI gives the content `min-width: fit-content`, so a
   child never narrows below its longest line. `app-shell/order-list.tsx` and
   `app-shell/order-detail.tsx` add `contain-inline-size` to their scrolled content.
-- Give `TrondelagkraftLogo` and `GudbrandsdalEnergiLogo` full artwork for light surfaces, and
-  draw Telinet's "Energi" and the Nordic Green Energy wordmark in `currentColor`. Their fixed
-  fills (white, navy in Telinet's and dark green in Nordic Green Energy's) vanish on one of the
-  schemes, so those sites set `logo: "wordmark"` in `brand-site/sites/` and
-  draw the landing's one-ink `brand-wordmark.tsx`, as the Elmera site's brand grid does.
+- Add a Fjordkraft Företag logo to Fuse. Until then the landing's `brand-wordmark.tsx` draws
+  that brand from a mask of `public/landing/logos/fkab.svg`.
 - Give the outline `Button` the ink of the `background` it paints. It inherits the text colour,
   so on a strong brand block its label is light on light. The promo hero in
   `brand-site/site-hero.tsx` passes `quiet="ghost"` for its second action instead.

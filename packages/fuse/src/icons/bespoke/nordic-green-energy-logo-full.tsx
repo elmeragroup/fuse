@@ -4,8 +4,9 @@ import { decorativeSvgProps } from "../bespoke-svg";
 import type { BespokeSvgProps } from "../bespoke-svg";
 
 /**
- * The full Nordic Green Energy logo: the five-leaf mark beside the dark green wordmark, in fixed
- * brand colors. A nonempty `title` names it as an image; without one it renders decorative.
+ * The full Nordic Green Energy logo: the five-leaf mark in its fixed brand colors beside the
+ * wordmark in `currentColor`. A nonempty `title` names it as an image; without one it renders
+ * decorative.
  *
  * @param props - SVG props, plus the optional accessible `title`.
  * @returns The full logo as an SVG.
@@ -19,7 +20,7 @@ export function NordicGreenEnergyLogoFull({ title, ...props }: BespokeSvgProps):
       {...decorativeSvgProps(title)}
       {...props}>
       {title ? <title>{title}</title> : null}
-      <g fill="#00453B">
+      <g fill="currentColor">
         <path d="M280.436 62.4101H269.725L251.807 35.2864V62.4101H241.096V18.4321H251.807L269.725 45.6821V18.4321H280.436V62.4101Z" />
         <path d="M294.875 60.7204C292.138 59.2571 289.99 57.1727 288.421 54.4567C286.853 51.7406 286.074 48.5666 286.074 44.9347C286.074 41.3028 286.869 38.1814 288.453 35.4443C290.043 32.7072 292.211 30.6122 294.969 29.1489C297.728 27.6856 300.817 26.954 304.239 26.954C307.66 26.954 310.755 27.6856 313.508 29.1489C316.266 30.6122 318.435 32.7124 320.025 35.4443C321.614 38.1814 322.404 41.3449 322.404 44.9347C322.404 48.5245 321.598 51.688 319.993 54.4251C318.382 57.1622 316.193 59.2571 313.413 60.7204C310.634 62.1837 307.534 62.9154 304.112 62.9154C300.691 62.9154 297.607 62.1837 294.869 60.7204H294.875ZM309.345 51.3879C310.787 49.8825 311.508 47.735 311.508 44.9347C311.508 42.1344 310.808 39.9868 309.408 38.4814C308.008 36.976 306.286 36.2286 304.239 36.2286C302.191 36.2286 300.417 36.9707 299.038 38.4551C297.659 39.9395 296.97 42.0976 296.97 44.9399C296.97 47.7823 297.649 49.8878 299.007 51.3932C300.365 52.8986 302.065 53.6461 304.112 53.6461C306.16 53.6461 307.902 52.8934 309.345 51.3932V51.3879Z" />
         <path d="M343.522 28.7384C345.401 27.633 347.49 27.0803 349.785 27.0803V38.4183H346.843C344.169 38.4183 342.164 38.992 340.827 40.1395C339.49 41.287 338.821 43.303 338.821 46.1875V62.4154H328.11V27.4593H338.821V33.2862C340.074 31.365 341.642 29.849 343.522 28.7436V28.7384Z" />

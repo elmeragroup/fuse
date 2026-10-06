@@ -96,7 +96,12 @@ export default function IconsPage(): ReactElement {
       <p>
         Each brand logo accepts <code>variant=&quot;full&quot;</code> (default) or{" "}
         <code>variant=&quot;mark&quot;</code>. <code>BrandLogo</code> takes a brand code and resolves the
-        right one for you — useful when the brand is a runtime value rather than a literal.
+        right one for you — useful when the brand is a runtime value rather than a literal. The full logos of
+        the energy brands (Elmera Group, Fjordkraft, TrøndelagKraft, Gudbrandsdal Energi, Telinet and Nordic
+        Green Energy) paint their lettering in <code>currentColor</code>, so the name takes the text colour
+        around it; <code>TrumfLogo</code> keeps its white lettering on a <code>currentColor</code> badge.
+        Marks drawn in brand colours keep them: TrøndelagKraft&apos;s yellow lamp, Gudbrandsdal Energi&apos;s
+        orange gradient, Telinet&apos;s cyan dots and Nordic Green Energy&apos;s five leaves.
       </p>
       <pre>
         <code>{BRAND_LOGO}</code>

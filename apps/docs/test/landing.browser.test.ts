@@ -165,6 +165,31 @@ describe("landing page", () => {
     await page.context().close();
   });
 
+  it("paints every picker wordmark in its tile's text colour alone", async () => {
+    const page = await openLanding(DESKTOP_VIEWPORT);
+    const picker = page.getByRole("region", { name: /Pick a brand/u });
+    await expect.poll(async () => picker.getByRole("img").count()).toBe(7);
+    // An SVG wordmark draws in the fill of each part outside its defs; a masked one draws in its
+    // own background colour. Either way the oracle is the text colour of the tile around it.
+    const stray = await picker.getByRole("img").evaluateAll((marks) =>
+      marks.flatMap((mark) => {
+        const text = getComputedStyle(mark.parentElement ?? mark).color;
+        const parts = [...mark.querySelectorAll("path, polygon, rect")].filter(
+          (part) => part.closest("defs") === null
+        );
+        const inks =
+          parts.length === 0
+            ? [getComputedStyle(mark).backgroundColor]
+            : parts.map((part) => getComputedStyle(part).fill);
+        return inks
+          .filter((ink) => ink !== text)
+          .map((ink) => `${mark.getAttribute("aria-label") ?? ""}: ${ink}, not ${text}`);
+      })
+    );
+    expect(stray).toEqual([]);
+    await page.context().close();
+  });
+
   it("gives every invoice row's button a target at least 24px tall", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
     await page.getByRole("tab", { name: "Invoices" }).click();
