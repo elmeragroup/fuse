@@ -16,7 +16,7 @@ const brandPicker = tv({
     title: "text-4xl sm:text-landing-h2 tracking-landing-h2 font-semibold font-heading text-balance",
     titleAccent: "block text-primary",
     lede: "text-base sm:text-lg leading-relaxed text-pretty text-muted-foreground",
-    rail: "landing-rail sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-6 max-w-landing sm:gap-4 xl:grid-cols-6 flex w-full scroll-px-6 gap-3 overflow-x-auto px-6 pb-2 lg:px-0",
+    rail: "landing-rail sm:grid sm:grid-cols-3 md:grid-cols-4 sm:overflow-visible sm:px-6 max-w-landing sm:gap-4 2xl:grid-cols-7 flex w-full scroll-px-6 gap-3 overflow-x-auto px-6 pb-2 lg:px-0",
     tile: "landing-press group sm:w-auto flex w-70 shrink-0 cursor-pointer flex-col gap-4 rounded-xl text-left outline-none",
     // The picked brand's tile fills with its primary, so the active theme reads at a glance.
     shot: "flex aspect-4/3 items-center justify-center overflow-hidden rounded-xl bg-card text-foreground ring-1 ring-border transition group-focus-visible:ring-3 group-focus-visible:ring-ring/50 group-aria-pressed:bg-primary group-aria-pressed:text-primary-foreground group-aria-pressed:ring-2 group-aria-pressed:ring-primary group-aria-pressed:ring-offset-2 group-aria-pressed:ring-offset-background",

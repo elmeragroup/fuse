@@ -46,11 +46,41 @@ import { glyph } from "./og-icons";
 import { css, ogTheme } from "./og-theme";
 import type { OgTheme } from "./og-theme";
 
+/** The matrix cell's design size; every metric inside scales with the width the grid fits. */
+const MATRIX_CELL = { width: 90, height: 98 } as const;
+
+/** The gap between matrix cells. */
+const MATRIX_GAP = 10;
+
+/**
+ * The column count and cell width that draw `count` matrix cells largest inside {@link ART_BOX}.
+ * Derived from the count, so a brand or theme added to the matrix shrinks the cells to fit.
+ */
+function matrixGrid(count: number): { readonly columns: number; readonly cellWidth: number } {
+  let best = { columns: 1, cellWidth: 0 };
+  for (let columns = 1; columns <= count; columns += 1) {
+    const rows = Math.ceil(count / columns);
+    const byWidth = (ART_BOX.width - (columns - 1) * MATRIX_GAP) / columns;
+    const byHeight =
+      ((ART_BOX.height - (rows - 1) * MATRIX_GAP) / rows) * (MATRIX_CELL.width / MATRIX_CELL.height);
+    const cellWidth = Math.floor(Math.min(byWidth, byHeight));
+    if (cellWidth > best.cellWidth) {
+      best = { columns, cellWidth };
+    }
+  }
+  return best;
+}
+
 /** One theme as a cell: its background, a primary button at its own radius, three role chips. */
-function MatrixCell({ theme }: { readonly theme: OgTheme }): ReactElement {
+function MatrixCell({ theme, width }: { readonly theme: OgTheme; readonly width: number }): ReactElement {
   const { colors } = theme;
+  const scale = width / MATRIX_CELL.width;
+  const px = (size: number) => Math.round(size * scale);
   const chip = (role: OgColorRole) => (
-    <div key={role} style={{ width: 18, height: 18, borderRadius: 9, backgroundColor: css(colors[role]) }} />
+    <div
+      key={role}
+      style={{ width: px(18), height: px(18), borderRadius: px(9), backgroundColor: css(colors[role]) }}
+    />
   );
   return (
     <div
@@ -58,20 +88,22 @@ function MatrixCell({ theme }: { readonly theme: OgTheme }): ReactElement {
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        width: 90,
-        height: 98,
-        padding: 12,
-        borderRadius: Math.min(16, theme.dimensions.radius + 4),
+        width,
+        height: px(MATRIX_CELL.height),
+        padding: px(12),
+        borderRadius: px(Math.min(16, theme.dimensions.radius + 4)),
         border: `2px solid ${css(colors.border)}`,
         backgroundColor: css(colors.background),
       }}>
-      <div style={{ display: "flex", gap: 5 }}>{(["brand", "feature", "secondary"] as const).map(chip)}</div>
+      <div style={{ display: "flex", gap: px(5) }}>
+        {(["brand", "feature", "secondary"] as const).map(chip)}
+      </div>
       <div
         style={{
           display: "flex",
-          height: 26,
-          width: 64,
-          borderRadius: Math.min(13, theme.dimensions["radius-button"]),
+          height: px(26),
+          width: px(64),
+          borderRadius: px(Math.min(13, theme.dimensions["radius-button"])),
           backgroundColor: css(colors.primary),
         }}
       />
@@ -79,22 +111,37 @@ function MatrixCell({ theme }: { readonly theme: OgTheme }): ReactElement {
   );
 }
 
-/** Theme matrix: the twenty legal themes as cells, internal rows over external rows. */
-const themeMatrix: DocsArt = () => (
-  <div
-    style={{
-      display: "flex",
-      flexWrap: "wrap",
-      alignContent: "center",
-      gap: 10,
-      width: ART_BOX.width,
-      height: ART_BOX.height,
-    }}>
-    {LEGAL_THEMES.map((theme) => (
-      <MatrixCell key={themeSlug(theme)} theme={ogTheme(themeSlug(theme))} />
-    ))}
-  </div>
+/** Theme matrix: every legal theme as a cell, internal rows over external rows. */
+const themeMatrix: DocsArt = () => {
+  const { columns, cellWidth } = matrixGrid(LEGAL_THEMES.length);
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        alignContent: "center",
+        gap: MATRIX_GAP,
+        width: columns * cellWidth + (columns - 1) * MATRIX_GAP,
+        height: ART_BOX.height,
+      }}>
+      {LEGAL_THEMES.map((theme) => (
+        <MatrixCell key={themeSlug(theme)} theme={ogTheme(themeSlug(theme))} width={cellWidth} />
+      ))}
+    </div>
+  );
+};
+
+/** The gap between brand cells in a segment row. */
+const BRAND_GAP = 10;
+
+/** One brand cell's width, so a segment row of every brand spans {@link ART_BOX} at most. */
+const BRAND_CELL_WIDTH = Math.min(
+  74,
+  Math.floor((ART_BOX.width - (BRAND_CODES.length - 1) * BRAND_GAP) / BRAND_CODES.length)
 );
+
+/** The mark's longest side inside a brand cell. */
+const BRAND_MARK_SIZE = Math.min(44, BRAND_CELL_WIDTH - 18);
 
 /** Brands & segments: each brand's mark per segment, in its external palette; pinned gaps stay empty. */
 const brandsAndSegments: DocsArt = async (docs) => {
@@ -118,7 +165,7 @@ const brandsAndSegments: DocsArt = async (docs) => {
       <span style={{ fontSize: 24, fontWeight: 500, color: css(docs.colors["muted-foreground"]) }}>
         {SEGMENT_LABELS[segment]}
       </span>
-      <div style={{ display: "flex", gap: 10 }}>
+      <div style={{ display: "flex", gap: BRAND_GAP }}>
         {cells
           .filter((cell) => cell.segment === segment)
           .map(
@@ -136,7 +183,7 @@ const brandsAndSegments: DocsArt = async (docs) => {
                   key={brand}
                   style={{
                     display: "flex",
-                    width: 74,
+                    width: BRAND_CELL_WIDTH,
                     height: 124,
                     borderRadius: 14,
                     border: `2px dashed ${css(docs.colors.border)}`,
@@ -149,15 +196,17 @@ const brandsAndSegments: DocsArt = async (docs) => {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    width: 74,
+                    width: BRAND_CELL_WIDTH,
                     height: 124,
                     borderRadius: 14,
                     backgroundColor: css(theme.colors["primary-soft"]),
                   }}>
                   <img
                     src={mark.src}
-                    width={Math.round(Math.min(44, 44 * mark.aspect))}
-                    height={Math.round(Math.min(44, 44 * mark.aspect) / mark.aspect)}
+                    width={Math.round(Math.min(BRAND_MARK_SIZE, BRAND_MARK_SIZE * mark.aspect))}
+                    height={Math.round(
+                      Math.min(BRAND_MARK_SIZE, BRAND_MARK_SIZE * mark.aspect) / mark.aspect
+                    )}
                     alt=""
                   />
                 </div>

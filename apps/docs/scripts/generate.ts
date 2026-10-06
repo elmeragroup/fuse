@@ -11,7 +11,7 @@
  *     change is a reviewable diff; a drift check fails when a committed one is stale;
  *   • the component-page manifest the nav, page intros and QuickNav import;
  *   • the tokens each component's recipe reads, and the site-wide token reference;
- *   • the `/api/themes` catalog of the 20 legal permutations, plus Figma DTCG files;
+ *   • the `/api/themes` catalog of the 24 legal permutations, plus Figma DTCG files;
  *   • the measured bundle sizes the Tokens page publishes;
  *   • the locales, density metrics and component index the landing page states;
  *   • the sRGB and px theme values the Open Graph images paint;

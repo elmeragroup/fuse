@@ -25,6 +25,8 @@ const SLUGS = [
   "internal-fkse-private",
   "internal-elma-private",
   "internal-elma-company",
+  "internal-ngfi-private",
+  "internal-ngfi-company",
   "external-fkas-private",
   "external-fkas-company",
   "external-tkas-private",
@@ -35,6 +37,8 @@ const SLUGS = [
   "external-fkse-private",
   "external-elma-private",
   "external-elma-company",
+  "external-ngfi-private",
+  "external-ngfi-company",
 ] as const;
 
 // Counts the derived `secondary-hover` role, the `radius-step` rung spacing and the two

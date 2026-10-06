@@ -74,7 +74,7 @@ function token<T extends { $type: string; $value: unknown }>(
 
 describe("Figma DTCG documents", () => {
   it("emits one file per legal theme with a shared token name set", () => {
-    expect(LEGAL_SLUGS).toHaveLength(20);
+    expect(LEGAL_SLUGS).toHaveLength(24);
     expect(FIGMA_THEME_INDEX.format).toBe("figma");
     for (const slug of ILLEGAL_SLUGS) {
       expect(LEGAL_SLUGS).not.toContain(slug);

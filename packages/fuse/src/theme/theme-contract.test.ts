@@ -3,6 +3,10 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
+import * as Hex from "@elmeragroup/color/hex";
+import * as Oklch from "@elmeragroup/color/oklch";
+import { getOrThrow } from "@elmeragroup/color/result";
+
 import { parseStyleRules } from "../../test/css-rules";
 import { declaredThemeValue, SECONDARY_HOVER_CSS } from "../../test/theme-css-contract";
 import { assertMustOverrideCoverage, composeTheme } from "./compose-theme";
@@ -56,6 +60,7 @@ const EXPECTED_SELECTORS = [
   '[data-theme-brand="fkab"]',
   '[data-theme-brand="fkse"]',
   '[data-theme-brand="elma"]',
+  '[data-theme-brand="ngfi"]',
   '[data-theme-variant="internal"]',
   '[data-theme-variant="external"][data-theme-brand="fkas"]',
   '[data-theme-variant="external"][data-theme-brand="fkas"][data-theme-segment="company"]',
@@ -64,6 +69,7 @@ const EXPECTED_SELECTORS = [
   '[data-theme-variant="external"][data-theme-brand="fkab"]',
   '[data-theme-variant="external"][data-theme-brand="fkse"]',
   '[data-theme-variant="external"][data-theme-brand="elma"]',
+  '[data-theme-variant="external"][data-theme-brand="ngfi"]',
 ];
 
 /** A dark palette body's direct/descendant selector pair. */
@@ -90,12 +96,14 @@ const COMPANY = '[data-theme-segment="company"]';
  */
 const EXPECTED_DARK_SELECTORS = [
   darkPalette(INTERNAL),
-  ...["fkas", "tkas", "guen", "fkab", "fkse", "elma"].map((brand) => darkBrandScoped(INTERNAL, brand)),
+  ...["fkas", "tkas", "guen", "fkab", "fkse", "elma", "ngfi"].map((brand) =>
+    darkBrandScoped(INTERNAL, brand)
+  ),
   darkPalette(`${EXTERNAL}[data-theme-brand="fkas"]`),
   darkBrandScoped(EXTERNAL, "fkas"),
   darkPalette(`${EXTERNAL}[data-theme-brand="fkas"]${COMPANY}`),
   darkBrandScoped(`${EXTERNAL}${COMPANY}`, "fkas"),
-  ...["tkas", "guen", "fkab", "fkse", "elma"].flatMap((brand) => [
+  ...["tkas", "guen", "fkab", "fkse", "elma", "ngfi"].flatMap((brand) => [
     darkPalette(`${EXTERNAL}[data-theme-brand="${brand}"]`),
     darkBrandScoped(EXTERNAL, brand),
   ]),
@@ -333,7 +341,6 @@ describe("elma identity", () => {
     expect(PRIMITIVES["brand-elma"]).toBe("oklch(0.28898 0.051828 217.7)");
     expect(PRIMITIVES["brand-elma-foreground"]).toBe("oklch(1 0 0)");
     expect(PRIMITIVES).not.toHaveProperty("brand-steddi");
-    expect(PRIMITIVES).not.toHaveProperty("brand-ngef");
     expect(PRIMITIVES).not.toHaveProperty("brand-trumf");
 
     for (const theme of elmaThemes) {
@@ -367,6 +374,79 @@ describe("elma identity", () => {
       expect(externalRule?.declarations.find((entry) => entry.name === key)?.value).toBe(
         EXTERNAL_PALETTES.elma[key]
       );
+    }
+  });
+});
+
+/** A token literal as the opaque sRGB hex Figma shows, through the shared color parser. */
+function figmaHex(value: string): string {
+  return Hex.formatOpaque(Oklch.toSrgb(getOrThrow(Oklch.parse(value)))).toUpperCase();
+}
+
+describe("ngfi identity", () => {
+  // The oracle is the Nordic Green Energy Material 3 scheme in Figma file
+  // q1sEYcZWmf1HUeuiaJFqm6, section 129:12419, read 2026-10-05, mapped to roles by meaning.
+  const LIGHT_SCHEME: readonly (readonly [TokenName, string])[] = [
+    ["background", "#F7FAF6"], // surface
+    ["foreground", "#181C1A"], // on-surface
+    ["card", "#FFFFFF"], // surface-container-lowest
+    ["card-foreground", "#181C1A"],
+    ["card-soft", "#F1F4F1"], // surface-container-low
+    ["muted-foreground", "#3F4944"], // on-surface-variant
+    ["primary", "#004B39"],
+    ["primary-foreground", "#FFFFFF"], // on-primary
+    ["primary-soft", "#CEEEDF"], // secondary-container
+    ["primary-soft-foreground", "#345045"], // on-secondary-container
+    ["secondary", "#181C1A"],
+    ["secondary-soft", "#CEEEDF"],
+    ["feature", "#1E725A"], // primary-container
+    ["feature-foreground", "#FFFFFF"], // on-primary-container
+    ["feature-bright", "#87D6B9"], // primary-fixed-dim
+    ["border", "#BEC9C3"], // outline-variant
+  ];
+  const DARK_SCHEME: readonly (readonly [TokenName, string])[] = [
+    ["background", "#101412"], // surface
+    ["foreground", "#E0E3E0"], // on-surface
+    ["card", "#1C201E"], // surface-container
+    ["card-soft", "#101412"],
+    ["primary", "#87D6B9"],
+    ["primary-foreground", "#00382A"], // on-primary
+    ["primary-soft", "#29453B"], // secondary-container
+    ["primary-soft-foreground", "#BCDBCD"], // on-secondary-container
+    ["secondary", "#E0E3E0"],
+    ["secondary-foreground", "#1A362C"], // on-secondary
+    ["feature", "#005742"], // primary-container
+    ["feature-foreground", "#A9F9DA"], // on-primary-container
+    ["feature-bright", "#1C201E"], // surface-container, the card tone as on the other dark sheets
+  ];
+
+  it("accepts the four legal ngfi slugs and pins the Nordic Green Energy brand pair", () => {
+    const ngfiThemes = LEGAL_THEMES.filter((theme) => theme.brand === "ngfi");
+    expect(ngfiThemes.map(themeSlug)).toEqual([
+      "internal-ngfi-private",
+      "internal-ngfi-company",
+      "external-ngfi-private",
+      "external-ngfi-company",
+    ]);
+    expect(figmaHex(PRIMITIVES["brand-ngfi"])).toBe("#004B39");
+    expect(PRIMITIVES["brand-ngfi-foreground"]).toBe("oklch(1 0 0)");
+    for (const theme of ngfiThemes) {
+      const composed = composeTheme(theme);
+      expect(composed.brand).toBe("var(--brand-ngfi)");
+      expect(composed["brand-foreground"]).toBe("var(--brand-ngfi-foreground)");
+    }
+  });
+
+  it("paints the external light and dark roles from the Nordic Green Energy scheme", () => {
+    for (const segment of ["private", "company"] as const) {
+      const light = composeTheme({ variant: "external", brand: "ngfi", segment });
+      const dark = composeTheme({ variant: "external", brand: "ngfi", segment }, "dark");
+      for (const [role, hex] of LIGHT_SCHEME) {
+        expect(figmaHex(light[role]), `light ${segment} ${role}`).toBe(hex);
+      }
+      for (const [role, hex] of DARK_SCHEME) {
+        expect(figmaHex(dark[role]), `dark ${segment} ${role}`).toBe(hex);
+      }
     }
   });
 });
@@ -417,7 +497,7 @@ describe("external variant layer roles", () => {
         expect(palette, brand).not.toHaveProperty(key);
       }
     }
-    for (const brand of ["fkas", "tkas", "guen", "fkab", "fkse", "elma"]) {
+    for (const brand of ["fkas", "tkas", "guen", "fkab", "fkse", "elma", "ngfi"]) {
       const selector = `[data-theme-variant="external"][data-theme-brand="${brand}"]`;
       for (const [key, value] of Object.entries(external)) {
         expect(declaration(rules, selector, key), `${selector} ${key}`).toBe(value);
@@ -433,7 +513,7 @@ describe("external variant layer roles", () => {
 
 describe("external soft tones", () => {
   it("uses P-95 for primary-soft wherever the brand sheet supplies it, the same tone as secondary-soft", () => {
-    for (const brand of ["fkas", "tkas", "fkse", "elma"] as const) {
+    for (const brand of ["fkas", "tkas", "fkse", "elma", "ngfi"] as const) {
       expect(EXTERNAL_PALETTES[brand]["primary-soft"], brand).toBe(
         EXTERNAL_PALETTES[brand]["secondary-soft"]
       );

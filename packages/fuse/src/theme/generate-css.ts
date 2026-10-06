@@ -247,7 +247,7 @@ function emitBrandPalettes(colorScheme: ResolvedColorScheme): string {
       // A light-only departure still gets its dark rule, so the four-attribute dark
       // segment selector wins the tie with the light segment selector by specificity.
       const departs = colorScheme === "light" ? lightDeparts : lightDeparts || differsFrom(base, tokens);
-      // tkas, guen and elma have a company segment but no sheet, so they get no rule in
+      // tkas, guen, elma and ngfi have a company segment but no sheet, so they get no rule in
       // either scheme.
       if (!departs) continue;
       const segment = `[data-theme-segment="${theme.segment}"]`;
