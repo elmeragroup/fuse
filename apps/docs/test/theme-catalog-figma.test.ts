@@ -110,9 +110,9 @@ describe("Figma DTCG documents", () => {
       $type: "color",
       $value: "{color.error}",
     });
-    expect(token<FigmaColorToken>(document.color, "sidebar-brand")).toEqual({
+    expect(token<FigmaColorToken>(document.color, "sidebar-brand-foreground")).toEqual({
       $type: "color",
-      $value: "{color.brand}",
+      $value: "{color.brand-foreground}",
     });
     expect(token<FigmaColorToken>(document.color, "brand-fkab")).toEqual({
       $type: "color",

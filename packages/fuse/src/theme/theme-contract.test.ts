@@ -66,17 +66,43 @@ const EXPECTED_SELECTORS = [
   '[data-theme-variant="external"][data-theme-brand="elma"]',
 ];
 
-/** The eight dark bodies in emission order, each pinned as its direct/descendant pair. */
+/** A dark palette body's direct/descendant selector pair. */
+function darkPalette(selector: string): string[] {
+  return [`[data-theme="dark"]${selector}`, `[data-theme="dark"] ${selector}`];
+}
+
+/** A brand-scoped companion's pair: the scheme and qualifiers weigh nothing, the brand one attribute. */
+function darkBrandScoped(qualifiers: string, brand: string): string[] {
+  const subject = `[data-theme-brand="${brand}"]`;
+  return [
+    `:where([data-theme="dark"]${qualifiers})${subject}`,
+    `:where([data-theme="dark"] ${qualifiers})${subject}`,
+  ];
+}
+
+const INTERNAL = '[data-theme-variant="internal"]';
+const EXTERNAL = '[data-theme-variant="external"]';
+const COMPANY = '[data-theme-segment="company"]';
+
+/**
+ * The dark bodies in emission order. The internal palette is shared, and each internal brand
+ * then gets its brand-scoped companion. Each external palette rule is followed by its own.
+ */
 const EXPECTED_DARK_SELECTORS = [
-  '[data-theme-variant="internal"]',
-  '[data-theme-variant="external"][data-theme-brand="fkas"]',
-  '[data-theme-variant="external"][data-theme-brand="fkas"][data-theme-segment="company"]',
-  '[data-theme-variant="external"][data-theme-brand="tkas"]',
-  '[data-theme-variant="external"][data-theme-brand="guen"]',
-  '[data-theme-variant="external"][data-theme-brand="fkab"]',
-  '[data-theme-variant="external"][data-theme-brand="fkse"]',
-  '[data-theme-variant="external"][data-theme-brand="elma"]',
-].map((selector) => [`[data-theme="dark"]${selector}`, `[data-theme="dark"] ${selector}`]);
+  darkPalette(INTERNAL),
+  ...["fkas", "tkas", "guen", "fkab", "fkse", "elma"].map((brand) => darkBrandScoped(INTERNAL, brand)),
+  darkPalette(`${EXTERNAL}[data-theme-brand="fkas"]`),
+  darkBrandScoped(EXTERNAL, "fkas"),
+  darkPalette(`${EXTERNAL}[data-theme-brand="fkas"]${COMPANY}`),
+  darkBrandScoped(`${EXTERNAL}${COMPANY}`, "fkas"),
+  ...["tkas", "guen", "fkab", "fkse", "elma"].flatMap((brand) => [
+    darkPalette(`${EXTERNAL}[data-theme-brand="${brand}"]`),
+    darkBrandScoped(EXTERNAL, brand),
+  ]),
+];
+
+/** The derived roles that read the brand pointer, which only companion rules declare in dark. */
+const BRAND_SCOPED_ROLES = ["sidebar-brand", "sidebar-brand-foreground"];
 
 describe("theme contract", () => {
   const css = generateThemesCss();
@@ -105,11 +131,16 @@ describe("theme contract", () => {
         rule.selector
       ).toEqual([...EXTERNAL_RESET_KEYS, "color-scheme"]);
     }
+    // A dark palette rule leaves the brand-scoped roles to its companion, which declares
+    // them alone. The palette rule beside it already sets the color scheme.
     for (const rule of rules.filter((entry) => entry.selector.includes('[data-theme="dark"]'))) {
+      const expected = rule.selector.startsWith(":where(")
+        ? BRAND_SCOPED_ROLES
+        : [...THEME_RESET_KEYS.filter((key) => !BRAND_SCOPED_ROLES.includes(key)), "color-scheme"];
       expect(
         rule.declarations.map((declaration) => declaration.name),
         rule.selector
-      ).toEqual([...THEME_RESET_KEYS, "color-scheme"]);
+      ).toEqual(expected);
     }
   });
 
@@ -121,19 +152,25 @@ describe("theme contract", () => {
     for (const colorScheme of ["light", "dark"] as const) {
       for (const theme of LEGAL_THEMES) {
         const slug = themeSlug(theme);
-        const baseSelector =
+        const brand = `[data-theme-brand="${theme.brand}"]`;
+        const segment = `[data-theme-segment="${theme.segment}"]`;
+        // Each slot pairs a palette rule's selector with its qualifiers without the brand. In
+        // dark, the palette rule's brand-scoped companion follows it.
+        const slots: (readonly [string, string])[] =
           theme.variant === "internal"
-            ? '[data-theme-variant="internal"]'
-            : `[data-theme-variant="external"][data-theme-brand="${theme.brand}"]`;
-        const slotted = [baseSelector];
-        if (theme.variant === "external") {
-          slotted.push(`${baseSelector}[data-theme-segment="${theme.segment}"]`);
-        }
+            ? [[INTERNAL, INTERNAL]]
+            : [
+                [`${EXTERNAL}${brand}`, EXTERNAL],
+                [`${EXTERNAL}${brand}${segment}`, `${EXTERNAL}${segment}`],
+              ];
+        const slotted = slots.flatMap(([selector, qualifiers]) =>
+          colorScheme === "light"
+            ? [selector]
+            : [`[data-theme="dark"]${selector}`, `:where([data-theme="dark"]${qualifiers})${brand}`]
+        );
         const declared = new Map<string, string>();
         for (const selector of slotted) {
-          const rule = byDirectSelector.get(
-            colorScheme === "dark" ? `[data-theme="dark"]${selector}` : selector
-          );
+          const rule = byDirectSelector.get(selector);
           if (rule === undefined) continue;
           for (const declaration of rule.declarations) declared.set(declaration.name, declaration.value);
         }
@@ -145,17 +182,19 @@ describe("theme contract", () => {
           expect(composedValue, `${colorScheme} ${slug} ${name} is composed`).toBeDefined();
           expect(value, `${colorScheme} ${slug} ${name}`).toBe(declaredThemeValue(name, composedValue ?? ""));
         }
-        // The brand pointer serves both schemes from one light rule; its inherited
-        // alias values must still equal what composition resolves, or a nested scope
-        // would inherit a pointer the composed theme never had.
-        const pointer = byDirectSelector.get(`[data-theme-brand="${theme.brand}"]`);
+        // The brand pointer serves both schemes' brand pair and the light brand-scoped roles
+        // from one rule; its values must still equal what composition resolves, or a nested
+        // scope would inherit a pointer the composed theme never had. A dark companion
+        // declares its own brand-scoped roles over the pointer's.
+        const pointer = byDirectSelector.get(brand);
         expect(pointer, `${slug} brand pointer`).toBeDefined();
-        for (const name of [
-          "brand",
-          "brand-foreground",
-          "sidebar-brand",
-          "sidebar-brand-foreground",
-        ] as const) {
+        if (colorScheme === "dark") {
+          for (const name of BRAND_SCOPED_ROLES) {
+            expect(declared.has(name), `${colorScheme} ${slug} declares ${name}`).toBe(true);
+          }
+        }
+        const pointerNames = colorScheme === "light" ? BRAND_SCOPED_ROLES : [];
+        for (const name of ["brand", "brand-foreground", ...pointerNames] as const) {
           expect(
             pointer?.declarations.find((declaration) => declaration.name === name)?.value,
             `${colorScheme} ${slug} brand pointer ${name}`
@@ -231,15 +270,10 @@ describe("theme contract", () => {
         expect(reset.has(name), `${name} rebinds to ${target}`).toBe(true);
       }
     }
-    // The brand pair, its sidebar aliases, and the locked sans stack are the brand-pointer
-    // layer's and the defaults'; every other role is a key some palette can change.
-    const brandPointerRoles = new Set<string>([
-      "brand",
-      "brand-foreground",
-      "sidebar-brand",
-      "sidebar-brand-foreground",
-      "font-sans",
-    ]);
+    // The brand pair and the locked sans stack are the brand-pointer layer's and the
+    // defaults'; every other role is a key some palette can change, or reads one. The sidebar
+    // brand pair reads the sidebar, which every dark palette sets.
+    const brandPointerRoles = new Set<string>(["brand", "brand-foreground", "font-sans"]);
     expect(THEME_RESET_KEYS).toEqual(TOKEN_NAMES.filter((name) => !brandPointerRoles.has(name)));
   });
 
@@ -254,9 +288,9 @@ describe("theme contract", () => {
       expect(dark.error).toBe("oklch(0.704 0.191 22.216)");
       expect(dark.destructive).toBe("var(--error)");
       expect(dark.input).toBe("oklch(1 0 0 / 40%)");
+      // The sidebar brand pair is derived per scheme, so only the brand itself must agree;
+      // contrast-matrix.test.ts holds the pair's contrast in both schemes.
       expect(dark.brand).toBe(light.brand);
-      expect(dark["sidebar-brand"]).toBe(light["sidebar-brand"]);
-      expect(dark["sidebar-brand-foreground"]).toBe(light["sidebar-brand-foreground"]);
       for (const key of [
         "radius",
         "radius-button",
