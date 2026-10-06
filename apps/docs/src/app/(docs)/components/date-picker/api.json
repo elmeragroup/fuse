@@ -76,6 +76,15 @@
           "defaultValue": "true",
           "description": "Pads day and month segments with a leading zero. The reference flips RAC's locale-dependent default; this port keeps that flip.",
           "required": false
+        },
+        {
+          "name": "triggerPlacement",
+          "origin": "declared",
+          "type": "\"end\" | \"start\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"end\"",
+          "description": "Where the calendar trigger sits in the field box. `\"start\"` puts it ahead of the segments in DOM, tab and visual order, for a field whose calendar button leads. Clicking the label then focuses the trigger, the field box's first focusable part.",
+          "required": false
         }
       ]
     },

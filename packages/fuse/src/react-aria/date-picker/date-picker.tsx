@@ -69,6 +69,13 @@ export type DatePickerProps<T extends DateValue> = {
    * wins.
    */
   container?: OverlayContainerProps["container"];
+  /**
+   * Where the calendar trigger sits in the field box. `"start"` puts it ahead of the
+   * segments in DOM, tab and visual order, for a field whose calendar button leads.
+   * Clicking the label then focuses the trigger, the field box's first focusable part.
+   * @default "end"
+   */
+  triggerPlacement?: "start" | "end";
 } & Omit<AriaDatePickerProps<T>, "defaultValue" | "shouldForceLeadingZeros">;
 
 /**
@@ -94,6 +101,7 @@ export function DatePicker<T extends DateValue>({
   label,
   presetGroup,
   shouldForceLeadingZeros = true,
+  triggerPlacement = "end",
   ...props
 }: DatePickerProps<T>): ReactElement {
   const { base, calendar, input, pane } = pickerVariants({
@@ -112,6 +120,7 @@ export function DatePicker<T extends DateValue>({
         errorMessage={errorMessage}
         isReadOnly={isReadOnly}
         label={label}
+        triggerPlacement={triggerPlacement}
         popover={
           <div className={pane()}>
             {presetGroup}
