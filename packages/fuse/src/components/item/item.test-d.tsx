@@ -21,6 +21,10 @@ test("itemVariants and Root carry the variant and size axes, and Root takes useR
   const _badMedia = <Item.Media variant="outline" />;
   // @ts-expect-error the footer axis is default | visible | hidden
   const _badMode = <Item.Footer mode="open" />;
+  const _compact = <Item.Group variant="compact" />;
+  const _defaultGroup = <Item.Group variant="default" />;
+  // @ts-expect-error the group axis is default | compact
+  const _badGroup = <Item.Group variant="outline" />;
   // @ts-expect-error polymorphism is never an `as` prop
   const _noAs = <Item.Root as="li" />;
 });
