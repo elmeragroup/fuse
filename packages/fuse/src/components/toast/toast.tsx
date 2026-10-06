@@ -1,12 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { Toast as ToastPrimitive } from "@base-ui/react/toast";
 import type {
   ToastManagerAddOptions as PrimitiveAddOptions,
-  ToastManagerPromiseOptions as PrimitivePromiseOptions,
   ToastManagerUpdateOptions as PrimitiveUpdateOptions,
   ToastObject,
 } from "@base-ui/react/toast";
@@ -22,7 +21,7 @@ import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
 import { Button } from "../button/button";
 import { overlayCloseStrings } from "../overlay/intl";
-import { overlayLayer } from "../overlay/overlay-classes";
+import { toastLayer } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
 import { toastVariants } from "./toast-variants";
@@ -55,14 +54,20 @@ export type ToastManagerUpdateOptions<Data extends object = object> = Omit<
 };
 
 export type ToastManagerPromiseOptions<Value, Data extends object = object> = {
-  /** Loading state — a description string or a full options object. */
-  loading: string | ToastManagerUpdateOptions<Data>;
-  /** Success state after the promise resolves. */
+  /**
+   * Loading state — a description string or a full options object. Omit it to show
+   * nothing until the promise settles.
+   */
+  loading?: string | ToastManagerUpdateOptions<Data>;
+  /** Success state after the promise resolves. A returned `type` replaces `"success"`. */
   success:
     | string
     | ToastManagerUpdateOptions<Data>
     | ((result: Value) => string | ToastManagerUpdateOptions<Data>);
-  /** Error state after the promise rejects. Defaults high/assertive. */
+  /**
+   * Error state after the promise rejects. Defaults high/assertive. A returned `type`
+   * replaces `"error"`.
+   */
   error:
     | string
     | ToastManagerUpdateOptions<Data>
@@ -74,6 +79,17 @@ export type UseToastManagerReturnValue<Data extends object = object> = {
   add: <T extends Data = Data>(options: ToastManagerAddOptions<T>) => string;
   close: (toastId?: string) => void;
   update: <T extends Data = Data>(toastId: string, options: ToastManagerUpdateOptions<T>) => void;
+  /**
+   * Shows a toast for the life of `promise`. With `loading`, a loading toast appears at
+   * once and moves to the settled state; without it, the settled toast is the first one
+   * shown. The settled status is the `type` that `success` or `error` returns, else
+   * `"success"` or `"error"`, and priority derives from that status unless the state
+   * sets `priority`. A `success` factory that throws moves the toast to the error state.
+   * A loading toast the user closed stays closed when the promise settles.
+   *
+   * @returns The original promise's value, or a rejection with its error (or the error a
+   *   state factory threw). The error toast does not consume the rejection.
+   */
   promise: <Value, T extends Data = Data>(
     promise: Promise<Value>,
     options: ToastManagerPromiseOptions<Value, T>
@@ -166,117 +182,237 @@ function isPromiseStateFactory<Value, Data extends object>(
   return typeof value === "function";
 }
 
-function adaptResolvedPromiseState<Data extends object>(
-  resolved: string | ToastManagerUpdateOptions<Data>,
-  stateType: "loading" | "success" | "error"
-): PrimitiveUpdateOptions<Data> {
-  if (isShorthandDescription(resolved)) {
-    return { description: resolved, priority: derivedPriority(stateType) };
-  }
-  const { priority, ...rest } = resolved;
-  return {
-    ...rest,
-    priority: priority ?? derivedPriority(stateType),
-  };
+function stateOptions<Data extends object>(
+  state: string | ToastManagerUpdateOptions<Data>
+): ToastManagerUpdateOptions<Data> {
+  return isShorthandDescription(state) ? { description: state } : state;
 }
 
-function adaptPromiseOption<Value, Data extends object>(
-  option:
-    | string
-    | ToastManagerUpdateOptions<Data>
-    | ((result: Value) => string | ToastManagerUpdateOptions<Data>),
-  stateType: "loading" | "success" | "error"
-): PrimitiveUpdateOptions<Data> | ((result: Value) => PrimitiveUpdateOptions<Data>) {
-  if (isPromiseStateFactory<Value, Data>(option)) {
-    return (result: Value) => adaptResolvedPromiseState(option(result), stateType);
-  }
-  return adaptResolvedPromiseState(option, stateType);
+function settledStateOptions<Value, Data extends object>(
+  state: PromiseStateInput<Value, Data>,
+  settled: Value
+): ToastManagerUpdateOptions<Data> {
+  return stateOptions(isPromiseStateFactory(state) ? state(settled) : state);
 }
 
 type PrimitiveManager = {
   add: (options: PrimitiveAddOptions<object>) => string;
   update: (id: string, options: PrimitiveUpdateOptions<object>) => void;
   close: (id?: string) => void;
-  promise: <Value>(
-    promiseValue: Promise<Value>,
-    options: PrimitivePromiseOptions<Value, object>
-  ) => Promise<Value>;
 };
 
 function wrapManagerMethods(manager: PrimitiveManager): CreateToastManagerReturnValue {
+  const add: CreateToastManagerReturnValue["add"] = (options) => {
+    // SAFETY: the adapter only writes `priority`; custom `data` is forwarded unchanged.
+    return manager.add(adaptAddOptions(options));
+  };
+  const update: CreateToastManagerReturnValue["update"] = (id, options) => {
+    // SAFETY: the adapter only writes `priority` when `type` changes; other fields pass through.
+    manager.update(id, adaptUpdateOptions(options));
+  };
   return {
-    ...manager,
-    add: (options) => {
-      // SAFETY: the adapter only writes `priority`; custom `data` is forwarded unchanged.
-      return manager.add(adaptAddOptions(options));
-    },
-    update: (id, options) => {
-      // SAFETY: the adapter only writes `priority` when `type` changes; other fields pass through.
-      manager.update(id, adaptUpdateOptions(options));
-    },
+    add,
+    update,
     close: (id) => {
       manager.close(id);
     },
+    // Base UI's promiseToast forces `type: "success" | "error"` over the state's own
+    // type, so the lifecycle runs over the wrapped add/update, which derive priority.
     promise: (promiseValue, options) => {
-      // SAFETY: each promise state is normalized to the primitive options shape with a
-      // type-aware priority default; the settled value is the original promise's value.
-      return manager.promise(promiseValue, {
-        loading: adaptResolvedPromiseState(options.loading, "loading"),
-        success: adaptPromiseOption(options.success, "success"),
-        error: adaptPromiseOption(options.error, "error"),
-      });
+      const loadingId =
+        options.loading === undefined
+          ? undefined
+          : add({ ...stateOptions(options.loading), type: "loading" });
+      const settle = <T extends object>(
+        state: ToastManagerUpdateOptions<T>,
+        fallback: "success" | "error"
+      ) => {
+        const type = state.type ?? fallback;
+        if (loadingId === undefined) {
+          add({ ...state, type });
+          return;
+        }
+        // Writing `timeout` even when undefined drops a timeout the loading state set,
+        // so the settled toast falls back to the provider default.
+        update(loadingId, { ...state, type, timeout: state.timeout });
+      };
+      return promiseValue
+        .then((value) => {
+          settle(settledStateOptions(options.success, value), "success");
+          return value;
+        })
+        .catch((cause: unknown) => {
+          // SAFETY: the public `error` factory has always received the rejection as an
+          // `Error`, as Base UI passed it through untyped; rejections are not re-parsed.
+          settle(settledStateOptions(options.error, cause as Error), "error");
+          return Promise.reject(cause);
+        });
     },
   };
 }
 
 /**
  * Imperative toast manager for a tree under `Toast.Provider`. Returns the live
- * `toasts` array plus `add` / `update` / `close` / `promise`.
+ * `toasts` array plus `add` / `update` / `close` / `promise`, which keep their
+ * identity as toasts change, so effects can list them as dependencies.
  */
 export function useToastManager<Data extends object = object>(): UseToastManagerReturnValue<Data> {
-  const manager = ToastPrimitive.useToastManager<Data>();
-  return useMemo(
-    () => ({
-      // SAFETY: the hook manager is the primitive store face; wrapManagerMethods only
-      // rebinds add/update/close/promise and keeps `toasts` from this closure.
-      ...wrapManagerMethods(manager as PrimitiveManager),
-      toasts: manager.toasts,
-    }),
-    [manager]
+  const { toasts, add, update, close } = ToastPrimitive.useToastManager<Data>();
+  // Base UI rebuilds its manager object whenever `toasts` changes, but the store's
+  // add/update/close keep their identity. Keying the wrappers on those functions keeps
+  // ours stable too, so an effect that lists `add` does not re-run after every toast.
+  const methods = useMemo(
+    // SAFETY: these are the primitive store's methods, typed over the caller's `Data`;
+    // wrapManagerMethods forwards custom `data` unchanged, so widening it to `object` is sound.
+    () => wrapManagerMethods({ add, update, close } as PrimitiveManager),
+    [add, update, close]
   );
+  return useMemo(() => ({ ...methods, toasts }), [methods, toasts]);
 }
+
+/** Connects a provider's store to a module manager; the returned function disconnects it. */
+type ConnectToastStore = (store: PrimitiveManager) => () => void;
+
+/**
+ * Keys each manager's connect function. It is an own enumerable property, so a spread
+ * copy of the manager keeps it, and the symbol stays private, so the public type does not
+ * list it.
+ */
+const connectToastStore = Symbol("fuse.connectToastStore");
+
+type ConnectableToastManager = CreateToastManagerReturnValue & {
+  readonly [connectToastStore]?: ConnectToastStore;
+};
+
+function storeConnection(manager: CreateToastManagerReturnValue): ConnectToastStore | undefined {
+  // SAFETY: the symbol is module-private, and only createToastManager writes it, always
+  // with that manager's connect function.
+  return (manager as ConnectableToastManager)[connectToastStore];
+}
+
+/**
+ * Counts ids minted across every manager. One provider keeps its store when its
+ * `toastManager` changes, so ids from two managers must not collide.
+ */
+let mintedToastIds = 0;
 
 /**
  * Module-scope manager for code outside the React tree (timers, query-cache
  * listeners). Same `add` / `update` / `close` / `promise` methods as the hook,
- * with no reactive `toasts` array. Pass the result to
+ * with no reactive `toasts` array. Pass the result, or a spread copy of it, to
  * `<Toast.Provider toastManager={…}>`.
+ *
+ * The manager queues calls made before that provider connects, including calls made
+ * before it mounts and calls from mount effects in its subtree, and replays them in
+ * call order when it connects. `add` returns the toast id at once either way, so a
+ * queued toast can still be updated or closed. A minted id is unique across managers.
+ * Mount a manager in one provider at a time: the most recently connected provider
+ * receives every call, and once it unmounts, calls queue again even while an earlier
+ * provider stays mounted.
  */
 export function createToastManager<Data extends object = object>(): CreateToastManagerReturnValue<Data> {
-  // SAFETY: createToastManager is the primitive emit face; wrapManagerMethods only
-  // rebinds add/update/close/promise and preserves the private subscribe channel.
-  return wrapManagerMethods(ToastPrimitive.createToastManager<Data>() as PrimitiveManager);
+  let store: PrimitiveManager | undefined;
+  // Every call goes through this one queue. A call made during a replay, such as from a
+  // replayed toast's `onClose`, joins the end instead of overtaking calls queued earlier.
+  const queued: Array<(target: PrimitiveManager) => void> = [];
+  let draining = false;
+  const drain = () => {
+    if (draining) {
+      return;
+    }
+    draining = true;
+    try {
+      while (store !== undefined) {
+        const call = queued.shift();
+        if (call === undefined) {
+          return;
+        }
+        call(store);
+      }
+    } finally {
+      draining = false;
+    }
+  };
+  const send = (call: (target: PrimitiveManager) => void) => {
+    queued.push(call);
+    drain();
+  };
+  // Fuse mints ids so a queued `add` can return one before any store exists. Like the
+  // store, it treats an empty id as none.
+  const mintId = () => {
+    mintedToastIds += 1;
+    return `fuse-toast-${mintedToastIds}`;
+  };
+  const connect: ConnectToastStore = (next) => {
+    store = next;
+    drain();
+    return () => {
+      if (store === next) {
+        store = undefined;
+      }
+    };
+  };
+  const manager: ConnectableToastManager = {
+    ...wrapManagerMethods({
+      add: (options) => {
+        const id = options.id === undefined || options.id === "" ? mintId() : options.id;
+        send((target) => target.add({ ...options, id }));
+        return id;
+      },
+      update: (id, options) => {
+        send((target) => {
+          target.update(id, options);
+        });
+      },
+      close: (id) => {
+        send((target) => {
+          target.close(id);
+        });
+      },
+    }),
+    [connectToastStore]: connect,
+  };
+  return manager;
+}
+
+/**
+ * Connects the provider's store to a module manager, replaying its queue. The Base UI
+ * provider gets no `toastManager`: its subscription reads a private key and starts in
+ * the provider's own effect, after every descendant's mount effect, so calls made
+ * earlier were dropped. This bridge reads only the public store-backed hook and, as the
+ * provider's first child, connects before any later sibling's mount effect runs. Every
+ * call takes this one path, so none is delivered twice.
+ *
+ * Under StrictMode the replay runs on the first connection, then the provider's replayed
+ * cleanup clears the store's auto-dismiss timers. The toasts keep their timeout anyway:
+ * each `Toast.Root` registers its height when it mounts, in a later commit, and that
+ * store write schedules the timer a toast is missing.
+ */
+function ToastManagerBridge({ connect }: { connect: ConnectToastStore }): null {
+  // `add` / `update` / `close` are the store's own bound methods and keep their identity
+  // across toast changes, so the bridge connects once per store.
+  const { add, update, close } = ToastPrimitive.useToastManager();
+  useEffect(() => connect({ add, update, close }), [connect, add, update, close]);
+  return null;
 }
 
 export type ToastProviderProps = Omit<ComponentProps<typeof ToastPrimitive.Provider>, "toastManager"> & {
   /**
    * Optional manager from `Toast.createToastManager()` so non-React code
    * (timers, query-cache listeners) can dispatch through the same adapter as
-   * `Toast.useToastManager()`.
+   * `Toast.useToastManager()`. The manager queues calls made before this provider
+   * connects and replays them in order.
    */
   toastManager?: CreateToastManagerReturnValue;
 };
 
-export function ToastProvider({ toastManager, ...props }: ToastProviderProps): ReactElement {
+export function ToastProvider({ toastManager, children, ...props }: ToastProviderProps): ReactElement {
+  const connect = toastManager === undefined ? undefined : storeConnection(toastManager);
   return (
-    <ToastPrimitive.Provider
-      toastManager={
-        // SAFETY: our adapter is a drop-in for the primitive manager; the private
-        // subscribe channel is preserved by wrapManagerMethods' object spread.
-        toastManager as ComponentProps<typeof ToastPrimitive.Provider>["toastManager"]
-      }
-      {...props}
-    />
+    <ToastPrimitive.Provider {...props}>
+      {connect === undefined ? null : <ToastManagerBridge connect={connect} />}
+      {children}
+    </ToastPrimitive.Provider>
   );
 }
 
@@ -295,7 +431,7 @@ export function ToastViewport({
         className={mergeClassName(
           className,
           "sm:right-8 sm:bottom-8 sm:w-[340px] fixed top-auto right-4 bottom-4 isolate mx-auto flex w-[calc(100%-2rem)]",
-          overlayLayer,
+          toastLayer,
           selfFocusRingClass
         )}
         {...props}>

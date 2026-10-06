@@ -8,6 +8,8 @@ import { FieldErrorDemo } from "./demos/field-error";
 import { FieldValidationDemo } from "./demos/field-validation";
 import { FieldOrientations } from "./demos/field-orientations";
 import { FieldSetDemo } from "./demos/field-set";
+import { FieldSetDescriptionDemo } from "./demos/field-set-description";
+import { FieldGridSetDemo } from "./demos/field-grid-set";
 import { FieldSeparatorDemo } from "./demos/field-separator";
 import { FieldChoiceCard } from "./demos/field-choice-card";
 
@@ -47,6 +49,26 @@ Controls that need a visible label, description, or error get the wiring from `F
 
 <Demo slug="field" id="set" title="Field set" file="field-set.tsx">
   <FieldSetDemo />
+</Demo>
+
+<Prose>
+
+A `Field.Description` inside a `Field.Set` but outside any `Field.Root` describes the fieldset through `aria-describedby`. Inside a `Field.Root`, it describes that field's control instead.
+
+</Prose>
+
+<Demo slug="field" id="set-description" title="Field set description" file="field-set-description.tsx">
+  <FieldSetDescriptionDemo />
+</Demo>
+
+<Prose>
+
+`Field.Legend` renders a `div`, so a grid `Field.Set` places it in the first cell. Pass `render={<legend />}` to render a native legend instead. The browser keeps a fieldset's first `legend` out of the grid, so the first field takes the first cell, and the legend still names the set.
+
+</Prose>
+
+<Demo slug="field" id="grid-set" title="Grid field set" file="field-grid-set.tsx">
+  <FieldGridSetDemo />
 </Demo>
 
 <Demo slug="field" id="separator" title="Separator" file="field-separator.tsx">

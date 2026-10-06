@@ -5,6 +5,7 @@ lede: >
 
 import { DateRangePickerBasic } from "./demos/date-range-picker-basic";
 import { DateRangePickerControlled } from "./demos/date-range-picker-controlled";
+import { DateRangePickerPresets } from "./demos/date-range-picker-presets";
 import { DateRangePickerValidation } from "./demos/date-range-picker-validation";
 import { DateRangePickerStates } from "./demos/date-range-picker-states";
 import { DateRangePickerInModal } from "./demos/date-range-picker-in-modal";
@@ -15,7 +16,7 @@ export const metadata = componentMetadata("date-range-picker");
 
 <ComponentIntro slug="date-range-picker" />
 
-The dates stack beside the calendar trigger when the field container is narrower than 24rem. Each date keeps its normal density sizing.
+The dates stack beside the calendar trigger when the field container is narrower than 24rem. Each date keeps its normal density sizing. Inside a flex row the picker takes no width from its content, so it gets only the room its siblings leave. Give it `w-96 shrink-0` there to hold 24rem and keep the dates on one row.
 
 <Prose>
 
@@ -33,6 +34,12 @@ Wrap locale-dependent usage in `UiProviders` so it follows the app locale.
 
 <Demo slug="date-range-picker" id="controlled" title="Controlled" file="date-range-picker-controlled.tsx">
   <DateRangePickerControlled />
+</Demo>
+
+Presets sit beside the calendar and stack above it on small screens. Each preset reports its own `value`, and your `onChange` turns that value into a range.
+
+<Demo slug="date-range-picker" id="presets" title="Presets" file="date-range-picker-presets.tsx">
+  <DateRangePickerPresets />
 </Demo>
 
 <Demo slug="date-range-picker" id="validation" title="Validation" file="date-range-picker-validation.tsx">

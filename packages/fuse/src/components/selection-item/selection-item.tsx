@@ -128,7 +128,10 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
    * Does not disable the control — the control or group owns that.
    */
   isDisabled?: boolean;
-  /** Extra classes, merged last through `cn`. */
+  /**
+   * Extra classes, merged last through `cn`. A `px-*` utility sets the card's side inset,
+   * and a click in that inset beside the label row toggles the control.
+   */
   className?: string;
   /**
    * Sub-sections the caller already partitioned out of its row children, rendered outside
@@ -153,6 +156,12 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
  * Shared card-row shell that CheckboxItem and RadioItem plug a control into. Client
  * component, because it reads Field.Item context. The control and sub-section columns
  * share one parent grid, so the spacer tracks the control slot without measuring it.
+ * The shell's side padding is the one horizontal inset, so a `px-*` in `className` sets it.
+ * The label is `display: contents`, so its cells are shell grid items and its `::before`
+ * is an absolute child of the shell grid. Placed in the label's row with automatic
+ * columns, that pseudo-element spans the shell's padding box, so a click anywhere across
+ * the label row toggles the control at any inset. Nothing clips, so a focus ring at a
+ * zero inset paints whole.
  *
  * Vertical and default shells, in either group shape or outside any group, collapse
  * borders with `not-first:border-t-0`. A checked non-first shell then repaints its top border in
@@ -186,12 +195,15 @@ export function SelectionItemShell({
   const hasSubSection = Children.toArray(passedSubSections).length > 0 || directSubSections.length > 0;
   const controlAtEnd = controlPosition === "end";
 
+  const rowCellClass = cn("self-start pt-3.5", hasSubSection ? null : "pb-3.5");
   const controlSlot = (
-    <ItemMedia variant="icon" data-slot="selection-item-control">
+    <ItemMedia variant="icon" data-slot="selection-item-control" className={rowCellClass}>
       {control}
     </ItemMedia>
   );
-  const rowCluster = <div className="flex min-w-0 items-start gap-2.5">{rowChildren}</div>;
+  const rowCluster = (
+    <div className={cn("flex min-w-0 items-start gap-2.5", rowCellClass)}>{rowChildren}</div>
+  );
   const spacer = <span aria-hidden />;
   // Separate child positions give each source its own key space; one merged array
   // would repeat the `.0` keys that the two `Children.toArray` calls assign independently.
@@ -210,7 +222,7 @@ export function SelectionItemShell({
       data-selection-item=""
       className={cn(
         outlineItemClass,
-        "grid items-stretch gap-0 gap-x-2.5 bg-background px-4 py-0 transition-colors has-[[data-slot=selection-item-control]_[data-checked]]:border-primary has-[[data-slot=selection-item-control]_[data-checked]]:bg-muted",
+        "relative isolate box-border grid items-stretch gap-0 gap-x-2.5 bg-background px-4 py-0 transition-colors has-[[data-slot=selection-item-control]_[data-checked]]:border-primary has-[[data-slot=selection-item-control]_[data-checked]]:bg-muted",
         controlAtEnd ? "grid-cols-[minmax(0,1fr)_auto]" : "grid-cols-[auto_minmax(0,1fr)]",
         connectedStack
           ? "rounded-none not-first:border-t-0 first:rounded-t-lg last:rounded-b-lg has-[[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px has-[[data-slot=selection-item-control]_[data-checked]]:not-first:border-t"
@@ -218,11 +230,7 @@ export function SelectionItemShell({
         isDisabled ? cn("cursor-not-allowed bg-muted", disabledHatch) : null,
         className
       )}>
-      <FieldPrimitive.Label
-        className={cn(
-          "col-span-full grid cursor-pointer grid-cols-subgrid items-start pt-3.5 has-disabled:cursor-not-allowed",
-          hasSubSection ? null : "pb-3.5"
-        )}>
+      <FieldPrimitive.Label className="contents cursor-pointer before:absolute before:inset-0 before:-z-1 before:row-[1/2] has-disabled:cursor-not-allowed">
         {controlAtEnd ? (
           <>
             {rowCluster}

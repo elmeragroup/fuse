@@ -81,18 +81,19 @@ describe("fuse-figma sync", () => {
       assert.deepStrictEqual(figma.modeNames("Fuse primitives"), ["Value"]);
       assert.deepStrictEqual(figma.modeNames("Fuse density"), ["Dense", "Comfortable"]);
       const themeModes = figma.modeNames("Fuse themes");
-      assert.strictEqual(themeModes.length, 20);
+      assert.strictEqual(themeModes.length, 24);
       assert.includeMembers(themeModes, [
         "internal-fkas-private",
         "external-elma-company",
         "external-fkab-company",
         "external-fkse-private",
+        "internal-ngfi-company",
       ]);
       assert.notInclude(themeModes, "external-fkab-private");
       // 81 contract tokens plus 5 radius rungs, and each of those per scheme in Fuse themes.
       assert.strictEqual(figma.variableNames("Fuse tokens").length, 86);
       assert.strictEqual(figma.variableNames("Fuse themes").length, 172);
-      assert.strictEqual(figma.variableNames("Fuse primitives").length, 23);
+      assert.strictEqual(figma.variableNames("Fuse primitives").length, 25);
       assert.strictEqual(figma.variableNames("Fuse density").length, 26);
       assert.strictEqual(writes(figma), 1);
       assert.include(yield* output, "reading it back matches the tokens");
@@ -254,11 +255,8 @@ describe("fuse-figma sync", () => {
       assert.deepStrictEqual(rungs(dark("external-fkas-private")), [6, 8, 10, 12, 16]);
       // external-guen-private sets 0.5rem, 8px.
       assert.deepStrictEqual(rungs(light("external-guen-private")), [2, 4, 6, 8, 12]);
-      // external-tkas-private sets 0.95rem, 15.2px. Figma stores each value as a 32-bit float.
-      assert.deepStrictEqual(
-        rungs(light("external-tkas-private")),
-        [9.2, 11.2, 13.2, 15.2, 19.2].map(Math.fround)
-      );
+      // external-tkas-private sets 1rem, 16px.
+      assert.deepStrictEqual(rungs(light("external-tkas-private")), [10, 12, 14, 16, 20]);
       // No component uses radius-popover, so the sync gives designers no variable for it.
       assert.notInclude(figma.variableNames("Fuse tokens"), "radius-popover");
       assert.notInclude(figma.variableNames("Fuse themes"), "light/radius-popover");
@@ -581,7 +579,7 @@ describe("fuse-figma check", () => {
       assert.include(printed, "Fuse tokens: create collection");
       assert.include(printed, "Fuse tokens: create mode Light");
       assert.include(printed, "Fuse tokens: create mode Dark");
-      assert.include(printed, "Fuse themes: create mode ×20");
+      assert.include(printed, "Fuse themes: create mode ×24");
       assert.notInclude(printed, "Fuse themes: create mode external-elma-company");
       assert.include(printed, "Fuse themes: create variable ×172");
       assert.include(printed, "Fuse density: create mode Comfortable");

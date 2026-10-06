@@ -66,8 +66,8 @@ export const EXTERNAL_PALETTES = {
     "feature-foreground": "oklch(0.90178 0.09399 190.62)",
     border: "oklch(0.929 0.0126 255.53)",
     input: "oklch(0.929 0.0126 255.53)",
-    radius: "0.95rem",
-    "radius-button": "0.95rem",
+    radius: "1rem",
+    "radius-button": "1rem",
     "font-heading": "var(--font-sans)",
   },
   guen: {
@@ -149,6 +149,36 @@ export const EXTERNAL_PALETTES = {
     input: "oklch(0.9219 0 0)",
     radius: "0.375rem",
     "radius-button": "0.375rem",
+    "font-heading": "var(--font-sans)",
+  },
+  // Nordic Green Energy Material 3 scheme, NGE/sys/light (Figma file q1sEYcZWmf1HUeuiaJFqm6,
+  // section 129:12419), mapped to roles by meaning. The file's "Farger" sheets carry Gudbrandsdal
+  // Energi's palette, not NGE's. Radius is not yet specified by design; the button radius takes
+  // the pill other external brands use. No segment delta.
+  ngfi: {
+    background: "oklch(0.9817261 0.0061352 137.7733593)", // #F7FAF6 surface
+    foreground: "oklch(0.2214543 0.0071419 164.2694873)", // #181C1A on-surface
+    card: WHITE, // surface-container-lowest
+    "card-foreground": "oklch(0.2214543 0.0071419 164.2694873)", // #181C1A on-surface
+    "card-soft": "oklch(0.9640374 0.0050774 145.5360229)", // #F1F4F1 surface-container-low
+    "card-soft-foreground": "oklch(0.2214543 0.0071419 164.2694873)", // #181C1A on-surface
+    muted: "oklch(0.97 0.0013 106.42)",
+    "muted-foreground": "oklch(0.3946937 0.0154068 164.0769747)", // #3F4944 on-surface-variant
+    primary: "oklch(0.3671893 0.072708 169.9789644)", // #004B39 primary
+    "primary-foreground": WHITE, // on-primary
+    "primary-soft": "oklch(0.9218495 0.0390897 165.5911635)", // #CEEEDF secondary-container
+    "primary-soft-foreground": "oklch(0.4052406 0.0386448 167.9041376)", // #345045 on-secondary-container
+    secondary: "oklch(0.2214543 0.0071419 164.2694873)", // #181C1A on-surface
+    "secondary-foreground": WHITE, // on-primary
+    "secondary-soft": "oklch(0.9218495 0.0390897 165.5911635)", // #CEEEDF secondary-container
+    "secondary-soft-foreground": "oklch(0.2214543 0.0071419 164.2694873)", // #181C1A on-surface
+    feature: "oklch(0.496237 0.0877084 169.5466991)", // #1E725A primary-container
+    "feature-bright": "oklch(0.8167409 0.088748 168.8259798)", // #87D6B9 primary-fixed-dim
+    "feature-foreground": WHITE, // on-primary-container
+    border: "oklch(0.8256644 0.0145962 162.3965393)", // #BEC9C3 outline-variant
+    input: "oklch(0.8256644 0.0145962 162.3965393)", // #BEC9C3 outline-variant
+    radius: "0.375rem",
+    "radius-button": "1.8125rem",
     "font-heading": "var(--font-sans)",
   },
 } as const satisfies Record<ExternalBrandCode, TokenLayer>;

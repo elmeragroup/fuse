@@ -20,6 +20,15 @@ import { cn } from "../../styles/cn";
 export const overlayLayer = "z-50";
 
 /**
+ * The toast viewport's layer, one step above {@link overlayLayer}. Toasts are status
+ * messages that must stay visible over modal content: a toast raised from inside an open
+ * Dialog or Sheet would otherwise paint under it, because the modal's portal mounts later.
+ * Base UI leaves `[aria-live]` regions out of a modal's `aria-hidden` marking, so the toast
+ * also stays reachable.
+ */
+export const toastLayer = "z-60";
+
+/**
  * The 13-value overlay width axis, default `md`. `sm`–`7xl` read the
  * Tailwind container variables; no `--container-8xl+` variables exist, so the top three
  * pixel caps stay literal and documented.

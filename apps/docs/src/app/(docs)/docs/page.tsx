@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   description: HOME_PAGE.description,
   ...ogMetadata({
     image: ogDocsPath(HOME_PAGE.href),
-    alt: `The Fuse docs overview: ${HOME_PAGE.description}`,
+    alt: "Fuse: Overview",
   }),
 };
 
@@ -33,9 +33,9 @@ export default function DocsHomePage(): ReactElement {
     <>
       <DocsPageTitle>Fuse</DocsPageTitle>
       <DocsLede>
-        The Elmera Group design system: one themed React component library covering six brands, two customer
-        segments and two variants — twenty legal themes — without forking a component. Docs pages are thin
-        authored shells; demo frames, API tables and the tokens-consumed lists are generated from library
+        The Elmera Group design system: one themed React component library covering seven brands, two customer
+        segments and two variants — twenty-four legal themes — without forking a component. Docs pages are
+        thin authored shells; demo frames, API tables and the tokens-consumed lists are generated from library
         source at docs build.
       </DocsLede>
       {NAV_GROUPS.map((group) => (

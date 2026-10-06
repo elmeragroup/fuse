@@ -1,3 +1,5 @@
+import type { ComponentProps } from "react";
+
 import { expectTypeOf, test } from "vitest";
 
 import { Alert } from "@elmeragroup/fuse/alert";
@@ -25,6 +27,16 @@ test("parts take the public API: required icon variant, heading level, no varian
 
   const _standalone = <Alert.Icon variant="success" className="size-4" />;
   const _ref = <Alert.Description ref={null}>Body</Alert.Description>;
+  // React types `div` and `p` attributes with the same shape, so this records the public
+  // contract; the browser and SSR suites prove the rendered element.
+  expectTypeOf<Parameters<typeof Alert.Description>[0]>().toEqualTypeOf<ComponentProps<"div">>();
+  const _block = (
+    <Alert.Description>
+      <ul>
+        <li>Meter number</li>
+      </ul>
+    </Alert.Description>
+  );
 
   // @ts-expect-error Icon requires the status variant
   const _iconNeedsVariant = <Alert.Icon />;

@@ -110,6 +110,27 @@ const EXTERNAL_DARK_PALETTES = {
     "feature-bright": "oklch(0.2675764 0.0014668 197.0689)", // #252626
     "feature-foreground": "oklch(0.3923005 0.0500012 219.4304)", // #234C58
   },
+  // q1sEYcZWmf1HUeuiaJFqm6, section 129:12419, NGE/sys/dark, read 2026-10-05. Material 3 roles
+  // mapped by meaning.
+  ngfi: {
+    background: "oklch(0.1860912 0.0074341 164.0507906)", // #101412 surface
+    foreground: "oklch(0.9126739 0.0051473 145.5332168)", // #E0E3E0 on-surface
+    card: "oklch(0.2386117 0.0070183 164.349003)", // #1C201E surface-container
+    "card-foreground": "oklch(0.9126739 0.0051473 145.5332168)", // #E0E3E0 on-surface
+    "card-soft": "oklch(0.1860912 0.0074341 164.0507906)", // #101412 surface
+    "card-soft-foreground": "oklch(0.9126739 0.0051473 145.5332168)", // #E0E3E0 on-surface
+    primary: "oklch(0.8167409 0.088748 168.8259798)", // #87D6B9 primary
+    "primary-foreground": "oklch(0.3030805 0.0598659 170.2072613)", // #00382A on-primary
+    "primary-soft": "oklch(0.3646304 0.0383747 169.5507252)", // #29453B secondary-container
+    "primary-soft-foreground": "oklch(0.8648169 0.0380643 166.4515995)", // #BCDBCD on-secondary-container
+    secondary: "oklch(0.9126739 0.0051473 145.5332168)", // #E0E3E0 on-surface
+    "secondary-foreground": "oklch(0.3071978 0.0389954 168.5666487)", // #1A362C on-secondary
+    "secondary-soft": "oklch(0.3646304 0.0383747 169.5507252)", // #29453B secondary-container
+    "secondary-soft-foreground": "oklch(0.9126739 0.0051473 145.5332168)", // #E0E3E0 on-surface
+    feature: "oklch(0.4061032 0.080916 169.4114656)", // #005742 primary-container
+    "feature-bright": "oklch(0.2386117 0.0070183 164.349003)", // #1C201E surface-container, the card tone
+    "feature-foreground": "oklch(0.9218728 0.0894512 168.1399808)", // #A9F9DA on-primary-container
+  },
 } as const satisfies Record<ExternalBrandCode, ExternalDarkSheet>;
 
 /** The share of foreground in the dark hover tint, matching internal dark's popover-to-accent step. */

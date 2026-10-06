@@ -74,6 +74,8 @@ test("the elements take the public props and reject an invented axis", () => {
     />
   );
   const _container = <DatePicker container={document.body} label="Invoice date" />;
+  const _leading = <DatePicker label="Start-up date" triggerPlacement="start" />;
+  const _trailing = <DatePicker label="Start-up date" triggerPlacement="end" />;
 
   // @ts-expect-error no size axis
   const _noSize = <DatePicker label="Invoice date" size="md" />;
@@ -83,4 +85,6 @@ test("the elements take the public props and reject an invented axis", () => {
   const _noCallbackFlag = <DatePickerPresetItem isCloseDialogOnDoubleClick={() => undefined} value="x" />;
   // @ts-expect-error container takes an element or a ref, never a selector
   const _noSelector = <DatePicker container="#overlays" label="Invoice date" />;
+  // @ts-expect-error the trigger leads or trails the segments, nothing else
+  const _noVerticalPlacement = <DatePicker label="Invoice date" triggerPlacement="top" />;
 });

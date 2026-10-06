@@ -337,6 +337,10 @@
   mask-image: url("/landing/logos/fkse.svg");
 }
 
+@utility landing-logo-ngfi {
+  mask-image: url("/landing/logos/ngfi.svg");
+}
+
 /* Monochrome brand marks for the picker tiles, the artwork the closing shader also traces. */
 @utility landing-mark-elma {
   mask-image: url("/landing/marks/elma.svg");
@@ -360,4 +364,8 @@
 
 @utility landing-mark-fkse {
   mask-image: url("/landing/marks/fkse.svg");
+}
+
+@utility landing-mark-ngfi {
+  mask-image: url("/landing/marks/ngfi.svg");
 }

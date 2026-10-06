@@ -161,6 +161,8 @@
   --color-brand-fkse-foreground: var(--brand-fkse-foreground);
   --color-brand-elma: var(--brand-elma);
   --color-brand-elma-foreground: var(--brand-elma-foreground);
+  --color-brand-ngfi: var(--brand-ngfi);
+  --color-brand-ngfi-foreground: var(--brand-ngfi-foreground);
 
   /* Each rung sits whole --radius-step multiples from the theme's --radius. External themes
      step 2px. The internal variant steps 0px, so every rung is the one radius. An arbitrary

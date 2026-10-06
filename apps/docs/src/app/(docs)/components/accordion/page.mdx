@@ -8,6 +8,7 @@ import { AccordionMultiple } from "./demos/accordion-multiple";
 import { AccordionVariants } from "./demos/accordion-variants";
 import { AccordionControlled } from "./demos/accordion-controlled";
 import { AccordionHiddenUntilFound } from "./demos/accordion-hidden-until-found";
+import { AccordionLeadingIndicator } from "./demos/accordion-leading-indicator";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -29,6 +30,14 @@ export const metadata = componentMetadata("accordion");
 
 <Demo slug="accordion" id="controlled" title="Controlled" file="accordion-controlled.tsx">
   <AccordionControlled />
+</Demo>
+
+<Demo
+  slug="accordion"
+  id="leading-indicator"
+  title="Leading indicator"
+  file="accordion-leading-indicator.tsx">
+  <AccordionLeadingIndicator />
 </Demo>
 
 <Demo

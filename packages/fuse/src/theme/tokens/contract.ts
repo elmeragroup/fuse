@@ -94,6 +94,8 @@ export type TokenContract = {
  * design tools store, and the CSS emitter writes the matching `color-mix()`.
  */
 export type OklchMixRole = {
+  /** Emitted as a live `color-mix()`. */
+  readonly _tag: "OklchMix";
   /** The role the mix starts from. */
   readonly from: TokenName;
   /** The role the mix moves toward. */
@@ -103,14 +105,37 @@ export type OklchMixRole = {
 };
 
 /**
+ * A derived role that composition computes at build time from the roles it reads. Per theme,
+ * composition picks either a literal color or an alias of a source, such as `var(--brand)`, and
+ * theme rules declare that choice. A literal does not follow a host override of a source; an
+ * alias does.
+ */
+export type ComposedRole = {
+  /** Emitted as the composed value. */
+  readonly _tag: "Composed";
+  /** Every role the computation reads. */
+  readonly sources: readonly TokenName[];
+};
+
+/** How the pipeline derives a role, and so how the CSS emitter declares it. */
+export type DerivedRole = OklchMixRole | ComposedRole;
+
+/**
  * The roles the pipeline computes from other composed roles instead of reading them from
  * a layer, each with the only roles it reads. The reset closure reads the same entry, so a
  * scope that resets a source always resets the derived role too.
  */
 export const DERIVED_ROLES = {
   // The secondary Button hover, which the recipe used to spell as an inline color-mix().
-  "secondary-hover": { from: "secondary", toward: "foreground", percent: 5 },
-} as const satisfies Partial<Record<TokenName, OklchMixRole>>;
+  "secondary-hover": { _tag: "OklchMix", from: "secondary", toward: "foreground", percent: 5 },
+  // The brand on the sidebar, stepped to 4.5:1 there, and the text on its fill. See
+  // `sidebar-brand.ts`.
+  "sidebar-brand": { _tag: "Composed", sources: ["brand", "sidebar"] },
+  "sidebar-brand-foreground": {
+    _tag: "Composed",
+    sources: ["brand", "brand-foreground", "sidebar", "sidebar-foreground"],
+  },
+} as const satisfies Partial<Record<TokenName, DerivedRole>>;
 
 /** A role the pipeline computes from other composed roles. */
 export type DerivedTokenName = keyof typeof DERIVED_ROLES;
@@ -145,11 +170,11 @@ function isLayerTokenName(name: TokenName): name is LayerTokenName {
  * The roles a derived role reads, straight from its `DERIVED_ROLES` entry.
  *
  * @param name - A derived role.
- * @returns The role the mix starts from and the role it moves toward.
+ * @returns The roles its value is computed from.
  */
-export function derivedRoleSources(name: DerivedTokenName): readonly [LayerTokenName, LayerTokenName] {
+export function derivedRoleSources(name: DerivedTokenName): readonly LayerTokenName[] {
   const role = DERIVED_ROLES[name];
-  return [role.from, role.toward];
+  return role._tag === "OklchMix" ? [role.from, role.toward] : role.sources;
 }
 
 /** Every role a layer can assign, in `TOKEN_NAMES` order. */

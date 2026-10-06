@@ -8,6 +8,7 @@ import { SelectionItemSubsection } from "./demos/selection-item-subsection";
 import { SelectionItemControlEnd } from "./demos/selection-item-control-end";
 import { SelectionItemStacked } from "./demos/selection-item-stacked";
 import { SelectionItemDisabled } from "./demos/selection-item-disabled";
+import { SelectionItemIcon } from "./demos/selection-item-icon";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -33,6 +34,16 @@ export const metadata = componentMetadata("selection-item");
 
 <Demo slug="selection-item" id="disabled" title="Disabled" file="selection-item-disabled.tsx">
   <SelectionItemDisabled />
+</Demo>
+
+<Prose>
+
+`RadioItem` and `CheckboxItem` take no icon. To show one beside the control, compose `SelectionItem.Shell` and pass the control and the icon together as `control`. Hide the icon with `aria-hidden`, so the row's title and description stay the control's name.
+
+</Prose>
+
+<Demo slug="selection-item" id="icon" title="Icon beside the control" file="selection-item-icon.tsx">
+  <SelectionItemIcon />
 </Demo>
 
 <ApiReference slug="selection-item" />

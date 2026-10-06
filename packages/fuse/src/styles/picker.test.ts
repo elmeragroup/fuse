@@ -117,11 +117,11 @@ describe("pickerVariants range axis", () => {
     expect(group).not.toContain("--control-h-");
   });
 
-  it("strips Calendar's card border and pays RangeCalendar's inset", () => {
-    // Calendar's root carries its own `p-2` and a card border the popover already
-    // provides; RangeCalendar's root is bare by design above a
+  it("strips Calendar's card chrome and pays RangeCalendar's inset", () => {
+    // Calendar's root carries its own `p-2` and a card's border, shadow and fill, which
+    // the popover already provides; RangeCalendar's root is bare by design above a
     // `p-0` dialog, so the range arm is where that inset comes from.
-    expect(pickerVariants().calendar()).toBe("border-none");
+    expect(pickerVariants().calendar()).toBe("border-none bg-transparent shadow-none");
     expect(pickerVariants({ range: true }).calendar()).toBe("p-2");
   });
 
@@ -148,16 +148,32 @@ describe("pickerVariants range axis", () => {
     expect(pickerVariants().trigger()).not.toMatch(/(?:col|row)-/);
   });
 
-  it("gives the dialog its two-pane row only when the caller has presets", () => {
-    // The two-pane layout is the divider plus the column gap and the trailing inset; a
-    // lone calendar takes none of it, and the slot must be empty rather than absent so
-    // the call site can hand the class through unconditionally.
-    expect(pickerVariants({ hasPresets: true }).pane().split(/\s+/)).toEqual(
-      expect.arrayContaining(["flex", "flex-col", "sm:flex-row", "sm:divide-x", "pb-3"])
-    );
-    // tailwind-variants collapses an empty slot face to `undefined`, which is what the
-    // call site wants: React then omits the attribute rather than emitting `class=""`.
-    expect(pickerVariants({ hasPresets: false }).pane()).toBeUndefined();
-    expect(pickerVariants().pane()).toBeUndefined();
+  it.each([false, true])(
+    "gives the dialog its two-pane row only when the caller has presets (range: %s)",
+    (range) => {
+      // The two-pane layout is the border-coloured divider, with no padding or gap of its
+      // own so the divider reaches the popover's edges; a lone calendar takes none of it,
+      // and the slot must be empty rather than absent so the call site can hand the class
+      // through unconditionally.
+      expect(pickerVariants({ range, hasPresets: true }).pane().split(/\s+/).toSorted()).toEqual(
+        [
+          "flex",
+          "flex-col",
+          "sm:flex-row",
+          "sm:divide-x",
+          "sm:divide-y-0",
+          "divide-y",
+          "divide-border",
+        ].toSorted()
+      );
+      // tailwind-variants collapses an empty slot face to `undefined`, which is what the
+      // call site wants: React then omits the attribute rather than emitting `class=""`.
+      expect(pickerVariants({ range, hasPresets: false }).pane()).toBeUndefined();
+      expect(pickerVariants({ range }).pane()).toBeUndefined();
+    }
+  );
+
+  it("keeps RangeCalendar's own inset beside the preset pane", () => {
+    expect(pickerVariants({ range: true, hasPresets: true }).calendar()).toBe("p-2");
   });
 });

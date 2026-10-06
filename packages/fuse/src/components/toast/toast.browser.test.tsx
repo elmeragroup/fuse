@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -16,6 +16,8 @@ import {
   snapshotDocumentTheme,
   stampDocumentTheme,
 } from "../../../test/themed-browser-render";
+import { Dialog } from "../dialog/index";
+import { Sheet } from "../sheet/index";
 import { Toast } from "./index";
 
 const CLOSE_COPY = {
@@ -281,6 +283,112 @@ describe("Toast manager", () => {
     expect(quiet.getAttribute("role")).toBe("dialog");
     expect(page.getByRole("alert").query()).toBeNull();
   });
+
+  it("promise keeps the type a success state returns", async () => {
+    const { manager } = renderToast();
+
+    const warned = manager.promise(Promise.resolve(3), {
+      loading: "Recalculating…",
+      success: (count) => ({ type: "warning", title: "Recalculated", description: `${count} warnings` }),
+      error: "Failed",
+    });
+    await expect(warned).resolves.toBe(3);
+    const warning = await waitForToast("Recalculated");
+    expect(warning.getAttribute("data-status")).toBe("warning");
+    expect(warning.getAttribute("role")).toBe("dialog");
+  });
+
+  it("promise derives priority from the type a success state returns", async () => {
+    const { manager } = renderToast();
+
+    const refused = manager.promise(Promise.resolve("refused"), {
+      loading: "Submitting…",
+      success: { type: "error", title: "Order refused" },
+      error: "Failed",
+    });
+    await expect(refused).resolves.toBe("refused");
+    const refusal = await waitForToast("Order refused");
+    expect(refusal.getAttribute("data-status")).toBe("error");
+    expect(refusal.getAttribute("role")).toBe("alertdialog");
+    expect(page.getByRole("alert").element()).toBeTruthy();
+  });
+
+  it("promise without loading shows nothing until the promise settles", async () => {
+    const { manager } = renderToast();
+
+    let resolveOk: (value: string) => void = () => {
+      throw new Error("unresolved");
+    };
+    const ok = new Promise<string>((resolve) => {
+      resolveOk = resolve;
+    });
+    const settled = manager.promise(ok, { success: "Synced", error: "Sync failed" });
+    // A toast added after promise() renders in the same pass as any toast promise() added.
+    manager.add({ title: "Sentinel" });
+    const sentinel = await waitForToast("Sentinel");
+    expect(toastRoots()).toEqual([sentinel]);
+
+    resolveOk("done");
+    await expect(settled).resolves.toBe("done");
+    const success = await waitForToast("Synced");
+    expect(success.getAttribute("data-status")).toBe("success");
+  });
+
+  it("promise moves to the error state when the success factory throws", async () => {
+    const { manager } = renderToast();
+
+    const broken = manager.promise(Promise.resolve("value"), {
+      loading: "Loading…",
+      success: () => {
+        throw new Error("render failed");
+      },
+      error: (cause) => ({ title: "Could not show the result", description: cause.message }),
+    });
+    await expect(broken).rejects.toThrow("render failed");
+    const errorRoot = await waitForToast("Could not show the result");
+    expect(errorRoot.getAttribute("data-status")).toBe("error");
+    expect(queryToastCopy("render failed")).toBeTruthy();
+    expect(queryToastCopy("Loading…")).toBeUndefined();
+  });
+
+  it("useToastManager keeps add, update, close and promise stable while toasts change", async () => {
+    const renders: Array<{ toasts: number; methods: readonly unknown[] }> = [];
+    function Recorder() {
+      const { toasts, add, update, close, promise } = Toast.useToastManager();
+      renders.push({ toasts: toasts.length, methods: [add, update, close, promise] });
+      return <Toast.Viewport />;
+    }
+    const { manager } = renderToast(<Recorder />);
+
+    const id = manager.add({ title: "Stable", timeout: 0 });
+    await waitForToast("Stable");
+    manager.close(id);
+    await waitForToastGone("Stable");
+
+    expect(renders.map((render) => render.toasts)).toContain(1);
+    const [first] = renders;
+    for (const render of renders) {
+      render.methods.forEach((method, index) => {
+        expect(method).toBe(first?.methods[index]);
+      });
+    }
+  });
+
+  it("an effect keyed on useToastManager's add adds one toast", async () => {
+    function AddOnMount() {
+      const { add } = Toast.useToastManager();
+      useEffect(() => {
+        add({ title: "Added once", timeout: 0 });
+      }, [add]);
+      return <Toast.Viewport />;
+    }
+    const { manager } = renderToast(<AddOnMount />);
+
+    await waitForToast("Added once");
+    manager.add({ title: "Marker", timeout: 0 });
+    await waitForToast("Marker");
+    expect(toastRoots()).toHaveLength(2);
+  });
 });
 
 describe("Toast chrome", () => {
@@ -479,4 +587,53 @@ describe("Toast overlay containment", () => {
     expect(island.contains(root)).toBe(true);
     expect([...document.body.children].includes(root)).toBe(false);
   });
+});
+
+describe("Toast layer", () => {
+  // A toast raised from inside an open modal must paint over it. The modal's portal mounts
+  // after the viewport's, so a shared z-index would let the modal win on DOM order.
+  for (const [family, modal] of [
+    [
+      "Sheet",
+      <Sheet.Root key="sheet">
+        <Sheet.Trigger>Open modal</Sheet.Trigger>
+        <Sheet.Content>
+          <Sheet.Title>Order details</Sheet.Title>
+        </Sheet.Content>
+      </Sheet.Root>,
+    ],
+    [
+      "Dialog",
+      <Dialog.Root key="dialog">
+        <Dialog.Trigger>Open modal</Dialog.Trigger>
+        <Dialog.Content>
+          <Dialog.Title>Order details</Dialog.Title>
+        </Dialog.Content>
+      </Dialog.Root>,
+    ],
+  ] as const) {
+    it(`paints a toast above an open ${family}`, async () => {
+      const { manager } = renderToast(
+        <>
+          <Toast.Viewport />
+          {modal}
+        </>
+      );
+      await userEvent.click(page.getByRole("button", { name: "Open modal", exact: true }));
+      await vi.waitFor(() => {
+        expect(page.getByRole("dialog", { name: "Order details", exact: true }).query()).toBeTruthy();
+      });
+
+      manager.add({ title: "Copied to clipboard", timeout: 0 });
+      const root = await waitForToast("Copied to clipboard");
+      await vi.waitFor(() => {
+        // DOM audit: paint order has no accessible role. The covering backdrop or popup
+        // panel has none either, so the failure message names it by its data-slot.
+        const box = root.getBoundingClientRect();
+        const topmost = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+        const covering = topmost?.closest("[data-slot]")?.getAttribute("data-slot");
+        expect(topmost !== null && root.contains(topmost), `covered by ${covering}`).toBe(true);
+      });
+    });
+  }
 });

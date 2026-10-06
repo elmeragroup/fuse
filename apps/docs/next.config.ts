@@ -14,17 +14,16 @@ const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: workspaceRoot,
   /**
-   * The OG image routes read Roboto and the brand artwork with `fs` at request time
+   * The OG image routes read Roboto and the Elmera mark with `fs` at request time
    * (`src/og/og-assets.ts`). Tracing cannot follow a path built at runtime, so the files are
    * named here and the standalone bundle carries them.
    */
   outputFileTracingIncludes: {
     "/og/**": [
-      "./node_modules/@fontsource/roboto/files/roboto-latin-{400,500,600,700}-normal.woff",
+      "./node_modules/@fontsource/roboto/files/roboto-latin-{500,600}-normal.woff",
       // SIL OFL 1.1 requires the license text with every copy of the fonts.
       "./node_modules/@fontsource/roboto/LICENSE",
-      "./public/landing/marks/*.svg",
-      "./public/landing/logos/*.svg",
+      "./public/landing/marks/elma.svg",
     ],
   },
   /** Component pages are authored as `page.mdx` route files. */

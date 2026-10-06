@@ -282,3 +282,43 @@ export function toLinearSrgb(color: Oklch): Srgb.LinearSrgb {
 export function toSrgb(color: Oklch): Srgb.Srgb {
   return Srgb.fromLinear(toLinearSrgb(color));
 }
+
+// Linear channels this close outside `0..1` are conversion rounding, not a gamut miss: the
+// achromatic endpoints land within it.
+const GAMUT_TOLERANCE = 1e-7;
+
+// Each halving narrows the chroma bracket; 40 take a 0.5 chroma below 1e-12.
+const CHROMA_BISECTIONS = 40;
+
+function isInSrgbGamut(color: Oklch): boolean {
+  const { r, g, b } = toLinearSrgb(color);
+  return [r, g, b].every((channel) => channel >= -GAMUT_TOLERANCE && channel <= 1 + GAMUT_TOLERANCE);
+}
+
+/**
+ * Map a color into the sRGB gamut by lowering its chroma, keeping lightness, hue and alpha, as
+ * CSS Color 4 gamut mapping does without its just-noticeable-difference shortcut. Where
+ * {@link toSrgb} clips each channel and shifts the hue, this keeps the hue, so a color derived
+ * by stepping a token's lightness stays the token's hue.
+ *
+ * @param color - The color to map.
+ * @returns The color itself when it is inside the gamut, otherwise the same lightness and
+ *   hue at the highest chroma the gamut holds.
+ */
+export function clampChromaToSrgb(color: Oklch): Oklch {
+  if (isInSrgbGamut(color)) {
+    return color;
+  }
+  // Chroma 0 is a grey, inside the gamut at every lightness, so the bracket always holds the edge.
+  let inside = 0;
+  let outside = color.c;
+  for (let step = 0; step < CHROMA_BISECTIONS; step++) {
+    const chroma = (inside + outside) / 2;
+    if (isInSrgbGamut(inRange(color.l, chroma, color.h, color.alpha))) {
+      inside = chroma;
+    } else {
+      outside = chroma;
+    }
+  }
+  return inRange(color.l, inside, color.h, color.alpha);
+}

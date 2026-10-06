@@ -6,7 +6,7 @@ import type { Expression, JSXElementName, JSXOpeningElement } from "oxc-parser";
 import { describe, expect, it } from "vitest";
 
 import { OPTIONAL_PEER_ENTRIES, walkImportedSourceFiles } from "../scripts/entries";
-import { overlayLayer } from "./components/overlay/overlay-classes";
+import { overlayLayer, toastLayer } from "./components/overlay/overlay-classes";
 
 /**
  * Remaining source-level invariants that are not already a lint rule
@@ -479,12 +479,19 @@ describe("runtime listeners and layout motion", () => {
 
 describe("overlay layer", () => {
   // Why not a lint rule: the invariant is a count across two places. The shared overlay
-  // module spells `z-50` once and no component restates it. A rule banning the class would
-  // need an exemption for the module that owns it and could not assert "exactly once".
+  // module spells `z-50` and the toast layer's `z-60` once each, and no component restates
+  // them. A rule banning either class would need an exemption for the module that owns it
+  // and could not assert "exactly once".
   it("is declared once in overlay-classes.ts and nowhere else in component source", () => {
     expect(overlayLayer).toBe("z-50");
     expect(codeOnly(readSrc("components/overlay/overlay-classes.ts")).match(/z-50/gu)).toHaveLength(1);
     expect(ownedBy("components/overlay/overlay-classes.ts", "z-50")).toEqual([]);
+  });
+
+  it("declares the toast layer once in overlay-classes.ts and nowhere else in component source", () => {
+    expect(toastLayer).toBe("z-60");
+    expect(codeOnly(readSrc("components/overlay/overlay-classes.ts")).match(/z-60/gu)).toHaveLength(1);
+    expect(ownedBy("components/overlay/overlay-classes.ts", "z-60")).toEqual([]);
   });
 });
 
@@ -701,7 +708,7 @@ describe("state faces", () => {
         "data-disabled:opacity-50",
         "data-disabled:pointer-events-none",
       ],
-      "react-aria/date-picker/date-picker.tsx": ["data-disabled:pointer-events-none"],
+      "react-aria/internal/picker-presets.tsx": ["data-disabled:pointer-events-none"],
     });
   });
 

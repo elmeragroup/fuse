@@ -25,6 +25,8 @@ const SLUGS = [
   "internal-fkse-private",
   "internal-elma-private",
   "internal-elma-company",
+  "internal-ngfi-private",
+  "internal-ngfi-company",
   "external-fkas-private",
   "external-fkas-company",
   "external-tkas-private",
@@ -35,6 +37,8 @@ const SLUGS = [
   "external-fkse-private",
   "external-elma-private",
   "external-elma-company",
+  "external-ngfi-private",
+  "external-ngfi-company",
 ] as const;
 
 // Counts the derived `secondary-hover` role, the `radius-step` rung spacing and the two
@@ -97,8 +101,8 @@ describe("resolveThemeCatalog", () => {
       value: 10,
     });
     expect(theme("external-fkas-private").schemes.dark.rungs["radius-xl"].value).toBe(16);
-    // external-tkas-private sets 0.95rem, 15.2px, so radius-xs is 15.2 - 3 * 2.
-    expect(light("external-tkas-private").rungs["radius-xs"].value).toBeCloseTo(9.2, 9);
+    // external-tkas-private sets 1rem, 16px, so radius-xs is 16 - 3 * 2.
+    expect(light("external-tkas-private").rungs["radius-xs"].value).toBe(10);
     // Internal themes keep 0.375rem, 6px, and step 0px, so every rung is 6px.
     expect(light("internal-elma-private").rungs["radius-xs"].value).toBe(6);
     expect(light("internal-elma-private").rungs["radius-xl"].value).toBe(6);
@@ -132,9 +136,12 @@ describe("resolveThemeCatalog", () => {
     });
     expect(catalog.primitives["brand-fkab"].value).toEqual(Oklch.toSrgb(fkasAccent));
 
-    const sidebarBrand = light("external-fkas-private").tokens["sidebar-brand"];
+    // Gudbrandsdal's accent already reads on the light sidebar, so its sidebar brand keeps
+    // the alias.
+    const guenAccent = getOrThrow(Oklch.parse("oklch(0.21 0.0399 265.73)"));
+    const sidebarBrand = light("external-guen-private").tokens["sidebar-brand"];
     expect(sidebarBrand).toMatchObject({ css: "var(--brand)", reference: { space: "token", name: "brand" } });
-    expect(sidebarBrand.value).toEqual(Oklch.toSrgb(fkasAccent));
+    expect(sidebarBrand.value).toEqual(Oklch.toSrgb(guenAccent));
 
     // The external outline aliases the text color, so the dark hop lands on the dark
     // foreground, #FFEEE6 in the fkas dark sheet.

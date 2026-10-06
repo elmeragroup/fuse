@@ -7,6 +7,7 @@ import { ToastStatuses } from "./demos/toast-statuses";
 import { ToastAction } from "./demos/toast-action";
 import { ToastPromise } from "./demos/toast-promise";
 import { ToastStacking } from "./demos/toast-stacking";
+import { ToastModuleManager } from "./demos/toast-module-manager";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -14,7 +15,7 @@ export const metadata = componentMetadata("toast");
 
 <ComponentIntro slug="toast" />
 
-These examples render notifications inside their own preview areas so different examples can run together. In an application, use one provider and viewport for the shared notification stack. Handle the promise returned by `toastManager.promise`; the error toast does not consume its rejection.
+These examples render notifications inside their own preview areas so different examples can run together. In an application, use one provider and viewport for the shared notification stack. Handle the promise returned by `toastManager.promise`; the error toast does not consume its rejection. A `type` returned from `success` or `error`, such as `"warning"`, sets the settled status and its priority. Omit `loading` to show no toast until the promise settles. A loading toast the user closes stays closed when the promise settles.
 
 <Demo slug="toast" id="statuses" title="Statuses" file="toast-statuses.tsx">
   <ToastStatuses />
@@ -30,6 +31,14 @@ These examples render notifications inside their own preview areas so different 
 
 <Demo slug="toast" id="stacking" title="Stacking" file="toast-stacking.tsx">
   <ToastStacking />
+</Demo>
+
+## Toasts outside React
+
+Code outside the React tree, such as a timer or a query-cache listener, raises toasts through a manager from `Toast.createToastManager()`. Create it at module scope and pass it to `Toast.Provider` as `toastManager`. The manager queues calls made before the provider connects, including calls made before it mounts and calls from mount effects in its subtree, and replays them in call order once it connects. `add` returns the toast id at once, so a queued toast can still be updated or closed. Mount the manager in one provider at a time.
+
+<Demo slug="toast" id="module-manager" title="Module manager" file="toast-module-manager.tsx">
+  <ToastModuleManager />
 </Demo>
 
 <ApiReference slug="toast" />

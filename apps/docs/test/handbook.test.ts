@@ -28,14 +28,14 @@ function matrixGrid(html: string): string {
 describe("theme matrix", () => {
   it("renders one slug-labelled cell per legal permutation, never an illegal one and no density axis", async () => {
     const html = await fetchText("/handbook/theme-matrix");
-    expect([...html.matchAll(/data-theme-matrix-cell/g)]).toHaveLength(20);
+    expect([...html.matchAll(/data-theme-matrix-cell/g)]).toHaveLength(24);
     const slugHooks = [...html.matchAll(/data-theme-slug="([^"]*)"/g)].map((match) => match[1]);
     expect(slugHooks).toEqual(LEGAL_THEMES.map(themeSlug));
     // Hatched or otherwise, no illegal permutation reaches the page.
     for (const slug of ILLEGAL_SLUGS) {
       expect(html, slug).not.toContain(slug);
     }
-    // No density axis: the grid is 20 cells, not 20 × 2.
+    // No density axis: the grid is 24 cells, not 24 × 2.
     expect(matrixGrid(html)).not.toContain("comfortable");
   });
 
@@ -43,7 +43,7 @@ describe("theme matrix", () => {
     const html = await fetchText("/handbook/theme-matrix");
     // Every cell carries its own three brand attributes.
     expect([...html.matchAll(/data-theme-brand="elma"/g)].length).toBeGreaterThanOrEqual(4);
-    expect([...html.matchAll(/data-theme-variant="external"/g)]).toHaveLength(10);
+    expect([...html.matchAll(/data-theme-variant="external"/g)]).toHaveLength(12);
     // The document root stays Elmera-internal, and dense.
     expect(/<html\b[^>]*data-theme-variant="internal"/.test(html)).toBe(true);
     expect(/<html\b[^>]*data-density="dense"/.test(html)).toBe(true);
@@ -51,7 +51,7 @@ describe("theme matrix", () => {
 
   it("puts an overlay inside every cell, so the portal target is the cell's scope", async () => {
     const html = await fetchText("/handbook/theme-matrix");
-    expect([...matrixGrid(html).matchAll(/>Overlay</g)]).toHaveLength(20);
+    expect([...matrixGrid(html).matchAll(/>Overlay</g)]).toHaveLength(24);
   });
 });
 

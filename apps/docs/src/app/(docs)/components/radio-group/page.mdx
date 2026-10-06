@@ -5,6 +5,7 @@ lede: >
 
 import { RadioGroupBasic } from "./demos/radio-group-basic";
 import { RadioGroupPending } from "./demos/radio-group-pending";
+import { RadioGroupLabelHidden } from "./demos/radio-group-label-hidden";
 import { RadioItemGroupDemo } from "./demos/radio-item-group";
 import { RadioIconButtonDemo } from "./demos/radio-icon-button";
 import { RadioControlledNull } from "./demos/radio-controlled-null";
@@ -21,6 +22,10 @@ export const metadata = componentMetadata("radio-group");
 
 <Demo slug="radio-group" id="pending" title="Pending" file="radio-group-pending.tsx">
   <RadioGroupPending />
+</Demo>
+
+<Demo slug="radio-group" id="label-hidden" title="Hidden label" file="radio-group-label-hidden.tsx">
+  <RadioGroupLabelHidden />
 </Demo>
 
 <Demo slug="radio-group" id="item-group" title="Item group" file="radio-item-group.tsx">

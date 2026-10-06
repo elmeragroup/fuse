@@ -78,8 +78,8 @@ export function LandingPage({ theme }: LandingPageProps): ReactElement {
             <footer className={styles.footer()}>
               <div className={styles.footerInner()}>
                 <span>
-                  Fuse is built by Elmera Group for Fjordkraft, TrøndelagKraft, Gudbrandsdal Energi and
-                  Telinet.
+                  Fuse is built by Elmera Group for Fjordkraft, TrøndelagKraft, Gudbrandsdal Energi, Telinet
+                  and Nordic Green Energy.
                 </span>
                 <span className={styles.footerLinks()}>
                   {FOOTER_LINKS.map((link) => (
