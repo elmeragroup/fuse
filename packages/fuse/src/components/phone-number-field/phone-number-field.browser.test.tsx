@@ -95,6 +95,15 @@ function optionFlagCodes(): string[] {
   });
 }
 
+function triggerDialCode(dialCode: string): HTMLElement {
+  const trigger = roleNamed("button", "Select country");
+  const match = [...trigger.querySelectorAll("span")].find((span) => span.textContent === dialCode);
+  if (!(match instanceof HTMLElement)) {
+    throw new Error(`expected dial code ${dialCode} on the trigger`);
+  }
+  return match;
+}
+
 function inputGroupRoot(name: string): HTMLElement {
   const group = textboxNamed(name).closest('[role="group"]');
   if (!(group instanceof HTMLElement)) {
@@ -490,6 +499,17 @@ describe("PhoneNumberField", () => {
       inputGroupRoot("Mobile"),
       "mouse focus on the country trigger must not paint the group ring"
     );
+  });
+  it("sets the dial code in the number input's density type pair, so both share a baseline", () => {
+    renderField(<PhoneNumberField label="Mobile" />);
+    // The group centres the trigger and the input, so a smaller dial-code font sat higher
+    // than the typed digits. Matching the input's type pair aligns the two baselines.
+    for (const density of ["dense", "comfortable"] as const) {
+      stampDensity(density);
+      const style = getComputedStyle(triggerDialCode("+47"));
+      expect(px(style.fontSize), `${density} dial code font`).toBe(CONTROL_MD[density].font);
+      expect(px(style.lineHeight), `${density} dial code leading`).toBe(CONTROL_MD[density].leading);
+    }
   });
 });
 

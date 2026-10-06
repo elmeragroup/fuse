@@ -143,6 +143,26 @@ describe("control size: the text-entry touch floor", () => {
   );
 
   it.each(CASES)(
+    "sets the phone dial code in its number's floored type at %s with a %s pointer",
+    async (density, pointer) => {
+      stampDensity(density);
+      await emulatePointer(pointer);
+      renderEntryBoxes();
+      const md = CONTROL_MD[density];
+      // The dial code shares a baseline with the typed digits only while both have one size.
+      const font = pointer === "coarse" ? Math.max(IOS_NO_ZOOM_FONT, md.font) : md.font;
+      const trigger = roleNamed("button", "Select country");
+      const dialCode = [...trigger.querySelectorAll("span")].find((span) => span.textContent === "+47");
+      if (dialCode === undefined) {
+        throw new Error("expected the +47 dial code on the country trigger");
+      }
+      const style = getComputedStyle(dialCode);
+      expect(px(style.fontSize), `${density} ${pointer} dial code font`).toBe(font);
+      expect(px(style.lineHeight), `${density} ${pointer} dial code leading`).toBe(md.leading);
+    }
+  );
+
+  it.each(CASES)(
     "floors the chips input over the chips box's 14px at %s with a %s pointer",
     async (density, pointer) => {
       stampDensity(density);
