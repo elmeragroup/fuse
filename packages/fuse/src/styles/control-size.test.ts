@@ -55,8 +55,38 @@ describe("control size: consumer utilities replace the recipe's", () => {
     expect(merged).toContain("px-(--control-px-md)");
     expect(merged).toContain("gap-(--control-gap-md)");
   });
+});
 
-  it("lets a consumer text-* class replace the type in the inset-and-type pair the text-entry boxes forward", () => {
-    expect(cn(controlMdInsetTypeClass, "text-sm")).toBe("px-(--control-px-md) text-sm");
+/**
+ * The text-entry pair: the md inset, the density type and the 16px coarse-pointer floor that
+ * keeps iOS Safari from zooming into a focused dense field. The expected strings are written
+ * by hand; `control-size.browser.test.tsx` measures the floor itself.
+ */
+describe("control size: the text-entry inset-and-type pair", () => {
+  const FLOOR = "pointer-coarse:[--entry-text:max(16px,var(--control-text))]";
+  const FLOORED_TYPE = "text-[length:var(--entry-text,var(--control-text))]";
+
+  /** Class order carries no meaning, so the pair is compared as a set. */
+  function classSet(classes: string): string[] {
+    return classes.split(" ").sort();
+  }
+
+  it("reads the floor in its one font-size class and keeps the density leading", () => {
+    expect(classSet(controlMdInsetTypeClass)).toEqual(
+      classSet(`px-(--control-px-md) ${FLOOR} ${FLOORED_TYPE} leading-(--control-leading)`)
+    );
+  });
+
+  it.each(["text-sm", "text-lg"])("lets a consumer %s replace the type on every pointer", (consumer) => {
+    // Only the inert floor variable stays: no font-size class but the consumer's reads it.
+    expect(classSet(cn(controlMdInsetTypeClass, consumer))).toEqual(
+      classSet(`px-(--control-px-md) ${FLOOR} ${consumer}`)
+    );
+  });
+
+  it("keeps the floored type under a consumer leading-* class", () => {
+    expect(classSet(cn(controlMdInsetTypeClass, "leading-5"))).toEqual(
+      classSet(`px-(--control-px-md) ${FLOOR} ${FLOORED_TYPE} leading-5`)
+    );
   });
 });

@@ -7,6 +7,7 @@ import { Input } from "../components/input/input";
 import { textFieldVariants } from "../components/text-field/text-field-variants";
 import { Textarea } from "../components/textarea/textarea";
 import { cn } from "./cn";
+import { controlMdInsetTypeClass } from "./control-size-md";
 import {
   fieldBox,
   fieldBoxChromeClass,
@@ -63,9 +64,6 @@ describe("fieldBox recipe", () => {
       "bg-card",
       "border-input",
       "h-(--control-h-md)",
-      "px-(--control-px-md)",
-      "text-(length:--control-text)",
-      "leading-(--control-leading)",
       "placeholder:text-muted-foreground",
       "disabled:bg-input/50",
       // The read-only fill keys off the attribute: `:read-only` also matches disabled and file inputs.
@@ -75,6 +73,8 @@ describe("fieldBox recipe", () => {
       expect(classes).toContain(token);
     }
     expect(classes).not.toContain("transition-[color,box-shadow,border-color]");
+    // Oracle: the text-entry inset-and-type pair, which control-size.test.ts pins by hand.
+    expect(classes).toEqual(expect.arrayContaining(tokens(controlMdInsetTypeClass)));
     // Oracle: the shared focus recipe, which utils.test.ts pins by hand.
     for (const token of selfFocusRingClass.split(" ")) {
       expect(classes).toContain(token);

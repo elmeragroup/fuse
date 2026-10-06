@@ -70,14 +70,6 @@
   -webkit-touch-callout: none;
 }
 
-/* iOS zooms into any focused field under 16px and never zooms back out. A floor, so it lifts
-   dense 14px control text and leaves comfortable 18px alone. */
-@media (pointer: coarse) {
-  [data-landing] :is(input, textarea, select) {
-    font-size: max(16px, var(--control-text));
-  }
-}
-
 /* The re-theme reveal: the new snapshot is clipped by a growing circle (driven from
    landing-theme.tsx), so the default cross-fade between snapshots is switched off. */
 :root:has([data-landing])::view-transition-old(root),

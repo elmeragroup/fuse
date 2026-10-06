@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../test/raw-palette";
+import { controlMdInsetTypeClass } from "./control-size-md";
 import { pickerVariants } from "./picker";
 
 /** Every class the recipe can emit, across every face of both axes. */
@@ -59,9 +60,8 @@ describe("pickerVariants shared slots", () => {
   it("keeps the segment row on the md rung's padding and type pair at both densities", () => {
     for (const range of [false, true]) {
       const input = pickerVariants({ range }).input();
-      expect(input).toContain("px-(--control-px-md)");
-      expect(input).toContain("text-(length:--control-text)");
-      expect(input).toContain("leading-(--control-leading)");
+      // Oracle: the text-entry inset-and-type pair, which control-size.test.ts pins by hand.
+      expect(input.split(" ")).toEqual(expect.arrayContaining(controlMdInsetTypeClass.split(" ")));
       expect(input).not.toContain("py-");
       expect(input).not.toContain("text-sm");
       expect(input).not.toContain("px-2");

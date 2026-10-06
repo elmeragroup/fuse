@@ -25,6 +25,10 @@ import { cn } from "./cn";
  * arbitrary property never reaches the merge, because tailwind-merge puts it in no
  * font-size or line-height group, so `cn` kept both. The `length:` hint is required,
  * because a bare `text-(--var)` could also be a colour.
+ *
+ * `entryType` is the text-entry variant of `type`, with a coarse-pointer font-size floor (see
+ * `controlMdInsetTypeClass`). Its one font-size class is a typed arbitrary value, so
+ * tailwind-merge groups it with `text-*` the same way.
  */
 export const controlMd = tv({
   slots: {
@@ -37,13 +41,34 @@ export const controlMd = tv({
     iconInset: "px-(--control-px-icon-md)",
     iconEdge:
       "has-data-[icon=inline-end]:pr-(--control-px-icon-md) has-data-[icon=inline-start]:pl-(--control-px-icon-md)",
-    type: "text-(length:--control-text) leading-(--control-leading)",
+    type: "text-(length:--control-text)",
+    entryType:
+      "text-[length:var(--entry-text,var(--control-text))] pointer-coarse:[--entry-text:max(16px,var(--control-text))]",
   },
+  // The density leading, shared by both type slots so it has one literal.
+  compoundSlots: [{ slots: ["type", "entryType"], class: "leading-(--control-leading)" }],
 })();
 
 /**
  * The md inline inset and the density-owned type pair, the one pairing every text-entry box
  * uses: the field-box recipe, the RAC input, the picker and date-field inputs, and
  * NumberField's input. Each box sets its own height, so the pair leaves height out.
+ *
+ * On a coarse pointer the font size gets a 16px floor. iOS Safari zooms the page into a
+ * focused editable field whose text is under 16px and never zooms back out, and dense
+ * `--control-text` is 14px. WebKit compares against a fixed 16px, not the root size, so the
+ * floor is `16px`: a `1rem` floor would shrink under a host `html { font-size: 14px }`.
+ * `max()` leaves comfortable 18px as it is. Only the font size moves: the dense 20px leading
+ * and the box height stay, and the taller glyphs still fit.
+ * Non-entry controls that bind `controlMd.type()`, such as Tabs triggers, keep 14px, because
+ * focusing them does not zoom.
+ *
+ * The floor is a private `--entry-text` that only a coarse pointer declares, on each box that
+ * reads it, so a box reads its own value. The one font-size class reads it and falls back to
+ * `--control-text`. A consumer's font-size class replaces that class through tailwind-merge, as
+ * it replaces `controlMd.type()`, so the consumer's size applies on every pointer and the inert
+ * `--entry-text` is left behind. A variant-prefixed floor class would instead survive the merge
+ * and shrink a larger consumer size, such as the 18px TextField card input, to 16px.
+ * `ComboboxChipsInput` declares its own floor over the chips box's inherited size.
  */
-export const controlMdInsetTypeClass = cn(controlMd.inset(), controlMd.type());
+export const controlMdInsetTypeClass = cn(controlMd.inset(), controlMd.entryType());
