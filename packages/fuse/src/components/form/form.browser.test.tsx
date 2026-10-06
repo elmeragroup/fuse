@@ -134,7 +134,7 @@ describe("Form submit check", () => {
     expect(submitted).not.toHaveBeenCalled();
     await expect.element(page.getByRole("textbox", { name: "Email", exact: true })).toHaveFocus();
 
-    // Only an edit of the field that holds the error clears it.
+    // An edit of the field that holds the error clears it, as a new errors object without it would.
     await userEvent.type(page.getByRole("textbox", { name: "Email", exact: true }), "a");
     await userEvent.click(page.getByRole("button", { name: "Sign up", exact: true }));
     expect(submitted).toHaveBeenCalledOnce();

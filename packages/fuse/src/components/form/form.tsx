@@ -16,7 +16,8 @@ export type FormProps<FormValues extends object = FormPrimitive.Values> = FormPr
  * context instead, so pass them `errorMessage` and `isInvalid`.
  *
  * Every submit first checks the enabled Fields inside the form. While any of them is invalid,
- * the form calls neither `onSubmit` nor `onFormSubmit` and focuses the first one it can. An
+ * the form calls neither `onSubmit` nor `onFormSubmit`, lets no native submit or form action
+ * run, and focuses the first one it can. An
  * `errors` entry counts until its own field's value changes or a new `errors` object leaves it
  * out, and a Field passed `invalid` (TextField's `isInvalid`) for as long as it is passed. In
  * the default `onSubmit` validation mode, Fields also re-check their native constraints on
