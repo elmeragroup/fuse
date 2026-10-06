@@ -442,7 +442,7 @@ export function ComboboxChip({
       // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- chip chrome is compact token, not a control rung
       className={mergeClassName(
         className,
-        "text-xs font-medium flex h-[calc(--spacing(5.5))] w-fit items-center justify-center gap-1 rounded-sm bg-muted px-1.5 whitespace-nowrap text-foreground has-data-[slot=combobox-chip-remove]:pr-0"
+        "text-xs font-medium flex h-[calc(--spacing(5.5))] w-fit items-center justify-center gap-1 rounded-sm bg-muted px-1.5 whitespace-nowrap text-foreground has-data-[slot=combobox-chip-remove]:pr-0.5"
       )}
       {...props}>
       {children}
@@ -480,12 +480,24 @@ function ComboboxChipRemove({ label }: { label: string }): ReactElement {
   return (
     <ComboboxPrimitive.ChipRemove
       data-slot="combobox-chip-remove"
-      render={<Button variant="ghost" size="icon-sm" aria-label={label} />}
-      // The remove button sits inside a chip in the field box, so it takes the compact
-      // corner instead of Button's `--radius-button`.
-      className={cn("-ml-1 opacity-50 enabled-hover:opacity-100", compactCornerClass)}
+      render={
+        <Button
+          variant="ghost"
+          size="icon-inline"
+          aria-label={label}
+          // The remove button sits inside a chip in the field box, so it takes the compact
+          // corner instead of Button's `--radius-button`. The inline square is as tall as the
+          // chip's 16px line and fits inside it. Without preflight a native button keeps the
+          // browser's own font, so the button sets the chip's xs type itself. Its hit area
+          // extends the padding box, so the ghost button drops its transparent border to make
+          // the target 24px. The target reaches into the chip's inset and the chips' gap
+          // without meeting the next chip. The glyph takes the xs size, as on Button's
+          // smallest square.
+          className={cn("text-xs border-0 opacity-50 enabled-hover:opacity-100", compactCornerClass)}
+        />
+      }
       aria-label={label}>
-      <X className="pointer-events-none" />
+      <X className="pointer-events-none size-3" />
     </ComboboxPrimitive.ChipRemove>
   );
 }

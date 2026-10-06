@@ -253,19 +253,21 @@ function wrapManagerMethods(manager: PrimitiveManager): CreateToastManagerReturn
 
 /**
  * Imperative toast manager for a tree under `Toast.Provider`. Returns the live
- * `toasts` array plus `add` / `update` / `close` / `promise`.
+ * `toasts` array plus `add` / `update` / `close` / `promise`, which keep their
+ * identity as toasts change, so effects can list them as dependencies.
  */
 export function useToastManager<Data extends object = object>(): UseToastManagerReturnValue<Data> {
-  const manager = ToastPrimitive.useToastManager<Data>();
-  return useMemo(
-    () => ({
-      // SAFETY: the hook manager is the primitive store face; wrapManagerMethods only
-      // rebinds add/update/close/promise and keeps `toasts` from this closure.
-      ...wrapManagerMethods(manager as PrimitiveManager),
-      toasts: manager.toasts,
-    }),
-    [manager]
+  const { toasts, add, update, close } = ToastPrimitive.useToastManager<Data>();
+  // Base UI rebuilds its manager object whenever `toasts` changes, but the store's
+  // add/update/close keep their identity. Keying the wrappers on those functions keeps
+  // ours stable too, so an effect that lists `add` does not re-run after every toast.
+  const methods = useMemo(
+    // SAFETY: these are the primitive store's methods, typed over the caller's `Data`;
+    // wrapManagerMethods forwards custom `data` unchanged, so widening it to `object` is sound.
+    () => wrapManagerMethods({ add, update, close } as PrimitiveManager),
+    [add, update, close]
   );
+  return useMemo(() => ({ ...methods, toasts }), [methods, toasts]);
 }
 
 /** Connects a provider's store to a module manager; the returned function disconnects it. */
