@@ -133,8 +133,11 @@ const EXTERNAL_DARK_PALETTES = {
   },
 } as const satisfies Record<ExternalBrandCode, ExternalDarkSheet>;
 
-/** The share of foreground in the dark hover tint, matching internal dark's popover-to-accent step. */
-const ACCENT_LIFT_PERCENT = 8;
+/**
+ * The share of foreground in a dark hover tint, matching internal dark's step from card and
+ * popover (0.205) to muted and accent (0.269).
+ */
+const HOVER_LIFT_PERCENT = 8;
 
 /** The dark sheet for one brand and segment, preferring a segment sheet over the brand base. */
 function darkSheet(brand: BrandCode, segment: ThemeSegment): ExternalDarkSheet {
@@ -156,11 +159,14 @@ export function externalDarkPalette(brand: BrandCode, segment: ThemeSegment): To
     // Carry the brand's dark surfaces into roles the Figma sheets do not name.
     popover,
     "popover-foreground": palette["popover-foreground"] ?? palette["card-foreground"],
-    muted: palette.muted ?? palette.card,
+    // `hover:bg-muted` tints controls that sit on a card or popover, so muted lifts the card
+    // toward the foreground rather than repeating it: the step internal dark takes from card
+    // to muted. No sheet names muted yet; one that does keeps its own.
+    muted: palette.muted ?? mixOklchLiteral(palette.card, palette.foreground, HOVER_LIFT_PERCENT),
     // Menus paint a highlighted row with `accent` over the popover. Most sheets set
     // `primary-soft` to their card, which is the popover, so the tint lifts the popover
-    // toward the foreground instead: the step internal dark takes from popover to accent.
-    accent: palette.accent ?? mixOklchLiteral(popover, palette.foreground, ACCENT_LIFT_PERCENT),
+    // the same step instead.
+    accent: palette.accent ?? mixOklchLiteral(popover, palette.foreground, HOVER_LIFT_PERCENT),
     "accent-foreground": palette["accent-foreground"] ?? palette["primary-soft-foreground"],
     sidebar: palette.sidebar ?? palette.background,
     "sidebar-foreground": palette["sidebar-foreground"] ?? palette.foreground,
