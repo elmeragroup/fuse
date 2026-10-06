@@ -16,6 +16,7 @@ import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { MagnifyingGlass } from "../../icons/generated/magnifying-glass";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
+import { controlMd } from "../../styles/control-size-md";
 import { fieldFlushCornerClass } from "../../styles/corner-radius";
 import { selfFocusRingClass } from "../../styles/utils";
 import { ComboboxContent, ComboboxEmpty, ComboboxItem, ComboboxList } from "../combobox/combobox";
@@ -264,7 +265,14 @@ export function PhoneNumberField({
                 )}>
                 <div className="flex items-center gap-1">
                   <Flag country={phone.selectedCountry.code} />
-                  <span className="text-xs font-medium min-w-6 tabular-nums">
+                  {/* The input's font size, touch floor included, so both runs of digits have one size.
+                      Leading is `normal` because a text input centres its text on the font's normal
+                      metrics whatever its line-height; the dial code centres the same way. */}
+                  <span
+                    className={cn(
+                      controlMd.entryType(),
+                      "font-medium min-w-6 leading-[normal] tabular-nums"
+                    )}>
                     {phone.selectedCountry.dialCode}
                   </span>
                 </div>

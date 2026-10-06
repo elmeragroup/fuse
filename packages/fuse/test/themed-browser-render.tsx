@@ -160,6 +160,21 @@ export function px(value: string): number {
   return parsed;
 }
 
+/**
+ * The height of one line of `element`'s font at `line-height: normal`, measured on a plain
+ * block outside the component so no class under test reaches it.
+ */
+export function normalLineHeightOf(element: HTMLElement): number {
+  const { fontFamily, fontSize, fontWeight } = getComputedStyle(element);
+  const probe = document.createElement("div");
+  probe.style.cssText = `position:absolute;visibility:hidden;line-height:normal;font-family:${fontFamily};font-size:${fontSize};font-weight:${fontWeight}`;
+  probe.textContent = element.textContent;
+  document.body.append(probe);
+  const height = probe.getBoundingClientRect().height;
+  probe.remove();
+  return height;
+}
+
 /** The lightness, chroma and hue of an opaque OKLCH color, as Chromium computes it. */
 export type ComputedOklch = { readonly l: number; readonly c: number; readonly h: number };
 
