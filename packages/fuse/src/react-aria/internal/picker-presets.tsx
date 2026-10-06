@@ -54,7 +54,7 @@ export function PickerPresetGroup({
     <AriaRadioGroup
       aria-label={ariaLabel ?? label ?? strings.format("presets")}
       {...props}
-      className={composeTailwindRenderProps(className, "flex flex-col gap-2 px-3")}
+      className={composeTailwindRenderProps(className, "flex flex-col gap-2 p-2")}
     />
   );
 }

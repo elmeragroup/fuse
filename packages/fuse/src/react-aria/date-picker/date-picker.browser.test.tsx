@@ -4,19 +4,28 @@ import type { ReactElement, ReactNode } from "react";
 import { CalendarDate } from "@internationalized/date";
 import { DatePickerContext } from "react-aria-components";
 import type { ValidationResult } from "react-aria-components";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
+
+import * as CssColor from "@elmeragroup/color/css-color";
+import { getOrThrow } from "@elmeragroup/color/result";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { shadowLayers } from "../../../test/assert-invalid-ring";
 import { withLocale } from "../../../test/locale-matrix";
 import {
   calendarGrid,
   calendarRoot,
   cellNamed,
   describedTextsFor,
+  insetsWithin,
+  paddingBox,
+  ROW_VIEWPORT,
   segmentLocator,
   segmentNamed,
+  STACKED_VIEWPORT,
+  unionBox,
 } from "../../../test/rac-calendar-testing";
 import {
   CONTROL_MD,
@@ -536,6 +545,83 @@ describe("DatePicker presets", () => {
   });
 });
 
+/**
+ * The layers of a computed `box-shadow` that paint, judged by their colour's alpha.
+ * Tailwind's `shadow-none` keeps its ring and inset layers in the cascade, so Chromium
+ * reports fully transparent layers rather than `none`; a shadow that paints nothing has
+ * no other kind. Chromium writes each layer's colour first, then its lengths and `inset`.
+ * A colour the parser rejects throws, so an unknown notation never passes as transparent.
+ */
+function paintedShadowLayers(boxShadow: string): string[] {
+  return shadowLayers(boxShadow).filter((layer) => {
+    const colour = layer.replace(/(?:\s+(?:-?[\d.]+px|inset))+$/u, "");
+    return getOrThrow(CssColor.parse(colour)).alpha > 0;
+  });
+}
+
+describe("DatePicker preset pane geometry", () => {
+  afterEach(async () => {
+    await page.viewport(STACKED_VIEWPORT.width, STACKED_VIEWPORT.height);
+  });
+
+  it("runs the row divider from the dialog's top edge to its bottom edge", async () => {
+    await page.viewport(ROW_VIEWPORT.width, ROW_VIEWPORT.height);
+    renderPicker(<DatePicker label="Invoice date" value={march10} presetGroup={presets()} />);
+    const inner = paddingBox(await openPicker());
+    const column = roleNamed("radiogroup", "Date presets");
+    const divider = column.getBoundingClientRect();
+
+    expect(px(getComputedStyle(column).borderRightWidth)).toBeGreaterThan(0);
+    expect(divider.top).toBe(inner.top);
+    expect(divider.bottom).toBe(inner.bottom);
+    expect(divider.left).toBe(inner.left);
+  });
+
+  it("runs the stacked divider from the dialog's start edge to its end edge", async () => {
+    await page.viewport(STACKED_VIEWPORT.width, STACKED_VIEWPORT.height);
+    renderPicker(<DatePicker label="Invoice date" value={march10} presetGroup={presets()} />);
+    const inner = paddingBox(await openPicker());
+    const column = roleNamed("radiogroup", "Date presets");
+    const divider = column.getBoundingClientRect();
+
+    expect(px(getComputedStyle(column).borderBottomWidth)).toBeGreaterThan(0);
+    expect(divider.left).toBe(inner.left);
+    expect(divider.right).toBe(inner.right);
+    expect(divider.top).toBe(inner.top);
+  });
+
+  it.each([
+    ["row", ROW_VIEWPORT],
+    ["stacked", STACKED_VIEWPORT],
+  ])("insets the presets by at least 8px on every side of their column (%s)", async (_layout, viewport) => {
+    await page.viewport(viewport.width, viewport.height);
+    renderPicker(<DatePicker label="Invoice date" value={march10} presetGroup={presets()} />);
+    await openPicker();
+    const items = unionBox([presetTargetNamed("Today"), presetTargetNamed("In a week")]);
+    const insets = insetsWithin(paddingBox(roleNamed("radiogroup", "Date presets")), items);
+
+    expect(insets.top).toBeGreaterThanOrEqual(8);
+    expect(insets.right).toBeGreaterThanOrEqual(8);
+    expect(insets.bottom).toBeGreaterThanOrEqual(8);
+    expect(insets.left).toBeGreaterThanOrEqual(8);
+  });
+
+  it.each([
+    ["with presets", true],
+    ["without presets", false],
+  ])("leaves the card chrome to the popover: no calendar shadow or fill (%s)", async (_case, withPresets) => {
+    await page.viewport(ROW_VIEWPORT.width, ROW_VIEWPORT.height);
+    renderPicker(
+      <DatePicker label="Invoice date" value={march10} {...(withPresets && { presetGroup: presets() })} />
+    );
+    await openPicker();
+    const style = getComputedStyle(calendarRoot());
+
+    expect(paintedShadowLayers(style.boxShadow)).toEqual([]);
+    expect(style.backgroundColor).toBe("rgba(0, 0, 0, 0)");
+  });
+});
+
 describe("DatePicker density metrics", () => {
   it("pins the field box to the signed md rung at both densities and does not rescope", () => {
     const { rerender } = renderPicker(<DatePicker label="Meter" defaultValue={july14} />);
@@ -622,7 +708,7 @@ describe("DatePicker composition surface", () => {
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
 
     // `presetGroup={showPresets && <Group />}` collapses to `false`, not to `undefined`:
-    // a lone calendar must not get the two-pane divider and padding.
+    // a lone calendar must not get the two-pane divider.
     await userEvent.click(buttonNamed("Guard off"));
     await openPicker();
     expect(paneAroundCalendar().className).toBe("");
@@ -633,7 +719,10 @@ describe("DatePicker composition surface", () => {
     await userEvent.click(buttonNamed("Add presets"));
     await openPicker();
     expect(getComputedStyle(paneAroundCalendar()).display).toBe("flex");
-    expect(px(getComputedStyle(paneAroundCalendar()).columnGap)).toBe(12);
     await expect.element(page.getByRole("radiogroup", { name: "Date presets" })).toBeVisible();
+    // Vitest's default viewport sits below `sm`, so the panes stack under a bottom divider.
+    expect(px(getComputedStyle(roleNamed("radiogroup", "Date presets")).borderBottomWidth)).toBeGreaterThan(
+      0
+    );
   });
 });

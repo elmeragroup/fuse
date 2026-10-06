@@ -41,7 +41,7 @@ export const cellVariants = tv({
 /**
  * Calendar's slotted recipe. Package-private, same as `cellVariants`
  * above, and — unlike RangeCalendar's — it owns the card surface: standalone Calendar
- * renders as a bordered card, and the picker strips that border from the call site
+ * renders as a bordered card, and the picker strips that card chrome from the call site.
  *
  * Every slot here is invariant, so the component resolves them once per render; the
  * per-date axes all live on `cellVariants`.
