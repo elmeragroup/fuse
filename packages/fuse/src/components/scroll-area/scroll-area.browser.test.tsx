@@ -156,6 +156,49 @@ describe("ScrollArea", () => {
     expect(viewport.scrollTop).toBeGreaterThan(0);
   });
 
+  it("caps an auto-height Root at its max height and scrolls the overflow", async () => {
+    render(
+      <>
+        <ScrollArea.Root type="always" style={{ maxHeight: 160 }}>
+          <div style={{ height: 400 }}>Capped tall</div>
+        </ScrollArea.Root>
+        <ScrollArea.Root type="always" style={{ maxHeight: 160 }}>
+          <div style={{ height: 80 }}>Capped short</div>
+        </ScrollArea.Root>
+        <ScrollArea.Root type="always" style={{ height: 288 }}>
+          <div style={{ height: 400 }}>Fixed tall</div>
+        </ScrollArea.Root>
+      </>
+    );
+
+    await waitForOverflow("Capped tall", "data-has-overflow-y");
+    expect(scrollRootFromText("Capped tall").getBoundingClientRect().height).toBe(160);
+    const capped = viewportFromText("Capped tall");
+    expect(capped.clientHeight).toBe(160);
+    expect(capped.scrollHeight).toBe(400);
+    const bar = barsIn(scrollRootFromText("Capped tall"))[0];
+    if (!(bar instanceof HTMLElement)) {
+      throw new Error("expected a scrollbar on the capped list");
+    }
+    expect(getComputedStyle(bar).visibility).not.toBe("hidden");
+    // DOM audit: the thumb has no role; locate it by the mandated data-slot.
+    const thumb = bar.querySelector("[data-slot=scroll-area-thumb]");
+    if (!(thumb instanceof HTMLElement)) {
+      throw new Error("expected a thumb in the capped scrollbar");
+    }
+    // The 158px track (160px less the 1px padding each side) times the 160/400 visible ratio.
+    await expect.poll(() => thumb.getBoundingClientRect().height).toBeCloseTo(63.2, 1);
+    await userEvent.wheel(capped, { delta: { y: 120 } });
+    await expect.poll(() => capped.scrollTop).toBeGreaterThan(0);
+
+    expect(scrollRootFromText("Capped short").getBoundingClientRect().height).toBe(80);
+    expect(scrollRootFromText("Capped short").hasAttribute("data-has-overflow-y")).toBe(false);
+
+    await waitForOverflow("Fixed tall", "data-has-overflow-y");
+    expect(scrollRootFromText("Fixed tall").getBoundingClientRect().height).toBe(288);
+    expect(viewportFromText("Fixed tall").clientHeight).toBe(288);
+  });
+
   it("mounts no scrollbar for overflow-free auto and hover content", async () => {
     render(
       <>

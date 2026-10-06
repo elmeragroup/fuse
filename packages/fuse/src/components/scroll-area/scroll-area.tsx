@@ -48,11 +48,13 @@ export function ScrollAreaRoot({
   return (
     <ScrollAreaPrimitive.Root
       data-slot="scroll-area"
-      className={mergeClassName(className, "relative overflow-hidden")}
+      className={mergeClassName(className, "relative flex flex-col overflow-hidden")}
       {...props}>
+      {/* A flex column hands the viewport the root's resolved height, so a max height caps and scrolls
+          like a fixed one; `size-full` would resolve to auto under a max height and the root would clip. */}
       <ScrollAreaPrimitive.Viewport
         data-slot="scroll-area-viewport"
-        className={cn("size-full rounded-[inherit] transition-[color,box-shadow]", selfFocusRingClass)}>
+        className={cn("min-h-0 flex-1 rounded-[inherit] transition-[color,box-shadow]", selfFocusRingClass)}>
         <ScrollAreaPrimitive.Content data-slot="scroll-area-content">{children}</ScrollAreaPrimitive.Content>
       </ScrollAreaPrimitive.Viewport>
       <ScrollAreaBar orientation={orientation} type={type} />
