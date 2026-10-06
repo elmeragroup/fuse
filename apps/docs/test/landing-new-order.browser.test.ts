@@ -11,7 +11,8 @@ import {
   windowScope,
   DASHBOARD_FIRST,
 } from "./landing-dashboard";
-import { launchLandingSuite } from "./landing-page";
+import { holdChunks, launchLandingSuite, settleFrames } from "./landing-page";
+import type { HeldChunks } from "./landing-page";
 
 const { openLanding } = launchLandingSuite({ search: DASHBOARD_FIRST });
 
@@ -93,6 +94,35 @@ async function fillNewOrder(sheet: Locator, phone: string): Promise<void> {
 }
 
 describe("landing Dashboard New order", () => {
+  it("opens before its form's code arrives, holds the body with a loader, and stays closed once Escape closes it", async () => {
+    let held: HeldChunks | undefined;
+    const page = await openLanding(DESKTOP_VIEWPORT, {
+      prepare: async (target) => {
+        // Only the form's code renders the Note for back office label.
+        held = await holdChunks(target, "Note for back office");
+      },
+    });
+    const app = dashboard(page);
+    await app.scrollIntoViewIfNeeded();
+    await app.getByRole("button", { name: /^New order/u }).click();
+    const sheet = page.getByRole("dialog", { name: "New order" });
+    await sheet.getByRole("status", { name: "Loading the form" }).waitFor();
+    const caught = held?.caught() ?? [];
+    expect(caught).toHaveLength(1);
+
+    await page.keyboard.press("Escape");
+    await expect.poll(async () => sheet.count()).toBe(0);
+    const delivered = page.waitForEvent("requestfinished", (request) => caught.includes(request.url()));
+    held?.release();
+    await delivered;
+    await settleFrames(page);
+    expect(await sheet.count()).toBe(0);
+
+    const reopened = await openNewOrder(app);
+    expect(await reopened.getByRole("status", { name: "Loading the form" }).count()).toBe(0);
+    await page.context().close();
+  });
+
   it("names every New order control by its role and visible label", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
     const { sheet } = await openScrolledNewOrder(page);

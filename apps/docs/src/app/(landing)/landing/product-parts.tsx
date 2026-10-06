@@ -58,6 +58,7 @@ export function BudgetMeter(): ReactElement {
 }
 
 type ToggleRootProps = ComponentProps<typeof ToggleGroup.Root>;
+type ToggleItemProps = Omit<ComponentProps<typeof ToggleGroup.Item>, "value" | "children">;
 
 export type SingleToggleProps<Option extends string> = Omit<
   ToggleRootProps,
@@ -68,6 +69,8 @@ export type SingleToggleProps<Option extends string> = Omit<
   labels: Readonly<Record<Option, ReactNode>>;
   value: Option;
   onValueChange: (next: Option) => void;
+  /** Props for one option's button, such as a handler that only that option needs. */
+  optionProps?: { readonly [Key in Option]?: ToggleItemProps };
 };
 
 /** An outline toggle row where exactly one option is on; pressing the active one keeps it. */
@@ -77,6 +80,7 @@ export function SingleToggle<Option extends string>({
   labels,
   value,
   onValueChange,
+  optionProps,
   ...props
 }: SingleToggleProps<Option>): ReactElement {
   return (
@@ -93,7 +97,7 @@ export function SingleToggle<Option extends string>({
         }
       }}>
       {options.map((option) => (
-        <ToggleGroup.Item key={option} value={option}>
+        <ToggleGroup.Item key={option} value={option} {...optionProps?.[option]}>
           {labels[option]}
         </ToggleGroup.Item>
       ))}

@@ -76,11 +76,12 @@ export function sideSwitch(
 
 /**
  * The side the window shows: the switch's pressed button, checked against the side that is not
- * inert, so a switch that disagrees with its window fails here.
+ * inert, so a switch that disagrees with its window fails here. A Dashboard that has not mounted
+ * yet, because Internal never showed, counts as hidden.
  */
 export async function shownSide(page: Page): Promise<"Internal" | "External" | "mismatch"> {
   const pressed = (await sideSwitch(page).getByRole("button", { pressed: true }).textContent()) ?? "";
-  const dashboardInert = await isInert(dashboard(page));
+  const dashboardInert = (await dashboard(page).count()) === 0 || (await isInert(dashboard(page)));
   if (pressed === "Internal" && !dashboardInert) {
     return "Internal";
   }
@@ -138,11 +139,14 @@ export async function openOrderSearch(page: Page): Promise<Locator> {
   return app;
 }
 
-/** Opens New order from the window's sidebar and waits for its Sheet. */
+/**
+ * Opens New order from the window's sidebar and waits for its Sheet and the form, whose code can
+ * arrive after the Sheet has opened.
+ */
 export async function openNewOrder(app: Locator): Promise<Locator> {
   await app.getByRole("button", { name: /^New order/u }).click();
   const sheet = app.page().getByRole("dialog", { name: "New order" });
-  await sheet.waitFor();
+  await sheet.getByRole("form", { name: "New order" }).waitFor();
   return sheet;
 }
 
