@@ -708,7 +708,7 @@ describe("state faces", () => {
         "data-disabled:opacity-50",
         "data-disabled:pointer-events-none",
       ],
-      "react-aria/date-picker/date-picker.tsx": ["data-disabled:pointer-events-none"],
+      "react-aria/internal/picker-presets.tsx": ["data-disabled:pointer-events-none"],
     });
   });
 

@@ -21,7 +21,10 @@ type CheckboxItemBaseProps = {
    * Default `"start"`.
    */
   controlPosition?: "start" | "end";
-  /** Extra classes, merged onto the shell via `cn`. */
+  /**
+   * Extra classes, merged onto the shell via `cn`. A `px-*` utility sets the card's side
+   * inset, and a click in that inset beside the label row toggles the control.
+   */
   className?: string;
   /**
    * Row children, partitioned by the row. Direct `CheckboxItem.SubSection` (the

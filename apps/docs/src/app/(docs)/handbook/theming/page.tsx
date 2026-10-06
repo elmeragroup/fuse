@@ -26,6 +26,21 @@ const SCOPE = `import { ThemeScope } from "@elmeragroup/fuse/theme";
   <TrackSummary />
 </ThemeScope>;`;
 
+const SIDEBAR_BRAND_OVERRIDE = `/* After the Fuse stylesheet, on the element that carries the theme attributes. */
+.app-shell[data-theme-brand="tkas"] {
+  --sidebar-brand: oklch(0.45 0.08 191);
+  --sidebar-brand-foreground: oklch(1 0 0);
+}
+
+/* No one tone reaches 4.5:1 on both sidebars, so dark takes its own pair.
+   The first selector matches under a dark ancestor, the second an element
+   that is dark itself, such as a themed <html>. */
+[data-theme="dark"] .app-shell[data-theme-brand="tkas"],
+.app-shell[data-theme="dark"][data-theme-brand="tkas"] {
+  --sidebar-brand: oklch(0.75 0.08 191);
+  --sidebar-brand-foreground: oklch(0.205 0 0);
+}`;
+
 const NEXT_PAGES = `// pages/_document.tsx
 import { Head, Html, Main, NextScript } from "next/document";
 import {
@@ -176,7 +191,7 @@ export default function ThemingPage(): ReactElement {
           look.
         </li>
         <li>
-          <strong>Brand</strong> — one of six four-character codes. See{" "}
+          <strong>Brand</strong> — one of seven four-character codes. See{" "}
           <Link href="/handbook/brands-and-segments">Brands &amp; segments</Link>.
         </li>
         <li>
@@ -184,9 +199,9 @@ export default function ThemingPage(): ReactElement {
         </li>
       </ul>
       <p>
-        Two of the six brands are pinned to one segment, which is why there are twenty legal themes and not
-        twenty-four. The <code>ThemeInput</code> type is a discriminated union that makes the four illegal
-        combinations unrepresentable in typed code — they are a compile error, not a runtime check.
+        Two of the seven brands are pinned to one segment, which is why there are twenty-four legal themes and
+        not twenty-eight. The <code>ThemeInput</code> type is a discriminated union that makes the four
+        illegal combinations unrepresentable in typed code — they are a compile error, not a runtime check.
       </p>
 
       <h2 id="how-it-resolves">How it resolves</h2>
@@ -223,6 +238,28 @@ export default function ThemingPage(): ReactElement {
         internal variant keeps a 1px <code>var(--border)</code> hairline with a small shadow, which only a 1px
         border casts.
       </p>
+      <p>
+        The sidebar&apos;s brand pair, <code>--sidebar-brand</code> and{" "}
+        <code>--sidebar-brand-foreground</code>, reaches 4.5:1 in every theme and color scheme. Where the
+        brand color falls short on the sidebar, the theme steps its lightness away from the sidebar&apos;s
+        until it passes and keeps the hue, so the tone can differ between light and dark. <code>--brand</code>{" "}
+        keeps the brand color everywhere else.
+      </p>
+      <p>
+        The stylesheet build computes the stepped tones, so the stylesheet declares them as literal colors.
+        Fjordkraft, Fjordkraft Företag and TrøndelagKraft have one in light themes, and Gudbrandsdal Energi,
+        Telinet, Elmera and Nordic Green Energy have one in dark themes. In those themes a host override of{" "}
+        <code>--brand</code> no longer moves <code>--sidebar-brand</code>. In every dark theme,{" "}
+        <code>--sidebar-brand-foreground</code> is the sidebar color instead of{" "}
+        <code>--brand-foreground</code>. To restyle the sidebar brand, override both sidebar tokens on the
+        element that carries the theme attributes, in a rule after the Fuse stylesheet. The rule applies in
+        both color schemes and both variants, so give the dark scheme its own pair in a second rule. That rule
+        needs two selectors, one for a theme element under a dark ancestor and one for an element that is dark
+        itself, such as a themed <code>&lt;html&gt;</code>.
+      </p>
+      <pre>
+        <code>{SIDEBAR_BRAND_OVERRIDE}</code>
+      </pre>
 
       <h2 id="document-theme">The document theme</h2>
       <p>
@@ -252,7 +289,7 @@ export default function ThemingPage(): ReactElement {
         explicit <code>container</code> → nearest scope element → the primitive default. A popup opened inside
         a scope therefore lands inside it and inherits its theme, instead of escaping to{" "}
         <code>document.body</code> and silently taking the page theme. The{" "}
-        <Link href="/handbook/theme-matrix">Theme matrix</Link> demonstrates this twenty times over.
+        <Link href="/handbook/theme-matrix">Theme matrix</Link> demonstrates this twenty-four times over.
       </p>
       <p>
         <code>useTheme()</code> returns the nearest theme plus its slug, and throws outside a provider or
@@ -411,9 +448,9 @@ export default function ThemingPage(): ReactElement {
         <code>internal-elma-private</code> and the chrome you are reading consumes that theme's light and dark
         tokens. The header's theme settings menu writes docs-local preview state from its labelled radio
         groups (Appearance, Variant, Brand, Segment). Variant, Brand and Segment feed demo stages and theme
-        scopes only, so every demo can be viewed in all twenty permutations while the page keeps its Elmera
-        identity. Appearance changes the whole document through the library's colour-scheme API, offers light,
-        dark and system, and remembers your choice; the matrix mirrors the same three-way control.
+        scopes only, so every demo can be viewed in all twenty-four permutations while the page keeps its
+        Elmera identity. Appearance changes the whole document through the library's colour-scheme API, offers
+        light, dark and system, and remembers your choice; the matrix mirrors the same three-way control.
       </p>
     </DocsPage>
   );

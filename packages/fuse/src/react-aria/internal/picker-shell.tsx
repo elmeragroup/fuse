@@ -53,7 +53,13 @@ export type PickerShellProps = {
    * recipe call with one axis, so the axis is the honest parameter.
    */
   range?: boolean;
-  /** The segment row(s) inside the field box, ahead of the trigger. */
+  /**
+   * Which side of the segment row the trigger sits on, in DOM, tab and visual order.
+   * Only DatePicker passes `"start"`: the range grid places its trigger column itself.
+   * RAC's arrow-key and pointer focus walk the group in DOM order, so either order works.
+   */
+  triggerPlacement?: "start" | "end";
+  /** The segment row(s) inside the field box, beside the trigger. */
   children: ReactNode;
   /** The popover body: a Calendar, a RangeCalendar, or a preset pane beside one. */
   popover: ReactNode;
@@ -68,18 +74,23 @@ export function PickerShell({
   label,
   popover,
   range,
+  triggerPlacement = "end",
 }: PickerShellProps): ReactElement {
   const { dialog, group, icon, trigger } = pickerVariants({ range });
+  const button = (
+    // oxlint-disable-next-line elmera/require-icon-button-label -- RAC's DatePicker and DateRangePicker fill this default Button slot and supply the trigger's localized accessible name ("Calendar"); a local label would shadow it. Asserted in both browser suites.
+    <Button size="icon-sm" variant="ghost" className={trigger()}>
+      <CalendarBlank aria-hidden className={icon()} />
+    </Button>
+  );
 
   return (
     <>
       {label ? <Label>{label}</Label> : null}
       <FieldGroup className={group()} isReadOnly={isReadOnly}>
+        {triggerPlacement === "start" ? button : null}
         {children}
-        {/* oxlint-disable-next-line elmera/require-icon-button-label -- RAC's DatePicker and DateRangePicker fill this default Button slot and supply the trigger's localized accessible name ("Calendar"); a local label would shadow it. Asserted in both browser suites. */}
-        <Button size="icon-sm" variant="ghost" className={trigger()}>
-          <CalendarBlank aria-hidden className={icon()} />
-        </Button>
+        {triggerPlacement === "end" ? button : null}
       </FieldGroup>
       {description ? <Description>{description}</Description> : null}
       <FieldError>{errorMessage}</FieldError>

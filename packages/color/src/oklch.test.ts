@@ -344,3 +344,38 @@ describe("toSrgb", () => {
     expect([clipped.r, clipped.g]).toEqual([0, 1]);
   });
 });
+
+/** True when every linear channel sits in `0..1`, within the rounding of the conversion. */
+function inSrgbGamut(color: Oklch.Oklch): boolean {
+  const { r, g, b } = Oklch.toLinearSrgb(color);
+  return [r, g, b].every((channel) => channel >= -1e-6 && channel <= 1 + 1e-6);
+}
+
+describe("clampChromaToSrgb", () => {
+  it("returns a color inside the sRGB gamut unchanged", () => {
+    const inside = parsed("oklch(0.4816 0.0908 240.16)");
+    expect(inSrgbGamut(inside)).toBe(true);
+    expect(components(Oklch.clampChromaToSrgb(inside))).toEqual(components(inside));
+  });
+
+  it("lowers an out-of-gamut color's chroma to the gamut edge, keeping lightness, hue and alpha", () => {
+    const vivid = parsed("oklch(0.9 0.4 150 / 0.5)");
+    expect(inSrgbGamut(vivid)).toBe(false);
+    const clamped = Oklch.clampChromaToSrgb(vivid);
+    expect([clamped.l, clamped.h, clamped.alpha]).toEqual([0.9, 150, 0.5]);
+    expect(inSrgbGamut(clamped)).toBe(true);
+    const past = getOrThrow(Oklch.make({ l: 0.9, c: clamped.c + 0.001, h: 150, alpha: 0.5 }));
+    expect(inSrgbGamut(past)).toBe(false);
+  });
+
+  it("lands every color inside the gamut with at most its chroma", () => {
+    fc.assert(
+      fc.property(oklch, (color) => {
+        const clamped = Oklch.clampChromaToSrgb(color);
+        expect(inSrgbGamut(clamped)).toBe(true);
+        expect(clamped.c).toBeLessThanOrEqual(color.c);
+        expect([clamped.l, clamped.h, clamped.alpha]).toEqual([color.l, color.h, color.alpha]);
+      })
+    );
+  });
+});

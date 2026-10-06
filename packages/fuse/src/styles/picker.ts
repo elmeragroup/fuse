@@ -50,9 +50,8 @@ export const pickerVariants = tv({
     calendar: "",
     /**
      * The responsive pane holding presets above the calendar on small viewports and
-     * beside it on larger ones. Empty
-     * unless there are presets: a lone calendar is a single pane, so it must not inherit the
-     * divider, the column gap or the trailing inset the two-pane layout needs
+     * beside it on larger ones. Empty unless there are presets: a lone calendar is a single
+     * pane, so it must not inherit the divider the two-pane layout needs.
      */
     pane: "",
   },
@@ -66,8 +65,9 @@ export const pickerVariants = tv({
         // One row that grows to fill the box.
         group: "min-w-[180px]",
         input: "flex min-w-[150px] flex-1",
-        // Calendar's own root carries `p-2`; the popover already provides the card chrome.
-        calendar: "border-none",
+        // Calendar's root is a standalone card. Inside the popover, which is already the
+        // card, it keeps only its `p-2` inset and drops the border, shadow and fill.
+        calendar: "border-none bg-transparent shadow-none",
       },
       true: {
         base: "@container/picker w-full",
@@ -97,7 +97,8 @@ export const pickerVariants = tv({
     /**
      * Whether the caller handed over a preset pane that would actually paint. The call site
      * decides that (`presetGroup={showPresets && <Group />}` collapses to `false`, not
-     * `undefined`), so this axis takes the answer, never the node. Single-date only.
+     * `undefined`), so this axis takes the answer, never the node. Both pickers take it:
+     * the pane wraps the preset group and a Calendar or a RangeCalendar alike.
      *
      * The stack-to-row flip stays a viewport `sm:` query: the pane lives in the portalled
      * popover, outside the picker root's `@container/picker`, and the popover sizes to its
@@ -106,7 +107,11 @@ export const pickerVariants = tv({
      */
     hasPresets: {
       true: {
-        pane: "sm:flex-row sm:divide-x sm:divide-y-0 sm:pr-3 flex flex-col gap-3 divide-y pb-3",
+        // The divider names the border role: fuse ships no global border-colour reset, so
+        // a bare `divide-*` would draw in `currentColor`, the text colour. The pane takes no
+        // padding or gap, so the divider runs edge to edge across the popover; the preset
+        // group and the calendar each carry their own inset.
+        pane: "sm:flex-row sm:divide-x sm:divide-y-0 flex flex-col divide-y divide-border",
       },
       false: {
         pane: "",

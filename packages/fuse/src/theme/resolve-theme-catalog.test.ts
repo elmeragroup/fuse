@@ -25,6 +25,8 @@ const SLUGS = [
   "internal-fkse-private",
   "internal-elma-private",
   "internal-elma-company",
+  "internal-ngfi-private",
+  "internal-ngfi-company",
   "external-fkas-private",
   "external-fkas-company",
   "external-tkas-private",
@@ -35,6 +37,8 @@ const SLUGS = [
   "external-fkse-private",
   "external-elma-private",
   "external-elma-company",
+  "external-ngfi-private",
+  "external-ngfi-company",
 ] as const;
 
 // Counts the derived `secondary-hover` role, the `radius-step` rung spacing and the two
@@ -132,9 +136,12 @@ describe("resolveThemeCatalog", () => {
     });
     expect(catalog.primitives["brand-fkab"].value).toEqual(Oklch.toSrgb(fkasAccent));
 
-    const sidebarBrand = light("external-fkas-private").tokens["sidebar-brand"];
+    // Gudbrandsdal's accent already reads on the light sidebar, so its sidebar brand keeps
+    // the alias.
+    const guenAccent = getOrThrow(Oklch.parse("oklch(0.21 0.0399 265.73)"));
+    const sidebarBrand = light("external-guen-private").tokens["sidebar-brand"];
     expect(sidebarBrand).toMatchObject({ css: "var(--brand)", reference: { space: "token", name: "brand" } });
-    expect(sidebarBrand.value).toEqual(Oklch.toSrgb(fkasAccent));
+    expect(sidebarBrand.value).toEqual(Oklch.toSrgb(guenAccent));
 
     // The external outline aliases the text color, so the dark hop lands on the dark
     // foreground, #FFEEE6 in the fkas dark sheet.

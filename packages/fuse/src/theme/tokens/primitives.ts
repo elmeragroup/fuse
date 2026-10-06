@@ -24,6 +24,8 @@ export const PRIMITIVE_NAMES = [
   "brand-fkse-foreground",
   "brand-elma",
   "brand-elma-foreground",
+  "brand-ngfi",
+  "brand-ngfi-foreground",
 ] as const;
 
 export type PrimitiveName = (typeof PRIMITIVE_NAMES)[number];
@@ -56,4 +58,8 @@ export const PRIMITIVES = {
   "brand-fkse-foreground": WHITE,
   "brand-elma": "oklch(0.28898 0.051828 217.7)",
   "brand-elma-foreground": WHITE,
+  // Nordic Green Energy light primary #004B39, from the NGE Material 3 scheme (Figma file
+  // q1sEYcZWmf1HUeuiaJFqm6, section 129:12419).
+  "brand-ngfi": "oklch(0.3671893 0.072708 169.9789644)",
+  "brand-ngfi-foreground": WHITE,
 } as const satisfies PrimitiveTokens;

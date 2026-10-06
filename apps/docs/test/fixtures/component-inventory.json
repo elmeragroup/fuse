@@ -7,6 +7,7 @@
       "accordion-multiple.tsx",
       "accordion-variants.tsx",
       "accordion-controlled.tsx",
+      "accordion-leading-indicator.tsx",
       "accordion-hidden-until-found.tsx"
     ]
   },
@@ -172,6 +173,7 @@
       "date-picker-basic.tsx",
       "date-picker-controlled.tsx",
       "date-picker-presets.tsx",
+      "date-picker-trigger-start.tsx",
       "date-picker-validation.tsx",
       "date-picker-states.tsx",
       "date-picker-in-modal.tsx"
@@ -183,6 +185,7 @@
     "demos": [
       "date-range-picker-basic.tsx",
       "date-range-picker-controlled.tsx",
+      "date-range-picker-presets.tsx",
       "date-range-picker-validation.tsx",
       "date-range-picker-states.tsx",
       "date-range-picker-in-modal.tsx"
@@ -245,6 +248,7 @@
       "field-validation.tsx",
       "field-orientations.tsx",
       "field-set.tsx",
+      "field-set-description.tsx",
       "field-grid-set.tsx",
       "field-choice-card.tsx",
       "field-separator.tsx"
@@ -313,6 +317,8 @@
       "item-as-link.tsx",
       "item-as-button.tsx",
       "item-group.tsx",
+      "item-link-group.tsx",
+      "item-compact-group.tsx",
       "item-media-variants.tsx",
       "item-footer-reveal.tsx",
       "item-sizes.tsx"
@@ -400,6 +406,7 @@
     "demos": [
       "radio-group-basic.tsx",
       "radio-group-pending.tsx",
+      "radio-group-label-hidden.tsx",
       "radio-item-group.tsx",
       "radio-icon-button.tsx",
       "radio-controlled-null.tsx"
@@ -423,6 +430,7 @@
       "scroll-area-vertical.tsx",
       "scroll-area-horizontal.tsx",
       "scroll-area-always.tsx",
+      "scroll-area-max-height.tsx",
       "scroll-area-composed.tsx"
     ]
   },
@@ -577,7 +585,13 @@
   "toast": {
     "title": "Toast",
     "rsc": "client",
-    "demos": ["toast-statuses.tsx", "toast-action.tsx", "toast-promise.tsx", "toast-stacking.tsx"]
+    "demos": [
+      "toast-statuses.tsx",
+      "toast-action.tsx",
+      "toast-promise.tsx",
+      "toast-stacking.tsx",
+      "toast-module-manager.tsx"
+    ]
   },
   "toggle": {
     "title": "Toggle",

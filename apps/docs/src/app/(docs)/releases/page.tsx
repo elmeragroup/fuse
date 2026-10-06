@@ -103,7 +103,7 @@ export default function ReleasesPage(): ReactElement {
 
       <h3 id="merge-gates">Merge gates</h3>
       <p>
-        The 20-theme token contract and the unit, type and browser suites run on every merge to{" "}
+        The 24-theme token contract and the unit, type and browser suites run on every merge to{" "}
         <code>main</code>, not against the packed tarball.
       </p>
 

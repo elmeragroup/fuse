@@ -1,22 +1,54 @@
+import type { ComponentType, ReactNode } from "react";
+
 import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import {
+  assertLabelHiddenLayout,
+  assertLabelShownLayout,
+  legendFieldset,
+} from "../../../test/assert-group-label-hidden";
 import { withLocale } from "../../../test/locale-matrix";
 import { fieldRootFrom, renderThemed, roleNamed, textboxNamed } from "../../../test/themed-browser-render";
-import { CheckboxGroup } from "../checkbox/checkbox";
+import { CheckboxGroup, CheckboxItemGroup } from "../checkbox/checkbox";
 import { CheckboxItem } from "../checkbox/checkbox-item";
 import { Form } from "../form/form";
 import { Input } from "../input/input";
 import { NumberField } from "../number-field/number-field";
 import { PhoneNumberField } from "../phone-number-field/phone-number-field";
-import { Radio, RadioGroup } from "../radio-group/radio-group";
+import { Radio, RadioGroup, RadioItemGroup } from "../radio-group/radio-group";
+import { RadioItem } from "../radio-group/radio-item";
 import { TextField } from "../text-field/text-field";
 import { TextareaField } from "../textarea-field/textarea-field";
 import { FieldFrame } from "./field-frame";
 
 function statusSvgs(root: HTMLElement): SVGElement[] {
   return [...root.querySelectorAll("svg")];
+}
+
+/** A public labeled group composite, its member, and the `data-slot` of its group primitive. */
+type LabelHiddenCase = {
+  readonly part: string;
+  readonly Group: ComponentType<{ label: string; isLabelHidden?: boolean; children: ReactNode }>;
+  readonly Member: ComponentType<{ value: string; children: ReactNode }>;
+  readonly slot: string;
+};
+
+const labelHiddenCases: ReadonlyArray<LabelHiddenCase> = [
+  { part: "CheckboxGroup", Group: CheckboxGroup, Member: CheckboxItem, slot: "checkbox-group" },
+  { part: "CheckboxItemGroup", Group: CheckboxItemGroup, Member: CheckboxItem, slot: "checkbox-group" },
+  { part: "RadioGroup", Group: RadioGroup, Member: RadioItem, slot: "radio-group" },
+  { part: "RadioItemGroup", Group: RadioItemGroup, Member: RadioItem, slot: "radio-group" },
+];
+
+function groupBody(fieldset: HTMLElement, slot: string): HTMLElement {
+  // DOM audit: the group primitive's top is the layout contract; the group's name is checked by role.
+  const body = fieldset.querySelector(`[data-slot=${slot}]`);
+  if (!(body instanceof HTMLElement)) {
+    throw new Error(`expected the ${slot} primitive in the fieldset`);
+  }
+  return body;
 }
 
 function nestedOrientationStamps(root: HTMLElement): Element[] {
@@ -215,4 +247,29 @@ describe("FieldFrame", () => {
     }
     expect(host.querySelectorAll("[data-orientation]")).toHaveLength(6);
   });
+});
+
+describe("isLabelHidden", () => {
+  // The legend stays the group's name but leaves the layout: an sr-only box is 1px
+  // square and absolute, so the group starts where the heading row was.
+  it.each(labelHiddenCases)(
+    "keeps $part named by a visually hidden legend with no heading row",
+    ({ Group, Member, slot }) => {
+      renderThemed(
+        <>
+          <Group label="Hidden options" isLabelHidden>
+            <Member value="first">Hidden first</Member>
+          </Group>
+          <Group label="Shown options">
+            <Member value="first">Shown first</Member>
+          </Group>
+        </>
+      );
+
+      const hidden = legendFieldset("Hidden options");
+      assertLabelHiddenLayout(hidden, groupBody(hidden, slot));
+      const shown = legendFieldset("Shown options");
+      assertLabelShownLayout(shown, groupBody(shown, slot));
+    }
+  );
 });

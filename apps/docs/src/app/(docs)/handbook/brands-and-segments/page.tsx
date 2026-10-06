@@ -33,8 +33,8 @@ export default function BrandsAndSegmentsPage(): ReactElement {
     <DocsPage href={HREF}>
       <h2 id="brands">Brands</h2>
       <p>
-        Six brand codes, each four characters, fixed. The code is what appears in types, attributes, slugs and
-        every line of code; the display name is what a customer sees. The two differ deliberately for{" "}
+        Seven brand codes, each four characters, fixed. The code is what appears in types, attributes, slugs
+        and every line of code; the display name is what a customer sees. The two differ deliberately for{" "}
         <code>fkse</code>, which renders under the trade name Telinet while keeping its code everywhere.
       </p>
       <DocsTable.Wrap>
@@ -60,8 +60,7 @@ export default function BrandsAndSegmentsPage(): ReactElement {
         </DocsTable.Root>
       </DocsTable.Wrap>
       <p>
-        Steddi, NGE and Trumf are outside this theme set. <code>elma</code> is corporate Elmera and is not
-        pinned.
+        Steddi and Trumf are outside this theme set. <code>elma</code> is corporate Elmera and is not pinned.
       </p>
 
       <h2 id="segments">Segments</h2>
@@ -74,9 +73,9 @@ export default function BrandsAndSegmentsPage(): ReactElement {
       <h2 id="pinned-brands">Pinned brands</h2>
       <p>
         Two brands exist for one segment only: <code>fkab</code> is pinned to <code>company</code> and{" "}
-        <code>fkse</code> is pinned to <code>private</code>. Four of the other brands span both. Two variants
-        × that pin table gives <strong>{String(LEGAL_THEMES.length)} legal themes</strong> — ten internal and
-        ten external.
+        <code>fkse</code> is pinned to <code>private</code>. The five other brands span both. Two variants ×
+        that pin table gives <strong>{String(LEGAL_THEMES.length)} legal themes</strong> — twelve internal and
+        twelve external.
       </p>
 
       <h2 id="illegal-permutations">The four illegal permutations</h2>
@@ -108,7 +107,7 @@ export default function BrandsAndSegmentsPage(): ReactElement {
         combination. Enforcement is the provider&apos;s job, not the cascade&apos;s.
       </p>
 
-      <h2 id="the-twenty">The twenty slugs</h2>
+      <h2 id="the-twenty-four">The twenty-four slugs</h2>
       <p>
         Each theme has a canonical slug, <code>variant-brand-segment</code>. The{" "}
         <Link href="/handbook/theme-matrix">Theme matrix</Link> renders all of them side by side.

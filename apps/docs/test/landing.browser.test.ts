@@ -51,7 +51,7 @@ describe("landing page", () => {
     });
 
     // The picker's masks request every brand's mark; the closing shader shares the active one.
-    await expect.poll(() => failed.size, { timeout: 10_000 }).toBe(6);
+    await expect.poll(() => failed.size, { timeout: 10_000 }).toBe(7);
     // A rejected mark reaches its shader on React's next render; give that render time to land.
     await page.waitForTimeout(1000);
 
@@ -63,7 +63,7 @@ describe("landing page", () => {
         .getByRole("region", { name: /Pick a brand/u })
         .getByRole("button")
         .count()
-    ).toBe(6);
+    ).toBe(7);
     await page.context().close();
   });
 
@@ -124,13 +124,14 @@ describe("landing page", () => {
     // The marks are refused (openLanding's default), so no shader draws. Their canvas is
     // absolutely positioned with `contain: strict`, so it could not change the page width or a
     // wordmark's box anyway.
-    const page = await openLanding({ width: 768, height: 900 });
+    const page = await openLanding({ width: 639, height: 900 });
     const picker = page.getByRole("region", { name: /Pick a brand/u });
     const tiles = picker.getByRole("button");
-    await expect.poll(async () => tiles.count()).toBe(6);
+    await expect.poll(async () => tiles.count()).toBe(7);
 
-    // The rail has three columns below 1280px and six from there; both layouts are measured.
-    for (const width of [768, 820, 960, 1024, 1280, 1440]) {
+    // The rail scrolls below 640px, has three columns from there, four from 768px and seven from
+    // 1536px. Each layout is measured, on both sides of every breakpoint it crosses.
+    for (const width of [639, 640, 767, 768, 820, 960, 1023, 1024, 1280, 1440, 1535, 1536, 1600]) {
       await page.setViewportSize({ width, height: 900 });
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth

@@ -335,13 +335,32 @@ const FJORDKRAFT_FORETAG = {
   priceArea: { label: "Välj prisområde", option: /^SE3/u, unit: /öre\/kWh/u },
 } as const;
 
+const NORDIC_GREEN_ENERGY = {
+  site: "Nordic Green Energy",
+  brand: "ngfi",
+  domain: "nordicgreen.fi",
+  lang: "fi-FI",
+  logo: "Nordic Green Energy",
+  heading: "Tee uusi sähkösopimus kotiisi jo tänään",
+  sections: [],
+  labelled: [],
+  nav: "Päävalikko",
+  menus: [],
+  utility: ["Asiakaspalvelu", "Tietoa meistä", "Energianeuvonta"],
+  search: null,
+  menuButton: "Valikko",
+  photos: 1,
+  priceArea: null,
+} as const;
+
 export type SiteFacts =
   | typeof ELMERA
   | typeof FJORDKRAFT
   | typeof TRONDELAGKRAFT
   | typeof GUDBRANDSDAL_ENERGI
   | typeof TELINET
-  | typeof FJORDKRAFT_FORETAG;
+  | typeof FJORDKRAFT_FORETAG
+  | typeof NORDIC_GREEN_ENERGY;
 
 export const ALL_SITES: readonly SiteFacts[] = [
   ELMERA,
@@ -350,4 +369,5 @@ export const ALL_SITES: readonly SiteFacts[] = [
   GUDBRANDSDAL_ENERGI,
   TELINET,
   FJORDKRAFT_FORETAG,
+  NORDIC_GREEN_ENERGY,
 ];

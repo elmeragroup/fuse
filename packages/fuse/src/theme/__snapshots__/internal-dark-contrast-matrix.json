@@ -31,5 +31,7 @@
     "internal-fkse-private",
     "internal-elma-private",
     "internal-elma-company",
+    "internal-ngfi-private",
+    "internal-ngfi-company",
   ],
 }

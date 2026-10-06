@@ -91,7 +91,17 @@
         "@types/react"
       ],
       "forwardedCount": 280,
-      "props": []
+      "props": [
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"compact\" | \"default\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "",
+          "required": false
+        }
+      ]
     },
     {
       "name": "Item.Separator",

@@ -4,12 +4,13 @@ import { getOrThrow } from "@elmeragroup/color/result";
 import { tokenOklch } from "../token-color";
 import { DERIVED_ROLES } from "./contract";
 import type { DerivedTokenName, LayerTokens, TokenContract } from "./contract";
+import { readableSidebarBrand } from "./sidebar-brand";
 
 /**
- * One `DERIVED_ROLES` entry. Indexing `LayerTokens` with its sources fails to compile if an
- * entry ever names a derived role as a source.
+ * One `DERIVED_ROLES` mix entry. Indexing `LayerTokens` with its sources fails to compile if
+ * an entry ever names a derived role as a source.
  */
-type DerivedRole = (typeof DERIVED_ROLES)[DerivedTokenName];
+type MixRole = Extract<(typeof DERIVED_ROLES)[DerivedTokenName], { readonly _tag: "OklchMix" }>;
 
 /**
  * Mix two `oklch()` token literals in OKLCH, as CSS `color-mix(in oklch, from, toward percent%)`
@@ -30,7 +31,7 @@ export function mixOklchLiteral(from: string, toward: string, percent: number): 
   return Oklch.format(mixed);
 }
 
-function mixLiteral(tokens: LayerTokens, role: DerivedRole): string {
+function mixLiteral(tokens: LayerTokens, role: MixRole): string {
   return mixOklchLiteral(tokens[role.from], tokens[role.toward], role.percent);
 }
 
@@ -45,20 +46,25 @@ function mixLiteral(tokens: LayerTokens, role: DerivedRole): string {
 export function withDerivedTokens(tokens: LayerTokens): TokenContract {
   const derived = {
     "secondary-hover": mixLiteral(tokens, DERIVED_ROLES["secondary-hover"]),
+    ...readableSidebarBrand(tokens),
   } satisfies Record<DerivedTokenName, string>;
   return { ...tokens, ...derived };
 }
 
 /**
- * The live CSS form of a derived role, the `color-mix()` its `DERIVED_ROLES` entry
- * describes. The browser evaluates it wherever the declaration applies, so it follows a
- * host override of either source there. `withDerivedTokens` computes the same mix as a
- * literal.
+ * The value a theme rule declares for a derived role. A mix declares its live `color-mix()`,
+ * which the browser evaluates wherever the declaration applies, so it follows a host
+ * override of either source there; `withDerivedTokens` computes the same mix as a literal.
+ * A composed role declares the value composition computed.
  *
  * @param name - A derived role.
- * @returns The `color-mix(in oklch, …)` expression over the role's sources.
+ * @param composed - The value `withDerivedTokens` computed for the role.
+ * @returns The `color-mix(in oklch, …)` expression over a mix's sources, or `composed`.
  */
-export function derivedRoleCss(name: DerivedTokenName): string {
+export function derivedRoleCss(name: DerivedTokenName, composed: string): string {
   const role = DERIVED_ROLES[name];
+  if (role._tag === "Composed") {
+    return composed;
+  }
   return `color-mix(in oklch, var(--${role.from}), var(--${role.toward}) ${role.percent}%)`;
 }

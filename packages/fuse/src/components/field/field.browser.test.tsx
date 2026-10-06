@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -154,6 +156,124 @@ describe("Field", () => {
       </Field.Set>
     );
     await expect.element(page.getByRole("group", { name: "Contact", exact: true })).toBeInTheDocument();
+  });
+
+  it("describes a fieldset with the descriptions it holds outside any root, in DOM order", async () => {
+    renderThemed(
+      <Field.Set>
+        <Field.Legend>Contact</Field.Legend>
+        <Field.Description>Pick one.</Field.Description>
+        <Field.Description>We reply within a day.</Field.Description>
+        <Field.Root>
+          <Field.Label>Email</Field.Label>
+          <Field.Control render={<input />} />
+        </Field.Root>
+      </Field.Set>
+    );
+    const group = page.getByRole("group", { name: "Contact", exact: true });
+    await expect.element(group).toHaveAccessibleDescription("Pick one. We reply within a day.");
+    expect(group.element().getAttribute("aria-describedby")).toBe(
+      `${textNamed("Pick one.").id} ${textNamed("We reply within a day.").id}`
+    );
+    expect(textNamed("Pick one.").getAttribute("data-slot")).toBe("field-description");
+    expect(textboxNamed("Email").hasAttribute("aria-describedby")).toBe(false);
+  });
+
+  it("keeps the fieldset's descriptions in DOM order as they are inserted, re-identified and reordered", async () => {
+    const contactSet = (descriptions: ReactNode) => (
+      <>
+        <p id="contact-hint">Optional.</p>
+        <Field.Set aria-describedby="contact-hint">
+          <Field.Legend>Contact</Field.Legend>
+          {descriptions}
+        </Field.Set>
+      </>
+    );
+    const group = page.getByRole("group", { name: "Contact", exact: true });
+    const { rerender } = renderThemed(
+      contactSet(<Field.Description key="day">We reply within a day.</Field.Description>)
+    );
+    await expect.element(group).toHaveAccessibleDescription("Optional. We reply within a day.");
+
+    rerender(
+      contactSet([
+        <Field.Description key="pick">Pick one.</Field.Description>,
+        <Field.Description key="day">We reply within a day.</Field.Description>,
+      ])
+    );
+    await expect.element(group).toHaveAccessibleDescription("Optional. Pick one. We reply within a day.");
+
+    rerender(
+      contactSet([
+        <Field.Description key="pick" id="pick-one">
+          Pick one.
+        </Field.Description>,
+        <Field.Description key="day">We reply within a day.</Field.Description>,
+      ])
+    );
+    await expect.element(group).toHaveAccessibleDescription("Optional. Pick one. We reply within a day.");
+    expect(group.element().getAttribute("aria-describedby")).toBe(
+      `contact-hint pick-one ${textNamed("We reply within a day.").id}`
+    );
+
+    rerender(
+      contactSet([
+        <Field.Description key="day">We reply within a day.</Field.Description>,
+        <Field.Description key="pick" id="pick-one">
+          Pick one.
+        </Field.Description>,
+      ])
+    );
+    await expect.element(group).toHaveAccessibleDescription("Optional. We reply within a day. Pick one.");
+    expect(group.element().getAttribute("aria-describedby")).toBe(
+      `contact-hint ${textNamed("We reply within a day.").id} pick-one`
+    );
+  });
+
+  it("follows reused description elements when a reorder moves them without re-rendering", async () => {
+    const pick = <Field.Description key="pick">Pick one.</Field.Description>;
+    const day = <Field.Description key="day">We reply within a day.</Field.Description>;
+    const contactSet = (descriptions: ReactNode) => (
+      <Field.Set>
+        <Field.Legend>Contact</Field.Legend>
+        {descriptions}
+      </Field.Set>
+    );
+    const group = page.getByRole("group", { name: "Contact", exact: true });
+    const { rerender } = renderThemed(contactSet([pick, day]));
+    await expect.element(group).toHaveAccessibleDescription("Pick one. We reply within a day.");
+
+    rerender(contactSet([day, pick]));
+    await expect.element(group).toHaveAccessibleDescription("We reply within a day. Pick one.");
+    expect(group.element().getAttribute("aria-describedby")).toBe(
+      `${textNamed("We reply within a day.").id} ${textNamed("Pick one.").id}`
+    );
+  });
+
+  it("lets a description inside a root in a fieldset describe the control, not the fieldset", async () => {
+    renderThemed(
+      <Field.Root>
+        <Field.Set>
+          <Field.Legend>Contact</Field.Legend>
+          <Field.Description>Pick one.</Field.Description>
+          <Field.Control aria-label="Email" render={<input />} />
+        </Field.Set>
+      </Field.Root>
+    );
+    await expect.element(textboxNamed("Email")).toHaveAccessibleDescription("Pick one.");
+    expect(roleNamed("group", "Contact").hasAttribute("aria-describedby")).toBe(false);
+  });
+
+  it("renders a description with neither root nor fieldset as plain text, resolving a className callback", () => {
+    renderThemed(
+      <Field.Description className={(state) => (state.disabled ? "is-disabled" : "is-enabled")}>
+        Standalone note.
+      </Field.Description>
+    );
+    const description = textNamed("Standalone note.");
+    expect(description.tagName).toBe("P");
+    expect(description.getAttribute("data-slot")).toBe("field-description");
+    expect(description.classList.contains("is-enabled")).toBe(true);
   });
 
   it("cascades disabled from Root onto the control", () => {

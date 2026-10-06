@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import { Checkbox } from "@base-ui/react/checkbox";
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -128,6 +130,38 @@ function RowTitle({ children }: { children: string }) {
   );
 }
 
+/** The viewport y of the middle of the label row that holds `title`. */
+function labelRowCentre(title: HTMLElement): number {
+  const label = title.closest("label");
+  if (!(label instanceof HTMLElement)) {
+    throw new Error("expected the row label around the title");
+  }
+  // The label lays its cells out in the shell's grid without a box of its own.
+  const cells = [...label.children].map((cell) => cell.getBoundingClientRect());
+  const top = Math.min(...cells.map((cell) => cell.top));
+  const bottom = Math.max(...cells.map((cell) => cell.bottom));
+  return (top + bottom) / 2;
+}
+
+/**
+ * Click the shell at `x(width)` from the left of its padding box, where `width` is the
+ * padding box's width, and at viewport `y`. Playwright measures `position` from the
+ * padding box, inside the border.
+ */
+async function clickShellAt(shell: HTMLElement, x: (width: number) => number, y: number): Promise<void> {
+  const top = shell.getBoundingClientRect().top + shell.clientTop;
+  await userEvent.click(shell, { position: { x: x(shell.clientWidth), y: y - top } });
+}
+
+function PressCounter() {
+  const [presses, setPresses] = useState(0);
+  return (
+    <button type="button" onClick={() => setPresses((count) => count + 1)}>
+      {`Pressed ${presses} times`}
+    </button>
+  );
+}
+
 describe("SelectionItem", () => {
   it.each([
     { host: "the default host", title: "Fixed price", render: undefined, tag: "DIV" },
@@ -169,6 +203,189 @@ describe("SelectionItem", () => {
     await userEvent.click(page.getByRole("button", { name: "Details", exact: true }));
     expect(checkboxNamed("Fixed price", true).getAttribute("aria-checked")).toBe("true");
   });
+
+  it.each([
+    { edge: "left", x: () => 4 },
+    { edge: "right", x: (width: number) => width - 4 },
+  ] as const)("selects a RadioItem from 4px inside the $edge edge", async ({ x }) => {
+    renderThemed(
+      <RadioItemGroup label="Radio cards">
+        <RadioItem value="a">
+          <RowTitle>Radio card</RowTitle>
+        </RadioItem>
+      </RadioItemGroup>
+    );
+
+    await clickShellAt(shellFrom("Radio card"), x, labelRowCentre(headingNamed("Radio card")));
+    expect(roleNamed("radio", "Radio card").getAttribute("aria-checked")).toBe("true");
+  });
+
+  it.each([
+    { item: "CheckboxItem", role: "checkbox", controlPosition: "start" },
+    { item: "CheckboxItem", role: "checkbox", controlPosition: "end" },
+    { item: "RadioItem", role: "radio", controlPosition: "start" },
+    { item: "RadioItem", role: "radio", controlPosition: "end" },
+  ] as const)(
+    "leaves the whole focus ring of a $item control at the $controlPosition edge of a px-0 card unclipped",
+    async ({ role, controlPosition }) => {
+      renderThemed(
+        <div style={{ padding: 32 }}>
+          <button type="button">Before</button>
+          {role === "checkbox" ? (
+            <CheckboxItemGroup label="Cards">
+              <CheckboxItem value="a" className="px-0" controlPosition={controlPosition}>
+                <RowTitle>Fixed price</RowTitle>
+              </CheckboxItem>
+            </CheckboxItemGroup>
+          ) : (
+            <RadioItemGroup label="Cards">
+              <RadioItem value="a" className="px-0" controlPosition={controlPosition}>
+                <RowTitle>Fixed price</RowTitle>
+              </RadioItem>
+            </RadioItemGroup>
+          )}
+        </div>
+      );
+
+      const control = roleNamed(role, "Fixed price");
+      roleNamed("button", "Before").focus();
+      await userEvent.keyboard("{Tab}");
+      expect(control.matches(":focus-visible")).toBe(true);
+
+      // The shared ring is a 2px ring outside a 2px offset, so it paints 4px past the control.
+      const style = getComputedStyle(control);
+      expect(style.getPropertyValue("--tw-ring-offset-width")).toBe("2px");
+      const rect = control.getBoundingClientRect();
+      const ring = { left: rect.left - 4, top: rect.top - 4, right: rect.right + 4, bottom: rect.bottom + 4 };
+      const shell = shellFrom("Fixed price");
+      const shellRect = shell.getBoundingClientRect();
+      const edgeGap =
+        controlPosition === "start"
+          ? rect.left - (shellRect.left + shell.clientLeft)
+          : shellRect.right - shell.clientLeft - rect.right;
+      expect(edgeGap, "the control touches the shell's inner edge").toBeCloseTo(0, 0);
+
+      const clippers: string[] = [];
+      for (let ancestor = control.parentElement; ancestor; ancestor = ancestor.parentElement) {
+        const ancestorStyle = getComputedStyle(ancestor);
+        const clips =
+          ancestorStyle.overflowX !== "visible" ||
+          ancestorStyle.overflowY !== "visible" ||
+          ancestorStyle.clipPath !== "none" ||
+          /paint|strict|content/.test(ancestorStyle.contain);
+        if (!clips || ancestor === document.documentElement || ancestor === document.body) {
+          continue;
+        }
+        const box = ancestor.getBoundingClientRect();
+        const inner = {
+          left: box.left + ancestor.clientLeft,
+          top: box.top + ancestor.clientTop,
+          right: box.left + ancestor.clientLeft + ancestor.clientWidth,
+          bottom: box.top + ancestor.clientTop + ancestor.clientHeight,
+        };
+        if (
+          ring.left < inner.left ||
+          ring.top < inner.top ||
+          ring.right > inner.right ||
+          ring.bottom > inner.bottom
+        ) {
+          clippers.push(`${ancestor.tagName}.${ancestor.className}`);
+        }
+      }
+      expect(clippers, "no ancestor clips the ring's box").toEqual([]);
+    }
+  );
+
+  it("keeps clicks beside the card, level with its label row, outside the click target", async () => {
+    renderThemed(
+      // The test CSS only holds the package's own utilities, so the frame pads itself inline.
+      <div data-testid="frame" style={{ paddingInline: 32 }}>
+        <CheckboxItemGroup label="Cards">
+          <CheckboxItem value="a">
+            <RowTitle>Fixed price</RowTitle>
+          </CheckboxItem>
+        </CheckboxItemGroup>
+      </div>
+    );
+
+    const frame = page.getByTestId("frame").element();
+    const checkbox = checkboxNamed("Fixed price");
+    for (const x of [(shell: DOMRect) => shell.left - 2, (shell: DOMRect) => shell.right + 2]) {
+      // Both boxes move together if a click scrolls the page, so the offset holds.
+      const box = frame.getBoundingClientRect();
+      const shell = shellFrom("Fixed price").getBoundingClientRect();
+      await userEvent.click(frame, {
+        position: { x: x(shell) - box.left, y: labelRowCentre(headingNamed("Fixed price")) - box.top },
+      });
+      expect(checkbox.getAttribute("aria-checked")).toBe("false");
+    }
+  });
+
+  it("keeps the sub-section side padding outside the click target and an action's click its own", async () => {
+    renderThemed(
+      <CheckboxItemGroup label="Cards">
+        <CheckboxItem value="a">
+          <RowTitle>Fixed price</RowTitle>
+          <SelectionItem.Actions>
+            <PressCounter />
+          </SelectionItem.Actions>
+          <SelectionItem.SubSection role="region" aria-label="Price details">
+            Price details
+          </SelectionItem.SubSection>
+        </CheckboxItem>
+      </CheckboxItemGroup>
+    );
+
+    const shell = shellFrom("Fixed price");
+    const details = roleNamed("region", "Price details").getBoundingClientRect();
+    const detailsCentre = details.top + details.height / 2;
+    // The label also names the checkbox by the action text, so match the one checkbox by role.
+    const checkbox = page.getByRole("checkbox").element();
+    await clickShellAt(shell, () => 4, detailsCentre);
+    expect(checkbox.getAttribute("aria-checked")).toBe("false");
+    await clickShellAt(shell, (width) => width - 4, detailsCentre);
+    expect(checkbox.getAttribute("aria-checked")).toBe("false");
+
+    await userEvent.click(roleNamed("button", "Pressed 0 times"));
+    expect(roleNamed("button", "Pressed 1 times")).toBeTruthy();
+    expect(checkbox.getAttribute("aria-checked")).toBe("false");
+  });
+
+  it.each([
+    { inset: 16, className: undefined },
+    { inset: 24, className: "px-6" },
+    { inset: 0, className: "px-0" },
+  ] as const)(
+    "insets the row content $inset px for className $className and toggles from the label row's edges",
+    async ({ inset, className }) => {
+      renderThemed(
+        <CheckboxItemGroup label="Cards">
+          <CheckboxItem value="a" className={className}>
+            <RowTitle>Fixed price</RowTitle>
+          </CheckboxItem>
+        </CheckboxItemGroup>
+      );
+
+      const shell = shellFrom("Fixed price");
+      const inner = shell.getBoundingClientRect();
+      // The test CSS has no preflight, so this also checks the card's own box sizing.
+      expect(inner.width).toBeCloseTo(shell.parentElement?.getBoundingClientRect().width ?? Number.NaN, 0);
+      const border = Number.parseFloat(getComputedStyle(shell).borderLeftWidth);
+      const rowCluster = headingNamed("Fixed price").parentElement;
+      if (!(rowCluster instanceof HTMLElement)) {
+        throw new Error("expected the row cluster around the title");
+      }
+      expect(controlSlot(shell).getBoundingClientRect().left - (inner.left + border)).toBeCloseTo(inset, 0);
+      expect(inner.right - border - rowCluster.getBoundingClientRect().right).toBeCloseTo(inset, 0);
+
+      const checkbox = checkboxNamed("Fixed price");
+      // Read the row centre before each click: a click can scroll the page.
+      await clickShellAt(shell, () => 1, labelRowCentre(headingNamed("Fixed price")));
+      expect(checkbox.getAttribute("aria-checked")).toBe("true");
+      await clickShellAt(shell, (width) => width - 1, labelRowCentre(headingNamed("Fixed price")));
+      expect(checkbox.getAttribute("aria-checked")).toBe("false");
+    }
+  );
 
   it("renders passed and direct sub-sections outside the label, passed first, without key collisions", () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => undefined);

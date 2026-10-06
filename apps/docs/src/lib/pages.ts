@@ -29,7 +29,7 @@ export const HOME_PAGE = {
 } as const;
 
 /** Every authored Overview and Handbook page, in nav order. */
-export const STATIC_PAGES = [
+export const STATIC_PAGES: readonly StaticPage[] = [
   {
     href: "/quick-start",
     label: "Quick start",
@@ -66,7 +66,7 @@ export const STATIC_PAGES = [
   {
     href: "/handbook/theme-matrix",
     label: "Theme matrix",
-    description: "All 20 legal brand × segment × variant permutations rendered side by side.",
+    description: "All 24 legal brand × segment × variant permutations rendered side by side.",
     group: "handbook",
   },
   {
@@ -80,7 +80,7 @@ export const STATIC_PAGES = [
     href: "/handbook/brands-and-segments",
     label: "Brands & segments",
     description:
-      "The six brand codes, the two segments, the pinned brands, and the four permutations that are illegal.",
+      "The seven brand codes, the two segments, the pinned brands, and the four permutations that are illegal.",
     group: "handbook",
   },
   {
@@ -103,10 +103,7 @@ export const STATIC_PAGES = [
       "The AI-docs surface: the generated llms.txt index and the per-component markdown endpoints.",
     group: "handbook",
   },
-] as const satisfies readonly StaticPage[];
-
-/** The route of an authored Overview or Handbook page. */
-export type StaticHref = (typeof STATIC_PAGES)[number]["href"];
+];
 
 export function staticPagesIn(group: StaticNavGroup): readonly StaticPage[] {
   return STATIC_PAGES.filter((page) => page.group === group);

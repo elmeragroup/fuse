@@ -8,6 +8,11 @@
 - When design supplies ring colors or an audit escalates contrast, replace the
   shared violet where needed. Retain the [accepted contrast exceptions](<apps/docs/src/app/(docs)/accessibility/page.tsx>)
   until reviewed replacements exist, including internal and Telinet light muted copy.
+- Ask design for Nordic Green Energy's radius and button radius, and sign off its palette.
+  `external-palettes.ts` maps the NGE Material 3 scheme by meaning, keeps the default
+  `0.375rem` radius and takes the `1.8125rem` pill button that Fjordkraft and Telinet use,
+  since the nordicgreen.fi buttons are pills. Running `figma:sync` for the four new theme
+  modes and two primitives waits on the owner.
 - Ask design for an external secondary hover tone. Every external palette sets `secondary`
   equal to `foreground`, so `--secondary-hover` equals `--secondary` and the hover is invisible.
 - Ask design for a text-grade foreground on dark `feature`, or lighter dark `feature` tones.
@@ -211,8 +216,9 @@ each stand-in once Fuse ships the part.
   child never narrows below its longest line. `app-shell/order-list.tsx` and
   `app-shell/order-detail.tsx` add `contain-inline-size` to their scrolled content.
 - Give `TrondelagkraftLogo` and `GudbrandsdalEnergiLogo` full artwork for light surfaces, and
-  draw Telinet's "Energi" in `currentColor`. Their fixed fills (white, and navy in Telinet's)
-  vanish on one of the schemes, so those sites set `logo: "wordmark"` in `brand-site/sites/` and
+  draw Telinet's "Energi" and the Nordic Green Energy wordmark in `currentColor`. Their fixed
+  fills (white, navy in Telinet's and dark green in Nordic Green Energy's) vanish on one of the
+  schemes, so those sites set `logo: "wordmark"` in `brand-site/sites/` and
   draw the landing's one-ink `brand-wordmark.tsx`, as the Elmera site's brand grid does.
 - Give the outline `Button` the ink of the `background` it paints. It inherits the text colour,
   so on a strong brand block its label is light on light. The promo hero in
@@ -225,15 +231,6 @@ Every overlay on a side of the hero window must close when that side hides, thro
 `useSideOverlay` or `useSideRemountKey` in `landing/window-side.tsx`. Nothing enforces this, so a
 new overlay that skips both keeps its scroll lock after a flip. Add a lint rule, or a browser test
 that opens every overlay on a side before flipping the window.
-
-## Open Graph images
-
-- The component specimens in `apps/docs/src/og/specimens/` redraw each Fuse recipe from
-  tokens by hand. A recipe change in `packages/fuse` does not reach them, and no test compares
-  the two. Review the specimens when a recipe's radius, border, padding or default variant
-  changes, or add a cross-check against the recipe classes.
-- The images draw the light palette only, and set Code in Roboto because the repo ships no
-  monospace font. Add a dark variant or a mono face if design asks for them.
 
 ## Product-triggered work
 

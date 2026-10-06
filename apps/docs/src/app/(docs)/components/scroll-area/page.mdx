@@ -6,6 +6,7 @@ lede: >
 import { ScrollAreaVertical } from "./demos/scroll-area-vertical";
 import { ScrollAreaHorizontal } from "./demos/scroll-area-horizontal";
 import { ScrollAreaAlways } from "./demos/scroll-area-always";
+import { ScrollAreaMaxHeight } from "./demos/scroll-area-max-height";
 import { ScrollAreaComposed } from "./demos/scroll-area-composed";
 
 import { componentMetadata } from "../../../../lib/component-page";
@@ -20,6 +21,8 @@ export const metadata = componentMetadata("scroll-area");
 
 `Root` renders exactly one scrollbar. For two-axis scrolling, mount two `ScrollArea.Bar`s yourself; the last demo shows the composition.
 
+`Root` takes either a fixed height or a max height. Under a max height, short content keeps the area at its content height, and longer content scrolls once it reaches the cap.
+
 </Prose>
 
 <Demo slug="scroll-area" id="vertical" title="Vertical" file="scroll-area-vertical.tsx">
@@ -32,6 +35,10 @@ export const metadata = componentMetadata("scroll-area");
 
 <Demo slug="scroll-area" id="always-visible" title="Always visible" file="scroll-area-always.tsx">
   <ScrollAreaAlways />
+</Demo>
+
+<Demo slug="scroll-area" id="max-height" title="Max height" file="scroll-area-max-height.tsx">
+  <ScrollAreaMaxHeight />
 </Demo>
 
 <Demo slug="scroll-area" id="composed" title="Two-axis composition" file="scroll-area-composed.tsx">

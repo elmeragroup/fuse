@@ -70,6 +70,12 @@ export type FieldFrameProps = {
   /** Visible heading. Falsy renders no label/legend element. */
   label?: string;
   /**
+   * Hides the label/legend visually and keeps it as the accessible name. Without a status
+   * face the whole heading row is `sr-only` too, so the body starts at the top; with one,
+   * the row stays for the status.
+   */
+  isLabelHidden?: boolean;
+  /**
    * Component-owned status face at the end of the heading row — TextareaField's
    * character counter, RadioGroup's pending spinner. Its presence forces the row to
    * exist, the same way `isPending` and `isSuccess` do.
@@ -111,6 +117,7 @@ export type FieldFrameProps = {
 export function FieldFrame({
   heading = "label",
   label,
+  isLabelHidden = false,
   status,
   isPending = false,
   isSuccess = false,
@@ -124,7 +131,10 @@ export function FieldFrame({
   children,
 }: FieldFrameProps): ReactElement {
   const hasCrossfade = isPending || isSuccess;
-  const headingClass = classNames?.label;
+  const hasStatus = status != null || hasCrossfade;
+  // `sr-only` takes the hidden part out of flow, so it leaves no row height or gap. The
+  // row goes with the label only when no status face needs it.
+  const headingClass = cn(isLabelHidden && "sr-only", classNames?.label);
   const descriptionNode = description ? (
     <FieldDescription className={cn(fieldFrameDescriptionClass, classNames?.description)}>
       {description}
@@ -144,8 +154,13 @@ export function FieldFrame({
     );
   const content = classNames?.content === undefined ? body : <div className={classNames.content}>{body}</div>;
   const headingRow =
-    label || status != null || hasCrossfade ? (
-      <div className={cn(fieldFrameLabelRowClass, classNames?.labelRow)}>
+    label || hasStatus ? (
+      <div
+        className={cn(
+          fieldFrameLabelRowClass,
+          isLabelHidden && !hasStatus && "sr-only",
+          classNames?.labelRow
+        )}>
         {label ? (
           heading === "legend" ? (
             <FieldLegend variant="label" className={headingClass}>

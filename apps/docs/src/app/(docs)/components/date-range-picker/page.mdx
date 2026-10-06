@@ -5,6 +5,7 @@ lede: >
 
 import { DateRangePickerBasic } from "./demos/date-range-picker-basic";
 import { DateRangePickerControlled } from "./demos/date-range-picker-controlled";
+import { DateRangePickerPresets } from "./demos/date-range-picker-presets";
 import { DateRangePickerValidation } from "./demos/date-range-picker-validation";
 import { DateRangePickerStates } from "./demos/date-range-picker-states";
 import { DateRangePickerInModal } from "./demos/date-range-picker-in-modal";
@@ -33,6 +34,12 @@ Wrap locale-dependent usage in `UiProviders` so it follows the app locale.
 
 <Demo slug="date-range-picker" id="controlled" title="Controlled" file="date-range-picker-controlled.tsx">
   <DateRangePickerControlled />
+</Demo>
+
+Presets sit beside the calendar and stack above it on small screens. Each preset reports its own `value`, and your `onChange` turns that value into a range.
+
+<Demo slug="date-range-picker" id="presets" title="Presets" file="date-range-picker-presets.tsx">
+  <DateRangePickerPresets />
 </Demo>
 
 <Demo slug="date-range-picker" id="validation" title="Validation" file="date-range-picker-validation.tsx">

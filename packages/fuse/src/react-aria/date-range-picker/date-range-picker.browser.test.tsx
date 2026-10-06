@@ -3,27 +3,42 @@ import type { ReactElement, ReactNode } from "react";
 
 import { CalendarDate, isSameDay } from "@internationalized/date";
 import type { DateValue } from "@internationalized/date";
-import { describe, expect, it, vi } from "vitest";
+import { DateRangePickerContext } from "react-aria-components";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Mock } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertStateFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
+import { withLocale } from "../../../test/locale-matrix";
 import {
   calendarGrid,
   calendarRoot,
   cellNumbered,
   dayNumbered,
   describedTextsFor,
+  insetsWithin,
   navButtonNamed,
+  paddingBox,
+  ROW_VIEWPORT,
   segmentLocator,
   segmentNamed,
+  STACKED_VIEWPORT,
+  SUBPIXEL,
+  unionBox,
 } from "../../../test/rac-calendar-testing";
-import { CONTROL_MD, cssVarColor, px, renderThemed, stampDensity } from "../../../test/themed-browser-render";
+import {
+  CONTROL_MD,
+  cssVarColor,
+  px,
+  renderThemed,
+  roleNamed,
+  stampDensity,
+} from "../../../test/themed-browser-render";
 import { Dialog } from "../../components/dialog";
 import { UiProviders } from "../ui-providers/ui-providers";
-import { DateRangePicker } from "./date-range-picker";
+import { DateRangePicker, DateRangePickerPresetGroup, DateRangePickerPresetItem } from "./date-range-picker";
 
 function renderPicker(node: ReactNode) {
   return renderThemed(
@@ -531,5 +546,447 @@ describe("DateRangePicker composition surface", () => {
 
     expect(px(getComputedStyle(glyph).width)).toBe(16);
     expect(px(getComputedStyle(glyph).height)).toBe(16);
+  });
+});
+
+/**
+ * A preset's pointer target. RAC keeps the `radio` element visually hidden inside the
+ * label that carries the visible copy, so the item is *found* by its role and name and
+ * *clicked* on the label the user actually sees.
+ */
+function presetTargetNamed(name: string): HTMLElement {
+  const label = page.getByRole("radio", { name, exact: true }).element().closest("label");
+  if (!(label instanceof HTMLElement)) {
+    throw new Error(`expected the preset label for ${name}`);
+  }
+  return label;
+}
+
+/** The pane wrapper the composite puts around the preset group and the calendar. */
+function paneAroundCalendar(): HTMLElement {
+  const pane = calendarRoot().parentElement;
+  if (!(pane instanceof HTMLElement)) {
+    throw new Error("expected the dialog's pane wrapper");
+  }
+  return pane;
+}
+
+/** The visible month the open range grid shows, as RAC names it ("July 2026"). */
+function visibleMonth(): string | null {
+  return calendarGrid().getAttribute("aria-label");
+}
+
+/** Both rows' month, day and year segments, in reading order. */
+function committedSegments(): string[] {
+  return ["Start Date", "End Date"].flatMap((row) =>
+    ["month", "day", "year"].map((part) => segmentNamed(`${part}, ${row}`).textContent)
+  );
+}
+
+/**
+ * A controlled range picker whose presets map a preset value to a range, as a caller
+ * would. `onCalendarCommit` sees only what the picker itself commits (calendar or
+ * segments), never the preset path, so a half range leaking out is observable.
+ */
+function PresetDrivenRangePicker({
+  ranges,
+  onCalendarCommit,
+  placeholderValue,
+  shouldCloseOnSelect,
+}: {
+  ranges: Record<string, CommittedRange>;
+  onCalendarCommit?: (value: CommittedRange | null) => void;
+  placeholderValue?: CalendarDate;
+  shouldCloseOnSelect?: boolean;
+}): ReactElement {
+  const [value, setValue] = useState<CommittedRange | null>(null);
+  return (
+    <DateRangePicker
+      label="Period"
+      value={value}
+      onChange={(next) => {
+        onCalendarCommit?.(next);
+        setValue(next);
+      }}
+      {...(placeholderValue && { placeholderValue })}
+      {...(shouldCloseOnSelect !== undefined && { shouldCloseOnSelect })}
+      presetGroup={
+        <DateRangePickerPresetGroup onChange={(preset) => setValue(ranges[preset] ?? null)}>
+          {Object.keys(ranges).map((preset) => (
+            <DateRangePickerPresetItem key={preset} value={preset}>
+              {preset}
+            </DateRangePickerPresetItem>
+          ))}
+        </DateRangePickerPresetGroup>
+      }
+    />
+  );
+}
+
+function presetPicker(): ReactElement {
+  return (
+    <DateRangePicker
+      label="Period"
+      defaultValue={julyWeek}
+      presetGroup={
+        <DateRangePickerPresetGroup>
+          <DateRangePickerPresetItem value="today">Today</DateRangePickerPresetItem>
+          <DateRangePickerPresetItem value="last-7-days">Last 7 days</DateRangePickerPresetItem>
+        </DateRangePickerPresetGroup>
+      }
+    />
+  );
+}
+
+describe("DateRangePicker preset pane geometry", () => {
+  afterEach(async () => {
+    await page.viewport(STACKED_VIEWPORT.width, STACKED_VIEWPORT.height);
+  });
+
+  it("runs the row divider from the dialog's top edge to its bottom edge", async () => {
+    await page.viewport(ROW_VIEWPORT.width, ROW_VIEWPORT.height);
+    renderPicker(presetPicker());
+    const inner = paddingBox(await openPicker());
+    const column = roleNamed("radiogroup", "Date presets");
+    const divider = column.getBoundingClientRect();
+
+    expect(px(getComputedStyle(column).borderRightWidth)).toBeGreaterThan(0);
+    expect(Math.abs(divider.top - inner.top)).toBeLessThanOrEqual(SUBPIXEL);
+    expect(Math.abs(divider.bottom - inner.bottom)).toBeLessThanOrEqual(SUBPIXEL);
+    expect(Math.abs(divider.left - inner.left)).toBeLessThanOrEqual(SUBPIXEL);
+  });
+
+  it("runs the stacked divider from the dialog's start edge to its end edge", async () => {
+    await page.viewport(STACKED_VIEWPORT.width, STACKED_VIEWPORT.height);
+    renderPicker(presetPicker());
+    const inner = paddingBox(await openPicker());
+    const column = roleNamed("radiogroup", "Date presets");
+    const divider = column.getBoundingClientRect();
+
+    expect(px(getComputedStyle(column).borderBottomWidth)).toBeGreaterThan(0);
+    expect(Math.abs(divider.left - inner.left)).toBeLessThanOrEqual(SUBPIXEL);
+    expect(Math.abs(divider.right - inner.right)).toBeLessThanOrEqual(SUBPIXEL);
+    expect(Math.abs(divider.top - inner.top)).toBeLessThanOrEqual(SUBPIXEL);
+  });
+
+  it.each([
+    ["row", ROW_VIEWPORT],
+    ["stacked", STACKED_VIEWPORT],
+  ])("insets the presets by at least 8px on every side of their column (%s)", async (_layout, viewport) => {
+    await page.viewport(viewport.width, viewport.height);
+    renderPicker(presetPicker());
+    await openPicker();
+    const items = unionBox([presetTargetNamed("Today"), presetTargetNamed("Last 7 days")]);
+    const insets = insetsWithin(paddingBox(roleNamed("radiogroup", "Date presets")), items);
+
+    expect(insets.top).toBeGreaterThanOrEqual(8 - SUBPIXEL);
+    expect(insets.right).toBeGreaterThanOrEqual(8 - SUBPIXEL);
+    expect(insets.bottom).toBeGreaterThanOrEqual(8 - SUBPIXEL);
+    expect(insets.left).toBeGreaterThanOrEqual(8 - SUBPIXEL);
+  });
+});
+
+describe("DateRangePicker presets", () => {
+  it("lays a locale-named preset radiogroup beside the range calendar inside the dialog", async () => {
+    renderPicker(
+      <DateRangePicker
+        label="Period"
+        defaultValue={julyWeek}
+        presetGroup={
+          <DateRangePickerPresetGroup>
+            <DateRangePickerPresetItem value="today">Today</DateRangePickerPresetItem>
+            <DateRangePickerPresetItem value="last-7-days">Last 7 days</DateRangePickerPresetItem>
+          </DateRangePickerPresetGroup>
+        }
+      />
+    );
+    const dialog = await openPicker();
+    const radiogroup = page.getByRole("radiogroup", { name: "Date presets" }).element();
+    if (!(radiogroup instanceof HTMLElement)) {
+      throw new Error("expected the preset radiogroup");
+    }
+
+    expect(radiogroup.getAttribute("data-slot")).toBe("date-range-picker-preset-group");
+    expect(presetTargetNamed("Today").getAttribute("data-slot")).toBe("date-range-picker-preset-item");
+    await expect.element(page.getByRole("radio", { name: "Last 7 days", exact: true })).toBeVisible();
+    // The group and the grid share one pane inside the dialog, the group first.
+    const pane = paneAroundCalendar();
+    expect(pane.closest('[role="dialog"]')).toBe(dialog);
+    expect(radiogroup.parentElement).toBe(pane);
+    expect(getComputedStyle(pane).display).toBe("flex");
+  });
+
+  it("draws the pane divider in the border role colour, not the text colour", async () => {
+    renderPicker(
+      <DateRangePicker
+        label="Period"
+        defaultValue={julyWeek}
+        presetGroup={
+          <DateRangePickerPresetGroup>
+            <DateRangePickerPresetItem value="today">Today</DateRangePickerPresetItem>
+          </DateRangePickerPresetGroup>
+        }
+      />
+    );
+    await openPicker();
+    // The preset group is the pane's first child, so it carries the divider: on its
+    // bottom edge while the panes stack, on its trailing edge once they sit side by side.
+    const group = page.getByRole("radiogroup", { name: "Date presets" }).element();
+    if (!(group instanceof HTMLElement)) {
+      throw new Error("expected the preset radiogroup");
+    }
+    const groupStyle = getComputedStyle(group);
+    const drawn = ["top", "right", "bottom", "left"].filter(
+      (side) => px(groupStyle.getPropertyValue(`border-${side}-width`)) > 0
+    );
+
+    expect(drawn).toHaveLength(1);
+    const color = groupStyle.getPropertyValue(`border-${drawn.join("")}-color`);
+    expect(color).toBe(cssVarColor(group, "--border"));
+    expect(color).not.toBe(groupStyle.color);
+  });
+
+  it("keeps the lone range calendar single-pane when the preset guard collapses to false", async () => {
+    renderPicker(<DateRangePicker label="Period" defaultValue={julyWeek} presetGroup={false} />);
+    await openPicker();
+    const pane = paneAroundCalendar();
+    const paneStyle = getComputedStyle(pane);
+
+    expect(page.getByRole("radiogroup").query()).toBeNull();
+    // None of the two-pane layout: no flex row, no inset, and no divider on any child.
+    expect(paneStyle.display).toBe("block");
+    expect(paneStyle.columnGap).toBe("normal");
+    expect(paneStyle.paddingBottom).toBe("0px");
+    for (const child of pane.children) {
+      expect(getComputedStyle(child).borderLeftWidth).toBe("0px");
+      expect(getComputedStyle(child).borderRightWidth).toBe("0px");
+    }
+  });
+
+  it("lands each preset's range in both rows and follows it to its month with the popover open", async () => {
+    renderPicker(
+      <PresetDrivenRangePicker
+        placeholderValue={new CalendarDate(2025, 3, 1)}
+        ranges={{
+          "Mid month": { start: july14, end: july24 },
+          "Early November": { start: new CalendarDate(2026, 11, 3), end: new CalendarDate(2026, 11, 9) },
+          "Year end": { start: new CalendarDate(2025, 12, 28), end: new CalendarDate(2026, 1, 3) },
+        }}
+      />
+    );
+    await openPicker();
+    // The placeholder month, so every later month is the sync's doing and not the clock's.
+    expect(visibleMonth()).toMatch(/March\s+2025/i);
+
+    await userEvent.click(presetTargetNamed("Mid month"));
+    expect(page.getByRole("radio", { name: "Mid month", exact: true }).element()).toBeChecked();
+    await expect.element(page.getByRole("dialog")).toBeVisible();
+    expect(visibleMonth()).toMatch(/July\s+2026/i);
+    expect(committedSegments()).toEqual(["07", "14", "2026", "07", "24", "2026"]);
+    expect(cellNumbered(14)).toHaveAttribute("aria-selected", "true");
+    expect(cellNumbered(24)).toHaveAttribute("aria-selected", "true");
+
+    await userEvent.click(presetTargetNamed("Early November"));
+    await expect.element(page.getByRole("dialog")).toBeVisible();
+    expect(visibleMonth()).toMatch(/November\s+2026/i);
+    expect(committedSegments()).toEqual(["11", "03", "2026", "11", "09", "2026"]);
+
+    // Across a year boundary the grid follows the start, not the end.
+    await userEvent.click(presetTargetNamed("Year end"));
+    await expect.element(page.getByRole("dialog")).toBeVisible();
+    expect(visibleMonth()).toMatch(/December\s+2025/i);
+    expect(committedSegments()).toEqual(["12", "28", "2025", "01", "03", "2026"]);
+  });
+
+  it("opens on a placeholder supplied through DateRangePickerContext", async () => {
+    renderPicker(
+      <DateRangePickerContext.Provider value={{ placeholderValue: new CalendarDate(2025, 3, 1) }}>
+        <DateRangePicker label="Period" />
+      </DateRangePickerContext.Provider>
+    );
+    await openPicker();
+
+    expect(visibleMonth()).toMatch(/March\s+2025/i);
+  });
+
+  it.each([
+    ["pointer", () => userEvent.click(presetTargetNamed("Mid month"))],
+    [
+      "keyboard",
+      async () => {
+        await userEvent.keyboard("{Tab}");
+        expect(document.activeElement).toBe(
+          page.getByRole("radio", { name: "First week", exact: true }).element()
+        );
+        await userEvent.keyboard("{ArrowDown}");
+      },
+    ],
+  ] as const)(
+    "drops a half-picked range rather than committing it when the user moves to the presets by %s",
+    async (_input, moveToPreset) => {
+      const onCalendarCommit = vi.fn<(value: CommittedRange | null) => void>();
+      renderPicker(
+        <PresetDrivenRangePicker
+          onCalendarCommit={onCalendarCommit}
+          placeholderValue={july4}
+          ranges={{ "First week": { start: july4, end: july9 }, "Mid month": { start: july14, end: july24 } }}
+        />
+      );
+      await openPicker();
+
+      // Anchor a first endpoint, then leave the grid for the preset pane.
+      await userEvent.click(dayNumbered(20));
+      await moveToPreset();
+
+      await expect.element(page.getByRole("dialog")).toBeVisible();
+      expect(onCalendarCommit).not.toHaveBeenCalled();
+      expect(page.getByRole("radio", { name: "Mid month", exact: true }).element()).toBeChecked();
+      expect(committedSegments()).toEqual(["07", "14", "2026", "07", "24", "2026"]);
+      expect(cellNumbered(20)).toHaveAttribute("aria-selected", "true");
+    }
+  );
+
+  it.each([
+    ["without presets", false],
+    ["with presets", true],
+  ] as const)(
+    "keeps the grid and focus where a cross-month calendar selection ended (%s)",
+    async (_case, withPresets) => {
+      const onChange = rangeChangeSpy();
+      renderPicker(
+        <DateRangePicker
+          label="Period"
+          placeholderValue={july4}
+          shouldCloseOnSelect={false}
+          onChange={onChange}
+          {...(withPresets && {
+            presetGroup: (
+              <DateRangePickerPresetGroup>
+                <DateRangePickerPresetItem value="today">Today</DateRangePickerPresetItem>
+              </DateRangePickerPresetGroup>
+            ),
+          })}
+        />
+      );
+      await openPicker();
+
+      await userEvent.click(dayNumbered(20));
+      await userEvent.click(navButtonNamed(/next/i));
+      expect(visibleMonth()).toMatch(/August\s+2026/i);
+      await userEvent.click(dayNumbered(5));
+
+      const committed = committedRange(onChange);
+      expect([committed.start.toString(), committed.end.toString()]).toEqual(["2026-07-20", "2026-08-05"]);
+      await expect.element(page.getByRole("dialog")).toBeVisible();
+      expect(visibleMonth()).toMatch(/August\s+2026/i);
+      expect(document.activeElement).toBe(dayNumbered(5));
+    }
+  );
+
+  it("still moves the grid to a preset's month after a calendar commit in the same open", async () => {
+    renderPicker(
+      <PresetDrivenRangePicker
+        placeholderValue={july4}
+        shouldCloseOnSelect={false}
+        ranges={{
+          "Early November": { start: new CalendarDate(2026, 11, 3), end: new CalendarDate(2026, 11, 9) },
+        }}
+      />
+    );
+    await openPicker();
+    await userEvent.click(dayNumbered(14));
+    await userEvent.click(dayNumbered(24));
+    expect(committedSegments()).toEqual(["07", "14", "2026", "07", "24", "2026"]);
+    expect(visibleMonth()).toMatch(/July\s+2026/i);
+
+    await userEvent.click(presetTargetNamed("Early November"));
+
+    expect(visibleMonth()).toMatch(/November\s+2026/i);
+  });
+
+  it("keeps a paged month when a preset commits an equal range, and resyncs when only the end changes", async () => {
+    renderPicker(
+      <PresetDrivenRangePicker
+        ranges={{
+          "Mid month": { start: july14, end: july24 },
+          // An equal range built from fresh objects: the same committed value.
+          "Same span": { start: new CalendarDate(2026, 7, 14), end: new CalendarDate(2026, 7, 24) },
+          // The very same start object, with a later end: a different committed value.
+          "Into August": { start: july14, end: new CalendarDate(2026, 8, 5) },
+        }}
+      />
+    );
+    await openPicker();
+    await userEvent.click(presetTargetNamed("Mid month"));
+    expect(visibleMonth()).toMatch(/July\s+2026/i);
+
+    await userEvent.click(navButtonNamed(/next/i));
+    await userEvent.click(navButtonNamed(/next/i));
+    expect(visibleMonth()).toMatch(/September\s+2026/i);
+
+    await userEvent.click(presetTargetNamed("Same span"));
+    expect(page.getByRole("radio", { name: "Same span", exact: true }).element()).toBeChecked();
+    expect(visibleMonth()).toMatch(/September\s+2026/i);
+
+    await userEvent.click(presetTargetNamed("Into August"));
+    expect(committedSegments()).toEqual(["07", "14", "2026", "08", "05", "2026"]);
+    expect(visibleMonth()).toMatch(/July\s+2026/i);
+  });
+
+  it("closes the dialog on double-click only where the caller opted in, after its own handler", async () => {
+    const events: string[] = [];
+    renderPicker(
+      <DateRangePicker
+        label="Period"
+        defaultValue={julyWeek}
+        onOpenChange={(isOpen) => events.push(isOpen ? "open" : "close")}
+        presetGroup={
+          <DateRangePickerPresetGroup>
+            <DateRangePickerPresetItem value="today" onDoubleClick={() => events.push("double-click today")}>
+              Today
+            </DateRangePickerPresetItem>
+            <DateRangePickerPresetItem
+              value="this-month"
+              isCloseDialogOnDoubleClick
+              onDoubleClick={() => events.push("double-click this month")}>
+              This month
+            </DateRangePickerPresetItem>
+          </DateRangePickerPresetGroup>
+        }
+      />
+    );
+    await openPicker();
+
+    await userEvent.dblClick(presetTargetNamed("Today"));
+    await expect.element(page.getByRole("dialog")).toBeVisible();
+    expect(events).toEqual(["open", "double-click today"]);
+
+    await userEvent.dblClick(presetTargetNamed("This month"));
+    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
+    expect(events).toEqual(["open", "double-click today", "double-click this month", "close"]);
+  });
+
+  it("forwards label and aria-label to the group name, the explicit aria-label first", async () => {
+    const { unmount } = renderThemed(
+      withLocale(
+        "nb-NO",
+        <DateRangePickerPresetGroup label="Hurtigvalg">
+          <DateRangePickerPresetItem value="today">I dag</DateRangePickerPresetItem>
+        </DateRangePickerPresetGroup>
+      )
+    );
+    await expect.element(page.getByRole("radiogroup", { name: "Hurtigvalg", exact: true })).toBeVisible();
+    unmount();
+
+    renderThemed(
+      withLocale(
+        "nb-NO",
+        <DateRangePickerPresetGroup label="Hurtigvalg" aria-label="Periode">
+          <DateRangePickerPresetItem value="today">I dag</DateRangePickerPresetItem>
+        </DateRangePickerPresetGroup>
+      )
+    );
+    await expect.element(page.getByRole("radiogroup", { name: "Periode", exact: true })).toBeVisible();
+    expect(page.getByRole("radiogroup", { name: "Hurtigvalg" }).query()).toBeNull();
   });
 });

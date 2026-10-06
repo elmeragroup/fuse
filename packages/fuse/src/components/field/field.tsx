@@ -1,16 +1,36 @@
 "use client";
 
+import { createContext, use, useEffect, useId, useLayoutEffect, useState } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { Field as FieldPrimitive } from "@base-ui/react/field";
 import { Fieldset as FieldsetPrimitive } from "@base-ui/react/fieldset";
+import { useRender } from "@base-ui/react/use-render";
 import type { VariantProps } from "tailwind-variants";
 
+import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { Separator } from "../separator/separator";
 import { fieldVariants } from "./field-variants";
+
+/** How a `Field.Set` collects the description elements it holds. */
+type DescriptionRegistry = {
+  /** Track a mounted description element; the returned function stops tracking it. */
+  readonly add: (element: HTMLElement) => () => void;
+};
+
+/**
+ * What a `Field.Description` describes. Base UI's part throws outside a `Field.Root`, so the
+ * root marks its subtree and a `Field.Set` outside any root collects the descriptions it holds.
+ * Without either, the description is plain text.
+ */
+type DescriptionOwner = { readonly _tag: "field" } | ({ readonly _tag: "fieldset" } & DescriptionRegistry);
+
+const DescriptionOwnerContext = createContext<DescriptionOwner | null>(null);
+
+const fieldDescriptionOwner: DescriptionOwner = { _tag: "field" };
 
 export function FieldRoot({
   className,
@@ -18,28 +38,76 @@ export function FieldRoot({
   ...props
 }: ComponentProps<typeof FieldPrimitive.Root> & VariantProps<typeof fieldVariants>): ReactElement {
   return (
-    <FieldPrimitive.Root
-      data-slot="field"
-      data-orientation={orientation}
-      className={mergeClassName(className, fieldVariants({ orientation }).root())}
-      {...props}
-    />
+    <DescriptionOwnerContext.Provider value={fieldDescriptionOwner}>
+      <FieldPrimitive.Root
+        data-slot="field"
+        data-orientation={orientation}
+        className={mergeClassName(className, fieldVariants({ orientation }).root())}
+        {...props}
+      />
+    </DescriptionOwnerContext.Provider>
   );
 }
 
+/**
+ * Outside a `Field.Root`, the set is described by the `Field.Description` parts it holds, after
+ * the consumer's own `aria-describedby`. Inside a root, they describe the root's control instead.
+ */
 export function FieldSet({
   className,
+  ref,
+  "aria-describedby": consumerDescribedBy,
   ...props
 }: ComponentProps<typeof FieldsetPrimitive.Root>): ReactElement {
+  const owner = use(DescriptionOwnerContext);
+  // A joined string, so an unchanged order bails out of the state update instead of re-rendering.
+  const [descriptionIds, setDescriptionIds] = useState("");
+  const [{ fieldsetOwner, sync }] = useState(() => {
+    const elements = new Set<HTMLElement>();
+    const sync = () =>
+      setDescriptionIds(
+        [...elements]
+          .sort(documentOrder)
+          .map((element) => element.id)
+          .join(" ")
+      );
+    const fieldsetOwner: DescriptionOwner = {
+      _tag: "fieldset",
+      add: (element) => {
+        elements.add(element);
+        sync();
+        return () => {
+          elements.delete(element);
+          sync();
+        };
+      },
+    };
+    return { fieldsetOwner, sync };
+  });
+  const [fieldset, setFieldset] = useState<HTMLElement | null>(null);
+  const mergedRef = useMergedRefs(ref, setFieldset);
+  const ownsDescriptions = owner?._tag !== "field";
+  // A reorder can move memoized descriptions without re-rendering them, and an id can change
+  // without a re-registration, so the set watches its own subtree rather than each description.
+  useEffect(() => {
+    if (!fieldset || !ownsDescriptions) return;
+    const observer = new MutationObserver(sync);
+    observer.observe(fieldset, { childList: true, subtree: true, attributeFilter: ["id"] });
+    return () => observer.disconnect();
+  }, [fieldset, ownsDescriptions, sync]);
+  const describedBy = [consumerDescribedBy, descriptionIds].filter(Boolean).join(" ");
   return (
-    <FieldsetPrimitive.Root
-      data-slot="field-set"
-      className={mergeClassName(
-        className,
-        "flex flex-col gap-6 has-[>[data-slot=checkbox-group]]:gap-3 has-[>[data-slot=radio-group]]:gap-3"
-      )}
-      {...definedProps(props)}
-    />
+    <DescriptionOwnerContext.Provider value={ownsDescriptions ? fieldsetOwner : owner}>
+      <FieldsetPrimitive.Root
+        ref={mergedRef}
+        data-slot="field-set"
+        className={mergeClassName(
+          className,
+          "flex flex-col gap-6 has-[>[data-slot=checkbox-group]]:gap-3 has-[>[data-slot=radio-group]]:gap-3"
+        )}
+        {...definedProps({ ...props, "aria-describedby": describedBy || undefined })}
+      />
+    </DescriptionOwnerContext.Provider>
   );
 }
 
@@ -132,20 +200,85 @@ export function FieldControl(props: ComponentProps<typeof FieldPrimitive.Control
   return <FieldPrimitive.Control data-slot="field-control" {...definedProps(props)} />;
 }
 
-export function FieldDescription({
-  className,
-  ...props
-}: ComponentProps<typeof FieldPrimitive.Description>): ReactElement {
+type FieldDescriptionProps = ComponentProps<typeof FieldPrimitive.Description>;
+
+/**
+ * The state Base UI's description reports for a field nobody has touched. Mapped so the type
+ * satisfies `useRender`'s record constraint, which the source interface does not.
+ */
+type UnownedDescriptionState = {
+  readonly [K in keyof FieldPrimitive.Description.State]: FieldPrimitive.Description.State[K];
+};
+
+const unownedDescriptionState: UnownedDescriptionState = {
+  disabled: false,
+  touched: false,
+  dirty: false,
+  valid: null,
+  filled: false,
+  focused: false,
+};
+
+/**
+ * Supporting copy. Inside a `Field.Root` it describes the field's control. Outside any root it
+ * renders the same paragraph, and inside a `Field.Set` it describes that fieldset, so a
+ * description can follow a `Field.Legend` without a root around the set.
+ */
+export function FieldDescription({ className, ...props }: FieldDescriptionProps): ReactElement {
+  const owner = use(DescriptionOwnerContext);
+  const descriptionClassName = mergeClassName(
+    className,
+    "text-sm leading-normal font-normal text-left text-pretty text-muted-foreground group-has-data-horizontal/field:text-balance last:mt-0 [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary [[data-variant=legend]+&]:-mt-1.5"
+  );
+  if (owner?._tag === "field") {
+    return (
+      <FieldPrimitive.Description
+        data-slot="field-description"
+        className={descriptionClassName}
+        {...definedProps(props)}
+      />
+    );
+  }
   return (
-    <FieldPrimitive.Description
-      data-slot="field-description"
-      className={mergeClassName(
-        className,
-        "text-sm leading-normal font-normal text-left text-pretty text-muted-foreground group-has-data-horizontal/field:text-balance last:mt-0 [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary [[data-variant=legend]+&]:-mt-1.5"
-      )}
-      {...definedProps(props)}
+    <UnownedDescription
+      registry={owner?._tag === "fieldset" ? owner : undefined}
+      className={descriptionClassName}
+      {...props}
     />
   );
+}
+
+function documentOrder(left: Node, right: Node): number {
+  return left.compareDocumentPosition(right) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+}
+
+function UnownedDescription({
+  registry,
+  className,
+  style,
+  render,
+  ref,
+  id,
+  ...props
+}: FieldDescriptionProps & { registry: DescriptionRegistry | undefined }): ReactElement {
+  const generatedId = useId();
+  const [element, setElement] = useState<HTMLParagraphElement | null>(null);
+  useLayoutEffect(() => (element ? registry?.add(element) : undefined), [registry, element]);
+  return useRender<UnownedDescriptionState, HTMLParagraphElement>({
+    defaultTagName: "p",
+    render,
+    ref: ref ? [ref, setElement] : setElement,
+    state: unownedDescriptionState,
+    props: {
+      "data-slot": "field-description",
+      // oxlint-disable-next-line anti-slop/no-runtime-typeof -- Base UI's public className contract accepts strings or state callbacks; useRender does not resolve them.
+      className: typeof className === "function" ? className(unownedDescriptionState) : className,
+      // oxlint-disable-next-line anti-slop/no-runtime-typeof -- Base UI's public style contract accepts objects or state callbacks; useRender does not resolve them.
+      style: typeof style === "function" ? style(unownedDescriptionState) : style,
+      ...definedProps(props),
+      id: id ?? generatedId,
+    },
+  });
 }
 
 export function FieldItem(props: ComponentProps<typeof FieldPrimitive.Item>): ReactElement {
