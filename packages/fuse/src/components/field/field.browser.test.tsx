@@ -387,4 +387,30 @@ describe("Field", () => {
     await userEvent.keyboard("{Tab}");
     expect(document.activeElement).toBe(textboxNamed("Email"));
   });
+
+  it("keeps a native legend out of a grid Field.Set's cells and names the set with it", () => {
+    // The built library CSS has no `grid-cols-2`, so the columns come inline.
+    renderThemed(
+      <Field.Set className="grid" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 16 }}>
+        <Field.Legend render={<legend />}>Address</Field.Legend>
+        <Field.Root>
+          <Field.Label>Street</Field.Label>
+          <Field.Control render={<input />} />
+        </Field.Root>
+        <Field.Root>
+          <Field.Label>City</Field.Label>
+          <Field.Control render={<input />} />
+        </Field.Root>
+      </Field.Set>
+    );
+    expect(roleNamed("group", "Address").tagName).toBe("FIELDSET");
+    const legend = textNamed("Address");
+    expect(legend.tagName).toBe("LEGEND");
+    const street = fieldRootFrom("Street").getBoundingClientRect();
+    const city = fieldRootFrom("City").getBoundingClientRect();
+    // A legend in a grid cell would push Street to the second column and City to a new row.
+    expect(street.top).toBe(city.top);
+    expect(city.left).toBeGreaterThan(street.right);
+    expect(legend.getBoundingClientRect().bottom).toBeLessThanOrEqual(street.top);
+  });
 });

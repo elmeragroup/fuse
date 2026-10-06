@@ -5,6 +5,7 @@ lede: >
 
 import { SeparatorHorizontal } from "./demos/separator-horizontal";
 import { SeparatorVertical } from "./demos/separator-vertical";
+import { SeparatorHeader } from "./demos/separator-header";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -18,6 +19,16 @@ export const metadata = componentMetadata("separator");
 
 <Demo slug="separator" id="vertical" title="Vertical" file="separator-vertical.tsx">
   <SeparatorVertical />
+</Demo>
+
+<Prose>
+
+A vertical separator stretches to the height of its row. For a shorter line in a header, add `data-vertical:h-4 data-vertical:self-auto` and center the row with `items-center`. `h-4 self-center` leaves the line at the top of the row. The separator's own `data-vertical:self-stretch` sorts after `self-center` and wins, and a stretched item with a fixed height aligns to the start of the row.
+
+</Prose>
+
+<Demo slug="separator" id="header" title="In a header" file="separator-header.tsx">
+  <SeparatorHeader />
 </Demo>
 
 <ApiReference slug="separator" />
