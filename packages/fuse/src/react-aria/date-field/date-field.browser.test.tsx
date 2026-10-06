@@ -320,8 +320,8 @@ describe("DateField field-box chrome", () => {
     expect(px(dateBox.borderTopWidth)).toBeGreaterThan(0);
     expect(dateBox.backgroundColor).not.toBe("rgba(0, 0, 0, 0)");
 
-    // The field corner is one arbitrary class, the shared owner's literal.
-    for (const rung of [fieldCornerClass, "shadow-xs"]) {
+    // The field corner's classes, from their shared owner.
+    for (const rung of [...fieldCornerClass.split(" "), "shadow-xs"]) {
       expect(dateElement.classList.contains(rung), `DateField lost ${rung}`).toBe(true);
       expect(inputElement.classList.contains(rung), `Input lost ${rung}`).toBe(true);
     }

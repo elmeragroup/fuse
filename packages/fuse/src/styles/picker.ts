@@ -1,7 +1,7 @@
 import { tv } from "tailwind-variants";
 
 import { controlMdInsetTypeClass } from "./control-size-md";
-import { fieldCornerClass } from "./corner-radius";
+import { fieldFlushCornerClass } from "./corner-radius";
 
 /**
  * Shared layout recipe for the two date pickers. The `range` axis selects one segment
@@ -39,7 +39,7 @@ export const pickerVariants = tv({
      * range arm's placements are live at every width. The trigger sits inside the field
      * box, so it takes the field corner instead of Button's `--radius-button`.
      */
-    trigger: fieldCornerClass,
+    trigger: fieldFlushCornerClass,
     /**
      * The styled Dialog inside the popover. Both padding utilities are needed: the dialog
      * recipe sets `p-6` on its base and `p-4` under `[data-placement]`, which is exactly the

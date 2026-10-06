@@ -16,7 +16,7 @@ import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { MagnifyingGlass } from "../../icons/generated/magnifying-glass";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
-import { fieldFixedCornerClass } from "../../styles/corner-radius";
+import { fieldFlushCornerClass } from "../../styles/corner-radius";
 import { selfFocusRingClass } from "../../styles/utils";
 import { ComboboxContent, ComboboxEmpty, ComboboxItem, ComboboxList } from "../combobox/combobox";
 import { FieldFrame, fieldFrameRootClass } from "../field/field-frame";
@@ -255,7 +255,7 @@ export function PhoneNumberField({
                 aria-labelledby=""
                 className={cn(
                   selfFocusRingClass,
-                  fieldFixedCornerClass,
+                  fieldFlushCornerClass,
                   "flex min-h-6 shrink-0 items-center px-1 transition-[color,background-color,scale] duration-150",
                   isEditable
                     ? "cursor-pointer hover:bg-muted active:scale-[0.97] data-pressed:bg-muted"

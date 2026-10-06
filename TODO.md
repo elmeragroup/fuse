@@ -25,9 +25,9 @@
   (`EXTERNAL_VARIANT_LAYER`). Also confirm the comfortable icon edge, three quarters of that
   inset (12px at `sm`, 24px at `md` and `lg`), and pick a comfortable `xs` inset and icon edge,
   which keep the 12px and 10px control values.
-- Ask design whether external themes keep the reference's 4px corner on the `Checkbox`,
-  the phone country trigger and the standalone `Calendar` (`styles/corner-radius.ts`), or
-  round them from the brand radius. Internal themes round them with `--radius`.
+- Ask design whether external themes keep the reference's 4px corner on the `Checkbox` and
+  the standalone `Calendar` (`styles/corner-radius.ts`), or round them from the brand radius.
+  Internal themes round them with `--radius`.
 - Confirm the external field corner with design. `--radius-field` is 0.25rem for every brand,
   from the Central design system's Text input ("Ready for review"), whose
   `Border-radius/Rounded MD` variable reads 4px in the one mode the file shows. Ask whether

@@ -57,7 +57,7 @@ Button's `outline` variant reads `--button-outline` and `--button-outline-width`
 }
 ```
 
-Field boxes round with your `--radius`, as internal themes do. For the external themes' 4px field corner, set the external step and the field radius. The step also spreads the `rounded-*` scale in 2px steps around `--radius` and gives the checkbox, the phone country trigger and the calendar their external 4px corner:
+Field boxes round with your `--radius`, as internal themes do. For the external themes' 4px field corner, set the external step and the field radius. The step also spreads the `rounded-*` scale in 2px steps around `--radius` and gives the checkbox and the calendar their external 4px corner:
 
 ```css
 :root {

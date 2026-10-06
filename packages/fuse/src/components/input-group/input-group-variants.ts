@@ -2,7 +2,7 @@ import { tv } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
 import { controlMd } from "../../styles/control-size-md";
-import { fieldCornerClass, insetCornerClass, kbdInsetCornerClass } from "../../styles/corner-radius";
+import { fieldFlushCornerClass, insetCornerClass, kbdInsetCornerClass } from "../../styles/corner-radius";
 
 /**
  * Module-private recipe for the group's addon rail. `align` places
@@ -45,7 +45,7 @@ export const inputGroupAddonVariants = tv({
  * the field corner, and the `xs` sizes take the kbd's inset corner.
  */
 export const inputGroupButtonVariants = tv({
-  base: cn("text-sm flex items-center gap-2 shadow-none", fieldCornerClass, controlMd.iconEdge()),
+  base: cn("text-sm flex items-center gap-2 shadow-none", fieldFlushCornerClass, controlMd.iconEdge()),
   variants: {
     size: {
       // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- compact addon chrome, not a control rung
