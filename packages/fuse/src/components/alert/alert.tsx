@@ -8,7 +8,8 @@ import { Warning } from "../../icons/generated/warning";
 import { WarningOctagon } from "../../icons/generated/warning-octagon";
 import { cn } from "../../styles/cn";
 import { Button } from "../button/button";
-import { ItemActions, ItemContent, ItemDescription, ItemMedia, ItemRootElement } from "../item/item-markup";
+import { ITEM_DESCRIPTION_CLASSES } from "../item/item-description-classes";
+import { ItemActions, ItemContent, ItemMedia, ItemRootElement } from "../item/item-markup";
 import { ITEM_TITLE_CLASSES } from "../item/item-title-classes";
 import { alertVariants } from "./alert-variants";
 
@@ -65,7 +66,7 @@ export type AlertTitleProps = ComponentProps<"h3"> & {
   level?: AlertTitleLevel;
 };
 
-export type AlertDescriptionProps = ComponentProps<"p">;
+export type AlertDescriptionProps = ComponentProps<"div">;
 
 /**
  * Status alert composite over the library Item family. Server —
@@ -116,10 +117,21 @@ function AlertTitle({ children, className, level = 3, ...props }: AlertTitleProp
   );
 }
 
+/**
+ * Renders the alert body as a `div` without Item.Description's two-line clamp, so it can
+ * hold full instructions, paragraphs and lists.
+ */
 function AlertDescription({ className, ...props }: AlertDescriptionProps): ReactElement {
   const { description } = alertVariants();
 
-  return <ItemDescription className={cn(description(), className)} {...props} />;
+  // The `item-description` slot keeps Item.Media's icon at the top of multi-line content.
+  return (
+    <div
+      data-slot="item-description"
+      className={cn(ITEM_DESCRIPTION_CLASSES, description(), className)}
+      {...props}
+    />
+  );
 }
 
 function hasAction(

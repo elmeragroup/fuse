@@ -97,7 +97,7 @@ describe("Alert server boundary", () => {
     expect(html).toContain('data-slot="alert-icon"');
     expect(html).toContain('aria-hidden="true"');
     expect(html).toMatch(/<h3[^>]*data-slot="item-title"/);
-    expect(html).toMatch(/<p[^>]*data-slot="item-description"/);
+    expect(html).toMatch(/<div[^>]*data-slot="item-description"/);
     expect(html).not.toContain('data-slot="item-actions"');
     expect(html).not.toContain("bg-destructive");
     expect(html).not.toContain("warning-accent");

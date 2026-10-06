@@ -11,7 +11,10 @@ export const alertVariants = tv({
   slots: {
     base: "relative",
     icon: "block size-5 shrink-0 text-foreground",
-    description: "text-foreground",
+    // Spaces consecutive block children (paragraphs, lists) by 8px, twice the title's 4px gap,
+    // so a block break reads apart from the heading. The `text-sm` line stays the same at both
+    // densities, so the step does too. Vertical margins skip inline runs, so links stay in flow.
+    description: "text-foreground [&>*+*]:mt-2",
     button: "",
   },
   variants: {

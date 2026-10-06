@@ -8,7 +8,7 @@ import * as Wcag from "@elmeragroup/color/wcag";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { headingNamed, renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
+import { headingNamed, px, renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
 import { Alert } from "./alert";
 
 const VARIANTS = ["default", "destructive", "warning", "success"] as const;
@@ -26,6 +26,15 @@ function alertNamed(name: string): HTMLElement {
     throw new Error(`expected alert ${name}`);
   }
   return element;
+}
+
+function descriptionIn(root: HTMLElement): HTMLElement {
+  // DOM audit: Item.Media's top alignment keys on the item-description data-slot hook.
+  const description = root.querySelector('[data-slot="item-description"]');
+  if (!(description instanceof HTMLElement)) {
+    throw new Error("expected item-description");
+  }
+  return description;
 }
 
 function iconIn(root: HTMLElement): SVGSVGElement {
@@ -80,9 +89,110 @@ describe("Alert", () => {
       const description = textNamed(`${variant} body`);
       expect(title.getAttribute("variant"), variant).toBeNull();
       expect(description.getAttribute("variant"), variant).toBeNull();
-      expect(description.tagName, variant).toBe("P");
+      expect(description.tagName, variant).toBe("DIV");
       unmount();
     }
+  });
+
+  it("shows every line of a long description instead of clamping it", () => {
+    const sentence = "The supplier switch completes on the first day of next month.";
+    renderThemed(
+      <div style={{ width: "240px" }}>
+        <Alert.Root>
+          <Alert.Title>Switch scheduled</Alert.Title>
+          <Alert.Description>
+            <p>{sentence}</p>
+            <p>{sentence}</p>
+            <p>{sentence}</p>
+          </Alert.Description>
+        </Alert.Root>
+      </div>
+    );
+    const description = descriptionIn(alertNamed("default"));
+    const lineHeight = px(getComputedStyle(description).lineHeight);
+    // Three paragraphs wrap to well over two lines at 240px; a two-line clamp would cap the box.
+    expect(description.getBoundingClientRect().height).toBeGreaterThan(lineHeight * 4);
+    expect(description.scrollHeight).toBe(description.clientHeight);
+  });
+
+  it("renders a list inside the description element", () => {
+    renderThemed(
+      <Alert.Root>
+        <Alert.Title>Before you continue</Alert.Title>
+        <Alert.Description>
+          <ul>
+            <li>Meter number</li>
+            <li>Moving date</li>
+          </ul>
+        </Alert.Description>
+      </Alert.Root>
+    );
+    const list = page.getByRole("list").element();
+    const description = descriptionIn(alertNamed("default"));
+    expect(description.tagName).toBe("DIV");
+    expect(list.parentElement).toBe(description);
+  });
+
+  it("spaces a list below a paragraph in the description under a preflight host", () => {
+    renderThemed(
+      <>
+        {/* dist/styles.css ships without preflight, so user-agent margins would space the blocks.
+            A host with Tailwind's preflight zeroes them in the base layer, below utilities. */}
+        <style>{"@layer base { p, ul { margin: 0; } }"}</style>
+        <Alert.Root>
+          <Alert.Title>Before you move</Alert.Title>
+          <Alert.Description>
+            <p>Have these ready:</p>
+            <ul>
+              <li>Meter number</li>
+            </ul>
+          </Alert.Description>
+        </Alert.Root>
+      </>
+    );
+    const paragraph = textNamed("Have these ready:").getBoundingClientRect();
+    const list = page.getByRole("list").element().getBoundingClientRect();
+    expect(list.top - paragraph.bottom).toBeGreaterThan(0);
+  });
+
+  it("keeps a link in the description on the surrounding text's line", () => {
+    renderThemed(
+      <Alert.Root>
+        <Alert.Title>Switch scheduled</Alert.Title>
+        <Alert.Description>
+          Read <a href="#terms">the terms</a> before you sign.
+        </Alert.Description>
+      </Alert.Root>
+    );
+    const description = descriptionIn(alertNamed("default"));
+    const lineHeight = px(getComputedStyle(description).lineHeight);
+    const link = page.getByRole("link", { name: "the terms" }).element().getBoundingClientRect();
+    // One short sentence fits one line box; a block or grid row per inline run would stack three.
+    expect(description.getBoundingClientRect().height).toBeLessThan(lineHeight * 2);
+    expect(Math.abs(link.top - description.getBoundingClientRect().top)).toBeLessThan(lineHeight / 2);
+  });
+
+  it("aligns the icon with the top of a multi-line description's content", () => {
+    renderThemed(
+      <div style={{ width: "240px" }}>
+        <Alert.Root>
+          <Alert.Title>Switch scheduled</Alert.Title>
+          <Alert.Description>
+            The supplier switch completes on the first day of next month, and the final invoice from the
+            current supplier follows within six weeks.
+          </Alert.Description>
+        </Alert.Root>
+      </div>
+    );
+    const content = headingNamed("Switch scheduled", 3).parentElement;
+    if (content === null) {
+      throw new Error("expected the title inside the alert content");
+    }
+    const icon = iconIn(alertNamed("default")).getBoundingClientRect();
+    const contentBox = content.getBoundingClientRect();
+    // Item.Media centres by default; a centred icon would sit near the content's middle.
+    expect(contentBox.height).toBeGreaterThan(icon.height * 3);
+    expect(Math.abs(icon.top - contentBox.top)).toBeLessThanOrEqual(4);
   });
 
   it("renders the mapped Phosphor glyph for each variant, hidden from AT", () => {
