@@ -93,6 +93,7 @@ export type PhoneNumberFieldProps = {
   isDisabled?: boolean;
   /**
    * Blocks edits, including paste and country changes, while preserving focus and form submission.
+   * The field takes the muted read-only fill.
    * @default false
    */
   isReadOnly?: boolean;

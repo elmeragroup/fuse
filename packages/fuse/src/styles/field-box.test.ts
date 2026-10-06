@@ -12,12 +12,23 @@ function tokens(classes: string): string[] {
   return classes.split(/\s+/).filter(Boolean);
 }
 
+/** The entities React writes into an attribute value, such as the `&` of `[&[readonly]]:`. */
+const ATTRIBUTE_ENTITIES: Record<string, string> = {
+  "&amp;": "&",
+  "&lt;": "<",
+  "&gt;": ">",
+  "&quot;": '"',
+  "&#x27;": "'",
+};
+
 function renderedClasses(element: ReturnType<typeof createElement>): string[] {
   const match = /class="([^"]*)"/.exec(renderToStaticMarkup(element));
   if (match?.[1] === undefined) {
     throw new Error("rendered markup has no class attribute");
   }
-  return tokens(match[1]);
+  return tokens(
+    match[1].replaceAll(/&(?:amp|lt|gt|quot|#x27);/g, (entity) => ATTRIBUTE_ENTITIES[entity] ?? entity)
+  );
 }
 
 describe("fieldBoxChromeClass", () => {
@@ -49,6 +60,8 @@ describe("fieldBox recipe", () => {
       "leading-(--control-leading)",
       "placeholder:text-muted-foreground",
       "disabled:bg-input/50",
+      // The read-only fill keys off the attribute: `:read-only` also matches disabled and file inputs.
+      "[&[readonly]:not(:disabled)]:bg-muted",
       "transition-[color,border-color,box-shadow]",
     ]) {
       expect(classes).toContain(token);

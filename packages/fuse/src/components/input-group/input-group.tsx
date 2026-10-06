@@ -57,12 +57,13 @@ export type InputGroupInputProps = InputProps;
 export type InputGroupTextareaProps = ComponentProps<"textarea">;
 
 /**
- * Chrome stripped off the embedded control: the Root owns border, radius, shadow, rings and
- * the disabled dim, so the control contributes nothing but its own box. The focus-visible
- * and state-face neutralizations come from the shared within adapters, never a local literal.
+ * Chrome stripped off the embedded control: the Root owns border, radius, shadow, rings, the
+ * disabled dim and the disabled and read-only fills, so the control contributes nothing but
+ * its own box. The focus-visible and state-face neutralizations come from the shared within
+ * adapters, never a local literal.
  */
 const CONTROL_CHROME = cn(
-  "flex-1 rounded-none border-0 bg-transparent shadow-none ring-0 disabled:bg-transparent",
+  "flex-1 rounded-none border-0 bg-transparent shadow-none ring-0 disabled:bg-transparent [&[readonly]:not(:disabled)]:bg-transparent",
   withinFocusRingControlClass,
   withinStateFaceControlClass
 );

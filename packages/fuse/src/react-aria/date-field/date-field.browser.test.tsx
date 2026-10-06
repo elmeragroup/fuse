@@ -22,7 +22,10 @@ import {
   renderThemed,
   stampDensity,
 } from "../../../test/themed-browser-render";
+import { InputGroup } from "../../components/input-group";
 import { Input } from "../../components/input/input";
+import { TextField } from "../../components/text-field/text-field";
+import { Textarea } from "../../components/textarea/textarea";
 import { fieldCornerClass } from "../../styles/corner-radius";
 import { ThemeScope } from "../../theme";
 import { UiProviders } from "../ui-providers/ui-providers";
@@ -328,5 +331,75 @@ describe("DateField field-box chrome", () => {
     // The interim tier's old rung is gone from both sides, not just from the one that moved.
     expect(dateElement.classList.contains("rounded-lg")).toBe(false);
     expect(inputElement.classList.contains("rounded-lg")).toBe(false);
+  });
+
+  it("paints the read-only fill on every read-only base-ui field box", () => {
+    renderField(
+      <>
+        <DateField label="Meter" isReadOnly defaultValue={july14} />
+        <Input aria-label="Reading" readOnly defaultValue="Locked" />
+        <Textarea aria-label="Note" readOnly defaultValue="Locked" />
+        <TextField label="Customer" isReadOnly defaultValue="Locked" />
+        <InputGroup.Root>
+          <InputGroup.Addon>
+            <InputGroup.Text>kr</InputGroup.Text>
+          </InputGroup.Addon>
+          <InputGroup.Input aria-label="Amount" readOnly defaultValue="120" />
+        </InputGroup.Root>
+        <Input aria-label="Editable" />
+      </>
+    );
+    const dateElement = groupNamed("Meter");
+    // Unit: each base-ui box's computed fill. Oracle: the React Aria FieldGroup's `isReadOnly`
+    // face, which paints `--muted`, the fill the base-ui tier must reproduce.
+    const readOnlyFill = getComputedStyle(dateElement).backgroundColor;
+    expect(readOnlyFill).toBe(cssVarColor(dateElement, "--muted"));
+    // Not the resting fill, so the equalities below cannot pass on two editable boxes.
+    expect(readOnlyFill).not.toBe(
+      getComputedStyle(page.getByRole("textbox", { name: "Editable" }).element()).backgroundColor
+    );
+
+    for (const name of ["Reading", "Note", "Customer"]) {
+      const box = page.getByRole("textbox", { name, exact: true }).element();
+      expect.soft(getComputedStyle(box).backgroundColor, name).toBe(readOnlyFill);
+    }
+    // InputGroup paints the fill once, on its root; the stripped control stays transparent.
+    const amount = page.getByRole("textbox", { name: "Amount" }).element();
+    const groupRoot = amount.closest('[data-slot="input-group"]');
+    if (!(groupRoot instanceof HTMLElement)) {
+      throw new Error("expected the InputGroup root");
+    }
+    expect.soft(getComputedStyle(groupRoot).backgroundColor, "InputGroup root").toBe(readOnlyFill);
+    expect.soft(getComputedStyle(amount).backgroundColor, "InputGroup control").toBe("rgba(0, 0, 0, 0)");
+  });
+
+  it("keeps the disabled fill on a disabled box that is also read-only", () => {
+    renderField(
+      <>
+        <Input aria-label="Disabled" disabled />
+        <Input aria-label="Disabled read-only" disabled readOnly />
+        <InputGroup.Root>
+          <InputGroup.Input aria-label="Grouped disabled" disabled />
+        </InputGroup.Root>
+        <InputGroup.Root>
+          <InputGroup.Input aria-label="Grouped disabled read-only" disabled readOnly />
+        </InputGroup.Root>
+      </>
+    );
+    const fill = (name: string): string =>
+      getComputedStyle(page.getByRole("textbox", { name, exact: true }).element()).backgroundColor;
+    const rootFill = (name: string): string => {
+      const root = page
+        .getByRole("textbox", { name, exact: true })
+        .element()
+        .closest('[data-slot="input-group"]');
+      if (!(root instanceof HTMLElement)) {
+        throw new Error("expected the InputGroup root");
+      }
+      return getComputedStyle(root).backgroundColor;
+    };
+    // Oracle: the same box disabled without `readOnly`.
+    expect(fill("Disabled read-only")).toBe(fill("Disabled"));
+    expect(rootFill("Grouped disabled read-only")).toBe(rootFill("Grouped disabled"));
   });
 });
