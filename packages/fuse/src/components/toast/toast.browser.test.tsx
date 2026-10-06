@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -349,6 +349,45 @@ describe("Toast manager", () => {
     expect(errorRoot.getAttribute("data-status")).toBe("error");
     expect(queryToastCopy("render failed")).toBeTruthy();
     expect(queryToastCopy("Loading…")).toBeUndefined();
+  });
+
+  it("useToastManager keeps add, update, close and promise stable while toasts change", async () => {
+    const renders: Array<{ toasts: number; methods: readonly unknown[] }> = [];
+    function Recorder() {
+      const { toasts, add, update, close, promise } = Toast.useToastManager();
+      renders.push({ toasts: toasts.length, methods: [add, update, close, promise] });
+      return <Toast.Viewport />;
+    }
+    const { manager } = renderToast(<Recorder />);
+
+    const id = manager.add({ title: "Stable", timeout: 0 });
+    await waitForToast("Stable");
+    manager.close(id);
+    await waitForToastGone("Stable");
+
+    expect(renders.map((render) => render.toasts)).toContain(1);
+    const [first] = renders;
+    for (const render of renders) {
+      render.methods.forEach((method, index) => {
+        expect(method).toBe(first?.methods[index]);
+      });
+    }
+  });
+
+  it("an effect keyed on useToastManager's add adds one toast", async () => {
+    function AddOnMount() {
+      const { add } = Toast.useToastManager();
+      useEffect(() => {
+        add({ title: "Added once", timeout: 0 });
+      }, [add]);
+      return <Toast.Viewport />;
+    }
+    const { manager } = renderToast(<AddOnMount />);
+
+    await waitForToast("Added once");
+    manager.add({ title: "Marker", timeout: 0 });
+    await waitForToast("Marker");
+    expect(toastRoots()).toHaveLength(2);
   });
 });
 

@@ -3,10 +3,12 @@ import type { ReactElement } from "react";
 import { decorativeSvgProps } from "../bespoke-svg";
 import type { BespokeSvgProps } from "../bespoke-svg";
 
+// The paths keep the full wordmark's coordinates; the viewBox crops to the dot cloud
+// (x 2.5 to 83.897, y 6.367 to 69.163) with 1 unit of padding on every side.
 export function TelinetLogoMark({ title, ...props }: BespokeSvgProps): ReactElement {
   return (
     <svg
-      viewBox="0 0 655 93"
+      viewBox="1.5 5.367 83.397 64.796"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       {...decorativeSvgProps(title)}

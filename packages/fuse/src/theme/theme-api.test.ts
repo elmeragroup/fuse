@@ -30,8 +30,8 @@ afterEach(() => {
 });
 
 describe("themeSlug / parseThemeSlug", () => {
-  it("is a total inverse over the 20 legal themes", () => {
-    expect(LEGAL_THEMES).toHaveLength(20);
+  it("is a total inverse over the 24 legal themes", () => {
+    expect(LEGAL_THEMES).toHaveLength(24);
     for (const theme of LEGAL_THEMES) {
       expect(parseThemeSlug(themeSlug(theme))).toEqual(theme);
     }
@@ -168,6 +168,7 @@ describe("BRANDS", () => {
       fkab: { code: "fkab", displayName: "Fjordkraft Företag", segments: ["company"] },
       fkse: { code: "fkse", displayName: "Telinet", segments: ["private"] },
       elma: { code: "elma", displayName: "Elmera", segments: ["private", "company"] },
+      ngfi: { code: "ngfi", displayName: "Nordic Green Energy", segments: ["private", "company"] },
     });
   });
 });

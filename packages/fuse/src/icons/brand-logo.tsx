@@ -5,6 +5,7 @@ import type { BrandCode } from "../theme/tokens/themes";
 import type { LogoProps } from "./bespoke-svg";
 import { FjordkraftLogo } from "./bespoke/fjordkraft-logo";
 import { GudbrandsdalEnergiLogo } from "./bespoke/gudbrandsdal-energi-logo";
+import { NordicGreenEnergyLogo } from "./bespoke/nordic-green-energy-logo";
 import { TelinetLogo } from "./bespoke/telinet-logo";
 import { TrondelagkraftLogo } from "./bespoke/trondelagkraft-logo";
 
@@ -22,6 +23,7 @@ const BRAND_MARKS = {
   guen: GudbrandsdalEnergiLogo,
   fkse: TelinetLogo,
   elma: null,
+  ngfi: NordicGreenEnergyLogo,
 } satisfies Record<BrandCode, ((props: LogoProps) => ReactElement) | null>;
 
 export function BrandLogo({

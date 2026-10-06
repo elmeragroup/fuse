@@ -74,7 +74,7 @@ function token<T extends { $type: string; $value: unknown }>(
 
 describe("Figma DTCG documents", () => {
   it("emits one file per legal theme with a shared token name set", () => {
-    expect(LEGAL_SLUGS).toHaveLength(20);
+    expect(LEGAL_SLUGS).toHaveLength(24);
     expect(FIGMA_THEME_INDEX.format).toBe("figma");
     for (const slug of ILLEGAL_SLUGS) {
       expect(LEGAL_SLUGS).not.toContain(slug);
@@ -110,9 +110,9 @@ describe("Figma DTCG documents", () => {
       $type: "color",
       $value: "{color.error}",
     });
-    expect(token<FigmaColorToken>(document.color, "sidebar-brand")).toEqual({
+    expect(token<FigmaColorToken>(document.color, "sidebar-brand-foreground")).toEqual({
       $type: "color",
-      $value: "{color.brand}",
+      $value: "{color.brand-foreground}",
     });
     expect(token<FigmaColorToken>(document.color, "brand-fkab")).toEqual({
       $type: "color",

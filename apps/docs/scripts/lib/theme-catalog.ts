@@ -17,7 +17,7 @@ function cssCustomProperties(entries: {
 }
 
 /**
- * Twenty legal themes; density locked to variant; values are the light scheme's CSS as
+ * Twenty-four legal themes; density locked to variant; values are the light scheme's CSS as
  * `composeTheme` declares it.
  *
  * @param catalog - The resolved theme catalog.
@@ -44,7 +44,7 @@ export function buildThemeCatalog(catalog: ResolvedThemeCatalog): ThemeCatalog {
 export function renderThemeCatalog(catalog: ThemeCatalog): string {
   return `import type { ThemeCatalog } from "../lib/docs-model";
 
-/** Twenty legal themes with CSS-honest token values. */
+/** Twenty-four legal themes with CSS-honest token values. */
 export const THEME_CATALOG: ThemeCatalog = ${JSON.stringify(catalog, null, 2)};
 `;
 }

@@ -25,7 +25,7 @@ export function renderLlmsTxt(components: readonly DocsComponent[]): string {
   const lines: string[] = [
     "# Fuse",
     "",
-    "> The Elmera Group design system: a themed React component library covering six brands, two",
+    "> The Elmera Group design system: a themed React component library covering seven brands, two",
     "> segments and two variants. Every component page below has a plain-markdown twin containing",
     "> its generated API reference and the verbatim source of every demo.",
     "",

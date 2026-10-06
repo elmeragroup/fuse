@@ -1,9 +1,14 @@
-import type { ReactElement } from "react";
+import type { ComponentType, ReactElement, ReactNode } from "react";
 
 import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import {
+  assertLabelHiddenLayout,
+  assertLabelShownLayout,
+  legendFieldset,
+} from "../../../test/assert-group-label-hidden";
 import { withLocale } from "../../../test/locale-matrix";
 import {
   fieldRootFrom,
@@ -41,38 +46,42 @@ const TEXT_FIELD_LABEL_TO_CONTROL_PX = 4;
 
 type GroupFixture = {
   readonly name: string;
-  readonly render: (props: { readonly label?: string; readonly description?: string }) => ReactElement;
+  readonly render: (props: {
+    readonly label?: string;
+    readonly description?: string;
+    readonly isLabelHidden?: boolean;
+  }) => ReactElement;
 };
 
 const GROUPS: ReadonlyArray<GroupFixture> = [
   {
     name: "CheckboxGroup",
-    render: ({ label, description }) => (
-      <CheckboxGroup label={label} description={description}>
+    render: ({ label, description, isLabelHidden }) => (
+      <CheckboxGroup label={label} description={description} isLabelHidden={isLabelHidden}>
         <CheckboxItem value="a">Option</CheckboxItem>
       </CheckboxGroup>
     ),
   },
   {
     name: "RadioGroup",
-    render: ({ label, description }) => (
-      <RadioGroup label={label} description={description}>
+    render: ({ label, description, isLabelHidden }) => (
+      <RadioGroup label={label} description={description} isLabelHidden={isLabelHidden}>
         <Radio value="a">Option</Radio>
       </RadioGroup>
     ),
   },
   {
     name: "CheckboxItemGroup",
-    render: ({ label, description }) => (
-      <CheckboxItemGroup label={label} description={description}>
+    render: ({ label, description, isLabelHidden }) => (
+      <CheckboxItemGroup label={label} description={description} isLabelHidden={isLabelHidden}>
         <CheckboxItem value="a">Option</CheckboxItem>
       </CheckboxItemGroup>
     ),
   },
   {
     name: "RadioItemGroup",
-    render: ({ label, description }) => (
-      <RadioItemGroup label={label} description={description}>
+    render: ({ label, description, isLabelHidden }) => (
+      <RadioItemGroup label={label} description={description} isLabelHidden={isLabelHidden}>
         <RadioItem value="a">Option</RadioItem>
       </RadioItemGroup>
     ),
@@ -125,6 +134,30 @@ function fieldsetIn(root: Element): Element {
 
 function statusSvgs(root: HTMLElement): SVGElement[] {
   return [...root.querySelectorAll("svg")];
+}
+
+/** A public labeled group composite, its member, and the `data-slot` of its group primitive. */
+type LabelHiddenCase = {
+  readonly part: string;
+  readonly Group: ComponentType<{ label: string; isLabelHidden?: boolean; children: ReactNode }>;
+  readonly Member: ComponentType<{ value: string; children: ReactNode }>;
+  readonly slot: string;
+};
+
+const labelHiddenCases: ReadonlyArray<LabelHiddenCase> = [
+  { part: "CheckboxGroup", Group: CheckboxGroup, Member: CheckboxItem, slot: "checkbox-group" },
+  { part: "CheckboxItemGroup", Group: CheckboxItemGroup, Member: CheckboxItem, slot: "checkbox-group" },
+  { part: "RadioGroup", Group: RadioGroup, Member: RadioItem, slot: "radio-group" },
+  { part: "RadioItemGroup", Group: RadioItemGroup, Member: RadioItem, slot: "radio-group" },
+];
+
+function groupBody(fieldset: HTMLElement, slot: string): HTMLElement {
+  // DOM audit: the group primitive's top is the layout contract; the group's name is checked by role.
+  const body = fieldset.querySelector(`[data-slot=${slot}]`);
+  if (!(body instanceof HTMLElement)) {
+    throw new Error(`expected the ${slot} primitive in the fieldset`);
+  }
+  return body;
 }
 
 function nestedOrientationStamps(root: HTMLElement): Element[] {
@@ -366,6 +399,21 @@ describe("FieldFrame", () => {
       expect(verticalGap(description, optionsIn(host))).toBeCloseTo(DESCRIPTION_TO_OPTIONS_PX, 0);
     });
 
+    it.each(GROUPS)("starts a $name with a hidden label at its description", ({ render }) => {
+      stampDensity(density);
+      const { host } = renderThemed(
+        <>
+          {preflightBoxReset}
+          {render({ label: "Group", description: "Pick any.", isLabelHidden: true })}
+        </>
+      );
+      const description = textNamed("Pick any.");
+
+      // The hidden legend is out of flow, so nothing above the description is left to cancel.
+      expect(description.getBoundingClientRect().top - contentBoxTop(fieldsetIn(host))).toBeCloseTo(0, 0);
+      expect(verticalGap(description, optionsIn(host))).toBeCloseTo(DESCRIPTION_TO_OPTIONS_PX, 0);
+    });
+
     it("keeps the group gap under an unlabeled pending RadioGroup's spinner row", () => {
       stampDensity(density);
       const { host } = renderThemed(
@@ -400,4 +448,29 @@ describe("FieldFrame", () => {
       );
     });
   });
+});
+
+describe("isLabelHidden", () => {
+  // The legend stays the group's name but leaves the layout: an sr-only box is 1px
+  // square and absolute, so the group starts where the heading row was.
+  it.each(labelHiddenCases)(
+    "keeps $part named by a visually hidden legend with no heading row",
+    ({ Group, Member, slot }) => {
+      renderThemed(
+        <>
+          <Group label="Hidden options" isLabelHidden>
+            <Member value="first">Hidden first</Member>
+          </Group>
+          <Group label="Shown options">
+            <Member value="first">Shown first</Member>
+          </Group>
+        </>
+      );
+
+      const hidden = legendFieldset("Hidden options");
+      assertLabelHiddenLayout(hidden, groupBody(hidden, slot));
+      const shown = legendFieldset("Shown options");
+      assertLabelShownLayout(shown, groupBody(shown, slot));
+    }
+  );
 });

@@ -17,7 +17,7 @@
           "type": "CreateToastManagerReturnValue<object> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Optional manager from `Toast.createToastManager()` so non-React code (timers, query-cache listeners) can dispatch through the same adapter as `Toast.useToastManager()`.",
+          "description": "Optional manager from `Toast.createToastManager()` so non-React code (timers, query-cache listeners) can dispatch through the same adapter as `Toast.useToastManager()`. The manager queues calls made before this provider connects and replays them in order.",
           "required": false
         }
       ]

@@ -1,5 +1,5 @@
 export const THEME_VARIANTS = ["internal", "external"] as const;
-export const BRAND_CODES = ["fkas", "tkas", "guen", "fkab", "fkse", "elma"] as const;
+export const BRAND_CODES = ["fkas", "tkas", "guen", "fkab", "fkse", "elma", "ngfi"] as const;
 export const THEME_SEGMENTS = ["private", "company"] as const;
 
 export type ThemeVariant = (typeof THEME_VARIANTS)[number];
@@ -7,12 +7,12 @@ export type BrandCode = (typeof BRAND_CODES)[number];
 export type ThemeSegment = (typeof THEME_SEGMENTS)[number];
 
 export type ThemeInput =
-  | { variant: ThemeVariant; brand: "fkas" | "tkas" | "guen" | "elma"; segment: ThemeSegment }
+  | { variant: ThemeVariant; brand: "fkas" | "tkas" | "guen" | "elma" | "ngfi"; segment: ThemeSegment }
   | { variant: ThemeVariant; brand: "fkab"; segment: "company" }
   | { variant: ThemeVariant; brand: "fkse"; segment: "private" };
 
 export type ThemeSlug =
-  | `${ThemeVariant}-${"fkas" | "tkas" | "guen" | "elma"}-${ThemeSegment}`
+  | `${ThemeVariant}-${"fkas" | "tkas" | "guen" | "elma" | "ngfi"}-${ThemeSegment}`
   | `${ThemeVariant}-fkab-company`
   | `${ThemeVariant}-fkse-private`;
 
@@ -29,6 +29,7 @@ export const BRANDS = {
   fkab: { code: "fkab", displayName: "Fjordkraft Företag", segments: ["company"] },
   fkse: { code: "fkse", displayName: "Telinet", segments: ["private"] },
   elma: { code: "elma", displayName: "Elmera", segments: ["private", "company"] },
+  ngfi: { code: "ngfi", displayName: "Nordic Green Energy", segments: ["private", "company"] },
 } as const satisfies Record<
   BrandCode,
   {

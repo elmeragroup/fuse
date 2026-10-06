@@ -123,7 +123,7 @@ export default function AccessibilityPage(): ReactElement {
         <li>
           Telinet light external muted copy measures 4.35–4.41:1 after sRGB alpha compositing. The same
           restriction to non-essential secondary copy applies. Other light external muted pairs measure
-          4.93–7.17:1.
+          4.93–8.88:1.
         </li>
         <li>
           The brand-independent violet <code>--ring</code> falls below 3:1 non-text contrast against some
@@ -136,7 +136,7 @@ export default function AccessibilityPage(): ReactElement {
         </li>
       </ul>
       <p>
-        Contrast snapshots cover all twenty themes. Text pairs target 4.5:1, with the accepted light
+        Contrast snapshots cover all twenty-four themes. Text pairs target 4.5:1, with the accepted light
         exceptions above pinned against further regression. Both dark variants pass their paired-text checks;
         additional tests cover panel text, input boundaries and focus colors. Decorative dark borders cannot
         be the sole control boundary. These checks do not establish chart-series distinction or whole-page

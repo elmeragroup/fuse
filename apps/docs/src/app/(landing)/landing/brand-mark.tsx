@@ -20,6 +20,7 @@ const brandMark = tv({
       tkas: "landing-mark-tkas aspect-81191/118212",
       guen: "landing-mark-guen aspect-22632/22300",
       fkse: "landing-mark-fkse aspect-32559/25118",
+      ngfi: "landing-mark-ngfi aspect-203/199",
     } satisfies Record<BrandCode, string>,
     // `tile` fills a brand picker tile; `icon` sits in a 16px icon slot, as in a menu item.
     size: { tile: "sm:h-16 h-18", icon: "h-4" },

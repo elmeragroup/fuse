@@ -23,6 +23,7 @@ const brandWordmark = tv({
       tkas: "landing-logo-tkas aspect-534/88",
       guen: "landing-logo-guen aspect-461/124",
       fkse: "landing-logo-fkse aspect-260/35",
+      ngfi: "landing-logo-ngfi aspect-461/201",
     } satisfies Record<BrandCode, string>,
     // `tile` captions a brand tile; `strip` is the hero's row, a step larger from `sm`; `site`
     // takes its height from a demo site's logo slot.
@@ -35,12 +36,14 @@ const brandWordmark = tv({
     { brand: "tkas", size: "tile", class: "h-4.5" },
     { brand: "guen", size: "tile", class: "h-7" },
     { brand: "fkse", size: "tile", class: "h-4.5" },
+    { brand: "ngfi", size: "tile", class: "h-8" },
     { brand: "elma", size: "strip", class: "sm:h-4.5 h-3.5" },
     { brand: "fkas", size: "strip", class: "sm:h-6 h-4.5" },
     { brand: "fkab", size: "strip", class: "sm:h-6 h-4.5" },
     { brand: "tkas", size: "strip", class: "sm:h-5 h-4" },
     { brand: "guen", size: "strip", class: "sm:h-8 h-6" },
     { brand: "fkse", size: "strip", class: "sm:h-5 h-4" },
+    { brand: "ngfi", size: "strip", class: "sm:h-9 h-7" },
   ],
   defaultVariants: { size: "tile" },
 });

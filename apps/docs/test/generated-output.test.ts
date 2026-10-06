@@ -216,7 +216,11 @@ describe("committed api.json", () => {
     expect(resolveComponentPaths("date-range-picker").entry).toBe(
       "@elmeragroup/fuse/react-aria/date-range-picker"
     );
-    expect(resolveComponentPaths("date-range-picker").apiExportNames).toEqual(["DateRangePicker"]);
+    expect(resolveComponentPaths("date-range-picker").apiExportNames).toEqual([
+      "DateRangePicker",
+      "DateRangePickerPresetGroup",
+      "DateRangePickerPresetItem",
+    ]);
   });
 
   it("documents DateInput's own props and the forwarded RAC remainder", () => {

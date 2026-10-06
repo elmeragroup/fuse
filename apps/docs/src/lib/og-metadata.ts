@@ -7,10 +7,7 @@
 
 import type { Metadata } from "next";
 
-import type { ThemeInput } from "@elmeragroup/fuse/theme";
-import { themeSlug } from "@elmeragroup/fuse/theme";
-
-import { OG_SIZE } from "../og/og-frame";
+import { OG_SIZE } from "../og/og-card";
 import { componentHref, HOME_PAGE } from "./pages";
 
 /** The route prefix of the docs page images; the docs index draws at the bare prefix. */
@@ -49,9 +46,9 @@ export function docsSegmentsFromHref(href: string): string[] {
   return href === HOME_PAGE.href ? [] : href.slice(1).split("/");
 }
 
-/** The landing image route for a parsed theme, carrying only its canonical slug. */
-export function ogLandingPath(theme: ThemeInput): string {
-  return `/og/landing?theme=${themeSlug(theme)}`;
+/** The landing image route. The card is the same in every theme, so it takes no query. */
+export function ogLandingPath(): string {
+  return "/og/landing";
 }
 
 /** What a page's card shows. */
