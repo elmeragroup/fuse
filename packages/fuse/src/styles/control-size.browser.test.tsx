@@ -9,6 +9,7 @@ import {
   CONTROL_MD,
   CONTROL_SM,
   CONTROL_XS,
+  FIXED_CONTROL_TYPE,
   fkasExternal,
   px,
   renderThemed,
@@ -35,8 +36,8 @@ import { ThemeScope } from "../theme/theme-scope";
  *
  * The oracle is `DENSITY_METRICS`, through the `CONTROL_*` pixel tables the shared harness
  * derives from it (`density-css.test.ts` ties that module to `fuse.css`). The xs and sm type
- * is Tailwind's fixed `text-xs` / `text-sm`, which no density owns, so its pixels are
- * written here by hand.
+ * is Tailwind's fixed `text-xs` / `text-sm`, which no density owns; the harness writes its
+ * pixels by hand in `FIXED_CONTROL_TYPE`.
  */
 
 const DENSITIES = ["dense", "comfortable"] as const;
@@ -53,18 +54,12 @@ type SizeMetrics = {
   readonly leading: number;
 };
 
-/** Tailwind's `text-xs` and `text-sm` at the 16px root: 0.75rem / 1rem and 0.875rem / 1.25rem. */
-const FIXED_TYPE = {
-  xs: { font: 12, leading: 16 },
-  sm: { font: 14, leading: 20 },
-} as const;
-
 function expectedMetrics(size: ControlSizeName, density: Density): SizeMetrics {
   switch (size) {
     case "xs":
-      return { ...CONTROL_XS[density], ...FIXED_TYPE.xs };
+      return { ...CONTROL_XS[density], ...FIXED_CONTROL_TYPE.xs };
     case "sm":
-      return { ...CONTROL_SM[density], ...FIXED_TYPE.sm };
+      return { ...CONTROL_SM[density], ...FIXED_CONTROL_TYPE.sm };
     case "md":
       return CONTROL_MD[density];
     case "lg":
@@ -293,8 +288,8 @@ describe("control size: label and min-square fits", () => {
 
     for (const name of ["md compact", "lg compact"]) {
       const compact = measure("button", name);
-      expect(px(compact.font), `${density} ${name} font`).toBe(FIXED_TYPE.sm.font);
-      expect(px(compact.leading), `${density} ${name} leading`).toBe(FIXED_TYPE.sm.leading);
+      expect(px(compact.font), `${density} ${name} font`).toBe(FIXED_CONTROL_TYPE.sm.font);
+      expect(px(compact.leading), `${density} ${name} leading`).toBe(FIXED_CONTROL_TYPE.sm.leading);
     }
     const tall = measure("button", "md tall");
     expect(px(tall.font), `${density} tall font`).toBe(md.font);

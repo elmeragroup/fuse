@@ -9,6 +9,9 @@ const BROWSER_TESTS = ["src/**/*.browser.test.tsx"];
 /** Browser files that copy and paste through Chromium's shared clipboard, named by convention. */
 const CLIPBOARD_TESTS = "**/*.clipboard.browser.test.tsx";
 
+/** Browser files that emulate a touch pointer across Chromium's shared page, named by convention. */
+const TOUCH_TESTS = "**/*.touch.browser.test.tsx";
+
 /** Browser files that exercise production-only behavior, named by convention. */
 const PRODUCTION_TESTS = "**/*.production.browser.test.tsx";
 
@@ -72,7 +75,7 @@ export default defineConfig({
         },
       },
       browserProject("browser", {
-        exclude: [CLIPBOARD_TESTS, PRODUCTION_TESTS],
+        exclude: [CLIPBOARD_TESTS, PRODUCTION_TESTS, TOUCH_TESTS],
       }),
       // Vite replaces `process.env.NODE_ENV` at transform time, so `vi.stubEnv` cannot reach
       // production-only branches in the browser. This project compiles its files, their source
@@ -90,6 +93,14 @@ export default defineConfig({
       // at a time.
       browserProject("browser-clipboard", {
         include: [`src/${CLIPBOARD_TESTS}`],
+        fileParallelism: false,
+      }),
+      // Touch emulation goes through CDP and covers the whole page the browser project's
+      // parallel files share, so it would switch off `(hover: hover)`, and every Tailwind
+      // `hover:` paint, in a neighbouring file. Each project opens its own page; the files that
+      // emulate touch end in `.touch.browser.test.tsx` and run one at a time here.
+      browserProject("browser-touch", {
+        include: [`src/${TOUCH_TESTS}`],
         fileParallelism: false,
       }),
     ],
