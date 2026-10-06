@@ -168,15 +168,15 @@ describe("contrast matrix", () => {
   const lightMatrix = buildContrastMatrix();
   const darkMatrix = buildContrastMatrix("dark");
 
-  it("snapshots text-grade pairs across the 20 themes", async () => {
-    expect(LEGAL_THEMES).toHaveLength(20);
-    expect(Object.keys(lightMatrix)).toHaveLength(20);
+  it("snapshots text-grade pairs across the 24 themes", async () => {
+    expect(LEGAL_THEMES).toHaveLength(24);
+    expect(Object.keys(lightMatrix)).toHaveLength(24);
     await expect(lightMatrix).toMatchFileSnapshot("./__snapshots__/contrast-matrix.json");
   });
 
-  it("snapshots the ten internal dark permutations as one shared body", async () => {
+  it("snapshots the twelve internal dark permutations as one shared body", async () => {
     const themes = LEGAL_THEMES.filter((theme) => theme.variant === "internal");
-    expect(themes).toHaveLength(10);
+    expect(themes).toHaveLength(12);
     const [firstTheme] = themes;
     if (firstTheme === undefined) {
       throw new Error("No internal themes are legal");
@@ -191,12 +191,12 @@ describe("contrast matrix", () => {
     );
   });
 
-  it("snapshots the 10 external dark themes", async () => {
+  it("snapshots the 12 external dark themes", async () => {
     const themes = LEGAL_THEMES.filter((theme) => theme.variant === "external");
     const external = Object.fromEntries(
       themes.map((theme) => [themeSlug(theme), darkMatrix[themeSlug(theme)]])
     );
-    expect(Object.keys(external)).toHaveLength(10);
+    expect(Object.keys(external)).toHaveLength(12);
     await expect(external).toMatchFileSnapshot("./__snapshots__/external-dark-contrast-matrix.json");
   });
 

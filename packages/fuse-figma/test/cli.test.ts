@@ -81,18 +81,19 @@ describe("fuse-figma sync", () => {
       assert.deepStrictEqual(figma.modeNames("Fuse primitives"), ["Value"]);
       assert.deepStrictEqual(figma.modeNames("Fuse density"), ["Dense", "Comfortable"]);
       const themeModes = figma.modeNames("Fuse themes");
-      assert.strictEqual(themeModes.length, 20);
+      assert.strictEqual(themeModes.length, 24);
       assert.includeMembers(themeModes, [
         "internal-fkas-private",
         "external-elma-company",
         "external-fkab-company",
         "external-fkse-private",
+        "internal-ngfi-company",
       ]);
       assert.notInclude(themeModes, "external-fkab-private");
       // 81 contract tokens plus 5 radius rungs, and each of those per scheme in Fuse themes.
       assert.strictEqual(figma.variableNames("Fuse tokens").length, 86);
       assert.strictEqual(figma.variableNames("Fuse themes").length, 172);
-      assert.strictEqual(figma.variableNames("Fuse primitives").length, 23);
+      assert.strictEqual(figma.variableNames("Fuse primitives").length, 25);
       assert.strictEqual(figma.variableNames("Fuse density").length, 26);
       assert.strictEqual(writes(figma), 1);
       assert.include(yield* output, "reading it back matches the tokens");
@@ -581,7 +582,7 @@ describe("fuse-figma check", () => {
       assert.include(printed, "Fuse tokens: create collection");
       assert.include(printed, "Fuse tokens: create mode Light");
       assert.include(printed, "Fuse tokens: create mode Dark");
-      assert.include(printed, "Fuse themes: create mode ×20");
+      assert.include(printed, "Fuse themes: create mode ×24");
       assert.notInclude(printed, "Fuse themes: create mode external-elma-company");
       assert.include(printed, "Fuse themes: create variable ×172");
       assert.include(printed, "Fuse density: create mode Comfortable");

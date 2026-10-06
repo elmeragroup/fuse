@@ -16,8 +16,8 @@ export default function TokensPage(): ReactElement {
     <DocsPage href={HREF}>
       <p>
         A token is a CSS custom property with a semantic name. Components are written against tokens and never
-        against literal colours, so the same component markup paints correctly under all twenty themes. The
-        swatches below show live values for whichever theme the header picker is on.
+        against literal colours, so the same component markup paints correctly under all twenty-four themes.
+        The swatches below show live values for whichever theme the header picker is on.
       </p>
 
       <h2 id="colour-tokens">Colour tokens</h2>
@@ -27,7 +27,7 @@ export default function TokensPage(): ReactElement {
         with the stylesheet.
       </p>
       {/* Swatches render inside a `ThemeScope` on the header picker's theme, so the list shows
-          real values for whichever of the twenty themes is selected. */}
+          real values for whichever of the twenty-four themes is selected. */}
       <TokenSwatchList tokens={COLOR_TOKENS.map((name) => ({ name, isColor: true }))} />
 
       <h2 id="what-a-component-reads">What a component reads</h2>

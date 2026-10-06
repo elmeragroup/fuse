@@ -1,6 +1,6 @@
 # Fuse
 
-`@elmeragroup/fuse` is the Elmera Group component library: whitelabel React components for the energy brands and corporate Elmera. One package, 20 theme permutations, ESM-only.
+`@elmeragroup/fuse` is the Elmera Group component library: whitelabel React components for the energy brands and corporate Elmera. One package, 24 theme permutations, ESM-only.
 
 ## Tailwind v4
 

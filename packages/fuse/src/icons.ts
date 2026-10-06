@@ -148,6 +148,7 @@ export type { BespokeSvgProps, LogoProps } from "./icons/bespoke-svg";
 export { ElmeraGroupLogo } from "./icons/bespoke/elmera-group-logo";
 export { FjordkraftLogo } from "./icons/bespoke/fjordkraft-logo";
 export { GudbrandsdalEnergiLogo } from "./icons/bespoke/gudbrandsdal-energi-logo";
+export { NordicGreenEnergyLogo } from "./icons/bespoke/nordic-green-energy-logo";
 export { SteddiLogo } from "./icons/bespoke/steddi-logo";
 export { TelinetLogo } from "./icons/bespoke/telinet-logo";
 export { TrondelagkraftLogo } from "./icons/bespoke/trondelagkraft-logo";

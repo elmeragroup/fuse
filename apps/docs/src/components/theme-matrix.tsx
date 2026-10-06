@@ -33,7 +33,7 @@ const { grid, cell, slug: slugClass, surface, row, controls, control } = themeMa
 /**
  * The whitelabel pitch grid.
  *
- * One cell per legal permutation — twenty of them, including `elma` — each rendering the
+ * One cell per legal permutation — twenty-four of them, including `elma` — each rendering the
  * same fixed set of key components inside its own `ThemeScope`. There is no density
  * axis: this is a colour grid, and the document root stays dense.
  *

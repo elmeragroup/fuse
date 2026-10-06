@@ -342,7 +342,7 @@ export type Site = {
    * `elmera-group` is the group's lockup and `brand` the brand's own logo from Fuse.
    * `wordmark` is the landing's one-ink wordmark, for a brand whose Fuse artwork has fixed fills
    * that one of the schemes hides: white for TrøndelagKraft and Gudbrandsdal Energi, navy in
-   * Telinet's (see TODO.md).
+   * Telinet's, dark green in Nordic Green Energy's (see TODO.md).
    */
   readonly logo: "elmera-group" | "brand" | "wordmark";
   /** `center` stacks section headings over their lede; `split` sets the lede beside the heading. */

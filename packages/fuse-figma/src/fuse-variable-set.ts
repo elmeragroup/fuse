@@ -15,7 +15,7 @@
  *   tokens are public API, so designers can bind these too.
  * - `Fuse density` holds the control metrics with a Dense and a Comfortable mode.
  *
- * Twenty theme modes stay well inside Figma's 40-mode limit, and a new theme adds a mode
+ * Twenty-four theme modes stay well inside Figma's 40-mode limit, and a new theme adds a mode
  * rather than a collection.
  */
 

@@ -41,10 +41,10 @@ function firstCatalogTheme(): ThemeCatalogEntry {
 
 describe("theme catalog payload", () => {
   it("emits one row per legal theme, never an illegal slug", () => {
-    expect(THEME_CATALOG.legalThemeCount).toBe(20);
-    expect(THEME_CATALOG.themes).toHaveLength(20);
+    expect(THEME_CATALOG.legalThemeCount).toBe(24);
+    expect(THEME_CATALOG.themes).toHaveLength(24);
     const slugs = THEME_CATALOG.themes.map((theme) => theme.slug);
-    expect(new Set(slugs).size).toBe(20);
+    expect(new Set(slugs).size).toBe(24);
     for (const slug of ILLEGAL_SLUGS) {
       expect(slugs).not.toContain(slug);
     }

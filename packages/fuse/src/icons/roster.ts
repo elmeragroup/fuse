@@ -153,6 +153,7 @@ export const LOGO_NAMES = [
   "ElmeraGroupLogo",
   "FjordkraftLogo",
   "GudbrandsdalEnergiLogo",
+  "NordicGreenEnergyLogo",
   "SteddiLogo",
   "TelinetLogo",
   "TrondelagkraftLogo",

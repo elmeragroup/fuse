@@ -66,7 +66,7 @@ export const STATIC_PAGES: readonly StaticPage[] = [
   {
     href: "/handbook/theme-matrix",
     label: "Theme matrix",
-    description: "All 20 legal brand × segment × variant permutations rendered side by side.",
+    description: "All 24 legal brand × segment × variant permutations rendered side by side.",
     group: "handbook",
   },
   {
@@ -80,7 +80,7 @@ export const STATIC_PAGES: readonly StaticPage[] = [
     href: "/handbook/brands-and-segments",
     label: "Brands & segments",
     description:
-      "The six brand codes, the two segments, the pinned brands, and the four permutations that are illegal.",
+      "The seven brand codes, the two segments, the pinned brands, and the four permutations that are illegal.",
     group: "handbook",
   },
   {
