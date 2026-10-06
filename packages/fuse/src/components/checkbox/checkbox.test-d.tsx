@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
@@ -105,4 +105,11 @@ test("CheckboxItemProps is the parent-vs-value discriminated union and the eleme
     // @ts-expect-error native disabled is not on the composite face; use isDisabled
     <CheckboxGroup disabled />
   );
+});
+
+test("CheckboxGroup and CheckboxItemGroup accept isLabelHidden as an optional boolean", () => {
+  expectTypeOf<ComponentProps<typeof CheckboxGroup>["isLabelHidden"]>().toEqualTypeOf<boolean | undefined>();
+  expectTypeOf<ComponentProps<typeof CheckboxItemGroup>["isLabelHidden"]>().toEqualTypeOf<
+    boolean | undefined
+  >();
 });
