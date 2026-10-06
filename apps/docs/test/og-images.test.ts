@@ -1,3 +1,5 @@
+import { createElement } from "react";
+
 import { readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -8,8 +10,10 @@ import { docsRoot } from "../scripts/lib/paths.ts";
 import { generateStaticParams as componentImageParams } from "../src/app/og/components/[slug]/route";
 import { generateStaticParams as docsImageParams } from "../src/app/og/docs/[[...path]]/route";
 import { GET as landingImage } from "../src/app/og/landing/route";
-import { THEME_CATALOG } from "../src/generated/theme-catalog";
 import { parseSiteOrigin } from "../src/lib/site-origin";
+import { loadElmeraMark } from "../src/og/og-assets";
+import { OgCard } from "../src/og/og-card";
+import { ogResponse } from "../src/og/og-response";
 import { COMPONENT_INVENTORY } from "./component-inventory";
 import { decodePng } from "./png";
 
@@ -46,10 +50,9 @@ describe("OG image routes", () => {
   });
 });
 
-/** A catalog primary as 0–255 sRGB channels, converted by the color package alone. */
-function catalogPrimary(slug: string): number[] {
-  const value = THEME_CATALOG.themes.find((theme) => theme.slug === slug)?.tokens["--primary"] ?? "";
-  const parsed = CssColor.parse(value);
+/** The card background Paper draws, `oklch(17.7% 0.003 248)`, as 0–255 sRGB channels. */
+function paperBackground(): number[] {
+  const parsed = CssColor.parse("oklch(0.177 0.003 248)");
   if (parsed._tag === "err") {
     throw parsed.error;
   }
@@ -57,36 +60,78 @@ function catalogPrimary(slug: string): number[] {
   return [srgb.r, srgb.g, srgb.b].map((channel) => Math.round(channel * 255));
 }
 
-/** The first pixel of the signature band, where the landing's gradient starts at `--primary`. */
-async function bandStart(query: string): Promise<number[]> {
-  const response = await landingImage(new Request(`http://docs.test/og/landing${query}`));
-  expect(response.headers.get("content-type")).toBe("image/png");
-  const png = decodePng(new Uint8Array(await response.arrayBuffer()));
-  expect([png.width, png.height]).toEqual([1200, 630]);
-  return png.pixel(0, 626).slice(0, 3);
-}
-
-function expectClose(actual: readonly number[], expected: readonly number[]): void {
-  actual.forEach((channel, index) => {
-    expect(Math.abs(channel - (expected[index] ?? -1)), `channel ${String(index)}`).toBeLessThanOrEqual(2);
-  });
-}
-
 describe("landing OG image", () => {
-  it("paints the theme ?theme= names", async () => {
-    expectClose(await bandStart("?theme=external-fkas-private"), catalogPrimary("external-fkas-private"));
+  it("is a 1200 × 630 PNG on Paper's card background", async () => {
+    const response = await landingImage();
+    expect(response.headers.get("content-type")).toBe("image/png");
+    const png = decodePng(new Uint8Array(await response.arrayBuffer()));
+    expect([png.width, png.height]).toEqual([1200, 630]);
+    const corner = png.pixel(0, 0).slice(0, 3);
+    paperBackground().forEach((channel, index) => {
+      expect(Math.abs((corner[index] ?? -1) - channel), `channel ${String(index)}`).toBeLessThanOrEqual(2);
+    });
   });
+});
 
-  it("paints the landing's opening theme for a missing, repeated or illegal theme", async () => {
-    const fallback = catalogPrimary("external-elma-private");
-    expect(fallback).not.toEqual(catalogPrimary("external-fkas-private"));
-    for (const query of [
-      "",
-      "?theme=external-fkab-private",
-      "?theme=external-fkas-private&theme=external-tkas-private",
-    ]) {
-      expectClose(await bandStart(query), fallback);
+/** The centred column a subtitle may paint in: 560px wide on the 1200px card. */
+const SUBTITLE_COLUMN = { left: 320, right: 880 } as const;
+
+/** The subtitle's line height in the Paper design. */
+const PAPER_LINE_HEIGHT = 72;
+
+/** True when a pixel differs from the card background by more than 2/255 in any channel. */
+function isInk(pixel: readonly number[], background: readonly number[]): boolean {
+  return background.some((channel, index) => Math.abs((pixel[index] ?? -1) - channel) > 2);
+}
+
+/** A run of consecutive image rows that hold ink, as its first and last row. */
+type InkBand = { readonly top: number; readonly bottom: number };
+
+/** The horizontal bands of ink in an image, top to bottom. */
+function inkBands(png: ReturnType<typeof decodePng>, background: readonly number[]): InkBand[] {
+  const bands: InkBand[] = [];
+  let top: number | undefined;
+  // The loop runs one row past the image, which reads as blank and closes a band at the bottom edge.
+  for (let y = 0; y <= png.height; y += 1) {
+    let inked = false;
+    for (let x = 0; y < png.height && x < png.width && !inked; x += 1) {
+      inked = isInk(png.pixel(x, y), background);
     }
+    if (inked && top === undefined) {
+      top = y;
+    } else if (!inked && top !== undefined) {
+      bands.push({ top, bottom: y - 1 });
+      top = undefined;
+    }
+  }
+  return bands;
+}
+
+describe("OG card subtitle", () => {
+  it("wraps a subtitle with no break opportunity onto two lines inside its 560px column", async () => {
+    const mark = await loadElmeraMark();
+    const response = await ogResponse(createElement(OgCard, { mark, subtitle: "W".repeat(19) }));
+    const png = decodePng(new Uint8Array(await response.arrayBuffer()));
+    const background = paperBackground();
+    // The lockup sits inside the column too, so every row is checked, not only the subtitle's.
+    const stray: string[] = [];
+    for (let y = 0; y < png.height; y += 1) {
+      for (let x = 0; x < png.width; x += 1) {
+        if (x >= SUBTITLE_COLUMN.left && x < SUBTITLE_COLUMN.right) {
+          continue;
+        }
+        if (isInk(png.pixel(x, y), background)) {
+          stray.push(`${String(x)},${String(y)}`);
+        }
+      }
+    }
+    expect(stray.slice(0, 5), `${String(stray.length)} pixels outside the column`).toEqual([]);
+
+    // The first band from the top is the lockup; every band below it is a subtitle line.
+    const [, ...lines] = inkBands(png, background);
+    expect(lines, "subtitle lines below the lockup").toHaveLength(2);
+    const [first, second] = lines;
+    expect(Math.abs((second?.top ?? 0) - (first?.top ?? 0) - PAPER_LINE_HEIGHT)).toBeLessThanOrEqual(4);
   });
 });
 

@@ -22,7 +22,7 @@ export function pageMetadata(href: string): Metadata {
     description: page.description,
     ...ogMetadata({
       image: ogDocsPath(href),
-      alt: `${page.label}, a Fuse docs page: ${page.description}`,
+      alt: `Fuse: ${page.label}`,
     }),
   };
 }

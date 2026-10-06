@@ -2,8 +2,6 @@ import type { ReactElement } from "react";
 
 import type { Metadata } from "next";
 
-import { BRANDS } from "@elmeragroup/fuse/theme";
-
 import { ogLandingPath, ogMetadata } from "../../lib/og-metadata";
 import { LandingPage } from "./landing/landing-page";
 import { parseThemeQuery, THEME_QUERY } from "./landing/landing-theme-defaults";
@@ -13,19 +11,11 @@ export type LandingRouteProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-/**
- * The card follows the shared theme: the image route receives the parsed, canonical slug, never
- * the raw parameter, so an illegal or repeated value previews the same fallback theme the page
- * opens in.
- */
-export async function generateMetadata({ searchParams }: LandingRouteProps): Promise<Metadata> {
-  const query = await searchParams;
-  const theme = parseThemeQuery(query[THEME_QUERY]);
-  return ogMetadata({
-    image: ogLandingPath(theme),
-    alt: `Fuse, the Elmera Group design system, in the ${BRANDS[theme.brand].displayName} theme: One system. Every brand.`,
-  });
-}
+/** The card is the same whatever theme the address names, so the metadata is static. */
+export const metadata: Metadata = ogMetadata({
+  image: ogLandingPath(),
+  alt: "Fuse, the Elmera Group design system",
+});
 
 /**
  * The landing renders per request, because a shared address names the theme it opens in
