@@ -36,10 +36,10 @@ export type LandingSuite = {
 
 /**
  * Launches one browser for the suite file and returns its landing opener. Each call opens the
- * landing in a fresh context and resolves once the hero's heading has rendered and the app has
- * hydrated. The heading is server-rendered, so it shows before React attaches a handler: a click
- * or key sent then does nothing, and a `history.pushState` reaches no router, so hydration starts
- * from the pushed address. Contexts reduce motion unless a test that checks motion asks otherwise.
+ * landing in a fresh context and resolves once the hero's heading has rendered and the app, a
+ * server-rendered Dashboard included, has hydrated. The heading is server-rendered, so it shows
+ * before React attaches a handler: a click or key sent then does nothing, and a
+ * `history.pushState` reaches no router, so hydration starts from the pushed address. Contexts reduce motion unless a test that checks motion asks otherwise.
  *
  * Unless `shaders` is set, the brand marks are refused, so the closing shader never draws and the
  * picker's mark masks stay empty. Processing a mark blurs a large canvas on the main thread, which
@@ -78,8 +78,48 @@ export function launchLandingSuite({
         // DOM audit: Next's router mounts its announcer once the page has hydrated, and the
         // announcer has no accessible name to query.
         await page.locator("next-route-announcer").waitFor({ state: "attached" });
+        // A server-rendered Dashboard's toast viewport portals into its theme scope once the
+        // scope has mounted, so the region shows only after the Dashboard has hydrated. The
+        // landing opens on External without a Dashboard, which has nothing to wait for.
+        const app = page.getByRole("region", { name: "Dashboard", exact: true });
+        if ((await app.count()) > 0) {
+          await app.getByRole("region", { name: "Dashboard notifications" }).waitFor({ state: "attached" });
+        }
       }
       return page;
+    },
+  };
+}
+
+/** Script chunks a test holds back, and the release that lets them through. */
+export type HeldChunks = {
+  /** The address of every chunk the hold has caught so far. */
+  readonly caught: () => readonly string[];
+  /** Lets every caught chunk, and every later one, through. */
+  readonly release: () => void;
+};
+
+/**
+ * Holds back every script chunk whose code contains `marker` until `release`, so a test sees the
+ * page while one part's code is still on its way. A marker is a string only that part's code
+ * holds, such as a label it renders. Call it before navigation, as `prepare` does.
+ */
+export async function holdChunks(page: Page, marker: string): Promise<HeldChunks> {
+  const gate = Promise.withResolvers<undefined>();
+  const caught: string[] = [];
+  await page.route("**/_next/static/chunks/**", async (route) => {
+    const response = await route.fetch();
+    const body = await response.text();
+    if (body.includes(marker)) {
+      caught.push(route.request().url());
+      await gate.promise;
+    }
+    await route.fulfill({ response, body });
+  });
+  return {
+    caught: () => caught,
+    release: () => {
+      gate.resolve(undefined);
     },
   };
 }

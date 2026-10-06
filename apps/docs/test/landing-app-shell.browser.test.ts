@@ -399,9 +399,7 @@ describe("landing Dashboard window", () => {
     await page.keyboard.press("Escape");
     await expect.poll(async () => facetMenu.count()).toBe(0);
 
-    await app.getByRole("button", { name: /^New order/u }).click();
-    const newOrder = page.getByRole("dialog", { name: "New order" });
-    await newOrder.waitFor();
+    const newOrder = await openNewOrder(app);
     await expectTargets(newOrder, "New order Sheet");
     await newOrder
       .getByRole("group", { name: "Start date" })
@@ -464,7 +462,7 @@ describe("landing Dashboard window", () => {
     await app.getByRole("button", { name: "Toggle sidebar" }).click();
     await nav.getByRole("button", { name: /^New order/u }).click();
     const newOrder = page.getByRole("dialog", { name: "New order" });
-    await newOrder.waitFor();
+    await newOrder.getByRole("form", { name: "New order" }).waitFor();
     await expectTargets(newOrder, "New order Sheet");
     // On a phone the Sheet fills the window's width. DOM audit: the window's theme scope, inside
     // its border, has no role.

@@ -45,7 +45,12 @@ describe("landing page", () => {
       shaders: true,
       prepare: async (target) => {
         errors = collectPageErrors(target);
-        target.on("requestfailed", (request) => failed.add(request.url()));
+        // Only the marks count: a cold server can also abort Next's prefetch of the page itself.
+        target.on("requestfailed", (request) => {
+          if (request.url().includes("/landing/marks/")) {
+            failed.add(request.url());
+          }
+        });
         await target.route("**/landing/marks/**", async (route) => route.abort());
       },
     });

@@ -17,11 +17,13 @@ import {
   row,
   searchTable,
   showSide,
+  shownSide,
   sideSwitch,
   WIDE_VIEWPORT,
   windowCaption,
 } from "./landing-dashboard";
-import { launchLandingSuite, settleFrames } from "./landing-page";
+import { holdChunks, launchLandingSuite, settleFrames } from "./landing-page";
+import type { HeldChunks } from "./landing-page";
 
 const { openLanding } = launchLandingSuite({ search: DASHBOARD_FIRST });
 
@@ -483,6 +485,66 @@ describe("landing hero window, External side", () => {
     await finishSide(site);
     expect(await opacity(app)).toBe(1);
     expect(await opacity(site)).toBe(0);
+    await page.context().close();
+  });
+});
+
+describe("landing hero window, opening on External", () => {
+  it("leaves the Dashboard out until Internal first shows, then keeps it and its state through a round trip", async () => {
+    const page = await openLanding(DESKTOP_VIEWPORT, { search: "" });
+    expect(await shownSide(page)).toBe("External");
+    expect(await dashboard(page).count()).toBe(0);
+
+    await showSide(page, "Internal");
+    const app = dashboard(page);
+    const scope = app.getByRole("group", { name: "Orders to show" });
+    await scope.getByRole("button", { name: "All", exact: true }).click();
+    await expect.poll(async () => scope.getByRole("button", { pressed: true }).textContent()).toBe("All");
+
+    await showSide(page, "External");
+    await expect.poll(async () => isInert(app)).toBe(true);
+    await showSide(page, "Internal");
+    await expect.poll(async () => isInert(app)).toBe(false);
+    expect(await scope.getByRole("button", { pressed: true }).textContent()).toBe("All");
+    await page.context().close();
+  });
+});
+
+describe("landing hero window, opening on Internal", () => {
+  it("keeps the server's Dashboard on screen while its code is still loading, until it hydrates", async () => {
+    let held: HeldChunks | undefined;
+    const page = await openLanding(DESKTOP_VIEWPORT, {
+      hydrated: false,
+      prepare: async (target) => {
+        // Only the Dashboard's code renders its notifications region's label.
+        held = await holdChunks(target, "Dashboard notifications");
+        // DOM audit: a dropped server rendering empties the Dashboard's region between two
+        // queries, so an observer watches every mutation for a region without its theme scope
+        // and marks the document when it sees one.
+        await target.addInitScript(() => {
+          new MutationObserver(() => {
+            const region = document.querySelector("[role='region'][aria-label='Dashboard']");
+            if (region?.querySelector("[data-theme-variant]") === null) {
+              document.documentElement.dataset.dashboardEmptied = "";
+            }
+          }).observe(document, { childList: true, subtree: true });
+        });
+      },
+    });
+    const app = dashboard(page);
+    await app.getByRole("button", { name: /^New order/u }).waitFor();
+    // The page's own code runs while the Dashboard's waits: Next's bootstrap marks the window
+    // before it hydrates, and hydration then runs as far as it can without the Dashboard's code.
+    await page.waitForFunction(() => "next" in window);
+    await page.waitForTimeout(1000);
+    expect(held?.caught().length).toBeGreaterThan(0);
+    expect(await app.getByRole("button", { name: /^New order/u }).count()).toBe(1);
+
+    held?.release();
+    await app.getByRole("region", { name: "Dashboard notifications" }).waitFor({ state: "attached" });
+    await app.getByRole("button", { name: /^New order/u }).click();
+    await page.getByRole("dialog", { name: "New order" }).waitFor();
+    expect(await page.locator("html").getAttribute("data-dashboard-emptied")).toBeNull();
     await page.context().close();
   });
 });

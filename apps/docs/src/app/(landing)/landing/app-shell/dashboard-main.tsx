@@ -1,7 +1,9 @@
 "use client";
 
+import { Suspense, useEffect } from "react";
 import type { ReactElement } from "react";
 
+import dynamic from "next/dynamic";
 import { tv } from "tailwind-variants";
 
 import { Breadcrumb } from "@elmeragroup/fuse/breadcrumb";
@@ -23,7 +25,6 @@ import { PRIMARY_VIEWS, VIEW_GROUPS, viewEntry } from "./dashboard-views";
 import { Kbd } from "./kbd";
 import { OrderDetail } from "./order-detail";
 import { OrderList } from "./order-list";
-import { OrderSearch } from "./order-search";
 
 const dashboardMain = tv({
   slots: {
@@ -48,6 +49,12 @@ const dashboardMain = tv({
 });
 
 const styles = dashboardMain();
+
+// Order search's table engine loads apart from the queue the Dashboard opens on, once the
+// Dashboard has mounted, so neither the landing's first load nor the Dashboard's hydration waits
+// for it. Keeping SSR costs nothing: no address opens the Dashboard on Order search. With SSR on,
+// `dynamic` adds no Suspense boundary, so the list column brings its own.
+const OrderSearch = dynamic(async () => (await import("./order-search")).OrderSearch);
 
 const SCOPES = ["active", "closed", "all"] as const satisfies readonly Scope[];
 const SCOPE_LABELS = { active: "Active", closed: "Closed", all: "All" } as const satisfies Record<
@@ -220,6 +227,10 @@ export type DashboardMainProps = {
 /** The pane beside the sidebar: header, tabs, the order list with its bulk toolbar, the detail. */
 export function DashboardMain({ sheetOpen, onSheetOpenChange }: DashboardMainProps): ReactElement {
   const { state, openPalette } = useDashboard();
+  useEffect(() => {
+    // A failed fetch is not an error yet: opening Order search imports the module again.
+    import("./order-search").catch(() => undefined);
+  }, []);
   return (
     <div className={styles.root()}>
       <header className={styles.header()}>
@@ -242,7 +253,13 @@ export function DashboardMain({ sheetOpen, onSheetOpenChange }: DashboardMainPro
       <Filters />
       <div className={styles.body()}>
         <div className={styles.listColumn()}>
-          {state.view === "order-search" ? <OrderSearch /> : <OrderList />}
+          {state.view === "order-search" ? (
+            <Suspense fallback={null}>
+              <OrderSearch />
+            </Suspense>
+          ) : (
+            <OrderList />
+          )}
           <BulkToolbar />
         </div>
         <Detail sheetOpen={sheetOpen} onSheetOpenChange={onSheetOpenChange} />
