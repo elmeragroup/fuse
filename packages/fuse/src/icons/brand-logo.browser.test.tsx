@@ -54,6 +54,28 @@ describe("BrandLogo", () => {
     }
   });
 
+  it("paints every mark at least half of a 24px tile in both dimensions", () => {
+    // Elmera has no mark artwork; the fallback tests above own its no-path contract.
+    for (const brand of BRAND_CODES.filter((code) => code !== "elma")) {
+      const { host, unmount } = render(
+        <div style={{ width: 24, height: 24 }}>
+          <style>{"svg { display: block; width: 24px; height: 24px; }"}</style>
+          <BrandLogo brand={brand} variant="mark" />
+        </div>
+      );
+      const paths = [...host.querySelectorAll("path")].map((path) => path.getBoundingClientRect());
+      expect(paths.length, brand).toBeGreaterThan(0);
+      const width =
+        Math.max(...paths.map((rect) => rect.right)) - Math.min(...paths.map((rect) => rect.left));
+      const height =
+        Math.max(...paths.map((rect) => rect.bottom)) - Math.min(...paths.map((rect) => rect.top));
+      // Oracle: half the tile, so a mark reads at icon size; a wordmark-wide viewBox paints about 2px tall.
+      expect(width, brand).toBeGreaterThanOrEqual(12);
+      expect(height, brand).toBeGreaterThanOrEqual(12);
+      unmount();
+    }
+  });
+
   it("throws an explicit error for an unknown brand code", () => {
     // React 19 createRoot + flushSync reports render errors as unhandled instead of
     // rethrowing to the caller, so assert the throw on the component function.
