@@ -12,7 +12,8 @@ type Errors = { phone?: string };
 
 // Stands in for a schema library or a server: the phone rule depends on the checkbox.
 function validate(data: FormData): Errors {
-  const phone = String(data.get("phone") ?? "");
+  const entry = data.get("phone");
+  const phone = typeof entry === "string" ? entry : "";
   if (data.get("no-phone") === null && !/^\d{8}$/.test(phone)) {
     return { phone: "Enter eight digits, or tick that you have no mobile number." };
   }
