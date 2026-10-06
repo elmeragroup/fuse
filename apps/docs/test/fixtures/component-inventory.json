@@ -422,6 +422,7 @@
       "scroll-area-vertical.tsx",
       "scroll-area-horizontal.tsx",
       "scroll-area-always.tsx",
+      "scroll-area-max-height.tsx",
       "scroll-area-composed.tsx"
     ]
   },
