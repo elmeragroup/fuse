@@ -4,7 +4,7 @@ import type { ReactElement, ReactNode } from "react";
 import { CalendarDate, isSameDay } from "@internationalized/date";
 import type { DateValue } from "@internationalized/date";
 import { DateRangePickerContext } from "react-aria-components";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Mock } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -18,11 +18,23 @@ import {
   cellNumbered,
   dayNumbered,
   describedTextsFor,
+  insetsWithin,
   navButtonNamed,
+  paddingBox,
+  ROW_VIEWPORT,
   segmentLocator,
   segmentNamed,
+  STACKED_VIEWPORT,
+  unionBox,
 } from "../../../test/rac-calendar-testing";
-import { CONTROL_MD, cssVarColor, px, renderThemed, stampDensity } from "../../../test/themed-browser-render";
+import {
+  CONTROL_MD,
+  cssVarColor,
+  px,
+  renderThemed,
+  roleNamed,
+  stampDensity,
+} from "../../../test/themed-browser-render";
 import { Dialog } from "../../components/dialog";
 import { UiProviders } from "../ui-providers/ui-providers";
 import { DateRangePicker, DateRangePickerPresetGroup, DateRangePickerPresetItem } from "./date-range-picker";
@@ -610,6 +622,69 @@ function PresetDrivenRangePicker({
   );
 }
 
+function presetPicker(): ReactElement {
+  return (
+    <DateRangePicker
+      label="Period"
+      defaultValue={julyWeek}
+      presetGroup={
+        <DateRangePickerPresetGroup>
+          <DateRangePickerPresetItem value="today">Today</DateRangePickerPresetItem>
+          <DateRangePickerPresetItem value="last-7-days">Last 7 days</DateRangePickerPresetItem>
+        </DateRangePickerPresetGroup>
+      }
+    />
+  );
+}
+
+describe("DateRangePicker preset pane geometry", () => {
+  afterEach(async () => {
+    await page.viewport(STACKED_VIEWPORT.width, STACKED_VIEWPORT.height);
+  });
+
+  it("runs the row divider from the dialog's top edge to its bottom edge", async () => {
+    await page.viewport(ROW_VIEWPORT.width, ROW_VIEWPORT.height);
+    renderPicker(presetPicker());
+    const inner = paddingBox(await openPicker());
+    const column = roleNamed("radiogroup", "Date presets");
+    const divider = column.getBoundingClientRect();
+
+    expect(px(getComputedStyle(column).borderRightWidth)).toBeGreaterThan(0);
+    expect(divider.top).toBe(inner.top);
+    expect(divider.bottom).toBe(inner.bottom);
+    expect(divider.left).toBe(inner.left);
+  });
+
+  it("runs the stacked divider from the dialog's start edge to its end edge", async () => {
+    await page.viewport(STACKED_VIEWPORT.width, STACKED_VIEWPORT.height);
+    renderPicker(presetPicker());
+    const inner = paddingBox(await openPicker());
+    const column = roleNamed("radiogroup", "Date presets");
+    const divider = column.getBoundingClientRect();
+
+    expect(px(getComputedStyle(column).borderBottomWidth)).toBeGreaterThan(0);
+    expect(divider.left).toBe(inner.left);
+    expect(divider.right).toBe(inner.right);
+    expect(divider.top).toBe(inner.top);
+  });
+
+  it.each([
+    ["row", ROW_VIEWPORT],
+    ["stacked", STACKED_VIEWPORT],
+  ])("insets the presets by at least 8px on every side of their column (%s)", async (_layout, viewport) => {
+    await page.viewport(viewport.width, viewport.height);
+    renderPicker(presetPicker());
+    await openPicker();
+    const items = unionBox([presetTargetNamed("Today"), presetTargetNamed("Last 7 days")]);
+    const insets = insetsWithin(paddingBox(roleNamed("radiogroup", "Date presets")), items);
+
+    expect(insets.top).toBeGreaterThanOrEqual(8);
+    expect(insets.right).toBeGreaterThanOrEqual(8);
+    expect(insets.bottom).toBeGreaterThanOrEqual(8);
+    expect(insets.left).toBeGreaterThanOrEqual(8);
+  });
+});
+
 describe("DateRangePicker presets", () => {
   it("lays a locale-named preset radiogroup beside the range calendar inside the dialog", async () => {
     renderPicker(
@@ -638,7 +713,6 @@ describe("DateRangePicker presets", () => {
     expect(pane.closest('[role="dialog"]')).toBe(dialog);
     expect(radiogroup.parentElement).toBe(pane);
     expect(getComputedStyle(pane).display).toBe("flex");
-    expect(px(getComputedStyle(pane).columnGap)).toBe(12);
   });
 
   it("draws the pane divider in the border role colour, not the text colour", async () => {
@@ -678,8 +752,7 @@ describe("DateRangePicker presets", () => {
     const paneStyle = getComputedStyle(pane);
 
     expect(page.getByRole("radiogroup").query()).toBeNull();
-    // None of the two-pane layout: no flex row with its column gap, no trailing inset,
-    // and no divider on any child.
+    // None of the two-pane layout: no flex row, no inset, and no divider on any child.
     expect(paneStyle.display).toBe("block");
     expect(paneStyle.columnGap).toBe("normal");
     expect(paneStyle.paddingBottom).toBe("0px");

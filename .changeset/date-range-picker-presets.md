@@ -13,3 +13,7 @@ of committing a one-day range.
 `DatePicker` now opens on a `placeholderValue` that comes through `DatePickerContext`. Before,
 an empty picker configured that way opened on the current month. `DateRangePicker` still opens
 on a `placeholderValue` from `DateRangePickerContext`.
+
+The calendar inside a `DatePicker` popover no longer draws its own shadow and fill when the
+picker has no presets. The popover already draws the card, so the calendar keeps only its
+inset.

@@ -8,8 +8,8 @@ import type { Locator } from "vitest/browser";
  * are built on. Every suite reaches the same DOM through the same role queries, so the
  * mechanism notes below live here once instead of once per suite.
  *
- * Nothing here asserts; these are locators plus the two interaction helpers that have to
- * wait out RAC's asynchronous focus moves.
+ * Nothing here asserts; these are locators, box-geometry readers, and the two interaction
+ * helpers that have to wait out RAC's asynchronous focus moves.
  */
 
 /** The RAC calendar root. RAC gives it `role="application"`. */
@@ -205,4 +205,59 @@ export function describedTextsFor(element: HTMLElement): string[] {
   return [
     ...new Set(ids.map((id) => document.getElementById(id)?.textContent ?? "").filter((text) => text !== "")),
   ];
+}
+
+/** Viewport-pixel edges of a box, as `getBoundingClientRect` reports them. */
+export type BoxEdges = {
+  readonly top: number;
+  readonly right: number;
+  readonly bottom: number;
+  readonly left: number;
+};
+
+/**
+ * An element's padding box: its border box less its own borders. For the picker dialog
+ * that is the area a full-bleed divider has to reach, edge to edge.
+ */
+export function paddingBox(element: HTMLElement): BoxEdges {
+  // Computed border widths rather than `clientTop`/`clientHeight`, which round to whole
+  // pixels while the bounding rect keeps the fractional layout.
+  const rect = element.getBoundingClientRect();
+  const style = getComputedStyle(element);
+  const border = (side: string) => Number.parseFloat(style.getPropertyValue(`border-${side}-width`));
+  return {
+    top: rect.top + border("top"),
+    right: rect.right - border("right"),
+    bottom: rect.bottom - border("bottom"),
+    left: rect.left + border("left"),
+  };
+}
+
+/**
+ * Viewports either side of Tailwind's `sm` breakpoint (40rem), where the picker's preset
+ * pane flips from stacked to a row. The stacked one is Vitest's default browser viewport,
+ * so a suite that widens the page restores it with `STACKED_VIEWPORT`.
+ */
+export const ROW_VIEWPORT = { width: 1024, height: 896 } as const;
+export const STACKED_VIEWPORT = { width: 414, height: 896 } as const;
+
+/** How far `inner` sits inside `outer` on each side; negative where it pokes out. */
+export function insetsWithin(outer: BoxEdges, inner: BoxEdges): BoxEdges {
+  return {
+    top: inner.top - outer.top,
+    right: outer.right - inner.right,
+    bottom: outer.bottom - inner.bottom,
+    left: inner.left - outer.left,
+  };
+}
+
+/** The smallest box around every element given, in viewport pixels. */
+export function unionBox(elements: readonly HTMLElement[]): BoxEdges {
+  const rects = elements.map((element) => element.getBoundingClientRect());
+  return {
+    top: Math.min(...rects.map((rect) => rect.top)),
+    right: Math.max(...rects.map((rect) => rect.right)),
+    bottom: Math.max(...rects.map((rect) => rect.bottom)),
+    left: Math.min(...rects.map((rect) => rect.left)),
+  };
 }
