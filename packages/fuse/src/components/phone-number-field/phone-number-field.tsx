@@ -242,13 +242,13 @@ export function PhoneNumberField({
             // `${name}-display-value`. The id names no rendered form on purpose
             form="fuse-phone-country-unbound"
             locale={locale}>
-            <InputGroupAddon className="py-0 text-foreground" align="inline-start">
+            <InputGroupAddon className="text-foreground" align="inline-start">
               {/* role="button" overrides Base UI's default role="combobox" so the trigger keeps the
                   getByRole("button", {name}) contract the browser tests freeze; an empty aria-labelledby
                   overrides the surrounding Field's label, so aria-label wins.
                   Don't "simplify" either without updating the browser tests.
-                  min-h-6 is the 24px target floor. The addon drops its block padding, so the
-                  trigger fits the field's fixed md box at both densities without overflowing it. */}
+                  min-h-6 is the 24px target floor. The trigger renders a <button>, so the inline addon
+                  drops its block padding and the trigger fits the field's fixed md box at both densities. */}
               <ComboboxPrimitive.Trigger
                 role="button"
                 aria-label={resolvedSelectCountryLabel}

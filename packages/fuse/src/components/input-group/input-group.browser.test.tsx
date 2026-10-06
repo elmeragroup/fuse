@@ -412,6 +412,38 @@ describe("InputGroup", () => {
     }
   });
 
+  it("fits xs addon buttons inside the md field box at the 24px target floor, at both densities", () => {
+    renderThemed(
+      <InputGroup.Root>
+        <InputGroup.Addon>
+          <InputGroup.Button size="icon-xs" aria-label="Lead icon" />
+        </InputGroup.Addon>
+        <InputGroup.Input aria-label="Rails" />
+        <InputGroup.Addon align="inline-end">
+          <InputGroup.Button>Trail text</InputGroup.Button>
+        </InputGroup.Addon>
+      </InputGroup.Root>
+    );
+
+    // Oracle: the WCAG 2.5.8 floor and the field's own border box. A rail that kept its
+    // block padding would stand taller than the box inside the dense border.
+    for (const density of ["dense", "comfortable"] as const) {
+      stampDensity(density);
+      const group = rootNamed("Rails");
+      const groupBox = group.getBoundingClientRect();
+      expect(groupBox.height, density).toBe(CONTROL_MD[density].height);
+      for (const name of ["Lead icon", "Trail text"]) {
+        const button = roleNamed("button", name);
+        const buttonBox = button.getBoundingClientRect();
+        expect(buttonBox.height, `${density} ${name}`).toBeGreaterThanOrEqual(24);
+        const railBox = groupAround(button).getBoundingClientRect();
+        expect(railBox.height, `${density} ${name} rail`).toBeLessThanOrEqual(group.clientHeight);
+        expect(railBox.top, `${density} ${name} rail top`).toBeGreaterThanOrEqual(groupBox.top);
+        expect(railBox.bottom, `${density} ${name} rail bottom`).toBeLessThanOrEqual(groupBox.bottom);
+      }
+    }
+  });
+
   it("grows past the md rung for block rails and textarea controls", () => {
     renderThemed(
       <InputGroup.Root>
