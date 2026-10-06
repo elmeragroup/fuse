@@ -440,6 +440,7 @@
   --button-outline: var(--foreground);
   --radius: 0.375rem;
   --radius-button: 1.8125rem;
+  --radius-field: 0.25rem;
   --radius-step: 2px;
   --button-outline-width: 2px;
   --font-heading: var(--font-sans);
@@ -1261,6 +1262,7 @@
   --sh-comment: oklch(0.8280204 0.0042636 121.5755);
   --radius: 0.375rem;
   --radius-button: 1.8125rem;
+  --radius-field: 0.25rem;
   --radius-step: 2px;
   --button-outline-width: 2px;
   --font-heading: var(--font-sans);
