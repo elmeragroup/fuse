@@ -41,9 +41,9 @@ const SLUGS = [
   "external-ngfi-company",
 ] as const;
 
-// Counts the derived `secondary-hover` role, the `radius-step` rung spacing and the two
-// outline Button roles.
-const TOKEN_COUNT = 81;
+// Counts the derived `secondary-hover` role, the `radius-step` rung spacing, the
+// `radius-field` field corner and the two outline Button roles.
+const TOKEN_COUNT = 82;
 
 // xs, sm, md, lg, xl and the unused popover rung.
 const RUNG_COUNT = 6;

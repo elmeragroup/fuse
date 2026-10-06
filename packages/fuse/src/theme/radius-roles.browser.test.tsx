@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import type { CSSProperties, ReactElement } from "react";
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
@@ -65,20 +65,23 @@ type Specimen =
   | "phone trigger"
   | "search clear"
   | "date trigger"
+  | "date segment"
   | "preset"
   | "chip remove";
 
 type Variant = "internal" | "fkas" | "tkas" | "guen";
 
 /**
- * Corner radii in px. External themes change only their standalone buttons, so the external
- * values outside `button` and `calendar nav` are the ones Chromium measured on origin/main
- * (e178f6d7) with each theme on the document. The tkas row has since moved 0.8px with its
- * `--radius`, from 0.95rem to 1rem. Buttons inside a field box, a button group or
- * a preset list keep the radius they had there. The standalone button values and the
- * internal row come from the palette literals. Internal rounds every element with
- * `--radius`, 0.375rem (6px). An external button rounds with the brand's `--radius-button`,
- * which is 1.8125rem (29px) for fkas, 1rem (16px) for tkas and 0.5rem (8px) for guen.
+ * Corner radii in px. Internal rounds every element with `--radius`, 0.375rem (6px). An
+ * external button rounds with the brand's `--radius-button`, which is 1.8125rem (29px) for
+ * fkas, 1rem (16px) for tkas and 0.5rem (8px) for guen. An external field box rounds
+ * with the external variant's `--radius-field`, 0.25rem (4px), whatever the brand, and
+ * nothing inside it rounds more: the kbd and the xs addons take the smaller of 5px inside
+ * `--radius` and 4px, so guen's stay at 3px, a date segment takes the smaller of `rounded-xs`
+ * and 4px, so guen's stays at 2px, and the sm addons, the search clear button, the date
+ * trigger and the chip remove button take 4px. The other external values are the ones
+ * Chromium measured on origin/main (e178f6d7) with each theme on the document. The tkas row
+ * has since moved 0.8px with its `--radius`, from 0.95rem to 1rem.
  */
 const EXPECTED = {
   internal: {
@@ -101,6 +104,7 @@ const EXPECTED = {
     "phone trigger": 6,
     "search clear": 6,
     "date trigger": 6,
+    "date segment": 6,
     preset: 6,
     "chip remove": 6,
   },
@@ -108,70 +112,73 @@ const EXPECTED = {
     button: 29,
     "grouped button": 10,
     card: 12,
-    input: 10,
+    input: 4,
     badge: 12,
     toggle: 10,
     "toggle xs": 10,
     checkbox: 4,
-    "input group": 10,
-    kbd: 7,
-    "addon xs": 7,
-    "addon sm": 10,
+    "input group": 4,
+    kbd: 4,
+    "addon xs": 4,
+    "addon sm": 4,
     frame: 16,
     calendar: 4,
     "calendar nav": 29,
     tab: 10,
     "phone trigger": 4,
-    "search clear": 10,
-    "date trigger": 10,
+    "search clear": 4,
+    "date trigger": 4,
+    "date segment": 4,
     preset: 10,
-    "chip remove": 10,
+    "chip remove": 4,
   },
   tkas: {
     button: 16,
     "grouped button": 14,
     card: 16,
-    input: 14,
+    input: 4,
     badge: 16,
     toggle: 14,
     "toggle xs": 10,
     checkbox: 4,
-    "input group": 14,
-    kbd: 11,
-    "addon xs": 11,
-    "addon sm": 14,
+    "input group": 4,
+    kbd: 4,
+    "addon xs": 4,
+    "addon sm": 4,
     frame: 20,
     calendar: 4,
     "calendar nav": 16,
     tab: 14,
     "phone trigger": 4,
-    "search clear": 14,
-    "date trigger": 10,
+    "search clear": 4,
+    "date trigger": 4,
+    "date segment": 4,
     preset: 10,
-    "chip remove": 10,
+    "chip remove": 4,
   },
   guen: {
     button: 8,
     "grouped button": 6,
     card: 8,
-    input: 6,
+    input: 4,
     badge: 8,
     toggle: 6,
     "toggle xs": 6,
     checkbox: 4,
-    "input group": 6,
+    "input group": 4,
     kbd: 3,
     "addon xs": 3,
-    "addon sm": 6,
+    "addon sm": 4,
     frame: 12,
     calendar: 4,
     "calendar nav": 8,
     tab: 6,
     "phone trigger": 4,
-    "search clear": 6,
-    "date trigger": 6,
+    "search clear": 4,
+    "date trigger": 4,
+    "date segment": 2,
     preset: 6,
-    "chip remove": 6,
+    "chip remove": 4,
   },
 } as const satisfies Record<Variant, Record<Specimen, number>>;
 
@@ -244,10 +251,10 @@ const HOST_WITHOUT_THEMES = {
   ...Object.fromEntries(Object.keys(EXTERNAL_VARIANT_LAYER).map((key) => [`--${key}`, "initial"])),
 } as const;
 
-function HostSpecimens(): ReactElement {
+function HostSpecimens({ style = HOST_WITHOUT_THEMES }: { style?: CSSProperties }): ReactElement {
   return withLocale(
     "en-US",
-    <div style={HOST_WITHOUT_THEMES}>
+    <div style={style}>
       <Card.Root role="group" aria-label="Host card" />
       <Input aria-label="Host input" />
       <Frame.Root role="group" aria-label="Host frame" />
@@ -296,6 +303,15 @@ function calendarNav(name: "Previous" | "Next"): HTMLElement {
   return element;
 }
 
+/** The date picker's first segment, which paints its focus fill inside the field box. */
+function dateSegment(): HTMLElement {
+  const element = page.getByRole("spinbutton").first().element();
+  if (!(element instanceof HTMLElement)) {
+    throw new Error("expected the date picker's first segment");
+  }
+  return element;
+}
+
 /** A preset item's label, the element that carries the preset's button chrome. */
 function presetNamed(name: string): HTMLElement {
   const label = roleNamed("radio", name).closest("label");
@@ -337,6 +353,7 @@ function measure(): readonly (readonly [Specimen, string, number])[] {
     button("phone trigger", "Select country"),
     button("search clear", "Clear search"),
     ["date trigger", "Date trigger", radius(dateTrigger())],
+    ["date segment", "Date segment", radius(dateSegment())],
     ["preset", "Today", radius(presetNamed("Today"))],
     button("chip remove", "Remove Apple"),
   ];
@@ -417,6 +434,44 @@ describe("radius roles", () => {
     }
   });
 
+  it("moves internal fields, not buttons, with a --radius override on a plain wrapper", () => {
+    // The theme element resolves --radius-button, so a wrapper below it leaves buttons alone.
+    // Internal fields read --radius on the element itself, as cards do.
+    stampDocumentTheme(fkasPrivate, "light");
+    render(
+      <div style={{ "--radius": "1rem" }}>
+        <Input aria-label="Wrapped input" />
+        <Button aria-label="Wrapped button" />
+      </div>
+    );
+    expect(radius(roleNamed("textbox", "Wrapped input"))).toBe(16);
+    expect(radius(roleNamed("button", "Wrapped button"))).toBe(6);
+  });
+
+  it("rounds external fields with a --radius-field override and caps their addons at it", () => {
+    stampDocumentTheme(tkasCompany, "light");
+    render(
+      <ThemeScope theme={fkasExternal} style={{ "--radius-field": "0.125rem" }}>
+        <Specimens />
+      </ThemeScope>
+    );
+    for (const [specimen, name] of [
+      ["input", "Input"],
+      ["input group", "Input group"],
+      ["kbd", "Kbd"],
+      ["addon xs", "Addon xs"],
+      ["addon sm", "Addon sm"],
+      ["search clear", "Clear search"],
+      ["date trigger", "Date trigger"],
+      ["date segment", "Date segment"],
+      ["chip remove", "Remove Apple"],
+      ["phone trigger", "Select country"],
+    ] as const) {
+      const measured = measure().find(([candidate, label]) => candidate === specimen && label === name);
+      expect(measured?.[2], name).toBe(2);
+    }
+  });
+
   it("resolves a host rule's plain var(--radius-button) read to the theme's button radius", () => {
     const host = (
       <div role="group" aria-label="Host button" style={{ borderRadius: "var(--radius-button)" }} />
@@ -451,6 +506,22 @@ describe("a host without themes.css", () => {
     ] as const) {
       expect(radius(element), label).toBe(host);
     }
+  });
+
+  it("rounds fields with its own --radius-field once it sets the external --radius-step", () => {
+    const host = (step: Record<string, string>) =>
+      render(<HostSpecimens style={{ ...HOST_WITHOUT_THEMES, "--radius-step": "2px", ...step }} />);
+    // A 4px field corner under a 8px host --radius: the xs addon and the kbd would sit 5px
+    // inside --radius, at 3px, which is already under the field corner.
+    const { unmount } = host({ "--radius-field": "4px" });
+    expect(radius(roleNamed("textbox", "Host input"))).toBe(4);
+    expect(radius(roleNamed("group", "Host input group"))).toBe(4);
+    expect(radius(roleNamed("button", "Host addon xs"))).toBe(3);
+    expect(radius(textNamed("K"))).toBe(3);
+    unmount();
+    // Without the role the field falls back to the host's --radius.
+    host({});
+    expect(radius(roleNamed("textbox", "Host input"))).toBe(8);
   });
 
   it("draws the outline Button as the host's --border hairline with shadow-xs", () => {

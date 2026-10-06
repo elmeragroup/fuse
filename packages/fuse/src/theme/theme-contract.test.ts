@@ -302,6 +302,7 @@ describe("theme contract", () => {
       for (const key of [
         "radius",
         "radius-button",
+        "radius-field",
         "radius-step",
         "button-outline",
         "button-outline-width",
@@ -486,8 +487,9 @@ describe("derived roles", () => {
 describe("external variant layer roles", () => {
   const rules = parseStyleRules(generateThemesCss());
 
-  it("sets the radius step and the reference's 2px text-color outline once for the external variant", () => {
+  it("sets the radius step, the 4px field corner and the reference's 2px text-color outline once for the external variant", () => {
     const external = {
+      "radius-field": "0.25rem",
       "radius-step": "2px",
       "button-outline": "var(--foreground)",
       "button-outline-width": "2px",
@@ -503,10 +505,11 @@ describe("external variant layer roles", () => {
         expect(declaration(rules, selector, key), `${selector} ${key}`).toBe(value);
       }
     }
-    // Internal themes and the root keep the 1px border hairline.
+    // Internal themes and the root keep the 1px border hairline and round fields with --radius.
     for (const selector of [":root", '[data-theme-variant="internal"]']) {
       expect(declaration(rules, selector, "button-outline"), selector).toBe("var(--border)");
       expect(declaration(rules, selector, "button-outline-width"), selector).toBe("1px");
+      expect(declaration(rules, selector, "radius-field"), selector).toBe("var(--radius)");
     }
   });
 });

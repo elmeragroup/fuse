@@ -7,12 +7,15 @@ export type ExternalBrandCode = Exclude<BrandCode, "fkab">;
 /**
  * The roles every external theme shares, whatever its brand. External rounding spreads the
  * `rounded-*` scale in 2px steps around the brand radius, so `rounded-md` sits 2px inside
- * `--radius` and `rounded-xl` 4px outside it. The outline Button draws the customer-facing
- * reference's outline, a 2px ring in the text color, which every brand shares. The internal
- * variant keeps the default 0px step and the 1px `--border` hairline.
+ * `--radius` and `rounded-xl` 4px outside it. Field boxes leave that scale for the 4px corner
+ * of the Central design system's text input, whatever the brand radius. The outline Button
+ * draws the customer-facing reference's outline, a 2px ring in the text color, which every
+ * brand shares. The internal variant keeps the default 0px step and the 1px `--border`
+ * hairline.
  */
 export const EXTERNAL_VARIANT_LAYER = {
   "button-outline": "var(--foreground)",
+  "radius-field": "0.25rem",
   "radius-step": "2px",
   "button-outline-width": "2px",
 } as const satisfies TokenLayer;

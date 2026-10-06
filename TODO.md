@@ -25,9 +25,18 @@
   (`EXTERNAL_VARIANT_LAYER`). Also confirm the comfortable icon edge, three quarters of that
   inset (12px at `sm`, 24px at `md` and `lg`), and pick a comfortable `xs` inset and icon edge,
   which keep the 12px and 10px control values.
-- Ask design whether external themes keep the reference's 4px corner on the `Checkbox`,
-  the phone country trigger and the standalone `Calendar` (`styles/corner-radius.ts`), or
-  round them from the brand radius. Internal themes round them with `--radius`.
+- Ask design whether external themes keep the reference's 4px corner on the `Checkbox` and
+  the standalone `Calendar` (`styles/corner-radius.ts`), or round them from the brand radius.
+  Internal themes round them with `--radius`.
+- Confirm the external field corner with design. `--radius-field` is 0.25rem for every brand,
+  from the Central design system's Text input ("Ready for review"), whose
+  `Border-radius/Rounded MD` variable reads 4px in the one mode the file shows. Ask whether
+  that variable varies by brand, and whether the external `rounded-*` scale, where
+  `rounded-md` sits 2px inside the brand radius, should follow Central's radius variables.
+- Ask design about the remaining Central Text input deltas at comfortable density: 8px
+  inline padding (Fuse 14px), 16px input text (Fuse 18px), a 16px label (Fuse 14px), a
+  darker border on hover, grey disabled fill and text instead of the 50% dim, and an error
+  icon inside the box.
 - Decide whether `PhoneNumberField` and `NumberField` name their wrapper `group` from the field's
   label or drop the role. The controls inside have names; the groups around them have none.
 - Decide with design whether `Item` gets an unclamped description variant. `Item.Description`

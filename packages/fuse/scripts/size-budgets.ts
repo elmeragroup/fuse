@@ -224,8 +224,11 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // while themes.css is unchanged at 4472/6416.
   // 2026-10-02: styles.css re-measured at 23905 (+484) with the NavigationMenu part classes,
   // within its standing ceiling of 24466, which stays.
+  // 2026-10-06: main measured 24451, 15 bytes under that ceiling. The field corner classes,
+  // which read `--radius-field` (+142), take styles.css to 24593, over it, so the shared entry
+  // recalibrates to measured × 1.5, as a code owner approved.
   { name: "themes.css", file: "themes.css", measuredGzip: 4472, ceilingGzip: 6416 },
-  { name: "styles.css", file: "styles.css", measuredGzip: 23905, ceilingGzip: 24466 },
+  { name: "styles.css", file: "styles.css", measuredGzip: 24593 },
 ] satisfies readonly Measured<CssBudget>[]);
 
 export const FLAG_RAW_BUDGETS: readonly FlagRawBudget[] = [
