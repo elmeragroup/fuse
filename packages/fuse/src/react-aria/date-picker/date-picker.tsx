@@ -1,15 +1,13 @@
 "use client";
 
-import { use, useState } from "react";
-import type { ComponentProps, ReactElement, ReactNode } from "react";
+import { use } from "react";
+import type { ReactElement, ReactNode } from "react";
 
-import { getLocalTimeZone, toCalendarDate, today } from "@internationalized/date";
-import type { CalendarDate } from "@internationalized/date";
 import {
+  CalendarContext,
   DatePicker as AriaDatePicker,
-  Radio as AriaRadio,
-  RadioGroup as AriaRadioGroup,
   DatePickerStateContext,
+  useSlottedContext,
 } from "react-aria-components";
 import type {
   DatePickerProps as AriaDatePickerProps,
@@ -17,17 +15,15 @@ import type {
   ValidationResult,
 } from "react-aria-components";
 
-import { buttonVariants } from "../../components/button/button-variants";
 import type { OverlayContainerProps } from "../../components/overlay/overlay-props";
-import { useLocalizedStrings } from "../../hooks/use-localized-strings";
-import { cn } from "../../styles/cn";
-import { compactCornerClass } from "../../styles/corner-radius";
 import { pickerVariants } from "../../styles/picker";
 import { Calendar } from "../calendar/calendar";
 import { DateInput } from "../date-field/date-field";
 import { composeTailwindRenderProps } from "../internal/compose-tailwind-render-props";
+import { useCommittedMonthFocus } from "../internal/picker-focused-month";
+import { isRenderableNode, PickerPresetGroup, PickerPresetItem } from "../internal/picker-presets";
+import type { PickerPresetGroupProps, PickerPresetItemProps } from "../internal/picker-presets";
 import { PickerShell } from "../internal/picker-shell";
-import { datePickerStrings } from "./intl";
 
 /**
  * Labeled date-picker composite over RAC `DatePicker`: the public
@@ -76,63 +72,17 @@ export type DatePickerProps<T extends DateValue> = {
 } & Omit<AriaDatePickerProps<T>, "defaultValue" | "shouldForceLeadingZeros">;
 
 /**
- * The month the popover opens on: the selected date's month, else the caller's
- * `placeholderValue` month, else the current month (the today-fallback is kept from the
- * reference). The controlled `focusedValue` below beats the `defaultFocusedValue` RAC
- * derives from `placeholderValue`, so the placeholder has to be honoured here.
+ * The popover's calendar, month-synced to the picker's own committed value through the
+ * RAC `DatePickerStateContext`, where `state.value` is the committed value in both the
+ * controlled and the uncontrolled mode. The placeholder comes from the `CalendarContext`
+ * RAC fills, so a `placeholderValue` supplied through `DatePickerContext` counts too.
  */
-function focusedMonthFor(
-  value: DateValue | null | undefined,
-  placeholderValue: DateValue | null | undefined
-): CalendarDate {
-  return toCalendarDate(value ?? placeholderValue ?? today(getLocalTimeZone()));
-}
-
-/**
- * Whether a node a caller handed us would paint anything. `presetGroup={showPresets &&
- * <DatePickerPresetGroup />}` is the idiomatic conditional, so `false` — like `null`,
- * `undefined` and `""` — has to read as "no preset pane" and leave the dialog in its
- * single-pane layout.
- */
-function isRenderableNode(node: ReactNode): boolean {
-  return node !== null && node !== undefined && node !== false && node !== "";
-}
-
-/**
- * The popover's calendar, month-synced to the picker's own committed value.
- *
- * The month the grid shows is local state so paging never rewrites the value, and it is
- * derived from the RAC `DatePickerStateContext` rather than from `props.value` — that is
- * what makes the sync hold for an uncontrolled `defaultValue` picker as well as a
- * controlled one, because `state.value` is the committed value in both modes.
- * Two triggers synchronize the focused date: the popover unmounts its content on close, so
- * this component mounts once per open and the `useState` initializer *is* the per-open
- * resync, while the derive-with-reset below follows a value that changes with the dialog
- * still open — a preset pane lives inside the popover. It resyncs during the render that
- * first sees the new value rather than in an effect after paint, and the compare
- * guard keeps a fresh, equal `CalendarDate` from committing anything.
- */
-function PickerCalendar({
-  className,
-  placeholderValue,
-}: {
-  className: string;
-  placeholderValue: DateValue | null | undefined;
-}): ReactElement {
+function PickerCalendar({ className }: { className: string }): ReactElement {
   const state = use(DatePickerStateContext);
-  const value = state?.value;
-  const [focusedValue, setFocusedValue] = useState(() => focusedMonthFor(value, placeholderValue));
-  const [lastValue, setLastValue] = useState(value);
+  const calendar = useSlottedContext(CalendarContext);
+  const focus = useCommittedMonthFocus(state?.value, calendar?.defaultFocusedValue);
 
-  if (value !== lastValue) {
-    setLastValue(value);
-    const month = focusedMonthFor(value, placeholderValue);
-    if (focusedValue.compare(month) !== 0) {
-      setFocusedValue(month);
-    }
-  }
-
-  return <Calendar className={className} focusedValue={focusedValue} onFocusChange={setFocusedValue} />;
+  return <Calendar className={className} {...focus} />;
 }
 
 export function DatePicker<T extends DateValue>({
@@ -142,7 +92,6 @@ export function DatePicker<T extends DateValue>({
   errorMessage,
   isReadOnly,
   label,
-  placeholderValue,
   presetGroup,
   shouldForceLeadingZeros = true,
   ...props
@@ -155,7 +104,6 @@ export function DatePicker<T extends DateValue>({
     <AriaDatePicker
       {...props}
       isReadOnly={isReadOnly}
-      placeholderValue={placeholderValue}
       shouldForceLeadingZeros={shouldForceLeadingZeros}
       className={composeTailwindRenderProps(className, base())}>
       <PickerShell
@@ -167,7 +115,7 @@ export function DatePicker<T extends DateValue>({
         popover={
           <div className={pane()}>
             {presetGroup}
-            <PickerCalendar className={calendar()} placeholderValue={placeholderValue} />
+            <PickerCalendar className={calendar()} />
           </div>
         }>
         <DateInput className={input()} />
@@ -176,92 +124,28 @@ export function DatePicker<T extends DateValue>({
   );
 }
 
-export type DatePickerPresetGroupProps = ComponentProps<typeof AriaRadioGroup> & {
-  /**
-   * Accessible name for the preset pane. An explicit `aria-label` wins over it, and
-   * either wins over the `datePicker.presets` row of the locale dictionary.
-   */
-  label?: string;
-};
+export type DatePickerPresetGroupProps = PickerPresetGroupProps;
 
 /**
  * The quick-choice pane beside the calendar: a radio group whose options are dates.
  * Only one preset can be in effect at a time, which is why this is a `radiogroup` and
  * not a row of buttons.
  */
-export function DatePickerPresetGroup({
-  className,
-  label,
-  "aria-label": ariaLabel,
-  ...props
-}: DatePickerPresetGroupProps): ReactElement {
-  const strings = useLocalizedStrings(datePickerStrings);
-
-  return (
-    <AriaRadioGroup
-      data-slot="date-picker-preset-group"
-      aria-label={ariaLabel ?? label ?? strings.format("presets")}
-      {...props}
-      className={composeTailwindRenderProps(className, "flex flex-col gap-2 px-3")}
-    />
-  );
+export function DatePickerPresetGroup(props: DatePickerPresetGroupProps): ReactElement {
+  return <PickerPresetGroup data-slot="date-picker-preset-group" {...props} />;
 }
 
-export type DatePickerPresetItemProps = ComponentProps<typeof AriaRadio> & {
-  /**
-   * Supporting copy carried alongside the preset, kept from the reference face.
-   * RAC `Radio` renders only its children, so this never joins the accessible name.
-   */
-  description?: string;
-  /**
-   * Closes the picker dialog on double-click, after the caller's own `onDoubleClick`.
-   * A pointer-only affordance: single click (and Space from the keyboard) selects
-   * without closing, so nothing is reachable by pointer alone.
-   */
-  isCloseDialogOnDoubleClick?: boolean;
-};
+export type DatePickerPresetItemProps = PickerPresetItemProps;
 
 /**
- * One preset. Styled as a ghost `sm` button from the shared public `buttonVariants`
- * recipe so a preset reads as the affordance it is, and named by its visible
- * children — the library never synthesises copy from the item's `value`.
+ * One preset, closing the picker on double-click when the caller opts in. Styled as a
+ * ghost `sm` button and named by its visible children — the library never synthesises
+ * copy from the item's `value`.
  */
-export function DatePickerPresetItem({
-  className,
-  isCloseDialogOnDoubleClick,
-  onDoubleClick,
-  ...props
-}: DatePickerPresetItemProps): ReactElement {
+export function DatePickerPresetItem(props: DatePickerPresetItemProps): ReactElement {
   const state = use(DatePickerStateContext);
 
-  return (
-    <AriaRadio
-      data-slot="date-picker-preset-item"
-      {...props}
-      className={composeTailwindRenderProps(
-        className,
-        buttonVariants({
-          size: "sm",
-          variant: "ghost",
-          // The radio's own indicator, if a caller's children render one, stays hidden,
-          // because the preset is a button-shaped choice and not a bullet list. A preset is
-          // a row in a list, so it takes the compact corner instead of Button's
-          // `--radius-button`.
-          className: cn(
-            "justify-start text-left *:data-[slot=radio-indicator]:hidden data-selected:bg-accent data-disabled:pointer-events-none",
-            compactCornerClass
-          ),
-        })
-      )}
-      onDoubleClick={(event) => {
-        onDoubleClick?.(event);
-
-        if (isCloseDialogOnDoubleClick === true && state !== null && state.isOpen) {
-          state.close();
-        }
-      }}
-    />
-  );
+  return <PickerPresetItem data-slot="date-picker-preset-item" {...props} state={state} />;
 }
 
 DatePicker.displayName = "DatePicker";

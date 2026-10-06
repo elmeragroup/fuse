@@ -97,7 +97,8 @@ export const pickerVariants = tv({
     /**
      * Whether the caller handed over a preset pane that would actually paint. The call site
      * decides that (`presetGroup={showPresets && <Group />}` collapses to `false`, not
-     * `undefined`), so this axis takes the answer, never the node. Single-date only.
+     * `undefined`), so this axis takes the answer, never the node. Both pickers take it:
+     * the pane wraps the preset group and a Calendar or a RangeCalendar alike.
      *
      * The stack-to-row flip stays a viewport `sm:` query: the pane lives in the portalled
      * popover, outside the picker root's `@container/picker`, and the popover sizes to its
@@ -106,7 +107,9 @@ export const pickerVariants = tv({
      */
     hasPresets: {
       true: {
-        pane: "sm:flex-row sm:divide-x sm:divide-y-0 sm:pr-3 flex flex-col gap-3 divide-y pb-3",
+        // The divider names the border role: fuse ships no global border-colour reset, so
+        // a bare `divide-*` would draw in `currentColor`, the text colour.
+        pane: "sm:flex-row sm:divide-x sm:divide-y-0 sm:pr-3 flex flex-col gap-3 divide-y divide-border pb-3",
       },
       false: {
         pane: "",

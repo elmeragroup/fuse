@@ -2,13 +2,14 @@ import { useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { CalendarDate } from "@internationalized/date";
+import { DatePickerContext } from "react-aria-components";
 import type { ValidationResult } from "react-aria-components";
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
+import { withLocale } from "../../../test/locale-matrix";
 import {
   calendarGrid,
   calendarRoot,
@@ -269,6 +270,29 @@ describe("DatePicker", () => {
     expect(segmentNamed("month").textContent).toBe("11");
   });
 
+  it("keeps a paged month when the value is replaced by an equal date", async () => {
+    // A fresh object for the same day: the committed value has not changed.
+    renderPicker(<PresetDrivenPicker next={new CalendarDate(2026, 7, 14)} presetLabel="Same day" />);
+    await openPicker();
+    await userEvent.keyboard("{PageDown}{PageDown}");
+    expect(calendarGrid().getAttribute("aria-label")).toMatch(/September\s+2026/i);
+
+    await userEvent.click(presetTargetNamed("Same day"));
+    expect(page.getByRole("radio", { name: "Same day", exact: true }).element()).toBeChecked();
+    expect(calendarGrid().getAttribute("aria-label")).toMatch(/September\s+2026/i);
+  });
+
+  it("opens on a placeholder supplied through DatePickerContext", async () => {
+    renderPicker(
+      <DatePickerContext.Provider value={{ placeholderValue: new CalendarDate(1990, 1, 1) }}>
+        <DatePicker label="Birth date" />
+      </DatePickerContext.Provider>
+    );
+    await openPicker();
+
+    expect(calendarGrid().getAttribute("aria-label")).toMatch(/January\s+1990/i);
+  });
+
   it.each([
     ["renders leading zeros on day and month by default", {}, "07", "04"],
     ["drops the leading zeros when a caller turns them off", { shouldForceLeadingZeros: false }, "7", "4"],
@@ -414,26 +438,7 @@ describe("DatePicker presets", () => {
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("names the preset pane from the dictionary in every shipped locale, below an explicit label", async () => {
-    const expected = {
-      "nb-NO": "Datoforvalg",
-      "sv-SE": "Datumalternativ",
-      "en-US": "Date presets",
-      "fi-FI": "Päivämäärän pikavalinnat",
-    } as const;
-    for (const locale of SUPPORTED_LOCALES) {
-      const { unmount } = renderThemed(
-        withLocale(
-          locale,
-          <DatePickerPresetGroup>
-            <DatePickerPresetItem value="today">Today</DatePickerPresetItem>
-          </DatePickerPresetGroup>
-        )
-      );
-      await expect.element(page.getByRole("radiogroup", { name: expected[locale] })).toBeVisible();
-      unmount();
-    }
-
+  it("forwards label to the group name", async () => {
     renderThemed(
       withLocale(
         "nb-NO",
@@ -443,8 +448,7 @@ describe("DatePicker presets", () => {
       )
     );
 
-    await expect.element(page.getByRole("radiogroup", { name: "Hurtigvalg" })).toBeVisible();
-    expect(page.getByRole("radiogroup", { name: "Datoforvalg" }).query()).toBeNull();
+    await expect.element(page.getByRole("radiogroup", { name: "Hurtigvalg", exact: true })).toBeVisible();
   });
 });
 

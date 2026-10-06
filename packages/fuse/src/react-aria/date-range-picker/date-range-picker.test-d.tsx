@@ -2,7 +2,11 @@ import { CalendarDate } from "@internationalized/date";
 import { expectTypeOf, test } from "vitest";
 
 import type * as DateRangePickerApi from "@elmeragroup/fuse/react-aria/date-range-picker";
-import { DateRangePicker } from "@elmeragroup/fuse/react-aria/date-range-picker";
+import {
+  DateRangePicker,
+  DateRangePickerPresetGroup,
+  DateRangePickerPresetItem,
+} from "@elmeragroup/fuse/react-aria/date-range-picker";
 
 test("no private overlay part, recipe, or RAC type leaks through the entry", () => {
   expectTypeOf<typeof DateRangePickerApi>().not.toHaveProperty("dateRangePickerVariants");
@@ -26,7 +30,7 @@ test("no private overlay part, recipe, or RAC type leaks through the entry", () 
   type _NoAria = DateRangePickerApi.AriaDateRangePickerProps;
 });
 
-test("the element takes the public props and rejects an invented axis", () => {
+test("the elements take the public props and reject an invented axis", () => {
   const july = { start: new CalendarDate(2026, 7, 14), end: new CalendarDate(2026, 7, 21) };
   const _basic = (
     <DateRangePicker label="Delivery window" description="When we may deliver." defaultValue={july} />
@@ -60,12 +64,33 @@ test("the element takes the public props and rejects an invented axis", () => {
       }}
     />
   );
+  const _presets = (
+    <DateRangePicker
+      label="Period"
+      presetGroup={
+        <DateRangePickerPresetGroup label="Hurtigvalg" onChange={(value) => value.length}>
+          <DateRangePickerPresetItem value="today">Today</DateRangePickerPresetItem>
+          <DateRangePickerPresetItem
+            description="Rolling week"
+            isCloseDialogOnDoubleClick
+            value="last-7-days">
+            Last 7 days
+          </DateRangePickerPresetItem>
+        </DateRangePickerPresetGroup>
+      }
+    />
+  );
+  const _guardedPresets = <DateRangePicker label="Period" presetGroup={false} />;
   const _container = <DateRangePicker container={document.body} label="Delivery window" />;
 
   // @ts-expect-error no size axis
   const _noSize = <DateRangePicker label="Delivery window" size="md" />;
-  // @ts-expect-error presets are DatePicker's alone
-  const _noPresets = <DateRangePicker label="Delivery window" presetGroup={<span>Today</span>} />;
+  // @ts-expect-error the preset group's label is copy, not a node
+  const _noNodeLabel = <DateRangePickerPresetGroup label={<span>Presets</span>} />;
+  // @ts-expect-error the double-click opt-in is a boolean flag, not a handler
+  const _noFlagFn = <DateRangePickerPresetItem isCloseDialogOnDoubleClick={() => undefined} value="x" />;
+  // @ts-expect-error a preset's value is the caller's key, never a range the library would map
+  const _noRangeValue = <DateRangePickerPresetItem value={{ start: july.start, end: july.end }} />;
   // @ts-expect-error the value surface is a range, never a single date
   const _noSingleValue = <DateRangePicker label="Delivery window" value={new CalendarDate(2026, 7, 14)} />;
   // @ts-expect-error container takes an element or a ref, never a selector
