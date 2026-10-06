@@ -73,11 +73,12 @@ type Variant = "internal" | "fkas" | "tkas" | "guen";
 /**
  * Corner radii in px. External themes change only their standalone buttons, so the external
  * values outside `button` and `calendar nav` are the ones Chromium measured on origin/main
- * (e178f6d7) with each theme on the document. Buttons inside a field box, a button group or
+ * (e178f6d7) with each theme on the document. The tkas row has since moved 0.8px with its
+ * `--radius`, from 0.95rem to 1rem. Buttons inside a field box, a button group or
  * a preset list keep the radius they had there. The standalone button values and the
  * internal row come from the palette literals. Internal rounds every element with
  * `--radius`, 0.375rem (6px). An external button rounds with the brand's `--radius-button`,
- * which is 1.8125rem (29px) for fkas, 0.95rem (15.2px) for tkas and 0.5rem (8px) for guen.
+ * which is 1.8125rem (29px) for fkas, 1rem (16px) for tkas and 0.5rem (8px) for guen.
  */
 const EXPECTED = {
   internal: {
@@ -127,24 +128,24 @@ const EXPECTED = {
     "chip remove": 10,
   },
   tkas: {
-    button: 15.2,
-    "grouped button": 13.2,
-    card: 15.2,
-    input: 13.2,
-    badge: 15.2,
-    toggle: 13.2,
+    button: 16,
+    "grouped button": 14,
+    card: 16,
+    input: 14,
+    badge: 16,
+    toggle: 14,
     "toggle xs": 10,
     checkbox: 4,
-    "input group": 13.2,
-    kbd: 10.2,
-    "addon xs": 10.2,
-    "addon sm": 13.2,
-    frame: 19.2,
+    "input group": 14,
+    kbd: 11,
+    "addon xs": 11,
+    "addon sm": 14,
+    frame: 20,
     calendar: 4,
-    "calendar nav": 15.2,
-    tab: 13.2,
+    "calendar nav": 16,
+    tab: 14,
     "phone trigger": 4,
-    "search clear": 13.2,
+    "search clear": 14,
     "date trigger": 10,
     preset: 10,
     "chip remove": 10,

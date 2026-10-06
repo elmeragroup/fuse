@@ -255,11 +255,8 @@ describe("fuse-figma sync", () => {
       assert.deepStrictEqual(rungs(dark("external-fkas-private")), [6, 8, 10, 12, 16]);
       // external-guen-private sets 0.5rem, 8px.
       assert.deepStrictEqual(rungs(light("external-guen-private")), [2, 4, 6, 8, 12]);
-      // external-tkas-private sets 0.95rem, 15.2px. Figma stores each value as a 32-bit float.
-      assert.deepStrictEqual(
-        rungs(light("external-tkas-private")),
-        [9.2, 11.2, 13.2, 15.2, 19.2].map(Math.fround)
-      );
+      // external-tkas-private sets 1rem, 16px.
+      assert.deepStrictEqual(rungs(light("external-tkas-private")), [10, 12, 14, 16, 20]);
       // No component uses radius-popover, so the sync gives designers no variable for it.
       assert.notInclude(figma.variableNames("Fuse tokens"), "radius-popover");
       assert.notInclude(figma.variableNames("Fuse themes"), "light/radius-popover");

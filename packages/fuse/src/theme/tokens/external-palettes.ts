@@ -66,8 +66,8 @@ export const EXTERNAL_PALETTES = {
     "feature-foreground": "oklch(0.90178 0.09399 190.62)",
     border: "oklch(0.929 0.0126 255.53)",
     input: "oklch(0.929 0.0126 255.53)",
-    radius: "0.95rem",
-    "radius-button": "0.95rem",
+    radius: "1rem",
+    "radius-button": "1rem",
     "font-heading": "var(--font-sans)",
   },
   guen: {
