@@ -28,6 +28,9 @@ describe("accordionVariants", () => {
     expect(defaults.trigger()).not.toContain("transition-all");
     expect(defaults.item()).not.toContain("bg-card");
     expect(defaults.content()).not.toContain("pl-7");
+    expect(defaults.icon()).toContain("shrink-0");
+    expect(defaults.icon()).not.toContain("absolute");
+    expect(defaults.indicator()).toContain("shrink-0");
 
     const card = accordionVariants({ variant: "card" });
     expect(card.base()).toContain("space-y-3");
@@ -50,6 +53,9 @@ describe("accordionVariants", () => {
     expect(info.trigger()).toContain("data-[panel-open]:pb-0");
     expect(info.icon()).toContain("absolute");
     expect(info.icon()).toContain("right-0");
+    expect(info.indicator()).toContain("absolute");
+    expect(info.indicator()).toContain("right-0");
+    expect(defaults.indicator()).not.toContain("absolute");
     expect(info.content()).toContain("pl-7");
     expect(info.item()).not.toContain("bg-card");
   });
@@ -96,6 +102,7 @@ describe("accordionVariants", () => {
         slots.item(),
         slots.header(),
         slots.trigger(),
+        slots.indicator(),
         slots.icon(),
         slots.content(),
         slots.contentInner(),
@@ -111,6 +118,15 @@ describe("accordionVariants", () => {
     for (const radius of RADII) {
       expect(accordionVariants({ radius }).item().length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("accordionVariants hasIndicator", () => {
+  it("packs the trigger's children at the start when it has no indicator", () => {
+    expect(accordionVariants({ hasIndicator: false }).trigger()).toContain("justify-start");
+    expect(accordionVariants({ hasIndicator: false }).trigger()).not.toContain("justify-between");
+    expect(accordionVariants({ hasIndicator: true }).trigger()).toContain("justify-between");
+    expect(accordionVariants().trigger()).toContain("justify-between");
   });
 });
 

@@ -1,6 +1,9 @@
+import type { ReactNode } from "react";
+
 import { expectTypeOf, test } from "vitest";
 
 import { Accordion } from "@elmeragroup/fuse/accordion";
+import { Plus } from "@elmeragroup/fuse/icons";
 
 test("Root takes the array value shape, multiple, and recipe axes — never radix type or collapsible", () => {
   expectTypeOf<Parameters<typeof Accordion.Root>[0]["multiple"]>().toEqualTypeOf<boolean | undefined>();
@@ -57,4 +60,12 @@ test("Root takes the array value shape, multiple, and recipe axes — never radi
   const _badRadius = <Accordion.Root radius="md" />;
   // @ts-expect-error polymorphism is never an `as` prop
   const _noAs = <Accordion.Trigger as="div" />;
+});
+
+test("Trigger takes an optional ReactNode indicator, including null", () => {
+  expectTypeOf<Parameters<typeof Accordion.Trigger>[0]["indicator"]>().toEqualTypeOf<ReactNode | undefined>();
+
+  const _none = <Accordion.Trigger indicator={null}>Shipping</Accordion.Trigger>;
+  const _custom = <Accordion.Trigger indicator={<Plus />}>Shipping</Accordion.Trigger>;
+  const _default = <Accordion.Trigger>Shipping</Accordion.Trigger>;
 });

@@ -29,7 +29,7 @@ export const HOME_PAGE = {
 } as const;
 
 /** Every authored Overview and Handbook page, in nav order. */
-export const STATIC_PAGES = [
+export const STATIC_PAGES: readonly StaticPage[] = [
   {
     href: "/quick-start",
     label: "Quick start",
@@ -103,10 +103,7 @@ export const STATIC_PAGES = [
       "The AI-docs surface: the generated llms.txt index and the per-component markdown endpoints.",
     group: "handbook",
   },
-] as const satisfies readonly StaticPage[];
-
-/** The route of an authored Overview or Handbook page. */
-export type StaticHref = (typeof STATIC_PAGES)[number]["href"];
+];
 
 export function staticPagesIn(group: StaticNavGroup): readonly StaticPage[] {
   return STATIC_PAGES.filter((page) => page.group === group);
