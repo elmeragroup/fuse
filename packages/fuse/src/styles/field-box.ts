@@ -33,6 +33,13 @@ export const fieldBoxChromeClass = cn(
 export const readOnlyFillClass = "[&[readonly]:not(:disabled)]:bg-muted";
 
 /**
+ * Cancels {@link readOnlyFillClass} on a control that sits inside a box that paints the fill
+ * itself (InputGroup's root, TextField's card). It shares the fill's variant, so
+ * tailwind-merge replaces the fill instead of keeping both.
+ */
+export const readOnlyFillCancelClass = "[&[readonly]:not(:disabled)]:bg-transparent";
+
+/**
  * NumberField group chrome — same elevation as Input, `within` focus. The group box is the
  * control, so it takes the within-target state face: it dims once and shows the
  * `not-allowed` cursor when its own `data-focus-ring-control` input, a direct child, is

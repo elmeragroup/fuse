@@ -5,7 +5,14 @@ import { describe, expect, it } from "vitest";
 
 import { Input } from "../components/input/input";
 import { Textarea } from "../components/textarea/textarea";
-import { fieldBox, fieldBoxChromeClass } from "./field-box";
+import { cn } from "./cn";
+import {
+  fieldBox,
+  fieldBoxChromeClass,
+  inputGroupRootClass,
+  readOnlyFillCancelClass,
+  readOnlyFillClass,
+} from "./field-box";
 import { selfFocusRingClass } from "./utils";
 
 function tokens(classes: string): string[] {
@@ -84,6 +91,17 @@ describe("fieldBox recipe", () => {
     expect(content).toContain("py-2");
     expect(content).not.toContain("h-(--control-h-md)");
     expect(content).not.toContain("h-auto");
+  });
+
+  it("spells the read-only predicate once across the fill, its cancel and InputGroup's root", () => {
+    // Unit: the three literals Tailwind must find as written. Oracle: the attribute predicate the
+    // fill documents. tailwind-merge only replaces the fill with its cancel when the two share
+    // one variant, and the root only reads its control when it uses the same predicate.
+    const predicate = "[readonly]:not(:disabled)";
+    expect(readOnlyFillClass).toBe(`[&${predicate}]:bg-muted`);
+    expect(readOnlyFillCancelClass).toBe(`[&${predicate}]:bg-transparent`);
+    expect(tokens(inputGroupRootClass)).toContain(`has-[>[data-focus-ring-control]${predicate}]:bg-muted`);
+    expect(tokens(cn(fieldBox(), readOnlyFillCancelClass))).not.toContain(readOnlyFillClass);
   });
 
   it("survives both hosts uncancelled: every recipe class reaches the DOM", () => {
