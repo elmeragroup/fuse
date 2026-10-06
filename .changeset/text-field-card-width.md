@@ -1,5 +1,5 @@
 ---
-"@elmeragroup/fuse": patch
+"@elmeragroup/fuse": minor
 ---
 
 `TextField variant="card"` now stretches the input across the card. Before, the input kept its
