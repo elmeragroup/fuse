@@ -17,12 +17,25 @@ export const fieldFrameVariants = tv({
   slots: {
     root: "group flex flex-col gap-1",
     labelRow: "flex items-center justify-between",
+    label: "",
     content: "flex flex-col gap-1",
     description: "text-sm text-pretty",
+  },
+  variants: {
+    /**
+     * A legend-mode description sits directly under a visible legend (Figma). The legend gives
+     * up its trailing margin and the description cancels the fieldset's gap above it;
+     * the fieldset gap still separates it from the options. Without a description the
+     * legend keeps its margin, so the label-to-options distance does not change.
+     */
+    legendDescription: {
+      true: { label: "mb-0", description: "-mt-3" },
+    },
   },
 });
 
 const fieldFrameSlots = fieldFrameVariants();
+const legendDescriptionSlots = fieldFrameVariants({ legendDescription: true });
 
 /** Default `Field.Root` stack for labeled (non-legend) composites. */
 export const fieldFrameRootClass = fieldFrameSlots.root();
@@ -132,11 +145,23 @@ export function FieldFrame({
 }: FieldFrameProps): ReactElement {
   const hasCrossfade = isPending || isSuccess;
   const hasStatus = status != null || hasCrossfade;
+  // Only a visible legend leaves a margin and a fieldset gap above the description to
+  // cancel. Without one the description opens the fieldset, and a status-only row keeps
+  // the group gap. A visually hidden legend is out of flow, so it leaves nothing to cancel.
+  const legendDescription = heading === "legend" && Boolean(label) && !isLabelHidden && Boolean(description);
   // `sr-only` takes the hidden part out of flow, so it leaves no row height or gap. The
   // row goes with the label only when no status face needs it.
-  const headingClass = cn(isLabelHidden && "sr-only", classNames?.label);
+  const headingClass = cn(
+    isLabelHidden && "sr-only",
+    legendDescription && legendDescriptionSlots.label(),
+    classNames?.label
+  );
   const descriptionNode = description ? (
-    <FieldDescription className={cn(fieldFrameDescriptionClass, classNames?.description)}>
+    <FieldDescription
+      className={cn(
+        legendDescription ? legendDescriptionSlots.description() : fieldFrameDescriptionClass,
+        classNames?.description
+      )}>
       {description}
     </FieldDescription>
   ) : null;
