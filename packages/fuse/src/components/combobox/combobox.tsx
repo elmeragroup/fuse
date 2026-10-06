@@ -18,7 +18,7 @@ import { isTextValueNode } from "../../internal/is-text-node";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import { controlMd } from "../../styles/control-size-md";
-import { compactCornerClass } from "../../styles/corner-radius";
+import { chipCornerClass, fieldCornerClass } from "../../styles/corner-radius";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { withinStateFaceClass, withinStateFaceControlClass } from "../../styles/state-face";
 import { withinFocusRingClass, withinFocusRingControlClass } from "../../styles/utils";
@@ -375,7 +375,8 @@ export function ComboboxChips({
           className,
           controlMd.minHeight(),
           controlMd.inset(),
-          "text-sm shadow-xs flex flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent bg-clip-padding py-1.5 transition-[color,box-shadow] has-data-[slot=combobox-chip]:px-1.5",
+          "text-sm shadow-xs flex flex-wrap items-center gap-1.5 border border-input bg-transparent bg-clip-padding py-1.5 transition-[color,box-shadow] has-data-[slot=combobox-chip]:px-1.5",
+          fieldCornerClass,
           withinFocusRingClass,
           withinStateFaceClass
         )}
@@ -442,7 +443,8 @@ export function ComboboxChip({
       // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- chip chrome is compact token, not a control rung
       className={mergeClassName(
         className,
-        "text-xs font-medium flex h-[calc(--spacing(5.5))] w-fit items-center justify-center gap-1 rounded-sm bg-muted px-1.5 whitespace-nowrap text-foreground has-data-[slot=combobox-chip-remove]:pr-0.5"
+        "text-xs font-medium flex h-[calc(--spacing(5.5))] w-fit items-center justify-center gap-1 bg-muted px-1.5 whitespace-nowrap text-foreground has-data-[slot=combobox-chip-remove]:pr-0.5",
+        chipCornerClass
       )}
       {...props}>
       {children}
@@ -485,7 +487,7 @@ function ComboboxChipRemove({ label }: { label: string }): ReactElement {
           variant="ghost"
           size="icon-inline"
           aria-label={label}
-          // The remove button sits inside a chip in the field box, so it takes the compact
+          // The remove button sits inside a chip in the field box, so it takes the chip's
           // corner instead of Button's `--radius-button`. The inline square is as tall as the
           // chip's 16px line and fits inside it. Without preflight a native button keeps the
           // browser's own font, so the button sets the chip's xs type itself. Its hit area
@@ -493,7 +495,7 @@ function ComboboxChipRemove({ label }: { label: string }): ReactElement {
           // the target 24px. The target reaches into the chip's inset and the chips' gap
           // without meeting the next chip. The glyph takes the xs size, as on Button's
           // smallest square.
-          className={cn("text-xs border-0 opacity-50 enabled-hover:opacity-100", compactCornerClass)}
+          className={cn("text-xs border-0 opacity-50 enabled-hover:opacity-100", chipCornerClass)}
         />
       }
       aria-label={label}>

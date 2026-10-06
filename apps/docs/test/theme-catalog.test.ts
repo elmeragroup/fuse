@@ -18,9 +18,9 @@ const ILLEGAL_SLUGS = [
   "external-fkse-company",
 ] as const;
 
-// Counts the derived `secondary-hover` role, the `radius-step` rung spacing and the two
-// outline Button roles.
-const ROLE_TOKEN_COUNT = 81;
+// Counts the derived `secondary-hover` role, the `radius-step` rung spacing, the
+// `radius-field` field corner and the two outline Button roles.
+const ROLE_TOKEN_COUNT = 82;
 
 function catalogTheme(slug: string): ThemeCatalogEntry {
   const theme = THEME_CATALOG.themes.find((entry) => entry.slug === slug);

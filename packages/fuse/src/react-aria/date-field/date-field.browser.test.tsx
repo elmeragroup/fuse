@@ -23,6 +23,7 @@ import {
   stampDensity,
 } from "../../../test/themed-browser-render";
 import { Input } from "../../components/input/input";
+import { fieldCornerClass } from "../../styles/corner-radius";
 import { ThemeScope } from "../../theme";
 import { UiProviders } from "../ui-providers/ui-providers";
 import { DateField, DateInput } from "./date-field";
@@ -319,7 +320,8 @@ describe("DateField field-box chrome", () => {
     expect(px(dateBox.borderTopWidth)).toBeGreaterThan(0);
     expect(dateBox.backgroundColor).not.toBe("rgba(0, 0, 0, 0)");
 
-    for (const rung of ["rounded-md", "shadow-xs"]) {
+    // The field corner is one arbitrary class, the shared owner's literal.
+    for (const rung of [fieldCornerClass, "shadow-xs"]) {
       expect(dateElement.classList.contains(rung), `DateField lost ${rung}`).toBe(true);
       expect(inputElement.classList.contains(rung), `Input lost ${rung}`).toBe(true);
     }

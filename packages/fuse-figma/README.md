@@ -26,7 +26,7 @@ The token values come from `resolveThemeCatalog` in `@elmeragroup/fuse/theme-cat
 - A derived role, such as `secondary-hover`, becomes the literal color that composition computes, because Figma variables cannot mix colors.
 - The `Fuse tokens`, `Fuse primitives` and `Fuse density` variables carry web code syntax. A token, primitive or metric carries its `var()`, such as `var(--primary)`. A radius rung carries the `calc()` that `fuse.css` declares, such as `calc(var(--radius) - 3 * var(--radius-step, 0px))`. `fuse.css` declares the rungs in `@theme inline`, so Tailwind inlines them into its utilities, and the built CSS declares no `--radius-sm` property. A test requires every `var()` in the code syntax to name a property that the built `styles.css` or `themes.css` declares.
 - Colors and font families appear in every picker. Figma's REST documentation says scopes currently apply only to FLOAT and COLOR variables, so font families do not get the font picker scope yet.
-- Each length token names its picker scope in a table in `fuse-variable-set.ts`, so a new length token does not compile until someone picks one. `radius`, `radius-button` and the radius rungs get the corner radius picker, and `button-outline-width` gets the stroke picker.
+- Each length token names its picker scope in a table in `fuse-variable-set.ts`, so a new length token does not compile until someone picks one. `radius`, `radius-button`, `radius-field` and the radius rungs get the corner radius picker, and `button-outline-width` gets the stroke picker.
 - `radius-step` gets no picker scope. It is a length, but it spaces the radius rungs and switches between the internal and external variants, so no layer rounds with it. It keeps its code syntax, `var(--radius-step)`.
 
 ## Running it

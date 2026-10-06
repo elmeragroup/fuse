@@ -91,11 +91,14 @@ export const LAYER_DEFAULTS = {
   "sh-sign": "#ed9366",
   "sh-comment": "#abb0b6",
   radius: "0.375rem",
-  // The internal variant rounds every element alike. Buttons alias the one radius, and a
-  // zero step collapses the `rounded-*` scale in `fuse.css` onto it. Each theme rule
-  // resolves the alias against the `--radius` of the element it matches. External palettes
-  // set a brand button radius, and the external variant layer sets the step.
+  // The internal variant rounds every element alike. Buttons and fields alias the one radius,
+  // and a zero step collapses the `rounded-*` scale in `fuse.css` onto it. Each theme rule
+  // resolves the aliases against the `--radius` of the element it matches. External palettes
+  // set a brand button radius, and the external variant layer sets the field radius and the
+  // step. Internal fields read `--radius` itself rather than this alias, so they also follow
+  // a `--radius` override on a plain wrapper (`styles/corner-radius.ts`).
   "radius-button": "var(--radius)",
+  "radius-field": "var(--radius)",
   "radius-step": "0px",
   "button-outline-width": "1px",
   "font-sans": "Roboto, ui-sans-serif, system-ui, sans-serif",

@@ -25,7 +25,8 @@ describe("fieldBoxChromeClass", () => {
     expect(tokens(fieldBoxChromeClass)).toEqual([
       "shadow-xs",
       "box-border",
-      "rounded-md",
+      // The field corner: --radius-field at the external 2px step, --radius at the internal 0px.
+      "rounded-[clamp(var(--radius)-1000*var(--radius-step,0px),var(--radius-field,var(--radius)),var(--radius)+1000*var(--radius-step,0px))]",
       "border",
       "border-input",
       "bg-card",
