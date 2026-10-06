@@ -1,11 +1,14 @@
+import { useState } from "react";
+
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
-import { cssVarColor, headingNamed, renderThemed } from "../../../test/themed-browser-render";
+import { cssVarColor, formNamed, headingNamed, renderThemed } from "../../../test/themed-browser-render";
 import { Field } from "../field";
+import { Form } from "../form/form";
 import { Checkbox, CheckboxDescription, CheckboxGroup } from "./checkbox";
 import { CheckboxItem } from "./checkbox-item";
 
@@ -124,6 +127,69 @@ describe("Checkbox", () => {
     }
     await assertFocusRingAtBothDensities(previous, checkboxNamed("Alerts"));
   });
+
+  it("submits what each box shows after native reset, controlled or not, and keeps focus", async () => {
+    function MarketingConsent() {
+      const [checked, setChecked] = useState(true);
+      return (
+        <Field.Root name="marketing">
+          <Checkbox checked={checked} onCheckedChange={setChecked} />
+          <Field.Label>Marketing</Field.Label>
+        </Field.Root>
+      );
+    }
+    renderThemed(
+      <form aria-label="Consents">
+        <Field.Root name="terms">
+          <Checkbox />
+          <Field.Label>Terms</Field.Label>
+        </Field.Root>
+        <MarketingConsent />
+        <input name="note" aria-label="Note" />
+      </form>
+    );
+    await userEvent.fill(page.getByRole("textbox", { name: "Note", exact: true }), "Call first");
+    await userEvent.click(checkboxNamed("Terms"));
+    await userEvent.click(checkboxNamed("Marketing"));
+
+    formNamed("Consents").reset();
+    // The native note empties, and each box keeps what it shows and submits that.
+    await vi.waitFor(() => {
+      expect([...new FormData(formNamed("Consents")).entries()]).toEqual([
+        ["terms", "on"],
+        ["note", ""],
+      ]);
+    });
+    expect(checkboxNamed("Terms").getAttribute("aria-checked")).toBe("true");
+    expect(checkboxNamed("Marketing").getAttribute("aria-checked")).toBe("false");
+    expect(document.activeElement).toBe(checkboxNamed("Marketing"));
+  });
+
+  it("submits what the box shows after a form action resets the form", async () => {
+    const send = vi.fn<(data: FormData) => Promise<void>>(() => Promise.resolve());
+    renderThemed(
+      <form aria-label="Order" action={send}>
+        <Field.Root name="terms">
+          <Checkbox defaultChecked />
+          <Field.Label>Terms</Field.Label>
+        </Field.Root>
+        <input name="note" aria-label="Note" />
+        <button type="submit">Send</button>
+      </form>
+    );
+    const note = page.getByRole("textbox", { name: "Note", exact: true });
+    await userEvent.fill(note, "Call first");
+    await userEvent.click(checkboxNamed("Terms"));
+    await userEvent.click(page.getByRole("button", { name: "Send", exact: true }));
+    expect(send.mock.calls[0]?.[0].has("terms")).toBe(false);
+
+    // React's reset after the action empties the note; the box then submits what it shows.
+    await expect.element(note).toHaveValue("");
+    await vi.waitFor(() => {
+      expect([...new FormData(formNamed("Order")).entries()]).toEqual([["note", ""]]);
+    });
+    expect(checkboxNamed("Terms").getAttribute("aria-checked")).toBe("false");
+  });
 });
 
 describe("CheckboxGroup", () => {
@@ -229,6 +295,45 @@ describe("CheckboxGroup", () => {
 
     await userEvent.click(page.getByRole("button", { name: "Save", exact: true }));
     expect(submitted).toEqual([["pepperoni"]]);
+  });
+
+  it("submits each group's shown selection after native reset and keeps a Form error", async () => {
+    function Extras() {
+      const [value, setValue] = useState<string[]>([]);
+      return (
+        <CheckboxGroup name="extras" label="Extras" value={value} onChange={setValue}>
+          <CheckboxItem value="insurance">Insurance</CheckboxItem>
+        </CheckboxGroup>
+      );
+    }
+    renderThemed(
+      <Form aria-label="Add-ons" errors={{ sauces: "Pick a sauce." }}>
+        <CheckboxGroup name="toppings" label="Toppings" defaultValue={["pepperoni"]}>
+          <CheckboxItem value="pepperoni">Pepperoni</CheckboxItem>
+          <CheckboxItem value="mushroom">Mushroom</CheckboxItem>
+        </CheckboxGroup>
+        <Extras />
+        <CheckboxGroup name="sauces" label="Sauces">
+          <CheckboxItem value="garlic">Garlic</CheckboxItem>
+        </CheckboxGroup>
+      </Form>
+    );
+    await expect.element(page.getByText("Pick a sauce.", { exact: true })).toBeInTheDocument();
+    await userEvent.click(checkboxNamed("Pepperoni"));
+    await userEvent.click(checkboxNamed("Mushroom"));
+    await userEvent.click(checkboxNamed("Insurance"));
+
+    formNamed("Add-ons").reset();
+    await vi.waitFor(() => {
+      expect([...new FormData(formNamed("Add-ons")).entries()]).toEqual([
+        ["toppings", "mushroom"],
+        ["extras", "insurance"],
+      ]);
+    });
+    expect(checkboxNamed("Pepperoni").getAttribute("aria-checked")).toBe("false");
+    expect(checkboxNamed("Mushroom").getAttribute("aria-checked")).toBe("true");
+    expect(checkboxNamed("Insurance").getAttribute("aria-checked")).toBe("true");
+    expect(page.getByText("Pick a sauce.", { exact: true }).query()).not.toBeNull();
   });
 });
 

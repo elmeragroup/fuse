@@ -7,6 +7,7 @@ import { Field as FieldPrimitive } from "@base-ui/react/field";
 import { tv } from "tailwind-variants";
 import type { VariantProps } from "tailwind-variants";
 
+import { useCheckedResetSync } from "../../hooks/use-checked-reset-sync";
 import { CheckCircle } from "../../icons/generated/check-circle";
 import { Circle } from "../../icons/generated/circle";
 import { definedProps } from "../../internal/defined-props";
@@ -70,7 +71,9 @@ export type CheckboxCardProps = Omit<
 /**
  * Selectable marketing or product card over the base-ui Checkbox primitive. Client
  * component, because it wires Field.Item, the label and the checkbox primitive. It needs a
- * `Field.Root` ancestor, and a checkbox-group ancestor for `value` membership.
+ * `Field.Root` ancestor, and a checkbox-group ancestor for `value` membership. Native form
+ * reset, including React's reset after a form action, keeps the current state and what the form
+ * submits in step; an uncontrolled card does not return to `defaultChecked`.
  */
 export function CheckboxCard({
   children,
@@ -81,8 +84,10 @@ export function CheckboxCard({
   rightContent,
   isDisabled,
   value,
+  inputRef,
   ...other
 }: CheckboxCardProps): ReactElement {
+  const syncedInputRef = useCheckedResetSync(inputRef);
   return (
     <FieldPrimitive.Item>
       <Card.Root className={checkboxCardStyles({ variant, isDisabled })}>
@@ -90,6 +95,7 @@ export function CheckboxCard({
           {/* oxlint-disable-next-line elmera/no-local-focus-ring -- label is not the focus target; the checkbox owns the adapter */}
           <FieldPrimitive.Label className="group flex grow cursor-pointer items-center gap-3 bg-clip-padding outline-hidden has-disabled:cursor-not-allowed">
             <CheckboxPrimitive.Root
+              inputRef={syncedInputRef}
               value={value}
               disabled={isDisabled}
               className={cn(

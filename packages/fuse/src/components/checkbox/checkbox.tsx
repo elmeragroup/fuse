@@ -5,6 +5,7 @@ import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
 import { CheckboxGroup as CheckboxGroupPrimitive } from "@base-ui/react/checkbox-group";
 
+import { useCheckedResetSync } from "../../hooks/use-checked-reset-sync";
 import { Check } from "../../icons/generated/check";
 import { Minus } from "../../icons/generated/minus";
 import { definedProps } from "../../internal/defined-props";
@@ -24,14 +25,19 @@ import { selectionGroupOrientationVariants } from "../selection-item/selection-i
  * when indeterminate, `Check` otherwise. Labeled usage composes `Field.Root` and
  * `Field.Label`, or `CheckboxItem`. A disabled checkbox dims to 50% on its own, also
  * outside a field. Internal themes round the box with the one radius, and external themes
- * keep the reference's 4px corner.
+ * keep the reference's 4px corner. Native form reset, including React's reset after a form
+ * action, keeps the current state and what the form submits in step; an uncontrolled checkbox
+ * does not return to `defaultChecked`.
  */
 export function Checkbox({
   className,
+  inputRef,
   ...props
 }: ComponentProps<typeof CheckboxPrimitive.Root>): ReactElement {
+  const syncedInputRef = useCheckedResetSync(inputRef);
   return (
     <CheckboxPrimitive.Root
+      inputRef={syncedInputRef}
       data-slot="checkbox"
       className={mergeClassName(
         className,
@@ -111,7 +117,9 @@ export type CheckboxGroupProps = {
 
 /**
  * Labeled checkbox group composite over Field and base-ui CheckboxGroup. Client component,
- * because it wires Field validity and the group primitive.
+ * because it wires Field validity and the group primitive. Native form reset, including
+ * React's reset after a form action, keeps the selection and what the form submits in step for
+ * Fuse members; an uncontrolled group does not return to `defaultValue`.
  */
 export function CheckboxGroup({
   label,

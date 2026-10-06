@@ -1,9 +1,11 @@
+import { useState } from "react";
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
-import { px, renderThemed, stampDensity } from "../../../test/themed-browser-render";
+import { formNamed, px, renderThemed, stampDensity } from "../../../test/themed-browser-render";
 import { Field } from "../field";
 import { Switch } from "./switch";
 
@@ -176,6 +178,28 @@ describe("Switch", () => {
     await userEvent.click(page.getByRole("button", { name: "Save", exact: true }));
     expect(alerts).toEqual(["yes"]);
     expect(quiet).toEqual([null]);
+  });
+
+  it("submits what each switch shows after native reset, controlled or not", async () => {
+    function Alerts() {
+      const [checked, setChecked] = useState(true);
+      return <Switch name="alerts" aria-label="Alerts" checked={checked} onCheckedChange={setChecked} />;
+    }
+    renderThemed(
+      <form aria-label="Settings">
+        <Switch name="newsletter" aria-label="Newsletter" />
+        <Alerts />
+      </form>
+    );
+    await userEvent.click(switchNamed("Newsletter"));
+    await userEvent.click(switchNamed("Alerts"));
+
+    formNamed("Settings").reset();
+    await vi.waitFor(() => {
+      expect([...new FormData(formNamed("Settings")).entries()]).toEqual([["newsletter", "on"]]);
+    });
+    expect(switchNamed("Newsletter").getAttribute("aria-checked")).toBe("true");
+    expect(switchNamed("Alerts").getAttribute("aria-checked")).toBe("false");
   });
 
   it("keeps optical track and thumb sizes identical at both densities and under nested data-density", () => {

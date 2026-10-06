@@ -1,11 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
-import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
+import { cssVarColor, formNamed, renderThemed } from "../../../test/themed-browser-render";
 import { CheckboxGroup } from "../checkbox/checkbox";
+import { Field } from "../field";
 import { CheckboxCard } from "./checkbox-card";
 
 function checkboxNamed(name: string, checked?: boolean): HTMLElement {
@@ -68,6 +69,23 @@ describe("CheckboxCard", () => {
     );
     expect(checkboxNamed("Insurance", false).getAttribute("aria-checked")).toBe("false");
     expect(fieldItemFor("Insurance").getAttribute("data-slot")).toBeNull();
+  });
+
+  it("submits what the card shows after native reset", async () => {
+    renderThemed(
+      <form aria-label="Extras">
+        <Field.Root name="insurance">
+          <CheckboxCard title="Insurance" description="Covers everything." />
+        </Field.Root>
+      </form>
+    );
+    await userEvent.click(checkboxNamed("Insurance"));
+
+    formNamed("Extras").reset();
+    await vi.waitFor(() => {
+      expect([...new FormData(formNamed("Extras")).entries()]).toEqual([["insurance", "on"]]);
+    });
+    expect(checkboxNamed("Insurance").getAttribute("aria-checked")).toBe("true");
   });
 
   it("toggles from the title and description and isolates rightContent clicks", async () => {
