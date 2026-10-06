@@ -58,12 +58,12 @@ describe("control size: consumer utilities replace the recipe's", () => {
 });
 
 /**
- * The text-entry pair: the md inset, the density type and the 16px coarse-pointer floor that
+ * The text-entry pair: the md inset, the density type and the 16px `entry-floor` floor that
  * keeps iOS Safari from zooming into a focused dense field. The expected strings are written
  * by hand; `control-size.browser.test.tsx` measures the floor itself.
  */
 describe("control size: the text-entry inset-and-type pair", () => {
-  const FLOOR = "pointer-coarse:[--entry-text:max(16px,var(--control-text))]";
+  const FLOOR = "entry-floor:[--entry-text:max(16px,var(--control-text))]";
   const FLOORED_TYPE = "text-[length:var(--entry-text,var(--control-text))]";
 
   /** Class order carries no meaning, so the pair is compared as a set. */

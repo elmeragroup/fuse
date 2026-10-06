@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseCssBlocks, parseStyleRules } from "./css-rules";
+import { parseCssBlocks, parseScopedDeclarations, parseStyleRules } from "./css-rules";
 
 const SHEET = `
 @import "tw-animate-css";
@@ -60,5 +60,19 @@ describe("parseCssBlocks", () => {
 describe("parseStyleRules", () => {
   it("keeps only the blocks whose prelude is a selector", () => {
     expect(parseStyleRules(SHEET).map((rule) => rule.selector)).toEqual([":root", "&:where([data-open])"]);
+  });
+});
+
+describe("parseScopedDeclarations", () => {
+  it("reports the same selector and condition for a nested and a flattened rule", () => {
+    const nested = `.a { color: red; @media (pointer: coarse) { --x: 1; } }`;
+    const flattened = `@media (pointer: coarse) { .a { --x: 1; } }`;
+    expect(parseScopedDeclarations(nested)).toEqual([
+      { name: "color", value: "red", scope: [".a"] },
+      { name: "x", value: "1", scope: [".a", "@media (pointer: coarse)"] },
+    ]);
+    expect(parseScopedDeclarations(flattened)).toEqual([
+      { name: "x", value: "1", scope: ["@media (pointer: coarse)", ".a"] },
+    ]);
   });
 });
