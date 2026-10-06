@@ -660,6 +660,34 @@ describe("Button", () => {
     }
   );
 
+  it.each(["card", "popover"] as const)(
+    "lifts a hovered external dark ghost button off a %s, which its muted hover tint must not repeat",
+    async (surface) => {
+      render(
+        <div data-theme="dark">
+          <ThemeScope theme={fkasExternal}>
+            <div data-testid="surface" style={{ background: `var(--${surface})`, padding: 8 }}>
+              <Button variant="ghost" className="transition-none">
+                Close
+              </Button>
+            </div>
+          </ThemeScope>
+        </div>
+      );
+      const surfaceColor = computedOklch(
+        getComputedStyle(page.getByTestId("surface").element()).backgroundColor
+      );
+      const button = roleNamed("button", "Close");
+
+      await userEvent.hover(button);
+      // `computedOklch` throws on a translucent color, so a hover that leaves the ghost
+      // transparent, showing the surface through it, fails here too.
+      await vi.waitFor(() => {
+        expect(computedOklch(getComputedStyle(button).backgroundColor).l).toBeGreaterThan(surfaceColor.l);
+      });
+    }
+  );
+
   it("lets a consumer shadow class replace the outline shadow", () => {
     renderThemed(
       <Button variant="outline" className="shadow-none">

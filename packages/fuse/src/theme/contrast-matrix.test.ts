@@ -159,6 +159,18 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
     pairs: [["accent", "popover"]],
     floor: 1.1,
   },
+  {
+    // `hover:bg-muted` over a card or popover, such as a ghost Button in a Dialog, with the
+    // same 1.1:1 floor as the menu row. Dark only: light muted is the shadcn 0.97 on a white
+    // card, 1.09:1, a design value this floor does not yet override.
+    schemes: ["dark"],
+    matches: () => true,
+    pairs: [
+      ["muted", "popover"],
+      ["muted", "card"],
+    ],
+    floor: 1.1,
+  },
   { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(CHART_ROLES), floor: 3 },
   { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(SYNTAX_ROLES), floor: 4.5 },
   { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(["input", "ring"]), floor: 3 },
