@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { Input } from "../components/input/input";
+import { textFieldVariants } from "../components/text-field/text-field-variants";
 import { Textarea } from "../components/textarea/textarea";
 import { cn } from "./cn";
 import {
@@ -20,13 +21,13 @@ function tokens(classes: string): string[] {
 }
 
 /** The entities React writes into an attribute value, such as the `&` of `[&[readonly]]:`. */
-const ATTRIBUTE_ENTITIES: Record<string, string> = {
-  "&amp;": "&",
-  "&lt;": "<",
-  "&gt;": ">",
-  "&quot;": '"',
-  "&#x27;": "'",
-};
+const ATTRIBUTE_ENTITIES = new Map([
+  ["&amp;", "&"],
+  ["&lt;", "<"],
+  ["&gt;", ">"],
+  ["&quot;", '"'],
+  ["&#x27;", "'"],
+]);
 
 function renderedClasses(element: ReturnType<typeof createElement>): string[] {
   const match = /class="([^"]*)"/.exec(renderToStaticMarkup(element));
@@ -34,7 +35,7 @@ function renderedClasses(element: ReturnType<typeof createElement>): string[] {
     throw new Error("rendered markup has no class attribute");
   }
   return tokens(
-    match[1].replaceAll(/&(?:amp|lt|gt|quot|#x27);/g, (entity) => ATTRIBUTE_ENTITIES[entity] ?? entity)
+    match[1].replaceAll(/&(?:amp|lt|gt|quot|#x27);/g, (entity) => ATTRIBUTE_ENTITIES.get(entity) ?? entity)
   );
 }
 
@@ -93,7 +94,7 @@ describe("fieldBox recipe", () => {
     expect(content).not.toContain("h-auto");
   });
 
-  it("spells the read-only predicate once across the fill, its cancel and InputGroup's root", () => {
+  it("spells the read-only predicate once across the fill, its cancel and the boxes that paint it", () => {
     // Unit: the three literals Tailwind must find as written. Oracle: the attribute predicate the
     // fill documents. tailwind-merge only replaces the fill with its cancel when the two share
     // one variant, and the root only reads its control when it uses the same predicate.
@@ -101,6 +102,9 @@ describe("fieldBox recipe", () => {
     expect(readOnlyFillClass).toBe(`[&${predicate}]:bg-muted`);
     expect(readOnlyFillCancelClass).toBe(`[&${predicate}]:bg-transparent`);
     expect(tokens(inputGroupRootClass)).toContain(`has-[>[data-focus-ring-control]${predicate}]:bg-muted`);
+    expect(tokens(textFieldVariants({ variant: "card" }).base())).toContain(
+      `has-[input${predicate}]:bg-muted`
+    );
     expect(tokens(cn(fieldBox(), readOnlyFillCancelClass))).not.toContain(readOnlyFillClass);
   });
 

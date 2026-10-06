@@ -135,6 +135,10 @@
   that a bridge rendered first in `Toast.Provider` replays. For the second, Fuse runs
   `promise()` over its own `add` and `update`. Remove each workaround once Fuse installs a
   fixed release.
+- Finish the read-only field fill. Select's trigger (`components/select/select.tsx`) and
+  Combobox's chips box (`components/combobox/combobox.tsx`) take no read-only fill, and
+  `TextField variant="card"` still paints the borderless input's disabled band across the card
+  (`components/text-field/text-field-variants.ts`) where the read-only fill now paints the card.
 - `Item.Root hidden` stays visible in a host without Tailwind's preflight. The user-agent rule
   `[hidden] { display: none }` loses to the item's `flex` class; preflight makes `[hidden]`
   `display: none !important`. Decide whether `Item.Root`, and the other parts whose root sets

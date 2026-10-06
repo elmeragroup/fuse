@@ -30,14 +30,14 @@ export const fieldBoxChromeClass = cn(
  * `:read-only`, which also matches a disabled input and a file input, and it leaves a
  * disabled box its disabled fill.
  */
-export const readOnlyFillClass = "[&[readonly]:not(:disabled)]:bg-muted";
+export const readOnlyFillClass = cn("[&[readonly]:not(:disabled)]:bg-muted");
 
 /**
  * Cancels {@link readOnlyFillClass} on a control that sits inside a box that paints the fill
  * itself (InputGroup's root, TextField's card). It shares the fill's variant, so
  * tailwind-merge replaces the fill instead of keeping both.
  */
-export const readOnlyFillCancelClass = "[&[readonly]:not(:disabled)]:bg-transparent";
+export const readOnlyFillCancelClass = cn("[&[readonly]:not(:disabled)]:bg-transparent");
 
 /**
  * NumberField group chrome — same elevation as Input, `within` focus. The group box is the

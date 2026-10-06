@@ -355,6 +355,7 @@ describe("DateField field-box chrome", () => {
         <Textarea aria-label="Note" readOnly defaultValue="Locked" />
         <TextField label="Customer" isReadOnly defaultValue="Locked" />
         <TextField label="Nickname" variant="inline" isReadOnly defaultValue="Locked" />
+        <TextField label="Editable nickname" variant="inline" defaultValue="Ada" />
         <TextField label="Annual usage" variant="card" isReadOnly defaultValue="4200" />
         <InputGroup.Root>
           <InputGroup.Addon>
@@ -392,7 +393,12 @@ describe("DateField field-box chrome", () => {
       expect.soft(getComputedStyle(control).backgroundColor, `${name} control`).toBe("rgba(0, 0, 0, 0)");
     }
 
-    // The inline field's hover reveal does not repaint a read-only one as editable.
+    // The inline field's hover reveal repaints an editable one, but not a read-only one.
+    const editable = textboxNamed("Editable nickname");
+    await userEvent.hover(editable);
+    await expect
+      .poll(() => getComputedStyle(editable).backgroundColor)
+      .toBe(cssVarColor(dateElement, "--background"));
     await userEvent.hover(textboxNamed("Nickname"));
     expect(getComputedStyle(textboxNamed("Nickname")).backgroundColor).toBe(readOnlyFill);
   });
