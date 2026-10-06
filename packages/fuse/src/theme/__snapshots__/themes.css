@@ -270,8 +270,8 @@
   --border: oklch(0.929 0.0126 255.53);
   --input: oklch(0.929 0.0126 255.53);
   --button-outline: var(--foreground);
-  --radius: 0.95rem;
-  --radius-button: 0.95rem;
+  --radius: 1rem;
+  --radius-button: 1rem;
   --radius-step: 2px;
   --button-outline-width: 2px;
   --font-heading: var(--font-sans);
@@ -808,8 +808,8 @@
   --sh-jsxliterals: oklch(0.8156596 0.1022421 190.6206);
   --sh-sign: oklch(0.91205 0.0286161 218.9613);
   --sh-comment: oklch(0.8280204 0.0042636 121.5755);
-  --radius: 0.95rem;
-  --radius-button: 0.95rem;
+  --radius: 1rem;
+  --radius-button: 1rem;
   --radius-step: 2px;
   --button-outline-width: 2px;
   --font-heading: var(--font-sans);

@@ -101,8 +101,8 @@ describe("resolveThemeCatalog", () => {
       value: 10,
     });
     expect(theme("external-fkas-private").schemes.dark.rungs["radius-xl"].value).toBe(16);
-    // external-tkas-private sets 0.95rem, 15.2px, so radius-xs is 15.2 - 3 * 2.
-    expect(light("external-tkas-private").rungs["radius-xs"].value).toBeCloseTo(9.2, 9);
+    // external-tkas-private sets 1rem, 16px, so radius-xs is 16 - 3 * 2.
+    expect(light("external-tkas-private").rungs["radius-xs"].value).toBe(10);
     // Internal themes keep 0.375rem, 6px, and step 0px, so every rung is 6px.
     expect(light("internal-elma-private").rungs["radius-xs"].value).toBe(6);
     expect(light("internal-elma-private").rungs["radius-xl"].value).toBe(6);
