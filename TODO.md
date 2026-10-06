@@ -212,15 +212,6 @@ Every overlay on a side of the hero window must close when that side hides, thro
 new overlay that skips both keeps its scroll lock after a flip. Add a lint rule, or a browser test
 that opens every overlay on a side before flipping the window.
 
-## Open Graph images
-
-- The component specimens in `apps/docs/src/og/specimens/` redraw each Fuse recipe from
-  tokens by hand. A recipe change in `packages/fuse` does not reach them, and no test compares
-  the two. Review the specimens when a recipe's radius, border, padding or default variant
-  changes, or add a cross-check against the recipe classes.
-- The images draw the light palette only, and set Code in Roboto because the repo ships no
-  monospace font. Add a dark variant or a mono face if design asks for them.
-
 ## Product-triggered work
 
 - When Base UI offers suitable date primitives, migrate the interim React Aria tier.

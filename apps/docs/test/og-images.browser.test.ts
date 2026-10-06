@@ -37,8 +37,8 @@ async function cardImage(pathname: string): Promise<string> {
 
 describe("Open Graph cards", () => {
   for (const [pathname, origin, imagePath] of [
-    ["/", TEST_RUNTIME_ORIGIN, "/og/landing?theme=external-elma-private"],
-    ["/?theme=external-fkas-private", TEST_RUNTIME_ORIGIN, "/og/landing?theme=external-fkas-private"],
+    ["/", TEST_RUNTIME_ORIGIN, "/og/landing"],
+    ["/?theme=external-fkas-private", TEST_RUNTIME_ORIGIN, "/og/landing"],
     ["/handbook/theme-matrix", BUILD_FALLBACK_ORIGIN, "/og/docs/handbook/theme-matrix"],
     ["/components/button", BUILD_FALLBACK_ORIGIN, "/og/components/button"],
   ] as const) {
@@ -51,15 +51,14 @@ describe("Open Graph cards", () => {
     });
   }
 
-  it("passes only the canonical landing theme on, never the raw parameter", async () => {
+  it("names the same landing image whatever ?theme= says", async () => {
     for (const query of [
+      "?theme=internal-fkas-company",
       "?theme=external-fkab-private",
       "?theme=EXTERNAL-FKAS-PRIVATE",
       "?theme=a&theme=b",
     ]) {
-      expect(await cardImage(`/${query}`), query).toBe(
-        `${TEST_RUNTIME_ORIGIN}/og/landing?theme=external-elma-private`
-      );
+      expect(await cardImage(`/${query}`), query).toBe(`${TEST_RUNTIME_ORIGIN}/og/landing`);
     }
   });
 
