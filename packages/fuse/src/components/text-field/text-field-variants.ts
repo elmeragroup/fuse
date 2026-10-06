@@ -33,10 +33,11 @@ export const textFieldVariants = tv({
         input: "text-lg rounded-none border-none p-0",
         label: "text-muted-foreground",
         container: "flex flex-row items-center gap-3",
-        // A flex item sizes to its content, so without these the wrapper keeps the input's
-        // intrinsic width and the input's w-full resolves against that, not the row.
+        // The wrapper's zero flex basis sizes it from the row, not from the input's intrinsic
+        // width, so the input fills whatever the description leaves. The description takes at
+        // most half the row: past that it wraps, so it can never squeeze the input away.
         inputContainer: "min-w-0 flex-1",
-        description: "text-muted-foreground",
+        description: "max-w-1/2 text-muted-foreground",
       },
       inline: {
         base: "group/inline-field",
