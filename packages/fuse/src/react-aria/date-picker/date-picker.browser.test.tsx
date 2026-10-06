@@ -25,6 +25,7 @@ import {
   segmentLocator,
   segmentNamed,
   STACKED_VIEWPORT,
+  SUBPIXEL,
   unionBox,
 } from "../../../test/rac-calendar-testing";
 import {
@@ -489,9 +490,9 @@ describe("DatePicker preset pane geometry", () => {
     const divider = column.getBoundingClientRect();
 
     expect(px(getComputedStyle(column).borderRightWidth)).toBeGreaterThan(0);
-    expect(divider.top).toBe(inner.top);
-    expect(divider.bottom).toBe(inner.bottom);
-    expect(divider.left).toBe(inner.left);
+    expect(Math.abs(divider.top - inner.top)).toBeLessThanOrEqual(SUBPIXEL);
+    expect(Math.abs(divider.bottom - inner.bottom)).toBeLessThanOrEqual(SUBPIXEL);
+    expect(Math.abs(divider.left - inner.left)).toBeLessThanOrEqual(SUBPIXEL);
   });
 
   it("runs the stacked divider from the dialog's start edge to its end edge", async () => {
@@ -502,9 +503,9 @@ describe("DatePicker preset pane geometry", () => {
     const divider = column.getBoundingClientRect();
 
     expect(px(getComputedStyle(column).borderBottomWidth)).toBeGreaterThan(0);
-    expect(divider.left).toBe(inner.left);
-    expect(divider.right).toBe(inner.right);
-    expect(divider.top).toBe(inner.top);
+    expect(Math.abs(divider.left - inner.left)).toBeLessThanOrEqual(SUBPIXEL);
+    expect(Math.abs(divider.right - inner.right)).toBeLessThanOrEqual(SUBPIXEL);
+    expect(Math.abs(divider.top - inner.top)).toBeLessThanOrEqual(SUBPIXEL);
   });
 
   it.each([
@@ -517,10 +518,10 @@ describe("DatePicker preset pane geometry", () => {
     const items = unionBox([presetTargetNamed("Today"), presetTargetNamed("In a week")]);
     const insets = insetsWithin(paddingBox(roleNamed("radiogroup", "Date presets")), items);
 
-    expect(insets.top).toBeGreaterThanOrEqual(8);
-    expect(insets.right).toBeGreaterThanOrEqual(8);
-    expect(insets.bottom).toBeGreaterThanOrEqual(8);
-    expect(insets.left).toBeGreaterThanOrEqual(8);
+    expect(insets.top).toBeGreaterThanOrEqual(8 - SUBPIXEL);
+    expect(insets.right).toBeGreaterThanOrEqual(8 - SUBPIXEL);
+    expect(insets.bottom).toBeGreaterThanOrEqual(8 - SUBPIXEL);
+    expect(insets.left).toBeGreaterThanOrEqual(8 - SUBPIXEL);
   });
 
   it.each([

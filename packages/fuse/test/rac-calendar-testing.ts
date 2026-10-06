@@ -241,6 +241,12 @@ export function paddingBox(element: HTMLElement): BoxEdges {
 export const ROW_VIEWPORT = { width: 1024, height: 896 } as const;
 export const STACKED_VIEWPORT = { width: 414, height: 896 } as const;
 
+/**
+ * Tolerance for comparing layout pixels. Chromium on Linux reports fractional layout
+ * (7.999996px for an 8px padding), so geometry assertions allow this much drift.
+ */
+export const SUBPIXEL = 0.01;
+
 /** How far `inner` sits inside `outer` on each side; negative where it pokes out. */
 export function insetsWithin(outer: BoxEdges, inner: BoxEdges): BoxEdges {
   return {
