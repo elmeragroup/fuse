@@ -93,12 +93,8 @@
   checks over translucent fills, such as the Alert action's, throw `InvalidColor` until it
   does. Also correct the notation list in `packages/color/src/css-color.ts`, which names only
   `rgb()`, `oklch()` and `lab()` as Chromium's computed serializations.
-- No select demo shows `Select.Content alignItemWithTrigger`; only `select.browser.test.tsx`
-  exercises it. Add a demo beside the page and list it in the component inventory.
-- `Select.Content` measures its fixed-position containing block when it mounts, when its portal
-  target resizes and when Base UI reports an open request (`select/select.tsx`). A host that
-  sets `open` from its own code, without a trigger event, after it transforms an ancestor
-  of the target, gets the earlier measurement, and the popup opens away from its trigger.
+- No select demo shows `Select.Content alignItemWithTrigger`; only browser tests and the landing
+  exercise it. Add a demo beside the page and list it in the component inventory.
 - React Aria 3.52.1 misjudges the room around a popover inside a positioned container. In
   `react-aria/dist/private/overlays/calculatePosition.mjs`, `getOffset` (lines 363-371) measures
   a boundary in page coordinates and adds the document scroll. `getPosition` (line 300)

@@ -259,7 +259,8 @@ export function NewOrderForm({ onSaved }: NewOrderFormProps): ReactElement {
               <Select.Trigger>
                 <Select.Value />
               </Select.Trigger>
-              <Select.Content>
+              {/* Item alignment would misplace the popup inside the window's transformed scope. */}
+              <Select.Content alignItemWithTrigger={false}>
                 {(["none", ...CAMPAIGNS] as const).map((value) => (
                   <Select.Item key={value} value={value}>
                     {CAMPAIGN_ITEMS[value]}

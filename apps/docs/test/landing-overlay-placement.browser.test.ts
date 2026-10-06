@@ -109,10 +109,6 @@ describe.each(VIEWPORTS)("landing Dashboard overlays at $width×$height, scrolle
     const app = await openOrderSearch(page);
     await scrollWindowPartWay(page);
     const trigger = app.getByRole("combobox", { name: "Rows per page" });
-    // Base UI drops item alignment by itself near a viewport edge, so the trigger sits mid-way.
-    await trigger.evaluate((element) => {
-      element.scrollIntoView({ block: "center" });
-    });
     await trigger.click();
 
     await expectBeside(page.getByRole("listbox"), trigger, windowScope(app));

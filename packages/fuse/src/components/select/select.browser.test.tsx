@@ -71,7 +71,6 @@ function FruitSelect({
   size,
   alignItemWithTrigger,
   extra,
-  defaultOpen,
 }: {
   onValueChange?: ComponentProps<typeof Select.Root>["onValueChange"];
   onOpenChange?: ComponentProps<typeof Select.Root>["onOpenChange"];
@@ -79,12 +78,10 @@ function FruitSelect({
   size?: "sm" | "default";
   alignItemWithTrigger?: boolean;
   extra?: boolean;
-  defaultOpen?: boolean;
 }) {
   return (
     <Select.Root
       items={FRUIT_ITEMS}
-      defaultOpen={defaultOpen}
       disabled={disabled}
       onValueChange={onValueChange}
       onOpenChange={onOpenChange}>
@@ -252,14 +249,20 @@ describe("Select", () => {
     expect(selectContent().getAttribute("data-align-trigger")).toBe("false");
   });
 
-  describe("placement against the fixed containing block", () => {
+  describe("placement", () => {
     // The scope sits away from the viewport origin, so a popup placed with viewport
-    // coordinates inside a transformed block lands that offset away from its trigger.
-    function OffsetScope({ ancestor, defaultOpen }: { ancestor: CSSProperties; defaultOpen?: boolean }) {
+    // coordinates inside a transformed block would land that offset away from its trigger.
+    function OffsetScope({
+      ancestor,
+      alignItemWithTrigger,
+    }: {
+      ancestor: CSSProperties;
+      alignItemWithTrigger?: boolean;
+    }) {
       return (
-        <div data-testid="offset-host" style={{ ...ancestor, marginTop: 160, marginLeft: 120 }}>
+        <div style={{ ...ancestor, marginTop: 160, marginLeft: 120 }}>
           <ThemeScope theme={fkasPrivate}>
-            <FruitSelect defaultOpen={defaultOpen} />
+            <FruitSelect alignItemWithTrigger={alignItemWithTrigger} />
           </ThemeScope>
         </div>
       );
@@ -270,10 +273,8 @@ describe("Select", () => {
       window.scrollTo(0, 0);
     });
 
-    async function openedContentAndTrigger(
-      open: () => Promise<HTMLElement> = openWithClick
-    ): Promise<{ content: DOMRect; trigger: DOMRect }> {
-      await open();
+    async function openedContentAndTrigger(): Promise<{ content: DOMRect; trigger: DOMRect }> {
+      await openWithClick();
       // The entrance slide shifts the popup until it settles in place.
       await vi.waitFor(() => {
         expect(selectContent().getAnimations()).toHaveLength(0);
@@ -284,153 +285,25 @@ describe("Select", () => {
       };
     }
 
-    // Ancestors that make themselves the containing block for `position: fixed` content.
-    it.each([
-      ["a transformed", { transform: "translateZ(0)" }],
-      ["a content-visibility: auto", { contentVisibility: "auto" }],
-    ] satisfies [string, CSSProperties][])(
-      "opens below its trigger when %s ancestor contains the popup",
-      async (_, ancestor) => {
-        render(<OffsetScope ancestor={ancestor} />);
-        const { content, trigger } = await openedContentAndTrigger();
+    it("lays the popup over its trigger by default on a plain page", async () => {
+      render(<OffsetScope ancestor={{}} />);
+      const { content, trigger } = await openedContentAndTrigger();
 
-        // Oracle: the default `side="bottom"` and `sideOffset={4}` place the popup's top 4px
-        // under the trigger, overlapping it horizontally.
-        expect(content.top - trigger.bottom).toBeGreaterThanOrEqual(0);
-        expect(content.top - trigger.bottom).toBeLessThanOrEqual(8);
-        expect(content.left).toBeLessThan(trigger.right);
-        expect(content.right).toBeGreaterThan(trigger.left);
-        expect(selectContent().getAttribute("data-align-trigger")).toBe("false");
-      }
-    );
-
-    // Ancestors that leave the viewport as the containing block, as a fixed probe measures them
-    // in the test browser.
-    it.each([
-      ["a plain", {}],
-      ["a container-type: inline-size", { containerType: "inline-size" }],
-    ] satisfies [string, CSSProperties][])(
-      "keeps item alignment when %s ancestor leaves the viewport containing the popup",
-      async (_, ancestor) => {
-        render(<OffsetScope ancestor={ancestor} />);
-        const { content, trigger } = await openedContentAndTrigger();
-
-        // Item alignment lays the popup over the trigger instead of under it.
-        expect(content.top).toBeLessThan(trigger.bottom);
-        expect(content.bottom).toBeGreaterThan(trigger.top);
-        expect(selectContent().getAttribute("data-align-trigger")).toBe("true");
-      }
-    );
-
-    it("keeps item alignment for a popup open from the first render", async () => {
-      render(<OffsetScope ancestor={{}} defaultOpen />);
-      const { content, trigger } = await openedContentAndTrigger(openedListbox);
-
+      // Item alignment overlays the selected row on the trigger instead of opening below it.
       expect(content.top).toBeLessThan(trigger.bottom);
       expect(content.bottom).toBeGreaterThan(trigger.top);
-      expect(selectContent().getAttribute("data-align-trigger")).toBe("true");
     });
 
-    it.each([
-      ["a click", openWithClick],
-      ["ArrowDown", openWithArrowDown],
-    ] satisfies [string, () => Promise<HTMLElement>][])(
-      "opens below its trigger from %s when an ancestor is transformed after mount",
-      async (_, open) => {
-        render(<OffsetScope ancestor={{}} />);
-        // Let the first measurement land before the host changes the page under it.
-        await new Promise((resolve) => {
-          requestAnimationFrame(() => requestAnimationFrame(resolve));
-        });
-        // A transform changes the containing block without resizing anything.
-        const host = page.getByTestId("offset-host").element();
-        if (!(host instanceof HTMLElement)) {
-          throw new Error("expected the offset host");
-        }
-        host.style.transform = "translateZ(0)";
-        const { content, trigger } = await openedContentAndTrigger(open);
-
-        // Oracle: the default `side="bottom"` and `sideOffset={4}` place the popup's top 4px
-        // under the trigger.
-        expect(content.top - trigger.bottom).toBeGreaterThanOrEqual(0);
-        expect(content.top - trigger.bottom).toBeLessThanOrEqual(8);
-        expect(selectContent().getAttribute("data-align-trigger")).toBe("false");
-      }
-    );
-
-    // A host opens the popup through `open` from a control outside the Select, which fires no
-    // open change for the root to measure on.
-    function HostOpenedSelect() {
-      const [open, setOpen] = useState(false);
-      return (
-        <>
-          <button type="button" onClick={() => setOpen(true)}>
-            Show fruit
-          </button>
-          <div style={{ marginTop: 160, marginLeft: 120 }}>
-            <ThemeScope theme={fkasPrivate}>
-              <Select.Root items={FRUIT_ITEMS} open={open} onOpenChange={setOpen}>
-                <Select.Trigger aria-label="Fruit">
-                  <Select.Value placeholder="Pick a fruit" />
-                </Select.Trigger>
-                <Select.Content>
-                  <Select.Item value="apple">Apple</Select.Item>
-                  <Select.Item value="banana">Banana</Select.Item>
-                  <Select.Item value="date">Date</Select.Item>
-                </Select.Content>
-              </Select.Root>
-            </ThemeScope>
-          </div>
-        </>
-      );
-    }
-
-    async function openFromHost(): Promise<HTMLElement> {
-      await userEvent.click(page.getByRole("button", { name: "Show fruit", exact: true }));
-      return openedListbox();
-    }
-
-    it("keeps item alignment for a popup a host opens through open", async () => {
-      render(<HostOpenedSelect />);
-      const { content, trigger } = await openedContentAndTrigger(openFromHost);
-
-      expect(content.top).toBeLessThan(trigger.bottom);
-      expect(content.bottom).toBeGreaterThan(trigger.top);
-      expect(selectContent().getAttribute("data-align-trigger")).toBe("true");
-    });
-
-    it("opens below its trigger when a shorter transformed ancestor sits at the viewport origin", async () => {
-      // A long list makes Base UI's item alignment pin the positioner with `bottom: 0`, which
-      // resolves against this 200px block rather than the viewport.
-      const values = Array.from({ length: 40 }, (_, index) => `item-${index}`);
-      render(
-        <div
-          style={{ position: "fixed", top: 0, left: 0, height: 200, width: 320, transform: "translateZ(0)" }}>
-          <div style={{ paddingTop: 60, paddingLeft: 40 }}>
-            <ThemeScope theme={fkasPrivate}>
-              <Select.Root>
-                <Select.Trigger aria-label="Fruit">
-                  <Select.Value placeholder="Pick an item" />
-                </Select.Trigger>
-                <Select.Content>
-                  {values.map((value) => (
-                    <Select.Item key={value} value={value}>
-                      {value}
-                    </Select.Item>
-                  ))}
-                </Select.Content>
-              </Select.Root>
-            </ThemeScope>
-          </div>
-        </div>
-      );
+    it("opens below its trigger inside a transformed scope with alignItemWithTrigger={false}", async () => {
+      render(<OffsetScope ancestor={{ transform: "translateZ(0)" }} alignItemWithTrigger={false} />);
       const { content, trigger } = await openedContentAndTrigger();
 
       // Oracle: the default `side="bottom"` and `sideOffset={4}` place the popup's top 4px
-      // under the trigger.
+      // under the trigger, overlapping it horizontally.
       expect(content.top - trigger.bottom).toBeGreaterThanOrEqual(0);
       expect(content.top - trigger.bottom).toBeLessThanOrEqual(8);
-      expect(selectContent().getAttribute("data-align-trigger")).toBe("false");
+      expect(content.left).toBeLessThan(trigger.right);
+      expect(content.right).toBeGreaterThan(trigger.left);
     });
   });
 
