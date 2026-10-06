@@ -184,6 +184,7 @@
     "demos": [
       "date-range-picker-basic.tsx",
       "date-range-picker-controlled.tsx",
+      "date-range-picker-presets.tsx",
       "date-range-picker-validation.tsx",
       "date-range-picker-states.tsx",
       "date-range-picker-in-modal.tsx"

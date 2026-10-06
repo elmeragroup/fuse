@@ -176,7 +176,10 @@ const EXPECTED_ENTRIES = {
     inRootBarrel: false,
     runtimeExports: ["DatePicker", "DatePickerPresetGroup", "DatePickerPresetItem"],
   },
-  "react-aria/date-range-picker": { inRootBarrel: false, runtimeExports: ["DateRangePicker"] },
+  "react-aria/date-range-picker": {
+    inRootBarrel: false,
+    runtimeExports: ["DateRangePicker", "DateRangePickerPresetGroup", "DateRangePickerPresetItem"],
+  },
   "react-aria/file-trigger": { inRootBarrel: false, runtimeExports: ["FileTrigger"] },
   "react-aria/focusable": { inRootBarrel: false, runtimeExports: ["Focusable", "useFocusable"] },
   "react-aria/grid-list": { inRootBarrel: false, runtimeExports: ["GridList", "GridListItem"] },
