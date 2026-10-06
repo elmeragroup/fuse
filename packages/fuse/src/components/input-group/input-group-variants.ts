@@ -8,6 +8,8 @@ import { fieldFlushCornerClass, insetCornerClass, kbdInsetCornerClass } from "..
  * Module-private recipe for the group's addon rail. `align` places
  * the rail inline (leading/trailing) or as a full-width block row; the Root
  * switches to a column and re-pads the input from the emitted `data-align`.
+ * An inline rail holding a button drops its block padding, so a 24px addon
+ * button fits the dense md field box without overflowing it.
  * The kbd takes the inset corner, 5px inside `--radius` and never rounder than the field box
  * in external themes, and the one radius in the internal variant.
  */
@@ -18,8 +20,8 @@ export const inputGroupAddonVariants = tv({
   ),
   variants: {
     align: {
-      "inline-start": "order-first pl-2 has-[>button]:-ml-1 has-[>kbd]:ml-[-0.15rem]",
-      "inline-end": "order-last pr-2 has-[>button]:-mr-1 has-[>kbd]:mr-[-0.15rem]",
+      "inline-start": "order-first pl-2 has-[>button]:-ml-1 has-[>button]:py-0 has-[>kbd]:ml-[-0.15rem]",
+      "inline-end": "order-last pr-2 has-[>button]:-mr-1 has-[>button]:py-0 has-[>kbd]:mr-[-0.15rem]",
       "block-start":
         "order-first w-full justify-start px-2.5 pt-2 group-has-[>input]/input-group:pt-2 [.border-b]:pb-2",
       "block-end":

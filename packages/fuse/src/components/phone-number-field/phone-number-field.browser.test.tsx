@@ -21,10 +21,13 @@ import {
 } from "../../../test/phone-browser-queries";
 import { EXCLUDED_PRODUCT_COUNTRY_CODES, FLAG_GAP_COUNTRY_CODES } from "../../../test/phone-picker-contract";
 import {
+  CONTROL_MD,
   fieldRootFrom,
   formNamed,
+  px,
   renderThemed,
   roleNamed,
+  stampDensity,
   textboxNamed,
 } from "../../../test/themed-browser-render";
 import { flagAssets } from "../../flags";
@@ -107,6 +110,25 @@ describe("PhoneNumberField", () => {
     expect(page.getByRole("button", { name: "Mobile", exact: true }).query()).toBeNull();
     expect(textboxNamed("Mobile")).toBeTruthy();
     expect(textboxNamed("Mobile")).toHaveProperty("inputMode", "tel");
+  });
+
+  it("fits the country trigger inside the md field box at the 24px target floor, at both densities", () => {
+    renderField(<PhoneNumberField label="Mobile" />);
+    const trigger = roleNamed("button", "Select country");
+    // The InputGroup rail drops its block padding only for a direct <button> child.
+    expect(trigger.tagName).toBe("BUTTON");
+    expect(trigger.parentElement?.getAttribute("data-slot")).toBe("input-group-addon");
+    for (const density of ["dense", "comfortable"] as const) {
+      stampDensity(density);
+      const group = inputGroupRoot("Mobile");
+      const groupBox = group.getBoundingClientRect();
+      expect(px(getComputedStyle(group).height), density).toBe(CONTROL_MD[density].height);
+      expect(trigger.getBoundingClientRect().height, density).toBeGreaterThanOrEqual(24);
+      const railBox = trigger.parentElement?.getBoundingClientRect();
+      expect(railBox?.height, `${density} rail`).toBeLessThanOrEqual(group.clientHeight);
+      expect(railBox?.top, `${density} rail top`).toBeGreaterThanOrEqual(groupBox.top);
+      expect(railBox?.bottom, `${density} rail bottom`).toBeLessThanOrEqual(groupBox.bottom);
+    }
   });
 
   it("keeps the Field label and description when a wrapper forwards id and ARIA props as undefined", async () => {
