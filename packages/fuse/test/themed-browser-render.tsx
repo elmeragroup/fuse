@@ -87,6 +87,16 @@ export const CONTROL_LG = {
   comfortable: controlBoxWithDensityType("lg", "comfortable"),
 } as const;
 
+/**
+ * The xs and sm control type in pixels: Tailwind's fixed `text-xs` and `text-sm` at the 16px
+ * root, 0.75rem / 1rem and 0.875rem / 1.25rem. No density owns them, so they are written here
+ * by hand.
+ */
+export const FIXED_CONTROL_TYPE = {
+  xs: { font: 12, leading: 16 },
+  sm: { font: 14, leading: 20 },
+} as const;
+
 afterEach(() => {
   document.documentElement.removeAttribute("data-density");
 });
