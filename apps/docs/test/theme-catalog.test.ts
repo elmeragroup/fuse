@@ -101,7 +101,7 @@ describe("theme catalog payload", () => {
     expect(external.tokens["--brand"]).toBe("var(--brand-fkas)");
     expect(external.tokens["--brand-foreground"]).toBe("var(--brand-fkas-foreground)");
     expect(external.tokens["--destructive"]).toBe("var(--error)");
-    expect(external.tokens["--sidebar-brand"]).toBe("var(--brand)");
+    expect(external.tokens["--sidebar-brand-foreground"]).toBe("var(--brand-foreground)");
 
     expect(THEME_CATALOG.primitives["--brand-fkas"]).toBe("oklch(0.68 0.21747 38.8)");
     expect(THEME_CATALOG.primitives["--brand-fkab"]).toBe("var(--brand-fkas)");

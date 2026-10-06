@@ -1,6 +1,7 @@
 import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
 import { brandPointer } from "./tokens/brand-pointers";
+import type { BrandPointer } from "./tokens/brand-pointers";
 import { derivedRoleSources, EXTERNAL_RESET_KEYS, isDerivedTokenName, TOKEN_NAMES } from "./tokens/contract";
 import type { TokenContract, TokenName } from "./tokens/contract";
 import { DEFAULTS } from "./tokens/defaults";
@@ -8,7 +9,7 @@ import { derivedRoleCss } from "./tokens/derived-tokens";
 import { PRIMITIVE_NAMES, PRIMITIVES } from "./tokens/primitives";
 import { THEME_RESET_KEYS } from "./tokens/reset-keys";
 import { BRAND_CODES, BRANDS, LEGAL_THEMES } from "./tokens/themes";
-import type { ThemeInput } from "./tokens/themes";
+import type { BrandCode, ThemeInput } from "./tokens/themes";
 
 const GENERATED_FILE_HEADER = `/**
  * AUTO-GENERATED FILE — DO NOT EDIT DIRECTLY.
@@ -23,13 +24,13 @@ function cssCustomProperty(name: string, value: string): string {
 }
 
 /**
- * The value a theme rule declares for one composed role. A derived role declares its live
- * `color-mix()`, so the browser mixes the sources of the element that carries the rule.
+ * The value a theme rule declares for one composed role. A mixed derived role declares its
+ * live `color-mix()`, so the browser mixes the sources of the element that carries the rule.
  * Every other role declares its composed value. The catalog, the docs and design tools
  * read the composed literals.
  */
 function cssValue(name: TokenName, value: string): string {
-  return isDerivedTokenName(name) ? derivedRoleCss(name) : value;
+  return isDerivedTokenName(name) ? derivedRoleCss(name, value) : value;
 }
 
 function cssRule(
@@ -87,6 +88,61 @@ function emitRoot(): string {
   return cssRule([":root"], rootDeclarations());
 }
 
+const POINTER_KEYS: ReadonlySet<TokenName> = new Set([
+  "brand",
+  "brand-foreground",
+] satisfies (keyof BrandPointer)[]);
+
+/**
+ * The derived roles that read the brand pointer. A host restyles a brand at the pointer's
+ * weight, one attribute such as `.app[data-theme-brand="tkas"]`, so no rule declares these
+ * roles at more than that weight. The brand pointer carries their light values, and every
+ * dark palette rule leaves them to a companion rule that puts its scheme and variant
+ * qualifiers in `:where()`.
+ */
+const BRAND_SCOPED_KEYS = TOKEN_NAMES.filter(
+  (name) => isDerivedTokenName(name) && derivedRoleSources(name).some((source) => POINTER_KEYS.has(source))
+);
+
+function brandScopedDeclarations(tokens: TokenContract): (readonly [string, string])[] {
+  return BRAND_SCOPED_KEYS.map((key) => [key, cssValue(key, tokens[key])] as const);
+}
+
+/** A dark palette rule's declarations: its reset keys, less the brand-scoped roles. */
+function darkPaletteDeclarations(tokens: TokenContract): (readonly [string, string])[] {
+  return resetDeclarations(
+    tokens,
+    resetKeys("dark").filter((key) => !BRAND_SCOPED_KEYS.includes(key))
+  );
+}
+
+/**
+ * The companion of a dark palette rule: the brand-scoped roles for one brand, with the
+ * scheme and the palette's other qualifiers weighing nothing. It ties the brand pointer and
+ * follows it, so it wins over the pointer's light values, and a host override at the
+ * pointer's weight that comes later wins over it.
+ */
+function darkBrandScopedRule(qualifiers: string, brand: BrandCode, tokens: TokenContract): string {
+  const subject = `[data-theme-brand="${brand}"]`;
+  return cssRule(
+    [
+      `:where([data-theme="dark"]${qualifiers})${subject}`,
+      `:where([data-theme="dark"] ${qualifiers})${subject}`,
+    ],
+    brandScopedDeclarations(tokens)
+  );
+}
+
+function internalTheme(brand: BrandCode): ThemeInput {
+  const theme = LEGAL_THEMES.find(
+    (candidate) => candidate.variant === "internal" && candidate.brand === brand
+  );
+  if (theme === undefined) {
+    throw new Error(`Brand ${brand} has no legal internal theme`);
+  }
+  return theme;
+}
+
 function emitBrandPointers(): string {
   return BRAND_CODES.map((code) => {
     const pointer = brandPointer(code);
@@ -95,8 +151,7 @@ function emitBrandPointers(): string {
       [
         ["brand", pointer.brand],
         ["brand-foreground", pointer["brand-foreground"]],
-        ["sidebar-brand", DEFAULTS["sidebar-brand"]],
-        ["sidebar-brand-foreground", DEFAULTS["sidebar-brand-foreground"]],
+        ...brandScopedDeclarations(composeTheme(internalTheme(code), "light")),
       ]
     );
   }).join("\n\n");
@@ -120,11 +175,17 @@ function internalDarkTheme(): ThemeInput {
 }
 
 function emitInternalDarkPalette(): string {
-  return themeRule(
-    `[data-theme-variant="internal"]`,
-    resetDeclarations(composeTheme(internalDarkTheme(), "dark"), resetKeys("dark")),
+  const variant = `[data-theme-variant="internal"]`;
+  const palette = themeRule(
+    variant,
+    darkPaletteDeclarations(composeTheme(internalDarkTheme(), "dark")),
     "dark"
   );
+  // The shared palette is brand-agnostic, but the brand-scoped roles follow the brand.
+  const brandScoped = BRAND_CODES.map((code) =>
+    darkBrandScopedRule(variant, code, composeTheme(internalTheme(code), "dark"))
+  );
+  return [palette, ...brandScoped].join("\n\n");
 }
 
 /**
@@ -155,7 +216,6 @@ function differsFrom(base: TokenContract, tokens: TokenContract): boolean {
  * emission order instead of by specificity.
  */
 function emitBrandPalettes(colorScheme: ResolvedColorScheme): string {
-  const keys = resetKeys(colorScheme);
   const rules: string[] = [];
   for (const brand of BRAND_CODES) {
     const themes = LEGAL_THEMES.filter((theme) => theme.variant === "external" && theme.brand === brand);
@@ -172,8 +232,14 @@ function emitBrandPalettes(colorScheme: ResolvedColorScheme): string {
     // The dark arm also asks whether the segment departs in light, so it needs the light
     // base beside the composed base it already holds.
     const lightBase = colorScheme === "dark" ? composeTheme(baseTheme, "light") : base;
-    const selector = `[data-theme-variant="external"][data-theme-brand="${brand}"]`;
-    rules.push(themeRule(selector, resetDeclarations(base, keys), colorScheme));
+    const variant = `[data-theme-variant="external"]`;
+    const selector = `${variant}[data-theme-brand="${brand}"]`;
+    if (colorScheme === "dark") {
+      rules.push(themeRule(selector, darkPaletteDeclarations(base), "dark"));
+      rules.push(darkBrandScopedRule(variant, brand, base));
+    } else {
+      rules.push(themeRule(selector, resetDeclarations(base, resetKeys("light")), "light"));
+    }
     for (const theme of themes.filter((candidate) => candidate !== baseTheme)) {
       const lightTokens = composeTheme(theme, "light");
       const lightDeparts = differsFrom(lightBase, lightTokens);
@@ -184,11 +250,17 @@ function emitBrandPalettes(colorScheme: ResolvedColorScheme): string {
       // tkas, guen and elma have a company segment but no sheet, so they get no rule in
       // either scheme.
       if (!departs) continue;
-      const declarations =
-        colorScheme === "dark"
-          ? resetDeclarations(tokens, keys)
-          : changedKeys(base, tokens).map((key) => [key, cssValue(key, tokens[key])] as const);
-      rules.push(themeRule(`${selector}[data-theme-segment="${theme.segment}"]`, declarations, colorScheme));
+      const segment = `[data-theme-segment="${theme.segment}"]`;
+      if (colorScheme === "dark") {
+        rules.push(themeRule(`${selector}${segment}`, darkPaletteDeclarations(tokens), "dark"));
+        // It follows the base companion at the same weight, so the segment's values win.
+        rules.push(darkBrandScopedRule(`${variant}${segment}`, brand, tokens));
+      } else {
+        const declarations = changedKeys(base, tokens).map(
+          (key) => [key, cssValue(key, tokens[key])] as const
+        );
+        rules.push(themeRule(`${selector}${segment}`, declarations, "light"));
+      }
     }
   }
   return rules.join("\n\n");

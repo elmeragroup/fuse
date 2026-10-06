@@ -26,6 +26,21 @@ const SCOPE = `import { ThemeScope } from "@elmeragroup/fuse/theme";
   <TrackSummary />
 </ThemeScope>;`;
 
+const SIDEBAR_BRAND_OVERRIDE = `/* After the Fuse stylesheet, on the element that carries the theme attributes. */
+.app-shell[data-theme-brand="tkas"] {
+  --sidebar-brand: oklch(0.45 0.08 191);
+  --sidebar-brand-foreground: oklch(1 0 0);
+}
+
+/* No one tone reaches 4.5:1 on both sidebars, so dark takes its own pair.
+   The first selector matches under a dark ancestor, the second an element
+   that is dark itself, such as a themed <html>. */
+[data-theme="dark"] .app-shell[data-theme-brand="tkas"],
+.app-shell[data-theme="dark"][data-theme-brand="tkas"] {
+  --sidebar-brand: oklch(0.75 0.08 191);
+  --sidebar-brand-foreground: oklch(0.205 0 0);
+}`;
+
 const NEXT_PAGES = `// pages/_document.tsx
 import { Head, Html, Main, NextScript } from "next/document";
 import {
@@ -223,6 +238,28 @@ export default function ThemingPage(): ReactElement {
         internal variant keeps a 1px <code>var(--border)</code> hairline with a small shadow, which only a 1px
         border casts.
       </p>
+      <p>
+        The sidebar&apos;s brand pair, <code>--sidebar-brand</code> and{" "}
+        <code>--sidebar-brand-foreground</code>, reaches 4.5:1 in every theme and color scheme. Where the
+        brand color falls short on the sidebar, the theme steps its lightness away from the sidebar&apos;s
+        until it passes and keeps the hue, so the tone can differ between light and dark. <code>--brand</code>{" "}
+        keeps the brand color everywhere else.
+      </p>
+      <p>
+        The stylesheet build computes the stepped tones, so the stylesheet declares them as literal colors.
+        Fjordkraft, Fjordkraft Företag and TrøndelagKraft have one in light themes, and Gudbrandsdal Energi,
+        Telinet and Elmera have one in dark themes. In those themes a host override of <code>--brand</code> no
+        longer moves <code>--sidebar-brand</code>. In every dark theme,{" "}
+        <code>--sidebar-brand-foreground</code> is the sidebar color instead of{" "}
+        <code>--brand-foreground</code>. To restyle the sidebar brand, override both sidebar tokens on the
+        element that carries the theme attributes, in a rule after the Fuse stylesheet. The rule applies in
+        both color schemes and both variants, so give the dark scheme its own pair in a second rule. That rule
+        needs two selectors, one for a theme element under a dark ancestor and one for an element that is dark
+        itself, such as a themed <code>&lt;html&gt;</code>.
+      </p>
+      <pre>
+        <code>{SIDEBAR_BRAND_OVERRIDE}</code>
+      </pre>
 
       <h2 id="document-theme">The document theme</h2>
       <p>

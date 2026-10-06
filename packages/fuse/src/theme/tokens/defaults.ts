@@ -71,8 +71,6 @@ export const LAYER_DEFAULTS = {
   "sidebar-accent-foreground": NEUTRAL_950,
   "sidebar-border": NEUTRAL_LINE,
   "sidebar-ring": "var(--ring)",
-  "sidebar-brand": "var(--brand)",
-  "sidebar-brand-foreground": "var(--brand-foreground)",
   "right-panel": "oklch(0.9851 0 0)",
   "right-panel-foreground": "oklch(0.1448 0 0)",
   "chart-1": "oklch(0.289 0.0518 217.7)",

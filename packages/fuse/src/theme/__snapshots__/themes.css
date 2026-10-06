@@ -114,14 +114,14 @@
 [data-theme-brand="fkas"] {
   --brand: var(--brand-fkas);
   --brand-foreground: var(--brand-fkas-foreground);
-  --sidebar-brand: var(--brand);
+  --sidebar-brand: oklch(0.57 0.1834077 38.8);
   --sidebar-brand-foreground: var(--brand-foreground);
 }
 
 [data-theme-brand="tkas"] {
   --brand: var(--brand-tkas);
   --brand-foreground: var(--brand-tkas-foreground);
-  --sidebar-brand: var(--brand);
+  --sidebar-brand: oklch(0.54 0.0929338 191.11);
   --sidebar-brand-foreground: var(--brand-foreground);
 }
 
@@ -135,7 +135,7 @@
 [data-theme-brand="fkab"] {
   --brand: var(--brand-fkab);
   --brand-foreground: var(--brand-fkab-foreground);
-  --sidebar-brand: var(--brand);
+  --sidebar-brand: oklch(0.57 0.1834077 38.8);
   --sidebar-brand-foreground: var(--brand-foreground);
 }
 
@@ -478,6 +478,42 @@
   color-scheme: dark;
 }
 
+:where([data-theme="dark"][data-theme-variant="internal"])[data-theme-brand="fkas"],
+:where([data-theme="dark"] [data-theme-variant="internal"])[data-theme-brand="fkas"] {
+  --sidebar-brand: var(--brand);
+  --sidebar-brand-foreground: var(--sidebar);
+}
+
+:where([data-theme="dark"][data-theme-variant="internal"])[data-theme-brand="tkas"],
+:where([data-theme="dark"] [data-theme-variant="internal"])[data-theme-brand="tkas"] {
+  --sidebar-brand: var(--brand);
+  --sidebar-brand-foreground: var(--sidebar);
+}
+
+:where([data-theme="dark"][data-theme-variant="internal"])[data-theme-brand="guen"],
+:where([data-theme="dark"] [data-theme-variant="internal"])[data-theme-brand="guen"] {
+  --sidebar-brand: oklch(0.6 0.0399 265.73);
+  --sidebar-brand-foreground: var(--sidebar);
+}
+
+:where([data-theme="dark"][data-theme-variant="internal"])[data-theme-brand="fkab"],
+:where([data-theme="dark"] [data-theme-variant="internal"])[data-theme-brand="fkab"] {
+  --sidebar-brand: var(--brand);
+  --sidebar-brand-foreground: var(--sidebar);
+}
+
+:where([data-theme="dark"][data-theme-variant="internal"])[data-theme-brand="fkse"],
+:where([data-theme="dark"] [data-theme-variant="internal"])[data-theme-brand="fkse"] {
+  --sidebar-brand: oklch(0.6016 0.0908 240.16);
+  --sidebar-brand-foreground: var(--sidebar);
+}
+
+:where([data-theme="dark"][data-theme-variant="internal"])[data-theme-brand="elma"],
+:where([data-theme="dark"] [data-theme-variant="internal"])[data-theme-brand="elma"] {
+  --sidebar-brand: oklch(0.59898 0.051828 217.7);
+  --sidebar-brand-foreground: var(--sidebar);
+}
+
 [data-theme="dark"][data-theme-variant="external"][data-theme-brand="fkas"],
 [data-theme="dark"] [data-theme-variant="external"][data-theme-brand="fkas"] {
   --background: oklch(0.1749487 0.003804 164.5613);
@@ -557,6 +593,12 @@
   --button-outline-width: 2px;
   --font-heading: "Neo Sans", var(--font-sans);
   color-scheme: dark;
+}
+
+:where([data-theme="dark"][data-theme-variant="external"])[data-theme-brand="fkas"],
+:where([data-theme="dark"] [data-theme-variant="external"])[data-theme-brand="fkas"] {
+  --sidebar-brand: var(--brand);
+  --sidebar-brand-foreground: var(--sidebar);
 }
 
 [data-theme="dark"][data-theme-variant="external"][data-theme-brand="fkas"][data-theme-segment="company"],
@@ -640,6 +682,12 @@
   color-scheme: dark;
 }
 
+:where([data-theme="dark"][data-theme-variant="external"][data-theme-segment="company"])[data-theme-brand="fkas"],
+:where([data-theme="dark"] [data-theme-variant="external"][data-theme-segment="company"])[data-theme-brand="fkas"] {
+  --sidebar-brand: var(--brand);
+  --sidebar-brand-foreground: var(--sidebar);
+}
+
 [data-theme="dark"][data-theme-variant="external"][data-theme-brand="tkas"],
 [data-theme="dark"] [data-theme-variant="external"][data-theme-brand="tkas"] {
   --background: oklch(0.1749487 0.003804 164.5613);
@@ -719,6 +767,12 @@
   --button-outline-width: 2px;
   --font-heading: var(--font-sans);
   color-scheme: dark;
+}
+
+:where([data-theme="dark"][data-theme-variant="external"])[data-theme-brand="tkas"],
+:where([data-theme="dark"] [data-theme-variant="external"])[data-theme-brand="tkas"] {
+  --sidebar-brand: var(--brand);
+  --sidebar-brand-foreground: var(--sidebar);
 }
 
 [data-theme="dark"][data-theme-variant="external"][data-theme-brand="guen"],
@@ -802,6 +856,12 @@
   color-scheme: dark;
 }
 
+:where([data-theme="dark"][data-theme-variant="external"])[data-theme-brand="guen"],
+:where([data-theme="dark"] [data-theme-variant="external"])[data-theme-brand="guen"] {
+  --sidebar-brand: oklch(0.6 0.0399 265.73);
+  --sidebar-brand-foreground: var(--sidebar);
+}
+
 [data-theme="dark"][data-theme-variant="external"][data-theme-brand="fkab"],
 [data-theme="dark"] [data-theme-variant="external"][data-theme-brand="fkab"] {
   --background: oklch(0.1749487 0.003804 164.5613);
@@ -881,6 +941,12 @@
   --button-outline-width: 2px;
   --font-heading: "Neo Sans", var(--font-sans);
   color-scheme: dark;
+}
+
+:where([data-theme="dark"][data-theme-variant="external"])[data-theme-brand="fkab"],
+:where([data-theme="dark"] [data-theme-variant="external"])[data-theme-brand="fkab"] {
+  --sidebar-brand: var(--brand);
+  --sidebar-brand-foreground: var(--sidebar);
 }
 
 [data-theme="dark"][data-theme-variant="external"][data-theme-brand="fkse"],
@@ -964,6 +1030,12 @@
   color-scheme: dark;
 }
 
+:where([data-theme="dark"][data-theme-variant="external"])[data-theme-brand="fkse"],
+:where([data-theme="dark"] [data-theme-variant="external"])[data-theme-brand="fkse"] {
+  --sidebar-brand: oklch(0.5916 0.0908 240.16);
+  --sidebar-brand-foreground: var(--sidebar);
+}
+
 [data-theme="dark"][data-theme-variant="external"][data-theme-brand="elma"],
 [data-theme="dark"] [data-theme-variant="external"][data-theme-brand="elma"] {
   --background: oklch(0.176932 0.0026206 247.9754);
@@ -1043,5 +1115,11 @@
   --button-outline-width: 2px;
   --font-heading: var(--font-sans);
   color-scheme: dark;
+}
+
+:where([data-theme="dark"][data-theme-variant="external"])[data-theme-brand="elma"],
+:where([data-theme="dark"] [data-theme-variant="external"])[data-theme-brand="elma"] {
+  --sidebar-brand: oklch(0.58898 0.051828 217.7);
+  --sidebar-brand-foreground: var(--sidebar);
 }
 

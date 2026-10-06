@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 
+import { getOrThrow } from "@elmeragroup/color/result";
+import * as Wcag from "@elmeragroup/color/wcag";
+
 import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
 import { buildContrastMatrix, contrastRatio, TEXT_GRADE_PAIRS } from "./contrast";
+import { resolveThemeCatalog } from "./resolve-theme-catalog";
 import type { TokenName } from "./tokens/contract";
 import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
 import type { ThemeInput } from "./tokens/themes";
@@ -17,6 +21,15 @@ const DARK_PANEL_TEXT_PAIRS = [
   ["sidebar-foreground", "sidebar"],
   ["sidebar-accent-foreground", "sidebar-accent"],
   ["right-panel-foreground", "right-panel"],
+] as const;
+
+/**
+ * The sidebar's brand pair: `text-sidebar-brand` on the sidebar, and text on a
+ * `bg-sidebar-brand` fill. Either role may alias another, so the test reads them resolved.
+ */
+const SIDEBAR_BRAND_PAIRS = [
+  ["sidebar-brand", "sidebar"],
+  ["sidebar-brand-foreground", "sidebar-brand"],
 ] as const;
 
 /**
@@ -200,6 +213,22 @@ describe("contrast matrix", () => {
               `${scheme} ${slug} ${foreground}/${background}`
             ).toBeGreaterThanOrEqual(policy.floor);
           }
+        }
+      }
+    }
+  });
+
+  it("holds the sidebar brand pair at 4.5:1 for every theme and color scheme", () => {
+    for (const theme of resolveThemeCatalog().themes) {
+      for (const scheme of ["light", "dark"] as const) {
+        const tokens = theme.schemes[scheme].tokens;
+        for (const [foreground, background] of SIDEBAR_BRAND_PAIRS) {
+          expect
+            .soft(
+              getOrThrow(Wcag.contrastRatio(tokens[foreground].value, tokens[background].value)),
+              `${scheme} ${theme.slug} ${foreground}/${background}`
+            )
+            .toBeGreaterThanOrEqual(4.5);
         }
       }
     }
