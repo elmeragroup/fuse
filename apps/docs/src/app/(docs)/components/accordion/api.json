@@ -301,6 +301,15 @@
           "required": false
         },
         {
+          "name": "indicator",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Node after the children. Defaults to a rotating caret; `null` renders none.",
+          "required": false
+        },
+        {
           "name": "nativeButton",
           "origin": {
             "packageName": "@base-ui/react"

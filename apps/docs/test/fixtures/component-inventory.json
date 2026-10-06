@@ -7,6 +7,7 @@
       "accordion-multiple.tsx",
       "accordion-variants.tsx",
       "accordion-controlled.tsx",
+      "accordion-leading-indicator.tsx",
       "accordion-hidden-until-found.tsx"
     ]
   },
