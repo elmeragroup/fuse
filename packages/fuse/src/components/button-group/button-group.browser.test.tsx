@@ -5,10 +5,17 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { Button } from "../button/button";
+import { Input } from "../input/input";
 import { ButtonGroup } from "./index";
 
 /** Browser suites load styles.css only; radius collapsing reads `--radius`. */
 const radiusToken = { "--radius": "8px" };
+
+/**
+ * The external corners without a theme: a 2px step spreads `rounded-md` to 10px under a 12px
+ * `--radius`, and fields round with a 4px `--radius-field` of their own.
+ */
+const externalCorners = { "--radius": "12px", "--radius-step": "2px", "--radius-field": "4px" };
 
 function groupNamed(name: string): HTMLElement {
   const element = page.getByRole("group", { name, exact: true }).element();
@@ -180,6 +187,31 @@ describe("ButtonGroup", () => {
     expect(last.bottomRight).toBeGreaterThan(0);
     expect(last.borderTop).toBe("0px");
   });
+
+  it.each([
+    ["horizontal", "Search", "topLeft", "bottomLeft", "topRight"],
+    ["vertical", "Stacked search", "topLeft", "topRight", "bottomLeft"],
+  ] as const)(
+    "rounds a leading field like the trailing button when the group is %s",
+    (orientation, name, fieldCornerA, fieldCornerB, buttonCorner) => {
+      renderThemed(
+        <ButtonGroup.Root orientation={orientation} aria-label={name} style={externalCorners}>
+          <Input aria-label={`${name} query`} />
+          <Button>{`${name} go`}</Button>
+        </ButtonGroup.Root>
+      );
+      const fieldBox = page.getByRole("textbox", { name: `${name} query` }).element();
+      if (!(fieldBox instanceof HTMLElement)) {
+        throw new Error("expected the grouped field");
+      }
+      const field = radius(fieldBox);
+      const button = radius(buttonNamed(`${name} go`));
+      // rounded-md: 12px - 2px. The field alone would round at its own 4px.
+      expect(field[fieldCornerA]).toBe(10);
+      expect(field[fieldCornerB]).toBe(10);
+      expect(button[buttonCorner]).toBe(10);
+    }
+  );
 
   it("spaces nested button-groups with gap-2", () => {
     renderThemed(

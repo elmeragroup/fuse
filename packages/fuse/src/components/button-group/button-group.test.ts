@@ -18,6 +18,7 @@ const BASE_CLASSES = [
 
 const HORIZONTAL_CLASSES = [
   "*:data-slot:rounded-r-none",
+  "[&>[data-slot]:not([data-slot]~[data-slot])]:rounded-l-md!",
   "[&>[data-slot]:not(:has(~[data-slot]))]:rounded-r-md!",
   "[&>[data-slot]~[data-slot]]:rounded-l-none",
   "[&>[data-slot]~[data-slot]]:border-l-0",
@@ -26,6 +27,7 @@ const HORIZONTAL_CLASSES = [
 const VERTICAL_CLASSES = [
   "flex-col",
   "*:data-slot:rounded-b-none",
+  "[&>[data-slot]:not([data-slot]~[data-slot])]:rounded-t-md!",
   "[&>[data-slot]:not(:has(~[data-slot]))]:rounded-b-md!",
   "[&>[data-slot]~[data-slot]]:rounded-t-none",
   "[&>[data-slot]~[data-slot]]:border-t-0",

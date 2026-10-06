@@ -222,17 +222,17 @@ export default function ThemingPage(): ReactElement {
         <code>--radius-button</code>, which is a pill for Fjordkraft, Fjordkraft Företag and Telinet. Field
         boxes, from Input and Select to InputGroup and the date fields, round with <code>--radius-field</code>
         , the design system&apos;s 4px for every brand, and nothing inside a field rounds more than the field.
-        A button inside a button group or a preset list keeps a compact corner instead, and the checkbox, the
-        phone country trigger and the standalone calendar keep the reference&apos;s 4px corner. The internal
-        variant rounds every element with the one <code>--radius</code>. Its step is <code>0px</code> and its{" "}
-        <code>--radius-button</code> and <code>--radius-field</code> are <code>var(--radius)</code>, so a host
-        rule that reads either gets the same corner. To change the radius, override <code>--radius</code> on
-        the element that carries the theme attributes, which is <code>&lt;html&gt;</code> or a{" "}
-        <code>ThemeScope</code>. The theme rules resolve <code>--radius-button</code> there, so buttons move
-        with the cards and fields. On a plain wrapper the override reaches cards and internal fields, but
-        buttons keep the button radius the theme element resolved. To change the external field corner,
-        override <code>--radius-field</code>. Nested internal surfaces share the radius instead of stepping
-        inward, and dialogs round like cards.
+        A button inside a button group or a preset list keeps a compact corner instead, and a button group
+        rounds both its ends that way, even when a field sits at one end. The checkbox and the standalone
+        calendar keep the reference&apos;s 4px corner. The internal variant rounds every element with the one{" "}
+        <code>--radius</code>. Its step is <code>0px</code> and its <code>--radius-button</code> and{" "}
+        <code>--radius-field</code> are <code>var(--radius)</code>, so a host rule that reads either gets the
+        same corner. To change the radius, override <code>--radius</code> on the element that carries the
+        theme attributes, which is <code>&lt;html&gt;</code> or a <code>ThemeScope</code>. The theme rules
+        resolve <code>--radius-button</code> there, so buttons move with the cards and fields. On a plain
+        wrapper the override reaches cards and internal fields, but buttons keep the button radius the theme
+        element resolved. To change the external field corner, override <code>--radius-field</code>. Nested
+        internal surfaces share the radius instead of stepping inward, and dialogs round like cards.
       </p>
       <p>
         The outline button&apos;s border is part of the theme too. It reads <code>--button-outline</code> at{" "}
