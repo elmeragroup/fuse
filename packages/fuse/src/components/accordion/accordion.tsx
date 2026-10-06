@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useMemo } from "react";
-import type { ComponentProps, ReactElement } from "react";
+import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { Accordion as AccordionPrimitive } from "@base-ui/react/accordion";
 import type { AccordionRoot as AccordionRootType } from "@base-ui/react/accordion";
@@ -10,7 +10,7 @@ import type { VariantProps } from "tailwind-variants";
 import { CaretDown } from "../../icons/generated/caret-down";
 import { accordionVariants } from "./accordion-variants";
 
-type AccordionVariantProps = VariantProps<typeof accordionVariants>;
+type AccordionVariantProps = Omit<VariantProps<typeof accordionVariants>, "hasIndicator">;
 
 type WithSlotClassName<T> = Omit<T, "className"> & {
   /** Extra classes, merged into the part's recipe slot via the recipe `className` argument. */
@@ -70,18 +70,39 @@ export function AccordionHeader({
   );
 }
 
+/**
+ * The item's toggle button. `indicator` follows the children: it defaults to a caret that
+ * rotates while the item is open, `null` renders none, and any other node renders as given.
+ * The variant places any indicator, default or custom, in the same position. The rotation
+ * belongs to the default caret only; a custom indicator, or a leading icon passed as a child,
+ * styles its open state from the trigger's `data-panel-open` (`in-data-[panel-open]:rotate-90`).
+ * With no indicator the children pack at the start.
+ */
 export function AccordionTrigger({
   className,
   children,
+  indicator,
   ...props
-}: WithSlotClassName<ComponentProps<typeof AccordionPrimitive.Trigger>>): ReactElement {
+}: WithSlotClassName<ComponentProps<typeof AccordionPrimitive.Trigger>> & {
+  /** Node after the children. Defaults to a rotating caret; `null` renders none. */
+  indicator?: ReactNode;
+}): ReactElement {
   const variants = useAccordion();
-  const { trigger, icon } = accordionVariants(variants);
+  const slots = accordionVariants({ ...variants, hasIndicator: indicator !== null });
 
   return (
-    <AccordionPrimitive.Trigger data-slot="accordion-trigger" className={trigger({ className })} {...props}>
+    <AccordionPrimitive.Trigger
+      data-slot="accordion-trigger"
+      className={slots.trigger({ className })}
+      {...props}>
       {children}
-      <CaretDown aria-hidden="true" className={icon()} />
+      {indicator === undefined ? (
+        <CaretDown aria-hidden="true" className={slots.icon()} />
+      ) : indicator === null ? null : (
+        <span data-slot="accordion-indicator" className={slots.indicator()}>
+          {indicator}
+        </span>
+      )}
     </AccordionPrimitive.Trigger>
   );
 }

@@ -1,4 +1,4 @@
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { useState } from "react";
 
 import { describe, expect, it, vi } from "vitest";
@@ -9,6 +9,8 @@ import "../../../dist/themes.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
 import { expectPanelHeightTransition } from "../../../test/panel-transition";
 import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
+import { CaretRight } from "../../icons/generated/caret-right";
+import { Plus } from "../../icons/generated/plus";
 import { Accordion } from "./index";
 
 function htmlControl(name: string): HTMLElement {
@@ -21,15 +23,19 @@ function htmlControl(name: string): HTMLElement {
 
 function ShippingBilling({
   shippingDisabled,
+  shippingTrigger = "Shipping",
+  shippingIndicator,
   ...props
 }: ComponentProps<typeof Accordion.Root> & {
   shippingDisabled?: boolean;
+  shippingTrigger?: ReactNode;
+  shippingIndicator?: ReactNode;
 }) {
   return (
     <Accordion.Root {...props}>
       <Accordion.Item value="shipping" disabled={shippingDisabled}>
         <Accordion.Header>
-          <Accordion.Trigger>Shipping</Accordion.Trigger>
+          <Accordion.Trigger indicator={shippingIndicator}>{shippingTrigger}</Accordion.Trigger>
         </Accordion.Header>
         <Accordion.Content>
           Delivered within 3–5 business days. <a href="#track">Track shipment</a>
@@ -241,6 +247,97 @@ describe("Accordion", () => {
     const gap = billingItem.getBoundingClientRect().top - item.getBoundingClientRect().bottom;
     expect(gap).toBeGreaterThanOrEqual(11);
     expect(gap).toBeLessThan(16);
+  });
+
+  it("rotates the default caret while its item is open", async () => {
+    renderThemed(<ShippingBilling defaultValue={["shipping"]} />);
+
+    const openCaret = htmlControl("Shipping").querySelector("svg");
+    const closedCaret = htmlControl("Billing").querySelector("svg");
+    if (openCaret === null || closedCaret === null) {
+      throw new Error("expected a caret in each trigger");
+    }
+    expect(htmlControl("Shipping").lastElementChild).toBe(openCaret);
+    await vi.waitFor(() => {
+      expect(getComputedStyle(openCaret).rotate).toBe("180deg");
+    });
+    expect(getComputedStyle(closedCaret).rotate).toBe("none");
+  });
+
+  it("renders no indicator when indicator is null", () => {
+    renderThemed(<ShippingBilling shippingIndicator={null} />);
+
+    expect(htmlControl("Shipping").querySelector("svg")).toBeNull();
+    expect(htmlControl("Shipping").children).toHaveLength(0);
+    expect(htmlControl("Billing").querySelector("svg")).not.toBeNull();
+  });
+
+  it("renders a custom indicator in the caret's place", () => {
+    renderThemed(
+      <ShippingBilling shippingIndicator={<Plus aria-hidden="true" data-testid="plus-indicator" />} />
+    );
+
+    const trigger = htmlControl("Shipping");
+    const plus = page.getByTestId("plus-indicator").element();
+    expect(trigger.querySelectorAll("svg")).toHaveLength(1);
+    expect(trigger.lastElementChild?.contains(plus)).toBe(true);
+  });
+
+  it.each(["default", "infodropdown"] as const)(
+    "places a custom indicator where the default caret sits in the %s variant",
+    (variant) => {
+      renderThemed(
+        <ShippingBilling
+          variant={variant}
+          shippingIndicator={<Plus aria-hidden="true" className="size-4" data-testid="plus-indicator" />}
+        />
+      );
+
+      const shipping = htmlControl("Shipping").getBoundingClientRect();
+      const billing = htmlControl("Billing").getBoundingClientRect();
+      const plus = page.getByTestId("plus-indicator").element().getBoundingClientRect();
+      const caret = htmlControl("Billing").querySelector("svg")?.getBoundingClientRect();
+      if (caret === undefined) {
+        throw new Error("expected the default caret in the billing trigger");
+      }
+      // Oracle: the default caret in the sibling trigger, offset from its own trigger box.
+      expect(shipping.right - plus.right).toBeCloseTo(billing.right - caret.right, 0);
+      expect(plus.top + plus.height / 2 - shipping.top).toBeCloseTo(
+        caret.top + caret.height / 2 - billing.top,
+        0
+      );
+    }
+  );
+
+  it("keeps a leading icon beside the label when the indicator is null", () => {
+    renderThemed(
+      <ShippingBilling
+        shippingIndicator={null}
+        shippingTrigger={
+          <>
+            <CaretRight aria-hidden="true" data-testid="leading-chevron" />
+            <span>Shipping</span>
+          </>
+        }
+      />
+    );
+
+    const trigger = htmlControl("Shipping");
+    const chevron = page.getByTestId("leading-chevron").element();
+    const label = page.getByText("Shipping", { exact: true }).element();
+    expect(trigger.firstElementChild).toBe(chevron);
+    const triggerBox = trigger.getBoundingClientRect();
+    const chevronBox = chevron.getBoundingClientRect();
+    const labelBox = label.getBoundingClientRect();
+    const triggerStyle = getComputedStyle(trigger);
+    const contentLeft =
+      triggerBox.left +
+      Number.parseFloat(triggerStyle.borderLeftWidth) +
+      Number.parseFloat(triggerStyle.paddingLeft);
+    expect(Math.abs(chevronBox.left - contentLeft)).toBeLessThan(1);
+    // The trigger's 8px gap, not the free space a space-between row would open.
+    expect(labelBox.left - chevronBox.right).toBeCloseTo(8, 0);
+    expect(triggerBox.right - labelBox.right).toBeGreaterThan(100);
   });
 
   it("paints the shared ring on keyboard focus-visible and not on mouse focus, at both densities", async () => {
