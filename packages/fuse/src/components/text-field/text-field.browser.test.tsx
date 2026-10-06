@@ -59,7 +59,7 @@ describe("TextField Field wiring", () => {
 
 describe("TextField card variant", () => {
   /** The card root's content box in viewport coordinates: its border box minus border and padding. */
-  function contentBox(root: HTMLElement): { left: number; right: number } {
+  function contentBox(root: HTMLElement) {
     const style = getComputedStyle(root);
     const rect = root.getBoundingClientRect();
     return {
