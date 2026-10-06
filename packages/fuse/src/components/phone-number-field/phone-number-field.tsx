@@ -265,9 +265,14 @@ export function PhoneNumberField({
                 )}>
                 <div className="flex items-center gap-1">
                   <Flag country={phone.selectedCountry.code} />
-                  {/* The number input's type, touch floor included, not a fixed size: the group centres
-                      both boxes, so a smaller dial code would sit above the typed digits' baseline. */}
-                  <span className={cn(controlMd.entryType(), "font-medium min-w-6 tabular-nums")}>
+                  {/* The input's font size, touch floor included, so both runs of digits have one size.
+                      Leading is `normal` because a text input centres its text on the font's normal
+                      metrics whatever its line-height; the dial code centres the same way. */}
+                  <span
+                    className={cn(
+                      controlMd.entryType(),
+                      "font-medium min-w-6 leading-[normal] tabular-nums"
+                    )}>
                     {phone.selectedCountry.dialCode}
                   </span>
                 </div>

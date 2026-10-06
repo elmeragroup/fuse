@@ -24,6 +24,7 @@ import {
   CONTROL_MD,
   fieldRootFrom,
   formNamed,
+  normalLineHeightOf,
   px,
   renderThemed,
   roleNamed,
@@ -500,15 +501,20 @@ describe("PhoneNumberField", () => {
       "mouse focus on the country trigger must not paint the group ring"
     );
   });
-  it("sets the dial code in the number input's density type pair, so both share a baseline", () => {
+  it("sets the dial code in the number input's font size at the font's normal line height, at both densities", () => {
     renderField(<PhoneNumberField label="Mobile" />);
-    // The group centres the trigger and the input, so a smaller dial-code font sat higher
-    // than the typed digits. Matching the input's type pair aligns the two baselines.
+    // The group centres the trigger and the input, and the input centres its text on the
+    // font's normal metrics, so the dial code shares the size and a normal line box.
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);
-      const style = getComputedStyle(triggerDialCode("+47"));
-      expect(px(style.fontSize), `${density} dial code font`).toBe(CONTROL_MD[density].font);
-      expect(px(style.lineHeight), `${density} dial code leading`).toBe(CONTROL_MD[density].leading);
+      const dialCode = triggerDialCode("+47");
+      expect(px(getComputedStyle(dialCode).fontSize), `${density} dial code font`).toBe(
+        CONTROL_MD[density].font
+      );
+      // Oracle: a plain block in the same font at `line-height: normal`.
+      expect(dialCode.getBoundingClientRect().height, `${density} dial code leading`).toBe(
+        normalLineHeightOf(dialCode)
+      );
     }
   });
 });
