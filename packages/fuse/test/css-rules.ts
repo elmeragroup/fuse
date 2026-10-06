@@ -45,19 +45,15 @@ function declarationsIn(statements: readonly string[]): CssDeclaration[] {
   return declarations;
 }
 
-/**
- * Read every block of declarations, nested ones included. A block keeps its own declarations
- * whether they come before, between or after the blocks nested in it. The reader is for the
- * library's own stylesheets, so it does not handle strings or escapes that contain braces or
- * semicolons.
- *
- * @param css - A stylesheet.
- * @returns The blocks in the order their preludes appear. A nested block follows its parent,
- *   and its prelude is its own, such as `&:hover`, not the resolved selector.
- */
-export function parseCssBlocks(css: string): CssBlock[] {
+/** A block with the preludes of the blocks around it, outermost first. */
+type ScopedBlock = {
+  block: CssBlock;
+  ancestors: readonly string[];
+};
+
+function readScopedBlocks(css: string): ScopedBlock[] {
   const source = stripCssComments(css);
-  const blocks: CssBlock[] = [];
+  const blocks: ScopedBlock[] = [];
   const open: CssBlock[] = [];
   let start = 0;
   for (let index = 0; index < source.length; index += 1) {
@@ -78,12 +74,46 @@ export function parseCssBlocks(css: string): CssBlock[] {
     const prelude = statements.pop()?.trim() ?? "";
     parent?.declarations.push(...declarationsIn(statements));
     const block: CssBlock = { prelude, declarations: [] };
+    const ancestors = open.map((enclosing) => enclosing.prelude).filter((ancestor) => ancestor !== "");
     open.push(block);
     if (prelude !== "") {
-      blocks.push(block);
+      blocks.push({ block, ancestors });
     }
   }
   return blocks;
+}
+
+/**
+ * Read every block of declarations, nested ones included. A block keeps its own declarations
+ * whether they come before, between or after the blocks nested in it. The reader is for the
+ * library's own stylesheets, so it does not handle strings or escapes that contain braces or
+ * semicolons.
+ *
+ * @param css - A stylesheet.
+ * @returns The blocks in the order their preludes appear. A nested block follows its parent,
+ *   and its prelude is its own, such as `&:hover`, not the resolved selector.
+ */
+export function parseCssBlocks(css: string): CssBlock[] {
+  return readScopedBlocks(css).map(({ block }) => block);
+}
+
+/** A declaration with the preludes of every block around it, outermost first. */
+export type CssScopedDeclaration = CssDeclaration & {
+  scope: readonly string[];
+};
+
+/**
+ * Read every declaration with the chain of blocks that holds it, so a nested build
+ * (`.a { @media x { … } }`) and a flattened one (`@media x { .a { … } }`) both report the
+ * selector and the conditions a declaration applies under.
+ *
+ * @param css - A stylesheet.
+ * @returns The declarations in block order. Each `scope` ends with the declaring block's prelude.
+ */
+export function parseScopedDeclarations(css: string): CssScopedDeclaration[] {
+  return readScopedBlocks(css).flatMap(({ block, ancestors }) =>
+    block.declarations.map((declaration) => ({ ...declaration, scope: [...ancestors, block.prelude] }))
+  );
 }
 
 /**

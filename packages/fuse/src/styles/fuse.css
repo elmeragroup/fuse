@@ -290,6 +290,21 @@
     }
   }
 }
+/* The text-entry font-size floor's condition (see controlMdInsetTypeClass in
+   control-size-md.ts): a coarse primary pointer, or iOS-family WebKit. iPhone and iPad
+   report a coarse pointer; the @supports arm catches the WebKit paths on iOS that report
+   a fine one, since only iOS WebKit supports -webkit-touch-callout. `any-pointer` stays
+   out: touch laptops and Chromebooks report a fine primary pointer and never zoom on focus,
+   so they keep dense 14px text. Plain CSS cannot OR @media with @supports, so this emits
+   one rule per arm. */
+@custom-variant entry-floor {
+  @media (pointer: coarse) {
+    @slot;
+  }
+  @supports (-webkit-touch-callout: none) {
+    @slot;
+  }
+}
 @custom-variant enabled-active {
   @variant not-disabled-state {
     &:where([data-rac][data-active], :not([data-rac]):active) {

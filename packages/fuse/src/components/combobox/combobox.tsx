@@ -519,9 +519,9 @@ export function ComboboxChipsInput({
         className,
         // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; ring comes from the shared within adapter
         "min-w-16 flex-1 outline-none",
-        // The text-entry 16px floor on a coarse pointer (see `controlMdInsetTypeClass`), over the
+        // The text-entry 16px floor under `entry-floor` (see `controlMdInsetTypeClass`), over the
         // chips box's 14px. In `font-size`, `1em` is the inherited size.
-        "pointer-coarse:[--entry-text:max(16px,1em)] text-[length:var(--entry-text,1em)]",
+        "entry-floor:[--entry-text:max(16px,1em)] text-[length:var(--entry-text,1em)]",
         withinFocusRingControlClass,
         withinStateFaceControlClass
       )}

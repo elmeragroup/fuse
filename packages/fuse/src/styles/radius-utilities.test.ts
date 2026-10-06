@@ -1,14 +1,12 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { compile } from "tailwindcss";
-import reactAriaComponents from "tailwindcss-react-aria-components";
 import { describe, expect, it } from "vitest";
 
+import { consumerBuild } from "../../test/tailwind-consumer-build";
 import { RADIUS_RUNGS } from "../theme/tokens/radius-scale";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const nodeModules = join(here, "../../node_modules");
 const compiledCssPath = join(here, "../../dist/styles.css");
 
 /**
@@ -24,45 +22,6 @@ const PRIVATE_CORNER_CANDIDATES = [
 ] as const;
 const PRIVATE_CORNER_SELECTOR = /\.rounded-(?:t-)?(?:inset|fixed)\b/;
 const PRIVATE_CORNER_VARIABLE = /--radius-(?:inset|fixed)\b/;
-
-/** The style entry of each bare package `fuse.css` imports, from its `exports["."].style`. */
-const PACKAGE_STYLES = new Map([["tw-animate-css", "tw-animate-css/dist/tw-animate.css"]]);
-
-/** Resolve an `@import` the way a CSS bundler does, for the imports this build meets. */
-function stylesheetPath(id: string, base: string): string {
-  if (id.startsWith(".")) {
-    return join(base, id);
-  }
-  const packageStyle = PACKAGE_STYLES.get(id);
-  if (packageStyle !== undefined) {
-    return join(nodeModules, packageStyle);
-  }
-  if (id.startsWith("tailwindcss/")) {
-    return join(nodeModules, id);
-  }
-  throw new Error(`fuse.css imports no stylesheet named ${id}`);
-}
-
-/** Compile `fuse.css` the way a Tailwind-source consumer does, with only the given candidates. */
-async function consumerBuild(candidates: readonly string[]): Promise<string> {
-  const compiler = await compile(
-    '@import "tailwindcss/theme.css";\n@import "tailwindcss/utilities.css" source(none);\n@import "./fuse.css";',
-    {
-      base: here,
-      loadStylesheet: (id, base) => {
-        const path = stylesheetPath(id, base);
-        return Promise.resolve({ path, base: dirname(path), content: readFileSync(path, "utf8") });
-      },
-      loadModule: (id, base) => {
-        if (id !== "tailwindcss-react-aria-components") {
-          throw new Error(`fuse.css loads no plugin but tailwindcss-react-aria-components, received ${id}`);
-        }
-        return Promise.resolve({ path: id, base, module: reactAriaComponents });
-      },
-    }
-  );
-  return compiler.build([...candidates]);
-}
 
 describe("private corner classes", () => {
   it("add no rounded-* utility to a Tailwind-source consumer's build", async () => {
