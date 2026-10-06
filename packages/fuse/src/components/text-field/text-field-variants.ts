@@ -20,6 +20,8 @@ export const textFieldVariants = tv({
     labelContainer: frame.labelRow(),
     label: "",
     container: frame.content(),
+    // The input's wrapper and the trailing icon's positioning box.
+    inputContainer: "relative",
     description: frame.description(),
     iconContainer: "pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 [&>svg]:size-4",
   },
@@ -31,6 +33,9 @@ export const textFieldVariants = tv({
         input: "text-lg rounded-none border-none p-0",
         label: "text-muted-foreground",
         container: "flex flex-row items-center gap-3",
+        // A flex item sizes to its content, so without these the wrapper keeps the input's
+        // intrinsic width and the input's w-full resolves against that, not the row.
+        inputContainer: "min-w-0 flex-1",
         description: "text-muted-foreground",
       },
       inline: {
