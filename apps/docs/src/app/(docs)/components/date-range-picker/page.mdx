@@ -15,7 +15,7 @@ export const metadata = componentMetadata("date-range-picker");
 
 <ComponentIntro slug="date-range-picker" />
 
-The dates stack beside the calendar trigger when the field container is narrower than 24rem. Each date keeps its normal density sizing.
+The dates stack beside the calendar trigger when the field container is narrower than 24rem. Each date keeps its normal density sizing. Inside a flex row the picker takes no width from its content, so it gets only the room its siblings leave. Give it `w-96 shrink-0` there to hold 24rem and keep the dates on one row.
 
 <Prose>
 

@@ -25,6 +25,11 @@
   round them from the brand radius. Internal themes round them with `--radius`.
 - Decide whether `PhoneNumberField` and `NumberField` name their wrapper `group` from the field's
   label or drop the role. The controls inside have names; the groups around them have none.
+- Decide with design whether `Item` gets an unclamped description variant. `Item.Description`
+  clamps to two lines, matching shadcn, and funnel needed an unclamped one for full instructions.
+  `shadcn(no-restyle)` rejects `line-clamp-*` on `ItemDescription` and points to a variant in
+  `components/item/index.ts`, so the docs show no `className` override. Until then, consumers
+  render their own element for long text.
 - Confirm the shared overlay-close dictionary and the docs' client-demo rule and
   three non-public import exceptions with the owner; these remain implemented defaults.
 
@@ -109,6 +114,21 @@
   logical-side popups such as NavigationMenu's `inline-end` open on the LTR side. Also add
   `@base-ui/react/direction-provider` to `optimizeDeps.include` in `packages/fuse/vitest.config.ts`;
   until then the NavigationMenu browser test imports it from the `@base-ui/react` root entry.
+- Report two toast bugs to Base UI. `Toast.Provider` subscribes to a manager in its own effect,
+  so the manager drops calls made before then, including calls from a child's mount effect.
+  `promiseToast` overwrites a `type` that the success or error state returns with `"success"`
+  or `"error"`. The Fuse workaround for the first is a call queue in `createToastManager()`
+  that a bridge rendered first in `Toast.Provider` replays. For the second, Fuse runs
+  `promise()` over its own `add` and `update`. Remove each workaround once Fuse installs a
+  fixed release.
+- `Item.Root hidden` stays visible in a host without Tailwind's preflight. The user-agent rule
+  `[hidden] { display: none }` loses to the item's `flex` class; preflight makes `[hidden]`
+  `display: none !important`. Decide whether `Item.Root`, and the other parts whose root sets
+  `display`, carry a `hidden` reset.
+- The interim React Aria fields read React Aria's form context, not Fuse `Form`'s `errors`, so
+  a server error under their name does not reach them. A form that mixes them with Base UI
+  fields keeps React Aria's `Form`. Wire them to `Form`'s `errors`, or retire them with the
+  date tier below.
 
 ## Control size
 
@@ -220,6 +240,8 @@ that opens every overlay on a side before flipping the window.
 - When Base UI offers suitable date primitives, migrate the interim React Aria tier.
   Removing its public subpaths is a major release; other interim atoms can move earlier.
 - When a product commits to charts, ship the deferred chart entry and decide its optional peer.
+- When a product needs arrow-key roving focus across a row of controls, add a `Toolbar` over
+  Base UI 1.8's toolbar. Fuse has none today.
 - When a product needs density preferences, define persistence and pre-paint stamping in the host.
 - Add brands and locales on product demand; reconsider locale subsetting near ten locales.
 - When behavioral tests miss a visual regression or manual theme review stops scaling,

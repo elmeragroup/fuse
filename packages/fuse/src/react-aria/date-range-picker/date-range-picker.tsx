@@ -19,8 +19,9 @@ import { RangeCalendar } from "../range-calendar/range-calendar";
 /**
  * Labeled date-range-picker composite over RAC `DateRangePicker`: two public `DateInput` rows and the public `RangeCalendar`, handed to the same
  * package-private `PickerShell` DatePicker wears. In containers narrower than 24rem,
- * the dates stack beside the calendar trigger; wider containers use one row. Client — the interim
- * react-aria cluster owns segment state and overlay state.
+ * the dates stack beside the calendar trigger; wider containers use one row. Inside a flex row
+ * the picker takes no width from its content, so give it `w-96 shrink-0` to keep one row.
+ * Client — the interim react-aria cluster owns segment state and overlay state.
  *
  * What is left here is what a *range* picker owns and a single-date picker does not: two
  * segment rows and the en-dash between them. Unlike DatePicker there is no focused-month
