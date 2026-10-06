@@ -30,7 +30,7 @@ export function requireComponent(slug: string): ComponentPageEntry {
 
 /**
  * Page metadata from the generated manifest: the slug-derived title, the lede, and a card that
- * points at the component's specimen image.
+ * points at the component's OG card.
  */
 export function componentMetadata(slug: string): Metadata {
   const component = requireComponent(slug);
@@ -39,7 +39,7 @@ export function componentMetadata(slug: string): Metadata {
     description: component.lede,
     ...ogMetadata({
       image: ogComponentPath(component.slug),
-      alt: `${component.title}, a Fuse component, drawn beside its description: ${component.lede}`,
+      alt: `Fuse: ${component.title}`,
     }),
   };
 }

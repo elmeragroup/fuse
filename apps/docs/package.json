@@ -19,6 +19,7 @@
     "@internationalized/date": "catalog:",
     "@next/mdx": "catalog:",
     "@paper-design/shaders-react": "catalog:",
+    "@shuding/opentype.js": "catalog:",
     "@tanstack/react-table": "catalog:",
     "libphonenumber-js": "catalog:",
     "next": "catalog:",

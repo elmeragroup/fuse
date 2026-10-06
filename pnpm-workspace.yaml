@@ -19,6 +19,8 @@ catalog:
   "@mdx-js/loader": 3.1.1
   "@next/mdx": 16.3.5
   "@shadcn/lint": 0.1.1
+  # satori, which next/og bundles, pins this exact build; the OG card measures text with it.
+  "@shuding/opentype.js": 1.4.0-beta.0
   "@tailwindcss/cli": 4.3.3
   "@tailwindcss/postcss": 4.3.3
   "@tailwindcss/typography": 0.5.20

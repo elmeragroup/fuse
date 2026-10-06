@@ -1,20 +1,14 @@
 import { notFound } from "next/navigation";
 
-import { themeSlug } from "@elmeragroup/fuse/theme";
-
 import { COMPONENT_PAGES } from "../../../../generated/component-pages";
-import { requireComponent } from "../../../../lib/component-page";
-import { DOCUMENT_THEME } from "../../../../lib/theme";
-import { ComponentImage } from "../../../../og/component-image";
-import { loadBrandArtwork } from "../../../../og/og-assets";
+import { componentBySlug } from "../../../../lib/nav";
+import { loadElmeraMark } from "../../../../og/og-assets";
+import { OgCard } from "../../../../og/og-card";
 import { ogResponse } from "../../../../og/og-response";
-import { css, ogTheme } from "../../../../og/og-theme";
-import { specimenContext } from "../../../../og/specimen-kit";
-import { isComponentSlug, SPECIMENS } from "../../../../og/specimens";
 
 /**
  * The component pages are a closed set; any other slug answers 404. `next build` prerenders every
- * image in it, so a specimen that throws fails the build rather than the first share.
+ * image in it, so a card that throws fails the build rather than the first share.
  */
 export const dynamicParams = false;
 
@@ -33,22 +27,12 @@ export function generateStaticParams(): { slug: string }[] {
   return COMPONENT_PAGES.map((component) => ({ slug: component.slug }));
 }
 
-/** A component page's Open Graph image, drawn in the docs theme. */
+/** A component page's Open Graph image: the card with the component's title. */
 export async function GET(_request: Request, { params }: ComponentImageContext): Promise<Response> {
   const { slug } = await params;
-  if (!isComponentSlug(slug)) {
+  const component = componentBySlug(slug);
+  if (component === undefined) {
     notFound();
   }
-  const theme = ogTheme(themeSlug(DOCUMENT_THEME));
-  const specimen = SPECIMENS[slug];
-  const mark = await loadBrandArtwork("elma", "marks", css(theme.colors.foreground));
-  return await ogResponse(
-    <ComponentImage
-      theme={theme}
-      mark={mark}
-      component={requireComponent(slug)}
-      specimen={specimen.draw(specimenContext(theme, specimen.scale))}
-      caption={specimen.caption}
-    />
-  );
+  return await ogResponse(<OgCard mark={await loadElmeraMark()} subtitle={component.title} />);
 }
