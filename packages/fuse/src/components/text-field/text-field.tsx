@@ -94,6 +94,7 @@ export function TextField({
     iconContainer,
     label: labelSlot,
     container,
+    inputContainer,
     description: descriptionSlot,
   } = textFieldVariants({
     variant,
@@ -120,7 +121,7 @@ export function TextField({
       isSuccess={isSuccess}
       description={description}
       errorMessage={errorMessage}>
-      <div className="relative">
+      <div className={inputContainer()}>
         <Input
           name={name}
           value={value}

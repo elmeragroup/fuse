@@ -26,6 +26,8 @@ describe("textFieldVariants", () => {
     expect(String(slots.input())).not.toContain("text-lg");
     expect(slots.labelContainer()).toContain("justify-between");
     expect(slots.container()).toContain("flex-col");
+    // The trailing icon's positioning box.
+    expect(slots.inputContainer()).toContain("relative");
     expect(slots.description()).toContain("text-sm");
     expect(slots.iconContainer()).toContain("absolute");
     expect(slots).not.toHaveProperty("textArea");

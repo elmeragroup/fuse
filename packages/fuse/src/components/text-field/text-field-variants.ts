@@ -21,6 +21,8 @@ export const textFieldVariants = tv({
     labelContainer: frame.labelRow(),
     label: "",
     container: frame.content(),
+    // The input's wrapper and the trailing icon's positioning box.
+    inputContainer: "relative",
     description: frame.description(),
     iconContainer: "pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 [&>svg]:size-4",
   },
@@ -34,7 +36,11 @@ export const textFieldVariants = tv({
         input: cn("text-lg rounded-none border-none p-0", readOnlyFillCancelClass),
         label: "text-muted-foreground",
         container: "flex flex-row items-center gap-3",
-        description: "text-muted-foreground",
+        // The wrapper's zero flex basis sizes it from the row, not from the input's intrinsic
+        // width, so the input fills whatever the description leaves. The description takes at
+        // most half the row: past that it wraps, so it can never squeeze the input away.
+        inputContainer: "min-w-0 flex-1",
+        description: "max-w-1/2 text-muted-foreground",
       },
       inline: {
         base: "group/inline-field",
