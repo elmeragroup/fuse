@@ -246,6 +246,7 @@
       "field-validation.tsx",
       "field-orientations.tsx",
       "field-set.tsx",
+      "field-set-description.tsx",
       "field-choice-card.tsx",
       "field-separator.tsx"
     ]
