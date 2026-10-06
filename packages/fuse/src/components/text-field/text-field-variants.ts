@@ -1,6 +1,7 @@
 import { tv } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import { readOnlyFillCancelClass } from "../../styles/field-box";
 import { cardVariants } from "../card/card-variants";
 import { fieldFrameVariants } from "../field/field-frame";
 
@@ -28,9 +29,11 @@ export const textFieldVariants = tv({
   variants: {
     variant: {
       card: {
-        base: cn(cardVariants().base(), "gap-0 px-6 py-4"),
+        // The card is the field box, so it takes the read-only fill and the borderless input
+        // inside it cancels its own, which would paint a band across the card.
+        base: cn(cardVariants().base(), "gap-0 px-6 py-4 has-[input[readonly]:not(:disabled)]:bg-muted"),
         fieldGroup: "w-full border-none",
-        input: "text-lg rounded-none border-none p-0",
+        input: cn("text-lg rounded-none border-none p-0", readOnlyFillCancelClass),
         label: "text-muted-foreground",
         container: "flex flex-row items-center gap-3",
         // The wrapper's zero flex basis sizes it from the row, not from the input's intrinsic
@@ -45,7 +48,10 @@ export const textFieldVariants = tv({
         // enabled: a disabled inline field keeps its resting border and fill (the state face).
         // The gate negates fuse.css's one `disabled-state` predicate. `not-disabled-state:`
         // adds no specificity and sorts with the `not-*` variants ahead of `focus-visible:`,
-        // so `focus-visible:border-ring` still wins on a hovered, focused field.
+        // so `focus-visible:border-ring` still wins on a hovered, focused field. A read-only
+        // inline field keeps the field box's read-only fill at rest, as a disabled one keeps its
+        // disabled fill, so it never passes for plain text; the fill's `[readonly]` selector
+        // outranks the hover and focus-within reveals.
         fieldGroup:
           "border-transparent bg-transparent group-focus-within/inline-field:bg-background group-hover/inline-field:not-disabled-state:border-input group-hover/inline-field:not-disabled-state:bg-background group-data-[invalid]/inline-field:border-error group-data-[invalid]/inline-field:bg-background focus-visible:border-ring",
       },

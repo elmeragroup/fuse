@@ -5,7 +5,7 @@ import type { ComponentProps, ReactElement } from "react";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
-import { inputGroupRootClass } from "../../styles/field-box";
+import { inputGroupRootClass, readOnlyFillCancelClass } from "../../styles/field-box";
 import { withinStateFaceControlClass } from "../../styles/state-face";
 import { withinFocusRingControlClass } from "../../styles/utils";
 import { Button } from "../button/button";
@@ -15,7 +15,7 @@ import { Textarea } from "../textarea/textarea";
 import { inputGroupAddonVariants, inputGroupButtonVariants } from "./input-group-variants";
 
 /**
- * Group chrome follows the disabled and invalid state of its own input or textarea,
+ * Group chrome follows the disabled, read-only and invalid state of its own input or textarea,
  * independently of addon buttons. Keep `InputGroup.Input` or `InputGroup.Textarea` a direct
  * child of the root: the group reads its state from that child only, so a field nested in an
  * addon, such as a NumberField, keeps its state to itself.
@@ -57,12 +57,14 @@ export type InputGroupInputProps = InputProps;
 export type InputGroupTextareaProps = ComponentProps<"textarea">;
 
 /**
- * Chrome stripped off the embedded control: the Root owns border, radius, shadow, rings and
- * the disabled dim, so the control contributes nothing but its own box. The focus-visible
- * and state-face neutralizations come from the shared within adapters, never a local literal.
+ * Chrome stripped off the embedded control: the Root owns border, radius, shadow, rings, the
+ * disabled dim and the disabled and read-only fills, so the control contributes nothing but
+ * its own box. The focus-visible and state-face neutralizations come from the shared within
+ * adapters, never a local literal.
  */
 const CONTROL_CHROME = cn(
   "flex-1 rounded-none border-0 bg-transparent shadow-none ring-0 disabled:bg-transparent",
+  readOnlyFillCancelClass,
   withinFocusRingControlClass,
   withinStateFaceControlClass
 );

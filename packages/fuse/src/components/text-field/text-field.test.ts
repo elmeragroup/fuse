@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { cn } from "../../styles/cn";
-import { fieldBox } from "../../styles/field-box";
+import { fieldBox, readOnlyFillCancelClass, readOnlyFillClass } from "../../styles/field-box";
 import { cardVariants } from "../card/card-variants";
 import { fieldFrameVariants } from "../field/field-frame";
 import { textFieldVariants } from "./text-field-variants";
@@ -48,6 +48,10 @@ describe("textFieldVariants", () => {
     expect(card.input()).toContain("text-lg");
     expect(card.container()).toContain("flex-row");
     expect(card.label()).toContain("text-muted-foreground");
+    // The card is the read-only field box; the input inside it cancels its own fill.
+    expect(card.base()).toContain("has-[input[readonly]:not(:disabled)]:bg-muted");
+    expect(cn(fieldBox(), card.input())).toContain(readOnlyFillCancelClass);
+    expect(cn(fieldBox(), card.input())).not.toContain(readOnlyFillClass);
 
     const inline = textFieldVariants({ variant: "inline" });
     expect(inline.base()).toContain("group/inline-field");

@@ -186,7 +186,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Blocks edits, including paste and country changes, while preserving focus and form submission.",
+          "description": "Blocks edits, including paste and country changes, while preserving focus and form submission. The field takes the muted read-only fill.",
           "required": false
         },
         {
