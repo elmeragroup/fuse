@@ -72,6 +72,9 @@ catalogs:
     '@types/picomatch':
       specifier: 4.0.3
       version: 4.0.3
+    '@types/pngjs':
+      specifier: 6.0.5
+      version: 6.0.5
     '@types/react':
       specifier: 19.3.0
       version: 19.3.0
@@ -120,12 +123,18 @@ catalogs:
     picomatch:
       specifier: 4.0.7
       version: 4.0.7
+    pixelmatch:
+      specifier: 7.2.0
+      version: 7.2.0
     playwright:
       specifier: 1.63.0
       version: 1.63.0
     plop:
       specifier: 4.0.5
       version: 4.0.5
+    pngjs:
+      specifier: 7.0.0
+      version: 7.0.0
     publint:
       specifier: 0.3.24
       version: 0.3.24
@@ -535,6 +544,43 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 25.9.5
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.0(@types/node@25.9.5)(@vitest/browser-playwright@5.0.0)(@vitest/ui@5.0.0)(vite@8.3.0(@types/node@25.9.5)(jiti@2.7.0)(yaml@2.9.1))
+
+  tooling/pr-shots:
+    dependencies:
+      '@effect/platform-node':
+        specifier: 'catalog:'
+        version: 4.0.0-rc.115(effect@4.0.0-rc.115)(redis@6.2.1)
+      effect:
+        specifier: 'catalog:'
+        version: 4.0.0-rc.115
+      pixelmatch:
+        specifier: 'catalog:'
+        version: 7.2.0
+      playwright:
+        specifier: 'catalog:'
+        version: 1.63.0
+      pngjs:
+        specifier: 'catalog:'
+        version: 7.0.0
+    devDependencies:
+      '@effect/vitest':
+        specifier: 'catalog:'
+        version: 4.0.0-rc.115(effect@4.0.0-rc.115)(vitest@5.0.0)
+      '@elmeragroup/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.9.5
+      '@types/pngjs':
+        specifier: 'catalog:'
+        version: 6.0.5
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -2073,6 +2119,9 @@ packages:
 
   '@types/picomatch@4.0.3':
     resolution: {integrity: sha512-iG0T6+nYJ9FAPmx9SsUlnwcq1ZVRuCXcVEvWnntoPlrOpwtSTKNDC9uVAxTsC3PUvJ+99n4RpAcNgBbHX3JSnQ==}
+
+  '@types/pngjs@6.0.5':
+    resolution: {integrity: sha512-0k5eKfrA83JOZPppLtS2C7OUtyNAl2wKNxfyYl9Q5g9lPkgBl/9hNyAu6HuEH2J4XmIv2znEpkDd0SaZVxW6iQ==}
 
   '@types/react-dom@19.3.0':
     resolution: {integrity: sha512-ZI7bU42mZXXKHn/qNLEw2IrbiINU7X5+vfgdixBHkCNpYWXjKgfQ/P+uyGb5CjOLB9UcnTeg3rylQtV2hym44Q==}
@@ -3674,6 +3723,10 @@ packages:
   picomatch@4.0.7:
     resolution: {integrity: sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA==}
     engines: {node: '>=12'}
+
+  pixelmatch@7.2.0:
+    resolution: {integrity: sha512-xhcb4yHu9sM/G7foGzoLtXYcC0zHEaOXXjRKhGup0fw78Nf2Tkiapv4EQyMzrbcmQPsllAI7DbFY2UT7PlI9Pg==}
+    hasBin: true
 
   playwright-core@1.63.0:
     resolution: {integrity: sha512-rYCsBF/M5HjUch52bbtVONEFjv6Xu8sm8h72dNlR5bzIE1fvC/bxgspzkjSfU+MweEMmPM8KJebG6nnyxo5mCg==}
@@ -5493,6 +5546,10 @@ snapshots:
 
   '@types/picomatch@4.0.3': {}
 
+  '@types/pngjs@6.0.5':
+    dependencies:
+      '@types/node': 25.9.5
+
   '@types/react-dom@19.3.0(@types/react@19.3.0)':
     dependencies:
       '@types/react': 19.3.0
@@ -7290,6 +7347,10 @@ snapshots:
   picomatch@2.3.2: {}
 
   picomatch@4.0.7: {}
+
+  pixelmatch@7.2.0:
+    dependencies:
+      pngjs: 7.0.0
 
   playwright-core@1.63.0: {}
 

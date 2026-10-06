@@ -1,0 +1,11 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    // The unit tests cover argument parsing, Markdown, the diff and the docs server against a
+    // fake process, so they do not wait for the Fuse build that the root `test` task depends on.
+    // `test:browser` keeps the root's dependency on this package's build, which it does not have.
+    "test": {
+      "dependsOn": []
+    }
+  }
+}

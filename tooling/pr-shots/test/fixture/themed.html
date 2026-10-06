@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en" data-theme-variant="external" data-theme-brand="elma" data-theme-segment="private">
+  <head>
+    <meta charset="utf-8" />
+    <title>pr-shots fixture: a landing-style page whose target needs a theme</title>
+    <style>
+      body {
+        margin: 0;
+        font: 16px/20px sans-serif;
+      }
+      header {
+        display: flex;
+        height: 40px;
+        align-items: center;
+        padding: 0 16px;
+      }
+      main {
+        padding: 40px;
+      }
+      /* A fixed, whole-pixel target that exists only in the Internal variant, as the landing's
+         Dashboard does. */
+      [aria-label="Dashboard"] {
+        box-sizing: border-box;
+        width: 320px;
+        height: 160px;
+        background: #ddf;
+      }
+      [role="dialog"][hidden] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <header role="banner">
+      <button type="button" id="chip">Theme: Elmera · Private · External</button>
+    </header>
+    <div role="dialog" aria-label="Theme" hidden>
+      <p id="variant">Variant</p>
+      <div role="group" aria-labelledby="variant">
+        <button type="button" data-axis="variant" data-value="internal">Internal</button>
+        <button type="button" data-axis="variant" data-value="external">External</button>
+      </div>
+      <p id="brand">Brand</p>
+      <div role="group" aria-labelledby="brand">
+        <button type="button" data-axis="brand" data-value="elma">Elmera</button>
+        <button type="button" data-axis="brand" data-value="fkas">Fjordkraft</button>
+      </div>
+      <p id="segment">Segment</p>
+      <div role="group" aria-labelledby="segment">
+        <button type="button" data-axis="segment" data-value="private">Private</button>
+        <button type="button" data-axis="segment" data-value="company">Company</button>
+      </div>
+    </div>
+    <main></main>
+    <script>
+      const root = document.documentElement;
+      const dialog = document.querySelector('[role="dialog"]');
+      const chip = document.querySelector("#chip");
+      const main = document.querySelector("main");
+
+      function render() {
+        for (const button of dialog.querySelectorAll("button")) {
+          const current = root.getAttribute(`data-theme-${button.dataset.axis}`);
+          button.setAttribute("aria-pressed", String(current === button.dataset.value));
+        }
+        const internal = root.getAttribute("data-theme-variant") === "internal";
+        main.innerHTML = internal
+          ? '<section aria-label="Dashboard">Orders</section>'
+          : "<p>No dashboard</p>";
+      }
+
+      chip.addEventListener("click", () => {
+        dialog.hidden = false;
+      });
+      dialog.addEventListener("click", (event) => {
+        const button = event.target.closest("button");
+        if (button !== null) {
+          root.setAttribute(`data-theme-${button.dataset.axis}`, button.dataset.value);
+          render();
+        }
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          dialog.hidden = true;
+          chip.focus();
+        }
+      });
+      render();
+    </script>
+  </body>
+</html>

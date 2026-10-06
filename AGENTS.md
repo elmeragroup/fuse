@@ -70,6 +70,7 @@ Before opening a PR, read [CONTRIBUTING.md](CONTRIBUTING.md) in full. Write the 
 from [the PR template](.github/pull_request_template.md), filling each section, in place
 of any generic summary format, and attach the screenshots CONTRIBUTING.md asks for.
 Apply every label from the [contribution flow](README.md#contribution-flow) that fits.
+Take PR screenshots with `pnpm shots`; read [its README](tooling/pr-shots/README.md) first.
 For release or changeset work, read [scripts/RELEASE.md](scripts/RELEASE.md).
 For palette changes, read the [consumer contrast exceptions](<apps/docs/src/app/(docs)/accessibility/page.tsx>).
 For theme vocabulary, read [CONTEXT.md](CONTEXT.md).

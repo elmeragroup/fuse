@@ -81,6 +81,7 @@ Package-scoped scripts worth knowing:
 | `packages/fuse-figma` | `@elmeragroup/fuse-figma`        | Private CLI that syncs the design tokens into a Figma file's variables                   |
 | `packages/color`      | `@elmeragroup/color`             | Private color parsing, conversion, mixing and WCAG contrast, shared by every workspace   |
 | `tooling/typescript`  | `@elmeragroup/typescript-config` | Shared tsconfig bases                                                                    |
+| `tooling/pr-shots`    | `@elmeragroup/pr-shots`          | Private CLI behind `pnpm shots`: before and after docs screenshots for PRs               |
 
 The API extractor and the `elmera/*` and `anti-slop/*` lint rules come from [`@elmeragroup/internal`](https://github.com/elmeragroup/internal). The workspace pins it once in the pnpm catalog.
 

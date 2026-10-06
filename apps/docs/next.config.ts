@@ -7,6 +7,13 @@ const workspaceRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), ".
 
 const nextConfig: NextConfig = {
   /**
+   * `pnpm shots` serves this checkout with `next dev` beside `docs#test:browser`, which reads
+   * `.next`. Next has no CLI flag or environment variable of its own for the output directory, so
+   * the tool names a separate one here. Unset, the build and the container keep `.next`.
+   */
+  // oxlint-disable-next-line turbo/no-undeclared-env-vars -- only `pnpm shots` sets it, outside turbo; strict env mode keeps it out of turbo builds, so their output stays `.next`
+  distDir: process.env.DOCS_DIST_DIR ?? ".next",
+  /**
    * The container image runs `node apps/docs/server.js` from `.next/standalone` (see
    * `Dockerfile`). Tracing from the workspace root keeps the linked workspace packages in
    * that bundle instead of leaving them behind as pnpm symlinks.
