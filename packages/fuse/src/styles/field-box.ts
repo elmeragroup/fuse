@@ -25,6 +25,21 @@ export const fieldBoxChromeClass = cn(
 );
 
 /**
+ * The read-only fill, the React Aria FieldGroup's `isReadOnly` face, so a read-only Input
+ * reads as locked next to a read-only DateField. It keys off the `readonly` attribute, not
+ * `:read-only`, which also matches a disabled input and a file input, and it leaves a
+ * disabled box its disabled fill.
+ */
+export const readOnlyFillClass = cn("[&[readonly]:not(:disabled)]:bg-muted");
+
+/**
+ * Cancels {@link readOnlyFillClass} on a control that sits inside a box that paints the fill
+ * itself (InputGroup's root, TextField's card). It shares the fill's variant, so
+ * tailwind-merge replaces the fill instead of keeping both.
+ */
+export const readOnlyFillCancelClass = cn("[&[readonly]:not(:disabled)]:bg-transparent");
+
+/**
  * NumberField group chrome — same elevation as Input, `within` focus. The group box is the
  * control, so it takes the within-target state face: it dims once and shows the
  * `not-allowed` cursor when its own `data-focus-ring-control` input, a direct child, is
@@ -45,12 +60,13 @@ export const numberFieldGroupClass = cn(
  * `InputGroup.Textarea`, so it paints the shared chrome, fill included, once. It pins the md
  * control rung, and block addons and textareas grow it instead. Like NumberField's group it
  * takes the within-target state face from its own `data-focus-ring-control` control, a direct
- * child, plus that control's disabled fill.
+ * child, plus that control's disabled and read-only fills.
  */
 export const inputGroupRootClass = cn(
   fieldBoxChromeClass,
   "group/input-group relative flex h-(--control-h-md) w-full min-w-0 items-center",
   "has-[>[data-focus-ring-control]:disabled]:bg-input/50",
+  "has-[>[data-focus-ring-control][readonly]:not(:disabled)]:bg-muted",
   "has-[[data-focus-ring-control]:focus-visible]:border-ring",
   withinStateFaceClass,
   "has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>textarea]:h-auto",
@@ -64,7 +80,7 @@ export const inputGroupRootClass = cn(
  * md control rung, `content` grows with its content — no host may cancel a
  * recipe class via twMerge. The disabled and invalid looks are the native-target state
  * face, whose `aria-disabled` arm dims an `aria-disabled` box as the gate stills it; the box
- * adds only its disabled fill.
+ * adds only its disabled fill and {@link readOnlyFillClass}.
  */
 export const fieldBox = tv({
   base: cn(
@@ -72,6 +88,7 @@ export const fieldBox = tv({
     "w-full",
     controlMdInsetTypeClass,
     "placeholder:text-muted-foreground disabled:bg-input/50",
+    readOnlyFillClass,
     nativeStateFaceClass,
     selfFocusRingClass
   ),

@@ -17,14 +17,22 @@ import { describedTextsFor, segmentLocator, segmentNamed } from "../../../test/r
 import {
   CONTROL_MD,
   cssVarColor,
+  // This suite's own fieldRootFrom finds a DateField's root; the shared one a base-ui Field's.
+  fieldRootFrom as baseFieldRootFrom,
   fkasExternal,
   px,
   renderThemed,
+  roleNamed,
   stampDensity,
+  textboxNamed,
 } from "../../../test/themed-browser-render";
+import { InputGroup } from "../../components/input-group";
 import { Input } from "../../components/input/input";
+import { TextField } from "../../components/text-field/text-field";
+import { Textarea } from "../../components/textarea/textarea";
 import { fieldCornerClass } from "../../styles/corner-radius";
 import { ThemeScope } from "../../theme";
+import { SearchField } from "../search-field/search-field";
 import { UiProviders } from "../ui-providers/ui-providers";
 import { DateField, DateInput } from "./date-field";
 
@@ -34,6 +42,15 @@ function renderField(node: ReactNode) {
       {node}
     </UiProviders>
   );
+}
+
+/** The group box around a control: InputGroup's root or a React Aria FieldGroup. */
+function groupAround(element: HTMLElement): HTMLElement {
+  const box = element.closest('[role="group"]');
+  if (!(box instanceof HTMLElement)) {
+    throw new Error("expected a group around the control");
+  }
+  return box;
 }
 
 function groupNamed(name: string): HTMLElement {
@@ -328,5 +345,81 @@ describe("DateField field-box chrome", () => {
     // The interim tier's old rung is gone from both sides, not just from the one that moved.
     expect(dateElement.classList.contains("rounded-lg")).toBe(false);
     expect(inputElement.classList.contains("rounded-lg")).toBe(false);
+  });
+
+  it("paints the read-only fill on every read-only field box", async () => {
+    renderField(
+      <>
+        <DateField label="Meter" isReadOnly defaultValue={july14} />
+        <Input aria-label="Reading" readOnly defaultValue="Locked" />
+        <Textarea aria-label="Note" readOnly defaultValue="Locked" />
+        <TextField label="Customer" isReadOnly defaultValue="Locked" />
+        <TextField label="Nickname" variant="inline" isReadOnly defaultValue="Locked" />
+        <TextField label="Editable nickname" variant="inline" defaultValue="Ada" />
+        <TextField label="Annual usage" variant="card" isReadOnly defaultValue="4200" />
+        <InputGroup.Root>
+          <InputGroup.Addon>
+            <InputGroup.Text>kr</InputGroup.Text>
+          </InputGroup.Addon>
+          <InputGroup.Input aria-label="Amount" readOnly defaultValue="120" />
+        </InputGroup.Root>
+        <SearchField label="Find" isReadOnly defaultValue="Locked" />
+        <Input aria-label="Editable" />
+      </>
+    );
+    const dateElement = groupNamed("Meter");
+    // Unit: each box's computed fill. Oracle: DateField's FieldGroup `isReadOnly` face, which
+    // paints `--muted`, the fill every other read-only field box must reproduce.
+    const readOnlyFill = getComputedStyle(dateElement).backgroundColor;
+    expect(readOnlyFill).toBe(cssVarColor(dateElement, "--muted"));
+    // Not the resting fill, so the equalities below cannot pass on two editable boxes.
+    expect(readOnlyFill).not.toBe(getComputedStyle(textboxNamed("Editable")).backgroundColor);
+
+    for (const name of ["Reading", "Note", "Customer", "Nickname"]) {
+      expect.soft(getComputedStyle(textboxNamed(name)).backgroundColor, name).toBe(readOnlyFill);
+    }
+    // A box that wraps its control paints the fill once, and the control inside stays clear.
+    const wrapped = [
+      { name: "Annual usage", control: textboxNamed("Annual usage"), box: baseFieldRootFrom("Annual usage") },
+      { name: "Amount", control: textboxNamed("Amount"), box: groupAround(textboxNamed("Amount")) },
+      {
+        name: "Find",
+        control: roleNamed("searchbox", "Find"),
+        box: groupAround(roleNamed("searchbox", "Find")),
+      },
+    ];
+    for (const { name, control, box } of wrapped) {
+      expect.soft(getComputedStyle(box).backgroundColor, `${name} box`).toBe(readOnlyFill);
+      expect.soft(getComputedStyle(control).backgroundColor, `${name} control`).toBe("rgba(0, 0, 0, 0)");
+    }
+
+    // The inline field's hover reveal repaints an editable one, but not a read-only one.
+    const editable = textboxNamed("Editable nickname");
+    await userEvent.hover(editable);
+    await expect
+      .poll(() => getComputedStyle(editable).backgroundColor)
+      .toBe(cssVarColor(dateElement, "--background"));
+    await userEvent.hover(textboxNamed("Nickname"));
+    expect(getComputedStyle(textboxNamed("Nickname")).backgroundColor).toBe(readOnlyFill);
+  });
+
+  it("keeps the disabled fill on a disabled box that is also read-only", () => {
+    renderField(
+      <>
+        <Input aria-label="Disabled" disabled />
+        <Input aria-label="Disabled read-only" disabled readOnly />
+        <InputGroup.Root>
+          <InputGroup.Input aria-label="Grouped disabled" disabled />
+        </InputGroup.Root>
+        <InputGroup.Root>
+          <InputGroup.Input aria-label="Grouped disabled read-only" disabled readOnly />
+        </InputGroup.Root>
+      </>
+    );
+    const fill = (element: HTMLElement): string => getComputedStyle(element).backgroundColor;
+    const rootFill = (name: string): string => fill(groupAround(textboxNamed(name)));
+    // Oracle: the same box disabled without `readOnly`.
+    expect(fill(textboxNamed("Disabled read-only"))).toBe(fill(textboxNamed("Disabled")));
+    expect(rootFill("Grouped disabled read-only")).toBe(rootFill("Grouped disabled"));
   });
 });

@@ -57,7 +57,7 @@ export function SearchField({
   return (
     <AriaSearchField {...props} className={composeTailwindRenderProps(className, base())}>
       {label ? <Label>{label}</Label> : null}
-      <FieldGroup>
+      <FieldGroup isReadOnly={props.isReadOnly}>
         <MagnifyingGlass aria-hidden className={icon()} />
         <Input className={input()} placeholder={placeholder} ref={ref} />
         <Button

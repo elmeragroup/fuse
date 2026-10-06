@@ -15,6 +15,9 @@
   modes and two primitives waits on the owner.
 - Ask design for an external secondary hover tone. Every external palette sets `secondary`
   equal to `foreground`, so `--secondary-hover` equals `--secondary` and the hover is invisible.
+- Ask design for a light `muted` that clears the 1.1:1 hover-tint floor on `card` and `popover`.
+  The shared 0.97 on a white surface measures 1.09:1 on every light theme, so
+  `contrast-matrix.test.ts` holds `muted` to that floor in dark only.
 - Ask design for a text-grade foreground on dark `feature`, or lighter dark `feature` tones.
   White text on dark `feature` measures 4.49:1 for tkas, 4.38:1 for fkse and 4.49:1 for elma,
   under the 4.5:1 floor. Until design decides, the landing's brand sites fill strong bands and
@@ -135,6 +138,10 @@
   that a bridge rendered first in `Toast.Provider` replays. For the second, Fuse runs
   `promise()` over its own `add` and `update`. Remove each workaround once Fuse installs a
   fixed release.
+- Finish the read-only field fill. Select's trigger (`components/select/select.tsx`) and
+  Combobox's chips box (`components/combobox/combobox.tsx`) take no read-only fill, and
+  `TextField variant="card"` still paints the borderless input's disabled band across the card
+  (`components/text-field/text-field-variants.ts`) where the read-only fill now paints the card.
 - `Item.Root hidden` stays visible in a host without Tailwind's preflight. The user-agent rule
   `[hidden] { display: none }` loses to the item's `flex` class; preflight makes `[hidden]`
   `display: none !important`. Decide whether `Item.Root`, and the other parts whose root sets

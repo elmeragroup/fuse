@@ -107,7 +107,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `readOnly` to the inner input.",
+          "description": "Forwards `readOnly` to the inner input, which then takes the muted read-only fill.",
           "required": false
         },
         {

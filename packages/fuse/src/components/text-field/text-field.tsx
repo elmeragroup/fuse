@@ -31,7 +31,7 @@ export type TextFieldProps = {
   placeholder?: string;
   /** Hides the root via the recipe and the inner input via the native `hidden` attribute. */
   hidden?: boolean;
-  /** Forwards `readOnly` to the inner input. */
+  /** Forwards `readOnly` to the inner input, which then takes the muted read-only fill. */
   isReadOnly?: boolean;
   /** Forwards `disabled` to `Field.Root` and the inner input. */
   isDisabled?: boolean;
@@ -94,6 +94,7 @@ export function TextField({
     iconContainer,
     label: labelSlot,
     container,
+    inputContainer,
     description: descriptionSlot,
   } = textFieldVariants({
     variant,
@@ -120,7 +121,7 @@ export function TextField({
       isSuccess={isSuccess}
       description={description}
       errorMessage={errorMessage}>
-      <div className="relative">
+      <div className={inputContainer()}>
         <Input
           name={name}
           value={value}

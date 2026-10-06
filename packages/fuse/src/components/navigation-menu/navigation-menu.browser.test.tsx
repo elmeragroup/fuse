@@ -393,7 +393,7 @@ describe("nested NavigationMenu", () => {
     await openedLink("Spot price");
   });
 
-  describe("in external fkas dark, whose card, popover and muted are one color", () => {
+  describe("in external fkas dark, whose primary-soft is its popover", () => {
     let restoreDocumentTheme: () => void;
 
     beforeEach(() => {
