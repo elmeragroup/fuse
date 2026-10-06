@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { Toast as ToastPrimitive } from "@base-ui/react/toast";
@@ -211,7 +211,6 @@ function wrapManagerMethods(manager: PrimitiveManager): CreateToastManagerReturn
     manager.update(id, adaptUpdateOptions(options));
   };
   return {
-    ...manager,
     add,
     update,
     close: (id) => {
@@ -271,37 +270,149 @@ export function useToastManager<Data extends object = object>(): UseToastManager
   return useMemo(() => ({ ...methods, toasts }), [methods, toasts]);
 }
 
+/** Connects a provider's store to a module manager; the returned function disconnects it. */
+type ConnectToastStore = (store: PrimitiveManager) => () => void;
+
+/**
+ * Keys each manager's connect function. It is an own enumerable property, so a spread
+ * copy of the manager keeps it, and the symbol stays private, so the public type does not
+ * list it.
+ */
+const connectToastStore = Symbol("fuse.connectToastStore");
+
+type ConnectableToastManager = CreateToastManagerReturnValue & {
+  readonly [connectToastStore]?: ConnectToastStore;
+};
+
+function storeConnection(manager: CreateToastManagerReturnValue): ConnectToastStore | undefined {
+  // SAFETY: the symbol is module-private, and only createToastManager writes it, always
+  // with that manager's connect function.
+  return (manager as ConnectableToastManager)[connectToastStore];
+}
+
+/**
+ * Counts ids minted across every manager. One provider keeps its store when its
+ * `toastManager` changes, so ids from two managers must not collide.
+ */
+let mintedToastIds = 0;
+
 /**
  * Module-scope manager for code outside the React tree (timers, query-cache
  * listeners). Same `add` / `update` / `close` / `promise` methods as the hook,
- * with no reactive `toasts` array. Pass the result to
+ * with no reactive `toasts` array. Pass the result, or a spread copy of it, to
  * `<Toast.Provider toastManager={…}>`.
+ *
+ * The manager queues calls made before that provider connects, including calls made
+ * before it mounts and calls from mount effects in its subtree, and replays them in
+ * call order when it connects. `add` returns the toast id at once either way, so a
+ * queued toast can still be updated or closed. A minted id is unique across managers.
+ * Mount a manager in one provider at a time: the most recently connected provider
+ * receives every call, and once it unmounts, calls queue again even while an earlier
+ * provider stays mounted.
  */
 export function createToastManager<Data extends object = object>(): CreateToastManagerReturnValue<Data> {
-  // SAFETY: createToastManager is the primitive emit face; wrapManagerMethods only
-  // rebinds add/update/close/promise and preserves the private subscribe channel.
-  return wrapManagerMethods(ToastPrimitive.createToastManager<Data>() as PrimitiveManager);
+  let store: PrimitiveManager | undefined;
+  // Every call goes through this one queue. A call made during a replay, such as from a
+  // replayed toast's `onClose`, joins the end instead of overtaking calls queued earlier.
+  const queued: Array<(target: PrimitiveManager) => void> = [];
+  let draining = false;
+  const drain = () => {
+    if (draining) {
+      return;
+    }
+    draining = true;
+    try {
+      while (store !== undefined) {
+        const call = queued.shift();
+        if (call === undefined) {
+          return;
+        }
+        call(store);
+      }
+    } finally {
+      draining = false;
+    }
+  };
+  const send = (call: (target: PrimitiveManager) => void) => {
+    queued.push(call);
+    drain();
+  };
+  // Fuse mints ids so a queued `add` can return one before any store exists. Like the
+  // store, it treats an empty id as none.
+  const mintId = () => {
+    mintedToastIds += 1;
+    return `fuse-toast-${mintedToastIds}`;
+  };
+  const connect: ConnectToastStore = (next) => {
+    store = next;
+    drain();
+    return () => {
+      if (store === next) {
+        store = undefined;
+      }
+    };
+  };
+  const manager: ConnectableToastManager = {
+    ...wrapManagerMethods({
+      add: (options) => {
+        const id = options.id === undefined || options.id === "" ? mintId() : options.id;
+        send((target) => target.add({ ...options, id }));
+        return id;
+      },
+      update: (id, options) => {
+        send((target) => {
+          target.update(id, options);
+        });
+      },
+      close: (id) => {
+        send((target) => {
+          target.close(id);
+        });
+      },
+    }),
+    [connectToastStore]: connect,
+  };
+  return manager;
+}
+
+/**
+ * Connects the provider's store to a module manager, replaying its queue. The Base UI
+ * provider gets no `toastManager`: its subscription reads a private key and starts in
+ * the provider's own effect, after every descendant's mount effect, so calls made
+ * earlier were dropped. This bridge reads only the public store-backed hook and, as the
+ * provider's first child, connects before any later sibling's mount effect runs. Every
+ * call takes this one path, so none is delivered twice.
+ *
+ * Under StrictMode the replay runs on the first connection, then the provider's replayed
+ * cleanup clears the store's auto-dismiss timers. The toasts keep their timeout anyway:
+ * each `Toast.Root` registers its height when it mounts, in a later commit, and that
+ * store write schedules the timer a toast is missing.
+ */
+function ToastManagerBridge({ connect }: { connect: ConnectToastStore }): null {
+  // `add` / `update` / `close` are the store's own bound methods and keep their identity
+  // across toast changes, so the bridge connects once per store.
+  const { add, update, close } = ToastPrimitive.useToastManager();
+  useEffect(() => connect({ add, update, close }), [connect, add, update, close]);
+  return null;
 }
 
 export type ToastProviderProps = Omit<ComponentProps<typeof ToastPrimitive.Provider>, "toastManager"> & {
   /**
    * Optional manager from `Toast.createToastManager()` so non-React code
    * (timers, query-cache listeners) can dispatch through the same adapter as
-   * `Toast.useToastManager()`.
+   * `Toast.useToastManager()`. The manager queues calls made before this provider
+   * connects and replays them in order.
    */
   toastManager?: CreateToastManagerReturnValue;
 };
 
-export function ToastProvider({ toastManager, ...props }: ToastProviderProps): ReactElement {
+export function ToastProvider({ toastManager, children, ...props }: ToastProviderProps): ReactElement {
+  const connect = toastManager === undefined ? undefined : storeConnection(toastManager);
   return (
-    <ToastPrimitive.Provider
-      toastManager={
-        // SAFETY: our adapter is a drop-in for the primitive manager; the private
-        // subscribe channel is preserved by wrapManagerMethods' object spread.
-        toastManager as ComponentProps<typeof ToastPrimitive.Provider>["toastManager"]
-      }
-      {...props}
-    />
+    <ToastPrimitive.Provider {...props}>
+      {connect === undefined ? null : <ToastManagerBridge connect={connect} />}
+      {children}
+    </ToastPrimitive.Provider>
   );
 }
 
