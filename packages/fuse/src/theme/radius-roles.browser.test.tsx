@@ -65,6 +65,7 @@ type Specimen =
   | "phone trigger"
   | "search clear"
   | "date trigger"
+  | "date segment"
   | "preset"
   | "chip remove";
 
@@ -76,8 +77,9 @@ type Variant = "internal" | "fkas" | "tkas" | "guen";
  * fkas, 1rem (16px) for tkas and 0.5rem (8px) for guen. An external field box rounds
  * with the external variant's `--radius-field`, 0.25rem (4px), whatever the brand, and
  * nothing inside it rounds more: the kbd and the xs addons take the smaller of 5px inside
- * `--radius` and 4px, so guen's stay at 3px, and the sm addons, the search clear button, the
- * date trigger and the chip remove button take 4px. The other external values are the ones
+ * `--radius` and 4px, so guen's stay at 3px, a date segment takes the smaller of `rounded-xs`
+ * and 4px, so guen's stays at 2px, and the sm addons, the search clear button, the date
+ * trigger and the chip remove button take 4px. The other external values are the ones
  * Chromium measured on origin/main (e178f6d7) with each theme on the document. The tkas row
  * has since moved 0.8px with its `--radius`, from 0.95rem to 1rem.
  */
@@ -102,6 +104,7 @@ const EXPECTED = {
     "phone trigger": 6,
     "search clear": 6,
     "date trigger": 6,
+    "date segment": 6,
     preset: 6,
     "chip remove": 6,
   },
@@ -125,6 +128,7 @@ const EXPECTED = {
     "phone trigger": 4,
     "search clear": 4,
     "date trigger": 4,
+    "date segment": 4,
     preset: 10,
     "chip remove": 4,
   },
@@ -148,6 +152,7 @@ const EXPECTED = {
     "phone trigger": 4,
     "search clear": 4,
     "date trigger": 4,
+    "date segment": 4,
     preset: 10,
     "chip remove": 4,
   },
@@ -171,6 +176,7 @@ const EXPECTED = {
     "phone trigger": 4,
     "search clear": 4,
     "date trigger": 4,
+    "date segment": 2,
     preset: 6,
     "chip remove": 4,
   },
@@ -297,6 +303,15 @@ function calendarNav(name: "Previous" | "Next"): HTMLElement {
   return element;
 }
 
+/** The date picker's first segment, which paints its focus fill inside the field box. */
+function dateSegment(): HTMLElement {
+  const element = page.getByRole("spinbutton").first().element();
+  if (!(element instanceof HTMLElement)) {
+    throw new Error("expected the date picker's first segment");
+  }
+  return element;
+}
+
 /** A preset item's label, the element that carries the preset's button chrome. */
 function presetNamed(name: string): HTMLElement {
   const label = roleNamed("radio", name).closest("label");
@@ -338,6 +353,7 @@ function measure(): readonly (readonly [Specimen, string, number])[] {
     button("phone trigger", "Select country"),
     button("search clear", "Clear search"),
     ["date trigger", "Date trigger", radius(dateTrigger())],
+    ["date segment", "Date segment", radius(dateSegment())],
     ["preset", "Today", radius(presetNamed("Today"))],
     button("chip remove", "Remove Apple"),
   ];
@@ -447,6 +463,7 @@ describe("radius roles", () => {
       ["addon sm", "Addon sm"],
       ["search clear", "Clear search"],
       ["date trigger", "Date trigger"],
+      ["date segment", "Date segment"],
       ["chip remove", "Remove Apple"],
       ["phone trigger", "Select country"],
     ] as const) {

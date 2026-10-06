@@ -57,6 +57,15 @@ export const chipCornerClass = cn(
 );
 
 /**
+ * The corner of a DateField segment, which paints its focus fill inside the field box.
+ * External themes round it with `rounded-xs` capped at the {@link fieldCornerClass} corner,
+ * and internal themes with `--radius`.
+ */
+export const segmentCornerClass = cn(
+  "rounded-[min(--theme(--radius-xs),clamp(var(--radius)-1000*var(--radius-step,0px),var(--radius-field,var(--radius)),var(--radius)+1000*var(--radius-step,0px)))]"
+);
+
+/**
  * The corner of a compact button that sits in a list or a toolbar, the xs Toggle and the
  * DatePicker preset items. External themes round it with `rounded-md` capped at 10px, and
  * internal themes with `--radius`.
