@@ -173,6 +173,7 @@
       "date-picker-basic.tsx",
       "date-picker-controlled.tsx",
       "date-picker-presets.tsx",
+      "date-picker-trigger-start.tsx",
       "date-picker-validation.tsx",
       "date-picker-states.tsx",
       "date-picker-in-modal.tsx"

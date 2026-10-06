@@ -6,6 +6,7 @@ lede: >
 import { DatePickerBasic } from "./demos/date-picker-basic";
 import { DatePickerControlled } from "./demos/date-picker-controlled";
 import { DatePickerPresets } from "./demos/date-picker-presets";
+import { DatePickerTriggerStart } from "./demos/date-picker-trigger-start";
 import { DatePickerValidation } from "./demos/date-picker-validation";
 import { DatePickerStates } from "./demos/date-picker-states";
 import { DatePickerInModal } from "./demos/date-picker-in-modal";
@@ -36,6 +37,12 @@ Presets stack above the calendar on small screens. A popup with limited vertical
 
 <Demo slug="date-picker" id="presets" title="Presets" file="date-picker-presets.tsx">
   <DatePickerPresets />
+</Demo>
+
+Set `triggerPlacement="start"` to put the calendar button before the date. The button comes first in tab order, and clicking the label focuses it.
+
+<Demo slug="date-picker" id="trigger-start" title="Leading trigger" file="date-picker-trigger-start.tsx">
+  <DatePickerTriggerStart />
 </Demo>
 
 <Demo slug="date-picker" id="validation" title="Validation" file="date-picker-validation.tsx">

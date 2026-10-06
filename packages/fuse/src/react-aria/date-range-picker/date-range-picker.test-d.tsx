@@ -95,4 +95,6 @@ test("the elements take the public props and reject an invented axis", () => {
   const _noSingleValue = <DateRangePicker label="Delivery window" value={new CalendarDate(2026, 7, 14)} />;
   // @ts-expect-error container takes an element or a ref, never a selector
   const _noSelector = <DateRangePicker container="#overlays" label="Delivery window" />;
+  // @ts-expect-error the range grid places its trigger at the end; only DatePicker can lead with it
+  const _noTriggerPlacement = <DateRangePicker label="Delivery window" triggerPlacement="start" />;
 });

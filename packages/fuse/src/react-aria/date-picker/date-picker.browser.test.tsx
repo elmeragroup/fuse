@@ -70,7 +70,7 @@ function groupNamed(name: string): HTMLElement {
 }
 
 function dateInputRow(name: string): HTMLElement {
-  const segment = segmentNamed("month");
+  const segment = segmentNamed(`month, ${name}`);
   const row = segment.parentElement;
   if (!(row instanceof HTMLElement) || !groupNamed(name).contains(row)) {
     throw new Error(`expected DateInput around ${name}`);
@@ -125,6 +125,9 @@ async function openPicker(): Promise<HTMLElement> {
 const march10 = new CalendarDate(2026, 3, 10);
 const july4 = new CalendarDate(2026, 7, 4);
 const july14 = new CalendarDate(2026, 7, 14);
+
+/** Both trigger placements, for the tests whose behavior must not depend on the side. */
+const triggerPlacements = ["end", "start"] as const;
 
 function presets(): ReactElement {
   return (
@@ -186,26 +189,36 @@ describe("DatePicker", () => {
     expect(trigger_.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
   });
 
-  it("opens a named dialog holding the calendar grid and commits a day with Enter", async () => {
-    const onChange = vi.fn();
-    renderPicker(<DatePicker label="Invoice date" value={march10} onChange={onChange} />);
-    const dialog = await openPicker();
+  it.each(triggerPlacements)(
+    "opens a named dialog holding the calendar grid and commits a day with Enter, trigger at the %s",
+    async (triggerPlacement) => {
+      const onChange = vi.fn();
+      renderPicker(
+        <DatePicker
+          label="Invoice date"
+          value={march10}
+          onChange={onChange}
+          triggerPlacement={triggerPlacement}
+        />
+      );
+      const dialog = await openPicker();
 
-    expect(trigger()).toHaveAttribute("aria-expanded", "true");
-    await expect.element(page.getByRole("grid")).toBeVisible();
-    expect(dialog.contains(calendarGrid())).toBe(true);
-    // The dialog keeps RAC's own name; an unnamed overlay would be an AT dead end.
-    await expect.element(page.getByRole("dialog", { name: /calendar/i })).toBeVisible();
-    expect(cellNamed(/Tuesday, March 10, 2026/i)).toHaveAttribute("aria-selected", "true");
-    // RAC moves focus onto the selected day from an effect after the popover mounts.
-    await expect.element(page.getByRole("button", { name: /Tuesday, March 10, 2026/i })).toHaveFocus();
+      expect(trigger()).toHaveAttribute("aria-expanded", "true");
+      await expect.element(page.getByRole("grid")).toBeVisible();
+      expect(dialog.contains(calendarGrid())).toBe(true);
+      // The dialog keeps RAC's own name; an unnamed overlay would be an AT dead end.
+      await expect.element(page.getByRole("dialog", { name: /calendar/i })).toBeVisible();
+      expect(cellNamed(/Tuesday, March 10, 2026/i)).toHaveAttribute("aria-selected", "true");
+      // RAC moves focus onto the selected day from an effect after the popover mounts.
+      await expect.element(page.getByRole("button", { name: /Tuesday, March 10, 2026/i })).toHaveFocus();
 
-    await userEvent.keyboard("{Enter}");
-    expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange.mock.calls[0]?.[0]).toEqual(expect.objectContaining({ year: 2026, month: 3, day: 10 }));
-    expect(onChange.mock.calls[0]?.[0]).not.toBeInstanceOf(Event);
-    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
-  });
+      await userEvent.keyboard("{Enter}");
+      expect(onChange).toHaveBeenCalledTimes(1);
+      expect(onChange.mock.calls[0]?.[0]).toEqual(expect.objectContaining({ year: 2026, month: 3, day: 10 }));
+      expect(onChange.mock.calls[0]?.[0]).not.toBeInstanceOf(Event);
+      await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
+    }
+  );
 
   it("reopens an uncontrolled picker on its defaultValue's month after paging away", async () => {
     // The sync reads the picker state's committed value, so `defaultValue` alone — with
@@ -361,24 +374,94 @@ describe("DatePicker", () => {
     expect(document.body.textContent).not.toContain("Required");
   });
 
-  it("fills the read-only field with the muted surface and keeps the popover closed", async () => {
-    renderPicker(<DatePicker label="Invoice date" isReadOnly value={july14} />);
-    const group = groupNamed("Invoice date");
-    const glyph = group.querySelector("svg");
-    if (!(glyph instanceof SVGElement)) {
-      throw new Error("expected the trigger glyph");
+  it.each(triggerPlacements)(
+    "fills the read-only field with the muted surface and keeps the popover closed, trigger at the %s",
+    async (triggerPlacement) => {
+      renderPicker(
+        <DatePicker label="Invoice date" isReadOnly value={july14} triggerPlacement={triggerPlacement} />
+      );
+      const group = groupNamed("Invoice date");
+      const glyph = group.querySelector("svg");
+      if (!(glyph instanceof SVGElement)) {
+        throw new Error("expected the trigger glyph");
+      }
+
+      // The FieldGroup's own `isReadOnly` axis paints the fill, exactly once. The glyph is
+      // deliberately untinted: `bg-muted` on the `<svg>` never belonged there and went with
+      // the picker recipe's duplicate arm.
+      expect(getComputedStyle(group).backgroundColor).toBe(cssVarColor(group, "--muted"));
+      expect(group.getAttribute("data-readonly")).toBe("true");
+      expect(getComputedStyle(glyph).backgroundColor).not.toBe(cssVarColor(group, "--muted"));
+      expect(trigger()).toBeDisabled();
+
+      await userEvent.click(trigger(), { force: true });
+      expect(page.getByRole("dialog").query()).toBeNull();
     }
+  );
+});
 
-    // The FieldGroup's own `isReadOnly` axis paints the fill, exactly once. The glyph is
-    // deliberately untinted: `bg-muted` on the `<svg>` never belonged there and went with
-    // the picker recipe's duplicate arm.
-    expect(getComputedStyle(group).backgroundColor).toBe(cssVarColor(group, "--muted"));
-    expect(group.getAttribute("data-readonly")).toBe("true");
-    expect(getComputedStyle(glyph).backgroundColor).not.toBe(cssVarColor(group, "--muted"));
-    expect(trigger()).toBeDisabled();
+describe("DatePicker trigger placement", () => {
+  it("keeps the trigger after the segments by default", async () => {
+    renderPicker(<DatePicker label="Invoice date" defaultValue={july14} />);
+    await expect.element(segmentLocator("year")).toBeVisible();
 
-    await userEvent.click(trigger(), { force: true });
-    expect(page.getByRole("dialog").query()).toBeNull();
+    expect(groupNamed("Invoice date").lastElementChild).toBe(trigger());
+    expect(trigger().getBoundingClientRect().left).toBeGreaterThanOrEqual(
+      segmentNamed("year").getBoundingClientRect().right
+    );
+  });
+
+  it("leads the field box with the trigger in DOM, tab and visual order", async () => {
+    renderPicker(
+      <>
+        <button type="button">Before</button>
+        <DatePicker label="Start-up date" defaultValue={july14} triggerPlacement="start" />
+      </>
+    );
+    const group = groupNamed("Start-up date");
+
+    expect(group.firstElementChild).toBe(trigger());
+    expect(trigger().getBoundingClientRect().right).toBeLessThanOrEqual(
+      segmentNamed("month").getBoundingClientRect().left
+    );
+
+    buttonNamed("Before").focus();
+    await userEvent.tab();
+    expect(document.activeElement).toBe(trigger());
+    await userEvent.tab();
+    expect(document.activeElement).toBe(segmentNamed("month"));
+
+    // RAC's label click focuses the group's first focusable part, now the trigger.
+    await userEvent.click(page.getByText("Start-up date", { exact: true }));
+    expect(document.activeElement).toBe(trigger());
+  });
+
+  it("mirrors the trailing trigger's inset and the segment row's padding", async () => {
+    renderPicker(
+      <>
+        <DatePicker label="Trailing" defaultValue={july14} />
+        <DatePicker label="Leading" defaultValue={july14} triggerPlacement="start" />
+      </>
+    );
+    await expect.element(groupNamed("Leading")).toBeVisible();
+    // Unit: the leading layout. Oracle: the trailing layout, mirrored. The trailing
+    // trigger's inset and the segment row's padding are the established field box, so
+    // the leading trigger has to sit as far from the start edge as that one sits from
+    // the end edge, with the row's paddings swapped.
+    const triggerIn = (name: string): DOMRect =>
+      roleNamed("button", `Calendar ${name}`).getBoundingClientRect();
+    const trailing = groupNamed("Trailing").getBoundingClientRect();
+    const leading = groupNamed("Leading").getBoundingClientRect();
+
+    expect(triggerIn("Leading").left - leading.left).toBeCloseTo(
+      trailing.right - triggerIn("Trailing").right
+    );
+    expect(getComputedStyle(dateInputRow("Leading")).paddingInlineStart).toBe(
+      getComputedStyle(dateInputRow("Trailing")).paddingInlineEnd
+    );
+    expect(getComputedStyle(dateInputRow("Leading")).paddingInlineEnd).toBe(
+      getComputedStyle(dateInputRow("Trailing")).paddingInlineStart
+    );
   });
 });
 
