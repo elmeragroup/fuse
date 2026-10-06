@@ -117,3 +117,61 @@ describe("Form", () => {
     await expect.element(page.getByRole("textbox", { name: "Phone", exact: true })).toHaveFocus();
   });
 });
+
+describe("Form submit check", () => {
+  it("calls no submit handler while an error sits on a field the user has not edited", async () => {
+    const submitted = vi.fn();
+    renderThemed(
+      <Form aria-label="Signup" errors={{ email: "Already registered." }} onFormSubmit={submitted}>
+        <SignupFields />
+        <Button type="submit">Sign up</Button>
+      </Form>
+    );
+
+    // Editing another field leaves the error in place, so the submit stops on its field.
+    await userEvent.fill(page.getByRole("textbox", { name: "Phone", exact: true }), "12345678");
+    await userEvent.click(page.getByRole("button", { name: "Sign up", exact: true }));
+    expect(submitted).not.toHaveBeenCalled();
+    await expect.element(page.getByRole("textbox", { name: "Email", exact: true })).toHaveFocus();
+
+    // Only an edit of the field that holds the error clears it.
+    await userEvent.type(page.getByRole("textbox", { name: "Email", exact: true }), "a");
+    await userEvent.click(page.getByRole("button", { name: "Sign up", exact: true }));
+    expect(submitted).toHaveBeenCalledOnce();
+  });
+
+  it("calls no submit handler for as long as a Field inside it is passed invalid", async () => {
+    const submitted = vi.fn();
+    renderThemed(
+      <Form aria-label="Signup" onFormSubmit={submitted}>
+        <TextField label="Email" name="email" isInvalid errorMessage="Enter your work address." />
+        <Button type="submit">Sign up</Button>
+      </Form>
+    );
+
+    await userEvent.type(page.getByRole("textbox", { name: "Email", exact: true }), "ada@example.com");
+    await userEvent.click(page.getByRole("button", { name: "Sign up", exact: true }));
+    expect(submitted).not.toHaveBeenCalled();
+  });
+
+  it("leaves a plain form's submit to its own handler when a field is passed invalid", async () => {
+    const submitted = vi.fn();
+    renderThemed(
+      <form
+        aria-label="Signup"
+        noValidate
+        onSubmit={(event) => {
+          event.preventDefault();
+          submitted();
+        }}>
+        <TextField label="Email" name="email" isInvalid errorMessage="Enter your work address." />
+        <Button type="submit">Sign up</Button>
+      </form>
+    );
+
+    expect(inputNamed("Email").getAttribute("aria-invalid")).toBe("true");
+    await expect.element(inputNamed("Email")).toHaveAccessibleDescription("Enter your work address.");
+    await userEvent.click(page.getByRole("button", { name: "Sign up", exact: true }));
+    expect(submitted).toHaveBeenCalledOnce();
+  });
+});

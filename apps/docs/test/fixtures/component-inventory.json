@@ -267,7 +267,7 @@
   "form": {
     "title": "Form",
     "rsc": "client",
-    "demos": ["form-server-errors.tsx"]
+    "demos": ["form-server-errors.tsx", "form-schema-validation.tsx"]
   },
   "frame": {
     "title": "Frame",

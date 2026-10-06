@@ -5,6 +5,7 @@ lede: >
 ---
 
 import { FormServerErrors } from "./demos/form-server-errors";
+import { FormSchemaValidation } from "./demos/form-schema-validation";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -28,7 +29,21 @@ export const metadata = componentMetadata("form");
 
 The interim react-aria fields, such as `DatePicker`, read React Aria's own form context. They do not see `errors`, their values are not in `onFormSubmit`'s values, and their own validation, such as `isRequired`, does not stop a submit. Pass them `errorMessage` and `isInvalid`, and read their values from the form data.
 
+## Errors block the submit
+
+Every submit first checks the fields inside `Form`. While any of them is invalid, `Form` focuses the first one and calls neither `onSubmit` nor `onFormSubmit`. An error from `errors` counts until that field's own value changes, and a field passed `invalid`, such as `TextField` with `isInvalid`, counts for as long as it is passed. From the first submit on, the fields also re-check their native constraints, such as `required`, on every change.
+
+That suits errors the user fixes in the field that shows them, such as an address the server rejected. It does not suit a form whose rules live in a schema, on the client or on a server, where a change elsewhere makes a field valid: a checkbox that makes an empty field optional, or a hidden value that a lookup fills in after the error came back. The field that shows the error never changes, so every submit stops on it and the schema never runs again.
+
+## Schema-validated forms
+
+Use a plain `<form noValidate>` for those, and pass each field the schema's verdict: `isInvalid` and `errorMessage` on `TextField`, or `invalid` on `Field.Root` with the message as the children of `Field.Error`. Every submit reaches your handler, which runs the schema and sets the messages, and `noValidate` keeps the browser's own bubbles off. This path gives up the errors routed by name and the focus on the first field they mark, so move focus to the first invalid field yourself when it may be out of view.
+
 </Prose>
+
+<Demo slug="form" id="schema-validation" title="Schema validation" file="form-schema-validation.tsx">
+  <FormSchemaValidation />
+</Demo>
 
 <ApiReference slug="form" />
 
