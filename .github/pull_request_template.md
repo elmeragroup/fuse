@@ -25,5 +25,3 @@ needs each of them. -->
 <!-- The focused tests and manual checks you ran and what you saw. State what you could not
 check. For UI changes, add before and after screenshots, and a short recording when motion or
 interaction is part of the change. Upload them here; keep them out of the repository. -->
-
-<!-- If an agent did the work, end with the model and harness, for example "Claude Opus 5.5 in Claude Code". -->
