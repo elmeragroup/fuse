@@ -25,25 +25,26 @@ after parsing prints its message and exits 1.
 
 To find the role and accessible name, see [Finding the target](#finding-the-target).
 
-| Flag                         | Default                     | Does                                                                                                                                                                                                                               |
-| ---------------------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--route <path>`             | required                    | The docs path to open, such as `/components/phone-number-field`. It starts with a single `/` and has no backslash, so it stays on the source's origin.                                                                             |
-| `--target <role>:<name>`     | none                        | The element, by ARIA role and exact accessible name. Only the first colon separates them. Without it the shot covers the page: see [Pages other than component demos](#pages-other-than-component-demos).                          |
-| `--nth <n>`                  | `0`                         | Which match to take when several share the role and name.                                                                                                                                                                          |
-| `--fill <text>`              | none                        | Clicks the target, types the text and blurs it before the shot.                                                                                                                                                                    |
-| `--frame <frame>`            | `auto`                      | `stage` clips the closest `[data-demo-stage]` ancestor, which holds the label and description. `target` clips the element alone. `viewport` is the window at the top of the page, `page` the whole page. `auto` picks one of them. |
-| `--pad <px>`                 | `12`                        | CSS pixels added on every side of the frame. The clip stops at the page edges.                                                                                                                                                     |
-| `--themes <slug,...>`        | the page's preview theme    | Theme slugs such as `external-tkas-company`. The run picks each one in the header's theme settings menu by its roles and names. The stage then takes the deployment-default density for the variant.                               |
-| `--densities <list>`         | the theme's default density | `dense`, `comfortable` or both. An override: see [Overrides](#overrides).                                                                                                                                                          |
-| `--engines <list>`           | `chromium`                  | Any of `chromium`, `webkit`, `firefox`. Install a missing engine with `pnpm exec playwright install <engine>`.                                                                                                                     |
-| `--viewports <WxH,...>`      | `1280x900`                  | Window sizes in CSS pixels, such as `1280x800,390x844`. Each size is an axis of the matrix, like engines.                                                                                                                          |
-| `--scale <n>`                | `2`                         | The device scale factor, above 0 and at most 4.                                                                                                                                                                                    |
-| `--color-scheme light\|dark` | `light`                     | The color scheme the browser reports to the page.                                                                                                                                                                                  |
-| `--before <source>`          | `prod`                      | Where the base comes from: `prod`, `local` or a URL.                                                                                                                                                                               |
-| `--after <source>`           | `local`                     | Where the change comes from: `prod`, `local` or a URL.                                                                                                                                                                             |
-| `--threshold <0..1>`         | `0.1`                       | pixelmatch's matching threshold for the diff. Smaller counts fainter changes.                                                                                                                                                      |
-| `--no-diff`                  | diff on                     | Skips the pixel diff and leaves the Diff column out of the table.                                                                                                                                                                  |
-| `--pr <n>`                   | none                        | Uploads the shots to pull request `<n>`.                                                                                                                                                                                           |
+| Flag                         | Default                     | Does                                                                                                                                                                                                                                                                                                                                              |
+| ---------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--route <path>`             | required                    | The docs path to open, such as `/components/phone-number-field`. It starts with a single `/` and has no backslash, so it stays on the source's origin.                                                                                                                                                                                            |
+| `--target <role>:<name>`     | none                        | The element, by ARIA role and exact accessible name. Only the first colon separates them. Without it the shot covers the page: see [Pages other than component demos](#pages-other-than-component-demos).                                                                                                                                         |
+| `--nth <n>`                  | `0`                         | Which match to take when several share the role and name.                                                                                                                                                                                                                                                                                         |
+| `--click <role>:<name>[@n]`  | none                        | Clicks an element before the shot, found like `--target`. Repeat it for more steps; they run in order. A trailing `@n` picks the match, counting from 0, as `--nth` does. A name that itself ends in `@` and digits keeps them with `@0` after it: `--click 'button:Seat@3@0'` clicks `Seat@3`. See [Clicking first](#clicking-first).            |
+| `--fill <text>`              | none                        | Clicks the target, types the text and blurs it before the shot.                                                                                                                                                                                                                                                                                   |
+| `--frame <frame>`            | `auto`                      | `stage` clips the closest `[data-demo-stage]` ancestor, which holds the label and description. `target` clips the element alone. Both take in a popup a control in them holds open. `viewport` is the window: at the top of the page, or with `--click` where the steps and the fill left it. `page` is the whole page. `auto` picks one of them. |
+| `--pad <px>`                 | `12`                        | CSS pixels added on every side of the frame. The clip stops at the page edges.                                                                                                                                                                                                                                                                    |
+| `--themes <slug,...>`        | the page's preview theme    | Theme slugs such as `external-tkas-company`. The run picks each one in the header's theme settings menu by its roles and names. The stage then takes the deployment-default density for the variant.                                                                                                                                              |
+| `--densities <list>`         | the theme's default density | `dense`, `comfortable` or both. An override: see [Overrides](#overrides).                                                                                                                                                                                                                                                                         |
+| `--engines <list>`           | `chromium`                  | Any of `chromium`, `webkit`, `firefox`. Install a missing engine with `pnpm exec playwright install <engine>`.                                                                                                                                                                                                                                    |
+| `--viewports <WxH,...>`      | `1280x900`                  | Window sizes in CSS pixels, such as `1280x800,390x844`. Each size is an axis of the matrix, like engines.                                                                                                                                                                                                                                         |
+| `--scale <n>`                | `2`                         | The device scale factor, above 0 and at most 4.                                                                                                                                                                                                                                                                                                   |
+| `--color-scheme light\|dark` | `light`                     | The color scheme the browser reports to the page.                                                                                                                                                                                                                                                                                                 |
+| `--before <source>`          | `prod`                      | Where the base comes from: `prod`, `local` or a URL.                                                                                                                                                                                                                                                                                              |
+| `--after <source>`           | `local`                     | Where the change comes from: `prod`, `local` or a URL.                                                                                                                                                                                                                                                                                            |
+| `--threshold <0..1>`         | `0.1`                       | pixelmatch's matching threshold for the diff. Smaller counts fainter changes.                                                                                                                                                                                                                                                                     |
+| `--no-diff`                  | diff on                     | Skips the pixel diff and leaves the Diff column out of the table.                                                                                                                                                                                                                                                                                 |
+| `--pr <n>`                   | none                        | Uploads the shots to pull request `<n>`.                                                                                                                                                                                                                                                                                                          |
 
 A source is one of three things.
 
@@ -56,9 +57,10 @@ A source is one of three things.
 When the route answers 404 on the before source, the component is not deployed yet. The run says
 so, skips the before shots, and marks the before column in the table.
 
-Before each shot the run waits for network idle and `document.fonts.ready`. On a Next page it also
-waits for hydration, as the landing tests do, and after a theme picker closes it waits for the
-page's scroll lock to be released. It finishes running animations and takes the shot with reduced
+Each shot prepares the page in one order: theme, click steps, density override, fill. Before each
+shot the run waits for network idle and `document.fonts.ready`. On a Next page it also waits for
+hydration, as the landing tests do, and after a theme picker closes it waits for the page's scroll
+lock to be released. It finishes running animations and takes the shot with reduced
 motion, animations stopped and the caret hidden.
 
 ## Output
@@ -78,7 +80,7 @@ For each pair with both images, the run compares the two with
 anti-aliasing yellow over the faded before shot. The count leaves anti-aliased pixels out.
 
 `table.md` has one row per theme, density and engine, with the before and after images side by
-side. Each image's alt text names the target, the route, the fill, the theme, the density, the
+side. Each image's alt text names the target, the route, the click steps, the fill, the theme, the density, the
 scheme and the engine. The Diff column holds the diff image and the changed pixels as a count and
 a share, such as `312 px (0.4%)`. A share below 0.1% reads `<0.1%`, so a 1px shift never reads as
 no change.
@@ -141,6 +143,9 @@ npx agent-browser snapshot -i
 npx agent-browser close
 ```
 
+`--click` takes a role and name the same way. Snapshot again after a click that changes the page,
+such as a tab that reveals another panel, to read the next step's element.
+
 `snapshot -i` lists the interactive elements, one per line, as
 `- <role> "<accessible name>" [ref=…]`. The line `- textbox "Mobile" [ref=e12]` becomes
 `--target textbox:Mobile`. Pass `--nth` when several lines share the role and name, counting from 0
@@ -166,7 +171,8 @@ pnpm shots landing --route / --viewports 1280x800,390x844 --frame page
 - `--viewports` takes one or more window sizes, written without leading zeros; a size given twice
   counts once. Each is an axis of the matrix, like `--engines`, and adds a pair to the table and
   to the 50-attachment count. `viewport` shoots the window
-  scrolled to the top; `page` shoots the whole document at the window's width.
+  scrolled to the top, or with `--click` where the steps and the fill left it; `page` shoots the
+  whole document at the window's width.
 - `--themes` drives whichever theme picker the page has, by roles and names: the docs header's
   "Theme settings" menu, which themes demo stages, or the landing's "Theme" chip in its banner,
   which themes the whole page. A page with neither fails, naming `--themes` and the route, before
@@ -174,6 +180,55 @@ pnpm shots landing --route / --viewports 1280x800,390x844 --frame page
 - `--densities` stamps the frame's closest `[data-density]` element, which is the demo stage for a
   component, or the document root when there is none. It stays an override.
 - `--fill` needs `--target`, the element it types into.
+
+## Clicking first
+
+Some changes show only after an interaction, such as a Select's open list or a tab's panel.
+`--click` puts the page into that state. The steps run after the theme is picked and before the
+target is looked up, so a step may be what renders the target. Each step waits up to 15 seconds
+for its element to show, then clicks it once and leaves it as it is: nothing blurs it or presses
+Escape, so what it opened stays open for the shot. A step whose element never shows fails the run,
+naming the step's number, the element and the route.
+
+A step that clicks a collapsed control, one with `aria-expanded="false"`, also waits up to 15
+seconds for it to open: for it to hold open a popup that the clip takes in, by the `stage` and
+`target` rule below. Expanded alone is not enough, because a control may report it before its popup mounts.
+A Base UI submenu opens after a delay, so without the wait the shot would show it closed. A
+control that never opens fails the step, naming it, so a closed state never stands in for the
+open one. A control without `aria-expanded`, such as a tab, is only clicked. When the click
+re-renders the control as a new node, the wait follows the node that now has the step's role and
+name.
+
+The landing's Rows per page Select is in the Order search view of the hero window's Internal side,
+and the page opens on External:
+
+```sh
+pnpm shots landing-page-size --route / \
+  --click button:Internal --click 'button:Order search' --click 'combobox:Rows per page' \
+  --target 'combobox:Rows per page' --frame target --viewports 1280x800
+```
+
+How the steps meet each frame:
+
+- `stage` and `target` take in the popups a control holds open. A control in the frame, the frame
+  itself included, with `aria-expanded="true"` adds the box of each visible element its
+  `aria-controls` names. Base UI's Select trigger names its list only while it is open. A control
+  that names no visible element adds every visible listbox, menu and dialog on the page instead.
+  Each popup found is searched the same way, so a submenu an open menu's item holds open counts
+  too. Visible means painted: a closed popup that keeps its layout under `visibility: hidden` or
+  `opacity: 0` does not count. The padding goes around the union, and the clip stops at the page
+  edges.
+- After clicks, the target is looked up by its accessible name as usual. When nothing in the
+  accessibility tree matches, the lookup falls back to the elements visible on screen, including
+  those hidden from the tree, so `--target` can name the button that opened a modal dialog,
+  which hides the rest of the page. In the fallback `--nth` counts those elements too, and a
+  name takes in its aria-hidden text, such as a shortcut hint.
+- `viewport` keeps the scroll position the steps and the fill left. Clicking scrolls each element
+  into view, so what it opened is in the window. A run without clicks shoots the top of the page.
+- `page` shoots the whole document, popups included.
+- `--frame auto` replays the steps when it resolves, as it does the theme and the fill, so a
+  target that a step renders is found.
+- `--fill` runs after the steps. It blurs the target, which closes a popup the target opened.
 
 ## Overrides
 
@@ -249,8 +304,9 @@ services. `options.ts` holds the schemas that decode each flag, `shot-plan.ts` n
 
 `test/` holds the tests that need a browser or a process. `pnpm test` runs everything but
 `*.browser.test.ts`, so it needs no Playwright browser. `pnpm test:browser` runs
-`capture.browser.test.ts`, which captures a fixture page in Chromium and checks the PNG's pixel
-size.
+`capture.browser.test.ts`, which captures fixture pages in Chromium and checks each PNG's pixel
+size against the fixture's fixed geometry, including the clip of a control and the portaled popup
+it opened.
 
 - `docs-server.test.ts` runs a fake `next dev` with a launcher and a worker. It checks that an
   interrupt stops both and restores `next-env.d.ts`, and covers a failed spawn, a server that never

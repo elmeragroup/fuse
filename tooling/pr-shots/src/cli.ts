@@ -12,6 +12,7 @@ import { Capture } from "./capture.ts";
 import { DocsServer } from "./docs-server.ts";
 import { Gh } from "./gh.ts";
 import {
+  ClickStepFromText,
   Count,
   Densities,
   Engines,
@@ -63,6 +64,14 @@ const shotFlags = {
     Flag.withSchema(Count),
     Flag.withDefault(0)
   ),
+  clicks: Flag.String("click").pipe(
+    Flag.withDescription(
+      "Clicks an element before the shot, as <role>:<exact accessible name>[@n], such as tab:Internal. Repeat it for more steps; they run in order. @n picks the match, counting from 0; a name ending in @ and digits keeps them with @0 after it, as in button:Seat@3@0."
+    ),
+    Flag.withMetavar("role:name[@n]"),
+    Flag.withSchema(ClickStepFromText),
+    Flag.atLeast(0)
+  ),
   fill: Flag.String("fill").pipe(
     Flag.withDescription("Clicks the target, types this text and blurs it before the shot."),
     Flag.withMetavar("text"),
@@ -71,7 +80,7 @@ const shotFlags = {
   ),
   frame: Flag.Literals("frame", ["auto", "stage", "target", "viewport", "page"]).pipe(
     Flag.withDescription(
-      "stage clips the target's closest [data-demo-stage]; target clips the element alone; viewport is the window at the top of the page; page is the whole page. auto takes stage for a target in a demo stage, target for one outside, and viewport without a target. Default: auto."
+      "stage clips the target's closest [data-demo-stage]; target clips the element alone; both take in a popup a control in them holds open. viewport is the window at the top of the page, or with --click where the steps and the fill left it; page is the whole page. auto takes stage for a target in a demo stage, target for one outside, and viewport without a target. Default: auto."
     ),
     Flag.withDefault("auto")
   ),

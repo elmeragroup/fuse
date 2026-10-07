@@ -69,6 +69,30 @@ describe("renderTable", () => {
     );
   });
 
+  it("says which elements the run clicked before the shots", () => {
+    const run = options([
+      "page-size",
+      "--route",
+      "/",
+      "--click",
+      "button:Internal",
+      "--click",
+      "combobox:Rows | page",
+      "--target",
+      "combobox:Rows | page",
+    ]);
+    const table = renderTable(
+      run,
+      { _tag: "without-diff", rows: planShots(run, "target") },
+      { _tag: "captured" },
+      "prod",
+      "local checkout"
+    );
+    expect(table.split("\n")[0]).toBe(
+      'Screenshots of combobox "Rows \\| page" on `/`, after clicking button "Internal", then combobox "Rows \\| page". Before: prod. After: local checkout.'
+    );
+  });
+
   it("escapes text that would close the alt text or split the cell", () => {
     const run = options(["odd", "--route", "/x", "--target", "button:A | [b]"]);
     const table = renderTable(
