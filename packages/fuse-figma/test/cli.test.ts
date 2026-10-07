@@ -90,7 +90,7 @@ describe("fuse-figma sync", () => {
         "internal-ngfi-company",
       ]);
       assert.notInclude(themeModes, "external-fkab-private");
-      // 82 contract tokens plus 5 radius rungs, and each of those per scheme in Fuse themes.
+      // 83 contract tokens plus 5 radius rungs, and each of those per scheme in Fuse themes.
       assert.strictEqual(figma.variableNames("Fuse tokens").length, 88);
       assert.strictEqual(figma.variableNames("Fuse themes").length, 176);
       assert.strictEqual(figma.variableNames("Fuse primitives").length, 25);
