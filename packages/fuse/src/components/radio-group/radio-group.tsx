@@ -42,8 +42,10 @@ export function RadioGroupItem({
           // The root is a <span>, which never matches `:disabled`, so the state face keys off
           // Base UI's `data-disabled` and `data-invalid` attributes, plus a consumer's
           // `aria-invalid`. A checked invalid radio keeps its primary border beside the ring.
+          // The unchecked edge is the circle's only boundary, so it takes `muted-foreground`, as
+          // Checkbox does.
           // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; ring comes from the shared adapter
-          "group/radio-group-item peer relative flex aspect-square size-4 shrink-0 rounded-full border border-input transition-[color,box-shadow] outline-none after:absolute after:-inset-x-3 after:-inset-y-2 after:content-[''] data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground",
+          "group/radio-group-item peer relative flex aspect-square size-4 shrink-0 rounded-full border border-muted-foreground transition-[color,box-shadow] outline-none after:absolute after:-inset-x-3 after:-inset-y-2 after:content-[''] data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground",
           selfFocusRingClass,
           dataStateFaceClass,
           "aria-invalid:aria-checked:border-primary data-invalid:aria-checked:border-primary",
