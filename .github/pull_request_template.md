@@ -1,7 +1,7 @@
 <!--
 Read CONTRIBUTING.md before opening a PR. Solve one problem per PR; drafts follow the same rules.
-Use a conventional commit title in plain language, such as
-"fix(select): open beside the trigger inside a transformed scope".
+Write the PR title in plain language and Title Case, such as
+"Open Select Beside The Trigger Inside A Transformed Scope". See CONTRIBUTING.md#pr-title.
 -->
 
 ## Problem
