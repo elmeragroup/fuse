@@ -2,20 +2,16 @@ import type { ReactElement } from "react";
 
 import { tv } from "tailwind-variants";
 
+import { Monitor, Moon, Sun } from "@elmeragroup/fuse/icons";
+import type { ElmeraIconProps } from "@elmeragroup/fuse/icons";
 import { COLOR_SCHEMES } from "@elmeragroup/fuse/theme";
 import type { ColorScheme } from "@elmeragroup/fuse/theme";
 
-/**
- * Phosphor's regular Sun, Moon and Monitor (MIT), the set Fuse's icons come from. Fuse ships none
- * of the three yet (TODO.md), so the landing draws them from the same 256-unit paths.
- */
 const GLYPHS = {
-  light:
-    "M120,40V16a8,8,0,0,1,16,0V40a8,8,0,0,1-16,0Zm72,88a64,64,0,1,1-64-64A64.07,64.07,0,0,1,192,128Zm-16,0a48,48,0,1,0-48,48A48.05,48.05,0,0,0,176,128ZM58.34,69.66A8,8,0,0,0,69.66,58.34l-16-16A8,8,0,0,0,42.34,53.66Zm0,116.68-16,16a8,8,0,0,0,11.32,11.32l16-16a8,8,0,0,0-11.32-11.32ZM192,72a8,8,0,0,0,5.66-2.34l16-16a8,8,0,0,0-11.32-11.32l-16,16A8,8,0,0,0,192,72Zm5.66,114.34a8,8,0,0,0-11.32,11.32l16,16a8,8,0,0,0,11.32-11.32ZM48,128a8,8,0,0,0-8-8H16a8,8,0,0,0,0,16H40A8,8,0,0,0,48,128Zm80,80a8,8,0,0,0-8,8v24a8,8,0,0,0,16,0V216A8,8,0,0,0,128,208Zm112-88H216a8,8,0,0,0,0,16h24a8,8,0,0,0,0-16Z",
-  dark: "M233.54,142.23a8,8,0,0,0-8-2,88.08,88.08,0,0,1-109.8-109.8,8,8,0,0,0-10-10,104.84,104.84,0,0,0-52.91,37A104,104,0,0,0,136,224a103.09,103.09,0,0,0,62.52-20.88,104.84,104.84,0,0,0,37-52.91A8,8,0,0,0,233.54,142.23ZM188.9,190.34A88,88,0,0,1,65.66,67.11a89,89,0,0,1,31.4-26A106,106,0,0,0,96,56,104.11,104.11,0,0,0,200,160a106,106,0,0,0,14.92-1.06A89,89,0,0,1,188.9,190.34Z",
-  system:
-    "M208,40H48A24,24,0,0,0,24,64V176a24,24,0,0,0,24,24H208a24,24,0,0,0,24-24V64A24,24,0,0,0,208,40Zm8,136a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V64a8,8,0,0,1,8-8H208a8,8,0,0,1,8,8Zm-48,48a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64A8,8,0,0,1,168,224Z",
-} as const satisfies Record<ColorScheme, string>;
+  light: Sun,
+  dark: Moon,
+  system: Monitor,
+} as const satisfies Record<ColorScheme, (props: ElmeraIconProps) => ReactElement>;
 
 const schemeIcon = tv({
   slots: {
@@ -35,11 +31,8 @@ export type SchemeGlyphProps = {
 
 /** One scheme's glyph: a sun for light, a moon for dark, a monitor for the system's choice. */
 export function SchemeGlyph({ scheme }: SchemeGlyphProps): ReactElement {
-  return (
-    <svg aria-hidden focusable="false" viewBox="0 0 256 256" fill="currentColor" className={styles.glyph()}>
-      <path d={GLYPHS[scheme]} />
-    </svg>
-  );
+  const Glyph = GLYPHS[scheme];
+  return <Glyph className={styles.glyph()} />;
 }
 
 /** Props of `SchemeIcon`. */

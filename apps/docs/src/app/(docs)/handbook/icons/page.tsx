@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 
 import { DocsPage, pageMetadata } from "../../../../components/docs-page";
+import { IconRoster } from "./demos/icon-roster";
 
 const HREF = "/handbook/icons";
 
@@ -10,6 +11,7 @@ const IMPORT = `import { Check, MagnifyingGlass } from "@elmeragroup/fuse/icons"
 
 <Check />                       // decorative: aria-hidden, focusable="false"
 <Check title="Bekreftet" />     // meaningful: role="img" with a <title>
+<Check weight="regular" />      // lighter stroke than the bold default
 <Check weight="fill" />         // selected or active state`;
 
 const BRAND_LOGO = `import { BrandLogo } from "@elmeragroup/fuse/icons";
@@ -43,10 +45,16 @@ export default function IconsPage(): ReactElement {
       <h2 id="phosphor-adapters">Phosphor adapters</h2>
       <p>
         Each curated icon is a generated wrapper around a single per-icon Phosphor module, so importing one
-        icon costs one icon. The wrapper exists to narrow the weight axis: the library ships{" "}
-        <code>regular</code> and <code>fill</code> only, defaulting to <code>regular</code>, with{" "}
-        <code>fill</code> reserved for a selected or active state.
+        icon costs one icon. The wrapper narrows the weight axis to three: <code>bold</code> by default,{" "}
+        <code>regular</code> on request and <code>fill</code> for a selected or active state. Phosphor&apos;s
+        regular stroke puts about 28% less ink on the page than the Lucide set the products used before, at
+        every size; bold matches it.
       </p>
+      <p>
+        The full curated roster at the default weight, at <code>size-3</code>, <code>size-4</code> and{" "}
+        <code>size-5</code>. Hover an icon to read its name.
+      </p>
+      <IconRoster />
       <p>
         The adapters are <strong>server-safe</strong> — no <code>&quot;use client&quot;</code> directive, no
         hooks, no icon context — so they render in a server component without pulling it into the client

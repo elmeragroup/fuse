@@ -1,6 +1,9 @@
+import { createElement } from "react";
+
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import * as Icons from "../icons";
@@ -15,7 +18,7 @@ const byName = [...PHOSPHOR_ICON_NAMES].toSorted((left, right) => left.localeCom
 
 describe("Phosphor adapters", () => {
   it("treats the roster as a public API snapshot", async () => {
-    expect(PHOSPHOR_ICON_NAMES).toHaveLength(126);
+    expect(PHOSPHOR_ICON_NAMES).toHaveLength(130);
     expect(new Set(PHOSPHOR_ICON_NAMES).size).toBe(PHOSPHOR_ICON_NAMES.length);
     await expect([...PHOSPHOR_ICON_NAMES]).toMatchFileSnapshot("./__snapshots__/roster.json");
   });
@@ -77,7 +80,6 @@ describe("Phosphor adapters", () => {
     expect(helper).not.toContain("use client");
     expect(helper).not.toContain("dist/csr");
     expect(helper).not.toMatch(/from ["']@phosphor-icons\/react["']/);
-    expect(helper).toContain('weight = "regular"');
     expect(helper).toContain(`from "@phosphor-icons/react/dist/ssr/Check"`);
 
     for (const name of PHOSPHOR_ICON_NAMES) {
@@ -87,6 +89,31 @@ describe("Phosphor adapters", () => {
       expect(text, name).not.toContain("dist/csr");
       expect(text, name).not.toMatch(/from ["']@phosphor-icons\/react["']/);
       expect(text, name).not.toMatch(/from ["']lucide-react["']/);
+    }
+  });
+
+  // Oracle: Phosphor's own path data for Check (`dist/defs/Check.es.js`), copied as literals.
+  // Bold draws 24/256-unit strokes, regular 16/256, fill a filled square with the tick cut out.
+  const CHECK_PATH_START = {
+    bold: 'd="M232.49,80.49l-128,128',
+    regular: 'd="M229.66,77.66l-128,128',
+    fill: 'd="M216,40H40A16,16,0,0,0,24,56V200',
+  } as const;
+
+  it("draws bold when no weight is passed, and regular or fill only on request", () => {
+    const untouched = renderToStaticMarkup(createElement(Icons.Check));
+    expect(untouched).toContain(CHECK_PATH_START.bold);
+    expect(untouched).not.toContain(CHECK_PATH_START.regular);
+
+    for (const weight of ["regular", "bold", "fill"] as const) {
+      const markup = renderToStaticMarkup(createElement(Icons.Check, { weight }));
+      for (const [other, path] of Object.entries(CHECK_PATH_START)) {
+        if (other === weight) {
+          expect(markup, weight).toContain(path);
+        } else {
+          expect(markup, `${weight} draws no ${other} path`).not.toContain(path);
+        }
+      }
     }
   });
 });

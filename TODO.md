@@ -240,8 +240,6 @@ each stand-in once Fuse ships the part.
   palette.
 - Add a `Command` palette part. `app-shell/command-palette.tsx` builds one from `Dialog` and the
   ARIA combobox pattern, as the docs search (`apps/docs/src/components/search-palette.tsx`) does.
-- Add Sun, Moon and Monitor to the icon roster. The nav's theme picker draws Phosphor's regular
-  paths for light, dark and system in `theme-picker/scheme-icon.tsx`.
 - Add a floating action bar for row selections. `app-shell/bulk-toolbar.tsx` positions its own
   `role="toolbar"` over the queues' list and over Order search's table.
 - Add a list and detail split that becomes a Sheet below a breakpoint. `app-shell/dashboard-main.tsx`

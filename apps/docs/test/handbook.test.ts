@@ -1,9 +1,10 @@
 import { readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { LEGAL_THEMES, themeSlug } from "@elmeragroup/fuse/theme";
 
-import { sizeBudgetsFile } from "../scripts/lib/paths.ts";
+import { fuseSrc, sizeBudgetsFile } from "../scripts/lib/paths.ts";
 import { parseBudgets } from "../scripts/lib/sizes.ts";
 import { BUNDLE_SIZES, BUNDLE_SIZES_MEASURED_ON } from "../src/generated/bundle-sizes";
 import { fetchText } from "./docs-server";
@@ -117,5 +118,48 @@ describe("quick start page", () => {
     expect(html, "the quick-start Button snippet must not use a variant Button lacks").not.toContain(
       "variant=&quot;primary&quot;"
     );
+  });
+});
+
+/**
+ * The curated roster as `packages/fuse/src/icons/roster.ts` declares it. Read as text: the roster
+ * is private, and apps may not import `packages/fuse/src` (the workspace boundary test).
+ */
+function curatedRoster(): string[] {
+  const source = readFileSync(path.join(fuseSrc, "icons/roster.ts"), "utf8");
+  const literal = /PHOSPHOR_ICON_NAMES = \[([^\]]*)\] as const/u.exec(source)?.[1];
+  if (literal === undefined) {
+    throw new Error("packages/fuse/src/icons/roster.ts no longer declares PHOSPHOR_ICON_NAMES as a literal");
+  }
+  return [...literal.matchAll(/"(\w+)"/gu)].map((match) => match[1] ?? "");
+}
+
+/** The icon titles inside the demo section labelled with one size class. */
+function titlesInSizeSection(html: string, size: string): string[] {
+  const start = html.indexOf(`<section aria-label="${size}">`);
+  expect(start, size).toBeGreaterThan(-1);
+  const section = html.slice(start, html.indexOf("</section>", start));
+  return [...section.matchAll(/<title>([^<]*)<\/title>/gu)].map((match) => match[1] ?? "");
+}
+
+describe("icons page", () => {
+  it("renders the whole curated roster, and nothing else, once per size", async () => {
+    const html = await fetchText("/handbook/icons");
+    const roster = curatedRoster();
+    // The reader must see the real roster, so the comparison is not vacuous.
+    expect(roster.length).toBeGreaterThan(100);
+    expect(roster).toContain("Checks");
+    for (const size of ["size-3", "size-4", "size-5"]) {
+      const titles = titlesInSizeSection(html, size);
+      expect(titles, `${size} renders each icon once`).toHaveLength(new Set(titles).size);
+      expect(new Set(titles), size).toEqual(new Set(roster));
+    }
+  });
+
+  it("draws the roster at the bold default", async () => {
+    const html = await fetchText("/handbook/icons");
+    // Oracle: the start of Phosphor's bold and regular Check paths (`dist/defs/Check.es.js`).
+    expect(html).toContain('d="M232.49,80.49l-128,128');
+    expect(html).not.toContain('d="M229.66,77.66l-128,128');
   });
 });

@@ -62,10 +62,10 @@
         {
           "name": "weight",
           "origin": "declared",
-          "type": "\"fill\" | \"regular\" | undefined",
+          "type": "\"bold\" | \"fill\" | \"regular\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Phosphor weight. Regular is the library default; `fill` is reserved for selected or active states.",
+          "description": "Phosphor weight. Bold is the library default; `regular` draws a thinner stroke and `fill` is reserved for selected or active states.",
           "required": false
         }
       ]
