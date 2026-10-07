@@ -19,8 +19,18 @@ export function PhoneNumberFieldForm() {
           `phone=${phone instanceof File ? "" : (phone ?? "")} display=${display instanceof File ? "" : (display ?? "")}`
         );
       }}>
-      <PhoneNumberField label="Mobile" name="phone" />
-      <Button type="submit">Save</Button>
+      <PhoneNumberField
+        label="Mobile"
+        name="phone"
+        defaultValue="+4741234567"
+        description="Starts from a saved number; Reset brings it back."
+      />
+      <div className="flex gap-2">
+        <Button type="submit">Save</Button>
+        <Button type="reset" variant="outline">
+          Reset
+        </Button>
+      </div>
       {submitted ? <p>{submitted}</p> : null}
     </form>
   );

@@ -1,4 +1,4 @@
-import { expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
@@ -156,4 +156,120 @@ it.each([
   phoneForm().reset();
 
   await expect.poll(() => snapshot()).toEqual(emptySnapshot);
+});
+
+describe("defaultValue", () => {
+  it("starts from the default number, submits edits, and restores it on reset without notifying", async () => {
+    const change = vi.fn();
+    const countryChange = vi.fn();
+    const field = (formatOnType: boolean) =>
+      withLocale(
+        "en-US",
+        <PhoneForm
+          defaultValue="+4741234567"
+          formatOnType={formatOnType}
+          onChange={change}
+          onCountryChange={countryChange}
+        />
+      );
+    const { rerender } = render(field(false));
+    expect(snapshot()).toEqual(populatedSnapshot);
+
+    await userEvent.fill(phoneInput(), "99887766");
+    expect(snapshot()).toEqual({
+      display: "99887766",
+      submitted: "+4799887766",
+      submittedDisplay: "99887766",
+    });
+    const changeCalls = change.mock.calls.length;
+
+    // The default is read again under the props the field has at reset.
+    rerender(field(true));
+    phoneForm().reset();
+
+    await expect
+      .poll(() => snapshot())
+      .toEqual({ display: "41 23 45 67", submitted: "+4741234567", submittedDisplay: "41 23 45 67" });
+    expect(change).toHaveBeenCalledTimes(changeCalls);
+    expect(countryChange).not.toHaveBeenCalled();
+  });
+
+  it("restores a default in another country and reports the country it returns to", async () => {
+    const change = vi.fn();
+    const countryChange = vi.fn();
+    render(
+      withLocale(
+        "en-US",
+        <PhoneForm defaultValue="+46701234567" onChange={change} onCountryChange={countryChange} />
+      )
+    );
+    expect(snapshot()).toEqual({
+      display: "701234567",
+      submitted: "+46701234567",
+      submittedDisplay: "701234567",
+    });
+    await selectCountry("Norway");
+    await userEvent.fill(phoneInput(), "41234567");
+    expect(countryChange).toHaveBeenLastCalledWith({ code: "NO", dialCode: "+47" });
+    const changeCalls = change.mock.calls.length;
+    const countryCalls = countryChange.mock.calls.length;
+
+    phoneForm().reset();
+
+    await expect
+      .poll(() => snapshot())
+      .toEqual({ display: "701234567", submitted: "+46701234567", submittedDisplay: "701234567" });
+    expect(roleNamed("button", "Select country").textContent).toContain("+46");
+    expect(change).toHaveBeenCalledTimes(changeCalls);
+    expect(countryChange).toHaveBeenCalledTimes(countryCalls + 1);
+    expect(countryChange).toHaveBeenLastCalledWith({ code: "SE", dialCode: "+46" });
+  });
+
+  it("restores an empty default in the default country, reporting the change", async () => {
+    const countryChange = vi.fn();
+    render(withLocale("en-US", <PhoneForm defaultValue="" onCountryChange={countryChange} />));
+    await selectCountry("Sweden");
+    await userEvent.fill(phoneInput(), "701234567");
+    const countryCalls = countryChange.mock.calls.length;
+
+    phoneForm().reset();
+
+    await expect.poll(() => roleNamed("button", "Select country").textContent).toContain("+47");
+    expect(snapshot()).toEqual(emptySnapshot);
+    expect(countryChange).toHaveBeenCalledTimes(countryCalls + 1);
+    expect(countryChange).toHaveBeenLastCalledWith({ code: "NO", dialCode: "+47" });
+  });
+
+  it("keeps the shown number when the default changes, and resets to the new default", async () => {
+    const field = (defaultValue: string) => withLocale("en-US", <PhoneForm defaultValue={defaultValue} />);
+    const { rerender } = render(field("+4741234567"));
+    rerender(field("+4799887766"));
+    expect(snapshot()).toEqual(populatedSnapshot);
+
+    phoneForm().reset();
+
+    await expect
+      .poll(() => snapshot())
+      .toEqual({ display: "99887766", submitted: "+4799887766", submittedDisplay: "99887766" });
+  });
+
+  it("lets a controlled value win over the default, even when empty, through reset", async () => {
+    render(
+      withLocale(
+        "en-US",
+        <form aria-label="Phone form">
+          <PhoneNumberField label="Mobile" name="phone" value="" defaultValue="+4741234567" />
+          <PhoneNumberField label="Witness" name="witness" defaultValue="+4799887766" />
+        </form>
+      )
+    );
+    expect(snapshot()).toEqual(emptySnapshot);
+    await userEvent.fill(phoneInput("Witness"), "41234567");
+
+    phoneForm().reset();
+
+    // The uncontrolled witness proves the reset task has run.
+    await expect.poll(() => phoneInput("Witness").value).toBe("99887766");
+    expect(snapshot()).toEqual(emptySnapshot);
+  });
 });

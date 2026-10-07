@@ -10,6 +10,7 @@ test("PhoneNumberFieldProps is the closed composite face", () => {
   expectTypeOf<PhoneNumberFieldProps["errorMessage"]>().toEqualTypeOf<ReactNode | undefined>();
   expectTypeOf<PhoneNumberFieldProps["onChange"]>().toEqualTypeOf<((value: string) => void) | undefined>();
   expectTypeOf<PhoneNumberFieldProps["value"]>().toEqualTypeOf<string | undefined>();
+  expectTypeOf<PhoneNumberFieldProps["defaultValue"]>().toEqualTypeOf<string | undefined>();
   expectTypeOf<PhoneNumberFieldProps["outputFormat"]>().toEqualTypeOf<
     "e164" | "international" | "national" | "raw" | undefined
   >();

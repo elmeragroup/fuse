@@ -227,13 +227,16 @@ describe("PhoneNumberField identity and authoritative value", () => {
     expect(roleNamed("button", "Select country").textContent).toContain("+47");
   });
 
-  it("server-renders populated form state and hydrates it without recovery", async () => {
+  it.each([
+    { source: "a controlled value", field: { value: "+4741234567" } },
+    { source: "a default number", field: { defaultValue: "+4741234567" } },
+  ])("server-renders $source and hydrates it without recovery", async ({ field }) => {
     const hydrated = vi.fn<() => void>();
     function HydrationWitness() {
       useEffect(() => hydrated(), []);
       return (
         <form aria-label="SSR phone">
-          <PhoneNumberField label="Server mobile" name="phone" value="+4741234567" />
+          <PhoneNumberField label="Server mobile" name="phone" {...field} />
         </form>
       );
     }

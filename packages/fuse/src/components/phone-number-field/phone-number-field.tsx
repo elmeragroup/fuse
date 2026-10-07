@@ -53,6 +53,15 @@ const FORWARD_DELETIONS = new Set([
 export type PhoneNumberFieldProps = {
   /** Authoritative controlled value; URI-decoded when received. Omit for uncontrolled editing. */
   value?: string;
+  /**
+   * Initial number of an uncontrolled field, read on mount as `value` is. A native form reset
+   * restores it, read again under the current props, and calls `onCountryChange` when that
+   * changes the country; `""` restores an empty number in `defaultCountryCode`. Without a
+   * `defaultValue`, a reset clears the digits and keeps the country. A later change leaves the
+   * shown number alone and becomes the next reset's target. Ignored while `value` is set, even
+   * to `""`.
+   */
+  defaultValue?: string;
   /** Proposes a formatted output value. Controlled fields display it after parent acceptance. */
   onChange?: (value: string) => void;
   /**

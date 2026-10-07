@@ -100,6 +100,15 @@
           "required": false
         },
         {
+          "name": "defaultValue",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Initial number of an uncontrolled field, read on mount as `value` is. A native form reset restores it, read again under the current props, and calls `onCountryChange` when that changes the country; `\"\"` restores an empty number in `defaultCountryCode`. Without a `defaultValue`, a reset clears the digits and keeps the country. A later change leaves the shown number alone and becomes the next reset's target. Ignored while `value` is set, even to `\"\"`.",
+          "required": false
+        },
+        {
           "name": "description",
           "origin": "declared",
           "type": "string | undefined",
