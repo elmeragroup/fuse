@@ -122,8 +122,8 @@
     },
     {
       "name": "SelectionItem.Description",
-      "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/selection-item/selection-item.tsx",
+      "rsc": "server",
+      "sourcePath": "packages/fuse/src/components/selection-item/selection-item-description.tsx",
       "forwardedFrom": [
         "@types/react"
       ],

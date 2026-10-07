@@ -7,10 +7,10 @@ import { ItemContent } from "../item/item-markup";
 import {
   SelectionItemShell,
   SelectionItemTitle,
-  SelectionItemDescription,
   SelectionItemActions,
   SelectionItemSubSection,
 } from "./selection-item";
+import { SelectionItemDescription } from "./selection-item-description";
 
 /**
  * Shared selectable card row. `CheckboxItem` / `RadioItem` alias these part objects so
