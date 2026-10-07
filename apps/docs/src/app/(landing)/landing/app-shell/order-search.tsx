@@ -23,9 +23,18 @@ import { Button } from "@elmeragroup/fuse/button";
 import { createFuseTableHook, selectColumn } from "@elmeragroup/fuse/data-table";
 import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 import { Empty } from "@elmeragroup/fuse/empty";
-import { CaretDown, MagnifyingGlass } from "@elmeragroup/fuse/icons";
+import { Field } from "@elmeragroup/fuse/field";
+import {
+  CaretDoubleLeft,
+  CaretDoubleRight,
+  CaretDown,
+  CaretLeft,
+  CaretRight,
+  MagnifyingGlass,
+} from "@elmeragroup/fuse/icons";
 import { InputGroup } from "@elmeragroup/fuse/input-group";
 import { ScrollArea } from "@elmeragroup/fuse/scroll-area";
+import { Select } from "@elmeragroup/fuse/select";
 
 import { useSideOverlay, useSideRemountKey } from "../window-side";
 import { useDashboard } from "./dashboard-context";
@@ -67,7 +76,12 @@ const orderSearch = tv({
     seller: "flex items-center gap-2",
     avatar: "size-5",
     date: "text-muted-foreground tabular-nums",
-    pagination: "shrink-0 border-t border-border px-3 py-2",
+    // DataTable.Pagination's layout, composed here; see OrderPagination.
+    pagination:
+      "text-sm flex shrink-0 flex-wrap items-center justify-end gap-x-6 gap-y-2 border-t border-border px-3 py-2",
+    pageSize: "w-auto",
+    pageStatus: "font-medium whitespace-nowrap tabular-nums",
+    pageControls: "flex items-center gap-1",
   },
 });
 
@@ -277,6 +291,84 @@ function NoMatches(): ReactElement {
   );
 }
 
+const PAGE_SIZES = [10, 25, 50] as const;
+
+type OrderPaginationProps = {
+  /** The table's page. */
+  pagination: PaginationState;
+  /** The table's page count; an empty table reads as one page. */
+  pageCount: number;
+  /** Turns to a zero-based page. */
+  onPageIndexChange: (pageIndex: number) => void;
+  /** Changes the page size. */
+  onPageSizeChange: (pageSize: number) => void;
+};
+
+/**
+ * Order search's rows-per-page Select, page status and page buttons. It stands in for
+ * `DataTable.Pagination`, whose Select item-aligns over its trigger: inside the Dashboard's
+ * transformed scope, Base UI 1.8 would place that list off by the scope's offset. This Select
+ * opens beside its trigger instead.
+ */
+function OrderPagination({
+  pagination,
+  pageCount,
+  onPageIndexChange,
+  onPageSizeChange,
+}: OrderPaginationProps): ReactElement {
+  const { pageIndex, pageSize } = pagination;
+  const lastIndex = Math.max(pageCount, 1) - 1;
+  const moves = [
+    { label: "Go to first page", Icon: CaretDoubleLeft, target: 0, enabled: pageIndex > 0 },
+    { label: "Go to previous page", Icon: CaretLeft, target: pageIndex - 1, enabled: pageIndex > 0 },
+    { label: "Go to next page", Icon: CaretRight, target: pageIndex + 1, enabled: pageIndex < lastIndex },
+    { label: "Go to last page", Icon: CaretDoubleRight, target: lastIndex, enabled: pageIndex < lastIndex },
+  ];
+  return (
+    <div data-order-pagination className={styles.pagination()}>
+      <Field.Root orientation="horizontal" className={styles.pageSize()}>
+        <Field.Label>Rows per page</Field.Label>
+        <Select.Root<number>
+          items={PAGE_SIZES.map((size) => ({ value: size, label: String(size) }))}
+          value={pageSize}
+          onValueChange={(size) => {
+            if (size !== null) {
+              onPageSizeChange(size);
+            }
+          }}>
+          <Select.Trigger size="sm">
+            <Select.Value />
+          </Select.Trigger>
+          <Select.Content alignItemWithTrigger={false}>
+            {PAGE_SIZES.map((size) => (
+              <Select.Item key={size} value={size}>
+                {size}
+              </Select.Item>
+            ))}
+          </Select.Content>
+        </Select.Root>
+      </Field.Root>
+      <span
+        className={styles.pageStatus()}>{`Page ${String(pageIndex + 1)} of ${String(lastIndex + 1)}`}</span>
+      <div className={styles.pageControls()}>
+        {moves.map(({ label, Icon, target, enabled }) => (
+          <Button
+            key={label}
+            variant="outline"
+            size="icon-sm"
+            aria-label={label}
+            disabled={!enabled}
+            onClick={() => {
+              onPageIndexChange(target);
+            }}>
+            <Icon />
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function selectionOf(ids: readonly OrderId[]): RowSelectionState {
   return Object.fromEntries(ids.map((id) => [String(id), true]));
 }
@@ -297,9 +389,9 @@ type Paging = { readonly query: OrderQuery; readonly pagination: PaginationState
 export function OrderSearch(): ReactElement {
   const { state, dispatch, loading, openOrder, revealing } = useDashboard();
   const { orders, query, checked } = state;
-  // The Columns menu and the Rows per page Select keep their open state inside Fuse's DataTable,
-  // out of `useSideOverlay`'s reach, so a hidden side remounts them, which closes them and drops
-  // any scroll lock they hold. They stay in the layout through the flip. The table, owned here,
+  // The Columns menu and the Rows per page Select keep their open state to themselves, out of
+  // `useSideOverlay`'s reach, so a hidden side remounts them, which closes them and drops any
+  // scroll lock they hold. They stay in the layout through the flip. The table, owned here,
   // keeps the visible columns, the page size and the page.
   const controlsKey = useSideRemountKey();
   const rows = useMemo(() => searchOrders(orders, query), [orders, query]);
@@ -409,8 +501,18 @@ export function OrderSearch(): ReactElement {
             </table.Content>
           </div>
         </ScrollArea.Root>
-        <table.Pagination key={controlsKey} className={styles.pagination()} pageSizes={[10, 25, 50]} />
       </table.AppTable>
+      <OrderPagination
+        key={controlsKey}
+        pagination={pagination}
+        pageCount={table.getPageCount()}
+        onPageIndexChange={(pageIndex) => {
+          table.setPageIndex(pageIndex);
+        }}
+        onPageSizeChange={(pageSize) => {
+          table.setPageSize(pageSize);
+        }}
+      />
     </div>
   );
 }

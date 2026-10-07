@@ -125,7 +125,8 @@ export function SitePriceArea({
             <Select.Trigger>
               <Select.Value placeholder={section.placeholder} />
             </Select.Trigger>
-            <Select.Content>
+            {/* Item alignment would misplace the popup inside the window's transformed scope. */}
+            <Select.Content alignItemWithTrigger={false}>
               {section.areas.map((entry) => (
                 <Select.Item key={entry.code} value={entry.code}>
                   {items[entry.code]}

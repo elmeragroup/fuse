@@ -362,7 +362,7 @@ describe("landing hero window, External side", () => {
     // DOM audit: a popup left behind on the inert side has no role a query could reach.
     const popups = page.locator("[role='menu'], [role='listbox']");
 
-    // Each control holds its own open state inside Fuse's DataTable; the route flips the window.
+    // Each control holds its own open state; the route flips the window.
     const openers = [
       async () => {
         await app.getByRole("button", { name: "Columns" }).click();
@@ -408,11 +408,11 @@ describe("landing hero window, External side", () => {
     await page.goForward();
     await expect.poll(async () => isInert(app)).toBe(true);
     await seekSide(app, 30);
-    // DOM audit: the hidden side is inert, past any role query; locate the controls by data-slot.
-    for (const slot of ["data-table-column-toggle", "data-table-pagination"]) {
-      const control = app.locator(`[data-slot=${slot}]`);
-      expect(await control.count(), slot).toBe(1);
-      expect((await control.boundingBox())?.height ?? 0, slot).toBeGreaterThan(0);
+    // DOM audit: the hidden side is inert, past any role query; locate the controls by attribute.
+    for (const selector of ["[data-slot=data-table-column-toggle]", "[data-order-pagination]"]) {
+      const control = app.locator(selector);
+      expect(await control.count(), selector).toBe(1);
+      expect((await control.boundingBox())?.height ?? 0, selector).toBeGreaterThan(0);
     }
     expect(await bodyHeight()).toBe(before);
     await page.context().close();
