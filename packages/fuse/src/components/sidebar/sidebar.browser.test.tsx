@@ -10,6 +10,7 @@ import {
   assertKeyboardFocusRingAtBothDensities,
 } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
+import { emulateReducedMotion } from "../../../test/reduced-motion";
 import {
   ContextProbe,
   Frame,
@@ -17,7 +18,6 @@ import {
   OrdersLink,
   bySlot,
   captureCookieWrites,
-  emulateReducedMotion,
   layoutChildren,
   menuList,
   railNamed,

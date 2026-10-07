@@ -7,6 +7,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 // Role tokens live in themes.css only; the fill test reads --card and --background.
 import "../../../dist/themes.css";
+import { focusRingClippers } from "../../../test/assert-focus-ring";
 import { assertHorizontalItemList, radiusToken } from "../../../test/assert-selection-item-group-layout";
 import {
   cssVarColor,
@@ -264,7 +265,6 @@ describe("SelectionItem", () => {
       const style = getComputedStyle(control);
       expect(style.getPropertyValue("--tw-ring-offset-width")).toBe("2px");
       const rect = control.getBoundingClientRect();
-      const ring = { left: rect.left - 4, top: rect.top - 4, right: rect.right + 4, bottom: rect.bottom + 4 };
       const shell = shellFrom("Fixed price");
       const shellRect = shell.getBoundingClientRect();
       const edgeGap =
@@ -273,34 +273,7 @@ describe("SelectionItem", () => {
           : shellRect.right - shell.clientLeft - rect.right;
       expect(edgeGap, "the control touches the shell's inner edge").toBeCloseTo(0, 0);
 
-      const clippers: string[] = [];
-      for (let ancestor = control.parentElement; ancestor; ancestor = ancestor.parentElement) {
-        const ancestorStyle = getComputedStyle(ancestor);
-        const clips =
-          ancestorStyle.overflowX !== "visible" ||
-          ancestorStyle.overflowY !== "visible" ||
-          ancestorStyle.clipPath !== "none" ||
-          /paint|strict|content/.test(ancestorStyle.contain);
-        if (!clips || ancestor === document.documentElement || ancestor === document.body) {
-          continue;
-        }
-        const box = ancestor.getBoundingClientRect();
-        const inner = {
-          left: box.left + ancestor.clientLeft,
-          top: box.top + ancestor.clientTop,
-          right: box.left + ancestor.clientLeft + ancestor.clientWidth,
-          bottom: box.top + ancestor.clientTop + ancestor.clientHeight,
-        };
-        if (
-          ring.left < inner.left ||
-          ring.top < inner.top ||
-          ring.right > inner.right ||
-          ring.bottom > inner.bottom
-        ) {
-          clippers.push(`${ancestor.tagName}.${ancestor.className}`);
-        }
-      }
-      expect(clippers, "no ancestor clips the ring's box").toEqual([]);
+      expect(focusRingClippers(control), "no ancestor clips the ring's box").toEqual([]);
     }
   );
 

@@ -95,22 +95,39 @@ export function ItemHeader({ className, ...props }: ComponentProps<"div">): Reac
   );
 }
 
+// The two switchable modes share one 150 ms ease-out transition of the row size, the top
+// padding, the fade and the slide, the duration and curve of `panelHeightTransition`, so a
+// reveal expands and fades in and a hide collapses and fades out. `minmax(0,0fr)` to
+// `minmax(0,1fr)` interpolates without measuring, so the footer stays a server part, and a
+// mode change mid-tween reverses from the current value. `@starting-style` covers only the fade
+// and the slide, so a footer that renders visible does not grow on first paint. The central
+// reduced-motion rule keeps only the fade.
+//
+// The content overflows its row while the row is shorter than it, so both modes clip. The clip
+// edge is the padding box, so the footer pads 4px past its content on the sides and below and
+// cancels that with a negative margin: the shared focus ring, 2px outside a 2px offset, paints
+// whole on content at any edge. The top needs no extension, since `pt-3` already clears it.
+const itemFooterMotionClass = cn(
+  "-mx-1 -mb-1 overflow-clip px-1 pb-1",
+  "ease-out transition-[grid-template-rows,padding-top,opacity,translate] duration-150"
+);
+
 const itemFooterVariants = tv({
   base: "grid",
   variants: {
     mode: {
       default: "grid-rows-[minmax(0,1fr)] pt-3 opacity-100",
-      visible: [
+      visible: cn(
         "translate-y-0 grid-rows-[minmax(0,1fr)] pt-3 opacity-100",
-        "ease-out transition-[opacity,transform] duration-150",
-        "starting:-translate-y-1.5 starting:opacity-0",
-      ],
-      // The collapsed row is 0px but its content keeps its height, so `overflow-clip` keeps it
-      // out of the page and any scroll container. The row size does not transition, so the
-      // clip only ever applies to a collapsed footer and a visible one never clips a focus ring.
-      // Hiding collapses and clips in one frame, so this arm has no transition of its own: it is
-      // the reveal's start state.
-      hidden: "pointer-events-none -translate-y-1.5 grid-rows-[minmax(0,0fr)] overflow-clip pt-0 opacity-0",
+        itemFooterMotionClass,
+        "starting:-translate-y-1.5 starting:opacity-0"
+      ),
+      // The collapsed row is 0px but its content keeps its height, so the clip keeps it out of
+      // the page and any scroll container.
+      hidden: cn(
+        "pointer-events-none -translate-y-1.5 grid-rows-[minmax(0,0fr)] pt-0 opacity-0",
+        itemFooterMotionClass
+      ),
     },
   },
   defaultVariants: {
@@ -128,8 +145,10 @@ export function ItemFooter({
   VariantProps<typeof itemFooterVariants> & {
     /**
      * Footer content, wrapped in the inner `item-footer-content` element. `mode="hidden"`
-     * collapses its grid row to zero, clips it and makes it inert. The row snaps both ways;
-     * a footer switched to `visible` fades and slides its content in.
+     * collapses its grid row to zero, clips it and makes it inert. Switching between `hidden`
+     * and `visible` animates the row's height with a fade and a short slide, so content below
+     * the footer moves smoothly instead of jumping. Both modes clip content that escapes the
+     * footer more than 4px; `default` neither animates nor clips.
      */
     children?: ReactNode;
   }): ReactElement {

@@ -74,9 +74,10 @@ describe("Item.Media and Item.Footer class contracts", () => {
     expect(hidden).toContain("pointer-events-none");
     expect(hidden).toContain("0fr");
     expect(visible).toContain("starting:");
-    // Only a collapsed footer clips, so a visible footer paints its focus rings whole.
+    // Both switchable modes clip, since the row tweens between them in either direction; a
+    // default footer never changes size, so it never clips.
     expect(hidden).toContain("overflow-clip");
-    expect(visible).not.toContain("overflow-clip");
+    expect(visible).toContain("overflow-clip");
     expect(shown).not.toContain("overflow-clip");
   });
 });

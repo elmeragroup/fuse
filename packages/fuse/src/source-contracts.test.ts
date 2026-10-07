@@ -471,6 +471,9 @@ describe("runtime listeners and layout motion", () => {
       .map((record) => record.relative);
     expect(owners.toSorted()).toEqual([
       "components/accordion/accordion-variants.ts",
+      // Item.Footer, and so every SelectionItem.SubSection, tweens its grid row and top padding
+      // between `hidden` and `visible`.
+      "components/item/item-markup.tsx",
       "components/meter/meter-variants.ts",
       // Base UI sizes and places the shared popup through its --popup-* and --positioner-* variables.
       "components/navigation-menu/navigation-menu-variants.ts",

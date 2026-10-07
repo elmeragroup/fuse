@@ -131,3 +131,44 @@ export async function assertStateFocusRingAtBothDensities(
     expect(hasFocusRing(ringHost), "mouse focus on the control must not paint the group ring").toBe(false);
   });
 }
+
+/**
+ * The ancestors that would clip the shared focus ring around `control`. The ring is 2px wide
+ * outside a 2px offset, so it paints 4px past the control's border box; an ancestor clips it
+ * when it hides overflow, clips its paint, or sets a clip path, and the ring's box leaves that
+ * ancestor's padding box.
+ *
+ * @returns One `tag.class` label per clipping ancestor, empty when the whole ring paints.
+ */
+export function focusRingClippers(control: HTMLElement): string[] {
+  const rect = control.getBoundingClientRect();
+  const ring = { left: rect.left - 4, top: rect.top - 4, right: rect.right + 4, bottom: rect.bottom + 4 };
+  const clippers: string[] = [];
+  for (let ancestor = control.parentElement; ancestor; ancestor = ancestor.parentElement) {
+    const ancestorStyle = getComputedStyle(ancestor);
+    const clips =
+      ancestorStyle.overflowX !== "visible" ||
+      ancestorStyle.overflowY !== "visible" ||
+      ancestorStyle.clipPath !== "none" ||
+      /paint|strict|content/.test(ancestorStyle.contain);
+    if (!clips || ancestor === document.documentElement || ancestor === document.body) {
+      continue;
+    }
+    const box = ancestor.getBoundingClientRect();
+    const inner = {
+      left: box.left + ancestor.clientLeft,
+      top: box.top + ancestor.clientTop,
+      right: box.left + ancestor.clientLeft + ancestor.clientWidth,
+      bottom: box.top + ancestor.clientTop + ancestor.clientHeight,
+    };
+    if (
+      ring.left < inner.left ||
+      ring.top < inner.top ||
+      ring.right > inner.right ||
+      ring.bottom > inner.bottom
+    ) {
+      clippers.push(`${ancestor.tagName}.${ancestor.className}`);
+    }
+  }
+  return clippers;
+}

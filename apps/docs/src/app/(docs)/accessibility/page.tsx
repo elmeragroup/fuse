@@ -100,8 +100,10 @@ export default function AccessibilityPage(): ReactElement {
         transform, translate and scale motion while retaining opacity fades — comprehension-aiding transitions
         survive, movement does not. No component opts out. UI transitions sit in a 150–300 ms ease-out band
         and normally animate <code>transform</code> and <code>opacity</code>. Reviewed layout transitions are
-        accordion and collapsible height, accordion trigger padding, sidebar width and meter fill. The central
-        reduced-motion rule disables those exceptions too.
+        accordion and collapsible height, accordion trigger padding, the height and top padding of an{" "}
+        <code>Item.Footer</code> switching between <code>hidden</code> and <code>visible</code> (the
+        sub-section of <code>RadioItem</code> and <code>CheckboxItem</code>), sidebar width and meter fill.
+        The central reduced-motion rule disables those exceptions too.
       </p>
 
       <h2 id="target-size">Target size</h2>
