@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>pr-shots fixture: a page without a demo stage</title>
+    <style>
+      body {
+        margin: 0;
+        font: 16px/1.4 sans-serif;
+      }
+      /* A fixed document height, so a full-page shot's height is exact. */
+      main {
+        box-sizing: border-box;
+        height: 2000px;
+        padding: 40px;
+      }
+      /* Whole-pixel lines, so the target below starts on a whole pixel. */
+      label {
+        display: block;
+        height: 20px;
+        line-height: 20px;
+      }
+      /* A fixed, whole-pixel target outside any demo stage. */
+      input {
+        box-sizing: border-box;
+        display: block;
+        width: 200px;
+        height: 30px;
+      }
+      /* Shows which density the document root carries. */
+      .swatch {
+        width: 40px;
+        height: 40px;
+        margin-top: 20px;
+        background: rgb(0, 0, 255);
+      }
+      [data-density="dense"] .swatch {
+        background: rgb(255, 0, 0);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <label for="search">Search</label>
+      <input id="search" type="search" />
+      <div class="swatch"></div>
+    </main>
+  </body>
+</html>

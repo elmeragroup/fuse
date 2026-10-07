@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>pr-shots fixture</title>
+    <style>
+      body {
+        margin: 0;
+        font: 16px/1.4 sans-serif;
+      }
+      main {
+        padding: 40px;
+      }
+      /* A fixed, whole-pixel stage, so the expected clip is exact. */
+      [data-demo-stage] {
+        box-sizing: border-box;
+        width: 300px;
+        height: 120px;
+        padding: 16px;
+        background: #eef;
+      }
+      label {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div data-demo-stage>
+        <label for="mobile">Mobile</label>
+        <input id="mobile" type="tel" />
+      </div>
+    </main>
+  </body>
+</html>
