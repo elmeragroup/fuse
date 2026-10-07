@@ -158,7 +158,9 @@ export function ItemFooter({
      * collapses its grid row to zero, clips it and makes it inert. Switching between `hidden`
      * and `visible` animates the row's height with a fade and a short slide, so content below
      * the footer moves smoothly instead of jumping. Both modes clip content that reaches more
-     * than 4px past the footer's content box. A `default` footer never clips, and switching to
+     * than 4px past the footer's content box. That 4px of ring room is part of the content
+     * element's box, so a zero-inset item flush against a scroll container's edge should keep
+     * 4px of inset there or the room scrolls. A `default` footer never clips, and switching to
      * it snaps.
      */
     children?: ReactNode;

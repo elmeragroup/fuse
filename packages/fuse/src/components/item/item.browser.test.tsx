@@ -4,7 +4,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse, focusRingClippers } from "../../../test/assert-focus-ring";
-import { sampleFrames } from "../../../test/panel-transition";
+import { hasIntermediateFrame, sampleFrames } from "../../../test/panel-transition";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import { renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
 import { Button } from "../button/button";
@@ -54,13 +54,6 @@ function RevealTree({ mode }: { mode: "hidden" | "visible" }) {
       <button type="button">Below</button>
     </>
   );
-}
-
-/** True when some sample lies strictly between `from` and `to`, so the value moved through frames. */
-function hasIntermediateFrame(samples: readonly number[], from: number, to: number): boolean {
-  const low = Math.min(from, to);
-  const high = Math.max(from, to);
-  return samples.some((value) => value > low + 0.5 && value < high - 0.5);
 }
 
 async function settledFooter(footer: HTMLElement): Promise<void> {

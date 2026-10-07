@@ -11,5 +11,7 @@ the height still snaps and the fade remains.
 
 A `hidden` or `visible` footer clips its content in both modes, since the row is shorter than its
 content while it animates. The clip edge sits 4px outside the content on every side, so the shared
-focus ring paints whole, and the footer's own box keeps its size. A `default` footer never clips,
+focus ring paints whole, and the footer's own box keeps its size. The 4px belongs to the content
+element's box, so an item with no inset flush against a scroll container's edge should keep 4px of
+inset there, or the room adds scrollable overflow. A `default` footer never clips,
 and switching to it snaps.
