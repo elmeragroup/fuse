@@ -11,9 +11,9 @@ export type FormProps<FormValues extends object = FormPrimitive.Values> = FormPr
  * A native form whose `errors` reach the Fields inside it, such as validation errors a server
  * returned after submit. Keys are the names of the controls, and each value is one message or
  * several. A `Field.Error` without children shows the error under its control's name, and so
- * does `TextField` when it gets no `errorMessage`. Editing a field clears its error, and a new
- * `errors` object shows them again. The interim react-aria fields read React Aria's own form
- * context instead, so pass them `errorMessage` and `isInvalid`.
+ * do `TextField` and `PhoneNumberField` when they get no `errorMessage`. Editing a field clears
+ * its error, and a new `errors` object shows them again. The interim react-aria fields read
+ * React Aria's own form context instead, so pass them `errorMessage` and `isInvalid`.
  *
  * Every submit first checks the enabled Fields inside the form. While any of them is invalid,
  * the form calls neither `onSubmit` nor `onFormSubmit`, lets no native submit or form action
