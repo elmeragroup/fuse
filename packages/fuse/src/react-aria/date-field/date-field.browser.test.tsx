@@ -29,6 +29,7 @@ import {
   roleNamed,
   stampDensity,
   textboxNamed,
+  textNamed,
 } from "../../../test/themed-browser-render";
 import { InputGroup } from "../../components/input-group";
 import { Input } from "../../components/input/input";
@@ -36,6 +37,8 @@ import { TextField } from "../../components/text-field/text-field";
 import { Textarea } from "../../components/textarea/textarea";
 import { fieldCornerClass } from "../../styles/corner-radius";
 import { ThemeScope } from "../../theme";
+import { DatePicker } from "../date-picker/date-picker";
+import { DateRangePicker } from "../date-range-picker/date-range-picker";
 import { SearchField } from "../search-field/search-field";
 import { UiProviders } from "../ui-providers/ui-providers";
 import { DateField, DateInput } from "./date-field";
@@ -430,6 +433,37 @@ describe("DateField field-box chrome", () => {
       await settled(box);
       expectNoFocusRing(box, `pointer focus must not paint the ${name} ring`);
       expect(getComputedStyle(box).borderTopColor, name).toBe(cssVarColor(box, "--input"));
+    }
+  });
+
+  it("paints an invalid field's label in the error colour, as TextField does", () => {
+    renderField(
+      <>
+        <TextField label="Customer" isInvalid errorMessage="Required" />
+        <TextField label="Nickname" />
+        <DateField label="Meter" isInvalid description="Meter date" />
+        <DatePicker label="Start" isInvalid description="Start date" />
+        <DateRangePicker label="Period" isInvalid description="Billing period" />
+        <SearchField label="Find" isInvalid description="Search term" />
+      </>
+    );
+    // Unit: each React Aria field's label colour. Oracle: an invalid TextField's label, which
+    // `Field.Root` paints with `--error`, and which a valid label must not share.
+    const invalidLabel = getComputedStyle(textNamed("Customer")).color;
+    expect(invalidLabel).toBe(cssVarColor(textNamed("Customer"), "--error"));
+    expect(invalidLabel).not.toBe(getComputedStyle(textNamed("Nickname")).color);
+
+    for (const [label, description] of [
+      ["Meter", "Meter date"],
+      ["Start", "Start date"],
+      ["Period", "Billing period"],
+      ["Find", "Search term"],
+    ] as const) {
+      expect(getComputedStyle(textNamed(label)).color, `${label} label`).toBe(invalidLabel);
+      // The help text keeps its own muted colour under the invalid root.
+      expect(getComputedStyle(textNamed(description)).color, `${label} description`).toBe(
+        cssVarColor(textNamed(description), "--muted-foreground")
+      );
     }
   });
 

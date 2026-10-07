@@ -13,9 +13,13 @@ import { fieldFlushCornerClass } from "./corner-radius";
  */
 export const pickerVariants = tv({
   slots: {
-    /** The RAC picker root: label, field box, help text and popover in a column. */
+    /**
+     * The RAC picker root: label, field box, help text and popover in a column. An invalid
+     * picker paints its label in the error colour, as `Field.Root` does; every other part
+     * sets its own colour.
+     */
     // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- label/field stack gap is layout, not a control rung
-    base: "group flex max-w-full min-w-0 flex-col gap-1",
+    base: "group flex max-w-full min-w-0 flex-col gap-1 data-invalid:text-error",
     /** The private FieldGroup around the segment row(s) and the trigger. */
     group: "w-auto",
     /** A public DateInput inside the field box. */

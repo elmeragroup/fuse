@@ -15,7 +15,9 @@ import { fieldFlushCornerClass } from "./corner-radius";
  */
 export const searchFieldVariants = tv({
   slots: {
-    base: "group flex min-w-12 flex-col gap-1",
+    // An invalid field paints its label in the error colour, as `Field.Root` does; every
+    // other part sets its own colour.
+    base: "group flex min-w-12 flex-col gap-1 data-invalid:text-error",
     icon: "ml-2 size-4 text-foreground group-aria-disabled:text-muted-foreground forced-colors:text-[ButtonText] forced-colors:group-aria-disabled:text-[GrayText]",
     input: "[&::-webkit-search-cancel-button]:hidden",
     // The clear button sits inside the field box, so it takes the field's corner instead of
