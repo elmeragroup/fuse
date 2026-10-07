@@ -129,6 +129,19 @@ export function viewportName({ width, height }: Viewport): string {
   return `${String(width)}x${String(height)}`;
 }
 
+/**
+ * The click steps as alt text and the table's lead line read them.
+ *
+ * @param options - The parsed run.
+ * @returns Such as `, after clicking button "Internal", then combobox "Rows per page"`, or an
+ * empty string for a run without clicks.
+ */
+export function clickWords({ clicks }: ShotOptions): string {
+  return clicks.length === 0
+    ? ""
+    : `, after clicking ${clicks.map(({ role, name }) => `${role} "${name}"`).join(", then ")}`;
+}
+
 function makeShot(options: ShotOptions, state: ShotState, at: Coordinate, frame: ResolvedFrame): Shot {
   return {
     ...at,
@@ -171,7 +184,7 @@ function altText(options: ShotOptions, state: ShotState, at: Coordinate, frame: 
       ? `${at.density.density} density (override)`
       : "the theme's default density";
   const windowWords = `${String(at.viewport.width)} × ${String(at.viewport.height)} window`;
-  return `${capitalize(state)}: ${framing}${filled}, ${themeWords}, ${densityWords}, ${schemeWords(options.colorScheme)}, ${engineWords(at.engine)}, ${windowWords}`;
+  return `${capitalize(state)}: ${framing}${clickWords(options)}${filled}, ${themeWords}, ${densityWords}, ${schemeWords(options.colorScheme)}, ${engineWords(at.engine)}, ${windowWords}`;
 }
 
 function schemeWords(scheme: ColorScheme): string {

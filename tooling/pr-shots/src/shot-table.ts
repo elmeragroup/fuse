@@ -4,7 +4,7 @@
 
 import type { ShotOptions } from "./options.ts";
 import type { Size } from "./pixel-diff.ts";
-import { densityName, themeName, viewportName } from "./shot-plan.ts";
+import { clickWords, densityName, themeName, viewportName } from "./shot-plan.ts";
 import type { Coordinate, Shot, ShotRow } from "./shot-plan.ts";
 
 /** Whether the run has "before" shots. */
@@ -84,7 +84,7 @@ export function renderTable(
   beforeLabel: string,
   afterLabel: string
 ): string {
-  const lead = `${leadSubject(options, table)}. Before: ${beforeLabel}. After: ${afterLabel}.`;
+  const lead = `${leadSubject(options, table)}${escapeCell(clickWords(options))}. Before: ${beforeLabel}. After: ${afterLabel}.`;
   const skipped =
     before._tag === "not-deployed"
       ? ` The route answered 404 on ${beforeLabel}, so there are no before shots.`

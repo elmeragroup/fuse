@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>pr-shots fixture: controls that open portaled popups</title>
+    <style>
+      body {
+        margin: 0;
+        font: 16px/20px sans-serif;
+      }
+      /* A fixed document height, so a window shot near the bottom has to scroll there. */
+      main {
+        position: relative;
+        box-sizing: border-box;
+        height: 2000px;
+      }
+      /* Every control and popup sits at fixed, whole-pixel page coordinates, so the clip that
+         holds a control and its open popup is known in advance. */
+      button {
+        position: absolute;
+        box-sizing: border-box;
+        margin: 0;
+        width: 200px;
+        height: 30px;
+      }
+      #internal {
+        left: 40px;
+        top: 400px;
+      }
+      #rows {
+        left: 40px;
+        top: 40px;
+      }
+      #actions-0 {
+        left: 400px;
+        top: 40px;
+      }
+      #actions-1 {
+        left: 400px;
+        top: 100px;
+      }
+      #far {
+        left: 40px;
+        top: 1600px;
+      }
+      #move {
+        left: 900px;
+        top: 40px;
+      }
+      #more {
+        left: 40px;
+        top: 480px;
+      }
+      #inbox {
+        left: 900px;
+        top: 400px;
+      }
+      #later {
+        left: 900px;
+        top: 480px;
+      }
+      #stuck {
+        left: 900px;
+        top: 700px;
+      }
+      #swap {
+        left: 40px;
+        top: 700px;
+      }
+      #eager {
+        left: 40px;
+        top: 850px;
+      }
+      #edit {
+        left: 900px;
+        top: 800px;
+      }
+      /* Accessible, but with no box, so nothing to see or shoot. */
+      #edit-ghost {
+        left: 0;
+        top: 0;
+        width: 0;
+        height: 0;
+        padding: 0;
+        border: 0;
+        overflow: hidden;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      /* A closed popup that keeps its layout box, as one that fades out by visibility does. */
+      #actions-menu-0[hidden] {
+        display: block !important;
+        visibility: hidden;
+      }
+      /* The popups render in body, outside main, the way Base UI portals them. */
+      .popup {
+        position: absolute;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        background: rgb(255, 0, 0);
+      }
+      #rows-list {
+        left: 60px;
+        top: 90px;
+        width: 240px;
+        height: 120px;
+      }
+      #actions-menu-0 {
+        left: 700px;
+        top: 300px;
+        width: 100px;
+        height: 50px;
+      }
+      #actions-menu-1 {
+        left: 380px;
+        top: 150px;
+        width: 160px;
+        height: 90px;
+      }
+      #far-list {
+        left: 40px;
+        top: 1640px;
+        width: 200px;
+        height: 100px;
+      }
+      /* A menu that is always laid out but transparent, as one mid fade-in from opacity 0. */
+      #ghost-menu {
+        left: 1000px;
+        top: 600px;
+        width: 50px;
+        height: 50px;
+        opacity: 0;
+      }
+      #move-dialog {
+        left: 860px;
+        top: 120px;
+        width: 300px;
+        height: 200px;
+      }
+      #more-menu {
+        left: 40px;
+        top: 520px;
+        width: 200px;
+        height: 100px;
+      }
+      #later-menu {
+        left: 900px;
+        top: 520px;
+        width: 200px;
+        height: 80px;
+      }
+      #swap-menu {
+        left: 40px;
+        top: 740px;
+        width: 200px;
+        height: 60px;
+      }
+      #eager-menu {
+        left: 60px;
+        top: 900px;
+        width: 240px;
+        height: 120px;
+      }
+      #edit-dialog {
+        left: 860px;
+        top: 860px;
+        width: 300px;
+        height: 100px;
+      }
+      #share-menu {
+        left: 250px;
+        top: 520px;
+        width: 190px;
+        height: 60px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Comes before the Edit trigger in document order and stays in the accessibility tree when
+         the Edit dialog hides main. -->
+    <button type="button" id="edit-ghost">Edit</button>
+    <main>
+      <!-- Opening the Rows per page combobox needs a step first, as the landing's Internal side does. -->
+      <button type="button" id="internal">Internal</button>
+      <button type="button" id="rows" role="combobox" aria-label="Rows per page" aria-expanded="false" hidden>
+        10
+      </button>
+      <!-- Two controls share a role and name and set aria-expanded without aria-controls. -->
+      <button type="button" id="actions-0" aria-expanded="false">Actions</button>
+      <button type="button" id="actions-1" aria-expanded="false">Actions</button>
+      <!-- A control far below the first window. -->
+      <button type="button" id="far" aria-expanded="false" aria-controls="far-list">Far</button>
+      <!-- Opens a modal dialog that hides the rest of the page, its trigger included, from the
+           accessibility tree, as Base UI's modal Dialog does. -->
+      <button type="button" id="move" aria-expanded="false">Move</button>
+      <!-- Opens a menu whose Share item opens a submenu, each portaled on its own. -->
+      <button type="button" id="more" aria-expanded="false">More</button>
+      <!-- A keyboard shortcut hint inside the name's element, kept out of the name, as the
+           landing's sidebar shows them. -->
+      <button type="button" id="inbox">Inbox<span aria-hidden="true"> 9</span></button>
+      <!-- Opens its menu a while after the click, as a Base UI submenu does after its delay. -->
+      <button type="button" id="later" aria-haspopup="menu" aria-expanded="false" aria-controls="later-menu">
+        Later
+      </button>
+      <!-- Claims to open a menu and never does. -->
+      <button type="button" id="stuck" aria-haspopup="menu" aria-expanded="false">Stuck</button>
+      <!-- Re-rendered as a new node when clicked, as React does when a trigger's key changes. -->
+      <button type="button" id="swap" aria-expanded="false">Swap</button>
+      <!-- Reports itself expanded at once, but mounts its popup and names it a second later. -->
+      <button type="button" id="eager" aria-haspopup="menu" aria-expanded="false">Eager</button>
+      <!-- Opens a modal dialog that hides main, this trigger included. -->
+      <button type="button" id="edit" aria-expanded="false">Edit</button>
+    </main>
+    <ul role="listbox" id="rows-list" class="popup" aria-label="Rows per page" hidden>
+      <li role="option">10</li>
+    </ul>
+    <div role="menu" id="actions-menu-0" class="popup" hidden>
+      <div role="menuitem">First</div>
+    </div>
+    <div role="menu" id="actions-menu-1" class="popup" hidden>
+      <div role="menuitem">Second</div>
+    </div>
+    <ul role="listbox" id="far-list" class="popup" aria-label="Far" hidden>
+      <li role="option">1</li>
+    </ul>
+    <div role="menu" id="ghost-menu" class="popup">
+      <div role="menuitem">Ghost</div>
+    </div>
+    <div role="dialog" id="move-dialog" class="popup" aria-modal="true" aria-label="Move" hidden>
+      <button type="button" style="position: static">Confirm</button>
+    </div>
+    <div role="menu" id="more-menu" class="popup" hidden>
+      <div role="menuitem" id="share" aria-haspopup="menu" aria-expanded="false">Share</div>
+    </div>
+    <div role="menu" id="later-menu" class="popup" hidden>
+      <div role="menuitem">Eventually</div>
+    </div>
+    <div role="menu" id="swap-menu" class="popup" hidden>
+      <div role="menuitem">Swapped</div>
+    </div>
+    <div role="dialog" id="edit-dialog" class="popup" aria-modal="true" aria-label="Edit" hidden>
+      <button type="button" style="position: static">Save</button>
+    </div>
+    <div role="menu" id="share-menu" class="popup" hidden>
+      <div role="menuitem">Email</div>
+    </div>
+    <script>
+      const byId = (id) => document.getElementById(id);
+
+      byId("internal").addEventListener("click", () => {
+        byId("rows").hidden = false;
+      });
+
+      /** Opens a popup on click, as an open Base UI Select or Menu does: it stays open after. */
+      function opens(trigger, popup, { controls }) {
+        trigger.addEventListener("click", () => {
+          popup.hidden = false;
+          trigger.setAttribute("aria-expanded", "true");
+          if (controls) {
+            trigger.setAttribute("aria-controls", popup.id);
+          }
+        });
+        // A popup that closes on blur would be gone by the shot.
+        trigger.addEventListener("blur", () => {
+          popup.hidden = true;
+          trigger.setAttribute("aria-expanded", "false");
+        });
+      }
+
+      // Like Base UI's Select trigger, aria-controls is set only while the list is open.
+      opens(byId("rows"), byId("rows-list"), { controls: true });
+      opens(byId("actions-0"), byId("actions-menu-0"), { controls: false });
+      opens(byId("actions-1"), byId("actions-menu-1"), { controls: false });
+      opens(byId("far"), byId("far-list"), { controls: true });
+
+      /** Opens a popup on click and keeps it open whatever takes the focus next. */
+      function staysOpen(trigger, popup) {
+        trigger.addEventListener("click", () => {
+          popup.hidden = false;
+          trigger.setAttribute("aria-expanded", "true");
+          trigger.setAttribute("aria-controls", popup.id);
+        });
+      }
+
+      staysOpen(byId("move"), byId("move-dialog"));
+      byId("move").addEventListener("click", () => {
+        document.querySelector("main").setAttribute("aria-hidden", "true");
+      });
+      staysOpen(byId("more"), byId("more-menu"));
+      staysOpen(byId("share"), byId("share-menu"));
+      byId("swap").addEventListener("click", () => {
+        const fresh = byId("swap").cloneNode(true);
+        fresh.setAttribute("aria-expanded", "true");
+        fresh.setAttribute("aria-controls", "swap-menu");
+        byId("swap").replaceWith(fresh);
+        byId("swap-menu").hidden = false;
+      });
+      byId("eager").addEventListener("click", () => {
+        byId("eager").setAttribute("aria-expanded", "true");
+        setTimeout(() => {
+          const menu = document.createElement("div");
+          menu.setAttribute("role", "menu");
+          menu.id = "eager-menu";
+          menu.className = "popup";
+          menu.innerHTML = '<div role="menuitem">Mounted</div>';
+          document.body.append(menu);
+          byId("eager").setAttribute("aria-controls", "eager-menu");
+        }, 1000);
+      });
+      staysOpen(byId("edit"), byId("edit-dialog"));
+      byId("edit").addEventListener("click", () => {
+        document.querySelector("main").setAttribute("aria-hidden", "true");
+      });
+      byId("later").addEventListener("click", () => {
+        setTimeout(() => {
+          byId("later-menu").hidden = false;
+          byId("later").setAttribute("aria-expanded", "true");
+        }, 500);
+      });
+    </script>
+  </body>
+</html>

@@ -1,8 +1,8 @@
 /**
  * Takes a run's screenshots with Playwright: opens the route, sets the theme through the page's
- * own picker like a user, stamps a density override, types into the target, waits for the page
- * to hydrate and settle, and writes the frame: a padded clip of the target or its demo stage,
- * the window, or the whole page.
+ * own picker like a user, runs the click steps, stamps a density override, types into the target,
+ * waits for the page to hydrate and settle, and writes the frame: a padded clip of the target or
+ * its demo stage, widened to any popup a control in it holds open, the window, or the whole page.
  */
 
 import { Context, Effect, Layer, Schema } from "effect";
@@ -11,12 +11,24 @@ import { chromium, firefox, webkit } from "playwright";
 import type { Browser, BrowserType, Locator, Page } from "playwright";
 
 import { segmentLabel, variantLabel } from "./options.ts";
-import type { Engine, Frame, ResolvedFrame, ShotOptions, Target, ThemeChoice, Viewport } from "./options.ts";
+import type {
+  ClickStep,
+  Engine,
+  Frame,
+  ResolvedFrame,
+  ShotOptions,
+  Target,
+  ThemeChoice,
+  Viewport,
+} from "./options.ts";
 import { firstCoordinate } from "./shot-plan.ts";
 import type { Coordinate, Shot } from "./shot-plan.ts";
 
 /** How long the target may take to appear after the page loads. */
 const TARGET_TIMEOUT_MS = 15_000;
+
+/** How often a wait that Playwright cannot express polls the page. */
+const POLL_MS = 50;
 
 /** How long hydration and a released scroll lock may take. */
 const SETTLE_TIMEOUT_MS = 15_000;
@@ -226,29 +238,102 @@ const openPage = Effect.fnUntraced(function* (
   return page;
 });
 
+/**
+ * Which elements a role and name lookup sees. `accessible` takes the accessibility tree as it
+ * is. `accessible-then-shown` prefers the same match while it is visible, and otherwise takes
+ * the match among the elements visible on screen, those hidden from the tree included. A modal
+ * dialog hides the page behind it, its own trigger included, from the tree. The fallback is only
+ * a fallback because a lookup that includes hidden elements also puts aria-hidden text, such as
+ * a shortcut hint, into the names it compares.
+ */
+type Lookup = "accessible" | "accessible-then-shown";
+
+/** The locators a role and name lookup reads. */
+function candidates(page: Page, { role, name }: Target, nth: number) {
+  const accessible = page.getByRole(role, { name, exact: true }).nth(nth);
+  const shown = page
+    .getByRole(role, { name, exact: true, includeHidden: true })
+    .filter({ visible: true })
+    .nth(nth);
+  // Only a visible accessible match may win, so a boxless one earlier in the document cannot
+  // stand in front of the visible element behind a modal.
+  return { accessible, shown, either: accessible.filter({ visible: true }).or(shown).first() };
+}
+
 /** Finds the target by role and name, waiting for it to show, or fails naming what is missing. */
 const findTarget = Effect.fnUntraced(function* (
   page: Page,
-  { role, name }: Target,
+  target: Target,
   nth: number,
+  lookup: Lookup,
   fail: (reason: string) => CaptureFailed
 ) {
-  const matches = page.getByRole(role, { name, exact: true });
-  const target = matches.nth(nth);
-  const visible = yield* attempt(
+  const { accessible, shown, either } = candidates(page, target, nth);
+  const found = yield* attempt(
     () =>
-      target.waitFor({ state: "visible", timeout: TARGET_TIMEOUT_MS }).then(
-        () => true,
-        () => false
-      ),
+      (lookup === "accessible" ? accessible : either)
+        .waitFor({ state: "visible", timeout: TARGET_TIMEOUT_MS })
+        .then(
+          () => true,
+          () => false
+        ),
     fail
   );
-  if (!visible) {
-    const count = yield* attempt(() => matches.count(), fail);
-    const found = nth === 0 || count === 0 ? "nothing matched" : `only ${String(count)} matched`;
-    return yield* fail(`No ${role} named "${name}" at index ${String(nth)}: ${found}`);
+  if (!found) {
+    const count = yield* attempt(
+      () => page.getByRole(target.role, { name: target.name, exact: true }).count(),
+      fail
+    );
+    const matched = nth === 0 || count === 0 ? "nothing matched" : `only ${String(count)} matched`;
+    return yield* fail(`No ${target.role} named "${target.name}" at index ${String(nth)}: ${matched}`);
   }
-  return target;
+  if (lookup === "accessible") {
+    return accessible;
+  }
+  return (yield* attempt(() => accessible.isVisible(), fail)) ? accessible : shown;
+});
+
+/**
+ * Clicks a step's element. A collapsed control, one with `aria-expanded="false"`, opens
+ * something, and it may open it late: a Base UI submenu opens after a delay, after the page
+ * would otherwise have settled, and a control may report itself expanded before its popup
+ * mounts. So the step waits until the control holds open a popup the clip would take in, as
+ * `openPopupBoxes` finds them. A control that never gets there fails the step: shooting the
+ * closed state would pass for the open one and hide the change under review. A control without
+ * `aria-expanded`, such as a tab or a plain button, or one already expanded, is only clicked.
+ */
+const clickStep = Effect.fnUntraced(function* (
+  page: Page,
+  element: Locator,
+  step: ClickStep,
+  fail: (reason: string) => CaptureFailed
+) {
+  const collapsed = (yield* attempt(() => element.getAttribute("aria-expanded"), fail)) === "false";
+  // The clicked node stays the control while it is in the document, also once a modal it opened
+  // hides it from the role lookup. A click that re-renders it as a new node, as a React key
+  // change does, is followed to the node that has the role and name now.
+  const clicked = collapsed ? yield* attempt(() => element.elementHandle(), fail) : null;
+  yield* attempt(() => element.click(), fail);
+  if (clicked === null) {
+    return;
+  }
+  const { either } = candidates(page, step, step.nth);
+  const opened = yield* attempt(async () => {
+    for (const deadline = Date.now() + TARGET_TIMEOUT_MS; Date.now() < deadline;) {
+      // A replacement that is not rendered yet counts as not open, so the poll goes on.
+      const popups = (await clicked.evaluate((node) => node.isConnected))
+        ? await clicked.evaluate(openPopupBoxes)
+        : await either.evaluate(openPopupBoxes, undefined, { timeout: POLL_MS }).catch(() => []);
+      if (popups.length > 0) {
+        return true;
+      }
+      await page.waitForTimeout(POLL_MS);
+    }
+    return false;
+  }, fail);
+  if (!opened) {
+    return yield* fail(`${step.role} "${step.name}" did not open: no popup it holds open shows`);
+  }
 });
 
 /** The target's closest demo stage, which may match nothing. */
@@ -269,9 +354,10 @@ type Prepared = {
 /**
  * Brings a page to the state a shot shows, the same way for resolving `auto` and for every
  * shot: open the route at the coordinate's window size and wait for hydration, pick the theme,
- * wait for the picker's scroll lock to go, find the target and the frame's element, stamp a
- * density override on it, type the fill, and settle. The frame is checked before anything is
- * stamped or typed, so a frame with nothing to clip fails as `FrameNotFound` at once.
+ * wait for the picker's scroll lock to go, run the click steps, find the target and the frame's
+ * element, stamp a density override on it, type the fill, and settle. The frame is checked before
+ * anything is stamped or typed, so a frame with nothing to clip fails as `FrameNotFound` at once.
+ * The clicks run before the target is looked up, because a step may be what renders it.
  */
 const preparePage = Effect.fnUntraced(function* (
   browser: Browser,
@@ -314,7 +400,20 @@ const preparePage = Effect.fnUntraced(function* (
   }
   yield* attempt(() => waitForScrollUnlock(page, unlocked), fail);
 
-  const target = options.target === null ? null : yield* findTarget(page, options.target, options.nth, fail);
+  // Each step leaves what it opened open: nothing blurs the element or presses Escape, so a
+  // Select or a menu is still open for the shot.
+  for (const [index, step] of options.clicks.entries()) {
+    const stepFail = (reason: string) =>
+      fail(`--click step ${String(index + 1)} of ${String(options.clicks.length)}: ${reason}`);
+    const element = yield* findTarget(page, step, step.nth, "accessible", stepFail);
+    yield* clickStep(page, element, step, stepFail);
+  }
+
+  // A step may open a modal dialog that hides the rest of the page, the target included, from
+  // the accessibility tree, so after clicks the target is looked up among what is on screen.
+  const lookup: Lookup = options.clicks.length === 0 ? "accessible" : "accessible-then-shown";
+  const target =
+    options.target === null ? null : yield* findTarget(page, options.target, options.nth, lookup, fail);
   const stage = target === null ? null : stageOf(target);
   const inStage = stage === null ? false : (yield* attempt(() => stage.count(), fail)) > 0;
   const frame: ResolvedFrame =
@@ -381,8 +480,10 @@ const takeShot = Effect.fn("Capture.takeShot")(function* (
   const file = path.join(outDir, shot.file);
   const still = { animations: "disabled", caret: "hide" } as const;
   if (element === null) {
-    if (shot.frame === "viewport") {
-      // The window at the top of the page, whatever typing into the target scrolled.
+    // The window at the top of the page, whatever typing into the target scrolled. After click
+    // steps the window stays where they and the fill left it: clicking scrolls each element into
+    // view, and what it opened is near it.
+    if (shot.frame === "viewport" && options.clicks.length === 0) {
       yield* attempt(async () => {
         await page.evaluate(() => {
           window.scrollTo(0, 0);
@@ -618,8 +719,9 @@ async function settle(page: Page): Promise<void> {
 type Clip = { readonly x: number; readonly y: number; readonly width: number; readonly height: number };
 
 /**
- * The frame's box plus padding, in page coordinates for a full-page screenshot. Edges round
- * outwards to whole CSS pixels and stop at the page's edges.
+ * The frame's box, widened to every popup a control in it holds open, plus padding, in page
+ * coordinates for a full-page screenshot. Edges round outwards to whole CSS pixels and stop at
+ * the page's edges.
  *
  * @returns The clip, or `null` when the frame has no layout box.
  */
@@ -628,15 +730,70 @@ async function paddedClip(page: Page, frame: Locator, pad: number): Promise<Clip
   if (box === null) {
     return null;
   }
+  const popups = await frame.evaluate(openPopupBoxes);
   const extent = await page.evaluate(() => ({
     scrollX: window.scrollX,
     scrollY: window.scrollY,
     width: document.documentElement.scrollWidth,
     height: document.documentElement.scrollHeight,
   }));
-  const left = Math.max(0, Math.floor(box.x + extent.scrollX - pad));
-  const top = Math.max(0, Math.floor(box.y + extent.scrollY - pad));
-  const right = Math.min(extent.width, Math.ceil(box.x + extent.scrollX + box.width + pad));
-  const bottom = Math.min(extent.height, Math.ceil(box.y + extent.scrollY + box.height + pad));
+  const boxes = [box, ...popups];
+  const left = Math.max(0, Math.floor(Math.min(...boxes.map((b) => b.x)) + extent.scrollX - pad));
+  const top = Math.max(0, Math.floor(Math.min(...boxes.map((b) => b.y)) + extent.scrollY - pad));
+  const right = Math.min(
+    extent.width,
+    Math.ceil(Math.max(...boxes.map((b) => b.x + b.width)) + extent.scrollX + pad)
+  );
+  const bottom = Math.min(
+    extent.height,
+    Math.ceil(Math.max(...boxes.map((b) => b.y + b.height)) + extent.scrollY + pad)
+  );
   return { x: left, y: top, width: right - left, height: bottom - top };
+}
+
+/**
+ * Runs in the page. The window-relative boxes of the popups that the frame, or a control inside
+ * it, holds open: `aria-expanded="true"` and the visible elements its `aria-controls` names.
+ * A portaled popup renders outside the frame, so its box is not in the frame's. Base UI's Select
+ * trigger names its list in `aria-controls` only while the list is open. For an expanded control
+ * that names no visible element, every visible listbox, menu and dialog on the page counts. Each
+ * popup found is searched the same way, so a submenu that an item of an open menu holds open
+ * counts too. A popup counts only if it paints: a closed one that keeps its layout under
+ * `visibility: hidden` or `opacity: 0` does not widen the clip.
+ */
+function openPopupBoxes(frame: Element): readonly Clip[] {
+  const shown = (element: Element) => {
+    const rect = element.getBoundingClientRect();
+    return (
+      element.checkVisibility({ visibilityProperty: true, opacityProperty: true }) &&
+      rect.width > 0 &&
+      rect.height > 0
+    );
+  };
+  const opensFrom = (scope: Element) =>
+    [scope, ...scope.querySelectorAll("[aria-expanded]")]
+      .filter((control) => control.getAttribute("aria-expanded") === "true")
+      .flatMap((control) => {
+        const controlled = (control.getAttribute("aria-controls") ?? "").split(/\s+/u).flatMap((id) => {
+          const element = id === "" ? null : document.getElementById(id);
+          return element !== null && shown(element) ? [element] : [];
+        });
+        return controlled.length > 0
+          ? controlled
+          : [...document.querySelectorAll('[role="listbox"], [role="menu"], [role="dialog"]')].filter(shown);
+      });
+  // Breadth first over the popups found, each searched once, so popups that name each other
+  // cannot loop.
+  const popups = new Set<Element>();
+  const pending = [...opensFrom(frame)];
+  for (let popup = pending.shift(); popup !== undefined; popup = pending.shift()) {
+    if (popup !== frame && !popups.has(popup)) {
+      popups.add(popup);
+      pending.push(...opensFrom(popup));
+    }
+  }
+  return [...popups].map((popup) => {
+    const { x, y, width, height } = popup.getBoundingClientRect();
+    return { x, y, width, height };
+  });
 }

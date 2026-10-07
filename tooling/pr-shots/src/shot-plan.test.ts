@@ -142,6 +142,35 @@ describe("planShots", () => {
       `After: the whole of /, with searchbox "Search" filled with "button", the page's default theme, the theme's default density, light mode, Chromium, 1280 × 900 window`
     );
   });
+
+  it("names the click steps in order, before the fill", () => {
+    const run = options([
+      "page-size",
+      "--route",
+      "/",
+      "--click",
+      "button:Internal",
+      "--click",
+      "combobox:Rows per page",
+      "--target",
+      "combobox:Rows per page",
+      "--fill",
+      "25",
+      "--frame",
+      "target",
+    ]);
+    const [row] = planShots(run, "target");
+    expect(row?.after.alt).toBe(
+      `After: combobox "Rows per page" on /, after clicking button "Internal", then combobox "Rows per page", filled with "25", the page's default theme, the theme's default density, light mode, Chromium, 1280 × 900 window`
+    );
+    const [inWindow] = planShots(
+      options(["landing-menu", "--route", "/", "--click", "menuitem:Open"]),
+      "viewport"
+    );
+    expect(inWindow?.before.alt).toBe(
+      `Before: the visible part of /, after clicking menuitem "Open", the page's default theme, the theme's default density, light mode, Chromium, 1280 × 900 window`
+    );
+  });
 });
 
 describe("firstCoordinate", () => {

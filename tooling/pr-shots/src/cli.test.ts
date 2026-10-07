@@ -24,6 +24,7 @@ describe("the shots command line", () => {
         route: "/components/phone-number-field",
         target: { role: "textbox", name: "Mobile" },
         nth: 0,
+        clicks: [],
         fill: null,
         frame: "auto",
         pad: 12,
@@ -52,6 +53,10 @@ describe("the shots command line", () => {
         "button:Save changes: now",
         "--nth",
         "2",
+        "--click",
+        "tab:Internal",
+        "--click",
+        "button:Save changes: now@1",
         "--fill",
         "123 123",
         "--frame",
@@ -86,6 +91,11 @@ describe("the shots command line", () => {
         // Only the first colon separates the role, so the name may contain colons.
         target: { role: "button", name: "Save changes: now" },
         nth: 2,
+        // In the order given, each with the match its @n picks.
+        clicks: [
+          { role: "tab", name: "Internal", nth: 0 },
+          { role: "button", name: "Save changes: now", nth: 1 },
+        ],
         fill: "123 123",
         frame: "target",
         pad: 0,
@@ -137,6 +147,20 @@ describe("the shots command line", () => {
   it.effect.each(["auto", "stage", "target", "viewport", "page"] as const)("takes --frame %s", (frame) =>
     Effect.gen(function* () {
       assert.strictEqual((yield* parseArgv([...REQUIRED, "--frame", frame])).frame, frame);
+    })
+  );
+
+  it.effect.each([
+    ["combobox:Rows per page", { role: "combobox", name: "Rows per page", nth: 0 }],
+    ["button:Save@12", { role: "button", name: "Save", nth: 12 }],
+    // Only a trailing @<n> picks a match; an @ elsewhere belongs to the name.
+    ["link:me@example.com", { role: "link", name: "me@example.com", nth: 0 }],
+    ["button:Save@", { role: "button", name: "Save@", nth: 0 }],
+    // A name that itself ends in @<n> keeps it by adding the match: @0.
+    ["button:Seat@3@0", { role: "button", name: "Seat@3", nth: 0 }],
+  ] as const)("reads --click %s", ([value, step]) =>
+    Effect.gen(function* () {
+      assert.deepStrictEqual((yield* parseArgv([...REQUIRED, "--click", value])).clicks, [step]);
     })
   );
 
@@ -219,6 +243,19 @@ describe("the shots command line", () => {
       invalid("target", "textbox:", "an accessible name after the role, such as textbox:Mobile"),
     ],
     [[...REQUIRED, "--nth=-1"], invalid("nth", "-1", "a whole number of 0 or more")],
+    [
+      [...REQUIRED, "--click", "tabs:Internal"],
+      invalid(
+        "click",
+        "tabs:Internal",
+        '"tabs" is not an ARIA role; use <role>:<accessible name>[@<n>], such as tab:Internal'
+      ),
+    ],
+    [
+      [...REQUIRED, "--click", "button:@1"],
+      invalid("click", "button:@1", "an accessible name after the role, such as button:Internal"),
+    ],
+    [[...REQUIRED, "--click"], "Missing value for flag --click"],
     [[...REQUIRED, "--pad", "1.5"], invalid("pad", "1.5", "a whole number of 0 or more")],
     [[...REQUIRED, "--frame", "screen"], 'Invalid value for flag --frame: "screen"'],
     [
@@ -307,6 +344,7 @@ describe("the shots command line", () => {
       const help = (yield* TestConsole.logLines).map(String).join("\n");
       assert.include(help, "--target role:name");
       assert.include(help, "--densities list");
+      assert.include(help, "--click role:name[@n]");
     }).pipe(Effect.provide(cliEnvironment))
   );
 });

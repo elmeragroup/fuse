@@ -119,6 +119,19 @@ export const Target = Schema.Struct({
 /** The element a shot is about. */
 export type Target = typeof Target.Type;
 
+/** One `--click` step: the element to click, found like a target, and which match to take. */
+export const ClickStep = Schema.Struct({
+  /** The element's ARIA role. */
+  role: AriaRole,
+  /** The element's exact accessible name. */
+  name: Schema.NonEmptyString,
+  /** Which match to click when several share the role and name, counting from 0. */
+  nth: Schema.Int,
+});
+
+/** One `--click` step. */
+export type ClickStep = typeof ClickStep.Type;
+
 /** The variants a theme slug may name, with the label the docs theme picker shows. */
 const VARIANT_LABELS = { internal: "Internal", external: "External" } as const;
 
@@ -176,8 +189,9 @@ export type Engine = typeof Engine.Type;
 
 /**
  * What a shot covers. `stage` is the target's closest demo stage and `target` the element
- * itself, both padded. `viewport` is the browser window at the top of the page, and `page` the
- * whole document. `auto` picks one of them when the run starts.
+ * itself, both padded and widened to any popup a control in them holds open. `viewport` is the
+ * browser window at the top of the page, or after click steps where they and the fill left it,
+ * and `page` the whole document. `auto` picks one of them when the run starts.
  */
 export type Frame = "auto" | ResolvedFrame;
 
@@ -230,6 +244,8 @@ export type ShotOptions = {
   readonly target: Target | null;
   /** Which match of the target to take, counting from 0. */
   readonly nth: number;
+  /** The elements to click, in order, after the theme is picked and before the shot. */
+  readonly clicks: readonly ClickStep[];
   /** Text typed into the target before the shot, or `null` to leave it alone. */
   readonly fill: string | null;
   /** What the clip covers. */
@@ -308,17 +324,27 @@ export const Route = fromText(Schema.String, (input) =>
 );
 
 /** `<role>:<accessible name>`. Only the first colon separates them, so a name may hold colons. */
-export const TargetFromText = fromText(Target, (input) => {
-  const separator = input.indexOf(":");
-  const role = separator === -1 ? input : input.slice(0, separator);
-  const name = separator === -1 ? "" : input.slice(separator + 1);
-  if (!isAriaRole(role)) {
-    return Result.fail(`"${role}" is not an ARIA role; use <role>:<accessible name>, such as textbox:Mobile`);
-  }
-  if (name === "") {
-    return Result.fail(`an accessible name after the role, such as ${role}:Mobile`);
-  }
-  return Result.succeed({ role, name });
+export const TargetFromText = fromText(Target, (input) =>
+  parseRoleAndName(input, { role: "textbox", name: "Mobile" }, "")
+);
+
+/**
+ * `<role>:<accessible name>[@<n>]`, parsed like `--target`. A trailing `@` and digits pick the
+ * match, counting from 0; any other `@` belongs to the name. A name that itself ends in `@` and
+ * digits keeps them when `@0` follows.
+ */
+export const ClickStepFromText = fromText(ClickStep, (input) => {
+  const match = /^(.*)@(\d+)$/su.exec(input);
+  const text = match?.[1] ?? input;
+  const nth = match?.[2] === undefined ? 0 : Number(match[2]);
+  return Result.map(
+    parseRoleAndName(text, { role: "tab", name: "Internal" }, "[@<n>]"),
+    ({ role, name }) => ({
+      role,
+      name,
+      nth,
+    })
+  );
 });
 
 /** A whole number of 0 or more. */
@@ -471,6 +497,25 @@ function hasControlCharacter(text: string): boolean {
     }
   }
   return false;
+}
+
+/**
+ * Splits `<role>:<accessible name>` at its first colon. `example` is a valid value the messages
+ * show, and `suffix` what the flag's syntax adds after the name.
+ */
+function parseRoleAndName(input: string, example: Target, suffix: string): Result.Result<Target, string> {
+  const separator = input.indexOf(":");
+  const role = separator === -1 ? input : input.slice(0, separator);
+  const name = separator === -1 ? "" : input.slice(separator + 1);
+  if (!isAriaRole(role)) {
+    return Result.fail(
+      `"${role}" is not an ARIA role; use <role>:<accessible name>${suffix}, such as ${example.role}:${example.name}`
+    );
+  }
+  if (name === "") {
+    return Result.fail(`an accessible name after the role, such as ${role}:${example.name}`);
+  }
+  return Result.succeed({ role, name });
 }
 
 function isAriaRole(role: string): role is AriaRole {
