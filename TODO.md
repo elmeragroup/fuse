@@ -47,7 +47,9 @@
   `muted-foreground` until then, and could return to `--input` once it clears 3:1.
 - Decide with design how an unchecked `Switch` shows in light. Its `bg-input` track and
   `bg-background` thumb measure 1.08–1.62:1 against the page, under the 3:1 non-text floor that
-  `Checkbox` and `Radio` now meet.
+  `Checkbox` and `Radio` now meet. The interim GridList selection box
+  (`react-aria/internal/checkbox.ts`) has the same gap: its unchecked edge is `--border`, and its
+  pressed edge is already `--muted-foreground`, so raising the resting edge needs a new pressed one.
 - Decide whether `PhoneNumberField` and `NumberField` name their wrapper `group` from the field's
   label or drop the role. The controls inside have names; the groups around them have none.
 - Decide with design whether `Item` gets an unclamped description variant. `Item.Description`
