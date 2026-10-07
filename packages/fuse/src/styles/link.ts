@@ -4,8 +4,7 @@
  * Link's status axis uses `error`, and its live focus state composes the shared focus
  * recipe at render time. This text component has no control-box density metrics.
  */
-import { tv } from "tailwind-variants";
-
+import { tv } from "./tv";
 import { typographyFragments } from "./typography-fragments";
 
 /**

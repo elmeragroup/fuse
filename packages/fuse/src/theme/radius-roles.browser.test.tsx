@@ -7,12 +7,15 @@ import "../../dist/styles.css";
 import "../../dist/themes.css";
 import { shadowLayers } from "../../test/assert-invalid-ring";
 import { render } from "../../test/browser-render";
+import { DENSITIES, edgeInset } from "../../test/inner-corner-specimens";
+import type { PartEdge } from "../../test/inner-corner-specimens";
 import { withLocale } from "../../test/locale-matrix";
 import { fkasExternal, fkasPrivate, tkasCompany } from "../../test/theme-fixtures";
 import {
   px,
   roleNamed,
   snapshotDocumentTheme,
+  stampDensity,
   stampDocumentTheme,
   textNamed,
 } from "../../test/themed-browser-render";
@@ -72,16 +75,22 @@ type Specimen =
 type Variant = "internal" | "fkas" | "tkas" | "guen";
 
 /**
- * Corner radii in px. Internal rounds every element with `--radius`, 0.375rem (6px). An
+ * Corner radii in px. Internal rounds every outer element with `--radius`, 0.375rem (6px). An
  * external button rounds with the brand's `--radius-button`, which is 1.8125rem (29px) for
  * fkas, 1rem (16px) for tkas and 0.5rem (8px) for guen. An external field box rounds
- * with the external variant's `--radius-field`, 0.25rem (4px), whatever the brand, and
- * nothing inside it rounds more: the kbd and the xs addons take the smaller of 5px inside
- * `--radius` and 4px, so guen's stay at 3px, a date segment takes the smaller of `rounded-xs`
- * and 4px, so guen's stays at 2px, and the sm addons, the search clear button, the date
- * trigger and the chip remove button take 4px. The other external values are the ones
- * Chromium measured on origin/main (e178f6d7) with each theme on the document. The tkas row
- * has since moved 0.8px with its `--radius`, from 0.95rem to 1rem.
+ * with the external variant's `--radius-field`, 0.25rem (4px), whatever the brand. The other
+ * outer external values are the ones Chromium measured on origin/main (e178f6d7) with each
+ * theme on the document. The tkas row has since moved 0.8px with its `--radius`, from 0.95rem
+ * to 1rem.
+ *
+ * Inner parts round with the field corner (6px internal, 4px external) or their shell's rung
+ * less the inset, floored at 0: the xs and sm addons, the phone trigger and the search clear
+ * button sit 5px in, so they take 1px internal and 0px external; the kbd sits 6.6px in and
+ * the chips 7px, so the kbd and the chip remove button take 0px; the date trigger sits flush
+ * behind the 1px border, at 5px internal and 3px external; and a date segment sits behind the
+ * border and the dense 10px control inset, at 0px. A tab sits 4px inside the list's
+ * `rounded-lg`: 2px internal, 8px fkas, 12px tkas and 4px guen. A preset sits 9px inside the
+ * popover's `rounded-md`: 0px internal, 1px fkas, 5px tkas and 0px guen.
  */
 const EXPECTED = {
   internal: {
@@ -94,19 +103,19 @@ const EXPECTED = {
     "toggle xs": 6,
     checkbox: 6,
     "input group": 6,
-    kbd: 6,
-    "addon xs": 6,
-    "addon sm": 6,
+    kbd: 0,
+    "addon xs": 1,
+    "addon sm": 1,
     frame: 6,
     calendar: 6,
     "calendar nav": 6,
-    tab: 6,
-    "phone trigger": 6,
-    "search clear": 6,
-    "date trigger": 6,
-    "date segment": 6,
-    preset: 6,
-    "chip remove": 6,
+    tab: 2,
+    "phone trigger": 1,
+    "search clear": 1,
+    "date trigger": 5,
+    "date segment": 0,
+    preset: 0,
+    "chip remove": 0,
   },
   fkas: {
     button: 29,
@@ -118,19 +127,19 @@ const EXPECTED = {
     "toggle xs": 10,
     checkbox: 4,
     "input group": 4,
-    kbd: 4,
-    "addon xs": 4,
-    "addon sm": 4,
+    kbd: 0,
+    "addon xs": 0,
+    "addon sm": 0,
     frame: 16,
     calendar: 4,
     "calendar nav": 29,
-    tab: 10,
-    "phone trigger": 4,
-    "search clear": 4,
-    "date trigger": 4,
-    "date segment": 4,
-    preset: 10,
-    "chip remove": 4,
+    tab: 8,
+    "phone trigger": 0,
+    "search clear": 0,
+    "date trigger": 3,
+    "date segment": 0,
+    preset: 1,
+    "chip remove": 0,
   },
   tkas: {
     button: 16,
@@ -142,19 +151,19 @@ const EXPECTED = {
     "toggle xs": 10,
     checkbox: 4,
     "input group": 4,
-    kbd: 4,
-    "addon xs": 4,
-    "addon sm": 4,
+    kbd: 0,
+    "addon xs": 0,
+    "addon sm": 0,
     frame: 20,
     calendar: 4,
     "calendar nav": 16,
-    tab: 14,
-    "phone trigger": 4,
-    "search clear": 4,
-    "date trigger": 4,
-    "date segment": 4,
-    preset: 10,
-    "chip remove": 4,
+    tab: 12,
+    "phone trigger": 0,
+    "search clear": 0,
+    "date trigger": 3,
+    "date segment": 0,
+    preset: 5,
+    "chip remove": 0,
   },
   guen: {
     button: 8,
@@ -166,21 +175,53 @@ const EXPECTED = {
     "toggle xs": 6,
     checkbox: 4,
     "input group": 4,
-    kbd: 3,
-    "addon xs": 3,
-    "addon sm": 4,
+    kbd: 0,
+    "addon xs": 0,
+    "addon sm": 0,
     frame: 12,
     calendar: 4,
     "calendar nav": 8,
-    tab: 6,
-    "phone trigger": 4,
-    "search clear": 4,
-    "date trigger": 4,
-    "date segment": 2,
-    preset: 6,
-    "chip remove": 4,
+    tab: 4,
+    "phone trigger": 0,
+    "search clear": 0,
+    "date trigger": 3,
+    "date segment": 0,
+    preset: 0,
+    "chip remove": 0,
   },
 } as const satisfies Record<Variant, Record<Specimen, number>>;
+
+/**
+ * The internal radii at a 1rem (16px) `--radius`: every outer element at 16px, and each inner
+ * part 16px less its inset from {@link EXPECTED}: 6.6px for the kbd, 5px for the addons, the
+ * phone trigger and the search clear button, 1px for the date trigger, 11px for a date
+ * segment, 4px for a tab and 9px for a preset. The chip remove button sits 2px inside a chip
+ * that sits 7px in, so it takes 7px.
+ */
+const INTERNAL_AT_16PX = {
+  button: 16,
+  "grouped button": 16,
+  card: 16,
+  input: 16,
+  badge: 16,
+  toggle: 16,
+  "toggle xs": 16,
+  checkbox: 16,
+  "input group": 16,
+  kbd: 9.4,
+  "addon xs": 11,
+  "addon sm": 11,
+  frame: 16,
+  calendar: 16,
+  "calendar nav": 16,
+  tab: 12,
+  "phone trigger": 11,
+  "search clear": 11,
+  "date trigger": 15,
+  "date segment": 5,
+  preset: 7,
+  "chip remove": 7,
+} as const satisfies Record<Specimen, number>;
 
 function Specimens(): ReactElement {
   return withLocale(
@@ -204,18 +245,30 @@ function Specimens(): ReactElement {
       <Toggle>Toggle</Toggle>
       <Toggle size="xs">Toggle xs</Toggle>
       <Checkbox aria-label="Checkbox" />
+      {/* Each inner part ends its own field box, so it sits at the box's corner. */}
       <InputGroup.Root aria-label="Input group">
         <InputGroup.Input aria-label="Grouped input" />
         <InputGroup.Addon align="inline-end">
           <kbd>K</kbd>
         </InputGroup.Addon>
-        <InputGroup.Addon align="inline-end">
-          <InputGroup.Button size="xs">Addon xs</InputGroup.Button>
-          <InputGroup.Button size="sm">Addon sm</InputGroup.Button>
-          <InputGroup.Button size="icon-xs" aria-label="Addon icon-xs" />
-          <InputGroup.Button size="icon-sm" aria-label="Addon icon-sm" />
-        </InputGroup.Addon>
       </InputGroup.Root>
+      {(
+        [
+          ["xs", "Addon xs"],
+          ["sm", "Addon sm"],
+          ["icon-xs", "Addon icon-xs"],
+          ["icon-sm", "Addon icon-sm"],
+        ] as const
+      ).map(([size, name]) => (
+        <InputGroup.Root key={size} aria-label={`${name} group`}>
+          <InputGroup.Input aria-label={`${name} input`} />
+          <InputGroup.Addon align="inline-end">
+            <InputGroup.Button size={size} aria-label={name}>
+              {size.startsWith("icon") ? null : name}
+            </InputGroup.Button>
+          </InputGroup.Addon>
+        </InputGroup.Root>
+      ))}
       <Frame.Root role="group" aria-label="Frame" />
       <Calendar aria-label="Calendar" />
       <Tabs.Root defaultValue="one">
@@ -359,6 +412,57 @@ function measure(): readonly (readonly [Specimen, string, number])[] {
   ];
 }
 
+/** The element with a slot around `part`. DOM audit: field boxes and chips have no role. */
+function slotAround(part: HTMLElement, slot: string): HTMLElement {
+  const shell = part.closest(`[data-slot="${slot}"]`);
+  if (!(shell instanceof HTMLElement)) {
+    throw new Error(`expected ${slot} around ${part.textContent}`);
+  }
+  return shell;
+}
+
+/**
+ * Each inner specimen, the shell whose corner it sits in, and the inline edge where they meet.
+ * The chip remove button sits in a chip, whose corner it shares.
+ */
+function innerSpecimens(): readonly (readonly [string, HTMLElement, HTMLElement, PartEdge])[] {
+  const addon = (name: string) =>
+    [name, roleNamed("button", name), roleNamed("group", `${name} group`), "end"] as const;
+  const country = roleNamed("button", "Select country");
+  const clear = roleNamed("button", "Clear search");
+  const trigger = dateTrigger();
+  const segment = dateSegment();
+  const remove = roleNamed("button", "Remove Apple");
+  const tab = roleNamed("tab", "Tab");
+  return [
+    ["Kbd", textNamed("K"), roleNamed("group", "Input group"), "end"],
+    addon("Addon xs"),
+    addon("Addon icon-xs"),
+    addon("Addon sm"),
+    addon("Addon icon-sm"),
+    ["Select country", country, slotAround(country, "input-group"), "start"],
+    ["Clear search", clear, slotAround(clear, "field-group"), "end"],
+    ["Date trigger", trigger, slotAround(trigger, "field-group"), "end"],
+    ["Date segment", segment, slotAround(segment, "field-group"), "start"],
+    ["Remove Apple", remove, slotAround(remove, "combobox-chip"), "end"],
+    ["Tab", tab, slotAround(tab, "tabs-list"), "start"],
+  ];
+}
+
+/**
+ * Unit under test: each inner specimen's `rounded-inner` corner. Oracle: the concentric rule
+ * max(0, outer − inset), applied to its shell's measured corner and the inset measured between
+ * their boxes. The hand-computed corners are {@link EXPECTED}.
+ */
+function expectConcentric(context: string): void {
+  for (const [name, part, shell, edge] of innerSpecimens()) {
+    expect(radius(part), `${context} ${name}`).toBeCloseTo(
+      Math.max(0, radius(shell) - edgeInset(part, shell, edge)),
+      1
+    );
+  }
+}
+
 function expectRadii(variant: Variant, context: string): void {
   for (const [specimen, name, measured] of measure()) {
     expect(measured, `${context} ${name}`).toBeCloseTo(EXPECTED[variant][specimen], 1);
@@ -396,41 +500,45 @@ describe("radius roles", () => {
     }
   });
 
-  it("rounds a nested theme scope from its own radius roles, not the document's", () => {
-    for (const [variant, theme, documentTheme] of CASES) {
-      stampDocumentTheme(documentTheme, "light");
-      const { unmount } = render(
-        <ThemeScope theme={theme}>
-          <Specimens />
-        </ThemeScope>
-      );
-      expectRadii(variant, `scope ${variant}`);
-      unmount();
+  it("rounds a nested theme scope from its own radius roles, each inner part inside its shell, at both densities", () => {
+    for (const density of DENSITIES) {
+      stampDensity(density);
+      for (const [variant, theme, documentTheme] of CASES) {
+        stampDocumentTheme(documentTheme, "light");
+        const { unmount } = render(
+          <ThemeScope theme={theme}>
+            <Specimens />
+          </ThemeScope>
+        );
+        expectRadii(variant, `${density} ${variant}`);
+        expectConcentric(`${density} ${variant}`);
+        unmount();
+      }
     }
   });
 
-  it("moves every internal element together when the document overrides --radius", () => {
+  it("moves every internal element with a document --radius override, inner parts inside it", () => {
     stampDocumentTheme(fkasPrivate, "light");
     document.documentElement.style.setProperty("--radius", "1rem");
     try {
       render(<Specimens />);
-      for (const [, name, measured] of measure()) {
-        expect(measured, name).toBeCloseTo(16, 1);
+      for (const [specimen, name, measured] of measure()) {
+        expect(measured, name).toBeCloseTo(INTERNAL_AT_16PX[specimen], 1);
       }
     } finally {
       document.documentElement.style.removeProperty("--radius");
     }
   });
 
-  it("moves every internal element together when a nested theme scope overrides --radius", () => {
+  it("moves every internal element with a nested scope's --radius override, inner parts inside it", () => {
     stampDocumentTheme(tkasCompany, "light");
     render(
       <ThemeScope theme={fkasPrivate} style={{ "--radius": "1rem" }}>
         <Specimens />
       </ThemeScope>
     );
-    for (const [, name, measured] of measure()) {
-      expect(measured, name).toBeCloseTo(16, 1);
+    for (const [specimen, name, measured] of measure()) {
+      expect(measured, name).toBeCloseTo(INTERNAL_AT_16PX[specimen], 1);
     }
   });
 
@@ -448,27 +556,28 @@ describe("radius roles", () => {
     expect(radius(roleNamed("button", "Wrapped button"))).toBe(6);
   });
 
-  it("rounds external fields with a --radius-field override and caps their addons at it", () => {
+  it("rounds external fields with a --radius-field override and insets their parts from it", () => {
     stampDocumentTheme(tkasCompany, "light");
     render(
       <ThemeScope theme={fkasExternal} style={{ "--radius-field": "0.125rem" }}>
         <Specimens />
       </ThemeScope>
     );
-    for (const [specimen, name] of [
-      ["input", "Input"],
-      ["input group", "Input group"],
-      ["kbd", "Kbd"],
-      ["addon xs", "Addon xs"],
-      ["addon sm", "Addon sm"],
-      ["search clear", "Clear search"],
-      ["date trigger", "Date trigger"],
-      ["date segment", "Date segment"],
-      ["chip remove", "Remove Apple"],
-      ["phone trigger", "Select country"],
+    // The boxes take the 2px corner. Only the date trigger, 1px in, keeps a corner inside it.
+    for (const [specimen, name, expected] of [
+      ["input", "Input", 2],
+      ["input group", "Input group", 2],
+      ["kbd", "Kbd", 0],
+      ["addon xs", "Addon xs", 0],
+      ["addon sm", "Addon sm", 0],
+      ["search clear", "Clear search", 0],
+      ["date trigger", "Date trigger", 1],
+      ["date segment", "Date segment", 0],
+      ["chip remove", "Remove Apple", 0],
+      ["phone trigger", "Select country", 0],
     ] as const) {
       const measured = measure().find(([candidate, label]) => candidate === specimen && label === name);
-      expect(measured?.[2], name).toBe(2);
+      expect(measured?.[2], name).toBe(expected);
     }
   });
 
@@ -502,22 +611,22 @@ describe("a host without themes.css", () => {
       ["checkbox", roleNamed("checkbox", "Host checkbox")],
       ["toggle xs", roleNamed("button", "Host toggle xs")],
       ["input group", roleNamed("group", "Host input group")],
-      ["addon xs", roleNamed("button", "Host addon xs")],
     ] as const) {
       expect(radius(element), label).toBe(host);
     }
+    // The xs addon sits 5px inside the host's 8px field corner.
+    expect(radius(roleNamed("button", "Host addon xs")), "addon xs").toBe(3);
   });
 
   it("rounds fields with its own --radius-field once it sets the external --radius-step", () => {
     const host = (step: Record<string, string>) =>
       render(<HostSpecimens style={{ ...HOST_WITHOUT_THEMES, "--radius-step": "2px", ...step }} />);
-    // A 4px field corner under a 8px host --radius: the xs addon and the kbd would sit 5px
-    // inside --radius, at 3px, which is already under the field corner.
+    // A 4px field corner: the xs addon sits 5px and the kbd 6.6px inside it, so both are square.
     const { unmount } = host({ "--radius-field": "4px" });
     expect(radius(roleNamed("textbox", "Host input"))).toBe(4);
     expect(radius(roleNamed("group", "Host input group"))).toBe(4);
-    expect(radius(roleNamed("button", "Host addon xs"))).toBe(3);
-    expect(radius(textNamed("K"))).toBe(3);
+    expect(radius(roleNamed("button", "Host addon xs"))).toBe(0);
+    expect(radius(textNamed("K"))).toBe(0);
     unmount();
     // Without the role the field falls back to the host's --radius.
     host({});

@@ -76,6 +76,9 @@ function renderedVisibility(element: ReactElement): Visibility {
  * role inside an `item-listitem` wrapper, like `<li><a/></li>`. The wrapper follows the
  * `hidden` and `aria-hidden` the rendered element ends up with, whether they come from the
  * root or the render element. An explicit `role` replaces both and skips the wrapper.
+ *
+ * It publishes `--inner-corner`, its corner less its border and padding, for parts that round with
+ * `rounded-inner`.
  */
 export function ItemRoot({
   className,

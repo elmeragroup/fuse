@@ -6,6 +6,7 @@ import type { ComponentProps, ReactElement } from "react";
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 
 import { useMergedRefs } from "../../hooks/use-merged-refs";
+import { tooltipShellClass } from "../../styles/inner-corner/tooltip";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
 import { overlayPopupMotionClass, overlayPositionerClass } from "../overlay/overlay-classes";
@@ -93,6 +94,10 @@ export type TooltipContentProps = Omit<ComponentProps<typeof TooltipPrimitive.Po
     side?: ComponentProps<typeof TooltipPrimitive.Positioner>["side"];
   } & OverlayContainerProps;
 
+/**
+ * The Tooltip popup. It publishes `--inner-corner`, its corner less its padding, for parts that
+ * round with `rounded-inner`.
+ */
 export function TooltipContent({
   id,
   ref,
@@ -137,7 +142,8 @@ export function TooltipContent({
           className={mergeClassName(
             className,
             overlayPopupMotionClass,
-            "max-w-xs text-xs inline-flex w-fit items-center gap-1.5 rounded-md bg-foreground px-3 py-1.5 text-pretty text-background"
+            tooltipShellClass,
+            "max-w-xs text-xs inline-flex w-fit items-center gap-1.5 bg-foreground text-pretty text-background"
           )}
           {...props}>
           {children}

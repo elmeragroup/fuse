@@ -1,6 +1,7 @@
 import type { ComponentProps, ReactElement } from "react";
 
 import { cn } from "../../styles/cn";
+import { framePanelShellClass, frameShellClass } from "../../styles/inner-corner/frame";
 
 export type FrameRootProps = ComponentProps<"div"> & {
   /**
@@ -15,12 +16,17 @@ export type FrameTitleProps = ComponentProps<"div">;
 export type FrameDescriptionProps = ComponentProps<"div">;
 export type FrameFooterProps = ComponentProps<"footer">;
 
+/**
+ * The Frame surface. It hands its direct panels and tables the corner they take, `rounded-xl`
+ * less its 4px padding, and publishes the same value as `--inner-corner`.
+ */
 function FrameRoot({ className, stackedPanels = false, ...props }: FrameRootProps): ReactElement {
   return (
     <div
       data-slot="frame"
       className={cn(
-        "relative flex flex-col rounded-xl bg-muted/72 p-1",
+        frameShellClass,
+        "relative flex flex-col bg-muted/72",
         stackedPanels
           ? "*:has-[+[data-slot=frame-panel]]:rounded-b-none *:has-[+[data-slot=frame-panel]]:before:hidden *:[[data-slot=frame-panel]+[data-slot=frame-panel]]:rounded-t-none *:[[data-slot=frame-panel]+[data-slot=frame-panel]]:border-t-0"
           : "*:[[data-slot=frame-panel]+[data-slot=frame-panel]]:mt-1",
@@ -31,12 +37,18 @@ function FrameRoot({ className, stackedPanels = false, ...props }: FrameRootProp
   );
 }
 
+/**
+ * A panel. As a Frame's direct child it rounds with the corner the Frame hands it, and elsewhere
+ * with `rounded-xl`. It publishes `--inner-corner` for its content, its corner less its border and
+ * padding.
+ */
 function FramePanel({ className, ...props }: FramePanelProps): ReactElement {
   return (
     <div
       data-slot="frame-panel"
       className={cn(
-        "shadow-xs/5 before:shadow-[0_1px_--theme(--color-black/6%)] relative rounded-xl border bg-background bg-clip-padding p-5 before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(--theme(--radius-xl)-1px)]",
+        framePanelShellClass,
+        "shadow-xs/5 before:shadow-[0_1px_--theme(--color-black/6%)] relative bg-background bg-clip-padding before:pointer-events-none before:absolute before:inset-0",
         className
       )}
       {...props}

@@ -1,8 +1,7 @@
-import { tv } from "tailwind-variants";
-
 import { cn } from "../../styles/cn";
 import { controlSize } from "../../styles/control-size";
 import { dataStateFaceClass, nativeStateFaceClass } from "../../styles/state-face";
+import { tv } from "../../styles/tv";
 import { selfFocusRingClass } from "../../styles/utils";
 
 // Runtime-free recipe so other components can borrow it without Button's client graph.

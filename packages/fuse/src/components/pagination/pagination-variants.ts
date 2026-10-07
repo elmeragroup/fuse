@@ -10,7 +10,7 @@
  * control-box size axis. `size-9` on the ellipsis slot is
  * the reviewed decorative box, not a density rung.
  */
-import { tv } from "tailwind-variants";
+import { tv } from "../../styles/tv";
 
 export const paginationVariants = tv({
   slots: {

@@ -1,10 +1,9 @@
 import type { ReactElement, ReactNode } from "react";
 
-import { tv } from "tailwind-variants";
-
 import { Check } from "../../icons/generated/check";
 import { SpinnerGap } from "../../icons/generated/spinner-gap";
 import { cn } from "../../styles/cn";
+import { tv } from "../../styles/tv";
 import { iconCrossfadeHidden, iconCrossfadeShown, iconCrossfadeTransition } from "../../styles/utils";
 import { FieldDescription, FieldError, FieldLabel, FieldLegend, FieldRoot, FieldSet } from "./field";
 

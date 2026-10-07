@@ -10,8 +10,7 @@
  *   `text-error` — no `destructive` class appears in library source.
  * - `size` is a type-scale axis, not a density control-box rung: it does not read `--control-*`.
  */
-import { tv } from "tailwind-variants";
-
+import { tv } from "../../styles/tv";
 import { typographyFragments } from "../../styles/typography-fragments";
 
 export const headingVariants = tv({

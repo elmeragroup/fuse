@@ -49,6 +49,11 @@ describe("fieldBoxChromeClass", () => {
       // 2px step, --radius at the internal 0px.
       "rounded-(--field-corner)",
       "[--field-corner:clamp(var(--radius)-1000*var(--radius-step,0px),var(--radius-field,var(--radius)),var(--radius)+1000*var(--radius-step,0px))]",
+      // The inner corner the box publishes for the parts inside it: its corner less its border.
+      // As an independent shell boundary it also clears the private relay.
+      "[--shell-inner:max(0px,var(--field-corner)-1px)]",
+      "[--shell-corner:initial]",
+      "[--inner-corner:var(--shell-inner)]",
       "border",
       "border-input",
       "bg-card",

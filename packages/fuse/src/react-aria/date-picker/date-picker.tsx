@@ -139,6 +139,9 @@ export type DatePickerPresetGroupProps = PickerPresetGroupProps;
  * The quick-choice pane beside the calendar: a radio group whose options are dates.
  * Only one preset can be in effect at a time, which is why this is a `radiogroup` and
  * not a row of buttons.
+ *
+ * In the picker popover it publishes `--inner-corner` for its presets, the popover corner less its
+ * border and padding.
  */
 export function DatePickerPresetGroup(props: DatePickerPresetGroupProps): ReactElement {
   return <PickerPresetGroup data-slot="date-picker-preset-group" {...props} />;

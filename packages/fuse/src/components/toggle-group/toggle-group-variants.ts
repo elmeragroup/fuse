@@ -1,6 +1,5 @@
-import { tv } from "tailwind-variants";
-
 import { controlMetrics } from "../../styles/control-size";
+import { tv } from "../../styles/tv";
 
 /**
  * A segmented `ToggleGroup.Item`'s inset at each toggle size — module-private, never a

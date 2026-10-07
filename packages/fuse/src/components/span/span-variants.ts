@@ -6,8 +6,7 @@
  * Internal composition imports `textVariants` from the Text recipe module —
  * not a grab-bag styles barrel. Consumers use `@elmeragroup/fuse/span`.
  */
-import { tv } from "tailwind-variants";
-
+import { tv } from "../../styles/tv";
 import { textVariants } from "../text/text-variants";
 
 export const spanVariants = tv({

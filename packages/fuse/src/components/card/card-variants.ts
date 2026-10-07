@@ -1,4 +1,9 @@
-import { tv } from "tailwind-variants";
+import {
+  cardHorizontalShellClass,
+  cardSectionShellClass,
+  cardShellClass,
+} from "../../styles/inner-corner/card";
+import { tv } from "../../styles/tv";
 
 /**
  * PUBLIC slot recipe. `text-field`'s `card` variant and
@@ -9,7 +14,7 @@ import { tv } from "tailwind-variants";
  */
 export const cardVariants = tv({
   slots: {
-    base: "shadow-xs flex flex-col rounded-lg border bg-card text-card-foreground",
+    base: [cardShellClass, "shadow-xs flex flex-col bg-card text-card-foreground"],
     cardHeader:
       "@container/card-header grid auto-rows-min items-start gap-1.5 has-data-[slot=card-action]:grid-cols-[1fr_auto]",
     cardTag: "text-sm font-semibold text-muted-foreground",
@@ -22,12 +27,12 @@ export const cardVariants = tv({
   variants: {
     direction: {
       vertical: {
-        cardHeader: "p-6",
-        cardContent: "p-6 pt-0",
-        cardFooter: "p-6 pt-0",
+        cardHeader: cardSectionShellClass,
+        cardContent: [cardSectionShellClass, "pt-0"],
+        cardFooter: [cardSectionShellClass, "pt-0"],
       },
       horizontal: {
-        base: "flex-row flex-wrap items-start gap-6 p-6",
+        base: [cardHorizontalShellClass, "flex-row flex-wrap items-start gap-6"],
         cardHeader: "min-w-0 flex-[2_1_16rem] wrap-anywhere",
         cardContent: "min-w-0 flex-[1_1_12rem] wrap-anywhere",
         cardFooter: "min-w-0 flex-[1_1_8rem] wrap-anywhere",

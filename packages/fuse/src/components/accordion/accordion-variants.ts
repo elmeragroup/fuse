@@ -1,3 +1,14 @@
+import { cn } from "../../styles/cn";
+import {
+  accordionCardItemLgShellClass,
+  accordionCardItemShellClass,
+  accordionCardItemXlShellClass,
+  accordionItemLgShellClass,
+  accordionItemShellClass,
+  accordionItemXlShellClass,
+} from "../../styles/inner-corner/accordion";
+import { panelHeightTransition } from "../../styles/panel-height";
+import { dataStateFaceClass, nativeStateFaceClass } from "../../styles/state-face";
 /**
  * PUBLIC slot recipe. Consumers borrow it from
  * `@elmeragroup/fuse/accordion`. Context-passed `variant` / `radius` stay on Root;
@@ -19,11 +30,7 @@
  * one sits in the same spot. `infodropdown` packs the trigger at the start, so both slots pin
  * to the right edge there.
  */
-import { tv } from "tailwind-variants";
-
-import { cn } from "../../styles/cn";
-import { panelHeightTransition } from "../../styles/panel-height";
-import { dataStateFaceClass, nativeStateFaceClass } from "../../styles/state-face";
+import { tv } from "../../styles/tv";
 import { selfFocusRingClass } from "../../styles/utils";
 
 export const accordionVariants = tv({
@@ -45,13 +52,14 @@ export const accordionVariants = tv({
   variants: {
     variant: {
       default: {
-        item: "rounded-sm bg-muted",
+        item: [accordionItemShellClass, "bg-muted"],
         trigger: "transition-[padding-bottom]",
       },
       card: {
         base: "space-y-3",
-        item: "rounded-lg border bg-card text-foreground",
-        content: "rounded-lg bg-card text-foreground",
+        item: [accordionCardItemShellClass, "bg-card text-foreground"],
+        // The panel sits inside the item's padding, so it rounds with the item's inner corner.
+        content: "rounded-inner bg-card text-foreground",
         icon: "text-foreground",
       },
       infodropdown: {
@@ -68,10 +76,15 @@ export const accordionVariants = tv({
     },
     radius: {
       none: {}, // Not dead: the default and a published `radius` value.
-      lg: { item: "overflow-hidden rounded-lg" },
-      xl: { item: "overflow-hidden rounded-xl" },
+      lg: { item: [accordionItemLgShellClass, "overflow-hidden"] },
+      xl: { item: [accordionItemXlShellClass, "overflow-hidden"] },
     },
   },
+  // A bordered card item publishes its corner less the border too.
+  compoundVariants: [
+    { variant: "card", radius: "lg", class: { item: accordionCardItemLgShellClass } },
+    { variant: "card", radius: "xl", class: { item: accordionCardItemXlShellClass } },
+  ],
   defaultVariants: {
     variant: "default",
     radius: "none",

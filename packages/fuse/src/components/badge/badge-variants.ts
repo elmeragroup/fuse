@@ -1,4 +1,4 @@
-import { tv } from "tailwind-variants";
+import { tv } from "../../styles/tv";
 
 /**
  * PUBLIC recipe. `CheckboxCard` borrows it for its tag chips, so it

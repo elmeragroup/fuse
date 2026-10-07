@@ -4,7 +4,6 @@ import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
 import { Field as FieldPrimitive } from "@base-ui/react/field";
-import { tv } from "tailwind-variants";
 import type { VariantProps } from "tailwind-variants";
 
 import { useCheckedResetSync } from "../../hooks/use-checked-reset-sync";
@@ -12,7 +11,9 @@ import { CheckCircle } from "../../icons/generated/check-circle";
 import { Circle } from "../../icons/generated/circle";
 import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
+import { checkboxCardContentShellClass } from "../../styles/inner-corner/card";
 import { racDisabledStateFaceClass } from "../../styles/state-face";
+import { tv } from "../../styles/tv";
 import {
   iconCrossfadeHidden,
   iconCrossfadeShown,
@@ -91,7 +92,8 @@ export function CheckboxCard({
   return (
     <FieldPrimitive.Item>
       <Card.Root className={checkboxCardStyles({ variant, isDisabled })}>
-        <Card.Content className="flex items-center justify-between gap-3 px-4 py-3">
+        <Card.Content
+          className={cn(checkboxCardContentShellClass, "flex items-center justify-between gap-3")}>
           {/* oxlint-disable-next-line elmera/no-local-focus-ring -- label is not the focus target; the checkbox owns the adapter */}
           <FieldPrimitive.Label className="group flex grow cursor-pointer items-center gap-3 bg-clip-padding outline-hidden has-disabled:cursor-not-allowed">
             <CheckboxPrimitive.Root

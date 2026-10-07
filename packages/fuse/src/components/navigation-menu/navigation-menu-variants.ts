@@ -1,9 +1,12 @@
-import { tv } from "tailwind-variants";
-
 import { cn } from "../../styles/cn";
 import { controlMd } from "../../styles/control-size-md";
-import { innerCornerShell } from "../../styles/inner-corner";
+import {
+  navigationContentShellClass,
+  navigationInlineViewportShellClass,
+  navigationPopupShellClass,
+} from "../../styles/inner-corner/navigation";
 import { nativeStateFaceClass } from "../../styles/state-face";
+import { tv } from "../../styles/tv";
 import { selfFocusRingClass } from "../../styles/utils";
 import { overlayPopupSurfaceClass, overlayPositionerClass } from "../overlay/overlay-classes";
 
@@ -77,13 +80,13 @@ export const navigationMenuVariants = tv({
     ],
     popup: [
       overlayPopupSurfaceClass,
-      innerCornerShell.navigationPopup(),
+      navigationPopupShellClass,
       "ease-out relative h-(--popup-height) max-h-(--available-height) w-(--popup-width) max-w-(--available-width) transition-[opacity,width,height] duration-300 data-ending-style:opacity-0 data-starting-style:opacity-0",
     ],
     viewport: "relative size-full overflow-hidden",
-    inlineViewport: [innerCornerShell.navigationInlineViewport(), "relative min-w-0 overflow-hidden"],
+    inlineViewport: [navigationInlineViewportShellClass, "relative min-w-0 overflow-hidden"],
     content: [
-      innerCornerShell.navigationContent(),
+      navigationContentShellClass,
       "ease-out box-border h-full max-h-(--available-height) w-auto max-w-(--available-width) overflow-auto transition-[opacity,translate] duration-300",
       "data-ending-style:opacity-0 data-starting-style:opacity-0",
       "data-starting-style:data-[activation-direction=left]:-translate-x-1/2 data-starting-style:data-[activation-direction=right]:translate-x-1/2",

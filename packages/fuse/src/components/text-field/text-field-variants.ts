@@ -1,7 +1,7 @@
-import { tv } from "tailwind-variants";
-
 import { cn } from "../../styles/cn";
 import { readOnlyFillCancelClass } from "../../styles/field-box";
+import { textFieldCardShellClass } from "../../styles/inner-corner/card";
+import { tv } from "../../styles/tv";
 import { cardVariants } from "../card/card-variants";
 import { fieldFrameVariants } from "../field/field-frame";
 
@@ -31,7 +31,11 @@ export const textFieldVariants = tv({
       card: {
         // The card is the field box, so it takes the read-only fill and the borderless input
         // inside it cancels its own, which would paint a band across the card.
-        base: cn(cardVariants().base(), "gap-0 px-6 py-4 has-[input[readonly]:not(:disabled)]:bg-muted"),
+        base: cn(
+          cardVariants().base(),
+          textFieldCardShellClass,
+          "gap-0 has-[input[readonly]:not(:disabled)]:bg-muted"
+        ),
         fieldGroup: "w-full border-none",
         input: cn("text-lg rounded-none border-none p-0", readOnlyFillCancelClass),
         label: "text-muted-foreground",

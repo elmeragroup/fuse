@@ -161,6 +161,8 @@
   `[hidden] { display: none }` loses to the item's `flex` class; preflight makes `[hidden]`
   `display: none !important`. Decide whether `Item.Root`, and the other parts whose root sets
   `display`, carry a `hidden` reset.
+- `Sidebar.Menu` keeps the user agent's 40px list indent in a host without Tailwind's preflight,
+  so its rows sit 40px in from the group. Reset the list's padding on the part itself.
 - Ask Base UI for a way to let a `Form` submit while its Fields are invalid. Its submit handler
   validates its enabled Fields and calls neither `onSubmit` nor `onFormSubmit` while one is
   invalid, so a schema-validated form, where a change elsewhere clears an error, cannot reach
@@ -196,20 +198,6 @@
   control metrics to "control size"; "rung" is reserved for radius rungs.
 - Give the trigger caret's base classes one owner. Select, Combobox and NavigationMenu each
   spell out its size, muted colour and rotate transition by hand.
-
-## Inner corners
-
-The menu family publishes `--inner-corner` and its rows round with `rounded-inner`
-(`styles/corner-radius.ts`). The remaining surfaces follow, each as a slot of the shell recipe
-in `styles/inner-corner.ts`:
-
-- Field box: `fieldCornerClass` publishes `max(0px, var(--field-corner) - 5px)`, and the
-  `fieldFlush`, `inset`, `kbdInset`, `chip` and `segment` corner classes collapse into
-  `rounded-inner`.
-- Frame and Table: relay Frame's corner to its panels through `--shell-corner`, the nested-shell
-  relay in `styles/inner-corner.ts`, so no custom property depends on itself on one element.
-- Tabs: the list pads 4px so the trigger's focus ring fits, and the triggers read the inner corner.
-- Sidebar, the DatePicker presets and every remaining rounded, padded surface publish.
 
 ## Figma token sync
 

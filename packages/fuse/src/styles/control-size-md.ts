@@ -1,6 +1,5 @@
-import { tv } from "tailwind-variants";
-
 import { cn } from "./cn";
+import { tv } from "./tv";
 
 /**
  * The md row of the control size (see `control-size.ts`), resolved once at module scope for

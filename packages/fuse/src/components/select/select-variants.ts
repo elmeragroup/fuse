@@ -1,6 +1,5 @@
-import { tv } from "tailwind-variants";
-
 import { controlLabel } from "../../styles/control-size";
+import { tv } from "../../styles/tv";
 
 /**
  * `Select.Trigger` size axis — module-private, never a facade export. `"default"` is the md

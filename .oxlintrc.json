@@ -213,6 +213,12 @@
                 "name": "@tanstack/react-table",
                 "allowTypeImports": true,
                 "message": "Import only types from the optional TanStack peer. Plain parts render through table.FlexRender and read structural slices; only the data-table contexts, the table hook factory and their tests call into TanStack."
+              },
+              {
+                "name": "tailwind-variants",
+                "importNames": ["tv", "createTV"],
+                "allowTypeImports": true,
+                "message": "Import tv from styles/tv. It shares cn's tailwind-merge extension, so a consumer's rounded-* class replaces rounded-inner in a recipe; the upstream tv keeps both."
               }
             ]
           }
@@ -346,9 +352,55 @@
       }
     },
     {
+      "files": ["packages/fuse/src/styles/tv.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@internationalized/string",
+                "importNames": ["LocalizedStringDictionary"],
+                "allowTypeImports": true,
+                "message": "Assemble dictionaries with createStringDictionary; do not construct LocalizedStringDictionary outside the factory."
+              },
+              {
+                "name": "@tanstack/react-table",
+                "allowTypeImports": true,
+                "message": "Import only types from the optional TanStack peer. Plain parts render through table.FlexRender and read structural slices; only the data-table contexts, the table hook factory and their tests call into TanStack."
+              },
+              {
+                "name": "tailwind-variants",
+                "importNames": ["tv"],
+                "allowTypeImports": true,
+                "message": "Import tv from styles/tv. It shares cn's tailwind-merge extension, so a consumer's rounded-* class replaces rounded-inner in a recipe; the upstream tv keeps both."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "files": ["packages/fuse/src/intl/create-string-dictionary.ts"],
       "rules": {
-        "no-restricted-imports": "off"
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@tanstack/react-table",
+                "allowTypeImports": true,
+                "message": "Import only types from the optional TanStack peer. Plain parts render through table.FlexRender and read structural slices; only the data-table contexts, the table hook factory and their tests call into TanStack."
+              },
+              {
+                "name": "tailwind-variants",
+                "importNames": ["tv", "createTV"],
+                "allowTypeImports": true,
+                "message": "Import tv from styles/tv. It shares cn's tailwind-merge extension, so a consumer's rounded-* class replaces rounded-inner in a recipe; the upstream tv keeps both."
+              }
+            ]
+          }
+        ]
       }
     },
     {
@@ -358,7 +410,25 @@
         "packages/fuse/src/components/data-table/*.test*.{ts,tsx}"
       ],
       "rules": {
-        "no-restricted-imports": "off"
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@internationalized/string",
+                "importNames": ["LocalizedStringDictionary"],
+                "allowTypeImports": true,
+                "message": "Assemble dictionaries with createStringDictionary; do not construct LocalizedStringDictionary outside the factory."
+              },
+              {
+                "name": "tailwind-variants",
+                "importNames": ["tv", "createTV"],
+                "allowTypeImports": true,
+                "message": "Import tv from styles/tv. It shares cn's tailwind-merge extension, so a consumer's rounded-* class replaces rounded-inner in a recipe; the upstream tv keeps both."
+              }
+            ]
+          }
+        ]
       }
     },
     {

@@ -1,8 +1,7 @@
-import { tv } from "tailwind-variants";
-
 import { cn } from "./cn";
 import { controlMdInsetTypeClass } from "./control-size-md";
-import { segmentCornerClass } from "./corner-radius";
+import { dateInputShellClass } from "./inner-corner/date-field";
+import { tv } from "./tv";
 
 /**
  * DateField's slotted recipe. Package-private: no entry re-exports it. Every RAC entry
@@ -20,11 +19,10 @@ export const dateFieldVariants = tv({
     // other part sets its own colour.
     // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- label/input stack gap is layout, not a control rung
     base: "flex flex-col gap-1 data-invalid:text-error",
-    input: controlMdInsetTypeClass,
+    input: cn(controlMdInsetTypeClass, dateInputShellClass),
     segment: cn(
       // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- type-literal segments carry no inline padding
-      "inline p-0.5 text-foreground caret-transparent outline outline-0 forced-color-adjust-none forced-colors:text-[ButtonText] type-literal:px-0",
-      segmentCornerClass
+      "inline rounded-inner p-0.5 text-foreground caret-transparent outline outline-0 forced-color-adjust-none forced-colors:text-[ButtonText] type-literal:px-0"
     ),
   },
   variants: {

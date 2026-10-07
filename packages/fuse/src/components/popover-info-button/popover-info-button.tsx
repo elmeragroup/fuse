@@ -2,11 +2,11 @@
 
 import type { ReactElement, ReactNode } from "react";
 
-import { tv } from "tailwind-variants";
 import type { VariantProps } from "tailwind-variants";
 
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { Info } from "../../icons/generated/info";
+import { tv } from "../../styles/tv";
 import type { ButtonProps } from "../button/button";
 import { Button } from "../button/button";
 import type { OverlayContainerProps } from "../overlay/overlay-props";

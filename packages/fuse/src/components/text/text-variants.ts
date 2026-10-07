@@ -9,8 +9,7 @@
  * class is `text-error`. `weight: "bold"` maps to `font-medium` — a
  * deliberate cap on body-copy weight, kept from the ref.
  */
-import { tv } from "tailwind-variants";
-
+import { tv } from "../../styles/tv";
 import { typographyFragments } from "../../styles/typography-fragments";
 
 export const textVariants = tv({

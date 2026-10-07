@@ -5,6 +5,7 @@ import type { ComponentProps, ReactElement } from "react";
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 
 import { cn } from "../../styles/cn";
+import { popoverShellClass } from "../../styles/inner-corner/popover";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
 import { overlayPositionerClass, overlayTimedPopupClass } from "../overlay/overlay-classes";
@@ -36,6 +37,10 @@ export type PopoverContentProps = ComponentProps<typeof PopoverPrimitive.Popup> 
     showArrow?: boolean;
   } & OverlayContainerProps;
 
+/**
+ * The Popover popup. It publishes `--inner-corner`, its corner less its padding, for parts that
+ * round with `rounded-inner`.
+ */
 export function PopoverContent({
   className,
   align = "center",
@@ -61,7 +66,8 @@ export function PopoverContent({
             className,
             selfFocusRingClass,
             overlayTimedPopupClass,
-            "text-sm flex w-72 flex-col gap-4 p-4"
+            popoverShellClass,
+            "text-sm flex w-72 flex-col gap-4"
           )}
           {...props}>
           {children}

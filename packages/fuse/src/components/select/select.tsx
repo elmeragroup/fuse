@@ -10,7 +10,7 @@ import { CaretUp } from "../../icons/generated/caret-up";
 import { Check } from "../../icons/generated/check";
 import { cn } from "../../styles/cn";
 import { fieldBoxChromeClass } from "../../styles/field-box";
-import { innerCornerShell } from "../../styles/inner-corner";
+import { selectGroupShellClass, selectPopupShellClass } from "../../styles/inner-corner/select";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { dataStateFaceClass, nativeStateFaceClass } from "../../styles/state-face";
 import { selfFocusRingClass } from "../../styles/utils";
@@ -127,7 +127,7 @@ export function SelectContent({
           className={mergeClassName(
             className,
             overlayTimedPopupClass,
-            innerCornerShell.selectPopup(),
+            selectPopupShellClass,
             "relative max-h-(--available-height) w-(--anchor-width) min-w-36 overflow-x-hidden overflow-y-auto data-[align-trigger=true]:animate-none"
           )}
           {...props}>
@@ -178,7 +178,7 @@ export function SelectGroup({
   return (
     <SelectPrimitive.Group
       data-slot="select-group"
-      className={mergeClassName(className, innerCornerShell.selectGroup(), "scroll-my-1")}
+      className={mergeClassName(className, selectGroupShellClass, "scroll-my-1")}
       {...props}
     />
   );

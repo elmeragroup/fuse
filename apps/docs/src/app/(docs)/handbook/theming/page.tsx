@@ -223,19 +223,19 @@ export default function ThemingPage(): ReactElement {
         <code>--radius-step</code> increments. Every standalone button rounds with{" "}
         <code>--radius-button</code>, which is a pill for Fjordkraft, Fjordkraft Företag and Telinet. Field
         boxes, from Input and Select to InputGroup and the date fields, round with <code>--radius-field</code>
-        , the design system&apos;s 4px for every brand, and nothing inside a field rounds more than the field.
-        A button inside a button group or a preset list keeps a compact corner instead, and a button group
-        rounds both its ends that way, even when a field sits at one end. The checkbox and the standalone
-        calendar keep the reference&apos;s 4px corner. The internal variant rounds every outer element with
-        the one <code>--radius</code>. Its step is <code>0px</code> and its <code>--radius-button</code> and{" "}
+        , the design system&apos;s 4px for every brand, and the parts inside a field round inside its corner.
+        A button inside a button group keeps a compact corner instead, and a button group rounds both its ends
+        that way, even when a field sits at one end. The checkbox and the standalone calendar keep the
+        reference&apos;s 4px corner. The internal variant rounds every outer element with the one{" "}
+        <code>--radius</code>. Its step is <code>0px</code> and its <code>--radius-button</code> and{" "}
         <code>--radius-field</code> are <code>var(--radius)</code>, so a host rule that reads either gets the
         same corner. To change the radius, override <code>--radius</code> on the element that carries the
         theme attributes, which is <code>&lt;html&gt;</code> or a <code>ThemeScope</code>. The theme rules
         resolve <code>--radius-button</code> there, so buttons move with the cards and fields. On a plain
         wrapper the override reaches cards and internal fields, but buttons keep the button radius the theme
         element resolved. To change the external field corner, override <code>--radius-field</code>. Nested
-        internal surfaces share the radius, and dialogs round like cards. Inner parts, such as menu rows, are
-        the exception: see <a href="#inner-corners">Inner corners</a>.
+        internal surfaces share the radius, and dialogs round like cards. Inner parts, such as menu rows, tabs
+        and the buttons inside a field, are the exception: see <a href="#inner-corners">Inner corners</a>.
       </p>
       <p>
         The outline button&apos;s border is part of the theme too. It reads <code>--button-outline</code> at{" "}
@@ -275,29 +275,38 @@ export default function ThemingPage(): ReactElement {
 
       <h2 id="inner-corners">Inner corners</h2>
       <p>
-        A row laid against a padded popup&apos;s edge rounds concentrically with the popup: its corner is the
-        popup&apos;s corner less the padding and border between them, and never below 0. The part that pads
-        the rows publishes that corner as <code>--inner-corner</code>, and the rows round with the{" "}
-        <code>rounded-inner</code> utility. The publishing parts are:
+        A part laid against a padded surface&apos;s edge rounds concentrically with the surface: its corner is
+        the surface&apos;s corner less the padding and border between them, and never below 0. The part that
+        pads it publishes that corner as <code>--inner-corner</code>, and the inner part rounds with the{" "}
+        <code>rounded-inner</code> utility. Free-standing controls in a surface&apos;s content, such as a
+        dialog&apos;s buttons, keep their own corner. The publishing parts are:
       </p>
       <ul>
         <li>
-          <code>DropdownMenu.Content</code> and <code>DropdownMenu.SubContent</code>.
+          Menus: <code>DropdownMenu.Content</code> and <code>DropdownMenu.SubContent</code>;{" "}
+          <code>Combobox.List</code>, not <code>Combobox.Content</code>; <code>Select.Group</code>, and{" "}
+          <code>Select.Content</code> for rows outside a group; and <code>NavigationMenu.Content</code> in its
+          popup.
         </li>
         <li>
-          <code>Combobox.List</code>, not <code>Combobox.Content</code>.
+          Fields: every field box, <code>InputGroup.Addon</code>, <code>Combobox.Chips</code> and the date
+          fields&apos; segment row.
         </li>
         <li>
-          <code>Select.Group</code>, and <code>Select.Content</code> for rows outside a group, which meet the
-          popup&apos;s corner.
+          Containers: <code>Tabs.List</code>, <code>Frame.Root</code> and <code>Frame.Panel</code>, the
+          floating <code>Sidebar</code>&apos;s header, footer and groups, and the date pickers&apos; preset
+          group.
         </li>
         <li>
-          <code>NavigationMenu.Content</code>.
+          Surfaces: <code>Card</code> and its sections, <code>Dialog.Content</code>,{" "}
+          <code>Popover.Content</code>, <code>Tooltip.Content</code>, toasts, <code>Item</code>,{" "}
+          <code>SelectionItem</code>, <code>Empty</code>, the rounded <code>Accordion</code> items and the
+          standalone <code>Calendar</code>.
         </li>
       </ul>
       <p>
         Put a custom row or block inside one of these parts and give it <code>rounded-inner</code>, and it
-        rounds like the rows beside it. Anywhere else, such as directly in <code>Combobox.Content</code>,{" "}
+        rounds like the parts beside it. Anywhere else, such as directly in <code>Combobox.Content</code>,{" "}
         <code>rounded-inner</code> rounds with the theme&apos;s <code>--radius</code>. A{" "}
         <code>ThemeScope</code> resets it, so a part inside a nested scope rounds with that scope&apos;s
         radius.

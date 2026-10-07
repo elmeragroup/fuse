@@ -12,7 +12,7 @@ import { fkasPrivate, tkasCompany } from "../../test/theme-fixtures";
 import { roleNamed, snapshotDocumentTheme, stampDocumentTheme } from "../../test/themed-browser-render";
 import { ThemeScope } from "../theme/theme-scope";
 import fuseCss from "./fuse.css?raw";
-import { innerCornerShell } from "./inner-corner";
+import { menuPopupShellClass } from "./inner-corner/menu";
 
 /** The stylesheets a Tailwind-source consumer's `@import`s reach, keyed by the specifier. */
 const STYLESHEETS = new Map([
@@ -34,7 +34,7 @@ const LAYERED_CONSUMER = [
 ].join("\n");
 
 /** The classes the specimens below spell. */
-const CANDIDATES = [...innerCornerShell.menuPopup().split(" "), "rounded-inner"];
+const CANDIDATES = [...menuPopupShellClass.split(" "), "rounded-inner"];
 
 async function layeredConsumerCss(): Promise<string> {
   const compiler = await compile(LAYERED_CONSUMER, {
@@ -83,7 +83,7 @@ describe("inner corners in a layered consumer build", () => {
     stampDocumentTheme(fkasPrivate, "light");
     render(
       <ThemeScope theme={fkasPrivate}>
-        <div className={innerCornerShell.menuPopup()}>
+        <div className={menuPopupShellClass}>
           <div role="group" aria-label="Shell row" className="rounded-inner" />
           <ThemeScope theme={tkasCompany}>
             <div role="group" aria-label="Scoped row" className="rounded-inner" />

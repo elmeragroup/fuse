@@ -4,7 +4,7 @@
  * the 24px target floor through their own sizes: the pagination, sort and row-actions buttons use
  * `icon-sm` and `sm`, and Checkbox inflates its hit area.
  */
-import { tv } from "tailwind-variants";
+import { tv } from "../../styles/tv";
 
 export const dataTableVariants = tv({
   slots: {

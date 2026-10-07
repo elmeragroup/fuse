@@ -1,7 +1,6 @@
-import { tv } from "tailwind-variants";
-
 import { cn } from "./cn";
-import { fixedCornerClass } from "./corner-radius";
+import { calendarShellClass } from "./inner-corner/calendar";
+import { tv } from "./tv";
 import { stateFocusRingClass, stateFocusRingVisibleClass } from "./utils";
 
 /**
@@ -49,8 +48,8 @@ export const cellVariants = tv({
 export const calendarVariants = tv({
   slots: {
     base: cn(
-      "max-w-sm text-sm shadow-md min-h-80 min-w-32 border border-border bg-card bg-clip-padding p-2 text-card-foreground will-change-transform",
-      fixedCornerClass
+      "max-w-sm text-sm shadow-md min-h-80 min-w-32 border border-border bg-card bg-clip-padding text-card-foreground will-change-transform",
+      calendarShellClass
     ),
     header: "flex w-full items-center gap-1 px-1 pb-4",
     heading: "mx-2 flex-1 text-center",

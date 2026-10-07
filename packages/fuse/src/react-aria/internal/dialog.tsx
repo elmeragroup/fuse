@@ -4,13 +4,14 @@ import { use } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { Dialog as AriaDialog, Heading, OverlayTriggerStateContext } from "react-aria-components";
-import { tv } from "tailwind-variants";
 
 import { overlayCloseStrings } from "../../components/overlay/intl";
 import { overlayTitleClass } from "../../components/overlay/overlay-classes";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { X } from "../../icons/generated/x";
 import { cn } from "../../styles/cn";
+import { racDialogShellClass } from "../../styles/inner-corner/picker";
+import { tv } from "../../styles/tv";
 import { Button } from "./button";
 
 /**
@@ -24,8 +25,11 @@ import { Button } from "./button";
  */
 const dialogVariants = tv({
   slots: {
-    // oxlint-disable-next-line elmera/no-local-focus-ring -- dialog surface; focusable descendants own the adapter
-    base: "relative max-h-[inherit] overflow-y-auto p-6 outline-none [[data-placement]>&]:p-4",
+    base: [
+      racDialogShellClass,
+      // oxlint-disable-next-line elmera/no-local-focus-ring -- dialog surface; focusable descendants own the adapter
+      "relative max-h-[inherit] overflow-y-auto outline-none",
+    ],
     header: "flex items-start justify-between gap-4",
     // The heading borrows the public Dialog's literal so the interim tier
     // cannot drift.

@@ -507,7 +507,8 @@ export function ToastViewport({
 
 /**
  * One toast. Inside `Toast.Viewport` it stacks and swipes for the viewport's `placement`;
- * an explicit `swipeDirection` replaces the placement default.
+ * an explicit `swipeDirection` replaces the placement default. It publishes `--inner-corner`,
+ * its corner less its padding, for parts that round with `rounded-inner`.
  */
 export function ToastRoot({
   className,

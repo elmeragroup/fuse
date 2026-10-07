@@ -8,9 +8,8 @@
  * thirteen overlay consumers compile without edits.
  */
 
-import { tv } from "tailwind-variants";
-
 import { cn } from "../../styles/cn";
+import { tv } from "../../styles/tv";
 
 /**
  * One overlay layer for the whole family: the ref stamps the level on

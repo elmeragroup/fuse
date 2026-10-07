@@ -6,7 +6,7 @@
  * connector `bg-border`, dot `bg-foreground`. The final item drops
  * bottom margin; the connector is `Item::before` on every non-last item.
  */
-import { tv } from "tailwind-variants";
+import { tv } from "../../styles/tv";
 
 export const timelineListVariants = tv({
   slots: {

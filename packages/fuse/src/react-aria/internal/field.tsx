@@ -11,12 +11,12 @@ import {
   Text as AriaText,
   composeRenderProps,
 } from "react-aria-components";
-import { tv } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
 import { controlMdInsetTypeClass } from "../../styles/control-size-md";
 import { fieldBoxChromeClass } from "../../styles/field-box";
 import { racDisabledStateFaceClass, racInvalidStateFaceClass } from "../../styles/state-face";
+import { tv } from "../../styles/tv";
 import { stateFocusRingClass, stateFocusRingVisibleClass } from "../../styles/utils";
 import { composeTailwindRenderProps } from "./compose-tailwind-render-props";
 

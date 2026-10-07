@@ -1,6 +1,5 @@
-import { tv } from "tailwind-variants";
-
 import { cn } from "./cn";
+import { tv } from "./tv";
 import { stateFocusRingClass, stateFocusRingVisibleClass } from "./utils";
 
 /**

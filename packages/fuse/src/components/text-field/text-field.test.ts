@@ -35,14 +35,16 @@ describe("textFieldVariants", () => {
 
   it("composes cardVariants on variant=card and restyles inline chrome", () => {
     const card = textFieldVariants({ variant: "card" });
-    // Oracle: cardVariants, the upstream recipe every base token must survive twMerge with.
+    // Oracle: cardVariants, the upstream recipe every base token must survive twMerge with,
+    // except the inner corner the card publishes, which the field's own padding replaces.
     const cardBase = cardVariants().base();
-    for (const token of cardBase.split(/\s+/).filter(Boolean)) {
+    for (const token of cardBase.split(/\s+/).filter((token) => !token.startsWith("[--shell-inner:"))) {
       expect(card.base(), token).toContain(token);
     }
     expect(card.base()).toContain("gap-0");
     expect(card.base()).toContain("px-6");
     expect(card.base()).toContain("py-4");
+    expect(card.base()).toContain("[--shell-inner:max(0px,--theme(--radius-lg)-1px-6*var(--spacing))]");
     expect(card.fieldGroup()).toContain("w-full");
     expect(card.fieldGroup()).toContain("border-none");
     expect(card.input()).toContain("text-lg");

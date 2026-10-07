@@ -3,7 +3,7 @@
  * `VariantProps` aligns with Button's variant axis; only destructive/success
  * add armed styling. No recipe default — undefined variant adds nothing.
  */
-import { tv } from "tailwind-variants";
+import { tv } from "../../styles/tv";
 
 export const confirmButtonVariants = tv({
   variants: {

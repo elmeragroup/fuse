@@ -1,7 +1,6 @@
-import { tv } from "tailwind-variants";
-
 import { cn } from "./cn";
-import { fieldFlushCornerClass } from "./corner-radius";
+import { searchBoxShellClass, searchClearShellClass } from "./inner-corner/search-field";
+import { tv } from "./tv";
 
 /**
  * SearchField's slotted recipe. Package-private — no entry re-exports
@@ -20,9 +19,11 @@ export const searchFieldVariants = tv({
     base: "group flex min-w-12 flex-col gap-1 data-invalid:text-error",
     icon: "ml-2 size-4 text-foreground group-aria-disabled:text-muted-foreground forced-colors:text-[ButtonText] forced-colors:group-aria-disabled:text-[GrayText]",
     input: "[&::-webkit-search-cancel-button]:hidden",
-    // The clear button sits inside the field box, so it takes the field's corner instead of
-    // Button's `--radius-button`.
-    button: cn("mr-1 w-6 px-0 group-data-[empty]:invisible", fieldFlushCornerClass),
+    /** The field box, which publishes the corner its clear button rounds with. */
+    group: searchBoxShellClass,
+    // The clear button sits inside the field box, so it takes the box's inner corner instead
+    // of Button's `--radius-button`.
+    button: cn("w-6 px-0 group-data-[empty]:invisible", searchClearShellClass),
     buttonIcon: "size-4 text-foreground",
   },
 });

@@ -6,10 +6,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import "../../dist/styles.css";
 import "../../dist/themes.css";
 import { render } from "../../test/browser-render";
-import { cornerRadius, expectShellOnThemeElementWins } from "../../test/inner-corner-specimens";
+import {
+  CASES,
+  cornerRadius,
+  DENSITIES,
+  expectShellOnThemeElementWins,
+  RADIUS,
+} from "../../test/inner-corner-specimens";
+import type { Variant } from "../../test/inner-corner-specimens";
 import { withLocale } from "../../test/locale-matrix";
 import { panelControlledBy } from "../../test/panel-transition";
-import { fkasExternal, fkasPrivate, guenExternal, tkasCompany } from "../../test/theme-fixtures";
+import { fkasPrivate, tkasCompany } from "../../test/theme-fixtures";
 import {
   px,
   roleNamed,
@@ -21,10 +28,8 @@ import { Combobox } from "../components/combobox";
 import { DropdownMenu } from "../components/dropdown-menu";
 import { NavigationMenu } from "../components/navigation-menu";
 import { Select } from "../components/select";
-import type { Density } from "../theme/density";
 import { useTheme } from "../theme/theme-provider";
 import { ThemeScope } from "../theme/theme-scope";
-import type { ThemeInput } from "../theme/tokens/themes";
 
 const FAMILY_NAMES = [
   "dropdown",
@@ -40,8 +45,6 @@ const FAMILY_NAMES = [
 ] as const;
 
 type Family = (typeof FAMILY_NAMES)[number];
-
-type Variant = "internal" | "fkas" | "tkas" | "guen";
 
 /**
  * Row corners in px, worked out by hand. Each row rounds with its shell's corner less the inset
@@ -112,9 +115,6 @@ const EXPECTED = {
  */
 const OUTER_ROW = { internal: 6, fkas: 8, tkas: 12, guen: 4 } as const satisfies Record<Variant, number>;
 
-/** Each theme's `--radius` in px, the corner of an inner part outside any shell. */
-const RADIUS = { internal: 6, fkas: 12, tkas: 16, guen: 8 } as const satisfies Record<Variant, number>;
-
 /**
  * A row in an inline NavigationMenu panel inside a DropdownMenu, in px: the dropdown's
  * `rounded-md` less its 4px and the panel's 8px. Only tkas's 14px corner stays above 0.
@@ -148,16 +148,6 @@ function OpenNavigationPanel({
     </NavigationMenu.Root>
   );
 }
-
-/** Each case names the theme under test and a document theme with different radii. */
-const CASES: readonly (readonly [Variant, ThemeInput, ThemeInput])[] = [
-  ["internal", fkasPrivate, tkasCompany],
-  ["fkas", fkasExternal, fkasPrivate],
-  ["tkas", tkasCompany, fkasPrivate],
-  ["guen", guenExternal, tkasCompany],
-];
-
-const DENSITIES: readonly Density[] = ["dense", "comfortable"];
 
 /** One open menu family: the row under test and the rounded shell its corner nests in. */
 type Specimen = { readonly row: HTMLElement; readonly shell: HTMLElement };
