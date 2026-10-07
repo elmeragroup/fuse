@@ -70,13 +70,8 @@ describe("Item.Media and Item.Footer class contracts", () => {
   it("hides and reveals footer mode with the documented class tokens", () => {
     const hidden = renderToStaticMarkup(createElement(Item.Footer, { mode: "hidden" }, "Hidden"));
     const visible = renderToStaticMarkup(createElement(Item.Footer, { mode: "visible" }, "Visible"));
-    const shown = renderToStaticMarkup(createElement(Item.Footer, { mode: "default" }, "Default"));
     expect(hidden).toContain("pointer-events-none");
     expect(hidden).toContain("0fr");
     expect(visible).toContain("starting:");
-    // Only a collapsed footer clips, so a visible footer paints its focus rings whole.
-    expect(hidden).toContain("overflow-clip");
-    expect(visible).not.toContain("overflow-clip");
-    expect(shown).not.toContain("overflow-clip");
   });
 });

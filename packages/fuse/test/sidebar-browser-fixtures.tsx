@@ -2,7 +2,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { useEffect, useLayoutEffect, useRef } from "react";
 
 import { afterEach, beforeEach, vi } from "vitest";
-import { cdp, page } from "vitest/browser";
+import { page } from "vitest/browser";
 
 import { Sidebar } from "../src/components/sidebar";
 import { useSidebar } from "../src/components/sidebar/sidebar";
@@ -13,25 +13,11 @@ import type {
 } from "../src/components/sidebar/sidebar";
 import type { SupportedLocale } from "../src/intl/locale-context";
 import { withLocale } from "./locale-matrix";
+import { emulateReducedMotion } from "./reduced-motion";
 import { TOGGLE_COPY } from "./sidebar-contract";
 
 export const DESKTOP = { width: 1024, height: 768 } as const;
 export const MOBILE = { width: 500, height: 800 } as const;
-
-type ReducedMotionCdp = {
-  send: (
-    method: "Emulation.setEmulatedMedia",
-    params: { features: { name: "prefers-reduced-motion"; value: "reduce" | "no-preference" }[] }
-  ) => Promise<void>;
-};
-
-export async function emulateReducedMotion(value: "reduce" | "no-preference"): Promise<void> {
-  // SAFETY: vitest types CDPSession as {}; Playwright's session implements send.
-  const session: ReducedMotionCdp = cdp() as ReducedMotionCdp;
-  await session.send("Emulation.setEmulatedMedia", {
-    features: [{ name: "prefers-reduced-motion", value }],
-  });
-}
 
 /**
  * The reset every sidebar browser suite runs: desktop viewport in, and on the way out the

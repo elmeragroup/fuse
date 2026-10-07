@@ -3,8 +3,11 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
+import { assertFocusRingOnKeyboardAbsentOnMouse, focusRingClippers } from "../../../test/assert-focus-ring";
+import { hasIntermediateFrame, sampleFrames } from "../../../test/panel-transition";
+import { emulateReducedMotion } from "../../../test/reduced-motion";
 import { renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
+import { Button } from "../button/button";
 import { Item } from "./index";
 
 function footerHost(name: string): HTMLElement {
@@ -36,6 +39,27 @@ function FooterTree({ mode, inert }: { mode: "hidden" | "visible" | "default"; i
       <button type="button">After</button>
     </>
   );
+}
+
+/** A footer that reveals a fixed-height block, with a button after the item to track. */
+function RevealTree({ mode }: { mode: "hidden" | "visible" }) {
+  return (
+    <>
+      <Item.Root>
+        <Item.Title>Delivery</Item.Title>
+        <Item.Footer mode={mode} style={{ flexBasis: "100%" }}>
+          <div style={{ height: "80px" }}>Address fields</div>
+        </Item.Footer>
+      </Item.Root>
+      <button type="button">Below</button>
+    </>
+  );
+}
+
+async function settledFooter(footer: HTMLElement): Promise<void> {
+  await vi.waitFor(() => {
+    expect(footer.getAnimations().length).toBe(0);
+  });
 }
 
 describe("Item", () => {
@@ -391,6 +415,120 @@ describe("Item", () => {
     expect(below.getBoundingClientRect().top).toBe(separator.getBoundingClientRect().bottom);
   });
 
+  it("moves the content below a footer through every frame of a reveal and a hide", async () => {
+    const { rerender } = renderThemed(<RevealTree mode="hidden" />);
+    const footer = footerHost("Address fields");
+    const below = (): number => roleNamed("button", "Below").getBoundingClientRect().top;
+    // The grid row alone, without the top padding that tweens beside it.
+    const row = (): number =>
+      footer.getBoundingClientRect().height - Number.parseFloat(getComputedStyle(footer).paddingTop);
+    const collapsed = below();
+
+    rerender(<RevealTree mode="visible" />);
+    const revealing = await sampleFrames(20, row);
+    await settledFooter(footer);
+    const expanded = below();
+    // Oracle: the revealed block's own 80px plus `pt-3`, 12px at the fixed 0.25rem spacing,
+    // which a hidden footer drops.
+    expect(expanded - collapsed).toBeCloseTo(80 + 12, 0);
+    expect(row()).toBeCloseTo(80, 0);
+    expect(hasIntermediateFrame(revealing, 0, 80), "the row must not jump open").toBe(true);
+
+    rerender(<RevealTree mode="hidden" />);
+    const hiding = await sampleFrames(20, row);
+    await settledFooter(footer);
+    expect(below()).toBeCloseTo(collapsed, 0);
+    expect(row()).toBeCloseTo(0, 0);
+    expect(hasIntermediateFrame(hiding, 80, 0), "the row must not jump shut").toBe(true);
+  });
+
+  it("snaps a footer's height under reduced motion and keeps its fade", async () => {
+    const { rerender } = renderThemed(<RevealTree mode="hidden" />);
+    const footer = footerHost("Address fields");
+    try {
+      await emulateReducedMotion("reduce");
+      expect(window.matchMedia("(prefers-reduced-motion: reduce)").matches).toBe(true);
+      const properties = getComputedStyle(footer)
+        .transitionProperty.split(",")
+        .map((part) => part.trim());
+      expect(properties).toContain("opacity");
+      for (const layout of ["grid-template-rows", "padding-top", "translate"]) {
+        expect(properties).not.toContain(layout);
+      }
+
+      const below = (): number => roleNamed("button", "Below").getBoundingClientRect().top;
+      const collapsed = below();
+      rerender(<RevealTree mode="visible" />);
+      const revealing = await sampleFrames(5, below);
+      await settledFooter(footer);
+      expect(below()).toBeGreaterThan(collapsed + 80);
+      expect(revealing.every((top) => Math.abs(top - below()) < 0.5)).toBe(true);
+    } finally {
+      await emulateReducedMotion("no-preference");
+    }
+  });
+
+  it("paints the whole focus ring of content at the edges of a visible footer", async () => {
+    renderThemed(
+      <>
+        <button type="button">Before</button>
+        <Item.Root className="px-0 py-0">
+          <Item.Title>Order</Item.Title>
+          <Item.Footer mode="visible" style={{ flexBasis: "100%" }}>
+            <Button className="w-full">Edge to edge</Button>
+          </Item.Footer>
+        </Item.Root>
+      </>
+    );
+    const footer = footerHost("Edge to edge");
+    await settledFooter(footer);
+    const button = roleNamed("button", "Edge to edge");
+    roleNamed("button", "Before").focus();
+    await userEvent.keyboard("{Tab}");
+    expect(button.matches(":focus-visible")).toBe(true);
+    // The shared ring: 2px outside a 2px offset, the 4px the clipper check measures.
+    expect(getComputedStyle(button).getPropertyValue("--tw-ring-offset-width")).toBe("2px");
+    expect(focusRingClippers(button), "no ancestor clips the ring's box").toEqual([]);
+
+    // The ring room does not narrow the footer: a full-width child spans the item's content box.
+    // DOM audit: the item root is the footer's parent, which has no role or name of its own.
+    const root = footer.parentElement;
+    if (!(root instanceof HTMLElement)) {
+      throw new Error("expected the item root around the footer");
+    }
+    const rootBox = root.getBoundingClientRect();
+    const buttonBox = button.getBoundingClientRect();
+    expect(buttonBox.left).toBeCloseTo(rootBox.left + root.clientLeft, 0);
+    expect(buttonBox.right).toBeCloseTo(rootBox.left + root.clientLeft + root.clientWidth, 0);
+  });
+
+  it("clips a hidden or visible footer's content, and never a default footer's", () => {
+    renderThemed(
+      <Item.Root>
+        <Item.Footer mode="hidden">Hidden</Item.Footer>
+        <Item.Footer mode="visible">Visible</Item.Footer>
+        <Item.Footer>Default</Item.Footer>
+      </Item.Root>
+    );
+    // DOM audit: the clip sits on the footer's inner content element, which has no role.
+    const content = (name: string): Element | null => footerHost(name).firstElementChild;
+    for (const name of ["Hidden", "Visible"]) {
+      const element = content(name);
+      if (!(element instanceof HTMLElement)) {
+        throw new Error(`expected the ${name} footer's content`);
+      }
+      expect(getComputedStyle(element).overflowY, name).toBe("clip");
+    }
+    for (let node = textNamed("Default"); node !== document.body;) {
+      expect(getComputedStyle(node).overflowY).toBe("visible");
+      const parent = node.parentElement;
+      if (parent === null) {
+        break;
+      }
+      node = parent;
+    }
+  });
+
   it("emits media variant and footer mode without dark classes", () => {
     renderThemed(
       <Item.Root>
@@ -439,7 +577,7 @@ describe("Item", () => {
     }
   });
 
-  it("keeps a hidden footer's content out of its scroll container's overflow", () => {
+  it("keeps a hidden footer's content out of its scroll container's overflow", async () => {
     // Twelve lines of text, so the footer's column of flex items cannot shrink below them.
     const deliveryLines = Array.from({ length: 12 }, (_, index) => `Delivery detail ${index + 1}`);
     function Scroller({ mode }: { mode: "hidden" | "visible" }) {
@@ -462,8 +600,10 @@ describe("Item", () => {
     // The row alone fits in 120px, so a collapsed footer leaves nothing to scroll to.
     expect(scroller.scrollHeight).toBe(scroller.clientHeight);
 
-    // The same content, revealed, does overflow: the check above measures the clip.
+    // The same content, revealed, does overflow once the row has grown: the check above
+    // measures the clip.
     rerender(<Scroller mode="visible" />);
+    await settledFooter(footerHost("Delivery detail 1"));
     expect(scroller.scrollHeight).toBeGreaterThan(scroller.clientHeight * 2);
   });
 

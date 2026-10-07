@@ -95,22 +95,49 @@ export function ItemHeader({ className, ...props }: ComponentProps<"div">): Reac
   );
 }
 
+// The two switchable modes share one 150 ms ease-out transition of the row size, the top
+// padding, the fade and the slide, the duration and curve of `panelHeightTransition`, so a
+// reveal expands and fades in and a hide collapses and fades out. `minmax(0,0fr)` to
+// `minmax(0,1fr)` interpolates without measuring, so the footer stays a server part, and a
+// mode change mid-tween reverses from the current value. `@starting-style` covers only the fade
+// and the slide, so a footer that renders visible does not grow on first paint. The central
+// reduced-motion rule keeps only the fade.
+const itemFooterMotionClass = cn(
+  "ease-out transition-[grid-template-rows,padding-top,opacity,translate] duration-150"
+);
+
+// The content overflows its row while the row is shorter than it, so the content element clips
+// in both switchable modes. It is the footer's grid item, and a stretched grid item's margin box
+// fills its cell, so `-m-1 p-1` grows its clip edge, the padding box, 4px past the cell on every
+// side while its content box stays the cell: the shared focus ring, 2px outside a 2px offset,
+// paints whole on content at any edge, and the footer's own box is unchanged.
+const itemFooterClipClass = cn("-m-1 overflow-clip p-1");
+
 const itemFooterVariants = tv({
-  base: "grid",
+  slots: {
+    root: "grid",
+    content: "flex min-h-0 flex-col gap-3",
+  },
   variants: {
     mode: {
-      default: "grid-rows-[minmax(0,1fr)] pt-3 opacity-100",
-      visible: [
-        "translate-y-0 grid-rows-[minmax(0,1fr)] pt-3 opacity-100",
-        "ease-out transition-[opacity,transform] duration-150",
-        "starting:-translate-y-1.5 starting:opacity-0",
-      ],
-      // The collapsed row is 0px but its content keeps its height, so `overflow-clip` keeps it
-      // out of the page and any scroll container. The row size does not transition, so the
-      // clip only ever applies to a collapsed footer and a visible one never clips a focus ring.
-      // Hiding collapses and clips in one frame, so this arm has no transition of its own: it is
-      // the reveal's start state.
-      hidden: "pointer-events-none -translate-y-1.5 grid-rows-[minmax(0,0fr)] overflow-clip pt-0 opacity-0",
+      default: { root: "grid-rows-[minmax(0,1fr)] pt-3 opacity-100" },
+      visible: {
+        root: cn(
+          "translate-y-0 grid-rows-[minmax(0,1fr)] pt-3 opacity-100",
+          itemFooterMotionClass,
+          "starting:-translate-y-1.5 starting:opacity-0"
+        ),
+        content: itemFooterClipClass,
+      },
+      // The collapsed row is 0px but its content keeps its height, so the clip keeps it out of
+      // the page and any scroll container.
+      hidden: {
+        root: cn(
+          "pointer-events-none -translate-y-1.5 grid-rows-[minmax(0,0fr)] pt-0 opacity-0",
+          itemFooterMotionClass
+        ),
+        content: itemFooterClipClass,
+      },
     },
   },
   defaultVariants: {
@@ -128,19 +155,25 @@ export function ItemFooter({
   VariantProps<typeof itemFooterVariants> & {
     /**
      * Footer content, wrapped in the inner `item-footer-content` element. `mode="hidden"`
-     * collapses its grid row to zero, clips it and makes it inert. The row snaps both ways;
-     * a footer switched to `visible` fades and slides its content in.
+     * collapses its grid row to zero, clips it and makes it inert. Switching between `hidden`
+     * and `visible` animates the row's height with a fade and a short slide, so content below
+     * the footer moves smoothly instead of jumping. Both modes clip content that reaches more
+     * than 4px past the footer's content box. That 4px of ring room is part of the content
+     * element's box, so a zero-inset item flush against a scroll container's edge should keep
+     * 4px of inset there or the room scrolls. A `default` footer never clips, and switching to
+     * it snaps.
      */
     children?: ReactNode;
   }): ReactElement {
+  const { root, content } = itemFooterVariants({ mode });
   return (
     <div
       data-slot="item-footer"
       data-mode={mode}
-      className={cn(itemFooterVariants({ mode }), className)}
+      className={cn(root(), className)}
       {...props}
       inert={mode === "hidden" || Boolean(inert)}>
-      <div data-slot="item-footer-content" className="flex min-h-0 flex-col gap-3">
+      <div data-slot="item-footer-content" className={content()}>
         {children}
       </div>
     </div>

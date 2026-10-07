@@ -2,8 +2,10 @@ import { expect, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 
 /**
- * Frame-level observations for the two Base UI panels whose height animates through the
- * shared `panelHeightTransition` constant (`Collapsible.Content`, `Accordion.Content`). End-state
+ * Frame-level observations for a height tween. `sampleFrames` and `hasIntermediateFrame` serve
+ * any suite that pins one, such as `Item.Footer`'s row; the assertion helper below covers the two
+ * Base UI panels whose height animates through the shared `panelHeightTransition` constant
+ * (`Collapsible.Content`, `Accordion.Content`). End-state
  * assertions cannot tell a transition from a snap, so the assertion helper samples the
  * rendered box once per animation frame, watches the height transition events, and waits
  * for the animation to settle before checking either direction.
@@ -79,7 +81,7 @@ function heightTransitionsOn(
 }
 
 /** Sample `read()` once per animation frame for `count` frames. */
-async function sampleFrames(count: number, read: () => number): Promise<number[]> {
+export async function sampleFrames(count: number, read: () => number): Promise<number[]> {
   const samples: number[] = [];
   for (let index = 0; index < count; index += 1) {
     samples.push(read());
@@ -99,11 +101,13 @@ function renderedHeight(panel: HTMLElement): number {
 }
 
 /**
- * True when some sample lies strictly inside (0, settled): the height moved through
- * intermediate values rather than jumping. A snapped (or `transition-none`) panel fails this.
+ * True when some sample lies strictly between `from` and `to`: the value moved through
+ * intermediate frames rather than jumping. A snapped (or `transition-none`) tween fails this.
  */
-function hasIntermediateFrame(samples: readonly number[], settled: number): boolean {
-  return samples.some((height) => height > 0.5 && height < settled - 0.5);
+export function hasIntermediateFrame(samples: readonly number[], from: number, to: number): boolean {
+  const low = Math.min(from, to);
+  const high = Math.max(from, to);
+  return samples.some((value) => value > low + 0.5 && value < high - 0.5);
 }
 
 /**
@@ -137,7 +141,7 @@ export async function expectPanelHeightTransition(
     const settled = renderedHeight(panel);
     expect(settled).toBeGreaterThan(0);
     expect(Math.abs(settled - panel.scrollHeight)).toBeLessThanOrEqual(1);
-    expect(hasIntermediateFrame(opening, settled)).toBe(true);
+    expect(hasIntermediateFrame(opening, 0, settled)).toBe(true);
     await vi.waitFor(() => {
       expect(heightTransitionsOn(watch.events, panel)).toEqual(["transitionrun", "transitionend"]);
     });
@@ -145,7 +149,7 @@ export async function expectPanelHeightTransition(
     watch.events.length = 0;
     await userEvent.click(trigger);
     const closing = await sampleFrames(20, () => renderedHeight(panel));
-    expect(hasIntermediateFrame(closing, settled)).toBe(true);
+    expect(hasIntermediateFrame(closing, settled, 0)).toBe(true);
     if (closedState === "hidden") {
       await vi.waitFor(() => {
         expect(panel.hasAttribute("hidden")).toBe(true);
