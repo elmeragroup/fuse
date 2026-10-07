@@ -46,7 +46,8 @@
   clamps to two lines, matching shadcn, and funnel needed an unclamped one for full instructions.
   `shadcn(no-restyle)` rejects `line-clamp-*` on `ItemDescription` and points to a variant in
   `components/item/index.ts`, so the docs show no `className` override. Until then, consumers
-  render their own element for long text.
+  render their own element for long text. `SelectionItem.Description` is already unclamped,
+  because it is part of a control's label.
 - Confirm the shared overlay-close dictionary and the docs' client-demo rule and
   three non-public import exceptions with the owner; these remain implemented defaults.
 

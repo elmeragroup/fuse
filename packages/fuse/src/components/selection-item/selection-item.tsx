@@ -9,6 +9,7 @@ import { cn } from "../../styles/cn";
 import { disabledHatch } from "../../styles/utils";
 import { FieldItem } from "../field/field";
 import { ItemGroup } from "../item/item";
+import { ITEM_DESCRIPTION_CLASSES } from "../item/item-description-classes";
 import { ItemActions, ItemFooter, ItemMedia, ItemTitle } from "../item/item-markup";
 import { itemVariants } from "../item/item-variants";
 import { selectionGroupOrientationVariants } from "./selection-item-variants";
@@ -75,6 +76,16 @@ export function SelectionItemGroup({
 
 export function SelectionItemTitle({ className, ...props }: ComponentProps<typeof ItemTitle>): ReactElement {
   return <ItemTitle className={cn("font-normal", className)} {...props} />;
+}
+
+/**
+ * The option's supporting text. It sits inside the row's label, so it is part of the
+ * control's accessible name and shows every line: unlike `Item.Description` it carries no
+ * two-line clamp, which would cut what a screen reader still reads out. It keeps the
+ * `item-description` slot, so the control at the row's start stays aligned with the title.
+ */
+export function SelectionItemDescription({ className, ...props }: ComponentProps<"p">): ReactElement {
+  return <p data-slot="item-description" className={cn(ITEM_DESCRIPTION_CLASSES, className)} {...props} />;
 }
 
 export function SelectionItemActions({
@@ -266,5 +277,6 @@ export function SelectionItemShell({
 
 SelectionItemShell.displayName = "SelectionItem.Shell";
 SelectionItemTitle.displayName = "SelectionItem.Title";
+SelectionItemDescription.displayName = "SelectionItem.Description";
 SelectionItemActions.displayName = "SelectionItem.Actions";
 SelectionItemSubSection.displayName = "SelectionItem.SubSection";

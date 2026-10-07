@@ -12,6 +12,7 @@ import {
   cssVarColor,
   fkasExternal,
   headingNamed,
+  px,
   renderThemed,
   roleNamed,
   textNamed,
@@ -679,6 +680,33 @@ describe("SelectionItem", () => {
 
     // A background class merges after the fill, for a list that should show its surface.
     expect(getComputedStyle(shellFrom("See-through row")).backgroundColor).toBe(background);
+  });
+
+  it("shows every line of a long title and description on a phone-width row", () => {
+    const title = "Mobile broadband with a fixed monthly price and no binding period";
+    const description = "We send you a SIM card by post. You can easily insert it in your phone.";
+    renderThemed(
+      <div style={{ width: "260px" }}>
+        <CheckboxItemGroup label="Delivery">
+          <CheckboxItem value="sim">
+            <SelectionItem.Content>
+              <RowTitle>{title}</RowTitle>
+              <SelectionItem.Description>{description}</SelectionItem.Description>
+            </SelectionItem.Content>
+          </CheckboxItem>
+        </CheckboxItemGroup>
+      </div>
+    );
+
+    // Both wrap past two lines at this width, so a one- or two-line clamp would cap the box
+    // and leave the rest of the control's label hidden.
+    for (const element of [headingNamed(title), textNamed(description)]) {
+      const lineHeight = px(getComputedStyle(element).lineHeight);
+      expect(element.getBoundingClientRect().height).toBeGreaterThan(lineHeight * 2);
+      expect(element.scrollHeight).toBe(element.clientHeight);
+    }
+    // The control's accessible name still carries the whole description.
+    expect(checkboxNamed(`${title} ${description}`).getAttribute("aria-checked")).toBe("false");
   });
 
   it("toggles from the keyboard on the plugged-in control", async () => {
