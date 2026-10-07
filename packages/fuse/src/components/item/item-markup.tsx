@@ -105,8 +105,11 @@ const itemFooterVariants = tv({
         "ease-out transition-[opacity,transform] duration-150",
         "starting:-translate-y-1.5 starting:opacity-0",
       ],
+      // The collapsed row is 0px but its content keeps its height, so `overflow-clip` keeps it
+      // out of the page and any scroll container. The row size does not transition, so the
+      // clip only ever applies to a collapsed footer and a visible one never clips a focus ring.
       hidden: [
-        "pointer-events-none -translate-y-1.5 grid-rows-[minmax(0,0fr)] pt-0 opacity-0",
+        "pointer-events-none -translate-y-1.5 grid-rows-[minmax(0,0fr)] overflow-clip pt-0 opacity-0",
         "ease-out transition-[opacity,transform] duration-150",
       ],
     },
@@ -125,8 +128,9 @@ export function ItemFooter({
 }: ComponentProps<"div"> &
   VariantProps<typeof itemFooterVariants> & {
     /**
-     * Footer content, wrapped in the inner `item-footer-content` element that `mode`
-     * reveals or collapses via the grid-row animation.
+     * Footer content, wrapped in the inner `item-footer-content` element. `mode="hidden"`
+     * collapses its grid row to zero, clips it and makes it inert. The row snaps both ways;
+     * a footer switched to `visible` fades and slides its content in.
      */
     children?: ReactNode;
   }): ReactElement {

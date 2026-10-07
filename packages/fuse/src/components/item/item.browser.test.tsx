@@ -439,6 +439,34 @@ describe("Item", () => {
     }
   });
 
+  it("keeps a hidden footer's content out of its scroll container's overflow", () => {
+    // Twelve lines of text, so the footer's column of flex items cannot shrink below them.
+    const deliveryLines = Array.from({ length: 12 }, (_, index) => `Delivery detail ${index + 1}`);
+    function Scroller({ mode }: { mode: "hidden" | "visible" }) {
+      return (
+        <div role="region" aria-label="Orders" style={{ height: "120px", overflow: "auto" }}>
+          <Item.Root>
+            <Item.Title>Order</Item.Title>
+            <Item.Footer mode={mode}>
+              {deliveryLines.map((line) => (
+                <p key={line}>{line}</p>
+              ))}
+            </Item.Footer>
+          </Item.Root>
+        </div>
+      );
+    }
+    const { rerender } = renderThemed(<Scroller mode="hidden" />);
+    const scroller = roleNamed("region", "Orders");
+
+    // The row alone fits in 120px, so a collapsed footer leaves nothing to scroll to.
+    expect(scroller.scrollHeight).toBe(scroller.clientHeight);
+
+    // The same content, revealed, does overflow: the check above measures the clip.
+    rerender(<Scroller mode="visible" />);
+    expect(scroller.scrollHeight).toBeGreaterThan(scroller.clientHeight * 2);
+  });
+
   it("honors an explicit inert on a visible footer", async () => {
     renderThemed(<FooterTree mode="visible" inert />);
     const nestedButton = footerButton("Nested");

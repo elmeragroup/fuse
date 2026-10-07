@@ -204,7 +204,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Footer content, wrapped in the inner `item-footer-content` element that `mode` reveals or collapses via the grid-row animation.",
+          "description": "Footer content, wrapped in the inner `item-footer-content` element. `mode=\"hidden\"` collapses its grid row to zero, clips it and makes it inert. The row snaps both ways; a footer switched to `visible` fades and slides its content in.",
           "required": false
         },
         {
