@@ -204,7 +204,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Footer content, wrapped in the inner `item-footer-content` element. `mode=\"hidden\"` collapses its grid row to zero, clips it and makes it inert. Switching between `hidden` and `visible` animates the row's height with a fade and a short slide, so content below the footer moves smoothly instead of jumping. Both modes clip content that escapes the footer more than 4px; `default` neither animates nor clips.",
+          "description": "Footer content, wrapped in the inner `item-footer-content` element. `mode=\"hidden\"` collapses its grid row to zero, clips it and makes it inert. Switching between `hidden` and `visible` animates the row's height with a fade and a short slide, so content below the footer moves smoothly instead of jumping. Both modes clip content that reaches more than 4px past the footer's content box. A `default` footer never clips, and switching to it snaps.",
           "required": false
         },
         {

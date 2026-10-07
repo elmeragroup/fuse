@@ -79,7 +79,7 @@ function heightTransitionsOn(
 }
 
 /** Sample `read()` once per animation frame for `count` frames. */
-async function sampleFrames(count: number, read: () => number): Promise<number[]> {
+export async function sampleFrames(count: number, read: () => number): Promise<number[]> {
   const samples: number[] = [];
   for (let index = 0; index < count; index += 1) {
     samples.push(read());

@@ -4,6 +4,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse, focusRingClippers } from "../../../test/assert-focus-ring";
+import { sampleFrames } from "../../../test/panel-transition";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import { renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
 import { Button } from "../button/button";
@@ -53,18 +54,6 @@ function RevealTree({ mode }: { mode: "hidden" | "visible" }) {
       <button type="button">Below</button>
     </>
   );
-}
-
-/** Sample `read()` once per animation frame for `count` frames. */
-async function sampleFrames(count: number, read: () => number): Promise<number[]> {
-  const samples: number[] = [];
-  for (let index = 0; index < count; index += 1) {
-    samples.push(read());
-    await new Promise<void>((resolve) => {
-      requestAnimationFrame(() => resolve());
-    });
-  }
-  return samples;
 }
 
 /** True when some sample lies strictly between `from` and `to`, so the value moved through frames. */
@@ -437,22 +426,27 @@ describe("Item", () => {
     const { rerender } = renderThemed(<RevealTree mode="hidden" />);
     const footer = footerHost("Address fields");
     const below = (): number => roleNamed("button", "Below").getBoundingClientRect().top;
+    // The grid row alone, without the top padding that tweens beside it.
+    const row = (): number =>
+      footer.getBoundingClientRect().height - Number.parseFloat(getComputedStyle(footer).paddingTop);
     const collapsed = below();
 
     rerender(<RevealTree mode="visible" />);
-    const revealing = await sampleFrames(20, below);
+    const revealing = await sampleFrames(20, row);
     await settledFooter(footer);
     const expanded = below();
-    // Oracle: the revealed block's own 80px plus the footer's top padding, which a hidden
-    // footer drops; the 4px ring room below the content is cancelled by its margin.
-    expect(expanded - collapsed).toBeCloseTo(80 + Number.parseFloat(getComputedStyle(footer).paddingTop), 0);
-    expect(hasIntermediateFrame(revealing, collapsed, expanded), "the reveal must not jump").toBe(true);
+    // Oracle: the revealed block's own 80px plus `pt-3`, 12px at the fixed 0.25rem spacing,
+    // which a hidden footer drops.
+    expect(expanded - collapsed).toBeCloseTo(80 + 12, 0);
+    expect(row()).toBeCloseTo(80, 0);
+    expect(hasIntermediateFrame(revealing, 0, 80), "the row must not jump open").toBe(true);
 
     rerender(<RevealTree mode="hidden" />);
-    const hiding = await sampleFrames(20, below);
+    const hiding = await sampleFrames(20, row);
     await settledFooter(footer);
     expect(below()).toBeCloseTo(collapsed, 0);
-    expect(hasIntermediateFrame(hiding, expanded, collapsed), "the hide must not jump").toBe(true);
+    expect(row()).toBeCloseTo(0, 0);
+    expect(hasIntermediateFrame(hiding, 80, 0), "the row must not jump shut").toBe(true);
   });
 
   it("snaps a footer's height under reduced motion and keeps its fade", async () => {
@@ -501,9 +495,45 @@ describe("Item", () => {
     expect(button.matches(":focus-visible")).toBe(true);
     // The shared ring: 2px outside a 2px offset, the 4px the clipper check measures.
     expect(getComputedStyle(button).getPropertyValue("--tw-ring-offset-width")).toBe("2px");
-    // The footer clips: without its 4px of padding box the ring would be cut on three sides.
-    expect(getComputedStyle(footer).overflowX).toBe("clip");
     expect(focusRingClippers(button), "no ancestor clips the ring's box").toEqual([]);
+
+    // The ring room does not narrow the footer: a full-width child spans the item's content box.
+    // DOM audit: the item root is the footer's parent, which has no role or name of its own.
+    const root = footer.parentElement;
+    if (!(root instanceof HTMLElement)) {
+      throw new Error("expected the item root around the footer");
+    }
+    const rootBox = root.getBoundingClientRect();
+    const buttonBox = button.getBoundingClientRect();
+    expect(buttonBox.left).toBeCloseTo(rootBox.left + root.clientLeft, 0);
+    expect(buttonBox.right).toBeCloseTo(rootBox.left + root.clientLeft + root.clientWidth, 0);
+  });
+
+  it("clips a hidden or visible footer's content, and never a default footer's", () => {
+    renderThemed(
+      <Item.Root>
+        <Item.Footer mode="hidden">Hidden</Item.Footer>
+        <Item.Footer mode="visible">Visible</Item.Footer>
+        <Item.Footer>Default</Item.Footer>
+      </Item.Root>
+    );
+    // DOM audit: the clip sits on the footer's inner content element, which has no role.
+    const content = (name: string): Element | null => footerHost(name).firstElementChild;
+    for (const name of ["Hidden", "Visible"]) {
+      const element = content(name);
+      if (!(element instanceof HTMLElement)) {
+        throw new Error(`expected the ${name} footer's content`);
+      }
+      expect(getComputedStyle(element).overflowY, name).toBe("clip");
+    }
+    for (let node = textNamed("Default"); node !== document.body;) {
+      expect(getComputedStyle(node).overflowY).toBe("visible");
+      const parent = node.parentElement;
+      if (parent === null) {
+        break;
+      }
+      node = parent;
+    }
   });
 
   it("emits media variant and footer mode without dark classes", () => {

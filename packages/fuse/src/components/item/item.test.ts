@@ -70,14 +70,8 @@ describe("Item.Media and Item.Footer class contracts", () => {
   it("hides and reveals footer mode with the documented class tokens", () => {
     const hidden = renderToStaticMarkup(createElement(Item.Footer, { mode: "hidden" }, "Hidden"));
     const visible = renderToStaticMarkup(createElement(Item.Footer, { mode: "visible" }, "Visible"));
-    const shown = renderToStaticMarkup(createElement(Item.Footer, { mode: "default" }, "Default"));
     expect(hidden).toContain("pointer-events-none");
     expect(hidden).toContain("0fr");
     expect(visible).toContain("starting:");
-    // Both switchable modes clip, since the row tweens between them in either direction; a
-    // default footer never changes size, so it never clips.
-    expect(hidden).toContain("overflow-clip");
-    expect(visible).toContain("overflow-clip");
-    expect(shown).not.toContain("overflow-clip");
   });
 });

@@ -102,32 +102,42 @@ export function ItemHeader({ className, ...props }: ComponentProps<"div">): Reac
 // mode change mid-tween reverses from the current value. `@starting-style` covers only the fade
 // and the slide, so a footer that renders visible does not grow on first paint. The central
 // reduced-motion rule keeps only the fade.
-//
-// The content overflows its row while the row is shorter than it, so both modes clip. The clip
-// edge is the padding box, so the footer pads 4px past its content on the sides and below and
-// cancels that with a negative margin: the shared focus ring, 2px outside a 2px offset, paints
-// whole on content at any edge. The top needs no extension, since `pt-3` already clears it.
 const itemFooterMotionClass = cn(
-  "-mx-1 -mb-1 overflow-clip px-1 pb-1",
   "ease-out transition-[grid-template-rows,padding-top,opacity,translate] duration-150"
 );
 
+// The content overflows its row while the row is shorter than it, so the content element clips
+// in both switchable modes. It is the footer's grid item, and a stretched grid item's margin box
+// fills its cell, so `-m-1 p-1` grows its clip edge, the padding box, 4px past the cell on every
+// side while its content box stays the cell: the shared focus ring, 2px outside a 2px offset,
+// paints whole on content at any edge, and the footer's own box is unchanged.
+const itemFooterClipClass = cn("-m-1 overflow-clip p-1");
+
 const itemFooterVariants = tv({
-  base: "grid",
+  slots: {
+    root: "grid",
+    content: "flex min-h-0 flex-col gap-3",
+  },
   variants: {
     mode: {
-      default: "grid-rows-[minmax(0,1fr)] pt-3 opacity-100",
-      visible: cn(
-        "translate-y-0 grid-rows-[minmax(0,1fr)] pt-3 opacity-100",
-        itemFooterMotionClass,
-        "starting:-translate-y-1.5 starting:opacity-0"
-      ),
+      default: { root: "grid-rows-[minmax(0,1fr)] pt-3 opacity-100" },
+      visible: {
+        root: cn(
+          "translate-y-0 grid-rows-[minmax(0,1fr)] pt-3 opacity-100",
+          itemFooterMotionClass,
+          "starting:-translate-y-1.5 starting:opacity-0"
+        ),
+        content: itemFooterClipClass,
+      },
       // The collapsed row is 0px but its content keeps its height, so the clip keeps it out of
       // the page and any scroll container.
-      hidden: cn(
-        "pointer-events-none -translate-y-1.5 grid-rows-[minmax(0,0fr)] pt-0 opacity-0",
-        itemFooterMotionClass
-      ),
+      hidden: {
+        root: cn(
+          "pointer-events-none -translate-y-1.5 grid-rows-[minmax(0,0fr)] pt-0 opacity-0",
+          itemFooterMotionClass
+        ),
+        content: itemFooterClipClass,
+      },
     },
   },
   defaultVariants: {
@@ -147,19 +157,21 @@ export function ItemFooter({
      * Footer content, wrapped in the inner `item-footer-content` element. `mode="hidden"`
      * collapses its grid row to zero, clips it and makes it inert. Switching between `hidden`
      * and `visible` animates the row's height with a fade and a short slide, so content below
-     * the footer moves smoothly instead of jumping. Both modes clip content that escapes the
-     * footer more than 4px; `default` neither animates nor clips.
+     * the footer moves smoothly instead of jumping. Both modes clip content that reaches more
+     * than 4px past the footer's content box. A `default` footer never clips, and switching to
+     * it snaps.
      */
     children?: ReactNode;
   }): ReactElement {
+  const { root, content } = itemFooterVariants({ mode });
   return (
     <div
       data-slot="item-footer"
       data-mode={mode}
-      className={cn(itemFooterVariants({ mode }), className)}
+      className={cn(root(), className)}
       {...props}
       inert={mode === "hidden" || Boolean(inert)}>
-      <div data-slot="item-footer-content" className="flex min-h-0 flex-col gap-3">
+      <div data-slot="item-footer-content" className={content()}>
         {children}
       </div>
     </div>
