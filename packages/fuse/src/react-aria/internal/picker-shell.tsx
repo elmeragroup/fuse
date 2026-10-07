@@ -6,6 +6,7 @@ import type { ValidationResult } from "react-aria-components";
 
 import type { OverlayContainerProps } from "../../components/overlay/overlay-props";
 import { CalendarBlank } from "../../icons/generated/calendar-blank";
+import { useLocale } from "../../intl/locale-context";
 import { pickerVariants } from "../../styles/picker";
 import { Button } from "./button";
 import { Dialog } from "./dialog";
@@ -76,6 +77,11 @@ export function PickerShell({
   range,
   triggerPlacement = "end",
 }: PickerShellProps): ReactElement {
+  // Throw for a missing LocaleProvider when the picker mounts. Nothing else in a closed
+  // picker reads Fuse's locale: the calendar uses React Aria's, and the dialog and preset
+  // pane that read Fuse strings mount only when the popover opens, which would defer the
+  // error to the first click on the trigger.
+  useLocale();
   const { dialog, group, icon, trigger } = pickerVariants({ range });
   const button = (
     // oxlint-disable-next-line elmera/require-icon-button-label -- RAC's DatePicker and DateRangePicker fill this default Button slot and supply the trigger's localized accessible name ("Calendar"); a local label would shadow it. Asserted in both browser suites.
