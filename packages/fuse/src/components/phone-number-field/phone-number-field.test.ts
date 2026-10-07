@@ -1,5 +1,5 @@
 import { getCountries as getMetadataCountries } from "libphonenumber-js/core";
-import type { MetadataJson } from "libphonenumber-js/core";
+import type { CountryCode, MetadataJson } from "libphonenumber-js/core";
 import { describe, expect, it } from "vitest";
 
 import { SUPPORTED_LOCALES } from "../../../test/locale-matrix";
@@ -135,5 +135,90 @@ describe("phone number international identity", () => {
       formatOnType: false,
     });
     expect(values.outputValue).toBe("+24712345");
+  });
+});
+
+describe("national drafts with a trunk prefix", () => {
+  const resolve = (country: CountryCode, digits: string, formatOnType: boolean) =>
+    resolvePhoneFieldValues({
+      digits,
+      country,
+      metadata: defaultMetadata,
+      outputFormat: "e164",
+      international: false,
+      formatOnType,
+    });
+
+  // libphonenumber's national formats of each country's mobile example, trunk prefix included.
+  it.each([
+    ["SE", "0701234567", "070-123 45 67", "+46701234567"],
+    ["GB", "07700900123", "07700 900123", "+447700900123"],
+    ["DE", "015112345678", "01511 2345678", "+4915112345678"],
+    ["FI", "0401234567", "040 1234567", "+358401234567"],
+    ["KZ", "87710009998", "8 (771) 000 9998", "+77710009998"],
+    // An Italian leading 0 is part of the number, not a trunk prefix.
+    ["IT", "0212345678", "02 1234 5678", "+390212345678"],
+  ] as const)(
+    "keeps the %s draft %s on display and submits the number without it",
+    (country, digits, formatted, e164) => {
+      expect(resolve(country, digits, false)).toEqual({ displayValue: digits, outputValue: e164 });
+      expect(resolve(country, digits, true)).toEqual({ displayValue: formatted, outputValue: e164 });
+    }
+  );
+
+  it("strips separators from an unformatted national draft", () => {
+    expect(resolve("SE", "070 123-45 67", false).displayValue).toBe("0701234567");
+  });
+
+  it("reads digits detected from a partial international entry behind the calling code", () => {
+    // As a national entry, Anguilla's seven digits would take its local-dialling rule, which
+    // adds the 264 area code again: "+1 264 264 2351".
+    const countries = getCountries();
+    const detected = processInputWithDetection({
+      input: "+12642351",
+      currentCountry: resolveSelectedCountry(countries, "NO"),
+      countries,
+      autoDetectCountry: true,
+      international: false,
+      metadata: defaultMetadata,
+    });
+    expect(detected.country.code).toBe("AI");
+    expect(detected).toMatchObject({ digits: "2642351", parsedNational: true });
+    for (const formatOnType of [false, true]) {
+      expect(
+        resolvePhoneFieldValues({
+          ...detected,
+          country: detected.country.code,
+          metadata: defaultMetadata,
+          outputFormat: "e164",
+          international: false,
+          formatOnType,
+        })
+      ).toEqual({ displayValue: "2642351", outputValue: "+12642351" });
+    }
+  });
+
+  it("keeps the national format for digits detected from an international entry", () => {
+    const countries = getCountries();
+    const sweden = resolveSelectedCountry(countries, "SE");
+    const detected = processInputWithDetection({
+      input: "+46701234567",
+      currentCountry: sweden,
+      countries,
+      autoDetectCountry: true,
+      international: false,
+      metadata: defaultMetadata,
+    });
+    expect(detected).toEqual({ digits: "701234567", country: sweden, parsedNational: true });
+    expect(
+      resolvePhoneFieldValues({
+        ...detected,
+        country: detected.country.code,
+        metadata: defaultMetadata,
+        outputFormat: "e164",
+        international: false,
+        formatOnType: true,
+      }).displayValue
+    ).toBe("070-123 45 67");
   });
 });

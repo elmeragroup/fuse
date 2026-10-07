@@ -83,6 +83,21 @@ describe("reconcile", () => {
     expect(next.accepted.values.outputValue).toBe("41 23 45 67");
   });
 
+  it("keeps the national format of a detected number when formatOnType turns on", () => {
+    const before = configure(defaultMetadata);
+    const norway = resolveSelectedCountry(before.countries, "NO");
+    const stored: PhoneState = {
+      configuration: before,
+      value: undefined,
+      accepted: receiveValue("+46701234567", norway, before),
+      proposal: null,
+    };
+    expect(stored.accepted.values.displayValue).toBe("701234567");
+    const next = reconcile(stored, undefined, configure(defaultMetadata, { formatOnType: true }));
+    expect(next.accepted.country.code).toBe("SE");
+    expect(next.accepted.values).toEqual({ displayValue: "070-123 45 67", outputValue: "+46701234567" });
+  });
+
   it("re-reads authoritative controlled raw digits under a replaced catalog", () => {
     const before = configure(defaultMetadata, { outputFormat: "raw" });
     const stored = stateWith(before, "41234567", "");

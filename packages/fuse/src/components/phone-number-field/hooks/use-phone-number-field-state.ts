@@ -87,7 +87,7 @@ export function usePhoneNumberFieldState({
   const state = reconcile(stored, value, configuration);
   if (state !== stored) setState(state);
   const current = visibleSnapshot(state);
-  const { digits, country: selectedCountry, values } = current;
+  const { digits, parsedNational, country: selectedCountry, values } = current;
 
   // Notify only committed country changes, including external value/catalog replacement.
   const notifiedCountry = useRef(selectedCountry.code);
@@ -117,7 +117,9 @@ export function usePhoneNumberFieldState({
   const selectCountry = (code: CountryCode | undefined) => {
     if (!code || code === selectedCountry.code) return;
     const country = countries.find((row) => row.code === code);
-    if (country) propose({ digits: preserveOnCountryChange ? digits : "", country });
+    if (country) {
+      propose(preserveOnCountryChange ? { digits, country, parsedNational } : { digits: "", country });
+    }
   };
 
   const handlePaste = (event: ClipboardEvent<HTMLInputElement>) => {

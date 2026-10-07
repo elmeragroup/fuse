@@ -51,6 +51,7 @@ export function snapshot(next: ProcessedPhoneInput, configuration: PhoneConfigur
     values: resolvePhoneFieldValues({
       ...configuration,
       digits: next.digits,
+      parsedNational: next.parsedNational,
       country: next.country.code,
     }),
   };
@@ -124,7 +125,7 @@ function reformat(
   to: PhoneConfiguration
 ): PhoneSnapshot {
   if (from.metadata === to.metadata) {
-    return snapshot({ digits: previous.digits, country }, to);
+    return snapshot({ digits: previous.digits, country, parsedNational: previous.parsedNational }, to);
   }
   // Catalog replacement keeps the existing number's international identity. An
   // unsupported prefix remains visible instead of being reinterpreted in the new country.
