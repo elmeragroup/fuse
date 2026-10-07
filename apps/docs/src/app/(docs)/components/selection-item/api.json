@@ -27,7 +27,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged last through `cn`. A `px-*` utility sets the card's side inset, and a click in that inset beside the label row toggles the control.",
+          "description": "Extra classes, merged last through `cn`. A `px-*` utility sets the card's side inset, and a click in that inset beside the label row toggles the control. The row paints the card fill (`bg-card`) like the other field boxes; a list on a surface that should show through takes a background class such as `bg-background`, which replaces it.",
           "required": false
         },
         {
