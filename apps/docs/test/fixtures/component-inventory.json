@@ -590,6 +590,7 @@
       "toast-action.tsx",
       "toast-promise.tsx",
       "toast-stacking.tsx",
+      "toast-placement.tsx",
       "toast-module-manager.tsx"
     ]
   },

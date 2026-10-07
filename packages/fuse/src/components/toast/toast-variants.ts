@@ -53,3 +53,23 @@ export const toastVariants = tv({
     status: "neutral",
   },
 });
+
+/**
+ * Module-private viewport recipe. Below `sm` the viewport spans the screen minus a 1rem
+ * gutter, so it is centered whatever the placement; `placement` only moves the 340px
+ * column from `sm` up. Toast roots sit `absolute right-0 bottom-0 w-full` inside it and
+ * stack vertically, so no root class depends on the placement.
+ */
+export const toastViewportVariants = tv({
+  base: "sm:bottom-8 sm:w-[340px] fixed top-auto right-4 bottom-4 isolate mx-auto flex w-[calc(100%-2rem)]",
+  variants: {
+    placement: {
+      "bottom-right": "sm:right-8",
+      // Pinning both insets lets `mx-auto` center the fixed-width column.
+      "bottom-center": "sm:inset-x-0",
+    },
+  },
+  defaultVariants: {
+    placement: "bottom-right",
+  },
+});

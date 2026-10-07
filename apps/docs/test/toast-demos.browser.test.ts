@@ -48,6 +48,52 @@ describe("Toast demos", () => {
     await page.close();
   });
 
+  it("keeps both placements inside the Placement preview and centers bottom-center in it", async () => {
+    // At 720px the docs sidebar leaves the preview narrower than the 340px toast column.
+    const page = await browser().newPage({ viewport: { width: 720, height: 900 } });
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    const placement = await openDemo(page, "toast", "Placement");
+    const viewport = placement.locator('[data-slot="toast-viewport"]');
+    await viewport.waitFor({ state: "attached" });
+
+    // Each button sets its placement and raises a toast titled with the button's name.
+    for (const title of ["Bottom right", "Bottom center"] as const) {
+      await placement.getByRole("button", { name: title, exact: true }).click();
+      await placement.getByRole("heading", { name: title, exact: true, includeHidden: true }).waitFor();
+      // The viewport portals into the preview's own container.
+      const insets = () =>
+        viewport.evaluate((node, name) => {
+          const container = node.parentElement;
+          const toast = [...node.querySelectorAll('[data-slot="toast-root"]')].find(
+            (root) => root.querySelector('[data-slot="toast-title"]')?.textContent === name
+          );
+          if (container === null || toast === undefined) {
+            return null;
+          }
+          const outer = container.getBoundingClientRect();
+          const inner = toast.getBoundingClientRect();
+          return { left: inner.left - outer.left, right: outer.right - inner.right };
+        }, title);
+      await expect
+        .poll(async () => {
+          const box = await insets();
+          return box !== null && box.left >= -1 && box.right >= -1;
+        })
+        .toBe(true);
+      if (title === "Bottom center") {
+        await expect
+          .poll(async () => {
+            const box = await insets();
+            return box === null ? Number.POSITIVE_INFINITY : Math.abs(box.left - box.right);
+          })
+          .toBeLessThanOrEqual(1);
+      }
+    }
+    expect(errors).toEqual([]);
+    await page.close();
+  });
+
   it("fires five stacked notifications and closes them all", async () => {
     const page = await browser().newPage();
     const errors: string[] = [];

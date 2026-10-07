@@ -9,6 +9,7 @@ import type {
   ToastManagerUpdateOptions as PrimitiveUpdateOptions,
   ToastObject,
 } from "@base-ui/react/toast";
+import type { VariantProps } from "tailwind-variants";
 
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { CheckCircle } from "../../icons/generated/check-circle";
@@ -24,7 +25,7 @@ import { overlayCloseStrings } from "../overlay/intl";
 import { toastLayer } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
-import { toastVariants } from "./toast-variants";
+import { toastVariants, toastViewportVariants } from "./toast-variants";
 
 /** Resolved once at module scope — these slots carry no status axis (no per-render work). */
 const { content, title, description } = toastVariants();
@@ -416,11 +417,20 @@ export function ToastProvider({ toastManager, children, ...props }: ToastProvide
   );
 }
 
-export type ToastViewportProps = ComponentProps<typeof ToastPrimitive.Viewport> & OverlayContainerProps;
+export type ToastViewportProps = ComponentProps<typeof ToastPrimitive.Viewport> &
+  OverlayContainerProps & {
+    /**
+     * Where the toast stack sits from the `sm` breakpoint up. `"bottom-right"` pins it to
+     * the bottom-right corner; `"bottom-center"` centers it along the bottom edge. Below
+     * `sm` the stack spans the screen width either way.
+     */
+    placement?: VariantProps<typeof toastViewportVariants>["placement"];
+  };
 
 export function ToastViewport({
   className,
   container,
+  placement = "bottom-right",
   children,
   ...props
 }: ToastViewportProps): ReactElement | null {
@@ -430,7 +440,7 @@ export function ToastViewport({
         data-slot="toast-viewport"
         className={mergeClassName(
           className,
-          "sm:right-8 sm:bottom-8 sm:w-[340px] fixed top-auto right-4 bottom-4 isolate mx-auto flex w-[calc(100%-2rem)]",
+          toastViewportVariants({ placement }),
           toastLayer,
           selfFocusRingClass
         )}

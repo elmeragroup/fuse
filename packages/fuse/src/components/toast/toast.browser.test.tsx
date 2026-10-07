@@ -589,6 +589,65 @@ describe("Toast overlay containment", () => {
   });
 });
 
+describe("Toast placement", () => {
+  // From `sm` (40rem) up the viewport is a fixed 340px column; below it the column spans the
+  // screen minus a 1rem gutter on each side.
+  const SM_COLUMN_PX = 340;
+  const DESKTOP_GUTTER_PX = 32;
+  const MOBILE_GUTTER_PX = 16;
+
+  function currentSize() {
+    return { width: window.innerWidth, height: window.innerHeight };
+  }
+
+  let restoreSize = currentSize();
+
+  beforeEach(() => {
+    restoreSize = currentSize();
+  });
+
+  afterEach(async () => {
+    await page.viewport(restoreSize.width, restoreSize.height);
+  });
+
+  function viewportBox(): DOMRect {
+    const viewport = page.getByRole("region", { name: "Notifications", exact: true }).element();
+    return viewport.getBoundingClientRect();
+  }
+
+  it("keeps the default viewport in the bottom-right corner from sm up", async () => {
+    await page.viewport(1024, 768);
+    renderToast(<Toast.Viewport />);
+    const box = viewportBox();
+    const screenWidth = document.documentElement.clientWidth;
+    expect(box.width).toBeCloseTo(SM_COLUMN_PX, 0);
+    expect(screenWidth - box.right).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
+    expect(window.innerHeight - box.bottom).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
+  });
+
+  it("centers a bottom-center viewport along the bottom edge from sm up", async () => {
+    await page.viewport(1024, 768);
+    renderToast(<Toast.Viewport placement="bottom-center" />);
+    const box = viewportBox();
+    const screenWidth = document.documentElement.clientWidth;
+    expect(box.width).toBeCloseTo(SM_COLUMN_PX, 0);
+    expect(box.left).toBeCloseTo((screenWidth - SM_COLUMN_PX) / 2, 0);
+    expect(window.innerHeight - box.bottom).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
+  });
+
+  it("spans the screen minus its gutters below sm whatever the placement", async () => {
+    await page.viewport(400, 768);
+    for (const placement of ["bottom-right", "bottom-center"] as const) {
+      const { unmount } = renderToast(<Toast.Viewport placement={placement} />);
+      const box = viewportBox();
+      const screenWidth = document.documentElement.clientWidth;
+      expect(box.left).toBeCloseTo(MOBILE_GUTTER_PX, 0);
+      expect(screenWidth - box.right).toBeCloseTo(MOBILE_GUTTER_PX, 0);
+      unmount();
+    }
+  });
+});
+
 describe("Toast layer", () => {
   // A toast raised from inside an open modal must paint over it. The modal's portal mounts
   // after the viewport's, so a shared z-index would let the modal win on DOM order.
