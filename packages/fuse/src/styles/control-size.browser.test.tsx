@@ -384,44 +384,51 @@ describe("control size: square fit", () => {
     }
   });
 
-  it.each(DENSITIES)("keeps every smallest target at or above 24px at %s", (density) => {
-    stampDensity(density);
-    renderThemed(
-      <>
-        <Button size="icon-xs" aria-label="smallest button" />
-        <Toggle size="xs" aria-label="smallest toggle" />
-        <RadioGroup label="Smallest">
-          <RadioIconButton value="xxs" size="icon-xxs" aria-label="smallest radio">
-            <svg aria-hidden viewBox="0 0 1 1" />
-          </RadioIconButton>
-        </RadioGroup>
-        {withLocale("en-US", <NumberField label="Smallest number" defaultValue={1} />)}
-        {withLocale("en-US", <PhoneNumberField label="Smallest phone" />)}
-      </>
-    );
-    for (const [role, name] of [
-      ["button", "smallest button"],
-      ["button", "smallest toggle"],
-      ["radio", "smallest radio"],
-      ["button", "Increase"],
-      ["button", "Decrease"],
-      ["button", "Select country"],
-    ] as const) {
-      const box = measure(role, name);
-      expect(box.height, `${density} ${name} height`).toBeGreaterThanOrEqual(24);
-      expect(box.width, `${density} ${name} width`).toBeGreaterThanOrEqual(24);
+  // The floor is a fixed 24px, so a host root below 16px, which scales every rem metric
+  // down, must not take a target under it.
+  it.each(DENSITIES.flatMap((density) => [16, 14].map((root) => [density, root] as const)))(
+    "keeps every smallest target at or above 24px at %s under a %ipx root",
+    (density, root) => {
+      document.documentElement.style.fontSize = `${root}px`;
+      stampDensity(density);
+      renderThemed(
+        <>
+          <Button size="icon-xs" aria-label="smallest button" />
+          <Toggle size="xs" aria-label="smallest toggle" />
+          <RadioGroup label="Smallest">
+            <RadioIconButton value="xxs" size="icon-xxs" aria-label="smallest radio">
+              <svg aria-hidden viewBox="0 0 1 1" />
+            </RadioIconButton>
+          </RadioGroup>
+          {withLocale("en-US", <NumberField label="Smallest number" defaultValue={1} />)}
+          {withLocale("en-US", <PhoneNumberField label="Smallest phone" />)}
+        </>
+      );
+      for (const [role, name] of [
+        ["button", "smallest button"],
+        ["button", "smallest toggle"],
+        ["radio", "smallest radio"],
+        ["button", "Increase"],
+        ["button", "Decrease"],
+        ["button", "Select country"],
+      ] as const) {
+        const box = measure(role, name);
+        expect(box.height, `${density} ${root}px ${name} height`).toBeGreaterThanOrEqual(24);
+        expect(box.width, `${density} ${root}px ${name} width`).toBeGreaterThanOrEqual(24);
+      }
+      // The country trigger reaches the floor inside the field's md box, not by growing it.
+      const phoneGroup = roleNamed("textbox", "Smallest phone").closest<HTMLElement>(
+        "[data-slot='input-group']"
+      );
+      if (phoneGroup === null) {
+        throw new Error("expected the phone field's input group around its input");
+      }
+      // The md rung is rem, so the box follows the root.
+      expect(measureElement(phoneGroup).height, `${density} ${root}px phone field height`).toBe(
+        (expectedMetrics("md", density).height * root) / 16
+      );
     }
-    // The country trigger reaches the floor inside the field's md box, not by growing it.
-    const phoneGroup = roleNamed("textbox", "Smallest phone").closest<HTMLElement>(
-      "[data-slot='input-group']"
-    );
-    if (phoneGroup === null) {
-      throw new Error("expected the phone field's input group around its input");
-    }
-    expect(measureElement(phoneGroup).height, `${density} phone field height`).toBe(
-      expectedMetrics("md", density).height
-    );
-  });
+  );
 
   it("keeps Button's icon-inline square out of the density metrics", () => {
     stampDensity("dense");

@@ -249,8 +249,9 @@ export function PhoneNumberField({
                   getByRole("button", {name}) contract the browser tests freeze; an empty aria-labelledby
                   overrides the surrounding Field's label, so aria-label wins.
                   Don't "simplify" either without updating the browser tests.
-                  min-h-6 is the 24px target floor. The trigger renders a <button>, so the inline addon
-                  drops its block padding and the trigger fits the field's fixed md box at both densities. */}
+                  The min height is 1.5rem, floored at the fixed 24px target for a host root below 16px.
+                  The trigger renders a <button>, so the inline addon drops its block padding and the
+                  trigger fits the field's fixed md box at both densities. */}
               <ComboboxPrimitive.Trigger
                 role="button"
                 aria-label={resolvedSelectCountryLabel}
@@ -258,7 +259,7 @@ export function PhoneNumberField({
                 className={cn(
                   selfFocusRingClass,
                   fieldFlushCornerClass,
-                  "flex min-h-6 shrink-0 items-center px-1 transition-[color,background-color,scale] duration-150",
+                  "flex min-h-[max(1.5rem,24px)] shrink-0 items-center px-1 transition-[color,background-color,scale] duration-150",
                   isEditable
                     ? "cursor-pointer hover:bg-muted active:scale-[0.97] data-pressed:bg-muted"
                     : "cursor-default"

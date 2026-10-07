@@ -490,10 +490,10 @@ function ComboboxChipRemove({ label }: { label: string }): ReactElement {
           // The remove button sits inside a chip in the field box, so it takes the chip's
           // corner instead of Button's `--radius-button`. The inline square is as tall as the
           // chip's 16px line and fits inside it. Without preflight a native button keeps the
-          // browser's own font, so the button sets the chip's xs type itself. Its hit area
-          // extends the padding box, so the ghost button drops its transparent border to make
-          // the target 24px. The target reaches into the chip's inset and the chips' gap
-          // without meeting the next chip. The glyph takes the xs size, as on Button's
+          // browser's own font, so the button sets the chip's xs type itself. The ghost button
+          // drops its transparent border, and Button's inline hit area makes the target 24px.
+          // The target reaches into the chip's inset and the chips' gap without meeting the
+          // next chip. The glyph takes the xs size, as on Button's
           // smallest square.
           className={cn("text-xs border-0 opacity-50 enabled-hover:opacity-100", chipCornerClass)}
         />

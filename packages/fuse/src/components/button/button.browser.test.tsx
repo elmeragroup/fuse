@@ -660,6 +660,62 @@ describe("Button", () => {
     }
   );
 
+  // Oracle: the WCAG 2.5.8 24px square around the button's centre. The hit area extends the
+  // padding box, so a border shrinks it unless the extent accounts for one: the transparent
+  // 1px border, the internal outline hairline and the external 2px outline ring. The xs line
+  // is the shortest Button sits on, and a 14px host root shortens it further.
+  it.each([16, 14])(
+    "reaches the 24px target from a bordered icon-inline square under a %ipx root",
+    (root) => {
+      document.documentElement.style.fontSize = `${root}px`;
+      try {
+        renderThemed(
+          // The padding keeps the sampled square in the viewport, and the gap keeps one
+          // square's target off another's corners.
+          <div style={{ display: "flex", gap: 32, padding: 32 }}>
+            <Button size="icon-inline" variant="ghost" className="text-xs" aria-label="Ghost" />
+            <Button size="icon-inline" variant="outline" className="text-xs" aria-label="Outline" />
+            <ThemeScope theme={fkasExternal}>
+              <Button
+                size="icon-inline"
+                variant="outline"
+                className="text-xs"
+                aria-label="External outline"
+              />
+            </ThemeScope>
+          </div>
+        );
+        // The sampled corners sit half a pixel inside the square.
+        const reach = 24 / 2 - 0.5;
+        for (const [name, border] of [
+          ["Ghost", "1px"],
+          ["Outline", "1px"],
+          ["External outline", "2px"],
+        ] as const) {
+          const button = roleNamed("button", name);
+          expect(getComputedStyle(button).borderTopWidth, `${name} border`).toBe(border);
+          const box = button.getBoundingClientRect();
+          expect(box.height, `${root}px ${name} stays as tall as its line`).toBeLessThan(24);
+          const centreX = box.left + box.width / 2;
+          const centreY = box.top + box.height / 2;
+          for (const [dx, dy] of [
+            [-reach, -reach],
+            [reach, -reach],
+            [-reach, reach],
+            [reach, reach],
+          ] as const) {
+            expect(
+              document.elementFromPoint(centreX + dx, centreY + dy),
+              `${root}px ${name} ${dx},${dy}`
+            ).toBe(button);
+          }
+        }
+      } finally {
+        document.documentElement.style.removeProperty("font-size");
+      }
+    }
+  );
+
   it.each(["card", "popover"] as const)(
     "lifts a hovered external dark ghost button off a %s, which its muted hover tint must not repeat",
     async (surface) => {
