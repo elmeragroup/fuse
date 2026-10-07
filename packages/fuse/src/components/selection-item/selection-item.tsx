@@ -130,7 +130,9 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
   isDisabled?: boolean;
   /**
    * Extra classes, merged last through `cn`. A `px-*` utility sets the card's side inset,
-   * and a click in that inset beside the label row toggles the control.
+   * and a click in that inset beside the label row toggles the control. The row paints the
+   * card fill (`bg-card`) like the other field boxes; a list on a surface that should show
+   * through takes a background class such as `bg-background`, which replaces it.
    */
   className?: string;
   /**
@@ -222,7 +224,7 @@ export function SelectionItemShell({
       data-selection-item=""
       className={cn(
         outlineItemClass,
-        "relative isolate box-border grid items-stretch gap-0 gap-x-2.5 bg-background px-4 py-0 transition-colors has-[[data-slot=selection-item-control]_[data-checked]]:border-primary has-[[data-slot=selection-item-control]_[data-checked]]:bg-muted",
+        "relative isolate box-border grid items-stretch gap-0 gap-x-2.5 bg-card px-4 py-0 transition-colors has-[[data-slot=selection-item-control]_[data-checked]]:border-primary has-[[data-slot=selection-item-control]_[data-checked]]:bg-muted",
         controlAtEnd ? "grid-cols-[minmax(0,1fr)_auto]" : "grid-cols-[auto_minmax(0,1fr)]",
         connectedStack
           ? "rounded-none not-first:border-t-0 first:rounded-t-lg last:rounded-b-lg has-[[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px has-[[data-slot=selection-item-control]_[data-checked]]:not-first:border-t"

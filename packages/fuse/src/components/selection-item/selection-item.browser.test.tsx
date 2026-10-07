@@ -5,9 +5,20 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+// Role tokens live in themes.css only; the fill test reads --card and --background.
+import "../../../dist/themes.css";
 import { assertHorizontalItemList, radiusToken } from "../../../test/assert-selection-item-group-layout";
-import { headingNamed, renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
+import {
+  cssVarColor,
+  fkasExternal,
+  headingNamed,
+  renderThemed,
+  roleNamed,
+  textNamed,
+} from "../../../test/themed-browser-render";
 import { disabledHatch } from "../../styles/utils";
+import { ThemeScope } from "../../theme";
+import { CheckboxCard } from "../checkbox-card/checkbox-card";
 import { Checkbox as UiCheckbox, CheckboxGroup, CheckboxItemGroup } from "../checkbox/checkbox";
 import { CheckboxItem } from "../checkbox/checkbox-item";
 import { Field } from "../field";
@@ -95,15 +106,6 @@ function subsectionSpacer(label: string): HTMLElement {
   throw new Error(`expected aria-hidden subsection spacer beside ${label}`);
 }
 
-function tokenBorderColor(host: HTMLElement, utility: string): string {
-  const probe = document.createElement("span");
-  probe.className = `border ${utility}`;
-  host.append(probe);
-  const color = getComputedStyle(probe).borderTopColor;
-  probe.remove();
-  return color;
-}
-
 function tokenBackgroundColor(host: HTMLElement, utility: string): string {
   const probe = document.createElement("span");
   probe.className = utility;
@@ -120,6 +122,11 @@ function tokenBackgroundImage(host: HTMLElement, utility: string): string {
   const image = getComputedStyle(probe).backgroundImage;
   probe.remove();
   return image;
+}
+
+/** Let the shell's color transition settle, so computed colors are the end state. */
+async function settled(element: HTMLElement): Promise<void> {
+  await Promise.all(element.getAnimations().map((animation) => animation.finished));
 }
 
 function RowTitle({ children }: { children: string }) {
@@ -615,10 +622,62 @@ describe("SelectionItem", () => {
 
     await userEvent.click(headingNamed("Shell row"));
     expect(checkboxNamed("Shell row", true).getAttribute("aria-checked")).toBe("true");
+    await settled(shell);
     expect(getComputedStyle(shell).backgroundColor).toBe(tokenBackgroundColor(shell, "bg-muted"));
-    expect(getComputedStyle(shell).borderTopColor).toBe(tokenBorderColor(shell, "border-primary"));
+    // The token itself: the standalone sheet emits no plain `border-primary` rule to probe.
+    expect(getComputedStyle(shell).borderTopColor).toBe(cssVarColor(shell, "--primary"));
     expect(getComputedStyle(shell).borderTopWidth).not.toBe("0px");
     expect(getComputedStyle(shell).marginTop).toBe("-1px");
+  });
+
+  it("fills rows with the theme's card, like CheckboxCard, where the card and page background differ", async () => {
+    renderThemed(
+      <ThemeScope theme={fkasExternal}>
+        <CheckboxItemGroup label="Add-ons">
+          <CheckboxItem value="router">
+            <RowTitle>Router</RowTitle>
+          </CheckboxItem>
+          <CheckboxItem value="sim">
+            <RowTitle>SIM card</RowTitle>
+          </CheckboxItem>
+        </CheckboxItemGroup>
+        <RadioItemGroup label="Plan">
+          <RadioItem value="fixed">
+            <RowTitle>Fixed price</RowTitle>
+          </RadioItem>
+          <RadioItem value="spot" className="bg-background">
+            <RowTitle>See-through row</RowTitle>
+          </RadioItem>
+        </RadioItemGroup>
+        <CheckboxGroup label="Cards">
+          <CheckboxCard value="card" title="Card beside" />
+        </CheckboxGroup>
+      </ThemeScope>
+    );
+
+    const router = shellFrom("Router");
+    // The oracle is the theme's own --card, read where the rows sit; the external theme
+    // tints --background, so a row painting the page surface would show a different colour.
+    const card = cssVarColor(router, "--card");
+    const background = cssVarColor(router, "--background");
+    expect(card).not.toBe(background);
+    expect(getComputedStyle(router).backgroundColor).toBe(card);
+    expect(getComputedStyle(shellFrom("Fixed price")).backgroundColor).toBe(card);
+    const cardRoot = checkboxNamed("Card beside").closest("[data-slot=card]");
+    if (!(cardRoot instanceof HTMLElement)) {
+      throw new Error("expected the CheckboxCard's card root");
+    }
+    expect(getComputedStyle(cardRoot).backgroundColor).toBe(card);
+
+    // Checked steps from the card to muted, so selection reads as a tint of the card.
+    await userEvent.click(headingNamed("SIM card"));
+    await settled(shellFrom("SIM card"));
+    const checked = getComputedStyle(shellFrom("SIM card")).backgroundColor;
+    expect(checked).toBe(cssVarColor(router, "--muted"));
+    expect(checked).not.toBe(card);
+
+    // A background class merges after the fill, for a list that should show its surface.
+    expect(getComputedStyle(shellFrom("See-through row")).backgroundColor).toBe(background);
   });
 
   it("toggles from the keyboard on the plugged-in control", async () => {

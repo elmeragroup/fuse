@@ -23,7 +23,8 @@ export type RadioItemProps = {
   controlPosition?: "start" | "end";
   /**
    * Extra classes, merged onto the shell via `cn`. A `px-*` utility sets the card's side
-   * inset, and a click in that inset beside the label row toggles the control.
+   * inset, and a click in that inset beside the label row toggles the control. The row
+   * paints the card fill (`bg-card`); a background class such as `bg-background` replaces it.
    */
   className?: string;
   /**
