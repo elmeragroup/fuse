@@ -11,6 +11,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertStateFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
+import { CaughtError } from "../../../test/caught-error";
 import { withLocale } from "../../../test/locale-matrix";
 import {
   calendarGrid,
@@ -157,6 +158,15 @@ const july24 = new CalendarDate(2026, 7, 24);
 const julyWeek = { start: july14, end: july17 };
 
 describe("DateRangePicker", () => {
+  it("throws the missing-LocaleProvider error when it mounts, before the calendar opens", () => {
+    const { host } = renderThemed(
+      <CaughtError>
+        <DateRangePicker label="Dates" />
+      </CaughtError>
+    );
+    expect(host.textContent).toBe("useLocale must be used within LocaleProvider");
+  });
+
   it("names the field group from the label, exposes both rows' spinbuttons and a named collapsed trigger", async () => {
     renderPicker(
       <DateRangePicker label="Delivery window" description="When we may deliver." defaultValue={julyWeek} />

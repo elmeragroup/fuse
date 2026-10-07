@@ -13,6 +13,7 @@ import { getOrThrow } from "@elmeragroup/color/result";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { shadowLayers } from "../../../test/assert-invalid-ring";
+import { CaughtError } from "../../../test/caught-error";
 import { withLocale } from "../../../test/locale-matrix";
 import {
   calendarGrid,
@@ -171,6 +172,15 @@ function PresetDrivenPicker({
 }
 
 describe("DatePicker", () => {
+  it("throws the missing-LocaleProvider error when it mounts, before the calendar opens", () => {
+    const { host } = renderThemed(
+      <CaughtError>
+        <DatePicker label="Dates" />
+      </CaughtError>
+    );
+    expect(host.textContent).toBe("useLocale must be used within LocaleProvider");
+  });
+
   it("names the field group from the label, exposes segment spinbuttons and a named collapsed trigger", async () => {
     renderPicker(<DatePicker label="Invoice date" description="Billing date." defaultValue={july14} />);
     const group = groupNamed("Invoice date");

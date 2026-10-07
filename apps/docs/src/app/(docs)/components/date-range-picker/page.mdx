@@ -24,7 +24,7 @@ Values are `{ start, end }` ranges of `CalendarDate` objects from `@internationa
 
 `onChange` fires only once a range is complete, so a partly typed range reports nothing.
 
-Wrap locale-dependent usage in `UiProviders` so it follows the app locale.
+Render `DateRangePicker` inside `UiProviders`, which supplies the app locale it follows. Without a `LocaleProvider` above it, `DateRangePicker` throws when it mounts.
 
 </Prose>
 
