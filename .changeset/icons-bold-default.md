@@ -9,3 +9,6 @@ alongside `"regular"` and `"fill"`. Pass `weight="regular"` to keep the previous
 
 `DoubleCheck` is removed. Import `Checks` instead: the Phosphor glyph draws the same double tick
 and follows the `weight` prop.
+
+`Sun`, `Moon` and `Monitor` join the curated roster for light, dark and system color-scheme
+controls.
