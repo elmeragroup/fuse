@@ -39,10 +39,6 @@ export const fieldGroupVariants = tv({
       true: stateFocusRingVisibleClass,
       false: "",
     },
-    isFocusWithin: {
-      true: "border-ring",
-      false: "",
-    },
     isInvalid: {
       true: racInvalidStateFaceClass,
       false: "",
@@ -58,7 +54,6 @@ export const fieldGroupVariants = tv({
   },
   defaultVariants: {
     isFocusVisible: false,
-    isFocusWithin: false,
     isInvalid: false,
     isDisabled: false,
     isReadOnly: false,
@@ -79,7 +74,6 @@ export function FieldGroup({ className, ...props }: FieldGroupProps): ReactEleme
           cn(
             fieldGroupVariants({
               isFocusVisible: renderProps.isFocusVisible,
-              isFocusWithin: renderProps.isFocusWithin,
               isInvalid: renderProps.isInvalid,
               isDisabled: renderProps.isDisabled,
               isReadOnly: props.isReadOnly ?? false,

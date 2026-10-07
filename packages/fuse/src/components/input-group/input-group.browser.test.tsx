@@ -8,6 +8,7 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import {
   assertWithinKeyboardFocusRingAtBothDensities,
+  expectFocusRing,
   expectNoFocusRing,
 } from "../../../test/assert-focus-ring";
 import {
@@ -35,6 +36,17 @@ function groupAround(start: HTMLElement): HTMLElement {
 
 function rootNamed(name: string): HTMLElement {
   return groupAround(textboxNamed(name));
+}
+
+/** Tab from the button named `before` into a field, then read its settled field box. */
+async function keyboardFocusedBox(before: string, box: () => HTMLElement) {
+  roleNamed("button", before).focus();
+  await userEvent.keyboard("{Tab}");
+  const element = box();
+  // Let the border and ring transitions settle, so computed colours are the end state.
+  await Promise.all(element.getAnimations().map((animation) => animation.finished));
+  const style = getComputedStyle(element);
+  return { element, border: style.borderTopColor, shadow: style.boxShadow };
 }
 
 describe("InputGroup", () => {
@@ -188,6 +200,47 @@ describe("InputGroup", () => {
     expect(groupAround(roleNamed("button", "Clear")).getAttribute("tabindex")).toBeNull();
     expect(roleNamed("button", "Clear").matches(":focus-visible")).toBe(true);
     expectNoFocusRing(rootNamed("Search"), "an addon button must keep its own ring off the group chrome");
+  });
+
+  it("keeps Input's border under the keyboard focus ring, valid and invalid", async () => {
+    renderThemed(
+      <>
+        <button type="button">Before input</button>
+        <Input aria-label="Plain" />
+        <button type="button">Before group</button>
+        <InputGroup.Root>
+          <InputGroup.Input aria-label="Grouped" />
+        </InputGroup.Root>
+        <button type="button">Before invalid input</button>
+        <Input aria-label="Plain invalid" aria-invalid />
+        <button type="button">Before invalid group</button>
+        <InputGroup.Root>
+          <InputGroup.Input aria-label="Grouped invalid" aria-invalid />
+        </InputGroup.Root>
+      </>
+    );
+    const plain = await keyboardFocusedBox("Before input", () => textboxNamed("Plain"));
+    const grouped = await keyboardFocusedBox("Before group", () => rootNamed("Grouped"));
+    expectFocusRing(grouped.element, "keyboard focus must paint the group ring");
+
+    // Unit: the focused root's border. Oracle: the theme's resting `--input` role, which a
+    // focused Input keeps under its ring. `--ring` differs, so a ring-coloured border fails.
+    const resting = cssVarColor(grouped.element, "--input");
+    expect(resting).not.toBe(cssVarColor(grouped.element, "--ring"));
+    expect(plain.border).toBe(resting);
+    expect(grouped.border).toBe(resting);
+
+    // Invalid arm. Oracle: the theme's `--error` role for the border, and a focused invalid
+    // Input's shadow for the error-tinted ring, which must not fall back to the focus ring.
+    const invalidPlain = await keyboardFocusedBox("Before invalid input", () =>
+      textboxNamed("Plain invalid")
+    );
+    const invalidGrouped = await keyboardFocusedBox("Before invalid group", () =>
+      rootNamed("Grouped invalid")
+    );
+    expect(invalidGrouped.border).toBe(cssVarColor(invalidGrouped.element, "--error"));
+    expect(invalidGrouped.border).toBe(invalidPlain.border);
+    expect(invalidGrouped.shadow).toBe(invalidPlain.shadow);
   });
 
   it("filters the input to digits beside a text addon, counting maxLength in digits", async () => {

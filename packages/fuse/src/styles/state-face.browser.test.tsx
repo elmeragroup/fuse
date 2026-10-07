@@ -288,7 +288,7 @@ describe("state face at dense density", () => {
 
   it("dims an InputGroup once and shows the not-allowed cursor when its input is aria-disabled", async () => {
     // Not in the pointer-paint list: an `aria-disabled` input stays focusable, so a press
-    // focuses it and the group paints its focus border, which is focus, not a press face.
+    // focuses it and the group paints its focus ring, which is focus, not a press face.
     renderStateFaces(
       <InputGroup.Root aria-label="Aria-disabled group">
         <InputGroup.Input aria-label="Aria-disabled group input" aria-disabled="true" />

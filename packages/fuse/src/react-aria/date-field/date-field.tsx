@@ -102,7 +102,6 @@ export function DateInput({ className, ...props }: DateInputProps): ReactElement
             ? input()
             : fieldGroupVariants({
                 isFocusVisible: renderProps.isFocusVisible,
-                isFocusWithin: renderProps.isFocusWithin,
                 isInvalid: renderProps.isInvalid,
                 isDisabled: renderProps.isDisabled,
                 isReadOnly: state?.isReadOnly ?? false,
