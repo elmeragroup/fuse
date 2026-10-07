@@ -37,6 +37,15 @@
           "required": false
         },
         {
+          "name": "aria-required",
+          "origin": "declared",
+          "type": "Booleanish | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Marks the number input required for assistive technology only, forwarded when defined. It doesn't validate: an empty field still submits. Use `isRequired` for the native constraint, and this for a rule a schema can relax.",
+          "required": false
+        },
+        {
           "name": "autoComplete",
           "origin": "declared",
           "type": "HTMLInputAutoCompleteAttribute | undefined",

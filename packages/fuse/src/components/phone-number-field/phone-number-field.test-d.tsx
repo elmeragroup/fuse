@@ -27,6 +27,9 @@ test("PhoneNumberFieldProps is the closed composite face", () => {
   expectTypeOf<PhoneNumberFieldProps["container"]>().toEqualTypeOf<
     HTMLElement | RefObject<HTMLElement | null> | undefined
   >();
+  expectTypeOf<PhoneNumberFieldProps["aria-required"]>().toEqualTypeOf<
+    boolean | "true" | "false" | undefined
+  >();
   expectTypeOf<PhoneNumberFieldProps>().toHaveProperty("name");
   expectTypeOf<PhoneNumberFieldProps>().toHaveProperty("className");
   expectTypeOf<PhoneNumberFieldProps>().toHaveProperty("aria-label");
