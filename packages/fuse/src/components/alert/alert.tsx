@@ -52,10 +52,10 @@ export type AlertIconProps = Omit<ComponentProps<typeof Info>, "title" | "weight
    */
   variant: AlertVariant;
   /**
-   * Phosphor weight. Regular is the library default; `fill` is reserved for selected
-   * or active states.
+   * Phosphor weight. Bold is the library default; `regular` draws a thinner stroke and
+   * `fill` is reserved for selected or active states.
    */
-  weight?: "regular" | "fill";
+  weight?: ComponentProps<typeof Info>["weight"];
 };
 
 export type AlertTitleProps = ComponentProps<"h3"> & {

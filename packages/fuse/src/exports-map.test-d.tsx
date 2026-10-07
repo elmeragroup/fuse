@@ -29,7 +29,7 @@ test("workspace consumers resolve the same public subpaths as the published pack
   expectTypeOf<RootThemeInput>().toEqualTypeOf<ThemeInput>();
   expectTypeOf<ThemeProviderProps["theme"]>().toEqualTypeOf<ThemeInput>();
   expectTypeOf<(typeof Icons)["Check"]>().toBeFunction();
-  expectTypeOf<ElmeraIconProps["weight"]>().toEqualTypeOf<"regular" | "fill" | undefined>();
+  expectTypeOf<ElmeraIconProps["weight"]>().toEqualTypeOf<"regular" | "bold" | "fill" | undefined>();
   expectTypeOf<typeof Button>().toEqualTypeOf<typeof RootButton>();
   expectTypeOf<typeof ScrollArea>().toEqualTypeOf<typeof RootScrollArea>();
   expectTypeOf(buttonVariants).toBeFunction();

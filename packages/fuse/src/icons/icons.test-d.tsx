@@ -6,10 +6,10 @@ import type { BrandLogoProps, ElmeraIconProps } from "../icons";
 import type * as Icons from "../icons";
 import type { BrandCode } from "../theme";
 
-test("public adapters accept regular and fill, reject other weights, and are named by title, not Phosphor's alt", () => {
-  expectTypeOf<ElmeraIconProps["weight"]>().toEqualTypeOf<"regular" | "fill" | undefined>();
+test("public adapters accept regular, bold and fill, reject other weights, and are named by title, not Phosphor's alt", () => {
+  expectTypeOf<ElmeraIconProps["weight"]>().toEqualTypeOf<"regular" | "bold" | "fill" | undefined>();
   expectTypeOf<ComponentProps<(typeof Icons)["Check"]>["weight"]>().toEqualTypeOf<
-    "regular" | "fill" | undefined
+    "regular" | "bold" | "fill" | undefined
   >();
   expectTypeOf<ComponentProps<(typeof Icons)["Check"]>>().toEqualTypeOf<
     ComponentProps<(typeof Icons)["X"]>
@@ -17,6 +17,7 @@ test("public adapters accept regular and fill, reject other weights, and are nam
   expectTypeOf<ComponentProps<(typeof Icons)["SlidersHorizontal"]>>().toEqualTypeOf<ElmeraIconProps>();
 
   const _regular: ElmeraIconProps = { weight: "regular" };
+  const _bold: ElmeraIconProps = { weight: "bold" };
   const _fill: ElmeraIconProps = { weight: "fill" };
   const _default: ElmeraIconProps = {};
 
@@ -24,8 +25,6 @@ test("public adapters accept regular and fill, reject other weights, and are nam
   const _thin: ElmeraIconProps = { weight: "thin" };
   // @ts-expect-error light is not a public icon weight
   const _light: ElmeraIconProps = { weight: "light" };
-  // @ts-expect-error bold is not a public icon weight
-  const _bold: ElmeraIconProps = { weight: "bold" };
   // @ts-expect-error duotone is not a public icon weight
   const _duotone: ElmeraIconProps = { weight: "duotone" };
 

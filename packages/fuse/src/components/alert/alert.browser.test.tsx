@@ -13,11 +13,12 @@ import { Alert } from "./alert";
 
 const VARIANTS = ["default", "destructive", "warning", "success"] as const;
 
+/** Starts of Phosphor's bold paths (`dist/defs/*.es.js`), the icon default weight. */
 const ICON_PATH = {
-  default: "M112,84a12,12,0,1,1,12,12A12,12,0,0,1,112,84Z",
-  warning: "M236.8,188.09",
-  destructive: "M232,91.55v72.9",
-  success: "M173.66,98.34",
+  default: "M108,84a16,16,0,1,1,16,16A16,16,0,0,1,108,84Z",
+  warning: "M240.26,186.1",
+  destructive: "M236,91.55v72.9",
+  success: "M176.49,95.51",
 } as const;
 
 function alertNamed(name: string): HTMLElement {

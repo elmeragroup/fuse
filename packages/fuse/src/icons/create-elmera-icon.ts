@@ -17,8 +17,11 @@ import { decorativeSvgProps } from "./bespoke-svg";
 export type ElmeraIconProps = Omit<ComponentProps<typeof Check>, "alt" | "weight"> & {
   /** Accessible name. Omit it, or pass an empty string, for a decorative icon. */
   title?: string;
-  /** Glyph weight. Defaults to `"regular"`. */
-  weight?: "regular" | "fill";
+  /**
+   * Glyph weight. Defaults to `"bold"`; `"regular"` draws a thinner stroke and `"fill"`
+   * marks a selected or active state.
+   */
+  weight?: "regular" | "bold" | "fill";
 };
 
 /**
@@ -29,7 +32,9 @@ export type ElmeraIconProps = Omit<ComponentProps<typeof Check>, "alt" | "weight
  * @returns A server-safe icon component that follows the titled-or-decorative SVG contract.
  */
 export function createElmeraIcon(Icon: typeof Check, name: string): (props: ElmeraIconProps) => ReactElement {
-  function ElmeraIcon({ title, weight = "regular", ...props }: ElmeraIconProps): ReactElement {
+  // Bold is the default because Phosphor's regular stroke inks about 28% less than the
+  // Lucide set the products used before, at every size; bold tracks it within a few percent.
+  function ElmeraIcon({ title, weight = "bold", ...props }: ElmeraIconProps): ReactElement {
     // Phosphor renders its `alt` prop as the `<title>` element.
     return createElement(Icon, { ...decorativeSvgProps(title), ...props, alt: title, weight });
   }
