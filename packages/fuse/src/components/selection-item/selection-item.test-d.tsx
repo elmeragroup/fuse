@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
@@ -6,7 +6,7 @@ import type { SelectionItem as RootSelectionItem } from "@elmeragroup/fuse";
 import { Item } from "@elmeragroup/fuse/item";
 import { SelectionItem } from "@elmeragroup/fuse/selection-item";
 
-test("the namespace ships all six parts from both entries, reusing Item's Description and Content", () => {
+test("the namespace ships all six parts from both entries, reusing Item's Content", () => {
   expectTypeOf<typeof SelectionItem>().toEqualTypeOf<typeof RootSelectionItem>();
   expectTypeOf(SelectionItem).toHaveProperty("Shell");
   expectTypeOf(SelectionItem).toHaveProperty("Title");
@@ -14,8 +14,10 @@ test("the namespace ships all six parts from both entries, reusing Item's Descri
   expectTypeOf(SelectionItem).toHaveProperty("Content");
   expectTypeOf(SelectionItem).toHaveProperty("Actions");
   expectTypeOf(SelectionItem).toHaveProperty("SubSection");
-  // Description and Content are the Item parts so later aliasing keeps object identity.
-  expectTypeOf(SelectionItem.Description).toEqualTypeOf(Item.Description);
+  // Content is the Item part. Description is the row's own unclamped part, with the same props.
+  expectTypeOf<ComponentProps<typeof SelectionItem.Description>>().toEqualTypeOf<
+    ComponentProps<typeof Item.Description>
+  >();
   expectTypeOf(SelectionItem.Content).toEqualTypeOf(Item.Content);
 });
 

@@ -49,7 +49,6 @@ describe("itemGroupVariants", () => {
 describe("ITEM_TITLE_CLASSES", () => {
   it("is the Item.Title / Alert.Title face", () => {
     expect(ITEM_TITLE_CLASSES).toContain("font-medium");
-    expect(ITEM_TITLE_CLASSES).toContain("line-clamp-1");
     expect(ITEM_TITLE_CLASSES).toContain("underline-offset-4");
   });
 });

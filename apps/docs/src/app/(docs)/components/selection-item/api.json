@@ -123,7 +123,7 @@
     {
       "name": "SelectionItem.Description",
       "rsc": "server",
-      "sourcePath": "packages/fuse/src/components/item/item-markup.tsx",
+      "sourcePath": "packages/fuse/src/components/selection-item/selection-item-description.tsx",
       "forwardedFrom": [
         "@types/react"
       ],

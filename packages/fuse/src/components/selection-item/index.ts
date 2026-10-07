@@ -3,13 +3,14 @@
  * The implementation stays a client module; this file has no directive,
  * so a server component can read each part instead of dotting into a client reference.
  */
-import { ItemDescription, ItemContent } from "../item/item-markup";
+import { ItemContent } from "../item/item-markup";
 import {
   SelectionItemShell,
   SelectionItemTitle,
   SelectionItemActions,
   SelectionItemSubSection,
 } from "./selection-item";
+import { SelectionItemDescription } from "./selection-item-description";
 
 /**
  * Shared selectable card row. `CheckboxItem` / `RadioItem` alias these part objects so
@@ -18,7 +19,7 @@ import {
 export const SelectionItem = {
   Shell: SelectionItemShell,
   Title: SelectionItemTitle,
-  Description: ItemDescription,
+  Description: SelectionItemDescription,
   Content: ItemContent,
   Actions: SelectionItemActions,
   SubSection: SelectionItemSubSection,
