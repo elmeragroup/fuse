@@ -42,9 +42,10 @@ describe("InputGroup demos", () => {
     const mobile = demo.getByRole("textbox", { name: "Mobile number", exact: true });
     await expect.poll(() => mobile.getAttribute("aria-invalid")).toBe("true");
     await expect.poll(() => demo.getByRole("alert").textContent()).toBe("Enter 8 digits.");
+    // The error sits above the description, and both mount together, so it is read first too.
     await expect
       .poll(() => describedBy("Mobile number"))
-      .toBe("Eight digits after +47. We send the order confirmation here. Enter 8 digits.");
+      .toBe("Enter 8 digits. Eight digits after +47. We send the order confirmation here.");
 
     await mobile.fill("41234567");
     await expect.poll(() => demo.getByRole("alert").count()).toBe(0);

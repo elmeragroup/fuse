@@ -114,6 +114,7 @@ export function TextField({
         content: container(),
         description: descriptionSlot() || undefined,
       }}
+      isDescriptionBeside={variant === "card"}
       invalid={isInvalid}
       disabled={isDisabled}
       label={label}

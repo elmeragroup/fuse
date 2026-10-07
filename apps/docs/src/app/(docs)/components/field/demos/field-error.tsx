@@ -19,8 +19,8 @@ export function FieldErrorDemo() {
           setEmail(event.target.value);
         }}
       />
-      <Field.Description>Validation lives outside the field; the message is passed in.</Field.Description>
       {isInvalid ? <Field.Error>Enter a work email.</Field.Error> : null}
+      <Field.Description>Validation lives outside the field; the message is passed in.</Field.Description>
     </Field.Root>
   );
 }

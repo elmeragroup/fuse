@@ -50,40 +50,116 @@ type GroupFixture = {
     readonly label?: string;
     readonly description?: string;
     readonly isLabelHidden?: boolean;
+    readonly errorMessage?: string;
   }) => ReactElement;
 };
 
 const GROUPS: ReadonlyArray<GroupFixture> = [
   {
     name: "CheckboxGroup",
-    render: ({ label, description, isLabelHidden }) => (
-      <CheckboxGroup label={label} description={description} isLabelHidden={isLabelHidden}>
+    render: ({ label, description, isLabelHidden, errorMessage }) => (
+      <CheckboxGroup
+        label={label}
+        description={description}
+        isLabelHidden={isLabelHidden}
+        isInvalid={errorMessage !== undefined}
+        errorMessage={errorMessage}>
         <CheckboxItem value="a">Option</CheckboxItem>
       </CheckboxGroup>
     ),
   },
   {
     name: "RadioGroup",
-    render: ({ label, description, isLabelHidden }) => (
-      <RadioGroup label={label} description={description} isLabelHidden={isLabelHidden}>
+    render: ({ label, description, isLabelHidden, errorMessage }) => (
+      <RadioGroup
+        label={label}
+        description={description}
+        isLabelHidden={isLabelHidden}
+        isInvalid={errorMessage !== undefined}
+        errorMessage={errorMessage}>
         <Radio value="a">Option</Radio>
       </RadioGroup>
     ),
   },
   {
     name: "CheckboxItemGroup",
-    render: ({ label, description, isLabelHidden }) => (
-      <CheckboxItemGroup label={label} description={description} isLabelHidden={isLabelHidden}>
+    render: ({ label, description, isLabelHidden, errorMessage }) => (
+      <CheckboxItemGroup
+        label={label}
+        description={description}
+        isLabelHidden={isLabelHidden}
+        isInvalid={errorMessage !== undefined}
+        errorMessage={errorMessage}>
         <CheckboxItem value="a">Option</CheckboxItem>
       </CheckboxItemGroup>
     ),
   },
   {
     name: "RadioItemGroup",
-    render: ({ label, description, isLabelHidden }) => (
-      <RadioItemGroup label={label} description={description} isLabelHidden={isLabelHidden}>
+    render: ({ label, description, isLabelHidden, errorMessage }) => (
+      <RadioItemGroup
+        label={label}
+        description={description}
+        isLabelHidden={isLabelHidden}
+        isInvalid={errorMessage !== undefined}
+        errorMessage={errorMessage}>
         <RadioItem value="a">Option</RadioItem>
       </RadioItemGroup>
+    ),
+  },
+];
+
+type LabeledFixture = {
+  readonly name: string;
+  /** Renders the composite labelled "Field" with a description, in error when given one. */
+  readonly render: (errorMessage?: string) => ReactElement;
+};
+
+const FIELD_DESCRIPTION = "Supporting copy.";
+
+const LABELED: ReadonlyArray<LabeledFixture> = [
+  {
+    name: "TextField",
+    render: (errorMessage) => (
+      <TextField
+        label="Field"
+        description={FIELD_DESCRIPTION}
+        isInvalid={errorMessage !== undefined}
+        errorMessage={errorMessage}
+      />
+    ),
+  },
+  {
+    name: "NumberField",
+    render: (errorMessage) => (
+      <NumberField
+        label="Field"
+        description={FIELD_DESCRIPTION}
+        isInvalid={errorMessage !== undefined}
+        errorMessage={errorMessage}
+      />
+    ),
+  },
+  {
+    name: "TextareaField",
+    render: (errorMessage) => (
+      <TextareaField
+        label="Field"
+        description={FIELD_DESCRIPTION}
+        isInvalid={errorMessage !== undefined}
+        errorMessage={errorMessage}
+      />
+    ),
+  },
+  {
+    name: "PhoneNumberField",
+    render: (errorMessage) => (
+      <PhoneNumberField
+        label="Field"
+        description={FIELD_DESCRIPTION}
+        isInvalid={errorMessage !== undefined}
+        errorMessage={errorMessage}
+      />
     ),
   },
 ];
@@ -448,6 +524,73 @@ describe("FieldFrame", () => {
       );
     });
   });
+});
+
+// Figma: a field in error shows its message directly under the control, where the
+// description sits otherwise, and the description moves below the message.
+describe("error placement", () => {
+  it.each(LABELED)("puts the $name error in the description's place under the control", ({ render }) => {
+    const { unmount } = renderThemed(
+      <>
+        {preflightBoxReset}
+        {withLocale("en-US", render())}
+      </>
+    );
+    const restingGap = verticalGap(textboxNamed("Field"), textNamed(FIELD_DESCRIPTION));
+    unmount();
+
+    renderThemed(
+      <>
+        {preflightBoxReset}
+        {withLocale("en-US", render("Fix this."))}
+      </>
+    );
+    const error = page.getByRole("alert").element();
+
+    expect(verticalGap(textboxNamed("Field"), error)).toBeCloseTo(restingGap, 0);
+    expect(verticalGap(error, textNamed(FIELD_DESCRIPTION))).toBeGreaterThanOrEqual(0);
+  });
+
+  it("keeps a card TextField's description beside the input and puts the error under the row", () => {
+    renderThemed(
+      <>
+        {preflightBoxReset}
+        <TextField
+          variant="card"
+          label="Annual usage"
+          description="Estimated kWh"
+          isInvalid
+          errorMessage="Fix this."
+        />
+      </>
+    );
+    const input = textboxNamed("Annual usage").getBoundingClientRect();
+    const description = textNamed("Estimated kWh").getBoundingClientRect();
+    const error = page.getByRole("alert").element();
+
+    expect(description.left).toBeGreaterThanOrEqual(input.right);
+    expect(description.top).toBeLessThan(input.bottom);
+    expect(error.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+      Math.max(input.bottom, description.bottom)
+    );
+  });
+
+  it.each(GROUPS)(
+    "keeps the $name description under its label and puts the error under the options",
+    ({ render }) => {
+      const { host } = renderThemed(
+        <>
+          {preflightBoxReset}
+          {render({ label: "Group", description: "Pick any.", errorMessage: "Fix this." })}
+        </>
+      );
+      const options = optionsIn(host);
+      const error = page.getByRole("alert").element();
+
+      expect(verticalGap(textNamed("Pick any."), options)).toBeGreaterThanOrEqual(0);
+      expect(verticalGap(options, error)).toBeGreaterThanOrEqual(0);
+    }
+  );
 });
 
 describe("isLabelHidden", () => {

@@ -67,8 +67,8 @@ export function DateField<T extends DateValue>({
       className={composeTailwindRenderProps(className, base())}>
       {label ? <Label>{label}</Label> : null}
       <DateInput />
-      {description ? <Description>{description}</Description> : null}
       <FieldError>{errorMessage}</FieldError>
+      {description ? <Description>{description}</Description> : null}
     </AriaDateField>
   );
 }

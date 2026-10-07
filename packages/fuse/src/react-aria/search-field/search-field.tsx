@@ -68,8 +68,8 @@ export function SearchField({
           <X aria-hidden className={buttonIcon()} />
         </Button>
       </FieldGroup>
-      {description ? <Description slot="description">{description}</Description> : null}
       <FieldError>{errorMessage}</FieldError>
+      {description ? <Description slot="description">{description}</Description> : null}
     </AriaSearchField>
   );
 }

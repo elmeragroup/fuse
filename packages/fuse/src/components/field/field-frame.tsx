@@ -55,7 +55,7 @@ const fieldFrameDescriptionClass = fieldFrameSlots.description();
 
 /**
  * One class argument per part the frame paints. `content` opts into the
- * control/description wrapper and is the wrapper's class as given — no default merge.
+ * control/error/description wrapper and is the wrapper's class as given — no default merge.
  */
 export type FieldFrameClassNames = {
   /** The heading row. */
@@ -63,9 +63,9 @@ export type FieldFrameClassNames = {
   /** `Field.Label` or `Field.Legend`. */
   label?: string;
   /**
-   * The content wrapper around control + description. Rendered when this class is
-   * given, as this string exactly; omitted, both are direct children of `Field.Root` /
-   * `Field.Set`.
+   * The content wrapper around the control, its error and its description. Rendered when this
+   * class is given, as this string exactly; omitted, they are direct children of `Field.Root` /
+   * `Field.Set`. With {@link FieldFrameProps.isDescriptionBeside}, the error follows the wrapper.
    */
   content?: string;
   /** `Field.Description`. */
@@ -102,6 +102,12 @@ export type FieldFrameProps = {
   description?: ReactNode;
   /** Error copy, rendered as `Field.Error`; falsy, the field shows its own validation error. */
   errorMessage?: ReactNode;
+  /**
+   * The content wrapper lays the description out beside the control, as TextField's card row
+   * does, so the error goes under the wrapper instead of joining the row. The control keeps its
+   * place in the tree either way, so toggling this does not remount it.
+   */
+  isDescriptionBeside?: boolean;
   /** Forwarded to `Field.Root`. */
   invalid?: boolean;
   /** Forwarded to `Field.Root`. */
@@ -136,6 +142,7 @@ export function FieldFrame({
   isSuccess = false,
   description,
   errorMessage,
+  isDescriptionBeside = false,
   invalid,
   disabled,
   name,
@@ -165,18 +172,22 @@ export function FieldFrame({
       {description}
     </FieldDescription>
   ) : null;
-  const body =
-    heading === "legend" ? (
-      <>
-        {descriptionNode}
-        {children}
-      </>
-    ) : (
-      <>
-        {children}
-        {descriptionNode}
-      </>
-    );
+  // A legend-mode description sits under the legend, above the options. A label-mode one
+  // follows the control.
+  const leadingDescription = heading === "legend" ? descriptionNode : null;
+  const trailingDescription = heading === "legend" ? null : descriptionNode;
+  const errorNode = <FieldError>{errorMessage}</FieldError>;
+  // The error sits directly under the control, ahead of a trailing description, so a field in
+  // error shows its message there (Figma). A description beside the control shares its row,
+  // so the error goes under the whole content instead.
+  const body = (
+    <>
+      {leadingDescription}
+      {children}
+      {isDescriptionBeside ? null : errorNode}
+      {trailingDescription}
+    </>
+  );
   const content = classNames?.content === undefined ? body : <div className={classNames.content}>{body}</div>;
   const headingRow =
     label || hasStatus ? (
@@ -222,7 +233,7 @@ export function FieldFrame({
     <>
       {headingRow}
       {content}
-      <FieldError>{errorMessage}</FieldError>
+      {isDescriptionBeside ? errorNode : null}
     </>
   );
 
