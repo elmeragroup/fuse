@@ -75,9 +75,9 @@
   and configure the focus-ring owner path.
 - Replace the `state faces` source contract with `elmera/no-local-state-face` once the
   upstream plugin ships it with a configurable owner path and per-check allow lists.
-- Scope the within-target focus faces to the group's own control. `withinFocusRingClass` and
-  InputGroup's focus border still match any descendant `data-focus-ring-control`, so a
-  focused NumberField nested in an InputGroup addon also rings the outer group. The state
+- Scope the within-target focus faces to the group's own control. `withinFocusRingClass`
+  still matches any descendant `data-focus-ring-control`, so a focused NumberField nested
+  in an InputGroup addon also rings the outer group. The state
   face already reads only a direct child (`styles/state-face.ts`).
 - `pnpm lint` never type-checks `apps/docs/test/fixtures/rsc-namespace-register.mjs`: `oxlint .`
   reports nothing, while `oxlint apps/docs` reports `typescript(no-unsafe-call)` at line 3. Find

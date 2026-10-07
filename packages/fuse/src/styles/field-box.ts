@@ -11,7 +11,8 @@ import { selfFocusRingClass, withinFocusRingClass } from "./utils";
  * that animates them. The corner is `--radius-field` in external themes and `--radius` in
  * internal ones (`corner-radius.ts`). {@link fieldBox} paints it for Input and Textarea. RAC
  * `fieldGroupVariants`, Select's trigger, NumberField's group and InputGroup's root paint it
- * without being `fieldBox` variants.
+ * without being `fieldBox` variants. Focus leaves the `--input` border alone on every one of
+ * them: the shared focus ring marks focus, and only the invalid face recolours the border.
  *
  * `field-box.test.ts` pins the tokens. `internal-stack.test.ts` checks that each token
  * reaches every consumer's merged classes and that no consumer adds a second radius or
@@ -67,7 +68,6 @@ export const inputGroupRootClass = cn(
   "group/input-group relative flex h-(--control-h-md) w-full min-w-0 items-center",
   "has-[>[data-focus-ring-control]:disabled]:bg-input/50",
   "has-[>[data-focus-ring-control][readonly]:not(:disabled)]:bg-muted",
-  "has-[[data-focus-ring-control]:focus-visible]:border-ring",
   withinStateFaceClass,
   "has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>textarea]:h-auto",
   "has-[>[data-align=block-end]]:[&>input]:pt-3 has-[>[data-align=block-start]]:[&>input]:pb-3 has-[>[data-align=inline-end]]:[&>input]:pr-1.5 has-[>[data-align=inline-start]]:[&>input]:pl-1.5",

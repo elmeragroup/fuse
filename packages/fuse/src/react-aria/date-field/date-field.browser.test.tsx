@@ -12,7 +12,11 @@ import "../../../dist/styles.css";
 // every radius and fill below would compute to `0px` / `transparent` on both sides and
 // the chrome-parity assertions would pass on nothing.
 import "../../../dist/themes.css";
-import { assertStateFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
+import {
+  assertStateFocusRingAtBothDensities,
+  expectFocusRing,
+  expectNoFocusRing,
+} from "../../../test/assert-focus-ring";
 import { describedTextsFor, segmentLocator, segmentNamed } from "../../../test/rac-calendar-testing";
 import {
   CONTROL_MD,
@@ -120,6 +124,21 @@ function describedTargetsFor(name: string): HTMLElement[] {
 
 function describedTextsForField(name: string): string[] {
   return [...new Set(describedHostsFor(name).flatMap((host) => describedTextsFor(host)))];
+}
+
+/** Let a box's border and ring transitions settle, so computed colours are the end state. */
+async function settled(element: HTMLElement): Promise<void> {
+  await Promise.all(element.getAnimations().map((animation) => animation.finished));
+}
+
+/** Tab from the button named `before` into a field, then read its settled field box. */
+async function keyboardFocusedBox(before: string, box: () => HTMLElement) {
+  buttonNamed(before).focus();
+  await userEvent.keyboard("{Tab}");
+  const element = box();
+  await settled(element);
+  const style = getComputedStyle(element);
+  return { element, border: style.borderTopColor, shadow: style.boxShadow };
 }
 
 const july14 = new CalendarDate(2026, 7, 14);
@@ -345,6 +364,73 @@ describe("DateField field-box chrome", () => {
     // The interim tier's old rung is gone from both sides, not just from the one that moved.
     expect(dateElement.classList.contains("rounded-lg")).toBe(false);
     expect(inputElement.classList.contains("rounded-lg")).toBe(false);
+  });
+
+  it("keeps Input's border under the keyboard focus ring, valid and invalid", async () => {
+    renderField(
+      <>
+        <button type="button">Before input</button>
+        <Input aria-label="Reading" />
+        <button type="button">Before date</button>
+        <DateField label="Meter" defaultValue={july14} />
+        <button type="button">Before search</button>
+        <SearchField label="Find" />
+        <button type="button">Before invalid input</button>
+        <Input aria-label="Invalid reading" aria-invalid />
+        <button type="button">Before invalid date</button>
+        <DateField label="Invalid meter" isInvalid defaultValue={july14} />
+      </>
+    );
+    const input = await keyboardFocusedBox("Before input", () => textboxNamed("Reading"));
+    const date = await keyboardFocusedBox("Before date", () => groupNamed("Meter"));
+    expectFocusRing(date.element, "keyboard focus must paint the date field's ring");
+    const search = await keyboardFocusedBox("Before search", () =>
+      groupAround(roleNamed("searchbox", "Find"))
+    );
+    expectFocusRing(search.element, "keyboard focus must paint the search field's ring");
+
+    // Unit: each focused box's border. Oracle: the theme's resting `--input` role, which a
+    // focused Input keeps under its ring. `--ring` differs, so a ring-coloured border fails.
+    const resting = cssVarColor(date.element, "--input");
+    expect(resting).not.toBe(cssVarColor(date.element, "--ring"));
+    expect(input.border).toBe(resting);
+    expect(date.border, "date field").toBe(resting);
+    expect(search.border, "search field").toBe(resting);
+
+    // Invalid arm. Oracle: the theme's `--error` role for the border, and a focused invalid
+    // Input's shadow for the error-tinted ring, which must not fall back to the focus ring.
+    const invalidInput = await keyboardFocusedBox("Before invalid input", () =>
+      textboxNamed("Invalid reading")
+    );
+    const invalidDate = await keyboardFocusedBox("Before invalid date", () => groupNamed("Invalid meter"));
+    expect(invalidDate.border).toBe(cssVarColor(invalidDate.element, "--error"));
+    expect(invalidDate.border).toBe(invalidInput.border);
+    expect(invalidDate.shadow).toBe(invalidInput.shadow);
+  });
+
+  it("keeps the resting border when a pointer focuses a date segment", async () => {
+    renderField(
+      <>
+        <DateField label="Meter" defaultValue={july14} />
+        <RacDateField defaultValue={july14}>
+          <RacLabel>Standalone</RacLabel>
+          <DateInput />
+        </RacDateField>
+      </>
+    );
+    for (const name of ["Meter", "Standalone"]) {
+      const box = groupNamed(name);
+      const [segment] = spinbuttonsIn(name);
+      if (segment === undefined) {
+        throw new Error(`expected a segment in ${name}`);
+      }
+      await userEvent.click(segment);
+      // React Aria reports focus within the box, but not focus-visible.
+      expect(box.contains(document.activeElement), `${name} holds focus`).toBe(true);
+      await settled(box);
+      expectNoFocusRing(box, `pointer focus must not paint the ${name} ring`);
+      expect(getComputedStyle(box).borderTopColor, name).toBe(cssVarColor(box, "--input"));
+    }
   });
 
   it("paints the read-only fill on every read-only field box", async () => {
