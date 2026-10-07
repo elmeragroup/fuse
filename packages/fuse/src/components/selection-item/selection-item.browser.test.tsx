@@ -650,7 +650,7 @@ describe("SelectionItem", () => {
           </RadioItem>
         </RadioItemGroup>
         <CheckboxGroup label="Cards">
-          <CheckboxCard value="card" title="Card beside" />
+          <CheckboxCard value="card" title="Card beside" description="Filled like the rows." />
         </CheckboxGroup>
       </ThemeScope>
     );
@@ -663,7 +663,7 @@ describe("SelectionItem", () => {
     expect(card).not.toBe(background);
     expect(getComputedStyle(router).backgroundColor).toBe(card);
     expect(getComputedStyle(shellFrom("Fixed price")).backgroundColor).toBe(card);
-    const cardRoot = checkboxNamed("Card beside").closest("[data-slot=card]");
+    const cardRoot = textNamed("Card beside").closest("[data-slot=card]");
     if (!(cardRoot instanceof HTMLElement)) {
       throw new Error("expected the CheckboxCard's card root");
     }
