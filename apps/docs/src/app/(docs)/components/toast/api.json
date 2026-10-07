@@ -44,10 +44,10 @@
         {
           "name": "placement",
           "origin": "declared",
-          "type": "\"bottom-center\" | \"bottom-right\" | undefined",
+          "type": "\"bottom-center\" | \"bottom-left\" | \"bottom-right\" | \"top-center\" | \"top-left\" | \"top-right\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"bottom-right\"",
-          "description": "Where the toast stack sits from the `sm` breakpoint up. `\"bottom-right\"` pins it to the bottom-right corner; `\"bottom-center\"` centers it along the bottom edge. Below `sm` the stack spans the screen width either way.",
+          "description": "Where the toast stack sits from the `sm` breakpoint up: a top or bottom edge, aligned left, center or right. A top placement stacks downward and enters from above. Toasts dismiss by swiping toward the anchored edge and toward their side (right for center), unless a `Toast.Root` sets `swipeDirection`. Below `sm` every placement sits at the bottom, spans the screen width and swipes down or right.",
           "required": false
         }
       ]

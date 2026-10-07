@@ -5,23 +5,33 @@ import { useRef, useState } from "react";
 import { Button } from "@elmeragroup/fuse/button";
 import { Toast } from "@elmeragroup/fuse/toast";
 
-type Placement = "bottom-right" | "bottom-center";
+const PLACEMENTS = [
+  { placement: "top-left", label: "Top left" },
+  { placement: "top-center", label: "Top center" },
+  { placement: "top-right", label: "Top right" },
+  { placement: "bottom-left", label: "Bottom left" },
+  { placement: "bottom-center", label: "Bottom center" },
+  { placement: "bottom-right", label: "Bottom right" },
+] as const;
+
+type Placement = (typeof PLACEMENTS)[number]["placement"];
 
 function PlacementButtons({ onPlace }: { onPlace: (placement: Placement) => void }) {
   const toastManager = Toast.useToastManager();
-  const show = (placement: Placement, title: string) => {
-    onPlace(placement);
-    toastManager.add({ title, description: `Placement "${placement}".` });
-  };
 
   return (
-    <div className="flex flex-wrap gap-2">
-      <Button variant="outline" onClick={() => show("bottom-right", "Bottom right")}>
-        Bottom right
-      </Button>
-      <Button variant="outline" onClick={() => show("bottom-center", "Bottom center")}>
-        Bottom center
-      </Button>
+    <div className="max-w-md grid grid-cols-3 gap-2">
+      {PLACEMENTS.map(({ placement, label }) => (
+        <Button
+          key={placement}
+          variant="outline"
+          onClick={() => {
+            onPlace(placement);
+            toastManager.add({ title: label, description: `Placement "${placement}".` });
+          }}>
+          {label}
+        </Button>
+      ))}
     </div>
   );
 }
@@ -30,7 +40,8 @@ export function ToastPlacement() {
   const viewportRef = useRef<HTMLDivElement>(null);
   const [placement, setPlacement] = useState<Placement>("bottom-right");
   return (
-    <div ref={viewportRef} className="relative min-h-[28rem] w-full">
+    // The buttons sit mid-stage so a stack at either edge leaves them uncovered.
+    <div ref={viewportRef} className="relative flex min-h-[36rem] w-full items-center justify-center">
       <Toast.Provider>
         <PlacementButtons onPlace={setPlacement} />
         {/* `absolute` keeps the stack inside this preview, and the width cap keeps the 340px

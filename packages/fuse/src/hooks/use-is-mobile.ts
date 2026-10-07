@@ -1,26 +1,10 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useMediaQuery } from "./use-media-query";
 
 // The exact complement of Tailwind's `md:` (`width >= 48rem`). Both sides use rem, so no
 // fractional width or non-16px browser default font size leaves a gap where neither matches.
 const MOBILE_MEDIA_QUERY = "(width < 48rem)";
-
-function subscribeIsMobile(onStoreChange: () => void): () => void {
-  const mql = window.matchMedia(MOBILE_MEDIA_QUERY);
-  mql.addEventListener("change", onStoreChange);
-  return () => {
-    mql.removeEventListener("change", onStoreChange);
-  };
-}
-
-function getIsMobileSnapshot(): boolean {
-  return window.matchMedia(MOBILE_MEDIA_QUERY).matches;
-}
-
-function getIsMobileServerSnapshot(): boolean {
-  return false;
-}
 
 /**
  * Package-private viewport probe for Sidebar:
@@ -31,5 +15,5 @@ function getIsMobileServerSnapshot(): boolean {
  * public export.
  */
 export function useIsMobile(): boolean {
-  return useSyncExternalStore(subscribeIsMobile, getIsMobileSnapshot, getIsMobileServerSnapshot);
+  return useMediaQuery(MOBILE_MEDIA_QUERY);
 }

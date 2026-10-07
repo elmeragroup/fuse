@@ -436,7 +436,7 @@ describe("runtime listeners and layout motion", () => {
       "components/input/input.tsx",
       "components/sidebar/sidebar.tsx",
       "hooks/use-form-reset.ts",
-      "hooks/use-is-mobile.ts",
+      "hooks/use-media-query.ts",
       "hooks/use-predicted-events.ts",
       // Window `resize`: a fixed-height clipping scope taller than the viewport never resizes,
       // yet a shorter viewport still takes room from the popover's side.
@@ -448,7 +448,7 @@ describe("runtime listeners and layout motion", () => {
   // Why not a lint rule: the rule is "the adapter is the only owner", a closed list that a
   // ban-with-exemptions rule cannot state as complete. The closed bootstrap is the one
   // exception, because it is serialized into the page and runs before the bundle. Outside
-  // theme/, use-is-mobile owns its own query.
+  // theme/, use-media-query owns every query.
   it("touches matchMedia, localStorage and data-theme in theme/ only through the browser adapter", () => {
     const inTheme = (needle: string) =>
       filesContainingCode(needle)

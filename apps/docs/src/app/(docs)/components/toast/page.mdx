@@ -36,7 +36,7 @@ These examples render notifications inside their own preview areas so different 
 
 ## Viewport placement
 
-From the `sm` breakpoint up, the stack sits in the bottom-right corner. Set `placement="bottom-center"` on `Toast.Viewport` to center it along the bottom edge instead. On narrower screens the stack spans the screen width with either placement.
+From the `sm` breakpoint up, `placement` on `Toast.Viewport` puts the stack at the top or bottom edge, aligned left, center or right. The default is `"bottom-right"`. A top placement stacks downward and slides toasts in from above. Toasts dismiss by swiping toward the edge they sit on and toward their side, or right for a centered stack; set `swipeDirection` on `Toast.Root` to choose other directions. On narrower screens every placement sits at the bottom, spans the screen width and swipes down or right.
 
 <Demo slug="toast" id="placement" title="Placement" file="toast-placement.tsx">
   <ToastPlacement />

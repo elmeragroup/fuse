@@ -590,11 +590,24 @@ describe("Toast overlay containment", () => {
 });
 
 describe("Toast placement", () => {
-  // From `sm` (40rem) up the viewport is a fixed 340px column; below it the column spans the
-  // screen minus a 1rem gutter on each side.
+  // From `sm` (40rem) up the stack is a 340px column 32px in from its edges; below `sm`
+  // it sits at the bottom and spans the screen minus a 16px gutter on each side.
   const SM_COLUMN_PX = 340;
   const DESKTOP_GUTTER_PX = 32;
   const MOBILE_GUTTER_PX = 16;
+  // Root recipe constants: a collapsed toast peeks 0.75rem past the one in front of it, and
+  // an expanded stack leaves a 0.75rem gap between toasts.
+  const PEEK_PX = 12;
+  const GAP_PX = 12;
+
+  const PLACEMENTS = [
+    { placement: "top-left", vertical: "top", horizontal: "left" },
+    { placement: "top-center", vertical: "top", horizontal: "center" },
+    { placement: "top-right", vertical: "top", horizontal: "right" },
+    { placement: "bottom-left", vertical: "bottom", horizontal: "left" },
+    { placement: "bottom-center", vertical: "bottom", horizontal: "center" },
+    { placement: "bottom-right", vertical: "bottom", horizontal: "right" },
+  ] as const;
 
   function currentSize() {
     return { width: window.innerWidth, height: window.innerHeight };
@@ -610,41 +623,263 @@ describe("Toast placement", () => {
     await page.viewport(restoreSize.width, restoreSize.height);
   });
 
-  function viewportBox(): DOMRect {
-    const viewport = page.getByRole("region", { name: "Notifications", exact: true }).element();
-    return viewport.getBoundingClientRect();
+  /** Distances from the toast's box to each edge of the screen. */
+  function gaps(element: HTMLElement) {
+    const box = element.getBoundingClientRect();
+    return {
+      width: box.width,
+      top: box.top,
+      bottom: window.innerHeight - box.bottom,
+      left: box.left,
+      right: document.documentElement.clientWidth - box.right,
+    };
   }
 
-  it("keeps the default viewport in the bottom-right corner from sm up", async () => {
-    await page.viewport(1024, 768);
-    renderToast(<Toast.Viewport />);
-    const box = viewportBox();
-    const screenWidth = document.documentElement.clientWidth;
-    expect(box.width).toBeCloseTo(SM_COLUMN_PX, 0);
-    expect(screenWidth - box.right).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
-    expect(window.innerHeight - box.bottom).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
-  });
+  function nextFrame(): Promise<void> {
+    return new Promise((resolve) => {
+      requestAnimationFrame(() => {
+        resolve();
+      });
+    });
+  }
 
-  it("centers a bottom-center viewport along the bottom edge from sm up", async () => {
-    await page.viewport(1024, 768);
-    renderToast(<Toast.Viewport placement="bottom-center" />);
-    const box = viewportBox();
-    const screenWidth = document.documentElement.clientWidth;
-    expect(box.width).toBeCloseTo(SM_COLUMN_PX, 0);
-    expect(box.left).toBeCloseTo((screenWidth - SM_COLUMN_PX) / 2, 0);
-    expect(window.innerHeight - box.bottom).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
-  });
+  /**
+   * Drags a mouse pointer across `element` by (`dx`, `dy`) in small steps and releases it.
+   * Base UI's swipe handlers read pointer events from the root and the document, so
+   * dispatched events walk the same path a real drag does.
+   */
+  async function swipe(element: HTMLElement, dx: number, dy: number): Promise<void> {
+    const box = element.getBoundingClientRect();
+    const x = box.left + box.width / 2;
+    const y = box.top + box.height / 2;
+    const pointer = { bubbles: true, cancelable: true, pointerId: 1, pointerType: "mouse", isPrimary: true };
+    element.dispatchEvent(
+      new PointerEvent("pointerdown", { ...pointer, button: 0, buttons: 1, clientX: x, clientY: y })
+    );
+    await nextFrame();
+    const steps = 6;
+    for (let step = 1; step <= steps; step += 1) {
+      element.dispatchEvent(
+        new PointerEvent("pointermove", {
+          ...pointer,
+          buttons: 1,
+          clientX: x + (dx * step) / steps,
+          clientY: y + (dy * step) / steps,
+          movementX: dx / steps,
+          movementY: dy / steps,
+        })
+      );
+      await nextFrame();
+    }
+    element.dispatchEvent(
+      new PointerEvent("pointerup", { ...pointer, button: 0, clientX: x + dx, clientY: y + dy })
+    );
+    await nextFrame();
+  }
 
-  it("spans the screen minus its gutters below sm whatever the placement", async () => {
-    await page.viewport(400, 768);
-    for (const placement of ["bottom-right", "bottom-center"] as const) {
-      const { unmount } = renderToast(<Toast.Viewport placement={placement} />);
-      const box = viewportBox();
-      const screenWidth = document.documentElement.clientWidth;
-      expect(box.left).toBeCloseTo(MOBILE_GUTTER_PX, 0);
-      expect(screenWidth - box.right).toBeCloseTo(MOBILE_GUTTER_PX, 0);
+  async function expectToastStays(name: string): Promise<void> {
+    // A dismissal is decided on pointerup; a few frames later the toast would be ending.
+    for (let frame = 0; frame < 10; frame += 1) {
+      await nextFrame();
+    }
+    expect(toastRootNamed(name).hasAttribute("data-ending-style")).toBe(false);
+  }
+
+  it("puts the stack at each placement's edge and alignment from sm up", async () => {
+    await page.viewport(1024, 768);
+    for (const { placement, vertical, horizontal } of PLACEMENTS) {
+      const { manager, unmount } = renderToast(<Toast.Viewport placement={placement} />);
+      manager.add({ title: placement, timeout: 0 });
+      const root = await waitForToast(placement);
+      await vi.waitFor(() => {
+        const box = gaps(root);
+        expect(box.width).toBeCloseTo(SM_COLUMN_PX, 0);
+        expect(box[vertical]).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
+        if (horizontal === "center") {
+          expect(box.left).toBeCloseTo(box.right, 0);
+        } else {
+          expect(box[horizontal]).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
+        }
+      });
       unmount();
     }
+  });
+
+  it("keeps every placement at the bottom, spanning the screen minus its gutters, below sm", async () => {
+    await page.viewport(400, 768);
+    for (const { placement } of PLACEMENTS) {
+      const { manager, unmount } = renderToast(<Toast.Viewport placement={placement} />);
+      manager.add({ title: placement, timeout: 0 });
+      const root = await waitForToast(placement);
+      await vi.waitFor(() => {
+        const box = gaps(root);
+        expect(box.bottom).toBeCloseTo(MOBILE_GUTTER_PX, 0);
+        expect(box.left).toBeCloseTo(MOBILE_GUTTER_PX, 0);
+        expect(box.right).toBeCloseTo(MOBILE_GUTTER_PX, 0);
+      });
+      unmount();
+    }
+  });
+
+  it("stacks away from the anchored edge: downward for top placements, upward for bottom", async () => {
+    await page.viewport(1024, 768);
+    for (const { placement, vertical } of [PLACEMENTS[2], PLACEMENTS[5]]) {
+      const { manager, unmount } = renderToast(<Toast.Viewport placement={placement} />);
+      manager.add({ title: "Older", timeout: 0 });
+      await waitForToast("Older");
+      manager.add({ title: "Newer", timeout: 0 });
+      const newer = await waitForToast("Newer");
+      const older = toastRootNamed("Older");
+
+      // Collapsed, the newest toast holds the anchored edge and the older one peeks out
+      // past its far side.
+      await vi.waitFor(() => {
+        expect(gaps(newer)[vertical]).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
+        const newerBox = newer.getBoundingClientRect();
+        const olderBox = older.getBoundingClientRect();
+        const peek = vertical === "top" ? olderBox.bottom - newerBox.bottom : newerBox.top - olderBox.top;
+        expect(peek).toBeCloseTo(PEEK_PX, 0);
+      });
+
+      // Expanded, the older toast sits a gap beyond the newest one on the same side.
+      await expandViewport();
+      await vi.waitFor(() => {
+        expect(gaps(newer)[vertical]).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
+        const newerBox = newer.getBoundingClientRect();
+        const olderBox = older.getBoundingClientRect();
+        const gap = vertical === "top" ? olderBox.top - newerBox.bottom : newerBox.top - olderBox.bottom;
+        expect(gap).toBeCloseTo(GAP_PX, 0);
+      });
+      await userEvent.keyboard("{Escape}");
+      unmount();
+    }
+  });
+
+  it("slides a top placement's toast in from above and a bottom placement's from below", async () => {
+    await page.viewport(1024, 768);
+    // A long transition holds the toast near its starting transform while it is measured.
+    function SlowToasts() {
+      const { toasts } = Toast.useToastManager();
+      return toasts.map((toast) => (
+        <Toast.Root key={toast.id} toast={toast} style={{ transitionDuration: "60s" }}>
+          <Toast.Title />
+        </Toast.Root>
+      ));
+    }
+    for (const { placement, vertical } of [PLACEMENTS[2], PLACEMENTS[5]]) {
+      const { manager, unmount } = renderToast(
+        <Toast.Viewport placement={placement}>
+          <SlowToasts />
+        </Toast.Viewport>
+      );
+      manager.add({ title: placement, timeout: 0 });
+      const box = (await waitForToast(placement)).getBoundingClientRect();
+      // Its resting box would start 32px in from the edge; entering, it is still wholly
+      // beyond that line, on the edge's side.
+      if (vertical === "top") {
+        expect(box.bottom).toBeLessThanOrEqual(DESKTOP_GUTTER_PX);
+      } else {
+        expect(box.top).toBeGreaterThanOrEqual(window.innerHeight - DESKTOP_GUTTER_PX);
+      }
+      unmount();
+    }
+  });
+
+  it("dismisses a left placement's toast on a left swipe but not on a right swipe", async () => {
+    await page.viewport(1024, 768);
+    const { manager } = renderToast(<Toast.Viewport placement="bottom-left" />);
+    manager.add({ title: "Swiped right", timeout: 0 });
+    await swipe(await waitForToast("Swiped right"), 120, 0);
+    await expectToastStays("Swiped right");
+    await swipe(toastRootNamed("Swiped right"), -120, 0);
+    await waitForToastGone("Swiped right");
+  });
+
+  it("keeps the default down/right swipe for left placements below sm", async () => {
+    await page.viewport(400, 768);
+    for (const placement of ["top-left", "bottom-left"] as const) {
+      const { manager, unmount } = renderToast(<Toast.Viewport placement={placement} />);
+      manager.add({ title: placement, timeout: 0 });
+      await swipe(await waitForToast(placement), -120, 0);
+      await expectToastStays(placement);
+      await swipe(toastRootNamed(placement), 120, 0);
+      await waitForToastGone(placement);
+      unmount();
+    }
+  });
+
+  it("dismisses a top placement's toast on an upward swipe from sm up and a downward one below it", async () => {
+    await page.viewport(1024, 768);
+    const wide = renderToast(<Toast.Viewport placement="top-center" />);
+    wide.manager.add({ title: "Wide", timeout: 0 });
+    await swipe(await waitForToast("Wide"), 0, 120);
+    await expectToastStays("Wide");
+    await swipe(toastRootNamed("Wide"), 0, -120);
+    await waitForToastGone("Wide");
+    wide.unmount();
+
+    await page.viewport(400, 768);
+    const narrow = renderToast(<Toast.Viewport placement="top-center" />);
+    narrow.manager.add({ title: "Narrow", timeout: 0 });
+    await swipe(await waitForToast("Narrow"), 0, -120);
+    await expectToastStays("Narrow");
+    await swipe(toastRootNamed("Narrow"), 0, 120);
+    await waitForToastGone("Narrow");
+  });
+
+  it("places and swipes roots passed through the viewport's render element", async () => {
+    await page.viewport(1024, 768);
+    function RenderedToasts() {
+      const { toasts } = Toast.useToastManager();
+      return toasts.map((toast) => (
+        <Toast.Root key={toast.id} toast={toast}>
+          <Toast.Title />
+        </Toast.Root>
+      ));
+    }
+    const { manager } = renderToast(
+      <Toast.Viewport
+        placement="top-left"
+        render={
+          <div>
+            <RenderedToasts />
+          </div>
+        }
+      />
+    );
+    manager.add({ title: "Rendered", timeout: 0 });
+    const root = await waitForToast("Rendered");
+    await vi.waitFor(() => {
+      const box = gaps(root);
+      expect(box.top).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
+      expect(box.left).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
+    });
+    await swipe(root, 0, 120);
+    await expectToastStays("Rendered");
+    await swipe(toastRootNamed("Rendered"), 0, -120);
+    await waitForToastGone("Rendered");
+  });
+
+  it("lets an explicit swipeDirection on Toast.Root replace the placement default", async () => {
+    await page.viewport(1024, 768);
+    function RightOnlyToasts() {
+      const { toasts } = Toast.useToastManager();
+      return toasts.map((toast) => (
+        <Toast.Root key={toast.id} toast={toast} swipeDirection="right">
+          <Toast.Title />
+        </Toast.Root>
+      ));
+    }
+    const { manager } = renderToast(
+      <Toast.Viewport placement="bottom-left">
+        <RightOnlyToasts />
+      </Toast.Viewport>
+    );
+    manager.add({ title: "Overridden", timeout: 0 });
+    await swipe(await waitForToast("Overridden"), -120, 0);
+    await expectToastStays("Overridden");
+    await swipe(toastRootNamed("Overridden"), 120, 0);
+    await waitForToastGone("Overridden");
   });
 });
 

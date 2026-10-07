@@ -9,7 +9,33 @@ import { overlayPopupFillClass } from "../overlay/overlay-classes";
 
 export const toastVariants = tv({
   slots: {
-    root: "shadow-lg absolute right-0 bottom-0 left-auto z-[calc(1000-var(--toast-index))] mr-0 h-[var(--height)] w-full origin-bottom [transform:translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--toast-swipe-movement-y)-(var(--toast-index)*var(--peek))-(var(--shrink)*var(--height))))_scale(var(--scale))] rounded-lg p-4 select-none [--gap:0.75rem] [--height:var(--toast-frontmost-height,var(--toast-height))] [--offset-y:calc(var(--toast-offset-y)*-1+calc(var(--toast-index)*var(--gap)*-1)+var(--toast-swipe-movement-y))] [--peek:0.75rem] [--scale:calc(max(0,1-(var(--toast-index)*0.1)))] [--shrink:calc(1-var(--scale))] [transition:transform_0.2s_cubic-bezier(0.22,1,0.36,1),opacity_0.2s] after:absolute after:top-full after:left-0 after:h-[calc(var(--gap)+1px)] after:w-full after:content-[''] data-[ending-style]:opacity-0 data-[expanded]:h-[var(--toast-height)] data-[expanded]:[transform:translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--offset-y)))] data-[limited]:opacity-0 data-[starting-style]:[transform:translateY(150%)] data-[ending-style]:data-[swipe-direction=down]:[transform:translateY(calc(var(--toast-swipe-movement-y)+150%))] data-[expanded]:data-[ending-style]:data-[swipe-direction=down]:[transform:translateY(calc(var(--toast-swipe-movement-y)+150%))] data-[ending-style]:data-[swipe-direction=left]:[transform:translateX(calc(var(--toast-swipe-movement-x)-150%))_translateY(var(--offset-y))] data-[expanded]:data-[ending-style]:data-[swipe-direction=left]:[transform:translateX(calc(var(--toast-swipe-movement-x)-150%))_translateY(var(--offset-y))] data-[ending-style]:data-[swipe-direction=right]:[transform:translateX(calc(var(--toast-swipe-movement-x)+150%))_translateY(var(--offset-y))] data-[expanded]:data-[ending-style]:data-[swipe-direction=right]:[transform:translateX(calc(var(--toast-swipe-movement-x)+150%))_translateY(var(--offset-y))] data-[ending-style]:data-[swipe-direction=up]:[transform:translateY(calc(var(--toast-swipe-movement-y)-150%))] data-[expanded]:data-[ending-style]:data-[swipe-direction=up]:[transform:translateY(calc(var(--toast-swipe-movement-y)-150%))] [&[data-ending-style]:not([data-limited]):not([data-swipe-direction])]:[transform:translateY(150%)]",
+    // Each group below is one responsibility; the stack is written for a bottom edge.
+    root: [
+      // Box: the toast fills the viewport column and is anchored to its bottom edge, with
+      // older toasts layered beneath newer ones. `box-border` keeps the padding inside
+      // the column when the host ships no preflight.
+      "shadow-lg absolute right-0 bottom-0 left-auto z-[calc(1000-var(--toast-index))] mr-0 box-border h-[var(--height)] w-full origin-bottom rounded-lg p-4 select-none",
+      // Stack metrics. `--side` is the sign of the vertical math: `1` stacks upward from a
+      // bottom edge. Collapsed toasts shrink by `--scale` and peek `--peek` past the one in
+      // front; expanded toasts sit `--gap` apart at Base UI's measured `--toast-offset-y`.
+      "[--gap:0.75rem] [--height:var(--toast-frontmost-height,var(--toast-height))] [--offset-y:calc((var(--side)*((var(--toast-offset-y)*-1)+(var(--toast-index)*var(--gap)*-1)))+var(--toast-swipe-movement-y))] [--peek:0.75rem] [--scale:calc(max(0,1-(var(--toast-index)*0.1)))] [--shrink:calc(1-var(--scale))] [--side:1]",
+      // Collapsed transform: follow the swipe, then lift by the peek and the height lost to
+      // scaling, toward the far side of the stack.
+      "[transform:translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--toast-swipe-movement-y)-(var(--side)*((var(--toast-index)*var(--peek))+(var(--shrink)*var(--height))))))_scale(var(--scale))] [transition:transform_0.2s_cubic-bezier(0.22,1,0.36,1),opacity_0.2s]",
+      // Expanded: full height at the measured offset. The `after:` strip bridges the gap to
+      // the next toast so the pointer does not collapse the stack while crossing it.
+      "after:absolute after:top-full after:left-0 after:h-[calc(var(--gap)+1px)] after:w-full after:content-[''] data-[expanded]:h-[var(--toast-height)] data-[expanded]:[transform:translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--offset-y)))]",
+      // Enter and exit: slide in from beyond the anchored edge and fade out; a toast pushed
+      // past the limit fades; a dismissal without a swipe slides back out the way it came.
+      "data-[ending-style]:opacity-0 data-[limited]:opacity-0 data-[starting-style]:[transform:translateY(calc(var(--side)*150%))] [&[data-ending-style]:not([data-limited]):not([data-swipe-direction])]:[transform:translateY(calc(var(--side)*150%))]",
+      // Swipe exits continue the gesture 150% further in its direction, collapsed or
+      // expanded. These follow the pointer, not the placement, so they need no sign.
+      "data-[ending-style]:data-[swipe-direction=down]:[transform:translateY(calc(var(--toast-swipe-movement-y)+150%))] data-[expanded]:data-[ending-style]:data-[swipe-direction=down]:[transform:translateY(calc(var(--toast-swipe-movement-y)+150%))] data-[ending-style]:data-[swipe-direction=left]:[transform:translateX(calc(var(--toast-swipe-movement-x)-150%))_translateY(var(--offset-y))] data-[expanded]:data-[ending-style]:data-[swipe-direction=left]:[transform:translateX(calc(var(--toast-swipe-movement-x)-150%))_translateY(var(--offset-y))] data-[ending-style]:data-[swipe-direction=right]:[transform:translateX(calc(var(--toast-swipe-movement-x)+150%))_translateY(var(--offset-y))] data-[expanded]:data-[ending-style]:data-[swipe-direction=right]:[transform:translateX(calc(var(--toast-swipe-movement-x)+150%))_translateY(var(--offset-y))] data-[ending-style]:data-[swipe-direction=up]:[transform:translateY(calc(var(--toast-swipe-movement-y)-150%))] data-[expanded]:data-[ending-style]:data-[swipe-direction=up]:[transform:translateY(calc(var(--toast-swipe-movement-y)-150%))]",
+      // Top placements from `sm` up, matching the viewport: `--side:-1` mirrors the stack
+      // math and the enter/exit slide; what a sign cannot flip (the anchored inset, the
+      // scale origin, the hover bridge) flips here. Below `sm` they keep the bottom stack.
+      "sm:data-[placement^=top]:top-0 sm:data-[placement^=top]:bottom-auto sm:data-[placement^=top]:origin-top sm:data-[placement^=top]:[--side:-1] sm:data-[placement^=top]:after:top-auto sm:data-[placement^=top]:after:bottom-full",
+    ],
     content:
       "isolate flex flex-col gap-1 transition-opacity [transition-duration:250ms] data-[behind]:pointer-events-none data-[behind]:opacity-0 data-[expanded]:pointer-events-auto data-[expanded]:opacity-100",
     title: "font-medium leading-5",
@@ -55,18 +81,23 @@ export const toastVariants = tv({
 });
 
 /**
- * Module-private viewport recipe. Below `sm` the viewport spans the screen minus a 1rem
- * gutter, so it is centered whatever the placement; `placement` only moves the 340px
- * column from `sm` up. Toast roots sit `absolute right-0 bottom-0 w-full` inside it and
- * stack vertically, so no root class depends on the placement.
+ * Module-private viewport recipe. Below `sm` the viewport sits at the bottom and spans the
+ * screen minus a 1rem gutter whatever the placement; `placement` only moves the 340px
+ * column from `sm` up. Toast roots stack from the viewport's edge, so the root mirrors its
+ * vertical math for a top placement (see `toastVariants`).
  */
 export const toastViewportVariants = tv({
-  base: "sm:bottom-8 sm:w-[340px] fixed top-auto right-4 bottom-4 isolate mx-auto flex w-[calc(100%-2rem)]",
+  base: "sm:w-[340px] fixed top-auto right-4 bottom-4 isolate mx-auto flex w-[calc(100%-2rem)]",
   variants: {
+    // Pinning both horizontal insets lets `mx-auto` center the fixed-width column; a left
+    // placement frees the right inset the narrow layout pins.
     placement: {
-      "bottom-right": "sm:right-8",
-      // Pinning both insets lets `mx-auto` center the fixed-width column.
-      "bottom-center": "sm:inset-x-0",
+      "top-left": "sm:top-8 sm:bottom-auto sm:left-8 sm:right-auto",
+      "top-center": "sm:top-8 sm:bottom-auto sm:inset-x-0",
+      "top-right": "sm:top-8 sm:bottom-auto sm:right-8",
+      "bottom-left": "sm:bottom-8 sm:left-8 sm:right-auto",
+      "bottom-center": "sm:bottom-8 sm:inset-x-0",
+      "bottom-right": "sm:bottom-8 sm:right-8",
     },
   },
   defaultVariants: {
