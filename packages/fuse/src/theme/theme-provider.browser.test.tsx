@@ -1,9 +1,9 @@
-import { Component, useLayoutEffect } from "react";
-import type { ReactNode } from "react";
+import { useLayoutEffect } from "react";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { render } from "../../test/browser-render";
+import { CaughtError } from "../../test/caught-error";
 import { DEFAULT_BOOTSTRAP_MANIFEST } from "../../test/color-scheme-contract";
 import {
   fkasPrivate,
@@ -41,23 +41,6 @@ function ThemeProbe() {
     );
   } catch (error) {
     return <span>{error instanceof Error ? error.message : "error"}</span>;
-  }
-}
-
-type ValidatorErrorState = { message: string | null };
-
-class ValidatorErrorBoundary extends Component<{ children: ReactNode }, ValidatorErrorState> {
-  state: ValidatorErrorState = { message: null };
-
-  static getDerivedStateFromError(error: Error): ValidatorErrorState {
-    return { message: error.message };
-  }
-
-  render() {
-    if (this.state.message !== null) {
-      return <span>{this.state.message}</span>;
-    }
-    return this.props.children;
   }
 }
 
@@ -201,11 +184,11 @@ describe("ThemeProvider / ThemeScope", () => {
     const illegalPinned: ThemeInput = { variant: "internal", brand: "fkab", segment: "private" };
     const { host } = render(
       <ThemeProvider theme={fkasPrivate}>
-        <ValidatorErrorBoundary>
+        <CaughtError>
           <ThemeProvider theme={illegalPinned}>
             <span>nested-child</span>
           </ThemeProvider>
-        </ValidatorErrorBoundary>
+        </CaughtError>
       </ThemeProvider>
     );
 
@@ -322,10 +305,10 @@ describe("ThemeProvider / ThemeScope", () => {
     ];
 
     for (const tree of trees) {
-      const { host, rerender } = render(<ValidatorErrorBoundary>{tree(fkasPrivate)}</ValidatorErrorBoundary>);
+      const { host, rerender } = render(<CaughtError>{tree(fkasPrivate)}</CaughtError>);
       expect(host.textContent).toBe("internal-fkas-private-internal-fkas-private");
 
-      rerender(<ValidatorErrorBoundary>{tree(untyped)}</ValidatorErrorBoundary>);
+      rerender(<CaughtError>{tree(untyped)}</CaughtError>);
 
       expect(host.textContent).toBe("Invalid theme: expected an object with variant, brand, and segment.");
       expect(host.textContent).not.toMatch(/Rendered fewer hooks|Rendered more hooks|hook/i);

@@ -21,7 +21,7 @@ export const metadata = componentMetadata("date-picker");
 
 Values are `CalendarDate` objects from `@internationalized/date`, which you install separately; the library does not re-export it.
 
-Wrap locale-dependent usage in `UiProviders` so it follows the app locale.
+Render `DatePicker` inside `UiProviders`, which supplies the app locale it follows. Without a `LocaleProvider` above it, `DatePicker` throws when it mounts.
 
 </Prose>
 

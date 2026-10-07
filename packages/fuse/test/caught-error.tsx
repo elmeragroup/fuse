@@ -16,7 +16,7 @@ export class CaughtError extends Component<{ children: ReactNode }, CaughtErrorS
 
   render() {
     if (this.state.message !== null) {
-      return <output>{this.state.message}</output>;
+      return <span>{this.state.message}</span>;
     }
     return this.props.children;
   }
