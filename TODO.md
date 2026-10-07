@@ -40,6 +40,14 @@
   inline padding (Fuse 14px), 16px input text (Fuse 18px), a 16px label (Fuse 14px), a
   darker border on hover, grey disabled fill and text instead of the 50% dim, and an error
   icon inside the box.
+- Ask design for a light field border of at least 3:1. Light `--input`, the border of Input,
+  Textarea, Select and the other field boxes, measures 1.08–1.70:1 against the page and card, an
+  accepted deviation on the accessibility page. Except ngfi's M3 `outline-variant`, the values are
+  converted shadcn stock colours. `Checkbox` and `Radio` draw their unchecked edge in
+  `muted-foreground` until then, and could return to `--input` once it clears 3:1.
+- Decide with design how an unchecked `Switch` shows in light. Its `bg-input` track and
+  `bg-background` thumb measure 1.08–1.62:1 against the page, under the 3:1 non-text floor that
+  `Checkbox` and `Radio` now meet.
 - Decide whether `PhoneNumberField` and `NumberField` name their wrapper `group` from the field's
   label or drop the role. The controls inside have names; the groups around them have none.
 - Decide with design whether `Item` gets an unclamped description variant. `Item.Description`

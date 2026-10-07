@@ -174,6 +174,14 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
   { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(CHART_ROLES), floor: 3 },
   { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(SYNTAX_ROLES), floor: 4.5 },
   { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(["input", "ring"]), floor: 3 },
+  {
+    // The unchecked Checkbox and Radio edge (WCAG 1.4.11). Light `input` is the field border and
+    // stays under 3:1 (an accepted deviation), so the selection controls draw this role instead.
+    schemes: ["light", "dark"],
+    matches: () => true,
+    pairs: roleOnSurfaces(["muted-foreground"]),
+    floor: 3,
+  },
 ];
 
 describe("contrast matrix", () => {

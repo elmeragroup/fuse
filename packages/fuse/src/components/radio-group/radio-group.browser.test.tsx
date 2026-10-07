@@ -19,15 +19,18 @@ import {
   radiusToken,
 } from "../../../test/assert-selection-item-group-layout";
 import {
+  computedContrast,
   cssVarColor,
   effectiveOpacity,
   formNamed,
+  guenExternal,
   headingNamed,
   renderThemed,
   roleNamed,
   stampDensity,
   textNamed,
 } from "../../../test/themed-browser-render";
+import { ThemeScope } from "../../theme";
 import { Badge } from "../badge/badge";
 import { Field } from "../field";
 import { Radio, RadioGroup, RadioGroupItem, RadioIconButton, RadioItemGroup } from "./radio-group";
@@ -102,6 +105,32 @@ describe("RadioGroup", () => {
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange.mock.calls[0]?.[0]).toBe("fixed");
     expect(radioNamed("Fixed", true).getAttribute("aria-checked")).toBe("true");
+  });
+
+  it("draws the unchecked edge at 3:1 against the page and a card in light themes", () => {
+    renderThemed(
+      <>
+        <RadioGroup label="Internal plan">
+          <Radio value="internal">Internal</Radio>
+        </RadioGroup>
+        <ThemeScope theme={guenExternal}>
+          <RadioGroup label="External plan">
+            <Radio value="external">External</Radio>
+          </RadioGroup>
+        </ThemeScope>
+      </>
+    );
+    // WCAG 1.4.11: the unfilled circle shows only its edge, over whichever surface it sits on.
+    for (const name of ["Internal", "External"]) {
+      const radio = radioNamed(name);
+      const edge = getComputedStyle(radio).borderTopColor;
+      for (const surface of ["--background", "--card"]) {
+        expect(
+          computedContrast(edge, cssVarColor(radio, surface)),
+          `${name} ${surface}`
+        ).toBeGreaterThanOrEqual(3);
+      }
+    }
   });
 
   it("keeps a member's Field label when a wrapper forwards id and aria-labelledby as undefined", () => {

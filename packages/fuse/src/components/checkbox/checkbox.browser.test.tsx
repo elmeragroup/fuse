@@ -6,7 +6,16 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
-import { cssVarColor, formNamed, headingNamed, renderThemed } from "../../../test/themed-browser-render";
+import {
+  computedContrast,
+  cssVarColor,
+  formNamed,
+  guenExternal,
+  headingNamed,
+  renderThemed,
+  roleNamed,
+} from "../../../test/themed-browser-render";
+import { ThemeScope } from "../../theme";
 import { Field } from "../field";
 import { Form } from "../form/form";
 import { Checkbox, CheckboxDescription, CheckboxGroup } from "./checkbox";
@@ -109,6 +118,28 @@ describe("Checkbox", () => {
     }
     await userEvent.click(hit);
     expect(checkboxNamed("Hit", true).getAttribute("aria-checked")).toBe("true");
+  });
+
+  it("draws the unchecked edge at 3:1 against the box's fill and the page in light themes", () => {
+    renderThemed(
+      <>
+        <Checkbox aria-label="Internal" />
+        <ThemeScope theme={guenExternal}>
+          <Checkbox aria-label="External" />
+        </ThemeScope>
+      </>
+    );
+    // WCAG 1.4.11: the edge is the only thing that shows an unchecked box, so it must reach
+    // 3:1 against the fill inside it and the page around it.
+    for (const name of ["Internal", "External"]) {
+      const box = roleNamed("checkbox", name);
+      const { borderTopColor, backgroundColor } = getComputedStyle(box);
+      expect(computedContrast(borderTopColor, backgroundColor), `${name} fill`).toBeGreaterThanOrEqual(3);
+      expect(
+        computedContrast(borderTopColor, cssVarColor(box, "--background")),
+        `${name} page`
+      ).toBeGreaterThanOrEqual(3);
+    }
   });
 
   it("paints the shared ring on keyboard focus-visible and not on mouse focus, at both densities", async () => {

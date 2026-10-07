@@ -36,12 +36,12 @@ describe("primitive className contracts", () => {
         />
       );
     const { rerender } = render(field(true));
-    expectClasses(roleNamed("checkbox", "Accept"), "user-unchecked", "bg-card", "border-input");
+    expectClasses(roleNamed("checkbox", "Accept"), "user-unchecked", "bg-card", "border-muted-foreground");
     await userEvent.click(roleNamed("checkbox", "Accept"));
-    expectClasses(roleNamed("checkbox", "Accept"), "user-checked", "bg-card", "border-input");
+    expectClasses(roleNamed("checkbox", "Accept"), "user-checked", "bg-card", "border-muted-foreground");
     expect(roleNamed("checkbox", "Accept").classList.contains("user-unchecked")).toBe(false);
     rerender(field(false));
-    expectClasses(roleNamed("checkbox", "Accept"), "user-string", "bg-card", "border-input");
+    expectClasses(roleNamed("checkbox", "Accept"), "user-string", "bg-card", "border-muted-foreground");
   });
 
   it("passes live disclosure and tab state to their callbacks", async () => {

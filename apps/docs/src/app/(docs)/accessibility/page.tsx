@@ -131,6 +131,13 @@ export default function AccessibilityPage(): ReactElement {
           a roadmap item.
         </li>
         <li>
+          Light <code>--input</code>, the border of Input, Textarea, Select and the other field boxes,
+          measures 1.08–1.70:1 against the page and card surfaces, under the 3:1 non-text floor. The unchecked{" "}
+          <code>Switch</code> track uses the same role. A field border of at least 3:1 is a design decision on
+          the roadmap. <code>Checkbox</code> and <code>Radio</code> do not depend on it: their unchecked edge
+          is <code>--muted-foreground</code>, held to 3:1 on every surface in both color schemes.
+        </li>
+        <li>
           <code>feature-foreground</code> is reclassified as accent/decorative. Text on <code>feature</code>{" "}
           panels uses white; body text on feature panels is out of contract.
         </li>
@@ -138,9 +145,10 @@ export default function AccessibilityPage(): ReactElement {
       <p>
         Contrast snapshots cover all twenty-four themes. Text pairs target 4.5:1, with the accepted light
         exceptions above pinned against further regression. Both dark variants pass their paired-text checks;
-        additional tests cover panel text, input boundaries and focus colors. Decorative dark borders cannot
-        be the sole control boundary. These checks do not establish chart-series distinction or whole-page
-        conformance; review states, artwork and charts in their product context.
+        additional tests cover panel text, dark input boundaries, the selection-control edge and focus colors.
+        Decorative dark borders cannot be the sole control boundary. These checks do not establish
+        chart-series distinction or whole-page conformance; review states, artwork and charts in their product
+        context.
       </p>
     </DocsPage>
   );

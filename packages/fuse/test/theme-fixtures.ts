@@ -21,6 +21,13 @@ export const tkasCompany = {
   segment: "company",
 } as const satisfies ThemeInput;
 
+/** guen/private, external: the light page tint closest to the shared field border. */
+export const guenExternal = {
+  variant: "external",
+  brand: "guen",
+  segment: "private",
+} as const satisfies ThemeInput;
+
 /** guen/private, internal: a second internal brand for scope fixtures. */
 export const guenPrivate = {
   variant: "internal",

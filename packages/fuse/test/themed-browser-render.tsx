@@ -3,8 +3,10 @@ import type { ReactNode } from "react";
 import { afterEach } from "vitest";
 import { page } from "vitest/browser";
 
+import * as CssColor from "@elmeragroup/color/css-color";
 import * as Oklch from "@elmeragroup/color/oklch";
 import { getOrThrow } from "@elmeragroup/color/result";
+import * as Wcag from "@elmeragroup/color/wcag";
 
 import type { ResolvedColorScheme } from "../src/theme/color-scheme";
 import { remToPx } from "../src/theme/css-values";
@@ -16,7 +18,7 @@ import type { ThemeInput } from "../src/theme/tokens/themes";
 import { render } from "./browser-render";
 import { fkasPrivate, stampTheme } from "./theme-fixtures";
 
-export { fkasExternal, fkasPrivate, stampTheme } from "./theme-fixtures";
+export { fkasExternal, fkasPrivate, guenExternal, stampTheme } from "./theme-fixtures";
 
 /** A density metric in the pixels a browser computes, with `rem` at the 16px root. */
 function metricPx(name: DensityMetricName, density: Density): number {
@@ -194,6 +196,12 @@ export function computedOklch(serialized: string): ComputedOklch {
     throw new Error(`expected an opaque oklch() color, received ${serialized}`);
   }
   return { l, c, h };
+}
+
+/** The WCAG contrast ratio between two colours Chromium computed, such as a border and a fill. */
+export function computedContrast(foreground: string, background: string): number {
+  const srgb = (value: string) => CssColor.toSrgb(getOrThrow(CssColor.parse(value)));
+  return getOrThrow(Wcag.contrastRatio(srgb(foreground), srgb(background)));
 }
 
 /**
