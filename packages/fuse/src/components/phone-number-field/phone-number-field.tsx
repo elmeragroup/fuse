@@ -62,7 +62,11 @@ export type PhoneNumberFieldProps = {
    * to `""`.
    */
   defaultValue?: string;
-  /** Proposes a formatted output value. Controlled fields display it after parent acceptance. */
+  /**
+   * Proposes a formatted output value. Controlled fields display it after parent acceptance.
+   * Also called once as hydration commits, with a number typed or autofilled before the client
+   * scripts attached; a controlled parent accepts or rejects it like any other proposal.
+   */
   onChange?: (value: string) => void;
   /**
    * Initial country. Must be a libphonenumber country with a packaged flag asset.
@@ -282,6 +286,21 @@ export function PhoneNumberField({
 
   // Every native edit path honors both flags together.
   const isEditable = !isDisabled && !isReadOnly;
+
+  // A number typed (or autofilled) before hydration survives hydration in the DOM, but the
+  // hook starts from its own initial value, and the first re-render, which Base UI's Field
+  // registration triggers in this same commit, would write that value over it. Read it once,
+  // before then, and propose it as an edit: a controlled parent can accept it like any other.
+  // On a client mount, or a hydration without an early edit, the two values are equal.
+  const hydrationCheckedRef = useRef(false);
+  useLayoutEffect(() => {
+    if (hydrationCheckedRef.current) return;
+    hydrationCheckedRef.current = true;
+    const input = numberInputRef.current;
+    if (input && isEditable && input.value !== phone.displayValue) {
+      phone.handleInputChange(input.value);
+    }
+  });
 
   return (
     <>

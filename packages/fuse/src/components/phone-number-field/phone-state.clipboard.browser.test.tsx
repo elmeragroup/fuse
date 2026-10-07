@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { StrictMode, useEffect, useState } from "react";
 
 import type { MetadataJson } from "libphonenumber-js/core";
 import { hydrateRoot } from "react-dom/client";
@@ -230,13 +230,14 @@ describe("PhoneNumberField identity and authoritative value", () => {
   it.each([
     { source: "a controlled value", field: { value: "+4741234567" } },
     { source: "a default number", field: { defaultValue: "+4741234567" } },
-  ])("server-renders $source and hydrates it without recovery", async ({ field }) => {
+  ])("server-renders $source and hydrates it without recovery or a proposal", async ({ field }) => {
     const hydrated = vi.fn<() => void>();
+    const change = vi.fn<(value: string) => void>();
     function HydrationWitness() {
       useEffect(() => hydrated(), []);
       return (
         <form aria-label="SSR phone">
-          <PhoneNumberField label="Server mobile" name="phone" {...field} />
+          <PhoneNumberField label="Server mobile" name="phone" onChange={change} {...field} />
         </form>
       );
     }
@@ -254,9 +255,74 @@ describe("PhoneNumberField identity and authoritative value", () => {
       await expect.poll(() => hydrated.mock.calls.length).toBe(1);
       await expect.poll(() => phoneInput("Server mobile").value).toBe("41234567");
       expect(new FormData(form).get("phone")).toBe("+4741234567");
+      expect(change).not.toHaveBeenCalled();
       expect(recover).not.toHaveBeenCalled();
     } finally {
       root.unmount();
+      host.remove();
+    }
+  });
+
+  it.each([
+    { mode: "uncontrolled", controlled: false },
+    { mode: "controlled", controlled: true },
+  ])("keeps a number typed before hydration, $mode, proposing it once", async ({ controlled }) => {
+    const hydrated = vi.fn<() => void>();
+    const change = vi.fn<(value: string) => void>();
+    function Mobile() {
+      const [value, setValue] = useState("");
+      return controlled ? (
+        <PhoneNumberField
+          label="Server mobile"
+          name="phone"
+          value={value}
+          onChange={(next) => {
+            change(next);
+            setValue(next);
+          }}
+        />
+      ) : (
+        <PhoneNumberField label="Server mobile" name="phone" onChange={change} />
+      );
+    }
+    function HydrationWitness() {
+      useEffect(() => hydrated(), []);
+      return (
+        <form aria-label="SSR phone">
+          <Mobile />
+        </form>
+      );
+    }
+    // StrictMode runs the mount effects twice; the number is still proposed once.
+    const element = <StrictMode>{withLocale("en-US", <HydrationWitness />)}</StrictMode>;
+    const host = document.createElement("div");
+    host.innerHTML = renderToString(element);
+    document.body.append(host);
+    const recover = vi.fn();
+    let root: ReturnType<typeof hydrateRoot> | undefined;
+    try {
+      const form = host.querySelector("form");
+      // DOM audit: in the server markup the country trigger shares the number input's id, so the
+      // label's `for` names the trigger and the input has no accessible name until hydration.
+      const serverInput = host.querySelector('input[name="phone-display-value"]');
+      if (!form || !(serverInput instanceof HTMLInputElement)) throw new Error("Expected server form");
+      // What typing does before the client scripts attach their listeners.
+      serverInput.value = "91234567";
+      root = hydrateRoot(host, element, { onRecoverableError: recover });
+      await expect.poll(() => hydrated.mock.calls.length).toBeGreaterThan(0);
+      await expect.poll(() => new FormData(form).get("phone")).toBe("+4791234567");
+      expect(phoneInput("Server mobile").value).toBe("91234567");
+      expect(change.mock.calls).toEqual([["+4791234567"]]);
+
+      const input = phoneInput("Server mobile");
+      input.focus();
+      input.setSelectionRange(8, 8);
+      await userEvent.keyboard("8");
+      expect(input.value).toBe("912345678");
+      expect(new FormData(form).get("phone")).toBe("+47912345678");
+      expect(recover).not.toHaveBeenCalled();
+    } finally {
+      root?.unmount();
       host.remove();
     }
   });
