@@ -1,0 +1,5 @@
+---
+"@elmeragroup/fuse": minor
+---
+
+`PhoneNumberField` takes a `countries` list of the ISO codes its picker offers, so a consumer no longer trims the metadata, which also stops it parsing the numbers it leaves out. Detection selects only listed countries: a pasted number from another one stays in international form beside the selected country. Codes outside the catalog, without a flag or in the product exclusions are ignored, a list that leaves none throws, and a list that drops the selected country keeps the shown number's international identity, reading a national entry by its own country's rules (a controlled `raw` value, which names no country, reads again in the one that remains), while one that only adds or removes other countries leaves the number as entered. With one country, from the list or from the metadata, the field shows the flag and dial code as plain context, with the country's name for assistive technology, instead of a picker with a trigger, popup and tab stop. The picker trigger also drops the browser's default button border and fill, which showed where the host has no preflight reset.

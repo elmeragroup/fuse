@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Component, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import type { MetadataJson } from "libphonenumber-js/core";
@@ -16,6 +16,7 @@ import {
 } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import {
+  countryAddon,
   countryListbox,
   countrySearch,
   openPicker,
@@ -23,7 +24,11 @@ import {
   phoneSubmission,
   selectCountry,
 } from "../../../test/phone-browser-queries";
-import { EXCLUDED_PRODUCT_COUNTRY_CODES, FLAG_GAP_COUNTRY_CODES } from "../../../test/phone-picker-contract";
+import {
+  EMPTY_PICKER_ERROR_MESSAGE,
+  EXCLUDED_PRODUCT_COUNTRY_CODES,
+  FLAG_GAP_COUNTRY_CODES,
+} from "../../../test/phone-picker-contract";
 import {
   CONTROL_MD,
   fieldRootFrom,
@@ -1043,5 +1048,195 @@ describe("PhoneNumberField caret", () => {
     expect(input.value).toBe("99 99 99 99");
     expect(phoneSubmission().get("phone")).toBe("+4799999999");
     expect([input.selectionStart, input.selectionEnd]).toEqual([11, 11]);
+  });
+});
+
+describe("PhoneNumberField countries", () => {
+  function paste(text: string) {
+    const clipboard = new DataTransfer();
+    clipboard.setData("text/plain", text);
+    phoneInput().dispatchEvent(
+      new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData: clipboard })
+    );
+  }
+
+  it("offers only the listed countries and falls back from a default outside them", async () => {
+    renderField(<PhoneNumberField label="Mobile" countries={["SE", "NO", "FI"]} defaultCountryCode="DK" />);
+    // Norway, the fallback before the first country, is listed.
+    expect(roleNamed("button", "Select country").textContent).toContain("+47");
+    await openPicker();
+    // Finland, Norway, Sweden: name order, not the list's.
+    expect(optionFlagCodes()).toEqual(["FI", "NO", "SE"]);
+  });
+
+  it("shows one country as context, without a picker or a tab stop", async () => {
+    renderField(
+      <form aria-label="Phone form">
+        <button type="button">Before</button>
+        <PhoneNumberField label="Mobile" name="phone" countries={["SE"]} />
+      </form>
+    );
+    expect(page.getByRole("button", { name: "Select country" }).query()).toBeNull();
+    expect(page.getByRole("combobox").query()).toBeNull();
+    const addon = countryAddon();
+    expect(addon.textContent).toBe("Sweden+46");
+    roleNamed("button", "Before").focus();
+    await userEvent.keyboard("{Tab}");
+    expect(document.activeElement).toBe(phoneInput());
+    roleNamed("button", "Before").focus();
+    await userEvent.click(addon);
+    expect(document.activeElement).toBe(phoneInput());
+    await userEvent.keyboard("701234567");
+    expect([...phoneSubmission().entries()]).toEqual([
+      ["phone-display-value", "701234567"],
+      ["phone", "+46701234567"],
+    ]);
+  });
+
+  it("puts a single country's flag where the picker's sits, inside the md box at both densities", () => {
+    renderField(
+      <>
+        <PhoneNumberField label="Picker" />
+        <PhoneNumberField label="Single" countries={["NO"]} />
+      </>
+    );
+    function flagInset(label: string): number {
+      // DOM audit: the flag is decorative and hidden from the accessibility tree.
+      const flag = countryAddon(label).querySelector("img");
+      if (!flag) throw new Error(`expected a flag in ${label}`);
+      return flag.getBoundingClientRect().left - inputGroupRoot(label).getBoundingClientRect().left;
+    }
+    for (const density of ["dense", "comfortable"] as const) {
+      stampDensity(density);
+      expect(flagInset("Single"), density).toBe(flagInset("Picker"));
+      const group = inputGroupRoot("Single");
+      const groupBox = group.getBoundingClientRect();
+      const rail = countryAddon("Single").getBoundingClientRect();
+      expect(px(getComputedStyle(group).height), density).toBe(CONTROL_MD[density].height);
+      expect(rail.height, `${density} rail`).toBeLessThanOrEqual(group.clientHeight);
+      expect(rail.top, `${density} rail top`).toBeGreaterThanOrEqual(groupBox.top);
+      expect(rail.bottom, `${density} rail bottom`).toBeLessThanOrEqual(groupBox.bottom);
+    }
+  });
+
+  it("throws when the list leaves no country", async () => {
+    const messages: string[] = [];
+    class Boundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+      override state = { failed: false };
+      static getDerivedStateFromError() {
+        return { failed: true };
+      }
+      override componentDidCatch(error: Error) {
+        messages.push(error.message);
+      }
+      override render() {
+        return this.state.failed ? null : this.props.children;
+      }
+    }
+    renderField(
+      <Boundary>
+        <PhoneNumberField label="Mobile" countries={[]} />
+      </Boundary>
+    );
+    await expect.poll(() => messages).toEqual([EMPTY_PICKER_ERROR_MESSAGE]);
+  });
+
+  it("keeps a pasted number from an unlisted country international", async () => {
+    renderField(<PhoneNumberField label="Mobile" name="phone" countries={["NO"]} />);
+    paste("+46701234567");
+    await expect.poll(() => hiddenNamed("phone").value).toBe("+46701234567");
+    expect(phoneInput().value).toBe("+46701234567");
+    expect(countryAddon().textContent).toContain("+47");
+  });
+
+  it.each([
+    { mode: "uncontrolled", controlled: false },
+    { mode: "controlled", controlled: true },
+  ])(
+    "keeps a typed number as entered when the list changes around its country, $mode",
+    async ({ controlled }) => {
+      function Field({ countries }: { countries: PhoneNumberFieldProps["countries"] }) {
+        const [value, setValue] = useState("");
+        return controlled ? (
+          <PhoneNumberField
+            label="Mobile"
+            name="phone"
+            countries={countries}
+            defaultCountryCode="SE"
+            value={value}
+            onChange={setValue}
+          />
+        ) : (
+          <PhoneNumberField label="Mobile" name="phone" countries={countries} defaultCountryCode="SE" />
+        );
+      }
+      const { rerender } = renderField(<Field countries={["NO", "SE"]} />);
+      await userEvent.fill(phoneInput(), "0701234567");
+      for (const countries of [
+        ["NO", "SE", "FI"],
+        ["SE", "FI"],
+      ] as const) {
+        rerender(withLocale("en-US", <Field countries={countries} />));
+        expect(phoneInput().value).toBe("0701234567");
+        expect(hiddenNamed("phone").value).toBe("+46701234567");
+      }
+    }
+  );
+
+  it("keeps a local-dialling number's identity when its country leaves the list", async () => {
+    const field = (countries: PhoneNumberFieldProps["countries"]) =>
+      withLocale(
+        "en-US",
+        <PhoneNumberField label="Mobile" name="phone" countries={countries} defaultCountryCode="AI" />
+      );
+    const { rerender } = renderField(
+      <PhoneNumberField label="Mobile" name="phone" countries={["AI", "NO"]} defaultCountryCode="AI" />
+    );
+    // Anguilla dials seven-digit local numbers, which take its 264 area code.
+    await userEvent.fill(phoneInput(), "2351234");
+    expect(hiddenNamed("phone").value).toBe("+12642351234");
+    rerender(field(["NO"]));
+    expect(phoneInput().value).toBe("+12642351234");
+    expect(hiddenNamed("phone").value).toBe("+12642351234");
+  });
+
+  it.each([
+    { mode: "uncontrolled", controlled: false },
+    { mode: "controlled", controlled: true },
+  ])("keeps a number's identity when its country leaves the list, $mode", ({ controlled }) => {
+    const change = vi.fn<(value: string) => void>();
+    function Field({ countries }: { countries: PhoneNumberFieldProps["countries"] }) {
+      const [value, setValue] = useState("+46701234567");
+      return controlled ? (
+        <PhoneNumberField
+          label="Mobile"
+          name="phone"
+          countries={countries}
+          value={value}
+          onChange={(next) => {
+            change(next);
+            setValue(next);
+          }}
+        />
+      ) : (
+        <PhoneNumberField
+          label="Mobile"
+          name="phone"
+          countries={countries}
+          defaultValue="+46701234567"
+          onChange={change}
+        />
+      );
+    }
+    const { rerender } = renderField(<Field countries={["NO", "SE"]} />);
+    expect(phoneInput().value).toBe("701234567");
+    expect(countryAddon().textContent).toContain("+46");
+
+    rerender(withLocale("en-US", <Field countries={["NO"]} />));
+
+    expect(phoneInput().value).toBe("+46701234567");
+    expect(hiddenNamed("phone").value).toBe("+46701234567");
+    expect(countryAddon().textContent).toContain("+47");
+    expect(change).not.toHaveBeenCalled();
   });
 });

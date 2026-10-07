@@ -29,6 +29,7 @@ export type UsePhoneNumberFieldStateOptions = {
   onChange?: (value: string) => void;
   defaultCountryCode?: PhoneCountryCode;
   metadata?: MetadataJson;
+  countries?: readonly PhoneCountryCode[];
   autoDetectCountry?: boolean;
   international?: boolean;
   preserveOnCountryChange?: boolean;
@@ -64,6 +65,7 @@ export function usePhoneNumberFieldState({
   onChange,
   defaultCountryCode,
   metadata = defaultMetadata,
+  countries: allowedCountries,
   autoDetectCountry = true,
   international = false,
   preserveOnCountryChange = false,
@@ -72,7 +74,13 @@ export function usePhoneNumberFieldState({
   onCountryChange,
   locale,
 }: UsePhoneNumberFieldStateOptions): UsePhoneNumberFieldStateReturn {
-  const countries = useMemo(() => requirePickerCountries(getCountries(metadata)), [metadata]);
+  // Keyed on the codes, so a list written inline in the parent's render keeps its rows. An
+  // empty list stays empty, and so throws, rather than reading as no list.
+  const allowedKey = allowedCountries?.join(",");
+  const countries = useMemo(() => {
+    const allowed = allowedKey === undefined ? undefined : allowedKey === "" ? [] : allowedKey.split(",");
+    return requirePickerCountries(getCountries(metadata, allowed));
+  }, [metadata, allowedKey]);
   const configuration = useMemo(
     () => ({
       countries,

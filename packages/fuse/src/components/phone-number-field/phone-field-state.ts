@@ -104,9 +104,23 @@ export function resetToDefault(
 }
 
 /**
+ * Whether a number shown in `country` must be read again for a new configuration: its
+ * metadata was replaced, or the picker no longer offers its country. A list that only gains
+ * or loses other countries keeps the number as entered.
+ */
+function catalogReplaced(
+  from: PhoneConfiguration,
+  to: PhoneConfiguration,
+  country: PhoneNumberCountry
+): boolean {
+  return from.metadata !== to.metadata || !to.countries.some((row) => row.code === country.code);
+}
+
+/**
  * Fold new props into the stored record. An echoed proposal becomes the accepted snapshot;
  * a formatting-only change re-derives values from the existing digits; a catalog
- * replacement preserves the number's international identity.
+ * replacement, of the metadata or of the picker countries, preserves the number's
+ * international identity.
  */
 export function reconcile(
   stored: PhoneState,
@@ -123,11 +137,23 @@ export function reconcile(
   const echoedProposal = stored.proposal?.values.outputValue === value ? stored.proposal : null;
   const previous = echoedProposal ?? visibleSnapshot(stored);
   const country = resolveSelectedCountry(configuration.countries, previous.country.code);
-  const accepted =
-    value !== undefined &&
-    (stored.configuration.metadata !== configuration.metadata || (stored.value !== value && !echoedProposal))
-      ? receiveValue(value, country, configuration)
-      : reformat(previous, country, stored.configuration, configuration);
+  const replaced = catalogReplaced(stored.configuration, configuration, previous.country);
+  let accepted: PhoneSnapshot;
+  if (value !== undefined && stored.value !== value && !echoedProposal) {
+    accepted = receiveValue(value, country, configuration);
+  } else if (value !== undefined && replaced) {
+    // A controlled value the parent kept: its number reads again by its international form,
+    // which keeps the number's identity, unless the field was submitting `value` and that
+    // would change it. A `raw` value carries no country, so it then reads again as itself in
+    // the country that remains.
+    const kept = reformat(previous, country, stored.configuration, configuration, true);
+    accepted =
+      kept.values.outputValue === value || previous.values.outputValue !== value
+        ? kept
+        : receiveValue(value, country, configuration);
+  } else {
+    accepted = reformat(previous, country, stored.configuration, configuration, replaced);
+  }
   return { configuration, value, accepted, proposal: null };
 }
 
@@ -135,12 +161,13 @@ function reformat(
   previous: PhoneSnapshot,
   country: PhoneNumberCountry,
   from: PhoneConfiguration,
-  to: PhoneConfiguration
+  to: PhoneConfiguration,
+  replaced: boolean
 ): PhoneSnapshot {
-  if (from.metadata === to.metadata) {
+  if (!replaced) {
     return snapshot({ digits: previous.digits, country, parsedNational: previous.parsedNational }, to);
   }
   // Catalog replacement keeps the existing number's international identity. An
   // unsupported prefix remains visible instead of being reinterpreted in the new country.
-  return receiveValue(toInternationalInput(previous), country, to);
+  return receiveValue(toInternationalInput(previous, from.metadata), country, to);
 }

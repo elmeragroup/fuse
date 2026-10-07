@@ -6,6 +6,7 @@ lede: >
 import { PhoneNumberFieldBasic } from "./demos/phone-number-field-basic";
 import { PhoneNumberFieldInternational } from "./demos/phone-number-field-international";
 import { PhoneNumberFieldDetect } from "./demos/phone-number-field-detect";
+import { PhoneNumberFieldCountries } from "./demos/phone-number-field-countries";
 import { PhoneNumberFieldForm } from "./demos/phone-number-field-form";
 import { PhoneNumberFieldI18n } from "./demos/phone-number-field-i18n";
 import { PhoneNumberFieldStates } from "./demos/phone-number-field-states";
@@ -30,6 +31,10 @@ export const metadata = componentMetadata("phone-number-field");
 
 <Demo slug="phone-number-field" id="detect" title="Auto-detect" file="phone-number-field-detect.tsx">
   <PhoneNumberFieldDetect />
+</Demo>
+
+<Demo slug="phone-number-field" id="countries" title="Countries" file="phone-number-field-countries.tsx">
+  <PhoneNumberFieldCountries />
 </Demo>
 
 <Demo slug="phone-number-field" id="form" title="Form submit" file="phone-number-field-form.tsx">
