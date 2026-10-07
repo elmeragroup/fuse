@@ -98,7 +98,11 @@ export const buttonVariants = tv({
       icon: controlSize({ size: "md", fit: "square" }),
       "icon-xs": controlSize({ size: "xs", fit: "square", class: "[&_svg:not([class*='size-'])]:size-3" }),
       "icon-sm": controlSize({ size: "sm", fit: "square" }),
-      "icon-inline": "hit-area-1 aspect-square h-lh w-auto",
+      // The hit area extends the padding box, the `::before` containing block, by `hit-area-1`
+      // or as far as the fixed 24px target needs. `100%` in an inset is that padding box, so
+      // the border, of any variant or width, and a short line under a small host root cannot
+      // take the target under 24px.
+      "icon-inline": "hit-area-[max(0.25rem,calc((24px_-_100%)/2))] aspect-square h-lh w-auto",
       "icon-lg": controlSize({ size: "lg", fit: "square" }),
     },
   },

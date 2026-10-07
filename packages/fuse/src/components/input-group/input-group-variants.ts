@@ -50,11 +50,11 @@ export const inputGroupButtonVariants = tv({
   base: cn("text-sm flex items-center gap-2 shadow-none", fieldFlushCornerClass, controlMd.iconEdge()),
   variants: {
     size: {
+      // The xs boxes are 1.5rem, floored at the fixed 24px target for a host root below 16px.
       // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- compact addon chrome, not a control rung
-      xs: "h-6 gap-1 px-1.5 [&>svg:not([class*='size-'])]:size-3.5",
+      xs: "h-[max(1.5rem,24px)] gap-1 px-1.5 [&>svg:not([class*='size-'])]:size-3.5",
       sm: controlMd.inset(),
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- compact addon chrome, not a control rung
-      "icon-xs": "size-6 p-0 has-[>svg]:p-0",
+      "icon-xs": "size-[max(1.5rem,24px)] p-0 has-[>svg]:p-0",
       // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- compact addon chrome, not a control rung
       "icon-sm": "size-8 p-0 has-[>svg]:p-0",
     },

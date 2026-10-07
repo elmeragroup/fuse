@@ -57,10 +57,12 @@ export const controlMetrics = tv({
   },
   variants: {
     size: {
+      // The xs box is the smallest target, so it never drops under the fixed 24px target
+      // floor when a host root below 16px scales `--control-h-xs` down.
       xs: {
-        height: "h-(--control-h-xs)",
-        minWidth: "min-w-(--control-h-xs)",
-        square: "size-(--control-h-xs)",
+        height: "h-[max(var(--control-h-xs),24px)]",
+        minWidth: "min-w-[max(var(--control-h-xs),24px)]",
+        square: "size-[max(var(--control-h-xs),24px)]",
         gap: "gap-(--control-gap-xs)",
         inset: "px-(--control-px-xs)",
         iconInset: "px-(--control-px-icon-xs)",

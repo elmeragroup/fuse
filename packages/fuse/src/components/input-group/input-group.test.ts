@@ -29,10 +29,10 @@ describe("inputGroupAddonVariants", () => {
 
 describe("inputGroupButtonVariants", () => {
   it("defaults to the compact xs addon size, squares the icon values, and keeps Button's md box for sm", () => {
-    expect(tokens(inputGroupButtonVariants())).toContain("h-6");
+    expect(tokens(inputGroupButtonVariants())).toContain("h-[max(1.5rem,24px)]");
 
     expect(tokens(inputGroupButtonVariants({ size: "icon-xs" }))).toEqual(
-      expect.arrayContaining(["size-6", "p-0"])
+      expect.arrayContaining(["size-[max(1.5rem,24px)]", "p-0"])
     );
     expect(tokens(inputGroupButtonVariants({ size: "icon-sm" }))).toEqual(
       expect.arrayContaining(["size-8", "p-0"])
