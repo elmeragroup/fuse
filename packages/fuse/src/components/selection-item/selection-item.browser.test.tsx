@@ -663,6 +663,7 @@ describe("SelectionItem", () => {
     expect(card).not.toBe(background);
     expect(getComputedStyle(router).backgroundColor).toBe(card);
     expect(getComputedStyle(shellFrom("Fixed price")).backgroundColor).toBe(card);
+    // DOM audit: the CheckboxCard fill is on Card.Root, which exposes its `card` slot.
     const cardRoot = textNamed("Card beside").closest("[data-slot=card]");
     if (!(cardRoot instanceof HTMLElement)) {
       throw new Error("expected the CheckboxCard's card root");
