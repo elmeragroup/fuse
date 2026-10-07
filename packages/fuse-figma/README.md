@@ -8,8 +8,8 @@ The sync owns four variable collections, matched by name.
 
 | Collection        | Modes                  | Variables                                                                                                                                                  |
 | ----------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Fuse tokens`     | `Light`, `Dark`        | 86 variables, one per contract token such as `primary` or `radius` and one per radius rung such as `radius-md`. Designers bind these.                      |
-| `Fuse themes`     | One per theme slug, 24 | 172 variables, `light/<token>` and `dark/<token>` for each `Fuse tokens` variable. They are hidden from pickers and only feed `Fuse tokens`.               |
+| `Fuse tokens`     | `Light`, `Dark`        | 88 variables, one per contract token such as `primary` or `radius` and one per radius rung such as `radius-md`. Designers bind these.                      |
+| `Fuse themes`     | One per theme slug, 24 | 176 variables, `light/<token>` and `dark/<token>` for each `Fuse tokens` variable. They are hidden from pickers and only feed `Fuse tokens`.               |
 | `Fuse primitives` | `Value`                | 25 variables, the neutral ramp and the brand accents. Primitive tokens are public API with the same value in every theme, so designers can bind these too. |
 | `Fuse density`    | `Dense`, `Comfortable` | 26 variables, one per control metric such as `control-h-md`. Designers bind these.                                                                         |
 

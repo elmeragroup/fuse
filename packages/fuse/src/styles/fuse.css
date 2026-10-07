@@ -111,6 +111,7 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-button-outline: var(--button-outline, var(--border));
+  --color-selection-checked-border: var(--selection-checked-border, var(--primary));
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-accent: var(--sidebar-accent);
