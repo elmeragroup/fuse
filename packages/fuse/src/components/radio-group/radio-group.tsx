@@ -7,6 +7,7 @@ import { Radio as RadioPrimitive } from "@base-ui/react/radio";
 import { RadioGroup as RadioGroupPrimitive } from "@base-ui/react/radio-group";
 import type { VariantProps } from "tailwind-variants";
 
+import { useCheckedResetSync } from "../../hooks/use-checked-reset-sync";
 import { SpinnerGap } from "../../icons/generated/spinner-gap";
 import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
@@ -27,10 +28,13 @@ import { radioIconButtonVariants } from "./radio-group-variants";
 export function RadioGroupItem({
   className,
   value,
+  inputRef,
   ...props
 }: ComponentProps<typeof RadioPrimitive.Root>): ReactElement {
+  const syncedInputRef = useCheckedResetSync(inputRef);
   return (
     <RadioPrimitive.Root
+      inputRef={syncedInputRef}
       data-slot="radio-group-item"
       value={value}
       className={(state) =>
@@ -124,7 +128,9 @@ export type RadioGroupProps = {
 
 /**
  * Labeled radio group composite over Field and base-ui RadioGroup. Client component,
- * because it wires Field validity and the group primitive.
+ * because it wires Field validity and the group primitive. Native form reset, including
+ * React's reset after a form action, keeps the selection and what the form submits in step for
+ * Fuse members; an uncontrolled group does not return to `defaultValue`.
  */
 export function RadioGroup({
   label,
@@ -254,10 +260,13 @@ export function RadioIconButton({
   size = "icon",
   className,
   children,
+  inputRef,
   ...props
 }: RadioIconButtonProps): ReactElement {
+  const syncedInputRef = useCheckedResetSync(inputRef);
   return (
     <RadioPrimitive.Root
+      inputRef={syncedInputRef}
       data-slot="radio-icon-button"
       value={value}
       disabled={isDisabled}

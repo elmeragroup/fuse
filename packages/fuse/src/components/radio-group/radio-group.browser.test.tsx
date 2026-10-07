@@ -21,6 +21,7 @@ import {
 import {
   cssVarColor,
   effectiveOpacity,
+  formNamed,
   headingNamed,
   renderThemed,
   roleNamed,
@@ -296,6 +297,44 @@ describe("RadioGroup", () => {
     expect(hidden).not.toBeNull();
     await userEvent.click(page.getByRole("button", { name: "Save", exact: true }));
     expect(submitted).toEqual(["fixed"]);
+  });
+
+  it("submits each group's shown selection after native reset, controlled or not, and keeps focus", async () => {
+    function View() {
+      const [value, setValue] = useState("list");
+      return (
+        <RadioGroup label="View" name="view" value={value} onChange={setValue}>
+          <RadioIconButton value="list" aria-label="List">
+            <Glyph />
+          </RadioIconButton>
+          <RadioIconButton value="house" aria-label="Home">
+            <Glyph />
+          </RadioIconButton>
+        </RadioGroup>
+      );
+    }
+    renderThemed(
+      <form aria-label="Plan form">
+        <RadioGroup label="Contract" name="contract" defaultValue="fixed">
+          <Radio value="fixed">Fixed</Radio>
+          <Radio value="spot">Spot</Radio>
+        </RadioGroup>
+        <View />
+      </form>
+    );
+    await userEvent.click(radioNamed("Spot"));
+    await userEvent.click(radioNamed("Home"));
+
+    formNamed("Plan form").reset();
+    await vi.waitFor(() => {
+      expect([...new FormData(formNamed("Plan form")).entries()]).toEqual([
+        ["contract", "spot"],
+        ["view", "house"],
+      ]);
+    });
+    expect(radioNamed("Spot").getAttribute("aria-checked")).toBe("true");
+    expect(radioNamed("Home").getAttribute("aria-checked")).toBe("true");
+    expect(document.activeElement).toBe(radioNamed("Home"));
   });
 });
 

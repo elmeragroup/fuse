@@ -157,6 +157,16 @@
   a server error under their name does not reach them. A form that mixes them with Base UI
   fields keeps React Aria's `Form`. Wire them to `Form`'s `errors`, or retire them with the
   date tier below.
+- Native form reset, including React's reset after a form action, leaves Checkbox, Switch,
+  CheckboxCard, RadioGroup and CheckboxGroup at their current selection: `useCheckedResetSync`
+  only writes the shown state back into Base UI's hidden inputs, so an uncontrolled control does
+  not return to `defaultChecked` or `defaultValue` the way a native checkbox does. Base UI 1.8's
+  checked controls do not observe `reset`. Report it upstream; a Fuse-side restore means holding
+  the uncontrolled value in Fuse and tracking each group's member inputs (#144).
+- `useFormReset` (`hooks/use-form-reset.ts`) adds one capture `reset` listener per subscriber, and
+  every Checkbox, Switch, CheckboxCard and radio now subscribes, so a DataTable with a `SelectRow`
+  checkbox per row adds a listener per row. Pool subscribers per root, with one listener that
+  dispatches to the subscribers whose control is in the reset form.
 
 ## Control size
 
