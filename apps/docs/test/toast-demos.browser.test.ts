@@ -48,6 +48,73 @@ describe("Toast demos", () => {
     await page.close();
   });
 
+  it("keeps every placement inside the Placement preview, at its edge, and centers the centered ones", async () => {
+    // At 720px the docs sidebar leaves the preview narrower than the 340px toast column.
+    const page = await browser().newPage({ viewport: { width: 720, height: 900 } });
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    const placement = await openDemo(page, "toast", "Placement");
+    const viewport = placement.locator('[data-slot="toast-viewport"]');
+    await viewport.waitFor({ state: "attached" });
+
+    // Each button sets its placement and raises a toast titled with the button's name.
+    for (const title of [
+      "Top left",
+      "Top center",
+      "Top right",
+      "Bottom left",
+      "Bottom center",
+      "Bottom right",
+    ]) {
+      await placement.getByRole("button", { name: title, exact: true }).click();
+      await placement.getByRole("heading", { name: title, exact: true, includeHidden: true }).waitFor();
+      // The viewport portals into the preview's own stage, which positions it.
+      const insets = () =>
+        viewport.evaluate((node, name) => {
+          const container = node instanceof HTMLElement ? node.offsetParent : null;
+          const toast = [...node.querySelectorAll('[data-slot="toast-root"]')].find(
+            (root) => root.querySelector('[data-slot="toast-title"]')?.textContent === name
+          );
+          if (container === null || toast === undefined) {
+            return null;
+          }
+          const outer = container.getBoundingClientRect();
+          const inner = toast.getBoundingClientRect();
+          return {
+            left: inner.left - outer.left,
+            right: outer.right - inner.right,
+            top: inner.top - outer.top,
+            bottom: outer.bottom - inner.bottom,
+          };
+        }, title);
+      const edge = title.startsWith("Top") ? "top" : "bottom";
+      const farEdge = edge === "top" ? "bottom" : "top";
+      await expect
+        .poll(async () => {
+          const box = await insets();
+          return (
+            box !== null &&
+            box.left >= -1 &&
+            box.right >= -1 &&
+            box.top >= -1 &&
+            box.bottom >= -1 &&
+            box[edge] < box[farEdge]
+          );
+        })
+        .toBe(true);
+      if (title.endsWith("center")) {
+        await expect
+          .poll(async () => {
+            const box = await insets();
+            return box === null ? Number.POSITIVE_INFINITY : Math.abs(box.left - box.right);
+          })
+          .toBeLessThanOrEqual(1);
+      }
+    }
+    expect(errors).toEqual([]);
+    await page.close();
+  });
+
   it("fires five stacked notifications and closes them all", async () => {
     const page = await browser().newPage();
     const errors: string[] = [];

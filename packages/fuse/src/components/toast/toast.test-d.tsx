@@ -15,6 +15,9 @@ test("Viewport container, Close label, and manager faces match the public API", 
   expectTypeOf<ToastViewportProps["container"]>().toEqualTypeOf<
     HTMLElement | RefObject<HTMLElement | null> | undefined
   >();
+  expectTypeOf<ToastViewportProps["placement"]>().toEqualTypeOf<
+    "top-left" | "top-center" | "top-right" | "bottom-left" | "bottom-center" | "bottom-right" | undefined
+  >();
   expectTypeOf<ToastCloseProps["label"]>().toEqualTypeOf<string | undefined>();
   expectTypeOf<ToastManagerAddOptions["type"]>().toEqualTypeOf<
     "error" | "info" | "success" | "warning" | "loading" | undefined
@@ -50,6 +53,8 @@ test("Viewport container, Close label, and manager faces match the public API", 
     </Toast.Provider>
   );
 
+  // @ts-expect-error placements name an edge and an alignment, not a bare side
+  const _noBareSide = <Toast.Viewport placement="top" />;
   // @ts-expect-error polymorphism is never an `as` prop
   const _noAs = <Toast.Root as="section" toast={{ id: "x" }} />;
   // @ts-expect-error locale is provider-only

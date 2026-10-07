@@ -7,6 +7,7 @@ import { ToastStatuses } from "./demos/toast-statuses";
 import { ToastAction } from "./demos/toast-action";
 import { ToastPromise } from "./demos/toast-promise";
 import { ToastStacking } from "./demos/toast-stacking";
+import { ToastPlacement } from "./demos/toast-placement";
 import { ToastModuleManager } from "./demos/toast-module-manager";
 
 import { componentMetadata } from "../../../../lib/component-page";
@@ -31,6 +32,14 @@ These examples render notifications inside their own preview areas so different 
 
 <Demo slug="toast" id="stacking" title="Stacking" file="toast-stacking.tsx">
   <ToastStacking />
+</Demo>
+
+## Viewport placement
+
+From the `sm` breakpoint up, `placement` on `Toast.Viewport` puts the stack at the top or bottom edge, aligned left, center or right. The default is `"bottom-right"`. A top placement stacks downward and slides toasts in from above. Toasts dismiss by swiping toward the edge they sit on and toward their side, or right for a centered stack; set `swipeDirection` on `Toast.Root` to choose other directions. On narrower screens every placement sits at the bottom, spans the screen width and swipes down or right.
+
+<Demo slug="toast" id="placement" title="Placement" file="toast-placement.tsx">
+  <ToastPlacement />
 </Demo>
 
 ## Toasts outside React

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { createContext, use, useEffect, useMemo } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { Toast as ToastPrimitive } from "@base-ui/react/toast";
@@ -9,14 +9,17 @@ import type {
   ToastManagerUpdateOptions as PrimitiveUpdateOptions,
   ToastObject,
 } from "@base-ui/react/toast";
+import type { VariantProps } from "tailwind-variants";
 
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
+import { useMediaQuery } from "../../hooks/use-media-query";
 import { CheckCircle } from "../../icons/generated/check-circle";
 import { Info } from "../../icons/generated/info";
 import { SpinnerGap } from "../../icons/generated/spinner-gap";
 import { Warning } from "../../icons/generated/warning";
 import { WarningOctagon } from "../../icons/generated/warning-octagon";
 import { X } from "../../icons/generated/x";
+import { definedProps } from "../../internal/defined-props";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
 import { Button } from "../button/button";
@@ -24,7 +27,7 @@ import { overlayCloseStrings } from "../overlay/intl";
 import { toastLayer } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
-import { toastVariants } from "./toast-variants";
+import { toastVariants, toastViewportVariants } from "./toast-variants";
 
 /** Resolved once at module scope — these slots carry no status axis (no per-render work). */
 const { content, title, description } = toastVariants();
@@ -416,45 +419,113 @@ export function ToastProvider({ toastManager, children, ...props }: ToastProvide
   );
 }
 
-export type ToastViewportProps = ComponentProps<typeof ToastPrimitive.Viewport> & OverlayContainerProps;
+type ToastPlacement = NonNullable<VariantProps<typeof toastViewportVariants>["placement"]>;
+
+type ToastSwipeDirection = NonNullable<ComponentProps<typeof ToastPrimitive.Root>["swipeDirection"]>;
+
+/** Tailwind's `sm:` breakpoint, where a placement starts to move the stack. */
+const SM_UP_MEDIA_QUERY = "(width >= 40rem)";
+
+/**
+ * Swipe-to-dismiss directions per anchored edge: toward the horizontal side the stack sits
+ * on (right for center), and toward the vertical edge. Module constants keep the array
+ * identity stable across renders.
+ */
+const SWIPE_DIRECTIONS = {
+  "bottom-left": ["down", "left"],
+  "bottom-right": ["down", "right"],
+  "top-left": ["up", "left"],
+  "top-right": ["up", "right"],
+} as const satisfies Record<string, ToastSwipeDirection>;
+
+/**
+ * Placement only moves the stack from `sm` up. Below `sm` every placement renders the
+ * default bottom stack, so it keeps the default down/right swipe too.
+ */
+function swipeDirectionFor(placement: ToastPlacement, isSmUp: boolean): ToastSwipeDirection {
+  if (!isSmUp) {
+    return SWIPE_DIRECTIONS["bottom-right"];
+  }
+  const vertical = placement.startsWith("top") ? "top" : "bottom";
+  const horizontal = placement.endsWith("left") ? "left" : "right";
+  return SWIPE_DIRECTIONS[`${vertical}-${horizontal}`];
+}
+
+type ToastPlacementContextValue = {
+  readonly placement: ToastPlacement;
+  readonly swipeDirection: ToastSwipeDirection;
+};
+
+/** Read by `Toast.Root`; a root outside a Fuse viewport keeps the bottom-right defaults. */
+const ToastPlacementContext = createContext<ToastPlacementContextValue>({
+  placement: "bottom-right",
+  swipeDirection: SWIPE_DIRECTIONS["bottom-right"],
+});
+
+export type ToastViewportProps = ComponentProps<typeof ToastPrimitive.Viewport> &
+  OverlayContainerProps & {
+    /**
+     * Where the toast stack sits from the `sm` breakpoint up: a top or bottom edge, aligned
+     * left, center or right. A top placement stacks downward and enters from above. Toasts
+     * dismiss by swiping toward the anchored edge and toward their side (right for center),
+     * unless a `Toast.Root` sets `swipeDirection`. Below `sm` every placement sits at the
+     * bottom, spans the screen width and swipes down or right.
+     */
+    placement?: VariantProps<typeof toastViewportVariants>["placement"];
+  };
 
 export function ToastViewport({
   className,
   container,
+  placement = "bottom-right",
   children,
   ...props
 }: ToastViewportProps): ReactElement | null {
+  const isSmUp = useMediaQuery(SM_UP_MEDIA_QUERY);
+  const swipeDirection = swipeDirectionFor(placement, isSmUp);
+  const placementContext = useMemo(() => ({ placement, swipeDirection }), [placement, swipeDirection]);
+  // The provider wraps the part, not its children: a `render` element's own children
+  // replace the part's, and roots rendered there must still read the placement.
   return (
-    <OverlayPortal portal={ToastPrimitive.Portal} container={container}>
-      <ToastPrimitive.Viewport
-        data-slot="toast-viewport"
-        className={mergeClassName(
-          className,
-          "sm:right-8 sm:bottom-8 sm:w-[340px] fixed top-auto right-4 bottom-4 isolate mx-auto flex w-[calc(100%-2rem)]",
-          toastLayer,
-          selfFocusRingClass
-        )}
-        {...props}>
-        {children ?? <ToastList />}
-      </ToastPrimitive.Viewport>
-    </OverlayPortal>
+    <ToastPlacementContext value={placementContext}>
+      <OverlayPortal portal={ToastPrimitive.Portal} container={container}>
+        <ToastPrimitive.Viewport
+          data-slot="toast-viewport"
+          className={mergeClassName(
+            className,
+            toastViewportVariants({ placement }),
+            toastLayer,
+            selfFocusRingClass
+          )}
+          {...props}>
+          {children ?? <ToastList />}
+        </ToastPrimitive.Viewport>
+      </OverlayPortal>
+    </ToastPlacementContext>
   );
 }
 
+/**
+ * One toast. Inside `Toast.Viewport` it stacks and swipes for the viewport's `placement`;
+ * an explicit `swipeDirection` replaces the placement default.
+ */
 export function ToastRoot({
   className,
   toast,
   ...props
 }: ComponentProps<typeof ToastPrimitive.Root>): ReactElement {
+  const { placement, swipeDirection } = use(ToastPlacementContext);
   const status = statusFromType(toast.type);
   const { root } = STATUS_SLOTS[status];
   return (
     <ToastPrimitive.Root
       data-slot="toast-root"
       data-status={status}
+      data-placement={placement}
+      swipeDirection={swipeDirection}
       toast={toast}
       className={mergeClassName(className, root())}
-      {...props}
+      {...definedProps(props)}
     />
   );
 }
