@@ -445,13 +445,17 @@ describe("DateField field-box chrome", () => {
         <DatePicker label="Start" isInvalid description="Start date" />
         <DateRangePicker label="Period" isInvalid description="Billing period" />
         <SearchField label="Find" isInvalid description="Search term" />
+        <DateField label="Due" />
+        <DatePicker label="Issued" />
+        <SearchField label="Filter" />
       </>
     );
     // Unit: each React Aria field's label colour. Oracle: an invalid TextField's label, which
     // `Field.Root` paints with `--error`, and which a valid label must not share.
     const invalidLabel = getComputedStyle(textNamed("Customer")).color;
+    const validLabel = getComputedStyle(textNamed("Nickname")).color;
     expect(invalidLabel).toBe(cssVarColor(textNamed("Customer"), "--error"));
-    expect(invalidLabel).not.toBe(getComputedStyle(textNamed("Nickname")).color);
+    expect(invalidLabel).not.toBe(validLabel);
 
     for (const [label, description] of [
       ["Meter", "Meter date"],
@@ -464,6 +468,11 @@ describe("DateField field-box chrome", () => {
       expect(getComputedStyle(textNamed(description)).color, `${label} description`).toBe(
         cssVarColor(textNamed(description), "--muted-foreground")
       );
+    }
+    // A valid field of each recipe keeps the valid TextField's colour, so the rule is gated on
+    // `data-invalid` rather than painting every label.
+    for (const label of ["Due", "Issued", "Filter"]) {
+      expect(getComputedStyle(textNamed(label)).color, `${label} label`).toBe(validLabel);
     }
   });
 
