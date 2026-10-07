@@ -47,6 +47,16 @@ Include the source, tests, demos, documentation and generated artifacts the prob
 requires. Follow the [contribution flow](README.md#contribution-flow) for changesets
 and PR labels. Put unrelated cleanup and other fixes in separate PRs.
 
+<a id="pr-title"></a>
+
+## Title the PR in Title Case
+
+Write the PR title as a plain-language sentence in Title Case: capitalize every word,
+and keep code names and brand names in their own casing, such as
+"Floor Text-Entry Type On iOS WebKit As Well As Touch". Leave out the conventional
+commit prefix. This applies to the PR title only; commit messages keep the
+conventional commit format.
+
 <a id="review-before-submitting"></a>
 
 ## Review it before you open it
