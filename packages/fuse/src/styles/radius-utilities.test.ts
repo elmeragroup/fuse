@@ -41,6 +41,22 @@ describe("private corner classes", () => {
   });
 });
 
+/** The public inner-corner utility as fuse.css declares it: the shell's corner, else `--radius`. */
+const ROUNDED_INNER_RULE = ".rounded-inner {\n  border-radius: var(--inner-corner, var(--radius));\n}";
+
+describe("the public rounded-inner utility", () => {
+  it("resolves in a Tailwind-source consumer's build", async () => {
+    const css = await consumerBuild(["rounded-inner"]);
+    expect(css).toContain(ROUNDED_INNER_RULE);
+  });
+
+  it("ships in the standalone stylesheet, which Fuse's own menu rows put it in", () => {
+    expect(existsSync(compiledCssPath), compiledCssPath).toBe(true);
+    const css = readFileSync(compiledCssPath, "utf8");
+    expect(css).toContain(ROUNDED_INNER_RULE);
+  });
+});
+
 describe("radius rungs in a consumer build", () => {
   // The unit under test is Tailwind's inlining of the `@theme inline` rungs into the
   // `rounded-*` utilities. The oracle is `RADIUS_RUNGS`, whose CSS carries the 0px step

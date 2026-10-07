@@ -19,6 +19,22 @@ import { cn } from "./cn";
 // that sets the step but not the role. The property is unregistered, so the box substitutes
 // its own `var()` reads and the parts inside inherit the box's corner. They read it to round
 // no more than the box.
+//
+// Inner corners are concentric: an inner part rounds with its shell's outer corner less the
+// inset, `max(0px, outer - inset)`, where the inset is the shell's padding plus border on the
+// axis that reaches the corner. Outer corners keep their rung. A shell, a rounded and padded
+// surface such as a menu popup, publishes the result as `--inner-corner` on the part that
+// declares the padding. `inner-corner.ts` owns each shell's rung, padding and publisher in one
+// recipe. The publishing parts are DropdownMenu Content and SubContent, `Combobox.List`,
+// `Select.Content` (for rows outside a group) and `Select.Group`, and `NavigationMenu.Content`.
+// A part rounds concentrically only inside one of them; a block directly in
+// `Combobox.Content` rounds with `--radius`. An inner part rounds with the public
+// `rounded-inner` utility in fuse.css, `var(--inner-corner, var(--radius))`. The property is
+// unregistered and inherits as a computed length. No custom property depends on itself,
+// directly or indirectly, on one element, and a shell rounds with its own rung. Every element with theme attributes resets the property to `initial` with a
+// zero-specificity rule in the utilities layer, so a part in a nested ThemeScope rounds with
+// that scope's `--radius` instead of the outer shell's px value, and a shell class on the same
+// element wins whatever layer order the host declares.
 
 /**
  * The field box corner: Input, Textarea, the Select trigger, NumberField, InputGroup, the

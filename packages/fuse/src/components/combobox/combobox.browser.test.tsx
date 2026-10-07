@@ -732,14 +732,15 @@ describe("Combobox", () => {
       throw new Error("expected the search input group");
     }
     const contentStyles = getComputedStyle(content);
-    expect(px(contentStyles.paddingLeft)).toBe(4);
+    // The popup pads only above the group, so the List keeps its single 4px inset.
+    expect(px(contentStyles.paddingLeft)).toBe(0);
     expect(px(contentStyles.paddingTop)).toBe(6);
 
-    // `w-full` inside `px-1` must stay within the popup box (the regression the inset fixes).
-    const contentBox = content.getBoundingClientRect();
-    const groupBox = group.getBoundingClientRect();
-    expect(groupBox.left).toBeGreaterThanOrEqual(contentBox.left);
-    expect(groupBox.right).toBeLessThanOrEqual(contentBox.right);
+    // The `w-full` group sits 4px inside each inline edge without overflowing the popup box.
+    // Layout offsets, not client rects, so the popup's entry zoom does not scale them.
+    expect(group.offsetParent).toBe(content);
+    expect(group.offsetLeft).toBe(4);
+    expect(content.clientWidth - group.offsetLeft - group.offsetWidth).toBe(4);
   });
 
   it("portals Content into the enclosing ThemeScope instead of the document body", async () => {

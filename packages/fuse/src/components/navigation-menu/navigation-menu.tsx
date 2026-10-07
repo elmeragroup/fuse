@@ -120,7 +120,7 @@ export function NavigationMenuRoot<Value = unknown>({
               sideOffset={8}
               align={align}
               className={slots.positioner()}>
-              <NavigationMenuPrimitive.Popup className={slots.popup()}>
+              <NavigationMenuPrimitive.Popup data-slot="navigation-menu-popup" className={slots.popup()}>
                 <NavigationMenuPrimitive.Viewport className={slots.viewport()} />
               </NavigationMenuPrimitive.Popup>
             </NavigationMenuPrimitive.Positioner>
@@ -188,7 +188,12 @@ export function NavigationMenuTrigger({
   );
 }
 
-/** The panel an item shows in the shared popup while its trigger is open. */
+/**
+ * The panel an item shows in the shared popup while its trigger is open. In the popup it pads
+ * its rows inside the popup's corner and publishes `--inner-corner`, so its links, the triggers
+ * of a Root nested in it and a custom block placed in it with `rounded-inner` round
+ * concentrically with the popup. In an `inline` Root on the page its rows keep `rounded-sm`.
+ */
 export function NavigationMenuContent({
   className,
   ...props

@@ -19,6 +19,7 @@ import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import { controlMd } from "../../styles/control-size-md";
 import { chipCornerClass, fieldCornerClass } from "../../styles/corner-radius";
+import { innerCornerShell } from "../../styles/inner-corner";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { withinStateFaceClass, withinStateFaceControlClass } from "../../styles/state-face";
 import { withinFocusRingClass, withinFocusRingControlClass } from "../../styles/utils";
@@ -246,10 +247,12 @@ export function ComboboxContent({
           className={mergeClassName(
             className,
             overlayTimedPopupClass,
-            // Popup padding insets a search group; a child margin plus the group's w-full
-            // overflowed the box. Scope it to popups that directly own one, so a plain list
-            // keeps the menu family's single p-1 inset instead of double-insetting.
-            "group/combobox-content relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] overflow-hidden has-[>[data-slot=input-group]]:px-1 has-[>[data-slot=input-group]]:pt-1.5 data-[external-anchor=true]:min-w-(--anchor-width) *:data-[slot=input-group]:h-(--control-h-sm) *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none"
+            innerCornerShell.listboxPopup(),
+            // The popup pads nothing on the inline axis, so the List's own padding is the one
+            // inset its `--inner-corner` assumes. A search group the popup directly owns takes
+            // its own 4px inline margin and a width that fits inside it, which overrides the
+            // group's `w-full` (the phone field's), and the popup pads only above it.
+            "group/combobox-content relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] overflow-hidden has-[>[data-slot=input-group]]:pt-1.5 data-[external-anchor=true]:min-w-(--anchor-width) *:data-[slot=input-group]:mx-1 *:data-[slot=input-group]:h-(--control-h-sm) *:data-[slot=input-group]:w-[calc(100%---spacing(2))] *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none"
           )}
           {...props}
         />
@@ -258,6 +261,11 @@ export function ComboboxContent({
   );
 }
 
+/**
+ * The scrolling list of options. It is the part that publishes `--inner-corner`: it pads its
+ * rows inside the popup's corner, so a custom block placed in the List with `rounded-inner`
+ * rounds like the rows. A block directly in `Combobox.Content` rounds with `--radius`.
+ */
 export function ComboboxList({
   className,
   ...props
@@ -267,7 +275,8 @@ export function ComboboxList({
       data-slot="combobox-list"
       className={mergeClassName(
         className,
-        "no-scrollbar max-h-[min(calc(--spacing(72)---spacing(9)),calc(var(--available-height)---spacing(9)))] scroll-py-1 overflow-y-auto overscroll-contain p-1 data-empty:p-0"
+        innerCornerShell.listboxList(),
+        "no-scrollbar max-h-[min(calc(--spacing(72)---spacing(9)),calc(var(--available-height)---spacing(9)))] scroll-py-1 overflow-y-auto overscroll-contain"
       )}
       {...props}
     />

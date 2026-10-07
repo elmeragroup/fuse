@@ -20,6 +20,16 @@ describe("class merge last-wins", () => {
       ["size-9", "size-(--control-size)"],
       "size-(--control-size)",
     ],
+    [
+      "replaces rounded-inner with a later rounded-* class",
+      ["rounded-inner", "rounded-none"],
+      "rounded-none",
+    ],
+    [
+      "replaces a rounded-* class with a later rounded-inner",
+      ["rounded-sm", "rounded-inner"],
+      "rounded-inner",
+    ],
   ])("%s", (_name, classes, expected) => {
     expect(cn(...classes)).toBe(expected);
   });

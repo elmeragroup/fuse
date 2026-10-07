@@ -12,8 +12,9 @@
 
 import { readFile } from "node:fs/promises";
 
-import { componentRouteFile } from "./component-route-files";
 import { normalizeDemoSource } from "./docs-model";
+import { docsRouteFile } from "./docs-route-files";
+import type { DocsRouteSection } from "./docs-route-files";
 
 export type DemoSource = {
   /** Repo-relative path of the authored demo file, as printed in the frame's meta row. */
@@ -22,21 +23,28 @@ export type DemoSource = {
   source: string;
 };
 
+/** Where a demo file lives: the page's section and slug, and the file in its `demos/`. */
+export type DemoLocation = {
+  section: DocsRouteSection;
+  slug: string;
+  file: string;
+};
+
 /**
- * Reads one demo file of a component page.
+ * Reads one demo file of a docs page.
  *
  * A page that names a demo the directory does not hold is a build failure: this runs
  * during prerendering, so the throw fails `next build` with the path it looked for
  * instead of rendering a frame with an empty source region.
  */
-export async function readDemoSource(slug: string, file: string): Promise<DemoSource> {
-  const location = componentRouteFile(slug, "demos", file);
+export async function readDemoSource({ section, slug, file }: DemoLocation): Promise<DemoSource> {
+  const location = docsRouteFile(section, slug, "demos", file);
   let raw: string;
   try {
     raw = await readFile(location.absolute, "utf8");
   } catch (cause) {
     throw new Error(
-      `Component page "${slug}" renders a demo from ${file}, but ${location.repoPath} does not exist. ` +
+      `Docs page "${section}/${slug}" renders a demo from ${file}, but ${location.repoPath} does not exist. ` +
         `A demo is one file, imported by the page and read by the frame.`,
       { cause }
     );

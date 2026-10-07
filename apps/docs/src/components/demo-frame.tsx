@@ -3,12 +3,15 @@ import type { ReactElement, ReactNode } from "react";
 import { tv } from "tailwind-variants";
 
 import { readDemoSource } from "../lib/demo-source";
+import type { DocsRouteSection } from "../lib/docs-route-files";
 import { DemoStage } from "./demo-stage";
 import { DocsCodeBlock } from "./docs-code-block";
 import { DocsSectionHeading } from "./docs-section-heading";
 
 type DemoFrameProps = {
-  /** Slug of the component page this demo belongs to; locates the `demos/` directory. */
+  /** Docs section of the page this demo belongs to. Component pages, the MDX default, omit it. */
+  section?: DocsRouteSection;
+  /** Slug of the page this demo belongs to inside its section; locates the `demos/` directory. */
   slug: string;
   /** Anchor id, unique inside the page; the on-page TOC links to it. */
   id: string;
@@ -39,8 +42,15 @@ const { root, card } = demoFrame();
  * (`DemoStage`); the shell and the source region — highlighted by the shared
  * `DocsCodeBlock` from the same file the stage renders — stay on the server.
  */
-export async function DemoFrame({ slug, id, title, file, children }: DemoFrameProps): Promise<ReactElement> {
-  const demo = await readDemoSource(slug, file);
+export async function DemoFrame({
+  section = "components",
+  slug,
+  id,
+  title,
+  file,
+  children,
+}: DemoFrameProps): Promise<ReactElement> {
+  const demo = await readDemoSource({ section, slug, file });
 
   return (
     <section className={root()} data-demo-frame aria-labelledby={id}>

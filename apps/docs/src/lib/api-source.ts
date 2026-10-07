@@ -12,9 +12,9 @@
 
 import { readFile } from "node:fs/promises";
 
-import { componentRouteFile } from "./component-route-files";
 import type { ComponentApiArtifact } from "./docs-model";
 import { API_REGEN_COMMAND } from "./docs-model";
+import { docsRouteFile } from "./docs-route-files";
 
 /**
  * Reads one component page's `api.json`.
@@ -24,7 +24,7 @@ import { API_REGEN_COMMAND } from "./docs-model";
  * rendering an API section with no rows.
  */
 export async function readComponentApi(slug: string): Promise<ComponentApiArtifact> {
-  const location = componentRouteFile(slug, "api.json");
+  const location = docsRouteFile("components", slug, "api.json");
   let raw: string;
   try {
     raw = await readFile(location.absolute, "utf8");

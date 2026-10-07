@@ -44,6 +44,9 @@ function browserProject(
         "clsx",
         "tailwind-merge",
         "tailwind-variants",
+        // The layered-consumer browser test compiles fuse.css in the page.
+        "tailwindcss",
+        "tailwindcss-react-aria-components",
       ],
     },
     test: {

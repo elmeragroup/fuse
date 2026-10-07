@@ -219,6 +219,22 @@
 @utility rounded-button {
   border-radius: var(--radius-button);
 }
+/* The corner of an inner part, one laid against a shell's padding edge, such as a menu row.
+   The shell publishes --inner-corner, its own corner less its padding and border, so the
+   part rounds concentrically with it. Outside a shell the part rounds with --radius. The
+   contract lives in styles/corner-radius.ts. */
+@utility rounded-inner {
+  border-radius: var(--inner-corner, var(--radius));
+}
+/* An element that carries theme attributes drops the --inner-corner a shell above it
+   computed in another theme, so an inner part directly in a ThemeScope rounds with the
+   scope's own --radius. The reset sits with the utilities and weighs nothing, so a shell
+   class on the same element wins whatever layer order the host declares. */
+@layer utilities {
+  :where([data-theme-variant], [data-theme-brand], [data-theme-segment]) {
+    --inner-corner: initial;
+  }
+}
 
 @custom-variant data-open {
   &:where([data-state="open"]),

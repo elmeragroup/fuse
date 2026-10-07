@@ -197,6 +197,20 @@
 - Give the trigger caret's base classes one owner. Select, Combobox and NavigationMenu each
   spell out its size, muted colour and rotate transition by hand.
 
+## Inner corners
+
+The menu family publishes `--inner-corner` and its rows round with `rounded-inner`
+(`styles/corner-radius.ts`). The remaining surfaces follow, each as a slot of the shell recipe
+in `styles/inner-corner.ts`:
+
+- Field box: `fieldCornerClass` publishes `max(0px, var(--field-corner) - 5px)`, and the
+  `fieldFlush`, `inset`, `kbdInset`, `chip` and `segment` corner classes collapse into
+  `rounded-inner`.
+- Frame and Table: relay Frame's corner to its panels through `--shell-corner`, the nested-shell
+  relay in `styles/inner-corner.ts`, so no custom property depends on itself on one element.
+- Tabs: the list pads 4px so the trigger's focus ring fits, and the triggers read the inner corner.
+- Sidebar, the DatePicker presets and every remaining rounded, padded surface publish.
+
 ## Figma token sync
 
 - Run the first sync against a real Enterprise file and confirm that empty picker scopes,

@@ -2,7 +2,9 @@ import type { ReactElement } from "react";
 
 import Link from "next/link";
 
+import { DemoFrame } from "../../../../components/demo-frame";
 import { DocsPage, pageMetadata } from "../../../../components/docs-page";
+import { InnerCornerMenu } from "./demos/inner-corner-menu";
 
 const HREF = "/handbook/theming";
 
@@ -224,15 +226,16 @@ export default function ThemingPage(): ReactElement {
         , the design system&apos;s 4px for every brand, and nothing inside a field rounds more than the field.
         A button inside a button group or a preset list keeps a compact corner instead, and a button group
         rounds both its ends that way, even when a field sits at one end. The checkbox and the standalone
-        calendar keep the reference&apos;s 4px corner. The internal variant rounds every element with the one{" "}
-        <code>--radius</code>. Its step is <code>0px</code> and its <code>--radius-button</code> and{" "}
+        calendar keep the reference&apos;s 4px corner. The internal variant rounds every outer element with
+        the one <code>--radius</code>. Its step is <code>0px</code> and its <code>--radius-button</code> and{" "}
         <code>--radius-field</code> are <code>var(--radius)</code>, so a host rule that reads either gets the
         same corner. To change the radius, override <code>--radius</code> on the element that carries the
         theme attributes, which is <code>&lt;html&gt;</code> or a <code>ThemeScope</code>. The theme rules
         resolve <code>--radius-button</code> there, so buttons move with the cards and fields. On a plain
         wrapper the override reaches cards and internal fields, but buttons keep the button radius the theme
         element resolved. To change the external field corner, override <code>--radius-field</code>. Nested
-        internal surfaces share the radius instead of stepping inward, and dialogs round like cards.
+        internal surfaces share the radius, and dialogs round like cards. Inner parts, such as menu rows, are
+        the exception: see <a href="#inner-corners">Inner corners</a>.
       </p>
       <p>
         The outline button&apos;s border is part of the theme too. It reads <code>--button-outline</code> at{" "}
@@ -269,6 +272,44 @@ export default function ThemingPage(): ReactElement {
       <pre>
         <code>{SIDEBAR_BRAND_OVERRIDE}</code>
       </pre>
+
+      <h2 id="inner-corners">Inner corners</h2>
+      <p>
+        A row laid against a padded popup&apos;s edge rounds concentrically with the popup: its corner is the
+        popup&apos;s corner less the padding and border between them, and never below 0. The part that pads
+        the rows publishes that corner as <code>--inner-corner</code>, and the rows round with the{" "}
+        <code>rounded-inner</code> utility. The publishing parts are:
+      </p>
+      <ul>
+        <li>
+          <code>DropdownMenu.Content</code> and <code>DropdownMenu.SubContent</code>.
+        </li>
+        <li>
+          <code>Combobox.List</code>, not <code>Combobox.Content</code>.
+        </li>
+        <li>
+          <code>Select.Group</code>, and <code>Select.Content</code> for rows outside a group, which meet the
+          popup&apos;s corner.
+        </li>
+        <li>
+          <code>NavigationMenu.Content</code>.
+        </li>
+      </ul>
+      <p>
+        Put a custom row or block inside one of these parts and give it <code>rounded-inner</code>, and it
+        rounds like the rows beside it. Anywhere else, such as directly in <code>Combobox.Content</code>,{" "}
+        <code>rounded-inner</code> rounds with the theme&apos;s <code>--radius</code>. A{" "}
+        <code>ThemeScope</code> resets it, so a part inside a nested scope rounds with that scope&apos;s
+        radius.
+      </p>
+      <DemoFrame
+        section="handbook"
+        slug="theming"
+        id="inner-corner-demo"
+        title="A custom block in a menu"
+        file="inner-corner-menu.tsx">
+        <InnerCornerMenu />
+      </DemoFrame>
 
       <h2 id="document-theme">The document theme</h2>
       <p>

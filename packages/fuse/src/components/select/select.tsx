@@ -10,6 +10,7 @@ import { CaretUp } from "../../icons/generated/caret-up";
 import { Check } from "../../icons/generated/check";
 import { cn } from "../../styles/cn";
 import { fieldBoxChromeClass } from "../../styles/field-box";
+import { innerCornerShell } from "../../styles/inner-corner";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { dataStateFaceClass, nativeStateFaceClass } from "../../styles/state-face";
 import { selfFocusRingClass } from "../../styles/utils";
@@ -126,7 +127,8 @@ export function SelectContent({
           className={mergeClassName(
             className,
             overlayTimedPopupClass,
-            "relative max-h-(--available-height) w-(--anchor-width) min-w-36 overflow-x-hidden overflow-y-auto rounded-lg data-[align-trigger=true]:animate-none"
+            innerCornerShell.selectPopup(),
+            "relative max-h-(--available-height) w-(--anchor-width) min-w-36 overflow-x-hidden overflow-y-auto data-[align-trigger=true]:animate-none"
           )}
           {...props}>
           <SelectScrollUpButton />
@@ -164,6 +166,11 @@ export function SelectItem({
   );
 }
 
+/**
+ * A group of options. It pads its rows inside the popup's corner and publishes
+ * `--inner-corner`, so a custom block in the group with `rounded-inner` rounds like its rows.
+ * `Select.Content` publishes the popup's own corner for rows and blocks outside a group.
+ */
 export function SelectGroup({
   className,
   ...props
@@ -171,7 +178,7 @@ export function SelectGroup({
   return (
     <SelectPrimitive.Group
       data-slot="select-group"
-      className={mergeClassName(className, "scroll-my-1 p-1")}
+      className={mergeClassName(className, innerCornerShell.selectGroup(), "scroll-my-1")}
       {...props}
     />
   );
