@@ -5,10 +5,11 @@ import { publishShellBoundary } from "../corner-radius";
 // constant pairs a part's rung or padding with the corner it publishes.
 
 /**
- * Empty: `rounded-lg`, 24px padding and 48px from `md` up.
+ * Empty: `rounded-lg` and the large surface padding, `--surface-pad-lg`, doubled from `md` up:
+ * 32px dense and 48px comfortable there.
  */
 export const emptyShellClass = cn(
-  "md:p-12 md:[--shell-inner:max(0px,--theme(--radius-lg)-12*var(--spacing))] rounded-lg p-6 [--shell-inner:max(0px,--theme(--radius-lg)-6*var(--spacing))]",
+  "md:p-[calc(2*var(--surface-pad-lg))] md:[--shell-inner:max(0px,--theme(--radius-lg)-2*var(--surface-pad-lg))] rounded-lg p-(--surface-pad-lg) [--shell-inner:max(0px,--theme(--radius-lg)-var(--surface-pad-lg))]",
   publishShellBoundary
 );
 
@@ -16,6 +17,6 @@ export const emptyShellClass = cn(
  * The bordered Empty variants: {@link emptyShellClass} behind a 1px border.
  */
 export const emptyBorderedShellClass = cn(
-  "md:[--shell-inner:max(0px,--theme(--radius-lg)-1px-12*var(--spacing))] [--shell-inner:max(0px,--theme(--radius-lg)-1px-6*var(--spacing))]",
+  "md:[--shell-inner:max(0px,--theme(--radius-lg)-1px-2*var(--surface-pad-lg))] [--shell-inner:max(0px,--theme(--radius-lg)-1px-var(--surface-pad-lg))]",
   publishShellBoundary
 );

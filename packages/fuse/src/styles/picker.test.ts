@@ -118,11 +118,11 @@ describe("pickerVariants range axis", () => {
   });
 
   it("strips Calendar's card chrome and pays RangeCalendar's inset", () => {
-    // Calendar's root carries its own `p-2` and a card's border, shadow and fill, which
+    // Calendar's root carries its own small-tier inset and a card's border, shadow and fill, which
     // the popover already provides; RangeCalendar's root is bare by design above a
     // `p-0` dialog, so the range arm is where that inset comes from.
     expect(pickerVariants().calendar()).toBe("border-none bg-transparent shadow-none");
-    expect(pickerVariants({ range: true }).calendar()).toBe("p-2");
+    expect(pickerVariants({ range: true }).calendar()).toBe("p-(--surface-pad-sm)");
   });
 
   it("colours the separator with role tokens only on the range axis", () => {
@@ -174,6 +174,6 @@ describe("pickerVariants range axis", () => {
   );
 
   it("keeps RangeCalendar's own inset beside the preset pane", () => {
-    expect(pickerVariants({ range: true, hasPresets: true }).calendar()).toBe("p-2");
+    expect(pickerVariants({ range: true, hasPresets: true }).calendar()).toBe("p-(--surface-pad-sm)");
   });
 });

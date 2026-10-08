@@ -13,10 +13,11 @@ import { selfFocusRingClass } from "../../styles/utils";
 import {
   menuGroupLabelClass,
   menuItemIndicatorClass,
+  menuItemIndicatorRoomClass,
+  menuItemInsetClass,
   menuSeparatorClass,
-  overlayPositionerClass,
-  overlayTimedPopupClass,
-} from "../overlay/overlay-classes";
+} from "../overlay/menu-row-classes";
+import { overlayPositionerClass, overlayTimedPopupClass } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
 import { dropdownMenuVariants } from "./dropdown-menu-variants";
@@ -139,7 +140,7 @@ export function DropdownMenuLabel({ className, inset, ...props }: DropdownMenuLa
     <MenuPrimitive.GroupLabel
       data-slot="dropdown-menu-label"
       data-inset={inset ? true : undefined}
-      className={mergeClassName(className, menuGroupLabelClass, "font-medium data-inset:pl-8")}
+      className={mergeClassName(className, menuGroupLabelClass, menuItemInsetClass, "font-medium")}
       {...props}
     />
   );
@@ -206,7 +207,7 @@ export function DropdownMenuCheckboxItem({
     <MenuPrimitive.CheckboxItem
       data-slot="dropdown-menu-checkbox-item"
       data-inset={inset ? true : undefined}
-      className={mergeClassName(className, dropdownMenuItemClassName, "pr-8")}
+      className={mergeClassName(className, dropdownMenuItemClassName, menuItemIndicatorRoomClass)}
       checked={checked}
       {...props}>
       <span className={menuItemIndicatorClass} data-slot="dropdown-menu-checkbox-item-indicator">
@@ -269,7 +270,7 @@ export function DropdownMenuRadioItem({
     <MenuPrimitive.RadioItem
       data-slot="dropdown-menu-radio-item"
       data-inset={inset ? true : undefined}
-      className={mergeClassName(className, dropdownMenuItemClassName, "pr-8")}
+      className={mergeClassName(className, dropdownMenuItemClassName, menuItemIndicatorRoomClass)}
       {...props}>
       <span className={menuItemIndicatorClass} data-slot="dropdown-menu-radio-item-indicator">
         <MenuPrimitive.RadioItemIndicator>

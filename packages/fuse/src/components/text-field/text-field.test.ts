@@ -42,9 +42,9 @@ describe("textFieldVariants", () => {
       expect(card.base(), token).toContain(token);
     }
     expect(card.base()).toContain("gap-0");
-    expect(card.base()).toContain("px-6");
+    expect(card.base()).toContain("px-(--surface-pad-lg)");
     expect(card.base()).toContain("py-4");
-    expect(card.base()).toContain("[--shell-inner:max(0px,--theme(--radius-lg)-1px-6*var(--spacing))]");
+    expect(card.base()).toContain("[--shell-inner:max(0px,--theme(--radius-lg)-1px-var(--surface-pad-lg))]");
     expect(card.fieldGroup()).toContain("w-full");
     expect(card.fieldGroup()).toContain("border-none");
     expect(card.input()).toContain("text-lg");

@@ -12,16 +12,16 @@ import { overlayPopupSurfaceClass, overlayPositionerClass } from "../overlay/ove
 
 /**
  * The box and type of a row in a content panel's list: a link outside a bar, or a trigger in
- * a vertical Root. Both slots take it, so a nested trigger cannot drift from the links beside it. The xs
- * control height is the density-owned 24px floor: 24px dense, 32px comfortable. The padding
- * and type stay put across densities, as menu layout rather than a control rung. A row in the
- * popup is an inner part and rounds with `rounded-inner`. A row outside it, in a vertical Root
- * or an inline Root on the page, keeps the outer `rounded-sm`. Both corners weigh nothing, so a
- * consumer's `rounded-*` class wins.
+ * a vertical Root. Both slots take it, so a nested trigger cannot drift from the links beside it.
+ * A row is a control, as menu rows are: at least the sm control height, padded inline with the
+ * xs control inset, so 32px tall and 8px in dense and 36px and 12px comfortable. A multi-line
+ * row grows. A row in the popup is an inner part and rounds with `rounded-inner`. A row outside
+ * it, in a vertical Root or an inline Root on the page, keeps the outer `rounded-sm`. Both corners
+ * weigh nothing, so a consumer's `rounded-*` class wins.
  */
-// oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- row padding and type are menu layout, not a control rung
+// oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- the 8px icon gap is row layout, not a control rung
 const contentRowClass = cn(
-  "text-sm box-border min-h-(--control-h-xs) gap-2 px-2 py-1.5 [:where(&)]:rounded-sm in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner"
+  "text-sm box-border min-h-(--control-h-sm) gap-2 px-(--control-px-xs) py-1.5 [:where(&)]:rounded-sm in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner"
 );
 
 /**

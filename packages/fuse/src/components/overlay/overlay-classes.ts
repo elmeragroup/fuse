@@ -163,33 +163,3 @@ export const overlayTimedPopupClass = cn(
   overlayPopupMotionClass,
   overlayPopupDurationClass
 );
-
-/**
- * Menu-row slots shared by Select, Combobox, and DropdownMenu. The *highlight* face is
- * deliberately not on `item`: base-ui publishes it as `focus:` on menu items and
- * `data-highlighted:` on listbox options, so each family passes its own as the extra
- * `cn` argument, along with its horizontal padding (`px-2` for menus, `pr-8 pl-2` for
- * indicator-bearing options). A row is an inner part: it rounds with `rounded-inner`, from the
- * `--inner-corner` its family's padded popup part publishes.
- */
-const overlayMenuVariants = tv({
-  slots: {
-    item:
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics, elmera/no-local-focus-ring -- option padding is menu layout, not a control rung; `outline-hidden` only clears the UA outline; this constant carries no highlight face and no ring, both of which stay with the consuming family
-      "text-sm relative flex cursor-default items-center gap-2 rounded-inner py-1.5 outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-    /** The trailing check slot on a selectable option row, positioned once for all three menu families. */
-    indicator: "pointer-events-none absolute right-2 flex items-center justify-center",
-    /** The hairline rule between option groups, shared by Select, Combobox, and DropdownMenu. */
-    separator: "-mx-1 my-1 h-px bg-border",
-    groupLabel:
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- group label padding is menu layout, not a control rung
-      "text-xs px-2 py-1.5 text-muted-foreground",
-  },
-});
-
-const overlayMenuSlots = overlayMenuVariants();
-
-export const menuItemClass = overlayMenuSlots.item();
-export const menuItemIndicatorClass = overlayMenuSlots.indicator();
-export const menuSeparatorClass = overlayMenuSlots.separator();
-export const menuGroupLabelClass = overlayMenuSlots.groupLabel();

@@ -14,9 +14,10 @@ export const selectPopupShellClass = cn(
 );
 
 /**
- * `Select.Group`: pads its rows 4px inside the popup's `rounded-lg` and publishes.
+ * `Select.Group`: pads its rows with the small surface tier, `--surface-pad-sm`, inside the popup's
+ * `rounded-lg` and publishes.
  */
 export const selectGroupShellClass = cn(
-  "p-1 [--shell-inner:max(0px,--theme(--radius-lg)-var(--spacing))]",
+  "p-(--surface-pad-sm) [--shell-inner:max(0px,--theme(--radius-lg)-var(--surface-pad-sm))]",
   publishShellBoundary
 );

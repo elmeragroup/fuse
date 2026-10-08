@@ -31,9 +31,10 @@ export const pickerDialogShellClass = cn(
 );
 
 /**
- * The date pickers' preset group: 8px inside the popover's corner and border.
+ * The date pickers' preset group: the small surface tier, `--surface-pad-sm`, inside the popover's
+ * corner and border.
  */
 export const pickerPresetsShellClass = cn(
-  "p-2 [--shell-inner:max(0px,--theme(--radius-md)-1px-2*var(--spacing))]",
+  "p-(--surface-pad-sm) [--shell-inner:max(0px,--theme(--radius-md)-1px-var(--surface-pad-sm))]",
   publishShellBoundary
 );

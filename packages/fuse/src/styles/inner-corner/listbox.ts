@@ -10,11 +10,12 @@ import { publishShellBoundary } from "../corner-radius";
 export const listboxPopupShellClass = cn("rounded-md [--shell-inner:initial]", publishShellBoundary);
 
 /**
- * `Combobox.List`: pads its rows 4px inside the popup's `rounded-md` and publishes. An empty List
+ * `Combobox.List`: pads its rows with the small surface tier, `--surface-pad-sm`, inside the popup's
+ * `rounded-md` and publishes. An empty List
  * drops its padding, so it publishes the popup's rung at zero inset.
  */
 export const listboxListShellClass = cn(
-  "p-1 [--shell-inner:max(0px,--theme(--radius-md)-var(--spacing))] data-empty:p-0 data-empty:[--shell-inner:--theme(--radius-md)]",
+  "p-(--surface-pad-sm) [--shell-inner:max(0px,--theme(--radius-md)-var(--surface-pad-sm))] data-empty:p-0 data-empty:[--shell-inner:--theme(--radius-md)]",
   publishShellBoundary
 );
 

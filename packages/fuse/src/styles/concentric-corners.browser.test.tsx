@@ -51,12 +51,13 @@ type Family = (typeof FAMILY_NAMES)[number];
  * between them, floored at 0. The DropdownMenu popups and the Combobox popup round with
  * `rounded-md` (`--radius` less one 2px external step) and pad 4px, the Combobox through its
  * List whether or not a search group sits above it. An empty List drops its padding, so a block
- * in it rounds like the popup. A NavigationMenu panel nested in another sits behind both
- * contents' 8px, 16px in all, which takes every theme's `rounded-md` to 0. A NavigationMenu
- * popup mounted inside another's Content is a shell of its own and insets its rows 8px. The Select popup rounds with
- * `rounded-lg` (`--radius`) and pads nothing, and a Select group pads 4px. The NavigationMenu
- * popup rounds with `rounded-md` and its content pads 8px. `--radius` is 6px internal, and
- * external 12px for fkas, 16px for tkas and 8px for guen.
+ * in it rounds like the popup. The NavigationMenu popup rounds with `rounded-md` and its content
+ * pads 4px, the small surface tier, at both densities, as the dropdowns do. A NavigationMenu
+ * panel nested in another sits behind both contents' 4px, 8px in all. A NavigationMenu popup
+ * mounted inside another's Content is a shell of its own and insets its rows 4px. The Select
+ * popup rounds with `rounded-lg` (`--radius`) and pads nothing, and a Select group pads 4px.
+ * `--radius` is 6px internal, and external 12px for fkas, 16px for tkas and 8px for guen, so
+ * `rounded-md` is 6px internal, 10px for fkas, 14px for tkas and 6px for guen.
  */
 const EXPECTED = {
   internal: {
@@ -67,9 +68,9 @@ const EXPECTED = {
     "combobox empty": 6,
     "select group": 2,
     "select ungrouped": 6,
-    navigation: 0,
+    navigation: 2,
     "navigation nested": 0,
-    "navigation nested popup": 0,
+    "navigation nested popup": 2,
   },
   fkas: {
     dropdown: 6,
@@ -79,9 +80,9 @@ const EXPECTED = {
     "combobox empty": 10,
     "select group": 8,
     "select ungrouped": 12,
-    navigation: 2,
-    "navigation nested": 0,
-    "navigation nested popup": 2,
+    navigation: 6,
+    "navigation nested": 2,
+    "navigation nested popup": 6,
   },
   tkas: {
     dropdown: 10,
@@ -91,9 +92,9 @@ const EXPECTED = {
     "combobox empty": 14,
     "select group": 12,
     "select ungrouped": 16,
-    navigation: 6,
-    "navigation nested": 0,
-    "navigation nested popup": 6,
+    navigation: 10,
+    "navigation nested": 6,
+    "navigation nested popup": 10,
   },
   guen: {
     dropdown: 2,
@@ -103,9 +104,9 @@ const EXPECTED = {
     "combobox empty": 6,
     "select group": 4,
     "select ungrouped": 8,
-    navigation: 0,
+    navigation: 2,
     "navigation nested": 0,
-    "navigation nested popup": 0,
+    "navigation nested popup": 2,
   },
 } as const satisfies Record<Variant, Record<Family, number>>;
 
@@ -116,10 +117,11 @@ const EXPECTED = {
 const OUTER_ROW = { internal: 6, fkas: 8, tkas: 12, guen: 4 } as const satisfies Record<Variant, number>;
 
 /**
- * A row in an inline NavigationMenu panel inside a DropdownMenu, in px: the dropdown's
- * `rounded-md` less its 4px and the panel's 8px. Only tkas's 14px corner stays above 0.
+ * A row two 4px panels deep, in px: `rounded-md` less 8px. It is a row in an inline
+ * NavigationMenu panel inside a DropdownMenu, behind the dropdown's 4px and the panel's 4px, or
+ * a row in an inline panel inside a popup's Content, behind both contents' 4px.
  */
-const DROPDOWN_INLINE_PANEL_ROW = { internal: 0, fkas: 0, tkas: 2, guen: 0 } as const satisfies Record<
+const TWO_PANELS_DEEP_ROW = { internal: 0, fkas: 2, tkas: 6, guen: 0 } as const satisfies Record<
   Variant,
   number
 >;
@@ -565,8 +567,10 @@ describe("concentric inner corners", () => {
           </NavigationMenu.Root>
         </ThemeScope>
       );
-      // Two 8px panels inset the row 16px, past every theme's rounded-md (14px at most).
-      expect(cornerRadius(await vi.waitFor(() => roleNamed("link", "Spot price")))).toBe(0);
+      // Two 4px panels inset the row 8px inside the popup's rounded-md.
+      expect(cornerRadius(await vi.waitFor(() => roleNamed("link", "Spot price")))).toBe(
+        TWO_PANELS_DEEP_ROW[variant]
+      );
       // The scope adds no shell, so a block directly in it rounds with its --radius.
       expect(cornerRadius(roleNamed("group", "Scope note"))).toBe(RADIUS[variant]);
     }
@@ -608,7 +612,7 @@ describe("concentric inner corners", () => {
           '[data-slot="navigation-menu-content"]'
         )
       ).not.toBeNull();
-      expect(cornerRadius(row)).toBe(DROPDOWN_INLINE_PANEL_ROW[variant]);
+      expect(cornerRadius(row)).toBe(TWO_PANELS_DEEP_ROW[variant]);
     }
   );
 
@@ -680,9 +684,9 @@ describe("concentric inner corners", () => {
       </ThemeScope>
     );
     const row = await vi.waitFor(() => roleNamed("link", "Deep link"));
-    // tkas at 26px: rounded-md is 24px, and three 8px panels inset the row 24px.
+    // tkas at 26px: rounded-md is 24px, and three 4px panels inset the row 12px.
     expect(cornerRadius(navigationPopup("Level one", row))).toBe(24);
-    expect(cornerRadius(row)).toBe(0);
+    expect(cornerRadius(row)).toBe(12);
   });
 
   it("lets a consumer's rounded-* class replace either NavigationMenu row corner", async () => {
@@ -712,7 +716,7 @@ describe("concentric inner corners", () => {
         </NavigationMenu.Root>
       </ThemeScope>
     );
-    // Without the override, tkas rounds these 6px in the popup and 12px on the page.
+    // Without the override, tkas rounds these 10px in the popup and 12px on the page.
     expect(cornerRadius(await vi.waitFor(() => roleNamed("link", "Electricity")))).toBe(0);
     expect(cornerRadius(roleNamed("link", "Help"))).toBe(0);
   });

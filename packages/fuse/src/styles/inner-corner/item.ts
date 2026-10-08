@@ -10,10 +10,11 @@ import { publishShellBoundary } from "../corner-radius";
 export const itemShellClass = cn("rounded-md border");
 
 /**
- * A default-size Item: 16px inline padding.
+ * A default-size Item: the medium surface tier, `--surface-pad-md`, as inline padding, and a
+ * fixed 14px on the block axis.
  */
 export const itemDefaultShellClass = cn(
-  "px-4 py-3.5 [--shell-inner:max(0px,--theme(--radius-md)-1px-4*var(--spacing))]",
+  "px-(--surface-pad-md) py-3.5 [--shell-inner:max(0px,--theme(--radius-md)-1px-var(--surface-pad-md))]",
   publishShellBoundary
 );
 

@@ -541,8 +541,9 @@ describe("DateRangePicker composition surface", () => {
     expect(page.getByRole("button", { name: /close/i }).query()).toBeNull();
     expect(getComputedStyle(dialog).paddingTop).toBe("0px");
     expect(getComputedStyle(dialog).paddingLeft).toBe("0px");
-    // RangeCalendar's root is bare by design, so the inset is the recipe's own.
-    expect(getComputedStyle(root).paddingTop).toBe("8px");
+    // RangeCalendar's root is bare by design, so the inset is the recipe's own: the small
+    // surface tier, 4px.
+    expect(getComputedStyle(root).paddingTop).toBe("4px");
     expect(getComputedStyle(root).borderTopWidth).toBe("0px");
   });
 
@@ -682,18 +683,21 @@ describe("DateRangePicker preset pane geometry", () => {
   it.each([
     ["row", ROW_VIEWPORT],
     ["stacked", STACKED_VIEWPORT],
-  ])("insets the presets by at least 8px on every side of their column (%s)", async (_layout, viewport) => {
-    await page.viewport(viewport.width, viewport.height);
-    renderPicker(presetPicker());
-    await openPicker();
-    const items = unionBox([presetTargetNamed("Today"), presetTargetNamed("Last 7 days")]);
-    const insets = insetsWithin(paddingBox(roleNamed("radiogroup", "Date presets")), items);
+  ])(
+    "insets the presets by at least the 4px small surface tier on every side of their column (%s)",
+    async (_layout, viewport) => {
+      await page.viewport(viewport.width, viewport.height);
+      renderPicker(presetPicker());
+      await openPicker();
+      const items = unionBox([presetTargetNamed("Today"), presetTargetNamed("Last 7 days")]);
+      const insets = insetsWithin(paddingBox(roleNamed("radiogroup", "Date presets")), items);
 
-    expect(insets.top).toBeGreaterThanOrEqual(8 - SUBPIXEL);
-    expect(insets.right).toBeGreaterThanOrEqual(8 - SUBPIXEL);
-    expect(insets.bottom).toBeGreaterThanOrEqual(8 - SUBPIXEL);
-    expect(insets.left).toBeGreaterThanOrEqual(8 - SUBPIXEL);
-  });
+      expect(insets.top).toBeGreaterThanOrEqual(4 - SUBPIXEL);
+      expect(insets.right).toBeGreaterThanOrEqual(4 - SUBPIXEL);
+      expect(insets.bottom).toBeGreaterThanOrEqual(4 - SUBPIXEL);
+      expect(insets.left).toBeGreaterThanOrEqual(4 - SUBPIXEL);
+    }
+  );
 });
 
 describe("DateRangePicker presets", () => {

@@ -43,6 +43,7 @@ import {
   DatePickerPresetItem,
 } from "../react-aria/date-picker/date-picker";
 import { UiProviders } from "../react-aria/ui-providers/ui-providers";
+import type { Density } from "../theme/density";
 import { ThemeScope } from "../theme/theme-scope";
 
 /**
@@ -85,37 +86,40 @@ function floor(value: number): number {
   return Math.max(0, value);
 }
 
-function each(compute: (variant: Variant) => number) {
-  return {
-    internal: compute("internal"),
-    fkas: compute("fkas"),
-    tkas: compute("tkas"),
-    guen: compute("guen"),
-  };
-}
+/**
+ * The surface metrics in px, written out by hand rather than read from the library: the small
+ * tier pads 4px at both densities, the medium tier 12px dense and 16px comfortable, and the
+ * large tier 16px dense and 24px comfortable.
+ */
+const SURFACE_PAD = {
+  sm: { dense: 4, comfortable: 4 },
+  md: { dense: 12, comfortable: 16 },
+  lg: { dense: 16, comfortable: 24 },
+} as const satisfies Record<"sm" | "md" | "lg", Record<Density, number>>;
 
 /**
  * Inner corners in px, worked out by hand from each shell's rung and the inset its markup
- * declares, floored at 0. A chip sits 7px inside the field corner, a Frame panel 4px inside the
- * Frame's `rounded-xl`, a block 21px inside a panel, a floating Sidebar row 8px inside its
- * `rounded-lg` surface with the menu action 4px inside the row, a preset 9px inside the popover's
- * `rounded-md`, a block 25px inside a Card and 24px inside a Dialog's `rounded-xl`. The field
- * parts and tabs `radius-roles.browser.test.tsx` pins are not repeated here.
+ * declares at a density, floored at 0. A chip sits 7px inside the field corner, a Frame panel
+ * 4px (the small tier) inside the Frame's `rounded-xl`, a block its border and the large tier
+ * inside a panel, a floating Sidebar row 4px inside its `rounded-lg` surface with the menu action
+ * 4px inside the row, a preset its 1px border and 4px inside the popover's `rounded-md`, a block
+ * the border and the large tier inside a Card, and the large tier inside a Dialog's `rounded-xl`.
+ * The field parts and tabs `radius-roles.browser.test.tsx` pins are not repeated here.
  */
 const EXPECTED = {
-  chip: each((v) => floor(FIELD_CORNER[v] - 7)),
-  "frame panel": each((v) => floor(RADIUS_XL[v] - 4)),
-  "panel block": each((v) => floor(floor(RADIUS_XL[v] - 4) - 21)),
-  "sidebar row": each((v) => floor(RADIUS_LG[v] - 8)),
-  "sidebar label": each((v) => floor(RADIUS_LG[v] - 8)),
-  "sidebar action": each((v) => floor(floor(RADIUS_LG[v] - 8) - 4)),
-  preset: each((v) => floor(RADIUS_MD[v] - 9)),
-  "card block": each((v) => floor(RADIUS_LG[v] - 25)),
-  "dialog block": each((v) => floor(RADIUS_XL[v] - 24)),
-} as const satisfies Record<PairName, Record<Variant, number>>;
+  chip: (v) => floor(FIELD_CORNER[v] - 7),
+  "frame panel": (v) => floor(RADIUS_XL[v] - 4),
+  "panel block": (v, d) => floor(floor(RADIUS_XL[v] - 4) - 1 - SURFACE_PAD.lg[d]),
+  "sidebar row": (v) => floor(RADIUS_LG[v] - 4),
+  "sidebar label": (v) => floor(RADIUS_LG[v] - 4),
+  "sidebar action": (v) => floor(floor(RADIUS_LG[v] - 4) - 4),
+  preset: (v) => floor(RADIUS_MD[v] - 1 - 4),
+  "card block": (v, d) => floor(RADIUS_LG[v] - 1 - SURFACE_PAD.lg[d]),
+  "dialog block": (v, d) => floor(RADIUS_XL[v] - SURFACE_PAD.lg[d]),
+} as const satisfies Record<PairName, (variant: Variant, density: Density) => number>;
 
-function expectedFor(name: PairName, variant: Variant): number {
-  return EXPECTED[name][variant];
+function expectedFor(name: PairName, variant: Variant, density: Density): number {
+  return EXPECTED[name](variant, density);
 }
 
 /** The one element with a slot that contains `part`. DOM audit: shells have no role. */
@@ -296,7 +300,7 @@ describe("concentric inner corners on fields and surfaces", () => {
             )
           );
           for (const name of BOX_PAIRS) {
-            expectConcentric(name, FIND[name](), expectedFor(name, variant));
+            expectConcentric(name, FIND[name](), expectedFor(name, variant, density));
           }
         }
       );
@@ -313,7 +317,7 @@ describe("concentric inner corners on fields and surfaces", () => {
           );
           const pairs = sidebarPairs();
           for (const name of SIDEBAR_PAIRS) {
-            expectConcentric(name, pairs[name], expectedFor(name, variant));
+            expectConcentric(name, pairs[name], expectedFor(name, variant, density));
           }
         }
       );
@@ -354,7 +358,7 @@ describe("concentric inner corners on fields and surfaces", () => {
           expectConcentric(
             "preset",
             { part: preset, shell: popover, edge: "start" },
-            expectedFor("preset", variant)
+            expectedFor("preset", variant, density)
           );
         }
       );
@@ -381,7 +385,7 @@ describe("concentric inner corners on fields and surfaces", () => {
         expectConcentric(
           "dialog block",
           { part: block, shell: dialog, edge: "start" },
-          expectedFor("dialog block", variant)
+          expectedFor("dialog block", variant, density)
         );
       });
     });
@@ -460,18 +464,18 @@ describe("concentric inner corners on fields and surfaces", () => {
   });
 
   it.each([
-    // An internal theme at a 32px radius: every rung is 32px. A rounded item pads 16px, and a
-    // bordered card item 17px. An unrounded infodropdown item is no shell, so a block in it
-    // rounds with --radius.
-    ["default", "none", 16],
-    ["default", "lg", 16],
-    ["default", "xl", 16],
-    ["card", "none", 15],
-    ["card", "lg", 15],
-    ["card", "xl", 15],
+    // An internal theme at a 32px radius, dense: every rung is 32px. A rounded item pads 12px,
+    // the medium tier, and a bordered card item 13px. An unrounded infodropdown item is no
+    // shell, so a block in it rounds with --radius.
+    ["default", "none", 20],
+    ["default", "lg", 20],
+    ["default", "xl", 20],
+    ["card", "none", 19],
+    ["card", "lg", 19],
+    ["card", "xl", 19],
     ["infodropdown", "none", 32],
-    ["infodropdown", "lg", 16],
-    ["infodropdown", "xl", 16],
+    ["infodropdown", "lg", 20],
+    ["infodropdown", "xl", 20],
   ] as const)("rounds a block in a %s Accordion item with radius %s", (variant, radius, expected) => {
     stampDocumentTheme(fkasPrivate, "light");
     render(

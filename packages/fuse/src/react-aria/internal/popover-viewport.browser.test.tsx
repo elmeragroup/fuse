@@ -96,12 +96,13 @@ describe("react-aria popover in a viewport-sized clipping scope", () => {
       await animationFrames(10);
       expectWholeBelowField();
 
-      // 910px leaves 350px below the field: room for the calendar's 338px and the 8px offset,
-      // but not for React Aria's 12px gutter, which would clamp the calendar to 329px there.
-      await page.viewport(800, 910);
-      await vi.waitFor(() => expectWholeAboveField(910));
+      // 898px leaves 338px below the field: room for the dense calendar's 328px and the 8px
+      // offset, but not for React Aria's 12px gutter, which would clamp the calendar to 326px
+      // there.
+      await page.viewport(800, 898);
+      await vi.waitFor(() => expectWholeAboveField(898));
       await animationFrames(10);
-      expectWholeAboveField(910);
+      expectWholeAboveField(898);
       unmount();
     }
   });

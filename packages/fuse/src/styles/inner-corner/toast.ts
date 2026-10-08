@@ -5,9 +5,9 @@ import { publishShellBoundary } from "../corner-radius";
 // constant pairs a part's rung or padding with the corner it publishes.
 
 /**
- * A Toast: `rounded-lg` and 16px padding.
+ * A Toast: `rounded-lg` and the medium surface padding, `--surface-pad-md`.
  */
 export const toastShellClass = cn(
-  "rounded-lg p-4 [--shell-inner:max(0px,--theme(--radius-lg)-4*var(--spacing))]",
+  "rounded-lg p-(--surface-pad-md) [--shell-inner:max(0px,--theme(--radius-lg)-var(--surface-pad-md))]",
   publishShellBoundary
 );

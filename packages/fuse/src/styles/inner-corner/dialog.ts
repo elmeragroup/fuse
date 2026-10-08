@@ -5,9 +5,10 @@ import { publishShellBoundary } from "../corner-radius";
 // constant pairs a part's rung or padding with the corner it publishes.
 
 /**
- * The Dialog popup, AlertDialog's too: `rounded-xl` and 24px padding.
+ * The Dialog popup, AlertDialog's too: `rounded-xl` and the large surface padding,
+ * `--surface-pad-lg`.
  */
 export const dialogShellClass = cn(
-  "rounded-xl p-6 [--shell-inner:max(0px,--theme(--radius-xl)-6*var(--spacing))]",
+  "rounded-xl p-(--surface-pad-lg) [--shell-inner:max(0px,--theme(--radius-xl)-var(--surface-pad-lg))]",
   publishShellBoundary
 );

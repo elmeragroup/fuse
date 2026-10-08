@@ -18,10 +18,10 @@ import {
   menuGroupLabelClass,
   menuItemClass,
   menuItemIndicatorClass,
+  menuItemIndicatorRoomClass,
   menuSeparatorClass,
-  overlayPositionerClass,
-  overlayTimedPopupClass,
-} from "../overlay/overlay-classes";
+} from "../overlay/menu-row-classes";
+import { overlayPositionerClass, overlayTimedPopupClass } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
 import { selectTriggerSize } from "./select-variants";
@@ -148,12 +148,12 @@ export function SelectItem({
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- option padding is menu layout, not a control rung
       className={mergeClassName(
         className,
         menuItemClass,
+        menuItemIndicatorRoomClass,
         // oxlint-disable-next-line elmera/no-local-focus-ring -- the highlight face menuItemClass leaves to the family; base-ui spells it `focus:` on Select items
-        "w-full pr-8 pl-2 focus:bg-accent focus:text-accent-foreground focus:**:text-accent-foreground *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2"
+        "w-full focus:bg-accent focus:text-accent-foreground focus:**:text-accent-foreground *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2"
       )}
       {...props}>
       <SelectPrimitive.ItemText className="flex flex-1 shrink-0 gap-2 whitespace-nowrap">

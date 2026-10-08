@@ -5,8 +5,8 @@ import { cn } from "../cn";
 
 /**
  * A Field label that holds a Field: the label rounds `rounded-md` behind a 1px border and the Field
- * pads 12px inside it. Both clear the relay.
+ * pads inside it with the medium surface tier, `--surface-pad-md`. Both clear the relay.
  */
 export const fieldLabelCardShellClass = cn(
-  "has-[>[data-slot=field]]:rounded-md has-[>[data-slot=field]]:border has-[>[data-slot=field]]:[--inner-corner:var(--shell-inner)] has-[>[data-slot=field]]:[--shell-corner:initial] has-[>[data-slot=field]]:[--shell-inner:max(0px,--theme(--radius-md)-1px)] *:data-[slot=field]:p-3 *:data-[slot=field]:[--inner-corner:var(--shell-inner)] *:data-[slot=field]:[--shell-corner:initial] *:data-[slot=field]:[--shell-inner:max(0px,--theme(--radius-md)-1px-3*var(--spacing))]"
+  "has-[>[data-slot=field]]:rounded-md has-[>[data-slot=field]]:border has-[>[data-slot=field]]:[--inner-corner:var(--shell-inner)] has-[>[data-slot=field]]:[--shell-corner:initial] has-[>[data-slot=field]]:[--shell-inner:max(0px,--theme(--radius-md)-1px)] *:data-[slot=field]:p-(--surface-pad-md) *:data-[slot=field]:[--inner-corner:var(--shell-inner)] *:data-[slot=field]:[--shell-corner:initial] *:data-[slot=field]:[--shell-inner:max(0px,--theme(--radius-md)-1px-var(--surface-pad-md))]"
 );

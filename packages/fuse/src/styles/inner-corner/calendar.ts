@@ -5,10 +5,11 @@ import { fixedCornerClass, publishShellBoundary } from "../corner-radius";
 // `corner-radius.ts`. Each constant pairs a part's rung or padding with the corner it publishes.
 
 /**
- * The standalone Calendar: its fixed corner behind a 1px border, padded 8px.
+ * The standalone Calendar: its fixed corner behind a 1px border, padded with the small surface
+ * tier, `--surface-pad-sm`, around its control-sized cells.
  */
 export const calendarShellClass = cn(
   fixedCornerClass,
-  "p-2 [--shell-inner:max(0px,clamp(var(--radius)-1000*var(--radius-step,0px),4px,var(--radius)+1000*var(--radius-step,0px))-1px-2*var(--spacing))]",
+  "p-(--surface-pad-sm) [--shell-inner:max(0px,clamp(var(--radius)-1000*var(--radius-step,0px),4px,var(--radius)+1000*var(--radius-step,0px))-1px-var(--surface-pad-sm))]",
   publishShellBoundary
 );

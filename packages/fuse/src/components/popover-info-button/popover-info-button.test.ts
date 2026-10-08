@@ -30,11 +30,14 @@ const CONTENT_SIZE_CLASS = {
 } as const;
 
 describe("popoverInfoButtonStyles", () => {
+  // The Popover popup owns the padding, the medium surface tier, so the content adds none.
+  const PADDING = /(?:^|\s)p[xy]?-/u;
+
   it("keeps the content base and maps every contentSize onto max-w-*", () => {
     const defaults = popoverInfoButtonStyles();
     expect(defaults.icon()).toContain("size-4");
     expect(defaults.content()).toContain("w-auto");
-    expect(defaults.content()).toContain("p-4");
+    expect(defaults.content()).not.toMatch(PADDING);
     expect(defaults.content()).toContain("text-sm");
     expect(defaults.content()).toContain("max-w-md");
 
@@ -43,7 +46,7 @@ describe("popoverInfoButtonStyles", () => {
       const content = popoverInfoButtonStyles({ contentSize: size }).content();
       expect(content, size).toContain(maxWidth);
       expect(content, size).toContain("w-auto");
-      expect(content, size).toContain("p-4");
+      expect(content, size).not.toMatch(PADDING);
       expect(content, size).toContain("text-sm");
       for (const other of Object.values(CONTENT_SIZE_CLASS)) {
         if (other !== maxWidth) {

@@ -19,7 +19,7 @@ popup spreads `definedProps(props)` so `undefined` cannot erase automatic wiring
 ## Styling and accessibility
 
 Style components with role tokens and shared recipes. Theme layers own colors;
-control metrics follow document density. Keep density out of subtree theming.
+control and surface metrics follow document density, outside subtree theming.
 Use Field for label/error wiring and the shared focus, overlay and locale owners.
 Parse, convert, mix and measure colors through `@elmeragroup/color`, never ad hoc.
 Keep explicit string overrides ahead of dictionary defaults.

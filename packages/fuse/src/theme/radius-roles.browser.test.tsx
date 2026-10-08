@@ -89,8 +89,9 @@ type Variant = "internal" | "fkas" | "tkas" | "guen";
  * the chips 7px, so the kbd and the chip remove button take 0px; the date trigger sits flush
  * behind the 1px border, at 5px internal and 3px external; and a date segment sits behind the
  * border and the dense 10px control inset, at 0px. A tab sits 4px inside the list's
- * `rounded-lg`: 2px internal, 8px fkas, 12px tkas and 4px guen. A preset sits 9px inside the
- * popover's `rounded-md`: 0px internal, 1px fkas, 5px tkas and 0px guen.
+ * `rounded-lg`: 2px internal, 8px fkas, 12px tkas and 4px guen. A preset sits 5px inside the
+ * popover's `rounded-md`, its 1px border and the 4px small surface tier: 1px internal, 5px fkas,
+ * 9px tkas and 1px guen.
  */
 const EXPECTED = {
   internal: {
@@ -114,7 +115,7 @@ const EXPECTED = {
     "search clear": 1,
     "date trigger": 5,
     "date segment": 0,
-    preset: 0,
+    preset: 1,
     "chip remove": 0,
   },
   fkas: {
@@ -138,7 +139,7 @@ const EXPECTED = {
     "search clear": 0,
     "date trigger": 3,
     "date segment": 0,
-    preset: 1,
+    preset: 5,
     "chip remove": 0,
   },
   tkas: {
@@ -162,7 +163,7 @@ const EXPECTED = {
     "search clear": 0,
     "date trigger": 3,
     "date segment": 0,
-    preset: 5,
+    preset: 9,
     "chip remove": 0,
   },
   guen: {
@@ -186,7 +187,7 @@ const EXPECTED = {
     "search clear": 0,
     "date trigger": 3,
     "date segment": 0,
-    preset: 0,
+    preset: 1,
     "chip remove": 0,
   },
 } as const satisfies Record<Variant, Record<Specimen, number>>;
@@ -195,7 +196,7 @@ const EXPECTED = {
  * The internal radii at a 1rem (16px) `--radius`: every outer element at 16px, and each inner
  * part 16px less its inset from {@link EXPECTED}: 6.6px for the kbd, 5px for the addons, the
  * phone trigger and the search clear button, 1px for the date trigger, 11px for a date
- * segment, 4px for a tab and 9px for a preset. The chip remove button sits 2px inside a chip
+ * segment, 4px for a tab and 5px for a preset. The chip remove button sits 2px inside a chip
  * that sits 7px in, so it takes 7px.
  */
 const INTERNAL_AT_16PX = {
@@ -219,7 +220,7 @@ const INTERNAL_AT_16PX = {
   "search clear": 11,
   "date trigger": 15,
   "date segment": 5,
-  preset: 7,
+  preset: 11,
   "chip remove": 7,
 } as const satisfies Record<Specimen, number>;
 

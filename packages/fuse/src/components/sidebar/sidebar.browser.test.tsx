@@ -244,8 +244,8 @@ describe("Sidebar controlled and uncontrolled state", () => {
   });
 });
 
-describe("Sidebar density exemption", () => {
-  it("keeps the menu-button ladder and Sidebar.Input height identical at both density stamps", () => {
+describe("Sidebar row density", () => {
+  it("sizes the default menu button as a control and keeps the sm and lg rail heights and Sidebar.Input fixed", () => {
     const heights: Record<string, number[]> = {};
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);
@@ -282,9 +282,73 @@ describe("Sidebar density exemption", () => {
       ];
       unmount();
     }
+    // The default row is the sm control height, 32px dense and 36px comfortable. The sm and lg
+    // rows and the input are rail geometry and keep their height.
     expect(heights.dense).toEqual([32, 28, 48, 32]);
-    expect(heights.comfortable).toEqual(heights.dense);
+    expect(heights.comfortable).toEqual([36, 28, 48, 32]);
   });
+});
+
+describe("Sidebar menu skeleton geometry", () => {
+  /**
+   * A collapsed icon-rail row in px, written out by hand: a 32px square padded 8px on every
+   * side, so the 16px icon sits 8px in from the row's top and start edges, at both densities.
+   */
+  const COLLAPSED = { size: 32, padding: 8, iconOffset: 8 } as const;
+
+  /** The left and top distance from `outer`'s border box to `inner`'s. */
+  function offsetWithin(inner: Element, outer: Element) {
+    const innerBox = inner.getBoundingClientRect();
+    const outerBox = outer.getBoundingClientRect();
+    return { left: innerBox.left - outerBox.left, top: innerBox.top - outerBox.top };
+  }
+
+  for (const density of ["dense", "comfortable"] as const) {
+    it(`keeps the skeleton and the default menu button on one box in the collapsed icon rail (${density})`, () => {
+      stampDensity(density);
+      renderThemed(
+        <Frame provider={{ defaultOpen: false }} root={{ collapsible: "icon" }}>
+          <Sidebar.MenuItem>
+            <Sidebar.MenuButton>
+              <svg aria-hidden="true" viewBox="0 0 16 16" />
+              <span>Overview</span>
+            </Sidebar.MenuButton>
+          </Sidebar.MenuItem>
+          <Sidebar.MenuItem>
+            <Sidebar.MenuSkeleton showIcon role="group" aria-label="Loading row" />
+          </Sidebar.MenuItem>
+        </Frame>
+      );
+      expect(sidebarRoot().getAttribute("data-state")).toBe("collapsed");
+      const button = roleNamed("button", "Overview");
+      const skeleton = roleNamed("group", "Loading row");
+      const buttonIcon = button.querySelector("svg");
+      // DOM audit: the skeleton's icon placeholder has no role, so it is found by its slot.
+      const skeletonIcon = bySlot("sidebar-menu-skeleton-icon", skeleton);
+      if (buttonIcon === null) {
+        throw new Error("expected the button's icon");
+      }
+
+      for (const [name, row, icon] of [
+        ["button", button, buttonIcon],
+        ["skeleton", skeleton, skeletonIcon],
+      ] as const) {
+        const box = row.getBoundingClientRect();
+        const style = getComputedStyle(row);
+        expect(box.height, `${name} height`).toBe(COLLAPSED.size);
+        expect(box.width, `${name} width`).toBe(COLLAPSED.size);
+        expect(px(style.paddingLeft), `${name} start`).toBe(COLLAPSED.padding);
+        expect(px(style.paddingRight), `${name} end`).toBe(COLLAPSED.padding);
+        expect(offsetWithin(icon, row), `${name} icon`).toEqual({
+          left: COLLAPSED.iconOffset,
+          top: COLLAPSED.iconOffset,
+        });
+      }
+      // Both rows sit at the same inline position in the rail.
+      expect(skeleton.getBoundingClientRect().left).toBe(button.getBoundingClientRect().left);
+      expect(skeletonIcon.getBoundingClientRect().left).toBe(buttonIcon.getBoundingClientRect().left);
+    });
+  }
 });
 
 describe("Sidebar.Input focus ring", () => {

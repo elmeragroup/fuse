@@ -5,9 +5,10 @@ import { publishShellBoundary } from "../corner-radius";
 // constant pairs a part's rung or padding with the corner it publishes.
 
 /**
- * The Popover popup, PopoverInfoButton's too: `rounded-md` and 16px padding.
+ * The Popover popup, PopoverInfoButton's too: `rounded-md` and the medium surface padding,
+ * `--surface-pad-md`.
  */
 export const popoverShellClass = cn(
-  "rounded-md p-4 [--shell-inner:max(0px,--theme(--radius-md)-4*var(--spacing))]",
+  "rounded-md p-(--surface-pad-md) [--shell-inner:max(0px,--theme(--radius-md)-var(--surface-pad-md))]",
   publishShellBoundary
 );

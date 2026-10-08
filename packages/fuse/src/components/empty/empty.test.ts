@@ -18,10 +18,10 @@ describe("emptyVariants", () => {
     expect(resolved).toContain("justify-center");
     expect(resolved).toContain("gap-6");
     expect(resolved).toContain("rounded-lg");
-    expect(resolved).toContain("p-6");
+    expect(resolved).toContain("p-(--surface-pad-lg)");
     expect(resolved).toContain("text-center");
     expect(resolved).toContain("text-balance");
-    expect(resolved).toContain("md:p-12");
+    expect(resolved).toContain("md:p-[calc(2*var(--surface-pad-lg))]");
     expect(resolved).not.toContain("--control-");
     expect(resolved).not.toContain("data-density");
   });

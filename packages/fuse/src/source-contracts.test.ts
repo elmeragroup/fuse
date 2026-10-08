@@ -710,7 +710,7 @@ describe("state faces", () => {
     // `pointer-events-none` so the pointer never highlights a disabled option.
     const { "styles/state-face.ts": _owner, ...copies } = flaggedTokensByFile(localDisabledDims);
     expect(copies).toEqual({
-      "components/overlay/overlay-classes.ts": [
+      "components/overlay/menu-row-classes.ts": [
         "data-disabled:opacity-50",
         "data-disabled:pointer-events-none",
       ],
