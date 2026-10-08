@@ -6,6 +6,7 @@ import type { ComponentProps, MouseEvent, ReactElement, ReactNode } from "react"
 import { Field as FieldPrimitive } from "@base-ui/react/field";
 import { mergeProps } from "@base-ui/react/merge-props";
 
+import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { selectionItemShellClass } from "../../styles/inner-corner/item";
 import { labelTypeClass } from "../../styles/label-type";
@@ -432,8 +433,7 @@ export function SelectionItemShell({
 
   return (
     <FieldItem
-      {...(inItemGroup ? { role: "listitem" as const } : null)}
-      {...props}
+      {...definedProps({ ...props, role: props.role ?? (inItemGroup ? "listitem" : undefined) })}
       {...(isSubSectionSelectable
         ? mergeProps<"div">({ onClick: selectFromSubSection }, { onClick: props.onClick })
         : null)}
