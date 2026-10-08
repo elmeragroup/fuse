@@ -106,16 +106,13 @@ export function SelectionItemGroup({
 
 /**
  * The option's name. It takes the row's density type size, `--control-text-row`, in place of
- * `Item.Title`'s fixed `text-sm`. tailwind-merge drops a line height that comes before a font
- * size, so `leading-snug` is restated after it, in its own argument because the formatter sorts
- * the classes inside one string.
+ * `Item.Title`'s fixed `text-sm`. The size carries `leading-snug` as its `/snug` modifier: a
+ * separate `leading-snug` before it would fall to tailwind-merge, which drops a line height
+ * that comes before a font size, and the formatter sorts the classes inside a string.
  */
 export function SelectionItemTitle({ className, ...props }: ComponentProps<typeof ItemTitle>): ReactElement {
   return (
-    <ItemTitle
-      className={cn("text-(length:--control-text-row)", "leading-snug font-normal", className)}
-      {...props}
-    />
+    <ItemTitle className={cn("text-(length:--control-text-row)/snug font-normal", className)} {...props} />
   );
 }
 
