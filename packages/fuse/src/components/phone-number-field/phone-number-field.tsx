@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 // Subpath import (`@base-ui/react/combobox`) type-checks but crashes at runtime with a
@@ -9,6 +9,7 @@ import type { ComponentProps, ReactElement, ReactNode } from "react";
 // primitives; the popup surface itself is the library Combobox.
 import { Combobox as ComboboxPrimitive } from "@base-ui/react";
 import type { CountryCode, MetadataJson } from "libphonenumber-js/core";
+import { flushSync } from "react-dom";
 
 import type { FlagAssetCode } from "../../flags";
 import { useFormReset } from "../../hooks/use-form-reset";
@@ -23,6 +24,7 @@ import { ComboboxContent, ComboboxEmpty, ComboboxItem, ComboboxList } from "../c
 import { FieldFrame, fieldFrameRootClass } from "../field/field-frame";
 import { InputGroupAddon, InputGroupInput, InputGroupRoot } from "../input-group/input-group";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
+import { sortByCountryName } from "./country-names";
 import { Flag } from "./flag";
 import { usePhoneNumberFieldState } from "./hooks/use-phone-number-field-state";
 import { phoneNumberFieldStrings } from "./intl";
@@ -189,6 +191,10 @@ export function PhoneNumberField({
   // Combobox.Root stringifies the selected item on mount; names are only needed
   // once the popup is open (list rows + filter).
   const countryPickerOpenRef = useRef(false);
+  // The locale whose name order the picker rows follow, taken as the picker opens; null until
+  // the first open. A locale change shows in the order at the next open, so it cannot move
+  // the highlight of an open picker onto another country.
+  const [rowOrderLocale, setRowOrderLocale] = useState<string | null>(null);
   const strings = useLocalizedStrings(phoneNumberFieldStrings);
   const resolvedSelectCountryLabel = selectCountryLabel ?? strings.format("selectCountry");
   const resolvedSearchCountriesLabel = searchCountriesLabel ?? strings.format("searchCountries");
@@ -200,6 +206,12 @@ export function PhoneNumberField({
     locale,
   });
   useFormReset(numberInputRef, phone.onReset);
+  // Metadata order resolves no name, so it holds until the first open. The hook keeps that
+  // order for its own lookups; only the rows the picker shows are sorted.
+  const pickerCountries = useMemo(
+    () => (rowOrderLocale === null ? phone.countries : sortByCountryName(phone.countries, rowOrderLocale)),
+    [rowOrderLocale, phone.countries]
+  );
 
   // Input drops the undefined keys, so they cannot erase its Field id, label or description.
   const ariaProps = {
@@ -224,7 +236,7 @@ export function PhoneNumberField({
         errorMessage={errorMessage}>
         <InputGroupRoot ref={inputGroupRef} aria-invalid={isInvalid || undefined}>
           <ComboboxPrimitive.Root
-            items={phone.countries}
+            items={pickerCountries}
             value={phone.selectedCountry}
             onValueChange={(next) => {
               if (!isEditable) return;
@@ -241,6 +253,14 @@ export function PhoneNumberField({
               // the exit transition; flipping this back to false here would switch
               // labels from names to ISO codes and flash the empty state.
               if (open) {
+                // Base UI calls this before it commits `open`, and finds the selected row's
+                // index only while the popup is closed. The sorted rows commit first, in their
+                // own render, so the popup opens highlighting the selected country rather than
+                // whichever took its old index. On the first open the labels switch to names
+                // only after that render: switching them in it too loses the highlight.
+                if (rowOrderLocale !== locale) {
+                  flushSync(() => setRowOrderLocale(locale));
+                }
                 countryPickerOpenRef.current = true;
               }
             }}

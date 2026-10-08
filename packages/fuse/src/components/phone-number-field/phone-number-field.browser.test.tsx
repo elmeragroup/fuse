@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
+import type { MetadataJson } from "libphonenumber-js/core";
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -33,6 +34,7 @@ import {
 } from "../../../test/themed-browser-render";
 import { flagAssets } from "../../flags";
 import { resetCountryNameCache } from "./country-names";
+import { defaultMetadata } from "./phone-engine";
 
 const SELECT_COUNTRY_COPY = {
   "nb-NO": "Velg land",
@@ -536,6 +538,99 @@ describe("PhoneNumberField", () => {
         normalLineHeightOf(dialCode)
       );
     }
+  });
+});
+
+describe("PhoneNumberField country order", () => {
+  // ISO order, which is the name order in neither locale below.
+  const threeCountries: MetadataJson = {
+    ...defaultMetadata,
+    countries: {
+      AT: defaultMetadata.countries.AT,
+      AX: defaultMetadata.countries.AX,
+      ZA: defaultMetadata.countries.ZA,
+    },
+    country_calling_codes: { "27": ["ZA"], "358": ["AX"], "43": ["AT"] },
+  };
+
+  /** The row the search input's aria-activedescendant points at, by its flag. */
+  function highlightedFlagCode(locale: "sv-SE" | "nb-NO"): string | undefined {
+    const id = countrySearch(SEARCH_COUNTRIES_COPY[locale]).getAttribute("aria-activedescendant");
+    // DOM audit: the option's flag image is decorative, so it has no role of its own.
+    const flag = id ? document.getElementById(id)?.querySelector("img") : null;
+    return flagCodeFromSrc(flag?.getAttribute("src") ?? "");
+  }
+
+  async function closePicker() {
+    await userEvent.keyboard("{Escape}");
+    await vi.waitFor(() => {
+      expect(page.getByRole("listbox").query()).toBeNull();
+    });
+  }
+
+  it("lists rows by localized name from the first open, keeping the selection and highlight, and re-sorts for a new locale or catalog at the next open", async () => {
+    const change = vi.fn();
+    const countryChange = vi.fn();
+    const field = (metadata: MetadataJson) => (
+      <PhoneNumberField
+        label="Mobile"
+        metadata={metadata}
+        defaultCountryCode="AT"
+        onChange={change}
+        onCountryChange={countryChange}
+      />
+    );
+    const { rerender } = renderField(field(threeCountries), "sv-SE");
+    await openPicker(SELECT_COUNTRY_COPY["sv-SE"]);
+    // Sydafrika, Åland, Österrike
+    expect(optionFlagCodes()).toEqual(["ZA", "AX", "AT"]);
+    expect(page.getByRole("option", { selected: true }).element().textContent).toContain("Österrike");
+    await expect.poll(() => highlightedFlagCode("sv-SE")).toBe("AT");
+
+    // A locale change keeps the open picker's order, so the highlight stays on Austria.
+    rerender(withLocale("nb-NO", field(threeCountries)));
+    expect(optionFlagCodes()).toEqual(["ZA", "AX", "AT"]);
+    await expect.poll(() => highlightedFlagCode("nb-NO")).toBe("AT");
+    await closePicker();
+    await openPicker(SELECT_COUNTRY_COPY["nb-NO"]);
+    // Sør-Afrika, Østerrike, Åland
+    expect(optionFlagCodes()).toEqual(["ZA", "AT", "AX"]);
+    await expect.poll(() => highlightedFlagCode("nb-NO")).toBe("AT");
+    await closePicker();
+
+    const withGermany: MetadataJson = {
+      ...threeCountries,
+      countries: { ...threeCountries.countries, DE: defaultMetadata.countries.DE },
+      country_calling_codes: { ...threeCountries.country_calling_codes, "49": ["DE"] },
+    };
+    rerender(withLocale("nb-NO", field(withGermany)));
+    await openPicker(SELECT_COUNTRY_COPY["nb-NO"]);
+    // Sør-Afrika, Tyskland, Østerrike, Åland
+    expect(optionFlagCodes()).toEqual(["ZA", "DE", "AT", "AX"]);
+    await expect.poll(() => highlightedFlagCode("nb-NO")).toBe("AT");
+    expect(roleNamed("button", SELECT_COUNTRY_COPY["nb-NO"]).textContent).toContain("+43");
+    expect(change).not.toHaveBeenCalled();
+    expect(countryChange).not.toHaveBeenCalled();
+  });
+
+  it("selects the sorted row the keyboard lands on", async () => {
+    const countryChange = vi.fn();
+    renderField(
+      <PhoneNumberField
+        label="Mobile"
+        metadata={threeCountries}
+        defaultCountryCode="AT"
+        onCountryChange={countryChange}
+      />,
+      "sv-SE"
+    );
+    await openPicker(SELECT_COUNTRY_COPY["sv-SE"]);
+    // From Österrike, the last row, ArrowUp lands on Åland.
+    await userEvent.keyboard("{ArrowUp}{Enter}");
+    await vi.waitFor(() => {
+      expect(page.getByRole("listbox").query()).toBeNull();
+    });
+    expect(countryChange).toHaveBeenCalledExactlyOnceWith({ code: "AX", dialCode: "+358" });
   });
 });
 
