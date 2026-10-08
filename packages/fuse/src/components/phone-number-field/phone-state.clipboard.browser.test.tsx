@@ -304,11 +304,12 @@ describe("PhoneNumberField identity and authoritative value", () => {
     const recover = vi.fn();
     let root: ReturnType<typeof hydrateRoot> | undefined;
     try {
-      const form = host.querySelector("form");
-      // DOM audit: in the server markup the country trigger shares the number input's id, so the
-      // label's `for` names the trigger and the input has no accessible name until hydration.
-      const serverInput = host.querySelector('input[name="phone-display-value"]');
-      if (!form || !(serverInput instanceof HTMLInputElement)) throw new Error("Expected server form");
+      const form = phoneForm("SSR phone");
+      // The server markup labels the number input on its own: the country trigger has an id
+      // of its own rather than the input's.
+      const serverInput = phoneInput("Server mobile");
+      expect(serverInput.labels?.length).toBe(1);
+      expect(roleNamed("button", "Select country").id).not.toBe(serverInput.id);
       // What typing does before the client scripts attach their listeners.
       serverInput.value = "91234567";
       root = hydrateRoot(host, element, { onRecoverableError: recover });

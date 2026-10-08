@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 // Subpath import (`@base-ui/react/combobox`) type-checks but crashes at runtime with a
@@ -8,6 +8,13 @@ import type { ComponentProps, ReactElement, ReactNode } from "react";
 // Root, Trigger, and the popup's search Input are the raw
 // primitives; the popup surface itself is the library Combobox.
 import { Combobox as ComboboxPrimitive } from "@base-ui/react";
+// Base UI's own Field wiring, which its composite controls use. The phone field needs it to
+// keep its country picker out of the field and to register the number it submits.
+import { DEFAULT_FIELD_ROOT_STATE, DEFAULT_VALIDITY_STATE } from "@base-ui/react/internals/field-constants";
+import { FieldRootContext, useFieldRootContext } from "@base-ui/react/internals/field-root-context";
+import { useFormContext } from "@base-ui/react/internals/form-context";
+import { LabelableProvider } from "@base-ui/react/internals/labelable-provider";
+import { NOOP } from "@base-ui/react/internals/noop";
 import type { CountryCode, MetadataJson } from "libphonenumber-js/core";
 import { flushSync } from "react-dom";
 
@@ -22,7 +29,12 @@ import { fieldFlushCornerClass } from "../../styles/corner-radius";
 import { selfFocusRingClass } from "../../styles/utils";
 import { ComboboxContent, ComboboxEmpty, ComboboxItem, ComboboxList } from "../combobox/combobox";
 import { FieldFrame, fieldFrameRootClass } from "../field/field-frame";
-import { InputGroupAddon, InputGroupInput, InputGroupRoot } from "../input-group/input-group";
+import {
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupPlainInput,
+  InputGroupRoot,
+} from "../input-group/input-group";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
 import { caretOffset, significantAfter } from "./caret";
 import type { CaretSide } from "./caret";
@@ -31,6 +43,79 @@ import { Flag } from "./flag";
 import { usePhoneNumberFieldState } from "./hooks/use-phone-number-field-state";
 import { phoneNumberFieldStrings } from "./intl";
 import type { PhoneNumberCountry } from "./phone-engine";
+
+/**
+ * Hands the number input's Field registration the number the field submits in place of the
+ * display text the input holds, so a `Form` reads it for `onFormSubmit` while still focusing
+ * the input on an error and checking its constraints. The input keeps its own
+ * `${name}-display-value` DOM name, which the Field's `name` would otherwise replace.
+ */
+function SubmittedValueControl({
+  getSubmittedValue,
+  children,
+}: {
+  getSubmittedValue: () => string;
+  children: ReactNode;
+}): ReactElement {
+  const field = useFieldRootContext();
+  const { registerFieldControl } = field;
+  const register = useCallback<FieldRootContext["registerFieldControl"]>(
+    (source, registration) =>
+      registerFieldControl(source, registration && { ...registration, getValue: getSubmittedValue }),
+    [registerFieldControl, getSubmittedValue]
+  );
+  const context = useMemo(
+    () => ({ ...field, name: undefined, registerFieldControl: register }),
+    [field, register]
+  );
+  return <FieldRootContext.Provider value={context}>{children}</FieldRootContext.Provider>;
+}
+
+/**
+ * The Field context Base UI gives a control outside any Field: no name, registration,
+ * validation or state to report to. Typed against Base UI's own context, so a change to it
+ * fails the build here.
+ */
+const DETACHED_FIELD_CONTEXT: FieldRootContext = {
+  invalid: undefined,
+  name: undefined,
+  validityData: { state: DEFAULT_VALIDITY_STATE, errors: [], error: "", value: "", initialValue: null },
+  setValidityData: NOOP,
+  disabled: undefined,
+  setTouched: NOOP,
+  setDirty: NOOP,
+  setFilled: NOOP,
+  setFocused: NOOP,
+  validationMode: "onSubmit",
+  shouldValidateOnChange: () => false,
+  state: DEFAULT_FIELD_ROOT_STATE,
+  registerFieldControl: NOOP,
+  validation: {
+    getValidationProps: (_disabled, props = {}) => props,
+    inputRef: { current: null },
+    registeredInputs: new Map(),
+    registerInput: NOOP,
+    getInputControl: () => null,
+    commit: () => Promise.resolve(),
+    change: NOOP,
+  },
+};
+
+/**
+ * Renders the country picker outside the phone field's Field, and outside any Field around
+ * it: the detached context keeps the combobox from registering as a field's control or taking
+ * its name, and its own labelable scope keeps the field's label and control id off it. It
+ * keeps the field's disabled state, which a disabled `Field.Set` can set.
+ */
+function CountryPickerScope({ children }: { children: ReactNode }): ReactElement {
+  const { disabled } = useFieldRootContext();
+  const context = useMemo(() => ({ ...DETACHED_FIELD_CONTEXT, disabled }), [disabled]);
+  return (
+    <FieldRootContext.Provider value={context}>
+      <LabelableProvider>{children}</LabelableProvider>
+    </FieldRootContext.Provider>
+  );
+}
 
 /** A selection kept as the digits after each end, for the display an edit proposed. */
 type PendingSelection = {
@@ -129,8 +214,7 @@ export type PhoneNumberFieldProps = {
   description?: string;
   /**
    * Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the
-   * field shows the visible input's own constraint message. A Base UI `Form` error under
-   * `name` does not reach this field; pass it here.
+   * field shows a `Form` error under `name`, or the visible input's own constraint message.
    */
   errorMessage?: ReactNode;
   /** Placeholder for the visible number input. */
@@ -157,7 +241,9 @@ export type PhoneNumberFieldProps = {
   isRequired?: boolean;
   /**
    * Hidden input gets `name`; the visible input gets `${name}-display-value`.
-   * Unset, neither input submits.
+   * Unset, neither input submits. Inside a `Form`, the field shows `errors[name]`, clears it
+   * when the number it submits changes, and gives `onFormSubmit` that number under `name`, in
+   * `outputFormat`.
    */
   name?: string;
   /** Extra classes, merged onto the root via `cn`. */
@@ -286,6 +372,24 @@ export function PhoneNumberField({
       pending.direction
     );
   });
+  // A Form reads the submitted number at submit time, after the commit that last changed it.
+  const submittedValueRef = useRef(phone.outputValue);
+  useLayoutEffect(() => {
+    submittedValueRef.current = phone.outputValue;
+  });
+  const getSubmittedValue = useCallback(() => submittedValueRef.current, []);
+  // A Form error under `name` clears when the number the field submits changes: an edit, a
+  // country that changes it, or a reset. Searching the picker changes nothing it submits.
+  // A layout effect, so it runs before the Form's own: errors the parent passes in the same
+  // commit as a new value, such as a server's verdict on it, stay.
+  const { clearErrors } = useFormContext();
+  const clearedValueRef = useRef(phone.outputValue);
+  useLayoutEffect(() => {
+    if (clearedValueRef.current === phone.outputValue) return;
+    clearedValueRef.current = phone.outputValue;
+    if (name) clearErrors(name);
+  }, [phone.outputValue, name, clearErrors]);
+
   // Metadata order resolves no name, so it holds until the first open. The hook keeps that
   // order for its own lookups; only the rows the picker shows are sorted.
   const pickerCountries = useMemo(
@@ -337,6 +441,7 @@ export function PhoneNumberField({
     <>
       <FieldFrame
         className={cn(fieldFrameRootClass, className)}
+        name={name}
         invalid={isInvalid}
         disabled={isDisabled}
         label={label}
@@ -360,146 +465,153 @@ export function PhoneNumberField({
               </div>
             </InputGroupAddon>
           ) : (
-            <ComboboxPrimitive.Root
-              items={pickerCountries}
-              value={phone.selectedCountry}
-              onValueChange={(next) => {
-                if (!isEditable) return;
-                phone.selectCountry(next?.code);
-                requestAnimationFrame(() => numberInputRef.current?.focus());
-              }}
-              itemToStringLabel={(country) =>
-                countryPickerOpenRef.current ? phone.getCountryName(country.code) : country.code
-              }
-              itemToStringValue={(country) => country.code}
-              isItemEqualToValue={(left, right) => left.code === right.code}
-              onOpenChange={(open) => {
-                // Only latch open. Base UI still filters with itemToStringLabel through
-                // the exit transition; flipping this back to false here would switch
-                // labels from names to ISO codes and flash the empty state.
-                if (open) {
-                  // Base UI calls this before it commits `open`, and finds the selected row's
-                  // index only while the popup is closed. The sorted rows commit first, in their
-                  // own render, so the popup opens highlighting the selected country rather than
-                  // whichever took its old index. On the first open the labels switch to names
-                  // only after that render: switching them in it too loses the highlight.
-                  if (rowOrderLocale !== locale) {
-                    flushSync(() => setRowOrderLocale(locale));
-                  }
-                  countryPickerOpenRef.current = true;
+            <CountryPickerScope>
+              <ComboboxPrimitive.Root
+                items={pickerCountries}
+                value={phone.selectedCountry}
+                onValueChange={(next) => {
+                  if (!isEditable) return;
+                  phone.selectCountry(next?.code);
+                  requestAnimationFrame(() => numberInputRef.current?.focus());
+                }}
+                itemToStringLabel={(country) =>
+                  countryPickerOpenRef.current ? phone.getCountryName(country.code) : country.code
                 }
-              }}
-              disabled={isDisabled}
-              readOnly={isReadOnly}
-              autoComplete={autoComplete}
-              // Detach the country Combobox from the host form so base-ui's own hidden
-              // country input never reaches FormData beside `${name}` and
-              // `${name}-display-value`. The id names no rendered form on purpose
-              form="fuse-phone-country-unbound"
-              locale={locale}>
-              <InputGroupAddon className="text-foreground" align="inline-start">
-                {/* role="button" overrides Base UI's default role="combobox" so the trigger keeps the
-                    getByRole("button", {name}) contract the browser tests freeze; an empty aria-labelledby
-                    overrides the surrounding Field's label, so aria-label wins.
-                    Don't "simplify" either without updating the browser tests.
-                    The min height is 1.5rem, floored at the fixed 24px target for a host root below 16px.
-                    The trigger renders a <button>, so the inline addon drops its block padding and the
-                    trigger fits the field's fixed md box at both densities. */}
-                <ComboboxPrimitive.Trigger
-                  role="button"
-                  aria-label={resolvedSelectCountryLabel}
-                  aria-labelledby=""
-                  className={cn(
-                    selfFocusRingClass,
-                    fieldFlushCornerClass,
-                    // No UA button border or fill in a preflight-free host.
-                    "flex min-h-[max(1.5rem,24px)] shrink-0 items-center border-0 bg-transparent px-1 transition-[color,background-color,scale] duration-150",
-                    isEditable
-                      ? "cursor-pointer hover:bg-muted active:scale-[0.97] data-pressed:bg-muted"
-                      : "cursor-default"
-                  )}>
-                  {countryFace}
-                </ComboboxPrimitive.Trigger>
-              </InputGroupAddon>
-              <ComboboxContent
-                anchor={inputGroupRef}
-                container={container}
-                aria-label={resolvedSelectCountryLabel}>
-                <InputGroupRoot>
-                  <InputGroupAddon align="inline-start">
-                    <MagnifyingGlass className="size-4 text-muted-foreground" />
-                  </InputGroupAddon>
-                  <ComboboxPrimitive.Input
-                    render={<InputGroupInput />}
-                    aria-label={resolvedSearchCountriesLabel}
-                    // Field.Label labelledby would win over aria-label. An empty list overrides
-                    // it on this input and on the Input it renders, so the search keeps
-                    // dictionary `searchCountries`.
+                itemToStringValue={(country) => country.code}
+                isItemEqualToValue={(left, right) => left.code === right.code}
+                onOpenChange={(open) => {
+                  // Only latch open. Base UI still filters with itemToStringLabel through
+                  // the exit transition; flipping this back to false here would switch
+                  // labels from names to ISO codes and flash the empty state.
+                  if (open) {
+                    // Base UI calls this before it commits `open`, and finds the selected row's
+                    // index only while the popup is closed. The sorted rows commit first, in their
+                    // own render, so the popup opens highlighting the selected country rather than
+                    // whichever took its old index. On the first open the labels switch to names
+                    // only after that render: switching them in it too loses the highlight.
+                    if (rowOrderLocale !== locale) {
+                      flushSync(() => setRowOrderLocale(locale));
+                    }
+                    countryPickerOpenRef.current = true;
+                  }
+                }}
+                disabled={isDisabled}
+                readOnly={isReadOnly}
+                autoComplete={autoComplete}
+                // Detach the country Combobox from the host form so base-ui's own hidden
+                // country input never reaches FormData beside `${name}` and
+                // `${name}-display-value`. The id names no rendered form on purpose
+                form="fuse-phone-country-unbound"
+                locale={locale}>
+                <InputGroupAddon className="text-foreground" align="inline-start">
+                  {/* role="button" overrides Base UI's default role="combobox" so the trigger keeps the
+                        getByRole("button", {name}) contract the browser tests freeze. The picker's own labelable
+                        scope already keeps the field's label off it; the empty aria-labelledby is a safeguard
+                        that keeps aria-label the name.
+                        Don't "simplify" either without updating the browser tests.
+                        The min height is 1.5rem, floored at the fixed 24px target for a host root below 16px.
+                        The trigger renders a <button>, so the inline addon drops its block padding and the
+                        trigger fits the field's fixed md box at both densities. */}
+                  <ComboboxPrimitive.Trigger
+                    role="button"
+                    aria-label={resolvedSelectCountryLabel}
                     aria-labelledby=""
-                    autoComplete="one-time-code"
-                    // An empty name keeps the search box out of autofill heuristics and
-                    // out of any FormData: a nameless control is never submitted
-                    name=""
-                    aria-autocomplete="none"
-                    aria-haspopup="false"
-                  />
-                </InputGroupRoot>
-                <ComboboxEmpty>{resolvedNoCountriesFoundText}</ComboboxEmpty>
-                <ComboboxList>
-                  {(country: PhoneNumberCountry) => (
-                    <ComboboxItem key={country.code} value={country}>
-                      <Flag country={country.code} />
-                      <span className="text-sm leading-tight tabular-nums">{country.dialCode}</span>
-                      <span className="text-sm leading-tight max-w-32 truncate text-ellipsis">
-                        {phone.getCountryName(country.code)}
-                      </span>
-                    </ComboboxItem>
-                  )}
-                </ComboboxList>
-              </ComboboxContent>
-            </ComboboxPrimitive.Root>
+                    className={cn(
+                      selfFocusRingClass,
+                      fieldFlushCornerClass,
+                      // No UA button border or fill in a preflight-free host.
+                      "flex min-h-[max(1.5rem,24px)] shrink-0 items-center border-0 bg-transparent px-1 transition-[color,background-color,scale] duration-150",
+                      isEditable
+                        ? "cursor-pointer hover:bg-muted active:scale-[0.97] data-pressed:bg-muted"
+                        : "cursor-default"
+                    )}>
+                    {countryFace}
+                  </ComboboxPrimitive.Trigger>
+                </InputGroupAddon>
+                <ComboboxContent
+                  anchor={inputGroupRef}
+                  container={container}
+                  aria-label={resolvedSelectCountryLabel}>
+                  <InputGroupRoot>
+                    <InputGroupAddon align="inline-start">
+                      <MagnifyingGlass className="size-4 text-muted-foreground" />
+                    </InputGroupAddon>
+                    {/* A plain input: as a Field control it would register its id with the
+                        picker's labelable scope, which the trigger takes its id from. */}
+                    <ComboboxPrimitive.Input
+                      render={<InputGroupPlainInput />}
+                      aria-label={resolvedSearchCountriesLabel}
+                      // The picker's own labelable scope keeps the field's label off this input;
+                      // the empty list is a safeguard that keeps dictionary `searchCountries`
+                      // the name.
+                      aria-labelledby=""
+                      autoComplete="one-time-code"
+                      // An empty name keeps the search box out of autofill heuristics and
+                      // out of any FormData: a nameless control is never submitted
+                      name=""
+                      aria-autocomplete="none"
+                      aria-haspopup="false"
+                    />
+                  </InputGroupRoot>
+                  <ComboboxEmpty>{resolvedNoCountriesFoundText}</ComboboxEmpty>
+                  <ComboboxList>
+                    {(country: PhoneNumberCountry) => (
+                      <ComboboxItem key={country.code} value={country}>
+                        <Flag country={country.code} />
+                        <span className="text-sm leading-tight tabular-nums">{country.dialCode}</span>
+                        <span className="text-sm leading-tight max-w-32 truncate text-ellipsis">
+                          {phone.getCountryName(country.code)}
+                        </span>
+                      </ComboboxItem>
+                    )}
+                  </ComboboxList>
+                </ComboboxContent>
+              </ComboboxPrimitive.Root>
+            </CountryPickerScope>
           )}
-          <InputGroupInput
-            ref={numberInputRef}
-            readOnly={isReadOnly}
-            name={name ? `${name}-display-value` : undefined}
-            value={phone.displayValue}
-            onChange={(event) => {
-              if (!isEditable) return;
-              const { value, selectionStart, selectionEnd, selectionDirection } = event.currentTarget;
-              const { nativeEvent } = event;
-              const side: CaretSide =
-                nativeEvent instanceof InputEvent && FORWARD_DELETIONS.has(nativeEvent.inputType)
-                  ? "beforeNext"
-                  : "afterPrevious";
-              // Recorded before the proposal is published, since a parent that accepts it
-              // synchronously commits the new display before `handleInputChange` returns.
-              phone.handleInputChange(value, (display) => {
-                pendingSelectionRef.current =
-                  display !== value && selectionStart !== null && selectionEnd !== null
-                    ? {
-                        display,
-                        start: significantAfter(value, selectionStart),
-                        end: significantAfter(value, selectionEnd),
-                        side,
-                        direction: selectionDirection ?? undefined,
-                      }
-                    : null;
-              });
-            }}
-            onPaste={(event) => {
-              if (isEditable) phone.handlePaste(event);
-            }}
-            onBlur={onBlur}
-            placeholder={placeholder}
-            autoFocus={autoFocus}
-            inputMode={inputMode}
-            enterKeyHint={enterKeyHint}
-            autoComplete={autoComplete}
-            required={isRequired}
-            className="shrink tabular-nums"
-            {...ariaProps}
-          />
+          <SubmittedValueControl getSubmittedValue={getSubmittedValue}>
+            <InputGroupInput
+              ref={numberInputRef}
+              readOnly={isReadOnly}
+              name={name ? `${name}-display-value` : undefined}
+              value={phone.displayValue}
+              onChange={(event) => {
+                if (!isEditable) return;
+                const { value, selectionStart, selectionEnd, selectionDirection } = event.currentTarget;
+                const { nativeEvent } = event;
+                const side: CaretSide =
+                  nativeEvent instanceof InputEvent && FORWARD_DELETIONS.has(nativeEvent.inputType)
+                    ? "beforeNext"
+                    : "afterPrevious";
+                // Recorded before the proposal is published, since a parent that accepts it
+                // synchronously commits the new display before `handleInputChange` returns.
+                phone.handleInputChange(value, (display) => {
+                  pendingSelectionRef.current =
+                    display !== value && selectionStart !== null && selectionEnd !== null
+                      ? {
+                          display,
+                          start: significantAfter(value, selectionStart),
+                          end: significantAfter(value, selectionEnd),
+                          side,
+                          direction: selectionDirection ?? undefined,
+                        }
+                      : null;
+                });
+              }}
+              onPaste={(event) => {
+                if (isEditable) phone.handlePaste(event);
+              }}
+              onBlur={onBlur}
+              placeholder={placeholder}
+              autoFocus={autoFocus}
+              inputMode={inputMode}
+              enterKeyHint={enterKeyHint}
+              autoComplete={autoComplete}
+              required={isRequired}
+              className="shrink tabular-nums"
+              {...ariaProps}
+            />
+          </SubmittedValueControl>
           {endContent}
         </InputGroupRoot>
       </FieldFrame>

@@ -176,6 +176,19 @@ describe("PhoneNumberField", () => {
     expect(page.getByRole("combobox", { name: "Mobile", exact: true }).query()).toBeNull();
   });
 
+  it("keeps the picker's ids and descriptions apart from the number input's", async () => {
+    renderField(
+      <PhoneNumberField label="Mobile" description="We text a code." isInvalid errorMessage="Bad number." />
+    );
+    const trigger = roleNamed("button", "Select country");
+    // The field's description and error describe the number input, not the picker trigger.
+    await expect.element(textboxNamed("Mobile")).toHaveAccessibleDescription("We text a code. Bad number.");
+    expect(trigger.hasAttribute("aria-describedby")).toBe(false);
+    await openPicker();
+    const ids = [trigger.id, countrySearch().id, textboxNamed("Mobile").id];
+    expect(new Set(ids).size, JSON.stringify(ids)).toBe(3);
+  });
+
   it("insets the country search from the popup edge", async () => {
     renderField(<PhoneNumberField label="Mobile" />);
     await openPicker();

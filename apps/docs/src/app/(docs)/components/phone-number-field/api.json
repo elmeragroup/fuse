@@ -150,7 +150,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the field shows the visible input's own constraint message. A Base UI `Form` error under `name` does not reach this field; pass it here.",
+          "description": "Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the field shows a `Form` error under `name`, or the visible input's own constraint message.",
           "required": false
         },
         {
@@ -249,7 +249,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Hidden input gets `name`; the visible input gets `${name}-display-value`. Unset, neither input submits.",
+          "description": "Hidden input gets `name`; the visible input gets `${name}-display-value`. Unset, neither input submits. Inside a `Form`, the field shows `errors[name]`, clears it when the number it submits changes, and gives `onFormSubmit` that number under `name`, in `outputFormat`.",
           "required": false
         },
         {
