@@ -80,8 +80,8 @@ test("Radio, RadioItem, and RadioIconButton props match the public axes and pass
   expectTypeOf<RadioIconButtonProps["children"]>().toEqualTypeOf<ReactNode | undefined>();
   expectTypeOf<RadioProps>().not.toHaveProperty("render");
   expectTypeOf<RadioProps>().not.toHaveProperty("id");
-  expectTypeOf<RadioItemProps>().not.toHaveProperty("render");
-  expectTypeOf<RadioItemProps>().not.toHaveProperty("id");
+  // RadioItem forwards its Field.Item root's props, `render` and `id` included.
+  expectTypeOf<RadioItemProps>().toHaveProperty("render");
 
   const _passThrough = (
     <RadioIconButton value="grid" aria-label="Grid" id="view-grid" aria-describedby="view-help" readOnly>

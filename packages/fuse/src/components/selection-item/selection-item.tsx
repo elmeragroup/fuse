@@ -5,6 +5,7 @@ import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { Field as FieldPrimitive } from "@base-ui/react/field";
 
+import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { disabledHatch } from "../../styles/utils";
 import { FieldItem } from "../field/field";
@@ -236,8 +237,7 @@ export function SelectionItemShell({
 
   return (
     <FieldItem
-      {...(inItemGroup ? { role: "listitem" as const } : null)}
-      {...props}
+      {...definedProps({ ...props, role: props.role ?? (inItemGroup ? "listitem" : undefined) })}
       data-slot={dataSlot}
       data-selection-item=""
       className={cn(
