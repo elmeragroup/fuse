@@ -145,7 +145,10 @@ export type ResolvedTheme = {
   readonly schemes: { readonly [S in ResolvedColorScheme]: ResolvedScheme };
 };
 
-/** One density control metric, which is independent of the theme and the scheme. */
+/**
+ * One density metric, a control or surface metric, which is independent of the theme and the
+ * scheme.
+ */
 export type DensityMetricEntry = {
   /** The custom property without its leading dashes, such as `control-h-md`. */
   readonly name: DensityMetricName;
@@ -168,7 +171,7 @@ export type ResolvedThemeCatalog = {
   /** Every legal theme, in `LEGAL_THEMES` order. The pin table always admits one. */
   readonly themes: readonly [ResolvedTheme, ...ResolvedTheme[]];
 
-  /** Every control metric, in `fuse.css` order. */
+  /** Every density metric, control and surface, in `fuse.css` order. */
   readonly density: readonly DensityMetricEntry[];
 };
 

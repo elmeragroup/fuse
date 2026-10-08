@@ -6,6 +6,8 @@ import {
   menuItemClass,
   menuItemIndicatorClass,
   menuSeparatorClass,
+} from "./menu-row-classes";
+import {
   overlayPopupMotionClass,
   overlayPopupSurfaceClass,
   overlayPositionerClass,
@@ -118,7 +120,7 @@ describe("menu part classes", () => {
 
   it("positions the indicator, rule, and group label from tokens only", () => {
     expect(tokens(menuItemIndicatorClass)).toContain("absolute");
-    expect(tokens(menuItemIndicatorClass)).toContain("right-2");
+    expect(tokens(menuItemIndicatorClass)).toContain("right-(--control-px-xs)");
     expect(tokens(menuSeparatorClass)).toContain("bg-border");
     expect(tokens(menuSeparatorClass)).toContain("h-px");
     expect(tokens(menuGroupLabelClass)).toContain("text-muted-foreground");

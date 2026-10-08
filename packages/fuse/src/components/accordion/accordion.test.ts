@@ -17,7 +17,7 @@ describe("accordionVariants", () => {
     const slots = accordionVariants();
     expect(slots.item()).toContain("bg-muted");
     expect(slots.item()).toContain("rounded-sm");
-    expect(slots.item()).toContain("p-4");
+    expect(slots.item()).toContain("p-(--surface-pad-md)");
     expect(slots.item()).not.toContain("overflow-hidden");
   });
 

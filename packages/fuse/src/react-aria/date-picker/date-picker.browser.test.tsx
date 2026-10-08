@@ -604,18 +604,21 @@ describe("DatePicker preset pane geometry", () => {
   it.each([
     ["row", ROW_VIEWPORT],
     ["stacked", STACKED_VIEWPORT],
-  ])("insets the presets by at least 8px on every side of their column (%s)", async (_layout, viewport) => {
-    await page.viewport(viewport.width, viewport.height);
-    renderPicker(<DatePicker label="Invoice date" value={march10} presetGroup={presets()} />);
-    await openPicker();
-    const items = unionBox([presetTargetNamed("Today"), presetTargetNamed("In a week")]);
-    const insets = insetsWithin(paddingBox(roleNamed("radiogroup", "Date presets")), items);
+  ])(
+    "insets the presets by at least the 4px small surface tier on every side of their column (%s)",
+    async (_layout, viewport) => {
+      await page.viewport(viewport.width, viewport.height);
+      renderPicker(<DatePicker label="Invoice date" value={march10} presetGroup={presets()} />);
+      await openPicker();
+      const items = unionBox([presetTargetNamed("Today"), presetTargetNamed("In a week")]);
+      const insets = insetsWithin(paddingBox(roleNamed("radiogroup", "Date presets")), items);
 
-    expect(insets.top).toBeGreaterThanOrEqual(8 - SUBPIXEL);
-    expect(insets.right).toBeGreaterThanOrEqual(8 - SUBPIXEL);
-    expect(insets.bottom).toBeGreaterThanOrEqual(8 - SUBPIXEL);
-    expect(insets.left).toBeGreaterThanOrEqual(8 - SUBPIXEL);
-  });
+      expect(insets.top).toBeGreaterThanOrEqual(4 - SUBPIXEL);
+      expect(insets.right).toBeGreaterThanOrEqual(4 - SUBPIXEL);
+      expect(insets.bottom).toBeGreaterThanOrEqual(4 - SUBPIXEL);
+      expect(insets.left).toBeGreaterThanOrEqual(4 - SUBPIXEL);
+    }
+  );
 
   it.each([
     ["with presets", true],

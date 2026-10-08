@@ -40,10 +40,10 @@ import {
   menuGroupLabelClass,
   menuItemClass,
   menuItemIndicatorClass,
+  menuItemIndicatorRoomClass,
   menuSeparatorClass,
-  overlayPositionerClass,
-  overlayTimedPopupClass,
-} from "../overlay/overlay-classes";
+} from "../overlay/menu-row-classes";
+import { overlayPositionerClass, overlayTimedPopupClass } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
 import {
@@ -297,12 +297,12 @@ export function ComboboxItem({
   return (
     <ComboboxPrimitive.Item
       data-slot="combobox-item"
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- option padding is menu layout, not a control rung
       className={mergeClassName(
         className,
         menuItemClass,
+        menuItemIndicatorRoomClass,
         // oxlint-disable-next-line elmera/no-local-focus-ring -- the highlight face menuItemClass leaves to the family; base-ui spells it `data-highlighted:` on listbox options
-        "w-full pr-8 pl-2 data-highlighted:bg-accent data-highlighted:text-accent-foreground data-highlighted:**:text-accent-foreground"
+        "w-full data-highlighted:bg-accent data-highlighted:text-accent-foreground data-highlighted:**:text-accent-foreground"
       )}
       {...props}>
       {children}

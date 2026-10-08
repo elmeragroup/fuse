@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { BundleSizes } from "../../../../components/bundle-sizes";
 import { DocsPage, pageMetadata } from "../../../../components/docs-page";
+import { DocsTable } from "../../../../components/docs-table";
 import { TokenSwatchList } from "../../../../components/token-swatch-list";
 import { COLOR_TOKENS } from "../../../../generated/token-reference";
 
@@ -40,7 +41,8 @@ export default function TokensPage(): ReactElement {
 
       <h2 id="density">Density</h2>
       <p>
-        Control sizing lives in <code>--control-*</code> tokens and has two settings, <code>dense</code> and{" "}
+        Control sizing lives in <code>--control-*</code> tokens and surface padding in{" "}
+        <code>--surface-pad-*</code> tokens. Both have two settings, <code>dense</code> and{" "}
         <code>comfortable</code>, resolved once on the document root. Density is not a theme axis: the theme
         cascade decides colour, the root decides sizing, and no scope nests a second density. Both values are
         stamped explicitly, including <code>dense</code>.
@@ -59,6 +61,70 @@ export default function TokensPage(): ReactElement {
         <code>RadioItem</code> have their own pair, <code>--control-text-row</code> and{" "}
         <code>--control-leading-row</code>: 14/20px dense and 16/24px comfortable, so a row&apos;s title and
         description stay a step below the field and button text around them.
+      </p>
+
+      <h3 id="surface-tiers">Surface tiers</h3>
+      <p>
+        Every shell pads with one of three surface tiers, picked by what it holds, so spacing stays coherent
+        from a row out to the page. A shell subtracts the same tier from the corner it hands its inner parts,
+        so padding and inner corner cannot drift apart. Outer corners do not change with density.
+      </p>
+      <DocsTable.Wrap>
+        <DocsTable.Root>
+          <thead>
+            <tr>
+              <DocsTable.HeaderCell scope="col">Tier</DocsTable.HeaderCell>
+              <DocsTable.HeaderCell scope="col">Shells</DocsTable.HeaderCell>
+              <DocsTable.HeaderCell scope="col" numeric>
+                Dense
+              </DocsTable.HeaderCell>
+              <DocsTable.HeaderCell scope="col" numeric>
+                Comfortable
+              </DocsTable.HeaderCell>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <DocsTable.BodyCell>
+                <code>--surface-pad-sm</code>
+              </DocsTable.BodyCell>
+              <DocsTable.BodyCell>
+                Shells of control-sized rows: DropdownMenu, Select, Combobox, NavigationMenu content, the
+                floating Sidebar, Frame, Calendar and date-picker presets
+              </DocsTable.BodyCell>
+              <DocsTable.BodyCell numeric>4px</DocsTable.BodyCell>
+              <DocsTable.BodyCell numeric>4px</DocsTable.BodyCell>
+            </tr>
+            <tr>
+              <DocsTable.BodyCell>
+                <code>--surface-pad-md</code>
+              </DocsTable.BodyCell>
+              <DocsTable.BodyCell>
+                Compact content: Popover, Toast, Accordion items, the Field label card and Item&apos;s inline
+                padding
+              </DocsTable.BodyCell>
+              <DocsTable.BodyCell numeric>12px</DocsTable.BodyCell>
+              <DocsTable.BodyCell numeric>16px</DocsTable.BodyCell>
+            </tr>
+            <tr>
+              <DocsTable.BodyCell>
+                <code>--surface-pad-lg</code>
+              </DocsTable.BodyCell>
+              <DocsTable.BodyCell>
+                Content surfaces: Card sections and the gaps between them, Dialog, Frame panels and Empty
+              </DocsTable.BodyCell>
+              <DocsTable.BodyCell numeric>16px</DocsTable.BodyCell>
+              <DocsTable.BodyCell numeric>24px</DocsTable.BodyCell>
+            </tr>
+          </tbody>
+        </DocsTable.Root>
+      </DocsTable.Wrap>
+      <p>
+        Empty doubles the large tier from the <code>md</code> breakpoint up, 32px dense and 48px comfortable.
+        Rows inside a small-tier shell are controls: menu, Select, Combobox, NavigationMenu and default
+        Sidebar rows take the <code>sm</code> control height and the <code>xs</code> control inset, 32px tall
+        with 8px inline padding when dense and 36px with 12px when comfortable. Tooltip, Tabs and the compact
+        Item sizes keep their fixed padding.
       </p>
 
       <h2 id="bundle-sizes">Measured bundle sizes</h2>

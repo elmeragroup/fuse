@@ -36,7 +36,8 @@ import { selfFocusRingClass } from "../../styles/utils";
 export const accordionVariants = tv({
   slots: {
     base: "",
-    item: "p-4",
+    // Every item pads with the medium surface tier; the shells add it with the corner they publish.
+    item: "p-(--surface-pad-md)",
     header: "flex",
     trigger: cn(
       "group/accordion-trigger font-medium flex flex-1 cursor-pointer items-center justify-between gap-2 data-[panel-open]:pb-4 enabled-hover:underline",

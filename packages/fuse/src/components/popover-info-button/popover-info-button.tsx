@@ -17,7 +17,7 @@ import { popoverInfoButtonStrings } from "./intl";
 export const popoverInfoButtonStyles = tv({
   slots: {
     icon: "size-4",
-    content: "text-sm w-auto p-4",
+    content: "text-sm w-auto",
   },
   variants: {
     contentSize: {

@@ -12,7 +12,6 @@ import { render } from "../../../test/browser-render";
 import { panelControlledBy } from "../../../test/panel-transition";
 import {
   CONTROL_MD,
-  CONTROL_XS,
   computedOklch,
   fkasExternal,
   px,
@@ -607,11 +606,16 @@ describe("NavigationMenu trigger density metrics", () => {
         </NavigationMenu.Root>
       );
       await userEvent.click(roleNamed("button", `Products ${density}`));
-      const link = getComputedStyle(await openedLink(`Spot ${density}`));
+      const linkElement = await openedLink(`Spot ${density}`);
+      const link = getComputedStyle(linkElement);
 
-      // A content row: the xs floor, `px-2` and `text-sm` at the 16px root.
-      expect(px(link.minHeight), `${density} minHeight`).toBe(CONTROL_XS[density].height);
-      expect(px(link.paddingInlineStart), `${density} paddingInlineStart`).toBe(8);
+      // A content row is a control: the sm height and the xs inset, written out by hand, and
+      // `text-sm` at the 16px root.
+      const row = { dense: { height: 32, inset: 8 }, comfortable: { height: 36, inset: 12 } }[density];
+      expect(px(link.minHeight), `${density} minHeight`).toBe(row.height);
+      expect(linkElement.getBoundingClientRect().height, `${density} height`).toBe(row.height);
+      expect(px(link.paddingInlineStart), `${density} paddingInlineStart`).toBe(row.inset);
+      expect(px(link.paddingInlineEnd), `${density} paddingInlineEnd`).toBe(row.inset);
       expect(px(link.fontSize), `${density} fontSize`).toBe(14);
       unmount();
     }

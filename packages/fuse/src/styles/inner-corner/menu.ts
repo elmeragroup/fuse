@@ -5,9 +5,10 @@ import { publishShellBoundary } from "../corner-radius";
 // Each constant pairs a part's rung or padding with the corner it publishes.
 
 /**
- * DropdownMenu Content and SubContent: the popup rounds, pads 4px and publishes.
+ * DropdownMenu Content and SubContent: the popup rounds, pads with the small surface tier,
+ * `--surface-pad-sm`, and publishes.
  */
 export const menuPopupShellClass = cn(
-  "rounded-md p-1 [--shell-inner:max(0px,--theme(--radius-md)-var(--spacing))]",
+  "rounded-md p-(--surface-pad-sm) [--shell-inner:max(0px,--theme(--radius-md)-var(--surface-pad-sm))]",
   publishShellBoundary
 );

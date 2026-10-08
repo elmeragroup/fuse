@@ -9,15 +9,16 @@ import { menuPopupShellClass } from "../../styles/inner-corner/menu";
  */
 import { tv } from "../../styles/tv";
 import { selfFocusRingClass } from "../../styles/utils";
-import { menuItemClass } from "../overlay/overlay-classes";
+import { menuItemClass, menuItemInsetClass } from "../overlay/menu-row-classes";
 
 export const dropdownMenuVariants = tv({
   slots: {
     item: cn(
       selfFocusRingClass,
       menuItemClass,
+      menuItemInsetClass,
       // oxlint-disable-next-line elmera/no-local-focus-ring -- highlight face, not native outline; ring comes from the shared adapter
-      "group/dropdown-menu-item px-2 focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-inset:pl-8 data-[variant=destructive]:text-error data-[variant=destructive]:focus:bg-error/10 data-[variant=destructive]:focus:text-error data-[variant=destructive]:*:[svg]:text-error"
+      "group/dropdown-menu-item focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-[variant=destructive]:text-error data-[variant=destructive]:focus:bg-error/10 data-[variant=destructive]:focus:text-error data-[variant=destructive]:*:[svg]:text-error"
     ),
     // Both popups are inner-corner shells: they round, pad and publish `--inner-corner`.
     content: [

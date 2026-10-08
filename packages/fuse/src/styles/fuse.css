@@ -1,7 +1,8 @@
 @import "tw-animate-css";
 @plugin "tailwindcss-react-aria-components";
 
-/* Locked library-fixed --font-mono, plus library-owned density implementation variables. */
+/* Locked library-fixed --font-mono, plus the library-owned density metrics: control metrics
+   (`--control-*`) and surface metrics (`--surface-pad-*`). */
 :root {
   --font-mono:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -33,6 +34,9 @@
   --control-leading: 1.25rem;
   --control-text-row: 0.875rem;
   --control-leading-row: 1.25rem;
+  --surface-pad-sm: 0.25rem;
+  --surface-pad-md: 0.75rem;
+  --surface-pad-lg: 1rem;
 }
 
 :root[data-density="comfortable"] {
@@ -64,6 +68,9 @@
   --control-leading: 1.5rem;
   --control-text-row: 1rem;
   --control-leading-row: 1.5rem;
+  --surface-pad-sm: 0.25rem;
+  --surface-pad-md: 1rem;
+  --surface-pad-lg: 1.5rem;
 }
 
 @theme inline {

@@ -70,7 +70,7 @@ export const pickerVariants = tv({
         group: "min-w-[180px]",
         input: "flex min-w-[150px] flex-1",
         // Calendar's root is a standalone card. Inside the popover, which is already the
-        // card, it keeps only its `p-2` inset and drops the border, shadow and fill.
+        // card, it keeps only its small-tier inset and drops the border, shadow and fill.
         calendar: "border-none bg-transparent shadow-none",
       },
       true: {
@@ -94,8 +94,9 @@ export const pickerVariants = tv({
         trigger:
           "col-start-2 row-span-2 row-start-1 @min-[24rem]/picker:col-start-4 @min-[24rem]/picker:row-span-1",
         // RangeCalendar's root is bare and this dialog is `p-0`, so the grid would otherwise
-        // sit flush against the popover border.
-        calendar: "p-2",
+        // sit flush against the popover border. It pads with the small surface tier, as
+        // Calendar's own shell does in the single picker.
+        calendar: "p-(--surface-pad-sm)",
       },
     },
     /**

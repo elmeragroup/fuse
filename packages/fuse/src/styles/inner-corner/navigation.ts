@@ -15,11 +15,12 @@ export const navigationPopupShellClass = cn(
 );
 
 /**
- * `NavigationMenu.Content`: pads its rows 8px inside the relayed `--shell-corner` and publishes. It
+ * `NavigationMenu.Content`: pads its rows with the small surface tier, `--surface-pad-sm`, inside
+ * the relayed `--shell-corner` and publishes. It
  * preserves the relay. Outside a popup no corner is relayed, so it publishes nothing.
  */
 export const navigationContentShellClass = cn(
-  "p-2 [--shell-inner:max(0px,var(--shell-corner)-2*var(--spacing))]",
+  "p-(--surface-pad-sm) [--shell-inner:max(0px,var(--shell-corner)-var(--surface-pad-sm))]",
   publishInnerCorner
 );
 

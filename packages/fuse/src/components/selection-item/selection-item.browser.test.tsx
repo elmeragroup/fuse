@@ -593,7 +593,8 @@ describe("SelectionItem", () => {
 
   it.each([
     { inset: 16, className: undefined },
-    { inset: 24, className: "px-6" },
+    // The standalone sheet carries only the classes the library uses, so the override is one it ships.
+    { inset: 12, className: "px-3" },
     { inset: 0, className: "px-0" },
   ] as const)(
     "insets the row content $inset px for className $className and toggles from the label row's edges",

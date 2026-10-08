@@ -75,9 +75,10 @@ describe("Sidebar namespace", () => {
 });
 
 describe("sidebarMenuButtonVariants", () => {
-  it("covers the public axes with the shell-local height ladder", () => {
+  it("covers the public axes: a control-sized default row and the shell-local sm and lg heights", () => {
     const defaults = sidebarMenuButtonVariants();
-    expect(defaults).toContain("h-8");
+    expect(defaults).toContain("h-(--control-h-sm)");
+    expect(defaults).toContain("px-(--control-px-xs)");
     expect(defaults).toContain("peer/menu-button");
     expect(defaults).toContain("group/menu-button");
     expect(defaults).toContain("group-has-data-[slot=sidebar-menu-action]/menu-item:pr-8");
@@ -97,17 +98,20 @@ describe("sidebarMenuButtonVariants", () => {
   });
 
   it("uses no raw palette, dark, density, ring-literal, or legacy data-sidebar selectors", () => {
-    for (const className of [
-      sidebarMenuButtonVariants(),
+    const sized = [
       sidebarMenuButtonVariants({ variant: "outline", size: "sm" }),
       sidebarMenuButtonVariants({ size: "lg" }),
-    ]) {
+    ];
+    for (const className of [sidebarMenuButtonVariants(), ...sized]) {
       expect(className).not.toContain("dark:");
       expect(className).not.toMatch(RAW_PALETTE_RE);
       expect(className).not.toMatch(/\b(?:dense|comfortable):/);
       expect(className).not.toContain("destructive");
       expect(className).not.toContain("ring-sidebar-ring");
       expect(className).not.toContain("data-[sidebar=");
+    }
+    // The default row reads control metrics; the sm and lg rail heights read none.
+    for (const className of sized) {
       expect(className).not.toContain("--control-");
     }
   });

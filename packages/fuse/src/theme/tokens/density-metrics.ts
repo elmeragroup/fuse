@@ -1,5 +1,6 @@
 /**
- * The control metrics each density sets. `fuse.css` declares the same values by hand in the
+ * The metrics each density sets: the control metrics (`--control-*`) and the surface metrics
+ * (`--surface-pad-*`). `fuse.css` declares the same values by hand in the
  * rules {@link DENSITY_SELECTORS} names, and `density-css.test.ts` requires both rules to equal
  * {@link DENSITY_METRICS}. Tooling that cannot read CSS, such as the demo-stage artifact and
  * the resolved theme catalog the Figma sync reads, reads this module.
@@ -48,12 +49,28 @@ const SINGLE_FAMILIES = [
   { family: "control-leading-row", kind: "lineHeight" },
 ] as const satisfies readonly { family: string; kind: DensityMetricKind }[];
 
-/** One density control metric, the `--control-*` custom property without its leading dashes. */
+/**
+ * The surface tiers, in `fuse.css` order. A shell pads with its tier by what it holds: `sm`
+ * around control-sized rows, `md` around compact content and `lg` around content surfaces.
+ */
+const SURFACE_TIERS = ["sm", "md", "lg"] as const;
+
+/** The family with one surface metric per tier: a shell's padding. */
+const SURFACE_FAMILY = { family: "surface-pad", kind: "padding" } as const satisfies {
+  family: string;
+  kind: DensityMetricKind;
+};
+
+/**
+ * One density metric, the custom property without its leading dashes: a control metric
+ * (`--control-*`) or a surface metric (`--surface-pad-*`).
+ */
 export type DensityMetricName =
   | `${(typeof SIZED_FAMILIES)[number]["family"]}-${(typeof CONTROL_SIZES)[number]}`
-  | (typeof SINGLE_FAMILIES)[number]["family"];
+  | (typeof SINGLE_FAMILIES)[number]["family"]
+  | `${(typeof SURFACE_FAMILY)["family"]}-${(typeof SURFACE_TIERS)[number]}`;
 
-/** A family of control metrics and the kind they share. */
+/** A family of density metrics and the kind they share. */
 export type DensityMetricFamily = {
   /** The kind every metric of the family has. */
   readonly kind: DensityMetricKind;
@@ -72,9 +89,13 @@ export const DENSITY_METRIC_FAMILIES: readonly DensityMetricFamily[] = [
     metrics: CONTROL_SIZES.map((size) => `${family}-${size}` as const),
   })),
   ...SINGLE_FAMILIES.map(({ family, kind }) => ({ kind, metrics: [family] })),
+  {
+    kind: SURFACE_FAMILY.kind,
+    metrics: SURFACE_TIERS.map((tier) => `${SURFACE_FAMILY.family}-${tier}` as const),
+  },
 ];
 
-/** Every control metric in `fuse.css` order. */
+/** Every density metric in `fuse.css` order. */
 export const DENSITY_METRIC_NAMES: readonly DensityMetricName[] = DENSITY_METRIC_FAMILIES.flatMap(
   (family) => family.metrics
 );
@@ -83,7 +104,7 @@ export const DENSITY_METRIC_NAMES: readonly DensityMetricName[] = DENSITY_METRIC
 export type DensityMetricValues = { readonly [D in Density]: RemLength };
 
 /**
- * Every control metric with its value per density, as the `rem` lengths `fuse.css` declares.
+ * Every density metric with its value per density, as the `rem` lengths `fuse.css` declares.
  * A new metric without an entry, or a value that is not a `rem` length, fails to compile.
  */
 export const DENSITY_METRICS = {
@@ -115,6 +136,9 @@ export const DENSITY_METRICS = {
   "control-leading": { dense: "1.25rem", comfortable: "1.5rem" },
   "control-text-row": { dense: "0.875rem", comfortable: "1rem" },
   "control-leading-row": { dense: "1.25rem", comfortable: "1.5rem" },
+  "surface-pad-sm": { dense: "0.25rem", comfortable: "0.25rem" },
+  "surface-pad-md": { dense: "0.75rem", comfortable: "1rem" },
+  "surface-pad-lg": { dense: "1rem", comfortable: "1.5rem" },
 } as const satisfies Record<DensityMetricName, DensityMetricValues>;
 
 /**

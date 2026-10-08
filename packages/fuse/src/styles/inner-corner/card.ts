@@ -13,33 +13,34 @@ export const cardShellClass = cn(
 );
 
 /**
- * A horizontal Card root, which pads its sections itself.
+ * The boundary every large-tier part inside a Card's border publishes: the card's `rounded-lg`
+ * less its 1px border and the large surface tier, `--surface-pad-lg`, its inline padding.
  */
-export const cardHorizontalShellClass = cn(
-  "p-6 [--shell-inner:max(0px,--theme(--radius-lg)-1px-6*var(--spacing))]",
+const cardLargeTierBoundaryClass = cn(
+  "[--shell-inner:max(0px,--theme(--radius-lg)-1px-var(--surface-pad-lg))]",
   publishShellBoundary
 );
 
 /**
- * A vertical Card's header, content or footer, which pads 24px inside the card.
+ * A horizontal Card root, which pads its sections itself with the large surface tier,
+ * `--surface-pad-lg`: 16px dense, 24px comfortable.
  */
-export const cardSectionShellClass = cn(
-  "p-6 [--shell-inner:max(0px,--theme(--radius-lg)-1px-6*var(--spacing))]",
-  publishShellBoundary
-);
+export const cardHorizontalShellClass = cn("p-(--surface-pad-lg)", cardLargeTierBoundaryClass);
 
 /**
- * The TextField `card` box: a Card root that pads 24px inline.
+ * A vertical Card's header, content or footer, which pads with the large surface tier,
+ * `--surface-pad-lg`, inside the card.
  */
-export const textFieldCardShellClass = cn(
-  "px-6 py-4 [--shell-inner:max(0px,--theme(--radius-lg)-1px-6*var(--spacing))]",
-  publishShellBoundary
-);
+export const cardSectionShellClass = cn("p-(--surface-pad-lg)", cardLargeTierBoundaryClass);
 
 /**
- * The CheckboxCard content: a Card section that pads 16px inline.
+ * The TextField `card` box: a Card root that pads inline with the large surface tier and 16px
+ * on the block axis.
  */
-export const checkboxCardContentShellClass = cn(
-  "px-4 py-3 [--shell-inner:max(0px,--theme(--radius-lg)-1px-4*var(--spacing))]",
-  publishShellBoundary
-);
+export const textFieldCardShellClass = cn("px-(--surface-pad-lg) py-4", cardLargeTierBoundaryClass);
+
+/**
+ * The CheckboxCard content: a Card section that pads inline with the large surface tier and
+ * 12px on the block axis.
+ */
+export const checkboxCardContentShellClass = cn("px-(--surface-pad-lg) py-3", cardLargeTierBoundaryClass);

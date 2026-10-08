@@ -9,6 +9,6 @@ describe("dropdownMenuVariants", () => {
     expect(item).toContain("data-[variant=destructive]:focus:bg-error/10");
     expect(item).not.toContain("text-destructive");
     expect(item).not.toContain("bg-destructive");
-    expect(item).toContain("data-inset:pl-8");
+    expect(item).toContain("data-inset:pl-[calc(var(--control-px-xs)+1.5rem)]");
   });
 });

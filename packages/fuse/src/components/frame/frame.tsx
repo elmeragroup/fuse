@@ -17,8 +17,9 @@ export type FrameDescriptionProps = ComponentProps<"div">;
 export type FrameFooterProps = ComponentProps<"footer">;
 
 /**
- * The Frame surface. It hands its direct panels and tables the corner they take, `rounded-xl`
- * less its 4px padding, and publishes the same value as `--inner-corner`.
+ * The Frame surface. It pads with the small surface tier, `--surface-pad-sm`, and hands its
+ * direct panels and tables the corner they take, `rounded-xl` less that padding, and publishes the
+ * same value as `--inner-corner`.
  */
 function FrameRoot({ className, stackedPanels = false, ...props }: FrameRootProps): ReactElement {
   return (
@@ -39,8 +40,8 @@ function FrameRoot({ className, stackedPanels = false, ...props }: FrameRootProp
 
 /**
  * A panel. As a Frame's direct child it rounds with the corner the Frame hands it, and elsewhere
- * with `rounded-xl`. It publishes `--inner-corner` for its content, its corner less its border and
- * padding.
+ * with `rounded-xl`. It pads with the large surface tier, `--surface-pad-lg`, and publishes
+ * `--inner-corner` for its content, its corner less its border and padding.
  */
 function FramePanel({ className, ...props }: FramePanelProps): ReactElement {
   return (
@@ -58,7 +59,11 @@ function FramePanel({ className, ...props }: FramePanelProps): ReactElement {
 
 function FrameHeader({ className, ...props }: FrameHeaderProps): ReactElement {
   return (
-    <header data-slot="frame-panel-header" className={cn("flex flex-col px-5 py-4", className)} {...props} />
+    <header
+      data-slot="frame-panel-header"
+      className={cn("flex flex-col px-(--surface-pad-lg) py-4", className)}
+      {...props}
+    />
   );
 }
 
@@ -80,7 +85,7 @@ function FrameFooter({ className, ...props }: FrameFooterProps): ReactElement {
   return (
     <footer
       data-slot="frame-panel-footer"
-      className={cn("flex flex-col gap-1 px-5 py-4", className)}
+      className={cn("flex flex-col gap-1 px-(--surface-pad-lg) py-4", className)}
       {...props}
     />
   );

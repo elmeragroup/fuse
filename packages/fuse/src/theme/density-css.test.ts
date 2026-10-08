@@ -16,7 +16,9 @@ const compiledCssPath = join(here, "../../dist/styles.css");
 const packedRawCssPath = join(here, "../../dist/styles/fuse.css");
 const demoStageCssPath = join(here, "../../dist/demo-stage-comfortable.css");
 
-const isControlMetric = (declaration: CssDeclaration): boolean => declaration.name.startsWith("control-");
+/** A control metric (`--control-*`) or a surface metric (`--surface-pad-*`). */
+const isDensityMetric = (declaration: CssDeclaration): boolean =>
+  declaration.name.startsWith("control-") || declaration.name.startsWith("surface-pad-");
 
 /** The declarations of the one `fuse.css` rule with this selector. */
 function fuseCssRule(selector: string): CssDeclaration[] {
@@ -37,26 +39,28 @@ describe("density CSS", () => {
   // This cross-check reads the hand-written fuse.css, and DENSITY_METRICS is the oracle it
   // must reproduce.
   it("declares exactly DENSITY_METRICS, dense on :root and comfortable on the rooted attribute, in no other block", () => {
-    expect(fuseCssRule(DENSITY_SELECTORS.dense).filter(isControlMetric)).toEqual(
+    expect(fuseCssRule(DENSITY_SELECTORS.dense).filter(isDensityMetric)).toEqual(
       expectedDeclarations("dense")
     );
     expect(fuseCssRule(DENSITY_SELECTORS.comfortable)).toEqual(expectedDeclarations("comfortable"));
 
     // At-rule blocks such as @utility count as other blocks.
     const declaring = parseCssBlocks(fuseCss)
-      .filter((block) => block.declarations.some(isControlMetric))
+      .filter((block) => block.declarations.some(isDensityMetric))
       .map((block) => block.prelude);
     expect(declaring).toEqual([DENSITY_SELECTORS.dense, DENSITY_SELECTORS.comfortable]);
   });
 
   it("does not key density metrics on data-theme-variant or a nested attribute selector", () => {
     expect(fuseCss).not.toMatch(/\[data-theme-variant[^\]]*\][^{]*--control-/s);
+    expect(fuseCss).not.toMatch(/\[data-theme-variant[^\]]*\][^{]*--surface-pad-/s);
     expect(fuseCss).not.toMatch(/(?<!:root)\[data-density="comfortable"\]/);
   });
 
   it("does not enter generated theme CSS", () => {
     const css = generateThemesCss();
     expect(css).not.toContain("--control-");
+    expect(css).not.toContain("--surface-pad-");
     expect(css).not.toContain("data-density");
   });
 
@@ -69,15 +73,17 @@ describe("density CSS", () => {
     const compiled = readFileSync(compiledCssPath, "utf8");
     const packedRaw = readFileSync(packedRawCssPath, "utf8");
     expect(compiled).toContain("--control-h-md");
+    expect(compiled).toContain("--surface-pad-lg");
     expect(compiled).toContain(':root[data-density="comfortable"]');
     expect(packedRaw).toContain("--control-h-md");
+    expect(packedRaw).toContain("--surface-pad-lg");
     expect(packedRaw).toContain(':root[data-density="comfortable"]');
   });
 });
 
 /** The `fuse.css` rule a density's demo-stage block re-scopes: dense lives on `:root` beside other metrics. */
 function libraryDensityRule(density: Density): CssDeclaration[] {
-  return fuseCssRule(DENSITY_SELECTORS[density]).filter(isControlMetric);
+  return fuseCssRule(DENSITY_SELECTORS[density]).filter(isDensityMetric);
 }
 
 /** The demo-stage blocks the hand-written fuse.css density rules require, in emitted order. */

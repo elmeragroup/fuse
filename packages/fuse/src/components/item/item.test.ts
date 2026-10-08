@@ -14,7 +14,7 @@ describe("itemVariants", () => {
     const classes = itemVariants();
     expect(classes).toContain("border-transparent");
     expect(classes).toContain("gap-3.5");
-    expect(classes).toContain("px-4");
+    expect(classes).toContain("px-(--surface-pad-md)");
     expect(classes).not.toContain("dark:");
   });
 

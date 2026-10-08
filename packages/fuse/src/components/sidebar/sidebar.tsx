@@ -48,7 +48,11 @@ import { Skeleton } from "../skeleton/skeleton";
 import { TooltipContent, TooltipRoot, TooltipTrigger } from "../tooltip/tooltip";
 import type { TooltipContentProps } from "../tooltip/tooltip";
 import { sidebarStrings } from "./intl";
-import { sidebarMenuButtonVariants, sidebarMenuSubButtonVariants } from "./sidebar-variants";
+import {
+  sidebarMenuButtonVariants,
+  sidebarMenuSubButtonVariants,
+  sidebarRowBoxClass,
+} from "./sidebar-variants";
 
 /**
  * Cookie the open state persists to. HARD invariant: the funnel
@@ -566,7 +570,7 @@ export function SidebarGroupLabel({ className, render, ...props }: SidebarGroupL
       {
         className: cn(
           sidebarRowShellClass,
-          "text-xs font-medium flex h-8 shrink-0 items-center px-2 text-sidebar-foreground/70 transition-opacity duration-200 ease-linear group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0 [&>svg]:size-4 [&>svg]:shrink-0",
+          "text-xs font-medium flex h-8 shrink-0 items-center px-(--control-px-xs) text-sidebar-foreground/70 transition-opacity duration-200 ease-linear group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0 [&>svg]:size-4 [&>svg]:shrink-0",
           selfFocusRingClass,
           className
         ),
@@ -791,7 +795,8 @@ export function SidebarMenuSkeleton({
     <div
       data-slot="sidebar-menu-skeleton"
       className={cn(
-        "flex h-8 items-center gap-2 rounded-md px-2 [--skeleton-width:70%] [:nth-child(5n)>&]:[--skeleton-width:55%] [:nth-child(5n+1)>&]:[--skeleton-width:50%] [:nth-child(5n+2)>&]:[--skeleton-width:90%] [:nth-child(5n+3)>&]:[--skeleton-width:65%] [:nth-child(5n+4)>&]:[--skeleton-width:80%]",
+        sidebarRowBoxClass,
+        "flex items-center gap-2 rounded-md [--skeleton-width:70%] [:nth-child(5n)>&]:[--skeleton-width:55%] [:nth-child(5n+1)>&]:[--skeleton-width:50%] [:nth-child(5n+2)>&]:[--skeleton-width:90%] [:nth-child(5n+3)>&]:[--skeleton-width:65%] [:nth-child(5n+4)>&]:[--skeleton-width:80%]",
         className
       )}
       {...props}>
