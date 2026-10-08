@@ -278,7 +278,7 @@ describe("AlertDialog", () => {
     if (!(neutralAction instanceof HTMLElement) || !(neutralIcon instanceof SVGElement)) {
       throw new Error("expected the default action and Info fallback");
     }
-    expect(getComputedStyle(neutralAction).backgroundColor).toBe(cssVarColor(neutralAction, "--primary"));
+    expect(getComputedStyle(neutralAction).backgroundColor).toBe(cssVarColor(neutralAction, "--secondary"));
     expect(getComputedStyle(neutralIcon).color).not.toBe(cssVarColor(neutralAction, "--error"));
     expect(getComputedStyle(neutralIcon).width).toBe("20px");
     expect(neutralIcon.innerHTML).not.toBe(destructiveGlyph);

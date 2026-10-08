@@ -162,8 +162,8 @@ describe("FileTrigger", () => {
     expect(px(getComputedStyle(outline).height)).toBeGreaterThan(px(getComputedStyle(defaults).height));
     // This suite loads no themes.css, so the outline takes its 1px hairline fallback.
     expect(getComputedStyle(outline).borderTopWidth).toBe("1px");
-    expect(defaults.className).toContain("bg-primary");
-    expect(fileInputFor(defaults).className).not.toContain("bg-primary");
+    expect(defaults.className).toContain("bg-secondary");
+    expect(fileInputFor(defaults).className).not.toContain("bg-secondary");
     // Unit under test: FileTrigger's routing of variant and size. Oracle: Button's recipe for
     // the same pair, which the visible button carries whole and the hidden input not at all,
     // plus the `gap-x-2` the `withIcon` JSDoc documents for the default icon.

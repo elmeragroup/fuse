@@ -128,7 +128,8 @@ export type DerivedRole = OklchMixRole | ComposedRole;
  * scope that resets a source always resets the derived role too.
  */
 export const DERIVED_ROLES = {
-  // The secondary Button hover, which the recipe used to spell as an inline color-mix().
+  // The hover of the Button variant that takes the `secondary` fill, which is `default`. The
+  // recipe used to spell it as an inline color-mix().
   "secondary-hover": { _tag: "OklchMix", from: "secondary", toward: "foreground", percent: 5 },
   // The brand on the sidebar, stepped to 4.5:1 there, and the text on its fill. See
   // `sidebar-brand.ts`.

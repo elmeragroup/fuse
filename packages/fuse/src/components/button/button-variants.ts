@@ -57,11 +57,11 @@ export const buttonVariants = tv({
   ),
   variants: {
     variant: {
-      default: "bg-primary text-primary-foreground enabled-hover:bg-primary/80",
+      default:
+        "bg-secondary text-secondary-foreground aria-expanded:bg-secondary aria-expanded:text-secondary-foreground enabled-hover:bg-secondary-hover",
       outline:
         "border-[length:var(--button-outline-width,1px)] border-button-outline bg-background shadow-[0_1px_max(0px,4px-2*var(--button-outline-width,1px))_min(0px,2px-2*var(--button-outline-width,1px))_rgb(0_0_0/0.05)] aria-expanded:bg-muted aria-expanded:text-foreground enabled-hover:bg-muted enabled-hover:text-foreground",
-      secondary:
-        "bg-secondary text-secondary-foreground aria-expanded:bg-secondary aria-expanded:text-secondary-foreground enabled-hover:bg-secondary-hover",
+      secondary: "bg-primary text-primary-foreground enabled-hover:bg-primary/80",
       ghost:
         "aria-expanded:bg-muted aria-expanded:text-foreground enabled-hover:bg-muted enabled-hover:text-foreground",
       destructive:

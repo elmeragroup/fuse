@@ -377,13 +377,13 @@ describe("Button", () => {
     expect(getComputedStyle(button).backgroundColor).toBe(cssVarColor(button, "--muted"));
   });
 
-  it("paints a hovered secondary button with the secondary-hover role", async () => {
+  it("paints a hovered default button with the secondary-hover role", async () => {
     renderThemed(
-      <Button variant="secondary" className="transition-none">
-        Secondary
+      <Button variant="default" className="transition-none">
+        Default
       </Button>
     );
-    const button = roleNamed("button", "Secondary");
+    const button = roleNamed("button", "Default");
     expect(getComputedStyle(button).backgroundColor).toBe(cssVarColor(button, "--secondary"));
 
     await userEvent.hover(button);
@@ -395,7 +395,7 @@ describe("Button", () => {
   it("mixes the secondary hover from a host override of --secondary on a theme scope", async () => {
     render(
       <ThemeScope theme={fkasPrivate} style={{ "--secondary": "oklch(0.6 0.2 30)" }}>
-        <Button variant="secondary" className="transition-none">
+        <Button variant="default" className="transition-none">
           Custom
         </Button>
       </ThemeScope>

@@ -106,12 +106,12 @@ async function checkInBrowser(url: string): Promise<string[]> {
 
     // Read before any click: the Button's background transition and hover paint would otherwise
     // be caught mid-change. The probe paints the theme token directly, so it is the oracle for
-    // what `bg-primary` must compile to; the fixture's own files never write that class.
+    // what `bg-secondary` must compile to; the fixture's own files never write that class.
     await page.mouse.move(0, 0);
     await page.locator("#counter").waitFor();
     const colors = await page.evaluate(() => {
       const probe = document.createElement("div");
-      probe.style.backgroundColor = "var(--primary)";
+      probe.style.backgroundColor = "var(--secondary)";
       document.body.append(probe);
       const expected = getComputedStyle(probe).backgroundColor;
       probe.remove();

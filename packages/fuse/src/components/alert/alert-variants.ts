@@ -22,9 +22,9 @@ export const alertVariants = tv({
       default: {
         base: "bg-background text-foreground",
         icon: "text-foreground",
-        // Replaces Button's `enabled-hover:bg-primary/80`, which tailwind-merge keeps beside a
-        // plain `bg-*` because the modifier differs, and which puts `text-foreground` on a
-        // primary fill. `foreground` on `muted` is a gated text-grade pair.
+        // Replaces Button's `enabled-hover:bg-secondary-hover`, which tailwind-merge keeps
+        // beside a plain `bg-*` because the modifier differs, and which puts `text-foreground`
+        // on a secondary fill. `foreground` on `muted` is a gated text-grade pair.
         button: "bg-background text-foreground enabled-hover:bg-muted",
       },
       destructive: {
