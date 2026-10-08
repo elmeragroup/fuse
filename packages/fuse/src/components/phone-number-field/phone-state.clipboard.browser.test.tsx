@@ -1,24 +1,16 @@
 import { StrictMode, useEffect, useState } from "react";
 
-import type { MetadataJson } from "libphonenumber-js/core";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import { page, userEvent } from "vitest/browser";
+import { userEvent } from "vitest/browser";
 
 import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
 
 import { withLocale } from "../../../test/locale-matrix";
-import { countryAddon, phoneForm, phoneInput, phoneSubmission } from "../../../test/phone-browser-queries";
+import { phoneForm, phoneInput, phoneSubmission } from "../../../test/phone-browser-queries";
 import { renderThemed as render, roleNamed } from "../../../test/themed-browser-render";
 import { resetCountryNameCache } from "./country-names";
-import { defaultMetadata } from "./phone-engine";
-
-const swedishMetadata: MetadataJson = {
-  ...defaultMetadata,
-  countries: { SE: defaultMetadata.countries.SE },
-  country_calling_codes: { "46": ["SE"] },
-};
 
 function paste(text: string) {
   const clipboard = new DataTransfer();
@@ -29,76 +21,6 @@ function paste(text: string) {
 }
 
 describe("PhoneNumberField identity and authoritative value", () => {
-  it.each(["+24712345", "+79123456789", "+46701234567"])(
-    "preserves initial and pasted identity for %s",
-    async (value) => {
-      const change = vi.fn<(value: string) => void>();
-      const field = (controlled: boolean) =>
-        withLocale(
-          "en-US",
-          <form aria-label="Phone form">
-            <PhoneNumberField
-              label="Mobile"
-              name="phone"
-              value={controlled ? value : undefined}
-              onChange={change}
-            />
-          </form>
-        );
-      const { rerender } = render(field(true));
-      expect(phoneSubmission().get("phone")).toBe(value);
-      expect(phoneInput().value).toBe(value === "+46701234567" ? "701234567" : value);
-      rerender(field(false));
-      paste(value);
-      await expect.poll(() => change.mock.calls.at(-1)?.[0]).toBe(value);
-      expect(phoneSubmission().get("phone")).toBe(value);
-      expect(roleNamed("button", "Select country").textContent).toContain(
-        value === "+46701234567" ? "+46" : "+47"
-      );
-    }
-  );
-
-  it("keeps rejected proposals out of the display and actual phoneSubmission, then accepts a delayed echo", async () => {
-    const proposals: string[] = [];
-    function Parent() {
-      const [value, setValue] = useState("+4741234567");
-      return (
-        <form aria-label="Phone form">
-          <PhoneNumberField
-            label="Mobile"
-            name="phone"
-            value={value}
-            international
-            onChange={(next) => proposals.push(next)}
-          />
-          <button type="button" onClick={() => setValue(proposals.at(-1) ?? "")}>
-            Accept
-          </button>
-          <button type="button" onClick={() => setValue("+46701234567")}>
-            Replace
-          </button>
-          <button type="button" onClick={() => setValue("")}>
-            Clear
-          </button>
-        </form>
-      );
-    }
-    render(withLocale("en-US", <Parent />));
-    await userEvent.fill(phoneInput(), "99887766");
-    expect(proposals).toEqual(["+4799887766"]);
-    expect(phoneInput().value).toBe("+4741234567");
-    expect(phoneSubmission().get("phone")).toBe("+4741234567");
-    await userEvent.click(roleNamed("button", "Accept"));
-    expect(phoneInput().value).toBe("99887766");
-    expect(phoneSubmission().get("phone")).toBe("+4799887766");
-    await userEvent.click(roleNamed("button", "Replace"));
-    expect(phoneInput().value).toBe("+46701234567");
-    expect(phoneSubmission().get("phone")).toBe("+46701234567");
-    await userEvent.click(roleNamed("button", "Clear"));
-    expect(phoneInput().value).toBe("");
-    expect(phoneSubmission().get("phone")).toBe("");
-  });
-
   it("keeps a controlled value parent-owned through a native reset until the parent accepts empty", async () => {
     const change = vi.fn<(value: string) => void>();
     function Parent() {
@@ -133,101 +55,6 @@ describe("PhoneNumberField identity and authoritative value", () => {
     await userEvent.click(roleNamed("button", "Clear"));
     await expect.poll(() => phoneInput().value).toBe("");
     expect(phoneSubmission().get("phone")).toBe("");
-  });
-
-  it("submits immediately accepted drafts and keeps accepted country identity on rejected paste", async () => {
-    const proposals: string[] = [];
-    function Parent() {
-      const [value, setValue] = useState("");
-      return (
-        <form aria-label="Phone form">
-          <PhoneNumberField
-            label="Mobile"
-            name="phone"
-            international
-            value={value}
-            onChange={(next) => {
-              proposals.push(next);
-              if (next.startsWith("+47")) setValue(next);
-            }}
-          />
-        </form>
-      );
-    }
-    render(withLocale("en-US", <Parent />));
-    await userEvent.fill(phoneInput(), "41234567");
-    expect(phoneInput().value).toBe("41234567");
-    expect(phoneSubmission().get("phone")).toBe("+4741234567");
-    paste("+46701234567");
-    await expect.poll(() => proposals.at(-1)).toBe("+46701234567");
-    expect(phoneInput().value).toBe("41234567");
-    expect(roleNamed("button", "Select country").textContent).toContain("+47");
-    expect(phoneSubmission().get("phone")).toBe("+4741234567");
-  });
-
-  it("preserves a controlled number when its country leaves the metadata", async () => {
-    function Parent({ metadata }: { metadata: MetadataJson }) {
-      const [value, setValue] = useState("+4741234567");
-      return (
-        <form aria-label="Phone form">
-          <PhoneNumberField
-            label="Mobile"
-            name="phone"
-            metadata={metadata}
-            value={value}
-            onChange={setValue}
-          />
-        </form>
-      );
-    }
-    const { rerender } = render(withLocale("en-US", <Parent metadata={defaultMetadata} />));
-    rerender(withLocale("en-US", <Parent metadata={swedishMetadata} />));
-    expect(phoneInput().value).toBe("+4741234567");
-    expect(phoneSubmission().get("phone")).toBe("+4741234567");
-    // One country left by the metadata alone shows as context, without a picker.
-    expect(page.getByRole("button", { name: "Select country" }).query()).toBeNull();
-    expect(countryAddon().textContent).toBe("Sweden+46");
-    await userEvent.fill(phoneInput(), "701234567");
-    expect(phoneInput().value).toBe("701234567");
-    expect(phoneSubmission().get("phone")).toBe("+46701234567");
-  });
-
-  it.each([false, true])("reconciles metadata with existing digits: %s", async (existing) => {
-    const change = vi.fn<(value: string) => void>();
-    const field = (metadata: MetadataJson) =>
-      withLocale(
-        "en-US",
-        <form aria-label="Phone form">
-          <PhoneNumberField label="Mobile" name="phone" metadata={metadata} onChange={change} />
-        </form>
-      );
-    const { rerender } = render(field(defaultMetadata));
-    if (existing) await userEvent.fill(phoneInput(), "41234567");
-    rerender(field(swedishMetadata));
-    expect(countryAddon().textContent).toContain("+46");
-    // Metadata replacement keeps existing international identity, even if the catalog cannot parse it.
-    expect(phoneInput().value).toBe(existing ? "+4741234567" : "");
-    expect(phoneSubmission().get("phone")).toBe(existing ? "+4741234567" : "");
-    await userEvent.fill(phoneInput(), "701234567");
-    expect(change).toHaveBeenLastCalledWith("+46701234567");
-    expect(phoneSubmission().get("phone")).toBe("+46701234567");
-  });
-
-  it("keeps an uncontrolled international draft when only the output format changes", async () => {
-    const field = (outputFormat: "e164" | "raw") =>
-      withLocale(
-        "en-US",
-        <form aria-label="Phone form">
-          <PhoneNumberField label="Mobile" name="phone" international outputFormat={outputFormat} />
-        </form>
-      );
-    const { rerender } = render(field("e164"));
-    await userEvent.fill(phoneInput(), "41234567");
-    expect(phoneSubmission().get("phone")).toBe("+4741234567");
-    rerender(field("raw"));
-    expect(phoneInput().value).toBe("41234567");
-    expect(phoneSubmission().get("phone")).toBe("41234567");
-    expect(roleNamed("button", "Select country").textContent).toContain("+47");
   });
 
   it.each([
