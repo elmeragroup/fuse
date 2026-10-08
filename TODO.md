@@ -45,7 +45,9 @@
 - Ask design about the remaining Central Text input deltas at comfortable density: 8px
   inline padding (Fuse 14px), 16px input text (Fuse 18px), a 16px label (Fuse 14px), a
   darker border on hover, grey disabled fill and text instead of the 50% dim, and an error
-  icon inside the box.
+  icon inside the box. Confirm the label size together with the comfortable selection-row
+  type, `--control-text-row` at 16px, which a comfortable `RadioItemGroup` shows under a 14px
+  legend.
 - Ask design for a light field border of at least 3:1. Light `--input`, the border of Input,
   Textarea, Select and the other field boxes, measures 1.08–1.70:1 against the page and card, an
   accepted deviation on the accessibility page. Except ngfi's M3 `outline-variant`, the values are

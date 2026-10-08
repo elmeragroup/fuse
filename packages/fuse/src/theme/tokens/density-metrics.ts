@@ -34,10 +34,18 @@ const SIZED_FAMILIES = [
   { family: "control-gap", kind: "gap" },
 ] as const satisfies readonly { family: string; kind: DensityMetricKind }[];
 
-/** The families that are one metric for every control size, in `fuse.css` order. */
+/**
+ * The families that are one metric for every control size, in `fuse.css` order.
+ * `control-text-row` and `control-leading-row` are the type of a selection row, the card rows
+ * behind `CheckboxItem` and `RadioItem`. Dense matches `text-sm`, and comfortable takes the
+ * customer-facing reference radio card's 16px, a step below the 18px field and button text, so
+ * a row's title and description stay body text beside the controls around them.
+ */
 const SINGLE_FAMILIES = [
   { family: "control-text", kind: "fontSize" },
   { family: "control-leading", kind: "lineHeight" },
+  { family: "control-text-row", kind: "fontSize" },
+  { family: "control-leading-row", kind: "lineHeight" },
 ] as const satisfies readonly { family: string; kind: DensityMetricKind }[];
 
 /** One density control metric, the `--control-*` custom property without its leading dashes. */
@@ -105,6 +113,8 @@ export const DENSITY_METRICS = {
   "control-gap-lg": { dense: "0.375rem", comfortable: "0.5rem" },
   "control-text": { dense: "0.875rem", comfortable: "1.125rem" },
   "control-leading": { dense: "1.25rem", comfortable: "1.5rem" },
+  "control-text-row": { dense: "0.875rem", comfortable: "1rem" },
+  "control-leading-row": { dense: "1.25rem", comfortable: "1.5rem" },
 } as const satisfies Record<DensityMetricName, DensityMetricValues>;
 
 /**
