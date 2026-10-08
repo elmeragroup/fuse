@@ -9,9 +9,10 @@ import type { ReactElement, ReactNode } from "react";
 import { SelectionItem } from "../selection-item";
 import { partitionSubSections } from "../selection-item/partition-sub-sections";
 import { SelectionItemShell } from "../selection-item/selection-item";
+import type { SelectionItemRootProps } from "../selection-item/selection-item";
 import { Checkbox } from "./checkbox";
 
-type CheckboxItemBaseProps = {
+type CheckboxItemBaseProps = SelectionItemRootProps & {
   /** Forwards `disabled` to the inner Checkbox and applies disabled hatch styling on the shell. */
   isDisabled?: boolean;
   /** Forwards `readOnly` to the inner Checkbox. */
@@ -59,6 +60,8 @@ export type CheckboxItemProps = CheckboxItemBaseProps &
  * client `SelectionItem.Shell`, which wires Field.Item and the label. The namespace
  * aliases `Title`, `Description`, `Content`, `Actions` and `SubSection` are the exact
  * `SelectionItem.*` objects, so `child.type` partitioning works with either spelling.
+ * Other attributes, such as `id`, `data-testid` or a `data-*` hook, land on the row's
+ * `Field.Item` root, the element that carries the row's `data-slot`.
  */
 export function CheckboxItem({
   value,
@@ -68,6 +71,7 @@ export function CheckboxItem({
   controlPosition = "start",
   className,
   children,
+  ...props
 }: CheckboxItemProps): ReactElement {
   const { row, subSections } = partitionSubSections(children);
   return (
@@ -83,7 +87,8 @@ export function CheckboxItem({
           <Checkbox value={value} disabled={isDisabled} readOnly={isReadOnly} />
         )
       }
-      subSections={subSections}>
+      subSections={subSections}
+      {...props}>
       {row}
     </SelectionItemShell>
   );

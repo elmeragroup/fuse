@@ -155,6 +155,24 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
 };
 
 /**
+ * Root attributes `CheckboxItem` and `RadioItem` forward to the shell's `Field.Item` root,
+ * such as `id`, `style`, `data-*`, ARIA attributes and event handlers. It leaves out what
+ * the item owns: its row props, `className`, `children`, the shell wiring and `disabled`,
+ * which `isDisabled` spells.
+ */
+export type SelectionItemRootProps = Omit<
+  SelectionItemShellProps,
+  | "dataSlot"
+  | "control"
+  | "controlPosition"
+  | "isDisabled"
+  | "className"
+  | "subSections"
+  | "children"
+  | "disabled"
+>;
+
+/**
  * Shared card-row shell that CheckboxItem and RadioItem plug a control into. Client
  * component, because it reads Field.Item context. The control and sub-section columns
  * share one parent grid, so the spacer tracks the control slot without measuring it.

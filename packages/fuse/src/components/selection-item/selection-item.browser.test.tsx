@@ -682,6 +682,42 @@ describe("SelectionItem", () => {
     expect(checkboxNamed(`${title} ${description}`).getAttribute("aria-checked")).toBe("false");
   });
 
+  it.each([
+    { item: "CheckboxItem", role: "checkbox", slot: "checkbox-item" },
+    { item: "RadioItem", role: "radio", slot: "radio-item" },
+  ] as const)("puts root attributes on a $item's row and keeps its own data-slot", async ({ role, slot }) => {
+    const rowProps = {
+      "data-testid": "plan-fixed",
+      id: "plan-fixed-row",
+      "data-analytics": "plan",
+      // The item's own slot names the row; a consumer's does not replace it.
+      "data-slot": "consumer-slot",
+    };
+    renderThemed(
+      role === "checkbox" ? (
+        <CheckboxItemGroup label="Plans">
+          <CheckboxItem value="fixed" {...rowProps}>
+            <RowTitle>Fixed price</RowTitle>
+          </CheckboxItem>
+        </CheckboxItemGroup>
+      ) : (
+        <RadioItemGroup label="Plans">
+          <RadioItem value="fixed" {...rowProps}>
+            <RowTitle>Fixed price</RowTitle>
+          </RadioItem>
+        </RadioItemGroup>
+      )
+    );
+
+    const row = page.getByTestId("plan-fixed");
+    expect(row.element()).toBe(shellFrom("Fixed price"));
+    expect(row.element().id).toBe("plan-fixed-row");
+    expect(row.element().getAttribute("data-analytics")).toBe("plan");
+    expect(row.element().getAttribute("data-slot")).toBe(slot);
+    await userEvent.click(row.getByRole(role));
+    expect(roleNamed(role, "Fixed price").getAttribute("aria-checked")).toBe("true");
+  });
+
   it("toggles from the keyboard on the plugged-in control", async () => {
     renderThemed(
       <>
