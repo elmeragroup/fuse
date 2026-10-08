@@ -1,10 +1,10 @@
 "use client";
 
-import { Children, createContext, isValidElement, useContext, useMemo, useRef } from "react";
+import { Children, createContext, isValidElement, useContext, useMemo } from "react";
 import type { ComponentProps, MouseEvent, ReactElement, ReactNode } from "react";
 
 import { Field as FieldPrimitive } from "@base-ui/react/field";
-import type { BaseUIEvent } from "@base-ui/react/types";
+import { mergeProps } from "@base-ui/react/merge-props";
 
 import { cn } from "../../styles/cn";
 import { disabledHatch } from "../../styles/utils";
@@ -38,7 +38,7 @@ const subSectionBandClass = cn(
 // With `isSubSectionSelectable`, the band shows the label row's cursor, and the not-allowed one
 // while the control is disabled.
 const selectableBandClass = cn(
-  "cursor-pointer [[data-selection-item]:has(>label_:disabled)>&]:cursor-not-allowed"
+  "cursor-pointer [[data-selection-item]:has(>label>[data-slot=selection-item-control]_:disabled)>&]:cursor-not-allowed"
 );
 
 /**
@@ -205,9 +205,9 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
  * spans the shell's padding box, so a click anywhere across the label row toggles the
  * control at any inset. While a SubSection shows, it covers the label row only and the
  * sub-section band keeps its own clicks; while every SubSection is `mode="hidden"`, it
- * covers the whole row, bottom inset included. With `isSubSectionSelectable` it always covers
- * the whole row, and a click on the band's passive parts toggles the control. Nothing clips, so a focus ring at a zero
- * inset paints whole.
+ * covers the whole row, bottom inset included. With `isSubSectionSelectable` it always
+ * covers the whole row, and a click on the band's passive parts toggles the control.
+ * Nothing clips, so a focus ring at a zero inset paints whole.
  *
  * Vertical and default shells, in either group shape or outside any group, collapse
  * borders with `not-first:border-t-0`. A checked shell paints its border in the theme's
@@ -231,7 +231,6 @@ export function SelectionItemShell({
   children,
   ...props
 }: SelectionItemShellProps): ReactElement {
-  const labelRef = useRef<HTMLLabelElement>(null);
   const groupLayout = useContext(SelectionItemGroupContext);
   const inItemGroup = groupLayout !== false && groupLayout.list;
   const connectedStack = groupLayout === false || groupLayout.orientation !== "horizontal";
@@ -255,8 +254,8 @@ export function SelectionItemShell({
     <div className={cn("flex min-w-0 items-start gap-2.5", rowCellClass)}>{rowChildren}</div>
   );
   const spacer = <span aria-hidden />;
-  const selectFromSubSection = (event: BaseUIEvent<MouseEvent<HTMLDivElement>>) => {
-    props.onClick?.(event);
+  // `mergeProps` runs the consumer's `onClick` first; `preventBaseUIHandler()` there skips this.
+  const selectFromSubSection = (event: MouseEvent<HTMLDivElement>) => {
     if (event.defaultPrevented || !(event.target instanceof Element)) {
       return;
     }
@@ -278,8 +277,13 @@ export function SelectionItemShell({
       return;
     }
     // The label's control is the hidden input. Clicking it toggles without dispatching another
-    // click through the row, so ancestors and `onClick` see this one click only.
-    labelRef.current?.control?.click();
+    // click through the row, so ancestors and `onClick` see this one click only. Focusing it
+    // moves focus to the visible control, as a click on the label row does, so the keyboard
+    // carries on from the chosen row.
+    const label = event.currentTarget.querySelector(":scope > label");
+    const control = label instanceof HTMLLabelElement ? label.control : null;
+    control?.click();
+    control?.focus({ preventScroll: true });
   };
   // Separate child positions give each source its own key space; one merged array
   // would repeat the `.0` keys that the two `Children.toArray` calls assign independently.
@@ -297,7 +301,9 @@ export function SelectionItemShell({
     <FieldItem
       {...(inItemGroup ? { role: "listitem" as const } : null)}
       {...props}
-      {...(isSubSectionSelectable ? { onClick: selectFromSubSection } : null)}
+      {...(isSubSectionSelectable
+        ? mergeProps<"div">({ onClick: selectFromSubSection }, { onClick: props.onClick })
+        : null)}
       data-slot={dataSlot}
       data-selection-item=""
       className={cn(
@@ -310,9 +316,7 @@ export function SelectionItemShell({
         isDisabled ? cn("cursor-not-allowed bg-muted", disabledHatch) : null,
         className
       )}>
-      <FieldPrimitive.Label
-        ref={labelRef}
-        className={cn(labelClass, isSubSectionSelectable ? null : labelRowTargetClass)}>
+      <FieldPrimitive.Label className={cn(labelClass, isSubSectionSelectable ? null : labelRowTargetClass)}>
         {controlAtEnd ? (
           <>
             {rowCluster}

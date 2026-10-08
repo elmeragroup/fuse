@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 
 import { Checkbox } from "@base-ui/react/checkbox";
+import type { BaseUIEvent } from "@base-ui/react/types";
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -498,26 +499,48 @@ describe("SelectionItem", () => {
       expect(ancestorClicks).toEqual(["click"]);
     });
 
-    it("selects a RadioItem from its SubSection's text", async () => {
+    it("selects and focuses a RadioItem from its SubSection's text, so the arrow keys carry on", async () => {
       renderThemed(
         <RadioItemGroup label="Plans">
           <RadioItem value="fixed" isSubSectionSelectable>
             <RowTitle>Fixed price</RowTitle>
             <RadioItem.SubSection>Locked for twelve months.</RadioItem.SubSection>
           </RadioItem>
+          <RadioItem value="spot" isSubSectionSelectable>
+            <RowTitle>Spot price</RowTitle>
+            <RadioItem.SubSection>Follows the market.</RadioItem.SubSection>
+          </RadioItem>
         </RadioItemGroup>
       );
 
       await userEvent.click(textNamed("Locked for twelve months."));
-      expect(roleNamed("radio", "Fixed price").getAttribute("aria-checked")).toBe("true");
+      const fixed = roleNamed("radio", "Fixed price");
+      expect(fixed.getAttribute("aria-checked")).toBe("true");
+      expect(document.activeElement).toBe(fixed);
+      await userEvent.keyboard("{ArrowDown}");
+      expect(roleNamed("radio", "Spot price").getAttribute("aria-checked")).toBe("true");
     });
 
-    it("runs a consumer's click handler first and skips the toggle when it prevents the default", async () => {
+    it("focuses a CheckboxItem's control from its SubSection's text, so Space toggles it back", async () => {
+      renderThemed(<SelectablePlan isSubSectionSelectable />);
+
+      await userEvent.click(textNamed("Locked for twelve months."));
+      const checkbox = checkboxNamed("Fixed price");
+      expect(checkbox.getAttribute("aria-checked")).toBe("true");
+      expect(document.activeElement).toBe(checkbox);
+      await userEvent.keyboard(" ");
+      expect(checkbox.getAttribute("aria-checked")).toBe("false");
+    });
+
+    it("runs a consumer's click handler first and skips the toggle when it prevents it", async () => {
       const clicks: boolean[] = [];
-      function onClick(event: ReactMouseEvent): void {
+      function onClick(event: BaseUIEvent<ReactMouseEvent<HTMLDivElement>>): void {
         clicks.push(true);
         if (clicks.length === 1) {
           event.preventDefault();
+        }
+        if (clicks.length === 2) {
+          event.preventBaseUIHandler();
         }
       }
       renderThemed(
@@ -535,7 +558,10 @@ describe("SelectionItem", () => {
 
       await userEvent.click(textNamed("Locked for twelve months."));
       expect(clicks).toEqual([true]);
-      expect(checkboxNamed("Fixed price").getAttribute("aria-checked")).toBe("false");
+      expect(checkboxNamed("Fixed price").getAttribute("aria-checked"), "preventDefault").toBe("false");
+      await userEvent.click(textNamed("Locked for twelve months."));
+      expect(clicks).toEqual([true, true]);
+      expect(checkboxNamed("Fixed price").getAttribute("aria-checked"), "preventBaseUIHandler").toBe("false");
       await userEvent.click(textNamed("Locked for twelve months."));
       expect(checkboxNamed("Fixed price").getAttribute("aria-checked")).toBe("true");
     });

@@ -12,7 +12,9 @@ export function SelectionItemSelectableSubsection() {
         </RadioItem.Content>
         <RadioItem.SubSection>
           <p>No price changes while the agreement runs, and no fee to leave it at renewal.</p>
-          <a href="#fixed-price-terms">Fixed price terms</a>
+          <a href="#fixed-price-terms" className="text-sm text-primary underline underline-offset-4">
+            Fixed price terms
+          </a>
         </RadioItem.SubSection>
       </RadioItem>
       <RadioItem value="spot" isSubSectionSelectable>
@@ -22,7 +24,9 @@ export function SelectionItemSelectableSubsection() {
         </RadioItem.Content>
         <RadioItem.SubSection>
           <p>Cheaper when demand is low. Move usage to the night to pay less.</p>
-          <a href="#spot-price-terms">Spot price terms</a>
+          <a href="#spot-price-terms" className="text-sm text-primary underline underline-offset-4">
+            Spot price terms
+          </a>
         </RadioItem.SubSection>
       </RadioItem>
     </RadioItemGroup>
