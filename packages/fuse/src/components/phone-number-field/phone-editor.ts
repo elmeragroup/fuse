@@ -340,28 +340,8 @@ function reformat(
  */
 function answer(stored: EditorRecord, value: string | undefined, configuration: Configuration): Snapshot {
   const echoedProposal = stored.proposal?.values.outputValue === value ? stored.proposal : null;
-  const accepted = acceptedFor(stored, value, configuration, echoedProposal);
-  // An echoed edit re-derived under a new configuration keeps its caret while it shows the same
-  // display, as the commit that echoes it puts the caret back.
-  return echoedProposal &&
-    accepted !== echoedProposal &&
-    accepted.values.displayValue === echoedProposal.values.displayValue
-    ? { ...accepted, caret: echoedProposal.caret }
-    : accepted;
-}
-
-function acceptedFor(
-  stored: EditorRecord,
-  value: string | undefined,
-  configuration: Configuration,
-  echoedProposal: Snapshot | null
-): Snapshot {
-  if (
-    stored.configuration === configuration &&
-    stored.proposal &&
-    stored.proposal.values.outputValue === value
-  ) {
-    return stored.proposal;
+  if (echoedProposal && stored.configuration === configuration) {
+    return echoedProposal;
   }
   const previous = echoedProposal ?? visibleSnapshot(stored);
   const country = resolveSelectedCountry(configuration.countries, previous.country.code);
@@ -411,7 +391,8 @@ export function create(props: PhoneEditorProps): PhoneEditorState {
 /**
  * Fold new props into the state. A proposal the parent echoes becomes the accepted state, one
  * it rejects stays out of view, and a new value, configuration or catalog is read as described
- * on {@link PhoneEditorProps}.
+ * on {@link PhoneEditorProps}. The first answer to an edit keeps its caret when the field
+ * shows the display the edit proposed, whatever value the parent stored.
  *
  * @param state - The current state.
  * @param props - The field's props now.
@@ -421,18 +402,8 @@ export function create(props: PhoneEditorProps): PhoneEditorState {
 export function reconcile(state: PhoneEditorState, props: PhoneEditorProps): PhoneEditorState {
   const stored = state[RECORD];
   const configuration = configure(props, stored.configuration);
-  const { proposal } = stored;
-  // A proposal the parent rejects drops its caret: a later, delayed echo shows its number again
-  // but leaves the caret where the user has put it since.
-  const rejected =
-    stored.unanswered &&
-    proposal !== null &&
-    proposal.caret !== null &&
-    props.value !== undefined &&
-    proposal.values.outputValue !== props.value;
   const next: EditorRecord = {
     ...stored,
-    proposal: rejected ? { ...proposal, caret: null } : proposal,
     defaultValue: props.defaultValue,
     defaultCountryCode: props.defaultCountryCode,
     preserveOnCountryChange: props.preserveOnCountryChange ?? false,
@@ -444,15 +415,41 @@ export function reconcile(state: PhoneEditorState, props: PhoneEditorProps): Pho
       stored.defaultValue === next.defaultValue &&
       stored.defaultCountryCode === next.defaultCountryCode &&
       stored.preserveOnCountryChange === next.preserveOnCountryChange;
-    return unchanged ? state : wrap(next);
+    return unchanged ? state : wrap(settleCaret(stored, next));
   }
-  return wrap({
-    ...next,
-    configuration,
-    value: props.value,
-    accepted: answer(next, props.value, configuration),
-    proposal: null,
-  });
+  return wrap(
+    settleCaret(stored, {
+      ...next,
+      configuration,
+      value: props.value,
+      accepted: answer(next, props.value, configuration),
+      proposal: null,
+    })
+  );
+}
+
+/**
+ * Where an edit's caret goes when props first answer its proposal, from `stored` to `record`.
+ * When the field then shows the proposal's display, whatever value the parent stored or however
+ * a new configuration re-derived it, the shown snapshot takes the proposal's caret, so the
+ * commit that answers it puts the caret back. Otherwise the caret is dropped, and a proposal
+ * kept out of view loses it too: a later, delayed echo shows its number again but leaves the
+ * caret where the user has put it since.
+ */
+function settleCaret(stored: EditorRecord, record: EditorRecord): EditorRecord {
+  const { proposal } = stored;
+  const shown = visibleSnapshot(record);
+  if (!stored.unanswered || !proposal?.caret || shown === proposal) {
+    return record;
+  }
+  return {
+    ...record,
+    accepted:
+      shown.values.displayValue === proposal.values.displayValue
+        ? { ...record.accepted, caret: proposal.caret }
+        : record.accepted,
+    proposal: record.proposal && { ...record.proposal, caret: null },
+  };
 }
 
 /**

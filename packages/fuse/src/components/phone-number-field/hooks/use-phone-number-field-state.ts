@@ -73,9 +73,9 @@ export function usePhoneNumberFieldState({
 
   // An edit whose display the editor rewrites, as formatOnType does, would leave the caret at
   // the end once React assigns the value. The commit after the edit puts back the caret the
-  // edit's proposal carries, if it shows that proposal. A rejected or replaced proposal shows
-  // another one, so its caret is dropped. This runs after every commit: deleting a separator
-  // proposes the display that was already shown, so no dependency changes.
+  // edit's proposal carries, if the parent's first answer shows the proposed display, whatever
+  // value it stores. Any other answer drops the caret. This runs after every commit: deleting a
+  // separator proposes the display that was already shown, so no dependency changes.
   const pendingCaretRef = useRef<object | null>(null);
   useLayoutEffect(() => {
     const pending = pendingCaretRef.current;

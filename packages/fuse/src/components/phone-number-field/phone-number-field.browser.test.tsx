@@ -665,6 +665,32 @@ describe("PhoneNumberField caret", () => {
     expect(selection()).toEqual([5, 5]);
   });
 
+  it("keeps the caret when the parent stores its own form of the number", async () => {
+    function NationalDigits() {
+      const [value, setValue] = useState("");
+      return (
+        <PhoneNumberField
+          label="Mobile"
+          value={value}
+          onChange={(next) => setValue(next.replace(/^\+47/, ""))}
+          formatOnType
+        />
+      );
+    }
+    renderField(<NationalDigits />);
+    const input = phoneInput();
+    caretAt(0);
+    await typeKeys("91234567");
+    expect(input.value).toBe("91 23 45 67");
+    caretAt(4);
+    await userEvent.keyboard("{Backspace}");
+    expect(input.value).toBe("91 34 56 7");
+    expect([input.selectionStart, input.selectionEnd]).toEqual([2, 2]);
+    await typeKeys("5");
+    expect(input.value).toBe("91 53 45 67");
+    expect([input.selectionStart, input.selectionEnd]).toEqual([4, 4]);
+  });
+
   it("keeps the caret for a field inside a shadow root", async () => {
     const host = document.createElement("div");
     document.body.append(host);

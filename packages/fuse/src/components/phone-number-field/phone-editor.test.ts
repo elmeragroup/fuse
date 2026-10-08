@@ -440,6 +440,34 @@ describe("PhoneEditor caret", () => {
       });
     });
 
+    it("keeps the caret when the parent stores its own form of the proposed number", () => {
+      const proposed = backspaced();
+      const stored = PhoneEditor.reconcile(proposed, { ...props, value: "9134567" });
+      expect(PhoneEditor.view(stored)).toMatchObject({
+        displayValue: "91 34 56 7",
+        outputValue: "+479134567",
+        selection: { start: 2, end: 2, direction: "none" },
+      });
+      expect(PhoneEditor.view(stored).proposalKey).toBe(PhoneEditor.view(proposed).proposalKey);
+      const later = PhoneEditor.reconcile(stored, { ...props, value: "9134567" });
+      expect(later).toBe(stored);
+      expect(PhoneEditor.view(later).proposalKey).toBe(PhoneEditor.view(proposed).proposalKey);
+    });
+
+    it("keeps the caret when the parent keeps its own form of a number the edit shows unchanged", () => {
+      const national = { value: "91234567", formatOnType: true } as const;
+      // Backspace after the space in "91 23 45 67" removes only the space, which formatting
+      // puts back.
+      const proposed = keyAt(PhoneEditor.create(national), 3, "Backspace");
+      const kept = PhoneEditor.reconcile(proposed, national);
+      expect(PhoneEditor.view(kept)).toMatchObject({
+        displayValue: "91 23 45 67",
+        outputValue: "+4791234567",
+        selection: { start: 2, end: 2, direction: "none" },
+      });
+      expect(PhoneEditor.view(kept).proposalKey).toBe(PhoneEditor.view(proposed).proposalKey);
+    });
+
     it("drops the caret with a proposal the parent replaces", () => {
       const replaced = PhoneEditor.reconcile(backspaced(), { ...props, value: "+4799999999" });
       expect(PhoneEditor.view(replaced)).toMatchObject({
