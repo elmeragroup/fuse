@@ -16,8 +16,10 @@ import { segmentCornerClass } from "./corner-radius";
  */
 export const dateFieldVariants = tv({
   slots: {
+    // An invalid field paints its label in the error colour, as `Field.Root` does; every
+    // other part sets its own colour.
     // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- label/input stack gap is layout, not a control rung
-    base: "flex flex-col gap-1",
+    base: "flex flex-col gap-1 data-invalid:text-error",
     input: controlMdInsetTypeClass,
     segment: cn(
       // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- type-literal segments carry no inline padding
