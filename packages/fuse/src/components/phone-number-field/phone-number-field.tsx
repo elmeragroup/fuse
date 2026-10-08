@@ -29,32 +29,12 @@ import {
   InputGroupRoot,
 } from "../input-group/input-group";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
-import { caretOffset, significantAfter } from "./caret";
-import type { CaretSide } from "./caret";
-import { sortByCountryName } from "./country-names";
+import { countryNameResolver, sortByCountryName } from "./country-names";
 import { Flag } from "./flag";
 import { usePhoneNumberFieldState } from "./hooks/use-phone-number-field-state";
 import { phoneNumberFieldStrings } from "./intl";
 import type { PhoneNumberCountry } from "./phone-engine";
 import { CountryPickerScope, SubmittedValueControl } from "./phone-field-context";
-
-/** A selection kept as the digits after each end, for the display an edit proposed. */
-type PendingSelection = {
-  display: string;
-  start: number;
-  end: number;
-  side: CaretSide;
-  direction: "forward" | "backward" | "none" | undefined;
-};
-
-/** Edits that remove what follows the caret, so it waits before the next digit. */
-const FORWARD_DELETIONS = new Set([
-  "deleteContentForward",
-  "deleteWordForward",
-  "deleteSoftLineForward",
-  "deleteHardLineForward",
-  "deleteByCut",
-]);
 
 export type PhoneNumberFieldProps = {
   /** Authoritative controlled value; URI-decoded when received. Omit for uncontrolled editing. */
@@ -263,36 +243,11 @@ export function PhoneNumberField({
 
   const phone = usePhoneNumberFieldState({
     ...stateOptions,
-    locale,
+    inputRef: numberInputRef,
   });
   useFormReset(numberInputRef, phone.onReset);
+  const getCountryName = useMemo(() => countryNameResolver(locale), [locale]);
 
-  // An edit whose display the field rewrites, as formatOnType does, would leave the caret at
-  // the end once React assigns the value. The change handler keeps the selection as digit
-  // counts, and the commit that shows the edit's display puts it back. A rejected or replaced
-  // proposal shows another value, so the pending selection is dropped. This runs after every
-  // commit: deleting a separator proposes the display that was already shown, so no
-  // dependency changes.
-  const pendingSelectionRef = useRef<PendingSelection | null>(null);
-  useLayoutEffect(() => {
-    const pending = pendingSelectionRef.current;
-    pendingSelectionRef.current = null;
-    const input = numberInputRef.current;
-    if (!pending || !input || input.value !== pending.display) {
-      return;
-    }
-    // The document's activeElement is the shadow host for an input in a shadow root.
-    const root = input.getRootNode();
-    const focused = root instanceof Document || root instanceof ShadowRoot ? root.activeElement : null;
-    if (focused !== input) {
-      return;
-    }
-    input.setSelectionRange(
-      caretOffset(pending.display, pending.start, pending.side),
-      caretOffset(pending.display, pending.end, pending.side),
-      pending.direction
-    );
-  });
   // A Form reads the submitted number at submit time, after the commit that last changed it.
   const submittedValueRef = useRef(phone.outputValue);
   useLayoutEffect(() => {
@@ -341,19 +296,25 @@ export function PhoneNumberField({
     hydrationCheckedRef.current = true;
     const input = numberInputRef.current;
     if (input && isEditable && input.value !== phone.displayValue) {
-      phone.handleInputChange(input.value);
+      phone.edit({
+        value: input.value,
+        selectionStart: null,
+        selectionEnd: null,
+        selectionDirection: null,
+        inputType: null,
+      });
     }
   });
 
   // The flag and dial code: the picker trigger's face, or the plain context of one country.
   const countryFace = (
     <div className="flex items-center gap-1">
-      <Flag country={phone.selectedCountry.code} />
+      <Flag country={phone.country.code} />
       {/* The input's font size, touch floor included, so both runs of digits have one size.
           Leading is `normal` because a text input centres its text on the font's normal
           metrics whatever its line-height; the dial code centres the same way. */}
       <span className={cn(controlMd.entryType(), "font-medium min-w-6 leading-[normal] tabular-nums")}>
-        {phone.selectedCountry.dialCode}
+        {phone.country.dialCode}
       </span>
     </div>
   );
@@ -380,7 +341,7 @@ export function PhoneNumberField({
                   name may keep the server's text through hydration. */}
               <div className="flex shrink-0 items-center pr-1">
                 <span className="sr-only" suppressHydrationWarning>
-                  {phone.getCountryName(phone.selectedCountry.code)}
+                  {getCountryName(phone.country.code)}
                 </span>
                 {countryFace}
               </div>
@@ -389,14 +350,14 @@ export function PhoneNumberField({
             <CountryPickerScope>
               <ComboboxPrimitive.Root
                 items={pickerCountries}
-                value={phone.selectedCountry}
+                value={phone.country}
                 onValueChange={(next) => {
                   if (!isEditable) return;
                   phone.selectCountry(next?.code);
                   requestAnimationFrame(() => numberInputRef.current?.focus());
                 }}
                 itemToStringLabel={(country) =>
-                  countryPickerOpenRef.current ? phone.getCountryName(country.code) : country.code
+                  countryPickerOpenRef.current ? getCountryName(country.code) : country.code
                 }
                 itemToStringValue={(country) => country.code}
                 isItemEqualToValue={(left, right) => left.code === right.code}
@@ -480,7 +441,7 @@ export function PhoneNumberField({
                         <Flag country={country.code} />
                         <span className="text-sm leading-tight tabular-nums">{country.dialCode}</span>
                         <span className="text-sm leading-tight max-w-32 truncate text-ellipsis">
-                          {phone.getCountryName(country.code)}
+                          {getCountryName(country.code)}
                         </span>
                       </ComboboxItem>
                     )}
@@ -499,27 +460,18 @@ export function PhoneNumberField({
                 if (!isEditable) return;
                 const { value, selectionStart, selectionEnd, selectionDirection } = event.currentTarget;
                 const { nativeEvent } = event;
-                const side: CaretSide =
-                  nativeEvent instanceof InputEvent && FORWARD_DELETIONS.has(nativeEvent.inputType)
-                    ? "beforeNext"
-                    : "afterPrevious";
-                // Recorded before the proposal is published, since a parent that accepts it
-                // synchronously commits the new display before `handleInputChange` returns.
-                phone.handleInputChange(value, (display) => {
-                  pendingSelectionRef.current =
-                    display !== value && selectionStart !== null && selectionEnd !== null
-                      ? {
-                          display,
-                          start: significantAfter(value, selectionStart),
-                          end: significantAfter(value, selectionEnd),
-                          side,
-                          direction: selectionDirection ?? undefined,
-                        }
-                      : null;
+                phone.edit({
+                  value,
+                  selectionStart,
+                  selectionEnd,
+                  selectionDirection,
+                  inputType: nativeEvent instanceof InputEvent ? nativeEvent.inputType : null,
                 });
               }}
               onPaste={(event) => {
-                if (isEditable) phone.handlePaste(event);
+                if (!isEditable) return;
+                event.preventDefault();
+                phone.paste(event.clipboardData.getData("text"));
               }}
               onBlur={onBlur}
               placeholder={placeholder}

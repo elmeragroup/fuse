@@ -1,57 +1,40 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { ClipboardEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import type { RefObject } from "react";
 
-import type { CountryCode, MetadataJson } from "libphonenumber-js/core";
+import type { CountryCode } from "libphonenumber-js/core";
 
-import { countryNameResolver } from "../country-names";
-import {
-  cleanPhoneInput,
-  defaultMetadata,
-  getCountries,
-  processInputWithDetection,
-  requirePickerCountries,
-  resolveSelectedCountry,
-} from "../phone-engine";
-import type {
-  PhoneCountryCode,
-  PhoneNumberCountry,
-  PhoneNumberFormat,
-  ProcessedPhoneInput,
-} from "../phone-engine";
-import { receiveValue, reconcile, resetToDefault, snapshot, visibleSnapshot } from "../phone-field-state";
-import type { PhoneState } from "../phone-field-state";
+import * as PhoneEditor from "../phone-editor";
+import type { PhoneEdit, PhoneEditorProps, PhoneEditorState } from "../phone-editor";
+import type { PhoneNumberCountry } from "../phone-engine";
 
-export type UsePhoneNumberFieldStateOptions = {
-  value?: string;
-  defaultValue?: string;
+/** The editor's props, the field's two callbacks and the number input it restores the caret in. */
+export type UsePhoneNumberFieldStateOptions = PhoneEditorProps & {
+  /** Receives each proposal's output value. */
   onChange?: (value: string) => void;
-  defaultCountryCode?: PhoneCountryCode;
-  metadata?: MetadataJson;
-  countries?: readonly PhoneCountryCode[];
-  autoDetectCountry?: boolean;
-  international?: boolean;
-  preserveOnCountryChange?: boolean;
-  outputFormat?: PhoneNumberFormat;
-  formatOnType?: boolean;
+  /** Receives the country after a commit that changed it. */
   onCountryChange?: (country: PhoneNumberCountry) => void;
-  locale: string;
+  /** The number input, whose caret an edit's proposal puts back. */
+  inputRef: RefObject<HTMLInputElement | null>;
 };
 
+/** What the field renders, and the handlers that propose changes to it. */
 export type UsePhoneNumberFieldStateReturn = {
+  /** The text the number input shows. */
   displayValue: string;
+  /** The value the field submits. */
   outputValue: string;
-  /**
-   * Proposes an edit of the visible input. `onProposal` receives the display it proposes
-   * before any state update or `onChange`, which a parent may commit synchronously.
-   */
-  handleInputChange: (value: string, onProposal?: (displayValue: string) => void) => void;
+  /** The country the picker shows. */
+  country: Readonly<PhoneNumberCountry>;
+  /** The picker countries, in catalog order. */
+  countries: ReadonlyArray<Readonly<PhoneNumberCountry>>;
+  /** Proposes a change to the input's text, read from the input after the browser applied it. */
+  edit: (change: PhoneEdit) => void;
+  /** Proposes pasted text in place of the number. */
+  paste: (text: string) => void;
+  /** Proposes a picked country. */
   selectCountry: (code: CountryCode | undefined) => void;
-  handlePaste: (e: ClipboardEvent<HTMLInputElement>) => void;
-  selectedCountry: PhoneNumberCountry;
-  countries: PhoneNumberCountry[];
-  getCountryName: (countryCode: CountryCode) => string;
   /**
    * Native form-reset handler: restores `defaultValue`, or clears the digits in the visible
    * country without one; null when the parent owns `value`.
@@ -59,114 +42,81 @@ export type UsePhoneNumberFieldStateReturn = {
   onReset: (() => void) | null;
 };
 
+/**
+ * React adapter for the phone editor: holds its state, folds props in during render, sends
+ * `onChange` and `onCountryChange`, and puts an edit's caret back.
+ */
 export function usePhoneNumberFieldState({
-  value,
-  defaultValue,
   onChange,
-  defaultCountryCode,
-  metadata = defaultMetadata,
-  countries: allowedCountries,
-  autoDetectCountry = true,
-  international = false,
-  preserveOnCountryChange = false,
-  outputFormat = "e164",
-  formatOnType = false,
   onCountryChange,
-  locale,
+  inputRef,
+  ...props
 }: UsePhoneNumberFieldStateOptions): UsePhoneNumberFieldStateReturn {
-  // Keyed on the codes, so a list written inline in the parent's render keeps its rows. An
-  // empty list stays empty, and so throws, rather than reading as no list.
-  const allowedKey = allowedCountries?.join(",");
-  const countries = useMemo(() => {
-    const allowed = allowedKey === undefined ? undefined : allowedKey === "" ? [] : allowedKey.split(",");
-    return requirePickerCountries(getCountries(metadata, allowed));
-  }, [metadata, allowedKey]);
-  const configuration = useMemo(
-    () => ({
-      countries,
-      metadata,
-      autoDetectCountry,
-      international,
-      outputFormat,
-      formatOnType,
-    }),
-    [countries, metadata, autoDetectCountry, international, outputFormat, formatOnType]
-  );
-  const [stored, setState] = useState<PhoneState>(() => ({
-    configuration,
-    value,
-    accepted: receiveValue(
-      value ?? defaultValue ?? "",
-      resolveSelectedCountry(countries, defaultCountryCode),
-      configuration
-    ),
-    proposal: null,
-  }));
+  const [stored, setState] = useState(() => PhoneEditor.create(props));
 
   // Props are folded in during render so external replacement is visible in the same
   // pass, including server rendering. The store catches up on commit.
-  const state = reconcile(stored, value, configuration);
+  const state = PhoneEditor.reconcile(stored, props);
   if (state !== stored) setState(state);
-  const current = visibleSnapshot(state);
-  const { digits, parsedNational, country: selectedCountry, values } = current;
+  const { displayValue, outputValue, country, countries, selection, proposalKey } = PhoneEditor.view(state);
 
   // Notify only committed country changes, including external value/catalog replacement and
   // a reset that restores a default in another country. A reset without a default keeps the
   // visible country, so it stays silent.
-  const notifiedCountry = useRef(selectedCountry.code);
+  const notifiedCountry = useRef(country.code);
   useEffect(() => {
-    if (notifiedCountry.current !== selectedCountry.code) {
-      notifiedCountry.current = selectedCountry.code;
-      onCountryChange?.(selectedCountry);
+    if (notifiedCountry.current !== country.code) {
+      notifiedCountry.current = country.code;
+      onCountryChange?.(country);
     }
-  }, [selectedCountry, onCountryChange]);
+  }, [country, onCountryChange]);
 
-  const propose = (next: ProcessedPhoneInput, onProposal?: (displayValue: string) => void) => {
-    const proposal = snapshot(next, configuration);
-    onProposal?.(proposal.values.displayValue);
-    setState({ ...state, accepted: current, proposal });
-    onChange?.(proposal.values.outputValue);
-  };
-
-  const handleInputChange = (input: string, onProposal?: (displayValue: string) => void) => {
-    propose(
-      processInputWithDetection({
-        ...configuration,
-        input: cleanPhoneInput(input),
-        currentCountry: selectedCountry,
-      }),
-      onProposal
-    );
-  };
-
-  const selectCountry = (code: CountryCode | undefined) => {
-    if (!code || code === selectedCountry.code) return;
-    const country = countries.find((row) => row.code === code);
-    if (country) {
-      propose(preserveOnCountryChange ? { digits, country, parsedNational } : { digits: "", country });
+  // An edit whose display the editor rewrites, as formatOnType does, would leave the caret at
+  // the end once React assigns the value. The commit after the edit puts back the caret the
+  // edit's proposal carries, if it shows that proposal. A rejected or replaced proposal shows
+  // another one, so its caret is dropped. This runs after every commit: deleting a separator
+  // proposes the display that was already shown, so no dependency changes.
+  const pendingCaretRef = useRef<object | null>(null);
+  useLayoutEffect(() => {
+    const pending = pendingCaretRef.current;
+    pendingCaretRef.current = null;
+    const input = inputRef.current;
+    if (!pending || pending !== proposalKey || !selection || !input || input.value !== displayValue) {
+      return;
     }
+    // The document's activeElement is the shadow host for an input in a shadow root.
+    const root = input.getRootNode();
+    const focused = root instanceof Document || root instanceof ShadowRoot ? root.activeElement : null;
+    if (focused !== input) {
+      return;
+    }
+    input.setSelectionRange(selection.start, selection.end, selection.direction ?? undefined);
+  });
+
+  const publish = (next: PhoneEditorState) => {
+    if (next === state) return;
+    const proposed = PhoneEditor.view(next);
+    // Recorded before the proposal is published, since a parent that accepts it
+    // synchronously commits the new display before `onChange` returns.
+    pendingCaretRef.current = proposed.proposalKey;
+    setState(next);
+    onChange?.(proposed.outputValue);
   };
 
-  const handlePaste = (event: ClipboardEvent<HTMLInputElement>) => {
-    event.preventDefault();
-    handleInputChange(event.clipboardData.getData("text"));
-  };
-
-  const getCountryName = useMemo(() => countryNameResolver(locale), [locale]);
   return {
-    ...values,
-    handleInputChange,
-    selectCountry,
-    handlePaste,
-    selectedCountry,
+    displayValue,
+    outputValue,
+    country,
     countries,
-    getCountryName,
+    edit: (change) => publish(PhoneEditor.edit(state, change)),
+    paste: (text) => publish(PhoneEditor.paste(state, text)),
+    selectCountry: (code) => publish(PhoneEditor.selectCountry(state, code)),
     // Reset only when this hook owns the value. A parent-owned `value` is the parent's
     // to keep; a reset handler on this side would fight it.
     onReset:
-      value === undefined
+      props.value === undefined
         ? () => {
-            setState((stored) => resetToDefault(stored, defaultValue, defaultCountryCode));
+            setState((current) => PhoneEditor.reset(current));
           }
         : null,
   };
