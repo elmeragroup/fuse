@@ -5,6 +5,7 @@ import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { Field as FieldPrimitive } from "@base-ui/react/field";
 
+import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { disabledHatch } from "../../styles/utils";
 import { FieldItem } from "../field/field";
@@ -155,6 +156,24 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
 };
 
 /**
+ * Root attributes `CheckboxItem` and `RadioItem` forward to the shell's `Field.Item` root,
+ * such as `id`, `style`, `data-*`, ARIA attributes and event handlers. It leaves out what
+ * the item owns: its row props, `className`, `children`, the shell wiring and `disabled`,
+ * which `isDisabled` spells.
+ */
+export type SelectionItemRootProps = Omit<
+  SelectionItemShellProps,
+  | "dataSlot"
+  | "control"
+  | "controlPosition"
+  | "isDisabled"
+  | "className"
+  | "subSections"
+  | "children"
+  | "disabled"
+>;
+
+/**
  * Shared card-row shell that CheckboxItem and RadioItem plug a control into. Client
  * component, because it reads Field.Item context. The control and sub-section columns
  * share one parent grid, so the spacer tracks the control slot without measuring it.
@@ -218,8 +237,7 @@ export function SelectionItemShell({
 
   return (
     <FieldItem
-      {...(inItemGroup ? { role: "listitem" as const } : null)}
-      {...props}
+      {...definedProps({ ...props, role: props.role ?? (inItemGroup ? "listitem" : undefined) })}
       data-slot={dataSlot}
       data-selection-item=""
       className={cn(

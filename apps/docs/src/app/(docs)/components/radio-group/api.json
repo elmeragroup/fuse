@@ -324,8 +324,11 @@
       "name": "RadioItem",
       "rsc": "server",
       "sourcePath": "packages/fuse/src/components/radio-group/radio-item.tsx",
-      "forwardedFrom": [],
-      "forwardedCount": 0,
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 274,
       "props": [
         {
           "name": "children",
@@ -361,6 +364,28 @@
           "shortType": null,
           "defaultValue": null,
           "description": "Forwards `disabled` to the inner control and applies disabled hatch styling on the shell.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, FieldItemState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: FieldItemState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
           "required": false
         },
         {

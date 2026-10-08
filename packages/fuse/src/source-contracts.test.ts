@@ -851,7 +851,7 @@ const WIRING_PARTS = {
     "RadioGroupPrimitive",
     "FieldPrimitive.Label",
   ],
-  "components/selection-item/selection-item.tsx": ["FieldPrimitive.Label"],
+  "components/selection-item/selection-item.tsx": ["FieldPrimitive.Label", "FieldItem"],
   "components/sheet/sheet.tsx": ["SheetPrimitive.Popup"],
   "components/switch/switch.tsx": ["SwitchPrimitive.Root"],
 } as const satisfies Readonly<Record<string, readonly string[]>>;

@@ -9,9 +9,10 @@ import type { ReactElement, ReactNode } from "react";
 import { SelectionItem } from "../selection-item";
 import { partitionSubSections } from "../selection-item/partition-sub-sections";
 import { SelectionItemShell } from "../selection-item/selection-item";
+import type { SelectionItemRootProps } from "../selection-item/selection-item";
 import { RadioGroupItem } from "./radio-group";
 
-export type RadioItemProps = {
+export type RadioItemProps = SelectionItemRootProps & {
   /** Member value in the group. Forwarded to the inner `RadioGroupItem`. */
   value: string;
   /** Forwards `disabled` to the inner control and applies disabled hatch styling on the shell. */
@@ -39,6 +40,8 @@ export type RadioItemProps = {
  * client `SelectionItem.Shell`, which wires Field.Item and the label. The namespace
  * aliases `Title`, `Description`, `Content`, `Actions` and `SubSection` are the exact
  * `SelectionItem.*` objects, so `child.type` partitioning works with either spelling.
+ * Other attributes, such as `id`, `data-testid` or a `data-*` hook, land on the row's
+ * `Field.Item` root, the element that carries the row's `data-slot`.
  */
 export function RadioItem({
   value,
@@ -46,6 +49,7 @@ export function RadioItem({
   controlPosition = "start",
   className,
   children,
+  ...props
 }: RadioItemProps): ReactElement {
   const { row, subSections } = partitionSubSections(children);
   return (
@@ -55,7 +59,8 @@ export function RadioItem({
       controlPosition={controlPosition}
       className={className}
       control={<RadioGroupItem value={value} disabled={isDisabled} />}
-      subSections={subSections}>
+      subSections={subSections}
+      {...props}>
       {row}
     </SelectionItemShell>
   );
