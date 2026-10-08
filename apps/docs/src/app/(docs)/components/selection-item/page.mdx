@@ -5,6 +5,7 @@ lede: >
 
 import { SelectionItemBasic } from "./demos/selection-item-basic";
 import { SelectionItemSubsection } from "./demos/selection-item-subsection";
+import { SelectionItemSelectableSubsection } from "./demos/selection-item-selectable-subsection";
 import { SelectionItemControlEnd } from "./demos/selection-item-control-end";
 import { SelectionItemStacked } from "./demos/selection-item-stacked";
 import { SelectionItemDisabled } from "./demos/selection-item-disabled";
@@ -22,6 +23,20 @@ export const metadata = componentMetadata("selection-item");
 
 <Demo slug="selection-item" id="subsection" title="Sub-section" file="selection-item-subsection.tsx">
   <SelectionItemSubsection />
+</Demo>
+
+<Prose>
+
+A click on a `SubSection` stays outside the click target, so a field or button in it never toggles the row. When the sub-section only describes the option, pass `isSubSectionSelectable` to `CheckboxItem`, `RadioItem` or `SelectionItem.Shell`: a click on its text, its band or the padding beside it then toggles the control, and links, buttons and fields in it keep their own clicks. The control's name stays the label row. Leave it off when the sub-section reveals fields under the control.
+
+</Prose>
+
+<Demo
+  slug="selection-item"
+  id="selectable-subsection"
+  title="Selectable sub-section"
+  file="selection-item-selectable-subsection.tsx">
+  <SelectionItemSelectableSubsection />
 </Demo>
 
 <Demo slug="selection-item" id="control-end" title="Control at the end" file="selection-item-control-end.tsx">

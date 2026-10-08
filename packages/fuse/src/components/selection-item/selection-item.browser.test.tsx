@@ -1,6 +1,8 @@
 import { useState } from "react";
+import type { MouseEvent as ReactMouseEvent } from "react";
 
 import { Checkbox } from "@base-ui/react/checkbox";
+import type { BaseUIEvent } from "@base-ui/react/types";
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -394,6 +396,196 @@ describe("SelectionItem", () => {
     expect(checkbox.getAttribute("aria-checked")).toBe("true");
     await userEvent.click(headingNamed("Fixed price"));
     expect(checkbox.getAttribute("aria-checked")).toBe("false");
+  });
+
+  describe("isSubSectionSelectable", () => {
+    function SelectablePlan({ isSubSectionSelectable }: { isSubSectionSelectable?: boolean }) {
+      return (
+        <CheckboxItemGroup label="Plans">
+          <CheckboxItem value="fixed" isSubSectionSelectable={isSubSectionSelectable}>
+            <RowTitle>Fixed price</RowTitle>
+            <CheckboxItem.SubSection role="region" aria-label="Price details">
+              <p>Locked for twelve months.</p>
+              <a href="#price-terms">Price terms</a>
+            </CheckboxItem.SubSection>
+          </CheckboxItem>
+        </CheckboxItemGroup>
+      );
+    }
+
+    it("toggles from the SubSection's text, band and side padding, and leaves a link's click its own", async () => {
+      renderThemed(<SelectablePlan isSubSectionSelectable />);
+
+      const shell = shellFrom("Fixed price");
+      const checkbox = checkboxNamed("Fixed price");
+      await userEvent.click(textNamed("Locked for twelve months."));
+      expect(checkbox.getAttribute("aria-checked"), "SubSection text").toBe("true");
+
+      // The band's bottom inset, below the SubSection's content.
+      const bottom = shell.getBoundingClientRect().bottom - shell.clientTop;
+      await clickShellAt(shell, (width) => width / 2, bottom - 7);
+      expect(checkbox.getAttribute("aria-checked"), "band padding").toBe("false");
+
+      const details = roleNamed("region", "Price details").getBoundingClientRect();
+      await clickShellAt(shell, () => 4, details.top + details.height / 2);
+      expect(checkbox.getAttribute("aria-checked"), "side padding beside the SubSection").toBe("true");
+
+      await userEvent.click(roleNamed("link", "Price terms"));
+      expect(checkbox.getAttribute("aria-checked"), "link").toBe("true");
+      // The name stays the label row's: the SubSection's text does not join it.
+      expect(page.getByRole("checkbox", { name: "Fixed price", exact: true }).query()).toBe(checkbox);
+    });
+
+    it("leaves the SubSection's text outside the click target by default", async () => {
+      renderThemed(<SelectablePlan />);
+
+      await userEvent.click(textNamed("Locked for twelve months."));
+      expect(checkboxNamed("Fixed price").getAttribute("aria-checked")).toBe("false");
+    });
+
+    it("does not toggle on a click that ends a text selection", () => {
+      renderThemed(<SelectablePlan isSubSectionSelectable />);
+
+      const text = textNamed("Locked for twelve months.");
+      const selection = window.getSelection();
+      selection?.selectAllChildren(text);
+      expect(selection?.isCollapsed).toBe(false);
+      // A drag that selects text ends in a click on the text, with the selection still made.
+      text.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(checkboxNamed("Fixed price").getAttribute("aria-checked")).toBe("false");
+
+      selection?.removeAllRanges();
+      text.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(checkboxNamed("Fixed price").getAttribute("aria-checked")).toBe("true");
+    });
+
+    it("toggles while text outside the row stays selected", async () => {
+      renderThemed(
+        <>
+          <p>Compare the plans below.</p>
+          <SelectablePlan isSubSectionSelectable />
+        </>
+      );
+
+      const selection = window.getSelection();
+      selection?.selectAllChildren(textNamed("Compare the plans below."));
+      await userEvent.click(textNamed("Locked for twelve months."));
+      expect(checkboxNamed("Fixed price").getAttribute("aria-checked")).toBe("true");
+      selection?.removeAllRanges();
+    });
+
+    it("sends one click through the row and its ancestors per SubSection click", async () => {
+      const rowClicks: string[] = [];
+      const ancestorClicks: string[] = [];
+      renderThemed(
+        // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- counts bubbling clicks only
+        <div onClick={() => ancestorClicks.push("click")}>
+          <Field.Root>
+            <SelectionItem.Shell
+              dataSlot="checkbox-item"
+              control={<Checkbox.Root />}
+              isSubSectionSelectable
+              onClick={() => rowClicks.push("click")}>
+              <RowTitle>Fixed price</RowTitle>
+              <SelectionItem.SubSection>Locked for twelve months.</SelectionItem.SubSection>
+            </SelectionItem.Shell>
+          </Field.Root>
+        </div>
+      );
+
+      await userEvent.click(textNamed("Locked for twelve months."));
+      expect(checkboxNamed("Fixed price").getAttribute("aria-checked")).toBe("true");
+      expect(rowClicks).toEqual(["click"]);
+      expect(ancestorClicks).toEqual(["click"]);
+    });
+
+    it("selects and focuses a RadioItem from its SubSection's text, so the arrow keys carry on", async () => {
+      renderThemed(
+        <RadioItemGroup label="Plans">
+          <RadioItem value="fixed" isSubSectionSelectable>
+            <RowTitle>Fixed price</RowTitle>
+            <RadioItem.SubSection>Locked for twelve months.</RadioItem.SubSection>
+          </RadioItem>
+          <RadioItem value="spot" isSubSectionSelectable>
+            <RowTitle>Spot price</RowTitle>
+            <RadioItem.SubSection>Follows the market.</RadioItem.SubSection>
+          </RadioItem>
+        </RadioItemGroup>
+      );
+
+      await userEvent.click(textNamed("Locked for twelve months."));
+      const fixed = roleNamed("radio", "Fixed price");
+      expect(fixed.getAttribute("aria-checked")).toBe("true");
+      expect(document.activeElement).toBe(fixed);
+      await userEvent.keyboard("{ArrowDown}");
+      expect(roleNamed("radio", "Spot price").getAttribute("aria-checked")).toBe("true");
+    });
+
+    it("focuses a CheckboxItem's control from its SubSection's text, so Space toggles it back", async () => {
+      renderThemed(<SelectablePlan isSubSectionSelectable />);
+
+      await userEvent.click(textNamed("Locked for twelve months."));
+      const checkbox = checkboxNamed("Fixed price");
+      expect(checkbox.getAttribute("aria-checked")).toBe("true");
+      expect(document.activeElement).toBe(checkbox);
+      await userEvent.keyboard(" ");
+      expect(checkbox.getAttribute("aria-checked")).toBe("false");
+    });
+
+    it("runs a consumer's click handler first and skips the toggle when it prevents it", async () => {
+      const clicks: boolean[] = [];
+      function onClick(event: BaseUIEvent<ReactMouseEvent<HTMLDivElement>>): void {
+        clicks.push(true);
+        if (clicks.length === 1) {
+          event.preventDefault();
+        }
+        if (clicks.length === 2) {
+          event.preventBaseUIHandler();
+        }
+      }
+      renderThemed(
+        <Field.Root>
+          <SelectionItem.Shell
+            dataSlot="checkbox-item"
+            control={<Checkbox.Root />}
+            isSubSectionSelectable
+            onClick={onClick}>
+            <RowTitle>Fixed price</RowTitle>
+            <SelectionItem.SubSection>Locked for twelve months.</SelectionItem.SubSection>
+          </SelectionItem.Shell>
+        </Field.Root>
+      );
+
+      await userEvent.click(textNamed("Locked for twelve months."));
+      expect(clicks).toEqual([true]);
+      expect(checkboxNamed("Fixed price").getAttribute("aria-checked"), "preventDefault").toBe("false");
+      await userEvent.click(textNamed("Locked for twelve months."));
+      expect(clicks).toEqual([true, true]);
+      expect(checkboxNamed("Fixed price").getAttribute("aria-checked"), "preventBaseUIHandler").toBe("false");
+      await userEvent.click(textNamed("Locked for twelve months."));
+      expect(checkboxNamed("Fixed price").getAttribute("aria-checked")).toBe("true");
+    });
+
+    it("shows the label row's cursor over the SubSection, and not-allowed while disabled", () => {
+      renderThemed(
+        <CheckboxItemGroup label="Plans">
+          <CheckboxItem value="fixed" isSubSectionSelectable>
+            <RowTitle>Fixed price</RowTitle>
+            <CheckboxItem.SubSection>Locked for twelve months.</CheckboxItem.SubSection>
+          </CheckboxItem>
+          <CheckboxItem value="variable" isSubSectionSelectable isDisabled>
+            <RowTitle>Variable price</RowTitle>
+            <CheckboxItem.SubSection>Follows the market.</CheckboxItem.SubSection>
+          </CheckboxItem>
+        </CheckboxItemGroup>
+      );
+
+      expect(getComputedStyle(textNamed("Locked for twelve months.")).cursor).toBe(
+        getComputedStyle(headingNamed("Fixed price")).cursor
+      );
+      expect(getComputedStyle(headingNamed("Fixed price")).cursor).toBe("pointer");
+      expect(getComputedStyle(textNamed("Follows the market.")).cursor).toBe("not-allowed");
+    });
   });
 
   it.each([
