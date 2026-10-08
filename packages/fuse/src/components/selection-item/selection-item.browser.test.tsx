@@ -333,6 +333,70 @@ describe("SelectionItem", () => {
   });
 
   it.each([
+    { row: "a plain row", mode: undefined },
+    { row: "a row whose SubSection is hidden", mode: "hidden" },
+  ] as const)("toggles $row from its bottom inset", async ({ mode }) => {
+    renderThemed(
+      <CheckboxItemGroup label="Cards">
+        <CheckboxItem value="a">
+          <RowTitle>Fixed price</RowTitle>
+          {mode ? <SelectionItem.SubSection mode={mode}>Price details</SelectionItem.SubSection> : null}
+        </CheckboxItem>
+      </CheckboxItemGroup>
+    );
+
+    const shell = shellFrom("Fixed price");
+    const checkbox = checkboxNamed("Fixed price");
+    let checked = false;
+    for (const offset of [3, 7, 10, 13]) {
+      // Read the edge before each click: a click can scroll the page.
+      const bottom = shell.getBoundingClientRect().bottom - shell.clientTop;
+      await clickShellAt(shell, (width) => width / 2, bottom - offset);
+      checked = !checked;
+      expect(checkbox.getAttribute("aria-checked"), `${offset}px above the bottom`).toBe(String(checked));
+    }
+  });
+
+  it("gives a revealed SubSection's bottom inset back to the band once it shows", async () => {
+    function RevealOnCheck() {
+      const [value, setValue] = useState<string[]>([]);
+      return (
+        <CheckboxItemGroup label="Cards" value={value} onChange={setValue}>
+          <CheckboxItem value="a">
+            <RowTitle>Fixed price</RowTitle>
+            <SelectionItem.SubSection
+              mode={value.includes("a") ? "visible" : "hidden"}
+              role="region"
+              aria-label="Price details">
+              Price details
+            </SelectionItem.SubSection>
+          </CheckboxItem>
+        </CheckboxItemGroup>
+      );
+    }
+    renderThemed(<RevealOnCheck />);
+
+    const shell = shellFrom("Fixed price");
+    const checkbox = checkboxNamed("Fixed price");
+    const clickBottomInset = async () => {
+      const bottom = shell.getBoundingClientRect().bottom - shell.clientTop;
+      await clickShellAt(shell, (width) => width / 2, bottom - 7);
+    };
+
+    await clickBottomInset();
+    expect(checkbox.getAttribute("aria-checked")).toBe("true");
+    const details = roleNamed("region", "Price details");
+    await settled(details);
+    expect(details.getBoundingClientRect().height).toBeGreaterThan(0);
+
+    // The shown band sits under the bottom inset now, so the click stays the band's.
+    await clickBottomInset();
+    expect(checkbox.getAttribute("aria-checked")).toBe("true");
+    await userEvent.click(headingNamed("Fixed price"));
+    expect(checkbox.getAttribute("aria-checked")).toBe("false");
+  });
+
+  it.each([
     { inset: 16, className: undefined },
     { inset: 24, className: "px-6" },
     { inset: 0, className: "px-0" },
@@ -403,6 +467,29 @@ describe("SelectionItem", () => {
     } finally {
       error.mockRestore();
     }
+  });
+
+  it("keeps a passed SubSection's button clickable when a wrapper element surrounds it", async () => {
+    renderThemed(
+      <Field.Root>
+        <SelectionItem.Shell
+          dataSlot="checkbox-item"
+          control={<Checkbox.Root />}
+          subSections={
+            <div>
+              <SelectionItem.SubSection>
+                <PressCounter />
+              </SelectionItem.SubSection>
+            </div>
+          }>
+          <RowTitle>Fixed price</RowTitle>
+        </SelectionItem.Shell>
+      </Field.Root>
+    );
+
+    await userEvent.click(roleNamed("button", "Pressed 0 times"));
+    expect(roleNamed("button", "Pressed 1 times")).toBeTruthy();
+    expect(checkboxNamed("Fixed price").getAttribute("aria-checked")).toBe("false");
   });
 
   it("keeps a Fragment-wrapped SubSection inside the label", () => {

@@ -17,6 +17,22 @@ import type { SelectionItemGroupOrientation } from "./selection-item-variants";
 /** Resolved once at module scope — the shell always borrows the `outline` arm. */
 const outlineItemClass = itemVariants({ variant: "outline" });
 
+// The label's `::before` is the row's click target. With automatic grid lines it covers the
+// shell's padding box, so a row whose SubSections are all `mode="hidden"` toggles from its
+// bottom inset like a plain row: the sub-section band keeps that 14px inset and lets clicks
+// through to the target. Once the band holds a footer that shows, the target shrinks to the
+// label row and the band takes its own clicks again. Child combinators keep a selection row
+// nested in a SubSection from counting.
+// Tailwind reads class names from the source text, so each selector is written out in full.
+const labelClass = cn(
+  "contents cursor-pointer before:absolute before:inset-0 before:-z-1 has-disabled:cursor-not-allowed",
+  "[[data-selection-item]:has(>[data-slot=selection-item-sub-sections]>div>[data-slot=item-footer]:not([data-mode=hidden]))>&]:before:row-[1/2]"
+);
+const subSectionBandClass = cn(
+  "pointer-events-none col-span-full grid grid-cols-subgrid pb-3.5",
+  "has-[>div>[data-slot=item-footer]:not([data-mode=hidden])]:pointer-events-auto"
+);
+
 /**
  * What a shell sits in: `false` outside any selection group; otherwise the enclosing
  * group's `orientation` plus whether that group is the private `role="list"` card list
@@ -160,10 +176,12 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
  * share one parent grid, so the spacer tracks the control slot without measuring it.
  * The shell's side padding is the one horizontal inset, so a `px-*` in `className` sets it.
  * The label is `display: contents`, so its cells are shell grid items and its `::before`
- * is an absolute child of the shell grid. Placed in the label's row with automatic
- * columns, that pseudo-element spans the shell's padding box, so a click anywhere across
- * the label row toggles the control at any inset. Nothing clips, so a focus ring at a
- * zero inset paints whole.
+ * is an absolute child of the shell grid. With automatic columns, that pseudo-element
+ * spans the shell's padding box, so a click anywhere across the label row toggles the
+ * control at any inset. While a SubSection shows, it covers the label row only and the
+ * sub-section band keeps its own clicks; while every SubSection is `mode="hidden"`, it
+ * covers the whole row, bottom inset included. Nothing clips, so a focus ring at a zero
+ * inset paints whole.
  *
  * Vertical and default shells, in either group shape or outside any group, collapse
  * borders with `not-first:border-t-0`. A checked shell paints its border in the theme's
@@ -211,8 +229,11 @@ export function SelectionItemShell({
   const spacer = <span aria-hidden />;
   // Separate child positions give each source its own key space; one merged array
   // would repeat the `.0` keys that the two `Children.toArray` calls assign independently.
+  // The band ignores pointers until a footer shows, so the cluster takes them back: content in
+  // a SubSection that `subSections` passes inside a wrapper stays clickable. A hidden footer
+  // turns them off for itself.
   const subCluster = (
-    <div className="min-w-0">
+    <div className="pointer-events-auto min-w-0">
       {passedSubSections}
       {directSubSections}
     </div>
@@ -234,7 +255,7 @@ export function SelectionItemShell({
         isDisabled ? cn("cursor-not-allowed bg-muted", disabledHatch) : null,
         className
       )}>
-      <FieldPrimitive.Label className="contents cursor-pointer before:absolute before:inset-0 before:-z-1 before:row-[1/2] has-disabled:cursor-not-allowed">
+      <FieldPrimitive.Label className={labelClass}>
         {controlAtEnd ? (
           <>
             {rowCluster}
@@ -248,7 +269,7 @@ export function SelectionItemShell({
         )}
       </FieldPrimitive.Label>
       {hasSubSection ? (
-        <div className="col-span-full grid grid-cols-subgrid pb-3.5">
+        <div data-slot="selection-item-sub-sections" className={subSectionBandClass}>
           {controlAtEnd ? (
             <>
               {subCluster}
