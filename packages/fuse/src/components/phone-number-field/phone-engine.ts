@@ -54,7 +54,11 @@ const ITU_INTERNATIONAL_PREFIX = "00";
 
 const PHONE_CHAR_REGEX = /[^\d\s+\-()]/g;
 
+const LEADING_SEPARATORS_REGEX = /^[^\d+]+/;
+
 const E164_NOISE_REGEX = /[^\d+]/g;
+
+const NON_DIGIT_REGEX = /\D/g;
 
 const EMPTY_PICKER_ERROR =
   "PhoneNumberField: no picker countries remain after intersecting libphonenumber metadata with packaged flag assets and the product exclusion set.";
@@ -120,28 +124,24 @@ export function resolveSelectedCountry(
   return first;
 }
 
-function getInternationalPrefix(countryCode: CountryCode | undefined, metadata: MetadataJson): string {
-  if (!countryCode) {
-    return "";
-  }
-  try {
-    return `+${getCountryCallingCode(countryCode, metadata)}`;
-  } catch {
-    return "";
-  }
-}
+type ParsedPhoneInput = {
+  phoneNumber: PhoneNumber | undefined;
+  /** What `AsYouType#input` returned: the entry formatted as far as its digits allow. */
+  formatted: string;
+};
 
-function parsePhoneNumber(
+/** One libphonenumber parse. Callers read both results from it rather than parse twice. */
+function parsePhoneInput(
   input: string,
   country: CountryCode | undefined,
   metadata: MetadataJson
-): PhoneNumber | undefined {
+): ParsedPhoneInput {
   if (!input) {
-    return undefined;
+    return { phoneNumber: undefined, formatted: "" };
   }
   const asYouType = new AsYouType(country, metadata);
-  asYouType.input(input);
-  return asYouType.getNumber();
+  const formatted = asYouType.input(input);
+  return { phoneNumber: asYouType.getNumber(), formatted };
 }
 
 /** Digits entered with their own `+` prefix carry an identity independent of the picker country. */
@@ -158,17 +158,20 @@ function toE164Digits(digits: string): string {
   return digits.replace(E164_NOISE_REGEX, "");
 }
 
-function buildFullNumber(digits: string, country: CountryCode | undefined, metadata: MetadataJson): string {
-  if (!digits) {
+/** National digits without the separators `cleanPhoneInput` lets through. */
+function toNationalDigits(digits: string): string {
+  return digits.replace(NON_DIGIT_REGEX, "");
+}
+
+function getInternationalPrefix(countryCode: CountryCode | undefined, metadata: MetadataJson): string {
+  if (!countryCode) {
     return "";
   }
-  if (hasInternationalDigits(digits)) {
-    return digits;
+  try {
+    return `+${getCountryCallingCode(countryCode, metadata)}`;
+  } catch {
+    return "";
   }
-  if (country) {
-    return getInternationalPrefix(country, metadata) + digits;
-  }
-  return digits;
 }
 
 function formatOutputValue(
@@ -202,8 +205,8 @@ type PhoneDisplayOptions = {
 };
 
 function getDisplayValue(
-  phoneNumber: PhoneNumber | undefined,
-  digits: string,
+  { phoneNumber, formatted }: ParsedPhoneInput,
+  { digits, parsedNational }: Pick<ProcessedPhoneInput, "digits" | "parsedNational">,
   country: CountryCode | undefined,
   { international, formatOnType }: PhoneDisplayOptions
 ): string {
@@ -212,6 +215,13 @@ function getDisplayValue(
   }
   if (hasInternationalDigits(digits) && (!phoneNumber?.country || phoneNumber.country !== country)) {
     return formatOnType && phoneNumber ? phoneNumber.formatInternational() : toE164Digits(digits);
+  }
+  if (!hasInternationalDigits(digits) && !international && !parsedNational) {
+    // A national draft displays as entered, trunk prefix included: libphonenumber leaves the
+    // trunk 0 of "0701" out of the parsed number and its national formats ("701"), while its
+    // as-you-type output keeps it ("070-1"). The digits fallback is defensive: `cleanPhoneInput`
+    // leaves no entry that output is empty for.
+    return (formatOnType && formatted) || toNationalDigits(digits);
   }
   if (formatOnType && phoneNumber) {
     if (international) {
@@ -225,8 +235,12 @@ function getDisplayValue(
   return digits;
 }
 
+/**
+ * Keeps the characters a phone number is written with, and drops separators before its first
+ * digit or `+`, so a copied " +46 70…" or "(+46) 70…" still reads as international.
+ */
 export function cleanPhoneInput(input: string): string {
-  return input.replace(PHONE_CHAR_REGEX, "");
+  return input.replace(PHONE_CHAR_REGEX, "").replace(LEADING_SEPARATORS_REGEX, "");
 }
 
 function hasInternationalPrefix(input: string): boolean {
@@ -245,12 +259,18 @@ function detectCountryFromInput(input: string, metadata: MetadataJson): CountryC
   if (!hasInternationalDigits(input)) {
     return undefined;
   }
-  return parsePhoneNumber(input, undefined, metadata)?.country;
+  return parsePhoneInput(input, undefined, metadata).phoneNumber?.country;
 }
 
 export type ProcessedPhoneInput = {
   digits: string;
   country: PhoneNumberCountry;
+  /**
+   * The digits are the national number libphonenumber parsed from an international entry, not
+   * what was typed. They carry no trunk prefix, so they display as that national number, in
+   * the national format under `formatOnType`, rather than as typed.
+   */
+  parsedNational?: boolean;
 };
 
 /** Options for {@link processInputWithDetection}. */
@@ -282,11 +302,10 @@ export function processInputWithDetection({
   const country = nextCountry && nextCountry.code !== currentCountry.code ? nextCountry : currentCountry;
 
   if (!international && nextCountry) {
-    const phoneNumber = parsePhoneNumber(normalized, country.code, metadata);
-    return {
-      digits: phoneNumber?.nationalNumber ?? normalized,
-      country,
-    };
+    const { phoneNumber } = parsePhoneInput(normalized, country.code, metadata);
+    return phoneNumber
+      ? { digits: phoneNumber.nationalNumber, country, parsedNational: true }
+      : { digits: normalized, country };
   }
 
   return { digits: normalized, country };
@@ -300,6 +319,7 @@ export type PhoneFieldValues = {
 /** Options for {@link resolvePhoneFieldValues}. */
 export type ResolvePhoneFieldValuesOptions = {
   digits: string;
+  parsedNational?: boolean;
   country: CountryCode | undefined;
   metadata: MetadataJson;
   outputFormat: PhoneNumberFormat;
@@ -309,6 +329,7 @@ export type ResolvePhoneFieldValuesOptions = {
 
 export function resolvePhoneFieldValues({
   digits,
+  parsedNational,
   country,
   metadata,
   outputFormat,
@@ -318,11 +339,25 @@ export function resolvePhoneFieldValues({
   if (!digits) {
     return { displayValue: "", outputValue: "" };
   }
-  const fullNumber = buildFullNumber(digits, country, metadata);
-  const phoneNumber = parsePhoneNumber(fullNumber, country, metadata);
+  // A national draft parses as a national entry, with the country as its default. The
+  // as-you-type output then keeps a typed trunk prefix for the display ("070-1", where behind
+  // the calling code it reads "+46 070 1"), and every country's trunk prefix stays out of the
+  // number: behind the calling code, Kazakhstan's 8 or Uruguay's 0 was read as part of it.
+  // A typed draft at a local number's length takes local-dialling rules: with Anguilla
+  // selected, "2351234" submits as +12642351234, and a typed ten-digit number passes through
+  // such a value at its seventh key. Detected digits are already a national number, so they
+  // parse behind the calling code again, where a partial one takes no such rule.
+  const parsed = parsePhoneInput(
+    parsedNational ? getInternationalPrefix(country, metadata) + digits : digits,
+    country,
+    metadata
+  );
   return {
-    displayValue: getDisplayValue(phoneNumber, digits, country, { international, formatOnType }),
-    outputValue: formatOutputValue(phoneNumber, digits, outputFormat),
+    displayValue: getDisplayValue(parsed, { digits, parsedNational }, country, {
+      international,
+      formatOnType,
+    }),
+    outputValue: formatOutputValue(parsed.phoneNumber, digits, outputFormat),
   };
 }
 

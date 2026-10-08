@@ -18,6 +18,7 @@ import {
   countryListbox,
   countrySearch,
   openPicker,
+  phoneInput,
   selectCountry,
 } from "../../../test/phone-browser-queries";
 import { EXCLUDED_PRODUCT_COUNTRY_CODES, FLAG_GAP_COUNTRY_CODES } from "../../../test/phone-picker-contract";
@@ -682,5 +683,121 @@ describe("PhoneNumberField controlled value", () => {
     await userEvent.fill(page.getByRole("textbox", { name: "Mobile", exact: true }), typed);
     await expect.poll(() => hiddenNamed("phone").value).toBe(stored);
     expect(textboxNamed("Mobile")).toHaveProperty("value", display);
+  });
+});
+
+describe("PhoneNumberField national trunk prefix", () => {
+  // The issue's per-key expectations for a Swedish mobile number typed with its trunk 0.
+  const keys = "0701234567";
+  const asTyped = [
+    "0",
+    "07",
+    "070",
+    "0701",
+    "07012",
+    "070123",
+    "0701234",
+    "07012345",
+    "070123456",
+    "0701234567",
+  ];
+  const formattedAsTyped = [
+    "0",
+    "07",
+    "070",
+    "070-1",
+    "070-12",
+    "070-123",
+    "070-123 4",
+    "070-123 45",
+    "070-123 45 6",
+    "070-123 45 67",
+  ];
+
+  it.each([
+    { mode: "uncontrolled", controlled: false, formatOnType: false, expected: asTyped },
+    { mode: "uncontrolled", controlled: false, formatOnType: true, expected: formattedAsTyped },
+    { mode: "controlled", controlled: true, formatOnType: false, expected: asTyped },
+    { mode: "controlled", controlled: true, formatOnType: true, expected: formattedAsTyped },
+  ])(
+    "keeps the trunk 0 on display key by key, $mode, formatOnType $formatOnType",
+    async ({ controlled, formatOnType, expected }) => {
+      const Field = controlled ? ControlledField : PhoneNumberField;
+      renderField(
+        <form aria-label="Phone form">
+          <Field label="Mobile" name="phone" defaultCountryCode="SE" formatOnType={formatOnType} />
+        </form>
+      );
+      const input = phoneInput();
+      input.focus();
+      const shown: string[] = [];
+      for (const key of keys) {
+        await userEvent.keyboard(key);
+        shown.push(input.value);
+      }
+      expect(shown).toEqual(expected);
+      expect(new FormData(formNamed("Phone form")).get("phone")).toBe("+46701234567");
+    }
+  );
+
+  it("strips separators from a filled national number but keeps its trunk 0", async () => {
+    renderField(<PhoneNumberField label="Mobile" name="phone" defaultCountryCode="SE" />);
+    await userEvent.fill(textboxNamed("Mobile"), "070 123 45 67");
+    expect(textboxNamed("Mobile")).toHaveProperty("value", "0701234567");
+    expect(hiddenNamed("phone").value).toBe("+46701234567");
+  });
+});
+
+describe("PhoneNumberField detected numbers", () => {
+  function paste(text: string) {
+    const clipboard = new DataTransfer();
+    clipboard.setData("text/plain", text);
+    phoneInput().dispatchEvent(
+      new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData: clipboard })
+    );
+  }
+
+  it.each([
+    { formatOnType: false, completed: "2642351234" },
+    { formatOnType: true, completed: "(264) 235-1234" },
+  ])(
+    "completes a pasted partial international number without repeating its area code, formatOnType $formatOnType",
+    async ({ formatOnType, completed }) => {
+      renderField(<PhoneNumberField label="Mobile" name="phone" formatOnType={formatOnType} />);
+      paste("+12642351");
+      await expect.poll(() => hiddenNamed("phone").value).toBe("+12642351");
+      expect(phoneInput().value).toBe("2642351");
+      phoneInput().focus();
+      phoneInput().setSelectionRange(7, 7);
+      await userEvent.keyboard("234");
+      expect(phoneInput().value).toBe(completed);
+      expect(hiddenNamed("phone").value).toBe("+12642351234");
+    }
+  );
+
+  it.each([
+    { copied: " +46 701 234 567", formatOnType: false, display: "701234567" },
+    { copied: " +46 701 234 567", formatOnType: true, display: "070-123 45 67" },
+    { copied: "(+46) 70 123 45 67", formatOnType: false, display: "701234567" },
+    { copied: "(+46) 70 123 45 67", formatOnType: true, display: "070-123 45 67" },
+  ])(
+    "detects a pasted '$copied' from Norway, formatOnType $formatOnType",
+    async ({ copied, formatOnType, display }) => {
+      renderField(<PhoneNumberField label="Mobile" name="phone" formatOnType={formatOnType} />);
+      expect(roleNamed("button", "Select country").textContent).toContain("+47");
+      paste(copied);
+      await expect.poll(() => hiddenNamed("phone").value).toBe("+46701234567");
+      expect(phoneInput().value).toBe(display);
+      expect(roleNamed("button", "Select country").textContent).toContain("+46");
+    }
+  );
+
+  it("keeps the national format of a detected number through a preserving country change", async () => {
+    renderField(<PhoneNumberField label="Mobile" name="phone" formatOnType preserveOnCountryChange />);
+    paste("+46701234567");
+    await expect.poll(() => phoneInput().value).toBe("070-123 45 67");
+    await selectCountry("Finland");
+    expect(phoneInput().value).toBe("070 1234567");
+    expect(hiddenNamed("phone").value).toBe("+358701234567");
   });
 });

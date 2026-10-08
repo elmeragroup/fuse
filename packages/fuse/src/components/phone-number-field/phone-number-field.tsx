@@ -64,7 +64,9 @@ export type PhoneNumberFieldProps = {
    */
   outputFormat?: "e164" | "international" | "national" | "raw";
   /**
-   * As-you-type display formatting.
+   * As-you-type display formatting. A national entry keeps the trunk prefix it was typed with,
+   * so a Swedish "0701234567" shows "070-123 45 67", and one typed without it stays ungrouped.
+   * A number detected from a `+` or `00` prefix shows in the national format.
    * @default false
    */
   formatOnType?: boolean;

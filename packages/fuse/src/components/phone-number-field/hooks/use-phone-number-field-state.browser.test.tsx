@@ -12,7 +12,7 @@ import type { UsePhoneNumberFieldStateOptions } from "./use-phone-number-field-s
 
 /**
  * `AsYouType#input` runs exactly once per libphonenumber parse: the private engine builds
- * one `AsYouType` per `parsePhoneNumber` call, feeds it the number, and nothing else in
+ * one `AsYouType` per `parsePhoneInput` call, feeds it the number, and nothing else in
  * the hook touches the parser. Patching the shared prototype counts real parses without
  * mocking the module.
  *
