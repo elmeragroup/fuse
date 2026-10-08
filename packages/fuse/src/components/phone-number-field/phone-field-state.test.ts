@@ -2,7 +2,7 @@ import type { MetadataJson } from "libphonenumber-js/core";
 import { describe, expect, it } from "vitest";
 
 import { defaultMetadata, getCountries, resolveSelectedCountry } from "./phone-engine";
-import { receiveValue, reconcile, snapshot } from "./phone-field-state";
+import { receiveValue, reconcile, resetToDefault, snapshot } from "./phone-field-state";
 import type { PhoneConfiguration, PhoneState } from "./phone-field-state";
 
 const swedishMetadata: MetadataJson = {
@@ -105,5 +105,44 @@ describe("reconcile", () => {
     expect(next.accepted.country.code).toBe("SE");
     expect(next.accepted.digits).toBe("41234567");
     expect(next.accepted.values.outputValue).toBe("41234567");
+  });
+});
+
+describe("resetToDefault", () => {
+  // An edit in Sweden, proposed over an empty Norwegian field.
+  function editedInSweden(configuration: PhoneConfiguration): PhoneState {
+    const norway = resolveSelectedCountry(configuration.countries, "NO");
+    const sweden = resolveSelectedCountry(configuration.countries, "SE");
+    return {
+      configuration,
+      value: undefined,
+      accepted: receiveValue("", norway, configuration),
+      proposal: snapshot({ digits: "701234567", country: sweden }, configuration),
+    };
+  }
+
+  it("reads the default again under the configuration the field has now", () => {
+    const reset = resetToDefault(
+      editedInSweden(configure(defaultMetadata, { formatOnType: true })),
+      "+4741234567",
+      "NO"
+    );
+    expect(reset.proposal).toBeNull();
+    expect(reset.accepted.country.code).toBe("NO");
+    expect(reset.accepted.values).toEqual({ displayValue: "41 23 45 67", outputValue: "+4741234567" });
+  });
+
+  it("restores an empty default in the default country", () => {
+    const reset = resetToDefault(editedInSweden(configure(defaultMetadata)), "", "NO");
+    expect(reset.proposal).toBeNull();
+    expect(reset.accepted.country.code).toBe("NO");
+    expect(reset.accepted.values).toEqual({ displayValue: "", outputValue: "" });
+  });
+
+  it("clears the digits and keeps the visible country without a default", () => {
+    const reset = resetToDefault(editedInSweden(configure(defaultMetadata)), undefined, "NO");
+    expect(reset.proposal).toBeNull();
+    expect(reset.accepted.country.code).toBe("SE");
+    expect(reset.accepted.values).toEqual({ displayValue: "", outputValue: "" });
   });
 });

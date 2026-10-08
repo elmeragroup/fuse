@@ -1,4 +1,4 @@
-import type { MetadataJson } from "libphonenumber-js/core";
+import type { CountryCode, MetadataJson } from "libphonenumber-js/core";
 
 import {
   cleanPhoneInput,
@@ -78,14 +78,27 @@ export function visibleSnapshot({ value, accepted, proposal }: PhoneState): Phon
 }
 
 /**
- * Native form reset for an uncontrolled field: empty digits, the country that was
- * visible, no proposal. The hook calls it only while it owns the value.
+ * Native form reset for an uncontrolled field, with no proposal. A default number, `""`
+ * included, is read again as on mount, in the default country and under the current
+ * configuration, so a later formatting or catalog change shows in it. Without one, the
+ * digits empty and the visible country stays. The hook calls it only while it owns the value.
  */
-export function clearedForReset(stored: PhoneState): PhoneState {
-  const { country } = visibleSnapshot(stored);
+export function resetToDefault(
+  stored: PhoneState,
+  defaultValue: string | undefined,
+  defaultCountryCode: CountryCode | undefined
+): PhoneState {
+  const { configuration } = stored;
   return {
     ...stored,
-    accepted: snapshot({ digits: "", country }, stored.configuration),
+    accepted:
+      defaultValue !== undefined
+        ? receiveValue(
+            defaultValue,
+            resolveSelectedCountry(configuration.countries, defaultCountryCode),
+            configuration
+          )
+        : snapshot({ digits: "", country: visibleSnapshot(stored).country }, configuration),
     proposal: null,
   };
 }

@@ -20,11 +20,12 @@ import type {
   PhoneNumberFormat,
   ProcessedPhoneInput,
 } from "../phone-engine";
-import { clearedForReset, receiveValue, reconcile, snapshot, visibleSnapshot } from "../phone-field-state";
+import { receiveValue, reconcile, resetToDefault, snapshot, visibleSnapshot } from "../phone-field-state";
 import type { PhoneState } from "../phone-field-state";
 
 export type UsePhoneNumberFieldStateOptions = {
   value?: string;
+  defaultValue?: string;
   onChange?: (value: string) => void;
   defaultCountryCode?: PhoneCountryCode;
   metadata?: MetadataJson;
@@ -50,12 +51,16 @@ export type UsePhoneNumberFieldStateReturn = {
   selectedCountry: PhoneNumberCountry;
   countries: PhoneNumberCountry[];
   getCountryName: (countryCode: CountryCode) => string;
-  /** Native form-reset handler restoring the initial state, or null when the parent owns `value`. */
+  /**
+   * Native form-reset handler: restores `defaultValue`, or clears the digits in the visible
+   * country without one; null when the parent owns `value`.
+   */
   onReset: (() => void) | null;
 };
 
 export function usePhoneNumberFieldState({
   value,
+  defaultValue,
   onChange,
   defaultCountryCode,
   metadata = defaultMetadata,
@@ -82,7 +87,11 @@ export function usePhoneNumberFieldState({
   const [stored, setState] = useState<PhoneState>(() => ({
     configuration,
     value,
-    accepted: receiveValue(value ?? "", resolveSelectedCountry(countries, defaultCountryCode), configuration),
+    accepted: receiveValue(
+      value ?? defaultValue ?? "",
+      resolveSelectedCountry(countries, defaultCountryCode),
+      configuration
+    ),
     proposal: null,
   }));
 
@@ -93,7 +102,9 @@ export function usePhoneNumberFieldState({
   const current = visibleSnapshot(state);
   const { digits, parsedNational, country: selectedCountry, values } = current;
 
-  // Notify only committed country changes, including external value/catalog replacement.
+  // Notify only committed country changes, including external value/catalog replacement and
+  // a reset that restores a default in another country. A reset without a default keeps the
+  // visible country, so it stays silent.
   const notifiedCountry = useRef(selectedCountry.code);
   useEffect(() => {
     if (notifiedCountry.current !== selectedCountry.code) {
@@ -147,7 +158,7 @@ export function usePhoneNumberFieldState({
     onReset:
       value === undefined
         ? () => {
-            setState(clearedForReset);
+            setState((stored) => resetToDefault(stored, defaultValue, defaultCountryCode));
           }
         : null,
   };
