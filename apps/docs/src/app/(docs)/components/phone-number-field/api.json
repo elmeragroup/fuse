@@ -267,7 +267,7 @@
           "type": "((value: string) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Proposes a formatted output value. Controlled fields display it after parent acceptance.",
+          "description": "Proposes a formatted output value. Controlled fields display it after parent acceptance. Also called once as hydration commits, with a number typed or autofilled before the client scripts attached; a controlled parent accepts or rejects it like any other proposal.",
           "required": false
         },
         {
