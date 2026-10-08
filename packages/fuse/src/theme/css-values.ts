@@ -8,6 +8,12 @@
 const VAR_REFERENCE = /^var\(--([a-z0-9-]+)\)$/;
 const LENGTH = /^(-?[0-9]*\.?[0-9]+)(rem|px)$/;
 const QUOTED = /^(["'])(.*)\1$/;
+// Unsigned decimal digits with an optional fraction, as token modules write a number.
+const PLAIN_NUMBER = /^(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)$/;
+
+// CSS Fonts 4 bounds a numeric `font-weight` to 1..1000, both inclusive.
+const MIN_FONT_WEIGHT = 1;
+const MAX_FONT_WEIGHT = 1000;
 
 // CSS rem resolves against the 16px root font size the library assumes.
 const ROOT_FONT_PX = 16;
@@ -62,4 +68,24 @@ export function cssFirstFontFamily(value: string): string | undefined {
   const [first = ""] = value.split(",");
   const family = first.trim().replace(QUOTED, "$2");
   return family === "" || family.startsWith("var(") ? undefined : family;
+}
+
+/**
+ * Read a numeric font weight. CSS Fonts 4 takes any `<number>` from 1 to 1000 inclusive,
+ * fractions included, so `450.5` is a weight. The reader accepts only the plain decimal that
+ * token modules write: digits with an optional fraction. It refuses the keywords: `bolder` and
+ * `lighter` depend on the parent's weight, and `normal` and `bold` would give a weight a second
+ * spelling. It also refuses the rarer `<number>` spellings CSS allows, a sign, an exponent such
+ * as `4e2` and `calc()`, and a unit or trailing text, such as `400px`, which
+ * `Number.parseFloat` would read past.
+ *
+ * @param value - A token's CSS value.
+ * @returns The weight, or `undefined` when the value is not a plain number from 1 to 1000.
+ */
+export function cssFontWeight(value: string): number | undefined {
+  if (!PLAIN_NUMBER.test(value)) {
+    return undefined;
+  }
+  const weight = Number(value);
+  return weight >= MIN_FONT_WEIGHT && weight <= MAX_FONT_WEIGHT ? weight : undefined;
 }

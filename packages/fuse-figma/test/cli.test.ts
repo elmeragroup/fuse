@@ -91,8 +91,8 @@ describe("fuse-figma sync", () => {
       ]);
       assert.notInclude(themeModes, "external-fkab-private");
       // 83 contract tokens plus 5 radius rungs, and each of those per scheme in Fuse themes.
-      assert.strictEqual(figma.variableNames("Fuse tokens").length, 88);
-      assert.strictEqual(figma.variableNames("Fuse themes").length, 176);
+      assert.strictEqual(figma.variableNames("Fuse tokens").length, 89);
+      assert.strictEqual(figma.variableNames("Fuse themes").length, 178);
       assert.strictEqual(figma.variableNames("Fuse primitives").length, 25);
       // 28 control metrics plus the 3 surface metrics.
       assert.strictEqual(figma.variableNames("Fuse density").length, 31);
@@ -469,7 +469,7 @@ describe("fuse-figma sync", () => {
         "Fuse tokens",
         "Fuse density",
       ]);
-      assert.strictEqual(figma.variableNames("Fuse themes").length, 176);
+      assert.strictEqual(figma.variableNames("Fuse themes").length, 178);
       assert.deepStrictEqual(figma.variableById(libraryPrimary).values, [
         { r: 0, g: 0, b: 0, a: 1 },
         { r: 0, g: 0, b: 0, a: 1 },
@@ -594,7 +594,7 @@ describe("fuse-figma check", () => {
       assert.include(printed, "Fuse tokens: create mode Dark");
       assert.include(printed, "Fuse themes: create mode ×24");
       assert.notInclude(printed, "Fuse themes: create mode external-elma-company");
-      assert.include(printed, "Fuse themes: create variable ×176");
+      assert.include(printed, "Fuse themes: create variable ×178");
       assert.include(printed, "Fuse density: create mode Comfortable");
       assert.include(printed, "Fuse density: create variable ×31");
     })

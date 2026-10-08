@@ -111,6 +111,7 @@
   --radius-field: var(--radius);
   --radius-step: 0px;
   --button-outline-width: 1px;
+  --selection-title-weight: 400;
   --font-sans: Roboto, ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-sans);
 }
@@ -194,6 +195,7 @@
   --radius-field: var(--radius);
   --radius-step: 0px;
   --button-outline-width: 1px;
+  --selection-title-weight: 400;
   --font-heading: var(--font-sans);
   color-scheme: light;
 }
@@ -228,6 +230,7 @@
   --radius-field: 0.25rem;
   --radius-step: 2px;
   --button-outline-width: 2px;
+  --selection-title-weight: 500;
   --font-heading: "Neo Sans", var(--font-sans);
   color-scheme: light;
 }
@@ -282,6 +285,7 @@
   --radius-field: 0.25rem;
   --radius-step: 2px;
   --button-outline-width: 2px;
+  --selection-title-weight: 500;
   --font-heading: var(--font-sans);
   color-scheme: light;
 }
@@ -316,6 +320,7 @@
   --radius-field: 0.25rem;
   --radius-step: 2px;
   --button-outline-width: 2px;
+  --selection-title-weight: 500;
   --font-heading: var(--font-sans);
   color-scheme: light;
 }
@@ -350,6 +355,7 @@
   --radius-field: 0.25rem;
   --radius-step: 2px;
   --button-outline-width: 2px;
+  --selection-title-weight: 500;
   --font-heading: "Neo Sans", var(--font-sans);
   color-scheme: light;
 }
@@ -384,6 +390,7 @@
   --radius-field: 0.25rem;
   --radius-step: 2px;
   --button-outline-width: 2px;
+  --selection-title-weight: 500;
   --font-heading: var(--font-sans);
   color-scheme: light;
 }
@@ -418,6 +425,7 @@
   --radius-field: 0.25rem;
   --radius-step: 2px;
   --button-outline-width: 2px;
+  --selection-title-weight: 500;
   --font-heading: var(--font-sans);
   color-scheme: light;
 }
@@ -452,6 +460,7 @@
   --radius-field: 0.25rem;
   --radius-step: 2px;
   --button-outline-width: 2px;
+  --selection-title-weight: 500;
   --font-heading: var(--font-sans);
   color-scheme: light;
 }
@@ -535,6 +544,7 @@
   --radius-field: var(--radius);
   --radius-step: 0px;
   --button-outline-width: 1px;
+  --selection-title-weight: 400;
   --font-heading: var(--font-sans);
   color-scheme: dark;
 }
@@ -660,6 +670,7 @@
   --radius-field: 0.25rem;
   --radius-step: 2px;
   --button-outline-width: 2px;
+  --selection-title-weight: 500;
   --font-heading: "Neo Sans", var(--font-sans);
   color-scheme: dark;
 }
@@ -749,6 +760,7 @@
   --radius-field: 0.25rem;
   --radius-step: 2px;
   --button-outline-width: 2px;
+  --selection-title-weight: 500;
   --font-heading: "Neo Sans", var(--font-sans);
   color-scheme: dark;
 }
@@ -838,6 +850,7 @@
   --radius-field: 0.25rem;
   --radius-step: 2px;
   --button-outline-width: 2px;
+  --selection-title-weight: 500;
   --font-heading: var(--font-sans);
   color-scheme: dark;
 }
@@ -927,6 +940,7 @@
   --radius-field: 0.25rem;
   --radius-step: 2px;
   --button-outline-width: 2px;
+  --selection-title-weight: 500;
   --font-heading: var(--font-sans);
   color-scheme: dark;
 }
@@ -1016,6 +1030,7 @@
   --radius-field: 0.25rem;
   --radius-step: 2px;
   --button-outline-width: 2px;
+  --selection-title-weight: 500;
   --font-heading: "Neo Sans", var(--font-sans);
   color-scheme: dark;
 }
@@ -1105,6 +1120,7 @@
   --radius-field: 0.25rem;
   --radius-step: 2px;
   --button-outline-width: 2px;
+  --selection-title-weight: 500;
   --font-heading: var(--font-sans);
   color-scheme: dark;
 }
@@ -1194,6 +1210,7 @@
   --radius-field: 0.25rem;
   --radius-step: 2px;
   --button-outline-width: 2px;
+  --selection-title-weight: 500;
   --font-heading: var(--font-sans);
   color-scheme: dark;
 }
@@ -1283,6 +1300,7 @@
   --radius-field: 0.25rem;
   --radius-step: 2px;
   --button-outline-width: 2px;
+  --selection-title-weight: 500;
   --font-heading: var(--font-sans);
   color-scheme: dark;
 }

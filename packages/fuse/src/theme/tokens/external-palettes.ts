@@ -11,8 +11,10 @@ export type ExternalBrandCode = Exclude<BrandCode, "fkab">;
  * of the Central design system's text input, whatever the brand radius. The outline Button
  * draws the customer-facing reference's outline, a 2px ring in the text color, which every
  * brand shares. A checked selection row keeps its resting `--border` edge, as the external
- * radio card does, so its control alone shows the selection. The internal variant keeps the
- * default 0px step, the 1px `--border` hairline and the `--primary` edge on a checked row.
+ * radio card does, so its control alone shows the selection. A selection row's title takes the
+ * medium weight of that radio card, so it matches the group legend and `CheckboxCard` titles
+ * around it. The internal variant keeps the default 0px step, the 1px `--border` hairline, the
+ * `--primary` edge on a checked row and the regular row title.
  */
 export const EXTERNAL_VARIANT_LAYER = {
   "button-outline": "var(--foreground)",
@@ -20,6 +22,7 @@ export const EXTERNAL_VARIANT_LAYER = {
   "radius-field": "0.25rem",
   "radius-step": "2px",
   "button-outline-width": "2px",
+  "selection-title-weight": "500",
 } as const satisfies TokenLayer;
 
 export const EXTERNAL_PALETTES = {

@@ -222,6 +222,12 @@ export type FigmaFontToken = {
   $value: string;
 };
 
+/** A CSS font weight, a number from 1 to 1000. */
+export type FigmaFontWeightToken = {
+  $type: "fontWeight";
+  $value: number | `{${string}}`;
+};
+
 /** One DTCG file = one Figma variable mode. */
 export type FigmaThemeDocument = {
   color: {
@@ -235,6 +241,10 @@ export type FigmaThemeDocument = {
   font: {
     $type: "fontFamily";
     [name: string]: "fontFamily" | FigmaFontToken;
+  };
+  weight: {
+    $type: "fontWeight";
+    [name: string]: "fontWeight" | FigmaFontWeightToken;
   };
 };
 

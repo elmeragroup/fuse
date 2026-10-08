@@ -106,6 +106,10 @@ export const LAYER_DEFAULTS = {
   "radius-field": "var(--radius)",
   "radius-step": "0px",
   "button-outline-width": "1px",
+  // The weight of a SelectionItem row's title (RadioItem, CheckboxItem). Internal themes keep
+  // the regular weight the internal row was ported with, and the external variant layer sets
+  // the customer-facing radio card's medium title.
+  "selection-title-weight": "400",
   "font-sans": "Roboto, ui-sans-serif, system-ui, sans-serif",
   "font-heading": "var(--font-sans)",
 } as const satisfies LayerTokens;

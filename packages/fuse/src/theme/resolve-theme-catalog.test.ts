@@ -42,9 +42,9 @@ const SLUGS = [
 ] as const;
 
 // Counts the derived `secondary-hover` role, the `radius-step` rung spacing, the
-// `radius-field` field corner, the two outline Button roles and the checked selection
-// row border.
-const TOKEN_COUNT = 83;
+// `radius-field` field corner, the two outline Button roles, the checked selection
+// row border and the selection row title weight.
+const TOKEN_COUNT = 84;
 
 // xs, sm, md, lg, xl and the unused popover rung.
 const RUNG_COUNT = 6;
@@ -187,6 +187,25 @@ describe("resolveThemeCatalog", () => {
       reference: { space: "token", name: "font-sans" },
       value: "Roboto",
     });
+  });
+
+  it("reads font weights as numbers, kept in both schemes", () => {
+    // EXTERNAL_VARIANT_LAYER sets "500" and LAYER_DEFAULTS "400".
+    expect(light("external-fkas-private").tokens["selection-title-weight"]).toEqual({
+      name: "selection-title-weight",
+      kind: "fontWeight",
+      css: "500",
+      codeSyntax: "var(--selection-title-weight)",
+      reference: undefined,
+      value: 500,
+    });
+    expect(theme("external-guen-company").schemes.dark.tokens["selection-title-weight"].value).toBe(500);
+    expect(light("internal-fkas-private").tokens["selection-title-weight"]).toMatchObject({
+      kind: "fontWeight",
+      css: "400",
+      value: 400,
+    });
+    expect(theme("internal-ngfi-company").schemes.dark.tokens["selection-title-weight"].value).toBe(400);
   });
 
   it("gives each token its var() and each rung its calc() as code syntax", () => {
