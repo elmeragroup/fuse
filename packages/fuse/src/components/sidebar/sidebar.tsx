@@ -21,6 +21,12 @@ import { useIsMobile } from "../../hooks/use-is-mobile";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { SidebarSimple } from "../../icons/generated/sidebar-simple";
 import { cn } from "../../styles/cn";
+import {
+  sidebarMenuActionShellClass,
+  sidebarRowShellClass,
+  sidebarSectionShellClass,
+  sidebarSurfaceShellClass,
+} from "../../styles/inner-corner/sidebar";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { nativeStateFaceClass } from "../../styles/state-face";
 import { selfFocusRingClass } from "../../styles/utils";
@@ -365,7 +371,10 @@ export function SidebarRoot({
         <div
           data-slot="sidebar-inner"
           // `invisible`, not `inert`: Rail opts back in with `visible` (see SidebarRail).
-          className="group-data-[variant=floating]:shadow-sm flex size-full flex-col bg-sidebar group-data-[collapsible=offcanvas]:invisible group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:ring-1 group-data-[variant=floating]:ring-sidebar-border">
+          className={cn(
+            sidebarSurfaceShellClass,
+            "group-data-[variant=floating]:shadow-sm flex size-full flex-col bg-sidebar group-data-[collapsible=offcanvas]:invisible group-data-[variant=floating]:ring-1 group-data-[variant=floating]:ring-sidebar-border"
+          )}>
           {children}
         </div>
       </div>
@@ -475,14 +484,34 @@ export function SidebarInput({ className, ...props }: SidebarInputProps): ReactE
 
 export type SidebarHeaderProps = ComponentProps<"div">;
 
+/**
+ * The Sidebar header. In a floating Sidebar it publishes `--inner-corner` for its rows, the surface
+ * corner less its padding.
+ */
 export function SidebarHeader({ className, ...props }: SidebarHeaderProps): ReactElement {
-  return <div data-slot="sidebar-header" className={cn("flex flex-col gap-2 p-2", className)} {...props} />;
+  return (
+    <div
+      data-slot="sidebar-header"
+      className={cn(sidebarSectionShellClass, "flex flex-col gap-2", className)}
+      {...props}
+    />
+  );
 }
 
 export type SidebarFooterProps = ComponentProps<"div">;
 
+/**
+ * The Sidebar footer. In a floating Sidebar it publishes `--inner-corner` for its rows, the surface
+ * corner less its padding.
+ */
 export function SidebarFooter({ className, ...props }: SidebarFooterProps): ReactElement {
-  return <div data-slot="sidebar-footer" className={cn("flex flex-col gap-2 p-2", className)} {...props} />;
+  return (
+    <div
+      data-slot="sidebar-footer"
+      className={cn(sidebarSectionShellClass, "flex flex-col gap-2", className)}
+      {...props}
+    />
+  );
 }
 
 export type SidebarSeparatorProps = SeparatorProps;
@@ -514,11 +543,15 @@ export function SidebarContent({ className, ...props }: SidebarContentProps): Re
 
 export type SidebarGroupProps = ComponentProps<"div">;
 
+/**
+ * A Sidebar group. In a floating Sidebar it publishes `--inner-corner` for its menu buttons and
+ * label, the surface corner less its padding.
+ */
 export function SidebarGroup({ className, ...props }: SidebarGroupProps): ReactElement {
   return (
     <div
       data-slot="sidebar-group"
-      className={cn("relative flex w-full min-w-0 flex-col p-2", className)}
+      className={cn(sidebarSectionShellClass, "relative flex w-full min-w-0 flex-col", className)}
       {...props}
     />
   );
@@ -532,7 +565,8 @@ export function SidebarGroupLabel({ className, render, ...props }: SidebarGroupL
     props: mergeProps<"div">(
       {
         className: cn(
-          "text-xs font-medium flex h-8 shrink-0 items-center rounded-md px-2 text-sidebar-foreground/70 transition-opacity duration-200 ease-linear group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0 [&>svg]:size-4 [&>svg]:shrink-0",
+          sidebarRowShellClass,
+          "text-xs font-medium flex h-8 shrink-0 items-center px-2 text-sidebar-foreground/70 transition-opacity duration-200 ease-linear group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0 [&>svg]:size-4 [&>svg]:shrink-0",
           selfFocusRingClass,
           className
         ),
@@ -703,7 +737,8 @@ export function SidebarMenuAction({
     props: mergeProps<"button">(
       {
         className: cn(
-          "absolute top-1.5 right-1 flex size-6 items-center justify-center rounded-md p-0 text-sidebar-foreground transition-transform group-data-[collapsible=icon]:hidden peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 peer-data-[size=sm]/menu-button:top-1 after:absolute after:-inset-2 enabled-hover:bg-sidebar-accent enabled-hover:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0",
+          sidebarMenuActionShellClass,
+          "absolute top-1.5 right-1 flex size-6 items-center justify-center p-0 text-sidebar-foreground transition-transform group-data-[collapsible=icon]:hidden peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 peer-data-[size=sm]/menu-button:top-1 after:absolute after:-inset-2 enabled-hover:bg-sidebar-accent enabled-hover:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0",
           selfFocusRingClass,
           nativeStateFaceClass,
           showOnHover &&

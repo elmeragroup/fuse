@@ -1,20 +1,21 @@
+import { toastShellClass } from "../../styles/inner-corner/toast";
 /**
  * Module-private slot recipe. Not exported from the public entry —
  * there is no proven recipe-borrowing use. `status` is derived from the toast's
  * `type`, not a consumer prop, and is not a density rung.
  */
-import { tv } from "tailwind-variants";
-
+import { tv } from "../../styles/tv";
 import { overlayPopupFillClass } from "../overlay/overlay-classes";
 
 export const toastVariants = tv({
   slots: {
     // Each group below is one responsibility; the stack is written for a bottom edge.
     root: [
+      toastShellClass,
       // Box: the toast fills the viewport column and is anchored to its bottom edge, with
       // older toasts layered beneath newer ones. `box-border` keeps the padding inside
       // the column when the host ships no preflight.
-      "shadow-lg absolute right-0 bottom-0 left-auto z-[calc(1000-var(--toast-index))] mr-0 box-border h-[var(--height)] w-full origin-bottom rounded-lg p-4 select-none",
+      "shadow-lg absolute right-0 bottom-0 left-auto z-[calc(1000-var(--toast-index))] mr-0 box-border h-[var(--height)] w-full origin-bottom select-none",
       // Stack metrics. `--side` is the sign of the vertical math: `1` stacks upward from a
       // bottom edge. Collapsed toasts shrink by `--scale` and peek `--peek` past the one in
       // front; expanded toasts sit `--gap` apart at Base UI's measured `--toast-offset-y`.

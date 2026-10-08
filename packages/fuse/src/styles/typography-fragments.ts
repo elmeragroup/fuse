@@ -19,7 +19,7 @@
  * `secondary` is an identity alias of `foreground`, kept for consumer compatibility and
  * deprecated: `--secondary` is a surface token, never a text role. See the arm itself.
  */
-import { tv } from "tailwind-variants";
+import { tv } from "./tv";
 
 export const typographyFragments = tv({
   variants: {

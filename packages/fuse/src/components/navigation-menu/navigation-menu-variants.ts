@@ -1,8 +1,12 @@
-import { tv } from "tailwind-variants";
-
 import { cn } from "../../styles/cn";
 import { controlMd } from "../../styles/control-size-md";
+import {
+  navigationContentShellClass,
+  navigationInlineViewportShellClass,
+  navigationPopupShellClass,
+} from "../../styles/inner-corner/navigation";
 import { nativeStateFaceClass } from "../../styles/state-face";
+import { tv } from "../../styles/tv";
 import { selfFocusRingClass } from "../../styles/utils";
 import { overlayPopupSurfaceClass, overlayPositionerClass } from "../overlay/overlay-classes";
 
@@ -10,10 +14,15 @@ import { overlayPopupSurfaceClass, overlayPositionerClass } from "../overlay/ove
  * The box and type of a row in a content panel's list: a link outside a bar, or a trigger in
  * a vertical Root. Both slots take it, so a nested trigger cannot drift from the links beside it. The xs
  * control height is the density-owned 24px floor: 24px dense, 32px comfortable. The padding
- * and type stay put across densities, as menu layout rather than a control rung.
+ * and type stay put across densities, as menu layout rather than a control rung. A row in the
+ * popup is an inner part and rounds with `rounded-inner`. A row outside it, in a vertical Root
+ * or an inline Root on the page, keeps the outer `rounded-sm`. Both corners weigh nothing, so a
+ * consumer's `rounded-*` class wins.
  */
 // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- row padding and type are menu layout, not a control rung
-const contentRowClass = cn("text-sm box-border min-h-(--control-h-xs) gap-2 rounded-sm px-2 py-1.5");
+const contentRowClass = cn(
+  "text-sm box-border min-h-(--control-h-xs) gap-2 px-2 py-1.5 [:where(&)]:rounded-sm in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner"
+);
 
 /**
  * The box and type of a bar trigger and of a link directly in a horizontal List. It is the md
@@ -71,13 +80,14 @@ export const navigationMenuVariants = tv({
     ],
     popup: [
       overlayPopupSurfaceClass,
+      navigationPopupShellClass,
       "ease-out relative h-(--popup-height) max-h-(--available-height) w-(--popup-width) max-w-(--available-width) transition-[opacity,width,height] duration-300 data-ending-style:opacity-0 data-starting-style:opacity-0",
     ],
     viewport: "relative size-full overflow-hidden",
-    inlineViewport: "relative min-w-0 overflow-hidden",
+    inlineViewport: [navigationInlineViewportShellClass, "relative min-w-0 overflow-hidden"],
     content: [
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- panel padding is overlay layout, not a control rung
-      "ease-out box-border h-full max-h-(--available-height) w-auto max-w-(--available-width) overflow-auto p-2 transition-[opacity,translate] duration-300",
+      navigationContentShellClass,
+      "ease-out box-border h-full max-h-(--available-height) w-auto max-w-(--available-width) overflow-auto transition-[opacity,translate] duration-300",
       "data-ending-style:opacity-0 data-starting-style:opacity-0",
       "data-starting-style:data-[activation-direction=left]:-translate-x-1/2 data-starting-style:data-[activation-direction=right]:translate-x-1/2",
       "data-ending-style:data-[activation-direction=left]:translate-x-1/2 data-ending-style:data-[activation-direction=right]:-translate-x-1/2",

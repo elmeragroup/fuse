@@ -1,8 +1,11 @@
-import { tv } from "tailwind-variants";
-
 import { cn } from "../../styles/cn";
 import { controlMd } from "../../styles/control-size-md";
-import { fieldFlushCornerClass, insetCornerClass, kbdInsetCornerClass } from "../../styles/corner-radius";
+import {
+  addonBlockShellClass,
+  addonEndShellClass,
+  addonStartShellClass,
+} from "../../styles/inner-corner/input-group";
+import { tv } from "../../styles/tv";
 
 /**
  * Module-private recipe for the group's addon rail. `align` places
@@ -10,22 +13,23 @@ import { fieldFlushCornerClass, insetCornerClass, kbdInsetCornerClass } from "..
  * switches to a column and re-pads the input from the emitted `data-align`.
  * An inline rail holding a button drops its block padding, so a 24px addon
  * button fits the dense md field box without overflowing it.
- * The kbd takes the inset corner, 5px inside `--radius` and never rounder than the field box
- * in external themes, and the one radius in the internal variant.
+ * Each rail is an inner-corner shell: its inline padding and the corner it publishes for its
+ * buttons and kbd come from its inner-corner shell in `styles/inner-corner/input-group.ts`.
  */
 export const inputGroupAddonVariants = tv({
-  base: cn(
-    "text-sm font-medium flex h-auto cursor-text items-center justify-center gap-2 py-1.5 text-muted-foreground select-none [&>svg:not([class*='size-'])]:size-4",
-    kbdInsetCornerClass
-  ),
+  base: "text-sm font-medium flex h-auto cursor-text items-center justify-center gap-2 py-1.5 text-muted-foreground select-none [&>svg:not([class*='size-'])]:size-4",
   variants: {
     align: {
-      "inline-start": "order-first pl-2 has-[>button]:-ml-1 has-[>button]:py-0 has-[>kbd]:ml-[-0.15rem]",
-      "inline-end": "order-last pr-2 has-[>button]:-mr-1 has-[>button]:py-0 has-[>kbd]:mr-[-0.15rem]",
-      "block-start":
-        "order-first w-full justify-start px-2.5 pt-2 group-has-[>input]/input-group:pt-2 [.border-b]:pb-2",
-      "block-end":
-        "order-last w-full justify-start px-2.5 pb-2 group-has-[>input]/input-group:pb-2 [.border-t]:pt-2",
+      "inline-start": [addonStartShellClass, "order-first has-[>button]:py-0"],
+      "inline-end": [addonEndShellClass, "order-last has-[>button]:py-0"],
+      "block-start": [
+        addonBlockShellClass,
+        "order-first w-full justify-start pt-2 group-has-[>input]/input-group:pt-2 [.border-b]:pb-2",
+      ],
+      "block-end": [
+        addonBlockShellClass,
+        "order-last w-full justify-start pb-2 group-has-[>input]/input-group:pb-2 [.border-t]:pt-2",
+      ],
     },
   },
   defaultVariants: {
@@ -42,12 +46,11 @@ export const inputGroupAddonVariants = tv({
  * Button's default size, the md label. Every size swaps Button's own icon edge back to the
  * md control icon edge, and `sm`, which keeps that label's box, also swaps Button's inset
  * back to the md control inset, the field's own padding, so Button's wider comfortable inset
- * and icon edge never reach a field. An addon button sits inside the field box, so it pads and
- * rounds like the field chrome and never takes Button's `--radius-button`. The `sm` sizes take
- * the field corner, and the `xs` sizes take the kbd's inset corner.
+ * and icon edge never reach a field. An addon button sits inside the field box, so it pads like
+ * the field chrome and rounds with its addon's inner corner, never Button's `--radius-button`.
  */
 export const inputGroupButtonVariants = tv({
-  base: cn("text-sm flex items-center gap-2 shadow-none", fieldFlushCornerClass, controlMd.iconEdge()),
+  base: cn("text-sm flex items-center gap-2 rounded-inner shadow-none", controlMd.iconEdge()),
   variants: {
     size: {
       // The xs boxes are 1.5rem, floored at the fixed 24px target for a host root below 16px.
@@ -59,7 +62,6 @@ export const inputGroupButtonVariants = tv({
       "icon-sm": "size-8 p-0 has-[>svg]:p-0",
     },
   },
-  compoundVariants: [{ size: ["xs", "icon-xs"], class: insetCornerClass }],
   defaultVariants: {
     size: "xs",
   },

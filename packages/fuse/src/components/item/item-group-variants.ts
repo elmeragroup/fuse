@@ -1,7 +1,8 @@
 import type { VariantProps } from "tailwind-variants";
-import { tv } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import { itemCompactShellClass, itemCompactSmShellClass } from "../../styles/inner-corner/item";
+import { tv } from "../../styles/tv";
 
 /**
  * The `Item.Group` recipe. `root` lays out the group, `item` is what each `Item.Root` inside
@@ -53,8 +54,8 @@ export const itemGroupVariants = tv({
     },
   },
   compoundVariants: [
-    { variant: "compact", size: "default", class: { item: "p-3" } },
-    { variant: "compact", size: "sm", class: { item: "p-2" } },
+    { variant: "compact", size: "default", class: { item: itemCompactShellClass } },
+    { variant: "compact", size: "sm", class: { item: itemCompactSmShellClass } },
   ],
   defaultVariants: {
     variant: "default",

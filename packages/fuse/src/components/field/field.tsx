@@ -11,6 +11,7 @@ import type { VariantProps } from "tailwind-variants";
 import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
+import { fieldLabelCardShellClass } from "../../styles/inner-corner/field-label";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { Separator } from "../separator/separator";
 import { fieldVariants } from "./field-variants";
@@ -175,7 +176,8 @@ export function FieldLabel({
       data-field-heading=""
       className={mergeClassName(
         className,
-        "group/field-label peer/field-label leading-snug has-data-checked:border-primary/30 has-[>[data-slot=field]]:rounded-md has-[>[data-slot=field]]:border *:data-[slot=field]:p-3",
+        fieldLabelCardShellClass,
+        "group/field-label peer/field-label leading-snug has-data-checked:border-primary/30",
         "has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col",
         "has-[>[data-slot=checkbox]]:items-center has-[>[data-slot=checkbox]]:cursor-pointer",
         fieldHeadingClassName

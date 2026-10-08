@@ -161,6 +161,8 @@
   `[hidden] { display: none }` loses to the item's `flex` class; preflight makes `[hidden]`
   `display: none !important`. Decide whether `Item.Root`, and the other parts whose root sets
   `display`, carry a `hidden` reset.
+- `Sidebar.Menu` keeps the user agent's 40px list indent in a host without Tailwind's preflight,
+  so its rows sit 40px in from the group. Reset the list's padding on the part itself.
 - Ask Base UI for a way to let a `Form` submit while its Fields are invalid. Its submit handler
   validates its enabled Fields and calls neither `onSubmit` nor `onFormSubmit` while one is
   invalid, so a schema-validated form, where a change elsewhere clears an error, cannot reach

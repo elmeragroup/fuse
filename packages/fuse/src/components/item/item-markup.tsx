@@ -1,9 +1,9 @@
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
-import { tv } from "tailwind-variants";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import { tv } from "../../styles/tv";
 import { ITEM_DESCRIPTION_CLASSES } from "./item-description-classes";
 import { itemRootProps } from "./item-root-props";
 import { ITEM_TITLE_CLASSES } from "./item-title-classes";

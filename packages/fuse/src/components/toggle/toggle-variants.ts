@@ -1,9 +1,8 @@
-import { tv } from "tailwind-variants";
-
 import { cn } from "../../styles/cn";
 import { controlSize } from "../../styles/control-size";
 import { compactCornerClass } from "../../styles/corner-radius";
 import { dataStateFaceClass, nativeStateFaceClass } from "../../styles/state-face";
+import { tv } from "../../styles/tv";
 import { selfFocusRingClass } from "../../styles/utils";
 
 // Runtime-free recipe so ToggleGroup.Item can borrow it without Toggle's client graph.

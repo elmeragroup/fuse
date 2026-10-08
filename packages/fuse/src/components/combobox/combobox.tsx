@@ -18,7 +18,14 @@ import { isTextValueNode } from "../../internal/is-text-node";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import { controlMd } from "../../styles/control-size-md";
-import { chipCornerClass, fieldCornerClass } from "../../styles/corner-radius";
+import { fieldBoxShellClass } from "../../styles/inner-corner/field";
+import {
+  chipRemoveShellClass,
+  chipShellClass,
+  chipsShellClass,
+  listboxListShellClass,
+  listboxPopupShellClass,
+} from "../../styles/inner-corner/listbox";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { withinStateFaceClass, withinStateFaceControlClass } from "../../styles/state-face";
 import { withinFocusRingClass, withinFocusRingControlClass } from "../../styles/utils";
@@ -246,10 +253,12 @@ export function ComboboxContent({
           className={mergeClassName(
             className,
             overlayTimedPopupClass,
-            // Popup padding insets a search group; a child margin plus the group's w-full
-            // overflowed the box. Scope it to popups that directly own one, so a plain list
-            // keeps the menu family's single p-1 inset instead of double-insetting.
-            "group/combobox-content relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] overflow-hidden has-[>[data-slot=input-group]]:px-1 has-[>[data-slot=input-group]]:pt-1.5 data-[external-anchor=true]:min-w-(--anchor-width) *:data-[slot=input-group]:h-(--control-h-sm) *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none"
+            listboxPopupShellClass,
+            // The popup pads nothing on the inline axis, so the List's own padding is the one
+            // inset its `--inner-corner` assumes. A search group the popup directly owns takes
+            // its own 4px inline margin and a width that fits inside it, which overrides the
+            // group's `w-full` (the phone field's), and the popup pads only above it.
+            "group/combobox-content relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] overflow-hidden has-[>[data-slot=input-group]]:pt-1.5 data-[external-anchor=true]:min-w-(--anchor-width) *:data-[slot=input-group]:mx-1 *:data-[slot=input-group]:h-(--control-h-sm) *:data-[slot=input-group]:w-[calc(100%---spacing(2))] *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none"
           )}
           {...props}
         />
@@ -258,6 +267,11 @@ export function ComboboxContent({
   );
 }
 
+/**
+ * The scrolling list of options. It is the part that publishes `--inner-corner`: it pads its
+ * rows inside the popup's corner, so a custom block placed in the List with `rounded-inner`
+ * rounds like the rows. A block directly in `Combobox.Content` rounds with `--radius`.
+ */
 export function ComboboxList({
   className,
   ...props
@@ -267,7 +281,8 @@ export function ComboboxList({
       data-slot="combobox-list"
       className={mergeClassName(
         className,
-        "no-scrollbar max-h-[min(calc(--spacing(72)---spacing(9)),calc(var(--available-height)---spacing(9)))] scroll-py-1 overflow-y-auto overscroll-contain p-1 data-empty:p-0"
+        listboxListShellClass,
+        "no-scrollbar max-h-[min(calc(--spacing(72)---spacing(9)),calc(var(--available-height)---spacing(9)))] scroll-py-1 overflow-y-auto overscroll-contain"
       )}
       {...props}
     />
@@ -358,6 +373,10 @@ export function ComboboxSeparator({
   );
 }
 
+/**
+ * The chips field box. It publishes `--inner-corner`, the field corner less its border and padding,
+ * for the chips inside it.
+ */
 export function ComboboxChips({
   className,
   ...props
@@ -375,8 +394,9 @@ export function ComboboxChips({
           className,
           controlMd.minHeight(),
           controlMd.inset(),
-          "text-sm shadow-xs flex flex-wrap items-center gap-1.5 border border-input bg-transparent bg-clip-padding py-1.5 transition-[color,box-shadow] has-data-[slot=combobox-chip]:px-1.5",
-          fieldCornerClass,
+          "text-sm shadow-xs flex flex-wrap items-center gap-1.5 border border-input bg-transparent bg-clip-padding transition-[color,box-shadow]",
+          fieldBoxShellClass,
+          chipsShellClass,
           withinFocusRingClass,
           withinStateFaceClass
         )}
@@ -443,8 +463,8 @@ export function ComboboxChip({
       // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- chip chrome is compact token, not a control rung
       className={mergeClassName(
         className,
-        "text-xs font-medium flex h-[calc(--spacing(5.5))] w-fit items-center justify-center gap-1 bg-muted px-1.5 whitespace-nowrap text-foreground has-data-[slot=combobox-chip-remove]:pr-0.5",
-        chipCornerClass
+        "text-xs font-medium flex h-[calc(--spacing(5.5))] w-fit items-center justify-center gap-1 bg-muted px-1.5 whitespace-nowrap text-foreground",
+        chipShellClass
       )}
       {...props}>
       {children}
@@ -487,15 +507,15 @@ function ComboboxChipRemove({ label }: { label: string }): ReactElement {
           variant="ghost"
           size="icon-inline"
           aria-label={label}
-          // The remove button sits inside a chip in the field box, so it takes the chip's
-          // corner instead of Button's `--radius-button`. The inline square is as tall as the
+          // The remove button sits inside a chip in the field box, so it rounds inside the
+          // chip's corner instead of with Button's `--radius-button`. The inline square is as tall as the
           // chip's 16px line and fits inside it. Without preflight a native button keeps the
           // browser's own font, so the button sets the chip's xs type itself. The ghost button
           // drops its transparent border, and Button's inline hit area makes the target 24px.
           // The target reaches into the chip's inset and the chips' gap without meeting the
           // next chip. The glyph takes the xs size, as on Button's
           // smallest square.
-          className={cn("text-xs border-0 opacity-50 enabled-hover:opacity-100", chipCornerClass)}
+          className={cn("text-xs border-0 opacity-50 enabled-hover:opacity-100", chipRemoveShellClass)}
         />
       }
       aria-label={label}>

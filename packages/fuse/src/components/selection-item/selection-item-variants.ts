@@ -1,5 +1,6 @@
 import type { VariantProps } from "tailwind-variants";
-import { tv } from "tailwind-variants";
+
+import { tv } from "../../styles/tv";
 
 /**
  * The orientation recipe for the selection-group family. `group` lays out the group

@@ -1,7 +1,6 @@
-import { tv } from "tailwind-variants";
-
 import { controlMdInsetTypeClass } from "./control-size-md";
-import { fieldFlushCornerClass } from "./corner-radius";
+import { pickerDialogShellClass } from "./inner-corner/picker";
+import { tv } from "./tv";
 
 /**
  * Shared layout recipe for the two date pickers. The `range` axis selects one segment
@@ -40,16 +39,17 @@ export const pickerVariants = tv({
     /**
      * The calendar trigger's placement inside the field box. Both states share one grid
      * model, and only the column template and the separator toggle at 24rem, so the
-     * range arm's placements are live at every width. The trigger sits inside the field
-     * box, so it takes the field corner instead of Button's `--radius-button`.
+     * range arm's placements are live at every width. The trigger sits flush against the
+     * field box's border, so it reads the box's inner corner instead of Button's
+     * `--radius-button`.
      */
-    trigger: fieldFlushCornerClass,
+    trigger: "rounded-inner",
     /**
      * The styled Dialog inside the popover. Both padding utilities are needed: the dialog
      * recipe sets `p-6` on its base and `p-4` under `[data-placement]`, which is exactly the
      * popover case.
      */
-    dialog: "p-0 [[data-placement]>&]:p-0",
+    dialog: pickerDialogShellClass,
     /** The public Calendar / RangeCalendar inside the dialog — see the `range` axis. */
     calendar: "",
     /**

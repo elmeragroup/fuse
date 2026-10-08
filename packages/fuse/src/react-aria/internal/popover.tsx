@@ -11,11 +11,12 @@ import {
   useSlottedContext,
 } from "react-aria-components";
 import type { PopoverProps as AriaPopoverProps } from "react-aria-components";
-import { tv } from "tailwind-variants";
 
 import { overlayLayer, overlayPopupFillClass } from "../../components/overlay/overlay-classes";
 import type { OverlayContainerProps } from "../../components/overlay/overlay-props";
 import { cn } from "../../styles/cn";
+import { racPopoverShellClass } from "../../styles/inner-corner/picker";
+import { tv } from "../../styles/tv";
 import { useResolvedPortalContainer } from "../../theme/theme-scope-container";
 
 /**
@@ -39,7 +40,8 @@ const popoverVariants = tv({
     // hairline ring, and twMerge cannot subtract `ring-foreground/10` (overlay-classes.ts).
     base: cn(
       overlayPopupFillClass,
-      "shadow-md min-w-32 origin-(--trigger-anchor-point) rounded-md border border-border bg-clip-padding",
+      racPopoverShellClass,
+      "shadow-md min-w-32 origin-(--trigger-anchor-point) border-border bg-clip-padding",
       POPOVER_MAX_WIDTH_CLASS,
       overlayLayer
     ),

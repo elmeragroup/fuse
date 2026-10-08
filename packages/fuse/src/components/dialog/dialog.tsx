@@ -3,12 +3,13 @@
 import type { ComponentProps, ReactElement } from "react";
 
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
-import { tv } from "tailwind-variants";
 import type { VariantProps } from "tailwind-variants";
 
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { cn } from "../../styles/cn";
+import { dialogShellClass } from "../../styles/inner-corner/dialog";
 import { mergeClassName } from "../../styles/merge-class-name";
+import { tv } from "../../styles/tv";
 import { selfFocusRingClass } from "../../styles/utils";
 import { overlayCloseStrings } from "../overlay/intl";
 import {
@@ -29,13 +30,14 @@ import type { OverlayContainerProps } from "../overlay/overlay-props";
 
 const dialogContentVariants = tv({
   // The shared popup surface supplies the fill, the ring, and a radius rung; Dialog
-  // raises the elevation to `shadow-lg` and the radius to `rounded-xl` through the
-  // later `cn` argument. The keyframe set stays local: Dialog is not an
+  // raises the elevation to `shadow-lg`, and its inner-corner shell raises the radius to
+  // `rounded-xl` and publishes the corner inside its padding, through later `cn` arguments. The keyframe set stays local: Dialog is not an
   // anchored popup, so it takes neither the transform origin nor the per-side slide-ins
   // that `overlayPopupMotionClass` carries, and its `duration-100` rides with them.
   base: cn(
     overlayPopupSurfaceClass,
-    "text-sm shadow-lg fixed top-1/2 left-1/2 grid max-h-[calc(100%-2rem)] w-full max-w-(--overlay-width) -translate-x-1/2 -translate-y-1/2 gap-6 overflow-y-auto rounded-xl p-6 duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+    dialogShellClass,
+    "text-sm shadow-lg fixed top-1/2 left-1/2 grid max-h-[calc(100%-2rem)] w-full max-w-(--overlay-width) -translate-x-1/2 -translate-y-1/2 gap-6 overflow-y-auto duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
     overlayLayer,
     selfFocusRingClass
   ),
@@ -115,6 +117,10 @@ export type DialogContentProps = ComponentProps<typeof DialogPrimitive.Popup> &
     closeLabel?: string;
   };
 
+/**
+ * The Dialog popup. It publishes `--inner-corner`, its corner less its padding, for parts that
+ * round with `rounded-inner`.
+ */
 export function DialogContent({
   className,
   children,

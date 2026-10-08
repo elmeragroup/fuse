@@ -4,12 +4,12 @@ import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { createContext, use } from "react";
 
 import { Drawer as SheetPrimitive } from "@base-ui/react/drawer";
-import { tv } from "tailwind-variants";
 import type { VariantProps } from "tailwind-variants";
 
 import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
+import { tv } from "../../styles/tv";
 import { selfFocusRingClass } from "../../styles/utils";
 import {
   overlayLayer,

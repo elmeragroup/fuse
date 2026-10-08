@@ -1,7 +1,6 @@
-import { tv } from "tailwind-variants";
-
 import { cn } from "./cn";
 import { controlMd } from "./control-size-md";
+import { tv } from "./tv";
 
 /**
  * Control size: the size × fit mapping of the density-owned control metrics (`--control-*`

@@ -99,6 +99,10 @@ export type DropdownMenuContentProps = ComponentProps<typeof MenuPrimitive.Popup
 /** Popup chrome specific to the root menu; the surface and motion are shared. */
 const dropdownMenuContentClassName = dropdownMenuSlots.content();
 
+/**
+ * The menu popup. It pads its items and publishes `--inner-corner`, so a custom block placed
+ * in it with `rounded-inner` rounds like the items.
+ */
 export function DropdownMenuContent({
   align = "start",
   alignOffset = 0,
@@ -359,6 +363,10 @@ export type DropdownMenuSubContentProps = ComponentProps<typeof MenuPrimitive.Po
 /** Popup chrome specific to a submenu; the surface and motion are shared. */
 const dropdownMenuSubContentClassName = dropdownMenuSlots.subContent();
 
+/**
+ * A submenu popup. Like `DropdownMenu.Content`, it pads its items and publishes
+ * `--inner-corner` for parts that round with `rounded-inner`.
+ */
 export function DropdownMenuSubContent({
   align = "start",
   alignOffset = -3,

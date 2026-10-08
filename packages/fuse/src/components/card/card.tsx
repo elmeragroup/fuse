@@ -33,6 +33,10 @@ type CardDescriptionProps = HTMLAttributes<HTMLParagraphElement> &
     size?: NonNullable<VariantProps<typeof cardDescriptionVariants>["size"]>;
   };
 
+/**
+ * The Card surface. It publishes `--inner-corner`, its corner less its border, and its header,
+ * content and footer publish it less their padding too.
+ */
 function CardRoot({ className, direction, ...props }: CardDivProps): ReactElement {
   const { base } = cardVariants({ direction });
 

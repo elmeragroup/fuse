@@ -16,6 +16,24 @@ function overrideFiles(override) {
   return files.filter((file) => isString(file));
 }
 
+/**
+ * The module names an error-level `no-restricted-imports` rule restricts, in config order.
+ *
+ * @param {Record<string, unknown>} rules
+ * @returns {string[]}
+ */
+function restrictedImportNames(rules) {
+  const rule = rules["no-restricted-imports"];
+  if (!Array.isArray(rule)) {
+    throw new Error("no-restricted-imports is not configured with options");
+  }
+  expect(rule[0]).toBe("error");
+  const options = asRecord(rule[1], "no-restricted-imports options");
+  return asRecordArray(options.paths, "no-restricted-imports paths").map((path) =>
+    asString(path.name, "restricted path name")
+  );
+}
+
 describe("workspace lint script", () => {
   it("runs oxlint over the tree with --deny-warnings and without --quiet", () => {
     const parsed = readJsonObject(join(repoRoot, "package.json"));
@@ -78,13 +96,32 @@ describe("workspace lint script", () => {
       ]
     ).toBe("error");
     expect(fuseSrcRules["no-restricted-imports"]?.[0]).toBe("error");
+    expect(restrictedImportNames(fuseSrcRules)).toEqual([
+      "@internationalized/string",
+      "@tanstack/react-table",
+      "tailwind-variants",
+    ]);
 
-    const dictionaryFactoryOverride = overrides.find((entry) =>
-      overrideFiles(entry).includes("packages/fuse/src/intl/create-string-dictionary.ts")
-    );
-    expect(
-      asRecord(dictionaryFactoryOverride?.rules, "dictionary factory override rules")["no-restricted-imports"]
-    ).toBe("off");
+    // An override that lifts one restriction restates the others, so the configured `tv` stays
+    // enforced in every Fuse source file.
+    /** @param {string} file */
+    const restrictionsOf = (file) => {
+      const override = overrides.find((entry) => overrideFiles(entry).includes(file));
+      return restrictedImportNames(asRecord(override?.rules, `${file} override rules`));
+    };
+    expect(restrictionsOf("packages/fuse/src/intl/create-string-dictionary.ts")).toEqual([
+      "@tanstack/react-table",
+      "tailwind-variants",
+    ]);
+    expect(restrictionsOf("packages/fuse/src/components/data-table/data-table-contexts.ts")).toEqual([
+      "@internationalized/string",
+      "tailwind-variants",
+    ]);
+    expect(restrictionsOf("packages/fuse/src/styles/tv.ts")).toEqual([
+      "@internationalized/string",
+      "@tanstack/react-table",
+      "tailwind-variants",
+    ]);
 
     const shadcnOverrideIndexes = overrides.flatMap((entry, index) =>
       Object.keys(asRecord(entry.rules, "override rules")).some((rule) => rule.startsWith("shadcn/"))

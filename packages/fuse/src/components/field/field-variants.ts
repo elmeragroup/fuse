@@ -4,7 +4,7 @@
  * axis; `heading` is the Label/Title shared class, resolved once at module
  * scope in `field.tsx`.
  */
-import { tv } from "tailwind-variants";
+import { tv } from "../../styles/tv";
 
 export const fieldVariants = tv({
   slots: {

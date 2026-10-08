@@ -52,12 +52,12 @@ export function SearchField({
   ...props
 }: SearchFieldProps & RefAttributes<HTMLInputElement>): ReactElement {
   const strings = useLocalizedStrings(searchFieldStrings);
-  const { base, button, buttonIcon, icon, input } = searchFieldVariants();
+  const { base, button, buttonIcon, group, icon, input } = searchFieldVariants();
 
   return (
     <AriaSearchField {...props} className={composeTailwindRenderProps(className, base())}>
       {label ? <Label>{label}</Label> : null}
-      <FieldGroup isReadOnly={props.isReadOnly}>
+      <FieldGroup isReadOnly={props.isReadOnly} className={group()}>
         <MagnifyingGlass aria-hidden className={icon()} />
         <Input className={input()} placeholder={placeholder} ref={ref} />
         <Button

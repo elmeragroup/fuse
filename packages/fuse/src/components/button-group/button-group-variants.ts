@@ -8,7 +8,7 @@
  * with `rounded-md`, whatever its first and last children round with on their own, so a
  * field at one end, which rounds with `--radius-field`, matches a button at the other.
  */
-import { tv } from "tailwind-variants";
+import { tv } from "../../styles/tv";
 
 export const buttonGroupVariants = tv({
   base: "group/button-group flex w-fit items-stretch *:focus-visible:relative *:focus-visible:z-10 has-[>[data-slot=button-group]]:gap-2 has-[select[aria-hidden=true]:last-child]:[&>[data-slot=select-trigger]:last-of-type]:rounded-r-md [&>[data-slot=select-trigger]:not([class*='w-'])]:w-fit [&>input]:flex-1",

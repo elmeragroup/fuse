@@ -11,6 +11,9 @@ type EmptyMediaProps = ComponentProps<"div"> & VariantProps<typeof emptyMediaVar
 /**
  * Centered empty-state layout. Server component — it owns no state,
  * no handlers, and no browser APIs.
+ *
+ * It publishes `--inner-corner`, its corner less its border and padding, for parts that round with
+ * `rounded-inner`.
  */
 function EmptyRoot({ className, variant = "default", ...props }: EmptyRootProps): ReactElement {
   return <div data-slot="empty" className={cn(emptyVariants({ variant }), className)} {...props} />;

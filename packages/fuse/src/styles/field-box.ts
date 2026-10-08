@@ -1,15 +1,15 @@
-import { tv } from "tailwind-variants";
-
 import { cn } from "./cn";
 import { controlMdInsetTypeClass } from "./control-size-md";
-import { fieldCornerClass } from "./corner-radius";
+import { fieldBoxShellClass } from "./inner-corner/field";
 import { ariaStateFaceClass, nativeStateFaceClass, withinStateFaceClass } from "./state-face";
+import { tv } from "./tv";
 import { selfFocusRingClass, withinFocusRingClass } from "./utils";
 
 /**
  * The field box chrome: elevation, the field corner, hairline border, fill and the transition
  * that animates them. The corner is `--radius-field` in external themes and `--radius` in
- * internal ones (`corner-radius.ts`). {@link fieldBox} paints it for Input and Textarea. RAC
+ * internal ones (`corner-radius.ts`), and the box publishes it less its border as the inner
+ * corner of the parts inside (`inner-corner/field.ts`). {@link fieldBox} paints it for Input and Textarea. RAC
  * `fieldGroupVariants`, Select's trigger, NumberField's group and InputGroup's root paint it
  * without being `fieldBox` variants. Focus leaves the `--input` border alone on every one of
  * them: the shared focus ring marks focus, and only the invalid face recolours the border.
@@ -21,7 +21,7 @@ import { selfFocusRingClass, withinFocusRingClass } from "./utils";
  */
 export const fieldBoxChromeClass = cn(
   "shadow-xs box-border",
-  fieldCornerClass,
+  fieldBoxShellClass,
   "border border-input bg-card transition-[color,border-color,box-shadow]"
 );
 

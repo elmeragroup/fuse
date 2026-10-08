@@ -40,7 +40,8 @@ describe("accordionVariants", () => {
     expect(card.item()).toContain("border");
     expect(card.content()).toContain("bg-card");
     expect(card.content()).toContain("text-foreground");
-    expect(card.content()).toContain("rounded-lg");
+    // The panel sits inside the item's padding, so it rounds with the item's inner corner.
+    expect(card.content()).toContain("rounded-inner");
     expect(card.icon()).toContain("text-foreground");
     expect(card.item()).not.toContain("bg-muted");
     expect(card.trigger()).not.toContain("justify-start");

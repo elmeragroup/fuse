@@ -36,6 +36,10 @@ export type CalendarProps<T extends DateValue> = {
   errorMessage?: ReactNode;
 } & Omit<AriaCalendarProps<T>, "children" | "visibleDuration">;
 
+/**
+ * The standalone Calendar card. It publishes `--inner-corner`, its corner less its border and
+ * padding, for parts that round with `rounded-inner`.
+ */
 export function Calendar<T extends DateValue>({
   errorMessage,
   className,

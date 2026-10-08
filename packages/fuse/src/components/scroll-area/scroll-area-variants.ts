@@ -1,4 +1,4 @@
-import { tv } from "tailwind-variants";
+import { tv } from "../../styles/tv";
 
 /**
  * Visibility face for the Radix-style `type` prop.

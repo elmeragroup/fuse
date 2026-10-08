@@ -77,6 +77,10 @@ export function InputGroupRoot({ className, ...props }: InputGroupRootProps): Re
   );
 }
 
+/**
+ * An addon rail inside the field box. It publishes `--inner-corner` for its buttons, its kbd and
+ * any part that rounds with `rounded-inner`: the field corner less its inset.
+ */
 export function InputGroupAddon({
   className,
   align = "inline-start",

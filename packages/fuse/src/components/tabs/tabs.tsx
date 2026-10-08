@@ -6,6 +6,7 @@ import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
 import type { VariantProps } from "tailwind-variants";
 
 import { controlMd } from "../../styles/control-size-md";
+import { tabsTriggerShellClass } from "../../styles/inner-corner/tabs";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { dataStateFaceClass, nativeStateFaceClass } from "../../styles/state-face";
 import { selfFocusRingClass } from "../../styles/utils";
@@ -36,6 +37,9 @@ export function TabsRoot({
  * Tab strip. `activateOnFocus` defaults to `true` (the pinned Base UI default is
  * `false`): arrow keys move focus and activate in one step, with
  * `activateOnFocus={false}` as the manual-activation opt-out.
+ *
+ * The default list publishes `--inner-corner` for its triggers, its corner less its 4px padding.
+ * The `line` list publishes none.
  */
 export function TabsList({
   className,
@@ -64,7 +68,8 @@ export function TabsTrigger({ className, ...props }: ComponentProps<typeof TabsP
         controlMd.inset(),
         controlMd.iconEdge(),
         controlMd.type(),
-        "font-medium ease-out group-data-[variant=default]/tabs-list:data-active:shadow-sm relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center rounded-md border border-transparent whitespace-nowrap text-foreground/60 transition-[color,background-color,border-color,box-shadow] duration-150 group-data-vertical/tabs:w-full group-data-vertical/tabs:justify-start enabled-hover:text-foreground group-data-[variant=line]/tabs-list:data-active:shadow-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "font-medium ease-out group-data-[variant=default]/tabs-list:data-active:shadow-sm relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center border border-transparent whitespace-nowrap text-foreground/60 transition-[color,background-color,border-color,box-shadow] duration-150 group-data-vertical/tabs:w-full group-data-vertical/tabs:justify-start enabled-hover:text-foreground group-data-[variant=line]/tabs-list:data-active:shadow-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        tabsTriggerShellClass,
         selfFocusRingClass,
         nativeStateFaceClass,
         dataStateFaceClass,

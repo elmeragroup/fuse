@@ -1,4 +1,4 @@
-import { tv } from "tailwind-variants";
+import { tv } from "../../styles/tv";
 
 /**
  * PUBLIC slot recipe. Consumers composing their own pending

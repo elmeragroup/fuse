@@ -7,7 +7,7 @@ import { Radio as AriaRadio, RadioGroup as AriaRadioGroup } from "react-aria-com
 import { buttonVariants } from "../../components/button/button-variants";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { cn } from "../../styles/cn";
-import { compactCornerClass } from "../../styles/corner-radius";
+import { pickerPresetsShellClass } from "../../styles/inner-corner/picker";
 import { datePickerStrings } from "../date-picker/intl";
 import { composeTailwindRenderProps } from "./compose-tailwind-render-props";
 
@@ -54,7 +54,7 @@ export function PickerPresetGroup({
     <AriaRadioGroup
       aria-label={ariaLabel ?? label ?? strings.format("presets")}
       {...props}
-      className={composeTailwindRenderProps(className, "flex flex-col gap-2 p-2")}
+      className={composeTailwindRenderProps(className, cn(pickerPresetsShellClass, "flex flex-col gap-2"))}
     />
   );
 }
@@ -91,18 +91,20 @@ export function PickerPresetItem({
       {...props}
       className={composeTailwindRenderProps(
         className,
-        buttonVariants({
-          size: "sm",
-          variant: "ghost",
-          // The radio's own indicator, if a caller's children render one, stays hidden,
-          // because the preset is a button-shaped choice and not a bullet list. A preset is
-          // a row in a list, so it takes the compact corner instead of Button's
-          // `--radius-button`.
-          className: cn(
-            "justify-start text-left *:data-[slot=radio-indicator]:hidden data-selected:bg-accent data-disabled:pointer-events-none",
-            compactCornerClass
-          ),
-        })
+        cn(
+          buttonVariants({
+            size: "sm",
+            variant: "ghost",
+            // The radio's own indicator, if a caller's children render one, stays hidden,
+            // because the preset is a button-shaped choice and not a bullet list.
+            className:
+              "justify-start text-left *:data-[slot=radio-indicator]:hidden data-selected:bg-accent data-disabled:pointer-events-none",
+          }),
+          // A preset is a row in the preset group, so it reads the group's inner corner
+          // instead of Button's `--radius-button`. `cn` knows `rounded-inner` as a radius, so
+          // it replaces the recipe's corner, which the recipe's own merge would keep.
+          "rounded-inner"
+        )
       )}
       onDoubleClick={(event) => {
         onDoubleClick?.(event);

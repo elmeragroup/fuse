@@ -1,7 +1,6 @@
-import { tv } from "tailwind-variants";
-
 import { cn } from "../../styles/cn";
 import { racInvalidStateFaceClass } from "../../styles/state-face";
+import { tv } from "../../styles/tv";
 import { stateFocusRingClass, stateFocusRingVisibleClass } from "../../styles/utils";
 
 /**

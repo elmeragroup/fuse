@@ -5,7 +5,7 @@
  * `variant` is the status axis only. Item supplies `variant="outline"` / `size="sm"`
  * underneath; this recipe is not a density rung.
  */
-import { tv } from "tailwind-variants";
+import { tv } from "../../styles/tv";
 
 export const alertVariants = tv({
   slots: {

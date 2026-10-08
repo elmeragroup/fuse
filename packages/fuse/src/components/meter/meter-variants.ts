@@ -6,7 +6,7 @@
  * One `tone` axis, four arms. The `mode` × `level` resolution lives in
  * `METER_TONE_TABLE`, so this recipe holds colors only.
  */
-import { tv } from "tailwind-variants";
+import { tv } from "../../styles/tv";
 
 export const meterVariants = tv({
   base: "",

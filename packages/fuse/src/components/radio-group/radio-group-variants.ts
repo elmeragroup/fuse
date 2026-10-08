@@ -1,8 +1,7 @@
-import { tv } from "tailwind-variants";
-
 import { cn } from "../../styles/cn";
 import { controlSize } from "../../styles/control-size";
 import { dataStateFaceClass } from "../../styles/state-face";
+import { tv } from "../../styles/tv";
 
 /**
  * Module-private recipe. Size axis for `RadioIconButton`; default

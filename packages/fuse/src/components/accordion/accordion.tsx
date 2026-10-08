@@ -48,6 +48,10 @@ export function AccordionRoot<Value = unknown>({
   );
 }
 
+/**
+ * One accordion item. A rounded item publishes `--inner-corner`, its corner less its border and
+ * padding, and a card item's panel rounds with it.
+ */
 export function AccordionItem({
   className,
   ...props

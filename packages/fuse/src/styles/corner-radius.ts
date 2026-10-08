@@ -17,8 +17,44 @@ import { cn } from "./cn";
 // `--radius` override on a plain wrapper. At a 2px step they lie 4000px apart, and the theme's
 // `--radius-field` applies. The read of `--radius-field` falls back to `--radius` for a host
 // that sets the step but not the role. The property is unregistered, so the box substitutes
-// its own `var()` reads and the parts inside inherit the box's corner. They read it to round
-// no more than the box.
+// its own `var()` reads and the parts inside inherit the box's corner. The box publishes it
+// less its inset as the inner corner of the parts inside (`inner-corner/field.ts`).
+//
+// Inner corners are concentric: an inner part rounds with its shell's outer corner less the
+// inset, `max(0px, outer - inset)`, where the inset is the shell's padding plus border on the
+// axis that reaches the corner. Outer corners keep their rung. An inner part rounds with the
+// public `rounded-inner` utility in fuse.css, `var(--inner-corner, var(--radius))`, so outside
+// a shell it rounds with `--radius`. The shells live in `inner-corner/`, one private module per
+// component family, so a component bundles only its own. Each constant there pairs a part's
+// rung or padding with the corner it publishes, read through `--theme()` so it resolves in the
+// shell's own theme scope, and spells its values whole, because Tailwind generates a class only
+// from its whole literal. A part rounds concentrically only inside a shell; a block directly in
+// `Combobox.Content` rounds with `--radius`.
+//
+// Every shell boundary, a popup root or a padded part, states the whole corner state, so no
+// value from an outer shell crosses it. It writes its post-padding corner to a private
+// `--shell-inner`, or `initial` when the part does not publish a corner, and aliases the public
+// `--inner-corner` to it. It also clears the private `--shell-corner` relay with
+// `publishShellBoundary`, unless it is one of the parts that carry the relay:
+//
+// - a NavigationMenu popup, which sets `--shell-corner` to the corner its Content takes;
+// - a NavigationMenu Content, which reads it and subtracts its own padding;
+// - an inline NavigationMenu Viewport, which sets it from the inherited `--shell-inner` of the
+//   Content around it, a value a ThemeScope reset leaves alone.
+//
+// Frame hands its corner on through its own private input instead (`inner-corner/frame.ts`):
+// the root writes `--frame-corner` onto its direct panels and table containers, and every panel
+// and container resets it at lower specificity, so only a Frame's direct child holds a value. A
+// Frame panel is an ordinary boundary.
+//
+// No custom property depends on itself, directly or indirectly, on one element, so any depth
+// subtracts each padding once. Where no shell is above a padded part, `--shell-corner` is
+// undefined, its `--inner-corner` is invalid at computed-value time, and `rounded-inner` falls
+// back to `--radius`. `--inner-corner` is unregistered and inherits as a computed length. Every
+// element with theme attributes resets `--inner-corner` to `initial` with a zero-specificity
+// rule in the utilities layer, so a part in a nested ThemeScope rounds with that scope's
+// `--radius` instead of the outer shell's px value, and a shell class on the same element wins
+// whatever layer order the host declares.
 
 /**
  * The field box corner: Input, Textarea, the Select trigger, NumberField, InputGroup, the
@@ -31,45 +67,7 @@ export const fieldCornerClass = cn(
 );
 
 /**
- * The corner of a button that sits flush in a field box and rounds like it: the `sm`
- * InputGroup addon buttons, the SearchField clear button, the date picker trigger and the
- * phone country trigger. It reads the {@link fieldCornerClass} box's `--field-corner`.
- */
-export const fieldFlushCornerClass = cn("rounded-(--field-corner)");
-
-/**
- * The corner of an xs button inside an InputGroup addon. External themes inset it 5px, or
- * 2.5 steps, inside `--radius`, capped at the box's `--field-corner`, and internal themes
- * round it with `--radius`.
- */
-export const insetCornerClass = cn(
-  "rounded-[min(var(--radius)-2.5*var(--radius-step,0px),var(--field-corner))]"
-);
-
-/**
- * The {@link insetCornerClass} corner on an addon's `<kbd>` child. The radius browser matrix
- * measures the kbd and an xs addon button against the same expected corner.
- */
-export const kbdInsetCornerClass = cn(
-  "[&>kbd]:rounded-[min(var(--radius)-2.5*var(--radius-step,0px),var(--field-corner))]"
-);
-
-/**
- * The corner of a Combobox chip and its remove button. External themes round it with
- * `rounded-sm` capped at the chips box's `--field-corner`, and internal themes with `--radius`.
- */
-export const chipCornerClass = cn("rounded-[min(--theme(--radius-sm),var(--field-corner))]");
-
-/**
- * The corner of a DateField segment, which paints its focus fill inside the field box.
- * External themes round it with `rounded-xs` capped at the box's `--field-corner`, and
- * internal themes with `--radius`.
- */
-export const segmentCornerClass = cn("rounded-[min(--theme(--radius-xs),var(--field-corner))]");
-
-/**
- * The corner of a compact button that sits in a list or a toolbar, the xs Toggle and the
- * DatePicker preset items. External themes round it with `rounded-md` capped at 10px, and
+ * The corner of a compact button that sits in a toolbar, the xs Toggle. External themes round it with `rounded-md` capped at 10px, and
  * internal themes with `--radius`.
  */
 export const compactCornerClass = cn(
@@ -93,3 +91,18 @@ export const checkboxCornerClass = cn(
 export const fixedCornerClass = cn(
   "rounded-[clamp(var(--radius)-1000*var(--radius-step,0px),4px,var(--radius)+1000*var(--radius-step,0px))]"
 );
+
+/**
+ * The public corner a shell publishes: its private post-padding corner, `--shell-inner`. Only
+ * the parts that carry the `--shell-corner` relay compose it alone; every other shell boundary
+ * composes {@link publishShellBoundary}. Each composes it beside a `--shell-inner` declaration,
+ * and only there, so a ThemeScope reset of `--inner-corner` is never undone by an inherited
+ * `--shell-inner`.
+ */
+export const publishInnerCorner = cn("[--inner-corner:var(--shell-inner)]");
+
+/**
+ * {@link publishInnerCorner} for an independent shell boundary: it also clears the private
+ * `--shell-corner` relay, so no relay from an outer shell reaches a part inside it.
+ */
+export const publishShellBoundary = cn("[--shell-corner:initial]", publishInnerCorner);

@@ -4,7 +4,11 @@ import { readDemoSource } from "../src/lib/demo-source";
 
 describe("demo source read at render time", () => {
   it("reads the authored demo file verbatim", async () => {
-    const demo = await readDemoSource("button", "button-variant-matrix.tsx");
+    const demo = await readDemoSource({
+      section: "components",
+      slug: "button",
+      file: "button-variant-matrix.tsx",
+    });
     expect(demo.sourcePath).toBe(
       "apps/docs/src/app/(docs)/components/button/demos/button-variant-matrix.tsx"
     );
@@ -14,7 +18,9 @@ describe("demo source read at render time", () => {
   });
 
   it("throws with the path it looked for when the page names a demo that does not exist", async () => {
-    await expect(readDemoSource("button", "button-no-such-demo.tsx")).rejects.toThrow(
+    await expect(
+      readDemoSource({ section: "components", slug: "button", file: "button-no-such-demo.tsx" })
+    ).rejects.toThrow(
       "apps/docs/src/app/(docs)/components/button/demos/button-no-such-demo.tsx does not exist"
     );
   });

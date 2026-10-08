@@ -31,8 +31,8 @@ export const docsRouteGroup = path.join(docsRoot, "src/app/(docs)");
  * The component route directories. Each holds the component's authored `page.mdx` and
  * its co-located `demos/`.
  *
- * `src/lib/component-route-files.ts` encodes the same `src/app/(docs)/components/<slug>/`
- * layout as a cwd-relative path (`COMPONENT_ROUTES`), because it resolves route files at
+ * `src/lib/docs-route-files.ts` encodes the same `src/app/(docs)/components/<slug>/`
+ * layout as a cwd-relative path (`DOCS_ROUTES`), because it resolves route files at
  * render time rather than from this module's URL. Moving the route group means changing
  * both.
  */
