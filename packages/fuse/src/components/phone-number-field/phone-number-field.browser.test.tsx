@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import type { MetadataJson } from "libphonenumber-js/core";
+import { createPortal, flushSync } from "react-dom";
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -19,6 +20,7 @@ import {
   countrySearch,
   openPicker,
   phoneInput,
+  phoneSubmission,
   selectCountry,
 } from "../../../test/phone-browser-queries";
 import { EXCLUDED_PRODUCT_COUNTRY_CODES, FLAG_GAP_COUNTRY_CODES } from "../../../test/phone-picker-contract";
@@ -799,5 +801,247 @@ describe("PhoneNumberField detected numbers", () => {
     await selectCountry("Finland");
     expect(phoneInput().value).toBe("070 1234567");
     expect(hiddenNamed("phone").value).toBe("+358701234567");
+  });
+});
+
+describe("PhoneNumberField caret", () => {
+  /** Types the keys one at a time at the caret, as a user does. */
+  async function typeKeys(keys: string) {
+    for (const key of keys) {
+      await userEvent.keyboard(key);
+    }
+  }
+
+  function caretAt(offset: number) {
+    phoneInput().focus();
+    phoneInput().setSelectionRange(offset, offset);
+  }
+
+  it.each([
+    { mode: "uncontrolled", controlled: false },
+    { mode: "controlled", controlled: true },
+  ])("keeps the caret among the digits through a reformatting edit, $mode", async ({ controlled }) => {
+    const Field = controlled ? ControlledField : PhoneNumberField;
+    renderField(
+      <form aria-label="Phone form">
+        <Field label="Mobile" name="phone" formatOnType />
+      </form>
+    );
+    const input = phoneInput();
+    const caret = () => [input.selectionStart, input.selectionEnd];
+
+    // Backspace after the 2 deletes it, and the caret stays after "91".
+    caretAt(0);
+    await typeKeys("91234567");
+    expect(input.value).toBe("91 23 45 67");
+    caretAt(4);
+    await userEvent.keyboard("{Backspace}");
+    expect(input.value).toBe("91 34 56 7");
+    expect(caret()).toEqual([2, 2]);
+    await typeKeys("5");
+    expect(input.value).toBe("91 53 45 67");
+    expect(caret()).toEqual([4, 4]);
+    expect(phoneSubmission().get("phone")).toBe("+4791534567");
+
+    // Backspace after a space deletes only the space, which comes back; the caret stays after "91".
+    caretAt(3);
+    await userEvent.keyboard("{Backspace}");
+    expect(input.value).toBe("91 53 45 67");
+    expect(caret()).toEqual([2, 2]);
+    await typeKeys("0");
+    expect(input.value).toBe("910534567");
+    expect(caret()).toEqual([3, 3]);
+    expect(phoneSubmission().get("phone")).toBe("+47910534567");
+
+    // A digit typed after the first one of a shorter number lands there.
+    await userEvent.keyboard("{End}{Backspace}{Backspace}");
+    expect(input.value).toBe("91 05 34 5");
+    caretAt(1);
+    await typeKeys("4");
+    expect(input.value).toBe("94 10 53 45");
+    expect(caret()).toEqual([2, 2]);
+    expect(phoneSubmission().get("phone")).toBe("+4794105345");
+  });
+
+  it.each([
+    { mode: "uncontrolled", controlled: false },
+    { mode: "controlled", controlled: true },
+  ])(
+    "keeps the caret after the calling code an international display adds, $mode",
+    async ({ controlled }) => {
+      const Field = controlled ? ControlledField : PhoneNumberField;
+      renderField(
+        <form aria-label="Phone form">
+          <Field label="Mobile" name="phone" international formatOnType />
+        </form>
+      );
+      const input = phoneInput();
+      caretAt(0);
+      const shown: string[] = [];
+      for (const key of "91234567") {
+        await userEvent.keyboard(key);
+        shown.push(input.value);
+        expect(input.selectionStart, input.value).toBe(input.value.length);
+      }
+      expect(shown).toEqual([
+        "+47 9",
+        "+47 91",
+        "+47 912",
+        "+47 9123",
+        "+47 91234",
+        "+47 912345",
+        "+47 9123456",
+        "+47 91 23 45 67",
+      ]);
+      expect(phoneSubmission().get("phone")).toBe("+4791234567");
+
+      // Backspace after the 2, then a 5 in its place.
+      caretAt(8);
+      await userEvent.keyboard("{Backspace}");
+      expect(input.value).toBe("+47 9134567");
+      expect(input.selectionStart).toBe(6);
+      await typeKeys("5");
+      expect(input.value).toBe("+47 91 53 45 67");
+      expect(input.selectionStart).toBe(8);
+      expect(phoneSubmission().get("phone")).toBe("+4791534567");
+    }
+  );
+
+  it("keeps the caret before the next digit through forward deletes", async () => {
+    renderField(
+      <form aria-label="Phone form">
+        <PhoneNumberField label="Mobile" name="phone" formatOnType />
+      </form>
+    );
+    const input = phoneInput();
+    caretAt(0);
+    await typeKeys("91234567");
+    // Delete after the space removes the 2, and the caret waits before the 3.
+    caretAt(3);
+    await userEvent.keyboard("{Delete}");
+    expect(input.value).toBe("91 34 56 7");
+    expect(input.selectionStart).toBe(3);
+    await userEvent.keyboard("{Delete}");
+    expect(input.value).toBe("91 45 67");
+    expect(input.selectionStart).toBe(3);
+    // Delete before a space removes only the space, which comes back; the next Delete still
+    // reaches the digit after it.
+    caretAt(2);
+    await userEvent.keyboard("{Delete}");
+    expect(input.value).toBe("91 45 67");
+    expect(input.selectionStart).toBe(3);
+    await userEvent.keyboard("{Delete}");
+    expect(input.value).toBe("91 56 7");
+    expect(input.selectionStart).toBe(3);
+    expect(phoneSubmission().get("phone")).toBe("+4791567");
+  });
+
+  it("keeps the caret when the parent commits the edit synchronously", async () => {
+    function Synchronous() {
+      const [value, setValue] = useState("");
+      return (
+        <form aria-label="Phone form">
+          <PhoneNumberField
+            label="Mobile"
+            name="phone"
+            value={value}
+            onChange={(next) => flushSync(() => setValue(next))}
+            formatOnType
+          />
+        </form>
+      );
+    }
+    renderField(<Synchronous />);
+    const input = phoneInput();
+    caretAt(0);
+    await typeKeys("91234567");
+    caretAt(4);
+    await userEvent.keyboard("{Backspace}");
+    expect(input.value).toBe("91 34 56 7");
+    expect(input.selectionStart).toBe(2);
+    await typeKeys("5");
+    expect(input.value).toBe("91 53 45 67");
+    expect(phoneSubmission().get("phone")).toBe("+4791534567");
+  });
+
+  it("keeps the caret for a field inside a shadow root", async () => {
+    const host = document.createElement("div");
+    document.body.append(host);
+    const mountPoint = document.createElement("div");
+    host.attachShadow({ mode: "open" }).append(mountPoint);
+    try {
+      renderField(createPortal(<PhoneNumberField label="Mobile" formatOnType />, mountPoint));
+      const input = phoneInput();
+      caretAt(0);
+      await typeKeys("91234567");
+      expect(input.value).toBe("91 23 45 67");
+      caretAt(4);
+      await userEvent.keyboard("{Backspace}");
+      expect(input.value).toBe("91 34 56 7");
+      expect(input.selectionStart).toBe(2);
+    } finally {
+      host.remove();
+    }
+  });
+
+  it("keeps the caret where a separator typed into an unformatted number was dropped", async () => {
+    renderField(
+      <form aria-label="Phone form">
+        <PhoneNumberField label="Mobile" name="phone" />
+      </form>
+    );
+    const input = phoneInput();
+    caretAt(0);
+    await typeKeys("41234567");
+    caretAt(2);
+    await typeKeys("-");
+    expect(input.value).toBe("41234567");
+    expect([input.selectionStart, input.selectionEnd]).toEqual([2, 2]);
+    await typeKeys("9");
+    expect(input.value).toBe("419234567");
+  });
+
+  it("leaves the caret alone when the parent rejects the edit", async () => {
+    const proposals: string[] = [];
+    renderField(
+      <PhoneNumberField
+        label="Mobile"
+        value="+4791234567"
+        onChange={(next) => proposals.push(next)}
+        formatOnType
+      />
+    );
+    const input = phoneInput();
+    expect(input.value).toBe("91 23 45 67");
+    caretAt(4);
+    await userEvent.keyboard("{Backspace}");
+    expect(proposals).toEqual(["+479134567"]);
+    expect(input.value).toBe("91 23 45 67");
+    // Not the edit's caret, after "91", but where Chromium leaves an assigned value's caret.
+    expect([input.selectionStart, input.selectionEnd]).toEqual([11, 11]);
+  });
+
+  it("leaves the caret alone when the parent replaces the edit", async () => {
+    function Replacing() {
+      const [value, setValue] = useState("+4791234567");
+      return (
+        <form aria-label="Phone form">
+          <PhoneNumberField
+            label="Mobile"
+            name="phone"
+            value={value}
+            onChange={(next) => setValue(next === "+479134567" ? "+4799999999" : next)}
+            formatOnType
+          />
+        </form>
+      );
+    }
+    renderField(<Replacing />);
+    const input = phoneInput();
+    caretAt(4);
+    await userEvent.keyboard("{Backspace}");
+    expect(input.value).toBe("99 99 99 99");
+    expect(phoneSubmission().get("phone")).toBe("+4799999999");
+    expect([input.selectionStart, input.selectionEnd]).toEqual([11, 11]);
   });
 });

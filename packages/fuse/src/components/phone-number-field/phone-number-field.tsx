@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 // Subpath import (`@base-ui/react/combobox`) type-checks but crashes at runtime with a
@@ -24,11 +24,31 @@ import { ComboboxContent, ComboboxEmpty, ComboboxItem, ComboboxList } from "../c
 import { FieldFrame, fieldFrameRootClass } from "../field/field-frame";
 import { InputGroupAddon, InputGroupInput, InputGroupRoot } from "../input-group/input-group";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
+import { caretOffset, significantAfter } from "./caret";
+import type { CaretSide } from "./caret";
 import { sortByCountryName } from "./country-names";
 import { Flag } from "./flag";
 import { usePhoneNumberFieldState } from "./hooks/use-phone-number-field-state";
 import { phoneNumberFieldStrings } from "./intl";
 import type { PhoneNumberCountry } from "./phone-engine";
+
+/** A selection kept as the digits after each end, for the display an edit proposed. */
+type PendingSelection = {
+  display: string;
+  start: number;
+  end: number;
+  side: CaretSide;
+  direction: "forward" | "backward" | "none" | undefined;
+};
+
+/** Edits that remove what follows the caret, so it waits before the next digit. */
+const FORWARD_DELETIONS = new Set([
+  "deleteContentForward",
+  "deleteWordForward",
+  "deleteSoftLineForward",
+  "deleteHardLineForward",
+  "deleteByCut",
+]);
 
 export type PhoneNumberFieldProps = {
   /** Authoritative controlled value; URI-decoded when received. Omit for uncontrolled editing. */
@@ -208,6 +228,33 @@ export function PhoneNumberField({
     locale,
   });
   useFormReset(numberInputRef, phone.onReset);
+
+  // An edit whose display the field rewrites, as formatOnType does, would leave the caret at
+  // the end once React assigns the value. The change handler keeps the selection as digit
+  // counts, and the commit that shows the edit's display puts it back. A rejected or replaced
+  // proposal shows another value, so the pending selection is dropped. This runs after every
+  // commit: deleting a separator proposes the display that was already shown, so no
+  // dependency changes.
+  const pendingSelectionRef = useRef<PendingSelection | null>(null);
+  useLayoutEffect(() => {
+    const pending = pendingSelectionRef.current;
+    pendingSelectionRef.current = null;
+    const input = numberInputRef.current;
+    if (!pending || !input || input.value !== pending.display) {
+      return;
+    }
+    // The document's activeElement is the shadow host for an input in a shadow root.
+    const root = input.getRootNode();
+    const focused = root instanceof Document || root instanceof ShadowRoot ? root.activeElement : null;
+    if (focused !== input) {
+      return;
+    }
+    input.setSelectionRange(
+      caretOffset(pending.display, pending.start, pending.side),
+      caretOffset(pending.display, pending.end, pending.side),
+      pending.direction
+    );
+  });
   // Metadata order resolves no name, so it holds until the first open. The hook keeps that
   // order for its own lookups; only the rows the picker shows are sorted.
   const pickerCountries = useMemo(
@@ -352,7 +399,27 @@ export function PhoneNumberField({
             name={name ? `${name}-display-value` : undefined}
             value={phone.displayValue}
             onChange={(event) => {
-              if (isEditable) phone.handleInputChange(event.currentTarget.value);
+              if (!isEditable) return;
+              const { value, selectionStart, selectionEnd, selectionDirection } = event.currentTarget;
+              const { nativeEvent } = event;
+              const side: CaretSide =
+                nativeEvent instanceof InputEvent && FORWARD_DELETIONS.has(nativeEvent.inputType)
+                  ? "beforeNext"
+                  : "afterPrevious";
+              // Recorded before the proposal is published, since a parent that accepts it
+              // synchronously commits the new display before `handleInputChange` returns.
+              phone.handleInputChange(value, (display) => {
+                pendingSelectionRef.current =
+                  display !== value && selectionStart !== null && selectionEnd !== null
+                    ? {
+                        display,
+                        start: significantAfter(value, selectionStart),
+                        end: significantAfter(value, selectionEnd),
+                        side,
+                        direction: selectionDirection ?? undefined,
+                      }
+                    : null;
+              });
             }}
             onPaste={(event) => {
               if (isEditable) phone.handlePaste(event);

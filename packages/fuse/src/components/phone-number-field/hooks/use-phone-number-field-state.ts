@@ -40,7 +40,11 @@ export type UsePhoneNumberFieldStateOptions = {
 export type UsePhoneNumberFieldStateReturn = {
   displayValue: string;
   outputValue: string;
-  handleInputChange: (value: string) => void;
+  /**
+   * Proposes an edit of the visible input. `onProposal` receives the display it proposes
+   * before any state update or `onChange`, which a parent may commit synchronously.
+   */
+  handleInputChange: (value: string, onProposal?: (displayValue: string) => void) => void;
   selectCountry: (code: CountryCode | undefined) => void;
   handlePaste: (e: ClipboardEvent<HTMLInputElement>) => void;
   selectedCountry: PhoneNumberCountry;
@@ -98,19 +102,21 @@ export function usePhoneNumberFieldState({
     }
   }, [selectedCountry, onCountryChange]);
 
-  const propose = (next: ProcessedPhoneInput) => {
+  const propose = (next: ProcessedPhoneInput, onProposal?: (displayValue: string) => void) => {
     const proposal = snapshot(next, configuration);
+    onProposal?.(proposal.values.displayValue);
     setState({ ...state, accepted: current, proposal });
     onChange?.(proposal.values.outputValue);
   };
 
-  const handleInputChange = (input: string) => {
+  const handleInputChange = (input: string, onProposal?: (displayValue: string) => void) => {
     propose(
       processInputWithDetection({
         ...configuration,
         input: cleanPhoneInput(input),
         currentCountry: selectedCountry,
-      })
+      }),
+      onProposal
     );
   };
 
