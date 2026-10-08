@@ -53,6 +53,13 @@ export default function TokensPage(): ReactElement {
         <code>sm</code> and 24px at <code>default</code> and <code>lg</code> when comfortable, so the icon
         does not sit tight against one end. An input group&apos;s addon buttons keep their own padding.
       </p>
+      <p>
+        Controls set their type from <code>--control-text</code> and <code>--control-leading</code>, 14/20px
+        dense and 18/24px comfortable. The selection rows behind <code>CheckboxItem</code> and{" "}
+        <code>RadioItem</code> have their own pair, <code>--control-text-row</code> and{" "}
+        <code>--control-leading-row</code>: 14/20px dense and 16/24px comfortable, so a row&apos;s title and
+        description stay a step below the field and button text around them.
+      </p>
 
       <h2 id="bundle-sizes">Measured bundle sizes</h2>
       <p>

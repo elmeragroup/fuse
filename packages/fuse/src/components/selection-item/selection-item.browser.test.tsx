@@ -18,14 +18,17 @@ import {
   px,
   renderThemed,
   roleNamed,
+  stampDensity,
   textNamed,
 } from "../../../test/themed-browser-render";
 import { disabledHatch } from "../../styles/utils";
 import { ThemeScope } from "../../theme";
+import { Alert } from "../alert/alert";
 import { CheckboxCard } from "../checkbox-card/checkbox-card";
 import { Checkbox as UiCheckbox, CheckboxGroup, CheckboxItemGroup } from "../checkbox/checkbox";
 import { CheckboxItem } from "../checkbox/checkbox-item";
 import { Field } from "../field";
+import { Item } from "../item";
 import { Radio, RadioGroup, RadioItemGroup } from "../radio-group/radio-group";
 import { RadioItem } from "../radio-group/radio-item";
 import { SelectionItem } from "./index";
@@ -1029,6 +1032,112 @@ describe("SelectionItem", () => {
     expect(document.activeElement).toBe(checkboxNamed("Fixed price"));
     await userEvent.keyboard(" ");
     expect(checkboxNamed("Fixed price", true).getAttribute("aria-checked")).toBe("true");
+  });
+});
+
+/**
+ * The row's type per density, written out by hand: dense keeps today's `text-sm`, and
+ * comfortable is the customer-facing reference card's 16px. The title keeps `leading-snug`
+ * (1.375) and the description `leading-normal` (1.5); plain text in Actions and a SubSection
+ * takes the row's own line height.
+ */
+const ROW_TYPE = {
+  dense: { title: [14, 19.25], description: [14, 21], plain: [14, 20] },
+  comfortable: { title: [16, 22], description: [16, 24], plain: [16, 24] },
+} as const;
+
+function fontAndLeading(element: HTMLElement): [number, number] {
+  const style = getComputedStyle(element);
+  return [Number.parseFloat(style.fontSize), Number.parseFloat(style.lineHeight)];
+}
+
+describe("selection row type", () => {
+  it.each([
+    { item: "CheckboxItem", role: "checkbox", density: "dense" },
+    { item: "CheckboxItem", role: "checkbox", density: "comfortable" },
+    { item: "RadioItem", role: "radio", density: "dense" },
+    { item: "RadioItem", role: "radio", density: "comfortable" },
+  ] as const)(
+    "sizes a $item's text at $density and centres the control on the title's first line",
+    ({ role, density }) => {
+      stampDensity(density);
+      const rows = (
+        <>
+          {[
+            { value: "fixed", title: "Fixed price", description: "Locked for twelve months." },
+            { value: "spot", title: "Spot price", description: undefined },
+          ].map(({ value, title, description }) => {
+            const body = (
+              <>
+                <SelectionItem.Content>
+                  <SelectionItem.Title>{title}</SelectionItem.Title>
+                  {description ? <SelectionItem.Description>{description}</SelectionItem.Description> : null}
+                </SelectionItem.Content>
+                {description ? <SelectionItem.Actions>Recommended</SelectionItem.Actions> : null}
+                {description ? <SelectionItem.SubSection>Price details</SelectionItem.SubSection> : null}
+              </>
+            );
+            return role === "checkbox" ? (
+              <CheckboxItem key={value} value={value}>
+                {body}
+              </CheckboxItem>
+            ) : (
+              <RadioItem key={value} value={value}>
+                {body}
+              </RadioItem>
+            );
+          })}
+        </>
+      );
+      renderThemed(
+        role === "checkbox" ? (
+          <CheckboxItemGroup label="Plans">{rows}</CheckboxItemGroup>
+        ) : (
+          <RadioItemGroup label="Plans">{rows}</RadioItemGroup>
+        )
+      );
+
+      const expected = ROW_TYPE[density];
+      expect(fontAndLeading(textNamed("Fixed price")), "title").toEqual(expected.title);
+      expect(fontAndLeading(textNamed("Locked for twelve months.")), "description").toEqual(
+        expected.description
+      );
+      expect(fontAndLeading(textNamed("Recommended")), "plain text in Actions").toEqual(expected.plain);
+      expect(fontAndLeading(textNamed("Price details")), "plain text in a SubSection").toEqual(
+        expected.plain
+      );
+
+      for (const title of ["Fixed price", "Spot price"]) {
+        const line = textNamed(title).getBoundingClientRect().top + expected.title[1] / 2;
+        const control = page
+          .getByRole(role, { name: new RegExp(`^${title}`) })
+          .element()
+          .getBoundingClientRect();
+        expect(control.top + control.height / 2, `${title} control centre`).toBeCloseTo(line, 0);
+      }
+    }
+  );
+
+  it("leaves Item and Alert titles and descriptions at text-sm when comfortable", () => {
+    stampDensity("comfortable");
+    renderThemed(
+      <>
+        <Item.Root>
+          <Item.Content>
+            <Item.Title>Item title</Item.Title>
+            <Item.Description>Item description</Item.Description>
+          </Item.Content>
+        </Item.Root>
+        <Alert.Root>
+          <Alert.Title>Alert title</Alert.Title>
+          <Alert.Description>Alert description</Alert.Description>
+        </Alert.Root>
+      </>
+    );
+
+    for (const text of ["Item title", "Item description", "Alert title", "Alert description"]) {
+      expect(fontAndLeading(textNamed(text))[0], text).toBe(14);
+    }
   });
 });
 

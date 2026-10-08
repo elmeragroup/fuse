@@ -104,8 +104,18 @@ export function SelectionItemGroup({
   );
 }
 
+/**
+ * The option's name. It takes the row's density type size, `--control-text-row`, in place of
+ * `Item.Title`'s fixed `text-sm`. tailwind-merge drops a line height that comes before a font
+ * size, so `leading-snug` is restated after it.
+ */
 export function SelectionItemTitle({ className, ...props }: ComponentProps<typeof ItemTitle>): ReactElement {
-  return <ItemTitle className={cn("font-normal", className)} {...props} />;
+  return (
+    <ItemTitle
+      className={cn("leading-snug font-normal text-(length:--control-text-row)", className)}
+      {...props}
+    />
+  );
 }
 
 export function SelectionItemActions({
@@ -245,8 +255,18 @@ export function SelectionItemShell({
   const controlAtEnd = controlPosition === "end";
 
   const rowCellClass = cn("self-start pt-3.5", hasSubSection ? null : "pb-3.5");
+  // The slot's content box is one title line tall, `--control-text-row` at the title's
+  // `leading-snug`, and centres the control in it, so the control sits on the title's first
+  // line at either density. That replaces Item.Media's nudge for a row with a description,
+  // which was tuned to a 14px title.
   const controlSlot = (
-    <ItemMedia variant="icon" data-slot="selection-item-control" className={rowCellClass}>
+    <ItemMedia
+      variant="icon"
+      data-slot="selection-item-control"
+      className={cn(
+        rowCellClass,
+        "box-content h-[calc(var(--control-text-row)*var(--leading-snug))] group-has-data-[slot=item-description]/item:translate-y-0"
+      )}>
       {control}
     </ItemMedia>
   );
@@ -308,7 +328,7 @@ export function SelectionItemShell({
       data-selection-item=""
       className={cn(
         outlineItemClass,
-        "relative isolate box-border grid items-stretch gap-0 gap-x-2.5 bg-card px-4 py-0 transition-colors has-[[data-slot=selection-item-control]_[data-checked]]:border-selection-checked-border has-[[data-slot=selection-item-control]_[data-checked]]:bg-muted",
+        "relative isolate box-border grid items-stretch gap-0 gap-x-2.5 bg-card px-4 py-0 text-(length:--control-text-row) leading-(--control-leading-row) transition-colors has-[[data-slot=selection-item-control]_[data-checked]]:border-selection-checked-border has-[[data-slot=selection-item-control]_[data-checked]]:bg-muted",
         controlAtEnd ? "grid-cols-[minmax(0,1fr)_auto]" : "grid-cols-[auto_minmax(0,1fr)]",
         connectedStack
           ? "rounded-none not-first:border-t-0 first:rounded-t-lg last:rounded-b-lg has-[[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px has-[[data-slot=selection-item-control]_[data-checked]]:not-first:border-t"

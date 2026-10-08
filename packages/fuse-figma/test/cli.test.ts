@@ -94,7 +94,7 @@ describe("fuse-figma sync", () => {
       assert.strictEqual(figma.variableNames("Fuse tokens").length, 88);
       assert.strictEqual(figma.variableNames("Fuse themes").length, 176);
       assert.strictEqual(figma.variableNames("Fuse primitives").length, 25);
-      assert.strictEqual(figma.variableNames("Fuse density").length, 26);
+      assert.strictEqual(figma.variableNames("Fuse density").length, 28);
       assert.strictEqual(writes(figma), 1);
       assert.include(yield* output, "reading it back matches the tokens");
     })
@@ -232,6 +232,14 @@ describe("fuse-figma sync", () => {
         scopes: ["LINE_HEIGHT"],
         codeSyntax: { WEB: "var(--control-leading)" },
       });
+      assert.deepStrictEqual(figma.metadata("Fuse density", "control-text-row"), {
+        scopes: ["FONT_SIZE"],
+        codeSyntax: { WEB: "var(--control-text-row)" },
+      });
+      assert.deepStrictEqual(figma.metadata("Fuse density", "control-leading-row"), {
+        scopes: ["LINE_HEIGHT"],
+        codeSyntax: { WEB: "var(--control-leading-row)" },
+      });
     })
   );
 
@@ -298,6 +306,10 @@ describe("fuse-figma sync", () => {
       assert.strictEqual(metric("control-text", "Comfortable"), 18);
       assert.strictEqual(metric("control-leading", "Dense"), 20);
       assert.strictEqual(metric("control-leading", "Comfortable"), 24);
+      assert.strictEqual(metric("control-text-row", "Dense"), 14);
+      assert.strictEqual(metric("control-text-row", "Comfortable"), 16);
+      assert.strictEqual(metric("control-leading-row", "Dense"), 20);
+      assert.strictEqual(metric("control-leading-row", "Comfortable"), 24);
       // A frame that sets no density mode sees the collection's first mode, Dense.
       assert.strictEqual(figma.resolve("Fuse density", "control-h-sm", {}), 32);
     })
@@ -583,7 +595,7 @@ describe("fuse-figma check", () => {
       assert.notInclude(printed, "Fuse themes: create mode external-elma-company");
       assert.include(printed, "Fuse themes: create variable ×176");
       assert.include(printed, "Fuse density: create mode Comfortable");
-      assert.include(printed, "Fuse density: create variable ×26");
+      assert.include(printed, "Fuse density: create variable ×28");
     })
   );
 
