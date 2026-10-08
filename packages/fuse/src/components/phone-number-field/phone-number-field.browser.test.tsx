@@ -181,8 +181,9 @@ describe("PhoneNumberField", () => {
       <PhoneNumberField label="Mobile" description="We text a code." isInvalid errorMessage="Bad number." />
     );
     const trigger = roleNamed("button", "Select country");
-    // The field's description and error describe the number input, not the picker trigger.
-    await expect.element(textboxNamed("Mobile")).toHaveAccessibleDescription("We text a code. Bad number.");
+    // The field's error and description describe the number input, not the picker trigger. The
+    // error sits directly under the control, ahead of the description, and is read first.
+    await expect.element(textboxNamed("Mobile")).toHaveAccessibleDescription("Bad number. We text a code.");
     expect(trigger.hasAttribute("aria-describedby")).toBe(false);
     await openPicker();
     const ids = [trigger.id, countrySearch().id, textboxNamed("Mobile").id];
