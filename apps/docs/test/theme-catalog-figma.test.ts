@@ -12,6 +12,7 @@ import type {
   FigmaColorToken,
   FigmaDimensionToken,
   FigmaFontToken,
+  FigmaFontWeightToken,
   FigmaThemeDocument,
 } from "../src/lib/docs-model";
 import { docsBaseUrl } from "./docs-server";
@@ -88,6 +89,7 @@ describe("Figma DTCG documents", () => {
       expect(file.color.$type).toBe("color");
       expect(file.size.$type).toBe("dimension");
       expect(file.font.$type).toBe("fontFamily");
+      expect(file.weight.$type).toBe("fontWeight");
     }
   });
 
@@ -135,6 +137,11 @@ describe("Figma DTCG documents", () => {
       $type: "fontFamily",
       $value: "Neo Sans",
     });
+    // The external variant layer's medium selection row title, a DTCG number.
+    expect(token<FigmaFontWeightToken>(document.weight, "selection-title-weight")).toEqual({
+      $type: "fontWeight",
+      $value: 500,
+    });
 
     const internal = figmaDocumentFromScheme(lightScheme("internal-fkas-private"), CATALOG.primitives);
     expect(token<FigmaDimensionToken>(internal.size, "radius")).toEqual({
@@ -148,6 +155,10 @@ describe("Figma DTCG documents", () => {
     expect(token<FigmaDimensionToken>(internal.size, "radius-step")).toEqual({
       $type: "dimension",
       $value: { value: 0, unit: "px" },
+    });
+    expect(token<FigmaFontWeightToken>(internal.weight, "selection-title-weight")).toEqual({
+      $type: "fontWeight",
+      $value: 400,
     });
   });
 

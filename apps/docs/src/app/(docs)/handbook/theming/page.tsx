@@ -251,6 +251,12 @@ export default function ThemingPage(): ReactElement {
         its resting border and the control alone shows the selection, as the external radio card does.
       </p>
       <p>
+        The weight of a <code>RadioItem</code> or <code>CheckboxItem</code> row title is themed too. It, which
+        reads <code>--selection-title-weight</code>. External themes set it to <code>500</code>, the weight of
+        the group legend and a <code>CheckboxCard</code> title, and internal themes keep the regular{" "}
+        <code>400</code>. A <code>className</code> weight on the title replaces the theme&apos;s.
+      </p>
+      <p>
         The sidebar&apos;s brand pair, <code>--sidebar-brand</code> and{" "}
         <code>--sidebar-brand-foreground</code>, reaches 4.5:1 in every theme and color scheme. Where the
         brand color falls short on the sidebar, the theme steps its lightness away from the sidebar&apos;s

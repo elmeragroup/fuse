@@ -80,6 +80,7 @@ export const TOKEN_NAMES = [
   "radius-field",
   "radius-step",
   "button-outline-width",
+  "selection-title-weight",
   "font-sans",
   "font-heading",
 ] as const;
@@ -183,7 +184,7 @@ export function derivedRoleSources(name: DerivedTokenName): readonly LayerTokenN
 const LAYER_TOKEN_NAMES: readonly LayerTokenName[] = TOKEN_NAMES.filter(isLayerTokenName);
 
 /** What a token's CSS value holds, which decides how exporters translate it. */
-export type TokenKind = "color" | "dimension" | "fontFamily";
+export type TokenKind = "color" | "dimension" | "fontFamily" | "fontWeight";
 
 /**
  * The kind of every token. A new token without a kind fails to compile, so no exporter
@@ -271,6 +272,7 @@ export const TOKEN_KINDS = {
   "radius-field": "dimension",
   "radius-step": "dimension",
   "button-outline-width": "dimension",
+  "selection-title-weight": "fontWeight",
   "font-sans": "fontFamily",
   "font-heading": "fontFamily",
 } as const satisfies Record<TokenName, TokenKind>;
@@ -309,6 +311,7 @@ export const EXTERNAL_RESET_KEYS = [
   "radius-field",
   "radius-step",
   "button-outline-width",
+  "selection-title-weight",
   "font-heading",
 ] as const;
 
@@ -357,6 +360,7 @@ const LIGHT_ONLY_KEYS: ReadonlySet<TokenName> = new Set([
   "radius-field",
   "radius-step",
   "button-outline-width",
+  "selection-title-weight",
   "font-heading",
 ]);
 

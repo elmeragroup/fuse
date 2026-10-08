@@ -14,7 +14,7 @@ import type { Srgb } from "@elmeragroup/color/srgb";
 
 import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
-import { cssFirstFontFamily, cssLengthToPx, cssVarReference, remToPx } from "./css-values";
+import { cssFirstFontFamily, cssFontWeight, cssLengthToPx, cssVarReference, remToPx } from "./css-values";
 import { defaultDensityForVariant, densityAttributes } from "./density";
 import type { Density, DensityAttributes } from "./density";
 import { themeAttributes } from "./theme-attributes";
@@ -31,11 +31,15 @@ import type { RadiusRungName } from "./tokens/radius-scale";
 import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
 import type { ThemeInput, ThemeSlug } from "./tokens/themes";
 
-/** The design-tool value each token kind resolves to. Dimensions are px at the 16px root. */
+/**
+ * The design-tool value each token kind resolves to. Dimensions are px at the 16px root, and
+ * font weights are the CSS number from 1 to 1000.
+ */
 type LiteralByKind = {
   readonly color: Srgb;
   readonly dimension: number;
   readonly fontFamily: string;
+  readonly fontWeight: number;
 };
 
 /** The kind the contract gives a token. */
@@ -257,6 +261,13 @@ const LITERAL_READERS: LiteralReaders = {
       throw defect(site, expected("a font stack that starts with a named family", css));
     }
     return family;
+  },
+  fontWeight: (css, site) => {
+    const weight = cssFontWeight(css);
+    if (weight === undefined) {
+      throw defect(site, expected("a number from 1 to 1000", css));
+    }
+    return weight;
   },
 };
 

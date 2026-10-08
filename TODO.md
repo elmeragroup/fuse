@@ -34,6 +34,10 @@
   look wants the checked `bg-muted` row tint at all, which measures 1.09:1 on `card` in light, and
   whether `RadioIconButton` (`radio-group-variants.ts`), which still draws `border-primary` when
   checked, should read the same role.
+- Confirm with design the external selection row title weight, for `CheckboxItem` rows as well
+  as `RadioItem` rows. `--selection-title-weight` is 500 in `EXTERNAL_VARIANT_LAYER`, from the
+  radio card the sales flow used before `RadioItem` (`text-base/5 font-medium`), and internal
+  themes keep the 400 the internal row was ported with.
 - Ask design whether external themes keep the reference's 4px corner on the `Checkbox` and
   the standalone `Calendar` (`styles/corner-radius.ts`), or round them from the brand radius.
   Internal themes round them with `--radius`.

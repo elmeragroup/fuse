@@ -57,6 +57,22 @@ describe("fuseVariableSet", () => {
     expect(value(THEMES_COLLECTION, "light/button-outline-width", "external-fkas-private")).toEqual(px(2));
     expect(value(THEMES_COLLECTION, "light/button-outline-width", "internal-fkas-private")).toEqual(px(1));
     expect(spec(TOKENS_COLLECTION, "font-sans")).toMatchObject({ type: "STRING", scopes: ["ALL_SCOPES"] });
+    // A font weight syncs as a FLOAT variable that only the font weight picker offers, and
+    // keeps its value in both schemes.
+    expect(spec(TOKENS_COLLECTION, "selection-title-weight")).toMatchObject({
+      type: "FLOAT",
+      scopes: ["FONT_WEIGHT"],
+    });
+    for (const scheme of ["light", "dark"]) {
+      expect(value(THEMES_COLLECTION, `${scheme}/selection-title-weight`, "external-fkas-private")).toEqual({
+        _tag: "Float",
+        value: 500,
+      });
+      expect(value(THEMES_COLLECTION, `${scheme}/selection-title-weight`, "internal-fkas-private")).toEqual({
+        _tag: "Float",
+        value: 400,
+      });
+    }
   });
 
   it("turns var() references into aliases in the same scheme or to primitives", () => {

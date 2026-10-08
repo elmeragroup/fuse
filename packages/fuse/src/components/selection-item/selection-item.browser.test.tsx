@@ -14,6 +14,7 @@ import { assertHorizontalItemList, radiusToken } from "../../../test/assert-sele
 import {
   cssVarColor,
   fkasExternal,
+  fkasPrivate,
   headingNamed,
   px,
   renderThemed,
@@ -1139,6 +1140,96 @@ describe("selection row type", () => {
     for (const text of ["Item title", "Item description", "Alert title", "Alert description"]) {
       expect(fontAndLeading(textNamed(text))[0], text).toBe(14);
     }
+  });
+});
+
+/**
+ * A row title's weight comes from the theme's `--selection-title-weight`. The expected weights
+ * are the design decisions, written by hand: the internal row's regular 400 and the external
+ * radio card's medium 500. `selection-item-without-themes.browser.test.tsx` covers a host
+ * without `themes.css`.
+ */
+describe("SelectionItem title weight", () => {
+  function TitleRows({ prefix, className }: { prefix: string; className?: string }) {
+    return (
+      <>
+        <CheckboxItemGroup label={`${prefix} add-ons`}>
+          <CheckboxItem value="router">
+            <CheckboxItem.Title role="heading" aria-level={3} className={className}>
+              {`${prefix} checkbox row`}
+            </CheckboxItem.Title>
+          </CheckboxItem>
+        </CheckboxItemGroup>
+        <RadioItemGroup label={`${prefix} plan`}>
+          <RadioItem value="fixed">
+            <RadioItem.Title role="heading" aria-level={3} className={className}>
+              {`${prefix} radio row`}
+            </RadioItem.Title>
+          </RadioItem>
+        </RadioItemGroup>
+      </>
+    );
+  }
+
+  /** The computed weights of a prefix's checkbox and radio row titles. */
+  function titleWeights(prefix: string): readonly string[] {
+    return [`${prefix} checkbox row`, `${prefix} radio row`].map(
+      (name) => getComputedStyle(headingNamed(name)).fontWeight
+    );
+  }
+
+  it("sets row titles at 400 in internal themes and 500 in external ones, in light and dark", () => {
+    renderThemed(
+      <>
+        <TitleRows prefix="Internal" />
+        <ThemeScope theme={fkasExternal}>
+          <TitleRows prefix="External" />
+        </ThemeScope>
+        <div data-theme="dark">
+          <ThemeScope theme={fkasPrivate}>
+            <TitleRows prefix="Dark internal" />
+          </ThemeScope>
+          <ThemeScope theme={fkasExternal}>
+            <TitleRows prefix="Dark external" />
+          </ThemeScope>
+        </div>
+      </>
+    );
+
+    expect(titleWeights("Internal")).toEqual(["400", "400"]);
+    expect(titleWeights("External")).toEqual(["500", "500"]);
+    expect(titleWeights("Dark internal")).toEqual(["400", "400"]);
+    expect(titleWeights("Dark external")).toEqual(["500", "500"]);
+  });
+
+  it("resets row titles to 400 in an internal scope nested in an external one", () => {
+    renderThemed(
+      <ThemeScope theme={fkasExternal}>
+        <TitleRows prefix="Outer external" />
+        <ThemeScope theme={fkasPrivate}>
+          <TitleRows prefix="Nested internal" />
+        </ThemeScope>
+      </ThemeScope>
+    );
+
+    expect(titleWeights("Outer external")).toEqual(["500", "500"]);
+    expect(titleWeights("Nested internal")).toEqual(["400", "400"]);
+  });
+
+  it("takes a className weight over the theme's in either variant", () => {
+    renderThemed(
+      <>
+        <TitleRows prefix="Internal medium" className="font-medium" />
+        <ThemeScope theme={fkasExternal}>
+          <TitleRows prefix="External semibold" className="font-semibold" />
+          <TitleRows prefix="External normal" className="font-normal" />
+        </ThemeScope>
+      </>
+    );
+
+    expect(titleWeights("Internal medium")).toEqual(["500", "500"]);
+    expect(titleWeights("External semibold")).toEqual(["600", "600"]);
+    expect(titleWeights("External normal")).toEqual(["400", "400"]);
   });
 });
 

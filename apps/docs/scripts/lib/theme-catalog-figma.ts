@@ -1,8 +1,8 @@
 /**
  * DTCG JSON projected from the resolved theme catalog for native Figma import.
  *
- * One file is one Figma mode. Colors are sRGB rounded to 1e-6; dimensions are px; a
- * reference becomes a `{group.name}` alias. The DTCG vocabulary stays here, and the catalog
+ * One file is one Figma mode. Colors are sRGB rounded to 1e-6; dimensions are px; font
+ * weights are numbers; a reference becomes a `{group.name}` alias. The DTCG vocabulary stays here, and the catalog
  * owns every CSS reading. The generation pass writes one module that inlines every document
  * (`FIGMA_THEME_FILES`), and the routes serve from it — there is no second, per-slug JSON
  * serialisation.
@@ -24,17 +24,19 @@ import type {
   FigmaColorToken,
   FigmaDimensionToken,
   FigmaFontToken,
+  FigmaFontWeightToken,
   FigmaSrgbColor,
   FigmaThemeDocument,
   FigmaThemeIndex,
 } from "../../src/lib/docs-model.ts";
 
-type DtcgGroup = "color" | "size" | "font";
+type DtcgGroup = "color" | "size" | "font" | "weight";
 
 const DTCG_GROUPS = {
   color: "color",
   dimension: "size",
   fontFamily: "font",
+  fontWeight: "weight",
 } as const satisfies Record<TokenKind, DtcgGroup>;
 
 type DtcgAlias = `{${string}}`;
@@ -70,6 +72,7 @@ type DtcgGroups = {
   color: Record<string, FigmaColorToken>;
   size: Record<string, FigmaDimensionToken>;
   font: Record<string, FigmaFontToken>;
+  weight: Record<string, FigmaFontWeightToken>;
 };
 
 /** Write one entry into its kind's group: an alias for a reference, else its literal. */
@@ -86,6 +89,9 @@ function emitEntry(groups: DtcgGroups, entry: PrimitiveEntry | TokenEntry): void
     case "fontFamily":
       groups.font[key] = { $type: "fontFamily", $value: alias ?? entry.value };
       return;
+    case "fontWeight":
+      groups.weight[key] = { $type: "fontWeight", $value: alias ?? entry.value };
+      return;
   }
 }
 
@@ -100,7 +106,7 @@ export function figmaDocumentFromScheme(
   scheme: ResolvedScheme,
   primitives: ResolvedThemeCatalog["primitives"]
 ): FigmaThemeDocument {
-  const groups: DtcgGroups = { color: {}, size: {}, font: {} };
+  const groups: DtcgGroups = { color: {}, size: {}, font: {}, weight: {} };
   for (const entry of Object.values(primitives)) {
     emitEntry(groups, entry);
   }
@@ -111,6 +117,7 @@ export function figmaDocumentFromScheme(
     color: { $type: "color", ...groups.color },
     size: { $type: "dimension", ...groups.size },
     font: { $type: "fontFamily", ...groups.font },
+    weight: { $type: "fontWeight", ...groups.weight },
   };
 }
 

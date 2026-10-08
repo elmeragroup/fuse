@@ -60,8 +60,8 @@ export type VariableType = "COLOR" | "FLOAT" | "STRING";
  * The Figma picker scopes the REST API lists for the variable types the sync writes. An
  * empty list hides a variable from every picker while keeping it available as an alias
  * target. The type leaves out `FONT_FAMILY`. The same page says scopes currently apply only
- * to FLOAT and COLOR variables, so the font tokens take `ALL_SCOPES` until a real file shows
- * that Figma keeps `FONT_FAMILY` on a STRING variable.
+ * to FLOAT and COLOR variables, so the font family tokens take `ALL_SCOPES` until a real file
+ * shows that Figma keeps `FONT_FAMILY` on a STRING variable.
  */
 export type VariableScope =
   | "ALL_FILLS"

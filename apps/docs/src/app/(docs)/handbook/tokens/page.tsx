@@ -20,6 +20,11 @@ export default function TokensPage(): ReactElement {
         against literal colours, so the same component markup paints correctly under all twenty-four themes.
         The swatches below show live values for whichever theme the header picker is on.
       </p>
+      <p>
+        Most role tokens are colours. The rest hold a length, such as <code>--radius</code>, a font stack,
+        such as <code>--font-heading</code>, or a font weight, <code>--selection-title-weight</code>, and the{" "}
+        <Link href="/handbook/theming">theming page</Link> says what each variant sets them to.
+      </p>
 
       <h2 id="colour-tokens">Colour tokens</h2>
       <p>

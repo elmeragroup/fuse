@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { cssFirstFontFamily, cssLengthToPx, cssVarReference, remToPx } from "./css-values";
+import { cssFirstFontFamily, cssFontWeight, cssLengthToPx, cssVarReference, remToPx } from "./css-values";
 
 describe("cssVarReference", () => {
   it.each([
@@ -48,5 +48,51 @@ describe("cssFirstFontFamily", () => {
     ["var(--font-sans), serif", undefined],
   ])("reads %j as %j", (value, expected) => {
     expect(cssFirstFontFamily(value)).toBe(expected);
+  });
+});
+
+describe("cssFontWeight", () => {
+  it.each([
+    ["400", 400],
+    ["500", 500],
+    // CSS Fonts 4 bounds: 1 and 1000 are both weights.
+    ["1", 1],
+    ["1000", 1000],
+    // Fractions are weights too.
+    ["450.5", 450.5],
+    ["1.5", 1.5],
+  ])("reads %j as %j", (value, expected) => {
+    expect(cssFontWeight(value)).toBe(expected);
+  });
+
+  it.each([
+    // Outside 1..1000.
+    "0",
+    "0.5",
+    ".5",
+    "1000.5",
+    "1001",
+    // Keywords: a second spelling of a weight, or relative to the parent.
+    "normal",
+    "bold",
+    "bolder",
+    "lighter",
+    // Units and trailing text, which Number.parseFloat would read past.
+    "400px",
+    "400 bold",
+    "500;",
+    // Spellings CSS allows that token modules never write: a sign, an exponent, a trailing
+    // point, calc() and a var() reference.
+    "+400",
+    "-400",
+    "4e2",
+    "400.",
+    "calc(400)",
+    "var(--selection-title-weight)",
+    // Whitespace and empty values.
+    " 400",
+    "",
+  ])("rejects %j", (value) => {
+    expect(cssFontWeight(value)).toBeUndefined();
   });
 });

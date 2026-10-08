@@ -307,6 +307,7 @@ describe("theme contract", () => {
         "button-outline",
         "selection-checked-border",
         "button-outline-width",
+        "selection-title-weight",
         "font-sans",
         "font-heading",
       ] as const) {
@@ -488,13 +489,14 @@ describe("derived roles", () => {
 describe("external variant layer roles", () => {
   const rules = parseStyleRules(generateThemesCss());
 
-  it("sets the radius step, the 4px field corner, the reference's 2px text-color outline and the resting checked-row border once for the external variant", () => {
+  it("sets the radius step, the 4px field corner, the reference's 2px text-color outline, the resting checked-row border and the medium selection row title once for the external variant", () => {
     const external = {
       "radius-field": "0.25rem",
       "radius-step": "2px",
       "button-outline": "var(--foreground)",
       "button-outline-width": "2px",
       "selection-checked-border": "var(--border)",
+      "selection-title-weight": "500",
     } as const;
     for (const [brand, palette] of Object.entries(EXTERNAL_PALETTES)) {
       for (const key of Object.keys(external)) {
@@ -507,12 +509,13 @@ describe("external variant layer roles", () => {
         expect(declaration(rules, selector, key), `${selector} ${key}`).toBe(value);
       }
     }
-    // Internal themes and the root keep the 1px border hairline, the primary checked-row edge
-    // and round fields with --radius.
+    // Internal themes and the root keep the 1px border hairline, the primary checked-row edge,
+    // the regular selection row title and round fields with --radius.
     for (const selector of [":root", '[data-theme-variant="internal"]']) {
       expect(declaration(rules, selector, "button-outline"), selector).toBe("var(--border)");
       expect(declaration(rules, selector, "selection-checked-border"), selector).toBe("var(--primary)");
       expect(declaration(rules, selector, "button-outline-width"), selector).toBe("1px");
+      expect(declaration(rules, selector, "selection-title-weight"), selector).toBe("400");
       expect(declaration(rules, selector, "radius-field"), selector).toBe("var(--radius)");
     }
   });

@@ -83,6 +83,7 @@ const VARIABLE_TYPES = {
   color: "COLOR",
   dimension: "FLOAT",
   fontFamily: "STRING",
+  fontWeight: "FLOAT",
 } as const satisfies Record<TokenKind, VariableType>;
 
 /** The pickers that offer each kind of density metric. Figma's `GAP` covers padding too. */
@@ -113,14 +114,16 @@ const DIMENSION_SCOPES = {
 } as const satisfies Record<DimensionTokenName, readonly VariableScope[]>;
 
 /**
- * The pickers that offer a color or font token. Font tokens are STRING variables, and the
+ * The pickers that offer a color or font token. Font families are STRING variables, and the
  * REST API's variable types page says scopes are currently only supported on FLOAT and COLOR
  * variables (https://developers.figma.com/docs/rest-api/variables-types/). They get
  * `ALL_SCOPES` until a real file shows that Figma keeps `FONT_FAMILY` on a STRING variable.
+ * Font weights are FLOAT variables, so they get the font weight picker.
  */
 const KIND_SCOPES = {
   color: ["ALL_SCOPES"],
   fontFamily: ["ALL_SCOPES"],
+  fontWeight: ["FONT_WEIGHT"],
 } as const satisfies Record<Exclude<TokenKind, "dimension">, readonly VariableScope[]>;
 
 /** The pickers that offer a contract token's `Fuse tokens` variable. */
@@ -290,7 +293,10 @@ function schemeValue(entry: TokenEntry | RungEntry, scheme: ResolvedColorScheme)
     : themeAlias(themeVariableName(scheme, entry.reference.name));
 }
 
-/** A resolved literal in Figma's form for its kind. Figma dimensions are unitless pixels. */
+/**
+ * A resolved literal in Figma's form for its kind. Figma dimensions are unitless pixels, and
+ * font weights are the CSS number.
+ */
 function literalValue(entry: AnyEntry): LiteralValue {
   switch (entry.kind) {
     case "color": {
@@ -301,6 +307,8 @@ function literalValue(entry: AnyEntry): LiteralValue {
       return { _tag: "Float", value: entry.value };
     case "fontFamily":
       return { _tag: "String", value: entry.value };
+    case "fontWeight":
+      return { _tag: "Float", value: entry.value };
   }
 }
 

@@ -65,6 +65,14 @@ A checked `RadioItem` or `CheckboxItem` row draws its border in `--selection-che
 }
 ```
 
+`RadioItem` and `CheckboxItem` row titles read `--selection-title-weight`. Without it they are 400, as internal themes set them. For the external themes' medium title, which matches the group legend and `CheckboxCard` titles, set:
+
+```css
+:root {
+  --selection-title-weight: 500;
+}
+```
+
 Field boxes round with your `--radius`, as internal themes do. For the external themes' 4px field corner, set the external step and the field radius. The step also spreads the `rounded-*` scale in 2px steps around `--radius` and gives the checkbox and the calendar their external 4px corner:
 
 ```css
