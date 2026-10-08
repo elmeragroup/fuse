@@ -8,8 +8,8 @@ export function InputInField() {
     <Field.Root invalid>
       <Field.Label>Email</Field.Label>
       <Input type="email" />
-      <Field.Description>Work address preferred.</Field.Description>
       <Field.Error>Enter a valid email.</Field.Error>
+      <Field.Description>Work address preferred.</Field.Description>
     </Field.Root>
   );
 }

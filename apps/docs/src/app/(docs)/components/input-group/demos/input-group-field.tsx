@@ -35,9 +35,9 @@ export function InputGroupField() {
             }}
           />
         </InputGroup.Root>
+        {isInvalid ? <Field.Error>Enter 8 digits.</Field.Error> : null}
         {/* The +47 addon is visual, so the description says it too. */}
         <Field.Description>Eight digits after +47. We send the order confirmation here.</Field.Description>
-        {isInvalid ? <Field.Error>Enter 8 digits.</Field.Error> : null}
       </Field.Root>
     </div>
   );

@@ -10,8 +10,8 @@ export function FieldValidationDemo() {
       validate={(value) => (String(value).endsWith("@example.com") ? null : "Use your example.com address.")}>
       <Field.Label>Work email</Field.Label>
       <Input type="email" required />
-      <Field.Description>Checked when you leave the field.</Field.Description>
       <Field.Error />
+      <Field.Description>Checked when you leave the field.</Field.Description>
     </Field.Root>
   );
 }

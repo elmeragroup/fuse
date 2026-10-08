@@ -315,7 +315,9 @@ export function FieldSeparator({
 }
 
 /**
- * The field's error message, announced as an alert.
+ * The field's error message, announced as an alert. Place it directly after the control,
+ * ahead of any `Field.Description`, so the message sits right under a field in error, as
+ * the labeled composites place theirs.
  *
  * Children are shown as given: the caller decides when the field is in error, and a `match`
  * narrows that to one validity state. Without children it falls through to Base UI's own

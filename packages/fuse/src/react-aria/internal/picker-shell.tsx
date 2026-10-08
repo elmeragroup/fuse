@@ -98,8 +98,8 @@ export function PickerShell({
         {children}
         {triggerPlacement === "end" ? button : null}
       </FieldGroup>
-      {description ? <Description>{description}</Description> : null}
       <FieldError>{errorMessage}</FieldError>
+      {description ? <Description>{description}</Description> : null}
       <Popover container={container} placement="bottom right">
         <Dialog className={dialog()} closeButton={false}>
           {popover}

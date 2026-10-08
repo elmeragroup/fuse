@@ -55,6 +55,22 @@ describe("TextField Field wiring", () => {
     await expect.element(page.getByRole("alert")).not.toBeInTheDocument();
     expect(textboxNamed("Email").getAttribute("aria-invalid")).toBeNull();
   });
+
+  it("keeps the typed value and focus when the variant changes", async () => {
+    const field = (variant?: "card") => (
+      <TextField variant={variant} label="Usage" description="Estimated kWh" errorMessage="Too high." />
+    );
+    const { rerender } = renderThemed(field());
+    await userEvent.type(textboxNamed("Usage"), "42");
+
+    rerender(field("card"));
+    expect(textboxNamed("Usage")).toHaveProperty("value", "42");
+    expect(document.activeElement).toBe(textboxNamed("Usage"));
+
+    rerender(field());
+    expect(textboxNamed("Usage")).toHaveProperty("value", "42");
+    expect(document.activeElement).toBe(textboxNamed("Usage"));
+  });
 });
 
 describe("TextField card variant", () => {
