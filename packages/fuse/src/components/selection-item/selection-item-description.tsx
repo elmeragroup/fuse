@@ -9,14 +9,20 @@ import { ITEM_DESCRIPTION_CLASSES } from "../item/item-description-classes";
  * two-line clamp, which would cut what a screen reader still reads out. It keeps the
  * `item-description` slot, so the control at the row's start stays aligned with the title.
  * It takes the row's density type size, `--control-text-row`, and restates `leading-normal`
- * after it, because tailwind-merge drops a line height that comes before a font size.
+ * after it, in its own argument: tailwind-merge drops a line height that comes before a font
+ * size, and the formatter sorts the classes inside one string.
  * No directive, so a server component renders it, as it did `Item.Description`.
  */
 export function SelectionItemDescription({ className, ...props }: ComponentProps<"p">): ReactElement {
   return (
     <p
       data-slot="item-description"
-      className={cn(ITEM_DESCRIPTION_CLASSES, "leading-normal text-(length:--control-text-row)", className)}
+      className={cn(
+        ITEM_DESCRIPTION_CLASSES,
+        "text-(length:--control-text-row)",
+        "leading-normal",
+        className
+      )}
       {...props}
     />
   );
