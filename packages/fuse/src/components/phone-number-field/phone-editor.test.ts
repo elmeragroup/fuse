@@ -1,11 +1,11 @@
 import { AsYouType } from "libphonenumber-js/core";
 import type { MetadataJson } from "libphonenumber-js/core";
-import defaultMetadata from "libphonenumber-js/metadata.min.json";
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from "vitest";
 
 import { EMPTY_PICKER_ERROR_MESSAGE } from "../../../test/phone-picker-contract";
 import * as PhoneEditor from "./phone-editor";
 import type { PhoneEditorProps, PhoneEditorState } from "./phone-editor";
+import { defaultMetadata } from "./phone-engine";
 import type { PhoneNumberCountry } from "./phone-engine";
 
 const swedishMetadata: MetadataJson = {

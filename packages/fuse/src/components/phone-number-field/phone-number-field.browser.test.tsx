@@ -620,6 +620,12 @@ describe("PhoneNumberField caret", () => {
     phoneInput().setSelectionRange(offset, offset);
   }
 
+  /** The number input's selection, as its start and end offsets. */
+  function selection() {
+    const input = phoneInput();
+    return [input.selectionStart, input.selectionEnd];
+  }
+
   it("keeps the caret when the parent commits the edit synchronously", async () => {
     function Synchronous({ description }: { description?: string }) {
       const [value, setValue] = useState("");
@@ -638,7 +644,6 @@ describe("PhoneNumberField caret", () => {
     }
     const { rerender } = renderField(<Synchronous />);
     const input = phoneInput();
-    const selection = () => [input.selectionStart, input.selectionEnd];
     caretAt(0);
     await typeKeys("91234567");
     caretAt(4);
@@ -685,10 +690,10 @@ describe("PhoneNumberField caret", () => {
     caretAt(4);
     await userEvent.keyboard("{Backspace}");
     expect(input.value).toBe("91 34 56 7");
-    expect([input.selectionStart, input.selectionEnd]).toEqual([2, 2]);
+    expect(selection()).toEqual([2, 2]);
     await typeKeys("5");
     expect(input.value).toBe("91 53 45 67");
-    expect([input.selectionStart, input.selectionEnd]).toEqual([4, 4]);
+    expect(selection()).toEqual([4, 4]);
   });
 
   it("keeps the caret for a field inside a shadow root", async () => {

@@ -228,18 +228,14 @@ function decodeFieldValue(value: string): string {
   }
 }
 
-function snapshot(
-  next: ProcessedPhoneInput,
-  configuration: Configuration,
-  caret: (values: PhoneFieldValues) => Caret | null = () => null
-): Snapshot {
+function snapshot(next: ProcessedPhoneInput, configuration: Configuration): Snapshot {
   const values = resolvePhoneFieldValues({
     ...configuration,
     digits: next.digits,
     parsedNational: next.parsedNational,
     country: next.country.code,
   });
-  return { ...next, values, caret: caret(values) };
+  return { ...next, values, caret: null };
 }
 
 function receiveValue(input: string, country: PhoneNumberCountry, configuration: Configuration): Snapshot {
@@ -295,17 +291,14 @@ function propose(stored: EditorRecord, proposal: Snapshot): PhoneEditorState {
   return wrap({ ...stored, accepted: visibleSnapshot(stored), proposal, unanswered: true });
 }
 
-function proposeEntry(
-  stored: EditorRecord,
-  entry: string,
-  caret: (values: PhoneFieldValues) => Caret | null
-): PhoneEditorState {
+/** The snapshot for text entered over the visible state, read from its country. */
+function readEntry(stored: EditorRecord, entry: string): Snapshot {
   const next = processInputWithDetection({
     ...stored.configuration,
     input: cleanPhoneInput(entry),
     currentCountry: visibleSnapshot(stored).country,
   });
-  return propose(stored, snapshot(next, stored.configuration, caret));
+  return snapshot(next, stored.configuration);
 }
 
 /**
@@ -363,6 +356,20 @@ function answer(stored: EditorRecord, value: string | undefined, configuration: 
 }
 
 /**
+ * The props the record keeps as given, outside the configuration and value, with
+ * `preserveOnCountryChange` defaulted.
+ */
+function readDefaults(
+  props: PhoneEditorProps
+): Pick<EditorRecord, "defaultValue" | "defaultCountryCode" | "preserveOnCountryChange"> {
+  return {
+    defaultValue: props.defaultValue,
+    defaultCountryCode: props.defaultCountryCode,
+    preserveOnCountryChange: props.preserveOnCountryChange ?? false,
+  };
+}
+
+/**
  * The state for a field's first props: the controlled value, else the default, read in the
  * default country.
  *
@@ -373,11 +380,9 @@ function answer(stored: EditorRecord, value: string | undefined, configuration: 
 export function create(props: PhoneEditorProps): PhoneEditorState {
   const configuration = configure(props);
   return wrap({
+    ...readDefaults(props),
     configuration,
     value: props.value,
-    defaultValue: props.defaultValue,
-    defaultCountryCode: props.defaultCountryCode,
-    preserveOnCountryChange: props.preserveOnCountryChange ?? false,
     accepted: receiveValue(
       props.value ?? props.defaultValue ?? "",
       resolveSelectedCountry(configuration.countries, props.defaultCountryCode),
@@ -402,20 +407,19 @@ export function create(props: PhoneEditorProps): PhoneEditorState {
 export function reconcile(state: PhoneEditorState, props: PhoneEditorProps): PhoneEditorState {
   const stored = state[RECORD];
   const configuration = configure(props, stored.configuration);
-  const next: EditorRecord = {
-    ...stored,
-    defaultValue: props.defaultValue,
-    defaultCountryCode: props.defaultCountryCode,
-    preserveOnCountryChange: props.preserveOnCountryChange ?? false,
-    unanswered: false,
-  };
-  if (configuration === stored.configuration && stored.value === props.value) {
-    const unchanged =
-      !stored.unanswered &&
-      stored.defaultValue === next.defaultValue &&
-      stored.defaultCountryCode === next.defaultCountryCode &&
-      stored.preserveOnCountryChange === next.preserveOnCountryChange;
-    return unchanged ? state : wrap(settleCaret(stored, next));
+  const sameAnswer = configuration === stored.configuration && stored.value === props.value;
+  if (
+    sameAnswer &&
+    !stored.unanswered &&
+    stored.defaultValue === props.defaultValue &&
+    stored.defaultCountryCode === props.defaultCountryCode &&
+    stored.preserveOnCountryChange === (props.preserveOnCountryChange ?? false)
+  ) {
+    return state;
+  }
+  const next: EditorRecord = { ...stored, ...readDefaults(props), unanswered: false };
+  if (sameAnswer) {
+    return wrap(settleCaret(stored, next));
   }
   return wrap(
     settleCaret(stored, {
@@ -467,16 +471,18 @@ export function edit(
 ): PhoneEditorState {
   const side: CaretSide =
     inputType !== null && FORWARD_DELETIONS.has(inputType) ? "beforeNext" : "afterPrevious";
-  return proposeEntry(state[RECORD], value, ({ displayValue }) =>
-    displayValue !== value && selectionStart !== null && selectionEnd !== null
+  const stored = state[RECORD];
+  const next = readEntry(stored, value);
+  const caret: Caret | null =
+    next.values.displayValue !== value && selectionStart !== null && selectionEnd !== null
       ? {
           start: significantAfter(value, selectionStart),
           end: significantAfter(value, selectionEnd),
           side,
           direction: selectionDirection,
         }
-      : null
-  );
+      : null;
+  return propose(stored, { ...next, caret });
 }
 
 /**
@@ -487,7 +493,8 @@ export function edit(
  * @returns The state with the paste proposed.
  */
 export function paste(state: PhoneEditorState, text: string): PhoneEditorState {
-  return proposeEntry(state[RECORD], text, () => null);
+  const stored = state[RECORD];
+  return propose(stored, readEntry(stored, text));
 }
 
 /**

@@ -6,7 +6,7 @@ import type { RefObject } from "react";
 import type { CountryCode } from "libphonenumber-js/core";
 
 import * as PhoneEditor from "../phone-editor";
-import type { PhoneEdit, PhoneEditorProps, PhoneEditorState } from "../phone-editor";
+import type { PhoneEdit, PhoneEditorProps, PhoneEditorState, PhoneEditorView } from "../phone-editor";
 import type { PhoneNumberCountry } from "../phone-engine";
 
 /** The editor's props, the field's two callbacks and the number input it restores the caret in. */
@@ -20,15 +20,10 @@ export type UsePhoneNumberFieldStateOptions = PhoneEditorProps & {
 };
 
 /** What the field renders, and the handlers that propose changes to it. */
-export type UsePhoneNumberFieldStateReturn = {
-  /** The text the number input shows. */
-  displayValue: string;
-  /** The value the field submits. */
-  outputValue: string;
-  /** The country the picker shows. */
-  country: Readonly<PhoneNumberCountry>;
-  /** The picker countries, in catalog order. */
-  countries: ReadonlyArray<Readonly<PhoneNumberCountry>>;
+export type UsePhoneNumberFieldStateReturn = Pick<
+  PhoneEditorView,
+  "displayValue" | "outputValue" | "country" | "countries"
+> & {
   /** Proposes a change to the input's text, read from the input after the browser applied it. */
   edit: (change: PhoneEdit) => void;
   /** Proposes pasted text in place of the number. */
@@ -113,11 +108,6 @@ export function usePhoneNumberFieldState({
     selectCountry: (code) => publish(PhoneEditor.selectCountry(state, code)),
     // Reset only when this hook owns the value. A parent-owned `value` is the parent's
     // to keep; a reset handler on this side would fight it.
-    onReset:
-      props.value === undefined
-        ? () => {
-            setState((current) => PhoneEditor.reset(current));
-          }
-        : null,
+    onReset: props.value === undefined ? () => setState(PhoneEditor.reset) : null,
   };
 }
