@@ -57,6 +57,14 @@ Button's `outline` variant reads `--button-outline` and `--button-outline-width`
 }
 ```
 
+A checked `RadioItem` or `CheckboxItem` row draws its border in `--selection-checked-border`. Without it the row takes your `--primary`, as internal themes do. For the external themes' look, where the row keeps its resting border and the control alone shows the selection, set:
+
+```css
+:root {
+  --selection-checked-border: var(--border);
+}
+```
+
 Field boxes round with your `--radius`, as internal themes do. For the external themes' 4px field corner, set the external step and the field radius. The step also spreads the `rounded-*` scale in 2px steps around `--radius` and gives the checkbox and the calendar their external 4px corner:
 
 ```css

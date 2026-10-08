@@ -47,6 +47,7 @@ export const TOKEN_NAMES = [
   "input",
   "ring",
   "button-outline",
+  "selection-checked-border",
   "sidebar",
   "sidebar-foreground",
   "sidebar-accent",
@@ -237,6 +238,7 @@ export const TOKEN_KINDS = {
   input: "color",
   ring: "color",
   "button-outline": "color",
+  "selection-checked-border": "color",
   sidebar: "color",
   "sidebar-foreground": "color",
   "sidebar-accent": "color",
@@ -301,6 +303,7 @@ export const EXTERNAL_RESET_KEYS = [
   "border",
   "input",
   "button-outline",
+  "selection-checked-border",
   "radius",
   "radius-button",
   "radius-field",
@@ -342,12 +345,13 @@ export const MUST_OVERRIDE_EXTERNAL = [
 export const MUST_OVERRIDE_INTERNAL = ["brand", "brand-foreground"] as const;
 
 /**
- * What a dark palette keeps from the light composition: geometry, typography and the
- * outline Button's border color. That color is an alias, `var(--border)` or
- * `var(--foreground)`, so it follows the dark role it names.
+ * What a dark palette keeps from the light composition: geometry, typography, the outline
+ * Button's border color and a checked selection row's border color. Each color is an alias,
+ * such as `var(--border)` or `var(--foreground)`, so it follows the dark role it names.
  */
 const LIGHT_ONLY_KEYS: ReadonlySet<TokenName> = new Set([
   "button-outline",
+  "selection-checked-border",
   "radius",
   "radius-button",
   "radius-field",

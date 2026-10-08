@@ -242,6 +242,12 @@ export default function ThemingPage(): ReactElement {
         border casts.
       </p>
       <p>
+        A checked <code>RadioItem</code> or <code>CheckboxItem</code> row draws its border in{" "}
+        <code>--selection-checked-border</code>. Internal themes mark the checked row with{" "}
+        <code>var(--primary)</code>. External themes set it to <code>var(--border)</code>, so the row keeps
+        its resting border and the control alone shows the selection, as the external radio card does.
+      </p>
+      <p>
         The sidebar&apos;s brand pair, <code>--sidebar-brand</code> and{" "}
         <code>--sidebar-brand-foreground</code>, reaches 4.5:1 in every theme and color scheme. Where the
         brand color falls short on the sidebar, the theme steps its lightness away from the sidebar&apos;s

@@ -166,8 +166,10 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
  * zero inset paints whole.
  *
  * Vertical and default shells, in either group shape or outside any group, collapse
- * borders with `not-first:border-t-0`. A checked non-first shell then repaints its top border in
- * `primary` by pulling itself up one pixel
+ * borders with `not-first:border-t-0`. A checked shell paints its border in the theme's
+ * `--selection-checked-border`: `--primary` in internal themes, the resting `--border` in
+ * external ones, whose radio card shows the selection through its control alone. A checked
+ * non-first shell repaints its top border in that colour by pulling itself up one pixel
  * (`has-[[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px`)
  * instead of a z-index lift; `className` margin overrides can break that. Horizontal
  * item groups render individually rounded full-border cards with no vertical border
@@ -224,7 +226,7 @@ export function SelectionItemShell({
       data-selection-item=""
       className={cn(
         outlineItemClass,
-        "relative isolate box-border grid items-stretch gap-0 gap-x-2.5 bg-card px-4 py-0 transition-colors has-[[data-slot=selection-item-control]_[data-checked]]:border-primary has-[[data-slot=selection-item-control]_[data-checked]]:bg-muted",
+        "relative isolate box-border grid items-stretch gap-0 gap-x-2.5 bg-card px-4 py-0 transition-colors has-[[data-slot=selection-item-control]_[data-checked]]:border-selection-checked-border has-[[data-slot=selection-item-control]_[data-checked]]:bg-muted",
         controlAtEnd ? "grid-cols-[minmax(0,1fr)_auto]" : "grid-cols-[auto_minmax(0,1fr)]",
         connectedStack
           ? "rounded-none not-first:border-t-0 first:rounded-t-lg last:rounded-b-lg has-[[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px has-[[data-slot=selection-item-control]_[data-checked]]:not-first:border-t"

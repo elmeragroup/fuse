@@ -42,8 +42,9 @@ const SLUGS = [
 ] as const;
 
 // Counts the derived `secondary-hover` role, the `radius-step` rung spacing, the
-// `radius-field` field corner and the two outline Button roles.
-const TOKEN_COUNT = 82;
+// `radius-field` field corner, the two outline Button roles and the checked selection
+// row border.
+const TOKEN_COUNT = 83;
 
 // xs, sm, md, lg, xl and the unused popover rung.
 const RUNG_COUNT = 6;

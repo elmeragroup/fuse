@@ -10,11 +10,13 @@ export type ExternalBrandCode = Exclude<BrandCode, "fkab">;
  * `--radius` and `rounded-xl` 4px outside it. Field boxes leave that scale for the 4px corner
  * of the Central design system's text input, whatever the brand radius. The outline Button
  * draws the customer-facing reference's outline, a 2px ring in the text color, which every
- * brand shares. The internal variant keeps the default 0px step and the 1px `--border`
- * hairline.
+ * brand shares. A checked selection row keeps its resting `--border` edge, as the external
+ * radio card does, so its control alone shows the selection. The internal variant keeps the
+ * default 0px step, the 1px `--border` hairline and the `--primary` edge on a checked row.
  */
 export const EXTERNAL_VARIANT_LAYER = {
   "button-outline": "var(--foreground)",
+  "selection-checked-border": "var(--border)",
   "radius-field": "0.25rem",
   "radius-step": "2px",
   "button-outline-width": "2px",

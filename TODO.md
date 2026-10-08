@@ -28,6 +28,12 @@
   (`EXTERNAL_VARIANT_LAYER`). Also confirm the comfortable icon edge, three quarters of that
   inset (12px at `sm`, 24px at `md` and `lg`), and pick a comfortable `xs` inset and icon edge,
   which keep the 12px and 10px control values.
+- Confirm with design that external `CheckboxItem` rows follow the external radio card and keep
+  their resting border when checked. `--selection-checked-border` is `var(--border)` in
+  `EXTERNAL_VARIANT_LAYER` for both `RadioItem` and `CheckboxItem`. Ask too whether the external
+  look wants the checked `bg-muted` row tint at all, which measures 1.09:1 on `card` in light, and
+  whether `RadioIconButton` (`radio-group-variants.ts`), which still draws `border-primary` when
+  checked, should read the same role.
 - Ask design whether external themes keep the reference's 4px corner on the `Checkbox` and
   the standalone `Calendar` (`styles/corner-radius.ts`), or round them from the brand radius.
   Internal themes round them with `--radius`.

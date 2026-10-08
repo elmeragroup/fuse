@@ -598,10 +598,57 @@ describe("SelectionItem", () => {
     expect(checkboxNamed("Shell row", true).getAttribute("aria-checked")).toBe("true");
     await settled(shell);
     expect(getComputedStyle(shell).backgroundColor).toBe(tokenBackgroundColor(shell, "bg-muted"));
-    // The token itself: the standalone sheet emits no plain `border-primary` rule to probe.
+    // Internal themes keep the `--primary` edge through `--selection-checked-border`.
     expect(getComputedStyle(shell).borderTopColor).toBe(cssVarColor(shell, "--primary"));
     expect(getComputedStyle(shell).borderTopWidth).not.toBe("0px");
     expect(getComputedStyle(shell).marginTop).toBe("-1px");
+  });
+
+  it("keeps a checked row's resting border in an external theme, in light and dark", async () => {
+    renderThemed(
+      <>
+        <ThemeScope theme={fkasExternal}>
+          <RadioItemGroup label="Light plan" defaultValue="light-spot">
+            <RadioItem value="light-fixed">
+              <RowTitle>Light fixed</RowTitle>
+            </RadioItem>
+            <RadioItem value="light-spot">
+              <RowTitle>Light spot</RowTitle>
+            </RadioItem>
+          </RadioItemGroup>
+        </ThemeScope>
+        <div data-theme="dark">
+          <ThemeScope theme={fkasExternal}>
+            <RadioItemGroup label="Dark plan" defaultValue="dark-spot">
+              <RadioItem value="dark-fixed">
+                <RowTitle>Dark fixed</RowTitle>
+              </RadioItem>
+              <RadioItem value="dark-spot">
+                <RowTitle>Dark spot</RowTitle>
+              </RadioItem>
+            </RadioItemGroup>
+          </ThemeScope>
+        </div>
+      </>
+    );
+
+    for (const name of ["Light spot", "Dark spot"]) {
+      const shell = shellFrom(name);
+      await settled(shell);
+      // Oracle: the theme's own `--border`, read where the row sits. It must differ from
+      // `--primary`, or a primary edge would pass as the resting one.
+      const border = cssVarColor(shell, "--border");
+      expect(border, name).not.toBe(cssVarColor(shell, "--primary"));
+      // The checked non-first row still pulls its top edge over the row above's, so the
+      // shared edge is the checked row's own colour.
+      expect(getComputedStyle(shell).marginTop, name).toBe("-1px");
+      expect(getComputedStyle(shell).borderTopColor, name).toBe(border);
+      expect(getComputedStyle(shell).borderLeftColor, name).toBe(border);
+    }
+    // Light and dark resolve different borders, so the dark row read its own scheme.
+    expect(cssVarColor(shellFrom("Dark spot"), "--border")).not.toBe(
+      cssVarColor(shellFrom("Light spot"), "--border")
+    );
   });
 
   it("fills rows with the theme's card, like CheckboxCard, where the card and page background differ", async () => {

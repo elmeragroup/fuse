@@ -19,8 +19,9 @@ const ILLEGAL_SLUGS = [
 ] as const;
 
 // Counts the derived `secondary-hover` role, the `radius-step` rung spacing, the
-// `radius-field` field corner and the two outline Button roles.
-const ROLE_TOKEN_COUNT = 82;
+// `radius-field` field corner, the two outline Button roles and the checked selection
+// row border.
+const ROLE_TOKEN_COUNT = 83;
 
 function catalogTheme(slug: string): ThemeCatalogEntry {
   const theme = THEME_CATALOG.themes.find((entry) => entry.slug === slug);
