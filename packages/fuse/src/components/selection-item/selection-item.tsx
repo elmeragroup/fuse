@@ -227,8 +227,11 @@ export function SelectionItemShell({
   const spacer = <span aria-hidden />;
   // Separate child positions give each source its own key space; one merged array
   // would repeat the `.0` keys that the two `Children.toArray` calls assign independently.
+  // The band ignores pointers until a footer shows, so the cluster takes them back: content in
+  // a SubSection that `subSections` passes inside a wrapper stays clickable. A hidden footer
+  // turns them off for itself.
   const subCluster = (
-    <div className="min-w-0">
+    <div className="pointer-events-auto min-w-0">
       {passedSubSections}
       {directSubSections}
     </div>

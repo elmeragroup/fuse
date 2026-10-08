@@ -469,6 +469,29 @@ describe("SelectionItem", () => {
     }
   });
 
+  it("keeps a passed SubSection's button clickable when a wrapper element surrounds it", async () => {
+    renderThemed(
+      <Field.Root>
+        <SelectionItem.Shell
+          dataSlot="checkbox-item"
+          control={<Checkbox.Root />}
+          subSections={
+            <div>
+              <SelectionItem.SubSection>
+                <PressCounter />
+              </SelectionItem.SubSection>
+            </div>
+          }>
+          <RowTitle>Fixed price</RowTitle>
+        </SelectionItem.Shell>
+      </Field.Root>
+    );
+
+    await userEvent.click(roleNamed("button", "Pressed 0 times"));
+    expect(roleNamed("button", "Pressed 1 times")).toBeTruthy();
+    expect(checkboxNamed("Fixed price").getAttribute("aria-checked")).toBe("false");
+  });
+
   it("keeps a Fragment-wrapped SubSection inside the label", () => {
     renderThemed(
       <Field.Root>
