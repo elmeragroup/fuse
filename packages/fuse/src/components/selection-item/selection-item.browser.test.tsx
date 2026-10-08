@@ -458,6 +458,46 @@ describe("SelectionItem", () => {
       expect(checkboxNamed("Fixed price").getAttribute("aria-checked")).toBe("true");
     });
 
+    it("toggles while text outside the row stays selected", async () => {
+      renderThemed(
+        <>
+          <p>Compare the plans below.</p>
+          <SelectablePlan isSubSectionSelectable />
+        </>
+      );
+
+      const selection = window.getSelection();
+      selection?.selectAllChildren(textNamed("Compare the plans below."));
+      await userEvent.click(textNamed("Locked for twelve months."));
+      expect(checkboxNamed("Fixed price").getAttribute("aria-checked")).toBe("true");
+      selection?.removeAllRanges();
+    });
+
+    it("sends one click through the row and its ancestors per SubSection click", async () => {
+      const rowClicks: string[] = [];
+      const ancestorClicks: string[] = [];
+      renderThemed(
+        // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- counts bubbling clicks only
+        <div onClick={() => ancestorClicks.push("click")}>
+          <Field.Root>
+            <SelectionItem.Shell
+              dataSlot="checkbox-item"
+              control={<Checkbox.Root />}
+              isSubSectionSelectable
+              onClick={() => rowClicks.push("click")}>
+              <RowTitle>Fixed price</RowTitle>
+              <SelectionItem.SubSection>Locked for twelve months.</SelectionItem.SubSection>
+            </SelectionItem.Shell>
+          </Field.Root>
+        </div>
+      );
+
+      await userEvent.click(textNamed("Locked for twelve months."));
+      expect(checkboxNamed("Fixed price").getAttribute("aria-checked")).toBe("true");
+      expect(rowClicks).toEqual(["click"]);
+      expect(ancestorClicks).toEqual(["click"]);
+    });
+
     it("selects a RadioItem from its SubSection's text", async () => {
       renderThemed(
         <RadioItemGroup label="Plans">

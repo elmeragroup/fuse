@@ -46,7 +46,7 @@ const selectableBandClass = cn(
  * inside one of them, or inside an element that only takes focus, does not toggle the row.
  */
 const subSectionOwnClickSelector =
-  "a, button, input, select, textarea, label, summary, [contenteditable], [role=button], [role=link], [tabindex]";
+  "a, button, input, select, textarea, label, summary, audio[controls], video[controls], [contenteditable], [role=button], [role=link], [tabindex]";
 
 /**
  * What a shell sits in: `false` outside any selection group; otherwise the enclosing
@@ -205,7 +205,8 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
  * spans the shell's padding box, so a click anywhere across the label row toggles the
  * control at any inset. While a SubSection shows, it covers the label row only and the
  * sub-section band keeps its own clicks; while every SubSection is `mode="hidden"`, it
- * covers the whole row, bottom inset included. Nothing clips, so a focus ring at a zero
+ * covers the whole row, bottom inset included. With `isSubSectionSelectable` it always covers
+ * the whole row, and a click on the band's passive parts toggles the control. Nothing clips, so a focus ring at a zero
  * inset paints whole.
  *
  * Vertical and default shells, in either group shape or outside any group, collapse
@@ -228,7 +229,6 @@ export function SelectionItemShell({
   subSections: passedSubSections,
   isSubSectionSelectable = false,
   children,
-  onClick,
   ...props
 }: SelectionItemShellProps): ReactElement {
   const labelRef = useRef<HTMLLabelElement>(null);
@@ -256,7 +256,7 @@ export function SelectionItemShell({
   );
   const spacer = <span aria-hidden />;
   const selectFromSubSection = (event: BaseUIEvent<MouseEvent<HTMLDivElement>>) => {
-    onClick?.(event);
+    props.onClick?.(event);
     if (event.defaultPrevented || !(event.target instanceof Element)) {
       return;
     }
@@ -270,10 +270,16 @@ export function SelectionItemShell({
     if (ownClick && band.contains(ownClick)) {
       return;
     }
-    if (window.getSelection()?.isCollapsed === false) {
+    // A selection elsewhere outlives a click in a `select-none` card list, so only one that
+    // reaches into the band counts as the click that ended it.
+    const selection = window.getSelection();
+    const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+    if (range && !range.collapsed && range.intersectsNode(band)) {
       return;
     }
-    labelRef.current?.click();
+    // The label's control is the hidden input. Clicking it toggles without dispatching another
+    // click through the row, so ancestors and `onClick` see this one click only.
+    labelRef.current?.control?.click();
   };
   // Separate child positions give each source its own key space; one merged array
   // would repeat the `.0` keys that the two `Children.toArray` calls assign independently.
@@ -291,7 +297,7 @@ export function SelectionItemShell({
     <FieldItem
       {...(inItemGroup ? { role: "listitem" as const } : null)}
       {...props}
-      onClick={isSubSectionSelectable ? selectFromSubSection : onClick}
+      {...(isSubSectionSelectable ? { onClick: selectFromSubSection } : null)}
       data-slot={dataSlot}
       data-selection-item=""
       className={cn(
