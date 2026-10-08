@@ -28,6 +28,13 @@ export type RadioItemProps = {
    */
   className?: string;
   /**
+   * Lets a click on a SubSection's text, band or side padding toggle the control, while
+   * links, buttons, fields and other focusable elements in it keep their own clicks.
+   * Forwarded to `SelectionItem.Shell`; see it there. Leave it off when the SubSection
+   * reveals fields under the control. Default `false`.
+   */
+  isSubSectionSelectable?: boolean;
+  /**
    * Row children, partitioned by the row. Direct `RadioItem.SubSection` (the
    * same object as `SelectionItem.SubSection`) children render outside the label.
    */
@@ -45,6 +52,7 @@ export function RadioItem({
   isDisabled,
   controlPosition = "start",
   className,
+  isSubSectionSelectable,
   children,
 }: RadioItemProps): ReactElement {
   const { row, subSections } = partitionSubSections(children);
@@ -54,6 +62,7 @@ export function RadioItem({
       isDisabled={isDisabled}
       controlPosition={controlPosition}
       className={className}
+      isSubSectionSelectable={isSubSectionSelectable}
       control={<RadioGroupItem value={value} disabled={isDisabled} />}
       subSections={subSections}>
       {row}

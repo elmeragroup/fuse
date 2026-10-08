@@ -409,6 +409,15 @@
           "required": false
         },
         {
+          "name": "isSubSectionSelectable",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Lets a click on a SubSection's text, band or side padding toggle the control, while links, buttons, fields and other focusable elements in it keep their own clicks. Forwarded to `SelectionItem.Shell`; see it there. Leave it off when the SubSection reveals fields under the control. Default `false`.",
+          "required": false
+        },
+        {
           "name": "parent",
           "origin": "declared",
           "type": "boolean | undefined",

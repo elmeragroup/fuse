@@ -78,6 +78,15 @@
           "required": false
         },
         {
+          "name": "isSubSectionSelectable",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Lets a click on a SubSection's passive parts toggle the control: its text, the band around it and the side padding beside it. A click inside a link, button, form field, label or other focusable element in the SubSection stays that element's, and a click that ends a text selection does nothing. The control's accessible name stays the label row, and keyboard and assistive-technology users toggle through the control. Leave it off when the SubSection reveals fields under the control, so a click between those fields does not clear the choice. Default `false`.",
+          "required": false
+        },
+        {
           "name": "render",
           "origin": {
             "packageName": "@base-ui/react"

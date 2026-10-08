@@ -1,9 +1,10 @@
 "use client";
 
-import { Children, createContext, isValidElement, useContext, useMemo } from "react";
-import type { ComponentProps, ReactElement, ReactNode } from "react";
+import { Children, createContext, isValidElement, useContext, useMemo, useRef } from "react";
+import type { ComponentProps, MouseEvent, ReactElement, ReactNode } from "react";
 
 import { Field as FieldPrimitive } from "@base-ui/react/field";
+import type { BaseUIEvent } from "@base-ui/react/types";
 
 import { cn } from "../../styles/cn";
 import { disabledHatch } from "../../styles/utils";
@@ -21,17 +22,31 @@ const outlineItemClass = itemVariants({ variant: "outline" });
 // shell's padding box, so a row whose SubSections are all `mode="hidden"` toggles from its
 // bottom inset like a plain row: the sub-section band keeps that 14px inset and lets clicks
 // through to the target. Once the band holds a footer that shows, the target shrinks to the
-// label row and the band takes its own clicks again. Child combinators keep a selection row
-// nested in a SubSection from counting.
+// label row and the band takes its own clicks again, unless `isSubSectionSelectable` keeps the
+// whole box. Child combinators keep a selection row nested in a SubSection from counting.
 // Tailwind reads class names from the source text, so each selector is written out in full.
 const labelClass = cn(
-  "contents cursor-pointer before:absolute before:inset-0 before:-z-1 has-disabled:cursor-not-allowed",
+  "contents cursor-pointer before:absolute before:inset-0 before:-z-1 has-disabled:cursor-not-allowed"
+);
+const labelRowTargetClass = cn(
   "[[data-selection-item]:has(>[data-slot=selection-item-sub-sections]>div>[data-slot=item-footer]:not([data-mode=hidden]))>&]:before:row-[1/2]"
 );
 const subSectionBandClass = cn(
   "pointer-events-none col-span-full grid grid-cols-subgrid pb-3.5",
   "has-[>div>[data-slot=item-footer]:not([data-mode=hidden])]:pointer-events-auto"
 );
+// With `isSubSectionSelectable`, the band shows the label row's cursor, and the not-allowed one
+// while the control is disabled.
+const selectableBandClass = cn(
+  "cursor-pointer [[data-selection-item]:has(>label_:disabled)>&]:cursor-not-allowed"
+);
+
+/**
+ * Elements in a SubSection that keep their own clicks under `isSubSectionSelectable`. A click
+ * inside one of them, or inside an element that only takes focus, does not toggle the row.
+ */
+const subSectionOwnClickSelector =
+  "a, button, input, select, textarea, label, summary, [contenteditable], [role=button], [role=link], [tabindex]";
 
 /**
  * What a shell sits in: `false` outside any selection group; otherwise the enclosing
@@ -160,6 +175,16 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
    */
   subSections?: ReactNode;
   /**
+   * Lets a click on a SubSection's passive parts toggle the control: its text, the band
+   * around it and the side padding beside it. A click inside a link, button, form field,
+   * label or other focusable element in the SubSection stays that element's, and a click
+   * that ends a text selection does nothing. The control's accessible name stays the label
+   * row, and keyboard and assistive-technology users toggle through the control. Leave it
+   * off when the SubSection reveals fields under the control, so a click between those
+   * fields does not clear the choice. Default `false`.
+   */
+  isSubSectionSelectable?: boolean;
+  /**
    * Direct children are partitioned: `SelectionItem.SubSection` nodes render outside
    * the label so interactive content does not toggle the control. Everything else
    * renders in the label row. Wrapping a SubSection in a Fragment, another component,
@@ -201,9 +226,12 @@ export function SelectionItemShell({
   isDisabled,
   className,
   subSections: passedSubSections,
+  isSubSectionSelectable = false,
   children,
+  onClick,
   ...props
 }: SelectionItemShellProps): ReactElement {
+  const labelRef = useRef<HTMLLabelElement>(null);
   const groupLayout = useContext(SelectionItemGroupContext);
   const inItemGroup = groupLayout !== false && groupLayout.list;
   const connectedStack = groupLayout === false || groupLayout.orientation !== "horizontal";
@@ -227,6 +255,26 @@ export function SelectionItemShell({
     <div className={cn("flex min-w-0 items-start gap-2.5", rowCellClass)}>{rowChildren}</div>
   );
   const spacer = <span aria-hidden />;
+  const selectFromSubSection = (event: BaseUIEvent<MouseEvent<HTMLDivElement>>) => {
+    onClick?.(event);
+    if (event.defaultPrevented || !(event.target instanceof Element)) {
+      return;
+    }
+    // React bubbles clicks from portals and from rows nested in a SubSection; only a click
+    // in this row's own band toggles it.
+    const band = event.target.closest("[data-slot=selection-item-sub-sections]");
+    if (band?.parentElement !== event.currentTarget) {
+      return;
+    }
+    const ownClick = event.target.closest(subSectionOwnClickSelector);
+    if (ownClick && band.contains(ownClick)) {
+      return;
+    }
+    if (window.getSelection()?.isCollapsed === false) {
+      return;
+    }
+    labelRef.current?.click();
+  };
   // Separate child positions give each source its own key space; one merged array
   // would repeat the `.0` keys that the two `Children.toArray` calls assign independently.
   // The band ignores pointers until a footer shows, so the cluster takes them back: content in
@@ -243,6 +291,7 @@ export function SelectionItemShell({
     <FieldItem
       {...(inItemGroup ? { role: "listitem" as const } : null)}
       {...props}
+      onClick={isSubSectionSelectable ? selectFromSubSection : onClick}
       data-slot={dataSlot}
       data-selection-item=""
       className={cn(
@@ -255,7 +304,9 @@ export function SelectionItemShell({
         isDisabled ? cn("cursor-not-allowed bg-muted", disabledHatch) : null,
         className
       )}>
-      <FieldPrimitive.Label className={labelClass}>
+      <FieldPrimitive.Label
+        ref={labelRef}
+        className={cn(labelClass, isSubSectionSelectable ? null : labelRowTargetClass)}>
         {controlAtEnd ? (
           <>
             {rowCluster}
@@ -269,7 +320,9 @@ export function SelectionItemShell({
         )}
       </FieldPrimitive.Label>
       {hasSubSection ? (
-        <div data-slot="selection-item-sub-sections" className={subSectionBandClass}>
+        <div
+          data-slot="selection-item-sub-sections"
+          className={cn(subSectionBandClass, isSubSectionSelectable ? selectableBandClass : null)}>
           {controlAtEnd ? (
             <>
               {subCluster}
