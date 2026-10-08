@@ -139,6 +139,12 @@ export type PhoneNumberFieldProps = {
   "aria-labelledby"?: ComponentProps<"input">["aria-labelledby"];
   /** Description reference forwarded to the visible input when defined. */
   "aria-describedby"?: ComponentProps<"input">["aria-describedby"];
+  /**
+   * Marks the number input required for assistive technology only, forwarded when defined.
+   * It doesn't validate: an empty field still submits. Use `isRequired` for the native
+   * constraint, and this for a rule a schema can relax.
+   */
+  "aria-required"?: ComponentProps<"input">["aria-required"];
 };
 
 /**
@@ -173,6 +179,7 @@ export function PhoneNumberField({
   "aria-label": ariaLabel,
   "aria-labelledby": ariaLabelledby,
   "aria-describedby": ariaDescribedby,
+  "aria-required": ariaRequired,
   ...stateOptions
 }: PhoneNumberFieldProps): ReactElement {
   const numberInputRef = useRef<HTMLInputElement>(null);
@@ -200,6 +207,7 @@ export function PhoneNumberField({
     "aria-label": ariaLabel,
     "aria-labelledby": ariaLabelledby,
     "aria-describedby": ariaDescribedby,
+    "aria-required": ariaRequired,
   };
 
   // Every native edit path honors both flags together.

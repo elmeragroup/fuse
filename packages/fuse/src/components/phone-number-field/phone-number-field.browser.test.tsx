@@ -267,6 +267,26 @@ describe("PhoneNumberField", () => {
     expect(formNamed("Phone form").checkValidity()).toBe(true);
   });
 
+  it("forwards aria-required to the number input alone without adding a native constraint", async () => {
+    renderField(
+      <form aria-label="Phone form">
+        <PhoneNumberField label="Mobile" name="phone" aria-required />
+      </form>
+    );
+    const input = textboxNamed("Mobile");
+    expect(input.getAttribute("aria-required")).toBe("true");
+    expect(input).toHaveProperty("required", false);
+    expect(input).toHaveProperty("validity.valueMissing", false);
+    expect(formNamed("Phone form").checkValidity()).toBe(true);
+    expect(roleNamed("button", "Select country").hasAttribute("aria-required")).toBe(false);
+    // DOM audit: the submit and country inputs are type=hidden or visually hidden, so they have no role.
+    const otherInputs = [...document.body.querySelectorAll("input")].filter((element) => element !== input);
+    expect(otherInputs.length).toBeGreaterThan(0);
+    expect(otherInputs.filter((element) => element.hasAttribute("aria-required"))).toEqual([]);
+    await openPicker();
+    expect(countrySearch().hasAttribute("aria-required")).toBe(false);
+  });
+
   it("submits no display-value key when name is unset", async () => {
     renderField(
       <form aria-label="Phone form">
