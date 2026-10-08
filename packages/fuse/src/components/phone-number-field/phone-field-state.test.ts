@@ -98,6 +98,142 @@ describe("reconcile", () => {
     expect(next.accepted.values).toEqual({ displayValue: "070-123 45 67", outputValue: "+46701234567" });
   });
 
+  it("keeps a number's identity when the picker countries drop its country", () => {
+    const before = configure(defaultMetadata, { countries: getCountries(defaultMetadata, ["NO", "SE"]) });
+    const stored: PhoneState = {
+      configuration: before,
+      value: undefined,
+      accepted: receiveValue("+46701234567", resolveSelectedCountry(before.countries, "NO"), before),
+      proposal: null,
+    };
+    expect(stored.accepted.country.code).toBe("SE");
+    const next = reconcile(
+      stored,
+      undefined,
+      configure(defaultMetadata, { countries: getCountries(defaultMetadata, ["NO"]) })
+    );
+    expect(next.accepted.country.code).toBe("NO");
+    expect(next.accepted.values).toEqual({ displayValue: "+46701234567", outputValue: "+46701234567" });
+  });
+
+  it.each([
+    ["gains", ["NO", "SE", "FI"]],
+    ["loses", ["SE"]],
+  ] as const)("keeps national drafts as typed when the picker %s other countries", (_change, after) => {
+    const before = configure(defaultMetadata, { countries: getCountries(defaultMetadata, ["NO", "SE"]) });
+    const sweden = resolveSelectedCountry(before.countries, "SE");
+    const next = configure(defaultMetadata, { countries: getCountries(defaultMetadata, after) });
+    const typed: PhoneState = {
+      configuration: before,
+      value: undefined,
+      accepted: snapshot({ digits: "0701234567", country: sweden }, before),
+      proposal: null,
+    };
+    // A catalog replacement would re-read it through its E.164 form as "701234567".
+    expect(reconcile(typed, undefined, next).accepted.digits).toBe("0701234567");
+    // A controlled draft too short to submit: the parent holds "", and the draft stays shown.
+    const partial = snapshot({ digits: "0", country: sweden }, before);
+    expect(partial.values.outputValue).toBe("");
+    const draft: PhoneState = { configuration: before, value: "", accepted: partial, proposal: null };
+    expect(reconcile(draft, "", next).accepted.values.displayValue).toBe("0");
+  });
+
+  it.each([
+    // Anguilla dials seven-digit local numbers, which take its 264 area code.
+    ["AI", "2351234", "+12642351234"],
+    // Kazakhstan's trunk prefix is 8.
+    ["KZ", "87011234567", "+77011234567"],
+  ] as const)(
+    "re-reads a %s draft by its own rules when its country leaves the picker",
+    (code, digits, e164) => {
+      const before = configure(defaultMetadata, { countries: getCountries(defaultMetadata, [code, "NO"]) });
+      const stored: PhoneState = {
+        configuration: before,
+        value: undefined,
+        accepted: snapshot({ digits, country: resolveSelectedCountry(before.countries, code) }, before),
+        proposal: null,
+      };
+      expect(stored.accepted.values.outputValue).toBe(e164);
+      const next = reconcile(
+        stored,
+        undefined,
+        configure(defaultMetadata, { countries: getCountries(defaultMetadata, ["NO"]) })
+      );
+      expect(next.accepted.country.code).toBe("NO");
+      expect(next.accepted.values).toEqual({ displayValue: e164, outputValue: e164 });
+    }
+  );
+
+  it.each([
+    // The national format names no country, but the number still yields the parent's value.
+    ["national", "070-123 45 67", { displayValue: "+46701234567", outputValue: "070-123 45 67" }, "NO"],
+    // Raw digits name no country, so they read again as themselves in the one that remains.
+    ["raw", "0701234567", { displayValue: "0701234567", outputValue: "0701234567" }, "NO"],
+  ] as const)(
+    "keeps a controlled %s value the parent kept when its country leaves the picker",
+    (outputFormat, value, values, country) => {
+      const before = configure(defaultMetadata, {
+        outputFormat,
+        countries: getCountries(defaultMetadata, ["SE", "NO"]),
+      });
+      const sweden = resolveSelectedCountry(before.countries, "SE");
+      const accepted = snapshot({ digits: "0701234567", country: sweden }, before);
+      expect(accepted.values.outputValue).toBe(value);
+      const next = reconcile(
+        { configuration: before, value, accepted, proposal: null },
+        value,
+        configure(defaultMetadata, { outputFormat, countries: getCountries(defaultMetadata, ["NO"]) })
+      );
+      expect(next.accepted.country.code).toBe(country);
+      expect(next.accepted.values).toEqual(values);
+    }
+  );
+
+  it.each([
+    ["e164", "+46701234567"],
+    ["international", "+46 70 123 45 67"],
+    ["national", "070-123 45 67"],
+  ] as const)(
+    "keeps a controlled number the parent gave in another form when its country leaves the picker, %s",
+    (outputFormat, submits) => {
+      const before = configure(defaultMetadata, {
+        outputFormat,
+        countries: getCountries(defaultMetadata, ["SE", "NO"]),
+      });
+      const sweden = resolveSelectedCountry(before.countries, "SE");
+      const value = "0701234567";
+      const stored: PhoneState = {
+        configuration: before,
+        value,
+        accepted: receiveValue(value, sweden, before),
+        proposal: null,
+      };
+      expect(stored.accepted.values.outputValue).toBe(submits);
+      const next = reconcile(
+        stored,
+        value,
+        configure(defaultMetadata, { outputFormat, countries: getCountries(defaultMetadata, ["NO"]) })
+      );
+      expect(next.accepted.values.outputValue).toBe(submits);
+    }
+  );
+
+  it("empties a draft that holds no number yet when its country leaves the picker", () => {
+    const before = configure(defaultMetadata, { countries: getCountries(defaultMetadata, ["SE", "NO"]) });
+    const stored: PhoneState = {
+      configuration: before,
+      value: undefined,
+      accepted: snapshot({ digits: "0", country: resolveSelectedCountry(before.countries, "SE") }, before),
+      proposal: null,
+    };
+    const next = reconcile(
+      stored,
+      undefined,
+      configure(defaultMetadata, { countries: getCountries(defaultMetadata, ["NO"]) })
+    );
+    expect(next.accepted.values).toEqual({ displayValue: "", outputValue: "" });
+  });
+
   it("re-reads authoritative controlled raw digits under a replaced catalog", () => {
     const before = configure(defaultMetadata, { outputFormat: "raw" });
     const stored = stateWith(before, "41234567", "");

@@ -69,13 +69,31 @@ export type PhoneNumberFieldProps = {
    */
   onChange?: (value: string) => void;
   /**
-   * Initial country. Must be a libphonenumber country with a packaged flag asset.
-   * Untyped unresolved values fall back to `NO`, then the first picker country.
+   * Initial country. Must be a libphonenumber country with a packaged flag asset. A code the
+   * picker does not offer (outside `countries`, excluded, or untyped) falls back to `NO` when
+   * offered, else the first offered country in catalog order.
    * @default "NO"
    */
   defaultCountryCode?: Extract<CountryCode, FlagAssetCode>;
-  /** Custom/trimmed metadata. Replacement reconciles the picker while preserving existing international identity. */
+  /**
+   * Custom/trimmed metadata. Replacement reconciles the picker while preserving existing
+   * international identity. To limit the picker, pass `countries` instead: trimmed metadata can
+   * no longer parse the numbers it leaves out.
+   */
   metadata?: MetadataJson;
+  /**
+   * The countries the picker offers, as ISO codes. The metadata still parses every number:
+   * detection only selects a listed country, so a number from another one stays in
+   * international form beside the selected country, as with trimmed metadata. With one
+   * country the field shows its flag and dial code as plain context instead of a picker.
+   * Codes outside the catalog, without a packaged flag or in the product exclusions are
+   * ignored, and a list that leaves no country throws. A change that drops the selected
+   * country keeps the shown number's international identity, except a controlled `raw` value,
+   * which names no country and reads again in the one that remains. The rows sort by name
+   * whatever the list's order.
+   * @default every country in the catalog
+   */
+  countries?: readonly Extract<CountryCode, FlagAssetCode>[];
   /**
    * Detect country from a `+`/`00` prefix while typing or pasting.
    * @default true
@@ -302,6 +320,19 @@ export function PhoneNumberField({
     }
   });
 
+  // The flag and dial code: the picker trigger's face, or the plain context of one country.
+  const countryFace = (
+    <div className="flex items-center gap-1">
+      <Flag country={phone.selectedCountry.code} />
+      {/* The input's font size, touch floor included, so both runs of digits have one size.
+          Leading is `normal` because a text input centres its text on the font's normal
+          metrics whatever its line-height; the dial code centres the same way. */}
+      <span className={cn(controlMd.entryType(), "font-medium min-w-6 leading-[normal] tabular-nums")}>
+        {phone.selectedCountry.dialCode}
+      </span>
+    </div>
+  );
+
   return (
     <>
       <FieldFrame
@@ -312,115 +343,122 @@ export function PhoneNumberField({
         description={description}
         errorMessage={errorMessage}>
         <InputGroupRoot ref={inputGroupRef} aria-invalid={isInvalid || undefined}>
-          <ComboboxPrimitive.Root
-            items={pickerCountries}
-            value={phone.selectedCountry}
-            onValueChange={(next) => {
-              if (!isEditable) return;
-              phone.selectCountry(next?.code);
-              requestAnimationFrame(() => numberInputRef.current?.focus());
-            }}
-            itemToStringLabel={(country) =>
-              countryPickerOpenRef.current ? phone.getCountryName(country.code) : country.code
-            }
-            itemToStringValue={(country) => country.code}
-            isItemEqualToValue={(left, right) => left.code === right.code}
-            onOpenChange={(open) => {
-              // Only latch open. Base UI still filters with itemToStringLabel through
-              // the exit transition; flipping this back to false here would switch
-              // labels from names to ISO codes and flash the empty state.
-              if (open) {
-                // Base UI calls this before it commits `open`, and finds the selected row's
-                // index only while the popup is closed. The sorted rows commit first, in their
-                // own render, so the popup opens highlighting the selected country rather than
-                // whichever took its old index. On the first open the labels switch to names
-                // only after that render: switching them in it too loses the highlight.
-                if (rowOrderLocale !== locale) {
-                  flushSync(() => setRowOrderLocale(locale));
-                }
-                countryPickerOpenRef.current = true;
-              }
-            }}
-            disabled={isDisabled}
-            readOnly={isReadOnly}
-            autoComplete={autoComplete}
-            // Detach the country Combobox from the host form so base-ui's own hidden
-            // country input never reaches FormData beside `${name}` and
-            // `${name}-display-value`. The id names no rendered form on purpose
-            form="fuse-phone-country-unbound"
-            locale={locale}>
+          {phone.countries.length === 1 ? (
             <InputGroupAddon className="text-foreground" align="inline-start">
-              {/* role="button" overrides Base UI's default role="combobox" so the trigger keeps the
-                  getByRole("button", {name}) contract the browser tests freeze; an empty aria-labelledby
-                  overrides the surrounding Field's label, so aria-label wins.
-                  Don't "simplify" either without updating the browser tests.
-                  The min height is 1.5rem, floored at the fixed 24px target for a host root below 16px.
-                  The trigger renders a <button>, so the inline addon drops its block padding and the
-                  trigger fits the field's fixed md box at both densities. */}
-              <ComboboxPrimitive.Trigger
-                role="button"
-                aria-label={resolvedSelectCountryLabel}
-                aria-labelledby=""
-                className={cn(
-                  selfFocusRingClass,
-                  fieldFlushCornerClass,
-                  "flex min-h-[max(1.5rem,24px)] shrink-0 items-center px-1 transition-[color,background-color,scale] duration-150",
-                  isEditable
-                    ? "cursor-pointer hover:bg-muted active:scale-[0.97] data-pressed:bg-muted"
-                    : "cursor-default"
-                )}>
-                <div className="flex items-center gap-1">
-                  <Flag country={phone.selectedCountry.code} />
-                  {/* The input's font size, touch floor included, so both runs of digits have one size.
-                      Leading is `normal` because a text input centres its text on the font's normal
-                      metrics whatever its line-height; the dial code centres the same way. */}
-                  <span
-                    className={cn(
-                      controlMd.entryType(),
-                      "font-medium min-w-6 leading-[normal] tabular-nums"
-                    )}>
-                    {phone.selectedCountry.dialCode}
-                  </span>
-                </div>
-              </ComboboxPrimitive.Trigger>
+              {/* One country leaves nothing to pick, so its flag and dial code are context: no
+                  trigger, popup or tab stop, and a click focuses the number input, as on any
+                  addon. The name tells assistive technology which country the code belongs to. */}
+              {/* The addon keeps its block padding and inline inset for a non-button child, so
+                  only a trailing gap here puts the flag where the trigger's sits. The server's
+                  Intl data can name a country differently from the browser's (Hong Kong), so the
+                  name may keep the server's text through hydration. */}
+              <div className="flex shrink-0 items-center pr-1">
+                <span className="sr-only" suppressHydrationWarning>
+                  {phone.getCountryName(phone.selectedCountry.code)}
+                </span>
+                {countryFace}
+              </div>
             </InputGroupAddon>
-            <ComboboxContent
-              anchor={inputGroupRef}
-              container={container}
-              aria-label={resolvedSelectCountryLabel}>
-              <InputGroupRoot>
-                <InputGroupAddon align="inline-start">
-                  <MagnifyingGlass className="size-4 text-muted-foreground" />
-                </InputGroupAddon>
-                <ComboboxPrimitive.Input
-                  render={<InputGroupInput />}
-                  aria-label={resolvedSearchCountriesLabel}
-                  // Field.Label labelledby would win over aria-label. An empty list overrides
-                  // it on this input and on the Input it renders, so the search keeps
-                  // dictionary `searchCountries`.
+          ) : (
+            <ComboboxPrimitive.Root
+              items={pickerCountries}
+              value={phone.selectedCountry}
+              onValueChange={(next) => {
+                if (!isEditable) return;
+                phone.selectCountry(next?.code);
+                requestAnimationFrame(() => numberInputRef.current?.focus());
+              }}
+              itemToStringLabel={(country) =>
+                countryPickerOpenRef.current ? phone.getCountryName(country.code) : country.code
+              }
+              itemToStringValue={(country) => country.code}
+              isItemEqualToValue={(left, right) => left.code === right.code}
+              onOpenChange={(open) => {
+                // Only latch open. Base UI still filters with itemToStringLabel through
+                // the exit transition; flipping this back to false here would switch
+                // labels from names to ISO codes and flash the empty state.
+                if (open) {
+                  // Base UI calls this before it commits `open`, and finds the selected row's
+                  // index only while the popup is closed. The sorted rows commit first, in their
+                  // own render, so the popup opens highlighting the selected country rather than
+                  // whichever took its old index. On the first open the labels switch to names
+                  // only after that render: switching them in it too loses the highlight.
+                  if (rowOrderLocale !== locale) {
+                    flushSync(() => setRowOrderLocale(locale));
+                  }
+                  countryPickerOpenRef.current = true;
+                }
+              }}
+              disabled={isDisabled}
+              readOnly={isReadOnly}
+              autoComplete={autoComplete}
+              // Detach the country Combobox from the host form so base-ui's own hidden
+              // country input never reaches FormData beside `${name}` and
+              // `${name}-display-value`. The id names no rendered form on purpose
+              form="fuse-phone-country-unbound"
+              locale={locale}>
+              <InputGroupAddon className="text-foreground" align="inline-start">
+                {/* role="button" overrides Base UI's default role="combobox" so the trigger keeps the
+                    getByRole("button", {name}) contract the browser tests freeze; an empty aria-labelledby
+                    overrides the surrounding Field's label, so aria-label wins.
+                    Don't "simplify" either without updating the browser tests.
+                    The min height is 1.5rem, floored at the fixed 24px target for a host root below 16px.
+                    The trigger renders a <button>, so the inline addon drops its block padding and the
+                    trigger fits the field's fixed md box at both densities. */}
+                <ComboboxPrimitive.Trigger
+                  role="button"
+                  aria-label={resolvedSelectCountryLabel}
                   aria-labelledby=""
-                  autoComplete="one-time-code"
-                  // An empty name keeps the search box out of autofill heuristics and
-                  // out of any FormData: a nameless control is never submitted
-                  name=""
-                  aria-autocomplete="none"
-                  aria-haspopup="false"
-                />
-              </InputGroupRoot>
-              <ComboboxEmpty>{resolvedNoCountriesFoundText}</ComboboxEmpty>
-              <ComboboxList>
-                {(country: PhoneNumberCountry) => (
-                  <ComboboxItem key={country.code} value={country}>
-                    <Flag country={country.code} />
-                    <span className="text-sm leading-tight tabular-nums">{country.dialCode}</span>
-                    <span className="text-sm leading-tight max-w-32 truncate text-ellipsis">
-                      {phone.getCountryName(country.code)}
-                    </span>
-                  </ComboboxItem>
-                )}
-              </ComboboxList>
-            </ComboboxContent>
-          </ComboboxPrimitive.Root>
+                  className={cn(
+                    selfFocusRingClass,
+                    fieldFlushCornerClass,
+                    // No UA button border or fill in a preflight-free host.
+                    "flex min-h-[max(1.5rem,24px)] shrink-0 items-center border-0 bg-transparent px-1 transition-[color,background-color,scale] duration-150",
+                    isEditable
+                      ? "cursor-pointer hover:bg-muted active:scale-[0.97] data-pressed:bg-muted"
+                      : "cursor-default"
+                  )}>
+                  {countryFace}
+                </ComboboxPrimitive.Trigger>
+              </InputGroupAddon>
+              <ComboboxContent
+                anchor={inputGroupRef}
+                container={container}
+                aria-label={resolvedSelectCountryLabel}>
+                <InputGroupRoot>
+                  <InputGroupAddon align="inline-start">
+                    <MagnifyingGlass className="size-4 text-muted-foreground" />
+                  </InputGroupAddon>
+                  <ComboboxPrimitive.Input
+                    render={<InputGroupInput />}
+                    aria-label={resolvedSearchCountriesLabel}
+                    // Field.Label labelledby would win over aria-label. An empty list overrides
+                    // it on this input and on the Input it renders, so the search keeps
+                    // dictionary `searchCountries`.
+                    aria-labelledby=""
+                    autoComplete="one-time-code"
+                    // An empty name keeps the search box out of autofill heuristics and
+                    // out of any FormData: a nameless control is never submitted
+                    name=""
+                    aria-autocomplete="none"
+                    aria-haspopup="false"
+                  />
+                </InputGroupRoot>
+                <ComboboxEmpty>{resolvedNoCountriesFoundText}</ComboboxEmpty>
+                <ComboboxList>
+                  {(country: PhoneNumberCountry) => (
+                    <ComboboxItem key={country.code} value={country}>
+                      <Flag country={country.code} />
+                      <span className="text-sm leading-tight tabular-nums">{country.dialCode}</span>
+                      <span className="text-sm leading-tight max-w-32 truncate text-ellipsis">
+                        {phone.getCountryName(country.code)}
+                      </span>
+                    </ComboboxItem>
+                  )}
+                </ComboboxList>
+              </ComboboxContent>
+            </ComboboxPrimitive.Root>
+          )}
           <InputGroupInput
             ref={numberInputRef}
             readOnly={isReadOnly}

@@ -43,6 +43,10 @@ test("PhoneNumberFieldProps is the closed composite face", () => {
   expectTypeOf<PhoneNumberFieldProps>().not.toHaveProperty("disabled");
   expectTypeOf<PhoneNumberFieldProps>().not.toHaveProperty("readOnly");
   type DefaultCountryCode = NonNullable<PhoneNumberFieldProps["defaultCountryCode"]>;
+  // The picker list takes the same codes as the default country.
+  expectTypeOf<NonNullable<PhoneNumberFieldProps["countries"]>>().toEqualTypeOf<
+    readonly DefaultCountryCode[]
+  >();
   expectTypeOf<"NO" | "SE" | "FI">().toExtend<DefaultCountryCode>();
   // AC, BQ, EH and TA have no packaged flag asset.
   expectTypeOf<"AC">().not.toExtend<DefaultCountryCode>();

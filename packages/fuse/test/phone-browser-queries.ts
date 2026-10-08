@@ -62,3 +62,16 @@ export async function selectCountry(
     expect(page.getByRole("listbox").query()).toBeNull();
   });
 }
+
+/**
+ * The field's country addon: the rail of the picker trigger, or the flag and dial code a
+ * single-country field shows as plain context. Its text holds the dial code either way.
+ */
+export function countryAddon(name = "Mobile"): HTMLElement {
+  // DOM audit: the addon is an unnamed group inside the input group around the number input.
+  const addon = phoneInput(name).closest('[role="group"]')?.querySelector("[data-slot=input-group-addon]");
+  if (!(addon instanceof HTMLElement)) {
+    throw new Error(`expected the country addon of ${name}`);
+  }
+  return addon;
+}

@@ -61,7 +61,7 @@ const E164_NOISE_REGEX = /[^\d+]/g;
 const NON_DIGIT_REGEX = /\D/g;
 
 const EMPTY_PICKER_ERROR =
-  "PhoneNumberField: no picker countries remain after intersecting libphonenumber metadata with packaged flag assets and the product exclusion set.";
+  "PhoneNumberField: no picker countries remain after intersecting libphonenumber metadata with packaged flag assets, the product exclusion set and the countries prop.";
 
 export type PhoneCountryCode = Extract<CountryCode, FlagAssetCode>;
 
@@ -86,9 +86,20 @@ function createCountry(country: PhoneCountryCode, metadata: MetadataJson = metad
   };
 }
 
-export function getCountries(metadata: MetadataJson = metadataJson): PhoneNumberCountry[] {
+/**
+ * The picker countries: the catalog's, in its order, less the product exclusions and the
+ * codes without a packaged flag, and, given an allow list, only the ones it names.
+ */
+export function getCountries(
+  metadata: MetadataJson = metadataJson,
+  allowed?: readonly string[]
+): PhoneNumberCountry[] {
   return getMetadataCountries(metadata).reduce<PhoneNumberCountry[]>((acc, country) => {
-    if (PRODUCT_EXCLUDED_COUNTRY_CODES.has(country) || !isPhoneCountryCode(country)) {
+    if (
+      PRODUCT_EXCLUDED_COUNTRY_CODES.has(country) ||
+      !isPhoneCountryCode(country) ||
+      (allowed !== undefined && !allowed.includes(country))
+    ) {
       return acc;
     }
     acc.push(createCountry(country, metadata));
@@ -149,9 +160,24 @@ function hasInternationalDigits(digits: string): boolean {
   return digits.startsWith(INTERNATIONAL_PREFIX);
 }
 
-/** The full international form of a snapshot, used to re-read it under another catalog. */
-export function toInternationalInput({ digits, country }: ProcessedPhoneInput): string {
-  return !digits || hasInternationalDigits(digits) ? digits : country.dialCode + digits;
+/**
+ * The full international form of a snapshot, used to re-read it under another catalog. A
+ * national draft reads under the metadata it was entered with, so its own trunk prefix and
+ * local-dialling rules apply (Kazakhstan's 8, Anguilla's seven-digit numbers). A draft that
+ * holds no number yet, such as a lone trunk 0, reads as empty, as it submits; digits that are
+ * already a national number follow the calling code.
+ */
+export function toInternationalInput(
+  { digits, country, parsedNational }: ProcessedPhoneInput,
+  metadata: MetadataJson
+): string {
+  if (!digits || hasInternationalDigits(digits)) {
+    return digits;
+  }
+  if (parsedNational) {
+    return country.dialCode + digits;
+  }
+  return parsePhoneInput(digits, country.code, metadata).phoneNumber?.number ?? "";
 }
 
 function toE164Digits(digits: string): string {

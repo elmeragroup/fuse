@@ -60,6 +60,23 @@ describe("phone-number-field picker set", () => {
     expect(() => requirePickerCountries([])).toThrow(EMPTY_PICKER_ERROR_MESSAGE);
   });
 
+  it("narrows the picker to an allow list, in catalog order, without codes it cannot offer", () => {
+    // RU is a product exclusion, AC has no packaged flag, XX is no country.
+    expect(getCountries(defaultMetadata, ["SE", "NO", "RU", "AC", "XX"]).map((row) => row.code)).toEqual([
+      "NO",
+      "SE",
+    ]);
+  });
+
+  it("throws when the allow list leaves no picker country", () => {
+    expect(() => requirePickerCountries(getCountries(defaultMetadata, ["RU", "AC"]))).toThrow(
+      EMPTY_PICKER_ERROR_MESSAGE
+    );
+    expect(() => requirePickerCountries(getCountries(defaultMetadata, []))).toThrow(
+      EMPTY_PICKER_ERROR_MESSAGE
+    );
+  });
+
   it("falls back from an unresolved default to NO, then the first picker country", () => {
     const countries = getCountries();
     const norway = countries.find((country) => country.code === "NO");

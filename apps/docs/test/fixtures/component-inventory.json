@@ -381,6 +381,7 @@
       "phone-number-field-basic.tsx",
       "phone-number-field-international.tsx",
       "phone-number-field-detect.tsx",
+      "phone-number-field-countries.tsx",
       "phone-number-field-form.tsx",
       "phone-number-field-i18n.tsx",
       "phone-number-field-states.tsx"

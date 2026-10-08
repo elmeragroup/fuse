@@ -42,4 +42,4 @@ export const FLAG_GAP_COUNTRY_CODES = ["AC", "BQ", "EH", "TA"] as const;
 
 /** The configuration error the hook throws when filtering leaves no picker country. */
 export const EMPTY_PICKER_ERROR_MESSAGE =
-  "PhoneNumberField: no picker countries remain after intersecting libphonenumber metadata with packaged flag assets and the product exclusion set.";
+  "PhoneNumberField: no picker countries remain after intersecting libphonenumber metadata with packaged flag assets, the product exclusion set and the countries prop.";

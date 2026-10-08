@@ -4,13 +4,14 @@ import type { MetadataJson } from "libphonenumber-js/core";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import { userEvent } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
 
 import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
 
 import { withLocale } from "../../../test/locale-matrix";
-import { phoneForm, phoneInput, phoneSubmission } from "../../../test/phone-browser-queries";
+import { countryAddon, phoneForm, phoneInput, phoneSubmission } from "../../../test/phone-browser-queries";
 import { renderThemed as render, roleNamed } from "../../../test/themed-browser-render";
+import { resetCountryNameCache } from "./country-names";
 import { defaultMetadata } from "./phone-engine";
 
 const swedishMetadata: MetadataJson = {
@@ -183,7 +184,9 @@ describe("PhoneNumberField identity and authoritative value", () => {
     rerender(withLocale("en-US", <Parent metadata={swedishMetadata} />));
     expect(phoneInput().value).toBe("+4741234567");
     expect(phoneSubmission().get("phone")).toBe("+4741234567");
-    expect(roleNamed("button", "Select country").textContent).toContain("+46");
+    // One country left by the metadata alone shows as context, without a picker.
+    expect(page.getByRole("button", { name: "Select country" }).query()).toBeNull();
+    expect(countryAddon().textContent).toBe("Sweden+46");
     await userEvent.fill(phoneInput(), "701234567");
     expect(phoneInput().value).toBe("701234567");
     expect(phoneSubmission().get("phone")).toBe("+46701234567");
@@ -201,7 +204,7 @@ describe("PhoneNumberField identity and authoritative value", () => {
     const { rerender } = render(field(defaultMetadata));
     if (existing) await userEvent.fill(phoneInput(), "41234567");
     rerender(field(swedishMetadata));
-    expect(roleNamed("button", "Select country").textContent).toContain("+46");
+    expect(countryAddon().textContent).toContain("+46");
     // Metadata replacement keeps existing international identity, even if the catalog cannot parse it.
     expect(phoneInput().value).toBe(existing ? "+4741234567" : "");
     expect(phoneSubmission().get("phone")).toBe(existing ? "+4741234567" : "");
@@ -320,6 +323,46 @@ describe("PhoneNumberField identity and authoritative value", () => {
       await userEvent.keyboard("8");
       expect(input.value).toBe("912345678");
       expect(new FormData(form).get("phone")).toBe("+47912345678");
+      expect(recover).not.toHaveBeenCalled();
+    } finally {
+      root?.unmount();
+      host.remove();
+    }
+  });
+});
+
+describe("PhoneNumberField single-country hydration", () => {
+  it("hydrates a country the server names differently, keeping a number typed before it", async () => {
+    const hydrated = vi.fn<() => void>();
+    function HydrationWitness() {
+      useEffect(() => hydrated(), []);
+      return (
+        <form aria-label="SSR phone">
+          <PhoneNumberField label="Server mobile" name="phone" countries={["SE"]} />
+        </form>
+      );
+    }
+    const element = withLocale("en-US", <HydrationWitness />);
+    // The server's Intl data can name a country differently from the browser's.
+    resetCountryNameCache();
+    const of = vi.spyOn(Intl.DisplayNames.prototype, "of").mockReturnValue("Server Sweden");
+    const host = document.createElement("div");
+    try {
+      host.innerHTML = renderToString(element);
+    } finally {
+      of.mockRestore();
+      resetCountryNameCache();
+    }
+    document.body.append(host);
+    const recover = vi.fn();
+    let root: ReturnType<typeof hydrateRoot> | undefined;
+    try {
+      // One country renders no trigger, so the label names the number input already.
+      phoneInput("Server mobile").value = "701234567";
+      root = hydrateRoot(host, element, { onRecoverableError: recover });
+      await expect.poll(() => hydrated.mock.calls.length).toBe(1);
+      await expect.poll(() => phoneSubmission("SSR phone").get("phone")).toBe("+46701234567");
+      expect(phoneInput("Server mobile").value).toBe("701234567");
       expect(recover).not.toHaveBeenCalled();
     } finally {
       root?.unmount();
