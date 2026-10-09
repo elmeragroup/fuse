@@ -205,6 +205,16 @@ describe("SelectField", () => {
     expect(data.getAll("plan")).toEqual(data.getAll("handPlan"));
   });
 
+  it("submits with the form its form prop names, as Select.Root does", () => {
+    renderThemed(
+      <>
+        <form id="order" aria-label="Order" />
+        <Plan form="order" defaultValue="pro" />
+      </>
+    );
+    expect(new FormData(formNamed("Order")).getAll("plan")).toEqual(["pro"]);
+  });
+
   it("forwards the ref and the remaining props to the trigger", () => {
     const ref = createRef<HTMLButtonElement>();
     renderThemed(

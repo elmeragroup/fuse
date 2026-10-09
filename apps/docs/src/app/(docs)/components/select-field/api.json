@@ -10,7 +10,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 281,
+      "forwardedCount": 280,
       "props": [
         {
           "name": "children",
@@ -55,6 +55,15 @@
           "shortType": null,
           "defaultValue": null,
           "description": "Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the field shows its own validation error instead, such as an error `Form` holds under its `name` or the required message.",
+          "required": false
+        },
+        {
+          "name": "form",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The `id` of the form the selection submits with, forwarded to `Select.Root`.",
           "required": false
         },
         {
