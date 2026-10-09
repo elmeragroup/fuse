@@ -7,7 +7,7 @@ import { userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { render } from "../../../test/browser-render";
-import { DENSITIES, edgeInset } from "../../../test/inner-corner-specimens";
+import { edgeInset } from "../../../test/inner-corner-specimens";
 import { fkasPrivate } from "../../../test/theme-fixtures";
 import {
   roleNamed,
@@ -15,6 +15,7 @@ import {
   stampDensity,
   stampDocumentTheme,
 } from "../../../test/themed-browser-render";
+import { DENSITIES } from "../../theme/density";
 import { Tabs } from "./index";
 
 /** The stylesheets the preflight build imports, keyed by the specifier. */

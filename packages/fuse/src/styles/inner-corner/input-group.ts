@@ -5,12 +5,13 @@ import { publishShellBoundary } from "../corner-radius";
 // `corner-radius.ts`. Each constant pairs a part's rung or padding with the corner it publishes.
 
 /**
- * An inline-start InputGroup addon. It pads 8px, or 4px beside a button and 5.6px beside a kbd
+ * An inline-start InputGroup addon. It pads with the md control icon inset,
+ * `--control-px-icon-md`, less 4px beside a button and 0.15rem beside a kbd
  * through a negative margin, and publishes the field corner less that and the border. A button sets
  * the inset when the addon also holds a kbd.
  */
 export const addonStartShellClass = cn(
-  "pl-2 [--shell-inner:max(0px,var(--field-corner)-1px-2*var(--spacing))] has-[>button]:-ml-1 has-[>button]:[--shell-inner:max(0px,var(--field-corner)-1px-var(--spacing))] has-[>kbd]:not-has-[>button]:ml-[-0.15rem] has-[>kbd]:not-has-[>button]:[--shell-inner:max(0px,var(--field-corner)-1px-2*var(--spacing)+0.15rem)] [&>kbd]:rounded-inner",
+  "pl-(--control-px-icon-md) [--shell-inner:max(0px,var(--field-corner)-1px-var(--control-px-icon-md))] has-[>button]:-ml-1 has-[>button]:[--shell-inner:max(0px,var(--field-corner)-1px-var(--control-px-icon-md)+var(--spacing))] has-[>kbd]:not-has-[>button]:ml-[-0.15rem] has-[>kbd]:not-has-[>button]:[--shell-inner:max(0px,var(--field-corner)-1px-var(--control-px-icon-md)+0.15rem)] [&>kbd]:rounded-inner",
   publishShellBoundary
 );
 
@@ -18,14 +19,14 @@ export const addonStartShellClass = cn(
  * The inline-end mirror of {@link addonStartShellClass}.
  */
 export const addonEndShellClass = cn(
-  "pr-2 [--shell-inner:max(0px,var(--field-corner)-1px-2*var(--spacing))] has-[>button]:-mr-1 has-[>button]:[--shell-inner:max(0px,var(--field-corner)-1px-var(--spacing))] has-[>kbd]:not-has-[>button]:mr-[-0.15rem] has-[>kbd]:not-has-[>button]:[--shell-inner:max(0px,var(--field-corner)-1px-2*var(--spacing)+0.15rem)] [&>kbd]:rounded-inner",
+  "pr-(--control-px-icon-md) [--shell-inner:max(0px,var(--field-corner)-1px-var(--control-px-icon-md))] has-[>button]:-mr-1 has-[>button]:[--shell-inner:max(0px,var(--field-corner)-1px-var(--control-px-icon-md)+var(--spacing))] has-[>kbd]:not-has-[>button]:mr-[-0.15rem] has-[>kbd]:not-has-[>button]:[--shell-inner:max(0px,var(--field-corner)-1px-var(--control-px-icon-md)+0.15rem)] [&>kbd]:rounded-inner",
   publishShellBoundary
 );
 
 /**
- * A block-start or block-end InputGroup addon: 10px inline padding.
+ * A block-start or block-end InputGroup addon: the md control inset, `--control-px-md`, inline.
  */
 export const addonBlockShellClass = cn(
-  "px-2.5 [--shell-inner:max(0px,var(--field-corner)-1px-2.5*var(--spacing))] [&>kbd]:rounded-inner",
+  "px-(--control-px-md) [--shell-inner:max(0px,var(--field-corner)-1px-var(--control-px-md))] [&>kbd]:rounded-inner",
   publishShellBoundary
 );

@@ -83,8 +83,9 @@ export type CheckboxGroupProps = {
   errorMessage?: ReactNode;
   /**
    * Layout of the group primitive, and of CheckboxItemGroup's stacked-card list.
-   * Vertical: primitive `flex-col gap-2`; item list connected `flex-col gap-0`.
-   * Horizontal: primitive `flex-wrap gap-4`; item list `flex-row flex-wrap gap-4`
+   * Vertical: primitive `flex-col` gapped by `--surface-gap-sm`; item list connected
+   * `flex-col gap-0`. Horizontal: primitive `flex-wrap` and item list `flex-row flex-wrap`, gapped
+   * by `--surface-gap-lg`
    * with individually rounded cards. Maps through `selectionGroupOrientationVariants`.
    */
   orientation?: "vertical" | "horizontal";
@@ -152,6 +153,8 @@ export function CheckboxGroup({
       disabled={isDisabled}>
       <CheckboxGroupPrimitive
         data-slot="checkbox-group"
+        // The layout axis, as Card writes it: a vertical stack of selection shells is connected.
+        data-direction={orientation}
         id={id}
         value={value}
         defaultValue={defaultValue}
@@ -169,7 +172,7 @@ export function CheckboxGroup({
  * Stacked-card group: `CheckboxGroup` wrapping children in the private
  * SelectionItem list (`role="list"`). `orientation` is forwarded to the labeled
  * outer group and to that list: vertical remains connected `flex-col gap-0`;
- * horizontal is `flex-row flex-wrap gap-4` with individually rounded cards.
+ * horizontal is `flex-row flex-wrap`, gapped by `--surface-gap-lg`, with individually rounded cards.
  */
 export function CheckboxItemGroup({ orientation = "vertical", ...props }: CheckboxGroupProps): ReactElement {
   // The default is spelled here because the docs API extractor reads a part's

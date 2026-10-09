@@ -10,43 +10,44 @@ import { publishShellBoundary } from "../corner-radius";
 export const itemShellClass = cn("rounded-md border");
 
 /**
- * A default-size Item: the medium surface tier, `--surface-pad-md`, as inline padding, and a
- * fixed 14px on the block axis.
+ * A default-size Item: the medium surface tier, `--surface-pad-md`, on every side.
  */
 export const itemDefaultShellClass = cn(
-  "px-(--surface-pad-md) py-3.5 [--shell-inner:max(0px,--theme(--radius-md)-1px-var(--surface-pad-md))]",
+  "p-(--surface-pad-md) [--shell-inner:max(0px,--theme(--radius-md)-1px-var(--surface-pad-md))]",
   publishShellBoundary
 );
 
 /**
- * A small Item: 12px inline padding.
+ * A small Item: the default size's inline edge, `--surface-pad-md`, so it lines up with default
+ * Items and Cards, with the row inset, `--row-px`, on the block axis.
  */
 export const itemSmShellClass = cn(
-  "px-3 py-2.5 [--shell-inner:max(0px,--theme(--radius-md)-1px-3*var(--spacing))]",
+  "px-(--surface-pad-md) py-(--row-px) [--shell-inner:max(0px,--theme(--radius-md)-1px-var(--surface-pad-md))]",
   publishShellBoundary
 );
 
 /**
- * An extra-small Item: 10px inline padding, none inside a DropdownMenu.
+ * An extra-small Item: a list row, padded with the row metrics `--row-px` and `--row-py`, so a
+ * one-line Item matches a menu row. It pads none inside a DropdownMenu.
  */
 export const itemXsShellClass = cn(
-  "px-2.5 py-2 [--shell-inner:max(0px,--theme(--radius-md)-1px-2.5*var(--spacing))] in-data-[slot=dropdown-menu-content]:p-0 in-data-[slot=dropdown-menu-content]:[--shell-inner:max(0px,--theme(--radius-md)-1px)]",
+  "px-(--row-px) py-(--row-py) [--shell-inner:max(0px,--theme(--radius-md)-1px-var(--row-px))] in-data-[slot=dropdown-menu-content]:p-0 in-data-[slot=dropdown-menu-content]:[--shell-inner:max(0px,--theme(--radius-md)-1px)]",
   publishShellBoundary
 );
 
 /**
- * A default-size Item in a compact Item.Group: 12px padding.
+ * A default-size Item in a compact Item.Group: the medium surface tier, `--surface-pad-md`.
  */
 export const itemCompactShellClass = cn(
-  "p-3 [--shell-inner:max(0px,--theme(--radius-md)-1px-3*var(--spacing))]",
+  "p-(--surface-pad-md) [--shell-inner:max(0px,--theme(--radius-md)-1px-var(--surface-pad-md))]",
   publishShellBoundary
 );
 
 /**
- * A small Item in a compact Item.Group: 8px padding.
+ * A small Item in a compact Item.Group: the row inset, `--row-px`.
  */
 export const itemCompactSmShellClass = cn(
-  "p-2 [--shell-inner:max(0px,--theme(--radius-md)-1px-2*var(--spacing))]",
+  "p-(--row-px) [--shell-inner:max(0px,--theme(--radius-md)-1px-var(--row-px))]",
   publishShellBoundary
 );
 

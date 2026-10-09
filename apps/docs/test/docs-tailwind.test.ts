@@ -116,7 +116,7 @@ describe("docs Tailwind migration contract", () => {
     expect(globals).toContain('@import "tailwindcss";');
     expect(globals).toContain('@import "@elmeragroup/fuse/css";');
     expect(globals).toContain('@import "@elmeragroup/fuse/themes.css";');
-    expect(globals).toContain('@import "@elmeragroup/fuse/demo-stage-comfortable.css";');
+    expect(globals).toContain('@import "@elmeragroup/fuse/demo-stage-density.css";');
     expect(globals).toContain('@source "../../../../packages/fuse/src";');
     expect(globals).toContain('@source "../../src";');
     expect(globals).not.toContain("@apply");

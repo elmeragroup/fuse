@@ -7,11 +7,11 @@ import { tv } from "../../styles/tv";
  * primitive and `list` the private stacked-card list inside it. CheckboxGroup and
  * RadioGroup read `group`, and `SelectionItemGroup` reads `list`.
  *
- * The option-stack `gap-2` is layout, not a control rung, so it is a plain literal rather
- * than a `--control-gap-*` read. The vertical group drops that gap to `0` through
- * `has-[>[data-selection-item]]:gap-0` when its direct children are selection shells,
- * because shells draw connected edges and a gap would break the join. Plain `Checkbox`
- * and `Radio` rows keep the `gap-2` stack.
+ * The options of a group are spaced by the surface gaps: a vertical stack by
+ * `--surface-gap-sm`, and options in a line by `--surface-gap-lg`. The vertical group drops
+ * that gap to `0` through `has-[>[data-selection-item]]:gap-0` when its direct children are
+ * selection shells, because shells draw connected edges and a gap would break the join. Plain
+ * `Checkbox` and `Radio` rows keep the stack gap.
  *
  * Package-private: not exported from `package.json#exports` or the `SelectionItem`
  * namespace.
@@ -24,12 +24,12 @@ export const selectionGroupOrientationVariants = tv({
   variants: {
     orientation: {
       vertical: {
-        group: "flex flex-col gap-2 has-[>[data-selection-item]]:gap-0",
+        group: "flex flex-col gap-(--surface-gap-sm) has-[>[data-selection-item]]:gap-0",
         list: "gap-0",
       },
       horizontal: {
-        group: "flex flex-wrap gap-4",
-        list: "flex-row flex-wrap gap-4",
+        group: "flex flex-wrap gap-(--surface-gap-lg)",
+        list: "flex-row flex-wrap gap-(--surface-gap-lg)",
       },
     },
   },

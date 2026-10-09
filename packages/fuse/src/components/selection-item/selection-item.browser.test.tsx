@@ -852,6 +852,33 @@ describe("SelectionItem", () => {
     expect(checkboxNamed("Fixed price", false).getAttribute("aria-checked")).toBe("false");
   });
 
+  it("keeps the Field root's gap around a stack of shells, which a wrapper connects", () => {
+    renderThemed(
+      <Field.Root>
+        <Field.Label>Plans label</Field.Label>
+        <div>
+          <SelectionItem.Shell dataSlot="checkbox-item" control={<Checkbox.Root />}>
+            <RowTitle>Upper</RowTitle>
+          </SelectionItem.Shell>
+          <SelectionItem.Shell dataSlot="checkbox-item" control={<Checkbox.Root />}>
+            <RowTitle>Lower</RowTitle>
+          </SelectionItem.Shell>
+        </div>
+      </Field.Root>
+    );
+    const stack = shellFrom("Upper").parentElement;
+    const root = stack?.parentElement;
+    if (!(stack instanceof HTMLElement) || !(root instanceof HTMLElement)) {
+      throw new Error("expected the stack and the Field root");
+    }
+    // Field layout carries no connected-stack policy: its gap stays the density gap.
+    expect(getComputedStyle(root).rowGap).not.toBe("0px");
+    // The wrapper's shells share an edge: the lower one starts where the upper one ends.
+    expect(shellFrom("Lower").getBoundingClientRect().top).toBeLessThanOrEqual(
+      shellFrom("Upper").getBoundingClientRect().bottom
+    );
+  });
+
   it("does not paint checked shell state from a nested checked control in SubSection", async () => {
     renderThemed(
       <Field.Root className="gap-0">
@@ -1117,6 +1144,31 @@ describe("selection row type", () => {
           .getBoundingClientRect();
         expect(control.top + control.height / 2, `${title} control centre`).toBeCloseTo(line, 0);
       }
+    }
+  );
+
+  it.each(["dense", "comfortable"] as const)(
+    "centres the control on the title's first line when the row holds the public Item.Description, at %s",
+    (density) => {
+      stampDensity(density);
+      renderThemed(
+        <CheckboxItemGroup label="Plans">
+          <CheckboxItem value="fixed">
+            <SelectionItem.Content>
+              <SelectionItem.Title>Fixed price</SelectionItem.Title>
+              <Item.Description>Locked for twelve months.</Item.Description>
+            </SelectionItem.Content>
+          </CheckboxItem>
+        </CheckboxItemGroup>
+      );
+      // Item.Media nudges its content down beside an Item.Description; the selection control
+      // cancels that nudge for either description slot.
+      const line = textNamed("Fixed price").getBoundingClientRect().top + ROW_TYPE[density].title[1] / 2;
+      const control = page
+        .getByRole("checkbox", { name: /^Fixed price/ })
+        .element()
+        .getBoundingClientRect();
+      expect(control.top + control.height / 2).toBeCloseTo(line, 0);
     }
   );
 

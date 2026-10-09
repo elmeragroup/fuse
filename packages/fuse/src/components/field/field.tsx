@@ -12,6 +12,7 @@ import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { fieldLabelCardShellClass } from "../../styles/inner-corner/field-label";
+import { labelTypeClass } from "../../styles/label-type";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { Separator } from "../separator/separator";
 import { fieldVariants } from "./field-variants";
@@ -104,7 +105,7 @@ export function FieldSet({
         data-slot="field-set"
         className={mergeClassName(
           className,
-          "flex flex-col gap-6 has-[>[data-slot=checkbox-group]]:gap-3 has-[>[data-slot=radio-group]]:gap-3"
+          "flex flex-col gap-(--surface-gap-xl) has-[>[data-slot=checkbox-group]]:gap-(--surface-gap-md) has-[>[data-slot=radio-group]]:gap-(--surface-gap-md)"
         )}
         {...definedProps({ ...props, "aria-describedby": describedBy || undefined })}
       />
@@ -119,7 +120,7 @@ export function FieldLegend({
 }: ComponentProps<typeof FieldsetPrimitive.Legend> & {
   /**
    * Emitted as `data-variant` and drives the text size: `"legend"` (default) titles the
-   * fieldset, `"label"` sizes it down to match a `Field.Label`.
+   * fieldset at a fixed 16/24px, `"label"` reads the label type pair to match a `Field.Label`.
    */
   variant?: "legend" | "label";
 }): ReactElement {
@@ -129,7 +130,7 @@ export function FieldLegend({
       data-variant={variant}
       className={mergeClassName(
         className,
-        "font-medium data-[variant=label]:text-sm data-[variant=legend]:text-base mb-3 text-balance"
+        "font-medium data-[variant=label]:text-(length:--label-text) data-[variant=label]:leading-(--label-leading) data-[variant=legend]:text-base mb-3 text-balance"
       )}
       {...definedProps(props)}
     />
@@ -141,7 +142,7 @@ export function FieldGroup({ className, ...props }: ComponentProps<"div">): Reac
     <div
       data-slot="field-group"
       className={cn(
-        "group/field-group @container/field-group flex w-full flex-col gap-7 *:data-[slot=checkbox-group]:gap-3 *:data-[slot=field-group]:gap-4 *:data-[slot=radio-group]:gap-3",
+        "group/field-group @container/field-group flex w-full flex-col gap-(--surface-gap-xl) *:data-[slot=checkbox-group]:gap-(--surface-gap-md) *:data-[slot=field-group]:gap-(--surface-gap-lg) *:data-[slot=radio-group]:gap-(--surface-gap-md)",
         className
       )}
       {...props}
@@ -177,7 +178,7 @@ export function FieldLabel({
       className={mergeClassName(
         className,
         fieldLabelCardShellClass,
-        "group/field-label peer/field-label leading-snug has-data-checked:border-primary/30",
+        "group/field-label peer/field-label has-data-checked:border-primary/30",
         "has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col",
         "has-[>[data-slot=checkbox]]:items-center has-[>[data-slot=checkbox]]:cursor-pointer",
         fieldHeadingClassName
@@ -230,7 +231,8 @@ export function FieldDescription({ className, ...props }: FieldDescriptionProps)
   const owner = use(DescriptionOwnerContext);
   const descriptionClassName = mergeClassName(
     className,
-    "text-sm leading-normal font-normal text-left text-pretty text-muted-foreground group-has-data-horizontal/field:text-balance last:mt-0 [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary [[data-variant=legend]+&]:-mt-1.5"
+    labelTypeClass,
+    "font-normal text-left text-pretty text-muted-foreground group-has-data-horizontal/field:text-balance last:mt-0 [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary [[data-variant=legend]+&]:-mt-1.5"
   );
   if (owner?._tag === "field") {
     return (
@@ -332,7 +334,7 @@ export function FieldError({
   children,
   ...props
 }: ComponentProps<typeof FieldPrimitive.Error>): ReactElement {
-  const errorClassName = mergeClassName(className, "text-sm font-normal text-error");
+  const errorClassName = mergeClassName(className, labelTypeClass, "font-normal text-error");
   // Two branches, not `match={children ? true : undefined}`: Base UI merges every present
   // key, so a forwarded `children={undefined}` would erase the message it renders itself.
   if (!children) {

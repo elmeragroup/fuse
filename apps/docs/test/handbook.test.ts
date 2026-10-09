@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { LEGAL_THEMES, themeSlug } from "@elmeragroup/fuse/theme";
+import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 
 import { fuseSrc, sizeBudgetsFile } from "../scripts/lib/paths.ts";
 import { parseBudgets } from "../scripts/lib/sizes.ts";
@@ -56,7 +57,53 @@ describe("theme matrix", () => {
   });
 });
 
+/** The text an HTML text node spells with React's entity escapes. */
+function decodeHtml(text: string): string {
+  return text
+    .replaceAll("&gt;", ">")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#x27;", "'")
+    .replaceAll("&amp;", "&");
+}
+
+/** The text of each cell in the table row that `hook` marks, read only up to the row's own end. */
+function rowCells(html: string, hook: string): string[] {
+  const start = html.indexOf(hook);
+  expect(start, hook).toBeGreaterThan(-1);
+  const row = html.slice(start, html.indexOf("</tr>", start));
+  return [...row.matchAll(/<td[^>]*>([^]*?)<\/td>/g)].map((match) =>
+    decodeHtml((match[1] ?? "").replaceAll(/<[^>]*>/g, ""))
+  );
+}
+
 describe("tokens page", () => {
+  // Unit under test: the tokens page's density tables. Oracle: the resolved catalog, which
+  // density-css.test.ts ties to fuse.css and the source contract ties to every data-slot.
+  it("renders every density metric with its px per density, and every part under its role", async () => {
+    const html = await fetchText("/handbook/tokens");
+    const catalog = resolveThemeCatalog();
+    for (const metric of catalog.density) {
+      expect(rowCells(html, `data-density-metric="${metric.name}"`), metric.name).toEqual([
+        metric.role,
+        `--${metric.name}`,
+        `${String(metric.px.dense)}px`,
+        `${String(metric.px.comfortable)}px`,
+      ]);
+    }
+    expect([...html.matchAll(/data-density-metric="/g)]).toHaveLength(catalog.density.length);
+    for (const role of catalog.partDensity.roles) {
+      const start = html.indexOf(`data-density-role="${role}"`);
+      expect(start, role).toBeGreaterThan(-1);
+      const row = html.slice(start, html.indexOf("</tr>", start));
+      const listed = [...row.matchAll(/<code>([^<]+)<\/code>/g)].map((match) => decodeHtml(match[1] ?? ""));
+      const declared = Object.entries(catalog.partDensity.parts)
+        .filter(([, partRole]) => partRole === role)
+        .map(([part]) => part);
+      expect(listed, role).toEqual(declared);
+    }
+  });
+
   it("publishes a measured size and a ceiling for every budgeted entry", async () => {
     const html = await fetchText("/handbook/tokens");
     expect(BUNDLE_SIZES.length).toBeGreaterThan(0);

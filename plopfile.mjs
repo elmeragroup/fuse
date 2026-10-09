@@ -25,6 +25,9 @@ const BUDGET_MARKER = "// plop:js-entry-budget";
 
 const ENTRIES = `${FUSE}/scripts/entries.ts`;
 const ENTRY_MARKER = "// plop:component-entry";
+/** The density role table: a new component's slot starts with a placeholder role. */
+const DENSITY_ROLES = `${FUSE}/src/theme/tokens/density-roles.ts`;
+const DENSITY_MARKER = "// plop:density-part";
 const RESERVED_NAMES = new Set([
   ...NON_COMPONENT_JS_ENTRIES,
   ...TOOLING_ONLY_JS_ENTRIES.map((entry) => entry.subpath),
@@ -72,6 +75,7 @@ function preflight(answers, _config, plop) {
   for (const [file, marker] of [
     [ENTRIES, ENTRY_MARKER],
     [BUDGETS, BUDGET_MARKER],
+    [DENSITY_ROLES, DENSITY_MARKER],
   ]) {
     const source = readFileSync(join(root, file), "utf8");
     if (source.split(marker).length !== 2) {
@@ -121,6 +125,15 @@ export default function plopfile(plop) {
         // A brand-new packed entry has no measurement yet; 0 fails size-limit until the
         // implementer records measuredGzip.
         template: `  { name: "{{name}}", entryFile: "{{name}}.js", measuredGzip: 0 }, // TODO({{name}}): record measuredGzip`,
+      },
+      {
+        type: "append",
+        path: DENSITY_ROLES,
+        pattern: DENSITY_MARKER,
+        // Not a role: the type check rejects it until the implementer declares a role for each
+        // data-slot the component writes, and the source contract rejects the placeholder key
+        // until the component writes that slot.
+        template: `  "{{name}}": "TODO", // TODO({{name}}): declare the density role of every data-slot (CONTEXT.md, Density role)`,
       },
       // Template line breaks cannot know how long a component name is, so the emitted
       // TypeScript is normalised here — `oxfmt --check` is part of the merge gate.

@@ -5,9 +5,10 @@ import { publishShellBoundary } from "../corner-radius";
 // constant pairs a part's rung or padding with the corner it publishes.
 
 /**
- * The Tooltip popup: `rounded-md` and 12px inline padding.
+ * The Tooltip popup: `rounded-md`, padded inline with the medium surface tier, `--surface-pad-md`,
+ * and on the block axis with the row inset, `--row-py`. Its text and gap stay fixed.
  */
 export const tooltipShellClass = cn(
-  "rounded-md px-3 py-1.5 [--shell-inner:max(0px,--theme(--radius-md)-3*var(--spacing))]",
+  "rounded-md px-(--surface-pad-md) py-(--row-py) [--shell-inner:max(0px,--theme(--radius-md)-var(--surface-pad-md))]",
   publishShellBoundary
 );

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
@@ -6,7 +6,15 @@ import "../../../dist/themes.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse, focusRingClippers } from "../../../test/assert-focus-ring";
 import { hasIntermediateFrame, sampleFrames } from "../../../test/panel-transition";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
-import { renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
+import {
+  ROW,
+  metricPx,
+  renderThemed,
+  roleNamed,
+  stampDensity,
+  textNamed,
+} from "../../../test/themed-browser-render";
+import { DENSITIES } from "../../theme/density";
 import { Button } from "../button/button";
 import { Item } from "./index";
 
@@ -63,6 +71,10 @@ async function settledFooter(footer: HTMLElement): Promise<void> {
 }
 
 describe("Item", () => {
+  afterEach(() => {
+    document.documentElement.removeAttribute("data-density");
+  });
+
   it.each([
     {
       render: "link",
@@ -387,33 +399,131 @@ describe("Item", () => {
     }
   });
 
-  it("pads compact rows at 12px, 8px at size sm, and draws flush separators", () => {
-    renderThemed(
-      <Item.Group variant="compact">
-        <Item.Root>
-          <Item.Title>Above</Item.Title>
-        </Item.Root>
-        <Item.Separator />
-        <Item.Root size="sm">
-          <Item.Title>Below</Item.Title>
-        </Item.Root>
-      </Item.Group>
-    );
-    const above = textNamed("Above").parentElement;
-    const below = textNamed("Below").parentElement;
-    const separator = page.getByRole("separator").element();
-    if (
-      !(above instanceof HTMLElement) ||
-      !(below instanceof HTMLElement) ||
-      !(separator instanceof HTMLElement)
-    ) {
-      throw new Error("expected two rows and a separator");
+  it.each(DENSITIES)(
+    "gaps an Item group by the lg tier, and a group of sm or xs Items by the sm tier, at %s",
+    (density) => {
+      stampDensity(density);
+      renderThemed(
+        <div>
+          {(["default", "sm", "xs"] as const).map((size) => (
+            <Item.Group key={size}>
+              <Item.Root size={size}>
+                <Item.Title>{`${size} first`}</Item.Title>
+              </Item.Root>
+              <Item.Root size={size}>
+                <Item.Title>{`${size} second`}</Item.Title>
+              </Item.Root>
+            </Item.Group>
+          ))}
+        </div>
+      );
+      const between = (size: string) => {
+        const first = textNamed(`${size} first`).parentElement;
+        const second = textNamed(`${size} second`).parentElement;
+        if (!(first instanceof HTMLElement) || !(second instanceof HTMLElement)) {
+          throw new Error(`expected two ${size} Items`);
+        }
+        return second.getBoundingClientRect().top - first.getBoundingClientRect().bottom;
+      };
+      expect(between("default"), "default").toBe(metricPx("surface-gap-lg", density));
+      expect(between("sm"), "sm").toBe(metricPx("surface-gap-sm", density));
+      expect(between("xs"), "xs").toBe(metricPx("surface-gap-sm", density));
     }
-    expect(getComputedStyle(above).padding).toBe("12px");
-    expect(getComputedStyle(below).padding).toBe("8px");
-    expect(separator.getBoundingClientRect().top).toBe(above.getBoundingClientRect().bottom);
-    expect(below.getBoundingClientRect().top).toBe(separator.getBoundingClientRect().bottom);
-  });
+  );
+
+  it.each(DENSITIES)(
+    "pads a default Item with the medium tier on every side and gaps it by the md gap, at %s",
+    (density) => {
+      stampDensity(density);
+      renderThemed(
+        <Item.Root>
+          <Item.Content>
+            <Item.Title>Tile</Item.Title>
+          </Item.Content>
+          <Item.Actions>
+            <Button size="sm">Open</Button>
+          </Item.Actions>
+        </Item.Root>
+      );
+      // DOM audit: Item.Root has no role of its own, so the shell is found by its public slot.
+      const root = textNamed("Tile").closest('[data-slot="item"]');
+      if (!(root instanceof HTMLElement)) {
+        throw new Error("expected the Item root");
+      }
+      const style = getComputedStyle(root);
+      expect(style.padding).toBe(`${metricPx("surface-pad-md", density)}px`);
+      expect(style.columnGap).toBe(`${metricPx("surface-gap-md", density)}px`);
+    }
+  );
+
+  it.each(DENSITIES)(
+    "pads an sm Item as a tile edge over the row inset, and an xs Item as a row, at %s",
+    (density) => {
+      stampDensity(density);
+      renderThemed(
+        <div>
+          <Item.Root size="sm">
+            <Item.Title>Small</Item.Title>
+          </Item.Root>
+          <Item.Root size="xs">
+            <Item.Title>Extra small</Item.Title>
+          </Item.Root>
+        </div>
+      );
+      const box = (name: string) => {
+        // DOM audit: Item.Root has no role of its own, so the shell is found by its public slot.
+        const root = textNamed(name).closest('[data-slot="item"]');
+        if (!(root instanceof HTMLElement)) {
+          throw new Error(`expected the ${name} Item root`);
+        }
+        const style = getComputedStyle(root);
+        return { block: style.paddingTop, inline: style.paddingLeft, gap: style.columnGap };
+      };
+      const gap = `${metricPx("surface-gap-sm", density)}px`;
+      expect(box("Small")).toEqual({
+        block: `${ROW[density].px}px`,
+        inline: `${metricPx("surface-pad-md", density)}px`,
+        gap,
+      });
+      expect(box("Extra small")).toEqual({
+        block: `${ROW[density].py}px`,
+        inline: `${ROW[density].px}px`,
+        gap,
+      });
+    }
+  );
+
+  it.each(DENSITIES)(
+    "pads compact rows with the medium tier, sm rows with the row inset, at %s",
+    (density) => {
+      stampDensity(density);
+      renderThemed(
+        <Item.Group variant="compact">
+          <Item.Root>
+            <Item.Title>Above</Item.Title>
+          </Item.Root>
+          <Item.Separator />
+          <Item.Root size="sm">
+            <Item.Title>Below</Item.Title>
+          </Item.Root>
+        </Item.Group>
+      );
+      const above = textNamed("Above").parentElement;
+      const below = textNamed("Below").parentElement;
+      const separator = page.getByRole("separator").element();
+      if (
+        !(above instanceof HTMLElement) ||
+        !(below instanceof HTMLElement) ||
+        !(separator instanceof HTMLElement)
+      ) {
+        throw new Error("expected two rows and a separator");
+      }
+      expect(getComputedStyle(above).padding).toBe(`${metricPx("surface-pad-md", density)}px`);
+      expect(getComputedStyle(below).padding).toBe(`${ROW[density].px}px`);
+      expect(separator.getBoundingClientRect().top).toBe(above.getBoundingClientRect().bottom);
+      expect(below.getBoundingClientRect().top).toBe(separator.getBoundingClientRect().bottom);
+    }
+  );
 
   it("moves the content below a footer through every frame of a reveal and a hide", async () => {
     const { rerender } = renderThemed(<RevealTree mode="hidden" />);

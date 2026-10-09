@@ -49,7 +49,10 @@ import { TooltipContent, TooltipRoot, TooltipTrigger } from "../tooltip/tooltip"
 import type { TooltipContentProps } from "../tooltip/tooltip";
 import { sidebarStrings } from "./intl";
 import {
+  sidebarGroupActionBoxClass,
   sidebarMenuButtonVariants,
+  sidebarMenuActionBoxClass,
+  sidebarMenuBadgeOffsetClass,
   sidebarMenuSubButtonVariants,
   sidebarRowBoxClass,
 } from "./sidebar-variants";
@@ -471,8 +474,8 @@ export function SidebarInset({ className, ...props }: SidebarInsetProps): ReactE
 /**
  * Typed as `ComponentProps<"input">` (string `className`) rather than the base-ui Input's
  * props, whose `className` can be a render-prop function `cn` cannot merge.
- * Composes the library Input so the shared `focusRing` ships with the field box; `h-8` is
- * the shell-local density exemption.
+ * Composes the library Input so the shared `focusRing` ships with the field box. It is a row of
+ * the sidebar, so it is `--row-h` tall.
  */
 export type SidebarInputProps = ComponentProps<"input">;
 
@@ -480,7 +483,7 @@ export function SidebarInput({ className, ...props }: SidebarInputProps): ReactE
   return (
     <Input
       data-slot="sidebar-input"
-      className={cn("h-8 w-full bg-background shadow-none", className)}
+      className={cn("h-(--row-h) w-full bg-background shadow-none", className)}
       {...props}
     />
   );
@@ -590,7 +593,8 @@ export function SidebarGroupAction({ className, render, ...props }: SidebarGroup
     props: mergeProps<"button">(
       {
         className: cn(
-          "absolute top-3.5 right-3 flex size-6 items-center justify-center rounded-md p-0 text-sidebar-foreground transition-transform group-data-[collapsible=icon]:hidden after:absolute after:-inset-2 enabled-hover:bg-sidebar-accent enabled-hover:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0",
+          sidebarGroupActionBoxClass,
+          "absolute right-3 flex items-center justify-center rounded-md p-0 text-sidebar-foreground transition-transform group-data-[collapsible=icon]:hidden after:absolute after:-inset-2 enabled-hover:bg-sidebar-accent enabled-hover:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0",
           selfFocusRingClass,
           nativeStateFaceClass,
           className
@@ -742,7 +746,8 @@ export function SidebarMenuAction({
       {
         className: cn(
           sidebarMenuActionShellClass,
-          "absolute top-1.5 right-1 flex size-6 items-center justify-center p-0 text-sidebar-foreground transition-transform group-data-[collapsible=icon]:hidden peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 peer-data-[size=sm]/menu-button:top-1 after:absolute after:-inset-2 enabled-hover:bg-sidebar-accent enabled-hover:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0",
+          sidebarMenuActionBoxClass,
+          "absolute right-1 flex items-center justify-center p-0 text-sidebar-foreground transition-transform group-data-[collapsible=icon]:hidden peer-hover/menu-button:text-sidebar-accent-foreground after:absolute after:-inset-2 enabled-hover:bg-sidebar-accent enabled-hover:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0",
           selfFocusRingClass,
           nativeStateFaceClass,
           showOnHover &&
@@ -764,7 +769,8 @@ export function SidebarMenuBadge({ className, ...props }: SidebarMenuBadgeProps)
     <div
       data-slot="sidebar-menu-badge"
       className={cn(
-        "text-xs font-medium pointer-events-none absolute right-1 flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-sidebar-foreground tabular-nums select-none group-data-[collapsible=icon]:hidden peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 peer-data-[size=sm]/menu-button:top-1 peer-data-active/menu-button:text-sidebar-accent-foreground",
+        sidebarMenuBadgeOffsetClass,
+        "text-xs font-medium pointer-events-none absolute right-1 flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-sidebar-foreground tabular-nums select-none group-data-[collapsible=icon]:hidden peer-hover/menu-button:text-sidebar-accent-foreground peer-data-active/menu-button:text-sidebar-accent-foreground",
         className
       )}
       {...props}

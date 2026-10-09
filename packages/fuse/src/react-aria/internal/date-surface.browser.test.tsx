@@ -1,24 +1,24 @@
 import { CalendarDate } from "@internationalized/date";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { expectFocusRing, expectNoFocusRing } from "../../../test/assert-focus-ring";
-import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
+import { cssVarColor, renderThemed, stampDensity } from "../../../test/themed-browser-render";
+import { DENSITIES } from "../../theme/density";
 import { DateField } from "../date-field/date-field";
 import { DatePicker } from "../date-picker/date-picker";
 import { DateRangePicker } from "../date-range-picker/date-range-picker";
 import { UiProviders } from "../ui-providers/ui-providers";
 
 const date = new CalendarDate(2026, 7, 14);
-afterEach(() => document.documentElement.removeAttribute("data-density"));
 
 describe("date field surface ownership", () => {
   for (const kind of ["picker", "range"] as const) {
-    for (const density of ["dense", "comfortable"] as const) {
+    for (const density of DENSITIES) {
       it(`${kind} has one border and keyboard ring at ${density} density`, async () => {
-        document.documentElement.setAttribute("data-density", density);
+        stampDensity(density);
         const onChange = vi.fn();
         const { host } = renderThemed(
           <UiProviders locale="en-US" navigate={() => undefined}>

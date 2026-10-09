@@ -8,17 +8,29 @@ import type { CssDeclaration } from "../../test/css-rules";
 import type { Density } from "./density";
 import { generateThemesCss } from "./generate-css";
 import { generateDemoStageDensityCss } from "./generate-demo-stage-css";
-import { DENSITY_METRIC_NAMES, DENSITY_METRICS, DENSITY_SELECTORS } from "./tokens/density-metrics";
+import { DENSITY_METRIC_NAMES, DENSITY_METRICS } from "./tokens/density-metrics";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fuseCss = readFileSync(join(here, "../styles/fuse.css"), "utf8");
 const compiledCssPath = join(here, "../../dist/styles.css");
 const packedRawCssPath = join(here, "../../dist/styles/fuse.css");
-const demoStageCssPath = join(here, "../../dist/demo-stage-comfortable.css");
+const demoStageCssPath = join(here, "../../dist/demo-stage-density.css");
 
-/** A control metric (`--control-*`) or a surface metric (`--surface-pad-*`). */
+/**
+ * The `fuse.css` rule that declares each density's metrics. Dense is the `:root` default, and
+ * comfortable overrides it on the rooted attribute.
+ */
+const DENSITY_SELECTORS = {
+  dense: ":root",
+  comfortable: ':root[data-density="comfortable"]',
+} as const satisfies Record<Density, string>;
+
+/** The prefixes of the density metric families: control, row, label and surface metrics. */
+const DENSITY_METRIC_PREFIXES = ["control-", "row-", "label-", "surface-pad-", "surface-gap-"] as const;
+
+/** A declaration of a density metric, by its family prefix. */
 const isDensityMetric = (declaration: CssDeclaration): boolean =>
-  declaration.name.startsWith("control-") || declaration.name.startsWith("surface-pad-");
+  DENSITY_METRIC_PREFIXES.some((prefix) => declaration.name.startsWith(prefix));
 
 /** The declarations of the one `fuse.css` rule with this selector. */
 function fuseCssRule(selector: string): CssDeclaration[] {
@@ -52,15 +64,17 @@ describe("density CSS", () => {
   });
 
   it("does not key density metrics on data-theme-variant or a nested attribute selector", () => {
-    expect(fuseCss).not.toMatch(/\[data-theme-variant[^\]]*\][^{]*--control-/s);
-    expect(fuseCss).not.toMatch(/\[data-theme-variant[^\]]*\][^{]*--surface-pad-/s);
+    for (const prefix of DENSITY_METRIC_PREFIXES) {
+      expect(fuseCss).not.toMatch(new RegExp(String.raw`\[data-theme-variant[^\]]*\][^{]*--${prefix}`, "s"));
+    }
     expect(fuseCss).not.toMatch(/(?<!:root)\[data-density="comfortable"\]/);
   });
 
   it("does not enter generated theme CSS", () => {
     const css = generateThemesCss();
-    expect(css).not.toContain("--control-");
-    expect(css).not.toContain("--surface-pad-");
+    for (const prefix of DENSITY_METRIC_PREFIXES) {
+      expect(css).not.toContain(`--${prefix}`);
+    }
     expect(css).not.toContain("data-density");
   });
 

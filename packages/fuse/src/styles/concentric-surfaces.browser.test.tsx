@@ -9,7 +9,6 @@ import { render } from "../../test/browser-render";
 import {
   CASES,
   cornerRadius,
-  DENSITIES,
   edgeInset,
   FIELD_CORNER,
   RADIUS_LG,
@@ -43,6 +42,7 @@ import {
   DatePickerPresetItem,
 } from "../react-aria/date-picker/date-picker";
 import { UiProviders } from "../react-aria/ui-providers/ui-providers";
+import { DENSITIES } from "../theme/density";
 import type { Density } from "../theme/density";
 import { ThemeScope } from "../theme/theme-scope";
 

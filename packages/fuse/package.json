@@ -99,7 +99,7 @@
       "types": "./src/data-table.ts",
       "import": "./src/data-table.ts"
     },
-    "./demo-stage-comfortable.css": "./dist/demo-stage-comfortable.css",
+    "./demo-stage-density.css": "./dist/demo-stage-density.css",
     "./description-list": {
       "types": "./src/description-list.ts",
       "import": "./src/description-list.ts"

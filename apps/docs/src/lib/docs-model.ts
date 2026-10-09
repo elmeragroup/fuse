@@ -12,6 +12,7 @@ import type {
   ThemeInput,
   ThemeSlug,
 } from "@elmeragroup/fuse/theme";
+import type { DensityRole } from "@elmeragroup/fuse/theme-catalog";
 import type {
   ApiPart,
   ApiProp,
@@ -190,6 +191,26 @@ export type ThemeCatalogEntry = {
   density: Density;
   attributes: ThemeAttributes & DensityAttributes;
   tokens: ThemeCatalogTokenMap;
+};
+
+/** One density metric as the tokens handbook prints it. */
+export type DensityCatalogMetric = {
+  /** The custom property without its leading dashes. */
+  readonly name: string;
+  /** The metric in px when dense, at the 16px root. */
+  readonly dense: number;
+  /** The metric in px when comfortable, at the 16px root. */
+  readonly comfortable: number;
+};
+
+/** One density role, the metrics it reads and the parts that declare it. */
+export type DensityCatalogRole = {
+  /** The role. */
+  readonly role: DensityRole;
+  /** The metrics the role's parts read, in `fuse.css` order; none for `layout` and `fixed`. */
+  readonly metrics: readonly DensityCatalogMetric[];
+  /** The `PART_DENSITY` keys with this role, in table order. */
+  readonly parts: readonly string[];
 };
 
 /** Static `GET /api/themes` payload. */

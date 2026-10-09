@@ -40,7 +40,7 @@ export const accordionVariants = tv({
     item: "p-(--surface-pad-md)",
     header: "flex",
     trigger: cn(
-      "group/accordion-trigger font-medium flex flex-1 cursor-pointer items-center justify-between gap-2 data-[panel-open]:pb-4 enabled-hover:underline",
+      "group/accordion-trigger font-medium flex flex-1 cursor-pointer items-center justify-between gap-2 enabled-hover:underline",
       selfFocusRingClass,
       nativeStateFaceClass,
       dataStateFaceClass
@@ -48,13 +48,14 @@ export const accordionVariants = tv({
     indicator: "flex shrink-0 items-center",
     icon: "size-4 shrink-0 text-foreground transition-transform duration-200 group-data-[panel-open]/accordion-trigger:rotate-180",
     content: cn(panelHeightTransition, "h-(--accordion-panel-height)"),
-    contentInner: "pt-1.5",
+    // An open panel sits the large surface gap below its trigger, plus the 6px before its text.
+    // The gap lives in the panel, so it opens and closes with the panel's height.
+    contentInner: "pt-[calc(var(--surface-gap-lg)+--spacing(1.5))]",
   },
   variants: {
     variant: {
       default: {
         item: [accordionItemShellClass, "bg-muted"],
-        trigger: "transition-[padding-bottom]",
       },
       card: {
         base: "space-y-3",
@@ -65,10 +66,11 @@ export const accordionVariants = tv({
       },
       infodropdown: {
         base: "border-b border-border",
-        trigger: "relative justify-start data-[panel-open]:pb-0",
+        trigger: "relative justify-start",
         indicator: "absolute right-0",
         icon: "absolute right-0",
         content: "pl-7",
+        contentInner: "pt-1.5",
       },
     },
     hasIndicator: {

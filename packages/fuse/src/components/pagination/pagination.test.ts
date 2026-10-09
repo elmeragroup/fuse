@@ -35,7 +35,7 @@ describe("paginationVariants", () => {
     expect(slots.base()).toContain("mx-auto");
     expect(slots.content()).toContain("flex-row");
     expect(slots.linkIcon()).toContain("size-4");
-    expect(slots.ellipsis()).toContain("size-9");
+    expect(slots.ellipsis()).toContain("size-(--control-h-md)");
     expect(slots.ellipsisIcon()).toContain("size-4");
   });
 

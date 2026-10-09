@@ -108,6 +108,7 @@ export function TextField({
 
   return (
     <FieldFrame
+      spacing={variant === "card" ? "group" : "part"}
       className={cn(base(), className)}
       classNames={{
         label: labelSlot() || undefined,

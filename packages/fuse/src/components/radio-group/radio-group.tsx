@@ -87,8 +87,9 @@ export type RadioGroupProps = {
   isPending?: boolean;
   /**
    * Layout of the group primitive, and of RadioItemGroup's stacked-card list.
-   * Vertical: primitive `flex-col gap-2`; item list connected `flex-col gap-0`.
-   * Horizontal: primitive `flex-wrap gap-4`; item list `flex-row flex-wrap gap-4`
+   * Vertical: primitive `flex-col` gapped by `--surface-gap-sm`; item list connected
+   * `flex-col gap-0`. Horizontal: primitive `flex-wrap` and item list `flex-row flex-wrap`, gapped
+   * by `--surface-gap-lg`
    * with individually rounded cards. Maps through `selectionGroupOrientationVariants`.
    * Default `"vertical"`.
    */
@@ -165,6 +166,8 @@ export function RadioGroup({
       status={isPending ? <SpinnerGap aria-hidden className="animate-spin size-3" /> : null}>
       <RadioGroupPrimitive
         data-slot="radio-group"
+        // The layout axis, as Card writes it: a vertical stack of selection shells is connected.
+        data-direction={orientation}
         id={id}
         value={value}
         defaultValue={defaultValue}
@@ -185,7 +188,7 @@ export function RadioGroup({
  * Stacked-card group: `RadioGroup` wrapping children in the private
  * SelectionItem list (`role="list"`). `orientation` is forwarded to the labeled
  * outer group and to that list: vertical remains connected `flex-col gap-0`;
- * horizontal is `flex-row flex-wrap gap-4` with individually rounded cards.
+ * horizontal is `flex-row flex-wrap`, gapped by `--surface-gap-lg`, with individually rounded cards.
  */
 export function RadioItemGroup({ orientation = "vertical", ...props }: RadioGroupProps): ReactElement {
   // The default is spelled here because the docs API extractor reads a part's

@@ -34,7 +34,8 @@ const dialogVariants = tv({
     // The heading borrows the public Dialog's literal so the interim tier
     // cannot drift.
     heading: overlayTitleClass,
-    content: "flex flex-col gap-4",
+    // The content stacks its groups, such as a calendar and its presets, by the large surface gap.
+    content: "flex flex-col gap-(--surface-gap-lg)",
     closeButton: "hit-area-1",
     closeButtonIcon: "size-4",
   },

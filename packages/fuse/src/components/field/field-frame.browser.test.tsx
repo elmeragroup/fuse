@@ -12,12 +12,15 @@ import {
 import { withLocale } from "../../../test/locale-matrix";
 import {
   fieldRootFrom,
+  metricPx,
   renderThemed,
   roleNamed,
   stampDensity,
   textboxNamed,
   textNamed,
 } from "../../../test/themed-browser-render";
+import { DENSITIES } from "../../theme/density";
+import type { Density } from "../../theme/density";
 import { CheckboxGroup, CheckboxItemGroup } from "../checkbox/checkbox";
 import { CheckboxItem } from "../checkbox/checkbox-item";
 import { Form } from "../form/form";
@@ -30,17 +33,15 @@ import { TextField } from "../text-field/text-field";
 import { TextareaField } from "../textarea-field/textarea-field";
 import { FieldFrame } from "./field-frame";
 
-const DENSITIES = ["dense", "comfortable"] as const;
-
 // Figma (funnel nodes 9160:36033 and 9160:36034): a group's description sits directly
-// under its label, the options follow at the fieldset's 12px group gap, and a group
-// without a description keeps 24px between label and options.
+// under its label, and the options follow at the fieldset's group gap around an option group,
+// `--surface-gap-md` (12px dense, as in Figma). A group without a description keeps the
+// legend's fixed 12px margin plus that gap between label and options (24px dense).
 const LEGEND_TO_DESCRIPTION_PX = 0;
-const DESCRIPTION_TO_OPTIONS_PX = 12;
-const LEGEND_TO_OPTIONS_PX = 24;
+const LEGEND_MARGIN_PX = 12;
+const groupGap = (density: Density) => metricPx("surface-gap-md", density);
 // A pending RadioGroup without a label keeps a heading row for its spinner, and the
 // fieldset's group gap separates that row from the description.
-const STATUS_ROW_TO_DESCRIPTION_PX = 12;
 // TextField's label sits on the Field.Root's `gap-1` stack, at 4px from its control.
 const TEXT_FIELD_LABEL_TO_CONTROL_PX = 4;
 
@@ -446,7 +447,7 @@ describe("FieldFrame", () => {
       const description = textNamed("Pick any.");
 
       expect(verticalGap(legend, description)).toBeCloseTo(LEGEND_TO_DESCRIPTION_PX, 0);
-      expect(verticalGap(description, optionsIn(host))).toBeCloseTo(DESCRIPTION_TO_OPTIONS_PX, 0);
+      expect(verticalGap(description, optionsIn(host))).toBeCloseTo(groupGap(density), 0);
     });
 
     it.each(GROUPS)("keeps the $name label-to-options gap without a description", ({ render }) => {
@@ -458,7 +459,10 @@ describe("FieldFrame", () => {
         </>
       );
 
-      expect(verticalGap(textNamed("Group"), optionsIn(host))).toBeCloseTo(LEGEND_TO_OPTIONS_PX, 0);
+      expect(verticalGap(textNamed("Group"), optionsIn(host))).toBeCloseTo(
+        LEGEND_MARGIN_PX + groupGap(density),
+        0
+      );
     });
 
     it.each(GROUPS)("starts an unlabeled $name at its description", ({ render }) => {
@@ -472,7 +476,7 @@ describe("FieldFrame", () => {
       const description = textNamed("Pick any.");
 
       expect(description.getBoundingClientRect().top - contentBoxTop(fieldsetIn(host))).toBeCloseTo(0, 0);
-      expect(verticalGap(description, optionsIn(host))).toBeCloseTo(DESCRIPTION_TO_OPTIONS_PX, 0);
+      expect(verticalGap(description, optionsIn(host))).toBeCloseTo(groupGap(density), 0);
     });
 
     it.each(GROUPS)("starts a $name with a hidden label at its description", ({ render }) => {
@@ -487,7 +491,7 @@ describe("FieldFrame", () => {
 
       // The hidden legend is out of flow, so nothing above the description is left to cancel.
       expect(description.getBoundingClientRect().top - contentBoxTop(fieldsetIn(host))).toBeCloseTo(0, 0);
-      expect(verticalGap(description, optionsIn(host))).toBeCloseTo(DESCRIPTION_TO_OPTIONS_PX, 0);
+      expect(verticalGap(description, optionsIn(host))).toBeCloseTo(groupGap(density), 0);
     });
 
     it("keeps the group gap under an unlabeled pending RadioGroup's spinner row", () => {
@@ -507,7 +511,7 @@ describe("FieldFrame", () => {
         throw new Error("expected the pending spinner's heading row");
       }
 
-      expect(verticalGap(statusRow, textNamed("Pick one."))).toBeCloseTo(STATUS_ROW_TO_DESCRIPTION_PX, 0);
+      expect(verticalGap(statusRow, textNamed("Pick one."))).toBeCloseTo(groupGap(density), 0);
     });
 
     it("leaves a TextField's label-to-control gap alone", () => {

@@ -18,7 +18,7 @@ export const fieldFrameVariants = tv({
     labelRow: "flex items-center justify-between",
     label: "",
     content: "flex flex-col gap-1",
-    description: "text-sm text-pretty",
+    description: "text-pretty",
   },
   variants: {
     /**
@@ -28,7 +28,7 @@ export const fieldFrameVariants = tv({
      * legend keeps its margin, so the label-to-options distance does not change.
      */
     legendDescription: {
-      true: { label: "mb-0", description: "-mt-3" },
+      true: { label: "mb-0", description: "-mt-(--surface-gap-md)" },
     },
   },
 });
@@ -36,8 +36,8 @@ export const fieldFrameVariants = tv({
 const fieldFrameSlots = fieldFrameVariants();
 const legendDescriptionSlots = fieldFrameVariants({ legendDescription: true });
 
-/** Default `Field.Root` stack for labeled (non-legend) composites. */
-export const fieldFrameRootClass = fieldFrameSlots.root();
+/** The `Field.Root` stack of a `spacing="part"` frame: the label 4px from its control. */
+const fieldFrameRootClass = fieldFrameSlots.root();
 
 /**
  * The heading row's own layout. Composites append their own classes (TextareaField the
@@ -107,6 +107,12 @@ export type FieldFrameProps = {
    * place in the tree either way, so toggling this does not remount it.
    */
   isDescriptionBeside?: boolean;
+  /**
+   * The spacing of the frame's root, written as `data-spacing`. `"part"` is a compact stack whose
+   * label sits 4px from its control, fixed part spacing that does not follow density; `"group"`
+   * (default) keeps the `Field.Root` gap, which follows density, or the caller's own layout.
+   */
+  spacing?: "part" | "group";
   /** Forwarded to `Field.Root`. */
   invalid?: boolean;
   /** Forwarded to `Field.Root`. */
@@ -133,6 +139,7 @@ export type FieldFrameProps = {
  * Keep exactly one `Field.Root` per composite so a nested root cannot break label wiring.
  */
 export function FieldFrame({
+  spacing = "group",
   heading = "label",
   label,
   isLabelHidden = false,
@@ -237,7 +244,12 @@ export function FieldFrame({
   );
 
   return (
-    <FieldRoot name={name} invalid={invalid} disabled={disabled} className={className}>
+    <FieldRoot
+      data-spacing={spacing}
+      name={name}
+      invalid={invalid}
+      disabled={disabled}
+      className={cn(spacing === "part" ? fieldFrameRootClass : null, className)}>
       {heading === "legend" ? <FieldSet>{framed}</FieldSet> : framed}
     </FieldRoot>
   );

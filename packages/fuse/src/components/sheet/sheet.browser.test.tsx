@@ -4,7 +4,15 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import { px, renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import {
+  metricPx,
+  px,
+  renderThemed,
+  roleNamed,
+  stampDensity,
+  textNamed,
+} from "../../../test/themed-browser-render";
+import { DENSITIES } from "../../theme/density";
 import { Sheet } from "./index";
 
 /** Reads a theme token off the document root (`--container-*` are rem lengths). */
@@ -338,4 +346,57 @@ describe("Sheet", () => {
     }
     await assertFocusRingOnKeyboardAbsentOnMouse(previous, trigger);
   });
+});
+
+describe("Sheet surfaces follow density", () => {
+  it.each(DENSITIES)(
+    "pads its header, body and footer with the lg tier and gaps them by the surface gaps at %s",
+    async (density) => {
+      stampDensity(density);
+      renderThemed(
+        withLocale(
+          "en-US",
+          <Sheet.Root defaultOpen>
+            <Sheet.Content>
+              <Sheet.Header>
+                <Sheet.Title>Meter details</Sheet.Title>
+              </Sheet.Header>
+              <Sheet.Body>
+                <p>First block</p>
+                <p>Second block</p>
+              </Sheet.Body>
+              <Sheet.Footer>
+                <span>Footer text</span>
+              </Sheet.Footer>
+            </Sheet.Content>
+          </Sheet.Root>
+        )
+      );
+      await vi.waitFor(() => roleNamed("dialog", "Meter details"));
+      const pad = metricPx("surface-pad-lg", density);
+      const style = (text: string) => {
+        const parent = textNamed(text).parentElement;
+        if (!(parent instanceof HTMLElement)) {
+          throw new Error(`expected the part around ${text}`);
+        }
+        return { element: parent, computed: getComputedStyle(parent) };
+      };
+      const header = style("Meter details");
+      expect([header.computed.paddingTop, header.computed.paddingLeft].map(px), "header").toEqual([pad, pad]);
+      const body = style("First block");
+      expect(px(body.computed.paddingLeft), "body inline").toBe(pad);
+      const between =
+        textNamed("Second block").getBoundingClientRect().top -
+        textNamed("First block").getBoundingClientRect().bottom;
+      expect(between, "body blocks").toBe(metricPx("surface-gap-xl", density));
+      const footer = style("Footer text");
+      expect(px(footer.computed.paddingTop), "footer").toBe(pad);
+      // The header, body and footer stack on the inner content's lg gap.
+      expect(
+        body.element.getBoundingClientRect().top - header.element.getBoundingClientRect().bottom,
+        "stack"
+      ).toBe(metricPx("surface-gap-lg", density));
+      document.documentElement.removeAttribute("data-density");
+    }
+  );
 });

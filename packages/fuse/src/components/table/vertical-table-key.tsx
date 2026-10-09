@@ -47,7 +47,7 @@ export function VerticalTableKey({
         {
           className: cn(
             TABLE_CELL_CLASSES,
-            "text-sm font-medium *:text-sm **:text-sm group-data-[font-weight=bold]/vertical-table-row-item:font-medium group-data-[font-weight=normal]/vertical-table-row-item:font-normal bg-muted/50 py-2",
+            "text-sm font-medium *:text-sm **:text-sm group-data-[font-weight=bold]/vertical-table-row-item:font-medium group-data-[font-weight=normal]/vertical-table-row-item:font-normal bg-muted/50",
             "in-data-[variant=non-bordered-compact]:border-none in-data-[variant=non-bordered-compact]:bg-inherit in-data-[variant=non-bordered-compact]:px-0 in-data-[variant=non-bordered-compact]:py-1",
             verticalTableCellText(text),
             className

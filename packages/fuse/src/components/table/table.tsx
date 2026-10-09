@@ -101,7 +101,7 @@ function TableHeader({ className, ...props }: TableHeaderProps): ReactElement {
     <thead
       data-slot="table-header"
       className={cn(
-        "[&_tr]:border-b in-data-[slot=frame]:**:[th]:h-9 in-data-[slot=frame]:*:[tr]:border-none in-data-[slot=frame]:*:[tr]:hover:bg-transparent",
+        "[&_tr]:border-b in-data-[slot=frame]:*:[tr]:border-none in-data-[slot=frame]:*:[tr]:hover:bg-transparent",
         className
       )}
       {...props}
@@ -154,7 +154,7 @@ function TableHead({ className, ...props }: TableHeadProps): ReactElement {
     <th
       data-slot="table-head"
       className={cn(
-        "font-medium h-10 px-2 text-left align-middle leading-none whitespace-nowrap text-muted-foreground has-[[role=checkbox]]:w-px has-[[role=checkbox]]:pe-0",
+        "font-medium box-border h-(--row-h-header) px-(--row-px) text-left align-middle leading-none whitespace-nowrap text-muted-foreground has-[[role=checkbox]]:w-px has-[[role=checkbox]]:pe-0",
         className
       )}
       scope="col"
@@ -259,7 +259,7 @@ function VerticalTableValue({
   return (
     <TableCell
       className={cn(
-        "text-sm *:text-sm **:text-sm group-data-[font-weight=bold]/vertical-table-row-item:font-medium group-data-[font-weight=normal]/vertical-table-row-item:font-normal py-2",
+        "text-sm *:text-sm **:text-sm group-data-[font-weight=bold]/vertical-table-row-item:font-medium group-data-[font-weight=normal]/vertical-table-row-item:font-normal",
         "in-data-[variant=non-bordered-compact]:border-none in-data-[variant=non-bordered-compact]:bg-inherit in-data-[variant=non-bordered-compact]:p-1",
         verticalTableCellText(text),
         className

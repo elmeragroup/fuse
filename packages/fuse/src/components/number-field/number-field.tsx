@@ -135,11 +135,10 @@ export function NumberField({
   const controlledValue = value === undefined ? undefined : Number.isNaN(value) ? null : value;
 
   // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- label/control stack gap is layout, not a control rung
-  const rootClassName = cn("gap-1", className);
-
   return (
     <FieldFrame
-      className={rootClassName}
+      spacing="part"
+      className={className}
       invalid={isInvalid}
       disabled={isDisabled}
       label={label}

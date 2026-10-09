@@ -244,51 +244,6 @@ describe("Sidebar controlled and uncontrolled state", () => {
   });
 });
 
-describe("Sidebar row density", () => {
-  it("sizes the default menu button as a control and keeps the sm and lg rail heights and Sidebar.Input fixed", () => {
-    const heights: Record<string, number[]> = {};
-    for (const density of ["dense", "comfortable"] as const) {
-      stampDensity(density);
-      const { unmount } = renderThemed(
-        withLocale(
-          "en-US",
-          <Sidebar.Provider>
-            <Sidebar.Root>
-              <Sidebar.Header>
-                <Sidebar.Input aria-label="Search" />
-              </Sidebar.Header>
-              <Sidebar.Content>
-                <Sidebar.Menu>
-                  <Sidebar.MenuItem>
-                    <Sidebar.MenuButton>Default row</Sidebar.MenuButton>
-                  </Sidebar.MenuItem>
-                  <Sidebar.MenuItem>
-                    <Sidebar.MenuButton size="sm">Small row</Sidebar.MenuButton>
-                  </Sidebar.MenuItem>
-                  <Sidebar.MenuItem>
-                    <Sidebar.MenuButton size="lg">Large row</Sidebar.MenuButton>
-                  </Sidebar.MenuItem>
-                </Sidebar.Menu>
-              </Sidebar.Content>
-            </Sidebar.Root>
-          </Sidebar.Provider>
-        )
-      );
-      heights[density] = [
-        px(getComputedStyle(roleNamed("button", "Default row")).height),
-        px(getComputedStyle(roleNamed("button", "Small row")).height),
-        px(getComputedStyle(roleNamed("button", "Large row")).height),
-        px(getComputedStyle(textboxNamed("Search")).height),
-      ];
-      unmount();
-    }
-    // The default row is the sm control height, 32px dense and 36px comfortable. The sm and lg
-    // rows and the input are rail geometry and keep their height.
-    expect(heights.dense).toEqual([32, 28, 48, 32]);
-    expect(heights.comfortable).toEqual([36, 28, 48, 32]);
-  });
-});
-
 describe("Sidebar menu skeleton geometry", () => {
   /**
    * A collapsed icon-rail row in px, written out by hand: a 32px square padded 8px on every
@@ -704,9 +659,11 @@ describe("Sidebar.MenuButton", () => {
     expect(roleNamed("button", "Small").getAttribute("data-size")).toBe("sm");
     expect(roleNamed("button", "Large").hasAttribute("data-active")).toBe(false);
 
-    expect(px(getComputedStyle(roleNamed("button", "Default action")).top)).toBe(6);
-    expect(px(getComputedStyle(roleNamed("button", "Large action")).top)).toBe(10);
-    expect(px(getComputedStyle(roleNamed("button", "Small action")).top)).toBe(4);
+    // The 24px action is centred on the dense 32px default row and the 28px sm row, and shares
+    // the badge's middle, 20px down, on the 48px lg row.
+    expect(px(getComputedStyle(roleNamed("button", "Default action")).top)).toBe(4);
+    expect(px(getComputedStyle(roleNamed("button", "Large action")).top)).toBe(8);
+    expect(px(getComputedStyle(roleNamed("button", "Small action")).top)).toBe(2);
     const badge = page.getByText("3", { exact: true }).element();
     if (!(badge instanceof HTMLElement)) {
       throw new Error("expected a menu badge");

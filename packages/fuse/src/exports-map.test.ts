@@ -39,6 +39,7 @@ const EXPECTED_ENTRIES = {
       "useLocale",
       "ForceColorScheme",
       "defaultDensityForVariant",
+      "DENSITIES",
       "densityAttributes",
       "themeAttributes",
       "ThemeProvider",
@@ -231,7 +232,7 @@ describe("exports map", () => {
   it("maps the published layout to package-root files, not nested dist/", () => {
     expect(exportBindingTarget(publishExports, "./flags/*.svg")).toBe("./flags/*.svg");
     expect(exportBindingTarget(publishExports, "./css")).toBe("./styles/fuse.css");
-    expect(exportBindingTarget(publishExports, "./demo-stage-comfortable.css")).toBeUndefined();
+    expect(exportBindingTarget(publishExports, "./demo-stage-density.css")).toBeUndefined();
     expect(exportBindingTarget(publishExports, "./themes.css")).toBe("./themes.css");
     expect(exportBindingTarget(publishExports, "./styles.css")).toBe("./styles.css");
     expect(JSON.stringify(publishExports)).not.toContain("/dist/");
@@ -266,7 +267,12 @@ describe("exports map", () => {
       "src/theme/catalog.ts",
       readFileSync(join(packageRoot, "src/theme/catalog.ts"), "utf8")
     );
-    expect(catalog).toEqual(["resolveThemeCatalog"]);
+    expect(catalog).toEqual([
+      "resolveThemeCatalog",
+      "DENSITY_FROZEN_CONTEXTS",
+      "DENSITY_ROLES",
+      "PART_DENSITY",
+    ]);
   });
 
   it("keeps the committed root barrel in sync with the generator", () => {

@@ -8,7 +8,15 @@ import "../../../dist/styles.css";
 import { assertStateFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import { describedTextsFor } from "../../../test/rac-calendar-testing";
-import { CONTROL_MD, px, renderThemed, roleNamed, stampDensity } from "../../../test/themed-browser-render";
+import {
+  CONTROL_MD,
+  LABEL,
+  px,
+  renderThemed,
+  roleNamed,
+  stampDensity,
+  textNamed,
+} from "../../../test/themed-browser-render";
 import { UiProviders } from "../ui-providers/ui-providers";
 import { SearchField } from "./search-field";
 
@@ -175,5 +183,21 @@ describe("SearchField", () => {
 
     await expect.element(page.getByRole("button", { name: "Tøm feltet" })).toBeVisible();
     expect(page.getByRole("button", { name: "Tøm søket" }).query()).toBeNull();
+  });
+});
+
+describe("SearchField text follows density", () => {
+  it("sets its label and description in the label type, as a Fuse Field does", () => {
+    renderField(<SearchField label="Customer search" description="Search by name or number" />);
+    for (const density of ["dense", "comfortable"] as const) {
+      stampDensity(density);
+      for (const text of ["Customer search", "Search by name or number"]) {
+        const style = getComputedStyle(textNamed(text));
+        expect({ font: px(style.fontSize), leading: px(style.lineHeight) }, `${density} ${text}`).toEqual(
+          LABEL[density]
+        );
+      }
+    }
+    document.documentElement.removeAttribute("data-density");
   });
 });

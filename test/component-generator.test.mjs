@@ -27,6 +27,7 @@ function fixture() {
     "plop-templates",
     "packages/fuse/scripts",
     "packages/fuse/src/icons/roster.ts",
+    "packages/fuse/src/theme/tokens/density-roles.ts",
   ]) {
     mkdirSync(dirname(join(directory, path)), { recursive: true });
     cpSync(join(root, path), join(directory, path), { recursive: true });
@@ -94,6 +95,10 @@ describe("component generator", () => {
     expect(readFileSync(join(directory, "packages/fuse/scripts/size-budgets.ts"), "utf8")).toContain(
       'name: "status-light", entryFile: "status-light.js", measuredGzip: 0'
     );
+    // The new slot starts with a placeholder role the source contract rejects.
+    expect(
+      readFileSync(join(directory, "packages/fuse/src/theme/tokens/density-roles.ts"), "utf8")
+    ).toContain('  "status-light": "TODO",');
     writeFileSync(join(directory, "packages/fuse/src/index.ts"), "export {};\n");
     const discovery = execFileSync(
       process.execPath,

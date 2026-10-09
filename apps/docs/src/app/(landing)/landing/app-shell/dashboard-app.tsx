@@ -6,7 +6,7 @@ import type { Dispatch, ReactElement, RefObject, SetStateAction } from "react";
 import { tv } from "tailwind-variants";
 
 import { Sidebar, useSidebar } from "@elmeragroup/fuse/sidebar";
-import { densityAttributes, ThemeScope } from "@elmeragroup/fuse/theme";
+import { defaultDensityForVariant, densityAttributes, ThemeScope } from "@elmeragroup/fuse/theme";
 import { Toast } from "@elmeragroup/fuse/toast";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
@@ -316,7 +316,7 @@ export function DashboardApp(): ReactElement {
       theme={{ ...theme, variant: "internal" }}
       className={styles.scope()}
       data-demo-stage
-      {...densityAttributes("dense")}>
+      {...densityAttributes(defaultDensityForVariant("internal"))}>
       <Tooltip.Provider>
         <Toast.Provider>
           <Sidebar.Provider open={open} onOpenChange={setOpenState} className={styles.provider()}>

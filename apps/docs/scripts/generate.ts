@@ -36,6 +36,7 @@ import type { ApiArtifactDiagnostic, GeneratedApiComponent } from "@elmeragroup/
 import type { ComponentPageEntry, DocsComponent, DocsDemo, ThemeCatalog } from "../src/lib/docs-model.ts";
 import { API_REGEN_COMMAND } from "../src/lib/docs-model.ts";
 import { generateDocsApiArtifacts } from "./lib/api-artifact.ts";
+import { buildDensityCatalog, renderDensityCatalog } from "./lib/density-catalog.ts";
 import {
   componentInspections,
   docsApiInventory,
@@ -249,6 +250,14 @@ function emitLandingFacts(catalog: ResolvedThemeCatalog, components: readonly Do
   );
 }
 
+/** The density roles, metrics and parts the tokens handbook page renders. */
+function emitDensityCatalog(catalog: ResolvedThemeCatalog): void {
+  writeFile(
+    path.join(generatedDir, "density-catalog.ts"),
+    `${BANNER}${renderDensityCatalog(buildDensityCatalog(catalog))}`
+  );
+}
+
 /** The colors the Open Graph card paints, as hex. */
 function emitOgCardColors(catalog: ResolvedThemeCatalog): void {
   writeFile(path.join(generatedDir, "og-card-colors.ts"), `${BANNER}${renderOgCardColors(catalog)}`);
@@ -318,6 +327,7 @@ async function main(): Promise<void> {
   emitFigmaThemeCatalog(catalog);
   emitLandingFacts(catalog, components);
   emitOgCardColors(catalog);
+  emitDensityCatalog(catalog);
   emitMarkdownEndpoints(components);
   emitSearchIndex(components);
   emitLlmsTxt(components);

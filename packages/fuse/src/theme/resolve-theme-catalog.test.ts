@@ -221,6 +221,7 @@ describe("resolveThemeCatalog", () => {
     expect(catalog.density.find((metric) => metric.name === "control-h-md")).toEqual({
       name: "control-h-md",
       metricKind: "height",
+      role: "control",
       codeSyntax: "var(--control-h-md)",
       px: { dense: 36, comfortable: 44 },
     });
@@ -232,8 +233,33 @@ describe("resolveThemeCatalog", () => {
     expect(catalog.density.find((metric) => metric.name === "control-px-button-md")).toEqual({
       name: "control-px-button-md",
       metricKind: "padding",
+      role: "control",
       codeSyntax: "var(--control-px-button-md)",
       px: { dense: 10, comfortable: 32 },
+    });
+  });
+
+  it("gives the row, surface gap and label metrics their role and px per density", () => {
+    // The density design: a row is 32px dense and 36px comfortable, with 6/8px block padding.
+    expect(catalog.density.find((metric) => metric.name === "row-h")).toMatchObject({
+      metricKind: "height",
+      role: "row",
+      px: { dense: 32, comfortable: 36 },
+    });
+    expect(catalog.density.find((metric) => metric.name === "row-py")).toMatchObject({
+      metricKind: "padding",
+      role: "row",
+      px: { dense: 6, comfortable: 8 },
+    });
+    expect(catalog.density.find((metric) => metric.name === "surface-gap-xl")).toMatchObject({
+      metricKind: "gap",
+      role: "surface",
+      px: { dense: 24, comfortable: 32 },
+    });
+    expect(catalog.density.find((metric) => metric.name === "label-text")).toMatchObject({
+      metricKind: "fontSize",
+      role: "label",
+      px: { dense: 14, comfortable: 16 },
     });
   });
 

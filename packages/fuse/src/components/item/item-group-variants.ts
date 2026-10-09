@@ -32,7 +32,7 @@ export const itemGroupVariants = tv({
   variants: {
     variant: {
       default: {
-        root: "gap-4 has-data-[size=sm]:gap-2.5 has-data-[size=xs]:gap-2",
+        root: "gap-(--surface-gap-lg) has-[[data-slot=item][data-size=sm]]:gap-(--surface-gap-sm) has-[[data-slot=item][data-size=xs]]:gap-(--surface-gap-sm)",
         separator: "my-2",
       },
       compact: {

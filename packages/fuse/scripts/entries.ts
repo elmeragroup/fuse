@@ -105,8 +105,8 @@ export const TOOLING_ONLY_JS_ENTRIES = [
  * published CSS, and the publish `.npmignore` lists the same `distFile`s to keep them out of the tarball.
  */
 export const TOOLING_ONLY_CSS_ENTRIES = [
-  // The docs' demo stage previews comfortable density; no consumer surface depends on it.
-  { subpath: "demo-stage-comfortable.css", distFile: "demo-stage-comfortable.css" },
+  // Re-scopes both densities onto the docs' demo stage; no consumer surface depends on it.
+  { subpath: "demo-stage-density.css", distFile: "demo-stage-density.css" },
 ] as const;
 
 export const CSS_ENTRY_NAMES = ["css", "styles.css", "themes.css"] as const;

@@ -75,13 +75,19 @@ describe("Sidebar namespace", () => {
 });
 
 describe("sidebarMenuButtonVariants", () => {
-  it("covers the public axes: a control-sized default row and the shell-local sm and lg heights", () => {
+  it("covers the public axes: a row-metric default row and the shell-local sm and lg heights", () => {
     const defaults = sidebarMenuButtonVariants();
-    expect(defaults).toContain("h-(--control-h-sm)");
-    expect(defaults).toContain("px-(--control-px-xs)");
+    expect(defaults).toContain("h-(--row-h)");
+    expect(defaults).toContain("px-(--row-px)");
     expect(defaults).toContain("peer/menu-button");
     expect(defaults).toContain("group/menu-button");
-    expect(defaults).toContain("group-has-data-[slot=sidebar-menu-action]/menu-item:pr-8");
+    // The default row reserves the action's xs square plus 8px; the fixed rail sizes reserve 32px.
+    expect(defaults).toContain(
+      "group-has-data-[slot=sidebar-menu-action]/menu-item:pr-[calc(max(var(--control-h-xs),24px)+0.5rem)]"
+    );
+    expect(sidebarMenuButtonVariants({ size: "sm" })).toContain(
+      "group-has-data-[slot=sidebar-menu-action]/menu-item:pr-8"
+    );
     expect(defaults).toContain("group-data-[collapsible=icon]:size-8!");
     expect(defaults).toContain("data-active:bg-sidebar-accent");
     // oxlint-disable-next-line elmera/no-local-focus-ring -- source-grep of the shared recipe's class, not a recipe
@@ -110,9 +116,10 @@ describe("sidebarMenuButtonVariants", () => {
       expect(className).not.toContain("ring-sidebar-ring");
       expect(className).not.toContain("data-[sidebar=");
     }
-    // The default row reads control metrics; the sm and lg rail heights read none.
+    // The default row reads the row metrics; the sm and lg rail heights read none.
     for (const className of sized) {
       expect(className).not.toContain("--control-");
+      expect(className).not.toContain("--row-");
     }
   });
 });

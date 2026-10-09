@@ -12,7 +12,7 @@ import path from "node:path";
  */
 const DOCS_FUSE_DIST_CSS = [
   { exportKey: "./themes.css", relative: "dist/themes.css" },
-  { exportKey: "./demo-stage-comfortable.css", relative: "dist/demo-stage-comfortable.css" },
+  { exportKey: "./demo-stage-density.css", relative: "dist/demo-stage-density.css" },
 ] as const;
 
 export function assertDocsFuseCssExports(packageRoot: string): string[] {

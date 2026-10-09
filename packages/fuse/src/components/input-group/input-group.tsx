@@ -5,6 +5,7 @@ import type { ComponentProps, ReactElement } from "react";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import { controlMd } from "../../styles/control-size-md";
 import { inputGroupRootClass, readOnlyFillCancelClass } from "../../styles/field-box";
 import { withinStateFaceControlClass } from "../../styles/state-face";
 import { withinFocusRingControlClass } from "../../styles/utils";
@@ -134,7 +135,8 @@ export function InputGroupText({ className, ...props }: InputGroupTextProps): Re
       data-slot="input-group-text"
       // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- addon text gap is chrome, not a control rung
       className={cn(
-        "text-sm flex items-center gap-2 text-muted-foreground [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
+        controlMd.type(),
+        "flex items-center gap-2 text-muted-foreground [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
         className
       )}
       {...props}

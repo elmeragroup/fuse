@@ -23,7 +23,7 @@ const cardLargeTierBoundaryClass = cn(
 
 /**
  * A horizontal Card root, which pads its sections itself with the large surface tier,
- * `--surface-pad-lg`: 16px dense, 24px comfortable.
+ * `--surface-pad-lg`.
  */
 export const cardHorizontalShellClass = cn("p-(--surface-pad-lg)", cardLargeTierBoundaryClass);
 

@@ -140,7 +140,7 @@ describe("publish manifest", () => {
 describe("packed tarball", () => {
   it("leaves the docs-only demo-stage stylesheet out of the tarball", () => {
     const root = scratchPackageRoot();
-    for (const file of ["themes.css", "demo-stage-comfortable.css"]) {
+    for (const file of ["themes.css", "demo-stage-density.css"]) {
       writeFileSync(join(root, "dist", file), ":root {}\n");
     }
     writePublishManifest(root);
@@ -149,7 +149,7 @@ describe("packed tarball", () => {
     expect(listing.status).toBe(0);
     const files = listing.stdout.split("\n");
     expect(files).toContain("package/themes.css");
-    expect(files).not.toContain("package/demo-stage-comfortable.css");
+    expect(files).not.toContain("package/demo-stage-density.css");
   }, 30_000);
 });
 

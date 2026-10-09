@@ -3,7 +3,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../dist/styles.css";
 import "../../dist/themes.css";
-import { cornerRadius, DENSITIES } from "../../test/inner-corner-specimens";
+import { cornerRadius } from "../../test/inner-corner-specimens";
 import { withLocale } from "../../test/locale-matrix";
 import { fkasPrivate, tkasCompany } from "../../test/theme-fixtures";
 import { px, renderThemed, roleNamed, stampDensity } from "../../test/themed-browser-render";
@@ -15,6 +15,7 @@ import { Popover } from "../components/popover";
 import { PopoverInfoButton } from "../components/popover-info-button/popover-info-button";
 import { Select } from "../components/select";
 import { Sidebar } from "../components/sidebar";
+import { DENSITIES } from "../theme/density";
 import type { Density } from "../theme/density";
 import { ThemeScope } from "../theme/theme-scope";
 

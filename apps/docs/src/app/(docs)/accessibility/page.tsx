@@ -110,8 +110,8 @@ export default function AccessibilityPage(): ReactElement {
       <p>
         Interactive controls meet WCAG 2.2 AA 2.5.8 Target Size (Minimum): at least{" "}
         <strong>24 × 24 CSS pixels</strong>, through the rendered box or a documented hit-area expansion.
-        Density does not change this floor — dense <code>xs</code> Button is a 24 px box, comfortable{" "}
-        <code>xs</code> is 32 px.
+        Density does not change this floor: the <code>xs</code> control height is floored at it at both
+        densities, and comfortable only grows it.
       </p>
 
       <h2 id="accepted-deviations">Accepted deviations</h2>

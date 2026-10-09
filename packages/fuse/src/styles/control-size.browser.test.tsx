@@ -27,6 +27,7 @@ import { Sidebar } from "../components/sidebar";
 import { Tabs } from "../components/tabs";
 import { ToggleGroup } from "../components/toggle-group";
 import { Toggle } from "../components/toggle/toggle";
+import { DENSITIES } from "../theme/density";
 import type { Density } from "../theme/density";
 import { ThemeScope } from "../theme/theme-scope";
 
@@ -39,8 +40,6 @@ import { ThemeScope } from "../theme/theme-scope";
  * is Tailwind's fixed `text-xs` / `text-sm`, which no density owns; the harness writes its
  * pixels by hand in `FIXED_CONTROL_TYPE`.
  */
-
-const DENSITIES = ["dense", "comfortable"] as const;
 
 /** The pixel metrics one control size resolves to at one density. */
 type SizeMetrics = {

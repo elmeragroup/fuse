@@ -22,6 +22,7 @@ import { Textarea } from "../components/textarea/textarea";
 import { DateField } from "../react-aria/date-field/date-field";
 import { SearchField } from "../react-aria/search-field/search-field";
 import { UiProviders } from "../react-aria/ui-providers/ui-providers";
+import { DENSITIES } from "../theme/density";
 
 /**
  * Control size under a coarse pointer: the 16px type floor on every text-entry box, at both
@@ -31,8 +32,6 @@ import { UiProviders } from "../react-aria/ui-providers/ui-providers";
  * Touch emulation is page-wide, so this file runs in the `browser-touch` project: in the
  * parallel `browser` project it would switch off `(hover: hover)` for neighbouring files.
  */
-
-const DENSITIES = ["dense", "comfortable"] as const;
 
 beforeEach(() => {
   document.documentElement.style.fontSize = "16px";
@@ -166,12 +165,14 @@ describe("control size: the text-entry touch floor", () => {
   );
 
   it.each(CASES)(
-    "floors the chips input over the chips box's 14px at %s with a %s pointer",
+    "sizes the chips input from the field text and floors it on touch at %s with a %s pointer",
     async (density, pointer) => {
       stampDensity(density);
       await emulatePointer(pointer);
       renderEntryBoxes();
-      const font = pointer === "coarse" ? IOS_NO_ZOOM_FONT : FIXED_CONTROL_TYPE.sm.font;
+      // The chips box takes the md control type, so its input's 1em follows the field text.
+      const md = CONTROL_MD[density];
+      const font = pointer === "coarse" ? Math.max(IOS_NO_ZOOM_FONT, md.font) : md.font;
       expect(px(getComputedStyle(roleNamed("combobox", "entry chips input")).fontSize)).toBe(font);
     }
   );

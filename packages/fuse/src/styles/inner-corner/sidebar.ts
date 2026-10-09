@@ -14,13 +14,14 @@ export const sidebarSurfaceShellClass = cn(
 );
 
 /**
- * A Sidebar header, footer or group: 8px padding, publishing only inside the floating Sidebar's
- * rounded surface. There it holds control-sized rows, so it pads with the small surface tier,
- * `--surface-pad-sm`, except in the icon rail, where the 8px centres the 32px icon buttons in
- * the 48px rail.
+ * A Sidebar header, footer or group: the row inset, `--row-px`, so their content edges line up
+ * with each other and with the rows inside. In the icon rail it keeps 8px at both densities,
+ * which centres the 32px icon buttons in the 48px rail. It publishes only inside the floating
+ * Sidebar's rounded surface, where it pads with the small surface tier, `--surface-pad-sm`.
  */
+// oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- the icon rail's fixed 8px, not a control size
 export const sidebarSectionShellClass = cn(
-  "p-2 [--shell-inner:initial] in-data-[slot=sidebar-inner]:group-data-[variant=floating]:p-(--surface-pad-sm) in-data-[slot=sidebar-inner]:group-data-[variant=floating]:[--shell-inner:max(0px,--theme(--radius-lg)-var(--surface-pad-sm))] in-data-[slot=sidebar-inner]:group-data-[variant=floating]:group-data-[collapsible=icon]:p-2 in-data-[slot=sidebar-inner]:group-data-[variant=floating]:group-data-[collapsible=icon]:[--shell-inner:max(0px,--theme(--radius-lg)-2*var(--spacing))]",
+  "p-(--row-px) [--shell-inner:initial] group-data-[collapsible=icon]:p-2 in-data-[slot=sidebar-inner]:group-data-[variant=floating]:p-(--surface-pad-sm) in-data-[slot=sidebar-inner]:group-data-[variant=floating]:[--shell-inner:max(0px,--theme(--radius-lg)-var(--surface-pad-sm))] in-data-[slot=sidebar-inner]:group-data-[variant=floating]:group-data-[collapsible=icon]:p-2 in-data-[slot=sidebar-inner]:group-data-[variant=floating]:group-data-[collapsible=icon]:[--shell-inner:max(0px,--theme(--radius-lg)-2*var(--spacing))]",
   publishShellBoundary
 );
 

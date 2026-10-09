@@ -15,15 +15,15 @@ import { tv } from "./tv";
  * keeps its own geometry for the rest.
  *
  * The type pair is spelled as the typed variable utilities `text-(length:--control-text)`
- * and `leading-(--control-leading)`, not as the arbitrary properties `[font-size:…]` and
- * `[line-height:…]`. tailwind-merge groups the typed forms with `text-*` and `leading-*`,
- * so a consumer's `text-sm` or `leading-5` in `className` removes them through `cn`, and
- * only the consumer class reaches the element. That removal is the whole mechanism: Tailwind
+ * and `leading-(--control-leading)`, not as arbitrary font-size and line-height properties.
+ * tailwind-merge groups the typed forms with `text-*` and `leading-*`, so a consumer's
+ * `text-sm` or `leading-5` in `className` removes them through `cn`, and only the consumer
+ * class reaches the element. That removal is the whole mechanism: Tailwind
  * 4.3.3 orders these rules by property and emits `.text-(length:--control-text)` after
  * `.text-sm`, so a recipe class left beside the consumer's would still win the cascade. An
  * arbitrary property never reaches the merge, because tailwind-merge puts it in no
  * font-size or line-height group, so `cn` kept both. The `length:` hint is required,
- * because a bare `text-(--var)` could also be a colour.
+ * because a bare variable on the `text` utility could also be a colour.
  *
  * `entryType` is the text-entry variant of `type`, with a font-size floor under the
  * `entry-floor` variant (see `controlMdInsetTypeClass`). Its one font-size class is a typed

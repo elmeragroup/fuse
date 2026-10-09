@@ -173,9 +173,9 @@ describe("VerticalTable structure", () => {
     expect(host).toContain('scope="row"');
     expect(html).toContain("Name");
     expect(host).toContain("bg-muted/50");
-    expect(host).toContain("p-2");
+    expect(host).toContain("px-(--row-px)");
     expect(host).toContain("align-middle");
-    expect(host).toContain("in-data-[slot=frame]:first:p-[calc(--spacing(2.5)-1px)]");
+    expect(host).toContain("in-data-[slot=frame]:first:px-[calc(var(--row-px)+--spacing(0.5)-1px)]");
     expect(html).not.toMatch(/<td[^>]*>Name/);
   });
 });

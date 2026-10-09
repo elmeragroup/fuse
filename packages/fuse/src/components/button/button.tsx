@@ -126,6 +126,7 @@ export function Button({
   return (
     <ButtonPrimitive
       data-slot="button"
+      data-size={size ?? "default"}
       data-pending={isPending || undefined}
       // Present only while an indicator renders: the recipe's icon swap keys off it, so a
       // `null` indicator hides nothing.

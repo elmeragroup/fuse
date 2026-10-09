@@ -3,7 +3,7 @@ import { publishShellBoundary } from "../corner-radius";
 
 // The inner-corner shells of Accordion items. The rules every shell follows are in
 // `corner-radius.ts`. Each constant pairs a part's rung or padding with the corner it publishes.
-// Every item pads with the medium surface tier, `--surface-pad-md`: 12px dense, 16px comfortable.
+// Every item pads with the medium surface tier, `--surface-pad-md`.
 
 /**
  * A default Accordion item: `rounded-sm` and the medium surface padding.

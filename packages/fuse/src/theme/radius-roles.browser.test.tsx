@@ -7,7 +7,7 @@ import "../../dist/styles.css";
 import "../../dist/themes.css";
 import { shadowLayers } from "../../test/assert-invalid-ring";
 import { render } from "../../test/browser-render";
-import { DENSITIES, edgeInset } from "../../test/inner-corner-specimens";
+import { edgeInset } from "../../test/inner-corner-specimens";
 import type { PartEdge } from "../../test/inner-corner-specimens";
 import { withLocale } from "../../test/locale-matrix";
 import { fkasExternal, fkasPrivate, tkasCompany } from "../../test/theme-fixtures";
@@ -39,6 +39,8 @@ import {
 } from "../react-aria/date-picker/date-picker";
 import { SearchField } from "../react-aria/search-field/search-field";
 import { UiProviders } from "../react-aria/ui-providers/ui-providers";
+import { DENSITIES } from "./density";
+import type { Density } from "./density";
 import { ThemeScope } from "./theme-scope";
 import { EXTERNAL_VARIANT_LAYER } from "./tokens/external-palettes";
 import { themeSlug } from "./tokens/themes";
@@ -464,9 +466,31 @@ function expectConcentric(context: string): void {
   }
 }
 
-function expectRadii(variant: Variant, context: string): void {
+/**
+ * The radii that differ when comfortable. An addon pads with `--control-px-icon-md`, 12px
+ * comfortable, so a button pulled 4px into it, an addon button or the phone field's country
+ * trigger, sits 9px inside the field box, past the internal 6px field corner, and rounds at 0.
+ * The external field corner already floors at 0 dense.
+ */
+const COMFORTABLE = {
+  internal: { "addon xs": 0, "addon sm": 0, "phone trigger": 0 },
+} as const satisfies { readonly [V in Variant]?: { readonly [S in Specimen]?: number } };
+
+/** The comfortable radius of `specimen` where it differs from the dense one. */
+function comfortableRadius(variant: Variant, specimen: Specimen): number | undefined {
+  if (variant !== "internal") {
+    return undefined;
+  }
+  const overrides: { readonly [S in Specimen]?: number } = COMFORTABLE.internal;
+  return overrides[specimen];
+}
+
+function expectRadii(variant: Variant, context: string, density: Density = "dense"): void {
   for (const [specimen, name, measured] of measure()) {
-    expect(measured, `${context} ${name}`).toBeCloseTo(EXPECTED[variant][specimen], 1);
+    const expected =
+      (density === "comfortable" ? comfortableRadius(variant, specimen) : undefined) ??
+      EXPECTED[variant][specimen];
+    expect(measured, `${context} ${name}`).toBeCloseTo(expected, 1);
   }
 }
 
@@ -511,7 +535,7 @@ describe("radius roles", () => {
             <Specimens />
           </ThemeScope>
         );
-        expectRadii(variant, `${density} ${variant}`);
+        expectRadii(variant, `${density} ${variant}`, density);
         expectConcentric(`${density} ${variant}`);
         unmount();
       }

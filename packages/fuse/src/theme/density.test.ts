@@ -19,11 +19,23 @@ describe("densityAttributes", () => {
   });
 });
 
-it.each([
-  // SAFETY: runtime rejection is the contract under test; the public type is ThemeVariant.
-  ["defaultDensityForVariant", () => defaultDensityForVariant("system" as ThemeVariant)],
-  // SAFETY: runtime rejection is the contract under test; the public type is Density.
-  ["densityAttributes", () => densityAttributes("system" as Density)],
-] as const)("%s rejects an unknown untyped value", (_name, call) => {
-  expect(call).toThrow(/unknown or missing/);
+/** Untyped values a JS caller can pass: an unknown string and non-strings that coerce to a key. */
+const UNTYPED: readonly (readonly [string, unknown])[] = [
+  ["an unknown string", "system"],
+  ["an array holding a known key", ["external"]],
+  ["an array holding a density", ["comfortable"]],
+  ["an object", { variant: "external" }],
+  ["a number", 1],
+];
+
+describe.each(UNTYPED)("an untyped value: %s", (_name, value) => {
+  it("is rejected by defaultDensityForVariant", () => {
+    // SAFETY: runtime rejection is the contract under test; the public type is ThemeVariant.
+    expect(() => defaultDensityForVariant(value as ThemeVariant)).toThrow(/unknown or missing/);
+  });
+
+  it("is rejected by densityAttributes", () => {
+    // SAFETY: runtime rejection is the contract under test; the public type is Density.
+    expect(() => densityAttributes(value as Density)).toThrow(/unknown or missing/);
+  });
 });

@@ -6,6 +6,7 @@ import { BundleSizes } from "../../../../components/bundle-sizes";
 import { DocsPage, pageMetadata } from "../../../../components/docs-page";
 import { DocsTable } from "../../../../components/docs-table";
 import { TokenSwatchList } from "../../../../components/token-swatch-list";
+import { DENSITY_CATALOG } from "../../../../generated/density-catalog";
 import { COLOR_TOKENS } from "../../../../generated/token-reference";
 
 const HREF = "/handbook/tokens";
@@ -46,91 +47,30 @@ export default function TokensPage(): ReactElement {
 
       <h2 id="density">Density</h2>
       <p>
-        Control sizing lives in <code>--control-*</code> tokens and surface padding in{" "}
-        <code>--surface-pad-*</code> tokens. Both have two settings, <code>dense</code> and{" "}
-        <code>comfortable</code>, resolved once on the document root. Density is not a theme axis: the theme
-        cascade decides colour, the root decides sizing, and no scope nests a second density. Both values are
-        stamped explicitly, including <code>dense</code>.
+        Density has two settings, <code>dense</code> and <code>comfortable</code>, resolved once on the
+        document root. It is not a theme axis: the theme cascade decides colour, the root decides sizing, and
+        no scope nests a second density. Both settings are stamped explicitly, including <code>dense</code>.
       </p>
       <p>
-        Button pads its labels with its own <code>--control-px-button-*</code> family. Dense matches the other
-        controls, and comfortable widens it to 16px at <code>sm</code> and 32px at <code>default</code> and{" "}
-        <code>lg</code>, so text fields, Select and Toggle keep their narrower inset. The edge beside a
-        leading or trailing icon has its own <code>--control-px-button-icon-*</code> family, 12px at{" "}
-        <code>sm</code> and 24px at <code>default</code> and <code>lg</code> when comfortable, so the icon
-        does not sit tight against one end. An input group&apos;s addon buttons keep their own padding.
+        Every part declares a density role, which names the metrics it reads. A <strong>control</strong> is an
+        interactive single-line box, a <strong>row</strong> one line of a collection, a{" "}
+        <strong>surface</strong> a shell that pads content or a stack that spaces groups, and a{" "}
+        <strong>label</strong> the words that describe a control. A <strong>layout</strong> part is sized by
+        its children and a <strong>fixed</strong> part is identical at both densities. A row keeps its text
+        size, so it grows only in height and padding, and a gap between one part&apos;s own pieces stays
+        fixed. The docs density coverage test checks every rendered part against its role.
       </p>
       <p>
-        Controls set their type from <code>--control-text</code> and <code>--control-leading</code>, 14/20px
-        dense and 18/24px comfortable. The selection rows behind <code>CheckboxItem</code> and{" "}
-        <code>RadioItem</code> have their own pair, <code>--control-text-row</code> and{" "}
-        <code>--control-leading-row</code>: 14/20px dense and 16/24px comfortable, so a row&apos;s title and
-        description stay a step below the field and button text around them.
+        Button pads its labels with its own <code>--control-px-button-*</code> and{" "}
+        <code>--control-px-button-icon-*</code> families, so text fields, Select and Toggle keep their
+        narrower inset. A shell pads with one of three surface tiers, picked by what it holds, and subtracts
+        the same tier from the corner it hands its inner parts, so padding and inner corner cannot drift
+        apart. Outer corners do not change with density.
       </p>
-
-      <h3 id="surface-tiers">Surface tiers</h3>
-      <p>
-        Every shell pads with one of three surface tiers, picked by what it holds, so spacing stays coherent
-        from a row out to the page. A shell subtracts the same tier from the corner it hands its inner parts,
-        so padding and inner corner cannot drift apart. Outer corners do not change with density.
-      </p>
-      <DocsTable.Wrap>
-        <DocsTable.Root>
-          <thead>
-            <tr>
-              <DocsTable.HeaderCell scope="col">Tier</DocsTable.HeaderCell>
-              <DocsTable.HeaderCell scope="col">Shells</DocsTable.HeaderCell>
-              <DocsTable.HeaderCell scope="col" numeric>
-                Dense
-              </DocsTable.HeaderCell>
-              <DocsTable.HeaderCell scope="col" numeric>
-                Comfortable
-              </DocsTable.HeaderCell>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <DocsTable.BodyCell>
-                <code>--surface-pad-sm</code>
-              </DocsTable.BodyCell>
-              <DocsTable.BodyCell>
-                Shells of control-sized rows: DropdownMenu, Select, Combobox, NavigationMenu content, the
-                floating Sidebar, Frame, Calendar and date-picker presets
-              </DocsTable.BodyCell>
-              <DocsTable.BodyCell numeric>4px</DocsTable.BodyCell>
-              <DocsTable.BodyCell numeric>4px</DocsTable.BodyCell>
-            </tr>
-            <tr>
-              <DocsTable.BodyCell>
-                <code>--surface-pad-md</code>
-              </DocsTable.BodyCell>
-              <DocsTable.BodyCell>
-                Compact content: Popover, Toast, Accordion items, the Field label card and Item&apos;s inline
-                padding
-              </DocsTable.BodyCell>
-              <DocsTable.BodyCell numeric>12px</DocsTable.BodyCell>
-              <DocsTable.BodyCell numeric>16px</DocsTable.BodyCell>
-            </tr>
-            <tr>
-              <DocsTable.BodyCell>
-                <code>--surface-pad-lg</code>
-              </DocsTable.BodyCell>
-              <DocsTable.BodyCell>
-                Content surfaces: Card sections and the gaps between them, Dialog, Frame panels and Empty
-              </DocsTable.BodyCell>
-              <DocsTable.BodyCell numeric>16px</DocsTable.BodyCell>
-              <DocsTable.BodyCell numeric>24px</DocsTable.BodyCell>
-            </tr>
-          </tbody>
-        </DocsTable.Root>
-      </DocsTable.Wrap>
-      <p>
-        Empty doubles the large tier from the <code>md</code> breakpoint up, 32px dense and 48px comfortable.
-        Rows inside a small-tier shell are controls: menu, Select, Combobox, NavigationMenu and default
-        Sidebar rows take the <code>sm</code> control height and the <code>xs</code> control inset, 32px tall
-        with 8px inline padding when dense and 36px with 12px when comfortable. Tooltip, Tabs and the compact
-        Item sizes keep their fixed padding.
-      </p>
+      <h3 id="density-metrics">Metrics by role</h3>
+      <DensityMetricsTable />
+      <h3 id="density-parts">Parts by role</h3>
+      <DensityPartsTable />
 
       <h2 id="bundle-sizes">Measured bundle sizes</h2>
       <p>
@@ -142,5 +82,72 @@ export default function TokensPage(): ReactElement {
       </p>
       <BundleSizes />
     </DocsPage>
+  );
+}
+
+/** Every density metric, grouped by the role that reads it, in px per density. */
+function DensityMetricsTable(): ReactElement {
+  return (
+    <DocsTable.Wrap>
+      <DocsTable.Root>
+        <thead>
+          <tr>
+            <DocsTable.HeaderCell scope="col">Role</DocsTable.HeaderCell>
+            <DocsTable.HeaderCell scope="col">Metric</DocsTable.HeaderCell>
+            <DocsTable.HeaderCell scope="col" numeric>
+              Dense
+            </DocsTable.HeaderCell>
+            <DocsTable.HeaderCell scope="col" numeric>
+              Comfortable
+            </DocsTable.HeaderCell>
+          </tr>
+        </thead>
+        <tbody>
+          {DENSITY_CATALOG.flatMap(({ role, metrics }) =>
+            metrics.map((metric) => (
+              <tr key={metric.name} data-density-metric={metric.name}>
+                <DocsTable.BodyCell>{role}</DocsTable.BodyCell>
+                <DocsTable.BodyCell>
+                  <code>{`--${metric.name}`}</code>
+                </DocsTable.BodyCell>
+                <DocsTable.BodyCell numeric>{`${String(metric.dense)}px`}</DocsTable.BodyCell>
+                <DocsTable.BodyCell numeric>{`${String(metric.comfortable)}px`}</DocsTable.BodyCell>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </DocsTable.Root>
+    </DocsTable.Wrap>
+  );
+}
+
+/** Every part's declared role, by `data-slot` or a `slot[data-x=y]` override. */
+function DensityPartsTable(): ReactElement {
+  return (
+    <DocsTable.Wrap>
+      <DocsTable.Root>
+        <thead>
+          <tr>
+            <DocsTable.HeaderCell scope="col">Role</DocsTable.HeaderCell>
+            <DocsTable.HeaderCell scope="col">Parts</DocsTable.HeaderCell>
+          </tr>
+        </thead>
+        <tbody>
+          {DENSITY_CATALOG.map(({ role, parts }) => (
+            <tr key={role} data-density-role={role}>
+              <DocsTable.BodyCell>{role}</DocsTable.BodyCell>
+              <DocsTable.BodyCell>
+                {parts.map((part, index) => (
+                  <span key={part}>
+                    {index === 0 ? null : ", "}
+                    <code>{part}</code>
+                  </span>
+                ))}
+              </DocsTable.BodyCell>
+            </tr>
+          ))}
+        </tbody>
+      </DocsTable.Root>
+    </DocsTable.Wrap>
   );
 }

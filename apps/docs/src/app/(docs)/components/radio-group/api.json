@@ -150,7 +150,7 @@
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"vertical\"",
-          "description": "Layout of the group primitive, and of RadioItemGroup's stacked-card list. Vertical: primitive `flex-col gap-2`; item list connected `flex-col gap-0`. Horizontal: primitive `flex-wrap gap-4`; item list `flex-row flex-wrap gap-4` with individually rounded cards. Maps through `selectionGroupOrientationVariants`. Default `\"vertical\"`.",
+          "description": "Layout of the group primitive, and of RadioItemGroup's stacked-card list. Vertical: primitive `flex-col` gapped by `--surface-gap-sm`; item list connected `flex-col gap-0`. Horizontal: primitive `flex-wrap` and item list `flex-row flex-wrap`, gapped by `--surface-gap-lg` with individually rounded cards. Maps through `selectionGroupOrientationVariants`. Default `\"vertical\"`.",
           "required": false
         },
         {
@@ -531,7 +531,7 @@
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"vertical\"",
-          "description": "Layout of the group primitive, and of RadioItemGroup's stacked-card list. Vertical: primitive `flex-col gap-2`; item list connected `flex-col gap-0`. Horizontal: primitive `flex-wrap gap-4`; item list `flex-row flex-wrap gap-4` with individually rounded cards. Maps through `selectionGroupOrientationVariants`. Default `\"vertical\"`.",
+          "description": "Layout of the group primitive, and of RadioItemGroup's stacked-card list. Vertical: primitive `flex-col` gapped by `--surface-gap-sm`; item list connected `flex-col gap-0`. Horizontal: primitive `flex-wrap` and item list `flex-row flex-wrap`, gapped by `--surface-gap-lg` with individually rounded cards. Maps through `selectionGroupOrientationVariants`. Default `\"vertical\"`.",
           "required": false
         },
         {

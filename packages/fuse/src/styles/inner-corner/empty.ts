@@ -5,8 +5,7 @@ import { publishShellBoundary } from "../corner-radius";
 // constant pairs a part's rung or padding with the corner it publishes.
 
 /**
- * Empty: `rounded-lg` and the large surface padding, `--surface-pad-lg`, doubled from `md` up:
- * 32px dense and 48px comfortable there.
+ * Empty: `rounded-lg` and the large surface padding, `--surface-pad-lg`, doubled from `md` up.
  */
 export const emptyShellClass = cn(
   "md:p-[calc(2*var(--surface-pad-lg))] md:[--shell-inner:max(0px,--theme(--radius-lg)-2*var(--surface-pad-lg))] rounded-lg p-(--surface-pad-lg) [--shell-inner:max(0px,--theme(--radius-lg)-var(--surface-pad-lg))]",

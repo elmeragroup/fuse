@@ -352,7 +352,8 @@ export function ComboboxEmpty({
       data-slot="combobox-empty"
       className={mergeClassName(
         className,
-        "text-sm hidden w-full justify-center py-2 text-center text-muted-foreground group-data-empty/combobox-content:flex"
+        // The empty state is a row: the row inset pads it, and its text stays fixed.
+        "text-sm hidden w-full justify-center px-(--row-px) py-(--row-py) text-center text-muted-foreground group-data-empty/combobox-content:flex"
       )}
       {...props}>
       {children ?? strings.format("empty")}
@@ -394,7 +395,9 @@ export function ComboboxChips({
           className,
           controlMd.minHeight(),
           controlMd.inset(),
-          "text-sm shadow-xs flex flex-wrap items-center gap-1.5 border border-input bg-transparent bg-clip-padding transition-[color,box-shadow]",
+          controlMd.type(),
+          controlMd.gap(),
+          "shadow-xs flex flex-wrap items-center border border-input bg-transparent bg-clip-padding transition-[color,box-shadow]",
           fieldBoxShellClass,
           chipsShellClass,
           withinFocusRingClass,

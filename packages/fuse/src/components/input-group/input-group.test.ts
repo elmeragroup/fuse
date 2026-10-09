@@ -13,7 +13,8 @@ function tokens(classes: string): string[] {
 describe("inputGroupAddonVariants", () => {
   it("defaults to the inline-start rail and resolves every align value with the shared rail base", () => {
     expect(inputGroupAddonVariants()).toContain("order-first");
-    expect(inputGroupAddonVariants()).toContain("pl-2");
+    expect(inputGroupAddonVariants()).toContain("pl-(--control-px-icon-md)");
+    expect(inputGroupAddonVariants()).toContain("text-(length:--control-text)");
     for (const align of ALIGNMENTS) {
       const resolved = inputGroupAddonVariants({ align });
       expect(resolved, align).toContain("cursor-text");
@@ -28,14 +29,14 @@ describe("inputGroupAddonVariants", () => {
 });
 
 describe("inputGroupButtonVariants", () => {
-  it("defaults to the compact xs addon size, squares the icon values, and keeps Button's md box for sm", () => {
-    expect(tokens(inputGroupButtonVariants())).toContain("h-[max(1.5rem,24px)]");
+  it("defaults to the xs rung, squares the icon values on the xs and sm rungs, and keeps Button's md box for sm", () => {
+    expect(tokens(inputGroupButtonVariants())).toContain("h-[max(var(--control-h-xs),24px)]");
 
     expect(tokens(inputGroupButtonVariants({ size: "icon-xs" }))).toEqual(
-      expect.arrayContaining(["size-[max(1.5rem,24px)]", "p-0"])
+      expect.arrayContaining(["size-[max(var(--control-h-xs),24px)]", "p-0"])
     );
     expect(tokens(inputGroupButtonVariants({ size: "icon-sm" }))).toEqual(
-      expect.arrayContaining(["size-8", "p-0"])
+      expect.arrayContaining(["size-(--control-h-sm)", "p-0"])
     );
 
     for (const token of tokens(inputGroupButtonVariants({ size: "sm" }))) {
@@ -56,14 +57,19 @@ describe("inputGroupButtonVariants", () => {
     );
   });
 
-  it("is a shell-local exemption: no control size of its own and no density variants", () => {
+  it("reads only existing rungs below the field's md box, and no density variants", () => {
+    // Every size keeps the field's md icon edge. The box reads the xs rung, or the sm square for
+    // icon-sm, and sm keeps the md inset.
+    const expected = {
+      xs: ["--control-gap-xs", "--control-h-xs", "--control-px-icon-md", "--control-px-icon-xs"],
+      sm: ["--control-px-icon-md", "--control-px-md"],
+      "icon-xs": ["--control-h-xs", "--control-px-icon-md"],
+      "icon-sm": ["--control-h-sm", "--control-px-icon-md"],
+    } as const satisfies Record<(typeof BUTTON_SIZES)[number], readonly string[]>;
     for (const size of BUTTON_SIZES) {
       const resolved = inputGroupButtonVariants({ size });
-      // The addon reads only the md control parts it shares with the field box: the icon edge
-      // at every size, and the inset at sm.
       const metrics = new Set([...resolved.matchAll(/--control-[a-z-]+/gu)].map(([name]) => name));
-      const allowed = size === "sm" ? ["--control-px-icon-md", "--control-px-md"] : ["--control-px-icon-md"];
-      expect([...metrics].toSorted(), size).toEqual(allowed);
+      expect([...metrics].toSorted(), size).toEqual(expected[size]);
       expect(resolved, size).not.toContain("dense:");
       expect(resolved, size).not.toContain("comfortable:");
       expect(resolved, size).not.toContain("data-density");

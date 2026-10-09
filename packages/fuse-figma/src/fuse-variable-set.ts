@@ -13,7 +13,8 @@
  *   Its variables are hidden from the pickers because they only feed `Fuse tokens`.
  * - `Fuse primitives` holds the neutral ramp and brand accents in a single mode. Primitive
  *   tokens are public API, so designers can bind these too.
- * - `Fuse density` holds the control and surface metrics with a Dense and a Comfortable mode.
+ * - `Fuse density` holds the density metrics (control, row, surface and label) with a Dense and a
+ *   Comfortable mode.
  *
  * Twenty-four theme modes stay well inside Figma's 40-mode limit, and a new theme adds a mode
  * rather than a collection.
@@ -62,7 +63,7 @@ export const THEMES_COLLECTION = "Fuse themes";
 /** The collection holding the scheme-independent palette. */
 export const PRIMITIVES_COLLECTION = "Fuse primitives";
 
-/** The collection with the control and surface metrics and one mode per density. */
+/** The collection with the density metrics and one mode per density. */
 const DENSITY_COLLECTION = "Fuse density";
 
 const PRIMITIVES_MODE = "Value";
@@ -261,9 +262,9 @@ function themeVariableName(scheme: ResolvedColorScheme, name: string): string {
 }
 
 /**
- * One FLOAT variable per density metric, control or surface, named after its custom property. Density is
+ * One FLOAT variable per density metric, named after its custom property. Density is
  * independent of theme and scheme, so these variables hold literals and alias nothing. A
- * metric's family decides its scopes.
+ * metric's kind decides its scopes.
  */
 function densityCollection(density: readonly DensityMetricEntry[]): CollectionSpec {
   const variables = density.map((metric): VariableSpec => ({
