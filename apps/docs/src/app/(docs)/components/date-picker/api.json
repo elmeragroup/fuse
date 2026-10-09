@@ -47,7 +47,7 @@
           "type": "((validation: ValidationResult) => ReactNode) | ReactNode",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Error copy, rendered as `FieldError` when the picker is invalid. Accepts a node or a validation render function.",
+          "description": "Error copy, rendered as `FieldError` when the picker is invalid. Accepts a node or a validation render function. Without it, the picker shows a `Form` error under its `name`, which clears when the value changes.",
           "required": false
         },
         {

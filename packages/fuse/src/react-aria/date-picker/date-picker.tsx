@@ -20,6 +20,7 @@ import { pickerVariants } from "../../styles/picker";
 import { Calendar } from "../calendar/calendar";
 import { DateInput } from "../date-field/date-field";
 import { composeTailwindRenderProps } from "../internal/compose-tailwind-render-props";
+import { FormErrors, useClearFormErrors } from "../internal/form-errors";
 import { useCommittedMonthFocus } from "../internal/picker-focused-month";
 import { isRenderableNode, PickerPresetGroup, PickerPresetItem } from "../internal/picker-presets";
 import type { PickerPresetGroupProps, PickerPresetItemProps } from "../internal/picker-presets";
@@ -43,7 +44,8 @@ export type DatePickerProps<T extends DateValue> = {
   description?: string;
   /**
    * Error copy, rendered as `FieldError` when the picker is invalid. Accepts a node or a
-   * validation render function.
+   * validation render function. Without it, the picker shows a `Form` error under its `name`,
+   * which clears when the value changes.
    */
   errorMessage?: ReactNode | ((validation: ValidationResult) => ReactNode);
   /**
@@ -99,6 +101,7 @@ export function DatePicker<T extends DateValue>({
   errorMessage,
   isReadOnly,
   label,
+  onChange,
   presetGroup,
   shouldForceLeadingZeros = true,
   triggerPlacement = "end",
@@ -107,29 +110,34 @@ export function DatePicker<T extends DateValue>({
   const { base, calendar, input, pane } = pickerVariants({
     hasPresets: isRenderableNode(presetGroup),
   });
+  const names = [props.name] as const;
+  const clearingOnChange = useClearFormErrors(names, onChange);
 
   return (
-    <AriaDatePicker
-      {...props}
-      isReadOnly={isReadOnly}
-      shouldForceLeadingZeros={shouldForceLeadingZeros}
-      className={composeTailwindRenderProps(className, base())}>
-      <PickerShell
-        container={container}
-        description={description}
-        errorMessage={errorMessage}
+    <FormErrors names={names}>
+      <AriaDatePicker
+        {...props}
+        onChange={clearingOnChange}
         isReadOnly={isReadOnly}
-        label={label}
-        triggerPlacement={triggerPlacement}
-        popover={
-          <div className={pane()}>
-            {presetGroup}
-            <PickerCalendar className={calendar()} />
-          </div>
-        }>
-        <DateInput className={input()} />
-      </PickerShell>
-    </AriaDatePicker>
+        shouldForceLeadingZeros={shouldForceLeadingZeros}
+        className={composeTailwindRenderProps(className, base())}>
+        <PickerShell
+          container={container}
+          description={description}
+          errorMessage={errorMessage}
+          isReadOnly={isReadOnly}
+          label={label}
+          triggerPlacement={triggerPlacement}
+          popover={
+            <div className={pane()}>
+              {presetGroup}
+              <PickerCalendar className={calendar()} />
+            </div>
+          }>
+          <DateInput className={input()} />
+        </PickerShell>
+      </AriaDatePicker>
+    </FormErrors>
   );
 }
 

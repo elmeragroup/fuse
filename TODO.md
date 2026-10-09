@@ -174,10 +174,10 @@
   opt-out as a pure wrapper. Until then the Form page sends
   such forms to a plain `<form>` with `isInvalid` and `errorMessage`, which gives up the errors
   routed by name and the focus on new errors (#170).
-- The interim React Aria fields read React Aria's form context, not Fuse `Form`'s `errors`, so
-  a server error under their name does not reach them. A form that mixes them with Base UI
-  fields keeps React Aria's `Form`. Wire them to `Form`'s `errors`, or retire them with the
-  date tier below.
+- The interim React Aria fields show Fuse `Form`'s `errors` (`react-aria/internal/form-errors.tsx`)
+  but do not register as its Fields: their values are not in `onFormSubmit`'s, their own
+  validation does not block a submit, and `Form` does not focus them for a returned error.
+  Register them, or retire them with the date tier below.
 - Native form reset, including React's reset after a form action, leaves Checkbox, Switch,
   CheckboxCard, RadioGroup and CheckboxGroup at their current selection: `useCheckedResetSync`
   only writes the shown state back into Base UI's hidden inputs, so an uncontrolled control does
