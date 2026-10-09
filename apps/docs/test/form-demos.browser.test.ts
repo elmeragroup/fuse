@@ -16,7 +16,9 @@ describe("Form demos", () => {
     await demo.getByRole("button", { name: "Sign up" }).click();
     await expect.poll(async () => pickerError.count()).toBe(1);
     const errorId = await pickerError.getAttribute("id");
-    await expect.poll(async () => (await picker.getAttribute("aria-describedby"))?.split(" ")).toContain(errorId);
+    await expect
+      .poll(async () => (await picker.getAttribute("aria-describedby"))?.split(" "))
+      .toContain(errorId);
     await expect.poll(async () => alert("This address is already registered.").count()).toBe(1);
 
     await demo.getByRole("button", { name: /^calendar/i }).click();

@@ -19,15 +19,21 @@ type FieldNames = readonly [name: string | undefined, endName?: string | undefin
  * Both libraries show a new errors object again, so the bridge hands React Aria a new context
  * whenever `Form`'s errors object changes while it holds an entry for the field. That is why a
  * value change must also clear the key (`useClearFormErrors`): otherwise a sibling's edit, which
- * makes a new errors object, would show the error again. A field with no `Form` entry sees the
- * outer React Aria context untouched, such as a React Aria `Form`'s `validationErrors`; a `Form`
- * entry wins over an outer one under the same name.
+ * makes a new errors object, would show the error again.
+ *
+ * A field sees the outer React Aria context untouched, such as a React Aria `Form`'s
+ * `validationErrors`, when it has no `Form` entry or when the outer context holds an entry under
+ * one of its names. That keeps a form that passes the same errors to both working: swapping the
+ * context when the `Form` key clears would make React Aria show the outer copy again.
  */
 export function FormErrors({ names, children }: { names: FieldNames; children: ReactNode }): ReactElement {
   const { errors } = useFormContext();
   const outer = use(FormValidationContext);
   const [name, endName] = names;
   const value = useMemo(() => {
+    if ([name, endName].some((key) => key !== undefined && Object.hasOwn(outer, key))) {
+      return outer;
+    }
     let merged: ValidationErrors | undefined;
     for (const key of [name, endName]) {
       const entry = key !== undefined && Object.hasOwn(errors, key) ? errors[key] : undefined;

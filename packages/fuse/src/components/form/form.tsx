@@ -12,7 +12,8 @@ export type FormProps<FormValues extends object = FormPrimitive.Values> = FormPr
  * returned after submit. Keys are the names of the controls, and each value is one message or
  * several. A `Field.Error` without children shows the error under its control's name, and so
  * do `TextField`, `PhoneNumberField` and the interim react-aria fields when they get no
- * `errorMessage`. Editing a field clears its error, and a new `errors` object shows them again.
+ * `errorMessage`. Editing a field clears its error, a react-aria date field once the typed date
+ * is complete, and a new `errors` object shows them again.
  * The react-aria fields are not Fields of the form: their values are not in `onFormSubmit`'s,
  * and their own validation does not block a submit.
  *
