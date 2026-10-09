@@ -188,6 +188,9 @@
   every Checkbox, Switch, CheckboxCard and radio now subscribes, so a DataTable with a `SelectRow`
   checkbox per row adds a listener per row. Pool subscribers per root, with one listener that
   dispatches to the subscribers whose control is in the reset form.
+- NumberField writes optional props such as `name`, `min` and `aria-label` as plain attributes,
+  against the optional-prop rule in AGENTS.md. The `WIRING_PARTS` source contract flags only raw
+  spreads, so it misses them. Spread them through `definedProps`.
 
 ## Control size
 
@@ -206,6 +209,11 @@
   `styles/inner-corner/picker.ts`. It never renders: the only shipped consumer, `PickerShell`,
   overrides it with `pickerDialogShellClass`'s `p-0`, and the Calendar and presets inside pad
   with the small surface tier themselves.
+- Checkbox, Radio and Switch build their hit target from rem `after:-inset-*` offsets, so it
+  scales with the root font size and has no fixed-px 24px floor. At a 14px root, Checkbox and
+  Radio targets are 26px tall and the small Switch 33px. Checkbox and Radio drop below 24px only
+  under a root smaller than 13px, so this is about consistency, not a current failure. Use
+  Slider's centred fixed-px target instead.
 
 ## Figma token sync
 

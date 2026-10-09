@@ -330,6 +330,13 @@ export const PART_DENSITY = {
 
   skeleton: "fixed",
 
+  slider: "layout",
+  "slider-control": "control",
+  "slider-track": "fixed",
+  "slider-indicator": "fixed",
+  "slider-thumb": "fixed",
+  "slider-value": "label",
+
   span: "fixed",
 
   switch: "fixed",
