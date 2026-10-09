@@ -8,13 +8,7 @@ import type { ComponentProps, ReactElement, ReactNode } from "react";
 // Root, Trigger, and the popup's search Input are the raw
 // primitives; the popup surface itself is the library Combobox.
 import { Combobox as ComboboxPrimitive } from "@base-ui/react";
-// Base UI's own Field wiring, which its composite controls use. The phone field needs it to
-// keep its country picker out of the field and to register the number it submits.
-import { DEFAULT_FIELD_ROOT_STATE, DEFAULT_VALIDITY_STATE } from "@base-ui/react/internals/field-constants";
-import { FieldRootContext, useFieldRootContext } from "@base-ui/react/internals/field-root-context";
 import { useFormContext } from "@base-ui/react/internals/form-context";
-import { LabelableProvider } from "@base-ui/react/internals/labelable-provider";
-import { NOOP } from "@base-ui/react/internals/noop";
 import type { CountryCode, MetadataJson } from "libphonenumber-js/core";
 import { flushSync } from "react-dom";
 
@@ -35,104 +29,12 @@ import {
   InputGroupRoot,
 } from "../input-group/input-group";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
-import { caretOffset, significantAfter } from "./caret";
-import type { CaretSide } from "./caret";
-import { sortByCountryName } from "./country-names";
+import { countryNameResolver, sortByCountryName } from "./country-names";
 import { Flag } from "./flag";
 import { usePhoneNumberFieldState } from "./hooks/use-phone-number-field-state";
 import { phoneNumberFieldStrings } from "./intl";
 import type { PhoneNumberCountry } from "./phone-engine";
-
-/**
- * Hands the number input's Field registration the number the field submits in place of the
- * display text the input holds, so a `Form` reads it for `onFormSubmit` while still focusing
- * the input on an error and checking its constraints. The input keeps its own
- * `${name}-display-value` DOM name, which the Field's `name` would otherwise replace.
- */
-function SubmittedValueControl({
-  getSubmittedValue,
-  children,
-}: {
-  getSubmittedValue: () => string;
-  children: ReactNode;
-}): ReactElement {
-  const field = useFieldRootContext();
-  const { registerFieldControl } = field;
-  const register = useCallback<FieldRootContext["registerFieldControl"]>(
-    (source, registration) =>
-      registerFieldControl(source, registration && { ...registration, getValue: getSubmittedValue }),
-    [registerFieldControl, getSubmittedValue]
-  );
-  const context = useMemo(
-    () => ({ ...field, name: undefined, registerFieldControl: register }),
-    [field, register]
-  );
-  return <FieldRootContext.Provider value={context}>{children}</FieldRootContext.Provider>;
-}
-
-/**
- * The Field context Base UI gives a control outside any Field: no name, registration,
- * validation or state to report to. Typed against Base UI's own context, so a change to it
- * fails the build here.
- */
-const DETACHED_FIELD_CONTEXT: FieldRootContext = {
-  invalid: undefined,
-  name: undefined,
-  validityData: { state: DEFAULT_VALIDITY_STATE, errors: [], error: "", value: "", initialValue: null },
-  setValidityData: NOOP,
-  disabled: undefined,
-  setTouched: NOOP,
-  setDirty: NOOP,
-  setFilled: NOOP,
-  setFocused: NOOP,
-  validationMode: "onSubmit",
-  shouldValidateOnChange: () => false,
-  state: DEFAULT_FIELD_ROOT_STATE,
-  registerFieldControl: NOOP,
-  validation: {
-    getValidationProps: (_disabled, props = {}) => props,
-    inputRef: { current: null },
-    registeredInputs: new Map(),
-    registerInput: NOOP,
-    getInputControl: () => null,
-    commit: () => Promise.resolve(),
-    change: NOOP,
-  },
-};
-
-/**
- * Renders the country picker outside the phone field's Field, and outside any Field around
- * it: the detached context keeps the combobox from registering as a field's control or taking
- * its name, and its own labelable scope keeps the field's label and control id off it. It
- * keeps the field's disabled state, which a disabled `Field.Set` can set.
- */
-function CountryPickerScope({ children }: { children: ReactNode }): ReactElement {
-  const { disabled } = useFieldRootContext();
-  const context = useMemo(() => ({ ...DETACHED_FIELD_CONTEXT, disabled }), [disabled]);
-  return (
-    <FieldRootContext.Provider value={context}>
-      <LabelableProvider>{children}</LabelableProvider>
-    </FieldRootContext.Provider>
-  );
-}
-
-/** A selection kept as the digits after each end, for the display an edit proposed. */
-type PendingSelection = {
-  display: string;
-  start: number;
-  end: number;
-  side: CaretSide;
-  direction: "forward" | "backward" | "none" | undefined;
-};
-
-/** Edits that remove what follows the caret, so it waits before the next digit. */
-const FORWARD_DELETIONS = new Set([
-  "deleteContentForward",
-  "deleteWordForward",
-  "deleteSoftLineForward",
-  "deleteHardLineForward",
-  "deleteByCut",
-]);
+import { CountryPickerScope, SubmittedValueControl } from "./phone-field-context";
 
 export type PhoneNumberFieldProps = {
   /** Authoritative controlled value; URI-decoded when received. Omit for uncontrolled editing. */
@@ -341,36 +243,11 @@ export function PhoneNumberField({
 
   const phone = usePhoneNumberFieldState({
     ...stateOptions,
-    locale,
+    inputRef: numberInputRef,
   });
   useFormReset(numberInputRef, phone.onReset);
+  const getCountryName = useMemo(() => countryNameResolver(locale), [locale]);
 
-  // An edit whose display the field rewrites, as formatOnType does, would leave the caret at
-  // the end once React assigns the value. The change handler keeps the selection as digit
-  // counts, and the commit that shows the edit's display puts it back. A rejected or replaced
-  // proposal shows another value, so the pending selection is dropped. This runs after every
-  // commit: deleting a separator proposes the display that was already shown, so no
-  // dependency changes.
-  const pendingSelectionRef = useRef<PendingSelection | null>(null);
-  useLayoutEffect(() => {
-    const pending = pendingSelectionRef.current;
-    pendingSelectionRef.current = null;
-    const input = numberInputRef.current;
-    if (!pending || !input || input.value !== pending.display) {
-      return;
-    }
-    // The document's activeElement is the shadow host for an input in a shadow root.
-    const root = input.getRootNode();
-    const focused = root instanceof Document || root instanceof ShadowRoot ? root.activeElement : null;
-    if (focused !== input) {
-      return;
-    }
-    input.setSelectionRange(
-      caretOffset(pending.display, pending.start, pending.side),
-      caretOffset(pending.display, pending.end, pending.side),
-      pending.direction
-    );
-  });
   // A Form reads the submitted number at submit time, after the commit that last changed it.
   const submittedValueRef = useRef(phone.outputValue);
   useLayoutEffect(() => {
@@ -419,19 +296,25 @@ export function PhoneNumberField({
     hydrationCheckedRef.current = true;
     const input = numberInputRef.current;
     if (input && isEditable && input.value !== phone.displayValue) {
-      phone.handleInputChange(input.value);
+      phone.edit({
+        value: input.value,
+        selectionStart: null,
+        selectionEnd: null,
+        selectionDirection: null,
+        inputType: null,
+      });
     }
   });
 
   // The flag and dial code: the picker trigger's face, or the plain context of one country.
   const countryFace = (
     <div className="flex items-center gap-1">
-      <Flag country={phone.selectedCountry.code} />
+      <Flag country={phone.country.code} />
       {/* The input's font size, touch floor included, so both runs of digits have one size.
           Leading is `normal` because a text input centres its text on the font's normal
           metrics whatever its line-height; the dial code centres the same way. */}
       <span className={cn(controlMd.entryType(), "font-medium min-w-6 leading-[normal] tabular-nums")}>
-        {phone.selectedCountry.dialCode}
+        {phone.country.dialCode}
       </span>
     </div>
   );
@@ -459,7 +342,7 @@ export function PhoneNumberField({
                   name may keep the server's text through hydration. */}
               <div className="flex shrink-0 items-center pr-1">
                 <span className="sr-only" suppressHydrationWarning>
-                  {phone.getCountryName(phone.selectedCountry.code)}
+                  {getCountryName(phone.country.code)}
                 </span>
                 {countryFace}
               </div>
@@ -468,14 +351,14 @@ export function PhoneNumberField({
             <CountryPickerScope>
               <ComboboxPrimitive.Root
                 items={pickerCountries}
-                value={phone.selectedCountry}
+                value={phone.country}
                 onValueChange={(next) => {
                   if (!isEditable) return;
                   phone.selectCountry(next?.code);
                   requestAnimationFrame(() => numberInputRef.current?.focus());
                 }}
                 itemToStringLabel={(country) =>
-                  countryPickerOpenRef.current ? phone.getCountryName(country.code) : country.code
+                  countryPickerOpenRef.current ? getCountryName(country.code) : country.code
                 }
                 itemToStringValue={(country) => country.code}
                 isItemEqualToValue={(left, right) => left.code === right.code}
@@ -559,7 +442,7 @@ export function PhoneNumberField({
                         <Flag country={country.code} />
                         <span className="text-sm leading-tight tabular-nums">{country.dialCode}</span>
                         <span className="text-sm leading-tight max-w-32 truncate text-ellipsis">
-                          {phone.getCountryName(country.code)}
+                          {getCountryName(country.code)}
                         </span>
                       </ComboboxItem>
                     )}
@@ -578,27 +461,18 @@ export function PhoneNumberField({
                 if (!isEditable) return;
                 const { value, selectionStart, selectionEnd, selectionDirection } = event.currentTarget;
                 const { nativeEvent } = event;
-                const side: CaretSide =
-                  nativeEvent instanceof InputEvent && FORWARD_DELETIONS.has(nativeEvent.inputType)
-                    ? "beforeNext"
-                    : "afterPrevious";
-                // Recorded before the proposal is published, since a parent that accepts it
-                // synchronously commits the new display before `handleInputChange` returns.
-                phone.handleInputChange(value, (display) => {
-                  pendingSelectionRef.current =
-                    display !== value && selectionStart !== null && selectionEnd !== null
-                      ? {
-                          display,
-                          start: significantAfter(value, selectionStart),
-                          end: significantAfter(value, selectionEnd),
-                          side,
-                          direction: selectionDirection ?? undefined,
-                        }
-                      : null;
+                phone.edit({
+                  value,
+                  selectionStart,
+                  selectionEnd,
+                  selectionDirection,
+                  inputType: nativeEvent instanceof InputEvent ? nativeEvent.inputType : null,
                 });
               }}
               onPaste={(event) => {
-                if (isEditable) phone.handlePaste(event);
+                if (!isEditable) return;
+                event.preventDefault();
+                phone.paste(event.clipboardData.getData("text"));
               }}
               onBlur={onBlur}
               placeholder={placeholder}

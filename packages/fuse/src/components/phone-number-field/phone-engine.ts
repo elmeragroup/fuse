@@ -300,7 +300,7 @@ export type ProcessedPhoneInput = {
 };
 
 /** Options for {@link processInputWithDetection}. */
-export type ProcessInputOptions = {
+type ProcessInputOptions = {
   input: string;
   currentCountry: PhoneNumberCountry;
   countries: readonly PhoneNumberCountry[];
@@ -343,7 +343,7 @@ export type PhoneFieldValues = {
 };
 
 /** Options for {@link resolvePhoneFieldValues}. */
-export type ResolvePhoneFieldValuesOptions = {
+type ResolvePhoneFieldValuesOptions = {
   digits: string;
   parsedNational?: boolean;
   country: CountryCode | undefined;

@@ -82,6 +82,7 @@ const CLIENT_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
     "phone-number-field",
     [
       "components/phone-number-field/phone-number-field.tsx",
+      "components/phone-number-field/phone-field-context.tsx",
       "components/phone-number-field/hooks/use-phone-number-field-state.ts",
     ],
   ],

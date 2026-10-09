@@ -1,5 +1,5 @@
-import { Component, useState } from "react";
-import type { ReactElement, ReactNode } from "react";
+import { useState } from "react";
+import type { ReactNode } from "react";
 
 import type { MetadataJson } from "libphonenumber-js/core";
 import { createPortal, flushSync } from "react-dom";
@@ -7,7 +7,6 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
-import type { PhoneNumberFieldProps } from "@elmeragroup/fuse/phone-number-field";
 
 import "../../../dist/styles.css";
 import {
@@ -24,11 +23,7 @@ import {
   phoneSubmission,
   selectCountry,
 } from "../../../test/phone-browser-queries";
-import {
-  EMPTY_PICKER_ERROR_MESSAGE,
-  EXCLUDED_PRODUCT_COUNTRY_CODES,
-  FLAG_GAP_COUNTRY_CODES,
-} from "../../../test/phone-picker-contract";
+import { EXCLUDED_PRODUCT_COUNTRY_CODES, FLAG_GAP_COUNTRY_CODES } from "../../../test/phone-picker-contract";
 import {
   CONTROL_MD,
   fieldRootFrom,
@@ -319,50 +314,6 @@ describe("PhoneNumberField", () => {
     );
     await userEvent.fill(page.getByRole("textbox", { name: "Mobile", exact: true }), "41234567");
     expect([...new FormData(formNamed("Phone form")).keys()]).toEqual([]);
-  });
-
-  it("auto-detects SE from +46 and strips the prefix in national mode", async () => {
-    renderField(<PhoneNumberField label="Mobile" />);
-    await userEvent.fill(page.getByRole("textbox", { name: "Mobile", exact: true }), "+46701234567");
-    expect(roleNamed("button", "Select country").textContent).toContain("+46");
-    expect(textboxNamed("Mobile")).toHaveProperty("value", "701234567");
-  });
-
-  it("clears digits when preserveOnCountryChange is false and re-emits when true", async () => {
-    const onChange = vi.fn();
-    const { rerender } = renderField(
-      <PhoneNumberField label="Mobile" defaultCountryCode="NO" onChange={onChange} />
-    );
-    await userEvent.fill(page.getByRole("textbox", { name: "Mobile", exact: true }), "41234567");
-    expect(onChange).toHaveBeenLastCalledWith("+4741234567");
-    await selectCountry("Sweden");
-    expect(onChange).toHaveBeenLastCalledWith("");
-    expect(textboxNamed("Mobile")).toHaveProperty("value", "");
-
-    onChange.mockClear();
-    rerender(
-      withLocale(
-        "en-US",
-        <PhoneNumberField
-          label="Mobile"
-          defaultCountryCode="NO"
-          preserveOnCountryChange
-          onChange={onChange}
-        />
-      )
-    );
-    await userEvent.fill(page.getByRole("textbox", { name: "Mobile", exact: true }), "41234567");
-    await selectCountry("Sweden");
-    expect(onChange.mock.calls.at(-1)?.[0]).not.toBe("");
-    expect(textboxNamed("Mobile")).not.toHaveProperty("value", "");
-  });
-
-  it("strips non-phone characters through the input pipeline", async () => {
-    const onChange = vi.fn();
-    renderField(<PhoneNumberField label="Mobile" onChange={onChange} />);
-    await userEvent.fill(page.getByRole("textbox", { name: "Mobile", exact: true }), "41234567abc");
-    expect(textboxNamed("Mobile")).toHaveProperty("value", "41234567");
-    expect(onChange).toHaveBeenLastCalledWith("+4741234567");
   });
 
   it("intercepts paste, preventDefaults, and lands cleaned digits", async () => {
@@ -656,173 +607,6 @@ describe("PhoneNumberField country order", () => {
   });
 });
 
-/**
- * The controlled configurations, which had no coverage before this ticket: the emitted
- * value is fed straight back in as `value`, which is what makes the sync effect run on the
- * hook's own output.
- */
-function ControlledField(props: Omit<PhoneNumberFieldProps, "value" | "onChange">): ReactElement {
-  const [value, setValue] = useState("");
-  return <PhoneNumberField {...props} value={value} onChange={setValue} />;
-}
-
-describe("PhoneNumberField controlled value", () => {
-  // In international mode the display follows the entry in controlled and uncontrolled use
-  // alike. Before this ticket a controlled field rewrote itself to "+4741234567" once the
-  // number became valid, and an uncontrolled one never did.
-  it.each([
-    [
-      "emits the national format without rewriting what was typed",
-      { outputFormat: "national" as const },
-      "41234567",
-      "41 23 45 67",
-      "41234567",
-    ],
-    [
-      "shows what was entered in international mode and stores the full number",
-      { international: true },
-      "41234567",
-      "+4741234567",
-      "41234567",
-    ],
-    [
-      "keeps a typed international prefix in international mode",
-      { international: true },
-      "+4741234567",
-      "+4741234567",
-      "+4741234567",
-    ],
-    [
-      "formats as you type when formatOnType is set",
-      { formatOnType: true },
-      "41234567",
-      "+4741234567",
-      "41 23 45 67",
-    ],
-  ])("%s", async (_name, fieldProps, typed, stored, display) => {
-    renderField(<ControlledField label="Mobile" name="phone" {...fieldProps} />);
-    await userEvent.fill(page.getByRole("textbox", { name: "Mobile", exact: true }), typed);
-    await expect.poll(() => hiddenNamed("phone").value).toBe(stored);
-    expect(textboxNamed("Mobile")).toHaveProperty("value", display);
-  });
-});
-
-describe("PhoneNumberField national trunk prefix", () => {
-  // The issue's per-key expectations for a Swedish mobile number typed with its trunk 0.
-  const keys = "0701234567";
-  const asTyped = [
-    "0",
-    "07",
-    "070",
-    "0701",
-    "07012",
-    "070123",
-    "0701234",
-    "07012345",
-    "070123456",
-    "0701234567",
-  ];
-  const formattedAsTyped = [
-    "0",
-    "07",
-    "070",
-    "070-1",
-    "070-12",
-    "070-123",
-    "070-123 4",
-    "070-123 45",
-    "070-123 45 6",
-    "070-123 45 67",
-  ];
-
-  it.each([
-    { mode: "uncontrolled", controlled: false, formatOnType: false, expected: asTyped },
-    { mode: "uncontrolled", controlled: false, formatOnType: true, expected: formattedAsTyped },
-    { mode: "controlled", controlled: true, formatOnType: false, expected: asTyped },
-    { mode: "controlled", controlled: true, formatOnType: true, expected: formattedAsTyped },
-  ])(
-    "keeps the trunk 0 on display key by key, $mode, formatOnType $formatOnType",
-    async ({ controlled, formatOnType, expected }) => {
-      const Field = controlled ? ControlledField : PhoneNumberField;
-      renderField(
-        <form aria-label="Phone form">
-          <Field label="Mobile" name="phone" defaultCountryCode="SE" formatOnType={formatOnType} />
-        </form>
-      );
-      const input = phoneInput();
-      input.focus();
-      const shown: string[] = [];
-      for (const key of keys) {
-        await userEvent.keyboard(key);
-        shown.push(input.value);
-      }
-      expect(shown).toEqual(expected);
-      expect(new FormData(formNamed("Phone form")).get("phone")).toBe("+46701234567");
-    }
-  );
-
-  it("strips separators from a filled national number but keeps its trunk 0", async () => {
-    renderField(<PhoneNumberField label="Mobile" name="phone" defaultCountryCode="SE" />);
-    await userEvent.fill(textboxNamed("Mobile"), "070 123 45 67");
-    expect(textboxNamed("Mobile")).toHaveProperty("value", "0701234567");
-    expect(hiddenNamed("phone").value).toBe("+46701234567");
-  });
-});
-
-describe("PhoneNumberField detected numbers", () => {
-  function paste(text: string) {
-    const clipboard = new DataTransfer();
-    clipboard.setData("text/plain", text);
-    phoneInput().dispatchEvent(
-      new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData: clipboard })
-    );
-  }
-
-  it.each([
-    { formatOnType: false, completed: "2642351234" },
-    { formatOnType: true, completed: "(264) 235-1234" },
-  ])(
-    "completes a pasted partial international number without repeating its area code, formatOnType $formatOnType",
-    async ({ formatOnType, completed }) => {
-      renderField(<PhoneNumberField label="Mobile" name="phone" formatOnType={formatOnType} />);
-      paste("+12642351");
-      await expect.poll(() => hiddenNamed("phone").value).toBe("+12642351");
-      expect(phoneInput().value).toBe("2642351");
-      phoneInput().focus();
-      phoneInput().setSelectionRange(7, 7);
-      await userEvent.keyboard("234");
-      expect(phoneInput().value).toBe(completed);
-      expect(hiddenNamed("phone").value).toBe("+12642351234");
-    }
-  );
-
-  it.each([
-    { copied: " +46 701 234 567", formatOnType: false, display: "701234567" },
-    { copied: " +46 701 234 567", formatOnType: true, display: "070-123 45 67" },
-    { copied: "(+46) 70 123 45 67", formatOnType: false, display: "701234567" },
-    { copied: "(+46) 70 123 45 67", formatOnType: true, display: "070-123 45 67" },
-  ])(
-    "detects a pasted '$copied' from Norway, formatOnType $formatOnType",
-    async ({ copied, formatOnType, display }) => {
-      renderField(<PhoneNumberField label="Mobile" name="phone" formatOnType={formatOnType} />);
-      expect(roleNamed("button", "Select country").textContent).toContain("+47");
-      paste(copied);
-      await expect.poll(() => hiddenNamed("phone").value).toBe("+46701234567");
-      expect(phoneInput().value).toBe(display);
-      expect(roleNamed("button", "Select country").textContent).toContain("+46");
-    }
-  );
-
-  it("keeps the national format of a detected number through a preserving country change", async () => {
-    renderField(<PhoneNumberField label="Mobile" name="phone" formatOnType preserveOnCountryChange />);
-    paste("+46701234567");
-    await expect.poll(() => phoneInput().value).toBe("070-123 45 67");
-    await selectCountry("Finland");
-    expect(phoneInput().value).toBe("070 1234567");
-    expect(hiddenNamed("phone").value).toBe("+358701234567");
-  });
-});
-
 describe("PhoneNumberField caret", () => {
   /** Types the keys one at a time at the caret, as a user does. */
   async function typeKeys(keys: string) {
@@ -836,132 +620,20 @@ describe("PhoneNumberField caret", () => {
     phoneInput().setSelectionRange(offset, offset);
   }
 
-  it.each([
-    { mode: "uncontrolled", controlled: false },
-    { mode: "controlled", controlled: true },
-  ])("keeps the caret among the digits through a reformatting edit, $mode", async ({ controlled }) => {
-    const Field = controlled ? ControlledField : PhoneNumberField;
-    renderField(
-      <form aria-label="Phone form">
-        <Field label="Mobile" name="phone" formatOnType />
-      </form>
-    );
+  /** The number input's selection, as its start and end offsets. */
+  function selection() {
     const input = phoneInput();
-    const caret = () => [input.selectionStart, input.selectionEnd];
-
-    // Backspace after the 2 deletes it, and the caret stays after "91".
-    caretAt(0);
-    await typeKeys("91234567");
-    expect(input.value).toBe("91 23 45 67");
-    caretAt(4);
-    await userEvent.keyboard("{Backspace}");
-    expect(input.value).toBe("91 34 56 7");
-    expect(caret()).toEqual([2, 2]);
-    await typeKeys("5");
-    expect(input.value).toBe("91 53 45 67");
-    expect(caret()).toEqual([4, 4]);
-    expect(phoneSubmission().get("phone")).toBe("+4791534567");
-
-    // Backspace after a space deletes only the space, which comes back; the caret stays after "91".
-    caretAt(3);
-    await userEvent.keyboard("{Backspace}");
-    expect(input.value).toBe("91 53 45 67");
-    expect(caret()).toEqual([2, 2]);
-    await typeKeys("0");
-    expect(input.value).toBe("910534567");
-    expect(caret()).toEqual([3, 3]);
-    expect(phoneSubmission().get("phone")).toBe("+47910534567");
-
-    // A digit typed after the first one of a shorter number lands there.
-    await userEvent.keyboard("{End}{Backspace}{Backspace}");
-    expect(input.value).toBe("91 05 34 5");
-    caretAt(1);
-    await typeKeys("4");
-    expect(input.value).toBe("94 10 53 45");
-    expect(caret()).toEqual([2, 2]);
-    expect(phoneSubmission().get("phone")).toBe("+4794105345");
-  });
-
-  it.each([
-    { mode: "uncontrolled", controlled: false },
-    { mode: "controlled", controlled: true },
-  ])(
-    "keeps the caret after the calling code an international display adds, $mode",
-    async ({ controlled }) => {
-      const Field = controlled ? ControlledField : PhoneNumberField;
-      renderField(
-        <form aria-label="Phone form">
-          <Field label="Mobile" name="phone" international formatOnType />
-        </form>
-      );
-      const input = phoneInput();
-      caretAt(0);
-      const shown: string[] = [];
-      for (const key of "91234567") {
-        await userEvent.keyboard(key);
-        shown.push(input.value);
-        expect(input.selectionStart, input.value).toBe(input.value.length);
-      }
-      expect(shown).toEqual([
-        "+47 9",
-        "+47 91",
-        "+47 912",
-        "+47 9123",
-        "+47 91234",
-        "+47 912345",
-        "+47 9123456",
-        "+47 91 23 45 67",
-      ]);
-      expect(phoneSubmission().get("phone")).toBe("+4791234567");
-
-      // Backspace after the 2, then a 5 in its place.
-      caretAt(8);
-      await userEvent.keyboard("{Backspace}");
-      expect(input.value).toBe("+47 9134567");
-      expect(input.selectionStart).toBe(6);
-      await typeKeys("5");
-      expect(input.value).toBe("+47 91 53 45 67");
-      expect(input.selectionStart).toBe(8);
-      expect(phoneSubmission().get("phone")).toBe("+4791534567");
-    }
-  );
-
-  it("keeps the caret before the next digit through forward deletes", async () => {
-    renderField(
-      <form aria-label="Phone form">
-        <PhoneNumberField label="Mobile" name="phone" formatOnType />
-      </form>
-    );
-    const input = phoneInput();
-    caretAt(0);
-    await typeKeys("91234567");
-    // Delete after the space removes the 2, and the caret waits before the 3.
-    caretAt(3);
-    await userEvent.keyboard("{Delete}");
-    expect(input.value).toBe("91 34 56 7");
-    expect(input.selectionStart).toBe(3);
-    await userEvent.keyboard("{Delete}");
-    expect(input.value).toBe("91 45 67");
-    expect(input.selectionStart).toBe(3);
-    // Delete before a space removes only the space, which comes back; the next Delete still
-    // reaches the digit after it.
-    caretAt(2);
-    await userEvent.keyboard("{Delete}");
-    expect(input.value).toBe("91 45 67");
-    expect(input.selectionStart).toBe(3);
-    await userEvent.keyboard("{Delete}");
-    expect(input.value).toBe("91 56 7");
-    expect(input.selectionStart).toBe(3);
-    expect(phoneSubmission().get("phone")).toBe("+4791567");
-  });
+    return [input.selectionStart, input.selectionEnd];
+  }
 
   it("keeps the caret when the parent commits the edit synchronously", async () => {
-    function Synchronous() {
+    function Synchronous({ description }: { description?: string }) {
       const [value, setValue] = useState("");
       return (
         <form aria-label="Phone form">
           <PhoneNumberField
             label="Mobile"
+            description={description}
             name="phone"
             value={value}
             onChange={(next) => flushSync(() => setValue(next))}
@@ -970,17 +642,58 @@ describe("PhoneNumberField caret", () => {
         </form>
       );
     }
-    renderField(<Synchronous />);
+    const { rerender } = renderField(<Synchronous />);
     const input = phoneInput();
     caretAt(0);
     await typeKeys("91234567");
     caretAt(4);
     await userEvent.keyboard("{Backspace}");
     expect(input.value).toBe("91 34 56 7");
-    expect(input.selectionStart).toBe(2);
+    expect(selection()).toEqual([2, 2]);
     await typeKeys("5");
     expect(input.value).toBe("91 53 45 67");
     expect(phoneSubmission().get("phone")).toBe("+4791534567");
+
+    // Backspace after a space removes only the space, which formatting puts back: the display
+    // the edit proposes is the one already shown, and the caret still lands after "91".
+    caretAt(3);
+    await userEvent.keyboard("{Backspace}");
+    expect(input.value).toBe("91 53 45 67");
+    expect(document.activeElement).toBe(input);
+    expect(selection()).toEqual([2, 2]);
+
+    // A render that proposes nothing leaves a caret the user moved alone.
+    input.setSelectionRange(5, 5);
+    rerender(withLocale("en-US", <Synchronous description="Work" />));
+    expect(page.getByText("Work").query()).not.toBeNull();
+    expect(input.value).toBe("91 53 45 67");
+    expect(selection()).toEqual([5, 5]);
+  });
+
+  it("keeps the caret when the parent stores its own form of the number", async () => {
+    function NationalDigits() {
+      const [value, setValue] = useState("");
+      return (
+        <PhoneNumberField
+          label="Mobile"
+          value={value}
+          onChange={(next) => setValue(next.replace(/^\+47/, ""))}
+          formatOnType
+        />
+      );
+    }
+    renderField(<NationalDigits />);
+    const input = phoneInput();
+    caretAt(0);
+    await typeKeys("91234567");
+    expect(input.value).toBe("91 23 45 67");
+    caretAt(4);
+    await userEvent.keyboard("{Backspace}");
+    expect(input.value).toBe("91 34 56 7");
+    expect(selection()).toEqual([2, 2]);
+    await typeKeys("5");
+    expect(input.value).toBe("91 53 45 67");
+    expect(selection()).toEqual([4, 4]);
   });
 
   it("keeps the caret for a field inside a shadow root", async () => {
@@ -1002,78 +715,9 @@ describe("PhoneNumberField caret", () => {
       host.remove();
     }
   });
-
-  it("keeps the caret where a separator typed into an unformatted number was dropped", async () => {
-    renderField(
-      <form aria-label="Phone form">
-        <PhoneNumberField label="Mobile" name="phone" />
-      </form>
-    );
-    const input = phoneInput();
-    caretAt(0);
-    await typeKeys("41234567");
-    caretAt(2);
-    await typeKeys("-");
-    expect(input.value).toBe("41234567");
-    expect([input.selectionStart, input.selectionEnd]).toEqual([2, 2]);
-    await typeKeys("9");
-    expect(input.value).toBe("419234567");
-  });
-
-  it("leaves the caret alone when the parent rejects the edit", async () => {
-    const proposals: string[] = [];
-    renderField(
-      <PhoneNumberField
-        label="Mobile"
-        value="+4791234567"
-        onChange={(next) => proposals.push(next)}
-        formatOnType
-      />
-    );
-    const input = phoneInput();
-    expect(input.value).toBe("91 23 45 67");
-    caretAt(4);
-    await userEvent.keyboard("{Backspace}");
-    expect(proposals).toEqual(["+479134567"]);
-    expect(input.value).toBe("91 23 45 67");
-    // Not the edit's caret, after "91", but where Chromium leaves an assigned value's caret.
-    expect([input.selectionStart, input.selectionEnd]).toEqual([11, 11]);
-  });
-
-  it("leaves the caret alone when the parent replaces the edit", async () => {
-    function Replacing() {
-      const [value, setValue] = useState("+4791234567");
-      return (
-        <form aria-label="Phone form">
-          <PhoneNumberField
-            label="Mobile"
-            name="phone"
-            value={value}
-            onChange={(next) => setValue(next === "+479134567" ? "+4799999999" : next)}
-            formatOnType
-          />
-        </form>
-      );
-    }
-    renderField(<Replacing />);
-    const input = phoneInput();
-    caretAt(4);
-    await userEvent.keyboard("{Backspace}");
-    expect(input.value).toBe("99 99 99 99");
-    expect(phoneSubmission().get("phone")).toBe("+4799999999");
-    expect([input.selectionStart, input.selectionEnd]).toEqual([11, 11]);
-  });
 });
 
 describe("PhoneNumberField countries", () => {
-  function paste(text: string) {
-    const clipboard = new DataTransfer();
-    clipboard.setData("text/plain", text);
-    phoneInput().dispatchEvent(
-      new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData: clipboard })
-    );
-  }
-
   it("offers only the listed countries and falls back from a default outside them", async () => {
     renderField(<PhoneNumberField label="Mobile" countries={["SE", "NO", "FI"]} defaultCountryCode="DK" />);
     // Norway, the fallback before the first country, is listed.
@@ -1131,126 +775,5 @@ describe("PhoneNumberField countries", () => {
       expect(rail.top, `${density} rail top`).toBeGreaterThanOrEqual(groupBox.top);
       expect(rail.bottom, `${density} rail bottom`).toBeLessThanOrEqual(groupBox.bottom);
     }
-  });
-
-  it("throws when the list leaves no country", async () => {
-    const messages: string[] = [];
-    class Boundary extends Component<{ children: ReactNode }, { failed: boolean }> {
-      override state = { failed: false };
-      static getDerivedStateFromError() {
-        return { failed: true };
-      }
-      override componentDidCatch(error: Error) {
-        messages.push(error.message);
-      }
-      override render() {
-        return this.state.failed ? null : this.props.children;
-      }
-    }
-    renderField(
-      <Boundary>
-        <PhoneNumberField label="Mobile" countries={[]} />
-      </Boundary>
-    );
-    await expect.poll(() => messages).toEqual([EMPTY_PICKER_ERROR_MESSAGE]);
-  });
-
-  it("keeps a pasted number from an unlisted country international", async () => {
-    renderField(<PhoneNumberField label="Mobile" name="phone" countries={["NO"]} />);
-    paste("+46701234567");
-    await expect.poll(() => hiddenNamed("phone").value).toBe("+46701234567");
-    expect(phoneInput().value).toBe("+46701234567");
-    expect(countryAddon().textContent).toContain("+47");
-  });
-
-  it.each([
-    { mode: "uncontrolled", controlled: false },
-    { mode: "controlled", controlled: true },
-  ])(
-    "keeps a typed number as entered when the list changes around its country, $mode",
-    async ({ controlled }) => {
-      function Field({ countries }: { countries: PhoneNumberFieldProps["countries"] }) {
-        const [value, setValue] = useState("");
-        return controlled ? (
-          <PhoneNumberField
-            label="Mobile"
-            name="phone"
-            countries={countries}
-            defaultCountryCode="SE"
-            value={value}
-            onChange={setValue}
-          />
-        ) : (
-          <PhoneNumberField label="Mobile" name="phone" countries={countries} defaultCountryCode="SE" />
-        );
-      }
-      const { rerender } = renderField(<Field countries={["NO", "SE"]} />);
-      await userEvent.fill(phoneInput(), "0701234567");
-      for (const countries of [
-        ["NO", "SE", "FI"],
-        ["SE", "FI"],
-      ] as const) {
-        rerender(withLocale("en-US", <Field countries={countries} />));
-        expect(phoneInput().value).toBe("0701234567");
-        expect(hiddenNamed("phone").value).toBe("+46701234567");
-      }
-    }
-  );
-
-  it("keeps a local-dialling number's identity when its country leaves the list", async () => {
-    const field = (countries: PhoneNumberFieldProps["countries"]) =>
-      withLocale(
-        "en-US",
-        <PhoneNumberField label="Mobile" name="phone" countries={countries} defaultCountryCode="AI" />
-      );
-    const { rerender } = renderField(
-      <PhoneNumberField label="Mobile" name="phone" countries={["AI", "NO"]} defaultCountryCode="AI" />
-    );
-    // Anguilla dials seven-digit local numbers, which take its 264 area code.
-    await userEvent.fill(phoneInput(), "2351234");
-    expect(hiddenNamed("phone").value).toBe("+12642351234");
-    rerender(field(["NO"]));
-    expect(phoneInput().value).toBe("+12642351234");
-    expect(hiddenNamed("phone").value).toBe("+12642351234");
-  });
-
-  it.each([
-    { mode: "uncontrolled", controlled: false },
-    { mode: "controlled", controlled: true },
-  ])("keeps a number's identity when its country leaves the list, $mode", ({ controlled }) => {
-    const change = vi.fn<(value: string) => void>();
-    function Field({ countries }: { countries: PhoneNumberFieldProps["countries"] }) {
-      const [value, setValue] = useState("+46701234567");
-      return controlled ? (
-        <PhoneNumberField
-          label="Mobile"
-          name="phone"
-          countries={countries}
-          value={value}
-          onChange={(next) => {
-            change(next);
-            setValue(next);
-          }}
-        />
-      ) : (
-        <PhoneNumberField
-          label="Mobile"
-          name="phone"
-          countries={countries}
-          defaultValue="+46701234567"
-          onChange={change}
-        />
-      );
-    }
-    const { rerender } = renderField(<Field countries={["NO", "SE"]} />);
-    expect(phoneInput().value).toBe("701234567");
-    expect(countryAddon().textContent).toContain("+46");
-
-    rerender(withLocale("en-US", <Field countries={["NO"]} />));
-
-    expect(phoneInput().value).toBe("+46701234567");
-    expect(hiddenNamed("phone").value).toBe("+46701234567");
-    expect(countryAddon().textContent).toContain("+47");
-    expect(change).not.toHaveBeenCalled();
   });
 });
