@@ -1,0 +1,222 @@
+{
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate. Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "select-field",
+  "parts": [
+    {
+      "name": "SelectField",
+      "rsc": "server",
+      "sourcePath": "packages/fuse/src/components/select-field/select-field.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 281,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The options, normally `Select.Item`s, rendered inside `Select.Content`.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged onto the root via `cn`.",
+          "required": false
+        },
+        {
+          "name": "defaultValue",
+          "origin": "declared",
+          "type": "Value | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Uncontrolled initial selection.",
+          "required": false
+        },
+        {
+          "name": "description",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Supporting copy, rendered as `Field.Description`.",
+          "required": false
+        },
+        {
+          "name": "errorMessage",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the field shows its own validation error instead, such as an error `Form` holds under its `name` or the required message.",
+          "required": false
+        },
+        {
+          "name": "isDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Forwards `disabled` to `Field.Root` and `Select.Root`.",
+          "required": false
+        },
+        {
+          "name": "isInvalid",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Forwards `invalid` to `Field.Root`.",
+          "required": false
+        },
+        {
+          "name": "isItemEqualToValue",
+          "origin": "declared",
+          "type": "((itemValue: Value, value: Value) => boolean) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Compares an object value with an option's value.",
+          "required": false
+        },
+        {
+          "name": "isRequired",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Forwards `required` to `Select.Root`.",
+          "required": false
+        },
+        {
+          "name": "itemToStringLabel",
+          "origin": "declared",
+          "type": "((itemValue: Value) => string) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "The label of an object value, for the trigger.",
+          "required": false
+        },
+        {
+          "name": "itemToStringValue",
+          "origin": "declared",
+          "type": "((itemValue: Value) => string) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "The submitted string of an object value.",
+          "required": false
+        },
+        {
+          "name": "items",
+          "origin": "declared",
+          "type": "readonly Group<any>[] | readonly { label: ReactNode; value: any; }[] | Record<string, ReactNode> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The options' labels by value, so the trigger can show a label before the popup opens.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Visible label, rendered as `Field.Label`.",
+          "required": false
+        },
+        {
+          "name": "name",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Native `name` the selection submits under, forwarded to `Select.Root`.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
+          "required": false
+        },
+        {
+          "name": "onValueChange",
+          "origin": "declared",
+          "type": "((value: Value | null, eventDetails: SelectRootChangeEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called with the new selection and Base UI's event details.",
+          "required": false
+        },
+        {
+          "name": "placeholder",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Shown in the trigger while nothing is selected, forwarded to `Select.Value`.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, SelectTriggerState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "\"default\" | \"sm\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Control size of the trigger box. Emitted as `data-size`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: SelectTriggerState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "triggerClassName",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged onto `Select.Trigger`.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "Value | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Controlled selection; `null` selects nothing.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

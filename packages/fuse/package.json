@@ -249,6 +249,10 @@
       "types": "./src/select.ts",
       "import": "./src/select.ts"
     },
+    "./select-field": {
+      "types": "./src/select-field.ts",
+      "import": "./src/select-field.ts"
+    },
     "./selection-item": {
       "types": "./src/selection-item.ts",
       "import": "./src/selection-item.ts"

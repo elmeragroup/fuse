@@ -117,6 +117,7 @@ const SERVER_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["empty", ["components/empty/empty.tsx"]],
   ["frame", ["components/frame/frame.tsx"]],
   ["loader", ["components/loader/loader.tsx"]],
+  ["select-field", ["components/select-field/select-field.tsx"]],
   ["show", ["components/show/show.tsx"]],
   ["skeleton", ["components/skeleton/skeleton.tsx"]],
   ["table", ["components/table/table.tsx"]],
@@ -276,9 +277,9 @@ describe("RSC classification", () => {
     // owns client state and carries the directive; Dialog, Sheet and Sidebar were already
     // client modules.
     ["components/overlay/overlay-close-button.tsx", "client"],
-    // FieldFrame holds no state, and its six consumers (TextField, NumberField, TextareaField,
-    // PhoneNumberField, CheckboxGroup, RadioGroup) are client modules already, so a directive
-    // would only widen the client graph.
+    // FieldFrame holds no state. Six of its consumers (TextField, NumberField, TextareaField,
+    // PhoneNumberField, CheckboxGroup, RadioGroup) are client modules already, and SelectField
+    // is a server component that runs it, so a directive would only widen the client graph.
     ["components/field/field-frame.tsx", "server"],
     // Alert's documented server render uses the Item markup. Item.Root stays in the client
     // module because it calls useRender.
