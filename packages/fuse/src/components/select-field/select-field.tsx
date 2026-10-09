@@ -29,6 +29,8 @@ export type SelectFieldProps<Value = unknown> = {
   isDisabled?: boolean;
   /** Native `name` the selection submits under, forwarded to `Select.Root`. */
   name?: string;
+  /** The `id` of the form the selection submits with, forwarded to `Select.Root`. */
+  form?: string;
   /** Shown in the trigger while nothing is selected, forwarded to `Select.Value`. */
   placeholder?: ReactNode;
   /** Controlled selection; `null` selects nothing. */
@@ -51,7 +53,10 @@ export type SelectFieldProps<Value = unknown> = {
   triggerClassName?: string;
   /** The options, normally `Select.Item`s, rendered inside `Select.Content`. */
   children?: ReactNode;
-} & Omit<SelectTriggerProps, "children" | "className" | "disabled" | "name" | "value" | "defaultValue">;
+} & Omit<
+  SelectTriggerProps,
+  "children" | "className" | "disabled" | "name" | "form" | "value" | "defaultValue"
+>;
 
 /**
  * Labeled select composite over Field and the Base UI `Select` parts: the label, the trigger
@@ -70,6 +75,7 @@ export function SelectField<Value = unknown>({
   isRequired = false,
   isDisabled = false,
   name,
+  form,
   placeholder,
   value,
   defaultValue,
@@ -94,6 +100,7 @@ export function SelectField<Value = unknown>({
       <SelectRoot<Value>
         {...definedProps({
           name,
+          form,
           value,
           defaultValue,
           onValueChange,
