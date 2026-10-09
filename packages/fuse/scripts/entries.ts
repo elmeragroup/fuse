@@ -66,6 +66,7 @@ export const BARE_COMPONENT_ENTRIES = [
   "toggle-group",
   "tooltip",
   // plop:component-entry
+  "select-field",
   "form",
   "navigation-menu",
 ] as const;

@@ -1,0 +1,48 @@
+---
+lede: >
+  A labeled dropdown for picking one option, laid out like the other labeled fields.
+---
+
+import { SelectFieldBasic } from "./demos/select-field-basic";
+import { SelectFieldStates } from "./demos/select-field-states";
+import { SelectFieldForm } from "./demos/select-field-form";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("select-field");
+
+<ComponentIntro slug="select-field" />
+
+<Prose>
+
+`SelectField` puts a label, the error and a description around `Select`'s trigger and options, in the order `TextField` uses: the error sits under the trigger, ahead of the description. The trigger fills the field's width. Pass the options as `Select.Item` children and their labels as `items`, so the trigger can show the chosen label before the popup has opened. A `ref` and the props `SelectField` does not name itself go to the trigger.
+
+</Prose>
+
+<Demo slug="select-field" id="basic" title="Basic" file="select-field-basic.tsx">
+  <SelectFieldBasic />
+</Demo>
+
+<Demo slug="select-field" id="states" title="Invalid and disabled" file="select-field-states.tsx">
+  <SelectFieldStates />
+</Demo>
+
+<Prose>
+
+Inside a `Form`, the field shows the error `Form` holds under its `name` when it gets no `errorMessage`. Choosing another option clears it, and a new `errors` object shows it again. The selection submits under `name`, as `Select.Root`'s does, and `isRequired` blocks an empty submit with the required message.
+
+</Prose>
+
+<Demo slug="select-field" id="form" title="In a form" file="select-field-form.tsx">
+  <SelectFieldForm />
+</Demo>
+
+<Prose>
+
+`SelectField` takes one selection and has no read-only look yet. For multiple selection, a read-only select or a layout of your own, such as a label row with an info button or a label beside the trigger, compose `Field.Root` and the `Select` parts.
+
+</Prose>
+
+<ApiReference slug="select-field" />
+
+<ComponentTokens slug="select-field" />

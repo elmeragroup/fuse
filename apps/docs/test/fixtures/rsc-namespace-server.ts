@@ -1,6 +1,6 @@
 /**
  * Server module. Renders every public namespace part of the compound components whose
- * implementation is `"use client"`, plus Alert.
+ * implementation is `"use client"`, plus Alert and SelectField.
  *
  * The part lists are the public namespace shape. They are not read from the
  * implementation: a missing or renamed part fails here even if the source still parses.
@@ -39,6 +39,7 @@ import { Popover } from "@elmeragroup/fuse/popover";
 import { RadioItem } from "@elmeragroup/fuse/radio-group";
 import { ScrollArea } from "@elmeragroup/fuse/scroll-area";
 import { Select } from "@elmeragroup/fuse/select";
+import { SelectField } from "@elmeragroup/fuse/select-field";
 import { SelectionItem } from "@elmeragroup/fuse/selection-item";
 import { Sheet } from "@elmeragroup/fuse/sheet";
 import { Sidebar } from "@elmeragroup/fuse/sidebar";
@@ -362,6 +363,27 @@ function selectionItemTrees(): ReactElement {
   );
 }
 
+const SELECT_FIELD_PLACEHOLDER = "Choose a plan";
+
+/**
+ * SelectField owns no state, so a server form runs it and hands its options to the client
+ * Select parts, as a hand-composed `Field.Root` around `Select.Root` would.
+ */
+function selectFieldTree(): ReactElement {
+  if (isClientReference(SelectField)) {
+    throw new Error("SelectField is a client reference; the server must run it");
+  }
+  return createElement(
+    "section",
+    { "data-fixture": "select-field" },
+    createElement(
+      SelectField,
+      { label: "Plan", name: "plan", items: { basic: "Basic" }, placeholder: SELECT_FIELD_PLACEHOLDER },
+      createElement(Select.Item, { value: "basic" }, "Basic")
+    )
+  );
+}
+
 /** A value in a Flight model row, which is JSON. */
 type FlightJson = string | number | boolean | null | readonly FlightJson[] | FlightObject;
 
@@ -392,7 +414,14 @@ function pathsTo(value: FlightJson, text: string, path: readonly string[] = []):
 }
 
 function Fixture(): ReactElement {
-  return createElement("div", null, ...namespaceElements(), alertTree(), selectionItemTrees());
+  return createElement(
+    "div",
+    null,
+    ...namespaceElements(),
+    alertTree(),
+    selectionItemTrees(),
+    selectFieldTree()
+  );
 }
 
 function flightManifest() {
@@ -474,6 +503,10 @@ for (const text of ["Fixed price", "Locked for 12 months.", "Spot price"]) {
   if (models.flatMap((model) => pathsTo(model, text)).some((path) => path.includes("subSections"))) {
     throw new Error(`${text} left the row label`);
   }
+}
+
+if (!payload.includes(SELECT_FIELD_PLACEHOLDER)) {
+  throw new Error(`SelectField's placeholder is missing from the server payload:\n${payload.slice(0, 1500)}`);
 }
 
 process.stdout.write("RSC_OK\n");
