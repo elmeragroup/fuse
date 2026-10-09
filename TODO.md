@@ -72,6 +72,8 @@
   because it is part of a control's label.
 - Confirm the shared overlay-close dictionary and the docs' client-demo rule and
   three non-public import exceptions with the owner; these remain implemented defaults.
+- Dialog's backdrop blur samples shifted content inside a transformed scope, such as a theme
+  studio artboard. The fix needs a Fuse option that drops `backdrop-blur` for scoped dialogs.
 
 ## Consumer and release verification
 

@@ -12,9 +12,10 @@ import { TextField } from "@elmeragroup/fuse/text-field";
 import { DENSITIES, densityAttributes } from "@elmeragroup/fuse/theme";
 import type { Density } from "@elmeragroup/fuse/theme";
 
+import { SingleToggle } from "../../../components/single-toggle";
 import { mediumControlPx } from "./landing-facts";
 import { LANDING_DENSITY } from "./landing-theme-defaults";
-import { SingleToggle, stack } from "./product-parts";
+import { stack } from "./product-parts";
 
 const landingDensity = tv({
   slots: {

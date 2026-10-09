@@ -18,7 +18,7 @@ import type { ProblemLog } from "./errors.ts";
 import { readComponentPage } from "./page-source.ts";
 import type { ComponentPageSource } from "./page-source.ts";
 import { repoRelative, sizeBudgetsFile, fuseRoot } from "./paths.ts";
-import { missingNavRoutes, staticRouteFile } from "./routes.ts";
+import { missingNavRoutes, missingStudioRoutes, staticRouteFile, studioRouteFile } from "./routes.ts";
 import { readBundleSizes } from "./sizes.ts";
 import type { BundleSizeReport } from "./sizes.ts";
 import { assertDocsFuseCssExports } from "./workspace-css.ts";
@@ -158,6 +158,9 @@ export function inspectGlobalDocs(problems: ProblemLog): BundleSizeReport {
   assertDocsFuseCssExports(fuseRoot);
   for (const href of missingNavRoutes()) {
     problems.add(`nav entry ${href} has no route at ${repoRelative(staticRouteFile(href))}`);
+  }
+  for (const href of missingStudioRoutes()) {
+    problems.add(`studio page ${href} has no route at ${repoRelative(studioRouteFile(href))}`);
   }
   return readBundleSizes(sizeBudgetsFile, problems);
 }

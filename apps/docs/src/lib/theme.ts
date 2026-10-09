@@ -24,6 +24,13 @@ export const DEFAULT_THEME = {
   segment: "private",
 } as const satisfies ThemeInput;
 
+/** The external theme the landing paints on first load and the studio's artboards open on. */
+export const OPENING_THEME = {
+  variant: "external",
+  brand: "elma",
+  segment: "private",
+} as const satisfies ThemeInput;
+
 export const COLOR_SCHEME_LABELS = {
   light: "Light",
   dark: "Dark",

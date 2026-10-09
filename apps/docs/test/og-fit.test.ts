@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { docsRoot } from "../scripts/lib/paths.ts";
 import { COMPONENT_PAGES } from "../src/generated/component-pages";
-import { STATIC_PAGES } from "../src/lib/pages";
+import { STATIC_PAGES, STUDIO_PAGES } from "../src/lib/pages";
 import { ogSubtitleSize } from "../src/og/og-fit";
 
 /**
@@ -59,6 +59,7 @@ describe("OG card subtitle size", () => {
     const subtitles = [
       "Overview",
       ...STATIC_PAGES.map((page) => page.label),
+      ...STUDIO_PAGES.map((page) => page.title),
       ...COMPONENT_PAGES.map((component) => component.title),
     ];
     for (const subtitle of subtitles) {

@@ -16,7 +16,8 @@ import { Switch } from "@elmeragroup/fuse/switch";
 import { Tabs } from "@elmeragroup/fuse/tabs";
 import { Toast } from "@elmeragroup/fuse/toast";
 
-import { BudgetMeter, Labelled, SingleToggle, stack } from "./product-parts";
+import { SingleToggle } from "../../../components/single-toggle";
+import { BudgetMeter, Labelled, stack } from "./product-parts";
 import { AgreementsTab, InvoicesTab, MetersTab } from "./product-tabs";
 
 const productShot = tv({

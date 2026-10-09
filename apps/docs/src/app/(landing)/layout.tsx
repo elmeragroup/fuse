@@ -6,10 +6,9 @@ import { ColorSchemeScript } from "@elmeragroup/fuse/theme";
 
 import { DocumentRoot } from "../../components/document-root";
 import { siteOrigin } from "../../lib/site-origin";
-import { DOCUMENT_COLOR_SCHEME } from "../../lib/theme";
+import { DOCUMENT_COLOR_SCHEME, OPENING_THEME } from "../../lib/theme";
 import "../../styles/globals.css";
 import { LANDING_SUMMARY } from "./landing/landing-facts";
-import { LANDING_THEME } from "./landing/landing-theme-defaults";
 
 export const metadata: Metadata = {
   metadataBase: siteOrigin(),
@@ -38,7 +37,7 @@ export type LandingLayoutProps = {
 
 export default function LandingLayout({ children }: LandingLayoutProps): ReactElement {
   return (
-    <DocumentRoot theme={LANDING_THEME} suppressHydrationWarning>
+    <DocumentRoot theme={OPENING_THEME} suppressHydrationWarning>
       <head>
         <ColorSchemeScript
           storageKey={DOCUMENT_COLOR_SCHEME.storageKey}

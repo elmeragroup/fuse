@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import { COMPONENT_NAV, NAV_GROUPS } from "../src/lib/nav";
-import { HOME_PAGE, STATIC_PAGES } from "../src/lib/pages";
+import { HOME_PAGE, STATIC_PAGES, STUDIO_PAGES } from "../src/lib/pages";
 import { COMPONENT_INVENTORY } from "./component-inventory";
 import { fetchOk, fetchText } from "./docs-server";
 
@@ -49,6 +49,10 @@ describe("llms.txt", () => {
     expect(text).toContain(`](${HOME_PAGE.href}): ${HOME_PAGE.description}`);
     for (const page of STATIC_PAGES) {
       expect(text, page.href).toContain(`[${page.label}](${page.href}): ${page.description}`);
+    }
+    expect(text).toContain("## Studio");
+    for (const page of STUDIO_PAGES) {
+      expect(text, page.href).toContain(`[${page.title}](${page.href}): ${page.description}`);
     }
     for (const component of COMPONENT_PAGES) {
       expect(text, component.slug).toContain(`[${component.title}](/components/${component.slug}):`);

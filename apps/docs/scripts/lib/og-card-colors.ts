@@ -8,8 +8,8 @@ import * as Hex from "@elmeragroup/color/hex";
 import type { ResolvedThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 
 /**
- * The theme the card paints: the landing's opening theme, `LANDING_THEME`. Node generate cannot
- * import that constant, since its module loads the client `/theme` facade.
+ * The theme the card paints: the landing's opening theme, `OPENING_THEME` in `src/lib/theme.ts`,
+ * as its slug.
  */
 const CARD_THEME = "external-elma-private";
 

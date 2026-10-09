@@ -118,6 +118,42 @@ export function requireStaticPage(href: string): StaticPage {
   return page;
 }
 
+/**
+ * A page of the theme studio, the canvas editor under `/studio`. Studio pages live in their own
+ * `(studio)` route group, outside the SideNav, and each one is a destination in the ⌘K palette,
+ * `llms.txt` and the studio's own Pages list.
+ */
+export type StudioPage = {
+  /** Site-relative route under `/studio`. */
+  href: string;
+  /** The name the studio's Pages list shows. */
+  label: string;
+  /** The page title, for search, `llms.txt`, the metadata title and the card. */
+  title: string;
+  /** One-line description, for `llms.txt`, search and the page's own metadata. */
+  description: string;
+};
+
+/** Every studio page, in the Pages list's order. A page joins this list when its route ships. */
+export const STUDIO_PAGES: readonly StudioPage[] = [
+  {
+    href: "/studio",
+    label: "Overview",
+    title: "Theme studio",
+    description:
+      "A canvas of live Fuse components in every scheme and density, with the base theme's colours, radii and control sizes at a glance.",
+  },
+];
+
+/** The studio page at `href`; throws when the manifest has none, so a stale route fails the build. */
+export function requireStudioPage(href: string): StudioPage {
+  const page = STUDIO_PAGES.find((candidate) => candidate.href === href);
+  if (page === undefined) {
+    throw new Error(`${href} is not in the studio page manifest (src/lib/pages.ts)`);
+  }
+  return page;
+}
+
 /** The route prefix every component docs page lives under. */
 export const COMPONENTS_PREFIX = "/components/";
 

@@ -156,8 +156,11 @@ export type DocsComponent = Omit<ComponentPageEntry, "demos" | "partNames"> & {
   parts: readonly ApiPart[];
 };
 
-/** Which SideNav group a search hit belongs to; the palette shows it next to the title. */
-export type SearchGroup = "Overview" | "Handbook" | "Components";
+/**
+ * Which group a search hit belongs to, a SideNav group or the studio; the palette shows it next
+ * to the title.
+ */
+export type SearchGroup = "Overview" | "Handbook" | "Studio" | "Components";
 
 /**
  * One destination in the ⌘K palette index.

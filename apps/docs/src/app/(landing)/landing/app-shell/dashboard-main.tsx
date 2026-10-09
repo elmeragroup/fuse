@@ -14,8 +14,8 @@ import { Sheet } from "@elmeragroup/fuse/sheet";
 import { BRANDS } from "@elmeragroup/fuse/theme";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
+import { SingleToggle } from "../../../../components/single-toggle";
 import { useLandingTheme } from "../landing-theme";
-import { SingleToggle } from "../product-parts";
 import { useSideOverlay } from "../window-side";
 import { BulkToolbar } from "./bulk-toolbar";
 import { useDashboard } from "./dashboard-context";

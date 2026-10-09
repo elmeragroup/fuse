@@ -2,10 +2,10 @@ import { BRANDS, COLOR_SCHEMES, THEME_SEGMENTS, THEME_VARIANTS } from "@elmeragr
 import type { BrandCode, ColorScheme, ThemeInput, ThemeSegment, ThemeVariant } from "@elmeragroup/fuse/theme";
 
 import { COLOR_SCHEME_LABELS, SEGMENT_LABELS, VARIANT_LABELS } from "../../../../lib/theme";
+import { useMediaQuery } from "../../../../lib/use-media-query";
 import { PICKER_BRANDS } from "../landing-facts";
 import { useLandingTheme } from "../landing-theme";
 import type { ThemeChange } from "../landing-theme";
-import { useMediaQuery } from "../use-media-query";
 import { segmentBlock, themeSummary } from "./theme-options";
 
 /** One option on one axis, with the reason it is blocked when the current brand cannot take it. */

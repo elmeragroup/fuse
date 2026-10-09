@@ -8,6 +8,7 @@ import type { ThemeInput } from "@elmeragroup/fuse/theme";
 import { Toast } from "@elmeragroup/fuse/toast";
 
 import { HOME_PAGE, requireStaticPage } from "../../../lib/pages";
+import { OPENING_THEME } from "../../../lib/theme";
 import { BrandPicker } from "./brand-picker";
 import { LandingDensity } from "./landing-density";
 import { LandingHero } from "./landing-hero";
@@ -15,7 +16,7 @@ import { LandingInstall } from "./landing-install";
 import { LandingNav } from "./landing-nav";
 import { LandingSpecs } from "./landing-specs";
 import { LandingThemeProvider } from "./landing-theme";
-import { LANDING_THEME, sameTheme } from "./landing-theme-defaults";
+import { sameTheme } from "./landing-theme-defaults";
 import { ProductShot } from "./product-shot";
 
 const landingPage = tv({
@@ -39,7 +40,7 @@ const FOOTER_LINKS = [
 
 /**
  * Restamps `<html>` with a shared address's theme before the browser paints the page. The layout
- * stamps `LANDING_THEME` on the server, because a layout receives no search params; this script is
+ * stamps `OPENING_THEME` on the server, because a layout receives no search params; this script is
  * the body's first child, so it runs before any paintable element is parsed. Its values are the
  * attributes of a theme Fuse's slug parser accepted, so the inlined JSON holds only enum members.
  */
@@ -55,14 +56,14 @@ function SharedThemeScript({ theme }: { theme: ThemeInput }): ReactElement {
 }
 
 export type LandingPageProps = {
-  /** The theme a shared address names, or `LANDING_THEME`. */
+  /** The theme a shared address names, or `OPENING_THEME`. */
   theme: ThemeInput;
 };
 
 export function LandingPage({ theme }: LandingPageProps): ReactElement {
   return (
     <>
-      {sameTheme(theme, LANDING_THEME) ? null : <SharedThemeScript theme={theme} />}
+      {sameTheme(theme, OPENING_THEME) ? null : <SharedThemeScript theme={theme} />}
       <LandingThemeProvider routeTheme={theme}>
         <Toast.Provider>
           <div className={styles.root()} data-landing>

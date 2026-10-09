@@ -10,11 +10,11 @@ import { Lock } from "@elmeragroup/fuse/icons";
 import { THEME_VARIANTS, ThemeScope } from "@elmeragroup/fuse/theme";
 import type { BrandCode, ThemeVariant } from "@elmeragroup/fuse/theme";
 
+import { SingleToggle } from "../../../components/single-toggle";
 import { VARIANT_LABELS } from "../../../lib/theme";
 import { BrandSite } from "./brand-site/brand-site";
 import { SITES } from "./brand-site/sites";
 import { useLandingTheme } from "./landing-theme";
-import { SingleToggle } from "./product-parts";
 import { WindowSide } from "./window-side";
 
 const heroWindow = tv({

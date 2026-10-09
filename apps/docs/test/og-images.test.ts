@@ -18,6 +18,7 @@ import { COMPONENT_INVENTORY } from "./component-inventory";
 import { decodePng } from "./png";
 
 const docsAppDir = path.join(docsRoot, "src/app/(docs)");
+const studioAppDir = path.join(docsRoot, "src/app/(studio)");
 
 /** Every authored docs route on disk: a `page.tsx` outside the component pages. */
 function authoredDocsRoutes(dir: string, prefix = ""): string[] {
@@ -42,11 +43,13 @@ describe("OG image routes", () => {
     expect(params.toSorted()).toEqual([...COMPONENT_INVENTORY.keys()].toSorted());
   });
 
-  it("serve one docs image per authored docs route, the docs index at the bare prefix", () => {
+  it("serve one docs image per authored docs and studio route, the docs index at the bare prefix", () => {
     const routes = docsImageParams().map((param) =>
       param.path.length === 0 ? "/docs" : `/${param.path.join("/")}`
     );
-    expect(routes.toSorted()).toEqual(authoredDocsRoutes(docsAppDir).toSorted());
+    expect(routes.toSorted()).toEqual(
+      [...authoredDocsRoutes(docsAppDir), ...authoredDocsRoutes(studioAppDir)].toSorted()
+    );
   });
 });
 

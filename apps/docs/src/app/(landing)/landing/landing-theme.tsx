@@ -18,8 +18,8 @@ import {
 } from "@elmeragroup/fuse/theme";
 import type { BrandCode, ColorScheme, ThemeInput, ThemeSegment, ThemeVariant } from "@elmeragroup/fuse/theme";
 
-import { DOCUMENT_COLOR_SCHEME } from "../../../lib/theme";
-import { LANDING_THEME, parseThemeQuery, sameTheme, THEME_QUERY } from "./landing-theme-defaults";
+import { DOCUMENT_COLOR_SCHEME, OPENING_THEME } from "../../../lib/theme";
+import { parseThemeQuery, sameTheme, THEME_QUERY } from "./landing-theme-defaults";
 import { themeAnnouncement } from "./theme-picker/theme-options";
 
 /** Where a re-theme was triggered, so the reveal can grow out of the finger or cursor. */
@@ -93,7 +93,7 @@ type LandingThemeProviderProps = {
 
 /**
  * Owns the landing's theme and colour scheme. It writes only the `data-theme-*` attributes:
- * `data-density` stays as the layout stamped it from `LANDING_THEME`, so the page keeps its
+ * `data-density` stays as the layout stamped it from `OPENING_THEME`, so the page keeps its
  * comfortable metrics in either variant. Hosts own density (AGENTS.md), and a density change would
  * reflow the whole page under the visitor's cursor. The hero window's Dashboard is dense on its
  * own demo stage.
@@ -203,7 +203,7 @@ function LandingThemeState({ theme, setTheme, children }: LandingThemeStateProps
 function useThemeQuery(theme: ThemeInput): void {
   useEffect(() => {
     const url = new URL(window.location.href);
-    if (sameTheme(theme, LANDING_THEME)) {
+    if (sameTheme(theme, OPENING_THEME)) {
       url.searchParams.delete(THEME_QUERY);
     } else {
       url.searchParams.set(THEME_QUERY, themeSlug(theme));

@@ -27,6 +27,9 @@ export const markdownOutDir = path.join(docsRoot, "public/components");
 /** The `(docs)` route group, where every nav destination must have a `page.tsx`. */
 export const docsRouteGroup = path.join(docsRoot, "src/app/(docs)");
 
+/** The `(studio)` route group, where every studio page must have a `page.tsx`. */
+export const studioRouteGroup = path.join(docsRoot, "src/app/(studio)");
+
 /**
  * The component route directories. Each holds the component's authored `page.mdx` and
  * its co-located `demos/`.
