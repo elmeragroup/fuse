@@ -47,7 +47,7 @@ export type DateRangePickerProps<T extends DateValue> = {
   /**
    * Error copy, rendered as `FieldError` when the range is invalid — an end before its
    * start, or an endpoint outside the allowed dates. Accepts a node or a validation
-   * render function. Without it, the picker shows the `Form` errors under its `startName` and
+   * render function. Without it or `isInvalid`, the picker shows the `Form` errors under its `startName` and
    * its `endName`, and a change to the range clears both.
    */
   errorMessage?: ReactNode | ((validation: ValidationResult) => ReactNode);

@@ -40,7 +40,7 @@ export type DateFieldProps<T extends DateValue> = {
   description?: string;
   /**
    * Error copy, rendered as `FieldError` when the field is invalid. Accepts a
-   * node or a validation render function. Without it, the field shows a `Form` error under
+   * node or a validation render function. Without it or `isInvalid`, the field shows a `Form` error under
    * its `name`, which clears when the value changes.
    */
   errorMessage?: ReactNode | ((validation: ValidationResult) => ReactNode);

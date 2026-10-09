@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { CalendarDate } from "@internationalized/date";
-import { Form as AriaForm } from "react-aria-components";
+import { Form as AriaForm, FormValidationContext } from "react-aria-components";
 import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -182,6 +182,7 @@ describe("Form errors on the interim React Aria fields", () => {
       const [errors, setErrors] = useState<FormProps["errors"]>({
         from: "Arrive later.",
         to: "Leave earlier.",
+        email: "Enter an email.",
       });
       return (
         <Form aria-label="Booking" errors={errors}>
@@ -203,7 +204,9 @@ describe("Form errors on the interim React Aria fields", () => {
     await userEvent.click(segmentNamed("month, End Date, Stay"));
     await userEvent.keyboard("07172026");
     await expect.poll(() => errorTexts(dateGroup("Stay"))).toEqual([]);
+    // Clearing the email error makes a new errors object; the range's cleared keys stay cleared.
     await userEvent.fill(roleNamed("textbox", "Email"), "kari@example.com");
+    await expect.poll(() => errorTexts(roleNamed("textbox", "Email"))).toEqual([]);
     expect(errorTexts(dateGroup("Stay"))).toEqual([]);
 
     await userEvent.click(roleNamed("button", "Start only"));
@@ -211,28 +214,28 @@ describe("Form errors on the interim React Aria fields", () => {
     expect(dateRoot("Stay")).toHaveAttribute("data-invalid");
   });
 
-  it("keeps an outer React Aria Form's errors for names the Fuse Form leaves out", () => {
+  it("keeps an outer React Aria context's errors for names the Fuse Form leaves out", () => {
     render(
-      <AriaForm validationErrors={{ startDate: "Taken by another booking." }}>
+      <FormValidationContext.Provider value={{ startDate: "Taken by another booking." }}>
         <Form aria-label="Booking" errors={{ query: "Search for something else." }}>
           <DatePicker name="startDate" label="Start date" />
           <SearchField name="query" label="Search" />
         </Form>
-      </AriaForm>
+      </FormValidationContext.Provider>
     );
     expect(errorTexts(dateGroup("Start date"))).toEqual(["Taken by another booking."]);
     expect(errorTexts(roleNamed("searchbox", "Search"))).toEqual(["Search for something else."]);
   });
 
-  it("keeps a picker's edit clearing an error both an outer React Aria Form and the Fuse Form hold", async () => {
+  it("keeps a picker's edit clearing an error both an outer React Aria context and the Fuse Form hold", async () => {
     const errors = { startDate: "Pick a later date." };
     render(
-      <AriaForm validationErrors={errors}>
+      <FormValidationContext.Provider value={errors}>
         <Form aria-label="Booking" errors={errors}>
           <TextField name="email" label="Email" />
           <DatePicker name="startDate" label="Start date" defaultValue={june2} />
         </Form>
-      </AriaForm>
+      </FormValidationContext.Provider>
     );
     expect(errorTexts(dateGroup("Start date"))).toEqual(["Pick a later date."]);
     await pickDay("Start date", /Tuesday, June 9, 2026/);
