@@ -6,7 +6,9 @@ import type { Expression, JSXElementName, JSXOpeningElement } from "oxc-parser";
 import { describe, expect, it } from "vitest";
 
 import { OPTIONAL_PEER_ENTRIES, walkImportedSourceFiles } from "../scripts/entries";
+import { writtenSlots } from "../test/written-slots";
 import { overlayLayer, toastLayer } from "./components/overlay/overlay-classes";
+import { PART_DENSITY } from "./theme/tokens/density-roles";
 
 /**
  * Remaining source-level invariants that are not already a lint rule
@@ -411,6 +413,46 @@ describe("density stays out of subtree theming", () => {
   });
 });
 
+describe("density roles", () => {
+  // Why not a lint rule: the oracle is the part table in theme/tokens/density-roles.ts, and a
+  // per-file lint rule cannot see the slot inventory across files. The docs coverage test checks
+  // the rendered parts, but demos do not render every part, so the source must declare them all.
+  it("recognizes a slot written as an attribute, a prop key or useRender state, and not a React Aria slot", () => {
+    expect(
+      writtenSlots(
+        "probe.tsx",
+        'const props = { "data-slot": "a" }; useRender({ state: { slot: "b" } }); <P data-slot="c" dataSlot={"d"} slot="title" data-slot={name} />'
+      )
+    ).toEqual(["a", "b", "c", "d"]);
+  });
+
+  it("declares a density role for every data-slot the package writes", () => {
+    const undeclared = [...SOURCE_TREE.values()].flatMap((record) =>
+      writtenSlots(record.relative, record.source)
+        .filter((slot) => !Object.hasOwn(PART_DENSITY, slot))
+        .map((slot) => `${record.relative}: ${slot}`)
+    );
+    expect(undeclared).toEqual([]);
+  });
+
+  it("declares no part the package does not write", () => {
+    const written = new Set(
+      [...SOURCE_TREE.values()].flatMap((record) => writtenSlots(record.relative, record.source))
+    );
+    const stale = Object.keys(PART_DENSITY).filter(
+      (part) => !written.has(/^[a-z0-9-]+/u.exec(part)?.[0] ?? part)
+    );
+    expect(stale).toEqual([]);
+  });
+
+  it("keys every override as its slot plus a selector suffix the coverage test can match", () => {
+    // The docs coverage test splits an override key at the first `[` or `:` into the slot and a
+    // suffix it appends to `[data-slot="slot"]`; any other key would match no part there.
+    const malformed = Object.keys(PART_DENSITY).filter((part) => !/^[a-z0-9-]+(?:[[:].*)?$/u.test(part));
+    expect(malformed).toEqual([]);
+  });
+});
+
 describe("Twemoji artwork fidelity", () => {
   // Why not a lint rule: the contract is that the bundled third-party artwork
   // is a verbatim lift of the Twemoji path data the NOTICE file attributes.
@@ -470,7 +512,6 @@ describe("runtime listeners and layout motion", () => {
       .filter((record) => layoutTransition.test(record.code))
       .map((record) => record.relative);
     expect(owners.toSorted()).toEqual([
-      "components/accordion/accordion-variants.ts",
       // Item.Footer, and so every SelectionItem.SubSection, tweens its grid row and top padding
       // between `hidden` and `visible`.
       "components/item/item-markup.tsx",

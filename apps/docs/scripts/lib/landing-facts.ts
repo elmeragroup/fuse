@@ -60,10 +60,9 @@ export function renderLandingFacts(
   catalog: ResolvedThemeCatalog,
   components: readonly Pick<ComponentPageEntry, "slug" | "title" | "lede">[]
 ): string {
-  const densities = Object.keys(catalog.density[0]?.px ?? {});
   const metrics = catalog.density.map((metric) => ({ name: metric.name, px: metric.px }));
   const index = components.map(({ slug, title, lede }) => ({ slug, title, lede }));
-  const facts = { locales: readSupportedLocales(), densities, metrics, components: index };
+  const facts = { locales: readSupportedLocales(), metrics, components: index };
   return `/** Library facts the landing page states, read from the library by the generate pass. */
 export const LANDING_FACTS = ${JSON.stringify(facts, null, 2)} as const;
 `;

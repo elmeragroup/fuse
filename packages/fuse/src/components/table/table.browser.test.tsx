@@ -1,9 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { px, renderThemed } from "../../../test/themed-browser-render";
+import { CONTROL_SM, ROW, px, renderThemed, stampDensity } from "../../../test/themed-browser-render";
+import { DENSITIES } from "../../theme/density";
+import { Button } from "../button/button";
 import { Frame } from "../frame/frame";
 import { Table, VerticalTable } from "./table";
 
@@ -124,7 +126,106 @@ describe("Table in-frame visual contract", () => {
   });
 });
 
+/** The rendered height of the cell `name` names, which a `td` stretches to its row. */
+function cellHeight(role: "cell" | "columnheader", name: string): number {
+  return page.getByRole(role, { name, exact: true }).element().getBoundingClientRect().height;
+}
+
+function densityOrders(label: string) {
+  return (
+    <Table.Root aria-label={label}>
+      <Table.Header>
+        <Table.Row>
+          <Table.Head>{`${label} order`}</Table.Head>
+          <Table.Head>{`${label} actions`}</Table.Head>
+        </Table.Row>
+      </Table.Header>
+      <Table.Body>
+        <Table.Row>
+          <Table.Cell>{`${label} #1042`}</Table.Cell>
+          <Table.Cell>{`${label} active`}</Table.Cell>
+        </Table.Row>
+        <Table.Row>
+          <Table.Cell>{`${label} #1043`}</Table.Cell>
+          <Table.Cell>
+            <Button variant="ghost" size="icon-sm" aria-label={`${label} row actions`}>
+              <svg aria-hidden="true" viewBox="0 0 16 16" />
+            </Button>
+          </Table.Cell>
+        </Table.Row>
+      </Table.Body>
+    </Table.Root>
+  );
+}
+
+describe("Table rows follow density", () => {
+  afterEach(() => {
+    document.documentElement.removeAttribute("data-density");
+  });
+
+  it.each(DENSITIES)("sizes heads and cells from the row metrics at %s", (density) => {
+    stampDensity(density);
+    renderThemed(
+      <div>
+        {densityOrders("Loose")}
+        <Frame.Root>{densityOrders("Framed")}</Frame.Root>
+      </div>
+    );
+    const row = ROW[density];
+    for (const label of ["Loose", "Framed"]) {
+      expect(cellHeight("columnheader", `${label} order`), `${label} head`).toBe(row.headerHeight);
+      expect(cellHeight("cell", `${label} #1042`), `${label} one-line row`).toBe(row.height);
+      // An icon-sm button is the sm control square, and the row pads it on the block axis. A
+      // framed cell also draws its 1px bottom rule.
+      const actions = page.getByRole("cell", { name: `${label} #1043`, exact: true }).element();
+      expect(cellHeight("cell", `${label} #1043`), `${label} actions row`).toBe(
+        CONTROL_SM[density].height + 2 * row.py + px(getComputedStyle(actions).borderBottomWidth)
+      );
+    }
+    const loose = getComputedStyle(page.getByRole("cell", { name: "Loose active", exact: true }).element());
+    expect([loose.paddingTop, loose.paddingRight, loose.paddingBottom, loose.paddingLeft].map(px)).toEqual([
+      row.py,
+      row.px,
+      row.py,
+      row.px,
+    ]);
+    // A framed edge cell sits 2px further in than the row inset, less its 1px edge border.
+    const edge = getComputedStyle(page.getByRole("cell", { name: "Framed #1042", exact: true }).element());
+    expect(px(edge.paddingLeft) + px(edge.borderLeftWidth)).toBe(row.px + 2);
+  });
+});
+
 describe("VerticalTable", () => {
+  afterEach(() => {
+    document.documentElement.removeAttribute("data-density");
+  });
+
+  it.each(DENSITIES)(
+    "pads keys and values with the row metrics, and the compact variant by its own 4px, at %s",
+    (density) => {
+      stampDensity(density);
+      renderThemed(
+        <div>
+          <VerticalTable.Root>
+            <VerticalTable.Body data={[{ label: "Default key", value: "Default value" }]} />
+          </VerticalTable.Root>
+          <VerticalTable.Root variant="non-bordered-compact">
+            <VerticalTable.Body data={[{ label: "Compact key", value: "Compact value" }]} />
+          </VerticalTable.Root>
+        </div>
+      );
+      const block = (name: string) => {
+        const style = getComputedStyle(page.getByRole("cell", { name, exact: true }).element());
+        return [px(style.paddingTop), px(style.paddingBottom)];
+      };
+      const row = ROW[density];
+      expect(block("Default key")).toEqual([row.py, row.py]);
+      expect(block("Default value")).toEqual([row.py, row.py]);
+      expect(block("Compact key")).toEqual([4, 4]);
+      expect(block("Compact value")).toEqual([4, 4]);
+    }
+  );
+
   it("renders a level-2 heading and N data rows of two cells, with data before children", () => {
     renderThemed(
       <VerticalTable.Root>

@@ -15,6 +15,7 @@ import {
 import { cn } from "../../styles/cn";
 import { controlMdInsetTypeClass } from "../../styles/control-size-md";
 import { fieldBoxChromeClass } from "../../styles/field-box";
+import { labelTypeClass } from "../../styles/label-type";
 import { racDisabledStateFaceClass, racInvalidStateFaceClass } from "../../styles/state-face";
 import { tv } from "../../styles/tv";
 import { stateFocusRingClass, stateFocusRingVisibleClass } from "../../styles/utils";
@@ -93,7 +94,7 @@ export function Label({ className, ...props }: LabelProps): ReactElement {
   return (
     <AriaLabel
       data-slot="field-label"
-      className={cn("text-sm font-medium w-fit cursor-default", className)}
+      className={cn(labelTypeClass, "font-medium w-fit cursor-default", className)}
       {...props}
     />
   );
@@ -128,7 +129,7 @@ export function Description({ className, ...props }: DescriptionProps): ReactEle
     <AriaText
       data-slot="field-description"
       slot="description"
-      className={cn("text-sm text-muted-foreground", className)}
+      className={cn(labelTypeClass, "text-muted-foreground", className)}
       {...props}
     />
   );
@@ -143,7 +144,10 @@ export function FieldError({ className, ...props }: FieldErrorProps): ReactEleme
       // Announce the error when it appears, as Fuse Field's error does. RAC's FieldError
       // filters `role` out of its DOM props, so the role goes on through its element.
       render={(domProps) => <span {...domProps} role="alert" />}
-      className={composeTailwindRenderProps(className, "text-sm whitespace-break-spaces text-error")}
+      className={composeTailwindRenderProps(
+        className,
+        cn(labelTypeClass, "whitespace-break-spaces text-error")
+      )}
       {...props}
     />
   );

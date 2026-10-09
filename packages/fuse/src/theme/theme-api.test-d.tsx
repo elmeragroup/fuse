@@ -23,6 +23,7 @@ import {
   ColorSchemeScript,
   colorSchemeScriptSource,
   defaultDensityForVariant,
+  DENSITIES,
   densityAttributes,
   ForceColorScheme,
   LEGAL_THEMES,
@@ -144,6 +145,8 @@ test("coerceTheme is the env-free pin-table parse", () => {
 
 test("density helpers stamp a two-rung document attribute", () => {
   expectTypeOf<Density>().toEqualTypeOf<"dense" | "comfortable">();
+  expectTypeOf(DENSITIES).toEqualTypeOf<readonly ["dense", "comfortable"]>();
+  expectTypeOf<(typeof DENSITIES)[number]>().toEqualTypeOf<Density>();
   expectTypeOf<DensityAttributes>().toEqualTypeOf<{ "data-density": Density }>();
   expectTypeOf(defaultDensityForVariant).parameter(0).toEqualTypeOf<ThemeVariant>();
   expectTypeOf(defaultDensityForVariant).returns.toEqualTypeOf<Density>();

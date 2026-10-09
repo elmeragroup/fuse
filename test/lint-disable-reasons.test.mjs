@@ -57,7 +57,9 @@ function bareDirectives(path, text) {
 }
 
 describe("lint disable reasons", () => {
-  it("requires a reason on every oxlint/eslint-disable directive", () => {
+  // The synchronous walk over every source tree takes about 250ms alone but more than Vitest's 5s
+  // default when turbo runs it beside the other ci:checks tasks.
+  it("requires a reason on every oxlint/eslint-disable directive", { timeout: 30_000 }, () => {
     const offenders = SOURCE_TREES.flatMap((tree) =>
       findFiles(join(repoRoot, tree), isSourceFile).flatMap((path) =>
         bareDirectives(path, readFileSync(path, "utf8"))

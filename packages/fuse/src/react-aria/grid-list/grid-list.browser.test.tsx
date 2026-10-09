@@ -7,7 +7,14 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES } from "../../../test/locale-matrix";
-import { CONTROL_SM, px, renderThemed, roleNamed, stampDensity } from "../../../test/themed-browser-render";
+import {
+  CONTROL_SM,
+  ROW,
+  px,
+  renderThemed,
+  roleNamed,
+  stampDensity,
+} from "../../../test/themed-browser-render";
 import { UiProviders } from "../ui-providers/ui-providers";
 import { GridList, GridListItem } from "./grid-list";
 
@@ -202,21 +209,23 @@ describe("GridList", () => {
     await assertFocusRingAtBothDensities(rowNamed("Oslo"), handle);
   });
 
-  it("keeps the drag handle on the signed sm rung and row padding density-independent", () => {
+  it("keeps the drag handle on the signed sm rung and pads each row with the row metrics", () => {
     renderList(<DraggableMeters />);
     const handle = roleNamed("button", DRAG_COPY["en-US"]);
-    const rowPadding = new Set<string>();
+    const gaps = new Set<string>();
 
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);
       // The handle is the package-private RAC Button at `icon-sm`.
       expect(px(getComputedStyle(handle).height)).toBe(CONTROL_SM[density].height);
       const row = getComputedStyle(rowNamed("Oslo"));
-      rowPadding.add(`${row.paddingBlockStart}/${row.paddingInlineStart}`);
+      expect(px(row.minHeight), `${density} row floor`).toBe(ROW[density].height);
+      expect(px(row.paddingBlockStart), `${density} row block padding`).toBe(ROW[density].py);
+      expect(px(row.paddingInlineStart), `${density} row inline padding`).toBe(ROW[density].px);
+      gaps.add(row.columnGap);
     }
 
-    // row padding and gap are not a control-box rung, so they read no
-    // `--control-*` variable and stay identical across both stamps.
-    expect(rowPadding.size).toBe(1);
+    // A row grows in height and padding only: the gap between its cells stays fixed.
+    expect(gaps.size).toBe(1);
   });
 });

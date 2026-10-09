@@ -47,11 +47,11 @@
   that variable varies by brand, and whether the external `rounded-*` scale, where
   `rounded-md` sits 2px inside the brand radius, should follow Central's radius variables.
 - Ask design about the remaining Central Text input deltas at comfortable density: 8px
-  inline padding (Fuse 14px), 16px input text (Fuse 18px), a 16px label (Fuse 14px), a
-  darker border on hover, grey disabled fill and text instead of the 50% dim, and an error
-  icon inside the box. Confirm the label size together with the comfortable selection-row
-  type, `--control-text-row` at 16px, which a comfortable `RadioItemGroup` shows under a 14px
-  legend.
+  inline padding (Fuse 14px), 16px input text (Fuse 18px), a darker border on hover, grey
+  disabled fill and text instead of the 50% dim, and an error icon inside the box.
+- Ask design whether a `legend`-variant `Field.Legend` should step up at comfortable density.
+  It stays 16/24px at both densities, which now equals comfortable label text (`--label-text`),
+  so a fieldset title no longer reads above its field labels when comfortable.
 - Ask design for a light field border of at least 3:1. Light `--input`, the border of Input,
   Textarea, Select and the other field boxes, measures 1.08–1.70:1 against the page and card, an
   accepted deviation on the accessibility page. Except ngfi's M3 `outline-variant`, the values are
@@ -293,6 +293,9 @@ that opens every overlay on a side before flipping the window.
 - When a product needs arrow-key roving focus across a row of controls, add a `Toolbar` over
   Base UI 1.8's toolbar. Fuse has none today.
 - When a product needs density preferences, define persistence and pre-paint stamping in the host.
+- When a theme should choose its own density, rather than the host stamping it on the document
+  root, design theme-driven density as its own change. Subtree theming never rescopes the density
+  metrics today, and the density coverage test assumes one density per document.
 - Add brands and locales on product demand; reconsider locale subsetting near ten locales.
 - When behavioral tests miss a visual regression or manual theme review stops scaling,
   add visual regression coverage over demos to the publish gate.

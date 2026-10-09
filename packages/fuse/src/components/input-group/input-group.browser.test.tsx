@@ -13,6 +13,8 @@ import {
 } from "../../../test/assert-focus-ring";
 import {
   CONTROL_MD,
+  CONTROL_SM,
+  CONTROL_XS,
   cssVarColor,
   fkasExternal,
   px,
@@ -374,6 +376,7 @@ describe("InputGroup", () => {
           <InputGroup.Addon align="inline-end">
             <InputGroup.Button>Copy</InputGroup.Button>
             <InputGroup.Button size="icon-xs" aria-label="Clear" />
+            <InputGroup.Button size="icon-sm" aria-label="Open" />
           </InputGroup.Addon>
         </InputGroup.Root>
         <div data-density="comfortable">
@@ -389,8 +392,6 @@ describe("InputGroup", () => {
       </>
     );
 
-    const compactXs = [];
-    const compactIconXs = [];
     // Density is a document-root axis: `fuse.css` keys the comfortable block on
     // `:root[data-density="comfortable"]`, so a nested attribute rescopes nothing.
     for (const density of ["dense", "comfortable"] as const) {
@@ -399,12 +400,17 @@ describe("InputGroup", () => {
       expect(px(getComputedStyle(rootNamed("Meter")).height)).toBe(rung);
       expect(px(getComputedStyle(rootNamed("Nested comfortable")).height)).toBe(rung);
       expect(px(getComputedStyle(rootNamed("Nested dense")).height)).toBe(rung);
-      compactXs.push(px(getComputedStyle(roleNamed("button", "Copy")).height));
-      compactIconXs.push(px(getComputedStyle(roleNamed("button", "Clear")).height));
+      // An addon button reads the xs rung, one below the field's own md box.
+      expect(px(getComputedStyle(roleNamed("button", "Copy")).height), `${density} xs`).toBe(
+        CONTROL_XS[density].height
+      );
+      expect(px(getComputedStyle(roleNamed("button", "Clear")).height), `${density} icon-xs`).toBe(
+        CONTROL_XS[density].height
+      );
+      expect(px(getComputedStyle(roleNamed("button", "Open")).height), `${density} icon-sm`).toBe(
+        CONTROL_SM[density].height
+      );
     }
-    // Compact addon chrome is density-independent.
-    expect(compactXs[0]).toBe(compactXs[1]);
-    expect(compactIconXs[0]).toBe(compactIconXs[1]);
 
     stampDensity("dense");
     rerender(
@@ -447,7 +453,7 @@ describe("InputGroup", () => {
 
     // The field's own md control inset and icon edge: 10px and 8px dense, 14px and 12px
     // comfortable. A standalone md Button pads 32px and 24px at comfortable density. The
-    // default xs addon keeps its compact 6px (`px-1.5`) inset and the same md icon edge.
+    // default xs addon pads with the xs icon inset and the same md icon edge.
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);
       const bare = getComputedStyle(roleNamed("button", "Search"));
@@ -458,10 +464,10 @@ describe("InputGroup", () => {
       expect(px(icon.paddingInlineEnd), `${density} far edge`).toBe(CONTROL_MD[density].px);
       const lead = getComputedStyle(roleNamed("button", "Lead"));
       expect(px(lead.paddingInlineStart), `${density} xs leading icon edge`).toBe(CONTROL_MD[density].pxIcon);
-      expect(px(lead.paddingInlineEnd), `${density} xs far edge`).toBe(6);
+      expect(px(lead.paddingInlineEnd), `${density} xs far edge`).toBe(CONTROL_XS[density].pxIcon);
       const trail = getComputedStyle(roleNamed("button", "Trail"));
       expect(px(trail.paddingInlineEnd), `${density} xs trailing icon edge`).toBe(CONTROL_MD[density].pxIcon);
-      expect(px(trail.paddingInlineStart), `${density} xs far edge`).toBe(6);
+      expect(px(trail.paddingInlineStart), `${density} xs far edge`).toBe(CONTROL_XS[density].pxIcon);
     }
   });
 

@@ -1,6 +1,8 @@
 import { expect } from "vitest";
 import { userEvent } from "vitest/browser";
 
+import { DENSITIES } from "../src/theme/density";
+
 function hasFocusRing(element: HTMLElement): boolean {
   const style = getComputedStyle(element);
   const ring = style.getPropertyValue("--tw-ring-shadow");
@@ -40,8 +42,6 @@ export function expectFocusRing(element: HTMLElement, message: string): void {
 export function expectNoFocusRing(element: HTMLElement, message: string): void {
   expect(hasFocusRing(element), message).toBe(false);
 }
-
-const DENSITIES = ["dense", "comfortable"] as const;
 
 async function withBothDensities(run: () => Promise<void>): Promise<void> {
   const previousDensity = document.documentElement.getAttribute("data-density");

@@ -1,4 +1,11 @@
-import { BRAND_CODES, BRANDS, LEGAL_THEMES, THEME_SEGMENTS, THEME_VARIANTS } from "@elmeragroup/fuse/theme";
+import {
+  BRAND_CODES,
+  BRANDS,
+  DENSITIES,
+  LEGAL_THEMES,
+  THEME_SEGMENTS,
+  THEME_VARIANTS,
+} from "@elmeragroup/fuse/theme";
 import type { BrandCode, Density } from "@elmeragroup/fuse/theme";
 
 import { LANDING_FACTS } from "../../../generated/landing-facts";
@@ -14,9 +21,6 @@ import { componentHref, requireStaticPage } from "../../../lib/pages";
 
 const listFormat = new Intl.ListFormat("en-GB", { style: "long", type: "conjunction" });
 const languageNames = new Intl.DisplayNames(["en"], { type: "language" });
-
-/** The densities in the library's own order. */
-export const DENSITIES: readonly Density[] = LANDING_FACTS.densities;
 
 const mediumControl = LANDING_FACTS.metrics.find((metric) => metric.name === "control-h-md");
 

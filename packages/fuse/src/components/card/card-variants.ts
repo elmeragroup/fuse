@@ -11,8 +11,8 @@ import { tv } from "../../styles/tv";
  * Horizontal cards keep their header text in a grid and wrap whole sections when
  * the container cannot fit them side by side.
  * One axis only — the external ref's surface/padding axes are decomposed away.
- * Sections pad with the large surface tier, `--surface-pad-lg` (16px dense, 24px comfortable),
- * and content and footer drop their top padding, so the tier is also the gap between sections.
+ * Sections pad with the large surface tier, `--surface-pad-lg`, and content and footer drop
+ * their top padding, so the tier is also the gap between sections.
  * A horizontal card pads and gaps its sections with the same tier.
  */
 export const cardVariants = tv({

@@ -27,7 +27,7 @@ import { cn } from "../../styles/cn";
 import { controlMd } from "../../styles/control-size-md";
 import { selfFocusRingClass } from "../../styles/utils";
 import { ComboboxContent, ComboboxEmpty, ComboboxItem, ComboboxList } from "../combobox/combobox";
-import { FieldFrame, fieldFrameRootClass } from "../field/field-frame";
+import { FieldFrame } from "../field/field-frame";
 import {
   InputGroupAddon,
   InputGroupInput,
@@ -439,7 +439,8 @@ export function PhoneNumberField({
   return (
     <>
       <FieldFrame
-        className={cn(fieldFrameRootClass, className)}
+        spacing="part"
+        className={className}
         name={name}
         invalid={isInvalid}
         disabled={isDisabled}

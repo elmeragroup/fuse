@@ -170,6 +170,8 @@ export const Density = Schema.Literals(["dense", "comfortable"]);
 /** A control density. */
 export type Density = typeof Density.Type;
 
+const isDensity = Schema.is(Density);
+
 /** The density a shot renders the demo stage in. */
 export const DensityChoice = Schema.Union([
   /** The deployment default the demo stage takes from the theme's variant. */
@@ -397,7 +399,7 @@ export const Themes = fromText(Schema.NonEmptyArray(ThemeChoice), (input) =>
 /** A comma list of densities, each an override. */
 export const Densities = fromText(Schema.NonEmptyArray(DensityChoice), (input) =>
   parseList(input, (item): Result.Result<DensityChoice, string> =>
-    item === "dense" || item === "comfortable"
+    isDensity(item)
       ? Result.succeed({ _tag: "override", density: item })
       : Result.fail(`"${item}" must be dense or comfortable`)
   )

@@ -21,7 +21,7 @@ import { fkasPrivate, stampTheme } from "./theme-fixtures";
 export { fkasExternal, fkasPrivate, guenExternal, stampTheme } from "./theme-fixtures";
 
 /** A density metric in the pixels a browser computes, with `rem` at the 16px root. */
-function metricPx(name: DensityMetricName, density: Density): number {
+export function metricPx(name: DensityMetricName, density: Density): number {
   return remToPx(DENSITY_METRICS[name][density]);
 }
 
@@ -87,6 +87,36 @@ export const CONTROL_XS = {
 export const CONTROL_LG = {
   dense: controlBoxWithDensityType("lg", "dense"),
   comfortable: controlBoxWithDensityType("lg", "comfortable"),
+} as const;
+
+/**
+ * Row metrics (`--row-*`) in pixels, read from `DENSITY_METRICS`: one line of a collection's
+ * minimum height, a table head's height, and the row's inline and block padding.
+ */
+export const ROW = {
+  dense: rowBox("dense"),
+  comfortable: rowBox("comfortable"),
+} as const;
+
+function rowBox(density: Density) {
+  return {
+    height: metricPx("row-h", density),
+    headerHeight: metricPx("row-h-header", density),
+    px: metricPx("row-px", density),
+    py: metricPx("row-py", density),
+  };
+}
+
+/**
+ * The label type pair (`--label-text`, `--label-leading`) in pixels, read from `DENSITY_METRICS`:
+ * the type of a field's label, title, description and error.
+ */
+export const LABEL = {
+  dense: { font: metricPx("label-text", "dense"), leading: metricPx("label-leading", "dense") },
+  comfortable: {
+    font: metricPx("label-text", "comfortable"),
+    leading: metricPx("label-leading", "comfortable"),
+  },
 } as const;
 
 /**

@@ -28,7 +28,9 @@ describe("textFieldVariants", () => {
     expect(slots.container()).toContain("flex-col");
     // The trailing icon's positioning box.
     expect(slots.inputContainer()).toContain("relative");
-    expect(slots.description()).toContain("text-sm");
+    // The description takes its type from Field.Description's label pair, not a fixed size.
+    expect(slots.description()).toContain("text-pretty");
+    expect(slots.description()).not.toContain("text-sm");
     expect(slots.iconContainer()).toContain("absolute");
     expect(slots).not.toHaveProperty("textArea");
   });

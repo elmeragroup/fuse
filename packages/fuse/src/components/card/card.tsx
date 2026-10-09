@@ -35,18 +35,33 @@ type CardDescriptionProps = HTMLAttributes<HTMLParagraphElement> &
 
 /**
  * The Card surface. It publishes `--inner-corner`, its corner less its border, and its header,
- * content and footer publish it less their padding too.
+ * content and footer publish it less their padding too. The root and its sections write their
+ * `direction` as `data-direction`: a vertical card pads its sections, a horizontal one pads itself.
  */
 function CardRoot({ className, direction, ...props }: CardDivProps): ReactElement {
   const { base } = cardVariants({ direction });
 
-  return <div data-slot="card" className={cn(base(), className)} {...props} />;
+  return (
+    <div
+      data-slot="card"
+      data-direction={direction ?? "vertical"}
+      className={cn(base(), className)}
+      {...props}
+    />
+  );
 }
 
 function CardHeader({ className, direction, ...props }: CardDivProps): ReactElement {
   const { cardHeader } = cardVariants({ direction });
 
-  return <div data-slot="card-header" className={cn(cardHeader(), className)} {...props} />;
+  return (
+    <div
+      data-slot="card-header"
+      data-direction={direction ?? "vertical"}
+      className={cn(cardHeader(), className)}
+      {...props}
+    />
+  );
 }
 
 function CardTag({ className, direction, ...props }: CardDivProps): ReactElement {
@@ -111,13 +126,27 @@ function CardAction({ className, direction, ...props }: CardDivProps): ReactElem
 function CardContent({ className, direction, ...props }: CardDivProps): ReactElement {
   const { cardContent } = cardVariants({ direction });
 
-  return <div data-slot="card-content" className={cn(cardContent(), className)} {...props} />;
+  return (
+    <div
+      data-slot="card-content"
+      data-direction={direction ?? "vertical"}
+      className={cn(cardContent(), className)}
+      {...props}
+    />
+  );
 }
 
 function CardFooter({ className, direction, ...props }: CardDivProps): ReactElement {
   const { cardFooter } = cardVariants({ direction });
 
-  return <div data-slot="card-footer" className={cn(cardFooter(), className)} {...props} />;
+  return (
+    <div
+      data-slot="card-footer"
+      data-direction={direction ?? "vertical"}
+      className={cn(cardFooter(), className)}
+      {...props}
+    />
+  );
 }
 
 CardRoot.displayName = "Card.Root";

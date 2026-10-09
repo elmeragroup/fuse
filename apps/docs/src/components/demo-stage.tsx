@@ -35,7 +35,7 @@ const { stage, meta, slug: slugClass, density: densityClass, sourcePath: sourceP
  * preview context, so driving the header picker re-renders the stage and its label
  * while the frame shell and the source region stay server-rendered. Density is the
  * *deployment default* for the previewed variant, stamped on the stage so the
- * comfortable re-scope in `globals.css` can take effect inside the sandbox.
+ * demo-stage density re-scope in `globals.css` can take effect inside the sandbox.
  */
 export function DemoStage({ sourcePath, children }: DemoStageProps): ReactElement {
   const { theme } = usePreviewTheme();

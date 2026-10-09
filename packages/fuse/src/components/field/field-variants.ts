@@ -2,14 +2,15 @@
  * Module-private Field recipes. Not exported from the public
  * entry — there is no proven recipe-borrowing use. `orientation` is the Root
  * axis; `heading` is the Label/Title shared class, resolved once at module
- * scope in `field.tsx`.
+ * scope in `field.tsx`. It reads the label type pair.
  */
+import { labelTypeClass } from "../../styles/label-type";
 import { tv } from "../../styles/tv";
 
 export const fieldVariants = tv({
   slots: {
-    root: "group/field flex w-full gap-3 data-invalid:text-error",
-    heading: "text-sm font-medium flex w-fit gap-2 group-data-disabled/field:opacity-50",
+    root: "group/field flex w-full gap-(--surface-gap-md) data-invalid:text-error",
+    heading: [labelTypeClass, "font-medium flex w-fit gap-2 group-data-disabled/field:opacity-50"],
   },
   variants: {
     orientation: {

@@ -21,9 +21,9 @@ export const itemVariants = tv({
       muted: "border-transparent bg-muted/50",
     },
     size: {
-      default: [itemDefaultShellClass, "gap-3.5"],
-      sm: [itemSmShellClass, "gap-2.5"],
-      xs: [itemXsShellClass, "gap-2"],
+      default: [itemDefaultShellClass, "gap-(--surface-gap-md)"],
+      sm: [itemSmShellClass, "gap-(--surface-gap-sm)"],
+      xs: [itemXsShellClass, "gap-(--surface-gap-sm)"],
     },
   },
   defaultVariants: {

@@ -22,12 +22,12 @@ export const gridListVariants = tv({
  * `isFocusVisible` in as a render prop and this recipe turns it into a variant arm — so
  * `styles/utils` stays the only module that spells or resolves a focus class.
  *
- * Row padding and gap are not a control-box rung,
- * so they stay the reference's literals and read no `--control-*` variable.
+ * A row reads the row metrics: at least `--row-h` tall, padded with `--row-px` and `--row-py`.
+ * Its text and the gap between its cells stay fixed, so a row grows in height and padding only.
  */
 export const itemStyles = tv({
   base: cn(
-    "text-sm relative flex cursor-default gap-3 border-t border-transparent px-1.5 py-1 -outline-offset-2 select-none first:rounded-t-lg first:border-t-0 last:mb-0 last:rounded-b-lg",
+    "text-sm relative box-border flex min-h-(--row-h) cursor-default gap-3 border-t border-transparent px-(--row-px) py-(--row-py) -outline-offset-2 select-none first:rounded-t-lg first:border-t-0 last:mb-0 last:rounded-b-lg",
     stateFocusRingClass
   ),
   variants: {

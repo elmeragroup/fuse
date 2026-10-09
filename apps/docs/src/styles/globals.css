@@ -2,7 +2,7 @@
 @plugin "@tailwindcss/typography";
 @import "@elmeragroup/fuse/css";
 @import "@elmeragroup/fuse/themes.css";
-@import "@elmeragroup/fuse/demo-stage-comfortable.css";
+@import "@elmeragroup/fuse/demo-stage-density.css";
 /* Tailwind's automatic source detection is rooted at this file's own directory, so both
    class sources are declared explicitly: the library's recipes, and the docs app itself
    — which is where the component demos now live. */

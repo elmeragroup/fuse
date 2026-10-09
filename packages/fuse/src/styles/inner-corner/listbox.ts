@@ -20,10 +20,11 @@ export const listboxListShellClass = cn(
 );
 
 /**
- * The Combobox chips box: it pads its chips 6px inside the border.
+ * The Combobox chips box: it pads its chips 6px inline inside the border, and on the block axis
+ * with the row inset, `--row-py`.
  */
 export const chipsShellClass = cn(
-  "py-1.5 [--shell-inner:max(0px,var(--field-corner)-1px-1.5*var(--spacing))] has-data-[slot=combobox-chip]:px-1.5",
+  "py-(--row-py) [--shell-inner:max(0px,var(--field-corner)-1px-1.5*var(--spacing))] has-data-[slot=combobox-chip]:px-1.5",
   publishShellBoundary
 );
 

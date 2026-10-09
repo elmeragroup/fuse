@@ -1,20 +1,25 @@
 import type { ReactNode } from "react";
 
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import {
+  LABEL,
+  metricPx,
   cssVarColor,
   fieldRootFrom,
   inputNamed,
+  px,
   renderThemed,
   roleNamed,
+  stampDensity,
   textNamed,
   textboxNamed,
 } from "../../../test/themed-browser-render";
-import { Checkbox } from "../checkbox/checkbox";
+import { DENSITIES } from "../../theme/density";
+import { Checkbox, CheckboxGroup } from "../checkbox/checkbox";
 import { Form } from "../form/form";
 import { Field } from "./index";
 
@@ -413,4 +418,119 @@ describe("Field", () => {
     expect(city.left).toBeGreaterThan(street.right);
     expect(legend.getBoundingClientRect().bottom).toBeLessThanOrEqual(street.top);
   });
+});
+
+describe("Field text follows density", () => {
+  afterEach(() => {
+    document.documentElement.removeAttribute("data-density");
+  });
+
+  /** The font size and line height of the element whose text is `text`, in px. */
+  function typeOf(text: string) {
+    const style = getComputedStyle(textNamed(text));
+    return { font: px(style.fontSize), leading: px(style.lineHeight) };
+  }
+
+  it.each(DENSITIES)(
+    "sets label, title, description, error and a label legend in the label type at %s",
+    (density) => {
+      stampDensity(density);
+      renderThemed(
+        <Field.Set>
+          <Field.Legend>Legend title</Field.Legend>
+          <Field.Legend variant="label">Label legend</Field.Legend>
+          <Field.Root invalid>
+            <Field.Label>Email label</Field.Label>
+            <Field.Title>Field title</Field.Title>
+            <Field.Description>Field description</Field.Description>
+            <Field.Error>Field error</Field.Error>
+          </Field.Root>
+        </Field.Set>
+      );
+      for (const text of ["Label legend", "Email label", "Field title", "Field description", "Field error"]) {
+        expect(typeOf(text), `${density} ${text}`).toEqual(LABEL[density]);
+      }
+      // The legend variant titles the fieldset at a fixed 16/24px at both densities.
+      expect(typeOf("Legend title"), `${density} legend`).toEqual({ font: 16, leading: 24 });
+    }
+  );
+});
+
+describe("Field group gaps follow density", () => {
+  afterEach(() => {
+    document.documentElement.removeAttribute("data-density");
+  });
+
+  /** The row gap of the closest element around `text` that carries `slot`. */
+  function gapAround(text: string, slot: string): number {
+    // DOM audit: Field.Set, Field.Group and Field.Root have no role, so they are found by their public slot.
+    const element = textNamed(text).closest(`[data-slot="${slot}"]`);
+    if (!(element instanceof HTMLElement)) {
+      throw new Error(`expected a ${slot} around ${text}`);
+    }
+    return px(getComputedStyle(element).rowGap);
+  }
+
+  it.each(DENSITIES)(
+    "gaps a field, a field set, a field group and their nested groups by the surface tiers at %s",
+    (density) => {
+      stampDensity(density);
+      renderThemed(
+        <Field.Set>
+          <Field.Legend>Contact</Field.Legend>
+          <Field.Group>
+            <Field.Root>
+              <Field.Label>Root label</Field.Label>
+              <input aria-label="Root input" />
+            </Field.Root>
+            <Field.Group>
+              <Field.Root>
+                <Field.Label>Nested label</Field.Label>
+              </Field.Root>
+            </Field.Group>
+          </Field.Group>
+        </Field.Set>
+      );
+      expect(gapAround("Root label", "field"), "field").toBe(metricPx("surface-gap-md", density));
+      expect(gapAround("Contact", "field-set"), "field set").toBe(metricPx("surface-gap-xl", density));
+      // DOM audit: the outer Field.Group has no role, so it is the group around the inner one.
+      const outer = textNamed("Nested label")
+        .closest('[data-slot="field-group"]')
+        ?.parentElement?.closest('[data-slot="field-group"]');
+      if (!(outer instanceof HTMLElement)) {
+        throw new Error("expected the outer field group");
+      }
+      expect(px(getComputedStyle(outer).rowGap), "field group").toBe(metricPx("surface-gap-xl", density));
+      expect(gapAround("Nested label", "field-group"), "nested field group").toBe(
+        metricPx("surface-gap-lg", density)
+      );
+    }
+  );
+
+  it.each(DENSITIES)(
+    "gaps a checkbox group's options by the sm tier stacked and the lg tier in a line at %s",
+    (density) => {
+      stampDensity(density);
+      renderThemed(
+        <>
+          <CheckboxGroup label="Stacked">
+            <Checkbox value="a" aria-label="Stacked a" />
+            <Checkbox value="b" aria-label="Stacked b" />
+          </CheckboxGroup>
+          <CheckboxGroup label="Inline" orientation="horizontal">
+            <Checkbox value="a" aria-label="Inline a" />
+            <Checkbox value="b" aria-label="Inline b" />
+          </CheckboxGroup>
+        </>
+      );
+      // The options are the Checkbox controls, which the group primitive lays out.
+      const box = (name: string) => roleNamed("checkbox", name).getBoundingClientRect();
+      expect(box("Stacked b").top - box("Stacked a").bottom, "stacked").toBe(
+        metricPx("surface-gap-sm", density)
+      );
+      expect(box("Inline b").left - box("Inline a").right, "inline").toBe(
+        metricPx("surface-gap-lg", density)
+      );
+    }
+  );
 });

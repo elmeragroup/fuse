@@ -538,7 +538,7 @@
           "type": "\"label\" | \"legend\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"legend\"",
-          "description": "Emitted as `data-variant` and drives the text size: `\"legend\"` (default) titles the fieldset, `\"label\"` sizes it down to match a `Field.Label`.",
+          "description": "Emitted as `data-variant` and drives the text size: `\"legend\"` (default) titles the fieldset at a fixed 16/24px, `\"label\"` reads the label type pair to match a `Field.Label`.",
           "required": false
         }
       ]

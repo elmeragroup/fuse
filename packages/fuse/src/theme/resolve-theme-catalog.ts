@@ -1,8 +1,8 @@
 /**
  * The theme catalog resolved for design tools: every legal theme in both color schemes, the
- * primitives and the density metrics, with each custom property's CSS, its web code syntax,
- * the one `var()` hop it takes, and the literal at the end of its chain as a design-tool
- * value. Exporters, such as the Figma sync and the docs DTCG export, read this tree instead of
+ * primitives, the density metrics and the density role of every part, with each custom
+ * property's CSS, its web code syntax, the one `var()` hop it takes, and the literal at the end
+ * of its chain as a design-tool value. Exporters, such as the Figma sync and the docs DTCG export, read this tree instead of
  * parsing CSS values, so every CSS reader stays private to this module.
  *
  * Token values are fuse source, not caller input, so a value the resolver cannot read is a
@@ -23,7 +23,9 @@ import { readTokenColor } from "./token-color";
 import { TOKEN_KINDS, TOKEN_NAMES } from "./tokens/contract";
 import type { TokenContract, TokenKind, TokenName } from "./tokens/contract";
 import { DENSITY_METRIC_FAMILIES, DENSITY_METRICS } from "./tokens/density-metrics";
-import type { DensityMetricKind, DensityMetricName } from "./tokens/density-metrics";
+import type { DensityMetricKind, DensityMetricName, DensityMetricRole } from "./tokens/density-metrics";
+import { DENSITY_ROLES, PART_DENSITY } from "./tokens/density-roles";
+import type { DensityPart, DensityRole } from "./tokens/density-roles";
 import { PRIMITIVE_NAMES, PRIMITIVES } from "./tokens/primitives";
 import type { PrimitiveName } from "./tokens/primitives";
 import { RADIUS_RUNG_NAMES, RADIUS_RUNGS } from "./tokens/radius-scale";
@@ -150,8 +152,8 @@ export type ResolvedTheme = {
 };
 
 /**
- * One density metric, a control or surface metric, which is independent of the theme and the
- * scheme.
+ * One density metric, a control, row, surface or label metric, which is independent of the
+ * theme and the scheme.
  */
 export type DensityMetricEntry = {
   /** The custom property without its leading dashes, such as `control-h-md`. */
@@ -160,6 +162,9 @@ export type DensityMetricEntry = {
   /** The box or type property the metric sets. */
   readonly metricKind: DensityMetricKind;
 
+  /** The density role whose parts read the metric. */
+  readonly role: DensityMetricRole;
+
   /** The CSS a developer pastes, such as `var(--control-h-md)`. */
   readonly codeSyntax: string;
 
@@ -167,7 +172,22 @@ export type DensityMetricEntry = {
   readonly px: { readonly [D in Density]: number };
 };
 
-/** Every legal theme in both color schemes, the primitives and the density metrics. */
+/**
+ * The density role of every Fuse part, keyed by `data-slot` or by an override key: the slot followed
+ * by a CSS selector suffix starting with `[` or `:`, such as `card[data-direction=horizontal]`.
+ */
+export type PartDensityCatalog = {
+  /** Every density role, in the order CONTEXT.md defines them. */
+  readonly roles: readonly DensityRole[];
+
+  /** Every part's declared role. */
+  readonly parts: { readonly [P in DensityPart]: DensityRole };
+};
+
+/**
+ * Every legal theme in both color schemes, the primitives, the density metrics and the density
+ * role of every part.
+ */
 export type ResolvedThemeCatalog = {
   /** Every primitive, in `PRIMITIVE_NAMES` order. */
   readonly primitives: { readonly [N in PrimitiveName]: PrimitiveEntry<N> };
@@ -175,13 +195,16 @@ export type ResolvedThemeCatalog = {
   /** Every legal theme, in `LEGAL_THEMES` order. The pin table always admits one. */
   readonly themes: readonly [ResolvedTheme, ...ResolvedTheme[]];
 
-  /** Every density metric, control and surface, in `fuse.css` order. */
+  /** Every density metric, in `fuse.css` order. */
   readonly density: readonly DensityMetricEntry[];
+
+  /** The density role every part declares. */
+  readonly partDensity: PartDensityCatalog;
 };
 
 /**
- * Every legal theme in both colour schemes, the primitives and the density metrics, with each
- * value resolved for design tools. Pure: every call resolves afresh (no memo, no freeze).
+ * Every legal theme in both colour schemes, the primitives, the density metrics and the part
+ * density roles, with each value resolved for design tools. Pure: every call resolves afresh (no memo, no freeze).
  *
  * @returns The resolved catalog, with every record and list in source order.
  * @throws Error on a fuse defect, never caller input:
@@ -205,9 +228,10 @@ export function resolveThemeCatalog(): ResolvedThemeCatalog {
   return {
     primitives,
     themes: [resolve(first), ...rest.map(resolve)],
-    density: DENSITY_METRIC_FAMILIES.flatMap(({ kind, metrics }) =>
-      metrics.map((name) => densityEntry(name, kind))
+    density: DENSITY_METRIC_FAMILIES.flatMap(({ kind, role, metrics }) =>
+      metrics.map((name) => densityEntry(name, kind, role))
     ),
+    partDensity: { roles: DENSITY_ROLES, parts: PART_DENSITY },
   };
 }
 
@@ -482,11 +506,16 @@ function resolveRungs(radius: number, step: number): ResolvedScheme["rungs"] {
   return recordOf(RADIUS_RUNG_NAMES, rungs);
 }
 
-function densityEntry(name: DensityMetricName, metricKind: DensityMetricKind): DensityMetricEntry {
+function densityEntry(
+  name: DensityMetricName,
+  metricKind: DensityMetricKind,
+  role: DensityMetricRole
+): DensityMetricEntry {
   const rem = DENSITY_METRICS[name];
   return {
     name,
     metricKind,
+    role,
     codeSyntax: `var(--${name})`,
     px: { dense: remToPx(rem.dense), comfortable: remToPx(rem.comfortable) },
   };

@@ -9,10 +9,10 @@ import { Button } from "@elmeragroup/fuse/button";
 import { Card } from "@elmeragroup/fuse/card";
 import { NumberField } from "@elmeragroup/fuse/number-field";
 import { TextField } from "@elmeragroup/fuse/text-field";
-import { densityAttributes } from "@elmeragroup/fuse/theme";
+import { DENSITIES, densityAttributes } from "@elmeragroup/fuse/theme";
 import type { Density } from "@elmeragroup/fuse/theme";
 
-import { DENSITIES, mediumControlPx } from "./landing-facts";
+import { mediumControlPx } from "./landing-facts";
 import { LANDING_DENSITY } from "./landing-theme-defaults";
 import { SingleToggle, stack } from "./product-parts";
 

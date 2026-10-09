@@ -94,8 +94,8 @@ describe("fuse-figma sync", () => {
       assert.strictEqual(figma.variableNames("Fuse tokens").length, 89);
       assert.strictEqual(figma.variableNames("Fuse themes").length, 178);
       assert.strictEqual(figma.variableNames("Fuse primitives").length, 25);
-      // 28 control metrics plus the 3 surface metrics.
-      assert.strictEqual(figma.variableNames("Fuse density").length, 31);
+      // 26 control metrics, 4 row, 2 label, 3 surface padding and 4 surface gap metrics.
+      assert.strictEqual(figma.variableNames("Fuse density").length, 39);
       assert.strictEqual(writes(figma), 1);
       assert.include(yield* output, "reading it back matches the tokens");
     })
@@ -233,13 +233,25 @@ describe("fuse-figma sync", () => {
         scopes: ["LINE_HEIGHT"],
         codeSyntax: { WEB: "var(--control-leading)" },
       });
-      assert.deepStrictEqual(figma.metadata("Fuse density", "control-text-row"), {
+      assert.deepStrictEqual(figma.metadata("Fuse density", "label-text"), {
         scopes: ["FONT_SIZE"],
-        codeSyntax: { WEB: "var(--control-text-row)" },
+        codeSyntax: { WEB: "var(--label-text)" },
       });
-      assert.deepStrictEqual(figma.metadata("Fuse density", "control-leading-row"), {
+      assert.deepStrictEqual(figma.metadata("Fuse density", "label-leading"), {
         scopes: ["LINE_HEIGHT"],
-        codeSyntax: { WEB: "var(--control-leading-row)" },
+        codeSyntax: { WEB: "var(--label-leading)" },
+      });
+      assert.deepStrictEqual(figma.metadata("Fuse density", "row-h"), {
+        scopes: ["WIDTH_HEIGHT"],
+        codeSyntax: { WEB: "var(--row-h)" },
+      });
+      assert.deepStrictEqual(figma.metadata("Fuse density", "row-py"), {
+        scopes: ["GAP"],
+        codeSyntax: { WEB: "var(--row-py)" },
+      });
+      assert.deepStrictEqual(figma.metadata("Fuse density", "surface-gap-md"), {
+        scopes: ["GAP"],
+        codeSyntax: { WEB: "var(--surface-gap-md)" },
       });
     })
   );
@@ -277,7 +289,7 @@ describe("fuse-figma sync", () => {
     })
   );
 
-  it.effect("resolves each control metric in the density a frame sets, whatever its theme", () =>
+  it.effect("resolves each density metric in the density a frame sets, whatever its theme", () =>
     Effect.gen(function* () {
       const figma = new InMemoryFigma(FILE_KEY, TOKEN);
       yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
@@ -307,10 +319,21 @@ describe("fuse-figma sync", () => {
       assert.strictEqual(metric("control-text", "Comfortable"), 18);
       assert.strictEqual(metric("control-leading", "Dense"), 20);
       assert.strictEqual(metric("control-leading", "Comfortable"), 24);
-      assert.strictEqual(metric("control-text-row", "Dense"), 14);
-      assert.strictEqual(metric("control-text-row", "Comfortable"), 16);
-      assert.strictEqual(metric("control-leading-row", "Dense"), 20);
-      assert.strictEqual(metric("control-leading-row", "Comfortable"), 24);
+      assert.strictEqual(metric("label-text", "Dense"), 14);
+      assert.strictEqual(metric("label-text", "Comfortable"), 16);
+      assert.strictEqual(metric("label-leading", "Dense"), 20);
+      assert.strictEqual(metric("label-leading", "Comfortable"), 24);
+      // A row is 32px dense and 36px comfortable; a table head adds 8px.
+      assert.strictEqual(metric("row-h", "Dense"), 32);
+      assert.strictEqual(metric("row-h", "Comfortable"), 36);
+      assert.strictEqual(metric("row-h-header", "Comfortable"), 44);
+      assert.strictEqual(metric("row-px", "Comfortable"), 12);
+      assert.strictEqual(metric("row-py", "Dense"), 6);
+      // The surface gap tiers step 8/12/16/24px dense and 12/16/24/32px comfortable.
+      assert.strictEqual(metric("surface-gap-sm", "Dense"), 8);
+      assert.strictEqual(metric("surface-gap-lg", "Comfortable"), 24);
+      assert.strictEqual(metric("surface-gap-xl", "Dense"), 24);
+      assert.strictEqual(metric("surface-gap-xl", "Comfortable"), 32);
       // A frame that sets no density mode sees the collection's first mode, Dense.
       assert.strictEqual(figma.resolve("Fuse density", "control-h-sm", {}), 32);
     })
@@ -596,7 +619,7 @@ describe("fuse-figma check", () => {
       assert.notInclude(printed, "Fuse themes: create mode external-elma-company");
       assert.include(printed, "Fuse themes: create variable ×178");
       assert.include(printed, "Fuse density: create mode Comfortable");
-      assert.include(printed, "Fuse density: create variable ×31");
+      assert.include(printed, "Fuse density: create variable ×39");
     })
   );
 

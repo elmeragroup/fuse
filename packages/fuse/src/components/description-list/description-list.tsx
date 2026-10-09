@@ -36,7 +36,7 @@ function DescriptionListTerm({ className, ...props }: DescriptionListTermProps):
     <dt
       data-slot="description-list-term"
       className={cn(
-        "col-start-1 border-t py-2 pr-2 text-muted-foreground first-of-type:border-none",
+        "col-start-1 border-t py-(--row-py) pr-(--row-px) text-muted-foreground first-of-type:border-none",
         className
       )}
       {...props}
@@ -48,7 +48,7 @@ function DescriptionListDetails({ className, ...props }: DescriptionListDetailsP
   return (
     <dd
       data-slot="description-list-details"
-      className={cn("sm:border-t py-2 text-foreground first-of-type:border-none", className)}
+      className={cn("sm:border-t py-(--row-py) text-foreground first-of-type:border-none", className)}
       {...props}
     />
   );

@@ -3,7 +3,6 @@ import type { ReactElement } from "react";
 import { expect } from "vitest";
 
 import { menuPopupShellClass } from "../src/styles/inner-corner/menu";
-import type { Density } from "../src/theme/density";
 import { ThemeScope } from "../src/theme/theme-scope";
 import type { ThemeInput } from "../src/theme/tokens/themes";
 import { render } from "./browser-render";
@@ -20,9 +19,6 @@ export const CASES: readonly (readonly [Variant, ThemeInput, ThemeInput])[] = [
   ["tkas", tkasCompany, fkasPrivate],
   ["guen", guenExternal, tkasCompany],
 ];
-
-/** Both densities, which every geometry case runs at. */
-export const DENSITIES: readonly Density[] = ["dense", "comfortable"];
 
 /**
  * Each theme's `--radius` in px, the corner of an inner part outside any shell: 0.375rem

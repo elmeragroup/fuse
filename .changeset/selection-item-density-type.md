@@ -2,8 +2,8 @@
 "@elmeragroup/fuse": minor
 ---
 
-`CheckboxItem`, `RadioItem` and `SelectionItem.Shell` rows now follow density. Two new control
-metrics, `--control-text-row` and `--control-leading-row`, set the row's type: 14/20px dense, as
+`CheckboxItem`, `RadioItem` and `SelectionItem.Shell` rows now follow density. The label metrics,
+`--label-text` and `--label-leading`, set the row's type: 14/20px dense, as
 before, and 16/24px comfortable, the external default. `SelectionItem.Title` and
 `SelectionItem.Description` take the size and keep their own line heights, and plain text in
 `SelectionItem.Actions` or a `SelectionItem.SubSection` takes both. The control now centres on the

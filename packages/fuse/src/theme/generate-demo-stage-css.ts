@@ -1,13 +1,5 @@
-import type { Density } from "./density";
+import { DENSITIES } from "./density";
 import { DENSITY_METRIC_NAMES, DENSITY_METRICS } from "./tokens/density-metrics";
-
-// Stamped by apps/docs/src/components/demo-stage.tsx, the landing's density stage and its Dashboard; the docs browser first-paint test verifies the pairing against the shipped CSS.
-const DEMO_STAGE_SELECTORS = {
-  dense: '[data-demo-stage][data-density="dense"]',
-  comfortable: '[data-demo-stage][data-density="comfortable"]',
-} as const satisfies Record<Density, string>;
-
-const DENSITIES = ["dense", "comfortable"] as const satisfies readonly Density[];
 
 const GENERATED_FILE_HEADER = `/**
  * AUTO-GENERATED FILE — DO NOT EDIT DIRECTLY.
@@ -29,7 +21,8 @@ export function generateDemoStageDensityCss(): string {
     const body = DENSITY_METRIC_NAMES.map((name) => `  --${name}: ${DENSITY_METRICS[name][density]};`).join(
       "\n"
     );
-    return `${DEMO_STAGE_SELECTORS[density]} {\n${body}\n}\n`;
+    // Stamped by apps/docs/src/components/demo-stage.tsx, the landing's density stage and its Dashboard; the docs browser first-paint test verifies the pairing against the shipped CSS.
+    return `[data-demo-stage][data-density="${density}"] {\n${body}\n}\n`;
   });
   return `${GENERATED_FILE_HEADER}${blocks.join("\n")}`;
 }

@@ -9,7 +9,6 @@ import { render } from "../../test/browser-render";
 import {
   CASES,
   cornerRadius,
-  DENSITIES,
   expectShellOnThemeElementWins,
   RADIUS,
 } from "../../test/inner-corner-specimens";
@@ -28,6 +27,7 @@ import { Combobox } from "../components/combobox";
 import { DropdownMenu } from "../components/dropdown-menu";
 import { NavigationMenu } from "../components/navigation-menu";
 import { Select } from "../components/select";
+import { DENSITIES } from "../theme/density";
 import { useTheme } from "../theme/theme-provider";
 import { ThemeScope } from "../theme/theme-scope";
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { SUPPORTED_LOCALES } from "../../../test/locale-matrix";
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
+import { controlMd } from "../../styles/control-size-md";
 import { paginationStrings } from "./intl";
 import { paginationVariants } from "./pagination-variants";
 
@@ -35,7 +36,7 @@ describe("paginationVariants", () => {
     expect(slots.base()).toContain("mx-auto");
     expect(slots.content()).toContain("flex-row");
     expect(slots.linkIcon()).toContain("size-4");
-    expect(slots.ellipsis()).toContain("size-9");
+    expect(slots.ellipsis()).toContain(controlMd.square());
     expect(slots.ellipsisIcon()).toContain("size-4");
   });
 

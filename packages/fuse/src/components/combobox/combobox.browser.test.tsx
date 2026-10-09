@@ -12,6 +12,7 @@ import {
 } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import {
+  ROW,
   cssVarColor,
   formNamed,
   px,
@@ -19,6 +20,7 @@ import {
   roleNamed,
   stampDensity,
 } from "../../../test/themed-browser-render";
+import { DENSITIES } from "../../theme/density";
 import { Field } from "../field";
 import { InputGroup } from "../input-group";
 import { useComboboxAnchor } from "./combobox";
@@ -242,6 +244,16 @@ describe("Combobox", () => {
       expect(page.getByText("No results.", { exact: true }).query()).toBeNull();
     });
     expect(optionNamed("Apple")).toBeTruthy();
+  });
+
+  it.each(DENSITIES)("pads the empty state with the row metrics at %s", async (density) => {
+    stampDensity(density);
+    renderCombobox(<FruitCombobox />);
+    await userEvent.fill(comboboxNamed("Fruit"), "zzzz");
+    const empty = await vi.waitFor(() => page.getByText("No results.", { exact: true }).element());
+    const style = getComputedStyle(empty);
+    expect([style.paddingTop, style.paddingLeft].map(px)).toEqual([ROW[density].py, ROW[density].px]);
+    document.documentElement.removeAttribute("data-density");
   });
 
   it("selects with ArrowDown + Enter, closes, fills the input, and fires onValueChange", async () => {

@@ -24,8 +24,8 @@ describe("accordionVariants", () => {
   it("maps each variant onto the public slots without leaking the others", () => {
     const defaults = accordionVariants({ variant: "default" });
     expect(defaults.item()).toContain("bg-muted");
-    expect(defaults.trigger()).toContain("transition-[padding-bottom]");
     expect(defaults.trigger()).not.toContain("transition-all");
+    expect(defaults.contentInner()).toContain("pt-[calc(var(--surface-gap-lg)+--spacing(1.5))]");
     expect(defaults.item()).not.toContain("bg-card");
     expect(defaults.content()).not.toContain("pl-7");
     expect(defaults.icon()).toContain("shrink-0");
@@ -51,7 +51,8 @@ describe("accordionVariants", () => {
     expect(info.base()).toContain("border-b");
     expect(info.trigger()).toContain("relative");
     expect(info.trigger()).toContain("justify-start");
-    expect(info.trigger()).toContain("data-[panel-open]:pb-0");
+    expect(info.contentInner()).toContain("pt-1.5");
+    expect(info.contentInner()).not.toContain("--surface-gap-lg");
     expect(info.icon()).toContain("absolute");
     expect(info.icon()).toContain("right-0");
     expect(info.indicator()).toContain("absolute");
@@ -82,7 +83,8 @@ describe("accordionVariants", () => {
     const slots = accordionVariants();
     expect(slots.header()).toContain("flex");
     expect(slots.trigger()).toContain("group/accordion-trigger");
-    expect(slots.trigger()).toContain("data-[panel-open]:pb-4");
+    // The open gap lives in the panel, so the trigger has no open-state padding.
+    expect(slots.trigger()).not.toContain("data-[panel-open]:pb");
     expect(slots.trigger()).not.toContain("data-[state=open]");
     // Oracle: the shared focus recipe, which utils.test.ts pins by hand.
     for (const token of selfFocusRingClass.split(" ")) {
@@ -92,7 +94,7 @@ describe("accordionVariants", () => {
     // Oracle: the shared panel transition, which panel-height.test.ts pins by hand.
     expect(slots.content()).toBe(`${panelHeightTransition} h-(--accordion-panel-height)`);
     expect(slots.content()).not.toContain("motion-reduce");
-    expect(slots.contentInner()).toContain("pt-1.5");
+    expect(slots.contentInner()).toContain("pt-[calc(var(--surface-gap-lg)+--spacing(1.5))]");
   });
 
   it("covers every public variant and radius without raw palette, dark, or density variants", () => {

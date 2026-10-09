@@ -8,6 +8,7 @@ import { mergeProps } from "@base-ui/react/merge-props";
 
 import { cn } from "../../styles/cn";
 import { selectionItemShellClass } from "../../styles/inner-corner/item";
+import { labelTypeClass } from "../../styles/label-type";
 import { disabledHatch } from "../../styles/utils";
 import { FieldItem } from "../field/field";
 import { ItemGroup } from "../item/item";
@@ -79,7 +80,7 @@ type SelectionItemGroupProps = {
   children?: ReactNode;
   /**
    * Layout of the actual item list. Vertical (default) is connected
-   * `flex-col gap-0`. Horizontal is `flex-row flex-wrap gap-4`.
+   * `flex-col gap-0`. Horizontal is `flex-row flex-wrap`, gapped by `--surface-gap-lg`.
    */
   orientation?: SelectionItemGroupOrientation;
 };
@@ -88,7 +89,7 @@ type SelectionItemGroupProps = {
  * Private stacked-card list wrapper. `Item.Group` still emits `role="list"`;
  * `SelectionItem.Shell` reads this context and defaults to `role="listitem"`.
  * Vertical remains a connected `flex-col gap-0` stack; horizontal is the actual
- * item list `flex-row flex-wrap gap-4` with individually rounded shells.
+ * item list `flex-row flex-wrap`, gapped by `--surface-gap-lg`, with individually rounded shells.
  * Not part of the public `SelectionItem` namespace or entry.
  */
 export function SelectionItemGroup({
@@ -98,7 +99,10 @@ export function SelectionItemGroup({
   const value = useMemo(() => ({ orientation, list: true }), [orientation]);
   return (
     <SelectionItemGroupContext.Provider value={value}>
-      <ItemGroup className={cn("select-none", selectionGroupOrientationVariants({ orientation }).list())}>
+      <ItemGroup
+        // The layout axis, as Card writes it: a vertical stack of selection shells is connected.
+        data-direction={orientation}
+        className={cn("select-none", selectionGroupOrientationVariants({ orientation }).list())}>
         {children}
       </ItemGroup>
     </SelectionItemGroupContext.Provider>
@@ -106,11 +110,12 @@ export function SelectionItemGroup({
 }
 
 /**
- * A selection row's title, `CheckboxItem.Title` and `RadioItem.Title`: the option's name. It
- * takes the row's density type size, `--control-text-row`, in place of `Item.Title`'s fixed
- * `text-sm`. The size carries `leading-snug` as its `/snug` modifier: a separate `leading-snug`
- * before it would fall to tailwind-merge, which drops a line height that comes before a font
- * size, and the formatter sorts the classes inside a string.
+ * A selection row's title, `CheckboxItem.Title` and `RadioItem.Title`: the option's name, in its
+ * own `selection-item-title` slot because it is label text. It takes the label text size,
+ * `--label-text`, in place of `Item.Title`'s fixed `text-sm`. The size carries `leading-snug` as
+ * its `/snug` modifier: a separate `leading-snug` before it would fall to tailwind-merge, which
+ * drops a line height that comes before a font size, and the formatter sorts the classes inside a
+ * string.
  *
  * Its weight comes from the theme's `--selection-title-weight`: 400 in internal themes and 500
  * in external ones, which matches the group legend and `CheckboxCard` titles. Without
@@ -120,8 +125,9 @@ export function SelectionItemGroup({
 export function SelectionItemTitle({ className, ...props }: ComponentProps<typeof ItemTitle>): ReactElement {
   return (
     <ItemTitle
+      data-slot="selection-item-title"
       className={cn(
-        "text-(length:--control-text-row)/snug font-[number:var(--selection-title-weight,400)]",
+        "text-(length:--label-text)/snug font-[number:var(--selection-title-weight,400)]",
         className
       )}
       {...props}
@@ -269,17 +275,18 @@ export function SelectionItemShell({
   const controlAtEnd = controlPosition === "end";
 
   const rowCellClass = cn("self-start pt-3.5", hasSubSection ? null : "pb-3.5");
-  // The slot's content box is one title line tall, `--control-text-row` at the title's
+  // The slot's content box is one title line tall, `--label-text` at the title's
   // `leading-snug`, and centres the control in it, so the control sits on the title's first
   // line at either density. That replaces Item.Media's nudge for a row with a description,
-  // which was tuned to a 14px title.
+  // which was tuned to a 14px title, whether the row holds SelectionItem.Description or the
+  // public Item.Description.
   const controlSlot = (
     <ItemMedia
       variant="icon"
       data-slot="selection-item-control"
       className={cn(
         rowCellClass,
-        "box-content h-[calc(var(--control-text-row)*var(--leading-snug))] group-has-data-[slot=item-description]/item:translate-y-0"
+        "box-content h-[calc(var(--label-text)*var(--leading-snug))] group-has-data-[slot=item-description]/item:translate-y-0 group-has-data-[slot=selection-item-description]/item:translate-y-0"
       )}>
       {control}
     </ItemMedia>
@@ -343,7 +350,8 @@ export function SelectionItemShell({
       className={cn(
         outlineItemClass,
         selectionItemShellClass,
-        "relative isolate box-border grid items-stretch gap-0 gap-x-2.5 bg-card py-0 text-(length:--control-text-row) leading-(--control-leading-row) transition-colors has-[[data-slot=selection-item-control]_[data-checked]]:border-selection-checked-border has-[[data-slot=selection-item-control]_[data-checked]]:bg-muted",
+        labelTypeClass,
+        "relative isolate box-border grid items-stretch gap-0 gap-x-2.5 bg-card py-0 transition-colors has-[[data-slot=selection-item-control]_[data-checked]]:border-selection-checked-border has-[[data-slot=selection-item-control]_[data-checked]]:bg-muted",
         controlAtEnd ? "grid-cols-[minmax(0,1fr)_auto]" : "grid-cols-[auto_minmax(0,1fr)]",
         connectedStack
           ? "rounded-none not-first:border-t-0 first:rounded-t-lg last:rounded-b-lg has-[[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px has-[[data-slot=selection-item-control]_[data-checked]]:not-first:border-t"

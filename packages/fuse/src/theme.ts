@@ -11,7 +11,7 @@ export { LocaleProvider, useLocale } from "./intl/locale-context";
 export type { LocaleContextValue, LocaleProviderProps, SupportedLocale } from "./intl/locale-context";
 export { ForceColorScheme } from "./theme/force-color-scheme";
 export type { ForceColorSchemeProps } from "./theme/force-color-scheme";
-export { defaultDensityForVariant, densityAttributes } from "./theme/density";
+export { defaultDensityForVariant, DENSITIES, densityAttributes } from "./theme/density";
 export type { Density, DensityAttributes } from "./theme/density";
 export { themeAttributes } from "./theme/theme-attributes";
 export type { ThemeAttributes } from "./theme/theme-attributes";

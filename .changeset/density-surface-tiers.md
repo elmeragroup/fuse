@@ -21,7 +21,7 @@ subtracts the same tier from the inner corner it publishes. Outer corners do not
   dense and 24px comfortable inline, from 24px. CheckboxCard stays 16px dense inline and grows
   to 24px comfortable.
 
-Menu, Select, Combobox, NavigationMenu and default Sidebar rows read control metrics: the sm
-control height and the xs control inset. They stay 32px tall with 8px inline padding when dense
+Menu, Select, Combobox, NavigationMenu and default Sidebar rows read the row metrics,
+`--row-h` and `--row-px`. They stay 32px tall with 8px inline padding when dense
 and become 36px with 12px when comfortable. The Sidebar menu skeleton matches the default row.
 The Figma density collection gains the three surface metrics.

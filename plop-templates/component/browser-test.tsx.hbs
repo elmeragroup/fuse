@@ -18,7 +18,7 @@ import {
   renderThemed,
   stampDensity,
 } from "../../../test/themed-browser-render";
-import { ThemeScope } from "../../theme";
+import { DENSITIES, ThemeScope } from "../../theme";
 import { {{pascalCase name}} } from "./{{name}}";
 
 // TODO({{name}}): replace with the component's accessible role.
@@ -65,7 +65,7 @@ describe("{{pascalCase name}}", () => {
 // this block only if {{pascalCase name}} carries no control-box metrics.
 describe("{{pascalCase name}} density metrics", () => {
   it("resolves the signed md control rung at both density stamps", () => {
-    for (const density of ["dense", "comfortable"] as const) {
+    for (const density of DENSITIES) {
       stampDensity(density);
       renderThemed(<{{pascalCase name}} size="md">md {density}</{{pascalCase name}}>);
 

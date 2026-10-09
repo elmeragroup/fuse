@@ -170,7 +170,7 @@ export function SheetContent({
           {...definedProps(props)}>
           <SheetPrimitive.Content
             data-slot="sheet-content-inner"
-            className="flex h-full w-full flex-col gap-4">
+            className="flex h-full w-full flex-col gap-(--surface-gap-lg)">
             {children}
             {showCloseButton ? (
               <SheetPrimitive.Close
@@ -187,7 +187,11 @@ export function SheetContent({
 
 export function SheetHeader({ className, ...props }: ComponentProps<"div">): ReactElement {
   return (
-    <div data-slot="sheet-header" className={cn("flex flex-col gap-1.5 px-4 pt-4", className)} {...props} />
+    <div
+      data-slot="sheet-header"
+      className={cn("flex flex-col gap-1.5 px-(--surface-pad-lg) pt-(--surface-pad-lg)", className)}
+      {...props}
+    />
   );
 }
 
@@ -195,7 +199,10 @@ export function SheetBody({ className, ...props }: ComponentProps<"div">): React
   return (
     <div
       data-slot="sheet-body"
-      className={cn("min-h-0 flex-1 space-y-6 overflow-y-auto px-4", className)}
+      className={cn(
+        "min-h-0 flex-1 space-y-(--surface-gap-xl) overflow-y-auto px-(--surface-pad-lg)",
+        className
+      )}
       {...props}
     />
   );
@@ -203,7 +210,11 @@ export function SheetBody({ className, ...props }: ComponentProps<"div">): React
 
 export function SheetFooter({ className, ...props }: ComponentProps<"div">): ReactElement {
   return (
-    <div data-slot="sheet-footer" className={cn("mt-auto flex flex-col gap-2 p-4", className)} {...props} />
+    <div
+      data-slot="sheet-footer"
+      className={cn("mt-auto flex flex-col gap-2 p-(--surface-pad-lg)", className)}
+      {...props}
+    />
   );
 }
 
