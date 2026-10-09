@@ -130,7 +130,8 @@ export function FieldLegend({
       data-variant={variant}
       className={mergeClassName(
         className,
-        "font-medium data-[variant=label]:text-(length:--label-text) data-[variant=label]:leading-(--label-leading) data-[variant=legend]:text-base mb-3 text-balance"
+        "font-medium mb-3 text-balance",
+        variant === "label" ? labelTypeClass : "text-base"
       )}
       {...definedProps(props)}
     />

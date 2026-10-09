@@ -36,14 +36,6 @@ export const itemXsShellClass = cn(
 );
 
 /**
- * A default-size Item in a compact Item.Group: the medium surface tier, `--surface-pad-md`.
- */
-export const itemCompactShellClass = cn(
-  "p-(--surface-pad-md) [--shell-inner:max(0px,--theme(--radius-md)-1px-var(--surface-pad-md))]",
-  publishShellBoundary
-);
-
-/**
  * A small Item in a compact Item.Group: the row inset, `--row-px`.
  */
 export const itemCompactSmShellClass = cn(

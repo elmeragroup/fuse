@@ -3,8 +3,8 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import { DENSITIES } from "@elmeragroup/fuse/theme";
 import type { Density } from "@elmeragroup/fuse/theme";
-import { DENSITY_FROZEN_CONTEXTS, PART_DENSITY, resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
-import type { DensityPart, DensityRole } from "@elmeragroup/fuse/theme-catalog";
+import { PART_DENSITY, resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
+import type { DensityPart } from "@elmeragroup/fuse/theme-catalog";
 
 import { COMPONENT_INVENTORY } from "./component-inventory";
 import { DESKTOP_VIEWPORT, launchSuiteBrowser } from "./demo-page";
@@ -26,7 +26,7 @@ import { docsBaseUrl } from "./docs-server";
  * metric through its own properties, and a `layout` or `fixed` part reads none. Attribution is
  * `density-attribution.ts`'s; the oracle is the declared table, the unit under test the rendered
  * parts. Where one slot renders with two roles, an override key (the slot plus a CSS selector
- * suffix) splits them, and a part a frozen context names, such as a menu row in the collapsed icon rail, is checked as `fixed` there.
+ * suffix) splits them, such as a menu row in the collapsed icon rail, which is `fixed` there.
  */
 
 /** One probed part on one page. */
@@ -52,17 +52,7 @@ function partOf({ slot, overrides }: Instance): DensityPart | undefined {
   return isDensityPart(key) ? key : undefined;
 }
 
-/** The role an instance is checked against: `fixed` where a frozen context names its slot. */
-function roleOf(instance: Instance, part: DensityPart): DensityRole {
-  const frozen = DENSITY_FROZEN_CONTEXTS.some(
-    ({ context, parts }) =>
-      instance.contexts.includes(context) && parts.some((frozenPart) => frozenPart === instance.slot)
-  );
-  return frozen ? "fixed" : PART_DENSITY[part];
-}
-
 const SENTINELS = sentinelLengths(resolveThemeCatalog().density);
-const CONTEXTS = DENSITY_FROZEN_CONTEXTS.map(({ context }) => context);
 
 async function probe(
   page: Page,
@@ -74,7 +64,6 @@ async function probe(
     scope,
     sentinels: SENTINELS,
     properties: PROBED_PROPERTIES,
-    contexts: CONTEXTS,
     overrides: OVERRIDES,
   };
   const readings = await stage.evaluate(probeParts, options);
@@ -222,7 +211,7 @@ describe("density coverage", () => {
       if (part === undefined) {
         continue;
       }
-      const role = roleOf(instance, part);
+      const role = PART_DENSITY[part];
       const reason = roleViolation(role, instance.probe);
       if (reason !== undefined) {
         const claim = `${part} is ${role} but ${reason} at ${instance.density}`;

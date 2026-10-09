@@ -8,6 +8,7 @@ import { mergeProps } from "@base-ui/react/merge-props";
 
 import { cn } from "../../styles/cn";
 import { selectionItemShellClass } from "../../styles/inner-corner/item";
+import { labelTypeClass } from "../../styles/label-type";
 import { disabledHatch } from "../../styles/utils";
 import { FieldItem } from "../field/field";
 import { ItemGroup } from "../item/item";
@@ -349,7 +350,8 @@ export function SelectionItemShell({
       className={cn(
         outlineItemClass,
         selectionItemShellClass,
-        "relative isolate box-border grid items-stretch gap-0 gap-x-2.5 bg-card py-0 text-(length:--label-text) leading-(--label-leading) transition-colors has-[[data-slot=selection-item-control]_[data-checked]]:border-selection-checked-border has-[[data-slot=selection-item-control]_[data-checked]]:bg-muted",
+        labelTypeClass,
+        "relative isolate box-border grid items-stretch gap-0 gap-x-2.5 bg-card py-0 transition-colors has-[[data-slot=selection-item-control]_[data-checked]]:border-selection-checked-border has-[[data-slot=selection-item-control]_[data-checked]]:bg-muted",
         controlAtEnd ? "grid-cols-[minmax(0,1fr)_auto]" : "grid-cols-[auto_minmax(0,1fr)]",
         connectedStack
           ? "rounded-none not-first:border-t-0 first:rounded-t-lg last:rounded-b-lg has-[[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px has-[[data-slot=selection-item-control]_[data-checked]]:not-first:border-t"

@@ -1,14 +1,15 @@
 /**
- * Every part declares a density role: what the document's `data-density` changes on it. A part is
- * a `data-slot` the package writes. Where one slot renders with two roles, an override key, the
- * slot followed by a CSS selector suffix such as `item[data-size=sm]` or
- * `checkbox-group[data-direction=vertical]:has(> [data-selection-item])`, overrides the role for
- * the instances `[data-slot="slot"]` plus that suffix matches. The first matching override in
+ * Every part declares a density role: which density metrics it reads. A part is a `data-slot` the
+ * package writes. Where one slot renders with two roles, an override key, the slot followed by a
+ * CSS selector suffix starting with `[` or `:`, such as `card[data-direction=horizontal]` or
+ * `sidebar-group:where([data-collapsible=icon] *)` for the collapsed icon rail, overrides the role
+ * for the instances `[data-slot="slot"]` plus that suffix matches. The first matching override in
  * table order wins.
  * CONTEXT.md defines the roles. The docs density coverage test renders every demo at both densities
- * and checks each instance: a `control`, `row`, `surface` or `label` part changes its height,
- * padding, gap or type; a `layout` part keeps its padding and gap; a `fixed` part keeps its box,
- * padding, gap and type. The source contract requires every written `data-slot` to be a key.
+ * and checks each instance: a `control`, `row`, `surface` or `label` part reads a metric of its
+ * role through its height, padding, gap or type, even one that is the same at both densities, such
+ * as `--surface-pad-sm`; a `layout` or `fixed` part reads none. The source contract requires every
+ * written `data-slot` to be a key and every key to follow that grammar.
  */
 
 /** The density roles, in the order CONTEXT.md defines them. */
@@ -197,8 +198,6 @@ export const PART_DENSITY = {
   "input-group-control": "control",
 
   item: "surface",
-  "item[data-size=sm]": "surface",
-  "item[data-size=xs]": "surface",
   "item-group": "surface",
   "item-group[data-variant=compact]": "layout",
   "item-group[data-direction=vertical]": "layout",
@@ -300,21 +299,28 @@ export const PART_DENSITY = {
   "sidebar-rail": "fixed",
   "sidebar-inset": "layout",
   "sidebar-input": "row",
+  "sidebar-header:where([data-collapsible=icon] *)": "fixed",
   "sidebar-header": "surface",
+  "sidebar-footer:where([data-collapsible=icon] *)": "fixed",
   "sidebar-footer": "surface",
   "sidebar-separator": "fixed",
   "sidebar-content": "layout",
+  "sidebar-group:where([data-collapsible=icon] *)": "fixed",
   "sidebar-group": "surface",
   "sidebar-group-label": "row",
   "sidebar-group-action": "control",
   "sidebar-group-content": "layout",
   "sidebar-menu": "layout",
   "sidebar-menu-item": "layout",
+  "sidebar-menu-button:where([data-collapsible=icon] *)": "fixed",
   "sidebar-menu-button": "row",
   "sidebar-menu-button[data-size=sm]": "fixed",
   "sidebar-menu-button[data-size=lg]": "fixed",
+  "sidebar-menu-action:is([data-slot=sidebar-menu-button][data-size=sm] ~ *)": "fixed",
+  "sidebar-menu-action:is([data-slot=sidebar-menu-button][data-size=lg] ~ *)": "fixed",
   "sidebar-menu-action": "control",
   "sidebar-menu-badge": "fixed",
+  "sidebar-menu-skeleton:where([data-collapsible=icon] *)": "fixed",
   "sidebar-menu-skeleton": "row",
   "sidebar-menu-skeleton-icon": "fixed",
   "sidebar-menu-skeleton-text": "fixed",
@@ -389,29 +395,3 @@ export const PART_DENSITY = {
 
 /** A `PART_DENSITY` key: a `data-slot`, or the slot followed by a CSS selector suffix. */
 export type DensityPart = keyof typeof PART_DENSITY;
-
-/** A container, matched as a CSS selector against an ancestor, and the parts it freezes. */
-export type FrozenDensityContext = {
-  /** The ancestor selector. */
-  readonly context: string;
-  /** The slots whose CSS fixes their box inside the container, so they are `fixed` there. */
-  readonly parts: readonly DensityPart[];
-};
-
-/**
- * The parts whose CSS freezes their geometry inside a container: in the collapsed Sidebar icon
- * rail, the header, footer and group keep 8px padding and the menu rows and skeleton a fixed 32px
- * square, so the 48px rail does not change with density. Every other part keeps its role there.
- */
-export const DENSITY_FROZEN_CONTEXTS: readonly FrozenDensityContext[] = [
-  {
-    context: '[data-collapsible="icon"]',
-    parts: [
-      "sidebar-header",
-      "sidebar-footer",
-      "sidebar-group",
-      "sidebar-menu-button",
-      "sidebar-menu-skeleton",
-    ],
-  },
-];

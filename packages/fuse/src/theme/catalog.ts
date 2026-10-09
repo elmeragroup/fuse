@@ -8,7 +8,7 @@
  */
 
 export { resolveThemeCatalog } from "./resolve-theme-catalog";
-export { DENSITY_FROZEN_CONTEXTS, DENSITY_ROLES, PART_DENSITY } from "./tokens/density-roles";
+export { DENSITY_ROLES, PART_DENSITY } from "./tokens/density-roles";
 export type {
   AnyEntry,
   DensityMetricEntry,
@@ -27,7 +27,7 @@ export type { ResolvedColorScheme } from "./color-scheme-types";
 export type { Density } from "./density";
 export type { TokenKind, TokenName } from "./tokens/contract";
 export type { DensityMetricKind, DensityMetricName } from "./tokens/density-metrics";
-export type { DensityPart, DensityRole, FrozenDensityContext } from "./tokens/density-roles";
+export type { DensityPart, DensityRole } from "./tokens/density-roles";
 export type { PrimitiveName } from "./tokens/primitives";
 export type { RadiusRungName } from "./tokens/radius-scale";
 export type { ThemeSlug } from "./tokens/themes";

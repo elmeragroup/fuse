@@ -52,12 +52,10 @@ describe("density attribution in the browser", () => {
       scope: "stage",
       sentinels: SENTINELS,
       properties: PROBED_PROPERTIES,
-      contexts: [],
       overrides: [],
     };
     const readings = await page.locator("[data-demo-stage]").evaluate(probeParts, options);
     await page.close();
-    console.log("DEBUG", JSON.stringify(readings.map(({ slot, probe }) => [slot, probe])));
     const owned = Object.fromEntries(
       readings.map(({ slot, probe }) => [slot, densityOwnedProperties(probe)])
     );
@@ -102,7 +100,6 @@ describe("density attribution in the browser", () => {
       scope: "stage",
       sentinels: { "--label-text": "24px" },
       properties: PROBED_PROPERTIES,
-      contexts: [],
       overrides: [],
     };
     const verdictAt = async (density: "dense" | "comfortable") => {
@@ -139,7 +136,6 @@ describe("density attribution in the browser", () => {
       scope: "stage",
       sentinels: { "--surface-pad-md": "21px" },
       properties: PROBED_PROPERTIES,
-      contexts: [],
       overrides: [],
     };
     await page.evaluate(startDensityPass, "dense");

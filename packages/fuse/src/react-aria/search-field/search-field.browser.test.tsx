@@ -17,6 +17,7 @@ import {
   stampDensity,
   textNamed,
 } from "../../../test/themed-browser-render";
+import { DENSITIES } from "../../theme/density";
 import { UiProviders } from "../ui-providers/ui-providers";
 import { SearchField } from "./search-field";
 
@@ -189,7 +190,7 @@ describe("SearchField", () => {
 describe("SearchField text follows density", () => {
   it("sets its label and description in the label type, as a Fuse Field does", () => {
     renderField(<SearchField label="Customer search" description="Search by name or number" />);
-    for (const density of ["dense", "comfortable"] as const) {
+    for (const density of DENSITIES) {
       stampDensity(density);
       for (const text of ["Customer search", "Search by name or number"]) {
         const style = getComputedStyle(textNamed(text));

@@ -24,8 +24,8 @@ import { TOKEN_KINDS, TOKEN_NAMES } from "./tokens/contract";
 import type { TokenContract, TokenKind, TokenName } from "./tokens/contract";
 import { DENSITY_METRIC_FAMILIES, DENSITY_METRICS } from "./tokens/density-metrics";
 import type { DensityMetricKind, DensityMetricName, DensityMetricRole } from "./tokens/density-metrics";
-import { DENSITY_FROZEN_CONTEXTS, DENSITY_ROLES, PART_DENSITY } from "./tokens/density-roles";
-import type { DensityPart, DensityRole, FrozenDensityContext } from "./tokens/density-roles";
+import { DENSITY_ROLES, PART_DENSITY } from "./tokens/density-roles";
+import type { DensityPart, DensityRole } from "./tokens/density-roles";
 import { PRIMITIVE_NAMES, PRIMITIVES } from "./tokens/primitives";
 import type { PrimitiveName } from "./tokens/primitives";
 import { RADIUS_RUNG_NAMES, RADIUS_RUNGS } from "./tokens/radius-scale";
@@ -172,16 +172,16 @@ export type DensityMetricEntry = {
   readonly px: { readonly [D in Density]: number };
 };
 
-/** The density role of every Fuse part, keyed by `data-slot` or `slot[data-size=x]`. */
+/**
+ * The density role of every Fuse part, keyed by `data-slot` or by an override key: the slot followed
+ * by a CSS selector suffix starting with `[` or `:`, such as `card[data-direction=horizontal]`.
+ */
 export type PartDensityCatalog = {
   /** Every density role, in the order CONTEXT.md defines them. */
   readonly roles: readonly DensityRole[];
 
   /** Every part's declared role. */
   readonly parts: { readonly [P in DensityPart]: DensityRole };
-
-  /** The containers whose CSS freezes the named parts, which are `fixed` inside them. */
-  readonly frozenContexts: readonly FrozenDensityContext[];
 };
 
 /**
@@ -231,7 +231,7 @@ export function resolveThemeCatalog(): ResolvedThemeCatalog {
     density: DENSITY_METRIC_FAMILIES.flatMap(({ kind, role, metrics }) =>
       metrics.map((name) => densityEntry(name, kind, role))
     ),
-    partDensity: { roles: DENSITY_ROLES, parts: PART_DENSITY, frozenContexts: DENSITY_FROZEN_CONTEXTS },
+    partDensity: { roles: DENSITY_ROLES, parts: PART_DENSITY },
   };
 }
 

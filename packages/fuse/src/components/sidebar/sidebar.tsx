@@ -573,7 +573,7 @@ export function SidebarGroupLabel({ className, render, ...props }: SidebarGroupL
       {
         className: cn(
           sidebarRowShellClass,
-          "text-xs font-medium flex h-8 shrink-0 items-center px-(--control-px-xs) text-sidebar-foreground/70 transition-opacity duration-200 ease-linear group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0 [&>svg]:size-4 [&>svg]:shrink-0",
+          "text-xs font-medium flex h-8 shrink-0 items-center px-(--row-px) text-sidebar-foreground/70 transition-opacity duration-200 ease-linear group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0 [&>svg]:size-4 [&>svg]:shrink-0",
           selfFocusRingClass,
           className
         ),

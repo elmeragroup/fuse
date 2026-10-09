@@ -10,6 +10,8 @@
  * control-box size axis. The ellipsis is the md control square, so it matches its sibling
  * links at either density.
  */
+import { cn } from "../../styles/cn";
+import { controlMd } from "../../styles/control-size-md";
 import { tv } from "../../styles/tv";
 
 export const paginationVariants = tv({
@@ -20,7 +22,7 @@ export const paginationVariants = tv({
     // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- the chevron-to-label gap is fixed layout inside the borrowed button
     link: "gap-1",
     linkIcon: "size-4",
-    ellipsis: "flex size-(--control-h-md) items-center justify-center",
+    ellipsis: cn("flex items-center justify-center", controlMd.square()),
     ellipsisIcon: "size-4",
   },
   variants: {

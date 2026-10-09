@@ -100,11 +100,6 @@
   so the attribute is discarded. Drop it, and fix any comment that claims the root carries a slot.
 - The docs `sheet-demos` browser test failed once during the RSC namespace work
   (2026-09-25, T3) and passed on every rerun. If it recurs, diagnose before raising any timeout.
-- `test/lint-disable-reasons.test.mjs` (`test:repo-policy`) times out at Vitest's default 5s under
-  parallel load. During the density-roles work (2026-10-08 and 09) it failed four `pnpm ci:checks`
-  runs at 5.0 to 6.6s, while the same test passes alone in about 250ms and every other task
-  passed. It walks every source tree synchronously, so turbo's parallel tasks starve it. Give it an
-  explicit timeout or make the walk cheaper, then confirm under a loaded `ci:checks`.
 - `CssColor.parse` in `@elmeragroup/color` does not read `oklab()`, which is how Chromium
   serializes every `color-mix(in oklab, …)` / Tailwind `/NN` computed fill. Browser contrast
   checks over translucent fills, such as the Alert action's, throw `InvalidColor` until it

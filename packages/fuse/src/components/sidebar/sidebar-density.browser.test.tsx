@@ -13,6 +13,7 @@ import {
   stampDensity,
   textboxNamed,
 } from "../../../test/themed-browser-render";
+import { DENSITIES } from "../../theme/density";
 import { Sidebar } from "./index";
 
 // Sidebar geometry at both densities: row heights, section padding, and where the actions and
@@ -33,7 +34,7 @@ describe("Sidebar row density", () => {
   }
 
   it("sizes the default row and Sidebar.Input from the row metrics and keeps the sm and lg rail heights fixed", () => {
-    for (const density of ["dense", "comfortable"] as const) {
+    for (const density of DENSITIES) {
       stampDensity(density);
       const { unmount } = renderThemed(
         withLocale(
@@ -70,8 +71,51 @@ describe("Sidebar row density", () => {
     }
   });
 
+  it("keeps the menu action beside an sm or lg row a fixed 24px square at a fixed offset", () => {
+    // The sm and lg rows are rail geometry, so their action reads no density metric: 2px down
+    // the 28px sm row, which centres it, and 8px down the 48px lg row.
+    const expected = {
+      sm: { top: 2, height: 24, width: 24 },
+      lg: { top: 8, height: 24, width: 24 },
+    } as const;
+    for (const density of DENSITIES) {
+      stampDensity(density);
+      const { unmount } = renderThemed(
+        withLocale(
+          "en-US",
+          <Sidebar.Provider>
+            <Sidebar.Root>
+              <Sidebar.Content>
+                <Sidebar.Menu>
+                  <Sidebar.MenuItem>
+                    <Sidebar.MenuButton size="sm">Small row</Sidebar.MenuButton>
+                    <Sidebar.MenuAction aria-label="More for Small row" />
+                  </Sidebar.MenuItem>
+                  <Sidebar.MenuItem>
+                    <Sidebar.MenuButton size="lg">Large row</Sidebar.MenuButton>
+                    <Sidebar.MenuAction aria-label="More for Large row" />
+                  </Sidebar.MenuItem>
+                </Sidebar.Menu>
+              </Sidebar.Content>
+            </Sidebar.Root>
+          </Sidebar.Provider>
+        )
+      );
+      for (const [size, name] of [
+        ["sm", "Small row"],
+        ["lg", "Large row"],
+      ] as const) {
+        expect(
+          boxWithin(roleNamed("button", `More for ${name}`), roleNamed("button", name)),
+          `${density} ${size} menu action`
+        ).toEqual(expected[size]);
+      }
+      unmount();
+    }
+  });
+
   it("pads the header, footer and group with the row inset, and centres the group action, badge and menu action", () => {
-    for (const density of ["dense", "comfortable"] as const) {
+    for (const density of DENSITIES) {
       stampDensity(density);
       const { unmount } = renderThemed(
         withLocale(

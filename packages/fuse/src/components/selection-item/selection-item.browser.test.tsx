@@ -24,6 +24,7 @@ import {
 } from "../../../test/themed-browser-render";
 import { disabledHatch } from "../../styles/utils";
 import { ThemeScope } from "../../theme";
+import { DENSITIES } from "../../theme/density";
 import { Alert } from "../alert/alert";
 import { CheckboxCard } from "../checkbox-card/checkbox-card";
 import { Checkbox as UiCheckbox, CheckboxGroup, CheckboxItemGroup } from "../checkbox/checkbox";
@@ -1147,7 +1148,7 @@ describe("selection row type", () => {
     }
   );
 
-  it.each(["dense", "comfortable"] as const)(
+  it.each(DENSITIES)(
     "centres the control on the title's first line when the row holds the public Item.Description, at %s",
     (density) => {
       stampDensity(density);

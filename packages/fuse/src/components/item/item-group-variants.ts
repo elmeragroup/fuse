@@ -1,7 +1,7 @@
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
-import { itemCompactShellClass, itemCompactSmShellClass } from "../../styles/inner-corner/item";
+import { itemCompactSmShellClass } from "../../styles/inner-corner/item";
 import { tv } from "../../styles/tv";
 
 /**
@@ -10,8 +10,8 @@ import { tv } from "../../styles/tv";
  * row's own size, so the compact padding lands as plain classes that a row's `className` can
  * still override.
  *
- * The compact variant draws one connected list: no gap, tighter rows (`xs` keeps its own
- * padding) and flush separators. Outline rows drop their corners and bottom edge, so each
+ * The compact variant draws one connected list: no gap, small rows padded with the row
+ * inset on every side (default and `xs` rows keep their own padding) and flush separators. Outline rows drop their corners and bottom edge, so each
  * shared edge is one line; the group then rounds the outer corners and closes the bottom edge
  * on its first and last visible child, skipping `hidden` ones through `:nth-child(1 of
  * :not([hidden]))` and its `nth-last-child` mirror. That child is the row itself, or the
@@ -53,10 +53,7 @@ export const itemGroupVariants = tv({
       xs: "",
     },
   },
-  compoundVariants: [
-    { variant: "compact", size: "default", class: { item: itemCompactShellClass } },
-    { variant: "compact", size: "sm", class: { item: itemCompactSmShellClass } },
-  ],
+  compoundVariants: [{ variant: "compact", size: "sm", class: { item: itemCompactSmShellClass } }],
   defaultVariants: {
     variant: "default",
     size: "default",

@@ -444,6 +444,13 @@ describe("density roles", () => {
     );
     expect(stale).toEqual([]);
   });
+
+  it("keys every override as its slot plus a selector suffix the coverage test can match", () => {
+    // The docs coverage test splits an override key at the first `[` or `:` into the slot and a
+    // suffix it appends to `[data-slot="slot"]`; any other key would match no part there.
+    const malformed = Object.keys(PART_DENSITY).filter((part) => !/^[a-z0-9-]+(?:[[:].*)?$/u.test(part));
+    expect(malformed).toEqual([]);
+  });
 });
 
 describe("Twemoji artwork fidelity", () => {

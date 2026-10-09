@@ -97,8 +97,6 @@ export type ProbeOptions = {
   readonly sentinels: Readonly<Record<string, string>>;
   /** The properties to read, `PROBED_PROPERTIES`. */
   readonly properties: readonly string[];
-  /** Ancestor selectors to report for each part, such as the collapsed icon rail. */
-  readonly contexts: readonly string[];
   /** Override keys and the CSS selector each one matches a part with. */
   readonly overrides: readonly { readonly key: string; readonly selector: string }[];
 };
@@ -108,8 +106,6 @@ export type PartReading = {
   readonly slot: string;
   /** The override keys whose selector matches the part, in the order the options list them. */
   readonly overrides: readonly string[];
-  /** The context selectors an ancestor of the part matches. */
-  readonly contexts: readonly string[];
   readonly probe: DensityProbe;
 };
 
@@ -196,7 +192,8 @@ export async function probeParts(stage: Element, options: ProbeOptions): Promise
   for (const element of parts) {
     seen.add(element);
   }
-  globalThis.densityOpened = parts;
+  // Only a popup read's parts are waited on to leave; a stage's stay.
+  globalThis.densityOpened = options.scope === "unseen" ? parts : [];
 
   const freeze = document.createElement("style");
   freeze.textContent = "*, *::before, *::after { transition: none !important; animation: none !important; }";
@@ -275,7 +272,6 @@ export async function probeParts(stage: Element, options: ProbeOptions): Promise
   return parts.map((element, index) => ({
     slot: element.getAttribute("data-slot") ?? "",
     overrides: options.overrides.filter(({ selector }) => element.matches(selector)).map(({ key }) => key),
-    contexts: options.contexts.filter((context) => element.parentElement?.closest(context) != null),
     probe: { base: base[index] ?? {}, sentinel: sentinel[index] ?? {} },
   }));
 }

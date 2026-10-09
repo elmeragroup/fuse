@@ -38,7 +38,8 @@ describe("itemGroupVariants", () => {
     const { root, item, separator } = itemGroupVariants({ variant: "compact" });
     expect(root()).toContain("gap-0");
     expect(root()).not.toContain("gap-(--surface-gap-lg)");
-    expect(item()).toContain("p-(--surface-pad-md)");
+    // A default row keeps the Item's own medium-tier padding; only an sm row tightens.
+    expect(item()).not.toMatch(/(^| )p-/u);
     expect(itemGroupVariants({ variant: "compact", size: "sm" }).item()).toContain("p-(--row-px)");
     expect(itemGroupVariants({ variant: "compact", size: "xs" }).item()).not.toMatch(/(^| )p-\d/);
     expect(item()).toContain("data-[variant=outline]:rounded-none");

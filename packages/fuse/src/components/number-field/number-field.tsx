@@ -134,7 +134,6 @@ export function NumberField({
   const reset = useResetRemount(numberInputRef, !isControlled);
   const controlledValue = value === undefined ? undefined : Number.isNaN(value) ? null : value;
 
-  // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- label/control stack gap is layout, not a control rung
   return (
     <FieldFrame
       spacing="part"
