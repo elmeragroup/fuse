@@ -43,6 +43,7 @@ export * from "./popover-info-button";
 export * from "./radio-group";
 export * from "./scroll-area";
 export * from "./select";
+export * from "./select-field";
 export * from "./selection-item";
 export * from "./separator";
 export * from "./sheet";
