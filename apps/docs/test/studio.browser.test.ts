@@ -602,6 +602,9 @@ describe("theme studio", () => {
 
   it("continues a wheel pan from where an interrupted glide was drawn", async () => {
     const { page } = await openStudio({ reducedMotion: "no-preference" });
+    // A slow device, where a render scheduled after the wheel would land frames late.
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
     const frame = await box(canvas(page));
     await page.mouse.move(frame.x + frame.width / 2, frame.y + frame.height / 2);
     await page.mouse.wheel(4000, 3000);
@@ -609,9 +612,9 @@ describe("theme studio", () => {
     await expect.poll(async () => inside(await box(artboard(page, name)), frame)).toBe(false);
 
     // In one page task: start the zoom-to-fit glide, seek it 100 ms in, read where the artboard
-    // is drawn, wheel 100 px down, and read it again a frame after the pan commits. A glide lasts
-    // 280 ms.
-    const [drawn, after] = await page.evaluate(async (label) => {
+    // is drawn, wheel 100 px down, and read it again in the next frame and a frame after the pan
+    // commits. A glide lasts 280 ms.
+    const [drawn, next, after] = await page.evaluate(async (label) => {
       const frames = async (count: number) => {
         for (let index = 0; index < count; index += 1) {
           await new Promise((resolve) => requestAnimationFrame(resolve));
@@ -650,18 +653,29 @@ describe("theme studio", () => {
           cancelable: true,
         })
       );
+      // The frame after the wheel already draws the pan, not the glide playing on.
+      const nextFrame = await new Promise<ReturnType<typeof rect>>((resolve) => {
+        requestAnimationFrame(() => {
+          resolve(rect(board));
+        });
+      });
       // The pan commits through React, which a slow runner can hold past a fixed frame count, and
       // the seeked glide plays on until then. The commit drops `data-gliding` and cancels the glide.
       for (let wait = 0; wait < 30 && studio.dataset.gliding === "true"; wait += 1) {
         await frames(1);
       }
       await frames(1);
-      return [before, rect(board)];
+      return [before, nextFrame, rect(board)];
     }, name);
 
-    expect(Math.abs(after.x - drawn.x)).toBeLessThanOrEqual(3);
-    expect(Math.abs(after.y - (drawn.y - 100))).toBeLessThanOrEqual(3);
-    expect(Math.abs(after.width - drawn.width)).toBeLessThanOrEqual(3);
+    for (const [moment, seen] of [
+      ["next frame", next],
+      ["after the commit", after],
+    ] as const) {
+      expect(Math.abs(seen.x - drawn.x), moment).toBeLessThanOrEqual(3);
+      expect(Math.abs(seen.y - (drawn.y - 100)), moment).toBeLessThanOrEqual(3);
+      expect(Math.abs(seen.width - drawn.width), moment).toBeLessThanOrEqual(3);
+    }
     await page.close();
   });
 });

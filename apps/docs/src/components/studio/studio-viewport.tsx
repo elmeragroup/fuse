@@ -12,6 +12,8 @@ import {
 } from "react";
 import type { ReactElement, ReactNode } from "react";
 
+import { flushSync } from "react-dom";
+
 import {
   fitRects,
   mostlyOffscreen,
@@ -136,9 +138,11 @@ export function ViewportProvider({ children }: { children: ReactNode }): ReactEl
   );
 
   const move = useCallback((next: Viewport, { animate = false, announce = false }: MoveOptions = {}) => {
+    // A move that interrupts a glide commits inside its event. A native wheel listener's update
+    // is otherwise scheduled, and the glide plays on until that commit cancels it, then snaps.
+    const interrupts = glideTimer.current !== undefined && !animate;
     window.clearTimeout(glideTimer.current);
     glideTimer.current = undefined;
-    setGliding(animate);
     if (animate) {
       glideTimer.current = window.setTimeout(() => {
         glideTimer.current = undefined;
@@ -146,9 +150,17 @@ export function ViewportProvider({ children }: { children: ReactNode }): ReactEl
       }, GLIDE_MS);
     }
     latest.current = next;
-    setViewport(next);
-    if (announce) {
-      setAnnouncement(`Zoom ${zoomLabel(next.zoom)}`);
+    const commit = () => {
+      setGliding(animate);
+      setViewport(next);
+      if (announce) {
+        setAnnouncement(`Zoom ${zoomLabel(next.zoom)}`);
+      }
+    };
+    if (interrupts) {
+      flushSync(commit);
+    } else {
+      commit();
     }
   }, []);
 
