@@ -2,6 +2,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import { LocaleProvider } from "@elmeragroup/fuse/theme";
 
+import { DensityViewProvider } from "../../../components/studio/density/density-view";
 import { StudioShell } from "../../../components/studio/studio-shell";
 import { StudioProvider } from "../../../components/studio/studio-state";
 import { ViewportProvider } from "../../../components/studio/studio-viewport";
@@ -19,7 +20,9 @@ export default function StudioLayout({ children }: StudioLayoutProps): ReactElem
     <StudioProvider>
       <LocaleProvider locale="en-US">
         <ViewportProvider>
-          <StudioShell>{children}</StudioShell>
+          <DensityViewProvider>
+            <StudioShell>{children}</StudioShell>
+          </DensityViewProvider>
         </ViewportProvider>
       </LocaleProvider>
     </StudioProvider>

@@ -7,8 +7,8 @@ import * as Hex from "@elmeragroup/color/hex";
 import { MAX_SHARE_LENGTH } from "../src/lib/studio/size-policy";
 import { STUDIO_TOKEN_NAMES, TOKEN_TABLE, isLightOnly } from "../src/lib/studio/tokens";
 import { auditTargets } from "./landing-page";
-import { artboard, inspector, openStudioIn, openStudio as openStudioPage } from "./studio-page";
-import type { StudioPage } from "./studio-page";
+import { artboard, inspector, layers, openStudioIn, openStudio as openStudioPage } from "./studio-page";
+import type { StudioPage, StudioRoute } from "./studio-page";
 import { launchSuiteBrowser } from "./suite-browser";
 
 const browser = launchSuiteBrowser();
@@ -37,9 +37,16 @@ const SEED_CHUNK = /"radius-button":\{"?css"?:/u;
 const OPENING_SELECTOR =
   '[data-theme-variant="external"][data-theme-brand="elma"][data-theme-segment="private"]';
 
-/** Opens `/studio` with `hash` in a fresh desktop context the test closes. */
-async function openStudio(hash = "", prepare?: (page: Page) => Promise<void>): Promise<StudioPage> {
-  return openStudioPage(browser(), { hash, prepare });
+/** The Density page's light twin, which holds a primary Save button. */
+const DENSITY_TWIN = "Twin · Dense";
+
+/** Opens a studio page, `/studio` by default, with `hash` in a fresh desktop context the test closes. */
+async function openStudio(
+  hash = "",
+  prepare?: (page: Page) => Promise<void>,
+  route?: StudioRoute
+): Promise<StudioPage> {
+  return openStudioPage(browser(), { hash, prepare, route });
 }
 
 function tokenRow(page: Page, name: string): Locator {
@@ -269,6 +276,60 @@ describe("studio token editing", () => {
       const reloaded = await openStudioIn(context);
       await expect.poll(() => background(saveButton(reloaded.page, LIGHT_BOARD))).toBe(RED);
       expect([...errors, ...reloaded.errors]).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+
+  it("keeps the share hash on the address after a page link, so it restores the edits", async () => {
+    const { context, page, errors } = await openStudio();
+    try {
+      await openSection(page, "Actions");
+      await setColor(page, "primary", "#ff0000");
+      await page.waitForFunction(() => window.location.hash.length > 1);
+      await layers(page).getByRole("button", { name: "Density", exact: true }).click();
+      await artboard(page, DENSITY_TWIN).waitFor({ state: "visible" });
+      await expect.poll(() => new URL(page.url()).pathname).toBe("/studio/density");
+      await expect.poll(() => new URL(page.url()).hash).not.toBe("");
+
+      // A fresh context has no autosave, so only the copied address can restore the edit.
+      const url = new URL(page.url());
+      const shared = await openStudio(url.hash, undefined, { path: url.pathname, artboard: DENSITY_TWIN });
+      try {
+        await expect.poll(() => background(saveButton(shared.page, DENSITY_TWIN))).toBe(RED);
+        expect(shared.errors).toEqual([]);
+      } finally {
+        await shared.context.close();
+      }
+      expect(errors).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+
+  it("keeps the share hash on the address after a click on the current page's row", async () => {
+    const { context, page, errors } = await openStudio();
+    try {
+      await openSection(page, "Actions");
+      await setColor(page, "primary", "#ff0000");
+      await page.waitForFunction(() => window.location.hash.length > 1);
+      const shared = new URL(page.url()).hash;
+      // The same pathname, so only the navigation itself shows the click went through.
+      await page.evaluate(() => {
+        window.navigation.addEventListener(
+          "navigatesuccess",
+          () => {
+            document.documentElement.dataset.navigated = "";
+          },
+          { once: true }
+        );
+      });
+      await layers(page).getByRole("button", { name: "Overview", exact: true }).click();
+      await page.locator("html[data-navigated]").waitFor({ state: "attached" });
+      await page.waitForTimeout(600);
+      expect(new URL(page.url()).pathname).toBe("/studio");
+      expect(new URL(page.url()).hash).toBe(shared);
+      expect(errors).toEqual([]);
     } finally {
       await context.close();
     }
@@ -736,6 +797,12 @@ describe("studio token editing", () => {
       await page.getByText("Too many edits to share", { exact: true }).first().waitFor();
       await page.waitForTimeout(600);
       expect(await saved()).toBe(hash.slice(1));
+
+      // A page link drops the hash; the address gets the last good text back, not nothing.
+      await layers(page).getByRole("button", { name: "Density", exact: true }).click();
+      await expect.poll(() => new URL(page.url()).pathname).toBe("/studio/density");
+      await page.waitForTimeout(600);
+      expect(new URL(page.url()).hash).toBe(hash);
       expect(errors).toEqual([]);
     } finally {
       await context.close();

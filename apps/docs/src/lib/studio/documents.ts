@@ -70,8 +70,62 @@ export const OVERVIEW_ARTBOARDS: readonly ArtboardSpec[] = [
   },
 ];
 
+const TWIN_WIDTH = 560;
+const TWIN_COLUMN = TWIN_WIDTH + 120;
+const LADDER_WIDTH = 640;
+const LADDER_X = 2 * TWIN_COLUMN;
+
+/**
+ * The Density page: one composition as dense and comfortable twins, top-aligned, then the
+ * control size ladder at both densities. {@link DENSITY_TWINS} pairs the twins.
+ */
+export const DENSITY_ARTBOARDS: readonly ArtboardSpec[] = [
+  {
+    id: "density-twin-dense",
+    name: "Twin · Dense",
+    x: 0,
+    y: 0,
+    width: TWIN_WIDTH,
+    scheme: "light",
+    density: "dense",
+  },
+  {
+    id: "density-twin-comfortable",
+    name: "Twin · Comfortable",
+    x: TWIN_COLUMN,
+    y: 0,
+    width: TWIN_WIDTH,
+    scheme: "light",
+    density: "comfortable",
+  },
+  {
+    id: "density-ladder-dense",
+    name: "Control sizes · Dense",
+    x: LADDER_X,
+    y: 0,
+    width: LADDER_WIDTH,
+    scheme: "light",
+    density: "dense",
+  },
+  {
+    id: "density-ladder-comfortable",
+    name: "Control sizes · Comfortable",
+    x: LADDER_X + LADDER_WIDTH + 120,
+    y: 0,
+    width: LADDER_WIDTH,
+    scheme: "light",
+    density: "comfortable",
+  },
+];
+
+/** The Density page's twin artboards: the same composition, so a part in one has its twin. */
+export const DENSITY_TWINS = ["density-twin-dense", "density-twin-comfortable"] as const;
+
 /** Each studio page's artboards. The Layers list and the canvas both read it. */
-const STUDIO_DOCUMENTS = [{ href: "/studio", artboards: OVERVIEW_ARTBOARDS }] as const;
+const STUDIO_DOCUMENTS = [
+  { href: "/studio", artboards: OVERVIEW_ARTBOARDS },
+  { href: "/studio/density", artboards: DENSITY_ARTBOARDS },
+] as const;
 
 const NO_ARTBOARDS: readonly ArtboardSpec[] = [];
 

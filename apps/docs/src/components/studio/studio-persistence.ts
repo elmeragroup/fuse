@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from "react";
 
+import { usePathname } from "next/navigation";
+
 import { Toast } from "@elmeragroup/fuse/toast";
 
 import type { EditAction, StudioDocument } from "../../lib/studio/edits";
@@ -51,6 +53,15 @@ export function toastUnshareable(reason: Extract<ShareEncoding, { ok: false }>["
   });
 }
 
+/** Puts `text` back on the address when a navigation has dropped the hash. */
+function restoreHash(text: string | undefined): void {
+  if (text !== undefined && window.location.hash === "") {
+    const url = new URL(window.location.href);
+    url.hash = text;
+    window.history.replaceState(null, "", url);
+  }
+}
+
 function isPristine(document: StudioDocument, opening: StudioDocument): boolean {
   return document.theme === opening.theme && document.overrides === NO_OVERRIDES;
 }
@@ -63,6 +74,12 @@ function isPristine(document: StudioDocument, opening: StudioDocument): boolean 
  * session the share codec refuses, such as one too large to share, writes neither: both keep the
  * last good text, and a toast says so once until the session fits again.
  *
+ * A page link drops the hash while the session outlives the page. This hook remembers the last
+ * text it wrote and puts it back after every navigation that leaves the address without a hash,
+ * so one owner covers every link: the Pages list, the phone's Sheet and the ⌘K palette. A click on
+ * the current page's row keeps the pathname, so the Navigation API's entry changes trigger the
+ * restore; a new pathname also does, for browsers without that API.
+ *
  * @param document - The session's current document.
  * @param opening - The document the session opens with before anything is restored.
  * @param dispatch - Loads a restored document into the session.
@@ -74,6 +91,9 @@ export function useStudioPersistence(
 ): void {
   const restored = useRef(false);
   const refused = useRef(false);
+  // The last share text written to the address.
+  const shared = useRef<string | undefined>(undefined);
+  const pathname = usePathname();
 
   useEffect(() => {
     const hash = window.location.hash.slice(1);
@@ -122,6 +142,7 @@ export function useStudioPersistence(
       }
       refused.current = false;
       const text = encoded?.text;
+      shared.current = text;
       const url = new URL(window.location.href);
       url.hash = text ?? "";
       window.history.replaceState(null, "", text === undefined ? `${url.pathname}${url.search}` : url);
@@ -131,4 +152,25 @@ export function useStudioPersistence(
       window.clearTimeout(timer);
     };
   }, [document, opening]);
+
+  useEffect(() => {
+    restoreHash(shared.current);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!("navigation" in window)) {
+      return undefined;
+    }
+    const { navigation } = window;
+    // Deferred, so the router finishes its own history update before the hash goes back.
+    const onEntryChange = () => {
+      queueMicrotask(() => {
+        restoreHash(shared.current);
+      });
+    };
+    navigation.addEventListener("currententrychange", onEntryChange);
+    return () => {
+      navigation.removeEventListener("currententrychange", onEntryChange);
+    };
+  }, []);
 }

@@ -1,7 +1,9 @@
-import { themeAttributes } from "@elmeragroup/fuse/theme";
+import { DENSITIES, themeAttributes } from "@elmeragroup/fuse/theme";
 
 import { restatedAliases } from "./artboard-style";
 import type { Declarations } from "./artboard-style";
+import { STUDIO_METRICS } from "./density-metrics";
+import type { DensityOverrides } from "./density-metrics";
 import type { StudioDocument, TokenOverrides } from "./edits";
 import { STUDIO_TOKEN_NAMES, isLightOnly } from "./tokens";
 import type { TokenName } from "./tokens";
@@ -34,6 +36,27 @@ function rule(comment: string, selectors: readonly string[], declarations: Token
 export type BaseDeclarations = { readonly light: Declarations; readonly dark: Declarations };
 
 /**
+ * The density section: one rule per density with edits, on the document root. Density metrics
+ * are not theme tokens. Fuse declares them on `:root` per `data-density`, which the host stamps
+ * there, so a theme scope's rule would not reach them.
+ */
+function densityCss(density: DensityOverrides | undefined): string | undefined {
+  const rules = DENSITIES.flatMap((name) => {
+    const group = density?.[name] ?? {};
+    const body = STUDIO_METRICS.flatMap((metric) => {
+      const px = group[metric.name];
+      return px === undefined ? [] : [`  --${metric.name}: ${String(px)}px;`];
+    });
+    return body.length === 0 ? [] : [`:root[data-density="${name}"] {\n${body.join("\n")}\n}`];
+  });
+  if (rules.length === 0) {
+    return undefined;
+  }
+  return `/* Density. These belong on the host's document root, not the theme scope: Fuse reads
+   density metrics from :root, where the host sets data-density. */\n\n${rules.join("\n\n")}`;
+}
+
+/**
  * The CSS a host pastes after the Fuse stylesheet to apply the edits, in the override pattern
  * the theming handbook documents. Each rule ties or outweighs the theme rule it overrides, so it
  * wins by coming later:
@@ -47,6 +70,7 @@ export type BaseDeclarations = { readonly light: Declarations; readonly dark: De
  * - Each rule also restates the base aliases that read its edits, the closure the studio's
  *   artboards restate ({@link restatedAliases}), so the CSS works on a nested theme scope as well
  *   as on `<html>`. A light-only alias goes in the rule for both schemes.
+ * - Metric edits follow in their own section, on `:root[data-density="…"]`.
  *
  * @param document - The base theme and the edits.
  * @param base - The base theme's declared CSS in each scheme.
@@ -96,8 +120,15 @@ export function exportCss(document: StudioDocument, base: BaseDeclarations): str
       )
     );
   }
-  if (rules.length === 0) {
+  const density = densityCss(document.overrides.density);
+  if (rules.length === 0 && density === undefined) {
     return "/* No edits: every token keeps the base theme's value. */\n";
   }
-  return `/* After the Fuse stylesheet, on the element that carries the theme attributes. */\n\n${rules.join("\n\n")}\n`;
+  const sections =
+    rules.length === 0
+      ? []
+      : [
+          `/* After the Fuse stylesheet, on the element that carries the theme attributes. */\n\n${rules.join("\n\n")}`,
+        ];
+  return `${[...sections, ...(density === undefined ? [] : [density])].join("\n\n")}\n`;
 }

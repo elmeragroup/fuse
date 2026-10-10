@@ -1,6 +1,10 @@
-import { parseThemeSlug, themeSlug } from "@elmeragroup/fuse/theme";
+import { DENSITIES, parseThemeSlug, themeSlug } from "@elmeragroup/fuse/theme";
+import type { Density } from "@elmeragroup/fuse/theme";
+import type { DensityMetricName } from "@elmeragroup/fuse/theme-catalog";
 
-import type { StudioDocument, TokenOverrides } from "./edits";
+import { MAX_METRIC_PX, isMetricName } from "./density-metrics";
+import type { DensityOverrides, MetricOverrides } from "./density-metrics";
+import type { StudioDocument, StudioOverrides, TokenOverrides } from "./edits";
 import { MAX_SHARE_LENGTH } from "./size-policy";
 import { documentCycles, parseTokenValue } from "./token-values";
 import { isLightOnly, isTokenName } from "./tokens";
@@ -11,8 +15,17 @@ import { isLightOnly, isTokenName } from "./tokens";
  */
 const SHARE_VERSION = "1";
 
-/** The compact payload: the theme slug, then each non-empty override group. */
-type Payload = { t: string; l?: TokenOverrides; d?: TokenOverrides; s?: TokenOverrides };
+/**
+ * The compact payload: the theme slug, then each non-empty override group, then the metric edits
+ * in px per density. A link from before metric edits has no `m` and reads as having none.
+ */
+type Payload = {
+  t: string;
+  l?: TokenOverrides;
+  d?: TokenOverrides;
+  s?: TokenOverrides;
+  m?: DensityOverrides;
+};
 
 function base64UrlEncode(text: string): string {
   const bytes = new TextEncoder().encode(text);
@@ -40,6 +53,14 @@ function nonEmpty(group: TokenOverrides): TokenOverrides | undefined {
   return Object.keys(group).length === 0 ? undefined : group;
 }
 
+function nonEmptyDensity(density: DensityOverrides | undefined): DensityOverrides | undefined {
+  const groups = DENSITIES.flatMap((name) => {
+    const group = density?.[name];
+    return group === undefined || Object.keys(group).length === 0 ? [] : [[name, group] as const];
+  });
+  return groups.length === 0 ? undefined : Object.fromEntries(groups);
+}
+
 /**
  * A document's share text, or why there is none: `too-large` when the text would be longer than
  * the decoder reads, `invalid` when the decoder would refuse a value in it.
@@ -54,12 +75,13 @@ export type ShareEncoding =
  * {@link decodeShare} would refuse, so a copied link or an autosave always restores.
  */
 export function encodeShare(document: StudioDocument): ShareEncoding {
-  const { light, dark, shared } = document.overrides;
+  const { light, dark, shared, density } = document.overrides;
   const payload: Payload = {
     t: themeSlug(document.theme),
     l: nonEmpty(light),
     d: nonEmpty(dark),
     s: nonEmpty(shared),
+    m: nonEmptyDensity(density),
   };
   const text = `${SHARE_VERSION}.${base64UrlEncode(JSON.stringify(payload))}`;
   if (text.length > MAX_SHARE_LENGTH) {
@@ -102,11 +124,59 @@ function readGroup(value: unknown, lightOnly: boolean): TokenOverrides | undefin
   return group;
 }
 
+function isDensity(name: string): name is Density {
+  return DENSITIES.some((density) => density === name);
+}
+
+/** One density's metric edits, or `undefined` when any entry is not a px value in the knob's range. */
+// oxlint-disable-next-line anti-slop/no-unknown-parameters -- share-text I/O boundary: this module is the parser for untrusted link and storage text
+function readMetrics(value: unknown): MetricOverrides | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+  const group: Partial<Record<DensityMetricName, number>> = {};
+  for (const [name, px] of Object.entries(value)) {
+    if (
+      !isMetricName(name) ||
+      // oxlint-disable-next-line anti-slop/no-runtime-typeof -- share-text I/O boundary: this module is the parser for untrusted link and storage text
+      typeof px !== "number" ||
+      !Number.isFinite(px) ||
+      px < 0 ||
+      px > MAX_METRIC_PX
+    ) {
+      return undefined;
+    }
+    group[name] = px;
+  }
+  return group;
+}
+
+/** The metric edits, `{}` without any, or `undefined` when any density or entry is not legal. */
+// oxlint-disable-next-line anti-slop/no-unknown-parameters -- share-text I/O boundary: this module is the parser for untrusted link and storage text
+function readDensity(value: unknown): DensityOverrides | undefined {
+  if (value === undefined) {
+    return {};
+  }
+  if (!isRecord(value)) {
+    return undefined;
+  }
+  const density: Partial<Record<Density, MetricOverrides>> = {};
+  for (const [name, group] of Object.entries(value)) {
+    const metrics = readMetrics(group);
+    if (!isDensity(name) || metrics === undefined) {
+      return undefined;
+    }
+    density[name] = metrics;
+  }
+  return density;
+}
+
 /**
  * The document in share text, or `undefined` for anything else: garbage, another version, an
  * illegal theme, an unknown token, a value in the wrong group, a value its token does not
- * accept ({@link parseTokenValue}), or edits that close an alias cycle in the theme
- * ({@link documentCycles}). It never throws, so a corrupt link or autosave cannot break the page.
+ * accept ({@link parseTokenValue}), edits that close an alias cycle in the theme
+ * ({@link documentCycles}), or a metric edit outside a knob's range. It never throws, so a
+ * corrupt link or autosave cannot break the page.
  */
 export function decodeShare(text: string): StudioDocument | undefined {
   if (text.length > MAX_SHARE_LENGTH) {
@@ -134,9 +204,18 @@ export function decodeShare(text: string): StudioDocument | undefined {
   const light = readGroup(payload.l, false);
   const dark = readGroup(payload.d, false);
   const shared = readGroup(payload.s, true);
-  if (theme === null || light === undefined || dark === undefined || shared === undefined) {
+  const density = readDensity(payload.m);
+  if (
+    theme === null ||
+    light === undefined ||
+    dark === undefined ||
+    shared === undefined ||
+    density === undefined
+  ) {
     return undefined;
   }
-  const document: StudioDocument = { theme, overrides: { light, dark, shared } };
+  const overrides: StudioOverrides =
+    Object.keys(density).length === 0 ? { light, dark, shared } : { light, dark, shared, density };
+  const document: StudioDocument = { theme, overrides };
   return documentCycles(document).length === 0 ? document : undefined;
 }

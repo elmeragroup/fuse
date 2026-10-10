@@ -8,6 +8,8 @@ import { tv } from "tailwind-variants";
 import { Button } from "@elmeragroup/fuse/button";
 import { densityAttributes, ThemeScope } from "@elmeragroup/fuse/theme";
 
+import { metricStyle } from "../../lib/studio/density-metrics";
+import { metricOverridesFor } from "../../lib/studio/edits";
 import { ChromeScope } from "./chrome-scope";
 import { useStudioEdits } from "./studio-edits";
 import { useStudio } from "./studio-state";
@@ -46,18 +48,23 @@ export type StudioArtboardProps = {
  * One artboard: a theme scope in the studio's base theme, in its own scheme and density, with
  * its name above it at a constant screen size. It carries `data-demo-stage` and the density
  * attributes, the docs' demo-stage density mechanism, so each artboard has its own metrics, and
- * the overlays opened inside it portal into it. The token edits for its scheme are inline
- * declarations on the scope element itself, where the theme rules resolve their aliases.
+ * the overlays opened inside it portal into it. The token edits for its scheme and the metric
+ * edits for its density are inline declarations on the scope element itself, where the theme
+ * rules resolve their aliases and every part inside inherits the metrics.
  */
 export function StudioArtboard({ id, children }: StudioArtboardProps): ReactElement {
   const { artboards, theme, settingsOf, selectedId, hoveredId, select } = useStudio();
-  const { styleFor } = useStudioEdits();
+  const { styleFor, overrides } = useStudioEdits();
   const { registerArtboard } = useViewportCommands();
   const spec = artboards.find((artboard) => artboard.id === id);
   if (spec === undefined) {
     throw new Error(`${id} is not an artboard of this studio page (src/lib/studio/documents.ts)`);
   }
   const settings = settingsOf(spec);
+  const scopeStyle = () => ({
+    ...styleFor(settings.scheme),
+    ...metricStyle(metricOverridesFor(overrides, settings.density)),
+  });
   const selected = selectedId === id;
   const state = selected ? "selected" : hoveredId === id ? "hovered" : "idle";
 
@@ -95,8 +102,8 @@ export function StudioArtboard({ id, children }: StudioArtboardProps): ReactElem
         data-theme={settings.scheme}
         data-demo-stage
         {...densityAttributes(settings.density)}
-        // oxlint-disable-next-line shadcn/no-inline-styles -- token edits: custom properties only (artboardStyle), declared on the scope element so its aliases resolve against them
-        style={styleFor(settings.scheme)}
+        // oxlint-disable-next-line shadcn/no-inline-styles -- token and metric edits: custom properties only (artboardStyle, metricStyle), declared on the scope element so its aliases resolve against them
+        style={scopeStyle()}
         role="region"
         aria-label={spec.name}
         // The Layers list hands keyboard focus here; Tab then continues through its content.

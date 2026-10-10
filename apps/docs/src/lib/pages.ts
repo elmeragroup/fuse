@@ -143,6 +143,13 @@ export const STUDIO_PAGES: readonly StudioPage[] = [
     description:
       "A canvas of live Fuse components in every scheme and density, with the base theme's colours, radii and control sizes at a glance.",
   },
+  {
+    href: "/studio/density",
+    label: "Density",
+    title: "Theme studio · Density",
+    description:
+      "The same Fuse screen dense and comfortable side by side, with every density metric to tune and overlays that show which parts read it.",
+  },
 ];
 
 /** The studio page at `href`; throws when the manifest has none, so a stale route fails the build. */
