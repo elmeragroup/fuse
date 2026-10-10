@@ -342,8 +342,8 @@ describe("studio token editing", () => {
     const { context, page, errors } = await openStudio("", withoutNavigationApi);
     try {
       expect(await page.evaluate(() => "navigation" in window)).toBe(false);
-      await openSection(page, "Actions");
-      await setColor(page, "primary", "#ff0000");
+      await openTokenSection(page, "Actions");
+      await setTokenColor(page, "primary", "#ff0000");
       await page.waitForFunction(() => window.location.hash.length > 1);
       const shared = new URL(page.url()).hash;
       const entries = await page.evaluate(() => window.history.length);
@@ -362,14 +362,14 @@ describe("studio token editing", () => {
   it("puts the newest share text on the address after Back, so a reload keeps the newest edits", async () => {
     const { context, page, errors } = await openStudio();
     try {
-      await openSection(page, "Actions");
-      await setColor(page, "primary", "#ff0000");
+      await openTokenSection(page, "Actions");
+      await setTokenColor(page, "primary", "#ff0000");
       await page.waitForFunction(() => window.location.hash.length > 1);
       const older = new URL(page.url()).hash;
       await layers(page).getByRole("button", { name: "Density", exact: true }).click();
       await artboard(page, DENSITY_TWIN).waitFor({ state: "visible" });
-      await openSection(page, "Actions");
-      await setColor(page, "primary", "#0000ff");
+      await openTokenSection(page, "Actions");
+      await setTokenColor(page, "primary", "#0000ff");
       await expect.poll(() => new URL(page.url()).hash).not.toBe(older);
       const newest = new URL(page.url()).hash;
 
@@ -390,8 +390,8 @@ describe("studio token editing", () => {
   it("leaves no stale share hash on the address after Reset all and Back", async () => {
     const { context, page, errors } = await openStudio();
     try {
-      await openSection(page, "Actions");
-      await setColor(page, "primary", "#ff0000");
+      await openTokenSection(page, "Actions");
+      await setTokenColor(page, "primary", "#ff0000");
       await page.waitForFunction(() => window.location.hash.length > 1);
       await layers(page).getByRole("button", { name: "Density", exact: true }).click();
       await artboard(page, DENSITY_TWIN).waitFor({ state: "visible" });
