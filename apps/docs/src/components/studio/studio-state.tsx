@@ -11,6 +11,7 @@ import { artboardsFor } from "../../lib/studio/documents";
 import type { ArtboardScheme, ArtboardSpec } from "../../lib/studio/documents";
 import { OPENING_THEME } from "../../lib/theme";
 import { useMediaQuery } from "../../lib/use-media-query";
+import { StudioEditsProvider, useEditSession } from "./studio-edits";
 
 /** What a pointer drag on the canvas does: select and use artboard content, or pan. */
 export type StudioTool = "select" | "hand";
@@ -44,13 +45,14 @@ type StudioValue = {
 const StudioContext = createContext<StudioValue | undefined>(undefined);
 
 /**
- * Owns the studio's editing state. It sits in the studio layout, so the base theme and every
- * artboard's settings survive a switch between studio pages. State lives in React only.
+ * Owns the studio's editing state. It sits in the studio layout, so the base theme, the token
+ * edits and every artboard's settings survive a switch between studio pages. The base theme and
+ * the token edits form the edit session (`useStudioEdits`), which the URL hash and an autosave
+ * keep; the rest lives in React only.
  */
 export function StudioProvider({ children }: { children: ReactNode }): ReactElement {
   const pathname = usePathname();
   const artboards = artboardsFor(pathname);
-  const [theme, setTheme] = useState<ThemeInput>(OPENING_THEME);
   const [chromeScheme, setChromeScheme] = useState<ColorScheme>("system");
   const prefersDark = useMediaQuery("(prefers-color-scheme: dark)", false);
   const [overrides, setOverrides] = useState<Readonly<Record<string, Partial<ArtboardSettings>>>>({});
@@ -79,6 +81,14 @@ export function StudioProvider({ children }: { children: ReactNode }): ReactElem
     [pathname]
   );
 
+  const selected = artboards.find((artboard) => artboard.id === selectedId);
+  const session = useEditSession(
+    OPENING_THEME,
+    selectedId,
+    selected === undefined ? undefined : settingsOf(selected).scheme
+  );
+  const { theme, setTheme } = session;
+
   const resolvedChromeScheme: ArtboardScheme =
     chromeScheme === "system" ? (prefersDark ? "dark" : "light") : chromeScheme;
 
@@ -101,6 +111,7 @@ export function StudioProvider({ children }: { children: ReactNode }): ReactElem
     }),
     [
       theme,
+      setTheme,
       chromeScheme,
       resolvedChromeScheme,
       artboards,
@@ -110,10 +121,17 @@ export function StudioProvider({ children }: { children: ReactNode }): ReactElem
       select,
       hoveredId,
       tool,
+      setChromeScheme,
+      hover,
+      setTool,
     ]
   );
 
-  return <StudioContext.Provider value={value}>{children}</StudioContext.Provider>;
+  return (
+    <StudioContext.Provider value={value}>
+      <StudioEditsProvider value={session.value}>{children}</StudioEditsProvider>
+    </StudioContext.Provider>
+  );
 }
 
 export function useStudio(): StudioValue {

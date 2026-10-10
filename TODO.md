@@ -193,6 +193,12 @@
 - NumberField writes optional props such as `name`, `min` and `aria-label` as plain attributes,
   against the optional-prop rule in AGENTS.md. The `WIRING_PARTS` source contract flags only raw
   spreads, so it misses them. Spread them through `definedProps`.
+- A light theme rule declares only `EXTERNAL_RESET_KEYS`, so `--destructive`,
+  `--destructive-foreground` and `--sidebar-ring` resolve their `var()` on `:root`. A host that
+  overrides `--error` or `--ring` on a nested theme scope does not move them there. The theme
+  studio restates them on each artboard and in its CSS export
+  (`apps/docs/src/lib/studio/artboard-style.ts`). Decide whether the light rules restate every
+  alias, as the dark rules do.
 
 ## Control size
 

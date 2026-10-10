@@ -9,6 +9,7 @@ import { Button } from "@elmeragroup/fuse/button";
 import { densityAttributes, ThemeScope } from "@elmeragroup/fuse/theme";
 
 import { ChromeScope } from "./chrome-scope";
+import { useStudioEdits } from "./studio-edits";
 import { useStudio } from "./studio-state";
 import { useViewportCommands } from "./studio-viewport";
 
@@ -45,10 +46,12 @@ export type StudioArtboardProps = {
  * One artboard: a theme scope in the studio's base theme, in its own scheme and density, with
  * its name above it at a constant screen size. It carries `data-demo-stage` and the density
  * attributes, the docs' demo-stage density mechanism, so each artboard has its own metrics, and
- * the overlays opened inside it portal into it.
+ * the overlays opened inside it portal into it. The token edits for its scheme are inline
+ * declarations on the scope element itself, where the theme rules resolve their aliases.
  */
 export function StudioArtboard({ id, children }: StudioArtboardProps): ReactElement {
   const { artboards, theme, settingsOf, selectedId, hoveredId, select } = useStudio();
+  const { styleFor } = useStudioEdits();
   const { registerArtboard } = useViewportCommands();
   const spec = artboards.find((artboard) => artboard.id === id);
   if (spec === undefined) {
@@ -92,6 +95,8 @@ export function StudioArtboard({ id, children }: StudioArtboardProps): ReactElem
         data-theme={settings.scheme}
         data-demo-stage
         {...densityAttributes(settings.density)}
+        // oxlint-disable-next-line shadcn/no-inline-styles -- token edits: custom properties only (artboardStyle), declared on the scope element so its aliases resolve against them
+        style={styleFor(settings.scheme)}
         role="region"
         aria-label={spec.name}
         // The Layers list hands keyboard focus here; Tab then continues through its content.

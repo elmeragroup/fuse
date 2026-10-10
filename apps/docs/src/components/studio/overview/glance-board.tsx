@@ -12,6 +12,7 @@ import { DENSITIES, densityAttributes } from "@elmeragroup/fuse/theme";
 import type { Density } from "@elmeragroup/fuse/theme";
 
 import { LANDING_FACTS } from "../../../generated/landing-facts";
+import { useStudioEdits } from "../studio-edits";
 import { useStudio } from "../studio-state";
 
 const glanceBoard = tv({
@@ -93,14 +94,15 @@ function controlHeight(metric: string, density: Density): number | undefined {
 /** One radius rung as a real rounded box, labelled with the radius the browser resolved. */
 function RungBox({ rung }: { rung: Rung }): ReactElement {
   const { theme } = useStudio();
+  const { styleFor } = useStudioEdits();
   const box = useRef<HTMLDivElement>(null);
   const [radius, setRadius] = useState("");
-  // The rung follows the artboard's theme, so it is read back after every theme change.
+  // The rung follows the artboard's theme and token edits, so it is read back after each change.
   useLayoutEffect(() => {
     if (box.current !== null) {
       setRadius(getComputedStyle(box.current).borderTopLeftRadius);
     }
-  }, [theme]);
+  }, [theme, styleFor]);
   return (
     <div className={styles.rung()}>
       <div ref={box} className={styles.rungBox({ rung })} />
