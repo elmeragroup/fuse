@@ -7,7 +7,16 @@ import * as Hex from "@elmeragroup/color/hex";
 import { MAX_SHARE_LENGTH } from "../src/lib/studio/size-policy";
 import { STUDIO_TOKEN_NAMES, TOKEN_TABLE, isLightOnly } from "../src/lib/studio/tokens";
 import { auditTargets } from "./landing-page";
-import { artboard, inspector, layers, openStudioIn, openStudio as openStudioPage } from "./studio-page";
+import {
+  artboard,
+  inspector,
+  layers,
+  openStudioIn,
+  openStudio as openStudioPage,
+  openTokenSection,
+  setTokenColor,
+  tokenRow,
+} from "./studio-page";
 import type { StudioPage, StudioRoute } from "./studio-page";
 import { launchSuiteBrowser } from "./suite-browser";
 
@@ -63,28 +72,6 @@ async function openStudio(
   route?: StudioRoute
 ): Promise<StudioPage> {
   return openStudioPage(browser(), { hash, prepare, route });
-}
-
-function tokenRow(page: Page, name: string): Locator {
-  return inspector(page).getByRole("group", { name: `--${name}`, exact: true });
-}
-
-async function openSection(page: Page, title: string): Promise<void> {
-  const trigger = inspector(page).getByRole("button", { name: title, exact: false }).first();
-  if ((await trigger.getAttribute("aria-expanded")) !== "true") {
-    await trigger.click();
-  }
-}
-
-/** Types `value` into a color token's knob and closes its popover. */
-async function setColor(page: Page, name: string, value: string): Promise<void> {
-  await tokenRow(page, name)
-    .getByRole("button", { name: `Edit --${name}`, exact: true })
-    .click();
-  const field = page.getByRole("textbox", { name: "Color", exact: true });
-  await field.fill(value);
-  await page.keyboard.press("Escape");
-  await field.waitFor({ state: "hidden" });
 }
 
 async function background(locator: Locator): Promise<string> {
@@ -173,8 +160,8 @@ describe("studio token editing", () => {
       const darkBefore = await background(saveButton(page, DARK_BOARD));
       expect(lightBefore).not.toBe(RED);
 
-      await openSection(page, "Actions");
-      await setColor(page, "primary", "#ff0000");
+      await openTokenSection(page, "Actions");
+      await setTokenColor(page, "primary", "#ff0000");
 
       await expect.poll(() => background(saveButton(page, LIGHT_BOARD))).toBe(RED);
       expect(await background(saveButton(page, "Components · Light · Dense"))).toBe(RED);
@@ -191,7 +178,7 @@ describe("studio token editing", () => {
   it("rounds the Card in every artboard, light and dark, from the radius slider", async () => {
     const { context, page, errors } = await openStudio();
     try {
-      await openSection(page, "Shape");
+      await openTokenSection(page, "Shape");
       await tokenRow(page, "radius").getByRole("slider", { name: "--radius", exact: true }).focus();
       // The radius slider ends at 40px, and a Card rounds with `rounded-lg`, the radius itself.
       await page.keyboard.press("End");
@@ -216,8 +203,8 @@ describe("studio token editing", () => {
       const deleteButton = board.getByRole("button", { name: "Delete", exact: true });
       const before = await deleteButton.evaluate((element) => getComputedStyle(element).color);
 
-      await openSection(page, "Status");
-      await setColor(page, "error", "#ff0000");
+      await openTokenSection(page, "Status");
+      await setTokenColor(page, "error", "#ff0000");
 
       // `--destructive: var(--error)` is declared on `:root` in light, so the studio restates it
       // on the scope, where it resolves against the edit.
@@ -238,12 +225,12 @@ describe("studio token editing", () => {
   it("marks a foreground that matches its surface as failing contrast", async () => {
     const { context, page, errors } = await openStudio();
     try {
-      await openSection(page, "Actions");
+      await openTokenSection(page, "Actions");
       const mark = tokenRow(page, "primary-foreground").locator("[data-contrast]");
       await expect.poll(() => mark.getAttribute("data-contrast")).toBe("pass");
 
-      await setColor(page, "primary", "#ff0000");
-      await setColor(page, "primary-foreground", "#ff0000");
+      await setTokenColor(page, "primary", "#ff0000");
+      await setTokenColor(page, "primary-foreground", "#ff0000");
 
       await expect.poll(() => mark.getAttribute("data-contrast")).toBe("fail");
       expect(await mark.textContent()).toBe("Fail 1.00:1");
@@ -256,8 +243,8 @@ describe("studio token editing", () => {
   it("exports the edited declarations as CSS", async () => {
     const { context, page, errors } = await openStudio();
     try {
-      await openSection(page, "Actions");
-      await setColor(page, "primary", "#ff0000");
+      await openTokenSection(page, "Actions");
+      await setTokenColor(page, "primary", "#ff0000");
       await page.getByRole("banner").getByRole("button", { name: "Export", exact: true }).click();
       const dialog = page.getByRole("dialog", { name: "Export CSS" });
       const css = (await dialog.getByRole("region", { name: "Exported CSS" }).textContent()) ?? "";
@@ -274,8 +261,8 @@ describe("studio token editing", () => {
   it("restores the edits from the share hash, and from the autosave without it", async () => {
     const { context, page, errors } = await openStudio();
     try {
-      await openSection(page, "Actions");
-      await setColor(page, "primary", "#ff0000");
+      await openTokenSection(page, "Actions");
+      await setTokenColor(page, "primary", "#ff0000");
       await page.waitForFunction(() => window.location.hash.length > 1);
       const hash = await page.evaluate(() => window.location.hash);
 
@@ -300,8 +287,8 @@ describe("studio token editing", () => {
   it("keeps the share hash on the address after a page link, so it restores the edits", async () => {
     const { context, page, errors } = await openStudio();
     try {
-      await openSection(page, "Actions");
-      await setColor(page, "primary", "#ff0000");
+      await openTokenSection(page, "Actions");
+      await setTokenColor(page, "primary", "#ff0000");
       await page.waitForFunction(() => window.location.hash.length > 1);
       await layers(page).getByRole("button", { name: "Density", exact: true }).click();
       await artboard(page, DENSITY_TWIN).waitFor({ state: "visible" });
@@ -326,8 +313,8 @@ describe("studio token editing", () => {
   it("keeps the share hash on the address after a click on the current page's row", async () => {
     const { context, page, errors } = await openStudio();
     try {
-      await openSection(page, "Actions");
-      await setColor(page, "primary", "#ff0000");
+      await openTokenSection(page, "Actions");
+      await setTokenColor(page, "primary", "#ff0000");
       await page.waitForFunction(() => window.location.hash.length > 1);
       const shared = new URL(page.url()).hash;
       // The same pathname, so only the navigation itself shows the click went through.
@@ -355,8 +342,8 @@ describe("studio token editing", () => {
     const { context, page, errors } = await openStudio("", withoutNavigationApi);
     try {
       expect(await page.evaluate(() => "navigation" in window)).toBe(false);
-      await openSection(page, "Actions");
-      await setColor(page, "primary", "#ff0000");
+      await openTokenSection(page, "Actions");
+      await setTokenColor(page, "primary", "#ff0000");
       await page.waitForFunction(() => window.location.hash.length > 1);
       const shared = new URL(page.url()).hash;
       const entries = await page.evaluate(() => window.history.length);
@@ -375,14 +362,14 @@ describe("studio token editing", () => {
   it("puts the newest share text on the address after Back, so a reload keeps the newest edits", async () => {
     const { context, page, errors } = await openStudio();
     try {
-      await openSection(page, "Actions");
-      await setColor(page, "primary", "#ff0000");
+      await openTokenSection(page, "Actions");
+      await setTokenColor(page, "primary", "#ff0000");
       await page.waitForFunction(() => window.location.hash.length > 1);
       const older = new URL(page.url()).hash;
       await layers(page).getByRole("button", { name: "Density", exact: true }).click();
       await artboard(page, DENSITY_TWIN).waitFor({ state: "visible" });
-      await openSection(page, "Actions");
-      await setColor(page, "primary", "#0000ff");
+      await openTokenSection(page, "Actions");
+      await setTokenColor(page, "primary", "#0000ff");
       await expect.poll(() => new URL(page.url()).hash).not.toBe(older);
       const newest = new URL(page.url()).hash;
 
@@ -403,8 +390,8 @@ describe("studio token editing", () => {
   it("leaves no stale share hash on the address after Reset all and Back", async () => {
     const { context, page, errors } = await openStudio();
     try {
-      await openSection(page, "Actions");
-      await setColor(page, "primary", "#ff0000");
+      await openTokenSection(page, "Actions");
+      await setTokenColor(page, "primary", "#ff0000");
       await page.waitForFunction(() => window.location.hash.length > 1);
       await layers(page).getByRole("button", { name: "Density", exact: true }).click();
       await artboard(page, DENSITY_TWIN).waitFor({ state: "visible" });
@@ -434,10 +421,10 @@ describe("studio token editing", () => {
     try {
       // Edits show each row's reset; the sections hold every kind of knob, an alias chip and a
       // contrast mark.
-      await openSection(page, "Actions");
-      await setColor(page, "primary", "#ff0000");
-      await openSection(page, "Shape");
-      await openSection(page, "Typography");
+      await openTokenSection(page, "Actions");
+      await setTokenColor(page, "primary", "#ff0000");
+      await openTokenSection(page, "Shape");
+      await openTokenSection(page, "Typography");
       await tokenRow(page, "radius").getByRole("slider", { name: "--radius", exact: true }).focus();
       await page.keyboard.press("End");
       const audit = await auditTargets(inspector(page));
@@ -492,8 +479,8 @@ describe("studio token editing", () => {
       await expect
         .poll(() => page.getByText("The link's edits could not be read", { exact: true }).isVisible())
         .toBe(true);
-      await openSection(page, "Actions");
-      await setColor(page, "primary", "#ff0000");
+      await openTokenSection(page, "Actions");
+      await setTokenColor(page, "primary", "#ff0000");
       await expect.poll(() => background(saveButton(page, LIGHT_BOARD))).toBe(RED);
       expect(errors).toEqual([]);
     } finally {
@@ -508,14 +495,14 @@ describe("studio token editing", () => {
       const radius = () => card.evaluate((element) => getComputedStyle(element).borderTopLeftRadius);
       const before = await radius();
 
-      await openSection(page, "Shape");
+      await openTokenSection(page, "Shape");
       await dragSlider(page, "radius", 0.25);
       await expect.poll(radius).not.toBe(before);
       const first = await radius();
       // The closed panel unmounts the knob once its exit ends; reopening mounts a new one.
       await closeSection(page, "Shape");
       await tokenRow(page, "radius").waitFor({ state: "detached" });
-      await openSection(page, "Shape");
+      await openTokenSection(page, "Shape");
       await dragSlider(page, "radius", 0.75);
       await expect.poll(radius).not.toBe(first);
 
@@ -534,9 +521,9 @@ describe("studio token editing", () => {
     const { context, page, errors } = await openStudio();
     try {
       const before = await background(saveButton(page, LIGHT_BOARD));
-      await openSection(page, "Actions");
-      await setColor(page, "primary", "#ff0000");
-      await setColor(page, "primary", "#00ff00");
+      await openTokenSection(page, "Actions");
+      await setTokenColor(page, "primary", "#ff0000");
+      await setTokenColor(page, "primary", "#00ff00");
       await expect.poll(() => background(saveButton(page, LIGHT_BOARD))).toBe("rgb(0, 255, 0)");
 
       await page.keyboard.press("ControlOrMeta+z");
@@ -552,7 +539,7 @@ describe("studio token editing", () => {
   it("makes one undo step per stepper press on a number field", async () => {
     const { context, page, errors } = await openStudio();
     try {
-      await openSection(page, "Shape");
+      await openTokenSection(page, "Shape");
       const row = tokenRow(page, "radius");
       const field = row.getByRole("textbox", { name: "--radius in px", exact: true });
       const increase = row.getByRole("button", { name: "Increase", exact: true });
@@ -577,7 +564,7 @@ describe("studio token editing", () => {
   it("makes one undo step per arrow key press on a number field, and one for a held key", async () => {
     const { context, page, errors } = await openStudio();
     try {
-      await openSection(page, "Shape");
+      await openTokenSection(page, "Shape");
       const field = tokenRow(page, "radius").getByRole("textbox", { name: "--radius in px", exact: true });
       const before = await field.inputValue();
       await field.focus();
@@ -619,7 +606,7 @@ describe("studio token editing", () => {
     });
     try {
       await expect.poll(() => seedHeld).toBe(true);
-      await openSection(page, "Typography");
+      await openTokenSection(page, "Typography");
       const row = tokenRow(page, "selection-title-weight");
       const slider = row.getByRole("slider", { name: "--selection-title-weight", exact: true });
       const field = row.getByRole("textbox", { name: "--selection-title-weight value", exact: true });
@@ -642,7 +629,7 @@ describe("studio token editing", () => {
   it("makes one undo step per Home or End press on a number field", async () => {
     const { context, page, errors } = await openStudio();
     try {
-      await openSection(page, "Shape");
+      await openTokenSection(page, "Shape");
       const field = tokenRow(page, "radius").getByRole("textbox", { name: "--radius in px", exact: true });
       const before = await field.inputValue();
       await field.focus();
@@ -666,11 +653,11 @@ describe("studio token editing", () => {
   it("refuses a reset that would loop two tokens, with a toast, and keeps the edits", async () => {
     const { context, page, errors } = await openStudio();
     try {
-      await openSection(page, "Actions");
-      await openSection(page, "Status");
+      await openTokenSection(page, "Actions");
+      await openTokenSection(page, "Status");
       // The base theme declares destructive: var(--error).
-      await setColor(page, "destructive", "#ff0000");
-      await setColor(page, "error", "var(--destructive)");
+      await setTokenColor(page, "destructive", "#ff0000");
+      await setTokenColor(page, "error", "var(--destructive)");
       await tokenRow(page, "destructive")
         .getByRole("button", { name: "Reset --destructive", exact: true })
         .click();
@@ -690,7 +677,7 @@ describe("studio token editing", () => {
   it("undoes with the keyboard while the slider keeps focus", async () => {
     const { context, page, errors } = await openStudio();
     try {
-      await openSection(page, "Shape");
+      await openTokenSection(page, "Shape");
       const slider = tokenRow(page, "radius").getByRole("slider", { name: "--radius", exact: true });
       await slider.focus();
       const before = await slider.getAttribute("aria-valuenow");
@@ -709,7 +696,7 @@ describe("studio token editing", () => {
   it("refuses an alias that would close a cycle, typed or linked", async () => {
     const { context, page, errors } = await openStudio();
     try {
-      await openSection(page, "Status");
+      await openTokenSection(page, "Status");
       await colorTrigger(page, "error").click();
       const field = page.getByRole("textbox", { name: "Color", exact: true });
       // The base theme declares destructive: var(--error).
@@ -737,7 +724,7 @@ describe("studio token editing", () => {
         .getByRole("group", { name: "Edited scheme", exact: true })
         .getByRole("button", { name: "Dark", exact: true })
         .click();
-      await openSection(page, "Variant layer");
+      await openTokenSection(page, "Variant layer");
       await tokenRow(page, "button-outline")
         .getByRole("button", {
           name: "Detach --button-outline from --border to a literal value",
@@ -759,8 +746,8 @@ describe("studio token editing", () => {
   it("reads a color notation @elmeragroup/color does not, through the browser", async () => {
     const { context, page, errors } = await openStudio();
     try {
-      await openSection(page, "Actions");
-      await setColor(page, "primary", "color(srgb 1 0 0)");
+      await openTokenSection(page, "Actions");
+      await setTokenColor(page, "primary", "color(srgb 1 0 0)");
       // The artboard paints pure red, read back through @elmeragroup/color.
       await expect
         .poll(async () => opaqueHex(await background(saveButton(page, LIGHT_BOARD))))
@@ -779,12 +766,12 @@ describe("studio token editing", () => {
     // weight moves the tone. External elma's light secondary is its foreground.
     const { context, page, errors } = await openStudio(hashOf('{"t":"internal-elma-private"}'));
     try {
-      await openSection(page, "Actions");
+      await openTokenSection(page, "Actions");
       const swatch = colorTrigger(page, "secondary-hover").locator(".bg-\\(--swatch\\)");
       const before = await background(swatch);
       // The theme's own formula, at 10% instead of 5%.
       const formula = "color-mix(in oklch, var(--secondary), var(--foreground) 10%)";
-      await setColor(page, "secondary-hover", formula);
+      await setTokenColor(page, "secondary-hover", formula);
 
       const declared = () =>
         artboard(page, LIGHT_BOARD).evaluate((element) =>
@@ -802,7 +789,7 @@ describe("studio token editing", () => {
   it("refuses a formula that reads currentcolor, and keeps the declared value", async () => {
     const { context, page, errors } = await openStudio();
     try {
-      await openSection(page, "Actions");
+      await openTokenSection(page, "Actions");
       const declared = () =>
         artboard(page, LIGHT_BOARD).evaluate((element) => element.style.getPropertyValue("--primary"));
       const before = await declared();
@@ -826,10 +813,10 @@ describe("studio token editing", () => {
   it("marks a pair on a translucent surface as needing an opaque backdrop", async () => {
     const { context, page, errors } = await openStudio();
     try {
-      await openSection(page, "Actions");
+      await openTokenSection(page, "Actions");
       const mark = tokenRow(page, "primary-foreground").locator("[data-contrast]");
       await expect.poll(() => mark.getAttribute("data-contrast")).toBe("pass");
-      await setColor(page, "primary", "rgba(255, 0, 0, 0.5)");
+      await setTokenColor(page, "primary", "rgba(255, 0, 0, 0.5)");
       await expect.poll(() => mark.getAttribute("data-contrast")).toBe("translucent");
       expect(await mark.textContent()).toBe("Needs an opaque backdrop");
       expect(errors).toEqual([]);
@@ -841,13 +828,13 @@ describe("studio token editing", () => {
   it("shows short color values, with the declared CSS as the trigger's tooltip", async () => {
     const { context, page, errors } = await openStudio();
     try {
-      await openSection(page, "Actions");
+      await openTokenSection(page, "Actions");
       // external-palettes.ts, elma: primary oklch(0.47851 0.048934 219), #3C6470.
       expect(await shownValue(page, "primary")).toBe("#3C6470");
       expect(await shownValue(page, "destructive")).toBe("→ error");
       expect(await shownValue(page, "secondary-hover")).toBe("mix");
 
-      await setColor(page, "primary", "#ff000080");
+      await setTokenColor(page, "primary", "#ff000080");
       await expect.poll(() => shownValue(page, "primary")).toBe("#FF000080");
       await colorTrigger(page, "secondary-hover").hover();
       await page
@@ -885,8 +872,8 @@ describe("studio token editing", () => {
       const saved = () => page.evaluate(() => window.localStorage.getItem("fuse-studio-v1"));
       await expect.poll(saved).toBe(hash.slice(1));
 
-      await openSection(page, "Actions");
-      await setColor(page, "primary", long);
+      await openTokenSection(page, "Actions");
+      await setTokenColor(page, "primary", long);
       // The toast's title, and the live region's copy of it.
       await page.getByText("Too many edits to share", { exact: true }).first().waitFor();
       await page.waitForTimeout(600);

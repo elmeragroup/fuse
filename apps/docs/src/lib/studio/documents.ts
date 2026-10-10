@@ -173,12 +173,118 @@ export const CORNER_PAGE_ARTBOARDS: readonly ArtboardSpec[] = [
   },
 ];
 
+const PAIR_BOARD_WIDTH = 640;
+const PAIR_COLUMN = PAIR_BOARD_WIDTH + 120;
+const GAP = 160;
+const PAIRS_HEIGHT = 860;
+const CHARTS_HEIGHT = 460;
+const SIDEBAR_HEIGHT = 610;
+const SYNTAX_HEIGHT = 400;
+
+/** A light artboard and its dark twin beside it, as the Color page shows every color board. */
+function schemePair(id: string, name: string, x: number, y: number): ArtboardSpec[] {
+  return (["light", "dark"] as const).map((scheme, index) => ({
+    id: `${id}-${scheme}`,
+    name: `${name} · ${scheme === "light" ? "Light" : "Dark"}`,
+    x: x + index * PAIR_COLUMN,
+    y,
+    width: PAIR_BOARD_WIDTH,
+    scheme,
+    density: "comfortable",
+  }));
+}
+
+const DETAIL_X = 2 * PAIR_COLUMN;
+const SIDEBAR_Y = CHARTS_HEIGHT + GAP;
+const SYNTAX_Y = SIDEBAR_Y + SIDEBAR_HEIGHT + GAP;
+
+/**
+ * The Color page, in two column pairs, each light beside dark: the role pairs above the status
+ * roles, and the charts, sidebar and syntax colors stacked beside them, with the primitives,
+ * which hold one value in every theme, below those. The rows follow the boards' laid-out heights.
+ */
+export const COLOR_PAGE_ARTBOARDS: readonly ArtboardSpec[] = [
+  ...schemePair("color-pairs", "Role pairs", 0, 0),
+  ...schemePair("color-status", "Status", 0, PAIRS_HEIGHT + GAP),
+  ...schemePair("color-charts", "Charts", DETAIL_X, 0),
+  ...schemePair("color-sidebar", "Sidebar", DETAIL_X, SIDEBAR_Y),
+  ...schemePair("color-syntax", "Syntax", DETAIL_X, SYNTAX_Y),
+  {
+    id: "color-primitives",
+    name: "Primitives",
+    x: DETAIL_X,
+    y: SYNTAX_Y + SYNTAX_HEIGHT + GAP,
+    width: PAIR_BOARD_WIDTH,
+    scheme: "light",
+    density: "comfortable",
+  },
+];
+
+/** The token sections that hold colors, in the inspector's order. */
+const COLOR_SECTIONS: readonly SectionId[] = [
+  "surfaces",
+  "actions",
+  "status",
+  "lines",
+  "variant",
+  "sidebar",
+  "charts",
+  "syntax",
+];
+
+const TYPE_BOARD_WIDTH = 640;
+const TYPE_COLUMN = TYPE_BOARD_WIDTH + 120;
+const TYPE_ROW = 960;
+
+/**
+ * The Type page: the specimen, the control and label type pairs dense against comfortable, and
+ * a line in every font stack the font knobs offer.
+ */
+export const TYPE_PAGE_ARTBOARDS: readonly ArtboardSpec[] = [
+  {
+    id: "type-specimen",
+    name: "Specimen",
+    x: 0,
+    y: 0,
+    width: TYPE_BOARD_WIDTH,
+    scheme: "light",
+    density: "comfortable",
+  },
+  {
+    id: "type-pairs-dense",
+    name: "Type pairs · Dense",
+    x: TYPE_COLUMN,
+    y: 0,
+    width: TYPE_BOARD_WIDTH,
+    scheme: "light",
+    density: "dense",
+  },
+  {
+    id: "type-pairs-comfortable",
+    name: "Type pairs · Comfortable",
+    x: 2 * TYPE_COLUMN,
+    y: 0,
+    width: TYPE_BOARD_WIDTH,
+    scheme: "light",
+    density: "comfortable",
+  },
+  {
+    id: "type-stacks",
+    name: "Font stacks",
+    x: 0,
+    y: TYPE_ROW,
+    width: TYPE_BOARD_WIDTH,
+    scheme: "light",
+    density: "comfortable",
+  },
+];
+
 /** One studio page's document: its artboards and what the page adds to the editor. */
 type StudioPageDocument = {
   readonly href: string;
   readonly artboards: readonly ArtboardSpec[];
-  /** The token section the inspector stacks first and opens on this page. */
-  readonly leadSection?: SectionId;
+  /** The token sections the inspector stacks first, in order, opening the first on this page. */
+  readonly leadSections?: readonly SectionId[];
   /** The page offers the corner X-ray overlay. */
   readonly cornerXray?: boolean;
 };
@@ -187,7 +293,9 @@ type StudioPageDocument = {
 const STUDIO_DOCUMENTS: readonly StudioPageDocument[] = [
   { href: "/studio", artboards: OVERVIEW_ARTBOARDS },
   { href: "/studio/density", artboards: DENSITY_ARTBOARDS },
-  { href: "/studio/shape", artboards: CORNER_PAGE_ARTBOARDS, leadSection: "shape", cornerXray: true },
+  { href: "/studio/shape", artboards: CORNER_PAGE_ARTBOARDS, leadSections: ["shape"], cornerXray: true },
+  { href: "/studio/color", artboards: COLOR_PAGE_ARTBOARDS, leadSections: COLOR_SECTIONS },
+  { href: "/studio/type", artboards: TYPE_PAGE_ARTBOARDS, leadSections: ["typography"] },
 ];
 
 const NO_ARTBOARDS: readonly ArtboardSpec[] = [];
@@ -201,9 +309,11 @@ export function artboardsFor(pathname: string): readonly ArtboardSpec[] {
   return documentAt(pathname)?.artboards ?? NO_ARTBOARDS;
 }
 
-/** The token section the page at `pathname` leads its inspector with, if it names one. */
-export function leadSectionFor(pathname: string): SectionId | undefined {
-  return documentAt(pathname)?.leadSection;
+const NO_SECTIONS: readonly SectionId[] = [];
+
+/** The token sections the page at `pathname` leads its inspector with, in order. */
+export function leadSectionsFor(pathname: string): readonly SectionId[] {
+  return documentAt(pathname)?.leadSections ?? NO_SECTIONS;
 }
 
 const PAGE_PINS: ReadonlyMap<string, readonly ThemeVariant[]> = new Map(

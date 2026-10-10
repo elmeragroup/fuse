@@ -17,6 +17,7 @@ import { TextField } from "@elmeragroup/fuse/text-field";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
 import { STUDIO_PRIMITIVES } from "../../generated/studio-seeds";
+import { FONT_STACKS, FONT_STACK_LABELS, isFontStack } from "../../lib/studio/font-stacks";
 import { RADIUS_STEPS, aliasTarget, canonicalColorCss, formatLength } from "../../lib/studio/token-values";
 import type { ParsedValue } from "../../lib/studio/token-values";
 import { STUDIO_TOKEN_NAMES, TOKEN_TABLE, isTokenName } from "../../lib/studio/tokens";
@@ -490,29 +491,6 @@ export function RadiusStepKnob({
       }}
     />
   );
-}
-
-/** Font stacks the docs can render, by key. */
-const FONT_STACKS = {
-  roboto: "Roboto, ui-sans-serif, system-ui, sans-serif",
-  system: "ui-sans-serif, system-ui, sans-serif",
-  serif: "ui-serif, Georgia, serif",
-  mono: "ui-monospace, SFMono-Regular, Menlo, monospace",
-  body: "var(--font-sans)",
-} as const;
-
-type FontStack = keyof typeof FONT_STACKS;
-
-const FONT_STACK_LABELS = {
-  roboto: "Roboto",
-  system: "System sans",
-  serif: "Serif",
-  mono: "Monospace",
-  body: "Body font",
-} as const satisfies Record<FontStack, string>;
-
-function isFontStack(key: string | null): key is FontStack {
-  return key !== null && Object.hasOwn(FONT_STACKS, key);
 }
 
 /** A font family token's knob: a Select of stacks, and the stack as free text. */
