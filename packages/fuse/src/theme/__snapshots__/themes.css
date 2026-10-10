@@ -221,7 +221,7 @@
   --feature: oklch(0.57866 0.19387 36.96);
   --feature-bright: oklch(0.74389 0.16389 43.68);
   --feature-foreground: oklch(0.80097 0.10434 49.42);
-  --border: oklch(0.9232 0.0026 48.72);
+  --border: oklch(0.898 0.0026 48.72);
   --input: oklch(0.9232 0.0026 48.72);
   --button-outline: var(--foreground);
   --selection-checked-border: var(--border);
@@ -276,7 +276,7 @@
   --feature: oklch(0.55688 0.09585 191.06);
   --feature-bright: oklch(0.77279 0.10225 190.47);
   --feature-foreground: oklch(0.90178 0.09399 190.62);
-  --border: oklch(0.929 0.0126 255.53);
+  --border: oklch(0.921 0.0126 255.53);
   --input: oklch(0.929 0.0126 255.53);
   --button-outline: var(--foreground);
   --selection-checked-border: var(--border);
@@ -311,7 +311,7 @@
   --feature: oklch(0.57814 0.22881 270.38);
   --feature-bright: oklch(0.7068 0.1522 275.6);
   --feature-foreground: oklch(0.84919 0.07412 279.64);
-  --border: oklch(0.929 0.0126 255.53);
+  --border: oklch(0.894 0.0126 255.53);
   --input: oklch(0.929 0.0126 255.53);
   --button-outline: var(--foreground);
   --selection-checked-border: var(--border);
@@ -346,7 +346,7 @@
   --feature: oklch(0.57866 0.19387 36.96);
   --feature-bright: oklch(0.74389 0.16389 43.68);
   --feature-foreground: oklch(0.80097 0.10434 49.42);
-  --border: oklch(0.9232 0.0026 48.72);
+  --border: oklch(0.898 0.0026 48.72);
   --input: oklch(0.9232 0.0026 48.72);
   --button-outline: var(--foreground);
   --selection-checked-border: var(--border);

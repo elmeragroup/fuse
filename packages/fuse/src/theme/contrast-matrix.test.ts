@@ -171,6 +171,15 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
     ],
     floor: 1.1,
   },
+  {
+    // The hairline every bare border draws on the page, such as a Card, Table or
+    // DescriptionList edge. It is not a 1.4.11 control boundary. The floor is elma light's
+    // measured 1.1994:1 rounded down; below it the line stops reading on a tinted brand page.
+    schemes: ["light", "dark"],
+    matches: () => true,
+    pairs: [["border", "background"]],
+    floor: 1.19,
+  },
   { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(CHART_ROLES), floor: 3 },
   { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(SYNTAX_ROLES), floor: 4.5 },
   { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(["input", "ring"]), floor: 3 },
