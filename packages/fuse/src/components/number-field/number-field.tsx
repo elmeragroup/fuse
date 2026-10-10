@@ -92,7 +92,7 @@ export type NumberFieldProps = {
 // root below 16px, so its target meets the 24px floor at both densities (stacked steppers
 // cannot fit two 24px targets in the dense control height).
 const stepperButton = cn(
-  "box-border flex h-full w-[max(var(--control-h-xs),24px)] shrink-0 cursor-default items-center justify-center border-0 border-s bg-background p-0 text-foreground transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground enabled-hover:bg-muted"
+  "box-border flex h-full w-[max(var(--control-h-xs),24px)] shrink-0 cursor-default items-center justify-center border-0 border-s border-input bg-background p-0 text-foreground transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground enabled-hover:bg-muted"
 );
 
 /**

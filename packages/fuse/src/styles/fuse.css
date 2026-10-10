@@ -1,3 +1,8 @@
+/* The cascade order Tailwind's own entry declares. A layer is ordered where it is first named,
+   so without this a layered host that imports this file before `utilities.css` would get
+   `utilities` from the `@layer utilities` block below, ahead of `base`. A host that names a
+   layer before this file declares the order itself, first. */
+@layer theme, base, components, utilities;
 @import "tw-animate-css";
 @plugin "tailwindcss-react-aria-components";
 
@@ -257,6 +262,20 @@
 @layer utilities {
   :where([data-theme-variant], [data-theme-brand], [data-theme-segment]) {
     --inner-corner: initial;
+  }
+}
+
+/* Fuse ships no preflight, and Tailwind v4 borders default to `currentcolor`, the text colour,
+   so this gives every border the border role. It sits in the base layer, so every utility
+   (`border-input`, `border-transparent`, …) wins. Without themes.css `--border` is undefined
+   and borders keep `currentcolor`. */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--border, currentcolor);
   }
 }
 

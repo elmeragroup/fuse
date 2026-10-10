@@ -64,6 +64,9 @@
   pressed edge is already `--muted-foreground`, so raising the resting edge needs a new pressed one.
 - Decide whether `PhoneNumberField` and `NumberField` name their wrapper `group` from the field's
   label or drop the role. The controls inside have names; the groups around them have none.
+- Ask design whether the `NumberField` steppers keep their own fill. In internal dark the
+  stepper buttons draw `bg-background` (`oklch(0.145 0 0)`) inside a field box that draws
+  `bg-card` (`oklch(0.205 0 0)`). Is that intended, or should the steppers follow the field-box fill?
 - Decide with design whether `Item` gets an unclamped description variant. `Item.Description`
   clamps to two lines, matching shadcn, and funnel needed an unclamped one for full instructions.
   `shadcn(no-restyle)` rejects `line-clamp-*` on `ItemDescription` and points to a variant in
