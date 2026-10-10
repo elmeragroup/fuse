@@ -110,6 +110,16 @@ async function paintedProperty(locator: Locator, property: `--${string}`): Promi
   }, property);
 }
 
+/**
+ * How many 8-bit steps the swatch's paint strays from `painted` in its furthest channel. The
+ * swatch paints the hex `@elmeragroup/color` rounds from the browser's `lab()`, the part the
+ * browser's own conversion, so the two may round a channel apart by one step.
+ */
+async function swatchOffBy(swatch: Locator, painted: readonly number[]): Promise<number> {
+  const shown = await paintedBackground(swatch);
+  return Math.max(...shown.map((channel, index) => Math.abs(channel - (painted[index] ?? Number.NaN))));
+}
+
 /** The swatch on a Selection row's color knob. */
 function selectionSwatch(page: Page, name: string): Locator {
   // DOM audit: the swatch is presentational and has no role or name.
@@ -503,7 +513,7 @@ describe("the studio's Screens page", () => {
       await button.click({ modifiers: ["Alt"] });
       await expect.poll(async () => (await readout(page)).Scheme).toBe("Light");
       const painted = await paintedBackground(button);
-      await expect.poll(() => paintedBackground(selectionSwatch(page, "primary"))).toEqual(painted);
+      await expect.poll(() => swatchOffBy(selectionSwatch(page, "primary"), painted)).toBeLessThanOrEqual(1);
 
       await inspector(page)
         .getByRole("group", { name: "Edited scheme", exact: true })
@@ -511,7 +521,7 @@ describe("the studio's Screens page", () => {
         .click();
       expect((await readout(page)).Scheme).toBe("Light");
       await frames(page, 2);
-      expect(await paintedBackground(selectionSwatch(page, "primary"))).toEqual(painted);
+      expect(await swatchOffBy(selectionSwatch(page, "primary"), painted)).toBeLessThanOrEqual(1);
       expect(errors).toEqual([]);
     } finally {
       await context.close();
@@ -537,7 +547,9 @@ describe("the studio's Screens page", () => {
         .waitFor();
       const worn = await paintedProperty(board, "--button-outline");
       expect(worn).not.toEqual([255, 0, 0]);
-      await expect.poll(() => paintedBackground(selectionSwatch(page, "button-outline"))).toEqual(worn);
+      await expect
+        .poll(() => swatchOffBy(selectionSwatch(page, "button-outline"), worn))
+        .toBeLessThanOrEqual(1);
       expect(errors).toEqual([]);
     } finally {
       await context.close();
@@ -602,7 +614,9 @@ describe("the studio's Screens page", () => {
         await button.click({ modifiers: ["Alt"] });
         await expect.poll(async () => (await readout(page)).Slot).toBe("button");
         const painted = await paintedBackground(button);
-        await expect.poll(() => paintedBackground(selectionSwatch(page, "primary"))).toEqual(painted);
+        await expect
+          .poll(() => swatchOffBy(selectionSwatch(page, "primary"), painted))
+          .toBeLessThanOrEqual(1);
       }
     } finally {
       await context.close();
