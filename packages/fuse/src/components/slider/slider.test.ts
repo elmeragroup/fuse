@@ -25,7 +25,7 @@ describe("sliderVariants", () => {
 
   it("paints the track, indicator and thumb with role tokens", () => {
     const slots = sliderVariants();
-    expect(classes(slots.track())).toContain("bg-muted");
+    expect(classes(slots.track())).toContain("bg-input");
     expect(classes(slots.indicator())).toContain("bg-primary");
     expect(classes(slots.thumb())).toEqual(expect.arrayContaining(["bg-background", "border-primary"]));
   });

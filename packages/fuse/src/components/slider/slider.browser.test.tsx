@@ -11,6 +11,7 @@ import { expectInvalidRing } from "../../../test/assert-invalid-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import {
   CONTROL_MD,
+  cssVarColor,
   effectiveOpacity,
   px,
   renderThemed,
@@ -70,6 +71,16 @@ function controlOf(name: string): HTMLElement {
     throw new Error(`expected a control around ${name}`);
   }
   return control;
+}
+
+/** The track beside the thumbs in the control: the control's child that holds no thumb. */
+function trackOf(name: string): HTMLElement {
+  const thumb = thumbOf(name);
+  const track = [...controlOf(name).children].find((child) => child !== thumb);
+  if (!(track instanceof HTMLElement)) {
+    throw new Error(`expected a track beside ${name}`);
+  }
+  return track;
 }
 
 /** Every slider reads the provider locale, so each suite render supplies one. */
@@ -293,6 +304,12 @@ describe("Slider", () => {
     await userEvent.keyboard("{ArrowRight}");
     expect(valueNow("Locked")).toBe(20);
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("paints the unfilled track in the field-border tone", () => {
+    renderSlider(<Slider label="Track" defaultValue={50} />);
+    const track = trackOf("Track");
+    expect(getComputedStyle(track).backgroundColor).toBe(cssVarColor(track, "--input"));
   });
 
   it("wires isInvalid and errorMessage through the Field", () => {

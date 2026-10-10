@@ -20,6 +20,7 @@ import { withinFocusRingClass } from "../../styles/utils";
  *
  * The thumb is the whole control a person operates, so it carries the data-target state face:
  * Base UI writes `data-disabled` and `data-invalid` on it. The track and indicator are parts:
+ * the unfilled track takes the field-border tone `input`, the edge every field box shows, and
  * a disabled indicator drops to the muted foreground instead of dimming a second time.
  * The thumb also hosts the within-target focus ring for the range input Base UI nests in it.
  */
@@ -29,7 +30,7 @@ export const sliderVariants = tv({
     root: "",
     value: cn("text-muted-foreground tabular-nums", labelTypeClass),
     control: "relative flex touch-none items-center select-none data-disabled:cursor-not-allowed",
-    track: "relative grow overflow-hidden rounded-full bg-muted",
+    track: "relative grow overflow-hidden rounded-full bg-input",
     indicator: "rounded-full bg-primary data-disabled:bg-muted-foreground",
     thumb: cn(
       "shadow-xs box-border block size-[16px] shrink-0 rounded-full border-2 border-primary bg-background transition-[box-shadow] after:absolute after:top-1/2 after:left-1/2 after:size-[24px] after:-translate-1/2 after:content-['']",
