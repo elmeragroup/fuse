@@ -11,6 +11,7 @@ import { wheelZoomFactor } from "../../lib/studio/viewport";
 import type { Point } from "../../lib/studio/viewport";
 import { isTypingTarget } from "../../lib/typing-target";
 import { ChromeScope } from "./chrome-scope";
+import { CornerXrayOverlay } from "./corner-xray";
 import { OVERLAYS } from "./studio-shortcuts";
 import { useStudio } from "./studio-state";
 import { StudioToolbar } from "./studio-toolbar";
@@ -336,9 +337,10 @@ export function StudioCanvas({ children }: { children: ReactNode }): ReactElemen
         dispatch({ type: "cancel", pointerId: event.pointerId });
       }}>
       <ChromeScope aria-hidden className={styles.backdrop()} />
-      <div className={styles.world()} data-ready={ready} data-pan={panMode}>
+      <div className={styles.world()} data-ready={ready} data-pan={panMode} data-studio-world>
         {children}
       </div>
+      <CornerXrayOverlay canvas={commands.canvas} />
       <StudioToolbar />
       <p role="status" aria-live="polite" className={styles.status()}>
         {announcement}

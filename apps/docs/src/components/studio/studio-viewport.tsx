@@ -91,7 +91,7 @@ const INITIAL_VIEWPORT: Viewport = { x: 0, y: 0, zoom: 1 };
  * The camera the canvas draws now. Mid-glide, its registered properties hold the interpolated
  * values, which differ from the glide's destination.
  */
-function drawnViewport(canvas: HTMLElement): Viewport | undefined {
+export function drawnViewport(canvas: HTMLElement): Viewport | undefined {
   const style = getComputedStyle(canvas);
   const zoom = Number.parseFloat(style.getPropertyValue("--studio-zoom"));
   const x = Number.parseFloat(style.getPropertyValue("--studio-pan-x"));

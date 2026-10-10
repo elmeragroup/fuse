@@ -150,6 +150,13 @@ export const STUDIO_PAGES: readonly StudioPage[] = [
     description:
       "The same Fuse screen dense and comfortable side by side, with every density metric to tune and overlays that show which parts read it.",
   },
+  {
+    href: "/studio/shape",
+    label: "Shape",
+    title: "Theme studio · Shape",
+    description:
+      "The radius rungs and concentric inner corners of the base theme, drawn live on real Fuse parts with the numbers on top.",
+  },
 ];
 
 /** The studio page at `href`; throws when the manifest has none, so a stale route fails the build. */

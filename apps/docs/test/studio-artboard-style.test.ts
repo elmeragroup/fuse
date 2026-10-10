@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { artboardStyle } from "../src/lib/studio/artboard-style";
+import { artboardStyle, pinnedArtboardStyle } from "../src/lib/studio/artboard-style";
 
 /** A base scheme's declarations, written out by hand in the forms the theme rules use. */
 const BASE = {
@@ -59,4 +59,48 @@ describe("artboardStyle", () => {
   it("declares the overrides alone before the base theme's declarations load", () => {
     expect(artboardStyle({ error: "#ff0000" }, undefined)).toEqual({ "--error": "#ff0000" });
   });
+});
+
+/**
+ * The radius declarations of each variant, as the theme sources write them: the internal
+ * variant aliases both role corners to `--radius` (tokens/defaults.ts), and external elma
+ * declares its own literals (tokens/external-palettes.ts and the external variant layer).
+ */
+const INTERNAL_RADII = {
+  radius: "0.375rem",
+  "radius-button": "var(--radius)",
+  "radius-field": "var(--radius)",
+  "radius-step": "0px",
+} as const;
+const EXTERNAL_RADII = {
+  radius: "0.375rem",
+  "radius-button": "0.375rem",
+  "radius-field": "0.25rem",
+  "radius-step": "2px",
+} as const;
+
+describe("pinnedArtboardStyle", () => {
+  // The edits a session over each base variant can hold: an internal base never steps.
+  const EDITS_OVER = {
+    internal: { radius: "20px" },
+    external: { radius: "20px", "radius-step": "4px" },
+  } as const;
+
+  it.each(["internal", "external"] as const)(
+    "keeps an external pin's own role corners under a %s base theme's --radius edit",
+    (base) => {
+      expect(pinnedArtboardStyle(EDITS_OVER[base], EXTERNAL_RADII)).toEqual({ "--radius": "20px" });
+    }
+  );
+
+  it.each(["internal", "external"] as const)(
+    "restates an internal pin's role corner aliases under a %s base theme's --radius edit",
+    (base) => {
+      expect(pinnedArtboardStyle(EDITS_OVER[base], INTERNAL_RADII)).toEqual({
+        "--radius": "20px",
+        "--radius-button": "var(--radius)",
+        "--radius-field": "var(--radius)",
+      });
+    }
+  );
 });

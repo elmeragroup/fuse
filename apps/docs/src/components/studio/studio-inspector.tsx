@@ -8,10 +8,14 @@ import { tv } from "tailwind-variants";
 import { BRANDS, DENSITIES, defaultDensityForVariant, themeSlug } from "@elmeragroup/fuse/theme";
 import type { Density } from "@elmeragroup/fuse/theme";
 
+import { leadSectionFor } from "../../lib/studio/documents";
 import type { ArtboardScheme, ArtboardSpec } from "../../lib/studio/documents";
+import { pinnedEdits } from "../../lib/studio/token-values";
 import { SEGMENT_LABELS, VARIANT_LABELS } from "../../lib/theme";
 import { SingleToggle } from "../single-toggle";
+import { CornerReadout } from "./corner-xray";
 import { DensityPanel } from "./density/density-panel";
+import { useStudioEdits } from "./studio-edits";
 import { StudioPanelSection } from "./studio-panel-section";
 import { useStudio } from "./studio-state";
 import { StudioTokenPanel } from "./studio-token-panel";
@@ -25,6 +29,7 @@ const studioInspector = tv({
     code: "font-mono",
     field: "flex flex-col gap-1.5 px-2",
     fieldLabel: "text-sm text-muted-foreground",
+    note: "text-sm m-0 px-2 text-muted-foreground",
   },
 });
 
@@ -67,16 +72,31 @@ function BaseThemeSection(): ReactElement {
   );
 }
 
-/** With an artboard selected: its name, its scheme and density, both editable, and its width. */
+const TOKEN_LIST = new Intl.ListFormat("en", { type: "conjunction" });
+
+/**
+ * With an artboard selected: its name, its scheme and density, both editable, and its width. A
+ * pinned artboard also names the edits it skips because they would loop in its variant.
+ */
 function ArtboardSection({ artboard }: { artboard: ArtboardSpec }): ReactElement {
-  const { settingsOf, changeSettings } = useStudio();
+  const { theme, settingsOf, changeSettings } = useStudio();
+  const { overrides } = useStudioEdits();
   const settings = settingsOf(artboard);
+  const skipped =
+    artboard.variant === undefined
+      ? []
+      : pinnedEdits({ theme, overrides }, artboard.variant, settings.scheme).skipped;
   return (
     <StudioPanelSection title="Artboard">
       <dl className={styles.list()}>
         <Row term="Name">{artboard.name}</Row>
         <Row term="Width">{`${String(artboard.width)} px`}</Row>
       </dl>
+      {artboard.variant === undefined || skipped.length === 0 ? null : (
+        <p className={styles.note()}>
+          {`Skips ${TOKEN_LIST.format(skipped.map((name) => `--${name}`))}, which would loop through the ${VARIANT_LABELS[artboard.variant]} variant's own aliases.`}
+        </p>
+      )}
       <div className={styles.field()}>
         <span className={styles.fieldLabel()}>Scheme</span>
         <SingleToggle
@@ -109,7 +129,8 @@ function ArtboardSection({ artboard }: { artboard: ArtboardSpec }): ReactElement
 
 /**
  * The right panel. It is plain composition: the Density page's own section first on that page,
- * the selection's section, or the base theme's when nothing is selected, then the token editor.
+ * the selection's section, or the base theme's when nothing is selected, then the token editor,
+ * led by the section the page names and, after it, the corners the X-ray measures while it is on.
  */
 export function StudioInspector(): ReactElement {
   const { artboards, selectedId } = useStudio();
@@ -119,7 +140,7 @@ export function StudioInspector(): ReactElement {
     <>
       {pathname === "/studio/density" ? <DensityPanel /> : null}
       {selected === undefined ? <BaseThemeSection /> : <ArtboardSection artboard={selected} />}
-      <StudioTokenPanel />
+      <StudioTokenPanel lead={leadSectionFor(pathname)} afterLead={<CornerReadout />} />
     </>
   );
 }

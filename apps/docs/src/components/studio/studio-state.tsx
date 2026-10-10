@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 
 import type { ColorScheme, Density, ThemeInput } from "@elmeragroup/fuse/theme";
 
-import { artboardsFor } from "../../lib/studio/documents";
+import { artboardsFor, pinsFor } from "../../lib/studio/documents";
 import type { ArtboardScheme, ArtboardSpec } from "../../lib/studio/documents";
 import { OPENING_THEME } from "../../lib/theme";
 import { useMediaQuery } from "../../lib/use-media-query";
@@ -85,7 +85,8 @@ export function StudioProvider({ children }: { children: ReactNode }): ReactElem
   const session = useEditSession(
     OPENING_THEME,
     selectedId,
-    selected === undefined ? undefined : settingsOf(selected).scheme
+    selected === undefined ? undefined : settingsOf(selected).scheme,
+    pinsFor(pathname)
   );
   const { theme, setTheme } = session;
 

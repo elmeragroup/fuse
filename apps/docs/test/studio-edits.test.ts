@@ -11,7 +11,7 @@ import {
   reduceGuarded,
 } from "../src/lib/studio/edits";
 import type { EditAction, EditHistory, GuardedHistory, StudioDocument } from "../src/lib/studio/edits";
-import { documentCycles } from "../src/lib/studio/token-values";
+import { createsPinnedCycle, documentCycles, pinnedEdits } from "../src/lib/studio/token-values";
 
 const ELMA = { variant: "external", brand: "elma", segment: "private" } as const satisfies ThemeInput;
 const FKAS = { variant: "internal", brand: "fkas", segment: "private" } as const satisfies ThemeInput;
@@ -308,5 +308,67 @@ describe("the cycle invariant", () => {
     );
     expect(state.refusal).toBeUndefined();
     expect(state.history.present).toEqual(EMPTY);
+  });
+});
+
+/**
+ * Unit: the cycle checks against a pinned variant (`documentCycles` with pins, `pinnedEdits`,
+ * `createsPinnedCycle`). Oracle: the theme rules as written in Fuse's theme sources: an internal
+ * theme declares `radius-button: var(--radius)` and `radius-field: var(--radius)`, an external
+ * one literals. So `--radius: var(--radius-button)` loops only in the internal variant.
+ */
+describe("pinned variants", () => {
+  const radiusToButton: StudioDocument = {
+    ...EMPTY,
+    overrides: { light: {}, dark: {}, shared: { radius: "var(--radius-button)" } },
+  };
+
+  it("counts a loop in a pinned variant only when the page pins it", () => {
+    expect(documentCycles(radiusToButton)).toEqual([]);
+    expect(documentCycles(radiusToButton, ["external"])).toEqual([]);
+    expect(documentCycles(radiusToButton, ["internal"])).toEqual(["radius", "radius-button"]);
+  });
+
+  it("lets the pre-check refuse an edit that loops in a pinned variant", () => {
+    const none = EMPTY.overrides;
+    expect(createsPinnedCycle(none, ELMA, ["internal"], "dark", "radius", "var(--radius-button)")).toBe(true);
+    expect(createsPinnedCycle(none, ELMA, [], "dark", "radius", "var(--radius-button)")).toBe(false);
+    expect(createsPinnedCycle(none, ELMA, ["internal"], "light", "radius", "var(--radius-step)")).toBe(false);
+  });
+
+  it("skips the edit that loops in the pinned variant and applies the rest", () => {
+    const document: StudioDocument = {
+      ...radiusToButton,
+      overrides: { ...radiusToButton.overrides, light: { primary: "#ff0000" } },
+    };
+    expect(pinnedEdits(document, "internal", "light")).toEqual({
+      applied: { primary: "#ff0000" },
+      skipped: ["radius"],
+    });
+    expect(pinnedEdits(document, "external", "light")).toEqual({
+      applied: { primary: "#ff0000", radius: "var(--radius-button)" },
+      skipped: [],
+    });
+  });
+
+  it("skips again when a skipped token's own declaration loops another edit", () => {
+    // Round one drops the button/field loop; the internal button then reads --radius again,
+    // which reads the button: round two drops --radius.
+    const document: StudioDocument = {
+      ...EMPTY,
+      overrides: {
+        light: {},
+        dark: {},
+        shared: {
+          radius: "var(--radius-button)",
+          "radius-button": "var(--radius-field)",
+          "radius-field": "var(--radius-button)",
+        },
+      },
+    };
+    expect(pinnedEdits(document, "internal", "dark")).toEqual({
+      applied: {},
+      skipped: ["radius", "radius-button", "radius-field"],
+    });
   });
 });

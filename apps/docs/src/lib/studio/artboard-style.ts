@@ -61,3 +61,18 @@ export function artboardStyle(overrides: TokenOverrides, base: Declarations | un
   }
   return style;
 }
+
+/**
+ * The inline declarations for an artboard that pins a variant of the base theme. The pin owns
+ * its step, so a `--radius-step` edit is dropped, and the aliases restated beside the edits
+ * come from the pinned variant's declarations. The base theme's would carry its own aliases
+ * over the pin's, as an internal `--radius-button: var(--radius)` replaces an external literal.
+ *
+ * @param overrides - The edits that apply in the artboard's scheme.
+ * @param pinned - The pinned variant's declared CSS in that scheme, or `undefined` while it loads.
+ * @returns The declarations for the scope element's `style`.
+ */
+export function pinnedArtboardStyle(overrides: TokenOverrides, pinned: Declarations | undefined) {
+  const { "radius-step": _step, ...unstepped } = overrides;
+  return artboardStyle(unstepped, pinned);
+}

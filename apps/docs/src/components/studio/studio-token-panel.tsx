@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { Fragment, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { createPortal } from "react-dom";
@@ -23,6 +23,7 @@ import {
   aliasTarget,
   canonicalColorCss,
   createsCycle,
+  createsPinnedCycle,
   currentCss,
   lengthPx,
   parseTokenValue,
@@ -195,7 +196,8 @@ type RowProps = {
 
 /** One token: its name, marks and reset, then its knob. */
 function TokenRow({ name, colors }: RowProps): ReactElement {
-  const { overrides, seed, edit, editScheme } = useStudioEdits();
+  const { overrides, seed, pins, edit, editScheme } = useStudioEdits();
+  const { theme } = useStudio();
   const css = currentCss(overrides, seed, editScheme, name);
   const edited = overrideOf(overrides, editScheme, name) !== undefined;
   const target = css === undefined ? undefined : aliasTarget(css);
@@ -204,10 +206,12 @@ function TokenRow({ name, colors }: RowProps): ReactElement {
   const kind = TOKEN_TABLE[name].kind;
 
   // The one reading of a value for this row: its kind's parser, then the cycle check against
-  // the base theme and the edits in effect.
+  // the base theme, the variants the page pins and the edits in effect.
   const parse: ParseValue = (text): ParsedValue => {
     const parsed = parseTokenValue(name, text);
-    return parsed.ok && createsCycle(overrides, seed, editScheme, name, parsed.css)
+    return parsed.ok &&
+      (createsCycle(overrides, seed, editScheme, name, parsed.css) ||
+        createsPinnedCycle(overrides, theme, pins, editScheme, name, parsed.css))
       ? { ok: false, reason: `Links --${name} back to itself` }
       : parsed;
   };
@@ -301,30 +305,53 @@ function matches(name: TokenName, query: string): boolean {
   return name.includes(query.trim().toLowerCase().replace(/^-+/u, ""));
 }
 
+export type StudioTokenPanelProps = {
+  /** The section a page leads with: stacked first, and opened when the page opens. */
+  lead?: SectionId | undefined;
+  /** What follows the lead section, such as a readout of what its knobs change. */
+  afterLead?: ReactNode;
+};
+
+/** The editor's sections with `lead` moved to the front. */
+function leadFirst(lead: SectionId | undefined) {
+  const first = STUDIO_SECTIONS.filter((section) => section.id === lead);
+  return [...first, ...STUDIO_SECTIONS.filter((section) => section.id !== lead)];
+}
+
 /**
  * The token editor: every role token of the base theme, grouped in collapsible sections, each
  * with a knob that edits it live on every artboard in the edited scheme. A search filters the
  * tokens by name, and a toggle shows only the edited ones.
  */
-export function StudioTokenPanel(): ReactElement {
+export function StudioTokenPanel({ lead, afterLead }: StudioTokenPanelProps): ReactElement {
   const { overrides, edit, editScheme, setEditScheme } = useStudioEdits();
   const [query, setQuery] = useState("");
   const [editedOnly, setEditedOnly] = useState(false);
-  const [expanded, setExpanded] = useState<SectionId[]>([]);
+  const [expanded, setExpanded] = useState<SectionId[]>(lead === undefined ? [] : [lead]);
+  // A page that leads with a section opens it on arrival, keeping what the visitor opened.
+  const [arrivedLead, setArrivedLead] = useState(lead);
+  if (lead !== arrivedLead) {
+    setArrivedLead(lead);
+    if (lead !== undefined && !expanded.includes(lead)) {
+      setExpanded([lead, ...expanded]);
+    }
+  }
   const { colors, probe } = useResolvedColors(editScheme);
 
   const filtering = query.trim() !== "" || editedOnly;
   const visible = (name: TokenName): boolean =>
     matches(name, query) && (!editedOnly || overrideOf(overrides, editScheme, name) !== undefined);
-  const sections = STUDIO_SECTIONS.map((section) => {
-    const names = sectionTokens(section.id);
-    return {
-      ...section,
-      names,
-      shown: names.filter(visible),
-      count: editedCount(overrides, editScheme, names),
-    };
-  }).filter((section) => !filtering || section.shown.length > 0);
+  const sections = leadFirst(lead)
+    .map((section) => {
+      const names = sectionTokens(section.id);
+      return {
+        ...section,
+        names,
+        shown: names.filter(visible),
+        count: editedCount(overrides, editScheme, names),
+      };
+    })
+    .filter((section) => !filtering || section.shown.length > 0);
 
   return (
     // Layout only: the scroll area sizes its content to fit, so the rows' long names and paired
@@ -355,6 +382,7 @@ export function StudioTokenPanel(): ReactElement {
             </Toggle>
           </div>
         </div>
+        {sections.some((section) => section.id === lead) ? null : afterLead}
         {sections.length === 0 ? (
           <p className={styles.empty()}>{editedOnly ? "No edited tokens match." : "No tokens match."}</p>
         ) : (
@@ -368,37 +396,40 @@ export function StudioTokenPanel(): ReactElement {
               );
             }}>
             {sections.map((section) => (
-              <Accordion.Item key={section.id} value={section.id}>
-                <Accordion.Header>
-                  <Accordion.Trigger className={styles.trigger()}>
-                    {section.title}
-                    {section.count === 0 ? null : (
-                      <Badge size="sm" variant="secondary" className={styles.count()}>
-                        {String(section.count)}
-                        <span className="sr-only"> edited</span>
-                      </Badge>
-                    )}
-                  </Accordion.Trigger>
-                </Accordion.Header>
-                <Accordion.Content>
-                  <div className={styles.content()}>
-                    {section.count === 0 ? null : (
-                      <Button
-                        variant="ghost"
-                        size="xs"
-                        className={styles.sectionReset()}
-                        onClick={() => {
-                          edit({ type: "reset-section", scheme: editScheme, names: section.names });
-                        }}>
-                        {`Reset ${section.title.toLowerCase()}`}
-                      </Button>
-                    )}
-                    {section.shown.map((name) => (
-                      <TokenRow key={name} name={name} colors={colors} />
-                    ))}
-                  </div>
-                </Accordion.Content>
-              </Accordion.Item>
+              <Fragment key={section.id}>
+                <Accordion.Item value={section.id}>
+                  <Accordion.Header>
+                    <Accordion.Trigger className={styles.trigger()}>
+                      {section.title}
+                      {section.count === 0 ? null : (
+                        <Badge size="sm" variant="secondary" className={styles.count()}>
+                          {String(section.count)}
+                          <span className="sr-only"> edited</span>
+                        </Badge>
+                      )}
+                    </Accordion.Trigger>
+                  </Accordion.Header>
+                  <Accordion.Content>
+                    <div className={styles.content()}>
+                      {section.count === 0 ? null : (
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          className={styles.sectionReset()}
+                          onClick={() => {
+                            edit({ type: "reset-section", scheme: editScheme, names: section.names });
+                          }}>
+                          {`Reset ${section.title.toLowerCase()}`}
+                        </Button>
+                      )}
+                      {section.shown.map((name) => (
+                        <TokenRow key={name} name={name} colors={colors} />
+                      ))}
+                    </div>
+                  </Accordion.Content>
+                </Accordion.Item>
+                {section.id === lead ? afterLead : null}
+              </Fragment>
             ))}
           </Accordion.Root>
         )}

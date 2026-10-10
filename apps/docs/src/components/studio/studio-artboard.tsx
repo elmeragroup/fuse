@@ -1,15 +1,20 @@
 "use client";
 
-import { useCallback } from "react";
+import { createContext, use, useCallback, useMemo } from "react";
 import type { CSSProperties, ReactElement, ReactNode } from "react";
 
 import { tv } from "tailwind-variants";
 
 import { Button } from "@elmeragroup/fuse/button";
-import { densityAttributes, ThemeScope } from "@elmeragroup/fuse/theme";
+import { densityAttributes, ThemeScope, themeSlug } from "@elmeragroup/fuse/theme";
+import type { Density, ThemeInput } from "@elmeragroup/fuse/theme";
 
+import { pinnedArtboardStyle } from "../../lib/studio/artboard-style";
+import type { CustomProperties } from "../../lib/studio/artboard-style";
 import { metricStyle } from "../../lib/studio/density-metrics";
+import type { ArtboardScheme } from "../../lib/studio/documents";
 import { metricOverridesFor } from "../../lib/studio/edits";
+import { declarationsOf, pinnedEdits } from "../../lib/studio/token-values";
 import { ChromeScope } from "./chrome-scope";
 import { useStudioEdits } from "./studio-edits";
 import { useStudio } from "./studio-state";
@@ -38,6 +43,26 @@ const studioArtboard = tv({
 
 const styles = studioArtboard();
 
+/** What an artboard's content renders in: everything that changes the values it computes. */
+export type ArtboardScope = {
+  readonly theme: ThemeInput;
+  readonly scheme: ArtboardScheme;
+  readonly density: Density;
+  /** The inline token declarations on the artboard's theme scope. */
+  readonly style: CustomProperties;
+};
+
+const ArtboardScopeContext = createContext<ArtboardScope | undefined>(undefined);
+
+/** The scope of the artboard this content renders in. */
+export function useArtboardScope(): ArtboardScope {
+  const value = use(ArtboardScopeContext);
+  if (value === undefined) {
+    throw new Error("useArtboardScope must be used within StudioArtboard");
+  }
+  return value;
+}
+
 export type StudioArtboardProps = {
   /** The artboard's id in the page's document (`src/lib/studio/documents.ts`). */
   id: string;
@@ -50,21 +75,43 @@ export type StudioArtboardProps = {
  * attributes, the docs' demo-stage density mechanism, so each artboard has its own metrics, and
  * the overlays opened inside it portal into it. The token edits for its scheme and the metric
  * edits for its density are inline declarations on the scope element itself, where the theme
- * rules resolve their aliases and every part inside inherits the metrics.
+ * rules resolve their aliases and every part inside inherits the metrics. An artboard whose spec
+ * pins a variant renders that variant of the base theme, with the aliases of that variant
+ * restated, and skips the edits that would loop in that variant. Its content reads the scope
+ * through {@link useArtboardScope}.
  */
 export function StudioArtboard({ id, children }: StudioArtboardProps): ReactElement {
   const { artboards, theme, settingsOf, selectedId, hoveredId, select } = useStudio();
-  const { styleFor, overrides } = useStudioEdits();
+  const { overrides, seedOf, styleFor } = useStudioEdits();
   const { registerArtboard } = useViewportCommands();
   const spec = artboards.find((artboard) => artboard.id === id);
   if (spec === undefined) {
     throw new Error(`${id} is not an artboard of this studio page (src/lib/studio/documents.ts)`);
   }
-  const settings = settingsOf(spec);
-  const scopeStyle = () => ({
-    ...styleFor(settings.scheme),
-    ...metricStyle(metricOverridesFor(overrides, settings.density)),
-  });
+  const { scheme, density } = settingsOf(spec);
+  const pinned = useMemo(
+    () => (spec.variant === undefined ? undefined : { ...theme, variant: spec.variant }),
+    [theme, spec.variant]
+  );
+  // The edit session loads a pinned variant's seed, and its failure toast retries it.
+  const pinnedSeed = pinned === undefined ? undefined : seedOf(themeSlug(pinned));
+  const scope = useMemo(
+    (): ArtboardScope => ({
+      theme: pinned ?? theme,
+      scheme,
+      density,
+      style: {
+        ...(pinned === undefined
+          ? styleFor(scheme)
+          : pinnedArtboardStyle(
+              pinnedEdits({ theme, overrides }, pinned.variant, scheme).applied,
+              pinnedSeed === undefined ? undefined : declarationsOf(pinnedSeed)[scheme]
+            )),
+        ...metricStyle(metricOverridesFor(overrides, density)),
+      },
+    }),
+    [theme, pinned, pinnedSeed, scheme, density, overrides, styleFor]
+  );
   const selected = selectedId === id;
   const state = selected ? "selected" : hoveredId === id ? "hovered" : "idle";
 
@@ -98,18 +145,18 @@ export function StudioArtboard({ id, children }: StudioArtboardProps): ReactElem
       </ChromeScope>
       <ThemeScope
         ref={measure}
-        theme={theme}
-        data-theme={settings.scheme}
+        theme={scope.theme}
+        data-theme={scheme}
         data-demo-stage
-        {...densityAttributes(settings.density)}
+        {...densityAttributes(density)}
         // oxlint-disable-next-line shadcn/no-inline-styles -- token and metric edits: custom properties only (artboardStyle, metricStyle), declared on the scope element so its aliases resolve against them
-        style={scopeStyle()}
+        style={scope.style}
         role="region"
         aria-label={spec.name}
         // The Layers list hands keyboard focus here; Tab then continues through its content.
         tabIndex={-1}
         className={styles.board()}>
-        {children}
+        <ArtboardScopeContext.Provider value={scope}>{children}</ArtboardScopeContext.Provider>
       </ThemeScope>
     </div>
   );
