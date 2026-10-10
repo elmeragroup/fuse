@@ -5,7 +5,15 @@ import type { ReactElement, ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { tv } from "tailwind-variants";
 
-import { BRANDS, DENSITIES, defaultDensityForVariant, themeSlug } from "@elmeragroup/fuse/theme";
+import { Span } from "@elmeragroup/fuse/span";
+import { Text } from "@elmeragroup/fuse/text";
+import {
+  BRANDS,
+  DENSITIES,
+  THEME_VARIANTS,
+  defaultDensityForVariant,
+  themeSlug,
+} from "@elmeragroup/fuse/theme";
 import type { Density } from "@elmeragroup/fuse/theme";
 
 import { leadSectionsFor } from "../../lib/studio/documents";
@@ -17,6 +25,7 @@ import { CornerReadout } from "./corner-xray";
 import { DensityPanel } from "./density/density-panel";
 import { useStudioEdits } from "./studio-edits";
 import { StudioPanelSection } from "./studio-panel-section";
+import { SelectionSection } from "./studio-selection-section";
 import { useStudio } from "./studio-state";
 import { StudioTokenPanel } from "./studio-token-panel";
 
@@ -28,8 +37,7 @@ const studioInspector = tv({
     // A slug breaks only after its hyphens, never inside a word.
     code: "font-mono",
     field: "flex flex-col gap-1.5 px-2",
-    fieldLabel: "text-sm text-muted-foreground",
-    note: "text-sm m-0 px-2 text-muted-foreground",
+    note: "m-0 px-2",
   },
 });
 
@@ -54,7 +62,10 @@ function Row({ term, children }: { term: string; children: ReactNode }): ReactEl
   );
 }
 
-/** With nothing selected: the base theme every artboard renders in. */
+/**
+ * With nothing selected: the base theme every artboard renders in, and where a first visit
+ * starts editing.
+ */
 function BaseThemeSection(): ReactElement {
   const { theme } = useStudio();
   return (
@@ -68,6 +79,9 @@ function BaseThemeSection(): ReactElement {
         <Row term="Segment">{SEGMENT_LABELS[theme.segment]}</Row>
         <Row term="Density">{DENSITY_LABELS[defaultDensityForVariant(theme.variant)]}</Row>
       </dl>
+      <Text size="sm" variant="muted" className={styles.note()}>
+        Tune the tokens below. Each edit applies to every artboard, on every page.
+      </Text>
     </StudioPanelSection>
   );
 }
@@ -75,30 +89,32 @@ function BaseThemeSection(): ReactElement {
 const TOKEN_LIST = new Intl.ListFormat("en", { type: "conjunction" });
 
 /**
- * With an artboard selected: its name, its scheme and density, both editable, and its width. A
- * pinned artboard also names the edits it skips because they would loop in its variant.
+ * With an artboard selected: its name and width, and its scheme and density, both editable, and
+ * the variant of an artboard that pins one, which names the edits it skips because they would
+ * loop in that variant.
  */
 function ArtboardSection({ artboard }: { artboard: ArtboardSpec }): ReactElement {
   const { theme, settingsOf, changeSettings } = useStudio();
   const { overrides } = useStudioEdits();
   const settings = settingsOf(artboard);
+  const { variant } = settings;
   const skipped =
-    artboard.variant === undefined
-      ? []
-      : pinnedEdits({ theme, overrides }, artboard.variant, settings.scheme).skipped;
+    variant === undefined ? [] : pinnedEdits({ theme, overrides }, variant, settings.scheme).skipped;
   return (
     <StudioPanelSection title="Artboard">
       <dl className={styles.list()}>
         <Row term="Name">{artboard.name}</Row>
         <Row term="Width">{`${String(artboard.width)} px`}</Row>
       </dl>
-      {artboard.variant === undefined || skipped.length === 0 ? null : (
-        <p className={styles.note()}>
-          {`Skips ${TOKEN_LIST.format(skipped.map((name) => `--${name}`))}, which would loop through the ${VARIANT_LABELS[artboard.variant]} variant's own aliases.`}
-        </p>
+      {variant === undefined || skipped.length === 0 ? null : (
+        <Text size="sm" variant="muted" className={styles.note()}>
+          {`Skips ${TOKEN_LIST.format(skipped.map((name) => `--${name}`))}, which would loop through the ${VARIANT_LABELS[variant]} variant's own aliases.`}
+        </Text>
       )}
       <div className={styles.field()}>
-        <span className={styles.fieldLabel()}>Scheme</span>
+        <Span size="sm" variant="muted">
+          Scheme
+        </Span>
         <SingleToggle
           label="Scheme"
           size="sm"
@@ -111,7 +127,9 @@ function ArtboardSection({ artboard }: { artboard: ArtboardSpec }): ReactElement
         />
       </div>
       <div className={styles.field()}>
-        <span className={styles.fieldLabel()}>Density</span>
+        <Span size="sm" variant="muted">
+          Density
+        </Span>
         <SingleToggle
           label="Density"
           size="sm"
@@ -123,15 +141,32 @@ function ArtboardSection({ artboard }: { artboard: ArtboardSpec }): ReactElement
           }}
         />
       </div>
+      {variant === undefined ? null : (
+        <div className={styles.field()}>
+          <Span size="sm" variant="muted">
+            Variant
+          </Span>
+          <SingleToggle
+            label="Variant"
+            size="sm"
+            options={THEME_VARIANTS}
+            labels={VARIANT_LABELS}
+            value={variant}
+            onValueChange={(next) => {
+              changeSettings(artboard.id, { variant: next });
+            }}
+          />
+        </div>
+      )}
     </StudioPanelSection>
   );
 }
 
 /**
- * The right panel. It is plain composition: the Density page's own section first on that page,
- * the selection's section, or the base theme's when nothing is selected, then the token editor,
- * led by the sections the page names and, after them, the corners the X-ray measures while it is
- * on.
+ * The right panel. It is plain composition: the picked part's section first, the Density page's
+ * own section on that page, the selected artboard's section, or the base theme's when nothing is
+ * selected, then the token editor, led by the sections the page names and, after them, the
+ * corners the X-ray measures while it is on.
  */
 export function StudioInspector(): ReactElement {
   const { artboards, selectedId } = useStudio();
@@ -139,6 +174,7 @@ export function StudioInspector(): ReactElement {
   const selected = artboards.find((artboard) => artboard.id === selectedId);
   return (
     <>
+      <SelectionSection />
       {pathname === "/studio/density" ? <DensityPanel /> : null}
       {selected === undefined ? <BaseThemeSection /> : <ArtboardSection artboard={selected} />}
       <StudioTokenPanel lead={leadSectionsFor(pathname)} afterLead={<CornerReadout />} />

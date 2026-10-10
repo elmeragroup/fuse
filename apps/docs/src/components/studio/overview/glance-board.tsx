@@ -22,7 +22,7 @@ const glanceBoard = tv({
     section: "flex flex-col gap-3",
     swatches: "grid grid-cols-4 gap-3",
     swatch: "flex flex-col gap-1.5",
-    // The role's colour alone. Its name sits below, in text-grade foreground on the artboard's
+    // The role's color alone. Its name sits below, in text-grade foreground on the artboard's
     // background, since some roles' foregrounds, such as `feature-foreground`, are decorative.
     chip: "aspect-square rounded-md",
     swatchName: "text-xs font-medium text-foreground",
@@ -82,7 +82,7 @@ const DENSITY_LABELS = { dense: "Dense", comfortable: "Comfortable" } as const s
   string
 >;
 
-/** One radius rung as a real rounded box, labelled with the radius the browser resolved. */
+/** One radius rung as a real rounded box, labeled with the radius the browser resolved. */
 function RungBox({ rung }: { rung: Rung }): ReactElement {
   const { theme } = useStudio();
   const { styleFor } = useStudioEdits();
@@ -103,7 +103,7 @@ function RungBox({ rung }: { rung: Rung }): ReactElement {
 }
 
 /**
- * One Button size, labelled with the height the browser rendered: the density's control height
+ * One Button size, labeled with the height the browser rendered: the density's control height
  * after metric edits, or the 24px target-size floor where that is taller.
  */
 function SizeRow({ size }: { size: (typeof CONTROL_SIZES)[number] }): ReactElement {
@@ -128,7 +128,7 @@ function SizeRow({ size }: { size: (typeof CONTROL_SIZES)[number] }): ReactEleme
 }
 
 /**
- * The base theme at a glance: its key colour roles, its radius ladder and the control heights
+ * The base theme at a glance: its key color roles, its radius ladder and the control heights
  * each density gives Button's sizes. Every swatch, box and button is drawn by the theme itself.
  * Each density's stage redeclares its metrics, so it carries that density's metric edits too.
  */
@@ -136,9 +136,9 @@ export function GlanceBoard(): ReactElement {
   const { overrides } = useStudioEdits();
   return (
     <div className={styles.root()}>
-      <section className={styles.section()} aria-label="Colour roles">
+      <section className={styles.section()} aria-label="Color roles">
         <Heading level={2} size="lg">
-          Colour roles
+          Color roles
         </Heading>
         <div className={styles.swatches()}>
           {ROLES.map(({ role, name }) => (

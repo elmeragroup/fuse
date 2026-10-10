@@ -48,6 +48,7 @@ import {
 } from "../../lib/studio/tokens";
 import type { SectionId, TokenName } from "../../lib/studio/tokens";
 import { SingleToggle } from "../single-toggle";
+import type { ArtboardScope } from "./studio-artboard";
 import { useStudioEdits } from "./studio-edits";
 import { StudioPanelSection } from "./studio-panel-section";
 import { useStudio } from "./studio-state";
@@ -98,15 +99,20 @@ type ResolvedColor = { readonly srgb: Srgb; readonly css: string };
 
 /**
  * Every color token as the browser resolves it in `scheme`, read off a hidden probe: a theme
- * scope in the base theme and that scheme, wearing the scheme's edits. The probe is portalled to
- * the body, outside the chrome, whose dark rules would reach a nested scope. Each color token
- * routes through `color` on its own child by the studio's canonical path, so the browser
- * serializes it as `lab()`, which `@elmeragroup/color` reads whatever notation the token holds,
- * and one style pass resolves them all.
+ * scope in the base theme, or in the given artboard scope, and that scheme, wearing the
+ * scheme's edits or the scope's declarations. The probe is portalled to the body, outside the
+ * chrome, whose dark rules would reach a nested scope. Each color token routes through `color`
+ * on its own child by the studio's canonical path, so the browser serializes it as `lab()`,
+ * which `@elmeragroup/color` reads whatever notation the token holds, and one style pass
+ * resolves them all.
+ *
+ * @param scope - The theme and declarations to probe, such as an artboard's pinned variant;
+ *   omitted, the base theme wearing the scheme's edits.
  */
-function useResolvedColors(scheme: ArtboardScheme) {
-  const { theme } = useStudio();
+export function useResolvedColors(scheme: ArtboardScheme, scope?: ArtboardScope) {
+  const studio = useStudio();
   const { styleFor, seed } = useStudioEdits();
+  const theme = scope?.theme ?? studio.theme;
   const isClient = useSyncExternalStore(
     subscribeNever,
     () => true,
@@ -114,7 +120,8 @@ function useResolvedColors(scheme: ArtboardScheme) {
   );
   const probeRef = useRef<HTMLDivElement>(null);
   const [colors, setColors] = useState<ReadonlyMap<TokenName, ResolvedColor>>(new Map());
-  const style = styleFor(scheme);
+  // oxlint-disable-next-line shadcn/no-inline-styles -- token edits: custom properties only (artboardStyle), the scope's or the scheme's
+  const style = scope?.style ?? styleFor(scheme);
   useLayoutEffect(() => {
     const probe = probeRef.current;
     if (probe === null) {
@@ -199,17 +206,29 @@ function contrastOf(name: TokenName, colors: ReadonlyMap<TokenName, ResolvedColo
   return ratio._tag === "ok" ? ratio.value : "translucent";
 }
 
-type RowProps = {
+export type TokenRowProps = {
   name: TokenName;
   colors: ReadonlyMap<TokenName, ResolvedColor>;
+  /**
+   * The artboard scope the row describes, in its scheme and with the declarations it wears, such
+   * as a pinned variant's; omitted, the base theme in the edited scheme. An edit applies to that
+   * scheme on every artboard, so it is checked against the base theme and every pinned variant.
+   */
+  scope?: ArtboardScope;
 };
 
-/** One token: its name, marks and reset, then its knob. */
-function TokenRow({ name, colors }: RowProps): ReactElement {
+/**
+ * One token: its name, marks and reset, then its knob. The Selection section lists these too,
+ * for the scope of the artboard a part sits in.
+ */
+export function TokenRow({ name, colors, scope }: TokenRowProps): ReactElement {
   const { overrides, seed, pins, edit, editScheme } = useStudioEdits();
   const { theme } = useStudio();
-  const css = currentCss(overrides, seed, editScheme, name);
-  const edited = overrideOf(overrides, editScheme, name) !== undefined;
+  const scheme = scope?.scheme ?? editScheme;
+  // What the row describes: the declarations the scope wears, else the base theme's with the edits.
+  const shown = scope ?? { overrides, seed };
+  const css = currentCss(shown.overrides, shown.seed, scheme, name);
+  const edited = overrideOf(overrides, scheme, name) !== undefined;
   const target = css === undefined ? undefined : aliasTarget(css);
   const color = colors.get(name);
   const contrast = contrastOf(name, colors);
@@ -220,17 +239,17 @@ function TokenRow({ name, colors }: RowProps): ReactElement {
   const parse: ParseValue = (text): ParsedValue => {
     const parsed = parseTokenValue(name, text);
     return parsed.ok &&
-      (createsCycle(overrides, seed, editScheme, name, parsed.css) ||
-        createsPinnedCycle(overrides, theme, pins, editScheme, name, parsed.css))
+      (createsCycle(overrides, seed, scheme, name, parsed.css) ||
+        createsPinnedCycle(overrides, theme, pins, scheme, name, parsed.css))
       ? { ok: false, reason: `Links --${name} back to itself` }
       : parsed;
   };
 
   const commit: CommitValue = (value, coalesce) => {
-    edit({ type: "set", scheme: editScheme, name, value, coalesce });
+    edit({ type: "set", scheme, name, value, coalesce });
   };
   // A color detaches to the color it resolves to, alpha included, in the canonical lab().
-  const detachedCss = kind === "color" ? color?.css : resolvedCss(overrides, seed, editScheme, name);
+  const detachedCss = kind === "color" ? color?.css : resolvedCss(shown.overrides, shown.seed, scheme, name);
   const detachedValue = detachedCss === undefined ? undefined : parse(detachedCss);
   const detached = detachedValue?.ok === true ? detachedValue.css : undefined;
 
@@ -240,7 +259,7 @@ function TokenRow({ name, colors }: RowProps): ReactElement {
   } else if (kind === "fontFamily") {
     knob = <FontKnob name={name} css={css} parse={parse} onCommit={commit} />;
   } else if (kind === "fontWeight") {
-    const weight = Number(resolvedCss(overrides, seed, editScheme, name));
+    const weight = Number(resolvedCss(shown.overrides, shown.seed, scheme, name));
     knob = (
       <NumberKnob
         name={name}
@@ -256,7 +275,7 @@ function TokenRow({ name, colors }: RowProps): ReactElement {
   } else if (name === "radius-step") {
     knob = <RadiusStepKnob css={css} onCommit={commit} />;
   } else if (isLengthToken(name)) {
-    const resolved = resolvedCss(overrides, seed, editScheme, name);
+    const resolved = resolvedCss(shown.overrides, shown.seed, scheme, name);
     knob = (
       <LengthKnob
         name={name}
@@ -300,7 +319,7 @@ function TokenRow({ name, colors }: RowProps): ReactElement {
             className={styles.reset()}
             aria-label={`Reset --${name}`}
             onClick={() => {
-              edit({ type: "reset", scheme: editScheme, name });
+              edit({ type: "reset", scheme, name });
             }}>
             <ArrowsClockwise />
           </Button>

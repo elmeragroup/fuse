@@ -16,6 +16,7 @@
  *   • the locales, density metrics and component index the landing page states;
  *   • the three dark-scheme colors the Open Graph card paints;
  *   • the theme studio's per-theme seeds, one lazily loaded module per theme;
+ *   • the theme studio's slot-to-tokens index, for its selection inspector;
  *   • `/components/<slug>.md` — the markdown endpoint each page links to;
  *   • `llms.txt`, the site-root AI index;
  *   • the ⌘K search index;
@@ -61,6 +62,7 @@ import {
 } from "./lib/paths.ts";
 import { renderSearchIndex } from "./lib/search.ts";
 import type { BundleSizeReport } from "./lib/sizes.ts";
+import { buildSlotTokenIndex, renderSlotTokenIndex } from "./lib/slot-tokens.ts";
 import { collectRecipeSources } from "./lib/sources.ts";
 import { buildStudioSeeds, renderStudioSeed, renderStudioSeedIndex } from "./lib/studio-seeds.ts";
 import { renderFigmaThemeCatalog } from "./lib/theme-catalog-figma.ts";
@@ -280,6 +282,26 @@ function emitStudioSeeds(catalog: ResolvedThemeCatalog): void {
   writeFile(path.join(generatedDir, "studio-seeds.ts"), `${BANNER}${renderStudioSeedIndex(catalog, seeds)}`);
 }
 
+/**
+ * The theme studio's slot-to-tokens index: each slot's component and the tokens its recipe
+ * reads, the data behind the Tokens-consumed sections, kept small for the studio's client.
+ */
+function emitStudioSlotTokens(
+  inspections: readonly ComponentInspection[],
+  components: readonly DocsComponent[]
+): void {
+  const tokens = new Map(components.map((component) => [component.slug, component.tokens]));
+  const index = buildSlotTokenIndex(
+    inspections.map(({ slug, paths }) => ({
+      slug,
+      dir: paths.componentDir,
+      modules: collectRecipeSources(paths.componentDir).modules,
+      tokens: tokens.get(slug) ?? [],
+    }))
+  );
+  writeFile(path.join(generatedDir, "studio-slot-tokens.ts"), `${BANNER}${renderSlotTokenIndex(index)}`);
+}
+
 /** The ⌘K palette index. */
 function emitSearchIndex(components: readonly DocsComponent[]): void {
   writeFile(path.join(generatedDir, "search-index.ts"), `${BANNER}${renderSearchIndex(components)}`);
@@ -346,6 +368,7 @@ async function main(): Promise<void> {
   emitOgCardColors(catalog);
   emitDensityCatalog(catalog);
   emitStudioSeeds(catalog);
+  emitStudioSlotTokens(inspections, components);
   emitMarkdownEndpoints(components);
   emitSearchIndex(components);
   emitLlmsTxt(components);

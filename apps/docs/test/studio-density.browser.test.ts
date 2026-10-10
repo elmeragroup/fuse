@@ -430,7 +430,7 @@ describe("studio density page", () => {
     try {
       await setMetric(page, "control-h-md", "comfortable", 56);
       await expect.poll(() => height(button(page, COMFORTABLE_TWIN, "Medium"))).toBe(56);
-      await layers(page).getByRole("button", { name: "Overview", exact: true }).click();
+      await layers(page).getByRole("link", { name: "Overview", exact: true }).click();
       const heights = artboard(page, GLANCE_BOARD).getByRole("region", {
         name: "Control heights",
         exact: true,

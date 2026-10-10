@@ -16,6 +16,7 @@ import { flushSync } from "react-dom";
 
 import {
   fitRects,
+  fitWidth,
   mostlyOffscreen,
   panBy,
   revealRect,
@@ -28,6 +29,9 @@ import { useStudio } from "./studio-state";
 
 /** Screen pixels kept clear around the artboards a fit frames, enough to clear the floating toolbar. */
 const FIT_PADDING = 80;
+
+/** Screen pixels the phone's first fit keeps clear: the top clears the artboard's name label. */
+const PHONE_FIT_MARGINS = { top: 48, right: 24, left: 24 } as const;
 
 /** How long a programmatic move glides; the canvas transition in globals.css matches it. */
 const GLIDE_MS = 280;
@@ -307,6 +311,9 @@ export function ViewportProvider({ children }: { children: ReactNode }): ReactEl
   // Each page opens framed. A resize observer reports the canvas's size once it has laid out,
   // before the paint that shows the artboards. `zoomToFit` changes with the page's artboards, so
   // a page switch observes afresh and frames the new page.
+  // Every artboard at once on a phone is a thumbnail band, so there the first fit frames the
+  // first artboard across the screen instead. The canvas's CSS names the fit, which keeps the
+  // breakpoint with the layout's own.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (canvas === null) {
@@ -314,8 +321,17 @@ export function ViewportProvider({ children }: { children: ReactNode }): ReactEl
     }
     let framed = false;
     const observer = new ResizeObserver(() => {
-      if (!framed) {
-        framed = true;
+      if (framed) {
+        return;
+      }
+      framed = true;
+      const first = artboards[0] === undefined ? undefined : rectOf(artboards[0].id);
+      if (
+        first !== undefined &&
+        getComputedStyle(canvas).getPropertyValue("--studio-first-fit").trim() === "artboard"
+      ) {
+        move(fitWidth(first, screen(), PHONE_FIT_MARGINS));
+      } else {
         zoomToFit();
       }
     });
@@ -323,7 +339,7 @@ export function ViewportProvider({ children }: { children: ReactNode }): ReactEl
     return () => {
       observer.disconnect();
     };
-  }, [zoomToFit]);
+  }, [artboards, move, rectOf, screen, zoomToFit]);
 
   // The first fit replaces the initial viewport, and the artboards show from then on.
   const ready = viewport !== INITIAL_VIEWPORT;

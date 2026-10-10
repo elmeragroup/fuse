@@ -5,7 +5,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import { usePathname } from "next/navigation";
 
-import type { ColorScheme, Density, ThemeInput } from "@elmeragroup/fuse/theme";
+import type { ColorScheme, Density, ThemeInput, ThemeVariant } from "@elmeragroup/fuse/theme";
 
 import { artboardsFor, pinsFor } from "../../lib/studio/documents";
 import type { ArtboardScheme, ArtboardSpec } from "../../lib/studio/documents";
@@ -20,6 +20,8 @@ export type StudioTool = "select" | "hand";
 export type ArtboardSettings = {
   readonly scheme: ArtboardScheme;
   readonly density: Density;
+  /** The variant an artboard that pins one renders; `undefined` follows the base theme. */
+  readonly variant: ThemeVariant | undefined;
 };
 
 type StudioValue = {
@@ -64,6 +66,7 @@ export function StudioProvider({ children }: { children: ReactNode }): ReactElem
     (artboard: ArtboardSpec): ArtboardSettings => ({
       scheme: overrides[artboard.id]?.scheme ?? artboard.scheme,
       density: overrides[artboard.id]?.density ?? artboard.density,
+      variant: overrides[artboard.id]?.variant ?? artboard.variant,
     }),
     [overrides]
   );

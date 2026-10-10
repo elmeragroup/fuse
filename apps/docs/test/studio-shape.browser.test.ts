@@ -490,8 +490,9 @@ describe("the studio's Shape page", () => {
       expect(before.destructive).not.toBe("#ff0000");
 
       failing = false;
-      // F6 moves focus to the notifications, which expands them for assistive technology too.
-      await page.keyboard.press("F6");
+      // With nothing focused, Shift+F6 starts at the cycle's last stop, the notifications, which
+      // expands them for assistive technology too.
+      await page.keyboard.press("Shift+F6");
       await page
         .getByRole("region", { name: "Notifications", exact: true })
         .getByRole("button", { name: "Retry", exact: true })
@@ -512,7 +513,7 @@ describe("the studio's Shape page", () => {
       hash: hashOf('{"t":"external-elma-private","s":{"radius":"var(--radius-button)"}}'),
     });
     try {
-      await layers(page).getByRole("button", { name: "Shape", exact: true }).click();
+      await layers(page).getByRole("link", { name: "Shape", exact: true }).click();
       const internal = "Radius rungs · Internal";
       await artboard(page, internal).waitFor({ state: "visible" });
       // With the loop, --radius and --radius-button would be invalid and every rung 0px. Skipped,

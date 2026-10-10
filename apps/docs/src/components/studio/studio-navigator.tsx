@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { tv } from "tailwind-variants";
 
-import { Button } from "@elmeragroup/fuse/button";
+import { buttonVariants } from "@elmeragroup/fuse/button";
 import { Toggle } from "@elmeragroup/fuse/toggle";
 
 import { STUDIO_PAGES } from "../../lib/pages";
@@ -16,7 +16,9 @@ import { useViewportCommands } from "./studio-viewport";
 
 const studioNavigator = tv({
   slots: {
-    list: "m-0 flex list-none flex-col gap-0.5 p-0",
+    // Layout only: the scroll area sizes its content to fit, so a long artboard name would widen
+    // the panel; containment holds the rows to its width, where the names truncate.
+    list: "m-0 flex list-none flex-col gap-0.5 p-0 contain-inline-size",
     // A full-width row, its name from the start edge, like Figma's layers list.
     row: "w-full justify-start",
     name: "truncate",
@@ -49,15 +51,17 @@ export function StudioNavigator({
             const current = page.href === pathname;
             return (
               <li key={page.href}>
-                <Button
-                  variant={current ? "secondary" : "ghost"}
-                  size="sm"
-                  render={<Link href={page.href} />}
-                  nativeButton={false}
-                  className={styles.row()}
+                {/* A link in the Button's look: Button would announce page navigation as a button. */}
+                <Link
+                  href={page.href}
+                  className={buttonVariants({
+                    variant: current ? "secondary" : "ghost",
+                    size: "sm",
+                    className: styles.row(),
+                  })}
                   aria-current={current ? "page" : undefined}>
                   <span className={styles.name()}>{page.label}</span>
-                </Button>
+                </Link>
               </li>
             );
           })}

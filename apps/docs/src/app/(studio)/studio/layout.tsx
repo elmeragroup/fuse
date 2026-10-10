@@ -4,6 +4,7 @@ import { LocaleProvider } from "@elmeragroup/fuse/theme";
 
 import { CornerXrayProvider } from "../../../components/studio/corner-xray";
 import { DensityViewProvider } from "../../../components/studio/density/density-view";
+import { PartSelectionProvider } from "../../../components/studio/studio-part-selection";
 import { StudioShell } from "../../../components/studio/studio-shell";
 import { StudioProvider } from "../../../components/studio/studio-state";
 import { TokenFocusProvider } from "../../../components/studio/studio-token-focus";
@@ -25,7 +26,9 @@ export default function StudioLayout({ children }: StudioLayoutProps): ReactElem
           <DensityViewProvider>
             <CornerXrayProvider>
               <TokenFocusProvider>
-                <StudioShell>{children}</StudioShell>
+                <PartSelectionProvider>
+                  <StudioShell>{children}</StudioShell>
+                </PartSelectionProvider>
               </TokenFocusProvider>
             </CornerXrayProvider>
           </DensityViewProvider>

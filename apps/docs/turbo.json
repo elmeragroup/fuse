@@ -7,8 +7,13 @@
     "generate": {
       "dependsOn": ["^build"],
       // The Tokens page publishes the library's own recorded measurements, so a budget
-      // recalibration must invalidate this task even though nothing in apps/docs moved.
-      "inputs": ["$TURBO_DEFAULT$", "../../packages/fuse/scripts/size-budgets.ts"],
+      // recalibration must invalidate this task even though nothing in apps/docs moved. The
+      // studio's slot index reads slots through Fuse's private scanner, which counts the same.
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "../../packages/fuse/scripts/size-budgets.ts",
+        "../../packages/fuse/test/written-slots.ts"
+      ],
       // The committed per-component api.json is an output too. It is tracked, unlike
       // everything else here, but this task is what writes it — so a cache hit has to
       // restore it, or the drift check would read a file this run never produced.

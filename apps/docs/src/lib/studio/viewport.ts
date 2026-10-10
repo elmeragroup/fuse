@@ -103,6 +103,25 @@ export function fitRects(rects: readonly Rect[], screen: Size, padding: number):
 }
 
 /**
+ * The viewport that fills the room between the side margins with `rect`'s width, centred across
+ * it, and puts `rect`'s top on the top margin, at a zoom inside the range. Its height is left to
+ * scroll, for a screen too narrow to show a whole artboard at a readable size.
+ */
+export function fitWidth(
+  rect: Rect,
+  screen: Size,
+  margins: Pick<Margins, "top" | "right" | "left">
+): Viewport {
+  const room = screen.width - margins.left - margins.right;
+  const zoom = clampZoom(room / Math.max(rect.width, 1));
+  return {
+    x: margins.left + (room - rect.width * zoom) / 2 - rect.x * zoom,
+    y: margins.top - rect.y * zoom,
+    zoom,
+  };
+}
+
+/**
  * Whether less than half of `rect` shows on the screen. A rect larger than the screen counts as
  * shown once it covers half the screen, so a zoomed-in artboard never counts as off screen.
  */
