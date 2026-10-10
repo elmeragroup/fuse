@@ -103,15 +103,34 @@ jobs:
         if: env.IS_SELF_RELEASE_PR == 'true' || github.ref == 'refs/heads/changeset-release/main'
         run: pnpm release check-pr
 
+  # One leg runs every package's browser and packed-consumer tasks but docs'; the docs browser
+  # suite, the slowest, splits across the docs legs by Vitest's file shards. Each docs leg builds
+  # docs itself and serves it from its own `next start`. Jobs that need `browser` wait for
+  # every leg. A leg's failure lets the others finish, so one run reports every failing shard.
   browser:
+    name: browser (${{ matrix.leg }})
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - leg: packages
+            turbo-args: test:browser test:packed-consumer --filter='!docs'
+          - leg: docs-1
+            turbo-args: test:browser --filter=docs -- --shard=1/4
+          - leg: docs-2
+            turbo-args: test:browser --filter=docs -- --shard=2/4
+          - leg: docs-3
+            turbo-args: test:browser --filter=docs -- --shard=3/4
+          - leg: docs-4
+            turbo-args: test:browser --filter=docs -- --shard=4/4
     env:
       # A cache key is immutable once saved, so every attempt saves under its own key and
       # restores by prefix. Under PR churn these per-attempt entries can evict main's from the
       # 10GB repository cache (LRU); that only costs a cold run. The job id is spelled out
-      # because `github.job` is null outside a job's steps.
-      TURBO_CACHE_KEY: turbo-browser-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+      # because `github.job` is null outside a job's steps; the leg keeps each leg's tasks apart.
+      TURBO_CACHE_KEY: turbo-browser-${{ matrix.leg }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       # The browser gate reads no git history; only the checks job needs it (changeset status --since).
       - name: Checkout
@@ -168,12 +187,13 @@ jobs:
           path: .turbo/cache
           key: ${{ env.TURBO_CACHE_KEY }}
           restore-keys: |
-            turbo-browser-${{ github.sha }}-
-            turbo-browser-
+            turbo-browser-${{ matrix.leg }}-${{ github.sha }}-
+            turbo-browser-${{ matrix.leg }}-
 
       - name: turbo browser checks
         id: turbo-gate
-        run: pnpm exec turbo run test:browser test:packed-consumer
+        # The matrix arguments are literals in this file, so they can be part of the command.
+        run: pnpm exec turbo run ${{ matrix.turbo-args }}
         env:
           TURBO_RUN_SUMMARY: "true"
 

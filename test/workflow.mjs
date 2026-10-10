@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { expect } from "vitest";
 import { parse } from "yaml";
 
-import { asRecord, asRecordArray, asString } from "./json-object.mjs";
+import { asRecord, asRecordArray, asString, isString } from "./json-object.mjs";
 import { repoRoot } from "./repo-tree.mjs";
 
 /** The directory every GitHub Actions workflow lives in. */
@@ -46,7 +46,11 @@ export function readWorkflow(name) {
  * @returns {Record<string, unknown>[]}
  */
 export function turboTasks(args) {
-  const graphText = execFileSync(join(repoRoot, "node_modules/.bin/turbo"), [...args, "--dry=json"], {
+  // After `--`, Turbo forwards flags to the task instead of parsing them itself.
+  const graphArgs = [...args];
+  const separator = graphArgs.indexOf("--");
+  graphArgs.splice(separator === -1 ? graphArgs.length : separator, 0, "--dry=json");
+  const graphText = execFileSync(join(repoRoot, "node_modules/.bin/turbo"), graphArgs, {
     cwd: repoRoot,
     encoding: "utf8",
     maxBuffer: 32 * 1024 * 1024,
@@ -54,6 +58,37 @@ export function turboTasks(args) {
   // SAFETY: the graph is Turbo's JSON protocol, validated before inspecting its tasks.
   const graph = asRecord(JSON.parse(graphText), "Turbo graph");
   return asRecordArray(graph.tasks, "Turbo tasks");
+}
+
+/**
+ * The entries of an include-only matrix, or one execution for a job without a matrix.
+ * @param {Record<string, unknown>} workflow
+ * @param {string} name
+ * @returns {Record<string, unknown>[]}
+ */
+export function jobMatrixEntries(workflow, name) {
+  const job = asRecord(asRecord(workflow.jobs, "workflow jobs")[name], name);
+  if (job.strategy === undefined) return [{}];
+  const matrix = asRecord(asRecord(job.strategy, `${name} strategy`).matrix, `${name} matrix`);
+  expect(Object.keys(matrix), `${name} matrix must be include-only`).toEqual(["include"]);
+  const entries = asRecordArray(matrix.include, `${name} matrix include`);
+  expect(entries.length, `${name} matrix must schedule at least one execution`).toBeGreaterThan(0);
+  return entries;
+}
+
+/**
+ * Resolves references to literal matrix values, leaving unresolved references and other
+ * GitHub expressions untouched.
+ * @param {string} value
+ * @param {Record<string, unknown>} entry
+ * @returns {string}
+ */
+export function resolveMatrixExpressions(value, entry) {
+  return value.replace(/\$\{\{\s*matrix\.([\w-]+)\s*\}\}/g, (expression, key) => {
+    const property = asString(key, "matrix property");
+    const literal = entry[property];
+    return isString(literal) && !literal.includes("${{") ? literal : expression;
+  });
 }
 
 /**

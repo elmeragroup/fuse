@@ -11,7 +11,7 @@ function tag(value) {
  * @param {unknown} value
  * @returns {value is Record<string, unknown>}
  */
-function isPlainObject(value) {
+export function isPlainObject(value) {
   return tag(value) === "[object Object]";
 }
 

@@ -183,18 +183,35 @@ function pagesOf(instances: readonly Instance[]): string {
   return [...new Set(instances.map(({ page }) => page))].join(", ");
 }
 
+/**
+ * Component pages probed at once, each in its own context. A page spends most of its pass
+ * waiting for popups to mount or leave, so a few side by side cut the wall time without
+ * contending for the CPU.
+ */
+const CONCURRENT_PAGES = 4;
+
 const browser = launchSuiteBrowser();
 const measured: Instance[] = [];
 
 describe("density coverage", () => {
   beforeAll(async () => {
-    const context = await browser().newContext({ viewport: DESKTOP_VIEWPORT, reducedMotion: "reduce" });
-    const page = await context.newPage();
-    page.setDefaultTimeout(10_000);
-    for (const slug of COMPONENT_INVENTORY.keys()) {
-      measured.push(...(await readComponentPage(page, slug)));
-    }
-    await context.close();
+    const slugs = [...COMPONENT_INVENTORY.keys()];
+    const pending = [...slugs];
+    const readings = new Map<string, Instance[]>();
+    const readPages = async (): Promise<void> => {
+      const context = await browser().newContext({ viewport: DESKTOP_VIEWPORT, reducedMotion: "reduce" });
+      try {
+        const page = await context.newPage();
+        page.setDefaultTimeout(10_000);
+        for (let slug = pending.shift(); slug !== undefined; slug = pending.shift()) {
+          readings.set(slug, await readComponentPage(page, slug));
+        }
+      } finally {
+        await context.close();
+      }
+    };
+    await Promise.all(Array.from({ length: CONCURRENT_PAGES }, readPages));
+    measured.push(...slugs.flatMap((slug) => readings.get(slug) ?? []));
   }, 900_000);
 
   it("finds a declared role for every rendered part", () => {
