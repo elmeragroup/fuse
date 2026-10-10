@@ -12,8 +12,10 @@ import type { Density, ThemeInput } from "@elmeragroup/fuse/theme";
 import { pinnedArtboardStyle } from "../../lib/studio/artboard-style";
 import type { CustomProperties } from "../../lib/studio/artboard-style";
 import { metricStyle } from "../../lib/studio/density-metrics";
-import type { ArtboardScheme } from "../../lib/studio/documents";
-import { metricOverridesFor } from "../../lib/studio/edits";
+import type { ArtboardScheme, ArtboardSpec } from "../../lib/studio/documents";
+import { metricOverridesFor, resetNames } from "../../lib/studio/edits";
+import type { StudioOverrides } from "../../lib/studio/edits";
+import type { StudioSeed } from "../../lib/studio/seed";
 import { declarationsOf, pinnedEdits } from "../../lib/studio/token-values";
 import { ChromeScope } from "./chrome-scope";
 import { useStudioEdits } from "./studio-edits";
@@ -30,7 +32,8 @@ const studioArtboard = tv({
     // Focus handed in from the Layers list shows as the selection outline, which it always has.
     board: "shadow-md relative transform-gpu bg-background font-sans text-foreground outline-none",
     // The name and the selection outline, in the chrome's theme, painted over the artboard.
-    chrome: "pointer-events-none absolute inset-0 z-10",
+    // Its text color is set here: inherited, it would be the canvas's, not the chrome's.
+    chrome: "pointer-events-none absolute inset-0 z-10 text-foreground",
     outline:
       "data-[state=hovered]:studio-ring-hover data-[state=selected]:studio-ring-selected absolute inset-0",
     // Layout only: the label's placement and inverse zoom live here, apart from the Button's
@@ -50,6 +53,13 @@ export type ArtboardScope = {
   readonly density: Density;
   /** The inline token declarations on the artboard's theme scope. */
   readonly style: CustomProperties;
+  /**
+   * The token edits the artboard wears: the session's, less those a pinned variant skips and
+   * the step it owns. With {@link ArtboardScope.seed} they give each token's declaration there.
+   */
+  readonly overrides: StudioOverrides;
+  /** The seed of the artboard's theme, `undefined` while it loads. */
+  readonly seed: StudioSeed | undefined;
 };
 
 const ArtboardScopeContext = createContext<ArtboardScope | undefined>(undefined);
@@ -61,6 +71,43 @@ export function useArtboardScope(): ArtboardScope {
     throw new Error("useArtboardScope must be used within StudioArtboard");
   }
   return value;
+}
+
+/**
+ * The scope `spec` renders in, from its settings: the base theme with the edits for its scheme,
+ * or the variant it pins, with the aliases of that variant restated and without the edits that
+ * would loop there. The artboard wears it, and the Selection section describes a part by it.
+ *
+ * @param spec - The artboard, one of the page's.
+ */
+export function useArtboardScopeOf(spec: ArtboardSpec): ArtboardScope {
+  const { theme, settingsOf } = useStudio();
+  const { overrides, seed, seedOf, styleFor } = useStudioEdits();
+  const { scheme, density, variant } = settingsOf(spec);
+  const pinned = useMemo(() => (variant === undefined ? undefined : { ...theme, variant }), [theme, variant]);
+  // The edit session loads a pinned variant's seed, and its failure toast retries it.
+  const pinnedSeed = pinned === undefined ? undefined : seedOf(themeSlug(pinned));
+  return useMemo((): ArtboardScope => {
+    const metrics = metricStyle(metricOverridesFor(overrides, density));
+    if (pinned === undefined) {
+      return { theme, scheme, density, style: { ...styleFor(scheme), ...metrics }, overrides, seed };
+    }
+    const edits = pinnedEdits({ theme, overrides }, pinned.variant, scheme);
+    return {
+      theme: pinned,
+      scheme,
+      density,
+      style: {
+        ...pinnedArtboardStyle(
+          edits.applied,
+          pinnedSeed === undefined ? undefined : declarationsOf(pinnedSeed)[scheme]
+        ),
+        ...metrics,
+      },
+      overrides: resetNames(overrides, scheme, [...edits.skipped, "radius-step"]),
+      seed: pinnedSeed,
+    };
+  }, [theme, pinned, pinnedSeed, seed, scheme, density, overrides, styleFor]);
 }
 
 export type StudioArtboardProps = {
@@ -76,42 +123,19 @@ export type StudioArtboardProps = {
  * the overlays opened inside it portal into it. The token edits for its scheme and the metric
  * edits for its density are inline declarations on the scope element itself, where the theme
  * rules resolve their aliases and every part inside inherits the metrics. An artboard whose spec
- * pins a variant renders that variant of the base theme, with the aliases of that variant
- * restated, and skips the edits that would loop in that variant. Its content reads the scope
- * through {@link useArtboardScope}.
+ * pins a variant renders that variant of the base theme, or the other one the inspector switches
+ * it to, with the aliases of that variant restated, and skips the edits that would loop in that
+ * variant. Its content reads the scope through {@link useArtboardScope}.
  */
 export function StudioArtboard({ id, children }: StudioArtboardProps): ReactElement {
-  const { artboards, theme, settingsOf, selectedId, hoveredId, select } = useStudio();
-  const { overrides, seedOf, styleFor } = useStudioEdits();
+  const { artboards, selectedId, hoveredId, select } = useStudio();
   const { registerArtboard } = useViewportCommands();
   const spec = artboards.find((artboard) => artboard.id === id);
   if (spec === undefined) {
     throw new Error(`${id} is not an artboard of this studio page (src/lib/studio/documents.ts)`);
   }
-  const { scheme, density } = settingsOf(spec);
-  const pinned = useMemo(
-    () => (spec.variant === undefined ? undefined : { ...theme, variant: spec.variant }),
-    [theme, spec.variant]
-  );
-  // The edit session loads a pinned variant's seed, and its failure toast retries it.
-  const pinnedSeed = pinned === undefined ? undefined : seedOf(themeSlug(pinned));
-  const scope = useMemo(
-    (): ArtboardScope => ({
-      theme: pinned ?? theme,
-      scheme,
-      density,
-      style: {
-        ...(pinned === undefined
-          ? styleFor(scheme)
-          : pinnedArtboardStyle(
-              pinnedEdits({ theme, overrides }, pinned.variant, scheme).applied,
-              pinnedSeed === undefined ? undefined : declarationsOf(pinnedSeed)[scheme]
-            )),
-        ...metricStyle(metricOverridesFor(overrides, density)),
-      },
-    }),
-    [theme, pinned, pinnedSeed, scheme, density, overrides, styleFor]
-  );
+  const scope = useArtboardScopeOf(spec);
+  const { scheme, density } = scope;
   const selected = selectedId === id;
   const state = selected ? "selected" : hoveredId === id ? "hovered" : "idle";
 

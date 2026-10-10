@@ -171,6 +171,13 @@ export const STUDIO_PAGES: readonly StudioPage[] = [
     description:
       "The base theme's font stacks and type pairs: a heading and body specimen, and the control and label sizes dense against comfortable.",
   },
+  {
+    href: "/studio/screens",
+    label: "Screens",
+    title: "Theme studio · Screens",
+    description:
+      "Whole product screens in the base theme's external and internal looks: self-service, an admin table, a checkout form and a settings dialog.",
+  },
 ];
 
 /** The studio page at `href`; throws when the manifest has none, so a stale route fails the build. */

@@ -1,7 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactElement, ReactNode } from "react";
+import type {
+  CSSProperties,
+  MouseEvent as ReactMouseEvent,
+  PointerEvent as ReactPointerEvent,
+  KeyboardEvent as ReactKeyboardEvent,
+  ReactElement,
+  ReactNode,
+} from "react";
 
 import { tv } from "tailwind-variants";
 
@@ -12,6 +19,8 @@ import type { Point } from "../../lib/studio/viewport";
 import { isTypingTarget } from "../../lib/typing-target";
 import { ChromeScope } from "./chrome-scope";
 import { CornerXrayOverlay } from "./corner-xray";
+import { PartOutline, usePartSelection } from "./studio-part-selection";
+import { CANVAS_ID, regionProps } from "./studio-regions";
 import { OVERLAYS } from "./studio-shortcuts";
 import { useStudio } from "./studio-state";
 import { StudioToolbar } from "./studio-toolbar";
@@ -19,11 +28,13 @@ import { useViewportCommands, useViewportState } from "./studio-viewport";
 
 const studioCanvas = tv({
   slots: {
+    // The first fit frames the first artboard below `lg`, and every artboard from it. The focus
+    // ring is drawn on a layer above the artboards and the toolbar, which would cover its own.
     canvas:
-      "data-[gliding=true]:studio-glide relative isolate min-h-0 min-w-0 touch-none overflow-hidden overscroll-none select-none data-[pan=true]:cursor-grab data-[panning=true]:cursor-grabbing",
+      "data-[gliding=true]:studio-glide relative isolate min-h-0 min-w-0 touch-none overflow-hidden overscroll-none outline-none select-none [--studio-first-fit:artboard] after:pointer-events-none after:absolute after:inset-0 after:z-40 focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-ring data-[pan=true]:cursor-grab data-[panning=true]:cursor-grabbing lg:[--studio-first-fit:all]",
     backdrop: "studio-dot-grid absolute inset-0 bg-muted",
     world:
-      "studio-world invisible data-[pan=true]:pointer-events-none data-[pan=true]:**:pointer-events-none data-[ready=true]:visible",
+      "studio-world invisible data-[pan=true]:pointer-events-none data-[pan=true]:**:pointer-events-none data-[part=true]:**:cursor-crosshair data-[ready=true]:visible",
     status: "sr-only",
   },
 });
@@ -84,6 +95,7 @@ type GestureEvent = UIEvent & { readonly scale: number; readonly clientX: number
  */
 export function StudioCanvas({ children }: { children: ReactNode }): ReactElement {
   const { tool, setTool, select, selectedId } = useStudio();
+  const { part, pick, clear: clearPart, partMode, setPartMode } = usePartSelection();
   const commands = useViewportCommands();
   const { attachCanvas } = commands;
   const { viewport, gliding, ready, announcement } = useViewportState();
@@ -111,11 +123,70 @@ export function StudioCanvas({ children }: { children: ReactNode }): ReactElemen
       if (artboard === null) {
         select(undefined);
       } else if (!isControl(target)) {
+        clearPart();
         select(artboard.dataset.artboardId);
       }
     },
-    [select]
+    [select, clearPart]
   );
+
+  /**
+   * The element a primary press picks a part at, rather than using it: with the Select tool, and
+   * Alt held or "Select part" on, inside an artboard. Overlays inside artboards count; the canvas
+   * chrome, such as the toolbar, does not.
+   */
+  const pickTarget = (event: ReactMouseEvent<HTMLElement>): Element | undefined => {
+    const { target } = event;
+    const picking = tool === "select" && !spaceHeld && event.button === 0 && (event.altKey || partMode);
+    return picking &&
+      target instanceof Element &&
+      target.closest("[data-canvas-overlay]") === null &&
+      target.closest("[data-demo-stage]") !== null
+      ? target
+      : undefined;
+  };
+
+  // A picking press never reaches the part: capturing it here keeps a button from pressing, a
+  // menu from opening and a field from taking focus. Like a press on an artboard's empty space,
+  // it takes the keyboard off the artboard's controls, so Escape then clears the selection.
+  const onPointerDownCapture = (event: ReactPointerEvent<HTMLElement>) => {
+    const target = pickTarget(event);
+    if (target !== undefined && pick(target)) {
+      event.preventDefault();
+      event.stopPropagation();
+      const focused = document.activeElement;
+      if (focused instanceof HTMLElement && focused.closest("[data-artboard-id]") !== null) {
+        focused.blur();
+      }
+    }
+  };
+  const swallowPick = (event: ReactMouseEvent<HTMLElement>) => {
+    if (pickTarget(event) !== undefined) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  };
+  // In "Select part" mode, Enter or Space on a focused artboard control picks it as a press
+  // would, so the keyboard reaches every part the pointer does and a key never uses a control
+  // that a press would only pick. Capturing it keeps the control and its menus from seeing it.
+  const onKeyDownCapture = (event: ReactKeyboardEvent<HTMLElement>) => {
+    const { target } = event;
+    if (
+      partMode &&
+      tool === "select" &&
+      (event.key === "Enter" || event.key === " ") &&
+      !event.altKey &&
+      !event.metaKey &&
+      !event.ctrlKey &&
+      target instanceof Element &&
+      target.closest("[data-canvas-overlay]") === null &&
+      isControl(target) &&
+      pick(target)
+    ) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  };
 
   /** Steps the gesture, applies the camera move it makes and selects on a tap. */
   const dispatch = useCallback(
@@ -251,6 +322,18 @@ export function StudioCanvas({ children }: { children: ReactNode }): ReactElemen
   // Figma's shortcuts. A key typed into a field or an open overlay belongs to it.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      // Escape drops a picked part wherever focus is, such as on the toolbar's "Select part"
+      // or in an artboard's field, unless an open popup took the key to close itself.
+      if (
+        event.key === "Escape" &&
+        part !== undefined &&
+        !event.defaultPrevented &&
+        !inOverlay(event.target)
+      ) {
+        clearPart();
+        select(undefined);
+        return;
+      }
       if (event.defaultPrevented || isTypingTarget(event.target, OVERLAYS)) {
         return;
       }
@@ -285,6 +368,8 @@ export function StudioCanvas({ children }: { children: ReactNode }): ReactElemen
         setTool("select");
       } else if (event.key === "h" || event.key === "H") {
         setTool("hand");
+      } else if (event.key === "p" || event.key === "P") {
+        setPartMode(!partMode);
       } else if (event.key === "Escape" && !isControl(event.target)) {
         select(undefined);
       }
@@ -307,7 +392,7 @@ export function StudioCanvas({ children }: { children: ReactNode }): ReactElemen
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("blur", release);
     };
-  }, [commands, dispatch, select, selectedId, setTool]);
+  }, [commands, dispatch, select, selectedId, setTool, part, clearPart, partMode, setPartMode]);
 
   const camera: CSSProperties & Record<`--${string}`, string | number> = {
     "--studio-zoom": viewport.zoom,
@@ -318,13 +403,19 @@ export function StudioCanvas({ children }: { children: ReactNode }): ReactElemen
   return (
     <section
       ref={attachCanvas}
+      id={CANVAS_ID}
       aria-label="Canvas"
+      {...regionProps}
       className={styles.canvas()}
       style={camera}
       data-studio-canvas
       data-gliding={gliding}
       data-pan={panMode}
       data-panning={panning}
+      onPointerDownCapture={onPointerDownCapture}
+      onMouseDownCapture={swallowPick}
+      onClickCapture={swallowPick}
+      onKeyDownCapture={onKeyDownCapture}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={(event) => {
@@ -337,10 +428,16 @@ export function StudioCanvas({ children }: { children: ReactNode }): ReactElemen
         dispatch({ type: "cancel", pointerId: event.pointerId });
       }}>
       <ChromeScope aria-hidden className={styles.backdrop()} />
-      <div className={styles.world()} data-ready={ready} data-pan={panMode} data-studio-world>
+      <div
+        className={styles.world()}
+        data-ready={ready}
+        data-pan={panMode}
+        data-part={partMode && !panMode}
+        data-studio-world>
         {children}
       </div>
       <CornerXrayOverlay canvas={commands.canvas} />
+      <PartOutline />
       <StudioToolbar />
       <p role="status" aria-live="polite" className={styles.status()}>
         {announcement}

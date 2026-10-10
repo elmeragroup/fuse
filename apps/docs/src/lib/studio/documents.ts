@@ -279,6 +279,58 @@ export const TYPE_PAGE_ARTBOARDS: readonly ArtboardSpec[] = [
   },
 ];
 
+const SCREEN_WIDTH = 760;
+const TABLE_SCREEN_WIDTH = 960;
+const SCREEN_COLUMN = SCREEN_WIDTH + 120;
+const SCREEN_ROW = 1080;
+
+/**
+ * The Screens page: four whole product screens. Each pins a variant, so one page shows the base
+ * brand's external and internal looks side by side, and the inspector switches it.
+ */
+export const SCREENS_PAGE_ARTBOARDS: readonly ArtboardSpec[] = [
+  {
+    id: "screen-self-service",
+    name: "Customer self-service",
+    x: 0,
+    y: 0,
+    width: SCREEN_WIDTH,
+    scheme: "light",
+    density: "comfortable",
+    variant: "external",
+  },
+  {
+    id: "screen-admin-table",
+    name: "Internal admin table",
+    x: SCREEN_COLUMN,
+    y: 0,
+    width: TABLE_SCREEN_WIDTH,
+    scheme: "light",
+    density: "dense",
+    variant: "internal",
+  },
+  {
+    id: "screen-checkout",
+    name: "Checkout form",
+    x: 0,
+    y: SCREEN_ROW,
+    width: SCREEN_WIDTH,
+    scheme: "light",
+    density: "comfortable",
+    variant: "external",
+  },
+  {
+    id: "screen-settings",
+    name: "Settings dialog",
+    x: SCREEN_COLUMN,
+    y: SCREEN_ROW,
+    width: TABLE_SCREEN_WIDTH,
+    scheme: "light",
+    density: "comfortable",
+    variant: "internal",
+  },
+];
+
 /** One studio page's document: its artboards and what the page adds to the editor. */
 type StudioPageDocument = {
   readonly href: string;
@@ -296,6 +348,7 @@ const STUDIO_DOCUMENTS: readonly StudioPageDocument[] = [
   { href: "/studio/shape", artboards: CORNER_PAGE_ARTBOARDS, leadSections: ["shape"], cornerXray: true },
   { href: "/studio/color", artboards: COLOR_PAGE_ARTBOARDS, leadSections: COLOR_SECTIONS },
   { href: "/studio/type", artboards: TYPE_PAGE_ARTBOARDS, leadSections: ["typography"] },
+  { href: "/studio/screens", artboards: SCREENS_PAGE_ARTBOARDS },
 ];
 
 const NO_ARTBOARDS: readonly ArtboardSpec[] = [];

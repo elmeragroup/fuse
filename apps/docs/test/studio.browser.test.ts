@@ -24,7 +24,7 @@ const PHONE = { width: 390, height: 844 } as const;
 type Box = { x: number; y: number; width: number; height: number };
 
 /** Opens `/studio` in a fresh context; each test closes its page, and the suite the rest. */
-async function openStudio(options: StudioContextOptions = {}): Promise<StudioPage> {
+async function openStudio(options: StudioContextOptions & { hash?: string } = {}): Promise<StudioPage> {
   return openStudioPage(browser(), options);
 }
 
@@ -78,6 +78,11 @@ async function touch(cdp: CDPSession, type: "touchStart" | "touchMove" | "touchE
 /** Whether the focused element sits inside `locator`. */
 async function holdsFocus(locator: Locator): Promise<boolean> {
   return locator.evaluate((element) => element.contains(document.activeElement));
+}
+
+/** Whether `locator` is the focused element itself. */
+async function isFocused(locator: Locator): Promise<boolean> {
+  return locator.evaluate((element) => element === document.activeElement);
 }
 
 describe("theme studio", () => {
@@ -223,6 +228,60 @@ describe("theme studio", () => {
     await page.close();
   });
 
+  it("announces the pages as links, marking the current one", async () => {
+    const { page } = await openStudio();
+    const pages = layers(page).getByRole("region", { name: "Pages", exact: true });
+    expect(await pages.getByRole("link").allTextContents()).toEqual([
+      "Overview",
+      "Density",
+      "Shape",
+      "Color",
+      "Type",
+      "Screens",
+    ]);
+    expect(await pages.getByRole("button").count()).toBe(0);
+    const current = async () =>
+      pages.getByRole("link").evaluateAll((links) =>
+        links.flatMap((link) => {
+          const mark = link.getAttribute("aria-current");
+          return mark === null ? [] : [[link.textContent, mark]];
+        })
+      );
+    expect(await current()).toEqual([["Overview", "page"]]);
+
+    await pages.getByRole("link", { name: "Shape", exact: true }).click();
+    await page.waitForURL(/\/studio\/shape$/u);
+    await expect.poll(current).toEqual([["Shape", "page"]]);
+    await page.close();
+  });
+
+  it("truncates a long layer name inside the panel, keeping the whole name as its accessible name", async () => {
+    const { page } = await openStudio();
+    const row = layers(page).getByRole("button", { name: ARTBOARDS[0], exact: true });
+    expect(inside(await box(row), await box(layers(page)))).toBe(true);
+    const label = await row.evaluate((element) => {
+      const text = element.querySelector("span");
+      return text === null
+        ? undefined
+        : { clipped: text.scrollWidth > text.clientWidth, overflow: getComputedStyle(text).textOverflow };
+    });
+    expect(label).toEqual({ clipped: true, overflow: "ellipsis" });
+    await page.close();
+  });
+
+  it("paints the artboard names in the chrome's text color while the chrome is dark", async () => {
+    const { page } = await openStudio({ colorScheme: "dark" });
+    const chromeText = await layers(page).evaluate((element) => getComputedStyle(element).color);
+    for (const name of ARTBOARDS) {
+      const label = canvas(page).getByRole("button", { name, exact: true });
+      // The chrome turns dark after hydration, and the Button eases its color into the change.
+      await expect
+        .poll(async () => label.evaluate((element) => getComputedStyle(element).color), { message: name })
+        .toBe(chromeText);
+    }
+    await page.close();
+  });
+
   it("selects an artboard from a press on its label's top edge at 400%, holding the label still", async () => {
     const { page } = await openStudio();
     const name = ARTBOARDS[0];
@@ -334,6 +393,110 @@ describe("theme studio", () => {
     await entry.waitFor({ state: "visible" });
     expect(await entry.getAttribute("href")).toBe("/studio");
     await context.close();
+  });
+
+  it("skips from the page start to the inspector without touching the share link", async () => {
+    const { page } = await openStudio();
+    const hash = new URL(page.url()).hash;
+    await page.keyboard.press("Tab");
+    expect(await isFocused(page.getByRole("link", { name: "Skip to canvas", exact: true }))).toBe(true);
+    await page.keyboard.press("Tab");
+    expect(await isFocused(page.getByRole("link", { name: "Skip to inspector", exact: true }))).toBe(true);
+
+    await page.keyboard.press("Enter");
+    await expect.poll(async () => holdsFocus(inspector(page))).toBe(true);
+    expect(new URL(page.url()).hash).toBe(hash);
+    await page.close();
+  });
+
+  it("cycles focus through the regions with F6, back with Shift+F6, and leaves F6 to a text field", async () => {
+    const { page } = await openStudio();
+    // Figma's order: the top bar, the Pages and Layers panel, the canvas, its toolbar, the inspector.
+    const bar = page.getByRole("banner");
+    const regions = [
+      bar,
+      layers(page),
+      canvas(page),
+      canvas(page).getByRole("group", { name: "Toolbar", exact: true }),
+      inspector(page),
+    ];
+    for (const [index, region] of [...regions, bar].entries()) {
+      await page.keyboard.press("F6");
+      await expect.poll(async () => isFocused(region), { message: `F6 ${String(index + 1)}` }).toBe(true);
+    }
+    for (const [index, region] of [...regions].reverse().entries()) {
+      await page.keyboard.press("Shift+F6");
+      await expect
+        .poll(async () => isFocused(region), { message: `Shift+F6 ${String(index + 1)}` })
+        .toBe(true);
+    }
+
+    const field = inspector(page).getByRole("textbox").first();
+    await field.focus();
+    await page.keyboard.press("F6");
+    expect(await isFocused(field)).toBe(true);
+    await page.close();
+  });
+
+  it("keeps F6 the cycle's while a toast shows, with the notifications as one more stop", async () => {
+    const { page } = await openStudio({ hash: "#1.not-a-studio-link" });
+    const toast = page.getByText("The link's edits could not be read", { exact: true }).first();
+    await toast.waitFor();
+    // The pointer resting on the toast holds it open while the keys run.
+    await toast.hover();
+    const bar = page.getByRole("banner");
+    const regions = [
+      bar,
+      layers(page),
+      canvas(page),
+      canvas(page).getByRole("group", { name: "Toolbar", exact: true }),
+      inspector(page),
+      page.getByRole("region", { name: "Notifications", exact: true }),
+    ];
+    for (const [index, region] of [...regions, bar].entries()) {
+      await page.keyboard.press("F6");
+      await expect.poll(async () => isFocused(region), { message: `F6 ${String(index + 1)}` }).toBe(true);
+    }
+    for (const [index, region] of [...regions].reverse().entries()) {
+      await page.keyboard.press("Shift+F6");
+      await expect
+        .poll(async () => isFocused(region), { message: `Shift+F6 ${String(index + 1)}` })
+        .toBe(true);
+    }
+
+    const field = inspector(page).getByRole("textbox").first();
+    await field.focus();
+    await page.keyboard.press("F6");
+    await settleFrames(page);
+    expect(await isFocused(field)).toBe(true);
+    await page.close();
+  });
+
+  it("opens the inspector Sheet from its skip link on a phone", async () => {
+    const { page } = await openStudio({ viewport: PHONE });
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Tab");
+    expect(await isFocused(page.getByRole("link", { name: "Skip to inspector", exact: true }))).toBe(true);
+
+    await page.keyboard.press("Enter");
+    const sheet = page.getByRole("dialog", { name: "Inspector" });
+    await sheet.waitFor({ state: "visible" });
+    await expect.poll(async () => holdsFocus(sheet)).toBe(true);
+    await page.close();
+  });
+
+  it("frames the first artboard across a phone, while Shift+1 still fits every artboard", async () => {
+    const { page } = await openStudio({ viewport: PHONE });
+    const frame = await box(canvas(page));
+    expect((await box(artboard(page, ARTBOARDS[0]))).width).toBeGreaterThanOrEqual(0.8 * frame.width);
+
+    await page.keyboard.press("Shift+Digit1");
+    for (const name of ARTBOARDS) {
+      await expect
+        .poll(async () => inside(await box(artboard(page, name)), frame), { message: name })
+        .toBe(true);
+    }
+    await page.close();
   });
 
   it("fills a phone with the canvas, without sideways scroll, and opens the inspector as a Sheet", async () => {

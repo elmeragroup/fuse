@@ -208,7 +208,7 @@ describe("the studio's Type page", () => {
       });
       await knob.fill("22");
       await knob.press("Tab");
-      await layers(page).getByRole("button", { name: "Type", exact: true }).click();
+      await layers(page).getByRole("link", { name: "Type", exact: true }).click();
       await artboard(page, TYPE_PAGE.artboard).waitFor({ state: "visible" });
 
       const comfortable = artboard(page, "Type pairs · Comfortable");

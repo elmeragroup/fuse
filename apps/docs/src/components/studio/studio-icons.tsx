@@ -69,3 +69,13 @@ export function CornerGlyph(props: SVGProps<SVGSVGElement>): ReactElement {
     </ToolGlyph>
   );
 }
+
+/** "Select part": a pointer over a dashed box, a part inside the artboard. */
+export function PartGlyph(props: SVGProps<SVGSVGElement>): ReactElement {
+  return (
+    <ToolGlyph {...props}>
+      <path d="M3.5 9V4.5a1 1 0 0 1 1-1H9M15 3.5h4.5a1 1 0 0 1 1 1V9M9 20.5H4.5a1 1 0 0 1-1-1V15" />
+      <path d="m12 12 8 3.5-3.4 1.1-1.1 3.4z" />
+    </ToolGlyph>
+  );
+}

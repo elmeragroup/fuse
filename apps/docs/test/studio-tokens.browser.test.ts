@@ -290,7 +290,7 @@ describe("studio token editing", () => {
       await openTokenSection(page, "Actions");
       await setTokenColor(page, "primary", "#ff0000");
       await page.waitForFunction(() => window.location.hash.length > 1);
-      await layers(page).getByRole("button", { name: "Density", exact: true }).click();
+      await layers(page).getByRole("link", { name: "Density", exact: true }).click();
       await artboard(page, DENSITY_TWIN).waitFor({ state: "visible" });
       await expect.poll(() => new URL(page.url()).pathname).toBe("/studio/density");
       await expect.poll(() => new URL(page.url()).hash).not.toBe("");
@@ -327,7 +327,7 @@ describe("studio token editing", () => {
           { once: true }
         );
       });
-      await layers(page).getByRole("button", { name: "Overview", exact: true }).click();
+      await layers(page).getByRole("link", { name: "Overview", exact: true }).click();
       await page.locator("html[data-navigated]").waitFor({ state: "attached" });
       await page.waitForTimeout(600);
       expect(new URL(page.url()).pathname).toBe("/studio");
@@ -347,7 +347,7 @@ describe("studio token editing", () => {
       await page.waitForFunction(() => window.location.hash.length > 1);
       const shared = new URL(page.url()).hash;
       const entries = await page.evaluate(() => window.history.length);
-      await layers(page).getByRole("button", { name: "Overview", exact: true }).click();
+      await layers(page).getByRole("link", { name: "Overview", exact: true }).click();
       // The router pushes an entry for the address without the hash, so the click went through.
       await page.waitForFunction((before) => window.history.length > before, entries);
       await page.waitForTimeout(600);
@@ -366,7 +366,7 @@ describe("studio token editing", () => {
       await setTokenColor(page, "primary", "#ff0000");
       await page.waitForFunction(() => window.location.hash.length > 1);
       const older = new URL(page.url()).hash;
-      await layers(page).getByRole("button", { name: "Density", exact: true }).click();
+      await layers(page).getByRole("link", { name: "Density", exact: true }).click();
       await artboard(page, DENSITY_TWIN).waitFor({ state: "visible" });
       await openTokenSection(page, "Actions");
       await setTokenColor(page, "primary", "#0000ff");
@@ -393,7 +393,7 @@ describe("studio token editing", () => {
       await openTokenSection(page, "Actions");
       await setTokenColor(page, "primary", "#ff0000");
       await page.waitForFunction(() => window.location.hash.length > 1);
-      await layers(page).getByRole("button", { name: "Density", exact: true }).click();
+      await layers(page).getByRole("link", { name: "Density", exact: true }).click();
       await artboard(page, DENSITY_TWIN).waitFor({ state: "visible" });
       await page.getByRole("banner").getByRole("button", { name: "Reset all", exact: true }).click();
       await page
@@ -880,7 +880,7 @@ describe("studio token editing", () => {
       expect(await saved()).toBe(hash.slice(1));
 
       // A page link drops the hash; the address gets the last good text back, not nothing.
-      await layers(page).getByRole("button", { name: "Density", exact: true }).click();
+      await layers(page).getByRole("link", { name: "Density", exact: true }).click();
       await expect.poll(() => new URL(page.url()).pathname).toBe("/studio/density");
       await page.waitForTimeout(600);
       expect(new URL(page.url()).hash).toBe(hash);
@@ -909,8 +909,9 @@ describe("studio token editing", () => {
     try {
       // The toast's title, and the live region's copy of it.
       await page.getByText("The theme's values could not load", { exact: true }).first().waitFor();
-      // F6 moves focus to the notifications, which expands them for assistive technology too.
-      await page.keyboard.press("F6");
+      // With nothing focused, Shift+F6 starts at the cycle's last stop, the notifications, which
+      // expands them for assistive technology too.
+      await page.keyboard.press("Shift+F6");
       const retry = page
         .getByRole("region", { name: "Notifications", exact: true })
         .getByRole("button", { name: "Retry", exact: true });

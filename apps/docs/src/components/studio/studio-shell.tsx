@@ -31,6 +31,7 @@ import { StudioCanvas } from "./studio-canvas";
 import { StudioInspector } from "./studio-inspector";
 import { StudioNavigator } from "./studio-navigator";
 import { studioToasts } from "./studio-persistence";
+import { INSPECTOR_ID, regionProps, StudioSkipLinks, useRegionCycle } from "./studio-regions";
 import { useStudio } from "./studio-state";
 import { StudioThemePicker } from "./studio-theme-picker";
 import { useTokenFocus } from "./studio-token-focus";
@@ -39,7 +40,7 @@ import { StudioZoomMenu } from "./studio-zoom-menu";
 const studioShell = tv({
   slots: {
     root: "grid h-dvh grid-cols-1 grid-rows-[auto_minmax(0,1fr)] overflow-hidden lg:grid-cols-[15rem_minmax(0,1fr)_17.5rem]",
-    bar: "relative z-40 col-span-full flex h-12 min-w-0 items-center gap-2 border-b border-border bg-background px-3 text-foreground",
+    bar: "relative z-40 col-span-full flex h-12 min-w-0 items-center gap-2 border-b border-border bg-background px-3 text-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
     wordmark:
       "text-sm font-semibold flex min-h-6 shrink-0 items-center gap-2 rounded-md text-foreground no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
     mark: "size-5",
@@ -52,7 +53,8 @@ const studioShell = tv({
     link: "text-sm flex min-h-7 items-center rounded-md px-2.5 text-muted-foreground no-underline hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
     desktop: "hidden items-center gap-2 lg:flex",
     phone: "flex items-center gap-1 lg:hidden",
-    panel: "relative z-30 hidden min-h-0 border-border bg-background text-foreground lg:block",
+    panel:
+      "relative z-30 hidden min-h-0 border-border bg-background text-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring lg:block",
     scroll: "h-full",
     main: "grid min-h-0 min-w-0",
     sheetBody: "px-0",
@@ -105,7 +107,7 @@ type PanelSheetProps = {
    */
   children: (close: (focus?: HTMLElement) => void) => ReactNode;
   /** A request that opens the Sheet while it is the panel's only form: a new value opens it. */
-  summon?: number | undefined;
+  summon?: string | undefined;
 };
 
 /** A side panel as a Sheet, for phones, where the canvas takes the whole screen. */
@@ -155,10 +157,22 @@ export function StudioShell({ children }: { children: ReactNode }): ReactElement
   const page = STUDIO_PAGES.find((candidate) => candidate.href === pathname);
   // A canvas request for a token's knob opens the phone's inspector, whose panel answers it.
   const { request: focusRequest } = useTokenFocus();
+  // So does the inspector's skip link, while the inspector is a Sheet.
+  const [inspectorSkips, setInspectorSkips] = useState(0);
+  const summonInspector =
+    focusRequest === undefined && inspectorSkips === 0
+      ? undefined
+      : `${String(focusRequest?.serial ?? 0)}/${String(inspectorSkips)}`;
+  useRegionCycle();
 
   return (
     <div className={styles.root()} data-studio>
-      <ChromeScope render={<header />} className={styles.bar()}>
+      <StudioSkipLinks
+        onHiddenInspector={() => {
+          setInspectorSkips((count) => count + 1);
+        }}
+      />
+      <ChromeScope render={<header />} className={styles.bar()} {...regionProps}>
         <Link href="/" className={styles.wordmark()}>
           <ElmeraGroupLogo variant="mark" className={styles.mark()} aria-hidden />
           <span className={styles.wordmarkText()}>Fuse</span>
@@ -184,11 +198,7 @@ export function StudioShell({ children }: { children: ReactNode }): ReactElement
             <PanelSheet side="left" title="Pages and layers" icon={<SidebarSimple />}>
               {(close) => <StudioNavigator onPick={close} />}
             </PanelSheet>
-            <PanelSheet
-              side="right"
-              title="Inspector"
-              icon={<SlidersHorizontal />}
-              summon={focusRequest?.serial}>
+            <PanelSheet side="right" title="Inspector" icon={<SlidersHorizontal />} summon={summonInspector}>
               {() => <StudioInspector />}
             </PanelSheet>
           </div>
@@ -200,7 +210,8 @@ export function StudioShell({ children }: { children: ReactNode }): ReactElement
       </ChromeScope>
       <ChromeScope
         render={<aside aria-label="Pages and layers" />}
-        className={styles.panel({ side: "left" })}>
+        className={styles.panel({ side: "left" })}
+        {...regionProps}>
         <ScrollArea.Root className={styles.scroll()}>
           <StudioNavigator />
         </ScrollArea.Root>
@@ -208,7 +219,10 @@ export function StudioShell({ children }: { children: ReactNode }): ReactElement
       <main className={styles.main()}>
         <StudioCanvas>{children}</StudioCanvas>
       </main>
-      <ChromeScope render={<aside aria-label="Inspector" />} className={styles.panel({ side: "right" })}>
+      <ChromeScope
+        render={<aside id={INSPECTOR_ID} aria-label="Inspector" />}
+        className={styles.panel({ side: "right" })}
+        {...regionProps}>
         <ScrollArea.Root className={styles.scroll()}>
           <StudioInspector />
         </ScrollArea.Root>

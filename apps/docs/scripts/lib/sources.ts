@@ -18,6 +18,8 @@ const RELATIVE_IMPORT = /(?:from|import)\s+"(\.[^"]+)"/g;
 export type RecipeSources = {
   /** TS/TSX sources, in visit order. */
   sources: readonly string[];
+  /** The same sources with their absolute paths. */
+  modules: readonly { readonly path: string; readonly text: string }[];
   /** CSS files reachable from those sources. */
   stylesheets: readonly string[];
   /** Absolute paths of every file scanned, for reporting. */
@@ -75,6 +77,7 @@ function entryFiles(componentDir: string): readonly string[] {
 export function collectRecipeSources(componentDir: string): RecipeSources {
   const visited = new Set<string>();
   const sources: string[] = [];
+  const modules: { path: string; text: string }[] = [];
   const stylesheets: string[] = [];
   const files: string[] = [];
   const queue = [...entryFiles(componentDir)];
@@ -92,6 +95,7 @@ export function collectRecipeSources(componentDir: string): RecipeSources {
       continue;
     }
     sources.push(text);
+    modules.push({ path: file, text });
     RELATIVE_IMPORT.lastIndex = 0;
     let match = RELATIVE_IMPORT.exec(text);
     while (match !== null) {
@@ -106,5 +110,5 @@ export function collectRecipeSources(componentDir: string): RecipeSources {
     }
   }
 
-  return { sources, stylesheets, files };
+  return { sources, modules, stylesheets, files };
 }

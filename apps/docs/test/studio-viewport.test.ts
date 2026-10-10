@@ -5,6 +5,7 @@ import {
   MIN_ZOOM,
   clampZoom,
   fitRects,
+  fitWidth,
   mostlyOffscreen,
   panBy,
   revealRect,
@@ -224,6 +225,32 @@ describe("revealRect", () => {
       x: 40,
       y: 10,
       zoom: 2,
+    });
+  });
+});
+
+describe("fitWidth", () => {
+  const screen = { width: 390, height: 796 };
+  const margins = { top: 48, right: 24, left: 24 };
+
+  it("fills the room between the side margins and puts the rect's top at the top margin", () => {
+    // Room 390 - 24 - 24 = 342 across a 684-wide rect: zoom 0.5, whatever the rect's height.
+    // Its left edge lands on the left margin: x = 24 - 100 * 0.5 = -26.
+    // Its top lands on the top margin: y = 48 - 50 * 0.5 = 23.
+    expect(fitWidth({ x: 100, y: 50, width: 684, height: 4000 }, screen, margins)).toEqual({
+      x: -26,
+      y: 23,
+      zoom: 0.5,
+    });
+  });
+
+  it("centres a rect the zoom range keeps narrower than the room", () => {
+    // 342 / 10 = 34.2 clamps to 4, a 40-wide rect: x = 24 + (342 - 40) / 2 - 100 * 4 = -225,
+    // y = 48 - 50 * 4 = -152.
+    expect(fitWidth({ x: 100, y: 50, width: 10, height: 10 }, screen, margins)).toEqual({
+      x: -225,
+      y: -152,
+      zoom: 4,
     });
   });
 });
