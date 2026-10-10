@@ -609,7 +609,8 @@ describe("theme studio", () => {
     await expect.poll(async () => inside(await box(artboard(page, name)), frame)).toBe(false);
 
     // In one page task: start the zoom-to-fit glide, seek it 100 ms in, read where the artboard
-    // is drawn, wheel 100 px down, and read it again two frames later. A glide lasts 280 ms.
+    // is drawn, wheel 100 px down, and read it again a frame after the pan commits. A glide lasts
+    // 280 ms.
     const [drawn, after] = await page.evaluate(async (label) => {
       const frames = async (count: number) => {
         for (let index = 0; index < count; index += 1) {
@@ -649,7 +650,12 @@ describe("theme studio", () => {
           cancelable: true,
         })
       );
-      await frames(2);
+      // The pan commits through React, which a slow runner can hold past a fixed frame count, and
+      // the seeked glide plays on until then. The commit drops `data-gliding` and cancels the glide.
+      for (let wait = 0; wait < 30 && studio.dataset.gliding === "true"; wait += 1) {
+        await frames(1);
+      }
+      await frames(1);
       return [before, rect(board)];
     }, name);
 
