@@ -1,10 +1,11 @@
 import { notFound } from "next/navigation";
 
 import { docsHrefFromSegments, docsSegmentsFromHref } from "../../../../lib/og-metadata";
-import { HOME_PAGE, STATIC_PAGES, STUDIO_PAGES } from "../../../../lib/pages";
+import { HOME_PAGE, STATIC_PAGES } from "../../../../lib/pages";
 import { loadElmeraMark } from "../../../../og/og-assets";
 import { OgCard } from "../../../../og/og-card";
 import { ogResponse } from "../../../../og/og-response";
+import { STUDIO_PAGES } from "../../../../studio/registration";
 
 /**
  * The authored docs pages and the studio pages are a closed set; any other path answers 404.

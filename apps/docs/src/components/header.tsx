@@ -5,7 +5,7 @@ import type { ReactElement } from "react";
 import Link from "next/link";
 import { tv } from "tailwind-variants";
 
-import { requireStudioPage } from "../lib/pages";
+import { STUDIO_HEADER_LINK } from "../studio/registration";
 import { usePreviewTheme } from "./preview-theme";
 import { SearchPalette } from "./search-palette";
 import { ThemePicker } from "./theme-picker";
@@ -22,8 +22,6 @@ const header = tv({
 
 const { root, wordmark, actions, link } = header();
 
-const STUDIO = requireStudioPage("/studio");
-
 export function Header(): ReactElement {
   const { theme, setTheme } = usePreviewTheme();
 
@@ -33,8 +31,8 @@ export function Header(): ReactElement {
         Fuse
       </Link>
       <div className={actions()}>
-        <Link href={STUDIO.href} className={link()}>
-          Studio
+        <Link href={STUDIO_HEADER_LINK.href} className={link()}>
+          {STUDIO_HEADER_LINK.label}
         </Link>
         <ThemePicker theme={theme} onThemeChange={setTheme} />
         <SearchPalette />

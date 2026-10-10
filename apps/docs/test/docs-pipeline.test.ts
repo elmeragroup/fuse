@@ -15,7 +15,8 @@ import {
 import { collectRecipeSources } from "../scripts/lib/sources.ts";
 import { extractTokens, readColorTokenMap } from "../scripts/lib/tokens.ts";
 import type { DocsComponent } from "../src/lib/docs-model";
-import { STATIC_PAGES, STUDIO_PAGES } from "../src/lib/pages";
+import { STATIC_PAGES } from "../src/lib/pages";
+import { STUDIO_PAGES } from "../src/studio/registration";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const docsRoot = join(here, "..");

@@ -10,7 +10,8 @@
 
 import type { DocsComponent } from "../../src/lib/docs-model.ts";
 import type { StaticPage } from "../../src/lib/pages.ts";
-import { HOME_PAGE, staticPagesIn, STUDIO_PAGES } from "../../src/lib/pages.ts";
+import { HOME_PAGE, staticPagesIn } from "../../src/lib/pages.ts";
+import { STUDIO_PAGES } from "../../src/studio/registration.ts";
 import { finishMarkdown } from "./markdown.ts";
 
 function section(title: string, rows: readonly string[]): readonly string[] {

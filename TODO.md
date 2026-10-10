@@ -197,7 +197,7 @@
   `--destructive-foreground` and `--sidebar-ring` resolve their `var()` on `:root`. A host that
   overrides `--error` or `--ring` on a nested theme scope does not move them there. The theme
   studio restates them on each artboard and in its CSS export
-  (`apps/docs/src/lib/studio/artboard-style.ts`). Decide whether the light rules restate every
+  (`apps/docs/src/studio/lib/artboard-style.ts`). Decide whether the light rules restate every
   alias, as the dark rules do.
 
 ## Control size

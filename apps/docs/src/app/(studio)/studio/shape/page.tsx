@@ -1,10 +1,10 @@
 import type { ReactElement } from "react";
 
-import { ConcentricLab } from "../../../../components/studio/shape/concentric-lab";
-import { RungsBoard } from "../../../../components/studio/shape/rungs-board";
-import { ShellsBoard } from "../../../../components/studio/shape/shells-board";
-import { StudioArtboard } from "../../../../components/studio/studio-artboard";
-import { studioPageMetadata } from "../../../../components/studio/studio-metadata";
+import { ConcentricLab } from "../../../../studio/components/shape/concentric-lab";
+import { RungsBoard } from "../../../../studio/components/shape/rungs-board";
+import { ShellsBoard } from "../../../../studio/components/shape/shells-board";
+import { StudioArtboard } from "../../../../studio/components/studio-artboard";
+import { studioPageMetadata } from "../../../../studio/components/studio-metadata";
 
 export const metadata = studioPageMetadata("/studio/shape");
 

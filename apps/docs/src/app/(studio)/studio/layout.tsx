@@ -2,13 +2,13 @@ import type { ReactElement, ReactNode } from "react";
 
 import { LocaleProvider } from "@elmeragroup/fuse/theme";
 
-import { CornerXrayProvider } from "../../../components/studio/corner-xray";
-import { DensityViewProvider } from "../../../components/studio/density/density-view";
-import { PartSelectionProvider } from "../../../components/studio/studio-part-selection";
-import { StudioShell } from "../../../components/studio/studio-shell";
-import { StudioProvider } from "../../../components/studio/studio-state";
-import { TokenFocusProvider } from "../../../components/studio/studio-token-focus";
-import { ViewportProvider } from "../../../components/studio/studio-viewport";
+import { CornerXrayProvider } from "../../../studio/components/corner-xray";
+import { DensityViewProvider } from "../../../studio/components/density/density-view";
+import { PartSelectionProvider } from "../../../studio/components/studio-part-selection";
+import { StudioShell } from "../../../studio/components/studio-shell";
+import { StudioProvider } from "../../../studio/components/studio-state";
+import { TokenFocusProvider } from "../../../studio/components/studio-token-focus";
+import { ViewportProvider } from "../../../studio/components/studio-viewport";
 
 export type StudioLayoutProps = {
   children: ReactNode;

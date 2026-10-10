@@ -5,7 +5,8 @@
  * so it cannot point at a missing page. The Overview and Handbook groups are *authored* in
  * `src/lib/pages.ts`, and this is what stops one of them from shipping a 404 in the SideNav:
  * every authored entry must have a `page.tsx` under the `(docs)` route group. The studio
- * manifest is held to the same rule under the `(studio)` route group.
+ * manifest (`src/studio/registration.ts`) is held to the same rule under the `(studio)` route
+ * group.
  *
  * The existence probe is a parameter so the invariant is provable without moving a real
  * route out of the way (`test/docs-pipeline.test.ts`).
@@ -14,8 +15,10 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 
-import { STATIC_PAGES, STUDIO_PAGES } from "../../src/lib/pages.ts";
-import type { StaticPage, StudioPage } from "../../src/lib/pages.ts";
+import { STATIC_PAGES } from "../../src/lib/pages.ts";
+import type { StaticPage } from "../../src/lib/pages.ts";
+import { STUDIO_PAGES } from "../../src/studio/registration.ts";
+import type { StudioPage } from "../../src/studio/registration.ts";
 import { docsRouteGroup, studioRouteGroup } from "./paths.ts";
 
 /** Answers whether a route file exists. */

@@ -5,8 +5,9 @@ import { describe, expect, it } from "vitest";
 
 import { docsRoot } from "../scripts/lib/paths.ts";
 import { COMPONENT_PAGES } from "../src/generated/component-pages";
-import { STATIC_PAGES, STUDIO_PAGES } from "../src/lib/pages";
+import { STATIC_PAGES } from "../src/lib/pages";
 import { ogSubtitleSize } from "../src/og/og-fit";
+import { STUDIO_PAGES } from "../src/studio/registration";
 
 /**
  * An independent measurer: the Roboto 500 file the card loads, parsed by the library Satori

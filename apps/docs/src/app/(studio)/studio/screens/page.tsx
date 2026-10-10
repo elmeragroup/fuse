@@ -1,11 +1,11 @@
 import type { ReactElement } from "react";
 
-import { AdminTableScreen } from "../../../../components/studio/screens/admin-table-screen";
-import { CheckoutScreen } from "../../../../components/studio/screens/checkout-screen";
-import { SelfServiceScreen } from "../../../../components/studio/screens/self-service-screen";
-import { SettingsScreen } from "../../../../components/studio/screens/settings-screen";
-import { StudioArtboard } from "../../../../components/studio/studio-artboard";
-import { studioPageMetadata } from "../../../../components/studio/studio-metadata";
+import { AdminTableScreen } from "../../../../studio/components/screens/admin-table-screen";
+import { CheckoutScreen } from "../../../../studio/components/screens/checkout-screen";
+import { SelfServiceScreen } from "../../../../studio/components/screens/self-service-screen";
+import { SettingsScreen } from "../../../../studio/components/screens/settings-screen";
+import { StudioArtboard } from "../../../../studio/components/studio-artboard";
+import { studioPageMetadata } from "../../../../studio/components/studio-metadata";
 
 export const metadata = studioPageMetadata("/studio/screens");
 
