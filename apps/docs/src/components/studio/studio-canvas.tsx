@@ -11,6 +11,7 @@ import { wheelZoomFactor } from "../../lib/studio/viewport";
 import type { Point } from "../../lib/studio/viewport";
 import { isTypingTarget } from "../../lib/typing-target";
 import { ChromeScope } from "./chrome-scope";
+import { OVERLAYS } from "./studio-shortcuts";
 import { useStudio } from "./studio-state";
 import { StudioToolbar } from "./studio-toolbar";
 import { useViewportCommands, useViewportState } from "./studio-viewport";
@@ -54,9 +55,6 @@ const CONTROLS = [
   '[role="option"]',
   '[tabindex]:not([tabindex="-1"])',
 ].join(", ");
-
-/** Open overlays inside an artboard: they keep their keys, presses and scrolling. */
-const OVERLAYS = '[role="menu"], [role="listbox"], [role="dialog"], [role="alertdialog"]';
 
 /** Whether `target` is, or sits inside, a control. */
 function isControl(target: EventTarget | null): boolean {

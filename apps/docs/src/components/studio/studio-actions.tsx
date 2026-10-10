@@ -31,8 +31,10 @@ const studioActions = tv({
 const styles = studioActions();
 
 function hasEdits(document: StudioDocument): boolean {
-  const { light, dark, shared } = document.overrides;
-  return [light, dark, shared].some((group) => Object.keys(group).length > 0);
+  const { light, dark, shared, density } = document.overrides;
+  return [light, dark, shared, density?.dense ?? {}, density?.comfortable ?? {}].some(
+    (group) => Object.keys(group).length > 0
+  );
 }
 
 async function copy(text: string, done: string): Promise<void> {
@@ -151,7 +153,8 @@ export function StudioActions(): ReactElement {
             edit({ type: "reset-all" });
             setResetting(false);
           }}>
-          Every token returns to the base theme&apos;s value in both schemes. Undo brings the edits back.
+          Every token returns to the base theme&apos;s value in both schemes, and every density metric to
+          Fuse&apos;s. Undo brings the edits back.
         </AlertDialog.Content>
       </AlertDialog.Root>
     </>

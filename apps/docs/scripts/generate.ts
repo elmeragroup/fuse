@@ -37,7 +37,7 @@ import type { ApiArtifactDiagnostic, GeneratedApiComponent } from "@elmeragroup/
 import type { ComponentPageEntry, DocsComponent, DocsDemo, ThemeCatalog } from "../src/lib/docs-model.ts";
 import { API_REGEN_COMMAND } from "../src/lib/docs-model.ts";
 import { generateDocsApiArtifacts } from "./lib/api-artifact.ts";
-import { buildDensityCatalog, renderDensityCatalog } from "./lib/density-catalog.ts";
+import { buildDensityCatalog, densityMetricOrder, renderDensityCatalog } from "./lib/density-catalog.ts";
 import {
   componentInspections,
   docsApiInventory,
@@ -256,7 +256,7 @@ function emitLandingFacts(catalog: ResolvedThemeCatalog, components: readonly Do
 function emitDensityCatalog(catalog: ResolvedThemeCatalog): void {
   writeFile(
     path.join(generatedDir, "density-catalog.ts"),
-    `${BANNER}${renderDensityCatalog(buildDensityCatalog(catalog))}`
+    `${BANNER}${renderDensityCatalog(buildDensityCatalog(catalog), densityMetricOrder(catalog))}`
   );
 }
 

@@ -14,6 +14,12 @@ export const ARTBOARDS = [
   "Theme at a glance",
 ] as const;
 
+/** A studio page to open: its path, and the artboard that shows once the first fit has placed it. */
+export type StudioRoute = { path: string; artboard: string };
+
+/** The Overview, at `/studio`. */
+export const OVERVIEW: StudioRoute = { path: "/studio", artboard: ARTBOARDS[0] };
+
 /** How a studio suite sets up the browser context it opens the studio in. */
 export type StudioContextOptions = {
   viewport?: { width: number; height: number };
@@ -49,18 +55,20 @@ export async function newStudioContext(
 }
 
 /**
- * Opens `/studio` with `hash` in a new page of `context`, and waits for the app to hydrate and
+ * Opens a studio page with `hash` in a new page of `context`, and waits for the app to hydrate and
  * frame the page. A click or key sent before hydration reaches no handler. Errors collect from
  * before navigation, so hydration errors count.
  *
  * @param context - The context to open the page in; the caller keeps owning it.
  * @param hash - The address's hash, such as a share link's `#1.…`.
  * @param prepare - Runs before navigation, for routes and init scripts.
+ * @param route - The page to open, the Overview by default.
  */
 export async function openStudioIn(
   context: BrowserContext,
   hash = "",
-  prepare?: (page: Page) => Promise<void>
+  prepare?: (page: Page) => Promise<void>,
+  route: StudioRoute = OVERVIEW
 ): Promise<StudioPage> {
   const page = await context.newPage();
   page.setDefaultTimeout(5000);
@@ -71,20 +79,24 @@ export async function openStudioIn(
     }
   });
   await prepare?.(page);
-  await page.goto(`${docsBaseUrl()}/studio${hash}`, { waitUntil: "load" });
+  await page.goto(`${docsBaseUrl()}${route.path}${hash}`, { waitUntil: "load" });
   // DOM audit: Next's router mounts its announcer once the page has hydrated.
   await page.locator("next-route-announcer").waitFor({ state: "attached" });
   // The artboards show once the first fit has placed them.
-  await artboard(page, ARTBOARDS[0]).waitFor({ state: "visible" });
+  await artboard(page, route.artboard).waitFor({ state: "visible" });
   return { context, page, errors };
 }
 
-/** Opens `/studio` in a fresh context the caller owns. */
+/** Opens a studio page, the Overview by default, in a fresh context the caller owns. */
 export async function openStudio(
   browser: Browser,
-  options: StudioContextOptions & { hash?: string; prepare?: (page: Page) => Promise<void> } = {}
+  options: StudioContextOptions & {
+    hash?: string;
+    prepare?: (page: Page) => Promise<void>;
+    route?: StudioRoute;
+  } = {}
 ): Promise<StudioPage> {
-  return openStudioIn(await newStudioContext(browser, options), options.hash, options.prepare);
+  return openStudioIn(await newStudioContext(browser, options), options.hash, options.prepare, options.route);
 }
 
 export function canvas(page: Page): Locator {

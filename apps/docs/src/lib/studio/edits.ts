@@ -1,5 +1,7 @@
-import type { ThemeInput } from "@elmeragroup/fuse/theme";
+import type { Density, ThemeInput } from "@elmeragroup/fuse/theme";
+import type { DensityMetricName } from "@elmeragroup/fuse/theme-catalog";
 
+import type { DensityOverrides, MetricOverrides } from "./density-metrics";
 import type { ArtboardScheme } from "./documents";
 import { isLightOnly } from "./tokens";
 import type { TokenName } from "./tokens";
@@ -15,6 +17,11 @@ export type StudioOverrides = {
   readonly light: TokenOverrides;
   readonly dark: TokenOverrides;
   readonly shared: TokenOverrides;
+  /**
+   * Density metric edits, per density. They are not theme tokens: an artboard applies the edits
+   * for its own density, whatever its scheme.
+   */
+  readonly density?: DensityOverrides;
 };
 
 /** Everything an edit session holds: the base theme and the edits over it. */
@@ -25,7 +32,7 @@ export type StudioDocument = {
 
 export const NO_OVERRIDES: StudioOverrides = { light: {}, dark: {}, shared: {} };
 
-type OverrideGroup = keyof StudioOverrides;
+type OverrideGroup = Exclude<keyof StudioOverrides, "density">;
 
 function groupOf(scheme: ArtboardScheme, name: TokenName): OverrideGroup {
   return isLightOnly(name) ? "shared" : scheme;
@@ -52,6 +59,28 @@ export function editedCount(
   names: readonly TokenName[]
 ): number {
   return names.filter((name) => overrideOf(overrides, scheme, name) !== undefined).length;
+}
+
+const NO_METRICS: MetricOverrides = {};
+
+/** The metric edits that apply to an artboard in `density`. */
+export function metricOverridesFor(overrides: StudioOverrides, density: Density): MetricOverrides {
+  return overrides.density?.[density] ?? NO_METRICS;
+}
+
+function withMetric(
+  overrides: StudioOverrides,
+  density: Density,
+  name: DensityMetricName,
+  px: number | undefined
+): StudioOverrides {
+  const current = metricOverridesFor(overrides, density);
+  if (current[name] === px) {
+    return overrides;
+  }
+  const rest: MetricOverrides = Object.fromEntries(Object.entries(current).filter(([key]) => key !== name));
+  const next: MetricOverrides = px === undefined ? rest : { ...rest, [name]: px };
+  return { ...overrides, density: { ...overrides.density, [density]: next } };
 }
 
 function withoutKeys(group: TokenOverrides, names: readonly TokenName[]): TokenOverrides {
@@ -87,6 +116,15 @@ export type EditAction =
        */
       readonly coalesce?: string;
     }
+  | {
+      readonly type: "set-metric";
+      readonly density: Density;
+      readonly name: DensityMetricName;
+      readonly px: number;
+      /** As a token set's: consecutive sets with the same key make one undo step. */
+      readonly coalesce?: string;
+    }
+  | { readonly type: "reset-metric"; readonly density: Density; readonly name: DensityMetricName }
   | { readonly type: "reset"; readonly scheme: ArtboardScheme; readonly name: TokenName }
   | { readonly type: "reset-section"; readonly scheme: ArtboardScheme; readonly names: readonly TokenName[] }
   | { readonly type: "reset-all" }
@@ -132,6 +170,12 @@ function applyEdit(document: StudioDocument, action: EditAction): StudioDocument
       const next = resetNames(overrides, action.scheme, names);
       return next === overrides ? document : { ...document, overrides: next };
     }
+    case "set-metric":
+    case "reset-metric": {
+      const px = action.type === "set-metric" ? action.px : undefined;
+      const next = withMetric(overrides, action.density, action.name, px);
+      return next === overrides ? document : { ...document, overrides: next };
+    }
     case "reset-all":
       return overrides === NO_OVERRIDES ? document : { ...document, overrides: NO_OVERRIDES };
     case "theme":
@@ -172,7 +216,7 @@ export function reduceEdits(history: EditHistory, action: EditAction): EditHisto
       if (present === history.present) {
         return history;
       }
-      const coalesce = action.type === "set" ? action.coalesce : undefined;
+      const coalesce = action.type === "set" || action.type === "set-metric" ? action.coalesce : undefined;
       if (coalesce !== undefined && coalesce === history.coalesce) {
         return { ...history, present, future: [] };
       }

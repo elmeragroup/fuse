@@ -62,7 +62,7 @@ export type ParseValue = (text: string) => ParsedValue;
  * second interaction on the same control gets a new one. `end` closes the interaction, and the
  * next value starts a new undo step.
  */
-function useGesture() {
+export function useGesture() {
   const { newGesture } = useStudioEdits();
   const current = useRef<string | undefined>(undefined);
   return {
@@ -94,7 +94,7 @@ const STEP_KEYS: ReadonlySet<string> = new Set(["ArrowUp", "ArrowDown", "PageUp"
  * stays one step and two separate presses make two. The steppers keep the input focused, so
  * blur alone would merge them with each other and with the typing.
  */
-function numberFieldBoundaries(end: () => void) {
+export function numberFieldBoundaries(end: () => void) {
   return {
     onBlurCapture: end,
     onPointerDownCapture: end,

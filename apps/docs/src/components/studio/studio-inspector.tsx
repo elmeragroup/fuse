@@ -2,6 +2,7 @@
 
 import type { ReactElement, ReactNode } from "react";
 
+import { usePathname } from "next/navigation";
 import { tv } from "tailwind-variants";
 
 import { BRANDS, DENSITIES, defaultDensityForVariant, themeSlug } from "@elmeragroup/fuse/theme";
@@ -10,6 +11,7 @@ import type { Density } from "@elmeragroup/fuse/theme";
 import type { ArtboardScheme, ArtboardSpec } from "../../lib/studio/documents";
 import { SEGMENT_LABELS, VARIANT_LABELS } from "../../lib/theme";
 import { SingleToggle } from "../single-toggle";
+import { DensityPanel } from "./density/density-panel";
 import { StudioPanelSection } from "./studio-panel-section";
 import { useStudio } from "./studio-state";
 import { StudioTokenPanel } from "./studio-token-panel";
@@ -106,14 +108,16 @@ function ArtboardSection({ artboard }: { artboard: ArtboardSpec }): ReactElement
 }
 
 /**
- * The right panel. It is plain composition: the selection's section, or the base theme's when
- * nothing is selected, then the token editor.
+ * The right panel. It is plain composition: the Density page's own section first on that page,
+ * the selection's section, or the base theme's when nothing is selected, then the token editor.
  */
 export function StudioInspector(): ReactElement {
   const { artboards, selectedId } = useStudio();
+  const pathname = usePathname();
   const selected = artboards.find((artboard) => artboard.id === selectedId);
   return (
     <>
+      {pathname === "/studio/density" ? <DensityPanel /> : null}
       {selected === undefined ? <BaseThemeSection /> : <ArtboardSection artboard={selected} />}
       <StudioTokenPanel />
     </>
