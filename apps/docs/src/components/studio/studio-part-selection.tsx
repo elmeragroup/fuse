@@ -125,9 +125,9 @@ function measure({ slot, element }: PickedPart): PartMetrics {
  * Escape or its element leaving the page clears it.
  *
  * Nothing is read while the page is idle. The inspector's metrics are measured again when the
- * part's artboard mutates, such as an edit restyling it, or the part resizes, and per frame only
- * while a transition or animation runs in an artboard. The outline follows the same changes and
- * the camera on its own, so a pan re-renders neither the canvas nor the inspector.
+ * part's artboard mutates, such as an edit restyling it, the part resizes or a web font loads,
+ * and per frame only while a transition or animation runs in an artboard. The outline follows the
+ * same changes and the camera on its own, so a pan re-renders neither the canvas nor the inspector.
  */
 export function PartSelectionProvider({ children }: { children: ReactNode }): ReactElement {
   const { selectedId, select } = useStudio();
@@ -246,6 +246,8 @@ export function PartSelectionProvider({ children }: { children: ReactNode }): Re
       host.addEventListener(type, onMotion);
     }
     host.addEventListener("scroll", onScroll, { capture: true });
+    // A web font that finishes loading reflows the part without touching the artboard's DOM.
+    document.fonts.addEventListener("loadingdone", schedule);
     update();
     return () => {
       cancelAnimationFrame(request);
@@ -255,6 +257,7 @@ export function PartSelectionProvider({ children }: { children: ReactNode }): Re
         host.removeEventListener(type, onMotion);
       }
       host.removeEventListener("scroll", onScroll, { capture: true });
+      document.fonts.removeEventListener("loadingdone", schedule);
       setMetrics(undefined);
     };
   }, [part, listeners]);

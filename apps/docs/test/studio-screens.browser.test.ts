@@ -630,6 +630,34 @@ describe("the studio's Screens page", () => {
     }
   });
 
+  it("measures a picked part again when a web font finishes loading", async () => {
+    const { context, page, errors } = await openStudio(browser(), { route: SCREENS_PAGE });
+    try {
+      await artboard(page, SELF_SERVICE)
+        .getByRole("button", { name: "Change plan", exact: true })
+        .click({ modifiers: ["Alt"] });
+      await expect.poll(async () => (await readout(page)).Slot).toBe("button");
+      await expect.poll(() => page.evaluate(() => document.getAnimations().length)).toBe(0);
+      const before = (await readout(page)).Radius;
+      expect(before).not.toBe("3 px");
+      // A stylesheet in the head restyles the part without a mutation in an artboard, and a
+      // corner radius changes neither its box nor its layout, so only the font event remains.
+      await page.evaluate(() => {
+        const sheet = document.createElement("style");
+        sheet.textContent =
+          '[data-artboard-id] [data-slot="button"] { border-top-left-radius: 3px !important; }';
+        document.head.append(sheet);
+      });
+      await settleFrames(page);
+      expect((await readout(page)).Radius).toBe(before);
+      await page.evaluate(() => document.fonts.dispatchEvent(new Event("loadingdone")));
+      await expect.poll(async () => (await readout(page)).Radius).toBe("3 px");
+      expect(errors).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+
   it("reads no layout while a picked part sits idle, and its outline follows a pan", async () => {
     const { context, page, errors } = await openStudio(browser(), { route: SCREENS_PAGE });
     try {
@@ -931,6 +959,25 @@ describe("the studio's Screens page", () => {
       ).toBe("true");
       await artboard(page, CHECKOUT).getByRole("button", { name: "Confirm order", exact: true }).click();
       await expect.poll(async () => (await readout(page)).Slot).toBe("button");
+    } finally {
+      await context.close();
+    }
+  });
+
+  it("toggles Select part once while P is held", async () => {
+    const { context, page, errors } = await openStudio(browser(), { route: SCREENS_PAGE });
+    try {
+      // Playwright repeats a key it already holds down, as auto-repeat does. An even count of
+      // presses leaves a handler that toggles on every repeat off.
+      for (let press = 0; press < 4; press++) {
+        await page.keyboard.down("p");
+      }
+      await page.keyboard.up("p");
+      await settleFrames(page);
+      expect(
+        await page.getByRole("button", { name: "Select part", exact: true }).getAttribute("aria-pressed")
+      ).toBe("true");
+      expect(errors).toEqual([]);
     } finally {
       await context.close();
     }

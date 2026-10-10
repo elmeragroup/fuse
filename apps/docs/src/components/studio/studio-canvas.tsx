@@ -21,7 +21,7 @@ import { ChromeScope } from "./chrome-scope";
 import { CornerXrayOverlay } from "./corner-xray";
 import { PartOutline, usePartSelection } from "./studio-part-selection";
 import { CANVAS_ID, regionProps } from "./studio-regions";
-import { OVERLAYS } from "./studio-shortcuts";
+import { isOverlayShortcut, OVERLAYS } from "./studio-shortcuts";
 import { useStudio } from "./studio-state";
 import { StudioToolbar } from "./studio-toolbar";
 import { useViewportCommands, useViewportState } from "./studio-viewport";
@@ -368,7 +368,7 @@ export function StudioCanvas({ children }: { children: ReactNode }): ReactElemen
         setTool("select");
       } else if (event.key === "h" || event.key === "H") {
         setTool("hand");
-      } else if (event.key === "p" || event.key === "P") {
+      } else if (isOverlayShortcut(event, "p")) {
         setPartMode(!partMode);
       } else if (event.key === "Escape" && !isControl(event.target)) {
         select(undefined);
