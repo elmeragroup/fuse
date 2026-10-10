@@ -68,10 +68,10 @@ async function inspectedPart(page: Page): Promise<string[]> {
 }
 
 /**
- * Opens the dense twin's language Select with the X-ray on, runs `during` while its popup scales
- * in, and expects an option's row tint where the popup landed.
+ * Focuses the dense twin's language Select with the X-ray on, opens it with `open`, and expects an
+ * option's row tint where the popup landed.
  */
-async function expectTintLandsWithPopup(during: (page: Page) => Promise<void>): Promise<void> {
+async function expectTintLandsWithPopup(open: (trigger: Locator) => Promise<void>): Promise<void> {
   const { context, page, errors } = await openDensity("no-preference");
   try {
     // Close enough that the popup's 95% starting scale moves its items by whole pixels.
@@ -93,8 +93,7 @@ async function expectTintLandsWithPopup(during: (page: Page) => Promise<void>): 
     const trigger = artboard(page, DENSE_TWIN).getByRole("combobox").first();
     await trigger.focus();
     await expect.poll(() => page.evaluate(() => document.getAnimations().length)).toBe(0);
-    await trigger.press("Enter");
-    await during(page);
+    await open(trigger);
     const item = artboard(page, DENSE_TWIN).getByRole("option", { name: "Svenska", exact: true });
     await item.waitFor();
     await expect.poll(() => page.evaluate(() => document.getAnimations().length)).toBe(0);
@@ -233,17 +232,23 @@ describe("studio density page", () => {
   });
 
   it("follows the Select popup's opening animation with the X-ray on", async () => {
-    await expectTintLandsWithPopup(() => Promise.resolve());
+    await expectTintLandsWithPopup((trigger) => trigger.press("Enter"));
   });
 
   it("keeps following the Select popup's opening animation when Measure turns on mid-motion", async () => {
-    await expectTintLandsWithPopup(async (page) => {
-      // The overlays have seen the animation start. Holding it halfway through makes sure the
-      // option changes mid-motion, however fast the animation would otherwise finish.
+    await expectTintLandsWithPopup(async (trigger) => {
+      const page = trigger.page();
+      // The popup's scale-in starts held, so the option changes mid-motion. Catching it in flight
+      // could miss it: on a busy runner the compositor can finish the 100ms scale-in before the
+      // page's next frame, which then sends its start and end events together.
+      await page.addStyleTag({
+        content: '[data-slot="select-content"] { animation-play-state: paused !important; }',
+      });
+      await trigger.press("Enter");
       await expect.poll(() => page.evaluate(() => document.getAnimations().length)).toBeGreaterThan(0);
+      // Halfway through. `play()` below resumes it from script, which overrides the paused style.
       await page.evaluate(() => {
         for (const animation of document.getAnimations()) {
-          animation.pause();
           animation.currentTime = Number(animation.effect?.getComputedTiming().duration ?? 0) / 2;
         }
       });
