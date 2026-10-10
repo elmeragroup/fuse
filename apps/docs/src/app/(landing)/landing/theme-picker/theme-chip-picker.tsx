@@ -13,9 +13,9 @@ import type { ColorScheme } from "@elmeragroup/fuse/theme";
 import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
+import { isTypingTarget } from "../../../../lib/typing-target";
 import { Kbd } from "../app-shell/kbd";
 import { BrandMark } from "../brand-mark";
-import { isTypingTarget } from "../typing-target";
 import { SchemeGlyph, SchemeIcon } from "./scheme-icon";
 import { useIsPhone, useThemePicker } from "./use-theme-picker";
 import type { AxisOption } from "./use-theme-picker";

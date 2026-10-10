@@ -5,6 +5,7 @@ import type { ReactElement } from "react";
 import Link from "next/link";
 import { tv } from "tailwind-variants";
 
+import { requireStudioPage } from "../lib/pages";
 import { usePreviewTheme } from "./preview-theme";
 import { SearchPalette } from "./search-palette";
 import { ThemePicker } from "./theme-picker";
@@ -15,10 +16,13 @@ const header = tv({
     actions: "ml-auto flex items-center gap-3",
     wordmark:
       "text-base font-semibold text-foreground no-underline focus-visible:rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+    link: "text-sm flex min-h-7 items-center rounded-md px-2.5 text-muted-foreground no-underline hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
   },
 });
 
-const { root, wordmark, actions } = header();
+const { root, wordmark, actions, link } = header();
+
+const STUDIO = requireStudioPage("/studio");
 
 export function Header(): ReactElement {
   const { theme, setTheme } = usePreviewTheme();
@@ -29,6 +33,9 @@ export function Header(): ReactElement {
         Fuse
       </Link>
       <div className={actions()}>
+        <Link href={STUDIO.href} className={link()}>
+          Studio
+        </Link>
         <ThemePicker theme={theme} onThemeChange={setTheme} />
         <SearchPalette />
       </div>

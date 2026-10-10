@@ -7,8 +7,10 @@ import {
   INJECTED_BOOTSTRAP_SOURCE_KEY,
   bootstrapScripts,
   firstPaintableIndex,
+  openTag,
   readDocumentBrand,
   readDocumentDensity,
+  tagAttribute,
 } from "./html";
 
 async function fetchHtml(pathname: string): Promise<string> {
@@ -50,6 +52,19 @@ describe("docs response HTML", () => {
     expect(skipNav).toBeGreaterThan(bootstrapStart);
     expect(docsRoot).toBeGreaterThan(bootstrapStart);
     expect(html.indexOf(BOOTSTRAP_MANIFEST_KEY)).toBeGreaterThan(-1);
+  });
+
+  it("serves the studio as a light document, so a light artboard can sit in it", async () => {
+    // Dark rules are descendant selectors, so a dark `<html>` would darken every artboard. The
+    // studio stamps no scheme on the document and runs no scheme bootstrap; its chrome and its
+    // artboards set `data-theme` on their own subtrees.
+    const html = await fetchHtml("/studio");
+    const root = openTag(html, "html");
+    expect(root).not.toBeNull();
+    expect(tagAttribute(root ?? "", "data-theme")).toBeNull();
+    expect(bootstrapScripts(html)).toHaveLength(0);
+    expect(html).not.toContain(BOOTSTRAP_MANIFEST_KEY);
+    expect(html).toContain('aria-label="Canvas"');
   });
 
   it("keeps reserved roots branded without provider, picker, or color bootstrap", async () => {

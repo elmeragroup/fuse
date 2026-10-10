@@ -6,11 +6,16 @@ import { describe, expect, it } from "vitest";
 import { readRscStatus } from "../scripts/lib/docs-inspection.ts";
 import { renderComponentMarkdown } from "../scripts/lib/markdown.ts";
 import { parseComponentPage } from "../scripts/lib/page-source.ts";
-import { missingNavRoutes, staticRouteFile } from "../scripts/lib/routes.ts";
+import {
+  missingNavRoutes,
+  missingStudioRoutes,
+  staticRouteFile,
+  studioRouteFile,
+} from "../scripts/lib/routes.ts";
 import { collectRecipeSources } from "../scripts/lib/sources.ts";
 import { extractTokens, readColorTokenMap } from "../scripts/lib/tokens.ts";
 import type { DocsComponent } from "../src/lib/docs-model";
-import { STATIC_PAGES } from "../src/lib/pages";
+import { STATIC_PAGES, STUDIO_PAGES } from "../src/lib/pages";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const docsRoot = join(here, "..");
@@ -120,6 +125,14 @@ describe("nav destination verification", () => {
     const gone = staticRouteFile("/handbook/tokens");
     expect(missingNavRoutes(STATIC_PAGES, (file) => file !== gone)).toEqual(["/handbook/tokens"]);
     expect(missingNavRoutes(STATIC_PAGES, () => false)).toEqual(STATIC_PAGES.map((page) => page.href));
+  });
+
+  it("names a studio page whose route is gone, under the studio route group", () => {
+    expect(studioRouteFile("/studio").endsWith(join("src", "app", "(studio)", "studio", "page.tsx"))).toBe(
+      true
+    );
+    expect(missingStudioRoutes(STUDIO_PAGES, () => false)).toEqual(STUDIO_PAGES.map((page) => page.href));
+    expect(missingStudioRoutes()).toEqual([]);
   });
 });
 

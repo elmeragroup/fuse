@@ -3,22 +3,23 @@ import { describe, expect, it } from "vitest";
 import { resolveComponentPaths } from "../scripts/lib/components.ts";
 import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import { SEARCH_ENTRIES } from "../src/generated/search-index";
-import { HOME_PAGE, STATIC_PAGES } from "../src/lib/pages";
+import { HOME_PAGE, STATIC_PAGES, STUDIO_PAGES } from "../src/lib/pages";
 import { matchSearchEntries } from "../src/lib/search";
 import { docsBaseUrl } from "./docs-server";
 
 describe("search index", () => {
-  it("is generated from the two page manifests, with nothing else in it", () => {
+  it("is generated from the page manifests, with nothing else in it", () => {
     expect(SEARCH_ENTRIES.map((entry) => entry.href)).toEqual([
       HOME_PAGE.href,
       ...STATIC_PAGES.map((page) => page.href),
+      ...STUDIO_PAGES.map((page) => page.href),
       ...COMPONENT_PAGES.map((component) => `/components/${component.slug}`),
     ]);
   });
 
   it("carries a group, a description and match keywords on every entry", () => {
     for (const entry of SEARCH_ENTRIES) {
-      expect(["Overview", "Handbook", "Components"], entry.href).toContain(entry.group);
+      expect(["Overview", "Handbook", "Studio", "Components"], entry.href).toContain(entry.group);
       expect(entry.title, entry.href).not.toBe("");
       expect(entry.description, entry.href).not.toBe("");
       expect(entry.keywords.length, entry.href).toBeGreaterThan(0);
@@ -58,6 +59,8 @@ describe("search matching", () => {
       "@elmeragroup/fuse/scroll-area",
       "/components/scroll-area",
     ],
+    ["finds the theme studio by its title", "studio", "/studio"],
+    ["finds the theme studio by what it is", "playground", "/studio"],
   ] as const)("%s: %s → %s", (_case, query, href) => {
     expect(matchSearchEntries(query)[0]?.href).toBe(href);
   });

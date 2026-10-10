@@ -1,14 +1,15 @@
 import { notFound } from "next/navigation";
 
 import { docsHrefFromSegments, docsSegmentsFromHref } from "../../../../lib/og-metadata";
-import { HOME_PAGE, STATIC_PAGES } from "../../../../lib/pages";
+import { HOME_PAGE, STATIC_PAGES, STUDIO_PAGES } from "../../../../lib/pages";
 import { loadElmeraMark } from "../../../../og/og-assets";
 import { OgCard } from "../../../../og/og-card";
 import { ogResponse } from "../../../../og/og-response";
 
 /**
- * The authored docs pages are a closed set; any other path answers 404. `next build` prerenders
- * every image in it, so a card that throws fails the build rather than the first share.
+ * The authored docs pages and the studio pages are a closed set; any other path answers 404.
+ * `next build` prerenders every image in it, so a card that throws fails the build rather than
+ * the first share.
  */
 export const dynamicParams = false;
 
@@ -26,7 +27,8 @@ type DocsImageContext = {
 const DOCS_INDEX_SUBTITLE = "Overview";
 
 /**
- * The subtitle of the docs page at `href`: its SideNav label, or the docs index's title.
+ * The subtitle of the page at `href`: its SideNav label, a studio page's title, or the docs
+ * index's title.
  *
  * @param href - A docs page href.
  * @returns The subtitle, or `undefined` when no authored page has that route.
@@ -35,12 +37,17 @@ function docsSubtitle(href: string): string | undefined {
   if (href === HOME_PAGE.href) {
     return DOCS_INDEX_SUBTITLE;
   }
-  return STATIC_PAGES.find((page) => page.href === href)?.label;
+  return (
+    STATIC_PAGES.find((page) => page.href === href)?.label ??
+    STUDIO_PAGES.find((page) => page.href === href)?.title
+  );
 }
 
-/** One image per authored docs page; the docs index draws at the bare `/og/docs`. */
+/** One image per authored docs page and studio page; the docs index draws at the bare `/og/docs`. */
 export function generateStaticParams(): { path: string[] }[] {
-  return [HOME_PAGE, ...STATIC_PAGES].map((page) => ({ path: docsSegmentsFromHref(page.href) }));
+  return [HOME_PAGE, ...STATIC_PAGES, ...STUDIO_PAGES].map((page) => ({
+    path: docsSegmentsFromHref(page.href),
+  }));
 }
 
 /** An authored docs page's Open Graph image: the card with the page's label. */

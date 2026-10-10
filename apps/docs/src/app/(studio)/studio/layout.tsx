@@ -1,0 +1,27 @@
+import type { ReactElement, ReactNode } from "react";
+
+import { LocaleProvider } from "@elmeragroup/fuse/theme";
+
+import { StudioShell } from "../../../components/studio/studio-shell";
+import { StudioProvider } from "../../../components/studio/studio-state";
+import { ViewportProvider } from "../../../components/studio/studio-viewport";
+
+export type StudioLayoutProps = {
+  children: ReactNode;
+};
+
+/**
+ * The editor every studio page shares. The state lives here, above the pages, so the base theme
+ * and each artboard's settings survive a switch between them.
+ */
+export default function StudioLayout({ children }: StudioLayoutProps): ReactElement {
+  return (
+    <StudioProvider>
+      <LocaleProvider locale="en-US">
+        <ViewportProvider>
+          <StudioShell>{children}</StudioShell>
+        </ViewportProvider>
+      </LocaleProvider>
+    </StudioProvider>
+  );
+}

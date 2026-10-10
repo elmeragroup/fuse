@@ -5,10 +5,10 @@ import type { ReactElement } from "react";
 
 import dynamic from "next/dynamic";
 
+import { useMediaQuery } from "../../../lib/use-media-query";
 import { useHeat } from "./brand-heat";
 import { DecorationBoundary } from "./decoration-boundary";
 import { REDUCED_MOTION, useLandingTheme } from "./landing-theme";
-import { useMediaQuery } from "./use-media-query";
 
 // The shader is decoration that only draws on the client, so its code stays out of the server
 // render and the first-load bundle.

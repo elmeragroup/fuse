@@ -1,15 +1,16 @@
 /**
  * The `llms.txt` site index.
  *
- * Generated at docs build from the same two inventories the SideNav renders: the authored
- * page manifest and the component pages the generation pass globbed off the route group.
+ * Generated at docs build from the inventories the SideNav and the studio render: the authored
+ * page manifest, the studio page manifest and the component pages the generation pass globbed
+ * off the route group.
  * Nothing here is hand-listed, so a new component page appears in the AI index the moment
  * its `page.mdx` lands, and its markdown endpoint is linked from the same row.
  */
 
 import type { DocsComponent } from "../../src/lib/docs-model.ts";
 import type { StaticPage } from "../../src/lib/pages.ts";
-import { HOME_PAGE, staticPagesIn } from "../../src/lib/pages.ts";
+import { HOME_PAGE, staticPagesIn, STUDIO_PAGES } from "../../src/lib/pages.ts";
 import { finishMarkdown } from "./markdown.ts";
 
 function section(title: string, rows: readonly string[]): readonly string[] {
@@ -31,6 +32,10 @@ export function renderLlmsTxt(components: readonly DocsComponent[]): string {
     "",
     ...section("Overview", [pageRow(HOME_PAGE), ...staticPagesIn("overview").map(pageRow)]),
     ...section("Handbook", staticPagesIn("handbook").map(pageRow)),
+    ...section(
+      "Studio",
+      STUDIO_PAGES.map((page) => pageRow({ ...page, label: page.title }))
+    ),
     ...section(
       "Components",
       components.map(

@@ -10,9 +10,9 @@ import { defaultDensityForVariant, densityAttributes, ThemeScope } from "@elmera
 import { Toast } from "@elmeragroup/fuse/toast";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
+import { isTypingTarget } from "../../../../lib/typing-target";
+import { useMediaQuery } from "../../../../lib/use-media-query";
 import { useLandingTheme } from "../landing-theme";
-import { isTypingTarget } from "../typing-target";
-import { useMediaQuery } from "../use-media-query";
 import { useSideOverlay, useSideShown } from "../window-side";
 import { CommandPalette } from "./command-palette";
 import { DashboardContext } from "./dashboard-context";

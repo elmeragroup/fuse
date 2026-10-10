@@ -338,3 +338,110 @@
 @utility landing-mark-ngfi {
   mask-image: url("/landing/marks/ngfi.svg");
 }
+
+/* The theme studio (src/components/studio). Its canvas camera is three registered properties
+   on the canvas element, so the world layer, the dot grid, the artboard labels and the selection
+   outline all read one camera, and a programmatic move can transition it. The central
+   reduced-motion rule in Fuse keeps no transition on them, so reduced motion jumps instead. */
+@property --studio-zoom {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+@property --studio-pan-x {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --studio-pan-y {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+/* The layer the artboards sit on: world units, panned and scaled about the canvas's corner. */
+@utility studio-world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  translate: var(--studio-pan-x) var(--studio-pan-y);
+  scale: var(--studio-zoom);
+}
+
+/* A programmatic camera move: fit, zoom to an artboard, a zoom step. Direct manipulation never
+   sets it. */
+@utility studio-glide {
+  transition-property: --studio-zoom, --studio-pan-x, --studio-pan-y;
+  transition-duration: 280ms;
+  transition-timing-function: var(--ease-snap);
+}
+
+/* The canvas's dot grid moves and scales with the camera, and fades out as it zooms far out,
+   where the dots would crowd into a tint. */
+@utility studio-dot-grid {
+  --studio-grid: calc(20px * var(--studio-zoom));
+  background-image: radial-gradient(
+    circle at center,
+    color-mix(
+        in oklab,
+        var(--foreground) calc(clamp(0, (var(--studio-zoom) - 0.25) * 60, 22) * 1%),
+        transparent
+      )
+      1px,
+    transparent 1.5px
+  );
+  background-size: var(--studio-grid) var(--studio-grid);
+  background-position: var(--studio-pan-x) var(--studio-pan-y);
+}
+
+/* An artboard's name, above its top-left corner at one screen size whatever the zoom: it is
+   scaled back out of the camera's zoom about its foot, 4 screen px above the artboard, and
+   truncates at the artboard's screen width. As in Figma, it scales to nothing while the artboard
+   is under 120 screen px wide, where names would crowd their neighbours, unless it has focus.
+   `--artboard-span` is the artboard's width as a plain number. It goes on a wrapper around the
+   label's button, whose pressed `translate` would otherwise replace this one. */
+@utility studio-label {
+  --studio-label-width: calc(var(--artboard-w) * var(--studio-zoom));
+  --studio-label-shown: clamp(0, var(--artboard-span) * var(--studio-zoom) - 119, 1);
+  transform-origin: bottom left;
+  scale: calc(var(--studio-label-shown) / var(--studio-zoom));
+  translate: 0 calc(-4px / var(--studio-zoom));
+
+  &:has(:focus-visible) {
+    scale: calc(1 / var(--studio-zoom));
+  }
+}
+
+/* The selection and hover outlines keep one screen width whatever the zoom. */
+@utility studio-ring-selected {
+  outline: calc(2px / var(--studio-zoom)) solid var(--primary);
+}
+
+@utility studio-ring-hover {
+  outline: calc(1px / var(--studio-zoom)) solid var(--primary);
+}
+
+/* The radius ladder on the theme-at-a-glance artboard. `--theme()` inlines each rung's formula,
+   so the box resolves it in its own artboard's theme rather than the document's. */
+@utility studio-rung-xs {
+  border-radius: --theme(--radius-xs);
+}
+
+@utility studio-rung-sm {
+  border-radius: --theme(--radius-sm);
+}
+
+@utility studio-rung-md {
+  border-radius: --theme(--radius-md);
+}
+
+@utility studio-rung-lg {
+  border-radius: --theme(--radius-lg);
+}
+
+@utility studio-rung-xl {
+  border-radius: --theme(--radius-xl);
+}
