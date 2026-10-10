@@ -24,6 +24,7 @@ const LIGHT_BOARD = COMPONENT_BOARDS[0];
 const DARK_BOARD = COMPONENT_BOARDS[1];
 
 const RED = "rgb(255, 0, 0)";
+const BLUE = "rgb(0, 0, 255)";
 
 /** Every scheme-dependent color token, the ones a long share hash can fill. */
 const SCHEME_COLORS = STUDIO_TOKEN_NAMES.filter(
@@ -39,6 +40,21 @@ const OPENING_SELECTOR =
 
 /** The Density page's light twin, which holds a primary Save button. */
 const DENSITY_TWIN = "Twin · Dense";
+
+/** Hides the Navigation API before the studio loads, as browsers without it run the studio. */
+async function withoutNavigationApi(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    Reflect.deleteProperty(window, "navigation");
+    Reflect.deleteProperty(Window.prototype, "navigation");
+  });
+}
+
+/** Reloads the page and waits, as `openStudioIn` does, for it to hydrate and frame the Overview. */
+async function reloadStudio(page: Page): Promise<void> {
+  await page.reload({ waitUntil: "load" });
+  await page.locator("next-route-announcer").waitFor({ state: "attached" });
+  await artboard(page, LIGHT_BOARD).waitFor({ state: "visible" });
+}
 
 /** Opens a studio page, `/studio` by default, with `hash` in a fresh desktop context the test closes. */
 async function openStudio(
@@ -329,6 +345,84 @@ describe("studio token editing", () => {
       await page.waitForTimeout(600);
       expect(new URL(page.url()).pathname).toBe("/studio");
       expect(new URL(page.url()).hash).toBe(shared);
+      expect(errors).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+
+  it("keeps the share hash on a same-page click without the Navigation API", async () => {
+    const { context, page, errors } = await openStudio("", withoutNavigationApi);
+    try {
+      expect(await page.evaluate(() => "navigation" in window)).toBe(false);
+      await openSection(page, "Actions");
+      await setColor(page, "primary", "#ff0000");
+      await page.waitForFunction(() => window.location.hash.length > 1);
+      const shared = new URL(page.url()).hash;
+      const entries = await page.evaluate(() => window.history.length);
+      await layers(page).getByRole("button", { name: "Overview", exact: true }).click();
+      // The router pushes an entry for the address without the hash, so the click went through.
+      await page.waitForFunction((before) => window.history.length > before, entries);
+      await page.waitForTimeout(600);
+      expect(new URL(page.url()).pathname).toBe("/studio");
+      expect(new URL(page.url()).hash).toBe(shared);
+      expect(errors).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+
+  it("puts the newest share text on the address after Back, so a reload keeps the newest edits", async () => {
+    const { context, page, errors } = await openStudio();
+    try {
+      await openSection(page, "Actions");
+      await setColor(page, "primary", "#ff0000");
+      await page.waitForFunction(() => window.location.hash.length > 1);
+      const older = new URL(page.url()).hash;
+      await layers(page).getByRole("button", { name: "Density", exact: true }).click();
+      await artboard(page, DENSITY_TWIN).waitFor({ state: "visible" });
+      await openSection(page, "Actions");
+      await setColor(page, "primary", "#0000ff");
+      await expect.poll(() => new URL(page.url()).hash).not.toBe(older);
+      const newest = new URL(page.url()).hash;
+
+      await page.goBack();
+      await expect.poll(() => new URL(page.url()).pathname).toBe("/studio");
+      await expect.poll(() => new URL(page.url()).hash).toBe(newest);
+      await page.waitForTimeout(600);
+      expect(new URL(page.url()).hash).toBe(newest);
+
+      await reloadStudio(page);
+      await expect.poll(() => background(saveButton(page, LIGHT_BOARD))).toBe(BLUE);
+      expect(errors).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+
+  it("leaves no stale share hash on the address after Reset all and Back", async () => {
+    const { context, page, errors } = await openStudio();
+    try {
+      await openSection(page, "Actions");
+      await setColor(page, "primary", "#ff0000");
+      await page.waitForFunction(() => window.location.hash.length > 1);
+      await layers(page).getByRole("button", { name: "Density", exact: true }).click();
+      await artboard(page, DENSITY_TWIN).waitFor({ state: "visible" });
+      await page.getByRole("banner").getByRole("button", { name: "Reset all", exact: true }).click();
+      await page
+        .getByRole("alertdialog", { name: "Reset every edit?" })
+        .getByRole("button", { name: "Reset all", exact: true })
+        .click();
+      await expect.poll(() => new URL(page.url()).hash).toBe("");
+
+      await page.goBack();
+      await expect.poll(() => new URL(page.url()).pathname).toBe("/studio");
+      await expect.poll(() => new URL(page.url()).hash).toBe("");
+      await page.waitForTimeout(600);
+      expect(new URL(page.url()).hash).toBe("");
+
+      await reloadStudio(page);
+      await expect.poll(() => background(saveButton(page, LIGHT_BOARD))).not.toBe(RED);
       expect(errors).toEqual([]);
     } finally {
       await context.close();

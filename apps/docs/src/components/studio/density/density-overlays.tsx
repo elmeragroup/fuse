@@ -15,9 +15,9 @@ import type { InspectedPart, PartRole } from "../../../lib/studio/density-parts"
 import { DENSITY_TWINS } from "../../../lib/studio/documents";
 import { childGaps, formatPx, paddingBands } from "../../../lib/studio/measure";
 import type { Band, Box } from "../../../lib/studio/measure";
-import { isTypingTarget } from "../../../lib/typing-target";
 import { ChromeScope } from "../chrome-scope";
 import { useStudioEdits } from "../studio-edits";
+import { isOverlayShortcut } from "../studio-shortcuts";
 import { useViewportCommands, useViewportState } from "../studio-viewport";
 import { useDensityView } from "./density-view";
 
@@ -94,9 +94,8 @@ const PART = "[data-slot]";
 
 const ARTBOARD = "[data-artboard-id]";
 
-/** The events that start and stop a transition or keyframe animation the overlays follow. */
+/** The events that start a transition or keyframe animation, which wake the overlays to follow it. */
 const MOTION_STARTS = ["transitionrun", "animationstart"] as const;
-const MOTION_ENDS = ["transitionend", "transitioncancel", "animationend", "animationcancel"] as const;
 
 /** The anchors the twin composition marks, so a part keeps its identity across the twins. */
 const TWIN_ANCHOR = "[data-twin-id]";
@@ -279,20 +278,6 @@ function px(value: number): string {
 /** The canvas is attached once its section mounts; nothing else changes it. */
 const subscribeNever = (): (() => void) => () => undefined;
 
-/** Whether a key press should toggle an overlay: a bare letter, outside text fields and overlays. */
-function isShortcut(event: KeyboardEvent, key: string): boolean {
-  return (
-    event.key.toLowerCase() === key &&
-    !event.metaKey &&
-    !event.ctrlKey &&
-    !event.altKey &&
-    !event.shiftKey &&
-    !event.repeat &&
-    !event.defaultPrevented &&
-    !isTypingTarget(event.target, '[role="menu"], [role="listbox"], [role="dialog"], [role="alertdialog"]')
-  );
-}
-
 const ROLE_LABELS = {
   control: "Control",
   row: "Row",
@@ -346,9 +331,9 @@ function OverlayBar(): ReactElement {
  * The layer is `aria-hidden`; the inspector describes the hovered or focused part in text.
  *
  * Nothing is measured while the page is idle. A draw is scheduled when the camera, an edit, the
- * canvas size, an artboard's subtree, a scroll inside an artboard or the pointed element changes,
- * and the overlays sample every frame only while a glide, or a transition or keyframe animation
- * inside an artboard, runs.
+ * canvas size, an artboard's subtree, a scroll inside an artboard, a web font load or the pointed
+ * element changes, and the overlays sample every frame only while a glide, or a transition or
+ * keyframe animation inside an artboard, runs.
  */
 export function DensityOverlays(): ReactElement | null {
   const { canvas } = useViewportCommands();
@@ -412,9 +397,9 @@ export function DensityOverlays(): ReactElement | null {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Alt") {
         setAltHeld(true);
-      } else if (isShortcut(event, "m")) {
+      } else if (isOverlayShortcut(event, "m")) {
         setMeasure(!measuring);
-      } else if (isShortcut(event, "r")) {
+      } else if (isOverlayShortcut(event, "r")) {
         setXray(!xray);
       }
     };
@@ -443,9 +428,21 @@ export function DensityOverlays(): ReactElement | null {
     }
     let last = "";
     let request = 0;
-    // Each element's transitions and keyframe animations running inside the artboards, such as an
-    // Accordion opening or a Select popup scaling in.
-    const running = new Map<Element, number>();
+    const inArtboard = (node: Node): Element | null =>
+      (node instanceof Element ? node : node.parentElement)?.closest(ARTBOARD) ?? null;
+    // Whether a transition or keyframe animation inside an artboard is under way, such as an
+    // Accordion opening or a Select popup scaling in. The live list also holds motion that started
+    // before this effect subscribed, or that no start event announced. A paused one counts until
+    // it finishes, since resuming it sends no event.
+    const moving = () =>
+      host.getAnimations({ subtree: true }).some((animation) => {
+        const target = animation.effect instanceof KeyframeEffect ? animation.effect.target : null;
+        return (
+          (animation.playState === "running" || animation.playState === "paused") &&
+          target !== null &&
+          inArtboard(target) !== null
+        );
+      });
     const draw = () => {
       request = 0;
       const { xray, hiddenRoles, measureOn } = options.current;
@@ -472,12 +469,7 @@ export function DensityOverlays(): ReactElement | null {
         last = signature;
         setFrame(next);
       }
-      for (const element of running.keys()) {
-        if (!element.isConnected) {
-          running.delete(element);
-        }
-      }
-      if (glidingNow.current || running.size > 0) {
+      if (glidingNow.current || moving()) {
         request = requestAnimationFrame(draw);
       }
     };
@@ -488,8 +480,6 @@ export function DensityOverlays(): ReactElement | null {
     };
     schedule.current = requestDraw;
 
-    const inArtboard = (node: Node): Element | null =>
-      (node instanceof Element ? node : node.parentElement)?.closest(ARTBOARD) ?? null;
     const mutations = new MutationObserver((records) => {
       let changed = false;
       for (const record of records) {
@@ -509,36 +499,19 @@ export function DensityOverlays(): ReactElement | null {
     for (const artboard of host.querySelectorAll(ARTBOARD)) {
       resizes.observe(artboard);
     }
-    const onMotionStart = (event: Event) => {
-      if (event.target instanceof Element && inArtboard(event.target) !== null) {
-        running.set(event.target, (running.get(event.target) ?? 0) + 1);
-        requestDraw();
-      }
-    };
-    const onMotionEnd = (event: Event) => {
-      const count = event.target instanceof Element ? running.get(event.target) : undefined;
-      if (event.target instanceof Element && count !== undefined) {
-        if (count > 1) {
-          running.set(event.target, count - 1);
-        } else {
-          running.delete(event.target);
-        }
-        requestDraw();
-      }
-    };
-    // Scroll events do not bubble; capturing sees a Select list or a Dialog body scrolling.
-    const onScroll = (event: Event) => {
+    // A scroll or a motion start inside an artboard. Scroll events do not bubble; capturing sees a
+    // Select list or a Dialog body scrolling.
+    const onArtboardEvent = (event: Event) => {
       if (event.target instanceof Element && inArtboard(event.target) !== null) {
         requestDraw();
       }
     };
     for (const type of MOTION_STARTS) {
-      host.addEventListener(type, onMotionStart);
+      host.addEventListener(type, onArtboardEvent);
     }
-    for (const type of MOTION_ENDS) {
-      host.addEventListener(type, onMotionEnd);
-    }
-    host.addEventListener("scroll", onScroll, { capture: true });
+    host.addEventListener("scroll", onArtboardEvent, { capture: true });
+    // A web font that finishes loading reflows the parts under the drawn boxes.
+    document.fonts.addEventListener("loadingdone", requestDraw);
     requestDraw();
     return () => {
       schedule.current = () => undefined;
@@ -546,12 +519,10 @@ export function DensityOverlays(): ReactElement | null {
       mutations.disconnect();
       resizes.disconnect();
       for (const type of MOTION_STARTS) {
-        host.removeEventListener(type, onMotionStart);
+        host.removeEventListener(type, onArtboardEvent);
       }
-      for (const type of MOTION_ENDS) {
-        host.removeEventListener(type, onMotionEnd);
-      }
-      host.removeEventListener("scroll", onScroll, { capture: true });
+      host.removeEventListener("scroll", onArtboardEvent, { capture: true });
+      document.fonts.removeEventListener("loadingdone", requestDraw);
     };
   }, [host, cache]);
 

@@ -4,13 +4,14 @@ import { describe, expect, it } from "vitest";
 import { PART_DENSITY } from "@elmeragroup/fuse/theme-catalog";
 
 import { auditTargets, settleFrames } from "./landing-page";
-import { artboard, inspector, openStudio } from "./studio-page";
+import { artboard, inspector, layers, openStudio } from "./studio-page";
 import type { StudioPage, StudioRoute } from "./studio-page";
 import { launchSuiteBrowser } from "./suite-browser";
 
 const browser = launchSuiteBrowser();
 
 const DENSE_TWIN = "Twin · Dense";
+const GLANCE_BOARD = "Theme at a glance";
 const COMFORTABLE_TWIN = "Twin · Comfortable";
 
 /** The Density page, ready once the dense twin shows. */
@@ -418,6 +419,79 @@ describe("studio density page", () => {
       const dialog = page.getByRole("dialog", { name: "Export CSS" });
       const css = (await dialog.getByRole("region", { name: "Exported CSS" }).textContent()) ?? "";
       expect(css).toContain(':root[data-density="comfortable"] {\n  --control-h-md: 56px;\n}');
+      expect(errors).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+
+  it("draws the Overview's control heights with the metric edits, labelled with their rendered px", async () => {
+    const { context, page, errors } = await openDensity();
+    try {
+      await setMetric(page, "control-h-md", "comfortable", 56);
+      await expect.poll(() => height(button(page, COMFORTABLE_TWIN, "Medium"))).toBe(56);
+      await layers(page).getByRole("button", { name: "Overview", exact: true }).click();
+      const heights = artboard(page, GLANCE_BOARD).getByRole("region", {
+        name: "Control heights",
+        exact: true,
+      });
+      await heights.waitFor({ state: "visible" });
+      for (const [density, px] of [
+        ["Comfortable", 56],
+        ["Dense", 36],
+      ] as const) {
+        const row = heights
+          .locator("[data-demo-stage]")
+          .filter({ hasText: density })
+          .locator("div")
+          .filter({ has: page.getByRole("button", { name: "md", exact: true }) });
+        await expect.poll(() => height(row.getByRole("button")), { message: density }).toBe(px);
+        await expect.poll(() => row.textContent(), { message: density }).toBe(`${String(px)} pxmd`);
+      }
+      expect(errors).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+
+  it("toggles Measure once while M is held", async () => {
+    const { context, page, errors } = await openDensity();
+    try {
+      const measure = page.getByRole("button", { name: "Measure (M)", exact: true });
+      // Playwright repeats a key it already holds down, as auto-repeat does.
+      for (let press = 0; press < 5; press++) {
+        await page.keyboard.down("m");
+      }
+      await page.keyboard.up("m");
+      await frames(page, 2);
+      expect(await measure.getAttribute("aria-pressed")).toBe("true");
+      expect(errors).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+
+  it("follows motion that started before the X-ray turned on until it lands", async () => {
+    const { context, page, errors } = await openDensity("no-preference");
+    try {
+      const part = button(page, DENSE_TWIN, "Medium");
+      // A script animation sends no start event, so only the live animation list shows it moving.
+      const finished = part.evaluate(async (element) => {
+        await element.animate([{ translate: "0 0" }, { translate: "0 37px" }], {
+          duration: 900,
+          fill: "forwards",
+        }).finished;
+      });
+      await page.waitForTimeout(300);
+      await page.keyboard.press("r");
+      await finished;
+      await frames(page, 2);
+      const target = await rectOf(part);
+      const tints = await page.locator('[data-density-overlay] [data-xray-role="control"]').all();
+      const distances = await Promise.all(
+        tints.map(async (tint) => edgeDistance(await rectOf(tint), target))
+      );
+      expect(Math.min(...distances)).toBeLessThanOrEqual(1);
       expect(errors).toEqual([]);
     } finally {
       await context.close();

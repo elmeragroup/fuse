@@ -11,7 +11,8 @@ import { Text } from "@elmeragroup/fuse/text";
 import { DENSITIES, densityAttributes } from "@elmeragroup/fuse/theme";
 import type { Density } from "@elmeragroup/fuse/theme";
 
-import { LANDING_FACTS } from "../../../generated/landing-facts";
+import { metricStyle } from "../../../lib/studio/density-metrics";
+import { metricOverridesFor } from "../../../lib/studio/edits";
 import { useStudioEdits } from "../studio-edits";
 import { useStudio } from "../studio-state";
 
@@ -73,23 +74,13 @@ const ROLES: readonly { role: Role; name: string }[] = [
 
 const RUNGS: readonly Rung[] = ["xs", "sm", "md", "lg", "xl"];
 
-/** Button's sizes, each with the control-height metric it reads. */
-const CONTROL_SIZES = [
-  { size: "xs", metric: "control-h-xs" },
-  { size: "sm", metric: "control-h-sm" },
-  { size: "default", metric: "control-h-md" },
-  { size: "lg", metric: "control-h-lg" },
-] as const;
+/** Button's sizes. */
+const CONTROL_SIZES = ["xs", "sm", "default", "lg"] as const;
 
 const DENSITY_LABELS = { dense: "Dense", comfortable: "Comfortable" } as const satisfies Record<
   Density,
   string
 >;
-
-/** A control height in px at one density, from the library's density table. */
-function controlHeight(metric: string, density: Density): number | undefined {
-  return LANDING_FACTS.metrics.find((entry) => entry.name === metric)?.px[density];
-}
 
 /** One radius rung as a real rounded box, labelled with the radius the browser resolved. */
 function RungBox({ rung }: { rung: Rung }): ReactElement {
@@ -112,10 +103,37 @@ function RungBox({ rung }: { rung: Rung }): ReactElement {
 }
 
 /**
+ * One Button size, labelled with the height the browser rendered: the density's control height
+ * after metric edits, or the 24px target-size floor where that is taller.
+ */
+function SizeRow({ size }: { size: (typeof CONTROL_SIZES)[number] }): ReactElement {
+  const { theme } = useStudio();
+  const { overrides } = useStudioEdits();
+  const button = useRef<HTMLButtonElement>(null);
+  const [height, setHeight] = useState("");
+  // The height follows the theme and metric edits, so it is read back after each change.
+  useLayoutEffect(() => {
+    if (button.current !== null) {
+      setHeight(String(Number.parseFloat(getComputedStyle(button.current).height)));
+    }
+  }, [theme, overrides]);
+  return (
+    <div className={styles.sizeRow()}>
+      <span className={styles.sizeValue()}>{height === "" ? "" : `${height} px`}</span>
+      <Button ref={button} size={size} variant="outline">
+        {size === "default" ? "md" : size}
+      </Button>
+    </div>
+  );
+}
+
+/**
  * The base theme at a glance: its key colour roles, its radius ladder and the control heights
  * each density gives Button's sizes. Every swatch, box and button is drawn by the theme itself.
+ * Each density's stage redeclares its metrics, so it carries that density's metric edits too.
  */
 export function GlanceBoard(): ReactElement {
+  const { overrides } = useStudioEdits();
   return (
     <div className={styles.root()}>
       <section className={styles.section()} aria-label="Colour roles">
@@ -147,15 +165,16 @@ export function GlanceBoard(): ReactElement {
         </Heading>
         <div className={styles.densities()}>
           {DENSITIES.map((density) => (
-            <div key={density} data-demo-stage {...densityAttributes(density)} className={styles.density()}>
+            <div
+              key={density}
+              data-demo-stage
+              {...densityAttributes(density)}
+              // oxlint-disable-next-line shadcn/no-inline-styles -- metric edits: custom properties only (metricStyle), declared on the stage that redeclares the density's metrics
+              style={metricStyle(metricOverridesFor(overrides, density))}
+              className={styles.density()}>
               <Text weight="medium">{DENSITY_LABELS[density]}</Text>
-              {CONTROL_SIZES.map(({ size, metric }) => (
-                <div key={size} className={styles.sizeRow()}>
-                  <span className={styles.sizeValue()}>{`${String(controlHeight(metric, density))} px`}</span>
-                  <Button size={size} variant="outline">
-                    {size === "default" ? "md" : size}
-                  </Button>
-                </div>
+              {CONTROL_SIZES.map((size) => (
+                <SizeRow key={size} size={size} />
               ))}
             </div>
           ))}
