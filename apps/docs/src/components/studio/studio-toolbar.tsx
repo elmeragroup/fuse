@@ -11,6 +11,7 @@ import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
 import { ChromeScope } from "./chrome-scope";
+import { CornerXrayToggle } from "./corner-xray";
 import { useStudioEdits } from "./studio-edits";
 import { HandGlyph, PointerGlyph, RedoGlyph, UndoGlyph } from "./studio-icons";
 import { useModifierLabel } from "./studio-shortcuts";
@@ -106,6 +107,7 @@ export function StudioToolbar(): ReactElement {
           <Tooltip.Content>{`Redo (⇧${mod}Z)`}</Tooltip.Content>
         </Tooltip.Root>
         <Separator orientation="vertical" className={styles.separator()} />
+        <CornerXrayToggle />
         <Button
           variant="ghost"
           size="icon-sm"

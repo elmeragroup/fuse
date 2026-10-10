@@ -2,6 +2,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import { LocaleProvider } from "@elmeragroup/fuse/theme";
 
+import { CornerXrayProvider } from "../../../components/studio/corner-xray";
 import { DensityViewProvider } from "../../../components/studio/density/density-view";
 import { StudioShell } from "../../../components/studio/studio-shell";
 import { StudioProvider } from "../../../components/studio/studio-state";
@@ -21,7 +22,9 @@ export default function StudioLayout({ children }: StudioLayoutProps): ReactElem
       <LocaleProvider locale="en-US">
         <ViewportProvider>
           <DensityViewProvider>
-            <StudioShell>{children}</StudioShell>
+            <CornerXrayProvider>
+              <StudioShell>{children}</StudioShell>
+            </CornerXrayProvider>
           </DensityViewProvider>
         </ViewportProvider>
       </LocaleProvider>

@@ -87,7 +87,8 @@ function withoutKeys(group: TokenOverrides, names: readonly TokenName[]): TokenO
   return Object.fromEntries(Object.entries(group).filter(([name]) => !names.some((drop) => drop === name)));
 }
 
-function resetNames(
+/** `overrides` without the edits of `names` that apply in `scheme`. */
+export function resetNames(
   overrides: StudioOverrides,
   scheme: ArtboardScheme,
   names: readonly TokenName[]

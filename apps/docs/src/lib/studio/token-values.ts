@@ -1,10 +1,11 @@
 import * as CssColor from "@elmeragroup/color/css-color";
 import { themeSlug } from "@elmeragroup/fuse/theme";
+import type { ThemeInput, ThemeVariant } from "@elmeragroup/fuse/theme";
 
 import { STUDIO_BASE_REFERENCES, STUDIO_PRIMITIVES } from "../../generated/studio-seeds";
 import type { ArtboardScheme } from "./documents";
-import { overrideOf } from "./edits";
-import type { StudioDocument, StudioOverrides } from "./edits";
+import { overrideOf, overridesFor, resetNames } from "./edits";
+import type { StudioDocument, StudioOverrides, TokenOverrides } from "./edits";
 import { referencedNames, referencesOf } from "./references";
 import type { BaseReferences } from "./references";
 import type { StudioSeed } from "./seed";
@@ -423,13 +424,67 @@ export function cycleNames(overrides: StudioOverrides, base: BaseReferences): To
   ).sort();
 }
 
+/** The generated alias graph of `variant` of `theme`. */
+function variantReferences(theme: ThemeInput, variant: ThemeVariant): BaseReferences {
+  return STUDIO_BASE_REFERENCES[themeSlug({ ...theme, variant })];
+}
+
 /**
  * The tokens on an alias cycle in a document, against its own theme's generated alias graph, so
  * it answers before the theme's seed loads. The edit session refuses every transition to a
- * document where this is not empty, and the share codec drops such a document.
+ * document where this is not empty, and the share codec drops such a document. A page whose
+ * artboards pin variants of the theme passes them as `pins`, and their graphs count too.
+ *
+ * @param document - The base theme and the edits over it.
+ * @param pins - The variants of the theme the page's artboards pin.
  */
-export function documentCycles(document: StudioDocument): TokenName[] {
-  return cycleNames(document.overrides, STUDIO_BASE_REFERENCES[themeSlug(document.theme)]);
+export function documentCycles(document: StudioDocument, pins: readonly ThemeVariant[] = []): TokenName[] {
+  const variants = new Set([document.theme.variant, ...pins]);
+  const names = new Set(
+    [...variants].flatMap((variant) =>
+      cycleNames(document.overrides, variantReferences(document.theme, variant))
+    )
+  );
+  return [...names].sort();
+}
+
+/** The edits a pinned artboard applies in one scheme, and the ones it skips. */
+export type PinnedEdits = {
+  readonly applied: TokenOverrides;
+  /** Sorted. */
+  readonly skipped: readonly TokenName[];
+};
+
+/**
+ * The edits an artboard pinned to `variant` of the document's theme applies in `scheme`: every
+ * edit but those on an alias cycle against that variant's own declarations. The session guards
+ * the pins of the page it is on, so such an edit arrives from another page or a restore. A
+ * skipped token falls back to the variant's own declaration, which can loop another edit, so
+ * the check repeats until nothing loops.
+ *
+ * @param document - The base theme and the edits over it.
+ * @param variant - The variant the artboard pins.
+ * @param scheme - The artboard's scheme.
+ */
+export function pinnedEdits(
+  document: StudioDocument,
+  variant: ThemeVariant,
+  scheme: ArtboardScheme
+): PinnedEdits {
+  const base = variantReferences(document.theme, variant);
+  const looping = (overrides: StudioOverrides) =>
+    STUDIO_TOKEN_NAMES.filter(
+      (name) =>
+        overrideOf(overrides, scheme, name) !== undefined &&
+        reaches(overrides, base, scheme, name, readsOf(overrides, base, scheme, name))
+    );
+  let overrides = document.overrides;
+  const skipped: TokenName[] = [];
+  for (let next = looping(overrides); next.length > 0; next = looping(overrides)) {
+    skipped.push(...next);
+    overrides = resetNames(overrides, scheme, next);
+  }
+  return { applied: overridesFor(overrides, scheme), skipped: skipped.sort() };
 }
 
 const NO_REFERENCES: BaseReferences = { light: {}, dark: {} };
@@ -470,4 +525,31 @@ export function createsCycle(
   const schemes: readonly ArtboardScheme[] = isLightOnly(name) ? SCHEMES : [scheme];
   const base = baseOf(seed);
   return schemes.some((each) => reaches(overrides, base, each, name, referencedNames(css)));
+}
+
+/**
+ * Whether declaring `css` for `name` would close a cycle in a variant of `theme` that the page's
+ * artboards pin, against that variant's generated alias graph, as {@link createsCycle} checks
+ * the base theme.
+ *
+ * @param overrides - The edits in effect.
+ * @param theme - The base theme.
+ * @param pins - The variants of it the page pins.
+ * @param scheme - The scheme the edit is made in.
+ * @param name - The token the edit is for.
+ * @param css - The value it would declare.
+ */
+export function createsPinnedCycle(
+  overrides: StudioOverrides,
+  theme: ThemeInput,
+  pins: readonly ThemeVariant[],
+  scheme: ArtboardScheme,
+  name: TokenName,
+  css: string
+): boolean {
+  const schemes: readonly ArtboardScheme[] = isLightOnly(name) ? SCHEMES : [scheme];
+  return pins.some((variant) => {
+    const base = variantReferences(theme, variant);
+    return schemes.some((each) => reaches(overrides, base, each, name, referencedNames(css)));
+  });
 }

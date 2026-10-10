@@ -59,3 +59,13 @@ export function RedoGlyph(props: SVGProps<SVGSVGElement>): ReactElement {
     </ToolGlyph>
   );
 }
+
+/** The corner X-ray: two concentric corner arcs. */
+export function CornerGlyph(props: SVGProps<SVGSVGElement>): ReactElement {
+  return (
+    <ToolGlyph {...props}>
+      <path d="M4 20V12a8 8 0 0 1 8-8h8" />
+      <path d="M9 20v-6a3 3 0 0 1 3-3h8" />
+    </ToolGlyph>
+  );
+}

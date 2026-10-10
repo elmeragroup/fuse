@@ -13,7 +13,7 @@ import {
 } from "react";
 
 import { themeSlug } from "@elmeragroup/fuse/theme";
-import type { ThemeInput, ThemeSlug } from "@elmeragroup/fuse/theme";
+import type { ThemeInput, ThemeSlug, ThemeVariant } from "@elmeragroup/fuse/theme";
 
 import { loadStudioSeed } from "../../generated/studio-seeds";
 import { artboardStyle } from "../../lib/studio/artboard-style";
@@ -42,6 +42,10 @@ export type StudioEditsValue = {
   canRedo: boolean;
   /** The base theme's declared and resolved tokens, once its seed has loaded. */
   seed: StudioSeed | undefined;
+  /** The seed of the base theme or of a variant the page pins, once it has loaded. */
+  seedOf: (slug: ThemeSlug) => StudioSeed | undefined;
+  /** The variants of the base theme the page's artboards pin. */
+  pins: readonly ThemeVariant[];
   /** The inline declarations an artboard or probe in `scheme` wears. */
   styleFor: (scheme: ArtboardScheme) => CustomProperties;
   /** The scheme whose values the inspector edits. */
@@ -66,18 +70,48 @@ export function useStudioEdits(): StudioEditsValue {
   return value;
 }
 
-/**
- * The base theme's seed, loaded on demand; `undefined` while a theme's seed is in flight or after
- * its load failed. A failure toasts with a retry, and the session keeps its document meanwhile.
- */
-function useSeed(slug: ThemeSlug): StudioSeed | undefined {
+/** One seed's load: the seed once ready, and whether it failed until a retry. */
+type SeedLoad = {
+  readonly seed: StudioSeed | undefined;
+  readonly failed: boolean;
+  readonly retry: () => void;
+};
+
+/** `slug`'s seed through a seed store of its own; without a slug it loads and reports nothing. */
+function useSeedLoad(slug: ThemeSlug | undefined): SeedLoad {
   const [store] = useState(() => createSeedStore(loadStudioSeed));
   const state = useSyncExternalStore(store.subscribe, store.getState, store.getState);
   useEffect(() => {
-    store.request(slug);
+    if (slug !== undefined) {
+      store.request(slug);
+    }
   }, [store, slug]);
+  const current = slug !== undefined && state?.slug === slug ? state : undefined;
+  return {
+    seed: current?.status === "ready" ? current.seed : undefined,
+    failed: current?.status === "failed",
+    retry: store.retry,
+  };
+}
+
+/**
+ * The base theme's seed, and the seed of the other variant an artboard on the page pins, each
+ * loaded on demand; `undefined` while in flight or after a failed load. Fuse has two variants,
+ * so a page pins at most one besides the base theme's own. Any failure toasts once, with a retry
+ * that reloads every failed seed, and the session keeps its document meanwhile.
+ */
+function useSeeds(
+  theme: ThemeInput,
+  pins: readonly ThemeVariant[]
+): Pick<StudioEditsValue, "seed" | "seedOf"> {
+  const sibling = pins.find((variant) => variant !== theme.variant);
+  const base = useSeedLoad(themeSlug(theme));
+  const pinned = useSeedLoad(sibling === undefined ? undefined : themeSlug({ ...theme, variant: sibling }));
+  const failed = base.failed || pinned.failed;
+  const { retry: retryBase } = base;
+  const { retry: retryPinned } = pinned;
   useEffect(() => {
-    if (state?.status !== "failed") {
+    if (!failed) {
       return undefined;
     }
     const id = studioToasts.add({
@@ -88,15 +122,22 @@ function useSeed(slug: ThemeSlug): StudioSeed | undefined {
       actionProps: {
         children: "Retry",
         onClick: () => {
-          store.retry();
+          retryBase();
+          retryPinned();
         },
       },
     });
     return () => {
       studioToasts.close(id);
     };
-  }, [store, state]);
-  return state?.status === "ready" && state.slug === slug ? state.seed : undefined;
+  }, [failed, retryBase, retryPinned]);
+  const { seed } = base;
+  const { seed: pinnedSeed } = pinned;
+  const seedOf = useCallback(
+    (slug: ThemeSlug) => [seed, pinnedSeed].find((each) => each?.slug === slug),
+    [seed, pinnedSeed]
+  );
+  return { seed, seedOf };
 }
 
 /**
@@ -125,9 +166,17 @@ function useUndoShortcuts(dispatch: (action: EditAction) => void): void {
   }, [dispatch]);
 }
 
-/** The session's reducer: every transition under the no-cycle invariant. */
-function reduceSession(state: GuardedHistory, action: EditAction): GuardedHistory {
-  return reduceGuarded(state, action, documentCycles);
+/**
+ * The session's reducer on a page whose artboards pin `pins`: every transition under the
+ * no-cycle invariant, in the base theme and in each pinned variant. A restore answers to the
+ * base theme alone, so a document saved on another page is never lost; a pinned artboard skips
+ * the edits that loop in its variant instead (`pinnedEdits`).
+ */
+function sessionReducer(pins: readonly ThemeVariant[]) {
+  return (state: GuardedHistory, action: EditAction): GuardedHistory =>
+    reduceGuarded(state, action, (document) =>
+      documentCycles(document, action.type === "replace" ? [] : pins)
+    );
 }
 
 const NAME_LIST = new Intl.ListFormat("en", { type: "conjunction" });
@@ -164,22 +213,26 @@ export type EditSession = {
  * @param opening - The theme the session opens on.
  * @param selectedId - The selected artboard, if any.
  * @param selectedScheme - Its scheme.
+ * @param pins - The variants the page's artboards pin, whose seeds load beside the base theme's
+ *   and whose alias graphs the session guards too, the same array while the page stays.
  */
 export function useEditSession(
   opening: ThemeInput,
   selectedId: string | undefined,
-  selectedScheme: ArtboardScheme | undefined
+  selectedScheme: ArtboardScheme | undefined,
+  pins: readonly ThemeVariant[]
 ): EditSession {
   const openingDocument = useMemo(
     (): StudioDocument => ({ theme: opening, overrides: NO_OVERRIDES }),
     [opening]
   );
+  const reduceSession = useMemo(() => sessionReducer(pins), [pins]);
   const [{ history, refusal }, dispatch] = useReducer(reduceSession, openingDocument, guardedHistory);
   const { theme, overrides } = history.present;
   useRefusalToast(refusal);
   useStudioPersistence(history.present, openingDocument, dispatch);
   useUndoShortcuts(dispatch);
-  const seed = useSeed(themeSlug(theme));
+  const { seed, seedOf } = useSeeds(theme, pins);
 
   const [choice, setChoice] = useState<SchemeChoice | undefined>(undefined);
   const editScheme =
@@ -219,6 +272,8 @@ export function useEditSession(
       canUndo: history.past.length > 0,
       canRedo: history.future.length > 0,
       seed,
+      seedOf,
+      pins,
       styleFor,
       editScheme,
       setEditScheme,
@@ -229,6 +284,8 @@ export function useEditSession(
       history.past.length,
       history.future.length,
       seed,
+      seedOf,
+      pins,
       styleFor,
       editScheme,
       setEditScheme,
