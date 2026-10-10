@@ -1,10 +1,10 @@
 import type { ReactElement } from "react";
 
-import { StudioArtboard } from "../../../../components/studio/studio-artboard";
-import { studioPageMetadata } from "../../../../components/studio/studio-metadata";
-import { TypePairsBoard } from "../../../../components/studio/type/pairs-board";
-import { SpecimenBoard } from "../../../../components/studio/type/specimen-board";
-import { StacksBoard } from "../../../../components/studio/type/stacks-board";
+import { StudioArtboard } from "../../../../studio/components/studio-artboard";
+import { studioPageMetadata } from "../../../../studio/components/studio-metadata";
+import { TypePairsBoard } from "../../../../studio/components/type/pairs-board";
+import { SpecimenBoard } from "../../../../studio/components/type/specimen-board";
+import { StacksBoard } from "../../../../studio/components/type/stacks-board";
 
 export const metadata = studioPageMetadata("/studio/type");
 

@@ -10,8 +10,10 @@
  */
 
 import type { DocsComponent, SearchEntry, SearchGroup } from "../../src/lib/docs-model.ts";
-import type { StaticNavGroup, StaticPage, StudioPage } from "../../src/lib/pages.ts";
-import { HOME_PAGE, staticPagesIn, STUDIO_PAGES } from "../../src/lib/pages.ts";
+import type { StaticNavGroup, StaticPage } from "../../src/lib/pages.ts";
+import { HOME_PAGE, staticPagesIn } from "../../src/lib/pages.ts";
+import { STUDIO_PAGES } from "../../src/studio/registration.ts";
+import type { StudioPage } from "../../src/studio/registration.ts";
 
 /** The palette shows the SideNav group label, not the manifest's lower-case key. */
 const GROUP_LABELS = {

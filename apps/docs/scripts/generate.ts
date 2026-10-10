@@ -15,8 +15,7 @@
  *   • the measured bundle sizes the Tokens page publishes;
  *   • the locales, density metrics and component index the landing page states;
  *   • the three dark-scheme colors the Open Graph card paints;
- *   • the theme studio's per-theme seeds, one lazily loaded module per theme;
- *   • the theme studio's slot-to-tokens index, for its selection inspector;
+ *   • the theme studio's modules (`src/studio/registration.ts`);
  *   • `/components/<slug>.md` — the markdown endpoint each page links to;
  *   • `llms.txt`, the site-root AI index;
  *   • the ⌘K search index;
@@ -37,8 +36,9 @@ import type { ApiArtifactDiagnostic, GeneratedApiComponent } from "@elmeragroup/
 
 import type { ComponentPageEntry, DocsComponent, DocsDemo, ThemeCatalog } from "../src/lib/docs-model.ts";
 import { API_REGEN_COMMAND } from "../src/lib/docs-model.ts";
+import { studioGeneratedFiles } from "../src/studio/registration.ts";
 import { generateDocsApiArtifacts } from "./lib/api-artifact.ts";
-import { buildDensityCatalog, densityMetricOrder, renderDensityCatalog } from "./lib/density-catalog.ts";
+import { buildDensityCatalog, renderDensityCatalog } from "./lib/density-catalog.ts";
 import {
   componentInspections,
   docsApiInventory,
@@ -62,9 +62,7 @@ import {
 } from "./lib/paths.ts";
 import { renderSearchIndex } from "./lib/search.ts";
 import type { BundleSizeReport } from "./lib/sizes.ts";
-import { buildSlotTokenIndex, renderSlotTokenIndex } from "./lib/slot-tokens.ts";
 import { collectRecipeSources } from "./lib/sources.ts";
-import { buildStudioSeeds, renderStudioSeed, renderStudioSeedIndex } from "./lib/studio-seeds.ts";
 import { renderFigmaThemeCatalog } from "./lib/theme-catalog-figma.ts";
 import { buildThemeCatalog, renderThemeCatalog } from "./lib/theme-catalog.ts";
 import { extractTokens, readColorTokenMapFromFile } from "./lib/tokens.ts";
@@ -258,7 +256,7 @@ function emitLandingFacts(catalog: ResolvedThemeCatalog, components: readonly Do
 function emitDensityCatalog(catalog: ResolvedThemeCatalog): void {
   writeFile(
     path.join(generatedDir, "density-catalog.ts"),
-    `${BANNER}${renderDensityCatalog(buildDensityCatalog(catalog), densityMetricOrder(catalog))}`
+    `${BANNER}${renderDensityCatalog(buildDensityCatalog(catalog))}`
   );
 }
 
@@ -267,39 +265,24 @@ function emitOgCardColors(catalog: ResolvedThemeCatalog): void {
   writeFile(path.join(generatedDir, "og-card-colors.ts"), `${BANNER}${renderOgCardColors(catalog)}`);
 }
 
-/**
- * The theme studio's seeds: one module per theme, behind a loader of dynamic imports, so the
- * studio's first load carries none of them and each theme loads when the studio shows it.
- */
-function emitStudioSeeds(catalog: ResolvedThemeCatalog): void {
-  const seeds = buildStudioSeeds(catalog);
-  for (const seed of seeds) {
-    writeFile(
-      path.join(generatedDir, "studio-seeds", `${seed.slug}.ts`),
-      `${BANNER}${renderStudioSeed(seed)}`
-    );
-  }
-  writeFile(path.join(generatedDir, "studio-seeds.ts"), `${BANNER}${renderStudioSeedIndex(catalog, seeds)}`);
-}
-
-/**
- * The theme studio's slot-to-tokens index: each slot's component and the tokens its recipe
- * reads, the data behind the Tokens-consumed sections, kept small for the studio's client.
- */
-function emitStudioSlotTokens(
+/** The theme studio's modules: its theme seeds, slot-to-tokens index and density metric order. */
+async function emitStudio(
+  catalog: ResolvedThemeCatalog,
   inspections: readonly ComponentInspection[],
   components: readonly DocsComponent[]
-): void {
+): Promise<void> {
   const tokens = new Map(components.map((component) => [component.slug, component.tokens]));
-  const index = buildSlotTokenIndex(
-    inspections.map(({ slug, paths }) => ({
+  const files = await studioGeneratedFiles({
+    catalog,
+    components: inspections.map(({ slug, paths }) => ({
       slug,
       dir: paths.componentDir,
-      modules: collectRecipeSources(paths.componentDir).modules,
       tokens: tokens.get(slug) ?? [],
-    }))
-  );
-  writeFile(path.join(generatedDir, "studio-slot-tokens.ts"), `${BANNER}${renderSlotTokenIndex(index)}`);
+    })),
+  });
+  for (const { file, source } of files) {
+    writeFile(path.join(generatedDir, file), `${BANNER}${source}`);
+  }
 }
 
 /** The ⌘K palette index. */
@@ -367,8 +350,7 @@ async function main(): Promise<void> {
   emitLandingFacts(catalog, components);
   emitOgCardColors(catalog);
   emitDensityCatalog(catalog);
-  emitStudioSeeds(catalog);
-  emitStudioSlotTokens(inspections, components);
+  await emitStudio(catalog, inspections, components);
   emitMarkdownEndpoints(components);
   emitSearchIndex(components);
   emitLlmsTxt(components);

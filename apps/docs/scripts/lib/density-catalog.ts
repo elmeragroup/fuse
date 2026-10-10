@@ -28,27 +28,11 @@ export function buildDensityCatalog(catalog: ResolvedThemeCatalog): readonly Den
   }));
 }
 
-/**
- * Every density metric's name in `fuse.css` order, which groups the metrics by family rather
- * than by role: label text comes before the surface metrics.
- *
- * @param catalog - The resolved theme catalog.
- */
-export function densityMetricOrder(catalog: ResolvedThemeCatalog): readonly string[] {
-  return catalog.density.map(({ name }) => name);
-}
-
-/** The generated module the tokens handbook page and the studio import. */
-export function renderDensityCatalog(
-  roles: readonly DensityCatalogRole[],
-  metricOrder: readonly string[]
-): string {
+/** The generated module the tokens handbook page imports. */
+export function renderDensityCatalog(roles: readonly DensityCatalogRole[]): string {
   return `import type { DensityCatalogRole } from "../lib/docs-model";
 
 /** Every density role, the metrics it reads in px per density, and the parts that declare it. */
 export const DENSITY_CATALOG: readonly DensityCatalogRole[] = ${JSON.stringify(roles, null, 2)};
-
-/** Every density metric's name in \`fuse.css\` order. */
-export const DENSITY_METRIC_ORDER: readonly string[] = ${JSON.stringify(metricOrder, null, 2)};
 `;
 }

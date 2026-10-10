@@ -1,10 +1,10 @@
 import type { ReactElement } from "react";
 
-import { ComponentsBoard } from "../../../components/studio/overview/components-board";
-import { GlanceBoard } from "../../../components/studio/overview/glance-board";
-import { StudioArtboard } from "../../../components/studio/studio-artboard";
-import { studioPageMetadata } from "../../../components/studio/studio-metadata";
-import { OVERVIEW_ARTBOARDS } from "../../../lib/studio/documents";
+import { ComponentsBoard } from "../../../studio/components/overview/components-board";
+import { GlanceBoard } from "../../../studio/components/overview/glance-board";
+import { StudioArtboard } from "../../../studio/components/studio-artboard";
+import { studioPageMetadata } from "../../../studio/components/studio-metadata";
+import { OVERVIEW_ARTBOARDS } from "../../../studio/lib/documents";
 
 const HREF = "/studio";
 

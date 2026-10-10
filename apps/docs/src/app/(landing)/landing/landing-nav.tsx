@@ -9,8 +9,9 @@ import { Button } from "@elmeragroup/fuse/button";
 import { ElmeraGroupLogo } from "@elmeragroup/fuse/icons";
 import { NavigationMenu } from "@elmeragroup/fuse/navigation-menu";
 
-import { HOME_PAGE, requireStudioPage, staticPagesIn } from "../../../lib/pages";
+import { HOME_PAGE, staticPagesIn } from "../../../lib/pages";
 import type { StaticPage } from "../../../lib/pages";
+import { STUDIO_NAV_CARD } from "../../../studio/registration";
 import { ComponentShowcase, MenuCardText } from "./component-showcase";
 import { QUICK_START } from "./landing-facts";
 import { ThemeChipPicker } from "./theme-picker/theme-chip-picker";
@@ -47,17 +48,11 @@ function MenuCard({ page }: { page: MenuPage }): ReactElement {
   );
 }
 
-const STUDIO = requireStudioPage("/studio");
-
 /** The two page menus, in nav order; Components follows with its live showcase. */
 const PAGE_MENUS: readonly { label: string; pages: readonly MenuPage[] }[] = [
   {
     label: "Docs",
-    pages: [
-      { ...HOME_PAGE, label: "Overview" },
-      ...staticPagesIn("overview"),
-      { href: STUDIO.href, label: STUDIO.title, description: STUDIO.description },
-    ],
+    pages: [{ ...HOME_PAGE, label: "Overview" }, ...staticPagesIn("overview"), STUDIO_NAV_CARD],
   },
   { label: "Handbook", pages: staticPagesIn("handbook") },
 ];

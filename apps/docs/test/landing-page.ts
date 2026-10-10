@@ -102,15 +102,16 @@ export type HeldChunks = {
 /**
  * Holds back every script chunk whose code contains `marker` until `release`, so a test sees the
  * page while one part's code is still on its way. A marker is a string only that part's code
- * holds, such as a label it renders. Call it before navigation, as `prepare` does.
+ * holds, such as a label it renders, or a pattern only it matches. Call it before navigation, as
+ * `prepare` does.
  */
-export async function holdChunks(page: Page, marker: string): Promise<HeldChunks> {
+export async function holdChunks(page: Page, marker: string | RegExp): Promise<HeldChunks> {
   const gate = Promise.withResolvers<undefined>();
   const caught: string[] = [];
   await page.route("**/_next/static/chunks/**", async (route) => {
     const response = await route.fetch();
     const body = await response.text();
-    if (body.includes(marker)) {
+    if (marker instanceof RegExp ? marker.test(body) : body.includes(marker)) {
       caught.push(route.request().url());
       await gate.promise;
     }

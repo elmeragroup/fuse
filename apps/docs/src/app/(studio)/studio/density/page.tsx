@@ -1,11 +1,11 @@
 import type { ReactElement } from "react";
 
-import { DensityOverlays } from "../../../../components/studio/density/density-overlays";
-import { LadderBoard } from "../../../../components/studio/density/ladder-board";
-import { TwinBoard } from "../../../../components/studio/density/twin-board";
-import { StudioArtboard } from "../../../../components/studio/studio-artboard";
-import { studioPageMetadata } from "../../../../components/studio/studio-metadata";
-import { DENSITY_ARTBOARDS, DENSITY_TWINS } from "../../../../lib/studio/documents";
+import { DensityOverlays } from "../../../../studio/components/density/density-overlays";
+import { LadderBoard } from "../../../../studio/components/density/ladder-board";
+import { TwinBoard } from "../../../../studio/components/density/twin-board";
+import { StudioArtboard } from "../../../../studio/components/studio-artboard";
+import { studioPageMetadata } from "../../../../studio/components/studio-metadata";
+import { DENSITY_ARTBOARDS, DENSITY_TWINS } from "../../../../studio/lib/documents";
 
 const HREF = "/studio/density";
 

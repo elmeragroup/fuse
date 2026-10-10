@@ -110,6 +110,16 @@ const RETIRED_DOCS_UTILITY =
 const PRIMITIVE_PALETTE_UTILITY =
   /(?:(?:bg|border|text|ring(?:-offset)?|fill|stroke|placeholder|caret|accent|decoration|divide|outline|from|via|to))-(?:red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|slate|gray|zinc|neutral|stone|black|white)(?:-\d{2,3})?\b/;
 
+/**
+ * The component trees the retired-utility, recipe and `var()` checks read: the docs components and
+ * the theme studio.
+ */
+const CHECKED_SOURCES = ["src/components/", "src/studio/"] as const;
+
+function isCheckedSource(file: string): boolean {
+  return CHECKED_SOURCES.some((prefix) => file.startsWith(prefix));
+}
+
 describe("docs Tailwind migration contract", () => {
   it("keeps globals.css as the Tailwind entry with the library and demo-stage imports", () => {
     const globals = readFileSync(join(docsRoot, "src/styles/globals.css"), "utf8");
@@ -126,8 +136,7 @@ describe("docs Tailwind migration contract", () => {
   });
 
   it("keeps route and shared-component utilities on the library theme", () => {
-    const inScope = (file: string): boolean =>
-      file.startsWith("src/app/(docs)/") || file.startsWith("src/components/");
+    const inScope = (file: string): boolean => file.startsWith("src/app/(docs)/") || isCheckedSource(file);
     const mdxFiles = collectFiles(join(docsRoot, "src/app/(docs)"), "src/app/(docs)", ".mdx").filter(inScope);
     const failures = [
       // `elmera/no-primitive-colors` owns Tailwind palette utilities and arbitrary colour
@@ -170,7 +179,7 @@ describe("docs Tailwind migration contract", () => {
 
   it("inlines complete utility literals in private tv recipes", () => {
     const sources = srcTsFiles()
-      .filter((relative) => relative.startsWith("src/components/"))
+      .filter(isCheckedSource)
       .map((file) => ({ file, source: readFileSync(join(docsRoot, file), "utf8") }));
     expect(recipeSlotFailures(sources)).toEqual([]);
   });
@@ -241,7 +250,7 @@ describe("docs component CSS variables", () => {
     ]);
 
     const failures = srcTsFiles()
-      .filter((relative) => relative.startsWith("src/components/"))
+      .filter(isCheckedSource)
       .flatMap((relative) => {
         const source = readFileSync(join(docsRoot, relative), "utf8");
         for (const match of source.matchAll(/\[(--[A-Za-z0-9_-]+):/g)) {

@@ -1,13 +1,13 @@
 import type { ReactElement, ReactNode } from "react";
 
-import { ChartsBoard } from "../../../../components/studio/color/charts-board";
-import { PairsBoard } from "../../../../components/studio/color/pairs-board";
-import { PrimitivesBoard } from "../../../../components/studio/color/primitives-board";
-import { SidebarBoard } from "../../../../components/studio/color/sidebar-board";
-import { StatusBoard } from "../../../../components/studio/color/status-board";
-import { SyntaxBoard } from "../../../../components/studio/color/syntax-board";
-import { StudioArtboard } from "../../../../components/studio/studio-artboard";
-import { studioPageMetadata } from "../../../../components/studio/studio-metadata";
+import { ChartsBoard } from "../../../../studio/components/color/charts-board";
+import { PairsBoard } from "../../../../studio/components/color/pairs-board";
+import { PrimitivesBoard } from "../../../../studio/components/color/primitives-board";
+import { SidebarBoard } from "../../../../studio/components/color/sidebar-board";
+import { StatusBoard } from "../../../../studio/components/color/status-board";
+import { SyntaxBoard } from "../../../../studio/components/color/syntax-board";
+import { StudioArtboard } from "../../../../studio/components/studio-artboard";
+import { studioPageMetadata } from "../../../../studio/components/studio-metadata";
 
 export const metadata = studioPageMetadata("/studio/color");
 

@@ -339,9 +339,12 @@
   mask-image: url("/landing/marks/ngfi.svg");
 }
 
-/* The theme studio (src/components/studio). Its canvas camera is three registered properties
-   on the canvas element, so the world layer, the dot grid, the artboard labels and the selection
-   outline all read one camera, and a programmatic move can transition it. The central
+/* studio:start. Every rule the theme studio (src/studio) reads, and nothing else, sits between
+   this comment and studio:end. Removing the studio deletes the whole block. */
+
+/* The canvas camera is three registered properties on the canvas element, so the world layer,
+   the dot grid, the artboard labels and the selection outline all read one camera, and a
+   programmatic move can transition it. The central
    reduced-motion rule in Fuse keeps no transition on them, so reduced motion jumps instead. */
 @property --studio-zoom {
   syntax: "<number>";
@@ -445,3 +448,5 @@
 @utility studio-rung-xl {
   border-radius: --theme(--radius-xl);
 }
+
+/* studio:end */

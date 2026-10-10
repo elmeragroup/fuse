@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import { COMPONENT_NAV, NAV_GROUPS } from "../src/lib/nav";
-import { HOME_PAGE, STATIC_PAGES, STUDIO_PAGES } from "../src/lib/pages";
+import { HOME_PAGE, STATIC_PAGES } from "../src/lib/pages";
+import { STUDIO_PAGES } from "../src/studio/registration";
 import { COMPONENT_INVENTORY } from "./component-inventory";
 import { fetchOk, fetchText } from "./docs-server";
 
