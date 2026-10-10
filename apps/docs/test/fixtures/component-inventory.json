@@ -501,6 +501,19 @@
     "rsc": "server",
     "demos": ["skeleton-basic.tsx", "skeleton-card.tsx"]
   },
+  "slider": {
+    "title": "Slider",
+    "rsc": "client",
+    "demos": [
+      "slider-basic.tsx",
+      "slider-range.tsx",
+      "slider-format.tsx",
+      "slider-vertical.tsx",
+      "slider-disabled.tsx",
+      "slider-invalid.tsx",
+      "slider-label-less.tsx"
+    ]
+  },
   "span": {
     "title": "Span",
     "rsc": "client",

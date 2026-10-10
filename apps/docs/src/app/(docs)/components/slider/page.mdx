@@ -1,0 +1,68 @@
+---
+lede: >
+  A labeled slider for picking a number, or a range of numbers, within known bounds.
+---
+
+import { SliderBasic } from "./demos/slider-basic";
+import { SliderDisabled } from "./demos/slider-disabled";
+import { SliderFormat } from "./demos/slider-format";
+import { SliderInvalid } from "./demos/slider-invalid";
+import { SliderLabelLess } from "./demos/slider-label-less";
+import { SliderRange } from "./demos/slider-range";
+import { SliderVertical } from "./demos/slider-vertical";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("slider");
+
+<ComponentIntro slug="slider" />
+
+<Prose>
+
+Use a slider when the bounds are known and a rough position is enough. For an exact
+number, pair it with a NumberField that shares its value, as the label-less demo does.
+
+Pass an array of two or more numbers as `value` or `defaultValue` for a range. Each entry
+renders a thumb, and `onChange` reports an array of the same length. A range names its
+thumbs "minimum" and "maximum" in the provider's locale, joined to `label` or `aria-label`.
+Pass `thumbLabels` to name them yourself.
+
+A vertical slider fills its parent's height below the label row, so give the parent a
+height, as the vertical demo does.
+
+`formatOptions` formats the value that `showValue` puts in the label row and the value a
+screen reader announces for each thumb.
+
+</Prose>
+
+<Demo slug="slider" id="basic" title="Basic" file="slider-basic.tsx">
+  <SliderBasic />
+</Demo>
+
+<Demo slug="slider" id="range" title="Range" file="slider-range.tsx">
+  <SliderRange />
+</Demo>
+
+<Demo slug="slider" id="format" title="Steps and format" file="slider-format.tsx">
+  <SliderFormat />
+</Demo>
+
+<Demo slug="slider" id="vertical" title="Vertical" file="slider-vertical.tsx">
+  <SliderVertical />
+</Demo>
+
+<Demo slug="slider" id="disabled" title="Disabled" file="slider-disabled.tsx">
+  <SliderDisabled />
+</Demo>
+
+<Demo slug="slider" id="invalid" title="Invalid" file="slider-invalid.tsx">
+  <SliderInvalid />
+</Demo>
+
+<Demo slug="slider" id="label-less" title="Without a label" file="slider-label-less.tsx">
+  <SliderLabelLess />
+</Demo>
+
+<ApiReference slug="slider" />
+
+<ComponentTokens slug="slider" />

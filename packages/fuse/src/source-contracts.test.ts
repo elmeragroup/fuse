@@ -97,6 +97,7 @@ const CLIENT_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["separator", ["components/separator/separator.tsx"]],
   ["sheet", ["components/sheet/sheet.tsx"]],
   ["sidebar", ["components/sidebar/sidebar.tsx"]],
+  ["slider", ["components/slider/slider.tsx"]],
   ["span", ["components/span/span.tsx"]],
   ["switch", ["components/switch/switch.tsx"]],
   ["tabs", ["components/tabs/tabs.tsx"]],
@@ -895,6 +896,7 @@ const WIRING_PARTS = {
   ],
   "components/selection-item/selection-item.tsx": ["FieldPrimitive.Label"],
   "components/sheet/sheet.tsx": ["SheetPrimitive.Popup"],
+  "components/slider/slider.tsx": ["SliderPrimitive.Root", "SliderPrimitive.Thumb"],
   "components/switch/switch.tsx": ["SwitchPrimitive.Root"],
 } as const satisfies Readonly<Record<string, readonly string[]>>;
 

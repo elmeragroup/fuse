@@ -1,0 +1,186 @@
+{
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate. Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "slider",
+  "parts": [
+    {
+      "name": "Slider",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/slider/slider.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible name for label-less usage. A range joins it to each thumb's name.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged onto the root via `cn`.",
+          "required": false
+        },
+        {
+          "name": "defaultValue",
+          "origin": "declared",
+          "type": "Value | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Uncontrolled initial value. An array of two or more numbers renders one thumb per entry; a one-number array is read as that number. It is read on mount and again on a native form reset, as React reads its own inputs' defaults.",
+          "required": false
+        },
+        {
+          "name": "description",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Supporting copy, rendered as `Field.Description`.",
+          "required": false
+        },
+        {
+          "name": "errorMessage",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Error copy, rendered as `Field.Error` when truthy. Accepts any `ReactNode`. Falsy, the field shows its own validation error instead.",
+          "required": false
+        },
+        {
+          "name": "formatOptions",
+          "origin": "declared",
+          "type": "NumberFormatOptions | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Formatting options for the shown value and each thumb's `aria-valuetext`, forwarded as base-ui `format`. Locale comes from the provider.",
+          "required": false
+        },
+        {
+          "name": "isDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Forwards `disabled` to `Field.Root` and `Slider.Root`; the thumb shows the disabled state face.",
+          "required": false
+        },
+        {
+          "name": "isInvalid",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Forwards `invalid` to `Field.Root`; the thumb shows the invalid state face.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Visible label, rendered as `Field.Label`; it names the thumb of a single-value slider.",
+          "required": false
+        },
+        {
+          "name": "largeStep",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Step for PageUp, PageDown and Shift with an arrow. Defaults to 10.",
+          "required": false
+        },
+        {
+          "name": "maxValue",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Upper bound, forwarded as base-ui `max`. Defaults to 100.",
+          "required": false
+        },
+        {
+          "name": "minValue",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Lower bound, forwarded as base-ui `min`. Defaults to 0.",
+          "required": false
+        },
+        {
+          "name": "name",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Native `name` forwarded to the primitive, so the value submits with a form.",
+          "required": false
+        },
+        {
+          "name": "onChange",
+          "origin": "declared",
+          "type": "((value: ReportedValue<Value>) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called with the new value on every change while it moves. A range keeps the shape of `value`, with each element widened to `number`. A native form reset does not call it.",
+          "required": false
+        },
+        {
+          "name": "orientation",
+          "origin": "declared",
+          "type": "\"horizontal\" | \"vertical\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"horizontal\"",
+          "description": "Layout axis. A vertical slider fills its parent's height, and its control below the label row keeps at least 160px.",
+          "required": false
+        },
+        {
+          "name": "showValue",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Shows the formatted value at the end of the label row; a range joins its values with an en dash.",
+          "required": false
+        },
+        {
+          "name": "step",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Step for the arrow keys and the snap grid, counted from `minValue`. Defaults to 1.",
+          "required": false
+        },
+        {
+          "name": "thumbLabels",
+          "origin": "declared",
+          "type": "readonly string[] | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Accessible names of a range's thumbs, by index. Defaults to the locale dictionary's minimum and maximum, joined to `label` or `aria-label`. A single thumb takes its name from `label` or `aria-label` instead.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "Value | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Controlled value. `Value` is a `number`, or an array of at least two numbers with one value per thumb for a range. A one-number array from untyped code is read as that number, so `onChange` reports a number. `undefined`, passed or omitted, is uncontrolled, as with React's own inputs.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}
