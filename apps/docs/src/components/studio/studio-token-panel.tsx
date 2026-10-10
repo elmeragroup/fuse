@@ -1,7 +1,15 @@
 "use client";
 
-import { Fragment, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
-import type { ReactElement, ReactNode } from "react";
+import {
+  Fragment,
+  useEffect,
+  useEffectEvent,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import type { ReactElement, ReactNode, RefObject } from "react";
 
 import { createPortal } from "react-dom";
 import { tv } from "tailwind-variants";
@@ -43,6 +51,8 @@ import { SingleToggle } from "../single-toggle";
 import { useStudioEdits } from "./studio-edits";
 import { StudioPanelSection } from "./studio-panel-section";
 import { useStudio } from "./studio-state";
+import { useTokenFocus } from "./studio-token-focus";
+import type { TokenFocusRequest } from "./studio-token-focus";
 import { ColorKnob, FontKnob, LengthKnob, NumberKnob, RadiusStepKnob, isLengthToken } from "./token-knobs";
 import type { CommitValue, ParseValue } from "./token-knobs";
 
@@ -306,16 +316,65 @@ function matches(name: TokenName, query: string): boolean {
 }
 
 export type StudioTokenPanelProps = {
-  /** The section a page leads with: stacked first, and opened when the page opens. */
-  lead?: SectionId | undefined;
-  /** What follows the lead section, such as a readout of what its knobs change. */
+  /** The sections a page leads with: stacked first in this order, the first opened on arrival. */
+  lead?: readonly SectionId[];
+  /** What follows the lead sections, such as a readout of what their knobs change. */
   afterLead?: ReactNode;
 };
 
-/** The editor's sections with `lead` moved to the front. */
-function leadFirst(lead: SectionId | undefined) {
-  const first = STUDIO_SECTIONS.filter((section) => section.id === lead);
-  return [...first, ...STUDIO_SECTIONS.filter((section) => section.id !== lead)];
+const NO_LEAD: readonly SectionId[] = [];
+
+/** The editor's sections with `lead` moved to the front, in `lead`'s order. */
+function leadFirst(lead: readonly SectionId[]) {
+  const first = lead.flatMap((id) => STUDIO_SECTIONS.filter((section) => section.id === id));
+  return [...first, ...STUDIO_SECTIONS.filter((section) => !lead.includes(section.id))];
+}
+
+const FOCUSABLE = "button, input, [tabindex]";
+
+/**
+ * Answers a canvas request for a token's knob while this panel is on screen: shows the token,
+ * edits the requested scheme, and once the token's section has opened, focuses its knob, which
+ * scrolls it into view. Only a focused knob answers the request; a hidden panel, such as the
+ * desktop one on a phone, leaves it open for the panel in the inspector Sheet.
+ */
+function useFocusRequests(panel: RefObject<HTMLDivElement | null>, show: (name: TokenName) => void): void {
+  const { request, answer } = useTokenFocus();
+  const { setEditScheme } = useStudioEdits();
+  // The request this panel has shown, whose knob it focuses once the section has opened.
+  const [shown, setShown] = useState<number | undefined>(undefined);
+  const reveal = useEffectEvent((next: TokenFocusRequest) => {
+    setShown(next.serial);
+    show(next.name);
+    setEditScheme(next.scheme);
+  });
+  useEffect(() => {
+    if (request === undefined) {
+      return undefined;
+    }
+    // Read a frame after the commit, once the panel, and the section it opened, are laid out.
+    const frame = requestAnimationFrame(() => {
+      // A panel under `display: none` has no boxes.
+      if ((panel.current?.getClientRects().length ?? 0) === 0) {
+        return;
+      }
+      if (shown !== request.serial) {
+        reveal(request);
+        return;
+      }
+      const knob = panel.current?.querySelector(`[data-token-row="${request.name}"]`)?.lastElementChild;
+      const target = knob?.matches(FOCUSABLE) === true ? knob : knob?.querySelector(FOCUSABLE);
+      if (target instanceof HTMLElement) {
+        target.focus();
+        if (document.activeElement === target) {
+          answer(request.serial);
+        }
+      }
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+    };
+  }, [request, shown, panel, answer]);
 }
 
 /**
@@ -323,19 +382,32 @@ function leadFirst(lead: SectionId | undefined) {
  * with a knob that edits it live on every artboard in the edited scheme. A search filters the
  * tokens by name, and a toggle shows only the edited ones.
  */
-export function StudioTokenPanel({ lead, afterLead }: StudioTokenPanelProps): ReactElement {
+export function StudioTokenPanel({ lead = NO_LEAD, afterLead }: StudioTokenPanelProps): ReactElement {
   const { overrides, edit, editScheme, setEditScheme } = useStudioEdits();
   const [query, setQuery] = useState("");
   const [editedOnly, setEditedOnly] = useState(false);
-  const [expanded, setExpanded] = useState<SectionId[]>(lead === undefined ? [] : [lead]);
-  // A page that leads with a section opens it on arrival, keeping what the visitor opened.
-  const [arrivedLead, setArrivedLead] = useState(lead);
-  if (lead !== arrivedLead) {
-    setArrivedLead(lead);
-    if (lead !== undefined && !expanded.includes(lead)) {
-      setExpanded([lead, ...expanded]);
+  const opening = lead[0];
+  const [expanded, setExpanded] = useState<SectionId[]>(opening === undefined ? [] : [opening]);
+  // A page that leads with sections opens the first on arrival, keeping what the visitor opened.
+  const [arrivedLead, setArrivedLead] = useState(opening);
+  if (opening !== arrivedLead) {
+    setArrivedLead(opening);
+    if (opening !== undefined && !expanded.includes(opening)) {
+      setExpanded([opening, ...expanded]);
     }
   }
+  const panel = useRef<HTMLDivElement>(null);
+  useFocusRequests(panel, (name) => {
+    // A filter that hides the token gives way, and its section opens.
+    if (!matches(name, query) || editedOnly) {
+      setQuery("");
+      setEditedOnly(false);
+    }
+    const section = TOKEN_TABLE[name].section;
+    if (!expanded.includes(section)) {
+      setExpanded([...expanded, section]);
+    }
+  });
   const { colors, probe } = useResolvedColors(editScheme);
 
   const filtering = query.trim() !== "" || editedOnly;
@@ -352,11 +424,13 @@ export function StudioTokenPanel({ lead, afterLead }: StudioTokenPanelProps): Re
       };
     })
     .filter((section) => !filtering || section.shown.length > 0);
+  // The readout follows the last lead section on show, or the controls when a filter hides them all.
+  const lastLead = sections.findLast((section) => lead.includes(section.id))?.id;
 
   return (
     // Layout only: the scroll area sizes its content to fit, so the rows' long names and paired
     // controls would widen the panel; containment holds the editor to the panel's width.
-    <div className={styles.panel()}>
+    <div ref={panel} className={styles.panel()}>
       <StudioPanelSection title="Tokens">
         {probe}
         <div className={styles.controls()}>
@@ -382,7 +456,7 @@ export function StudioTokenPanel({ lead, afterLead }: StudioTokenPanelProps): Re
             </Toggle>
           </div>
         </div>
-        {sections.some((section) => section.id === lead) ? null : afterLead}
+        {lastLead === undefined ? afterLead : null}
         {sections.length === 0 ? (
           <p className={styles.empty()}>{editedOnly ? "No edited tokens match." : "No tokens match."}</p>
         ) : (
@@ -428,7 +502,7 @@ export function StudioTokenPanel({ lead, afterLead }: StudioTokenPanelProps): Re
                     </div>
                   </Accordion.Content>
                 </Accordion.Item>
-                {section.id === lead ? afterLead : null}
+                {section.id === lastLead ? afterLead : null}
               </Fragment>
             ))}
           </Accordion.Root>

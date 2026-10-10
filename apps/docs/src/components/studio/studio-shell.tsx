@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import Link from "next/link";
@@ -33,6 +33,7 @@ import { StudioNavigator } from "./studio-navigator";
 import { studioToasts } from "./studio-persistence";
 import { useStudio } from "./studio-state";
 import { StudioThemePicker } from "./studio-theme-picker";
+import { useTokenFocus } from "./studio-token-focus";
 import { StudioZoomMenu } from "./studio-zoom-menu";
 
 const studioShell = tv({
@@ -103,12 +104,21 @@ type PanelSheetProps = {
    * an element moves focus to it rather than back to the trigger.
    */
   children: (close: (focus?: HTMLElement) => void) => ReactNode;
+  /** A request that opens the Sheet while it is the panel's only form: a new value opens it. */
+  summon?: number | undefined;
 };
 
 /** A side panel as a Sheet, for phones, where the canvas takes the whole screen. */
-function PanelSheet({ side, title, icon, children }: PanelSheetProps): ReactElement {
+function PanelSheet({ side, title, icon, children, summon }: PanelSheetProps): ReactElement {
   const [open, setOpen] = useState(false);
   const [handoff, setHandoff] = useState<HTMLElement | undefined>(undefined);
+  const trigger = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    // The trigger shows below `lg` only; above it the desktop panel is on screen already.
+    if (summon !== undefined && (trigger.current?.getClientRects().length ?? 0) > 0) {
+      setOpen(true);
+    }
+  }, [summon]);
   return (
     <Sheet.Root
       side={side}
@@ -117,7 +127,7 @@ function PanelSheet({ side, title, icon, children }: PanelSheetProps): ReactElem
         setHandoff(undefined);
         setOpen(next);
       }}>
-      <Sheet.Trigger render={<Button variant="ghost" size="icon-sm" aria-label={title} />}>
+      <Sheet.Trigger ref={trigger} render={<Button variant="ghost" size="icon-sm" aria-label={title} />}>
         {icon}
       </Sheet.Trigger>
       <Sheet.Content finalFocus={() => handoff ?? true}>
@@ -143,6 +153,8 @@ function PanelSheet({ side, title, icon, children }: PanelSheetProps): ReactElem
 export function StudioShell({ children }: { children: ReactNode }): ReactElement {
   const pathname = usePathname();
   const page = STUDIO_PAGES.find((candidate) => candidate.href === pathname);
+  // A canvas request for a token's knob opens the phone's inspector, whose panel answers it.
+  const { request: focusRequest } = useTokenFocus();
 
   return (
     <div className={styles.root()} data-studio>
@@ -172,7 +184,11 @@ export function StudioShell({ children }: { children: ReactNode }): ReactElement
             <PanelSheet side="left" title="Pages and layers" icon={<SidebarSimple />}>
               {(close) => <StudioNavigator onPick={close} />}
             </PanelSheet>
-            <PanelSheet side="right" title="Inspector" icon={<SlidersHorizontal />}>
+            <PanelSheet
+              side="right"
+              title="Inspector"
+              icon={<SlidersHorizontal />}
+              summon={focusRequest?.serial}>
               {() => <StudioInspector />}
             </PanelSheet>
           </div>

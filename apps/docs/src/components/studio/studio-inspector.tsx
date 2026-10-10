@@ -8,7 +8,7 @@ import { tv } from "tailwind-variants";
 import { BRANDS, DENSITIES, defaultDensityForVariant, themeSlug } from "@elmeragroup/fuse/theme";
 import type { Density } from "@elmeragroup/fuse/theme";
 
-import { leadSectionFor } from "../../lib/studio/documents";
+import { leadSectionsFor } from "../../lib/studio/documents";
 import type { ArtboardScheme, ArtboardSpec } from "../../lib/studio/documents";
 import { pinnedEdits } from "../../lib/studio/token-values";
 import { SEGMENT_LABELS, VARIANT_LABELS } from "../../lib/theme";
@@ -130,7 +130,8 @@ function ArtboardSection({ artboard }: { artboard: ArtboardSpec }): ReactElement
 /**
  * The right panel. It is plain composition: the Density page's own section first on that page,
  * the selection's section, or the base theme's when nothing is selected, then the token editor,
- * led by the section the page names and, after it, the corners the X-ray measures while it is on.
+ * led by the sections the page names and, after them, the corners the X-ray measures while it is
+ * on.
  */
 export function StudioInspector(): ReactElement {
   const { artboards, selectedId } = useStudio();
@@ -140,7 +141,7 @@ export function StudioInspector(): ReactElement {
     <>
       {pathname === "/studio/density" ? <DensityPanel /> : null}
       {selected === undefined ? <BaseThemeSection /> : <ArtboardSection artboard={selected} />}
-      <StudioTokenPanel lead={leadSectionFor(pathname)} afterLead={<CornerReadout />} />
+      <StudioTokenPanel lead={leadSectionsFor(pathname)} afterLead={<CornerReadout />} />
     </>
   );
 }

@@ -114,3 +114,27 @@ export function inspector(page: Page): Locator {
 export function layers(page: Page): Locator {
   return page.getByRole("complementary", { name: "Pages and layers", exact: true });
 }
+
+/** A token's row in the inspector's token editor. */
+export function tokenRow(page: Page, name: string): Locator {
+  return inspector(page).getByRole("group", { name: `--${name}`, exact: true });
+}
+
+/** Opens the token editor's section titled `title`, if it is closed. */
+export async function openTokenSection(page: Page, title: string): Promise<void> {
+  const trigger = inspector(page).getByRole("button", { name: title, exact: false }).first();
+  if ((await trigger.getAttribute("aria-expanded")) !== "true") {
+    await trigger.click();
+  }
+}
+
+/** Types `value` into a color token's knob, in the edited scheme, and closes its popover. */
+export async function setTokenColor(page: Page, name: string, value: string): Promise<void> {
+  await tokenRow(page, name)
+    .getByRole("button", { name: `Edit --${name}`, exact: true })
+    .click();
+  const field = page.getByRole("textbox", { name: "Color", exact: true });
+  await field.fill(value);
+  await page.keyboard.press("Escape");
+  await field.waitFor({ state: "hidden" });
+}

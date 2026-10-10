@@ -6,6 +6,7 @@ import { CornerXrayProvider } from "../../../components/studio/corner-xray";
 import { DensityViewProvider } from "../../../components/studio/density/density-view";
 import { StudioShell } from "../../../components/studio/studio-shell";
 import { StudioProvider } from "../../../components/studio/studio-state";
+import { TokenFocusProvider } from "../../../components/studio/studio-token-focus";
 import { ViewportProvider } from "../../../components/studio/studio-viewport";
 
 export type StudioLayoutProps = {
@@ -23,7 +24,9 @@ export default function StudioLayout({ children }: StudioLayoutProps): ReactElem
         <ViewportProvider>
           <DensityViewProvider>
             <CornerXrayProvider>
-              <StudioShell>{children}</StudioShell>
+              <TokenFocusProvider>
+                <StudioShell>{children}</StudioShell>
+              </TokenFocusProvider>
             </CornerXrayProvider>
           </DensityViewProvider>
         </ViewportProvider>

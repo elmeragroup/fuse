@@ -157,6 +157,20 @@ export const STUDIO_PAGES: readonly StudioPage[] = [
     description:
       "The radius rungs and concentric inner corners of the base theme, drawn live on real Fuse parts with the numbers on top.",
   },
+  {
+    href: "/studio/color",
+    label: "Color",
+    title: "Theme studio · Color",
+    description:
+      "The base theme's color system in light and dark: role pairs with live contrast, status, charts, sidebar, syntax and the primitives.",
+  },
+  {
+    href: "/studio/type",
+    label: "Type",
+    title: "Theme studio · Type",
+    description:
+      "The base theme's font stacks and type pairs: a heading and body specimen, and the control and label sizes dense against comfortable.",
+  },
 ];
 
 /** The studio page at `href`; throws when the manifest has none, so a stale route fails the build. */
