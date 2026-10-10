@@ -2,7 +2,17 @@ import type { Locator } from "playwright";
 import { describe, expect, it } from "vitest";
 
 import { launchSuiteBrowser } from "../suite-browser";
-import { artboard, inspector, layers, openStudio, openTokenSection, setTokenColor, tokenRow } from "./page";
+import {
+  DENSITY_PAGE,
+  artboard,
+  inspector,
+  layers,
+  openStudio,
+  openTokenSection,
+  setMetric,
+  setTokenColor,
+  tokenRow,
+} from "./page";
 import type { StudioRoute } from "./page";
 
 const browser = launchSuiteBrowser();
@@ -12,9 +22,6 @@ const COLOR_PAGE: StudioRoute = { path: "/studio/color", artboard: "Role pairs Â
 
 /** The Type page, ready once its specimen shows. */
 const TYPE_PAGE: StudioRoute = { path: "/studio/type", artboard: "Specimen" };
-
-/** The Density page, ready once its dense twin shows. */
-const DENSITY: StudioRoute = { path: "/studio/density", artboard: "Twin Â· Dense" };
 
 const RED = "rgb(255, 0, 0)";
 
@@ -190,16 +197,11 @@ describe("the studio's Type page", () => {
   // Metric edits are B4's (the Density page): until its knobs land, the test declares the
   // comfortable label size on the comfortable artboard's scope, where a metric edit lands.
   it("resizes the comfortable twin's field labels only, and reports the new pair", async () => {
-    const { context, page, errors } = await openStudio(browser(), { route: DENSITY });
+    const { context, page, errors } = await openStudio(browser(), { route: DENSITY_PAGE });
     try {
       // Metric knobs live on the Density page; the edit carries over a page link.
       await inspector(page).getByRole("button", { name: "Label text", exact: true }).click();
-      const knob = inspector(page).getByRole("textbox", {
-        name: "--label-text comfortable in px",
-        exact: true,
-      });
-      await knob.fill("22");
-      await knob.press("Tab");
+      await setMetric(page, "label-text", "comfortable", 22);
       await layers(page).getByRole("link", { name: "Type", exact: true }).click();
       await artboard(page, TYPE_PAGE.artboard).waitFor({ state: "visible" });
 

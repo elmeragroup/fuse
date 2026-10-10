@@ -10,7 +10,7 @@ import * as Wcag from "@elmeragroup/color/wcag";
 import { Badge } from "@elmeragroup/fuse/badge";
 import { Button } from "@elmeragroup/fuse/button";
 
-import { pairMark } from "../../lib/color-roles";
+import { markVariant, pairMark } from "../../lib/color-roles";
 import type { PairMark, RolePair, RoleTile } from "../../lib/color-roles";
 import { canonicalColorCss } from "../../lib/token-values";
 import { useArtboardScope } from "../studio-artboard";
@@ -33,20 +33,6 @@ const pairTile = tv({
 });
 
 const styles = pairTile();
-
-/** The Badge a mark wears: the status it reports, or a plain outline for a decorative pair. */
-function markVariant(state: PairMark["state"]) {
-  switch (state) {
-    case "pass":
-      return "outline-success";
-    case "fail":
-      return "outline-destructive";
-    case "decorative":
-      return "outline";
-    case "translucent":
-      return "outline-warning";
-  }
-}
 
 function srgbOf(css: string) {
   const parsed = CssColor.parse(css);

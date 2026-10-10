@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement, ReactNode } from "react";
+import type { ReactElement } from "react";
 
 import { usePathname } from "next/navigation";
 import { tv } from "tailwind-variants";
@@ -14,28 +14,25 @@ import {
   defaultDensityForVariant,
   themeSlug,
 } from "@elmeragroup/fuse/theme";
-import type { Density } from "@elmeragroup/fuse/theme";
 
 import { SingleToggle } from "../../components/single-toggle";
 import { SEGMENT_LABELS, VARIANT_LABELS } from "../../lib/theme";
-import { leadSectionsFor } from "../lib/documents";
+import { hasDensityPanel, leadSectionsFor } from "../lib/documents";
 import type { ArtboardScheme, ArtboardSpec } from "../lib/documents";
+import { DENSITY_LABELS, SCHEME_LABELS } from "../lib/labels";
 import { pinnedEdits } from "../lib/token-values";
 import { CornerReadout } from "./corner-xray";
 import { DensityPanel } from "./density/density-panel";
 import { useStudioEdits } from "./studio-edits";
 import { StudioPanelSection } from "./studio-panel-section";
+import { ReadoutList, ReadoutRow } from "./studio-readout";
 import { SelectionSection } from "./studio-selection-section";
 import { useStudio } from "./studio-state";
 import { StudioTokenPanel } from "./studio-token-panel";
 
 const studioInspector = tv({
   slots: {
-    list: "text-sm m-0 grid grid-cols-[6rem_minmax(0,1fr)] gap-x-3 gap-y-2 px-2",
-    term: "text-muted-foreground",
-    detail: "m-0 min-w-0 wrap-break-word",
-    // A slug breaks only after its hyphens, never inside a word.
-    code: "font-mono",
+    list: "px-2",
     field: "flex flex-col gap-1.5 px-2",
     note: "m-0 px-2",
   },
@@ -45,23 +42,6 @@ const styles = studioInspector();
 
 const SCHEMES = ["light", "dark"] as const satisfies readonly ArtboardScheme[];
 
-const SCHEME_LABELS = { light: "Light", dark: "Dark" } as const satisfies Record<ArtboardScheme, string>;
-
-const DENSITY_LABELS = { dense: "Dense", comfortable: "Comfortable" } as const satisfies Record<
-  Density,
-  string
->;
-
-/** A term and its value in an inspector list. */
-function Row({ term, children }: { term: string; children: ReactNode }): ReactElement {
-  return (
-    <>
-      <dt className={styles.term()}>{term}</dt>
-      <dd className={styles.detail()}>{children}</dd>
-    </>
-  );
-}
-
 /**
  * With nothing selected: the base theme every artboard renders in, and where a first visit
  * starts editing.
@@ -70,15 +50,15 @@ function BaseThemeSection(): ReactElement {
   const { theme } = useStudio();
   return (
     <StudioPanelSection title="Base theme">
-      <dl className={styles.list()}>
-        <Row term="Slug">
-          <span className={styles.code()}>{themeSlug(theme)}</span>
-        </Row>
-        <Row term="Variant">{VARIANT_LABELS[theme.variant]}</Row>
-        <Row term="Brand">{BRANDS[theme.brand].displayName}</Row>
-        <Row term="Segment">{SEGMENT_LABELS[theme.segment]}</Row>
-        <Row term="Density">{DENSITY_LABELS[defaultDensityForVariant(theme.variant)]}</Row>
-      </dl>
+      <ReadoutList className={styles.list()}>
+        <ReadoutRow term="Slug" code>
+          {themeSlug(theme)}
+        </ReadoutRow>
+        <ReadoutRow term="Variant">{VARIANT_LABELS[theme.variant]}</ReadoutRow>
+        <ReadoutRow term="Brand">{BRANDS[theme.brand].displayName}</ReadoutRow>
+        <ReadoutRow term="Segment">{SEGMENT_LABELS[theme.segment]}</ReadoutRow>
+        <ReadoutRow term="Density">{DENSITY_LABELS[defaultDensityForVariant(theme.variant)]}</ReadoutRow>
+      </ReadoutList>
       <Text size="sm" variant="muted" className={styles.note()}>
         Tune the tokens below. Each edit applies to every artboard, on every page.
       </Text>
@@ -102,10 +82,10 @@ function ArtboardSection({ artboard }: { artboard: ArtboardSpec }): ReactElement
     variant === undefined ? [] : pinnedEdits({ theme, overrides }, variant, settings.scheme).skipped;
   return (
     <StudioPanelSection title="Artboard">
-      <dl className={styles.list()}>
-        <Row term="Name">{artboard.name}</Row>
-        <Row term="Width">{`${String(artboard.width)} px`}</Row>
-      </dl>
+      <ReadoutList className={styles.list()}>
+        <ReadoutRow term="Name">{artboard.name}</ReadoutRow>
+        <ReadoutRow term="Width">{`${String(artboard.width)} px`}</ReadoutRow>
+      </ReadoutList>
       {variant === undefined || skipped.length === 0 ? null : (
         <Text size="sm" variant="muted" className={styles.note()}>
           {`Skips ${TOKEN_LIST.format(skipped.map((name) => `--${name}`))}, which would loop through the ${VARIANT_LABELS[variant]} variant's own aliases.`}
@@ -175,7 +155,7 @@ export function StudioInspector(): ReactElement {
   return (
     <>
       <SelectionSection />
-      {pathname === "/studio/density" ? <DensityPanel /> : null}
+      {hasDensityPanel(pathname) ? <DensityPanel /> : null}
       {selected === undefined ? <BaseThemeSection /> : <ArtboardSection artboard={selected} />}
       <StudioTokenPanel lead={leadSectionsFor(pathname)} afterLead={<CornerReadout />} />
     </>

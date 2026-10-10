@@ -25,6 +25,7 @@ import { Toast } from "@elmeragroup/fuse/toast";
 import { SingleToggle } from "../../components/single-toggle";
 import { HOME_PAGE } from "../../lib/pages";
 import { COLOR_SCHEME_LABELS } from "../../lib/theme";
+import { useMediaQuery } from "../../lib/use-media-query";
 import { STUDIO_PAGES } from "../lib/pages";
 import { ChromeScope } from "./chrome-scope";
 import { StudioActions } from "./studio-actions";
@@ -69,6 +70,9 @@ const studioShell = tv({
 });
 
 const styles = studioShell();
+
+/** Tailwind's `lg`, where both panels sit beside the canvas instead of opening as Sheets. */
+const DESKTOP_QUERY = "(width >= 64rem)";
 
 const SCHEME_ICONS = {
   light: <Sun aria-hidden />,
@@ -165,6 +169,9 @@ export function StudioShell({ children }: { children: ReactNode }): ReactElement
       ? undefined
       : `${String(focusRequest?.serial ?? 0)}/${String(inspectorSkips)}`;
   useRegionCycle();
+  // Each panel mounts in one place only, so a phone does not render a hidden desktop copy on
+  // every edit. The asides stay, empty below `lg`, so the skip links and F6 still find them.
+  const desktop = useMediaQuery(DESKTOP_QUERY, true);
 
   return (
     <div className={styles.root()} data-studio>
@@ -195,14 +202,20 @@ export function StudioShell({ children }: { children: ReactNode }): ReactElement
               Docs
             </Link>
           </div>
-          <div className={styles.phone()}>
-            <PanelSheet side="left" title="Pages and layers" icon={<SidebarSimple />}>
-              {(close) => <StudioNavigator onPick={close} />}
-            </PanelSheet>
-            <PanelSheet side="right" title="Inspector" icon={<SlidersHorizontal />} summon={summonInspector}>
-              {() => <StudioInspector />}
-            </PanelSheet>
-          </div>
+          {desktop ? null : (
+            <div className={styles.phone()}>
+              <PanelSheet side="left" title="Pages and layers" icon={<SidebarSimple />}>
+                {(close) => <StudioNavigator onPick={close} />}
+              </PanelSheet>
+              <PanelSheet
+                side="right"
+                title="Inspector"
+                icon={<SlidersHorizontal />}
+                summon={summonInspector}>
+                {() => <StudioInspector />}
+              </PanelSheet>
+            </div>
+          )}
         </div>
         {/* The studio's toasts wear the chrome's theme; only the viewport needs the provider. */}
         <Toast.Provider toastManager={studioToasts}>
@@ -213,9 +226,11 @@ export function StudioShell({ children }: { children: ReactNode }): ReactElement
         render={<aside aria-label="Pages and layers" />}
         className={styles.panel({ side: "left" })}
         {...regionProps}>
-        <ScrollArea.Root className={styles.scroll()}>
-          <StudioNavigator />
-        </ScrollArea.Root>
+        {desktop ? (
+          <ScrollArea.Root className={styles.scroll()}>
+            <StudioNavigator />
+          </ScrollArea.Root>
+        ) : null}
       </ChromeScope>
       <main className={styles.main()}>
         <StudioCanvas>{children}</StudioCanvas>
@@ -224,9 +239,11 @@ export function StudioShell({ children }: { children: ReactNode }): ReactElement
         render={<aside id={INSPECTOR_ID} aria-label="Inspector" />}
         className={styles.panel({ side: "right" })}
         {...regionProps}>
-        <ScrollArea.Root className={styles.scroll()}>
-          <StudioInspector />
-        </ScrollArea.Root>
+        {desktop ? (
+          <ScrollArea.Root className={styles.scroll()}>
+            <StudioInspector />
+          </ScrollArea.Root>
+        ) : null}
       </ChromeScope>
     </div>
   );

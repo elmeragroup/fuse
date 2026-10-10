@@ -16,8 +16,9 @@ import { tv } from "tailwind-variants";
 
 import { Badge } from "@elmeragroup/fuse/badge";
 
-import { FUSE_PART_ROLES, resolvePartRole } from "../lib/density-parts";
 import type { PartRole } from "../lib/density-parts";
+import { boxSides, partRoleOf } from "../lib/measure";
+import type { Sides } from "../lib/measure";
 import { nearestSlot } from "../lib/slot-tokens";
 import { ChromeScope } from "./chrome-scope";
 import { useStudio } from "./studio-state";
@@ -40,14 +41,6 @@ export type PickedPart = {
   readonly artboard: string;
   readonly slot: string;
   readonly element: HTMLElement;
-};
-
-/** A length per side, in CSS px. */
-export type Sides = {
-  readonly top: number;
-  readonly right: number;
-  readonly bottom: number;
-  readonly left: number;
 };
 
 /** The picked part as measured off the page, in CSS px whatever the zoom. */
@@ -100,22 +93,14 @@ const MOTION_EVENTS = [
   "animationcancel",
 ] as const;
 
-function sides(style: CSSStyleDeclaration, property: (side: string) => string): Sides {
-  const read = (side: string) => Number.parseFloat(style.getPropertyValue(property(side))) || 0;
-  return { top: read("top"), right: read("right"), bottom: read("bottom"), left: read("left") };
-}
-
-function measure({ slot, element }: PickedPart): PartMetrics {
+function measure({ element }: PickedPart): PartMetrics {
   const style = getComputedStyle(element);
   return {
     width: element.offsetWidth,
     height: element.offsetHeight,
-    padding: sides(style, (side) => `padding-${side}`),
-    border: sides(style, (side) => `border-${side}-width`),
+    ...boxSides(style),
     radius: Number.parseFloat(style.borderTopLeftRadius) || 0,
-    role: resolvePartRole(FUSE_PART_ROLES, slot, (suffix) =>
-      element.matches(`[data-slot="${slot}"]${suffix}`)
-    ),
+    role: partRoleOf(element),
   };
 }
 

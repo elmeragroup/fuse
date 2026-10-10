@@ -26,8 +26,11 @@ import { ThemeScope } from "@elmeragroup/fuse/theme";
 import { Toggle } from "@elmeragroup/fuse/toggle";
 
 import { SingleToggle } from "../../components/single-toggle";
+import { markVariant, pairMark } from "../lib/color-roles";
+import type { PairMark } from "../lib/color-roles";
 import type { ArtboardScheme } from "../lib/documents";
 import { editedCount, overrideOf } from "../lib/edits";
+import { SCHEME_LABELS } from "../lib/labels";
 import {
   aliasTarget,
   canonicalColorCss,
@@ -87,8 +90,6 @@ const styles = studioTokenPanel();
 
 const SCHEMES = ["light", "dark"] as const satisfies readonly ArtboardScheme[];
 
-const SCHEME_LABELS = { light: "Light", dark: "Dark" } as const satisfies Record<ArtboardScheme, string>;
-
 const COLOR_TOKENS = STUDIO_TOKEN_NAMES.filter((name) => TOKEN_TABLE[name].kind === "color");
 
 /** The platform never changes whether it is a client, so there is nothing to subscribe to. */
@@ -96,6 +97,11 @@ const subscribeNever = (): (() => void) => () => undefined;
 
 /** A color token as the browser resolves it: in sRGB, and as the canonical `lab()` it computed. */
 type ResolvedColor = { readonly srgb: Srgb; readonly css: string };
+
+/** Whether two readings resolved every token to the same CSS, so the first can stand. */
+function sameColors(a: ReadonlyMap<TokenName, ResolvedColor>, b: ReadonlyMap<TokenName, ResolvedColor>) {
+  return a.size === b.size && [...b].every(([name, color]) => a.get(name)?.css === color.css);
+}
 
 /**
  * Every color token as the browser resolves it in `scheme`, read off a hidden probe: a theme
@@ -136,7 +142,7 @@ export function useResolvedColors(scheme: ArtboardScheme, scope?: ArtboardScope)
         resolved.set(name, { srgb: CssColor.toSrgb(parsed.value), css });
       }
     }
-    setColors(resolved);
+    setColors((previous) => (sameColors(previous, resolved) ? previous : resolved));
   }, [isClient, scheme, theme, style, seed]);
 
   const probe = isClient
@@ -164,38 +170,16 @@ export function useResolvedColors(scheme: ArtboardScheme, scope?: ArtboardScope)
   return { colors, probe };
 }
 
-/** WCAG AA for body text. */
-const AA_RATIO = 4.5;
-
 /**
- * The foreground row's mark: its pair's contrast ratio and whether it meets AA, or that the
- * surface is translucent. A role surface can sit on any other surface, so the studio does not
- * pick one backdrop to composite it over and report that one case as the pair's contrast.
+ * The foreground row's mark, as the Color page's tiles mark the same pair: its contrast ratio
+ * and whether it meets AA, since every foreground pair carries text, or that the surface is
+ * translucent. A role surface can sit on any other surface, so the studio does not pick one
+ * backdrop to composite it over and report that one case as the pair's contrast.
  */
-function ContrastMark({ contrast }: { contrast: Contrast }): ReactElement {
-  if (contrast === "translucent") {
-    return (
-      <Badge size="sm" className={styles.mark()} variant="outline-warning" data-contrast="translucent">
-        Needs an opaque backdrop
-      </Badge>
-    );
-  }
-  const passes = contrast >= AA_RATIO;
-  return (
-    <Badge
-      size="sm"
-      className={styles.mark()}
-      variant={passes ? "outline-success" : "outline-destructive"}
-      data-contrast={passes ? "pass" : "fail"}>
-      {`${passes ? "AA" : "Fail"} ${contrast.toFixed(2)}:1`}
-    </Badge>
-  );
-}
-
-/** A pair's WCAG ratio, or `translucent` when the surface is not opaque. */
-type Contrast = number | "translucent";
-
-function contrastOf(name: TokenName, colors: ReadonlyMap<TokenName, ResolvedColor>): Contrast | undefined {
+function contrastMarkOf(
+  name: TokenName,
+  colors: ReadonlyMap<TokenName, ResolvedColor>
+): PairMark | undefined {
   const pair = pairOfForeground(name);
   const foreground = pair === undefined ? undefined : colors.get(pair.foreground);
   const surface = pair === undefined ? undefined : colors.get(pair.surface);
@@ -203,7 +187,7 @@ function contrastOf(name: TokenName, colors: ReadonlyMap<TokenName, ResolvedColo
     return undefined;
   }
   const ratio = Wcag.contrastRatio(foreground.srgb, surface.srgb);
-  return ratio._tag === "ok" ? ratio.value : "translucent";
+  return pairMark("text", ratio._tag === "ok" ? ratio.value : "translucent");
 }
 
 export type TokenRowProps = {
@@ -231,7 +215,7 @@ export function TokenRow({ name, colors, scope }: TokenRowProps): ReactElement {
   const edited = overrideOf(overrides, scheme, name) !== undefined;
   const target = css === undefined ? undefined : aliasTarget(css);
   const color = colors.get(name);
-  const contrast = contrastOf(name, colors);
+  const mark = contrastMarkOf(name, colors);
   const kind = TOKEN_TABLE[name].kind;
 
   // The one reading of a value for this row: its kind's parser, then the cycle check against
@@ -311,7 +295,15 @@ export function TokenRow({ name, colors, scope }: TokenRowProps): ReactElement {
             {`→ ${target}`}
           </Button>
         )}
-        {contrast === undefined ? null : <ContrastMark contrast={contrast} />}
+        {mark === undefined ? null : (
+          <Badge
+            size="sm"
+            className={styles.mark()}
+            variant={markVariant(mark.state)}
+            data-contrast={mark.state}>
+            {mark.label}
+          </Badge>
+        )}
         {edited ? (
           <Button
             variant="ghost"
@@ -354,8 +346,8 @@ const FOCUSABLE = "button, input, [tabindex]";
 /**
  * Answers a canvas request for a token's knob while this panel is on screen: shows the token,
  * edits the requested scheme, and once the token's section has opened, focuses its knob, which
- * scrolls it into view. Only a focused knob answers the request; a hidden panel, such as the
- * desktop one on a phone, leaves it open for the panel in the inspector Sheet.
+ * scrolls it into view. Only a focused knob answers the request; a panel with no boxes leaves
+ * it open for one on screen, such as the panel in the inspector Sheet.
  */
 function useFocusRequests(panel: RefObject<HTMLDivElement | null>, show: (name: TokenName) => void): void {
   const { request, answer } = useTokenFocus();

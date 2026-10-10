@@ -1,3 +1,6 @@
+import { FUSE_PART_ROLES, resolvePartRole } from "./density-parts";
+import type { PartRole } from "./density-parts";
+
 /** A rectangle in canvas screen px. */
 export type Box = { readonly x: number; readonly y: number; readonly width: number; readonly height: number };
 
@@ -8,6 +11,9 @@ export type Sides = {
   readonly bottom: number;
   readonly left: number;
 };
+
+/** An element's padding and border widths per side, in CSS px. */
+export type BoxSides = { readonly padding: Sides; readonly border: Sides };
 
 /** A shaded band the measure overlay draws, in screen px, and the CSS px it labels. */
 export type Band = { readonly box: Box; readonly px: number };
@@ -24,11 +30,7 @@ const TOUCHING = 0.5;
  * @param sides - Its computed padding and border widths in CSS px.
  * @param scale - Screen px per CSS px, the canvas zoom.
  */
-export function paddingBands(
-  box: Box,
-  { padding, border }: { readonly padding: Sides; readonly border: Sides },
-  scale: number
-): Band[] {
+export function paddingBands(box: Box, { padding, border }: BoxSides, scale: number): Band[] {
   const inner = {
     x: box.x + border.left * scale,
     y: box.y + border.top * scale,
@@ -91,4 +93,22 @@ export function childGaps(children: readonly Box[], scale: number): Band[] {
 /** A CSS px length as a label: at most two decimals, without trailing zeros. */
 export function formatPx(px: number): string {
   return String(Math.round(px * 100) / 100);
+}
+
+/** An element's computed padding and border widths per side, in CSS px. */
+export function boxSides(style: CSSStyleDeclaration): BoxSides {
+  const sides = (property: (side: string) => string): Sides => {
+    const read = (side: string) => Number.parseFloat(style.getPropertyValue(property(side))) || 0;
+    return { top: read("top"), right: read("right"), bottom: read("bottom"), left: read("left") };
+  };
+  return {
+    padding: sides((side) => `padding-${side}`),
+    border: sides((side) => `border-${side}-width`),
+  };
+}
+
+/** A part's density role, from Fuse's part table and the selectors its override keys add. */
+export function partRoleOf(part: Element): PartRole | undefined {
+  const slot = part.getAttribute("data-slot") ?? "";
+  return resolvePartRole(FUSE_PART_ROLES, slot, (suffix) => part.matches(`[data-slot="${slot}"]${suffix}`));
 }

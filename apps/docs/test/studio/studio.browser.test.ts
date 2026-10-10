@@ -513,6 +513,22 @@ describe("theme studio", () => {
     await page.close();
   });
 
+  it("mounts one token editor on a phone, the Sheet's, keeping the desktop panels' regions", async () => {
+    const { page } = await openStudio({ viewport: PHONE });
+    const editors = page.getByRole("textbox", { name: "Filter tokens", exact: true, includeHidden: true });
+    expect(await editors.count()).toBe(0);
+    // The desktop panels' regions stay, out of view, for the skip links and F6 to find.
+    for (const name of ["Inspector", "Pages and layers"]) {
+      const region = page.getByRole("complementary", { name, exact: true, includeHidden: true });
+      expect(await region.count(), name).toBe(1);
+    }
+
+    await page.getByRole("button", { name: "Inspector", exact: true }).click();
+    await page.getByRole("dialog", { name: "Inspector" }).waitFor({ state: "visible" });
+    expect(await editors.count()).toBe(1);
+    await page.close();
+  });
+
   it("hands focus to the artboard a phone picks from the layers Sheet", async () => {
     const { page } = await openStudio({ viewport: PHONE });
     await page.getByRole("button", { name: "Pages and layers", exact: true }).click();

@@ -6,15 +6,21 @@ import * as Hex from "@elmeragroup/color/hex";
 
 import { MAX_SHARE_LENGTH } from "../../src/studio/lib/size-policy";
 import { STUDIO_TOKEN_NAMES, TOKEN_TABLE, isLightOnly } from "../../src/studio/lib/tokens";
-import { auditTargets } from "../landing-page";
+import { auditTargets, holdChunks } from "../landing-page";
+import type { HeldChunks } from "../landing-page";
 import { launchSuiteBrowser } from "../suite-browser";
 import {
+  DENSITY_PAGE,
   artboard,
+  background,
+  frames,
+  hashOf,
   inspector,
   layers,
   openStudioIn,
   openStudio as openStudioPage,
   openTokenSection,
+  setMetric,
   setTokenColor,
   tokenRow,
 } from "./page";
@@ -74,10 +80,6 @@ async function openStudio(
   return openStudioPage(browser(), { hash, prepare, route });
 }
 
-async function background(locator: Locator): Promise<string> {
-  return locator.evaluate((element) => getComputedStyle(element).backgroundColor);
-}
-
 function saveButton(page: Page, board: string): Locator {
   return artboard(page, board).getByRole("button", { name: "Save", exact: true });
 }
@@ -133,15 +135,28 @@ async function dragSlider(page: Page, name: string, fraction: number): Promise<v
   await page.mouse.up();
 }
 
+/**
+ * Counts the token editor's color resolutions from now on: `getComputedStyle` reads of the
+ * probe's spans, one per color token, which carry `data-token`.
+ */
+async function countColorReads(page: Page): Promise<() => Promise<number>> {
+  await page.evaluate(() => {
+    sessionStorage.setItem("colorReads", "0");
+    const read = window.getComputedStyle.bind(window);
+    window.getComputedStyle = (element, pseudo) => {
+      if (element instanceof HTMLElement && element.dataset.token !== undefined) {
+        sessionStorage.setItem("colorReads", String(Number(sessionStorage.getItem("colorReads")) + 1));
+      }
+      return read(element, pseudo);
+    };
+  });
+  return async () => page.evaluate(() => Number(sessionStorage.getItem("colorReads")));
+}
+
 /** A computed color as `#RRGGBB`, or the text itself when it is not one the parser reads. */
 function opaqueHex(computed: string): string {
   const parsed = CssColor.parse(computed);
   return parsed._tag === "ok" ? Hex.formatOpaque(CssColor.toSrgb(parsed.value)) : computed;
-}
-
-/** A share hash for `json`, the payload written out by hand. */
-function hashOf(json: string): string {
-  return `#1.${Buffer.from(json, "utf8").toString("base64url")}`;
 }
 
 async function blurFocus(page: Page): Promise<void> {
@@ -590,22 +605,14 @@ describe("studio token editing", () => {
   });
 
   it("shows the seeded font weight in the weight knob's field when the seed loads late", async () => {
-    const { promise: released, resolve: release } = Promise.withResolvers<void>();
-    let seedHeld = false;
+    const held = Promise.withResolvers<HeldChunks>();
     const { context, page, errors } = await openStudio("", async (opening) => {
       // Holds the seed chunk until the test releases it, so the knob first renders with no value.
-      await opening.route("**/_next/static/chunks/**", async (route) => {
-        const response = await route.fetch();
-        const body = await response.text();
-        if (SEED_CHUNK.test(body)) {
-          seedHeld = true;
-          await released;
-        }
-        await route.fulfill({ response, body });
-      });
+      held.resolve(await holdChunks(opening, SEED_CHUNK));
     });
+    const { caught, release } = await held.promise;
     try {
-      await expect.poll(() => seedHeld).toBe(true);
+      await expect.poll(() => caught().length).toBeGreaterThan(0);
       await openTokenSection(page, "Typography");
       const row = tokenRow(page, "selection-title-weight");
       const slider = row.getByRole("slider", { name: "--selection-title-weight", exact: true });
@@ -804,6 +811,28 @@ describe("studio token editing", () => {
         })
         .waitFor();
       expect(await declared()).toBe(before);
+      expect(errors).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+
+  it("leaves the editor's colors unread on a metric edit, and reads them again on a color edit", async () => {
+    const { context, page, errors } = await openStudio("", undefined, DENSITY_PAGE);
+    try {
+      const medium = artboard(page, DENSITY_TWIN).getByRole("button", { name: "Medium", exact: true });
+      const height = () => medium.evaluate((element) => getComputedStyle(element).height);
+      const colorReads = await countColorReads(page);
+
+      await setMetric(page, "control-h-md", "dense", 40);
+      await expect.poll(height).toBe("40px");
+      await frames(page, 2);
+      expect(await colorReads()).toBe(0);
+
+      // The counter sees a resolution: a color edit sends the probe back to the browser.
+      await openTokenSection(page, "Actions");
+      await setTokenColor(page, "primary", "#ff0000");
+      await expect.poll(colorReads).toBeGreaterThan(0);
       expect(errors).toEqual([]);
     } finally {
       await context.close();

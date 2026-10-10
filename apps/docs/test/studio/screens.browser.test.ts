@@ -3,7 +3,16 @@ import { describe, expect, it } from "vitest";
 
 import { settleFrames } from "../landing-page";
 import { launchSuiteBrowser } from "../suite-browser";
-import { artboard, canvas, inspector, openStudio } from "./page";
+import {
+  artboard,
+  background,
+  canvas,
+  countLayoutReads,
+  frames,
+  hashOf,
+  inspector,
+  openStudio,
+} from "./page";
 import type { StudioRoute } from "./page";
 
 const browser = launchSuiteBrowser();
@@ -101,11 +110,6 @@ async function paintedProperty(locator: Locator, property: `--${string}`): Promi
   }, property);
 }
 
-/** A studio share hash for a document, as the share codec writes it. */
-function hashOf(json: string): string {
-  return `#1.${Buffer.from(json, "utf8").toString("base64url")}`;
-}
-
 /** The swatch on a Selection row's color knob. */
 function selectionSwatch(page: Page, name: string): Locator {
   // DOM audit: the swatch is presentational and has no role or name.
@@ -122,21 +126,6 @@ async function outlineBox(page: Page): Promise<{ x: number; y: number }> {
     throw new Error("The part outline has no box");
   }
   return { x: box.x, y: box.y };
-}
-
-/**
- * Counts `getBoundingClientRect` calls on HTML elements from now on. The wrapper sits on
- * `HTMLElement.prototype` and calls through to `Element.prototype`'s own method.
- */
-async function countLayoutReads(page: Page): Promise<() => Promise<number>> {
-  await page.evaluate(() => {
-    sessionStorage.setItem("layoutReads", "0");
-    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(this: HTMLElement) {
-      sessionStorage.setItem("layoutReads", String(Number(sessionStorage.getItem("layoutReads")) + 1));
-      return Element.prototype.getBoundingClientRect.call(this);
-    };
-  });
-  return async () => page.evaluate(() => Number(sessionStorage.getItem("layoutReads")));
 }
 
 /**
@@ -168,12 +157,6 @@ async function countPendingFrames(page: Page): Promise<() => Promise<number>> {
   return async () => page.evaluate(() => Number(sessionStorage.getItem("mostPendingFrames")));
 }
 
-async function frames(page: Page, count: number): Promise<void> {
-  for (let frame = 0; frame < count; frame++) {
-    await settleFrames(page);
-  }
-}
-
 /** The admin table's customer names, in row order. */
 async function customerNames(page: Page): Promise<string[]> {
   const rows = artboard(page, ADMIN).getByRole("table").getByRole("row");
@@ -182,10 +165,6 @@ async function customerNames(page: Page): Promise<string[]> {
     elements.slice(1).map((row) => row.querySelectorAll("td")[1]?.textContent.trim() ?? "")
   );
   return names;
-}
-
-async function background(locator: Locator): Promise<string> {
-  return locator.evaluate((element) => getComputedStyle(element).backgroundColor);
 }
 
 /** The trigger's popup, which portals into the trigger's own artboard. */
@@ -372,7 +351,7 @@ describe("the studio's Screens page", () => {
       expect(facts.Component).toBe("button");
       // PART_DENSITY files Button under the control role (packages/fuse density-roles.ts).
       expect(facts["Density role"]).toBe("control");
-      expect(facts.Size).toMatch(/^\d+(\.\d)? × \d+(\.\d)? px$/u);
+      expect(facts.Size).toMatch(/^\d+(\.\d{1,2})? × \d+(\.\d{1,2})? px$/u);
       // Button's recipe paints the default variant with bg-primary.
       expect(await selection(page).getByRole("group", { name: "--primary", exact: true }).isVisible()).toBe(
         true

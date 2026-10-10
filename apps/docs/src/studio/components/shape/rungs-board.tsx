@@ -10,8 +10,9 @@ import { Input } from "@elmeragroup/fuse/input";
 import { Skeleton } from "@elmeragroup/fuse/skeleton";
 import { Text } from "@elmeragroup/fuse/text";
 
-import { RUNGS, formatPx, rungFormula } from "../../lib/corners";
+import { RUNGS, rungFormula } from "../../lib/corners";
 import type { RungId } from "../../lib/corners";
+import { formatPx } from "../../lib/measure";
 import { lengthPx } from "../../lib/token-values";
 import { useArtboardScope } from "../studio-artboard";
 

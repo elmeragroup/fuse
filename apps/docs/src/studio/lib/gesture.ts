@@ -58,7 +58,7 @@ export type GestureStep = { readonly gesture: Gesture; readonly move?: CameraMov
 export const IDLE: Gesture = { kind: "idle" };
 
 /** How far, in px, a finger may move from where it landed and still tap. */
-export const TAP_SLOP = 6;
+const TAP_SLOP = 6;
 
 function pinchOf(first: Contact, second: Contact): Extract<Gesture, { kind: "pinch" }> {
   return {

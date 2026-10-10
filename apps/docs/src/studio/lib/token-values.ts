@@ -418,7 +418,7 @@ function reaches(
  * @param base - The base theme's alias graph.
  * @returns The names on a cycle, sorted, or none.
  */
-export function cycleNames(overrides: StudioOverrides, base: BaseReferences): TokenName[] {
+function cycleNames(overrides: StudioOverrides, base: BaseReferences): TokenName[] {
   return STUDIO_TOKEN_NAMES.filter((name) =>
     SCHEMES.some((scheme) => reaches(overrides, base, scheme, name, readsOf(overrides, base, scheme, name)))
   ).sort();

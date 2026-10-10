@@ -114,6 +114,19 @@ export function numberFieldBoundaries(end: () => void) {
 }
 
 /**
+ * A slider's undo boundaries: a press starts a gesture and its release ends it, so a drag or a
+ * held key is one step and two separate presses make two.
+ */
+export function sliderBoundaries(end: () => void) {
+  return {
+    onPointerDownCapture: end,
+    onPointerUpCapture: end,
+    onKeyUpCapture: end,
+    onBlurCapture: end,
+  };
+}
+
+/**
  * Typed color text in a notation `@elmeragroup/color` reads. A color it reads already, or an
  * alias, stays as typed. Any other color the browser reads, such as `red` or
  * `color(srgb 1 0 0)`, goes through the studio's one canonical path ({@link canonicalColorCss})
@@ -387,12 +400,7 @@ export function NumberKnob({
   return (
     <div className={styles.pair()}>
       {/* Layout, and the slider gesture's boundary: a press starts one, a release ends it. */}
-      <div
-        className={styles.slider()}
-        onPointerDownCapture={sliding.end}
-        onPointerUpCapture={sliding.end}
-        onKeyUpCapture={sliding.end}
-        onBlurCapture={sliding.end}>
+      <div className={styles.slider()} {...sliderBoundaries(sliding.end)}>
         <Slider
           aria-label={`--${name}`}
           value={value ?? min}
@@ -427,14 +435,14 @@ export function NumberKnob({
 }
 
 /** The length knob's range and the unit it writes, per length token. */
-export const LENGTH_KNOBS = {
+const LENGTH_KNOBS = {
   radius: { max: 40, step: 1, unit: "rem" },
   "radius-button": { max: 40, step: 1, unit: "rem" },
   "radius-field": { max: 40, step: 1, unit: "rem" },
   "button-outline-width": { max: 4, step: 0.5, unit: "px" },
 } as const satisfies Partial<Record<TokenName, { max: number; step: number; unit: "px" | "rem" }>>;
 
-export type LengthToken = keyof typeof LENGTH_KNOBS;
+type LengthToken = keyof typeof LENGTH_KNOBS;
 
 export function isLengthToken(name: TokenName): name is LengthToken {
   return Object.hasOwn(LENGTH_KNOBS, name);

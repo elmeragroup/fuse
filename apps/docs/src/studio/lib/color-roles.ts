@@ -58,7 +58,7 @@ export const ROLE_TILES = {
 } as const;
 
 /** WCAG AA for body text. */
-export const AA_RATIO = 4.5;
+const AA_RATIO = 4.5;
 
 /** A pair's verdict, as a tile marks it. */
 export type PairMark = {
@@ -85,4 +85,18 @@ export function pairMark(grade: PairGrade, contrast: number | "translucent"): Pa
   return contrast >= AA_RATIO
     ? { state: "pass", label: `AA ${ratio}` }
     : { state: "fail", label: `Fail ${ratio}` };
+}
+
+/** The Badge variant a mark wears: the status it reports, or a plain outline for a decorative pair. */
+export function markVariant(state: PairMark["state"]) {
+  switch (state) {
+    case "pass":
+      return "outline-success";
+    case "fail":
+      return "outline-destructive";
+    case "decorative":
+      return "outline";
+    case "translucent":
+      return "outline-warning";
+  }
 }

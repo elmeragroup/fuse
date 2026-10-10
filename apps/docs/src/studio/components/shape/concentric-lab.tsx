@@ -11,7 +11,8 @@ import { Skeleton } from "@elmeragroup/fuse/skeleton";
 import { Slider } from "@elmeragroup/fuse/slider";
 import { Text } from "@elmeragroup/fuse/text";
 
-import { checkCorner, cornerEquation, formatPx, innerCorner } from "../../lib/corners";
+import { checkCorner, cornerEquation, innerCorner } from "../../lib/corners";
+import { formatPx } from "../../lib/measure";
 
 const concentricLab = tv({
   slots: {

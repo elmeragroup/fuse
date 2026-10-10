@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { settleFrames } from "../landing-page";
 import { launchSuiteBrowser } from "../suite-browser";
-import { artboard, canvas, inspector, layers, openStudio } from "./page";
+import { artboard, canvas, hashOf, inspector, layers, openStudio } from "./page";
 import type { StudioRoute } from "./page";
 
 const browser = launchSuiteBrowser();
@@ -103,11 +103,6 @@ function arcMisses(page: Page): Promise<string[]> {
 async function openMenu(page: Page): Promise<void> {
   await artboard(page, SHELLS).getByRole("button", { name: "Open the menu", exact: true }).click();
   await expect.poll(() => xrayLabels(page).count()).toBe(CLOSED_MENU_PARTS + MENU_ROWS);
-}
-
-/** A share link's hash for `json`, the studio's version-1 share text. */
-function hashOf(json: string): string {
-  return `#1.${Buffer.from(json, "utf8").toString("base64url")}`;
 }
 
 /** Turns the X-ray on and waits for its labels. */

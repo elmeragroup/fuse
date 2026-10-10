@@ -7,6 +7,8 @@
 
 import * as CssColor from "@elmeragroup/color/css-color";
 
+import { formatPx } from "./measure";
+
 /**
  * Each rung's distance from `--radius`, in `--radius-step` lengths, as fuse.css declares it.
  * Fuse keeps the table private (`theme/tokens/radius-scale.ts`); the Shape page's browser test
@@ -81,11 +83,6 @@ export function checkCorner({ outer, border, padding, inner }: CornerReading): C
     clamped: outer - border - padding < 0,
     mismatch: Math.abs(inner - expected) > TOLERANCE,
   };
-}
-
-/** A length in px to at most two places, without trailing zeros. */
-export function formatPx(px: number): string {
-  return String(Math.round(px * 100) / 100);
 }
 
 /** The formula with its numbers, such as `max(0, 16 − 1 − 12) = 3px`. */

@@ -20,7 +20,7 @@ import { isTextEditingTarget } from "../../lib/typing-target";
 import { artboardStyle } from "../lib/artboard-style";
 import type { CustomProperties } from "../lib/artboard-style";
 import type { ArtboardScheme } from "../lib/documents";
-import { NO_OVERRIDES, guardedHistory, overridesFor, reduceGuarded } from "../lib/edits";
+import { NO_OVERRIDES, guardedHistory, reduceGuarded } from "../lib/edits";
 import type { EditAction, GuardedHistory, Refusal, StudioDocument, StudioOverrides } from "../lib/edits";
 import type { StudioSeed } from "../lib/seed";
 import { createSeedStore } from "../lib/seed-store";
@@ -238,15 +238,24 @@ export function useEditSession(
     [selectedId]
   );
 
-  const styles = useMemo(() => {
-    const base = seed === undefined ? undefined : declarationsOf(seed);
-    return {
-      light: artboardStyle(overridesFor(overrides, "light"), base?.light),
-      dark: artboardStyle(overridesFor(overrides, "dark"), base?.dark),
-    };
-  }, [overrides, seed]);
+  // Each scheme's style (its edits under the shared ones) keeps its identity until those edits
+  // or the seed change, so a metric edit does not send the inspector's color probes back to
+  // the browser.
+  const { light: lightEdits, dark: darkEdits, shared } = overrides;
+  const base = useMemo(() => (seed === undefined ? undefined : declarationsOf(seed)), [seed]);
+  const light = useMemo(
+    () => artboardStyle({ ...lightEdits, ...shared }, base?.light),
+    [lightEdits, shared, base]
+  );
+  const dark = useMemo(
+    () => artboardStyle({ ...darkEdits, ...shared }, base?.dark),
+    [darkEdits, shared, base]
+  );
 
-  const styleFor = useCallback((scheme: ArtboardScheme) => styles[scheme], [styles]);
+  const styleFor = useCallback(
+    (scheme: ArtboardScheme) => (scheme === "light" ? light : dark),
+    [light, dark]
+  );
 
   const setTheme = useCallback((next: ThemeInput) => {
     dispatch({ type: "theme", theme: next });

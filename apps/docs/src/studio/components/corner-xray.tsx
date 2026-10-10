@@ -28,7 +28,6 @@ import {
   checkCorner,
   cornerEquation,
   cornerSum,
-  formatPx,
   insetOf,
   insetRedline,
   packLabels,
@@ -37,6 +36,7 @@ import {
 } from "../lib/corners";
 import type { CornerCheck, CornerReading, CornerSide, InsetBox } from "../lib/corners";
 import { hasCornerXray } from "../lib/documents";
+import { formatPx } from "../lib/measure";
 import type { Viewport } from "../lib/viewport";
 import { ChromeScope } from "./chrome-scope";
 import { useStudioEdits } from "./studio-edits";

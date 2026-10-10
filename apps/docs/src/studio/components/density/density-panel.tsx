@@ -20,10 +20,12 @@ import { MAX_METRIC_PX, STUDIO_METRICS, metricPx } from "../../lib/density-metri
 import type { StudioMetric } from "../../lib/density-metrics";
 import type { InspectedPart } from "../../lib/density-parts";
 import { metricOverridesFor } from "../../lib/edits";
+import { DENSITY_LABELS } from "../../lib/labels";
 import { useStudioEdits } from "../studio-edits";
 import { StudioPanelSection } from "../studio-panel-section";
+import { ReadoutList, ReadoutRow } from "../studio-readout";
 import { useStudio } from "../studio-state";
-import { numberFieldBoundaries, useGesture } from "../token-knobs";
+import { numberFieldBoundaries, sliderBoundaries, useGesture } from "../token-knobs";
 import { useDensityView } from "./density-view";
 
 const densityPanel = tv({
@@ -31,13 +33,7 @@ const densityPanel = tv({
     // Layout only: the knobs' fit-content width would otherwise widen the inspector's column.
     panel: "contain-inline-size",
     part: "flex flex-col gap-2 px-2",
-    list: "text-sm m-0 grid grid-cols-[4.5rem_minmax(0,1fr)] gap-x-3 gap-y-1",
-    term: "text-muted-foreground",
-    detail: "m-0 min-w-0 font-mono break-all",
-    // The metric list takes the whole row, under its term.
-    readsTerm: "col-span-full text-muted-foreground",
-    reads: "col-span-full m-0 min-w-0 font-mono",
-    metrics: "text-xs m-0 flex list-none flex-col gap-0.5 p-0",
+    metrics: "text-xs m-0 flex list-none flex-col gap-0.5 p-0 font-mono",
     metric: "flex min-w-0 items-baseline justify-between gap-2",
     metricName: "min-w-0 break-all",
     metricValue: "shrink-0 tabular-nums",
@@ -54,11 +50,6 @@ const densityPanel = tv({
 });
 
 const styles = densityPanel();
-
-const DENSITY_LABELS = { dense: "Dense", comfortable: "Comfortable" } as const satisfies Record<
-  Density,
-  string
->;
 
 /** The roles that read metrics, each a section of the editor, in CONTEXT.md order. */
 const METRIC_ROLES = [
@@ -110,12 +101,7 @@ function MetricKnob({ metric, density }: MetricKnobProps): ReactElement {
       </div>
       <div className={styles.knobFoot()}>
         {/* Layout, and the slider gesture's boundary: a press starts one, a release ends it. */}
-        <div
-          className={styles.slider()}
-          onPointerDownCapture={sliding.end}
-          onPointerUpCapture={sliding.end}
-          onKeyUpCapture={sliding.end}
-          onBlurCapture={sliding.end}>
+        <div className={styles.slider()} {...sliderBoundaries(sliding.end)}>
           <Slider
             aria-label={label}
             value={px}
@@ -213,21 +199,20 @@ function InspectedPartDetails({ part }: { part: InspectedPart | undefined }): Re
   const metrics = STUDIO_METRICS.filter((metric) => metric.role === part.role);
   const edits = metricOverridesFor(overrides, density);
   return (
-    <dl className={styles.list()} aria-label="Inspected part">
-      <dt className={styles.term()}>Slot</dt>
-      <dd className={styles.detail()}>{part.slot}</dd>
+    <ReadoutList aria-label="Inspected part">
+      <ReadoutRow term="Slot" code>
+        {part.slot}
+      </ReadoutRow>
       {part.key === part.slot ? null : (
-        <>
-          <dt className={styles.term()}>Key</dt>
-          <dd className={styles.detail()}>{part.key}</dd>
-        </>
+        <ReadoutRow term="Key" code>
+          {part.key}
+        </ReadoutRow>
       )}
-      <dt className={styles.term()}>Role</dt>
-      <dd className={styles.detail()}>{part.role}</dd>
-      <dt className={styles.term()}>Density</dt>
-      <dd className={styles.detail()}>{density}</dd>
-      <dt className={styles.readsTerm()}>Reads</dt>
-      <dd className={styles.reads()}>
+      <ReadoutRow term="Density role" code>
+        {part.role}
+      </ReadoutRow>
+      <ReadoutRow term="Density">{DENSITY_LABELS[density]}</ReadoutRow>
+      <ReadoutRow term="Reads">
         {metrics.length === 0 ? (
           "No density metric"
         ) : (
@@ -241,8 +226,8 @@ function InspectedPartDetails({ part }: { part: InspectedPart | undefined }): Re
             ))}
           </ul>
         )}
-      </dd>
-    </dl>
+      </ReadoutRow>
+    </ReadoutList>
   );
 }
 

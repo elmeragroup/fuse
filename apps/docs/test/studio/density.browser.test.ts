@@ -3,10 +3,19 @@ import { describe, expect, it } from "vitest";
 
 import { PART_DENSITY } from "@elmeragroup/fuse/theme-catalog";
 
-import { auditTargets, settleFrames } from "../landing-page";
+import { auditTargets } from "../landing-page";
 import { launchSuiteBrowser } from "../suite-browser";
-import { artboard, inspector, layers, openStudio } from "./page";
-import type { StudioPage, StudioRoute } from "./page";
+import {
+  DENSITY_PAGE,
+  artboard,
+  countLayoutReads,
+  frames,
+  inspector,
+  layers,
+  openStudio,
+  setMetric,
+} from "./page";
+import type { StudioPage } from "./page";
 
 const browser = launchSuiteBrowser();
 
@@ -14,11 +23,8 @@ const DENSE_TWIN = "Twin · Dense";
 const GLANCE_BOARD = "Theme at a glance";
 const COMFORTABLE_TWIN = "Twin · Comfortable";
 
-/** The Density page, ready once the dense twin shows. */
-const DENSITY: StudioRoute = { path: "/studio/density", artboard: DENSE_TWIN };
-
 async function openDensity(reducedMotion: "reduce" | "no-preference" = "reduce"): Promise<StudioPage> {
-  return openStudio(browser(), { reducedMotion, route: DENSITY });
+  return openStudio(browser(), { reducedMotion, route: DENSITY_PAGE });
 }
 
 function button(page: Page, board: string, name: string): Locator {
@@ -27,13 +33,6 @@ function button(page: Page, board: string, name: string): Locator {
 
 async function height(locator: Locator): Promise<number> {
   return locator.evaluate((element) => Number.parseFloat(getComputedStyle(element).height));
-}
-
-/** Types a metric's px for one density into its NumberField, and commits it by leaving the field. */
-async function setMetric(page: Page, name: string, density: string, px: number): Promise<void> {
-  const field = inspector(page).getByRole("textbox", { name: `--${name} ${density} in px`, exact: true });
-  await field.fill(String(px));
-  await field.press("Tab");
 }
 
 /** The overlay box the X-ray draws for the part under the pointer. */
@@ -60,31 +59,12 @@ function edgeDistance(a: Rect, b: Rect): number {
   );
 }
 
-/** The inspector's text alternative: its terms and their details, in order. */
+/** The Density section's text alternative for the inspected part: its details, in order. */
 async function inspectedPart(page: Page): Promise<string[]> {
-  return inspector(page).getByRole("definition").allTextContents();
-}
-
-/**
- * Counts `getBoundingClientRect` calls on HTML elements from now on. The wrapper sits on
- * `HTMLElement.prototype` and calls through to `Element.prototype`'s own method.
- */
-async function countLayoutReads(page: Page): Promise<() => Promise<number>> {
-  await page.evaluate(() => {
-    sessionStorage.setItem("layoutReads", "0");
-    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(this: HTMLElement) {
-      sessionStorage.setItem("layoutReads", String(Number(sessionStorage.getItem("layoutReads")) + 1));
-      return Element.prototype.getBoundingClientRect.call(this);
-    };
-  });
-  return async () => page.evaluate(() => Number(sessionStorage.getItem("layoutReads")));
-}
-
-/** Waits `count` animation frames. */
-async function frames(page: Page, count: number): Promise<void> {
-  for (let frame = 0; frame < count; frame++) {
-    await settleFrames(page);
-  }
+  return inspector(page)
+    .getByRole("region", { name: "Density", exact: true })
+    .getByRole("definition")
+    .allTextContents();
 }
 
 /**
@@ -208,9 +188,8 @@ describe("studio density page", () => {
         await expect
           .poll(() => hoveredTint(page).getAttribute("data-xray-role"), { message: slot })
           .toBe(PART_DENSITY[slot]);
-        const details = inspector(page).getByRole("definition");
-        await expect.poll(() => details.allTextContents(), { message: slot }).toContain(slot);
-        expect(await details.allTextContents()).toContain(PART_DENSITY[slot]);
+        await expect.poll(() => inspectedPart(page), { message: slot }).toContain(slot);
+        expect(await inspectedPart(page)).toContain(PART_DENSITY[slot]);
         // The tint is painted: a fill that is not transparent, over the part's own box.
         const fill = await hoveredTint(page).evaluate((element) => getComputedStyle(element).backgroundColor);
         expect(fill, slot).not.toMatch(/^(transparent|rgba\(0, 0, 0, 0\))$/u);
@@ -347,7 +326,7 @@ describe("studio density page", () => {
     const { context, page, errors } = await openDensity();
     try {
       await button(page, DENSE_TWIN, "Medium").hover();
-      await expect.poll(() => inspectedPart(page)).toContain("dense");
+      await expect.poll(() => inspectedPart(page)).toContain("Dense");
       expect((await inspectedPart(page)).join("|")).toContain("--control-h-md36px");
 
       await page
@@ -358,7 +337,7 @@ describe("studio density page", () => {
         .getByRole("group", { name: "Density", exact: true })
         .getByRole("button", { name: "Comfortable", exact: true })
         .click();
-      await expect.poll(() => inspectedPart(page)).toContain("comfortable");
+      await expect.poll(() => inspectedPart(page)).toContain("Comfortable");
       expect((await inspectedPart(page)).join("|")).toContain("--control-h-md44px");
       expect(errors).toEqual([]);
     } finally {

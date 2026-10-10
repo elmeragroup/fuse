@@ -9,10 +9,10 @@ import { Button } from "@elmeragroup/fuse/button";
 import { Heading } from "@elmeragroup/fuse/heading";
 import { Text } from "@elmeragroup/fuse/text";
 import { DENSITIES, densityAttributes } from "@elmeragroup/fuse/theme";
-import type { Density } from "@elmeragroup/fuse/theme";
 
 import { metricStyle } from "../../lib/density-metrics";
 import { metricOverridesFor } from "../../lib/edits";
+import { DENSITY_LABELS } from "../../lib/labels";
 import { useStudioEdits } from "../studio-edits";
 import { useStudio } from "../studio-state";
 
@@ -76,11 +76,6 @@ const RUNGS: readonly Rung[] = ["xs", "sm", "md", "lg", "xl"];
 
 /** Button's sizes. */
 const CONTROL_SIZES = ["xs", "sm", "default", "lg"] as const;
-
-const DENSITY_LABELS = { dense: "Dense", comfortable: "Comfortable" } as const satisfies Record<
-  Density,
-  string
->;
 
 /** One radius rung as a real rounded box, labeled with the radius the browser resolved. */
 function RungBox({ rung }: { rung: Rung }): ReactElement {

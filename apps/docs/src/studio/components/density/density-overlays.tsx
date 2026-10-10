@@ -10,10 +10,9 @@ import { DENSITY_ROLES } from "@elmeragroup/fuse/theme-catalog";
 import type { DensityRole } from "@elmeragroup/fuse/theme-catalog";
 import { Toggle } from "@elmeragroup/fuse/toggle";
 
-import { FUSE_PART_ROLES, resolvePartRole } from "../../lib/density-parts";
 import type { InspectedPart, PartRole } from "../../lib/density-parts";
 import { DENSITY_TWINS } from "../../lib/documents";
-import { childGaps, formatPx, paddingBands } from "../../lib/measure";
+import { boxSides, childGaps, formatPx, paddingBands, partRoleOf } from "../../lib/measure";
 import type { Band, Box } from "../../lib/measure";
 import { ChromeScope } from "../chrome-scope";
 import { useStudioEdits } from "../studio-edits";
@@ -110,12 +109,6 @@ function partAt(target: Element): { part: Element; stage: Element } | undefined 
   return stage !== null && part !== null && stage.contains(part) ? { part, stage } : undefined;
 }
 
-/** A part's role, from Fuse's part table and the selectors its override keys add. */
-function resolveRole(part: Element): PartRole | undefined {
-  const slot = part.getAttribute("data-slot") ?? "";
-  return resolvePartRole(FUSE_PART_ROLES, slot, (suffix) => part.matches(`[data-slot="${slot}"]${suffix}`));
-}
-
 /**
  * An artboard's parts and their roles, discovered once. The cache drops an artboard when its
  * subtree changes and every artboard on an edit.
@@ -128,7 +121,7 @@ function partsOf(cache: PartCache, artboard: Element): ReadonlyMap<Element, Part
   const parts = new Map(
     Array.from(
       artboard.querySelectorAll(`[data-demo-stage] ${PART}`),
-      (part) => [part, resolveRole(part)] as const
+      (part) => [part, partRoleOf(part)] as const
     )
   );
   cache.set(artboard, parts);
@@ -196,24 +189,7 @@ function measure(element: Element, origin: DOMRect): Measurement {
   const scale = scaleOf(element);
   const box = boxIn(element, origin);
   const style = getComputedStyle(element);
-  const padding = paddingBands(
-    box,
-    {
-      padding: {
-        top: Number.parseFloat(style.paddingTop),
-        right: Number.parseFloat(style.paddingRight),
-        bottom: Number.parseFloat(style.paddingBottom),
-        left: Number.parseFloat(style.paddingLeft),
-      },
-      border: {
-        top: Number.parseFloat(style.borderTopWidth),
-        right: Number.parseFloat(style.borderRightWidth),
-        bottom: Number.parseFloat(style.borderBottomWidth),
-        left: Number.parseFloat(style.borderLeftWidth),
-      },
-    },
-    scale
-  );
+  const padding = paddingBands(box, boxSides(style), scale);
   const children = Array.from(element.children).filter((child) => {
     const position = getComputedStyle(child).position;
     const rect = child.getBoundingClientRect();

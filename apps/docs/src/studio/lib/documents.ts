@@ -132,7 +132,7 @@ const RUNG_BOARD_WIDTH = 560;
 const RUNG_COLUMN = RUNG_BOARD_WIDTH + 120;
 
 /** The Shape page: the radius rungs in each variant, the concentric lab and Fuse's own shells. */
-export const CORNER_PAGE_ARTBOARDS: readonly ArtboardSpec[] = [
+const CORNER_PAGE_ARTBOARDS: readonly ArtboardSpec[] = [
   {
     id: "shape-rungs-internal",
     name: "Radius rungs · Internal",
@@ -203,7 +203,7 @@ const SYNTAX_Y = SIDEBAR_Y + SIDEBAR_HEIGHT + GAP;
  * roles, and the charts, sidebar and syntax colors stacked beside them, with the primitives,
  * which hold one value in every theme, below those. The rows follow the boards' laid-out heights.
  */
-export const COLOR_PAGE_ARTBOARDS: readonly ArtboardSpec[] = [
+const COLOR_PAGE_ARTBOARDS: readonly ArtboardSpec[] = [
   ...schemePair("color-pairs", "Role pairs", 0, 0),
   ...schemePair("color-status", "Status", 0, PAIRS_HEIGHT + GAP),
   ...schemePair("color-charts", "Charts", DETAIL_X, 0),
@@ -240,7 +240,7 @@ const TYPE_ROW = 960;
  * The Type page: the specimen, the control and label type pairs dense against comfortable, and
  * a line in every font stack the font knobs offer.
  */
-export const TYPE_PAGE_ARTBOARDS: readonly ArtboardSpec[] = [
+const TYPE_PAGE_ARTBOARDS: readonly ArtboardSpec[] = [
   {
     id: "type-specimen",
     name: "Specimen",
@@ -288,7 +288,7 @@ const SCREEN_ROW = 1080;
  * The Screens page: four whole product screens. Each pins a variant, so one page shows the base
  * brand's external and internal looks side by side, and the inspector switches it.
  */
-export const SCREENS_PAGE_ARTBOARDS: readonly ArtboardSpec[] = [
+const SCREENS_PAGE_ARTBOARDS: readonly ArtboardSpec[] = [
   {
     id: "screen-self-service",
     name: "Customer self-service",
@@ -339,12 +339,14 @@ type StudioPageDocument = {
   readonly leadSections?: readonly SectionId[];
   /** The page offers the corner X-ray overlay. */
   readonly cornerXray?: boolean;
+  /** The inspector shows the density metrics editor and the inspected part's readout. */
+  readonly densityPanel?: boolean;
 };
 
 /** Each studio page's document. The Layers list, the canvas and the inspector read it. */
 const STUDIO_DOCUMENTS: readonly StudioPageDocument[] = [
   { href: "/studio", artboards: OVERVIEW_ARTBOARDS },
-  { href: "/studio/density", artboards: DENSITY_ARTBOARDS },
+  { href: "/studio/density", artboards: DENSITY_ARTBOARDS, densityPanel: true },
   { href: "/studio/shape", artboards: CORNER_PAGE_ARTBOARDS, leadSections: ["shape"], cornerXray: true },
   { href: "/studio/color", artboards: COLOR_PAGE_ARTBOARDS, leadSections: COLOR_SECTIONS },
   { href: "/studio/type", artboards: TYPE_PAGE_ARTBOARDS, leadSections: ["typography"] },
@@ -386,4 +388,9 @@ export function pinsFor(pathname: string): readonly ThemeVariant[] {
 /** Whether the page at `pathname` offers the corner X-ray. */
 export function hasCornerXray(pathname: string): boolean {
   return documentAt(pathname)?.cornerXray === true;
+}
+
+/** Whether the inspector on the page at `pathname` shows the density panel. */
+export function hasDensityPanel(pathname: string): boolean {
+  return documentAt(pathname)?.densityPanel === true;
 }

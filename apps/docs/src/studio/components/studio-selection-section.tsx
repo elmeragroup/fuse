@@ -1,21 +1,24 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { ReactElement, ReactNode } from "react";
+import type { ReactElement } from "react";
 
 import { tv } from "tailwind-variants";
 
-import { DescriptionList } from "@elmeragroup/fuse/description-list";
 import { Heading } from "@elmeragroup/fuse/heading";
 import { Text } from "@elmeragroup/fuse/text";
 
 import { STUDIO_SLOT_TOKENS } from "../../generated/studio-slot-tokens";
-import type { ArtboardScheme, ArtboardSpec } from "../lib/documents";
+import type { ArtboardSpec } from "../lib/documents";
+import { SCHEME_LABELS } from "../lib/labels";
+import { formatPx } from "../lib/measure";
+import type { Sides } from "../lib/measure";
 import { partTokens } from "../lib/slot-tokens";
 import { useArtboardScopeOf } from "./studio-artboard";
 import { StudioPanelSection } from "./studio-panel-section";
 import { usePartMetrics, usePartSelection } from "./studio-part-selection";
-import type { PickedPart, Sides } from "./studio-part-selection";
+import type { PickedPart } from "./studio-part-selection";
+import { ReadoutList, ReadoutRow } from "./studio-readout";
 import { useStudio } from "./studio-state";
 import { TokenRow, useResolvedColors } from "./studio-token-panel";
 
@@ -25,44 +28,22 @@ const studioSelectionSection = tv({
     // controls would widen the panel; containment holds the section to the panel's width.
     root: "contain-inline-size",
     list: "px-2",
-    detail: "min-w-0 wrap-break-word tabular-nums",
     heading: "px-2",
     tokens: "flex flex-col gap-3 px-2",
     empty: "px-2",
-  },
-  variants: {
-    // An identifier the reader matches against source, set in the list's own size and leading.
-    code: { true: { detail: "font-mono" } },
   },
 });
 
 const styles = studioSelectionSection();
 
-/** A term and its value in the section's list; `code` sets the value as an identifier. */
-function Row({ term, code, children }: { term: string; code?: boolean; children: ReactNode }): ReactElement {
-  return (
-    <>
-      <DescriptionList.Term>{term}</DescriptionList.Term>
-      <DescriptionList.Details className={styles.detail({ code })}>{children}</DescriptionList.Details>
-    </>
-  );
-}
-
-/** Rounds a measured length to a tenth of a px, as the readout shows it. */
-function px(value: number): string {
-  return String(Math.round(value * 10) / 10);
-}
-
 /** Per-side lengths in CSS shorthand order, collapsed as the shorthand would collapse them. */
 function shorthand({ top, right, bottom, left }: Sides): string {
-  const values = [top, right, bottom, left].map(px);
+  const values = [top, right, bottom, left].map(formatPx);
   if (top === bottom && right === left) {
-    return `${top === right ? px(top) : `${px(top)} ${px(right)}`} px`;
+    return `${top === right ? formatPx(top) : `${formatPx(top)} ${formatPx(right)}`} px`;
   }
   return `${values.join(" ")} px`;
 }
-
-const SCHEME_LABELS = { light: "Light", dark: "Dark" } as const satisfies Record<ArtboardScheme, string>;
 
 /** The picked part's readout. It mounts with the pick, so its color probe resolves on arrival. */
 function PartDetails({ part, artboard }: { part: PickedPart; artboard: ArtboardSpec }): ReactElement {
@@ -80,30 +61,28 @@ function PartDetails({ part, artboard }: { part: PickedPart; artboard: ArtboardS
   return (
     <div ref={root} className={styles.root()} data-selection-section>
       <StudioPanelSection title="Selection">
-        <DescriptionList.Root className={styles.list()}>
-          <DescriptionList.Content>
-            <Row term="Slot" code>
-              {part.slot}
-            </Row>
-            <Row term="Component">{read?.component ?? "Not a documented component"}</Row>
-            <Row term="Scheme">{SCHEME_LABELS[scope.scheme]}</Row>
-            <Row term="Density role" code={metrics?.role !== undefined}>
-              {metrics?.role === undefined
-                ? "Not declared"
-                : metrics.role.key === part.slot
-                  ? metrics.role.role
-                  : `${metrics.role.role} (${metrics.role.key})`}
-            </Row>
-            {metrics === undefined ? null : (
-              <>
-                <Row term="Size">{`${px(metrics.width)} × ${px(metrics.height)} px`}</Row>
-                <Row term="Padding">{shorthand(metrics.padding)}</Row>
-                <Row term="Border">{shorthand(metrics.border)}</Row>
-                <Row term="Radius">{`${px(metrics.radius)} px`}</Row>
-              </>
-            )}
-          </DescriptionList.Content>
-        </DescriptionList.Root>
+        <ReadoutList className={styles.list()}>
+          <ReadoutRow term="Slot" code>
+            {part.slot}
+          </ReadoutRow>
+          <ReadoutRow term="Component">{read?.component ?? "Not a documented component"}</ReadoutRow>
+          <ReadoutRow term="Scheme">{SCHEME_LABELS[scope.scheme]}</ReadoutRow>
+          <ReadoutRow term="Density role" code={metrics?.role !== undefined}>
+            {metrics?.role === undefined
+              ? "Not declared"
+              : metrics.role.key === part.slot
+                ? metrics.role.role
+                : `${metrics.role.role} (${metrics.role.key})`}
+          </ReadoutRow>
+          {metrics === undefined ? null : (
+            <>
+              <ReadoutRow term="Size">{`${formatPx(metrics.width)} × ${formatPx(metrics.height)} px`}</ReadoutRow>
+              <ReadoutRow term="Padding">{shorthand(metrics.padding)}</ReadoutRow>
+              <ReadoutRow term="Border">{shorthand(metrics.border)}</ReadoutRow>
+              <ReadoutRow term="Radius">{`${formatPx(metrics.radius)} px`}</ReadoutRow>
+            </>
+          )}
+        </ReadoutList>
         <Heading level={3} size="sm" variant="muted" noMargin className={styles.heading()}>
           Tokens it reads
         </Heading>

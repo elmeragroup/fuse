@@ -1,7 +1,7 @@
 import type { Browser, BrowserContext, Locator, Page } from "playwright";
 
 import { docsBaseUrl } from "../docs-server";
-import { collectPageErrors } from "../landing-page";
+import { collectPageErrors, settleFrames } from "../landing-page";
 
 export const STUDIO_DESKTOP = { width: 1440, height: 900 } as const;
 
@@ -19,6 +19,9 @@ export type StudioRoute = { path: string; artboard: string };
 
 /** The Overview, at `/studio`. */
 export const OVERVIEW: StudioRoute = { path: "/studio", artboard: ARTBOARDS[0] };
+
+/** The Density page, ready once its dense twin shows. */
+export const DENSITY_PAGE: StudioRoute = { path: "/studio/density", artboard: "Twin · Dense" };
 
 /** How a studio suite sets up the browser context it opens the studio in. */
 export type StudioContextOptions = {
@@ -137,4 +140,42 @@ export async function setTokenColor(page: Page, name: string, value: string): Pr
   await field.fill(value);
   await page.keyboard.press("Escape");
   await field.waitFor({ state: "hidden" });
+}
+
+/** Types a metric's px for one density into its NumberField, and commits it by leaving the field. */
+export async function setMetric(page: Page, name: string, density: string, px: number): Promise<void> {
+  const field = inspector(page).getByRole("textbox", { name: `--${name} ${density} in px`, exact: true });
+  await field.fill(String(px));
+  await field.press("Tab");
+}
+
+/** A studio share hash for `json`, the version-1 share text written out by hand. */
+export function hashOf(json: string): string {
+  return `#1.${Buffer.from(json, "utf8").toString("base64url")}`;
+}
+
+export async function background(locator: Locator): Promise<string> {
+  return locator.evaluate((element) => getComputedStyle(element).backgroundColor);
+}
+
+/**
+ * Counts `getBoundingClientRect` calls on HTML elements from now on. The wrapper sits on
+ * `HTMLElement.prototype` and calls through to `Element.prototype`'s own method.
+ */
+export async function countLayoutReads(page: Page): Promise<() => Promise<number>> {
+  await page.evaluate(() => {
+    sessionStorage.setItem("layoutReads", "0");
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(this: HTMLElement) {
+      sessionStorage.setItem("layoutReads", String(Number(sessionStorage.getItem("layoutReads")) + 1));
+      return Element.prototype.getBoundingClientRect.call(this);
+    };
+  });
+  return async () => page.evaluate(() => Number(sessionStorage.getItem("layoutReads")));
+}
+
+/** Waits `count` animation frames. */
+export async function frames(page: Page, count: number): Promise<void> {
+  for (let frame = 0; frame < count; frame++) {
+    await settleFrames(page);
+  }
 }
