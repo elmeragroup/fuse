@@ -15,6 +15,7 @@
  *   • the measured bundle sizes the Tokens page publishes;
  *   • the locales, density metrics and component index the landing page states;
  *   • the three dark-scheme colors the Open Graph card paints;
+ *   • the theme studio's per-theme seeds, one lazily loaded module per theme;
  *   • `/components/<slug>.md` — the markdown endpoint each page links to;
  *   • `llms.txt`, the site-root AI index;
  *   • the ⌘K search index;
@@ -61,6 +62,7 @@ import {
 import { renderSearchIndex } from "./lib/search.ts";
 import type { BundleSizeReport } from "./lib/sizes.ts";
 import { collectRecipeSources } from "./lib/sources.ts";
+import { buildStudioSeeds, renderStudioSeed, renderStudioSeedIndex } from "./lib/studio-seeds.ts";
 import { renderFigmaThemeCatalog } from "./lib/theme-catalog-figma.ts";
 import { buildThemeCatalog, renderThemeCatalog } from "./lib/theme-catalog.ts";
 import { extractTokens, readColorTokenMapFromFile } from "./lib/tokens.ts";
@@ -263,6 +265,21 @@ function emitOgCardColors(catalog: ResolvedThemeCatalog): void {
   writeFile(path.join(generatedDir, "og-card-colors.ts"), `${BANNER}${renderOgCardColors(catalog)}`);
 }
 
+/**
+ * The theme studio's seeds: one module per theme, behind a loader of dynamic imports, so the
+ * studio's first load carries none of them and each theme loads when the studio shows it.
+ */
+function emitStudioSeeds(catalog: ResolvedThemeCatalog): void {
+  const seeds = buildStudioSeeds(catalog);
+  for (const seed of seeds) {
+    writeFile(
+      path.join(generatedDir, "studio-seeds", `${seed.slug}.ts`),
+      `${BANNER}${renderStudioSeed(seed)}`
+    );
+  }
+  writeFile(path.join(generatedDir, "studio-seeds.ts"), `${BANNER}${renderStudioSeedIndex(catalog, seeds)}`);
+}
+
 /** The ⌘K palette index. */
 function emitSearchIndex(components: readonly DocsComponent[]): void {
   writeFile(path.join(generatedDir, "search-index.ts"), `${BANNER}${renderSearchIndex(components)}`);
@@ -328,6 +345,7 @@ async function main(): Promise<void> {
   emitLandingFacts(catalog, components);
   emitOgCardColors(catalog);
   emitDensityCatalog(catalog);
+  emitStudioSeeds(catalog);
   emitMarkdownEndpoints(components);
   emitSearchIndex(components);
   emitLlmsTxt(components);

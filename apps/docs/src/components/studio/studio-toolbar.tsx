@@ -11,7 +11,9 @@ import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
 import { ChromeScope } from "./chrome-scope";
-import { HandGlyph, PointerGlyph } from "./studio-icons";
+import { useStudioEdits } from "./studio-edits";
+import { HandGlyph, PointerGlyph, RedoGlyph, UndoGlyph } from "./studio-icons";
+import { useModifierLabel } from "./studio-shortcuts";
 import { useStudio } from "./studio-state";
 import type { StudioTool } from "./studio-state";
 import { useViewportCommands, useViewportState, zoomLabel } from "./studio-viewport";
@@ -37,9 +39,11 @@ const TOOLS = [
   Glyph: (props: SVGProps<SVGSVGElement>) => ReactElement;
 }[];
 
-/** The floating bar at the foot of the canvas, as in Paper: the tools and the zoom. */
+/** The floating bar at the foot of the canvas, as in Paper: the tools, undo and redo, and the zoom. */
 export function StudioToolbar(): ReactElement {
   const { tool, setTool } = useStudio();
+  const { edit, canUndo, canRedo } = useStudioEdits();
+  const mod = useModifierLabel();
   const { zoomStep } = useViewportCommands();
   const { viewport } = useViewportState();
   const control = { animate: true, announce: true } as const;
@@ -66,6 +70,41 @@ export function StudioToolbar(): ReactElement {
             </Tooltip.Root>
           ))}
         </ToggleGroup.Root>
+        <Separator orientation="vertical" className={styles.separator()} />
+        <Tooltip.Root>
+          <Tooltip.Trigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Undo"
+                disabled={!canUndo}
+                onClick={() => {
+                  edit({ type: "undo" });
+                }}
+              />
+            }>
+            <UndoGlyph className={styles.glyph()} />
+          </Tooltip.Trigger>
+          <Tooltip.Content>{`Undo (${mod}Z)`}</Tooltip.Content>
+        </Tooltip.Root>
+        <Tooltip.Root>
+          <Tooltip.Trigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Redo"
+                disabled={!canRedo}
+                onClick={() => {
+                  edit({ type: "redo" });
+                }}
+              />
+            }>
+            <RedoGlyph className={styles.glyph()} />
+          </Tooltip.Trigger>
+          <Tooltip.Content>{`Redo (⇧${mod}Z)`}</Tooltip.Content>
+        </Tooltip.Root>
         <Separator orientation="vertical" className={styles.separator()} />
         <Button
           variant="ghost"

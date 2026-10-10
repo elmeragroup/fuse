@@ -4,76 +4,28 @@ import { describe, expect, it } from "vitest";
 import { BRANDS } from "@elmeragroup/fuse/theme";
 
 import { docsBaseUrl } from "./docs-server";
-import { auditTargets, collectPageErrors, settleFrames } from "./landing-page";
+import { auditTargets, settleFrames } from "./landing-page";
+import {
+  ARTBOARDS,
+  artboard,
+  canvas,
+  inspector,
+  layers,
+  newStudioContext,
+  openStudio as openStudioPage,
+} from "./studio-page";
+import type { StudioContextOptions, StudioPage } from "./studio-page";
 import { launchSuiteBrowser } from "./suite-browser";
 
 const browser = launchSuiteBrowser();
 
-const DESKTOP = { width: 1440, height: 900 } as const;
 const PHONE = { width: 390, height: 844 } as const;
-
-/** The Overview's artboards, by the names the canvas labels them with. */
-const ARTBOARDS = [
-  "Components · Light · Comfortable",
-  "Components · Dark · Comfortable",
-  "Components · Light · Dense",
-  "Components · Dark · Dense",
-  "Theme at a glance",
-] as const;
 
 type Box = { x: number; y: number; width: number; height: number };
 
-type OpenOptions = {
-  viewport?: { width: number; height: number };
-  colorScheme?: "light" | "dark";
-  /** Motion is reduced by default, so camera moves land at once. */
-  reducedMotion?: "reduce" | "no-preference";
-  /** A touchscreen, for touch driven through CDP. */
-  hasTouch?: boolean;
-};
-
-/**
- * Opens `/studio` in a fresh context and waits for the app to hydrate and frame the page. A
- * click or key sent before hydration reaches no handler. The page's uncaught errors and console
- * errors collect into `errors` from before navigation, so hydration errors count.
- */
-async function openStudio({
-  viewport = DESKTOP,
-  colorScheme = "light",
-  reducedMotion = "reduce",
-  hasTouch = false,
-}: OpenOptions = {}): Promise<{ page: Page; errors: string[] }> {
-  const context = await browser().newContext({ viewport, reducedMotion, colorScheme, hasTouch });
-  const page = await context.newPage();
-  page.setDefaultTimeout(5000);
-  const errors = collectPageErrors(page);
-  page.on("console", (message) => {
-    if (message.type() === "error") {
-      errors.push(message.text());
-    }
-  });
-  await page.goto(`${docsBaseUrl()}/studio`, { waitUntil: "load" });
-  // DOM audit: Next's router mounts its announcer once the page has hydrated.
-  await page.locator("next-route-announcer").waitFor({ state: "attached" });
-  // The artboards show once the first fit has placed them.
-  await artboard(page, ARTBOARDS[0]).waitFor({ state: "visible" });
-  return { page, errors };
-}
-
-function canvas(page: Page): Locator {
-  return page.getByRole("region", { name: "Canvas", exact: true });
-}
-
-function artboard(page: Page, name: string): Locator {
-  return canvas(page).getByRole("region", { name, exact: true });
-}
-
-function inspector(page: Page): Locator {
-  return page.getByRole("complementary", { name: "Inspector", exact: true });
-}
-
-function layers(page: Page): Locator {
-  return page.getByRole("complementary", { name: "Pages and layers", exact: true });
+/** Opens `/studio` in a fresh context; each test closes its page, and the suite the rest. */
+async function openStudio(options: StudioContextOptions = {}): Promise<StudioPage> {
+  return openStudioPage(browser(), options);
 }
 
 async function box(locator: Locator): Promise<Box> {
@@ -235,7 +187,7 @@ describe("theme studio", () => {
     const { page } = await openStudio();
     const name = ARTBOARDS[0];
     await canvas(page).getByRole("button", { name, exact: true }).click();
-    const scheme = inspector(page).getByRole("group", { name: "Scheme" });
+    const scheme = inspector(page).getByRole("group", { name: "Scheme", exact: true });
     await scheme.getByRole("button", { name: "Dark", exact: true }).click();
 
     const target = artboard(page, name);
@@ -363,7 +315,7 @@ describe("theme studio", () => {
   });
 
   it("is linked from the docs header and the landing's Docs menu", async () => {
-    const context = await browser().newContext({ viewport: DESKTOP, reducedMotion: "reduce" });
+    const context = await newStudioContext(browser());
     const page = await context.newPage();
     page.setDefaultTimeout(5000);
     await page.goto(`${docsBaseUrl()}/docs`, { waitUntil: "load" });

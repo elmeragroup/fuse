@@ -12,6 +12,7 @@ import { SEGMENT_LABELS, VARIANT_LABELS } from "../../lib/theme";
 import { SingleToggle } from "../single-toggle";
 import { StudioPanelSection } from "./studio-panel-section";
 import { useStudio } from "./studio-state";
+import { StudioTokenPanel } from "./studio-token-panel";
 
 const studioInspector = tv({
   slots: {
@@ -106,10 +107,15 @@ function ArtboardSection({ artboard }: { artboard: ArtboardSpec }): ReactElement
 
 /**
  * The right panel. It is plain composition: the selection's section, or the base theme's when
- * nothing is selected. Token sections compose in below them.
+ * nothing is selected, then the token editor.
  */
 export function StudioInspector(): ReactElement {
   const { artboards, selectedId } = useStudio();
   const selected = artboards.find((artboard) => artboard.id === selectedId);
-  return selected === undefined ? <BaseThemeSection /> : <ArtboardSection artboard={selected} />;
+  return (
+    <>
+      {selected === undefined ? <BaseThemeSection /> : <ArtboardSection artboard={selected} />}
+      <StudioTokenPanel />
+    </>
+  );
 }

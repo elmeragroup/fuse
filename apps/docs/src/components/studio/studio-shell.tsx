@@ -20,14 +20,17 @@ import { ScrollArea } from "@elmeragroup/fuse/scroll-area";
 import { Sheet } from "@elmeragroup/fuse/sheet";
 import { COLOR_SCHEMES } from "@elmeragroup/fuse/theme";
 import type { ColorScheme } from "@elmeragroup/fuse/theme";
+import { Toast } from "@elmeragroup/fuse/toast";
 
 import { HOME_PAGE, STUDIO_PAGES } from "../../lib/pages";
 import { COLOR_SCHEME_LABELS } from "../../lib/theme";
 import { SingleToggle } from "../single-toggle";
 import { ChromeScope } from "./chrome-scope";
+import { StudioActions } from "./studio-actions";
 import { StudioCanvas } from "./studio-canvas";
 import { StudioInspector } from "./studio-inspector";
 import { StudioNavigator } from "./studio-navigator";
+import { studioToasts } from "./studio-persistence";
 import { useStudio } from "./studio-state";
 import { StudioThemePicker } from "./studio-theme-picker";
 import { StudioZoomMenu } from "./studio-zoom-menu";
@@ -157,6 +160,7 @@ export function StudioShell({ children }: { children: ReactNode }): ReactElement
         </p>
         <div className={styles.end()}>
           <StudioThemePicker />
+          <StudioActions />
           <div className={styles.desktop()}>
             <StudioZoomMenu />
             <ChromeSchemeSwitch />
@@ -173,6 +177,10 @@ export function StudioShell({ children }: { children: ReactNode }): ReactElement
             </PanelSheet>
           </div>
         </div>
+        {/* The studio's toasts wear the chrome's theme; only the viewport needs the provider. */}
+        <Toast.Provider toastManager={studioToasts}>
+          <Toast.Viewport />
+        </Toast.Provider>
       </ChromeScope>
       <ChromeScope
         render={<aside aria-label="Pages and layers" />}
