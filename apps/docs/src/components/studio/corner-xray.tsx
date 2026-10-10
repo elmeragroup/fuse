@@ -32,16 +32,16 @@ import {
   insetOf,
   insetRedline,
   packLabels,
+  paintsFill,
   usedRadii,
 } from "../../lib/studio/corners";
 import type { CornerCheck, CornerReading, CornerSide, InsetBox } from "../../lib/studio/corners";
 import { hasCornerXray } from "../../lib/studio/documents";
 import type { Viewport } from "../../lib/studio/viewport";
-import { isTypingTarget } from "../../lib/typing-target";
 import { ChromeScope } from "./chrome-scope";
 import { useStudioEdits } from "./studio-edits";
 import { CornerGlyph } from "./studio-icons";
-import { OVERLAYS } from "./studio-shortcuts";
+import { isOverlayShortcut } from "./studio-shortcuts";
 import { useStudio } from "./studio-state";
 import { drawnViewport, useViewportState } from "./studio-viewport";
 
@@ -157,7 +157,7 @@ function drawsEdge(style: CSSStyleDeclaration): boolean {
   return (
     Number.parseFloat(style.borderTopLeftRadius) > 0 ||
     Number.parseFloat(style.borderLeftWidth) > 0 ||
-    (style.backgroundColor !== "transparent" && style.backgroundColor !== "rgba(0, 0, 0, 0)")
+    paintsFill(style.backgroundColor)
   );
 }
 
@@ -310,14 +310,7 @@ export function CornerXrayProvider({ children }: { children: ReactNode }): React
       return undefined;
     }
     const onKeyDown = (event: KeyboardEvent) => {
-      const plain = !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey;
-      if (
-        plain &&
-        !event.defaultPrevented &&
-        event.key.toLowerCase() === "x" &&
-        !isTypingTarget(event.target, OVERLAYS)
-      ) {
-        event.preventDefault();
+      if (isOverlayShortcut(event, "x")) {
         setOn((current) => !current);
       }
     };

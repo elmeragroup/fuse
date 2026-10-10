@@ -11,6 +11,7 @@ import {
   insetRedline,
   innerCorner,
   packLabels,
+  paintsFill,
   rungFormula,
   usedRadii,
 } from "../src/lib/studio/corners";
@@ -271,5 +272,18 @@ describe("packLabels", () => {
       { x: 54, y: 30, leader: true },
       undefined,
     ]);
+  });
+});
+
+describe("paintsFill", () => {
+  it("counts a background with any alpha as a fill", () => {
+    expect(paintsFill("rgb(255, 255, 255)")).toBe(true);
+    expect(paintsFill("oklch(0.5 0.1 200 / 0.02)")).toBe(true);
+  });
+
+  it("does not count a zero-alpha background as a fill, whatever its notation", () => {
+    expect(paintsFill("rgba(0, 0, 0, 0)")).toBe(false);
+    expect(paintsFill("oklch(0.5 0.1 200 / 0)")).toBe(false);
+    expect(paintsFill("lab(50 20 -10 / 0)")).toBe(false);
   });
 });

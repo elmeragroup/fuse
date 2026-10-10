@@ -5,6 +5,8 @@
  * `packages/fuse/src/styles/corner-radius.ts` owns the contract.
  */
 
+import * as CssColor from "@elmeragroup/color/css-color";
+
 /**
  * Each rung's distance from `--radius`, in `--radius-step` lengths, as fuse.css declares it.
  * Fuse keeps the table private (`theme/tokens/radius-scale.ts`); the Shape page's browser test
@@ -304,4 +306,14 @@ function firstFree(
     }
   }
   return undefined;
+}
+
+/**
+ * Whether a computed `background-color` paints anything: any alpha above 0, in whichever notation
+ * Chromium serializes it. A color `@elmeragroup/color` cannot read, such as `color(display-p3 …)`,
+ * counts as a fill, so the X-ray stops at the box rather than measuring past it.
+ */
+export function paintsFill(backgroundColor: string): boolean {
+  const parsed = CssColor.parse(backgroundColor);
+  return parsed._tag !== "ok" || parsed.value.alpha > 0;
 }

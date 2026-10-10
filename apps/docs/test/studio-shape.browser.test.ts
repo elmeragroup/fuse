@@ -1,6 +1,7 @@
 import type { Locator, Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
+import { settleFrames } from "./landing-page";
 import { artboard, canvas, inspector, layers, openStudio } from "./studio-page";
 import type { StudioRoute } from "./studio-page";
 import { launchSuiteBrowser } from "./suite-browser";
@@ -180,6 +181,24 @@ describe("the studio's Shape page", () => {
       await expect
         .poll(() => cornerValues(page, "Radius rungs · External"))
         .toMatchObject({ xs: "14px", sm: "16px", md: "18px", lg: "20px", xl: "24px", popover: "12px" });
+      expect(errors).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+
+  it("toggles the corner X-ray once while X is held", async () => {
+    const { context, page, errors } = await openStudio(browser(), { route: CORNERS_PAGE });
+    try {
+      const toggle = page.getByRole("button", { name: "Corner X-ray", exact: true });
+      // Playwright repeats a key it already holds down, as auto-repeat does. An even count of
+      // presses leaves a handler that toggles on every repeat off.
+      for (let press = 0; press < 4; press++) {
+        await page.keyboard.down("x");
+      }
+      await page.keyboard.up("x");
+      await settleFrames(page);
+      expect(await toggle.getAttribute("aria-pressed")).toBe("true");
       expect(errors).toEqual([]);
     } finally {
       await context.close();
