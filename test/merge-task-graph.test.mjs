@@ -1,7 +1,14 @@
 import { expect, it } from "vitest";
 
 import { asRecord, asString } from "./json-object.mjs";
-import { readWorkflow, requiredJobSteps, requiredRunStep, turboTasks } from "./workflow.mjs";
+import {
+  jobMatrixEntries,
+  readWorkflow,
+  requiredJobSteps,
+  requiredRunStep,
+  resolveMatrixExpressions,
+  turboTasks,
+} from "./workflow.mjs";
 
 /** @param {string} job */
 function turboRunStep(job) {
@@ -11,20 +18,44 @@ function turboRunStep(job) {
 }
 
 /**
- * The task names a job's turbo command requests, before Turbo resolves them.
+ * The arguments a job's turbo command requests, before Turbo resolves them.
  * @param {string} job
+ * @param {Record<string, unknown>} [entry]
  */
-function requestedTasks(job) {
-  const command = asString(turboRunStep(job).run, `${job} command`);
-  const tokens = (command.match(/'[^']*'|"[^"]*"|\S+/g) ?? []).map((token) =>
-    token.replace(/^['"]|['"]$/g, "")
+function requestedArgs(job, entry = {}) {
+  const command = resolveMatrixExpressions(asString(turboRunStep(job).run, `${job} command`), entry);
+  expect(command, `${job} gate must be one resolved command`).not.toMatch(/\$\{\{|[\r\n]/);
+  const tokens = (command.match(/(?:'[^']*'|"[^"]*"|[^\s'"]+)+/g) ?? []).map((token) =>
+    token.replace(/['"]/g, "")
   );
   return tokens.slice(4);
 }
 
 /** @param {string} job */
 function scheduledTasks(job) {
-  return turboTasks(["run", ...requestedTasks(job)]);
+  return turboTasks(["run", ...requestedArgs(job)]);
+}
+
+/**
+ * Turbo also reports placeholders for tasks whose package defines no script; they run no gate.
+ * @param {Record<string, unknown>[]} tasks
+ */
+function executableTaskIds(tasks) {
+  return tasks
+    .filter((task) => asString(task.command, "task command") !== "<NONEXISTENT>")
+    .map((task) => asString(task.taskId, "task id"));
+}
+
+/** @type {{ leg: string, args: string[], tasks: Record<string, unknown>[] }[] | undefined} */
+let browserGraphs;
+
+/** Each browser leg's command and resolved graph, including task passthrough arguments. */
+function browserLegs() {
+  browserGraphs ??= jobMatrixEntries(readWorkflow("merge"), "browser").map((entry) => {
+    const args = requestedArgs("browser", entry);
+    return { leg: asString(entry.leg, "browser leg"), args, tasks: turboTasks(["run", ...args]) };
+  });
+  return browserGraphs;
 }
 
 it("the merge checks schedule all required gates without browser work", () => {
@@ -58,19 +89,16 @@ it("the merge checks schedule all required gates without browser work", () => {
 }, 30_000);
 
 it("splits the ci:checks aggregate exactly between the checks and browser jobs", () => {
-  // The checks job runs explicit task names because it must exclude the browser gates; a
-  // task added to one list and not the other would silently run on no PR, so pin the split
-  // against the aggregate Turbo resolves rather than against a hand-copied second list.
-  const tasks = turboTasks(["run", "ci:checks"]);
-  const fuseChecks = asRecord(
-    tasks.find((task) => task.taskId === "@elmeragroup/fuse#ci:checks"),
-    "@elmeragroup/fuse#ci:checks"
+  // Unit under test: merge's resolved job graphs. Oracle: turbo.json's ci:checks aggregate.
+  // Shared builds and repeated docs shards count once; the aggregate's no-op anchor is not a gate.
+  const aggregate = executableTaskIds(turboTasks(["run", "ci:checks"])).filter(
+    (id) => !id.endsWith("#ci:checks")
   );
-  const dependsOn = asRecord(fuseChecks.resolvedTaskDefinition, "resolved task definition").dependsOn;
-  if (!Array.isArray(dependsOn)) throw new Error("ci:checks dependsOn is not an array");
-  const names = dependsOn.map((entry) => asString(entry, "ci:checks dependency"));
-  const scheduled = [...requestedTasks("checks"), ...requestedTasks("browser")];
-  expect([...scheduled].sort()).toEqual([...names].sort());
+  const scheduled = executableTaskIds([
+    ...scheduledTasks("checks"),
+    ...browserLegs().flatMap((leg) => leg.tasks),
+  ]);
+  expect([...new Set(scheduled)].sort()).toEqual([...new Set(aggregate)].sort());
 }, 30_000);
 
 /** @type {Map<string, string[]> | undefined} */
@@ -145,13 +173,36 @@ it("runs docs build before type-check, not against the same .next", () => {
 });
 
 it("the browser job schedules the browser and packed-consumer gates", () => {
-  const ids = scheduledTasks("browser").map((task) => asString(task.taskId, "task id"));
-  for (const required of [
+  // The required gate inventory is independent of the workflow's task arguments and filters.
+  const ids = executableTaskIds(browserLegs().flatMap((leg) => leg.tasks)).filter((id) =>
+    /#test:(browser|packed-consumer)$/.test(id)
+  );
+  expect([...new Set(ids)].sort()).toEqual([
     "@elmeragroup/fuse#test:browser",
     "@elmeragroup/fuse#test:packed-consumer",
+    "@elmeragroup/pr-shots#test:browser",
     "docs#test:browser",
     "static-theme#test:browser",
-  ]) {
-    expect(ids).toContain(required);
+  ]);
+}, 30_000);
+
+it("covers every docs browser shard exactly once and keeps package gates unsharded", () => {
+  const legs = browserLegs();
+  expect(legs.map((leg) => leg.leg).sort()).toEqual(["docs-1", "docs-2", "docs-3", "docs-4", "packages"]);
+  const docs = legs.filter((leg) => leg.tasks.some((task) => task.taskId === "docs#test:browser"));
+  expect(docs).toHaveLength(4);
+  for (const leg of docs) {
+    const gates = executableTaskIds(leg.tasks).filter((id) => /#test:(browser|packed-consumer)$/.test(id));
+    expect(gates, `${leg.leg} must only shard the docs browser gate`).toEqual(["docs#test:browser"]);
+    expect(leg.args.slice(leg.args.indexOf("--") + 1), `${leg.leg} shard arguments`).toHaveLength(1);
+  }
+  // N executions must cover 1/N through N/N, even though their resolved task ids are identical.
+  const shards = docs.map((leg) => leg.args.slice(leg.args.indexOf("--") + 1)[0]);
+  expect(shards.sort()).toEqual(
+    Array.from({ length: docs.length }, (_, index) => `--shard=${index + 1}/${docs.length}`)
+  );
+  for (const leg of legs.filter((candidate) => !docs.includes(candidate))) {
+    expect(leg.args, `${leg.leg} must not forward shard arguments to package gates`).not.toContain("--");
+    expect(leg.args.some((arg) => arg.startsWith("--shard"))).toBe(false);
   }
 }, 30_000);

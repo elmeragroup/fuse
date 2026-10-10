@@ -5,7 +5,15 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { asRecord, asString } from "./json-object.mjs";
-import { jobSteps, readWorkflow, requiredJobSteps, requiredRunStep, requiredUsesStep } from "./workflow.mjs";
+import {
+  jobMatrixEntries,
+  jobSteps,
+  readWorkflow,
+  requiredJobSteps,
+  requiredRunStep,
+  requiredUsesStep,
+  resolveMatrixExpressions,
+} from "./workflow.mjs";
 
 /** Both release jobs run only for a push to main once publishing is activated. */
 const activatedPush =
@@ -14,29 +22,43 @@ const activatedPush =
 describe("merge workflow", () => {
   const workflow = readWorkflow("merge");
 
-  it.each(["checks", "browser"])(
-    "%s restores turbo's cache before its gate except on main, and prunes then saves it once the gate ran",
-    (job) => {
+  it.each([
+    { job: "checks", leg: undefined },
+    { job: "browser", leg: "packages" },
+    { job: "browser", leg: "docs-1" },
+    { job: "browser", leg: "docs-2" },
+    { job: "browser", leg: "docs-3" },
+    { job: "browser", leg: "docs-4" },
+  ])(
+    "$job $leg restores turbo's cache before its gate except on main, and prunes then saves it once the gate ran",
+    ({ job, leg }) => {
+      const entry = asRecord(
+        jobMatrixEntries(workflow, job).find((candidate) => candidate.leg === leg),
+        `${job} ${leg} matrix entry`
+      );
+      const prefix = leg === undefined ? `turbo-${job}-` : `turbo-${job}-${leg}-`;
       const steps = requiredJobSteps(workflow, job);
       const gate = requiredRunStep(steps, "pnpm exec turbo run ");
       // Pruning keeps only the hashes the run summaries record; without them it refuses to run.
       expect(asRecord(gate.env, `${job} gate env`).TURBO_RUN_SUMMARY).toBe("true");
 
       // `github.job` is null in job-level env, so the key spells out the job id. Cache keys are
-      // immutable, so every attempt saves under its own key and restores by prefix.
+      // immutable, so every attempt saves under its own key and restores by prefix. Browser
+      // legs must use separate prefixes so their independent task sets restore their own entries.
       const jobEnv = asRecord(asRecord(asRecord(workflow.jobs, "merge jobs")[job], job).env, `${job} env`);
-      expect(jobEnv.TURBO_CACHE_KEY).toBe(
-        `turbo-${job}-\${{ github.sha }}-\${{ github.run_id }}-\${{ github.run_attempt }}`
+      expect(resolveMatrixExpressions(asString(jobEnv.TURBO_CACHE_KEY, `${job} cache key`), entry)).toBe(
+        `${prefix}\${{ github.sha }}-\${{ github.run_id }}-\${{ github.run_attempt }}`
       );
 
       const restore = requiredUsesStep(steps, "actions/cache/restore");
       const restoreWith = asRecord(restore.with, `${job} restore with`);
       expect(restoreWith.path).toBe(".turbo/cache");
       expect(restoreWith.key).toBe("${{ env.TURBO_CACHE_KEY }}");
-      expect(asString(restoreWith["restore-keys"], `${job} restore keys`).trim().split("\n")).toEqual([
-        `turbo-${job}-\${{ github.sha }}-`,
-        `turbo-${job}-`,
-      ]);
+      expect(
+        resolveMatrixExpressions(asString(restoreWith["restore-keys"], `${job} restore keys`), entry)
+          .trim()
+          .split("\n")
+      ).toEqual([`${prefix}\${{ github.sha }}-`, prefix]);
       // Every run on main, pushed or dispatched, verifies cold, so under-declared task inputs
       // cannot replay a false green there.
       expect(restore.if).toBe("${{ github.ref != 'refs/heads/main' }}");
@@ -65,6 +87,9 @@ describe("merge workflow", () => {
     expect(format.run).toBe("pnpm exec oxfmt --check");
 
     const browser = requiredJobSteps(workflow, "browser");
+    const job = asRecord(asRecord(workflow.jobs, "merge jobs").browser, "browser job");
+    expect(job.name).toBe("browser (${{ matrix.leg }})");
+    expect(asRecord(job.strategy, "browser strategy")["fail-fast"]).toBe(false);
     // The version step's script does not start with its pnpm command, so find it by id.
     const version = browser.find((step) => step.id === "playwright");
     if (version === undefined) throw new Error("browser job does not resolve the Playwright version");

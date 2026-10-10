@@ -1,29 +1,56 @@
 import { describe, expect, it } from "vitest";
 
-import { asRecord, asRecordArray, asString } from "./json-object.mjs";
-import { compositeActions, readWorkflow, workflowNames } from "./workflow.mjs";
+import { asRecord, asRecordArray, asString, isPlainObject } from "./json-object.mjs";
+import { compositeActions, readWorkflow, resolveMatrixExpressions, workflowNames } from "./workflow.mjs";
 
 /** Workflow and local composite-action steps, with the site each failure should name. */
 function workflowSteps() {
-  const workflows = workflowNames().flatMap((name) =>
-    Object.entries(asRecord(readWorkflow(name).jobs, `${name} jobs`)).flatMap(([job, value]) => {
-      const steps = asRecord(value, job).steps;
+  const workflows = workflowNames().flatMap((name) => {
+    const workflow = readWorkflow(name);
+    return Object.entries(asRecord(workflow.jobs, `${name} jobs`)).flatMap(([job, value]) => {
+      const configuration = asRecord(value, job);
+      const steps = configuration.steps;
       if (steps === undefined) return [];
-      return asRecordArray(steps, `${job} steps`).map((step) => ({ site: `${name}.yml ${job}`, step }));
-    })
-  );
+      return asRecordArray(steps, `${job} steps`).map((step) => ({
+        site: `${name}.yml ${job}`,
+        step,
+        job: configuration,
+      }));
+    });
+  });
   return [
     ...workflows,
-    ...compositeActions().flatMap(({ name, steps }) => steps.map((step) => ({ site: name, step }))),
+    ...compositeActions().flatMap(({ name, steps }) =>
+      steps.map((step) => ({ site: name, step, job: undefined }))
+    ),
   ];
 }
 
 // An expression inside `run:` is spliced into the script before the shell parses it, so a
-// value with quotes or `$(...)` becomes code. Every value reaches scripts through `env` instead.
+// value with quotes or `$(...)` becomes code. Dynamic values reach scripts through `env`;
+// only references resolved to literal values in every entry of an include-only matrix may be spliced in.
 describe("workflow hardening", () => {
-  it("keeps GitHub expressions out of every run script", () => {
+  it("keeps dynamic GitHub expressions out of every run script", () => {
     const offenders = workflowSteps()
-      .filter(({ site, step }) => step.run !== undefined && asString(step.run, `${site} run`).includes("${{"))
+      .filter(({ site, step, job }) => {
+        if (step.run === undefined) return false;
+        const run = asString(step.run, `${site} run`);
+        if (!/\$\{\{\s*matrix\./.test(run)) return run.includes("${{");
+        const strategy = job?.strategy;
+        if (!isPlainObject(strategy)) return true;
+        const matrix = strategy.matrix;
+        if (
+          !isPlainObject(matrix) ||
+          !Array.isArray(matrix.include) ||
+          matrix.include.length === 0 ||
+          Object.keys(matrix).some((key) => key !== "include")
+        ) {
+          return true;
+        }
+        return matrix.include.some(
+          (entry) => !isPlainObject(entry) || resolveMatrixExpressions(run, entry).includes("${{")
+        );
+      })
       .map(({ site, step }) => `${site}: ${String(step.name ?? step.run)}`);
     expect(offenders, offenders.join("\n")).toEqual([]);
   });
