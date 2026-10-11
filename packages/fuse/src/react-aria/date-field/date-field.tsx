@@ -27,6 +27,7 @@ import {
   Label,
   fieldGroupVariants,
 } from "../internal/field";
+import { FormErrors, useClearFormErrors } from "../internal/form-errors";
 
 /**
  * Labeled date field composite over RAC `DateField`.
@@ -39,7 +40,8 @@ export type DateFieldProps<T extends DateValue> = {
   description?: string;
   /**
    * Error copy, rendered as `FieldError` when the field is invalid. Accepts a
-   * node or a validation render function.
+   * node or a validation render function. Without it or `isInvalid`, the field shows a `Form` error under
+   * its `name`, which clears when the value changes.
    */
   errorMessage?: ReactNode | ((validation: ValidationResult) => ReactNode);
   /**
@@ -56,20 +58,26 @@ export function DateField<T extends DateValue>({
   errorMessage,
   shouldForceLeadingZeros = true,
   className,
+  onChange,
   ...props
 }: DateFieldProps<T>): ReactElement {
   const { base } = dateFieldVariants();
+  const names = [props.name] as const;
+  const clearingOnChange = useClearFormErrors(names, onChange);
 
   return (
-    <AriaDateField
-      {...props}
-      shouldForceLeadingZeros={shouldForceLeadingZeros}
-      className={composeTailwindRenderProps(className, base())}>
-      {label ? <Label>{label}</Label> : null}
-      <DateInput />
-      <FieldError>{errorMessage}</FieldError>
-      {description ? <Description>{description}</Description> : null}
-    </AriaDateField>
+    <FormErrors names={names}>
+      <AriaDateField
+        {...props}
+        onChange={clearingOnChange}
+        shouldForceLeadingZeros={shouldForceLeadingZeros}
+        className={composeTailwindRenderProps(className, base())}>
+        {label ? <Label>{label}</Label> : null}
+        <DateInput />
+        <FieldError>{errorMessage}</FieldError>
+        {description ? <Description>{description}</Description> : null}
+      </AriaDateField>
+    </FormErrors>
   );
 }
 

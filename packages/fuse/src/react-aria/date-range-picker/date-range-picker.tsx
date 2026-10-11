@@ -19,6 +19,7 @@ import type { OverlayContainerProps } from "../../components/overlay/overlay-pro
 import { pickerVariants } from "../../styles/picker";
 import { DateInput } from "../date-field/date-field";
 import { composeTailwindRenderProps } from "../internal/compose-tailwind-render-props";
+import { FormErrors, useClearFormErrors } from "../internal/form-errors";
 import { useCommittedMonthFocus } from "../internal/picker-focused-month";
 import { isRenderableNode, PickerPresetGroup, PickerPresetItem } from "../internal/picker-presets";
 import type { PickerPresetGroupProps, PickerPresetItemProps } from "../internal/picker-presets";
@@ -46,7 +47,8 @@ export type DateRangePickerProps<T extends DateValue> = {
   /**
    * Error copy, rendered as `FieldError` when the range is invalid — an end before its
    * start, or an endpoint outside the allowed dates. Accepts a node or a validation
-   * render function.
+   * render function. Without it or `isInvalid`, the picker shows the `Form` errors under its `startName` and
+   * its `endName`, and a change to the range clears both.
    */
   errorMessage?: ReactNode | ((validation: ValidationResult) => ReactNode);
   /**
@@ -98,44 +100,50 @@ export function DateRangePicker<T extends DateValue>({
   errorMessage,
   isReadOnly,
   label,
+  onChange,
   presetGroup,
   shouldForceLeadingZeros = true,
   ...props
 }: DateRangePickerProps<T>): ReactElement {
   const hasPresets = isRenderableNode(presetGroup);
   const { base, calendar, input, pane, separator } = pickerVariants({ range: true, hasPresets });
+  const names = [props.startName, props.endName] as const;
+  const clearingOnChange = useClearFormErrors(names, onChange);
 
   return (
-    <AriaDateRangePicker
-      {...props}
-      isReadOnly={isReadOnly}
-      shouldForceLeadingZeros={shouldForceLeadingZeros}
-      className={composeTailwindRenderProps(className, base())}>
-      <PickerShell
-        container={container}
-        description={description}
-        errorMessage={errorMessage}
+    <FormErrors names={names}>
+      <AriaDateRangePicker
+        {...props}
+        onChange={clearingOnChange}
         isReadOnly={isReadOnly}
-        label={label}
-        popover={
-          <div className={pane()}>
-            {presetGroup}
-            {/* RAC commits a half-picked range as a one-day range when focus or a pointer
+        shouldForceLeadingZeros={shouldForceLeadingZeros}
+        className={composeTailwindRenderProps(className, base())}>
+        <PickerShell
+          container={container}
+          description={description}
+          errorMessage={errorMessage}
+          isReadOnly={isReadOnly}
+          label={label}
+          popover={
+            <div className={pane()}>
+              {presetGroup}
+              {/* RAC commits a half-picked range as a one-day range when focus or a pointer
                 release leaves the grid. With presets beside it, leaving the grid means
                 reaching for a preset, so the draft is dropped instead. */}
-            <PickerRangeCalendar className={calendar()} commitBehavior={hasPresets ? "reset" : "select"} />
-          </div>
-        }
-        range>
-        <DateInput className={input()} slot="start" />
-        {/* Decoration: RAC names the two rows "Start Date" / "End Date" on the segments
+              <PickerRangeCalendar className={calendar()} commitBehavior={hasPresets ? "reset" : "select"} />
+            </div>
+          }
+          range>
+          <DateInput className={input()} slot="start" />
+          {/* Decoration: RAC names the two rows "Start Date" / "End Date" on the segments
             themselves, so announcing the glyph would only repeat it. */}
-        <span aria-hidden="true" className={separator()}>
-          –
-        </span>
-        <DateInput className={input()} slot="end" />
-      </PickerShell>
-    </AriaDateRangePicker>
+          <span aria-hidden="true" className={separator()}>
+            –
+          </span>
+          <DateInput className={input()} slot="end" />
+        </PickerShell>
+      </AriaDateRangePicker>
+    </FormErrors>
   );
 }
 
