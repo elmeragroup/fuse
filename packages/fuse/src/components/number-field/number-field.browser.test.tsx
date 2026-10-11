@@ -5,16 +5,20 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import {
   assertWithinKeyboardFocusRingAtBothDensities,
   expectNoFocusRing,
 } from "../../../test/assert-focus-ring";
+import { render } from "../../../test/browser-render";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import {
   CONTROL_MD,
   CONTROL_XS,
+  cssVarColor,
   fieldRootFrom,
   fkasExternal,
+  fkasPrivate,
   px,
   renderThemed,
   roleNamed,
@@ -490,12 +494,31 @@ describe("NumberField", () => {
   });
 
   it("paints stepper dividers with the field-box border color", () => {
+    // Dark, where the field-box `--input` and the divider-default `--border` differ.
+    render(
+      <div data-theme="dark">
+        <ThemeScope theme={fkasPrivate}>
+          {withLocale("en-US", <NumberField label="Quantity" defaultValue={1} />)}
+        </ThemeScope>
+      </div>
+    );
+    const group = groupFrom("Quantity");
+    const input = cssVarColor(group, "--input");
+    expect(input).not.toBe(cssVarColor(group, "--border"));
+    expect(getComputedStyle(group).borderTopColor).toBe(input);
+    for (const name of ["Decrease", "Increase"] as const) {
+      expect(
+        getComputedStyle(stepperIn("Quantity", name)).borderInlineStartColor,
+        `${name} divider color`
+      ).toBe(input);
+    }
+  });
+
+  it("draws one 1px stepper divider on the field-box fill", () => {
     renderField(<NumberField label="Quantity" defaultValue={1} />);
     const group = groupFrom("Quantity");
-    const chrome = getComputedStyle(group).borderTopColor;
     for (const name of ["Decrease", "Increase"] as const) {
       const stepper = getComputedStyle(stepperIn("Quantity", name));
-      expect(stepper.borderInlineStartColor, `${name} divider color`).toBe(chrome);
       expect(stepper.borderInlineStartWidth, `${name} divider width`).toBe("1px");
     }
     expect(getComputedStyle(stepperIn("Quantity", "Increase")).borderBottomWidth).toBe("0px");

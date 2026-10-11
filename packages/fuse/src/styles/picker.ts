@@ -112,8 +112,8 @@ export const pickerVariants = tv({
      */
     hasPresets: {
       true: {
-        // The divider names the border role: fuse ships no global border-colour reset, so
-        // a bare `divide-*` would draw in `currentColor`, the text colour. The pane takes no
+        // The divider names the border role, the colour fuse.css's base-layer default gives
+        // every border, so the role stays in the recipe beside the divider. The pane takes no
         // padding or gap, so the divider runs edge to edge across the popover; the preset
         // group and the calendar each carry their own inset.
         pane: "sm:flex-row sm:divide-x sm:divide-y-0 flex flex-col divide-y divide-border",

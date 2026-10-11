@@ -1,26 +1,13 @@
-import { compile } from "tailwindcss";
-import reactAriaComponents from "tailwindcss-react-aria-components";
-import themeCss from "tailwindcss/theme.css?raw";
-import utilitiesCss from "tailwindcss/utilities.css?raw";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import "../../dist/themes.css";
-import twAnimateCss from "../../node_modules/tw-animate-css/dist/tw-animate.css?raw";
 import { render } from "../../test/browser-render";
 import { cornerRadius, expectShellOnThemeElementWins } from "../../test/inner-corner-specimens";
+import { layeredConsumerCss } from "../../test/layered-consumer-css";
 import { fkasPrivate, tkasCompany } from "../../test/theme-fixtures";
 import { roleNamed, snapshotDocumentTheme, stampDocumentTheme } from "../../test/themed-browser-render";
 import { ThemeScope } from "../theme/theme-scope";
-import fuseCss from "./fuse.css?raw";
 import { menuPopupShellClass } from "./inner-corner/menu";
-
-/** The stylesheets a Tailwind-source consumer's `@import`s reach, keyed by the specifier. */
-const STYLESHEETS = new Map([
-  ["tailwindcss/theme.css", themeCss],
-  ["tailwindcss/utilities.css", utilitiesCss],
-  ["./fuse.css", fuseCss],
-  ["tw-animate-css", twAnimateCss],
-]);
 
 /**
  * A Tailwind-source consumer that declares its layers in an unusual order: `theme` after
@@ -36,32 +23,12 @@ const LAYERED_CONSUMER = [
 /** The classes the specimens below spell. */
 const CANDIDATES = [...menuPopupShellClass.split(" "), "rounded-inner"];
 
-async function layeredConsumerCss(): Promise<string> {
-  const compiler = await compile(LAYERED_CONSUMER, {
-    base: "/",
-    loadStylesheet: (id, base) => {
-      const content = STYLESHEETS.get(id);
-      if (content === undefined) {
-        throw new Error(`the layered consumer imports no stylesheet named ${id}`);
-      }
-      return Promise.resolve({ path: id, base, content });
-    },
-    loadModule: (id, base) => {
-      if (id !== "tailwindcss-react-aria-components") {
-        throw new Error(`fuse.css loads no plugin but tailwindcss-react-aria-components, received ${id}`);
-      }
-      return Promise.resolve({ path: id, base, module: reactAriaComponents });
-    },
-  });
-  return compiler.build(CANDIDATES);
-}
-
 describe("inner corners in a layered consumer build", () => {
   let restoreDocumentTheme: () => void = () => undefined;
 
   beforeAll(async () => {
     const style = document.createElement("style");
-    style.textContent = await layeredConsumerCss();
+    style.textContent = await layeredConsumerCss(LAYERED_CONSUMER, CANDIDATES);
     document.head.append(style);
   });
 
