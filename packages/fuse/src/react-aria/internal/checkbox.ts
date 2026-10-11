@@ -19,7 +19,7 @@ import {
  * consumer renders `<Checkbox slot="selection" />` with no variant.
  *
  * The invalid box takes the rac-target invalid state face on top of the error fill, and the
- * solid error ring when it is also keyboard-focused. A
+ * focused invalid face, a solid error line inside the halo, when it is also keyboard-focused. A
  * disabled box is a part of its disabled row, so like the row it keeps the muted colours
  * instead of the whole-control dim.
  */

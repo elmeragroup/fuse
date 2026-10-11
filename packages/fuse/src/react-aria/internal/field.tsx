@@ -31,7 +31,8 @@ import { composeTailwindRenderProps } from "./compose-tailwind-render-props";
  * Input's border, fill, radius, and shadow in mixed forms. The RAC Group is not focusable,
  * so it uses the shared state focus constants and receives disabled/invalid state through
  * render props, which the rac-target state face turns into the shared disabled and invalid
- * looks. A focused invalid group paints the solid error ring through its compound.
+ * looks. A focused invalid group draws a solid error line inside the invalid halo through its
+ * compound.
  * Descendant inputs borrow this surface instead of painting another fill.
  */
 export const fieldGroupVariants = tv({

@@ -11,7 +11,7 @@ import {
   expectFocusRing,
   expectNoFocusRing,
 } from "../../../test/assert-focus-ring";
-import { expectInvalidFocusRing, expectNoRing } from "../../../test/assert-invalid-ring";
+import { expectInvalidFocusRing, expectInvalidRing, expectNoRing } from "../../../test/assert-invalid-ring";
 import {
   CONTROL_MD,
   CONTROL_SM,
@@ -245,6 +245,10 @@ describe("InputGroup", () => {
     );
     expectInvalidFocusRing("focused invalid group", invalidGrouped.element);
     expectNoRing("focused invalid group input", textboxNamed("Grouped invalid"));
+    // Focus has left the plain input; leaving the group too, both keep only the halo.
+    expectInvalidRing("invalid input at rest", invalidPlain.element);
+    roleNamed("button", "Before input").focus();
+    expectInvalidRing("invalid group at rest", invalidGrouped.element);
   });
 
   it("filters the input to digits beside a text addon, counting maxLength in digits", async () => {

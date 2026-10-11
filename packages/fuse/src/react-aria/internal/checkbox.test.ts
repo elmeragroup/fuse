@@ -10,9 +10,14 @@ function ringClasses(className: string): string[] {
 describe("GridList selection checkbox box", () => {
   // The invalid selection box is unreachable through GridList's public API, which never marks
   // its selection checkbox invalid, so the recipe is the seam. Expectations are written by hand.
-  it("swaps the invalid halo for a solid 2px error ring while keyboard-focused", () => {
+  it("draws a solid 2px error line inside the invalid halo while keyboard-focused", () => {
     const { box } = checkboxVariants();
-    expect(ringClasses(box({ isInvalid: true, isFocusVisible: true }))).toEqual(["ring-2", "ring-error"]);
+    expect(ringClasses(box({ isInvalid: true, isFocusVisible: true })).toSorted()).toEqual([
+      "ring-3",
+      "ring-error/20",
+      "ring-offset-2",
+      "ring-offset-error",
+    ]);
   });
 
   it("keeps the 3px error halo at rest and the plain ring on a valid focused box", () => {

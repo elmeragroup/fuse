@@ -23,7 +23,8 @@ import { dataWithinInvalidFocusRingClass, withinFocusRingClass } from "../../sty
  * the unfilled track takes the field-border tone `input`, the edge every field box shows, and
  * a disabled indicator drops to the muted foreground instead of dimming a second time.
  * The thumb also hosts the within-target focus ring for the range input Base UI nests in it,
- * in solid `--error` while the thumb is invalid.
+ * and the focused invalid face, a solid `--error` line inside the halo, while the thumb is
+ * invalid.
  */
 export const sliderVariants = tv({
   slots: {

@@ -10,23 +10,23 @@ import { computedColor, ringLayers, settleTransitions } from "./assert-invalid-r
  * child elements, which an <input> cannot hold, so the colour resolves at the parent, which
  * sits in the same theme scope.
  */
-function ringRoleColor(element: HTMLElement, token: "--ring" | "--error"): string {
-  return computedColor(element.parentElement ?? element, `var(${token}, ${getComputedStyle(element).color})`);
+function ringRoleColor(element: HTMLElement): string {
+  return computedColor(element.parentElement ?? element, `var(--ring, ${getComputedStyle(element).color})`);
 }
 
 /**
- * The shared focus ring's fingerprint, read from the painted `box-shadow` as it stands, so the
- * caller settles transitions first: exactly one outer ring, 2px wide and flush (an offset would paint a second layer and
- * widen the ring), in the element's `--ring` role, or in its `--error` role on a focused
- * invalid control. The resting invalid halo is 3px in `--error` at 20% alpha, so it never
- * matches, and neither does an inset ring.
+ * The valid focus ring's fingerprint, read from the painted `box-shadow` as it stands, so the
+ * caller settles transitions first: exactly one outer ring, 2px wide and flush (an offset would
+ * paint a second layer and widen the ring), in the element's `--ring` role. The resting invalid
+ * halo and an inset ring never match; a focused invalid control has its own assertion,
+ * `expectInvalidFocusRing`.
  */
 function hasFocusRing(element: HTMLElement): boolean {
   const [ring, ...rest] = ringLayers(element);
   if (ring === undefined || rest.length > 0 || ring.inset || ring.spread !== "2px") {
     return false;
   }
-  return ring.color === ringRoleColor(element, "--ring") || ring.color === ringRoleColor(element, "--error");
+  return ring.color === ringRoleColor(element);
 }
 
 /**
@@ -36,7 +36,7 @@ function hasFocusRing(element: HTMLElement): boolean {
 export function expectValidFocusRing(element: HTMLElement, message: string): void {
   settleTransitions(element);
   expect(ringLayers(element), message).toEqual([
-    { spread: "2px", color: ringRoleColor(element, "--ring"), inset: false },
+    { spread: "2px", color: ringRoleColor(element), inset: false },
   ]);
 }
 

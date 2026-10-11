@@ -366,16 +366,21 @@ describe("state face at dense density", () => {
         </InputGroup.Root>
       </>
     );
+    const outer = roleNamed("group", "Order line");
     roleNamed("button", "Before").focus();
-    await userEvent.keyboard("{Tab}{Tab}");
+    // The outer group's own input takes focus first, and the outer group paints the face.
+    await userEvent.keyboard("{Tab}");
+    expectInvalidFocusRing("outer group, its own input focused", outer);
+    expectNoRing("outer group's input while focused", roleNamed("textbox", "Reference"));
+    await userEvent.keyboard("{Tab}");
     const quantity = roleNamed("textbox", "Quantity");
     expect(quantity.matches(":focus-visible"), "Tab lands on the nested field").toBe(true);
 
     // The nested field owns the focus: its group paints the plain ring.
     expectValidFocusRing(groupAround(quantity), "nested number field group");
     // Oracle: the theme's `--error` role. The outer group's own input is unfocused, so the
-    // outer group must not take the focused invalid ring from a control it does not own.
-    const outer = roleNamed("group", "Order line");
+    // outer group must not take the focused invalid face's solid line from a control it does
+    // not own.
     const error = cssVarColor(outer, "--error");
     settleTransitions(outer);
     expect(ringLayers(outer), "outer group").not.toContainEqual({
@@ -383,6 +388,10 @@ describe("state face at dense density", () => {
       color: error,
       inset: false,
     });
+
+    // Leaving the fields leaves the outer group its resting halo.
+    await userEvent.click(page.getByText("Away", { exact: true }));
+    expectInvalidRing("outer group at rest", outer);
   });
 
   it("still repaints the same controls under hover while they are enabled", async () => {
@@ -523,7 +532,7 @@ async function tabInto(before: string, ringHost: () => HTMLElement): Promise<HTM
 }
 
 describe("the focused invalid face", () => {
-  it("paints a solid 2px error ring on every keyboard-focused invalid ring host", async () => {
+  it("draws a solid 2px error line inside the halo on every keyboard-focused invalid ring host", async () => {
     renderStateFaces(
       <>
         <button type="button">Before valid input</button>
@@ -553,46 +562,47 @@ describe("the focused invalid face", () => {
       "valid input"
     );
 
-    // Self target on `aria-invalid`.
-    expectInvalidFocusRing(
-      "input",
-      await tabInto("Before input", () => roleNamed("textbox", "Invalid input"))
-    );
-    // Within target, through the group's own invalid control; the control paints no ring.
-    expectInvalidFocusRing(
-      "input group",
-      await tabInto("Before group", () => roleNamed("group", "Invalid group"))
-    );
-    expectNoRing("input group input", roleNamed("textbox", "Invalid group input"));
-    // Within target on a group that carries `aria-invalid` itself.
-    expectInvalidFocusRing(
-      "number field group",
-      await tabInto("Before number field", () => groupAround(roleNamed("textbox", "Invalid amount")))
-    );
-    // A Base UI root under an invalid field, which stamps `data-invalid` and `aria-invalid`.
-    expectInvalidFocusRing(
-      "checkbox in an invalid group",
-      await tabInto("Before checkbox", () => roleNamed("checkbox", "Invalid topping"))
-    );
-    // The data arm on its own: `data-invalid` with no `aria-invalid`.
-    expectInvalidFocusRing(
-      "data-invalid button",
-      await tabInto("Before data button", () => roleNamed("button", "Data-invalid button"))
-    );
-    // State target: React Aria reports focus and invalidity through render props.
-    expectInvalidFocusRing(
-      "date field group",
-      await tabInto("Before date field", () => roleNamed("group", "Invalid date"))
-    );
-
-    // Leaving the field restores the resting 3px halo.
-    await userEvent.click(page.getByText("Away", { exact: true }));
-    const dateGroup = roleNamed("group", "Invalid date");
-    await Promise.all(dateGroup.getAnimations().map((animation) => animation.finished));
-    expectInvalidRing("date field group at rest", dateGroup);
-    const input = roleNamed("textbox", "Invalid input");
-    await Promise.all(input.getAnimations().map((animation) => animation.finished));
-    expectInvalidRing("input at rest", input);
+    // Each invalid ring host, focused from the keyboard and then left: the solid line inside
+    // the halo while focused, the halo alone at rest. A within host's own control paints no
+    // ring of its own while it holds the focus, so the group's face is the only one.
+    const none = () => undefined;
+    for (const [label, before, host, embedded] of [
+      // Self target on `aria-invalid`.
+      ["input", "Before input", () => roleNamed("textbox", "Invalid input"), none],
+      // Within target, through the group's own invalid control.
+      [
+        "input group",
+        "Before group",
+        () => roleNamed("group", "Invalid group"),
+        () => roleNamed("textbox", "Invalid group input"),
+      ],
+      // Within target on a group that carries `aria-invalid` itself.
+      [
+        "number field group",
+        "Before number field",
+        () => groupAround(roleNamed("textbox", "Invalid amount")),
+        () => roleNamed("textbox", "Invalid amount"),
+      ],
+      // A Base UI root under an invalid field, which stamps `data-invalid` and `aria-invalid`.
+      [
+        "checkbox in an invalid group",
+        "Before checkbox",
+        () => roleNamed("checkbox", "Invalid topping"),
+        none,
+      ],
+      // The data arm on its own: `data-invalid` with no `aria-invalid`.
+      ["data-invalid button", "Before data button", () => roleNamed("button", "Data-invalid button"), none],
+      // State target: React Aria reports focus and invalidity through render props.
+      ["date field group", "Before date field", () => roleNamed("group", "Invalid date"), none],
+    ] as const) {
+      expectInvalidFocusRing(label, await tabInto(before, host));
+      const control = embedded();
+      if (control !== undefined) {
+        expectNoRing(`${label} control while focused`, control);
+      }
+      await userEvent.click(page.getByText("Away", { exact: true }));
+      expectInvalidRing(`${label} at rest`, host());
+    }
   });
 });
 

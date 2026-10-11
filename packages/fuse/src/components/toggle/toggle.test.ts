@@ -24,7 +24,10 @@ describe("toggleVariants", () => {
     for (const token of selfFocusRingClass.split(" ")) {
       expect(classes).toContain(token);
     }
-    expect(classes.includes(["focus-visible", "ring-[3px]"].join(":"))).toBe(false);
-    expect(classes.includes(["focus-visible", "ring-3"].join(":"))).toBe(false);
+    // Whole tokens: the focused invalid face's `aria-invalid:focus-visible:ring-3` is the shared
+    // state face, not a local focus ring.
+    const tokens = classes.split(" ");
+    expect(tokens).not.toContain(["focus-visible", "ring-[3px]"].join(":"));
+    expect(tokens).not.toContain(["focus-visible", "ring-3"].join(":"));
   });
 });

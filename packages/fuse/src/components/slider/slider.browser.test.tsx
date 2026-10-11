@@ -320,7 +320,7 @@ describe("Slider", () => {
     expectInvalidRing("thumb", thumbOf("Budget"));
   });
 
-  it("paints a solid error ring on an invalid thumb for keyboard focus, and the halo at rest", async () => {
+  it("draws a solid error line inside the halo on an invalid thumb for keyboard focus, and the halo alone at rest", async () => {
     renderSlider(
       <>
         <button type="button">Before</button>
