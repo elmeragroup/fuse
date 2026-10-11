@@ -451,6 +451,11 @@
       "select-invalid.tsx"
     ]
   },
+  "select-field": {
+    "title": "Select Field",
+    "rsc": "server",
+    "demos": ["select-field-basic.tsx", "select-field-states.tsx", "select-field-form.tsx"]
+  },
   "selection-item": {
     "title": "Selection Item",
     "rsc": "client",

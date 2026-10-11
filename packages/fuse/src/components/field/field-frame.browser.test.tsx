@@ -29,6 +29,8 @@ import { NumberField } from "../number-field/number-field";
 import { PhoneNumberField } from "../phone-number-field/phone-number-field";
 import { Radio, RadioGroup, RadioItemGroup } from "../radio-group/radio-group";
 import { RadioItem } from "../radio-group/radio-item";
+import { Select } from "../select";
+import { SelectField } from "../select-field/select-field";
 import { TextField } from "../text-field/text-field";
 import { TextareaField } from "../textarea-field/textarea-field";
 import { FieldFrame } from "./field-frame";
@@ -413,6 +415,9 @@ describe("FieldFrame", () => {
           <RadioGroup label="Radios">
             <Radio value="a">Radio member</Radio>
           </RadioGroup>
+          <SelectField label="Plan" items={{ a: "Plan member" }}>
+            <Select.Item value="a">Plan member</Select.Item>
+          </SelectField>
         </>
       )
     );
@@ -424,6 +429,7 @@ describe("FieldFrame", () => {
       fieldRootFrom("Phone"),
       roleNamed("group", "Checks").closest("[data-orientation]"),
       roleNamed("radiogroup", "Radios").closest("[data-orientation]"),
+      roleNamed("combobox", "Plan").closest("[data-orientation]"),
     ];
     for (const root of named) {
       if (!(root instanceof HTMLElement)) {
@@ -431,7 +437,7 @@ describe("FieldFrame", () => {
       }
       expect(nestedOrientationStamps(root)).toHaveLength(0);
     }
-    expect(host.querySelectorAll("[data-orientation]")).toHaveLength(6);
+    expect(host.querySelectorAll("[data-orientation]")).toHaveLength(7);
   });
 
   describe.each(DENSITIES)("group spacing at %s density", (density) => {

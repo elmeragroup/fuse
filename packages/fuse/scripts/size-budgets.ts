@@ -79,6 +79,8 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // `pnpm gen component` appends a 0-ceiling row below this marker, so a brand-new packed
   // entry cannot slip through unbudgeted. Replace the 0 with measured × 1.5.
   // plop:js-entry-budget
+  // 2026-10-09: new entry, measured at 71305. Select's parts in the FieldFrame that TextField wears.
+  { name: "select-field", entryFile: "select-field.js", measuredGzip: 71305, ceilingGzip: 106958 },
   // 2026-10-09: new entry, measured at 43729. A labeled composite over Field and Base UI's Slider.
   { name: "slider", entryFile: "slider.js", measuredGzip: 43729, ceilingGzip: 65594 },
   // 2026-10-05: new entry, measured at 2780. A pure wrapper over Base UI's Form.
