@@ -2,7 +2,7 @@
  * Serves the docs app from this checkout with `next dev` on a free port, as a scoped resource.
  *
  * The server writes to its own output directory, named through `DOCS_DIST_DIR` in
- * `apps/docs/next.config.ts`, so `docs#test:browser` can keep serving `apps/docs/.next` beside
+ * `apps/docs/next.config.ts`, so `docs#test:e2e` can keep serving `apps/docs/.next` beside
  * it. It lives under `apps/docs/node_modules/.cache`, which git and the dev watcher ignore, and
  * persists between runs so Turbopack's cache keeps later starts fast.
  *
@@ -13,7 +13,7 @@
  * record skips the `NEXT_TELEMETRY_DISABLED` check, and no environment variable or config sets
  * the launcher's fallback (Next 16.3.6, `dist/cli/next-dev.js` and `dist/telemetry/storage.js`).
  * So an interrupt in the first seconds of a start can leave that one small file in `.next`. It
- * is not a build output, and `docs#test:browser` ignores it.
+ * is not a build output, and `docs#test:e2e` ignores it.
  */
 
 import { Console, Context, Duration, Effect, Layer, Option, Schema, Stream } from "effect";

@@ -9,7 +9,7 @@ command that uploads them to a pull request, or runs that command with `--pr`.
 
 The shots come from the docs site, with Tailwind preflight and the docs fonts. The base comes from
 prod, so the working tree stays on your branch. The local server writes to its own output
-directory, so `docs#test:browser` can run beside it.
+directory, so `docs#test:e2e` can run beside it.
 
 ## Usage
 
@@ -282,7 +282,7 @@ next local run restores the file from it.
 One write into `apps/docs/.next` remains. Next's launcher learns the output directory only when the
 server is ready, so a Ctrl-C in the first seconds of a start can leave a telemetry file,
 `.next/_events_<pid>.json`. Telemetry being off does not stop it, and no setting moves it. It is
-not a build output, and `docs#test:browser` ignores it. `src/docs-server.ts` has the details.
+not a build output, and `docs#test:e2e` ignores it. `src/docs-server.ts` has the details.
 
 `next dev` serves the source as it is on disk, so it shows uncommitted changes. It compiles the
 Fuse components from source, but the docs stylesheet imports the theme CSS from
@@ -303,7 +303,7 @@ services. `options.ts` holds the schemas that decode each flag, `shot-plan.ts` n
 `pr-body.ts` edits the PR body. Their tests sit beside them.
 
 `test/` holds the tests that need a browser or a process. `pnpm test` runs everything but
-`*.browser.test.ts`, so it needs no Playwright browser. `pnpm test:browser` runs
+`*.browser.test.ts`, so it needs no Playwright browser. `pnpm test:e2e` runs
 `capture.browser.test.ts`, which captures fixture pages in Chromium and checks each PNG's pixel
 size against the fixture's fixed geometry, including the clip of a control and the portaled popup
 it opened.

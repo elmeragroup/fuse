@@ -58,7 +58,13 @@ Put necessary source contracts in the central suite with the reason lint or an
 existing gate cannot enforce them.
 While editing, run `vitest related <files> --run --project unit` in the owning package
 (drop `--project` where none exist). Direct Vitest skips the Fuse build and dist tripwires.
-Before review, run the touched turbo tasks with `--affected`, then `pnpm ci:checks`.
+Before review, run the touched turbo tasks with `--affected`, then `pnpm check`, the
+local gate. CI also runs the e2e and packed-artifact tier on every PR.
+When a change touches docs-app behavior (landing, studio, search, theme picker), run
+the affected e2e files with `pnpm --filter docs test:e2e test/<file>`; it serves the
+existing `.next`, so rebuild docs first.
+When it touches package exports, build or packaging scripts, or dependencies, run
+`package:check` and `test:packed-consumer`, or `pnpm ci:checks`, before review.
 Read versions, commands, budgets and task dependencies from their owning configuration
 and scripts.
 After dependency resolution changes, clear Vitest's `tsconfig.tmp.tsbuildinfo`

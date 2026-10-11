@@ -7,7 +7,7 @@ const workspaceRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), ".
 
 const nextConfig: NextConfig = {
   /**
-   * `pnpm shots` serves this checkout with `next dev` beside `docs#test:browser`, which reads
+   * `pnpm shots` serves this checkout with `next dev` beside `docs#test:e2e`, which reads
    * `.next`. Next has no CLI flag or environment variable of its own for the output directory, so
    * the tool names a separate one here. Unset, the build and the container keep `.next`.
    */

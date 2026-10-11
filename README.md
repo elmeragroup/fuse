@@ -48,6 +48,7 @@ Root scripts fan out through turbo unless noted.
 | `pnpm format`             | `oxfmt` write; `pnpm format:check` is the CI form                                                                     |
 | `pnpm test`               | Unit tests (vitest) in every package                                                                                  |
 | `pnpm test:browser`       | Browser-mode vitest projects                                                                                          |
+| `pnpm test:e2e`           | End-to-end suites against a built docs app (`next start`) and the `pnpm shots` tool                                   |
 | `pnpm test:types`         | Type-level tests (`*.test-d.tsx`)                                                                                     |
 | `pnpm test:repo-policy`   | Root-only vitest project in [`test/`](test) — merge-workflow shape, lint script, README claims                        |
 | `pnpm type-check`         | `tsc --noEmit` per package                                                                                            |
@@ -56,7 +57,8 @@ Root scripts fan out through turbo unless noted.
 | `pnpm release:version`    | `changeset version` + lockfile refresh; the Version Packages PR script                                                |
 | `pnpm release`            | Release-engine CLI: `check-pr` validates a Version Packages PR; `publish <commit>` and `retry <record-tag>` run in CI |
 | `pnpm type-check:scripts` | `tsc --noEmit` for the root release scripts                                                                           |
-| `pnpm ci:checks`          | The merge gate locally: `oxfmt --check` then `turbo run ci:checks`                                                    |
+| `pnpm check`              | The local gate: `oxfmt --check` then `turbo run check`, `ci:checks` minus the e2e and packed-artifact tier            |
+| `pnpm ci:checks`          | The full merge gate locally: `oxfmt --check` then `turbo run ci:checks`                                               |
 
 Package-scoped scripts worth knowing:
 
@@ -69,7 +71,7 @@ Package-scoped scripts worth knowing:
 | `pnpm --filter docs generate`                      | Regenerates the docs API tables and each component's committed `api.json`             |
 | `pnpm --filter @elmeragroup/fuse-figma figma:sync` | Writes the tokens into a Figma file; `figma:check` prints the plan and fails on drift |
 
-`@elmeragroup/fuse` has no work of its own to do under `ci:checks`: its gates are separate turbo tasks that the aggregate already depends on. Its `ci:checks` script is therefore a no-op anchor that lets `turbo run ci:checks` fan out, and it says so; the same note is in [`turbo.json`](turbo.json).
+`@elmeragroup/fuse` has no work of its own to do under `check` or `ci:checks`: its gates are separate turbo tasks that the aggregates already depend on. Its `check` and `ci:checks` scripts are therefore no-op anchors that let `turbo run check` and `turbo run ci:checks` fan out, and they say so; the same note is in [`turbo.json`](turbo.json).
 
 ## Package map
 
@@ -91,7 +93,7 @@ The API extractor and the `elmera/*` and `anti-slop/*` lint rules come from [`@e
 2. **Implement** using [AGENTS.md](AGENTS.md) and the component's source and tests. Update public JSDoc and consumer docs when usage changes; keep implementation rationale beside its owner.
 3. **Tests and demos** ship in that same change. Record the title, RSC status and demo files in `apps/docs/test/fixtures/component-inventory.json` and regenerate API artifacts.
 4. **Changeset and labels** — `pnpm changeset` for anything user-facing. Internal-only PRs (CI, docs site, tests) carry the `no-changeset` GitHub label instead. Add `no-canary` when the packed package is unchanged and `no-preview` when the docs site is unchanged. A PR that changes only contributor docs, such as this README, carries all three. Never edit an existing changeset to move a gate; edit one only to correct what it says shipped.
-5. **Gate** — `pnpm ci:checks` green locally before review. The merge workflow runs the same stages plus the label-aware changeset check.
+5. **Gate** — `pnpm check` green locally before review. The merge workflow runs the full `ci:checks` stages, which add the e2e and packed-artifact tier, plus the label-aware changeset check. [AGENTS.md](AGENTS.md#tests) says when to run that tier locally.
 
 **After rebasing, regenerate the generated artifacts before running the gate**: `pnpm --filter docs generate` rewrites the committed per-component `api.json` files. They are derived from the library's public API, so a rebase that picks up an API change leaves them stale and fails the docs drift check on work that is otherwise correct.
 

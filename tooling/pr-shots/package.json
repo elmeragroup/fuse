@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "test": "vitest run --project unit",
-    "test:browser": "vitest run --project browser",
+    "test:e2e": "vitest run --project browser",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {

@@ -81,7 +81,7 @@ it("the merge checks schedule all required gates without browser work", () => {
   ]) {
     expect(ids).toContain(required);
   }
-  expect(ids.filter((id) => /#test:(browser|packed-consumer)$/.test(id))).toEqual([]);
+  expect(ids.filter((id) => /#test:(browser|e2e|packed-consumer)$/.test(id))).toEqual([]);
   // The extractor and lint plugins ship in @elmeragroup/internal; no workspace package
   // carries their gates any more, so nothing under tooling/* other than the tsconfig
   // package may appear in the graph.
@@ -100,6 +100,24 @@ it("splits the ci:checks aggregate exactly between the checks and browser jobs",
   ]);
   expect([...new Set(scheduled)].sort()).toEqual([...new Set(aggregate)].sort());
 }, 30_000);
+
+it("the local check gate is ci:checks without the e2e and packed-artifact tier", () => {
+  // Unit under test: turbo.json's `check` aggregate. Oracle: the resolved ci:checks graph minus
+  // the tasks this list names, which CI alone runs. Each aggregate's no-op anchor is not a gate.
+  const ciOnly = ["test:e2e", "test:packed-consumer", "package:check"];
+  const gates = (/** @type {string} */ aggregate) =>
+    new Set(executableTaskIds(turboTasks(["run", aggregate])).filter((id) => !id.endsWith(`#${aggregate}`)));
+  const full = gates("ci:checks");
+  const local = gates("check");
+  for (const task of ciOnly) {
+    expect(
+      [...full].some((id) => id.endsWith(`#${task}`)),
+      `ci:checks must still run ${task}`
+    ).toBe(true);
+  }
+  const expected = [...full].filter((id) => !ciOnly.some((task) => id.endsWith(`#${task}`)));
+  expect([...local].sort()).toEqual(expected.sort());
+}, 60_000);
 
 /** @type {Map<string, string[]> | undefined} */
 let testGraph;
@@ -172,28 +190,30 @@ it("runs docs build before type-check, not against the same .next", () => {
   expect(dependencies).toContain("docs#build");
 });
 
-it("the browser job schedules the browser and packed-consumer gates", () => {
+it("the browser job schedules the browser, e2e and packed-consumer gates", () => {
   // The required gate inventory is independent of the workflow's task arguments and filters.
   const ids = executableTaskIds(browserLegs().flatMap((leg) => leg.tasks)).filter((id) =>
-    /#test:(browser|packed-consumer)$/.test(id)
+    /#test:(browser|e2e|packed-consumer)$/.test(id)
   );
   expect([...new Set(ids)].sort()).toEqual([
     "@elmeragroup/fuse#test:browser",
     "@elmeragroup/fuse#test:packed-consumer",
-    "@elmeragroup/pr-shots#test:browser",
-    "docs#test:browser",
+    "@elmeragroup/pr-shots#test:e2e",
+    "docs#test:e2e",
     "static-theme#test:browser",
   ]);
 }, 30_000);
 
-it("covers every docs browser shard exactly once and keeps package gates unsharded", () => {
+it("covers every docs e2e shard exactly once and keeps package gates unsharded", () => {
   const legs = browserLegs();
   expect(legs.map((leg) => leg.leg).sort()).toEqual(["docs-1", "docs-2", "docs-3", "docs-4", "packages"]);
-  const docs = legs.filter((leg) => leg.tasks.some((task) => task.taskId === "docs#test:browser"));
+  const docs = legs.filter((leg) => leg.tasks.some((task) => task.taskId === "docs#test:e2e"));
   expect(docs).toHaveLength(4);
   for (const leg of docs) {
-    const gates = executableTaskIds(leg.tasks).filter((id) => /#test:(browser|packed-consumer)$/.test(id));
-    expect(gates, `${leg.leg} must only shard the docs browser gate`).toEqual(["docs#test:browser"]);
+    const gates = executableTaskIds(leg.tasks).filter((id) =>
+      /#test:(browser|e2e|packed-consumer)$/.test(id)
+    );
+    expect(gates, `${leg.leg} must only shard the docs e2e gate`).toEqual(["docs#test:e2e"]);
     expect(leg.args.slice(leg.args.indexOf("--") + 1), `${leg.leg} shard arguments`).toHaveLength(1);
   }
   // N executions must cover 1/N through N/N, even though their resolved task ids are identical.
