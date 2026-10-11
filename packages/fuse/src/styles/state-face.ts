@@ -4,7 +4,7 @@ import { ariaInvalidFocusRingClass, dataInvalidFocusRingClass, withinInvalidFocu
 /**
  * The state face of a whole interactive control: the one disabled look (`opacity-50` plus
  * the `not-allowed` cursor) and the one invalid look (`border-error`, a 3px ring, and
- * `ring-error/20`). A keyboard-focused invalid control draws a solid 2px `--error` line
+ * `ring-error/20`). A keyboard-focused invalid control draws a solid 1px `--error` line
  * between its border and that halo, from the invalid focus constants in `utils.ts`, so focus
  * stays visible on an invalid control. Hover and press stay still on a disabled control through the
  * `enabled-hover:` and `enabled-active:` variants in `fuse.css`, which skip `:disabled`,

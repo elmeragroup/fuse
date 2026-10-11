@@ -532,7 +532,7 @@ async function tabInto(before: string, ringHost: () => HTMLElement): Promise<HTM
 }
 
 describe("the focused invalid face", () => {
-  it("draws a solid 2px error line inside the halo on every keyboard-focused invalid ring host", async () => {
+  it("draws a solid 1px error line inside the halo on every keyboard-focused invalid ring host", async () => {
     renderStateFaces(
       <>
         <button type="button">Before valid input</button>

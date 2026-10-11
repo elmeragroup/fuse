@@ -233,9 +233,9 @@ describe("InputGroup", () => {
     expect(plain.border).toBe(resting);
     expect(grouped.border).toBe(resting);
 
-    // Invalid arm. Oracle: the theme's `--error` role, for the border and for a solid 2px ring
-    // flush against the box, which replaces both the focus ring and the resting 3px halo. Each
-    // box is read while it holds focus.
+    // Invalid arm. Oracle: the theme's `--error` role, for the border and for a solid 1px line
+    // flush against the box, which replaces the focus ring and sits inside the resting 3px halo.
+    // Each box is read while it holds focus.
     const invalidPlain = await keyboardFocusedBox("Before invalid input", () =>
       textboxNamed("Plain invalid")
     );

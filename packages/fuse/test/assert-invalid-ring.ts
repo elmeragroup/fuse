@@ -135,9 +135,9 @@ export function expectInvalidRing(label: string, element: HTMLElement): void {
 }
 
 /**
- * Assert the focused invalid face: an `--error` border, then a solid 2px line of the `--error`
+ * Assert the focused invalid face: an `--error` border, then a solid 1px line of the `--error`
  * role flush against it, then the resting halo, `--error` at 20% alpha, as the outermost line,
- * reaching 5px past the border. Chromium lists the solid line's layer first, so it paints above
+ * reaching 4px past the border. Chromium lists the solid line's layer first, so it paints above
  * the halo's layer, which leaves 3px of halo showing beyond it. Every expected value is written
  * here by hand; the role colour is read from the theme.
  *
@@ -150,8 +150,8 @@ export function expectInvalidFocusRing(label: string, element: HTMLElement): voi
   const error = cssVarColor(host, "--error");
   expect.soft(getComputedStyle(element).borderTopColor, `${label} border`).toBe(error);
   expect.soft(ringLayers(element), `${label} focused rings`).toEqual([
-    { spread: "2px", color: error, inset: false },
-    { spread: "5px", color: computedColor(host, INVALID_RING_COLOR), inset: false },
+    { spread: "1px", color: error, inset: false },
+    { spread: "4px", color: computedColor(host, INVALID_RING_COLOR), inset: false },
   ]);
 }
 

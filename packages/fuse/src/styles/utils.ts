@@ -97,15 +97,15 @@ export const stateFocusRingVisibleClass = focusRing({ target: "state", isFocusVi
 
 /**
  * The focused invalid face for a control that carries `aria-invalid` itself. Outside the error
- * border it paints a solid 2px `--error` line flush against the box, and the resting 3px
- * `error/20` halo outside that line, reaching 5px. Tailwind's ring offset slot draws the solid
- * line and paints above the ring slot, whose spread is the halo's 3px plus the 2px offset.
+ * border it paints a solid 1px `--error` line flush against the box, and the resting 3px
+ * `error/20` halo outside that line, reaching 4px. Tailwind's ring offset slot draws the solid
+ * line and paints above the ring slot, whose spread is the halo's 3px plus the 1px offset.
  * Each arm stacks the invalid attribute on `:focus-visible`, so its selector outweighs both the
  * plain focus ring and the resting halo of the state face, whatever order Tailwind emits them
  * in. `state-face.ts` composes it into the aria arm of the invalid face.
  */
 export const ariaInvalidFocusRingClass = cn(
-  "aria-invalid:focus-visible:ring-3 aria-invalid:focus-visible:ring-error/20 aria-invalid:focus-visible:ring-offset-2 aria-invalid:focus-visible:ring-offset-error"
+  "aria-invalid:focus-visible:ring-3 aria-invalid:focus-visible:ring-error/20 aria-invalid:focus-visible:ring-offset-1 aria-invalid:focus-visible:ring-offset-error"
 );
 
 /**
@@ -113,7 +113,7 @@ export const ariaInvalidFocusRingClass = cn(
  * {@link ariaInvalidFocusRingClass}; `state-face.ts` composes it into the data-target face.
  */
 export const dataInvalidFocusRingClass = cn(
-  "data-invalid:focus-visible:ring-3 data-invalid:focus-visible:ring-error/20 data-invalid:focus-visible:ring-offset-2 data-invalid:focus-visible:ring-offset-error"
+  "data-invalid:focus-visible:ring-3 data-invalid:focus-visible:ring-error/20 data-invalid:focus-visible:ring-offset-1 data-invalid:focus-visible:ring-offset-error"
 );
 
 /**
@@ -126,8 +126,8 @@ export const dataInvalidFocusRingClass = cn(
  * `state-face.ts` composes it into the within-target face.
  */
 export const withinInvalidFocusRingClass = cn(
-  "has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-3 has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-error/20 has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-offset-2 has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-offset-error",
-  "aria-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-3 aria-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-error/20 aria-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-2 aria-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-error"
+  "has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-3 has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-error/20 has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-offset-1 has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-offset-error",
+  "aria-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-3 aria-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-error/20 aria-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-1 aria-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-error"
 );
 
 /**
@@ -138,7 +138,7 @@ export const withinInvalidFocusRingClass = cn(
  * attribute. The selector outweighs the within ring and the halo.
  */
 export const dataWithinInvalidFocusRingClass = cn(
-  "data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-3 data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-error/20 data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-2 data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-error"
+  "data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-3 data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-error/20 data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-1 data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-error"
 );
 
 /**
@@ -146,7 +146,7 @@ export const dataWithinInvalidFocusRingClass = cn(
  * Aria recipe's compound of `isInvalid: true` and `isFocusVisible: true`. A compound applies
  * after both arms, so tailwind-merge keeps its ring over the plain focus ring's.
  */
-export const stateInvalidFocusRingVisibleClass = cn("ring-3 ring-error/20 ring-offset-2 ring-offset-error");
+export const stateInvalidFocusRingVisibleClass = cn("ring-3 ring-error/20 ring-offset-1 ring-offset-error");
 
 /**
  * Hatch texture and icon-crossfade faces. `elmera/no-primitive-colors` allowlists

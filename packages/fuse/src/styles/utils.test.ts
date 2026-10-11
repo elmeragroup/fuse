@@ -33,20 +33,20 @@ describe("focus-ring constants", () => {
     expect(stateFocusRingVisibleClass).toBe("outline-none ring-2 ring-ring");
   });
 
-  it("paints a focused invalid control's solid 2px error line inside its 3px error/20 halo on every target", () => {
+  it("paints a focused invalid control's solid 1px error line inside its 3px error/20 halo on every target", () => {
     expect(ariaInvalidFocusRingClass).toBe(
-      "aria-invalid:focus-visible:ring-3 aria-invalid:focus-visible:ring-error/20 aria-invalid:focus-visible:ring-offset-2 aria-invalid:focus-visible:ring-offset-error"
+      "aria-invalid:focus-visible:ring-3 aria-invalid:focus-visible:ring-error/20 aria-invalid:focus-visible:ring-offset-1 aria-invalid:focus-visible:ring-offset-error"
     );
     expect(dataInvalidFocusRingClass).toBe(
-      "data-invalid:focus-visible:ring-3 data-invalid:focus-visible:ring-error/20 data-invalid:focus-visible:ring-offset-2 data-invalid:focus-visible:ring-offset-error"
+      "data-invalid:focus-visible:ring-3 data-invalid:focus-visible:ring-error/20 data-invalid:focus-visible:ring-offset-1 data-invalid:focus-visible:ring-offset-error"
     );
     expect(withinInvalidFocusRingClass).toBe(
-      "has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-3 has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-error/20 has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-offset-2 has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-offset-error aria-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-3 aria-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-error/20 aria-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-2 aria-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-error"
+      "has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-3 has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-error/20 has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-offset-1 has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-offset-error aria-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-3 aria-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-error/20 aria-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-1 aria-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-error"
     );
     expect(dataWithinInvalidFocusRingClass).toBe(
-      "data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-3 data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-error/20 data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-2 data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-error"
+      "data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-3 data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-error/20 data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-1 data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-error"
     );
-    expect(stateInvalidFocusRingVisibleClass).toBe("ring-3 ring-error/20 ring-offset-2 ring-offset-error");
+    expect(stateInvalidFocusRingVisibleClass).toBe("ring-3 ring-error/20 ring-offset-1 ring-offset-error");
   });
 });
 

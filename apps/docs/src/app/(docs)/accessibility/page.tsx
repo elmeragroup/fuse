@@ -63,9 +63,9 @@ export default function AccessibilityPage(): ReactElement {
       <ul>
         <li>
           Focus rings render on <code>:focus-visible</code> only, never bare <code>:focus</code>, always
-          through one shared recipe: a two-pixel ring with a mandatory two-pixel offset. The offset keeps the
-          brand-independent violet ring legible on coloured fills and pill shapes. No component suppresses,
-          recolours or redefines it.
+          through one shared recipe: a flush two-pixel ring in the neutral <code>--ring</code> role. A
+          keyboard-focused invalid control draws a one-pixel <code>--error</code> line inside its error halo
+          instead. No component suppresses, recolours or redefines either.
         </li>
         <li>
           Keyboard behaviour follows base-ui, with the documented component defaults: arrow-key roving with
