@@ -136,10 +136,10 @@ export default function AccessibilityPage(): ReactElement {
           Light <code>--input</code>, the border of Input, Textarea, Select and the other field boxes,
           measures 1.08–1.70:1 against the page and card surfaces, under the 3:1 non-text floor. The unchecked{" "}
           <code>Switch</code> track uses the same role, and the interim GridList selection box draws its
-          unchecked edge in <code>--border</code>, which is just as light. A field border of at least 3:1 is a
-          design decision on the roadmap. <code>Checkbox</code> and <code>Radio</code> do not depend on it:
-          their unchecked edge is <code>--muted-foreground</code>, held to 3:1 against the page, card and
-          card-soft surfaces in both color schemes.
+          unchecked edge in <code>--border</code>, which measures only 1.19–1.70:1 on the same surfaces. A
+          field border of at least 3:1 is a design decision on the roadmap. <code>Checkbox</code> and{" "}
+          <code>Radio</code> do not depend on it: their unchecked edge is <code>--muted-foreground</code>,
+          held to 3:1 against the page, card and card-soft surfaces in both color schemes.
         </li>
         <li>
           <code>feature-foreground</code> is reclassified as accent/decorative. Text on <code>feature</code>{" "}
