@@ -2,12 +2,42 @@ import { expect } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import { DENSITIES } from "../src/theme/density";
+import { computedColor, ringLayers, settleTransitions } from "./assert-invalid-ring";
 
+/**
+ * The colour the element's `ring-ring` resolves to: its `--ring` role, or the element's own
+ * text colour, Tailwind's `currentcolor` fallback, where no theme declares the role. Probes are
+ * child elements, which an <input> cannot hold, so the colour resolves at the parent, which
+ * sits in the same theme scope.
+ */
+function ringRoleColor(element: HTMLElement, token: "--ring" | "--error"): string {
+  return computedColor(element.parentElement ?? element, `var(${token}, ${getComputedStyle(element).color})`);
+}
+
+/**
+ * The shared focus ring's fingerprint, read from the painted `box-shadow` as it stands, so the
+ * caller settles transitions first: exactly one outer ring, 2px wide and flush (an offset would paint a second layer and
+ * widen the ring), in the element's `--ring` role, or in its `--error` role on a focused
+ * invalid control. The resting invalid halo is 3px in `--error` at 20% alpha, so it never
+ * matches, and neither does an inset ring.
+ */
 function hasFocusRing(element: HTMLElement): boolean {
-  const style = getComputedStyle(element);
-  const ring = style.getPropertyValue("--tw-ring-shadow");
-  const offset = style.getPropertyValue("--tw-ring-offset-width");
-  return ring.includes("calc(") && offset === "2px";
+  const [ring, ...rest] = ringLayers(element);
+  if (ring === undefined || rest.length > 0 || ring.inset || ring.spread !== "2px") {
+    return false;
+  }
+  return ring.color === ringRoleColor(element, "--ring") || ring.color === ringRoleColor(element, "--error");
+}
+
+/**
+ * Assert the focus ring a keyboard-focused valid control paints: one outer 2px ring, flush with
+ * no offset layer, in the theme's `--ring` role at that element.
+ */
+export function expectValidFocusRing(element: HTMLElement, message: string): void {
+  settleTransitions(element);
+  expect(ringLayers(element), message).toEqual([
+    { spread: "2px", color: ringRoleColor(element, "--ring"), inset: false },
+  ]);
 }
 
 /**
@@ -21,11 +51,13 @@ export async function assertFocusRingOnKeyboardAbsentOnMouse(
 ): Promise<void> {
   await userEvent.click(previous);
   await userEvent.keyboard("{Tab}");
+  settleTransitions(element);
   expect(element.matches(":focus-visible"), "Tab must land with :focus-visible").toBe(true);
   expect(hasFocusRing(element), "focus-visible must paint the shared ring").toBe(true);
 
   element.blur();
   await userEvent.click(element);
+  settleTransitions(element);
   expect(element.matches(":focus-visible"), "mouse focus must not match :focus-visible").toBe(false);
   expect(hasFocusRing(element), "mouse focus must not paint the shared ring").toBe(false);
 }
@@ -36,10 +68,12 @@ export async function assertFocusRingOnKeyboardAbsentOnMouse(
  * ring fingerprint inside this helper.
  */
 export function expectFocusRing(element: HTMLElement, message: string): void {
+  settleTransitions(element);
   expect(hasFocusRing(element), message).toBe(true);
 }
 
 export function expectNoFocusRing(element: HTMLElement, message: string): void {
+  settleTransitions(element);
   expect(hasFocusRing(element), message).toBe(false);
 }
 
@@ -66,6 +100,7 @@ export async function assertKeyboardFocusRingAtBothDensities(
   await withBothDensities(async () => {
     previous.focus();
     await userEvent.keyboard("{Tab}");
+    settleTransitions(element);
     expect(element.matches(":focus-visible"), "Tab must land with :focus-visible").toBe(true);
     expect(hasFocusRing(element), "focus-visible must paint the shared ring").toBe(true);
     element.blur();
@@ -95,10 +130,12 @@ export async function assertWithinKeyboardFocusRingAtBothDensities(
   await withBothDensities(async () => {
     previous.focus();
     await userEvent.keyboard("{Tab}");
+    settleTransitions(ringHost, control);
     expect(control.matches(":focus-visible"), "Tab must land with :focus-visible").toBe(true);
     expect(hasFocusRing(ringHost), "focus-visible must paint the shared ring on the group").toBe(true);
     expect(hasFocusRing(control), "the control must not paint a second ring").toBe(false);
     control.blur();
+    settleTransitions(ringHost);
     expect(hasFocusRing(ringHost), "blur must clear the group ring").toBe(false);
   });
 }
@@ -120,21 +157,24 @@ export async function assertStateFocusRingAtBothDensities(
   await withBothDensities(async () => {
     previous.focus();
     await userEvent.keyboard("{Tab}");
+    settleTransitions(ringHost, control);
     expect(control.matches(":focus-visible"), "Tab must land with :focus-visible").toBe(true);
     expect(hasFocusRing(ringHost), "focus-visible must paint the shared ring on the group").toBe(true);
     expect(hasFocusRing(control), "the control must not paint a second ring").toBe(false);
 
     await userEvent.click(previous);
+    settleTransitions(ringHost);
     expect(hasFocusRing(ringHost), "blur must clear the group ring").toBe(false);
 
     await userEvent.click(control);
+    settleTransitions(ringHost);
     expect(hasFocusRing(ringHost), "mouse focus on the control must not paint the group ring").toBe(false);
   });
 }
 
 /**
  * The ancestors that would clip the shared focus ring around `control`. The ring is 2px wide
- * outside a 2px offset, so it paints 4px past the control's border box; an ancestor clips it
+ * and flush, so it paints 2px past the control's border box; an ancestor clips it
  * when it hides overflow, clips its paint, or sets a clip path, and the ring's box leaves that
  * ancestor's padding box.
  *
@@ -142,7 +182,7 @@ export async function assertStateFocusRingAtBothDensities(
  */
 export function focusRingClippers(control: HTMLElement): string[] {
   const rect = control.getBoundingClientRect();
-  const ring = { left: rect.left - 4, top: rect.top - 4, right: rect.right + 4, bottom: rect.bottom + 4 };
+  const ring = { left: rect.left - 2, top: rect.top - 2, right: rect.right + 2, bottom: rect.bottom + 2 };
   const clippers: string[] = [];
   for (let ancestor = control.parentElement; ancestor; ancestor = ancestor.parentElement) {
     const ancestorStyle = getComputedStyle(ancestor);

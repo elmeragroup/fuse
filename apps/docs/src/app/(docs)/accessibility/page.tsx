@@ -128,9 +128,10 @@ export default function AccessibilityPage(): ReactElement {
           4.93–8.88:1.
         </li>
         <li>
-          The brand-independent violet <code>--ring</code> falls below 3:1 non-text contrast against some
-          strong external fills; the mandatory ring offset is the mitigation, and a per-brand ring re-mint is
-          a roadmap item.
+          The neutral <code>--ring</code> is held to 3:1 against the page and card surfaces in both color
+          schemes, the surfaces it is drawn on. The ring sits flush against the control, so against a strong
+          fill, such as an external primary button, it can measure below 3:1 against that fill. A brand can
+          tune its ring in its palette.
         </li>
         <li>
           Light <code>--input</code>, the border of Input, Textarea, Select and the other field boxes,

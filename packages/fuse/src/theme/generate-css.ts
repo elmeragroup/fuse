@@ -70,7 +70,7 @@ function rootDeclarations(): (readonly [string, string])[] {
 
 /**
  * Light layers declare `EXTERNAL_RESET_KEYS` only, so a host override of a role no
- * palette owns (`--ring`, `--popover`, `--chart-*`) inherits through the scope. Dark
+ * palette owns (`--popover`, `--chart-*`) inherits through the scope. Dark
  * layers materialize `THEME_RESET_KEYS`, every key any light or dark palette can change.
  */
 function resetDeclarations(

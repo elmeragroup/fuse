@@ -109,7 +109,7 @@ const itemFooterMotionClass = cn(
 // The content overflows its row while the row is shorter than it, so the content element clips
 // in both switchable modes. It is the footer's grid item, and a stretched grid item's margin box
 // fills its cell, so `-m-1 p-1` grows its clip edge, the padding box, 4px past the cell on every
-// side while its content box stays the cell: the shared focus ring, 2px outside a 2px offset,
+// side while its content box stays the cell: the shared focus ring, a flush 2px ring,
 // paints whole on content at any edge, and the footer's own box is unchanged.
 const itemFooterClipClass = cn("-m-1 overflow-clip p-1");
 

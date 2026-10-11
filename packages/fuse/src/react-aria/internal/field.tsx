@@ -18,7 +18,11 @@ import { fieldBoxChromeClass } from "../../styles/field-box";
 import { labelTypeClass } from "../../styles/label-type";
 import { racDisabledStateFaceClass, racInvalidStateFaceClass } from "../../styles/state-face";
 import { tv } from "../../styles/tv";
-import { stateFocusRingClass, stateFocusRingVisibleClass } from "../../styles/utils";
+import {
+  stateFocusRingClass,
+  stateFocusRingVisibleClass,
+  stateInvalidFocusRingVisibleClass,
+} from "../../styles/utils";
 import { composeTailwindRenderProps } from "./compose-tailwind-render-props";
 
 /**
@@ -27,7 +31,8 @@ import { composeTailwindRenderProps } from "./compose-tailwind-render-props";
  * Input's border, fill, radius, and shadow in mixed forms. The RAC Group is not focusable,
  * so it uses the shared state focus constants and receives disabled/invalid state through
  * render props, which the rac-target state face turns into the shared disabled and invalid
- * looks. Descendant inputs borrow this surface instead of painting another fill.
+ * looks. A focused invalid group paints the solid error ring through its compound.
+ * Descendant inputs borrow this surface instead of painting another fill.
  */
 export const fieldGroupVariants = tv({
   base: cn(
@@ -53,6 +58,13 @@ export const fieldGroupVariants = tv({
       false: "",
     },
   },
+  compoundVariants: [
+    {
+      isInvalid: true,
+      isFocusVisible: true,
+      class: stateInvalidFocusRingVisibleClass,
+    },
+  ],
   defaultVariants: {
     isFocusVisible: false,
     isInvalid: false,

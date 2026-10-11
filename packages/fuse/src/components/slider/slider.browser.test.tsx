@@ -7,7 +7,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertWithinKeyboardFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
-import { expectInvalidRing } from "../../../test/assert-invalid-ring";
+import { expectInvalidFocusRing, expectInvalidRing } from "../../../test/assert-invalid-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import {
   CONTROL_MD,
@@ -318,6 +318,22 @@ describe("Slider", () => {
     expect(input.getAttribute("aria-invalid")).toBe("true");
     expect(describedByText(input)).toContain("Too high.");
     expectInvalidRing("thumb", thumbOf("Budget"));
+  });
+
+  it("paints a solid error ring on an invalid thumb for keyboard focus, and the halo at rest", async () => {
+    renderSlider(
+      <>
+        <button type="button">Before</button>
+        <Slider label="Invalid budget" isInvalid defaultValue={30} />
+      </>
+    );
+    roleNamed("button", "Before").focus();
+    await userEvent.keyboard("{Tab}");
+    expect(sliderNamed("Invalid budget").matches(":focus-visible")).toBe(true);
+    expectInvalidFocusRing("focused thumb", thumbOf("Invalid budget"));
+
+    sliderNamed("Invalid budget").blur();
+    expectInvalidRing("thumb at rest", thumbOf("Invalid budget"));
   });
 
   it("paints the shared focus ring on the thumb for keyboard focus", async () => {

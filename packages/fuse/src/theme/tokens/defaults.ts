@@ -1,6 +1,6 @@
 import type { LayerTokens, TokenContract } from "./contract";
 import { withDerivedTokens } from "./derived-tokens";
-import { WHITE } from "./primitives";
+import { NEUTRAL_RING, WHITE } from "./primitives";
 
 const INTERNAL_FOREGROUND = "oklch(0.15 0.0041 49.31)";
 const ERROR = "oklch(0.4526 0.17845 30.42)";
@@ -60,7 +60,7 @@ export const LAYER_DEFAULTS = {
   "destructive-foreground": "var(--error-foreground)",
   border: NEUTRAL_LINE,
   input: NEUTRAL_LINE,
-  ring: "oklch(0.4844 0.20509 296.29)",
+  ring: NEUTRAL_RING,
   // The outline Button's border. Internal themes draw it as a 1px hairline in the border
   // role, and the external variant layer swaps both values for the reference's 2px ring
   // in the text color.

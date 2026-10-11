@@ -2,7 +2,7 @@ import { cn } from "../../styles/cn";
 import { labelTypeClass } from "../../styles/label-type";
 import { dataStateFaceClass } from "../../styles/state-face";
 import { tv } from "../../styles/tv";
-import { withinFocusRingClass } from "../../styles/utils";
+import { dataWithinInvalidFocusRingClass, withinFocusRingClass } from "../../styles/utils";
 
 /**
  * The Slider parts, one slot each, with the orientation as the one axis.
@@ -22,7 +22,8 @@ import { withinFocusRingClass } from "../../styles/utils";
  * Base UI writes `data-disabled` and `data-invalid` on it. The track and indicator are parts:
  * the unfilled track takes the field-border tone `input`, the edge every field box shows, and
  * a disabled indicator drops to the muted foreground instead of dimming a second time.
- * The thumb also hosts the within-target focus ring for the range input Base UI nests in it.
+ * The thumb also hosts the within-target focus ring for the range input Base UI nests in it,
+ * in solid `--error` while the thumb is invalid.
  */
 export const sliderVariants = tv({
   slots: {
@@ -35,7 +36,8 @@ export const sliderVariants = tv({
     thumb: cn(
       "shadow-xs box-border block size-[16px] shrink-0 rounded-full border-2 border-primary bg-background transition-[box-shadow] after:absolute after:top-1/2 after:left-1/2 after:size-[24px] after:-translate-1/2 after:content-['']",
       withinFocusRingClass,
-      dataStateFaceClass
+      dataStateFaceClass,
+      dataWithinInvalidFocusRingClass
     ),
   },
   variants: {

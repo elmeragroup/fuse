@@ -97,7 +97,7 @@ describe("dark CSS", () => {
     document.documentElement.setAttribute("data-theme", "light");
     document.documentElement.removeAttribute("data-theme-variant");
     const wrapper = document.createElement("div");
-    wrapper.style.setProperty("--ring", "oklch(0.5 0.1 20)");
+    wrapper.style.setProperty("--popover", "oklch(0.5 0.1 20)");
     wrapper.style.setProperty("--background", "oklch(0.5 0.1 20)");
     const inner = document.createElement("div");
     stampTheme(inner, { variant: "internal", brand: "elma", segment: "private" });
@@ -106,7 +106,7 @@ describe("dark CSS", () => {
 
     const innerStyle = getComputedStyle(inner);
     // Roles no light palette owns keep inheriting; the light reset set does not clobber them.
-    expect(innerStyle.getPropertyValue("--ring").trim()).toBe("oklch(0.5 0.1 20)");
+    expect(innerStyle.getPropertyValue("--popover").trim()).toBe("oklch(0.5 0.1 20)");
     // Roles the internal reset owns return to the defaults, not the host's override.
     expect(innerStyle.getPropertyValue("--background").trim()).toBe(
       getComputedStyle(document.documentElement).getPropertyValue("--background").trim()

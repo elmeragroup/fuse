@@ -37,12 +37,17 @@ function fkasCompanyLight(): TokenLayer {
 
 /**
  * The light reset keys every external brand palette assigns itself. Composition derives the
- * secondary hover, and the external variant layer sets its keys for every brand.
+ * secondary hover, the sidebar ring aliases the ring, and the external variant layer sets its
+ * keys for every brand.
  */
-type BrandPaletteKey = Exclude<ExternalResetKey, "secondary-hover" | keyof typeof EXTERNAL_VARIANT_LAYER>;
+type BrandPaletteKey = Exclude<
+  ExternalResetKey,
+  "secondary-hover" | "sidebar-ring" | keyof typeof EXTERNAL_VARIANT_LAYER
+>;
 
 const BRAND_PALETTE_KEYS = EXTERNAL_RESET_KEYS.filter(
-  (key): key is BrandPaletteKey => key !== "secondary-hover" && !(key in EXTERNAL_VARIANT_LAYER)
+  (key): key is BrandPaletteKey =>
+    key !== "secondary-hover" && key !== "sidebar-ring" && !(key in EXTERNAL_VARIANT_LAYER)
 );
 
 /** One declaration of the rule whose first selector is `selector`. */
@@ -254,6 +259,11 @@ describe("theme contract", () => {
     // light rule that resets them resets the hover too.
     expect(supplied.has("secondary") && supplied.has("foreground")).toBe(true);
     supplied.add("secondary-hover");
+    // The sidebar ring aliases the ring, a variant-layer key, so a light rule that resets the
+    // ring restates the alias too.
+    expect(DEFAULTS["sidebar-ring"]).toBe("var(--ring)");
+    expect(supplied.has("ring")).toBe(true);
+    supplied.add("sidebar-ring");
 
     expect([...supplied].toSorted((left, right) => left.localeCompare(right))).toEqual(
       [...EXTERNAL_RESET_KEYS].toSorted((left, right) => left.localeCompare(right))

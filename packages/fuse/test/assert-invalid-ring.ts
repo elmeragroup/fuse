@@ -2,8 +2,11 @@ import { expect } from "vitest";
 
 import { cssVarColor } from "./themed-browser-render";
 
-/** A ring layer of a computed `box-shadow`: its spread and its computed colour string. */
-type RingLayer = { readonly spread: string; readonly color: string };
+/**
+ * A ring layer of a computed `box-shadow`: its spread, its computed colour string and whether
+ * it paints inside the border box.
+ */
+export type RingLayer = { readonly spread: string; readonly color: string; readonly inset: boolean };
 
 /**
  * The invalid ring's colour, written by hand: the `--error` role at 20% alpha, mixed the way
@@ -65,7 +68,7 @@ export function shadowLayerLengths(layer: string): ShadowLengths | undefined {
  * `cssVarColor` resolves a token: a probe under the same theme scope takes it as its colour.
  * Chromium serializes a box-shadow layer's colour the same way, so the two compare exactly.
  */
-function computedColor(host: HTMLElement, color: string): string {
+export function computedColor(host: HTMLElement, color: string): string {
   const probe = document.createElement("span");
   probe.style.color = color;
   host.append(probe);
@@ -75,17 +78,40 @@ function computedColor(host: HTMLElement, color: string): string {
 }
 
 /**
- * The rings an element paints: every `box-shadow` layer with no offset and no blur but a
- * spread, as the `ring-*` utilities emit. Chromium writes each layer's colour first and its
- * four lengths after it; the transparent placeholder layers Tailwind stacks have no spread.
+ * Jump the elements' running CSS transitions to their end, synchronously, so the computed
+ * styles read next are the values the elements settle on rather than one frame of a
+ * transition. A field box, for one, transitions its border and `box-shadow` as focus arrives.
+ * Every public ring assertion calls it once, before any of its reads, so its border and its
+ * shadow come from the same settled state.
+ *
+ * @param elements - The elements an assertion is about to read.
  */
-function ringLayers(element: HTMLElement): RingLayer[] {
+export function settleTransitions(...elements: readonly HTMLElement[]): void {
+  for (const element of elements) {
+    for (const animation of element.getAnimations()) {
+      if (animation instanceof CSSTransition) {
+        animation.finish();
+      }
+    }
+  }
+}
+
+/**
+ * The rings an element paints, read from its computed `box-shadow` as it stands: every layer
+ * with no offset and no blur but a spread, as the `ring-*` utilities emit. Chromium writes each
+ * layer's colour first, its four lengths after it and an `inset` keyword last; the transparent
+ * placeholder layers Tailwind stacks have no spread. Call {@link settleTransitions} first to
+ * read the settled value.
+ */
+export function ringLayers(element: HTMLElement): RingLayer[] {
   return shadowLayers(getComputedStyle(element).boxShadow).flatMap((layer) => {
-    const lengths = shadowLayerLengths(layer);
+    const inset = /(?:^|\s)inset(?:\s|$)/u.test(layer);
+    const bare = layer.replace(/(?:^|\s)inset(?=\s|$)/u, "").trim();
+    const lengths = shadowLayerLengths(bare);
     if (lengths?.x !== 0 || lengths.y !== 0 || lengths.blur !== 0 || lengths.spread === 0) {
       return [];
     }
-    return [{ spread: `${lengths.spread}px`, color: layer.replace(/(?:\s+-?[\d.]+px)+$/u, "") }];
+    return [{ spread: `${lengths.spread}px`, color: bare.replace(/(?:\s+-?[\d.]+px)+$/u, ""), inset }];
   });
 }
 
@@ -100,11 +126,30 @@ function ringLayers(element: HTMLElement): RingLayer[] {
 export function expectInvalidRing(label: string, element: HTMLElement): void {
   // The probes are child elements, which an <input> cannot hold, so they resolve colours
   // where the control's parent sits in the same theme scope.
+  settleTransitions(element);
   const host = element.parentElement ?? element;
   expect.soft(getComputedStyle(element).borderTopColor, `${label} border`).toBe(cssVarColor(host, "--error"));
   expect
     .soft(ringLayers(element), `${label} ring`)
-    .toEqual([{ spread: "3px", color: computedColor(host, INVALID_RING_COLOR) }]);
+    .toEqual([{ spread: "3px", color: computedColor(host, INVALID_RING_COLOR), inset: false }]);
+}
+
+/**
+ * Assert the focused invalid face: an `--error` border and exactly one 2px ring of the solid
+ * `--error` role, flush against the control, in place of the resting 3px halo. Every expected
+ * value is written here by hand; the role colour is read from the theme.
+ *
+ * @param label - The ring host's name in failure messages.
+ * @param element - The element that paints the ring: the control, or its within/state group.
+ */
+export function expectInvalidFocusRing(label: string, element: HTMLElement): void {
+  settleTransitions(element);
+  const host = element.parentElement ?? element;
+  const error = cssVarColor(host, "--error");
+  expect.soft(getComputedStyle(element).borderTopColor, `${label} border`).toBe(error);
+  expect
+    .soft(ringLayers(element), `${label} focused ring`)
+    .toEqual([{ spread: "2px", color: error, inset: false }]);
 }
 
 /**
@@ -115,5 +160,6 @@ export function expectInvalidRing(label: string, element: HTMLElement): void {
  * @param element - The embedded control.
  */
 export function expectNoRing(label: string, element: HTMLElement): void {
+  settleTransitions(element);
   expect(ringLayers(element), `${label} ring`).toEqual([]);
 }

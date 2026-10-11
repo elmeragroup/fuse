@@ -77,13 +77,17 @@ describe("standalone stylesheet source set", () => {
 
 describe("variant-layer role reads", () => {
   it("fall back to the internal default wherever the compiled sheet reads them", () => {
-    // Only themes.css declares the variant-layer roles, so a host without it reads every
-    // fallback. Unit under test: each `var(--K` in dist/styles.css for K in
-    // EXTERNAL_VARIANT_LAYER. Oracle: LAYER_DEFAULTS[K], the role's internal default.
+    // Only themes.css declares the variant-layer roles Fuse adds to the shadcn grammar, so a
+    // host without it reads every fallback. `--ring` is a shadcn base role, which such a host
+    // declares itself, as it does `--primary`, so it is read bare. Unit under test: each
+    // `var(--K` in dist/styles.css for K in EXTERNAL_VARIANT_LAYER. Oracle: LAYER_DEFAULTS[K],
+    // the role's internal default.
     expect(existsSync(compiledCssPath), compiledCssPath).toBe(true);
     const css = readFileSync(compiledCssPath, "utf8");
     const defaults: Readonly<Record<string, string>> = LAYER_DEFAULTS;
+    const shadcnBaseRoles = new Set(["ring"]);
     for (const key of Object.keys(EXTERNAL_VARIANT_LAYER)) {
+      if (shadcnBaseRoles.has(key)) continue;
       const fallbacks = varFallbacks(css, key);
       expect(fallbacks.length, key).toBeGreaterThan(0);
       for (const fallback of fallbacks) {

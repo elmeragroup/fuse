@@ -607,9 +607,9 @@ describe("concentric inner corners on fields and surfaces", () => {
       const tab = roleNamed("tab", "One");
       const list = roleNamed("tablist", "Sections");
       expect(tab.matches(":focus-visible"), density).toBe(true);
-      // The shared ring is 2px wide on a 2px offset, so it reaches 4px past the trigger.
+      // The shared ring is 2px wide and flush, so it reaches 2px past the trigger.
       for (const edge of ["start", "end"] as const) {
-        expect(edgeInset(tab, list, edge), `${density} ${edge}`).toBeGreaterThanOrEqual(4);
+        expect(edgeInset(tab, list, edge), `${density} ${edge}`).toBeGreaterThanOrEqual(2);
       }
       expect(tab.getBoundingClientRect().height, `${density} target`).toBeGreaterThanOrEqual(24);
       unmount();
