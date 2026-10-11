@@ -164,7 +164,7 @@ export default function plopfile(plop) {
           "  5. pnpm --filter docs generate                    # writes the committed api.json next to the page",
           "  6. Record measuredGzip in packages/fuse/scripts/size-budgets.ts.",
           "  7. Add source-contracts.test.ts entries and public type/API checks.",
-          "  8. pnpm ci:checks",
+          "  8. pnpm check",
         ].join("\n"),
     ],
   });

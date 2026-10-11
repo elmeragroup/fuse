@@ -5,6 +5,7 @@
   "scripts": {
     "build": "turbo run build",
     "changeset": "changeset",
+    "check": "oxfmt --check && turbo run check",
     "ci:checks": "oxfmt --check && turbo run ci:checks",
     "dev": "turbo run dev",
     "format": "oxfmt",
@@ -17,6 +18,7 @@
     "shots": "node --experimental-strip-types tooling/pr-shots/src/main.ts",
     "test": "turbo run test",
     "test:browser": "turbo run test:browser",
+    "test:e2e": "turbo run test:e2e",
     "test:repo-policy": "vitest run --config test/vitest.config.mjs",
     "test:types": "turbo run test:types",
     "turbo-cache:prune": "node scripts/prune-turbo-cache.ts .turbo/cache .turbo/runs",

@@ -347,6 +347,7 @@
   },
   "scripts": {
     "build": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/build.ts",
+    "check": "echo '@elmeragroup/fuse check is a no-op anchor; its gates run as turbo dependsOn (see turbo.json)'",
     "ci:checks": "echo '@elmeragroup/fuse ci:checks is a no-op anchor; its gates run as turbo dependsOn (see turbo.json)'",
     "generate:exports": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/write-source-exports.ts",
     "pack": "node --experimental-strip-types --experimental-transform-types --import ./scripts/ts-resolve.mjs scripts/pack.ts",

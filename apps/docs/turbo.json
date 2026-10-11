@@ -45,7 +45,7 @@
       "dependsOn": ["build"],
       "env": ["DOCS_BASE_URL"]
     },
-    "test:browser": {
+    "test:e2e": {
       "dependsOn": ["build"],
       "env": ["DOCS_BASE_URL"]
     }

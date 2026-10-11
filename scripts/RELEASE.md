@@ -69,7 +69,8 @@ exact bytes. [PUBLISH_GATES](../packages/fuse/scripts/release-pack.ts) owns the 
 list; [turbo.json](../turbo.json) owns the merge dependencies. The publish adapter
 reruns its Chromium packed-consumer checks. It runs them again against the exact
 publish bytes even though the merge browser job has passed.
-Local `pnpm ci:checks` includes both browser and packed-consumer tasks.
+Local `pnpm ci:checks` includes both browser and packed-consumer tasks; `pnpm check` leaves
+the packed-consumer and package checks to CI.
 
 The adapter builds and runs its gates with the publish credentials removed from the
 environment ([release-credentials.ts](../packages/fuse/scripts/release-credentials.ts)); the

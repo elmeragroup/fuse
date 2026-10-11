@@ -81,7 +81,7 @@ test commands or manual checks you ran, the results and anything you could not
 check.
 
 - Behavior changes include tests, and verification follows
-  [AGENTS.md](AGENTS.md#tests), including `pnpm ci:checks` before the final review
+  [AGENTS.md](AGENTS.md#tests), including `pnpm check` before the final review
   pass.
 - Visual changes include before and after screenshots. For new UI, show the result.
   Add a short recording when motion, timing or interaction is part of the change.
