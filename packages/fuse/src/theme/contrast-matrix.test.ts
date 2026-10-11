@@ -182,7 +182,16 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
   },
   { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(CHART_ROLES), floor: 3 },
   { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(SYNTAX_ROLES), floor: 4.5 },
-  { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(["input", "ring"]), floor: 3 },
+  { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(["input"]), floor: 3 },
+  {
+    // The focus ring (WCAG 1.4.11). It is drawn flush against the control, so the surface it
+    // must separate from is the page or card around it. Light `input` stays out of this gate:
+    // it is the field border and an accepted deviation.
+    schemes: ["light", "dark"],
+    matches: () => true,
+    pairs: roleOnSurfaces(["ring"]),
+    floor: 3,
+  },
   {
     // The unchecked Checkbox and Radio edge (WCAG 1.4.11). Light `input` is the field border and
     // stays under 3:1 (an accepted deviation), so the selection controls draw this role instead.

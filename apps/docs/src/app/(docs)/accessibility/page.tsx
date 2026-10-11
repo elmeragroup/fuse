@@ -63,9 +63,9 @@ export default function AccessibilityPage(): ReactElement {
       <ul>
         <li>
           Focus rings render on <code>:focus-visible</code> only, never bare <code>:focus</code>, always
-          through one shared recipe: a two-pixel ring with a mandatory two-pixel offset. The offset keeps the
-          brand-independent violet ring legible on coloured fills and pill shapes. No component suppresses,
-          recolours or redefines it.
+          through one shared recipe: a flush two-pixel ring in the neutral <code>--ring</code> role. A
+          keyboard-focused invalid control draws a one-pixel <code>--error</code> line inside its error halo
+          instead. No component suppresses, recolours or redefines either.
         </li>
         <li>
           Keyboard behaviour follows base-ui, with the documented component defaults: arrow-key roving with
@@ -128,9 +128,10 @@ export default function AccessibilityPage(): ReactElement {
           4.93–8.88:1.
         </li>
         <li>
-          The brand-independent violet <code>--ring</code> falls below 3:1 non-text contrast against some
-          strong external fills; the mandatory ring offset is the mitigation, and a per-brand ring re-mint is
-          a roadmap item.
+          The neutral <code>--ring</code> is held to 3:1 against the page and card surfaces in both color
+          schemes, the surfaces it is drawn on. The ring sits flush against the control, so against a strong
+          fill, such as an external primary button, it can measure below 3:1 against that fill. A brand can
+          tune its ring in its palette.
         </li>
         <li>
           Light <code>--input</code>, the border of Input, Textarea, Select and the other field boxes,

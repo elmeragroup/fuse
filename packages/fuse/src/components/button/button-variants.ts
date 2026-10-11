@@ -47,9 +47,13 @@ import { selfFocusRingClass } from "../../styles/utils";
 // outer shadow never paints. It
 // starts with two plain lengths, so tailwind-merge still files it as a shadow, and a
 // consumer's own `shadow-*` utility replaces it.
+// The fill keeps the default border-box clip and paints under the transparent 1px border, so
+// the flush focus ring meets the fill with no hairline of page between them on the filled and
+// hovered ghost variants. On `destructive` and `success` the `/20` border composites over the
+// `/10` fill, a slightly stronger edge that is accepted.
 export const buttonVariants = tv({
   base: cn(
-    "group/button font-medium box-border inline-flex shrink-0 cursor-pointer items-center justify-center rounded-(--radius-button) border border-transparent bg-clip-padding p-0 whitespace-nowrap transition-[color,background-color,border-color,box-shadow,translate,opacity] select-none in-data-[slot=button-group]:rounded-md enabled-active:not-aria-[haspopup]:translate-y-px [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[pending-indicator]:[&>svg:not([data-icon=inline-end])]:hidden",
+    "group/button font-medium box-border inline-flex shrink-0 cursor-pointer items-center justify-center rounded-(--radius-button) border border-transparent p-0 whitespace-nowrap transition-[color,background-color,border-color,box-shadow,translate,opacity] select-none in-data-[slot=button-group]:rounded-md enabled-active:not-aria-[haspopup]:translate-y-px [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[pending-indicator]:[&>svg:not([data-icon=inline-end])]:hidden",
     selfFocusRingClass,
     nativeStateFaceClass,
     dataStateFaceClass

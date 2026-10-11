@@ -9,7 +9,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 // Role tokens live in themes.css only; the fill test reads --card and --background.
 import "../../../dist/themes.css";
-import { focusRingClippers } from "../../../test/assert-focus-ring";
+import { expectValidFocusRing, focusRingClippers } from "../../../test/assert-focus-ring";
 import { assertHorizontalItemList, radiusToken } from "../../../test/assert-selection-item-group-layout";
 import {
   cssVarColor,
@@ -268,9 +268,8 @@ describe("SelectionItem", () => {
       await userEvent.keyboard("{Tab}");
       expect(control.matches(":focus-visible")).toBe(true);
 
-      // The shared ring is a 2px ring outside a 2px offset, so it paints 4px past the control.
-      const style = getComputedStyle(control);
-      expect(style.getPropertyValue("--tw-ring-offset-width")).toBe("2px");
+      // The shared ring is a flush 2px ring, so it paints 2px past the control.
+      expectValidFocusRing(control, "keyboard focus must paint the flush 2px ring");
       const rect = control.getBoundingClientRect();
       const shell = shellFrom("Fixed price");
       const shellRect = shell.getBoundingClientRect();

@@ -279,7 +279,9 @@ export const TOKEN_KINDS = {
 
 /**
  * The roles a light theme rule resets. They are every key the external variant layer, an
- * external palette or a segment delta can assign, plus each derived role computed from them.
+ * external palette or a segment delta can assign, plus each derived role computed from them
+ * and each alias that reads one of them. `--sidebar-ring` defaults to `var(--ring)`, so the
+ * rule restates it and the alias resolves against the scope's own ring.
  */
 export const EXTERNAL_RESET_KEYS = [
   "background",
@@ -304,8 +306,10 @@ export const EXTERNAL_RESET_KEYS = [
   "feature-foreground",
   "border",
   "input",
+  "ring",
   "button-outline",
   "selection-checked-border",
+  "sidebar-ring",
   "radius",
   "radius-button",
   "radius-field",
@@ -365,13 +369,19 @@ const LIGHT_ONLY_KEYS: ReadonlySet<TokenName> = new Set([
 ]);
 
 /**
+ * The reset keys whose default is an alias of another reset key. A palette names the target,
+ * and the alias follows it, so no palette has to name the alias itself.
+ */
+const ALIAS_RESET_KEYS: ReadonlySet<TokenName> = new Set(["sidebar-ring"]);
+
+/**
  * The roles every dark palette must override. The `LIGHT_ONLY_KEYS` keep their light
- * values, and composition computes each derived role, so those are the only
- * `EXTERNAL_RESET_KEYS` entries a dark palette need not name.
+ * values, the `ALIAS_RESET_KEYS` follow their target, and composition computes each derived
+ * role, so those are the only `EXTERNAL_RESET_KEYS` entries a dark palette need not name.
  */
 export const MUST_OVERRIDE_DARK = EXTERNAL_RESET_KEYS.filter(
   (key): key is Extract<ExternalResetKey, LayerTokenName> =>
-    isLayerTokenName(key) && !LIGHT_ONLY_KEYS.has(key)
+    isLayerTokenName(key) && !LIGHT_ONLY_KEYS.has(key) && !ALIAS_RESET_KEYS.has(key)
 );
 
 /**

@@ -774,4 +774,34 @@ describe("Button", () => {
     expect(link.tagName).toBe("A");
     expect(link.getAttribute("href")).toBe("#go");
   });
+
+  // Oracle: the button's own fill, sampled as rendered pixels inside its padding. The flush
+  // focus ring meets the border edge, so the transparent 1px border must show that fill, not
+  // the page.
+  it("paints the default fill out to its border edge, with no hairline of page", async () => {
+    renderThemed(
+      <div style={{ padding: 16, backgroundColor: "white" }}>
+        <Button className="transition-none">Filled</Button>
+      </div>
+    );
+    const button = roleNamed("button", "Filled");
+    expect(getComputedStyle(button).borderLeftWidth).toBe("1px");
+    const base64 = await page.elementLocator(button).screenshot({ save: false });
+    const image = new Image();
+    image.src = `data:image/png;base64,${base64}`;
+    await image.decode();
+    const canvas = document.createElement("canvas");
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const context = canvas.getContext("2d");
+    if (context === null) throw new Error("expected a 2d canvas");
+    context.drawImage(image, 0, 0);
+    const middle = Math.floor(canvas.height / 2);
+    const pixel = (x: number) => [...context.getImageData(x, middle, 1, 1).data].join(",");
+    // The fill is sampled in the start padding, clear of the label. The page is white and the
+    // fill is not, so a page-coloured edge cannot pass for the fill.
+    const fill = pixel(Math.round(4 * devicePixelRatio));
+    expect(fill).not.toBe("255,255,255,255");
+    expect(pixel(0), "outermost border pixel").toBe(fill);
+  });
 });

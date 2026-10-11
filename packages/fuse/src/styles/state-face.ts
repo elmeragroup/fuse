@@ -1,9 +1,12 @@
 import { cn } from "./cn";
+import { ariaInvalidFocusRingClass, dataInvalidFocusRingClass, withinInvalidFocusRingClass } from "./utils";
 
 /**
  * The state face of a whole interactive control: the one disabled look (`opacity-50` plus
  * the `not-allowed` cursor) and the one invalid look (`border-error`, a 3px ring, and
- * `ring-error/20`). Hover and press stay still on a disabled control through the
+ * `ring-error/20`). A keyboard-focused invalid control draws a solid 1px `--error` line
+ * between its border and that halo, from the invalid focus constants in `utils.ts`, so focus
+ * stays visible on an invalid control. Hover and press stay still on a disabled control through the
  * `enabled-hover:` and `enabled-active:` variants in `fuse.css`, which skip `:disabled`,
  * `data-disabled` and `aria-disabled="true"`. That gate is the only mechanism, so no face
  * drops pointer events and a Tooltip on a disabled control still opens.
@@ -45,7 +48,10 @@ import { cn } from "./cn";
 
 const ariaDisabledFace = cn("aria-disabled:cursor-not-allowed aria-disabled:opacity-50");
 
-const ariaInvalidFace = cn("aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20");
+const ariaInvalidFace = cn(
+  "aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20",
+  ariaInvalidFocusRingClass
+);
 
 /** The native-target state face: `:disabled` plus the aria arms. */
 export const nativeStateFaceClass = cn(
@@ -59,6 +65,7 @@ export const dataStateFaceClass = cn(
   ariaDisabledFace,
   ariaInvalidFace,
   "data-invalid:border-error data-invalid:ring-3 data-invalid:ring-error/20",
+  dataInvalidFocusRingClass,
   "data-disabled:cursor-not-allowed data-disabled:opacity-50"
 );
 
@@ -71,7 +78,12 @@ export const ariaStateFaceClass = cn(ariaDisabledFace, ariaInvalidFace);
  */
 export const racDisabledStateFaceClass = cn("cursor-not-allowed opacity-50");
 
-/** The rac-target invalid face, for a recipe's `isInvalid: true` arm. */
+/**
+ * The rac-target invalid face, for a recipe's `isInvalid: true` arm. A recipe that also takes
+ * the state focus ring adds `stateInvalidFocusRingVisibleClass` from `utils.ts` on its
+ * `isInvalid` and `isFocusVisible` compound, so the focused invalid control draws the solid
+ * error line inside this halo rather than the plain focus ring.
+ */
 export const racInvalidStateFaceClass = cn("border-error ring-3 ring-error/20");
 
 /**
@@ -83,7 +95,8 @@ export const racInvalidStateFaceClass = cn("border-error ring-3 ring-error/20");
 export const withinStateFaceClass = cn(
   "has-[>[data-focus-ring-control]:disabled]:cursor-not-allowed has-[>[data-focus-ring-control]:disabled]:opacity-50",
   "has-[>[data-focus-ring-control][aria-disabled=true]]:cursor-not-allowed has-[>[data-focus-ring-control][aria-disabled=true]]:opacity-50",
-  "has-[>[data-focus-ring-control][aria-invalid=true]]:border-error has-[>[data-focus-ring-control][aria-invalid=true]]:ring-3 has-[>[data-focus-ring-control][aria-invalid=true]]:ring-error/20"
+  "has-[>[data-focus-ring-control][aria-invalid=true]]:border-error has-[>[data-focus-ring-control][aria-invalid=true]]:ring-3 has-[>[data-focus-ring-control][aria-invalid=true]]:ring-error/20",
+  withinInvalidFocusRingClass
 );
 
 /**

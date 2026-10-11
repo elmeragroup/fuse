@@ -1,5 +1,5 @@
 import type { TokenLayer } from "./contract";
-import { WHITE } from "./primitives";
+import { NEUTRAL_RING, WHITE } from "./primitives";
 import type { BrandCode } from "./themes";
 
 export type ExternalBrandCode = Exclude<BrandCode, "fkab">;
@@ -15,8 +15,23 @@ export type ExternalBrandCode = Exclude<BrandCode, "fkab">;
  * medium weight of that radio card, so it matches the group legend and `CheckboxCard` titles
  * around it. The internal variant keeps the default 0px step, the 1px `--border` hairline, the
  * `--primary` edge on a checked row and the regular row title.
+ *
+ * The layer names the neutral focus ring so every external light rule declares `--ring`
+ * (and restates the `--sidebar-ring` alias), and a nested scope gets its own theme's ring. To
+ * tune one brand's ring:
+ *
+ * - Light: add `ring` to the brand's entry in {@link EXTERNAL_PALETTES}. A segment delta in
+ *   `segment-sheets.ts` layers on top of it, so the ring carries through unless the delta
+ *   names its own.
+ * - Dark: add `ring` to the brand's sheet in `external-dark-palettes.ts`, and to each of the
+ *   brand's segment dark sheets in `segment-sheets.ts`, such as fkas-company's, since a
+ *   segment sheet replaces the brand's dark sheet. A sheet without `ring` keeps the dark
+ *   default's neutral ring.
+ *
+ * `contrast-matrix.test.ts` holds a tuned ring to 3:1 on the page and card surfaces.
  */
 export const EXTERNAL_VARIANT_LAYER = {
+  ring: NEUTRAL_RING,
   "button-outline": "var(--foreground)",
   "selection-checked-border": "var(--border)",
   "radius-field": "0.25rem",

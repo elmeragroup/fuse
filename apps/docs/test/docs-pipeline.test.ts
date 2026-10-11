@@ -202,8 +202,10 @@ describe("token extraction", () => {
         "--control-px-button-md",
       ]),
     ],
-    // The smaller set: exactly these three, nothing more.
-    ["ScrollArea", "scroll-area", ["--background", "--border", "--ring"]],
+    // The smaller set: exactly these three, nothing more. Extraction reads whole files, so
+    // `--error` arrives with the focused invalid ring that shares `styles/utils.ts` with the
+    // focus ring ScrollArea's viewport takes.
+    ["ScrollArea", "scroll-area", ["--border", "--error", "--ring"]],
   ] as const)("extracts the tokens consumed by %s", (_name, directory, expected) => {
     const recipe = collectRecipeSources(join(repoRoot, "packages/fuse/src/components", directory));
     const names = extractTokens({

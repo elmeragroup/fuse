@@ -6,7 +6,7 @@ import { publishShellBoundary } from "../corner-radius";
 
 /**
  * The Tabs list: `rounded-lg` and 4px padding, never under 4px at a small root, around triggers
- * floored at the 24px target, so a trigger and its 4px focus ring fit inside. The `line` variant
+ * floored at the 24px target, so a trigger and its flush 2px focus ring fit inside. The `line` variant
  * has no corner and publishes none, and keeps the 3px its underline sits on.
  */
 export const tabsListShellClass = cn(

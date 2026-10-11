@@ -82,14 +82,14 @@ describe("Tabs in a preflight consumer", () => {
         expect(tab.getBoundingClientRect().height, `${fontSize} ${density} target`).toBeGreaterThanOrEqual(
           24
         );
-        // The shared ring is 2px wide on a 2px offset, so it reaches 4px past the trigger.
+        // The shared ring is 2px wide and flush, so it reaches 2px past the trigger.
         const tabBox = tab.getBoundingClientRect();
         const listBox = list.getBoundingClientRect();
         for (const edge of ["start", "end"] as const) {
-          expect(edgeInset(tab, list, edge), `${fontSize} ${density} ${edge}`).toBeGreaterThanOrEqual(4);
+          expect(edgeInset(tab, list, edge), `${fontSize} ${density} ${edge}`).toBeGreaterThanOrEqual(2);
         }
-        expect(tabBox.top - listBox.top, `${fontSize} ${density} top`).toBeGreaterThanOrEqual(4);
-        expect(listBox.bottom - tabBox.bottom, `${fontSize} ${density} bottom`).toBeGreaterThanOrEqual(4);
+        expect(tabBox.top - listBox.top, `${fontSize} ${density} top`).toBeGreaterThanOrEqual(2);
+        expect(listBox.bottom - tabBox.bottom, `${fontSize} ${density} bottom`).toBeGreaterThanOrEqual(2);
         unmount();
       }
     }

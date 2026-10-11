@@ -11,6 +11,7 @@ import {
   expectFocusRing,
   expectNoFocusRing,
 } from "../../../test/assert-focus-ring";
+import { expectInvalidFocusRing, expectInvalidRing, expectNoRing } from "../../../test/assert-invalid-ring";
 import {
   CONTROL_MD,
   CONTROL_SM,
@@ -48,7 +49,7 @@ async function keyboardFocusedBox(before: string, box: () => HTMLElement) {
   // Let the border and ring transitions settle, so computed colours are the end state.
   await Promise.all(element.getAnimations().map((animation) => animation.finished));
   const style = getComputedStyle(element);
-  return { element, border: style.borderTopColor, shadow: style.boxShadow };
+  return { element, border: style.borderTopColor };
 }
 
 describe("InputGroup", () => {
@@ -232,17 +233,22 @@ describe("InputGroup", () => {
     expect(plain.border).toBe(resting);
     expect(grouped.border).toBe(resting);
 
-    // Invalid arm. Oracle: the theme's `--error` role for the border, and a focused invalid
-    // Input's shadow for the error-tinted ring, which must not fall back to the focus ring.
+    // Invalid arm. Oracle: the theme's `--error` role, for the border and for a solid 1px line
+    // flush against the box, which replaces the focus ring and sits inside the resting 3px halo.
+    // Each box is read while it holds focus.
     const invalidPlain = await keyboardFocusedBox("Before invalid input", () =>
       textboxNamed("Plain invalid")
     );
+    expectInvalidFocusRing("focused invalid input", invalidPlain.element);
     const invalidGrouped = await keyboardFocusedBox("Before invalid group", () =>
       rootNamed("Grouped invalid")
     );
-    expect(invalidGrouped.border).toBe(cssVarColor(invalidGrouped.element, "--error"));
-    expect(invalidGrouped.border).toBe(invalidPlain.border);
-    expect(invalidGrouped.shadow).toBe(invalidPlain.shadow);
+    expectInvalidFocusRing("focused invalid group", invalidGrouped.element);
+    expectNoRing("focused invalid group input", textboxNamed("Grouped invalid"));
+    // Focus has left the plain input; leaving the group too, both keep only the halo.
+    expectInvalidRing("invalid input at rest", invalidPlain.element);
+    roleNamed("button", "Before input").focus();
+    expectInvalidRing("invalid group at rest", invalidGrouped.element);
   });
 
   it("filters the input to digits beside a text addon, counting maxLength in digits", async () => {

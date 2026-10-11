@@ -1,4 +1,5 @@
 import type { TokenLayer } from "./contract";
+import { NEUTRAL_RING } from "./primitives";
 
 // Shared dark values for roles the supplied palettes lack. Several remain provisional
 // until design reviews them.
@@ -22,7 +23,7 @@ export const DARK_DEFAULTS = {
   "warning-soft-foreground": "oklch(0.9189171 0.0814924 82.8399)", // #FFE0A6
   border: "oklch(0.3956915 0.0031178 164.9356)", // #454746
   input: "oklch(0.6543689 0.0037291 145.5328)", // #8F918F
-  ring: "oklch(0.8299788 0.0546884 280.5235)", // #C0C4EB
+  ring: NEUTRAL_RING,
   "chart-1": "oklch(0.8235043 0.0474959 220.6613)", // #A4CDDB
   "chart-2": "oklch(0.8201874 0.0815522 220.2343)", // #86D1E9
   "chart-3": "oklch(0.8156596 0.1022421 190.6206)", // #69D8D2

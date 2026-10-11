@@ -5,9 +5,12 @@
 - Review GE dark semantics, Telinet's live collection, shared support roles,
   chart ordering and syntax colors.
 - Check dark states, fixed-color artwork and chart distinction in product screens.
-- When design supplies ring colors or an audit escalates contrast, replace the
-  shared violet where needed. Retain the [accepted contrast exceptions](<apps/docs/src/app/(docs)/accessibility/page.tsx>)
-  until reviewed replacements exist, including internal and Telinet light muted copy.
+- Ask design for per-brand focus ring colors. Every theme draws the neutral `oklch(0.6 0 0)` ring;
+  a brand tunes it with a `ring` entry in its light palette (`external-palettes.ts`) and in its
+  dark sheet (`external-dark-palettes.ts`) plus each of its segment dark sheets
+  (`segment-sheets.ts`), which replace the brand's dark sheet. `contrast-matrix.test.ts` holds it to 3:1. Retain the
+  [accepted contrast exceptions](<apps/docs/src/app/(docs)/accessibility/page.tsx>) until reviewed
+  replacements exist, including internal and Telinet light muted copy.
 - Ask design for Nordic Green Energy's radius and button radius, and sign off its palette.
   `external-palettes.ts` maps the NGE Material 3 scheme by meaning, keeps the default
   `0.375rem` radius and takes the `1.8125rem` pill button that Fjordkraft and Telinet use,
@@ -202,10 +205,10 @@
 - NumberField writes optional props such as `name`, `min` and `aria-label` as plain attributes,
   against the optional-prop rule in AGENTS.md. The `WIRING_PARTS` source contract flags only raw
   spreads, so it misses them. Spread them through `definedProps`.
-- A light theme rule declares only `EXTERNAL_RESET_KEYS`, so `--destructive`,
-  `--destructive-foreground` and `--sidebar-ring` resolve their `var()` on `:root`. A host that
-  overrides `--error` or `--ring` on a nested theme scope does not move them there. The theme
-  studio restates them on each artboard and in its CSS export
+- A light theme rule declares only `EXTERNAL_RESET_KEYS`, so `--destructive` and
+  `--destructive-foreground` resolve their `var()` on `:root`. A host that overrides `--error` on a
+  nested theme scope does not move them there. `--sidebar-ring` is a reset key now, so it follows
+  a scope's `--ring`. The theme studio restates the aliases on each artboard and in its CSS export
   (`apps/docs/src/studio/lib/artboard-style.ts`). Decide whether the light rules restate every
   alias, as the dark rules do.
 

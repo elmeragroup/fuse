@@ -108,9 +108,11 @@ const itemFooterMotionClass = cn(
 
 // The content overflows its row while the row is shorter than it, so the content element clips
 // in both switchable modes. It is the footer's grid item, and a stretched grid item's margin box
-// fills its cell, so `-m-1 p-1` grows its clip edge, the padding box, 4px past the cell on every
-// side while its content box stays the cell: the shared focus ring, 2px outside a 2px offset,
-// paints whole on content at any edge, and the footer's own box is unchanged.
+// fills its cell, so `-m-1 p-1` grows its clip edge, the padding box, 0.25rem past the cell on
+// every side while its content box stays the cell, and the footer's own box is unchanged. That
+// room is 4px at the default 16px root. The shared focus ring, a flush 2px ring, paints whole on
+// content at any edge. The focused invalid face reaches 4px, so it paints whole at the default
+// root, and a smaller root clips a fraction of its halo.
 const itemFooterClipClass = cn("-m-1 overflow-clip p-1");
 
 const itemFooterVariants = tv({
@@ -158,10 +160,10 @@ export function ItemFooter({
      * collapses its grid row to zero, clips it and makes it inert. Switching between `hidden`
      * and `visible` animates the row's height with a fade and a short slide, so content below
      * the footer moves smoothly instead of jumping. Both modes clip content that reaches more
-     * than 4px past the footer's content box. That 4px of ring room is part of the content
-     * element's box, so a zero-inset item flush against a scroll container's edge should keep
-     * 4px of inset there or the room scrolls. A `default` footer never clips, and switching to
-     * it snaps.
+     * than 0.25rem (4px at the default 16px root) past the footer's content box. That ring room
+     * is part of the content element's box, so a zero-inset item flush against a scroll
+     * container's edge should keep 0.25rem of inset there or the room scrolls. A `default`
+     * footer never clips, and switching to it snaps.
      */
     children?: ReactNode;
   }): ReactElement {

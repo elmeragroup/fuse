@@ -5,7 +5,14 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../dist/styles.css";
 import "../../dist/themes.css";
-import { expectInvalidRing, expectNoRing } from "../../test/assert-invalid-ring";
+import { expectValidFocusRing } from "../../test/assert-focus-ring";
+import {
+  expectInvalidFocusRing,
+  expectInvalidRing,
+  expectNoRing,
+  ringLayers,
+  settleTransitions,
+} from "../../test/assert-invalid-ring";
 import { withLocale } from "../../test/locale-matrix";
 import { whilePointerPressed } from "../../test/pointer-press";
 import {
@@ -347,6 +354,46 @@ describe("state face at dense density", () => {
     expectInvalidRing("nested number field group", groupAround(roleNamed("textbox", "Quantity")));
   });
 
+  it("keeps an invalid InputGroup's solid error ring off a valid NumberField focused in its addon", async () => {
+    renderStateFaces(
+      <>
+        <button type="button">Before</button>
+        <InputGroup.Root aria-label="Order line" aria-invalid>
+          <InputGroup.Input aria-label="Reference" aria-invalid />
+          <InputGroup.Addon align="block-end">
+            <NumberField label="Quantity" defaultValue={2} />
+          </InputGroup.Addon>
+        </InputGroup.Root>
+      </>
+    );
+    const outer = roleNamed("group", "Order line");
+    roleNamed("button", "Before").focus();
+    // The outer group's own input takes focus first, and the outer group paints the face.
+    await userEvent.keyboard("{Tab}");
+    expectInvalidFocusRing("outer group, its own input focused", outer);
+    expectNoRing("outer group's input while focused", roleNamed("textbox", "Reference"));
+    await userEvent.keyboard("{Tab}");
+    const quantity = roleNamed("textbox", "Quantity");
+    expect(quantity.matches(":focus-visible"), "Tab lands on the nested field").toBe(true);
+
+    // The nested field owns the focus: its group paints the plain ring.
+    expectValidFocusRing(groupAround(quantity), "nested number field group");
+    // Oracle: the theme's `--error` role. The outer group's own input is unfocused, so the
+    // outer group must not take the focused invalid face's solid line from a control it does
+    // not own.
+    const error = cssVarColor(outer, "--error");
+    settleTransitions(outer);
+    expect(ringLayers(outer), "outer group").not.toContainEqual({
+      spread: "2px",
+      color: error,
+      inset: false,
+    });
+
+    // Leaving the fields leaves the outer group its resting halo.
+    await userEvent.click(page.getByText("Away", { exact: true }));
+    expectInvalidRing("outer group at rest", outer);
+  });
+
   it("still repaints the same controls under hover while they are enabled", async () => {
     renderStateFaces(
       <>
@@ -472,6 +519,90 @@ describe("state face at dense density", () => {
     // Only the embedded input's state reaches the group: an invalid addon rings itself, not
     // the group around a valid input.
     expectNoRing("input group with an invalid addon", roleNamed("group", "Group with an invalid addon"));
+  });
+});
+
+/** Tab from the button named `before`, then let the ring host's transitions settle. */
+async function tabInto(before: string, ringHost: () => HTMLElement): Promise<HTMLElement> {
+  roleNamed("button", before).focus();
+  await userEvent.keyboard("{Tab}");
+  const host = ringHost();
+  await Promise.all(host.getAnimations().map((animation) => animation.finished));
+  return host;
+}
+
+describe("the focused invalid face", () => {
+  it("draws a solid 1px error line inside the halo on every keyboard-focused invalid ring host", async () => {
+    renderStateFaces(
+      <>
+        <button type="button">Before valid input</button>
+        <Input aria-label="Valid input" />
+        <button type="button">Before input</button>
+        <Input aria-label="Invalid input" aria-invalid />
+        <button type="button">Before group</button>
+        <InputGroup.Root aria-label="Invalid group">
+          <InputGroup.Input aria-label="Invalid group input" aria-invalid />
+        </InputGroup.Root>
+        <button type="button">Before number field</button>
+        <NumberField label="Invalid amount" isInvalid />
+        <button type="button">Before checkbox</button>
+        <CheckboxGroup label="Invalid toppings" isInvalid>
+          <CheckboxItem value="mushroom">Invalid topping</CheckboxItem>
+        </CheckboxGroup>
+        <button type="button">Before data button</button>
+        <Button data-invalid="">Data-invalid button</Button>
+        <button type="button">Before date field</button>
+        <DateField label="Invalid date" isInvalid />
+      </>
+    );
+
+    // A valid control keeps the plain ring: 2px, flush, in the theme's `--ring`.
+    expectValidFocusRing(
+      await tabInto("Before valid input", () => roleNamed("textbox", "Valid input")),
+      "valid input"
+    );
+
+    // Each invalid ring host, focused from the keyboard and then left: the solid line inside
+    // the halo while focused, the halo alone at rest. A within host's own control paints no
+    // ring of its own while it holds the focus, so the group's face is the only one.
+    const none = () => undefined;
+    for (const [label, before, host, embedded] of [
+      // Self target on `aria-invalid`.
+      ["input", "Before input", () => roleNamed("textbox", "Invalid input"), none],
+      // Within target, through the group's own invalid control.
+      [
+        "input group",
+        "Before group",
+        () => roleNamed("group", "Invalid group"),
+        () => roleNamed("textbox", "Invalid group input"),
+      ],
+      // Within target on a group that carries `aria-invalid` itself.
+      [
+        "number field group",
+        "Before number field",
+        () => groupAround(roleNamed("textbox", "Invalid amount")),
+        () => roleNamed("textbox", "Invalid amount"),
+      ],
+      // A Base UI root under an invalid field, which stamps `data-invalid` and `aria-invalid`.
+      [
+        "checkbox in an invalid group",
+        "Before checkbox",
+        () => roleNamed("checkbox", "Invalid topping"),
+        none,
+      ],
+      // The data arm on its own: `data-invalid` with no `aria-invalid`.
+      ["data-invalid button", "Before data button", () => roleNamed("button", "Data-invalid button"), none],
+      // State target: React Aria reports focus and invalidity through render props.
+      ["date field group", "Before date field", () => roleNamed("group", "Invalid date"), none],
+    ] as const) {
+      expectInvalidFocusRing(label, await tabInto(before, host));
+      const control = embedded();
+      if (control !== undefined) {
+        expectNoRing(`${label} control while focused`, control);
+      }
+      await userEvent.click(page.getByText("Away", { exact: true }));
+      expectInvalidRing(`${label} at rest`, host());
+    }
   });
 });
 

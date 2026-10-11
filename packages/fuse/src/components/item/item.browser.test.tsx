@@ -3,7 +3,11 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { assertFocusRingOnKeyboardAbsentOnMouse, focusRingClippers } from "../../../test/assert-focus-ring";
+import {
+  assertFocusRingOnKeyboardAbsentOnMouse,
+  expectValidFocusRing,
+  focusRingClippers,
+} from "../../../test/assert-focus-ring";
 import { hasIntermediateFrame, sampleFrames } from "../../../test/panel-transition";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import {
@@ -596,8 +600,8 @@ describe("Item", () => {
     roleNamed("button", "Before").focus();
     await userEvent.keyboard("{Tab}");
     expect(button.matches(":focus-visible")).toBe(true);
-    // The shared ring: 2px outside a 2px offset, the 4px the clipper check measures.
-    expect(getComputedStyle(button).getPropertyValue("--tw-ring-offset-width")).toBe("2px");
+    // The shared ring: 2px and flush, the 2px the clipper check measures.
+    expectValidFocusRing(button, "keyboard focus must paint the flush 2px ring");
     expect(focusRingClippers(button), "no ancestor clips the ring's box").toEqual([]);
 
     // The ring room does not narrow the footer: a full-width child spans the item's content box.
