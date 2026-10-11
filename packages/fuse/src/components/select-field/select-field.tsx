@@ -4,7 +4,7 @@ import type { SelectRoot as SelectRootType } from "@base-ui/react/select";
 
 import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
-import { FieldFrame, fieldFrameRootClass } from "../field/field-frame";
+import { FieldFrame } from "../field/field-frame";
 import { SelectContent, SelectRoot, SelectTrigger, SelectValue } from "../select/select";
 import type { SelectTriggerProps } from "../select/select";
 
@@ -91,7 +91,8 @@ export function SelectField<Value = unknown>({
 }: SelectFieldProps<Value>): ReactElement {
   return (
     <FieldFrame
-      className={cn(fieldFrameRootClass, className)}
+      spacing="part"
+      className={className}
       invalid={isInvalid}
       disabled={isDisabled}
       label={label}
