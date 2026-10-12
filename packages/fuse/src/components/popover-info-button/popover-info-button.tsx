@@ -82,12 +82,14 @@ export type PopoverInfoButtonProps = DistributiveOmit<ButtonProps, "children" | 
   };
 
 /**
- * Ghost icon-sm info button that opens a Popover.
+ * Ghost info button that opens a Popover. It defaults to the `icon-inline` square, as tall as
+ * the line it sits in, so beside a `Field.Label`'s text it centres on the label's line and
+ * keeps the label one line tall. Pass an `icon*` size for a standalone control-sized trigger.
  * Client — Popover state and localized trigger name.
  */
 export function PopoverInfoButton({
   children,
-  size = "icon-sm",
+  size = "icon-inline",
   variant = "ghost",
   contentSize = "default",
   label,

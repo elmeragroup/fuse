@@ -20,7 +20,7 @@ import { selfFocusRingClass } from "../../styles/utils";
 // edge follows it: `--control-px-button-icon-*` replaces the control icon edge, so a leading
 // or trailing icon does not sit tight against one end of a wide button. The xs
 // glyph size and `icon-inline`, a square as tall as the surrounding line that follows no
-// density, stay local.
+// density and inherits that line's type, stay local.
 // Every size rounds with the theme's `--radius-button`. The arbitrary value keeps
 // tailwind-merge able to replace it with a consumer `rounded-*` class, which the custom
 // `rounded-button` utility would not be.
@@ -101,11 +101,20 @@ export const buttonVariants = tv({
       icon: controlSize({ size: "md", fit: "square" }),
       "icon-xs": controlSize({ size: "xs", fit: "square", class: "[&_svg:not([class*='size-'])]:size-3" }),
       "icon-sm": controlSize({ size: "sm", fit: "square" }),
+      // `1lh` resolves against the button's own line height, so the square inherits the line's
+      // font, its family, weight, size and line height, and `1lh` matches the line, under
+      // `line-height: normal` too, where the face's metrics set it. Italic and condensed faces
+      // measured the same `normal` height, so style and stretch stay. Without preflight a native
+      // <button> keeps the browser's own font, and Button's base is `font-medium`. The typed
+      // `*-[...:inherit]` utilities let tailwind-merge group them with `font-sans`,
+      // `font-bold`, `text-*` and `leading-*`, so a consumer class still wins. The square is
+      // one line tall, so `align-top` fills the line box where baseline alignment would grow it.
       // The hit area extends the padding box, the `::before` containing block, by `hit-area-1`
       // or as far as the fixed 24px target needs. `100%` in an inset is that padding box, so
       // the border, of any variant or width, and a short line under a small host root cannot
       // take the target under 24px.
-      "icon-inline": "hit-area-[max(0.25rem,calc((24px_-_100%)/2))] aspect-square h-lh w-auto",
+      "icon-inline":
+        "hit-area-[max(0.25rem,calc((24px_-_100%)/2))] aspect-square h-lh w-auto align-top font-[family-name:inherit] text-[length:inherit] leading-[inherit] font-[weight:inherit]",
       "icon-lg": controlSize({ size: "lg", fit: "square" }),
     },
   },
