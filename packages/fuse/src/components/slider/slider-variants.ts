@@ -22,6 +22,10 @@ import { dataWithinInvalidFocusRingClass, withinFocusRingClass } from "../../sty
  * Base UI writes `data-disabled` and `data-invalid` on it. The track and indicator are parts:
  * the unfilled track takes the field-border tone `input`, the edge every field box shows, and
  * a disabled indicator drops to the muted foreground instead of dimming a second time.
+ * The thumb sits on top of the track and indicator, so it keeps the face's `not-allowed`
+ * cursor but cancels its `opacity-50` on both disabled arms: a translucent thumb lets the
+ * indicator show through its centre. A disabled thumb keeps its opaque `bg-background` fill
+ * and draws its border in the muted foreground, the same tone as the disabled indicator.
  * The thumb also hosts the within-target focus ring for the range input Base UI nests in it,
  * and the focused invalid face, a solid `--error` line inside the halo, while the thumb is
  * invalid.
@@ -38,6 +42,7 @@ export const sliderVariants = tv({
       "shadow-xs box-border block size-[16px] shrink-0 rounded-full border-2 border-primary bg-background transition-[box-shadow] after:absolute after:top-1/2 after:left-1/2 after:size-[24px] after:-translate-1/2 after:content-['']",
       withinFocusRingClass,
       dataStateFaceClass,
+      "aria-disabled:border-muted-foreground aria-disabled:opacity-100 data-disabled:border-muted-foreground data-disabled:opacity-100",
       dataWithinInvalidFocusRingClass
     ),
   },
