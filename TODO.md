@@ -357,6 +357,12 @@ that opens every overlay on a side before flipping the window.
 
 - When Base UI offers suitable date primitives, migrate the interim React Aria tier.
   Removing its public subpaths is a major release; other interim atoms can move earlier.
+- Under Cache Components, the interim React Aria Calendar, RangeCalendar, DateField and
+  DatePicker cannot prerender: React Aria and React Stately read the clock as they render
+  (`useDateSegment` calls `new Date()`; `useDateFieldState` and `useCalendarState` call
+  `@internationalized/date`'s `now()` and `today()`). A host wraps them in Suspense, and they
+  render on the client. Decide whether Fuse's wrappers own that boundary or document it in their
+  JSDoc. The docs app's boundaries are in `demo-frame.tsx` and the studio's `checkout-screen.tsx`.
 - When a product commits to charts, ship the deferred chart entry and decide its optional peer.
 - When a product needs density preferences, define persistence and pre-paint stamping in the host.
 - When a theme should choose its own density, rather than the host stamping it on the document
