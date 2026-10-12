@@ -41,13 +41,11 @@
   control is the only clear cue. Ask too whether
   `RadioIconButton` (`radio-group-variants.ts`), which still draws `border-primary` when checked,
   should read the selection roles.
-- Ask design for a cue that marks an external disabled selection row beyond its 50% control.
-  `EXTERNAL_VARIANT_LAYER` sets `--selection-disabled-background` to `var(--card)` and
-  `--selection-disabled-hatch` to `oklch(0 0 0 / 0)`, so a disabled `RadioItem` or
-  `CheckboxItem` row keeps the card fill with no stripes, and only the control's own 50% face
-  and the `not-allowed` cursor are left. The row's text keeps its colours in every theme.
-  Decide it together with the Central Text input's grey disabled fill and text below, so fields
-  and rows share one disabled look.
+- Confirm the external disabled selection row's grey with design. `EXTERNAL_VARIANT_LAYER`
+  keeps the card fill without stripes and greys the title and other label row text through
+  `--selection-disabled-foreground: var(--muted-foreground)`, beside the control's 50% face.
+  Ask whether that grey is the right value, and tune it together with the Central Text input's
+  grey disabled fill and text below, so fields and rows share one disabled look.
 - Drop the old disabled-hatch string, `rgb(0_0_0/0.02)` stripes, from the
   `elmera/no-primitive-colors` allowlist in `@elmeragroup/internal/oxlint`. The selection row's
   hatch now reads `--selection-disabled-hatch`, so no class carries that literal any more.

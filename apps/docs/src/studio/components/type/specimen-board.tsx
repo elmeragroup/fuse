@@ -28,8 +28,8 @@ const HEADINGS = [
  * The theme's two font stacks at work: headings H1 to H4 in `--font-heading`, then body, label
  * and small text in `--font-sans`, and a selection row's title at `--selection-title-weight`.
  * Each row reports the type the browser computed. The selection sample's second row is
- * disabled, so the `--selection-disabled-background` and `--selection-disabled-hatch` knobs
- * have a row to paint in either scheme.
+ * disabled, so the `--selection-disabled-background`, `--selection-disabled-hatch` and
+ * `--selection-disabled-foreground` knobs have a row to paint in either scheme.
  */
 export function SpecimenBoard(): ReactElement {
   return (

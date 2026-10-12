@@ -43,9 +43,9 @@ const SLUGS = [
 
 // Counts the derived `secondary-hover` role, the `radius-step` rung spacing, the
 // `radius-field` field corner, the two outline Button roles, the resting and checked
-// selection row borders and dividers, the disabled selection row fill and stripe and the
+// selection row borders and dividers, the disabled selection row fill, stripe and text and the
 // selection row title weight.
-const TOKEN_COUNT = 89;
+const TOKEN_COUNT = 90;
 
 // xs, sm, md, lg, xl and the unused popover rung.
 const RUNG_COUNT = 6;
@@ -257,7 +257,7 @@ describe("resolveThemeCatalog", () => {
     });
   });
 
-  it("resolves the external disabled selection row to the card fill and zero-alpha stripes in both schemes", () => {
+  it("resolves the external disabled selection row to the card fill, zero-alpha stripes and muted text in both schemes", () => {
     // EXTERNAL_VARIANT_LAYER aliases the fill to `--card` and writes the stripe as `oklch(0 0 0 / 0)`.
     // tkas's card is white in light and #242625, oklch(0.2661671 0.0034366 164.8011), in dark.
     const cards = {
@@ -276,6 +276,21 @@ describe("resolveThemeCatalog", () => {
         reference: undefined,
         value: { alpha: 0 },
       });
+      expect(tokens["selection-disabled-foreground"], scheme).toMatchObject({
+        css: "var(--muted-foreground)",
+        reference: { space: "token", name: "muted-foreground" },
+      });
+    }
+    // tkas's light muted foreground: its text colour at 70% alpha.
+    expect(light("external-tkas-private").tokens["selection-disabled-foreground"].value).toEqual(
+      Oklch.toSrgb(getOrThrow(Oklch.parse("oklch(0.30407 0.05238 190.82 / 0.7)")))
+    );
+    // Internal disabled text names the foreground role in both schemes.
+    for (const scheme of ["light", "dark"] as const) {
+      expect(
+        theme("internal-fkas-private").schemes[scheme].tokens["selection-disabled-foreground"],
+        scheme
+      ).toMatchObject({ css: "var(--foreground)", reference: { space: "token", name: "foreground" } });
     }
     // Internal rows keep the muted fill, oklch(0.97 0.0013 106.42) in light, and black stripes
     // at 2% alpha in both schemes.

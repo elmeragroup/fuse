@@ -69,12 +69,13 @@ A `RadioItem` or `CheckboxItem` row draws its edge in `--selection-border`, and 
 }
 ```
 
-A disabled `RadioItem` or `CheckboxItem` row, disabled itself or through its group, fills with `--selection-disabled-background` under a 45° hatch striped in `--selection-disabled-hatch`, and its control dims to 50%. Without them the row takes your `--muted` under black stripes at 2% alpha, as internal themes do. For the external themes' look, where a disabled row keeps the card fill of an enabled row and draws no stripes, set:
+A disabled `RadioItem` or `CheckboxItem` row, disabled itself or through its group, fills with `--selection-disabled-background` under a 45° hatch striped in `--selection-disabled-hatch`, its title and other label row text take `--selection-disabled-foreground`, and its control dims to 50%. Without them the row takes your `--muted` under black stripes at 2% alpha with `--foreground` text, as internal themes do. For the external themes' look, where a disabled row keeps the card fill of an enabled row, draws no stripes and greys its title, set:
 
 ```css
 :root {
   --selection-disabled-background: var(--card);
   --selection-disabled-hatch: oklch(0 0 0 / 0);
+  --selection-disabled-foreground: var(--muted-foreground);
 }
 ```
 

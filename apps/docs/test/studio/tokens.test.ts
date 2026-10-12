@@ -54,6 +54,7 @@ describe("TOKEN_TABLE", () => {
       "selection-checked-divider",
       "selection-disabled-background",
       "selection-disabled-hatch",
+      "selection-disabled-foreground",
     ]);
   });
 });
@@ -69,6 +70,7 @@ describe("LIGHT_ONLY_TOKENS", () => {
         "selection-checked-divider",
         "selection-disabled-background",
         "selection-disabled-hatch",
+        "selection-disabled-foreground",
         "radius",
         "radius-button",
         "radius-field",

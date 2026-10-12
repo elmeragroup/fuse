@@ -74,7 +74,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Shows the disabled row: the `not-allowed` cursor and the theme's `--selection-disabled-background` fill under a 45° hatch striped in `--selection-disabled-hatch`. Internal themes fill with `--muted` and black stripes at 2% alpha; external themes keep the card fill with no stripes. The control dims itself, and the row's text keeps its colours. A row whose group is disabled, or whose control in the control slot carries `data-disabled`, matches `:disabled` or is `aria-disabled=\"true\"`, shows the same look without it. Does not disable the control — the control or group owns that.",
+          "description": "Shows the disabled row: the `not-allowed` cursor and the theme's `--selection-disabled-background` fill under a 45° hatch striped in `--selection-disabled-hatch`. Internal themes fill with `--muted` and black stripes at 2% alpha; external themes keep the card fill with no stripes. The label row's text takes `--selection-disabled-foreground`: the foreground in internal themes, the muted foreground in external ones. A description keeps its own muted text, a SubSection keeps its colours, and the control dims itself. A row whose group is disabled, or whose control in the control slot carries `data-disabled`, matches `:disabled` or is `aria-disabled=\"true\"`, shows the same look without it. Does not disable the control — the control or group owns that.",
           "required": false
         },
         {

@@ -83,6 +83,16 @@ const disabledShellClass = cn(
   "[&:is([data-disabled]:not([data-disabled=false]),:has(>label>[data-slot=selection-item-control]_:is([data-disabled]:not([data-disabled=false]),:disabled,[aria-disabled=true])))]:bg-[repeating-linear-gradient(45deg,transparent,transparent_8px,--theme(--color-selection-disabled-hatch)_8px,--theme(--color-selection-disabled-hatch)_16px)]"
 );
 
+// A disabled row's label row text takes `--selection-disabled-foreground`: the foreground in
+// internal themes, which keeps the title's colour, and the muted foreground in external ones.
+// It goes on the label row cluster, which also holds a plain-text row, rather than on the
+// title, and the `>label>&` combinators keep a row nested in a SubSection from inheriting it.
+// The SubSection band is a sibling of the label, so its content keeps its colours, a
+// description keeps its own muted text, and the control keeps its 50% face.
+const disabledLabelTextClass = cn(
+  "[[data-selection-item]:is([data-disabled]:not([data-disabled=false]),:has(>label>[data-slot=selection-item-control]_:is([data-disabled]:not([data-disabled=false]),:disabled,[aria-disabled=true])))>label>&]:text-selection-disabled-foreground"
+);
+
 /**
  * Elements in a SubSection that keep their own clicks under `isSubSectionSelectable`. A click
  * inside one of them, or inside an element that only takes focus, does not toggle the row.
@@ -237,8 +247,10 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
    * Shows the disabled row: the `not-allowed` cursor and the theme's
    * `--selection-disabled-background` fill under a 45° hatch striped in
    * `--selection-disabled-hatch`. Internal themes fill with `--muted` and black stripes at 2%
-   * alpha; external themes keep the card fill with no stripes. The control dims itself, and the
-   * row's text keeps its colours. A row whose group is disabled, or whose control in the control
+   * alpha; external themes keep the card fill with no stripes. The label row's text takes
+   * `--selection-disabled-foreground`: the foreground in internal themes, the muted foreground in
+   * external ones. A description keeps its own muted text, a SubSection keeps its colours, and
+   * the control dims itself. A row whose group is disabled, or whose control in the control
    * slot carries `data-disabled`, matches `:disabled` or is `aria-disabled="true"`, shows the
    * same look without it. Does not disable the control — the control or group owns that.
    */
@@ -318,8 +330,9 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
  * A disabled shell, through `isDisabled`, a disabled group or its own disabled control, fills
  * with the theme's `--selection-disabled-background` under a hatch of
  * `--selection-disabled-hatch`, which outweighs the checked fill and a background class and
- * leaves the checked border, joins and pull-up alone. The control dims itself at 50%, and the
- * row's text keeps its colours.
+ * leaves the checked border, joins and pull-up alone. The label row's text takes
+ * `--selection-disabled-foreground`, the control dims itself at 50%, and a SubSection keeps
+ * its colours.
  *
  * It publishes `--inner-corner`, its corner less its border and padding, for parts that round with
  * `rounded-inner`.
@@ -362,7 +375,9 @@ export function SelectionItemShell({
     </ItemMedia>
   );
   const rowCluster = (
-    <div className={cn("flex min-w-0 items-start gap-2.5", rowCellClass)}>{rowChildren}</div>
+    <div className={cn("flex min-w-0 items-start gap-2.5", rowCellClass, disabledLabelTextClass)}>
+      {rowChildren}
+    </div>
   );
   const spacer = <span aria-hidden />;
   // `mergeProps` runs the consumer's `onClick` first; `preventBaseUIHandler()` there skips this.

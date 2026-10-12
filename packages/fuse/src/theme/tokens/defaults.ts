@@ -88,6 +88,11 @@ export const LAYER_DEFAULTS = {
   // The stripe colour of the disabled row's 45° hatch, a black alpha that reads the same in
   // both schemes. The external variant layer makes it transparent, which drops the stripes.
   "selection-disabled-hatch": "oklch(0 0 0 / 0.02)",
+  // The label row text of a disabled SelectionItem row. A token value can't be `currentColor`,
+  // so it names the foreground role rather than inheriting; internal `foreground` equals
+  // `card-foreground` in both schemes, so an internal disabled title keeps its colour. The
+  // external variant layer greys it to the muted foreground. It is not a text-grade role.
+  "selection-disabled-foreground": "var(--foreground)",
   sidebar: "oklch(0.9851 0 0)",
   "sidebar-foreground": NEUTRAL_950,
   "sidebar-accent": NEUTRAL_LINE,

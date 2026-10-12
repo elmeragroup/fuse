@@ -850,8 +850,10 @@ describe("SelectionItem", () => {
      */
     function DisabledRows({ scheme }: { scheme: string }) {
       const title = (row: string) => <RowTitle>{`${scheme} ${row}`}</RowTitle>;
+      // The page's text colour, as a host's body sets it, so an enabled row's title reads
+      // the foreground the test expects.
       return (
-        <>
+        <div style={{ color: "var(--foreground)" }}>
           <RadioItemGroup label={`${scheme} plan`} defaultValue="spot">
             <RadioItem value="fixed">{title("fixed")}</RadioItem>
             <RadioItem value="spot" isDisabled>
@@ -903,6 +905,7 @@ describe("SelectionItem", () => {
             <CheckboxItem value="bundle" isDisabled>
               {title("bundle")}
               <CheckboxItem.SubSection>
+                <p>{`${scheme} bundle details`}</p>
                 <CheckboxItemGroup label={`${scheme} bundle extras`}>
                   <CheckboxItem value="free">{title("free extra")}</CheckboxItem>
                 </CheckboxItemGroup>
@@ -911,6 +914,7 @@ describe("SelectionItem", () => {
             <CheckboxItem value="extras">
               {title("extras")}
               <CheckboxItem.SubSection>
+                <p>{`${scheme} extras details`}</p>
                 <CheckboxItemGroup label={`${scheme} extra options`}>
                   <CheckboxItem value="locked" isDisabled>
                     {title("locked extra")}
@@ -919,7 +923,16 @@ describe("SelectionItem", () => {
               </CheckboxItem.SubSection>
             </CheckboxItem>
           </CheckboxItemGroup>
-        </>
+          <CheckboxItemGroup label={`${scheme} plain rows`}>
+            <CheckboxItem value="plain" isDisabled>{`${scheme} plain row`}</CheckboxItem>
+            <CheckboxItem value="described" isDisabled>
+              <SelectionItem.Content>
+                {title("described")}
+                <SelectionItem.Description>{`${scheme} described details`}</SelectionItem.Description>
+              </SelectionItem.Content>
+            </CheckboxItem>
+          </CheckboxItemGroup>
+        </div>
       );
     }
 
@@ -955,12 +968,21 @@ describe("SelectionItem", () => {
     /**
      * Checks every fixture row of one scheme. A disabled row fills with `fill`, the role read
      * where it sits, under stripes of `stripeAlpha` black; an enabled one keeps the card or,
-     * checked, the muted fill and no image. A disabled row's control paints at its own 50%,
-     * and the row's title, and any sub-section content, keep full strength.
+     * checked, the muted fill and no image. A disabled row's label text takes `text`, an
+     * enabled row's the foreground. A disabled row's control paints at its own 50%, and the
+     * row's title, and any sub-section content, keep full strength.
      */
-    async function expectRows(scheme: string, fill: "--muted" | "--card", stripeAlpha: number) {
+    async function expectRows(
+      scheme: string,
+      fill: "--muted" | "--card",
+      stripeAlpha: number,
+      text: "--foreground" | "--muted-foreground"
+    ) {
       for (const { row, control, checked, disabled, pulled } of DISABLED_ROWS) {
         const name = `${scheme} ${row}`;
+        // An enabled row's title, a nested one included, keeps the foreground.
+        const title = cssVarColor(shellFrom(name), disabled ? text : "--foreground");
+        expect(getComputedStyle(headingNamed(name)).color, `${name} title colour`).toBe(title);
         const shell = shellFrom(name);
         await settled(shell);
         const box = roleNamed(control, name);
@@ -993,9 +1015,21 @@ describe("SelectionItem", () => {
         // The checked border, the joins and the pull-up are the checked row's own.
         expect(style.marginTop, name).toBe(pulled ? "-1px" : "0px");
       }
+      // A plain-text row's text greys like a title.
+      const plain = textNamed(`${scheme} plain row`);
+      expect(getComputedStyle(plain).color, `${scheme} plain row`).toBe(cssVarColor(plain, text));
+      // A description keeps its own muted text.
+      const described = textNamed(`${scheme} described details`);
+      expect(getComputedStyle(described).color, `${scheme} description`).toBe(
+        cssVarColor(described, "--muted-foreground")
+      );
+      // A disabled row's SubSection content matches an enabled row's.
+      expect(getComputedStyle(textNamed(`${scheme} bundle details`)).color, `${scheme} SubSection`).toBe(
+        getComputedStyle(textNamed(`${scheme} extras details`)).color
+      );
     }
 
-    it("keeps the card fill without stripes in external themes, at row and group level, in light and dark", async () => {
+    it("keeps the card fill without stripes and greys the label text in external themes, at row and group level, in light and dark", async () => {
       renderThemed(
         <>
           <ThemeScope theme={fkasExternal}>
@@ -1014,14 +1048,17 @@ describe("SelectionItem", () => {
         // Oracle sanity: the card differs from the checked row's muted tint, so a checked
         // disabled row that kept `bg-muted` fails, and the schemes differ from each other.
         expect(cssVarColor(shell, "--card"), scheme).not.toBe(cssVarColor(shell, "--muted"));
-        await expectRows(scheme, "--card", 0);
+        // Oracle sanity: the muted foreground differs from the foreground, so an ungreyed
+        // title fails.
+        expect(cssVarColor(shell, "--muted-foreground"), scheme).not.toBe(cssVarColor(shell, "--foreground"));
+        await expectRows(scheme, "--card", 0, "--muted-foreground");
       }
       expect(cssVarColor(shellFrom("Dark fixed"), "--card")).not.toBe(
         cssVarColor(shellFrom("Light fixed"), "--card")
       );
     });
 
-    it("keeps the muted fill under black stripes at 2% in internal themes, at row and group level, in light and dark", async () => {
+    it("keeps the muted fill under black stripes at 2% and the foreground text in internal themes, at row and group level, in light and dark", async () => {
       renderThemed(
         <>
           <DisabledRows scheme="Light" />
@@ -1034,7 +1071,7 @@ describe("SelectionItem", () => {
       );
 
       for (const scheme of ["Light", "Dark"]) {
-        await expectRows(scheme, "--muted", 0.02);
+        await expectRows(scheme, "--muted", 0.02, "--foreground");
         // A checked disabled row keeps the primary checked edge of an internal row.
         const spot = shellFrom(`${scheme} spot`);
         expect(getComputedStyle(spot).borderTopColor, scheme).toBe(cssVarColor(spot, "--primary"));
