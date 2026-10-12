@@ -15,8 +15,9 @@ field corner. A `ButtonGroup` rounds both outer ends with `rounded-md`, so a fie
 the other. Internal themes do not move, and internal fields still follow a `--radius` override on a plain wrapper.
 
 Each theme rule resolves `--radius-field` against its own `--radius`, as it does `--radius-button`. Set
-`--radius-field` on the element that carries the theme attributes to give fields a corner of their own. An external
-field does not follow a `--radius` override on a plain wrapper, so set `--radius-field` there too.
+`--radius-field` on the element that carries the theme attributes to give external fields a corner of their own;
+internal fields always round with `--radius`, so the override does not reach them. An external field does not
+follow a `--radius` override on a plain wrapper, so set `--radius-field` there too.
 
 A host without `themes.css` keeps rounding fields with its own `--radius`. With the external `--radius-step: 2px`,
 fields round with `--radius-field` where the host sets it, and with `--radius` otherwise. The Figma sync adds

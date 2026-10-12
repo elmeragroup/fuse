@@ -228,16 +228,17 @@ export default function ThemingPage(): ReactElement {
         keeps a compact corner instead, and a button group rounds both its ends that way, even when a field
         sits at one end. The checkbox and the standalone calendar keep the reference&apos;s 4px corner. The
         internal variant rounds every outer element with the one <code>--radius</code>. Its step is{" "}
-        <code>0px</code> and its <code>--radius-button</code> is <code>var(--radius)</code>, so a host rule
-        that reads either role gets the same corner. To change the radius, override <code>--radius</code> on
-        the element that carries the theme attributes, which is <code>&lt;html&gt;</code> or a{" "}
-        <code>ThemeScope</code>. The theme rules resolve <code>--radius-button</code> and{" "}
-        <code>--radius-field</code> there, so buttons and fields move with the cards. On a plain wrapper the
-        override reaches cards and internal fields, but buttons and external fields keep the corners the theme
-        element resolved, so set <code>--radius-field</code> beside it. To give fields a corner of their own,
-        override <code>--radius-field</code>. Nested internal surfaces share the radius, and dialogs round
-        like cards. Inner parts, such as menu rows, tabs and the buttons inside a field, are the exception:
-        see <a href="#inner-corners">Inner corners</a>.
+        <code>0px</code> and its <code>--radius-button</code> and <code>--radius-field</code> are{" "}
+        <code>var(--radius)</code>, so a host rule that reads either role gets the same corner. To change the
+        radius, override <code>--radius</code> on the element that carries the theme attributes, which is{" "}
+        <code>&lt;html&gt;</code> or a <code>ThemeScope</code>. The theme rules resolve{" "}
+        <code>--radius-button</code> and <code>--radius-field</code> there, so buttons and fields move with
+        the cards. On a plain wrapper the override reaches cards and internal fields, but buttons and external
+        fields keep the corners the theme element resolved, so set <code>--radius-field</code> beside it. To
+        give external fields a corner of their own, override <code>--radius-field</code>. Internal fields
+        always round with <code>--radius</code>, so the override does not reach them. Nested internal surfaces
+        share the radius, and dialogs round like cards. Inner parts, such as menu rows, tabs and the buttons
+        inside a field, are the exception: see <a href="#inner-corners">Inner corners</a>.
       </p>
       <p>
         The outline button&apos;s border is part of the theme too. It reads <code>--button-outline</code> at{" "}

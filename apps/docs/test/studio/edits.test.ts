@@ -314,19 +314,27 @@ describe("the cycle invariant", () => {
 /**
  * Unit: the cycle checks against a pinned variant (`documentCycles` with pins, `pinnedEdits`,
  * `createsPinnedCycle`). Oracle: the theme rules as written in Fuse's theme sources: an internal
- * theme declares `radius-button: var(--radius)` and `radius-field: var(--radius)`, an external
- * one literals. So `--radius: var(--radius-button)` loops only in the internal variant.
+ * theme declares `radius-button: var(--radius)` and `radius-field: var(--radius)`, and an
+ * external one a literal button radius and the same field alias. So
+ * `--radius: var(--radius-button)` loops only in the internal variant, and
+ * `--radius: var(--radius-field)` loops in both.
  */
 describe("pinned variants", () => {
   const radiusToButton: StudioDocument = {
     ...EMPTY,
     overrides: { light: {}, dark: {}, shared: { radius: "var(--radius-button)" } },
   };
+  const radiusToField: StudioDocument = {
+    ...EMPTY,
+    overrides: { light: {}, dark: {}, shared: { radius: "var(--radius-field)" } },
+  };
 
   it("counts a loop in a pinned variant only when the page pins it", () => {
     expect(documentCycles(radiusToButton)).toEqual([]);
     expect(documentCycles(radiusToButton, ["external"])).toEqual([]);
     expect(documentCycles(radiusToButton, ["internal"])).toEqual(["radius", "radius-button"]);
+    expect(documentCycles(radiusToField, ["internal"])).toEqual(["radius", "radius-field"]);
+    expect(documentCycles(radiusToField, ["external"])).toEqual(["radius", "radius-field"]);
   });
 
   it("lets the pre-check refuse an edit that loops in a pinned variant", () => {
