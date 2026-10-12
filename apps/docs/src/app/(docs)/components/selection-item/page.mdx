@@ -13,6 +13,8 @@ import { SelectionItemIcon } from "./demos/selection-item-icon";
 import { SelectionItemRadioStack } from "./demos/selection-item-radio-stack";
 import { SelectionItemCheckboxAdjacent } from "./demos/selection-item-checkbox-adjacent";
 import { SelectionItemHorizontal } from "./demos/selection-item-horizontal";
+import { SelectionItemDisabledRows } from "./demos/selection-item-disabled-rows";
+import { SelectionItemDisabledGroup } from "./demos/selection-item-disabled-group";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -94,14 +96,41 @@ A row's edges come from four theme roles. In a vertical group, the rows share on
 
 <Prose>
 
-| Role                          | Internal                          | External                   | Draws                                           |
-| ----------------------------- | --------------------------------- | -------------------------- | ----------------------------------------------- |
-| `--selection-border`          | `var(--border)`                   | `oklch(0 0 0 / 0)`         | A row's outer edge                              |
-| `--selection-checked-border`  | `var(--primary)`                  | `var(--selection-border)`  | A checked row's edge: the box around it         |
-| `--selection-divider`         | `var(--selection-border)`         | `var(--border)`            | The line between two stacked rows               |
-| `--selection-checked-divider` | `var(--selection-checked-border)` | `var(--selection-divider)` | The lines above and below a checked stacked row |
+| Role                              | Internal                          | External                   | Draws                                           |
+| --------------------------------- | --------------------------------- | -------------------------- | ----------------------------------------------- |
+| `--selection-border`              | `var(--border)`                   | `oklch(0 0 0 / 0)`         | A row's outer edge                              |
+| `--selection-checked-border`      | `var(--primary)`                  | `var(--selection-border)`  | A checked row's edge: the box around it         |
+| `--selection-divider`             | `var(--selection-border)`         | `var(--border)`            | The line between two stacked rows               |
+| `--selection-checked-divider`     | `var(--selection-checked-border)` | `var(--selection-divider)` | The lines above and below a checked stacked row |
+| `--selection-disabled-background` | `var(--muted)`                    | `var(--card)`              | A disabled row's fill                           |
+| `--selection-disabled-hatch`      | `oklch(0 0 0 / 0.02)`             | `oklch(0 0 0 / 0)`         | The stripes of a disabled row's 45° hatch       |
+| `--selection-disabled-foreground` | `var(--foreground)`               | `var(--muted-foreground)`  | A disabled row's title and other label row text |
 
 The theme settings menu in the docs header switches the demos above between internal and external themes, so both looks show on the same rows.
+
+A row disabled on its own, or through a disabled group, takes the three disabled roles. Switch the theme on the two demos below to compare them. Internal themes fill the row with `--muted` under faint black stripes and keep the title's colour. External themes keep the card fill of an enabled row with no stripes. What marks an external disabled row is its control at 50%, its title greyed to `--muted-foreground` and the `not-allowed` cursor. A description keeps its own muted text, and a `SubSection` keeps its colours.
+
+</Prose>
+
+<Demo
+  slug="selection-item"
+  id="disabled-rows"
+  title="Disabled rows, one checked"
+  file="selection-item-disabled-rows.tsx">
+  <SelectionItemDisabledRows />
+</Demo>
+
+<Demo
+  slug="selection-item"
+  id="disabled-group"
+  title="Disabled group"
+  file="selection-item-disabled-group.tsx">
+  <SelectionItemDisabledGroup />
+</Demo>
+
+<Prose>
+
+A checked row's `bg-muted` tint and a disabled row's fill win over a background class on the row, such as `bg-background` for a list that shows its surface through. To change the disabled fill, set `--selection-disabled-background` instead, for example to `var(--background)`.
 
 The theme rules resolve these roles on the element that carries the theme attributes, which is `<html>` or a `ThemeScope`. Set an override there. On a plain wrapper, a `--border` override reaches cards and `CheckboxCard`, but the rows keep the edges and dividers the theme element resolved. To give external rows back an outer edge:
 

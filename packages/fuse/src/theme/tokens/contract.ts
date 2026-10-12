@@ -51,6 +51,9 @@ export const TOKEN_NAMES = [
   "selection-checked-border",
   "selection-divider",
   "selection-checked-divider",
+  "selection-disabled-background",
+  "selection-disabled-hatch",
+  "selection-disabled-foreground",
   "sidebar",
   "sidebar-foreground",
   "sidebar-accent",
@@ -246,6 +249,9 @@ export const TOKEN_KINDS = {
   "selection-checked-border": "color",
   "selection-divider": "color",
   "selection-checked-divider": "color",
+  "selection-disabled-background": "color",
+  "selection-disabled-hatch": "color",
+  "selection-disabled-foreground": "color",
   sidebar: "color",
   "sidebar-foreground": "color",
   "sidebar-accent": "color",
@@ -318,6 +324,9 @@ export const EXTERNAL_RESET_KEYS = [
   "selection-checked-border",
   "selection-divider",
   "selection-checked-divider",
+  "selection-disabled-background",
+  "selection-disabled-hatch",
+  "selection-disabled-foreground",
   "sidebar-ring",
   "radius",
   "radius-button",
@@ -362,10 +371,11 @@ export const MUST_OVERRIDE_INTERNAL = ["brand", "brand-foreground"] as const;
 
 /**
  * What a dark palette keeps from the light composition: geometry, typography, the outline
- * Button's border color and a selection row's resting and checked border and divider colors.
- * Each color is an alias, such as `var(--border)` or `var(--foreground)`, so it follows the dark
- * role it names, or a value that reads the same in both schemes, such as the external row edge's
- * zero alpha.
+ * Button's border color, a selection row's resting and checked border and divider colors and a
+ * disabled selection row's fill, stripe and label text colors. Each color is either an alias,
+ * such as `var(--border)`, `var(--muted)` or `var(--foreground)`, so it follows the dark role it
+ * names, or a value that does not depend on the scheme, such as the external row edge's zero
+ * alpha or the disabled row's black stripe at 2% alpha.
  */
 const LIGHT_ONLY_KEYS: ReadonlySet<TokenName> = new Set([
   "button-outline",
@@ -373,6 +383,9 @@ const LIGHT_ONLY_KEYS: ReadonlySet<TokenName> = new Set([
   "selection-checked-border",
   "selection-divider",
   "selection-checked-divider",
+  "selection-disabled-background",
+  "selection-disabled-hatch",
+  "selection-disabled-foreground",
   "radius",
   "radius-button",
   "radius-field",

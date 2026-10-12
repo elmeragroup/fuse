@@ -328,6 +328,9 @@ describe("theme contract", () => {
         "selection-checked-border",
         "selection-divider",
         "selection-checked-divider",
+        "selection-disabled-background",
+        "selection-disabled-hatch",
+        "selection-disabled-foreground",
         "button-outline-width",
         "selection-title-weight",
         "font-sans",
@@ -506,7 +509,7 @@ describe("derived roles", () => {
 describe("external variant layer roles", () => {
   const rules = parseStyleRules(generateThemesCss());
 
-  it("sets the radius step, the reference's 2px text-color outline, the transparent selection row edge, checked or not, the grey divider between stacked rows and the medium selection row title once for the external variant", () => {
+  it("sets the radius step, the reference's 2px text-color outline, the transparent selection row edge, checked or not, the grey divider between stacked rows, the card-filled unstriped disabled row with its muted text and the medium selection row title once for the external variant", () => {
     const external = {
       "radius-step": "2px",
       "button-outline": "var(--foreground)",
@@ -515,6 +518,9 @@ describe("external variant layer roles", () => {
       "selection-checked-border": "var(--selection-border)",
       "selection-divider": "var(--border)",
       "selection-checked-divider": "var(--selection-divider)",
+      "selection-disabled-background": "var(--card)",
+      "selection-disabled-hatch": "oklch(0 0 0 / 0)",
+      "selection-disabled-foreground": "var(--muted-foreground)",
       "selection-title-weight": "500",
     } as const;
     for (const [brand, palette] of Object.entries(EXTERNAL_PALETTES)) {
@@ -535,8 +541,9 @@ describe("external variant layer roles", () => {
       expect(declaration(rules, selector, "radius-field"), selector).toBe("var(--radius)");
     }
     // Internal themes and the root keep the 1px border hairline, the border-coloured selection
-    // row edge, the primary checked-row edge, dividers that follow those edges, the regular
-    // selection row title and round fields with --radius.
+    // row edge, the primary checked-row edge, dividers that follow those edges, the muted
+    // disabled row striped in black at 2% with foreground text, the regular selection row title
+    // and round fields with --radius.
     for (const selector of [":root", '[data-theme-variant="internal"]']) {
       expect(declaration(rules, selector, "button-outline"), selector).toBe("var(--border)");
       expect(declaration(rules, selector, "selection-border"), selector).toBe("var(--border)");
@@ -544,6 +551,11 @@ describe("external variant layer roles", () => {
       expect(declaration(rules, selector, "selection-divider"), selector).toBe("var(--selection-border)");
       expect(declaration(rules, selector, "selection-checked-divider"), selector).toBe(
         "var(--selection-checked-border)"
+      );
+      expect(declaration(rules, selector, "selection-disabled-background"), selector).toBe("var(--muted)");
+      expect(declaration(rules, selector, "selection-disabled-hatch"), selector).toBe("oklch(0 0 0 / 0.02)");
+      expect(declaration(rules, selector, "selection-disabled-foreground"), selector).toBe(
+        "var(--foreground)"
       );
       expect(declaration(rules, selector, "button-outline-width"), selector).toBe("1px");
       expect(declaration(rules, selector, "selection-title-weight"), selector).toBe("400");

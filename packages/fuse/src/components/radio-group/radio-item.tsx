@@ -14,7 +14,14 @@ import { RadioGroupItem } from "./radio-group";
 export type RadioItemProps = {
   /** Member value in the group. Forwarded to the inner `RadioGroupItem`. */
   value: string;
-  /** Forwards `disabled` to the inner control and applies disabled hatch styling on the shell. */
+  /**
+   * Forwards `disabled` to the inner control, which dims to 50%, and shows the disabled row: the
+   * theme's `--selection-disabled-background` fill and `--selection-disabled-hatch` stripes
+   * (internal themes stripe a muted fill, external themes keep the card fill without stripes)
+   * and the `not-allowed` cursor. The title and other label row text take
+   * `--selection-disabled-foreground`, the muted foreground in external themes; a SubSection
+   * keeps its colours. A disabled group shows its rows the same way.
+   */
   isDisabled?: boolean;
   /**
    * Where the control sits in the labelled row. Forwarded to `SelectionItem.Shell`.
@@ -25,6 +32,9 @@ export type RadioItemProps = {
    * Extra classes, merged onto the shell via `cn`. A `px-*` utility sets the card's side
    * inset, and a click in that inset beside the label row toggles the control. The row
    * paints the card fill (`bg-card`); a background class such as `bg-background` replaces it.
+   * The checked row's `bg-muted` tint and the disabled row's `--selection-disabled-background`
+   * fill win over such a class; set `--selection-disabled-background`, for example to
+   * `var(--background)`, to change the disabled fill.
    */
   className?: string;
   /**

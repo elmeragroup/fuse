@@ -268,6 +268,22 @@ export default function ThemingPage(): ReactElement {
         , but the rows keep the edge and dividers the theme element resolved.
       </p>
       <p>
+        A disabled <code>RadioItem</code> or <code>CheckboxItem</code> row, whether the row or its group is
+        disabled, fills with <code>--selection-disabled-background</code> under a 45° hatch striped in{" "}
+        <code>--selection-disabled-hatch</code>. Internal themes fill it with <code>var(--muted)</code> and
+        stripe it in black at 2% alpha, which shows in light schemes. External themes keep the card fill of an
+        enabled row, <code>var(--card)</code>, and make the stripe a zero-alpha colour, so a disabled row is
+        not a grey panel among white rows; instead its title and other label row text grey to{" "}
+        <code>--selection-disabled-foreground</code>, <code>var(--muted-foreground)</code>. Internal themes
+        set that role to <code>var(--foreground)</code>, so their titles keep their colour. A description
+        keeps its own muted text, a SubSection keeps its colours, and the control dims to 50% in every theme.
+        The role is not text-grade, so it has no contrast floor: WCAG exempts an inactive control. The
+        disabled fill replaces a checked row&apos;s <code>bg-muted</code> tint and a background class on the
+        row; the checked edge stays. Internal themes resolve the fill&apos;s <code>var(--muted)</code> on the
+        element that carries the theme attributes, so override <code>--selection-disabled-background</code>{" "}
+        itself to change the fill under a plain wrapper.
+      </p>
+      <p>
         The weight of a <code>RadioItem</code> or <code>CheckboxItem</code> row title is themed too. It, which
         reads <code>--selection-title-weight</code>. External themes set it to <code>500</code>, the weight of
         the group legend and a <code>CheckboxCard</code> title, and internal themes keep the regular{" "}

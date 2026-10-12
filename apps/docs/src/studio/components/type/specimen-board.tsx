@@ -27,7 +27,9 @@ const HEADINGS = [
 /**
  * The theme's two font stacks at work: headings H1 to H4 in `--font-heading`, then body, label
  * and small text in `--font-sans`, and a selection row's title at `--selection-title-weight`.
- * Each row reports the type the browser computed.
+ * Each row reports the type the browser computed. The selection sample's second row is
+ * disabled, so the `--selection-disabled-background`, `--selection-disabled-hatch` and
+ * `--selection-disabled-foreground` knobs have a row to paint in either scheme.
  */
 export function SpecimenBoard(): ReactElement {
   return (
@@ -62,6 +64,12 @@ export function SpecimenBoard(): ReactElement {
             <CheckboxItem.Content>
               <CheckboxItem.Title>Fixed price</CheckboxItem.Title>
               <CheckboxItem.Description>Locked for 12 months.</CheckboxItem.Description>
+            </CheckboxItem.Content>
+          </CheckboxItem>
+          <CheckboxItem value="spot" isDisabled>
+            <CheckboxItem.Content>
+              <CheckboxItem.Title>Spot price</CheckboxItem.Title>
+              <CheckboxItem.Description>Not offered at your address.</CheckboxItem.Description>
             </CheckboxItem.Content>
           </CheckboxItem>
         </CheckboxItemGroup>

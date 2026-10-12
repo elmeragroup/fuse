@@ -169,6 +169,17 @@ describe("token extraction", () => {
     expect(tokens.find((token) => token.name === "--control-h-md")?.isColor).toBe(false);
   });
 
+  it("reads a theme colour named in an arbitrary value as its role", () => {
+    const tokens = extractTokens({
+      sources: [
+        'const a = "bg-[repeating-linear-gradient(45deg,transparent,--theme(--color-selection-disabled-hatch)_8px)]";',
+      ],
+      stylesheets: [],
+      colors,
+    });
+    expect(tokens).toEqual([{ name: "--selection-disabled-hatch", isColor: true }]);
+  });
+
   it("maps a colour utility with a fallback to its first token", () => {
     const map = readColorTokenMap(
       "@theme inline {\n  --color-ring: var(--ring);\n  --color-edge: var(--edge, var(--border));\n}\n"

@@ -82,6 +82,9 @@
   --selection-checked-border: var(--primary);
   --selection-divider: var(--selection-border);
   --selection-checked-divider: var(--selection-checked-border);
+  --selection-disabled-background: var(--muted);
+  --selection-disabled-hatch: oklch(0 0 0 / 0.02);
+  --selection-disabled-foreground: var(--foreground);
   --sidebar: oklch(0.9851 0 0);
   --sidebar-foreground: oklch(0.16 0 0);
   --sidebar-accent: oklch(0.9219 0 0);
@@ -197,6 +200,9 @@
   --selection-checked-border: var(--primary);
   --selection-divider: var(--selection-border);
   --selection-checked-divider: var(--selection-checked-border);
+  --selection-disabled-background: var(--muted);
+  --selection-disabled-hatch: oklch(0 0 0 / 0.02);
+  --selection-disabled-foreground: var(--foreground);
   --sidebar-ring: var(--ring);
   --radius: 0.375rem;
   --radius-button: var(--radius);
@@ -237,6 +243,9 @@
   --selection-checked-border: var(--selection-border);
   --selection-divider: var(--border);
   --selection-checked-divider: var(--selection-divider);
+  --selection-disabled-background: var(--card);
+  --selection-disabled-hatch: oklch(0 0 0 / 0);
+  --selection-disabled-foreground: var(--muted-foreground);
   --sidebar-ring: var(--ring);
   --radius: 0.75rem;
   --radius-button: 1.8125rem;
@@ -297,6 +306,9 @@
   --selection-checked-border: var(--selection-border);
   --selection-divider: var(--border);
   --selection-checked-divider: var(--selection-divider);
+  --selection-disabled-background: var(--card);
+  --selection-disabled-hatch: oklch(0 0 0 / 0);
+  --selection-disabled-foreground: var(--muted-foreground);
   --sidebar-ring: var(--ring);
   --radius: 1rem;
   --radius-button: 1rem;
@@ -337,6 +349,9 @@
   --selection-checked-border: var(--selection-border);
   --selection-divider: var(--border);
   --selection-checked-divider: var(--selection-divider);
+  --selection-disabled-background: var(--card);
+  --selection-disabled-hatch: oklch(0 0 0 / 0);
+  --selection-disabled-foreground: var(--muted-foreground);
   --sidebar-ring: var(--ring);
   --radius: 0.5rem;
   --radius-button: 0.5rem;
@@ -377,6 +392,9 @@
   --selection-checked-border: var(--selection-border);
   --selection-divider: var(--border);
   --selection-checked-divider: var(--selection-divider);
+  --selection-disabled-background: var(--card);
+  --selection-disabled-hatch: oklch(0 0 0 / 0);
+  --selection-disabled-foreground: var(--muted-foreground);
   --sidebar-ring: var(--ring);
   --radius: 0.75rem;
   --radius-button: 1.8125rem;
@@ -417,6 +435,9 @@
   --selection-checked-border: var(--selection-border);
   --selection-divider: var(--border);
   --selection-checked-divider: var(--selection-divider);
+  --selection-disabled-background: var(--card);
+  --selection-disabled-hatch: oklch(0 0 0 / 0);
+  --selection-disabled-foreground: var(--muted-foreground);
   --sidebar-ring: var(--ring);
   --radius: 0.75rem;
   --radius-button: 1.8125rem;
@@ -457,6 +478,9 @@
   --selection-checked-border: var(--selection-border);
   --selection-divider: var(--border);
   --selection-checked-divider: var(--selection-divider);
+  --selection-disabled-background: var(--card);
+  --selection-disabled-hatch: oklch(0 0 0 / 0);
+  --selection-disabled-foreground: var(--muted-foreground);
   --sidebar-ring: var(--ring);
   --radius: 0.375rem;
   --radius-button: 0.375rem;
@@ -497,6 +521,9 @@
   --selection-checked-border: var(--selection-border);
   --selection-divider: var(--border);
   --selection-checked-divider: var(--selection-divider);
+  --selection-disabled-background: var(--card);
+  --selection-disabled-hatch: oklch(0 0 0 / 0);
+  --selection-disabled-foreground: var(--muted-foreground);
   --sidebar-ring: var(--ring);
   --radius: 0.375rem;
   --radius-button: 1.8125rem;
@@ -560,6 +587,9 @@
   --selection-checked-border: var(--primary);
   --selection-divider: var(--selection-border);
   --selection-checked-divider: var(--selection-checked-border);
+  --selection-disabled-background: var(--muted);
+  --selection-disabled-hatch: oklch(0 0 0 / 0.02);
+  --selection-disabled-foreground: var(--foreground);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.269 0 0);
@@ -689,6 +719,9 @@
   --selection-checked-border: var(--selection-border);
   --selection-divider: var(--border);
   --selection-checked-divider: var(--selection-divider);
+  --selection-disabled-background: var(--card);
+  --selection-disabled-hatch: oklch(0 0 0 / 0);
+  --selection-disabled-foreground: var(--muted-foreground);
   --sidebar: oklch(0.1749487 0.003804 164.5613);
   --sidebar-foreground: oklch(0.9604175 0.0214022 46.9889);
   --sidebar-accent: oklch(0.2661671 0.0034366 164.8011);
@@ -782,6 +815,9 @@
   --selection-checked-border: var(--selection-border);
   --selection-divider: var(--border);
   --selection-checked-divider: var(--selection-divider);
+  --selection-disabled-background: var(--card);
+  --selection-disabled-hatch: oklch(0 0 0 / 0);
+  --selection-disabled-foreground: var(--muted-foreground);
   --sidebar: oklch(0.1749487 0.003804 164.5613);
   --sidebar-foreground: oklch(0.9822955 0.0142785 213.0969);
   --sidebar-accent: oklch(0.2661671 0.0034366 164.8011);
@@ -875,6 +911,9 @@
   --selection-checked-border: var(--selection-border);
   --selection-divider: var(--border);
   --selection-checked-divider: var(--selection-divider);
+  --selection-disabled-background: var(--card);
+  --selection-disabled-hatch: oklch(0 0 0 / 0);
+  --selection-disabled-foreground: var(--muted-foreground);
   --sidebar: oklch(0.1749487 0.003804 164.5613);
   --sidebar-foreground: oklch(0.9790218 0.0292767 188.8731);
   --sidebar-accent: oklch(0.2661671 0.0034366 164.8011);
@@ -968,6 +1007,9 @@
   --selection-checked-border: var(--selection-border);
   --selection-divider: var(--border);
   --selection-checked-divider: var(--selection-divider);
+  --selection-disabled-background: var(--card);
+  --selection-disabled-hatch: oklch(0 0 0 / 0);
+  --selection-disabled-foreground: var(--muted-foreground);
   --sidebar: oklch(0.2029294 0.0334602 267.7195);
   --sidebar-foreground: oklch(0.9592915 0.0326656 74.8018);
   --sidebar-accent: oklch(0.2717674 0.038702 268.9648);
@@ -1061,6 +1103,9 @@
   --selection-checked-border: var(--selection-border);
   --selection-divider: var(--border);
   --selection-checked-divider: var(--selection-divider);
+  --selection-disabled-background: var(--card);
+  --selection-disabled-hatch: oklch(0 0 0 / 0);
+  --selection-disabled-foreground: var(--muted-foreground);
   --sidebar: oklch(0.1749487 0.003804 164.5613);
   --sidebar-foreground: oklch(0.9822955 0.0142785 213.0969);
   --sidebar-accent: oklch(0.2661671 0.0034366 164.8011);
@@ -1154,6 +1199,9 @@
   --selection-checked-border: var(--selection-border);
   --selection-divider: var(--border);
   --selection-checked-divider: var(--selection-divider);
+  --selection-disabled-background: var(--card);
+  --selection-disabled-hatch: oklch(0 0 0 / 0);
+  --selection-disabled-foreground: var(--muted-foreground);
   --sidebar: oklch(0.1842633 0.0454734 244.0362);
   --sidebar-foreground: oklch(0.9801435 0.0172884 210.1893);
   --sidebar-accent: oklch(0.2250318 0.0601105 247.6754);
@@ -1247,6 +1295,9 @@
   --selection-checked-border: var(--selection-border);
   --selection-divider: var(--border);
   --selection-checked-divider: var(--selection-divider);
+  --selection-disabled-background: var(--card);
+  --selection-disabled-hatch: oklch(0 0 0 / 0);
+  --selection-disabled-foreground: var(--muted-foreground);
   --sidebar: oklch(0.176932 0.0026206 247.9754);
   --sidebar-foreground: oklch(0.9817745 0.0118616 223.5201);
   --sidebar-accent: oklch(0.2675764 0.0014668 197.0689);
@@ -1340,6 +1391,9 @@
   --selection-checked-border: var(--selection-border);
   --selection-divider: var(--border);
   --selection-checked-divider: var(--selection-divider);
+  --selection-disabled-background: var(--card);
+  --selection-disabled-hatch: oklch(0 0 0 / 0);
+  --selection-disabled-foreground: var(--muted-foreground);
   --sidebar: oklch(0.1860912 0.0074341 164.0507906);
   --sidebar-foreground: oklch(0.9126739 0.0051473 145.5332168);
   --sidebar-accent: oklch(0.2386117 0.0070183 164.349003);

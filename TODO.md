@@ -34,6 +34,14 @@
   (`EXTERNAL_VARIANT_LAYER`). Also confirm the comfortable icon edge, three quarters of that
   inset (12px at `sm`, 24px at `md` and `lg`), and pick a comfortable `xs` inset and icon edge,
   which keep the 12px and 10px control values.
+- Confirm the external disabled selection row's grey with design. `EXTERNAL_VARIANT_LAYER`
+  keeps the card fill without stripes and greys the title and other label row text through
+  `--selection-disabled-foreground: var(--muted-foreground)`, beside the control's 50% face.
+  Ask whether that grey is the right value, and tune it together with the Central Text input's
+  grey disabled fill and text below, so fields and rows share one disabled look.
+- Drop the old disabled-hatch string, `rgb(0_0_0/0.02)` stripes, from the
+  `elmera/no-primitive-colors` allowlist in `@elmeragroup/internal/oxlint`. The selection row's
+  hatch now reads `--selection-disabled-hatch`, so no class carries that literal any more.
 - Confirm with design the external selection row title weight, for `CheckboxItem` rows as well
   as `RadioItem` rows. `--selection-title-weight` is 500 in `EXTERNAL_VARIANT_LAYER`, from the
   radio card the sales flow used before `RadioItem` (`text-base/5 font-medium`), and internal

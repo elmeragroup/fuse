@@ -469,7 +469,9 @@
       "selection-item-icon.tsx",
       "selection-item-radio-stack.tsx",
       "selection-item-checkbox-adjacent.tsx",
-      "selection-item-horizontal.tsx"
+      "selection-item-horizontal.tsx",
+      "selection-item-disabled-rows.tsx",
+      "selection-item-disabled-group.tsx"
     ]
   },
   "separator": {
