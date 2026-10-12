@@ -28,10 +28,16 @@ import { Combobox } from "../components/combobox";
 import { Frame } from "../components/frame/frame";
 import { InputGroup } from "../components/input-group";
 import { Input } from "../components/input/input";
+import { NumberField } from "../components/number-field/number-field";
 import { PhoneNumberField } from "../components/phone-number-field/phone-number-field";
+import { RadioGroup } from "../components/radio-group/radio-group";
+import { RadioItem } from "../components/radio-group/radio-item";
+import { Select } from "../components/select";
 import { Tabs } from "../components/tabs";
+import { Textarea } from "../components/textarea/textarea";
 import { Toggle } from "../components/toggle/toggle";
 import { Calendar } from "../react-aria/calendar/calendar";
+import { DateField } from "../react-aria/date-field/date-field";
 import {
   DatePicker,
   DatePickerPresetGroup,
@@ -43,8 +49,8 @@ import { DENSITIES } from "./density";
 import type { Density } from "./density";
 import { ThemeScope } from "./theme-scope";
 import { EXTERNAL_VARIANT_LAYER } from "./tokens/external-palettes";
-import { themeSlug } from "./tokens/themes";
-import type { ThemeInput } from "./tokens/themes";
+import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
+import type { BrandCode, ThemeInput } from "./tokens/themes";
 
 const BUTTON_SIZES = ["default", "xs", "sm", "lg", "icon", "icon-xs", "icon-sm", "icon-lg"] as const;
 
@@ -79,18 +85,20 @@ type Variant = "internal" | "fkas" | "tkas" | "guen";
 /**
  * Corner radii in px. Internal rounds every outer element with `--radius`, 0.375rem (6px). An
  * external button rounds with the brand's `--radius-button`, which is 1.8125rem (29px) for
- * fkas, 1rem (16px) for tkas and 0.5rem (8px) for guen. An external field box rounds
- * with the external variant's `--radius-field`, 0.25rem (4px), whatever the brand. The other
- * outer external values are the ones Chromium measured on origin/main (e178f6d7) with each
- * theme on the document. The tkas row has since moved 0.8px with its `--radius`, from 0.95rem
- * to 1rem.
+ * fkas, 1rem (16px) for tkas and 0.5rem (8px) for guen. An external field box rounds with
+ * `--radius-field`, which aliases the brand's `--radius` as a card's `rounded-lg` does: 12px
+ * fkas, 16px tkas and 8px guen. The other outer external values are the ones Chromium
+ * measured on origin/main (e178f6d7) with each theme on the document. The tkas row has since
+ * moved 0.8px with its `--radius`, from 0.95rem to 1rem.
  *
- * Inner parts round with the field corner (6px internal, 4px external) or their shell's rung
- * less the inset, floored at 0: the xs and sm addons, the phone trigger and the search clear
- * button sit 5px in, so they take 1px internal and 0px external; the kbd sits 6.6px in and
- * the chips 7px, so the kbd and the chip remove button take 0px; the date trigger sits flush
- * behind the 1px border, at 5px internal and 3px external; and a date segment sits behind the
- * border and the dense 10px control inset, at 0px. A tab sits 4px inside the list's
+ * Inner parts round with the field corner (6px internal, 12px fkas, 16px tkas, 8px guen) or
+ * their shell's rung less the inset, floored at 0. The xs and sm addons, the phone trigger and
+ * the search clear button sit 5px in: 1px internal, 7px fkas, 11px tkas and 3px guen. The kbd
+ * sits 6.6px in: 0px internal, 5.4px fkas, 9.4px tkas and 1.4px guen. The date trigger sits
+ * flush behind the 1px border: 5px internal, 11px fkas, 15px tkas and 7px guen. A date segment
+ * sits behind the border and the dense 10px control inset, 11px in: 1px fkas, 5px tkas and 0px
+ * internal and guen. The chips sit 7px in and the chip remove button 2px inside a chip, 9px in
+ * all: 3px fkas, 7px tkas and 0px internal and guen. A tab sits 4px inside the list's
  * `rounded-lg`: 2px internal, 8px fkas, 12px tkas and 4px guen. A preset sits 5px inside the
  * popover's `rounded-md`, its 1px border and the 4px small surface tier: 1px internal, 5px fkas,
  * 9px tkas and 1px guen.
@@ -124,70 +132,70 @@ const EXPECTED = {
     button: 29,
     "grouped button": 10,
     card: 12,
-    input: 4,
+    input: 12,
     badge: 12,
     toggle: 10,
     "toggle xs": 10,
     checkbox: 4,
-    "input group": 4,
-    kbd: 0,
-    "addon xs": 0,
-    "addon sm": 0,
+    "input group": 12,
+    kbd: 5.4,
+    "addon xs": 7,
+    "addon sm": 7,
     frame: 16,
     calendar: 4,
     "calendar nav": 29,
     tab: 8,
-    "phone trigger": 0,
-    "search clear": 0,
-    "date trigger": 3,
-    "date segment": 0,
+    "phone trigger": 7,
+    "search clear": 7,
+    "date trigger": 11,
+    "date segment": 1,
     preset: 5,
-    "chip remove": 0,
+    "chip remove": 3,
   },
   tkas: {
     button: 16,
     "grouped button": 14,
     card: 16,
-    input: 4,
+    input: 16,
     badge: 16,
     toggle: 14,
     "toggle xs": 10,
     checkbox: 4,
-    "input group": 4,
-    kbd: 0,
-    "addon xs": 0,
-    "addon sm": 0,
+    "input group": 16,
+    kbd: 9.4,
+    "addon xs": 11,
+    "addon sm": 11,
     frame: 20,
     calendar: 4,
     "calendar nav": 16,
     tab: 12,
-    "phone trigger": 0,
-    "search clear": 0,
-    "date trigger": 3,
-    "date segment": 0,
+    "phone trigger": 11,
+    "search clear": 11,
+    "date trigger": 15,
+    "date segment": 5,
     preset: 9,
-    "chip remove": 0,
+    "chip remove": 7,
   },
   guen: {
     button: 8,
     "grouped button": 6,
     card: 8,
-    input: 4,
+    input: 8,
     badge: 8,
     toggle: 6,
     "toggle xs": 6,
     checkbox: 4,
-    "input group": 4,
-    kbd: 0,
-    "addon xs": 0,
-    "addon sm": 0,
+    "input group": 8,
+    kbd: 1.4,
+    "addon xs": 3,
+    "addon sm": 3,
     frame: 12,
     calendar: 4,
     "calendar nav": 8,
     tab: 4,
-    "phone trigger": 0,
-    "search clear": 0,
-    "date trigger": 3,
+    "phone trigger": 3,
+    "search clear": 3,
+    "date trigger": 7,
     "date segment": 0,
     preset: 1,
     "chip remove": 0,
@@ -297,13 +305,16 @@ function Specimens(): ReactElement {
 
 /**
  * A host that keeps its own tokens: `--radius` and `--border` are its own, and the
- * variant-layer roles (`--radius-step` and the button outline roles), which only themes.css
- * sets, are not declared. `initial` resets each inherited role to the guaranteed invalid
- * value, so every `var(--radius-step, 0px)` and outline role read takes its fallback here.
+ * variant-layer roles (`--radius-step` and the button outline roles) and `--radius-field`,
+ * which only themes.css sets, are not declared. The variant layer leaves `--radius-field` at
+ * its default, so the role is reset by name. `initial` resets each inherited role to the
+ * guaranteed invalid value, so every `var(--radius-step, 0px)`, `var(--radius-field,
+ * var(--radius))` and outline role read takes its fallback here.
  */
 const HOST_WITHOUT_THEMES = {
   "--radius": "8px",
   "--border": "rgb(10, 20, 30)",
+  "--radius-field": "initial",
   ...Object.fromEntries(Object.keys(EXTERNAL_VARIANT_LAYER).map((key) => [`--${key}`, "initial"])),
 } as const;
 
@@ -326,6 +337,84 @@ function HostSpecimens({ style = HOST_WITHOUT_THEMES }: { style?: CSSProperties 
       </InputGroup.Root>
     </div>
   );
+}
+
+/**
+ * Each external brand's `--radius` in px at the 16px root, the corner of its cards and
+ * selection rows: 0.75rem for fkas, fkab and fkse, 1rem for tkas, 0.5rem for guen and
+ * 0.375rem for elma and ngfi.
+ */
+const BRAND_RADIUS = {
+  fkas: 12,
+  fkab: 12,
+  tkas: 16,
+  guen: 8,
+  fkse: 12,
+  elma: 6,
+  ngfi: 6,
+} as const satisfies Record<BrandCode, number>;
+
+/** Every field box family beside a card and a selection row, the outer corners they match. */
+function FieldBoxes(): ReactElement {
+  return withLocale(
+    "en-US",
+    <UiProviders locale="en-US" navigate={() => undefined}>
+      <Card.Root role="group" aria-label="Card" />
+      <RadioGroup label="Plans">
+        <RadioItem value="fixed">
+          <RadioItem.Title>Fixed price</RadioItem.Title>
+        </RadioItem>
+      </RadioGroup>
+      <Input aria-label="Input" />
+      <Textarea aria-label="Notes" />
+      <Select.Root items={[{ value: "apple", label: "Apple" }]}>
+        <Select.Trigger aria-label="Fruit">
+          <Select.Value placeholder="Pick a fruit" />
+        </Select.Trigger>
+      </Select.Root>
+      <NumberField label="Quantity" />
+      <InputGroup.Root aria-label="Input group">
+        <InputGroup.Input aria-label="Grouped input" />
+      </InputGroup.Root>
+      <DateField label="Meter date" />
+      <SearchField label="Meter search" />
+      <Combobox.Root items={["Apple"]} multiple defaultValue={["Apple"]}>
+        <Combobox.Chips aria-label="Selected fruit">
+          <Combobox.Chip removeLabel="Remove Apple">Apple</Combobox.Chip>
+          <Combobox.ChipsInput aria-label="Chosen fruit" />
+        </Combobox.Chips>
+      </Combobox.Root>
+    </UiProviders>
+  );
+}
+
+/** Each field box {@link FieldBoxes} renders, by name. */
+function fieldBoxes(): readonly (readonly [string, HTMLElement])[] {
+  const quantity = roleNamed("textbox", "Quantity");
+  // DOM audit: the NumberField group has no role; its input is a direct child.
+  const numberGroup = quantity.parentElement;
+  if (!(numberGroup instanceof HTMLElement)) {
+    throw new Error("expected the NumberField group");
+  }
+  return [
+    ["Input", roleNamed("textbox", "Input")],
+    ["Textarea", roleNamed("textbox", "Notes")],
+    ["Select trigger", roleNamed("combobox", "Fruit")],
+    ["NumberField", numberGroup],
+    ["InputGroup", roleNamed("group", "Input group")],
+    ["DateField", roleNamed("group", "Meter date")],
+    ["SearchField", slotAround(roleNamed("searchbox", "Meter search"), "field-group")],
+    ["Combobox chips", slotAround(roleNamed("button", "Remove Apple"), "combobox-chips")],
+  ];
+}
+
+/** A selection row's root, the labelled row around its radio. DOM audit: the row has no role. */
+function selectionRow(name: string): HTMLElement {
+  const row = roleNamed("radio", name).closest("[data-selection-item]");
+  if (!(row instanceof HTMLElement)) {
+    throw new Error(`expected the selection row of ${name}`);
+  }
+  return row;
 }
 
 /** The one calendar root. React Aria appends the visible month to its accessible name. */
@@ -469,19 +558,21 @@ function expectConcentric(context: string): void {
 /**
  * The radii that differ when comfortable. An addon pads with `--control-px-icon-md`, 12px
  * comfortable, so a button pulled 4px into it, an addon button or the phone field's country
- * trigger, sits 9px inside the field box, past the internal 6px field corner, and rounds at 0.
- * The external field corner already floors at 0 dense.
+ * trigger, sits 9px inside the field box: 0px internal and guen, 3px fkas and 7px tkas. A kbd
+ * pulled 0.15rem into it sits 10.6px in: 1.4px fkas, 5.4px tkas and 0px guen. A date segment
+ * sits behind the border and the 14px comfortable control inset, 15px in: 0px fkas and 1px
+ * tkas. The other inner parts keep their dense insets.
  */
 const COMFORTABLE = {
   internal: { "addon xs": 0, "addon sm": 0, "phone trigger": 0 },
-} as const satisfies { readonly [V in Variant]?: { readonly [S in Specimen]?: number } };
+  fkas: { "addon xs": 3, "addon sm": 3, "phone trigger": 3, kbd: 1.4, "date segment": 0 },
+  tkas: { "addon xs": 7, "addon sm": 7, "phone trigger": 7, kbd: 5.4, "date segment": 1 },
+  guen: { "addon xs": 0, "addon sm": 0, "phone trigger": 0, kbd: 0 },
+} as const satisfies { readonly [V in Variant]: { readonly [S in Specimen]?: number } };
 
 /** The comfortable radius of `specimen` where it differs from the dense one. */
 function comfortableRadius(variant: Variant, specimen: Specimen): number | undefined {
-  if (variant !== "internal") {
-    return undefined;
-  }
-  const overrides: { readonly [S in Specimen]?: number } = COMFORTABLE.internal;
+  const overrides: { readonly [S in Specimen]?: number } = COMFORTABLE[variant];
   return overrides[specimen];
 }
 
@@ -514,6 +605,7 @@ describe("radius roles", () => {
   afterEach(() => {
     restoreDocumentTheme();
     document.documentElement.style.removeProperty("font-size");
+    document.documentElement.style.removeProperty("--radius-field");
   });
 
   it("rounds every element from the document theme's radius roles", () => {
@@ -581,30 +673,66 @@ describe("radius roles", () => {
     expect(radius(roleNamed("button", "Wrapped button"))).toBe(6);
   });
 
-  it("rounds external fields with a --radius-field override and insets their parts from it", () => {
-    stampDocumentTheme(tkasCompany, "light");
-    render(
-      <ThemeScope theme={fkasExternal} style={{ "--radius-field": "0.125rem" }}>
-        <Specimens />
-      </ThemeScope>
-    );
-    // The boxes take the 2px corner. Only the date trigger, 1px in, keeps a corner inside it.
-    for (const [specimen, name, expected] of [
-      ["input", "Input", 2],
-      ["input group", "Input group", 2],
-      ["kbd", "Kbd", 0],
-      ["addon xs", "Addon xs", 0],
-      ["addon sm", "Addon sm", 0],
-      ["search clear", "Clear search", 0],
-      ["date trigger", "Date trigger", 1],
-      ["date segment", "Date segment", 0],
-      ["chip remove", "Remove Apple", 0],
-      ["phone trigger", "Select country", 0],
-    ] as const) {
-      const measured = measure().find(([candidate, label]) => candidate === specimen && label === name);
-      expect(measured?.[2], name).toBe(expected);
+  it("rounds every field box with the brand radius, a card's and a selection row's corner, in every external theme", () => {
+    for (const theme of LEGAL_THEMES) {
+      if (theme.variant !== "external") continue;
+      const slug = themeSlug(theme);
+      const expected = BRAND_RADIUS[theme.brand];
+      // A document theme with another radius, so a corner resolved outside the scope shows.
+      stampDocumentTheme(theme.brand === "tkas" ? fkasExternal : tkasCompany, "light");
+      const { unmount } = render(
+        <ThemeScope theme={theme}>
+          <FieldBoxes />
+        </ThemeScope>
+      );
+      expect(radius(roleNamed("group", "Card")), `${slug} card`).toBe(expected);
+      expect(radius(selectionRow("Fixed price")), `${slug} selection row`).toBe(expected);
+      for (const [name, box] of fieldBoxes()) {
+        expect(radius(box), `${slug} ${name}`).toBe(expected);
+      }
+      unmount();
     }
   });
+
+  it.each([
+    ["a ThemeScope", "scope"],
+    ["the document", "document"],
+  ] as const)(
+    "rounds external fields with a --radius-field override on %s and insets their parts from it",
+    (_, host) => {
+      const override = { "--radius-field": "0.125rem" };
+      if (host === "document") {
+        stampDocumentTheme(fkasExternal, "light");
+        document.documentElement.style.setProperty("--radius-field", override["--radius-field"]);
+        render(<Specimens />);
+      } else {
+        stampDocumentTheme(tkasCompany, "light");
+        render(
+          <ThemeScope theme={fkasExternal} style={override}>
+            <Specimens />
+          </ThemeScope>
+        );
+      }
+      // The boxes take the 2px corner. Only the date trigger, 1px in, keeps a corner inside it.
+      for (const [specimen, name, expected] of [
+        ["input", "Input", 2],
+        ["input group", "Input group", 2],
+        ["kbd", "Kbd", 0],
+        ["addon xs", "Addon xs", 0],
+        ["addon sm", "Addon sm", 0],
+        ["search clear", "Clear search", 0],
+        ["date trigger", "Date trigger", 1],
+        ["date segment", "Date segment", 0],
+        ["chip remove", "Remove Apple", 0],
+        ["phone trigger", "Select country", 0],
+      ] as const) {
+        const measured = measure().find(([candidate, label]) => candidate === specimen && label === name);
+        expect(measured?.[2], name).toBe(expected);
+      }
+      // The override reaches field boxes alone: the card keeps the brand radius.
+      expect(radius(roleNamed("group", "Card")), "card").toBe(12);
+    }
+  );
 
   it("resolves a host rule's plain var(--radius-button) read to the theme's button radius", () => {
     const host = (

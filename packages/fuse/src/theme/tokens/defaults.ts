@@ -111,9 +111,10 @@ export const LAYER_DEFAULTS = {
   // follow outer − inset (`styles/corner-radius.ts`). Buttons and fields alias the one radius,
   // and a zero step collapses the `rounded-*` scale in `fuse.css` onto it. Each theme rule
   // resolves the aliases against the `--radius` of the element it matches. External palettes
-  // set a brand button radius, and the external variant layer sets the field radius and the
-  // step. Internal fields read `--radius` itself rather than this alias, so they also follow
-  // a `--radius` override on a plain wrapper (`styles/corner-radius.ts`).
+  // set a brand button radius, and the external variant layer sets the step. Every variant
+  // keeps the field alias, so external fields round with the brand radius. Internal fields
+  // read `--radius` itself rather than this alias, so they also follow a `--radius` override
+  // on a plain wrapper (`styles/corner-radius.ts`).
   "radius-button": "var(--radius)",
   "radius-field": "var(--radius)",
   "radius-step": "0px",

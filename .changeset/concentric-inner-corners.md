@@ -12,8 +12,9 @@ Visible changes, by family:
   (NavigationMenu 0px) instead of 6px, and external rows follow their brand's radius. A Select
   row outside a `Select.Group` rounds like the popup.
 - Fields: InputGroup addon buttons, the phone country trigger and the SearchField clear button
-  round 1px internal and 0px external; the DatePicker trigger 5px internal and 3px external;
-  a kbd, Combobox chips, the chip remove button and date segments 0px.
+  round with the field corner less 5px (1px internal); the DatePicker trigger with the field
+  corner less 1px (5px internal); a kbd, Combobox chips, the chip remove button and date
+  segments with the field corner less their deeper insets (0px internal).
 - Tabs: the list pads 4px instead of 3px, and a trigger rounds with the list's corner less 4px
   (2px internal). The `line` variant keeps its corners.
 - Frame: a panel in a Frame rounds with the Frame's corner less its 4px padding (2px internal),

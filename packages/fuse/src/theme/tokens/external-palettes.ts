@@ -7,8 +7,9 @@ export type ExternalBrandCode = Exclude<BrandCode, "fkab">;
 /**
  * The roles every external theme shares, whatever its brand. External rounding spreads the
  * `rounded-*` scale in 2px steps around the brand radius, so `rounded-md` sits 2px inside
- * `--radius` and `rounded-xl` 4px outside it. Field boxes leave that scale for the 4px corner
- * of the Central design system's text input, whatever the brand radius. The outline Button
+ * `--radius` and `rounded-xl` 4px outside it. Field boxes round with the brand radius, the
+ * corner of a card or selection row: the layer leaves `--radius-field` at its `var(--radius)`
+ * default, which each theme rule resolves against its own `--radius`. The outline Button
  * draws the customer-facing reference's outline, a 2px ring in the text color, which every
  * brand shares. A selection row draws no outer edge: its resting edge is a zero-alpha colour, not
  * a `transparent` keyword, which the token format does not read, and keeps the 1px border so the
@@ -42,7 +43,6 @@ export const EXTERNAL_VARIANT_LAYER = {
   "selection-checked-border": "var(--selection-border)",
   "selection-divider": "var(--border)",
   "selection-checked-divider": "var(--selection-divider)",
-  "radius-field": "0.25rem",
   "radius-step": "2px",
   "button-outline-width": "2px",
   "selection-title-weight": "500",

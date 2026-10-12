@@ -20,7 +20,7 @@ Adjust the `@source` path only when the stylesheet is not one directory below th
 `@elmeragroup/fuse/css` is not only the components' variants and control metrics. Importing it into a Tailwind build also changes these parts of the host theme, whether or not `themes.css` is imported:
 
 - **Role and primitive colours.** Its `@theme inline` block maps every role token (`--color-primary` → `var(--primary)` and so on) and remaps Tailwind's `neutral-50` to `neutral-950` palette onto `--neutral-*`. `themes.css` defines those; without it, `bg-neutral-200` and the other stock neutral utilities resolve to an undefined colour until you define `--neutral-*` yourself.
-- **Radius scale.** `rounded-xs` to `rounded-xl` become whole `--radius-step` multiples from `--radius` instead of Tailwind's fixed rems. The step falls back to `0px`, so with your own `--radius` and no `themes.css` every rung is that one radius; `--radius` itself has no fallback. Button rounds with `--radius-button`, which `themes.css` sets per theme; define it (`--radius-button: var(--radius)`) when you skip `themes.css`. Field boxes round with `--radius` until `--radius-step` is `2px`, and then with `--radius-field`.
+- **Radius scale.** `rounded-xs` to `rounded-xl` become whole `--radius-step` multiples from `--radius` instead of Tailwind's fixed rems. The step falls back to `0px`, so with your own `--radius` and no `themes.css` every rung is that one radius; `--radius` itself has no fallback. Button rounds with `--radius-button`, which `themes.css` sets per theme; define it (`--radius-button: var(--radius)`) when you skip `themes.css`. Field boxes round with `--radius` until `--radius-step` is `2px`, and then with `--radius-field`, which `themes.css` aliases to `var(--radius)` on each theme element.
 - **State variants.** It declares `data-open`, `data-closed`, `data-checked`, `data-unchecked`, `data-selected`, `data-disabled`, `data-active`, `data-horizontal` and `data-vertical` as static variants, wrapped in `:where()`. They replace Tailwind's functional `data-*` variants of the same name in your own classes too: their specificity drops to one class, so a plain `hover:` rule beats a `data-selected:` rule, `data-open:` and the like also match Radix-style `data-state` values, and `data-selected:` matches only `data-selected="true"`. Other `data-*` names are untouched.
 - **Border colour.** A base-layer rule gives every element, host markup included, `border-color: var(--border, currentcolor)`, so a bare `border` draws in the border role instead of the text colour. Any border colour utility still wins, and a host base rule like `* { @apply border-border; }` can go. Import `fuse/css` after `tailwindcss`; a preflight-free build that imports Tailwind's sheets into layers declares `@layer theme, base, components, utilities;` before them.
 - **Also:** `enabled-hover:`, `enabled-active:`, `disabled-state:`, `hit-area-*`, `no-scrollbar`, the `rounded-button`, `rounded-inner`, `font-sans`, `font-heading` and `font-mono` utilities, the `xs`, `lg` and `3xl` breakpoints, `--spacing: 0.25rem`, the `overshoot` easing, `tw-animate-css`, the React Aria Tailwind plugin, and a reduced-motion rule that switches off transform and layout transitions document-wide.
@@ -77,12 +77,11 @@ A `RadioItem` or `CheckboxItem` row draws its edge in `--selection-border`, and 
 }
 ```
 
-Field boxes round with your `--radius`, as internal themes do. For the external themes' 4px field corner, set the external step and the field radius. The step also spreads the `rounded-*` scale in 2px steps around `--radius` and gives the checkbox and the calendar their external 4px corner:
+Field boxes round with your `--radius`, as cards and the themes' fields do. For the external look, set the external step. It spreads the `rounded-*` scale in 2px steps around `--radius` and gives the checkbox and the calendar their external 4px corner. Fields then round with `--radius-field` where you set one, and with your `--radius` otherwise, so set it only for a field corner of your own:
 
 ```css
 :root {
   --radius-step: 2px;
-  --radius-field: 0.25rem;
 }
 ```
 

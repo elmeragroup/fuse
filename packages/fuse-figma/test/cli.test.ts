@@ -118,6 +118,10 @@ describe("fuse-figma sync", () => {
       assert.strictEqual(figma.resolve("Fuse tokens", "radius", light("external-elma-company")), 6);
       // 1.8125rem at the 16px root.
       assert.strictEqual(figma.resolve("Fuse tokens", "radius-button", light("external-fkas-private")), 29);
+      // Fields round with the theme's radius in both variants: 0.75rem for external fkas and
+      // 0.375rem internally.
+      assert.strictEqual(figma.resolve("Fuse tokens", "radius-field", light("external-fkas-private")), 12);
+      assert.strictEqual(figma.resolve("Fuse tokens", "radius-field", light("internal-fkas-private")), 6);
       assert.strictEqual(
         figma.resolve("Fuse tokens", "font-heading", light("external-fkas-private")),
         "Neo Sans"

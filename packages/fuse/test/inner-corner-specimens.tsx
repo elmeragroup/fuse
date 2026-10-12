@@ -44,11 +44,11 @@ export const RADIUS_XL = { internal: 6, fkas: 16, tkas: 20, guen: 12 } as const 
   number
 >;
 
-/** Each theme's field corner in px: `--radius` internally and the external 4px field radius. */
-export const FIELD_CORNER = { internal: 6, fkas: 4, tkas: 4, guen: 4 } as const satisfies Record<
-  Variant,
-  number
->;
+/**
+ * Each theme's field corner in px. `--radius-field` aliases `--radius` in both variants, so a
+ * field box rounds like a card's `rounded-lg`.
+ */
+export const FIELD_CORNER = RADIUS_LG;
 
 /** The edge of a part that meets its shell's corner. */
 export type PartEdge = "start" | "end";
