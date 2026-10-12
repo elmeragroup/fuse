@@ -751,13 +751,16 @@ describe("state faces", () => {
   it("dims a disabled control only through the state face", () => {
     // Reviewed exceptions, keyed by file and exact token so a new dim in a listed file still
     // fails: option rows inside a popup list are parts, not whole controls. They keep
-    // `pointer-events-none` so the pointer never highlights a disabled option.
+    // `pointer-events-none` so the pointer never highlights a disabled option. The slider
+    // thumb cancels the dim instead of adding one: it is drawn over the track and indicator,
+    // and a translucent thumb lets them show through its centre.
     const { "styles/state-face.ts": _owner, ...copies } = flaggedTokensByFile(localDisabledDims);
     expect(copies).toEqual({
       "components/overlay/menu-row-classes.ts": [
         "data-disabled:opacity-50",
         "data-disabled:pointer-events-none",
       ],
+      "components/slider/slider-variants.ts": ["aria-disabled:opacity-100", "data-disabled:opacity-100"],
       "react-aria/internal/picker-presets.tsx": ["data-disabled:pointer-events-none"],
     });
   });

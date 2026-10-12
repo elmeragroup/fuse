@@ -31,10 +31,18 @@ describe("sliderVariants", () => {
   });
 
   // Cross-check: the thumb forwards the shared data-target state face and within-target focus
-  // ring whole, so a change to either owner reaches the slider.
-  it("forwards the shared state face and focus ring onto the thumb", () => {
+  // ring, so a change to either owner reaches the slider. The face's disabled dim is the one
+  // part it replaces, since the thumb is drawn over the track and indicator.
+  it("forwards the shared state face, minus its disabled dim, and focus ring onto the thumb", () => {
     const thumb = classes(sliderVariants().thumb());
-    expect(thumb).toEqual(expect.arrayContaining(classes(dataStateFaceClass)));
+    const isDisabledDim = (token: string) => /^(?:data|aria)-disabled:opacity-/u.test(token);
+    expect(thumb).toEqual(
+      expect.arrayContaining(classes(dataStateFaceClass).filter((token) => !isDisabledDim(token)))
+    );
+    expect(thumb.filter(isDisabledDim).toSorted()).toEqual([
+      "aria-disabled:opacity-100",
+      "data-disabled:opacity-100",
+    ]);
     expect(thumb).toEqual(expect.arrayContaining(classes(withinFocusRingClass)));
   });
 });

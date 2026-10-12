@@ -292,7 +292,6 @@ describe("Slider", () => {
     );
     const input = sliderNamed("Locked");
     expect(input.disabled).toBe(true);
-    expect(effectiveOpacity(thumbOf("Locked"))).toBe(0.5);
     expect(getComputedStyle(thumbOf("Locked")).cursor).toBe("not-allowed");
 
     const box = controlOf("Locked").getBoundingClientRect();
@@ -304,6 +303,24 @@ describe("Slider", () => {
     await userEvent.keyboard("{ArrowRight}");
     expect(valueNow("Locked")).toBe(20);
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("keeps a disabled thumb opaque over the track, in the muted tone of the disabled indicator", () => {
+    renderSlider(
+      <div style={{ width: 400, height: 240 }}>
+        <Slider label="Brightness" showValue isDisabled defaultValue={40} />
+        <Slider label="Pris" isDisabled defaultValue={[20, 80]} />
+        <Slider label="Level" orientation="vertical" isDisabled defaultValue={40} />
+      </div>
+    );
+    for (const name of ["Brightness", "Pris, minimum", "Pris, maximum", "Level"]) {
+      const thumb = thumbOf(name);
+      // A translucent thumb lets the indicator and track beneath show through its centre.
+      expect(effectiveOpacity(thumb), name).toBe(1);
+      expect(getComputedStyle(thumb).backgroundColor, name).toBe(cssVarColor(thumb, "--background"));
+      expect(getComputedStyle(thumb).borderTopColor, name).toBe(cssVarColor(thumb, "--muted-foreground"));
+      expect(getComputedStyle(thumb).cursor, name).toBe("not-allowed");
+    }
   });
 
   it("paints the unfilled track in the field-border tone", () => {
