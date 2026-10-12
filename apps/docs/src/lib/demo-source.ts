@@ -7,12 +7,11 @@
  * byte-for-byte the code that produced the stage above it.
  *
  * Server-only: the read happens while the page is prerendered, so the source region is part
- * of the static HTML and no demo source is shipped as client data. Cache Components counts a file
- * read as uncached data, so the read is a cache function on the `default` profile.
- * `next.config.ts` sets that profile never to revalidate, so the read runs only during the build.
+ * of the static HTML and no demo source is shipped as client data. The read is synchronous: Cache
+ * Components prerenders synchronous I/O and counts an awaited file read as uncached data.
  */
 
-import { readFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 
 import { normalizeDemoSource } from "./docs-model";
 import { docsRouteFile } from "./docs-route-files";
@@ -39,12 +38,11 @@ export type DemoLocation = {
  * during prerendering, so the throw fails `next build` with the path it looked for
  * instead of rendering a frame with an empty source region.
  */
-export async function readDemoSource({ section, slug, file }: DemoLocation): Promise<DemoSource> {
-  "use cache";
+export function readDemoSource({ section, slug, file }: DemoLocation): DemoSource {
   const location = docsRouteFile(section, slug, "demos", file);
   let raw: string;
   try {
-    raw = await readFile(location.absolute, "utf8");
+    raw = readFileSync(location.absolute, "utf8");
   } catch (cause) {
     throw new Error(
       `Docs page "${section}/${slug}" renders a demo from ${file}, but ${location.repoPath} does not exist. ` +

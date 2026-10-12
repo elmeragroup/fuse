@@ -38,7 +38,7 @@ const { root, card } = demoFrame();
  * deployment-default density in mono, and the source of the very file that rendered the
  * stage.
  *
- * An async server component, so the source region comes from a read of the demo file
+ * A server component, so the source region comes from a read of the demo file
  * during prerendering rather than from generated data threaded through the page.
  * Only the stage and meta row need the preview theme, and they are the client half
  * (`DemoStage`); the shell and the source region — highlighted by the shared
@@ -49,15 +49,15 @@ const { root, card } = demoFrame();
  * the browser renders it on hydration; every other demo prerenders as before. The marker inside
  * the boundary stamps `data-demo-hydrated` on the frame once the demo is live.
  */
-export async function DemoFrame({
+export function DemoFrame({
   section = "components",
   slug,
   id,
   title,
   file,
   children,
-}: DemoFrameProps): Promise<ReactElement> {
-  const demo = await readDemoSource({ section, slug, file });
+}: DemoFrameProps): ReactElement {
+  const demo = readDemoSource({ section, slug, file });
 
   return (
     <section className={root()} data-demo-frame aria-labelledby={id}>

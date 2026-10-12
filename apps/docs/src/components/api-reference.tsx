@@ -35,7 +35,7 @@ const { part, partHeader, partHeading, partHeadingCode, partRsc, partNote, propG
  * A component page's API reference: one expandable table per
  * compound part, in the order the entry facade exports them.
  *
- * An async server component reading the page's committed `api.json` — the same seam the demo
+ * A server component reading the page's committed `api.json` — the same seam the demo
  * frame uses for demo sources. Everything except the row mechanics is decided here, on the
  * server: the artifact read, the short-type collapse and the em-dashes are all in the
  * prerendered HTML, so the client half is the `details` behaviour plus the shared
@@ -44,8 +44,8 @@ const { part, partHeader, partHeading, partHeadingCode, partRsc, partNote, propG
  * RSC status is a per-part fact, so it sits next to the part heading rather than repeating
  * down a column.
  */
-export async function ApiReference({ slug }: ApiReferenceProps): Promise<ReactElement> {
-  const api = await readComponentApi(slug);
+export function ApiReference({ slug }: ApiReferenceProps): ReactElement {
+  const api = readComponentApi(slug);
   const parts = api.parts.map(toPartView);
 
   return (

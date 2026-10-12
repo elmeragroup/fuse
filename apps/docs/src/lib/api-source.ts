@@ -7,11 +7,12 @@
  * (`test/api-artifact.test.ts`) is what keeps that claim true.
  *
  * Server-only, like the demo-source read: this runs while the page is prerendered, so the
- * whole reference is part of the static HTML and no API data is shipped as client payload. It is a
- * cache function on the `default` profile for the same reason.
+ * whole reference is part of the static HTML and no API data is shipped as client payload.
+ * The read is synchronous: Cache Components prerenders synchronous I/O and counts an awaited
+ * file read as uncached data.
  */
 
-import { readFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 
 import type { ComponentApiArtifact } from "./docs-model";
 import { API_REGEN_COMMAND } from "./docs-model";
@@ -24,12 +25,11 @@ import { docsRouteFile } from "./docs-route-files";
  * throw fails `next build` naming the file and the command that writes it, instead of
  * rendering an API section with no rows.
  */
-export async function readComponentApi(slug: string): Promise<ComponentApiArtifact> {
-  "use cache";
+export function readComponentApi(slug: string): ComponentApiArtifact {
   const location = docsRouteFile("components", slug, "api.json");
   let raw: string;
   try {
-    raw = await readFile(location.absolute, "utf8");
+    raw = readFileSync(location.absolute, "utf8");
   } catch (cause) {
     throw new Error(
       `Component page "${slug}" renders an API reference, but ${location.repoPath} does not exist. ` +
