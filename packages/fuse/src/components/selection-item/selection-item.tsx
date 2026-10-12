@@ -20,6 +20,18 @@ import type { SelectionItemGroupOrientation } from "./selection-item-variants";
 /** Resolved once at module scope — the shell always borrows the `outline` arm. */
 const outlineItemClass = itemVariants({ variant: "outline" });
 
+// A connected stack's rows share one line per join: every row but the first drops its top border,
+// and a checked one pulls itself up one pixel to paint that line itself. The dividers key on an
+// adjacent selection row, not on first or last child, so a lone shell beside a Field.Description
+// or Field.Error draws no line. A row with a row after it takes the divider on its bottom edge,
+// which outranks the shell's resting edge (0,2,0 over 0,1,0) and yields to a checked row's
+// whole-box edge (0,3,0). A checked row takes the checked divider on each edge it shares with a
+// row, which outranks that box (0,4,0). Every other edge keeps the row's own.
+const connectedStackClass = cn(
+  "rounded-none not-first:border-t-0 first:rounded-t-lg last:rounded-b-lg has-[[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px has-[[data-slot=selection-item-control]_[data-checked]]:not-first:border-t",
+  "[&:has(+[data-selection-item])]:border-b-selection-divider has-[[data-slot=selection-item-control]_[data-checked]]:[&:has(+[data-selection-item])]:border-b-selection-checked-divider has-[[data-slot=selection-item-control]_[data-checked]]:[[data-selection-item]+&]:border-t-selection-checked-divider"
+);
+
 // The label's `::before` is the row's click target. With automatic grid lines it covers the
 // shell's padding box, so a row whose SubSections are all `mode="hidden"` toggles from its
 // bottom inset like a plain row: the sub-section band keeps that 14px inset and lets clicks
@@ -257,16 +269,24 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
  * covers the whole row, and a click on the band's passive parts toggles the control.
  * Nothing clips, so a focus ring at a zero inset paints whole.
  *
- * Vertical and default shells, in either group shape or outside any group, collapse
- * borders with `not-first:border-t-0`. A checked shell paints its border in the theme's
- * `--selection-checked-border`: `--primary` in internal themes, the resting `--border` in
- * external ones, whose radio card shows the selection through its control alone. A checked
- * non-first shell repaints its top border in that colour by pulling itself up one pixel
- * (`has-[[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px`)
- * instead of a z-index lift; `className` margin overrides can break that. Horizontal
- * item groups render individually rounded full-border cards with no vertical border
- * collapse and no checked negative margin. Checked selectors are scoped to the
- * private control slot so a checked descendant in SubSection cannot repaint the shell.
+ * The shell's 1px edge is the theme's `--selection-border`, not Item's outline `--border`:
+ * `--border` in internal themes, a zero-alpha colour in external ones, which keeps the border's
+ * geometry but draws no line. A checked shell paints its edge in the theme's
+ * `--selection-checked-border`: `--primary` in internal themes, the resting `--selection-border`
+ * in external ones, whose radio card shows the selection through its control alone.
+ *
+ * Vertical and default shells, in either group shape or outside any group, collapse borders with
+ * `not-first:border-t-0`, so one line divides two rows. The bottom edge of a row with another
+ * row after it is the theme's `--selection-divider`, and a checked row's edges shared with another
+ * row are its `--selection-checked-divider`. Internal themes alias them to the row's own edges, so
+ * a checked row stays boxed in `--primary`. External themes draw both in `--border`: stacked rows
+ * keep a grey separator, checked or not, while the sides, the stack's outer top and bottom and a
+ * lone row beside other Field parts stay transparent. A checked non-first shell repaints its top border by pulling itself up one
+ * pixel (`has-[[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px`) instead of a
+ * z-index lift; `className` margin overrides can break that. Horizontal item groups render
+ * individually rounded full-border cards with no vertical border collapse, no divider and no
+ * checked negative margin. Checked selectors are scoped to the private control slot so a checked
+ * descendant in SubSection cannot repaint the shell.
  *
  * It publishes `--inner-corner`, its corner less its border and padding, for parts that round with
  * `rounded-inner`.
@@ -369,11 +389,9 @@ export function SelectionItemShell({
         selectionItemShellClass,
         labelTypeClass,
         firstLineClass,
-        "relative isolate box-border grid items-stretch gap-0 gap-x-2.5 bg-card py-0 transition-colors has-[[data-slot=selection-item-control]_[data-checked]]:border-selection-checked-border has-[[data-slot=selection-item-control]_[data-checked]]:bg-muted",
+        "relative isolate box-border grid items-stretch gap-0 gap-x-2.5 border-selection-border bg-card py-0 transition-colors has-[[data-slot=selection-item-control]_[data-checked]]:border-selection-checked-border has-[[data-slot=selection-item-control]_[data-checked]]:bg-muted",
         controlAtEnd ? "grid-cols-[minmax(0,1fr)_auto]" : "grid-cols-[auto_minmax(0,1fr)]",
-        connectedStack
-          ? "rounded-none not-first:border-t-0 first:rounded-t-lg last:rounded-b-lg has-[[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px has-[[data-slot=selection-item-control]_[data-checked]]:not-first:border-t"
-          : "rounded-lg",
+        connectedStack ? connectedStackClass : "rounded-lg",
         isDisabled ? cn("cursor-not-allowed bg-muted", disabledHatch) : null,
         className
       )}>

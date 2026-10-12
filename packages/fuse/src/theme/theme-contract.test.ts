@@ -315,7 +315,10 @@ describe("theme contract", () => {
         "radius-field",
         "radius-step",
         "button-outline",
+        "selection-border",
         "selection-checked-border",
+        "selection-divider",
+        "selection-checked-divider",
         "button-outline-width",
         "selection-title-weight",
         "font-sans",
@@ -494,13 +497,16 @@ describe("derived roles", () => {
 describe("external variant layer roles", () => {
   const rules = parseStyleRules(generateThemesCss());
 
-  it("sets the radius step, the 4px field corner, the reference's 2px text-color outline, the resting checked-row border and the medium selection row title once for the external variant", () => {
+  it("sets the radius step, the 4px field corner, the reference's 2px text-color outline, the transparent selection row edge, checked or not, the grey divider between stacked rows and the medium selection row title once for the external variant", () => {
     const external = {
       "radius-field": "0.25rem",
       "radius-step": "2px",
       "button-outline": "var(--foreground)",
       "button-outline-width": "2px",
-      "selection-checked-border": "var(--border)",
+      "selection-border": "oklch(0 0 0 / 0)",
+      "selection-checked-border": "var(--selection-border)",
+      "selection-divider": "var(--border)",
+      "selection-checked-divider": "var(--selection-divider)",
       "selection-title-weight": "500",
     } as const;
     for (const [brand, palette] of Object.entries(EXTERNAL_PALETTES)) {
@@ -514,11 +520,17 @@ describe("external variant layer roles", () => {
         expect(declaration(rules, selector, key), `${selector} ${key}`).toBe(value);
       }
     }
-    // Internal themes and the root keep the 1px border hairline, the primary checked-row edge,
-    // the regular selection row title and round fields with --radius.
+    // Internal themes and the root keep the 1px border hairline, the border-coloured selection
+    // row edge, the primary checked-row edge, dividers that follow those edges, the regular
+    // selection row title and round fields with --radius.
     for (const selector of [":root", '[data-theme-variant="internal"]']) {
       expect(declaration(rules, selector, "button-outline"), selector).toBe("var(--border)");
+      expect(declaration(rules, selector, "selection-border"), selector).toBe("var(--border)");
       expect(declaration(rules, selector, "selection-checked-border"), selector).toBe("var(--primary)");
+      expect(declaration(rules, selector, "selection-divider"), selector).toBe("var(--selection-border)");
+      expect(declaration(rules, selector, "selection-checked-divider"), selector).toBe(
+        "var(--selection-checked-border)"
+      );
       expect(declaration(rules, selector, "button-outline-width"), selector).toBe("1px");
       expect(declaration(rules, selector, "selection-title-weight"), selector).toBe("400");
       expect(declaration(rules, selector, "radius-field"), selector).toBe("var(--radius)");

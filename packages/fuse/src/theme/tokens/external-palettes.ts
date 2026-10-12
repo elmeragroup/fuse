@@ -10,11 +10,16 @@ export type ExternalBrandCode = Exclude<BrandCode, "fkab">;
  * `--radius` and `rounded-xl` 4px outside it. Field boxes leave that scale for the 4px corner
  * of the Central design system's text input, whatever the brand radius. The outline Button
  * draws the customer-facing reference's outline, a 2px ring in the text color, which every
- * brand shares. A checked selection row keeps its resting `--border` edge, as the external
- * radio card does, so its control alone shows the selection. A selection row's title takes the
- * medium weight of that radio card, so it matches the group legend and `CheckboxCard` titles
- * around it. The internal variant keeps the default 0px step, the 1px `--border` hairline, the
- * `--primary` edge on a checked row and the regular row title.
+ * brand shares. A selection row draws no outer edge: its resting edge is a zero-alpha colour, not
+ * a `transparent` keyword, which the token format does not read, and keeps the 1px border so the
+ * rows' joins and insets stay. A checked row keeps that resting edge, as the external radio
+ * card does, and the faint `bg-muted` tint, which design keeps, so its control is the clear
+ * cue. `RadioIconButton` is a button, not a row, so it keeps its `border-primary` checked edge
+ * rather than reading the selection roles. Stacked rows keep a grey `--border`
+ * separator between them, checked or not. A selection row's title takes the medium weight of
+ * that radio card, so it matches the group legend and `CheckboxCard` titles around it. The
+ * internal variant keeps the default 0px step, the 1px `--border` hairline, the `--border` row
+ * edge and divider, the `--primary` box around a checked row and the regular row title.
  *
  * The layer names the neutral focus ring so every external light rule declares `--ring`
  * (and restates the `--sidebar-ring` alias), and a nested scope gets its own theme's ring. To
@@ -33,7 +38,10 @@ export type ExternalBrandCode = Exclude<BrandCode, "fkab">;
 export const EXTERNAL_VARIANT_LAYER = {
   ring: NEUTRAL_RING,
   "button-outline": "var(--foreground)",
-  "selection-checked-border": "var(--border)",
+  "selection-border": "oklch(0 0 0 / 0)",
+  "selection-checked-border": "var(--selection-border)",
+  "selection-divider": "var(--border)",
+  "selection-checked-divider": "var(--selection-divider)",
   "radius-field": "0.25rem",
   "radius-step": "2px",
   "button-outline-width": "2px",

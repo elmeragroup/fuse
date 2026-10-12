@@ -133,6 +133,14 @@ export default function AccessibilityPage(): ReactElement {
           held to 3:1 against the page, card and card-soft surfaces in both color schemes.
         </li>
         <li>
+          External themes draw no outer edge around a <code>RadioItem</code> or <code>CheckboxItem</code> row:{" "}
+          <code>--selection-border</code> is transparent, checked or not, so it has no contrast floor. Stacked
+          rows keep a decorative <code>--border</code> divider between them, which has no floor either. The
+          row is not the control boundary. The <code>Checkbox</code> or <code>Radio</code> inside it carries
+          the state with its own edge, held to 3:1 as above, and its checked fill. On a <code>card</code>
+          -coloured surface the row has no outline.
+        </li>
+        <li>
           <code>feature-foreground</code> is reclassified as accent/decorative. Text on <code>feature</code>{" "}
           panels uses white; body text on feature panels is out of contract.
         </li>

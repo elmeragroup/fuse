@@ -6,6 +6,9 @@ import type { BaseUIEvent } from "@base-ui/react/types";
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
+import * as CssColor from "@elmeragroup/color/css-color";
+import { getOrThrow } from "@elmeragroup/color/result";
+
 import "../../../dist/styles.css";
 // Role tokens live in themes.css only; the fill test reads --card and --background.
 import "../../../dist/themes.css";
@@ -917,51 +920,220 @@ describe("SelectionItem", () => {
     expect(getComputedStyle(shell).marginTop).toBe("-1px");
   });
 
-  it("keeps a checked row's resting border in an external theme, in light and dark", async () => {
-    renderThemed(
-      <>
-        <ThemeScope theme={fkasExternal}>
-          <RadioItemGroup label="Light plan" defaultValue="light-spot">
-            <RadioItem value="light-fixed">
-              <RowTitle>Light fixed</RowTitle>
-            </RadioItem>
-            <RadioItem value="light-spot">
-              <RowTitle>Light spot</RowTitle>
+  describe("row edge", () => {
+    /**
+     * Vertical stacks, each named by where its checked rows sit: three radio rows with the first,
+     * the middle or the last checked, and four checkbox rows with the two middle ones checked.
+     */
+    const STACKS = [
+      { stack: "first", control: "radio", rows: 3, checked: [0] },
+      { stack: "middle", control: "radio", rows: 3, checked: [1] },
+      { stack: "last", control: "radio", rows: 3, checked: [2] },
+      { stack: "adjacent", control: "checkbox", rows: 4, checked: [1, 2] },
+    ] as const;
+
+    /**
+     * Rows that join no other row: a horizontal group's cards, a group of one, and a shell outside
+     * any group with a Field.Description after it, which is a sibling but not a row.
+     */
+    const LONE_ROWS = [
+      { row: "router", control: "checkbox", checked: true },
+      { row: "SIM card", control: "checkbox", checked: false },
+      { row: "terms", control: "checkbox", checked: true },
+      { row: "post", control: "radio", checked: false },
+      { row: "standalone checked", control: "checkbox", checked: true },
+      { row: "standalone unchecked", control: "checkbox", checked: false },
+    ] as const;
+
+    type StackRow = {
+      name: string;
+      control: "radio" | "checkbox";
+      checked: boolean;
+      first: boolean;
+      last: boolean;
+    };
+
+    function stackRows(scheme: string): StackRow[] {
+      return STACKS.flatMap(({ stack, control, rows, checked }) =>
+        Array.from({ length: rows }, (_, index) => ({
+          name: `${scheme} ${stack} ${index + 1}`,
+          control,
+          checked: checked.some((value) => value === index),
+          first: index === 0,
+          last: index === rows - 1,
+        }))
+      );
+    }
+
+    function EdgeRows({ scheme }: { scheme: string }) {
+      return (
+        <>
+          {STACKS.map(({ stack, control, rows, checked }) => {
+            const values = Array.from({ length: rows }, (_, index) => `${stack}-${index + 1}`);
+            const items = values.map((value, index) => {
+              const title = <RowTitle>{`${scheme} ${stack} ${index + 1}`}</RowTitle>;
+              return control === "radio" ? (
+                <RadioItem key={value} value={value}>
+                  {title}
+                </RadioItem>
+              ) : (
+                <CheckboxItem key={value} value={value}>
+                  {title}
+                </CheckboxItem>
+              );
+            });
+            const label = `${scheme} ${stack} stack`;
+            return control === "radio" ? (
+              <RadioItemGroup key={stack} label={label} defaultValue={values[checked[0]]}>
+                {items}
+              </RadioItemGroup>
+            ) : (
+              <CheckboxItemGroup
+                key={stack}
+                label={label}
+                defaultValue={checked.map((index) => values[index] ?? "")}>
+                {items}
+              </CheckboxItemGroup>
+            );
+          })}
+          <CheckboxItemGroup label={`${scheme} add-ons`} orientation="horizontal" defaultValue={["router"]}>
+            <CheckboxItem value="router">
+              <RowTitle>{`${scheme} router`}</RowTitle>
+            </CheckboxItem>
+            <CheckboxItem value="sim">
+              <RowTitle>{`${scheme} SIM card`}</RowTitle>
+            </CheckboxItem>
+          </CheckboxItemGroup>
+          <CheckboxItemGroup label={`${scheme} terms`} defaultValue={["terms"]}>
+            <CheckboxItem value="terms">
+              <RowTitle>{`${scheme} terms`}</RowTitle>
+            </CheckboxItem>
+          </CheckboxItemGroup>
+          <RadioItemGroup label={`${scheme} delivery`}>
+            <RadioItem value="post">
+              <RowTitle>{`${scheme} post`}</RowTitle>
             </RadioItem>
           </RadioItemGroup>
-        </ThemeScope>
-        <div data-theme="dark">
-          <ThemeScope theme={fkasExternal}>
-            <RadioItemGroup label="Dark plan" defaultValue="dark-spot">
-              <RadioItem value="dark-fixed">
-                <RowTitle>Dark fixed</RowTitle>
-              </RadioItem>
-              <RadioItem value="dark-spot">
-                <RowTitle>Dark spot</RowTitle>
-              </RadioItem>
-            </RadioItemGroup>
-          </ThemeScope>
-        </div>
-      </>
-    );
+          {[true, false].map((checked) => (
+            <Field.Root key={String(checked)}>
+              <SelectionItem.Shell
+                dataSlot="checkbox-item"
+                control={<Checkbox.Root defaultChecked={checked} />}>
+                <RowTitle>{`${scheme} standalone ${checked ? "checked" : "unchecked"}`}</RowTitle>
+              </SelectionItem.Shell>
+              <Field.Description>We send the contract by email.</Field.Description>
+            </Field.Root>
+          ))}
+        </>
+      );
+    }
 
-    for (const name of ["Light spot", "Dark spot"]) {
+    const SIDES = ["top", "right", "bottom", "left"] as const;
+
+    /** The alpha of a colour Chromium computed. */
+    function alphaOf(serialized: string): number {
+      return getOrThrow(CssColor.parse(serialized)).alpha;
+    }
+
+    /** The row's shell, settled, after checking its control's state matches the fixture. */
+    async function settledShell(name: string, control: "radio" | "checkbox", checked: boolean) {
       const shell = shellFrom(name);
       await settled(shell);
-      // Oracle: the theme's own `--border`, read where the row sits. It must differ from
-      // `--primary`, or a primary edge would pass as the resting one.
-      const border = cssVarColor(shell, "--border");
-      expect(border, name).not.toBe(cssVarColor(shell, "--primary"));
-      // The checked non-first row still pulls its top edge over the row above's, so the
-      // shared edge is the checked row's own colour.
-      expect(getComputedStyle(shell).marginTop, name).toBe("-1px");
-      expect(getComputedStyle(shell).borderTopColor, name).toBe(border);
-      expect(getComputedStyle(shell).borderLeftColor, name).toBe(border);
+      expect(roleNamed(control, name).getAttribute("aria-checked"), name).toBe(String(checked));
+      return getComputedStyle(shell);
     }
-    // Light and dark resolve different borders, so the dark row read its own scheme.
-    expect(cssVarColor(shellFrom("Dark spot"), "--border")).not.toBe(
-      cssVarColor(shellFrom("Light spot"), "--border")
-    );
+
+    it("divides external stacked rows in the border colour and draws no outer edge, in light and dark", async () => {
+      renderThemed(
+        <>
+          <ThemeScope theme={fkasExternal}>
+            <EdgeRows scheme="Light" />
+          </ThemeScope>
+          <div data-theme="dark">
+            <ThemeScope theme={fkasExternal}>
+              <EdgeRows scheme="Dark" />
+            </ThemeScope>
+          </div>
+        </>
+      );
+
+      for (const scheme of ["Light", "Dark"]) {
+        // Oracle: the theme's own `--border`, read where the rows sit. It is opaque, so a
+        // transparent divider fails, and so does an outer edge drawn in it.
+        const border = cssVarColor(shellFrom(`${scheme} first 1`), "--border");
+        expect(alphaOf(border), scheme).toBe(1);
+        for (const { name, control, checked, first, last } of stackRows(scheme)) {
+          const style = await settledShell(name, control, checked);
+          expect(alphaOf(style.borderLeftColor), name).toBe(0);
+          expect(alphaOf(style.borderRightColor), name).toBe(0);
+          if (first) {
+            expect(alphaOf(style.borderTopColor), name).toBe(0);
+          }
+          if (last) {
+            expect(alphaOf(style.borderBottomColor), name).toBe(0);
+          } else {
+            expect(style.borderBottomColor, name).toBe(border);
+          }
+          if (!first && checked) {
+            // A checked row pulls up over the row above's bottom and draws that join itself.
+            expect(style.borderTopColor, name).toBe(border);
+            expect(style.borderTopWidth, name).toBe("1px");
+            expect(style.marginTop, name).toBe("-1px");
+          } else if (!first) {
+            expect(style.borderTopWidth, name).toBe("0px");
+          }
+          // The 1px geometry stays: the joins and the insets.
+          expect(style.borderLeftWidth, name).toBe("1px");
+        }
+        for (const { row, control, checked } of LONE_ROWS) {
+          const name = `${scheme} ${row}`;
+          const style = await settledShell(name, control, checked);
+          for (const side of SIDES) {
+            expect(alphaOf(style.getPropertyValue(`border-${side}-color`)), `${name} ${side}`).toBe(0);
+          }
+          expect(style.borderTopWidth, name).toBe("1px");
+          expect(style.marginTop, name).toBe("0px");
+        }
+      }
+      // The fixture rendered both schemes: light and dark resolve different borders.
+      expect(cssVarColor(shellFrom("Dark first 1"), "--border")).not.toBe(
+        cssVarColor(shellFrom("Light first 1"), "--border")
+      );
+    });
+
+    it("keeps the border-role edge and divider and the primary box around checked internal rows", async () => {
+      renderThemed(
+        <ThemeScope theme={fkasPrivate}>
+          <EdgeRows scheme="Internal" />
+        </ThemeScope>
+      );
+
+      const rows = [
+        ...stackRows("Internal"),
+        ...LONE_ROWS.map(({ row, control, checked }) => ({ name: `Internal ${row}`, control, checked })),
+      ];
+      for (const { name, control, checked } of rows) {
+        const style = await settledShell(name, control, checked);
+        // Oracle: the theme's own `--border` at rest and `--primary` when checked, read where
+        // the row sits, on every side the row draws.
+        const edge = cssVarColor(shellFrom(name), checked ? "--primary" : "--border");
+        for (const side of SIDES) {
+          if (style.getPropertyValue(`border-${side}-width`) !== "0px") {
+            expect(style.getPropertyValue(`border-${side}-color`), `${name} ${side}`).toBe(edge);
+          }
+        }
+      }
+      // A checked row in the middle of a stack is boxed on all four sides.
+      const middle = await settledShell("Internal middle 2", "radio", true);
+      const primary = cssVarColor(shellFrom("Internal middle 2"), "--primary");
+      expect([
+        middle.borderTopColor,
+        middle.borderRightColor,
+        middle.borderBottomColor,
+        middle.borderLeftColor,
+      ]).toEqual([primary, primary, primary, primary]);
+      expect(middle.borderTopWidth).toBe("1px");
+    });
   });
 
   it("fills rows with the theme's card, like CheckboxCard, where the card and page background differ", async () => {

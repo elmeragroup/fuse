@@ -42,9 +42,9 @@ const SLUGS = [
 ] as const;
 
 // Counts the derived `secondary-hover` role, the `radius-step` rung spacing, the
-// `radius-field` field corner, the two outline Button roles, the checked selection
-// row border and the selection row title weight.
-const TOKEN_COUNT = 84;
+// `radius-field` field corner, the two outline Button roles, the resting and checked
+// selection row borders and dividers and the selection row title weight.
+const TOKEN_COUNT = 87;
 
 // xs, sm, md, lg, xl and the unused popover rung.
 const RUNG_COUNT = 6;
@@ -204,6 +204,55 @@ describe("resolveThemeCatalog", () => {
       css: "oklch(1 0 0 / 40%)",
       reference: undefined,
       value: { r: 1, g: 1, b: 1, alpha: 0.4 },
+    });
+  });
+
+  it("resolves the external selection row edge to a zero-alpha colour and its divider to the border, in both schemes", () => {
+    // EXTERNAL_VARIANT_LAYER writes the edge as `oklch(0 0 0 / 0)` and aliases the checked edge
+    // to it, so design tools get a transparent colour, not a `transparent` keyword they cannot read.
+    for (const scheme of ["light", "dark"] as const) {
+      const tokens = theme("external-tkas-company").schemes[scheme].tokens;
+      expect(tokens["selection-border"], scheme).toMatchObject({
+        css: "oklch(0 0 0 / 0)",
+        reference: undefined,
+        value: { alpha: 0 },
+      });
+      expect(tokens["selection-checked-border"], scheme).toMatchObject({
+        css: "var(--selection-border)",
+        reference: { space: "token", name: "selection-border" },
+        value: { alpha: 0 },
+      });
+    }
+    // The divider between stacked external rows is the scheme's own opaque border: fkas
+    // oklch(0.898 0.0026 48.72) in light and the shared dark border oklch(0.3956915 0.0031178
+    // 164.9356) in dark.
+    const fkas = theme("external-fkas-private").schemes;
+    for (const [scheme, border] of [
+      ["light", "oklch(0.898 0.0026 48.72)"],
+      ["dark", "oklch(0.3956915 0.0031178 164.9356)"],
+    ] as const) {
+      expect(fkas[scheme].tokens["selection-divider"], scheme).toMatchObject({
+        css: "var(--border)",
+        reference: { space: "token", name: "border" },
+        value: Oklch.toSrgb(getOrThrow(Oklch.parse(border))),
+      });
+      expect(fkas[scheme].tokens["selection-divider"].value.alpha, scheme).toBe(1);
+      expect(fkas[scheme].tokens["selection-checked-divider"], scheme).toMatchObject({
+        css: "var(--selection-divider)",
+        reference: { space: "token", name: "selection-divider" },
+      });
+      expect(fkas[scheme].tokens["selection-checked-divider"].value, scheme).toEqual(
+        fkas[scheme].tokens["selection-divider"].value
+      );
+    }
+    expect(fkas.light.tokens["selection-divider"].value).not.toEqual(
+      fkas.dark.tokens["selection-divider"].value
+    );
+    // Internal rows keep the border role, oklch(0.9219 0 0) in light.
+    expect(light("internal-fkas-private").tokens["selection-border"]).toMatchObject({
+      css: "var(--border)",
+      reference: { space: "token", name: "border" },
+      value: Oklch.toSrgb(getOrThrow(Oklch.parse("oklch(0.9219 0 0)"))),
     });
   });
 

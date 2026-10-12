@@ -245,10 +245,24 @@ export default function ThemingPage(): ReactElement {
         border casts.
       </p>
       <p>
-        A checked <code>RadioItem</code> or <code>CheckboxItem</code> row draws its border in{" "}
-        <code>--selection-checked-border</code>. Internal themes mark the checked row with{" "}
-        <code>var(--primary)</code>. External themes set it to <code>var(--border)</code>, so the row keeps
-        its resting border and the control alone shows the selection, as the external radio card does.
+        A <code>RadioItem</code> or <code>CheckboxItem</code> row draws its 1px edge in{" "}
+        <code>--selection-border</code>, and a checked row draws it in <code>--selection-checked-border</code>
+        . The line between the stacked rows of a vertical group is <code>--selection-divider</code>, and above
+        and below a checked row <code>--selection-checked-divider</code>. Internal themes draw the edge and
+        the divider in <code>var(--border)</code> and box the checked row in <code>var(--primary)</code>.
+        External themes draw no outer edge: <code>--selection-border</code> is a zero-alpha colour and{" "}
+        <code>--selection-checked-border</code> is <code>var(--selection-border)</code>, so the control alone
+        shows the selection, as the external radio card does. Stacked rows keep a grey separator: both
+        dividers are <code>var(--border)</code>, checked or not. The border keeps its width, so rows join and
+        inset as they do in internal themes. Without an outer edge, a row on a <code>card</code>-coloured
+        surface, such as inside a white <code>Card</code>, has no outline, and the checked row&apos;s{" "}
+        <code>bg-muted</code> tint barely shows on the row&apos;s card fill. The edge and the dividers are
+        theme roles of their own, so changing them leaves <code>--border</code>, and the cards, tables and{" "}
+        <code>CheckboxCard</code> it draws, as they are. To change the row edge or the dividers, override the
+        selection roles, or <code>--border</code>, on the element that carries the theme attributes, which is{" "}
+        <code>&lt;html&gt;</code> or a <code>ThemeScope</code>. The theme rules resolve the selection roles
+        there. On a plain wrapper a <code>--border</code> override reaches cards and <code>CheckboxCard</code>
+        , but the rows keep the edge and dividers the theme element resolved.
       </p>
       <p>
         The weight of a <code>RadioItem</code> or <code>CheckboxItem</code> row title is themed too. It, which

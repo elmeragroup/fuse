@@ -135,6 +135,9 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
     // The hairline every bare border draws on the page, such as a Card, Table or
     // DescriptionList edge. It is not a 1.4.11 control boundary. The floor is elma light's
     // measured 1.1994:1 rounded down; below it the line stops reading on a tinted brand page.
+    // Selection rows draw `--selection-border` and their dividers instead, which have no floor:
+    // the control inside carries the row's state at 3:1, external themes make the row edge
+    // transparent, and the divider between stacked rows is decorative.
     schemes: ["light", "dark"],
     matches: () => true,
     pairs: [["border", "background"]],
