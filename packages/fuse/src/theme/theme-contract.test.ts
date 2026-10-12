@@ -37,17 +37,20 @@ function fkasCompanyLight(): TokenLayer {
 
 /**
  * The light reset keys every external brand palette assigns itself. Composition derives the
- * secondary hover, the sidebar ring aliases the ring, and the external variant layer sets its
- * keys for every brand.
+ * secondary hover, the sidebar ring aliases the ring, the field radius aliases the radius, and
+ * the external variant layer sets its keys for every brand.
  */
 type BrandPaletteKey = Exclude<
   ExternalResetKey,
-  "secondary-hover" | "sidebar-ring" | keyof typeof EXTERNAL_VARIANT_LAYER
+  "secondary-hover" | "sidebar-ring" | "radius-field" | keyof typeof EXTERNAL_VARIANT_LAYER
 >;
 
 const BRAND_PALETTE_KEYS = EXTERNAL_RESET_KEYS.filter(
   (key): key is BrandPaletteKey =>
-    key !== "secondary-hover" && key !== "sidebar-ring" && !(key in EXTERNAL_VARIANT_LAYER)
+    key !== "secondary-hover" &&
+    key !== "sidebar-ring" &&
+    key !== "radius-field" &&
+    !(key in EXTERNAL_VARIANT_LAYER)
 );
 
 /** One declaration of the rule whose first selector is `selector`. */
@@ -264,6 +267,12 @@ describe("theme contract", () => {
     expect(DEFAULTS["sidebar-ring"]).toBe("var(--ring)");
     expect(supplied.has("ring")).toBe(true);
     supplied.add("sidebar-ring");
+    // The field radius aliases the radius, a palette key, so a light rule that resets the
+    // radius restates the alias too, and an external field rounds with its brand's radius.
+    expect(DEFAULTS["radius-field"]).toBe("var(--radius)");
+    expect(supplied.has("radius")).toBe(true);
+    expect(supplied.has("radius-field")).toBe(false);
+    supplied.add("radius-field");
 
     expect([...supplied].toSorted((left, right) => left.localeCompare(right))).toEqual(
       [...EXTERNAL_RESET_KEYS].toSorted((left, right) => left.localeCompare(right))
@@ -497,9 +506,8 @@ describe("derived roles", () => {
 describe("external variant layer roles", () => {
   const rules = parseStyleRules(generateThemesCss());
 
-  it("sets the radius step, the 4px field corner, the reference's 2px text-color outline, the transparent selection row edge, checked or not, the grey divider between stacked rows and the medium selection row title once for the external variant", () => {
+  it("sets the radius step, the reference's 2px text-color outline, the transparent selection row edge, checked or not, the grey divider between stacked rows and the medium selection row title once for the external variant", () => {
     const external = {
-      "radius-field": "0.25rem",
       "radius-step": "2px",
       "button-outline": "var(--foreground)",
       "button-outline-width": "2px",
@@ -519,6 +527,12 @@ describe("external variant layer roles", () => {
       for (const [key, value] of Object.entries(external)) {
         expect(declaration(rules, selector, key), `${selector} ${key}`).toBe(value);
       }
+    }
+    // Every external rule rounds fields with its own --radius, the corner of a card or a
+    // selection row, rather than a field corner of the variant's.
+    for (const brand of ["fkas", "tkas", "guen", "fkab", "fkse", "elma", "ngfi"]) {
+      const selector = `[data-theme-variant="external"][data-theme-brand="${brand}"]`;
+      expect(declaration(rules, selector, "radius-field"), selector).toBe("var(--radius)");
     }
     // Internal themes and the root keep the 1px border hairline, the border-coloured selection
     // row edge, the primary checked-row edge, dividers that follow those edges, the regular

@@ -3,7 +3,10 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { render } from "../../../test/browser-render";
+import { fkasExternal } from "../../../test/theme-fixtures";
 import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
+import { ThemeScope } from "../../theme/theme-scope";
 import { Button } from "../button/button";
 import { Input } from "../input/input";
 import { ButtonGroup } from "./index";
@@ -12,10 +15,10 @@ import { ButtonGroup } from "./index";
 const radiusToken = { "--radius": "8px" };
 
 /**
- * The external corners without a theme: a 2px step spreads `rounded-md` to 10px under a 12px
- * `--radius`, and fields round with a 4px `--radius-field` of their own.
+ * A host's own field corner under the external step: fields round with a 4px `--radius-field`,
+ * inside the group's 10px `rounded-md`.
  */
-const externalCorners = { "--radius": "12px", "--radius-step": "2px", "--radius-field": "4px" };
+const hostFieldCorner = { "--radius-field": "4px" };
 
 function groupNamed(name: string): HTMLElement {
   const element = page.getByRole("group", { name, exact: true }).element();
@@ -200,30 +203,41 @@ describe("ButtonGroup", () => {
     expect(last.borderTop).toBe("0px");
   });
 
-  it.each([
-    ["horizontal", "Search", "topLeft", "bottomLeft", "topRight"],
-    ["vertical", "Stacked search", "topLeft", "topRight", "bottomLeft"],
-  ] as const)(
-    "rounds a leading field like the trailing button when the group is %s",
-    (orientation, name, fieldCornerA, fieldCornerB, buttonCorner) => {
-      renderThemed(
-        <ButtonGroup.Root orientation={orientation} aria-label={name} style={externalCorners}>
-          <Input aria-label={`${name} query`} />
-          <Button>{`${name} go`}</Button>
-        </ButtonGroup.Root>
-      );
-      const fieldBox = page.getByRole("textbox", { name: `${name} query` }).element();
-      if (!(fieldBox instanceof HTMLElement)) {
-        throw new Error("expected the grouped field");
+  // fkas external: a 12px --radius and a 2px step, so rounded-md is 10px. A field alone rounds
+  // with the brand's 12px, or with a host's own --radius-field; the group ends override both.
+  describe.each([
+    ["the brand field corner", undefined, 12],
+    ["a host field corner", hostFieldCorner, 4],
+  ] as const)("over %s", (_, style, aloneCorner) => {
+    it.each([
+      ["horizontal", "Search", "topLeft", "bottomLeft", "topRight"],
+      ["vertical", "Stacked search", "topLeft", "topRight", "bottomLeft"],
+    ] as const)(
+      "rounds a leading field like the trailing button when the group is %s",
+      (orientation, name, fieldCornerA, fieldCornerB, buttonCorner) => {
+        render(
+          <ThemeScope theme={fkasExternal} style={style}>
+            <Input aria-label={`${name} alone`} />
+            <ButtonGroup.Root orientation={orientation} aria-label={name}>
+              <Input aria-label={`${name} query`} />
+              <Button>{`${name} go`}</Button>
+            </ButtonGroup.Root>
+          </ThemeScope>
+        );
+        const fieldBox = page.getByRole("textbox", { name: `${name} query` }).element();
+        const aloneBox = page.getByRole("textbox", { name: `${name} alone` }).element();
+        if (!(fieldBox instanceof HTMLElement) || !(aloneBox instanceof HTMLElement)) {
+          throw new Error("expected the grouped and the lone field");
+        }
+        expect(radius(aloneBox).topLeft).toBe(aloneCorner);
+        const field = radius(fieldBox);
+        const button = radius(buttonNamed(`${name} go`));
+        expect(field[fieldCornerA]).toBe(10);
+        expect(field[fieldCornerB]).toBe(10);
+        expect(button[buttonCorner]).toBe(10);
       }
-      const field = radius(fieldBox);
-      const button = radius(buttonNamed(`${name} go`));
-      // rounded-md: 12px - 2px. The field alone would round at its own 4px.
-      expect(field[fieldCornerA]).toBe(10);
-      expect(field[fieldCornerB]).toBe(10);
-      expect(button[buttonCorner]).toBe(10);
-    }
-  );
+    );
+  });
 
   it("spaces nested button-groups with gap-2", () => {
     renderThemed(

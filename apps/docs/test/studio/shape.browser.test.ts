@@ -264,11 +264,11 @@ describe("the studio's Shape page", () => {
       await expect
         .poll(() => cornerValues(page, "Radius rungs · Internal"))
         .toMatchObject({ lg: "20px", button: "20px", field: "20px" });
-      // External elma keeps its own 0.375rem button and 0.25rem field (tokens/external-palettes.ts
-      // and the external variant layer), whatever the radius.
+      // External elma keeps its own 0.375rem button (tokens/external-palettes.ts) whatever the
+      // radius, and its field aliases the radius in every variant (tokens/defaults.ts).
       await expect
         .poll(() => cornerValues(page, "Radius rungs · External"))
-        .toMatchObject({ lg: "20px", button: "6px", field: "4px" });
+        .toMatchObject({ lg: "20px", button: "6px", field: "20px" });
       expect(errors).toEqual([]);
     } finally {
       await context.close();

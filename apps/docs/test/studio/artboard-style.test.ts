@@ -64,7 +64,7 @@ describe("artboardStyle", () => {
 /**
  * The radius declarations of each variant, as the theme sources write them: the internal
  * variant aliases both role corners to `--radius` (tokens/defaults.ts), and external elma
- * declares its own literals (tokens/external-palettes.ts and the external variant layer).
+ * declares its own button literal (tokens/external-palettes.ts) and keeps the field alias.
  */
 const INTERNAL_RADII = {
   radius: "0.375rem",
@@ -75,7 +75,7 @@ const INTERNAL_RADII = {
 const EXTERNAL_RADII = {
   radius: "0.375rem",
   "radius-button": "0.375rem",
-  "radius-field": "0.25rem",
+  "radius-field": "var(--radius)",
   "radius-step": "2px",
 } as const;
 
@@ -87,9 +87,12 @@ describe("pinnedArtboardStyle", () => {
   } as const;
 
   it.each(["internal", "external"] as const)(
-    "keeps an external pin's own role corners under a %s base theme's --radius edit",
+    "keeps an external pin's own button corner and restates its field alias under a %s base theme's --radius edit",
     (base) => {
-      expect(pinnedArtboardStyle(EDITS_OVER[base], EXTERNAL_RADII)).toEqual({ "--radius": "20px" });
+      expect(pinnedArtboardStyle(EDITS_OVER[base], EXTERNAL_RADII)).toEqual({
+        "--radius": "20px",
+        "--radius-field": "var(--radius)",
+      });
     }
   );
 

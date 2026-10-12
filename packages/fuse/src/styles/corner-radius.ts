@@ -15,10 +15,12 @@ import { cn } from "./cn";
 // 1000 * step, --radius-field, --radius + 1000 * step)`. Its bounds meet at `--radius` at a
 // 0px step, so internal fields keep reading `--radius` on the box itself and follow a
 // `--radius` override on a plain wrapper. At a 2px step they lie 4000px apart, and the theme's
-// `--radius-field` applies. The read of `--radius-field` falls back to `--radius` for a host
-// that sets the step but not the role. The property is unregistered, so the box substitutes
-// its own `var()` reads and the parts inside inherit the box's corner. The box publishes it
-// less its inset as the inner corner of the parts inside (`inner-corner/field.ts`).
+// `--radius-field` applies. Every theme aliases it to `var(--radius)`, resolved on the theme
+// element as `--radius-button` is, so external fields round with the brand radius and a host
+// that sets the role still overrides it. The read of `--radius-field` falls back to `--radius`
+// for a host that sets the step but not the role. The property is unregistered, so the box
+// substitutes its own `var()` reads and the parts inside inherit the box's corner. The box
+// publishes it less its inset as the inner corner of the parts inside (`inner-corner/field.ts`).
 //
 // Inner corners are concentric: an inner part rounds with its shell's outer corner less the
 // inset, `max(0px, outer - inset)`, where the inset is the shell's padding plus border on the
