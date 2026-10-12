@@ -41,9 +41,6 @@
 - Ask design whether external themes keep the reference's 4px corner on the `Checkbox` and
   the standalone `Calendar` (`styles/corner-radius.ts`), or round them from the brand radius.
   Internal themes round them with `--radius`.
-- Ask design whether the external `rounded-*` scale, where `rounded-md` sits 2px inside the
-  brand radius, should follow the Central design system's radius variables. Fields round with
-  the brand radius, as design confirmed for #280.
 - Ask design about the remaining Central Text input deltas at comfortable density: 8px
   inline padding (Fuse 14px), 16px input text (Fuse 18px), a darker border on hover, grey
   disabled fill and text instead of the 50% dim, and an error icon inside the box.

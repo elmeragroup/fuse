@@ -7,7 +7,8 @@ export type ExternalBrandCode = Exclude<BrandCode, "fkab">;
 /**
  * The roles every external theme shares, whatever its brand. External rounding spreads the
  * `rounded-*` scale in 2px steps around the brand radius, so `rounded-md` sits 2px inside
- * `--radius` and `rounded-xl` 4px outside it. Field boxes round with the brand radius, the
+ * `--radius` and `rounded-xl` 4px outside it. Design keeps this derived scale rather than
+ * the Central design system's radius variables. Field boxes round with the brand radius, the
  * corner of a card or selection row: the layer leaves `--radius-field` at its `var(--radius)`
  * default, which each theme rule resolves against its own `--radius`. The outline Button
  * draws the customer-facing reference's outline, a 2px ring in the text color, which every
