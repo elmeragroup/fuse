@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { MouseEvent as ReactMouseEvent } from "react";
+import type { MouseEvent as ReactMouseEvent, ReactElement } from "react";
 
 import { Checkbox } from "@base-ui/react/checkbox";
 import type { BaseUIEvent } from "@base-ui/react/types";
@@ -1044,40 +1044,60 @@ describe("SelectionItem", () => {
       );
     });
 
-    it("shows the disabled row for a custom control that is natively disabled or aria-disabled", async () => {
+    it("shows the disabled row and its cursor for a custom control that is natively, aria- or data-disabled", async () => {
+      /** A custom control's row, with a SubSection whose passive parts toggle it. */
+      const row = (name: string, control: ReactElement) => (
+        <Field.Root>
+          <SelectionItem.Shell dataSlot="checkbox-item" control={control} isSubSectionSelectable>
+            <RowTitle>{name}</RowTitle>
+            <SelectionItem.SubSection>{`${name} details`}</SelectionItem.SubSection>
+          </SelectionItem.Shell>
+        </Field.Root>
+      );
       renderThemed(
         <>
-          <Field.Root>
-            <SelectionItem.Shell dataSlot="checkbox-item" control={<input type="checkbox" disabled />}>
-              <RowTitle>Native control</RowTitle>
-            </SelectionItem.Shell>
-          </Field.Root>
-          <Field.Root>
-            <SelectionItem.Shell
-              dataSlot="checkbox-item"
-              control={<span role="checkbox" aria-checked="false" aria-disabled="true" tabIndex={0} />}>
-              <RowTitle>Aria control</RowTitle>
-            </SelectionItem.Shell>
-          </Field.Root>
-          <Field.Root>
-            <SelectionItem.Shell dataSlot="checkbox-item" control={<input type="checkbox" />}>
-              <RowTitle>Enabled control</RowTitle>
-            </SelectionItem.Shell>
-          </Field.Root>
+          {row("Native control", <input type="checkbox" disabled />)}
+          {row(
+            "Aria control",
+            <span role="checkbox" aria-checked="false" aria-disabled="true" tabIndex={0} />
+          )}
+          {row("Data control", <span role="checkbox" aria-checked="false" data-disabled="" tabIndex={0} />)}
+          {row("Enabled control", <input type="checkbox" />)}
+          {row(
+            "Data false control",
+            <span role="checkbox" aria-checked="false" data-disabled="false" tabIndex={0} />
+          )}
         </>
       );
 
-      for (const name of ["Native control", "Aria control"]) {
+      for (const [name, disabled] of [
+        ["Native control", true],
+        ["Aria control", true],
+        ["Data control", true],
+        ["Enabled control", false],
+        ["Data false control", false],
+      ] as const) {
         const shell = shellFrom(name);
         await settled(shell);
-        // Oracle: the internal theme's own --muted, read where the row sits.
-        expect(getComputedStyle(shell).backgroundColor, name).toBe(cssVarColor(shell, "--muted"));
-        expect(getComputedStyle(shell).backgroundImage, name).toMatch(/^repeating-linear-gradient\(45deg, /);
-        expect(getComputedStyle(shell).cursor, name).toBe("not-allowed");
+        const style = getComputedStyle(shell);
+        // Oracle: the internal theme's own --muted for a disabled row and --card otherwise.
+        expect(style.backgroundColor, name).toBe(cssVarColor(shell, disabled ? "--muted" : "--card"));
+        if (disabled) {
+          expect(style.backgroundImage, name).toMatch(/^repeating-linear-gradient\(45deg, /);
+        } else {
+          expect(style.backgroundImage, name).toBe("none");
+        }
+        // The label's `::before` is the row's click target, and the band takes its own clicks
+        // here, so these two show the cursor a pointer meets.
+        // DOM audit: the row label has no role; it wraps the title.
+        const label = headingNamed(name).closest("label");
+        if (!(label instanceof HTMLElement)) {
+          throw new Error(`expected the label around ${name}`);
+        }
+        const cursor = disabled ? "not-allowed" : "pointer";
+        expect(getComputedStyle(label).cursor, `${name} label`).toBe(cursor);
+        expect(getComputedStyle(textNamed(`${name} details`)).cursor, `${name} band`).toBe(cursor);
       }
-      const enabled = shellFrom("Enabled control");
-      expect(getComputedStyle(enabled).backgroundColor).toBe(cssVarColor(enabled, "--card"));
-      expect(getComputedStyle(enabled).backgroundImage).toBe("none");
     });
 
     it("fills a disabled row with the role over a background class", async () => {

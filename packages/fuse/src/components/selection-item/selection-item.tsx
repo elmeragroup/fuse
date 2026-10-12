@@ -39,7 +39,8 @@ const connectedStackClass = cn(
 // whole box. Child combinators keep a selection row nested in a SubSection from counting.
 // Tailwind reads class names from the source text, so each selector is written out in full.
 const labelClass = cn(
-  "contents cursor-pointer before:absolute before:inset-0 before:-z-1 has-disabled:cursor-not-allowed"
+  "contents cursor-pointer before:absolute before:inset-0 before:-z-1",
+  "[[data-selection-item]:is([data-disabled]:not([data-disabled=false]),:has(>label>[data-slot=selection-item-control]_:is([data-disabled]:not([data-disabled=false]),:disabled,[aria-disabled=true])))>&]:cursor-not-allowed"
 );
 const labelRowTargetClass = cn(
   "[[data-selection-item]:has(>[data-slot=selection-item-sub-sections]>div>[data-slot=item-footer]:not([data-mode=hidden]))>&]:before:row-[1/2]"
@@ -49,9 +50,10 @@ const subSectionBandClass = cn(
   "has-[>div>[data-slot=item-footer]:not([data-mode=hidden])]:pointer-events-auto"
 );
 // With `isSubSectionSelectable`, the band shows the label row's cursor, and the not-allowed one
-// while the control is disabled.
+// while the row is disabled, by the same predicate as the disabled row below.
 const selectableBandClass = cn(
-  "cursor-pointer [[data-selection-item]:has(>label>[data-slot=selection-item-control]_:disabled)>&]:cursor-not-allowed"
+  "cursor-pointer",
+  "[[data-selection-item]:is([data-disabled]:not([data-disabled=false]),:has(>label>[data-slot=selection-item-control]_:is([data-disabled]:not([data-disabled=false]),:disabled,[aria-disabled=true])))>&]:cursor-not-allowed"
 );
 
 // The row's first line, which the control and Actions centre on: one line of the label text
@@ -66,17 +68,19 @@ const firstLineClass = cn(
 // The disabled row. A shell is disabled when its own `isDisabled` or a disabled group's Field
 // root marks it `data-disabled`, or when its own control is disabled: an element in this row's
 // control slot, not one nested in a SubSection, that carries `data-disabled`, matches the
-// `:disabled` pseudo-class or is `aria-disabled="true"`. The `:is()` takes the specificity of
-// its `:has()` arm whichever arm matches, and that arm's `label` type selector lifts it to
-// (0,3,1) over the checked row's `bg-muted` rule at (0,3,0), so the `label` must stay. A
+// `:disabled` pseudo-class or is `aria-disabled="true"`, the `disabled-state` predicate of
+// fuse.css. The label and the selectable band key their `not-allowed` cursor on the same
+// predicate. The `:is()` takes the specificity of its `:has()` arm whichever arm matches, and
+// that arm's `label` type selector and `:not()` lift it to (0,4,1) over the checked row's
+// `bg-muted` rule at (0,3,0); keep the arm at least that heavy. A
 // disabled row fills with the disabled background role, checked or not, and that fill also
 // wins over a background class in `className`. The 45° hatch alternates 8px transparent bands
 // with 8px of the hatch role: a black alpha in internal themes, transparent in external ones.
 // Tailwind reads class names from the source text, so each selector is written out in full.
 const disabledShellClass = cn(
-  "[&:is([data-disabled],:has(>label>[data-slot=selection-item-control]_:is([data-disabled],:disabled,[aria-disabled=true])))]:cursor-not-allowed",
-  "[&:is([data-disabled],:has(>label>[data-slot=selection-item-control]_:is([data-disabled],:disabled,[aria-disabled=true])))]:bg-selection-disabled-background",
-  "[&:is([data-disabled],:has(>label>[data-slot=selection-item-control]_:is([data-disabled],:disabled,[aria-disabled=true])))]:bg-[repeating-linear-gradient(45deg,transparent,transparent_8px,--theme(--color-selection-disabled-hatch)_8px,--theme(--color-selection-disabled-hatch)_16px)]"
+  "[&:is([data-disabled]:not([data-disabled=false]),:has(>label>[data-slot=selection-item-control]_:is([data-disabled]:not([data-disabled=false]),:disabled,[aria-disabled=true])))]:cursor-not-allowed",
+  "[&:is([data-disabled]:not([data-disabled=false]),:has(>label>[data-slot=selection-item-control]_:is([data-disabled]:not([data-disabled=false]),:disabled,[aria-disabled=true])))]:bg-selection-disabled-background",
+  "[&:is([data-disabled]:not([data-disabled=false]),:has(>label>[data-slot=selection-item-control]_:is([data-disabled]:not([data-disabled=false]),:disabled,[aria-disabled=true])))]:bg-[repeating-linear-gradient(45deg,transparent,transparent_8px,--theme(--color-selection-disabled-hatch)_8px,--theme(--color-selection-disabled-hatch)_16px)]"
 );
 
 /**
@@ -411,6 +415,8 @@ export function SelectionItemShell({
       {...(isSubSectionSelectable
         ? mergeProps<"div">({ onClick: selectFromSubSection }, { onClick: props.onClick })
         : null)}
+      // Stamped directly: Field.Item's `disabled` prop would disable the control through
+      // FieldItemContext.
       {...(isDisabled ? { "data-disabled": "" } : null)}
       data-slot={dataSlot}
       data-selection-item=""

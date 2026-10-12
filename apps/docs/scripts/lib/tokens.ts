@@ -158,13 +158,20 @@ export function extractTokens(input: TokenScanInput): readonly TokenRef[] {
   const found = new Set<string>();
   const colorTokens = new Set(input.colors.values());
 
+  // A theme colour read by name, such as `--theme(--color-selection-disabled-hatch)` in an
+  // arbitrary value, is the role it maps to, the same hop a colour utility takes.
+  const record = (token: string): void => {
+    const utility = token.startsWith("--color-") ? token.slice("--color-".length) : undefined;
+    found.add((utility === undefined ? undefined : input.colors.get(utility)) ?? token);
+  };
+
   const scanForVars = (text: string): void => {
     const varPattern = /var\(\s*(--[a-z0-9-]+)/gi;
     let match = varPattern.exec(text);
     while (match !== null) {
       const token = match[1];
       if (token !== undefined) {
-        found.add(token);
+        record(token);
       }
       match = varPattern.exec(text);
     }
@@ -176,7 +183,7 @@ export function extractTokens(input: TokenScanInput): readonly TokenRef[] {
     while (shorthand !== null) {
       const token = shorthand[1];
       if (token !== undefined) {
-        found.add(token);
+        record(token);
       }
       shorthand = shorthandPattern.exec(text);
     }
