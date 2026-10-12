@@ -959,7 +959,7 @@ describe("studio token editing", () => {
       const retry = page
         .getByRole("region", { name: "Notifications", exact: true })
         .getByRole("button", { name: "Retry", exact: true });
-      expect(await background(saveButton(page, LIGHT_BOARD))).toBe(RED);
+      await expect.poll(() => background(saveButton(page, LIGHT_BOARD))).toBe(RED);
       const exportButton = page.getByRole("banner").getByRole("button", { name: "Export", exact: true });
       expect(await exportButton.isDisabled()).toBe(true);
 
