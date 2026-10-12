@@ -4,7 +4,6 @@ import {
   ariaInvalidFocusRingClass,
   dataInvalidFocusRingClass,
   dataWithinInvalidFocusRingClass,
-  disabledHatch,
   iconCrossfadeHidden,
   iconCrossfadeShown,
   iconCrossfadeTransition,
@@ -52,11 +51,8 @@ describe("focus-ring constants", () => {
 
 /* oxlint-enable elmera/no-local-focus-ring */
 
-describe("hatch and icon-crossfade constants", () => {
-  it("pins the hatch as one token and the three icon-crossfade faces", () => {
-    expect(disabledHatch).toBe(
-      "bg-[repeating-linear-gradient(45deg,transparent,transparent_8px,rgb(0_0_0/0.02)_8px,rgb(0_0_0/0.02)_16px)]"
-    );
+describe("icon-crossfade constants", () => {
+  it("pins the three icon-crossfade faces", () => {
     expect(iconCrossfadeTransition).toBe(
       "transition-[opacity,filter,scale] duration-300 ease-[cubic-bezier(0.2,0,0,1)]"
     );

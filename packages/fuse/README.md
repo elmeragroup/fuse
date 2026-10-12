@@ -69,6 +69,15 @@ A `RadioItem` or `CheckboxItem` row draws its edge in `--selection-border`, and 
 }
 ```
 
+A disabled `RadioItem` or `CheckboxItem` row, disabled itself or through its group, fills with `--selection-disabled-background` under a 45° hatch striped in `--selection-disabled-hatch`, and its title, description and actions dim to 50% beside the control's own 50%. Without them the row takes your `--muted` under black stripes at 2% alpha, as internal themes do. For the external themes' look, where a disabled row keeps the card fill of an enabled row and draws no stripes, set:
+
+```css
+:root {
+  --selection-disabled-background: var(--card);
+  --selection-disabled-hatch: oklch(0 0 0 / 0);
+}
+```
+
 `RadioItem` and `CheckboxItem` row titles read `--selection-title-weight`. Without it they are 400, as internal themes set them. For the external themes' medium title, which matches the group legend and `CheckboxCard` titles, set:
 
 ```css

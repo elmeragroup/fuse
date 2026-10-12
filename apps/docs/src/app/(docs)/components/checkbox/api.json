@@ -396,7 +396,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Forwards `disabled` to the inner Checkbox and applies disabled hatch styling on the shell.",
+          "description": "Forwards `disabled` to the inner Checkbox and shows the disabled row: the theme's `--selection-disabled-background` fill and `--selection-disabled-hatch` stripes (internal themes stripe a muted fill, external themes keep the card fill without stripes), the `not-allowed` cursor and the label row (title, description, actions) at 50% beside the 50% control. A SubSection keeps its colours. A disabled group shows its rows the same way.",
           "required": false
         },
         {

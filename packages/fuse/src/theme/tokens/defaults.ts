@@ -81,6 +81,13 @@ export const LAYER_DEFAULTS = {
   // border role here while the rows' outer edge goes transparent.
   "selection-divider": "var(--selection-border)",
   "selection-checked-divider": "var(--selection-checked-border)",
+  // The fill of a disabled SelectionItem row, which wins over the checked row's muted tint.
+  // Internal themes fill it with the muted role, and the external variant layer keeps the
+  // card fill of an enabled row.
+  "selection-disabled-background": "var(--muted)",
+  // The stripe colour of the disabled row's 45° hatch, a black alpha that reads the same in
+  // both schemes. The external variant layer makes it transparent, which drops the stripes.
+  "selection-disabled-hatch": "oklch(0 0 0 / 0.02)",
   sidebar: "oklch(0.9851 0 0)",
   "sidebar-foreground": NEUTRAL_950,
   "sidebar-accent": NEUTRAL_LINE,

@@ -9,7 +9,6 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import { cn } from "../../styles/cn";
 import { selectionItemShellClass } from "../../styles/inner-corner/item";
 import { labelTypeClass } from "../../styles/label-type";
-import { disabledHatch } from "../../styles/utils";
 import { FieldItem } from "../field/field";
 import { ItemGroup } from "../item/item";
 import { ItemActions, ItemFooter, ItemMedia, ItemTitle } from "../item/item-markup";
@@ -62,6 +61,27 @@ const selectableBandClass = cn(
 // test looks through the label only, so a row nested in a SubSection does not count.
 const firstLineClass = cn(
   "[--selection-first-line:var(--label-leading)] has-[>label_[data-slot=selection-item-title]]:[--selection-first-line:calc(var(--label-text)*var(--leading-snug))]"
+);
+
+// The disabled row. A shell is disabled when its own `isDisabled` or a disabled group's Field
+// root marks it `data-disabled`, or when its own control is disabled, a control in this row's
+// label rather than one nested in a SubSection. The `:is()` takes the specificity of its
+// `:has()` arm whichever arm matches, which outweighs the checked row's `bg-muted`, so a
+// disabled row fills with `--selection-disabled-background`, checked or not. The 45° hatch
+// alternates 8px transparent bands with 8px of `--selection-disabled-hatch`: a black alpha in
+// internal themes, transparent in external ones. Tailwind reads class names from the source
+// text, so each selector is written out in full.
+const disabledShellClass = cn(
+  "[&:is([data-disabled],:has(>label>[data-slot=selection-item-control]_[data-disabled]))]:cursor-not-allowed",
+  "[&:is([data-disabled],:has(>label>[data-slot=selection-item-control]_[data-disabled]))]:bg-selection-disabled-background",
+  "[&:is([data-disabled],:has(>label>[data-slot=selection-item-control]_[data-disabled]))]:bg-[repeating-linear-gradient(45deg,transparent,transparent_8px,--theme(--color-selection-disabled-hatch)_8px,--theme(--color-selection-disabled-hatch)_16px)]"
+);
+// A disabled row's label content (title, description, actions) takes the 50% of the shared
+// disabled look, as a plain `Radio` row's label does. The control dims itself, so the label row
+// cluster dims beside it rather than the whole label, and a SubSection, which may hold enabled
+// content, keeps its colours.
+const disabledLabelContentClass = cn(
+  "[[data-selection-item]:is([data-disabled],:has(>label>[data-slot=selection-item-control]_[data-disabled]))>label>&]:opacity-50"
 );
 
 /**
@@ -215,8 +235,13 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
    */
   controlPosition?: "start" | "end";
   /**
-   * Applies `cursor-not-allowed bg-muted` plus the shared `disabledHatch` overlay.
-   * Does not disable the control — the control or group owns that.
+   * Shows the disabled row: the `not-allowed` cursor, the theme's
+   * `--selection-disabled-background` fill under a 45° hatch striped in
+   * `--selection-disabled-hatch`, and the label row's content at 50%. Internal themes fill with
+   * `--muted` and black stripes at 2% alpha; external themes keep the card fill with no
+   * stripes. The control dims itself, and a SubSection keeps its colours. A row whose control
+   * is disabled, or whose group is, shows the same look without it. Does not disable the
+   * control — the control or group owns that.
    */
   isDisabled?: boolean;
   /**
@@ -288,6 +313,12 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
  * checked negative margin. Checked selectors are scoped to the private control slot so a checked
  * descendant in SubSection cannot repaint the shell.
  *
+ * A disabled shell, through `isDisabled`, a disabled group or its own disabled control, fills
+ * with the theme's `--selection-disabled-background` under a hatch of
+ * `--selection-disabled-hatch`, which outweighs the checked fill and leaves the checked border,
+ * joins and pull-up alone. The label row's content dims at 50% beside the control's own 50%,
+ * and a SubSection keeps its colours.
+ *
  * It publishes `--inner-corner`, its corner less its border and padding, for parts that round with
  * `rounded-inner`.
  */
@@ -329,7 +360,9 @@ export function SelectionItemShell({
     </ItemMedia>
   );
   const rowCluster = (
-    <div className={cn("flex min-w-0 items-start gap-2.5", rowCellClass)}>{rowChildren}</div>
+    <div className={cn("flex min-w-0 items-start gap-2.5", rowCellClass, disabledLabelContentClass)}>
+      {rowChildren}
+    </div>
   );
   const spacer = <span aria-hidden />;
   // `mergeProps` runs the consumer's `onClick` first; `preventBaseUIHandler()` there skips this.
@@ -382,6 +415,7 @@ export function SelectionItemShell({
       {...(isSubSectionSelectable
         ? mergeProps<"div">({ onClick: selectFromSubSection }, { onClick: props.onClick })
         : null)}
+      {...(isDisabled ? { "data-disabled": "" } : null)}
       data-slot={dataSlot}
       data-selection-item=""
       className={cn(
@@ -392,7 +426,7 @@ export function SelectionItemShell({
         "relative isolate box-border grid items-stretch gap-0 gap-x-2.5 border-selection-border bg-card py-0 transition-colors has-[[data-slot=selection-item-control]_[data-checked]]:border-selection-checked-border has-[[data-slot=selection-item-control]_[data-checked]]:bg-muted",
         controlAtEnd ? "grid-cols-[minmax(0,1fr)_auto]" : "grid-cols-[auto_minmax(0,1fr)]",
         connectedStack ? connectedStackClass : "rounded-lg",
-        isDisabled ? cn("cursor-not-allowed bg-muted", disabledHatch) : null,
+        disabledShellClass,
         className
       )}>
       <FieldPrimitive.Label className={cn(labelClass, isSubSectionSelectable ? null : labelRowTargetClass)}>

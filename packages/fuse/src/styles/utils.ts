@@ -148,14 +148,7 @@ export const dataWithinInvalidFocusRingClass = cn(
  */
 export const stateInvalidFocusRingVisibleClass = cn("ring-3 ring-error/20 ring-offset-1 ring-offset-error");
 
-/**
- * Hatch texture and icon-crossfade faces. `elmera/no-primitive-colors` allowlists
- * the hatch as a whole
- * token, so the string must not split, re-space, or prefix it.
- */
-export const disabledHatch = cn(
-  "bg-[repeating-linear-gradient(45deg,transparent,transparent_8px,rgb(0_0_0/0.02)_8px,rgb(0_0_0/0.02)_16px)]"
-);
+/** Icon-crossfade faces. */
 export const iconCrossfadeTransition = cn(
   "transition-[opacity,filter,scale] duration-300 ease-[cubic-bezier(0.2,0,0,1)]"
 );

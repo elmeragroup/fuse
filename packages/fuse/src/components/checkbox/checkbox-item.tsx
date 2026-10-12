@@ -12,7 +12,13 @@ import { SelectionItemShell } from "../selection-item/selection-item";
 import { Checkbox } from "./checkbox";
 
 type CheckboxItemBaseProps = {
-  /** Forwards `disabled` to the inner Checkbox and applies disabled hatch styling on the shell. */
+  /**
+   * Forwards `disabled` to the inner Checkbox and shows the disabled row: the theme's
+   * `--selection-disabled-background` fill and `--selection-disabled-hatch` stripes (internal
+   * themes stripe a muted fill, external themes keep the card fill without stripes), the
+   * `not-allowed` cursor and the label row (title, description, actions) at 50% beside the 50%
+   * control. A SubSection keeps its colours. A disabled group shows its rows the same way.
+   */
   isDisabled?: boolean;
   /** Forwards `readOnly` to the inner Checkbox. */
   isReadOnly?: boolean;

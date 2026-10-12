@@ -43,8 +43,9 @@ const SLUGS = [
 
 // Counts the derived `secondary-hover` role, the `radius-step` rung spacing, the
 // `radius-field` field corner, the two outline Button roles, the resting and checked
-// selection row borders and dividers and the selection row title weight.
-const TOKEN_COUNT = 87;
+// selection row borders and dividers, the disabled selection row fill and stripe and the
+// selection row title weight.
+const TOKEN_COUNT = 89;
 
 // xs, sm, md, lg, xl and the unused popover rung.
 const RUNG_COUNT = 6;
@@ -254,6 +255,43 @@ describe("resolveThemeCatalog", () => {
       reference: { space: "token", name: "border" },
       value: Oklch.toSrgb(getOrThrow(Oklch.parse("oklch(0.9219 0 0)"))),
     });
+  });
+
+  it("resolves the external disabled selection row to the card fill and zero-alpha stripes in both schemes", () => {
+    // EXTERNAL_VARIANT_LAYER aliases the fill to `--card` and writes the stripe as `oklch(0 0 0 / 0)`.
+    // tkas's card is white in light and #242625, oklch(0.2661671 0.0034366 164.8011), in dark.
+    const cards = {
+      light: "oklch(1 0 0)",
+      dark: "oklch(0.2661671 0.0034366 164.8011)",
+    } as const;
+    for (const scheme of ["light", "dark"] as const) {
+      const tokens = theme("external-tkas-private").schemes[scheme].tokens;
+      expect(tokens["selection-disabled-background"], scheme).toMatchObject({
+        css: "var(--card)",
+        reference: { space: "token", name: "card" },
+        value: Oklch.toSrgb(getOrThrow(Oklch.parse(cards[scheme]))),
+      });
+      expect(tokens["selection-disabled-hatch"], scheme).toMatchObject({
+        css: "oklch(0 0 0 / 0)",
+        reference: undefined,
+        value: { alpha: 0 },
+      });
+    }
+    // Internal rows keep the muted fill, oklch(0.97 0.0013 106.42) in light, and black stripes
+    // at 2% alpha in both schemes.
+    expect(light("internal-fkas-private").tokens["selection-disabled-background"]).toMatchObject({
+      css: "var(--muted)",
+      reference: { space: "token", name: "muted" },
+      value: Oklch.toSrgb(getOrThrow(Oklch.parse("oklch(0.97 0.0013 106.42)"))),
+    });
+    for (const scheme of ["light", "dark"] as const) {
+      expect(theme("internal-fkas-private").schemes[scheme].tokens["selection-disabled-hatch"]).toMatchObject(
+        {
+          css: "oklch(0 0 0 / 0.02)",
+          value: { r: 0, g: 0, b: 0, alpha: 0.02 },
+        }
+      );
+    }
   });
 
   it("reads dimensions as px and fonts as the first family", () => {

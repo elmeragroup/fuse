@@ -74,7 +74,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Applies `cursor-not-allowed bg-muted` plus the shared `disabledHatch` overlay. Does not disable the control — the control or group owns that.",
+          "description": "Shows the disabled row: the `not-allowed` cursor, the theme's `--selection-disabled-background` fill under a 45° hatch striped in `--selection-disabled-hatch`, and the label row's content at 50%. Internal themes fill with `--muted` and black stripes at 2% alpha; external themes keep the card fill with no stripes. The control dims itself, and a SubSection keeps its colours. A row whose control is disabled, or whose group is, shows the same look without it. Does not disable the control — the control or group owns that.",
           "required": false
         },
         {

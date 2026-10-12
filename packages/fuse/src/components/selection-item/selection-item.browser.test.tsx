@@ -17,6 +17,7 @@ import { assertHorizontalItemList, radiusToken } from "../../../test/assert-sele
 import { HOSTS, centreY, firstLineCentreY, hostCss } from "../../../test/first-line";
 import {
   cssVarColor,
+  effectiveOpacity,
   fkasExternal,
   fkasPrivate,
   headingNamed,
@@ -26,7 +27,6 @@ import {
   stampDensity,
   textNamed,
 } from "../../../test/themed-browser-render";
-import { disabledHatch } from "../../styles/utils";
 import { ThemeScope } from "../../theme";
 import { DENSITIES } from "../../theme/density";
 import { Alert } from "../alert/alert";
@@ -127,15 +127,6 @@ function tokenBackgroundColor(host: HTMLElement, utility: string): string {
   const color = getComputedStyle(probe).backgroundColor;
   probe.remove();
   return color;
-}
-
-function tokenBackgroundImage(host: HTMLElement, utility: string): string {
-  const probe = document.createElement("span");
-  probe.className = utility;
-  host.append(probe);
-  const image = getComputedStyle(probe).backgroundImage;
-  probe.remove();
-  return image;
 }
 
 /** Let the shell's color transition settle, so computed colors are the end state. */
@@ -834,7 +825,7 @@ describe("SelectionItem", () => {
     expect(startSpacer.getBoundingClientRect().left).toBeLessThan(startExtra.left);
   });
 
-  it("does not toggle a disabled control on row click and hatches the surface", () => {
+  it("does not toggle a disabled control on row click and shows the not-allowed cursor", () => {
     renderThemed(
       <Field.Root>
         <SelectionItem.Shell dataSlot="checkbox-item" isDisabled control={<Checkbox.Root disabled />}>
@@ -845,16 +836,238 @@ describe("SelectionItem", () => {
 
     const box = checkboxNamed("Fixed price");
     expect(box.getAttribute("aria-checked")).toBe("false");
-    const shell = shellFrom("Fixed price");
-    const shellStyle = getComputedStyle(shell);
-    expect(shellStyle.cursor).toBe("not-allowed");
-    expect(shellStyle.backgroundColor).toBe(tokenBackgroundColor(shell, "bg-muted"));
-    // Oracle: the shared hatch, which utils.test.ts pins by hand.
-    expect(shellStyle.backgroundImage).toBe(tokenBackgroundImage(shell, disabledHatch));
-    expect(shellStyle.backgroundImage).not.toBe("none");
+    expect(getComputedStyle(shellFrom("Fixed price")).cursor).toBe("not-allowed");
 
     headingNamed("Fixed price").click();
     expect(checkboxNamed("Fixed price", false).getAttribute("aria-checked")).toBe("false");
+  });
+
+  describe("disabled row", () => {
+    /**
+     * One scheme's rows: row-level disabling in a vertical stack and in horizontal cards,
+     * group-level disabling in both orientations, two standalone shells, and controls nested
+     * in SubSections, enabled under a disabled row and disabled under an enabled one.
+     */
+    function DisabledRows({ scheme }: { scheme: string }) {
+      const title = (row: string) => <RowTitle>{`${scheme} ${row}`}</RowTitle>;
+      return (
+        <>
+          <RadioItemGroup label={`${scheme} plan`} defaultValue="spot">
+            <RadioItem value="fixed">{title("fixed")}</RadioItem>
+            <RadioItem value="spot" isDisabled>
+              {title("spot")}
+            </RadioItem>
+            <RadioItem value="hourly" isDisabled>
+              {title("hourly")}
+            </RadioItem>
+          </RadioItemGroup>
+          <CheckboxItemGroup
+            label={`${scheme} add-ons`}
+            orientation="horizontal"
+            defaultValue={["router", "modem"]}>
+            <CheckboxItem value="router" isDisabled>
+              {title("router")}
+            </CheckboxItem>
+            <CheckboxItem value="sim" isDisabled>
+              {title("SIM card")}
+            </CheckboxItem>
+            <CheckboxItem value="modem">{title("modem")}</CheckboxItem>
+            <CheckboxItem value="tv">{title("TV")}</CheckboxItem>
+          </CheckboxItemGroup>
+          <CheckboxItemGroup label={`${scheme} terms`} isDisabled defaultValue={["terms"]}>
+            <CheckboxItem value="terms">{title("terms")}</CheckboxItem>
+            <CheckboxItem value="newsletter">{title("newsletter")}</CheckboxItem>
+          </CheckboxItemGroup>
+          <RadioItemGroup
+            label={`${scheme} delivery`}
+            orientation="horizontal"
+            isDisabled
+            defaultValue="post">
+            <RadioItem value="post">{title("post")}</RadioItem>
+            <RadioItem value="pickup">{title("pickup")}</RadioItem>
+          </RadioItemGroup>
+          <Field.Root>
+            <SelectionItem.Shell dataSlot="checkbox-item" isDisabled control={<UiCheckbox disabled />}>
+              {title("standalone")}
+            </SelectionItem.Shell>
+          </Field.Root>
+          <Field.Root>
+            <SelectionItem.Shell
+              dataSlot="checkbox-item"
+              isDisabled
+              control={<UiCheckbox disabled defaultChecked />}>
+              {title("standalone checked")}
+            </SelectionItem.Shell>
+          </Field.Root>
+          <CheckboxItemGroup label={`${scheme} bundles`}>
+            <CheckboxItem value="bundle" isDisabled>
+              {title("bundle")}
+              <CheckboxItem.SubSection>
+                <CheckboxItemGroup label={`${scheme} bundle extras`}>
+                  <CheckboxItem value="free">{title("free extra")}</CheckboxItem>
+                </CheckboxItemGroup>
+              </CheckboxItem.SubSection>
+            </CheckboxItem>
+            <CheckboxItem value="extras">
+              {title("extras")}
+              <CheckboxItem.SubSection>
+                <CheckboxItemGroup label={`${scheme} extra options`}>
+                  <CheckboxItem value="locked" isDisabled>
+                    {title("locked extra")}
+                  </CheckboxItem>
+                </CheckboxItemGroup>
+              </CheckboxItem.SubSection>
+            </CheckboxItem>
+          </CheckboxItemGroup>
+        </>
+      );
+    }
+
+    // Each row by title suffix: its control, whether it is checked and disabled, and whether
+    // it is a checked non-first row of a vertical stack, which pulls its top edge up one pixel.
+    const DISABLED_ROWS = [
+      { row: "fixed", control: "radio", checked: false, disabled: false, pulled: false },
+      { row: "spot", control: "radio", checked: true, disabled: true, pulled: true },
+      { row: "hourly", control: "radio", checked: false, disabled: true, pulled: false },
+      { row: "router", control: "checkbox", checked: true, disabled: true, pulled: false },
+      { row: "SIM card", control: "checkbox", checked: false, disabled: true, pulled: false },
+      { row: "modem", control: "checkbox", checked: true, disabled: false, pulled: false },
+      { row: "TV", control: "checkbox", checked: false, disabled: false, pulled: false },
+      { row: "terms", control: "checkbox", checked: true, disabled: true, pulled: false },
+      { row: "newsletter", control: "checkbox", checked: false, disabled: true, pulled: false },
+      { row: "post", control: "radio", checked: true, disabled: true, pulled: false },
+      { row: "pickup", control: "radio", checked: false, disabled: true, pulled: false },
+      { row: "standalone", control: "checkbox", checked: false, disabled: true, pulled: false },
+      { row: "standalone checked", control: "checkbox", checked: true, disabled: true, pulled: false },
+      { row: "bundle", control: "checkbox", checked: false, disabled: true, pulled: false },
+      { row: "free extra", control: "checkbox", checked: false, disabled: false, pulled: false },
+      { row: "extras", control: "checkbox", checked: false, disabled: false, pulled: false },
+      { row: "locked extra", control: "checkbox", checked: false, disabled: true, pulled: false },
+    ] as const;
+
+    /** The colour stops of a computed gradient, in sRGB. */
+    function gradientStops(image: string): readonly { r: number; g: number; b: number; alpha: number }[] {
+      return [...image.matchAll(/(?:rgba?|oklch|lab)\([^()]*\)/g)].map(([stop]) =>
+        CssColor.toSrgb(getOrThrow(CssColor.parse(stop)))
+      );
+    }
+
+    /**
+     * Checks every fixture row of one scheme. A disabled row fills with `fill`, the role read
+     * where it sits, under stripes of `stripeAlpha` black; an enabled one keeps the card or,
+     * checked, the muted fill and no image. A disabled row's title and control paint at 50%
+     * each, never 25%, and the row's sub-section content stays at full strength.
+     */
+    async function expectRows(scheme: string, fill: "--muted" | "--card", stripeAlpha: number) {
+      for (const { row, control, checked, disabled, pulled } of DISABLED_ROWS) {
+        const name = `${scheme} ${row}`;
+        const shell = shellFrom(name);
+        await settled(shell);
+        const box = roleNamed(control, name);
+        expect(box.getAttribute("aria-checked"), name).toBe(String(checked));
+        expect(box.hasAttribute("data-disabled"), name).toBe(disabled);
+        const style = getComputedStyle(shell);
+        const stops = gradientStops(style.backgroundImage);
+        if (disabled) {
+          expect(style.backgroundColor, name).toBe(cssVarColor(shell, fill));
+          expect(style.backgroundImage, name).toMatch(/^repeating-linear-gradient\(45deg, /);
+          // Two transparent bands, then two stops of the stripe colour.
+          expect(
+            stops.map(({ alpha }) => alpha),
+            name
+          ).toEqual([0, 0, stripeAlpha, stripeAlpha]);
+          expect(
+            stops.slice(2).map(({ r, g, b }) => [r, g, b]),
+            name
+          ).toEqual([
+            [0, 0, 0],
+            [0, 0, 0],
+          ]);
+          expect(style.cursor, name).toBe("not-allowed");
+        } else {
+          expect(style.backgroundColor, name).toBe(cssVarColor(shell, checked ? "--muted" : "--card"));
+          expect(style.backgroundImage, name).toBe("none");
+        }
+        const strength = disabled ? 0.5 : 1;
+        expect(effectiveOpacity(headingNamed(name)), `${name} title`).toBeCloseTo(strength, 5);
+        expect(effectiveOpacity(box), `${name} control`).toBeCloseTo(strength, 5);
+        // The checked border, the joins and the pull-up are the checked row's own.
+        expect(style.marginTop, name).toBe(pulled ? "-1px" : "0px");
+      }
+    }
+
+    it("keeps the card fill without stripes and dims the label content in external themes, at row and group level, in light and dark", async () => {
+      renderThemed(
+        <>
+          <ThemeScope theme={fkasExternal}>
+            <DisabledRows scheme="Light" />
+          </ThemeScope>
+          <div data-theme="dark">
+            <ThemeScope theme={fkasExternal}>
+              <DisabledRows scheme="Dark" />
+            </ThemeScope>
+          </div>
+        </>
+      );
+
+      for (const scheme of ["Light", "Dark"]) {
+        const shell = shellFrom(`${scheme} spot`);
+        // Oracle sanity: the card differs from the checked row's muted tint, so a checked
+        // disabled row that kept `bg-muted` fails, and the schemes differ from each other.
+        expect(cssVarColor(shell, "--card"), scheme).not.toBe(cssVarColor(shell, "--muted"));
+        await expectRows(scheme, "--card", 0);
+      }
+      expect(cssVarColor(shellFrom("Dark fixed"), "--card")).not.toBe(
+        cssVarColor(shellFrom("Light fixed"), "--card")
+      );
+    });
+
+    it("keeps the muted fill under black stripes at 2% and dims the label content in internal themes, at row and group level, in light and dark", async () => {
+      renderThemed(
+        <>
+          <DisabledRows scheme="Light" />
+          <div data-theme="dark">
+            <ThemeScope theme={fkasPrivate}>
+              <DisabledRows scheme="Dark" />
+            </ThemeScope>
+          </div>
+        </>
+      );
+
+      for (const scheme of ["Light", "Dark"]) {
+        await expectRows(scheme, "--muted", 0.02);
+        // A checked disabled row keeps the primary checked edge of an internal row.
+        const spot = shellFrom(`${scheme} spot`);
+        expect(getComputedStyle(spot).borderTopColor, scheme).toBe(cssVarColor(spot, "--primary"));
+      }
+      expect(cssVarColor(shellFrom("Dark fixed"), "--muted")).not.toBe(
+        cssVarColor(shellFrom("Light fixed"), "--muted")
+      );
+    });
+
+    it("fills a checked disabled row with a host's own disabled roles over the checked tint", async () => {
+      renderThemed(
+        <div
+          style={{
+            "--selection-disabled-background": "#ffeedd",
+            "--selection-disabled-hatch": "oklch(0 0 0 / 0)",
+          }}>
+          <CheckboxItemGroup label="Host add-ons" defaultValue={["router"]}>
+            <CheckboxItem value="router" isDisabled>
+              <RowTitle>Host router</RowTitle>
+            </CheckboxItem>
+          </CheckboxItemGroup>
+        </div>
+      );
+
+      const shell = shellFrom("Host router");
+      await settled(shell);
+      expect(checkboxNamed("Host router").getAttribute("aria-checked")).toBe("true");
+      expect(getComputedStyle(shell).backgroundColor).toBe("rgb(255, 238, 221)");
+      expect(gradientStops(getComputedStyle(shell).backgroundImage).map(({ alpha }) => alpha)).toEqual([
+        0, 0, 0, 0,
+      ]);
+    });
   });
 
   it("keeps the Field root's gap around a stack of shells, which a wrapper connects", () => {

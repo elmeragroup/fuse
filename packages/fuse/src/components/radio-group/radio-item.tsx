@@ -14,7 +14,13 @@ import { RadioGroupItem } from "./radio-group";
 export type RadioItemProps = {
   /** Member value in the group. Forwarded to the inner `RadioGroupItem`. */
   value: string;
-  /** Forwards `disabled` to the inner control and applies disabled hatch styling on the shell. */
+  /**
+   * Forwards `disabled` to the inner control and shows the disabled row: the theme's
+   * `--selection-disabled-background` fill and `--selection-disabled-hatch` stripes (internal
+   * themes stripe a muted fill, external themes keep the card fill without stripes), the
+   * `not-allowed` cursor and the label row (title, description, actions) at 50% beside the 50%
+   * control. A SubSection keeps its colours. A disabled group shows its rows the same way.
+   */
   isDisabled?: boolean;
   /**
    * Where the control sits in the labelled row. Forwarded to `SelectionItem.Shell`.
