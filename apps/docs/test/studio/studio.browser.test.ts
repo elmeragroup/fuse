@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { BRANDS } from "@elmeragroup/fuse/theme";
 
 import { docsBaseUrl } from "../docs-server";
-import { auditTargets, settleFrames } from "../landing-page";
+import { auditTargets, settleFrames, waitForLandingHydration } from "../landing-page";
 import { launchSuiteBrowser } from "../suite-browser";
 import {
   ARTBOARDS,
@@ -407,7 +407,7 @@ describe("theme studio", () => {
     expect(await header.getAttribute("href")).toBe("/studio");
 
     await page.goto(`${docsBaseUrl()}/`, { waitUntil: "load" });
-    await page.locator("next-route-announcer").waitFor({ state: "attached" });
+    await waitForLandingHydration(page);
     await page
       .getByRole("navigation", { name: "Primary" })
       .getByRole("button", { name: "Docs", exact: true })
