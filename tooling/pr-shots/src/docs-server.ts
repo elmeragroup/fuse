@@ -2,9 +2,10 @@
  * Serves the docs app from this checkout with `next dev` on a free port, as a scoped resource.
  *
  * The server writes to its own output directory, named through `DOCS_DIST_DIR` in
- * `apps/docs/next.config.ts`, so `docs#test:e2e` can keep serving `apps/docs/.next` beside
- * it. It lives under `apps/docs/node_modules/.cache`, which git and the dev watcher ignore, and
- * persists between runs so Turbopack's cache keeps later starts fast.
+ * `apps/docs/next.config.ts`, so it leaves both builds the docs suites serve untouched:
+ * `apps/docs/.next`, the production build the unit suite serves, and `apps/docs/.cache/next-e2e`,
+ * the build `docs#test:e2e` serves. It lives under `apps/docs/node_modules/.cache`, which git and
+ * the dev watcher ignore, and persists between runs so Turbopack's cache keeps later starts fast.
  *
  * One residual write into `apps/docs/.next` remains. The `next dev` launcher learns the output
  * directory from its worker only when the worker reports the server ready. A SIGTERM before that
@@ -13,7 +14,7 @@
  * deferred record skips the `NEXT_TELEMETRY_DISABLED` check, and no environment variable or config
  * sets the launcher's fallback (Next 16.4.0, `dist/cli/next-dev.js` and `dist/telemetry/storage.js`).
  * So an interrupt in the first seconds of a start can leave that one small file in `.next`. It
- * is not a build output, and `docs#test:e2e` ignores it.
+ * is not a build output, and neither suite reads it.
  */
 
 import { Console, Context, Duration, Effect, Layer, Option, Schema, Stream } from "effect";
@@ -118,8 +119,7 @@ function nextDevConfig(repoRoot: string): DocsServerConfig {
       args: [
         path.join(docsRoot, "node_modules/next/dist/bin/next"),
         "dev",
-        // Next names a loopback IP `localhost` in the docs proxy's request URL but not in its own,
-        // so on `127.0.0.1` it fetches the proxy's rewrite as an external address, which redirects.
+        // Not `127.0.0.1`: see the loopback note in `apps/docs/src/proxy.ts`.
         "--hostname",
         "localhost",
         "--port",

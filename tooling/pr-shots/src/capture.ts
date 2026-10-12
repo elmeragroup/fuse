@@ -33,6 +33,12 @@ const POLL_MS = 50;
 /** How long hydration and a released scroll lock may take. */
 const SETTLE_TIMEOUT_MS = 15_000;
 
+/** The docs side nav's scroll viewport, which every docs page renders. */
+const SIDE_NAV_VIEWPORT = 'nav[aria-label="Main navigation"] [data-slot="scroll-area-viewport"]';
+
+/** The `theme-color` tags; only the landing layout declares a pair. */
+const THEME_COLOR = 'meta[name="theme-color"]';
+
 /** A shot could not be taken. */
 export class CaptureFailed extends Schema.TaggedError<CaptureFailed>()("CaptureFailed", {
   message: Schema.String,
@@ -655,15 +661,44 @@ async function themeOf(themed: Locator): Promise<string> {
 }
 
 /**
- * Waits until a Next page has hydrated, as the landing tests do (`apps/docs/test/landing-page.ts`):
- * a click before hydration reaches no handler. Next's router mounts its announcer once the page
- * has hydrated. A page without Next's scripts, such as the test fixture, has nothing to wait for.
+ * Waits until a Next page has hydrated: a click before hydration reaches no handler. Every Next page
+ * mounts the route announcer once its root has committed, so the announcer is the floor. Under Cache
+ * Components the root mounts it before each segment's Activity pass hydrates, so docs pages and the
+ * landing also wait on a signal of their own that both the main build and a Cache Components build
+ * produce, as the docs suites do (`apps/docs/test/demo-page.ts`, `apps/docs/test/landing-page.ts`):
+ *
+ * - On a docs page, the side nav's Base UI ScrollArea writes `--scroll-area-overflow-y-start`
+ *   on its viewport as it mounts.
+ * - On the landing, the only page that declares the `theme-color` pair, the theme provider's
+ *   status-bar effect points both tags at one colour once the page has hydrated.
+ *
+ * The accepted gap: under Cache Components a demo hydrates in its own pass after the shell, and no
+ * signal both builds share covers it. A click on a collapsed demo control that is still inert
+ * opens nothing, and `clickStep` fails loudly. A page without Next's scripts, such as the test
+ * fixture, has nothing to wait for.
  */
 async function waitForHydration(page: Page): Promise<void> {
   if ((await page.locator("script[src*='/_next/']").count()) === 0) {
     return;
   }
   await page.locator("next-route-announcer").waitFor({ state: "attached", timeout: SETTLE_TIMEOUT_MS });
+  await page.waitForFunction(
+    // Off a docs page there is no viewport, and `undefined !== ""` passes.
+    (selector) =>
+      document
+        .querySelector<HTMLElement>(selector)
+        ?.style.getPropertyValue("--scroll-area-overflow-y-start") !== "",
+    SIDE_NAV_VIEWPORT,
+    { timeout: SETTLE_TIMEOUT_MS }
+  );
+  await page.waitForFunction(
+    (selector) => {
+      const colors = [...document.querySelectorAll<HTMLMetaElement>(selector)].map((meta) => meta.content);
+      return colors.length < 2 || new Set(colors).size === 1;
+    },
+    THEME_COLOR,
+    { timeout: SETTLE_TIMEOUT_MS }
+  );
   // Landing only: a server-rendered Dashboard's toast region portals in once the Dashboard has
   // hydrated. No other page renders a region named Dashboard, so elsewhere this waits for nothing.
   const app = page.getByRole("region", { name: "Dashboard", exact: true });
