@@ -281,9 +281,9 @@ describe("resolveThemeCatalog", () => {
         reference: { space: "token", name: "muted-foreground" },
       });
     }
-    // tkas's light muted foreground: its text colour at 70% alpha.
+    // tkas's light muted foreground, the opaque tone #283 holds to 4.5:1.
     expect(light("external-tkas-private").tokens["selection-disabled-foreground"].value).toEqual(
-      Oklch.toSrgb(getOrThrow(Oklch.parse("oklch(0.30407 0.05238 190.82 / 0.7)")))
+      Oklch.toSrgb(getOrThrow(Oklch.parse("oklch(0.5273 0.03558 190.82)")))
     );
     // Internal disabled text names the foreground role in both schemes.
     for (const scheme of ["light", "dark"] as const) {
