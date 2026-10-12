@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 
 import { themeSlug } from "@elmeragroup/fuse/theme";
 
-import { parseThemeQuery, sameTheme, THEME_QUERY } from "./app/(landing)/landing/landing-theme-defaults";
+import { parseThemeSearch, sameTheme } from "./app/(landing)/landing/landing-theme-defaults";
 import { OPENING_THEME } from "./lib/theme";
 
 /**
@@ -18,9 +18,7 @@ import { OPENING_THEME } from "./lib/theme";
  * the themed route's redirect answers it. Start such a server on `localhost` instead.
  */
 export function proxy(request: NextRequest): NextResponse {
-  const values = request.nextUrl.searchParams.getAll(THEME_QUERY);
-  // In the shape Next gives a page's `searchParams`: one value as a string, a repeated key as a list.
-  const theme = parseThemeQuery(values.length > 1 ? values : values[0]);
+  const theme = parseThemeSearch(request.nextUrl.searchParams);
   // The opening theme's own slug renders what `/` renders, so it stays there with the rest.
   if (sameTheme(theme, OPENING_THEME)) {
     return NextResponse.next();

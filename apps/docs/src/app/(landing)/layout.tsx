@@ -49,7 +49,7 @@ const SLUG_ATTRIBUTES = JSON.stringify(
  * Restamps `<html>` with a shared address's theme before the browser can paint. The layout
  * stamps `OPENING_THEME` on the server, because a layout receives no search params, and a shared
  * address's landing arrives after an empty shell. So the script reads `?theme=` from the address
- * itself, by `parseThemeQuery`'s rules: exactly one value that names a legal slug stamps, and a
+ * itself, by `parseThemeSearch`'s rules: exactly one value that names a legal slug stamps, and a
  * missing, repeated or illegal value leaves the opening theme, as `proxy.ts` leaves the request on
  * `/`. The map's keys are `themeSlug` over `LEGAL_THEMES`, the set `parseThemeSlug` accepts, so the
  * script carries no slug grammar of its own and the same text serves every landing route.
