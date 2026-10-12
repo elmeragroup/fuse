@@ -13,11 +13,11 @@ import { Checkbox } from "./checkbox";
 
 type CheckboxItemBaseProps = {
   /**
-   * Forwards `disabled` to the inner Checkbox and shows the disabled row: the theme's
-   * `--selection-disabled-background` fill and `--selection-disabled-hatch` stripes (internal
-   * themes stripe a muted fill, external themes keep the card fill without stripes), the
-   * `not-allowed` cursor and the label row (title, description, actions) at 50% beside the 50%
-   * control. A SubSection keeps its colours. A disabled group shows its rows the same way.
+   * Forwards `disabled` to the inner Checkbox, which dims to 50%, and shows the disabled row: the
+   * theme's `--selection-disabled-background` fill and `--selection-disabled-hatch` stripes
+   * (internal themes stripe a muted fill, external themes keep the card fill without stripes)
+   * and the `not-allowed` cursor. The row's text keeps its colours. A disabled group shows its
+   * rows the same way.
    */
   isDisabled?: boolean;
   /** Forwards `readOnly` to the inner Checkbox. */
@@ -31,6 +31,9 @@ type CheckboxItemBaseProps = {
    * Extra classes, merged onto the shell via `cn`. A `px-*` utility sets the card's side
    * inset, and a click in that inset beside the label row toggles the control. The row
    * paints the card fill (`bg-card`); a background class such as `bg-background` replaces it.
+   * The checked row's `bg-muted` tint and the disabled row's `--selection-disabled-background`
+   * fill win over such a class; set `--selection-disabled-background`, for example to
+   * `var(--background)`, to change the disabled fill.
    */
   className?: string;
   /**

@@ -78,7 +78,7 @@ function DisabledRows({ prefix, style }: { prefix: string; style?: CSSProperties
   );
 }
 
-/** The fill, the stripe alphas and the title's painted opacity of a prefix's two rows. */
+/** The fill, the stripe alphas and the title's painted opacity of a prefix's two rows; the title never dims. */
 function disabledLooks(prefix: string): readonly { fill: string; stripes: number[]; title: number }[] {
   return [`${prefix} checkbox row`, `${prefix} radio row`].map((name) => {
     const title = headingNamed(name);
@@ -99,7 +99,7 @@ describe("SelectionItem disabled row without themes.css", () => {
   it("fills a disabled row, checked or in a disabled group, with the host's --muted under black stripes at 2%", () => {
     // The internal look, from the fallbacks in fuse.css: the host maps only the shared roles.
     render(<DisabledRows prefix="Host" style={{ "--muted": "#eeeeee", "--card": "#ffffff" }} />);
-    const expected = { fill: "rgb(238, 238, 238)", stripes: [0, 0, 0.02, 0.02], title: 0.5 };
+    const expected = { fill: "rgb(238, 238, 238)", stripes: [0, 0, 0.02, 0.02], title: 1 };
     expect(disabledLooks("Host")).toEqual([expected, expected]);
   });
 
@@ -116,7 +116,7 @@ describe("SelectionItem disabled row without themes.css", () => {
         }}
       />
     );
-    const expected = { fill: "rgb(255, 255, 255)", stripes: [0, 0, 0, 0], title: 0.5 };
+    const expected = { fill: "rgb(255, 255, 255)", stripes: [0, 0, 0, 0], title: 1 };
     expect(disabledLooks("Mapped")).toEqual([expected, expected]);
   });
 });

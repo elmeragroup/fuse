@@ -17,12 +17,12 @@ export type ExternalBrandCode = Exclude<BrandCode, "fkab">;
  * rows' joins and insets stay. A checked row keeps that resting edge, as the external radio
  * card does, so its control alone shows the selection. Stacked rows keep a grey `--border`
  * separator between them, checked or not. A disabled selection row keeps the card fill of an
- * enabled row and draws no stripes, so it is not a grey panel among the white rows: its control
- * and its label content dim at 50%, as in every theme. A selection row's title takes the medium
- * weight of that radio card, so it matches the group legend and `CheckboxCard` titles around it.
- * The internal variant keeps the default 0px step, the 1px `--border` hairline, the `--border`
- * row edge and divider, the `--primary` box around a checked row, the muted, striped disabled row
- * and the regular row title.
+ * enabled row and draws no stripes, so it is not a grey panel among the white rows; its control
+ * dims at 50%, as in every theme. A selection row's title takes the medium weight of that radio
+ * card, so it matches the group legend and `CheckboxCard` titles around it. The internal variant
+ * keeps the default 0px step, the 1px `--border` hairline, the `--border` row edge and divider,
+ * the `--primary` box around a checked row, the muted, striped disabled row and the regular row
+ * title.
  *
  * The layer names the neutral focus ring so every external light rule declares `--ring`
  * (and restates the `--sidebar-ring` alias), and a nested scope gets its own theme's ring. To

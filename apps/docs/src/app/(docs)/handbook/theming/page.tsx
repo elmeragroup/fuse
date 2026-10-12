@@ -273,10 +273,11 @@ export default function ThemingPage(): ReactElement {
         <code>--selection-disabled-hatch</code>. Internal themes fill it with <code>var(--muted)</code> and
         stripe it in black at 2% alpha, which shows in light schemes. External themes keep the card fill of an
         enabled row, <code>var(--card)</code>, and make the stripe a zero-alpha colour, so a disabled row is
-        not a grey panel among white rows. In every theme the row&apos;s title, description and actions dim to
-        50% beside the control&apos;s own 50%, Fuse&apos;s one disabled look, and a SubSection keeps its
-        colours. The disabled fill replaces a checked row&apos;s <code>bg-muted</code> tint; the checked edge
-        stays.
+        not a grey panel among white rows. The control dims to 50% in every theme, and the row&apos;s text
+        keeps its colours. The disabled fill replaces a checked row&apos;s <code>bg-muted</code> tint and a
+        background class on the row; the checked edge stays. Internal themes resolve the fill&apos;s{" "}
+        <code>var(--muted)</code> on the element that carries the theme attributes, so override{" "}
+        <code>--selection-disabled-background</code> itself to change the fill under a plain wrapper.
       </p>
       <p>
         The weight of a <code>RadioItem</code> or <code>CheckboxItem</code> row title is themed too. It, which

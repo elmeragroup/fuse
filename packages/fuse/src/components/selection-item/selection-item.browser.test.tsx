@@ -955,8 +955,8 @@ describe("SelectionItem", () => {
     /**
      * Checks every fixture row of one scheme. A disabled row fills with `fill`, the role read
      * where it sits, under stripes of `stripeAlpha` black; an enabled one keeps the card or,
-     * checked, the muted fill and no image. A disabled row's title and control paint at 50%
-     * each, never 25%, and the row's sub-section content stays at full strength.
+     * checked, the muted fill and no image. A disabled row's control paints at its own 50%,
+     * and the row's title, and any sub-section content, keep full strength.
      */
     async function expectRows(scheme: string, fill: "--muted" | "--card", stripeAlpha: number) {
       for (const { row, control, checked, disabled, pulled } of DISABLED_ROWS) {
@@ -988,15 +988,14 @@ describe("SelectionItem", () => {
           expect(style.backgroundColor, name).toBe(cssVarColor(shell, checked ? "--muted" : "--card"));
           expect(style.backgroundImage, name).toBe("none");
         }
-        const strength = disabled ? 0.5 : 1;
-        expect(effectiveOpacity(headingNamed(name)), `${name} title`).toBeCloseTo(strength, 5);
-        expect(effectiveOpacity(box), `${name} control`).toBeCloseTo(strength, 5);
+        expect(effectiveOpacity(headingNamed(name)), `${name} title`).toBe(1);
+        expect(effectiveOpacity(box), `${name} control`).toBeCloseTo(disabled ? 0.5 : 1, 5);
         // The checked border, the joins and the pull-up are the checked row's own.
         expect(style.marginTop, name).toBe(pulled ? "-1px" : "0px");
       }
     }
 
-    it("keeps the card fill without stripes and dims the label content in external themes, at row and group level, in light and dark", async () => {
+    it("keeps the card fill without stripes in external themes, at row and group level, in light and dark", async () => {
       renderThemed(
         <>
           <ThemeScope theme={fkasExternal}>
@@ -1022,7 +1021,7 @@ describe("SelectionItem", () => {
       );
     });
 
-    it("keeps the muted fill under black stripes at 2% and dims the label content in internal themes, at row and group level, in light and dark", async () => {
+    it("keeps the muted fill under black stripes at 2% in internal themes, at row and group level, in light and dark", async () => {
       renderThemed(
         <>
           <DisabledRows scheme="Light" />
@@ -1043,6 +1042,64 @@ describe("SelectionItem", () => {
       expect(cssVarColor(shellFrom("Dark fixed"), "--muted")).not.toBe(
         cssVarColor(shellFrom("Light fixed"), "--muted")
       );
+    });
+
+    it("shows the disabled row for a custom control that is natively disabled or aria-disabled", async () => {
+      renderThemed(
+        <>
+          <Field.Root>
+            <SelectionItem.Shell dataSlot="checkbox-item" control={<input type="checkbox" disabled />}>
+              <RowTitle>Native control</RowTitle>
+            </SelectionItem.Shell>
+          </Field.Root>
+          <Field.Root>
+            <SelectionItem.Shell
+              dataSlot="checkbox-item"
+              control={<span role="checkbox" aria-checked="false" aria-disabled="true" tabIndex={0} />}>
+              <RowTitle>Aria control</RowTitle>
+            </SelectionItem.Shell>
+          </Field.Root>
+          <Field.Root>
+            <SelectionItem.Shell dataSlot="checkbox-item" control={<input type="checkbox" />}>
+              <RowTitle>Enabled control</RowTitle>
+            </SelectionItem.Shell>
+          </Field.Root>
+        </>
+      );
+
+      for (const name of ["Native control", "Aria control"]) {
+        const shell = shellFrom(name);
+        await settled(shell);
+        // Oracle: the internal theme's own --muted, read where the row sits.
+        expect(getComputedStyle(shell).backgroundColor, name).toBe(cssVarColor(shell, "--muted"));
+        expect(getComputedStyle(shell).backgroundImage, name).toMatch(/^repeating-linear-gradient\(45deg, /);
+        expect(getComputedStyle(shell).cursor, name).toBe("not-allowed");
+      }
+      const enabled = shellFrom("Enabled control");
+      expect(getComputedStyle(enabled).backgroundColor).toBe(cssVarColor(enabled, "--card"));
+      expect(getComputedStyle(enabled).backgroundImage).toBe("none");
+    });
+
+    it("fills a disabled row with the role over a background class", async () => {
+      renderThemed(
+        <CheckboxItemGroup label="Surface add-ons">
+          <CheckboxItem value="router" isDisabled className="bg-background">
+            <RowTitle>Surface router</RowTitle>
+          </CheckboxItem>
+          <CheckboxItem value="sim" className="bg-background">
+            <RowTitle>Surface SIM card</RowTitle>
+          </CheckboxItem>
+        </CheckboxItemGroup>
+      );
+
+      const shell = shellFrom("Surface router");
+      await settled(shell);
+      // Oracle sanity: the page background differs from the disabled fill, --muted here.
+      const background = cssVarColor(shell, "--background");
+      expect(background).not.toBe(cssVarColor(shell, "--muted"));
+      expect(getComputedStyle(shell).backgroundColor).toBe(cssVarColor(shell, "--muted"));
+      // The class still replaces the card fill of an enabled row.
+      expect(getComputedStyle(shellFrom("Surface SIM card")).backgroundColor).toBe(background);
     });
 
     it("fills a checked disabled row with a host's own disabled roles over the checked tint", async () => {
