@@ -8,7 +8,7 @@ import { MAX_SHARE_LENGTH } from "../../src/studio/lib/size-policy";
 import { STUDIO_TOKEN_NAMES, TOKEN_TABLE, isLightOnly } from "../../src/studio/lib/tokens";
 import { auditTargets, holdChunks } from "../landing-page";
 import type { HeldChunks } from "../landing-page";
-import { launchSuiteBrowser } from "../suite-browser";
+import { closeContext, launchSuiteBrowser } from "../suite-browser";
 import {
   DENSITY_PAGE,
   artboard,
@@ -629,7 +629,7 @@ describe("studio token editing", () => {
       expect(errors).toEqual([]);
     } finally {
       release();
-      await context.close();
+      await closeContext(context);
     }
   });
 
@@ -956,7 +956,7 @@ describe("studio token editing", () => {
       // The aborted chunk request logs a console error; nothing else may.
       expect(errors.filter((error) => !error.includes("Failed to load resource"))).toEqual([]);
     } finally {
-      await context.close();
+      await closeContext(context);
     }
   });
 });

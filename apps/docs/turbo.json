@@ -34,6 +34,16 @@
       // (src/lib/site-origin.ts), so both key the cache.
       "env": ["DOCS_ORIGIN", "PORT"]
     },
+    // The build the e2e suite serves: `build` plus Next's Instant Navigation testing API, which
+    // `instant()` needs (test/instant-navigation.browser.test.ts). Its script sets
+    // DOCS_TESTING_API, which also moves its output to .cache/next-e2e (next.config.ts), so `.next`
+    // stays the production build the unit suite asserts on. Only this task declares the variable:
+    // strict env mode hides it from `build`, which the container image runs.
+    "build:e2e": {
+      "dependsOn": ["generate"],
+      "outputs": [".cache/next-e2e/**", "!.cache/next-e2e/cache/**", "!.cache/next-e2e/dev/**"],
+      "env": ["DOCS_ORIGIN", "PORT", "DOCS_TESTING_API"]
+    },
     // `next build` deletes everything in .next except cache/dev/lock/trace before it
     // compiles, while `next typegen` creates .next/types and then writes into it. Running
     // both at once lets the build's clean land between those two steps, failing typegen
@@ -42,12 +52,10 @@
       "dependsOn": ["generate", "build"]
     },
     "test": {
-      "dependsOn": ["build"],
-      "env": ["DOCS_BASE_URL"]
+      "dependsOn": ["build"]
     },
     "test:e2e": {
-      "dependsOn": ["build"],
-      "env": ["DOCS_BASE_URL"]
+      "dependsOn": ["build:e2e"]
     }
   }
 }

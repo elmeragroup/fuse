@@ -115,6 +115,13 @@ async function get(pathname: string): Promise<{ response: Response; text: string
 }
 
 describe("rendering contract", () => {
+  // The browser project serves `docs#build:e2e`, whose pages carry Next's Instant Navigation
+  // bootstrap. These contracts hold for the shipped build, so the server must not be that one.
+  it("serves the production build, without Next's testing API", async () => {
+    const { text } = await get("/components/button");
+    expect(text).not.toContain("__next_instant_test");
+  });
+
   it.each(STATIC_PAGES)("serves %s whole from its prerender", async (pathname) => {
     const { response } = await get(pathname);
     expect(response.status).toBe(200);

@@ -24,6 +24,7 @@ import {
 } from "./landing-dashboard";
 import { holdChunks, launchLandingSuite, settleFrames } from "./landing-page";
 import type { HeldChunks } from "./landing-page";
+import { closeContext } from "./suite-browser";
 
 const { openLanding } = launchLandingSuite({ search: DASHBOARD_FIRST });
 
@@ -545,7 +546,7 @@ describe("landing hero window, opening on Internal", () => {
     await app.getByRole("button", { name: /^New order/u }).click();
     await page.getByRole("dialog", { name: "New order" }).waitFor();
     expect(await page.locator("html").getAttribute("data-dashboard-emptied")).toBeNull();
-    await page.context().close();
+    await closeContext(page.context());
   });
 });
 

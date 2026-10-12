@@ -1,13 +1,14 @@
 import type { Locator, Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
-import { launchSuiteBrowser, readThemeAttributes } from "./demo-page";
+import { launchSuiteBrowser, readThemeAttributes, waitForDocsShellHydration } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
 
 const browser = launchSuiteBrowser();
 
 async function openSettings(page: Page): Promise<Locator> {
-  await page.goto(`${docsBaseUrl()}/components/button`, { waitUntil: "networkidle" });
+  await page.goto(`${docsBaseUrl()}/components/button`, { waitUntil: "domcontentloaded" });
+  await waitForDocsShellHydration(page);
   await page.getByRole("button", { name: "Theme settings", exact: true }).click();
   const menu = page.getByRole("menu", { name: "Theme settings", exact: true });
   await menu.waitFor();
@@ -104,7 +105,8 @@ describe("docs theme settings", () => {
 
   it("supports keyboard selection, Escape focus return, and outside dismissal", async () => {
     const page = await browser().newPage({ colorScheme: "light" });
-    await page.goto(`${docsBaseUrl()}/components/button`, { waitUntil: "networkidle" });
+    await page.goto(`${docsBaseUrl()}/components/button`, { waitUntil: "domcontentloaded" });
+    await waitForDocsShellHydration(page);
     const trigger = page.getByRole("button", { name: "Theme settings", exact: true });
     await trigger.focus();
     await page.keyboard.press("ArrowDown");
@@ -141,7 +143,8 @@ describe("docs theme settings", () => {
     await expect.poll(() => page.locator("html").getAttribute("data-theme")).toBe("dark");
     expect(await menu.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(lightPaint);
     expect(await page.evaluate(() => localStorage.getItem("elmera-color-scheme"))).toBe("dark");
-    await page.reload({ waitUntil: "networkidle" });
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await waitForDocsShellHydration(page);
     await page.getByRole("button", { name: "Theme settings", exact: true }).click();
     menu = page.getByRole("menu", { name: "Theme settings", exact: true });
     await menu.waitFor();

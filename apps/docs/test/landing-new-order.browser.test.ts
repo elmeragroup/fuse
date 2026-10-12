@@ -13,6 +13,7 @@ import {
 } from "./landing-dashboard";
 import { holdChunks, launchLandingSuite, settleFrames } from "./landing-page";
 import type { HeldChunks } from "./landing-page";
+import { closeContext } from "./suite-browser";
 
 const { openLanding } = launchLandingSuite({ search: DASHBOARD_FIRST });
 
@@ -120,7 +121,7 @@ describe("landing Dashboard New order", () => {
 
     const reopened = await openNewOrder(app);
     expect(await reopened.getByRole("status", { name: "Loading the form" }).count()).toBe(0);
-    await page.context().close();
+    await closeContext(page.context());
   });
 
   it("names every New order control by its role and visible label", async () => {

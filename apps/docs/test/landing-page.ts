@@ -120,7 +120,8 @@ export type HeldChunks = {
  * Holds back every script chunk whose code contains `marker` until `release`, so a test sees the
  * page while one part's code is still on its way. A marker is a string only that part's code
  * holds, such as a label it renders, or a pattern only it matches. Call it before navigation, as
- * `prepare` does.
+ * `prepare` does. The hold fetches every chunk itself, so close the page's context with
+ * `closeContext` (suite-browser.ts).
  */
 export async function holdChunks(page: Page, marker: string | RegExp): Promise<HeldChunks> {
   const gate = Promise.withResolvers<undefined>();

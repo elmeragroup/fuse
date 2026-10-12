@@ -1,7 +1,7 @@
 import type { Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
-import { launchSuiteBrowser } from "./demo-page";
+import { launchSuiteBrowser, waitForDocsShellHydration } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
 
 const browser = launchSuiteBrowser();
@@ -18,10 +18,29 @@ type ActiveOption = {
 };
 
 async function openDocsPage(pathname = "/components/button"): Promise<Page> {
-  const page = await browser().newPage();
-  await page.goto(`${docsBaseUrl()}${pathname}`, { waitUntil: "networkidle" });
-  await page.locator("h1").first().waitFor();
+  const page = await browser().newPage({ colorScheme: "light" });
+  await page.goto(`${docsBaseUrl()}${pathname}`, { waitUntil: "domcontentloaded" });
+  await waitForDocsShellHydration(page);
+  await waitForShellEffects(page);
   return page;
+}
+
+/**
+ * Waits until the shell's passive effects have run, which is where the palette registers its
+ * ⌘K listener. The shell hydration signal comes from a layout effect, and a ⌘K dispatched the
+ * moment it appeared opened nothing in 8 of 8 loads, at 1x and 4x CPU. The color-scheme root
+ * subscribes to the device scheme in a passive effect of the same commit, and React runs one
+ * commit's passive effects together, so once the document follows a scheme flip, the hotkey
+ * listener is registered too. The page opens in light and ends in light.
+ */
+async function waitForShellEffects(page: Page): Promise<void> {
+  for (const scheme of ["dark", "light"] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.waitForFunction(
+      (expected) => document.documentElement.getAttribute("data-theme") === expected,
+      scheme
+    );
+  }
 }
 
 async function waitForPalette(page: Page, state: "visible" | "hidden"): Promise<void> {

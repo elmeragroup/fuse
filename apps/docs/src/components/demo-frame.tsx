@@ -5,6 +5,7 @@ import { tv } from "tailwind-variants";
 
 import { readDemoSource } from "../lib/demo-source";
 import type { DocsRouteSection } from "../lib/docs-route-files";
+import { DemoHydrationMarker } from "./demo-hydration-marker";
 import { DemoStage } from "./demo-stage";
 import { DocsCodeBlock } from "./docs-code-block";
 import { DocsSectionHeading } from "./docs-section-heading";
@@ -45,7 +46,8 @@ const { root, card } = demoFrame();
  *
  * A demo that reads the clock while it renders cannot prerender: React Aria's date components
  * build their dates on `new Date()`. The boundary keeps such a demo out of the static HTML, and
- * the browser renders it on hydration; every other demo prerenders as before.
+ * the browser renders it on hydration; every other demo prerenders as before. The marker inside
+ * the boundary stamps `data-demo-hydrated` on the frame once the demo is live.
  */
 export async function DemoFrame({
   section = "components",
@@ -62,7 +64,10 @@ export async function DemoFrame({
       <DocsSectionHeading id={id}>{title}</DocsSectionHeading>
       <div className={card()}>
         <DemoStage sourcePath={demo.sourcePath}>
-          <Suspense fallback={null}>{children}</Suspense>
+          <Suspense fallback={null}>
+            {children}
+            <DemoHydrationMarker headingId={id} />
+          </Suspense>
         </DemoStage>
         <DocsCodeBlock variant="embedded" data-demo-source source={demo.source} />
       </div>
