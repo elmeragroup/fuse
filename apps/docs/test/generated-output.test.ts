@@ -315,6 +315,17 @@ describe("committed api.json", () => {
     expect(dropdownSubContent?.props.find((prop) => prop.name === "side")?.defaultValue).toBe('"right"');
     const dropdownItem = api("dropdown-menu").parts.find((part) => part.name === "DropdownMenu.Item");
     expect(dropdownItem?.props.find((prop) => prop.name === "variant")?.defaultValue).toBe('"default"');
+    // Command's search pins `inline` and `open` and sets its own highlight defaults, which the
+    // Root and each Page destructure.
+    for (const partName of ["Command.Root", "Command.Page"]) {
+      const commandSearch = api("command").parts.find((part) => part.name === partName);
+      const prop = (name: string) => commandSearch?.props.find((candidate) => candidate.name === name);
+      expect(prop("autoHighlight")?.defaultValue, partName).toBe('"always"');
+      expect(prop("keepHighlight")?.defaultValue, partName).toBe("true");
+      expect(prop("inline"), partName).toBeUndefined();
+    }
+    const commandPage = api("command").parts.find((part) => part.name === "Command.Page");
+    expect(commandPage?.props.find((prop) => prop.name === "open")).toBeUndefined();
     const selectTrigger = api("select").parts.find((part) => part.name === "Select.Trigger");
     expect(selectTrigger?.props.find((prop) => prop.name === "size")?.defaultValue).toBe('"default"');
     const selectContent = api("select").parts.find((part) => part.name === "Select.Content");

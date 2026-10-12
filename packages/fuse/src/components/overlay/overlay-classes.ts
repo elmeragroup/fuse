@@ -149,7 +149,7 @@ const overlayPopupDurationClass = overlayPopupSlots.duration();
 export const overlayPopupMotionClass = cn(overlayPopupSlots.anchor(), overlayPopupFadeZoomClass);
 
 /**
- * The open/close motion of a modal that no trigger anchors, Dialog and `Command.Dialog`:
+ * The open/close motion of a modal that no trigger anchors, Dialog and `Command.Content`:
  * the fade/zoom pair with its timing rung, without the transform origin or the per-side
  * slide-ins of {@link overlayPopupMotionClass}.
  */
@@ -157,7 +157,7 @@ const overlayModalMotionClass = cn(overlayPopupFadeZoomClass, overlayPopupDurati
 
 /**
  * Fill + edge + the `md` radius rung: the whole surface of a popup that sits on the
- * popover role. Dialog and `Command.Dialog` take it through {@link overlayModalPopupClass},
+ * popover role. Dialog and `Command.Content` take it through {@link overlayModalPopupClass},
  * raising the radius to `rounded-xl` in their shells; the four timed
  * anchored popups (Popover, Select, Combobox, DropdownMenu — Select raises the radius
  * to `rounded-lg`) take it through {@link overlayTimedPopupClass}. Each still overrides
@@ -178,7 +178,7 @@ export const overlayPopupSurfaceClass = cn(overlayPopupFillClass, overlayPopupEd
 /**
  * Surface + motion + duration: the four timed anchored popups (Popover, Select,
  * Combobox, DropdownMenu) compose this instead of restating the three parts.
- * Tooltip keeps {@link overlayPopupMotionClass} untimed; Dialog and `Command.Dialog`
+ * Tooltip keeps {@link overlayPopupMotionClass} untimed; Dialog and `Command.Content`
  * take {@link overlayModalPopupClass} — none is a timed anchored popup, which is what the
  * fill/edge/anchor/fadeZoom/duration split is for.
  */
@@ -190,7 +190,7 @@ export const overlayTimedPopupClass = cn(
 
 /**
  * Surface + the `lg` elevation rung + {@link overlayModalMotionClass} + {@link overlayLayer} +
- * the self focus ring: the face of the two modals, Dialog and `Command.Dialog`. Each composes
+ * the self focus ring: the face of the two modals, Dialog and `Command.Content`. Each composes
  * it first and passes its shell and layout as later `cn` arguments, so the shell's
  * `rounded-xl` overrides the surface's `rounded-md`.
  */

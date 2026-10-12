@@ -16,57 +16,53 @@ const CUSTOMERS: readonly Customer[] = [
 const CUSTOMER_ACTIONS = ["Open customer", "Register meter reading", "Send invoice copy"];
 
 /**
- * The customer search lives in `Palette`, above `Command.Pages`, so going back to the list
+ * The customer search lives in `Palette`, above `Command.Root`, so going back to the list
  * shows the same search. The palette's own state ends when the palette unmounts.
  */
 function Palette({ onRun }: { onRun: (summary: string) => void }) {
   const [query, setQuery] = useState("");
   return (
-    <Command.Pages defaultValue={["customers"]}>
-      <Command.Page id="customers" label="Customers">
-        <Command.Root items={CUSTOMERS} value={query} onValueChange={setQuery}>
-          <Command.Input placeholder="Search customers…" />
+    <Command.Root defaultPages={["customers"]}>
+      <Command.Page id="customers" label="Customers" items={CUSTOMERS} value={query} onValueChange={setQuery}>
+        <Command.Input placeholder="Search customers…" />
+        <Command.Empty />
+        <Command.List>
+          {(customer: Customer) => (
+            <Command.PageTrigger key={customer.id} value={customer} page={customer.id}>
+              {customer.label}
+              <span className="text-xs text-muted-foreground">{customer.city}</span>
+            </Command.PageTrigger>
+          )}
+        </Command.List>
+        <Command.Footer>
+          <Command.NavigateHint />
+          <Command.SelectHint />
+        </Command.Footer>
+      </Command.Page>
+      {CUSTOMERS.map((customer) => (
+        <Command.Page key={customer.id} id={customer.id} label={customer.label} items={CUSTOMER_ACTIONS}>
+          <Command.Input placeholder={`Actions for ${customer.label}…`} />
           <Command.Empty />
           <Command.List>
-            {(customer: Customer) => (
-              <Command.PageTrigger key={customer.id} value={customer} page={customer.id}>
-                {customer.label}
-                <span className="text-xs text-muted-foreground">{customer.city}</span>
-              </Command.PageTrigger>
+            {(action: string) => (
+              <Command.Item
+                key={action}
+                value={action}
+                onClick={() => {
+                  onRun(`${action}: ${customer.label}`);
+                }}>
+                {action}
+              </Command.Item>
             )}
           </Command.List>
           <Command.Footer>
             <Command.NavigateHint />
             <Command.SelectHint />
+            <Command.BackHint />
           </Command.Footer>
-        </Command.Root>
-      </Command.Page>
-      {CUSTOMERS.map((customer) => (
-        <Command.Page key={customer.id} id={customer.id} label={customer.label}>
-          <Command.Root items={CUSTOMER_ACTIONS}>
-            <Command.Input placeholder={`Actions for ${customer.label}…`} />
-            <Command.Empty />
-            <Command.List>
-              {(action: string) => (
-                <Command.Item
-                  key={action}
-                  value={action}
-                  onClick={() => {
-                    onRun(`${action}: ${customer.label}`);
-                  }}>
-                  {action}
-                </Command.Item>
-              )}
-            </Command.List>
-            <Command.Footer>
-              <Command.NavigateHint />
-              <Command.SelectHint />
-              <Command.BackHint />
-            </Command.Footer>
-          </Command.Root>
         </Command.Page>
       ))}
-    </Command.Pages>
+    </Command.Root>
   );
 }
 

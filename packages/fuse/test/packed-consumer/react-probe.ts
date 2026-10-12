@@ -74,19 +74,16 @@ const dataTable = renderToStaticMarkup(
 assert.match(dataTable, /<th[^>]*>Customer<\/th>/);
 assert.match(dataTable, /<td[^>]*>Ada<\/td>/);
 
-// The probe is plain TypeScript, so the binding instantiates List's item type that JSX would infer.
-const VirtualList: (props: { readonly children: (item: string) => React.ReactNode }) => React.ReactElement =
-  CommandVirtual.List;
-
 // The server has no scroll element to measure, so the virtual list renders its listbox empty.
 const commandVirtual = renderToStaticMarkup(
   React.createElement(root.LocaleProvider, {
     locale: "en-US",
     children: React.createElement(
-      CommandVirtual.Root,
-      { items: ["Ada", "Grace"] },
+      Command.Root,
+      { items: ["Ada", "Grace"], virtualized: true },
       React.createElement(Command.Input),
-      React.createElement(VirtualList, {
+      React.createElement(Command.List, {
+        render: React.createElement(CommandVirtual.List),
         children: (item: string) => React.createElement(Command.Item, { value: item }, item),
       })
     ),

@@ -9,28 +9,35 @@
       "forwardedFrom": [
         "@base-ui/react"
       ],
-      "forwardedCount": 1,
+      "forwardedCount": 0,
       "props": [
         {
           "name": "actionsRef",
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "RefObject<AutocompleteRootActions | null> | undefined",
+          "type": "RefObject<DialogRootActions | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "A ref to imperative actions. - `unmount`: Manually unmounts the autocomplete. Call this after any externally controlled closing animation finishes.",
+          "description": "A ref to imperative actions. - `unmount`: Manually unmounts the dialog. Call this after any externally controlled closing animation finishes. - `close`: Closes the dialog imperatively when called.",
           "required": false
         },
         {
           "name": "autoHighlight",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "\"always\" | boolean | undefined",
           "shortType": "Union",
           "defaultValue": "\"always\"",
-          "description": "Whether the first matching item is highlighted automatically. - `true`: highlight after the user types and keep the highlight while the query changes. - `'always'`: always highlight the first item.",
+          "description": "Whether the first matching item is highlighted automatically, as Base UI's prop of the same name: `true` highlights it after the user types, `\"always\"` keeps it highlighted.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The palette's parts.",
           "required": false
         },
         {
@@ -41,7 +48,16 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Whether the popup is initially open. To render a controlled popup, use the `open` prop instead.",
+          "description": "Whether the dialog is initially open. To render a controlled dialog, use the `open` prop instead.",
+          "required": false
+        },
+        {
+          "name": "defaultPages",
+          "origin": "declared",
+          "type": "readonly string[] | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The page ids the stack starts with, from the first page to the one on top.",
           "required": false
         },
         {
@@ -53,6 +69,17 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "The uncontrolled input value of the autocomplete when it's initially rendered. To render a controlled autocomplete, use the `value` prop instead.",
+          "required": false
+        },
+        {
+          "name": "disablePointerDismissal",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether to prevent the dialog from closing on outside presses. For non-modal dialogs, this also prevents the dialog from closing when focus moves outside of it.",
           "required": false
         },
         {
@@ -71,7 +98,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((item: Item, query: string, itemToString?: ((item: Item) => string) | undefined) => boolean) | null | undefined",
+          "type": "((item: CommandItemOf<Item, Groups, Grouped>, query: string, itemToString?: ((item: CommandItemOf<Item, Groups, Grouped>) => string) | undefined) => boolean) | null | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Filter function used to match items against the input query.",
@@ -82,7 +109,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "readonly Item[] | readonly Group<Item>[] | undefined",
+          "type": "readonly Group<CommandItemOf<Item, Groups, Grouped>>[] | readonly CommandItemOf<Item, Groups, Grouped>[] | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "Filtered items to display in the list. When provided, the list uses these items instead of filtering the `items` prop internally. When `items` is also provided, this array must preserve its flat or grouped structure. Nullish entries are not supported, as in `items`. Use when you want to control filtering logic externally with the `useFilter()` hook.",
@@ -111,6 +138,15 @@
           "required": false
         },
         {
+          "name": "grouped",
+          "origin": "declared",
+          "type": "Grouped | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Marks `items` as groups, each with its own `items`. The callbacks, such as `itemToStringValue` and `onItemHighlighted`, then receive one item of a group. The search throws when the first entry disagrees with it.",
+          "required": false
+        },
+        {
           "name": "highlightItemOnHover",
           "origin": {
             "packageName": "@base-ui/react"
@@ -133,17 +169,6 @@
           "required": false
         },
         {
-          "name": "inline",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": "true",
-          "description": "Whether the list is rendered inline without using the component's own popup. Specify `open` unconditionally in conjunction with this prop so the list is considered visible: `<Autocomplete.Root inline open>`",
-          "required": false
-        },
-        {
           "name": "inputRef",
           "origin": {
             "packageName": "@base-ui/react"
@@ -159,7 +184,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((itemValue: Item) => string) | undefined",
+          "type": "((itemValue: CommandItemOf<Item, Groups, Grouped>) => string) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "When the item values are objects (`<Autocomplete.Item value={object}>`), this function converts the object value to a string representation for both display in the input and form submission. If the shape of the object is `{ value, label }`, the label will be used automatically without needing to specify this prop.",
@@ -168,21 +193,19 @@
         {
           "name": "items",
           "origin": "declared",
-          "type": "readonly Item[] | undefined",
-          "shortType": null,
+          "type": "Groups | readonly Item[] | undefined",
+          "shortType": "Union",
           "defaultValue": null,
-          "description": "The items, as a flat list, in the order the list shows them.",
+          "description": "The groups of items, in the order the list shows them. The items, as a flat list, in the order the list shows them.",
           "required": false
         },
         {
           "name": "keepHighlight",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "true",
-          "description": "Whether the highlighted item should be preserved when the pointer leaves the list.",
+          "description": "Whether the highlighted item stays highlighted when the pointer leaves the list.",
           "required": false
         },
         {
@@ -212,10 +235,10 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": "false",
-          "description": "Determines if the popup enters a modal state when open. - `true`: user interaction is limited to the popup: document page scroll is locked and pointer interactions on outside elements are disabled. - `false`: user interaction with the rest of the document is allowed. On touch devices, a `true` modal blocks outside taps but leaves the page scrollable unless the popup spans nearly the full viewport width, matching native iOS behavior.",
+          "type": "\"trap-focus\" | boolean | undefined",
+          "shortType": "Union",
+          "defaultValue": "true",
+          "description": "Determines if the dialog enters a modal state when open. - `true`: user interaction is limited to just the dialog: focus is trapped, document page scroll is locked, and pointer interactions on outside elements are disabled. - `false`: user interaction with the rest of the document is allowed. - `'trap-focus'`: focus is trapped inside the dialog, but document page scroll is not locked and pointer interactions outside of it remain enabled. When `modal` is `true` or `'trap-focus'`, render `<Dialog.Close>` inside `<Dialog.Popup>` so touch screen readers can escape the popup.",
           "required": false
         },
         {
@@ -245,7 +268,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((highlightedValue: Item | undefined, eventDetails: HighlightEventDetails) => void) | undefined",
+          "type": "((highlightedValue: CommandItemOf<Item, Groups, Grouped> | undefined, eventDetails: HighlightEventDetails) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Callback fired when an item is highlighted or unhighlighted. Receives the highlighted item value (or `undefined` if no item is highlighted) and event details with a `reason` property describing why the highlight changed. The `reason` can be: - `'keyboard'`: the highlight changed due to keyboard navigation. - `'pointer'`: the highlight changed due to pointer hovering. - `'none'`: the highlight changed programmatically.",
@@ -256,10 +279,10 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((open: boolean, eventDetails: AutocompleteRootChangeEventDetails) => void) | undefined",
+          "type": "((open: boolean, eventDetails: DialogRootChangeEventDetails) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Event handler called when the popup is opened or closed.",
+          "description": "Event handler called when the dialog is opened or closed.",
           "required": false
         },
         {
@@ -270,7 +293,16 @@
           "type": "((open: boolean) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Event handler called after any animations complete when the popup is opened or closed.",
+          "description": "Event handler called after any animations complete when the dialog is opened or closed.",
+          "required": false
+        },
+        {
+          "name": "onPagesChange",
+          "origin": "declared",
+          "type": "((pages: string[]) => void) | ((pages: string[]) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called with the next stack when a page is pushed or popped.",
           "required": false
         },
         {
@@ -291,8 +323,8 @@
           },
           "type": "boolean | undefined",
           "shortType": null,
-          "defaultValue": "true",
-          "description": "Whether the popup is currently open. Use when controlled.",
+          "defaultValue": null,
+          "description": "Whether the dialog is currently open.",
           "required": false
         },
         {
@@ -304,6 +336,15 @@
           "shortType": null,
           "defaultValue": "false",
           "description": "Whether the popup opens when clicking the input.",
+          "required": false
+        },
+        {
+          "name": "pages",
+          "origin": "declared",
+          "type": "readonly string[] | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The page ids from the first page to the one on top. Use when controlled.",
           "required": false
         },
         {
@@ -364,122 +405,24 @@
       ]
     },
     {
-      "name": "Command.GroupedRoot",
+      "name": "Command.Trigger",
       "rsc": "client",
       "sourcePath": "packages/fuse/src/components/command/command.tsx",
       "forwardedFrom": [
-        "@base-ui/react"
+        "@base-ui/react",
+        "@types/react"
       ],
-      "forwardedCount": 1,
+      "forwardedCount": 284,
       "props": [
         {
-          "name": "actionsRef",
+          "name": "className",
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "RefObject<AutocompleteRootActions | null> | undefined",
-          "shortType": "Union",
-          "defaultValue": null,
-          "description": "A ref to imperative actions. - `unmount`: Manually unmounts the autocomplete. Call this after any externally controlled closing animation finishes.",
-          "required": false
-        },
-        {
-          "name": "autoHighlight",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "\"always\" | boolean | undefined",
-          "shortType": "Union",
-          "defaultValue": "\"always\"",
-          "description": "Whether the first matching item is highlighted automatically. - `true`: highlight after the user types and keep the highlight while the query changes. - `'always'`: always highlight the first item.",
-          "required": false
-        },
-        {
-          "name": "defaultOpen",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": "false",
-          "description": "Whether the popup is initially open. To render a controlled popup, use the `open` prop instead.",
-          "required": false
-        },
-        {
-          "name": "defaultValue",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "string | number | readonly string[] | undefined",
-          "shortType": "Union",
-          "defaultValue": null,
-          "description": "The uncontrolled input value of the autocomplete when it's initially rendered. To render a controlled autocomplete, use the `value` prop instead.",
-          "required": false
-        },
-        {
-          "name": "disabled",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": "false",
-          "description": "Whether the component should ignore user interaction.",
-          "required": false
-        },
-        {
-          "name": "filter",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "((item: Items[number][\"items\"][number], query: string, itemToString?: ((item: Items[number][\"items\"][number]) => string) | undefined) => boolean) | null | undefined",
+          "type": "string | ((state: DialogTriggerState) => string | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Filter function used to match items against the input query.",
-          "required": false
-        },
-        {
-          "name": "filteredItems",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "readonly Group<Items[number][\"items\"][number]>[] | readonly Items[number][\"items\"][number][] | undefined",
-          "shortType": "Union",
-          "defaultValue": null,
-          "description": "Filtered items to display in the list. When provided, the list uses these items instead of filtering the `items` prop internally. When `items` is also provided, this array must preserve its flat or grouped structure. Nullish entries are not supported, as in `items`. Use when you want to control filtering logic externally with the `useFilter()` hook.",
-          "required": false
-        },
-        {
-          "name": "form",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "string | undefined",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "Identifies the form that owns the internal input. Useful when the autocomplete is rendered outside the form.",
-          "required": false
-        },
-        {
-          "name": "grid",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": "false",
-          "description": "Whether list items are presented in a grid layout. When enabled, arrow keys navigate across rows and columns inferred from DOM rows.",
-          "required": false
-        },
-        {
-          "name": "highlightItemOnHover",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": "true",
-          "description": "Whether moving the pointer over items should highlight them. Disabling this prop allows CSS `:hover` to be differentiated from the `:focus` (`data-highlighted`) state.",
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
           "required": false
         },
         {
@@ -490,236 +433,116 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The id of the component.",
+          "description": "ID of the trigger. In addition to being forwarded to the rendered element, it is also used to specify the active trigger for the dialog in controlled mode (with the DialogRoot `triggerId` prop).",
           "required": false
         },
         {
-          "name": "inline",
+          "name": "nativeButton",
           "origin": {
             "packageName": "@base-ui/react"
           },
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "true",
-          "description": "Whether the list is rendered inline without using the component's own popup. Specify `open` unconditionally in conjunction with this prop so the list is considered visible: `<Autocomplete.Root inline open>`",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
           "required": false
         },
         {
-          "name": "inputRef",
+          "name": "render",
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "Ref<HTMLInputElement> | undefined",
+          "type": "ComponentRenderFn<HTMLProps, DialogTriggerState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "A ref to the hidden input element.",
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
           "required": false
         },
         {
-          "name": "itemToStringValue",
+          "name": "style",
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((itemValue: Items[number][\"items\"][number]) => string) | undefined",
+          "type": "CSSProperties | ((state: DialogTriggerState) => CSSProperties | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "When the item values are objects (`<Autocomplete.Item value={object}>`), this function converts the object value to a string representation for both display in the input and form submission. If the shape of the object is `{ value, label }`, the label will be used automatically without needing to specify this prop.",
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Command.Content",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/command/command.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: DialogPopupState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
           "required": false
         },
         {
-          "name": "items",
+          "name": "container",
           "origin": "declared",
-          "type": "Items",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "The groups of items, in the order the list shows them.",
-          "required": true
-        },
-        {
-          "name": "keepHighlight",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": "true",
-          "description": "Whether the highlighted item should be preserved when the pointer leaves the list.",
-          "required": false
-        },
-        {
-          "name": "limit",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "number | undefined",
-          "shortType": null,
-          "defaultValue": "-1",
-          "description": "The maximum number of items to display in the list.",
-          "required": false
-        },
-        {
-          "name": "loopFocus",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": "true",
-          "description": "Whether to loop keyboard focus back to the input when the end of the list is reached while using the arrow keys. The first item can then be reached by pressing <kbd>ArrowDown</kbd> again from the input, or the last item can be reached by pressing <kbd>ArrowUp</kbd> from the input. The input is always included in the focus loop per [ARIA Authoring Practices](https://www.w3.org/WAI/ARIA/apg/patterns/combobox/). When disabled, focus does not move when on the last element and the user presses <kbd>ArrowDown</kbd>, or when on the first element and the user presses <kbd>ArrowUp</kbd>.",
-          "required": false
-        },
-        {
-          "name": "modal",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": "false",
-          "description": "Determines if the popup enters a modal state when open. - `true`: user interaction is limited to the popup: document page scroll is locked and pointer interactions on outside elements are disabled. - `false`: user interaction with the rest of the document is allowed. On touch devices, a `true` modal blocks outside taps but leaves the page scrollable unless the popup spans nearly the full viewport width, matching native iOS behavior.",
-          "required": false
-        },
-        {
-          "name": "mode",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "\"both\" | \"inline\" | \"list\" | \"none\" | undefined",
-          "shortType": "Union",
-          "defaultValue": "'list'",
-          "description": "Controls how the autocomplete behaves with respect to list filtering and inline autocompletion. - `list` (default): items are dynamically filtered based on the input value. The input value does not change based on the active item. - `both`: items are dynamically filtered based on the input value, which will temporarily change based on the active item (inline autocompletion). - `inline`: items are static (not filtered), and the input value will temporarily change based on the active item (inline autocompletion). - `none`: items are static (not filtered), and the input value will not change based on the active item.",
-          "required": false
-        },
-        {
-          "name": "name",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "string | undefined",
-          "shortType": null,
-          "defaultValue": null,
-          "description": "Identifies the field when a form is submitted.",
-          "required": false
-        },
-        {
-          "name": "onItemHighlighted",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "((highlightedValue: Items[number][\"items\"][number] | undefined, eventDetails: HighlightEventDetails) => void) | undefined",
-          "shortType": "function",
-          "defaultValue": null,
-          "description": "Callback fired when an item is highlighted or unhighlighted. Receives the highlighted item value (or `undefined` if no item is highlighted) and event details with a `reason` property describing why the highlight changed. The `reason` can be: - `'keyboard'`: the highlight changed due to keyboard navigation. - `'pointer'`: the highlight changed due to pointer hovering. - `'none'`: the highlight changed programmatically.",
-          "required": false
-        },
-        {
-          "name": "onOpenChange",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "((open: boolean, eventDetails: AutocompleteRootChangeEventDetails) => void) | undefined",
-          "shortType": "function",
-          "defaultValue": null,
-          "description": "Event handler called when the popup is opened or closed.",
-          "required": false
-        },
-        {
-          "name": "onOpenChangeComplete",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "((open: boolean) => void) | undefined",
-          "shortType": "function",
-          "defaultValue": null,
-          "description": "Event handler called after any animations complete when the popup is opened or closed.",
-          "required": false
-        },
-        {
-          "name": "onValueChange",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "((value: string, eventDetails: AutocompleteRootChangeEventDetails) => void) | undefined",
-          "shortType": "function",
-          "defaultValue": null,
-          "description": "Event handler called when the input value of the autocomplete changes.",
-          "required": false
-        },
-        {
-          "name": "open",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": "true",
-          "description": "Whether the popup is currently open. Use when controlled.",
-          "required": false
-        },
-        {
-          "name": "openOnInputClick",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": "false",
-          "description": "Whether the popup opens when clicking the input.",
-          "required": false
-        },
-        {
-          "name": "readOnly",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": "false",
-          "description": "Whether the user should be unable to choose a different option from the popup.",
-          "required": false
-        },
-        {
-          "name": "required",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": "false",
-          "description": "Whether the user must choose a value before submitting a form.",
-          "required": false
-        },
-        {
-          "name": "submitOnItemClick",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": "false",
-          "description": "Whether clicking an item should submit the autocomplete's owning form. By default, clicking an item via a pointer or <kbd>Enter</kbd> key does not submit the owning form. Useful when the autocomplete is used as a single-field form search input.",
-          "required": false
-        },
-        {
-          "name": "value",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "string | number | readonly string[] | undefined",
+          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The input value of the autocomplete. Use when controlled.",
+          "description": "Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope` element, so it never escapes the theme that opened it.",
           "required": false
         },
         {
-          "name": "virtualized",
+          "name": "finalFocus",
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "boolean | undefined",
-          "shortType": null,
-          "defaultValue": "false",
-          "description": "Whether the items are being externally virtualized.",
+          "type": "boolean | RefObject<HTMLElement | null> | ((closeType: InteractionType) => void | boolean | HTMLElement | null) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Determines the element to focus when the dialog is closed. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (trigger or previously focused element). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, `null` to fall back to the default behavior, or `false`/`undefined` to do nothing.",
+          "required": false
+        },
+        {
+          "name": "initialFocus",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | RefObject<HTMLElement | null> | ((openType: InteractionType) => void | boolean | HTMLElement | null) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Determines the element to focus when the dialog is opened. By default, focus moves to the first tabbable element inside the popup, except when the dialog is opened by touch — then the popup itself is focused to avoid opening the virtual keyboard. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (first tabbable element or popup). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, `null` to fall back to the default behavior, or `false`/`undefined` to do nothing.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, DialogPopupState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: DialogPopupState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
           "required": false
         }
       ]
@@ -1062,7 +885,7 @@
       ]
     },
     {
-      "name": "Command.GroupLabel",
+      "name": "Command.Label",
       "rsc": "client",
       "sourcePath": "packages/fuse/src/components/command/command.tsx",
       "forwardedFrom": [
@@ -1227,64 +1050,116 @@
       "props": []
     },
     {
-      "name": "Command.Pages",
+      "name": "Command.Page",
       "rsc": "client",
       "sourcePath": "packages/fuse/src/components/command/command.tsx",
-      "forwardedFrom": [],
+      "forwardedFrom": [
+        "@base-ui/react"
+      ],
       "forwardedCount": 0,
       "props": [
+        {
+          "name": "autoHighlight",
+          "origin": "declared",
+          "type": "\"always\" | boolean | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"always\"",
+          "description": "Whether the first matching item is highlighted automatically, as Base UI's prop of the same name: `true` highlights it after the user types, `\"always\"` keeps it highlighted.",
+          "required": false
+        },
         {
           "name": "children",
           "origin": "declared",
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "The pages: one `Command.Page` per id the stack can hold.",
+          "description": "The page's parts: its `Command.Input`, `Command.List` and the rest.",
           "required": false
         },
         {
           "name": "defaultValue",
-          "origin": "declared",
-          "type": "string[] | undefined",
-          "shortType": null,
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | number | readonly string[] | undefined",
+          "shortType": "Union",
           "defaultValue": null,
-          "description": "The page ids the stack starts with, from the first page to the one on top.",
+          "description": "The uncontrolled input value of the autocomplete when it's initially rendered. To render a controlled autocomplete, use the `value` prop instead.",
           "required": false
         },
         {
-          "name": "onValueChange",
-          "origin": "declared",
-          "type": "((value: string[]) => void) | undefined",
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the component should ignore user interaction.",
+          "required": false
+        },
+        {
+          "name": "filter",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((item: CommandItemOf<Item, Groups, Grouped>, query: string, itemToString?: ((item: CommandItemOf<Item, Groups, Grouped>) => string) | undefined) => boolean) | null | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called with the next stack when a page is pushed or popped.",
+          "description": "Filter function used to match items against the input query.",
           "required": false
         },
         {
-          "name": "value",
-          "origin": "declared",
-          "type": "string[] | undefined",
-          "shortType": null,
+          "name": "filteredItems",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "readonly Group<CommandItemOf<Item, Groups, Grouped>>[] | readonly CommandItemOf<Item, Groups, Grouped>[] | undefined",
+          "shortType": "Union",
           "defaultValue": null,
-          "description": "The page ids from the first page to the one on top. Use when controlled.",
+          "description": "Filtered items to display in the list. When provided, the list uses these items instead of filtering the `items` prop internally. When `items` is also provided, this array must preserve its flat or grouped structure. Nullish entries are not supported, as in `items`. Use when you want to control filtering logic externally with the `useFilter()` hook.",
           "required": false
-        }
-      ]
-    },
-    {
-      "name": "Command.Page",
-      "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/command/command.tsx",
-      "forwardedFrom": [],
-      "forwardedCount": 0,
-      "props": [
+        },
         {
-          "name": "children",
-          "origin": "declared",
-          "type": "ReactNode",
+          "name": "form",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The page's own `Command.Root` and its parts.",
+          "description": "Identifies the form that owns the internal input. Useful when the autocomplete is rendered outside the form.",
+          "required": false
+        },
+        {
+          "name": "grid",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether list items are presented in a grid layout. When enabled, arrow keys navigate across rows and columns inferred from DOM rows.",
+          "required": false
+        },
+        {
+          "name": "grouped",
+          "origin": "declared",
+          "type": "Grouped | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Marks `items` as groups, each with its own `items`. The callbacks, such as `itemToStringValue` and `onItemHighlighted`, then receive one item of a group. The search throws when the first entry disagrees with it.",
+          "required": false
+        },
+        {
+          "name": "highlightItemOnHover",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether moving the pointer over items should highlight them. Disabling this prop allows CSS `:hover` to be differentiated from the `:focus` (`data-highlighted`) state.",
           "required": false
         },
         {
@@ -1293,8 +1168,48 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "The id `Command.PageTrigger` pushes and the stack holds.",
+          "description": "The id of the component. The id `Command.PageTrigger` pushes and the Root's stack holds.",
           "required": true
+        },
+        {
+          "name": "inputRef",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "Ref<HTMLInputElement> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A ref to the hidden input element.",
+          "required": false
+        },
+        {
+          "name": "itemToStringValue",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((itemValue: CommandItemOf<Item, Groups, Grouped>) => string) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "When the item values are objects (`<Autocomplete.Item value={object}>`), this function converts the object value to a string representation for both display in the input and form submission. If the shape of the object is `{ value, label }`, the label will be used automatically without needing to specify this prop.",
+          "required": false
+        },
+        {
+          "name": "items",
+          "origin": "declared",
+          "type": "Groups | readonly Item[] | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The groups of items, in the order the list shows them. The items, as a flat list, in the order the list shows them.",
+          "required": false
+        },
+        {
+          "name": "keepHighlight",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the highlighted item stays highlighted when the pointer leaves the list.",
+          "required": false
         },
         {
           "name": "label",
@@ -1304,6 +1219,138 @@
           "defaultValue": null,
           "description": "The page's name. The page's `Command.Input` is named after it unless it has a name of its own.",
           "required": true
+        },
+        {
+          "name": "limit",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "-1",
+          "description": "The maximum number of items to display in the list.",
+          "required": false
+        },
+        {
+          "name": "loopFocus",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether to loop keyboard focus back to the input when the end of the list is reached while using the arrow keys. The first item can then be reached by pressing <kbd>ArrowDown</kbd> again from the input, or the last item can be reached by pressing <kbd>ArrowUp</kbd> from the input. The input is always included in the focus loop per [ARIA Authoring Practices](https://www.w3.org/WAI/ARIA/apg/patterns/combobox/). When disabled, focus does not move when on the last element and the user presses <kbd>ArrowDown</kbd>, or when on the first element and the user presses <kbd>ArrowUp</kbd>.",
+          "required": false
+        },
+        {
+          "name": "mode",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "\"both\" | \"inline\" | \"list\" | \"none\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "'list'",
+          "description": "Controls how the autocomplete behaves with respect to list filtering and inline autocompletion. - `list` (default): items are dynamically filtered based on the input value. The input value does not change based on the active item. - `both`: items are dynamically filtered based on the input value, which will temporarily change based on the active item (inline autocompletion). - `inline`: items are static (not filtered), and the input value will temporarily change based on the active item (inline autocompletion). - `none`: items are static (not filtered), and the input value will not change based on the active item.",
+          "required": false
+        },
+        {
+          "name": "name",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Identifies the field when a form is submitted.",
+          "required": false
+        },
+        {
+          "name": "onItemHighlighted",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((highlightedValue: CommandItemOf<Item, Groups, Grouped> | undefined, eventDetails: HighlightEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Callback fired when an item is highlighted or unhighlighted. Receives the highlighted item value (or `undefined` if no item is highlighted) and event details with a `reason` property describing why the highlight changed. The `reason` can be: - `'keyboard'`: the highlight changed due to keyboard navigation. - `'pointer'`: the highlight changed due to pointer hovering. - `'none'`: the highlight changed programmatically.",
+          "required": false
+        },
+        {
+          "name": "onValueChange",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "((value: string, eventDetails: AutocompleteRootChangeEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Event handler called when the input value of the autocomplete changes.",
+          "required": false
+        },
+        {
+          "name": "openOnInputClick",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the popup opens when clicking the input.",
+          "required": false
+        },
+        {
+          "name": "readOnly",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the user should be unable to choose a different option from the popup.",
+          "required": false
+        },
+        {
+          "name": "required",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the user must choose a value before submitting a form.",
+          "required": false
+        },
+        {
+          "name": "submitOnItemClick",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether clicking an item should submit the autocomplete's owning form. By default, clicking an item via a pointer or <kbd>Enter</kbd> key does not submit the owning form. Useful when the autocomplete is used as a single-field form search input.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | number | readonly string[] | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The input value of the autocomplete. Use when controlled.",
+          "required": false
+        },
+        {
+          "name": "virtualized",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the items are being externally virtualized.",
+          "required": false
         }
       ]
     },
@@ -1512,82 +1559,6 @@
           "shortType": null,
           "defaultValue": null,
           "description": "The hint's label, in place of the locale dictionary's.",
-          "required": false
-        }
-      ]
-    },
-    {
-      "name": "Command.Dialog",
-      "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/command/command.tsx",
-      "forwardedFrom": [
-        "@base-ui/react",
-        "@types/react"
-      ],
-      "forwardedCount": 275,
-      "props": [
-        {
-          "name": "className",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "string | ((state: DialogPopupState) => string | undefined) | undefined",
-          "shortType": "function",
-          "defaultValue": null,
-          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
-          "required": false
-        },
-        {
-          "name": "container",
-          "origin": "declared",
-          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
-          "shortType": "Union",
-          "defaultValue": null,
-          "description": "Portal target for this overlay. Defaults to the nearest enclosing `ThemeScope` element, so it never escapes the theme that opened it.",
-          "required": false
-        },
-        {
-          "name": "finalFocus",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "boolean | RefObject<HTMLElement | null> | ((closeType: InteractionType) => void | boolean | HTMLElement | null) | undefined",
-          "shortType": "function",
-          "defaultValue": null,
-          "description": "Determines the element to focus when the dialog is closed. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (trigger or previously focused element). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, `null` to fall back to the default behavior, or `false`/`undefined` to do nothing.",
-          "required": false
-        },
-        {
-          "name": "initialFocus",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "boolean | RefObject<HTMLElement | null> | ((openType: InteractionType) => void | boolean | HTMLElement | null) | undefined",
-          "shortType": "function",
-          "defaultValue": null,
-          "description": "Determines the element to focus when the dialog is opened. By default, focus moves to the first tabbable element inside the popup, except when the dialog is opened by touch — then the popup itself is focused to avoid opening the virtual keyboard. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (first tabbable element or popup). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, `null` to fall back to the default behavior, or `false`/`undefined` to do nothing.",
-          "required": false
-        },
-        {
-          "name": "render",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "ComponentRenderFn<HTMLProps, DialogPopupState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
-          "shortType": "Union",
-          "defaultValue": null,
-          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
-          "required": false
-        },
-        {
-          "name": "style",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
-          "type": "CSSProperties | ((state: DialogPopupState) => CSSProperties | undefined) | undefined",
-          "shortType": "function",
-          "defaultValue": null,
-          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
           "required": false
         }
       ]

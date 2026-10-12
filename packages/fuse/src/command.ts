@@ -6,15 +6,17 @@
 export { Command } from "./components/command";
 export type {
   CommandBackProps,
-  CommandDialogProps,
-  CommandGroupedRootProps,
+  CommandContentProps,
   CommandHintPresetProps,
   CommandInputProps,
+  CommandItemOf,
   CommandItemProps,
+  CommandListProps,
   CommandPageProps,
-  CommandPagesProps,
   CommandPageTriggerProps,
   CommandRootProps,
+  CommandSearchProps,
+  CommandTriggerProps,
 } from "./components/command/command";
 export type {
   CommandFooterProps,

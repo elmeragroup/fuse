@@ -82,7 +82,7 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
-  // parts for Command.Dialog. CommandVirtual keeps the optional @tanstack/react-virtual peer external.
+  // parts for Command.Content. CommandVirtual keeps the optional @tanstack/react-virtual peer external.
   { name: "command", entryFile: "command.js", measuredGzip: 68632 },
   { name: "command-virtual", entryFile: "command-virtual.js", measuredGzip: 58247 },
   { name: "kbd", entryFile: "kbd.js", measuredGzip: 21431 },

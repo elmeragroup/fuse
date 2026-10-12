@@ -6,10 +6,10 @@ import { publishShellBoundary } from "../corner-radius";
 // `rounded-xl` box that pads nothing itself: its input, list and footer each pad their own edge.
 
 /**
- * `Command.Dialog`: the palette box, `rounded-xl`. It publishes no corner; its List pads the rows
- * and publishes.
+ * `Command.Content`: the palette box, `rounded-xl`. It publishes no corner; its List pads the
+ * rows and publishes.
  */
-export const commandDialogShellClass = cn("rounded-xl [--shell-inner:initial]", publishShellBoundary);
+export const commandContentShellClass = cn("rounded-xl [--shell-inner:initial]", publishShellBoundary);
 
 /**
  * The boundary both lists publish: the palette's `rounded-xl` less the small surface tier,
@@ -27,10 +27,12 @@ const commandListBoundaryClass = cn(
 export const commandListShellClass = cn("p-(--surface-pad-sm) data-empty:p-0", commandListBoundaryClass);
 
 /**
- * `CommandVirtual.List`: the same corner as {@link commandListShellClass}, padded only on the
- * inline axis. The virtualizer pads the block axis, so its scroll offsets include the padding.
+ * `Command.List` that hands its rows to a render element, such as `CommandVirtual.List`: the same
+ * corner as {@link commandListShellClass}, padded only on the inline axis. The element places the
+ * rows, so it pads the block axis itself; a virtualizer does, so its scroll offsets include the
+ * padding.
  */
-export const commandVirtualListShellClass = cn(
+export const commandRowsHandedOffListShellClass = cn(
   "px-(--surface-pad-sm) data-empty:px-0",
   commandListBoundaryClass
 );

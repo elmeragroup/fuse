@@ -34,13 +34,13 @@ const GROUPS: readonly ActionGroup[] = [
 
 const ACTIONS = GROUPS.flatMap((group) => group.items);
 
-/** A palette on the page itself. The box around it is the app's; Command.Dialog draws its own. */
+/** A palette on the page itself. The box around it is the app's; Command.Content draws its own. */
 export function CommandGroups() {
   const [lastRun, setLastRun] = useState("");
   return (
     <div className="max-w-xl flex w-full flex-col gap-3">
       <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground">
-        <Command.GroupedRoot items={GROUPS}>
+        <Command.Root grouped items={GROUPS}>
           <Command.Input
             aria-label="Search actions"
             placeholder="Search actions…"
@@ -57,7 +57,7 @@ export function CommandGroups() {
           <Command.List>
             {(group: ActionGroup) => (
               <Command.Group key={group.value} items={group.items}>
-                <Command.GroupLabel>{group.value}</Command.GroupLabel>
+                <Command.Label>{group.value}</Command.Label>
                 <Command.Collection>
                   {(action: Action) => (
                     <Command.Item
@@ -78,7 +78,7 @@ export function CommandGroups() {
               </Command.Group>
             )}
           </Command.List>
-        </Command.GroupedRoot>
+        </Command.Root>
       </div>
       <p role="status" className="text-sm text-muted-foreground">
         {lastRun === "" ? "No action run yet." : `Ran: ${lastRun}`}

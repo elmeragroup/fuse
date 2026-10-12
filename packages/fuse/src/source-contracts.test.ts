@@ -45,7 +45,7 @@ const CLIENT_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["checkbox-card", ["components/checkbox-card/checkbox-card.tsx"]],
   ["collapsible", ["components/collapsible/collapsible.tsx"]],
   ["combobox", ["components/combobox/combobox.tsx"]],
-  ["command", ["components/command/command.tsx", "components/command/command-row-context.ts"]],
+  ["command", ["components/command/command.tsx", "components/command/command-list-context.ts"]],
   ["command-virtual", ["components/command-virtual/command-virtual.tsx"]],
   ["confirm-button", ["components/confirm-button/confirm-button.tsx"]],
   [
@@ -863,7 +863,7 @@ function wiringPartSpreads(relativePath: string, source: string, parts: Readonly
 
 /**
  * The Base UI parts that read Field or Labelable context, plus Button (aria-disabled) and
- * the Sheet and Command.Dialog popups (dialog ARIA), keyed by the module that renders each one.
+ * the Sheet and Command.Content popups (dialog ARIA), keyed by the module that renders each one.
  */
 const WIRING_PARTS = {
   "components/button/button.tsx": ["ButtonPrimitive"],

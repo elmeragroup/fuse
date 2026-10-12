@@ -4,7 +4,4 @@
 // or src/index.ts. Subpath-only: it imports the optional `@tanstack/react-virtual` peer, so the
 // root barrel leaves it out (OPTIONAL_PEER_ENTRIES in scripts/entries.ts). No public recipe.
 export { CommandVirtual } from "./components/command-virtual";
-export type {
-  CommandVirtualListProps,
-  CommandVirtualRootProps,
-} from "./components/command-virtual/command-virtual";
+export type { CommandVirtualListProps } from "./components/command-virtual/command-virtual";

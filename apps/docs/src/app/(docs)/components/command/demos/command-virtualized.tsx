@@ -36,10 +36,10 @@ export function CommandVirtualized() {
   return (
     <div className="max-w-xl flex w-full flex-col gap-3">
       <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground">
-        <CommandVirtual.Root items={METER_POINTS}>
+        <Command.Root items={METER_POINTS} virtualized>
           <Command.Input aria-label="Search meter points" placeholder="Search 2,000 meter points…" />
           <Command.Empty />
-          <CommandVirtual.List>
+          <Command.List render={<CommandVirtual.List />}>
             {(point: MeterPoint) => (
               <Command.Item
                 value={point}
@@ -50,12 +50,12 @@ export function CommandVirtualized() {
                 <span className="text-xs ms-auto text-muted-foreground tabular-nums">{point.id}</span>
               </Command.Item>
             )}
-          </CommandVirtual.List>
+          </Command.List>
           <Command.Footer>
             <Command.NavigateHint />
             <Command.SelectHint>Open</Command.SelectHint>
           </Command.Footer>
-        </CommandVirtual.Root>
+        </Command.Root>
       </div>
       <p role="status" className="text-sm text-muted-foreground">
         {lastRun === "" ? "No meter point opened yet." : `Opened ${lastRun}`}

@@ -302,13 +302,12 @@
 
 ## Command
 
-- `CommandVirtual.List` renders flat item lists only. Add grouped virtual lists: a row per group
-  label in the virtualizer's index space, with Base UI's item indexes kept separate from the row
-  indexes.
+- `CommandVirtual.List` renders flat item lists only, so `virtualized` beside `grouped` throws. Add
+  grouped virtual lists: a row per group label in the virtualizer's index space, with Base UI's
+  item indexes kept separate from the row indexes.
 - Give `CommandVirtual` a committed API artifact. A docs page reads only its own entry, and the
   `command-virtual` entry has no page, so the API diff and drift checks miss changes to
-  `CommandVirtual.Root` and `CommandVirtual.List`. Add a `command-virtual` page, or let one page
-  read several entries.
+  `CommandVirtual.List`. Add a `command-virtual` page, or let one page read several entries.
 
 ## Landing stand-ins
 
