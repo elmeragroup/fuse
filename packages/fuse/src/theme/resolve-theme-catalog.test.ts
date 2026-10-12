@@ -162,6 +162,29 @@ describe("resolveThemeCatalog", () => {
     expect(internalOutline.value).toEqual(Oklch.toSrgb(getOrThrow(Oklch.parse("oklch(0.9219 0 0)"))));
   });
 
+  it("resolves external fkab-company to the tokens of external fkas-company in both schemes", () => {
+    // Unit under test: external-fkab-company. Oracle: external-fkas-company, which fkab
+    // aliases by policy, so every token must resolve to the same colour, length or font.
+    // Only the brand pointer may name fkab, and it resolves to the fkas accent.
+    const fkab = theme("external-fkab-company");
+    const fkas = theme("external-fkas-company");
+    for (const colorScheme of ["light", "dark"] as const) {
+      for (const name of TOKEN_NAMES) {
+        const actual = fkab.schemes[colorScheme].tokens[name];
+        const oracle = fkas.schemes[colorScheme].tokens[name];
+        expect(actual.value, `${colorScheme} ${name}`).toEqual(oracle.value);
+        if (name !== "brand" && name !== "brand-foreground") {
+          expect(actual.css, `${colorScheme} ${name}`).toBe(oracle.css);
+        }
+      }
+      expect(fkab.schemes[colorScheme].tokens.brand.css).toBe("var(--brand-fkab)");
+    }
+    // The company sheet's teal primaries, hand-copied from segment-sheets.ts, anchor the
+    // oracle itself to the Bedrift look rather than the orange private palette.
+    expect(fkab.schemes.light.tokens.primary.css).toBe("oklch(0.47471 0.07313 217.18)");
+    expect(fkab.schemes.dark.tokens.primary.css).toBe("oklch(0.9085589 0.0595841 225.0316)");
+  });
+
   it("reads colours as unrounded sRGB", () => {
     // `#5c6773` in DEFAULTS is a hex literal, not oklch.
     expect(light("internal-fkas-private").tokens["sh-identifier"]).toMatchObject({
