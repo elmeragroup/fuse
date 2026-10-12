@@ -23,12 +23,12 @@ const FKAS_COMPANY_DELTA = {
   "card-soft": "oklch(0.99011 0.0069 219.56)",
   "card-soft-foreground": "oklch(0.30579 0.03693 215.45)",
   "muted-foreground": "oklch(0.5337 0.02481 215.45)",
-  primary: "oklch(0.47471 0.07313 217.18)",
+  primary: "oklch(0.30579 0.03693 215.45)",
   "primary-soft": "oklch(0.95328 0.03401 215.01)",
-  "primary-soft-foreground": "oklch(0.25285 0.03792 212.52)",
-  secondary: "oklch(0.30579 0.03693 215.45)",
+  "primary-soft-foreground": "oklch(0.30579 0.03693 215.45)",
+  secondary: "oklch(0.47471 0.07313 217.18)",
   "secondary-soft": "oklch(0.95328 0.03401 215.01)",
-  "secondary-soft-foreground": "oklch(0.30579 0.03693 215.45)",
+  "secondary-soft-foreground": "oklch(0.25285 0.03792 212.52)",
   feature: "oklch(0.55738 0.06979 216.27)",
   "feature-bright": "oklch(0.7871 0.0657 225.82)",
   "feature-foreground": "oklch(0.90856 0.05958 225.03)",
@@ -44,11 +44,11 @@ const FKAS_COMPANY_DARK_SHEET = {
   "card-foreground": "oklch(0.9822955 0.0142785 213.0969)", // #EFFCFF
   "card-soft": "oklch(0.1749487 0.003804 164.5613)", // #0F1110
   "card-soft-foreground": "oklch(0.9822955 0.0142785 213.0969)", // #EFFCFF
-  primary: "oklch(0.9085589 0.0595841 225.0316)", // #B7EAFF
+  primary: "oklch(0.9822955 0.0142785 213.0969)", // #EFFCFF
   "primary-foreground": "oklch(0 0 0)", // #000000
   "primary-soft": "oklch(0.2661671 0.0034366 164.8011)", // #242625
   "primary-soft-foreground": "oklch(0.9822955 0.0142785 213.0969)", // #EFFCFF
-  secondary: "oklch(0.9822955 0.0142785 213.0969)", // #EFFCFF
+  secondary: "oklch(0.9085589 0.0595841 225.0316)", // #B7EAFF
   "secondary-foreground": "oklch(0 0 0)", // #000000
   "secondary-soft": "oklch(0.2661671 0.0034366 164.8011)", // #242625
   "secondary-soft-foreground": "oklch(0.9822955 0.0142785 213.0969)", // #EFFCFF

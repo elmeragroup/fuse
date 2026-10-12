@@ -770,7 +770,7 @@ describe("studio token editing", () => {
 
   it("edits a live color formula and recolors the hover tone it measures", async () => {
     // Internal elma, whose light secondary is a light grey and foreground near black, so the mix
-    // weight moves the tone. External elma's light secondary is its foreground.
+    // weight moves the tone.
     const { context, page, errors } = await openStudio(hashOf('{"t":"internal-elma-private"}'));
     try {
       await openTokenSection(page, "Actions");
@@ -858,8 +858,8 @@ describe("studio token editing", () => {
     const { context, page, errors } = await openStudio();
     try {
       await openTokenSection(page, "Actions");
-      // external-palettes.ts, elma: primary oklch(0.47851 0.048934 219), #3C6470.
-      expect(await shownValue(page, "primary")).toBe("#3C6470");
+      // external-palettes.ts, elma: primary oklch(0.28898 0.051828 217.7), #00313C.
+      expect(await shownValue(page, "primary")).toBe("#00313C");
       expect(await shownValue(page, "destructive")).toBe("→ error");
       expect(await shownValue(page, "secondary-hover")).toBe("mix");
 

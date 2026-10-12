@@ -132,7 +132,8 @@ const siteShortcuts = tv({
   },
   variants: {
     // `tabs` underline each shortcut with a heavy rule, as TrøndelagKraft's do; `tiles` fill each
-    // one with the brand colour and point an arrow onward, as Gudbrandsdal Energi's do.
+    // one with `primary` and point an arrow onward, in the shape of Gudbrandsdal Energi's. Its
+    // external `primary` is its text colour, and its brand colour is `secondary`.
     style: {
       tabs: {
         list: "@3xl:grid-cols-5 @md:grid-cols-3 max-w-4xl mx-auto w-full grid-cols-2 gap-x-6 gap-y-3",

@@ -19,8 +19,13 @@
   `0.375rem` radius and takes the `1.8125rem` pill button that Fjordkraft and Telinet use,
   since the nordicgreen.fi buttons are pills. Running `figma:sync` for the four new theme
   modes and two primitives waits on the owner.
-- Ask design for an external secondary hover tone. Every external palette sets `secondary`
-  equal to `foreground`, so `--secondary-hover` equals `--secondary` and the hover is invisible.
+- Ask design for an external secondary hover tone. The fkas, tkas, guen, fkse and elma themes
+  paint `secondary` in the brand color, and `--secondary-hover`, 5% toward `foreground`, measures
+  1.03–1.06:1 against it in light and 1.01–1.04:1 in dark, so the hover is faint. Nordic Green
+  Energy sets `secondary` equal to `foreground`, so its hover equals `--secondary` and does not show.
+- Ask design how the external link Button should look. The `link` variant in
+  `button-variants.ts` colors its text with `text-primary`, which is the text color in the fkas,
+  tkas, guen, fkse and elma themes, so a link Button reads as plain text until hover underlines it.
 - Ask design for a light `muted` that clears the 1.1:1 hover-tint floor on `card` and `popover`.
   The shared 0.97 on a white surface measures 1.09:1 on every light theme, so
   `contrast-matrix.test.ts` holds `muted` to that floor in dark only.
@@ -302,7 +307,7 @@ each stand-in once Fuse ships the part.
 - Add a Fjordkraft Företag logo to Fuse. Until then the landing's `brand-wordmark.tsx` draws
   that brand from a mask of `public/landing/logos/fkab.svg`.
 - Give the outline `Button` the ink of the `background` it paints. It inherits the text colour,
-  so on a strong brand block its label is light on light. The promo hero in
+  so on a block filled with `primary` its label is light on light. The promo hero in
   `brand-site/site-hero.tsx` passes `quiet="ghost"` for its second action instead.
 - Let `Sidebar.Inset` render an element other than `<main>`. A page that already has a `main`
   landmark cannot use it, so `app-shell/dashboard-main.tsx` copies its inset classes onto a `div`

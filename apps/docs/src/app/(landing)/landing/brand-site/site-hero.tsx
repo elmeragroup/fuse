@@ -11,8 +11,8 @@ import { SiteActionRow, SitePhoto } from "./site-parts";
 /**
  * The hero in one of six closed layouts, one per reference. The theme paints it; the layout
  * decides the shape: a centred statement on a soft glow, a tinted card that frames the photo,
- * a panel cut on a diagonal, a soft rounded panel, tiles over a full-bleed photo, or a strong
- * brand-coloured promo block. Sizes follow the window's container, not the viewport.
+ * a panel cut on a diagonal, a soft rounded panel, tiles over a full-bleed photo, or a promo
+ * block filled with `primary`. Sizes follow the window's container, not the viewport.
  */
 const siteHero = tv({
   slots: {

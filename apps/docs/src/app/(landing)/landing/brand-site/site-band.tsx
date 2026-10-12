@@ -37,7 +37,10 @@ const siteBand = tv({
   },
 });
 
-/** The tones that fill the band with a brand colour, where a nested card needs its own surface. */
+/**
+ * The tones that fill the band with `primary` or `secondary`, where a nested card needs its own
+ * surface.
+ */
 const FILLED_TONES: ReadonlySet<SiteTone> = new Set(["strong", "inverse"]);
 
 /**

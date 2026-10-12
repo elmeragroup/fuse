@@ -27,13 +27,15 @@ type BareBorder = {
   readonly name: string;
   readonly find: () => HTMLElement;
   readonly side: Side;
-  readonly token: "--border" | "--sidebar-border" | "--primary";
+  readonly token: "--border" | "--sidebar-border" | "--error";
 };
 
 /**
- * The parts with a bare `border*` width, plus a Card whose `border-primary` utility must win
- * over the base default. The first Term and Details drop their border, so the second pair is
- * read; the last body row drops its own, so the first is.
+ * The parts with a bare `border*` width, plus a Card whose `border-error` utility must win
+ * over the base default. An external `primary` can equal the text colour, but the error role is
+ * a status hue, so the check against the text colour stays meaningful in every scope. The first
+ * Term and Details drop their border, so the second pair is read; the last body row drops its
+ * own, so the first is.
  */
 const PARTS: readonly BareBorder[] = [
   { name: "DescriptionList Term", find: () => textNamed("Meter point"), side: "Top", token: "--border" },
@@ -53,10 +55,10 @@ const PARTS: readonly BareBorder[] = [
     token: "--sidebar-border",
   },
   {
-    name: "border-primary Card",
-    find: () => roleNamed("group", "Primary card"),
+    name: "border-error Card",
+    find: () => roleNamed("group", "Error card"),
     side: "Top",
-    token: "--primary",
+    token: "--error",
   },
 ];
 
@@ -73,7 +75,7 @@ function BareBorderParts() {
         </DescriptionList.Content>
       </DescriptionList.Root>
       <Card.Root role="group" aria-label="Card" />
-      <Card.Root role="group" aria-label="Primary card" className="border-primary" />
+      <Card.Root role="group" aria-label="Error card" className="border-error" />
       <Badge variant="outline">Outline</Badge>
       <Table.Root>
         <Table.Body>

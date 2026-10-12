@@ -66,11 +66,13 @@ describe("cssVarColor", () => {
     const externalHeading = headingNamed("external primary", 2);
     const external = cssVarColor(externalHeading, "--primary");
 
-    // themes.css: internal --primary is the neutral near-black, external-fkas is Fjordkraft orange.
+    // themes.css: internal --primary is the neutral near-black, external-fkas is Fjordkraft's
+    // dark red-brown text color.
     expect(internal).toBe("oklch(0.16 0 0)");
-    expect(external).toBe("oklch(0.4848 0.16637 35.92)");
-    // Fjordkraft's external --primary is its orange; currentColor, the fallback an undefined var
-    // leaves behind, would be the black the document inherits.
+    expect(external).toBe("oklch(0.3209 0.10325 38.8)");
+    // Fjordkraft's external --primary is that red-brown; currentColor, the fallback an undefined
+    // var leaves behind, would be the black the document inherits, since no ThemeScope sets a
+    // text color.
     expect(external).not.toBe(getComputedStyle(externalHeading).color);
   });
 

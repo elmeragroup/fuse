@@ -82,7 +82,7 @@ describe("theme catalog payload", () => {
     expect(external.brand).toBe("fkas");
     expect(external.segment).toBe("private");
     expect(external.density).toBe("comfortable");
-    expect(external.tokens["--primary"]).toBe("oklch(0.4848 0.16637 35.92)");
+    expect(external.tokens["--primary"]).toBe("oklch(0.3209 0.10325 38.8)");
     expect(external.tokens["--primary-foreground"]).toBe("oklch(1 0 0)");
 
     const internal = catalogTheme("internal-elma-private");

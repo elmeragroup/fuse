@@ -56,8 +56,8 @@ export function SiteActionRow({
   actions: SiteActions;
   primary?: ButtonVariant;
   /**
-   * The second action's variant. On a strong brand block pass `ghost`: an outline button paints
-   * `background` but keeps the block's light text (see TODO.md).
+   * The second action's variant. On a block filled with `primary` or `secondary` pass `ghost`: an
+   * outline button paints `background` but keeps the block's light text (see TODO.md).
    */
   quiet?: ButtonVariant;
   size?: ButtonSize;
