@@ -1091,8 +1091,9 @@ describe("SelectionItem", () => {
           </SelectionItem.Shell>
         </Field.Root>
       );
+      // A host colour for the disabled label text, which no theme or page colour produces.
       renderThemed(
-        <>
+        <div style={{ "--selection-disabled-foreground": "#ff0000" }}>
           {row("Native control", <input type="checkbox" disabled />)}
           {row(
             "Aria control",
@@ -1104,7 +1105,7 @@ describe("SelectionItem", () => {
             "Data false control",
             <span role="checkbox" aria-checked="false" data-disabled="false" tabIndex={0} />
           )}
-        </>
+        </div>
       );
 
       for (const [name, disabled] of [
@@ -1130,6 +1131,12 @@ describe("SelectionItem", () => {
         const label = headingNamed(name).closest("label");
         if (!(label instanceof HTMLElement)) {
           throw new Error(`expected the label around ${name}`);
+        }
+        const title = getComputedStyle(headingNamed(name)).color;
+        if (disabled) {
+          expect(title, `${name} title colour`).toBe("rgb(255, 0, 0)");
+        } else {
+          expect(title, `${name} title colour`).not.toBe("rgb(255, 0, 0)");
         }
         const cursor = disabled ? "not-allowed" : "pointer";
         expect(getComputedStyle(label).cursor, `${name} label`).toBe(cursor);
@@ -1165,6 +1172,7 @@ describe("SelectionItem", () => {
           style={{
             "--selection-disabled-background": "#ffeedd",
             "--selection-disabled-hatch": "oklch(0 0 0 / 0)",
+            "--selection-disabled-foreground": "#ff0000",
           }}>
           <CheckboxItemGroup label="Host add-ons" defaultValue={["router"]}>
             <CheckboxItem value="router" isDisabled>
@@ -1178,6 +1186,7 @@ describe("SelectionItem", () => {
       await settled(shell);
       expect(checkboxNamed("Host router").getAttribute("aria-checked")).toBe("true");
       expect(getComputedStyle(shell).backgroundColor).toBe("rgb(255, 238, 221)");
+      expect(getComputedStyle(headingNamed("Host router")).color).toBe("rgb(255, 0, 0)");
       expect(gradientStops(getComputedStyle(shell).backgroundImage).map(({ alpha }) => alpha)).toEqual([
         0, 0, 0, 0,
       ]);
