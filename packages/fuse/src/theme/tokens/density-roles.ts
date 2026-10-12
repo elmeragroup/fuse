@@ -208,6 +208,8 @@ export const PART_DENSITY = {
   "item-title": "fixed",
   "item-description": "fixed",
   "item-actions": "layout",
+  // SelectionItem.Actions is one first line of its row tall, a line of the label text.
+  "item-actions:where([data-selection-item] > label *)": "label",
   "item-header": "layout",
   "item-footer": "layout",
   "item-footer-content": "layout",

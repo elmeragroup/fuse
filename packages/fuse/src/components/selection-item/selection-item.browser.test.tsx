@@ -11,6 +11,7 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { expectValidFocusRing, focusRingClippers } from "../../../test/assert-focus-ring";
 import { assertHorizontalItemList, radiusToken } from "../../../test/assert-selection-item-group-layout";
+import { HOSTS, centreY, firstLineCentreY, hostCss } from "../../../test/first-line";
 import {
   cssVarColor,
   fkasExternal,
@@ -26,6 +27,7 @@ import { disabledHatch } from "../../styles/utils";
 import { ThemeScope } from "../../theme";
 import { DENSITIES } from "../../theme/density";
 import { Alert } from "../alert/alert";
+import { Badge } from "../badge/badge";
 import { CheckboxCard } from "../checkbox-card/checkbox-card";
 import { Checkbox as UiCheckbox, CheckboxGroup, CheckboxItemGroup } from "../checkbox/checkbox";
 import { CheckboxItem } from "../checkbox/checkbox-item";
@@ -1131,7 +1133,11 @@ describe("selection row type", () => {
       expect(fontAndLeading(textNamed("Locked for twelve months.")), "description").toEqual(
         expected.description
       );
-      expect(fontAndLeading(textNamed("Recommended")), "plain text in Actions").toEqual(expected.plain);
+      // Actions text sits on the row's first line, so beside a title it takes the title's leading.
+      expect(fontAndLeading(textNamed("Recommended")), "plain text in Actions").toEqual([
+        expected.plain[0],
+        expected.title[1],
+      ]);
       expect(fontAndLeading(textNamed("Price details")), "plain text in a SubSection").toEqual(
         expected.plain
       );
@@ -1161,8 +1167,8 @@ describe("selection row type", () => {
           </CheckboxItem>
         </CheckboxItemGroup>
       );
-      // Item.Media nudges its content down beside an Item.Description; the selection control
-      // cancels that nudge for either description slot.
+      // Item.Media sizes itself to Item.Title's line beside an Item.Description; the selection
+      // control keeps its own title's line for either description slot.
       const line = textNamed("Fixed price").getBoundingClientRect().top + ROW_TYPE[density].title[1] / 2;
       const control = page
         .getByRole("checkbox", { name: /^Fixed price/ })
@@ -1193,6 +1199,133 @@ describe("selection row type", () => {
       expect(fontAndLeading(textNamed(text))[0], text).toBe(14);
     }
   });
+});
+
+describe.each(HOSTS)("selection row first line in a %s host", (host) => {
+  function controlCentreY(role: "checkbox" | "radio", name: RegExp): number {
+    return centreY(page.getByRole(role, { name }).element());
+  }
+
+  it.each(DENSITIES)("centres text and badge Actions content on the title's first line at %s", (density) => {
+    stampDensity(density);
+    renderThemed(
+      <div style={{ width: "320px" }}>
+        <style>{hostCss(host)}</style>
+        <CheckboxItemGroup label="Plans">
+          <CheckboxItem value="fixed">
+            <SelectionItem.Content>
+              <SelectionItem.Title>Fixed price</SelectionItem.Title>
+              <SelectionItem.Description>
+                Locked for twelve months, whatever the spot market does.
+              </SelectionItem.Description>
+            </SelectionItem.Content>
+            <SelectionItem.Actions>Recommended</SelectionItem.Actions>
+          </CheckboxItem>
+          <CheckboxItem value="spot">
+            <SelectionItem.Content>
+              <SelectionItem.Title>Spot price</SelectionItem.Title>
+              <SelectionItem.Description>Follows the hourly market.</SelectionItem.Description>
+            </SelectionItem.Content>
+            <SelectionItem.Actions>
+              <Badge variant="info" size="sm">
+                Current
+              </Badge>
+            </SelectionItem.Actions>
+          </CheckboxItem>
+        </CheckboxItemGroup>
+      </div>
+    );
+    const fixedLine = firstLineCentreY(textNamed("Fixed price"));
+    const spotLine = firstLineCentreY(textNamed("Spot price"));
+    expect(Math.abs(firstLineCentreY(textNamed("Recommended")) - fixedLine), "text").toBeLessThanOrEqual(0.5);
+    expect(Math.abs(centreY(textNamed("Current")) - spotLine), "badge").toBeLessThanOrEqual(0.5);
+  });
+
+  it.each(DENSITIES)(
+    "grows the row around wrapped Actions text and keeps its first line on the title's at %s",
+    (density) => {
+      stampDensity(density);
+      renderThemed(
+        <>
+          <style>{hostCss(host)}</style>
+          <CheckboxItemGroup label="Plans">
+            <CheckboxItem value="fixed">
+              <SelectionItem.Content>
+                <SelectionItem.Title>Fixed</SelectionItem.Title>
+              </SelectionItem.Content>
+              <SelectionItem.Actions style={{ width: "100px" }}>
+                Billed every month in arrears from the first meter reading
+              </SelectionItem.Actions>
+            </CheckboxItem>
+          </CheckboxItemGroup>
+        </>
+      );
+      const text = textNamed("Billed every month in arrears from the first meter reading");
+      const row = text.closest("[data-selection-item]");
+      if (row === null) {
+        throw new Error("expected the selection row around the Actions");
+      }
+      const range = document.createRange();
+      range.selectNodeContents(text);
+      const lines = [...range.getClientRects()];
+      // The fixture wraps, or the test would not reach the case it names.
+      expect(new Set(lines.map((line) => Math.round(line.top))).size).toBeGreaterThan(2);
+      const rowBox = row.getBoundingClientRect();
+      for (const box of [text.getBoundingClientRect(), ...lines]) {
+        expect(box.top).toBeGreaterThanOrEqual(rowBox.top);
+        expect(box.bottom).toBeLessThanOrEqual(rowBox.bottom);
+      }
+      expect(Math.abs(firstLineCentreY(text) - firstLineCentreY(textNamed("Fixed")))).toBeLessThanOrEqual(
+        0.5
+      );
+    }
+  );
+
+  it.each(DENSITIES)("centres the control on a plain-text row's first line at %s", (density) => {
+    stampDensity(density);
+    renderThemed(
+      <>
+        <style>{hostCss(host)}</style>
+        <RadioItemGroup label="Plans">
+          <RadioItem value="fixed">Fixed price</RadioItem>
+        </RadioItemGroup>
+      </>
+    );
+    const line = firstLineCentreY(textNamed("Fixed price"));
+    expect(Math.abs(controlCentreY("radio", /^Fixed price/) - line)).toBeLessThanOrEqual(0.5);
+  });
+
+  it.each(DENSITIES)(
+    "spaces the description from the title by the content gap and ends the content with it at %s",
+    (density) => {
+      stampDensity(density);
+      renderThemed(
+        <>
+          <style>{hostCss(host)}</style>
+          <CheckboxItemGroup label="Plans">
+            <CheckboxItem value="fixed">
+              <SelectionItem.Content>
+                <SelectionItem.Title>Fixed price</SelectionItem.Title>
+                <SelectionItem.Description>Locked for twelve months.</SelectionItem.Description>
+              </SelectionItem.Content>
+            </CheckboxItem>
+          </CheckboxItemGroup>
+        </>
+      );
+      const title = textNamed("Fixed price").getBoundingClientRect();
+      const description = textNamed("Locked for twelve months.");
+      const content = description.parentElement;
+      if (content === null) {
+        throw new Error("expected the content column");
+      }
+      // The content column's gap is 0.25rem, 4px at the default 16px root.
+      expect(description.getBoundingClientRect().top - title.bottom).toBeCloseTo(4, 2);
+      expect(content.getBoundingClientRect().bottom - description.getBoundingClientRect().bottom).toBeCloseTo(
+        0,
+        2
+      );
+    }
+  );
 });
 
 /**

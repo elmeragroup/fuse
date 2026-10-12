@@ -85,7 +85,7 @@ function AlertRoot({
 
   return (
     <ItemRootElement {...props} role="alert" variant="outline" size="sm" className={cn(base(), className)}>
-      <ItemMedia>
+      <ItemMedia variant="icon">
         <AlertIcon variant={variant} />
       </ItemMedia>
       <ItemContent>{children}</ItemContent>
@@ -124,7 +124,8 @@ function AlertTitle({ children, className, level = 3, ...props }: AlertTitleProp
 function AlertDescription({ className, ...props }: AlertDescriptionProps): ReactElement {
   const { description } = alertVariants();
 
-  // The `item-description` slot keeps Item.Media's icon at the top of multi-line content.
+  // The `item-description` slot centres Item.Media's icon on the title's first line instead of the
+  // middle of multi-line content.
   return (
     <div
       data-slot="item-description"
