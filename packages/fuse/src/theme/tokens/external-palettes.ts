@@ -40,6 +40,14 @@ export const EXTERNAL_VARIANT_LAYER = {
   "selection-title-weight": "500",
 } as const satisfies TokenLayer;
 
+/**
+ * Each brand's light palette. Every `muted-foreground` is opaque, so it keeps one contrast per
+ * surface, and `contrast-matrix.test.ts` holds it to 4.5:1 on `background`, `muted`, `card` and
+ * `card-soft`. Where a brand sheet set the foreground at 70% alpha, the role is an opaque tone of
+ * the foreground: its hue, mixed in OKLCH toward white until it measures on a white card what
+ * the 70% value measured. Telinet (`fkse`) stops darker, at a tone that clears 4.5:1 on `muted`.
+ * Nordic Green Energy keeps its sheet's opaque on-surface-variant.
+ */
 export const EXTERNAL_PALETTES = {
   fkas: {
     background: "oklch(0.96042 0.0214 46.99)",
@@ -49,7 +57,7 @@ export const EXTERNAL_PALETTES = {
     "card-soft": "oklch(0.98095 0.01088 54.5)",
     "card-soft-foreground": "oklch(0.3209 0.10325 38.8)",
     muted: "oklch(0.97 0.0013 106.42)",
-    "muted-foreground": "oklch(0.3209 0.10325 38.8 / 0.7)",
+    "muted-foreground": "oklch(0.5286 0.07167 38.8)",
     primary: "oklch(0.4848 0.16637 35.92)",
     "primary-foreground": WHITE,
     "primary-soft": "oklch(0.8861 0.05413 50.48)",
@@ -75,7 +83,7 @@ export const EXTERNAL_PALETTES = {
     "card-soft": "oklch(0.98982 0.01388 185.97)",
     "card-soft-foreground": "oklch(0.30407 0.05238 190.82)",
     muted: "oklch(0.9684 0.0068 247.9)",
-    "muted-foreground": "oklch(0.30407 0.05238 190.82 / 0.7)",
+    "muted-foreground": "oklch(0.5273 0.03558 190.82)",
     primary: "oklch(0.47316 0.08165 190.23)",
     "primary-foreground": WHITE,
     "primary-soft": "oklch(0.94764 0.07736 190.94)",
@@ -101,7 +109,7 @@ export const EXTERNAL_PALETTES = {
     "card-soft": "oklch(0.99199 0.00734 80.72)",
     "card-soft-foreground": "oklch(0.19922 0.12072 268.2)",
     muted: "oklch(0.9684 0.0068 247.9)",
-    "muted-foreground": "oklch(0.19922 0.12072 268.2 / 0.7)",
+    "muted-foreground": "oklch(0.4513 0.08272 268.2)",
     primary: "oklch(0.4863 0.25238 271.95)",
     "primary-foreground": WHITE,
     "primary-soft": "oklch(0.93 0.035 277)",
@@ -127,7 +135,7 @@ export const EXTERNAL_PALETTES = {
     "card-soft": "oklch(0.99007 0.00865 210.19)",
     "card-soft-foreground": "oklch(0.36735 0.09417 249.17)",
     muted: "oklch(0.97 0.0013 106.42)",
-    "muted-foreground": "oklch(0.36735 0.09417 249.17 / 0.7)",
+    "muted-foreground": "oklch(0.543 0.06802 249.17)",
     primary: "oklch(0.48158 0.09084 240.16)",
     "primary-foreground": WHITE,
     "primary-soft": "oklch(0.9368 0.04194 223.32)",
@@ -156,7 +164,7 @@ export const EXTERNAL_PALETTES = {
     "card-soft": "oklch(0.99085 0.0059393 223.5)",
     "card-soft-foreground": "oklch(0.28898 0.051828 217.7)",
     muted: "oklch(0.97 0.0013 106.42)",
-    "muted-foreground": "oklch(0.28898 0.051828 217.7 / 0.7)",
+    "muted-foreground": "oklch(0.5186 0.03509 217.7)",
     primary: "oklch(0.47851 0.048934 219)",
     "primary-foreground": WHITE,
     "primary-soft": "oklch(0.95359 0.031306 222)",

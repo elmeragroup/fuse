@@ -12,14 +12,15 @@ export type SegmentSheets = {
 };
 
 // fkas-company's light overrides on top of the fkas base palette. The generator emits only
-// the keys that differ from the base theme.
+// the keys that differ from the base theme. `muted-foreground` is an opaque tone of the
+// foreground, chosen as the brand palettes' tones are (see `EXTERNAL_PALETTES`).
 const FKAS_COMPANY_DELTA = {
   background: "oklch(0.9823 0.01428 213.1)",
   foreground: "oklch(0.30579 0.03693 215.45)",
   "card-foreground": "oklch(0.25285 0.03792 212.52)",
   "card-soft": "oklch(0.99011 0.0069 219.56)",
   "card-soft-foreground": "oklch(0.30579 0.03693 215.45)",
-  "muted-foreground": "oklch(0.30579 0.03693 215.45 / 0.7)",
+  "muted-foreground": "oklch(0.5337 0.02481 215.45)",
   primary: "oklch(0.47471 0.07313 217.18)",
   "primary-soft": "oklch(0.95328 0.03401 215.01)",
   "primary-soft-foreground": "oklch(0.25285 0.03792 212.52)",

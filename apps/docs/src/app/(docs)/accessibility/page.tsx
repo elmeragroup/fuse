@@ -118,16 +118,6 @@ export default function AccessibilityPage(): ReactElement {
       <p>Documented honestly rather than quietly fixed away:</p>
       <ul>
         <li>
-          Internal light <code>--muted-foreground</code> measures 4.74:1 on white and 4.35:1 on{" "}
-          <code>--muted</code>. Use the muted pairing only for non-essential secondary copy, never as the sole
-          carrier of required information. Keep muted copy at least 14 px.
-        </li>
-        <li>
-          Telinet light external muted copy measures 4.35–4.41:1 after sRGB alpha compositing. The same
-          restriction to non-essential secondary copy applies. Other light external muted pairs measure
-          4.93–8.88:1.
-        </li>
-        <li>
           The neutral <code>--ring</code> is held to 3:1 against the page and card surfaces in both color
           schemes, the surfaces it is drawn on. The ring sits flush against the control, so against a strong
           fill, such as an external primary button, it can measure below 3:1 against that fill. A brand can
@@ -148,12 +138,12 @@ export default function AccessibilityPage(): ReactElement {
         </li>
       </ul>
       <p>
-        Contrast snapshots cover all twenty-four themes. Text pairs target 4.5:1, with the accepted light
-        exceptions above pinned against further regression. Both dark variants pass their paired-text checks;
-        additional tests cover panel text, dark input boundaries, the selection-control edge and focus colors.
-        Decorative dark borders cannot be the sole control boundary. These checks do not establish
-        chart-series distinction or whole-page conformance; review states, artwork and charts in their product
-        context.
+        Contrast snapshots cover all twenty-four themes. Text pairs hold 4.5:1 in both color schemes,
+        including <code>--muted-foreground</code> on the page, <code>--muted</code>, card and card-soft
+        surfaces, so muted descriptions can carry required information. Additional tests cover dark panel
+        text, dark input boundaries, the selection-control edge and focus colors. Decorative dark borders
+        cannot be the sole control boundary. These checks do not establish chart-series distinction or
+        whole-page conformance; review states, artwork and charts in their product context.
       </p>
     </DocsPage>
   );

@@ -16,6 +16,8 @@ export const TEXT_GRADE_PAIRS = [
   ["card-soft-foreground", "card-soft"],
   ["muted-foreground", "muted"],
   ["muted-foreground", "background"],
+  ["muted-foreground", "card"],
+  ["muted-foreground", "card-soft"],
   ["primary-foreground", "primary"],
   ["primary-soft-foreground", "primary-soft"],
   ["secondary-foreground", "secondary"],

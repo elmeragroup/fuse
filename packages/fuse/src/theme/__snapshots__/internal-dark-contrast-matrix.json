@@ -9,6 +9,8 @@
     "info-foreground/info": 7.74,
     "info-soft-foreground/info-soft": 7.22,
     "muted-foreground/background": 7.63,
+    "muted-foreground/card": 6.91,
+    "muted-foreground/card-soft": 5.83,
     "muted-foreground/muted": 5.83,
     "primary-foreground/primary": 14.22,
     "primary-soft-foreground/primary-soft": 14.48,
