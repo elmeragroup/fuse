@@ -176,6 +176,12 @@ describe("resolveThemeCatalog", () => {
       reference: undefined,
       value: Oklch.toSrgb(fkasMutedForeground),
     });
+    // INTERNAL_DARK_PALETTE writes the field border as white at 40% alpha, and the alpha survives.
+    expect(theme("internal-fkas-private").schemes.dark.tokens.input).toMatchObject({
+      css: "oklch(1 0 0 / 40%)",
+      reference: undefined,
+      value: { r: 1, g: 1, b: 1, alpha: 0.4 },
+    });
   });
 
   it("reads dimensions as px and fonts as the first family", () => {

@@ -49,6 +49,11 @@ describe("fuseVariableSet", () => {
       _tag: "Color",
       color: { r: fkasMutedForeground.r, g: fkasMutedForeground.g, b: fkasMutedForeground.b, a: 1 },
     });
+    // The internal dark field border is white at 40% alpha, which Figma keeps as `a`.
+    expect(value(THEMES_COLLECTION, "dark/input", "internal-fkas-private")).toEqual({
+      _tag: "Color",
+      color: { r: 1, g: 1, b: 1, a: 0.4 },
+    });
     expect(value(THEMES_COLLECTION, "light/radius-button", "external-fkas-private")).toEqual(px(29));
     expect(value(THEMES_COLLECTION, "light/font-heading", "external-fkas-private")).toEqual({
       _tag: "String",
