@@ -10,6 +10,9 @@ import { SelectionItemControlEnd } from "./demos/selection-item-control-end";
 import { SelectionItemStacked } from "./demos/selection-item-stacked";
 import { SelectionItemDisabled } from "./demos/selection-item-disabled";
 import { SelectionItemIcon } from "./demos/selection-item-icon";
+import { SelectionItemRadioStack } from "./demos/selection-item-radio-stack";
+import { SelectionItemCheckboxAdjacent } from "./demos/selection-item-checkbox-adjacent";
+import { SelectionItemHorizontal } from "./demos/selection-item-horizontal";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -60,6 +63,57 @@ A click on a `SubSection` stays outside the click target, so a field or button i
 <Demo slug="selection-item" id="icon" title="Icon beside the control" file="selection-item-icon.tsx">
   <SelectionItemIcon />
 </Demo>
+
+<Prose>
+
+## Theming
+
+A row's edges come from four theme roles. In a vertical group, the rows share one line per join. In a horizontal group, each row is a card of its own and draws no divider. Internal themes outline every row in `--border` and box a checked row in `--primary`. External themes draw no outer edge, only a grey line between stacked rows, so the control alone shows which row is checked.
+
+</Prose>
+
+<Demo
+  slug="selection-item"
+  id="radio-stack"
+  title="Stacked radio items"
+  file="selection-item-radio-stack.tsx">
+  <SelectionItemRadioStack />
+</Demo>
+
+<Demo
+  slug="selection-item"
+  id="checkbox-adjacent"
+  title="Adjacent checked rows"
+  file="selection-item-checkbox-adjacent.tsx">
+  <SelectionItemCheckboxAdjacent />
+</Demo>
+
+<Demo slug="selection-item" id="horizontal" title="Horizontal group" file="selection-item-horizontal.tsx">
+  <SelectionItemHorizontal />
+</Demo>
+
+<Prose>
+
+| Role                          | Internal                          | External                   | Draws                                           |
+| ----------------------------- | --------------------------------- | -------------------------- | ----------------------------------------------- |
+| `--selection-border`          | `var(--border)`                   | `oklch(0 0 0 / 0)`         | A row's outer edge                              |
+| `--selection-checked-border`  | `var(--primary)`                  | `var(--selection-border)`  | A checked row's edge: the box around it         |
+| `--selection-divider`         | `var(--selection-border)`         | `var(--border)`            | The line between two stacked rows               |
+| `--selection-checked-divider` | `var(--selection-checked-border)` | `var(--selection-divider)` | The lines above and below a checked stacked row |
+
+The theme settings menu in the docs header switches the demos above between internal and external themes, so both looks show on the same rows.
+
+The theme rules resolve these roles on the element that carries the theme attributes, which is `<html>` or a `ThemeScope`. Set an override there. On a plain wrapper, a `--border` override reaches cards and `CheckboxCard`, but the rows keep the edges and dividers the theme element resolved. To give external rows back an outer edge:
+
+```tsx
+<ThemeScope theme={theme} style={{ "--selection-border": "var(--border)" }}>
+  <RadioItemGroup label="Payment method">{/* … */}</RadioItemGroup>
+</ThemeScope>
+```
+
+The [theming handbook](/handbook/theming#how-it-resolves) explains how the variant layers set these roles.
+
+</Prose>
 
 <ApiReference slug="selection-item" />
 

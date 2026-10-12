@@ -466,7 +466,10 @@
       "selection-item-control-end.tsx",
       "selection-item-stacked.tsx",
       "selection-item-disabled.tsx",
-      "selection-item-icon.tsx"
+      "selection-item-icon.tsx",
+      "selection-item-radio-stack.tsx",
+      "selection-item-checkbox-adjacent.tsx",
+      "selection-item-horizontal.tsx"
     ]
   },
   "separator": {
