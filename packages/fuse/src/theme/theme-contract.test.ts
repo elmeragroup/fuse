@@ -295,7 +295,7 @@ describe("theme contract", () => {
     expect(THEME_RESET_KEYS).toEqual(TOKEN_NAMES.filter((name) => !brandPointerRoles.has(name)));
   });
 
-  it("uses neutral internal dark surfaces with brand accents and preserves the fkab external alias", () => {
+  it("uses neutral internal dark surfaces with brand accents", () => {
     for (const theme of LEGAL_THEMES) {
       if (theme.variant !== "internal") continue;
       const dark = composeTheme(theme, "dark");
@@ -323,11 +323,6 @@ describe("theme contract", () => {
       ] as const) {
         expect(dark[key]).toBe(light[key]);
       }
-    }
-    const fkab = composeTheme({ variant: "external", brand: "fkab", segment: "company" }, "dark");
-    const fkas = composeTheme({ variant: "external", brand: "fkas", segment: "private" }, "dark");
-    for (const key of THEME_RESET_KEYS) {
-      expect(fkab[key], key).toBe(fkas[key]);
     }
   });
 

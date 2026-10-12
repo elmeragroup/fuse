@@ -1,5 +1,7 @@
 import type { TokenLayer } from "./contract";
 import type { ExternalDarkSheet } from "./external-dark-sheet";
+import { paletteBrand } from "./external-palettes";
+import type { ExternalBrandCode } from "./external-palettes";
 import type { BrandCode, ThemeSegment } from "./themes";
 
 /** Both schemes' sheets for one brand/segment pair that departs from its brand base. */
@@ -32,8 +34,9 @@ const FKAS_COMPANY_DELTA = {
   "feature-foreground": "oklch(0.90856 0.05958 225.03)",
 } as const satisfies TokenLayer;
 
-// Bedrift UF9t0CyeKAwPEypCW3S41m. Only fkas-company uses this sheet, and it replaces
-// the fkas dark sheet key for key rather than layering on top of it.
+// Bedrift UF9t0CyeKAwPEypCW3S41m. Only fkas-company uses this sheet, which fkab-company
+// shares through the alias, and it replaces the fkas dark sheet key for key rather than
+// layering on top of it.
 const FKAS_COMPANY_DARK_SHEET = {
   background: "oklch(0.1749487 0.003804 164.5613)", // #0F1110
   foreground: "oklch(0.9822955 0.0142785 213.0969)", // #EFFCFF
@@ -54,7 +57,8 @@ const FKAS_COMPANY_DARK_SHEET = {
   "feature-foreground": "oklch(0.3921674 0.071463 220.1224)", // #004E60
 } as const satisfies ExternalDarkSheet;
 
-const SEGMENT_SHEETS: ReadonlyMap<BrandCode, ReadonlyMap<ThemeSegment, SegmentSheets>> = new Map([
+// Keyed by palette brand, so a pinned alias such as fkab cannot hold sheets of its own.
+const SEGMENT_SHEETS: ReadonlyMap<ExternalBrandCode, ReadonlyMap<ThemeSegment, SegmentSheets>> = new Map([
   [
     "fkas",
     new Map<ThemeSegment, SegmentSheets>([
@@ -65,8 +69,9 @@ const SEGMENT_SHEETS: ReadonlyMap<BrandCode, ReadonlyMap<ThemeSegment, SegmentSh
 
 /**
  * Both schemes' sheets for one brand/segment pair that departs from its brand base, or
- * `undefined` when it has none.
+ * `undefined` when it has none. The lookup goes through `paletteBrand`, so fkab-company
+ * takes fkas-company's sheets.
  */
 export function segmentSheet(brand: BrandCode, segment: ThemeSegment): SegmentSheets | undefined {
-  return SEGMENT_SHEETS.get(brand)?.get(segment);
+  return SEGMENT_SHEETS.get(paletteBrand(brand))?.get(segment);
 }
