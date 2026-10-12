@@ -23,6 +23,7 @@ import {
   setMetric,
   setTokenColor,
   tokenRow,
+  waitForSeed,
 } from "./page";
 import type { StudioPage, StudioRoute } from "./page";
 
@@ -67,7 +68,6 @@ async function withoutNavigationApi(page: Page): Promise<void> {
 /** Reloads the page and waits, as `openStudioIn` does, for it to hydrate and frame the Overview. */
 async function reloadStudio(page: Page): Promise<void> {
   await page.reload({ waitUntil: "load" });
-  await page.locator("next-route-announcer").waitFor({ state: "attached" });
   await artboard(page, LIGHT_BOARD).waitFor({ state: "visible" });
 }
 
@@ -120,9 +120,11 @@ async function settledBox(locator: Locator) {
   }
 }
 
-/** Drags a slider knob's thumb to `fraction` of its track, in one press. */
+/** Drags a slider knob's thumb to `fraction` of its track, in one press, once the seed enables it. */
 async function dragSlider(page: Page, name: string, fraction: number): Promise<void> {
   const row = tokenRow(page, name);
+  // A disabled thumb looks the same and ignores the press.
+  await waitForSeed(row.getByRole("slider", { name: `--${name}`, exact: true }));
   const thumb = await settledBox(row.locator('[data-slot="slider-thumb"]'));
   const track = await settledBox(row.locator('[data-slot="slider-control"]'));
   if (thumb === null || track === null) {
@@ -194,7 +196,9 @@ describe("studio token editing", () => {
     const { context, page, errors } = await openStudio();
     try {
       await openTokenSection(page, "Shape");
-      await tokenRow(page, "radius").getByRole("slider", { name: "--radius", exact: true }).focus();
+      const slider = tokenRow(page, "radius").getByRole("slider", { name: "--radius", exact: true });
+      await waitForSeed(slider);
+      await slider.focus();
       // The radius slider ends at 40px, and a Card rounds with `rounded-lg`, the radius itself.
       await page.keyboard.press("End");
       for (const board of COMPONENT_BOARDS) {
@@ -440,7 +444,9 @@ describe("studio token editing", () => {
       await setTokenColor(page, "primary", "#ff0000");
       await openTokenSection(page, "Shape");
       await openTokenSection(page, "Typography");
-      await tokenRow(page, "radius").getByRole("slider", { name: "--radius", exact: true }).focus();
+      const radius = tokenRow(page, "radius").getByRole("slider", { name: "--radius", exact: true });
+      await waitForSeed(radius);
+      await radius.focus();
       await page.keyboard.press("End");
       const audit = await auditTargets(inspector(page));
       expect(audit.targets).toBeGreaterThan(0);
@@ -558,9 +564,12 @@ describe("studio token editing", () => {
       const row = tokenRow(page, "radius");
       const field = row.getByRole("textbox", { name: "--radius in px", exact: true });
       const increase = row.getByRole("button", { name: "Increase", exact: true });
+      await waitForSeed(field);
+      // external-elma-private.ts: radius 6px; the knob steps by 1px.
       const before = await field.inputValue();
+      expect(before).toBe("6");
       await increase.click();
-      await expect.poll(() => field.inputValue()).not.toBe(before);
+      await expect.poll(() => field.inputValue()).toBe("7");
       const first = await field.inputValue();
       await increase.click();
       await expect.poll(() => field.inputValue()).not.toBe(first);
@@ -581,10 +590,13 @@ describe("studio token editing", () => {
     try {
       await openTokenSection(page, "Shape");
       const field = tokenRow(page, "radius").getByRole("textbox", { name: "--radius in px", exact: true });
+      await waitForSeed(field);
+      // external-elma-private.ts: radius 6px; the knob steps by 1px.
       const before = await field.inputValue();
+      expect(before).toBe("6");
       await field.focus();
       await page.keyboard.press("ArrowUp");
-      await expect.poll(() => field.inputValue()).not.toBe(before);
+      await expect.poll(() => field.inputValue()).toBe("7");
       const first = await field.inputValue();
       // A held key: repeated keydowns, then one keyup.
       await page.keyboard.down("ArrowUp");
@@ -638,6 +650,7 @@ describe("studio token editing", () => {
     try {
       await openTokenSection(page, "Shape");
       const field = tokenRow(page, "radius").getByRole("textbox", { name: "--radius in px", exact: true });
+      await waitForSeed(field);
       const before = await field.inputValue();
       await field.focus();
       await page.keyboard.press("End");
@@ -686,6 +699,7 @@ describe("studio token editing", () => {
     try {
       await openTokenSection(page, "Shape");
       const slider = tokenRow(page, "radius").getByRole("slider", { name: "--radius", exact: true });
+      await waitForSeed(slider);
       await slider.focus();
       const before = await slider.getAttribute("aria-valuenow");
       await page.keyboard.press("ArrowRight");

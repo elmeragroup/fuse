@@ -1,10 +1,14 @@
 import type { Browser, BrowserContext, Locator, Page } from "playwright";
+import { expect } from "vitest";
 
 import { readThemeAttributes } from "../demo-page";
 import { docsBaseUrl } from "../docs-server";
 import { collectPageErrors, settleFrames } from "../landing-page";
 
 export const STUDIO_DESKTOP = { width: 1440, height: 900 } as const;
+
+/** How long a studio page waits for an element to become ready, and for the seed to load. */
+const READY_TIMEOUT = 5000;
 
 /** The Overview's artboards, by the names the canvas labels them with. */
 export const ARTBOARDS = [
@@ -84,7 +88,7 @@ export async function openStudioIn(
   route: StudioRoute = OVERVIEW
 ): Promise<StudioPage> {
   const page = await context.newPage();
-  page.setDefaultTimeout(5000);
+  page.setDefaultTimeout(READY_TIMEOUT);
   const errors = collectPageErrors(page);
   page.on("console", (message) => {
     if (message.type() === "error") {
@@ -93,9 +97,7 @@ export async function openStudioIn(
   });
   await prepare?.(page);
   await page.goto(`${docsBaseUrl()}${route.path}${hash}`, { waitUntil: "load" });
-  // DOM audit: Next's router mounts its announcer once the page has hydrated.
-  await page.locator("next-route-announcer").waitFor({ state: "attached" });
-  // The artboards show once the first fit has placed them.
+  // The artboards show once the first fit has placed them, a client effect, so the page has hydrated.
   await artboard(page, route.artboard).waitFor({ state: "visible" });
   return { context, page, errors };
 }
@@ -171,6 +173,14 @@ export function toggle(within: Locator, group: string, option: string): Locator 
  */
 export function tokenRow(page: Page, name: string, within: Locator = inspector(page)): Locator {
   return within.getByRole("group", { name: `--${name}`, exact: true });
+}
+
+/**
+ * Waits until a knob's control enables: it stays disabled and empty until the studio seed loads.
+ * `isDisabled()` answers at once, so the poll carries the page's ready timeout itself.
+ */
+export async function waitForSeed(control: Locator): Promise<void> {
+  await expect.poll(() => control.isDisabled(), { timeout: READY_TIMEOUT }).toBe(false);
 }
 
 /** Opens the token editor's section titled `title`, if it is closed. */
