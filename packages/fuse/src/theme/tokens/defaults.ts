@@ -75,6 +75,12 @@ export const LAYER_DEFAULTS = {
   // primary role, and the external variant layer keeps the resting edge, so the control alone
   // shows the selection.
   "selection-checked-border": "var(--primary)",
+  // The line between two stacked rows of a vertical SelectionItem group: a row's bottom edge, and
+  // a checked row's top and bottom edges. Internal themes draw it as the row's own edge, so a
+  // checked row stays boxed in the primary role, and the external variant layer keeps the grey
+  // border role here while the rows' outer edge goes transparent.
+  "selection-divider": "var(--selection-border)",
+  "selection-checked-divider": "var(--selection-checked-border)",
   sidebar: "oklch(0.9851 0 0)",
   "sidebar-foreground": NEUTRAL_950,
   "sidebar-accent": NEUTRAL_LINE,

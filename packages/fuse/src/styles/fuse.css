@@ -146,6 +146,11 @@
   --color-button-outline: var(--button-outline, var(--border));
   --color-selection-border: var(--selection-border, var(--border));
   --color-selection-checked-border: var(--selection-checked-border, var(--primary));
+  --color-selection-divider: var(--selection-divider, var(--selection-border, var(--border)));
+  --color-selection-checked-divider: var(
+    --selection-checked-divider,
+    var(--selection-checked-border, var(--primary))
+  );
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-accent: var(--sidebar-accent);

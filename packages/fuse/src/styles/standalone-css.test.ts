@@ -35,7 +35,7 @@ function selectorLines(css: string): Set<string> {
 /** The fallback of every `var(--name, …)` read in `css`, or `undefined` for a bare read. */
 function varFallbacks(css: string, name: string): (string | undefined)[] {
   const fallbacks: (string | undefined)[] = [];
-  const read = new RegExp(`var\\(--${name}(?![\\w-])\\s*`, "gu");
+  const read = new RegExp(`var\\(\\s*--${name}(?![\\w-])\\s*`, "gu");
   for (const match of css.matchAll(read)) {
     const start = match.index + match[0].length;
     if (css[start] !== ",") {
@@ -81,7 +81,9 @@ describe("variant-layer role reads", () => {
     // host without it reads every fallback. `--ring` is a shadcn base role, which such a host
     // declares itself, as it does `--primary`, so it is read bare. Unit under test: each
     // `var(--K` in dist/styles.css for K in EXTERNAL_VARIANT_LAYER. Oracle: LAYER_DEFAULTS[K],
-    // the role's internal default.
+    // the role's internal default. A default that aliases another Fuse role, such as the
+    // selection divider's `var(--selection-border)`, is read with that role's own fallback,
+    // `var(--selection-border, var(--border))`, so the fallback is compared without it.
     expect(existsSync(compiledCssPath), compiledCssPath).toBe(true);
     const css = readFileSync(compiledCssPath, "utf8");
     const defaults: Readonly<Record<string, string>> = LAYER_DEFAULTS;
@@ -91,7 +93,7 @@ describe("variant-layer role reads", () => {
       const fallbacks = varFallbacks(css, key);
       expect(fallbacks.length, key).toBeGreaterThan(0);
       for (const fallback of fallbacks) {
-        expect(fallback, key).toBe(defaults[key]);
+        expect(fallback?.replace(/^var\((--[\w-]+)\s*,[\s\S]*\)$/u, "var($1)"), key).toBe(defaults[key]);
       }
     }
   });

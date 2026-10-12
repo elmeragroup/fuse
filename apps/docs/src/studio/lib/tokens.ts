@@ -90,6 +90,8 @@ export const TOKEN_TABLE = {
   "button-outline": color("variant"),
   "selection-border": color("variant"),
   "selection-checked-border": color("variant"),
+  "selection-divider": color("variant"),
+  "selection-checked-divider": color("variant"),
   sidebar: color("sidebar"),
   "sidebar-foreground": color("sidebar"),
   "sidebar-accent": color("sidebar"),
@@ -145,8 +147,8 @@ export function sectionTokens(section: SectionId): readonly TokenName[] {
 }
 
 /**
- * The keys a dark palette keeps from light: geometry, the outline and selection border colors,
- * and the heading font. Fuse keeps this set private as `LIGHT_ONLY_KEYS` in
+ * The keys a dark palette keeps from light: geometry, the outline and selection border and
+ * divider colors, and the heading font. Fuse keeps this set private as `LIGHT_ONLY_KEYS` in
  * `packages/fuse/src/theme/tokens/contract.ts`; the studio tests check every one declares the
  * same value in both schemes of every theme. An edit to one applies to both schemes.
  */
@@ -154,6 +156,8 @@ export const LIGHT_ONLY_TOKENS: ReadonlySet<TokenName> = new Set<TokenName>([
   "button-outline",
   "selection-border",
   "selection-checked-border",
+  "selection-divider",
+  "selection-checked-divider",
   "radius",
   "radius-button",
   "radius-field",

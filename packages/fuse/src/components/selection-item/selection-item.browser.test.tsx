@@ -921,21 +921,76 @@ describe("SelectionItem", () => {
   });
 
   describe("row edge", () => {
-    /** The rows of one scheme's fixture: a vertical and a horizontal group, and two single rows. */
+    /**
+     * Vertical stacks, each named by where its checked rows sit: three radio rows with the first,
+     * the middle or the last checked, and four checkbox rows with the two middle ones checked.
+     */
+    const STACKS = [
+      { stack: "first", control: "radio", rows: 3, checked: [0] },
+      { stack: "middle", control: "radio", rows: 3, checked: [1] },
+      { stack: "last", control: "radio", rows: 3, checked: [2] },
+      { stack: "adjacent", control: "checkbox", rows: 4, checked: [1, 2] },
+    ] as const;
+
+    /** Rows that join no other row: a horizontal group's cards and a group of one. */
+    const LONE_ROWS = [
+      { row: "router", control: "checkbox", checked: true },
+      { row: "SIM card", control: "checkbox", checked: false },
+      { row: "terms", control: "checkbox", checked: true },
+      { row: "post", control: "radio", checked: false },
+    ] as const;
+
+    type StackRow = {
+      name: string;
+      control: "radio" | "checkbox";
+      checked: boolean;
+      first: boolean;
+      last: boolean;
+    };
+
+    function stackRows(scheme: string): StackRow[] {
+      return STACKS.flatMap(({ stack, control, rows, checked }) =>
+        Array.from({ length: rows }, (_, index) => ({
+          name: `${scheme} ${stack} ${index + 1}`,
+          control,
+          checked: checked.some((value) => value === index),
+          first: index === 0,
+          last: index === rows - 1,
+        }))
+      );
+    }
+
     function EdgeRows({ scheme }: { scheme: string }) {
       return (
         <>
-          <RadioItemGroup label={`${scheme} plan`} defaultValue="spot">
-            <RadioItem value="fixed">
-              <RowTitle>{`${scheme} fixed`}</RowTitle>
-            </RadioItem>
-            <RadioItem value="spot">
-              <RowTitle>{`${scheme} spot`}</RowTitle>
-            </RadioItem>
-            <RadioItem value="hourly">
-              <RowTitle>{`${scheme} hourly`}</RowTitle>
-            </RadioItem>
-          </RadioItemGroup>
+          {STACKS.map(({ stack, control, rows, checked }) => {
+            const values = Array.from({ length: rows }, (_, index) => `${stack}-${index + 1}`);
+            const items = values.map((value, index) => {
+              const title = <RowTitle>{`${scheme} ${stack} ${index + 1}`}</RowTitle>;
+              return control === "radio" ? (
+                <RadioItem key={value} value={value}>
+                  {title}
+                </RadioItem>
+              ) : (
+                <CheckboxItem key={value} value={value}>
+                  {title}
+                </CheckboxItem>
+              );
+            });
+            const label = `${scheme} ${stack} stack`;
+            return control === "radio" ? (
+              <RadioItemGroup key={stack} label={label} defaultValue={values[checked[0]]}>
+                {items}
+              </RadioItemGroup>
+            ) : (
+              <CheckboxItemGroup
+                key={stack}
+                label={label}
+                defaultValue={checked.map((index) => values[index] ?? "")}>
+                {items}
+              </CheckboxItemGroup>
+            );
+          })}
           <CheckboxItemGroup label={`${scheme} add-ons`} orientation="horizontal" defaultValue={["router"]}>
             <CheckboxItem value="router">
               <RowTitle>{`${scheme} router`}</RowTitle>
@@ -958,19 +1013,6 @@ describe("SelectionItem", () => {
       );
     }
 
-    // Each row by title suffix: whether it is checked, and whether it is a non-first row of a
-    // vertical group, whose top edge collapses into the row above's or, once checked, pulls
-    // up over it.
-    const EDGE_ROWS = [
-      { row: "fixed", control: "radio", checked: false, stacked: false },
-      { row: "spot", control: "radio", checked: true, stacked: true },
-      { row: "hourly", control: "radio", checked: false, stacked: true },
-      { row: "router", control: "checkbox", checked: true, stacked: false },
-      { row: "SIM card", control: "checkbox", checked: false, stacked: false },
-      { row: "terms", control: "checkbox", checked: true, stacked: false },
-      { row: "post", control: "radio", checked: false, stacked: false },
-    ] as const;
-
     const SIDES = ["top", "right", "bottom", "left"] as const;
 
     /** The alpha of a colour Chromium computed. */
@@ -978,7 +1020,15 @@ describe("SelectionItem", () => {
       return getOrThrow(CssColor.parse(serialized)).alpha;
     }
 
-    it("draws no edge around external rows, single and grouped, either orientation, checked or not, in light and dark", async () => {
+    /** The row's shell, settled, after checking its control's state matches the fixture. */
+    async function settledShell(name: string, control: "radio" | "checkbox", checked: boolean) {
+      const shell = shellFrom(name);
+      await settled(shell);
+      expect(roleNamed(control, name).getAttribute("aria-checked"), name).toBe(String(checked));
+      return getComputedStyle(shell);
+    }
+
+    it("divides external stacked rows in the border colour and draws no outer edge, in light and dark", async () => {
       renderThemed(
         <>
           <ThemeScope theme={fkasExternal}>
@@ -993,46 +1043,81 @@ describe("SelectionItem", () => {
       );
 
       for (const scheme of ["Light", "Dark"]) {
-        for (const { row, control, checked, stacked } of EDGE_ROWS) {
+        // Oracle: the theme's own `--border`, read where the rows sit. It is opaque, so a
+        // transparent divider fails, and so does an outer edge drawn in it.
+        const border = cssVarColor(shellFrom(`${scheme} first 1`), "--border");
+        expect(alphaOf(border), scheme).toBe(1);
+        for (const { name, control, checked, first, last } of stackRows(scheme)) {
+          const style = await settledShell(name, control, checked);
+          expect(alphaOf(style.borderLeftColor), name).toBe(0);
+          expect(alphaOf(style.borderRightColor), name).toBe(0);
+          if (first) {
+            expect(alphaOf(style.borderTopColor), name).toBe(0);
+          }
+          if (last) {
+            expect(alphaOf(style.borderBottomColor), name).toBe(0);
+          } else {
+            expect(style.borderBottomColor, name).toBe(border);
+          }
+          if (!first && checked) {
+            // A checked row pulls up over the row above's bottom and draws that join itself.
+            expect(style.borderTopColor, name).toBe(border);
+            expect(style.borderTopWidth, name).toBe("1px");
+            expect(style.marginTop, name).toBe("-1px");
+          } else if (!first) {
+            expect(style.borderTopWidth, name).toBe("0px");
+          }
+          // The 1px geometry stays: the joins and the insets.
+          expect(style.borderLeftWidth, name).toBe("1px");
+        }
+        for (const { row, control, checked } of LONE_ROWS) {
           const name = `${scheme} ${row}`;
-          const shell = shellFrom(name);
-          await settled(shell);
-          expect(roleNamed(control, name).getAttribute("aria-checked"), name).toBe(String(checked));
-          const style = getComputedStyle(shell);
-          // Oracle: a zero-alpha edge. The theme's `--border` is opaque, so a row drawing it fails.
+          const style = await settledShell(name, control, checked);
           for (const side of SIDES) {
             expect(alphaOf(style.getPropertyValue(`border-${side}-color`)), `${name} ${side}`).toBe(0);
           }
-          // The 1px geometry stays: the joins, the insets and a checked stacked row's pull-up.
-          expect(style.borderLeftWidth, name).toBe("1px");
-          expect(style.borderTopWidth, name).toBe(stacked && !checked ? "0px" : "1px");
-          expect(style.marginTop, name).toBe(stacked && checked ? "-1px" : "0px");
+          expect(style.borderTopWidth, name).toBe("1px");
+          expect(style.marginTop, name).toBe("0px");
         }
       }
       // The fixture rendered both schemes: light and dark resolve different borders.
-      expect(cssVarColor(shellFrom("Dark fixed"), "--border")).not.toBe(
-        cssVarColor(shellFrom("Light fixed"), "--border")
+      expect(cssVarColor(shellFrom("Dark first 1"), "--border")).not.toBe(
+        cssVarColor(shellFrom("Light first 1"), "--border")
       );
     });
 
-    it("keeps the border-role edge and the primary checked edge on internal rows", async () => {
+    it("keeps the border-role edge and divider and the primary box around checked internal rows", async () => {
       renderThemed(
         <ThemeScope theme={fkasPrivate}>
           <EdgeRows scheme="Internal" />
         </ThemeScope>
       );
 
-      for (const { row, control, checked } of EDGE_ROWS) {
-        const name = `Internal ${row}`;
-        const shell = shellFrom(name);
-        await settled(shell);
-        expect(roleNamed(control, name).getAttribute("aria-checked"), name).toBe(String(checked));
+      const rows = [
+        ...stackRows("Internal"),
+        ...LONE_ROWS.map(({ row, control, checked }) => ({ name: `Internal ${row}`, control, checked })),
+      ];
+      for (const { name, control, checked } of rows) {
+        const style = await settledShell(name, control, checked);
         // Oracle: the theme's own `--border` at rest and `--primary` when checked, read where
-        // the row sits.
-        const edge = cssVarColor(shell, checked ? "--primary" : "--border");
-        expect(getComputedStyle(shell).borderLeftColor, name).toBe(edge);
-        expect(getComputedStyle(shell).borderBottomColor, name).toBe(edge);
+        // the row sits, on every side the row draws.
+        const edge = cssVarColor(shellFrom(name), checked ? "--primary" : "--border");
+        for (const side of SIDES) {
+          if (style.getPropertyValue(`border-${side}-width`) !== "0px") {
+            expect(style.getPropertyValue(`border-${side}-color`), `${name} ${side}`).toBe(edge);
+          }
+        }
       }
+      // A checked row in the middle of a stack is boxed on all four sides.
+      const middle = await settledShell("Internal middle 2", "radio", true);
+      const primary = cssVarColor(shellFrom("Internal middle 2"), "--primary");
+      expect([
+        middle.borderTopColor,
+        middle.borderRightColor,
+        middle.borderBottomColor,
+        middle.borderLeftColor,
+      ]).toEqual([primary, primary, primary, primary]);
+      expect(middle.borderTopWidth).toBe("1px");
     });
   });
 

@@ -58,12 +58,14 @@ Button's `outline` variant reads `--button-outline` and `--button-outline-width`
 }
 ```
 
-A `RadioItem` or `CheckboxItem` row draws its edge in `--selection-border`, and a checked row in `--selection-checked-border`. Without them the row takes your `--border` and a checked row your `--primary`, as internal themes do. For the external themes' look, where the row draws no edge and the control alone shows the selection, set the edge to a transparent colour and point the checked edge at it. The border keeps its 1px width, so rows join and inset as before, but a row on a `--card`-coloured surface has no outline and grouped rows have no divider:
+A `RadioItem` or `CheckboxItem` row draws its edge in `--selection-border`, and a checked row in `--selection-checked-border`. The line between stacked rows reads `--selection-divider`, and above and below a checked row `--selection-checked-divider`. Without them the row and its dividers take your `--border` and a checked row your `--primary`, as internal themes do. For the external themes' look, where stacked rows keep a grey separator but no outer edge and the control alone shows the selection, set the edge to a transparent colour, point the checked edge at it, and draw both dividers in `--border`. The border keeps its 1px width, so rows join and inset as before, but a row on a `--card`-coloured surface has no outline:
 
 ```css
 :root {
   --selection-border: oklch(0 0 0 / 0);
   --selection-checked-border: var(--selection-border);
+  --selection-divider: var(--border);
+  --selection-checked-divider: var(--selection-divider);
 }
 ```
 
