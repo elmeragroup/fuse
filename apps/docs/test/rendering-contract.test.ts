@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { readdir } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -35,7 +34,7 @@ const prerendered: Partial<Record<string, PrerenderedRoute>> =
   // SAFETY: `next build` writes this manifest, and every test compares each field it reads
   // against an expected value, so a shape that disagrees with the type fails the test.
   (
-    JSON.parse(readFileSync(path.join(docsBuildDir, "prerender-manifest.json"), "utf8")) as {
+    JSON.parse(readFileSync(path.join(docsBuildDir(), "prerender-manifest.json"), "utf8")) as {
       routes: Partial<Record<string, PrerenderedRoute>>;
     }
   ).routes;
@@ -133,36 +132,14 @@ describe("rendering contract", () => {
     expect(prerendered[pathname]).toMatchObject(STATIC_HANDLER);
   });
 
-  // A param that `generateStaticParams` does not list runs the handler, and Next caches the 404
-  // it answers. `next.config.ts` keeps request-time cache writes off disk, so junk paths, which
-  // the catch-all `/og/docs` accepts at any depth, cannot add files to the build.
-  it.each(["/api/themes/figma", "/og/docs"])("keeps a 404 under %s off disk", async (handler) => {
-    const segment = `not-a-page-${randomUUID()}`;
-    const { response } = await get(`${handler}/${segment}`);
-    expect(response.status).toBe(404);
-    // Scans the whole build, since Next also writes outside `server/` (`cache/fetch-cache`), but
-    // skips `standalone`: a copy the server never serves, and through pnpm's symlinks most of the
-    // entries. Asynchronous: a long synchronous scan would stall the suite's keep-alive sockets
-    // past the server's idle timeout, and the next request would reuse a closed one.
-    const entries = await readdir(docsBuildDir, { withFileTypes: true });
-    const files = await Promise.all(
-      entries
-        .filter((entry) => entry.name !== "standalone")
-        .map(async (entry) =>
-          entry.isDirectory()
-            ? [
-                entry.name,
-                ...(await readdir(path.join(docsBuildDir, entry.name), {
-                  recursive: true,
-                  encoding: "utf8",
-                })),
-              ]
-            : [entry.name]
-        )
-    );
-    const written = files.flat().filter((file) => file.includes(segment));
-    expect(written).toEqual([]);
-  });
+  // A param that `generateStaticParams` does not list runs the handler, which answers 404.
+  it.each(["/api/themes/figma", "/og/docs"])(
+    "answers 404 for an unlisted param under %s",
+    async (handler) => {
+      const { response } = await get(`${handler}/not-a-page-${randomUUID()}`);
+      expect(response.status).toBe(404);
+    }
+  );
 
   it("serves the landing in the opening theme whole from its prerender", async () => {
     const { response, text } = await get("/");

@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import type { ChildProcess } from "node:child_process";
+import { rm } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, inject } from "vitest";
@@ -10,11 +11,14 @@ const docsRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const nextBin = path.join(docsRoot, "node_modules/next/dist/bin/next");
 
 /**
- * The production build the unit suite's server serves. `next start` inherits this process's
- * environment, so it reads `distDir` from `next.config.ts` the same way.
+ * The build the suite's server serves: the testing build with `testingApi`, else the production
+ * build. `next start` inherits this process's environment, so it reads `distDir` from
+ * `next.config.ts` the same way.
  */
-// oxlint-disable-next-line turbo/no-undeclared-env-vars -- mirrors `distDir` in `next.config.ts`; only `pnpm shots` sets it, outside turbo
-export const docsBuildDir = path.join(docsRoot, process.env.DOCS_DIST_DIR ?? ".next");
+export function docsBuildDir(testingApi = false): string {
+  // oxlint-disable-next-line turbo/no-undeclared-env-vars -- mirrors `distDir` in `next.config.ts`; only `pnpm shots` sets it, outside turbo
+  return path.join(docsRoot, process.env.DOCS_DIST_DIR ?? (testingApi ? ".cache/next-e2e" : ".next"));
+}
 
 /**
  * The origin the suite's server reads as `DOCS_ORIGIN` at runtime. Every page's card URL
@@ -61,6 +65,10 @@ export async function startDocsProductionServer({ testingApi = false } = {}): Pr
   const port = await reservePort();
   // Not `127.0.0.1`: see the loopback note in `src/proxy.ts`.
   const url = `http://localhost:${String(port)}`;
+  // `next start` writes request-time route cache entries into the build. A turbo cache hit
+  // restores a build over the directory and keeps the entries the last server wrote, which would
+  // then serve the previous build's pages.
+  await rm(path.join(docsBuildDir(testingApi), "server/route-cache"), { recursive: true, force: true });
   const child = spawn(
     process.execPath,
     [nextBin, "start", "--hostname", "localhost", "--port", String(port)],

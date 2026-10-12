@@ -74,18 +74,6 @@ const nextConfig: NextConfig = {
     /** `next dev` compiles a client `import()` only when the browser first asks for its chunk. */
     turbopackLazyDynamicImports: true,
     /**
-     * Keeps what the server caches at request time off disk. Cache Components rejects
-     * `dynamicParams = false`, so a handler param that `generateStaticParams` does not list runs
-     * the handler. Next caches its response whatever its status, a 404 included, and would
-     * otherwise write it under the build's `server/` directory, never to revalidate.
-     * `/og/docs/[[...path]]` is a catch-all, so junk URLs would add files that outlive server
-     * restarts until the next build replaces the directory. The build still writes its
-     * prerendered output: its export worker ignores this flag. Request-time entries stay in an
-     * in-memory LRU that counts key and body bytes, up to `cacheMaxMemorySize` (50 MB by
-     * default). The flag also turns off `next/image`'s disk cache, which the app does not use.
-     */
-    isrFlushToDisk: false,
-    /**
      * Adds a cookie-guarded bootstrap script to every page and the navigation lock to the client
      * bundle. It never ships: see `testingApi`.
      */
