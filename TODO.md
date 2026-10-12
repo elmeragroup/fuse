@@ -34,13 +34,6 @@
   (`EXTERNAL_VARIANT_LAYER`). Also confirm the comfortable icon edge, three quarters of that
   inset (12px at `sm`, 24px at `md` and `lg`), and pick a comfortable `xs` inset and icon edge,
   which keep the 12px and 10px control values.
-- Ask design whether the external look wants the checked `bg-muted` row tint at all. External
-  `RadioItem` and `CheckboxItem` rows draw no outer edge (`--selection-border` is transparent in
-  `EXTERNAL_VARIANT_LAYER`, and a checked row keeps it), only the grey `--selection-divider`
-  between stacked rows, and the tint measures 1.09:1 on the rows' `card` fill in light, so the
-  control is the only clear cue. Ask too whether
-  `RadioIconButton` (`radio-group-variants.ts`), which still draws `border-primary` when checked,
-  should read the selection roles.
 - Confirm the external disabled selection row's grey with design. `EXTERNAL_VARIANT_LAYER`
   keeps the card fill without stripes and greys the title and other label row text through
   `--selection-disabled-foreground: var(--muted-foreground)`, beside the control's 50% face.

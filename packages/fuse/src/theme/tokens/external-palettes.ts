@@ -15,8 +15,10 @@ export type ExternalBrandCode = Exclude<BrandCode, "fkab">;
  * brand shares. A selection row draws no outer edge: its resting edge is a zero-alpha colour, not
  * a `transparent` keyword, which the token format does not read, and keeps the 1px border so the
  * rows' joins and insets stay. A checked row keeps that resting edge, as the external radio
- * card does, so its control alone shows the selection. Stacked rows keep a grey `--border`
- * separator between them, checked or not. A disabled selection row keeps the card fill of an
+ * card does, and the faint `bg-muted` tint, which design keeps, so its control is the clear
+ * cue. `RadioIconButton` is a button, not a row, so it keeps its `border-primary` checked edge
+ * rather than reading the selection roles. Stacked rows keep a grey `--border` separator
+ * between them, checked or not. A disabled selection row keeps the card fill of an
  * enabled row and draws no stripes, so it is not a grey panel among the white rows; its title
  * greys to the muted foreground, and its control dims at 50%, as in every theme. A selection
  * row's title takes the medium weight of that radio card, so it matches the group legend and
