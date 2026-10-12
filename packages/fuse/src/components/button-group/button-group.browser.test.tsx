@@ -97,19 +97,31 @@ describe("ButtonGroup", () => {
     expect(document.activeElement).toBe(buttonNamed("Save"));
   });
 
-  it("renders the group Separator with a vertical hairline by default", () => {
-    renderThemed(
-      <ButtonGroup.Root aria-label="Split">
-        <Button>Save</Button>
-        <ButtonGroup.Separator />
-        <Button aria-label="More">More</Button>
-      </ButtonGroup.Root>
-    );
-    const rule = separator();
-    expect(rule.getAttribute("data-slot")).toBe("button-group-separator");
-    expect(rule.getAttribute("aria-orientation")).toBe("vertical");
-    expect(rule.getAttribute("data-orientation")).toBe("vertical");
-  });
+  it.each([
+    ["a horizontal group", "vertical", undefined, undefined, "top", "bottom"],
+    ["a vertical group", "horizontal", "vertical", "horizontal", "left", "right"],
+  ] as const)(
+    "draws the Separator in %s as a %s hairline reaching both outer edges of the buttons",
+    (_, hairline, groupOrientation, separatorOrientation, start, end) => {
+      renderThemed(
+        <ButtonGroup.Root orientation={groupOrientation} aria-label="Split">
+          <Button>Save</Button>
+          <ButtonGroup.Separator orientation={separatorOrientation} />
+          <Button>More</Button>
+        </ButtonGroup.Root>
+      );
+      const rule = separator();
+      expect(rule.getAttribute("data-slot")).toBe("button-group-separator");
+      expect(rule.getAttribute("aria-orientation")).toBe(hairline);
+      expect(rule.getAttribute("data-orientation")).toBe(hairline);
+      // The Button fill paints under its border, out to the border box, so a shorter line
+      // leaves a notch of page at each end.
+      const line = rule.getBoundingClientRect();
+      const button = buttonNamed("Save").getBoundingClientRect();
+      expect(line[start]).toBe(button[start]);
+      expect(line[end]).toBe(button[end]);
+    }
+  );
 
   it("renders Text as a div with data-slot and swaps the tag through render", () => {
     renderThemed(
