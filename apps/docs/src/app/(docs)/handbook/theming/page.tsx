@@ -256,7 +256,12 @@ export default function ThemingPage(): ReactElement {
         such as inside a white <code>Card</code>, has no outline, rows in a group have no divider between
         them, and the checked row&apos;s <code>bg-muted</code> tint barely shows on the row&apos;s card fill.
         The edge is a theme role of its own, so changing it leaves <code>--border</code>, and the cards,
-        tables and <code>CheckboxCard</code> it draws, as they are.
+        tables and <code>CheckboxCard</code> it draws, as they are. To change the row edge, override{" "}
+        <code>--selection-border</code>, or <code>--border</code> in an internal theme, on the element that
+        carries the theme attributes, which is <code>&lt;html&gt;</code> or a <code>ThemeScope</code>. The
+        theme rules resolve <code>--selection-border</code> there. On a plain wrapper a <code>--border</code>{" "}
+        override reaches cards and <code>CheckboxCard</code>, but the rows keep the edge the theme element
+        resolved.
       </p>
       <p>
         The weight of a <code>RadioItem</code> or <code>CheckboxItem</code> row title is themed too. It, which
