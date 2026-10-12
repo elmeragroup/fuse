@@ -1052,6 +1052,16 @@ describe("SelectionItem", () => {
         // title fails.
         expect(cssVarColor(shell, "--muted-foreground"), scheme).not.toBe(cssVarColor(shell, "--foreground"));
         await expectRows(scheme, "--card", 0, "--muted-foreground");
+        // The disabled fill leaves the dividers: the checked disabled row between "fixed" and
+        // "hourly" draws the grey line above and below it, and the last row no line.
+        const spot = shellFrom(`${scheme} spot`);
+        const border = cssVarColor(spot, "--border");
+        expect(getComputedStyle(spot).borderTopColor, `${scheme} spot top`).toBe(border);
+        expect(getComputedStyle(spot).borderBottomColor, `${scheme} spot bottom`).toBe(border);
+        expect(
+          getComputedStyle(shellFrom(`${scheme} hourly`)).borderBottomColor,
+          `${scheme} hourly bottom`
+        ).toBe("oklch(0 0 0 / 0)");
       }
       expect(cssVarColor(shellFrom("Dark fixed"), "--card")).not.toBe(
         cssVarColor(shellFrom("Light fixed"), "--card")
@@ -1072,9 +1082,10 @@ describe("SelectionItem", () => {
 
       for (const scheme of ["Light", "Dark"]) {
         await expectRows(scheme, "--muted", 0.02, "--foreground");
-        // A checked disabled row keeps the primary checked edge of an internal row.
+        // A checked disabled row keeps the primary box of an internal row, dividers included.
         const spot = shellFrom(`${scheme} spot`);
         expect(getComputedStyle(spot).borderTopColor, scheme).toBe(cssVarColor(spot, "--primary"));
+        expect(getComputedStyle(spot).borderBottomColor, scheme).toBe(cssVarColor(spot, "--primary"));
       }
       expect(cssVarColor(shellFrom("Dark fixed"), "--muted")).not.toBe(
         cssVarColor(shellFrom("Light fixed"), "--muted")
