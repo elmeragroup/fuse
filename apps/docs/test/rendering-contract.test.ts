@@ -1,4 +1,6 @@
+import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { readdir } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -14,10 +16,10 @@ import { readDocumentBrand } from "./html";
  * `x-nextjs-cache` at all.
  *
  * A header proves the server answered from its cache, not that the build filled it: Next also
- * writes a request-generated handler response to disk, so a later run on the same build answers
- * it `HIT`. So each path is also cross-checked against the oracle that must agree with the
- * hand-written lists, the build's own record of what it prerendered: `prerender-manifest.json` in
- * the directory the suite's server serves.
+ * caches a request-generated handler response, so a later request answers it `HIT`. So each path
+ * is also cross-checked against the oracle that must agree with the hand-written lists, the
+ * build's own record of what it prerendered: `prerender-manifest.json` in the directory the
+ * suite's server serves.
  */
 
 /** The fields of a prerender manifest route these tests read. */
@@ -71,12 +73,6 @@ const STATIC_PAGES = [
 /** Route handlers that read nothing from the request, so the build answers them. */
 const STATIC_HANDLERS = ["/api/themes", "/api/themes/figma", "/og/landing", "/og/components/button"] as const;
 
-/**
- * An address outside a handler's closed set of parameters. The OG images' unknown paths are
- * covered in `og-images.browser.test.ts`.
- */
-const UNKNOWN_HANDLER_PATH = "/api/themes/figma/not-a-theme";
-
 /** The landing's opening theme, as its theme trigger names it and its layout stamps it. */
 const OPENING = {
   label: "Theme: Elmera · Private · External",
@@ -90,7 +86,7 @@ const SHARED = {
 } as const;
 
 /**
- * Addresses `parseThemeQuery` opens on the opening theme: a slug Fuse does not know, and a
+ * Addresses `parseThemeSearch` opens on the opening theme: a slug Fuse does not know, and a
  * repeated `theme`, even when its last value is legal.
  */
 const OPENING_ADDRESSES = [
@@ -137,9 +133,35 @@ describe("rendering contract", () => {
     expect(prerendered[pathname]).toMatchObject(STATIC_HANDLER);
   });
 
-  it(`answers ${UNKNOWN_HANDLER_PATH} with 404`, async () => {
-    const { response } = await get(UNKNOWN_HANDLER_PATH);
+  // A param that `generateStaticParams` does not list runs the handler, and Next caches the 404
+  // it answers. `next.config.ts` keeps request-time cache writes off disk, so junk paths, which
+  // the catch-all `/og/docs` accepts at any depth, cannot add files to the build.
+  it.each(["/api/themes/figma", "/og/docs"])("keeps a 404 under %s off disk", async (handler) => {
+    const segment = `not-a-page-${randomUUID()}`;
+    const { response } = await get(`${handler}/${segment}`);
     expect(response.status).toBe(404);
+    // Scans the whole build, since Next also writes outside `server/` (`cache/fetch-cache`), but
+    // skips `standalone`: a copy the server never serves, and through pnpm's symlinks most of the
+    // entries. Asynchronous: a long synchronous scan would stall the suite's keep-alive sockets
+    // past the server's idle timeout, and the next request would reuse a closed one.
+    const entries = await readdir(docsBuildDir, { withFileTypes: true });
+    const files = await Promise.all(
+      entries
+        .filter((entry) => entry.name !== "standalone")
+        .map(async (entry) =>
+          entry.isDirectory()
+            ? [
+                entry.name,
+                ...(await readdir(path.join(docsBuildDir, entry.name), {
+                  recursive: true,
+                  encoding: "utf8",
+                })),
+              ]
+            : [entry.name]
+        )
+    );
+    const written = files.flat().filter((file) => file.includes(segment));
+    expect(written).toEqual([]);
   });
 
   it("serves the landing in the opening theme whole from its prerender", async () => {
@@ -147,6 +169,7 @@ describe("rendering contract", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("x-nextjs-prerender")).toContain("1");
     expect(response.headers.get("x-nextjs-postponed")).toBeNull();
+    // Covers the landing layout's server-side stamp, which every landing route carries.
     expect(readDocumentBrand(text)).toEqual(OPENING.brand);
     expect(text).toContain(`aria-label="${OPENING.label}"`);
     expect(text).toContain("One system");
@@ -169,7 +192,6 @@ describe("rendering contract", () => {
   it.each(OPENING_ADDRESSES)("serves %s in the opening theme", async (address) => {
     const { response, text } = await get(address);
     expect(response.status).toBe(200);
-    expect(readDocumentBrand(text)).toEqual(OPENING.brand);
     expect(text).toContain(`aria-label="${OPENING.label}"`);
     expect(text).not.toContain(`aria-label="${SHARED.label}"`);
     expect(occurrences(text, LANDING_TITLE)).toBe(1);

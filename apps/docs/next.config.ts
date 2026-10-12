@@ -24,9 +24,10 @@ const nextConfig: NextConfig = {
   /**
    * The container image runs `node apps/docs/server.js` from `.next/standalone` (see
    * `Dockerfile`). Tracing from the workspace root keeps the linked workspace packages in
-   * that bundle instead of leaving them behind as pnpm symlinks.
+   * that bundle instead of leaving them behind as pnpm symlinks. The testing build skips the
+   * bundle: `next start` serves it from its output directory, and nothing reads its standalone copy.
    */
-  output: "standalone",
+  output: testingApi ? undefined : "standalone",
   outputFileTracingRoot: workspaceRoot,
   /**
    * The OG image routes read Roboto and the Elmera mark with `fs` at request time
@@ -60,15 +61,6 @@ const nextConfig: NextConfig = {
    */
   partialPrefetching: true,
   /**
-   * What this app caches is fixed when it builds: demo sources and API artifacts. With no timed
-   * revalidation or expiry, a page prerendered from them never revalidates, as before Cache
-   * Components, so the server answers from build output and never calls the cache functions
-   * again. The standalone container ships no demo or API source files for them to read.
-   */
-  cacheLife: {
-    default: { revalidate: Infinity, expire: Infinity },
-  },
-  /**
    * The themed route is not an address of its own: a request for it goes to the shared address it
    * stands for, so search engines and visitors only meet `/?theme=`. Redirects run before
    * `src/proxy.ts`, so this leaves the proxy's rewrite alone.
@@ -81,6 +73,18 @@ const nextConfig: NextConfig = {
     turbopackGc: true,
     /** `next dev` compiles a client `import()` only when the browser first asks for its chunk. */
     turbopackLazyDynamicImports: true,
+    /**
+     * Keeps what the server caches at request time off disk. Cache Components rejects
+     * `dynamicParams = false`, so a handler param that `generateStaticParams` does not list runs
+     * the handler. Next caches its response whatever its status, a 404 included, and would
+     * otherwise write it under the build's `server/` directory, never to revalidate.
+     * `/og/docs/[[...path]]` is a catch-all, so junk URLs would add files that outlive server
+     * restarts until the next build replaces the directory. The build still writes its
+     * prerendered output: its export worker ignores this flag. Request-time entries stay in an
+     * in-memory LRU that counts key and body bytes, up to `cacheMaxMemorySize` (50 MB by
+     * default). The flag also turns off `next/image`'s disk cache, which the app does not use.
+     */
+    isrFlushToDisk: false,
     /**
      * Adds a cookie-guarded bootstrap script to every page and the navigation lock to the client
      * bundle. It never ships: see `testingApi`.
