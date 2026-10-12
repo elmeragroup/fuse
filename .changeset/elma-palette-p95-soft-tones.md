@@ -12,7 +12,3 @@ the elma foreground.
 `--secondary-soft`, so every brand backed by a role sheet follows one rule.
 Surfaces using `bg-primary-soft` in those brands render a slightly more
 saturated tint.
-
-External `--muted-foreground` is documented as an accepted contrast
-deviation (≈ 2.7–2.9:1, non-essential text only) in the accessibility
-spec; no values changed for that token.

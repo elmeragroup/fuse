@@ -10,7 +10,10 @@
   dark sheet (`external-dark-palettes.ts`) plus each of its segment dark sheets
   (`segment-sheets.ts`), which replace the brand's dark sheet. `contrast-matrix.test.ts` holds it to 3:1. Retain the
   [accepted contrast exceptions](<apps/docs/src/app/(docs)/accessibility/page.tsx>) until reviewed
-  replacements exist, including internal and Telinet light muted copy.
+  replacements exist.
+- Ask design to set the opaque light `muted-foreground` tones from `external-palettes.ts`,
+  `segment-sheets.ts` and `defaults.ts` in the brand Figma files, which set the brand foreground
+  at 70% alpha. Running `figma:sync` for the new values waits on the owner.
 - Ask design for Nordic Green Energy's radius and button radius, and sign off its palette.
   `external-palettes.ts` maps the NGE Material 3 scheme by meaning, keeps the default
   `0.375rem` radius and takes the `1.8125rem` pill button that Fjordkraft and Telinet use,

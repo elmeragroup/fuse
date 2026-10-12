@@ -24,7 +24,9 @@ export const LAYER_DEFAULTS = {
   popover: WHITE,
   "popover-foreground": INTERNAL_FOREGROUND,
   muted: "oklch(0.97 0.0013 106.42)",
-  "muted-foreground": "oklch(0.5555 0 0)",
+  // The lightest grey, at three decimals, that measures at least 4.55:1 on `muted` and `card-soft`,
+  // the darkest surfaces muted copy lands on, a margin over the 4.5:1 text floor.
+  "muted-foreground": "oklch(0.544 0 0)",
   accent: "oklch(0.96 0 0)",
   "accent-foreground": NEUTRAL_950,
   feature: "oklch(0.96 0 0)",

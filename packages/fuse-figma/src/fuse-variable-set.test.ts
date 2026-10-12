@@ -3,6 +3,9 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
+import * as Oklch from "@elmeragroup/color/oklch";
+import { getOrThrow } from "@elmeragroup/color/result";
+
 import {
   fuseVariableSet,
   PRIMITIVES_COLLECTION,
@@ -40,8 +43,12 @@ describe("fuseVariableSet", () => {
       _tag: "Color",
       color: { r: 0x5c / 255, g: 0x67 / 255, b: 0x73 / 255, a: 1 },
     });
-    const mutedForeground = value(THEMES_COLLECTION, "light/muted-foreground", "external-fkas-private");
-    expect(mutedForeground?._tag === "Color" && mutedForeground.color.a).toBe(0.7);
+    // EXTERNAL_PALETTES.fkas writes its muted copy as an opaque `oklch()` literal.
+    const fkasMutedForeground = Oklch.toSrgb(getOrThrow(Oklch.parse("oklch(0.5286 0.07167 38.8)")));
+    expect(value(THEMES_COLLECTION, "light/muted-foreground", "external-fkas-private")).toEqual({
+      _tag: "Color",
+      color: { r: fkasMutedForeground.r, g: fkasMutedForeground.g, b: fkasMutedForeground.b, a: 1 },
+    });
     expect(value(THEMES_COLLECTION, "light/radius-button", "external-fkas-private")).toEqual(px(29));
     expect(value(THEMES_COLLECTION, "light/font-heading", "external-fkas-private")).toEqual({
       _tag: "String",

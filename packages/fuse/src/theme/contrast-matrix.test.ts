@@ -88,55 +88,15 @@ type ContrastPolicy = {
 };
 
 /**
- * `muted-foreground` copy is classified by the accessibility deviations instead of the blanket
- * 4.5:1 text-grade floor in light: the shared internal light default measures 4.35:1 on `muted`
- * and 4.74:1 on `background`, and Telinet's locked light palette measures 4.35:1 on `muted` and
- * 4.41:1 on `background` (documented deviation 4). Every dark theme holds 4.5:1.
+ * The text-grade pairs hold 4.5:1 in both schemes, `muted-foreground` among them on every
+ * surface muted copy lands on: `background`, `muted`, `card` and `card-soft`. Muted copy carries
+ * field and selection row descriptions, which can hold required information.
  */
 const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
   {
     schemes: ["light", "dark"],
     matches: () => true,
-    pairs: TEXT_GRADE_PAIRS.filter(([foreground]) => foreground !== "muted-foreground"),
-    floor: 4.5,
-  },
-  {
-    schemes: ["light"],
-    matches: (theme) => theme.variant === "internal",
-    pairs: [["muted-foreground", "muted"]],
-    floor: 4.3,
-  },
-  {
-    schemes: ["light"],
-    matches: (theme) => theme.variant === "internal",
-    pairs: [["muted-foreground", "background"]],
-    floor: 4.45,
-  },
-  {
-    schemes: ["light"],
-    matches: (theme) => theme.variant === "external" && theme.brand !== "fkse",
-    pairs: [
-      ["muted-foreground", "muted"],
-      ["muted-foreground", "background"],
-    ],
-    floor: 4.5,
-  },
-  {
-    schemes: ["light"],
-    matches: (theme) => theme.variant === "external" && theme.brand === "fkse",
-    pairs: [
-      ["muted-foreground", "muted"],
-      ["muted-foreground", "background"],
-    ],
-    floor: 4.3,
-  },
-  {
-    schemes: ["dark"],
-    matches: () => true,
-    pairs: [
-      ["muted-foreground", "muted"],
-      ["muted-foreground", "background"],
-    ],
+    pairs: TEXT_GRADE_PAIRS,
     floor: 4.5,
   },
   {

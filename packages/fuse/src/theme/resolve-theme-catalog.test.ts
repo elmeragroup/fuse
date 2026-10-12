@@ -169,7 +169,13 @@ describe("resolveThemeCatalog", () => {
       reference: undefined,
       value: { r: 0x5c / 255, g: 0x67 / 255, b: 0x73 / 255, alpha: 1 },
     });
-    expect(light("external-fkas-private").tokens["muted-foreground"].value).toMatchObject({ alpha: 0.7 });
+    // EXTERNAL_PALETTES.fkas writes an opaque `oklch()` literal for its muted copy.
+    const fkasMutedForeground = getOrThrow(Oklch.parse("oklch(0.5286 0.07167 38.8)"));
+    expect(light("external-fkas-private").tokens["muted-foreground"]).toMatchObject({
+      css: "oklch(0.5286 0.07167 38.8)",
+      reference: undefined,
+      value: Oklch.toSrgb(fkasMutedForeground),
+    });
   });
 
   it("reads dimensions as px and fonts as the first family", () => {
