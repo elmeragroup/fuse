@@ -1,16 +1,7 @@
 "use client";
 
-import {
-  createContext,
-  use,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import type { ComponentProps, CSSProperties, ReactElement, ReactNode, RefObject } from "react";
+import { createContext, use, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import type { ComponentProps, CSSProperties, KeyboardEvent, ReactElement, ReactNode, RefObject } from "react";
 
 // Subpath imports of Base UI's combobox family type-check but crash at runtime with a null React
 // context (see combobox.tsx). Autocomplete shares those internals, so it keeps the package-root
@@ -29,7 +20,6 @@ import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import { commandDialogShellClass, commandListShellClass } from "../../styles/inner-corner/command";
 import { mergeClassName } from "../../styles/merge-class-name";
-import { selfFocusRingClass } from "../../styles/utils";
 import type { LabelButtonProps } from "../button/button";
 import { DialogOverlay, DialogPortal } from "../dialog/dialog";
 import {
@@ -40,7 +30,7 @@ import {
 } from "../input-group/input-group";
 import { Kbd } from "../kbd/kbd";
 import { menuGroupLabelClass } from "../overlay/menu-row-classes";
-import { overlayLayer, overlayPopupSurfaceClass } from "../overlay/overlay-classes";
+import { overlayModalPopupClass } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
 import { CommandHint } from "./command-markup";
@@ -65,11 +55,8 @@ type CommandPagesContextValue = {
 
 const CommandPagesContext = createContext<CommandPagesContextValue | null>(null);
 
-type CommandPageContextValue = {
-  readonly label: string;
-};
-
-const CommandPageContext = createContext<CommandPageContextValue | null>(null);
+/** The label of the page on top, which names its `Command.Input`. */
+const CommandPageContext = createContext<string | null>(null);
 
 type CommandPagesSharedProps = {
   /** The pages: one `Command.Page` per id the stack can hold. */
@@ -115,17 +102,14 @@ export function CommandPages({
       settled.current = false;
     };
   }, []);
-  const change = useCallback(
-    (next: string[]) => {
+  const context = useMemo(() => {
+    const change = (next: string[]) => {
       if (value === undefined) {
         setUncontrolled(next);
       }
       onValueChange?.(next);
-    },
-    [value, onValueChange]
-  );
-  const context = useMemo(
-    () => ({
+    };
+    return {
       stack,
       push: (page: string) => {
         change([...stack, page]);
@@ -136,9 +120,8 @@ export function CommandPages({
         }
       },
       settled,
-    }),
-    [stack, change]
-  );
+    };
+  }, [stack, value, onValueChange]);
   return <CommandPagesContext.Provider value={context}>{children}</CommandPagesContext.Provider>;
 }
 
@@ -162,11 +145,10 @@ export function CommandPage({ id, label, children }: CommandPageProps): ReactEle
   if (pages === null) {
     throw new Error("Command.Page must be used within Command.Pages.");
   }
-  const context = useMemo(() => ({ label }), [label]);
   if (pages.stack.at(-1) !== id) {
     return null;
   }
-  return <CommandPageContext.Provider value={context}>{children}</CommandPageContext.Provider>;
+  return <CommandPageContext.Provider value={label}>{children}</CommandPageContext.Provider>;
 }
 
 /** Whether a stack holds a page below the one on top. */
@@ -255,12 +237,7 @@ export function CommandGroupedRoot<Items extends readonly { readonly items: read
 }
 
 /** Whether a key press is a Backspace that edits nothing: the input is empty and no IME text is composing. */
-function isBackspaceOnEmpty(event: {
-  readonly key: string;
-  readonly keyCode: number;
-  readonly currentTarget: HTMLInputElement;
-  readonly nativeEvent: KeyboardEvent;
-}): boolean {
+function isBackspaceOnEmpty(event: KeyboardEvent<HTMLInputElement>): boolean {
   // keyCode 229 is the IME's own key event, which some browsers send without `isComposing`.
   return (
     event.key === "Backspace" &&
@@ -302,7 +279,7 @@ export function CommandInput({
 }: CommandInputProps): ReactElement {
   const strings = useLocalizedStrings(commandStrings);
   const pages = use(CommandPagesContext);
-  const page = use(CommandPageContext);
+  const pageLabel = use(CommandPageContext);
   const inputRef = useRef<HTMLInputElement>(null);
   const mergedRef = useMergedRefs(ref, inputRef);
   const settled = pages?.settled;
@@ -315,7 +292,7 @@ export function CommandInput({
     <InputGroupRoot data-slot="command-input" className={cn(styles.input(), className)}>
       <AutocompletePrimitive.Input
         ref={mergedRef}
-        aria-label={ariaLabel ?? page?.label ?? strings.format("inputLabel")}
+        aria-label={ariaLabel ?? pageLabel ?? strings.format("inputLabel")}
         placeholder={placeholder ?? strings.format("placeholder")}
         render={<InputGroupPlainInput />}
         onKeyDown={(event) => {
@@ -468,7 +445,7 @@ function rowProps(row: CommandRow | null, style: CommandItemStyle) {
     index: row.index,
     "data-index": row.index,
     "aria-setsize": row.setSize,
-    "aria-posinset": row.posInSet,
+    "aria-posinset": row.index + 1,
     style: withRowStyle(row.style, style),
   };
 }
@@ -535,63 +512,57 @@ export type CommandHintPresetProps = Omit<CommandHintProps, "children"> & {
   children?: ReactNode;
 };
 
-/** The arrow keys' hint: they move the highlight. */
-export function CommandNavigateHint({ children, ...props }: CommandHintPresetProps): ReactElement {
+/** The props of one key hint preset: its caps and the dictionary key of its default label. */
+type KeyHintProps = CommandHintPresetProps & {
+  readonly keys: readonly string[];
+  readonly label: "navigate" | "select" | "close" | "back";
+};
+
+/** A key hint preset's parts: its caps, then its label, or the locale dictionary's. */
+function KeyHint({ keys, label, children, ...props }: KeyHintProps): ReactElement {
   const strings = useLocalizedStrings(commandStrings);
   return (
     <CommandHint {...props}>
-      <Kbd>↑</Kbd>
-      <Kbd>↓</Kbd>
-      <span>{children ?? strings.format("navigate")}</span>
+      {keys.map((key) => (
+        <Kbd key={key}>{key}</Kbd>
+      ))}
+      <span>{children ?? strings.format(label)}</span>
     </CommandHint>
   );
+}
+
+/** The arrow keys' hint: they move the highlight. */
+export function CommandNavigateHint(props: CommandHintPresetProps): ReactElement {
+  return <KeyHint keys={["↑", "↓"]} label="navigate" {...props} />;
 }
 
 /** The Enter key's hint: it runs the highlighted row. */
-export function CommandSelectHint({ children, ...props }: CommandHintPresetProps): ReactElement {
-  const strings = useLocalizedStrings(commandStrings);
-  return (
-    <CommandHint {...props}>
-      <Kbd>↵</Kbd>
-      <span>{children ?? strings.format("select")}</span>
-    </CommandHint>
-  );
+export function CommandSelectHint(props: CommandHintPresetProps): ReactElement {
+  return <KeyHint keys={["↵"]} label="select" {...props} />;
 }
 
 /** The Escape key's hint: it closes `Command.Dialog`. */
-export function CommandCloseHint({ children, ...props }: CommandHintPresetProps): ReactElement {
-  const strings = useLocalizedStrings(commandStrings);
-  return (
-    <CommandHint {...props}>
-      <Kbd>Esc</Kbd>
-      <span>{children ?? strings.format("close")}</span>
-    </CommandHint>
-  );
+export function CommandCloseHint(props: CommandHintPresetProps): ReactElement {
+  return <KeyHint keys={["Esc"]} label="close" {...props} />;
 }
 
 /**
  * The Backspace key's hint: in an empty input it goes back a page. It renders only while the
  * enclosing `Command.Pages` has a page to go back to.
  */
-export function CommandBackHint({ children, ...props }: CommandHintPresetProps): ReactElement | null {
-  const strings = useLocalizedStrings(commandStrings);
+export function CommandBackHint(props: CommandHintPresetProps): ReactElement | null {
   const pages = use(CommandPagesContext);
   if (!canGoBack(pages)) {
     return null;
   }
-  return (
-    <CommandHint {...props}>
-      <Kbd>⌫</Kbd>
-      <span>{children ?? strings.format("back")}</span>
-    </CommandHint>
-  );
+  return <KeyHint keys={["⌫"]} label="back" {...props} />;
 }
 
 /** Props of `Command.Dialog`: Base UI Dialog Popup's plus the portal container. */
 export type CommandDialogProps = ComponentProps<typeof DialogPrimitive.Popup> & OverlayContainerProps;
 
 /**
- * The palette as a modal: the Dialog's portal and overlay around a palette-wide popup anchored
+ * The palette as a modal: the Dialog's portal and overlay around a palette-wide popup placed
  * near the top of the viewport, with no close button. Place it inside `Dialog.Root` and the
  * palette's `Command.Root` inside it. Its name defaults to the locale dictionary; a
  * `Dialog.Title` inside it names it instead. Escape closes it from any page.
@@ -601,7 +572,7 @@ export function CommandDialog({
   container,
   "aria-label": ariaLabel,
   ...props
-}: CommandDialogProps): ReactElement | null {
+}: CommandDialogProps): ReactElement {
   const strings = useLocalizedStrings(commandStrings);
   return (
     <OverlayPortal portal={DialogPortal} container={container}>
@@ -611,11 +582,9 @@ export function CommandDialog({
         aria-label={ariaLabel ?? strings.format("dialogLabel")}
         className={mergeClassName(
           className,
-          overlayPopupSurfaceClass,
+          overlayModalPopupClass,
           commandDialogShellClass,
-          styles.dialog(),
-          overlayLayer,
-          selfFocusRingClass
+          styles.dialog()
         )}
         {...definedProps(props)}
       />

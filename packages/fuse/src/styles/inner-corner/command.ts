@@ -12,19 +12,25 @@ import { publishShellBoundary } from "../corner-radius";
 export const commandDialogShellClass = cn("rounded-xl [--shell-inner:initial]", publishShellBoundary);
 
 /**
- * `Command.List`: pads its rows with the small surface tier, `--surface-pad-sm`, inside the
- * palette's `rounded-xl` and publishes. An empty List drops its padding.
+ * The boundary both lists publish: the palette's `rounded-xl` less the small surface tier,
+ * `--surface-pad-sm`, that pads their rows.
  */
-export const commandListShellClass = cn(
-  "p-(--surface-pad-sm) [--shell-inner:max(0px,--theme(--radius-xl)-var(--surface-pad-sm))] data-empty:p-0",
+const commandListBoundaryClass = cn(
+  "[--shell-inner:max(0px,--theme(--radius-xl)-var(--surface-pad-sm))]",
   publishShellBoundary
 );
+
+/**
+ * `Command.List`: pads its rows with the small surface tier inside the palette's `rounded-xl`
+ * and publishes. An empty List drops its padding.
+ */
+export const commandListShellClass = cn("p-(--surface-pad-sm) data-empty:p-0", commandListBoundaryClass);
 
 /**
  * `CommandVirtual.List`: the same corner as {@link commandListShellClass}, padded only on the
  * inline axis. The virtualizer pads the block axis, so its scroll offsets include the padding.
  */
 export const commandVirtualListShellClass = cn(
-  "px-(--surface-pad-sm) [--shell-inner:max(0px,--theme(--radius-xl)-var(--surface-pad-sm))] data-empty:px-0",
-  publishShellBoundary
+  "px-(--surface-pad-sm) data-empty:px-0",
+  commandListBoundaryClass
 );

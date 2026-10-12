@@ -17,8 +17,6 @@ export type CommandRow = {
   readonly style: CSSProperties;
   /** How many items the filtered list holds, for `aria-setsize`. */
   readonly setSize: number;
-  /** The row's 1-based position in the filtered list, for `aria-posinset`. */
-  readonly posInSet: number;
 };
 
 /** The row a virtual list is rendering, or `null` in an ordinary list. */

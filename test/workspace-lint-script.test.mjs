@@ -100,6 +100,8 @@ describe("workspace lint script", () => {
       "@internationalized/string",
       "@tanstack/react-table",
       "@tanstack/react-virtual",
+      "@base-ui/react/combobox",
+      "@base-ui/react/autocomplete",
       "tailwind-variants",
     ]);
 
@@ -113,22 +115,30 @@ describe("workspace lint script", () => {
     expect(restrictionsOf("packages/fuse/src/intl/create-string-dictionary.ts")).toEqual([
       "@tanstack/react-table",
       "@tanstack/react-virtual",
+      "@base-ui/react/combobox",
+      "@base-ui/react/autocomplete",
       "tailwind-variants",
     ]);
     expect(restrictionsOf("packages/fuse/src/components/data-table/data-table-contexts.ts")).toEqual([
       "@internationalized/string",
       "@tanstack/react-virtual",
+      "@base-ui/react/combobox",
+      "@base-ui/react/autocomplete",
       "tailwind-variants",
     ]);
     expect(restrictionsOf("packages/fuse/src/components/command-virtual/command-virtual.tsx")).toEqual([
       "@internationalized/string",
       "@tanstack/react-table",
+      "@base-ui/react/combobox",
+      "@base-ui/react/autocomplete",
       "tailwind-variants",
     ]);
     expect(restrictionsOf("packages/fuse/src/styles/tv.ts")).toEqual([
       "@internationalized/string",
       "@tanstack/react-table",
       "@tanstack/react-virtual",
+      "@base-ui/react/combobox",
+      "@base-ui/react/autocomplete",
       "tailwind-variants",
     ]);
 

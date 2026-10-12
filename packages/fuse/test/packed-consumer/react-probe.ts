@@ -87,7 +87,7 @@ const commandVirtual = renderToStaticMarkup(
       { items: ["Ada", "Grace"] },
       React.createElement(Command.Input),
       React.createElement(VirtualList, {
-        children: (item: string) => React.createElement(Command.Item, { key: item, value: item }, item),
+        children: (item: string) => React.createElement(Command.Item, { value: item }, item),
       })
     ),
   })

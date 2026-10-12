@@ -75,11 +75,7 @@ test("the virtual list renders flat items through a child function", () => {
     <CommandVirtual.Root items={["Meter point 0001"]}>
       <Command.Input />
       <CommandVirtual.List>
-        {(item: string) => (
-          <Command.Item key={item} value={item}>
-            {item}
-          </Command.Item>
-        )}
+        {(item: string) => <Command.Item value={item}>{item}</Command.Item>}
       </CommandVirtual.List>
     </CommandVirtual.Root>
   );

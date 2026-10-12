@@ -4,6 +4,7 @@ import { page } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { render } from "../../../test/browser-render";
+import { cornerRadius } from "../../../test/inner-corner-specimens";
 import { fkasPrivate } from "../../../test/theme-fixtures";
 import { cssVarColor, px, renderThemed, stampDensity, textNamed } from "../../../test/themed-browser-render";
 import { DENSITIES } from "../../theme/density";
@@ -14,10 +15,6 @@ import { Kbd, KbdGroup } from "./kbd";
 afterEach(() => {
   document.documentElement.removeAttribute("data-density");
 });
-
-function radius(element: HTMLElement): number {
-  return px(getComputedStyle(element).borderTopLeftRadius);
-}
 
 function slotAround(element: HTMLElement, slot: string): HTMLElement {
   // DOM audit: a key combination has no role, so its outer `kbd` is found by the slot it writes.
@@ -57,9 +54,10 @@ describe("Kbd", () => {
     for (const density of DENSITIES) {
       stampDensity(density);
       const { unmount } = renderThemed(<Kbd>{`K ${density}`}</Kbd>);
-      const style = getComputedStyle(textNamed(`K ${density}`));
-      expect(px(style.height), density).toBe(20);
-      expect(px(style.fontSize), density).toBe(12);
+      const cap = textNamed(`K ${density}`);
+      // The rendered box, border included: computed `height` reads the content box alone.
+      expect(cap.getBoundingClientRect().height, density).toBe(20);
+      expect(px(getComputedStyle(cap).fontSize), density).toBe(12);
       unmount();
     }
   });
@@ -91,9 +89,9 @@ describe("Kbd", () => {
         </InputGroup.Root>
       </ThemeScope>
     );
-    expect(radius(textNamed("Free"))).toBe(16);
-    expect(radius(slotAround(textNamed("Ctrl"), "kbd-group"))).toBeCloseTo(9.4, 1);
-    expect(radius(textNamed("Ctrl"))).toBeCloseTo(9.4, 1);
-    expect(radius(textNamed("K"))).toBeCloseTo(9.4, 1);
+    expect(cornerRadius(textNamed("Free"))).toBe(16);
+    expect(cornerRadius(slotAround(textNamed("Ctrl"), "kbd-group"))).toBeCloseTo(9.4, 1);
+    expect(cornerRadius(textNamed("Ctrl"))).toBeCloseTo(9.4, 1);
+    expect(cornerRadius(textNamed("K"))).toBeCloseTo(9.4, 1);
   });
 });

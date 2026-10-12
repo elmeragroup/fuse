@@ -10,6 +10,14 @@ function highlighted(scope: Locator): Promise<string | null> {
   return scope.locator('[role="option"][data-highlighted]').first().textContent();
 }
 
+/** The text of the demo's result line, which reports the last command run. */
+function status(demo: Locator): Promise<string | null> {
+  return demo
+    .getByRole("status")
+    .filter({ hasText: /^(?:Ran|Changed|Opened|No)\b/u })
+    .textContent();
+}
+
 async function focusedName(page: Page): Promise<string | null> {
   return page.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? null);
 }
@@ -25,14 +33,7 @@ describe("Command demos", () => {
     await expect.poll(() => highlighted(dialog)).toBe("Open invoices");
     await page.keyboard.press("Enter");
     await expect.poll(() => dialog.count()).toBe(0);
-    await expect
-      .poll(() =>
-        demo
-          .getByRole("status")
-          .filter({ hasText: /^(?:Ran|Changed|Opened|No)\b/u })
-          .textContent()
-      )
-      .toBe("Ran: Open invoices");
+    await expect.poll(() => status(demo)).toBe("Ran: Open invoices");
     await page.close();
   });
 
@@ -41,24 +42,10 @@ describe("Command demos", () => {
     const demo = await openDemo(page, "command", "Groups with shortcuts");
     await expect.poll(() => demo.getByRole("group", { name: "Go to", exact: true }).count()).toBe(1);
     await demo.getByRole("option", { name: "Invoices", exact: true }).click();
-    await expect
-      .poll(() =>
-        demo
-          .getByRole("status")
-          .filter({ hasText: /^(?:Ran|Changed|Opened|No)\b/u })
-          .textContent()
-      )
-      .toBe("Ran: Invoices");
+    await expect.poll(() => status(demo)).toBe("Ran: Invoices");
     await demo.getByRole("combobox", { name: "Search actions", exact: true }).focus();
     await page.keyboard.press("Alt+KeyR");
-    await expect
-      .poll(() =>
-        demo
-          .getByRole("status")
-          .filter({ hasText: /^(?:Ran|Changed|Opened|No)\b/u })
-          .textContent()
-      )
-      .toBe("Ran: Register meter reading");
+    await expect.poll(() => status(demo)).toBe("Ran: Register meter reading");
     await page.close();
   });
 
@@ -76,14 +63,7 @@ describe("Command demos", () => {
     await page.keyboard.press("ArrowDown");
     await expect.poll(() => highlighted(demo)).toBe("Register meter reading");
     await page.keyboard.press("Enter");
-    await expect
-      .poll(() =>
-        demo
-          .getByRole("status")
-          .filter({ hasText: /^(?:Ran|Changed|Opened|No)\b/u })
-          .textContent()
-      )
-      .toBe("Ran: Register meter reading: Grace Hopper");
+    await expect.poll(() => status(demo)).toBe("Ran: Register meter reading: Grace Hopper");
     await page.keyboard.press("Backspace");
     await expect.poll(() => focusedName(page)).toBe("Customers");
     await expect.poll(() => demo.getByRole("combobox").inputValue()).toBe("");
@@ -122,14 +102,7 @@ describe("Command demos", () => {
     await expect.poll(() => focusedName(page)).toBe("Language");
     await page.keyboard.press("Enter");
     await expect.poll(() => dialog.count()).toBe(0);
-    await expect
-      .poll(() =>
-        demo
-          .getByRole("status")
-          .filter({ hasText: /^(?:Ran|Changed|Opened|No)\b/u })
-          .textContent()
-      )
-      .toBe("Changed Language: Norsk bokmål");
+    await expect.poll(() => status(demo)).toBe("Changed Language: Norsk bokmål");
     await page.close();
   });
 
@@ -142,14 +115,7 @@ describe("Command demos", () => {
     await page.keyboard.press("ArrowUp");
     await expect.poll(() => highlighted(demo)).toContain("Havnegata 200");
     await page.keyboard.press("Enter");
-    await expect
-      .poll(() =>
-        demo
-          .getByRole("status")
-          .filter({ hasText: /^(?:Ran|Changed|Opened|No)\b/u })
-          .textContent()
-      )
-      .toBe("Opened Havnegata 200");
+    await expect.poll(() => status(demo)).toBe("Opened Havnegata 200");
     await page.close();
   });
 });

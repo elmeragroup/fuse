@@ -217,7 +217,17 @@
               {
                 "name": "@tanstack/react-virtual",
                 "allowTypeImports": true,
-                "message": "Import only types from the optional virtualizer peer. Only the command-virtual list and its tests call into TanStack Virtual, so the core command entry never loads it."
+                "message": "Import only types from the optional virtualizer peer. Only the command-virtual list calls into TanStack Virtual, so the core command entry never loads it."
+              },
+              {
+                "name": "@base-ui/react/combobox",
+                "allowTypeImports": true,
+                "message": "Import Combobox from the @base-ui/react package root. The subpath type-checks but crashes at runtime with a null React context."
+              },
+              {
+                "name": "@base-ui/react/autocomplete",
+                "allowTypeImports": true,
+                "message": "Import Autocomplete from the @base-ui/react package root. It shares the combobox internals, so the subpath type-checks but crashes at runtime with a null React context."
               },
               {
                 "name": "tailwind-variants",
@@ -377,7 +387,17 @@
               {
                 "name": "@tanstack/react-virtual",
                 "allowTypeImports": true,
-                "message": "Import only types from the optional virtualizer peer. Only the command-virtual list and its tests call into TanStack Virtual, so the core command entry never loads it."
+                "message": "Import only types from the optional virtualizer peer. Only the command-virtual list calls into TanStack Virtual, so the core command entry never loads it."
+              },
+              {
+                "name": "@base-ui/react/combobox",
+                "allowTypeImports": true,
+                "message": "Import Combobox from the @base-ui/react package root. The subpath type-checks but crashes at runtime with a null React context."
+              },
+              {
+                "name": "@base-ui/react/autocomplete",
+                "allowTypeImports": true,
+                "message": "Import Autocomplete from the @base-ui/react package root. It shares the combobox internals, so the subpath type-checks but crashes at runtime with a null React context."
               },
               {
                 "name": "tailwind-variants",
@@ -405,7 +425,17 @@
               {
                 "name": "@tanstack/react-virtual",
                 "allowTypeImports": true,
-                "message": "Import only types from the optional virtualizer peer. Only the command-virtual list and its tests call into TanStack Virtual, so the core command entry never loads it."
+                "message": "Import only types from the optional virtualizer peer. Only the command-virtual list calls into TanStack Virtual, so the core command entry never loads it."
+              },
+              {
+                "name": "@base-ui/react/combobox",
+                "allowTypeImports": true,
+                "message": "Import Combobox from the @base-ui/react package root. The subpath type-checks but crashes at runtime with a null React context."
+              },
+              {
+                "name": "@base-ui/react/autocomplete",
+                "allowTypeImports": true,
+                "message": "Import Autocomplete from the @base-ui/react package root. It shares the combobox internals, so the subpath type-checks but crashes at runtime with a null React context."
               },
               {
                 "name": "tailwind-variants",
@@ -438,7 +468,17 @@
               {
                 "name": "@tanstack/react-virtual",
                 "allowTypeImports": true,
-                "message": "Import only types from the optional virtualizer peer. Only the command-virtual list and its tests call into TanStack Virtual, so the core command entry never loads it."
+                "message": "Import only types from the optional virtualizer peer. Only the command-virtual list calls into TanStack Virtual, so the core command entry never loads it."
+              },
+              {
+                "name": "@base-ui/react/combobox",
+                "allowTypeImports": true,
+                "message": "Import Combobox from the @base-ui/react package root. The subpath type-checks but crashes at runtime with a null React context."
+              },
+              {
+                "name": "@base-ui/react/autocomplete",
+                "allowTypeImports": true,
+                "message": "Import Autocomplete from the @base-ui/react package root. It shares the combobox internals, so the subpath type-checks but crashes at runtime with a null React context."
               },
               {
                 "name": "tailwind-variants",
@@ -452,10 +492,7 @@
       }
     },
     {
-      "files": [
-        "packages/fuse/src/components/command-virtual/command-virtual.tsx",
-        "packages/fuse/src/components/command-virtual/*.test*.{ts,tsx}"
-      ],
+      "files": ["packages/fuse/src/components/command-virtual/command-virtual.tsx"],
       "rules": {
         "no-restricted-imports": [
           "error",
@@ -471,6 +508,16 @@
                 "name": "@tanstack/react-table",
                 "allowTypeImports": true,
                 "message": "Import only types from the optional TanStack peer. Plain parts render through table.FlexRender and read structural slices; only the data-table contexts, the table hook factory and their tests call into TanStack."
+              },
+              {
+                "name": "@base-ui/react/combobox",
+                "allowTypeImports": true,
+                "message": "Import Combobox from the @base-ui/react package root. The subpath type-checks but crashes at runtime with a null React context."
+              },
+              {
+                "name": "@base-ui/react/autocomplete",
+                "allowTypeImports": true,
+                "message": "Import Autocomplete from the @base-ui/react package root. It shares the combobox internals, so the subpath type-checks but crashes at runtime with a null React context."
               },
               {
                 "name": "tailwind-variants",

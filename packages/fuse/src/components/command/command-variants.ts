@@ -13,8 +13,9 @@ import { menuItemClass } from "../overlay/menu-row-classes";
  * - `item` is the shared menu row, highlighted by Base UI's `data-highlighted`.
  * - `empty` is a row-inset message that collapses while the list has matches.
  * - `footer` and `hint` lay out the key hints under the list.
- * - `dialog` is the palette popup, anchored near the top of the viewport so the input stays put
- *   while the results shrink.
+ * - `dialog` is the palette popup's layout, placed near the top of the viewport so the input
+ *   stays put while the results shrink. `Command.Dialog` composes it after the modal face it
+ *   shares with Dialog, which brings the surface, elevation and motion.
  */
 export const commandVariants = tv({
   slots: {
@@ -31,6 +32,6 @@ export const commandVariants = tv({
       "text-xs flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 border-t border-border px-[calc(var(--surface-pad-sm)+var(--row-px))] py-(--row-py) text-muted-foreground",
     hint: "inline-flex items-center gap-1.5",
     dialog:
-      "shadow-lg max-w-xl fixed top-[max(--spacing(4),12dvh)] left-1/2 flex max-h-[calc(100dvh-2*max(--spacing(4),12dvh))] w-[calc(100%-2rem)] -translate-x-1/2 flex-col overflow-hidden duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+      "max-w-xl fixed top-[max(--spacing(4),12dvh)] left-1/2 flex max-h-[calc(100dvh-2*max(--spacing(4),12dvh))] w-[calc(100%-2rem)] -translate-x-1/2 flex-col overflow-hidden",
   },
 });

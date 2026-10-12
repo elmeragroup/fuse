@@ -12,11 +12,13 @@ import type { Virtualizer } from "@tanstack/react-virtual";
 import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { commandVirtualListShellClass } from "../../styles/inner-corner/command";
 import { mergeClassName } from "../../styles/merge-class-name";
+import { cssLengthToPx } from "../../theme/css-values";
 import { CommandRoot } from "../command/command";
 import type { CommandRootProps } from "../command/command";
 import { CommandRowContext } from "../command/command-row-context";
 import { commandVariants } from "../command/command-variants";
-import { densityLengthInPx } from "./density-length";
+import { DENSE_ROW_METRICS } from "./row-metrics";
+import type { RowMetrics } from "./row-metrics";
 import { highlightScrollAlign, withHighlightedRow } from "./virtual-highlight";
 
 const styles = commandVariants();
@@ -90,18 +92,17 @@ function isItemGroup<ItemValue>(entry: ItemValue | undefined): boolean {
   );
 }
 
-/** One row's height and the list's block padding, in px, read from the density metrics. */
-type RowMetrics = { readonly row: number; readonly pad: number };
-
-/** The dense metrics, for the first render before the list can read the document's. */
-const DENSE_ROW_METRICS: RowMetrics = { row: 32, pad: 4 };
-
+/**
+ * `fuse.css` declares the metrics as unregistered custom properties, so the browser reports one
+ * as written, a `rem` length such as ` 2rem`, and the virtualizer needs pixels.
+ */
 function readRowMetrics(element: HTMLElement): RowMetrics {
   const style = getComputedStyle(element);
   const rootFontSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+  const metric = (name: string) => cssLengthToPx(style.getPropertyValue(name).trim(), rootFontSize);
   return {
-    row: densityLengthInPx(style.getPropertyValue("--row-h"), rootFontSize) ?? DENSE_ROW_METRICS.row,
-    pad: densityLengthInPx(style.getPropertyValue("--surface-pad-sm"), rootFontSize) ?? DENSE_ROW_METRICS.pad,
+    row: metric("--row-h") ?? DENSE_ROW_METRICS.row,
+    pad: metric("--surface-pad-sm") ?? DENSE_ROW_METRICS.pad,
   };
 }
 
@@ -114,7 +115,11 @@ export type CommandVirtualListProps<ItemValue> = Omit<
   ComponentProps<typeof AutocompletePrimitive.List>,
   "children"
 > & {
-  /** Renders one filtered item, usually as a `Command.Item`. */
+  /**
+   * Renders one filtered item, usually as a `Command.Item`. The list keys each row by its
+   * position, so the element you return sets no `key`: one keyed by item would remount the row
+   * whenever filtering moves another item into its place.
+   */
   children: (item: ItemValue, index: number) => ReactNode;
   /**
    * A row's height before it is measured. Defaults to the document density's row height, which a
@@ -204,7 +209,6 @@ export function CommandVirtualList<ItemValue>({
                     transform: `translateY(${String(virtualItem.start)}px)`,
                   },
                   setSize: items.length,
-                  posInSet: virtualItem.index + 1,
                 }}>
                 {children(item, virtualItem.index)}
               </CommandRowContext.Provider>

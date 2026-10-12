@@ -16,8 +16,9 @@ import { PART_DENSITY } from "./theme/tokens/density-roles";
  * `no-hardcoded-density-metrics`, `no-primitive-colors`, `no-local-focus-ring`,
  * `restrict-focus-ring-call`, `restrict-browser-helper-copy`, `no-field-part-jsx`,
  * `no-tailwind-dark-variant`, `restrict-process-env`, `no-restricted-imports` for
- * `LocalizedStringDictionary` and for runtime values of `@tanstack/react-table` and
- * `@tanstack/react-virtual`)
+ * `LocalizedStringDictionary`, for runtime values of `@tanstack/react-table` and
+ * `@tanstack/react-virtual`, and for the `@base-ui/react/combobox` and
+ * `@base-ui/react/autocomplete` subpaths)
  * or an exports/package-check gate. Each describe documents why the contract is
  * not a lint rule.
  */
@@ -392,29 +393,6 @@ describe("deleted user-agent and @elmeragroup/lib APIs", () => {
     expect(manifest).not.toMatch(/\bUserAgentParserResult\b/);
     expect(manifest).not.toMatch(/@elmeragroup\/lib/);
   });
-});
-
-describe("combobox", () => {
-  // Why not a lint rule: `@base-ui/react/combobox` type-checks and is the
-  // usual subpath; it crashes at runtime with a null React context.
-  // The forbidden specifier is one documented trap, not a
-  // grammar.
-  it("imports Combobox from the @base-ui/react package root, never the combobox subpath", () => {
-    const source = readSrc("components/combobox/combobox.tsx");
-    expect(source).toContain('from "@base-ui/react"');
-    expect(source).not.toContain('from "@base-ui/react/combobox"');
-  });
-
-  // Autocomplete shares the combobox internals, so its subpath is the same trap.
-  it.each(["components/command/command.tsx", "components/command-virtual/command-virtual.tsx"])(
-    "%s imports Autocomplete from the @base-ui/react package root, never a combobox-family subpath",
-    (file) => {
-      const source = readSrc(file);
-      expect(source).toContain('from "@base-ui/react"');
-      expect(source).not.toContain('from "@base-ui/react/autocomplete"');
-      expect(source).not.toContain('from "@base-ui/react/combobox"');
-    }
-  );
 });
 
 describe("density stays out of subtree theming", () => {

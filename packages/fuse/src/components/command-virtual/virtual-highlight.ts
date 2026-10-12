@@ -4,8 +4,7 @@
  * be mounted, and a highlight that jumps past the rendered window must scroll there.
  */
 
-/** Why Base UI moved the highlight, as `onItemHighlighted` reports it. */
-export type HighlightReason = "keyboard" | "pointer" | "none";
+import type { AutocompleteRootHighlightEventReason } from "@base-ui/react";
 
 /**
  * Where to scroll a newly highlighted row, by Base UI's rule for virtual lists: scroll on a
@@ -19,7 +18,7 @@ export type HighlightReason = "keyboard" | "pointer" | "none";
  * @returns The alignment to scroll the row to, or `undefined` to leave the scroll alone.
  */
 export function highlightScrollAlign(
-  reason: HighlightReason,
+  reason: AutocompleteRootHighlightEventReason,
   index: number,
   count: number
 ): "start" | "end" | undefined {

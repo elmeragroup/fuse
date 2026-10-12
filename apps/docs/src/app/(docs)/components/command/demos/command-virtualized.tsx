@@ -42,7 +42,6 @@ export function CommandVirtualized() {
           <CommandVirtual.List>
             {(point: MeterPoint) => (
               <Command.Item
-                key={point.id}
                 value={point}
                 onClick={() => {
                   setLastRun(point.label);

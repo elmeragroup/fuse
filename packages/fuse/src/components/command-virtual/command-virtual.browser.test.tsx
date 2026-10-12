@@ -36,7 +36,6 @@ function VirtualPalette({
       <CommandVirtual.List>
         {(item: string) => (
           <Command.Item
-            key={item}
             value={item}
             onClick={() => {
               onRun(item);
@@ -74,11 +73,26 @@ function isInView(element: HTMLElement): boolean {
   return row.top >= list.top - 0.5 && row.bottom <= list.bottom + 0.5;
 }
 
+/** Focuses the input and waits for the first match's highlight. */
+async function focusInput(): Promise<HTMLElement> {
+  const input = roleNamed("combobox", "Meter points");
+  input.focus();
+  await expect.poll(() => highlightedOption()?.textContent).toBe("Meter point 0001");
+  return input;
+}
+
+/** Highlights the third row with the arrows, then wheels the list far past it. */
+async function highlightThirdRowAndWheelAway(): Promise<void> {
+  await userEvent.keyboard("{ArrowDown}{ArrowDown}");
+  await expect.poll(() => highlightedOption()?.textContent).toBe("Meter point 0003");
+  await userEvent.wheel(listbox(), { delta: { y: 4000 } });
+  await expect.poll(() => listbox().scrollTop).toBeGreaterThan(2000);
+}
+
 describe("CommandVirtual", () => {
   it("renders a window of rows, each placed in the full list", async () => {
     renderPalette(<VirtualPalette onRun={() => undefined} />);
-    roleNamed("combobox", "Meter points").focus();
-    await expect.poll(() => highlightedOption()?.textContent).toBe("Meter point 0001");
+    await focusInput();
     const rows = page.getByRole("option").elements();
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.length).toBeLessThan(60);
@@ -89,8 +103,7 @@ describe("CommandVirtual", () => {
   it("wraps ArrowUp from the first row to the last, scrolls it into view and runs it on Enter", async () => {
     const onRun = vi.fn<(item: string) => void>();
     renderPalette(<VirtualPalette onRun={onRun} />);
-    roleNamed("combobox", "Meter points").focus();
-    await expect.poll(() => highlightedOption()?.textContent).toBe("Meter point 0001");
+    await focusInput();
     await userEvent.keyboard("{ArrowUp}");
     await expect.poll(() => highlightedOption()?.textContent).toBe("Meter point 1000");
     await expect.poll(() => isInView(roleNamed("option", "Meter point 1000"))).toBe(true);
@@ -104,29 +117,20 @@ describe("CommandVirtual", () => {
     // The wheel needs the pointer over the list, and a hovered row would take the highlight, so
     // hover leaves the keyboard's highlight alone here.
     renderPalette(<VirtualPalette onRun={onRun} highlightItemOnHover={false} />);
-    roleNamed("combobox", "Meter points").focus();
-    await expect.poll(() => highlightedOption()?.textContent).toBe("Meter point 0001");
-    await userEvent.keyboard("{ArrowDown}{ArrowDown}");
-    await expect.poll(() => highlightedOption()?.textContent).toBe("Meter point 0003");
-    await userEvent.wheel(listbox(), { delta: { y: 4000 } });
-    await expect.poll(() => listbox().scrollTop).toBeGreaterThan(2000);
+    const input = await focusInput();
+    await highlightThirdRowAndWheelAway();
     const highlighted = roleNamed("option", "Meter point 0003");
     expect(isInView(highlighted)).toBe(false);
     expect(page.getByRole("option", { name: "Meter point 0004", exact: true }).elements()).toEqual([]);
-    roleNamed("combobox", "Meter points").focus();
+    input.focus();
     await userEvent.keyboard("{Enter}");
     expect(onRun.mock.calls).toEqual([["Meter point 0003"]]);
   });
 
   it("scrolls back to the first match when typing moves the highlight", async () => {
     renderPalette(<VirtualPalette onRun={() => undefined} highlightItemOnHover={false} />);
-    const input = roleNamed("combobox", "Meter points");
-    input.focus();
-    await expect.poll(() => highlightedOption()?.textContent).toBe("Meter point 0001");
-    await userEvent.keyboard("{ArrowDown}{ArrowDown}");
-    await expect.poll(() => highlightedOption()?.textContent).toBe("Meter point 0003");
-    await userEvent.wheel(listbox(), { delta: { y: 4000 } });
-    await expect.poll(() => listbox().scrollTop).toBeGreaterThan(2000);
+    const input = await focusInput();
+    await highlightThirdRowAndWheelAway();
     input.focus();
     // "point 0" matches 999 rows, so the list stays long and the first match is far above.
     await userEvent.keyboard("point 0");

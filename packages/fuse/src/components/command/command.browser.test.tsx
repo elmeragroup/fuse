@@ -7,7 +7,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { withLocale } from "../../../test/locale-matrix";
-import { px, renderThemed, roleNamed, stampDensity } from "../../../test/themed-browser-render";
+import { px, renderThemed, ROW, roleNamed, stampDensity } from "../../../test/themed-browser-render";
 import { DENSITIES } from "../../theme/density";
 import { Dialog } from "../dialog";
 import { Kbd } from "../kbd/kbd";
@@ -74,10 +74,19 @@ function EntryRows({ onRun }: { onRun: (label: string) => void }): ReactElement 
 /** A query held above the stack, which makes the home page's Root controlled. */
 type HeldQuery = Pick<CommandRootProps<Entry>, "value" | "onValueChange">;
 
-function HomePage({ onRun, held = {} }: { onRun: (label: string) => void; held?: HeldQuery }): ReactElement {
+type EntryPageProps = {
+  readonly id: string;
+  readonly label: string;
+  readonly items: readonly Entry[];
+  readonly onRun: (label: string) => void;
+  readonly held?: HeldQuery;
+};
+
+/** One page of the stack: its entries and the footer hints. */
+function EntryPage({ id, label, items, onRun, held = {} }: EntryPageProps): ReactElement {
   return (
-    <Command.Page id="home" label="Commands">
-      <Command.Root items={HOME} {...held}>
+    <Command.Page id={id} label={label}>
+      <Command.Root items={items} {...held}>
         <Command.Input />
         <Command.Empty />
         <EntryRows onRun={onRun} />
@@ -90,27 +99,14 @@ function HomePage({ onRun, held = {} }: { onRun: (label: string) => void; held?:
   );
 }
 
-function CustomersPage({ onRun }: { onRun: (label: string) => void }): ReactElement {
-  return (
-    <Command.Page id="customers" label="Customers">
-      <Command.Root items={CUSTOMERS}>
-        <Command.Input />
-        <Command.Empty />
-        <EntryRows onRun={onRun} />
-        <Command.Footer>
-          <Command.NavigateHint />
-          <Command.BackHint />
-        </Command.Footer>
-      </Command.Root>
-    </Command.Page>
-  );
-}
+const HOME_PAGE = { id: "home", label: "Commands", items: HOME } as const;
+const CUSTOMERS_PAGE = { id: "customers", label: "Customers", items: CUSTOMERS } as const;
 
 function PagedPalette({ onRun = () => undefined }: { onRun?: (label: string) => void }): ReactElement {
   return (
     <Command.Pages defaultValue={["home"]}>
-      <HomePage onRun={onRun} />
-      <CustomersPage onRun={onRun} />
+      <EntryPage {...HOME_PAGE} onRun={onRun} />
+      <EntryPage {...CUSTOMERS_PAGE} onRun={onRun} />
     </Command.Pages>
   );
 }
@@ -120,10 +116,16 @@ function KeptQueryPalette(): ReactElement {
   const [query, setQuery] = useState("");
   return (
     <Command.Pages defaultValue={["home"]}>
-      <HomePage onRun={() => undefined} held={{ value: query, onValueChange: setQuery }} />
-      <CustomersPage onRun={() => undefined} />
+      <EntryPage {...HOME_PAGE} onRun={() => undefined} held={{ value: query, onValueChange: setQuery }} />
+      <EntryPage {...CUSTOMERS_PAGE} onRun={() => undefined} />
     </Command.Pages>
   );
+}
+
+/** Waits until the page input with this name has mounted, and returns it. */
+async function mountedInput(name: string): Promise<HTMLInputElement> {
+  await expect.element(page.getByRole("combobox", { name, exact: true })).toBeInTheDocument();
+  return comboboxNamed(name);
 }
 
 async function openCustomers(): Promise<HTMLInputElement> {
@@ -131,8 +133,7 @@ async function openCustomers(): Promise<HTMLInputElement> {
   home.focus();
   await expect.poll(highlightedLabel).toBe("Customers");
   await userEvent.keyboard("{Enter}");
-  await expect.element(page.getByRole("combobox", { name: "Customers", exact: true })).toBeInTheDocument();
-  return comboboxNamed("Customers");
+  return mountedInput("Customers");
 }
 
 describe("Command", () => {
@@ -213,10 +214,9 @@ describe("Command", () => {
     await userEvent.keyboard("cust");
     await expect.poll(highlightedLabel).toBe("Customers");
     await userEvent.keyboard("{Enter}");
-    await expect.element(page.getByRole("combobox", { name: "Customers", exact: true })).toBeInTheDocument();
+    await mountedInput("Customers");
     await userEvent.keyboard("{Backspace}");
-    await expect.element(page.getByRole("combobox", { name: "Commands", exact: true })).toBeInTheDocument();
-    const home = comboboxNamed("Commands");
+    const home = await mountedInput("Commands");
     expect(home.value).toBe("");
     expect(document.activeElement).toBe(home);
     await expect.poll(highlightedLabel).toBe("Customers");
@@ -229,10 +229,10 @@ describe("Command", () => {
     await userEvent.keyboard("cust");
     await expect.poll(highlightedLabel).toBe("Customers");
     await userEvent.keyboard("{Enter}");
-    await expect.element(page.getByRole("combobox", { name: "Customers", exact: true })).toBeInTheDocument();
+    await mountedInput("Customers");
     await userEvent.keyboard("{Backspace}");
-    await expect.element(page.getByRole("combobox", { name: "Commands", exact: true })).toBeInTheDocument();
-    expect(comboboxNamed("Commands").value).toBe("cust");
+    const home = await mountedInput("Commands");
+    expect(home.value).toBe("cust");
   });
 
   it("stays on the page when Backspace edits text or comes from an IME composition", async () => {
@@ -253,7 +253,7 @@ describe("Command", () => {
     renderPalette(<PagedPalette />);
     await openCustomers();
     await userEvent.click(roleNamed("button", "Back"));
-    await expect.element(page.getByRole("combobox", { name: "Commands", exact: true })).toBeInTheDocument();
+    await mountedInput("Commands");
     expect(page.getByRole("button", { name: "Back", exact: true }).elements()).toEqual([]);
   });
 
@@ -293,8 +293,8 @@ describe("Command", () => {
         </Command.Root>
       );
       const row = roleNamed("option", `Row ${density}`);
-      // A single-line row is exactly --row-h: 32px dense, 36px comfortable.
-      expect(px(getComputedStyle(row).height), density).toBe(density === "dense" ? 32 : 36);
+      // A single-line row is exactly --row-h.
+      expect(px(getComputedStyle(row).height), density).toBe(ROW[density].height);
       unmount();
     }
     document.documentElement.removeAttribute("data-density");
@@ -334,8 +334,8 @@ function EscapeBackPalette(): ReactElement {
       <Dialog.Trigger>Open palette</Dialog.Trigger>
       <Command.Dialog>
         <Command.Pages value={stack} onValueChange={setStack}>
-          <HomePage onRun={() => undefined} />
-          <CustomersPage onRun={() => undefined} />
+          <EntryPage {...HOME_PAGE} onRun={() => undefined} />
+          <EntryPage {...CUSTOMERS_PAGE} onRun={() => undefined} />
         </Command.Pages>
       </Command.Dialog>
     </Dialog.Root>
@@ -360,7 +360,7 @@ describe("Command.Dialog", () => {
     renderPalette(<DialogPalette />);
     await openPalette();
     await userEvent.keyboard("{Enter}");
-    await expect.element(page.getByRole("combobox", { name: "Customers", exact: true })).toBeInTheDocument();
+    await mountedInput("Customers");
     await userEvent.keyboard("{Escape}");
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
   });
@@ -369,11 +369,11 @@ describe("Command.Dialog", () => {
     renderPalette(<EscapeBackPalette />);
     await openPalette();
     await userEvent.keyboard("{Enter}");
-    await expect.element(page.getByRole("combobox", { name: "Customers", exact: true })).toBeInTheDocument();
+    await mountedInput("Customers");
     await userEvent.keyboard("{Escape}");
-    await expect.element(page.getByRole("combobox", { name: "Commands", exact: true })).toBeInTheDocument();
+    const home = await mountedInput("Commands");
     expect(roleNamed("dialog", "Command palette")).toBeInstanceOf(HTMLElement);
-    await expect.poll(() => document.activeElement).toBe(comboboxNamed("Commands"));
+    await expect.poll(() => document.activeElement).toBe(home);
     await userEvent.keyboard("{Escape}");
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
   });
