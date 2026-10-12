@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { tv } from "tailwind-variants";
@@ -41,6 +42,10 @@ const { root, card } = demoFrame();
  * Only the stage and meta row need the preview theme, and they are the client half
  * (`DemoStage`); the shell and the source region — highlighted by the shared
  * `DocsCodeBlock` from the same file the stage renders — stay on the server.
+ *
+ * A demo that reads the clock while it renders cannot prerender: React Aria's date components
+ * build their dates on `new Date()`. The boundary keeps such a demo out of the static HTML, and
+ * the browser renders it on hydration; every other demo prerenders as before.
  */
 export async function DemoFrame({
   section = "components",
@@ -56,7 +61,9 @@ export async function DemoFrame({
     <section className={root()} data-demo-frame aria-labelledby={id}>
       <DocsSectionHeading id={id}>{title}</DocsSectionHeading>
       <div className={card()}>
-        <DemoStage sourcePath={demo.sourcePath}>{children}</DemoStage>
+        <DemoStage sourcePath={demo.sourcePath}>
+          <Suspense fallback={null}>{children}</Suspense>
+        </DemoStage>
         <DocsCodeBlock variant="embedded" data-demo-source source={demo.source} />
       </div>
     </section>

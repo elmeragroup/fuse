@@ -112,6 +112,32 @@ function announcer(page: Page): Locator {
   return page.getByRole("status").filter({ hasText: /^Theme:/u });
 }
 
+/** A shared address's theme: its slug, and the attributes it must stamp. */
+const SHARED = STEPS.at(-1) ?? OPENING;
+
+/**
+ * Records `<html>`'s theme attributes the moment the parser opens `<body>`, before any of its
+ * content exists to paint. The parser runs pending observers before each inline script, so a
+ * script inside the body cannot get in first.
+ */
+function recordThemeAtBody(): void {
+  const observer = new MutationObserver(() => {
+    if (document.querySelector("body") === null) {
+      return;
+    }
+    observer.disconnect();
+    const root = document.documentElement;
+    Object.assign(window, {
+      themeAtBody: {
+        variant: root.getAttribute("data-theme-variant"),
+        brand: root.getAttribute("data-theme-brand"),
+        segment: root.getAttribute("data-theme-segment"),
+      },
+    });
+  });
+  observer.observe(document, { childList: true, subtree: true });
+}
+
 async function abortNextScripts(route: Route): Promise<void> {
   if (route.request().url().includes("/_next/") && route.request().resourceType() === "script") {
     await route.abort();
@@ -204,6 +230,34 @@ describe("landing theme picker", () => {
     expect(await shownSide(hydrated)).toBe(last.variant);
     await hydrated.context().close();
   });
+
+  it.each([
+    { address: `?theme=${SHARED.slug}`, wears: SHARED },
+    { address: `?theme=${SHARED.slug}&theme=${OPENING.slug}`, wears: OPENING },
+    { address: `?theme=${OPENING.slug}&theme=${SHARED.slug}`, wears: OPENING },
+    { address: "?theme=not-a-theme", wears: OPENING },
+  ])(
+    "stamps $address's theme before the body can paint, and keeps it once hydrated",
+    async ({ address, wears }) => {
+      const painted = await openLanding(DESKTOP_VIEWPORT, {
+        search: address,
+        hydrated: false,
+        prepare: async (opening) => {
+          await opening.route("**/*", abortNextScripts);
+          await opening.addInitScript(recordThemeAtBody);
+        },
+      });
+      expect(
+        await painted.evaluate(() => ("themeAtBody" in window ? window.themeAtBody : undefined))
+      ).toEqual(wears.attributes);
+      await painted.context().close();
+
+      const hydrated = await openLanding(DESKTOP_VIEWPORT, { search: address });
+      await settleFrames(hydrated);
+      expect(await documentTheme(hydrated)).toEqual(wears.attributes);
+      await hydrated.context().close();
+    }
+  );
 
   it("follows the URL's theme through client navigation and Back, without a reload", async () => {
     const shared = STEPS.at(-1) ?? OPENING;

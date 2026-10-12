@@ -353,6 +353,12 @@ Every overlay on a side of the hero window must close when that side hides, thro
 new overlay that skips both keeps its scroll lock after a flip. Add a lint rule, or a browser test
 that opens every overlay on a side before flipping the window.
 
+## Docs rendering
+
+- Add `@next/playwright` `instant()` e2e tests for client navigation into the docs, studio and
+  landing App Shells. They need `experimental.exposeTestingApiInProductionBuild` in a separate
+  test build, and the suite serves the one production build (`apps/docs/test/docs-server.ts`).
+
 ## Product-triggered work
 
 - When Base UI offers suitable date primitives, migrate the interim React Aria tier.

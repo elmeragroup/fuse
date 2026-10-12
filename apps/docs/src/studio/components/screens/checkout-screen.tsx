@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, Suspense, useState } from "react";
 import type { FocusEvent, FormEvent, KeyboardEvent, ReactElement } from "react";
 
 import { CalendarDate } from "@internationalized/date";
@@ -166,20 +166,24 @@ export function CheckoutScreen(): ReactElement {
             autoComplete="email"
           />
           <PhoneNumberField label="Mobile" name="mobile" defaultValue="+4741234567" />
-          <UiProviders locale="en-US" navigate={() => undefined}>
-            <DateField<CalendarDate>
-              label="Start date"
-              name="start"
-              description="The first of a month, from November on."
-              value={start}
-              minValue={earliestStart}
-              isInvalid={startError !== undefined}
-              errorMessage={startError}
-              onChange={setStart}
-              onKeyUp={trackFilled}
-              onBlur={trackFilled}
-            />
-          </UiProviders>
+          {/* React Aria builds its dates on `new Date()`, which the studio's prerender refuses, so
+              the browser renders the field. */}
+          <Suspense fallback={null}>
+            <UiProviders locale="en-US" navigate={() => undefined}>
+              <DateField<CalendarDate>
+                label="Start date"
+                name="start"
+                description="The first of a month, from November on."
+                value={start}
+                minValue={earliestStart}
+                isInvalid={startError !== undefined}
+                errorMessage={startError}
+                onChange={setStart}
+                onKeyUp={trackFilled}
+                onBlur={trackFilled}
+              />
+            </UiProviders>
+          </Suspense>
           <Field.Root>
             <Field.Label>Extras</Field.Label>
             <div className={styles.extras()}>

@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { docsBaseUrl, fetchText, TEST_RUNTIME_ORIGIN } from "./docs-server";
+import { docsBaseUrl, fetchText } from "./docs-server";
 import { pngSize } from "./png";
 
 /**
- * The origin prerendered pages carry. They bake in the build's origin, and the builds this suite
+ * The origin every page carries, the landing's shared addresses included. Pages bake in the
+ * build's origin, never the `DOCS_ORIGIN` the server runs with, and the builds this suite
  * runs against (turbo's `docs#build` in CI, `next build` locally) leave `DOCS_ORIGIN` unset, so
  * the documented fallback applies. Only the Docker image build sets it. A run against a build made
  * with `DOCS_ORIGIN` or `PORT` set fails here, by design.
@@ -37,8 +38,8 @@ async function cardImage(pathname: string): Promise<string> {
 
 describe("Open Graph cards", () => {
   for (const [pathname, origin, imagePath] of [
-    ["/", TEST_RUNTIME_ORIGIN, "/og/landing"],
-    ["/?theme=external-fkas-private", TEST_RUNTIME_ORIGIN, "/og/landing"],
+    ["/", BUILD_FALLBACK_ORIGIN, "/og/landing"],
+    ["/?theme=external-fkas-private", BUILD_FALLBACK_ORIGIN, "/og/landing"],
     ["/handbook/theme-matrix", BUILD_FALLBACK_ORIGIN, "/og/docs/handbook/theme-matrix"],
     ["/components/button", BUILD_FALLBACK_ORIGIN, "/og/components/button"],
   ] as const) {
@@ -58,7 +59,7 @@ describe("Open Graph cards", () => {
       "?theme=EXTERNAL-FKAS-PRIVATE",
       "?theme=a&theme=b",
     ]) {
-      expect(await cardImage(`/${query}`), query).toBe(`${TEST_RUNTIME_ORIGIN}/og/landing`);
+      expect(await cardImage(`/${query}`), query).toBe(`${BUILD_FALLBACK_ORIGIN}/og/landing`);
     }
   });
 

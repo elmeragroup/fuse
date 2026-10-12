@@ -150,6 +150,9 @@ export function ViewportProvider({ children }: { children: ReactNode }): ReactEl
   const canvasRef = useRef<HTMLElement | null>(null);
   const pinnedBar = useRef<((from: Viewport, to: Viewport) => number | undefined) | null>(null);
   const elements = useRef(new Map<string, HTMLElement>());
+  // Counts artboard registrations, so the first fit can wait for the page's artboards. The page
+  // can hydrate after this layout's effects have run.
+  const [registrations, setRegistrations] = useState(0);
   const [viewport, setViewport] = useState<Viewport>(INITIAL_VIEWPORT);
   const [gliding, setGliding] = useState(false);
   const [announcement, setAnnouncement] = useState("");
@@ -379,6 +382,7 @@ export function ViewportProvider({ children }: { children: ReactNode }): ReactEl
       canvas: () => canvasRef.current,
       registerArtboard: (id, element) => {
         elements.current.set(id, element);
+        setRegistrations((count) => count + 1);
         return () => {
           if (elements.current.get(id) === element) {
             elements.current.delete(id);
@@ -410,15 +414,15 @@ export function ViewportProvider({ children }: { children: ReactNode }): ReactEl
     [answerFrame, centre, current, move, revealFocus, zoomToArtboard, zoomToFit]
   );
 
-  // Each page opens framed. A resize observer reports the canvas's size once it has laid out,
-  // before the paint that shows the artboards. `zoomToFit` changes with the page's artboards, so
-  // a page switch observes afresh and frames the new page.
+  // Each page opens framed, once its artboards have registered. A resize observer reports the
+  // canvas's size once it has laid out, before the paint that shows the artboards. `zoomToFit`
+  // changes with the page's artboards, so a page switch observes afresh and frames the new page.
   // Every artboard at once on a phone is a thumbnail band, so there the first fit frames the
   // first artboard across the screen instead. The canvas's CSS names the fit, which keeps the
   // breakpoint with the layout's own.
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (canvas === null) {
+    if (canvas === null || !artboards.every((artboard) => elements.current.has(artboard.id))) {
       return undefined;
     }
     let framed = false;
@@ -441,7 +445,7 @@ export function ViewportProvider({ children }: { children: ReactNode }): ReactEl
     return () => {
       observer.disconnect();
     };
-  }, [artboards, move, rectOf, screen, zoomToFit]);
+  }, [artboards, move, rectOf, screen, zoomToFit, registrations]);
 
   // The first fit replaces the initial viewport, and the artboards show from then on.
   const ready = viewport !== INITIAL_VIEWPORT;

@@ -366,6 +366,18 @@ export function artboardsFor(pathname: string): readonly ArtboardSpec[] {
   return documentAt(pathname)?.artboards ?? NO_ARTBOARDS;
 }
 
+const ARTBOARDS_BY_ID: ReadonlyMap<string, ArtboardSpec> = new Map(
+  STUDIO_DOCUMENTS.flatMap(({ artboards }) => artboards.map((artboard) => [artboard.id, artboard] as const))
+);
+
+/**
+ * The artboard with `id` on any studio page. Next keeps visited pages mounted while hidden, and
+ * they render on later pages, so an artboard resolves its spec without the current page.
+ */
+export function artboardById(id: string): ArtboardSpec | undefined {
+  return ARTBOARDS_BY_ID.get(id);
+}
+
 const NO_SECTIONS: readonly SectionId[] = [];
 
 /** The token sections the page at `pathname` leads its inspector with, in order. */

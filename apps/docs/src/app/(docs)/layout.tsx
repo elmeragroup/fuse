@@ -11,6 +11,9 @@ import { siteOrigin } from "../../lib/site-origin";
 import { DOCUMENT_COLOR_SCHEME, DOCUMENT_THEME } from "../../lib/theme";
 import "../../styles/globals.css";
 
+/** Every docs page prerenders whole; the build fails if one starts reading the request. */
+export const ensureStatic = "navigation";
+
 export const metadata: Metadata = {
   metadataBase: siteOrigin(),
   title: {

@@ -118,8 +118,10 @@ function nextDevConfig(repoRoot: string): DocsServerConfig {
       args: [
         path.join(docsRoot, "node_modules/next/dist/bin/next"),
         "dev",
+        // Next names a loopback IP `localhost` in the docs proxy's request URL but not in its own,
+        // so on `127.0.0.1` it fetches the proxy's rewrite as an external address, which redirects.
         "--hostname",
-        "127.0.0.1",
+        "localhost",
         "--port",
         String(port),
       ],
@@ -165,7 +167,7 @@ function makeDocsServer(
       putBack(taken, recordFile).pipe(Effect.catch((failure) => Console.error(failure.message)))
     );
     const port = yield* freePort;
-    const origin = new URL(`http://127.0.0.1:${String(port)}`);
+    const origin = new URL(`http://localhost:${String(port)}`);
     yield* Effect.annotateCurrentSpan({ port, route });
 
     const command = config.command(port);

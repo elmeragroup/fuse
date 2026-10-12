@@ -37,7 +37,8 @@ ENV DOCS_ORIGIN=${DOCS_ORIGIN}
 RUN pnpm exec turbo run build --filter=docs
 
 FROM node:${NODE_VERSION}-bookworm-slim AS runtime
-# The landing renders per request and reads the origin at runtime, so it must match the build's.
+# Every page bakes the build's origin into its HTML; the server keeps the same value, so a
+# request-time read could only agree with it.
 ARG DOCS_ORIGIN
 ENV DOCS_ORIGIN=${DOCS_ORIGIN} \
     NODE_ENV=production \

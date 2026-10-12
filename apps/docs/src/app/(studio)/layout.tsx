@@ -6,6 +6,8 @@ import { DocumentRoot } from "../../components/document-root";
 import { siteOrigin } from "../../lib/site-origin";
 import "../../styles/globals.css";
 
+export const ensureStatic = "navigation";
+
 export const metadata: Metadata = {
   metadataBase: siteOrigin(),
   title: {

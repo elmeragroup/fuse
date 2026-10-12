@@ -7,7 +7,9 @@
  * byte-for-byte the code that produced the stage above it.
  *
  * Server-only: the read happens while the page is prerendered, so the source region is part
- * of the static HTML and no demo source is shipped as client data.
+ * of the static HTML and no demo source is shipped as client data. Cache Components counts a file
+ * read as uncached data, so the read is a cache function on the `default` profile.
+ * `next.config.ts` sets that profile never to revalidate, so the read runs only during the build.
  */
 
 import { readFile } from "node:fs/promises";
@@ -38,6 +40,7 @@ export type DemoLocation = {
  * instead of rendering a frame with an empty source region.
  */
 export async function readDemoSource({ section, slug, file }: DemoLocation): Promise<DemoSource> {
+  "use cache";
   const location = docsRouteFile(section, slug, "demos", file);
   let raw: string;
   try {

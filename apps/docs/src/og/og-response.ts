@@ -19,11 +19,11 @@ let fonts: ReturnType<typeof loadOgFonts> | undefined;
  * @param element - The drawing, an `OgCard`.
  * @returns The PNG response.
  */
-export async function ogResponse(element: ReactElement): Promise<ImageResponse> {
+export function ogResponse(element: ReactElement): ImageResponse {
   fonts ??= loadOgFonts();
   return new ImageResponse(element, {
     ...OG_SIZE,
-    fonts: await fonts,
+    fonts,
     headers: { "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400" },
   });
 }

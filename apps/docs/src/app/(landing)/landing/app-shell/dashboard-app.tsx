@@ -72,7 +72,8 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
   const [sheetOpen, setSheetOpen] = useSideOverlay(false);
   const [paletteOpen, setPaletteOpen] = useSideOverlay(false);
   const [newOrderOpen, setNewOrderOpen] = useSideOverlay(false);
-  const [mountedAt] = useState(() => Date.now());
+  // Read after mount: the clock has no value a prerender could keep.
+  const mountedAt = useRef<number | undefined>(undefined);
   const fetchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const invoker = useRef<HTMLElement | null>(null);
   const palettePopup = useRef<HTMLDivElement>(null);
@@ -82,6 +83,9 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
   const wide = useMediaQuery(SPLIT_QUERY, true);
   const splitView = wide && isQueue(state.view);
 
+  useEffect(() => {
+    mountedAt.current = Date.now();
+  }, []);
   useEffect(() => () => clearTimeout(fetchTimer.current), []);
 
   // The phone's sidebar Sheet keeps its open state in Fuse's Sidebar provider, out of reach of a
@@ -162,7 +166,10 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
       dispatch,
       navigate,
       loading,
-      now: () => new Date(DEMO_NOW + (Date.now() - mountedAt)).toISOString(),
+      now: () => {
+        const at = Date.now();
+        return new Date(DEMO_NOW + (at - (mountedAt.current ?? at))).toISOString();
+      },
       notify,
       openOrder: (id: OrderId) => {
         const shown = visibleOrders(state).some((order) => order.id === id);
@@ -190,7 +197,6 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
       loading,
       revealing,
       revealed,
-      mountedAt,
       notify,
       toggleSidebar,
       wide,

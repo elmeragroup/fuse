@@ -10,11 +10,18 @@ const docsRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const nextBin = path.join(docsRoot, "node_modules/next/dist/bin/next");
 
 /**
- * The origin the suite's server reads as `DOCS_ORIGIN` at runtime, which the landing's card URLs
- * must carry. It is a reserved test host that resolves nowhere, so a card can only name it if the
- * server took it from the environment.
+ * The build output the suite's server serves. `next start` inherits this process's environment,
+ * so it reads `distDir` from `next.config.ts` the same way.
  */
-export const TEST_RUNTIME_ORIGIN = "https://og.fuse.test";
+// oxlint-disable-next-line turbo/no-undeclared-env-vars -- mirrors `distDir` in `next.config.ts`; only `pnpm shots` sets it, outside turbo
+export const docsBuildDir = path.join(docsRoot, process.env.DOCS_DIST_DIR ?? ".next");
+
+/**
+ * The origin the suite's server reads as `DOCS_ORIGIN` at runtime. Every page's card URL
+ * prerenders with the build's origin, so none may carry this one. It is a reserved test host that
+ * resolves nowhere, so a card can only name it if the server took it from the environment.
+ */
+const TEST_RUNTIME_ORIGIN = "https://og.fuse.test";
 
 export type DocsServer = {
   url: string;
@@ -45,10 +52,12 @@ async function waitForServer(url: string, child: ChildProcess): Promise<void> {
 
 export async function startDocsProductionServer(): Promise<DocsServer> {
   const port = await reservePort();
-  const url = `http://127.0.0.1:${String(port)}`;
+  // Next names a loopback IP `localhost` in the proxy's request URL but not in its own, so with
+  // `--hostname 127.0.0.1` it would fetch the landing proxy's rewrite as an external address.
+  const url = `http://localhost:${String(port)}`;
   const child = spawn(
     process.execPath,
-    [nextBin, "start", "--hostname", "127.0.0.1", "--port", String(port)],
+    [nextBin, "start", "--hostname", "localhost", "--port", String(port)],
     {
       cwd: docsRoot,
       env: {

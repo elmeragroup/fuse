@@ -7,7 +7,8 @@
  * (`test/api-artifact.test.ts`) is what keeps that claim true.
  *
  * Server-only, like the demo-source read: this runs while the page is prerendered, so the
- * whole reference is part of the static HTML and no API data is shipped as client payload.
+ * whole reference is part of the static HTML and no API data is shipped as client payload. It is a
+ * cache function on the `default` profile for the same reason.
  */
 
 import { readFile } from "node:fs/promises";
@@ -24,6 +25,7 @@ import { docsRouteFile } from "./docs-route-files";
  * rendering an API section with no rows.
  */
 export async function readComponentApi(slug: string): Promise<ComponentApiArtifact> {
+  "use cache";
   const location = docsRouteFile("components", slug, "api.json");
   let raw: string;
   try {
