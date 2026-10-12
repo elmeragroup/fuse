@@ -245,10 +245,18 @@ export default function ThemingPage(): ReactElement {
         border casts.
       </p>
       <p>
-        A checked <code>RadioItem</code> or <code>CheckboxItem</code> row draws its border in{" "}
-        <code>--selection-checked-border</code>. Internal themes mark the checked row with{" "}
-        <code>var(--primary)</code>. External themes set it to <code>var(--border)</code>, so the row keeps
-        its resting border and the control alone shows the selection, as the external radio card does.
+        A <code>RadioItem</code> or <code>CheckboxItem</code> row draws its 1px edge in{" "}
+        <code>--selection-border</code>, which also divides the rows of a vertical group, and a checked row
+        draws it in <code>--selection-checked-border</code>. Internal themes draw the edge in{" "}
+        <code>var(--border)</code> and mark the checked row with <code>var(--primary)</code>. External themes
+        draw no edge: <code>--selection-border</code> is a zero-alpha colour and{" "}
+        <code>--selection-checked-border</code> is <code>var(--selection-border)</code>, so the control alone
+        shows the selection, as the external radio card does. The border keeps its width, so rows join and
+        inset as they do in internal themes. Without an edge, a row on a <code>card</code>-coloured surface,
+        such as inside a white <code>Card</code>, has no outline, rows in a group have no divider between
+        them, and the checked row&apos;s <code>bg-muted</code> tint barely shows on the row&apos;s card fill.
+        The edge is a theme role of its own, so changing it leaves <code>--border</code>, and the cards,
+        tables and <code>CheckboxCard</code> it draws, as they are.
       </p>
       <p>
         The weight of a <code>RadioItem</code> or <code>CheckboxItem</code> row title is themed too. It, which

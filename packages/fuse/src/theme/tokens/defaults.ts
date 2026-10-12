@@ -67,9 +67,13 @@ export const LAYER_DEFAULTS = {
   // role, and the external variant layer swaps both values for the reference's 2px ring
   // in the text color.
   "button-outline": "var(--border)",
-  // The edge of a checked SelectionItem row (RadioItem, CheckboxItem). Internal themes mark
-  // the checked row with the primary role, and the external variant layer keeps the resting
-  // border, so the control alone shows the selection.
+  // The resting edge of a SelectionItem row (RadioItem, CheckboxItem), which also divides the
+  // rows of a vertical group. Internal themes draw it in the border role, and the external
+  // variant layer makes it transparent.
+  "selection-border": "var(--border)",
+  // The edge of a checked SelectionItem row. Internal themes mark the checked row with the
+  // primary role, and the external variant layer keeps the resting edge, so the control alone
+  // shows the selection.
   "selection-checked-border": "var(--primary)",
   sidebar: "oklch(0.9851 0 0)",
   "sidebar-foreground": NEUTRAL_950,

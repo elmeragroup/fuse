@@ -46,7 +46,11 @@ describe("TOKEN_TABLE", () => {
       "button-outline-width",
     ]);
     expect(sectionTokens("typography")).toEqual(["selection-title-weight", "font-sans", "font-heading"]);
-    expect(sectionTokens("variant")).toEqual(["button-outline", "selection-checked-border"]);
+    expect(sectionTokens("variant")).toEqual([
+      "button-outline",
+      "selection-border",
+      "selection-checked-border",
+    ]);
   });
 });
 
@@ -55,6 +59,7 @@ describe("LIGHT_ONLY_TOKENS", () => {
     expect([...LIGHT_ONLY_TOKENS].toSorted()).toEqual(
       [
         "button-outline",
+        "selection-border",
         "selection-checked-border",
         "radius",
         "radius-button",

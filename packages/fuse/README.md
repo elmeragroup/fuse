@@ -58,11 +58,12 @@ Button's `outline` variant reads `--button-outline` and `--button-outline-width`
 }
 ```
 
-A checked `RadioItem` or `CheckboxItem` row draws its border in `--selection-checked-border`. Without it the row takes your `--primary`, as internal themes do. For the external themes' look, where the row keeps its resting border and the control alone shows the selection, set:
+A `RadioItem` or `CheckboxItem` row draws its edge in `--selection-border`, and a checked row in `--selection-checked-border`. Without them the row takes your `--border` and a checked row your `--primary`, as internal themes do. For the external themes' look, where the row draws no edge and the control alone shows the selection, set the edge to a transparent colour and point the checked edge at it. The border keeps its 1px width, so rows join and inset as before, but a row on a `--card`-coloured surface has no outline and grouped rows have no divider:
 
 ```css
 :root {
-  --selection-checked-border: var(--border);
+  --selection-border: oklch(0 0 0 / 0);
+  --selection-checked-border: var(--selection-border);
 }
 ```
 

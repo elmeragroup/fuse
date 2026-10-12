@@ -88,6 +88,7 @@ export const TOKEN_TABLE = {
   input: color("lines"),
   ring: color("lines"),
   "button-outline": color("variant"),
+  "selection-border": color("variant"),
   "selection-checked-border": color("variant"),
   sidebar: color("sidebar"),
   "sidebar-foreground": color("sidebar"),
@@ -151,6 +152,7 @@ export function sectionTokens(section: SectionId): readonly TokenName[] {
  */
 export const LIGHT_ONLY_TOKENS: ReadonlySet<TokenName> = new Set<TokenName>([
   "button-outline",
+  "selection-border",
   "selection-checked-border",
   "radius",
   "radius-button",
