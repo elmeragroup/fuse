@@ -932,12 +932,17 @@ describe("SelectionItem", () => {
       { stack: "adjacent", control: "checkbox", rows: 4, checked: [1, 2] },
     ] as const;
 
-    /** Rows that join no other row: a horizontal group's cards and a group of one. */
+    /**
+     * Rows that join no other row: a horizontal group's cards, a group of one, and a shell outside
+     * any group with a Field.Description after it, which is a sibling but not a row.
+     */
     const LONE_ROWS = [
       { row: "router", control: "checkbox", checked: true },
       { row: "SIM card", control: "checkbox", checked: false },
       { row: "terms", control: "checkbox", checked: true },
       { row: "post", control: "radio", checked: false },
+      { row: "standalone checked", control: "checkbox", checked: true },
+      { row: "standalone unchecked", control: "checkbox", checked: false },
     ] as const;
 
     type StackRow = {
@@ -1009,6 +1014,16 @@ describe("SelectionItem", () => {
               <RowTitle>{`${scheme} post`}</RowTitle>
             </RadioItem>
           </RadioItemGroup>
+          {[true, false].map((checked) => (
+            <Field.Root key={String(checked)}>
+              <SelectionItem.Shell
+                dataSlot="checkbox-item"
+                control={<Checkbox.Root defaultChecked={checked} />}>
+                <RowTitle>{`${scheme} standalone ${checked ? "checked" : "unchecked"}`}</RowTitle>
+              </SelectionItem.Shell>
+              <Field.Description>We send the contract by email.</Field.Description>
+            </Field.Root>
+          ))}
         </>
       );
     }

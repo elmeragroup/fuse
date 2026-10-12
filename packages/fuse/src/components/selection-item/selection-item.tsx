@@ -21,14 +21,15 @@ import type { SelectionItemGroupOrientation } from "./selection-item-variants";
 const outlineItemClass = itemVariants({ variant: "outline" });
 
 // A connected stack's rows share one line per join: every row but the first drops its top border,
-// and a checked one pulls itself up one pixel to paint that line itself. A row's bottom edge takes
-// the divider, which outranks the shell's resting edge (0,2,0 over 0,1,0) and yields to a checked
-// row's whole-box edge (0,3,0). A checked row's top and bottom take the checked divider, which
-// outranks that box (0,4,0). The first row's top, the last row's bottom and the sides keep the
-// row's own edge.
+// and a checked one pulls itself up one pixel to paint that line itself. The dividers key on an
+// adjacent selection row, not on first or last child, so a lone shell beside a Field.Description
+// or Field.Error draws no line. A row with a row after it takes the divider on its bottom edge,
+// which outranks the shell's resting edge (0,2,0 over 0,1,0) and yields to a checked row's
+// whole-box edge (0,3,0). A checked row takes the checked divider on each edge it shares with a
+// row, which outranks that box (0,4,0). Every other edge keeps the row's own.
 const connectedStackClass = cn(
   "rounded-none not-first:border-t-0 first:rounded-t-lg last:rounded-b-lg has-[[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px has-[[data-slot=selection-item-control]_[data-checked]]:not-first:border-t",
-  "not-last:border-b-selection-divider has-[[data-slot=selection-item-control]_[data-checked]]:not-first:border-t-selection-checked-divider has-[[data-slot=selection-item-control]_[data-checked]]:not-last:border-b-selection-checked-divider"
+  "[&:has(+[data-selection-item])]:border-b-selection-divider has-[[data-slot=selection-item-control]_[data-checked]]:[&:has(+[data-selection-item])]:border-b-selection-checked-divider has-[[data-slot=selection-item-control]_[data-checked]]:[[data-selection-item]+&]:border-t-selection-checked-divider"
 );
 
 // The label's `::before` is the row's click target. With automatic grid lines it covers the
@@ -275,12 +276,12 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
  * in external ones, whose radio card shows the selection through its control alone.
  *
  * Vertical and default shells, in either group shape or outside any group, collapse borders with
- * `not-first:border-t-0`, so one line divides two rows. A non-last row's bottom edge is the
- * theme's `--selection-divider`, and a checked row's top and bottom edges are its
- * `--selection-checked-divider`. Internal themes alias them to the row's own edges, so a checked
- * row stays boxed in `--primary`. External themes draw both in `--border`: stacked rows keep a
- * grey separator, checked or not, while the sides, the first row's top and the last row's bottom
- * stay transparent. A checked non-first shell repaints its top border by pulling itself up one
+ * `not-first:border-t-0`, so one line divides two rows. The bottom edge of a row with another
+ * row after it is the theme's `--selection-divider`, and a checked row's edges shared with another
+ * row are its `--selection-checked-divider`. Internal themes alias them to the row's own edges, so
+ * a checked row stays boxed in `--primary`. External themes draw both in `--border`: stacked rows
+ * keep a grey separator, checked or not, while the sides, the stack's outer top and bottom and a
+ * lone row beside other Field parts stay transparent. A checked non-first shell repaints its top border by pulling itself up one
  * pixel (`has-[[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px`) instead of a
  * z-index lift; `className` margin overrides can break that. Horizontal item groups render
  * individually rounded full-border cards with no vertical border collapse, no divider and no
