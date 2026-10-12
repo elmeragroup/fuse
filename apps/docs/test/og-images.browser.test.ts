@@ -24,8 +24,8 @@ function metaContent(html: string, key: string): string {
 
 /**
  * Reads a page's card image URL, checks the X card agrees with it, and returns it whole. The
- * caller fetches the image by its path from the server under test, since neither expected origin
- * resolves to that server.
+ * caller fetches the image by its path from the server under test, since the expected origin does
+ * not resolve to that server.
  */
 async function cardImage(pathname: string): Promise<string> {
   const html = await fetchText(pathname);
@@ -37,14 +37,13 @@ async function cardImage(pathname: string): Promise<string> {
 }
 
 describe("Open Graph cards", () => {
-  for (const [pathname, origin, imagePath] of [
-    ["/", BUILD_FALLBACK_ORIGIN, "/og/landing"],
-    ["/?theme=external-fkas-private", BUILD_FALLBACK_ORIGIN, "/og/landing"],
-    ["/handbook/theme-matrix", BUILD_FALLBACK_ORIGIN, "/og/docs/handbook/theme-matrix"],
-    ["/components/button", BUILD_FALLBACK_ORIGIN, "/og/components/button"],
+  for (const [pathname, imagePath] of [
+    ["/", "/og/landing"],
+    ["/handbook/theme-matrix", "/og/docs/handbook/theme-matrix"],
+    ["/components/button", "/og/components/button"],
   ] as const) {
-    it(`${pathname} names ${origin}${imagePath}, a 1200 × 630 PNG`, async () => {
-      expect(await cardImage(pathname)).toBe(`${origin}${imagePath}`);
+    it(`${pathname} names ${BUILD_FALLBACK_ORIGIN}${imagePath}, a 1200 × 630 PNG`, async () => {
+      expect(await cardImage(pathname)).toBe(`${BUILD_FALLBACK_ORIGIN}${imagePath}`);
       const response = await fetch(new URL(imagePath, docsBaseUrl()));
       expect(response.status).toBe(200);
       expect(response.headers.get("content-type")).toBe("image/png");
@@ -55,6 +54,7 @@ describe("Open Graph cards", () => {
   it("names the same landing image whatever ?theme= says", async () => {
     for (const query of [
       "?theme=internal-fkas-company",
+      "?theme=external-fkas-private",
       "?theme=external-fkab-private",
       "?theme=EXTERNAL-FKAS-PRIVATE",
       "?theme=a&theme=b",

@@ -59,8 +59,7 @@ async function waitForServer(url: string, child: ChildProcess): Promise<void> {
  */
 export async function startDocsProductionServer({ testingApi = false } = {}): Promise<DocsServer> {
   const port = await reservePort();
-  // Next names a loopback IP `localhost` in the proxy's request URL but not in its own, so with
-  // `--hostname 127.0.0.1` it would fetch the landing proxy's rewrite as an external address.
+  // Not `127.0.0.1`: see the loopback note in `src/proxy.ts`.
   const url = `http://localhost:${String(port)}`;
   const child = spawn(
     process.execPath,

@@ -78,12 +78,7 @@ function scopeChanges(history: readonly InstantCookieChange[]): InstantCookieCha
  * Node, so a scope that loads a second document keeps the first one's changes and fails. A
  * `"load"` scope watches from the next document the page loads.
  */
-async function expectInstant(
-  page: Page,
-  capture: Capture,
-  assertions: () => Promise<void>,
-  options?: { baseURL: string }
-): Promise<void> {
+async function expectInstant(page: Page, capture: Capture, assertions: () => Promise<void>): Promise<void> {
   const history: InstantCookieChange[] = [];
   const watch: InstantCookieWatch = {
     name: INSTANT_COOKIE,
@@ -111,7 +106,8 @@ async function expectInstant(
           "Next reset, released or captured again before the assertions ended"
         ).toEqual([capture]);
       },
-      options
+      // A scope can start on a blank page, which has no origin for Next's cookie.
+      { baseURL: docsBaseUrl() }
     );
   } finally {
     await documents.dispose();
@@ -247,32 +243,27 @@ describe("instant initial load of a docs page", () => {
     page.setDefaultTimeout(5000);
     // The frame's next sibling opens only once the parser has closed the frame, source and all.
     await snapshotWhenParsed(page, '[aria-labelledby="basic"] + *');
-    await expectInstant(
-      page,
-      "load",
-      async () => {
-        await page.goto(`${docsBaseUrl()}/components/date-picker`, { waitUntil: "domcontentloaded" });
-        const basic = page.getByRole("main").getByRole("region", { name: "Basic", exact: true });
-        await basic.getByRole("heading", { level: 2, name: "Basic", exact: true }).waitFor();
-        // React Aria's date components read the clock as they render, so the prerender leaves the
-        // demo out: the served frame has its stage and its source, and the stage is empty.
-        const served = await page.evaluate(() => {
-          const root =
-            "servedDocument" in window && window.servedDocument instanceof Element
-              ? window.servedDocument
-              : null;
-          const frame = root?.querySelector('[aria-labelledby="basic"]');
-          return {
-            stage: frame?.querySelector("[data-demo-stage]")?.textContent,
-            source: frame?.querySelector("[data-demo-source]")?.textContent.includes('label="Invoice date"'),
-          };
-        });
-        expect(served).toEqual({ stage: "", source: true });
-        // Hydration renders it in the browser, with request-time content still held back.
-        await basic.getByRole("group", { name: "Invoice date", exact: true }).waitFor();
-      },
-      { baseURL: docsBaseUrl() }
-    );
+    await expectInstant(page, "load", async () => {
+      await page.goto(`${docsBaseUrl()}/components/date-picker`, { waitUntil: "domcontentloaded" });
+      const basic = page.getByRole("main").getByRole("region", { name: "Basic", exact: true });
+      await basic.getByRole("heading", { level: 2, name: "Basic", exact: true }).waitFor();
+      // React Aria's date components read the clock as they render, so the prerender leaves the
+      // demo out: the served frame has its stage and its source, and the stage is empty.
+      const served = await page.evaluate(() => {
+        const root =
+          "servedDocument" in window && window.servedDocument instanceof Element
+            ? window.servedDocument
+            : null;
+        const frame = root?.querySelector('[aria-labelledby="basic"]');
+        return {
+          stage: frame?.querySelector("[data-demo-stage]")?.textContent,
+          source: frame?.querySelector("[data-demo-source]")?.textContent.includes('label="Invoice date"'),
+        };
+      });
+      expect(served).toEqual({ stage: "", source: true });
+      // Hydration renders it in the browser, with request-time content still held back.
+      await basic.getByRole("group", { name: "Invoice date", exact: true }).waitFor();
+    });
     await context.close();
   });
 });
@@ -383,19 +374,14 @@ describe("instant landing", () => {
     const page = await context.newPage();
     page.setDefaultTimeout(5000);
     await snapshotWhenParsed(page, 'header button[aria-label^="Theme"]');
-    await expectInstant(
-      page,
-      "load",
-      async () => {
-        await page.goto(`${docsBaseUrl()}/`, { waitUntil: "domcontentloaded" });
-        await page.getByRole("heading", { level: 1, name: /^One system/u }).waitFor();
-        expect(await servedTheme(page)).toEqual(opening);
-        await waitForLandingHydration(page);
-        expect(await themeChip(page).getAttribute("aria-label")).toBe(opening.label);
-        expect(await readThemeAttributes(page.locator("html"))).toEqual(opening.attributes);
-      },
-      { baseURL: docsBaseUrl() }
-    );
+    await expectInstant(page, "load", async () => {
+      await page.goto(`${docsBaseUrl()}/`, { waitUntil: "domcontentloaded" });
+      await page.getByRole("heading", { level: 1, name: /^One system/u }).waitFor();
+      expect(await servedTheme(page)).toEqual(opening);
+      await waitForLandingHydration(page);
+      expect(await themeChip(page).getAttribute("aria-label")).toBe(opening.label);
+      expect(await readThemeAttributes(page.locator("html"))).toEqual(opening.attributes);
+    });
     await context.close();
   });
 
@@ -409,20 +395,15 @@ describe("instant landing", () => {
     page.setDefaultTimeout(5000);
     await snapshotWhenParsed(page, 'header button[aria-label^="Theme"]');
     await keepQueryOnBootstrap(page, "?theme=internal-fkas-company");
-    await expectInstant(
-      page,
-      "load",
-      async () => {
-        await page.goto(`${docsBaseUrl()}/?theme=internal-fkas-company`, { waitUntil: "domcontentloaded" });
-        await page.getByRole("heading", { level: 1, name: /^One system/u }).waitFor();
-        expect(await servedTheme(page)).toEqual(shared);
-        await waitForLandingHydration(page);
-        expect(await themeChip(page).getAttribute("aria-label")).toBe(shared.label);
-        expect(await readThemeAttributes(page.locator("html"))).toEqual(shared.attributes);
-        expect(new URL(page.url()).search).toBe("?theme=internal-fkas-company");
-      },
-      { baseURL: docsBaseUrl() }
-    );
+    await expectInstant(page, "load", async () => {
+      await page.goto(`${docsBaseUrl()}/?theme=internal-fkas-company`, { waitUntil: "domcontentloaded" });
+      await page.getByRole("heading", { level: 1, name: /^One system/u }).waitFor();
+      expect(await servedTheme(page)).toEqual(shared);
+      await waitForLandingHydration(page);
+      expect(await themeChip(page).getAttribute("aria-label")).toBe(shared.label);
+      expect(await readThemeAttributes(page.locator("html"))).toEqual(shared.attributes);
+      expect(new URL(page.url()).search).toBe("?theme=internal-fkas-company");
+    });
     await context.close();
   });
 
