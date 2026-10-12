@@ -8,7 +8,9 @@ import { PopoverInfoButton } from "@elmeragroup/fuse/popover-info-button";
 
 import "../../../dist/styles.css";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import { px, renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { LABEL, px, renderThemed, roleNamed, stampDensity } from "../../../test/themed-browser-render";
+import { DENSITIES } from "../../theme/density";
+import { Field } from "../field";
 
 const MORE_INFORMATION_COPY = {
   "nb-NO": "Mer informasjon",
@@ -126,6 +128,95 @@ describe("PopoverInfoButton", () => {
     dialog = await openInfo();
     expect(px(getComputedStyle(dialog).maxWidth)).toBeGreaterThan(smMaxWidth);
   });
+
+  // Oracle: the label type pair from the density metrics, `LABEL[density].leading`. The
+  // trigger sits on the label's line, so the label stays one line tall and the glyph centres
+  // on that line, at both densities.
+  it.each(DENSITIES)("sits on a Field.Label's line without growing it at %s", (density) => {
+    stampDensity(density);
+    renderInfo(
+      <Field.Root>
+        <Field.Label>
+          Grid rent
+          <PopoverInfoButton>{EXPLAINER}</PopoverInfoButton>
+        </Field.Label>
+      </Field.Root>
+    );
+    const line = LABEL[density].leading;
+    const trigger = roleNamed("button", "More information");
+    const label = trigger.closest("label");
+    const glyph = trigger.querySelector("svg");
+    if (label === null || glyph === null) {
+      throw new Error("expected the trigger and its glyph inside the label");
+    }
+    const labelBox = label.getBoundingClientRect();
+    const triggerBox = trigger.getBoundingClientRect();
+    const glyphBox = glyph.getBoundingClientRect();
+
+    expect(labelBox.height, "label height").toBe(line);
+    expect(triggerBox.height, "trigger height").toBe(line);
+    expect(triggerBox.width, "trigger width").toBe(line);
+    expect(glyphBox.top + glyphBox.height / 2 - labelBox.top, "glyph centre").toBeCloseTo(line / 2, 3);
+  });
+
+  // Oracle: the 48px line the heading writes. In an inline formatting context the square fills
+  // that line box instead of sitting on the baseline and growing it.
+  it.each(DENSITIES)("keeps a block heading's line box at its line height at %s", (density) => {
+    stampDensity(density);
+    renderInfo(
+      <h2 style={{ fontFamily: "Arial", fontSize: 48, lineHeight: "48px", margin: 0 }}>
+        Grid rent <PopoverInfoButton>{EXPLAINER}</PopoverInfoButton>
+      </h2>
+    );
+    const trigger = roleNamed("button", "More information");
+    const heading = trigger.closest("h2");
+    if (heading === null) {
+      throw new Error("expected the trigger inside the heading");
+    }
+    const headingBox = heading.getBoundingClientRect();
+    const triggerBox = trigger.getBoundingClientRect();
+
+    expect(headingBox.height, "heading height").toBe(48);
+    expect(triggerBox.top - headingBox.top, "trigger top").toBe(0);
+    expect(triggerBox.height, "trigger height").toBe(48);
+  });
+
+  // Oracle: the same heading without the trigger. Under `line-height: normal` the line takes its
+  // height from the font, so a square sized from another family's or weight's metrics would grow
+  // the line. The fallback fonts differ by platform, so the line is measured, not written down.
+  it.each([
+    { name: "a bold Palatino", font: { fontFamily: "Palatino, Georgia, serif" } },
+    {
+      name: "a weight-400 Helvetica Neue",
+      font: { fontFamily: "'Helvetica Neue', sans-serif", fontWeight: 400 },
+    },
+  ] as const)(
+    "keeps $name `line-height: normal` heading at the height it has without the trigger",
+    ({ font }) => {
+      const heading = { ...font, fontSize: 48, lineHeight: "normal", margin: 0 };
+      renderInfo(
+        <>
+          <h2 style={heading}>Grid rent</h2>
+          <h2 style={heading}>
+            Grid rent <PopoverInfoButton>{EXPLAINER}</PopoverInfoButton>
+          </h2>
+        </>
+      );
+      const trigger = roleNamed("button", "More information");
+      const [bare, withTrigger] = page
+        .getByRole("heading", { level: 2 })
+        .elements()
+        .map((element) => element.getBoundingClientRect());
+      if (bare === undefined || withTrigger === undefined) {
+        throw new Error("expected both headings");
+      }
+      const triggerBox = trigger.getBoundingClientRect();
+
+      expect(withTrigger.height, "heading height").toBe(bare.height);
+      expect(triggerBox.top - withTrigger.top, "trigger top").toBe(0);
+      expect(triggerBox.height, "trigger height").toBe(bare.height);
+    }
+  );
 
   it("portals into an explicit container element", async () => {
     function ExplicitContainer() {

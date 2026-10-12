@@ -13,6 +13,7 @@ import { dispatchPredictedPointer } from "../../../test/predicted-pointer";
 import {
   cssVarColor,
   effectiveOpacity,
+  FIXED_CONTROL_TYPE,
   fkasExternal,
   fkasPrivate,
   computedOklch,
@@ -659,6 +660,26 @@ describe("Button", () => {
       expect(paintsOutsideBorderBox(shadow), shadow.css).toBe(false);
     }
   );
+
+  // Oracle: the line the square sits in, a 20/28px parent written here, and Tailwind's
+  // `text-xs` line, 16px. The harness loads no preflight, so a native button that kept the
+  // browser's own font would size its square from that instead.
+  it("takes icon-inline's square from the surrounding line, and a consumer text-xs replaces it", () => {
+    renderThemed(
+      <div style={{ fontSize: 20, lineHeight: "28px" }}>
+        Grid rent
+        <Button size="icon-inline" variant="ghost" aria-label="Inline" />
+        <Button size="icon-inline" variant="ghost" className="text-xs" aria-label="Inline xs" />
+      </div>
+    );
+    const inline = roleNamed("button", "Inline").getBoundingClientRect();
+    expect(inline.height, "inherited line height").toBe(28);
+    expect(inline.width, "inherited line width").toBe(28);
+
+    const xs = roleNamed("button", "Inline xs").getBoundingClientRect();
+    expect(xs.height, "text-xs line height").toBe(FIXED_CONTROL_TYPE.xs.leading);
+    expect(xs.width, "text-xs line width").toBe(FIXED_CONTROL_TYPE.xs.leading);
+  });
 
   // Oracle: the WCAG 2.5.8 24px square around the button's centre. The hit area extends the
   // padding box, so a border shrinks it unless the extent accounts for one: the transparent

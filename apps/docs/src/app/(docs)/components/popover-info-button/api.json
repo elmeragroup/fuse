@@ -140,7 +140,7 @@
           "origin": "declared",
           "type": "IconButtonSize | LabelButtonSize | undefined",
           "shortType": "Union",
-          "defaultValue": "\"icon-sm\"",
+          "defaultValue": "\"icon-inline\"",
           "description": "Recipe size axis. The `icon*` sizes are square and additionally require an `aria-label`.",
           "required": false
         },

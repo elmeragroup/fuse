@@ -242,6 +242,7 @@ export const PART_DENSITY = {
 
   popover: "layout",
   "popover-trigger": "control",
+  "popover-trigger[data-size=icon-inline]": "fixed",
   "popover-content": "surface",
   "popover-header": "layout",
   "popover-title": "fixed",

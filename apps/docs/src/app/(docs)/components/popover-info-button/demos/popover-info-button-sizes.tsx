@@ -11,7 +11,8 @@ export function PopoverInfoButtonSizes() {
         <label key={contentSize} className="text-sm flex items-center gap-2">
           {contentSize}
           <PopoverInfoButton contentSize={contentSize} label={`More information (${contentSize})`}>
-            {contentSize} popover. The content axis only changes max-width — the trigger stays ghost icon-sm.
+            {contentSize} popover. The content axis only changes max-width — the trigger stays the ghost
+            inline square.
           </PopoverInfoButton>
         </label>
       ))}
