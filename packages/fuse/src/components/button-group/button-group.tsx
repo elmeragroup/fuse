@@ -55,13 +55,15 @@ export function ButtonGroupSeparator({
   orientation = "vertical",
   ...props
 }: ButtonGroupSeparatorProps): ReactElement {
+  // No inset at either end: Button paints its fill under its border, so a shorter line
+  // would leave a notch of page where it stops.
   return (
     <Separator
       data-slot="button-group-separator"
       orientation={orientation}
       className={mergeClassName(
         className,
-        "relative self-stretch bg-input data-horizontal:mx-px data-horizontal:w-auto data-vertical:my-px data-vertical:h-auto"
+        "relative self-stretch bg-input data-horizontal:w-auto data-vertical:h-auto"
       )}
       {...props}
     />
