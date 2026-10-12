@@ -167,6 +167,10 @@ const EXPECTED_ENTRIES = {
   "toggle-group": { inRootBarrel: true, runtimeExports: ["ToggleGroup"] },
   tooltip: { inRootBarrel: true, runtimeExports: ["Tooltip"] },
   toolbar: { inRootBarrel: true, runtimeExports: ["Toolbar"] },
+  command: { inRootBarrel: true, runtimeExports: ["Command"] },
+  // Subpath-only: it imports the optional @tanstack/react-virtual peer.
+  "command-virtual": { inRootBarrel: false, runtimeExports: ["CommandVirtual"] },
+  kbd: { inRootBarrel: true, runtimeExports: ["Kbd", "KbdGroup"] },
   "select-field": { inRootBarrel: true, runtimeExports: ["SelectField"] },
   slider: { inRootBarrel: true, runtimeExports: ["Slider"] },
   form: { inRootBarrel: true, runtimeExports: ["Form"] },

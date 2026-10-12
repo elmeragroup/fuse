@@ -99,6 +99,7 @@ describe("workspace lint script", () => {
     expect(restrictedImportNames(fuseSrcRules)).toEqual([
       "@internationalized/string",
       "@tanstack/react-table",
+      "@tanstack/react-virtual",
       "tailwind-variants",
     ]);
 
@@ -111,15 +112,23 @@ describe("workspace lint script", () => {
     };
     expect(restrictionsOf("packages/fuse/src/intl/create-string-dictionary.ts")).toEqual([
       "@tanstack/react-table",
+      "@tanstack/react-virtual",
       "tailwind-variants",
     ]);
     expect(restrictionsOf("packages/fuse/src/components/data-table/data-table-contexts.ts")).toEqual([
       "@internationalized/string",
+      "@tanstack/react-virtual",
+      "tailwind-variants",
+    ]);
+    expect(restrictionsOf("packages/fuse/src/components/command-virtual/command-virtual.tsx")).toEqual([
+      "@internationalized/string",
+      "@tanstack/react-table",
       "tailwind-variants",
     ]);
     expect(restrictionsOf("packages/fuse/src/styles/tv.ts")).toEqual([
       "@internationalized/string",
       "@tanstack/react-table",
+      "@tanstack/react-virtual",
       "tailwind-variants",
     ]);
 

@@ -27,6 +27,7 @@ export type ExportBinding = {
 
 type WorkspacePeers = {
   "@tanstack/react-table": string;
+  "@tanstack/react-virtual": string;
   react: string;
   "react-dom": string;
   tailwindcss: string;
@@ -50,6 +51,7 @@ type WorkspaceManifest = PackageMetadata & {
   sideEffects: string[];
   peerDependenciesMeta: {
     "@tanstack/react-table": { optional: boolean };
+    "@tanstack/react-virtual": { optional: boolean };
     tailwindcss: { optional: boolean };
     recharts?: { optional: boolean };
   };
@@ -244,6 +246,7 @@ type PublishManifest = PackageMetadata & {
 function publishedPeerDependencies(): WorkspacePeers {
   return {
     "@tanstack/react-table": PUBLISHED_PEER_RANGES["@tanstack/react-table"],
+    "@tanstack/react-virtual": PUBLISHED_PEER_RANGES["@tanstack/react-virtual"],
     react: PUBLISHED_PEER_RANGES.react,
     "react-dom": PUBLISHED_PEER_RANGES["react-dom"],
     tailwindcss: PUBLISHED_PEER_RANGES.tailwindcss,

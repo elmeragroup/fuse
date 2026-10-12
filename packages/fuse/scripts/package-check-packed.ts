@@ -69,6 +69,7 @@ process.stdout.write(JSON.stringify(exported));`,
 
 type PackedPeers = {
   "@tanstack/react-table"?: string;
+  "@tanstack/react-virtual"?: string;
   react?: string;
   "react-dom"?: string;
   tailwindcss?: string;
@@ -160,14 +161,21 @@ export function checkPackedPeers(extracted: string): void {
       `Packed @tanstack/react-table peer range must be ^9.2, got ${JSON.stringify(peers["@tanstack/react-table"])}`
     );
   }
+  if (peers["@tanstack/react-virtual"] !== "^3.14") {
+    throw new Error(
+      `Packed @tanstack/react-virtual peer range must be ^3.14, got ${JSON.stringify(peers["@tanstack/react-virtual"])}`
+    );
+  }
   const optional = packed.peerDependenciesMeta ?? {};
-  for (const name of ["tailwindcss", "@tanstack/react-table"] as const) {
+  for (const name of ["tailwindcss", "@tanstack/react-table", "@tanstack/react-virtual"] as const) {
     if (optional[name]?.optional !== true) {
       throw new Error(`Packed ${name} peer must be optional`);
     }
   }
-  if (packed.dependencies?.["@tanstack/react-table"] !== undefined) {
-    throw new Error("Packed @tanstack/react-table must be a peer, not a dependency");
+  for (const name of ["@tanstack/react-table", "@tanstack/react-virtual"] as const) {
+    if (packed.dependencies?.[name] !== undefined) {
+      throw new Error(`Packed ${name} must be a peer, not a dependency`);
+    }
   }
   if (packedText.includes("catalog:")) {
     throw new Error("Packed package.json leaked catalog: pins");

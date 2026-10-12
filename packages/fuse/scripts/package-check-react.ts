@@ -21,10 +21,11 @@ function installedVersion(name: string): string {
 type ReactPair = { readonly react: string; readonly reactDom: string };
 
 /**
- * The optional table peer, installed at the version the workspace tests so the probe renders the
- * data-table entry against the consumer's own copy.
+ * The optional table and virtualizer peers, installed at the versions the workspace tests so the
+ * probe renders the data-table and command-virtual entries against the consumer's own copies.
  */
 const TANSTACK_TABLE_VERSION = catalogVersion(readWorkspaceCatalog(), "@tanstack/react-table");
+const TANSTACK_VIRTUAL_VERSION = catalogVersion(readWorkspaceCatalog(), "@tanstack/react-virtual");
 
 function checkReactPair(
   tarball: string,
@@ -41,6 +42,7 @@ function checkReactPair(
         react: pair.react,
         "react-dom": pair.reactDom,
         "@tanstack/react-table": TANSTACK_TABLE_VERSION,
+        "@tanstack/react-virtual": TANSTACK_VIRTUAL_VERSION,
       },
       cutoff,
       signal,

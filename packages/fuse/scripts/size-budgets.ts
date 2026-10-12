@@ -81,6 +81,11 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // plop:js-entry-budget
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
+  // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
+  // parts for Command.Dialog. CommandVirtual keeps the optional @tanstack/react-virtual peer external.
+  { name: "command", entryFile: "command.js", measuredGzip: 68632 },
+  { name: "command-virtual", entryFile: "command-virtual.js", measuredGzip: 58247 },
+  { name: "kbd", entryFile: "kbd.js", measuredGzip: 21431 },
   // 2026-10-09: new entry, measured at 71305. Select's parts in the FieldFrame that TextField wears.
   { name: "select-field", entryFile: "select-field.js", measuredGzip: 71305, ceilingGzip: 106958 },
   // 2026-10-09: new entry, measured at 43729. A labeled composite over Field and Base UI's Slider.

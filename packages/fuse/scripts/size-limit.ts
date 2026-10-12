@@ -24,6 +24,7 @@ const PEER_EXTERNALS = [
   "react/jsx-dev-runtime",
   "tailwindcss",
   "@tanstack/react-table",
+  "@tanstack/react-virtual",
 ];
 
 function gzipSize(bytes: Uint8Array): number {

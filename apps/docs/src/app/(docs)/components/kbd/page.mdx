@@ -1,0 +1,42 @@
+---
+lede: >
+  A key cap for keyboard instructions and shortcut hints, and a group for keys pressed together.
+---
+
+import { KbdKeys } from "./demos/kbd-keys";
+import { KbdCombination } from "./demos/kbd-combination";
+import { KbdInputGroup } from "./demos/kbd-input-group";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("kbd");
+
+<ComponentIntro slug="kbd" />
+
+<Prose>
+
+`Kbd` renders one key as a `<kbd>` element. `KbdGroup` wraps the caps of a combination in an outer `<kbd>`, which is how HTML marks keys pressed together. A cap holds whatever you give it: a word, a glyph such as `⌘`, or an icon.
+
+Kbd renders the glyph you pass and never detects the platform, because the server cannot know the visitor's operating system and a guess would differ from the browser's render. When your app knows the platform, pass `⌘` or `Ctrl` yourself.
+
+Screen readers read a cap. When a cap only repeats a shortcut, set `aria-hidden` on it and put the shortcut on the control it belongs to in `aria-keyshortcuts`, as the search field below does.
+
+A cap has one size at both densities and takes its colours from the muted role tokens. In an `InputGroup` addon, a cap or a group is the addon's direct child and rounds with the addon's inner corner. A group passes that corner on to its caps.
+
+</Prose>
+
+<Demo slug="kbd" id="keys" title="Keys in a sentence" file="kbd-keys.tsx">
+  <KbdKeys />
+</Demo>
+
+<Demo slug="kbd" id="combination" title="Combinations" file="kbd-combination.tsx">
+  <KbdCombination />
+</Demo>
+
+<Demo slug="kbd" id="input-group" title="Shortcut hint in a search field" file="kbd-input-group.tsx">
+  <KbdInputGroup />
+</Demo>
+
+<ApiReference slug="kbd" />
+
+<ComponentTokens slug="kbd" />

@@ -27,6 +27,8 @@ import { ButtonGroup } from "@elmeragroup/fuse/button-group";
 import { CheckboxItem } from "@elmeragroup/fuse/checkbox";
 import { Collapsible } from "@elmeragroup/fuse/collapsible";
 import { Combobox } from "@elmeragroup/fuse/combobox";
+import { Command } from "@elmeragroup/fuse/command";
+import { CommandVirtual } from "@elmeragroup/fuse/command-virtual";
 import { DataTable } from "@elmeragroup/fuse/data-table";
 import { Dialog } from "@elmeragroup/fuse/dialog";
 import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
@@ -155,6 +157,32 @@ function namespaceElements(): ReactElement[] {
       "ChipsInput",
       "Value",
     ]),
+    ...renderNamespace(
+      "Command",
+      Command,
+      [
+        "Root",
+        "GroupedRoot",
+        "Input",
+        "Back",
+        "List",
+        "Empty",
+        "Group",
+        "GroupLabel",
+        "Collection",
+        "Item",
+        "Pages",
+        "Page",
+        "PageTrigger",
+        "NavigateHint",
+        "SelectHint",
+        "CloseHint",
+        "BackHint",
+        "Dialog",
+      ],
+      { server: ["Shortcut", "Footer", "Hint"] }
+    ),
+    ...renderNamespace("CommandVirtual", CommandVirtual, ["Root", "List"]),
     ...renderNamespace("DataTable", DataTable, [
       "Content",
       "Header",

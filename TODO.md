@@ -300,6 +300,16 @@
   remounts them, as the landing's Order search does
   (`apps/docs/src/app/(landing)/landing/app-shell/order-search.tsx`).
 
+## Command
+
+- `CommandVirtual.List` renders flat item lists only. Add grouped virtual lists: a row per group
+  label in the virtualizer's index space, with Base UI's item indexes kept separate from the row
+  indexes.
+- Give `CommandVirtual` a committed API artifact. A docs page reads only its own entry, and the
+  `command-virtual` entry has no page, so the API diff and drift checks miss changes to
+  `CommandVirtual.Root` and `CommandVirtual.List`. Add a `command-virtual` page, or let one page
+  read several entries.
+
 ## Landing stand-ins
 
 The hero window's Dashboard (`apps/docs/src/app/(landing)/landing/app-shell/`), the brand sites
@@ -307,10 +317,11 @@ The hero window's Dashboard (`apps/docs/src/app/(landing)/landing/app-shell/`), 
 locally because Fuse has no part for them. Replace
 each stand-in once Fuse ships the part.
 
-- Add a `Kbd` part. `app-shell/kbd.tsx` draws the shortcut caps in the sidebar, tooltips and
-  palette.
-- Add a `Command` palette part. `app-shell/command-palette.tsx` builds one from `Dialog` and the
-  ARIA combobox pattern, as the docs search (`apps/docs/src/components/search-palette.tsx`) does.
+- Replace `app-shell/kbd.tsx` with Fuse's `Kbd` and `KbdGroup`, which now ship. The stand-in
+  draws the shortcut caps in the sidebar, tooltips and palette.
+- Replace `app-shell/command-palette.tsx` and the docs search
+  (`apps/docs/src/components/search-palette.tsx`) with Fuse's `Command`, which now ships. Both
+  build a palette from `Dialog` and the ARIA combobox pattern.
 - Add a floating action bar for row selections. `app-shell/bulk-toolbar.tsx` positions its own
   `role="toolbar"` over the queues' list and over Order search's table.
 - Add a list and detail split that becomes a Sheet below a breakpoint. `app-shell/dashboard-main.tsx`

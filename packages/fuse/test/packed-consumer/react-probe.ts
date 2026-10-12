@@ -8,6 +8,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import * as root from "@elmeragroup/fuse";
 import { Button } from "@elmeragroup/fuse/button";
+import { Command } from "@elmeragroup/fuse/command";
+import { CommandVirtual } from "@elmeragroup/fuse/command-virtual";
 import { DataTable } from "@elmeragroup/fuse/data-table";
 import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
 
@@ -20,6 +22,7 @@ assert.equal(require.resolve("react"), packedRequire.resolve("react"));
 assert.equal(require.resolve("react-dom"), packedRequire.resolve("react-dom"));
 // One shared copy: TanStack's contexts and feature objects must be the consumer's instances.
 assert.equal(require.resolve("@tanstack/react-table"), packedRequire.resolve("@tanstack/react-table"));
+assert.equal(require.resolve("@tanstack/react-virtual"), packedRequire.resolve("@tanstack/react-virtual"));
 assert.equal(React.version, expectedReact);
 // SAFETY: the resolved file is react-dom's own package manifest.
 const reactDomManifest = JSON.parse(readFileSync(require.resolve("react-dom/package.json"), "utf8")) as {
@@ -28,6 +31,8 @@ const reactDomManifest = JSON.parse(readFileSync(require.resolve("react-dom/pack
 assert.equal(reactDomManifest.version, expectedReactDom);
 assert.equal(root.PhoneNumberField, PhoneNumberField);
 assert.equal(root.Button, Button);
+assert.equal(root.Command, Command);
+assert.equal("CommandVirtual" in root, false);
 
 const phone = renderToStaticMarkup(
   React.createElement(root.LocaleProvider, {
@@ -69,6 +74,28 @@ const dataTable = renderToStaticMarkup(
 assert.match(dataTable, /<th[^>]*>Customer<\/th>/);
 assert.match(dataTable, /<td[^>]*>Ada<\/td>/);
 
+// The probe is plain TypeScript, so the binding instantiates List's item type that JSX would infer.
+const VirtualList: (props: { readonly children: (item: string) => React.ReactNode }) => React.ReactElement =
+  CommandVirtual.List;
+
+// The server has no scroll element to measure, so the virtual list renders its listbox empty.
+const commandVirtual = renderToStaticMarkup(
+  React.createElement(root.LocaleProvider, {
+    locale: "en-US",
+    children: React.createElement(
+      CommandVirtual.Root,
+      { items: ["Ada", "Grace"] },
+      React.createElement(Command.Input),
+      React.createElement(VirtualList, {
+        children: (item: string) => React.createElement(Command.Item, { key: item, value: item }, item),
+      })
+    ),
+  })
+);
+assert.match(commandVirtual, /role="combobox"/);
+assert.match(commandVirtual, /aria-label="Search commands"/);
+assert.match(commandVirtual, /role="listbox"/);
+
 console.log(
   JSON.stringify({
     react: React.version,
@@ -77,5 +104,6 @@ console.log(
     phone: "rendered",
     button: "rendered",
     dataTable: "rendered",
+    commandVirtual: "rendered",
   })
 );

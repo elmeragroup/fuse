@@ -1,0 +1,26 @@
+{
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate. Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "kbd",
+  "parts": [
+    {
+      "name": "Kbd",
+      "rsc": "server",
+      "sourcePath": "packages/fuse/src/components/kbd/kbd.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "KbdGroup",
+      "rsc": "server",
+      "sourcePath": "packages/fuse/src/components/kbd/kbd.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    }
+  ]
+}

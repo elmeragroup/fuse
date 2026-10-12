@@ -1,0 +1,106 @@
+---
+lede: >
+  A command palette: a search field over a list of actions, run with the keyboard or the
+  pointer, alone on the page or in a dialog.
+---
+
+import { CommandDialog } from "./demos/command-dialog";
+import { CommandGroups } from "./demos/command-groups";
+import { CommandPages } from "./demos/command-pages";
+import { CommandKeptQuery } from "./demos/command-kept-query";
+import { CommandEscapeBack } from "./demos/command-escape-back";
+import { CommandVirtualized } from "./demos/command-virtualized";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("command");
+
+<ComponentIntro slug="command" />
+
+<Prose>
+
+`Command.Root` is Base UI's Autocomplete, always open, with its list inline and the first match always highlighted. Pass the actions in `items` and render them in `Command.List` through a child function. Base UI filters them as the user types, in the locale of `LocaleProvider`; `filter`, `filteredItems`, `mode`, `value` and `onValueChange` pass through. `Command.Root` renders no element: put the palette's parts in `Command.Dialog`, or in a box of your own when the palette sits on the page.
+
+Pick the Root by the shape of your items. A flat list goes to `Command.Root`, groups of items go to `Command.GroupedRoot`, and a long flat list goes to `CommandVirtual.Root`, described under Long lists. Each types its props as the matching Base UI Root overload does, so the callbacks of `Command.GroupedRoot` receive one item of a group.
+
+An item's `onClick` runs when the user clicks it and when they press Enter while it is highlighted. The arrow keys move the highlight; Base UI's `data-highlighted` is the only highlight. Place `Command.Empty` beside `Command.List`, not inside it. It shows the locale dictionary's message while nothing matches.
+
+`Command.Input` is named after its page, or by the locale dictionary outside `Command.Pages`, and its placeholder comes from the dictionary; `aria-label` and `placeholder` override both. Its children replace the leading search icon with addons of your own.
+
+`Command.Footer` holds key hints. `Command.Hint` takes `Kbd` caps and a label. The presets cover the keys the palette handles itself: `Command.NavigateHint` for the arrows, `Command.SelectHint` for Enter, `Command.CloseHint` for Escape and `Command.BackHint` for Backspace. Their labels come from the dictionary, and children replace them. The hints are hidden from assistive technology, since the palette's roles already describe the keys.
+
+</Prose>
+
+<Demo slug="command" id="dialog" title="Palette in a dialog" file="command-dialog.tsx">
+  <CommandDialog />
+</Demo>
+
+<Prose>
+
+`Command.Dialog` goes inside `Dialog.Root`, with `Command.Root` inside it. It uses the Dialog's portal and overlay, sits near the top of the viewport so the field stays put while the results shrink, and has no close button. Its name defaults to the dictionary's "Command palette"; a `Dialog.Title` inside it names it instead. Escape closes it from any page. Opening the dialog moves focus to the field.
+
+## Groups and shortcuts
+
+Pass the groups to `Command.GroupedRoot`, give each `Command.Group` its own `items`, and name it with `Command.GroupLabel`. `Command.Shortcut` shows a row's shortcut at the row's end. It is hidden from assistive technology, so put the same shortcut on the row in `aria-keyshortcuts`. Binding the keys is up to the app; this demo runs them while the field has focus.
+
+</Prose>
+
+<Demo slug="command" id="groups" title="Groups with shortcuts" file="command-groups.tsx">
+  <CommandGroups />
+</Demo>
+
+<Prose>
+
+## Pages
+
+`Command.Pages` holds a stack of page ids, with `defaultValue`, or `value` and `onValueChange` to control it. Each `Command.Page` has an `id`, a `label` that names its field, and its own `Command.Root`. Only the page on top renders. `Command.PageTrigger` is an item that opens a page and shows a chevron.
+
+On a page above the first, the field leads with `Command.Back`, and Backspace in the empty field goes back a page. Backspace does nothing while an input method is composing text. `Command.BackHint` shows only when there is a page to go back to. Pages work with or without `Command.Dialog`.
+
+</Prose>
+
+<Demo slug="command" id="pages-with-back" title="Pages with Back" file="command-pages.tsx">
+  <CommandPages />
+</Demo>
+
+<Prose>
+
+## Keep the parent's query
+
+Going back mounts the parent page fresh, with an empty field and the first match highlighted. To keep what the user typed, hold the query in a component above `Command.Pages`, here `Palette`, and pass it to the parent page's `Command.Root` as `value` with `onValueChange`. The highlight still returns to the first match.
+
+Where the state lives decides how long it lasts. Held inside `Command.Dialog`, it resets when the palette closes, because the dialog unmounts its content. Held above `Dialog.Root`, it lasts from one opening to the next.
+
+</Prose>
+
+<Demo slug="command" id="kept-query" title="Keep the parent's query" file="command-kept-query.tsx">
+  <CommandKeptQuery />
+</Demo>
+
+<Prose>
+
+## Escape goes back a page
+
+Escape closes `Command.Dialog` from any page. To make it go back a page first, control the stack and the dialog. In `Dialog.Root`'s `onOpenChange`, when `eventDetails.reason` is `"escape-key"` and the stack has a page to go back to, call `eventDetails.cancel()` and pop the stack instead. Reset the stack when the dialog closes, so the next opening starts on the first page.
+
+</Prose>
+
+<Demo slug="command" id="escape-back" title="Escape goes back a page" file="command-escape-back.tsx">
+  <CommandEscapeBack />
+</Demo>
+
+<Prose>
+
+## Long lists
+
+For thousands of items, install `@tanstack/react-virtual` 3.14 or later beside Fuse and import `CommandVirtual` from `@elmeragroup/fuse/command-virtual`. That entry is not in the root barrel, so apps without the virtualizer never resolve it. Swap `Command.Root` for `CommandVirtual.Root` and `Command.List` for `CommandVirtual.List`; the other parts stay. `CommandVirtual.List` renders a flat list and throws when its items are groups. The list renders the rows in view plus the highlighted row, so Enter still runs a row the wheel has scrolled away, and it scrolls when the arrows wrap from the first row to the last. It measures each row, so rows of any height stack without gaps. `CommandVirtual.List` scrolls itself, so keep it out of a `ScrollArea`.
+
+</Prose>
+
+<Demo slug="command" id="virtualized" title="Long lists" file="command-virtualized.tsx">
+  <CommandVirtualized />
+</Demo>
+
+<ApiReference slug="command" />
+
+<ComponentTokens slug="command" />

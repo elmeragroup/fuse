@@ -41,6 +41,7 @@ function browserProject(
         "@base-ui/react/internals/labelable-provider",
         "@base-ui/react/internals/noop",
         "@tanstack/react-table",
+        "@tanstack/react-virtual",
         "clsx",
         "tailwind-merge",
         "tailwind-variants",

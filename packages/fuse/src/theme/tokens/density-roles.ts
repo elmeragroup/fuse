@@ -96,6 +96,20 @@ export const PART_DENSITY = {
   "combobox-chip-input": "layout",
   "input-group-button": "control",
 
+  "command-dialog": "layout",
+  "command-input": "control",
+  "command-back": "control",
+  "command-list": "surface",
+  "command-empty": "row",
+  "command-empty:empty": "layout",
+  "command-group": "layout",
+  "command-group-label": "row",
+  "command-item": "row",
+  "command-page-trigger": "row",
+  "command-shortcut": "fixed",
+  "command-footer": "row",
+  "command-hint": "fixed",
+
   "data-table-header": "layout",
   "data-table-body": "layout",
   "data-table-row": "layout",
@@ -213,6 +227,9 @@ export const PART_DENSITY = {
   "item-header": "layout",
   "item-footer": "layout",
   "item-footer-content": "layout",
+
+  kbd: "fixed",
+  "kbd-group": "fixed",
 
   loader: "fixed",
 
