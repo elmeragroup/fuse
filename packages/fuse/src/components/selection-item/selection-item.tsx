@@ -43,6 +43,15 @@ const selectableBandClass = cn(
   "cursor-pointer [[data-selection-item]:has(>label>[data-slot=selection-item-control]_:disabled)>&]:cursor-not-allowed"
 );
 
+// The row's first line, which the control and Actions centre on: one line of the label text
+// `--label-text` at `--label-leading` for a plain-text row, which inherits the shell's label type,
+// or one line of SelectionItem.Title, `--label-text` at `leading-snug`, once the label row holds
+// one. The shell owns it as `--selection-first-line`, so both parts read one value. The title
+// test looks through the label only, so a row nested in a SubSection does not count.
+const firstLineClass = cn(
+  "[--selection-first-line:var(--label-leading)] has-[>label_[data-slot=selection-item-title]]:[--selection-first-line:calc(var(--label-text)*var(--leading-snug))]"
+);
+
 /**
  * Elements in a SubSection that keep their own clicks under `isSubSectionSelectable`. A click
  * inside one of them, or inside an element that only takes focus, does not toggle the row.
@@ -135,11 +144,23 @@ export function SelectionItemTitle({ className, ...props }: ComponentProps<typeo
   );
 }
 
+/**
+ * A selection row's trailing content, such as a price or a badge: `CheckboxItem.Actions` and
+ * `RadioItem.Actions`. Its box is at least one first line of the row tall, the line the control
+ * centres on, and its text takes that line height, so one line of text or a badge up to a line
+ * tall centres on the title's first line. Wrapped text keeps its first line there and grows the
+ * row, and content taller than a line tops flush with the title.
+ */
 export function SelectionItemActions({
   className,
   ...props
 }: ComponentProps<typeof ItemActions>): ReactElement {
-  return <ItemActions className={cn("-translate-y-0.5 items-start", className)} {...props} />;
+  return (
+    <ItemActions
+      className={cn("min-h-(--selection-first-line) leading-(--selection-first-line)", className)}
+      {...props}
+    />
+  );
 }
 
 /**
@@ -275,19 +296,15 @@ export function SelectionItemShell({
   const controlAtEnd = controlPosition === "end";
 
   const rowCellClass = cn("self-start pt-3.5", hasSubSection ? null : "pb-3.5");
-  // The slot's content box is one title line tall, `--label-text` at the title's
-  // `leading-snug`, and centres the control in it, so the control sits on the title's first
-  // line at either density. That replaces Item.Media's nudge for a row with a description,
-  // which was tuned to a 14px title, whether the row holds SelectionItem.Description or the
-  // public Item.Description.
+  // The slot's content box is one first line of the row tall and centres the control in it, so
+  // the control sits on the first line at either density. Its height replaces icon media's
+  // Item.Title line, which is 14px type, for SelectionItem.Description and the public
+  // Item.Description alike.
   const controlSlot = (
     <ItemMedia
       variant="icon"
       data-slot="selection-item-control"
-      className={cn(
-        rowCellClass,
-        "box-content h-[calc(var(--label-text)*var(--leading-snug))] group-has-data-[slot=item-description]/item:translate-y-0 group-has-data-[slot=selection-item-description]/item:translate-y-0"
-      )}>
+      className={cn(rowCellClass, "box-content h-(--selection-first-line)")}>
       {control}
     </ItemMedia>
   );
@@ -351,6 +368,7 @@ export function SelectionItemShell({
         outlineItemClass,
         selectionItemShellClass,
         labelTypeClass,
+        firstLineClass,
         "relative isolate box-border grid items-stretch gap-0 gap-x-2.5 bg-card py-0 transition-colors has-[[data-slot=selection-item-control]_[data-checked]]:border-selection-checked-border has-[[data-slot=selection-item-control]_[data-checked]]:bg-muted",
         controlAtEnd ? "grid-cols-[minmax(0,1fr)_auto]" : "grid-cols-[auto_minmax(0,1fr)]",
         connectedStack

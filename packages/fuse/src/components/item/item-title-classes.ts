@@ -2,10 +2,13 @@
  * Item.Title class string. Shared with Alert.Title so the alert
  * heading keeps the same type while staying an `h*`. Titles wrap: Alert.Title and a
  * selection row's title must show every line, and `flex` would win over a `line-clamp-*`.
+ * Alert.Title renders an `h1`–`h6`, so the string resets block margins that a host without
+ * Tailwind's preflight would otherwise keep. Item.Media sizes itself to one line of this type,
+ * `text-sm` at `leading-snug`, beside a description; change both together.
  * Package-private — not on the `@elmeragroup/fuse/item` facade.
  */
 import { cn } from "../../styles/cn";
 
 export const ITEM_TITLE_CLASSES = cn(
-  "text-sm leading-snug font-medium flex w-fit items-center gap-2 underline-offset-4"
+  "text-sm leading-snug font-medium m-0 flex w-fit items-center gap-2 underline-offset-4"
 );

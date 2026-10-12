@@ -8,7 +8,16 @@ import * as Wcag from "@elmeragroup/color/wcag";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { headingNamed, px, renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
+import { HOSTS, centreY, firstLineCentreY, hostCss } from "../../../test/first-line";
+import {
+  headingNamed,
+  px,
+  renderThemed,
+  roleNamed,
+  stampDensity,
+  textNamed,
+} from "../../../test/themed-browser-render";
+import { DENSITIES } from "../../theme/density";
 import { Alert } from "./alert";
 
 const VARIANTS = ["default", "destructive", "warning", "success"] as const;
@@ -173,27 +182,70 @@ describe("Alert", () => {
     expect(Math.abs(link.top - description.getBoundingClientRect().top)).toBeLessThan(lineHeight / 2);
   });
 
-  it("aligns the icon with the top of a multi-line description's content", () => {
+  it.each(HOSTS)(
+    "centres the icon on the title's first line beside a multi-line description, in a %s host",
+    (host) => {
+      for (const density of DENSITIES) {
+        stampDensity(density);
+        for (const variant of VARIANTS) {
+          const { unmount } = renderThemed(
+            <div style={{ width: "240px" }}>
+              <style>{hostCss(host)}</style>
+              <Alert.Root variant={variant}>
+                <Alert.Title>Switch scheduled</Alert.Title>
+                <Alert.Description>
+                  The supplier switch completes on the first day of next month, and the final invoice from the
+                  current supplier follows within six weeks.
+                </Alert.Description>
+              </Alert.Root>
+            </div>
+          );
+          const icon = iconIn(alertNamed(variant));
+          const line = firstLineCentreY(headingNamed("Switch scheduled", 3));
+          expect(Math.abs(centreY(icon) - line), `${variant} at ${density}`).toBeLessThanOrEqual(0.5);
+          unmount();
+        }
+      }
+    }
+  );
+
+  it.each(HOSTS)("keeps the action button centred on the row beside a description, in a %s host", (host) => {
+    for (const density of DENSITIES) {
+      stampDensity(density);
+      const { unmount } = renderThemed(
+        <div style={{ width: "320px" }}>
+          <style>{hostCss(host)}</style>
+          <Alert.Root onAction={() => undefined} actionLabel="Retry">
+            <Alert.Title>Sync delayed</Alert.Title>
+            <Alert.Description>
+              Facility data is more than an hour old and may not match the meter.
+            </Alert.Description>
+          </Alert.Root>
+        </div>
+      );
+      const offset = centreY(roleNamed("button", "Retry")) - centreY(alertNamed("default"));
+      expect(Math.abs(offset), density).toBeLessThanOrEqual(0.5);
+      unmount();
+    }
+  });
+
+  it("keeps the title flush with the content and 4px above the description without preflight", () => {
     renderThemed(
-      <div style={{ width: "240px" }}>
-        <Alert.Root>
-          <Alert.Title>Switch scheduled</Alert.Title>
-          <Alert.Description>
-            The supplier switch completes on the first day of next month, and the final invoice from the
-            current supplier follows within six weeks.
-          </Alert.Description>
-        </Alert.Root>
-      </div>
+      <Alert.Root>
+        <Alert.Title>Switch scheduled</Alert.Title>
+        <Alert.Description>The switch completes next month.</Alert.Description>
+      </Alert.Root>
     );
-    const content = headingNamed("Switch scheduled", 3).parentElement;
+    const title = headingNamed("Switch scheduled", 3);
+    const content = title.parentElement;
     if (content === null) {
       throw new Error("expected the title inside the alert content");
     }
-    const icon = iconIn(alertNamed("default")).getBoundingClientRect();
-    const contentBox = content.getBoundingClientRect();
-    // Item.Media centres by default; a centred icon would sit near the content's middle.
-    expect(contentBox.height).toBeGreaterThan(icon.height * 3);
-    expect(Math.abs(icon.top - contentBox.top)).toBeLessThanOrEqual(4);
+    const description = descriptionIn(alertNamed("default")).getBoundingClientRect();
+    // The content column's gap is 0.25rem, 4px at the default 16px root; an `h3` keeps its
+    // user-agent block margins in a preflight-free host unless the title resets them.
+    expect(title.getBoundingClientRect().top - content.getBoundingClientRect().top).toBeCloseTo(0, 2);
+    expect(description.top - title.getBoundingClientRect().bottom).toBeCloseTo(4, 2);
   });
 
   it("renders the mapped Phosphor glyph for each variant, hidden from AT", () => {

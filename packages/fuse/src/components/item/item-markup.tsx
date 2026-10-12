@@ -24,12 +24,22 @@ export function ItemRootElement({
   return <div {...itemRootProps({ variant, size, className })} {...props} />;
 }
 
+// Beside a description the media and Item.Content both align to the row's top, so media taller than
+// the content shares its top edge, and `--item-media-line` becomes one Item.Title line, `text-sm` at
+// `leading-snug` as ITEM_TITLE_CLASSES sets it. Icon media is exactly that tall and centres its
+// glyph, so a glyph of any size centres on the title's first line. Default and image media keep
+// their content's own height and so top-align with the content. Elsewhere the property is `auto`
+// and the row centres the media. A plain utility reads the property, so tailwind-merge drops it for
+// a consumer's own height or size, and that size wins. A minimum of one line on default media would
+// override a smaller consumer height, which CSS cannot tell apart without the class attribute.
 const itemMediaVariants = tv({
-  base: "flex shrink-0 items-center justify-center gap-2 group-has-data-[slot=item-description]/item:translate-y-0.5 group-has-data-[slot=item-description]/item:self-start group-has-data-[slot=selection-item-description]/item:translate-y-0.5 group-has-data-[slot=selection-item-description]/item:self-start [&_svg]:pointer-events-none",
+  base: "flex shrink-0 items-center justify-center gap-2 [--item-media-line:auto] group-has-data-[slot=item-description]/item:self-start group-has-data-[slot=item-description]/item:[--item-media-line:calc(var(--text-sm)*var(--leading-snug))] group-has-data-[slot=selection-item-description]/item:self-start group-has-data-[slot=selection-item-description]/item:[--item-media-line:calc(var(--text-sm)*var(--leading-snug))] [&_svg]:pointer-events-none",
   variants: {
     variant: {
       default: "bg-transparent",
-      icon: "[&_svg:not([class*='size-'])]:size-4",
+      icon: "h-(--item-media-line) [&_svg:not([class*='size-'])]:size-4",
+      // An image is taller than a title line, so beside a description it tops flush with the
+      // content.
       image:
         "outline-black/10 size-10 overflow-hidden rounded-sm outline outline-1 -outline-offset-1 group-data-[size=sm]/item:size-8 group-data-[size=xs]/item:size-6 [&_img]:size-full [&_img]:object-cover",
     },
@@ -39,6 +49,13 @@ const itemMediaVariants = tv({
   },
 });
 
+/**
+ * The row's leading media. `icon` sizes a bare glyph to 16px, and `image` frames a picture in a
+ * rounded square. Beside a description, `default` and `image` media top-align with the content,
+ * and `icon` media centres its glyph on the title's first line. A height or size class sets the
+ * box of `default` and `icon` media. `image` media takes its size from the row's size, so resizing
+ * it takes a size class under the matching row-size group variant.
+ */
 export function ItemMedia({
   className,
   variant = "default",
@@ -59,7 +76,7 @@ export function ItemContent({ className, ...props }: ComponentProps<"div">): Rea
     <div
       data-slot="item-content"
       className={cn(
-        "flex flex-1 flex-col gap-1 group-data-[size=xs]/item:gap-0 [&+[data-slot=item-content]]:flex-none",
+        "flex flex-1 flex-col gap-1 group-has-data-[slot=item-description]/item:self-start group-has-data-[slot=selection-item-description]/item:self-start group-data-[size=xs]/item:gap-0 [&+[data-slot=item-content]]:flex-none",
         className
       )}
       {...props}
