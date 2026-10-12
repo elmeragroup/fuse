@@ -330,6 +330,56 @@
     @slot;
   }
 }
+/* Block spacing inside Alert.Description. A block child that follows another child takes the
+   step; inline-level children never do, because a top margin on an inline-block child (a
+   button, a badge, or a Popover.Trigger that gains focus-guard siblings while open) would raise
+   its sentence's line box. The block set is every conforming element the HTML rendering rules
+   display as block or table by default that can be a direct flow child, `dialog` aside. It keys
+   on default display, so Fuse's Badge, an inline-flex `div`, is excluded by its slot. Preflight
+   displays media as blocks, so media takes the step only right after a block, where it starts a
+   new line on any host; inside a sentence it never does. The gap weighs one element selector:
+   it beats a universal margin reset in any order and an element reset loaded before Fuse's
+   stylesheet, and any consumer class rule overrides it. */
+@custom-variant alert-description-gap {
+  :where(&)
+    > :is(
+      address,
+      article,
+      aside,
+      blockquote,
+      details,
+      div,
+      dl,
+      fieldset,
+      figure,
+      footer,
+      form,
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6,
+      header,
+      hgroup,
+      hr,
+      main,
+      menu,
+      nav,
+      ol,
+      p,
+      pre,
+      search,
+      section,
+      table,
+      ul
+    ):where(:not([data-slot="badge"])) {
+    &:where(* + *),
+    :where(&) + :is(img, svg, video, canvas, audio, iframe, embed, object) {
+      @slot;
+    }
+  }
+}
 /* A disabled control: `:disabled`, `data-disabled` or `aria-disabled="true"`. This is the
    one disabled predicate. `enabled-hover` and `enabled-active` build on its negation, and
    a part that repaints a whole control from another element's hover (the inline

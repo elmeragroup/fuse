@@ -1,4 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import type { ReactNode } from "react";
+
+import { describe, expect, it, onTestFinished, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import * as CssColor from "@elmeragroup/color/css-color";
@@ -18,6 +20,8 @@ import {
   textNamed,
 } from "../../../test/themed-browser-render";
 import { DENSITIES } from "../../theme/density";
+import { Badge } from "../badge/badge";
+import { PopoverContent, PopoverRoot, PopoverTrigger } from "../popover/popover";
 import { Alert } from "./alert";
 
 const VARIANTS = ["default", "destructive", "warning", "success"] as const;
@@ -58,6 +62,16 @@ function iconIn(root: HTMLElement): SVGSVGElement {
 
 /** WCAG AA for body-size text, the size the sm action label renders at. */
 const AA_TEXT_CONTRAST = 4.5;
+
+/** A 1px transparent GIF, so an image's box comes from its width and height, not a network load. */
+const PIXEL = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+
+/**
+ * The parts of Tailwind's preflight that move blocks in a description: it zeroes every margin and
+ * displays media as blocks, both in the base layer, below Fuse's utilities.
+ */
+const PREFLIGHT_STAND_IN =
+  "@layer base { * { margin: 0; } img, svg, video, canvas, audio, iframe, embed, object { display: block; vertical-align: middle; } }";
 
 function computedSrgb(value: string): Srgb.Srgb {
   return CssColor.toSrgb(getOrThrow(CssColor.parse(value)));
@@ -143,15 +157,74 @@ describe("Alert", () => {
     expect(list.parentElement).toBe(description);
   });
 
-  it("spaces a list below a paragraph in the description under a preflight host", () => {
+  /** Block children a description holds after a paragraph, each found by its accessible role. */
+  const BLOCKS_AFTER_PARAGRAPH = [
+    {
+      name: "list",
+      block: (
+        <ul>
+          <li>Meter number</li>
+        </ul>
+      ),
+      find: () => page.getByRole("list").element(),
+    },
+    {
+      name: "disclosure",
+      block: (
+        <details>
+          <summary>More information</summary>
+          The meter number is on the meter.
+        </details>
+      ),
+      find: () => page.getByRole("group").element(),
+    },
+    {
+      name: "heading",
+      block: <h4>Meter number</h4>,
+      find: () => headingNamed("Meter number", 4),
+    },
+    {
+      name: "section",
+      block: <section aria-label="Meter">The meter number is on the meter.</section>,
+      find: () => roleNamed("region", "Meter"),
+    },
+    {
+      name: "image",
+      block: <img src={PIXEL} alt="Meter photo" width={40} height={20} />,
+      find: () => roleNamed("img", "Meter photo"),
+    },
+  ] as const;
+
+  it("spaces each block child below a paragraph in the description under a preflight host", () => {
+    for (const { name, block, find } of BLOCKS_AFTER_PARAGRAPH) {
+      const { unmount } = renderThemed(
+        <>
+          {/* dist/styles.css ships without preflight, so user-agent margins would space the blocks. */}
+          <style>{PREFLIGHT_STAND_IN}</style>
+          <Alert.Root>
+            <Alert.Title>Before you move</Alert.Title>
+            <Alert.Description>
+              <p>Have these ready:</p>
+              {block}
+            </Alert.Description>
+          </Alert.Root>
+        </>
+      );
+      const paragraph = textNamed("Have these ready:").getBoundingClientRect();
+      expect.soft(find().getBoundingClientRect().top - paragraph.bottom, name).toBeGreaterThan(0);
+      unmount();
+    }
+  });
+
+  it("lets a consumer rule on a description's block child override its spacing", () => {
     renderThemed(
       <>
-        {/* dist/styles.css ships without preflight, so user-agent margins would space the blocks.
-            A host with Tailwind's preflight zeroes them in the base layer, below utilities. */}
-        <style>{"@layer base { p, ul { margin: 0; } }"}</style>
+        {/* Unlayered, like the Fuse utilities in dist/styles.css: specificity alone decides. */}
+        <style>{".consumer-description > ul { margin-top: 0; }"}</style>
+        <style>{PREFLIGHT_STAND_IN}</style>
         <Alert.Root>
           <Alert.Title>Before you move</Alert.Title>
-          <Alert.Description>
+          <Alert.Description className="consumer-description">
             <p>Have these ready:</p>
             <ul>
               <li>Meter number</li>
@@ -162,7 +235,62 @@ describe("Alert", () => {
     );
     const paragraph = textNamed("Have these ready:").getBoundingClientRect();
     const list = page.getByRole("list").element().getBoundingClientRect();
-    expect(list.top - paragraph.bottom).toBeGreaterThan(0);
+    // A class and a child combinator outrank a spacing rule that is one class deep.
+    expect(list.top - paragraph.bottom).toBe(0);
+  });
+
+  it("keeps the block step under unlayered margin resets on a preflight-free host", () => {
+    // The worst order for each reset: an element reset before the Fuse stylesheet, where it ties
+    // on order, and a universal reset after it, where it would win any tie.
+    const elementReset = document.createElement("style");
+    elementReset.textContent = "p, ul { margin: 0; }";
+    document.head.prepend(elementReset);
+    const universalReset = document.createElement("style");
+    universalReset.textContent = "* { margin: 0; }";
+    document.head.append(universalReset);
+    onTestFinished(() => {
+      elementReset.remove();
+      universalReset.remove();
+    });
+    renderThemed(
+      <Alert.Root>
+        <Alert.Title>Before you move</Alert.Title>
+        <Alert.Description>
+          <p>Have these ready:</p>
+          <ul>
+            <li>Meter number</li>
+          </ul>
+        </Alert.Description>
+      </Alert.Root>
+    );
+    const paragraph = textNamed("Have these ready:").getBoundingClientRect();
+    const list = page.getByRole("list").element().getBoundingClientRect();
+    // The documented block step is 8px, twice the title's 4px gap.
+    expect(list.top - paragraph.bottom).toBe(8);
+  });
+
+  it("lets a consumer's Tailwind spacing class on the description override its spacing", () => {
+    // The host's build emits `[&>*+*]:mt-0`, not dist/styles.css. Placed before the Fuse
+    // stylesheet, it can only win on specificity: on a tie, the later Fuse rule would win.
+    const consumerRule = document.createElement("style");
+    consumerRule.textContent = String.raw`.\[\&\>\*\+\*\]\:mt-0 > * + * { margin-top: 0; }`;
+    document.head.prepend(consumerRule);
+    onTestFinished(() => consumerRule.remove());
+    renderThemed(
+      <>
+        <style>{PREFLIGHT_STAND_IN}</style>
+        <Alert.Root>
+          <Alert.Title>Before you move</Alert.Title>
+          <Alert.Description className="[&>*+*]:mt-0">
+            <p>Have these ready:</p>
+            <p>Your meter number.</p>
+          </Alert.Description>
+        </Alert.Root>
+      </>
+    );
+    const first = textNamed("Have these ready:").getBoundingClientRect();
+    const second = textNamed("Your meter number.").getBoundingClientRect();
+    expect(second.top - first.bottom).toBe(0);
   });
 
   it("keeps a link in the description on the surrounding text's line", () => {
@@ -180,6 +308,69 @@ describe("Alert", () => {
     // One short sentence fits one line box; a block or grid row per inline run would stack three.
     expect(description.getBoundingClientRect().height).toBeLessThan(lineHeight * 2);
     expect(Math.abs(link.top - description.getBoundingClientRect().top)).toBeLessThan(lineHeight / 2);
+  });
+
+  it("keeps its height when an inline popover trigger in the description opens", async () => {
+    renderThemed(
+      <Alert.Root variant="warning">
+        <Alert.Title>Ongoing activity on the person</Alert.Title>
+        <Alert.Description>
+          There are orders sold for this person{" "}
+          <PopoverRoot>
+            <PopoverTrigger>in the last month</PopoverTrigger>
+            <PopoverContent>Orders this month</PopoverContent>
+          </PopoverRoot>
+          .
+        </Alert.Description>
+      </Alert.Root>
+    );
+    const root = alertNamed("warning");
+    const closedHeight = root.getBoundingClientRect().height;
+    await userEvent.click(roleNamed("button", "in the last month"));
+    await expect.element(page.getByText("Orders this month")).toBeVisible();
+    // Opening a popover changes nothing in the sentence a reader sees, so the alert keeps its box.
+    expect(root.getBoundingClientRect().height).toBe(closedHeight);
+  });
+
+  /** Inline-level children that honour a top margin, unlike a plain inline run. */
+  const INLINE_BLOCKS = [
+    {
+      name: "link-styled button",
+      inline: (
+        <button type="button" style={{ font: "inherit", padding: 0, border: 0, background: "none" }}>
+          that
+        </button>
+      ),
+    },
+    { name: "Badge", inline: <Badge>active</Badge> },
+    { name: "image", inline: <img src={PIXEL} alt="meter" width={16} height={16} /> },
+  ] as const;
+
+  /** The rendered height of a description holding `content`. */
+  function descriptionHeightOf(content: ReactNode): number {
+    const { unmount } = renderThemed(
+      <Alert.Root>
+        <Alert.Title>Switch scheduled</Alert.Title>
+        <Alert.Description>{content}</Alert.Description>
+      </Alert.Root>
+    );
+    const height = descriptionIn(alertNamed("default")).getBoundingClientRect().height;
+    unmount();
+    return height;
+  }
+
+  it("keeps an inline-block child after another inline element on the sentence's line box", () => {
+    for (const { name, inline } of INLINE_BLOCKS) {
+      // Without an element before it, nothing can space the child; that sentence is the baseline.
+      const alone = descriptionHeightOf(<>See this and {inline}.</>);
+      const afterEmphasis = descriptionHeightOf(
+        <>
+          See <strong>this</strong> and {inline}.
+        </>
+      );
+      // Emphasis changes the weight of a word, not the height of the line it sits on.
+      expect.soft(afterEmphasis, name).toBe(alone);
+    }
   });
 
   it.each(HOSTS)(
