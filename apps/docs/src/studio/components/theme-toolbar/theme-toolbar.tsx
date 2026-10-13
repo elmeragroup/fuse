@@ -45,9 +45,9 @@ const themeToolbar = tv({
     layer: "absolute top-0 left-0 z-30 data-[hidden=true]:invisible",
     // Placement only: the toolbar paints the surface, so the popup drops the popover's own.
     popup: "w-auto gap-0 rounded-lg bg-transparent p-0 shadow-none ring-0",
-    // As wide as its controls, up to the canvas's width, past which its groups wrap. Its width
-    // is its own: the layer that holds it has none to fit into.
-    bar: "shadow-lg w-max max-w-(--available-width) flex-wrap focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
+    // As wide as its controls, up to the room inside the canvas, past which its groups wrap. Its
+    // width is its own: the layer that holds it has none to fit into.
+    bar: "shadow-lg w-max max-w-(--toolbar-max-width) flex-wrap focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
     group: "flex-wrap",
     label: "flex min-w-0 items-baseline gap-1.5 px-2",
     slot: "text-xs font-mono",
@@ -65,11 +65,19 @@ const ARTBOARD_OFFSET = 36;
 /** Screen px between a picked part and its toolbar. */
 const PART_OFFSET = 8;
 
+/** Base UI's default collision padding: the screen px it keeps a popup inside the canvas. */
+const COLLISION_PADDING = 5;
+
 /**
- * Screen px a toolbar pinned to the canvas's top keeps from it: more than Base UI's 5px collision
+ * Screen px a toolbar pinned to the canvas's top keeps from it: more than Base UI's collision
  * padding, so the top side still fits there.
  */
 const PINNED_MARGIN = 8;
+
+/** The screen px a toolbar `height` tall needs between the canvas's top and its anchor's top. */
+function roomAbove(height: number, sideOffset: number): number {
+  return height + sideOffset + PINNED_MARGIN;
+}
 
 /** What the toolbar edits: the selected artboard, or the part picked in it. */
 type ToolbarTarget =
@@ -260,7 +268,8 @@ const ThemeBar = memo(function ThemeBar({
 function FloatingToolbar(): ReactElement {
   const { artboards, selectedId, select, toolbarShown } = useStudio();
   const { part, clear: clearPart } = usePartSelection();
-  const { artboardElement, canvas } = useViewportCommands();
+  const { artboardElement, canvas, answerFrame } = useViewportCommands();
+  const { frameRequest } = useViewportState();
   const artboard = artboards.find((each) => each.id === selectedId);
   const board = artboard === undefined ? undefined : artboardElement(artboard.id);
   const target = useMemo((): ToolbarTarget | undefined => {
@@ -286,12 +295,62 @@ function FloatingToolbar(): ReactElement {
   // toolbar to the canvas's top while the anchor runs on below it.
   const anchor = useTrackedAnchor(element, (box) => {
     const frame = canvas()?.getBoundingClientRect();
-    const room = (popup?.offsetHeight ?? 0) + sideOffset + PINNED_MARGIN;
+    const room = roomAbove(popup?.offsetHeight ?? 0, sideOffset);
     return frame === undefined ? box : toolbarAnchor(box, frame, room);
   });
   const layer = useRef<HTMLDivElement>(null);
+  // The bar's width cap: the canvas's width less the collision padding on each side, the room
+  // Base UI keeps the bar in. The studio sets it rather than read Base UI's `--available-width`,
+  // which holds a 100vw placeholder until Base UI has placed the bar, so the bar lays out at its
+  // final width, on one row or two, from its first paint, and its first reported height is its
+  // real one. A passive effect, as the canvas attaches after its children's layout effects; no
+  // bar opens before it runs.
+  useEffect(() => {
+    const frame = canvas();
+    const scope = layer.current;
+    if (frame === null || scope === null) {
+      return undefined;
+    }
+    const cap = () => {
+      scope.style.setProperty(
+        "--toolbar-max-width",
+        `${String(frame.clientWidth - 2 * COLLISION_PADDING)}px`
+      );
+    };
+    cap();
+    const observer = new ResizeObserver(cap);
+    observer.observe(frame);
+    return () => {
+      observer.disconnect();
+    };
+  }, [canvas]);
   const anchorHidden = useAnchorHidden(popup);
   const open = toolbarShown && target !== undefined && anchor !== undefined;
+  // Each frame of an artboard gets one answer, on the commit after it (`zoomToArtboard`): the
+  // room the artboard's bar needs above it when the bar shows over that artboard, and otherwise
+  // that it shows none there, hidden, on a part or on another artboard. A bar that has just
+  // opened answers once Base UI has mounted its popup, a commit or two on.
+  const barOver = open && target.kind === "artboard" ? target.artboard.id : undefined;
+  const answered = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    if (frameRequest === undefined || answered.current === frameRequest.serial) {
+      return;
+    }
+    const showing = barOver === frameRequest.artboardId;
+    if (showing && popup === null) {
+      return;
+    }
+    answered.current = frameRequest.serial;
+    answerFrame(
+      showing && popup !== null
+        ? {
+            serial: frameRequest.serial,
+            kind: "measured",
+            px: roomAbove(popup.offsetHeight, ARTBOARD_OFFSET),
+          }
+        : { serial: frameRequest.serial, kind: "not-showing" }
+    );
+  }, [frameRequest, barOver, popup, answerFrame]);
   // The open menu, and the target the toolbar showed when it opened.
   const [openMenu, setOpenMenu] = useState<
     { readonly target: ToolbarTarget | undefined; readonly title: string } | undefined

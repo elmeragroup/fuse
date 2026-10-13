@@ -106,6 +106,17 @@ describe("fitRects", () => {
   it("returns undefined when there is nothing to fit", () => {
     expect(fitRects([], screen, 0)).toBeUndefined();
   });
+
+  it("keeps `top` free above the rects, centring them in the room below it", () => {
+    // The room is 1000 - 2*50 = 900 by 600 - 150 - 50 = 400, so zoom = min(900/400, 400/200) = 2.
+    // Drawn 800 × 400, the rect fills the room's height from y = 150, its centre (200, 100)
+    // centred across: x = 500 - 200*2.
+    expect(fitRects([{ x: 0, y: 0, width: 400, height: 200 }], screen, 50, 150)).toEqual({
+      x: 100,
+      y: 150,
+      zoom: 2,
+    });
+  });
 });
 
 describe("stepZoom", () => {

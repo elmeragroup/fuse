@@ -100,8 +100,9 @@ const PINNED_MARGIN = 8;
 
 /**
  * Pans the canvas down until the artboard `name` has room above it for its bar at
- * {@link ARTBOARD_GAP}, so the bar sits on the artboard rather than pinned to the canvas's top.
- * The room follows the bar's measured height, since wider text wraps the bar onto a second row.
+ * {@link ARTBOARD_GAP}, so the bar sits on the artboard rather than pinned to the canvas's top,
+ * for a selection that framed nothing. The room follows the bar's measured height, since wider
+ * text wraps the bar onto a second row.
  */
 async function makeRoomAbove(page: Page, name: string): Promise<void> {
   const frame = await box(canvas(page));
@@ -114,6 +115,32 @@ async function makeRoomAbove(page: Page, name: string): Promise<void> {
   await page.mouse.move(board.x + board.width / 2, board.y + board.height / 2);
   await page.mouse.wheel(0, -short);
   await expect.poll(async () => (await box(artboard(page, name))).y).toBeCloseTo(board.y + short, 0);
+  await settleFrames(page);
+}
+
+/**
+ * Where the camera draws the artboard `name`: its top-left corner, and its width, which follows
+ * the zoom. Its height follows its content, which a brand changes.
+ */
+async function drawnAt(page: Page, name: string): Promise<{ x: number; y: number; width: number }> {
+  const { x, y, width } = await box(artboard(page, name));
+  return { x, y, width };
+}
+
+/** Picks `brand` in the artboard bar's Brand select, and waits for its trigger to show it. */
+async function pickBarBrand(page: Page, brand: string): Promise<void> {
+  const trigger = artboardBar(page).getByRole("combobox", { name: "Brand", exact: true });
+  await trigger.click();
+  await page.getByRole("option", { name: brand, exact: true }).click();
+  await trigger.getByText(brand, { exact: true }).waitFor();
+}
+
+/**
+ * Lets a height change of the bar land: one frame for its resize report, one for a camera move
+ * the report would make.
+ */
+async function settleReport(page: Page): Promise<void> {
+  await settleFrames(page);
   await settleFrames(page);
 }
 
@@ -186,12 +213,8 @@ describe("the studio's theme toolbar", () => {
       expect(
         await artboard(page, LIGHT_BOARD).evaluate((element) => element === document.activeElement)
       ).toBe(true);
-      // The press framed the artboard; with room above it, the bar sits above the artboard and
-      // clear of its name label, centred across it.
-      await makeRoomAbove(page, LIGHT_BOARD);
-      const label = await box(canvas(page).getByRole("button", { name: LIGHT_BOARD, exact: true }));
-      const barBox = await box(bar);
-      expect(barBox.y + barBox.height).toBeLessThanOrEqual(label.y);
+      // Centred across the artboard the press framed, room above it and all (next test).
+      await expect.poll(async () => (await placement(page, LIGHT_BOARD)).gap).toBeCloseTo(ARTBOARD_GAP, 0);
       expect(Math.abs((await placement(page, LIGHT_BOARD)).offset)).toBeLessThanOrEqual(1);
 
       await layer(page, LIGHT_BOARD).click();
@@ -200,6 +223,163 @@ describe("the studio's theme toolbar", () => {
       await layer(page, LIGHT_BOARD).click();
       await bar.waitFor({ state: "visible" });
       expect(errors).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+
+  it.each([
+    { theme: "the base theme's brand", brand: undefined },
+    // Its name widens the Brand select until the bar wraps onto a second row.
+    { theme: "a brand whose long name wraps the bar", brand: "Nordic Green Energy" },
+  ])("frames an artboard picked in Layers with room above it for its bar, in $theme", async ({ brand }) => {
+    const { context, page } = await openStudio(browser());
+    try {
+      if (brand !== undefined) {
+        await layer(page, LIGHT_BOARD).click();
+        await pickBarBrand(page, brand);
+        // Another artboard's bar is the last one measured, so the pick below meets a taller bar.
+        await layer(page, DARK_BOARD).click();
+        await artboardBar(page).waitFor({ state: "visible" });
+      }
+      await layer(page, LIGHT_BOARD).click();
+      await artboardBar(page).waitFor({ state: "visible" });
+      await expect.poll(async () => (await placement(page, LIGHT_BOARD)).gap).toBeCloseTo(ARTBOARD_GAP, 0);
+      const label = await box(canvas(page).getByRole("button", { name: LIGHT_BOARD, exact: true }));
+      const bar = await box(artboardBar(page));
+      expect(bar.y + bar.height).toBeLessThanOrEqual(label.y);
+    } finally {
+      await context.close();
+    }
+  });
+
+  it("keeps the camera still when a brand picked after a frame makes the bar taller", async () => {
+    const { context, page } = await openStudio(browser());
+    try {
+      await layer(page, LIGHT_BOARD).click();
+      await expect.poll(async () => (await placement(page, LIGHT_BOARD)).gap).toBeCloseTo(ARTBOARD_GAP, 0);
+      const framed = await drawnAt(page, LIGHT_BOARD);
+      await pickBarBrand(page, "Nordic Green Energy");
+      await settleReport(page);
+      expect(await drawnAt(page, LIGHT_BOARD)).toEqual(framed);
+    } finally {
+      await context.close();
+    }
+  });
+
+  it("keeps the camera still when a canvas click selects an artboard a frame was made for before", async () => {
+    const { context, page } = await openStudio(browser());
+    try {
+      await layer(page, LIGHT_BOARD).click();
+      await expect.poll(async () => (await placement(page, LIGHT_BOARD)).gap).toBeCloseTo(ARTBOARD_GAP, 0);
+      await page.keyboard.press("Escape");
+      await artboardBar(page).waitFor({ state: "detached" });
+      // The base brand's long name widens the bar the click below opens past the framed one.
+      await page.getByRole("button", { name: /^Base theme/u }).click();
+      await page.getByRole("menuitemradio", { name: "Nordic Green Energy", exact: true }).click();
+      await page.keyboard.press("Escape");
+      await expect
+        .poll(async () => artboard(page, LIGHT_BOARD).getAttribute("data-theme-brand"))
+        .toBe("ngfi");
+
+      const before = await drawnAt(page, LIGHT_BOARD);
+      await page.mouse.click(before.x + 3, before.y + 3);
+      await artboardBar(page).waitFor({ state: "visible" });
+      await settleReport(page);
+      expect(await drawnAt(page, LIGHT_BOARD)).toEqual(before);
+    } finally {
+      await context.close();
+    }
+  });
+
+  it("keeps where a wheel that interrupts a Layers pick leaves the camera, though the pick's bar answers after it", async () => {
+    const { context, page } = await openStudio(browser());
+    try {
+      const [row, surface] = await Promise.all([
+        layer(page, LIGHT_BOARD).elementHandle(),
+        canvas(page).elementHandle(),
+      ]);
+      const fitted = await drawnAt(page, LIGHT_BOARD);
+      // The pick and a wheel in one task. The wheel interrupts the pick's glide before React has
+      // drawn it, so it pans from the camera the canvas still draws, the first fit, and the pick's
+      // bar answers after it.
+      await page.evaluate(
+        ([pick, region]) => {
+          if (!(pick instanceof HTMLElement)) {
+            throw new Error("the Layers row is not an HTML element");
+          }
+          pick.click();
+          const frame = region.getBoundingClientRect();
+          region.dispatchEvent(
+            new WheelEvent("wheel", {
+              deltaY: -120,
+              clientX: frame.x + frame.width / 2,
+              clientY: frame.y + frame.height / 2,
+              bubbles: true,
+              cancelable: true,
+            })
+          );
+        },
+        [row, surface] as const
+      );
+      await artboardBar(page).waitFor({ state: "visible" });
+      // The answer, and a taller bar after it, leave the camera where the wheel did: 120px below
+      // the first fit.
+      await pickBarBrand(page, "Nordic Green Energy");
+      await settleReport(page);
+      const panned = await drawnAt(page, LIGHT_BOARD);
+      expect(panned.x).toBeCloseTo(fitted.x, 1);
+      expect(panned.y).toBeCloseTo(fitted.y + 120, 1);
+      expect(panned.width).toBeCloseTo(fitted.width, 1);
+    } finally {
+      await context.close();
+    }
+  });
+
+  it("keeps the camera still when Escape drops a part whose artboard a zoom to selection framed", async () => {
+    const { context, page } = await openStudio(browser());
+    try {
+      await artboard(page, LIGHT_BOARD)
+        .getByRole("switch", { name: "Paperless invoices", exact: true })
+        .click({ modifiers: ["Alt"] });
+      await partBar(page).waitFor({ state: "visible" });
+      // Zoom to selection frames the part's artboard while the part's bar shows.
+      await page.keyboard.press("Shift+Digit2");
+      await settleReport(page);
+      const framed = await drawnAt(page, LIGHT_BOARD);
+
+      await page.keyboard.press("Escape");
+      await artboardBar(page).waitFor({ state: "visible" });
+      await settleReport(page);
+      expect(await drawnAt(page, LIGHT_BOARD)).toEqual(framed);
+    } finally {
+      await context.close();
+    }
+  });
+
+  it("keeps the camera still when a canvas click shows the bar a zoom to selection framed while hidden", async () => {
+    const { context, page } = await openStudio(browser());
+    try {
+      await layer(page, LIGHT_BOARD).click();
+      await artboardBar(page).waitFor({ state: "visible" });
+      // A press on the selected artboard's row hides its bar.
+      await layer(page, LIGHT_BOARD).click();
+      await artboardBar(page).waitFor({ state: "detached" });
+      await page.keyboard.press("Shift+Digit2");
+      await settleReport(page);
+      // The base brand's long name widens the bar the click below shows past the framed one.
+      await page.getByRole("button", { name: /^Base theme/u }).click();
+      await page.getByRole("menuitemradio", { name: "Nordic Green Energy", exact: true }).click();
+      await page.keyboard.press("Escape");
+      await expect
+        .poll(async () => artboard(page, LIGHT_BOARD).getAttribute("data-theme-brand"))
+        .toBe("ngfi");
+
+      const before = await drawnAt(page, LIGHT_BOARD);
+      await page.mouse.click(before.x + 3, before.y + 3);
+      await artboardBar(page).waitFor({ state: "visible" });
+      await settleReport(page);
+      expect(await drawnAt(page, LIGHT_BOARD)).toEqual(before);
     } finally {
       await context.close();
     }
@@ -390,9 +570,10 @@ describe("the studio's theme toolbar", () => {
       await layer(page, LIGHT_BOARD).click();
       const bar = artboardBar(page);
       await bar.waitFor({ state: "visible" });
-      // With room above the artboard, the bar's menus open at one place against it however many
-      // rows the bar wraps to, so the Type menu ends above the switch.
-      await makeRoomAbove(page, LIGHT_BOARD);
+      // The press framed the artboard with room above it for the bar, so the bar's menus open at
+      // one place against it however many rows the bar wraps to, and the Type menu ends above the
+      // switch.
+      await expect.poll(async () => (await placement(page, LIGHT_BOARD)).gap).toBeCloseTo(ARTBOARD_GAP, 0);
       await page.getByRole("button", { name: "Select part", exact: true }).click();
       await menuButton(bar, "Type").click();
       await page.getByRole("dialog", { name: "Type", exact: true }).waitFor({ state: "visible" });
