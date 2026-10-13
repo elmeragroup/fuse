@@ -109,7 +109,7 @@ describe("fuse-figma sync", () => {
       // Pinned in the docs DTCG export for the same theme.
       assert.strictEqual(
         hex(figma.resolve("Fuse tokens", "primary", light("external-elma-company"))),
-        "#3C6470"
+        "#00313C"
       );
       assert.strictEqual(
         hex(figma.resolve("Fuse tokens", "primary-foreground", light("external-fkas-private"))),
@@ -520,7 +520,7 @@ describe("fuse-figma sync", () => {
       assert.isTrue(figma.variableById(deleted).deletedButReferenced);
       assert.strictEqual(
         hex(figma.resolve("Fuse tokens", "primary", light("external-elma-company"))),
-        "#3C6470"
+        "#00313C"
       );
     })
   );

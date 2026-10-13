@@ -120,8 +120,10 @@ export default function AccessibilityPage(): ReactElement {
         <li>
           The neutral <code>--ring</code> is held to 3:1 against the page and card surfaces in both color
           schemes, the surfaces it is drawn on. The ring sits flush against the control, so against a strong
-          fill, such as an external primary button, it can measure below 3:1 against that fill. A brand can
-          tune its ring in its palette.
+          fill it can measure below 3:1 against that fill. The external secondary button carries the brand
+          color in every brand except Nordic Green Energy, and in light mode the ring measures 1.62–1.79:1
+          against it. Against the light Telinet and Nordic Green Energy primary buttons it measures under
+          2.7:1. A brand can tune its ring in its palette.
         </li>
         <li>
           Light <code>--input</code>, the border of Input, Textarea, Select and the other field boxes,

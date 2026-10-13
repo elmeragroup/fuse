@@ -485,8 +485,9 @@ describe("derived roles", () => {
     expect(composeTheme(internalFkas)["secondary-hover"]).toBe("oklch(0.929 0.000205 2.4655)");
     // Internal dark: 0.269 0 0 toward 0.985 0 0. L 0.25555 + 0.04925.
     expect(composeTheme(internalFkas, "dark")["secondary-hover"]).toBe("oklch(0.3048 0 0)");
-    // External fkas paints secondary in its foreground color, so the hover keeps that color.
-    expect(composeTheme(externalFkas)["secondary-hover"]).toBe("oklch(0.3209 0.10325 38.8)");
+    // External fkas light: its orange secondary 0.4848 0.16637 35.92 toward its foreground
+    // 0.3209 0.10325 38.8. L 0.46056 + 0.016045, C 0.1580515 + 0.0051625, H 34.124 + 1.94.
+    expect(composeTheme(externalFkas)["secondary-hover"]).toBe("oklch(0.476605 0.163214 36.064)");
   });
 
   it("declares the live hover mix in the root rule and in each rule that resets its sources", () => {

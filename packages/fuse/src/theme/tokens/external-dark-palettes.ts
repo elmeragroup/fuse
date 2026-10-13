@@ -18,11 +18,11 @@ const EXTERNAL_DARK_PALETTES = {
     "card-foreground": "oklch(0.9604175 0.0214022 46.9889)", // #FFEEE6
     "card-soft": "oklch(0.1749487 0.003804 164.5613)", // #0F1110
     "card-soft-foreground": "oklch(0.9604175 0.0214022 46.9889)", // #FFEEE6
-    primary: "oklch(0.8009687 0.1043361 49.42)", // #F5AA81
+    primary: "oklch(0.9604175 0.0214022 46.9889)", // #FFEEE6
     "primary-foreground": "oklch(0 0 0)", // #000000
     "primary-soft": "oklch(0.2661671 0.0034366 164.8011)", // #242625
     "primary-soft-foreground": "oklch(0.9604175 0.0214022 46.9889)", // #FFEEE6
-    secondary: "oklch(0.9604175 0.0214022 46.9889)", // #FFEEE6
+    secondary: "oklch(0.8009687 0.1043361 49.42)", // #F5AA81
     "secondary-foreground": "oklch(0 0 0)", // #000000
     "secondary-soft": "oklch(0.2661671 0.0034366 164.8011)", // #242625
     "secondary-soft-foreground": "oklch(0.9604175 0.0214022 46.9889)", // #FFEEE6
@@ -38,11 +38,11 @@ const EXTERNAL_DARK_PALETTES = {
     "card-foreground": "oklch(0.9790218 0.0292767 188.8731)", // #E3FFFC
     "card-soft": "oklch(0.1749487 0.003804 164.5613)", // #0F1110
     "card-soft-foreground": "oklch(0.9790218 0.0292767 188.8731)", // #E3FFFC
-    primary: "oklch(0.9017794 0.0939863 190.6188)", // #90F3ED
+    primary: "oklch(0.9790218 0.0292767 188.8731)", // #E3FFFC
     "primary-foreground": "oklch(0 0 0)", // #000000
     "primary-soft": "oklch(0.2661671 0.0034366 164.8011)", // #242625
     "primary-soft-foreground": "oklch(0.9790218 0.0292767 188.8731)", // #E3FFFC
-    secondary: "oklch(0.9790218 0.0292767 188.8731)", // #E3FFFC
+    secondary: "oklch(0.9017794 0.0939863 190.6188)", // #90F3ED
     "secondary-foreground": "oklch(0 0 0)", // #000000
     "secondary-soft": "oklch(0.2661671 0.0034366 164.8011)", // #242625
     "secondary-soft-foreground": "oklch(0.9790218 0.0292767 188.8731)", // #E3FFFC
@@ -58,13 +58,13 @@ const EXTERNAL_DARK_PALETTES = {
     "card-foreground": "oklch(0.9592915 0.0326656 74.8018)", // #FFEFDA
     "card-soft": "oklch(0.259775 0.0931218 272.2625)", // #161D50
     "card-soft-foreground": "oklch(0.9592915 0.0326656 74.8018)", // #FFEFDA
-    primary: "oklch(0.758638 0.1768149 60.637)", // #FF9100
+    primary: "oklch(0.9592915 0.0326656 74.8018)", // #FFEFDA
     "primary-foreground": "oklch(0.2029294 0.0334602 267.7195)", // #101626
-    "primary-soft": "oklch(0.259775 0.0931218 272.2625)", // #161D50
+    "primary-soft": "oklch(0.2717674 0.038702 268.9648)", // #1F263A
     "primary-soft-foreground": "oklch(0.9592915 0.0326656 74.8018)", // #FFEFDA
-    secondary: "oklch(0.9592915 0.0326656 74.8018)", // #FFEFDA
+    secondary: "oklch(0.758638 0.1768149 60.637)", // #FF9100
     "secondary-foreground": "oklch(0.2029294 0.0334602 267.7195)", // #101626
-    "secondary-soft": "oklch(0.2717674 0.038702 268.9648)", // #1F263A
+    "secondary-soft": "oklch(0.259775 0.0931218 272.2625)", // #161D50
     "secondary-soft-foreground": "oklch(0.9592915 0.0326656 74.8018)", // #FFEFDA
     feature: "oklch(0.3648292 0.1832979 272.6095)", // #26269C
     "feature-bright": "oklch(0.4975851 0.2528095 273.0222)", // #403DEE
@@ -78,11 +78,11 @@ const EXTERNAL_DARK_PALETTES = {
     "card-foreground": "oklch(0.9801435 0.0172884 210.1893)", // #ECFCFF
     "card-soft": "oklch(0.1842633 0.0454734 244.0362)", // #001425
     "card-soft-foreground": "oklch(0.9801435 0.0172884 210.1893)", // #ECFCFF
-    primary: "oklch(0.9049169 0.0947745 206.4627)", // #8FF2FF
+    primary: "oklch(0.9801435 0.0172884 210.1893)", // #ECFCFF
     "primary-foreground": "oklch(0 0 0)", // #000000
     "primary-soft": "oklch(0.2250318 0.0601105 247.6754)", // #001D36
     "primary-soft-foreground": "oklch(0.9801435 0.0172884 210.1893)", // #ECFCFF
-    secondary: "oklch(0.9801435 0.0172884 210.1893)", // #ECFCFF
+    secondary: "oklch(0.9049169 0.0947745 206.4627)", // #8FF2FF
     "secondary-foreground": "oklch(0 0 0)", // #000000
     "secondary-soft": "oklch(0.2250318 0.0601105 247.6754)", // #001D36
     "secondary-soft-foreground": "oklch(0.9801435 0.0172884 210.1893)", // #ECFCFF
@@ -98,11 +98,11 @@ const EXTERNAL_DARK_PALETTES = {
     "card-foreground": "oklch(0.9817745 0.0118616 223.5201)", // #F1FBFF
     "card-soft": "oklch(0.176932 0.0026206 247.9754)", // #101112
     "card-soft-foreground": "oklch(0.9817745 0.0118616 223.5201)", // #F1FBFF
-    primary: "oklch(0.9094018 0.0466256 220.5572)", // #C0E9F7
+    primary: "oklch(0.9817745 0.0118616 223.5201)", // #F1FBFF
     "primary-foreground": "oklch(0 0 0)", // #000000
     "primary-soft": "oklch(0.2675764 0.0014668 197.0689)", // #252626
     "primary-soft-foreground": "oklch(0.9817745 0.0118616 223.5201)", // #F1FBFF
-    secondary: "oklch(0.9817745 0.0118616 223.5201)", // #F1FBFF
+    secondary: "oklch(0.9094018 0.0466256 220.5572)", // #C0E9F7
     "secondary-foreground": "oklch(0 0 0)", // #000000
     "secondary-soft": "oklch(0.2675764 0.0014668 197.0689)", // #252626
     "secondary-soft-foreground": "oklch(0.9817745 0.0118616 223.5201)", // #F1FBFF

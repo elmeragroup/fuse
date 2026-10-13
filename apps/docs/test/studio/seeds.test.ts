@@ -28,8 +28,8 @@ describe("buildStudioSeeds", () => {
   it("holds the declared CSS and the resolved value of a literal", () => {
     // external-palettes.ts, fkas: radius 0.75rem, 12px at the 16px root.
     expect(seed("external-fkas-private").light.radius).toEqual({ css: "0.75rem", value: "12px" });
-    // external-dark-palettes.ts, fkas: primary oklch(0.8009687 0.1043361 49.42), #F5AA81.
-    expect(seed("external-fkas-private").dark.primary).toEqual({
+    // external-dark-palettes.ts, fkas: secondary oklch(0.8009687 0.1043361 49.42), #F5AA81.
+    expect(seed("external-fkas-private").dark.secondary).toEqual({
       css: "oklch(0.8009687 0.1043361 49.42)",
       value: "#F5AA81",
     });

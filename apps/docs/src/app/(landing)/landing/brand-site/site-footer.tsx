@@ -6,8 +6,8 @@ import type { Site, SiteLink } from "./site-model";
 
 const siteFooter = tv({
   slots: {
-    // The brand's deepest ink in light mode. Fuse's dark sheets turn `secondary` into a light
-    // text tone, so in dark mode the footer sits on the deep soft surface under a rule.
+    // The brand's `secondary` fill in light mode. Fuse's dark sheets turn `secondary` into a light
+    // ink, so in dark mode the footer sits on the deep soft surface under a rule.
     footer:
       "landing-dark:border-t landing-dark:border-border landing-dark:bg-card-soft landing-dark:text-card-soft-foreground bg-secondary text-secondary-foreground",
     inner:

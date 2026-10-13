@@ -17,8 +17,8 @@ const siteChecklist = tv({
     icon: "size-4",
   },
   variants: {
-    // `inverse` sits on a strong brand block, where the page's primary disc would disappear. In
-    // dark mode that block is the soft surface, where the primary disc shows again.
+    // `inverse` sits on the promo hero's `primary` block, where the page's primary disc would
+    // disappear. In dark mode that block is the soft surface, where the primary disc shows again.
     tone: {
       default: { tick: "bg-primary text-primary-foreground" },
       inverse: {

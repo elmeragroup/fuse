@@ -205,7 +205,8 @@ describe("Figma DTCG documents", () => {
       $type: "color",
       $value: "{color.brand-elma}",
     });
-    expect(token<FigmaColorToken>(document.color, "primary").$value).toMatchObject({ hex: "#3C6470" });
+    // external-palettes.ts, elma: primary oklch(0.28898 0.051828 217.7), sRGB #00313C.
+    expect(token<FigmaColorToken>(document.color, "primary").$value).toMatchObject({ hex: "#00313C" });
     expect(token<FigmaDimensionToken>(document.size, "radius")).toEqual({
       $type: "dimension",
       $value: { value: 6, unit: "px" },

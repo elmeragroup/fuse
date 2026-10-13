@@ -180,10 +180,10 @@ describe("resolveThemeCatalog", () => {
       }
       expect(fkab.schemes[colorScheme].tokens.brand.css).toBe("var(--brand-fkab)");
     }
-    // The company sheet's teal primaries, hand-copied from segment-sheets.ts, anchor the
-    // oracle itself to the Bedrift look rather than the orange private palette.
-    expect(fkab.schemes.light.tokens.primary.css).toBe("oklch(0.47471 0.07313 217.18)");
-    expect(fkab.schemes.dark.tokens.primary.css).toBe("oklch(0.9085589 0.0595841 225.0316)");
+    // The company sheet's teal brand fills, its secondaries, hand-copied from segment-sheets.ts,
+    // anchor the oracle itself to the Bedrift look rather than the orange private palette.
+    expect(fkab.schemes.light.tokens.secondary.css).toBe("oklch(0.47471 0.07313 217.18)");
+    expect(fkab.schemes.dark.tokens.secondary.css).toBe("oklch(0.9085589 0.0595841 225.0316)");
   });
 
   it("reads colours as unrounded sRGB", () => {
