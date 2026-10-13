@@ -7,10 +7,12 @@ import { tv } from "tailwind-variants";
 import { Button } from "@elmeragroup/fuse/button";
 import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 import { CaretDown } from "@elmeragroup/fuse/icons";
-import { BRAND_CODES, BRANDS, THEME_SEGMENTS, THEME_VARIANTS, coerceTheme } from "@elmeragroup/fuse/theme";
-import type { ThemeInput, ThemeSegment } from "@elmeragroup/fuse/theme";
+import { BRAND_CODES, BRANDS, THEME_SEGMENTS, THEME_VARIANTS } from "@elmeragroup/fuse/theme";
+import type { ThemeSegment } from "@elmeragroup/fuse/theme";
 
 import { SEGMENT_LABELS, VARIANT_LABELS } from "../../lib/theme";
+import { themeLabel, themeWith } from "../lib/theme-axes";
+import type { ThemeAxes } from "../lib/theme-axes";
 import { useStudio } from "./studio-state";
 
 const studioThemePicker = tv({
@@ -24,11 +26,6 @@ const studioThemePicker = tv({
 
 const styles = studioThemePicker();
 
-/** The theme an axis change lands on: a brand pinned to one segment drags the segment along. */
-function change(theme: ThemeInput, axis: Partial<ThemeInput>): ThemeInput | null {
-  return coerceTheme({ ...theme, ...axis });
-}
-
 /**
  * The base theme every artboard renders in: variant, brand and segment, through Fuse's
  * `coerceTheme`, so only a legal theme is ever picked.
@@ -36,20 +33,15 @@ function change(theme: ThemeInput, axis: Partial<ThemeInput>): ThemeInput | null
 export function StudioThemePicker(): ReactElement {
   const { theme, setTheme } = useStudio();
   const segments: readonly ThemeSegment[] = BRANDS[theme.brand].segments;
-  const commit = (axis: Partial<ThemeInput>) => {
-    const next = change(theme, axis);
-    if (next !== null) {
-      setTheme(next);
-    }
+  const commit = (axes: ThemeAxes) => {
+    setTheme(themeWith(theme, axes));
   };
 
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger render={<Button variant="outline" size="sm" className={styles.trigger()} />}>
         <span className="sr-only">Base theme: </span>
-        <span className={styles.summary()}>
-          {`${BRANDS[theme.brand].displayName} · ${VARIANT_LABELS[theme.variant]} · ${SEGMENT_LABELS[theme.segment]}`}
-        </span>
+        <span className={styles.summary()}>{themeLabel(theme)}</span>
         <CaretDown data-icon="inline-end" />
       </DropdownMenu.Trigger>
       <DropdownMenu.Content align="end" className={styles.content()}>

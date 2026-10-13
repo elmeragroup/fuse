@@ -5,13 +5,14 @@ import type { ReactElement, ReactNode } from "react";
 
 import { usePathname } from "next/navigation";
 
-import type { ColorScheme, Density, ThemeInput, ThemeVariant } from "@elmeragroup/fuse/theme";
+import { themeSlug } from "@elmeragroup/fuse/theme";
+import type { ColorScheme, Density, ThemeInput } from "@elmeragroup/fuse/theme";
 
 import { OPENING_THEME } from "../../lib/theme";
 import { useMediaQuery } from "../../lib/use-media-query";
 import { artboardsFor, pinsFor } from "../lib/documents";
 import type { ArtboardScheme, ArtboardSpec } from "../lib/documents";
-import { StudioEditsProvider, useEditSession } from "./studio-edits";
+import { StudioEditsProvider, useEditSession, useSeedFailureToast } from "./studio-edits";
 
 /** What a pointer drag on the canvas does: select and use artboard content, or pan. */
 export type StudioTool = "select" | "hand";
@@ -27,9 +28,15 @@ type Selection = {
 export type ArtboardSettings = {
   readonly scheme: ArtboardScheme;
   readonly density: Density;
-  /** The variant an artboard that pins one renders; `undefined` follows the base theme. */
-  readonly variant: ThemeVariant | undefined;
+  /**
+   * The theme the artboard renders: its own brand, variant and segment once the visitor picks
+   * them, else the base theme with the variant its spec pins. Always a legal theme.
+   */
+  readonly theme: ThemeInput;
 };
+
+/** The settings the visitor changed on one artboard; the rest follow its spec and the base theme. */
+type ArtboardChoices = Partial<ArtboardSettings>;
 
 type StudioValue = {
   /** The base theme every artboard renders in. */
@@ -41,6 +48,7 @@ type StudioValue = {
   setChromeScheme: (scheme: ColorScheme) => void;
   /** The current page's artboards, in Layers order. */
   artboards: readonly ArtboardSpec[];
+  /** An artboard's settings; the same object until they or the base theme change. */
   settingsOf: (artboard: ArtboardSpec) => ArtboardSettings;
   changeSettings: (id: string, change: Partial<ArtboardSettings>) => void;
   selectedId: string | undefined;
@@ -69,23 +77,17 @@ export function StudioProvider({ children }: { children: ReactNode }): ReactElem
   const artboards = artboardsFor(pathname);
   const [chromeScheme, setChromeScheme] = useState<ColorScheme>("system");
   const prefersDark = useMediaQuery("(prefers-color-scheme: dark)", false);
-  const [overrides, setOverrides] = useState<Readonly<Record<string, Partial<ArtboardSettings>>>>({});
+  const [choices, setChoices] = useState<Readonly<Record<string, ArtboardChoices>>>({});
   const [selection, setSelection] = useState<Selection | undefined>(undefined);
   const [hoveredId, hover] = useState<string | undefined>(undefined);
   const [tool, setTool] = useState<StudioTool>("select");
 
-  const settingsOf = useCallback(
-    (artboard: ArtboardSpec): ArtboardSettings => ({
-      scheme: overrides[artboard.id]?.scheme ?? artboard.scheme,
-      density: overrides[artboard.id]?.density ?? artboard.density,
-      variant: overrides[artboard.id]?.variant ?? artboard.variant,
-    }),
-    [overrides]
+  const changeSettings = useCallback(
+    (id: string, change: Partial<ArtboardSettings>) => {
+      setChoices((current) => ({ ...current, [id]: { ...current[id], ...change } }));
+    },
+    [setChoices]
   );
-
-  const changeSettings = useCallback((id: string, change: Partial<ArtboardSettings>) => {
-    setOverrides((current) => ({ ...current, [id]: { ...current[id], ...change } }));
-  }, []);
 
   // A selection belongs to the page it was made on, so a page switch starts with none.
   const selectedId = selection?.path === pathname ? selection.id : undefined;
@@ -108,10 +110,44 @@ export function StudioProvider({ children }: { children: ReactNode }): ReactElem
   const session = useEditSession(
     OPENING_THEME,
     selectedId,
-    selected === undefined ? undefined : settingsOf(selected).scheme,
+    selected === undefined ? undefined : (choices[selected.id]?.scheme ?? selected.scheme),
     pinsFor(pathname)
   );
   const { theme, setTheme } = session;
+
+  // Every artboard's own brand, variant and segment are picked against the base theme the
+  // visitor sees, so any change of it, by the picker, an undo or redo, a share link or a restore,
+  // returns every artboard to it, and a spec-pinned artboard to its spec's variant. Scheme and
+  // density stay. Resetting here rather than in the picker's commit catches every source, and an
+  // undo does not bring back themes picked against a base theme it left.
+  const [themedOver, setThemedOver] = useState(() => themeSlug(theme));
+  if (themeSlug(theme) !== themedOver) {
+    setThemedOver(themeSlug(theme));
+    setChoices((current) =>
+      Object.fromEntries(Object.entries(current).map(([id, { theme: _own, ...rest }]) => [id, rest]))
+    );
+  }
+
+  // One settings object per artboard, so a scope that reads an artboard's theme keeps it until
+  // the settings or the base theme change.
+  const settings = useMemo(() => {
+    const of = (artboard: ArtboardSpec): ArtboardSettings => ({
+      scheme: choices[artboard.id]?.scheme ?? artboard.scheme,
+      density: choices[artboard.id]?.density ?? artboard.density,
+      theme:
+        choices[artboard.id]?.theme ??
+        (artboard.variant === undefined ? theme : { ...theme, variant: artboard.variant }),
+    });
+    return { of, byId: new Map(artboards.map((artboard) => [artboard.id, of(artboard)])) };
+  }, [artboards, choices, theme]);
+  const settingsOf = useCallback(
+    (artboard: ArtboardSpec) => settings.byId.get(artboard.id) ?? settings.of(artboard),
+    [settings]
+  );
+  useSeedFailureToast(session.seeds, [
+    themeSlug(theme),
+    ...Array.from(settings.byId.values(), (artboard) => themeSlug(artboard.theme)),
+  ]);
 
   const resolvedChromeScheme: ArtboardScheme =
     chromeScheme === "system" ? (prefersDark ? "dark" : "light") : chromeScheme;

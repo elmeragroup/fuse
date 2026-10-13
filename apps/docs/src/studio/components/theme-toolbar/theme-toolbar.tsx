@@ -7,18 +7,25 @@ import { tv } from "tailwind-variants";
 
 import { Popover } from "@elmeragroup/fuse/popover";
 import type { PopoverContentProps } from "@elmeragroup/fuse/popover";
-import { DENSITIES, THEME_VARIANTS } from "@elmeragroup/fuse/theme";
+import { Select } from "@elmeragroup/fuse/select";
+import { DENSITIES } from "@elmeragroup/fuse/theme";
 import { Toolbar } from "@elmeragroup/fuse/toolbar";
 
 import { SingleToggle } from "../../../components/single-toggle";
 import { STUDIO_SLOT_TOKENS } from "../../../generated/studio-slot-tokens";
-import { VARIANT_LABELS } from "../../../lib/theme";
 import type { ArtboardScheme, ArtboardSpec } from "../../lib/documents";
 import { DENSITY_LABELS, SCHEME_LABELS } from "../../lib/labels";
 import { partTokens } from "../../lib/slot-tokens";
 import { STUDIO_TOKEN_NAMES } from "../../lib/tokens";
 import { toolbarAnchor } from "../../lib/viewport";
 import type { Rect } from "../../lib/viewport";
+import {
+  BRAND_NAMES,
+  BrandOptions,
+  SegmentToggle,
+  VariantToggle,
+  useArtboardTheme,
+} from "../artboard-theme-controls";
 import { ChromeScope } from "../chrome-scope";
 import { useArtboardScopeOf } from "../studio-artboard";
 import { useDesktop } from "../studio-desktop";
@@ -120,12 +127,45 @@ function useAnchorHidden(popup: HTMLElement | null): boolean {
   );
 }
 
-/** The selected artboard's scheme, density and pinned variant, as the inspector's Artboard section sets them. */
-function ArtboardSettings({ artboard }: { artboard: ArtboardSpec }): ReactElement {
+/** The Brand list's title among the toolbar's menus. */
+const BRAND_MENU = "Brand";
+
+/**
+ * The selected artboard's settings, as the inspector's Artboard section sets them: its theme by
+ * identity, brand, variant and segment, then its scheme and density. The Brand Select joins the
+ * toolbar's arrow-key order through a `Toolbar.Button` that renders its trigger, and opens as one
+ * of the toolbar's menus in `menu`, so it closes when another menu opens or the toolbar's anchor
+ * hides.
+ */
+function ArtboardSettings({ artboard, menu }: { artboard: ArtboardSpec; menu: OpenMenu }): ReactElement {
   const { settingsOf, changeSettings } = useStudio();
-  const { scheme, density, variant } = settingsOf(artboard);
+  const { scheme, density } = settingsOf(artboard);
+  const { theme, change } = useArtboardTheme(artboard);
   return (
     <>
+      <Select.Root
+        items={BRAND_NAMES}
+        value={theme.brand}
+        open={menu.title === BRAND_MENU}
+        onOpenChange={(next) => {
+          menu.change(BRAND_MENU, next);
+        }}
+        onValueChange={(brand) => {
+          if (brand !== null) {
+            change({ brand });
+          }
+        }}>
+        <Toolbar.Button render={<Select.Trigger size="sm" aria-label="Brand" />}>
+          <Select.Value />
+        </Toolbar.Button>
+        {/* Laid over its trigger, as a Select opens by default, the list would run past the
+            canvas's top, where the toolbar often sits, and out of reach. It opens below the bar. */}
+        <Select.Content alignItemWithTrigger={false}>
+          <BrandOptions />
+        </Select.Content>
+      </Select.Root>
+      <VariantToggle artboard={artboard} />
+      <SegmentToggle artboard={artboard} />
       <SingleToggle
         label="Scheme"
         size="sm"
@@ -146,18 +186,6 @@ function ArtboardSettings({ artboard }: { artboard: ArtboardSpec }): ReactElemen
           changeSettings(artboard.id, { density: next });
         }}
       />
-      {variant === undefined ? null : (
-        <SingleToggle
-          label="Variant"
-          size="sm"
-          options={THEME_VARIANTS}
-          labels={VARIANT_LABELS}
-          value={variant}
-          onValueChange={(next) => {
-            changeSettings(artboard.id, { variant: next });
-          }}
-        />
-      )}
     </>
   );
 }
@@ -192,7 +220,7 @@ const ThemeBar = memo(function ThemeBar({
         </span>
       ) : (
         <Toolbar.Group key="artboard" aria-label="Artboard settings" className={styles.group()}>
-          <ArtboardSettings artboard={target.artboard} />
+          <ArtboardSettings artboard={target.artboard} menu={menu} />
         </Toolbar.Group>
       )}
       {names.length === 0 ? (

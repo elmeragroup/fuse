@@ -424,9 +424,9 @@ function cycleNames(overrides: StudioOverrides, base: BaseReferences): TokenName
   ).sort();
 }
 
-/** The generated alias graph of `variant` of `theme`. */
-function variantReferences(theme: ThemeInput, variant: ThemeVariant): BaseReferences {
-  return STUDIO_BASE_REFERENCES[themeSlug({ ...theme, variant })];
+/** The generated alias graph of `theme`, which answers before its seed loads. */
+function themeReferences(theme: ThemeInput): BaseReferences {
+  return STUDIO_BASE_REFERENCES[themeSlug(theme)];
 }
 
 /**
@@ -442,43 +442,44 @@ export function documentCycles(document: StudioDocument, pins: readonly ThemeVar
   const variants = new Set([document.theme.variant, ...pins]);
   const names = new Set(
     [...variants].flatMap((variant) =>
-      cycleNames(document.overrides, variantReferences(document.theme, variant))
+      cycleNames(document.overrides, themeReferences({ ...document.theme, variant }))
     )
   );
   return [...names].sort();
 }
 
-/** The edits a pinned artboard applies in one scheme, and the ones it skips. */
-export type PinnedEdits = {
+/** The edits an artboard in a theme of its own applies in one scheme, and the ones it skips. */
+export type ArtboardEdits = {
   readonly applied: TokenOverrides;
   /** Sorted. */
   readonly skipped: readonly TokenName[];
 };
 
 /**
- * The edits an artboard pinned to `variant` of the document's theme applies in `scheme`: every
- * edit but those on an alias cycle against that variant's own declarations. The session guards
- * the pins of the page it is on, so such an edit arrives from another page or a restore. A
- * skipped token falls back to the variant's own declaration, which can loop another edit, so
- * the check repeats until nothing loops.
+ * The edits an artboard rendering `theme`, its own brand, variant and segment, applies in
+ * `scheme`: every edit but those on an alias cycle against that theme's own declarations, the
+ * only alias graph the check reads. The session guards only the base theme and the variants the
+ * page pins, so an edit can loop in an artboard's own theme alone. A skipped token falls back to
+ * the theme's own declaration, which can loop another edit, so the check repeats until nothing
+ * loops.
  *
- * @param document - The base theme and the edits over it.
- * @param variant - The variant the artboard pins.
+ * @param edits - The session's token edits.
+ * @param theme - The theme the artboard renders.
  * @param scheme - The artboard's scheme.
  */
-export function pinnedEdits(
-  document: StudioDocument,
-  variant: ThemeVariant,
+export function artboardEdits(
+  edits: StudioOverrides,
+  theme: ThemeInput,
   scheme: ArtboardScheme
-): PinnedEdits {
-  const base = variantReferences(document.theme, variant);
+): ArtboardEdits {
+  const base = themeReferences(theme);
   const looping = (overrides: StudioOverrides) =>
     STUDIO_TOKEN_NAMES.filter(
       (name) =>
         overrideOf(overrides, scheme, name) !== undefined &&
         reaches(overrides, base, scheme, name, readsOf(overrides, base, scheme, name))
     );
-  let overrides = document.overrides;
+  let overrides = edits;
   const skipped: TokenName[] = [];
   for (let next = looping(overrides); next.length > 0; next = looping(overrides)) {
     skipped.push(...next);
@@ -549,7 +550,7 @@ export function createsPinnedCycle(
 ): boolean {
   const schemes: readonly ArtboardScheme[] = isLightOnly(name) ? SCHEMES : [scheme];
   return pins.some((variant) => {
-    const base = variantReferences(theme, variant);
+    const base = themeReferences({ ...theme, variant });
     return schemes.some((each) => reaches(overrides, base, each, name, referencedNames(css)));
   });
 }

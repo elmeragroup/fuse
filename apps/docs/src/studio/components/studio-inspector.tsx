@@ -5,22 +5,25 @@ import type { ReactElement } from "react";
 import { usePathname } from "next/navigation";
 import { tv } from "tailwind-variants";
 
+import { Select } from "@elmeragroup/fuse/select";
 import { Span } from "@elmeragroup/fuse/span";
 import { Text } from "@elmeragroup/fuse/text";
-import {
-  BRANDS,
-  DENSITIES,
-  THEME_VARIANTS,
-  defaultDensityForVariant,
-  themeSlug,
-} from "@elmeragroup/fuse/theme";
+import { BRANDS, DENSITIES, defaultDensityForVariant, themeSlug } from "@elmeragroup/fuse/theme";
 
 import { SingleToggle } from "../../components/single-toggle";
 import { SEGMENT_LABELS, VARIANT_LABELS } from "../../lib/theme";
 import { hasDensityPanel, leadSectionsFor } from "../lib/documents";
 import type { ArtboardScheme, ArtboardSpec } from "../lib/documents";
 import { DENSITY_LABELS, SCHEME_LABELS } from "../lib/labels";
-import { pinnedEdits } from "../lib/token-values";
+import { themeLabel } from "../lib/theme-axes";
+import { artboardEdits } from "../lib/token-values";
+import {
+  BRAND_NAMES,
+  BrandOptions,
+  SegmentToggle,
+  VariantToggle,
+  useArtboardTheme,
+} from "./artboard-theme-controls";
 import { CornerReadout } from "./corner-xray";
 import { DensityPanel } from "./density/density-panel";
 import { useStudioEdits } from "./studio-edits";
@@ -35,6 +38,7 @@ const studioInspector = tv({
     list: "px-2",
     field: "flex flex-col gap-1.5 px-2",
     note: "m-0 px-2",
+    select: "w-full",
   },
 });
 
@@ -69,28 +73,60 @@ function BaseThemeSection(): ReactElement {
 const TOKEN_LIST = new Intl.ListFormat("en", { type: "conjunction" });
 
 /**
- * With an artboard selected: its name and width, and its scheme and density, both editable, and
- * the variant of an artboard that pins one, which names the edits it skips because they would
- * loop in that variant.
+ * With an artboard selected: its name and width, then its theme, brand, variant and segment, its
+ * scheme and its density, all editable as on the theme toolbar. An artboard in a theme of its own
+ * names the edits it skips because they would loop in that theme.
  */
 function ArtboardSection({ artboard }: { artboard: ArtboardSpec }): ReactElement {
-  const { theme, settingsOf, changeSettings } = useStudio();
+  const { theme: base, settingsOf, changeSettings } = useStudio();
   const { overrides } = useStudioEdits();
   const settings = settingsOf(artboard);
-  const { variant } = settings;
-  const skipped =
-    variant === undefined ? [] : pinnedEdits({ theme, overrides }, variant, settings.scheme).skipped;
+  const { theme, change } = useArtboardTheme(artboard);
+  const own = themeSlug(theme) !== themeSlug(base);
+  const skipped = own ? artboardEdits(overrides, theme, settings.scheme).skipped : [];
   return (
     <StudioPanelSection title="Artboard">
       <ReadoutList className={styles.list()}>
         <ReadoutRow term="Name">{artboard.name}</ReadoutRow>
         <ReadoutRow term="Width">{`${String(artboard.width)} px`}</ReadoutRow>
       </ReadoutList>
-      {variant === undefined || skipped.length === 0 ? null : (
+      {skipped.length === 0 ? null : (
         <Text size="sm" variant="muted" className={styles.note()}>
-          {`Skips ${TOKEN_LIST.format(skipped.map((name) => `--${name}`))}, which would loop through the ${VARIANT_LABELS[variant]} variant's own aliases.`}
+          {`Skips ${TOKEN_LIST.format(skipped.map((name) => `--${name}`))}, which would loop through the aliases of ${themeLabel(theme)}.`}
         </Text>
       )}
+      <div className={styles.field()}>
+        <Span size="sm" variant="muted">
+          Brand
+        </Span>
+        <Select.Root
+          items={BRAND_NAMES}
+          value={theme.brand}
+          onValueChange={(brand) => {
+            if (brand !== null) {
+              change({ brand });
+            }
+          }}>
+          <Select.Trigger size="sm" aria-label="Brand" className={styles.select()}>
+            <Select.Value />
+          </Select.Trigger>
+          <Select.Content>
+            <BrandOptions />
+          </Select.Content>
+        </Select.Root>
+      </div>
+      <div className={styles.field()}>
+        <Span size="sm" variant="muted">
+          Variant
+        </Span>
+        <VariantToggle artboard={artboard} />
+      </div>
+      <div className={styles.field()}>
+        <Span size="sm" variant="muted">
+          Segment
+        </Span>
+        <SegmentToggle artboard={artboard} />
+      </div>
       <div className={styles.field()}>
         <Span size="sm" variant="muted">
           Scheme
@@ -121,23 +157,6 @@ function ArtboardSection({ artboard }: { artboard: ArtboardSpec }): ReactElement
           }}
         />
       </div>
-      {variant === undefined ? null : (
-        <div className={styles.field()}>
-          <Span size="sm" variant="muted">
-            Variant
-          </Span>
-          <SingleToggle
-            label="Variant"
-            size="sm"
-            options={THEME_VARIANTS}
-            labels={VARIANT_LABELS}
-            value={variant}
-            onValueChange={(next) => {
-              changeSettings(artboard.id, { variant: next });
-            }}
-          />
-        </div>
-      )}
     </StudioPanelSection>
   );
 }

@@ -66,22 +66,33 @@ function menuButton(bar: Locator, name: string): Locator {
   return bar.getByRole("button", { name: new RegExp(`^${name}(?: \\d+ tokens)?$`, "u") });
 }
 
+/** The px Base UI keeps a popup inside its collision boundary, the canvas here, by default. */
+const COLLISION_PADDING = 5;
+
 /**
  * Where a toolbar sits against its anchor: the screen px between its bottom edge and the anchor's
- * top edge, and between their centres across.
+ * top edge, and between its centre across and where Base UI centres it: over the anchor's
+ * centre, shifted to stay {@link COLLISION_PADDING} inside the canvas.
  */
-async function placementOver(bar: Locator, anchor: Locator): Promise<{ gap: number; offset: number }> {
+async function placementOver(
+  page: Page,
+  bar: Locator,
+  anchor: Locator
+): Promise<{ gap: number; offset: number }> {
   const above = await box(bar);
   const below = await box(anchor);
-  return {
-    gap: below.y - (above.y + above.height),
-    offset: above.x + above.width / 2 - (below.x + below.width / 2),
-  };
+  const frame = await box(canvas(page));
+  const half = above.width / 2;
+  const centre = Math.min(
+    Math.max(below.x + below.width / 2, frame.x + COLLISION_PADDING + half),
+    frame.x + frame.width - COLLISION_PADDING - half
+  );
+  return { gap: below.y - (above.y + above.height), offset: above.x + half - centre };
 }
 
 /** {@link placementOver} for the artboard bar over the artboard `name`. */
 async function placement(page: Page, name: string): Promise<{ gap: number; offset: number }> {
-  return placementOver(artboardBar(page), artboard(page, name));
+  return placementOver(page, artboardBar(page), artboard(page, name));
 }
 
 function inside(inner: Box, outer: Box): boolean {
@@ -436,33 +447,51 @@ describe("the studio's theme toolbar", () => {
     }
   });
 
-  it("hides once its artboard leaves the canvas, closing its open menu, so one Escape clears the selection", async () => {
-    const { context, page } = await openStudio(browser());
-    try {
-      await layer(page, LIGHT_BOARD).click();
-      const bar = artboardBar(page);
-      await menuButton(bar, "Color").click();
-      const menu = page.getByRole("dialog", { name: "Color", exact: true });
-      await menu.waitFor({ state: "visible" });
-      expect(await menu.evaluate((element) => element.contains(document.activeElement))).toBe(true);
+  it.each([
+    {
+      popup: "the Color menu",
+      trigger: (bar: Locator) => bar.getByRole("button", { name: "Color", exact: true, includeHidden: true }),
+      find: (page: Page) => page.getByRole("dialog", { name: "Color", exact: true }),
+    },
+    {
+      popup: "the Brand list",
+      trigger: (bar: Locator) =>
+        bar.getByRole("combobox", { name: "Brand", exact: true, includeHidden: true }),
+      find: (page: Page) => page.getByRole("listbox"),
+    },
+  ])(
+    "hides once its artboard leaves the canvas, closing $popup, so one Escape clears the selection",
+    async ({ trigger, find }) => {
+      const { context, page } = await openStudio(browser());
+      try {
+        await layer(page, LIGHT_BOARD).click();
+        const bar = artboardBar(page);
+        // The trigger is read on the hidden bar too. A Select keeps its list mounted once its
+        // trigger has had focus, so the trigger's expanded state, not the popup, tells closed.
+        const opener = trigger(
+          canvas(page).getByRole("toolbar", { name: "Artboard theme", exact: true, includeHidden: true })
+        );
+        await opener.click();
+        const popup = find(page);
+        await popup.waitFor({ state: "visible" });
+        expect(await popup.evaluate((element) => element.contains(document.activeElement))).toBe(true);
 
-      // A wheel over the artboard, clear of the menu, pans it up and out of the canvas.
-      const board = await box(artboard(page, LIGHT_BOARD));
-      await page.mouse.move(board.x + 10, board.y + board.height - 10);
-      await page.mouse.wheel(0, 4000);
-      await expect.poll(async () => bar.isVisible()).toBe(false);
-      // Closed, not merely hidden, so it holds neither focus nor the next Escape.
-      await page
-        .getByRole("dialog", { name: "Color", exact: true, includeHidden: true })
-        .waitFor({ state: "detached" });
-      expect(await isFocused(canvas(page))).toBe(true);
+        // A wheel over the artboard, clear of the popup, pans it up and out of the canvas.
+        const board = await box(artboard(page, LIGHT_BOARD));
+        await page.mouse.move(board.x + 10, board.y + board.height - 10);
+        await page.mouse.wheel(0, 4000);
+        await expect.poll(async () => bar.isVisible()).toBe(false);
+        // Closed, not merely hidden, so it holds neither focus nor the next Escape.
+        await expect.poll(async () => opener.getAttribute("aria-expanded")).toBe("false");
+        expect(await isFocused(canvas(page))).toBe(true);
 
-      await page.keyboard.press("Escape");
-      await expect.poll(async () => layers(page).getByRole("button", { pressed: true }).count()).toBe(0);
-    } finally {
-      await context.close();
+        await page.keyboard.press("Escape");
+        await expect.poll(async () => layers(page).getByRole("button", { pressed: true }).count()).toBe(0);
+      } finally {
+        await context.close();
+      }
     }
-  });
+  );
 
   it("wraps its groups inside a narrow canvas at lg, keeping every control on the canvas and in the arrow-key order", async () => {
     const { context, page } = await openStudio(browser(), { viewport: LG, route: RUNGS_PAGE });
@@ -470,24 +499,32 @@ describe("the studio's theme toolbar", () => {
       await layer(page, PINNED_BOARD).click();
       const bar = artboardBar(page);
       await bar.waitFor({ state: "visible" });
-      expect(await bar.getByRole("group", { name: "Variant", exact: true }).count()).toBe(1);
+      const brand = bar.getByRole("combobox", { name: "Brand", exact: true });
+      for (const group of ["Variant", "Segment", "Scheme", "Density"]) {
+        expect(await bar.getByRole("group", { name: group, exact: true }).count(), group).toBe(1);
+      }
       const frame = await box(canvas(page));
-      const controls = bar.getByRole("button");
-      expect(await controls.count()).toBeGreaterThanOrEqual(10);
-      for (const control of await controls.all()) {
+      const controls = [...(await bar.getByRole("combobox").all()), ...(await bar.getByRole("button").all())];
+      expect(controls.length).toBeGreaterThanOrEqual(13);
+      for (const control of controls) {
         const label = (await control.getAttribute("aria-label")) ?? (await control.textContent()) ?? "";
         expect(inside(await box(control), frame), label).toBe(true);
       }
 
-      // The arrow keys still run through every control in order, wrapping from the first to the last.
-      const first = bar
-        .getByRole("group", { name: "Scheme", exact: true })
-        .getByRole("button", { name: "Light" });
-      await first.focus();
+      // The arrow keys still run through every control in order, wrapping from the first, the
+      // Brand Select, to the last, and on from the Brand Select into the Variant and Segment toggles.
+      await brand.focus();
       await page.keyboard.press("ArrowLeft");
       expect(await isFocused(menuButton(bar, "Density"))).toBe(true);
       await page.keyboard.press("ArrowRight");
-      expect(await isFocused(first)).toBe(true);
+      expect(await isFocused(brand)).toBe(true);
+      const variant = bar.getByRole("group", { name: "Variant", exact: true });
+      await page.keyboard.press("ArrowRight");
+      expect(await isFocused(variant.getByRole("button", { name: "Internal", exact: true }))).toBe(true);
+      await page.keyboard.press("ArrowRight");
+      await page.keyboard.press("ArrowRight");
+      const segment = bar.getByRole("group", { name: "Segment", exact: true });
+      expect(await isFocused(segment.getByRole("button", { name: "Private", exact: true }))).toBe(true);
     } finally {
       await context.close();
     }
@@ -533,8 +570,8 @@ describe("the studio's theme toolbar", () => {
       await save.click({ modifiers: ["Alt"] });
       const bar = partBar(page);
       await bar.waitFor({ state: "visible" });
-      await expect.poll(async () => (await placementOver(bar, save)).gap).toBeCloseTo(PART_GAP, 0);
-      expect((await placementOver(bar, save)).offset).toBeCloseTo(0, 0);
+      await expect.poll(async () => (await placementOver(page, bar, save)).gap).toBeCloseTo(PART_GAP, 0);
+      expect((await placementOver(page, bar, save)).offset).toBeCloseTo(0, 0);
       const before = await box(save);
 
       // The dense metrics move the button up its artboard and shrink it.
@@ -544,8 +581,8 @@ describe("the studio's theme toolbar", () => {
         .click();
       await expect.poll(async () => (await box(save)).y).toBeLessThan(before.y - 1);
       expect((await box(save)).width).toBeLessThan(before.width - 1);
-      await expect.poll(async () => (await placementOver(bar, save)).gap).toBeCloseTo(PART_GAP, 0);
-      expect((await placementOver(bar, save)).offset).toBeCloseTo(0, 0);
+      await expect.poll(async () => (await placementOver(page, bar, save)).gap).toBeCloseTo(PART_GAP, 0);
+      expect((await placementOver(page, bar, save)).offset).toBeCloseTo(0, 0);
     } finally {
       await context.close();
     }
@@ -564,18 +601,10 @@ describe("the studio's theme toolbar", () => {
       expect(await focused()).toBe(true);
 
       await page.keyboard.press("Tab");
-      const scheme = bar.getByRole("group", { name: "Scheme", exact: true });
-      expect(
-        await scheme
-          .getByRole("button", { name: "Light", exact: true })
-          .evaluate((element) => element === document.activeElement)
-      ).toBe(true);
+      expect(await isFocused(bar.getByRole("combobox", { name: "Brand", exact: true }))).toBe(true);
       await page.keyboard.press("ArrowRight");
-      expect(
-        await scheme
-          .getByRole("button", { name: "Dark", exact: true })
-          .evaluate((element) => element === document.activeElement)
-      ).toBe(true);
+      const variant = bar.getByRole("group", { name: "Variant", exact: true });
+      expect(await isFocused(variant.getByRole("button", { name: "Internal", exact: true }))).toBe(true);
     } finally {
       await context.close();
     }

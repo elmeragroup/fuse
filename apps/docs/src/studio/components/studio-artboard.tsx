@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, use, useCallback, useMemo } from "react";
+import { createContext, use, useCallback, useEffect, useMemo } from "react";
 import type { CSSProperties, ReactElement, ReactNode } from "react";
 
 import { tv } from "tailwind-variants";
@@ -9,14 +9,14 @@ import { Button } from "@elmeragroup/fuse/button";
 import { densityAttributes, ThemeScope, themeSlug } from "@elmeragroup/fuse/theme";
 import type { Density, ThemeInput } from "@elmeragroup/fuse/theme";
 
-import { pinnedArtboardStyle } from "../lib/artboard-style";
+import { artboardStyle, otherVariantStyle } from "../lib/artboard-style";
 import type { CustomProperties } from "../lib/artboard-style";
 import { metricStyle } from "../lib/density-metrics";
 import type { ArtboardScheme, ArtboardSpec } from "../lib/documents";
 import { metricOverridesFor, resetNames } from "../lib/edits";
 import type { StudioOverrides } from "../lib/edits";
 import type { StudioSeed } from "../lib/seed";
-import { declarationsOf, pinnedEdits } from "../lib/token-values";
+import { artboardEdits, declarationsOf } from "../lib/token-values";
 import { ChromeScope } from "./chrome-scope";
 import { useStudioEdits } from "./studio-edits";
 import { useStudio } from "./studio-state";
@@ -54,8 +54,9 @@ export type ArtboardScope = {
   /** The inline token declarations on the artboard's theme scope. */
   readonly style: CustomProperties;
   /**
-   * The token edits the artboard wears: the session's, less those a pinned variant skips and
-   * the step it owns. With {@link ArtboardScope.seed} they give each token's declaration there.
+   * The token edits the artboard wears: the session's, less those its own theme skips and the
+   * step another variant owns. With {@link ArtboardScope.seed} they give each token's declaration
+   * there.
    */
   readonly overrides: StudioOverrides;
   /** The seed of the artboard's theme, `undefined` while it loads. */
@@ -74,40 +75,58 @@ export function useArtboardScope(): ArtboardScope {
 }
 
 /**
+ * Whether `theme` is a theme of the artboard's own: one that differs from the base theme in
+ * brand, variant or segment, so it needs its own declarations and loop checks.
+ */
+function ownTheme(theme: ThemeInput, base: ThemeInput): ThemeInput | undefined {
+  return themeSlug(theme) === themeSlug(base) ? undefined : theme;
+}
+
+/**
  * The scope `spec` renders in, from its settings: the base theme with the edits for its scheme,
- * or the variant it pins, with the aliases of that variant restated and without the edits that
+ * or the artboard's own theme, with that theme's aliases restated and without the edits that
  * would loop there. The artboard wears it, and the Selection section describes a part by it.
  *
  * @param spec - The artboard, one of the page's.
  */
 export function useArtboardScopeOf(spec: ArtboardSpec): ArtboardScope {
-  const { theme, settingsOf } = useStudio();
-  const { overrides, seed, seedOf, styleFor } = useStudioEdits();
-  const { scheme, density, variant } = settingsOf(spec);
-  const pinned = useMemo(() => (variant === undefined ? undefined : { ...theme, variant }), [theme, variant]);
-  // The edit session loads a pinned variant's seed, and its failure toast retries it.
-  const pinnedSeed = pinned === undefined ? undefined : seedOf(themeSlug(pinned));
+  const { theme: base, settingsOf } = useStudio();
+  const { overrides, seed, seedOf, requestSeed, styleFor } = useStudioEdits();
+  const { scheme, density, theme } = settingsOf(spec);
+  const own = ownTheme(theme, base);
+  const slug = themeSlug(theme);
+  // The edit session loads the seed, and its failure toast retries it.
+  useEffect(() => {
+    requestSeed(slug);
+  }, [requestSeed, slug]);
+  const ownSeed = own === undefined ? undefined : seedOf(slug);
   return useMemo((): ArtboardScope => {
     const metrics = metricStyle(metricOverridesFor(overrides, density));
-    if (pinned === undefined) {
-      return { theme, scheme, density, style: { ...styleFor(scheme), ...metrics }, overrides, seed };
+    if (own === undefined) {
+      return { theme: base, scheme, density, style: { ...styleFor(scheme), ...metrics }, overrides, seed };
     }
-    const edits = pinnedEdits({ theme, overrides }, pinned.variant, scheme);
+    const edits = artboardEdits(overrides, own, scheme);
+    const declarations = ownSeed === undefined ? undefined : declarationsOf(ownSeed)[scheme];
+    // The variant sets the radius step, so a step edit over the base theme's variant stays off an
+    // artboard in the other one. In the base theme's variant, it applies.
+    const otherVariant = own.variant !== base.variant;
     return {
-      theme: pinned,
+      theme: own,
       scheme,
       density,
       style: {
-        ...pinnedArtboardStyle(
-          edits.applied,
-          pinnedSeed === undefined ? undefined : declarationsOf(pinnedSeed)[scheme]
-        ),
+        ...(otherVariant
+          ? otherVariantStyle(edits.applied, declarations)
+          : artboardStyle(edits.applied, declarations)),
         ...metrics,
       },
-      overrides: resetNames(overrides, scheme, [...edits.skipped, "radius-step"]),
-      seed: pinnedSeed,
+      overrides: resetNames(overrides, scheme, [
+        ...edits.skipped,
+        ...(otherVariant ? ["radius-step" as const] : []),
+      ]),
+      seed: ownSeed,
     };
-  }, [theme, pinned, pinnedSeed, seed, scheme, density, overrides, styleFor]);
+  }, [base, own, ownSeed, seed, scheme, density, overrides, styleFor]);
 }
 
 export type StudioArtboardProps = {
@@ -122,10 +141,10 @@ export type StudioArtboardProps = {
  * attributes, the docs' demo-stage density mechanism, so each artboard has its own metrics, and
  * the overlays opened inside it portal into it. The token edits for its scheme and the metric
  * edits for its density are inline declarations on the scope element itself, where the theme
- * rules resolve their aliases and every part inside inherits the metrics. An artboard whose spec
- * pins a variant renders that variant of the base theme, or the other one the inspector switches
- * it to, with the aliases of that variant restated, and skips the edits that would loop in that
- * variant. Its content reads the scope through {@link useArtboardScope}.
+ * rules resolve their aliases and every part inside inherits the metrics. An artboard in a theme
+ * of its own, the brand, variant and segment the visitor picks or the variant its spec pins,
+ * renders that theme with its aliases restated, and skips the edits that would loop there. Its
+ * content reads the scope through {@link useArtboardScope}.
  */
 export function StudioArtboard({ id, children }: StudioArtboardProps): ReactElement {
   const { artboards, selectedId, hoveredId, select } = useStudio();

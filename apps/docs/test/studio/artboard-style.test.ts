@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { artboardStyle, pinnedArtboardStyle } from "../../src/studio/lib/artboard-style";
+import { artboardStyle, otherVariantStyle } from "../../src/studio/lib/artboard-style";
 
 /** A base scheme's declarations, written out by hand in the forms the theme rules use. */
 const BASE = {
@@ -79,31 +79,25 @@ const EXTERNAL_RADII = {
   "radius-step": "2px",
 } as const;
 
-describe("pinnedArtboardStyle", () => {
+describe("otherVariantStyle", () => {
   // The edits a session over each base variant can hold: an internal base never steps.
   const EDITS_OVER = {
     internal: { radius: "20px" },
     external: { radius: "20px", "radius-step": "4px" },
   } as const;
 
-  it.each(["internal", "external"] as const)(
-    "keeps an external pin's own button corner and restates its field alias under a %s base theme's --radius edit",
-    (base) => {
-      expect(pinnedArtboardStyle(EDITS_OVER[base], EXTERNAL_RADII)).toEqual({
-        "--radius": "20px",
-        "--radius-field": "var(--radius)",
-      });
-    }
-  );
+  it("keeps an external artboard's own button corner and restates its field alias under an internal base theme's --radius edit", () => {
+    expect(otherVariantStyle(EDITS_OVER.internal, EXTERNAL_RADII)).toEqual({
+      "--radius": "20px",
+      "--radius-field": "var(--radius)",
+    });
+  });
 
-  it.each(["internal", "external"] as const)(
-    "restates an internal pin's role corner aliases under a %s base theme's --radius edit",
-    (base) => {
-      expect(pinnedArtboardStyle(EDITS_OVER[base], INTERNAL_RADII)).toEqual({
-        "--radius": "20px",
-        "--radius-button": "var(--radius)",
-        "--radius-field": "var(--radius)",
-      });
-    }
-  );
+  it("restates an internal artboard's role corner aliases and drops the external base theme's step edit", () => {
+    expect(otherVariantStyle(EDITS_OVER.external, INTERNAL_RADII)).toEqual({
+      "--radius": "20px",
+      "--radius-button": "var(--radius)",
+      "--radius-field": "var(--radius)",
+    });
+  });
 });

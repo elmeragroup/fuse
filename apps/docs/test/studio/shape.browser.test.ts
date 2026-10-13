@@ -523,7 +523,7 @@ describe("the studio's Shape page", () => {
       const note = inspector(page).getByText(/^Skips --radius,/u);
       await note.waitFor();
       expect(await note.textContent()).toBe(
-        "Skips --radius, which would loop through the Internal variant's own aliases."
+        "Skips --radius, which would loop through the aliases of Elmera · Internal · Private."
       );
       expect(errors).toEqual([]);
     } finally {
