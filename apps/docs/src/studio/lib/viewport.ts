@@ -83,12 +83,18 @@ function bounds(rects: readonly Rect[]): Rect | undefined {
 }
 
 /**
- * The viewport that shows every rect, centred, with `padding` screen pixels to spare on each
- * side, at a zoom inside the range.
+ * The viewport that shows every rect, centred in the room `padding` screen pixels inside each
+ * side of the screen, or `top` pixels below its top, at a zoom inside the range.
  *
+ * @param top - The screen pixels to spare above the rects, `padding` by default.
  * @returns The viewport, or undefined when there is nothing to fit.
  */
-export function fitRects(rects: readonly Rect[], screen: Size, padding: number): Viewport | undefined {
+export function fitRects(
+  rects: readonly Rect[],
+  screen: Size,
+  padding: number,
+  top: number = padding
+): Viewport | undefined {
   const box = bounds(rects);
   if (box === undefined) {
     return undefined;
@@ -96,10 +102,13 @@ export function fitRects(rects: readonly Rect[], screen: Size, padding: number):
   const zoom = clampZoom(
     Math.min(
       (screen.width - 2 * padding) / Math.max(box.width, 1),
-      (screen.height - 2 * padding) / Math.max(box.height, 1)
+      (screen.height - top - padding) / Math.max(box.height, 1)
     )
   );
-  return centred(box, screen, zoom);
+  // Centred on a screen shortened by the extra top room, then lowered by it.
+  const extra = top - padding;
+  const fitted = centred(box, { width: screen.width, height: screen.height - extra }, zoom);
+  return { ...fitted, y: fitted.y + extra };
 }
 
 /**
@@ -191,4 +200,35 @@ export function stepZoom(zoom: number, direction: 1 | -1): number {
 export function wheelZoomFactor(deltaY: number): number {
   const capped = Math.max(-WHEEL_DELTA_CAP, Math.min(WHEEL_DELTA_CAP, deltaY));
   return Math.exp(-capped * WHEEL_ZOOM_RATE);
+}
+
+/**
+ * The part of `anchor` a toolbar sits on top of, in screen px, so the toolbar stays inside
+ * `frame`: `anchor` with its top edge lowered to `room` below the frame's top. A toolbar over an
+ * anchor whose top is out of view then pins to the frame's top, over the anchor, rather than
+ * flipping beneath an anchor taller than the frame. An anchor that ends above that line keeps only
+ * its bottom edge, so the toolbar flips below it.
+ *
+ * @param room - The px the toolbar needs above its anchor: its height, its offset and a margin.
+ */
+export function toolbarAnchor(anchor: Rect, frame: Rect, room: number): Rect {
+  const bottom = anchor.y + anchor.height;
+  const top = Math.min(Math.max(anchor.y, frame.y + room), bottom);
+  return { x: anchor.x, y: top, width: anchor.width, height: bottom - top };
+}
+
+/** The side of its trigger a menu opens on, and the screen px of height it may take there. */
+export type MenuPlacement = { readonly side: "top" | "bottom"; readonly room: number };
+
+/**
+ * Where a menu opens against its trigger inside `frame`: below, when the room there is at least
+ * `minimum` or at least the room above, and above otherwise, with the room on that side.
+ *
+ * @param gap - The px the menu keeps from its trigger and from the frame's edge.
+ * @param minimum - The least room below that keeps the menu there.
+ */
+export function menuPlacement(trigger: Rect, frame: Rect, gap: number, minimum: number): MenuPlacement {
+  const below = frame.y + frame.height - (trigger.y + trigger.height) - gap;
+  const above = trigger.y - frame.y - gap;
+  return below >= minimum || below >= above ? { side: "bottom", room: below } : { side: "top", room: above };
 }

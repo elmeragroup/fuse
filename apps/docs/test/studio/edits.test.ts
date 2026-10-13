@@ -11,7 +11,7 @@ import {
   reduceGuarded,
 } from "../../src/studio/lib/edits";
 import type { EditAction, EditHistory, GuardedHistory, StudioDocument } from "../../src/studio/lib/edits";
-import { createsPinnedCycle, documentCycles, pinnedEdits } from "../../src/studio/lib/token-values";
+import { artboardEdits, createsPinnedCycle, documentCycles } from "../../src/studio/lib/token-values";
 
 const ELMA = { variant: "external", brand: "elma", segment: "private" } as const satisfies ThemeInput;
 const FKAS = { variant: "internal", brand: "fkas", segment: "private" } as const satisfies ThemeInput;
@@ -312,7 +312,7 @@ describe("the cycle invariant", () => {
 });
 
 /**
- * Unit: the cycle checks against a pinned variant (`documentCycles` with pins, `pinnedEdits`,
+ * Unit: the cycle checks against a pinned variant (`documentCycles` with pins, `artboardEdits`,
  * `createsPinnedCycle`). Oracle: the theme rules as written in Fuse's theme sources: an internal
  * theme declares `radius-button: var(--radius)` and `radius-field: var(--radius)`, and an
  * external one a literal button radius and the same field alias. So
@@ -349,11 +349,11 @@ describe("pinned variants", () => {
       ...radiusToButton,
       overrides: { ...radiusToButton.overrides, light: { primary: "#ff0000" } },
     };
-    expect(pinnedEdits(document, "internal", "light")).toEqual({
+    expect(artboardEdits(document.overrides, { ...ELMA, variant: "internal" }, "light")).toEqual({
       applied: { primary: "#ff0000" },
       skipped: ["radius"],
     });
-    expect(pinnedEdits(document, "external", "light")).toEqual({
+    expect(artboardEdits(document.overrides, ELMA, "light")).toEqual({
       applied: { primary: "#ff0000", radius: "var(--radius-button)" },
       skipped: [],
     });
@@ -374,9 +374,56 @@ describe("pinned variants", () => {
         },
       },
     };
-    expect(pinnedEdits(document, "internal", "dark")).toEqual({
+    expect(artboardEdits(document.overrides, { ...ELMA, variant: "internal" }, "dark")).toEqual({
       applied: {},
       skipped: ["radius", "radius-button", "radius-field"],
     });
+  });
+});
+
+/**
+ * Unit: `artboardEdits` for an artboard in another brand than the base theme. Oracle: the theme
+ * rules as written in Fuse's palettes, which the theming handbook states: Fjordkraft, Fjordkraft
+ * Företag and TrøndelagKraft declare a stepped literal `--sidebar-brand` in light themes and
+ * `sidebar-brand: var(--brand)` in dark ones, and Gudbrandsdal Energi, Telinet, Elmera and Nordic
+ * Green Energy the other way round. So `--brand: var(--sidebar-brand)` loops only where the
+ * scheme's `--sidebar-brand` reads `--brand`.
+ */
+describe("an artboard in another brand", () => {
+  const FKAS_EXTERNAL = {
+    variant: "external",
+    brand: "fkas",
+    segment: "private",
+  } as const satisfies ThemeInput;
+  const brandToSidebar = (scheme: "light" | "dark"): StudioDocument => ({
+    theme: scheme === "light" ? FKAS_EXTERNAL : ELMA,
+    overrides: {
+      light: scheme === "light" ? { brand: "var(--sidebar-brand)" } : {},
+      dark: scheme === "dark" ? { brand: "var(--sidebar-brand)" } : {},
+      shared: {},
+    },
+  });
+
+  it("admits the edit in the base brand, where it does not loop", () => {
+    expect(documentCycles(brandToSidebar("light"))).toEqual([]);
+    expect(documentCycles(brandToSidebar("dark"))).toEqual([]);
+  });
+
+  it("skips the edit on a light Elmera artboard over a Fjordkraft base, and keeps it on a TrøndelagKraft one", () => {
+    const document = brandToSidebar("light");
+    expect(artboardEdits(document.overrides, ELMA, "light")).toEqual({ applied: {}, skipped: ["brand"] });
+    expect(artboardEdits(document.overrides, { ...FKAS_EXTERNAL, brand: "tkas" }, "light")).toEqual({
+      applied: { brand: "var(--sidebar-brand)" },
+      skipped: [],
+    });
+  });
+
+  it("skips the edit on a dark Fjordkraft artboard over an Elmera base, and leaves the light scheme alone", () => {
+    const document = brandToSidebar("dark");
+    expect(artboardEdits(document.overrides, FKAS_EXTERNAL, "dark")).toEqual({
+      applied: {},
+      skipped: ["brand"],
+    });
+    expect(artboardEdits(document.overrides, FKAS_EXTERNAL, "light")).toEqual({ applied: {}, skipped: [] });
   });
 });

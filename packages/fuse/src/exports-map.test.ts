@@ -166,6 +166,7 @@ const EXPECTED_ENTRIES = {
   toggle: { inRootBarrel: true, runtimeExports: ["Toggle", "toggleVariants"] },
   "toggle-group": { inRootBarrel: true, runtimeExports: ["ToggleGroup"] },
   tooltip: { inRootBarrel: true, runtimeExports: ["Tooltip"] },
+  toolbar: { inRootBarrel: true, runtimeExports: ["Toolbar"] },
   "select-field": { inRootBarrel: true, runtimeExports: ["SelectField"] },
   slider: { inRootBarrel: true, runtimeExports: ["Slider"] },
   form: { inRootBarrel: true, runtimeExports: ["Form"] },

@@ -60,6 +60,10 @@
 - Ask design whether a `legend`-variant `Field.Legend` should step up at comfortable density.
   It stays 16/24px at both densities, which now equals comfortable label text (`--label-text`),
   so a fieldset title no longer reads above its field labels when comfortable.
+- Ask design whether toolbar items round concentrically with the bar. `Toolbar.Root` publishes
+  `--inner-corner`, but its items render Fuse controls, such as Button and Toggle, that keep their
+  own corners, and `shadcn/no-restyle` keeps `rounded-inner` off those controls in consumer code.
+  Rounding them would take a Toolbar rule for the controls inside it.
 - Ask design for a light field border of at least 3:1. Light `--input`, the border of Input,
   Textarea, Select and the other field boxes, measures 1.08–1.70:1 against the page and card, an
   accepted deviation on the accessibility page. Except ngfi's M3 `outline-variant`, the values are
@@ -168,6 +172,12 @@
   logical-side popups such as NavigationMenu's `inline-end` open on the LTR side. Also add
   `@base-ui/react/direction-provider` to `optimizeDeps.include` in `packages/fuse/vitest.config.ts`;
   until then the NavigationMenu browser test imports it from the `@base-ui/react` root entry.
+- Report to Base UI that an anchored popup stays put when its anchor shrinks in place. The
+  positioner watches the anchor with an IntersectionObserver whose threshold is the anchor's last
+  box, so a transform that shrinks the anchor inside that box, such as a zoom out around a point
+  in it, never repositions the popup. The studio's theme toolbar
+  (`apps/docs/src/studio/components/theme-toolbar/theme-toolbar.tsx`) hands `Popover.Content` a
+  new virtual anchor on every camera move. Drop that once Base UI follows such a change.
 - Report two toast bugs to Base UI. `Toast.Provider` subscribes to a manager in its own effect,
   so the manager drops calls made before then, including calls from a child's mount effect.
   `promiseToast` overwrites a `type` that the success or error state returns with `"success"`
@@ -323,8 +333,6 @@ that opens every overlay on a side before flipping the window.
 - When Base UI offers suitable date primitives, migrate the interim React Aria tier.
   Removing its public subpaths is a major release; other interim atoms can move earlier.
 - When a product commits to charts, ship the deferred chart entry and decide its optional peer.
-- When a product needs arrow-key roving focus across a row of controls, add a `Toolbar` over
-  Base UI 1.8's toolbar. Fuse has none today.
 - When a product needs density preferences, define persistence and pre-paint stamping in the host.
 - When a theme should choose its own density, rather than the host stamping it on the document
   root, design theme-driven density as its own change. Subtree theming never rescopes the density

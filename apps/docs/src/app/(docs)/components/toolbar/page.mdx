@@ -1,0 +1,73 @@
+---
+lede: >
+  A bar of controls that is one Tab stop, with the arrow keys moving between its items.
+  Use it for actions on one object, such as a document, a selection or a canvas.
+---
+
+import { ToolbarBasic } from "./demos/toolbar-basic";
+import { ToolbarToggleGroup } from "./demos/toolbar-toggle-group";
+import { ToolbarPopups } from "./demos/toolbar-popups";
+import { ToolbarInput } from "./demos/toolbar-input";
+import { ToolbarVertical } from "./demos/toolbar-vertical";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("toolbar");
+
+<ComponentIntro slug="toolbar" />
+
+<Prose>
+
+`Toolbar.Root` paints the bar: a bordered popover fill with 4px of padding between its edge and
+its items. Name it with `aria-label`. Tab moves focus into the bar and out of it again. Inside,
+the arrow keys move between items and wrap at the ends. Set `loopFocus={false}` to stop at the
+ends instead.
+
+`Toolbar.Button`, `Toolbar.Link` and `Toolbar.Input` only place an item in that focus order.
+Each takes its look from the control it renders, such as
+`render={<Button variant="ghost" size="sm" />}`. A disabled item stays in the arrow-key order,
+so a keyboard user still finds it. The bar publishes `--inner-corner`, so a custom block in it
+that rounds with `rounded-inner` sits concentric with the bar.
+
+For a toolbar that only switches between options, use ToggleGroup on its own.
+
+</Prose>
+
+<Demo slug="toolbar" id="basic" title="Basic" file="toolbar-basic.tsx">
+  <ToolbarBasic />
+</Demo>
+
+`Toolbar.Group` lays out related items together and disables them all with `disabled`.
+`Toolbar.Separator` draws a line across the bar between groups.
+
+<Demo slug="toolbar" id="toggle-group" title="Toggle group" file="toolbar-toggle-group.tsx">
+  <ToolbarToggleGroup />
+</Demo>
+
+A ToggleGroup inside a toolbar joins the toolbar's arrow-key order instead of keeping its own.
+A single Toggle joins it through `Toolbar.Button`'s `render`.
+
+<Demo slug="toolbar" id="popups" title="Menus, popovers and tooltips" file="toolbar-popups.tsx">
+  <ToolbarPopups />
+</Demo>
+
+A Popover or DropdownMenu trigger goes in `Toolbar.Button`'s `render`. A tooltip wraps the
+other way round: pass the `Toolbar.Button` to `Tooltip.Trigger`'s `render`.
+
+<Demo slug="toolbar" id="input" title="Links and an input" file="toolbar-input.tsx">
+  <ToolbarInput />
+</Demo>
+
+The arrow keys move a text input's caret as well as the toolbar's focus. Put at most one
+`Toolbar.Input` in a horizontal toolbar, as its last item.
+
+<Demo slug="toolbar" id="vertical" title="Vertical" file="toolbar-vertical.tsx">
+  <ToolbarVertical />
+</Demo>
+
+With `orientation="vertical"` the bar stacks its items, the up and down arrows move between
+them, and separators turn horizontal.
+
+<ApiReference slug="toolbar" />
+
+<ComponentTokens slug="toolbar" />

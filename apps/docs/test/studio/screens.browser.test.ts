@@ -416,7 +416,7 @@ describe("the studio's Screens page", () => {
     }
   });
 
-  it("clears the selected part with Escape while the Settings dialog stays open", async () => {
+  it("clears the selected part, then its artboard, with Escape while the Settings dialog stays open", async () => {
     const { context, page } = await openStudio(browser(), { route: SCREENS_PAGE });
     try {
       await settingsDialog(page).waitFor({ state: "visible" });
@@ -425,10 +425,14 @@ describe("the studio's Screens page", () => {
         .click({ modifiers: ["Alt"] });
       await selection(page).waitFor({ state: "visible" });
 
+      // The first Escape drops the part and keeps its artboard selected.
       await page.keyboard.press("Escape");
       await selection(page).waitFor({ state: "hidden" });
       expect(await outlineTag(page).count()).toBe(0);
-      expect(await inspector(page).getByRole("region", { name: "Base theme" }).isVisible()).toBe(true);
+      expect(await inspector(page).getByRole("region", { name: "Artboard" }).isVisible()).toBe(true);
+      // The second clears the selection.
+      await page.keyboard.press("Escape");
+      await inspector(page).getByRole("region", { name: "Base theme" }).waitFor({ state: "visible" });
       // Escape from another artboard is not the dialog's to take.
       expect(await settingsDialog(page).isVisible()).toBe(true);
     } finally {

@@ -3,15 +3,15 @@ import { describe, expect, it } from "vitest";
 import type { ThemeSlug } from "@elmeragroup/fuse/theme";
 
 import type { StudioSchemeSeed, StudioSeed } from "../../src/studio/lib/seed";
-import { createSeedStore } from "../../src/studio/lib/seed-store";
+import { createSeedCache } from "../../src/studio/lib/seed-store";
 import type { SeedState } from "../../src/studio/lib/seed-store";
 
 const ELMA: ThemeSlug = "external-elma-private";
 const FKAS: ThemeSlug = "internal-fkas-private";
 
-/** A seed the loader under test hands back; the store never reads into it. */
+/** A seed the loader under test hands back; the cache never reads into it. */
 function fakeSeed(slug: ThemeSlug): StudioSeed {
-  // SAFETY: the store passes a seed through untouched, so an empty scheme stands in.
+  // SAFETY: the cache passes a seed through untouched, so an empty scheme stands in.
   const scheme = {} as StudioSchemeSeed;
   return { slug, light: scheme, dark: scheme };
 }
@@ -28,86 +28,71 @@ function deferredLoader() {
   return { calls, load };
 }
 
-/** Lets the store's promise handlers run. */
+/** Lets the cache's promise handlers run. */
 async function settle(): Promise<void> {
   await Promise.resolve();
   await Promise.resolve();
 }
 
-function stateOf(store: { getState: () => SeedState | undefined }) {
-  const state = store.getState();
-  return state === undefined ? undefined : { status: state.status, slug: state.slug };
+/** Each requested theme's status, by slug. */
+function statuses(cache: { getState: () => ReadonlyMap<ThemeSlug, SeedState> }) {
+  return Object.fromEntries([...cache.getState()].map(([slug, load]) => [slug, load.status]));
 }
 
-describe("createSeedStore", () => {
-  it("loads a theme's seed and reports it ready", async () => {
+describe("createSeedCache", () => {
+  it("loads each requested theme's seed and reports it ready", async () => {
     const { calls, load } = deferredLoader();
-    const store = createSeedStore(load);
-    store.request(ELMA);
-    expect(stateOf(store)).toEqual({ status: "loading", slug: ELMA });
+    const cache = createSeedCache(load);
+    cache.request(ELMA);
+    expect(statuses(cache)).toEqual({ [ELMA]: "loading" });
     calls[0]?.resolve(fakeSeed(ELMA));
     await settle();
-    expect(store.getState()).toEqual({ status: "ready", slug: ELMA, seed: fakeSeed(ELMA) });
+    expect(cache.getState().get(ELMA)).toEqual({ status: "ready", seed: fakeSeed(ELMA) });
   });
 
-  it("reports a failed load, and a retry loads it again", async () => {
+  it("loads several themes side by side, each settling on its own", async () => {
     const { calls, load } = deferredLoader();
-    const store = createSeedStore(load);
-    const seen: (string | undefined)[] = [];
-    store.subscribe(() => {
-      seen.push(store.getState()?.status);
+    const cache = createSeedCache(load);
+    cache.request(ELMA);
+    cache.request(FKAS);
+    expect(calls.map((call) => call.slug)).toEqual([ELMA, FKAS]);
+    calls[1]?.resolve(fakeSeed(FKAS));
+    await settle();
+    expect(statuses(cache)).toEqual({ [ELMA]: "loading", [FKAS]: "ready" });
+    calls[0]?.reject(new Error("ChunkLoadError"));
+    await settle();
+    expect(statuses(cache)).toEqual({ [ELMA]: "failed", [FKAS]: "ready" });
+  });
+
+  it("loads a theme once, and a retry loads only the failed ones again", async () => {
+    const { calls, load } = deferredLoader();
+    const cache = createSeedCache(load);
+    const seen: Record<string, string>[] = [];
+    cache.subscribe(() => {
+      seen.push(statuses(cache));
     });
-    store.request(ELMA);
+    cache.request(ELMA);
+    cache.request(FKAS);
+    cache.request(ELMA);
     calls[0]?.reject(new Error("ChunkLoadError"));
-    await settle();
-    expect(stateOf(store)).toEqual({ status: "failed", slug: ELMA });
-
-    store.retry();
-    expect(stateOf(store)).toEqual({ status: "loading", slug: ELMA });
-    expect(calls.map((call) => call.slug)).toEqual([ELMA, ELMA]);
-    calls[1]?.resolve(fakeSeed(ELMA));
-    await settle();
-    expect(stateOf(store)).toEqual({ status: "ready", slug: ELMA });
-    expect(seen).toEqual(["loading", "failed", "loading", "ready"]);
-  });
-
-  it("ignores a stale load that succeeds after another theme was requested", async () => {
-    const { calls, load } = deferredLoader();
-    const store = createSeedStore(load);
-    store.request(ELMA);
-    store.request(FKAS);
-    calls[0]?.resolve(fakeSeed(ELMA));
-    await settle();
-    expect(stateOf(store)).toEqual({ status: "loading", slug: FKAS });
     calls[1]?.resolve(fakeSeed(FKAS));
     await settle();
-    expect(store.getState()).toEqual({ status: "ready", slug: FKAS, seed: fakeSeed(FKAS) });
-  });
+    // A failed theme waits for a retry rather than a new request.
+    cache.request(ELMA);
+    expect(calls).toHaveLength(2);
 
-  it("ignores a stale load that fails after another theme was requested", async () => {
-    const { calls, load } = deferredLoader();
-    const store = createSeedStore(load);
-    store.request(ELMA);
-    store.request(FKAS);
-    calls[0]?.reject(new Error("ChunkLoadError"));
+    cache.retry();
+    expect(calls.map((call) => call.slug)).toEqual([ELMA, FKAS, ELMA]);
+    calls[2]?.resolve(fakeSeed(ELMA));
     await settle();
-    expect(stateOf(store)).toEqual({ status: "loading", slug: FKAS });
-    calls[1]?.resolve(fakeSeed(FKAS));
-    await settle();
-    expect(store.getState()).toEqual({ status: "ready", slug: FKAS, seed: fakeSeed(FKAS) });
-  });
-
-  it("does not reload a theme that is loading or ready, and retries only a failure", async () => {
-    const { calls, load } = deferredLoader();
-    const store = createSeedStore(load);
-    store.request(ELMA);
-    store.request(ELMA);
-    store.retry();
-    expect(calls).toHaveLength(1);
-    calls[0]?.resolve(fakeSeed(ELMA));
-    await settle();
-    store.request(ELMA);
-    store.retry();
-    expect(calls).toHaveLength(1);
+    expect(statuses(cache)).toEqual({ [ELMA]: "ready", [FKAS]: "ready" });
+    expect(seen.map((each) => each[ELMA])).toEqual([
+      "loading",
+      "loading",
+      "failed",
+      "failed",
+      "loading",
+      "ready",
+    ]);
   });
 });

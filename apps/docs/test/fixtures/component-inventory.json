@@ -390,7 +390,13 @@
   "popover": {
     "title": "Popover",
     "rsc": "client",
-    "demos": ["popover-basic.tsx", "popover-arrow.tsx", "popover-placement.tsx", "popover-controlled.tsx"]
+    "demos": [
+      "popover-basic.tsx",
+      "popover-arrow.tsx",
+      "popover-placement.tsx",
+      "popover-controlled.tsx",
+      "popover-anchor.tsx"
+    ]
   },
   "popover-info-button": {
     "title": "Popover Info Button",
@@ -639,6 +645,17 @@
       "toggle-group-outline-segmented.tsx",
       "toggle-group-vertical.tsx",
       "toggle-group-sizes.tsx"
+    ]
+  },
+  "toolbar": {
+    "title": "Toolbar",
+    "rsc": "client",
+    "demos": [
+      "toolbar-basic.tsx",
+      "toolbar-toggle-group.tsx",
+      "toolbar-popups.tsx",
+      "toolbar-input.tsx",
+      "toolbar-vertical.tsx"
     ]
   },
   "tooltip": {

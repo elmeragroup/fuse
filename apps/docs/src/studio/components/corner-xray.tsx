@@ -18,8 +18,8 @@ import { tv } from "tailwind-variants";
 import { Badge } from "@elmeragroup/fuse/badge";
 import { Button } from "@elmeragroup/fuse/button";
 import { Collapsible } from "@elmeragroup/fuse/collapsible";
-import { Separator } from "@elmeragroup/fuse/separator";
 import { Toggle } from "@elmeragroup/fuse/toggle";
+import { Toolbar } from "@elmeragroup/fuse/toolbar";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
 import {
@@ -60,7 +60,6 @@ const cornerXray = tv({
     probe: "invisible absolute top-0 left-0",
     tag: "font-mono whitespace-nowrap",
     glyph: "size-4",
-    separator: "h-5",
     readout: "flex flex-col gap-2 py-1",
     readoutTrigger: "w-full justify-start",
     list: "text-xs m-0 flex list-none flex-col gap-2 px-2 pb-2",
@@ -333,7 +332,10 @@ export function CornerXrayProvider({ children }: { children: ReactNode }): React
   return <CornerXrayContext.Provider value={value}>{children}</CornerXrayContext.Provider>;
 }
 
-/** The toolbar's X-ray switch and the separator after it, on a page that offers it. */
+/**
+ * The canvas toolbar's X-ray switch and the separator after it, on a page that offers it. It
+ * renders inside that toolbar, whose arrow keys reach the switch.
+ */
 export function CornerXrayToggle(): ReactElement | null {
   const { available, active, setOn } = useCornerXray();
   if (!available) {
@@ -343,12 +345,16 @@ export function CornerXrayToggle(): ReactElement | null {
     <>
       <Tooltip.Root>
         <Tooltip.Trigger
-          render={<Toggle size="sm" aria-label="Corner X-ray" pressed={active} onPressedChange={setOn} />}>
+          render={
+            <Toolbar.Button
+              render={<Toggle size="sm" aria-label="Corner X-ray" pressed={active} onPressedChange={setOn} />}
+            />
+          }>
           <CornerGlyph className={styles.glyph()} />
         </Tooltip.Trigger>
         <Tooltip.Content>Corner X-ray (X)</Tooltip.Content>
       </Tooltip.Root>
-      <Separator orientation="vertical" className={styles.separator()} />
+      <Toolbar.Separator />
     </>
   );
 }

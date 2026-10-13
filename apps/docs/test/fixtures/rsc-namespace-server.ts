@@ -46,6 +46,7 @@ import { Sidebar } from "@elmeragroup/fuse/sidebar";
 import { Tabs } from "@elmeragroup/fuse/tabs";
 import { Toast } from "@elmeragroup/fuse/toast";
 import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
+import { Toolbar } from "@elmeragroup/fuse/toolbar";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
 import { renderToPipeableStream } from "./rsc-flight-server.ts";
@@ -302,6 +303,7 @@ function namespaceElements(): ReactElement[] {
       { helpers: ["useToastManager", "createToastManager"] }
     ),
     ...renderNamespace("ToggleGroup", ToggleGroup, ["Root", "Item"]),
+    ...renderNamespace("Toolbar", Toolbar, ["Root", "Button", "Link", "Input", "Group", "Separator"]),
     ...renderNamespace("Tooltip", Tooltip, ["Provider", "Root", "Trigger", "Content"]),
   ];
 }

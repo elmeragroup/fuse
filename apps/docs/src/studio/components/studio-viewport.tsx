@@ -25,6 +25,7 @@ import {
   zoomAt,
 } from "../lib/viewport";
 import type { Margins, Point, Rect, Viewport } from "../lib/viewport";
+import { useDesktop } from "./studio-desktop";
 import { useStudio } from "./studio-state";
 
 /** Screen pixels kept clear around the artboards a fit frames, enough to clear the floating toolbar. */
@@ -50,6 +51,18 @@ type MoveOptions = {
   readonly announce?: boolean;
 };
 
+/** A frame of an artboard waiting for the floating toolbar's answer, told apart by its serial. */
+export type FrameRequest = { readonly serial: number; readonly artboardId: string };
+
+/**
+ * The floating toolbar's one answer to a frame request: the room its bar over the artboard needs
+ * above it, the screen px between the canvas's top and the artboard's top that keep the bar at
+ * its gap, or that it shows no bar over the artboard.
+ */
+export type FrameAnswer =
+  | { readonly serial: number; readonly kind: "measured"; readonly px: number }
+  | { readonly serial: number; readonly kind: "not-showing" };
+
 type ViewportCommands = {
   /** Attaches the canvas element. Screen points are relative to it. */
   attachCanvas: (element: HTMLElement | null) => void;
@@ -67,8 +80,10 @@ type ViewportCommands = {
   zoomStep: (direction: 1 | -1, options?: MoveOptions) => void;
   /** Frames every artboard on the page. */
   zoomToFit: (options?: MoveOptions) => void;
-  /** Frames one artboard. */
+  /** Frames one artboard, with room above it for its floating toolbar once one has shown. */
   zoomToArtboard: (id: string, options?: MoveOptions) => void;
+  /** Takes the floating toolbar's answer to the frame request it was given. */
+  answerFrame: (answer: FrameAnswer) => void;
   /**
    * Shows a focused element inside an artboard: glides to frame the artboard when it is mostly
    * out of view, and otherwise pans the element into view when the canvas clips it.
@@ -84,6 +99,8 @@ type ViewportState = {
   ready: boolean;
   /** The latest zoom announcement for the canvas's live region. */
   announcement: string;
+  /** The latest frame of an artboard, for the floating toolbar to answer (`zoomToArtboard`). */
+  frameRequest: FrameRequest | undefined;
 };
 
 const CommandsContext = createContext<ViewportCommands | undefined>(undefined);
@@ -113,7 +130,8 @@ export function zoomLabel(zoom: number): string {
  * the artboards never re-render while the canvas pans.
  */
 export function ViewportProvider({ children }: { children: ReactNode }): ReactElement {
-  const { artboards } = useStudio();
+  const { artboards, selectedId } = useStudio();
+  const desktop = useDesktop();
   const canvasRef = useRef<HTMLElement | null>(null);
   const elements = useRef(new Map<string, HTMLElement>());
   const [viewport, setViewport] = useState<Viewport>(INITIAL_VIEWPORT);
@@ -123,6 +141,14 @@ export function ViewportProvider({ children }: { children: ReactNode }): ReactEl
   // The camera commands read the newest viewport even between renders, as a pinch sends
   // several moves per frame. Mid-glide it holds the destination; `current` reads the drawn one.
   const latest = useRef(viewport);
+  // The room the floating toolbar last measured above an artboard, and the frame request waiting
+  // for its answer (`zoomToArtboard`).
+  const toolbarRoom = useRef<number | undefined>(undefined);
+  const serials = useRef(0);
+  const [frameRequest, setFrameRequest] = useState<FrameRequest | undefined>(undefined);
+  const pending = useRef<
+    (FrameRequest & { readonly top: number; readonly options: MoveOptions | undefined }) | undefined
+  >(undefined);
 
   const screen = useCallback(() => {
     const canvas = canvasRef.current;
@@ -142,6 +168,7 @@ export function ViewportProvider({ children }: { children: ReactNode }): ReactEl
   );
 
   const move = useCallback((next: Viewport, { animate = false, announce = false }: MoveOptions = {}) => {
+    pending.current = undefined;
     // A move that interrupts a glide commits inside its event. A native wheel listener's update
     // is otherwise scheduled, and the glide plays on until that commit cancels it, then snaps.
     const interrupts = glideTimer.current !== undefined && !animate;
@@ -203,16 +230,25 @@ export function ViewportProvider({ children }: { children: ReactNode }): ReactEl
     return latest.current;
   }, []);
 
+  /**
+   * Moves the camera to show every rect, `top` screen px below the screen's top, the fit padding
+   * by default.
+   *
+   * @returns Whether it moved: not when there is nothing to fit.
+   */
   const fit = useCallback(
-    (rects: readonly (Rect | undefined)[], options?: MoveOptions) => {
+    (rects: readonly (Rect | undefined)[], options?: MoveOptions, top?: number): boolean => {
       const next = fitRects(
         rects.filter((rect) => rect !== undefined),
         screen(),
-        FIT_PADDING
+        FIT_PADDING,
+        top
       );
-      if (next !== undefined) {
-        move(next, options);
+      if (next === undefined) {
+        return false;
       }
+      move(next, options);
+      return true;
     },
     [move, screen]
   );
@@ -227,12 +263,58 @@ export function ViewportProvider({ children }: { children: ReactNode }): ReactEl
     [artboards, fit, rectOf]
   );
 
-  const zoomToArtboard = useCallback(
-    (id: string, options?: MoveOptions) => {
-      fit([rectOf(id)], options);
-    },
+  const frameArtboard = useCallback(
+    (id: string, top: number, options: MoveOptions | undefined): boolean => fit([rectOf(id)], options, top),
     [fit, rectOf]
   );
+
+  // A Layers pick or zoom to selection frames the artboard with room above it for the floating
+  // toolbar. The pick selects and frames in one click, before the toolbar for the new selection
+  // has rendered, so the frame reserves the room the toolbar last measured and becomes a request
+  // with a serial, published in the viewport state. On the commit that follows, the toolbar
+  // answers it once, whatever it shows: the measured room when its bar sits over the artboard,
+  // its first and real height as the studio caps its width, and otherwise that it shows none
+  // there. A taller bar frames the artboard once more with its own room. Either answer ends the
+  // request, as do any other camera move and a selection change, so no request waits on a bar
+  // that will not render, and the camera moves only when the visitor has just asked for a frame.
+  // Below `lg` no toolbar renders, and a frame requests nothing.
+  const zoomToArtboard = useCallback(
+    (id: string, options?: MoveOptions) => {
+      const top = desktop ? Math.max(FIT_PADDING, toolbarRoom.current ?? 0) : FIT_PADDING;
+      if (!frameArtboard(id, top, options) || !desktop) {
+        return;
+      }
+      serials.current += 1;
+      const request: FrameRequest = { serial: serials.current, artboardId: id };
+      pending.current = { ...request, top, options };
+      setFrameRequest(request);
+    },
+    [desktop, frameArtboard]
+  );
+
+  const answerFrame = useCallback(
+    (answer: FrameAnswer) => {
+      if (answer.kind === "measured") {
+        toolbarRoom.current = answer.px;
+      }
+      const waiting = pending.current;
+      if (waiting?.serial !== answer.serial) {
+        return;
+      }
+      pending.current = undefined;
+      if (answer.kind === "measured" && answer.px > waiting.top) {
+        frameArtboard(waiting.artboardId, answer.px, waiting.options);
+      }
+    },
+    [frameArtboard]
+  );
+
+  // A selection change ends a request to frame another artboard.
+  useEffect(() => {
+    if (pending.current?.artboardId !== selectedId) {
+      pending.current = undefined;
+    }
+  }, [selectedId]);
 
   const revealFocus = useCallback(
     (element: HTMLElement) => {
@@ -303,9 +385,10 @@ export function ViewportProvider({ children }: { children: ReactNode }): ReactEl
       },
       zoomToFit,
       zoomToArtboard,
+      answerFrame,
       revealFocus,
     }),
-    [centre, current, move, revealFocus, zoomToArtboard, zoomToFit]
+    [answerFrame, centre, current, move, revealFocus, zoomToArtboard, zoomToFit]
   );
 
   // Each page opens framed. A resize observer reports the canvas's size once it has laid out,
@@ -344,8 +427,8 @@ export function ViewportProvider({ children }: { children: ReactNode }): ReactEl
   // The first fit replaces the initial viewport, and the artboards show from then on.
   const ready = viewport !== INITIAL_VIEWPORT;
   const state = useMemo(
-    (): ViewportState => ({ viewport, gliding, ready, announcement }),
-    [viewport, gliding, ready, announcement]
+    (): ViewportState => ({ viewport, gliding, ready, announcement, frameRequest }),
+    [viewport, gliding, ready, announcement, frameRequest]
   );
 
   return (

@@ -332,9 +332,9 @@ export default function ThemingPage(): ReactElement {
           fields&apos; segment row.
         </li>
         <li>
-          Containers: <code>Tabs.List</code>, <code>Frame.Root</code> and <code>Frame.Panel</code>, the
-          floating <code>Sidebar</code>&apos;s header, footer and groups, and the date pickers&apos; preset
-          group.
+          Containers: <code>Tabs.List</code>, <code>Toolbar.Root</code>, <code>Frame.Root</code> and{" "}
+          <code>Frame.Panel</code>, the floating <code>Sidebar</code>&apos;s header, footer and groups, and
+          the date pickers&apos; preset group.
         </li>
         <li>
           Surfaces: <code>Card</code> and its sections, <code>Dialog.Content</code>,{" "}

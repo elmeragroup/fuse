@@ -25,11 +25,11 @@ import { Toast } from "@elmeragroup/fuse/toast";
 import { SingleToggle } from "../../components/single-toggle";
 import { HOME_PAGE } from "../../lib/pages";
 import { COLOR_SCHEME_LABELS } from "../../lib/theme";
-import { useMediaQuery } from "../../lib/use-media-query";
 import { STUDIO_PAGES } from "../lib/pages";
 import { ChromeScope } from "./chrome-scope";
 import { StudioActions } from "./studio-actions";
 import { StudioCanvas } from "./studio-canvas";
+import { useDesktop } from "./studio-desktop";
 import { StudioInspector } from "./studio-inspector";
 import { StudioNavigator } from "./studio-navigator";
 import { studioToasts } from "./studio-persistence";
@@ -70,9 +70,6 @@ const studioShell = tv({
 });
 
 const styles = studioShell();
-
-/** Tailwind's `lg`, where both panels sit beside the canvas instead of opening as Sheets. */
-const DESKTOP_QUERY = "(width >= 64rem)";
 
 const SCHEME_ICONS = {
   light: <Sun aria-hidden />,
@@ -171,7 +168,7 @@ export function StudioShell({ children }: { children: ReactNode }): ReactElement
   useRegionCycle();
   // Each panel mounts in one place only, so a phone does not render a hidden desktop copy on
   // every edit. The asides stay, empty below `lg`, so the skip links and F6 still find them.
-  const desktop = useMediaQuery(DESKTOP_QUERY, true);
+  const desktop = useDesktop();
 
   return (
     <div className={styles.root()} data-studio>

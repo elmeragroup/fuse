@@ -9,7 +9,7 @@ import {
   expectFocusRing,
   expectNoFocusRing,
 } from "../../../test/assert-focus-ring";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
 import { Popover } from "./index";
 import type { PopoverContentProps } from "./popover";
@@ -208,6 +208,54 @@ describe("Popover", () => {
     const scope = dialog.closest("[data-theme-variant=external]");
     expect(scope).not.toBeNull();
     expect([...document.body.children].includes(dialog)).toBe(false);
+  });
+
+  it("places a controlled popover with no trigger against its anchor, and follows the anchor as it moves", async () => {
+    function Anchored() {
+      const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+      return (
+        <div style={{ padding: 120 }}>
+          <div ref={setAnchor} role="group" aria-label="Anchor" style={{ width: 120, height: 40 }} />
+          {anchor === null ? null : (
+            <Popover.Root open>
+              <Popover.Content
+                anchor={anchor}
+                side="bottom"
+                sideOffset={8}
+                initialFocus={false}
+                style={{ width: 96 }}>
+                <Popover.Title>Anchored</Popover.Title>
+              </Popover.Content>
+            </Popover.Root>
+          )}
+        </div>
+      );
+    }
+    renderThemed(<Anchored />);
+    const dialog = await mountedPopover("Anchored");
+    await Promise.all(dialog.getAnimations().map((animation) => animation.finished));
+    const anchor = roleNamed("group", "Anchor");
+
+    // Unit under test: the popup's placement. Oracle: the anchor's own box, read from the page,
+    // with the requested bottom side, 8px offset and centred alignment applied by hand.
+    const expectPlacedAgainstAnchor = async () => {
+      await vi.waitFor(() => {
+        const target = anchor.getBoundingClientRect();
+        const popup = dialog.getBoundingClientRect();
+        expect(popup.top).toBeCloseTo(target.bottom + 8, 0);
+        expect(popup.left + popup.width / 2).toBeCloseTo(target.left + target.width / 2, 0);
+      });
+    };
+    expect(dialog.getAttribute("data-side")).toBe("bottom");
+    await expectPlacedAgainstAnchor();
+
+    // A transform moves the anchor without a layout change or a scroll.
+    const before = dialog.getBoundingClientRect();
+    anchor.style.translate = "48px 24px";
+    await expectPlacedAgainstAnchor();
+    const after = dialog.getBoundingClientRect();
+    expect(after.left - before.left).toBeCloseTo(48, 0);
+    expect(after.top - before.top).toBeCloseTo(24, 0);
   });
 
   it("round-trips controlled open state on trigger click and Escape", async () => {

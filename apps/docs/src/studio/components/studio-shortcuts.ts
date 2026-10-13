@@ -4,7 +4,10 @@ import { useSyncExternalStore } from "react";
 
 import { isTypingTarget } from "../../lib/typing-target";
 
-/** Open overlays inside an artboard: they keep their keys, presses and scrolling. */
+/**
+ * Open overlays, such as those inside an artboard and the theme toolbar's menus: they keep their
+ * keys, presses and scrolling.
+ */
 export const OVERLAYS = '[role="menu"], [role="listbox"], [role="dialog"], [role="alertdialog"]';
 
 /**

@@ -55,6 +55,7 @@ describe("size-limit harness", () => {
       "input-group",
       "textarea",
       "flags",
+      "toolbar",
       "select-field",
       "slider",
       "form",
