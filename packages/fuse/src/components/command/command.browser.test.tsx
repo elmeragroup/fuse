@@ -786,7 +786,36 @@ function TitledPagedDialogPalette(): ReactElement {
   );
 }
 
+/** A controlled stack that opens straight onto the customers page, with focus on the title. */
+function OpenOnSubPagePalette(): ReactElement {
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const [stack, setStack] = useState<string[]>(["home"]);
+  return (
+    <Command.Root
+      pages={stack}
+      onPagesChange={setStack}
+      onOpenChange={(next) => {
+        setStack(next ? ["home", "customers"] : ["home"]);
+      }}>
+      <Command.Trigger>Open palette</Command.Trigger>
+      <Command.Content initialFocus={titleRef}>
+        <Dialog.Title ref={titleRef} isFocusable>
+          Commands palette
+        </Dialog.Title>
+        <EntryPages onRun={() => undefined} />
+      </Command.Content>
+    </Command.Root>
+  );
+}
+
 describe("Command.Content focus", () => {
+  it("leaves initialFocus in charge when the opening also moves the stack's top", async () => {
+    renderPalette(<OpenOnSubPagePalette />);
+    await userEvent.click(roleNamed("button", "Open palette"));
+    await mountedInput("Customers");
+    await expect.poll(() => document.activeElement).toBe(roleNamed("heading", "Commands palette"));
+  });
+
   it("leaves the dialog's initialFocus in charge of a paged palette's first page", async () => {
     renderPalette(<TitledPagedDialogPalette />);
     await userEvent.click(roleNamed("button", "Open palette"));

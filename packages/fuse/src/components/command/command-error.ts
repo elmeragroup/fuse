@@ -4,9 +4,7 @@
  */
 const MESSAGES = {
   "outside-root": "must be used within Command.Root. Wrap the palette's parts in Command.Root.",
-  "page-outside-stack":
-    "must be used within a Command.Root that holds a stack of pages. Give the Root defaultPages, or pages with onPagesChange.",
-  "page-trigger-outside-stack":
+  "outside-stack":
     "must be used within a Command.Root that holds a stack of pages. Give the Root defaultPages, or pages with onPagesChange.",
   "groups-without-grouped":
     "received groups of items without `grouped`. Add `grouped` beside `items`, or pass a flat list.",

@@ -9,13 +9,11 @@ export type {
   CommandContentProps,
   CommandHintPresetProps,
   CommandInputProps,
-  CommandItemOf,
   CommandItemProps,
   CommandListProps,
   CommandPageProps,
   CommandPageTriggerProps,
   CommandRootProps,
-  CommandSearchProps,
   CommandTriggerProps,
 } from "./components/command/command";
 export type {
@@ -23,3 +21,4 @@ export type {
   CommandHintProps,
   CommandShortcutProps,
 } from "./components/command/command-markup";
+export type { CommandSearchProps } from "./components/command/command-search";

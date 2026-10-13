@@ -111,32 +111,32 @@ export function CommandVirtualList({
           role="presentation"
           className="relative h-(--command-virtual-height) w-full"
           style={{ "--command-virtual-height": `${String(virtualizer.getTotalSize())}px` }}>
-          {virtualizer.getVirtualItems().map((virtualItem) => {
-            const item = items[virtualItem.index];
-            if (item === undefined) {
-              return null;
-            }
-            return (
-              <CommandRowContext.Provider
-                key={virtualItem.key}
-                value={{
-                  index: virtualItem.index,
-                  ref: virtualizer.measureElement,
-                  style: {
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    transform: `translateY(${String(virtualItem.start)}px)`,
-                  },
-                  setSize: items.length,
-                }}>
-                <CommandListTargetContext.Provider value={false}>
+          <CommandListTargetContext.Provider value={false}>
+            {virtualizer.getVirtualItems().map((virtualItem) => {
+              const item = items[virtualItem.index];
+              if (item === undefined) {
+                return null;
+              }
+              return (
+                <CommandRowContext.Provider
+                  key={virtualItem.key}
+                  value={{
+                    index: virtualItem.index,
+                    ref: virtualizer.measureElement,
+                    style: {
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      transform: `translateY(${String(virtualItem.start)}px)`,
+                    },
+                    setSize: items.length,
+                  }}>
                   {rows(item, virtualItem.index)}
-                </CommandListTargetContext.Provider>
-              </CommandRowContext.Provider>
-            );
-          })}
+                </CommandRowContext.Provider>
+              );
+            })}
+          </CommandListTargetContext.Provider>
         </div>
       )}
     </div>
