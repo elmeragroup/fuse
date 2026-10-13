@@ -9,6 +9,7 @@ import { CommandGroups } from "./demos/command-groups";
 import { CommandPages } from "./demos/command-pages";
 import { CommandKeptQuery } from "./demos/command-kept-query";
 import { CommandEscapeBack } from "./demos/command-escape-back";
+import { CommandAppPalette } from "./demos/command-app-palette";
 import { CommandVirtualized } from "./demos/command-virtualized";
 
 import { componentMetadata } from "../../../../lib/component-page";
@@ -91,6 +92,24 @@ Escape closes `Command.Content` from any page. To make it go back a page first, 
 
 <Demo slug="command" id="escape-back" title="Escape goes back a page" file="command-escape-back.tsx">
   <CommandEscapeBack />
+</Demo>
+
+<Prose>
+
+## One palette for the app
+
+Mount one `Command.Root` in the app's layout, beside the app's pages, so it stays mounted as the user moves between them. The palette shows whatever `items` holds on each render, so the layout can put the commands of the page on screen above the app's own. Fuse has no registry of commands. Here each page passes its commands to the layout through `usePageCommands`, a hook the app writes. The customer list adds a command per customer, and a customer's page adds actions on that customer, grouped under the customer's name. The app's groups and the pages' groups share one type, which the row functions name in their annotations.
+
+`Command.Trigger` works only inside the Root. To open the palette from anywhere else, such as a button in the app's header or a keyboard shortcut, control `open` on the Root. Closing returns focus to the element that had it when the palette opened. An app listens for its shortcut on `document`. This demo takes ⌘K and Ctrl+K only while focus is inside it or its palette, since the docs site uses them for its search.
+
+A command that changes the page also changes the page's commands while the dialog is still fading out. The layout here updates `items` only while the palette is open, so the closing dialog keeps the rows the user chose from.
+
+To open the palette on a `Command.Page` of the entity's actions, control the stack and set `pages` as the palette opens. `defaultPages` is read only when the Root mounts and when the palette closes. So after the user moves to another page of the app, a Root in the layout still opens on the stack of the page where it last closed, and if the `Command.Page` on top of that stack no longer renders, the dialog opens empty.
+
+</Prose>
+
+<Demo slug="command" id="app-palette" title="One palette for the app" file="command-app-palette.tsx">
+  <CommandAppPalette />
 </Demo>
 
 <Prose>

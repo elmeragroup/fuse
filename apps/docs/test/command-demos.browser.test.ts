@@ -22,6 +22,11 @@ async function focusedName(page: Page): Promise<string | null> {
   return page.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? null);
 }
 
+/** The labels of the groups the palette lists inside `scope`, in order. */
+function groupLabels(scope: Locator): Promise<string[]> {
+  return scope.locator('[data-slot="command-label"]').allTextContents();
+}
+
 describe("Command demos", () => {
   it("runs a command from the palette in a dialog and closes it", async () => {
     const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT });
@@ -103,6 +108,76 @@ describe("Command demos", () => {
     await page.keyboard.press("Enter");
     await expect.poll(() => dialog.count()).toBe(0);
     await expect.poll(() => status(demo)).toBe("Changed Language: Norsk bokmål");
+    await page.close();
+  });
+
+  it("lists the page's commands above the app's, from the header button and the shortcut", async () => {
+    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT });
+    const demo = await openDemo(page, "command", "One palette for the app");
+    const dialog = page.getByRole("dialog", { name: "Command palette", exact: true });
+    const opener = demo.getByRole("button", { name: "Search commands", exact: true });
+    await opener.click();
+    await expect.poll(() => focusedName(page)).toBe("Search commands");
+    await expect.poll(() => groupLabels(dialog)).toEqual(["Customers", "Go to"]);
+    await page.keyboard.type("grace");
+    await expect.poll(() => highlighted(dialog)).toBe("Grace Hopper");
+    await page.keyboard.press("Enter");
+    await expect.poll(() => dialog.count()).toBe(0);
+    await expect.poll(() => opener.evaluate((node) => node === document.activeElement)).toBe(true);
+    await expect.poll(() => demo.getByRole("definition").first().textContent()).toBe("10232");
+
+    await page.keyboard.press("ControlOrMeta+KeyK");
+    await expect.poll(() => focusedName(page)).toBe("Search commands");
+    await expect.poll(() => groupLabels(dialog)).toEqual(["Grace Hopper", "Go to"]);
+    // The demo stops the shortcut's propagation, so the docs site's search stays closed.
+    expect(await page.getByRole("dialog").count()).toBe(1);
+    await page.keyboard.type("invoice");
+    await expect.poll(() => highlighted(dialog)).toBe("Send invoice copy");
+    await page.keyboard.press("Enter");
+    await expect.poll(() => dialog.count()).toBe(0);
+    await expect.poll(() => status(demo)).toBe("Ran: Send invoice copy: Grace Hopper");
+
+    await page.keyboard.press("ControlOrMeta+KeyK");
+    await expect.poll(() => focusedName(page)).toBe("Search commands");
+    await page.keyboard.type("overview");
+    await expect.poll(() => highlighted(dialog)).toBe("Overview");
+    await page.keyboard.press("Enter");
+    await expect.poll(() => dialog.count()).toBe(0);
+    await page.keyboard.press("ControlOrMeta+KeyK");
+    await expect.poll(() => focusedName(page)).toBe("Search commands");
+    await expect.poll(() => groupLabels(dialog)).toEqual(["Go to"]);
+    await page.keyboard.press("ControlOrMeta+KeyK");
+    await expect.poll(() => dialog.count()).toBe(0);
+    await page.close();
+  });
+
+  it("keeps the rows it showed while it closes onto another page", async () => {
+    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, reducedMotion: "no-preference" });
+    const demo = await openDemo(page, "command", "One palette for the app");
+    // Slow every animation tenfold, so the popup is still closing when the test reads its rows.
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Animation.enable");
+    await cdp.send("Animation.setPlaybackRate", { playbackRate: 0.1 });
+    const dialog = page.getByRole("dialog", { name: "Command palette", exact: true });
+    await demo.getByRole("button", { name: "Search commands", exact: true }).click();
+    await expect.poll(() => focusedName(page)).toBe("Search commands");
+    await expect.poll(() => highlighted(dialog)).toBe("Ada Lovelace");
+    await expect.poll(() => groupLabels(dialog)).toEqual(["Customers", "Go to"]);
+    const popup = await dialog.elementHandle();
+    await page.keyboard.press("Enter");
+    await expect.poll(() => popup.getAttribute("data-closed")).toBe("");
+    // Ada's page is on screen and has passed her commands to the layout.
+    await expect.poll(() => demo.getByRole("definition").first().textContent()).toBe("10231");
+    await page.evaluate(
+      () =>
+        new Promise((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(resolve));
+        })
+    );
+    expect(await popup.evaluate((node) => node.isConnected)).toBe(true);
+    expect(
+      await popup.$$eval('[data-slot="command-label"]', (labels) => labels.map((label) => label.textContent))
+    ).toEqual(["Customers", "Go to"]);
     await page.close();
   });
 

@@ -148,6 +148,7 @@
       "command-pages.tsx",
       "command-kept-query.tsx",
       "command-escape-back.tsx",
+      "command-app-palette.tsx",
       "command-virtualized.tsx"
     ]
   },
