@@ -4,8 +4,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
-import { formNamed, px, renderThemed, stampDensity } from "../../../test/themed-browser-render";
+import {
+  computedContrast,
+  cssVarColor,
+  formNamed,
+  guenExternal,
+  px,
+  renderThemed,
+  stampDensity,
+} from "../../../test/themed-browser-render";
+import { ThemeScope } from "../../theme";
 import { Field } from "../field";
 import { Switch } from "./switch";
 
@@ -200,6 +210,42 @@ describe("Switch", () => {
     });
     expect(switchNamed("Newsletter").getAttribute("aria-checked")).toBe("true");
     expect(switchNamed("Alerts").getAttribute("aria-checked")).toBe("false");
+  });
+
+  it("draws the unchecked track at 3:1 against the page and cards, and the thumb at 3:1 on its track, in light themes", () => {
+    renderThemed(
+      <>
+        <Switch aria-label="Internal off" />
+        <Switch aria-label="Internal on" defaultChecked />
+        <ThemeScope theme={guenExternal}>
+          <Switch aria-label="External off" />
+          <Switch aria-label="External on" defaultChecked />
+        </ThemeScope>
+      </>
+    );
+    // WCAG 1.4.11: the track shows where an unchecked switch is, and the thumb on it shows the
+    // state, so each must reach 3:1 against what it sits on.
+    for (const scope of ["Internal", "External"]) {
+      const track = switchNamed(`${scope} off`);
+      const trackColor = getComputedStyle(track).backgroundColor;
+      for (const surface of ["--background", "--card", "--card-soft"]) {
+        expect(
+          computedContrast(trackColor, cssVarColor(track, surface)),
+          `${scope} track on ${surface}`
+        ).toBeGreaterThanOrEqual(3);
+      }
+      for (const name of [`${scope} off`, `${scope} on`]) {
+        const root = switchNamed(name);
+        const thumb = root.firstElementChild;
+        if (!(thumb instanceof HTMLElement)) {
+          throw new Error(`Expected a thumb inside ${name}`);
+        }
+        expect(
+          computedContrast(getComputedStyle(thumb).backgroundColor, getComputedStyle(root).backgroundColor),
+          `${name} thumb`
+        ).toBeGreaterThanOrEqual(3);
+      }
+    }
   });
 
   it("keeps optical track and thumb sizes identical at both densities and under nested data-density", () => {

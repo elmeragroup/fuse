@@ -63,18 +63,18 @@
 - Ask design for a light field border of at least 3:1. Light `--input`, the border of Input,
   Textarea, Select and the other field boxes, measures 1.08–1.70:1 against the page and card, an
   accepted deviation on the accessibility page. Except ngfi's M3 `outline-variant`, the values are
-  converted shadcn stock colours. `Checkbox` and `Radio` draw their unchecked edge in
-  `muted-foreground` until then, and could return to `--input` once it clears 3:1.
+  converted shadcn stock colours. `Checkbox` and `Radio` draw their unchecked edge, and `Switch`
+  its unchecked track, in `muted-foreground` until then, and could return to `--input` once it
+  clears 3:1.
 - Ask design to confirm the two `--border` hairlines that sit well above the 1.19:1 page floor
   in `contrast-matrix.test.ts`. ngfi light, M3 `outline-variant` #BEC9C3, measures 1.62:1 on
   the page and 1.70:1 on card; every other light theme sits at 1.19–1.30:1 on the page. The
   provisional external dark `#454746` (`dark-defaults.ts`) measures 1.93–2.02:1 on the page and
   1.61–1.83:1 on card.
-- Decide with design how an unchecked `Switch` shows in light. Its `bg-input` track and
-  `bg-background` thumb measure 1.08–1.62:1 against the page, under the 3:1 non-text floor that
-  `Checkbox` and `Radio` now meet. The interim GridList selection box
-  (`react-aria/internal/checkbox.ts`) has the same gap: its unchecked edge is `--border`, and its
-  pressed edge is already `--muted-foreground`, so raising the resting edge needs a new pressed one.
+- The interim GridList selection box (`react-aria/internal/checkbox.ts`) draws its unchecked edge in
+  `--border`, under the 3:1 non-text floor that `Checkbox`, `Radio` and the unchecked `Switch`
+  track now meet in `--muted-foreground`. Its pressed edge is already `--muted-foreground`, so
+  raising the resting edge needs a new pressed one.
 - Decide whether `PhoneNumberField` and `NumberField` name their wrapper `group` from the field's
   label or drop the role. The controls inside have names; the groups around them have none.
 - Ask design whether the `NumberField` steppers keep their own fill. In internal dark the
