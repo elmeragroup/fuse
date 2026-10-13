@@ -95,6 +95,50 @@ async function placement(page: Page, name: string): Promise<{ gap: number; offse
   return placementOver(page, artboardBar(page), artboard(page, name));
 }
 
+/** The documented screen px a toolbar pinned to the canvas's top keeps from it. */
+const PINNED_MARGIN = 8;
+
+/**
+ * Pans the canvas down until the artboard `name` has room above it for its bar at
+ * {@link ARTBOARD_GAP}, so the bar sits on the artboard rather than pinned to the canvas's top.
+ * The room follows the bar's measured height, since wider text wraps the bar onto a second row.
+ */
+async function makeRoomAbove(page: Page, name: string): Promise<void> {
+  const frame = await box(canvas(page));
+  const bar = await box(artboardBar(page));
+  const board = await box(artboard(page, name));
+  const short = Math.ceil(bar.height + ARTBOARD_GAP + PINNED_MARGIN - (board.y - frame.y));
+  if (short <= 0) {
+    return;
+  }
+  await page.mouse.move(board.x + board.width / 2, board.y + board.height / 2);
+  await page.mouse.wheel(0, -short);
+  await expect.poll(async () => (await box(artboard(page, name))).y).toBeCloseTo(board.y + short, 0);
+  await settleFrames(page);
+}
+
+/**
+ * A corner of the foot of the artboard `name` that `popup` does not cover, so a wheel there pans
+ * the canvas rather than scrolling the popup.
+ */
+async function spotClearOf(page: Page, name: string, popup: Locator): Promise<{ x: number; y: number }> {
+  const board = await box(artboard(page, name));
+  const y = board.y + board.height - 10;
+  const corners = [
+    { x: board.x + 10, y },
+    { x: board.x + board.width - 10, y },
+  ];
+  const spot = await popup.evaluate(
+    (element, points) =>
+      points.find((point) => !element.contains(document.elementFromPoint(point.x, point.y))),
+    corners
+  );
+  if (spot === undefined) {
+    throw new Error(`the popup covers both corners of the foot of ${name}`);
+  }
+  return spot;
+}
+
 function inside(inner: Box, outer: Box): boolean {
   return (
     inner.x >= outer.x - 1 &&
@@ -131,7 +175,8 @@ describe("the studio's theme toolbar", () => {
       await page.mouse.click(dark.x + 3, dark.y + 3);
       expect(await layer(page, DARK_BOARD).getAttribute("aria-pressed")).toBe("true");
       await artboardBar(page).waitFor({ state: "visible" });
-      expect((await placement(page, DARK_BOARD)).gap).toBeGreaterThan(0);
+      await makeRoomAbove(page, DARK_BOARD);
+      expect((await placement(page, DARK_BOARD)).gap).toBeCloseTo(ARTBOARD_GAP, 0);
       expect(Math.abs((await placement(page, DARK_BOARD)).offset)).toBeLessThanOrEqual(1);
 
       await layer(page, LIGHT_BOARD).click();
@@ -141,7 +186,9 @@ describe("the studio's theme toolbar", () => {
       expect(
         await artboard(page, LIGHT_BOARD).evaluate((element) => element === document.activeElement)
       ).toBe(true);
-      // Above the artboard and clear of its name label, centred across it.
+      // The press framed the artboard; with room above it, the bar sits above the artboard and
+      // clear of its name label, centred across it.
+      await makeRoomAbove(page, LIGHT_BOARD);
       const label = await box(canvas(page).getByRole("button", { name: LIGHT_BOARD, exact: true }));
       const barBox = await box(bar);
       expect(barBox.y + barBox.height).toBeLessThanOrEqual(label.y);
@@ -343,6 +390,9 @@ describe("the studio's theme toolbar", () => {
       await layer(page, LIGHT_BOARD).click();
       const bar = artboardBar(page);
       await bar.waitFor({ state: "visible" });
+      // With room above the artboard, the bar's menus open at one place against it however many
+      // rows the bar wraps to, so the Type menu ends above the switch.
+      await makeRoomAbove(page, LIGHT_BOARD);
       await page.getByRole("button", { name: "Select part", exact: true }).click();
       await menuButton(bar, "Type").click();
       await page.getByRole("dialog", { name: "Type", exact: true }).waitFor({ state: "visible" });
@@ -477,8 +527,8 @@ describe("the studio's theme toolbar", () => {
         expect(await popup.evaluate((element) => element.contains(document.activeElement))).toBe(true);
 
         // A wheel over the artboard, clear of the popup, pans it up and out of the canvas.
-        const board = await box(artboard(page, LIGHT_BOARD));
-        await page.mouse.move(board.x + 10, board.y + board.height - 10);
+        const spot = await spotClearOf(page, LIGHT_BOARD, popup);
+        await page.mouse.move(spot.x, spot.y);
         await page.mouse.wheel(0, 4000);
         await expect.poll(async () => bar.isVisible()).toBe(false);
         // Closed, not merely hidden, so it holds neither focus nor the next Escape.
