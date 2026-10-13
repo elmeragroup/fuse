@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { launchSuiteBrowser } from "../suite-browser";
 import {
+  COLOR_PAGE,
   DENSITY_PAGE,
   artboard,
   inspector,
@@ -11,14 +12,12 @@ import {
   openTokenSection,
   setMetric,
   setTokenColor,
+  sidebarBrandSource,
   tokenRow,
 } from "./page";
 import type { StudioRoute } from "./page";
 
 const browser = launchSuiteBrowser();
-
-/** The Color page, ready once its light role pairs show. */
-const COLOR_PAGE: StudioRoute = { path: "/studio/color", artboard: "Role pairs · Light" };
 
 /** The Type page, ready once its specimen shows. */
 const TYPE_PAGE: StudioRoute = { path: "/studio/type", artboard: "Specimen" };
@@ -138,9 +137,8 @@ describe("the studio's Color page", () => {
     try {
       const light = artboard(page, "Sidebar · Light");
       const dark = artboard(page, "Sidebar · Dark");
-      const source = (board: Locator) => board.locator('[data-brand-source="sidebar-brand"] [data-source]');
-      await expect.poll(() => source(light).textContent()).toBe("→ brand");
-      expect(await source(dark).textContent()).toBe("Literal");
+      await expect.poll(() => sidebarBrandSource(light).textContent()).toBe("→ brand");
+      expect(await sidebarBrandSource(dark).textContent()).toBe("Literal");
       const block = (board: Locator) =>
         board
           .getByRole("navigation", { name: "Sidebar sample" })

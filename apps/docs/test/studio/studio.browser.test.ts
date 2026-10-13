@@ -11,6 +11,7 @@ import {
   artboard,
   box,
   canvas,
+  holdsFocus,
   inside,
   inspector,
   isFocused,
@@ -57,11 +58,6 @@ type Finger = { id: number; x: number; y: number };
  */
 async function touch(cdp: CDPSession, type: "touchStart" | "touchMove" | "touchEnd", fingers: Finger[]) {
   await cdp.send("Input.dispatchTouchEvent", { type, touchPoints: fingers });
-}
-
-/** Whether the focused element sits inside `locator`. */
-async function holdsFocus(locator: Locator): Promise<boolean> {
-  return locator.evaluate((element) => element.contains(document.activeElement));
 }
 
 describe("theme studio", () => {

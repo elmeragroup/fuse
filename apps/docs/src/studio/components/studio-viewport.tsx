@@ -231,12 +231,13 @@ export function ViewportProvider({ children }: { children: ReactNode }): ReactEl
   }, []);
 
   /**
-   * Moves the camera to show every rect, `top` screen px below the screen's top.
+   * Moves the camera to show every rect, `top` screen px below the screen's top, the fit padding
+   * by default.
    *
    * @returns Whether it moved: not when there is nothing to fit.
    */
   const fit = useCallback(
-    (rects: readonly (Rect | undefined)[], options?: MoveOptions, top: number = FIT_PADDING): boolean => {
+    (rects: readonly (Rect | undefined)[], options?: MoveOptions, top?: number): boolean => {
       const next = fitRects(
         rects.filter((rect) => rect !== undefined),
         screen(),

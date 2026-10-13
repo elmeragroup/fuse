@@ -5,6 +5,7 @@ import { readThemeAttributes } from "../demo-page";
 import { launchSuiteBrowser } from "../suite-browser";
 import {
   ARTBOARDS,
+  COLOR_PAGE,
   CORNERS_PAGE,
   artboard,
   background,
@@ -14,9 +15,9 @@ import {
   pickBrand,
   selectBoard,
   setTokenColor,
+  sidebarBrandSource,
   toggle,
 } from "./page";
-import type { StudioRoute } from "./page";
 
 const browser = launchSuiteBrowser();
 
@@ -26,11 +27,9 @@ const LIGHT_NEIGHBOUR = ARTBOARDS[2];
 const DARK_NEIGHBOUR = ARTBOARDS[3];
 const GLANCE_BOARD = ARTBOARDS[4];
 
-const INTERNAL_RUNGS = "Radius rungs · Internal";
+const INTERNAL_RUNGS = CORNERS_PAGE.artboard;
 const SHELLS = "Shells in Fuse";
 
-/** The Color page, with its sidebar boards. */
-const COLOR_PAGE: StudioRoute = { path: "/studio/color", artboard: "Role pairs · Light" };
 const LIGHT_SIDEBAR = "Sidebar · Light";
 
 const RED = "rgb(255, 0, 0)";
@@ -264,9 +263,7 @@ describe("an artboard's own brand, variant and segment", () => {
     // as a literal tone, while Elmera's light one is var(--brand).
     const { context, page } = await openStudio(browser(), { route: COLOR_PAGE });
     try {
-      const source = artboard(page, LIGHT_SIDEBAR).locator(
-        '[data-brand-source="sidebar-brand"] [data-source]'
-      );
+      const source = sidebarBrandSource(artboard(page, LIGHT_SIDEBAR));
       await expect.poll(async () => source.textContent()).toBe("→ brand");
 
       await pickBrand(page, await selectBoard(page, LIGHT_SIDEBAR), "Fjordkraft");

@@ -15,6 +15,7 @@ import {
   box,
   canvas,
   frames,
+  holdsFocus,
   inside,
   inspector,
   isFocused,
@@ -37,7 +38,7 @@ const LIGHT_BOARD = ARTBOARDS[0];
 const DARK_BOARD = ARTBOARDS[1];
 
 /** A rungs board of the Shape page, which pins a variant, so its bar carries the Variant toggle. */
-const PINNED_BOARD = "Radius rungs · Internal";
+const PINNED_BOARD = CORNERS_PAGE.artboard;
 
 /** Tailwind's `lg`, the narrowest viewport the floating toolbar renders at. */
 const LG = { width: 1024, height: 768 } as const;
@@ -394,9 +395,7 @@ describe("the studio's theme toolbar", () => {
       await artboardBar(page).waitFor({ state: "visible" });
       expect(await partBar(page).count()).toBe(0);
       // The focused menu button stays in place on the artboard's bar.
-      expect(await artboardBar(page).evaluate((element) => element.contains(document.activeElement))).toBe(
-        true
-      );
+      expect(await holdsFocus(artboardBar(page))).toBe(true);
       await page.keyboard.press("Escape");
       await artboardBar(page).waitFor({ state: "detached" });
       expect(await layers(page).getByRole("button", { pressed: true }).count()).toBe(0);
@@ -414,8 +413,8 @@ describe("the studio's theme toolbar", () => {
       const darkBefore = await background(save(DARK_BOARD));
       expect(before).not.toBe(RED);
 
-      await layer(page, LIGHT_BOARD).click();
-      await menuButton(artboardBar(page), "Color").click();
+      const bar = await selectBoard(page, LIGHT_BOARD);
+      await menuButton(bar, "Color").click();
       const menu = page.getByRole("dialog", { name: "Color", exact: true });
       await menu.getByRole("button", { name: "Actions", exact: true }).click();
       await setTokenColor(page, "primary", "#ff0000", menu);
@@ -425,7 +424,7 @@ describe("the studio's theme toolbar", () => {
       expect(await background(save(ARTBOARDS[2]))).toBe(RED);
       expect(await background(save(DARK_BOARD))).toBe(darkBefore);
       // The inspector edits the selected artboard's scheme and marks the token edited.
-      await menuButton(artboardBar(page), "Color").click();
+      await menuButton(bar, "Color").click();
       await menu.waitFor({ state: "detached" });
       await openTokenSection(page, "Actions");
       expect(await tokenRow(page, "primary").getByText("Edited", { exact: true }).count()).toBe(1);
@@ -566,8 +565,7 @@ describe("the studio's theme toolbar", () => {
   it("opens a menu taller than the room below the bar under the bar, scrolling, with the other menus in reach", async () => {
     const { context, page } = await openStudio(browser());
     try {
-      await layer(page, LIGHT_BOARD).click();
-      const bar = artboardBar(page);
+      const bar = await selectBoard(page, LIGHT_BOARD);
       await menuButton(bar, "Color").click();
       const color = page.getByRole("dialog", { name: "Color", exact: true });
       await color.waitFor({ state: "visible" });
@@ -590,8 +588,7 @@ describe("the studio's theme toolbar", () => {
   it("keeps an open menu below the bar and inside the canvas through a zoom out and a window resize", async () => {
     const { context, page } = await openStudio(browser());
     try {
-      await layer(page, LIGHT_BOARD).click();
-      const bar = artboardBar(page);
+      const bar = await selectBoard(page, LIGHT_BOARD);
       await menuButton(bar, "Color").click();
       const color = page.getByRole("dialog", { name: "Color", exact: true });
       await color.waitFor({ state: "visible" });
@@ -672,7 +669,7 @@ describe("the studio's theme toolbar", () => {
         await opener.click();
         const popup = find(page);
         await popup.waitFor({ state: "visible" });
-        expect(await popup.evaluate((element) => element.contains(document.activeElement))).toBe(true);
+        expect(await holdsFocus(popup)).toBe(true);
 
         // A wheel over the artboard, clear of the popup, pans it up and out of the canvas.
         const spot = await spotClearOf(page, LIGHT_BOARD, popup);
@@ -803,11 +800,7 @@ describe("the studio's theme toolbar", () => {
       expect(await colorScheme(artboard(page, DARK_BOARD))).toBe("dark");
       expect(await colorScheme(bar)).toBe("light");
 
-      await page
-        .getByRole("banner")
-        .getByRole("group", { name: "Editor appearance", exact: true })
-        .getByRole("button", { name: "Dark", exact: true })
-        .click();
+      await toggle(page.getByRole("banner"), "Editor appearance", "Dark").click();
       await layer(page, LIGHT_BOARD).click();
       await expect.poll(() => colorScheme(bar)).toBe("dark");
       expect(await colorScheme(artboard(page, LIGHT_BOARD))).toBe("light");

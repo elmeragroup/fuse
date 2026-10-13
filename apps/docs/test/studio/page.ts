@@ -29,6 +29,9 @@ export const DENSITY_PAGE: StudioRoute = { path: "/studio/density", artboard: "T
  */
 export const CORNERS_PAGE: StudioRoute = { path: "/studio/shape", artboard: "Radius rungs · Internal" };
 
+/** The Color page, ready once its light role pairs show. */
+export const COLOR_PAGE: StudioRoute = { path: "/studio/color", artboard: "Role pairs · Light" };
+
 /** How a studio suite sets up the browser context it opens the studio in. */
 export type StudioContextOptions = {
   viewport?: { width: number; height: number };
@@ -160,9 +163,13 @@ export function toggle(within: Locator, group: string, option: string): Locator 
     .getByRole("button", { name: option, exact: true });
 }
 
-/** A token's row in the inspector's token editor. */
-export function tokenRow(page: Page, name: string): Locator {
-  return inspector(page).getByRole("group", { name: `--${name}`, exact: true });
+/**
+ * A token's row in a token editor.
+ *
+ * @param within - Where the row is: the inspector by default, or a theme toolbar menu.
+ */
+export function tokenRow(page: Page, name: string, within: Locator = inspector(page)): Locator {
+  return within.getByRole("group", { name: `--${name}`, exact: true });
 }
 
 /** Opens the token editor's section titled `title`, if it is closed. */
@@ -184,8 +191,7 @@ export async function setTokenColor(
   value: string,
   within: Locator = inspector(page)
 ): Promise<void> {
-  await within
-    .getByRole("group", { name: `--${name}`, exact: true })
+  await tokenRow(page, name, within)
     .getByRole("button", { name: `Edit --${name}`, exact: true })
     .click();
   const field = page.getByRole("textbox", { name: "Color", exact: true });
@@ -206,6 +212,7 @@ export function hashOf(json: string): string {
   return `#1.${Buffer.from(json, "utf8").toString("base64url")}`;
 }
 
+/** A box on the page, in CSS px from the viewport's top-left corner. */
 export type Box = { x: number; y: number; width: number; height: number };
 
 /** The box `locator` draws, which must have one. */
@@ -230,6 +237,16 @@ export function inside(inner: Box, outer: Box): boolean {
 /** Whether `locator` is the focused element itself. */
 export async function isFocused(locator: Locator): Promise<boolean> {
   return locator.evaluate((element) => element === document.activeElement);
+}
+
+/** Whether the focused element sits inside `locator`. */
+export async function holdsFocus(locator: Locator): Promise<boolean> {
+  return locator.evaluate((element) => element.contains(document.activeElement));
+}
+
+/** The sidebar brand's source mark on `board`: an alias such as `→ brand`, or `Literal`. */
+export function sidebarBrandSource(board: Locator): Locator {
+  return board.locator('[data-brand-source="sidebar-brand"] [data-source]');
 }
 
 export async function background(locator: Locator): Promise<string> {
