@@ -103,6 +103,8 @@ export const PART_DENSITY = {
   "command-list": "surface",
   "command-empty": "row",
   "command-empty:empty": "layout",
+  "command-status": "row",
+  "command-status:empty": "layout",
   "command-group": "layout",
   "command-label": "row",
   "command-item": "row",

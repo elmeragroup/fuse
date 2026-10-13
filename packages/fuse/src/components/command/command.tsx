@@ -616,6 +616,25 @@ export function CommandEmpty({
   );
 }
 
+/**
+ * A polite live region for the search's state, such as "Searching…", an error or the number of
+ * results. Screen readers announce each change of its children. It announces only while it stays
+ * mounted, so render the message as its children and leave it empty when there is nothing to say.
+ * Place it between `Command.Input` and `Command.List`.
+ */
+export function CommandStatus({
+  className,
+  ...props
+}: ComponentProps<typeof AutocompletePrimitive.Status>): ReactElement {
+  return (
+    <AutocompletePrimitive.Status
+      data-slot="command-status"
+      className={mergeClassName(className, styles.status())}
+      {...props}
+    />
+  );
+}
+
 /** A group of results. Pass the group's own `items` when the Root's items are grouped. */
 export function CommandGroup({
   className,
@@ -790,6 +809,7 @@ CommandInput.displayName = "Command.Input";
 CommandBack.displayName = "Command.Back";
 CommandList.displayName = "Command.List";
 CommandEmpty.displayName = "Command.Empty";
+CommandStatus.displayName = "Command.Status";
 CommandGroup.displayName = "Command.Group";
 CommandLabel.displayName = "Command.Label";
 CommandCollection.displayName = "Command.Collection";

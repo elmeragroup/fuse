@@ -101,6 +101,27 @@ function EntrySearch({ onRun }: { onRun: (label: string) => void }): ReactElemen
   );
 }
 
+/**
+ * A search whose items come from elsewhere, as a server's results do, so `filter={null}` turns
+ * Base UI's filtering off. Its status line reports the query it last saw.
+ */
+function ServerSearch(): ReactElement {
+  const [query, setQuery] = useState("");
+  return (
+    <Command.Root items={HOME} filter={null} value={query} onValueChange={setQuery}>
+      <Command.Input aria-label="Search" />
+      <Command.Status>{query === "" ? null : `${HOME.length} results for ${query}`}</Command.Status>
+      <Command.List>
+        {(entry: Entry) => (
+          <Command.Item key={entry.value} value={entry}>
+            {entry.label}
+          </Command.Item>
+        )}
+      </Command.List>
+    </Command.Root>
+  );
+}
+
 /** A query held above `Command.Root`, which makes the home page's search controlled. */
 type HeldQuery = { readonly value: string; readonly onValueChange: (value: string) => void };
 
@@ -279,6 +300,25 @@ describe("Command", () => {
     await userEvent.keyboard("zzz");
     await expect.element(page.getByText("No results.", { exact: true })).toBeVisible();
     expect(page.getByRole("option").elements()).toEqual([]);
+  });
+
+  it("keeps a server's items unfiltered and announces the search's state from a status that stays mounted", async () => {
+    renderPalette(<ServerSearch />);
+    const status = page.getByRole("status").element();
+    expect(status.getAttribute("aria-live")).toBe("polite");
+    expect(status.textContent).toBe("");
+    comboboxNamed("Search").focus();
+    await userEvent.keyboard("zzz");
+    await expect.poll(() => status.textContent).toBe("3 results for zzz");
+    expect(
+      page
+        .getByRole("option")
+        .elements()
+        .map((option) => option.textContent)
+    ).toEqual(["Customers", "Open invoices", "Register meter reading"]);
+    await userEvent.keyboard("{Backspace}{Backspace}{Backspace}");
+    await expect.poll(() => status.textContent).toBe("");
+    expect(page.getByRole("status").element()).toBe(status);
   });
 
   it("opens a page from its trigger, focuses the page's input and names it after the page", async () => {

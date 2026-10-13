@@ -20,6 +20,7 @@ import {
   CommandPageTrigger,
   CommandRoot,
   CommandSelectHint,
+  CommandStatus,
   CommandTrigger,
 } from "./command";
 import { CommandFooter, CommandHint, CommandShortcut } from "./command-markup";
@@ -32,6 +33,7 @@ export const Command = {
   Back: CommandBack,
   List: CommandList,
   Empty: CommandEmpty,
+  Status: CommandStatus,
   Group: CommandGroup,
   Label: CommandLabel,
   Collection: CommandCollection,

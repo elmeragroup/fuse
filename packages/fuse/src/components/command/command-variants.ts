@@ -12,6 +12,7 @@ import { menuItemClass } from "../overlay/menu-row-classes";
  * - `list` scrolls; in a palette box it takes the room the input and footer leave.
  * - `item` is the shared menu row, highlighted by Base UI's `data-highlighted`.
  * - `empty` is a row-inset message that collapses while the list has matches.
+ * - `status` is a line under the input, inset to the rows' text, that collapses while it is empty.
  * - `footer` and `hint` lay out the key hints under the list.
  * - `content` is the palette popup's layout, placed near the top of the viewport so the input
  *   stays put while the results shrink. `Command.Content` composes it after the modal face it
@@ -28,6 +29,8 @@ export const commandVariants = tv({
     ),
     trailing: "ms-auto text-muted-foreground in-data-highlighted:text-accent-foreground",
     empty: "text-sm px-(--row-px) py-6 text-center text-muted-foreground empty:p-0",
+    status:
+      "text-sm flex shrink-0 items-center gap-2 px-[calc(var(--surface-gap-sm)+var(--row-px))] py-(--surface-gap-sm) text-muted-foreground empty:p-0",
     footer:
       "text-xs flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 border-t border-border px-[calc(var(--surface-gap-sm)+var(--row-px))] py-(--surface-gap-sm) text-muted-foreground",
     hint: "inline-flex items-center gap-1.5",

@@ -168,6 +168,7 @@ function namespaceElements(): ReactElement[] {
         "Back",
         "List",
         "Empty",
+        "Status",
         "Group",
         "Label",
         "Collection",
