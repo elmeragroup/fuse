@@ -7,6 +7,7 @@ import { PopoverBasic } from "./demos/popover-basic";
 import { PopoverArrow } from "./demos/popover-arrow";
 import { PopoverPlacement } from "./demos/popover-placement";
 import { PopoverControlled } from "./demos/popover-controlled";
+import { PopoverAnchor } from "./demos/popover-anchor";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -29,6 +30,16 @@ export const metadata = componentMetadata("popover");
 <Demo slug="popover" id="controlled" title="Controlled" file="popover-controlled.tsx">
   <PopoverControlled />
 </Demo>
+
+<Demo slug="popover" id="anchor" title="Anchor" file="popover-anchor.tsx">
+  <PopoverAnchor />
+</Demo>
+
+`anchor` places the popup against an element other than the trigger. It takes an element, a
+ref or a virtual element. A controlled popover needs no trigger at all. The popup follows its
+anchor when the anchor moves or resizes. A transform that shrinks the anchor within its last box
+does not move the popup, so pass a new anchor then. Pass `initialFocus={false}` when opening it
+should leave focus where it is.
 
 <ApiReference slug="popover" />
 

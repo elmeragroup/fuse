@@ -64,4 +64,5 @@ export * from "./timeline-list";
 export * from "./toast";
 export * from "./toggle";
 export * from "./toggle-group";
+export * from "./toolbar";
 export * from "./tooltip";

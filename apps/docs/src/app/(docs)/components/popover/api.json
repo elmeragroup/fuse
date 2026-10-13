@@ -274,6 +274,15 @@
           "required": false
         },
         {
+          "name": "anchor",
+          "origin": "declared",
+          "type": "Element | RefObject<Element | null> | VirtualElement | (() => Element | VirtualElement | null) | null | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "The element, ref or virtual element the popup is placed against, in place of the trigger. A controlled popover with no trigger opens against it. The popup follows the anchor as it moves or resizes, except when a transform shrinks the anchor within its last box; pass a new anchor then, such as a new virtual element, to place the popup again.",
+          "required": false
+        },
+        {
           "name": "className",
           "origin": {
             "packageName": "@base-ui/react"

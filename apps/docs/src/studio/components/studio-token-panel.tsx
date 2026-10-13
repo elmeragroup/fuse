@@ -47,6 +47,7 @@ import {
   STUDIO_TOKEN_NAMES,
   TOKEN_TABLE,
   isTokenName,
+  matchesTokenQuery,
   pairOfForeground,
   sectionTokens,
 } from "../lib/tokens";
@@ -322,10 +323,6 @@ export function TokenRow({ name, colors, scope }: TokenRowProps): ReactElement {
   );
 }
 
-function matches(name: TokenName, query: string): boolean {
-  return name.includes(query.trim().toLowerCase().replace(/^-+/u, ""));
-}
-
 export type StudioTokenPanelProps = {
   /** The sections a page leads with: stacked first in this order, the first opened on arrival. */
   lead?: readonly SectionId[];
@@ -410,7 +407,7 @@ export function StudioTokenPanel({ lead = NO_LEAD, afterLead }: StudioTokenPanel
   const panel = useRef<HTMLDivElement>(null);
   useFocusRequests(panel, (name) => {
     // A filter that hides the token gives way, and its section opens.
-    if (!matches(name, query) || editedOnly) {
+    if (!matchesTokenQuery(name, query) || editedOnly) {
       setQuery("");
       setEditedOnly(false);
     }
@@ -423,7 +420,7 @@ export function StudioTokenPanel({ lead = NO_LEAD, afterLead }: StudioTokenPanel
 
   const filtering = query.trim() !== "" || editedOnly;
   const visible = (name: TokenName): boolean =>
-    matches(name, query) && (!editedOnly || overrideOf(overrides, editScheme, name) !== undefined);
+    matchesTokenQuery(name, query) && (!editedOnly || overrideOf(overrides, editScheme, name) !== undefined);
   const sections = leadFirst(lead)
     .map((section) => {
       const names = sectionTokens(section.id);

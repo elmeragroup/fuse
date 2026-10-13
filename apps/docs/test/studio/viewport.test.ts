@@ -6,11 +6,13 @@ import {
   clampZoom,
   fitRects,
   fitWidth,
+  menuPlacement,
   mostlyOffscreen,
   panBy,
   revealRect,
   screenToWorld,
   stepZoom,
+  toolbarAnchor,
   wheelZoomFactor,
   zoomAt,
 } from "../../src/studio/lib/viewport";
@@ -251,6 +253,66 @@ describe("fitWidth", () => {
       x: -225,
       y: -152,
       zoom: 4,
+    });
+  });
+});
+
+describe("toolbarAnchor", () => {
+  // A frame from y = 100 to 700 and a toolbar that needs 80 px above its anchor: the line the
+  // anchor's top stays below is 100 + 80 = 180.
+  const frame = { x: 0, y: 100, width: 800, height: 600 };
+
+  it("keeps an anchor whose top leaves the toolbar room", () => {
+    const anchor = { x: 40, y: 200, width: 300, height: 400 };
+    expect(toolbarAnchor(anchor, frame, 80)).toEqual(anchor);
+  });
+
+  it("lowers the top of an anchor that starts above the line, so the toolbar pins to the frame", () => {
+    // Top 50 rises to 180; the bottom stays at 50 + 900 = 950, so the height is 770.
+    expect(toolbarAnchor({ x: 40, y: 50, width: 300, height: 900 }, frame, 80)).toEqual({
+      x: 40,
+      y: 180,
+      width: 300,
+      height: 770,
+    });
+  });
+
+  it("keeps only the bottom edge of an anchor that ends above the line", () => {
+    // The bottom at 20 + 140 = 160 is above 180, so the anchor collapses onto it.
+    expect(toolbarAnchor({ x: 40, y: 20, width: 300, height: 140 }, frame, 80)).toEqual({
+      x: 40,
+      y: 160,
+      width: 300,
+      height: 0,
+    });
+  });
+});
+
+describe("menuPlacement", () => {
+  // A frame from y = 100 to 700, a 20px gap and a 160px minimum.
+  const frame = { x: 0, y: 100, width: 800, height: 600 };
+
+  it("opens below a trigger with at least the minimum room there, though more is left above", () => {
+    // Below: 700 - (400 + 30) - 20 = 250, past the minimum; above: 400 - 100 - 20 = 280.
+    expect(menuPlacement({ x: 10, y: 400, width: 60, height: 30 }, frame, 20, 160)).toEqual({
+      side: "bottom",
+      room: 250,
+    });
+  });
+
+  it("opens below a trigger near the frame's top, where less room is left above", () => {
+    // Below: 700 - (110 + 30) - 20 = 540; above: 110 - 100 - 20 = -10.
+    expect(menuPlacement({ x: 10, y: 110, width: 60, height: 30 }, frame, 20, 600)).toEqual({
+      side: "bottom",
+      room: 540,
+    });
+  });
+
+  it("opens above a trigger near the frame's foot, where more room is left above", () => {
+    // Below: 700 - (600 + 30) - 20 = 50; above: 600 - 100 - 20 = 480.
+    expect(menuPlacement({ x: 10, y: 600, width: 60, height: 30 }, frame, 20, 160)).toEqual({
+      side: "top",
+      room: 480,
     });
   });
 });

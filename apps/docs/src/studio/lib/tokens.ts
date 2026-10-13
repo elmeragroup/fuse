@@ -144,6 +144,14 @@ export function isTokenName(name: string): name is TokenName {
   return KNOWN_NAMES.has(name);
 }
 
+/**
+ * Whether a token filter's text finds `name`: a case-insensitive part of the name, with or without
+ * its leading `--`.
+ */
+export function matchesTokenQuery(name: TokenName, query: string): boolean {
+  return name.includes(query.trim().toLowerCase().replace(/^-+/u, ""));
+}
+
 /** A section's tokens, in the contract's order. */
 export function sectionTokens(section: SectionId): readonly TokenName[] {
   return STUDIO_TOKEN_NAMES.filter((name) => TOKEN_TABLE[name].section === section);

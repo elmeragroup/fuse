@@ -7,9 +7,9 @@ import { tv } from "tailwind-variants";
 
 import { Button } from "@elmeragroup/fuse/button";
 import { Minus, Plus } from "@elmeragroup/fuse/icons";
-import { Separator } from "@elmeragroup/fuse/separator";
 import { Toggle } from "@elmeragroup/fuse/toggle";
 import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
+import { Toolbar } from "@elmeragroup/fuse/toolbar";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
 import { ChromeScope } from "./chrome-scope";
@@ -25,9 +25,9 @@ import { useViewportCommands, useViewportState, zoomLabel } from "./studio-viewp
 
 const studioToolbar = tv({
   slots: {
-    bar: "shadow-lg absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1 rounded-lg border border-border bg-popover p-1 text-popover-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
+    // Toolbar.Root paints the surface; the canvas places it, floating over the artboards.
+    bar: "shadow-lg absolute bottom-4 left-1/2 z-30 -translate-x-1/2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
     glyph: "size-4",
-    separator: "h-5",
     value: "text-xs w-12 text-center font-mono tabular-nums",
   },
 });
@@ -52,8 +52,9 @@ function ZoomValue(): ReactElement {
 
 /**
  * The floating bar at the foot of the canvas, as in Paper: the tools and "Select part", undo and
- * redo, and the zoom. The canvas re-renders with every camera move, so the bar is memoized and
- * only its zoom readout follows the camera.
+ * redo, and the zoom. It is a Fuse Toolbar, one Tab stop whose arrow keys move between its
+ * controls. The canvas re-renders with every camera move, so the bar is memoized and only its zoom
+ * readout follows the camera.
  */
 export const StudioToolbar = memo(function StudioToolbar(): ReactElement {
   const { tool, setTool } = useStudio();
@@ -65,8 +66,7 @@ export const StudioToolbar = memo(function StudioToolbar(): ReactElement {
 
   return (
     <ChromeScope
-      role="group"
-      aria-label="Toolbar"
+      render={<Toolbar.Root aria-label="Toolbar" />}
       className={styles.bar()}
       data-canvas-overlay
       {...regionProps}>
@@ -93,68 +93,97 @@ export const StudioToolbar = memo(function StudioToolbar(): ReactElement {
         <Tooltip.Root>
           <Tooltip.Trigger
             render={
-              <Toggle size="sm" aria-label="Select part" pressed={partMode} onPressedChange={setPartMode} />
+              <Toolbar.Button
+                render={
+                  <Toggle
+                    size="sm"
+                    aria-label="Select part"
+                    pressed={partMode}
+                    onPressedChange={setPartMode}
+                  />
+                }
+              />
             }>
             <PartGlyph className={styles.glyph()} />
           </Tooltip.Trigger>
           <Tooltip.Content>Select part (P, or Alt+click)</Tooltip.Content>
         </Tooltip.Root>
-        <Separator orientation="vertical" className={styles.separator()} />
-        <Tooltip.Root>
-          <Tooltip.Trigger
-            render={
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label="Undo"
-                disabled={!canUndo}
-                onClick={() => {
-                  edit({ type: "undo" });
-                }}
-              />
-            }>
-            <UndoGlyph className={styles.glyph()} />
-          </Tooltip.Trigger>
-          <Tooltip.Content>{`Undo (${mod}Z)`}</Tooltip.Content>
-        </Tooltip.Root>
-        <Tooltip.Root>
-          <Tooltip.Trigger
-            render={
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label="Redo"
-                disabled={!canRedo}
-                onClick={() => {
-                  edit({ type: "redo" });
-                }}
-              />
-            }>
-            <RedoGlyph className={styles.glyph()} />
-          </Tooltip.Trigger>
-          <Tooltip.Content>{`Redo (⇧${mod}Z)`}</Tooltip.Content>
-        </Tooltip.Root>
-        <Separator orientation="vertical" className={styles.separator()} />
+        <Toolbar.Separator />
+        <Toolbar.Group aria-label="History">
+          <Tooltip.Root>
+            <Tooltip.Trigger
+              render={
+                <Toolbar.Button
+                  disabled={!canUndo}
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="Undo"
+                      onClick={() => {
+                        edit({ type: "undo" });
+                      }}
+                    />
+                  }
+                />
+              }>
+              <UndoGlyph className={styles.glyph()} />
+            </Tooltip.Trigger>
+            <Tooltip.Content>{`Undo (${mod}Z)`}</Tooltip.Content>
+          </Tooltip.Root>
+          <Tooltip.Root>
+            <Tooltip.Trigger
+              render={
+                <Toolbar.Button
+                  disabled={!canRedo}
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="Redo"
+                      onClick={() => {
+                        edit({ type: "redo" });
+                      }}
+                    />
+                  }
+                />
+              }>
+              <RedoGlyph className={styles.glyph()} />
+            </Tooltip.Trigger>
+            <Tooltip.Content>{`Redo (⇧${mod}Z)`}</Tooltip.Content>
+          </Tooltip.Root>
+        </Toolbar.Group>
+        <Toolbar.Separator />
         <CornerXrayToggle />
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label="Zoom out"
-          onClick={() => {
-            zoomStep(-1, control);
-          }}>
-          <Minus />
-        </Button>
-        <ZoomValue />
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label="Zoom in"
-          onClick={() => {
-            zoomStep(1, control);
-          }}>
-          <Plus />
-        </Button>
+        <Toolbar.Group aria-label="Zoom">
+          <Toolbar.Button
+            render={
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Zoom out"
+                onClick={() => {
+                  zoomStep(-1, control);
+                }}
+              />
+            }>
+            <Minus />
+          </Toolbar.Button>
+          <ZoomValue />
+          <Toolbar.Button
+            render={
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Zoom in"
+                onClick={() => {
+                  zoomStep(1, control);
+                }}
+              />
+            }>
+            <Plus />
+          </Toolbar.Button>
+        </Toolbar.Group>
       </Tooltip.Provider>
     </ChromeScope>
   );

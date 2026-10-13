@@ -35,6 +35,13 @@ export type PopoverContentProps = ComponentProps<typeof PopoverPrimitive.Popup> 
      * Renders the placement arrow after `children`. Off by default.
      */
     showArrow?: boolean;
+    /**
+     * The element, ref or virtual element the popup is placed against, in place of the trigger.
+     * A controlled popover with no trigger opens against it. The popup follows the anchor as it
+     * moves or resizes, except when a transform shrinks the anchor within its last box; pass a
+     * new anchor then, such as a new virtual element, to place the popup again.
+     */
+    anchor?: ComponentProps<typeof PopoverPrimitive.Positioner>["anchor"];
   } & OverlayContainerProps;
 
 /**
@@ -48,6 +55,7 @@ export function PopoverContent({
   side = "bottom",
   sideOffset = 4,
   showArrow = false,
+  anchor,
   children,
   container,
   ...props
@@ -59,6 +67,7 @@ export function PopoverContent({
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
+        anchor={anchor}
         className={overlayPositionerClass}>
         <PopoverPrimitive.Popup
           data-slot="popover-content"

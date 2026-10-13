@@ -51,8 +51,11 @@ const densityPanel = tv({
 
 const styles = densityPanel();
 
-/** The roles that read metrics, each a section of the editor, in CONTEXT.md order. */
-const METRIC_ROLES = [
+/**
+ * The roles that read metrics, each a section of the editor, in CONTEXT.md order. The theme
+ * toolbar's Density menu lists the same sections.
+ */
+export const METRIC_ROLES = [
   { role: "control", title: "Control metrics" },
   { role: "row", title: "Row metrics" },
   { role: "label", title: "Label text" },
@@ -70,9 +73,10 @@ type MetricKnobProps = {
 /**
  * One metric at one density: a NumberField in px over the Fuse Slider, and its reset. The undo
  * boundaries are the token knobs': a slider drag or held key is one step, and in the field a
- * typing burst, each stepper press and each stepping key press is its own.
+ * typing burst, each stepper press and each stepping key press is its own. The edit applies to
+ * every artboard in that density. The theme toolbar's Density menu renders it too.
  */
-function MetricKnob({ metric, density }: MetricKnobProps): ReactElement {
+export function MetricKnob({ metric, density }: MetricKnobProps): ReactElement {
   const { overrides, edit } = useStudioEdits();
   const edited = metricOverridesFor(overrides, density)[metric.name];
   const px = edited ?? metric.px[density];

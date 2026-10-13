@@ -30,7 +30,8 @@ const styles = studioNavigator();
 /**
  * The left panel: the studio's pages, then the current page's artboards. A layer selects its
  * artboard, glides the canvas to it and moves focus into it, so a keyboard user reaches every
- * artboard from here and Tab continues through its content. Hovering a layer highlights its
+ * artboard from here and Tab continues through its content. The selected artboard's layer hides
+ * its theme toolbar, and shows it again. Hovering a layer highlights its
  * artboard. `onPick`, when given, takes the artboard to focus instead, so the phone's Sheet can
  * close and hand focus to it.
  */
@@ -40,7 +41,7 @@ export function StudioNavigator({
   onPick?: (artboard: HTMLElement | undefined) => void;
 }): ReactElement {
   const pathname = usePathname();
-  const { artboards, selectedId, select, hover } = useStudio();
+  const { artboards, selectedId, select, toggleToolbar, hover } = useStudio();
   const { zoomToArtboard, artboardElement } = useViewportCommands();
 
   return (
@@ -88,7 +89,13 @@ export function StudioNavigator({
                   hover(undefined);
                 }}
                 onClick={() => {
-                  select(artboard.id);
+                  // A press on the selected artboard's row hides its theme toolbar or shows it
+                  // again; the artboard stays selected.
+                  if (artboard.id === selectedId) {
+                    toggleToolbar();
+                  } else {
+                    select(artboard.id);
+                  }
                   zoomToArtboard(artboard.id, { animate: true, announce: true });
                   const board = artboardElement(artboard.id);
                   if (onPick === undefined) {

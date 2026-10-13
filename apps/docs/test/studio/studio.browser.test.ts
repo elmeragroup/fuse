@@ -417,7 +417,7 @@ describe("theme studio", () => {
       bar,
       layers(page),
       canvas(page),
-      canvas(page).getByRole("group", { name: "Toolbar", exact: true }),
+      canvas(page).getByRole("toolbar", { name: "Toolbar", exact: true }),
       inspector(page),
     ];
     for (const [index, region] of [...regions, bar].entries()) {
@@ -449,7 +449,7 @@ describe("theme studio", () => {
       bar,
       layers(page),
       canvas(page),
-      canvas(page).getByRole("group", { name: "Toolbar", exact: true }),
+      canvas(page).getByRole("toolbar", { name: "Toolbar", exact: true }),
       inspector(page),
       page.getByRole("region", { name: "Notifications", exact: true }),
     ];

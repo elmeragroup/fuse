@@ -4,8 +4,13 @@ import { useSyncExternalStore } from "react";
 
 import { isTypingTarget } from "../../lib/typing-target";
 
-/** Open overlays inside an artboard: they keep their keys, presses and scrolling. */
-export const OVERLAYS = '[role="menu"], [role="listbox"], [role="dialog"], [role="alertdialog"]';
+/**
+ * Open overlays, such as those inside an artboard: they keep their keys, presses and scrolling.
+ * The theme toolbar's popup is a dialog of the canvas chrome, whose keys stay the studio's, as on
+ * the toolbar at the canvas's foot; the menus it opens are overlays.
+ */
+export const OVERLAYS =
+  '[role="menu"], [role="listbox"], [role="dialog"]:not([data-canvas-overlay]), [role="alertdialog"]';
 
 /**
  * Whether a key press should toggle a canvas overlay: a bare `key`, pressed once rather than

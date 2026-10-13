@@ -389,6 +389,15 @@ export const PART_DENSITY = {
   "toggle-group": "layout",
   "toggle-group-item": "control",
 
+  // The bar pads and spaces its items by a fixed 4px. An item renders the control that gives it
+  // its look, such as a Button or an Input, and reads that control's metrics.
+  toolbar: "layout",
+  "toolbar-group": "layout",
+  "toolbar-button": "control",
+  "toolbar-link": "control",
+  "toolbar-input": "control",
+  "toolbar-separator": "fixed",
+
   "tooltip-provider": "layout",
   tooltip: "layout",
   "tooltip-trigger": "control",

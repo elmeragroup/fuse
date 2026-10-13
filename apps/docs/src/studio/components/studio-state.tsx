@@ -16,6 +16,13 @@ import { StudioEditsProvider, useEditSession } from "./studio-edits";
 /** What a pointer drag on the canvas does: select and use artboard content, or pan. */
 export type StudioTool = "select" | "hand";
 
+/** The selected artboard, on the page it was selected on, and whether its theme toolbar shows. */
+type Selection = {
+  readonly path: string;
+  readonly id: string;
+  readonly toolbar: "shown" | "hidden";
+};
+
 /** An artboard's editable settings, seeded from its spec. */
 export type ArtboardSettings = {
   readonly scheme: ArtboardScheme;
@@ -37,7 +44,12 @@ type StudioValue = {
   settingsOf: (artboard: ArtboardSpec) => ArtboardSettings;
   changeSettings: (id: string, change: Partial<ArtboardSettings>) => void;
   selectedId: string | undefined;
+  /** Selects an artboard, or clears the selection, and shows the theme toolbar for it. */
   select: (id: string | undefined) => void;
+  /** Whether the selected artboard's theme toolbar shows; it hides only on the visitor's toggle. */
+  toolbarShown: boolean;
+  /** Hides the selected artboard's theme toolbar, or shows it again; the selection stays. */
+  toggleToolbar: () => void;
   hoveredId: string | undefined;
   hover: (id: string | undefined) => void;
   tool: StudioTool;
@@ -58,7 +70,7 @@ export function StudioProvider({ children }: { children: ReactNode }): ReactElem
   const [chromeScheme, setChromeScheme] = useState<ColorScheme>("system");
   const prefersDark = useMediaQuery("(prefers-color-scheme: dark)", false);
   const [overrides, setOverrides] = useState<Readonly<Record<string, Partial<ArtboardSettings>>>>({});
-  const [selection, setSelection] = useState<{ path: string; id: string } | undefined>(undefined);
+  const [selection, setSelection] = useState<Selection | undefined>(undefined);
   const [hoveredId, hover] = useState<string | undefined>(undefined);
   const [tool, setTool] = useState<StudioTool>("select");
 
@@ -79,10 +91,18 @@ export function StudioProvider({ children }: { children: ReactNode }): ReactElem
   const selectedId = selection?.path === pathname ? selection.id : undefined;
   const select = useCallback(
     (id: string | undefined) => {
-      setSelection(id === undefined ? undefined : { path: pathname, id });
+      setSelection(id === undefined ? undefined : { path: pathname, id, toolbar: "shown" });
     },
     [pathname]
   );
+  const toolbarShown = selectedId !== undefined && selection?.toolbar === "shown";
+  const toggleToolbar = useCallback(() => {
+    setSelection((current) =>
+      current === undefined
+        ? undefined
+        : { ...current, toolbar: current.toolbar === "shown" ? "hidden" : "shown" }
+    );
+  }, []);
 
   const selected = artboards.find((artboard) => artboard.id === selectedId);
   const session = useEditSession(
@@ -108,6 +128,8 @@ export function StudioProvider({ children }: { children: ReactNode }): ReactElem
       changeSettings,
       selectedId,
       select,
+      toolbarShown,
+      toggleToolbar,
       hoveredId,
       hover,
       tool,
@@ -123,6 +145,8 @@ export function StudioProvider({ children }: { children: ReactNode }): ReactElem
       changeSettings,
       selectedId,
       select,
+      toolbarShown,
+      toggleToolbar,
       hoveredId,
       tool,
       setChromeScheme,

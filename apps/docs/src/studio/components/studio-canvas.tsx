@@ -25,6 +25,7 @@ import { isOverlayShortcut, OVERLAYS } from "./studio-shortcuts";
 import { useStudio } from "./studio-state";
 import { StudioToolbar } from "./studio-toolbar";
 import { useViewportCommands, useViewportState } from "./studio-viewport";
+import { ThemeToolbar } from "./theme-toolbar/theme-toolbar";
 
 const studioCanvas = tv({
   slots: {
@@ -322,16 +323,20 @@ export function StudioCanvas({ children }: { children: ReactNode }): ReactElemen
   // Figma's shortcuts. A key typed into a field or an open overlay belongs to it.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      // Escape drops a picked part wherever focus is, such as on the toolbar's "Select part"
-      // or in an artboard's field, unless an open popup took the key to close itself.
-      if (
-        event.key === "Escape" &&
-        part !== undefined &&
-        !event.defaultPrevented &&
-        !inOverlay(event.target)
-      ) {
-        clearPart();
-        select(undefined);
+      // Escape steps back one level. It drops a picked part wherever focus is, text fields
+      // included, and keeps the part's artboard selected. With no part picked, it clears the
+      // selection from a control, such as the toolbar's "Select part" or an artboard button a key
+      // picked, while a text field keeps the key. An open popup that took the key to close
+      // itself, or that holds focus, keeps it.
+      if (event.key === "Escape") {
+        if (event.defaultPrevented || inOverlay(event.target)) {
+          return;
+        }
+        if (part !== undefined) {
+          clearPart();
+        } else if (!isTypingTarget(event.target, OVERLAYS)) {
+          select(undefined);
+        }
         return;
       }
       if (event.defaultPrevented || isTypingTarget(event.target, OVERLAYS)) {
@@ -370,8 +375,6 @@ export function StudioCanvas({ children }: { children: ReactNode }): ReactElemen
         setTool("hand");
       } else if (isOverlayShortcut(event, "p")) {
         setPartMode(!partMode);
-      } else if (event.key === "Escape" && !isControl(event.target)) {
-        select(undefined);
       }
     };
     const onKeyUp = (event: KeyboardEvent) => {
@@ -439,6 +442,7 @@ export function StudioCanvas({ children }: { children: ReactNode }): ReactElemen
       <CornerXrayOverlay canvas={commands.canvas} />
       <PartOutline />
       <StudioToolbar />
+      <ThemeToolbar />
       <p role="status" aria-live="polite" className={styles.status()}>
         {announcement}
       </p>

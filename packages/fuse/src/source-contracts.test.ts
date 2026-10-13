@@ -107,6 +107,7 @@ const CLIENT_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["toast", ["components/toast/toast.tsx"]],
   ["toggle", ["components/toggle/toggle.tsx"]],
   ["toggle-group", ["components/toggle-group/toggle-group.tsx"]],
+  ["toolbar", ["components/toolbar/toolbar.tsx"]],
   ["tooltip", ["components/tooltip/tooltip.tsx"]],
   ["ui-providers", ["react-aria/ui-providers/ui-providers.tsx"]],
 ];
@@ -331,6 +332,7 @@ describe("RSC classification", () => {
     ["tabs", "Tabs"],
     ["toast", "Toast"],
     ["toggle-group", "ToggleGroup"],
+    ["toolbar", "Toolbar"],
     ["tooltip", "Tooltip"],
   ])("%s namespace index stays directive-free and exports only %s", (slug, namespace) => {
     const file = `components/${slug}/index.ts`;

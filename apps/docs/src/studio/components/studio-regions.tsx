@@ -16,7 +16,7 @@ const REGION = "[data-studio-region]";
 
 /**
  * Makes an element one of the editor's regions, which F6 and the skip links focus as a whole, as
- * in Figma: the top bar, the Pages and Layers panel, the canvas, its toolbar and the inspector.
+ * in Figma: the top bar, the Pages and Layers panel, the canvas, its toolbars and the inspector.
  * Its recipe adds the keyboard focus ring.
  */
 export const regionProps = { "data-studio-region": true, tabIndex: -1 } as const;
@@ -30,9 +30,12 @@ const skipLinks = tv({
 
 const styles = skipLinks();
 
-/** Whether `element` is laid out: below `lg` the side panels are not, as Sheets stand in. */
+/**
+ * Whether `element` shows: below `lg` the side panels are not laid out, as Sheets stand in, and
+ * the theme toolbar hides while its anchor is out of the canvas.
+ */
 function shown(element: Element): boolean {
-  return element.getClientRects().length > 0;
+  return element.checkVisibility({ visibilityProperty: true });
 }
 
 type SkipLinksProps = {
