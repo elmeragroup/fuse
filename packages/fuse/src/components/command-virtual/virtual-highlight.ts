@@ -1,11 +1,11 @@
 /**
- * Package-private rule that keeps Base UI's highlight usable in a virtual list. Base UI runs
+ * This package-private rule keeps Base UI's highlight usable in a virtual list. Base UI runs
  * Enter by clicking the highlighted row's element, so the row must stay mounted.
  */
 
 /**
- * The rows to render: the virtualizer's window, plus the highlighted row when it lies outside it,
- * so Enter still finds the row after a wheel scroll moved it out of view.
+ * Returns the rows to render. They are the virtualizer's window plus the highlighted row when it
+ * lies outside the window, so Enter still finds the row after a wheel scroll moved it out of view.
  *
  * @param indexes - The window's indexes in ascending order.
  * @param highlighted - The highlighted row's index, or `undefined` when nothing is highlighted.

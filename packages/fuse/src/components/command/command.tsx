@@ -12,8 +12,8 @@ import type {
 } from "react";
 
 // Subpath imports of Base UI's combobox family type-check but crash at runtime with a null React
-// context (see combobox.tsx). Autocomplete shares those internals, so it keeps the package-root
-// import too.
+// context, as combobox.tsx explains. Autocomplete shares those internals, so it also uses the
+// package-root import.
 import { Autocomplete as AutocompletePrimitive } from "@base-ui/react";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import type { DialogRootChangeEventDetails, DialogRootProps } from "@base-ui/react/dialog";
@@ -81,7 +81,7 @@ type CommandDialogStateProps = Pick<
 type CommandPaletteContextValue = {
   /** Joins `Command.Trigger` to the Dialog.Root that `Command.Content` renders. */
   readonly handle: DialogPrimitive.Handle<unknown>;
-  /** The Root's dialog props, for `Command.Content`'s Dialog.Root, which they always control. */
+  /** The dialog props `Command.Content` passes to its Dialog.Root, which they always control. */
   readonly dialog: Omit<CommandDialogStateProps, "defaultOpen">;
   /** Tells the Root a `Command.Content` is mounted, until the returned cleanup runs. */
   readonly registerContent: () => () => void;
@@ -89,10 +89,13 @@ type CommandPaletteContextValue = {
 
 const CommandPaletteContext = createContext<CommandPaletteContextValue | null>(null);
 
-/** Counts the dialog's closes, so each page's search resets an uncontrolled query when it changes. */
+/**
+ * Counts the dialog's closes. Each page's search resets an uncontrolled query when the count
+ * changes.
+ */
 const CommandSessionContext = createContext(0);
 
-/** The enclosing Root's palette state; throws a named error outside a Root. */
+/** Returns the enclosing Root's palette state, and throws a named error outside a Root. */
 function usePalette(part: string): CommandPaletteContextValue {
   const palette = use(CommandPaletteContext);
   if (palette === null) {
@@ -101,7 +104,7 @@ function usePalette(part: string): CommandPaletteContextValue {
   return palette;
 }
 
-/** The enclosing Root's stack; throws a named error outside a Root with a stack. */
+/** Returns the enclosing Root's stack, and throws a named error outside a Root with a stack. */
 function useEnclosingStack(part: string): CommandStackContextValue {
   const stack = use(CommandStackContext);
   if (stack === null) {
@@ -115,25 +118,25 @@ type CommandNoSearchProps = {
   [Key in keyof CommandSearchProps<unknown, readonly ItemGroup[], boolean>]?: never;
 };
 
-/** A stack of page ids: controlled with `pages`, or uncontrolled from `defaultPages`. */
+/** A stack of page ids, controlled with `pages` or uncontrolled from `defaultPages`. */
 type CommandStackProps =
   | {
-      /** The page ids from the first page to the one on top. Use when controlled. */
+      /** The page ids from the first page to the one on top. Pass it to control the stack. */
       pages: readonly string[];
       defaultPages?: never;
-      /** Called with the next stack when a page is pushed or popped. */
+      /** The Root calls it with the next stack after a push or a pop. */
       onPagesChange?: ((pages: string[]) => void) | undefined;
     }
   | {
       /** The page ids the stack starts with, from the first page to the one on top. */
       defaultPages: readonly string[];
       pages?: never;
-      /** Called with the next stack when a page is pushed or popped. */
+      /** The Root calls it with the next stack after a push or a pop. */
       onPagesChange?: ((pages: string[]) => void) | undefined;
     };
 
 /**
- * Props of `Command.Root`: the dialog's state, then either the search's props or a stack of
+ * `Command.Root` takes the dialog's state props, plus either the search's props or a stack of
  * pages, never both.
  *
  * @template Item - The item of a flat search.
@@ -157,17 +160,18 @@ export type CommandRootProps<
   );
 
 /**
- * The palette's state, where every palette starts. It renders no element. It holds the dialog's
- * open state for `Command.Trigger` and `Command.Content`, with Base UI Dialog Root's `open`,
- * `defaultOpen`, `onOpenChange` and the rest. Without a stack it is the search: Base UI's
- * Autocomplete, always open with its list inline and the first match always highlighted, which
- * takes every Autocomplete prop, such as `items`, `value`, `filter` and `virtualized`, and filters
- * in the locale of `LocaleProvider`. With `defaultPages`, or `pages` and `onPagesChange`, it holds
- * a stack of page ids instead, and each `Command.Page` holds its own search.
+ * The palette's state. Every palette starts here, and the Root renders no element. It holds the
+ * dialog's open state for `Command.Trigger` and `Command.Content`, and takes Base UI Dialog Root's
+ * `open`, `defaultOpen`, `onOpenChange` and the rest. Without a stack, the Root is the search.
+ * That search is Base UI's Autocomplete, always open, with its list inline and the first match
+ * always highlighted. It takes every Autocomplete prop, such as `items`, `value`, `filter` and
+ * `virtualized`, and filters in the locale of `LocaleProvider`. With `defaultPages`, or `pages`
+ * and `onPagesChange`, the Root holds a stack of page ids instead, and each `Command.Page` holds
+ * its own search.
  *
- * Pass `grouped` when `items` are groups: the callbacks then receive one item of a group. Each
- * opening of the dialog starts fresh: when the close animation ends, an uncontrolled query goes
- * back to `defaultValue` and an uncontrolled stack to `defaultPages`.
+ * Pass `grouped` when `items` are groups, and the callbacks receive one item of a group. Each
+ * opening of the dialog starts fresh. When the close animation ends, an uncontrolled query goes
+ * back to `defaultValue` and an uncontrolled stack goes back to `defaultPages`.
  *
  * @template Item - The item of a flat search.
  * @template Groups - The whole `items` array of a grouped search.
@@ -203,7 +207,7 @@ export function CommandRoot<
     };
   }, []);
   // The Root owns the dialog's open state, so `Command.Content`'s Dialog.Root is always
-  // controlled: remounting Content cannot reopen a dialog the Root records as closed.
+  // controlled. Remounting Content then cannot reopen a dialog the Root records as closed.
   const [ownOpen, setOwnOpen] = useState(defaultOpen ?? false);
   const isOpen = open ?? ownOpen;
   // An inline palette always shows; one in `Command.Content` shows while its dialog is open.
@@ -241,8 +245,8 @@ export function CommandRoot<
             </CommandFocusRequestContext.Provider>
           </CommandStackContext.Provider>
         ) : (
-          // A Root without pages is a palette of its own, even inside an outer palette's page: no
-          // stack for Back and Backspace to pop, and no page to name or focus its input.
+          // A Root without pages is a palette of its own, even inside an outer palette's page. Back
+          // and Backspace find no stack to pop, and no page names its input or focuses it.
           <CommandStackContext.Provider value={null}>
             <CommandPageContext.Provider value={null}>
               <CommandSearch
@@ -262,7 +266,7 @@ export function CommandRoot<
 }
 
 /**
- * Props of `Command.Page`: its id and label, and the props of its own search.
+ * `Command.Page` takes its id and label, and the props of its own search.
  *
  * @template Item - The item of a flat search.
  * @template Groups - The whole `items` array of a grouped search.
@@ -275,7 +279,7 @@ export type CommandPageProps<
 > = CommandSearchProps<Item, Groups, Grouped> & {
   /** The id `Command.PageTrigger` pushes and the Root's stack holds. */
   id: string;
-  /** The page's name. The page's `Command.Input` is named after it unless it has a name of its own. */
+  /** The page's name, which also names the page's `Command.Input` unless the input has its own. */
   label: string;
   /** The page's parts: its `Command.Input`, `Command.List` and the rest. */
   children?: ReactNode;
@@ -284,9 +288,9 @@ export type CommandPageProps<
 /**
  * One page of a Root's stack, such as a list of customers that opens one customer's actions. It
  * holds its own search, with the same props as a Root without a stack, and renders only while its
- * id is on top of the stack. So going back mounts the parent fresh: empty query, first match
- * highlighted. To keep the parent's query, hold it above `Command.Root` and pass it to the page as
- * `value` with `onValueChange`. Throws outside a Root with a stack.
+ * id is on top of the stack. So going back mounts the parent fresh, with an empty query and the
+ * first match highlighted. To keep the parent's query, hold it above `Command.Root` and pass it to
+ * the page as `value` with `onValueChange`. It throws outside a Root with a stack.
  *
  * @template Item - The item of a flat search.
  * @template Groups - The whole `items` array of a grouped search.
@@ -323,7 +327,7 @@ export function CommandPage<
   );
 }
 
-/** Props of `Command.Trigger`: Base UI Dialog Trigger's, less the handle the Root supplies. */
+/** `Command.Trigger` takes Base UI Dialog Trigger's props, less the handle the Root supplies. */
 export type CommandTriggerProps = Omit<ComponentProps<typeof DialogPrimitive.Trigger>, "handle" | "payload">;
 
 /**
@@ -335,15 +339,15 @@ export function CommandTrigger(props: CommandTriggerProps): ReactElement {
   return <DialogTrigger data-slot="command-trigger" handle={handle} {...props} />;
 }
 
-/** Props of `Command.Content`: Base UI Dialog Popup's plus the portal container. */
+/** `Command.Content` takes Base UI Dialog Popup's props plus the portal container. */
 export type CommandContentProps = ComponentProps<typeof DialogPrimitive.Popup> & OverlayContainerProps;
 
 /**
- * The palette as a modal: the Dialog's portal and overlay around a palette-wide popup placed near
- * the top of the viewport, with no close button. The dialog lives here, so a palette without it
- * renders no dialog, and one inline in a dialog of your own leaves that dialog's parts bound to
- * it. Its name defaults to the locale dictionary; a `Dialog.Title` inside it names it instead.
- * Escape closes it from any page.
+ * The palette as a modal. It renders the Dialog's portal and overlay around a palette-wide popup
+ * near the top of the viewport, with no close button. Only this part renders a dialog, so a
+ * palette without it renders none, and a palette inline in a dialog of your own leaves that
+ * dialog's parts bound to that dialog. Its name defaults to the locale dictionary's, and a
+ * `Dialog.Title` inside it names it instead. Escape closes it from any page.
  */
 export function CommandContent({
   className,
@@ -374,9 +378,12 @@ export function CommandContent({
   );
 }
 
-/** Whether a key press is a Backspace that edits nothing: the input is empty and no IME text is composing. */
+/**
+ * Whether a key press is a Backspace that edits nothing, because the input is empty and no input
+ * method is composing text.
+ */
 function isBackspaceOnEmpty(event: KeyboardEvent<HTMLInputElement>): boolean {
-  // keyCode 229 is the IME's own key event, which some browsers send without `isComposing`.
+  // keyCode 229 marks an input method's key event, which some browsers send without `isComposing`.
   return (
     event.key === "Backspace" &&
     event.currentTarget.value === "" &&
@@ -385,12 +392,15 @@ function isBackspaceOnEmpty(event: KeyboardEvent<HTMLInputElement>): boolean {
   );
 }
 
-/** Props of `Command.Input`: Base UI Autocomplete Input's, with the class and children on the group. */
+/**
+ * `Command.Input` takes Base UI Autocomplete Input's props, with the class and children on the
+ * group.
+ */
 export type CommandInputProps = Omit<
   ComponentProps<typeof AutocompletePrimitive.Input>,
   "className" | "children"
 > & {
-  /** Extra classes, applied to the outer InputGroup, not the input element. */
+  /** Extra classes for the outer InputGroup, not the input element. */
   className?: string;
   /**
    * The group's addons, such as an `InputGroup.Addon` holding a `Kbd`. Without children the
@@ -400,13 +410,14 @@ export type CommandInputProps = Omit<
 };
 
 /**
- * The palette's search field: an InputGroup around Base UI's Autocomplete input. Its name is
- * `aria-label`, else the enclosing `Command.Page`'s `label`, else the locale dictionary; its
- * placeholder defaults to the dictionary. On a page above the first, Backspace in the empty
- * input goes back a page; it does nothing while IME text is composing. When a different page
- * comes on top while the palette shows, that page's input takes focus as it mounts, even after
- * Suspense. An input mounted when the page loads or the dialog opens leaves focus where it is,
- * or to the dialog's `initialFocus`, and a stack change that keeps its page on top leaves it be.
+ * The palette's search field, an InputGroup around Base UI's Autocomplete input. Its name is
+ * `aria-label`, else the enclosing `Command.Page`'s `label`, else the locale dictionary's. Its
+ * placeholder defaults to the dictionary's. On a page above the first, Backspace in the empty
+ * input goes back a page, and does nothing while an input method is composing text. When a
+ * different page comes on top while the palette shows, that page's input takes focus as it
+ * mounts, even after Suspense. An input that mounts when the page loads or the dialog opens
+ * leaves focus where it is, or to the dialog's `initialFocus`. A stack change that keeps the
+ * input's page on top leaves focus alone.
  */
 export function CommandInput({
   className,
@@ -424,7 +435,7 @@ export function CommandInput({
   const inputRef = useRef<HTMLInputElement>(null);
   const mergedRef = useMergedRefs(ref, inputRef);
   const pageId = page?.id;
-  // Read once, when the input first renders: a later stack change never refocuses it.
+  // Read once, when the input first renders, so a later stack change never refocuses it.
   const [focusOnMount] = useState(() => pageId !== undefined && focusRequest?.page === pageId);
   const clearFocusPage = focusRequest?.clear;
   useLayoutEffect(() => {
@@ -456,9 +467,12 @@ export function CommandInput({
   );
 }
 
-/** Props of `Command.Back`: a label-sized Button's, with the size and icon fixed. */
+/** `Command.Back` takes a label-sized Button's props, with the size and icon fixed. */
 export type CommandBackProps = Omit<LabelButtonProps, "size" | "children"> & {
-  /** Accessible name. An explicit `aria-label` wins over it; both default to the locale dictionary. */
+  /**
+   * The accessible name. An explicit `aria-label` wins over it, and both default to the locale
+   * dictionary's.
+   */
   label?: string;
 };
 
@@ -495,23 +509,26 @@ export function CommandBack({
   );
 }
 
-/** Props of `Command.List`: Base UI Autocomplete List's. */
+/** `Command.List` takes Base UI Autocomplete List's props. */
 export type CommandListProps = ComponentProps<typeof AutocompletePrimitive.List>;
 
 type CommandListRender = NonNullable<CommandListProps["render"]>;
 
 type CommandListRenderProps = Parameters<Extract<CommandListRender, (...args: never[]) => ReactElement>>;
 
-/** The element `Command.List`'s render value renders: a listbox `div` whose children are the rows. */
+/**
+ * The element that `Command.List`'s `render` value renders. It is a listbox `div` whose children
+ * are the rows.
+ */
 type CommandListTargetType = ComponentType<
   Omit<ComponentPropsWithRef<"div">, "children"> & { children?: CommandListRows }
 >;
 
 /**
  * Renders `Command.List`'s `render` value with Base UI's listbox props and the row function as
- * `children`, through Base UI's `useRender`, which takes an element, a function or the lazy
- * element a Server Component's render prop arrives as. It marks its subtree as `Command.List`'s
- * render target, which `CommandVirtual.List` checks.
+ * `children`. It uses Base UI's `useRender`, which takes an element, a function, or the lazy
+ * element React passes when a Server Component sets the `render` prop. It marks its subtree as
+ * `Command.List`'s render target, which `CommandVirtual.List` checks.
  */
 function CommandListRowsTarget({
   render,
@@ -542,12 +559,12 @@ function CommandListRowsTarget({
 /**
  * The scrolling list of results. It pads its rows with the small surface gap, `--surface-gap-sm`,
  * and publishes the palette's `rounded-xl` less that padding as `--inner-corner`. Given a `render`
- * value and a row function, it hands the row function to the rendered element as its `children`,
- * in place of rendered rows, beside Base UI's listbox props, so the element decides which rows
- * mount, as `CommandVirtual.List` does. Given other children, `render` keeps Base UI's meaning,
- * with or without `virtualized`, so a virtualizer of your own can pass indexed `Command.Item`
- * elements. A virtualized search throws on a row function without a `render` value, since it would
- * mount every row without the index Base UI's navigation reads.
+ * value and a row function, it passes the row function to the rendered element as `children`,
+ * with Base UI's listbox props and no rendered rows. The element then decides which rows mount,
+ * as `CommandVirtual.List` does. Given other children, `render` keeps Base UI's meaning, with or
+ * without `virtualized`, so a virtualizer of your own can pass indexed `Command.Item` elements. A
+ * virtualized search throws on a row function without a `render` value, since the list would
+ * mount every row without the index that Base UI's navigation reads.
  */
 export function CommandList({ className, ...props }: CommandListProps): ReactElement {
   const search = use(CommandSearchContext);
@@ -630,7 +647,7 @@ export function CommandCollection(
   return <AutocompletePrimitive.Collection {...props} />;
 }
 
-/** Props of `Command.Item`: Base UI Autocomplete Item's. */
+/** `Command.Item` takes Base UI Autocomplete Item's props. */
 export type CommandItemProps = ComponentProps<typeof AutocompletePrimitive.Item>;
 
 type CommandItemStyle = CommandItemProps["style"];
@@ -662,10 +679,10 @@ function rowProps(row: CommandRow | null, style: CommandItemStyle) {
 }
 
 /**
- * One result row. Its `onClick` runs on a click and on Enter while it is highlighted; Base UI's
- * `data-highlighted` is its only highlight. Give it a `value` when the search has no `items`. Put
- * a shortcut it carries in `aria-keyshortcuts` beside a `Command.Shortcut`. In a virtual list it
- * takes its index, position and measurement from the list.
+ * One result row. Its `onClick` runs on a click, and on Enter while the row is highlighted. Base
+ * UI's `data-highlighted` is its only highlight. Give it a `value` when the search has no `items`.
+ * When it shows a `Command.Shortcut`, put the same shortcut in its `aria-keyshortcuts`. In a
+ * virtual list it takes its index, position and measurement from the list.
  */
 export function CommandItem({ className, ref, style, ...props }: CommandItemProps): ReactElement {
   const row = use(CommandRowContext);
@@ -681,7 +698,7 @@ export function CommandItem({ className, ref, style, ...props }: CommandItemProp
   );
 }
 
-/** Props of `Command.PageTrigger`: `Command.Item`'s plus the page it opens. */
+/** `Command.PageTrigger` takes `Command.Item`'s props plus the page it opens. */
 export type CommandPageTriggerProps = CommandItemProps & {
   /** The id of the `Command.Page` this row opens. */
   page: string;
@@ -689,7 +706,7 @@ export type CommandPageTriggerProps = CommandItemProps & {
 
 /**
  * A row that opens a page of the Root's stack on click or Enter, with a chevron at its end. Call
- * `preventDefault()` in `onClick` to keep the page closed. Throws outside a Root with a stack.
+ * `preventDefault()` in `onClick` to keep the page closed. It throws outside a Root with a stack.
  */
 export function CommandPageTrigger({
   page,
@@ -714,19 +731,19 @@ export function CommandPageTrigger({
   );
 }
 
-/** Props of the key hint presets: `Command.Hint`'s, with children as the label. */
+/** The key hint presets take `Command.Hint`'s props, with children as the label. */
 export type CommandHintPresetProps = Omit<CommandHintProps, "children"> & {
   /** The hint's label, in place of the locale dictionary's. */
   children?: ReactNode;
 };
 
-/** The props of one key hint preset: its caps and the dictionary key of its default label. */
+/** One key hint preset's caps, and the dictionary key of its default label. */
 type KeyHintProps = CommandHintPresetProps & {
   readonly keys: readonly string[];
   readonly label: "navigate" | "select" | "close" | "back";
 };
 
-/** A key hint preset's parts: its caps, then its label, or the locale dictionary's. */
+/** Renders a key hint preset's caps, then its label or the locale dictionary's. */
 function KeyHint({ keys, label, children, ...props }: KeyHintProps): ReactElement {
   const strings = useLocalizedStrings(commandStrings);
   return (
@@ -739,23 +756,23 @@ function KeyHint({ keys, label, children, ...props }: KeyHintProps): ReactElemen
   );
 }
 
-/** The arrow keys' hint: they move the highlight. */
+/** The hint for the arrow keys, which move the highlight. */
 export function CommandNavigateHint(props: CommandHintPresetProps): ReactElement {
   return <KeyHint keys={["↑", "↓"]} label="navigate" {...props} />;
 }
 
-/** The Enter key's hint: it runs the highlighted row. */
+/** The hint for Enter, which runs the highlighted row. */
 export function CommandSelectHint(props: CommandHintPresetProps): ReactElement {
   return <KeyHint keys={["↵"]} label="select" {...props} />;
 }
 
-/** The Escape key's hint: it closes `Command.Content`. */
+/** The hint for Escape, which closes `Command.Content`. */
 export function CommandCloseHint(props: CommandHintPresetProps): ReactElement {
   return <KeyHint keys={["Esc"]} label="close" {...props} />;
 }
 
 /**
- * The Backspace key's hint: in an empty input it goes back a page. It renders only while the
+ * The hint for Backspace, which goes back a page from an empty input. It renders only while the
  * Root's stack has a page to go back to.
  */
 export function CommandBackHint(props: CommandHintPresetProps): ReactElement | null {

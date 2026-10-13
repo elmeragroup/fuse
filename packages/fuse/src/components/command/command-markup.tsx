@@ -10,34 +10,34 @@ import { commandVariants } from "./command-variants";
 
 const styles = commandVariants();
 
-/** Props of `Command.Footer`: a native `div`'s. */
+/** `Command.Footer` takes a native `div`'s props. */
 export type CommandFooterProps = ComponentProps<"div">;
-/** Props of `Command.Hint`: a native `span`'s. */
+/** `Command.Hint` takes a native `span`'s props. */
 export type CommandHintProps = ComponentProps<"span">;
-/** Props of `Command.Shortcut`: `KbdGroup`'s. */
+/** `Command.Shortcut` takes `KbdGroup`'s props. */
 export type CommandShortcutProps = KbdGroupProps;
 
 /**
  * The strip under the list for key hints. It pads its content so the hints' text lines up with
- * the rows' text. Server component.
+ * the rows' text. It is a server component.
  */
 export function CommandFooter({ className, ...props }: CommandFooterProps): ReactElement {
   return <div data-slot="command-footer" className={cn(styles.footer(), className)} {...props} />;
 }
 
 /**
- * One key hint: its `Kbd` caps and a label, such as the caps for `↵` and "Open". A hint repeats
- * what the palette's own roles already tell assistive technology, so it is `aria-hidden`.
- * Server component.
+ * One key hint, made of its `Kbd` caps and a label, such as the cap for `↵` and "Open". A hint
+ * repeats what the palette's own roles already tell assistive technology, so it is `aria-hidden`.
+ * It is a server component.
  */
 export function CommandHint({ className, ...props }: CommandHintProps): ReactElement {
   return <span data-slot="command-hint" aria-hidden className={cn(styles.hint(), className)} {...props} />;
 }
 
 /**
- * A row's keyboard shortcut, pushed to the row's end: the caps of one combination. It is
- * decorative, so it is `aria-hidden`; put the same shortcut on the row in `aria-keyshortcuts`,
- * such as `aria-keyshortcuts="Control+N"`. Server component.
+ * A row's keyboard shortcut, the caps of one combination at the row's end. It is decorative, so
+ * it is `aria-hidden`. Put the same shortcut on the row in `aria-keyshortcuts`, such as
+ * `aria-keyshortcuts="Control+N"`. It is a server component.
  */
 export function CommandShortcut({ className, ...props }: CommandShortcutProps): ReactElement {
   return (

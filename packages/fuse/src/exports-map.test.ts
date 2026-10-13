@@ -168,7 +168,8 @@ const EXPECTED_ENTRIES = {
   tooltip: { inRootBarrel: true, runtimeExports: ["Tooltip"] },
   toolbar: { inRootBarrel: true, runtimeExports: ["Toolbar"] },
   command: { inRootBarrel: true, runtimeExports: ["Command"] },
-  // Subpath-only: it imports the optional @tanstack/react-virtual peer.
+  // CommandVirtual stays out of the root barrel because it imports the optional
+  // @tanstack/react-virtual peer.
   "command-virtual": { inRootBarrel: false, runtimeExports: ["CommandVirtual"] },
   kbd: { inRootBarrel: true, runtimeExports: ["Kbd", "KbdGroup"] },
   "select-field": { inRootBarrel: true, runtimeExports: ["SelectField"] },

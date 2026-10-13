@@ -303,7 +303,8 @@ describe("RSC classification", () => {
     ["components/data-table/select-column.tsx", "server"],
     ["components/data-table/actions-column.tsx", "server"],
     // Command's footer, hint and shortcut hold no state and read no context, so a server tree
-    // renders them inside the client palette; the presets that read the dictionary stay client.
+    // renders them inside the client palette. The presets that read the dictionary stay in
+    // client modules.
     ["components/command/command-markup.tsx", "server"],
   ] as const)("keeps the shared module %s %s", (file, rsc) => {
     expectRsc(file, rsc);

@@ -3,7 +3,8 @@
 import { use, useImperativeHandle, useLayoutEffect, useState } from "react";
 import type { ComponentProps, ReactElement } from "react";
 
-// The package-root import, as in command.tsx: the combobox family's subpaths crash at runtime.
+// Import from the package root, as command.tsx does, because the combobox family's subpaths
+// crash at runtime.
 import { Autocomplete as AutocompletePrimitive } from "@base-ui/react";
 import { defaultRangeExtractor, useVirtualizer } from "@tanstack/react-virtual";
 
@@ -21,8 +22,8 @@ import type { RowMetrics } from "./row-metrics";
 import { withHighlightedRow } from "./virtual-highlight";
 
 /**
- * `fuse.css` declares the metrics as unregistered custom properties, so the browser reports one
- * as written, a `rem` length such as ` 2rem`, and the virtualizer needs pixels.
+ * `fuse.css` declares the metrics as unregistered custom properties, so the browser reports each
+ * one as written, as a `rem` length such as ` 2rem`. The virtualizer needs pixels.
  */
 function readRowMetrics(element: HTMLElement): RowMetrics {
   const style = getComputedStyle(element);
@@ -36,19 +37,20 @@ function readRowMetrics(element: HTMLElement): RowMetrics {
 }
 
 /**
- * Props of `CommandVirtual.List`: a `div`'s, which `Command.List` fills with Base UI's listbox
- * props and its row function, plus the virtualizer's two settings. Write it with no children:
- * `<Command.List render={<CommandVirtual.List />}>` passes its own row function as `children`.
+ * `CommandVirtual.List` takes a `div`'s props, which `Command.List` fills with Base UI's listbox
+ * props and its row function, plus the virtualizer's two settings. Write it with no children,
+ * because `<Command.List render={<CommandVirtual.List />}>` passes its own row function as
+ * `children`.
  */
 export type CommandVirtualListProps = Omit<ComponentProps<"div">, "children"> & {
   /**
-   * The row function, which `Command.List` passes from its own children. Renders one filtered
-   * item, usually as a `Command.Item`.
+   * The row function, which `Command.List` passes from its own children. It renders one
+   * filtered item, usually as a `Command.Item`.
    */
   children?: CommandListRows;
   /**
-   * A row's height before it is measured. Defaults to the document density's row height, which a
-   * single-line `Command.Item` takes.
+   * A row's height before the virtualizer measures it. It defaults to the document density's row
+   * height, which a single-line `Command.Item` takes.
    */
   estimateSize?: (index: number) => number;
   /**
@@ -61,11 +63,12 @@ export type CommandVirtualListProps = Omit<ComponentProps<"div">, "children"> & 
 /**
  * The render element of a virtualized search's `Command.List`, as in
  * `<Command.List render={<CommandVirtual.List />}>`. It renders only the rows in view plus the
- * highlighted one, through the row function `Command.List` passes as `children`, and registers
- * its virtualizer with the search, which scrolls it when the highlight jumps out of view. It keys
- * each row by its position, so the row function's element sets no `key`. It is its own scroll
- * element, so keep it out of a `ScrollArea`. Each row is measured, so rows of any height stack
- * without gaps. Throws outside `Command.List`'s `render`, and in a search without `virtualized`.
+ * highlighted one, through the row function that `Command.List` passes as `children`. It
+ * registers its virtualizer with the search, which scrolls it when the highlight jumps out of
+ * view. It keys each row by its position, so the row function's element sets no `key`. It is its
+ * own scroll element, so keep it out of a `ScrollArea`. It measures each row, so rows of any
+ * height stack without gaps. It throws outside `Command.List`'s `render`, and in a search without
+ * `virtualized`.
  */
 export function CommandVirtualList({
   children: rows,
@@ -91,7 +94,7 @@ export function CommandVirtualList({
     }
   }, [scrollElement]);
   const { highlightedIndex } = search;
-  // oxlint-disable-next-line react/incompatible-library -- TanStack Virtual hands back one mutable instance by design; the list re-renders on each scroll update it reports, and nothing here memoizes its functions.
+  // oxlint-disable-next-line react/incompatible-library -- TanStack Virtual returns one mutable instance by design; the list re-renders on each scroll update it reports, and nothing here memoizes its functions.
   const virtualizer = useVirtualizer<HTMLDivElement, Element>({
     count: items.length,
     getScrollElement: () => scrollElement,

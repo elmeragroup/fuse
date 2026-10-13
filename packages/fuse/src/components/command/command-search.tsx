@@ -4,8 +4,8 @@ import { useMemo, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 // Subpath imports of Base UI's combobox family type-check but crash at runtime with a null React
-// context (see combobox.tsx). Autocomplete shares those internals, so it keeps the package-root
-// import too.
+// context, as combobox.tsx explains. Autocomplete shares those internals, so it also uses the
+// package-root import.
 import { Autocomplete as AutocompletePrimitive } from "@base-ui/react";
 import type { AutocompleteRootHighlightEventDetails, AutocompleteRootProps } from "@base-ui/react";
 
@@ -15,13 +15,13 @@ import { CommandSearchContext } from "./command-list-context";
 import type { CommandSearchState, CommandVirtualScroller } from "./command-list-context";
 import { highlightScrollAlign } from "./highlight-scroll";
 
-/** A group of items as Base UI recognizes one: an object with its own `items` list. */
+/** A group of items as Base UI recognizes one, an object with its own `items` list. */
 export type ItemGroup = { readonly items: readonly unknown[] };
 
 /**
- * Whether an entry is a group, by Base UI's own predicate (`isGroup` in its
- * `internals/resolveValueLabel`): a non-null object whose `items` is an array. An object with a
- * null prototype counts too, as it does for Base UI.
+ * Whether an entry is a group, by the predicate Base UI uses, `isGroup` in its
+ * `internals/resolveValueLabel`. A group is a non-null object whose `items` is an array. An object
+ * with a null prototype counts too, as it does for Base UI.
  */
 function isItemGroup<Entry>(entry: Entry): boolean {
   return (
@@ -31,7 +31,8 @@ function isItemGroup<Entry>(entry: Entry): boolean {
 }
 
 /**
- * One item of the palette: an item of a group of `Groups` when `Grouped` is `true`, else `Item`.
+ * One item of the palette. It is an item of a group of `Groups` when `Grouped` is `true`, and
+ * `Item` otherwise.
  *
  * @template Item - The item of a flat search.
  * @template Groups - The whole `items` array of a grouped search.
@@ -43,7 +44,7 @@ type CommandItemOf<
   Grouped extends boolean | undefined,
 > = Grouped extends true ? Groups[number]["items"][number] : Item;
 
-/** Autocomplete Root props a search pins or leaves out: an inline list has no popup to open. */
+/** Autocomplete Root props a search pins or leaves out. An inline list has no popup to open. */
 type CommandSearchOmitted =
   | "items"
   | "locale"
@@ -57,11 +58,11 @@ type CommandSearchOmitted =
   | "children";
 
 /**
- * Props of a palette's search, which `Command.Root` takes when it has no stack and each
- * `Command.Page` takes: Base UI Autocomplete Root's. Without `grouped` they are generic over one
- * item, as Base UI's flat overload is; with `grouped`, over the whole array of groups, as its
- * grouped overload is. `locale` comes from `LocaleProvider`, and the popup props are gone, since
- * the list is always open inline.
+ * The props of a palette's search, which `Command.Root` takes when it has no stack and each
+ * `Command.Page` takes. They are Base UI Autocomplete Root's props. Without `grouped` they are
+ * generic over one item, as Base UI's flat overload is. With `grouped` they are generic over the
+ * whole array of groups, as its grouped overload is. `locale` comes from `LocaleProvider`, and the
+ * popup props are gone, since the list is always open inline.
  *
  * @template Item - The item of a flat search.
  * @template Groups - The whole `items` array of a grouped search.
@@ -83,8 +84,8 @@ export type CommandSearchProps<
    */
   grouped?: Grouped;
   /**
-   * Whether the first matching item is highlighted automatically, as Base UI's prop of the same
-   * name: `true` highlights it after the user types, `"always"` keeps it highlighted.
+   * Whether the search highlights the first matching item, as Base UI's prop of the same name
+   * does. `true` highlights it after the user types, and `"always"` keeps it highlighted.
    * @default "always"
    */
   autoHighlight?: boolean | "always" | undefined;
@@ -105,7 +106,7 @@ export type CommandSearchProps<
 
 /** The search props the module passes around inside, with the item type erased. */
 type CommandSearchCoreProps = Omit<
-  // oxlint-disable-next-line typescript/no-explicit-any -- SAFETY: the public props pair each callback with its items; here the item type is erased so one search serves every Root and Page, and `unknown` would reject the typed callbacks.
+  // oxlint-disable-next-line typescript/no-explicit-any -- SAFETY: the public props pair each callback with its items. This type erases the item type so one search serves every Root and Page, and `unknown` would reject the typed callbacks.
   AutocompleteRootProps<any>,
   CommandSearchOmitted
 > & {
@@ -115,7 +116,7 @@ type CommandSearchCoreProps = Omit<
 
 /**
  * Throws the named error for an `items` list that disagrees with `grouped`, or for `virtualized`
- * beside `grouped`. Reads the first entry, as Base UI does.
+ * beside `grouped`. It reads the first entry, as Base UI does.
  */
 function assertGrouping(
   part: string,
@@ -139,8 +140,8 @@ function assertGrouping(
 }
 
 /**
- * One search: Base UI's Autocomplete, always open with its list inline, and the first match
- * always highlighted. It owns an uncontrolled query, so it can reset the query to
+ * One search, which is Base UI's Autocomplete, always open, with its list inline and the first
+ * match always highlighted. It owns an uncontrolled query, so it can reset the query to
  * `defaultValue` each time the palette's dialog closes. A virtualized search tracks the
  * highlighted row and scrolls its virtual list when the highlight jumps out of view.
  */
@@ -159,7 +160,7 @@ export function CommandSearch({
   ...props
 }: CommandSearchCoreProps & {
   part: string;
-  /** The palette's count of dialog closes: a change resets an uncontrolled query. */
+  /** The palette's count of dialog closes. A change resets an uncontrolled query. */
   session: number;
   autoHighlight: NonNullable<CommandSearchCoreProps["autoHighlight"]>;
   keepHighlight: boolean;
@@ -168,8 +169,8 @@ export function CommandSearch({
   assertGrouping(part, grouped, virtualized, props.items ?? props.filteredItems);
   const { locale } = useLocale();
   const [ownQuery, setOwnQuery] = useState(defaultValue ?? "");
-  // Each close of the dialog starts the next opening fresh, as React's docs adjust state from a
-  // changed prop: during render, not in an effect.
+  // Each close of the dialog starts the next opening fresh. The state changes during render, not
+  // in an effect, as React's docs adjust state from a changed prop.
   const [seenSession, setSeenSession] = useState(session);
   if (seenSession !== session) {
     setSeenSession(session);

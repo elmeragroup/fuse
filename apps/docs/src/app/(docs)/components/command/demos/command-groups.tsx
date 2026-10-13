@@ -45,7 +45,8 @@ export function CommandGroups() {
             aria-label="Search actions"
             placeholder="Search actions…"
             onKeyDown={(event) => {
-              // `code` names the physical key, so Alt still matches where it types a symbol.
+              // `code` names the physical key, so the shortcut still matches on keyboard layouts
+              // where Alt types a symbol.
               const action = ACTIONS.find((candidate) => event.code === `Key${candidate.key}`);
               if (event.altKey && action !== undefined) {
                 event.preventDefault();

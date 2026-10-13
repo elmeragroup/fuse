@@ -54,7 +54,7 @@ function comboboxNamed(name: string): HTMLInputElement {
   return input;
 }
 
-/** The option Base UI marks highlighted, by its text. */
+/** The text of the option that Base UI marks highlighted. */
 function highlightedLabel(): string | null {
   const highlighted = page
     .getByRole("option")
@@ -86,7 +86,7 @@ function EntryRows({ onRun }: { onRun: (label: string) => void }): ReactElement 
   );
 }
 
-/** The parts of one search: input, empty message, rows and footer hints. */
+/** The parts of one search: the input, the empty message, the rows and the footer hints. */
 function EntrySearch({ onRun }: { onRun: (label: string) => void }): ReactElement {
   return (
     <>
@@ -131,7 +131,7 @@ function PagedPalette({ onRun = () => undefined }: { onRun?: (label: string) => 
   );
 }
 
-/** The parent page's query lives above the Root, so it outlasts the page. */
+/** The palette holds the parent page's query above the Root, so the query outlasts the page. */
 function KeptQueryPalette(): ReactElement {
   const [query, setQuery] = useState("");
   return (
@@ -186,8 +186,8 @@ describe("Command", () => {
         </Command.Page>
       </Command.Root>
     );
-    // The inner input takes the dictionary's name, not the outer page's label, and leads with the
-    // search icon, not the outer stack's Back button.
+    // The inner input takes its name from the dictionary, not from the outer page's label. It
+    // starts with the search icon, not with the outer stack's Back button.
     const inner = comboboxNamed("Search commands");
     expect(page.getByRole("button", { name: "Back", exact: true }).elements()).toEqual([]);
     expect(page.getByText("Back", { exact: true }).elements()).toEqual([]);
@@ -343,7 +343,7 @@ describe("Command", () => {
     const customers = comboboxNamed("Customers");
     const button = roleNamed("button", "Forget the first page");
     await userEvent.click(button);
-    // The Back button leaves with the first page, so the stack change has rendered.
+    // The Back button unmounts with the first page, so once it is gone the stack change has rendered.
     await expect.element(page.getByRole("button", { name: "Back", exact: true })).not.toBeInTheDocument();
     expect(comboboxNamed("Customers")).toBe(customers);
     expect(document.activeElement).toBe(button);
@@ -512,7 +512,7 @@ describe("Command", () => {
 
 const COMMANDS = ["New customer", "Open invoices", "Register meter reading"];
 
-/** The one-page palette in a dialog: the search sits in the Root, above the dialog's portal. */
+/** The one-page palette in a dialog, with the search in the Root above the dialog's portal. */
 function DialogPalette({ onRun = () => undefined }: { onRun?: (command: string) => void }): ReactElement {
   return (
     <Command.Root items={COMMANDS}>
@@ -569,7 +569,7 @@ function HeldQueryDialogPalette(): ReactElement {
   );
 }
 
-/** The controlled-stack recipe: Escape goes back a page before it closes the dialog. */
+/** The controlled-stack recipe, in which Escape goes back a page before it closes the dialog. */
 function EscapeBackPalette(): ReactElement {
   const [stack, setStack] = useState<string[]>(["home"]);
   return (
@@ -902,7 +902,7 @@ function slotIn(popup: HTMLElement, slot: string): HTMLElement {
   return element;
 }
 
-/** One internal theme, whose rows round to 0, and one external, whose rows round positive. */
+/** One internal theme, whose row corners round to 0, and one external, whose corners are positive. */
 const GEOMETRY_CASES = [
   ["internal", fkasPrivate, fkasExternal],
   ["fkas", fkasExternal, fkasPrivate],
@@ -961,7 +961,7 @@ describe("Command.Content geometry", () => {
         });
 
         // Unit under test: the row's `rounded-inner` corner. Oracle: the concentric rule,
-        // max(0, outer − inset), on the popup's computed corner and the list's computed padding.
+        // max(0, outer - inset), on the popup's computed corner and the list's computed padding.
         const row = roleNamed("option", "New customer");
         expect(cornerRadius(row), "row corner").toBe(
           Math.max(0, cornerRadius(popup) - px(listStyle.paddingTop))
@@ -1011,7 +1011,7 @@ describe("Command composition errors", () => {
       "`grouped` with a flat list",
       () => (
         <Command.Root defaultPages={["home"]}>
-          {/* @ts-expect-error -- the error under test: the types reject a flat list beside `grouped` */}
+          {/* @ts-expect-error -- the types also reject this case's flat list beside `grouped` */}
           <Command.Page id="home" label="Commands" grouped items={["New customer"]} />
         </Command.Root>
       ),

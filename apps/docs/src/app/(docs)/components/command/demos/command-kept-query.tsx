@@ -16,8 +16,8 @@ const CUSTOMERS: readonly Customer[] = [
 const CUSTOMER_ACTIONS = ["Open customer", "Register meter reading", "Send invoice copy"];
 
 /**
- * The customer search lives in `Palette`, above `Command.Root`, so going back to the list
- * shows the same search. The palette's own state ends when the palette unmounts.
+ * `Palette` holds the customer search above `Command.Root`, so going back to the list shows the
+ * same search. The palette's own state ends when the palette unmounts.
  */
 function Palette({ onRun }: { onRun: (summary: string) => void }) {
   const [query, setQuery] = useState("");

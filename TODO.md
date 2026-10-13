@@ -303,8 +303,8 @@
 ## Command
 
 - `CommandVirtual.List` renders flat item lists only, so `virtualized` beside `grouped` throws. Add
-  grouped virtual lists: a row per group label in the virtualizer's index space, with Base UI's
-  item indexes kept separate from the row indexes.
+  grouped virtual lists. They need a row per group label in the virtualizer's index space, and
+  Base UI's item indexes kept separate from the row indexes.
 - Give `CommandVirtual` a committed API artifact. A docs page reads only its own entry, and the
   `command-virtual` entry has no page, so the API diff and drift checks miss changes to
   `CommandVirtual.List`. Add a `command-virtual` page, or let one page read several entries.
@@ -323,8 +323,8 @@ each stand-in once Fuse ships the part.
 
 - Replace `app-shell/kbd.tsx` with Fuse's `Kbd` and `KbdGroup`, which now ship. The stand-in
   draws the shortcut caps in the sidebar, tooltips and palette.
-- Replace `app-shell/command-palette.tsx` and the docs search
-  (`apps/docs/src/components/search-palette.tsx`) with Fuse's `Command`, which now ships. Both
+- Replace `app-shell/command-palette.tsx` and the docs search in
+  `apps/docs/src/components/search-palette.tsx` with Fuse's `Command`, which now ships. Both
   build a palette from `Dialog` and the ARIA combobox pattern.
 - Add a floating action bar for row selections. `app-shell/bulk-toolbar.tsx` positions its own
   `role="toolbar"` over the queues' list and over Order search's table.

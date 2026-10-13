@@ -1,6 +1,6 @@
 /**
- * Readers for CSS values: the values a theme token holds, which exporters translate into
- * design-tool units, and lengths a component reads from computed style. Each reader returns
+ * These readers parse two kinds of CSS value. Exporters translate the values a theme token holds
+ * into design-tool units, and components read lengths from computed style. Each reader returns
  * `undefined` when the value is not in its form, so a caller can try the forms a token kind
  * allows and report the value when none fits. Colors are read by `@elmeragroup/color`, which
  * owns every color notation.

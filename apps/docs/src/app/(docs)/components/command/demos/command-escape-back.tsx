@@ -22,9 +22,9 @@ const OPTIONS = {
 const FIRST_PAGE = ["settings"];
 
 /**
- * Escape goes back a page and closes the palette only from the first page. The stack is
- * controlled, and the Root's `onOpenChange` cancels an Escape close while there is a page to go
- * back to. The stack goes back to the first page once the close animation ends.
+ * Escape goes back a page and closes the palette only from the first page. The demo controls the
+ * stack, and the Root's `onOpenChange` cancels an Escape close while there is a page to go back
+ * to. The stack returns to the first page once the close animation ends.
  */
 export function CommandEscapeBack() {
   const [open, setOpen] = useState(false);

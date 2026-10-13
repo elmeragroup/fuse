@@ -13,20 +13,21 @@ export type CommandStackContextValue = {
 
 export const CommandStackContext = createContext<CommandStackContextValue | null>(null);
 
-/** The page on top: its id, which a focus request names, and its label, which names its input. */
+/** The page on top. A focus request names its id, and its label names its input. */
 type CommandPageContextValue = { readonly id: string; readonly label: string };
 
 export const CommandPageContext = createContext<CommandPageContextValue | null>(null);
 
 /**
- * The stack's request that a page's input take focus. Apart from the stack's own context, so
- * clearing a request re-renders only `Command.Input`, not every part that reads the stack.
+ * The stack's request that a page's input take focus. It has its own context, separate from the
+ * stack's, so clearing a request re-renders only `Command.Input`, not every part that reads the
+ * stack.
  */
 type CommandFocusRequestValue = {
   /**
-   * The page whose input takes focus when it mounts: the page that came on top while the palette
-   * was showing. `undefined` when no page swap is waiting for its input, so a page mounted when
-   * the palette loads or its dialog opens leaves focus alone.
+   * The page whose input takes focus when it mounts, which is the page that came on top while the
+   * palette was showing. It is `undefined` when no page swap is waiting for its input, so a page
+   * that mounts when the palette loads or its dialog opens leaves focus alone.
    */
   readonly page: string | undefined;
   /** Drops the focus request once the named page's input has taken focus. */
@@ -41,11 +42,11 @@ export function canGoBack(stack: CommandStackContextValue | null): stack is Comm
 }
 
 /**
- * The stack's state: controlled by `pages`, else its own, starting from `defaultPages`. When a
- * different page comes on top while the palette stays showing, it requests focus for that page's
- * input, which takes it once it mounts, even after Suspense. A top that changes as the palette
- * opens requests nothing, so the dialog's `initialFocus` decides. Closing the palette drops the
- * request, so a stack reset while it is closed requests nothing.
+ * The stack's state. `pages` controls it, or else it keeps its own, starting from `defaultPages`.
+ * When a different page comes on top while the palette stays showing, the stack requests focus
+ * for that page's input, which takes focus once it mounts, even after Suspense. A top that
+ * changes as the palette opens requests nothing, so the dialog's `initialFocus` decides. Closing
+ * the palette drops the request, so a stack reset while the palette is closed requests nothing.
  */
 export function useStack(
   pages: readonly string[] | undefined,
@@ -59,8 +60,8 @@ export function useStack(
   const [seenTop, setSeenTop] = useState(top);
   const [seenShowing, setSeenShowing] = useState(showing);
   const [focusPage, setFocusPage] = useState<string | undefined>(undefined);
-  // Adjusted during render, as React's docs adjust state from a changed prop, so the input that
-  // the same render mounts reads the request.
+  // The state changes during render, as React's docs adjust state from a changed prop, so the
+  // input that the same render mounts reads the request.
   if (seenTop !== top || seenShowing !== showing) {
     setSeenTop(top);
     setSeenShowing(showing);

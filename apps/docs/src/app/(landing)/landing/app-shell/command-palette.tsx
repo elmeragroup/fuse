@@ -151,7 +151,8 @@ export type CommandPaletteProps = {
 /**
  * The window's ⌘K palette: jump to an order, open a view or run an action. It predates Fuse's
  * `Command`, and TODO.md tracks replacing it. It composes Dialog with the ARIA combobox pattern
- * the docs search uses: focus stays in the field and the arrows move `aria-activedescendant`.
+ * that the docs search uses. In that pattern, focus stays in the field and the arrows move
+ * `aria-activedescendant`.
  */
 export function CommandPalette({ open, onOpenChange, finalFocus, popup }: CommandPaletteProps): ReactElement {
   const input = useRef<HTMLInputElement>(null);

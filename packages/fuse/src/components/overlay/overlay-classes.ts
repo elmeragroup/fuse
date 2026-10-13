@@ -75,11 +75,11 @@ export const overlaySizeVariants = tv({
  * {@link overlayPopupSurfaceClass} or {@link overlayTimedPopupClass}.
  *
  * {@link overlayPopupSurfaceClass} is fill + edge + `rounded-md`;
- * {@link overlayTimedPopupClass} is surface + motion + duration;
- * {@link overlayModalPopupClass} is surface + `shadow-lg` + the modal motion +
- * {@link overlayLayer} + the self focus ring. All are `cn()` composites of the slots below
- * and those two shared constants, so each class is spelled once. Fill and edge stay slots —
- * a surface-only recipe would be the thing Tooltip would then have to negate.
+ * {@link overlayTimedPopupClass} is surface + motion + duration.
+ * {@link overlayModalPopupClass} is the surface with `shadow-lg`, the modal motion,
+ * {@link overlayLayer} and the self focus ring. All three are `cn()` composites of the slots
+ * below and those two shared constants, so each class is spelled once. Fill and edge stay
+ * slots because Tooltip would otherwise have to negate a surface-only recipe.
  *
  * The positioner interpolates {@link overlayLayer} and the modal face composes it, rather
  * than restating `z-50`, which this module spells exactly once.
@@ -120,8 +120,8 @@ const overlayPopupVariants = tv({
     fadeZoom:
       "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
     /**
-     * The shared popup timing rung. Folded into {@link overlayTimedPopupClass} for the
-     * four timed anchored popups and into {@link overlayModalMotionClass} for the modals;
+     * The shared popup timing rung. {@link overlayTimedPopupClass} folds it in for the four
+     * timed anchored popups, and {@link overlayModalMotionClass} folds it in for the modals.
      * Tooltip ships motion untimed.
      */
     duration: "duration-100",
@@ -143,14 +143,14 @@ const overlayPopupDurationClass = overlayPopupSlots.duration();
 /**
  * The open/close motion set every anchored popup animates with: the anchor slot's
  * transform origin and per-side slide-in, plus the fade/zoom pair. The timing rung is
- * deliberately **not** bundled in: the four timed anchored popups compose
- * {@link overlayTimedPopupClass}, and Tooltip ships the set untimed.
+ * deliberately **not** bundled in, because the four timed anchored popups compose
+ * {@link overlayTimedPopupClass} and Tooltip ships the set untimed.
  */
 export const overlayPopupMotionClass = cn(overlayPopupSlots.anchor(), overlayPopupFadeZoomClass);
 
 /**
- * The open/close motion of a modal that no trigger anchors, Dialog and `Command.Content`:
- * the fade/zoom pair with its timing rung, without the transform origin or the per-side
+ * The open/close motion of the modals that no trigger anchors, Dialog and `Command.Content`.
+ * It is the fade/zoom pair with its timing rung, without the transform origin or the per-side
  * slide-ins of {@link overlayPopupMotionClass}.
  */
 const overlayModalMotionClass = cn(overlayPopupFadeZoomClass, overlayPopupDurationClass);
@@ -179,8 +179,8 @@ export const overlayPopupSurfaceClass = cn(overlayPopupFillClass, overlayPopupEd
  * Surface + motion + duration: the four timed anchored popups (Popover, Select,
  * Combobox, DropdownMenu) compose this instead of restating the three parts.
  * Tooltip keeps {@link overlayPopupMotionClass} untimed; Dialog and `Command.Content`
- * take {@link overlayModalPopupClass} — none is a timed anchored popup, which is what the
- * fill/edge/anchor/fadeZoom/duration split is for.
+ * take {@link overlayModalPopupClass}. None of them is a timed anchored popup, which is what
+ * the fill/edge/anchor/fadeZoom/duration split is for.
  */
 export const overlayTimedPopupClass = cn(
   overlayPopupSurfaceClass,
@@ -189,10 +189,10 @@ export const overlayTimedPopupClass = cn(
 );
 
 /**
- * Surface + the `lg` elevation rung + {@link overlayModalMotionClass} + {@link overlayLayer} +
- * the self focus ring: the face of the two modals, Dialog and `Command.Content`. Each composes
- * it first and passes its shell and layout as later `cn` arguments, so the shell's
- * `rounded-xl` overrides the surface's `rounded-md`.
+ * The face of the two modals, Dialog and `Command.Content`. It is the surface with the `lg`
+ * elevation rung, {@link overlayModalMotionClass}, {@link overlayLayer} and the self focus
+ * ring. Each modal composes it first and passes its shell and layout as later `cn` arguments,
+ * so the shell's `rounded-xl` overrides the surface's `rounded-md`.
  */
 export const overlayModalPopupClass = cn(
   overlayPopupSurfaceClass,

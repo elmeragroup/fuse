@@ -6,7 +6,7 @@ import { Command } from "@elmeragroup/fuse/command";
 
 type Customer = { readonly id: string; readonly label: string };
 
-/** A row of the first page: an action, or the customers page it opens. */
+/** A row of the first page, either an action or the customers page it opens. */
 type HomeEntry = { readonly label: string; readonly page: string | null };
 
 const CUSTOMERS: readonly Customer[] = [
@@ -24,7 +24,7 @@ const HOME: readonly HomeEntry[] = [
 
 const CUSTOMER_ACTIONS = ["Open customer", "Register meter reading", "Send invoice copy"];
 
-/** Customers open a page of customers, and each customer a page of actions. */
+/** "Customers" opens a page of customers, and each customer opens a page of actions. */
 export function CommandPages() {
   const [lastRun, setLastRun] = useState("");
   return (

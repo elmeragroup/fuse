@@ -28,7 +28,7 @@
           "type": "\"always\" | boolean | undefined",
           "shortType": "Union",
           "defaultValue": "\"always\"",
-          "description": "Whether the first matching item is highlighted automatically, as Base UI's prop of the same name: `true` highlights it after the user types, `\"always\"` keeps it highlighted.",
+          "description": "Whether the search highlights the first matching item, as Base UI's prop of the same name does. `true` highlights it after the user types, and `\"always\"` keeps it highlighted.",
           "required": false
         },
         {
@@ -302,7 +302,7 @@
           "type": "((pages: string[]) => void) | ((pages: string[]) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called with the next stack when a page is pushed or popped.",
+          "description": "The Root calls it with the next stack after a push or a pop.",
           "required": false
         },
         {
@@ -344,7 +344,7 @@
           "type": "readonly string[] | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The page ids from the first page to the one on top. Use when controlled.",
+          "description": "The page ids from the first page to the one on top. Pass it to control the stack.",
           "required": false
         },
         {
@@ -572,7 +572,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, applied to the outer InputGroup, not the input element.",
+          "description": "Extra classes for the outer InputGroup, not the input element.",
           "required": false
         },
         {
@@ -664,7 +664,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name. An explicit `aria-label` wins over it; both default to the locale dictionary.",
+          "description": "The accessible name. An explicit `aria-label` wins over it, and both default to the locale dictionary's.",
           "required": false
         },
         {
@@ -1064,7 +1064,7 @@
           "type": "\"always\" | boolean | undefined",
           "shortType": "Union",
           "defaultValue": "\"always\"",
-          "description": "Whether the first matching item is highlighted automatically, as Base UI's prop of the same name: `true` highlights it after the user types, `\"always\"` keeps it highlighted.",
+          "description": "Whether the search highlights the first matching item, as Base UI's prop of the same name does. `true` highlights it after the user types, and `\"always\"` keeps it highlighted.",
           "required": false
         },
         {
@@ -1217,7 +1217,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "The page's name. The page's `Command.Input` is named after it unless it has a name of its own.",
+          "description": "The page's name, which also names the page's `Command.Input` unless the input has its own.",
           "required": true
         },
         {

@@ -110,7 +110,7 @@ test("the Root takes Dialog Root's state props, with Dialog's own event details"
 
 test("the virtual list is Command.List's render element and takes its rows from it", () => {
   expectTypeOf(CommandVirtual).not.toHaveProperty("Root");
-  // Command.List passes its row function as `children`, so the element is written without one.
+  // Command.List passes its row function as `children`, so a consumer writes the element without one.
   expectTypeOf<undefined>().toExtend<CommandVirtualListProps["children"]>();
   expectTypeOf<CommandVirtualListProps["overscan"]>().toEqualTypeOf<number | undefined>();
 
@@ -135,8 +135,9 @@ test("the virtual list is Command.List's render element and takes its rows from 
   const _elements = <CommandVirtual.List>{null}</CommandVirtual.List>;
 });
 
-// Without `grouped`, the Root types its props as Base UI's flat Autocomplete.Root overload; with
-// `grouped`, as its grouped overload. Each case below behaves as the matching overload does.
+// Without `grouped`, the Root types its props as Base UI's flat Autocomplete.Root overload. With
+// `grouped`, it types them as the grouped overload. Each case below behaves as the matching
+// overload does.
 
 type Action = { readonly label: string; readonly key: string };
 
@@ -379,12 +380,12 @@ test("a grouped Root gives its callbacks one item of a group", () => {
       }}
     />
   );
-  // oxlint-disable-next-line typescript/consistent-type-definitions -- an interface has no implicit index signature, the case under test
+  // oxlint-disable-next-line typescript/consistent-type-definitions -- this case tests an interface, which has no implicit index signature
   interface Shortcut {
     label: string;
     key: string;
   }
-  // oxlint-disable-next-line typescript/consistent-type-definitions -- an interface has no implicit index signature, the case under test
+  // oxlint-disable-next-line typescript/consistent-type-definitions -- this case tests an interface, which has no implicit index signature
   interface ShortcutGroup {
     value: string;
     items: Shortcut[];

@@ -1,7 +1,7 @@
 ---
 lede: >
-  A command palette: a search field over a list of actions, run with the keyboard or the
-  pointer, alone on the page or in a dialog.
+  A search field over a list of actions, which the user runs with the keyboard or the pointer,
+  on the page or in a dialog.
 ---
 
 import { CommandDialog } from "./demos/command-dialog";
@@ -19,15 +19,15 @@ export const metadata = componentMetadata("command");
 
 <Prose>
 
-Every palette starts at `Command.Root`, which holds its state and renders no element. Without pages, the Root is the search: Base UI's Autocomplete, always open, with its list inline and the first match always highlighted. Pass the actions in `items` and render them in `Command.List` through a child function. Base UI filters them as the user types, in the locale of `LocaleProvider`; `filter`, `filteredItems`, `mode`, `value` and `onValueChange` pass through. Put the palette's parts in `Command.Content` for a dialog, or in a box of your own when the palette sits on the page.
+Every palette starts at `Command.Root`, which holds its state and renders no element. Without pages, the Root is the search. It is Base UI's Autocomplete, always open, with its list inline and the first match always highlighted. Pass the actions in `items` and render them in `Command.List` through a child function. Base UI filters them as the user types, in the locale of `LocaleProvider`. The Root passes `filter`, `filteredItems`, `mode`, `value` and `onValueChange` through to Base UI. Put the palette's parts in `Command.Content` for a dialog, or in a box of your own when the palette sits on the page.
 
 The Root types its props as Base UI's Autocomplete Root does. A flat list in `items` gives each callback, such as `itemToStringValue`, one entry. With `grouped`, `items` holds groups and each callback receives one item of a group. The row functions of `Command.List` and `Command.Collection` take their type from your annotation, such as `(entry: Entry) =>`.
 
 An item's `onClick` runs when the user clicks it and when they press Enter while it is highlighted. The arrow keys move the highlight; Base UI's `data-highlighted` is the only highlight. Place `Command.Empty` beside `Command.List`, not inside it. It shows the locale dictionary's message while nothing matches.
 
-`Command.Input` is named after its page, or by the locale dictionary in a palette without pages, and its placeholder comes from the dictionary; `aria-label` and `placeholder` override both. Its children replace the leading search icon with addons of your own.
+`Command.Input` takes its name from its page, or from the locale dictionary in a palette without pages, and its placeholder from the dictionary. `aria-label` and `placeholder` override both. Its children replace the leading search icon with addons of your own.
 
-`Command.Footer` holds key hints. `Command.Hint` takes `Kbd` caps and a label. The presets cover the keys the palette handles itself: `Command.NavigateHint` for the arrows, `Command.SelectHint` for Enter, `Command.CloseHint` for Escape and `Command.BackHint` for Backspace. Their labels come from the dictionary, and children replace them. The hints are hidden from assistive technology, since the palette's roles already describe the keys.
+`Command.Footer` holds key hints. `Command.Hint` takes `Kbd` caps and a label. The presets cover the keys the palette handles itself: `Command.NavigateHint` for the arrows, `Command.SelectHint` for Enter, `Command.CloseHint` for Escape and `Command.BackHint` for Backspace. Their labels come from the dictionary, and children replace them. The hints carry `aria-hidden`, since the palette's roles already describe the keys to assistive technology.
 
 </Prose>
 
@@ -37,7 +37,7 @@ An item's `onClick` runs when the user clicks it and when they press Enter while
 
 <Prose>
 
-`Command.Trigger` opens `Command.Content`, and closing the palette returns focus to it. The Root takes Dialog's state props: `open`, `defaultOpen`, `onOpenChange` with Dialog's event details, `onOpenChangeComplete`, `modal`, `disablePointerDismissal` and `actionsRef`. `Command.Content` renders the Dialog's portal and overlay, sits near the top of the viewport so the field stays put while the results shrink, and has no close button. Its name defaults to the dictionary's "Command palette"; a `Dialog.Title` inside it names it instead. Escape closes it from any page. Opening the dialog moves focus to the field.
+`Command.Trigger` opens `Command.Content`, and closing the palette returns focus to it. The Root takes Dialog's state props: `open`, `defaultOpen`, `onOpenChange` with Dialog's event details, `onOpenChangeComplete`, `modal`, `disablePointerDismissal` and `actionsRef`. `Command.Content` renders the Dialog's portal and overlay, sits near the top of the viewport so the field keeps its position while the results shrink, and has no close button. Its name defaults to the dictionary's "Command palette"; a `Dialog.Title` inside it names it instead. Escape closes it from any page. Opening the dialog moves focus to the field.
 
 Each opening starts fresh. When the close animation ends, the Root sets an uncontrolled query back to its `defaultValue` and an uncontrolled stack back to `defaultPages`. Values you control stay as you set them.
 
@@ -45,7 +45,7 @@ A palette without `Command.Content` renders no dialog. Place one inline in your 
 
 ## Groups and shortcuts
 
-Pass `grouped` and the groups in `items`, give each `Command.Group` its own `items`, and name it with `Command.Label`. The Root throws when `grouped` disagrees with the first entry of `items`. `Command.Shortcut` shows a row's shortcut at the row's end. It is hidden from assistive technology, so put the same shortcut on the row in `aria-keyshortcuts`. Binding the keys is up to the app; this demo runs them while the field has focus.
+Pass `grouped` and the groups in `items`, give each `Command.Group` its own `items`, and name it with `Command.Label`. The Root throws when `grouped` disagrees with the first entry of `items`. `Command.Shortcut` shows a row's shortcut at the row's end. It carries `aria-hidden`, so put the same shortcut on the row in `aria-keyshortcuts`. Binding the keys is up to the app; this demo runs them while the field has focus.
 
 </Prose>
 
@@ -57,7 +57,7 @@ Pass `grouped` and the groups in `items`, give each `Command.Group` its own `ite
 
 ## Pages
 
-Give the Root a stack of page ids with `defaultPages`, or with `pages` and `onPagesChange` to control it. The first id is the first page. Each `Command.Page` has an `id`, a `label` that names its field, and its own search: it takes `items`, `grouped`, `virtualized`, `value` and the other search props. A Root with pages holds no search of its own, so it takes none of those props. Only the page on top renders. `Command.PageTrigger` is an item that opens a page and shows a chevron.
+Give the Root a stack of page ids with `defaultPages`, or with `pages` and `onPagesChange` to control it. The first id is the first page. Each `Command.Page` has an `id`, a `label` that names its field, and its own search, which takes `items`, `grouped`, `virtualized`, `value` and the other search props. A Root with pages holds no search of its own, so it takes none of those props. Only the page on top renders. `Command.PageTrigger` is an item that opens a page and shows a chevron.
 
 On a page above the first, the field leads with `Command.Back`, and Backspace in the empty field goes back a page. Backspace does nothing while an input method is composing text. `Command.BackHint` shows only when there is a page to go back to. Pages work with or without `Command.Content`.
 
@@ -97,7 +97,7 @@ Escape closes `Command.Content` from any page. To make it go back a page first, 
 
 ## Long lists
 
-For thousands of items, install `@tanstack/react-virtual` 3.14 or later beside Fuse and import `CommandVirtual` from `@elmeragroup/fuse/command-virtual`. That entry is not in the root barrel, so apps without the virtualizer never resolve it. Add `virtualized` to the Root, or to the `Command.Page` that holds the search, and render `<CommandVirtual.List />` as the `render` element of `Command.List`. `Command.List` passes any `render` value its row function as `children`, so a list element of your own can decide which rows mount too. `CommandVirtual.List` mounts only the rows in view plus the highlighted row, so Enter still runs a row the wheel has scrolled away. The search scrolls the list when the arrows wrap from the first row to the last. The list measures each row, so rows of any height stack without gaps, and it scrolls itself, so keep it out of a `ScrollArea`. A virtual list renders flat items only, so `virtualized` beside `grouped` throws, as does a row function in a virtualized search's `Command.List` without a `render` value. A virtualizer of your own can instead pass `Command.List` its rows as `Command.Item` elements, each with its `index`.
+For thousands of items, install `@tanstack/react-virtual` 3.14 or later beside Fuse and import `CommandVirtual` from `@elmeragroup/fuse/command-virtual`. That entry is not in the root barrel, so apps without the virtualizer never resolve it. Add `virtualized` to the Root, or to the `Command.Page` that holds the search, and render `<CommandVirtual.List />` as the `render` element of `Command.List`. `Command.List` passes any `render` value its row function as `children`, so a list element of your own can decide which rows mount too. `CommandVirtual.List` mounts only the rows in view plus the highlighted row, so Enter still runs a row that the mouse wheel scrolled out of view. The search scrolls the list when the arrows wrap from the first row to the last. The list measures each row, so rows of any height stack without gaps, and it scrolls itself, so keep it out of a `ScrollArea`. A virtual list renders flat items only, so `virtualized` beside `grouped` throws. A row function in a virtualized search's `Command.List` without a `render` value throws too. A virtualizer of your own can instead pass `Command.List` its rows as `Command.Item` elements, each with its `index`.
 
 </Prose>
 

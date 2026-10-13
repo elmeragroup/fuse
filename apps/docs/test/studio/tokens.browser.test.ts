@@ -859,7 +859,7 @@ describe("studio token editing", () => {
     try {
       await openTokenSection(page, "Actions");
       // external-palettes.ts, elma: primary oklch(0.28898 0.051828 217.7), #00313C. A knob
-      // shows "…" until the base theme's computed CSS arrives, so each value is polled.
+      // shows "…" until the base theme's computed CSS arrives, so the test polls each value.
       await expect.poll(() => shownValue(page, "primary")).toBe("#00313C");
       await expect.poll(() => shownValue(page, "destructive")).toBe("→ error");
       await expect.poll(() => shownValue(page, "secondary-hover")).toBe("mix");

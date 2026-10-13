@@ -29,8 +29,8 @@ import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
 
 const dialogContentVariants = tv({
-  // Its inner-corner shell follows the modal face, so its `rounded-xl` overrides the face's
-  // `rounded-md` and it publishes the corner inside its padding.
+  // Dialog's inner-corner shell comes after the modal face, so the shell's `rounded-xl` overrides
+  // the face's `rounded-md`. The shell publishes the corner inside its padding.
   base: cn(
     overlayModalPopupClass,
     dialogShellClass,

@@ -1,6 +1,6 @@
 /**
- * What each composition rule tells the consumer, after the name of the part that threw: the
- * rule, then the fix.
+ * What each composition rule tells the consumer after the name of the part that threw. Each
+ * message states the rule, then the fix.
  */
 const MESSAGES = {
   "outside-root": "must be used within Command.Root. Wrap the palette's parts in Command.Root.",
@@ -27,8 +27,9 @@ const MESSAGES = {
 export type CommandCompositionRule = keyof typeof MESSAGES;
 
 /**
- * Thrown when a palette's parts are composed in a way that cannot work, such as `Command.Page`
- * outside a Root with a stack. Its message starts with the part that threw and names the fix.
+ * A part throws it when the consumer composes a palette's parts in a way that cannot work, such
+ * as `Command.Page` outside a Root with a stack. Its message starts with the part that threw and
+ * names the fix.
  */
 export class CommandCompositionError extends Error {
   override readonly name = "CommandCompositionError";

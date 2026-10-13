@@ -18,6 +18,6 @@ test("Kbd and KbdGroup take native kbd props, one size, and no polymorphic as pr
 
   // @ts-expect-error a cap has one size
   const _sized = <Kbd size="sm">K</Kbd>;
-  // @ts-expect-error polymorphism is never an `as` prop
+  // @ts-expect-error Fuse never offers polymorphism through an `as` prop
   const _noAs = <Kbd as="span">K</Kbd>;
 });

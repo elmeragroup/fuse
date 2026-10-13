@@ -3,10 +3,10 @@ import { tv } from "../../styles/tv";
 import { menuItemClass } from "../overlay/menu-row-classes";
 
 /**
- * Module-private recipe for the palette's parts. The palette box pads nothing: the input sits
- * the small surface gap, `--surface-gap-sm`, in from the box's edges, the list pads its rows with
- * the same inset (`styles/inner-corner/command.ts`), and the footer sits its hints the same inset
- * above the box's bottom edge and pads them inline so their text lines up with the rows' text.
+ * The module-private recipe for the palette's parts. The palette box pads nothing. The input sits
+ * the small surface gap, `--surface-gap-sm`, in from the box's edges. The list pads its rows with
+ * the same inset in `styles/inner-corner/command.ts`. The footer places its hints the same inset
+ * above the box's bottom edge and pads them inline, so their text lines up with the rows' text.
  *
  * - `input` is the InputGroup field box, inset from the palette's edges.
  * - `list` scrolls; in a palette box it takes the room the input and footer leave.
@@ -15,7 +15,7 @@ import { menuItemClass } from "../overlay/menu-row-classes";
  * - `footer` and `hint` lay out the key hints under the list.
  * - `content` is the palette popup's layout, placed near the top of the viewport so the input
  *   stays put while the results shrink. `Command.Content` composes it after the modal face it
- *   shares with Dialog, which brings the surface, elevation and motion.
+ *   shares with Dialog, which provides the surface, elevation and motion.
  */
 export const commandVariants = tv({
   slots: {
@@ -23,7 +23,7 @@ export const commandVariants = tv({
     list: "max-h-80 min-h-0 flex-1 scroll-py-(--surface-gap-sm) overflow-y-auto overscroll-contain",
     item: cn(
       menuItemClass,
-      // oxlint-disable-next-line elmera/no-local-focus-ring -- the highlight face menuItemClass leaves to the family; base-ui spells it `data-highlighted:` on listbox options
+      // oxlint-disable-next-line elmera/no-local-focus-ring -- menuItemClass leaves the highlight face to each family; on base-ui listbox options it is the `data-highlighted:` variant
       "w-full data-highlighted:bg-accent data-highlighted:text-accent-foreground"
     ),
     trailing: "ms-auto text-muted-foreground in-data-highlighted:text-accent-foreground",

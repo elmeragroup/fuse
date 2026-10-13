@@ -20,7 +20,7 @@ const STREETS = [
   "Havnegata",
 ];
 
-/** 2,000 meter points: 200 house numbers on each of ten streets. */
+/** 2,000 meter points, with 200 house numbers on each of ten streets. */
 const METER_POINTS: readonly MeterPoint[] = STREETS.flatMap((street, streetIndex) =>
   Array.from({ length: 200 }, (_, numberIndex) => {
     const serial = streetIndex * 200 + numberIndex + 1;

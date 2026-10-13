@@ -17,7 +17,8 @@ afterEach(() => {
 });
 
 function slotAround(element: HTMLElement, slot: string): HTMLElement {
-  // DOM audit: a key combination has no role, so its outer `kbd` is found by the slot it writes.
+  // DOM audit: a key combination has no role, so this helper finds its outer `kbd` by the slot
+  // that KbdGroup writes.
   const found = element.closest(`[data-slot="${slot}"]`);
   if (!(found instanceof HTMLElement)) {
     throw new Error(`expected a ${slot} around the element`);
@@ -55,7 +56,8 @@ describe("Kbd", () => {
       stampDensity(density);
       const { unmount } = renderThemed(<Kbd>{`K ${density}`}</Kbd>);
       const cap = textNamed(`K ${density}`);
-      // The rendered box, border included: computed `height` reads the content box alone.
+      // The test measures the rendered box with its border, because computed `height` reads only
+      // the content box.
       expect(cap.getBoundingClientRect().height, density).toBe(20);
       expect(px(getComputedStyle(cap).fontSize), density).toBe(12);
       unmount();
@@ -70,8 +72,8 @@ describe("Kbd", () => {
   });
 
   it("rounds a free group's caps with the group's rung, and an addon's group and caps with its inner corner", () => {
-    // Internal at a 16px --radius: every rung is 16px, and the addon publishes the field corner
-    // less its 1px border and its 5.6px padding beside a kbd, 9.4px.
+    // With the internal theme at a 16px --radius, every rung is 16px. The addon publishes the field
+    // corner less its 1px border and its 5.6px padding beside a kbd, which gives 9.4px.
     stampDensity("dense");
     render(
       <ThemeScope theme={fkasPrivate} style={{ "--radius": "1rem" }}>

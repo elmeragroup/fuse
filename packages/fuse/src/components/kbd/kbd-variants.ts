@@ -1,15 +1,16 @@
 import { tv } from "../../styles/tv";
 
 /**
- * Module-private recipe for the key cap and the key combination. One size at both densities:
- * a cap annotates a control and never sets its height, so it reads no density metric.
+ * The module-private recipe for the key cap and the key combination. The recipe has one size
+ * at both densities. A cap annotates a control and never sets its height, so it reads no
+ * density metric.
  *
- * - `cap` is one key. It rounds with the `sm` rung of its own, and its colours come from the
- *   muted role pair. An icon inside it takes the cap's text size. `box-border` keeps the
- *   20px cap a border-box one without preflight.
- * - `group` lays out the caps of one combination. It rounds with the cap's rung too and hands
- *   its corner on to its caps, so where an InputGroup addon rounds the group, a direct `>kbd`
- *   child, with its inner corner, the caps inside follow it.
+ * - `cap` is one key. It rounds with its own `sm` rung, and its colours come from the muted role
+ *   pair. An icon inside it takes the cap's text size. `box-border` keeps the 20px cap
+ *   border-box sized without preflight.
+ * - `group` lays out the caps of one combination. It also rounds with the cap's rung, and its
+ *   caps inherit its corner. An InputGroup addon rounds a direct `>kbd` child with its inner
+ *   corner, so when the group is that child, the caps inside follow the addon's corner.
  */
 export const kbdVariants = tv({
   slots: {

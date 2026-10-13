@@ -86,14 +86,14 @@ async function highlightThirdRowAndWheelAway(): Promise<void> {
   await expect.poll(() => listbox().scrollTop).toBeGreaterThan(2000);
 }
 
-/** The lazy node React Flight produces for an element a Server Component passes to a client one. */
+/** React Flight's lazy node for an element that a Server Component passes to a client one. */
 type FlightLazyNode = {
   readonly $$typeof: symbol;
   readonly _payload: ReactElement;
   readonly _init: (payload: ReactElement) => ReactElement;
 };
 
-/** Wraps an element as React Flight hands it to a client component's render prop. */
+/** Wraps an element the way React Flight passes it to a client component's render prop. */
 function flightLazyElement(element: ReactElement): ReactElement {
   const node: FlightLazyNode = {
     $$typeof: Symbol.for("react.lazy"),
@@ -101,8 +101,8 @@ function flightLazyElement(element: ReactElement): ReactElement {
     _init: (payload) => payload,
   };
   // SAFETY: React's public types have no lazy node, though React renders one wherever it renders
-  // an element, and Base UI's render prop unwraps it. Flight produces this shape.
-  // oxlint-disable-next-line anti-slop/no-chained-type-assertions -- a lazy node shares no key with ReactElement's type, so one assertion cannot reach it; this fixture stands in for React Flight's output
+  // an element. Base UI's render prop unwraps it, and Flight produces this shape.
+  // oxlint-disable-next-line anti-slop/no-chained-type-assertions -- a lazy node shares no key with ReactElement's type, so TypeScript rejects a single assertion; this fixture imitates React Flight's output
   return node as unknown as ReactElement;
 }
 
@@ -133,8 +133,8 @@ describe("CommandVirtual", () => {
 
   it("runs the highlighted row on Enter after the wheel scrolls it out of view", async () => {
     const onRun = vi.fn<(item: string) => void>();
-    // The wheel needs the pointer over the list, and a hovered row would take the highlight, so
-    // hover leaves the keyboard's highlight alone here.
+    // The wheel needs the pointer over the list, and a hovered row would take the highlight. With
+    // `highlightItemOnHover` off, hover leaves the keyboard's highlight alone.
     renderPalette(<VirtualPalette onRun={onRun} highlightItemOnHover={false} />);
     const input = await focusInput();
     await highlightThirdRowAndWheelAway();
@@ -158,8 +158,8 @@ describe("CommandVirtual", () => {
   });
 
   it("takes the lazy element React Flight hands over for a Server Component's render prop", async () => {
-    // React Flight hands a client component this lazy wrapper in place of an element a Server
-    // Component created; React's children utilities unwrap it through `_init(_payload)`.
+    // React Flight passes a client component this lazy wrapper in place of an element that a
+    // Server Component created. React's children utilities unwrap it through `_init(_payload)`.
     const serverElement = flightLazyElement(<CommandVirtual.List />);
     renderPalette(
       <Command.Root items={METER_POINTS} virtualized>

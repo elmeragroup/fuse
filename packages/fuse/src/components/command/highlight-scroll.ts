@@ -1,15 +1,16 @@
 /**
- * Package-private rule that keeps Base UI's highlight in view in a virtual list. Base UI moves
- * the highlight by index, so a highlight that jumps past the rendered window must scroll there.
+ * This package-private rule keeps Base UI's highlight in view in a virtual list. Base UI moves
+ * the highlight by index, so when the highlight jumps past the rendered window, the list must
+ * scroll to it.
  */
 
 import type { AutocompleteRootHighlightEventReason } from "@base-ui/react";
 
 /**
- * Where to scroll a newly highlighted row, by Base UI's rule for virtual lists: scroll on a
- * programmatic highlight, such as the first match after typing, and on a keyboard highlight that
- * lands on the first or last row, where the arrows wrap. Other keyboard moves step to a mounted
- * neighbour, which Base UI scrolls into view itself.
+ * Returns where to scroll a newly highlighted row, by Base UI's rule for virtual lists. The list
+ * scrolls on a programmatic highlight, such as the first match after typing, and on a keyboard
+ * highlight that lands on the first or last row, where the arrows wrap. Other keyboard moves step
+ * to a mounted neighbour, which Base UI scrolls into view itself.
  *
  * @param reason - Why the highlight moved.
  * @param index - The highlighted row's index in the filtered items.
