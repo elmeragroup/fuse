@@ -63,8 +63,9 @@
 - Ask design for a light field border of at least 3:1. Light `--input`, the border of Input,
   Textarea, Select and the other field boxes, measures 1.08–1.70:1 against the page and card, an
   accepted deviation on the accessibility page. Except ngfi's M3 `outline-variant`, the values are
-  converted shadcn stock colours. `Checkbox` and `Radio` draw their unchecked edge in
-  `muted-foreground` until then, and could return to `--input` once it clears 3:1.
+  converted shadcn stock colours. `Checkbox` and `Radio` draw their unchecked edge, and `Switch`
+  its unchecked track, in `muted-foreground` until then, and could return to `--input` once it
+  clears 3:1.
 - Ask design to confirm the two `--border` hairlines that sit well above the 1.19:1 page floor
   in `contrast-matrix.test.ts`. ngfi light, M3 `outline-variant` #BEC9C3, measures 1.62:1 on
   the page and 1.70:1 on card; every other light theme sits at 1.19–1.30:1 on the page. The
