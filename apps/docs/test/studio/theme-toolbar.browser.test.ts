@@ -1,6 +1,9 @@
 import type { Locator, Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
+import { STUDIO_SLOT_TOKENS } from "../../src/generated/studio-slot-tokens";
+import { TOKEN_TABLE, isTokenName } from "../../src/studio/lib/tokens";
+import type { TokenName } from "../../src/studio/lib/tokens";
 import { settleFrames } from "../landing-page";
 import { launchSuiteBrowser } from "../suite-browser";
 import {
@@ -64,6 +67,19 @@ function layer(page: Page, name: string): Locator {
 /** A menu button of a theme toolbar, by its name before any token count. */
 function menuButton(bar: Locator, name: string): Locator {
   return bar.getByRole("button", { name: new RegExp(`^${name}(?: \\d+ tokens)?$`, "u") });
+}
+
+/**
+ * The contract tokens the recipe behind `slot` reads, as the generated slot index records them
+ * from Fuse's recipes.
+ */
+function recipeReads(slot: string): readonly TokenName[] {
+  const component = STUDIO_SLOT_TOKENS.slots[slot];
+  const reads = component === undefined ? undefined : STUDIO_SLOT_TOKENS.components[component];
+  if (reads === undefined) {
+    throw new Error(`no documented component declares the slot ${slot}`);
+  }
+  return reads.map((name) => name.replace(/^--/u, "")).filter(isTokenName);
 }
 
 /** The px Base UI keeps a popup inside its collision boundary, the canvas here, by default. */
@@ -393,20 +409,32 @@ describe("the studio's theme toolbar", () => {
         .click({ modifiers: ["Alt"] });
       const bar = partBar(page);
       await bar.waitFor({ state: "visible" });
-      expect(await bar.getByText("switch", { exact: false }).first().isVisible()).toBe(true);
-      // Switch's recipe reads five color roles: its track off and on, its thumb, its focus ring
-      // and its invalid state. It reads no shape or type token.
-      expect(await menuButton(bar, "Color").textContent()).toContain("5");
-      for (const name of ["Shape", "Type", "Density"]) {
-        expect(await menuButton(bar, name).count(), name).toBe(0);
+      expect(await bar.getByText("switch", { exact: true }).first().isVisible()).toBe(true);
+      // Unit under test: the part bar's menus. Oracle: the tokens Switch's recipe reads, as the
+      // generated slot index records them, which the token contract sorts into colors, corners
+      // and typography. The index follows the recipe, so the menus follow a recipe change too.
+      const reads = recipeReads("switch");
+      const colors = reads.filter((name) => TOKEN_TABLE[name].kind === "color");
+      expect(
+        await bar.getByRole("button", { name: `Color ${String(colors.length)} tokens`, exact: true }).count()
+      ).toBe(1);
+      for (const [name, section] of [
+        ["Shape", "shape"],
+        ["Type", "typography"],
+      ] as const) {
+        const count = reads.some((token) => TOKEN_TABLE[token].section === section) ? 1 : 0;
+        expect(await menuButton(bar, name).count(), name).toBe(count);
       }
+      // A part's bar has no Density menu: density is the artboard's.
+      expect(await menuButton(bar, "Density").count()).toBe(0);
       await menuButton(bar, "Color").click();
       const menu = page.getByRole("dialog", { name: "Color", exact: true });
       await menu.waitFor({ state: "visible" });
       const rows = await menu
         .getByRole("group", { name: /^--/u })
-        .evaluateAll((groups) => groups.map((group) => group.getAttribute("aria-label")));
-      expect(rows).toEqual(["--background", "--primary", "--error", "--input", "--ring"]);
+        .evaluateAll((groups) => groups.map((group) => group.getAttribute("aria-label") ?? ""));
+      const byName = (left: string, right: string) => left.localeCompare(right);
+      expect(rows.toSorted(byName)).toEqual(colors.map((name) => `--${name}`).toSorted(byName));
 
       // Escape closes the menu first, then drops the part, then clears the selection.
       await page.keyboard.press("Escape");
