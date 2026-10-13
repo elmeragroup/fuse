@@ -4,9 +4,9 @@ import { menuItemClass } from "../overlay/menu-row-classes";
 
 /**
  * Module-private recipe for the palette's parts. The palette box pads nothing: the input sits
- * one small surface tier in from the box's edges, the list pads its rows with the same tier
- * (`styles/inner-corner/command.ts`), and the footer pads its hints so their text lines up with
- * the rows' text.
+ * the small surface gap, `--surface-gap-sm`, in from the box's edges, the list pads its rows with
+ * the same inset (`styles/inner-corner/command.ts`), and the footer sits its hints the same inset
+ * above the box's bottom edge and pads them inline so their text lines up with the rows' text.
  *
  * - `input` is the InputGroup field box, inset from the palette's edges.
  * - `list` scrolls; in a palette box it takes the room the input and footer leave.
@@ -19,8 +19,8 @@ import { menuItemClass } from "../overlay/menu-row-classes";
  */
 export const commandVariants = tv({
   slots: {
-    input: "m-(--surface-pad-sm) mb-0 w-auto shrink-0",
-    list: "max-h-80 min-h-0 flex-1 scroll-py-(--surface-pad-sm) overflow-y-auto overscroll-contain",
+    input: "m-(--surface-gap-sm) mb-0 w-auto shrink-0",
+    list: "max-h-80 min-h-0 flex-1 scroll-py-(--surface-gap-sm) overflow-y-auto overscroll-contain",
     item: cn(
       menuItemClass,
       // oxlint-disable-next-line elmera/no-local-focus-ring -- the highlight face menuItemClass leaves to the family; base-ui spells it `data-highlighted:` on listbox options
@@ -29,7 +29,7 @@ export const commandVariants = tv({
     trailing: "ms-auto text-muted-foreground in-data-highlighted:text-accent-foreground",
     empty: "text-sm px-(--row-px) py-6 text-center text-muted-foreground empty:p-0",
     footer:
-      "text-xs flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 border-t border-border px-[calc(var(--surface-pad-sm)+var(--row-px))] py-(--row-py) text-muted-foreground",
+      "text-xs flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 border-t border-border px-[calc(var(--surface-gap-sm)+var(--row-px))] py-(--surface-gap-sm) text-muted-foreground",
     hint: "inline-flex items-center gap-1.5",
     content:
       "max-w-xl fixed top-[max(--spacing(4),12dvh)] left-1/2 flex max-h-[calc(100dvh-2*max(--spacing(4),12dvh))] w-[calc(100%-2rem)] -translate-x-1/2 flex-col overflow-hidden",

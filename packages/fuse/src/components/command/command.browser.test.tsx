@@ -2,15 +2,29 @@ import { lazy, Suspense, useRef, useState } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { Autocomplete } from "@base-ui/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { render } from "../../../test/browser-render";
 import { CaughtError, caughtError } from "../../../test/caught-error";
+import { cornerRadius, RADIUS_XL } from "../../../test/inner-corner-specimens";
 import { withLocale } from "../../../test/locale-matrix";
-import { px, renderThemed, ROW, roleNamed, stampDensity } from "../../../test/themed-browser-render";
+import {
+  fkasExternal,
+  fkasPrivate,
+  metricPx,
+  px,
+  renderThemed,
+  ROW,
+  roleNamed,
+  snapshotDocumentTheme,
+  stampDensity,
+  stampDocumentTheme,
+} from "../../../test/themed-browser-render";
 import { DENSITIES } from "../../theme/density";
+import { ThemeScope } from "../../theme/theme-scope";
 import { Dialog } from "../dialog";
 import { Kbd } from "../kbd/kbd";
 import { Command } from "./index";
@@ -852,6 +866,109 @@ describe("Command.Content focus", () => {
     const customers = await mountedInput("Customers");
     await expect.poll(() => document.activeElement).toBe(customers);
   });
+});
+
+/** A dialog palette with every part the palette insets: the input, the list's rows and the footer. */
+function GeometryPalette(): ReactElement {
+  return (
+    <Command.Root items={COMMANDS}>
+      <Command.Trigger>Open palette</Command.Trigger>
+      <Command.Content>
+        <Command.Input />
+        <Command.List>
+          {(command: string) => (
+            <Command.Item key={command} value={command}>
+              {command}
+            </Command.Item>
+          )}
+        </Command.List>
+        <Command.Footer>
+          <Command.NavigateHint />
+        </Command.Footer>
+      </Command.Content>
+    </Command.Root>
+  );
+}
+
+/**
+ * DOM audit: the geometry test measures the palette's parts by their public `data-slot`, since
+ * the input group and the footer have no role of their own.
+ */
+function slotIn(popup: HTMLElement, slot: string): HTMLElement {
+  const element = popup.querySelector(`[data-slot="${slot}"]`);
+  if (!(element instanceof HTMLElement)) {
+    throw new Error(`expected ${slot} in the palette`);
+  }
+  return element;
+}
+
+/** One internal theme, whose rows round to 0, and one external, whose rows round positive. */
+const GEOMETRY_CASES = [
+  ["internal", fkasPrivate, fkasExternal],
+  ["fkas", fkasExternal, fkasPrivate],
+] as const;
+
+describe("Command.Content geometry", () => {
+  let restoreDocumentTheme: () => void = () => undefined;
+
+  beforeEach(() => {
+    restoreDocumentTheme = snapshotDocumentTheme();
+  });
+
+  afterEach(() => {
+    restoreDocumentTheme();
+  });
+
+  for (const density of DENSITIES) {
+    it.each(GEOMETRY_CASES)(
+      `insets its parts by the small surface gap and rounds its rows concentrically (%s, ${density})`,
+      async (variant, theme, documentTheme) => {
+        // The document carries other radii, so the portaled popup must read the scope's theme.
+        stampDocumentTheme(documentTheme, "light");
+        stampDensity(density);
+        render(
+          withLocale(
+            "en-US",
+            <ThemeScope theme={theme}>
+              <GeometryPalette />
+            </ThemeScope>
+          )
+        );
+        const popup = await openPalette();
+        const list = slotIn(popup, "command-list");
+        const input = getComputedStyle(slotIn(popup, "command-input"));
+        const footer = getComputedStyle(slotIn(popup, "command-footer"));
+        const listStyle = getComputedStyle(list);
+        const inset = metricPx("surface-gap-sm", density);
+
+        expect(cornerRadius(popup), "popup corner").toBe(RADIUS_XL[variant]);
+        expect(
+          {
+            list: [
+              listStyle.paddingTop,
+              listStyle.paddingRight,
+              listStyle.paddingBottom,
+              listStyle.paddingLeft,
+            ].map(px),
+            input: [input.marginTop, input.marginLeft, input.marginRight].map(px),
+            footer: [footer.paddingTop, footer.paddingBottom].map(px),
+          },
+          "shared inset"
+        ).toEqual({
+          list: [inset, inset, inset, inset],
+          input: [inset, inset, inset],
+          footer: [inset, inset],
+        });
+
+        // Unit under test: the row's `rounded-inner` corner. Oracle: the concentric rule,
+        // max(0, outer − inset), on the popup's computed corner and the list's computed padding.
+        const row = roleNamed("option", "New customer");
+        expect(cornerRadius(row), "row corner").toBe(
+          Math.max(0, cornerRadius(popup) - px(listStyle.paddingTop))
+        );
+      }
+    );
+  }
 });
 
 describe("Command composition errors", () => {

@@ -12,19 +12,19 @@ import { publishShellBoundary } from "../corner-radius";
 export const commandContentShellClass = cn("rounded-xl [--shell-inner:initial]", publishShellBoundary);
 
 /**
- * The boundary both lists publish: the palette's `rounded-xl` less the small surface tier,
- * `--surface-pad-sm`, that pads their rows.
+ * The boundary both lists publish: the palette's `rounded-xl` less the lists' inset, the small
+ * surface gap, `--surface-gap-sm`.
  */
 const commandListBoundaryClass = cn(
-  "[--shell-inner:max(0px,--theme(--radius-xl)-var(--surface-pad-sm))]",
+  "[--shell-inner:max(0px,--theme(--radius-xl)-var(--surface-gap-sm))]",
   publishShellBoundary
 );
 
 /**
- * `Command.List`: pads its rows with the small surface tier inside the palette's `rounded-xl`
- * and publishes. An empty List drops its padding.
+ * `Command.List`: pads its rows with the small surface gap inside the palette's `rounded-xl` and
+ * publishes. An empty List drops its padding.
  */
-export const commandListShellClass = cn("p-(--surface-pad-sm) data-empty:p-0", commandListBoundaryClass);
+export const commandListShellClass = cn("p-(--surface-gap-sm) data-empty:p-0", commandListBoundaryClass);
 
 /**
  * `Command.List` that hands its rows to a render element, such as `CommandVirtual.List`: the same
@@ -33,6 +33,6 @@ export const commandListShellClass = cn("p-(--surface-pad-sm) data-empty:p-0", c
  * padding.
  */
 export const commandRowsHandedOffListShellClass = cn(
-  "px-(--surface-pad-sm) data-empty:px-0",
+  "px-(--surface-gap-sm) data-empty:px-0",
   commandListBoundaryClass
 );

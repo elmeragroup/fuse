@@ -30,7 +30,8 @@ function readRowMetrics(element: HTMLElement): RowMetrics {
   const metric = (name: string) => cssLengthToPx(style.getPropertyValue(name).trim(), rootFontSize);
   return {
     row: metric("--row-h") ?? DENSE_ROW_METRICS.row,
-    pad: metric("--surface-pad-sm") ?? DENSE_ROW_METRICS.pad,
+    // The list pads its rows with the small surface gap, as `Command.List` does.
+    pad: metric("--surface-gap-sm") ?? DENSE_ROW_METRICS.pad,
   };
 }
 

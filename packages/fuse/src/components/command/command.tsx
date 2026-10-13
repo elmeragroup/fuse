@@ -540,14 +540,14 @@ function CommandListRowsTarget({
 }
 
 /**
- * The scrolling list of results. It pads its rows with the small surface tier and publishes the
- * palette's `rounded-xl` less that padding as `--inner-corner`. Given a `render` value and a row
- * function, it hands the row function to the rendered element as its `children`, in place of
- * rendered rows, beside Base UI's listbox props, so the element decides which rows mount, as
- * `CommandVirtual.List` does. Given other children, `render` keeps Base UI's meaning, with or
- * without `virtualized`, so a virtualizer of your own can pass indexed `Command.Item` elements. A
- * virtualized search throws on a row function without a `render` value, since it would mount
- * every row without the index Base UI's navigation reads.
+ * The scrolling list of results. It pads its rows with the small surface gap, `--surface-gap-sm`,
+ * and publishes the palette's `rounded-xl` less that padding as `--inner-corner`. Given a `render`
+ * value and a row function, it hands the row function to the rendered element as its `children`,
+ * in place of rendered rows, beside Base UI's listbox props, so the element decides which rows
+ * mount, as `CommandVirtual.List` does. Given other children, `render` keeps Base UI's meaning,
+ * with or without `virtualized`, so a virtualizer of your own can pass indexed `Command.Item`
+ * elements. A virtualized search throws on a row function without a `render` value, since it would
+ * mount every row without the index Base UI's navigation reads.
  */
 export function CommandList({ className, ...props }: CommandListProps): ReactElement {
   const search = use(CommandSearchContext);
