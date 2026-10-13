@@ -166,7 +166,7 @@ describe("Command demos", () => {
     const popup = await dialog.elementHandle();
     await page.keyboard.press("Enter");
     await expect.poll(() => popup.getAttribute("data-closed")).toBe("");
-    // Ada's page is on screen and has passed her commands to the layout.
+    // Ada Lovelace's page is on screen and has passed its commands to the layout.
     await expect.poll(() => demo.getByRole("definition").first().textContent()).toBe("10231");
     await page.evaluate(
       () =>
