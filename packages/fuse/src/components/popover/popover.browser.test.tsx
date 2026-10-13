@@ -9,7 +9,7 @@ import {
   expectFocusRing,
   expectNoFocusRing,
 } from "../../../test/assert-focus-ring";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
 import { Popover } from "./index";
 import type { PopoverContentProps } from "./popover";
@@ -234,7 +234,7 @@ describe("Popover", () => {
     renderThemed(<Anchored />);
     const dialog = await mountedPopover("Anchored");
     await Promise.all(dialog.getAnimations().map((animation) => animation.finished));
-    const anchor = page.getByRole("group", { name: "Anchor", exact: true }).element();
+    const anchor = roleNamed("group", "Anchor");
 
     // Unit under test: the popup's placement. Oracle: the anchor's own box, read from the page,
     // with the requested bottom side, 8px offset and centred alignment applied by hand.
@@ -250,9 +250,6 @@ describe("Popover", () => {
     await expectPlacedAgainstAnchor();
 
     // A transform moves the anchor without a layout change or a scroll.
-    if (!(anchor instanceof HTMLElement)) {
-      throw new Error("expected the anchor element");
-    }
     const before = dialog.getBoundingClientRect();
     anchor.style.translate = "48px 24px";
     await expectPlacedAgainstAnchor();

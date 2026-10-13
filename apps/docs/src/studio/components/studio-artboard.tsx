@@ -17,6 +17,7 @@ import { metricOverridesFor, resetNames } from "../lib/edits";
 import type { StudioOverrides } from "../lib/edits";
 import type { StudioSeed } from "../lib/seed";
 import { artboardEdits, declarationsOf } from "../lib/token-values";
+import type { TokenName } from "../lib/tokens";
 import { ChromeScope } from "./chrome-scope";
 import { useStudioEdits } from "./studio-edits";
 import { useStudio } from "./studio-state";
@@ -61,6 +62,11 @@ export type ArtboardScope = {
   readonly overrides: StudioOverrides;
   /** The seed of the artboard's theme, `undefined` while it loads. */
   readonly seed: StudioSeed | undefined;
+  /**
+   * The token edits the artboard's own theme skips because they would loop through its aliases,
+   * sorted by name. None for an artboard in the base theme, where the edit session admits no loop.
+   */
+  readonly skipped: readonly TokenName[];
 };
 
 const ArtboardScopeContext = createContext<ArtboardScope | undefined>(undefined);
@@ -91,7 +97,7 @@ function ownTheme(theme: ThemeInput, base: ThemeInput): ThemeInput | undefined {
  */
 export function useArtboardScopeOf(spec: ArtboardSpec): ArtboardScope {
   const { theme: base, settingsOf } = useStudio();
-  const { overrides, seed, seedOf, requestSeed, styleFor } = useStudioEdits();
+  const { overrides, seedOf, requestSeed, styleFor } = useStudioEdits();
   const { scheme, density, theme } = settingsOf(spec);
   const own = ownTheme(theme, base);
   const slug = themeSlug(theme);
@@ -99,14 +105,22 @@ export function useArtboardScopeOf(spec: ArtboardSpec): ArtboardScope {
   useEffect(() => {
     requestSeed(slug);
   }, [requestSeed, slug]);
-  const ownSeed = own === undefined ? undefined : seedOf(slug);
+  const themeSeed = seedOf(slug);
   return useMemo((): ArtboardScope => {
     const metrics = metricStyle(metricOverridesFor(overrides, density));
     if (own === undefined) {
-      return { theme: base, scheme, density, style: { ...styleFor(scheme), ...metrics }, overrides, seed };
+      return {
+        theme: base,
+        scheme,
+        density,
+        style: { ...styleFor(scheme), ...metrics },
+        overrides,
+        seed: themeSeed,
+        skipped: [],
+      };
     }
     const edits = artboardEdits(overrides, own, scheme);
-    const declarations = ownSeed === undefined ? undefined : declarationsOf(ownSeed)[scheme];
+    const declarations = themeSeed === undefined ? undefined : declarationsOf(themeSeed)[scheme];
     // The variant sets the radius step, so a step edit over the base theme's variant stays off an
     // artboard in the other one. In the base theme's variant, it applies.
     const otherVariant = own.variant !== base.variant;
@@ -124,9 +138,10 @@ export function useArtboardScopeOf(spec: ArtboardSpec): ArtboardScope {
         ...edits.skipped,
         ...(otherVariant ? ["radius-step" as const] : []),
       ]),
-      seed: ownSeed,
+      seed: themeSeed,
+      skipped: edits.skipped,
     };
-  }, [base, own, ownSeed, seed, scheme, density, overrides, styleFor]);
+  }, [base, own, themeSeed, scheme, density, overrides, styleFor]);
 }
 
 export type StudioArtboardProps = {

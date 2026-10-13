@@ -8,25 +8,25 @@ import { tv } from "tailwind-variants";
 import { Select } from "@elmeragroup/fuse/select";
 import { Span } from "@elmeragroup/fuse/span";
 import { Text } from "@elmeragroup/fuse/text";
-import { BRANDS, DENSITIES, defaultDensityForVariant, themeSlug } from "@elmeragroup/fuse/theme";
+import { BRANDS, defaultDensityForVariant, themeSlug } from "@elmeragroup/fuse/theme";
 
-import { SingleToggle } from "../../components/single-toggle";
 import { SEGMENT_LABELS, VARIANT_LABELS } from "../../lib/theme";
 import { hasDensityPanel, leadSectionsFor } from "../lib/documents";
-import type { ArtboardScheme, ArtboardSpec } from "../lib/documents";
-import { DENSITY_LABELS, SCHEME_LABELS } from "../lib/labels";
+import type { ArtboardSpec } from "../lib/documents";
+import { DENSITY_LABELS } from "../lib/labels";
 import { themeLabel } from "../lib/theme-axes";
-import { artboardEdits } from "../lib/token-values";
 import {
   BRAND_NAMES,
   BrandOptions,
+  DensityToggle,
+  SchemeToggle,
   SegmentToggle,
   VariantToggle,
   useArtboardTheme,
 } from "./artboard-theme-controls";
 import { CornerReadout } from "./corner-xray";
 import { DensityPanel } from "./density/density-panel";
-import { useStudioEdits } from "./studio-edits";
+import { useArtboardScopeOf } from "./studio-artboard";
 import { StudioPanelSection } from "./studio-panel-section";
 import { ReadoutList, ReadoutRow } from "./studio-readout";
 import { SelectionSection } from "./studio-selection-section";
@@ -43,8 +43,6 @@ const studioInspector = tv({
 });
 
 const styles = studioInspector();
-
-const SCHEMES = ["light", "dark"] as const satisfies readonly ArtboardScheme[];
 
 /**
  * With nothing selected: the base theme every artboard renders in, and where a first visit
@@ -78,12 +76,8 @@ const TOKEN_LIST = new Intl.ListFormat("en", { type: "conjunction" });
  * names the edits it skips because they would loop in that theme.
  */
 function ArtboardSection({ artboard }: { artboard: ArtboardSpec }): ReactElement {
-  const { theme: base, settingsOf, changeSettings } = useStudio();
-  const { overrides } = useStudioEdits();
-  const settings = settingsOf(artboard);
   const { theme, change } = useArtboardTheme(artboard);
-  const own = themeSlug(theme) !== themeSlug(base);
-  const skipped = own ? artboardEdits(overrides, theme, settings.scheme).skipped : [];
+  const { skipped } = useArtboardScopeOf(artboard);
   return (
     <StudioPanelSection title="Artboard">
       <ReadoutList className={styles.list()}>
@@ -131,31 +125,13 @@ function ArtboardSection({ artboard }: { artboard: ArtboardSpec }): ReactElement
         <Span size="sm" variant="muted">
           Scheme
         </Span>
-        <SingleToggle
-          label="Scheme"
-          size="sm"
-          options={SCHEMES}
-          labels={SCHEME_LABELS}
-          value={settings.scheme}
-          onValueChange={(scheme) => {
-            changeSettings(artboard.id, { scheme });
-          }}
-        />
+        <SchemeToggle artboard={artboard} />
       </div>
       <div className={styles.field()}>
         <Span size="sm" variant="muted">
           Density
         </Span>
-        <SingleToggle
-          label="Density"
-          size="sm"
-          options={DENSITIES}
-          labels={DENSITY_LABELS}
-          value={settings.density}
-          onValueChange={(density) => {
-            changeSettings(artboard.id, { density });
-          }}
-        />
+        <DensityToggle artboard={artboard} />
       </div>
     </StudioPanelSection>
   );

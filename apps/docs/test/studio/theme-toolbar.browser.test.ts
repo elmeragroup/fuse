@@ -8,16 +8,26 @@ import { settleFrames } from "../landing-page";
 import { launchSuiteBrowser } from "../suite-browser";
 import {
   ARTBOARDS,
+  CORNERS_PAGE,
   artboard,
+  artboardBar,
   background,
+  box,
   canvas,
+  frames,
+  inside,
   inspector,
+  isFocused,
+  layer,
   layers,
   openStudio,
   openTokenSection,
+  pickBrand,
+  selectBoard,
+  setTokenColor,
+  toggle,
   tokenRow,
 } from "./page";
-import type { StudioRoute } from "./page";
 
 const browser = launchSuiteBrowser();
 
@@ -26,9 +36,8 @@ const PHONE = { width: 390, height: 844 } as const;
 const LIGHT_BOARD = ARTBOARDS[0];
 const DARK_BOARD = ARTBOARDS[1];
 
-/** The Shape page, whose rung artboards pin a variant, so their bars carry the Variant toggle. */
+/** A rungs board of the Shape page, which pins a variant, so its bar carries the Variant toggle. */
 const PINNED_BOARD = "Radius rungs · Internal";
-const RUNGS_PAGE: StudioRoute = { path: "/studio/shape", artboard: PINNED_BOARD };
 
 /** Tailwind's `lg`, the narrowest viewport the floating toolbar renders at. */
 const LG = { width: 1024, height: 768 } as const;
@@ -39,29 +48,9 @@ const PART_GAP = 8;
 
 const RED = "rgb(255, 0, 0)";
 
-type Box = { x: number; y: number; width: number; height: number };
-
-async function box(locator: Locator): Promise<Box> {
-  const measured = await locator.boundingBox();
-  if (measured === null) {
-    throw new Error("the element has no box");
-  }
-  return measured;
-}
-
-/** The floating theme toolbar over a selected artboard. */
-function artboardBar(page: Page): Locator {
-  return canvas(page).getByRole("toolbar", { name: "Artboard theme", exact: true });
-}
-
 /** The floating theme toolbar over a picked part. */
 function partBar(page: Page): Locator {
   return canvas(page).getByRole("toolbar", { name: "Part theme", exact: true });
-}
-
-/** An artboard's row in the Layers list. */
-function layer(page: Page, name: string): Locator {
-  return layers(page).getByRole("button", { name, exact: true });
 }
 
 /** A menu button of a theme toolbar, by its name before any token count. */
@@ -143,23 +132,6 @@ async function drawnAt(page: Page, name: string): Promise<{ x: number; y: number
   return { x, y, width };
 }
 
-/** Picks `brand` in the artboard bar's Brand select, and waits for its trigger to show it. */
-async function pickBarBrand(page: Page, brand: string): Promise<void> {
-  const trigger = artboardBar(page).getByRole("combobox", { name: "Brand", exact: true });
-  await trigger.click();
-  await page.getByRole("option", { name: brand, exact: true }).click();
-  await trigger.getByText(brand, { exact: true }).waitFor();
-}
-
-/**
- * Lets a height change of the bar land: one frame for its resize report, one for a camera move
- * the report would make.
- */
-async function settleReport(page: Page): Promise<void> {
-  await settleFrames(page);
-  await settleFrames(page);
-}
-
 /**
  * A corner of the foot of the artboard `name` that `popup` does not cover, so a wheel there pans
  * the canvas rather than scrolling the popup.
@@ -182,15 +154,6 @@ async function spotClearOf(page: Page, name: string, popup: Locator): Promise<{ 
   return spot;
 }
 
-function inside(inner: Box, outer: Box): boolean {
-  return (
-    inner.x >= outer.x - 1 &&
-    inner.y >= outer.y - 1 &&
-    inner.x + inner.width <= outer.x + outer.width + 1 &&
-    inner.y + inner.height <= outer.y + outer.height + 1
-  );
-}
-
 /** Whether `menu` opens on `side` of `bar`, clear of it, and inside the canvas. */
 async function menuClear(page: Page, menu: Locator, bar: Locator, side: "below" | "above"): Promise<boolean> {
   const popup = await box(menu);
@@ -198,11 +161,6 @@ async function menuClear(page: Page, menu: Locator, bar: Locator, side: "below" 
   const clear =
     side === "below" ? popup.y >= toolbar.y + toolbar.height : popup.y + popup.height <= toolbar.y;
   return clear && inside(popup, await box(canvas(page)));
-}
-
-/** Whether the focused element is `locator`'s element. */
-async function isFocused(locator: Locator): Promise<boolean> {
-  return locator.evaluate((element) => element === document.activeElement);
 }
 
 async function colorScheme(locator: Locator): Promise<string> {
@@ -222,13 +180,9 @@ describe("the studio's theme toolbar", () => {
       expect((await placement(page, DARK_BOARD)).gap).toBeCloseTo(ARTBOARD_GAP, 0);
       expect(Math.abs((await placement(page, DARK_BOARD)).offset)).toBeLessThanOrEqual(1);
 
-      await layer(page, LIGHT_BOARD).click();
-      const bar = artboardBar(page);
-      await bar.waitFor({ state: "visible" });
+      const bar = await selectBoard(page, LIGHT_BOARD);
       // Opening moves no focus: the Layers press still hands it to the artboard.
-      expect(
-        await artboard(page, LIGHT_BOARD).evaluate((element) => element === document.activeElement)
-      ).toBe(true);
+      expect(await isFocused(artboard(page, LIGHT_BOARD))).toBe(true);
       // Centred across the artboard the press framed, room above it and all (next test).
       await expect.poll(async () => (await placement(page, LIGHT_BOARD)).gap).toBeCloseTo(ARTBOARD_GAP, 0);
       expect(Math.abs((await placement(page, LIGHT_BOARD)).offset)).toBeLessThanOrEqual(1);
@@ -252,14 +206,11 @@ describe("the studio's theme toolbar", () => {
     const { context, page } = await openStudio(browser());
     try {
       if (brand !== undefined) {
-        await layer(page, LIGHT_BOARD).click();
-        await pickBarBrand(page, brand);
+        await pickBrand(page, await selectBoard(page, LIGHT_BOARD), brand);
         // Another artboard's bar is the last one measured, so the pick below meets a taller bar.
-        await layer(page, DARK_BOARD).click();
-        await artboardBar(page).waitFor({ state: "visible" });
+        await selectBoard(page, DARK_BOARD);
       }
-      await layer(page, LIGHT_BOARD).click();
-      await artboardBar(page).waitFor({ state: "visible" });
+      await selectBoard(page, LIGHT_BOARD);
       await expect.poll(async () => (await placement(page, LIGHT_BOARD)).gap).toBeCloseTo(ARTBOARD_GAP, 0);
       const label = await box(canvas(page).getByRole("button", { name: LIGHT_BOARD, exact: true }));
       const bar = await box(artboardBar(page));
@@ -275,8 +226,8 @@ describe("the studio's theme toolbar", () => {
       await layer(page, LIGHT_BOARD).click();
       await expect.poll(async () => (await placement(page, LIGHT_BOARD)).gap).toBeCloseTo(ARTBOARD_GAP, 0);
       const framed = await drawnAt(page, LIGHT_BOARD);
-      await pickBarBrand(page, "Nordic Green Energy");
-      await settleReport(page);
+      await pickBrand(page, artboardBar(page), "Nordic Green Energy");
+      await frames(page, 2);
       expect(await drawnAt(page, LIGHT_BOARD)).toEqual(framed);
     } finally {
       await context.close();
@@ -301,7 +252,7 @@ describe("the studio's theme toolbar", () => {
       const before = await drawnAt(page, LIGHT_BOARD);
       await page.mouse.click(before.x + 3, before.y + 3);
       await artboardBar(page).waitFor({ state: "visible" });
-      await settleReport(page);
+      await frames(page, 2);
       expect(await drawnAt(page, LIGHT_BOARD)).toEqual(before);
     } finally {
       await context.close();
@@ -341,8 +292,8 @@ describe("the studio's theme toolbar", () => {
       await artboardBar(page).waitFor({ state: "visible" });
       // The answer, and a taller bar after it, leave the camera where the wheel did: 120px below
       // the first fit.
-      await pickBarBrand(page, "Nordic Green Energy");
-      await settleReport(page);
+      await pickBrand(page, artboardBar(page), "Nordic Green Energy");
+      await frames(page, 2);
       const panned = await drawnAt(page, LIGHT_BOARD);
       expect(panned.x).toBeCloseTo(fitted.x, 1);
       expect(panned.y).toBeCloseTo(fitted.y + 120, 1);
@@ -361,12 +312,12 @@ describe("the studio's theme toolbar", () => {
       await partBar(page).waitFor({ state: "visible" });
       // Zoom to selection frames the part's artboard while the part's bar shows.
       await page.keyboard.press("Shift+Digit2");
-      await settleReport(page);
+      await frames(page, 2);
       const framed = await drawnAt(page, LIGHT_BOARD);
 
       await page.keyboard.press("Escape");
       await artboardBar(page).waitFor({ state: "visible" });
-      await settleReport(page);
+      await frames(page, 2);
       expect(await drawnAt(page, LIGHT_BOARD)).toEqual(framed);
     } finally {
       await context.close();
@@ -376,13 +327,12 @@ describe("the studio's theme toolbar", () => {
   it("keeps the camera still when a canvas click shows the bar a zoom to selection framed while hidden", async () => {
     const { context, page } = await openStudio(browser());
     try {
-      await layer(page, LIGHT_BOARD).click();
-      await artboardBar(page).waitFor({ state: "visible" });
+      await selectBoard(page, LIGHT_BOARD);
       // A press on the selected artboard's row hides its bar.
       await layer(page, LIGHT_BOARD).click();
       await artboardBar(page).waitFor({ state: "detached" });
       await page.keyboard.press("Shift+Digit2");
-      await settleReport(page);
+      await frames(page, 2);
       // The base brand's long name widens the bar the click below shows past the framed one.
       await page.getByRole("button", { name: /^Base theme/u }).click();
       await page.getByRole("menuitemradio", { name: "Nordic Green Energy", exact: true }).click();
@@ -394,7 +344,7 @@ describe("the studio's theme toolbar", () => {
       const before = await drawnAt(page, LIGHT_BOARD);
       await page.mouse.click(before.x + 3, before.y + 3);
       await artboardBar(page).waitFor({ state: "visible" });
-      await settleReport(page);
+      await frames(page, 2);
       expect(await drawnAt(page, LIGHT_BOARD)).toEqual(before);
     } finally {
       await context.close();
@@ -450,7 +400,7 @@ describe("the studio's theme toolbar", () => {
       await page.keyboard.press("Escape");
       await artboardBar(page).waitFor({ state: "detached" });
       expect(await layers(page).getByRole("button", { pressed: true }).count()).toBe(0);
-      expect(await canvas(page).evaluate((element) => element === document.activeElement)).toBe(true);
+      expect(await isFocused(canvas(page))).toBe(true);
     } finally {
       await context.close();
     }
@@ -468,14 +418,7 @@ describe("the studio's theme toolbar", () => {
       await menuButton(artboardBar(page), "Color").click();
       const menu = page.getByRole("dialog", { name: "Color", exact: true });
       await menu.getByRole("button", { name: "Actions", exact: true }).click();
-      await menu
-        .getByRole("group", { name: "--primary", exact: true })
-        .getByRole("button", { name: "Edit --primary", exact: true })
-        .click();
-      const field = page.getByRole("textbox", { name: "Color", exact: true });
-      await field.fill("#ff0000");
-      await page.keyboard.press("Escape");
-      await field.waitFor({ state: "hidden" });
+      await setTokenColor(page, "primary", "#ff0000", menu);
 
       // Every light artboard wears the edit; the dark ones keep their own scheme's value.
       await expect.poll(() => background(save(LIGHT_BOARD))).toBe(RED);
@@ -498,8 +441,7 @@ describe("the studio's theme toolbar", () => {
   it("follows its artboard through a pan and a zoom out, stays inside the canvas, and hides with it", async () => {
     const { context, page } = await openStudio(browser());
     try {
-      await layer(page, LIGHT_BOARD).click();
-      await artboardBar(page).waitFor({ state: "visible" });
+      await selectBoard(page, LIGHT_BOARD);
       // Room above the artboard for the toolbar, so the camera moves below only move it.
       const board = await box(artboard(page, LIGHT_BOARD));
       await page.mouse.move(board.x + board.width / 2, board.y + board.height / 2);
@@ -578,8 +520,7 @@ describe("the studio's theme toolbar", () => {
   it("leaves Escape in a text field to the field, keeping the artboard selected and its toolbar shown", async () => {
     const { context, page } = await openStudio(browser());
     try {
-      await layer(page, LIGHT_BOARD).click();
-      await artboardBar(page).waitFor({ state: "visible" });
+      await selectBoard(page, LIGHT_BOARD);
       const filter = inspector(page).getByRole("textbox", { name: "Filter tokens", exact: true });
       await filter.focus();
       await page.keyboard.press("Escape");
@@ -595,9 +536,7 @@ describe("the studio's theme toolbar", () => {
   it("opens a new target with no menu open, even one the last target's bar had open", async () => {
     const { context, page } = await openStudio(browser());
     try {
-      await layer(page, LIGHT_BOARD).click();
-      const bar = artboardBar(page);
-      await bar.waitFor({ state: "visible" });
+      const bar = await selectBoard(page, LIGHT_BOARD);
       // The press framed the artboard with room above it for the bar, so the bar's menus open at
       // one place against it however many rows the bar wraps to, and the Type menu ends above the
       // switch.
@@ -753,11 +692,9 @@ describe("the studio's theme toolbar", () => {
   );
 
   it("wraps its groups inside a narrow canvas at lg, keeping every control on the canvas and in the arrow-key order", async () => {
-    const { context, page } = await openStudio(browser(), { viewport: LG, route: RUNGS_PAGE });
+    const { context, page } = await openStudio(browser(), { viewport: LG, route: CORNERS_PAGE });
     try {
-      await layer(page, PINNED_BOARD).click();
-      const bar = artboardBar(page);
-      await bar.waitFor({ state: "visible" });
+      const bar = await selectBoard(page, PINNED_BOARD);
       const brand = bar.getByRole("combobox", { name: "Brand", exact: true });
       for (const group of ["Variant", "Segment", "Scheme", "Density"]) {
         expect(await bar.getByRole("group", { name: group, exact: true }).count(), group).toBe(1);
@@ -777,13 +714,11 @@ describe("the studio's theme toolbar", () => {
       expect(await isFocused(menuButton(bar, "Density"))).toBe(true);
       await page.keyboard.press("ArrowRight");
       expect(await isFocused(brand)).toBe(true);
-      const variant = bar.getByRole("group", { name: "Variant", exact: true });
       await page.keyboard.press("ArrowRight");
-      expect(await isFocused(variant.getByRole("button", { name: "Internal", exact: true }))).toBe(true);
+      expect(await isFocused(toggle(bar, "Variant", "Internal"))).toBe(true);
       await page.keyboard.press("ArrowRight");
       await page.keyboard.press("ArrowRight");
-      const segment = bar.getByRole("group", { name: "Segment", exact: true });
-      expect(await isFocused(segment.getByRole("button", { name: "Private", exact: true }))).toBe(true);
+      expect(await isFocused(toggle(bar, "Segment", "Private"))).toBe(true);
     } finally {
       await context.close();
     }
@@ -792,8 +727,7 @@ describe("the studio's theme toolbar", () => {
   it("sits on its artboard again once an animated zoom-out glide lands", async () => {
     const { context, page } = await openStudio(browser(), { reducedMotion: "no-preference" });
     try {
-      await layer(page, LIGHT_BOARD).click();
-      await artboardBar(page).waitFor({ state: "visible" });
+      await selectBoard(page, LIGHT_BOARD);
       await expect.poll(async () => canvas(page).getAttribute("data-gliding")).toBe("false");
       // Room above the artboard first, so the toolbar sits on it rather than pinned to the canvas.
       const framed = await box(artboard(page, LIGHT_BOARD));
@@ -834,10 +768,7 @@ describe("the studio's theme toolbar", () => {
       const before = await box(save);
 
       // The dense metrics move the button up its artboard and shrink it.
-      await inspector(page)
-        .getByRole("group", { name: "Density", exact: true })
-        .getByRole("button", { name: "Dense", exact: true })
-        .click();
+      await toggle(inspector(page), "Density", "Dense").click();
       await expect.poll(async () => (await box(save)).y).toBeLessThan(before.y - 1);
       expect((await box(save)).width).toBeLessThan(before.width - 1);
       await expect.poll(async () => (await placementOver(page, bar, save)).gap).toBeCloseTo(PART_GAP, 0);
@@ -850,20 +781,16 @@ describe("the studio's theme toolbar", () => {
   it("is a stop in the F6 cycle whose arrow keys move between its controls", async () => {
     const { context, page } = await openStudio(browser());
     try {
-      await layer(page, LIGHT_BOARD).click();
-      const bar = artboardBar(page);
-      await bar.waitFor({ state: "visible" });
-      const focused = async () => bar.evaluate((element) => element === document.activeElement);
-      for (let press = 0; press < 6 && !(await focused()); press++) {
+      const bar = await selectBoard(page, LIGHT_BOARD);
+      for (let press = 0; press < 6 && !(await isFocused(bar)); press++) {
         await page.keyboard.press("F6");
       }
-      expect(await focused()).toBe(true);
+      expect(await isFocused(bar)).toBe(true);
 
       await page.keyboard.press("Tab");
       expect(await isFocused(bar.getByRole("combobox", { name: "Brand", exact: true }))).toBe(true);
       await page.keyboard.press("ArrowRight");
-      const variant = bar.getByRole("group", { name: "Variant", exact: true });
-      expect(await isFocused(variant.getByRole("button", { name: "Internal", exact: true }))).toBe(true);
+      expect(await isFocused(toggle(bar, "Variant", "Internal"))).toBe(true);
     } finally {
       await context.close();
     }
@@ -872,9 +799,7 @@ describe("the studio's theme toolbar", () => {
   it("wears the chrome's scheme while its artboard wears its own", async () => {
     const { context, page } = await openStudio(browser(), { colorScheme: "light" });
     try {
-      await layer(page, DARK_BOARD).click();
-      const bar = artboardBar(page);
-      await bar.waitFor({ state: "visible" });
+      const bar = await selectBoard(page, DARK_BOARD);
       expect(await colorScheme(artboard(page, DARK_BOARD))).toBe("dark");
       expect(await colorScheme(bar)).toBe("light");
 
@@ -902,7 +827,7 @@ describe("the studio's theme toolbar", () => {
       expect(await page.getByRole("toolbar", { name: "Artboard theme", includeHidden: true }).count()).toBe(
         0
       );
-      expect(await page.getByRole("dialog", { name: "Theme toolbar", includeHidden: true }).count()).toBe(0);
+      expect(await page.getByRole("group", { name: "Theme toolbar", includeHidden: true }).count()).toBe(0);
     } finally {
       await context.close();
     }

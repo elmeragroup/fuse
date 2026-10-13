@@ -3,15 +3,11 @@ import { describe, expect, it } from "vitest";
 
 import { settleFrames } from "../landing-page";
 import { launchSuiteBrowser } from "../suite-browser";
-import { artboard, canvas, hashOf, inspector, layers, openStudio } from "./page";
-import type { StudioRoute } from "./page";
+import { CORNERS_PAGE, artboard, canvas, hashOf, inspector, layers, openStudio } from "./page";
 
 const browser = launchSuiteBrowser();
 
 const SHELLS = "Shells in Fuse";
-
-/** The Shape page, framed once its first rungs board shows. */
-const CORNERS_PAGE: StudioRoute = { path: "/studio/shape", artboard: "Radius rungs · Internal" };
 
 /**
  * The inner parts the Shells board renders with the menu closed, counted from its markup: three

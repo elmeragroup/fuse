@@ -1,18 +1,20 @@
 import type { Locator, Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
+import { readThemeAttributes } from "../demo-page";
 import { launchSuiteBrowser } from "../suite-browser";
 import {
   ARTBOARDS,
+  CORNERS_PAGE,
   artboard,
   background,
-  canvas,
   inspector,
-  layers,
   openStudio,
   openTokenSection,
+  pickBrand,
+  selectBoard,
   setTokenColor,
-  tokenRow,
+  toggle,
 } from "./page";
 import type { StudioRoute } from "./page";
 
@@ -22,50 +24,21 @@ const LIGHT_BOARD = ARTBOARDS[0];
 const DARK_BOARD = ARTBOARDS[1];
 const LIGHT_NEIGHBOUR = ARTBOARDS[2];
 const DARK_NEIGHBOUR = ARTBOARDS[3];
+const GLANCE_BOARD = ARTBOARDS[4];
 
-/** The Shape page: its rung artboards pin a variant in their spec, its shells board does not. */
-const RUNGS_PAGE: StudioRoute = { path: "/studio/shape", artboard: "Radius rungs · Internal" };
 const INTERNAL_RUNGS = "Radius rungs · Internal";
 const SHELLS = "Shells in Fuse";
 
+/** The Color page, with its sidebar boards. */
+const COLOR_PAGE: StudioRoute = { path: "/studio/color", artboard: "Role pairs · Light" };
+const LIGHT_SIDEBAR = "Sidebar · Light";
+
 const RED = "rgb(255, 0, 0)";
-
-/** The floating theme toolbar over the selected artboard. */
-function artboardBar(page: Page): Locator {
-  return canvas(page).getByRole("toolbar", { name: "Artboard theme", exact: true });
-}
-
-/** An artboard's row in the Layers list. */
-function layer(page: Page, name: string): Locator {
-  return layers(page).getByRole("button", { name, exact: true });
-}
-
-/** Selects the artboard `name` from Layers and waits for its bar. */
-async function selectBoard(page: Page, name: string): Promise<Locator> {
-  await layer(page, name).click();
-  const bar = artboardBar(page);
-  await bar.waitFor({ state: "visible" });
-  return bar;
-}
-
-/** Picks `brand` in the Brand Select inside `within`, the bar or the inspector. */
-async function pickBrand(page: Page, within: Locator, brand: string): Promise<void> {
-  await within.getByRole("combobox", { name: "Brand", exact: true }).click();
-  await page.getByRole("option", { name: brand, exact: true }).click();
-}
-
-/** Presses the `option` button of the toggle group named `group` inside `within`. */
-function toggle(within: Locator, group: string, option: string): Locator {
-  return within
-    .getByRole("group", { name: group, exact: true })
-    .getByRole("button", { name: option, exact: true });
-}
 
 /** The theme an artboard's scope renders, as its theme attributes name it. */
 async function themeOf(page: Page, name: string): Promise<string> {
-  return artboard(page, name).evaluate((element) =>
-    ["variant", "brand", "segment"].map((axis) => element.getAttribute(`data-theme-${axis}`)).join("-")
-  );
+  const { variant, brand, segment } = await readThemeAttributes(artboard(page, name));
+  return [variant, brand, segment].join("-");
 }
 
 /** A custom property as the artboard's scope element computes it. */
@@ -121,7 +94,7 @@ describe("an artboard's own brand, variant and segment", () => {
   });
 
   it("changes the variant of an artboard that follows the base theme and of one its spec pins", async () => {
-    const { context, page } = await openStudio(browser(), { route: RUNGS_PAGE });
+    const { context, page } = await openStudio(browser(), { route: CORNERS_PAGE });
     try {
       let bar = await selectBoard(page, SHELLS);
       expect(await toggle(bar, "Variant", "External").getAttribute("aria-pressed")).toBe("true");
@@ -195,11 +168,7 @@ describe("an artboard's own brand, variant and segment", () => {
       await pickBrand(page, await selectBoard(page, DARK_BOARD), "Fjordkraft");
       await expect.poll(() => themeOf(page, DARK_BOARD)).toBe("external-fkas-private");
       await openTokenSection(page, "Actions");
-      await tokenRow(page, "brand").getByRole("button", { name: "Edit --brand", exact: true }).click();
-      const field = page.getByRole("textbox", { name: "Color", exact: true });
-      await field.fill("var(--sidebar-brand)");
-      await page.keyboard.press("Escape");
-      await field.waitFor({ state: "hidden" });
+      await setTokenColor(page, "brand", "var(--sidebar-brand)");
 
       // The Elmera neighbour wears the edit: its brand is its sidebar brand.
       await expect
@@ -218,7 +187,7 @@ describe("an artboard's own brand, variant and segment", () => {
   });
 
   it("resets every artboard's brand, variant and segment with the base theme, keeping scheme and density", async () => {
-    const { context, page } = await openStudio(browser(), { route: RUNGS_PAGE });
+    const { context, page } = await openStudio(browser(), { route: CORNERS_PAGE });
     try {
       let bar = await selectBoard(page, INTERNAL_RUNGS);
       await pickBrand(page, bar, "Fjordkraft");
@@ -266,6 +235,43 @@ describe("an artboard's own brand, variant and segment", () => {
         .toBe("true");
       expect(await brandIn(section, "TrøndelagKraft").isVisible()).toBe(true);
       await expect.poll(() => themeOf(page, LIGHT_BOARD)).toBe("internal-tkas-company");
+    } finally {
+      await context.close();
+    }
+  });
+
+  it("labels the glance board's radius ladder with the re-branded artboard's radius", async () => {
+    // The lg rung is --radius (fuse.css: --radius-lg: var(--radius)). The composed themes declare
+    // --radius 0.375rem for external Elmera and 0.75rem for external Fjordkraft
+    // (packages/fuse/src/theme/__snapshots__/themes.css).
+    const { context, page } = await openStudio(browser());
+    try {
+      const lg = artboard(page, GLANCE_BOARD)
+        .getByRole("region", { name: "Radius", exact: true })
+        .getByText(/^lg /u);
+      await expect.poll(async () => lg.textContent()).toBe("lg 6px");
+
+      await pickBrand(page, await selectBoard(page, GLANCE_BOARD), "Fjordkraft");
+      await expect.poll(() => themeOf(page, GLANCE_BOARD)).toBe("external-fkas-private");
+      await expect.poll(async () => lg.textContent()).toBe("lg 12px");
+    } finally {
+      await context.close();
+    }
+  });
+
+  it("marks the sidebar brand by the re-branded artboard's own declaration", async () => {
+    // The theming handbook's sidebar brand section: Fjordkraft declares its light sidebar brand
+    // as a literal tone, while Elmera's light one is var(--brand).
+    const { context, page } = await openStudio(browser(), { route: COLOR_PAGE });
+    try {
+      const source = artboard(page, LIGHT_SIDEBAR).locator(
+        '[data-brand-source="sidebar-brand"] [data-source]'
+      );
+      await expect.poll(async () => source.textContent()).toBe("→ brand");
+
+      await pickBrand(page, await selectBoard(page, LIGHT_SIDEBAR), "Fjordkraft");
+      await expect.poll(() => themeOf(page, LIGHT_SIDEBAR)).toBe("external-fkas-private");
+      await expect.poll(async () => source.textContent()).toBe("Literal");
     } finally {
       await context.close();
     }

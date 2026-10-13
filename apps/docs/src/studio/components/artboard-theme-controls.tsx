@@ -3,15 +3,18 @@
 import type { ReactElement } from "react";
 
 import { Select } from "@elmeragroup/fuse/select";
-import { BRAND_CODES, BRANDS, THEME_SEGMENTS, THEME_VARIANTS } from "@elmeragroup/fuse/theme";
+import { BRAND_CODES, BRANDS, DENSITIES, THEME_SEGMENTS, THEME_VARIANTS } from "@elmeragroup/fuse/theme";
 import type { ThemeInput, ThemeSegment } from "@elmeragroup/fuse/theme";
 
 import { SingleToggle } from "../../components/single-toggle";
 import { SEGMENT_LABELS, VARIANT_LABELS } from "../../lib/theme";
-import type { ArtboardSpec } from "../lib/documents";
+import type { ArtboardScheme, ArtboardSpec } from "../lib/documents";
+import { DENSITY_LABELS, SCHEME_LABELS } from "../lib/labels";
 import { themeWith } from "../lib/theme-axes";
 import type { ThemeAxes } from "../lib/theme-axes";
 import { useStudio } from "./studio-state";
+
+const SCHEMES = ["light", "dark"] as const satisfies readonly ArtboardScheme[];
 
 /** The brands' display names, by brand, for a Select's trigger to show before it opens. */
 export const BRAND_NAMES = Object.fromEntries(
@@ -87,6 +90,40 @@ export function SegmentToggle({ artboard }: { artboard: ArtboardSpec }): ReactEl
       }}
       onValueChange={(segment) => {
         change({ segment });
+      }}
+    />
+  );
+}
+
+/** An artboard's scheme, as a segmented toggle. */
+export function SchemeToggle({ artboard }: { artboard: ArtboardSpec }): ReactElement {
+  const { settingsOf, changeSettings } = useStudio();
+  return (
+    <SingleToggle
+      label="Scheme"
+      size="sm"
+      options={SCHEMES}
+      labels={SCHEME_LABELS}
+      value={settingsOf(artboard).scheme}
+      onValueChange={(scheme) => {
+        changeSettings(artboard.id, { scheme });
+      }}
+    />
+  );
+}
+
+/** An artboard's density, as a segmented toggle. */
+export function DensityToggle({ artboard }: { artboard: ArtboardSpec }): ReactElement {
+  const { settingsOf, changeSettings } = useStudio();
+  return (
+    <SingleToggle
+      label="Density"
+      size="sm"
+      options={DENSITIES}
+      labels={DENSITY_LABELS}
+      value={settingsOf(artboard).density}
+      onValueChange={(density) => {
+        changeSettings(artboard.id, { density });
       }}
     />
   );

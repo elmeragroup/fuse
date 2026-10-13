@@ -10,7 +10,6 @@ import { Text } from "@elmeragroup/fuse/text";
 import { aliasTarget, currentCss } from "../../lib/token-values";
 import type { TokenName } from "../../lib/tokens";
 import { useArtboardScope } from "../studio-artboard";
-import { useStudioEdits } from "../studio-edits";
 
 const sidebarBrandSource = tv({
   slots: {
@@ -22,12 +21,11 @@ const sidebarBrandSource = tv({
 const styles = sidebarBrandSource();
 
 /**
- * Whether `name` holds an alias or a literal on this artboard, as the base theme declares it or
- * an edit replaced it: a chip naming the alias's source, such as `→ brand`, or `Literal`.
+ * Whether `name` holds an alias or a literal on this artboard, as the artboard's theme declares it
+ * or an edit it wears replaced it: a chip naming the alias's source, such as `→ brand`, or `Literal`.
  */
 export function SidebarBrandSource({ name }: { name: TokenName }): ReactElement {
-  const { overrides, seed } = useStudioEdits();
-  const { scheme } = useArtboardScope();
+  const { overrides, seed, scheme } = useArtboardScope();
   const css = currentCss(overrides, seed, scheme, name);
   const target = css === undefined ? undefined : aliasTarget(css);
   return (

@@ -9,40 +9,24 @@ import { launchSuiteBrowser } from "../suite-browser";
 import {
   ARTBOARDS,
   artboard,
+  box,
   canvas,
+  inside,
   inspector,
+  isFocused,
   layers,
   newStudioContext,
   openStudio as openStudioPage,
 } from "./page";
-import type { StudioContextOptions, StudioPage } from "./page";
+import type { Box, StudioContextOptions, StudioPage } from "./page";
 
 const browser = launchSuiteBrowser();
 
 const PHONE = { width: 390, height: 844 } as const;
 
-type Box = { x: number; y: number; width: number; height: number };
-
 /** Opens `/studio` in a fresh context; each test closes its page, and the suite the rest. */
 async function openStudio(options: StudioContextOptions & { hash?: string } = {}): Promise<StudioPage> {
   return openStudioPage(browser(), options);
-}
-
-async function box(locator: Locator): Promise<Box> {
-  const measured = await locator.boundingBox();
-  if (measured === null) {
-    throw new Error("the element has no box");
-  }
-  return measured;
-}
-
-function inside(inner: Box, outer: Box): boolean {
-  return (
-    inner.x >= outer.x - 1 &&
-    inner.y >= outer.y - 1 &&
-    inner.x + inner.width <= outer.x + outer.width + 1 &&
-    inner.y + inner.height <= outer.y + outer.height + 1
-  );
 }
 
 /** Whether `inner` shows in `outer`: whole when it fits, else from its top-left corner. */
@@ -78,11 +62,6 @@ async function touch(cdp: CDPSession, type: "touchStart" | "touchMove" | "touchE
 /** Whether the focused element sits inside `locator`. */
 async function holdsFocus(locator: Locator): Promise<boolean> {
   return locator.evaluate((element) => element.contains(document.activeElement));
-}
-
-/** Whether `locator` is the focused element itself. */
-async function isFocused(locator: Locator): Promise<boolean> {
-  return locator.evaluate((element) => element === document.activeElement);
 }
 
 describe("theme studio", () => {

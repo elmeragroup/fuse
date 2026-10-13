@@ -230,16 +230,24 @@ export function ViewportProvider({ children }: { children: ReactNode }): ReactEl
     return latest.current;
   }, []);
 
+  /**
+   * Moves the camera to show every rect, `top` screen px below the screen's top.
+   *
+   * @returns Whether it moved: not when there is nothing to fit.
+   */
   const fit = useCallback(
-    (rects: readonly (Rect | undefined)[], options?: MoveOptions) => {
+    (rects: readonly (Rect | undefined)[], options?: MoveOptions, top: number = FIT_PADDING): boolean => {
       const next = fitRects(
         rects.filter((rect) => rect !== undefined),
         screen(),
-        FIT_PADDING
+        FIT_PADDING,
+        top
       );
-      if (next !== undefined) {
-        move(next, options);
+      if (next === undefined) {
+        return false;
       }
+      move(next, options);
+      return true;
     },
     [move, screen]
   );
@@ -255,16 +263,8 @@ export function ViewportProvider({ children }: { children: ReactNode }): ReactEl
   );
 
   const frameArtboard = useCallback(
-    (id: string, top: number, options: MoveOptions | undefined): boolean => {
-      const rect = rectOf(id);
-      const next = rect === undefined ? undefined : fitRects([rect], screen(), FIT_PADDING, top);
-      if (next === undefined) {
-        return false;
-      }
-      move(next, options);
-      return true;
-    },
-    [move, rectOf, screen]
+    (id: string, top: number, options: MoveOptions | undefined): boolean => fit([rectOf(id)], options, top),
+    [fit, rectOf]
   );
 
   // A Layers pick or zoom to selection frames the artboard with room above it for the floating

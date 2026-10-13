@@ -1,6 +1,15 @@
 "use client";
 
-import { memo, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import {
+  Fragment,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import type { ReactElement } from "react";
 
 import { tv } from "tailwind-variants";
@@ -8,13 +17,11 @@ import { tv } from "tailwind-variants";
 import { Popover } from "@elmeragroup/fuse/popover";
 import type { PopoverContentProps } from "@elmeragroup/fuse/popover";
 import { Select } from "@elmeragroup/fuse/select";
-import { DENSITIES } from "@elmeragroup/fuse/theme";
 import { Toolbar } from "@elmeragroup/fuse/toolbar";
 
-import { SingleToggle } from "../../../components/single-toggle";
 import { STUDIO_SLOT_TOKENS } from "../../../generated/studio-slot-tokens";
-import type { ArtboardScheme, ArtboardSpec } from "../../lib/documents";
-import { DENSITY_LABELS, SCHEME_LABELS } from "../../lib/labels";
+import type { ArtboardSpec } from "../../lib/documents";
+import { DENSITY_LABELS } from "../../lib/labels";
 import { partTokens } from "../../lib/slot-tokens";
 import { STUDIO_TOKEN_NAMES } from "../../lib/tokens";
 import { toolbarAnchor } from "../../lib/viewport";
@@ -22,12 +29,13 @@ import type { Rect } from "../../lib/viewport";
 import {
   BRAND_NAMES,
   BrandOptions,
+  DensityToggle,
+  SchemeToggle,
   SegmentToggle,
   VariantToggle,
   useArtboardTheme,
 } from "../artboard-theme-controls";
 import { ChromeScope } from "../chrome-scope";
-import { useArtboardScopeOf } from "../studio-artboard";
 import { useDesktop } from "../studio-desktop";
 import { usePartSelection } from "../studio-part-selection";
 import type { PickedPart } from "../studio-part-selection";
@@ -56,8 +64,6 @@ const themeToolbar = tv({
 });
 
 const styles = themeToolbar();
-
-const SCHEMES = ["light", "dark"] as const satisfies readonly ArtboardScheme[];
 
 /** Screen px between an artboard and its toolbar, clear of the artboard's name label above it. */
 const ARTBOARD_OFFSET = 36;
@@ -146,8 +152,6 @@ const BRAND_MENU = "Brand";
  * hides.
  */
 function ArtboardSettings({ artboard, menu }: { artboard: ArtboardSpec; menu: OpenMenu }): ReactElement {
-  const { settingsOf, changeSettings } = useStudio();
-  const { scheme, density } = settingsOf(artboard);
   const { theme, change } = useArtboardTheme(artboard);
   return (
     <>
@@ -174,26 +178,8 @@ function ArtboardSettings({ artboard, menu }: { artboard: ArtboardSpec; menu: Op
       </Select.Root>
       <VariantToggle artboard={artboard} />
       <SegmentToggle artboard={artboard} />
-      <SingleToggle
-        label="Scheme"
-        size="sm"
-        options={SCHEMES}
-        labels={SCHEME_LABELS}
-        value={scheme}
-        onValueChange={(next) => {
-          changeSettings(artboard.id, { scheme: next });
-        }}
-      />
-      <SingleToggle
-        label="Density"
-        size="sm"
-        options={DENSITIES}
-        labels={DENSITY_LABELS}
-        value={density}
-        onValueChange={(next) => {
-          changeSettings(artboard.id, { density: next });
-        }}
-      />
+      <SchemeToggle artboard={artboard} />
+      <DensityToggle artboard={artboard} />
     </>
   );
 }
@@ -212,7 +198,6 @@ const ThemeBar = memo(function ThemeBar({
   menu: OpenMenu;
 }): ReactElement {
   const { settingsOf } = useStudio();
-  const scope = useArtboardScopeOf(target.artboard);
   const read = target.kind === "part" ? partTokens(STUDIO_SLOT_TOKENS, target.part.slot) : undefined;
   const names = target.kind === "part" ? (read?.tokens ?? []) : STUDIO_TOKEN_NAMES;
   const { density } = settingsOf(target.artboard);
@@ -236,20 +221,25 @@ const ThemeBar = memo(function ThemeBar({
           No role tokens
         </span>
       ) : (
-        <Toolbar.Separator key="separator" />
-      )}
-      {names.length === 0 ? null : (
-        <Toolbar.Group key="menus" aria-label="Theme menus" className={styles.group()}>
-          <TokenMenus scope={scope} names={names} target={target.kind} menu={menu} />
-          {target.kind === "part" ? null : (
-            <ThemeMenu
-              title="Density"
+        <Fragment key="menus">
+          <Toolbar.Separator />
+          <Toolbar.Group aria-label="Theme menus" className={styles.group()}>
+            <TokenMenus
+              artboard={target.artboard}
+              names={names}
+              counted={target.kind === "part"}
               menu={menu}
-              description={`Edits apply to every ${DENSITY_LABELS[density].toLowerCase()} artboard.`}>
-              <DensityKnobs density={density} />
-            </ThemeMenu>
-          )}
-        </Toolbar.Group>
+            />
+            {target.kind === "part" ? null : (
+              <ThemeMenu
+                title="Density"
+                menu={menu}
+                description={`Edits apply to every ${DENSITY_LABELS[density].toLowerCase()} artboard.`}>
+                <DensityKnobs density={density} />
+              </ThemeMenu>
+            )}
+          </Toolbar.Group>
+        </Fragment>
       )}
     </Toolbar.Root>
   );
@@ -411,8 +401,10 @@ function FloatingToolbar(): ReactElement {
           side="top"
           sideOffset={sideOffset}
           initialFocus={false}
+          // A group of the canvas chrome, not a dialog: it takes no focus, and the studio's keys
+          // stay the studio's inside it, as on the toolbar at the canvas's foot.
+          role="group"
           aria-label="Theme toolbar"
-          data-canvas-overlay
           className={styles.popup()}>
           {current === undefined ? null : <ThemeBar target={current} menu={menu} />}
         </Popover.Content>

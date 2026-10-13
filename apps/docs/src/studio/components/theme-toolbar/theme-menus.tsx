@@ -16,12 +16,13 @@ import type { Density } from "@elmeragroup/fuse/theme";
 import { Toolbar } from "@elmeragroup/fuse/toolbar";
 
 import { STUDIO_METRICS } from "../../lib/density-metrics";
+import type { ArtboardSpec } from "../../lib/documents";
 import { STUDIO_SECTIONS, TOKEN_TABLE, matchesTokenQuery } from "../../lib/tokens";
 import type { SectionId, TokenName } from "../../lib/tokens";
 import { menuPlacement } from "../../lib/viewport";
 import type { MenuPlacement } from "../../lib/viewport";
 import { METRIC_ROLES, MetricKnob } from "../density/density-panel";
-import type { ArtboardScope } from "../studio-artboard";
+import { useArtboardScopeOf } from "../studio-artboard";
 import { TokenRow, useResolvedColors } from "../studio-token-panel";
 import type { TokenRowProps } from "../studio-token-panel";
 import { useViewportCommands, useViewportState } from "../studio-viewport";
@@ -67,6 +68,39 @@ const MENU_GAP = MENU_OFFSET + 12;
 const MIN_MENU_ROOM = 160;
 
 /**
+ * Re-measures an open menu a frame after each camera move or canvas resize, once the toolbar has
+ * followed. Only an open menu renders it, so a closed one does not render on camera moves.
+ */
+function FollowCamera({ measure }: { measure: () => void }): null {
+  const { canvas } = useViewportCommands();
+  const { viewport } = useViewportState();
+  // `viewport` places the trigger: each camera move measures again.
+  useEffect(() => {
+    const request = requestAnimationFrame(measure);
+    return () => {
+      cancelAnimationFrame(request);
+    };
+  }, [viewport, measure]);
+  useEffect(() => {
+    const frame = canvas();
+    if (frame === null) {
+      return undefined;
+    }
+    let request = 0;
+    const resizes = new ResizeObserver(() => {
+      cancelAnimationFrame(request);
+      request = requestAnimationFrame(measure);
+    });
+    resizes.observe(frame);
+    return () => {
+      cancelAnimationFrame(request);
+      resizes.disconnect();
+    };
+  }, [canvas, measure]);
+  return null;
+}
+
+/**
  * A menu of the theme toolbar: a toolbar button that opens a popover holding the menu's knobs,
  * which mount only while it is open. `count`, when given, shows how many tokens it lists.
  *
@@ -74,8 +108,8 @@ const MIN_MENU_ROOM = 160;
  * taller than the room below its trigger would flip beside the toolbar and cover its other
  * buttons. The menu picks its side itself, above or below the trigger (`menuPlacement`), and caps
  * its height to the room there, which it then fits, and scrolls inside. It measures as it opens,
- * and again while open, a frame after each camera move or canvas resize, once the toolbar has
- * followed.
+ * and again while open, a frame after each camera move or canvas resize (`FollowCamera`), once
+ * the toolbar has followed.
  */
 export function ThemeMenu({
   title,
@@ -91,7 +125,6 @@ export function ThemeMenu({
   children: ReactNode;
 }): ReactElement {
   const { canvas } = useViewportCommands();
-  const { viewport } = useViewportState();
   const trigger = useRef<HTMLButtonElement>(null);
   const open = menu.title === title;
   const [placement, setPlacement] = useState<MenuPlacement | undefined>(undefined);
@@ -104,25 +137,6 @@ export function ThemeMenu({
     const next = menuPlacement(below, frame, MENU_GAP, MIN_MENU_ROOM);
     setPlacement((current) => (current?.side === next.side && current.room === next.room ? current : next));
   }, [canvas]);
-  useEffect(() => {
-    const frame = canvas();
-    if (!open || frame === null) {
-      return undefined;
-    }
-    let request = 0;
-    const later = () => {
-      cancelAnimationFrame(request);
-      request = requestAnimationFrame(measure);
-    };
-    later();
-    const resizes = new ResizeObserver(later);
-    resizes.observe(frame);
-    return () => {
-      cancelAnimationFrame(request);
-      resizes.disconnect();
-    };
-    // `viewport` places the trigger: each camera move measures again.
-  }, [open, viewport, canvas, measure]);
   const cap: CSSProperties & Record<"--menu-room", string> = {
     "--menu-room": placement === undefined ? "100vh" : `${String(placement.room)}px`,
   };
@@ -135,6 +149,7 @@ export function ThemeMenu({
         }
         menu.change(title, next);
       }}>
+      {open ? <FollowCamera measure={measure} /> : null}
       <Toolbar.Button
         ref={trigger}
         render={<Popover.Trigger render={<Button variant="ghost" size="sm" />} />}>
@@ -163,35 +178,33 @@ export function ThemeMenu({
   );
 }
 
-/** Which bar the token menus sit in: the part bar counts each menu's tokens. */
-export type MenuTarget = "artboard" | "part";
-
 /**
  * The theme toolbar's token menus, named after the studio pages that show their tokens: Color
  * holds the color tokens of `names`, grouped in the token editor's sections, and Shape and Type
- * hold the tokens of the editor's Shape and Typography sections. Each edits in `scope`. A menu
- * with no tokens does not render.
+ * hold the tokens of the editor's Shape and Typography sections. Each edits in the scope of
+ * `artboard`. A menu with no tokens does not render. A `counted` menu shows how many tokens it
+ * lists, as the part bar's do.
  */
 export function TokenMenus({
-  scope,
+  artboard,
   names,
-  target,
+  counted,
   menu,
 }: {
-  scope: ArtboardScope;
+  artboard: ArtboardSpec;
   names: readonly TokenName[];
-  target: MenuTarget;
+  counted: boolean;
   menu: OpenMenu;
 }): ReactElement {
   const colors = names.filter((name) => TOKEN_TABLE[name].kind === "color");
   const corners = names.filter((name) => TOKEN_TABLE[name].section === "shape");
   const type = names.filter((name) => TOKEN_TABLE[name].section === "typography");
-  const count = (tokens: readonly TokenName[]) => (target === "part" ? tokens.length : undefined);
+  const count = (tokens: readonly TokenName[]) => (counted ? tokens.length : undefined);
   return (
     <>
       {colors.length === 0 ? null : (
         <ThemeMenu title="Color" count={count(colors)} menu={menu}>
-          <ColorKnobs scope={scope} tokens={colors} />
+          <ColorKnobs artboard={artboard} tokens={colors} />
         </ThemeMenu>
       )}
       {corners.length === 0 ? null : (
@@ -200,12 +213,12 @@ export function TokenMenus({
           description="Edits apply to every artboard."
           count={count(corners)}
           menu={menu}>
-          <TokenKnobs scope={scope} tokens={corners} />
+          <TokenKnobs artboard={artboard} tokens={corners} />
         </ThemeMenu>
       )}
       {type.length === 0 ? null : (
         <ThemeMenu title="Type" count={count(type)} menu={menu}>
-          <TokenKnobs scope={scope} tokens={type} />
+          <TokenKnobs artboard={artboard} tokens={type} />
         </ThemeMenu>
       )}
     </>
@@ -220,7 +233,14 @@ const SHORT_LIST = 12;
  * `TokenRow` per token edited in the target's scope and scheme, as the Selection section edits
  * them. A filter opens every section that holds a match.
  */
-function ColorKnobs({ scope, tokens }: { scope: ArtboardScope; tokens: readonly TokenName[] }): ReactElement {
+function ColorKnobs({
+  artboard,
+  tokens,
+}: {
+  artboard: ArtboardSpec;
+  tokens: readonly TokenName[];
+}): ReactElement {
+  const scope = useArtboardScopeOf(artboard);
   const [query, setQuery] = useState("");
   const listed = STUDIO_SECTIONS.filter((section) =>
     tokens.some((name) => TOKEN_TABLE[name].section === section.id)
@@ -286,12 +306,13 @@ const NO_COLORS: TokenRowProps["colors"] = new Map();
 
 /** The Shape or Type menu's knobs: a `TokenRow` per token, edited in the target's scope and scheme. */
 function TokenKnobs({
-  scope,
+  artboard,
   tokens,
 }: {
-  scope: ArtboardScope;
+  artboard: ArtboardSpec;
   tokens: readonly TokenName[];
 }): ReactElement | null {
+  const scope = useArtboardScopeOf(artboard);
   return scope.seed === undefined ? null : (
     <div className={styles.rows()}>
       {tokens.map((name) => (

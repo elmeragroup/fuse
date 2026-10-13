@@ -13,6 +13,7 @@ import { DENSITIES, densityAttributes } from "@elmeragroup/fuse/theme";
 import { metricStyle } from "../../lib/density-metrics";
 import { metricOverridesFor } from "../../lib/edits";
 import { DENSITY_LABELS } from "../../lib/labels";
+import { useArtboardScope } from "../studio-artboard";
 import { useStudioEdits } from "../studio-edits";
 import { useStudio } from "../studio-state";
 
@@ -79,8 +80,7 @@ const CONTROL_SIZES = ["xs", "sm", "default", "lg"] as const;
 
 /** One radius rung as a real rounded box, labeled with the radius the browser resolved. */
 function RungBox({ rung }: { rung: Rung }): ReactElement {
-  const { theme } = useStudio();
-  const { styleFor } = useStudioEdits();
+  const { theme, style } = useArtboardScope();
   const box = useRef<HTMLDivElement>(null);
   const [radius, setRadius] = useState("");
   // The rung follows the artboard's theme and token edits, so it is read back after each change.
@@ -88,7 +88,7 @@ function RungBox({ rung }: { rung: Rung }): ReactElement {
     if (box.current !== null) {
       setRadius(getComputedStyle(box.current).borderTopLeftRadius);
     }
-  }, [theme, styleFor]);
+  }, [theme, style]);
   return (
     <div className={styles.rung()}>
       <div ref={box} className={styles.rungBox({ rung })} />
@@ -123,7 +123,7 @@ function SizeRow({ size }: { size: (typeof CONTROL_SIZES)[number] }): ReactEleme
 }
 
 /**
- * The base theme at a glance: its key color roles, its radius ladder and the control heights
+ * The artboard's theme at a glance: its key color roles, its radius ladder and the control heights
  * each density gives Button's sizes. Every swatch, box and button is drawn by the theme itself.
  * Each density's stage redeclares its metrics, so it carries that density's metric edits too.
  */

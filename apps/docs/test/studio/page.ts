@@ -23,6 +23,12 @@ export const OVERVIEW: StudioRoute = { path: "/studio", artboard: ARTBOARDS[0] }
 /** The Density page, ready once its dense twin shows. */
 export const DENSITY_PAGE: StudioRoute = { path: "/studio/density", artboard: "Twin · Dense" };
 
+/**
+ * The Shape page, framed once its first rungs board shows. Its rung artboards pin a variant in
+ * their spec; its Shells board does not.
+ */
+export const CORNERS_PAGE: StudioRoute = { path: "/studio/shape", artboard: "Radius rungs · Internal" };
+
 /** How a studio suite sets up the browser context it opens the studio in. */
 export type StudioContextOptions = {
   viewport?: { width: number; height: number };
@@ -118,6 +124,42 @@ export function layers(page: Page): Locator {
   return page.getByRole("complementary", { name: "Pages and layers", exact: true });
 }
 
+/** An artboard's row in the Layers list. */
+export function layer(page: Page, name: string): Locator {
+  return layers(page).getByRole("button", { name, exact: true });
+}
+
+/** The floating theme toolbar over the selected artboard. */
+export function artboardBar(page: Page): Locator {
+  return canvas(page).getByRole("toolbar", { name: "Artboard theme", exact: true });
+}
+
+/** Selects the artboard `name` from Layers and waits for its bar. */
+export async function selectBoard(page: Page, name: string): Promise<Locator> {
+  await layer(page, name).click();
+  const bar = artboardBar(page);
+  await bar.waitFor({ state: "visible" });
+  return bar;
+}
+
+/**
+ * Picks `brand` in the Brand Select inside `within`, the bar or the inspector, and waits for its
+ * trigger to show it.
+ */
+export async function pickBrand(page: Page, within: Locator, brand: string): Promise<void> {
+  const trigger = within.getByRole("combobox", { name: "Brand", exact: true });
+  await trigger.click();
+  await page.getByRole("option", { name: brand, exact: true }).click();
+  await trigger.getByText(brand, { exact: true }).waitFor();
+}
+
+/** The `option` button of the toggle group named `group` inside `within`. */
+export function toggle(within: Locator, group: string, option: string): Locator {
+  return within
+    .getByRole("group", { name: group, exact: true })
+    .getByRole("button", { name: option, exact: true });
+}
+
 /** A token's row in the inspector's token editor. */
 export function tokenRow(page: Page, name: string): Locator {
   return inspector(page).getByRole("group", { name: `--${name}`, exact: true });
@@ -131,9 +173,19 @@ export async function openTokenSection(page: Page, title: string): Promise<void>
   }
 }
 
-/** Types `value` into a color token's knob, in the edited scheme, and closes its popover. */
-export async function setTokenColor(page: Page, name: string, value: string): Promise<void> {
-  await tokenRow(page, name)
+/**
+ * Types `value` into a color token's knob, in the edited scheme, and closes its popover.
+ *
+ * @param within - Where the token's row is: the inspector by default, or a theme toolbar menu.
+ */
+export async function setTokenColor(
+  page: Page,
+  name: string,
+  value: string,
+  within: Locator = inspector(page)
+): Promise<void> {
+  await within
+    .getByRole("group", { name: `--${name}`, exact: true })
     .getByRole("button", { name: `Edit --${name}`, exact: true })
     .click();
   const field = page.getByRole("textbox", { name: "Color", exact: true });
@@ -152,6 +204,32 @@ export async function setMetric(page: Page, name: string, density: string, px: n
 /** A studio share hash for `json`, the version-1 share text written out by hand. */
 export function hashOf(json: string): string {
   return `#1.${Buffer.from(json, "utf8").toString("base64url")}`;
+}
+
+export type Box = { x: number; y: number; width: number; height: number };
+
+/** The box `locator` draws, which must have one. */
+export async function box(locator: Locator): Promise<Box> {
+  const measured = await locator.boundingBox();
+  if (measured === null) {
+    throw new Error("the element has no box");
+  }
+  return measured;
+}
+
+/** Whether `inner` lies inside `outer`, give or take a pixel. */
+export function inside(inner: Box, outer: Box): boolean {
+  return (
+    inner.x >= outer.x - 1 &&
+    inner.y >= outer.y - 1 &&
+    inner.x + inner.width <= outer.x + outer.width + 1 &&
+    inner.y + inner.height <= outer.y + outer.height + 1
+  );
+}
+
+/** Whether `locator` is the focused element itself. */
+export async function isFocused(locator: Locator): Promise<boolean> {
+  return locator.evaluate((element) => element === document.activeElement);
 }
 
 export async function background(locator: Locator): Promise<string> {

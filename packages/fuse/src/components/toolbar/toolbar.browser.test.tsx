@@ -14,6 +14,7 @@ import {
   stampDensity,
   stampDocumentTheme,
 } from "../../../test/themed-browser-render";
+import type { QueryableRole } from "../../../test/themed-browser-render";
 import { DENSITIES } from "../../theme/density";
 import { ThemeScope } from "../../theme/theme-scope";
 import { Button } from "../button/button";
@@ -22,15 +23,10 @@ import { ToggleGroup } from "../toggle-group";
 import { Tooltip } from "../tooltip";
 import { Toolbar } from "./index";
 
-function focusedName(): string | null {
-  const focused = document.activeElement;
-  return focused instanceof HTMLElement ? (focused.getAttribute("aria-label") ?? focused.textContent) : null;
-}
-
-async function press(key: string, expected: string): Promise<void> {
+async function press(key: string, role: QueryableRole, name: string): Promise<void> {
   await userEvent.keyboard(key);
   await vi.waitFor(() => {
-    expect(focusedName(), `${key} focuses ${expected}`).toBe(expected);
+    expect(document.activeElement, `${key} focuses the ${role} ${name}`).toBe(roleNamed(role, name));
   });
 }
 
@@ -53,17 +49,17 @@ describe("Toolbar", () => {
     expect(toolbar.getAttribute("aria-orientation")).toBe("horizontal");
 
     roleNamed("button", "Before").focus();
-    await press("{Tab}", "Bold");
-    await press("{ArrowRight}", "Italic");
-    await press("{ArrowRight}", "Help");
-    await press("{ArrowRight}", "Find");
-    await press("{ArrowRight}", "Bold");
-    await press("{ArrowLeft}", "Find");
-    await press("{ArrowLeft}", "Help");
+    await press("{Tab}", "button", "Bold");
+    await press("{ArrowRight}", "button", "Italic");
+    await press("{ArrowRight}", "link", "Help");
+    await press("{ArrowRight}", "textbox", "Find");
+    await press("{ArrowRight}", "button", "Bold");
+    await press("{ArrowLeft}", "textbox", "Find");
+    await press("{ArrowLeft}", "link", "Help");
 
     // Tab leaves the toolbar, and Shift+Tab comes back to the item it left.
-    await press("{Tab}", "After");
-    await press("{Shift>}{Tab}{/Shift}", "Help");
+    await press("{Tab}", "button", "After");
+    await press("{Shift>}{Tab}{/Shift}", "link", "Help");
   });
 
   it("stops at the ends instead of wrapping when loopFocus is false", async () => {
@@ -74,9 +70,9 @@ describe("Toolbar", () => {
       </Toolbar.Root>
     );
     roleNamed("button", "Undo").focus();
-    await press("{ArrowLeft}", "Undo");
-    await press("{ArrowRight}", "Redo");
-    await press("{ArrowRight}", "Redo");
+    await press("{ArrowLeft}", "button", "Undo");
+    await press("{ArrowRight}", "button", "Redo");
+    await press("{ArrowRight}", "button", "Redo");
   });
 
   it("keeps a disabled item in the arrow-key order without letting it activate", async () => {
@@ -93,7 +89,7 @@ describe("Toolbar", () => {
       </Toolbar.Root>
     );
     roleNamed("button", "Reply").focus();
-    await press("{ArrowRight}", "Archive");
+    await press("{ArrowRight}", "button", "Archive");
     const archive = roleNamed("button", "Archive");
     expect(archive.getAttribute("aria-disabled")).toBe("true");
     await userEvent.keyboard("{Enter}");
@@ -101,7 +97,7 @@ describe("Toolbar", () => {
     expect(onArchive).not.toHaveBeenCalled();
 
     // A disabled group disables its items the same way.
-    await press("{ArrowRight}", "Spam");
+    await press("{ArrowRight}", "button", "Spam");
     expect(roleNamed("button", "Spam").getAttribute("aria-disabled")).toBe("true");
   });
 
@@ -126,8 +122,8 @@ describe("Toolbar", () => {
     expect(line.width).toBeGreaterThan(1);
 
     roleNamed("button", "Pen").focus();
-    await press("{ArrowDown}", "Eraser");
-    await press("{ArrowUp}", "Pen");
+    await press("{ArrowDown}", "button", "Eraser");
+    await press("{ArrowUp}", "button", "Pen");
   });
 
   it("draws a horizontal toolbar's separator as a vertical hairline, 4px short of the items at each end", () => {
@@ -181,25 +177,25 @@ describe("Toolbar", () => {
     );
 
     roleNamed("button", "Left").focus();
-    await press("{ArrowRight}", "Right");
+    await press("{ArrowRight}", "button", "Right");
     await userEvent.keyboard(" ");
     await expect.element(page.getByRole("button", { name: "Right", pressed: true })).toBeInTheDocument();
     await expect.element(page.getByRole("button", { name: "Left", pressed: false })).toBeInTheDocument();
 
-    await press("{ArrowRight}", "Insert");
+    await press("{ArrowRight}", "button", "Insert");
     await userEvent.keyboard("{Enter}");
     const popup = page.getByRole("dialog", { name: "Insert a block" });
     await expect.element(popup).toBeInTheDocument();
     // The arrow keys inside the popup are the popup's: the toolbar keeps its place.
     roleNamed("button", "Image").focus();
-    await press("{ArrowRight}", "Image");
+    await press("{ArrowRight}", "button", "Image");
     await userEvent.keyboard("{Escape}");
     await expect.element(popup).not.toBeInTheDocument();
-    expect(focusedName()).toBe("Insert");
+    expect(document.activeElement).toBe(roleNamed("button", "Insert"));
 
-    await press("{ArrowRight}", "Clear");
+    await press("{ArrowRight}", "button", "Clear");
     await expect.element(page.getByRole("tooltip", { name: "Clear formatting" })).toBeVisible();
-    await press("{ArrowRight}", "Left");
+    await press("{ArrowRight}", "button", "Left");
   });
 });
 
