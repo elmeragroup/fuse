@@ -38,7 +38,7 @@ export function Switch({ className, size = "default", inputRef, ...props }: Swit
         // The root is a <span>, so the state face keys off Base UI's `data-disabled` and
         // `data-invalid` attributes, plus a consumer's `aria-invalid`.
         // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; ring comes from the shared adapter
-        "peer group/switch shadow-xs relative inline-flex shrink-0 items-center rounded-full border border-transparent transition-colors outline-none after:absolute after:-inset-x-3 after:-inset-y-3 after:content-[''] data-[size=default]:h-[18.4px] data-[size=default]:w-[32px] data-[size=sm]:h-[14px] data-[size=sm]:w-[24px] data-checked:bg-primary data-unchecked:bg-input",
+        "peer group/switch shadow-xs relative inline-flex shrink-0 items-center rounded-full border border-transparent transition-colors outline-none after:absolute after:-inset-x-3 after:-inset-y-3 after:content-[''] data-[size=default]:h-[18.4px] data-[size=default]:w-[32px] data-[size=sm]:h-[14px] data-[size=sm]:w-[24px] data-checked:bg-primary data-unchecked:bg-muted-foreground",
         selfFocusRingClass,
         dataStateFaceClass,
         className
