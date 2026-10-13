@@ -181,6 +181,55 @@ describe("Command demos", () => {
     await page.close();
   });
 
+  it("searches orders on the server, keeps the latest request's results and opens an order", async () => {
+    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT });
+    const demo = await openDemo(page, "command", "Search on the server");
+    // Command.Status comes before the demo's result line, which is a status too.
+    const searchStatus = demo.getByRole("status").first();
+    // Record every text the status shows, so a brief "Searching…" is not missed.
+    await searchStatus.evaluate((node) => {
+      const seen: string[] = [];
+      new MutationObserver(() => {
+        seen.push(node.textContent);
+        node.setAttribute("data-seen", JSON.stringify(seen));
+      }).observe(node, { childList: true, subtree: true, characterData: true });
+    });
+    await demo.getByRole("combobox", { name: "Orders", exact: true }).focus();
+    await page.keyboard.type("ada");
+    await expect.poll(() => searchStatus.textContent()).toBe("2 orders");
+    expect(JSON.parse((await searchStatus.getAttribute("data-seen")) ?? "[]")).toContain("Searching…");
+    // "a" matches all six orders, so the stand-in answers it 480ms after it starts, after "ada".
+    // The keystrokes after it aborted it, so its results never replace these.
+    await page.waitForTimeout(600);
+    expect(await searchStatus.textContent()).toBe("2 orders");
+    expect(await demo.getByRole("option").count()).toBe(2);
+    await expect.poll(() => highlighted(demo)).toContain("Order 10418");
+
+    await page.keyboard.press("Enter");
+    await expect.poll(() => focusedName(page)).toBe("Order 10418");
+    const summary = await page.evaluate(() => {
+      const id = document.activeElement?.getAttribute("aria-describedby") ?? "";
+      return document.getElementById(id)?.textContent ?? null;
+    });
+    expect(summary).toContain("Ada Lovelace");
+    expect(summary).toContain("NOK 14,490.00");
+    await expect
+      .poll(() => demo.getByRole("listitem").allTextContents())
+      .toEqual(["Charging boxNOK 9,990.00", "InstallationNOK 4,500.00"]);
+    await page.keyboard.type("resend");
+    await expect.poll(() => highlighted(demo)).toBe("Resend confirmation");
+    await page.keyboard.press("Enter");
+    await expect.poll(() => status(demo)).toBe("Ran: Resend confirmation: Order 10418");
+
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.keyboard.press("Backspace");
+    await page.keyboard.press("Backspace");
+    await expect.poll(() => focusedName(page)).toBe("Orders");
+    expect(await demo.getByRole("combobox").inputValue()).toBe("ada");
+    await expect.poll(() => searchStatus.textContent()).toBe("2 orders");
+    await page.close();
+  });
+
   it("wraps to the last of 2,000 meter points and opens it", async () => {
     const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT });
     const demo = await openDemo(page, "command", "Long lists");

@@ -10,6 +10,7 @@ import { CommandPages } from "./demos/command-pages";
 import { CommandKeptQuery } from "./demos/command-kept-query";
 import { CommandEscapeBack } from "./demos/command-escape-back";
 import { CommandAppPalette } from "./demos/command-app-palette";
+import { CommandServerSearch } from "./demos/command-server-search";
 import { CommandVirtualized } from "./demos/command-virtualized";
 
 import { componentMetadata } from "../../../../lib/component-page";
@@ -110,6 +111,22 @@ To open the palette on a `Command.Page` of the entity's actions, control the sta
 
 <Demo slug="command" id="app-palette" title="One palette for the app" file="command-app-palette.tsx">
   <CommandAppPalette />
+</Demo>
+
+<Prose>
+
+## Search on the server
+
+Hold the query above `Command.Root` and pass it to the search as `value` with `onValueChange`. Each change requests results from the server. Pass the results as `items`, and set `filter={null}` so Base UI shows them as the server sent them. Abort the request before each new one. Here a broad query takes the stand-in server longer, so without the abort the results for "a" would replace those for "ada". The demo runs each request in a transition and sets the results in a second `startTransition` after the `await`, which React needs to keep those updates in the transition.
+
+`Command.Status` announces the search's state to screen readers, here "Searching…" while a request runs, then the number of orders or that none match. Place it between `Command.Input` and `Command.List`. It announces only while it stays mounted, so change its children and leave it empty when there is nothing to say.
+
+Each result is a `Command.PageTrigger` that opens the order's page. Its click handler starts the request for the order's lines, and the page reads that request with `use` inside `Suspense`, so the page's input takes focus while the lines load. The order's details sit between the page's input and its actions, and the input's `aria-describedby` points at them. Going back shows the same results, since the query and the results live above the Root. To search orders from an app-wide palette, add this search as a page of that palette and open it from a "Search orders" row.
+
+</Prose>
+
+<Demo slug="command" id="server-search" title="Search on the server" file="command-server-search.tsx">
+  <CommandServerSearch />
 </Demo>
 
 <Prose>
