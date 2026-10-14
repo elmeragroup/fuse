@@ -18,8 +18,10 @@ export type ArtboardSpec = {
   readonly scheme: ArtboardScheme;
   readonly density: Density;
   /**
-   * Pins the artboard to one variant of the base theme. The variant owns `--radius-step`, so
-   * the artboard wears every token edit but that one.
+   * The variant of the base theme the artboard opens in; the visitor can change it, and a change
+   * of the base theme returns the artboard to it. The variant owns `--radius-step`, so the
+   * artboard withholds a step edit only while its variant differs from the base theme's, and
+   * wears every other edit that does not loop in its theme.
    */
   readonly variant?: ThemeVariant;
 };

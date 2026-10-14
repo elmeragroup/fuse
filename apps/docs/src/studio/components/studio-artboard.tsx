@@ -9,11 +9,11 @@ import { Button } from "@elmeragroup/fuse/button";
 import { densityAttributes, ThemeScope, themeSlug } from "@elmeragroup/fuse/theme";
 import type { Density, ThemeInput } from "@elmeragroup/fuse/theme";
 
-import { artboardStyle, otherVariantStyle } from "../lib/artboard-style";
+import { artboardStyle } from "../lib/artboard-style";
 import type { CustomProperties } from "../lib/artboard-style";
 import { metricStyle } from "../lib/density-metrics";
 import type { ArtboardScheme, ArtboardSpec } from "../lib/documents";
-import { metricOverridesFor, resetNames } from "../lib/edits";
+import { metricOverridesFor, overridesFor } from "../lib/edits";
 import type { StudioOverrides } from "../lib/edits";
 import type { StudioSeed } from "../lib/seed";
 import { artboardEdits, declarationsOf } from "../lib/token-values";
@@ -114,25 +114,14 @@ export function useArtboardScopeOf(spec: ArtboardSpec): ArtboardScope {
         skipped: [],
       };
     }
-    const edits = artboardEdits(overrides, own, scheme);
+    const edits = artboardEdits(overrides, own, base, scheme);
     const declarations = themeSeed === undefined ? undefined : declarationsOf(themeSeed)[scheme];
-    // The variant sets the radius step, so a step edit over the base theme's variant stays off an
-    // artboard in the other one. In the base theme's variant, it applies.
-    const otherVariant = own.variant !== base.variant;
     return {
       theme: own,
       scheme,
       density,
-      style: {
-        ...(otherVariant
-          ? otherVariantStyle(edits.applied, declarations)
-          : artboardStyle(edits.applied, declarations)),
-        ...metrics,
-      },
-      overrides: resetNames(overrides, scheme, [
-        ...edits.skipped,
-        ...(otherVariant ? ["radius-step" as const] : []),
-      ]),
+      style: { ...artboardStyle(overridesFor(edits.overrides, scheme), declarations), ...metrics },
+      overrides: edits.overrides,
       seed: themeSeed,
       skipped: edits.skipped,
     };
