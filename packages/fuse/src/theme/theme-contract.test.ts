@@ -476,6 +476,15 @@ describe("ngfi identity", () => {
   });
 });
 
+describe("fkse identity", () => {
+  // The oracle is the Alias/Surface/On Surface Variant colour in the Telinet Figma file
+  // gzLEvCCAiwRqzoEPMBesdx, the role `feature-foreground` maps onto.
+  it("paints the external light feature foreground in the Telinet green", () => {
+    const light = composeTheme({ variant: "external", brand: "fkse", segment: "private" });
+    expect(figmaHex(light["feature-foreground"])).toBe("#36C275");
+  });
+});
+
 describe("derived roles", () => {
   const internalFkas = { variant: "internal", brand: "fkas", segment: "private" } as const;
   const externalFkas = { variant: "external", brand: "fkas", segment: "private" } as const;
