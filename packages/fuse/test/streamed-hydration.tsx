@@ -110,7 +110,7 @@ export async function hydrateStreamedPage(
     })
   ).getReader();
   const host = document.createElement("div");
-  host.innerHTML = await readUntil(reader, (html) => html.includes("data-shell-end"));
+  host.innerHTML = await readUntil(reader, (html) => /<hr data-shell-end=""\/?>/.test(html));
   await restoreContextDefaults();
   // Streamed scripts and segments land beside the root, as they would in <body>, and run.
   const tail = document.createElement("div");

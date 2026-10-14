@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useState } from "react";
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
@@ -43,6 +43,11 @@ function ThemeScopeElement({
   ...rest
 }: Omit<ThemeScopeProps, "theme"> & { theme: Theme; attributes: ThemeAttributes }) {
   const [container] = useState(createThemeScopeContainerStore);
+  // Runs on mount and again on every reveal of a Suspense boundary that hid the scope, where an
+  // element deleted while hidden never had its ref detached a second time.
+  useLayoutEffect(() => {
+    container.revalidate();
+  }, [container]);
 
   const rendered = useRender({
     defaultTagName: "div",

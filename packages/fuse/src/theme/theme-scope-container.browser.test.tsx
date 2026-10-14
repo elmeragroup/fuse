@@ -1,4 +1,4 @@
-import { createRef, StrictMode, Suspense, use, useLayoutEffect, useRef } from "react";
+import { createRef, StrictMode, Suspense, use, useEffect, useLayoutEffect, useRef } from "react";
 import type { ReactNode, RefObject } from "react";
 
 import { flushSync } from "react-dom";
@@ -310,6 +310,61 @@ describe("ThemeScope's container lifecycle", () => {
 
     expect(host.querySelector("[data-theme-brand]")).toBeNull();
     await expect.poll(() => seen.at(-1)).toBeNull();
+  });
+
+  it("stops providing a removed element to a consumer that stays mounted through the hide", async () => {
+    function SuspendOn({ pending }: { pending: Promise<void> | undefined }) {
+      if (pending !== undefined) {
+        use(pending);
+      }
+      return null;
+    }
+    const seen: Resolved[] = [];
+    const record = (resolved: Resolved) => {
+      seen.push(resolved);
+    };
+    const mounts: string[] = [];
+    function MountedProbe() {
+      // Passive effects stay connected while a Suspense boundary hides its content.
+      useEffect(() => {
+        mounts.push("mount");
+      }, []);
+      return <Probe onResolve={record} />;
+    }
+    // The children sit beside the scope element, so removing the element keeps them mounted.
+    const tree = (attached: boolean, pending?: Promise<void>) => (
+      <Suspense fallback={<span>Hidden</span>}>
+        <ThemeScope
+          theme={scopeTheme}
+          render={({ children, ...props }) => (
+            <>
+              {attached ? <div {...props} /> : null}
+              {children}
+            </>
+          )}>
+          <MountedProbe />
+          <SuspendOn pending={pending} />
+        </ThemeScope>
+      </Suspense>
+    );
+    const { host, rerender } = render(tree(true));
+    const scope = host.querySelector("[data-theme-brand]");
+    await expect.poll(() => seen.at(-1)).toBe(scope);
+
+    let reveal: () => void = () => undefined;
+    const pending = new Promise<void>((resolve) => {
+      reveal = resolve;
+    });
+    rerender(tree(true, pending));
+    await expect.element(page.getByText("Hidden")).toBeVisible();
+    await settleScheduledWork();
+    rerender(tree(false, pending));
+    reveal();
+    await expect.element(page.getByText("Hidden")).not.toBeInTheDocument();
+
+    expect(host.querySelector("[data-theme-brand]")).toBeNull();
+    await expect.poll(() => seen.at(-1)).toBeNull();
+    expect(mounts).toEqual(["mount"]);
   });
 
   it("still attaches and cleans up a caller's ref", () => {

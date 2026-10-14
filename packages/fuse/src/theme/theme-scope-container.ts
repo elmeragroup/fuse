@@ -25,7 +25,7 @@ export type ThemeScopeContainerStore = ScopeElementSource & {
   /**
    * Drops an element that was detached, never reattached and has left the document. React
    * deletes an element inside a hidden Suspense boundary without detaching its ref again, so
-   * consumers call this after they commit, which they do once that boundary reveals.
+   * the scope calls this from a layout effect, which React runs again when the boundary reveals.
    */
   revalidate: () => void;
 };
@@ -133,12 +133,10 @@ export function useResolvedPortalContainer(
   // React attaches sibling refs during commit. One post-commit comparison makes
   // that attachment observable without polling or ever choosing a body fallback.
   useEffect(() => {
-    if (container === undefined) {
-      store?.revalidate();
-    } else if (isElementRef(container) && container.current !== resolved) {
+    if (container !== undefined && isElementRef(container) && container.current !== resolved) {
       refresh();
     }
-  }, [container, resolved, store]);
+  }, [container, resolved]);
 
   return resolved;
 }
