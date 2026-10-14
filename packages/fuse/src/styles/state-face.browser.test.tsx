@@ -522,13 +522,11 @@ describe("state face at dense density", () => {
   });
 });
 
-/** Tab from the button named `before`, then let the ring host's transitions settle. */
+/** Tab from the button named `before` and return the ring host; the ring assertions settle its transitions. */
 async function tabInto(before: string, ringHost: () => HTMLElement): Promise<HTMLElement> {
   roleNamed("button", before).focus();
   await userEvent.keyboard("{Tab}");
-  const host = ringHost();
-  await Promise.all(host.getAnimations().map((animation) => animation.finished));
-  return host;
+  return ringHost();
 }
 
 describe("the focused invalid face", () => {
