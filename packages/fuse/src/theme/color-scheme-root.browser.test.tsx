@@ -10,7 +10,12 @@ import {
   MISMATCHED_BOOTSTRAP_MANIFEST,
   MISSING_BOOTSTRAP_MESSAGE,
 } from "../../test/color-scheme-contract";
-import { hydrateStreamedPage, serverBoundaryNodes, settleScheduledWork } from "../../test/streamed-hydration";
+import {
+  distinctSteps,
+  hydrateStreamedPage,
+  serverBoundaryNodes,
+  settleScheduledWork,
+} from "../../test/streamed-hydration";
 import {
   ColorSchemeOutput,
   ColorSchemeSetter,
@@ -323,7 +328,7 @@ describe("ThemeProvider around a streamed Suspense boundary", () => {
 
     await page.finishStreaming();
 
-    await expect.poll(() => committed).toEqual(["system/pending", "dark/dark"]);
+    await expect.poll(() => distinctSteps(committed)).toEqual(["system/pending", "dark/dark"]);
     expect(page.host.querySelector("strong")?.textContent).toBe("dark/dark");
     expect(page.recoverableErrors).toEqual([]);
   });

@@ -7,9 +7,15 @@ import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import { render } from "../../test/browser-render";
-import { hydrateStreamedPage, serverBoundaryNodes, settleScheduledWork } from "../../test/streamed-hydration";
+import {
+  distinctSteps,
+  hydrateStreamedPage,
+  serverBoundaryNodes,
+  settleScheduledWork,
+} from "../../test/streamed-hydration";
 import { Popover } from "../components/popover";
 import { ThemeScope } from "./theme-scope";
+import type { ThemeScopeProps } from "./theme-scope";
 import { useResolvedPortalContainer } from "./theme-scope-container";
 
 type Resolved = HTMLElement | null | undefined;
@@ -118,6 +124,22 @@ function afterFirstAttach(seen: Resolved[]): Resolved[] {
   return seen.slice(seen.findIndex((resolved) => resolved instanceof HTMLElement));
 }
 
+function SuspendOn({ pending }: { pending: Promise<void> | undefined }): ReactNode {
+  if (pending !== undefined) {
+    use(pending);
+  }
+  return null;
+}
+
+/** A promise that keeps shown content suspended, hidden behind its fallback, until `reveal`. */
+function suspension() {
+  let reveal: () => void = () => undefined;
+  const pending = new Promise<void>((resolve) => {
+    reveal = resolve;
+  });
+  return { pending, reveal };
+}
+
 describe("ThemeScope's container across a streamed Suspense boundary", () => {
   it("attaches without client-rendering a boundary whose content is still streaming", async () => {
     const seen: Resolved[] = [];
@@ -163,19 +185,13 @@ describe("ThemeScope's container across a streamed Suspense boundary", () => {
 
     await streamed.finishStreaming();
 
-    await expect.poll(() => committed).toEqual(["waiting", "in scope"]);
+    await expect.poll(() => distinctSteps(committed)).toEqual(["waiting", "in scope"]);
     expect(streamed.recoverableErrors).toEqual([]);
   });
 });
 
 describe("ThemeScope's container across a Suspense hide and reveal", () => {
   it("keeps the same element and an open overlay in it while the boundary hides and reveals", async () => {
-    function SuspendOn({ pending }: { pending: Promise<void> | undefined }) {
-      if (pending !== undefined) {
-        use(pending);
-      }
-      return null;
-    }
     const seen: Resolved[] = [];
     const record = (resolved: Resolved) => {
       seen.push(resolved);
@@ -200,15 +216,9 @@ describe("ThemeScope's container across a Suspense hide and reveal", () => {
     const popup = page.getByRole("dialog", { name: "Scoped popup" });
     await expect.element(popup).toBeVisible();
 
-    let reveal: () => void = () => undefined;
+    const { pending, reveal } = suspension();
     // A non-transition update that suspends shown content hides it behind the fallback.
-    rerender(
-      tree(
-        new Promise<void>((resolve) => {
-          reveal = resolve;
-        })
-      )
-    );
+    rerender(tree(pending));
     await expect.element(page.getByText("Hidden")).toBeVisible();
     await settleScheduledWork();
     reveal();
@@ -271,101 +281,70 @@ describe("ThemeScope's container lifecycle", () => {
     await expect.poll(() => seen.at(-1)).toBeNull();
   });
 
-  it("stops providing an element that a render change removed while a boundary hid it", async () => {
-    function SuspendOn({ pending }: { pending: Promise<void> | undefined }) {
-      if (pending !== undefined) {
-        use(pending);
+  it.each<{
+    name: string;
+    scopeRender: (attached: boolean) => ThemeScopeProps["render"];
+    mounts: string[];
+  }>([
+    {
+      name: "a consumer inside the element, which remounts",
+      scopeRender: (attached) => (props) => (attached ? <div {...props} /> : <>{props.children}</>),
+      mounts: ["mount", "mount"],
+    },
+    {
+      // Children beside the scope element stay mounted when the element is removed.
+      name: "a consumer beside the element, which stays mounted",
+      scopeRender:
+        (attached) =>
+        ({ children, ...props }) => (
+          <>
+            {attached ? <div {...props} /> : null}
+            {children}
+          </>
+        ),
+      mounts: ["mount"],
+    },
+  ])(
+    "stops providing an element removed while a boundary hid it, for $name",
+    async ({ scopeRender, mounts }) => {
+      const seen: Resolved[] = [];
+      const record = (resolved: Resolved) => {
+        seen.push(resolved);
+      };
+      const mounted: string[] = [];
+      function MountedProbe() {
+        // Passive effects stay connected while a Suspense boundary hides its content.
+        useEffect(() => {
+          mounted.push("mount");
+        }, []);
+        return <Probe onResolve={record} />;
       }
-      return null;
+      const tree = (attached: boolean, pending?: Promise<void>) => (
+        <Suspense fallback={<span>Hidden</span>}>
+          <ThemeScope theme={scopeTheme} render={scopeRender(attached)}>
+            <MountedProbe />
+            <SuspendOn pending={pending} />
+          </ThemeScope>
+        </Suspense>
+      );
+      const { host, rerender } = render(tree(true));
+      const scope = host.querySelector("[data-theme-brand]");
+      await expect.poll(() => seen.at(-1)).toBe(scope);
+
+      const { pending, reveal } = suspension();
+      rerender(tree(true, pending));
+      await expect.element(page.getByText("Hidden")).toBeVisible();
+      await settleScheduledWork();
+      // React deletes the hidden element without detaching its ref a second time.
+      rerender(tree(false, pending));
+      reveal();
+      await expect.element(page.getByText("Hidden")).not.toBeInTheDocument();
+
+      expect(host.querySelector("[data-theme-brand]")).toBeNull();
+      await expect.poll(() => seen.at(-1)).toBeNull();
+      expect(mounted).toEqual(mounts);
     }
-    const seen: Resolved[] = [];
-    const record = (resolved: Resolved) => {
-      seen.push(resolved);
-    };
-    const tree = (attached: boolean, pending?: Promise<void>) => (
-      <Suspense fallback={<span>Hidden</span>}>
-        <ThemeScope
-          theme={scopeTheme}
-          render={(props) => (attached ? <div {...props} /> : <>{props.children}</>)}>
-          <Probe onResolve={record} />
-          <SuspendOn pending={pending} />
-        </ThemeScope>
-      </Suspense>
-    );
-    const { host, rerender } = render(tree(true));
-    const scope = host.querySelector("[data-theme-brand]");
-    await expect.poll(() => seen.at(-1)).toBe(scope);
-
-    let reveal: () => void = () => undefined;
-    const pending = new Promise<void>((resolve) => {
-      reveal = resolve;
-    });
-    rerender(tree(true, pending));
-    await expect.element(page.getByText("Hidden")).toBeVisible();
-    await settleScheduledWork();
-    // React deletes the hidden element without detaching its ref a second time.
-    rerender(tree(false, pending));
-    reveal();
-    await expect.element(page.getByText("Hidden")).not.toBeInTheDocument();
-
-    expect(host.querySelector("[data-theme-brand]")).toBeNull();
-    await expect.poll(() => seen.at(-1)).toBeNull();
-  });
-
-  it("stops providing a removed element to a consumer that stays mounted through the hide", async () => {
-    function SuspendOn({ pending }: { pending: Promise<void> | undefined }) {
-      if (pending !== undefined) {
-        use(pending);
-      }
-      return null;
-    }
-    const seen: Resolved[] = [];
-    const record = (resolved: Resolved) => {
-      seen.push(resolved);
-    };
-    const mounts: string[] = [];
-    function MountedProbe() {
-      // Passive effects stay connected while a Suspense boundary hides its content.
-      useEffect(() => {
-        mounts.push("mount");
-      }, []);
-      return <Probe onResolve={record} />;
-    }
-    // The children sit beside the scope element, so removing the element keeps them mounted.
-    const tree = (attached: boolean, pending?: Promise<void>) => (
-      <Suspense fallback={<span>Hidden</span>}>
-        <ThemeScope
-          theme={scopeTheme}
-          render={({ children, ...props }) => (
-            <>
-              {attached ? <div {...props} /> : null}
-              {children}
-            </>
-          )}>
-          <MountedProbe />
-          <SuspendOn pending={pending} />
-        </ThemeScope>
-      </Suspense>
-    );
-    const { host, rerender } = render(tree(true));
-    const scope = host.querySelector("[data-theme-brand]");
-    await expect.poll(() => seen.at(-1)).toBe(scope);
-
-    let reveal: () => void = () => undefined;
-    const pending = new Promise<void>((resolve) => {
-      reveal = resolve;
-    });
-    rerender(tree(true, pending));
-    await expect.element(page.getByText("Hidden")).toBeVisible();
-    await settleScheduledWork();
-    rerender(tree(false, pending));
-    reveal();
-    await expect.element(page.getByText("Hidden")).not.toBeInTheDocument();
-
-    expect(host.querySelector("[data-theme-brand]")).toBeNull();
-    await expect.poll(() => seen.at(-1)).toBeNull();
-    expect(mounts).toEqual(["mount"]);
-  });
+  );
 
   it("still attaches and cleans up a caller's ref", () => {
     const calls: string[] = [];
@@ -393,51 +372,42 @@ describe("ThemeScope's container lifecycle", () => {
     expect(objectRef.current).toBeNull();
   });
 
-  it("keeps one element through StrictMode's double attach in a root outside the document", async () => {
+  it.each<{ name: string; inDocument: boolean }>([
+    { name: "in the document", inDocument: true },
+    // isConnected is false throughout, so only the reattach may cancel the detach.
+    { name: "outside the document", inDocument: false },
+  ])("keeps one element through StrictMode's double attach in a root $name", async ({ inDocument }) => {
     const seen: Resolved[] = [];
-    const detachedHost = document.createElement("div");
-    const root = createRoot(detachedHost);
-    flushSync(() => {
-      root.render(
-        <StrictMode>
-          <ThemeScope theme={scopeTheme}>
-            <Probe
-              onResolve={(resolved) => {
-                seen.push(resolved);
-              }}
-            />
-          </ThemeScope>
-        </StrictMode>
-      );
-    });
-    const scope = detachedHost.querySelector("[data-theme-brand]");
-    await expect.poll(() => seen.at(-1)).toBe(scope);
-    await settleScheduledWork();
+    const host = document.createElement("div");
+    if (inDocument) {
+      document.body.append(host);
+    }
+    const root = createRoot(host);
+    try {
+      flushSync(() => {
+        root.render(
+          <StrictMode>
+            <ThemeScope theme={scopeTheme}>
+              <Probe
+                onResolve={(resolved) => {
+                  seen.push(resolved);
+                }}
+              />
+            </ThemeScope>
+          </StrictMode>
+        );
+      });
+      const scope = host.querySelector("[data-theme-brand]");
+      await expect.poll(() => seen.at(-1)).toBe(scope);
+      await settleScheduledWork();
 
-    expect(seen.at(-1)).toBe(scope);
-    flushSync(() => {
-      root.unmount();
-    });
-  });
-
-  it("keeps one element through StrictMode's double attach", async () => {
-    const seen: Resolved[] = [];
-    const { host } = render(
-      <StrictMode>
-        <ThemeScope theme={scopeTheme}>
-          <Probe
-            onResolve={(resolved) => {
-              seen.push(resolved);
-            }}
-          />
-        </ThemeScope>
-      </StrictMode>
-    );
-    const scope = host.querySelector("[data-theme-brand]");
-    await expect.poll(() => seen.at(-1)).toBe(scope);
-    await settleScheduledWork();
-
-    expect(afterFirstAttach(seen)).not.toContain(null);
-    expect(new Set(scopeElements(seen))).toEqual(new Set([scope]));
+      expect(afterFirstAttach(seen)).not.toContain(null);
+      expect(new Set(scopeElements(seen))).toEqual(new Set([scope]));
+    } finally {
+      flushSync(() => {
+        root.unmount();
+      });
+      host.remove();
+    }
   });
 });

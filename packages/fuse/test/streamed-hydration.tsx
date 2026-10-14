@@ -2,6 +2,7 @@ import { Suspense, use } from "react";
 import type { ReactNode } from "react";
 
 import { hydrateRoot } from "react-dom/client";
+import type { Root } from "react-dom/client";
 import { renderToReadableStream } from "react-dom/server";
 import { afterEach } from "vitest";
 
@@ -96,11 +97,32 @@ export async function hydrateStreamedPage(
     </>
   );
 
+  // Everything the helper changes is undone after the test, even when setup below throws.
+  const previousReadyState = Object.getOwnPropertyDescriptor(document, "readyState");
+  const host = document.createElement("div");
+  // Streamed scripts and segments land beside the root, as they would in <body>, and run.
+  const tail = document.createElement("div");
+  let closing = false;
+  let reader: ReadableStreamDefaultReader<unknown> | undefined;
+  let root: Root | undefined;
+  cleanups.push(() => {
+    closing = true;
+    if (previousReadyState === undefined) {
+      // Deleting the own property uncovers Document.prototype's real getter again.
+      Reflect.deleteProperty(document, "readyState");
+    } else {
+      Object.defineProperty(document, "readyState", previousReadyState);
+    }
+    root?.unmount();
+    host.remove();
+    tail.remove();
+    void reader?.cancel();
+  });
+
   // React client-renders a pending boundary at once in a document that finished loading,
   // since no more of the stream can arrive; a streaming page is still loading.
   Object.defineProperty(document, "readyState", { configurable: true, get: () => "loading" });
-  let closing = false;
-  const reader = (
+  const stream = (
     await renderToReadableStream(tree, {
       onError: (error) => {
         if (!closing) {
@@ -109,11 +131,9 @@ export async function hydrateStreamedPage(
       },
     })
   ).getReader();
-  const host = document.createElement("div");
-  host.innerHTML = await readUntil(reader, (html) => /<hr data-shell-end=""\/?>/.test(html));
+  reader = stream;
+  host.innerHTML = await readUntil(stream, (html) => /<hr data-shell-end=""\/?>/.test(html));
   await restoreContextDefaults();
-  // Streamed scripts and segments land beside the root, as they would in <body>, and run.
-  const tail = document.createElement("div");
   // A contextual fragment's scripts run once inserted, unlike innerHTML's.
   for (const script of host.querySelectorAll(":scope > script")) {
     script.remove();
@@ -122,19 +142,10 @@ export async function hydrateStreamedPage(
   document.body.append(host, tail);
 
   const recoverableErrors: unknown[] = [];
-  const root = hydrateRoot(host, tree, {
+  root = hydrateRoot(host, tree, {
     onRecoverableError: (error) => {
       recoverableErrors.push(error);
     },
-  });
-  cleanups.push(() => {
-    closing = true;
-    // Deleting the own property uncovers Document.prototype's real getter again.
-    Reflect.deleteProperty(document, "readyState");
-    root.unmount();
-    host.remove();
-    tail.remove();
-    void reader.cancel();
   });
 
   return {
@@ -142,7 +153,7 @@ export async function hydrateStreamedPage(
     recoverableErrors,
     finishStreaming: async () => {
       finish();
-      const rest = await readUntil(reader, () => false);
+      const rest = await readUntil(stream, () => false);
       await restoreContextDefaults();
       tail.append(document.createRange().createContextualFragment(rest));
     },
@@ -165,4 +176,15 @@ export async function settleScheduledWork(): Promise<void> {
   await new Promise((resolve) => {
     setTimeout(resolve, 100);
   });
+}
+
+/**
+ * The values in commit order without consecutive repeats, so an extra commit of an unchanged
+ * value does not count as a step.
+ *
+ * @param values - What each commit recorded.
+ * @returns The distinct steps.
+ */
+export function distinctSteps<T>(values: readonly T[]): T[] {
+  return values.filter((value, index) => index === 0 || value !== values[index - 1]);
 }
