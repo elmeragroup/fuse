@@ -10,14 +10,15 @@ import type { PartReading } from "./density-attribution";
 import { docsBaseUrl } from "./docs-server";
 
 /**
- * The demo sweep: one walk over every component page's demos, at both densities, that runs a set
- * of in-page probes on each stage and on each popup, disclosure and tooltip a demo opens. Suites
- * that read the rendered demos share one walk, so adding a probe costs its own reads, not another
- * pass over the pages.
+ * The demo sweep: one walk over every component page's demos, at both densities, that runs the
+ * density probe and then one further in-page probe on each stage and on each popup, disclosure and
+ * tooltip a demo opens. Suites that read the rendered demos share one walk, so a further read costs
+ * its own reads, not another pass over the pages. A caller that needs several reads combines them
+ * into that one probe.
  *
  * The density probe discovers each reveal: it records the parts an opener revealed
- * (`densityOpened`), which the walk waits on to close and the other probes scope by. So it is a
- * fixed first step, not a member of the probe set.
+ * (`densityOpened`), which the walk waits on to close and the further probe scopes by. So it is a
+ * fixed first step.
  */
 
 /** Every part in the stage, or every part that appeared on the page since the last probe. */
@@ -29,23 +30,14 @@ export type StageProbe<Reading> = (stage: Locator, scope: ProbeScope) => Promise
 /** A reading with the page and density it was taken at. */
 export type Located<Reading> = Reading & { readonly page: string; readonly density: Density };
 
-type ProbeSet = Readonly<Record<string, StageProbe<object>>>;
-
-/** Each probe's readings, in inventory order. */
-export type SweepReadings<Probes extends ProbeSet> = {
-  readonly [Name in keyof Probes]: Located<
-    Probes[Name] extends StageProbe<infer Reading> ? Reading : never
-  >[];
-};
-
-/** The discovery readings, and the other readings by probe name, as the walk collects them. */
-type Collected = {
+/** The discovery readings and the further probe's readings, as the walk collects them. */
+type Collected<Reading> = {
   readonly discovered: Located<PartReading>[];
-  readonly probes: Map<string, Located<object>[]>;
+  readonly probed: Located<Reading>[];
 };
 
-/** The steps run on each reveal: the density probe first, then the probe set. */
-type Steps = { readonly discover: StageProbe<PartReading>; readonly probes: ProbeSet };
+/** The steps run on each reveal: the density probe first, then the further probe. */
+type Steps<Reading> = { readonly discover: StageProbe<PartReading>; readonly probe: StageProbe<Reading> };
 
 /** Controls that open a popup or reveal a panel: menus, selects, dialogs, disclosures. */
 const OPENERS = '[aria-haspopup]:not([aria-haspopup="false"]), [aria-expanded="false"]';
@@ -60,22 +52,20 @@ const POPUP_WAIT = { timeout: 2000 } as const;
  */
 const CONCURRENT_PAGES = 4;
 
-/** Runs the density probe, then every other probe, and files each reading under its step. */
-async function runProbes(
+/** Runs the density probe, then the further probe, and files each reading under its step. */
+async function runProbes<Reading extends object>(
   page: Page,
-  { discover, probes }: Steps,
-  collected: Collected,
+  { discover, probe }: Steps<Reading>,
+  collected: Collected<Reading>,
   stage: Locator,
   scope: ProbeScope,
   density: Density
 ): Promise<void> {
   const pageName = new URL(page.url()).pathname;
-  const located = <Reading extends object>(readings: readonly Reading[]): Located<Reading>[] =>
+  const located = <Read extends object>(readings: readonly Read[]): Located<Read>[] =>
     readings.map((reading) => ({ ...reading, page: pageName, density }));
   collected.discovered.push(...located(await discover(stage, scope)));
-  for (const [name, probe] of Object.entries(probes)) {
-    collected.probes.get(name)?.push(...located(await probe(stage, scope)));
-  }
+  collected.probed.push(...located(await probe(stage, scope)));
 }
 
 /**
@@ -164,11 +154,11 @@ async function readOpenedParts(
   }
 }
 
-async function readComponentPage(
+async function readComponentPage<Reading extends object>(
   page: Page,
   slug: string,
-  steps: Steps,
-  collected: Collected
+  steps: Steps<Reading>,
+  collected: Collected<Reading>
 ): Promise<void> {
   await page.goto(`${docsBaseUrl()}/components/${slug}`, { waitUntil: "load" });
   const stages = page.locator("[data-demo-stage]");
@@ -188,35 +178,32 @@ async function readComponentPage(
 }
 
 /**
- * Walks every component page in the inventory and runs `discover`, then `probes`, on each demo
- * stage and on each part its openers reveal. Every probe runs after `discover` on the same reveal,
- * so it may scope itself by what the density probe recorded in the page.
+ * Walks every component page in the inventory and runs `discover`, then `probe`, on each demo
+ * stage and on each part its openers reveal. `probe` runs after `discover` on the same reveal, so
+ * it may scope itself by what the density probe recorded in the page.
  *
  * @param browser - The suite's browser; each concurrent page gets its own context.
  * @param discover - The density probe, which records each reveal's parts.
- * @param probes - The other in-page probes, by name.
- * @returns The density probe's readings and each other probe's, with their page and density, in
+ * @param probe - An in-page probe run after the density probe on each reveal.
+ * @returns The density probe's readings and the further probe's, with their page and density, in
  *   inventory order.
  */
-export async function sweepDemos<Probes extends ProbeSet>(
+export async function sweepDemos<Reading extends object>(
   browser: Browser,
   discover: StageProbe<PartReading>,
-  probes: Probes
-): Promise<{ readonly discovered: Located<PartReading>[]; readonly probes: SweepReadings<Probes> }> {
+  probe: StageProbe<Reading>
+): Promise<{ readonly discovered: Located<PartReading>[]; readonly probed: Located<Reading>[] }> {
   const slugs = [...COMPONENT_INVENTORY.keys()];
   const pending = [...slugs];
-  const bySlug = new Map<string, Collected>();
+  const bySlug = new Map<string, Collected<Reading>>();
   const readPages = async (): Promise<void> => {
     const context = await browser.newContext({ viewport: DESKTOP_VIEWPORT, reducedMotion: "reduce" });
     try {
       const page = await context.newPage();
       page.setDefaultTimeout(10_000);
       for (let slug = pending.shift(); slug !== undefined; slug = pending.shift()) {
-        const collected: Collected = {
-          discovered: [],
-          probes: new Map(Object.keys(probes).map((name) => [name, []])),
-        };
-        await readComponentPage(page, slug, { discover, probes }, collected);
+        const collected: Collected<Reading> = { discovered: [], probed: [] };
+        await readComponentPage(page, slug, { discover, probe }, collected);
         bySlug.set(slug, collected);
       }
     } finally {
@@ -224,15 +211,8 @@ export async function sweepDemos<Probes extends ProbeSet>(
     }
   };
   await Promise.all(Array.from({ length: CONCURRENT_PAGES }, readPages));
-  const readings = Object.fromEntries(
-    Object.keys(probes).map((name) => [
-      name,
-      slugs.flatMap((slug) => bySlug.get(slug)?.probes.get(name) ?? []),
-    ])
-  );
   return {
     discovered: slugs.flatMap((slug) => bySlug.get(slug)?.discovered ?? []),
-    // SAFETY: each name holds only the readings its own probe returned, which `SweepReadings` types by name.
-    probes: readings as SweepReadings<Probes>,
+    probed: slugs.flatMap((slug) => bySlug.get(slug)?.probed ?? []),
   };
 }
