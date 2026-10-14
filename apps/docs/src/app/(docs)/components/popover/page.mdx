@@ -36,10 +36,11 @@ export const metadata = componentMetadata("popover");
 </Demo>
 
 `anchor` places the popup against an element other than the trigger. It takes an element, a
-ref or a virtual element. A controlled popover needs no trigger at all. The popup follows its
-anchor when the anchor moves or resizes. A transform that shrinks the anchor within its last box
-does not move the popup, so pass a new anchor then. Pass `initialFocus={false}` when opening it
-should leave focus where it is.
+ref or a virtual element. The trigger still opens and closes the popup, reports its state and
+takes focus back when it closes. A controlled popover needs no trigger at all; the opener's
+`aria-expanded`, and where focus goes, are then yours to handle. The popup follows its anchor
+when the anchor moves or resizes. A transform that shrinks the anchor within its last box does
+not move the popup, so pass a new anchor then.
 
 <ApiReference slug="popover" />
 

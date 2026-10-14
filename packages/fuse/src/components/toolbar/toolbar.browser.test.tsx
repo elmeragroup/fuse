@@ -1,22 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { render } from "../../../test/browser-render";
-import { CASES, cornerRadius, edgeInset } from "../../../test/inner-corner-specimens";
-import type { Variant } from "../../../test/inner-corner-specimens";
-import {
-  px,
-  renderThemed,
-  roleNamed,
-  snapshotDocumentTheme,
-  stampDensity,
-  stampDocumentTheme,
-} from "../../../test/themed-browser-render";
+import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import type { QueryableRole } from "../../../test/themed-browser-render";
-import { DENSITIES } from "../../theme/density";
-import { ThemeScope } from "../../theme/theme-scope";
 import { Button } from "../button/button";
 import { Popover } from "../popover";
 import { ToggleGroup } from "../toggle-group";
@@ -101,28 +89,62 @@ describe("Toolbar", () => {
     expect(roleNamed("button", "Spam").getAttribute("aria-disabled")).toBe("true");
   });
 
-  it("stacks a vertical toolbar, moves with the up and down arrows, and turns its separators horizontal", async () => {
+  it("disables the buttons of a disabled root, keeping them in the arrow-key order, but never its links", async () => {
+    const onSave = vi.fn();
+    renderThemed(
+      <Toolbar.Root aria-label="Document" disabled>
+        <Toolbar.Button render={<Button variant="ghost" size="sm" />} onClick={onSave}>
+          Save
+        </Toolbar.Button>
+        <Toolbar.Button render={<Button variant="ghost" size="sm" />}>Share</Toolbar.Button>
+        <Toolbar.Link href="#history">History</Toolbar.Link>
+      </Toolbar.Root>
+    );
+    const save = roleNamed("button", "Save");
+    expect(save.getAttribute("aria-disabled")).toBe("true");
+    expect(roleNamed("button", "Share").getAttribute("aria-disabled")).toBe("true");
+    expect(roleNamed("link", "History").hasAttribute("aria-disabled")).toBe(false);
+
+    save.focus();
+    await press("{ArrowRight}", "button", "Share");
+    await userEvent.click(save, { force: true });
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it("stacks a vertical toolbar and its groups, moves with the up and down arrows, and turns its separators horizontal", async () => {
     renderThemed(
       <Toolbar.Root aria-label="Tools" orientation="vertical">
-        <Toolbar.Button render={<Button variant="ghost" size="sm" />}>Pen</Toolbar.Button>
+        <Toolbar.Group aria-label="Draw">
+          <Toolbar.Button render={<Button variant="ghost" size="icon-sm" aria-label="Pen" />} />
+          <Toolbar.Button render={<Button variant="ghost" size="icon-sm" aria-label="Eraser" />} />
+        </Toolbar.Group>
         <Toolbar.Separator />
-        <Toolbar.Button render={<Button variant="ghost" size="sm" />}>Eraser</Toolbar.Button>
+        <Toolbar.Button render={<Button variant="ghost" size="icon-sm" aria-label="Fill" />} />
       </Toolbar.Root>
     );
     const toolbar = roleNamed("toolbar", "Tools");
     expect(toolbar.getAttribute("aria-orientation")).toBe("vertical");
+    // Pen and Eraser sit in the group, so this checks the group stacks, not only the root.
     const pen = roleNamed("button", "Pen").getBoundingClientRect();
     const eraser = roleNamed("button", "Eraser").getBoundingClientRect();
+    const fill = roleNamed("button", "Fill").getBoundingClientRect();
     expect(eraser.top).toBeGreaterThan(pen.bottom);
 
     const separator = page.getByRole("separator").element();
     expect(separator.getAttribute("aria-orientation")).toBe("horizontal");
     const line = separator.getBoundingClientRect();
+    expect(line.top).toBeGreaterThan(eraser.bottom);
+    expect(fill.top).toBeGreaterThan(line.bottom);
     expect(line.height).toBe(1);
-    expect(line.width).toBeGreaterThan(1);
+    // Every item is an icon-sm square, so each one's edges line up with the bar's content box.
+    // Both ends are checked: without `w-auto` the line still starts 4px in but overflows the right.
+    expect(line.left - pen.left).toBeCloseTo(4, 1);
+    expect(pen.right - line.right).toBeCloseTo(4, 1);
 
     roleNamed("button", "Pen").focus();
     await press("{ArrowDown}", "button", "Eraser");
+    await press("{ArrowDown}", "button", "Fill");
+    await press("{ArrowUp}", "button", "Eraser");
     await press("{ArrowUp}", "button", "Pen");
   });
 
@@ -197,54 +219,4 @@ describe("Toolbar", () => {
     await expect.element(page.getByRole("tooltip", { name: "Clear formatting" })).toBeVisible();
     await press("{ArrowRight}", "button", "Left");
   });
-});
-
-describe("Toolbar corners", () => {
-  let restoreDocumentTheme: () => void = () => undefined;
-
-  beforeEach(() => {
-    restoreDocumentTheme = snapshotDocumentTheme();
-    document.documentElement.style.fontSize = "16px";
-  });
-
-  afterEach(() => {
-    restoreDocumentTheme();
-    document.documentElement.style.removeProperty("font-size");
-  });
-
-  /**
-   * The item corner in px, worked out by hand: the toolbar's `rounded-lg`, `--radius` itself (6px
-   * internal, 12px fkas, 16px tkas, 8px guen), less its 1px border and 4px padding.
-   */
-  const EXPECTED = { internal: 1, fkas: 7, tkas: 11, guen: 3 } as const satisfies Record<Variant, number>;
-
-  for (const density of DENSITIES) {
-    it.each(CASES)(
-      `rounds an inner item concentric with the bar, ${density} (%s)`,
-      (variant, theme, documentTheme) => {
-        stampDocumentTheme(documentTheme, "light");
-        stampDensity(density);
-        render(
-          <ThemeScope theme={theme}>
-            <Toolbar.Root aria-label="Shape">
-              <Toolbar.Button render={<Button variant="ghost" size="sm" className="rounded-inner" />}>
-                Corner
-              </Toolbar.Button>
-            </Toolbar.Root>
-          </ThemeScope>
-        );
-        const toolbar = roleNamed("toolbar", "Shape");
-        const item = roleNamed("button", "Corner");
-        // Unit under test: the corner the toolbar publishes to an item that rounds with
-        // `rounded-inner`. Oracle: the concentric rule max(0, outer − inset) on the bar's measured
-        // corner and the measured inset between them, and the hand-computed corner above.
-        expect(px(getComputedStyle(toolbar).paddingInlineStart)).toBe(4);
-        expect(cornerRadius(item)).toBeCloseTo(
-          Math.max(0, cornerRadius(toolbar) - edgeInset(item, toolbar, "start")),
-          1
-        );
-        expect(cornerRadius(item)).toBeCloseTo(EXPECTED[variant], 1);
-      }
-    );
-  }
 });

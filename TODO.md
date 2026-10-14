@@ -177,7 +177,10 @@
   box, so a transform that shrinks the anchor inside that box, such as a zoom out around a point
   in it, never repositions the popup. The studio's theme toolbar
   (`apps/docs/src/studio/components/theme-toolbar/theme-toolbar.tsx`) hands `Popover.Content` a
-  new virtual anchor on every camera move. Drop that once Base UI follows such a change.
+  new virtual anchor on every camera move. Once Base UI follows such a change, drop that, drop
+  the shrink caveat from `PopoverContent`'s `anchor` JSDoc
+  (`packages/fuse/src/components/popover/popover.tsx`) and the popover page
+  (`apps/docs/src/app/(docs)/components/popover/page.mdx`), and regenerate the popover `api.json`.
 - Report two toast bugs to Base UI. `Toast.Provider` subscribes to a manager in its own effect,
   so the manager drops calls made before then, including calls from a child's mount effect.
   `promiseToast` overwrites a `type` that the success or error state returns with `"success"`
