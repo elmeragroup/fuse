@@ -157,9 +157,9 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
     floor: 3,
   },
   {
-    // The unchecked Checkbox and Radio edge and the unchecked Switch track (WCAG 1.4.11). Light
-    // `input` is the field border and stays under 3:1 (an accepted deviation), so the selection
-    // controls draw this role instead.
+    // The unchecked Checkbox and Radio edge and the unchecked Switch edge and thumb (WCAG 1.4.11).
+    // Light `input` is the field border and stays under 3:1 (an accepted deviation), so the
+    // selection controls draw this role instead.
     schemes: ["light", "dark"],
     matches: () => true,
     pairs: roleOnSurfaces(["muted-foreground"]),
