@@ -281,8 +281,8 @@ next local run restores the file from it.
 
 One write into `apps/docs/.next` remains. Next's launcher learns the output directory only when the
 server is ready, so a Ctrl-C in the first seconds of a start can leave a telemetry file,
-`.next/_events_<pid>.json`. Telemetry being off does not stop it, and no setting moves it. It is
-not a build output, and `docs#test:e2e` ignores it. `src/docs-server.ts` has the details.
+`.next/cache/_events_<pid>_<hex>.json`. Telemetry being off does not stop it, and no setting moves
+it. It is not a build output, and `docs#test:e2e` ignores it. `src/docs-server.ts` has the details.
 
 `next dev` serves the source as it is on disk, so it shows uncommitted changes. It compiles the
 Fuse components from source, but the docs stylesheet imports the theme CSS from

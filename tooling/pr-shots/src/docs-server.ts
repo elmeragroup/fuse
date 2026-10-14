@@ -9,9 +9,9 @@
  * One residual write into `apps/docs/.next` remains. The `next dev` launcher learns the output
  * directory from its worker only when the worker reports the server ready. A SIGTERM before that
  * runs the launcher's shutdown handler with its fallback, `.next`, and the handler records a
- * session-stopped telemetry event and writes it to `.next/_events_<pid>.json`. The deferred
- * record skips the `NEXT_TELEMETRY_DISABLED` check, and no environment variable or config sets
- * the launcher's fallback (Next 16.3.6, `dist/cli/next-dev.js` and `dist/telemetry/storage.js`).
+ * session-stopped telemetry event and writes it to `.next/cache/_events_<pid>_<hex>.json`. The
+ * deferred record skips the `NEXT_TELEMETRY_DISABLED` check, and no environment variable or config
+ * sets the launcher's fallback (Next 16.4.0, `dist/cli/next-dev.js` and `dist/telemetry/storage.js`).
  * So an interrupt in the first seconds of a start can leave that one small file in `.next`. It
  * is not a build output, and `docs#test:e2e` ignores it.
  */
