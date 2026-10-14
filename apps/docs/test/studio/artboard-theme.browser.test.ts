@@ -8,6 +8,7 @@ import {
   CORNERS_PAGE,
   artboard,
   background,
+  canvas,
   inspector,
   openStudio,
   openTokenSection,
@@ -195,6 +196,23 @@ describe("an artboard's own brand, variant and segment", () => {
       await expect.poll(() => themeOf(page, SHELLS)).toBe("external-ngfi-private");
       expect(await artboard(page, INTERNAL_RUNGS).getAttribute("data-theme")).toBe("dark");
       expect(await artboard(page, SHELLS).getAttribute("data-density")).toBe("comfortable");
+    } finally {
+      await context.close();
+    }
+  });
+
+  it("resets the artboards' own themes when an undo changes the base theme", async () => {
+    const { context, page } = await openStudio(browser());
+    try {
+      await page.getByRole("button", { name: /^Base theme/u }).click();
+      await page.getByRole("menuitemradio", { name: "Nordic Green Energy", exact: true }).click();
+      await page.keyboard.press("Escape");
+      await pickBrand(page, await selectBoard(page, LIGHT_BOARD), "Fjordkraft");
+      await expect.poll(() => themeOf(page, LIGHT_BOARD)).toBe("external-fkas-private");
+
+      // The undo returns the base to the studio's opening theme, and the board with it.
+      await canvas(page).getByRole("button", { name: "Undo", exact: true }).click();
+      await expect.poll(() => themeOf(page, LIGHT_BOARD)).toBe("external-elma-private");
     } finally {
       await context.close();
     }

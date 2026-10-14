@@ -41,18 +41,20 @@ export function restatedAliases(declared: Iterable<string>, base: Declarations) 
 
 /**
  * The inline declarations that apply `overrides` on an artboard's theme scope: each edit, and
- * the base aliases that read one, restated so they resolve against the edit on the scope (see
- * {@link restatedAliases}).
+ * the aliases that read one, restated so they resolve against the edit on the scope (see
+ * {@link restatedAliases}). The aliases come from the theme the artboard renders: an artboard in
+ * a theme of its own restates its own, since the base theme's would carry their aliases over it,
+ * as an internal `--radius-button: var(--radius)` replaces an external literal.
  *
  * @param overrides - The edits that apply in the artboard's scheme.
- * @param base - The base theme's declared CSS in that scheme, keyed by token name, or
+ * @param theme - The artboard's theme's declared CSS in that scheme, keyed by token name, or
  *   `undefined` while it loads.
  * @returns The declarations for the scope element's `style`.
  */
-export function artboardStyle(overrides: TokenOverrides, base: Declarations | undefined) {
+export function artboardStyle(overrides: TokenOverrides, theme: Declarations | undefined) {
   const style: CustomProperties = {};
-  if (base !== undefined) {
-    for (const [name, css] of Object.entries(restatedAliases(Object.keys(overrides), base))) {
+  if (theme !== undefined) {
+    for (const [name, css] of Object.entries(restatedAliases(Object.keys(overrides), theme))) {
       style[`--${name}`] = css;
     }
   }
@@ -60,19 +62,4 @@ export function artboardStyle(overrides: TokenOverrides, base: Declarations | un
     style[`--${name}`] = value;
   }
   return style;
-}
-
-/**
- * The inline declarations for an artboard in the other variant than the base theme's. Its
- * variant owns its step, so a `--radius-step` edit is dropped, and the aliases restated beside
- * the edits come from the artboard's own declarations. The base theme's would carry its own
- * aliases over them, as an internal `--radius-button: var(--radius)` replaces an external literal.
- *
- * @param overrides - The edits that apply in the artboard's scheme.
- * @param own - The artboard's theme's declared CSS in that scheme, or `undefined` while it loads.
- * @returns The declarations for the scope element's `style`.
- */
-export function otherVariantStyle(overrides: TokenOverrides, own: Declarations | undefined) {
-  const { "radius-step": _step, ...unstepped } = overrides;
-  return artboardStyle(unstepped, own);
 }

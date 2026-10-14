@@ -4,8 +4,8 @@ import type { ThemeInput } from "@elmeragroup/fuse/theme";
 
 import { STUDIO_BASE_REFERENCES, STUDIO_PRIMITIVES } from "../../generated/studio-seeds";
 import type { ArtboardScheme } from "./documents";
-import { overrideOf, overridesFor, resetNames } from "./edits";
-import type { StudioDocument, StudioOverrides, TokenOverrides } from "./edits";
+import { overrideOf, resetNames } from "./edits";
+import type { StudioDocument, StudioOverrides } from "./edits";
 import { referencedNames, referencesOf } from "./references";
 import type { BaseReferences } from "./references";
 import type { StudioSeed } from "./seed";
@@ -442,35 +442,38 @@ export function documentCycles(document: StudioDocument): TokenName[] {
   return cycleNames(document.overrides, themeReferences(document.theme));
 }
 
-/** The edits an artboard in a theme of its own applies in one scheme, and the ones it skips. */
+/** The edits an artboard in a theme of its own wears in one scheme, and the loops it skips. */
 export type ArtboardEdits = {
-  readonly applied: TokenOverrides;
-  /** Sorted. */
+  readonly overrides: StudioOverrides;
+  /** The edits that loop in the artboard's theme, sorted. */
   readonly skipped: readonly TokenName[];
 };
 
 /**
- * The edits an artboard rendering `theme`, its own brand, variant and segment, applies in
- * `scheme`: every edit but those on an alias cycle against that theme's own declarations, the
- * only alias graph the check reads. The session guards the base theme alone, so an edit can loop
- * in any other theme on screen. A skipped token falls back to the theme's own declaration, which
- * can loop another edit, so the check repeats until nothing loops.
+ * The edits an artboard rendering `theme`, its own brand, variant and segment, wears in `scheme`:
+ * every edit but those on an alias cycle against that theme's own declarations, the only alias
+ * graph the check reads, and, in the other variant than the base theme's, the `--radius-step`
+ * edit, since the variant owns its step. The session guards the base theme alone, so an edit can
+ * loop in any other theme on screen. A skipped token falls back to the theme's own declaration,
+ * which can loop another edit, so the check repeats until nothing loops.
  *
  * @param edits - The session's token edits.
  * @param theme - The theme the artboard renders.
+ * @param base - The base theme the edits are made over.
  * @param scheme - The artboard's scheme.
  */
 export function artboardEdits(
   edits: StudioOverrides,
   theme: ThemeInput,
+  base: ThemeInput,
   scheme: ArtboardScheme
 ): ArtboardEdits {
-  const base = themeReferences(theme);
+  const references = themeReferences(theme);
   const looping = (overrides: StudioOverrides) =>
     STUDIO_TOKEN_NAMES.filter(
       (name) =>
         overrideOf(overrides, scheme, name) !== undefined &&
-        reaches(overrides, base, scheme, name, readsOf(overrides, base, scheme, name))
+        reaches(overrides, references, scheme, name, readsOf(overrides, references, scheme, name))
     );
   let overrides = edits;
   const skipped: TokenName[] = [];
@@ -478,7 +481,10 @@ export function artboardEdits(
     skipped.push(...next);
     overrides = resetNames(overrides, scheme, next);
   }
-  return { applied: overridesFor(overrides, scheme), skipped: skipped.sort() };
+  if (theme.variant !== base.variant) {
+    overrides = resetNames(overrides, scheme, ["radius-step"]);
+  }
+  return { overrides, skipped: skipped.sort() };
 }
 
 const NO_REFERENCES: BaseReferences = { light: {}, dark: {} };

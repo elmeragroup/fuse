@@ -3,7 +3,19 @@ import { describe, expect, it } from "vitest";
 
 import { settleFrames } from "../landing-page";
 import { launchSuiteBrowser } from "../suite-browser";
-import { CORNERS_PAGE, artboard, canvas, hashOf, inspector, layers, openStudio } from "./page";
+import {
+  CORNERS_PAGE,
+  artboard,
+  canvas,
+  hashOf,
+  inspector,
+  layers,
+  openStudio,
+  pickBrand,
+  selectBoard,
+  tokenOn,
+  toggle,
+} from "./page";
 
 const browser = launchSuiteBrowser();
 
@@ -172,6 +184,25 @@ describe("the studio's Shape page", () => {
       await expect
         .poll(() => cornerValues(page, "Radius rungs · External"))
         .toMatchObject({ xs: "14px", sm: "16px", md: "18px", lg: "20px", xl: "24px", popover: "12px" });
+      expect(errors).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+
+  it("wears a --radius-step edit on every board in the base theme's variant, in any brand", async () => {
+    const { context, page, errors } = await openStudio(browser(), { route: CORNERS_PAGE });
+    try {
+      await setRadius(page, 20);
+      await toggle(inspector(page), "--radius-step", "0px · internal").click();
+      // At a 0px step every rung equals --radius (CONTEXT.md, "Radius rung"), where the external
+      // step alone draws 14/16/18/20/24/12px.
+      await expect
+        .poll(() => cornerValues(page, "Radius rungs · External"))
+        .toMatchObject({ xs: "20px", sm: "20px", md: "20px", lg: "20px", xl: "20px", popover: "20px" });
+      // Fjordkraft shares the external base's variant, so its board wears the step edit too.
+      await pickBrand(page, await selectBoard(page, SHELLS), "Fjordkraft");
+      await expect.poll(() => tokenOn(page, SHELLS, "--radius-step")).toBe("0px");
       expect(errors).toEqual([]);
     } finally {
       await context.close();

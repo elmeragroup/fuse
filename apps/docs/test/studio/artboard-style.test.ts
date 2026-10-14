@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { artboardStyle, otherVariantStyle } from "../../src/studio/lib/artboard-style";
+import { artboardStyle } from "../../src/studio/lib/artboard-style";
 
 /** A base scheme's declarations, written out by hand in the forms the theme rules use. */
 const BASE = {
@@ -79,22 +79,19 @@ const EXTERNAL_RADII = {
   "radius-step": "2px",
 } as const;
 
-describe("otherVariantStyle", () => {
-  // The edits a session over each base variant can hold: an internal base never steps.
-  const EDITS_OVER = {
-    internal: { radius: "20px" },
-    external: { radius: "20px", "radius-step": "4px" },
-  } as const;
+describe("artboardStyle in a theme of the artboard's own", () => {
+  // A --radius edit, as an artboard in either variant wears it.
+  const EDITS = { radius: "20px" } as const;
 
-  it("keeps an external artboard's own button corner and restates its field alias under an internal base theme's --radius edit", () => {
-    expect(otherVariantStyle(EDITS_OVER.internal, EXTERNAL_RADII)).toEqual({
+  it("keeps an external artboard's own button corner and restates its field alias", () => {
+    expect(artboardStyle(EDITS, EXTERNAL_RADII)).toEqual({
       "--radius": "20px",
       "--radius-field": "var(--radius)",
     });
   });
 
-  it("restates an internal artboard's role corner aliases and drops the external base theme's step edit", () => {
-    expect(otherVariantStyle(EDITS_OVER.external, INTERNAL_RADII)).toEqual({
+  it("restates an internal artboard's role corner aliases", () => {
+    expect(artboardStyle(EDITS, INTERNAL_RADII)).toEqual({
       "--radius": "20px",
       "--radius-button": "var(--radius)",
       "--radius-field": "var(--radius)",

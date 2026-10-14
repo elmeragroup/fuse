@@ -327,14 +327,15 @@ describe("pinned variants", () => {
       ...radiusToButton,
       overrides: { ...radiusToButton.overrides, light: { primary: "#ff0000" } },
     };
-    expect(artboardEdits(document.overrides, { ...ELMA, variant: "internal" }, "light")).toEqual({
-      applied: { primary: "#ff0000" },
-      skipped: ["radius"],
+    const internal = artboardEdits(document.overrides, { ...ELMA, variant: "internal" }, ELMA, "light");
+    expect(overridesFor(internal.overrides, "light")).toEqual({ primary: "#ff0000" });
+    expect(internal.skipped).toEqual(["radius"]);
+    const external = artboardEdits(document.overrides, ELMA, ELMA, "light");
+    expect(overridesFor(external.overrides, "light")).toEqual({
+      primary: "#ff0000",
+      radius: "var(--radius-button)",
     });
-    expect(artboardEdits(document.overrides, ELMA, "light")).toEqual({
-      applied: { primary: "#ff0000", radius: "var(--radius-button)" },
-      skipped: [],
-    });
+    expect(external.skipped).toEqual([]);
   });
 
   it("skips again when a skipped token's own declaration loops another edit", () => {
@@ -352,10 +353,9 @@ describe("pinned variants", () => {
         },
       },
     };
-    expect(artboardEdits(document.overrides, { ...ELMA, variant: "internal" }, "dark")).toEqual({
-      applied: {},
-      skipped: ["radius", "radius-button", "radius-field"],
-    });
+    const result = artboardEdits(document.overrides, { ...ELMA, variant: "internal" }, ELMA, "dark");
+    expect(overridesFor(result.overrides, "dark")).toEqual({});
+    expect(result.skipped).toEqual(["radius", "radius-button", "radius-field"]);
   });
 });
 
@@ -389,19 +389,47 @@ describe("an artboard in another brand", () => {
 
   it("skips the edit on a light Elmera artboard over a Fjordkraft base, and keeps it on a TrøndelagKraft one", () => {
     const document = brandToSidebar("light");
-    expect(artboardEdits(document.overrides, ELMA, "light")).toEqual({ applied: {}, skipped: ["brand"] });
-    expect(artboardEdits(document.overrides, { ...FKAS_EXTERNAL, brand: "tkas" }, "light")).toEqual({
-      applied: { brand: "var(--sidebar-brand)" },
-      skipped: [],
-    });
+    const elma = artboardEdits(document.overrides, ELMA, document.theme, "light");
+    expect(overridesFor(elma.overrides, "light")).toEqual({});
+    expect(elma.skipped).toEqual(["brand"]);
+    const tkas = artboardEdits(
+      document.overrides,
+      { ...FKAS_EXTERNAL, brand: "tkas" },
+      document.theme,
+      "light"
+    );
+    expect(overridesFor(tkas.overrides, "light")).toEqual({ brand: "var(--sidebar-brand)" });
+    expect(tkas.skipped).toEqual([]);
   });
 
   it("skips the edit on a dark Fjordkraft artboard over an Elmera base, and leaves the light scheme alone", () => {
     const document = brandToSidebar("dark");
-    expect(artboardEdits(document.overrides, FKAS_EXTERNAL, "dark")).toEqual({
-      applied: {},
-      skipped: ["brand"],
-    });
-    expect(artboardEdits(document.overrides, FKAS_EXTERNAL, "light")).toEqual({ applied: {}, skipped: [] });
+    const dark = artboardEdits(document.overrides, FKAS_EXTERNAL, document.theme, "dark");
+    expect(overridesFor(dark.overrides, "dark")).toEqual({});
+    expect(dark.skipped).toEqual(["brand"]);
+    const light = artboardEdits(document.overrides, FKAS_EXTERNAL, document.theme, "light");
+    expect(overridesFor(light.overrides, "light")).toEqual({});
+    expect(light.skipped).toEqual([]);
+  });
+});
+
+/**
+ * Unit: `artboardEdits` for a `--radius-step` edit over an external base theme. Oracle: CONTEXT.md,
+ * "Radius step": set once per variant. So an artboard in the base theme's variant wears the step
+ * edit whatever its brand, and one in the other variant keeps its own step.
+ */
+describe("the radius step in an artboard's own theme", () => {
+  const edits = { light: {}, dark: {}, shared: { "radius-step": "0px", radius: "20px" } };
+
+  it("wears the step edit in the base theme's variant, in another brand", () => {
+    expect(
+      overridesFor(artboardEdits(edits, { ...ELMA, brand: "fkas" }, ELMA, "light").overrides, "light")
+    ).toEqual({ "radius-step": "0px", radius: "20px" });
+  });
+
+  it("withholds the step edit in the other variant, without naming it a skipped loop", () => {
+    const result = artboardEdits(edits, { ...ELMA, variant: "internal" }, ELMA, "light");
+    expect(overridesFor(result.overrides, "light")).toEqual({ radius: "20px" });
+    expect(result.skipped).toEqual([]);
   });
 });
