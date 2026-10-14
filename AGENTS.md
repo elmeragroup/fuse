@@ -61,8 +61,10 @@ While editing, run `vitest related <files> --run --project unit` in the owning p
 Before review, run the touched turbo tasks with `--affected`, then `pnpm check`, the
 local gate. CI also runs the e2e and packed-artifact tier on every PR.
 When a change touches docs-app behavior (landing, studio, search, theme picker), run
-the affected e2e files with `pnpm --filter docs test:e2e test/<file>`; it serves the
-existing `.next`, so rebuild docs first.
+`pnpm exec turbo run build --filter=docs`, which builds Fuse and generates docs first,
+then run the affected e2e files with `pnpm --filter docs test:e2e test/<file>`.
+When it changes a Fuse part's density role, a data-slot, or the density-metric or border
+classes a part reads, run `test/demo-coverage.browser.test.ts` the same way.
 When it touches package exports, build or packaging scripts, or dependencies, run
 `package:check` and `test:packed-consumer`, or `pnpm ci:checks`, before review.
 Read versions, commands, budgets and task dependencies from their owning configuration

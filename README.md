@@ -47,7 +47,7 @@ Root scripts fan out through turbo unless noted.
 | `pnpm lint:fix`           | The same with `--fix`                                                                                                 |
 | `pnpm format`             | `oxfmt` write; `pnpm format:check` is the CI form                                                                     |
 | `pnpm test`               | Unit tests (vitest) in every package                                                                                  |
-| `pnpm test:browser`       | Browser-mode vitest projects                                                                                          |
+| `pnpm test:browser`       | Fast browser-mode suites in the local gate (Fuse components, static-theme)                                            |
 | `pnpm test:e2e`           | End-to-end suites against a built docs app (`next start`) and the `pnpm shots` tool                                   |
 | `pnpm test:types`         | Type-level tests (`*.test-d.tsx`)                                                                                     |
 | `pnpm test:repo-policy`   | Root-only vitest project in [`test/`](test) — merge-workflow shape, lint script, README claims                        |

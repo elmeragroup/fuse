@@ -109,17 +109,14 @@ describe("release wiring", () => {
 
   it("schedules every publish gate through the ci:checks aggregate", () => {
     // The merge `checks` job runs explicit task names and `test:packed-consumer` runs in the
-    // `browser` job; this pins the aggregate a local `pnpm ci:checks` fans out.
+    // `browser` job; this pins the aggregate a local `pnpm ci:checks` fans out, directly or
+    // through the `check` gate it includes.
     expect([...PUBLISH_GATES]).toEqual(["package:check", "size-limit", "test:packed-consumer"]);
-    const tasks = turboTasks(["run", "ci:checks"]);
-    const fuseChecks = asRecord(
-      tasks.find((task) => task.taskId === "@elmeragroup/fuse#ci:checks"),
-      "@elmeragroup/fuse#ci:checks"
-    );
-    const dependencies = fuseChecks.dependencies;
-    if (!Array.isArray(dependencies)) throw new Error("ci:checks dependencies is not an array");
+    const scheduled = turboTasks(["run", "ci:checks"])
+      .filter((task) => asString(task.command, "task command") !== "<NONEXISTENT>")
+      .map((task) => asString(task.taskId, "task id"));
     for (const gate of PUBLISH_GATES) {
-      expect(dependencies, `${gate} must also run in the ci:checks aggregate`).toContain(
+      expect(scheduled, `${gate} must also run in the ci:checks aggregate`).toContain(
         `@elmeragroup/fuse#${gate}`
       );
     }

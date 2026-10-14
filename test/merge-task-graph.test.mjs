@@ -10,6 +10,9 @@ import {
   turboTasks,
 } from "./workflow.mjs";
 
+/** Gates that run only in the merge workflow's browser job. */
+const BROWSER_JOB_GATE = /#test:(browser|e2e|packed-consumer)$/;
+
 /** @param {string} job */
 function turboRunStep(job) {
   const step = requiredRunStep(requiredJobSteps(readWorkflow("merge"), job), "pnpm exec turbo run ");
@@ -33,7 +36,7 @@ function requestedArgs(job, entry = {}) {
 
 /** @param {string} job */
 function scheduledTasks(job) {
-  return turboTasks(["run", ...requestedArgs(job)]);
+  return resolvedTasks(["run", ...requestedArgs(job)]);
 }
 
 /**
@@ -45,6 +48,26 @@ function executableTaskIds(tasks) {
     .filter((task) => asString(task.command, "task command") !== "<NONEXISTENT>")
     .map((task) => asString(task.taskId, "task id"));
 }
+
+/** @type {Map<string, Record<string, unknown>[]>} */
+const resolvedGraphs = new Map();
+
+/**
+ * Turbo's resolved tasks for an argument list, resolved once per distinct list per file.
+ * @param {string[]} args
+ */
+function resolvedTasks(args) {
+  const key = JSON.stringify(args);
+  let tasks = resolvedGraphs.get(key);
+  if (tasks === undefined) {
+    tasks = turboTasks(args);
+    resolvedGraphs.set(key, tasks);
+  }
+  return tasks;
+}
+
+/** Fuse's no-op `ci:checks` and `check` scripts, which only anchor each aggregate's fan-out. */
+const AGGREGATE_ANCHORS = new Set(["@elmeragroup/fuse#ci:checks", "@elmeragroup/fuse#check"]);
 
 /** @type {{ leg: string, args: string[], tasks: Record<string, unknown>[] }[] | undefined} */
 let browserGraphs;
@@ -81,7 +104,7 @@ it("the merge checks schedule all required gates without browser work", () => {
   ]) {
     expect(ids).toContain(required);
   }
-  expect(ids.filter((id) => /#test:(browser|e2e|packed-consumer)$/.test(id))).toEqual([]);
+  expect(ids.filter((id) => BROWSER_JOB_GATE.test(id))).toEqual([]);
   // The extractor and lint plugins ship in @elmeragroup/internal; no workspace package
   // carries their gates any more, so nothing under tooling/* other than the tsconfig
   // package may appear in the graph.
@@ -90,9 +113,10 @@ it("the merge checks schedule all required gates without browser work", () => {
 
 it("splits the ci:checks aggregate exactly between the checks and browser jobs", () => {
   // Unit under test: merge's resolved job graphs. Oracle: turbo.json's ci:checks aggregate.
-  // Shared builds and repeated docs shards count once; the aggregate's no-op anchor is not a gate.
-  const aggregate = executableTaskIds(turboTasks(["run", "ci:checks"])).filter(
-    (id) => !id.endsWith("#ci:checks")
+  // Shared builds and repeated docs shards count once; Fuse's no-op `ci:checks` and `check`
+  // anchors are not gates.
+  const aggregate = executableTaskIds(resolvedTasks(["run", "ci:checks"])).filter(
+    (id) => !AGGREGATE_ANCHORS.has(id)
   );
   const scheduled = executableTaskIds([
     ...scheduledTasks("checks"),
@@ -103,10 +127,10 @@ it("splits the ci:checks aggregate exactly between the checks and browser jobs",
 
 it("the local check gate is ci:checks without the e2e and packed-artifact tier", () => {
   // Unit under test: turbo.json's `check` aggregate. Oracle: the resolved ci:checks graph minus
-  // the tasks this list names, which CI alone runs. Each aggregate's no-op anchor is not a gate.
+  // the tasks this list names, which CI alone runs. Fuse's no-op aggregate anchors are not gates.
   const ciOnly = ["test:e2e", "test:packed-consumer", "package:check"];
   const gates = (/** @type {string} */ aggregate) =>
-    new Set(executableTaskIds(turboTasks(["run", aggregate])).filter((id) => !id.endsWith(`#${aggregate}`)));
+    new Set(executableTaskIds(resolvedTasks(["run", aggregate])).filter((id) => !AGGREGATE_ANCHORS.has(id)));
   const full = gates("ci:checks");
   const local = gates("check");
   for (const task of ciOnly) {
@@ -193,7 +217,7 @@ it("runs docs build before type-check, not against the same .next", () => {
 it("the browser job schedules the browser, e2e and packed-consumer gates", () => {
   // The required gate inventory is independent of the workflow's task arguments and filters.
   const ids = executableTaskIds(browserLegs().flatMap((leg) => leg.tasks)).filter((id) =>
-    /#test:(browser|e2e|packed-consumer)$/.test(id)
+    BROWSER_JOB_GATE.test(id)
   );
   expect([...new Set(ids)].sort()).toEqual([
     "@elmeragroup/fuse#test:browser",
@@ -210,9 +234,7 @@ it("covers every docs e2e shard exactly once and keeps package gates unsharded",
   const docs = legs.filter((leg) => leg.tasks.some((task) => task.taskId === "docs#test:e2e"));
   expect(docs).toHaveLength(4);
   for (const leg of docs) {
-    const gates = executableTaskIds(leg.tasks).filter((id) =>
-      /#test:(browser|e2e|packed-consumer)$/.test(id)
-    );
+    const gates = executableTaskIds(leg.tasks).filter((id) => BROWSER_JOB_GATE.test(id));
     expect(gates, `${leg.leg} must only shard the docs e2e gate`).toEqual(["docs#test:e2e"]);
     expect(leg.args.slice(leg.args.indexOf("--") + 1), `${leg.leg} shard arguments`).toHaveLength(1);
   }
