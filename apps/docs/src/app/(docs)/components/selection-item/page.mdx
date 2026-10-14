@@ -135,9 +135,11 @@ A checked row's `bg-muted` tint and a disabled row's fill win over a background 
 The theme rules resolve these roles on the element that carries the theme attributes, which is `<html>` or a `ThemeScope`. Set an override there. On a plain wrapper, a `--border` override reaches cards and `CheckboxCard`, but the rows keep the edges and dividers the theme element resolved. To give external rows back an outer edge:
 
 ```tsx
-<ThemeScope theme={theme} style={{ "--selection-border": "var(--border)" }}>
+import type { CSSProperties } from "react";
+
+<ThemeScope theme={theme} style={{ "--selection-border": "var(--border)" } as CSSProperties}>
   <RadioItemGroup label="Payment method">{/* … */}</RadioItemGroup>
-</ThemeScope>
+</ThemeScope>;
 ```
 
 The [theming handbook](/handbook/theming#how-it-resolves) explains how the variant layers set these roles.

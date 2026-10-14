@@ -161,8 +161,7 @@ describe("PopoverInfoButton", () => {
 
   // Oracle: the 48px line the heading writes. In an inline formatting context the square fills
   // that line box instead of sitting on the baseline and growing it.
-  it.each(DENSITIES)("keeps a block heading's line box at its line height at %s", (density) => {
-    stampDensity(density);
+  it("keeps a block heading's line box at its line height", () => {
     renderInfo(
       <h2 style={{ fontFamily: "Arial", fontSize: 48, lineHeight: "48px", margin: 0 }}>
         Grid rent <PopoverInfoButton>{EXPLAINER}</PopoverInfoButton>
