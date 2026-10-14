@@ -165,6 +165,7 @@ export default function plopfile(plop) {
           "  6. Record measuredGzip in packages/fuse/scripts/size-budgets.ts.",
           "  7. Add source-contracts.test.ts entries and public type/API checks.",
           "  8. pnpm check",
+          "  9. pnpm exec turbo run package:check test:packed-consumer  # new entry changes package exports (AGENTS.md#tests)",
         ].join("\n"),
     ],
   });

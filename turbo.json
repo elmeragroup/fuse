@@ -45,7 +45,9 @@
     "test:browser": {
       "dependsOn": ["build"]
     },
-    // End-to-end suites drive a built app or tool through Playwright (docs against `next start`).
+    // CI-only Playwright suites, too slow for the local `check` gate (docs against `next start`,
+    // pr-shots' capture tool). Fast suites against a built host, like static-theme's first-paint
+    // suite, stay in `test:browser`.
     "test:e2e": {
       "dependsOn": ["build"]
     },
@@ -73,24 +75,11 @@
     // Aggregate leaves. Every real gate below is its own task, so a package's own `ci:checks` or
     // `check` script has nothing left to run: `@elmeragroup/fuse` defines both as self-describing
     // no-ops that exist only so `turbo run <aggregate>` fans out to the dependency list.
-    // `ci:checks` mirrors every gate the merge workflow runs; `check` is the local gate, which
-    // leaves the e2e and packed-artifact tier (`test:e2e`, `test:packed-consumer`,
-    // `package:check`) to CI.
+    // `check` is the local gate; `ci:checks` is `check` plus the CI-only e2e and packed-artifact
+    // tier (`test:e2e`, `test:packed-consumer`, `package:check`), so it mirrors every gate the
+    // merge workflow runs.
     "ci:checks": {
-      "dependsOn": [
-        "//#lint",
-        "//#test:repo-policy",
-        "//#type-check:scripts",
-        "type-check",
-        "test",
-        "test:browser",
-        "test:e2e",
-        "test:packed-consumer",
-        "test:types",
-        "build",
-        "package:check",
-        "size-limit"
-      ]
+      "dependsOn": ["check", "test:e2e", "test:packed-consumer", "package:check"]
     },
     "check": {
       "dependsOn": [
