@@ -161,7 +161,7 @@ export const EXTERNAL_PALETTES = {
     "secondary-soft-foreground": "oklch(0.22503 0.06011 247.68)",
     feature: "oklch(0.56873 0.09344 229.37)",
     "feature-bright": "oklch(0.77836 0.11783 206.21)",
-    "feature-foreground": "oklch(0.90492 0.09477 206.46)",
+    "feature-foreground": "oklch(0.72225 0.16251 154.25)", // #36C275, the Telinet green
     border: "oklch(0.9232 0.0026 48.72)",
     input: "oklch(0.9232 0.0026 48.72)",
     radius: "0.75rem",
