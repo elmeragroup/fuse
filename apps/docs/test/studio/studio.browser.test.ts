@@ -721,6 +721,70 @@ describe("theme studio", () => {
     await page.close();
   });
 
+  it("reveals the first Tab stop below the pinned theme toolbar while the zoom to 400% still glides", async () => {
+    const { page } = await openStudio({ reducedMotion: "no-preference" });
+    const name = ARTBOARDS[0];
+    await layers(page).getByRole("button", { name, exact: true }).focus();
+    await page.keyboard.press("Enter");
+    for (let step = 0; step < 8; step++) {
+      await page.keyboard.press("ControlOrMeta+Equal");
+    }
+    await page.keyboard.press("Tab");
+    const focused = page.locator(":focus");
+    await expect
+      .poll(
+        async () =>
+          (await settled(page, focused)) && clearBelow(await box(focused), await box(themeBar(page)))
+      )
+      .toBe(true);
+    await page.close();
+  });
+
+  it("reveals a control below the theme toolbar that pins as a zoom out glides its hidden artboard into view", async () => {
+    const { page } = await openStudio({ reducedMotion: "no-preference" });
+    const name = ARTBOARDS[0];
+    const frame = await box(canvas(page));
+    await layers(page).getByRole("button", { name, exact: true }).focus();
+    await page.keyboard.press("Enter");
+    for (let step = 0; step < 8; step++) {
+      await page.keyboard.press("ControlOrMeta+Equal");
+    }
+    await expect.poll(async () => settled(page, artboard(page, name))).toBe(true);
+    const focused = page.locator(":focus");
+    await page.keyboard.press("Tab");
+    await expect.poll(async () => settled(page, focused)).toBe(true);
+    await focused.evaluate((element) => {
+      element.setAttribute("data-test-target", "");
+    });
+    const marked = page.locator("[data-test-target]");
+    await page.keyboard.press("Tab");
+    await expect.poll(async () => settled(page, focused)).toBe(true);
+
+    // Six steps zoom 400% out to 50% around the canvas's centre, scaling every offset from it by
+    // 1/8. Pan the artboard 600 px past the canvas's left edge, which hides the bar, and so far
+    // down that the marked control lands 30 px below the canvas's top at 50%. The artboard's top is
+    // then above the canvas, so the bar pins there, over the control.
+    const board = await box(artboard(page, name));
+    const centre = { x: frame.width / 2, y: frame.height / 2 };
+    const top = (await box(marked)).y - frame.y;
+    await page.mouse.move(frame.x + centre.x, frame.y + centre.y);
+    await page.mouse.wheel(board.x + board.width - frame.x + 600, top - centre.y - 8 * (30 - centre.y));
+    await expect.poll(async () => themeBar(page).isVisible()).toBe(false);
+
+    for (let step = 0; step < 6; step++) {
+      await page.keyboard.press("ControlOrMeta+Minus");
+    }
+    await page.keyboard.press("Shift+Tab");
+    expect(await isFocused(marked)).toBe(true);
+    await expect
+      .poll(
+        async () => (await settled(page, marked)) && clearBelow(await box(marked), await box(themeBar(page)))
+      )
+      .toBe(true);
+    expect(await zoomLabel(page)).toBe("50%");
+    await page.close();
+  });
+
   it("moves a focused control out from under the pinned theme toolbar as Tab returns to it", async () => {
     const { page } = await openStudio();
     const name = ARTBOARDS[0];

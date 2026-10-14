@@ -95,10 +95,10 @@ type ViewportCommands = {
   answerFrame: (answer: FrameAnswer) => void;
   /**
    * Attaches the floating theme toolbar's reader for the canvas-local px its bar covers while
-   * pinned to the canvas's top: the bar's bottom edge measured from the canvas's top, or
-   * undefined when no bar is pinned.
+   * pinned to the canvas's top at camera `to`: the bar's bottom edge measured from the canvas's
+   * top, or undefined when no bar pins there. `from` is the camera the canvas draws now.
    */
-  attachPinnedBar: (read: (() => number | undefined) | null) => void;
+  attachPinnedBar: (read: ((from: Viewport, to: Viewport) => number | undefined) | null) => void;
   /**
    * Shows a focused element inside an artboard: glides to frame the artboard when it is mostly
    * out of view, and otherwise pans the element into view when the canvas clips it.
@@ -148,7 +148,7 @@ export function ViewportProvider({ children }: { children: ReactNode }): ReactEl
   const { artboards } = useStudio();
   const desktop = useDesktop();
   const canvasRef = useRef<HTMLElement | null>(null);
-  const pinnedBar = useRef<(() => number | undefined) | null>(null);
+  const pinnedBar = useRef<((from: Viewport, to: Viewport) => number | undefined) | null>(null);
   const elements = useRef(new Map<string, HTMLElement>());
   const [viewport, setViewport] = useState<Viewport>(INITIAL_VIEWPORT);
   const [gliding, setGliding] = useState(false);
@@ -351,8 +351,9 @@ export function ViewportProvider({ children }: { children: ReactNode }): ReactEl
         y: box.top - frame.top + canvas.scrollTop,
       });
       const world = { ...topLeft, width: box.width / drawn.zoom, height: box.height / drawn.zoom };
-      // A pinned bar stays put as the camera moves, so it is measured here with the element.
-      const covered = pinnedBar.current?.();
+      // A pinned bar stays put as the camera moves, so it is measured here with the element, at
+      // the camera the pan starts from: mid-glide, the glide's destination.
+      const covered = pinnedBar.current?.(drawn, latest.current);
       const margins =
         covered === undefined
           ? REVEAL_MARGINS

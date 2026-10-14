@@ -88,6 +88,16 @@ function roomAbove(height: number, sideOffset: number): number {
   return height + sideOffset + PINNED_MARGIN;
 }
 
+/** Whether `rect` shares any area with `frame`: Base UI hides a popup whose anchor shares none. */
+function overlaps(rect: Rect, frame: Rect): boolean {
+  return (
+    rect.x < frame.x + frame.width &&
+    rect.x + rect.width > frame.x &&
+    rect.y < frame.y + frame.height &&
+    rect.y + rect.height > frame.y
+  );
+}
+
 /** What the toolbar edits: the selected artboard, or the part picked in it. */
 type ToolbarTarget =
   | { readonly kind: "artboard"; readonly artboard: ArtboardSpec; readonly element: HTMLElement }
@@ -345,22 +355,36 @@ function FloatingToolbar(): ReactElement {
   // The focus reveal reads the bar between renders, so a control it pans into view clears the bar
   // while the bar is pinned to the canvas's top. A bar floating over its anchor moves with the
   // camera, so it covers nothing a pan could clear.
-  const pinned = useRef({ open, anchorHidden, popup });
+  const pinned = useRef({ open, popup, element, sideOffset });
   useLayoutEffect(() => {
-    pinned.current = { open, anchorHidden, popup };
-  }, [open, anchorHidden, popup]);
+    pinned.current = { open, popup, element, sideOffset };
+  }, [open, popup, element, sideOffset]);
   useEffect(() => {
-    attachPinnedBar(() => {
+    attachPinnedBar((from, to) => {
       const bar = pinned.current;
-      const frame = canvas();
-      if (!bar.open || bar.anchorHidden || bar.popup === null || frame === null) {
+      const canvasElement = canvas();
+      if (!bar.open || bar.popup === null || bar.element === undefined || canvasElement === null) {
         return undefined;
       }
-      // The bar's layer scrolls with the canvas, so it is measured where it draws once the
-      // canvas's native focus scroll is undone, as the reveal measures the control.
-      const box = bar.popup.getBoundingClientRect();
-      const top = box.top - frame.getBoundingClientRect().top + frame.scrollTop;
-      return top <= PINNED_MARGIN + 1 ? top + box.height : undefined;
+      // Mid-glide the bar still floats where the drawn camera puts its anchor, so the anchor is
+      // carried from `from` to `to`, once the canvas's native focus scroll is undone as the reveal
+      // measures the control, and placed there by `toolbarAnchor`. The bar pins when that lowers
+      // the anchor's top, unless the lowered anchor is out of the canvas, which hides the bar.
+      const box = bar.element.getBoundingClientRect();
+      const bounds = canvasElement.getBoundingClientRect();
+      const frame = { x: bounds.left, y: bounds.top, width: bounds.width, height: bounds.height };
+      const scale = to.zoom / from.zoom;
+      const projected = {
+        x: frame.x + (box.left - frame.x + canvasElement.scrollLeft - from.x) * scale + to.x,
+        y: frame.y + (box.top - frame.y + canvasElement.scrollTop - from.y) * scale + to.y,
+        width: box.width * scale,
+        height: box.height * scale,
+      };
+      const height = bar.popup.offsetHeight;
+      const room = roomAbove(height, bar.sideOffset);
+      const placed = toolbarAnchor(projected, frame, room);
+      const lowered = placed.y === frame.y + room && placed.y > projected.y;
+      return lowered && overlaps(placed, frame) ? PINNED_MARGIN + height : undefined;
     });
     return () => {
       attachPinnedBar(null);
