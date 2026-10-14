@@ -75,9 +75,10 @@ export default function QuickStartPage(): ReactElement {
       </p>
       <p>
         Fuse gives every element, your own markup included, a base-layer default border colour, the{" "}
-        <code>--border</code> role, and any border colour utility still wins. Import Fuse after{" "}
-        <code>tailwindcss</code>. A preflight-free build that imports Tailwind&apos;s sheets into layers
-        declares <code>@layer theme, base, components, utilities;</code> before them.
+        <code>--border</code> role, and any border colour utility still wins. Native form widgets outside Fuse
+        parts keep their own border colour and native look. Import Fuse after <code>tailwindcss</code>. A
+        preflight-free build that imports Tailwind&apos;s sheets into layers declares{" "}
+        <code>@layer theme, base, components, utilities;</code> before them.
       </p>
       <pre>
         <code>{STYLES_TAILWIND}</code>
