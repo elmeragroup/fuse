@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { ReactNode } from "react";
 
 import type { ValidationResult } from "react-aria-components";
@@ -75,6 +76,25 @@ describe("SearchField", () => {
     expect(input).toHaveProperty("value", "");
     expect(root).toHaveAttribute("data-empty");
     expect(getComputedStyle(clear).visibility).toBe("hidden");
+  });
+
+  it("passes typed text to a controlled value through onChange", async () => {
+    function Controlled() {
+      const [value, setValue] = useState("");
+      return (
+        <>
+          <SearchField label="Meter search" value={value} onChange={setValue} />
+          <output aria-label="Echo">{value}</output>
+        </>
+      );
+    }
+    renderField(<Controlled />);
+
+    const input = roleNamed("searchbox", "Meter search");
+    await userEvent.click(input);
+    await userEvent.keyboard("735");
+    expect(input).toHaveProperty("value", "735");
+    expect(roleNamed("status", "Echo").textContent).toBe("735");
   });
 
   it("reflects isDisabled and isInvalid on the root and renders errorMessage only when invalid", async () => {

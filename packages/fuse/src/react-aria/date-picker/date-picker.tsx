@@ -7,6 +7,7 @@ import {
   CalendarContext,
   DatePicker as AriaDatePicker,
   DatePickerStateContext,
+  FormValidationContext,
   useSlottedContext,
 } from "react-aria-components";
 import type {
@@ -20,7 +21,7 @@ import { pickerVariants } from "../../styles/picker";
 import { Calendar } from "../calendar/calendar";
 import { DateInput } from "../date-field/date-field";
 import { composeTailwindRenderProps } from "../internal/compose-tailwind-render-props";
-import { FormErrors, useClearFormErrors } from "../internal/form-errors";
+import { useFormErrors } from "../internal/form-errors";
 import { useCommittedMonthFocus } from "../internal/picker-focused-month";
 import { isRenderableNode, PickerPresetGroup, PickerPresetItem } from "../internal/picker-presets";
 import type { PickerPresetGroupProps, PickerPresetItemProps } from "../internal/picker-presets";
@@ -110,11 +111,10 @@ export function DatePicker<T extends DateValue>({
   const { base, calendar, input, pane } = pickerVariants({
     hasPresets: isRenderableNode(presetGroup),
   });
-  const names = [props.name] as const;
-  const clearingOnChange = useClearFormErrors(names, onChange);
+  const { validationErrors, onChange: clearingOnChange } = useFormErrors([props.name], onChange);
 
   return (
-    <FormErrors names={names}>
+    <FormValidationContext.Provider value={validationErrors}>
       <AriaDatePicker
         {...props}
         onChange={clearingOnChange}
@@ -137,7 +137,7 @@ export function DatePicker<T extends DateValue>({
           <DateInput className={input()} />
         </PickerShell>
       </AriaDatePicker>
-    </FormErrors>
+    </FormValidationContext.Provider>
   );
 }
 
