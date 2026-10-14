@@ -431,6 +431,26 @@ describe("theme studio", () => {
     await page.close();
   });
 
+  it("keeps the canvas bar's disabled Undo and Redo focusable in its arrow-key order", async () => {
+    // No link edits, so the history is empty and both are disabled.
+    const { page } = await openStudio();
+    const bar = canvas(page).getByRole("toolbar", { name: "Toolbar", exact: true });
+    const undo = bar.getByRole("button", { name: "Undo", exact: true });
+    const redo = bar.getByRole("button", { name: "Redo", exact: true });
+    for (const control of [undo, redo]) {
+      expect(await control.getAttribute("aria-disabled")).toBe("true");
+      expect(await control.getAttribute("disabled")).toBeNull();
+    }
+
+    // Select part is the item before the History group.
+    await bar.getByRole("button", { name: "Select part", exact: true }).focus();
+    await page.keyboard.press("ArrowRight");
+    await expect.poll(async () => isFocused(undo)).toBe(true);
+    await page.keyboard.press("ArrowRight");
+    await expect.poll(async () => isFocused(redo)).toBe(true);
+    await page.close();
+  });
+
   it("keeps F6 the cycle's while a toast shows, with the notifications as one more stop", async () => {
     const { page } = await openStudio({ hash: "#1.not-a-studio-link" });
     const toast = page.getByText("The link's edits could not be read", { exact: true }).first();
