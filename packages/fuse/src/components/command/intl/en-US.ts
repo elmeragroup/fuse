@@ -7,5 +7,4 @@ export const enUS = {
   back: "Back",
   navigate: "Navigate",
   select: "Select",
-  close: "Close",
 };

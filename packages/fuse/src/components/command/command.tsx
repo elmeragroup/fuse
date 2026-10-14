@@ -11,9 +11,6 @@ import type {
   ReactNode,
 } from "react";
 
-// Subpath imports of Base UI's combobox family type-check but crash at runtime with a null React
-// context, as combobox.tsx explains. Autocomplete shares those internals, so it also uses the
-// package-root import.
 import { Autocomplete as AutocompletePrimitive } from "@base-ui/react";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import type { DialogRootChangeEventDetails, DialogRootProps } from "@base-ui/react/dialog";
@@ -27,11 +24,7 @@ import { CaretRight } from "../../icons/generated/caret-right";
 import { MagnifyingGlass } from "../../icons/generated/magnifying-glass";
 import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
-import {
-  commandContentShellClass,
-  commandListShellClass,
-  commandRowsHandedOffListShellClass,
-} from "../../styles/inner-corner/command";
+import { commandContentShellClass, commandListShellClass } from "../../styles/inner-corner/command";
 import { mergeClassName } from "../../styles/merge-class-name";
 import type { LabelButtonProps } from "../button/button";
 import { DialogOverlay, DialogPortal, DialogTrigger } from "../dialog/dialog";
@@ -42,6 +35,7 @@ import {
   InputGroupRoot,
 } from "../input-group/input-group";
 import { Kbd } from "../kbd/kbd";
+import { overlayCloseStrings } from "../overlay/intl";
 import { menuGroupLabelClass } from "../overlay/menu-row-classes";
 import { overlayModalPopupClass } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
@@ -85,15 +79,11 @@ type CommandPaletteContextValue = {
   readonly dialog: Omit<CommandDialogStateProps, "defaultOpen">;
   /** Tells the Root a `Command.Content` is mounted, until the returned cleanup runs. */
   readonly registerContent: () => () => void;
+  /** The count of dialog closes. A change resets each search's uncontrolled query. */
+  readonly session: number;
 };
 
 const CommandPaletteContext = createContext<CommandPaletteContextValue | null>(null);
-
-/**
- * Counts the dialog's closes. Each page's search resets an uncontrolled query when the count
- * changes.
- */
-const CommandSessionContext = createContext(0);
 
 /** Returns the enclosing Root's palette state, and throws a named error outside a Root. */
 function usePalette(part: string): CommandPaletteContextValue {
@@ -192,6 +182,7 @@ export function CommandRoot<
   pages,
   defaultPages,
   onPagesChange,
+  grouped = false,
   autoHighlight = "always",
   keepHighlight = true,
   children,
@@ -212,11 +203,12 @@ export function CommandRoot<
   const isOpen = open ?? ownOpen;
   // An inline palette always shows; one in `Command.Content` shows while its dialog is open.
   const showing = !hasContent || isOpen;
-  const stack = useStack(pages, defaultPages, onPagesChange, showing);
+  const stack = useStack(pages, defaultPages, onPagesChange, showing, isOpen);
   const hasStack = pages !== undefined || defaultPages !== undefined;
   const palette: CommandPaletteContextValue = {
     handle,
     registerContent,
+    session,
     dialog: {
       ...definedProps({ modal, disablePointerDismissal, actionsRef }),
       open: isOpen,
@@ -237,30 +229,29 @@ export function CommandRoot<
   };
   return (
     <CommandPaletteContext.Provider value={palette}>
-      <CommandSessionContext.Provider value={session}>
-        {hasStack ? (
-          <CommandStackContext.Provider value={stack.context}>
-            <CommandFocusRequestContext.Provider value={stack.focusRequest}>
+      {hasStack ? (
+        <CommandStackContext.Provider value={stack.context}>
+          <CommandFocusRequestContext.Provider value={stack.focusRequest}>
+            {children}
+          </CommandFocusRequestContext.Provider>
+        </CommandStackContext.Provider>
+      ) : (
+        // A Root without pages is a palette of its own, even inside an outer palette's page. Back
+        // and Backspace find no stack to pop, and no page names its input or focuses it.
+        <CommandStackContext.Provider value={null}>
+          <CommandPageContext.Provider value={null}>
+            <CommandSearch
+              part="Command.Root"
+              session={session}
+              grouped={grouped}
+              autoHighlight={autoHighlight}
+              keepHighlight={keepHighlight}
+              {...search}>
               {children}
-            </CommandFocusRequestContext.Provider>
-          </CommandStackContext.Provider>
-        ) : (
-          // A Root without pages is a palette of its own, even inside an outer palette's page. Back
-          // and Backspace find no stack to pop, and no page names its input or focuses it.
-          <CommandStackContext.Provider value={null}>
-            <CommandPageContext.Provider value={null}>
-              <CommandSearch
-                part="Command.Root"
-                session={session}
-                autoHighlight={autoHighlight}
-                keepHighlight={keepHighlight}
-                {...search}>
-                {children}
-              </CommandSearch>
-            </CommandPageContext.Provider>
-          </CommandStackContext.Provider>
-        )}
-      </CommandSessionContext.Provider>
+            </CommandSearch>
+          </CommandPageContext.Provider>
+        </CommandStackContext.Provider>
+      )}
     </CommandPaletteContext.Provider>
   );
 }
@@ -303,13 +294,14 @@ export function CommandPage<
 >({
   id,
   label,
+  grouped = false,
   autoHighlight = "always",
   keepHighlight = true,
   children,
   ...search
 }: CommandPageProps<Item, Groups, Grouped>): ReactElement | null {
   const stack = useEnclosingStack("Command.Page");
-  const session = use(CommandSessionContext);
+  const { session } = usePalette("Command.Page");
   if (stack.stack.at(-1) !== id) {
     return null;
   }
@@ -318,6 +310,7 @@ export function CommandPage<
       <CommandSearch
         part="Command.Page"
         session={session}
+        grouped={grouped}
         autoHighlight={autoHighlight}
         keepHighlight={keepHighlight}
         {...search}>
@@ -347,7 +340,9 @@ export type CommandContentProps = ComponentProps<typeof DialogPrimitive.Popup> &
  * near the top of the viewport, with no close button. Only this part renders a dialog, so a
  * palette without it renders none, and a palette inline in a dialog of your own leaves that
  * dialog's parts bound to that dialog. Its name defaults to the locale dictionary's, and a
- * `Dialog.Title` inside it names it instead. Escape closes it from any page.
+ * `Dialog.Title` inside it names it instead. Escape closes it from any page. It may mount late,
+ * such as on the first opening from a code-split chunk, but keep it mounted while the Root lives:
+ * the end of its close animation is what resets an uncontrolled query and stack.
  */
 export function CommandContent({
   className,
@@ -575,7 +570,7 @@ export function CommandList({ className, ...props }: CommandListProps): ReactEle
     return (
       <AutocompletePrimitive.List
         data-slot="command-list"
-        className={mergeClassName(className, styles.list(), commandRowsHandedOffListShellClass)}
+        className={mergeClassName(className, styles.list(), commandListShellClass)}
         render={(renderProps, state) => (
           <CommandListRowsTarget render={render} rows={rows} listProps={renderProps} state={state} />
         )}
@@ -756,38 +751,40 @@ export type CommandHintPresetProps = Omit<CommandHintProps, "children"> & {
   children?: ReactNode;
 };
 
-/** One key hint preset's caps, and the dictionary key of its default label. */
+/** One key hint preset's caps, and its label from a locale dictionary. */
 type KeyHintProps = CommandHintPresetProps & {
   readonly keys: readonly string[];
-  readonly label: "navigate" | "select" | "close" | "back";
+  readonly defaultLabel: string;
 };
 
 /** Renders a key hint preset's caps, then its label or the locale dictionary's. */
-function KeyHint({ keys, label, children, ...props }: KeyHintProps): ReactElement {
-  const strings = useLocalizedStrings(commandStrings);
+function KeyHint({ keys, defaultLabel, children, ...props }: KeyHintProps): ReactElement {
   return (
     <CommandHint {...props}>
       {keys.map((key) => (
         <Kbd key={key}>{key}</Kbd>
       ))}
-      <span>{children ?? strings.format(label)}</span>
+      <span>{children ?? defaultLabel}</span>
     </CommandHint>
   );
 }
 
 /** The hint for the arrow keys, which move the highlight. */
 export function CommandNavigateHint(props: CommandHintPresetProps): ReactElement {
-  return <KeyHint keys={["↑", "↓"]} label="navigate" {...props} />;
+  const strings = useLocalizedStrings(commandStrings);
+  return <KeyHint keys={["↑", "↓"]} defaultLabel={strings.format("navigate")} {...props} />;
 }
 
 /** The hint for Enter, which runs the highlighted row. */
 export function CommandSelectHint(props: CommandHintPresetProps): ReactElement {
-  return <KeyHint keys={["↵"]} label="select" {...props} />;
+  const strings = useLocalizedStrings(commandStrings);
+  return <KeyHint keys={["↵"]} defaultLabel={strings.format("select")} {...props} />;
 }
 
-/** The hint for Escape, which closes `Command.Content`. */
+/** The hint for Escape, which closes `Command.Content`. Its label is the overlays' `close` word. */
 export function CommandCloseHint(props: CommandHintPresetProps): ReactElement {
-  return <KeyHint keys={["Esc"]} label="close" {...props} />;
+  const strings = useLocalizedStrings(overlayCloseStrings);
+  return <KeyHint keys={["Esc"]} defaultLabel={strings.format("close")} {...props} />;
 }
 
 /**
@@ -795,11 +792,12 @@ export function CommandCloseHint(props: CommandHintPresetProps): ReactElement {
  * Root's stack has a page to go back to.
  */
 export function CommandBackHint(props: CommandHintPresetProps): ReactElement | null {
+  const strings = useLocalizedStrings(commandStrings);
   const stack = use(CommandStackContext);
   if (!canGoBack(stack)) {
     return null;
   }
-  return <KeyHint keys={["⌫"]} label="back" {...props} />;
+  return <KeyHint keys={["⌫"]} defaultLabel={strings.format("back")} {...props} />;
 }
 
 CommandRoot.displayName = "Command.Root";

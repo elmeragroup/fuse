@@ -2,6 +2,7 @@ import type { Locator, Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
 import { DESKTOP_VIEWPORT, launchSuiteBrowser, openDemo } from "./demo-page";
+import { settleFrames } from "./landing-page";
 
 const browser = launchSuiteBrowser();
 
@@ -168,12 +169,7 @@ describe("Command demos", () => {
     await expect.poll(() => popup.getAttribute("data-closed")).toBe("");
     // Ada Lovelace's page is on screen and has passed its commands to the layout.
     await expect.poll(() => demo.getByRole("definition").first().textContent()).toBe("10231");
-    await page.evaluate(
-      () =>
-        new Promise((resolve) => {
-          requestAnimationFrame(() => requestAnimationFrame(resolve));
-        })
-    );
+    await settleFrames(page);
     expect(await popup.evaluate((node) => node.isConnected)).toBe(true);
     expect(
       await popup.$$eval('[data-slot="command-label"]', (labels) => labels.map((label) => label.textContent))

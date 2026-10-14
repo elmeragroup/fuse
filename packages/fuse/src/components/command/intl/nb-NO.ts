@@ -7,5 +7,4 @@ export const nbNO = {
   back: "Tilbake",
   navigate: "Naviger",
   select: "Velg",
-  close: "Lukk",
 };

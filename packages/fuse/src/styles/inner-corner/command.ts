@@ -12,8 +12,8 @@ import { publishShellBoundary } from "../corner-radius";
 export const commandContentShellClass = cn("rounded-xl [--shell-inner:initial]", publishShellBoundary);
 
 /**
- * The boundary that both lists publish. It is the palette's `rounded-xl` less the lists' inset,
- * which is the small surface gap, `--surface-gap-sm`.
+ * The boundary the list publishes. It is the palette's `rounded-xl` less the list's inset, which
+ * is the small surface gap, `--surface-gap-sm`.
  */
 const commandListBoundaryClass = cn(
   "[--shell-inner:max(0px,--theme(--radius-xl)-var(--surface-gap-sm))]",
@@ -21,18 +21,9 @@ const commandListBoundaryClass = cn(
 );
 
 /**
- * `Command.List`. It pads its rows with the small surface gap inside the palette's `rounded-xl`
- * and publishes. An empty List drops its padding.
+ * `Command.List`, with or without a render element. It pads its rows with the small surface gap
+ * inside the palette's `rounded-xl` and publishes. An empty List drops its padding.
+ * `CommandVirtual.List` drops the block padding, because its virtualizer pads the block axis so
+ * the scroll offsets include the padding.
  */
 export const commandListShellClass = cn("p-(--surface-gap-sm) data-empty:p-0", commandListBoundaryClass);
-
-/**
- * A `Command.List` that passes its rows to a render element, such as `CommandVirtual.List`. It
- * publishes the same corner as {@link commandListShellClass} but pads only the inline axis. The
- * render element places the rows, so it pads the block axis itself. A virtualizer pads it, so its
- * scroll offsets include the padding.
- */
-export const commandRowsHandedOffListShellClass = cn(
-  "px-(--surface-gap-sm) data-empty:px-0",
-  commandListBoundaryClass
-);

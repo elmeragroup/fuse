@@ -3,12 +3,11 @@
 import { use, useImperativeHandle, useLayoutEffect, useState } from "react";
 import type { ComponentProps, ReactElement } from "react";
 
-// Import from the package root, as command.tsx does, because the combobox family's subpaths
-// crash at runtime.
 import { Autocomplete as AutocompletePrimitive } from "@base-ui/react";
 import { defaultRangeExtractor, useVirtualizer } from "@tanstack/react-virtual";
 
 import { useMergedRefs } from "../../hooks/use-merged-refs";
+import { cn } from "../../styles/cn";
 import { cssLengthToPx } from "../../theme/css-values";
 import { CommandCompositionError } from "../command/command-error";
 import {
@@ -50,7 +49,7 @@ export type CommandVirtualListProps = Omit<ComponentProps<"div">, "children"> & 
   children?: CommandListRows;
   /**
    * A row's height before the virtualizer measures it. It defaults to the document density's row
-   * height, which a single-line `Command.Item` takes.
+   * height, which a single-line `Command.Item` takes, and follows a change of density.
    */
   estimateSize?: (index: number) => number;
   /**
@@ -67,10 +66,13 @@ export type CommandVirtualListProps = Omit<ComponentProps<"div">, "children"> & 
  * registers its virtualizer with the search, which scrolls it when the highlight jumps out of
  * view. It keys each row by its position, so the row function's element sets no `key`. It is its
  * own scroll element, so keep it out of a `ScrollArea`. It measures each row, so rows of any
- * height stack without gaps. It throws outside `Command.List`'s `render`, and in a search without
+ * height stack without gaps. It pads the rows with the density's small surface gap, and pads and
+ * estimates them again when a `data-density` attribute on the document root or an ancestor
+ * changes. It throws outside `Command.List`'s `render`, and in a search without
  * `virtualized`.
  */
 export function CommandVirtualList({
+  className,
   children: rows,
   estimateSize,
   overscan = 8,
@@ -89,9 +91,26 @@ export function CommandVirtualList({
   const mergedRef = useMergedRefs(ref, setScrollElement);
   const [metrics, setMetrics] = useState(DENSE_ROW_METRICS);
   useLayoutEffect(() => {
-    if (scrollElement !== null) {
-      setMetrics(readRowMetrics(scrollElement));
+    if (scrollElement === null) {
+      return undefined;
     }
+    const update = () => {
+      const next = readRowMetrics(scrollElement);
+      setMetrics((current) => (current.row === next.row && current.pad === next.pad ? current : next));
+    };
+    update();
+    // Density reaches the metrics only through a `data-density` attribute, on the document root or
+    // on an ancestor such as a demo stage. Watching that one attribute re-reads the metrics when
+    // density changes, and never while the list scrolls or filters.
+    const observer = new MutationObserver(update);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-density"],
+      subtree: true,
+    });
+    return () => {
+      observer.disconnect();
+    };
   }, [scrollElement]);
   const { highlightedIndex } = search;
   // oxlint-disable-next-line react/incompatible-library -- TanStack Virtual returns one mutable instance by design; the list re-renders on each scroll update it reports, and nothing here memoizes its functions.
@@ -109,7 +128,10 @@ export function CommandVirtualList({
   });
   useImperativeHandle(search.scroller, () => virtualizer, [virtualizer]);
   return (
-    <div ref={mergedRef} {...props}>
+    // `Command.List`'s class pads every side, and the virtualizer pads the block axis, so the list
+    // drops its own block padding. Base UI puts this element's own classes ahead of the List's,
+    // and tailwind-merge drops a block padding that precedes the List's padding, so it goes last.
+    <div ref={mergedRef} className={cn(className, "py-0")} {...props}>
       {items.length === 0 ? null : (
         <div
           role="presentation"

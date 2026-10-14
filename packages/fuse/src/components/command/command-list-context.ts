@@ -3,7 +3,6 @@
 import { createContext } from "react";
 import type { ComponentProps, CSSProperties, ReactNode, RefObject } from "react";
 
-// The package-root import, as in command.tsx. The combobox family's subpaths crash at runtime.
 import type { Autocomplete as AutocompletePrimitive } from "@base-ui/react";
 
 /**

@@ -3,9 +3,6 @@
 import { useMemo, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
-// Subpath imports of Base UI's combobox family type-check but crash at runtime with a null React
-// context, as combobox.tsx explains. Autocomplete shares those internals, so it also uses the
-// package-root import.
 import { Autocomplete as AutocompletePrimitive } from "@base-ui/react";
 import type { AutocompleteRootHighlightEventDetails, AutocompleteRootProps } from "@base-ui/react";
 
@@ -141,9 +138,9 @@ function assertGrouping(
 
 /**
  * One search, which is Base UI's Autocomplete, always open, with its list inline and the first
- * match always highlighted. It owns an uncontrolled query, so it can reset the query to
- * `defaultValue` each time the palette's dialog closes. A virtualized search tracks the
- * highlighted row and scrolls its virtual list when the highlight jumps out of view.
+ * match always highlighted. It owns an uncontrolled query, which goes back to `defaultValue` each
+ * time the palette's dialog closes. A virtualized search tracks the highlighted row and scrolls
+ * its virtual list when the highlight jumps out of view.
  */
 export function CommandSearch({
   part,
@@ -160,7 +157,10 @@ export function CommandSearch({
   ...props
 }: CommandSearchCoreProps & {
   part: string;
-  /** The palette's count of dialog closes. A change resets an uncontrolled query. */
+  /**
+   * The palette's count of dialog closes. A change resets an uncontrolled query, including that
+   * of a page that wraps `Command.Content` and so stays mounted while the dialog is closed.
+   */
   session: number;
   autoHighlight: NonNullable<CommandSearchCoreProps["autoHighlight"]>;
   keepHighlight: boolean;

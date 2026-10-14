@@ -7,5 +7,4 @@ export const fiFI = {
   back: "Takaisin",
   navigate: "Siirry",
   select: "Valitse",
-  close: "Sulje",
 };

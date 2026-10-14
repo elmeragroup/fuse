@@ -3,11 +3,12 @@ import type { ReactElement, ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
+import "../../../dist/demo-stage-density.css";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { CaughtError, caughtError } from "../../../test/caught-error";
 import { withLocale } from "../../../test/locale-matrix";
-import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { metricPx, renderThemed, roleNamed, stampDensity } from "../../../test/themed-browser-render";
 import { Command } from "../command";
 import { CommandVirtual } from "./index";
 
@@ -244,4 +245,64 @@ describe("CommandVirtual", () => {
     );
     expect(caughtError()).toEqual({ name: "CommandCompositionError", message });
   });
+});
+
+/** The top of the list's scrolled content, in viewport coordinates. */
+function contentTop(list: HTMLElement): number {
+  return list.getBoundingClientRect().top + list.clientTop - list.scrollTop;
+}
+
+/** The gap above the first row and the height of the whole scrolled content. */
+function firstRowInsetAndTotal() {
+  const list = listbox();
+  const first = roleNamed("option", "Meter point 0001");
+  return { inset: first.getBoundingClientRect().top - contentTop(list), total: list.scrollHeight };
+}
+
+/** The gap below the last row, once the list has scrolled to its end. */
+function lastRowInset(): number {
+  const list = listbox();
+  const last = roleNamed("option", "Meter point 1000");
+  return list.scrollHeight - (last.getBoundingClientRect().bottom - contentTop(list));
+}
+
+describe("CommandVirtual density", () => {
+  it.each([
+    ["the document root", false],
+    ["a demo stage around the list", true],
+  ])(
+    "pads its rows and estimates unmeasured ones at the new density when %s switches it",
+    async (_owner, onStage) => {
+      stampDensity("dense");
+      const palette = <VirtualPalette onRun={() => undefined} highlightItemOnHover={false} />;
+      renderPalette(
+        onStage ? (
+          <div data-demo-stage data-density="dense">
+            {palette}
+          </div>
+        ) : (
+          palette
+        )
+      );
+      await focusInput();
+      const dense = metricPx("surface-gap-sm", "dense");
+      expect(firstRowInsetAndTotal()).toEqual({
+        inset: dense,
+        total: 2 * dense + METER_POINTS.length * metricPx("row-h", "dense"),
+      });
+
+      const owner = onStage ? listbox().closest("[data-demo-stage]") : document.documentElement;
+      owner?.setAttribute("data-density", "comfortable");
+
+      // Oracle: the comfortable gap above and below the rows, and every row, measured or not, at
+      // the comfortable row height.
+      const comfortable = metricPx("surface-gap-sm", "comfortable");
+      await expect.poll(firstRowInsetAndTotal).toEqual({
+        inset: comfortable,
+        total: 2 * comfortable + METER_POINTS.length * metricPx("row-h", "comfortable"),
+      });
+      listbox().scrollTop = listbox().scrollHeight;
+      await expect.poll(lastRowInset).toBe(comfortable);
+    }
+  );
 });

@@ -45,27 +45,33 @@ export function canGoBack(stack: CommandStackContextValue | null): stack is Comm
  * The stack's state. `pages` controls it, or else it keeps its own, starting from `defaultPages`.
  * When a different page comes on top while the palette stays showing, the stack requests focus
  * for that page's input, which takes focus once it mounts, even after Suspense. A top that
- * changes as the palette opens requests nothing, so the dialog's `initialFocus` decides. Closing
- * the palette drops the request, so a stack reset while the palette is closed requests nothing.
+ * changes as the dialog opens or closes requests nothing, so the dialog's `initialFocus` decides.
+ * That holds when the opening also mounts `Command.Content`, which registers only after the
+ * render that mounts it, so `showing` alone cannot tell that render from an inline palette's.
+ * Closing the palette drops the request, so a stack reset while the palette is closed requests
+ * nothing.
  */
 export function useStack(
   pages: readonly string[] | undefined,
   defaultPages: readonly string[] | undefined,
   onPagesChange: ((pages: string[]) => void) | undefined,
-  showing: boolean
+  showing: boolean,
+  open: boolean
 ) {
   const [ownStack, setOwnStack] = useState<readonly string[]>(defaultPages ?? []);
   const stack = pages ?? ownStack;
   const top = stack.at(-1);
   const [seenTop, setSeenTop] = useState(top);
   const [seenShowing, setSeenShowing] = useState(showing);
+  const [seenOpen, setSeenOpen] = useState(open);
   const [focusPage, setFocusPage] = useState<string | undefined>(undefined);
   // The state changes during render, as React's docs adjust state from a changed prop, so the
   // input that the same render mounts reads the request.
-  if (seenTop !== top || seenShowing !== showing) {
+  if (seenTop !== top || seenShowing !== showing || seenOpen !== open) {
     setSeenTop(top);
     setSeenShowing(showing);
-    setFocusPage(seenTop !== top && seenShowing && showing ? top : undefined);
+    setSeenOpen(open);
+    setFocusPage(seenTop !== top && seenShowing && showing && seenOpen === open ? top : undefined);
   }
   const clearFocusPage = useCallback((page: string) => {
     setFocusPage((current) => (current === page ? undefined : current));

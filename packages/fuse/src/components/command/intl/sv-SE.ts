@@ -7,5 +7,4 @@ export const svSE = {
   back: "Tillbaka",
   navigate: "Navigera",
   select: "Välj",
-  close: "Stäng",
 };

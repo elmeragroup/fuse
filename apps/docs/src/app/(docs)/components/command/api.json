@@ -142,7 +142,7 @@
           "origin": "declared",
           "type": "Grouped | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "false",
           "description": "Marks `items` as groups, each with its own `items`. The callbacks, such as `itemToStringValue` and `onItemHighlighted`, then receive one item of a group. The search throws when the first entry disagrees with it.",
           "required": false
         },
@@ -1192,7 +1192,7 @@
           "origin": "declared",
           "type": "Grouped | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "false",
           "description": "Marks `items` as groups, each with its own `items`. The callbacks, such as `itemToStringValue` and `onItemHighlighted`, then receive one item of a group. The search throws when the first entry disagrees with it.",
           "required": false
         },
