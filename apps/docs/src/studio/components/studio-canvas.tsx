@@ -31,8 +31,11 @@ const studioCanvas = tv({
   slots: {
     // The first fit frames the first artboard below `lg`, and every artboard from it. The focus
     // ring is drawn on a layer above the artboards and the toolbar, which would cover its own.
+    // It is an inline-size query container, so the theme toolbar caps its width with `cqw`.
+    // Artboard content that uses an unnamed container query or a `cq*` unit needs a container of
+    // its own, or it resolves against the canvas's unzoomed width.
     canvas:
-      "data-[gliding=true]:studio-glide relative isolate min-h-0 min-w-0 touch-none overflow-hidden overscroll-none outline-none select-none [--studio-first-fit:artboard] after:pointer-events-none after:absolute after:inset-0 after:z-40 focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-ring data-[pan=true]:cursor-grab data-[panning=true]:cursor-grabbing lg:[--studio-first-fit:all]",
+      "data-[gliding=true]:studio-glide @container relative isolate min-h-0 min-w-0 touch-none overflow-hidden overscroll-none outline-none select-none [--studio-first-fit:artboard] after:pointer-events-none after:absolute after:inset-0 after:z-40 focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-ring data-[pan=true]:cursor-grab data-[panning=true]:cursor-grabbing lg:[--studio-first-fit:all]",
     backdrop: "studio-dot-grid absolute inset-0 bg-muted",
     world:
       "studio-world invisible data-[pan=true]:pointer-events-none data-[pan=true]:**:pointer-events-none data-[part=true]:**:cursor-crosshair data-[ready=true]:visible",

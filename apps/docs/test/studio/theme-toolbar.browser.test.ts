@@ -37,7 +37,10 @@ const PHONE = { width: 390, height: 844 } as const;
 const LIGHT_BOARD = ARTBOARDS[0];
 const DARK_BOARD = ARTBOARDS[1];
 
-/** A rungs board of the Shape page, which pins a variant, so its bar carries the Variant toggle. */
+/**
+ * A rungs board of the Shape page, whose spec pins a variant (Internal). Every artboard bar
+ * carries the Variant toggle.
+ */
 const PINNED_BOARD = CORNERS_PAGE.artboard;
 
 /** Tailwind's `lg`, the narrowest viewport the floating toolbar renders at. */
@@ -52,6 +55,11 @@ const RED = "rgb(255, 0, 0)";
 /** The floating theme toolbar over a picked part. */
 function partBar(page: Page): Locator {
   return canvas(page).getByRole("toolbar", { name: "Part theme", exact: true });
+}
+
+/** Every control of a theme toolbar: its comboboxes, then its buttons. */
+async function barControls(bar: Locator): Promise<Locator[]> {
+  return [...(await bar.getByRole("combobox").all()), ...(await bar.getByRole("button").all())];
 }
 
 /** A menu button of a theme toolbar, by its name before any token count. */
@@ -697,6 +705,17 @@ describe("the studio's theme toolbar", () => {
         await expect.poll(async () => opener.getAttribute("aria-expanded")).toBe("false");
         expect(await isFocused(canvas(page))).toBe(true);
 
+        // The hidden bar is still laid out but cannot take focus, so F6 skips it both ways.
+        const canvasBar = canvas(page).getByRole("toolbar", { name: "Toolbar", exact: true });
+        await page.keyboard.press("F6");
+        await expect.poll(async () => isFocused(canvasBar)).toBe(true);
+        await page.keyboard.press("F6");
+        await expect.poll(async () => isFocused(inspector(page))).toBe(true);
+        await page.keyboard.press("Shift+F6");
+        await expect.poll(async () => isFocused(canvasBar)).toBe(true);
+        await page.keyboard.press("Shift+F6");
+        await expect.poll(async () => isFocused(canvas(page))).toBe(true);
+
         await page.keyboard.press("Escape");
         await expect.poll(async () => layers(page).getByRole("button", { pressed: true }).count()).toBe(0);
       } finally {
@@ -714,7 +733,7 @@ describe("the studio's theme toolbar", () => {
         expect(await bar.getByRole("group", { name: group, exact: true }).count(), group).toBe(1);
       }
       const frame = await box(canvas(page));
-      const controls = [...(await bar.getByRole("combobox").all()), ...(await bar.getByRole("button").all())];
+      const controls = await barControls(bar);
       expect(controls.length).toBeGreaterThanOrEqual(13);
       for (const control of controls) {
         const label = (await control.getAttribute("aria-label")) ?? (await control.textContent()) ?? "";
@@ -733,6 +752,33 @@ describe("the studio's theme toolbar", () => {
       await page.keyboard.press("ArrowRight");
       await page.keyboard.press("ArrowRight");
       expect(await isFocused(toggle(bar, "Segment", "Private"))).toBe(true);
+    } finally {
+      await context.close();
+    }
+  });
+
+  it("rewraps inside the canvas when the window narrows to lg with the bar open", async () => {
+    const { context, page } = await openStudio(browser(), { route: CORNERS_PAGE });
+    try {
+      const bar = await selectBoard(page, PINNED_BOARD);
+      await page.setViewportSize(LG);
+      // The canvas resizes after the window does, so each poll reads its box afresh. Role queries
+      // skip hidden controls, so a bar that hides or loses its controls must not pass as rewrapped.
+      await expect
+        .poll(async () => {
+          const controls = await barControls(bar);
+          if (!(await bar.isVisible()) || controls.length < 13) {
+            return false;
+          }
+          const frame = await box(canvas(page));
+          for (const control of controls) {
+            if (!inside(await box(control), frame)) {
+              return false;
+            }
+          }
+          return true;
+        })
+        .toBe(true);
     } finally {
       await context.close();
     }

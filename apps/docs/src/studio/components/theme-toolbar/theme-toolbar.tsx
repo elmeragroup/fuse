@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Fragment,
   memo,
   useCallback,
   useEffect,
@@ -57,8 +56,10 @@ const themeToolbar = tv({
     // Placement only: the toolbar paints the surface, so the popup drops the popover's own.
     popup: "w-auto gap-0 rounded-lg bg-transparent p-0 shadow-none ring-0",
     // As wide as its controls, up to the room inside the canvas, past which its groups wrap. Its
-    // width is its own: the layer that holds it has none to fit into.
-    bar: "shadow-lg w-max max-w-(--toolbar-max-width) flex-wrap focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
+    // width is its own: the layer that holds it has none to fit into. The cap is the canvas's
+    // width, as its query container, less Base UI's default 5px collision padding on each side,
+    // so the bar lays out at its final width, on one row or two, from its first paint.
+    bar: "shadow-lg w-max max-w-[calc(100cqw-10px)] flex-wrap focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
     group: "flex-wrap",
     label: "flex min-w-0 items-baseline gap-1.5 px-2",
     slot: "text-xs font-mono",
@@ -73,9 +74,6 @@ const ARTBOARD_OFFSET = 36;
 
 /** Screen px between a picked part and its toolbar. */
 const PART_OFFSET = 8;
-
-/** Base UI's default collision padding: the screen px it keeps a popup inside the canvas. */
-const COLLISION_PADDING = 5;
 
 /**
  * Screen px a toolbar pinned to the canvas's top keeps from it: more than Base UI's collision
@@ -199,9 +197,9 @@ function ArtboardSettings({ artboard, menu }: { artboard: ArtboardSpec; menu: Op
 
 /**
  * The bar itself: the artboard's settings, or the picked part's slot and component, then the
- * menus that have tokens for the target. One Toolbar.Root serves both targets and keys its parts,
- * so dropping a part keeps the focused menu button in place. Where the canvas is narrower than the
- * bar, its groups wrap onto a second row; the arrow keys keep their order.
+ * menus that have tokens for the target. One Toolbar.Root serves both targets, and the menus keep
+ * their place in it, so dropping a part keeps the focused menu button mounted. Where the canvas is
+ * narrower than the bar, its groups wrap onto a second row; the arrow keys keep their order.
  */
 const ThemeBar = memo(function ThemeBar({
   target,
@@ -220,21 +218,19 @@ const ThemeBar = memo(function ThemeBar({
       className={styles.bar()}
       {...regionProps}>
       {target.kind === "part" ? (
-        <span key="part" className={styles.label()}>
+        <span className={styles.label()}>
           <span className={styles.slot()}>{target.part.slot}</span>
           <span className={styles.note()}>{read?.component ?? "Not a documented component"}</span>
         </span>
       ) : (
-        <Toolbar.Group key="artboard" aria-label="Artboard settings" className={styles.group()}>
+        <Toolbar.Group aria-label="Artboard settings" className={styles.group()}>
           <ArtboardSettings artboard={target.artboard} menu={menu} />
         </Toolbar.Group>
       )}
       {names.length === 0 ? (
-        <span key="none" className={styles.note()}>
-          No role tokens
-        </span>
+        <span className={styles.note()}>No role tokens</span>
       ) : (
-        <Fragment key="menus">
+        <>
           <Toolbar.Separator />
           <Toolbar.Group aria-label="Theme menus" className={styles.group()}>
             <TokenMenus
@@ -252,7 +248,7 @@ const ThemeBar = memo(function ThemeBar({
               </ThemeMenu>
             )}
           </Toolbar.Group>
-        </Fragment>
+        </>
       )}
     </Toolbar.Root>
   );
@@ -302,31 +298,6 @@ function FloatingToolbar(): ReactElement {
     return frame === undefined ? box : toolbarAnchor(box, frame, room);
   });
   const layer = useRef<HTMLDivElement>(null);
-  // The bar's width cap: the canvas's width less the collision padding on each side, the room
-  // Base UI keeps the bar in. The studio sets it rather than read Base UI's `--available-width`,
-  // which holds a 100vw placeholder until Base UI has placed the bar, so the bar lays out at its
-  // final width, on one row or two, from its first paint, and its first reported height is its
-  // real one. A passive effect, as the canvas attaches after its children's layout effects; no
-  // bar opens before it runs.
-  useEffect(() => {
-    const frame = canvas();
-    const scope = layer.current;
-    if (frame === null || scope === null) {
-      return undefined;
-    }
-    const cap = () => {
-      scope.style.setProperty(
-        "--toolbar-max-width",
-        `${String(frame.clientWidth - 2 * COLLISION_PADDING)}px`
-      );
-    };
-    cap();
-    const observer = new ResizeObserver(cap);
-    observer.observe(frame);
-    return () => {
-      observer.disconnect();
-    };
-  }, [canvas]);
   const anchorHidden = useAnchorHidden(popup);
   const open = toolbarShown && target !== undefined && anchor !== undefined;
   // The bar answers the latest frame of an artboard (`zoomToArtboard`) whenever the bar or its
