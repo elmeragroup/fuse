@@ -67,6 +67,9 @@ export const BARE_COMPONENT_ENTRIES = [
   "tooltip",
   // plop:component-entry
   "toolbar",
+  "command",
+  "command-virtual",
+  "kbd",
   "select-field",
   "slider",
   "form",
@@ -129,8 +132,9 @@ export const runtimeDependencies = [
   "@internationalized/string",
   "sugar-high",
   "libphonenumber-js",
-  // Optional peer. Only OPTIONAL_PEER_ENTRIES import it.
+  // Only OPTIONAL_PEER_ENTRIES import these optional peers.
   "@tanstack/react-table",
+  "@tanstack/react-virtual",
 ] as const;
 
 /**
@@ -140,6 +144,7 @@ export const runtimeDependencies = [
  */
 export const OPTIONAL_PEER_ENTRIES = {
   "data-table": "@tanstack/react-table",
+  "command-virtual": "@tanstack/react-virtual",
 } as const;
 
 export const PUBLISHED_PEER_RANGES = {
@@ -151,6 +156,9 @@ export const PUBLISHED_PEER_RANGES = {
   // Optional. The data-table entry shares the consumer's copy, because TanStack's contexts and
   // feature objects must be the same instances on both sides.
   "@tanstack/react-table": "^9.2",
+  // Optional. The command-virtual entry uses it as its virtualizer, and the consumer installs it
+  // beside Fuse.
+  "@tanstack/react-virtual": "^3.14",
 } as const;
 
 function isOptionalPeerEntry(subpath: string): boolean {

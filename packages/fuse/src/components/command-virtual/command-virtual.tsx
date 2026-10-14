@@ -1,0 +1,172 @@
+"use client";
+
+import { use, useImperativeHandle, useLayoutEffect, useState } from "react";
+import type { ComponentProps, ReactElement } from "react";
+
+import { Autocomplete as AutocompletePrimitive } from "@base-ui/react";
+import { defaultRangeExtractor, useVirtualizer } from "@tanstack/react-virtual";
+
+import { useMergedRefs } from "../../hooks/use-merged-refs";
+import { cn } from "../../styles/cn";
+import { cssLengthToPx } from "../../theme/css-values";
+import { CommandCompositionError } from "../command/command-error";
+import {
+  CommandListTargetContext,
+  CommandRowContext,
+  CommandSearchContext,
+} from "../command/command-list-context";
+import type { CommandListRows } from "../command/command-list-context";
+import { DENSE_ROW_METRICS } from "./row-metrics";
+import type { RowMetrics } from "./row-metrics";
+import { withHighlightedRow } from "./virtual-highlight";
+
+/**
+ * `fuse.css` declares the metrics as unregistered custom properties, so the browser reports each
+ * one as written, as a `rem` length such as ` 2rem`. The virtualizer needs pixels.
+ */
+function readRowMetrics(element: HTMLElement): RowMetrics {
+  const style = getComputedStyle(element);
+  const rootFontSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+  const metric = (name: string) => cssLengthToPx(style.getPropertyValue(name).trim(), rootFontSize);
+  return {
+    row: metric("--row-h") ?? DENSE_ROW_METRICS.row,
+    // The list pads its rows with the small surface gap, as `Command.List` does.
+    pad: metric("--surface-gap-sm") ?? DENSE_ROW_METRICS.pad,
+  };
+}
+
+/**
+ * `CommandVirtual.List` takes a `div`'s props, which `Command.List` fills with Base UI's listbox
+ * props and its row function, plus the virtualizer's two settings. Write it with no children,
+ * because `<Command.List render={<CommandVirtual.List />}>` passes its own row function as
+ * `children`.
+ */
+export type CommandVirtualListProps = Omit<ComponentProps<"div">, "children"> & {
+  /**
+   * The row function, which `Command.List` passes from its own children. It renders one
+   * filtered item, usually as a `Command.Item`.
+   */
+  children?: CommandListRows;
+  /**
+   * A row's height before the virtualizer measures it. It defaults to the document density's row
+   * height, which a single-line `Command.Item` takes, and follows a change of density.
+   */
+  estimateSize?: (index: number) => number;
+  /**
+   * Rows rendered beyond each edge of the visible window.
+   * @default 8
+   */
+  overscan?: number;
+};
+
+/**
+ * The render element of a virtualized search's `Command.List`, as in
+ * `<Command.List render={<CommandVirtual.List />}>`. It renders only the rows in view plus the
+ * highlighted one, through the row function that `Command.List` passes as `children`. It
+ * registers its virtualizer with the search, which scrolls it when the highlight jumps out of
+ * view. It keys each row by its position, so the row function's element sets no `key`. It is its
+ * own scroll element, so keep it out of a `ScrollArea`. It measures each row, so rows of any
+ * height stack without gaps. It pads the rows with the density's small surface gap, and pads and
+ * estimates them again when a `data-density` attribute on the document root or an ancestor
+ * changes. It throws outside `Command.List`'s `render`, and in a search without
+ * `virtualized`.
+ */
+export function CommandVirtualList({
+  className,
+  children: rows,
+  estimateSize,
+  overscan = 8,
+  ref,
+  ...props
+}: CommandVirtualListProps): ReactElement {
+  if (!use(CommandListTargetContext) || rows === undefined) {
+    throw new CommandCompositionError("CommandVirtual.List", "virtual-list-outside-list");
+  }
+  const search = use(CommandSearchContext);
+  if (search === null || !search.virtualized) {
+    throw new CommandCompositionError("CommandVirtual.List", "virtual-list-without-virtualized");
+  }
+  const items = AutocompletePrimitive.useFilteredItems<unknown>();
+  const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(null);
+  const mergedRef = useMergedRefs(ref, setScrollElement);
+  const [metrics, setMetrics] = useState(DENSE_ROW_METRICS);
+  useLayoutEffect(() => {
+    if (scrollElement === null) {
+      return undefined;
+    }
+    const update = () => {
+      const next = readRowMetrics(scrollElement);
+      setMetrics((current) => (current.row === next.row && current.pad === next.pad ? current : next));
+    };
+    update();
+    // Density reaches the metrics only through a `data-density` attribute, on the document root or
+    // on an ancestor such as a demo stage. Watching that one attribute re-reads the metrics when
+    // density changes, and never while the list scrolls or filters.
+    const observer = new MutationObserver(update);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-density"],
+      subtree: true,
+    });
+    return () => {
+      observer.disconnect();
+    };
+  }, [scrollElement]);
+  const { highlightedIndex } = search;
+  // oxlint-disable-next-line react/incompatible-library -- TanStack Virtual returns one mutable instance by design; the list re-renders on each scroll update it reports, and nothing here memoizes its functions.
+  const virtualizer = useVirtualizer<HTMLDivElement, Element>({
+    count: items.length,
+    getScrollElement: () => scrollElement,
+    estimateSize: estimateSize ?? (() => metrics.row),
+    overscan,
+    paddingStart: metrics.pad,
+    paddingEnd: metrics.pad,
+    scrollPaddingStart: metrics.pad,
+    scrollPaddingEnd: metrics.pad,
+    rangeExtractor: (range) =>
+      withHighlightedRow(defaultRangeExtractor(range), highlightedIndex, range.count),
+  });
+  useImperativeHandle(search.scroller, () => virtualizer, [virtualizer]);
+  return (
+    // `Command.List`'s class pads every side, and the virtualizer pads the block axis, so the list
+    // drops its own block padding. Base UI puts this element's own classes ahead of the List's,
+    // and tailwind-merge drops a block padding that precedes the List's padding, so it goes last.
+    <div ref={mergedRef} className={cn(className, "py-0")} {...props}>
+      {items.length === 0 ? null : (
+        <div
+          role="presentation"
+          className="relative h-(--command-virtual-height) w-full"
+          style={{ "--command-virtual-height": `${String(virtualizer.getTotalSize())}px` }}>
+          <CommandListTargetContext.Provider value={false}>
+            {virtualizer.getVirtualItems().map((virtualItem) => {
+              const item = items[virtualItem.index];
+              if (item === undefined) {
+                return null;
+              }
+              return (
+                <CommandRowContext.Provider
+                  key={virtualItem.key}
+                  value={{
+                    index: virtualItem.index,
+                    ref: virtualizer.measureElement,
+                    style: {
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      transform: `translateY(${String(virtualItem.start)}px)`,
+                    },
+                    setSize: items.length,
+                  }}>
+                  {rows(item, virtualItem.index)}
+                </CommandRowContext.Provider>
+              );
+            })}
+          </CommandListTargetContext.Provider>
+        </div>
+      )}
+    </div>
+  );
+}
+
+CommandVirtualList.displayName = "CommandVirtual.List";

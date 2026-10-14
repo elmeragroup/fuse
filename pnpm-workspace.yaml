@@ -25,6 +25,7 @@ catalog:
   "@tailwindcss/postcss": 4.3.3
   "@tailwindcss/typography": 0.5.20
   "@tanstack/react-table": 9.2.4
+  "@tanstack/react-virtual": 3.14.13
   "@types/node": 25.9.5
   "@types/picomatch": 4.0.3
   "@types/pngjs": 6.0.5

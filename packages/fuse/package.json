@@ -90,6 +90,14 @@
       "types": "./src/combobox.ts",
       "import": "./src/combobox.ts"
     },
+    "./command": {
+      "types": "./src/command.ts",
+      "import": "./src/command.ts"
+    },
+    "./command-virtual": {
+      "types": "./src/command-virtual.ts",
+      "import": "./src/command-virtual.ts"
+    },
     "./confirm-button": {
       "types": "./src/confirm-button.ts",
       "import": "./src/confirm-button.ts"
@@ -160,6 +168,10 @@
     "./item": {
       "types": "./src/item.ts",
       "import": "./src/item.ts"
+    },
+    "./kbd": {
+      "types": "./src/kbd.ts",
+      "import": "./src/kbd.ts"
     },
     "./loader": {
       "types": "./src/loader.ts",
@@ -369,12 +381,16 @@
   },
   "peerDependencies": {
     "@tanstack/react-table": "^9.2",
+    "@tanstack/react-virtual": "^3.14",
     "react": "catalog:",
     "react-dom": "catalog:",
     "tailwindcss": "catalog:"
   },
   "peerDependenciesMeta": {
     "@tanstack/react-table": {
+      "optional": true
+    },
+    "@tanstack/react-virtual": {
       "optional": true
     },
     "tailwindcss": {
@@ -404,6 +420,7 @@
     "@elmeragroup/typescript-config": "workspace:*",
     "@tailwindcss/cli": "catalog:",
     "@tanstack/react-table": "catalog:",
+    "@tanstack/react-virtual": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",

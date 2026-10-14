@@ -21,6 +21,7 @@
     "@paper-design/shaders-react": "catalog:",
     "@shuding/opentype.js": "catalog:",
     "@tanstack/react-table": "catalog:",
+    "@tanstack/react-virtual": "catalog:",
     "libphonenumber-js": "catalog:",
     "next": "catalog:",
     "react": "catalog:",

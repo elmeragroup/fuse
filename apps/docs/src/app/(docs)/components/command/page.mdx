@@ -1,0 +1,146 @@
+---
+lede: >
+  A search field over a list of actions, which the user runs with the keyboard or the pointer,
+  on the page or in a dialog.
+---
+
+import { CommandDialog } from "./demos/command-dialog";
+import { CommandGroups } from "./demos/command-groups";
+import { CommandPages } from "./demos/command-pages";
+import { CommandKeptQuery } from "./demos/command-kept-query";
+import { CommandEscapeBack } from "./demos/command-escape-back";
+import { CommandAppPalette } from "./demos/command-app-palette";
+import { CommandServerSearch } from "./demos/command-server-search";
+import { CommandVirtualized } from "./demos/command-virtualized";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("command");
+
+<ComponentIntro slug="command" />
+
+<Prose>
+
+Every palette starts at `Command.Root`, which holds its state and renders no element. Without pages, the Root is the search. It is Base UI's Autocomplete, always open, with its list inline and the first match always highlighted. Pass the actions in `items` and render them in `Command.List` through a child function. Base UI filters them as the user types, in the locale of `LocaleProvider`. The Root passes `filter`, `filteredItems`, `mode`, `value` and `onValueChange` through to Base UI. Put the palette's parts in `Command.Content` for a dialog, or in a box of your own when the palette sits on the page.
+
+The Root types its props as Base UI's Autocomplete Root does. A flat list in `items` gives each callback, such as `itemToStringValue`, one entry. With `grouped`, `items` holds groups and each callback receives one item of a group. The row functions of `Command.List` and `Command.Collection` take their type from your annotation, such as `(entry: Entry) =>`.
+
+An item's `onClick` runs when the user clicks it and when they press Enter while it is highlighted. The arrow keys move the highlight; Base UI's `data-highlighted` is the only highlight. Place `Command.Empty` beside `Command.List`, not inside it. It shows the locale dictionary's message while nothing matches.
+
+`Command.Input` takes its name from its page, or from the locale dictionary in a palette without pages, and its placeholder from the dictionary. `aria-label` and `placeholder` override both. Its children replace the leading search icon with addons of your own.
+
+`Command.Footer` holds key hints. `Command.Hint` takes `Kbd` caps and a label. The presets cover the keys the palette handles itself: `Command.NavigateHint` for the arrows, `Command.SelectHint` for Enter, `Command.CloseHint` for Escape and `Command.BackHint` for Backspace. Their labels come from the dictionary, and children replace them. The hints carry `aria-hidden`, since the palette's roles already describe the keys to assistive technology.
+
+</Prose>
+
+<Demo slug="command" id="dialog" title="Palette in a dialog" file="command-dialog.tsx">
+  <CommandDialog />
+</Demo>
+
+<Prose>
+
+`Command.Trigger` opens `Command.Content`, and closing the palette returns focus to it. The Root takes Dialog's state props: `open`, `defaultOpen`, `onOpenChange` with Dialog's event details, `onOpenChangeComplete`, `modal`, `disablePointerDismissal` and `actionsRef`. `Command.Content` renders the Dialog's portal and overlay, sits near the top of the viewport so the field keeps its position while the results shrink, and has no close button. Its name defaults to the dictionary's "Command palette"; a `Dialog.Title` inside it names it instead. Escape closes it from any page. Opening the dialog moves focus to the field.
+
+Each opening starts fresh. When the close animation ends, the Root sets an uncontrolled query back to its `defaultValue` and an uncontrolled stack back to `defaultPages`. Values you control stay as you set them.
+
+A palette without `Command.Content` renders no dialog. Place one inline in your own `Dialog.Content`, and that dialog's parts, such as `Dialog.Close`, keep working inside the palette.
+
+## Groups and shortcuts
+
+Pass `grouped` and the groups in `items`, give each `Command.Group` its own `items`, and name it with `Command.Label`. The Root throws when `grouped` disagrees with the first entry of `items`. `Command.Shortcut` shows a row's shortcut at the row's end. It carries `aria-hidden`, so put the same shortcut on the row in `aria-keyshortcuts`. Binding the keys is up to the app; this demo runs them while the field has focus.
+
+</Prose>
+
+<Demo slug="command" id="groups" title="Groups with shortcuts" file="command-groups.tsx">
+  <CommandGroups />
+</Demo>
+
+<Prose>
+
+## Pages
+
+Give the Root a stack of page ids with `defaultPages`, or with `pages` and `onPagesChange` to control it. The first id is the first page. Each `Command.Page` has an `id`, a `label` that names its field, and its own search, which takes `items`, `grouped`, `virtualized`, `value` and the other search props. A Root with pages holds no search of its own, so it takes none of those props. Only the page on top renders. `Command.PageTrigger` is an item that opens a page and shows a chevron.
+
+On a page above the first, the field leads with `Command.Back`, and Backspace in the empty field goes back a page. Backspace does nothing while an input method is composing text. `Command.BackHint` shows only when there is a page to go back to. Pages work with or without `Command.Content`.
+
+</Prose>
+
+<Demo slug="command" id="pages-with-back" title="Pages with Back" file="command-pages.tsx">
+  <CommandPages />
+</Demo>
+
+<Prose>
+
+## Keep the parent's query
+
+Going back mounts the parent page fresh, with an empty field and the first match highlighted. To keep what the user typed, hold the query in a component above `Command.Root`, here `Palette`, and pass it to the parent `Command.Page` as `value` with `onValueChange`. The highlight still returns to the first match.
+
+A query held above `Command.Root` also lasts from one opening of `Command.Content` to the next, since the Root stays mounted while the dialog is closed.
+
+</Prose>
+
+<Demo slug="command" id="kept-query" title="Keep the parent's query" file="command-kept-query.tsx">
+  <CommandKeptQuery />
+</Demo>
+
+<Prose>
+
+## Escape goes back a page
+
+Escape closes `Command.Content` from any page. To make it go back a page first, control the stack and the dialog on the Root. In its `onOpenChange`, when `eventDetails.reason` is `"escape-key"` and the stack has a page to go back to, call `eventDetails.cancel()` and pop the stack instead. A controlled stack keeps its pages when the palette closes, so set it back to the first page in `onOpenChangeComplete`, after the close animation.
+
+</Prose>
+
+<Demo slug="command" id="escape-back" title="Escape goes back a page" file="command-escape-back.tsx">
+  <CommandEscapeBack />
+</Demo>
+
+<Prose>
+
+## One palette for the app
+
+Mount one `Command.Root` in the app's layout, beside the app's pages, so it stays mounted as the user moves between them. The palette shows whatever `items` holds on each render, so the layout can put the commands of the page on screen above the app's own. Fuse has no registry of commands. Here each page passes its commands to the layout through `usePageCommands`, a hook the app writes. The customer list adds a command per customer, and a customer's page adds actions on that customer, grouped under the customer's name. The app's groups and the pages' groups share one type, which the row functions name in their annotations.
+
+`Command.Trigger` works only inside the Root. To open the palette from anywhere else, such as a button in the app's header or a keyboard shortcut, control `open` on the Root. Closing returns focus to the element that had it when the palette opened. An app listens for its shortcut on `document`. This demo takes ⌘K and Ctrl+K only while focus is inside it or its palette, since the docs site uses them for its search.
+
+A command that changes the page also changes the page's commands while the dialog is still fading out. The layout here updates `items` only while the palette is open, so the closing dialog keeps the rows the user chose from.
+
+To open the palette on a `Command.Page` of the entity's actions, control the stack and set `pages` as the palette opens. `defaultPages` is read only when the Root mounts and when the palette closes. So after the user moves to another page of the app, a Root in the layout still opens on the stack of the page where it last closed, and if the `Command.Page` on top of that stack no longer renders, the dialog opens empty.
+
+</Prose>
+
+<Demo slug="command" id="app-palette" title="One palette for the app" file="command-app-palette.tsx">
+  <CommandAppPalette />
+</Demo>
+
+<Prose>
+
+## Search on the server
+
+Hold the query above `Command.Root` and pass it to the search as `value` with `onValueChange`. Each change requests results from the server. Pass the results as `items`, and set `filter={null}` so Base UI shows them as the server sent them. Abort the request before each new one. Here a broad query takes the stand-in server longer, so without the abort the results for "a" would replace those for "ada". The demo runs each request in a transition and sets the results in a second `startTransition` after the `await`, which React needs to keep those updates in the transition.
+
+`Command.Status` announces the search's state to screen readers, here "Searching…" while a request runs, then the number of orders or that none match. Place it between `Command.Input` and `Command.List`. It announces only while it stays mounted, so change its children and leave it empty when there is nothing to say.
+
+Each result is a `Command.PageTrigger` that opens the order's page. Its click handler starts the request for the order's lines, and the page reads that request with `use` inside `Suspense`, so the page's input takes focus while the lines load. The order's details sit between the page's input and its actions, and the input's `aria-describedby` points at them. Going back shows the same results, since the query and the results live above the Root. To search orders from an app-wide palette, add this search as a page of that palette and open it from a "Search orders" row.
+
+</Prose>
+
+<Demo slug="command" id="server-search" title="Search on the server" file="command-server-search.tsx">
+  <CommandServerSearch />
+</Demo>
+
+<Prose>
+
+## Long lists
+
+For thousands of items, install `@tanstack/react-virtual` 3.14 or later beside Fuse and import `CommandVirtual` from `@elmeragroup/fuse/command-virtual`. That entry is not in the root barrel, so apps without the virtualizer never resolve it. Add `virtualized` to the Root, or to the `Command.Page` that holds the search, and render `<CommandVirtual.List />` as the `render` element of `Command.List`. `Command.List` passes any `render` value its row function as `children`, so a list element of your own can decide which rows mount too. `CommandVirtual.List` mounts only the rows in view plus the highlighted row, so Enter still runs a row that the mouse wheel scrolled out of view. The search scrolls the list when the arrows wrap from the first row to the last. The list measures each row, so rows of any height stack without gaps, and it scrolls itself, so keep it out of a `ScrollArea`. A virtual list renders flat items only, so `virtualized` beside `grouped` throws. A row function in a virtualized search's `Command.List` without a `render` value throws too. A virtualizer of your own can instead pass `Command.List` its rows as `Command.Item` elements, each with its `index`.
+
+</Prose>
+
+<Demo slug="command" id="virtualized" title="Long lists" file="command-virtualized.tsx">
+  <CommandVirtualized />
+</Demo>
+
+<ApiReference slug="command" />
+
+<ComponentTokens slug="command" />

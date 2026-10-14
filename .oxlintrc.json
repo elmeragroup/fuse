@@ -215,6 +215,21 @@
                 "message": "Import only types from the optional TanStack peer. Plain parts render through table.FlexRender and read structural slices; only the data-table contexts, the table hook factory and their tests call into TanStack."
               },
               {
+                "name": "@tanstack/react-virtual",
+                "allowTypeImports": true,
+                "message": "Import only types from the optional virtualizer peer. Only the command-virtual list calls into TanStack Virtual, so the core command entry never loads it."
+              },
+              {
+                "name": "@base-ui/react/combobox",
+                "allowTypeImports": true,
+                "message": "Import Combobox from the @base-ui/react package root. The subpath type-checks but crashes at runtime with a null React context."
+              },
+              {
+                "name": "@base-ui/react/autocomplete",
+                "allowTypeImports": true,
+                "message": "Import Autocomplete from the @base-ui/react package root. It shares the combobox internals, so the subpath type-checks but crashes at runtime with a null React context."
+              },
+              {
                 "name": "tailwind-variants",
                 "importNames": ["tv", "createTV"],
                 "allowTypeImports": true,
@@ -370,6 +385,21 @@
                 "message": "Import only types from the optional TanStack peer. Plain parts render through table.FlexRender and read structural slices; only the data-table contexts, the table hook factory and their tests call into TanStack."
               },
               {
+                "name": "@tanstack/react-virtual",
+                "allowTypeImports": true,
+                "message": "Import only types from the optional virtualizer peer. Only the command-virtual list calls into TanStack Virtual, so the core command entry never loads it."
+              },
+              {
+                "name": "@base-ui/react/combobox",
+                "allowTypeImports": true,
+                "message": "Import Combobox from the @base-ui/react package root. The subpath type-checks but crashes at runtime with a null React context."
+              },
+              {
+                "name": "@base-ui/react/autocomplete",
+                "allowTypeImports": true,
+                "message": "Import Autocomplete from the @base-ui/react package root. It shares the combobox internals, so the subpath type-checks but crashes at runtime with a null React context."
+              },
+              {
                 "name": "tailwind-variants",
                 "importNames": ["tv"],
                 "allowTypeImports": true,
@@ -391,6 +421,21 @@
                 "name": "@tanstack/react-table",
                 "allowTypeImports": true,
                 "message": "Import only types from the optional TanStack peer. Plain parts render through table.FlexRender and read structural slices; only the data-table contexts, the table hook factory and their tests call into TanStack."
+              },
+              {
+                "name": "@tanstack/react-virtual",
+                "allowTypeImports": true,
+                "message": "Import only types from the optional virtualizer peer. Only the command-virtual list calls into TanStack Virtual, so the core command entry never loads it."
+              },
+              {
+                "name": "@base-ui/react/combobox",
+                "allowTypeImports": true,
+                "message": "Import Combobox from the @base-ui/react package root. The subpath type-checks but crashes at runtime with a null React context."
+              },
+              {
+                "name": "@base-ui/react/autocomplete",
+                "allowTypeImports": true,
+                "message": "Import Autocomplete from the @base-ui/react package root. It shares the combobox internals, so the subpath type-checks but crashes at runtime with a null React context."
               },
               {
                 "name": "tailwind-variants",
@@ -419,6 +464,60 @@
                 "importNames": ["LocalizedStringDictionary"],
                 "allowTypeImports": true,
                 "message": "Assemble dictionaries with createStringDictionary; do not construct LocalizedStringDictionary outside the factory."
+              },
+              {
+                "name": "@tanstack/react-virtual",
+                "allowTypeImports": true,
+                "message": "Import only types from the optional virtualizer peer. Only the command-virtual list calls into TanStack Virtual, so the core command entry never loads it."
+              },
+              {
+                "name": "@base-ui/react/combobox",
+                "allowTypeImports": true,
+                "message": "Import Combobox from the @base-ui/react package root. The subpath type-checks but crashes at runtime with a null React context."
+              },
+              {
+                "name": "@base-ui/react/autocomplete",
+                "allowTypeImports": true,
+                "message": "Import Autocomplete from the @base-ui/react package root. It shares the combobox internals, so the subpath type-checks but crashes at runtime with a null React context."
+              },
+              {
+                "name": "tailwind-variants",
+                "importNames": ["tv", "createTV"],
+                "allowTypeImports": true,
+                "message": "Import tv from styles/tv. It shares cn's tailwind-merge extension, so a consumer's rounded-* class replaces rounded-inner in a recipe; the upstream tv keeps both."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["packages/fuse/src/components/command-virtual/command-virtual.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@internationalized/string",
+                "importNames": ["LocalizedStringDictionary"],
+                "allowTypeImports": true,
+                "message": "Assemble dictionaries with createStringDictionary; do not construct LocalizedStringDictionary outside the factory."
+              },
+              {
+                "name": "@tanstack/react-table",
+                "allowTypeImports": true,
+                "message": "Import only types from the optional TanStack peer. Plain parts render through table.FlexRender and read structural slices; only the data-table contexts, the table hook factory and their tests call into TanStack."
+              },
+              {
+                "name": "@base-ui/react/combobox",
+                "allowTypeImports": true,
+                "message": "Import Combobox from the @base-ui/react package root. The subpath type-checks but crashes at runtime with a null React context."
+              },
+              {
+                "name": "@base-ui/react/autocomplete",
+                "allowTypeImports": true,
+                "message": "Import Autocomplete from the @base-ui/react package root. It shares the combobox internals, so the subpath type-checks but crashes at runtime with a null React context."
               },
               {
                 "name": "tailwind-variants",

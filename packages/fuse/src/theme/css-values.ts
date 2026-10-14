@@ -1,8 +1,9 @@
 /**
- * Readers for the CSS values a theme token holds, for exporters that translate tokens into
- * design-tool units. Each reader returns `undefined` when the value is not in its form, so a
- * caller can try the forms a token kind allows and report the value when none fits. Colors
- * are read by `@elmeragroup/color`, which owns every color notation.
+ * These readers parse two kinds of CSS value. Exporters translate the values a theme token holds
+ * into design-tool units, and components read lengths from computed style. Each reader returns
+ * `undefined` when the value is not in its form, so a caller can try the forms a token kind
+ * allows and report the value when none fits. Colors are read by `@elmeragroup/color`, which
+ * owns every color notation.
  */
 
 const VAR_REFERENCE = /^var\(--([a-z0-9-]+)\)$/;
@@ -29,18 +30,20 @@ export function cssVarReference(value: string): string | undefined {
 }
 
 /**
- * Read a `rem` or `px` length as pixels, with `rem` at the 16px root.
+ * Read a `rem` or `px` length as pixels, with `rem` at the 16px root unless the caller passes
+ * the document's root font size.
  *
- * @param value - A token's CSS value.
+ * @param value - A single `rem` or `px` length with no surrounding whitespace.
+ * @param rootFontSize - The root font size in px, which one `rem` equals.
  * @returns The length in pixels, or `undefined` when the value is not a `rem` or `px` length.
  */
-export function cssLengthToPx(value: string): number | undefined {
+export function cssLengthToPx(value: string, rootFontSize = ROOT_FONT_PX): number | undefined {
   const length = LENGTH.exec(value);
   if (length === null) {
     return undefined;
   }
   const amount = Number(length[1]);
-  return length[2] === "rem" ? amount * ROOT_FONT_PX : amount;
+  return length[2] === "rem" ? amount * rootFontSize : amount;
 }
 
 /** A CSS length in `rem`, such as `2.25rem`, for lengths the library writes in TypeScript. */

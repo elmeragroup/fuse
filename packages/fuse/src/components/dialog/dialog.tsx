@@ -15,7 +15,7 @@ import { overlayCloseStrings } from "../overlay/intl";
 import {
   overlayFooterClass,
   overlayLayer,
-  overlayPopupSurfaceClass,
+  overlayModalPopupClass,
   overlayScrimClass,
   overlaySizeVariants,
   overlayTitleClass,
@@ -29,17 +29,12 @@ import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
 
 const dialogContentVariants = tv({
-  // The shared popup surface supplies the fill, the ring, and a radius rung; Dialog
-  // raises the elevation to `shadow-lg`, and its inner-corner shell raises the radius to
-  // `rounded-xl` and publishes the corner inside its padding, through later `cn` arguments. The keyframe set stays local: Dialog is not an
-  // anchored popup, so it takes neither the transform origin nor the per-side slide-ins
-  // that `overlayPopupMotionClass` carries, and its `duration-100` rides with them.
+  // Dialog's inner-corner shell comes after the modal face, so the shell's `rounded-xl` overrides
+  // the face's `rounded-md`. The shell publishes the corner inside its padding.
   base: cn(
-    overlayPopupSurfaceClass,
+    overlayModalPopupClass,
     dialogShellClass,
-    "text-sm shadow-lg fixed top-1/2 left-1/2 grid max-h-[calc(100%-2rem)] w-full max-w-(--overlay-width) -translate-x-1/2 -translate-y-1/2 gap-6 overflow-y-auto duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
-    overlayLayer,
-    selfFocusRingClass
+    "text-sm fixed top-1/2 left-1/2 grid max-h-[calc(100%-2rem)] w-full max-w-(--overlay-width) -translate-x-1/2 -translate-y-1/2 gap-6 overflow-y-auto"
   ),
   variants: {
     // The 13-value overlay width axis, shared with Sheet.

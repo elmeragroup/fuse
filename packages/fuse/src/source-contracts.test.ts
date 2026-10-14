@@ -16,7 +16,9 @@ import { PART_DENSITY } from "./theme/tokens/density-roles";
  * `no-hardcoded-density-metrics`, `no-primitive-colors`, `no-local-focus-ring`,
  * `restrict-focus-ring-call`, `restrict-browser-helper-copy`, `no-field-part-jsx`,
  * `no-tailwind-dark-variant`, `restrict-process-env`, `no-restricted-imports` for
- * `LocalizedStringDictionary` and for runtime values of `@tanstack/react-table`)
+ * `LocalizedStringDictionary`, for runtime values of `@tanstack/react-table` and
+ * `@tanstack/react-virtual`, and for the `@base-ui/react/combobox` and
+ * `@base-ui/react/autocomplete` subpaths)
  * or an exports/package-check gate. Each describe documents why the contract is
  * not a lint rule.
  */
@@ -43,6 +45,8 @@ const CLIENT_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["checkbox-card", ["components/checkbox-card/checkbox-card.tsx"]],
   ["collapsible", ["components/collapsible/collapsible.tsx"]],
   ["combobox", ["components/combobox/combobox.tsx"]],
+  ["command", ["components/command/command.tsx", "components/command/command-list-context.ts"]],
+  ["command-virtual", ["components/command-virtual/command-virtual.tsx"]],
   ["confirm-button", ["components/confirm-button/confirm-button.tsx"]],
   [
     "data-table",
@@ -121,6 +125,7 @@ const SERVER_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["emoji", ["components/emoji/emoji.tsx"]],
   ["empty", ["components/empty/empty.tsx"]],
   ["frame", ["components/frame/frame.tsx"]],
+  ["kbd", ["components/kbd/kbd.tsx"]],
   ["loader", ["components/loader/loader.tsx"]],
   ["select-field", ["components/select-field/select-field.tsx"]],
   ["show", ["components/show/show.tsx"]],
@@ -297,6 +302,10 @@ describe("RSC classification", () => {
     // client modules of their own.
     ["components/data-table/select-column.tsx", "server"],
     ["components/data-table/actions-column.tsx", "server"],
+    // Command's footer, hint and shortcut hold no state and read no context, so a server tree
+    // renders them inside the client palette. The presets that read the dictionary stay in
+    // client modules.
+    ["components/command/command-markup.tsx", "server"],
   ] as const)("keeps the shared module %s %s", (file, rsc) => {
     expectRsc(file, rsc);
   });
@@ -314,6 +323,8 @@ describe("RSC classification", () => {
     ["button-group", "ButtonGroup"],
     ["collapsible", "Collapsible"],
     ["combobox", "Combobox"],
+    ["command", "Command"],
+    ["command-virtual", "CommandVirtual"],
     ["data-table", "DataTable"],
     ["dialog", "Dialog"],
     ["dropdown-menu", "DropdownMenu"],
@@ -382,18 +393,6 @@ describe("deleted user-agent and @elmeragroup/lib APIs", () => {
     expect(manifest).not.toMatch(/\buserAgent\b/);
     expect(manifest).not.toMatch(/\bUserAgentParserResult\b/);
     expect(manifest).not.toMatch(/@elmeragroup\/lib/);
-  });
-});
-
-describe("combobox", () => {
-  // Why not a lint rule: `@base-ui/react/combobox` type-checks and is the
-  // usual subpath; it crashes at runtime with a null React context.
-  // The forbidden specifier is one documented trap, not a
-  // grammar.
-  it("imports Combobox from the @base-ui/react package root, never the combobox subpath", () => {
-    const source = readSrc("components/combobox/combobox.tsx");
-    expect(source).toContain('from "@base-ui/react"');
-    expect(source).not.toContain('from "@base-ui/react/combobox"');
   });
 });
 
@@ -865,7 +864,7 @@ function wiringPartSpreads(relativePath: string, source: string, parts: Readonly
 
 /**
  * The Base UI parts that read Field or Labelable context, plus Button (aria-disabled) and
- * the Sheet popup (dialog ARIA), keyed by the module that renders each one.
+ * the Sheet and Command.Content popups (dialog ARIA), keyed by the module that renders each one.
  */
 const WIRING_PARTS = {
   "components/button/button.tsx": ["ButtonPrimitive"],
@@ -876,6 +875,7 @@ const WIRING_PARTS = {
     "ComboboxPrimitive.Clear",
     "ComboboxPrimitive.Input",
   ],
+  "components/command/command.tsx": ["AutocompletePrimitive.Input", "DialogPrimitive.Popup"],
   "components/field/field.tsx": [
     "FieldsetPrimitive.Root",
     "FieldsetPrimitive.Legend",

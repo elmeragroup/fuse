@@ -28,6 +28,12 @@ describe("cssLengthToPx", () => {
   ])("reads %j as %j", (value, expected) => {
     expect(cssLengthToPx(value)).toBe(expected);
   });
+
+  it("reads rem at the root font size it is given, and px as written", () => {
+    expect(cssLengthToPx("2rem", 20)).toBe(40);
+    expect(cssLengthToPx("0.25rem", 20)).toBe(5);
+    expect(cssLengthToPx("36px", 20)).toBe(36);
+  });
 });
 
 describe("remToPx", () => {

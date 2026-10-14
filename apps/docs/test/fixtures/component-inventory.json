@@ -139,6 +139,20 @@
       "combobox-input-group-anchor.tsx"
     ]
   },
+  "command": {
+    "title": "Command",
+    "rsc": "client",
+    "demos": [
+      "command-dialog.tsx",
+      "command-groups.tsx",
+      "command-pages.tsx",
+      "command-kept-query.tsx",
+      "command-escape-back.tsx",
+      "command-app-palette.tsx",
+      "command-server-search.tsx",
+      "command-virtualized.tsx"
+    ]
+  },
   "confirm-button": {
     "title": "Confirm Button",
     "rsc": "client",
@@ -323,6 +337,11 @@
       "item-footer-reveal.tsx",
       "item-sizes.tsx"
     ]
+  },
+  "kbd": {
+    "title": "Kbd",
+    "rsc": "server",
+    "demos": ["kbd-keys.tsx", "kbd-combination.tsx", "kbd-input-group.tsx"]
   },
   "link": {
     "title": "Link",

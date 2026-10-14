@@ -125,6 +125,20 @@ describe("publish manifest", () => {
     });
   }, 20_000);
 
+  it("publishes @tanstack/react-virtual as an optional peer, never a dependency", () => {
+    const root = scratchPackageRoot();
+    writePublishManifest(root);
+
+    const manifest = readManifestFields(join(root, "dist/package.json"));
+    expect(manifest.peerDependencies?.["@tanstack/react-virtual"]).toBe("^3.14");
+    expect(manifest.peerDependenciesMeta?.["@tanstack/react-virtual"]).toEqual({ optional: true });
+    expect(manifest.dependencies).not.toHaveProperty("@tanstack/react-virtual");
+    expect(manifest.exports?.["./command-virtual"]).toEqual({
+      types: "./command-virtual.d.ts",
+      import: "./command-virtual.js",
+    });
+  }, 20_000);
+
   it("an unstamped write never carries a stale release identity", () => {
     const root = scratchPackageRoot();
     writePublishManifest(root, { version: "0.2.0-canary.1", commit, channel });
