@@ -27,7 +27,9 @@ export type ButtonGroupTextProps = useRender.ComponentProps<"div">;
 /**
  * Layout container that collapses inner radii and shared borders of `data-slot`
  * children into one visual control. `orientation` defaults so
- * `data-orientation` is always emitted.
+ * `data-orientation` is always emitted. Filled Buttons (`default`, `secondary`) join
+ * with no visible seam because Button's fill paints under its transparent border, so put
+ * `ButtonGroup.Separator` between them; `outline` takes its seam from its own border.
  */
 export function ButtonGroupRoot({
   className,
@@ -48,7 +50,8 @@ export function ButtonGroupRoot({
 /**
  * Hairline divider between segments. Forwards to the canonical library Separator so the
  * group `[data-slot]` join contract stays intact. Default is
- * `"vertical"` — a horizontal group needs a vertical hairline.
+ * `"vertical"` — a horizontal group needs a vertical hairline. It is the seam between
+ * filled segments (`default`, `secondary`), which otherwise join as one fill.
  */
 export function ButtonGroupSeparator({
   className,

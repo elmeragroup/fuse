@@ -512,9 +512,11 @@ function ComboboxChipRemove({ label }: { label: string }): ReactElement {
           aria-label={label}
           // The remove button sits inside a chip in the field box, so it rounds inside the
           // chip's corner instead of with Button's `--radius-button`. The inline square is as tall as the
-          // chip's 16px line and fits inside it. The square inherits the chip's xs line, and the
-          // explicit `text-xs` pins it there if a consumer restyles the chip's type. The ghost button
-          // drops its transparent border, and Button's inline hit area makes the target 24px.
+          // chip's 16px line and fits inside it. The explicit `text-xs` replaces icon-inline's
+          // inherited size and line height, so the square is the xs line's 16px, the chip's own
+          // line, even if a consumer restyles the chip's type; family and weight still inherit.
+          // The ghost button drops its transparent border, and Button's inline hit area makes
+          // the target 24px.
           // The target reaches into the chip's inset and the chips' gap without meeting the
           // next chip. The glyph takes the xs size, as on Button's
           // smallest square.
