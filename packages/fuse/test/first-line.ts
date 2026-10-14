@@ -6,16 +6,21 @@
 
 /**
  * The host stylesheets a component ships into. `dist/styles.css` carries no preflight, so a
- * bare import is the preflight-free host. A Tailwind consumer's preflight zeroes every margin and
- * padding in its base layer, below the utilities, which `PREFLIGHT_BASE_LAYER` reproduces.
+ * bare import is the preflight-free host. A Tailwind consumer's preflight resets boxes in its base
+ * layer, below the utilities: it zeroes every margin and padding and displays replaced and
+ * embedded media as blocks. `PREFLIGHT_BASE_LAYER` reproduces those resets.
  */
 export const HOSTS = ["preflight", "preflight-free"] as const;
 
 /** One host stylesheet. */
 export type Host = (typeof HOSTS)[number];
 
-/** The part of Tailwind's preflight that moves boxes: margins and padding reset in the base layer. */
-export const PREFLIGHT_BASE_LAYER = "@layer base { *, ::before, ::after { margin: 0; padding: 0; } }";
+/**
+ * Tailwind preflight's base-layer box resets: margins and padding zeroed, and replaced and
+ * embedded media displayed as blocks, aligned to the middle.
+ */
+export const PREFLIGHT_BASE_LAYER =
+  "@layer base { *, ::before, ::after { margin: 0; padding: 0; } img, svg, video, canvas, audio, iframe, embed, object { display: block; vertical-align: middle; } }";
 
 /**
  * The style text a test mounts for `host`: the preflight reset, or nothing for a bare host.

@@ -199,6 +199,11 @@
   `display`, carry a `hidden` reset.
 - `Sidebar.Menu` keeps the user agent's 40px list indent in a host without Tailwind's preflight,
   so its rows sit 40px in from the group. Reset the list's padding on the part itself.
+- `Badge` (`components/badge/badge.tsx`) renders a `div`, which is invalid inside the `<p>` of
+  `Item.Description` and `SelectionItem.Description`. Render it as a `span` and change
+  `BadgeProps` to `HTMLAttributes<HTMLSpanElement>`, then drop the
+  `:where(:not([data-slot="badge"]))` exclusion from the `alert-description-block` variant in
+  `styles/fuse.css` and the Badge sentence in the comment above it. #277 deferred this.
 - Ask Base UI for a way to let a `Form` submit while its Fields are invalid. Its submit handler
   validates its enabled Fields and calls neither `onSubmit` nor `onFormSubmit` while one is
   invalid, so a schema-validated form, where a change elsewhere clears an error, cannot reach
