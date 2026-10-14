@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useEffectEvent, useId, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useEffectEvent, useId, useRef, useState } from "react";
 import type { ReactElement, ReactNode, RefObject } from "react";
 
 import { tv } from "tailwind-variants";
@@ -13,6 +13,7 @@ import type { ColorScheme } from "@elmeragroup/fuse/theme";
 import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
+import { useModifierKey } from "../../../../lib/modifier-key";
 import { isTypingTarget } from "../../../../lib/typing-target";
 import { Kbd } from "../app-shell/kbd";
 import { BrandMark } from "../brand-mark";
@@ -270,22 +271,6 @@ function isShortcut(event: KeyboardEvent): boolean {
   );
 }
 
-function subscribeNever(): () => void {
-  return () => undefined;
-}
-
-/**
- * The modifier key the tooltip names: ⌘ on Apple platforms, Ctrl elsewhere. The tooltip renders
- * only on the client, so the server's answer never reaches the markup.
- */
-function useShortcutModifier(): string {
-  return useSyncExternalStore(
-    subscribeNever,
-    () => (/Mac|iPhone|iPad/u.test(navigator.userAgent) ? "⌘" : "Ctrl"),
-    () => "⌘"
-  );
-}
-
 /** How the picker last opened: from the chip, or from the shortcut with focus somewhere else. */
 type Opening = { readonly by: "chip" } | { readonly by: "shortcut"; readonly returnTo: HTMLElement | null };
 
@@ -312,7 +297,7 @@ function canTakeFocus(element: HTMLElement | null): element is HTMLElement {
 export function ThemeChipPicker(): ReactElement {
   const { theme, colorScheme, summary } = useThemePicker();
   const phone = useIsPhone();
-  const modifier = useShortcutModifier();
+  const modifier = useModifierKey();
   const [open, setOpen] = useState(false);
   const [opening, setOpening] = useState<Opening>({ by: "chip" });
   const currentTile = useRef<HTMLButtonElement>(null);

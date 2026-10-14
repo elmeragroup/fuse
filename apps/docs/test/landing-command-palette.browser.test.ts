@@ -1,6 +1,7 @@
 import type { Locator, Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
+import { isHighlighted } from "./command-page";
 import { DESKTOP_VIEWPORT } from "./demo-page";
 import {
   PHONE_VIEWPORT,
@@ -16,11 +17,6 @@ const { openLanding } = launchLandingSuite({ search: DASHBOARD_FIRST });
 
 /** A query that matches several orders, so the active option can move off the first. */
 const MULTI_RESULT_QUERY = "StrømSmart";
-
-/** Whether Base UI highlights `option`, the row Enter runs. */
-async function isHighlighted(option: Locator): Promise<boolean> {
-  return (await option.getAttribute("data-highlighted")) !== null;
-}
 
 /** Searches the open palette, moves the highlight to the third result and checks it. */
 async function searchAndMoveActive(page: Page, palette: Locator): Promise<void> {

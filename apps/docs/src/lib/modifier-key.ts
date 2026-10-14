@@ -1,5 +1,3 @@
-"use client";
-
 import { useSyncExternalStore } from "react";
 
 /** The platform never changes, so there is nothing to subscribe to. */

@@ -21,14 +21,15 @@ import { Command } from "@elmeragroup/fuse/command";
 import type { CommandRootProps } from "@elmeragroup/fuse/command";
 import { Check, MagnifyingGlass } from "@elmeragroup/fuse/icons";
 import { Kbd, KbdGroup } from "@elmeragroup/fuse/kbd";
-import type { CreateToastManagerReturnValue } from "@elmeragroup/fuse/toast";
 
+import { copyWithToast } from "../../lib/copy-with-toast";
+import type { CopyToasts } from "../../lib/copy-with-toast";
 import { useModifierKey } from "../../lib/modifier-key";
 import { matchesEveryToken } from "../../lib/search";
 import {
   COMPONENT_ROWS,
   COMPONENTS_PAGE,
-  HOME_PAGE,
+  FIRST_PAGE_ID,
   homeGroups,
   settingsPageId,
   sitePaletteModel,
@@ -57,9 +58,6 @@ const sitePalette = tv({
 
 const styles = sitePalette();
 
-/** The toasts the palette reports a copy in: a Fuse toast manager. */
-export type SitePaletteToasts = Pick<CreateToastManagerReturnValue, "add">;
-
 type Registration = { readonly key: string; readonly commands: readonly SiteCommand[] };
 
 type Registry = {
@@ -74,6 +72,9 @@ type Registry = {
 const RegistryContext = createContext<Registry | null>(null);
 
 type OpenChange = NonNullable<CommandRootProps["onOpenChange"]>;
+
+/** What a row runs. An `OpenPage` row is a `Command.PageTrigger`, which pushes its page itself. */
+type RowAction = Exclude<SiteAction, { readonly _tag: "OpenPage" }>;
 
 type SitePaletteValue = {
   readonly open: boolean;
@@ -92,7 +93,7 @@ type SitePaletteValue = {
   readonly model: SitePaletteModel;
   readonly onOpenChange: OpenChange;
   readonly onOpenChangeComplete: (open: boolean) => void;
-  readonly run: (action: SiteAction) => void;
+  readonly run: (action: RowAction) => void;
   readonly pick: (option: SettingOption) => void;
 };
 
@@ -106,7 +107,7 @@ function useSitePalette(part: string): SitePaletteValue {
   return value;
 }
 
-const FIRST_PAGE: readonly string[] = [HOME_PAGE];
+const FIRST_PAGE: readonly string[] = [FIRST_PAGE_ID];
 
 /** ⌘K or Ctrl+K, the pair the trigger's `aria-keyshortcuts` names, without Alt. */
 function isPaletteShortcut(event: KeyboardEvent): boolean {
@@ -122,18 +123,6 @@ function copiedText(target: CopyTarget): string {
     case "SiteUrl":
       return new URL(target.path, window.location.origin).href;
   }
-}
-
-async function copy(toasts: SitePaletteToasts, target: CopyTarget, notice: string): Promise<void> {
-  const text = copiedText(target);
-  try {
-    // Rejects too where there is no clipboard at all, as on insecure origins.
-    await navigator.clipboard.writeText(text);
-  } catch {
-    toasts.add({ type: "error", title: "Could not copy", description: "The browser refused the clipboard." });
-    return;
-  }
-  toasts.add({ type: "success", title: notice, description: text });
 }
 
 type Router = ReturnType<typeof useRouter>;
@@ -157,11 +146,11 @@ function navigate(router: Router, href: string): void {
 }
 
 /** `SitePaletteProvider` takes the surface's settings and toasts. */
-export type SitePaletteProviderProps = {
+type SitePaletteProviderProps = {
   /** The surface's settings drill-downs and settings commands. Memoize it. */
   readonly settings: SiteSettings;
   /** Where a copy action reports what it copied. */
-  readonly toasts: SitePaletteToasts;
+  readonly toasts: CopyToasts;
   readonly children: ReactNode;
 };
 
@@ -269,8 +258,6 @@ export function SitePaletteProvider({ settings, toasts, children }: SitePaletteP
         if (isOpen) {
           return;
         }
-        setStack(FIRST_PAGE);
-        setQuery("");
         const pending = afterClose.current;
         afterClose.current = null;
         if (pending !== null) {
@@ -282,17 +269,16 @@ export function SitePaletteProvider({ settings, toasts, children }: SitePaletteP
       },
       run: (action) => {
         switch (action._tag) {
-          case "OpenPage":
-            // `Command.PageTrigger` pushes the page itself.
-            return;
           case "Run":
             close();
             action.run();
             return;
-          case "Copy":
+          case "Copy": {
             close();
-            void copy(toasts, action.target, action.notice);
+            const text = copiedText(action.target);
+            void copyWithToast(toasts, text, action.notice, text);
             return;
+          }
           case "OpenOverlay":
             afterClose.current = action.open;
             close();
@@ -386,22 +372,22 @@ function optionMatches(option: SettingOption, query: string): boolean {
 }
 
 /** One row of the first page or the Components page. */
-function SiteRowItem({ row, run }: { row: SiteRow; run: (action: SiteAction) => void }): ReactElement {
-  if (row.action._tag === "OpenPage") {
+function SiteRowItem({ row, run }: { row: SiteRow; run: (action: RowAction) => void }): ReactElement {
+  const { action, shortcut } = row;
+  if (action._tag === "OpenPage") {
     return (
-      <Command.PageTrigger value={row} page={row.action.page}>
+      <Command.PageTrigger value={row} page={action.page}>
         <span className={styles.title()}>{row.title}</span>
       </Command.PageTrigger>
     );
   }
-  const { shortcut } = row;
   return (
     <Command.Item
       value={row}
       disabled={row.disabled}
       aria-keyshortcuts={shortcut?.aria}
       onClick={() => {
-        run(row.action);
+        run(action);
       }}>
       <span className={styles.title()}>{row.title}</span>
       {row.hint === undefined ? null : <span className={styles.hint()}>{row.hint}</span>}
@@ -459,7 +445,7 @@ export function SitePaletteDialog(): ReactElement {
       <Command.Content aria-label="Site search">
         <Command.Page
           key={opening}
-          id={HOME_PAGE}
+          id={FIRST_PAGE_ID}
           label="Search the site"
           grouped
           items={groups}

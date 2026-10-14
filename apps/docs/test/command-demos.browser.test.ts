@@ -1,15 +1,11 @@
-import type { Locator, Page } from "playwright";
+import type { Locator } from "playwright";
 import { describe, expect, it } from "vitest";
 
+import { focusedName, groupLabels, highlighted } from "./command-page";
 import { DESKTOP_VIEWPORT, launchSuiteBrowser, openDemo } from "./demo-page";
 import { settleFrames } from "./landing-page";
 
 const browser = launchSuiteBrowser();
-
-/** The text of the option Base UI marks highlighted inside `scope`. */
-function highlighted(scope: Locator): Promise<string | null> {
-  return scope.locator('[role="option"][data-highlighted]').first().textContent();
-}
 
 /** The text of the demo's result line, which reports the last command run. */
 function status(demo: Locator): Promise<string | null> {
@@ -17,15 +13,6 @@ function status(demo: Locator): Promise<string | null> {
     .getByRole("status")
     .filter({ hasText: /^(?:Ran|Changed|Opened|No)\b/u })
     .textContent();
-}
-
-async function focusedName(page: Page): Promise<string | null> {
-  return page.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? null);
-}
-
-/** The labels of the groups the palette lists inside `scope`, in order. */
-function groupLabels(scope: Locator): Promise<string[]> {
-  return scope.locator('[data-slot="command-label"]').allTextContents();
 }
 
 describe("Command demos", () => {

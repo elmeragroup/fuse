@@ -558,6 +558,29 @@ describe("theme studio", () => {
     await page.close();
   });
 
+  // The studio's root clips its overflow, so a crowded bar would hide its last buttons without any
+  // sideways scroll.
+  it.each([
+    { width: 320, height: 700 },
+    { width: 390, height: 844 },
+  ])("keeps every header button inside a $width px phone", async (viewport) => {
+    const { page } = await openStudio({ viewport });
+    const buttons = await page
+      .getByRole("banner")
+      .getByRole("button")
+      .evaluateAll((elements) =>
+        elements.map((element) => {
+          const { left, right } = element.getBoundingClientRect();
+          return { name: element.getAttribute("aria-label") ?? element.textContent, left, right };
+        })
+      );
+    expect(buttons.length).toBeGreaterThan(0);
+    expect(
+      buttons.filter(({ left, right }) => left < 0 || right > viewport.width).map(({ name }) => name)
+    ).toEqual([]);
+    await page.close();
+  });
+
   it("mounts one token editor on a phone, the Sheet's, keeping the desktop panels' regions", async () => {
     const { page } = await openStudio({ viewport: PHONE });
     const editors = page.getByRole("textbox", { name: "Filter tokens", exact: true, includeHidden: true });

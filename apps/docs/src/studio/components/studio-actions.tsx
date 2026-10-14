@@ -14,6 +14,7 @@ import { Copy, DotsThree } from "@elmeragroup/fuse/icons";
 
 import { useSiteCommands } from "../../components/site-palette/site-palette";
 import type { SiteCommand } from "../../components/site-palette/site-palette-model";
+import { copyWithToast } from "../../lib/copy-with-toast";
 import type { StudioDocument } from "../lib/edits";
 import { exportCss } from "../lib/export-css";
 import { encodeShare } from "../lib/share-codec";
@@ -39,19 +40,6 @@ function hasEdits(document: StudioDocument): boolean {
   );
 }
 
-async function copy(text: string, done: string): Promise<void> {
-  try {
-    await navigator.clipboard.writeText(text);
-    studioToasts.add({ type: "success", title: done });
-  } catch {
-    studioToasts.add({
-      type: "error",
-      title: "Could not copy",
-      description: "The browser refused the clipboard.",
-    });
-  }
-}
-
 /** Copies the address that opens the studio on `document`, or says why it cannot. */
 function copyShareLink(document: StudioDocument): void {
   const encoded = encodeShare(document);
@@ -61,7 +49,7 @@ function copyShareLink(document: StudioDocument): void {
   }
   const url = new URL(window.location.href);
   url.hash = encoded.text;
-  void copy(url.toString(), "Link copied");
+  void copyWithToast(studioToasts, url.toString(), "Link copied");
 }
 
 /**
@@ -187,7 +175,7 @@ export function StudioActions(): ReactElement {
           <Dialog.Footer showCloseButton>
             <Button
               onClick={() => {
-                void copy(css ?? "", "CSS copied");
+                void copyWithToast(studioToasts, css ?? "", "CSS copied");
               }}>
               <Copy data-icon="inline-start" />
               Copy CSS

@@ -20,18 +20,18 @@ import { ThemeChipPicker } from "./theme-picker/theme-chip-picker";
 const landingNav = tv({
   slots: {
     bar: "pt-safe-top backdrop-blur-md sticky top-0 z-20 border-b border-border bg-background/80 backdrop-saturate-150 supports-[not(backdrop-filter:blur(0))]:bg-background",
-    // The gaps tighten below `lg`, where the menu, the search button and the theme chip share the bar.
-    inner: "sm:px-6 max-w-landing mx-auto flex h-16 w-full items-center gap-6 px-4 lg:gap-8 lg:px-12",
+    inner: "sm:px-6 max-w-landing mx-auto flex h-16 w-full items-center gap-8 px-4 lg:px-12",
     wordmark:
       "text-base font-semibold flex items-center gap-2.5 rounded-md text-foreground no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
     mark: "size-5",
-    // Below md the menu and the CTA do not fit in one bar beside the theme picker.
+    // Below md the menu does not fit in one bar beside the theme picker and the CTA. From md to lg
+    // it takes the CTA's place, which the hero repeats right below.
     menu: "md:flex hidden flex-none",
     panel: "w-2xl m-0 grid list-none grid-cols-2 gap-1 p-0",
     end: "sm:gap-4 ml-auto flex min-w-0 items-center gap-3",
     // From `xl`: at `lg` the theme chip needs the room to show its whole summary.
     version: "text-xs xl:inline hidden font-mono text-muted-foreground",
-    cta: "shrink-0",
+    cta: "md:max-lg:hidden shrink-0",
   },
 });
 

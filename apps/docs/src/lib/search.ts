@@ -1,22 +1,16 @@
 /**
  * Matching for the site's ⌘K palette.
  *
- * Pure over the generated index and the palette's own rows, so the ranking is testable without a
- * browser and the palette component holds nothing but state and keyboard wiring.
+ * Pure over the rows it is given, from the generated index to the palette's own, so the ranking is
+ * testable without a browser and the palette component holds nothing but state and keyboard wiring.
  */
-
-import { SEARCH_ENTRIES } from "../generated/search-index";
-import type { SearchEntry } from "./docs-model";
-
-/** How many index pages `matchSearchEntries` lists at once. */
-const SEARCH_RESULT_LIMIT = 20;
 
 /** Anything the palette ranks: a page of the index, a demo, a setting or a command. */
 export type Searchable = {
   readonly title: string;
   /** Extra match text, such as an import specifier or a component's name. */
-  readonly keywords: readonly string[];
-  readonly description: string;
+  readonly keywords?: readonly string[];
+  readonly description?: string;
 };
 
 type Fields = {
@@ -43,8 +37,8 @@ function fieldsFor(entry: Searchable): Fields {
   }
   const fields: Fields = {
     title: entry.title.toLowerCase(),
-    keywords: entry.keywords.join(" ").toLowerCase(),
-    description: entry.description.toLowerCase(),
+    keywords: entry.keywords?.join(" ").toLowerCase() ?? "",
+    description: entry.description?.toLowerCase() ?? "",
   };
   FIELDS.set(entry, fields);
   return fields;
@@ -130,23 +124,4 @@ export function rankEntries<Entry extends Searchable>(
     )
     .slice(0, limit)
     .map((hit) => hit.entry);
-}
-
-/**
- * The index pages for a query, best first. An empty query is not an error state: it lists the
- * site in nav order.
- *
- * @param query - What the user typed.
- * @param entries - The index to search, the generated one by default.
- * @returns At most 20 pages.
- */
-export function matchSearchEntries(
-  query: string,
-  entries: readonly SearchEntry[] = SEARCH_ENTRIES
-): readonly SearchEntry[] {
-  const tokens = queryTokens(query);
-  if (tokens.length === 0) {
-    return entries.slice(0, SEARCH_RESULT_LIMIT);
-  }
-  return rankEntries(entries, tokens, SEARCH_RESULT_LIMIT);
 }

@@ -2,10 +2,11 @@ import type { BrowserContext, Locator, Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
 import { INSTALL_COMMAND } from "../src/lib/docs-model";
+import { focusedName, groupLabels, highlighted, isHighlighted } from "./command-page";
 import { launchSuiteBrowser, waitForDocsShellHydration } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
 import { waitForLandingHydration } from "./landing-page";
-import { canvas, openStudio, toggle } from "./studio/page";
+import { canvas, isFocused, openStudio, toggle } from "./studio/page";
 import { closeContext } from "./suite-browser";
 
 const browser = launchSuiteBrowser();
@@ -13,24 +14,6 @@ const browser = launchSuiteBrowser();
 /** The site palette's dialog. */
 function palette(page: Page): Locator {
   return page.getByRole("dialog", { name: "Site search", exact: true });
-}
-
-/** The name of the focused element, as its `aria-label` or its text. */
-async function focusedName(page: Page): Promise<string | null> {
-  return page.evaluate(() => {
-    const active = document.activeElement;
-    return active?.getAttribute("aria-label") ?? active?.textContent.trim() ?? null;
-  });
-}
-
-/** The text of the option Base UI marks highlighted inside `scope`. */
-async function highlighted(scope: Locator): Promise<string | null> {
-  return scope.locator('[role="option"][data-highlighted]').first().textContent();
-}
-
-/** The labels of the groups the palette lists, in order. */
-async function groupLabels(scope: Locator): Promise<string[]> {
-  return scope.locator('[data-slot="command-label"]').allTextContents();
 }
 
 /** The option named `name` in the group labelled `group`. */
@@ -86,7 +69,7 @@ describe("site palette on the docs", () => {
     await expect.poll(() => focusedName(page)).toBe("Search the site");
     await page.keyboard.press("Escape");
     await expect.poll(() => dialog.count()).toBe(0);
-    await expect.poll(() => trigger.evaluate((node) => node === document.activeElement)).toBe(true);
+    await expect.poll(() => isFocused(trigger)).toBe(true);
     await closeContext(context);
   });
 
@@ -157,7 +140,7 @@ describe("site palette on the docs", () => {
     await page.keyboard.press("Enter");
     await expect.poll(() => dialog.count()).toBe(0);
     await page.waitForFunction(() => document.documentElement.getAttribute("data-theme") === "dark");
-    await expect.poll(() => tokens.evaluate((node) => node === document.activeElement)).toBe(true);
+    await expect.poll(() => isFocused(tokens)).toBe(true);
 
     await page.keyboard.press("Meta+k");
     await dialog.getByRole("option", { name: "Appearance" }).click();
@@ -221,7 +204,7 @@ describe("site palette on the docs", () => {
     await expect.poll(() => groupLabels(dialog)).toContain("Pages");
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("ArrowDown");
-    await expect.poll(() => first.getAttribute("data-highlighted")).toBeNull();
+    await expect.poll(() => isHighlighted(first)).toBe(false);
     const popup = await dialog.elementHandle();
     await page.keyboard.press("Escape");
     await expect.poll(() => popup.getAttribute("data-closed")).toBe("");
@@ -231,7 +214,7 @@ describe("site palette on the docs", () => {
     expect(await popup.evaluate((node) => node.isConnected)).toBe(true);
     await expect.poll(() => dialog.getByRole("combobox").inputValue()).toBe("");
     await expect.poll(() => groupLabels(dialog)).toEqual(["This page", "Go to", "Settings", "Copy"]);
-    await expect.poll(() => first.getAttribute("data-highlighted")).toBe("");
+    await expect.poll(() => isHighlighted(first)).toBe(true);
     await expect.poll(() => focusedName(page)).toBe("Search the site");
     await closeContext(context);
   });

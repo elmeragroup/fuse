@@ -4,13 +4,18 @@
  * It reads the generated search index and component manifest, which every surface ships eagerly.
  */
 
+import { COLOR_SCHEMES } from "@elmeragroup/fuse/theme";
+import type { ColorScheme } from "@elmeragroup/fuse/theme";
+
 import { COMPONENT_PAGES } from "../../generated/component-pages";
+import { SEARCH_ENTRIES } from "../../generated/search-index";
 import { INSTALL_COMMAND } from "../../lib/docs-model";
 import type { SearchEntry } from "../../lib/docs-model";
 import { COMPONENT_NAV, componentForPath, tocForPath } from "../../lib/nav";
 import { componentHref } from "../../lib/pages";
-import { matchSearchEntries, queryTokens, rankEntries } from "../../lib/search";
+import { queryTokens, rankEntries } from "../../lib/search";
 import type { Searchable } from "../../lib/search";
+import { COLOR_SCHEME_LABELS } from "../../lib/theme";
 
 /** A row's keyboard shortcut: the caps it shows and the `aria-keyshortcuts` value it carries. */
 export type SiteShortcut = {
@@ -98,6 +103,27 @@ export type SettingsPage = {
   readonly options: readonly SettingOption[];
 };
 
+/**
+ * The options of a colour-scheme settings page, one per scheme, with `current` marked.
+ *
+ * @param current - The scheme in force.
+ * @param apply - Puts a scheme in force.
+ * @returns The options in Fuse's scheme order.
+ */
+export function colorSchemeOptions(
+  current: ColorScheme,
+  apply: (scheme: ColorScheme) => void
+): readonly SettingOption[] {
+  return COLOR_SCHEMES.map((scheme) => ({
+    id: scheme,
+    label: COLOR_SCHEME_LABELS[scheme],
+    state: scheme === current ? "current" : "available",
+    apply: () => {
+      apply(scheme);
+    },
+  }));
+}
+
 /** The settings a surface offers: its drill-downs, then the settings that act at once. */
 export type SiteSettings = {
   readonly pages: readonly SettingsPage[];
@@ -113,7 +139,7 @@ export type SitePaletteModel = {
 };
 
 /** The stack id of the first page. */
-export const HOME_PAGE = "home";
+export const FIRST_PAGE_ID = "home";
 
 /** The stack id of the page that lists every component. */
 export const COMPONENTS_PAGE = "components";
@@ -162,7 +188,6 @@ const DEMO_ROWS: readonly SiteRow[] = COMPONENT_PAGES.flatMap((component) =>
     id: `demo:${component.slug}#${demo.id}`,
     title: demo.title,
     keywords: [component.title, component.slug],
-    description: "",
     hint: component.title,
     action: { _tag: "Navigate", href: `${componentHref(component.slug)}#${demo.id}` },
   }))
@@ -172,8 +197,6 @@ const DEMO_ROWS: readonly SiteRow[] = COMPONENT_PAGES.flatMap((component) =>
 export const COMPONENT_ROWS: readonly SiteRow[] = COMPONENT_NAV.map((item) => ({
   id: `component:${item.href}`,
   title: item.label,
-  keywords: [],
-  description: "",
   action: { _tag: "Navigate", href: item.href },
 }));
 
@@ -181,23 +204,15 @@ const GO_TO_ROWS: readonly SiteRow[] = [
   {
     id: "go-to:components",
     title: "Components",
-    keywords: [],
-    description: "",
     action: { _tag: "OpenPage", page: COMPONENTS_PAGE },
   },
 ];
-
-function commandRow(command: SiteCommand): SiteRow {
-  const { keywords = [], ...rest } = command;
-  return { ...rest, keywords, description: "" };
-}
 
 function settingsEntry(page: SettingsPage): SiteRow {
   return {
     id: `settings:${page.id}`,
     title: page.label,
     keywords: page.keywords,
-    description: "",
     action: { _tag: "OpenPage", page: settingsPageId(page) },
   };
 }
@@ -209,7 +224,6 @@ function copyRows(pathname: string): readonly SiteRow[] {
       id: "copy:install",
       title: "Copy install command",
       keywords: [INSTALL_COMMAND],
-      description: "",
       action: {
         _tag: "Copy",
         target: { _tag: "Text", text: INSTALL_COMMAND },
@@ -220,7 +234,6 @@ function copyRows(pathname: string): readonly SiteRow[] {
       id: "copy:link",
       title: "Copy link to this page",
       keywords: ["url", "address", "share"],
-      description: "",
       action: { _tag: "Copy", target: { _tag: "PageLink" }, notice: "Copied link to this page" },
     },
   ];
@@ -229,7 +242,6 @@ function copyRows(pathname: string): readonly SiteRow[] {
       id: "copy:markdown",
       title: "Copy Markdown URL",
       keywords: ["md", "llms"],
-      description: "",
       action: {
         _tag: "Copy",
         target: { _tag: "SiteUrl", path: component.markdownUrl },
@@ -257,13 +269,11 @@ export function sitePaletteModel(
   const toc = tocForPath(pathname).map((item): SiteRow => ({
     id: `toc:${item.id}`,
     title: item.title,
-    keywords: [],
-    description: "",
     action: { _tag: "Navigate", href: `${pathname}#${item.id}` },
   }));
   return {
-    thisPage: [...toc, ...commands.map(commandRow)],
-    settings: [...settings.pages.map(settingsEntry), ...settings.commands.map(commandRow)],
+    thisPage: [...toc, ...commands],
+    settings: [...settings.pages.map(settingsEntry), ...settings.commands],
     settingsPages: settings.pages,
     copy: copyRows(pathname),
   };
@@ -295,7 +305,7 @@ export function homeGroups(model: SitePaletteModel, query: string): readonly Sit
   }
   return nonEmpty([
     { value: GROUP.thisPage, items: rankEntries(model.thisPage, tokens, GROUP_CAPS.thisPage) },
-    { value: GROUP.pages, items: matchSearchEntries(query).slice(0, GROUP_CAPS.pages).map(pageRow) },
+    { value: GROUP.pages, items: rankEntries(SEARCH_ENTRIES, tokens, GROUP_CAPS.pages).map(pageRow) },
     { value: GROUP.demos, items: rankEntries(DEMO_ROWS, tokens, GROUP_CAPS.demos) },
     { value: GROUP.settings, items: rankEntries(model.settings, tokens, GROUP_CAPS.settings) },
     { value: GROUP.copy, items: rankEntries(model.copy, tokens, GROUP_CAPS.copy) },

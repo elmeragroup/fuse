@@ -3,21 +3,20 @@
 import { useMemo } from "react";
 import type { ReactElement, ReactNode } from "react";
 
-import { COLOR_SCHEMES } from "@elmeragroup/fuse/theme";
-
 import { SitePaletteProvider, useSiteCommands } from "../../components/site-palette/site-palette";
+import { colorSchemeOptions } from "../../components/site-palette/site-palette-model";
 import type {
   SiteCommand,
   SiteSettings,
   SiteShortcut,
 } from "../../components/site-palette/site-palette-model";
-import { COLOR_SCHEME_LABELS } from "../../lib/theme";
+import { useModifierKey } from "../../lib/modifier-key";
 import { useCornerXraySwitch } from "./corner-xray";
 import { useStudioEdits } from "./studio-edits";
 import { usePartSelection } from "./studio-part-selection";
 import { studioToasts } from "./studio-persistence";
-import { useModifierLabel } from "./studio-shortcuts";
 import { useStudio } from "./studio-state";
+import { TOOLS } from "./studio-toolbar";
 
 /** The studio's one setting: the editor chrome's scheme, which the top bar's switch also moves. */
 function useStudioSettings(): SiteSettings {
@@ -29,14 +28,7 @@ function useStudioSettings(): SiteSettings {
           id: "chrome-scheme",
           label: "Chrome scheme",
           keywords: ["appearance", "editor", "color scheme"],
-          options: COLOR_SCHEMES.map((scheme) => ({
-            id: scheme,
-            label: COLOR_SCHEME_LABELS[scheme],
-            state: scheme === chromeScheme ? "current" : "available",
-            apply: () => {
-              setChromeScheme(scheme);
-            },
-          })),
+          options: colorSchemeOptions(chromeScheme, setChromeScheme),
         },
       ],
       commands: [],
@@ -71,8 +63,7 @@ export function StudioToolbarCommands(): null {
   const { partMode, setPartMode } = usePartSelection();
   const { edit, canUndo, canRedo } = useStudioEdits();
   const { available: xrayAvailable, active: xrayActive, setOn: setXray } = useCornerXraySwitch();
-  // The zoom label reads "Ctrl+" off Apple platforms; a cap names the key alone.
-  const modifier = useModifierLabel() === "⌘" ? "⌘" : "Ctrl";
+  const modifier = useModifierKey();
   useSiteCommands(
     useMemo((): readonly SiteCommand[] => {
       const commands: SiteCommand[] = [
@@ -100,30 +91,18 @@ export function StudioToolbarCommands(): null {
             },
           },
         },
-        {
-          id: "select-tool",
-          title: "Select tool",
-          keywords: ["pointer"],
-          shortcut: letter("V"),
+        ...TOOLS.map(({ value, label, key, keywords }): SiteCommand => ({
+          id: `${value}-tool`,
+          title: `${label} tool`,
+          keywords,
+          shortcut: letter(key),
           action: {
             _tag: "Run",
             run: () => {
-              setTool("select");
+              setTool(value);
             },
           },
-        },
-        {
-          id: "hand-tool",
-          title: "Hand tool",
-          keywords: ["pan"],
-          shortcut: letter("H"),
-          action: {
-            _tag: "Run",
-            run: () => {
-              setTool("hand");
-            },
-          },
-        },
+        })),
         {
           id: "select-part",
           title: "Select part",

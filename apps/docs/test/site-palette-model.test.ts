@@ -82,13 +82,22 @@ describe("the site palette's first page with nothing typed", () => {
   });
 
   it("lists registered commands after the table of contents, in registration order", () => {
+    // The oracle is the route's table of contents followed by the commands as supplied.
     const commands: SiteCommand[] = [
       { id: "undo", title: "Undo", disabled: true, action: { _tag: "Run", run: noop } },
       { id: "export", title: "Export CSS", action: { _tag: "OpenOverlay", open: noop } },
     ];
-    const rows = group(homeGroups(sitePaletteModel("/studio", commands, NO_SETTINGS), ""), "This page");
-    expect(rows.map((row) => row.title)).toEqual(["Undo", "Export CSS"]);
-    expect(rows[0]?.disabled).toBe(true);
+    const quickNav = tocForPath("/components/dialog");
+    const rows = group(
+      homeGroups(sitePaletteModel("/components/dialog", commands, NO_SETTINGS), ""),
+      "This page"
+    );
+    expect(rows.map((row) => row.title)).toEqual([
+      ...quickNav.map((item) => item.title),
+      "Undo",
+      "Export CSS",
+    ]);
+    expect(rows.find((row) => row.title === "Undo")?.disabled).toBe(true);
   });
 
   it("opens the Components page, whose rows are every component in nav order", () => {
@@ -117,10 +126,7 @@ describe("the site palette's first page as the user types", () => {
   it("keeps the fixed group order and caps each group", () => {
     const commands: SiteCommand[] = [{ id: "a", title: "Alpha tool", action: { _tag: "Run", run: noop } }];
     const groups = homeGroups(sitePaletteModel("/components/button", commands, SETTINGS), "a");
-    const order = ["This page", "Pages", "Demos", "Settings", "Copy"];
-    const present = labels(groups);
-    expect(present).toEqual(order.filter((label) => present.includes(label)));
-    expect(present).toEqual(expect.arrayContaining(["This page", "Pages", "Demos", "Settings", "Copy"]));
+    expect(labels(groups)).toEqual(["This page", "Pages", "Demos", "Settings", "Copy"]);
     expect(group(groups, "Pages").length).toBe(8);
     expect(group(groups, "Demos").length).toBe(6);
     expect(group(groups, "This page").length).toBeLessThanOrEqual(6);

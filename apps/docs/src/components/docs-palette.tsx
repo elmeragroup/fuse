@@ -3,20 +3,14 @@
 import { useMemo } from "react";
 import type { ReactElement, ReactNode } from "react";
 
-import {
-  BRAND_CODES,
-  BRANDS,
-  COLOR_SCHEMES,
-  THEME_SEGMENTS,
-  THEME_VARIANTS,
-  useColorScheme,
-} from "@elmeragroup/fuse/theme";
+import { BRAND_CODES, BRANDS, THEME_SEGMENTS, THEME_VARIANTS, useColorScheme } from "@elmeragroup/fuse/theme";
 import type { ThemeSegment } from "@elmeragroup/fuse/theme";
 import { Toast } from "@elmeragroup/fuse/toast";
 
-import { COLOR_SCHEME_LABELS, DEFAULT_THEME, SEGMENT_LABELS, VARIANT_LABELS } from "../lib/theme";
+import { DEFAULT_THEME, SEGMENT_LABELS, VARIANT_LABELS } from "../lib/theme";
 import { usePreviewTheme } from "./preview-theme";
 import { SitePaletteDialog, SitePaletteProvider } from "./site-palette/site-palette";
+import { colorSchemeOptions } from "./site-palette/site-palette-model";
 import type { SiteSettings } from "./site-palette/site-palette-model";
 import { commitTheme } from "./theme-picker";
 
@@ -38,14 +32,7 @@ function useDocsSettings(): SiteSettings {
           id: "appearance",
           label: "Appearance",
           keywords: ["color scheme"],
-          options: COLOR_SCHEMES.map((scheme) => ({
-            id: scheme,
-            label: COLOR_SCHEME_LABELS[scheme],
-            state: scheme === colorScheme ? "current" : "available",
-            apply: () => {
-              setColorScheme(scheme);
-            },
-          })),
+          options: colorSchemeOptions(colorScheme, setColorScheme),
         },
         {
           id: "variant",

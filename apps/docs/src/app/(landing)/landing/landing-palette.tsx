@@ -3,13 +3,13 @@
 import { useMemo } from "react";
 import type { ReactElement, ReactNode } from "react";
 
-import { COLOR_SCHEMES, LEGAL_THEMES, themeSlug } from "@elmeragroup/fuse/theme";
+import { LEGAL_THEMES, themeSlug } from "@elmeragroup/fuse/theme";
 import type { ThemeInput } from "@elmeragroup/fuse/theme";
 import { Toast } from "@elmeragroup/fuse/toast";
 
 import { SitePaletteDialog, SitePaletteProvider } from "../../../components/site-palette/site-palette";
+import { colorSchemeOptions } from "../../../components/site-palette/site-palette-model";
 import type { SiteSettings } from "../../../components/site-palette/site-palette-model";
-import { COLOR_SCHEME_LABELS } from "../../../lib/theme";
 import { PICKER_BRANDS } from "./landing-facts";
 import { useLandingTheme } from "./landing-theme";
 import { sameTheme } from "./landing-theme-defaults";
@@ -34,14 +34,7 @@ function useLandingSettings(): SiteSettings {
           id: "appearance",
           label: "Appearance",
           keywords: ["color scheme"],
-          options: COLOR_SCHEMES.map((scheme) => ({
-            id: scheme,
-            label: COLOR_SCHEME_LABELS[scheme],
-            state: scheme === colorScheme ? "current" : "available",
-            apply: () => {
-              changeColorScheme(scheme);
-            },
-          })),
+          options: colorSchemeOptions(colorScheme, changeColorScheme),
         },
         {
           id: "landing-theme",

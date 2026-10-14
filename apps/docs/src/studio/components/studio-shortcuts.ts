@@ -1,7 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
-
+import { useModifierKey } from "../../lib/modifier-key";
 import { isTypingTarget } from "../../lib/typing-target";
 
 /**
@@ -30,17 +29,10 @@ export function isOverlayShortcut(event: KeyboardEvent, key: string): boolean {
   );
 }
 
-/** The platform never changes, so there is nothing to subscribe to. */
-const subscribe = (): (() => void) => () => undefined;
-
 /**
- * The modifier the zoom shortcuts name: ⌘ on Apple platforms, Ctrl elsewhere. The server and
- * hydration render ⌘, and the client corrects it after hydration.
+ * The modifier the zoom shortcuts name before their key: ⌘ on Apple platforms, Ctrl+ elsewhere.
+ * The server and hydration render ⌘, and the client corrects it after hydration.
  */
 export function useModifierLabel(): string {
-  return useSyncExternalStore(
-    subscribe,
-    () => (/Mac|iPhone|iPad/u.test(navigator.platform) ? "⌘" : "Ctrl+"),
-    () => "⌘"
-  );
+  return useModifierKey() === "⌘" ? "⌘" : "Ctrl+";
 }
