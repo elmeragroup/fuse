@@ -1,5 +1,5 @@
 import { chromium } from "playwright";
-import type { Browser } from "playwright";
+import type { Browser, BrowserContext } from "playwright";
 import { afterAll, beforeAll } from "vitest";
 
 /**
@@ -27,4 +27,19 @@ export function launchSuiteBrowser(): () => Browser {
     }
     return launched;
   };
+}
+
+/**
+ * Closes `context` without failing the run. Closing disposes the context's request context first,
+ * so a route handler still in `route.fetch`, or reading the response it fetched, rejects after the
+ * test has passed, and Vitest fails the run on the unhandled rejection. Every route is dropped with
+ * `ignoreErrors` first, which silences the handlers still in flight. A test whose route handler
+ * fetches closes its context through this.
+ */
+export async function closeContext(context: BrowserContext): Promise<void> {
+  await Promise.all([
+    context.unrouteAll({ behavior: "ignoreErrors" }),
+    ...context.pages().map(async (page) => page.unrouteAll({ behavior: "ignoreErrors" })),
+  ]);
+  await context.close();
 }

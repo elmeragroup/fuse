@@ -65,7 +65,7 @@ function paperBackground(): number[] {
 
 describe("landing OG image", () => {
   it("is a 1200 × 630 PNG on Paper's card background", async () => {
-    const response = await landingImage();
+    const response = landingImage();
     expect(response.headers.get("content-type")).toBe("image/png");
     const png = decodePng(new Uint8Array(await response.arrayBuffer()));
     expect([png.width, png.height]).toEqual([1200, 630]);
@@ -112,8 +112,8 @@ function inkBands(png: ReturnType<typeof decodePng>, background: readonly number
 
 describe("OG card subtitle", () => {
   it("wraps a subtitle with no break opportunity onto two lines inside its 560px column", async () => {
-    const mark = await loadElmeraMark();
-    const response = await ogResponse(createElement(OgCard, { mark, subtitle: "W".repeat(19) }));
+    const mark = loadElmeraMark();
+    const response = ogResponse(createElement(OgCard, { mark, subtitle: "W".repeat(19) }));
     const png = decodePng(new Uint8Array(await response.arrayBuffer()));
     const background = paperBackground();
     // The lockup sits inside the column too, so every row is checked, not only the subtitle's.

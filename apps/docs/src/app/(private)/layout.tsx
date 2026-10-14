@@ -5,6 +5,8 @@ import type { Metadata } from "next";
 import { DocumentRoot } from "../../components/document-root";
 import "../../styles/globals.css";
 
+export const ensureStatic = "navigation";
+
 export const metadata: Metadata = {
   robots: {
     index: false,

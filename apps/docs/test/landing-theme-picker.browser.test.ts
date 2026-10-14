@@ -112,6 +112,35 @@ function announcer(page: Page): Locator {
   return page.getByRole("status").filter({ hasText: /^Theme:/u });
 }
 
+/** A shared address's theme: its slug, and the attributes it must stamp. */
+const SHARED = STEPS.at(-1) ?? OPENING;
+
+/** The first step's theme: its slug, and the attributes it must stamp. */
+const FIRST_PICK = STEPS[0] ?? OPENING;
+
+/**
+ * Records `<html>`'s theme attributes the moment the parser opens `<body>`, before any of its
+ * content exists to paint. The parser runs pending observers before each inline script, so a
+ * script inside the body cannot get in first.
+ */
+function recordThemeAtBody(): void {
+  const observer = new MutationObserver(() => {
+    if (document.querySelector("body") === null) {
+      return;
+    }
+    observer.disconnect();
+    const root = document.documentElement;
+    Object.assign(window, {
+      themeAtBody: {
+        variant: root.getAttribute("data-theme-variant"),
+        brand: root.getAttribute("data-theme-brand"),
+        segment: root.getAttribute("data-theme-segment"),
+      },
+    });
+  });
+  observer.observe(document, { childList: true, subtree: true });
+}
+
 async function abortNextScripts(route: Route): Promise<void> {
   if (route.request().url().includes("/_next/") && route.request().resourceType() === "script") {
     await route.abort();
@@ -183,31 +212,38 @@ describe("landing theme picker", () => {
     await page.context().close();
   });
 
-  it("paints a fresh load of a theme's URL in that theme, before and after the app hydrates", async () => {
-    const last = STEPS.at(-1) ?? OPENING;
-    const shared = `?theme=${last.slug}`;
+  it.each([
+    { address: `?theme=${SHARED.slug}`, wears: SHARED },
+    { address: `?theme=${SHARED.slug}&theme=${OPENING.slug}`, wears: OPENING },
+    { address: `?theme=${OPENING.slug}&theme=${SHARED.slug}`, wears: OPENING },
+    { address: "?theme=not-a-theme", wears: OPENING },
+  ])(
+    "stamps $address's theme before the body can paint, and keeps it once hydrated",
+    async ({ address, wears }) => {
+      const painted = await openLanding(DESKTOP_VIEWPORT, {
+        search: address,
+        hydrated: false,
+        prepare: async (opening) => {
+          await opening.route("**/*", abortNextScripts);
+          await opening.addInitScript(recordThemeAtBody);
+        },
+      });
+      expect(
+        await painted.evaluate(() => ("themeAtBody" in window ? window.themeAtBody : undefined))
+      ).toEqual(wears.attributes);
+      expect(await shownSide(painted)).toBe(wears.variant);
+      await painted.context().close();
 
-    // Without the app's scripts the page shows only what the server sent and the inline script set.
-    const painted = await openLanding(DESKTOP_VIEWPORT, {
-      search: shared,
-      hydrated: false,
-      prepare: async (opening) => {
-        await opening.route("**/*", abortNextScripts);
-      },
-    });
-    expect(await documentTheme(painted)).toEqual(last.attributes);
-    expect(await shownSide(painted)).toBe(last.variant);
-    await painted.context().close();
-
-    const hydrated = await openLanding(DESKTOP_VIEWPORT, { search: shared });
-    await expect.poll(async () => documentTheme(hydrated)).toEqual(last.attributes);
-    expect(await shownSide(hydrated)).toBe(last.variant);
-    await hydrated.context().close();
-  });
+      const hydrated = await openLanding(DESKTOP_VIEWPORT, { search: address });
+      await settleFrames(hydrated);
+      expect(await documentTheme(hydrated)).toEqual(wears.attributes);
+      expect(await shownSide(hydrated)).toBe(wears.variant);
+      await hydrated.context().close();
+    }
+  );
 
   it("follows the URL's theme through client navigation and Back, without a reload", async () => {
-    const shared = STEPS.at(-1) ?? OPENING;
-    const page = await openLanding(DESKTOP_VIEWPORT, { search: `?theme=${shared.slug}` });
+    const page = await openLanding(DESKTOP_VIEWPORT, { search: `?theme=${SHARED.slug}` });
     // A full load would start a fresh window object and drop the mark.
     await page.evaluate(() => {
       Object.assign(window, { sameDocument: true });
@@ -221,8 +257,8 @@ describe("landing theme picker", () => {
     expect(await trigger(page).getAttribute("aria-label")).toBe("Theme: Elmera · Private · External");
 
     await page.goBack();
-    await expect.poll(() => urlTheme(page)).toBe(shared.slug);
-    await expect.poll(async () => documentTheme(page)).toEqual(shared.attributes);
+    await expect.poll(() => urlTheme(page)).toBe(SHARED.slug);
+    await expect.poll(async () => documentTheme(page)).toEqual(SHARED.attributes);
     expect(await trigger(page).getAttribute("aria-label")).toBe("Theme: Fjordkraft · Company · Internal");
 
     expect(await sameDocument()).toBe(true);
@@ -230,16 +266,15 @@ describe("landing theme picker", () => {
   });
 
   it("treats a repeated theme in client navigation as a fresh load of that address does", async () => {
-    const shared = STEPS.at(-1) ?? OPENING;
-    const repeated = `?theme=${shared.slug}&theme=${(STEPS[0] ?? OPENING).slug}`;
+    const repeated = `?theme=${SHARED.slug}&theme=${FIRST_PICK.slug}`;
     // The oracle: the server's reading of the address on a fresh load.
     const fresh = await openLanding(DESKTOP_VIEWPORT, { search: repeated });
     const served = await documentTheme(fresh);
     expect(served).toEqual(OPENING.attributes);
     await fresh.context().close();
 
-    const page = await openLanding(DESKTOP_VIEWPORT, { search: `?theme=${shared.slug}` });
-    await expect.poll(async () => documentTheme(page)).toEqual(shared.attributes);
+    const page = await openLanding(DESKTOP_VIEWPORT, { search: `?theme=${SHARED.slug}` });
+    await expect.poll(async () => documentTheme(page)).toEqual(SHARED.attributes);
     // A second value that leaves the first unchanged, written through Next's patched history.
     await page.evaluate((search) => {
       window.history.pushState(null, "", `/${search}`);
@@ -256,17 +291,16 @@ describe("landing theme picker", () => {
   it("lands the home link on the opening theme after a pick on the plain address, and Back and Forward on each", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
     // The route names the opening theme both before and after the pick; only the address changed.
-    const step = STEPS[0] ?? OPENING;
-    await choose(page, step);
-    await expect.poll(() => urlTheme(page)).toBe(step.slug);
+    await choose(page, FIRST_PICK);
+    await expect.poll(() => urlTheme(page)).toBe(FIRST_PICK.slug);
     await nav(page).getByRole("link", { name: "Fuse" }).click();
     await expect.poll(() => urlTheme(page)).toBeNull();
     await expect.poll(async () => documentTheme(page)).toEqual(OPENING.attributes);
 
     // Back returns to the entry the pick rewrote, so it wears the picked theme again.
     await page.goBack();
-    await expect.poll(() => urlTheme(page)).toBe(step.slug);
-    await expect.poll(async () => documentTheme(page)).toEqual(step.attributes);
+    await expect.poll(() => urlTheme(page)).toBe(FIRST_PICK.slug);
+    await expect.poll(async () => documentTheme(page)).toEqual(FIRST_PICK.attributes);
     expect(await trigger(page).getAttribute("aria-label")).toBe("Theme: Fjordkraft · Private · External");
 
     await page.goForward();
@@ -278,8 +312,7 @@ describe("landing theme picker", () => {
 
   it("keeps announcing while the phone's Sheet hides the rest of the page", async () => {
     const page = await openLanding(PHONE_VIEWPORT);
-    const step = STEPS[0] ?? OPENING;
-    await choose(page, step);
+    await choose(page, FIRST_PICK);
     // The Sheet stays open: the region must stay out of its modal hiding.
     expect(await pickerDialog(page).isVisible()).toBe(true);
     // DOM audit: a region under `aria-hidden` has no role a query could reach, so the check reads the attribute.
@@ -299,8 +332,8 @@ describe("landing theme picker", () => {
       await root.getByRole("group", { name: axis }).waitFor();
     }
 
-    await choose(page, STEPS.at(-1) ?? OPENING);
-    await expect.poll(async () => documentTheme(page)).toEqual(STEPS.at(-1)?.attributes);
+    await choose(page, SHARED);
+    await expect.poll(async () => documentTheme(page)).toEqual(SHARED.attributes);
     await page.context().close();
   });
 

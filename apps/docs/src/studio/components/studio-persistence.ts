@@ -98,6 +98,10 @@ export function useStudioPersistence(
   dispatch: (action: EditAction) => void
 ): void {
   const restored = useRef(false);
+  // Set from the restore's dispatch until the restored document commits. Until then `document` is
+  // `opening` itself, which a write would record in place of the restored one, and on a slow
+  // device that commit can land after the write delay.
+  const restoring = useRef(false);
   const refused = useRef(false);
   // The share text the address carries: the last text written, or the one the session opened from.
   const shared = useRef<string | undefined>(undefined);
@@ -131,6 +135,7 @@ export function useStudioPersistence(
     }
     if (loaded !== undefined) {
       dispatch({ type: "replace", document: loaded });
+      restoring.current = true;
     }
     // An opening hash stays on the address until the first write; one that could not be read goes.
     shared.current = hash !== "" && loaded !== undefined ? hash : undefined;
@@ -140,6 +145,12 @@ export function useStudioPersistence(
   useEffect(() => {
     if (!restored.current) {
       return undefined;
+    }
+    if (restoring.current) {
+      if (document === opening) {
+        return undefined;
+      }
+      restoring.current = false;
     }
     const timer = window.setTimeout(() => {
       const encoded = isPristine(document, opening) ? undefined : encodeShare(document);

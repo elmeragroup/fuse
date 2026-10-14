@@ -1,7 +1,6 @@
 import { defineConfig } from "vitest/config";
 
 const shared = {
-  globalSetup: ["test/global-setup.ts"],
   testTimeout: 30_000,
   hookTimeout: 60_000,
 };
@@ -18,13 +17,17 @@ export default defineConfig({
           name: "unit",
           include: ["test/**/*.test.ts"],
           exclude: ["**/*.browser.test.*"],
+          globalSetup: ["test/global-setup.ts"],
           ...shared,
+          // Projects with different worker limits need groups of their own for one unfiltered run.
+          sequence: { groupOrder: 0 },
         },
       },
       {
         test: {
           name: "browser",
           include: ["test/**/*.browser.test.ts"],
+          globalSetup: ["test/global-setup-e2e.ts"],
           ...shared,
           // Two browser files run at once against the one `next start` server global setup
           // starts. Each file launches its own Chromium and each test opens its own context, so
@@ -32,6 +35,7 @@ export default defineConfig({
           // only after the same check.
           fileParallelism: true,
           maxWorkers: 2,
+          sequence: { groupOrder: 1 },
         },
       },
     ],

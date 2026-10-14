@@ -357,6 +357,18 @@ that opens every overlay on a side before flipping the window.
 
 - When Base UI offers suitable date primitives, migrate the interim React Aria tier.
   Removing its public subpaths is a major release; other interim atoms can move earlier.
+- Under Cache Components, the interim React Aria Calendar, RangeCalendar, DateField and
+  DatePicker cannot prerender: React Aria and React Stately read the clock as they render
+  (`useDateSegment` calls `new Date()`; `useDateFieldState` and `useCalendarState` call
+  `@internationalized/date`'s `now()` and `today()`). A host wraps them in Suspense, and they
+  render on the client. Decide whether Fuse's wrappers own that boundary or document it in their
+  JSDoc. The docs app's boundaries are in `demo-frame.tsx` and the studio's `checkout-screen.tsx`.
+- The studio's address writes can cancel a client navigation. The debounced write (300 ms after
+  an edit) and the link-click follow loop in `apps/docs/src/studio/components/studio-persistence.ts`
+  call `replaceState` on the old pathname, and Next's app router treats that as an external history
+  change and drops the pending navigation. An edit followed by a page link within the delay can
+  leave the visitor on the old page. The opening restore no longer races. Coordinate address
+  writes with the router's navigation. Found by source inspection; not reproduced.
 - When a product commits to charts, ship the deferred chart entry and decide its optional peer.
 - When a product needs density preferences, define persistence and pre-paint stamping in the host.
 - When a theme should choose its own density, rather than the host stamping it on the document

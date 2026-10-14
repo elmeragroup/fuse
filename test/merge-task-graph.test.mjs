@@ -128,7 +128,8 @@ it("splits the ci:checks aggregate exactly between the checks and browser jobs",
 it("the local check gate is ci:checks without the e2e and packed-artifact tier", () => {
   // Unit under test: turbo.json's `check` aggregate. Oracle: the resolved ci:checks graph minus
   // the tasks this list names, which CI alone runs. Fuse's no-op aggregate anchors are not gates.
-  const ciOnly = ["test:e2e", "test:packed-consumer", "package:check"];
+  // `build:e2e` is the build only `docs#test:e2e` serves (apps/docs/turbo.json).
+  const ciOnly = ["test:e2e", "build:e2e", "test:packed-consumer", "package:check"];
   const gates = (/** @type {string} */ aggregate) =>
     new Set(executableTaskIds(resolvedTasks(["run", aggregate])).filter((id) => !AGGREGATE_ANCHORS.has(id)));
   const full = gates("ci:checks");

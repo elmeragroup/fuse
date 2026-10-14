@@ -1,7 +1,5 @@
 import { FIGMA_THEME_FILES, FIGMA_THEME_INDEX } from "../../../../../generated/theme-catalog-figma";
 
-export const dynamic = "force-static";
-
 export function generateStaticParams(): readonly { slug: string }[] {
   return FIGMA_THEME_INDEX.files.map((file) => ({ slug: file.slug }));
 }

@@ -10,8 +10,8 @@ import { toPartView } from "../src/lib/api-view";
 import type { ApiPart } from "../src/lib/docs-model";
 import { API_REGEN_COMMAND } from "../src/lib/docs-model";
 
-async function partView(slug: string, name: string): Promise<ApiPartView> {
-  const api = await readComponentApi(slug);
+function partView(slug: string, name: string): ApiPartView {
+  const api = readComponentApi(slug);
   const part = api.parts.find((candidate) => candidate.name === name);
   if (part === undefined) {
     throw new Error(`${slug} has no part named ${name}`);
@@ -20,15 +20,15 @@ async function partView(slug: string, name: string): Promise<ApiPartView> {
 }
 
 describe("committed api.json read at render time", () => {
-  it("fails the build naming the file and the command when the artifact is missing", async () => {
-    await expect(readComponentApi("no-such-component")).rejects.toThrow(
+  it("fails the build naming the file and the command when the artifact is missing", () => {
+    expect(() => readComponentApi("no-such-component")).toThrow(
       "apps/docs/src/app/(docs)/components/no-such-component/api.json does not exist"
     );
-    await expect(readComponentApi("no-such-component")).rejects.toThrow(API_REGEN_COMMAND);
+    expect(() => readComponentApi("no-such-component")).toThrow(API_REGEN_COMMAND);
   });
 
-  it("includes selected Base UI primitive props without exposing React or DOM props", async () => {
-    const api = await readComponentApi("button");
+  it("includes selected Base UI primitive props without exposing React or DOM props", () => {
+    const api = readComponentApi("button");
     const button = api.parts.find((part) => part.name === "Button");
     if (button === undefined) throw new Error("button has no Button API part");
 
@@ -56,8 +56,8 @@ describe("committed api.json read at render time", () => {
 });
 
 describe("reference row presentation", () => {
-  it("keeps library and dependency rows in distinct groups", async () => {
-    const view = await partView("button", "Button");
+  it("keeps library and dependency rows in distinct groups", () => {
+    const view = partView("button", "Button");
     expect(view.propGroups.map(({ key, label }) => ({ key, label }))).toEqual([
       { key: "library", label: null },
       { key: "@base-ui/react", label: "Base UI primitive props" },
@@ -68,8 +68,8 @@ describe("reference row presentation", () => {
     expect(view.propGroups[1]?.props.map((prop) => prop.name)).not.toContain("onIntent");
   });
 
-  it("persists a country union beyond the compiler's diagnostic truncation limit", async () => {
-    const api = await readComponentApi("phone-number-field");
+  it("persists a country union beyond the compiler's diagnostic truncation limit", () => {
+    const api = readComponentApi("phone-number-field");
     const phone = api.parts.find((part) => part.name === "PhoneNumberField");
     const country = phone?.props.find((prop) => prop.name === "defaultCountryCode");
     expect(country).toBeDefined();
@@ -78,7 +78,7 @@ describe("reference row presentation", () => {
     expect(country?.type).toContain('"NO"');
     expect(country?.type).toContain('"SE"');
     expect(country?.type).toContain('"ZW"');
-    const view = await partView("phone-number-field", "PhoneNumberField");
+    const view = partView("phone-number-field", "PhoneNumberField");
     const row = view.propGroups
       .flatMap((group) => group.props)
       .find((prop) => prop.name === "defaultCountryCode");
@@ -91,8 +91,8 @@ describe("reference row presentation", () => {
     expect(markdown).toContain('"ZW"');
   });
 
-  it("closes a row on its printed type when short, on a collapsed kind when long, and expands to the full signature", async () => {
-    const part = await partView("button", "Button");
+  it("closes a row on its printed type when short, on a collapsed kind when long, and expands to the full signature", () => {
+    const part = partView("button", "Button");
     const props = part.propGroups.flatMap((group) => group.props);
     expect(props.find((prop) => prop.name === "isPending")?.closedType).toBe("boolean | undefined");
     const onIntent = props.find((prop) => prop.name === "onIntent");
@@ -106,9 +106,9 @@ describe("reference row presentation", () => {
     });
   });
 
-  it("reports RSC status per part, in the words a reader acts on", async () => {
-    expect((await partView("button", "Button")).rscLabel).toBe('"use client"');
-    expect((await partView("card", "Card.Root")).rscLabel).toBe("server-safe");
+  it("reports RSC status per part, in the words a reader acts on", () => {
+    expect(partView("button", "Button").rscLabel).toBe('"use client"');
+    expect(partView("card", "Card.Root").rscLabel).toBe("server-safe");
   });
 
   it("composes one label per row so a summary is not announced cell by cell", () => {

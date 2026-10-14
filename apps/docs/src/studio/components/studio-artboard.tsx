@@ -12,6 +12,7 @@ import type { Density, ThemeInput } from "@elmeragroup/fuse/theme";
 import { artboardStyle } from "../lib/artboard-style";
 import type { CustomProperties } from "../lib/artboard-style";
 import { metricStyle } from "../lib/density-metrics";
+import { artboardById } from "../lib/documents";
 import type { ArtboardScheme, ArtboardSpec } from "../lib/documents";
 import { metricOverridesFor, overridesFor } from "../lib/edits";
 import type { StudioOverrides } from "../lib/edits";
@@ -129,7 +130,7 @@ export function useArtboardScopeOf(spec: ArtboardSpec): ArtboardScope {
 }
 
 export type StudioArtboardProps = {
-  /** The artboard's id in the page's document (`src/studio/lib/documents.ts`). */
+  /** The artboard's id in its page's document (`src/studio/lib/documents.ts`). */
   id: string;
   children: ReactNode;
 };
@@ -146,11 +147,11 @@ export type StudioArtboardProps = {
  * scope through {@link useArtboardScope}.
  */
 export function StudioArtboard({ id, children }: StudioArtboardProps): ReactElement {
-  const { artboards, selectedId, hoveredId, select } = useStudio();
+  const { selectedId, hoveredId, select } = useStudio();
   const { registerArtboard } = useViewportCommands();
-  const spec = artboards.find((artboard) => artboard.id === id);
+  const spec = artboardById(id);
   if (spec === undefined) {
-    throw new Error(`${id} is not an artboard of this studio page (src/studio/lib/documents.ts)`);
+    throw new Error(`${id} is not a studio artboard (src/studio/lib/documents.ts)`);
   }
   const scope = useArtboardScopeOf(spec);
   const { scheme, density } = scope;

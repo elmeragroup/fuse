@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { docsBaseUrl, fetchText, TEST_RUNTIME_ORIGIN } from "./docs-server";
+import { docsBaseUrl, fetchText } from "./docs-server";
 import { pngSize } from "./png";
 
 /**
- * The origin prerendered pages carry. They bake in the build's origin, and the builds this suite
+ * The origin every page carries, the landing's shared addresses included. Pages bake in the
+ * build's origin, never the `DOCS_ORIGIN` the server runs with, and the builds this suite
  * runs against (turbo's `docs#build` in CI, `next build` locally) leave `DOCS_ORIGIN` unset, so
  * the documented fallback applies. Only the Docker image build sets it. A run against a build made
  * with `DOCS_ORIGIN` or `PORT` set fails here, by design.
@@ -23,8 +24,8 @@ function metaContent(html: string, key: string): string {
 
 /**
  * Reads a page's card image URL, checks the X card agrees with it, and returns it whole. The
- * caller fetches the image by its path from the server under test, since neither expected origin
- * resolves to that server.
+ * caller fetches the image by its path from the server under test, since the expected origin does
+ * not resolve to that server.
  */
 async function cardImage(pathname: string): Promise<string> {
   const html = await fetchText(pathname);
@@ -36,14 +37,13 @@ async function cardImage(pathname: string): Promise<string> {
 }
 
 describe("Open Graph cards", () => {
-  for (const [pathname, origin, imagePath] of [
-    ["/", TEST_RUNTIME_ORIGIN, "/og/landing"],
-    ["/?theme=external-fkas-private", TEST_RUNTIME_ORIGIN, "/og/landing"],
-    ["/handbook/theme-matrix", BUILD_FALLBACK_ORIGIN, "/og/docs/handbook/theme-matrix"],
-    ["/components/button", BUILD_FALLBACK_ORIGIN, "/og/components/button"],
+  for (const [pathname, imagePath] of [
+    ["/", "/og/landing"],
+    ["/handbook/theme-matrix", "/og/docs/handbook/theme-matrix"],
+    ["/components/button", "/og/components/button"],
   ] as const) {
-    it(`${pathname} names ${origin}${imagePath}, a 1200 × 630 PNG`, async () => {
-      expect(await cardImage(pathname)).toBe(`${origin}${imagePath}`);
+    it(`${pathname} names ${BUILD_FALLBACK_ORIGIN}${imagePath}, a 1200 × 630 PNG`, async () => {
+      expect(await cardImage(pathname)).toBe(`${BUILD_FALLBACK_ORIGIN}${imagePath}`);
       const response = await fetch(new URL(imagePath, docsBaseUrl()));
       expect(response.status).toBe(200);
       expect(response.headers.get("content-type")).toBe("image/png");
@@ -54,11 +54,12 @@ describe("Open Graph cards", () => {
   it("names the same landing image whatever ?theme= says", async () => {
     for (const query of [
       "?theme=internal-fkas-company",
+      "?theme=external-fkas-private",
       "?theme=external-fkab-private",
       "?theme=EXTERNAL-FKAS-PRIVATE",
       "?theme=a&theme=b",
     ]) {
-      expect(await cardImage(`/${query}`), query).toBe(`${TEST_RUNTIME_ORIGIN}/og/landing`);
+      expect(await cardImage(`/${query}`), query).toBe(`${BUILD_FALLBACK_ORIGIN}/og/landing`);
     }
   });
 

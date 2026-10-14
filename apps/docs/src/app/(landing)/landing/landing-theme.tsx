@@ -1,9 +1,19 @@
 "use client";
 
-import { createContext, use, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  use,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import type { ReactElement, ReactNode } from "react";
 
-import { useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { flushSync } from "react-dom";
 
 import * as CssColor from "@elmeragroup/color/css-color";
@@ -19,7 +29,7 @@ import {
 import type { BrandCode, ColorScheme, ThemeInput, ThemeSegment, ThemeVariant } from "@elmeragroup/fuse/theme";
 
 import { DOCUMENT_COLOR_SCHEME, OPENING_THEME } from "../../../lib/theme";
-import { parseThemeQuery, sameTheme, THEME_QUERY } from "./landing-theme-defaults";
+import { parseThemeParam, parseThemeSearch, sameTheme, THEME_QUERY } from "./landing-theme-defaults";
 import { themeAnnouncement } from "./theme-picker/theme-options";
 
 /** Where a re-theme was triggered, so the reveal can grow out of the finger or cursor. */
@@ -86,10 +96,17 @@ function revealUpdate(update: () => void): void {
 }
 
 type LandingThemeProviderProps = {
-  /** The theme the server read from the request's `?theme=`, which the first paint wears. */
-  routeTheme: ThemeInput;
   children: ReactNode;
 };
+
+/**
+ * The theme the route prerenders: the shared address's theme on the route `proxy.ts` rewrites
+ * `/?theme=<slug>` to, or `OPENING_THEME` on `/`.
+ */
+function useRouteTheme(): ThemeInput {
+  const { theme } = useParams<{ theme?: string }>();
+  return parseThemeParam(theme);
+}
 
 /**
  * Owns the landing's theme and colour scheme. It writes only the `data-theme-*` attributes:
@@ -98,22 +115,13 @@ type LandingThemeProviderProps = {
  * reflow the whole page under the visitor's cursor. The hero window's Dashboard is dense on its
  * own demo stage.
  */
-export function LandingThemeProvider({ routeTheme, children }: LandingThemeProviderProps): ReactElement {
-  const [theme, setTheme] = useState<ThemeInput>(routeTheme);
-  // Next keeps client state across a navigation that changes only the query, and Back restores
-  // a picked entry with the page props it was first rendered with. So the landing wears whatever
-  // `?theme=` the address bar moves to, through a link, Back or Forward. A pick's own
-  // `replaceState` moves it to the theme already worn, and remounts nothing. Every value is read,
-  // in the shape Next gives the server's `searchParams`, so a repeated `theme` opens on the
-  // default here as it does on a fresh load. The comparison covers every value, so a second
-  // `theme` added after an unchanged first still counts as a change.
-  const values = useSearchParams().getAll(THEME_QUERY);
-  const query = JSON.stringify(values);
-  const [seenQuery, setSeenQuery] = useState(query);
-  if (seenQuery !== query) {
-    setSeenQuery(query);
-    setTheme(parseThemeQuery(values.length > 1 ? values : values[0]));
-  }
+export function LandingThemeProvider({ children }: LandingThemeProviderProps): ReactElement {
+  const [theme, setTheme] = useState<ThemeInput>(useRouteTheme());
+  const hydrated = useSyncExternalStore(
+    subscribeNever,
+    () => true,
+    () => false
+  );
 
   return (
     <ThemeProvider
@@ -126,9 +134,40 @@ export function LandingThemeProvider({ routeTheme, children }: LandingThemeProvi
         <LandingThemeState theme={theme} setTheme={setTheme}>
           {children}
         </LandingThemeState>
+        {/* The prerender has no address to read, and the route already names its theme, so the
+            reader starts once the page has hydrated. */}
+        {hydrated ? <ThemeQuery onChange={setTheme} /> : null}
       </LocaleProvider>
     </ThemeProvider>
   );
+}
+
+function subscribeNever(): () => void {
+  return () => undefined;
+}
+
+/**
+ * Moves the theme with the address bar. Next keeps client state across a navigation that changes
+ * only the query, and Back restores a picked entry with the page props it was first rendered with.
+ * So the landing wears whatever `?theme=` the address bar moves to, through a link, Back or
+ * Forward. A pick's own `replaceState` moves it to the theme already worn, and remounts nothing.
+ * `parseThemeSearch` reads every value, so a repeated `theme` opens on the default here as it does
+ * on a fresh load. The comparison covers every value, so a second `theme` added after an unchanged
+ * first still counts as a change. A layout effect applies the change before the browser paints the
+ * new address.
+ */
+function ThemeQuery({ onChange }: { onChange: (theme: ThemeInput) => void }): null {
+  const params = useSearchParams();
+  const seenQuery = useRef(JSON.stringify(params.getAll(THEME_QUERY)));
+  useLayoutEffect(() => {
+    const query = JSON.stringify(params.getAll(THEME_QUERY));
+    if (seenQuery.current === query) {
+      return;
+    }
+    seenQuery.current = query;
+    onChange(parseThemeSearch(params));
+  }, [params, onChange]);
+  return null;
 }
 
 type LandingThemeStateProps = {

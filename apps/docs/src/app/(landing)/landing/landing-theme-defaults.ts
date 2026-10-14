@@ -19,15 +19,27 @@ export function sameTheme(left: ThemeInput, right: ThemeInput): boolean {
 }
 
 /**
- * The theme a shared address names, read with Fuse's own slug parser so only a legal theme gets
- * through. A missing, repeated or illegal value opens on `OPENING_THEME`.
+ * The theme a slug names, read with Fuse's own slug parser so only a legal theme gets through. A
+ * missing or illegal slug opens on `OPENING_THEME`.
  *
- * @param value - The raw `theme` search parameter.
+ * @param value - A theme slug, such as the themed route's `theme` param.
  * @returns The theme to render.
  */
-export function parseThemeQuery(value: string | string[] | undefined): ThemeInput {
-  if (value === undefined || Array.isArray(value)) {
+export function parseThemeParam(value: string | undefined): ThemeInput {
+  if (value === undefined) {
     return OPENING_THEME;
   }
   return parseThemeSlug(value) ?? OPENING_THEME;
+}
+
+/**
+ * The theme a shared address names. Exactly one `theme` value parses through Fuse's slug parser;
+ * none, several, or an illegal value opens on `OPENING_THEME`.
+ *
+ * @param params - The address's search parameters.
+ * @returns The theme to render.
+ */
+export function parseThemeSearch(params: URLSearchParams): ThemeInput {
+  const values = params.getAll(THEME_QUERY);
+  return values.length === 1 ? parseThemeParam(values[0]) : OPENING_THEME;
 }

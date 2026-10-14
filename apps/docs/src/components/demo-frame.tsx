@@ -1,9 +1,11 @@
+import { Suspense } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { tv } from "tailwind-variants";
 
 import { readDemoSource } from "../lib/demo-source";
 import type { DocsRouteSection } from "../lib/docs-route-files";
+import { DemoHydrationMarker } from "./demo-hydration-marker";
 import { DemoStage } from "./demo-stage";
 import { DocsCodeBlock } from "./docs-code-block";
 import { DocsSectionHeading } from "./docs-section-heading";
@@ -36,27 +38,37 @@ const { root, card } = demoFrame();
  * deployment-default density in mono, and the source of the very file that rendered the
  * stage.
  *
- * An async server component, so the source region comes from a read of the demo file
+ * A server component, so the source region comes from a read of the demo file
  * during prerendering rather than from generated data threaded through the page.
  * Only the stage and meta row need the preview theme, and they are the client half
  * (`DemoStage`); the shell and the source region — highlighted by the shared
  * `DocsCodeBlock` from the same file the stage renders — stay on the server.
+ *
+ * A demo that reads the clock while it renders cannot prerender: React Aria's date components
+ * build their dates on `new Date()`. The boundary keeps such a demo out of the static HTML, and
+ * the browser renders it on hydration; every other demo prerenders as before. The marker inside
+ * the boundary stamps `data-demo-hydrated` on the frame once the demo is live.
  */
-export async function DemoFrame({
+export function DemoFrame({
   section = "components",
   slug,
   id,
   title,
   file,
   children,
-}: DemoFrameProps): Promise<ReactElement> {
-  const demo = await readDemoSource({ section, slug, file });
+}: DemoFrameProps): ReactElement {
+  const demo = readDemoSource({ section, slug, file });
 
   return (
     <section className={root()} data-demo-frame aria-labelledby={id}>
       <DocsSectionHeading id={id}>{title}</DocsSectionHeading>
       <div className={card()}>
-        <DemoStage sourcePath={demo.sourcePath}>{children}</DemoStage>
+        <DemoStage sourcePath={demo.sourcePath}>
+          <Suspense fallback={null}>
+            {children}
+            <DemoHydrationMarker headingId={id} />
+          </Suspense>
+        </DemoStage>
         <DocsCodeBlock variant="embedded" data-demo-source source={demo.source} />
       </div>
     </section>

@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { BRANDS } from "@elmeragroup/fuse/theme";
 
 import { docsBaseUrl } from "../docs-server";
-import { auditTargets, settleFrames } from "../landing-page";
+import { auditTargets, settleFrames, waitForLandingHydration } from "../landing-page";
 import { launchSuiteBrowser } from "../suite-browser";
 import {
   ARTBOARDS,
@@ -248,6 +248,38 @@ describe("theme studio", () => {
     await page.close();
   });
 
+  it("keeps a visited page current while hidden, and shows it with its input on Back", async () => {
+    const { page, errors } = await openStudio();
+    const field = artboard(page, ARTBOARDS[0]).getByRole("textbox", { name: "Full name" });
+    await field.fill("Kari Nordmann");
+    const pages = layers(page).getByRole("region", { name: "Pages", exact: true });
+    await pages.getByRole("link", { name: "Color", exact: true }).click();
+    await artboard(page, "Role pairs · Light").waitFor({ state: "visible" });
+    await pages.getByRole("link", { name: "Type", exact: true }).click();
+    await page.waitForURL(/\/studio\/type$/u);
+
+    // Next keeps the visited pages mounted in hidden Activity boundaries, and React renders their
+    // updates at idle priority. A base theme picked here reaches the hidden Overview there.
+    await page.getByRole("button", { name: /^Base theme/u }).click();
+    await page.getByRole("menuitemradio", { name: BRANDS.fkas.displayName, exact: true }).click();
+    await page.keyboard.press("Escape");
+    const hidden = canvas(page).getByRole("region", { name: ARTBOARDS[0], exact: true, includeHidden: true });
+    expect(await hidden.isVisible()).toBe(false);
+    await expect.poll(async () => hidden.getAttribute("data-theme-brand")).toBe("fkas");
+
+    await page.goBack();
+    await page.goBack();
+    await page.waitForURL(/\/studio$/u);
+    const frame = await box(canvas(page));
+    for (const name of ARTBOARDS) {
+      await artboard(page, name).waitFor({ state: "visible" });
+      expect(shown(await box(artboard(page, name)), frame), name).toBe(true);
+    }
+    expect(await field.inputValue()).toBe("Kari Nordmann");
+    expect(errors).toEqual([]);
+    await page.close();
+  });
+
   it("truncates a long layer name inside the panel, keeping the whole name as its accessible name", async () => {
     const { page } = await openStudio();
     const row = layers(page).getByRole("button", { name: ARTBOARDS[0], exact: true });
@@ -375,7 +407,7 @@ describe("theme studio", () => {
     expect(await header.getAttribute("href")).toBe("/studio");
 
     await page.goto(`${docsBaseUrl()}/`, { waitUntil: "load" });
-    await page.locator("next-route-announcer").waitFor({ state: "attached" });
+    await waitForLandingHydration(page);
     await page
       .getByRole("navigation", { name: "Primary" })
       .getByRole("button", { name: "Docs", exact: true })

@@ -7,6 +7,8 @@ export type WebsiteLayoutProps = {
   children: ReactNode;
 };
 
+export const ensureStatic = "navigation";
+
 export default function WebsiteLayout({ children }: WebsiteLayoutProps): ReactElement {
   return (
     <DocumentRoot>

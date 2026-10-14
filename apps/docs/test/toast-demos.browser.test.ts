@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { launchSuiteBrowser, openDemo } from "./demo-page";
+import { launchSuiteBrowser, openDemo, waitForDemoHydration } from "./demo-page";
 
 const browser = launchSuiteBrowser();
 
@@ -10,8 +10,6 @@ describe("Toast demos", () => {
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
     const promise = await openDemo(page, "toast", "Promise");
-    // The portal mounts after hydration; wait for the demo-owned notification surface before dispatching.
-    await promise.locator('[data-slot="toast-viewport"]').waitFor({ state: "attached" });
     await promise.getByRole("button", { name: "Save (error)" }).click();
     // Base UI announces high-priority toasts through a live region and hides their visual root until focused.
     await promise
@@ -29,7 +27,7 @@ describe("Toast demos", () => {
     page.on("pageerror", (error) => errors.push(error.message));
     const statuses = await openDemo(page, "toast", "Statuses");
     const action = page.getByRole("region", { name: "Action", exact: true });
-    await action.waitFor();
+    await waitForDemoHydration(action);
     await statuses.getByRole("button", { name: "Info", exact: true }).click();
     await action.getByRole("button", { name: "Delete invoice" }).click();
     await statuses.getByRole("heading", { name: "Syncing", exact: true, includeHidden: true }).waitFor();
@@ -55,7 +53,6 @@ describe("Toast demos", () => {
     page.on("pageerror", (error) => errors.push(error.message));
     const placement = await openDemo(page, "toast", "Placement");
     const viewport = placement.locator('[data-slot="toast-viewport"]');
-    await viewport.waitFor({ state: "attached" });
 
     // Each button sets its placement and raises a toast titled with the button's name.
     for (const title of [

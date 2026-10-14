@@ -8,13 +8,6 @@ import { ogResponse } from "../../../../og/og-response";
 import { STUDIO_PAGES } from "../../../../studio/registration";
 
 /**
- * The authored docs pages and the studio pages are a closed set; any other path answers 404.
- * `next build` prerenders every image in it, so a card that throws fails the build rather than
- * the first share.
- */
-export const dynamicParams = false;
-
-/**
  * The handler's route context, written here rather than through Next's generated `RouteContext`,
  * which exists only after `next typegen` and so is an error type where lint runs on a fresh
  * checkout. The optional catch-all is absent for the bare `/og/docs`.
@@ -44,19 +37,26 @@ function docsSubtitle(href: string): string | undefined {
   );
 }
 
-/** One image per authored docs page and studio page; the docs index draws at the bare `/og/docs`. */
+/**
+ * One image per authored docs page and studio page; the docs index draws at the bare `/og/docs`.
+ * `next build` prerenders every image in it, so a card that throws fails the build rather than the
+ * first share.
+ */
 export function generateStaticParams(): { path: string[] }[] {
   return [HOME_PAGE, ...STATIC_PAGES, ...STUDIO_PAGES].map((page) => ({
     path: docsSegmentsFromHref(page.href),
   }));
 }
 
-/** An authored docs page's Open Graph image: the card with the page's label. */
+/**
+ * An authored docs page's Open Graph image: the card with the page's label. The authored docs and
+ * studio pages are a closed set, so a path outside it answers 404 instead of rendering on request.
+ */
 export async function GET(_request: Request, { params }: DocsImageContext): Promise<Response> {
   const { path = [] } = await params;
   const subtitle = docsSubtitle(docsHrefFromSegments(path));
   if (subtitle === undefined) {
     notFound();
   }
-  return await ogResponse(<OgCard mark={await loadElmeraMark()} subtitle={subtitle} />);
+  return ogResponse(<OgCard mark={loadElmeraMark()} subtitle={subtitle} />);
 }

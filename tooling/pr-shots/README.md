@@ -51,7 +51,7 @@ A source is one of three things.
 - `prod` is `https://fuse.elmeragroup.no`, which deploys on every merge to main.
 - `local` runs `next dev` for `apps/docs` from this checkout on a free port and stops it when the
   run ends.
-- A URL, such as `http://127.0.0.1:3000`, reuses a server that is already running. The run keeps
+- A URL, such as `http://localhost:3000`, reuses a server that is already running. The run keeps
   only its origin.
 
 When the route answers 404 on the before source, the component is not deployed yet. The run says

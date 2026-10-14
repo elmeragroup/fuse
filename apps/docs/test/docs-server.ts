@@ -1,8 +1,9 @@
 import { spawn } from "node:child_process";
 import type { ChildProcess } from "node:child_process";
+import { rm } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { expect } from "vitest";
+import { expect, inject } from "vitest";
 
 import { reservePort } from "./tcp-port";
 
@@ -10,11 +11,21 @@ const docsRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const nextBin = path.join(docsRoot, "node_modules/next/dist/bin/next");
 
 /**
- * The origin the suite's server reads as `DOCS_ORIGIN` at runtime, which the landing's card URLs
- * must carry. It is a reserved test host that resolves nowhere, so a card can only name it if the
- * server took it from the environment.
+ * The build the suite's server serves: the testing build with `testingApi`, else the production
+ * build. `next start` inherits this process's environment, so it reads `distDir` from
+ * `next.config.ts` the same way.
  */
-export const TEST_RUNTIME_ORIGIN = "https://og.fuse.test";
+export function docsBuildDir(testingApi = false): string {
+  // oxlint-disable-next-line turbo/no-undeclared-env-vars -- mirrors `distDir` in `next.config.ts`; only `pnpm shots` sets it, outside turbo
+  return path.join(docsRoot, process.env.DOCS_DIST_DIR ?? (testingApi ? ".cache/next-e2e" : ".next"));
+}
+
+/**
+ * The origin the suite's server reads as `DOCS_ORIGIN` at runtime. Every page's card URL
+ * prerenders with the build's origin, so none may carry this one. It is a reserved test host that
+ * resolves nowhere, so a card can only name it if the server took it from the environment.
+ */
+const TEST_RUNTIME_ORIGIN = "https://og.fuse.test";
 
 export type DocsServer = {
   url: string;
@@ -43,12 +54,24 @@ async function waitForServer(url: string, child: ChildProcess): Promise<void> {
   throw new Error(`docs production server did not become ready at ${url}`);
 }
 
-export async function startDocsProductionServer(): Promise<DocsServer> {
+/**
+ * Starts `next start` on a free port.
+ *
+ * @param testingApi - Serve `docs#build:e2e`, the build with Next's Instant Navigation testing API,
+ * instead of the production build in `.next`. `next.config.ts` picks that build's directory from
+ * the same variable its build set.
+ */
+export async function startDocsProductionServer({ testingApi = false } = {}): Promise<DocsServer> {
   const port = await reservePort();
-  const url = `http://127.0.0.1:${String(port)}`;
+  // Not `127.0.0.1`: see the loopback note in `src/proxy.ts`.
+  const url = `http://localhost:${String(port)}`;
+  // `next start` writes request-time route cache entries into the build. A turbo cache hit
+  // restores a build over the directory and keeps the entries the last server wrote, which would
+  // then serve the previous build's pages.
+  await rm(path.join(docsBuildDir(testingApi), "server/route-cache"), { recursive: true, force: true });
   const child = spawn(
     process.execPath,
-    [nextBin, "start", "--hostname", "127.0.0.1", "--port", String(port)],
+    [nextBin, "start", "--hostname", "localhost", "--port", String(port)],
     {
       cwd: docsRoot,
       env: {
@@ -56,6 +79,7 @@ export async function startDocsProductionServer(): Promise<DocsServer> {
         NODE_ENV: "production",
         PORT: String(port),
         DOCS_ORIGIN: TEST_RUNTIME_ORIGIN,
+        DOCS_TESTING_API: testingApi ? "1" : "0",
       },
       stdio: ["ignore", "pipe", "pipe"],
     }
@@ -71,8 +95,11 @@ export async function startDocsProductionServer(): Promise<DocsServer> {
   } catch (error) {
     child.kill("SIGKILL");
     const stderr = Buffer.concat(stderrChunks).toString("utf8");
+    const build = testingApi
+      ? "pnpm turbo run build:e2e --filter docs"
+      : "pnpm turbo run build --filter docs";
     throw new Error(
-      `${error instanceof Error ? error.message : "docs production server failed to start"}${
+      `${error instanceof Error ? error.message : "docs production server failed to start"} (build it with \`${build}\`)${
         stderr === "" ? "" : `\n${stderr}`
       }`
     );
@@ -99,12 +126,9 @@ export async function startDocsProductionServer(): Promise<DocsServer> {
   };
 }
 
+/** The origin of the server the running project's globalSetup started. */
 export function docsBaseUrl(): string {
-  const url = process.env.DOCS_BASE_URL;
-  if (url === undefined || url === "") {
-    throw new Error("DOCS_BASE_URL is missing. Vitest globalSetup must start the docs production server.");
-  }
-  return url;
+  return inject("docsBaseUrl");
 }
 
 /**

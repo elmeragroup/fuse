@@ -75,9 +75,7 @@ export function launchLandingSuite({
       // The hero window's site has a heading of its own, so the wait names the landing's.
       await page.getByRole("heading", { level: 1, name: /^One system/u }).waitFor();
       if (hydrated) {
-        // DOM audit: Next's router mounts its announcer once the page has hydrated, and the
-        // announcer has no accessible name to query.
-        await page.locator("next-route-announcer").waitFor({ state: "attached" });
+        await waitForLandingHydration(page);
         // A server-rendered Dashboard's toast viewport portals into its theme scope once the
         // scope has mounted, so the region shows only after the Dashboard has hydrated. The
         // landing opens on External without a Dashboard, which has nothing to wait for.
@@ -89,6 +87,25 @@ export function launchLandingSuite({
       return page;
     },
   };
+}
+
+/**
+ * Waits until the landing has hydrated. The landing layout renders the page inside a Suspense
+ * boundary, which hydrates in a pass of its own after the router's, so Next's route announcer
+ * can mount while the landing is still inert: measured at 6x CPU throttling, the landing took
+ * 430-800ms longer. The layout's `theme-color` pair names one colour per scheme, and the
+ * landing's status-bar effect points both tags at the page's background. That effect belongs to
+ * the landing's theme provider, and a parent's effects run after its children's, so once the tags
+ * agree every handler the landing attaches on hydration, such as the theme picker's shortcut, is
+ * live.
+ */
+export async function waitForLandingHydration(page: Page): Promise<void> {
+  await page.waitForFunction(() => {
+    const colors = [...document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')].map(
+      (meta) => meta.content
+    );
+    return colors.length > 1 && new Set(colors).size === 1;
+  });
 }
 
 /** Script chunks a test holds back, and the release that lets them through. */
@@ -103,7 +120,8 @@ export type HeldChunks = {
  * Holds back every script chunk whose code contains `marker` until `release`, so a test sees the
  * page while one part's code is still on its way. A marker is a string only that part's code
  * holds, such as a label it renders, or a pattern only it matches. Call it before navigation, as
- * `prepare` does.
+ * `prepare` does. The hold fetches every chunk itself, so close the page's context with
+ * `closeContext` (suite-browser.ts).
  */
 export async function holdChunks(page: Page, marker: string | RegExp): Promise<HeldChunks> {
   const gate = Promise.withResolvers<undefined>();

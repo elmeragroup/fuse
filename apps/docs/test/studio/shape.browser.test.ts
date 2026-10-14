@@ -2,7 +2,7 @@ import type { Locator, Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
 import { settleFrames } from "../landing-page";
-import { launchSuiteBrowser } from "../suite-browser";
+import { closeContext, launchSuiteBrowser } from "../suite-browser";
 import {
   CORNERS_PAGE,
   artboard,
@@ -523,7 +523,7 @@ describe("the studio's Shape page", () => {
       // The aborted chunk request logs a console error; nothing else may.
       expect(errors.filter((error) => !error.includes("Failed to load resource"))).toEqual([]);
     } finally {
-      await context.close();
+      await closeContext(context);
     }
   });
 

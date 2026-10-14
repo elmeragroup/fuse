@@ -1,7 +1,7 @@
 import type { Page } from "playwright";
 import { expect, it } from "vitest";
 
-import { launchSuiteBrowser, readThemeAttributes } from "./demo-page";
+import { launchSuiteBrowser, readThemeAttributes, waitForDocsShellHydration } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
 
 const browser = launchSuiteBrowser();
@@ -113,7 +113,8 @@ it.each([
 
 it("keeps search overlays in the document's dark palette", async () => {
   const page = await browser().newPage({ colorScheme: "dark", reducedMotion: "reduce" });
-  await page.goto(`${docsBaseUrl()}/components/button`, { waitUntil: "networkidle" });
+  await page.goto(`${docsBaseUrl()}/components/button`, { waitUntil: "domcontentloaded" });
+  await waitForDocsShellHydration(page);
   await page.getByRole("button", { name: "Search ⌘K", exact: true }).click();
   await page.getByRole("dialog").waitFor();
   await page.evaluate(() =>
