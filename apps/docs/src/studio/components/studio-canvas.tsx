@@ -20,7 +20,7 @@ import type { Point } from "../lib/viewport";
 import { ChromeScope } from "./chrome-scope";
 import { CornerXrayOverlay } from "./corner-xray";
 import { PartOutline, usePartSelection } from "./studio-part-selection";
-import { CANVAS_ID, regionProps } from "./studio-regions";
+import { CANVAS_ID, INSPECTOR_ID, regionProps } from "./studio-regions";
 import { isOverlayShortcut, OVERLAYS } from "./studio-shortcuts";
 import { useStudio } from "./studio-state";
 import { StudioToolbar } from "./studio-toolbar";
@@ -326,8 +326,9 @@ export function StudioCanvas({ children }: { children: ReactNode }): ReactElemen
       // Escape steps back one level. It drops a picked part wherever focus is, text fields
       // included, and keeps the part's artboard selected. With no part picked, it clears the
       // selection from a control, such as the toolbar's "Select part" or an artboard button a key
-      // picked, while a text field keeps the key. An open popup that took the key to close
-      // itself, or that holds focus, keeps it.
+      // picked, while a text field keeps the key. From an inspector control, focus moves to the
+      // inspector, as clearing the selection swaps the Artboard section out from under it. An open
+      // popup that took the key to close itself, or that holds focus, keeps it.
       if (event.key === "Escape") {
         if (event.defaultPrevented || inOverlay(event.target)) {
           return;
@@ -335,6 +336,9 @@ export function StudioCanvas({ children }: { children: ReactNode }): ReactElemen
         if (part !== undefined) {
           clearPart();
         } else if (!isTypingTarget(event.target, OVERLAYS)) {
+          if (event.target instanceof Element && event.target.closest(`#${INSPECTOR_ID}`) !== null) {
+            document.getElementById(INSPECTOR_ID)?.focus();
+          }
           select(undefined);
         }
         return;

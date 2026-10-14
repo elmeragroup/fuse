@@ -5,6 +5,7 @@ import {
   memo,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -20,6 +21,7 @@ import { Select } from "@elmeragroup/fuse/select";
 import { Toolbar } from "@elmeragroup/fuse/toolbar";
 
 import { STUDIO_SLOT_TOKENS } from "../../../generated/studio-slot-tokens";
+import { isTypingTarget } from "../../../lib/typing-target";
 import type { ArtboardSpec } from "../../lib/documents";
 import { DENSITY_LABELS } from "../../lib/labels";
 import { partTokens } from "../../lib/slot-tokens";
@@ -40,6 +42,7 @@ import { useDesktop } from "../studio-desktop";
 import { usePartSelection } from "../studio-part-selection";
 import type { PickedPart } from "../studio-part-selection";
 import { regionProps } from "../studio-regions";
+import { OVERLAYS } from "../studio-shortcuts";
 import { useStudio } from "../studio-state";
 import { useViewportCommands, useViewportState } from "../studio-viewport";
 import { DensityKnobs, ThemeMenu, TokenMenus } from "./theme-menus";
@@ -251,14 +254,14 @@ const ThemeBar = memo(function ThemeBar({
  * wears the chrome's theme. It edits theme tokens, as the inspector does, through the same edit
  * session. While its anchor is out of the canvas, the layer hides with every menu in it.
  *
- * The selection decides whether it shows, so no dismissal closes it on its own. Escape inside it
- * steps back once a menu inside it has closed: from a part to its artboard, then from the artboard
- * to no selection, handing focus to the canvas. Opening moves no focus.
+ * The selection decides whether it shows, so no dismissal closes it on its own. Escape inside it,
+ * once a menu inside it has closed, reaches the canvas, which steps back; the bar only hands focus
+ * to the canvas when that step back is about to close it. Opening moves no focus.
  */
 function FloatingToolbar(): ReactElement {
-  const { artboards, selectedId, select, toolbarShown } = useStudio();
-  const { part, clear: clearPart } = usePartSelection();
-  const { artboardElement, canvas, answerFrame } = useViewportCommands();
+  const { artboards, selectedId, toolbarShown } = useStudio();
+  const { part } = usePartSelection();
+  const { artboardElement, canvas, answerFrame, attachPinnedBar } = useViewportCommands();
   const { frameRequest } = useViewportState();
   const artboard = artboards.find((each) => each.id === selectedId);
   const board = artboard === undefined ? undefined : artboardElement(artboard.id);
@@ -316,21 +319,19 @@ function FloatingToolbar(): ReactElement {
   }, [canvas]);
   const anchorHidden = useAnchorHidden(popup);
   const open = toolbarShown && target !== undefined && anchor !== undefined;
-  // Each frame of an artboard gets one answer, on the commit after it (`zoomToArtboard`): the
-  // room the artboard's bar needs above it when the bar shows over that artboard, and otherwise
-  // that it shows none there, hidden, on a part or on another artboard. A bar that has just
-  // opened answers once Base UI has mounted its popup, a commit or two on.
+  // The bar answers the latest frame of an artboard (`zoomToArtboard`) whenever the bar or its
+  // target changes: the room the artboard's bar needs above it when the bar shows over that
+  // artboard, once Base UI has mounted its popup, and otherwise that it shows none there, hidden,
+  // on a part or on another artboard. The viewport acts only on the first answer to a serial.
   const barOver = open && target.kind === "artboard" ? target.artboard.id : undefined;
-  const answered = useRef<number | undefined>(undefined);
   useEffect(() => {
-    if (frameRequest === undefined || answered.current === frameRequest.serial) {
+    if (frameRequest === undefined) {
       return;
     }
     const showing = barOver === frameRequest.artboardId;
     if (showing && popup === null) {
       return;
     }
-    answered.current = frameRequest.serial;
     answerFrame(
       showing && popup !== null
         ? {
@@ -341,6 +342,30 @@ function FloatingToolbar(): ReactElement {
         : { serial: frameRequest.serial, kind: "not-showing" }
     );
   }, [frameRequest, barOver, popup, answerFrame]);
+  // The focus reveal reads the bar between renders, so a control it pans into view clears the bar
+  // while the bar is pinned to the canvas's top. A bar floating over its anchor moves with the
+  // camera, so it covers nothing a pan could clear.
+  const pinned = useRef({ open, anchorHidden, popup });
+  useLayoutEffect(() => {
+    pinned.current = { open, anchorHidden, popup };
+  }, [open, anchorHidden, popup]);
+  useEffect(() => {
+    attachPinnedBar(() => {
+      const bar = pinned.current;
+      const frame = canvas();
+      if (!bar.open || bar.anchorHidden || bar.popup === null || frame === null) {
+        return undefined;
+      }
+      // The bar's layer scrolls with the canvas, so it is measured where it draws once the
+      // canvas's native focus scroll is undone, as the reveal measures the control.
+      const box = bar.popup.getBoundingClientRect();
+      const top = box.top - frame.getBoundingClientRect().top + frame.scrollTop;
+      return top <= PINNED_MARGIN + 1 ? top + box.height : undefined;
+    });
+    return () => {
+      attachPinnedBar(null);
+    };
+  }, [attachPinnedBar, canvas]);
   // The open menu, and the target the toolbar showed when it opened.
   const [openMenu, setOpenMenu] = useState<
     { readonly target: ToolbarTarget | undefined; readonly title: string } | undefined
@@ -382,18 +407,18 @@ function FloatingToolbar(): ReactElement {
           if (next || details.reason !== "escape-key") {
             return;
           }
+          // The canvas takes the step back; the bar only hands focus to the canvas when the step
+          // back is about to close it.
           const pressed = details.event.target;
-          if (!(pressed instanceof Node) || popup?.contains(pressed) !== true) {
-            // Escape elsewhere is the canvas's to take.
-            details.allowPropagation();
-            return;
-          }
-          if (part !== undefined) {
-            clearPart();
-          } else {
+          if (
+            pressed instanceof Node &&
+            popup?.contains(pressed) === true &&
+            part === undefined &&
+            !isTypingTarget(pressed, OVERLAYS)
+          ) {
             canvas()?.focus();
-            select(undefined);
           }
+          details.allowPropagation();
         }}>
         <Popover.Content
           ref={setPopup}

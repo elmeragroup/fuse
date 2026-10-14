@@ -532,6 +532,23 @@ describe("the studio's theme toolbar", () => {
     }
   });
 
+  it("clears the selection on Escape from an inspector control and keeps focus in the inspector", async () => {
+    const { context, page } = await openStudio(browser());
+    try {
+      await selectBoard(page, LIGHT_BOARD);
+      await toggle(inspector(page), "Density", "Dense").focus();
+      await page.keyboard.press("Escape");
+      await inspector(page)
+        .getByRole("region", { name: "Base theme", exact: true })
+        .waitFor({ state: "visible" });
+      expect(await layer(page, LIGHT_BOARD).getAttribute("aria-pressed")).toBe("false");
+      expect(await isFocused(inspector(page))).toBe(true);
+      expect(await page.evaluate(() => document.activeElement !== document.body)).toBe(true);
+    } finally {
+      await context.close();
+    }
+  });
+
   it("opens a new target with no menu open, even one the last target's bar had open", async () => {
     const { context, page } = await openStudio(browser());
     try {

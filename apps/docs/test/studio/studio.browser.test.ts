@@ -38,6 +38,24 @@ function shown(inner: Box, outer: Box): boolean {
   return inside({ x: inner.x, y: inner.y, width: 0, height: 0 }, outer);
 }
 
+/** The floating theme toolbar's popup over the selected artboard or part. */
+function themeBar(page: Page): Locator {
+  return page.getByRole("group", { name: "Theme toolbar", exact: true });
+}
+
+/** Whether `control`'s top sits at or below `bar`'s bottom edge. */
+function clearBelow(control: Box, bar: Box): boolean {
+  return control.y >= bar.y + bar.height - 0.5;
+}
+
+/** Whether `locator` holds still across two frames, once the camera's glide has ended. */
+async function settled(page: Page, locator: Locator): Promise<boolean> {
+  const before = await box(locator);
+  await settleFrames(page);
+  const after = await box(locator);
+  return before.x === after.x && before.y === after.y;
+}
+
 async function computedPrimary(locator: Locator): Promise<string> {
   return locator.evaluate((element) => getComputedStyle(element).getPropertyValue("--primary").trim());
 }
@@ -677,6 +695,79 @@ describe("theme studio", () => {
     }
     expect(await zoomLabel(page)).toBe("400%");
     expect(await canvas(page).evaluate((element) => [element.scrollLeft, element.scrollTop])).toEqual([0, 0]);
+    await page.close();
+  });
+
+  it("reveals a clipped control below the theme toolbar pinned to the canvas's top at 400%", async () => {
+    const { page } = await openStudio();
+    const name = ARTBOARDS[0];
+    const frame = await box(canvas(page));
+    await layers(page).getByRole("button", { name, exact: true }).focus();
+    await page.keyboard.press("Enter");
+    for (let step = 0; step < 8; step++) {
+      await page.keyboard.press("ControlOrMeta+Equal");
+    }
+    expect(await zoomLabel(page)).toBe("400%");
+    const bar = await box(themeBar(page));
+    expect(Math.abs(bar.y - frame.y - 8)).toBeLessThanOrEqual(1);
+
+    const focused = page.locator(":focus");
+    for (const key of ["Tab", "Tab", "Tab", "Tab", "Shift+Tab", "Shift+Tab", "Shift+Tab"]) {
+      await page.keyboard.press(key);
+      expect(await holdsFocus(artboard(page, name))).toBe(true);
+      await expect.poll(async () => clearBelow(await box(focused), bar)).toBe(true);
+      expect(shown(await box(focused), frame)).toBe(true);
+    }
+    await page.close();
+  });
+
+  it("moves a focused control out from under the pinned theme toolbar as Tab returns to it", async () => {
+    const { page } = await openStudio();
+    const name = ARTBOARDS[0];
+    const frame = await box(canvas(page));
+    await layers(page).getByRole("button", { name, exact: true }).focus();
+    await page.keyboard.press("Enter");
+    for (let step = 0; step < 8; step++) {
+      await page.keyboard.press("ControlOrMeta+Equal");
+    }
+    const focused = page.locator(":focus");
+    // Tab on to the first button, switch or checkbox under 40 layout pixels tall.
+    let found = false;
+    for (let step = 0; step < 12 && !found; step++) {
+      await page.keyboard.press("Tab");
+      found = await focused.evaluate(
+        (element) =>
+          element instanceof HTMLElement &&
+          element.matches(
+            'button, [role="button"], [role="switch"], [role="checkbox"], input[type="checkbox"]'
+          ) &&
+          element.offsetHeight < 40
+      );
+    }
+    expect(found).toBe(true);
+    await focused.evaluate((element) => {
+      element.setAttribute("data-test-target", "");
+    });
+    const marked = page.locator("[data-test-target]");
+    await page.keyboard.press("Shift+Tab");
+    // Shift+Tab's own reveal settles before the pan, so nothing moves the control afterwards.
+    await expect.poll(async () => settled(page, marked)).toBe(true);
+
+    await page.mouse.move(frame.x + frame.width / 2, frame.y + frame.height / 2);
+    const bar = await box(themeBar(page));
+    await page.mouse.wheel(0, (await box(marked)).y - (bar.y + bar.height / 2));
+    // Fresh boxes, with no key press between this check and the Tab it judges.
+    await expect
+      .poll(async () => {
+        const top = (await box(marked)).y;
+        const band = await box(themeBar(page));
+        return top > band.y && top < band.y + band.height && (await settled(page, marked));
+      })
+      .toBe(true);
+
+    await page.keyboard.press("Tab");
+    expect(await isFocused(marked)).toBe(true);
+    await expect.poll(async () => clearBelow(await box(marked), await box(themeBar(page)))).toBe(true);
     await page.close();
   });
 
