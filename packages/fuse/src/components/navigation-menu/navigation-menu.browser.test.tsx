@@ -12,6 +12,7 @@ import { render } from "../../../test/browser-render";
 import { panelControlledBy } from "../../../test/panel-transition";
 import {
   CONTROL_MD,
+  computedContrast,
   computedOklch,
   fkasExternal,
   px,
@@ -20,6 +21,7 @@ import {
   snapshotDocumentTheme,
   stampDensity,
   stampDocumentTheme,
+  textNamed,
 } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme";
 import { NavigationMenu } from "./index";
@@ -300,6 +302,61 @@ describe("nested NavigationMenu", () => {
     const nestedRoot = roleNamed("button", "Business").closest("[data-slot='navigation-menu']");
     expect(nestedRoot?.tagName).toBe("DIV");
     expect(page.getByRole("navigation", { name: "Site", exact: true }).all()).toHaveLength(1);
+  });
+
+  it("holds muted descriptions in a hovered link row and an open vertical trigger to 4.5:1 on the row's accent", async () => {
+    renderThemed(
+      <NavigationMenu.Root aria-label="Site">
+        <NavigationMenu.List>
+          <NavigationMenu.Item>
+            <NavigationMenu.Trigger>Products</NavigationMenu.Trigger>
+            <NavigationMenu.Content>
+              <NavigationMenu.Link href="#spot">
+                Spot price <span className="text-muted-foreground">Follow the hourly market price.</span>
+              </NavigationMenu.Link>
+              <NavigationMenu.Root orientation="vertical" side="right">
+                <NavigationMenu.List>
+                  <NavigationMenu.Item>
+                    <NavigationMenu.Trigger>
+                      Electric car <span className="text-muted-foreground">Charging at home and away.</span>
+                    </NavigationMenu.Trigger>
+                    <NavigationMenu.Content>
+                      <NavigationMenu.Link href="#charging">Home charger</NavigationMenu.Link>
+                    </NavigationMenu.Content>
+                  </NavigationMenu.Item>
+                </NavigationMenu.List>
+              </NavigationMenu.Root>
+            </NavigationMenu.Content>
+          </NavigationMenu.Item>
+        </NavigationMenu.List>
+      </NavigationMenu.Root>
+    );
+    await userEvent.click(roleNamed("button", "Products"));
+    const spot = await openedLink("Spot price Follow the hourly market price.");
+    await userEvent.hover(spot);
+    await vi.waitFor(() => {
+      expect(
+        computedContrast(
+          getComputedStyle(textNamed("Follow the hourly market price.")).color,
+          getComputedStyle(spot).backgroundColor
+        )
+      ).toBeGreaterThanOrEqual(4.5);
+    });
+
+    const car = roleNamed("button", "Electric car Charging at home and away.");
+    await userEvent.click(car);
+    // Move off the trigger so its hover recolour cannot stand in for the open-state one.
+    await userEvent.hover(await openedLink("Home charger"));
+    expect(car.hasAttribute("data-popup-open")).toBe(true);
+    expect(car.matches(":hover")).toBe(false);
+    await vi.waitFor(() => {
+      expect(
+        computedContrast(
+          getComputedStyle(textNamed("Charging at home and away.")).color,
+          getComputedStyle(car).backgroundColor
+        )
+      ).toBeGreaterThanOrEqual(4.5);
+    });
   });
 
   function InlineMenu() {
