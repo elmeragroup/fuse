@@ -83,7 +83,9 @@
   label or drop the role. The controls inside have names; the groups around them have none.
 - Ask design whether the `NumberField` steppers keep their own fill. In internal dark the
   stepper buttons draw `bg-background` (`oklch(0.145 0 0)`) inside a field box that draws
-  `bg-card` (`oklch(0.205 0 0)`). Is that intended, or should the steppers follow the field-box fill?
+  `bg-card` (`oklch(0.205 0 0)`). In external light every brand's steppers draw the tinted page
+  `--background` (guen `oklch(0.95469 0.01887 279.53)`) inside a white `--card` field box. Only
+  internal light matches. Is that intended, or should the steppers follow the field-box fill?
 - Decide with design whether `Item` gets an unclamped description variant. `Item.Description`
   clamps to two lines, matching shadcn, and funnel needed an unclamped one for full instructions.
   `shadcn(no-restyle)` rejects `line-clamp-*` on `ItemDescription` and points to a variant in

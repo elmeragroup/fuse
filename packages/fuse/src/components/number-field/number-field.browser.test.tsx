@@ -514,17 +514,13 @@ describe("NumberField", () => {
     }
   });
 
-  it("draws one 1px stepper divider on the field-box fill", () => {
+  it("draws one 1px stepper divider and no bottom edge", () => {
     renderField(<NumberField label="Quantity" defaultValue={1} />);
-    const group = groupFrom("Quantity");
     for (const name of ["Decrease", "Increase"] as const) {
       const stepper = getComputedStyle(stepperIn("Quantity", name));
       expect(stepper.borderInlineStartWidth, `${name} divider width`).toBe("1px");
     }
     expect(getComputedStyle(stepperIn("Quantity", "Increase")).borderBottomWidth).toBe("0px");
-    expect(getComputedStyle(stepperIn("Quantity", "Increase")).backgroundColor).toBe(
-      getComputedStyle(group).backgroundColor
-    );
   });
 });
 

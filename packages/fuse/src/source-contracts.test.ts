@@ -282,8 +282,7 @@ describe("RSC classification", () => {
     // owns client state and carries the directive; Dialog, Sheet and Sidebar were already
     // client modules.
     ["components/overlay/overlay-close-button.tsx", "client"],
-    // FieldFrame holds no state. Six of its consumers (TextField, NumberField, TextareaField,
-    // PhoneNumberField, CheckboxGroup, RadioGroup) are client modules already, and SelectField
+    // FieldFrame holds no state. Its other consumers are client modules already, and SelectField
     // is a server component that runs it, so a directive would only widen the client graph.
     ["components/field/field-frame.tsx", "server"],
     // Alert's documented server render uses the Item markup. Item.Root stays in the client
