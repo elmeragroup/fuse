@@ -10,6 +10,7 @@ import {
   MISMATCHED_BOOTSTRAP_MANIFEST,
   MISSING_BOOTSTRAP_MESSAGE,
 } from "../../test/color-scheme-contract";
+import { hydrateStreamedPage, serverBoundaryNodes, settleScheduledWork } from "../../test/streamed-hydration";
 import {
   ColorSchemeOutput,
   ColorSchemeSetter,
@@ -20,11 +21,6 @@ import {
   tkasCompany,
   writeManifest,
 } from "../../test/theme-browser-fixtures";
-import {
-  hydrateStreamedPage,
-  serverBoundaryNodes,
-  settleScheduledWork,
-} from "../../test/streamed-hydration";
 import { roleNamed } from "../../test/themed-browser-render";
 import { DEFAULT_COLOR_SCHEME_STORAGE_KEY, resolveColorSchemeOptions } from "./color-scheme";
 import { colorSchemeScriptSource, injectedColorSchemeScriptSource } from "./color-scheme-script";

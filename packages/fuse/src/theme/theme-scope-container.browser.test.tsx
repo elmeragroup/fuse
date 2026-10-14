@@ -1,15 +1,13 @@
 import { createRef, StrictMode, Suspense, use, useLayoutEffect, useRef } from "react";
 import type { ReactNode, RefObject } from "react";
 
+import { flushSync } from "react-dom";
+import { createRoot } from "react-dom/client";
 import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import { render } from "../../test/browser-render";
-import {
-  hydrateStreamedPage,
-  serverBoundaryNodes,
-  settleScheduledWork,
-} from "../../test/streamed-hydration";
+import { hydrateStreamedPage, serverBoundaryNodes, settleScheduledWork } from "../../test/streamed-hydration";
 import { Popover } from "../components/popover";
 import { ThemeScope } from "./theme-scope";
 import { useResolvedPortalContainer } from "./theme-scope-container";
@@ -297,6 +295,33 @@ describe("ThemeScope's container lifecycle", () => {
 
     expect(calls).toEqual(["attach DIV", "cleanup"]);
     expect(objectRef.current).toBeNull();
+  });
+
+  it("keeps one element through StrictMode's double attach in a root outside the document", async () => {
+    const seen: Resolved[] = [];
+    const detachedHost = document.createElement("div");
+    const root = createRoot(detachedHost);
+    flushSync(() => {
+      root.render(
+        <StrictMode>
+          <ThemeScope theme={scopeTheme}>
+            <Probe
+              onResolve={(resolved) => {
+                seen.push(resolved);
+              }}
+            />
+          </ThemeScope>
+        </StrictMode>
+      );
+    });
+    const scope = detachedHost.querySelector("[data-theme-brand]");
+    await expect.poll(() => seen.at(-1)).toBe(scope);
+    await settleScheduledWork();
+
+    expect(seen.at(-1)).toBe(scope);
+    flushSync(() => {
+      root.unmount();
+    });
   });
 
   it("keeps one element through StrictMode's double attach", async () => {

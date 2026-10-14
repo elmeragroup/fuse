@@ -77,16 +77,15 @@ describe("server snapshot", () => {
     });
   });
 
-  it("follows a configured default with a new object that stays stable between reads", () => {
+  it("keeps the server's default when a later configure changes it", () => {
     const { runtime } = setup({ stored: { [KEY]: "dark" } });
+    const served = runtime.getServerSnapshot();
     runtime.connect();
 
     runtime.configure(config({ defaultColorScheme: "light" }));
-    const served = runtime.getServerSnapshot();
-    runtime.configure(config({ defaultColorScheme: "light" }));
 
-    expect(served).toMatchObject({ colorScheme: "light", resolvedColorScheme: undefined });
     expect(runtime.getServerSnapshot()).toBe(served);
+    expect(served).toMatchObject({ colorScheme: "system", resolvedColorScheme: undefined });
   });
 });
 

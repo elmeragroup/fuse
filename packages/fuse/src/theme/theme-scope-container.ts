@@ -26,6 +26,8 @@ export type ThemeScopeContainerStore = ScopeElementSource & {
 
 export function createThemeScopeContainerStore(): ThemeScopeContainerStore {
   let element: HTMLElement | null = null;
+  // Bumped by every attach, so a detach that React follows with an attach is never acted on.
+  let attaches = 0;
   const listeners = new Set<() => void>();
   const publish = (next: HTMLElement | null) => {
     if (next === element) {
@@ -47,16 +49,18 @@ export function createThemeScopeContainerStore(): ThemeScopeContainerStore {
     getServerSnapshot: () => null,
     attach(node) {
       if (node !== null) {
+        attaches += 1;
         publish(node);
         return;
       }
       // React detaches the ref when a Suspense boundary hides already-shown content and on
       // StrictMode's double attach, and keeps the element in both. Notifying there would
       // re-render inside the commit for every hide and reveal, which can feed an update loop,
-      // so only an element that has left the document by the next microtask is dropped.
-      const detached = element;
+      // so the element is dropped only if nothing reattached by the next microtask and it has
+      // left the document; a hidden element stays connected.
+      const detachedAfter = attaches;
       queueMicrotask(() => {
-        if (detached !== null && element === detached && !detached.isConnected) {
+        if (attaches === detachedAfter && element !== null && !element.isConnected) {
           publish(null);
         }
       });

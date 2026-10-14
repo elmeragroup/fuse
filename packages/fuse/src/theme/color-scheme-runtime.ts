@@ -24,10 +24,10 @@ export type ColorSchemeRuntime = {
   /** The current snapshot. Makes no platform call and allocates nothing. */
   getSnapshot: () => ColorSchemeRuntimeSnapshot;
   /**
-   * The hydration snapshot: what the server rendered, which is the configured default with no
-   * resolution, whatever the platform holds. A consumer can hydrate after `connect`, for
-   * example inside a boundary that streamed in later, so this must not be the live snapshot.
-   * Same identity until `configure` changes the default; makes no platform call.
+   * The hydration snapshot: what the server rendered, which is the initial config's default
+   * with no resolution, whatever the platform holds or a later `configure` sets. A consumer can
+   * hydrate after `connect`, for example inside a boundary that streamed in later from the same
+   * server render, so this must not be the live snapshot. One identity; no platform call.
    */
   getServerSnapshot: () => ColorSchemeRuntimeSnapshot;
   /**
@@ -120,7 +120,7 @@ export function createColorSchemeRuntime(
     resolvedColorScheme: undefined,
     setColorScheme,
   };
-  let serverSnapshot = snapshot;
+  const serverSnapshot = snapshot;
 
   function activeForce(): ColorScheme | undefined {
     let winner: ForceEntry | undefined;
@@ -270,9 +270,6 @@ export function createColorSchemeRuntime(
   function applyConfig(next: ColorSchemeRuntimeConfig): void {
     const previous = config;
     config = next;
-    if (previous.defaultColorScheme !== next.defaultColorScheme) {
-      serverSnapshot = { colorScheme: next.defaultColorScheme, resolvedColorScheme: undefined, setColorScheme };
-    }
     if (lifecycle._tag === "unhydrated") {
       if (lifecycle.preferenceSource === "default") {
         preference = next.defaultColorScheme;
