@@ -25,6 +25,8 @@ function browserProject(
         "react",
         "react-dom",
         "react-dom/client",
+        // The streamed-hydration tests server-render in the page.
+        "react-dom/server",
         "react/jsx-runtime",
         "@base-ui/react/button",
         "@base-ui/react/drawer",

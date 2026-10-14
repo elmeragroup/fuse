@@ -1,14 +1,14 @@
 "use client";
 
-import { use } from "react";
+import { use, useSyncExternalStore } from "react";
 
 import type { UseColorSchemeResult } from "./color-scheme";
 import { ColorSchemeContext } from "./color-scheme-root";
 
 export function useColorScheme(): UseColorSchemeResult {
-  const value = use(ColorSchemeContext);
-  if (value === undefined) {
+  const runtime = use(ColorSchemeContext);
+  if (runtime === undefined) {
     throw new Error("useColorScheme must be used within ThemeProvider");
   }
-  return value;
+  return useSyncExternalStore(runtime.subscribe, runtime.getSnapshot, runtime.getServerSnapshot);
 }

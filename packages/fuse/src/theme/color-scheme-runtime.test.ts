@@ -60,6 +60,36 @@ describe("construction", () => {
   });
 });
 
+describe("server snapshot", () => {
+  it("keeps what the server rendered after connect hydrates a stored preference", () => {
+    const { runtime } = setup({ root: "dark", stored: { [KEY]: "dark" }, prefersDark: true });
+    const before = runtime.getServerSnapshot();
+
+    runtime.connect();
+    runtime.configure(config());
+
+    expect(scheme(runtime)).toBe("dark/dark");
+    expect(runtime.getServerSnapshot()).toBe(before);
+    expect(before).toEqual({
+      colorScheme: "system",
+      resolvedColorScheme: undefined,
+      setColorScheme: runtime.getSnapshot().setColorScheme,
+    });
+  });
+
+  it("follows a configured default with a new object that stays stable between reads", () => {
+    const { runtime } = setup({ stored: { [KEY]: "dark" } });
+    runtime.connect();
+
+    runtime.configure(config({ defaultColorScheme: "light" }));
+    const served = runtime.getServerSnapshot();
+    runtime.configure(config({ defaultColorScheme: "light" }));
+
+    expect(served).toMatchObject({ colorScheme: "light", resolvedColorScheme: undefined });
+    expect(runtime.getServerSnapshot()).toBe(served);
+  });
+});
+
 describe("write gate before connect", () => {
   it("leaves a bootstrapped root alone on an unforced configure", () => {
     const { memory, runtime } = setup({ root: "dark" });
