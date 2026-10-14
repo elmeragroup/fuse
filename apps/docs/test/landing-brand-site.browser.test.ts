@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import * as CssColor from "@elmeragroup/color/css-color";
 import * as Hex from "@elmeragroup/color/hex";
 import { getOrThrow } from "@elmeragroup/color/result";
-import type * as Srgb from "@elmeragroup/color/srgb";
+import * as Srgb from "@elmeragroup/color/srgb";
 import { contrastRatio, relativeLuminance } from "@elmeragroup/color/wcag";
 
 import { DESKTOP_VIEWPORT } from "./demo-page";
@@ -167,6 +167,73 @@ async function paintedBands(site: Locator): Promise<PaintedBand[]> {
     surface: CssColor.toSrgb(getOrThrow(CssColor.parse(band.surface))),
     text: CssColor.toSrgb(getOrThrow(CssColor.parse(band.text))),
   }));
+}
+
+/** A footer or utility-row line as painted: its ink, with any dimming as alpha, and the band. */
+type PaintedLine = {
+  readonly name: string;
+  readonly where: "footer" | "utility";
+  readonly ink: Srgb.Srgb;
+  readonly surface: Srgb.Srgb;
+};
+
+/**
+ * Every footer paragraph, and every visible header link on the utility row, with the opaque band
+ * behind it. A line dims through its colour's alpha (`text-current/85`) and the opacity of each
+ * element up to the band (`opacity-85`), so its ink carries their product as alpha. Chromium
+ * serialises `currentcolor` mixed with transparent as `oklab()`, which `CssColor` does not parse,
+ * so the ink takes the band's opaque `color` for its channels and a canvas reads the alpha.
+ */
+async function paintedLines(site: Locator): Promise<PaintedLine[]> {
+  // DOM audit: the footer and utility row are band paint, which has no accessible form.
+  const read = await site.locator("[data-site-scroller]").evaluate((scroller) => {
+    const opaque = (color: string) => color !== "rgba(0, 0, 0, 0)" && !/^rgba|\/ /u.test(color);
+    const context = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+    if (context === null) {
+      throw new Error("expected a 2D canvas to read colour alpha");
+    }
+    const alphaOf = (color: string) => {
+      context.clearRect(0, 0, 1, 1);
+      context.fillStyle = color;
+      context.fillRect(0, 0, 1, 1);
+      return (context.getImageData(0, 0, 1, 1).data.at(3) ?? 0) / 255;
+    };
+    const header = scroller.querySelector("header");
+    const lines = [...scroller.querySelectorAll("footer p"), ...scroller.querySelectorAll("header a")];
+    return lines.flatMap((line) => {
+      let band = line.parentElement;
+      let opacity = Number.parseFloat(getComputedStyle(line).opacity);
+      while (band !== null && !opaque(getComputedStyle(band).backgroundColor)) {
+        opacity *= Number.parseFloat(getComputedStyle(band).opacity);
+        band = band.parentElement;
+      }
+      const onUtilityRow = band !== null && band !== header && header?.contains(band) === true;
+      if (band === null || (line.closest("header") !== null && !onUtilityRow) || !line.checkVisibility()) {
+        return [];
+      }
+      return [
+        {
+          name: line.textContent.trim().slice(0, 40),
+          where: line.closest("footer") === null ? ("utility" as const) : ("footer" as const),
+          inkChannels: getComputedStyle(band).color,
+          alpha:
+            alphaOf(getComputedStyle(line).color) *
+            opacity *
+            Number.parseFloat(getComputedStyle(band).opacity),
+          surface: getComputedStyle(band).backgroundColor,
+        },
+      ];
+    });
+  });
+  return read.map((line) => {
+    const channels = CssColor.toSrgb(getOrThrow(CssColor.parse(line.inkChannels)));
+    return {
+      name: line.name,
+      where: line.where,
+      ink: getOrThrow(Srgb.make({ r: channels.r, g: channels.g, b: channels.b, alpha: line.alpha })),
+      surface: CssColor.toSrgb(getOrThrow(CssColor.parse(line.surface))),
+    };
+  });
 }
 
 /** WCAG 1.4.11's floor for the parts of a graphic a visitor needs to recognise it. */
@@ -389,6 +456,32 @@ describe("landing hero window, External side", () => {
         expect(ratio._tag === "ok" ? ratio.value : 0, Hex.formatOpaque(ink)).toBeGreaterThanOrEqual(
           GRAPHIC_CONTRAST
         );
+      }
+      await page.context().close();
+    }
+  );
+
+  it.each(ALL_SITES)(
+    "keeps $site's dimmed footer and utility text readable on its bands in light mode",
+    async (facts) => {
+      // A font the header fits keeps it expanded, so the utility row shows.
+      const { page, site } = await openSite(facts, WIDE_VIEWPORT, {
+        colorScheme: "light",
+        prepare: narrowFont,
+      });
+      await settleFrames(page);
+      const lines = await paintedLines(site);
+      // The footer's domain and copyright lines dim, and every utility link is read, so a pass
+      // cannot come from reading none.
+      const footer = lines.filter((line) => line.where === "footer" && line.ink.alpha < 1);
+      expect(footer.length).toBeGreaterThanOrEqual(2);
+      const utility = lines.filter((line) => line.where === "utility").map((line) => line.name);
+      expect(utility).toEqual(expect.arrayContaining([...facts.utility]));
+      for (const line of lines) {
+        // Unit under test: the line's computed paint, composited over its band. Oracle: WCAG
+        // contrast from @elmeragroup/color against the 4.5:1 text floor.
+        const ratio = contrastRatio(Srgb.compositeOver(line.ink, line.surface), line.surface);
+        expect.soft(ratio._tag === "ok" ? ratio.value : 0, line.name).toBeGreaterThanOrEqual(4.5);
       }
       await page.context().close();
     }

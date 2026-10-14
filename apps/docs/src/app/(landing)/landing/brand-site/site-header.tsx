@@ -23,7 +23,7 @@ const siteHeader = tv({
       "landing-dark:bg-card landing-dark:text-card-foreground hidden bg-secondary text-secondary-foreground",
     utilityInner: "text-xs max-w-6xl @3xl:px-10 mx-auto flex h-9 w-full items-center gap-5 px-5",
     utilityLink:
-      "aria-[current=page]:font-medium inline-flex h-full items-center gap-1.5 border-b-2 border-transparent text-current/75 no-underline outline-none hover:text-current focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset aria-[current=page]:border-current aria-[current=page]:text-current",
+      "aria-[current=page]:font-medium inline-flex h-full items-center gap-1.5 border-b-2 border-transparent text-current/85 no-underline outline-none hover:text-current focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset aria-[current=page]:border-current aria-[current=page]:text-current",
     utilityIcon: "size-3.5",
     utilityEnd: "ml-auto flex h-full items-center gap-5",
     bar: "max-w-6xl @3xl:gap-6 @3xl:px-10 mx-auto flex h-16 w-full items-center gap-4 px-4",

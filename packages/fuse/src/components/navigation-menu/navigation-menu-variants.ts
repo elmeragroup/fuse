@@ -104,7 +104,8 @@ export const navigationMenuVariants = tv({
   },
   // A bar sits on the page and highlights with `muted`. A row sits on the popover and
   // highlights with `accent`, as menu items in Select, Combobox and DropdownMenu do: accent
-  // is the role defined as a lift from the popover, so a row tint stays off the popup.
+  // is the role defined as a lift from the popover, so a row tint stays off the popup. A
+  // highlighted row also recolours its descendants to accent-foreground, as those menus' items do.
   variants: {
     orientation: {
       horizontal: {
@@ -115,13 +116,18 @@ export const navigationMenuVariants = tv({
         trigger: [
           contentRowClass,
           "h-auto w-full justify-between text-start font-[number:inherit]",
-          "data-popup-open:bg-accent data-popup-open:text-accent-foreground enabled-hover:bg-accent enabled-hover:text-accent-foreground",
+          "data-popup-open:bg-accent data-popup-open:text-accent-foreground data-popup-open:**:text-accent-foreground enabled-hover:bg-accent enabled-hover:text-accent-foreground enabled-hover:**:text-accent-foreground",
         ],
       },
     },
     box: {
       bar: { link: [barBoxClass, "hover:bg-muted"] },
-      row: { link: [contentRowClass, "hover:bg-accent hover:text-accent-foreground"] },
+      row: {
+        link: [
+          contentRowClass,
+          "hover:bg-accent hover:text-accent-foreground hover:**:text-accent-foreground",
+        ],
+      },
     },
   },
   // Trigger and Link always pass their axis, so neither has a default.
