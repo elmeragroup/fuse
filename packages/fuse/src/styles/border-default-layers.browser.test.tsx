@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import "../../dist/themes.css";
 import { render } from "../../test/browser-render";
-import { layeredConsumerCss } from "../../test/layered-consumer-css";
+import { consumerCss } from "../../test/tailwind-consumer-build";
 import { fkasPrivate } from "../../test/theme-fixtures";
 import { cssVarColor, roleNamed } from "../../test/themed-browser-render";
 import { Card } from "../components/card/card";
@@ -37,7 +37,7 @@ describe("the base-layer border default in a layered consumer build", () => {
     ["fuse-first", FUSE_FIRST],
   ])("draws a bare border in --border and lets border-primary win, %s", async (_, entry) => {
     style = document.createElement("style");
-    style.textContent = await layeredConsumerCss(entry, CANDIDATES);
+    style.textContent = await consumerCss(entry, CANDIDATES);
     document.head.append(style);
     render(
       <ThemeScope theme={fkasPrivate}>

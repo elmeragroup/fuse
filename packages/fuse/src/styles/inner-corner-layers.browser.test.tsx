@@ -3,7 +3,7 @@ import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import "../../dist/themes.css";
 import { render } from "../../test/browser-render";
 import { cornerRadius, expectShellOnThemeElementWins } from "../../test/inner-corner-specimens";
-import { layeredConsumerCss } from "../../test/layered-consumer-css";
+import { consumerCss } from "../../test/tailwind-consumer-build";
 import { fkasPrivate, tkasCompany } from "../../test/theme-fixtures";
 import { roleNamed, snapshotDocumentTheme, stampDocumentTheme } from "../../test/themed-browser-render";
 import { ThemeScope } from "../theme/theme-scope";
@@ -28,7 +28,7 @@ describe("inner corners in a layered consumer build", () => {
 
   beforeAll(async () => {
     const style = document.createElement("style");
-    style.textContent = await layeredConsumerCss(LAYERED_CONSUMER, CANDIDATES);
+    style.textContent = await consumerCss(LAYERED_CONSUMER, CANDIDATES);
     document.head.append(style);
   });
 
