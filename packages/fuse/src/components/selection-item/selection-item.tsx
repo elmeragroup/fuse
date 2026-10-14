@@ -433,13 +433,16 @@ export function SelectionItemShell({
 
   return (
     <FieldItem
-      {...definedProps({ ...props, role: props.role ?? (inItemGroup ? "listitem" : undefined) })}
-      {...(isSubSectionSelectable
-        ? mergeProps<"div">({ onClick: selectFromSubSection }, { onClick: props.onClick })
-        : null)}
-      // Stamped directly: Field.Item's `disabled` prop would disable the control through
-      // FieldItemContext.
-      {...(isDisabled ? { "data-disabled": "" } : null)}
+      {...definedProps({
+        ...props,
+        role: props.role ?? (inItemGroup ? "listitem" : undefined),
+        ...(isSubSectionSelectable
+          ? mergeProps<"div">({ onClick: selectFromSubSection }, { onClick: props.onClick })
+          : null),
+        // Stamped directly: Field.Item's `disabled` prop would disable the control through
+        // FieldItemContext.
+        ...(isDisabled ? { "data-disabled": "" } : null),
+      })}
       data-slot={dataSlot}
       data-selection-item=""
       className={cn(
