@@ -5,7 +5,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../dist/styles.css";
 import "../../dist/themes.css";
-import { expectValidFocusRing } from "../../test/assert-focus-ring";
+import { expectFocusRing } from "../../test/assert-focus-ring";
 import {
   expectInvalidFocusRing,
   expectInvalidRing,
@@ -377,7 +377,7 @@ describe("state face at dense density", () => {
     expect(quantity.matches(":focus-visible"), "Tab lands on the nested field").toBe(true);
 
     // The nested field owns the focus: its group paints the plain ring.
-    expectValidFocusRing(groupAround(quantity), "nested number field group");
+    expectFocusRing(groupAround(quantity), "nested number field group");
     // Oracle: the theme's `--error` role. The outer group's own input is unfocused, so the
     // outer group must not take the focused invalid face's solid `--error` line from a control
     // it does not own. It may still paint the plain `--ring` within ring, a parked within-ring
@@ -555,7 +555,7 @@ describe("the focused invalid face", () => {
     );
 
     // A valid control keeps the plain ring: 2px, flush, in the theme's `--ring`.
-    expectValidFocusRing(
+    expectFocusRing(
       await tabInto("Before valid input", () => roleNamed("textbox", "Valid input")),
       "valid input"
     );
@@ -627,7 +627,7 @@ describe("the focused invalid face", () => {
       ["input group", "Before group", () => roleNamed("group", "Flagged group")],
       ["combobox chips", "Before chips", () => roleNamed("toolbar", "Flagged chips")],
     ] as const) {
-      expectValidFocusRing(await tabInto(before, host), label);
+      expectFocusRing(await tabInto(before, host), label);
       await userEvent.click(page.getByText("Away", { exact: true }));
       expectNoRing(`${label} at rest`, host());
     }

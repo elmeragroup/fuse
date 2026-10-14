@@ -234,6 +234,13 @@ export function computedContrast(foreground: string, background: string): number
   return getOrThrow(Wcag.contrastRatio(srgb(foreground), srgb(background)));
 }
 
+/** The colour stops of a computed gradient, such as `getComputedStyle(el).backgroundImage`, in sRGB. */
+export function gradientStops(image: string): readonly { r: number; g: number; b: number; alpha: number }[] {
+  return [...image.matchAll(/(?:rgba?|oklch|lab)\([^()]*\)/g)].map(([stop]) =>
+    CssColor.toSrgb(getOrThrow(CssColor.parse(stop)))
+  );
+}
+
 /**
  * The opacity an element paints at, which is its own computed opacity multiplied by every
  * ancestor's. A disabled control inside a dimmed wrapper compounds, so a suite that checks

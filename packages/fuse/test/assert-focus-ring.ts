@@ -2,6 +2,7 @@ import { expect } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import { DENSITIES } from "../src/theme/density";
+import type { RingLayer } from "./assert-invalid-ring";
 import { computedColor, ringLayers, settleTransitions } from "./assert-invalid-ring";
 
 /**
@@ -21,23 +22,19 @@ function ringRoleColor(element: HTMLElement): string {
  * halo and an inset ring never match; a focused invalid control has its own assertion,
  * `expectInvalidFocusRing`.
  */
-function hasFocusRing(element: HTMLElement): boolean {
-  const [ring, ...rest] = ringLayers(element);
-  if (ring === undefined || rest.length > 0 || ring.inset || ring.spread !== "2px") {
-    return false;
-  }
-  return ring.color === ringRoleColor(element);
+function validFocusRing(element: HTMLElement): RingLayer {
+  return { spread: "2px", color: ringRoleColor(element), inset: false };
 }
 
-/**
- * Assert the focus ring a keyboard-focused valid control paints: one outer 2px ring, flush with
- * no offset layer, in the theme's `--ring` role at that element.
- */
-export function expectValidFocusRing(element: HTMLElement, message: string): void {
-  settleTransitions(element);
-  expect(ringLayers(element), message).toEqual([
-    { spread: "2px", color: ringRoleColor(element), inset: false },
-  ]);
+function hasFocusRing(element: HTMLElement): boolean {
+  const [ring, ...rest] = ringLayers(element);
+  const valid = validFocusRing(element);
+  return (
+    rest.length === 0 &&
+    ring?.spread === valid.spread &&
+    ring.color === valid.color &&
+    ring.inset === valid.inset
+  );
 }
 
 /**
@@ -65,11 +62,13 @@ export async function assertFocusRingOnKeyboardAbsentOnMouse(
 /**
  * Ring-presence/absence probes for hosts that are already the active element
  * (a portalled popup that received initial keyboard focus). Keeps the Tailwind
- * ring fingerprint inside this helper.
+ * ring fingerprint inside this helper. `expectFocusRing` asserts the ring a focused valid
+ * control paints, one outer 2px ring, flush with no offset layer, in the theme's `--ring` role
+ * at that element, and fails with a layer diff.
  */
 export function expectFocusRing(element: HTMLElement, message: string): void {
   settleTransitions(element);
-  expect(hasFocusRing(element), message).toBe(true);
+  expect(ringLayers(element), message).toEqual([validFocusRing(element)]);
 }
 
 export function expectNoFocusRing(element: HTMLElement, message: string): void {
