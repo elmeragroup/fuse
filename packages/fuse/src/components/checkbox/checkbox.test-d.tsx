@@ -39,6 +39,15 @@ test("CheckboxItemProps is the parent-vs-value discriminated union and the eleme
   expectTypeOf<CheckboxItemProps["controlPosition"]>().toEqualTypeOf<"start" | "end" | undefined>();
   expectTypeOf<CheckboxDescriptionProps["describedBy"]>().toEqualTypeOf<string | ReactNode | undefined>();
   expectTypeOf<CheckboxItemProps>().not.toHaveProperty("as");
+  // The row forwards its Field.Item root's attributes and keeps the shell wiring and `disabled`.
+  expectTypeOf<CheckboxItemProps["id"]>().toEqualTypeOf<string | undefined>();
+  expectTypeOf<CheckboxItemProps>().toHaveProperty("style");
+  expectTypeOf<CheckboxItemProps>().toHaveProperty("onClick");
+  expectTypeOf<CheckboxItemProps>().toHaveProperty("render");
+  expectTypeOf<CheckboxItemProps>().not.toHaveProperty("disabled");
+  expectTypeOf<CheckboxItemProps>().not.toHaveProperty("dataSlot");
+  expectTypeOf<CheckboxItemProps>().not.toHaveProperty("control");
+  expectTypeOf<CheckboxItemProps>().not.toHaveProperty("subSections");
 
   const _primitive = <Checkbox aria-label="Accept" defaultChecked />;
   const _group = (

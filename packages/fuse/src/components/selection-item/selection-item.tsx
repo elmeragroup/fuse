@@ -6,6 +6,7 @@ import type { ComponentProps, MouseEvent, ReactElement, ReactNode } from "react"
 import { Field as FieldPrimitive } from "@base-ui/react/field";
 import { mergeProps } from "@base-ui/react/merge-props";
 
+import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { selectionItemShellClass } from "../../styles/inner-corner/item";
 import { labelTypeClass } from "../../styles/label-type";
@@ -283,6 +284,25 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
 };
 
 /**
+ * Root attributes `CheckboxItem` and `RadioItem` forward to the shell's `Field.Item` root,
+ * such as `id`, `style`, `data-*`, ARIA attributes and event handlers. It leaves out what
+ * the item owns: its row props, `className`, `children`, the shell wiring and `disabled`,
+ * which `isDisabled` spells.
+ */
+export type SelectionItemRootProps = Omit<
+  SelectionItemShellProps,
+  | "dataSlot"
+  | "control"
+  | "controlPosition"
+  | "isDisabled"
+  | "isSubSectionSelectable"
+  | "className"
+  | "subSections"
+  | "children"
+  | "disabled"
+>;
+
+/**
  * Shared card-row shell that CheckboxItem and RadioItem plug a control into. Client
  * component, because it reads Field.Item context. The control and sub-section columns
  * share one parent grid, so the spacer tracks the control slot without measuring it.
@@ -413,14 +433,16 @@ export function SelectionItemShell({
 
   return (
     <FieldItem
-      {...(inItemGroup ? { role: "listitem" as const } : null)}
-      {...props}
-      {...(isSubSectionSelectable
-        ? mergeProps<"div">({ onClick: selectFromSubSection }, { onClick: props.onClick })
-        : null)}
-      // Stamped directly: Field.Item's `disabled` prop would disable the control through
-      // FieldItemContext.
-      {...(isDisabled ? { "data-disabled": "" } : null)}
+      {...definedProps({
+        ...props,
+        role: props.role ?? (inItemGroup ? "listitem" : undefined),
+        ...(isSubSectionSelectable
+          ? mergeProps<"div">({ onClick: selectFromSubSection }, { onClick: props.onClick })
+          : null),
+        // Stamped directly: Field.Item's `disabled` prop would disable the control through
+        // FieldItemContext.
+        ...(isDisabled ? { "data-disabled": "" } : null),
+      })}
       data-slot={dataSlot}
       data-selection-item=""
       className={cn(

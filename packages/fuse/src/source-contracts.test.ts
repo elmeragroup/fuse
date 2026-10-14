@@ -900,7 +900,7 @@ const WIRING_PARTS = {
     "RadioGroupPrimitive",
     "FieldPrimitive.Label",
   ],
-  "components/selection-item/selection-item.tsx": ["FieldPrimitive.Label"],
+  "components/selection-item/selection-item.tsx": ["FieldPrimitive.Label", "FieldItem"],
   "components/sheet/sheet.tsx": ["SheetPrimitive.Popup"],
   "components/slider/slider.tsx": ["SliderPrimitive.Root", "SliderPrimitive.Thumb"],
   "components/switch/switch.tsx": ["SwitchPrimitive.Root"],
