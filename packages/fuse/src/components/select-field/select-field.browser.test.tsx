@@ -6,7 +6,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { describedTextsFor } from "../../../test/rac-calendar-testing";
-import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { formNamed, renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
 import { Button } from "../button/button";
 import { Field } from "../field";
 import { Form } from "../form/form";
@@ -217,12 +217,26 @@ describe("SelectField", () => {
 
   it("forwards the ref and the remaining props to the trigger", () => {
     const ref = createRef<HTMLButtonElement>();
-    renderThemed(
-      <Plan ref={ref} data-testid="plan" aria-labelledby={undefined} triggerClassName="font-bold" />
-    );
+    renderThemed(<Plan ref={ref} data-testid="plan" triggerClassName="font-bold" />);
     expect(ref.current).toBe(trigger());
     expect(trigger()).toHaveAttribute("data-testid", "plan");
     expect(trigger()).toHaveClass("font-bold", "w-full");
+  });
+
+  it("keeps the trigger's label and popup wiring when a forwarded prop is undefined", () => {
+    renderThemed(
+      <>
+        <Plan aria-labelledby={undefined} aria-haspopup={undefined} aria-expanded={undefined} />
+        <HandComposedPlan />
+      </>
+    );
+    const labelId = textNamed("Plan").id;
+    expect(labelId).not.toBe("");
+    expect(trigger().getAttribute("aria-labelledby")).toBe(labelId);
+    expect(trigger("Hand plan").getAttribute("aria-haspopup")).toBe("listbox");
+    expect(trigger().getAttribute("aria-haspopup")).toBe(trigger("Hand plan").getAttribute("aria-haspopup"));
+    expect(trigger("Hand plan").getAttribute("aria-expanded")).toBe("false");
+    expect(trigger().getAttribute("aria-expanded")).toBe(trigger("Hand plan").getAttribute("aria-expanded"));
   });
 
   it("calls onValueChange with the chosen value and follows a controlled value", async () => {

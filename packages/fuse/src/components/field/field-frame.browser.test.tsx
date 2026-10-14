@@ -44,8 +44,33 @@ const LEGEND_MARGIN_PX = 12;
 const groupGap = (density: Density) => metricPx("surface-gap-md", density);
 // A pending RadioGroup without a label keeps a heading row for its spinner, and the
 // fieldset's group gap separates that row from the description.
-// TextField's label sits on the Field.Root's `gap-1` stack, at 4px from its control.
+// TextField's label sits on the Field.Root's `gap-1` stack, at 4px from its control. SelectField
+// shares this part spacing through FieldFrame's `spacing="part"`.
 const TEXT_FIELD_LABEL_TO_CONTROL_PX = 4;
+
+const PART_SPACED_FIELDS: ReadonlyArray<{
+  readonly name: string;
+  readonly label: string;
+  readonly render: () => ReactElement;
+  readonly control: () => HTMLElement;
+}> = [
+  {
+    name: "TextField",
+    label: "Email",
+    render: () => <TextField label="Email" description="Work address." />,
+    control: () => textboxNamed("Email"),
+  },
+  {
+    name: "SelectField",
+    label: "Plan",
+    render: () => (
+      <SelectField label="Plan">
+        <Select.Item value="a">A</Select.Item>
+      </SelectField>
+    ),
+    control: () => roleNamed("combobox", "Plan"),
+  },
+];
 
 type GroupFixture = {
   readonly name: string;
@@ -520,19 +545,19 @@ describe("FieldFrame", () => {
       expect(verticalGap(statusRow, textNamed("Pick one."))).toBeCloseTo(groupGap(density), 0);
     });
 
-    it("leaves a TextField's label-to-control gap alone", () => {
-      stampDensity(density);
-      renderThemed(
-        <>
-          {preflightBoxReset}
-          <TextField label="Email" description="Work address." />
-        </>
-      );
-      expect(verticalGap(textNamed("Email"), textboxNamed("Email"))).toBeCloseTo(
-        TEXT_FIELD_LABEL_TO_CONTROL_PX,
-        0
-      );
-    });
+    it.each(PART_SPACED_FIELDS)(
+      "leaves a $name's label-to-control gap at the part spacing",
+      ({ label, render, control }) => {
+        stampDensity(density);
+        renderThemed(
+          <>
+            {preflightBoxReset}
+            {render()}
+          </>
+        );
+        expect(verticalGap(textNamed(label), control())).toBeCloseTo(TEXT_FIELD_LABEL_TO_CONTROL_PX, 0);
+      }
+    );
   });
 });
 
