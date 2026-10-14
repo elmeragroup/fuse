@@ -229,11 +229,10 @@ export const EXTERNAL_PALETTES = {
   },
 } as const satisfies Record<ExternalBrandCode, TokenLayer>;
 
-/** fkab is a permanent alias of fkas; every palette lookup goes through here. */
+/**
+ * fkab is a permanent alias of fkas, resolved once in `paletteLayers`. Every palette table and
+ * accessor takes `ExternalBrandCode`, so an unresolved brand cannot reach one.
+ */
 export function paletteBrand(brand: BrandCode): ExternalBrandCode {
   return brand === "fkab" ? "fkas" : brand;
-}
-
-export function externalPalette(brand: BrandCode): TokenLayer {
-  return EXTERNAL_PALETTES[paletteBrand(brand)];
 }
