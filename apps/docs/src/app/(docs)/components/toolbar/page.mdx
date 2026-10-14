@@ -37,7 +37,9 @@ For a toolbar that only switches between options, use ToggleGroup on its own.
   <ToolbarBasic />
 </Demo>
 
-`Toolbar.Group` lays out related items together and disables them all with `disabled`.
+`Toolbar.Group` lays out related items together. `disabled` on `Toolbar.Group`, or on
+`Toolbar.Root` for the whole bar, disables the buttons and inputs inside; they stay in the
+arrow-key order. A `Toolbar.Link` cannot be disabled.
 `Toolbar.Separator` draws a line across the bar between groups.
 
 <Demo slug="toolbar" id="toggle-group" title="Toggle group" file="toolbar-toggle-group.tsx">
