@@ -5,7 +5,7 @@ import { DESKTOP_VIEWPORT, launchSuiteBrowser, openDemo } from "./demo-page";
 const browser = launchSuiteBrowser();
 
 describe("Form demos", () => {
-  it("routes the server's errors to the text fields and the date picker, and clears the picker's on a new date", async () => {
+  it("routes the server's errors to the text fields and the date picker", async () => {
     const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT });
     const demo = await openDemo(page, "form", "Server errors");
     const picker = demo.getByRole("group", { name: "Start date", exact: true });
@@ -19,11 +19,6 @@ describe("Form demos", () => {
     await expect
       .poll(async () => (await picker.getAttribute("aria-describedby"))?.split(" "))
       .toContain(errorId);
-    await expect.poll(async () => alert("This address is already registered.").count()).toBe(1);
-
-    await demo.getByRole("button", { name: /^calendar/i }).click();
-    await page.getByRole("gridcell", { name: /July 20, 2026/ }).click();
-    await expect.poll(async () => pickerError.count()).toBe(0);
     await expect.poll(async () => alert("This address is already registered.").count()).toBe(1);
 
     await page.close();

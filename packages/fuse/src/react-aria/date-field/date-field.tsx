@@ -8,6 +8,7 @@ import {
   DateFieldStateContext,
   DateInput as AriaDateInput,
   DateSegment,
+  FormValidationContext,
   composeRenderProps,
 } from "react-aria-components";
 import type {
@@ -27,7 +28,7 @@ import {
   Label,
   fieldGroupVariants,
 } from "../internal/field";
-import { FormErrors, useClearFormErrors } from "../internal/form-errors";
+import { useFormErrors } from "../internal/form-errors";
 
 /**
  * Labeled date field composite over RAC `DateField`.
@@ -62,11 +63,10 @@ export function DateField<T extends DateValue>({
   ...props
 }: DateFieldProps<T>): ReactElement {
   const { base } = dateFieldVariants();
-  const names = [props.name] as const;
-  const clearingOnChange = useClearFormErrors(names, onChange);
+  const { validationErrors, onChange: clearingOnChange } = useFormErrors([props.name], onChange);
 
   return (
-    <FormErrors names={names}>
+    <FormValidationContext.Provider value={validationErrors}>
       <AriaDateField
         {...props}
         onChange={clearingOnChange}
@@ -77,7 +77,7 @@ export function DateField<T extends DateValue>({
         <FieldError>{errorMessage}</FieldError>
         {description ? <Description>{description}</Description> : null}
       </AriaDateField>
-    </FormErrors>
+    </FormValidationContext.Provider>
   );
 }
 

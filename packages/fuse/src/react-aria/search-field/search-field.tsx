@@ -2,7 +2,7 @@
 
 import type { ReactElement, ReactNode, RefAttributes } from "react";
 
-import { SearchField as AriaSearchField } from "react-aria-components";
+import { FormValidationContext, SearchField as AriaSearchField } from "react-aria-components";
 import type { SearchFieldProps as AriaSearchFieldProps, ValidationResult } from "react-aria-components";
 
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
@@ -12,7 +12,7 @@ import { searchFieldVariants } from "../../styles/search-field";
 import { Button } from "../internal/button";
 import { composeTailwindRenderProps } from "../internal/compose-tailwind-render-props";
 import { Description, FieldError, FieldGroup, Input, Label } from "../internal/field";
-import { FormErrors, useClearFormErrors } from "../internal/form-errors";
+import { useFormErrors } from "../internal/form-errors";
 import { searchFieldStrings } from "./intl";
 
 /**
@@ -56,11 +56,10 @@ export function SearchField({
 }: SearchFieldProps & RefAttributes<HTMLInputElement>): ReactElement {
   const strings = useLocalizedStrings(searchFieldStrings);
   const { base, button, buttonIcon, group, icon, input } = searchFieldVariants();
-  const names = [props.name] as const;
-  const clearingOnChange = useClearFormErrors(names, onChange);
+  const { validationErrors, onChange: clearingOnChange } = useFormErrors([props.name], onChange);
 
   return (
-    <FormErrors names={names}>
+    <FormValidationContext.Provider value={validationErrors}>
       <AriaSearchField
         {...props}
         onChange={clearingOnChange}
@@ -80,7 +79,7 @@ export function SearchField({
         <FieldError>{errorMessage}</FieldError>
         {description ? <Description slot="description">{description}</Description> : null}
       </AriaSearchField>
-    </FormErrors>
+    </FormValidationContext.Provider>
   );
 }
 

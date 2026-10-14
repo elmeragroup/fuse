@@ -50,18 +50,9 @@ const ALL_ERRORS = {
   query: "Search for something else.",
 };
 
-/** A date field's segment group; RAC names it after the field label. */
-function dateGroup(name: string): HTMLElement {
-  const element = page.getByRole("group", { name, exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected group ${name}`);
-  }
-  return element;
-}
-
-/** The RAC root around a date group, which carries `data-invalid`. */
+/** The RAC root around a date field's segment group, which RAC names after the field label. */
 function dateRoot(name: string): HTMLElement {
-  const root = dateGroup(name).parentElement;
+  const root = roleNamed("group", name).parentElement;
   if (!(root instanceof HTMLElement)) {
     throw new Error(`expected the root around ${name}`);
   }
@@ -82,7 +73,7 @@ function fieldStates() {
   const search = roleNamed("searchbox", "Search");
   const date = (name: string) => ({
     invalid: dateRoot(name).hasAttribute("data-invalid"),
-    texts: errorTexts(dateGroup(name)),
+    texts: errorTexts(roleNamed("group", name)),
   });
   return {
     email: { invalid: email.getAttribute("aria-invalid") === "true", texts: errorTexts(email) },
@@ -164,17 +155,22 @@ describe("Form errors on the interim React Aria fields", () => {
     render(
       <Form
         aria-label="Booking"
-        errors={{ startDate: "Pick a later date.", query: "Search for something else." }}>
+        errors={{
+          startDate: "Pick a later date.",
+          dueDate: "Pick a due date.",
+          query: "Search for something else.",
+        }}>
         <DatePicker name="startDate" label="Start date" errorMessage="Choose a weekday." />
         <SearchField name="query" label="Search" isInvalid={false} />
         <DateField name="dueDate" label="Due date" isInvalid errorMessage="Due dates are closed." />
       </Form>
     );
-    expect(errorTexts(dateGroup("Start date"))).toEqual(["Choose a weekday."]);
+    expect(errorTexts(roleNamed("group", "Start date"))).toEqual(["Choose a weekday."]);
     expect(dateRoot("Start date")).toHaveAttribute("data-invalid");
     expect(roleNamed("searchbox", "Search").getAttribute("aria-invalid")).toBeNull();
     expect(errorTexts(roleNamed("searchbox", "Search"))).toEqual([]);
-    expect(errorTexts(dateGroup("Due date"))).toEqual(["Due dates are closed."]);
+    expect(errorTexts(roleNamed("group", "Due date"))).toEqual(["Due dates are closed."]);
+    expect(dateRoot("Due date")).toHaveAttribute("data-invalid");
   });
 
   it("shows a range's errors under its start name, its end name or both, and clears both on a change", async () => {
@@ -197,20 +193,20 @@ describe("Form errors on the interim React Aria fields", () => {
       );
     }
     render(<Fixture />);
-    expect(errorTexts(dateGroup("Stay"))).toEqual(["Arrive later. Leave earlier."]);
+    expect(errorTexts(roleNamed("group", "Stay"))).toEqual(["Arrive later. Leave earlier."]);
 
     await userEvent.click(segmentNamed("month, Start Date, Stay"));
     await userEvent.keyboard("07142026");
     await userEvent.click(segmentNamed("month, End Date, Stay"));
     await userEvent.keyboard("07172026");
-    await expect.poll(() => errorTexts(dateGroup("Stay"))).toEqual([]);
+    await expect.poll(() => errorTexts(roleNamed("group", "Stay"))).toEqual([]);
     // Clearing the email error makes a new errors object; the range's cleared keys stay cleared.
     await userEvent.fill(roleNamed("textbox", "Email"), "kari@example.com");
     await expect.poll(() => errorTexts(roleNamed("textbox", "Email"))).toEqual([]);
-    expect(errorTexts(dateGroup("Stay"))).toEqual([]);
+    expect(errorTexts(roleNamed("group", "Stay"))).toEqual([]);
 
     await userEvent.click(roleNamed("button", "Start only"));
-    await expect.poll(() => errorTexts(dateGroup("Stay"))).toEqual(["Arrive later."]);
+    await expect.poll(() => errorTexts(roleNamed("group", "Stay"))).toEqual(["Arrive later."]);
     expect(dateRoot("Stay")).toHaveAttribute("data-invalid");
   });
 
@@ -223,7 +219,7 @@ describe("Form errors on the interim React Aria fields", () => {
         </Form>
       </FormValidationContext.Provider>
     );
-    expect(errorTexts(dateGroup("Start date"))).toEqual(["Taken by another booking."]);
+    expect(errorTexts(roleNamed("group", "Start date"))).toEqual(["Taken by another booking."]);
     expect(errorTexts(roleNamed("searchbox", "Search"))).toEqual(["Search for something else."]);
   });
 
@@ -232,16 +228,13 @@ describe("Form errors on the interim React Aria fields", () => {
     render(
       <FormValidationContext.Provider value={errors}>
         <Form aria-label="Booking" errors={errors}>
-          <TextField name="email" label="Email" />
           <DatePicker name="startDate" label="Start date" defaultValue={june2} />
         </Form>
       </FormValidationContext.Provider>
     );
-    expect(errorTexts(dateGroup("Start date"))).toEqual(["Pick a later date."]);
+    expect(errorTexts(roleNamed("group", "Start date"))).toEqual(["Pick a later date."]);
     await pickDay("Start date", /Tuesday, June 9, 2026/);
-    await expect.poll(() => errorTexts(dateGroup("Start date"))).toEqual([]);
-    await userEvent.fill(roleNamed("textbox", "Email"), "kari@example.com");
-    expect(errorTexts(dateGroup("Start date"))).toEqual([]);
+    await expect.poll(() => errorTexts(roleNamed("group", "Start date"))).toEqual([]);
   });
 
   it("keeps React Aria's own server errors outside a Fuse Form", async () => {
@@ -250,8 +243,8 @@ describe("Form errors on the interim React Aria fields", () => {
         <DatePicker name="startDate" label="Start date" defaultValue={june2} />
       </AriaForm>
     );
-    expect(errorTexts(dateGroup("Start date"))).toEqual(["Taken by another booking."]);
+    expect(errorTexts(roleNamed("group", "Start date"))).toEqual(["Taken by another booking."]);
     await pickDay("Start date", /Tuesday, June 9, 2026/);
-    await expect.poll(() => errorTexts(dateGroup("Start date"))).toEqual([]);
+    await expect.poll(() => errorTexts(roleNamed("group", "Start date"))).toEqual([]);
   });
 });

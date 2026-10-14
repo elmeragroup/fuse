@@ -6,6 +6,7 @@ import type { ReactElement, ReactNode } from "react";
 import {
   DateRangePicker as AriaDateRangePicker,
   DateRangePickerStateContext,
+  FormValidationContext,
   RangeCalendarContext,
   useSlottedContext,
 } from "react-aria-components";
@@ -19,7 +20,7 @@ import type { OverlayContainerProps } from "../../components/overlay/overlay-pro
 import { pickerVariants } from "../../styles/picker";
 import { DateInput } from "../date-field/date-field";
 import { composeTailwindRenderProps } from "../internal/compose-tailwind-render-props";
-import { FormErrors, useClearFormErrors } from "../internal/form-errors";
+import { useFormErrors } from "../internal/form-errors";
 import { useCommittedMonthFocus } from "../internal/picker-focused-month";
 import { isRenderableNode, PickerPresetGroup, PickerPresetItem } from "../internal/picker-presets";
 import type { PickerPresetGroupProps, PickerPresetItemProps } from "../internal/picker-presets";
@@ -107,11 +108,13 @@ export function DateRangePicker<T extends DateValue>({
 }: DateRangePickerProps<T>): ReactElement {
   const hasPresets = isRenderableNode(presetGroup);
   const { base, calendar, input, pane, separator } = pickerVariants({ range: true, hasPresets });
-  const names = [props.startName, props.endName] as const;
-  const clearingOnChange = useClearFormErrors(names, onChange);
+  const { validationErrors, onChange: clearingOnChange } = useFormErrors(
+    [props.startName, props.endName],
+    onChange
+  );
 
   return (
-    <FormErrors names={names}>
+    <FormValidationContext.Provider value={validationErrors}>
       <AriaDateRangePicker
         {...props}
         onChange={clearingOnChange}
@@ -143,7 +146,7 @@ export function DateRangePicker<T extends DateValue>({
           <DateInput className={input()} slot="end" />
         </PickerShell>
       </AriaDateRangePicker>
-    </FormErrors>
+    </FormValidationContext.Provider>
   );
 }
 
