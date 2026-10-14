@@ -117,8 +117,9 @@ async function openWithArrowDown(name = "Fruit"): Promise<HTMLElement> {
   comboboxNamed(name).focus();
   await userEvent.keyboard("{ArrowDown}");
   const listbox = await openedListbox();
-  // Keyboard opening highlights an option once the list has registered its items.
-  await vi.waitFor(() => highlightedOption());
+  // Keyboard opening highlights an option once the list has registered its items, and focuses it
+  // a frame later. A key sent before that focus reaches the trigger, which drops it.
+  await vi.waitFor(() => expect(document.activeElement).toBe(highlightedOption()));
   return listbox;
 }
 
