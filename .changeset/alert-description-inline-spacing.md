@@ -10,3 +10,5 @@ line. The 8px gap now applies only to block children such as paragraphs, lists, 
 those blocks. The gap weighs as much as one element selector: a margin reset such as
 `* { margin: 0 }` leaves it in place, and any consumer class rule overrides it, such as
 `className="[&>*+*]:mt-0"` on the description or `.my-description > p { margin-top: 0 }`.
+On a host without Tailwind's preflight, a paragraph or list in `Alert.Description` no longer keeps
+the browser's default margins, so it sits 4px below the title and 8px from the next block.

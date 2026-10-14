@@ -11,8 +11,9 @@ export const alertVariants = tv({
   slots: {
     base: "relative",
     icon: "block size-5 shrink-0 text-foreground",
-    // 8px between block children, twice the title's 4px gap; the selector lives in fuse.css.
-    description: "text-foreground alert-description-gap:mt-2",
+    // Zeroes its blocks' own block margins and puts 8px between consecutive blocks, twice the
+    // title's 4px gap; the selectors live in fuse.css.
+    description: "text-foreground alert-description-block:my-0 alert-description-gap:mt-2",
     button: "",
   },
   variants: {

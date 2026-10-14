@@ -348,10 +348,12 @@
    display as block or table by default that can be a direct flow child, `dialog` aside. It keys
    on default display, so Fuse's Badge, an inline-flex `div`, is excluded by its slot. Preflight
    displays media as blocks, so media takes the step only right after a block, where it starts a
-   new line on any host; inside a sentence it never does. The gap weighs one element selector:
-   it beats a universal margin reset in any order and an element reset loaded before Fuse's
-   stylesheet, and any consumer class rule overrides it. */
-@custom-variant alert-description-gap {
+   new line on any host; inside a sentence it never does. The block variant zeroes those blocks'
+   user-agent block margins on a host without preflight, so ItemContent's 4px gap and the 8px
+   step are the only spacing. Each rule weighs one element selector: it beats a universal margin
+   reset in any order and an element reset loaded before Fuse's stylesheet, and any consumer
+   class rule overrides it. The gap is declared after the block reset, so it wins their tie. */
+@custom-variant alert-description-block {
   :where(&)
     > :is(
       address,
@@ -385,6 +387,11 @@
       table,
       ul
     ):where(:not([data-slot="badge"])) {
+    @slot;
+  }
+}
+@custom-variant alert-description-gap {
+  @variant alert-description-block {
     &:where(* + *),
     :where(&) + :is(img, svg, video, canvas, audio, iframe, embed, object) {
       @slot;

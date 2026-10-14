@@ -72,13 +72,6 @@ const AA_TEXT_CONTRAST = 4.5;
 /** A 1px transparent GIF, so an image's box comes from its width and height, not a network load. */
 const PIXEL = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 
-/**
- * The parts of Tailwind's preflight that move blocks in a description: it zeroes every margin and
- * displays media as blocks, both in the base layer, below Fuse's utilities.
- */
-const PREFLIGHT_STAND_IN =
-  "@layer base { * { margin: 0; } img, svg, video, canvas, audio, iframe, embed, object { display: block; vertical-align: middle; } }";
-
 function computedSrgb(value: string): Srgb.Srgb {
   return CssColor.toSrgb(getOrThrow(CssColor.parse(value)));
 }
@@ -205,8 +198,8 @@ describe("Alert", () => {
     for (const { name, block, find } of BLOCKS_AFTER_PARAGRAPH) {
       const { unmount } = renderThemed(
         <>
-          {/* dist/styles.css ships without preflight, so user-agent margins would space the blocks. */}
-          <style>{PREFLIGHT_STAND_IN}</style>
+          {/* Preflight zeroes every margin in the base layer; the step must outlast that reset. */}
+          <style>{hostCss("preflight")}</style>
           <Alert.Root>
             <Alert.Title>Before you move</Alert.Title>
             <Alert.Description>
@@ -227,7 +220,7 @@ describe("Alert", () => {
       <>
         {/* Unlayered, like the Fuse utilities in dist/styles.css: specificity alone decides. */}
         <style>{".consumer-description > ul { margin-top: 0; }"}</style>
-        <style>{PREFLIGHT_STAND_IN}</style>
+        <style>{hostCss("preflight")}</style>
         <Alert.Root>
           <Alert.Title>Before you move</Alert.Title>
           <Alert.Description className="consumer-description">
@@ -241,7 +234,8 @@ describe("Alert", () => {
     );
     const paragraph = textNamed("Have these ready:").getBoundingClientRect();
     const list = page.getByRole("list").element().getBoundingClientRect();
-    // A class and a child combinator outrank a spacing rule that is one class deep.
+    // A class and a child combinator, (0,1,1), outrank the block-gap rule, which weighs one
+    // element selector, (0,0,1).
     expect(list.top - paragraph.bottom).toBe(0);
   });
 
@@ -275,6 +269,29 @@ describe("Alert", () => {
     expect(list.top - paragraph.bottom).toBe(8);
   });
 
+  it("spaces a paragraph and list 4px under the title and 8px apart without preflight", () => {
+    renderThemed(
+      <Alert.Root>
+        <Alert.Title>Before you move</Alert.Title>
+        <Alert.Description>
+          <p>Have these ready:</p>
+          <ul>
+            <li>Meter number</li>
+          </ul>
+        </Alert.Description>
+      </Alert.Root>
+    );
+    const title = headingNamed("Before you move", 3).getBoundingClientRect();
+    const paragraph = textNamed("Have these ready:").getBoundingClientRect();
+    const list = page.getByRole("list").element().getBoundingClientRect();
+    const description = descriptionIn(alertNamed("default")).getBoundingClientRect();
+    // The content column's gap is 0.25rem, 4px at the default 16px root, and the documented
+    // block step is 8px; user-agent `p` and `ul` margins would add to both and trail the list.
+    expect.soft(paragraph.top - title.bottom, "title to paragraph").toBeCloseTo(4, 2);
+    expect.soft(list.top - paragraph.bottom, "paragraph to list").toBeCloseTo(8, 2);
+    expect.soft(description.bottom - list.bottom, "list to description end").toBeCloseTo(0, 2);
+  });
+
   it("lets a consumer's Tailwind spacing class on the description override its spacing", () => {
     // The host's build emits `[&>*+*]:mt-0`, not dist/styles.css. Placed before the Fuse
     // stylesheet, it can only win on specificity: on a tie, the later Fuse rule would win.
@@ -284,7 +301,7 @@ describe("Alert", () => {
     onTestFinished(() => consumerRule.remove());
     renderThemed(
       <>
-        <style>{PREFLIGHT_STAND_IN}</style>
+        <style>{hostCss("preflight")}</style>
         <Alert.Root>
           <Alert.Title>Before you move</Alert.Title>
           <Alert.Description className="[&>*+*]:mt-0">
