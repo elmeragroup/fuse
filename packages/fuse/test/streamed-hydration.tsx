@@ -82,12 +82,18 @@ export async function hydrateStreamedPage(
     return children;
   }
   // A boundary with no host element above it holds back the whole shell, so it gets a <main>.
-  const tree = page(
-    <main>
-      <Suspense fallback={<p>{STREAMED_FALLBACK_TEXT}</p>}>
-        <AfterServerWork>{content}</AfterServerWork>
-      </Suspense>
-    </main>
+  // The shell is complete once the end marker after the page has streamed.
+  const tree = (
+    <>
+      {page(
+        <main>
+          <Suspense fallback={<p>{STREAMED_FALLBACK_TEXT}</p>}>
+            <AfterServerWork>{content}</AfterServerWork>
+          </Suspense>
+        </main>
+      )}
+      <hr data-shell-end="" />
+    </>
   );
 
   // React client-renders a pending boundary at once in a document that finished loading,
@@ -104,7 +110,7 @@ export async function hydrateStreamedPage(
     })
   ).getReader();
   const host = document.createElement("div");
-  host.innerHTML = await readUntil(reader, (html) => html.includes("<!--/$-->"));
+  host.innerHTML = await readUntil(reader, (html) => html.includes("data-shell-end"));
   await restoreContextDefaults();
   // Streamed scripts and segments land beside the root, as they would in <body>, and run.
   const tail = document.createElement("div");

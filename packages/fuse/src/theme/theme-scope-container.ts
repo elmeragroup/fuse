@@ -22,12 +22,19 @@ export type ThemeScopeContainerStore = ScopeElementSource & {
   getServerSnapshot: () => null;
   /** The scope element's callback ref. */
   attach: (node: HTMLElement | null) => void;
+  /**
+   * Drops an element that was detached, never reattached and has left the document. React
+   * deletes an element inside a hidden Suspense boundary without detaching its ref again, so
+   * consumers call this after they commit, which they do once that boundary reveals.
+   */
+  revalidate: () => void;
 };
 
 export function createThemeScopeContainerStore(): ThemeScopeContainerStore {
   let element: HTMLElement | null = null;
-  // Bumped by every attach, so a detach that React follows with an attach is never acted on.
-  let attaches = 0;
+  // Set by a detach and cleared by any attach, so a detach React follows with an attach (a
+  // replacement, StrictMode's double attach, a reveal) is never acted on.
+  let detached = false;
   const listeners = new Set<() => void>();
   const publish = (next: HTMLElement | null) => {
     if (next === element) {
@@ -36,6 +43,11 @@ export function createThemeScopeContainerStore(): ThemeScopeContainerStore {
     element = next;
     for (const listener of listeners) {
       listener();
+    }
+  };
+  const revalidate = () => {
+    if (detached && element !== null && !element.isConnected) {
+      publish(null);
     }
   };
   return {
@@ -49,7 +61,7 @@ export function createThemeScopeContainerStore(): ThemeScopeContainerStore {
     getServerSnapshot: () => null,
     attach(node) {
       if (node !== null) {
-        attaches += 1;
+        detached = false;
         publish(node);
         return;
       }
@@ -58,13 +70,10 @@ export function createThemeScopeContainerStore(): ThemeScopeContainerStore {
       // re-render inside the commit for every hide and reveal, which can feed an update loop,
       // so the element is dropped only if nothing reattached by the next microtask and it has
       // left the document; a hidden element stays connected.
-      const detachedAfter = attaches;
-      queueMicrotask(() => {
-        if (attaches === detachedAfter && element !== null && !element.isConnected) {
-          publish(null);
-        }
-      });
+      detached = true;
+      queueMicrotask(revalidate);
     },
+    revalidate,
   };
 }
 
@@ -101,7 +110,9 @@ function isElementRef(
  * - `null` — an explicit ref or an enclosing `ThemeScope` exists but its element is
  *   not attached yet, or the scope's element left the document, so the overlay
  *   renders nothing and waits. It must never briefly escape to `document.body`. A
- *   scope element that a Suspense boundary only hides stays the target;
+ *   scope element that a Suspense boundary only hides stays the target. An overlay
+ *   that mounts in the same commit as its scope sees the element after that commit's
+ *   passive effects, since the scope never updates state while it commits;
  * - `undefined` — no scope and no explicit container, so the primitive's own default
  *   (`document.body`) stays in place.
  *
@@ -122,10 +133,12 @@ export function useResolvedPortalContainer(
   // React attaches sibling refs during commit. One post-commit comparison makes
   // that attachment observable without polling or ever choosing a body fallback.
   useEffect(() => {
-    if (container !== undefined && isElementRef(container) && container.current !== resolved) {
+    if (container === undefined) {
+      store?.revalidate();
+    } else if (isElementRef(container) && container.current !== resolved) {
       refresh();
     }
-  }, [container, resolved]);
+  }, [container, resolved, store]);
 
   return resolved;
 }

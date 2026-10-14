@@ -271,6 +271,47 @@ describe("ThemeScope's container lifecycle", () => {
     await expect.poll(() => seen.at(-1)).toBeNull();
   });
 
+  it("stops providing an element that a render change removed while a boundary hid it", async () => {
+    function SuspendOn({ pending }: { pending: Promise<void> | undefined }) {
+      if (pending !== undefined) {
+        use(pending);
+      }
+      return null;
+    }
+    const seen: Resolved[] = [];
+    const record = (resolved: Resolved) => {
+      seen.push(resolved);
+    };
+    const tree = (attached: boolean, pending?: Promise<void>) => (
+      <Suspense fallback={<span>Hidden</span>}>
+        <ThemeScope
+          theme={scopeTheme}
+          render={(props) => (attached ? <div {...props} /> : <>{props.children}</>)}>
+          <Probe onResolve={record} />
+          <SuspendOn pending={pending} />
+        </ThemeScope>
+      </Suspense>
+    );
+    const { host, rerender } = render(tree(true));
+    const scope = host.querySelector("[data-theme-brand]");
+    await expect.poll(() => seen.at(-1)).toBe(scope);
+
+    let reveal: () => void = () => undefined;
+    const pending = new Promise<void>((resolve) => {
+      reveal = resolve;
+    });
+    rerender(tree(true, pending));
+    await expect.element(page.getByText("Hidden")).toBeVisible();
+    await settleScheduledWork();
+    // React deletes the hidden element without detaching its ref a second time.
+    rerender(tree(false, pending));
+    reveal();
+    await expect.element(page.getByText("Hidden")).not.toBeInTheDocument();
+
+    expect(host.querySelector("[data-theme-brand]")).toBeNull();
+    await expect.poll(() => seen.at(-1)).toBeNull();
+  });
+
   it("still attaches and cleans up a caller's ref", () => {
     const calls: string[] = [];
     const objectRef = createRef<HTMLDivElement>();
