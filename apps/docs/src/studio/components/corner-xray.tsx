@@ -286,6 +286,12 @@ function useCornerXray(): CornerXrayValue {
   return value;
 }
 
+/** Whether the page offers the corner X-ray, whether it is drawn, and its switch. */
+export function useCornerXraySwitch(): Pick<CornerXrayValue, "available" | "active" | "setOn"> {
+  const { available, active, setOn } = useCornerXray();
+  return { available, active, setOn };
+}
+
 /**
  * Owns the corner X-ray for the studio layout: whether it is on, and what it measured. It stays
  * on across a page switch and draws only on a page that offers it, where `X` toggles it.

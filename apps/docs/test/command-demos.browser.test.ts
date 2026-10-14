@@ -112,7 +112,7 @@ describe("Command demos", () => {
     await page.close();
   });
 
-  it("lists the page's commands above the app's, from the header button and the shortcut", async () => {
+  it("lists the page's commands above the app's and opens from the header button only", async () => {
     const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT });
     const demo = await openDemo(page, "command", "One palette for the app");
     const dialog = page.getByRole("dialog", { name: "Command palette", exact: true });
@@ -127,27 +127,33 @@ describe("Command demos", () => {
     await expect.poll(() => opener.evaluate((node) => node === document.activeElement)).toBe(true);
     await expect.poll(() => demo.getByRole("definition").first().textContent()).toBe("10232");
 
+    // ⌘K belongs to the docs site's palette, even with focus in the demo.
     await page.keyboard.press("ControlOrMeta+KeyK");
+    const sitePalette = page.getByRole("dialog", { name: "Site search", exact: true });
+    await expect.poll(() => sitePalette.count()).toBe(1);
+    expect(await dialog.count()).toBe(0);
+    await page.keyboard.press("Escape");
+    await expect.poll(() => sitePalette.count()).toBe(0);
+
+    await opener.click();
     await expect.poll(() => focusedName(page)).toBe("Search commands");
     await expect.poll(() => groupLabels(dialog)).toEqual(["Grace Hopper", "Go to"]);
-    // The demo stops the shortcut's propagation, so the docs site's search stays closed.
-    expect(await page.getByRole("dialog").count()).toBe(1);
     await page.keyboard.type("invoice");
     await expect.poll(() => highlighted(dialog)).toBe("Send invoice copy");
     await page.keyboard.press("Enter");
     await expect.poll(() => dialog.count()).toBe(0);
     await expect.poll(() => status(demo)).toBe("Ran: Send invoice copy: Grace Hopper");
 
-    await page.keyboard.press("ControlOrMeta+KeyK");
+    await opener.click();
     await expect.poll(() => focusedName(page)).toBe("Search commands");
     await page.keyboard.type("overview");
     await expect.poll(() => highlighted(dialog)).toBe("Overview");
     await page.keyboard.press("Enter");
     await expect.poll(() => dialog.count()).toBe(0);
-    await page.keyboard.press("ControlOrMeta+KeyK");
+    await opener.click();
     await expect.poll(() => focusedName(page)).toBe("Search commands");
     await expect.poll(() => groupLabels(dialog)).toEqual(["Go to"]);
-    await page.keyboard.press("ControlOrMeta+KeyK");
+    await page.keyboard.press("Escape");
     await expect.poll(() => dialog.count()).toBe(0);
     await page.close();
   });

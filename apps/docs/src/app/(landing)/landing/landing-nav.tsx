@@ -9,6 +9,7 @@ import { Button } from "@elmeragroup/fuse/button";
 import { ElmeraGroupLogo } from "@elmeragroup/fuse/icons";
 import { NavigationMenu } from "@elmeragroup/fuse/navigation-menu";
 
+import { SitePaletteTrigger } from "../../../components/site-palette/site-palette";
 import { HOME_PAGE, staticPagesIn } from "../../../lib/pages";
 import type { StaticPage } from "../../../lib/pages";
 import { STUDIO_NAV_CARD } from "../../../studio/registration";
@@ -19,7 +20,8 @@ import { ThemeChipPicker } from "./theme-picker/theme-chip-picker";
 const landingNav = tv({
   slots: {
     bar: "pt-safe-top backdrop-blur-md sticky top-0 z-20 border-b border-border bg-background/80 backdrop-saturate-150 supports-[not(backdrop-filter:blur(0))]:bg-background",
-    inner: "sm:px-6 max-w-landing mx-auto flex h-16 w-full items-center gap-8 px-4 lg:px-12",
+    // The gaps tighten below `lg`, where the menu, the search button and the theme chip share the bar.
+    inner: "sm:px-6 max-w-landing mx-auto flex h-16 w-full items-center gap-6 px-4 lg:gap-8 lg:px-12",
     wordmark:
       "text-base font-semibold flex items-center gap-2.5 rounded-md text-foreground no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
     mark: "size-5",
@@ -89,6 +91,7 @@ export function LandingNav(): ReactElement {
         </NavigationMenu.Root>
         <div className={styles.end()}>
           <span className={styles.version()}>v1.0</span>
+          <SitePaletteTrigger />
           <ThemeChipPicker />
           <Button
             size="sm"

@@ -114,13 +114,13 @@ function QuickActions(): ReactElement {
     <Sidebar.Menu>
       <Sidebar.MenuItem>
         <Sidebar.MenuButton
-          tooltip={{ children: <TooltipKeys label="Search" keys={["⌘", "K"]} /> }}
-          aria-keyshortcuts="Meta+K Control+K"
+          tooltip={{ children: <TooltipKeys label="Search" keys={["/"]} /> }}
+          aria-keyshortcuts="/"
           onClick={openPalette}>
           <MagnifyingGlass />
           <span>Search</span>
           <span className={styles.hint()}>
-            <Kbd keys={["⌘", "K"]} />
+            <Kbd keys={["/"]} />
           </span>
         </Sidebar.MenuButton>
       </Sidebar.MenuItem>

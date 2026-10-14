@@ -64,7 +64,8 @@ export function componentBySlug(slug: string): ComponentPageEntry | undefined {
   return COMPONENT_PAGES.find((component) => component.slug === slug);
 }
 
-function componentForPath(pathname: string): ComponentPageEntry | undefined {
+/** The component page a pathname serves, or `undefined` off the component pages. */
+export function componentForPath(pathname: string): ComponentPageEntry | undefined {
   if (!pathname.startsWith(COMPONENTS_PREFIX)) {
     return undefined;
   }

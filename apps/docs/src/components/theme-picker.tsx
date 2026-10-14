@@ -157,7 +157,14 @@ export function ThemePicker({ theme, onThemeChange }: ThemePickerProps): ReactEl
   );
 }
 
-function commitTheme(
+/**
+ * Applies a preview theme change. A brand pinned to one segment drags the segment along through
+ * `coerceTheme`; a combination it cannot make legal changes nothing.
+ *
+ * @param next - The preview theme with the changed axis.
+ * @param onThemeChange - Receives the legal theme.
+ */
+export function commitTheme(
   next: { variant: ThemeInput["variant"]; brand: ThemeInput["brand"]; segment: ThemeSegment },
   onThemeChange: (theme: ThemeInput) => void
 ): void {

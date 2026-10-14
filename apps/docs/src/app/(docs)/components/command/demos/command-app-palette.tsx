@@ -5,7 +5,6 @@ import type { ReactElement } from "react";
 
 import { Button } from "@elmeragroup/fuse/button";
 import { Command } from "@elmeragroup/fuse/command";
-import { Kbd, KbdGroup } from "@elmeragroup/fuse/kbd";
 
 type Action = { readonly label: string; readonly run: () => void };
 
@@ -152,9 +151,9 @@ function PageOf({ route }: { route: Route }): ReactElement {
 }
 
 /**
- * The app's layout, with one palette for every page. The header button, ⌘K and Ctrl+K open it.
- * The Root stays mounted while the pages change, and its `items` are the page's commands above
- * the app's own.
+ * The app's layout, with one palette for every page. The header button opens it; the docs site
+ * keeps ⌘K and Ctrl+K for its own palette. The Root stays mounted while the pages change, and its
+ * `items` are the page's commands above the app's own.
  */
 export function CommandAppPalette() {
   const [route, setRoute] = useState<Route>({ page: "customers" });
@@ -196,23 +195,7 @@ export function CommandAppPalette() {
   }
   return (
     <AppContext.Provider value={app}>
-      <div
-        className="max-w-xl flex w-full flex-col gap-3"
-        onKeyDown={(event) => {
-          // An app listens on `document`. The docs site uses ⌘K for its own search, so this demo
-          // handles the key only while focus is in the demo or its palette, and stops it from
-          // reaching the site's listener.
-          if (
-            (event.metaKey || event.ctrlKey) &&
-            !event.altKey &&
-            !event.shiftKey &&
-            event.key.toLowerCase() === "k"
-          ) {
-            event.preventDefault();
-            event.stopPropagation();
-            setOpen(!open);
-          }
-        }}>
+      <div className="max-w-xl flex w-full flex-col gap-3">
         <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-background">
           <div className="flex items-center gap-1 border-b border-border px-3 py-2">
             <nav aria-label="App" className="flex gap-1">
@@ -241,15 +224,10 @@ export function CommandAppPalette() {
               className="ml-auto"
               aria-haspopup="dialog"
               aria-expanded={open}
-              aria-keyshortcuts="Meta+K Control+K"
               onClick={() => {
                 setOpen(true);
               }}>
               Search commands
-              <KbdGroup aria-hidden>
-                <Kbd>⌘</Kbd>
-                <Kbd>K</Kbd>
-              </KbdGroup>
             </Button>
           </div>
           <div className="flex flex-col gap-3 p-4">

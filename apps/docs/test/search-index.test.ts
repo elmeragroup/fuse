@@ -4,7 +4,7 @@ import { resolveComponentPaths } from "../scripts/lib/components.ts";
 import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import { SEARCH_ENTRIES } from "../src/generated/search-index";
 import { HOME_PAGE, STATIC_PAGES } from "../src/lib/pages";
-import { matchSearchEntries } from "../src/lib/search";
+import { matchesEveryToken, matchSearchEntries } from "../src/lib/search";
 import { STUDIO_PAGES } from "../src/studio/registration";
 import { docsBaseUrl } from "./docs-server";
 
@@ -74,5 +74,14 @@ describe("search matching", () => {
 
   it("returns nothing for a query no page matches", () => {
     expect(matchSearchEntries("zzzz-no-such-page")).toEqual([]);
+  });
+
+  it.each([
+    ["every word, in any order", "internal telinet", true],
+    ["regardless of case", "TELINET", true],
+    ["a blank query", "  ", true],
+    ["not when one word is missing", "telinet company", false],
+  ] as const)("matches a row's text on %s: %s → %s", (_case, query, expected) => {
+    expect(matchesEveryToken("Telinet · Private · Internal", query)).toBe(expected);
   });
 });

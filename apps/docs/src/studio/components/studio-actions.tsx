@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { ReactElement } from "react";
 
 import { tv } from "tailwind-variants";
@@ -12,6 +12,8 @@ import { Dialog } from "@elmeragroup/fuse/dialog";
 import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 import { Copy, DotsThree } from "@elmeragroup/fuse/icons";
 
+import { useSiteCommands } from "../../components/site-palette/site-palette";
+import type { SiteCommand } from "../../components/site-palette/site-palette-model";
 import type { StudioDocument } from "../lib/edits";
 import { exportCss } from "../lib/export-css";
 import { encodeShare } from "../lib/share-codec";
@@ -50,29 +52,77 @@ async function copy(text: string, done: string): Promise<void> {
   }
 }
 
+/** Copies the address that opens the studio on `document`, or says why it cannot. */
+function copyShareLink(document: StudioDocument): void {
+  const encoded = encodeShare(document);
+  if (!encoded.ok) {
+    toastUnshareable(encoded.reason);
+    return;
+  }
+  const url = new URL(window.location.href);
+  url.hash = encoded.text;
+  void copy(url.toString(), "Link copied");
+}
+
 /**
  * The top bar's session actions: copy a share link, export the edits as CSS, and reset every
- * edit after a confirmation. On a phone they sit in one menu.
+ * edit after a confirmation. On a phone they sit in one menu. The site palette lists the same
+ * three; its Export and Reset all open these dialogs once the palette has closed.
  */
 export function StudioActions(): ReactElement {
   const { theme } = useStudio();
   const { overrides, seed, edit } = useStudioEdits();
   const [exporting, setExporting] = useState(false);
   const [resetting, setResetting] = useState(false);
-  const document: StudioDocument = { theme, overrides };
+  const document = useMemo((): StudioDocument => ({ theme, overrides }), [theme, overrides]);
   const edited = hasEdits(document);
   const css = seed === undefined ? undefined : exportCss(document, declarationsOf(seed));
+  const exportable = css !== undefined;
 
   const copyLink = () => {
-    const encoded = encodeShare(document);
-    if (!encoded.ok) {
-      toastUnshareable(encoded.reason);
-      return;
-    }
-    const url = new URL(window.location.href);
-    url.hash = encoded.text;
-    void copy(url.toString(), "Link copied");
+    copyShareLink(document);
   };
+
+  useSiteCommands(
+    useMemo(
+      (): readonly SiteCommand[] => [
+        {
+          id: "copy-link",
+          title: "Copy link",
+          keywords: ["share"],
+          action: {
+            _tag: "Run",
+            run: () => {
+              copyShareLink(document);
+            },
+          },
+        },
+        {
+          id: "export-css",
+          title: "Export CSS",
+          disabled: !exportable,
+          action: {
+            _tag: "OpenOverlay",
+            open: () => {
+              setExporting(true);
+            },
+          },
+        },
+        {
+          id: "reset-all",
+          title: "Reset all",
+          disabled: !edited,
+          action: {
+            _tag: "OpenOverlay",
+            open: () => {
+              setResetting(true);
+            },
+          },
+        },
+      ],
+      [document, exportable, edited]
+    )
+  );
 
   return (
     <>
