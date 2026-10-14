@@ -68,7 +68,7 @@
   Textarea, Select and the other field boxes, measures 1.08–1.70:1 against the page and card, an
   accepted deviation on the accessibility page. Except ngfi's M3 `outline-variant`, the values are
   converted shadcn stock colours. `Checkbox` and `Radio` draw their unchecked edge, and `Switch`
-  its unchecked track, in `muted-foreground` until then, and could return to `--input` once it
+  its unchecked edge and thumb, in `muted-foreground` until then, and could return to `--input` once it
   clears 3:1.
 - Ask design to confirm the two `--border` hairlines that sit well above the 1.19:1 page floor
   in `contrast-matrix.test.ts`. ngfi light, M3 `outline-variant` #BEC9C3, measures 1.62:1 on
@@ -77,7 +77,7 @@
   1.61–1.83:1 on card.
 - The interim GridList selection box (`react-aria/internal/checkbox.ts`) draws its unchecked edge in
   `--border`, under the 3:1 non-text floor that `Checkbox`, `Radio` and the unchecked `Switch`
-  track now meet in `--muted-foreground`. Its pressed edge is already `--muted-foreground`, so
+  edge and thumb now meet in `--muted-foreground`. Its pressed edge is already `--muted-foreground`, so
   raising the resting edge needs a new pressed one.
 - Decide whether `PhoneNumberField` and `NumberField` name their wrapper `group` from the field's
   label or drop the role. The controls inside have names; the groups around them have none.

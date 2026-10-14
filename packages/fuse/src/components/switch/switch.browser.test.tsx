@@ -3,6 +3,9 @@ import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
+import * as CssColor from "@elmeragroup/color/css-color";
+import { getOrThrow } from "@elmeragroup/color/result";
+
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
@@ -13,6 +16,7 @@ import {
   guenExternal,
   px,
   renderThemed,
+  snapshotDocumentTheme,
   stampDensity,
 } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme";
@@ -32,12 +36,17 @@ function switchNamed(name: string, checked?: boolean): HTMLElement {
   return element;
 }
 
-function measureSwitch(name: string) {
-  const root = switchNamed(name);
-  const thumb = [...root.children].find((child): child is HTMLElement => child instanceof HTMLElement);
+function switchThumb(root: HTMLElement, name: string): HTMLElement {
+  const thumb = root.querySelector('[data-slot="switch-thumb"]');
   if (!(thumb instanceof HTMLElement)) {
     throw new Error(`Expected a thumb inside ${name}`);
   }
+  return thumb;
+}
+
+function measureSwitch(name: string) {
+  const root = switchNamed(name);
+  const thumb = switchThumb(root, name);
   const rootStyle = getComputedStyle(root);
   const thumbStyle = getComputedStyle(thumb);
   return {
@@ -48,12 +57,16 @@ function measureSwitch(name: string) {
   };
 }
 
+let restoreDocumentTheme: () => void = () => undefined;
+
 beforeEach(() => {
   document.documentElement.style.fontSize = "16px";
+  restoreDocumentTheme = snapshotDocumentTheme();
 });
 
 afterEach(() => {
   document.documentElement.style.removeProperty("font-size");
+  restoreDocumentTheme();
 });
 
 describe("Switch", () => {
@@ -212,39 +225,71 @@ describe("Switch", () => {
     expect(switchNamed("Alerts").getAttribute("aria-checked")).toBe("false");
   });
 
-  it("draws the unchecked track at 3:1 against the page and cards, and the thumb at 3:1 on its track, in light themes", () => {
+  it.each(["light", "dark"] as const)(
+    "outlines the unchecked switch at 3:1 on the page and cards, and keeps the checked thumb at 3:1 on its fill, in %s themes",
+    (scheme) => {
+      // Stamp before mounting: a scheme flip under a mounted switch runs its colour transition.
+      document.documentElement.setAttribute("data-theme", scheme);
+      renderThemed(
+        <>
+          <Switch aria-label="Internal off" />
+          <Switch aria-label="Internal on" defaultChecked />
+          <ThemeScope theme={guenExternal}>
+            <Switch aria-label="Guen off" />
+            <Switch aria-label="Guen on" defaultChecked />
+          </ThemeScope>
+          <ThemeScope theme={{ variant: "external", brand: "ngfi", segment: "private" }}>
+            <Switch aria-label="Ngfi off" />
+            <Switch aria-label="Ngfi on" defaultChecked />
+          </ThemeScope>
+        </>
+      );
+      // WCAG 1.4.11: the unchecked edge shows where the switch is and its thumb shows the state,
+      // so each reaches 3:1 on what the switch sits on. The unchecked track paints no fill, so on
+      // versus off reads as outline versus fill whatever the palette.
+      for (const scope of ["Internal", "Guen", "Ngfi"]) {
+        const off = switchNamed(`${scope} off`);
+        const offStyle = getComputedStyle(off);
+        const offThumb = getComputedStyle(switchThumb(off, `${scope} off`)).backgroundColor;
+        expect(getOrThrow(CssColor.parse(offStyle.backgroundColor)).alpha, `${scope} off fill alpha`).toBe(0);
+        for (const surface of ["--background", "--card", "--card-soft"]) {
+          const surfaceColor = cssVarColor(off, surface);
+          expect(
+            computedContrast(offStyle.borderTopColor, surfaceColor),
+            `${scope} off edge on ${surface}`
+          ).toBeGreaterThanOrEqual(3);
+          expect(
+            computedContrast(offThumb, surfaceColor),
+            `${scope} off thumb on ${surface}`
+          ).toBeGreaterThanOrEqual(3);
+        }
+        const on = switchNamed(`${scope} on`);
+        expect(
+          computedContrast(
+            getComputedStyle(switchThumb(on, `${scope} on`)).backgroundColor,
+            getComputedStyle(on).backgroundColor
+          ),
+          `${scope} on thumb`
+        ).toBeGreaterThanOrEqual(3);
+      }
+    }
+  );
+
+  it("draws the invalid border on an unchecked or checked switch inside an invalid Field", () => {
     renderThemed(
       <>
-        <Switch aria-label="Internal off" />
-        <Switch aria-label="Internal on" defaultChecked />
-        <ThemeScope theme={guenExternal}>
-          <Switch aria-label="External off" />
-          <Switch aria-label="External on" defaultChecked />
-        </ThemeScope>
+        <Field.Root invalid>
+          <Field.Label>Required</Field.Label>
+          <Switch />
+        </Field.Root>
+        <Field.Root invalid>
+          <Field.Label>Accepted</Field.Label>
+          <Switch defaultChecked />
+        </Field.Root>
       </>
     );
-    // WCAG 1.4.11: the track shows where an unchecked switch is, and the thumb on it shows the
-    // state, so each must reach 3:1 against what it sits on.
-    for (const scope of ["Internal", "External"]) {
-      const track = switchNamed(`${scope} off`);
-      const trackColor = getComputedStyle(track).backgroundColor;
-      for (const surface of ["--background", "--card", "--card-soft"]) {
-        expect(
-          computedContrast(trackColor, cssVarColor(track, surface)),
-          `${scope} track on ${surface}`
-        ).toBeGreaterThanOrEqual(3);
-      }
-      for (const name of [`${scope} off`, `${scope} on`]) {
-        const root = switchNamed(name);
-        const thumb = root.firstElementChild;
-        if (!(thumb instanceof HTMLElement)) {
-          throw new Error(`Expected a thumb inside ${name}`);
-        }
-        expect(
-          computedContrast(getComputedStyle(thumb).backgroundColor, getComputedStyle(root).backgroundColor),
-          `${name} thumb`
-        ).toBeGreaterThanOrEqual(3);
-      }
+    for (const control of [switchNamed("Required", false), switchNamed("Accepted", true)]) {
+      expect(getComputedStyle(control).borderTopColor).toBe(cssVarColor(control, "--error"));
     }
   });
 
