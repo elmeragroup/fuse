@@ -31,7 +31,9 @@ export const alertVariants = tv({
         button: "bg-error text-error-foreground hover:bg-error/90",
       },
       warning: {
-        base: "border-warning bg-warning-soft text-warning-soft-foreground",
+        // The flush focus ring takes the soft foreground, held to 4.5:1 on this fill, where
+        // the neutral grey falls under 3:1 in dark.
+        base: "border-warning bg-warning-soft text-warning-soft-foreground [--ring:var(--warning-soft-foreground)]",
         icon: "text-warning",
         button: "bg-warning text-warning-foreground hover:bg-warning/90",
       },

@@ -63,9 +63,11 @@ export default function AccessibilityPage(): ReactElement {
       <ul>
         <li>
           Focus rings render on <code>:focus-visible</code> only, never bare <code>:focus</code>, always
-          through one shared recipe: a flush two-pixel ring in the neutral <code>--ring</code> role. A
-          keyboard-focused invalid control draws a one-pixel <code>--error</code> line inside its error halo
-          instead. No component suppresses, recolours or redefines either.
+          through one shared recipe: a flush two-pixel ring in the <code>--ring</code> role, a neutral grey by
+          default. Status Toasts and the warning Alert rebind <code>--ring</code> to their soft surface&apos;s
+          foreground, as the accepted deviations below explain. A keyboard-focused invalid control draws a
+          one-pixel <code>--error</code> line inside its error halo instead. No component suppresses or
+          redefines either recipe.
         </li>
         <li>
           Keyboard behaviour follows base-ui, with the documented component defaults: arrow-key roving with
@@ -118,12 +120,14 @@ export default function AccessibilityPage(): ReactElement {
       <p>Documented honestly rather than quietly fixed away:</p>
       <ul>
         <li>
-          The neutral <code>--ring</code> is held to 3:1 against the page and card surfaces in both color
-          schemes, the surfaces it is drawn on. The ring sits flush against the control, so against a strong
-          fill it can measure below 3:1 against that fill. The external secondary button carries the brand
-          color in every brand except Nordic Green Energy, and in light mode the ring measures 1.62–1.79:1
-          against it. Against the light Telinet and Nordic Green Energy primary buttons it measures under
-          2.7:1. A brand can tune its ring in its palette.
+          The neutral <code>--ring</code> is held to 3:1 against the page, card and muted surfaces in both
+          color schemes. Muted is the Tabs list track. Status Toasts and the warning Alert redraw the ring in
+          their soft surface&apos;s foreground, because the neutral grey falls under 3:1 on the dark status
+          soft fills. The ring sits flush against the control, so against a strong fill it can measure below
+          3:1 against that fill. The external secondary button carries the brand color in every brand except
+          Nordic Green Energy, and in light mode the ring measures 1.62–1.79:1 against it. Against the light
+          Telinet and Nordic Green Energy primary buttons it measures under 2.7:1. A brand can tune its ring
+          in its palette.
         </li>
         <li>
           Light <code>--input</code>, the border of Input, Textarea, Select and the other field boxes,

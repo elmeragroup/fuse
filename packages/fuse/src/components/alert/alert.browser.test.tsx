@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { describe, expect, it, onTestFinished, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import * as CssColor from "@elmeragroup/color/css-color";
@@ -10,16 +10,22 @@ import * as Wcag from "@elmeragroup/color/wcag";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { ringLayers, settleTransitions } from "../../../test/assert-invalid-ring";
 import { HOSTS, centreY, firstLineCentreY, hostCss } from "../../../test/first-line";
 import {
+  computedContrast,
   headingNamed,
   px,
   renderThemed,
   roleNamed,
+  snapshotDocumentTheme,
   stampDensity,
+  stampDocumentTheme,
+  stampTheme,
   textNamed,
 } from "../../../test/themed-browser-render";
 import { DENSITIES } from "../../theme/density";
+import { LEGAL_THEMES, themeSlug } from "../../theme/tokens/themes";
 import { Badge } from "../badge/badge";
 import { PopoverContent, PopoverRoot, PopoverTrigger } from "../popover/popover";
 import { Alert } from "./alert";
@@ -510,5 +516,55 @@ describe("Alert", () => {
     await settled(action);
     expect(getComputedStyle(action).backgroundColor).not.toBe(restFill);
     expect(actionContrast(action, alertNamed("default"))).toBeGreaterThanOrEqual(AA_TEXT_CONTRAST);
+  });
+});
+
+describe("Alert focus ring contrast", () => {
+  let restoreDocumentTheme: () => void;
+
+  beforeEach(() => {
+    restoreDocumentTheme = snapshotDocumentTheme();
+  });
+
+  afterEach(() => {
+    restoreDocumentTheme();
+  });
+
+  it("draws the warning action's focus ring at 3:1 against the alert fill in every theme and scheme", async () => {
+    renderThemed(
+      <>
+        <button type="button">Focus start</button>
+        <Alert.Root variant="warning" onAction={vi.fn()} actionLabel="Retry">
+          <Alert.Title>Meter offline</Alert.Title>
+        </Alert.Root>
+      </>
+    );
+    roleNamed("button", "Focus start").focus();
+    // A real Tab, so the action matches `:focus-visible` and paints the ring.
+    await userEvent.keyboard("{Tab}");
+    const action = roleNamed("button", "Retry");
+    expect(document.activeElement).toBe(action);
+    const root = alertNamed("warning");
+    // renderThemed's ThemeScope stamp outranks the document's, so the theme goes on that
+    // scope and the scheme on the document.
+    const scope = root.closest<HTMLElement>("[data-theme-brand]");
+    if (scope === null || scope === document.documentElement) {
+      throw new Error("expected the alert inside renderThemed's ThemeScope");
+    }
+
+    for (const scheme of ["light", "dark"] as const) {
+      for (const theme of LEGAL_THEMES) {
+        stampDocumentTheme(theme, scheme);
+        stampTheme(scope, theme);
+        settleTransitions(root, action);
+        const [ring] = ringLayers(action);
+        const context = `${themeSlug(theme)} ${scheme}`;
+        expect(ring, context).toBeDefined();
+        // WCAG 1.4.11: the ring's outer edge sits flush on the warning-soft surface.
+        expect
+          .soft(computedContrast(ring?.color ?? "", getComputedStyle(root).backgroundColor), context)
+          .toBeGreaterThanOrEqual(3);
+      }
+    }
   });
 });
