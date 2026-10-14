@@ -1092,11 +1092,15 @@ describe("SelectionItem", () => {
       );
     });
 
-    it("shows the disabled row and its cursor for a custom control that is natively, aria- or data-disabled", async () => {
+    it("shows the disabled row and its cursor when the shell is disabled or its custom control is natively, aria- or data-disabled", async () => {
       /** A custom control's row, with a SubSection whose passive parts toggle it. */
-      const row = (name: string, control: ReactElement) => (
+      const row = (name: string, control: ReactElement, isDisabled?: boolean) => (
         <Field.Root>
-          <SelectionItem.Shell dataSlot="checkbox-item" control={control} isSubSectionSelectable>
+          <SelectionItem.Shell
+            dataSlot="checkbox-item"
+            control={control}
+            isSubSectionSelectable
+            {...(isDisabled ? { isDisabled } : null)}>
             <RowTitle>{name}</RowTitle>
             <SelectionItem.SubSection>{`${name} details`}</SelectionItem.SubSection>
           </SelectionItem.Shell>
@@ -1112,6 +1116,7 @@ describe("SelectionItem", () => {
           )}
           {row("Data control", <span role="checkbox" aria-checked="false" data-disabled="" tabIndex={0} />)}
           {row("Enabled control", <input type="checkbox" />)}
+          {row("Shell-disabled control", <span role="checkbox" aria-checked="false" tabIndex={0} />, true)}
           {row(
             "Data false control",
             <span role="checkbox" aria-checked="false" data-disabled="false" tabIndex={0} />
@@ -1124,6 +1129,7 @@ describe("SelectionItem", () => {
         ["Aria control", true],
         ["Data control", true],
         ["Enabled control", false],
+        ["Shell-disabled control", true],
         ["Data false control", false],
       ] as const) {
         const shell = shellFrom(name);
@@ -1265,6 +1271,59 @@ describe("SelectionItem", () => {
     expect(getComputedStyle(shell).borderTopColor).toBe(cssVarColor(shell, "--primary"));
     expect(getComputedStyle(shell).borderTopWidth).not.toBe("0px");
     expect(getComputedStyle(shell).marginTop).toBe("-1px");
+  });
+
+  it("does not paint checked shell state from a checked selection row nested in SubSection", async () => {
+    /** Three unchecked rows; the middle one's SubSection holds a checked selection row. */
+    const Rows = ({ prefix }: { prefix: string }) => (
+      <CheckboxItemGroup label={`${prefix}Plans`}>
+        <CheckboxItem value="basic">
+          <RowTitle>{`${prefix}Basic`}</RowTitle>
+        </CheckboxItem>
+        <CheckboxItem value="bundle">
+          <RowTitle>{`${prefix}Bundle`}</RowTitle>
+          <CheckboxItem.SubSection>
+            <CheckboxItemGroup label={`${prefix}Bundle extras`} defaultValue={["router"]}>
+              <CheckboxItem value="router">
+                <RowTitle>{`${prefix}Router`}</RowTitle>
+              </CheckboxItem>
+            </CheckboxItemGroup>
+          </CheckboxItem.SubSection>
+        </CheckboxItem>
+        <CheckboxItem value="support">
+          <RowTitle>{`${prefix}Support`}</RowTitle>
+        </CheckboxItem>
+      </CheckboxItemGroup>
+    );
+    renderThemed(
+      <>
+        <Rows prefix="" />
+        <ThemeScope theme={fkasExternal}>
+          <Rows prefix="External " />
+        </ThemeScope>
+      </>
+    );
+
+    const shell = shellFrom("Bundle");
+    await settled(shell);
+    expect(checkboxNamed("Bundle").getAttribute("aria-checked")).toBe("false");
+    expect(checkboxNamed("Router").getAttribute("aria-checked")).toBe("true");
+    // Oracle sanity: a checked repaint would change each colour asserted below.
+    expect(cssVarColor(shell, "--primary")).not.toBe(cssVarColor(shell, "--border"));
+    expect(tokenBackgroundColor(shell, "bg-muted")).not.toBe(cssVarColor(shell, "--card"));
+    const style = getComputedStyle(shell);
+    expect(style.backgroundColor).toBe(cssVarColor(shell, "--card"));
+    expect(style.borderBottomColor).toBe(cssVarColor(shell, "--border"));
+    expect(style.marginTop).toBe("0px");
+    expect(style.borderTopWidth).toBe("0px");
+
+    const external = shellFrom("External Bundle");
+    await settled(external);
+    expect(checkboxNamed("External Bundle").getAttribute("aria-checked")).toBe("false");
+    expect(checkboxNamed("External Router").getAttribute("aria-checked")).toBe("true");
+    expect(tokenBackgroundColor(external, "bg-muted")).not.toBe(cssVarColor(external, "--card"));
+    expect(getComputedStyle(external).backgroundColor).toBe(cssVarColor(external, "--card"));
+    expect(getComputedStyle(external).marginTop).toBe("0px");
   });
 
   describe("row edge", () => {

@@ -10,6 +10,8 @@ import type { Host } from "../../../test/first-line";
 import { renderThemed, roleNamed, stampDensity, textNamed } from "../../../test/themed-browser-render";
 import { DENSITIES } from "../../theme/density";
 import { Button } from "../button/button";
+import { CheckboxItemGroup } from "../checkbox/checkbox";
+import { CheckboxItem } from "../checkbox/checkbox-item";
 import { Item } from "./index";
 
 const ITEM_SIZES = ["default", "sm", "xs"] as const;
@@ -55,6 +57,20 @@ function MediaRow({
         {actions}
       </Item.Root>
     </div>
+  );
+}
+
+/** A title-only row with a 40px avatar, which centres both cells wherever it is nested. */
+function NestedMeterRow() {
+  return (
+    <Item.Root>
+      <Item.Media>
+        <div role="img" aria-label="Avatar" style={{ width: "40px", height: "40px" }} />
+      </Item.Media>
+      <Item.Content>
+        <Item.Title>Meter 1</Item.Title>
+      </Item.Content>
+    </Item.Root>
   );
 }
 
@@ -271,6 +287,53 @@ describe("Item media alignment", () => {
         expect(Math.abs(centreY(roleNamed("button", "Open")) - centreY(row)), density).toBeLessThanOrEqual(
           0.5
         );
+        unmount();
+      }
+    });
+
+    it.each([
+      {
+        outer: "a described Item's footer",
+        tree: (
+          <Item.Root>
+            <Item.Content>
+              <Item.Title>Usage spike</Item.Title>
+              <Item.Description>{WRAPPING_DESCRIPTION}</Item.Description>
+            </Item.Content>
+            <Item.Footer>
+              <NestedMeterRow />
+            </Item.Footer>
+          </Item.Root>
+        ),
+      },
+      {
+        outer: "a described CheckboxItem's SubSection",
+        tree: (
+          <CheckboxItemGroup label="Meters">
+            <CheckboxItem value="usage">
+              <CheckboxItem.Content>
+                <CheckboxItem.Title>Usage spike</CheckboxItem.Title>
+                <CheckboxItem.Description>{WRAPPING_DESCRIPTION}</CheckboxItem.Description>
+              </CheckboxItem.Content>
+              <CheckboxItem.SubSection>
+                <NestedMeterRow />
+              </CheckboxItem.SubSection>
+            </CheckboxItem>
+          </CheckboxItemGroup>
+        ),
+      },
+    ])("centres a title-only row nested in $outer on its own line", ({ tree }) => {
+      for (const density of DENSITIES) {
+        stampDensity(density);
+        const { unmount } = renderThemed(
+          <div style={{ width: "240px" }}>
+            <style>{hostCss(host)}</style>
+            {tree}
+          </div>
+        );
+        // Oracle: a title-only row's `items-center` centres its title line on its media.
+        const offset = firstLineCentreY(textNamed("Meter 1")) - centreY(roleNamed("img", "Avatar"));
+        expect(Math.abs(offset), density).toBeLessThanOrEqual(0.5);
         unmount();
       }
     });

@@ -391,6 +391,19 @@
     }
   }
 }
+/* An Item part beside a description. Item.Media and Item.Content are direct children of the
+   row, and the test reads only that row's own Item.Content, so a row nested in another row's
+   footer or in a selection SubSection does not count, and neither does the selection label,
+   whose direct children are the control slot and a cluster. It keys on the parent, not a root
+   slot, so a root built from the public `itemVariants` matches too. `:where` adds no
+   specificity, so the rule weighs the part's class, (0,1,0), and it still overrides the part's
+   plain utilities (the base `[--item-media-line:auto]`, a plain `self-*`) because Tailwind
+   emits variant rules after them. */
+@custom-variant item-described {
+  :where(:has(> [data-slot="item-content"] > [data-slot="item-description"])) > & {
+    @slot;
+  }
+}
 /* A disabled control: `:disabled`, `data-disabled` or `aria-disabled="true"`. This is the
    one disabled predicate. `enabled-hover` and `enabled-active` build on its negation, and
    a part that repaints a whole control from another element's hover (the inline
@@ -398,6 +411,41 @@
    that way it sorts with the `not-*` variants, ahead of `focus-visible:`, and `:not(:where())`
    adds no specificity. The state face in styles/state-face.ts owns the matching disabled look. */
 @custom-variant disabled-state (&:where([data-disabled]:not([data-disabled="false"]), :disabled, [aria-disabled="true"]));
+/* A disabled selection row. A shell is disabled when its own `isDisabled` or a disabled group's
+   Field root marks it `data-disabled`, or when its own control is disabled: an element in the
+   row's control slot that matches `disabled-state` above. Keep the control arm in step with that
+   predicate; it uses `:is` where that uses `:where`, to keep the weight. The outer `:is()`
+   takes the specificity of its `:has()` arm whichever arm matches, and that arm's `label` type
+   selector and `:not()` lift the shell rule to (0,4,1) over the checked row's `bg-muted` at
+   (0,3,1), so keep the arm at least that heavy. Child combinators keep a row nested in a
+   SubSection from matching. `selection-row-disabled` marks the shell itself;
+   `selection-row-disabled-part` marks the shell's direct children, the label and the SubSection
+   band, and the label's children, the label row cluster among them, so each part matches exactly
+   one arm. */
+@custom-variant selection-row-disabled (&:is([data-disabled]:not([data-disabled="false"]), :has(> label > [data-slot="selection-item-control"] :is([data-disabled]:not([data-disabled="false"]), :disabled, [aria-disabled="true"]))));
+@custom-variant selection-row-disabled-part {
+  [data-selection-item]:is(
+      [data-disabled]:not([data-disabled="false"]),
+      :has(
+        > label
+          > [data-slot="selection-item-control"]
+          :is([data-disabled]:not([data-disabled="false"]), :disabled, [aria-disabled="true"])
+      )
+    )
+    > &,
+  [data-selection-item]:is(
+      [data-disabled]:not([data-disabled="false"]),
+      :has(
+        > label
+          > [data-slot="selection-item-control"]
+          :is([data-disabled]:not([data-disabled="false"]), :disabled, [aria-disabled="true"])
+      )
+    )
+    > label
+    > & {
+    @slot;
+  }
+}
 /* Hover and press on an enabled control. A disabled control keeps pointer events, so a
    Tooltip on it still opens, and these variants keep its paint and position still. An
    `aria-disabled` control still activates; only its hover and press faces are gated.

@@ -20,15 +20,16 @@ import type { SelectionItemGroupOrientation } from "./selection-item-variants";
 const outlineItemClass = itemVariants({ variant: "outline" });
 
 // A connected stack's rows share one line per join: every row but the first drops its top border,
-// and a checked one pulls itself up one pixel to paint that line itself. The dividers key on an
-// adjacent selection row, not on first or last child, so a lone shell beside a Field.Description
-// or Field.Error draws no line. A row with a row after it takes the divider on its bottom edge,
-// which outranks the shell's resting edge (0,2,0 over 0,1,0) and yields to a checked row's
-// whole-box edge (0,3,0). A checked row takes the checked divider on each edge it shares with a
-// row, which outranks that box (0,4,0). Every other edge keeps the row's own.
+// and a checked one pulls itself up one pixel to paint that line itself. The checked test reads the
+// control through this row's own label, so a checked row nested in a SubSection does not count. The
+// dividers key on an adjacent selection row, not on first or last child, so a lone shell beside a
+// Field.Description or Field.Error draws no line. A row with a row after it takes the divider on
+// its bottom edge, which outranks the shell's resting edge (0,2,0 over 0,1,0) and yields to a
+// checked row's whole-box edge (0,3,1). A checked row takes the checked divider on each edge it
+// shares with a row, which outranks that box (0,4,1). Every other edge keeps the row's own.
 const connectedStackClass = cn(
-  "rounded-none not-first:border-t-0 first:rounded-t-lg last:rounded-b-lg has-[[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px has-[[data-slot=selection-item-control]_[data-checked]]:not-first:border-t",
-  "[&:has(+[data-selection-item])]:border-b-selection-divider has-[[data-slot=selection-item-control]_[data-checked]]:[&:has(+[data-selection-item])]:border-b-selection-checked-divider has-[[data-slot=selection-item-control]_[data-checked]]:[[data-selection-item]+&]:border-t-selection-checked-divider"
+  "rounded-none not-first:border-t-0 first:rounded-t-lg last:rounded-b-lg has-[>label>[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px has-[>label>[data-slot=selection-item-control]_[data-checked]]:not-first:border-t",
+  "[&:has(+[data-selection-item])]:border-b-selection-divider has-[>label>[data-slot=selection-item-control]_[data-checked]]:[&:has(+[data-selection-item])]:border-b-selection-checked-divider has-[>label>[data-slot=selection-item-control]_[data-checked]]:[[data-selection-item]+&]:border-t-selection-checked-divider"
 );
 
 // The label's `::before` is the row's click target. With automatic grid lines it covers the
@@ -37,10 +38,9 @@ const connectedStackClass = cn(
 // through to the target. Once the band holds a footer that shows, the target shrinks to the
 // label row and the band takes its own clicks again, unless `isSubSectionSelectable` keeps the
 // whole box. Child combinators keep a selection row nested in a SubSection from counting.
-// Tailwind reads class names from the source text, so each selector is written out in full.
 const labelClass = cn(
   "contents cursor-pointer before:absolute before:inset-0 before:-z-1",
-  "[[data-selection-item]:is([data-disabled]:not([data-disabled=false]),:has(>label>[data-slot=selection-item-control]_:is([data-disabled]:not([data-disabled=false]),:disabled,[aria-disabled=true])))>&]:cursor-not-allowed"
+  "selection-row-disabled-part:cursor-not-allowed"
 );
 const labelRowTargetClass = cn(
   "[[data-selection-item]:has(>[data-slot=selection-item-sub-sections]>div>[data-slot=item-footer]:not([data-mode=hidden]))>&]:before:row-[1/2]"
@@ -50,11 +50,8 @@ const subSectionBandClass = cn(
   "has-[>div>[data-slot=item-footer]:not([data-mode=hidden])]:pointer-events-auto"
 );
 // With `isSubSectionSelectable`, the band shows the label row's cursor, and the not-allowed one
-// while the row is disabled, by the same predicate as the disabled row below.
-const selectableBandClass = cn(
-  "cursor-pointer",
-  "[[data-selection-item]:is([data-disabled]:not([data-disabled=false]),:has(>label>[data-slot=selection-item-control]_:is([data-disabled]:not([data-disabled=false]),:disabled,[aria-disabled=true])))>&]:cursor-not-allowed"
-);
+// while the row is disabled.
+const selectableBandClass = cn("cursor-pointer", "selection-row-disabled-part:cursor-not-allowed");
 
 // The row's first line, which the control and Actions centre on: one line of the label text
 // `--label-text` at `--label-leading` for a plain-text row, which inherits the shell's label type,
@@ -65,33 +62,24 @@ const firstLineClass = cn(
   "[--selection-first-line:var(--label-leading)] has-[>label_[data-slot=selection-item-title]]:[--selection-first-line:calc(var(--label-text)*var(--leading-snug))]"
 );
 
-// The disabled row. A shell is disabled when its own `isDisabled` or a disabled group's Field
-// root marks it `data-disabled`, or when its own control is disabled: an element in this row's
-// control slot, not one nested in a SubSection, that carries `data-disabled`, matches the
-// `:disabled` pseudo-class or is `aria-disabled="true"`, the `disabled-state` predicate of
-// fuse.css. The label and the selectable band key their `not-allowed` cursor on the same
-// predicate. The `:is()` takes the specificity of its `:has()` arm whichever arm matches, and
-// that arm's `label` type selector and `:not()` lift it to (0,4,1) over the checked row's
-// `bg-muted` rule at (0,3,0); keep the arm at least that heavy. A
-// disabled row fills with the disabled background role, checked or not, and that fill also
-// wins over a background class in `className`. The 45° hatch alternates 8px transparent bands
-// with 8px of the hatch role: a black alpha in internal themes, transparent in external ones.
-// Tailwind reads class names from the source text, so each selector is written out in full.
+// The disabled row, by the `selection-row-disabled` variants of fuse.css, which also give the label
+// and the selectable band their `not-allowed` cursor. A disabled row fills with the disabled
+// background role, checked or not, and that fill also wins over a background class in
+// `className`. The 45° hatch alternates 8px transparent bands with 8px of the hatch role: a black
+// alpha in internal themes, transparent in external ones.
 const disabledShellClass = cn(
-  "[&:is([data-disabled]:not([data-disabled=false]),:has(>label>[data-slot=selection-item-control]_:is([data-disabled]:not([data-disabled=false]),:disabled,[aria-disabled=true])))]:cursor-not-allowed",
-  "[&:is([data-disabled]:not([data-disabled=false]),:has(>label>[data-slot=selection-item-control]_:is([data-disabled]:not([data-disabled=false]),:disabled,[aria-disabled=true])))]:bg-selection-disabled-background",
-  "[&:is([data-disabled]:not([data-disabled=false]),:has(>label>[data-slot=selection-item-control]_:is([data-disabled]:not([data-disabled=false]),:disabled,[aria-disabled=true])))]:bg-[repeating-linear-gradient(45deg,transparent,transparent_8px,--theme(--color-selection-disabled-hatch)_8px,--theme(--color-selection-disabled-hatch)_16px)]"
+  "selection-row-disabled:cursor-not-allowed",
+  "selection-row-disabled:bg-selection-disabled-background",
+  "selection-row-disabled:bg-[repeating-linear-gradient(45deg,transparent,transparent_8px,--theme(--color-selection-disabled-hatch)_8px,--theme(--color-selection-disabled-hatch)_16px)]"
 );
 
 // A disabled row's label row text takes `--selection-disabled-foreground`: the foreground in
 // internal themes, which keeps the title's colour, and the muted foreground in external ones.
 // It goes on the label row cluster, which also holds a plain-text row, rather than on the
-// title, and the `>label>&` combinators keep a row nested in a SubSection from inheriting it.
+// title, and the variant's `> label > &` arm keeps a row nested in a SubSection from inheriting it.
 // The SubSection band is a sibling of the label, so its content keeps its colours, a
 // description keeps its own muted text, and the control keeps its 50% face.
-const disabledLabelTextClass = cn(
-  "[[data-selection-item]:is([data-disabled]:not([data-disabled=false]),:has(>label>[data-slot=selection-item-control]_:is([data-disabled]:not([data-disabled=false]),:disabled,[aria-disabled=true])))>label>&]:text-selection-disabled-foreground"
-);
+const disabledLabelTextClass = cn("selection-row-disabled-part:text-selection-disabled-foreground");
 
 /**
  * Elements in a SubSection that keep their own clicks under `isSubSectionSelectable`. A click
@@ -321,11 +309,11 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
  * a checked row stays boxed in `--primary`. External themes draw both in `--border`: stacked rows
  * keep a grey separator, checked or not, while the sides, the stack's outer top and bottom and a
  * lone row beside other Field parts stay transparent. A checked non-first shell repaints its top border by pulling itself up one
- * pixel (`has-[[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px`) instead of a
+ * pixel (`has-[>label>[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px`) instead of a
  * z-index lift; `className` margin overrides can break that. Horizontal item groups render
  * individually rounded full-border cards with no vertical border collapse, no divider and no
- * checked negative margin. Checked selectors are scoped to the private control slot so a checked
- * descendant in SubSection cannot repaint the shell.
+ * checked negative margin. The checked selectors read only the row's own control, through
+ * `>label>`, so a checked row nested in a SubSection cannot repaint the shell.
  *
  * A disabled shell, through `isDisabled`, a disabled group or its own disabled control, fills
  * with the theme's `--selection-disabled-background` under a hatch of
@@ -440,7 +428,7 @@ export function SelectionItemShell({
         selectionItemShellClass,
         labelTypeClass,
         firstLineClass,
-        "relative isolate box-border grid items-stretch gap-0 gap-x-2.5 border-selection-border bg-card py-0 transition-colors has-[[data-slot=selection-item-control]_[data-checked]]:border-selection-checked-border has-[[data-slot=selection-item-control]_[data-checked]]:bg-muted",
+        "relative isolate box-border grid items-stretch gap-0 gap-x-2.5 border-selection-border bg-card py-0 transition-colors has-[>label>[data-slot=selection-item-control]_[data-checked]]:border-selection-checked-border has-[>label>[data-slot=selection-item-control]_[data-checked]]:bg-muted",
         controlAtEnd ? "grid-cols-[minmax(0,1fr)_auto]" : "grid-cols-[auto_minmax(0,1fr)]",
         connectedStack ? connectedStackClass : "rounded-lg",
         disabledShellClass,
