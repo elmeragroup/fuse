@@ -27,8 +27,9 @@ const studioThemePicker = tv({
 const styles = studioThemePicker();
 
 /**
- * The base theme every artboard renders in: variant, brand and segment, through Fuse's
- * `coerceTheme`, so only a legal theme is ever picked.
+ * The base theme, which every artboard follows unless it has a theme of its own. A change of it
+ * resets those. Variant, brand and segment go through Fuse's `coerceTheme`, so only a legal theme
+ * is ever picked.
  */
 export function StudioThemePicker(): ReactElement {
   const { theme, setTheme } = useStudio();

@@ -45,8 +45,8 @@ const studioInspector = tv({
 const styles = studioInspector();
 
 /**
- * With nothing selected: the base theme every artboard renders in, and where a first visit
- * starts editing.
+ * With nothing selected: the base theme, which every artboard follows unless it has a theme of
+ * its own, and where a first visit starts editing.
  */
 function BaseThemeSection(): ReactElement {
   const { theme } = useStudio();

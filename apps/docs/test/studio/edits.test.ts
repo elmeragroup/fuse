@@ -11,7 +11,7 @@ import {
   reduceGuarded,
 } from "../../src/studio/lib/edits";
 import type { EditAction, EditHistory, GuardedHistory, StudioDocument } from "../../src/studio/lib/edits";
-import { artboardEdits, createsPinnedCycle, documentCycles } from "../../src/studio/lib/token-values";
+import { artboardEdits, documentCycles } from "../../src/studio/lib/token-values";
 
 const ELMA = { variant: "external", brand: "elma", segment: "private" } as const satisfies ThemeInput;
 const FKAS = { variant: "internal", brand: "fkas", segment: "private" } as const satisfies ThemeInput;
@@ -312,38 +312,16 @@ describe("the cycle invariant", () => {
 });
 
 /**
- * Unit: the cycle checks against a pinned variant (`documentCycles` with pins, `artboardEdits`,
- * `createsPinnedCycle`). Oracle: the theme rules as written in Fuse's theme sources: an internal
- * theme declares `radius-button: var(--radius)` and `radius-field: var(--radius)`, and an
- * external one a literal button radius and the same field alias. So
- * `--radius: var(--radius-button)` loops only in the internal variant, and
- * `--radius: var(--radius-field)` loops in both.
+ * Unit: `artboardEdits` for an artboard in another variant than the base theme. Oracle: the theme
+ * rules as written in Fuse's theme sources: an internal theme declares
+ * `radius-button: var(--radius)`, and an external one a literal button radius. So
+ * `--radius: var(--radius-button)` loops only in the internal variant.
  */
 describe("pinned variants", () => {
   const radiusToButton: StudioDocument = {
     ...EMPTY,
     overrides: { light: {}, dark: {}, shared: { radius: "var(--radius-button)" } },
   };
-  const radiusToField: StudioDocument = {
-    ...EMPTY,
-    overrides: { light: {}, dark: {}, shared: { radius: "var(--radius-field)" } },
-  };
-
-  it("counts a loop in a pinned variant only when the page pins it", () => {
-    expect(documentCycles(radiusToButton)).toEqual([]);
-    expect(documentCycles(radiusToButton, ["external"])).toEqual([]);
-    expect(documentCycles(radiusToButton, ["internal"])).toEqual(["radius", "radius-button"]);
-    expect(documentCycles(radiusToField, ["internal"])).toEqual(["radius", "radius-field"]);
-    expect(documentCycles(radiusToField, ["external"])).toEqual(["radius", "radius-field"]);
-  });
-
-  it("lets the pre-check refuse an edit that loops in a pinned variant", () => {
-    const none = EMPTY.overrides;
-    expect(createsPinnedCycle(none, ELMA, ["internal"], "dark", "radius", "var(--radius-button)")).toBe(true);
-    expect(createsPinnedCycle(none, ELMA, [], "dark", "radius", "var(--radius-button)")).toBe(false);
-    expect(createsPinnedCycle(none, ELMA, ["internal"], "light", "radius", "var(--radius-step)")).toBe(false);
-  });
-
   it("skips the edit that loops in the pinned variant and applies the rest", () => {
     const document: StudioDocument = {
       ...radiusToButton,

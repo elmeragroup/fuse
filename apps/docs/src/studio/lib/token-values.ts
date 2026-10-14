@@ -1,6 +1,6 @@
 import * as CssColor from "@elmeragroup/color/css-color";
 import { themeSlug } from "@elmeragroup/fuse/theme";
-import type { ThemeInput, ThemeVariant } from "@elmeragroup/fuse/theme";
+import type { ThemeInput } from "@elmeragroup/fuse/theme";
 
 import { STUDIO_BASE_REFERENCES, STUDIO_PRIMITIVES } from "../../generated/studio-seeds";
 import type { ArtboardScheme } from "./documents";
@@ -432,20 +432,14 @@ function themeReferences(theme: ThemeInput): BaseReferences {
 /**
  * The tokens on an alias cycle in a document, against its own theme's generated alias graph, so
  * it answers before the theme's seed loads. The edit session refuses every transition to a
- * document where this is not empty, and the share codec drops such a document. A page whose
- * artboards pin variants of the theme passes them as `pins`, and their graphs count too.
+ * document where this is not empty, and the share codec drops such a document. It guards the
+ * base theme alone: every other theme on screen skips the edits that loop in it
+ * ({@link artboardEdits}).
  *
  * @param document - The base theme and the edits over it.
- * @param pins - The variants of the theme the page's artboards pin.
  */
-export function documentCycles(document: StudioDocument, pins: readonly ThemeVariant[] = []): TokenName[] {
-  const variants = new Set([document.theme.variant, ...pins]);
-  const names = new Set(
-    [...variants].flatMap((variant) =>
-      cycleNames(document.overrides, themeReferences({ ...document.theme, variant }))
-    )
-  );
-  return [...names].sort();
+export function documentCycles(document: StudioDocument): TokenName[] {
+  return cycleNames(document.overrides, themeReferences(document.theme));
 }
 
 /** The edits an artboard in a theme of its own applies in one scheme, and the ones it skips. */
@@ -458,10 +452,9 @@ export type ArtboardEdits = {
 /**
  * The edits an artboard rendering `theme`, its own brand, variant and segment, applies in
  * `scheme`: every edit but those on an alias cycle against that theme's own declarations, the
- * only alias graph the check reads. The session guards only the base theme and the variants the
- * page pins, so an edit can loop in an artboard's own theme alone. A skipped token falls back to
- * the theme's own declaration, which can loop another edit, so the check repeats until nothing
- * loops.
+ * only alias graph the check reads. The session guards the base theme alone, so an edit can loop
+ * in any other theme on screen. A skipped token falls back to the theme's own declaration, which
+ * can loop another edit, so the check repeats until nothing loops.
  *
  * @param edits - The session's token edits.
  * @param theme - The theme the artboard renders.
@@ -526,31 +519,4 @@ export function createsCycle(
   const schemes: readonly ArtboardScheme[] = isLightOnly(name) ? SCHEMES : [scheme];
   const base = baseOf(seed);
   return schemes.some((each) => reaches(overrides, base, each, name, referencedNames(css)));
-}
-
-/**
- * Whether declaring `css` for `name` would close a cycle in a variant of `theme` that the page's
- * artboards pin, against that variant's generated alias graph, as {@link createsCycle} checks
- * the base theme.
- *
- * @param overrides - The edits in effect.
- * @param theme - The base theme.
- * @param pins - The variants of it the page pins.
- * @param scheme - The scheme the edit is made in.
- * @param name - The token the edit is for.
- * @param css - The value it would declare.
- */
-export function createsPinnedCycle(
-  overrides: StudioOverrides,
-  theme: ThemeInput,
-  pins: readonly ThemeVariant[],
-  scheme: ArtboardScheme,
-  name: TokenName,
-  css: string
-): boolean {
-  const schemes: readonly ArtboardScheme[] = isLightOnly(name) ? SCHEMES : [scheme];
-  return pins.some((variant) => {
-    const base = themeReferences({ ...theme, variant });
-    return schemes.some((each) => reaches(overrides, base, each, name, referencedNames(css)));
-  });
 }

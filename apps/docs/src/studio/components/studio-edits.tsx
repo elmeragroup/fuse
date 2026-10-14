@@ -5,6 +5,7 @@ import {
   use,
   useCallback,
   useEffect,
+  useEffectEvent,
   useMemo,
   useReducer,
   useRef,
@@ -13,7 +14,7 @@ import {
 } from "react";
 
 import { themeSlug } from "@elmeragroup/fuse/theme";
-import type { ThemeInput, ThemeSlug, ThemeVariant } from "@elmeragroup/fuse/theme";
+import type { ThemeInput, ThemeSlug } from "@elmeragroup/fuse/theme";
 
 import { loadStudioSeed } from "../../generated/studio-seeds";
 import { isTextEditingTarget } from "../../lib/typing-target";
@@ -39,10 +40,6 @@ export type StudioEditsValue = {
   seed: StudioSeed | undefined;
   /** The seed of a theme on screen, the base theme's or an artboard's own, once it has loaded. */
   seedOf: (slug: ThemeSlug) => StudioSeed | undefined;
-  /** Loads a theme's seed, for an artboard that renders a theme of its own. */
-  requestSeed: (slug: ThemeSlug) => void;
-  /** The variants of the base theme the page's artboards pin. */
-  pins: readonly ThemeVariant[];
   /** The inline declarations an artboard or probe in `scheme` wears. */
   styleFor: (scheme: ArtboardScheme) => CustomProperties;
   /** The scheme whose values the inspector edits. */
@@ -68,20 +65,14 @@ export function useStudioEdits(): StudioEditsValue {
 }
 
 /**
- * The seeds of the themes on screen, each loaded on demand; `undefined` while in flight or after
- * a failed load. The session requests the base theme's, and an artboard in a theme of its own
- * requests that theme's through `requestSeed`. A failed load waits for a retry
- * (`useSeedFailureToast`).
+ * The seeds of the themes on screen; `undefined` while in flight or after a failed load. They
+ * load for the slugs the provider reports on screen, and a failed load waits for a retry
+ * (`useSeedsOnScreen`).
  */
-function useSeeds(
-  theme: ThemeInput
-): Pick<StudioEditsValue, "seed" | "seedOf" | "requestSeed"> & { seeds: SeedLoads } {
+function useSeeds(theme: ThemeInput): Pick<StudioEditsValue, "seed" | "seedOf"> & { seeds: SeedLoads } {
   const [cache] = useState(() => createSeedCache(loadStudioSeed));
   const loads = useSyncExternalStore(cache.subscribe, cache.getState, cache.getState);
   const slug = themeSlug(theme);
-  useEffect(() => {
-    cache.request(slug);
-  }, [cache, slug]);
   const seedOf = useCallback(
     (wanted: ThemeSlug) => {
       const load = loads.get(wanted);
@@ -89,22 +80,38 @@ function useSeeds(
     },
     [loads]
   );
-  const seeds = useMemo((): SeedLoads => ({ loads, retry: cache.retry }), [loads, cache]);
-  return { seed: seedOf(slug), seedOf, requestSeed: cache.request, seeds };
+  const seeds = useMemo(
+    (): SeedLoads => ({ loads, retry: cache.retry, request: cache.request }),
+    [loads, cache]
+  );
+  return { seed: seedOf(slug), seedOf, seeds };
 }
 
 /**
- * Toasts while the seed of a theme on screen has failed to load, with a retry that loads every
- * failed seed again; the session keeps its document meanwhile. The toast closes once no theme on
- * screen has a failed seed, after a retry or once a base theme or artboard change takes the
- * failed theme off screen.
+ * Loads the seed of each theme on screen, and toasts while one has failed to load, with a retry
+ * that loads every failed seed again; the session keeps its document meanwhile. The toast closes
+ * once no theme on screen has a failed seed, after a retry or once a base theme or artboard
+ * change takes the failed theme off screen.
  *
  * @param seeds - The session's seed loads.
- * @param onScreen - The slugs of the themes on screen: the base theme's and each artboard's.
+ * @param onScreen - The slugs of the themes on screen: the base theme's first, then each
+ *   artboard's.
  */
-export function useSeedFailureToast(seeds: SeedLoads, onScreen: Iterable<ThemeSlug>): void {
-  const failed = failedAmong(seeds.loads, onScreen);
-  const { retry } = seeds;
+export function useSeedsOnScreen(seeds: SeedLoads, onScreen: Iterable<ThemeSlug>): void {
+  const slugs = Array.from(onScreen);
+  // Keyed on the joined slugs, so the request effect runs when the themes on screen change
+  // rather than on every render's fresh list.
+  const key = slugs.join("\n");
+  const { request, retry } = seeds;
+  const requestOnScreen = useEffectEvent(() => {
+    for (const slug of slugs) {
+      request(slug);
+    }
+  });
+  useEffect(() => {
+    requestOnScreen();
+  }, [key]);
+  const failed = failedAmong(seeds.loads, slugs);
   useEffect(() => {
     if (!failed) {
       return undefined;
@@ -152,16 +159,11 @@ function useUndoShortcuts(dispatch: (action: EditAction) => void): void {
 }
 
 /**
- * The session's reducer on a page whose artboards pin `pins`: every transition under the
- * no-cycle invariant, in the base theme and in each pinned variant. A restore answers to the
- * base theme alone, so a document saved on another page is never lost; an artboard in a theme of
- * its own skips the edits that loop in that theme instead (`artboardEdits`).
+ * The session's reducer: every transition under the no-cycle invariant, checked against the base
+ * theme. Every other theme on screen skips the edits that loop in it instead (`artboardEdits`).
  */
-function sessionReducer(pins: readonly ThemeVariant[]) {
-  return (state: GuardedHistory, action: EditAction): GuardedHistory =>
-    reduceGuarded(state, action, (document) =>
-      documentCycles(document, action.type === "replace" ? [] : pins)
-    );
+function reduceSession(state: GuardedHistory, action: EditAction): GuardedHistory {
+  return reduceGuarded(state, action, documentCycles);
 }
 
 const NAME_LIST = new Intl.ListFormat("en", { type: "conjunction" });
@@ -183,17 +185,18 @@ function useRefusalToast(refusal: Refusal | undefined): void {
 /** The scheme the inspector edits, chosen for one selection. */
 type SchemeChoice = { readonly selectedId: string | undefined; readonly scheme: ArtboardScheme };
 
-/** Each requested theme's seed load, and a retry that loads every failed one again. */
+/** Each requested theme's seed load, a request for another, and a retry of every failed one. */
 export type SeedLoads = {
   readonly loads: ReadonlyMap<ThemeSlug, SeedState>;
   readonly retry: () => void;
+  readonly request: (slug: ThemeSlug) => void;
 };
 
 export type EditSession = {
   theme: ThemeInput;
   setTheme: (theme: ThemeInput) => void;
   value: StudioEditsValue;
-  /** The seed loads, for `useSeedFailureToast`. */
+  /** The seed loads, for `useSeedsOnScreen`. */
   seeds: SeedLoads;
 };
 
@@ -206,26 +209,22 @@ export type EditSession = {
  * @param opening - The theme the session opens on.
  * @param selectedId - The selected artboard, if any.
  * @param selectedScheme - Its scheme.
- * @param pins - The variants the page's artboards pin, whose alias graphs the session guards
- *   too, the same array while the page stays.
  */
 export function useEditSession(
   opening: ThemeInput,
   selectedId: string | undefined,
-  selectedScheme: ArtboardScheme | undefined,
-  pins: readonly ThemeVariant[]
+  selectedScheme: ArtboardScheme | undefined
 ): EditSession {
   const openingDocument = useMemo(
     (): StudioDocument => ({ theme: opening, overrides: NO_OVERRIDES }),
     [opening]
   );
-  const reduceSession = useMemo(() => sessionReducer(pins), [pins]);
   const [{ history, refusal }, dispatch] = useReducer(reduceSession, openingDocument, guardedHistory);
   const { theme, overrides } = history.present;
   useRefusalToast(refusal);
   useStudioPersistence(history.present, openingDocument, dispatch);
   useUndoShortcuts(dispatch);
-  const { seed, seedOf, requestSeed, seeds } = useSeeds(theme);
+  const { seed, seedOf, seeds } = useSeeds(theme);
 
   const [choice, setChoice] = useState<SchemeChoice | undefined>(undefined);
   const editScheme =
@@ -275,8 +274,6 @@ export function useEditSession(
       canRedo: history.future.length > 0,
       seed,
       seedOf,
-      requestSeed,
-      pins,
       styleFor,
       editScheme,
       setEditScheme,
@@ -288,8 +285,6 @@ export function useEditSession(
       history.future.length,
       seed,
       seedOf,
-      requestSeed,
-      pins,
       styleFor,
       editScheme,
       setEditScheme,
