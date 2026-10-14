@@ -68,11 +68,11 @@ const measured: Instance[] = [];
 const bordered: Located<BorderReading>[] = [];
 
 beforeAll(async () => {
-  const readings = await sweepDemos(browser(), densityProbe, {
-    border: (stage, scope) => stage.evaluate(probeBorders, scope),
-  });
+  const readings = await sweepDemos(browser(), densityProbe, (stage, scope) =>
+    stage.evaluate(probeBorders, scope)
+  );
   measured.push(...readings.discovered);
-  bordered.push(...readings.probes.border);
+  bordered.push(...readings.probed);
 }, 900_000);
 
 describe("density coverage", () => {

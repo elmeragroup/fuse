@@ -168,34 +168,31 @@ export function probeBorders(stage: Element, scope: "stage" | "unseen"): BorderR
   freeze.textContent = "*, *::before, *::after { transition: none !important; animation: none !important; }";
   document.head.append(freeze);
   const read = (style: CSSStyleDeclaration, property: string): string => style.getPropertyValue(property);
-  const base = boxes.map(({ style }) =>
-    sides.map((side) => ({
-      width: read(style, `border-${side}-width`),
-      style: read(style, `border-${side}-style`),
-      color: read(style, `border-${side}-color`),
-    }))
-  );
+  const bySide = <Value>(value: (side: BorderSide) => Value) => ({
+    top: value("top"),
+    right: value("right"),
+    bottom: value("bottom"),
+    left: value("left"),
+  });
+  const rendered = boxes.map((box) => ({
+    ...box,
+    sides: bySide((side) => ({
+      width: read(box.style, `border-${side}-width`),
+      style: read(box.style, `border-${side}-style`),
+      color: read(box.style, `border-${side}-color`),
+    })),
+  }));
   const sentinelSheet = document.createElement("style");
   sentinelSheet.textContent = "*, *::before, *::after { color: rgb(1, 2, 3) !important; }";
   document.head.append(sentinelSheet);
-  const sentinel = boxes.map(({ style }) => sides.map((side) => read(style, `border-${side}-color`)));
-  const sentinelColors = boxes.map(({ style }) => read(style, "color"));
+  const readings = rendered.map(({ element, pseudo, style, sides: base }): BorderReading => ({
+    slot: element.closest("[data-slot]")?.getAttribute("data-slot") ?? "",
+    tag: element.tagName.toLowerCase(),
+    pseudo,
+    sentinelColor: read(style, "color"),
+    sides: bySide((side) => ({ ...base[side], sentinelColor: read(style, `border-${side}-color`) })),
+  }));
   sentinelSheet.remove();
   freeze.remove();
-
-  return boxes.map(({ element, pseudo }, index) => {
-    const side = (at: number): SideReading => ({
-      width: base[index]?.[at]?.width ?? "",
-      style: base[index]?.[at]?.style ?? "",
-      color: base[index]?.[at]?.color ?? "",
-      sentinelColor: sentinel[index]?.[at] ?? "",
-    });
-    return {
-      slot: element.closest("[data-slot]")?.getAttribute("data-slot") ?? "",
-      tag: element.tagName.toLowerCase(),
-      pseudo,
-      sentinelColor: sentinelColors[index] ?? "",
-      sides: { top: side(0), right: side(1), bottom: side(2), left: side(3) },
-    };
-  });
+  return readings;
 }

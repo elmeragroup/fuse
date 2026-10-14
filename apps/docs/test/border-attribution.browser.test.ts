@@ -20,6 +20,7 @@ const FIXTURES = `
   .contents::before { content: ""; position: absolute; inset: 0; border: 1px solid currentColor; }
   .fixed-host { border: 1px solid rgb(10, 20, 30); }
   .bare-host { border: 1px solid; }
+  .mix-host { border: 1px solid color-mix(in oklab, currentColor 50%, transparent); }
   .important-color::before { color: rgb(255, 0, 0) !important; }
 </style>
 <div data-demo-stage>
@@ -30,6 +31,7 @@ const FIXTURES = `
   <div data-slot="bare-host" class="bare-host"></div>
   <div data-slot="important-color" class="pseudo important-color"></div>
   <div data-slot="inline-color" class="bare-host" style="color: rgb(255, 0, 0) !important"></div>
+  <div data-slot="mix-host" class="mix-host"></div>
   <div style="display: none"><span data-slot="hidden-host" class="contents">Hidden</span></div>
 </div>`;
 
@@ -56,6 +58,8 @@ describe("border attribution in the browser", () => {
       "fixed-host": [],
       // A bare `border` takes the initial colour, `currentColor`.
       "bare-host": all,
+      // A border mixed from currentColor still follows the text colour.
+      "mix-host": all,
       // An important own `color` beats the sentinel, so these borders cannot move; the report
       // names them instead.
       "important-color::before": [],
