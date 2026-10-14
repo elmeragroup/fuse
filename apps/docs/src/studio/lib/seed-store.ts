@@ -23,7 +23,8 @@ export type SeedCache = {
 };
 
 /**
- * A seed cache over `load`. Each theme loads once, and again on a retry after it failed.
+ * A seed cache over `load`. Each theme loads once, and again on a retry after it failed. A theme
+ * restarts only after its load failed, so it never has two loads in flight.
  *
  * @param load - Loads one theme's seed, such as a generated chunk's dynamic import.
  */
@@ -37,18 +38,13 @@ export function createSeedCache(load: (slug: ThemeSlug) => Promise<StudioSeed>):
     }
   };
   const start = (slug: ThemeSlug) => {
-    const loading: SeedState = { status: "loading" };
-    set(slug, loading);
+    set(slug, { status: "loading" });
     load(slug).then(
       (seed) => {
-        if (state.get(slug) === loading) {
-          set(slug, { status: "ready", seed });
-        }
+        set(slug, { status: "ready", seed });
       },
       () => {
-        if (state.get(slug) === loading) {
-          set(slug, { status: "failed" });
-        }
+        set(slug, { status: "failed" });
       }
     );
   };

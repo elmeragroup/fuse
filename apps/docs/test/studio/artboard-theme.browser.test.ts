@@ -1,7 +1,6 @@
-import type { Locator, Page } from "playwright";
+import type { Locator } from "playwright";
 import { describe, expect, it } from "vitest";
 
-import { readThemeAttributes } from "../demo-page";
 import { launchSuiteBrowser } from "../suite-browser";
 import {
   ARTBOARDS,
@@ -16,7 +15,9 @@ import {
   selectBoard,
   setTokenColor,
   sidebarBrandSource,
+  themeOf,
   toggle,
+  tokenOn,
 } from "./page";
 
 const browser = launchSuiteBrowser();
@@ -33,20 +34,6 @@ const SHELLS = "Shells in Fuse";
 const LIGHT_SIDEBAR = "Sidebar · Light";
 
 const RED = "rgb(255, 0, 0)";
-
-/** The theme an artboard's scope renders, as its theme attributes name it. */
-async function themeOf(page: Page, name: string): Promise<string> {
-  const { variant, brand, segment } = await readThemeAttributes(artboard(page, name));
-  return [variant, brand, segment].join("-");
-}
-
-/** A custom property as the artboard's scope element computes it. */
-async function tokenOn(page: Page, name: string, property: `--${string}`): Promise<string> {
-  return artboard(page, name).evaluate(
-    (element, token) => getComputedStyle(element).getPropertyValue(token).trim(),
-    property
-  );
-}
 
 describe("an artboard's own brand, variant and segment", () => {
   it("re-themes one artboard to another brand while its neighbour keeps the base theme", async () => {

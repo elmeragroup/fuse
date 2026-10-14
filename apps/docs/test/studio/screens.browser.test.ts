@@ -12,6 +12,13 @@ import {
   hashOf,
   inspector,
   openStudio,
+  openTokenSection,
+  selectBoard,
+  setTokenColor,
+  themeOf,
+  toggle,
+  tokenOn,
+  tokenRow,
 } from "./page";
 import type { StudioRoute } from "./page";
 
@@ -504,6 +511,55 @@ describe("the studio's Screens page", () => {
       await field.fill("var(--button-outline)");
       await expect.poll(() => field.getAttribute("aria-invalid")).toBe("true");
       await page.getByText("Links --foreground back to itself", { exact: true }).waitFor();
+      expect(errors).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+
+  it("admits an edit that would loop only in a variant no artboard renders any more", async () => {
+    // Internal elma declares button-outline: var(--border), external elma a literal --border and
+    // button-outline: var(--foreground). Once both internal screens turn external, no theme on
+    // screen loops --border through --button-outline.
+    const { context, page, errors } = await openStudio(browser(), { route: SCREENS_PAGE });
+    try {
+      for (const name of [SETTINGS, ADMIN]) {
+        await toggle(await selectBoard(page, name), "Variant", "External").click();
+        await expect.poll(() => themeOf(page, name)).toBe("external-elma-private");
+      }
+      await openTokenSection(page, "Lines and focus");
+      await tokenRow(page, "border").getByRole("button", { name: "Edit --border", exact: true }).click();
+      const field = page.getByRole("textbox", { name: "Color", exact: true });
+      await field.fill("var(--button-outline)");
+      await frames(page, 2);
+      expect(await field.getAttribute("aria-invalid")).not.toBe("true");
+      expect(await page.getByText("Links --border back to itself", { exact: true }).count()).toBe(0);
+
+      await page.keyboard.press("Escape");
+      await field.waitFor({ state: "hidden" });
+      await expect
+        .poll(async () => tokenOn(page, SELF_SERVICE, "--border"))
+        .toBe(await tokenOn(page, SELF_SERVICE, "--foreground"));
+      expect(errors).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+
+  it("admits an edit that loops only in an internal screen's variant, which skips it", async () => {
+    const { context, page, errors } = await openStudio(browser(), { route: SCREENS_PAGE });
+    try {
+      await selectBoard(page, ADMIN);
+      await openTokenSection(page, "Lines and focus");
+      await setTokenColor(page, "border", "var(--button-outline)");
+      await expect
+        .poll(async () => tokenOn(page, SELF_SERVICE, "--border"))
+        .toBe(await tokenOn(page, SELF_SERVICE, "--foreground"));
+      const note = inspector(page).getByText(/^Skips --border,/u);
+      await note.waitFor();
+      expect(await note.textContent()).toBe(
+        "Skips --border, which would loop through the aliases of Elmera · Internal · Private."
+      );
       expect(errors).toEqual([]);
     } finally {
       await context.close();

@@ -1,5 +1,6 @@
 import type { Browser, BrowserContext, Locator, Page } from "playwright";
 
+import { readThemeAttributes } from "../demo-page";
 import { docsBaseUrl } from "../docs-server";
 import { collectPageErrors, settleFrames } from "../landing-page";
 
@@ -251,6 +252,20 @@ export function sidebarBrandSource(board: Locator): Locator {
 
 export async function background(locator: Locator): Promise<string> {
   return locator.evaluate((element) => getComputedStyle(element).backgroundColor);
+}
+
+/** The theme an artboard's scope renders, as its theme attributes name it. */
+export async function themeOf(page: Page, name: string): Promise<string> {
+  const { variant, brand, segment } = await readThemeAttributes(artboard(page, name));
+  return [variant, brand, segment].join("-");
+}
+
+/** A custom property as the artboard's scope element computes it. */
+export async function tokenOn(page: Page, name: string, property: `--${string}`): Promise<string> {
+  return artboard(page, name).evaluate(
+    (element, token) => getComputedStyle(element).getPropertyValue(token).trim(),
+    property
+  );
 }
 
 /**

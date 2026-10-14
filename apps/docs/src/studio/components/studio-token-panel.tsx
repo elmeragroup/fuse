@@ -35,7 +35,6 @@ import {
   aliasTarget,
   canonicalColorCss,
   createsCycle,
-  createsPinnedCycle,
   currentCss,
   lengthPx,
   parseTokenValue,
@@ -197,7 +196,8 @@ export type TokenRowProps = {
   /**
    * The artboard scope the row describes, in its scheme and with the declarations it wears, such
    * as a pinned variant's; omitted, the base theme in the edited scheme. An edit applies to that
-   * scheme on every artboard, so it is checked against the base theme and every pinned variant.
+   * scheme on every artboard, so it is checked against the base theme; an artboard in any other
+   * theme skips it if it would loop there.
    */
   scope?: ArtboardScope;
 };
@@ -207,8 +207,7 @@ export type TokenRowProps = {
  * for the scope of the artboard a part sits in.
  */
 export function TokenRow({ name, colors, scope }: TokenRowProps): ReactElement {
-  const { overrides, seed, pins, edit, editScheme } = useStudioEdits();
-  const { theme } = useStudio();
+  const { overrides, seed, edit, editScheme } = useStudioEdits();
   const scheme = scope?.scheme ?? editScheme;
   // What the row describes: the declarations the scope wears, else the base theme's with the edits.
   const shown = scope ?? { overrides, seed };
@@ -220,12 +219,10 @@ export function TokenRow({ name, colors, scope }: TokenRowProps): ReactElement {
   const kind = TOKEN_TABLE[name].kind;
 
   // The one reading of a value for this row: its kind's parser, then the cycle check against
-  // the base theme, the variants the page pins and the edits in effect.
+  // the base theme alone and the edits in effect.
   const parse: ParseValue = (text): ParsedValue => {
     const parsed = parseTokenValue(name, text);
-    return parsed.ok &&
-      (createsCycle(overrides, seed, scheme, name, parsed.css) ||
-        createsPinnedCycle(overrides, theme, pins, scheme, name, parsed.css))
+    return parsed.ok && createsCycle(overrides, seed, scheme, name, parsed.css)
       ? { ok: false, reason: `Links --${name} back to itself` }
       : parsed;
   };

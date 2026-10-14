@@ -10,9 +10,9 @@ import type { ColorScheme, Density, ThemeInput } from "@elmeragroup/fuse/theme";
 
 import { OPENING_THEME } from "../../lib/theme";
 import { useMediaQuery } from "../../lib/use-media-query";
-import { artboardsFor, pinsFor } from "../lib/documents";
+import { artboardsFor } from "../lib/documents";
 import type { ArtboardScheme, ArtboardSpec } from "../lib/documents";
-import { StudioEditsProvider, useEditSession, useSeedFailureToast } from "./studio-edits";
+import { StudioEditsProvider, useEditSession, useSeedsOnScreen } from "./studio-edits";
 
 /** What a pointer drag on the canvas does: select and use artboard content, or pan. */
 export type StudioTool = "select" | "hand";
@@ -39,7 +39,10 @@ export type ArtboardSettings = {
 type ArtboardChoices = Partial<ArtboardSettings>;
 
 type StudioValue = {
-  /** The base theme every artboard renders in. */
+  /**
+   * The base theme: what an artboard renders unless its spec pins a variant or the visitor gives
+   * it a theme of its own (see ArtboardSettings.theme). Export and the share link carry it.
+   */
   theme: ThemeInput;
   setTheme: (theme: ThemeInput) => void;
   /** The chrome's scheme preference, and what it resolves to now. */
@@ -110,8 +113,7 @@ export function StudioProvider({ children }: { children: ReactNode }): ReactElem
   const session = useEditSession(
     OPENING_THEME,
     selectedId,
-    selected === undefined ? undefined : (choices[selected.id]?.scheme ?? selected.scheme),
-    pinsFor(pathname)
+    selected === undefined ? undefined : (choices[selected.id]?.scheme ?? selected.scheme)
   );
   const { theme, setTheme } = session;
 
@@ -144,7 +146,7 @@ export function StudioProvider({ children }: { children: ReactNode }): ReactElem
     (artboard: ArtboardSpec) => settings.byId.get(artboard.id) ?? settings.of(artboard),
     [settings]
   );
-  useSeedFailureToast(session.seeds, [
+  useSeedsOnScreen(session.seeds, [
     themeSlug(theme),
     ...Array.from(settings.byId.values(), (artboard) => themeSlug(artboard.theme)),
   ]);

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, use, useCallback, useEffect, useMemo } from "react";
+import { createContext, use, useCallback, useMemo } from "react";
 import type { CSSProperties, ReactElement, ReactNode } from "react";
 
 import { tv } from "tailwind-variants";
@@ -97,15 +97,10 @@ function ownTheme(theme: ThemeInput, base: ThemeInput): ThemeInput | undefined {
  */
 export function useArtboardScopeOf(spec: ArtboardSpec): ArtboardScope {
   const { theme: base, settingsOf } = useStudio();
-  const { overrides, seedOf, requestSeed, styleFor } = useStudioEdits();
+  const { overrides, seedOf, styleFor } = useStudioEdits();
   const { scheme, density, theme } = settingsOf(spec);
   const own = ownTheme(theme, base);
-  const slug = themeSlug(theme);
-  // The edit session loads the seed, and its failure toast retries it.
-  useEffect(() => {
-    requestSeed(slug);
-  }, [requestSeed, slug]);
-  const themeSeed = seedOf(slug);
+  const themeSeed = seedOf(themeSlug(theme));
   return useMemo((): ArtboardScope => {
     const metrics = metricStyle(metricOverridesFor(overrides, density));
     if (own === undefined) {
@@ -151,15 +146,15 @@ export type StudioArtboardProps = {
 };
 
 /**
- * One artboard: a theme scope in the studio's base theme, in its own scheme and density, with
- * its name above it at a constant screen size. It carries `data-demo-stage` and the density
- * attributes, the docs' demo-stage density mechanism, so each artboard has its own metrics, and
- * the overlays opened inside it portal into it. The token edits for its scheme and the metric
- * edits for its density are inline declarations on the scope element itself, where the theme
- * rules resolve their aliases and every part inside inherits the metrics. An artboard in a theme
- * of its own, the brand, variant and segment the visitor picks or the variant its spec pins,
- * renders that theme with its aliases restated, and skips the edits that would loop there. Its
- * content reads the scope through {@link useArtboardScope}.
+ * One artboard: a theme scope in its theme (see ArtboardSettings.theme), in its own scheme and
+ * density, with its name above it at a constant screen size. It carries `data-demo-stage` and the
+ * density attributes, the docs' demo-stage density mechanism, so each artboard has its own metrics,
+ * and the overlays opened inside it portal into it. The token edits for its scheme and the metric
+ * edits for its density are inline declarations on the scope element itself, where the theme rules
+ * resolve their aliases and every part inside inherits the metrics. An artboard in a theme of its
+ * own, the brand, variant and segment the visitor picks or the variant its spec pins, renders that
+ * theme with its aliases restated, and skips the edits that would loop there. Its content reads the
+ * scope through {@link useArtboardScope}.
  */
 export function StudioArtboard({ id, children }: StudioArtboardProps): ReactElement {
   const { artboards, selectedId, hoveredId, select } = useStudio();

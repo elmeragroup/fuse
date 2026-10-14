@@ -371,20 +371,6 @@ export function leadSectionsFor(pathname: string): readonly SectionId[] {
   return documentAt(pathname)?.leadSections ?? NO_SECTIONS;
 }
 
-const PAGE_PINS: ReadonlyMap<string, readonly ThemeVariant[]> = new Map(
-  STUDIO_DOCUMENTS.map(({ href, artboards }) => [
-    href,
-    artboards.flatMap(({ variant }) => (variant === undefined ? [] : [variant])),
-  ])
-);
-
-const NO_PINS: readonly ThemeVariant[] = [];
-
-/** The variants the artboards of the page at `pathname` pin, the same array for each call. */
-export function pinsFor(pathname: string): readonly ThemeVariant[] {
-  return PAGE_PINS.get(pathname) ?? NO_PINS;
-}
-
 /** Whether the page at `pathname` offers the corner X-ray. */
 export function hasCornerXray(pathname: string): boolean {
   return documentAt(pathname)?.cornerXray === true;
