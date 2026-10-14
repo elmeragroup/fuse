@@ -28,12 +28,15 @@ export function ItemRootElement({
 // the content shares its top edge, and `--item-media-line` becomes one Item.Title line, `text-sm` at
 // `leading-snug` as ITEM_TITLE_CLASSES sets it. Icon media is exactly that tall and centres its
 // glyph, so a glyph of any size centres on the title's first line. Default and image media keep
-// their content's own height and so top-align with the content. Elsewhere the property is `auto`
-// and the row centres the media. A plain utility reads the property, so tailwind-merge drops it for
-// a consumer's own height or size, and that size wins. A minimum of one line on default media would
-// override a smaller consumer height, which CSS cannot tell apart without the class attribute.
+// their content's own height and so top-align with the content. The row is the part's own parent,
+// so a row nested in another row's footer or in a selection SubSection keeps its own centring; the
+// selection shell places its control on its first line through `--selection-first-line`.
+// Elsewhere the property is `auto` and the row centres the media. A plain utility reads the
+// property, so tailwind-merge drops it for a consumer's own height or size, and that size wins. A
+// minimum of one line on default media would override a smaller consumer height, which CSS cannot
+// tell apart without the class attribute.
 const itemMediaVariants = tv({
-  base: "flex shrink-0 items-center justify-center gap-2 [--item-media-line:auto] group-has-data-[slot=item-description]/item:self-start group-has-data-[slot=item-description]/item:[--item-media-line:calc(var(--text-sm)*var(--leading-snug))] group-has-data-[slot=selection-item-description]/item:self-start group-has-data-[slot=selection-item-description]/item:[--item-media-line:calc(var(--text-sm)*var(--leading-snug))] [&_svg]:pointer-events-none",
+  base: "flex shrink-0 items-center justify-center gap-2 [--item-media-line:auto] item-described:self-start item-described:[--item-media-line:calc(var(--text-sm)*var(--leading-snug))] [&_svg]:pointer-events-none",
   variants: {
     variant: {
       default: "bg-transparent",
@@ -76,7 +79,7 @@ export function ItemContent({ className, ...props }: ComponentProps<"div">): Rea
     <div
       data-slot="item-content"
       className={cn(
-        "flex flex-1 flex-col gap-1 group-has-data-[slot=item-description]/item:self-start group-has-data-[slot=selection-item-description]/item:self-start group-data-[size=xs]/item:gap-0 [&+[data-slot=item-content]]:flex-none",
+        "flex flex-1 flex-col gap-1 group-data-[size=xs]/item:gap-0 item-described:self-start [&+[data-slot=item-content]]:flex-none",
         className
       )}
       {...props}
