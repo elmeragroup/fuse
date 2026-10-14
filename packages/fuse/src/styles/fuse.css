@@ -277,13 +277,15 @@
 /* Fuse ships no preflight, and Tailwind v4 borders default to `currentcolor`, the text colour,
    so this gives every border the border role. It sits in the base layer, so every utility
    (`border-input`, `border-transparent`, …) wins. Without themes.css `--border` is undefined
-   and borders keep `currentcolor`. */
+   and borders keep `currentcolor`. Host native form widgets without a `data-slot` are skipped:
+   any author border colour turns off their native appearance and replaces the UA field border
+   in a preflight-free host. Fuse's own native parts carry `data-slot`, so they keep the default. */
 @layer base {
-  *,
+  :where(:not(:is(button, input, select, textarea, meter, progress):not([data-slot]))),
   ::after,
   ::before,
   ::backdrop,
-  ::file-selector-button {
+  :where([data-slot])::file-selector-button {
     border-color: var(--border, currentcolor);
   }
 }

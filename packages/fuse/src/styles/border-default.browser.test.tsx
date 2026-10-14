@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
+import { Fragment } from "react";
 
 import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
@@ -9,7 +10,8 @@ import { render } from "../../test/browser-render";
 import { withLocale } from "../../test/locale-matrix";
 import { bySlot, Frame as SidebarFrame, setupSidebarBrowser } from "../../test/sidebar-browser-fixtures";
 import { fkasPrivate, guenExternal } from "../../test/theme-fixtures";
-import { cssVarColor, px, roleNamed, stampDensity, textNamed } from "../../test/themed-browser-render";
+import type { QueryableRole } from "../../test/themed-browser-render";
+import { cssVarColor, px, roleNamed, textNamed } from "../../test/themed-browser-render";
 import { Accordion } from "../components/accordion";
 import { Badge } from "../components/badge/badge";
 import { ButtonGroup } from "../components/button-group";
@@ -125,6 +127,31 @@ async function expectRoleBorders(): Promise<void> {
   }
 }
 
+/** A host native widget outside any Fuse part, the role it exposes and how to render it with extra props. */
+type HostWidget = {
+  readonly name: string;
+  readonly role: QueryableRole;
+  readonly render: (props: { "aria-label": string; style?: CSSProperties }) => ReactNode;
+};
+
+/** Host widgets whose native look any author border colour would turn off. */
+const HOST_WIDGETS: readonly HostWidget[] = [
+  { name: "Button", role: "button", render: (props) => <button type="button" {...props} /> },
+  {
+    name: "Select",
+    role: "combobox",
+    render: (props) => (
+      <select {...props}>
+        <option>One</option>
+      </select>
+    ),
+  },
+  { name: "Textarea", role: "textbox", render: (props) => <textarea {...props} /> },
+  { name: "Text input", role: "textbox", render: (props) => <input type="text" {...props} /> },
+  { name: "Progress", role: "progressbar", render: (props) => <progress value={0.5} max={1} {...props} /> },
+  { name: "Meter", role: "meter", render: (props) => <meter value={0.5} {...props} /> },
+];
+
 const SCOPES = {
   "internal light": (node: ReactNode) => <ThemeScope theme={fkasPrivate}>{node}</ThemeScope>,
   "internal dark": (node: ReactNode) => (
@@ -143,10 +170,40 @@ describe("the base-layer border default", () => {
     await expectRoleBorders();
   });
 
-  it("draws bare borders in the border role at comfortable density", async () => {
-    stampDensity("comfortable");
-    render(SCOPES["internal light"](<BareBorderParts />));
-    await expectRoleBorders();
+  it("draws the Sidebar rail edge in the sidebar role where it differs from the border role", () => {
+    render(SCOPES["external guen"](withLocale("en-US", <SidebarFrame />)));
+    const container = bySlot("sidebar-container");
+    const role = cssVarColor(container, "--sidebar-border");
+    expect(role, "precondition: the sidebar role differs from the border role").not.toBe(
+      cssVarColor(container, "--border")
+    );
+    expect(getComputedStyle(container).borderRightColor).toBe(role);
+  });
+
+  it("leaves host native widgets their own border colour and gives a host rule the border role", () => {
+    render(
+      SCOPES["internal light"](
+        <>
+          {HOST_WIDGETS.map((widget) => (
+            <Fragment key={widget.name}>
+              {widget.render({ "aria-label": widget.name })}
+              {widget.render({ "aria-label": `${widget.name} twin`, style: { borderColor: "revert" } })}
+            </Fragment>
+          ))}
+          <hr aria-label="Rule" />
+        </>
+      )
+    );
+    // `revert` rolls the twin back to the UA border colour, the oracle for an untouched host widget.
+    for (const widget of HOST_WIDGETS) {
+      const host = roleNamed(widget.role, widget.name);
+      const twin = roleNamed(widget.role, `${widget.name} twin`);
+      expect
+        .soft(getComputedStyle(host).borderTopColor, widget.name)
+        .toBe(getComputedStyle(twin).borderTopColor);
+    }
+    const rule = roleNamed("separator", "Rule");
+    expect(getComputedStyle(rule).borderTopColor).toBe(cssVarColor(rule, "--border"));
   });
 
   it("reads the inner scope's border role in an external scope inside an internal dark one", async () => {
