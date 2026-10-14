@@ -44,7 +44,7 @@ function browserProject(
         "clsx",
         "tailwind-merge",
         "tailwind-variants",
-        // The layered-consumer browser test compiles fuse.css in the page.
+        // The layer browser tests compile fuse.css in the page.
         "tailwindcss",
         "tailwindcss-react-aria-components",
       ],
@@ -80,6 +80,9 @@ export default defineConfig({
           environment: "node",
           include: ["src/**/*.test.ts", "test/**/*.test.ts"],
           exclude: ["**/*.browser.test.*", "**/*.test-d.*"],
+          // Outside the browser, Vitest blanks CSS ids that `test.css` leaves out. The
+          // consumer-build helper reads stylesheet text through `?raw`.
+          css: { include: [/\.css\?raw$/] },
         },
       },
       browserProject("browser", {
