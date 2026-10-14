@@ -2,10 +2,9 @@ import type { TokenLayer } from "./contract";
 import { DARK_DEFAULTS } from "./dark-defaults";
 import { mixOklchLiteral } from "./derived-tokens";
 import type { ExternalDarkSheet } from "./external-dark-sheet";
-import { paletteBrand } from "./external-palettes";
 import type { ExternalBrandCode } from "./external-palettes";
 import { segmentSheet } from "./segment-sheets";
-import type { BrandCode, ThemeSegment } from "./themes";
+import type { ThemeSegment } from "./themes";
 
 // Custom Figma color collections in Dark mode, read 2026-09-15.
 // Exact sRGB colors are retained in comments; OKLCH is the library's color format.
@@ -140,8 +139,8 @@ const EXTERNAL_DARK_PALETTES = {
 const HOVER_LIFT_PERCENT = 8;
 
 /** The dark sheet for one brand and segment, preferring a segment sheet over the brand base. */
-function darkSheet(brand: BrandCode, segment: ThemeSegment): ExternalDarkSheet {
-  return segmentSheet(brand, segment)?.dark ?? EXTERNAL_DARK_PALETTES[paletteBrand(brand)];
+function darkSheet(brand: ExternalBrandCode, segment: ThemeSegment): ExternalDarkSheet {
+  return segmentSheet(brand, segment)?.dark ?? EXTERNAL_DARK_PALETTES[brand];
 }
 
 /**
@@ -150,7 +149,7 @@ function darkSheet(brand: BrandCode, segment: ThemeSegment): ExternalDarkSheet {
  * role a sheet does name is never clobbered. Internal themes compose
  * `INTERNAL_DARK_PALETTE` instead.
  */
-export function externalDarkPalette(brand: BrandCode, segment: ThemeSegment): TokenLayer {
+export function externalDarkPalette(brand: ExternalBrandCode, segment: ThemeSegment): TokenLayer {
   const palette = darkSheet(brand, segment);
   const popover = palette.popover ?? palette.card;
   return {

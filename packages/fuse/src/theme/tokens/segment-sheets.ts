@@ -1,8 +1,7 @@
 import type { TokenLayer } from "./contract";
 import type { ExternalDarkSheet } from "./external-dark-sheet";
-import { paletteBrand } from "./external-palettes";
 import type { ExternalBrandCode } from "./external-palettes";
-import type { BrandCode, ThemeSegment } from "./themes";
+import type { ThemeSegment } from "./themes";
 
 /** Both schemes' sheets for one brand/segment pair that departs from its brand base. */
 export type SegmentSheets = {
@@ -69,9 +68,9 @@ const SEGMENT_SHEETS: ReadonlyMap<ExternalBrandCode, ReadonlyMap<ThemeSegment, S
 
 /**
  * Both schemes' sheets for one brand/segment pair that departs from its brand base, or
- * `undefined` when it has none. The lookup goes through `paletteBrand`, so fkab-company
- * takes fkas-company's sheets.
+ * `undefined` when it has none. Callers pass the palette brand (see `paletteBrand`), so
+ * fkab-company takes fkas-company's sheets.
  */
-export function segmentSheet(brand: BrandCode, segment: ThemeSegment): SegmentSheets | undefined {
-  return SEGMENT_SHEETS.get(paletteBrand(brand))?.get(segment);
+export function segmentSheet(brand: ExternalBrandCode, segment: ThemeSegment): SegmentSheets | undefined {
+  return SEGMENT_SHEETS.get(brand)?.get(segment);
 }

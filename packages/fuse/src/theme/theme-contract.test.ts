@@ -18,7 +18,7 @@ import { assignedTokenNames, EXTERNAL_RESET_KEYS, MUST_OVERRIDE_DARK, TOKEN_NAME
 import type { ExternalResetKey, TokenLayer, TokenName } from "./tokens/contract";
 import { DEFAULTS } from "./tokens/defaults";
 import { externalDarkPalette } from "./tokens/external-dark-palettes";
-import { EXTERNAL_PALETTES, EXTERNAL_VARIANT_LAYER } from "./tokens/external-palettes";
+import { EXTERNAL_PALETTES, EXTERNAL_VARIANT_LAYER, paletteBrand } from "./tokens/external-palettes";
 import { INTERNAL_DARK_PALETTE } from "./tokens/internal-dark-palette";
 import { paletteLayers } from "./tokens/palette-layers";
 import { PRIMITIVES } from "./tokens/primitives";
@@ -227,7 +227,9 @@ describe("theme contract", () => {
   it("gives every external dark palette the full set of must-override roles", () => {
     for (const theme of LEGAL_THEMES) {
       if (theme.variant !== "external") continue;
-      const supplied = new Set(assignedTokenNames(externalDarkPalette(theme.brand, theme.segment)));
+      const supplied = new Set(
+        assignedTokenNames(externalDarkPalette(paletteBrand(theme.brand), theme.segment))
+      );
       const missing = MUST_OVERRIDE_DARK.filter((key) => !supplied.has(key));
       expect(missing, themeSlug(theme)).toEqual([]);
     }
@@ -285,7 +287,7 @@ describe("theme contract", () => {
     }
     for (const theme of LEGAL_THEMES) {
       if (theme.variant !== "external") continue;
-      for (const name of assignedTokenNames(externalDarkPalette(theme.brand, theme.segment))) {
+      for (const name of assignedTokenNames(externalDarkPalette(paletteBrand(theme.brand), theme.segment))) {
         expect(THEME_RESET_KEYS, `${themeSlug(theme)} ${name}`).toContain(name);
       }
     }
