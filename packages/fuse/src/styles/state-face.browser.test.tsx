@@ -379,15 +379,15 @@ describe("state face at dense density", () => {
     // The nested field owns the focus: its group paints the plain ring.
     expectValidFocusRing(groupAround(quantity), "nested number field group");
     // Oracle: the theme's `--error` role. The outer group's own input is unfocused, so the
-    // outer group must not take the focused invalid face's solid line from a control it does
-    // not own.
+    // outer group must not take the focused invalid face's solid `--error` line from a control
+    // it does not own. It may still paint the plain `--ring` within ring, a parked within-ring
+    // gap, or its `error/20` halo; neither colour equals `--error`.
     const error = cssVarColor(outer, "--error");
     settleTransitions(outer);
-    expect(ringLayers(outer), "outer group").not.toContainEqual({
-      spread: "2px",
-      color: error,
-      inset: false,
-    });
+    expect(
+      ringLayers(outer).map((layer) => layer.color),
+      "outer group takes no solid error line from a control it does not own"
+    ).not.toContain(error);
 
     // Leaving the fields leaves the outer group its resting halo.
     await userEvent.click(page.getByText("Away", { exact: true }));
@@ -576,7 +576,8 @@ describe("the focused invalid face", () => {
         () => roleNamed("group", "Invalid group"),
         () => roleNamed("textbox", "Invalid group input"),
       ],
-      // Within target on a group that carries `aria-invalid` itself.
+      // Within target through the group's own input, which Base UI marks `aria-invalid` from
+      // the invalid Field.
       [
         "number field group",
         "Before number field",
@@ -602,6 +603,35 @@ describe("the focused invalid face", () => {
       }
       await userEvent.click(page.getByText("Away", { exact: true }));
       expectInvalidRing(`${label} at rest`, host());
+    }
+  });
+
+  it("keeps the plain focus ring on a group marked aria-invalid whose own control is valid", async () => {
+    renderStateFaces(
+      <>
+        <button type="button">Before group</button>
+        <InputGroup.Root aria-label="Flagged group" aria-invalid>
+          <InputGroup.Input aria-label="Plain group input" />
+        </InputGroup.Root>
+        <button type="button">Before chips</button>
+        <Combobox.Root items={["Apple", "Banana"]} multiple defaultValue={["Apple"]}>
+          <Combobox.Chips aria-label="Flagged chips" aria-invalid>
+            <Combobox.Chip>Apple</Combobox.Chip>
+            <Combobox.ChipsInput aria-label="Plain chips input" />
+          </Combobox.Chips>
+        </Combobox.Root>
+      </>
+    );
+
+    // A within host reads its state from its own control only, so the group's own
+    // `aria-invalid` paints no invalid face, focused or at rest.
+    for (const [label, before, host] of [
+      ["input group", "Before group", () => roleNamed("group", "Flagged group")],
+      ["combobox chips", "Before chips", () => roleNamed("toolbar", "Flagged chips")],
+    ] as const) {
+      expectValidFocusRing(await tabInto(before, host), label);
+      await userEvent.click(page.getByText("Away", { exact: true }));
+      expectNoRing(`${label} at rest`, host());
     }
   });
 });

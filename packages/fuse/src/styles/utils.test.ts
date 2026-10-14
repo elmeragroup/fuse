@@ -26,7 +26,7 @@ describe("focus-ring constants", () => {
       "has-[[data-focus-ring-control]:focus-visible]:ring-2 has-[[data-focus-ring-control]:focus-visible]:ring-ring has-[[data-focus-ring-control]:focus-visible]:outline-none"
     );
     expect(withinFocusRingControlClass).toBe(
-      "focus-visible:ring-0 focus-visible:outline-none aria-invalid:focus-visible:ring-0 aria-invalid:focus-visible:ring-offset-0 data-invalid:focus-visible:ring-0 data-invalid:focus-visible:ring-offset-0"
+      "focus-visible:ring-0 focus-visible:outline-none aria-invalid:focus-visible:ring-0 aria-invalid:focus-visible:ring-offset-0"
     );
     expect(stateFocusRingClass).toBe("outline-none");
     expect(stateFocusRingVisibleClass).toBe("outline-none ring-2 ring-ring");
@@ -40,7 +40,7 @@ describe("focus-ring constants", () => {
       "data-invalid:focus-visible:ring-3 data-invalid:focus-visible:ring-error/20 data-invalid:focus-visible:ring-offset-1 data-invalid:focus-visible:ring-offset-error"
     );
     expect(withinInvalidFocusRingClass).toBe(
-      "has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-3 has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-error/20 has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-offset-1 has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-offset-error aria-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-3 aria-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-error/20 aria-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-1 aria-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-error"
+      "has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-3 has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-error/20 has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-offset-1 has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-offset-error"
     );
     expect(dataWithinInvalidFocusRingClass).toBe(
       "data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-3 data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-error/20 data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-1 data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-error"

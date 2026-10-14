@@ -28,7 +28,7 @@ export const focusRing = tv({
       within: {
         root: "has-[[data-focus-ring-control]:focus-visible]:ring-2 has-[[data-focus-ring-control]:focus-visible]:ring-ring has-[[data-focus-ring-control]:focus-visible]:outline-none",
         control:
-          "focus-visible:ring-0 focus-visible:outline-none aria-invalid:focus-visible:ring-0 aria-invalid:focus-visible:ring-offset-0 data-invalid:focus-visible:ring-0 data-invalid:focus-visible:ring-offset-0",
+          "focus-visible:ring-0 focus-visible:outline-none aria-invalid:focus-visible:ring-0 aria-invalid:focus-visible:ring-offset-0",
       },
       state: {
         root: "outline-none",
@@ -118,16 +118,14 @@ export const dataInvalidFocusRingClass = cn(
 
 /**
  * The focused invalid face (see {@link ariaInvalidFocusRingClass}) on a within-target group.
- * One arm reads the group's own control, a direct child marked `data-focus-ring-control` with
- * `aria-invalid="true"`, as the within state face does. The other covers a group that carries
- * `aria-invalid` itself, such as NumberField's, and also reads only its direct child, so a
- * valid control nested in an addon leaves an invalid outer group its resting halo. Each
- * selector outweighs the within ring and the halo, so source order never decides it.
- * `state-face.ts` composes it into the within-target face.
+ * It reads only the group's own control, a direct child marked `data-focus-ring-control` with
+ * `aria-invalid="true"`, as the within state face does. NumberField is covered too, because
+ * Base UI stamps `aria-invalid` on its input from the invalid Field. Each selector outweighs the
+ * within ring and the halo, so source order never decides it. `state-face.ts` composes it into
+ * the within-target face.
  */
 export const withinInvalidFocusRingClass = cn(
-  "has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-3 has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-error/20 has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-offset-1 has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-offset-error",
-  "aria-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-3 aria-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-error/20 aria-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-1 aria-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-error"
+  "has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-3 has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-error/20 has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-offset-1 has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-offset-error"
 );
 
 /**
