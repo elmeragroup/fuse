@@ -20,16 +20,16 @@ import {
 describe("focus-ring constants", () => {
   it("uses the documented focus selectors and a flush 2px ring with no offset", () => {
     expect(selfFocusRingClass).toBe(
-      "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
     );
     expect(withinFocusRingClass).toBe(
-      "has-[[data-focus-ring-control]:focus-visible]:ring-2 has-[[data-focus-ring-control]:focus-visible]:ring-ring has-[[data-focus-ring-control]:focus-visible]:outline-none"
+      "has-[[data-focus-ring-control]:focus-visible]:ring-2 has-[[data-focus-ring-control]:focus-visible]:ring-ring has-[[data-focus-ring-control]:focus-visible]:outline-hidden"
     );
     expect(withinFocusRingControlClass).toBe(
       "focus-visible:ring-0 focus-visible:outline-none aria-invalid:focus-visible:ring-0 aria-invalid:focus-visible:ring-offset-0"
     );
     expect(stateFocusRingClass).toBe("outline-none");
-    expect(stateFocusRingVisibleClass).toBe("outline-none ring-2 ring-ring");
+    expect(stateFocusRingVisibleClass).toBe("ring-2 ring-ring outline-hidden");
   });
 
   it("paints a focused invalid control's solid 1px error line inside its 3px error/20 halo on every target", () => {

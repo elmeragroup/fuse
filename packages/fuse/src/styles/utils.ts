@@ -5,7 +5,8 @@ import { tv } from "./tv";
  * The shared keyboard focus ring: a 2px `--ring` box-shadow drawn flush against the control,
  * with no offset gap. The flush ring keeps one 2px reach in every target, so a ring never
  * paints the page colour between itself and the control, and the ring's colour is held to 3:1
- * against the page and card it is drawn on (`contrast-matrix.test.ts`).
+ * against the page and card it is drawn on (`contrast-matrix.test.ts`). The focused faces use
+ * `outline-hidden`, so forced-colors mode, which drops box-shadow, still draws an outline.
  *
  * - `self` paints on the element that matches `:focus-visible`.
  * - `within` paints on a group whose `data-focus-ring-control` descendant is focus-visible;
@@ -23,10 +24,10 @@ export const focusRing = tv({
   variants: {
     target: {
       self: {
-        root: "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+        root: "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden",
       },
       within: {
-        root: "has-[[data-focus-ring-control]:focus-visible]:ring-2 has-[[data-focus-ring-control]:focus-visible]:ring-ring has-[[data-focus-ring-control]:focus-visible]:outline-none",
+        root: "has-[[data-focus-ring-control]:focus-visible]:ring-2 has-[[data-focus-ring-control]:focus-visible]:ring-ring has-[[data-focus-ring-control]:focus-visible]:outline-hidden",
         control:
           "focus-visible:ring-0 focus-visible:outline-none aria-invalid:focus-visible:ring-0 aria-invalid:focus-visible:ring-offset-0",
       },
@@ -44,7 +45,7 @@ export const focusRing = tv({
       target: "state",
       isFocusVisible: true,
       class: {
-        root: "ring-2 ring-ring",
+        root: "ring-2 ring-ring outline-hidden",
       },
     },
   ],
@@ -78,7 +79,9 @@ export const withinFocusRingControlClass = focusRing({ target: "within" }).contr
 /**
  * The state-target focus ring's resting face — `outline-none` alone, the half that does
  * not depend on RAC's `isFocusVisible` render prop. Pair it with
- * {@link stateFocusRingVisibleClass} on the recipe's `isFocusVisible: true` arm.
+ * {@link stateFocusRingVisibleClass} on the recipe's `isFocusVisible: true` arm, whose
+ * `outline-hidden` replaces it, so forced-colors mode, which drops box-shadow, still draws
+ * an outline on the focused face and none at rest.
  *
  * The `state` target exists because the interim react-aria tier hangs the ring on a
  * non-focusable wrapper (a `Group`, a calendar cell, a grid row) and is told about focus
