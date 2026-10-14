@@ -28,7 +28,10 @@ import type { Margins, Point, Rect, Viewport } from "../lib/viewport";
 import { useDesktop } from "./studio-desktop";
 import { useStudio } from "./studio-state";
 
-/** Screen pixels kept clear around the artboards a fit frames, enough to clear the floating toolbar. */
+/**
+ * Screen pixels kept clear around the artboards a fit frames, enough to clear the canvas bar at the
+ * canvas's foot.
+ */
 const FIT_PADDING = 80;
 
 /** Screen pixels the phone's first fit keeps clear: the top clears the artboard's name label. */
@@ -38,10 +41,15 @@ const PHONE_FIT_MARGINS = { top: 48, right: 24, left: 24 } as const;
 const GLIDE_MS = 280;
 
 /**
- * Screen pixels kept clear around a focused control the camera pans into view. The bottom keeps
- * the fits' clearance, so a control revealed there never lands beneath the floating toolbar.
+ * Screen pixels kept clear around a focused control the camera pans into view. The top keeps 24px
+ * from the canvas's edge, which `revealFocus` raises past the floating theme toolbar while that bar
+ * is pinned to the canvas's top. The bottom keeps the fits' clearance, so a control revealed there
+ * never lands beneath the canvas bar.
  */
 const REVEAL_MARGINS: Margins = { top: 24, right: 24, bottom: FIT_PADDING, left: 24 };
+
+/** Screen pixels kept between a pinned theme toolbar and a control revealed under it. */
+const PINNED_BAR_GAP = 8;
 
 /** How a camera move happens. */
 type MoveOptions = {
@@ -51,13 +59,14 @@ type MoveOptions = {
   readonly announce?: boolean;
 };
 
-/** A frame of an artboard waiting for the floating toolbar's answer, told apart by its serial. */
+/** A frame of an artboard waiting for the floating theme toolbar's answer, told apart by its serial. */
 export type FrameRequest = { readonly serial: number; readonly artboardId: string };
 
 /**
- * The floating toolbar's one answer to a frame request: the room its bar over the artboard needs
+ * The floating theme toolbar's answer to a frame request: the room its bar over the artboard needs
  * above it, the screen px between the canvas's top and the artboard's top that keep the bar at
- * its gap, or that it shows no bar over the artboard.
+ * its gap, or that it shows no bar over the artboard. The viewport acts on the first answer per
+ * serial.
  */
 export type FrameAnswer =
   | { readonly serial: number; readonly kind: "measured"; readonly px: number }
@@ -80,10 +89,16 @@ type ViewportCommands = {
   zoomStep: (direction: 1 | -1, options?: MoveOptions) => void;
   /** Frames every artboard on the page. */
   zoomToFit: (options?: MoveOptions) => void;
-  /** Frames one artboard, with room above it for its floating toolbar once one has shown. */
+  /** Frames one artboard, with room above it for its floating theme toolbar once one has shown. */
   zoomToArtboard: (id: string, options?: MoveOptions) => void;
-  /** Takes the floating toolbar's answer to the frame request it was given. */
+  /** Takes the floating theme toolbar's answer to the frame request it was given. */
   answerFrame: (answer: FrameAnswer) => void;
+  /**
+   * Attaches the floating theme toolbar's reader for the canvas-local px its bar covers while
+   * pinned to the canvas's top at camera `to`: the bar's bottom edge measured from the canvas's
+   * top, or undefined when no bar pins there. `from` is the camera the canvas draws now.
+   */
+  attachPinnedBar: (read: ((from: Viewport, to: Viewport) => number | undefined) | null) => void;
   /**
    * Shows a focused element inside an artboard: glides to frame the artboard when it is mostly
    * out of view, and otherwise pans the element into view when the canvas clips it.
@@ -99,7 +114,7 @@ type ViewportState = {
   ready: boolean;
   /** The latest zoom announcement for the canvas's live region. */
   announcement: string;
-  /** The latest frame of an artboard, for the floating toolbar to answer (`zoomToArtboard`). */
+  /** The latest frame of an artboard, for the floating theme toolbar to answer (`zoomToArtboard`). */
   frameRequest: FrameRequest | undefined;
 };
 
@@ -130,9 +145,10 @@ export function zoomLabel(zoom: number): string {
  * the artboards never re-render while the canvas pans.
  */
 export function ViewportProvider({ children }: { children: ReactNode }): ReactElement {
-  const { artboards, selectedId } = useStudio();
+  const { artboards } = useStudio();
   const desktop = useDesktop();
   const canvasRef = useRef<HTMLElement | null>(null);
+  const pinnedBar = useRef<((from: Viewport, to: Viewport) => number | undefined) | null>(null);
   const elements = useRef(new Map<string, HTMLElement>());
   const [viewport, setViewport] = useState<Viewport>(INITIAL_VIEWPORT);
   const [gliding, setGliding] = useState(false);
@@ -141,8 +157,8 @@ export function ViewportProvider({ children }: { children: ReactNode }): ReactEl
   // The camera commands read the newest viewport even between renders, as a pinch sends
   // several moves per frame. Mid-glide it holds the destination; `current` reads the drawn one.
   const latest = useRef(viewport);
-  // The room the floating toolbar last measured above an artboard, and the frame request waiting
-  // for its answer (`zoomToArtboard`).
+  // The room the floating theme toolbar last measured above an artboard, and the frame request
+  // waiting for its answer (`zoomToArtboard`).
   const toolbarRoom = useRef<number | undefined>(undefined);
   const serials = useRef(0);
   const [frameRequest, setFrameRequest] = useState<FrameRequest | undefined>(undefined);
@@ -269,14 +285,14 @@ export function ViewportProvider({ children }: { children: ReactNode }): ReactEl
   );
 
   // A Layers pick or zoom to selection frames the artboard with room above it for the floating
-  // toolbar. The pick selects and frames in one click, before the toolbar for the new selection
-  // has rendered, so the frame reserves the room the toolbar last measured and becomes a request
-  // with a serial, published in the viewport state. On the commit that follows, the toolbar
-  // answers it once, whatever it shows: the measured room when its bar sits over the artboard,
+  // theme toolbar. The pick selects and frames in one click, before the toolbar for the new
+  // selection has rendered, so the frame reserves the room the toolbar last measured and becomes a
+  // request with a serial, published in the viewport state. On the commit that follows, the
+  // toolbar answers it, whatever it shows: the measured room when its bar sits over the artboard,
   // its first and real height as the studio caps its width, and otherwise that it shows none
-  // there. A taller bar frames the artboard once more with its own room. Either answer ends the
-  // request, as do any other camera move and a selection change, so no request waits on a bar
-  // that will not render, and the camera moves only when the visitor has just asked for a frame.
+  // there. A taller bar frames the artboard once more with its own room. The first answer for a
+  // serial ends the request, as does any other camera move, and the viewport ignores later
+  // answers, so the camera moves only when the visitor has just asked for a frame.
   // Below `lg` no toolbar renders, and a frame requests nothing.
   const zoomToArtboard = useCallback(
     (id: string, options?: MoveOptions) => {
@@ -309,13 +325,6 @@ export function ViewportProvider({ children }: { children: ReactNode }): ReactEl
     [frameArtboard]
   );
 
-  // A selection change ends a request to frame another artboard.
-  useEffect(() => {
-    if (pending.current?.artboardId !== selectedId) {
-      pending.current = undefined;
-    }
-  }, [selectedId]);
-
   const revealFocus = useCallback(
     (element: HTMLElement) => {
       const id = element.closest<HTMLElement>("[data-artboard-id]")?.dataset.artboardId;
@@ -342,7 +351,14 @@ export function ViewportProvider({ children }: { children: ReactNode }): ReactEl
         y: box.top - frame.top + canvas.scrollTop,
       });
       const world = { ...topLeft, width: box.width / drawn.zoom, height: box.height / drawn.zoom };
-      const next = revealRect(latest.current, world, screen(), REVEAL_MARGINS);
+      // A pinned bar stays put as the camera moves, so it is measured here with the element, at
+      // the camera the pan starts from: mid-glide, the glide's destination.
+      const covered = pinnedBar.current?.(drawn, latest.current);
+      const margins =
+        covered === undefined
+          ? REVEAL_MARGINS
+          : { ...REVEAL_MARGINS, top: Math.max(REVEAL_MARGINS.top, covered + PINNED_BAR_GAP) };
+      const next = revealRect(latest.current, world, screen(), margins);
       if (next.x !== latest.current.x || next.y !== latest.current.y) {
         move(next, { animate: true });
       }
@@ -386,6 +402,9 @@ export function ViewportProvider({ children }: { children: ReactNode }): ReactEl
       zoomToFit,
       zoomToArtboard,
       answerFrame,
+      attachPinnedBar: (read) => {
+        pinnedBar.current = read;
+      },
       revealFocus,
     }),
     [answerFrame, centre, current, move, revealFocus, zoomToArtboard, zoomToFit]
