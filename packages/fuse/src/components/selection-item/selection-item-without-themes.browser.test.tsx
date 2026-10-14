@@ -2,14 +2,11 @@ import type { CSSProperties } from "react";
 
 import { describe, expect, it } from "vitest";
 
-import * as CssColor from "@elmeragroup/color/css-color";
-import { getOrThrow } from "@elmeragroup/color/result";
-
 // No themes.css: only themes.css declares the role tokens, so these rows see a host that
 // declares none of them, or only the ones it sets itself.
 import "../../../dist/styles.css";
 import { render } from "../../../test/browser-render";
-import { effectiveOpacity, headingNamed } from "../../../test/themed-browser-render";
+import { effectiveOpacity, gradientStops, headingNamed } from "../../../test/themed-browser-render";
 import { CheckboxItemGroup } from "../checkbox/checkbox";
 import { CheckboxItem } from "../checkbox/checkbox-item";
 import { RadioItemGroup } from "../radio-group/radio-group";
@@ -90,9 +87,7 @@ function disabledLooks(
       throw new Error(`expected the shell around ${name}`);
     }
     const style = getComputedStyle(shell);
-    const stripes = [...style.backgroundImage.matchAll(/(?:rgba?|oklch|lab)\([^()]*\)/g)].map(
-      ([stop]) => CssColor.toSrgb(getOrThrow(CssColor.parse(stop))).alpha
-    );
+    const stripes = gradientStops(style.backgroundImage).map(({ alpha }) => alpha);
     return {
       fill: style.backgroundColor,
       stripes,
