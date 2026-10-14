@@ -58,20 +58,24 @@ export const toastVariants = tv({
         root: `${overlayPopupFillClass} ring-1 ring-border`,
         icon: "animate-spin",
       },
+      // The focus ring is drawn flush, so on a status soft surface it takes that surface's
+      // foreground, which the contrast matrix's text-grade pairs hold to 4.5:1 in every
+      // theme and scheme; the neutral grey falls under 3:1 on the dark soft fills. This
+      // overrides a brand-tuned `--ring` inside status toasts on purpose.
       error: {
-        root: "bg-error-soft text-error-soft-foreground ring-1 ring-error/20 [--toast-copy:var(--error-soft-foreground)]",
+        root: "bg-error-soft text-error-soft-foreground ring-1 ring-error/20 [--ring:var(--error-soft-foreground)] [--toast-copy:var(--error-soft-foreground)]",
         icon: "text-error",
       },
       info: {
-        root: "bg-info-soft text-info-soft-foreground ring-1 ring-info/20 [--toast-copy:var(--info-soft-foreground)]",
+        root: "bg-info-soft text-info-soft-foreground ring-1 ring-info/20 [--ring:var(--info-soft-foreground)] [--toast-copy:var(--info-soft-foreground)]",
         icon: "text-info",
       },
       success: {
-        root: "bg-success-soft text-success-soft-foreground ring-1 ring-success/20 [--toast-copy:var(--success-soft-foreground)]",
+        root: "bg-success-soft text-success-soft-foreground ring-1 ring-success/20 [--ring:var(--success-soft-foreground)] [--toast-copy:var(--success-soft-foreground)]",
         icon: "text-success",
       },
       warning: {
-        root: "bg-warning-soft text-warning-soft-foreground ring-1 ring-warning/20 [--toast-copy:var(--warning-soft-foreground)]",
+        root: "bg-warning-soft text-warning-soft-foreground ring-1 ring-warning/20 [--ring:var(--warning-soft-foreground)] [--toast-copy:var(--warning-soft-foreground)]",
         icon: "text-warning",
       },
     },

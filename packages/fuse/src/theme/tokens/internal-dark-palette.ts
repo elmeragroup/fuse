@@ -1,6 +1,5 @@
 import type { TokenLayer } from "./contract";
 import { DARK_DEFAULTS } from "./dark-defaults";
-import { NEUTRAL_RING } from "./primitives";
 
 // User-supplied shadcn neutral dark base, 2026-09-15.
 // Missing library roles use neutral surfaces or shared dark support colors.
@@ -38,7 +37,6 @@ export const INTERNAL_DARK_PALETTE = {
   border: "oklch(1 0 0 / 10%)",
   // Raised from the supplied 15% to meet 3:1 on supported control surfaces.
   input: "oklch(1 0 0 / 40%)",
-  ring: NEUTRAL_RING,
   "chart-1": "oklch(0.845 0.143 164.978)",
   "chart-2": "oklch(0.696 0.17 162.48)",
   "chart-3": "oklch(0.596 0.145 163.225)",

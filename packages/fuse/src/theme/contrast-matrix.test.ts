@@ -147,12 +147,13 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
   { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(SYNTAX_ROLES), floor: 4.5 },
   { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(["input"]), floor: 3 },
   {
-    // The focus ring (WCAG 1.4.11). It is drawn flush against the control, so the surface it
-    // must separate from is the page or card around it. Light `input` stays out of this gate:
-    // it is the field border and an accepted deviation.
+    // The focus ring (WCAG 1.4.11). It is drawn flush against the control, so it must separate
+    // from the page or card around the control and from the muted Tabs list track it sits on
+    // inside the list padding. Light `input` stays out of this gate: it is the field border and
+    // an accepted deviation.
     schemes: ["light", "dark"],
     matches: () => true,
-    pairs: roleOnSurfaces(["ring"]),
+    pairs: [...roleOnSurfaces(["ring"]), ["ring", "muted"]],
     floor: 3,
   },
   {

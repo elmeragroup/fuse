@@ -2,8 +2,9 @@ export const WHITE = "oklch(1 0 0)";
 
 /**
  * The focus ring's default colour in every theme and both colour schemes: one neutral grey.
- * Lightness 0.6 meets the 3:1 floor on every gated light and dark surface (page, card and
- * card-soft) with some margin, the lowest measuring about 3.45:1 on the guen light page, so a
+ * Status Toasts and the warning Alert rebind `--ring` on their soft fills. Lightness 0.6 meets
+ * the 3:1 floor on every gated light and dark surface (page, card, card-soft and the muted Tabs
+ * list track), the lowest measuring about 3.15:1 on the elma external dark muted track, so a
  * ring drawn flush against a control still separates from the surface around it.
  * `contrast-matrix.test.ts` holds that floor. `EXTERNAL_VARIANT_LAYER` describes how a brand
  * tunes its ring.

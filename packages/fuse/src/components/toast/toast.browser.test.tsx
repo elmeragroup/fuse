@@ -7,15 +7,19 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 // Role tokens live in themes.css only; styles.css defines none of them.
 import "../../../dist/themes.css";
+import { ringLayers, settleTransitions } from "../../../test/assert-invalid-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import {
+  computedContrast,
   cssVarColor,
   fkasPrivate,
   renderThemed,
   roleNamed,
   snapshotDocumentTheme,
   stampDocumentTheme,
+  stampTheme,
 } from "../../../test/themed-browser-render";
+import { LEGAL_THEMES, themeSlug } from "../../theme/tokens/themes";
 import { Dialog } from "../dialog/index";
 import { Sheet } from "../sheet/index";
 import { Toast } from "./index";
@@ -540,6 +544,43 @@ describe("Toast contrast", () => {
       const description = toastCopy("Nothing to report.");
 
       expect(getComputedStyle(description).color).toBe(cssVarColor(root, "--muted-foreground"));
+    }
+  );
+
+  it.each(["error", "info", "success", "warning"] as const)(
+    "draws the %s close button's focus ring at 3:1 against the toast fill in every theme and scheme",
+    async (status) => {
+      const { manager } = renderToast();
+      manager.add({ type: status, title: "Outage", timeout: 0 });
+      const root = await waitForToast("Outage");
+      await expandViewport();
+      const close = roleNamed("button", "Close");
+      // A real Tab, so the button matches `:focus-visible` and paints the ring.
+      for (let step = 0; step < 4 && document.activeElement !== close; step += 1) {
+        await userEvent.keyboard("{Tab}");
+      }
+      expect(document.activeElement).toBe(close);
+      // The toast portals into renderThemed's ThemeScope, whose own stamp outranks the
+      // document's, so the theme goes on that scope and the scheme on the document.
+      const scope = root.closest<HTMLElement>("[data-theme-brand]");
+      if (scope === null || scope === document.documentElement) {
+        throw new Error("expected the toast inside renderThemed's ThemeScope");
+      }
+
+      for (const scheme of ["light", "dark"] as const) {
+        for (const theme of LEGAL_THEMES) {
+          stampDocumentTheme(theme, scheme);
+          stampTheme(scope, theme);
+          settleTransitions(root, close);
+          const [ring] = ringLayers(close);
+          const context = `${themeSlug(theme)} ${scheme} ${status}`;
+          expect(ring, context).toBeDefined();
+          // WCAG 1.4.11: the flush ring is the indicator's only edge against the fill.
+          expect
+            .soft(computedContrast(ring?.color ?? "", getComputedStyle(root).backgroundColor), context)
+            .toBeGreaterThanOrEqual(3);
+        }
+      }
     }
   );
 });
