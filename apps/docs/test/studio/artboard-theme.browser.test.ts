@@ -1,7 +1,7 @@
 import type { Locator } from "playwright";
 import { describe, expect, it } from "vitest";
 
-import { launchSuiteBrowser } from "../suite-browser";
+import { closeContext, launchSuiteBrowser } from "../suite-browser";
 import {
   ARTBOARDS,
   COLOR_PAGE,
@@ -141,7 +141,7 @@ describe("an artboard's own brand, variant and segment", () => {
       await pickBrand(page, bar, "Fjordkraft");
       await toast.first().waitFor();
     } finally {
-      await context.close();
+      await closeContext(context);
     }
   });
 
