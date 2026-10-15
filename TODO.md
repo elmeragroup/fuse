@@ -126,10 +126,11 @@
   (2026-09-25, T3) and passed on every rerun. If it recurs, diagnose before raising any timeout.
 - `CssColor.parse` in `@elmeragroup/color` does not read `oklab()`, which is how Chromium
   serializes every `color-mix(in oklab, …)` / Tailwind `/NN` computed fill. Browser contrast
-  checks over translucent fills, such as the Alert action's, throw `InvalidColor` until it
-  does. Meanwhile `alert.browser.test.tsx` approximates the info action's hovered fill as `info`
-  at 0.9 alpha composited in sRGB; switch it to the parsed fill then. Also correct the notation list in `packages/color/src/css-color.ts`, which names only
-  `rgb()`, `oklch()` and `lab()` as Chromium's computed serializations.
+  checks over translucent fills, such as the Alert action's, throw `InvalidColor` until it does.
+  Meanwhile `alert.browser.test.tsx` approximates the info action's hovered fill as `info` at 0.9
+  alpha composited in sRGB; switch it to the parsed fill then. Also correct the notation list in
+  `packages/color/src/css-color.ts`, which names only `rgb()`, `oklch()` and `lab()` as Chromium's
+  computed serializations.
 - No select demo shows `Select.Content alignItemWithTrigger`; only browser tests and the landing
   exercise it. Add a demo beside the page and list it in the component inventory.
 - React Aria 3.52.1 misjudges the room around a popover inside a positioned container. In

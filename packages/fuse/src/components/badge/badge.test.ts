@@ -11,9 +11,9 @@ const VARIANTS = [
   "warning",
   "info",
   "soft-destructive",
-  "soft-info",
   "soft-success",
   "soft-warning",
+  "soft-info",
   "outline",
   "outline-secondary",
   "outline-destructive",
@@ -60,7 +60,7 @@ describe("badgeVariants", () => {
   it.each([
     // The destructive-named variants rename onto the canonical error tokens.
     ["destructive", ["bg-error", "text-error-foreground"], ["destructive"]],
-    ["outline-destructive", ["border-error", "text-error"], ["destructive"]],
+    ["outline-destructive", ["border-error", "text-error"], ["destructive", "-foreground"]],
     // info fills with the status role, like success and warning.
     ["info", ["bg-info", "text-info-foreground", "border-transparent"], ["-soft"]],
     // The soft arms pair each soft surface with its foreground; soft-destructive renames onto error.
@@ -69,7 +69,6 @@ describe("badgeVariants", () => {
       ["bg-error-soft", "border-error/20", "text-error-soft-foreground"],
       ["text-error-foreground", "destructive"],
     ],
-    ["soft-info", ["bg-info-soft", "border-info/20", "text-info-soft-foreground"], ["text-info-foreground"]],
     [
       "soft-success",
       ["bg-success-soft", "border-success/20", "text-success-soft-foreground"],
@@ -80,8 +79,9 @@ describe("badgeVariants", () => {
       ["bg-warning-soft", "border-warning/20", "text-warning-soft-foreground"],
       ["text-warning-foreground"],
     ],
+    ["soft-info", ["bg-info-soft", "border-info/20", "text-info-soft-foreground"], ["text-info-foreground"]],
     // The status outlines draw the role as border and text, with no fill.
-    ["outline-info", ["border-info", "text-info"], ["bg-"]],
+    ["outline-info", ["border-info", "text-info"], ["bg-", "-foreground"]],
     // outline keeps a bare border and foreground text.
     ["outline", ["text-foreground", "border"], ["bg-"]],
   ] as const)("maps variant=%s onto its token classes", (variant, present, absent) => {

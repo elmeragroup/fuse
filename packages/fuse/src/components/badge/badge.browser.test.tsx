@@ -19,9 +19,9 @@ const BADGE_VARIANTS = [
   "warning",
   "info",
   "soft-destructive",
-  "soft-info",
   "soft-success",
   "soft-warning",
+  "soft-info",
   "outline",
   "outline-secondary",
   "outline-destructive",
@@ -74,9 +74,9 @@ describe("Badge", () => {
 
   it.each([
     ["soft-destructive", "--error-soft", "--error-soft-foreground"],
-    ["soft-info", "--info-soft", "--info-soft-foreground"],
     ["soft-success", "--success-soft", "--success-soft-foreground"],
     ["soft-warning", "--warning-soft", "--warning-soft-foreground"],
+    ["soft-info", "--info-soft", "--info-soft-foreground"],
   ] as const)("pairs the %s variant's soft surface and foreground", (variant, background, foreground) => {
     renderThemed(<Badge variant={variant}>Scheduled</Badge>);
     const badge = badgeNamed("Scheduled");
@@ -84,7 +84,23 @@ describe("Badge", () => {
     expect(styles.backgroundColor).toBe(cssVarColor(badge, background));
     expect(styles.borderTopColor).not.toBe("rgba(0, 0, 0, 0)");
     expect(styles.backgroundColor).not.toBe(styles.borderTopColor);
+    // The base layer draws every bordered element in `--border`, so the status border must differ.
+    expect(styles.borderTopColor).not.toBe(cssVarColor(badge, "--border"));
     expect(styles.color).toBe(cssVarColor(badge, foreground));
+  });
+
+  it.each([
+    ["outline-destructive", "--error"],
+    ["outline-success", "--success"],
+    ["outline-warning", "--warning"],
+    ["outline-info", "--info"],
+  ] as const)("draws the %s variant's border and text in its status role, with no fill", (variant, role) => {
+    renderThemed(<Badge variant={variant}>Scheduled</Badge>);
+    const badge = badgeNamed("Scheduled");
+    const styles = getComputedStyle(badge);
+    expect(styles.backgroundColor).toBe("rgba(0, 0, 0, 0)");
+    expect(styles.borderTopColor).toBe(cssVarColor(badge, role));
+    expect(styles.color).toBe(cssVarColor(badge, role));
   });
 
   it("scales padding and type across the three decorative sizes", () => {

@@ -165,6 +165,14 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
     pairs: roleOnSurfaces(["muted-foreground"]),
     floor: 3,
   },
+  {
+    // Status roles as text on the plain surfaces: the outline Badge arms, field errors and the
+    // destructive and success typography arms draw `text-<status>` on the page, card and card-soft.
+    schemes: ["light", "dark"],
+    matches: () => true,
+    pairs: roleOnSurfaces(["error", "info", "success", "warning"]),
+    floor: 4.5,
+  },
 ];
 
 describe("contrast matrix", () => {
