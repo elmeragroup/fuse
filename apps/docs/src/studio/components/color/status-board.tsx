@@ -24,8 +24,7 @@ const styles = statusBoard();
 
 /**
  * The status roles: error, info, success and warning with their soft forms, marked with live
- * contrast, then in the components that wear them: Badges, Alerts and a field's error. Alert
- * has no info variant, so info shows in the Badges only.
+ * contrast, then in the components that wear them: Badges, Alerts and a field's error.
  */
 export function StatusBoard(): ReactElement {
   return (
@@ -55,6 +54,11 @@ export function StatusBoard(): ReactElement {
           <Badge variant="outline-success">Paid</Badge>
           <Badge variant="outline-warning">Due soon</Badge>
         </div>
+        <div className={styles.badges()}>
+          <Badge variant="info">New</Badge>
+          <Badge variant="soft-success">Paid</Badge>
+          <Badge variant="soft-warning">Due soon</Badge>
+        </div>
       </section>
       <section className={styles.section()} aria-label="Alerts">
         <Heading level={2} size="lg">
@@ -64,6 +68,10 @@ export function StatusBoard(): ReactElement {
           <Alert.Root variant="destructive">
             <Alert.Title>Payment failed</Alert.Title>
             <Alert.Description>Your card was declined. Try another card.</Alert.Description>
+          </Alert.Root>
+          <Alert.Root variant="info">
+            <Alert.Title>New prices from 1 November</Alert.Title>
+            <Alert.Description>The change shows on your next invoice.</Alert.Description>
           </Alert.Root>
           <Alert.Root variant="success">
             <Alert.Title>Payment received</Alert.Title>

@@ -536,9 +536,7 @@ describe("Alert", () => {
     expect(getComputedStyle(action).backgroundColor).not.toBe(restFill);
     expect(actionContrast(action, alertNamed("default"))).toBeGreaterThanOrEqual(AA_TEXT_CONTRAST);
   });
-});
 
-describe("Alert info action", () => {
   it("paints the info action on the info pair and hovers to its 90% tint", async () => {
     renderThemed(
       <Alert.Root variant="info" onAction={vi.fn()} actionLabel="Read more">
@@ -581,7 +579,7 @@ describe("Alert focus ring contrast", () => {
         <>
           <button type="button">Focus start</button>
           <Alert.Root variant={variant} onAction={vi.fn()} actionLabel="Retry">
-            <Alert.Title>Meter offline</Alert.Title>
+            <Alert.Title>{`${variant} status`}</Alert.Title>
           </Alert.Root>
         </>
       );
