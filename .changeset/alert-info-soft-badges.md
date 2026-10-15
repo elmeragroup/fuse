@@ -10,7 +10,7 @@ fill in the dark scheme.
 `Badge` takes `variant="soft-success"` and `variant="soft-warning"`: the soft status fill, its
 soft foreground and a 20% status border.
 
-**Breaking:** `Badge`'s soft blue arm is renamed from `variant="info"` to `variant="soft-info"`,
+Migration: `Badge`'s soft blue arm is renamed from `variant="info"` to `variant="soft-info"`,
 beside `soft-success` and `soft-warning`. `variant="info"` now draws a filled badge on `info`
 with `info-foreground` text, like `success` and `warning`. Replace `variant="info"` with
 `variant="soft-info"` to keep the soft look; the type checker does not flag it, because `info`
