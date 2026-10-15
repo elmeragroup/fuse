@@ -1,18 +1,23 @@
 "use client";
 
-import { createContext, useEffect, useInsertionEffect, useRef, useState, useSyncExternalStore } from "react";
+import { createContext, useEffect, useInsertionEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import { resolveColorSchemeOptions } from "./color-scheme";
-import type { ColorSchemeOptions, ColorSchemeScriptElementProps, UseColorSchemeResult } from "./color-scheme";
+import type { ColorSchemeOptions, ColorSchemeScriptElementProps } from "./color-scheme";
 import { createBrowserColorSchemePlatform } from "./color-scheme-browser-platform";
 import { diagnoseColorSchemeBootstrap } from "./color-scheme-diagnostics";
 import { createColorSchemeRuntime } from "./color-scheme-runtime";
 import type { ColorSchemeRuntime, ColorSchemeRuntimeConfig } from "./color-scheme-runtime";
 import { InjectedColorSchemeScript } from "./color-scheme-script";
 
-/** The document's color-scheme snapshot, provided by the one `ColorSchemeRoot`. */
-export const ColorSchemeContext = createContext<UseColorSchemeResult | undefined>(undefined);
+/**
+ * The document's color-scheme runtime, provided by the one `ColorSchemeRoot`. Consumers
+ * subscribe to it themselves: the value never changes after mount, because a changed context
+ * value reaches Suspense boundaries that have not hydrated yet, and React client-renders a
+ * boundary it cannot hydrate on the spot, deleting the server's markers for streamed content.
+ */
+export const ColorSchemeContext = createContext<ColorSchemeRuntime | undefined>(undefined);
 
 /** The runtime's `force`, for `ForceColorScheme`; `undefined` outside a `ColorSchemeRoot`. */
 export const ColorSchemeForceContext = createContext<ColorSchemeRuntime["force"] | undefined>(undefined);
@@ -65,7 +70,6 @@ export function ColorSchemeRoot({
   });
   const config: ColorSchemeRuntimeConfig = { ...manifest, disableTransitionOnChange, nonce };
   const [runtime] = useState(() => createColorSchemeRuntime(config, createBrowserColorSchemePlatform()));
-  const colorScheme = useSyncExternalStore(runtime.subscribe, runtime.getSnapshot, runtime.getServerSnapshot);
   const diagnosed = useRef(false);
 
   // No dependency list on purpose: every commit re-runs configure, which is free for an equal
@@ -82,7 +86,7 @@ export function ColorSchemeRoot({
   useEffect(() => runtime.connect(), [runtime]);
 
   return (
-    <ColorSchemeContext.Provider value={colorScheme}>
+    <ColorSchemeContext.Provider value={runtime}>
       <ColorSchemeForceContext.Provider value={runtime.force}>
         {injectColorSchemeScript ? (
           <InjectedColorSchemeScript {...manifest} nonce={nonce} scriptProps={scriptProps} />

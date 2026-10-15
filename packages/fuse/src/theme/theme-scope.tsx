@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
@@ -8,7 +8,7 @@ import { useRender } from "@base-ui/react/use-render";
 import type { ThemeAttributes } from "./theme-attributes";
 import { ThemeContext, useResolvedTheme } from "./theme-context";
 import type { Theme } from "./theme-context";
-import { ThemeScopeContainerContext } from "./theme-scope-container";
+import { createThemeScopeContainerStore, ThemeScopeContainerContext } from "./theme-scope-container";
 import type { ThemeInput } from "./tokens/themes";
 
 export type ThemeScopeProps = Omit<
@@ -42,15 +42,17 @@ function ThemeScopeElement({
   children,
   ...rest
 }: Omit<ThemeScopeProps, "theme"> & { theme: Theme; attributes: ThemeAttributes }) {
-  const [element, setElement] = useState<HTMLElement | null>(null);
-  const setScopeElement = useCallback((node: HTMLElement | null) => {
-    setElement(node);
-  }, []);
+  const [container] = useState(createThemeScopeContainerStore);
+  // Runs on mount and again on every reveal of a Suspense boundary that hid the scope, where an
+  // element deleted while hidden never had its ref detached a second time.
+  useLayoutEffect(() => {
+    container.revalidate();
+  }, [container]);
 
   const rendered = useRender({
     defaultTagName: "div",
     render,
-    ref: ref === undefined ? setScopeElement : [ref, setScopeElement],
+    ref: ref === undefined ? container.attach : [ref, container.attach],
     props: mergeProps<"div">(rest, {
       ...attributes,
       children,
@@ -59,7 +61,7 @@ function ThemeScopeElement({
 
   return (
     <ThemeContext.Provider value={theme}>
-      <ThemeScopeContainerContext.Provider value={element}>{rendered}</ThemeScopeContainerContext.Provider>
+      <ThemeScopeContainerContext.Provider value={container}>{rendered}</ThemeScopeContainerContext.Provider>
     </ThemeContext.Provider>
   );
 }

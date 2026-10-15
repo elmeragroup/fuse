@@ -1,4 +1,4 @@
-import { Suspense, use } from "react";
+import { StrictMode, Suspense, use, useLayoutEffect, useRef } from "react";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -10,6 +10,12 @@ import {
   MISMATCHED_BOOTSTRAP_MANIFEST,
   MISSING_BOOTSTRAP_MESSAGE,
 } from "../../test/color-scheme-contract";
+import {
+  distinctSteps,
+  hydrateStreamedPage,
+  serverBoundaryNodes,
+  settleScheduledWork,
+} from "../../test/streamed-hydration";
 import {
   ColorSchemeOutput,
   ColorSchemeSetter,
@@ -24,6 +30,7 @@ import { roleNamed } from "../../test/themed-browser-render";
 import { DEFAULT_COLOR_SCHEME_STORAGE_KEY, resolveColorSchemeOptions } from "./color-scheme";
 import { colorSchemeScriptSource, injectedColorSchemeScriptSource } from "./color-scheme-script";
 import { ThemeProvider } from "./theme-provider";
+import { useColorScheme } from "./use-color-scheme";
 
 function transitionStyles(): HTMLStyleElement[] {
   return [...document.head.querySelectorAll("style")].filter((style) =>
@@ -265,5 +272,86 @@ describe("ThemeProvider on the real browser platform", () => {
     expect(removed.mock.calls.filter(([type]) => type === "change").map(([, listener]) => listener)).toEqual(
       changeListeners
     );
+  });
+});
+
+describe("ThemeProvider around a streamed Suspense boundary", () => {
+  it("connects without client-rendering a boundary whose content is still streaming", async () => {
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "dark");
+    const { host, recoverableErrors } = await hydrateStreamedPage(
+      (boundary) => (
+        <ThemeProvider theme={fkasPrivate}>
+          <ColorSchemeOutput />
+          {boundary}
+        </ThemeProvider>
+      ),
+      <span>Streamed content</span>
+    );
+    const server = serverBoundaryNodes(host);
+    expect(server.template).not.toBeNull();
+    expect(server.fallback).not.toBeNull();
+
+    await mountedColorScheme(host, "internal-fkas-private:dark/dark");
+    await settleScheduledWork();
+
+    // A client render deletes the server's markers, so the streamed segment has nowhere to land.
+    expect(server.template?.isConnected).toBe(true);
+    expect(server.fallback?.isConnected).toBe(true);
+    expect(recoverableErrors).toEqual([]);
+  });
+
+  it("hydrates a consumer that streams in after the provider connected with the server's value", async () => {
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "dark");
+    const committed: string[] = [];
+    function StreamedScheme() {
+      const { colorScheme, resolvedColorScheme } = useColorScheme();
+      const output = useRef<HTMLElement>(null);
+      useLayoutEffect(() => {
+        committed.push(output.current?.textContent ?? "");
+      });
+      return (
+        <strong ref={output}>
+          {colorScheme}/{resolvedColorScheme ?? "pending"}
+        </strong>
+      );
+    }
+    const page = await hydrateStreamedPage(
+      (boundary) => (
+        <ThemeProvider theme={fkasPrivate}>
+          <ColorSchemeOutput />
+          {boundary}
+        </ThemeProvider>
+      ),
+      <StreamedScheme />
+    );
+    await mountedColorScheme(page.host, "internal-fkas-private:dark/dark");
+
+    await page.finishStreaming();
+
+    await expect.poll(() => distinctSteps(committed)).toEqual(["system/pending", "dark/dark"]);
+    expect(page.host.querySelector("strong")?.textContent).toBe("dark/dark");
+    expect(page.recoverableErrors).toEqual([]);
+  });
+});
+
+describe("useColorScheme under StrictMode", () => {
+  it("follows the setter and another document's storage event after the double subscribe", async () => {
+    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "light");
+    const { host } = render(
+      <StrictMode>
+        <ThemeProvider theme={fkasPrivate}>
+          <ColorSchemeOutput />
+          <ColorSchemeSetter value="dark" />
+        </ThemeProvider>
+      </StrictMode>
+    );
+    await mountedColorScheme(host, "internal-fkas-private:light/light");
+
+    roleNamed("button", "set").click();
+    await mountedColorScheme(host, "internal-fkas-private:dark/dark");
+
+    emitStorageChange(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "system");
+    const expected = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    await mountedColorScheme(host, `internal-fkas-private:system/${expected}`);
   });
 });

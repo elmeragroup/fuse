@@ -1,10 +1,21 @@
-import { useRef } from "react";
+import { createRef, StrictMode, Suspense, use, useEffect, useLayoutEffect, useRef } from "react";
 import type { ReactNode, RefObject } from "react";
 
+import { flushSync } from "react-dom";
+import { createRoot } from "react-dom/client";
 import { describe, expect, it } from "vitest";
+import { page } from "vitest/browser";
 
 import { render } from "../../test/browser-render";
+import {
+  distinctSteps,
+  hydrateStreamedPage,
+  serverBoundaryNodes,
+  settleScheduledWork,
+} from "../../test/streamed-hydration";
+import { Popover } from "../components/popover";
 import { ThemeScope } from "./theme-scope";
+import type { ThemeScopeProps } from "./theme-scope";
 import { useResolvedPortalContainer } from "./theme-scope-container";
 
 type Resolved = HTMLElement | null | undefined;
@@ -99,5 +110,304 @@ describe("useResolvedPortalContainer", () => {
     );
     expect(seen[0]).toBeNull();
     await expect.poll(() => seen.at(-1)).toBeInstanceOf(HTMLElement);
+  });
+});
+
+const scopeTheme = { variant: "internal", brand: "fkas", segment: "private" } as const;
+
+function scopeElements(seen: Resolved[]): HTMLElement[] {
+  return seen.filter((resolved): resolved is HTMLElement => resolved instanceof HTMLElement);
+}
+
+/** Everything recorded from the first attached element on, which must never fall back to null. */
+function afterFirstAttach(seen: Resolved[]): Resolved[] {
+  return seen.slice(seen.findIndex((resolved) => resolved instanceof HTMLElement));
+}
+
+function SuspendOn({ pending }: { pending: Promise<void> | undefined }): ReactNode {
+  if (pending !== undefined) {
+    use(pending);
+  }
+  return null;
+}
+
+/** A promise that keeps shown content suspended, hidden behind its fallback, until `reveal`. */
+function suspension() {
+  let reveal: () => void = () => undefined;
+  const pending = new Promise<void>((resolve) => {
+    reveal = resolve;
+  });
+  return { pending, reveal };
+}
+
+describe("ThemeScope's container across a streamed Suspense boundary", () => {
+  it("attaches without client-rendering a boundary whose content is still streaming", async () => {
+    const seen: Resolved[] = [];
+    const { host, recoverableErrors } = await hydrateStreamedPage(
+      (boundary) => (
+        <ThemeScope theme={scopeTheme}>
+          <Probe
+            onResolve={(resolved) => {
+              seen.push(resolved);
+            }}
+          />
+          {boundary}
+        </ThemeScope>
+      ),
+      <span>Streamed content</span>
+    );
+    const server = serverBoundaryNodes(host);
+    expect(server.template).not.toBeNull();
+
+    await expect.poll(() => seen.at(-1)).toBe(host.querySelector("[data-theme-brand]"));
+    await settleScheduledWork();
+
+    expect(server.template?.isConnected).toBe(true);
+    expect(server.fallback?.isConnected).toBe(true);
+    expect(recoverableErrors).toEqual([]);
+  });
+
+  it("hydrates an overlay that streams in after the scope attached as the server rendered it", async () => {
+    const committed: string[] = [];
+    function StreamedOverlay() {
+      const resolved = useResolvedPortalContainer();
+      const output = useRef<HTMLElement>(null);
+      useLayoutEffect(() => {
+        committed.push(output.current?.textContent ?? "");
+      });
+      return <strong ref={output}>{resolved instanceof HTMLElement ? "in scope" : "waiting"}</strong>;
+    }
+    const streamed = await hydrateStreamedPage(
+      (boundary) => <ThemeScope theme={scopeTheme}>{boundary}</ThemeScope>,
+      <StreamedOverlay />
+    );
+    await settleScheduledWork();
+
+    await streamed.finishStreaming();
+
+    await expect.poll(() => distinctSteps(committed)).toEqual(["waiting", "in scope"]);
+    expect(streamed.recoverableErrors).toEqual([]);
+  });
+});
+
+describe("ThemeScope's container across a Suspense hide and reveal", () => {
+  it("keeps the same element and an open overlay in it while the boundary hides and reveals", async () => {
+    const seen: Resolved[] = [];
+    const record = (resolved: Resolved) => {
+      seen.push(resolved);
+    };
+    const tree = (pending?: Promise<void>) => (
+      <Suspense fallback={<span>Hidden</span>}>
+        <ThemeScope theme={scopeTheme}>
+          <Probe onResolve={record} />
+          <Popover.Root defaultOpen>
+            <Popover.Trigger>Open</Popover.Trigger>
+            <Popover.Content>
+              <Popover.Title>Scoped popup</Popover.Title>
+            </Popover.Content>
+          </Popover.Root>
+          <SuspendOn pending={pending} />
+        </ThemeScope>
+      </Suspense>
+    );
+    const { host, rerender } = render(tree());
+    const scope = host.querySelector("[data-theme-brand]");
+    await expect.poll(() => seen.at(-1)).toBe(scope);
+    const popup = page.getByRole("dialog", { name: "Scoped popup" });
+    await expect.element(popup).toBeVisible();
+
+    const { pending, reveal } = suspension();
+    // A non-transition update that suspends shown content hides it behind the fallback.
+    rerender(tree(pending));
+    await expect.element(page.getByText("Hidden")).toBeVisible();
+    await settleScheduledWork();
+    reveal();
+    await expect.element(page.getByText("Hidden")).not.toBeInTheDocument();
+    await expect.element(popup).toBeVisible();
+    await settleScheduledWork();
+
+    expect(afterFirstAttach(seen)).not.toContain(null);
+    expect(new Set(scopeElements(seen))).toEqual(new Set([scope]));
+    expect(host.querySelector("[data-theme-brand]")).toBe(scope);
+    expect(scope?.contains(popup.element())).toBe(true);
+  });
+});
+
+describe("ThemeScope's container lifecycle", () => {
+  it("provides the new element when a render change replaces it", async () => {
+    const seen: Resolved[] = [];
+    const record = (resolved: Resolved) => {
+      seen.push(resolved);
+    };
+    const { host, rerender } = render(
+      <ThemeScope theme={scopeTheme}>
+        <Probe onResolve={record} />
+      </ThemeScope>
+    );
+    await expect.poll(() => seen.at(-1)).toBe(host.querySelector("div[data-theme-brand]"));
+
+    rerender(
+      <ThemeScope theme={scopeTheme} render={<section />}>
+        <Probe onResolve={record} />
+      </ThemeScope>
+    );
+
+    const section = host.querySelector("section[data-theme-brand]");
+    expect(section).not.toBeNull();
+    await expect.poll(() => seen.at(-1)).toBe(section);
+  });
+
+  it("stops providing an element that a render change removed from the document", async () => {
+    const seen: Resolved[] = [];
+    const record = (resolved: Resolved) => {
+      seen.push(resolved);
+    };
+    function Scope({ attached }: { attached: boolean }) {
+      return (
+        <ThemeScope
+          theme={scopeTheme}
+          render={(props) => (attached ? <div {...props} /> : <>{props.children}</>)}>
+          <Probe onResolve={record} />
+        </ThemeScope>
+      );
+    }
+    const { host, rerender } = render(<Scope attached />);
+    const scope = host.querySelector("[data-theme-brand]");
+    await expect.poll(() => seen.at(-1)).toBe(scope);
+
+    rerender(<Scope attached={false} />);
+
+    expect(host.querySelector("[data-theme-brand]")).toBeNull();
+    await expect.poll(() => seen.at(-1)).toBeNull();
+  });
+
+  it.each<{
+    name: string;
+    scopeRender: (attached: boolean) => ThemeScopeProps["render"];
+    mounts: string[];
+  }>([
+    {
+      name: "a consumer inside the element, which remounts",
+      scopeRender: (attached) => (props) => (attached ? <div {...props} /> : <>{props.children}</>),
+      mounts: ["mount", "mount"],
+    },
+    {
+      // Children beside the scope element stay mounted when the element is removed.
+      name: "a consumer beside the element, which stays mounted",
+      scopeRender:
+        (attached) =>
+        ({ children, ...props }) => (
+          <>
+            {attached ? <div {...props} /> : null}
+            {children}
+          </>
+        ),
+      mounts: ["mount"],
+    },
+  ])(
+    "stops providing an element removed while a boundary hid it, for $name",
+    async ({ scopeRender, mounts }) => {
+      const seen: Resolved[] = [];
+      const record = (resolved: Resolved) => {
+        seen.push(resolved);
+      };
+      const mounted: string[] = [];
+      function MountedProbe() {
+        // Passive effects stay connected while a Suspense boundary hides its content.
+        useEffect(() => {
+          mounted.push("mount");
+        }, []);
+        return <Probe onResolve={record} />;
+      }
+      const tree = (attached: boolean, pending?: Promise<void>) => (
+        <Suspense fallback={<span>Hidden</span>}>
+          <ThemeScope theme={scopeTheme} render={scopeRender(attached)}>
+            <MountedProbe />
+            <SuspendOn pending={pending} />
+          </ThemeScope>
+        </Suspense>
+      );
+      const { host, rerender } = render(tree(true));
+      const scope = host.querySelector("[data-theme-brand]");
+      await expect.poll(() => seen.at(-1)).toBe(scope);
+
+      const { pending, reveal } = suspension();
+      rerender(tree(true, pending));
+      await expect.element(page.getByText("Hidden")).toBeVisible();
+      await settleScheduledWork();
+      // React deletes the hidden element without detaching its ref a second time.
+      rerender(tree(false, pending));
+      reveal();
+      await expect.element(page.getByText("Hidden")).not.toBeInTheDocument();
+
+      expect(host.querySelector("[data-theme-brand]")).toBeNull();
+      await expect.poll(() => seen.at(-1)).toBeNull();
+      expect(mounted).toEqual(mounts);
+    }
+  );
+
+  it("still attaches and cleans up a caller's ref", () => {
+    const calls: string[] = [];
+    const objectRef = createRef<HTMLDivElement>();
+    const { host, unmount } = render(
+      <>
+        <ThemeScope
+          theme={scopeTheme}
+          ref={(node) => {
+            calls.push(`attach ${node?.tagName ?? "null"}`);
+            return () => {
+              calls.push("cleanup");
+            };
+          }}
+        />
+        <ThemeScope theme={scopeTheme} ref={objectRef} />
+      </>
+    );
+    expect(calls).toEqual(["attach DIV"]);
+    expect(objectRef.current).toBe(host.querySelectorAll("[data-theme-brand]")[1]);
+
+    unmount();
+
+    expect(calls).toEqual(["attach DIV", "cleanup"]);
+    expect(objectRef.current).toBeNull();
+  });
+
+  it.each<{ name: string; inDocument: boolean }>([
+    { name: "in the document", inDocument: true },
+    // isConnected is false throughout, so only the reattach may cancel the detach.
+    { name: "outside the document", inDocument: false },
+  ])("keeps one element through StrictMode's double attach in a root $name", async ({ inDocument }) => {
+    const seen: Resolved[] = [];
+    const host = document.createElement("div");
+    if (inDocument) {
+      document.body.append(host);
+    }
+    const root = createRoot(host);
+    try {
+      flushSync(() => {
+        root.render(
+          <StrictMode>
+            <ThemeScope theme={scopeTheme}>
+              <Probe
+                onResolve={(resolved) => {
+                  seen.push(resolved);
+                }}
+              />
+            </ThemeScope>
+          </StrictMode>
+        );
+      });
+      const scope = host.querySelector("[data-theme-brand]");
+      await expect.poll(() => seen.at(-1)).toBe(scope);
+      await settleScheduledWork();
+
+      expect(afterFirstAttach(seen)).not.toContain(null);
+      expect(new Set(scopeElements(seen))).toEqual(new Set([scope]));
+    } finally {
+      flushSync(() => {
+        root.unmount();
+      });
+      host.remove();
+    }
   });
 });

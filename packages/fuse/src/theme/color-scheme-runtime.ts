@@ -23,7 +23,12 @@ export type ColorSchemeRuntime = {
   subscribe: (listener: () => void) => () => void;
   /** The current snapshot. Makes no platform call and allocates nothing. */
   getSnapshot: () => ColorSchemeRuntimeSnapshot;
-  /** The hydration snapshot, which is the live one: React reads it only before `connect`. */
+  /**
+   * The hydration snapshot: what the server rendered, which is the initial config's default
+   * with no resolution, whatever the platform holds or a later `configure` sets. A consumer can
+   * hydrate after `connect`, for example inside a boundary that streamed in later from the same
+   * server render, so this must not be the live snapshot. One identity; no platform call.
+   */
   getServerSnapshot: () => ColorSchemeRuntimeSnapshot;
   /**
    * Commits a config. Call it in an insertion effect on every commit: a field-equal config
@@ -115,6 +120,7 @@ export function createColorSchemeRuntime(
     resolvedColorScheme: undefined,
     setColorScheme,
   };
+  const serverSnapshot = snapshot;
 
   function activeForce(): ColorScheme | undefined {
     let winner: ForceEntry | undefined;
@@ -285,7 +291,7 @@ export function createColorSchemeRuntime(
       return snapshot;
     },
     getServerSnapshot() {
-      return snapshot;
+      return serverSnapshot;
     },
     configure(next) {
       if (!configsEqual(config, next)) {
