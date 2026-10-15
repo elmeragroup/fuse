@@ -1,9 +1,10 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { resolveComponentPaths } from "../scripts/lib/components.ts";
 import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import { SEARCH_ENTRIES } from "../src/generated/search-index";
-import type { SearchEntry } from "../src/lib/docs-model";
+import type { ComponentApiArtifact, SearchEntry } from "../src/lib/docs-model";
 import { HOME_PAGE, STATIC_PAGES } from "../src/lib/pages";
 import { matchesEveryToken, queryTokens, rankEntries } from "../src/lib/search";
 import { STUDIO_PAGES } from "../src/studio/registration";
@@ -32,8 +33,13 @@ describe("search index", () => {
     for (const component of COMPONENT_PAGES) {
       const entry = SEARCH_ENTRIES.find((candidate) => candidate.title === component.title);
       expect(entry, component.slug).toBeDefined();
-      expect(entry?.keywords).toContain(resolveComponentPaths(component.slug).entry);
-      for (const name of component.partNames) {
+      const paths = resolveComponentPaths(component.slug);
+      expect(entry?.keywords).toContain(paths.entry);
+      // Oracle: the committed api.json, which owns the part names.
+      // SAFETY: the drift check (`api-artifact.test.ts`) regenerates and byte-compares each
+      // committed api.json, so a shape that disagrees with the type fails there first.
+      const api = JSON.parse(readFileSync(paths.apiFile, "utf8")) as ComponentApiArtifact;
+      for (const name of api.parts.map((part) => part.name)) {
         expect(entry?.keywords, name).toContain(name);
       }
     }

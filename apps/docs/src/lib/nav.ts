@@ -1,5 +1,5 @@
 import { COMPONENT_OUTLINES } from "../generated/component-outlines";
-import type { ComponentOutline } from "./docs-model";
+import type { ComponentOutline, TocItem } from "./docs-model";
 import { COMPONENTS_PREFIX, componentHref, staticPagesIn } from "./pages";
 
 export type NavItem = {
@@ -11,11 +11,6 @@ export type NavGroup = {
   /** Muted, normal-case group label. */
   label: string;
   items: readonly NavItem[];
-};
-
-export type TocItem = {
-  id: string;
-  title: string;
 };
 
 export const API_SECTION_ID = "api-reference";

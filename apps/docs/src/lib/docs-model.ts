@@ -103,21 +103,25 @@ export type ContentHeading = {
   depth: number;
 };
 
+/** One on-page TOC entry: the anchor it links and its label. */
+export type TocItem = {
+  id: string;
+  title: string;
+};
+
 /**
  * One component page in the site manifest the server renders from.
  *
  * Deliberately *not* the page's content: the prose, the demo frames and the API reference
  * all come from the authored `page.mdx`, the demo files and the committed `api.json`. What
  * is left is the metadata no single artifact owns — the page's identity (title, lede,
- * source links), its TOC skeleton, and the tokens its recipe reads — read by the intro, the
- * Tokens-consumed section, the page's `metadata` export and its Open Graph card. Client code
- * reads the slimmer {@link ComponentOutline} instead, so the token lists never ship.
+ * source links) and the tokens its recipe reads — read by the intro, the Tokens-consumed
+ * section, the page's `metadata` export and its Open Graph card. Client code reads
+ * {@link ComponentOutline} instead, which holds the TOC skeleton and leaves out the token
+ * lists.
  *
  * The import specifier and the page's RSC status are absent on purpose: the generation pass
  * is their only reader, so they live on `DocsComponent` and never reach the browser.
- *
- * `partNames` is TOC material, not API data: an anchor per part heading the reference
- * renders. The reference itself never reads this — it reads `api.json`.
  */
 export type ComponentPageEntry = {
   slug: string;
@@ -129,48 +133,39 @@ export type ComponentPageEntry = {
   sourceUrl: string;
   /** Site-relative URL of the generated markdown endpoint. */
   markdownUrl: string;
-  headings: readonly ContentHeading[];
-  demos: readonly DemoRef[];
-  /** Names of the API parts the reference renders, in order — one TOC anchor each. */
-  partNames: readonly string[];
   tokens: readonly TokenRef[];
 };
 
-/** One prose section of a component page's TOC, a depth-2 heading of its `page.mdx`. */
-type TocHeading = {
-  id: string;
-  title: string;
-};
-
 /**
- * One component page as client code gets it: the slice of {@link ComponentPageEntry} that the
- * SideNav, the QuickNav and the site palette read on every surface, including the landing and
- * the studio. It names the page, links its markdown endpoint and holds its TOC skeleton.
+ * One component page as client code gets it: what the SideNav, the QuickNav and the site palette
+ * read on every surface, including the landing and the studio. It names the page, links its
+ * markdown endpoint and holds its TOC skeleton.
  */
-export type ComponentOutline = {
-  slug: string;
-  title: string;
-  /** Site-relative URL of the generated markdown endpoint. */
-  markdownUrl: string;
+export type ComponentOutline = Pick<ComponentPageEntry, "slug" | "title" | "markdownUrl"> & {
   /** The page's depth-2 headings, in page order. Deeper headings stay out of the TOC. */
-  headings: readonly TocHeading[];
+  headings: readonly TocItem[];
   demos: readonly DemoRef[];
-  /** Names of the API parts the reference renders, in order — one TOC anchor each. */
+  /**
+   * Names of the API parts the reference renders, in order — one TOC anchor each. This is TOC
+   * material, not API data: the reference itself never reads it, it reads `api.json`.
+   */
   partNames: readonly string[];
   /** Whether the page renders a Tokens-consumed section, which its TOC then lists. */
   hasTokens: boolean;
 };
 
 /**
- * One component as the *generation pass* holds it: the manifest entry plus the facts only
- * the generated markdown and the search index need — the import specifier, the page's RSC
- * status, every demo's verbatim source and the full API model.
+ * One component as the *generation pass* holds it: the manifest entry plus the facts the
+ * generated outputs derive from — the import specifier, the page's RSC status, its headings,
+ * every demo's verbatim source and the full API model.
  *
- * None of those is shipped to the browser: the manifest carries the page's metadata, the
- * page reads its demos and its `api.json` at render time. This type exists for the length of
- * one generation run, feeding the markdown endpoints, `llms.txt` and the search index.
+ * The client outline ships a slice of those: the depth-2 headings, each demo's id and title,
+ * and the part names. The demo sources, the API model and the import specifier stay in the
+ * generation run; the page reads its demos and its `api.json` at render time. This type exists
+ * for the length of one generation run, feeding the manifest, the client outline, the markdown
+ * endpoints, `llms.txt` and the search index.
  */
-export type DocsComponent = Omit<ComponentPageEntry, "demos" | "partNames"> & {
+export type DocsComponent = ComponentPageEntry & {
   /** Public import specifier, e.g. `@elmeragroup/fuse/button`. */
   entry: string;
   /**
@@ -178,6 +173,8 @@ export type DocsComponent = Omit<ComponentPageEntry, "demos" | "partNames"> & {
    * and published by the markdown endpoint.
    */
   rsc: RscStatus;
+  /** Every heading of the page's authored prose, in page order. */
+  headings: readonly ContentHeading[];
   demos: readonly DocsDemo[];
   parts: readonly ApiPart[];
 };

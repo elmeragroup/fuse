@@ -55,18 +55,7 @@ function declaredRsc(sourcePath: string): string {
 }
 
 /** The keys a manifest entry carries. Anything else would reach the server's pages unreviewed. */
-const MANIFEST_ENTRY_KEYS = [
-  "demos",
-  "headings",
-  "lede",
-  "markdownUrl",
-  "partNames",
-  "slug",
-  "sourcePath",
-  "sourceUrl",
-  "title",
-  "tokens",
-];
+const MANIFEST_ENTRY_KEYS = ["lede", "markdownUrl", "slug", "sourcePath", "sourceUrl", "title", "tokens"];
 
 describe("component page manifest", () => {
   it("covers every authored component page", () => {
@@ -84,9 +73,6 @@ describe("component page manifest", () => {
     expect(serialized).not.toContain("use client");
     for (const entry of COMPONENT_PAGES) {
       expect(Object.keys(entry).toSorted(), entry.slug).toEqual(MANIFEST_ENTRY_KEYS);
-      // The API data the manifest carries is one TOC anchor per part, named exactly as the
-      // committed artifact names them.
-      expect(entry.partNames, entry.slug).toEqual(api(entry.slug).parts.map((part) => part.name));
     }
   });
 
@@ -128,27 +114,6 @@ describe("component page manifest", () => {
     }
   });
 
-  it("carries every demo the page renders into the manifest, in order, each with a unique URL-safe ID and a nonempty title", () => {
-    // Unit under test: the generator's copy of each page's demos into the manifest. Oracle:
-    // the parsed page. The parser itself is tested against literal pages in docs-pipeline.
-    for (const entry of COMPONENT_PAGES) {
-      const authored = authoredPage(entry.slug).parsed;
-      expect(
-        entry.demos.map((demo) => demo.id),
-        entry.slug
-      ).toEqual(authored.demos.map((demo) => demo.id));
-      expect(
-        entry.demos.map((demo) => demo.title),
-        entry.slug
-      ).toEqual(authored.demos.map((demo) => demo.title));
-      expect(new Set(entry.demos.map((demo) => demo.id)).size, entry.slug).toBe(entry.demos.length);
-      for (const demo of entry.demos) {
-        expect(demo.id, `${entry.slug}.${demo.id}`).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
-        expect(demo.title.trim(), `${entry.slug}.${demo.id}`).not.toBe("");
-      }
-    }
-  });
-
   it("reports per-part directives and the reviewed page RSC status", () => {
     for (const [slug, reviewed] of COMPONENT_INVENTORY) {
       // Each part's badge is the leading directive of the module that declares it.
@@ -173,26 +138,59 @@ describe("component outlines", () => {
     expect(new Set(COMPONENT_OUTLINES.map((outline) => outline.hasTokens))).toEqual(new Set([true, false]));
   });
 
-  it("agrees with the full manifest on every page and every field it keeps", () => {
-    // Unit under test: the client outlines. Oracle: the full manifest from the same generation
-    // run, which the server renders the same pages from. The outline keeps a page's identity,
-    // its depth-2 headings with their ids and titles, its demos and parts, and whether it lists
-    // any tokens.
-    expect(COMPONENT_OUTLINES.map((outline) => outline.slug)).toEqual(
-      COMPONENT_PAGES.map((entry) => entry.slug)
-    );
-    for (const [index, entry] of COMPONENT_PAGES.entries()) {
-      expect(COMPONENT_OUTLINES[index], entry.slug).toEqual({
+  it("agrees with the full manifest on every page's identity and on whether it lists tokens", () => {
+    // Unit under test: the client outlines' identity fields and token flag. Oracle: the full
+    // manifest from the same generation run, which the server renders the same pages from.
+    expect(
+      COMPONENT_OUTLINES.map(({ slug, title, markdownUrl, hasTokens }) => ({
+        slug,
+        title,
+        markdownUrl,
+        hasTokens,
+      }))
+    ).toEqual(
+      COMPONENT_PAGES.map((entry) => ({
         slug: entry.slug,
         title: entry.title,
         markdownUrl: entry.markdownUrl,
-        headings: entry.headings
-          .filter((heading) => heading.depth === 2)
-          .map((heading) => ({ id: heading.id, title: heading.title })),
-        demos: entry.demos,
-        partNames: entry.partNames,
         hasTokens: entry.tokens.length > 0,
-      });
+      }))
+    );
+  });
+
+  it("outlines each page's depth-2 headings, in page order", () => {
+    // Unit under test: the generator's copy of each page's TOC headings into the outline.
+    // Oracle: the parsed page. Deeper headings stay out of the TOC.
+    for (const outline of COMPONENT_OUTLINES) {
+      const authored = authoredPage(outline.slug).parsed;
+      expect(outline.headings, outline.slug).toEqual(
+        authored.headings
+          .filter((heading) => heading.depth === 2)
+          .map((heading) => ({ id: heading.id, title: heading.title }))
+      );
+    }
+  });
+
+  it("carries every demo the page renders into the outline, in order, each with a unique URL-safe ID and a nonempty title", () => {
+    // Unit under test: the generator's copy of each page's demos into the outline. Oracle:
+    // the parsed page's id and title pairs, compared whole so no demo field beyond them (its
+    // source, say) ships to the client. The parser itself is tested against literal pages in
+    // docs-pipeline.
+    for (const outline of COMPONENT_OUTLINES) {
+      const authored = authoredPage(outline.slug).parsed;
+      expect(outline.demos, outline.slug).toEqual(authored.demos.map(({ id, title }) => ({ id, title })));
+      expect(new Set(outline.demos.map((demo) => demo.id)).size, outline.slug).toBe(outline.demos.length);
+      for (const demo of outline.demos) {
+        expect(demo.id, `${outline.slug}.${demo.id}`).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+        expect(demo.title.trim(), `${outline.slug}.${demo.id}`).not.toBe("");
+      }
+    }
+  });
+
+  it("names one TOC anchor per API part, exactly as the committed api.json names them", () => {
+    // Unit under test: the outline's part names. Oracle: the committed API artifact.
+    for (const outline of COMPONENT_OUTLINES) {
+      expect(outline.partNames, outline.slug).toEqual(api(outline.slug).parts.map((part) => part.name));
     }
   });
 });

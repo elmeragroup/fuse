@@ -154,25 +154,22 @@ function toPageEntry(component: DocsComponent): ComponentPageEntry {
     sourcePath: component.sourcePath,
     sourceUrl: component.sourceUrl,
     markdownUrl: component.markdownUrl,
-    headings: component.headings,
-    demos: component.demos.map((demo) => ({ id: demo.id, title: demo.title })),
-    partNames: component.parts.map((part) => part.name),
     tokens: component.tokens,
   };
 }
 
-/** The client's outline of a manifest entry: its identity and its TOC skeleton. */
-function toOutline(entry: ComponentPageEntry): ComponentOutline {
+/** The client's outline of a component: its identity and its TOC skeleton. */
+function toOutline(component: DocsComponent): ComponentOutline {
   return {
-    slug: entry.slug,
-    title: entry.title,
-    markdownUrl: entry.markdownUrl,
-    headings: entry.headings
+    slug: component.slug,
+    title: component.title,
+    markdownUrl: component.markdownUrl,
+    headings: component.headings
       .filter((heading) => heading.depth === 2)
       .map((heading) => ({ id: heading.id, title: heading.title })),
-    demos: entry.demos,
-    partNames: entry.partNames,
-    hasTokens: entry.tokens.length > 0,
+    demos: component.demos.map((demo) => ({ id: demo.id, title: demo.title })),
+    partNames: component.parts.map((part) => part.name),
+    hasTokens: component.tokens.length > 0,
   };
 }
 
@@ -184,29 +181,29 @@ function toOutline(entry: ComponentPageEntry): ComponentOutline {
  * committed `api.json`. So a page's *substance* has exactly one source, and this carries only the
  * metadata none of those files owns.
  */
-function emitComponentPages(entries: readonly ComponentPageEntry[]): void {
+function emitComponentPages(components: readonly DocsComponent[]): void {
   writeFile(
     path.join(generatedDir, "component-pages.ts"),
     `${BANNER}import type { ComponentPageEntry } from "../lib/docs-model";
 
 /** Every component page the site serves, in route order. */
-export const COMPONENT_PAGES: readonly ComponentPageEntry[] = ${JSON.stringify(entries, null, 2)};
+export const COMPONENT_PAGES: readonly ComponentPageEntry[] = ${JSON.stringify(components.map(toPageEntry), null, 2)};
 `
   );
 }
 
 /**
- * The client's slice of the manifest: what the SideNav lists, what the QuickNav outlines and what
- * the site palette searches and copies. Every surface ships it on first paint, the landing and
+ * The client's outline of every component page: what the SideNav lists, what the QuickNav outlines
+ * and what the site palette searches and copies. Every surface ships it on first paint, the landing and
  * the studio included, so it leaves out the token lists, the ledes and the source links.
  */
-function emitComponentOutlines(entries: readonly ComponentPageEntry[]): void {
+function emitComponentOutlines(components: readonly DocsComponent[]): void {
   writeFile(
     path.join(generatedDir, "component-outlines.ts"),
     `${BANNER}import type { ComponentOutline } from "../lib/docs-model";
 
 /** Every component page the site serves, in route order, as client code reads it. */
-export const COMPONENT_OUTLINES: readonly ComponentOutline[] = ${JSON.stringify(entries.map(toOutline), null, 2)};
+export const COMPONENT_OUTLINES: readonly ComponentOutline[] = ${JSON.stringify(components.map(toOutline), null, 2)};
 `
   );
 }
@@ -377,9 +374,8 @@ async function main(): Promise<void> {
     return buildComponent(inspection, demos, api, colors);
   });
 
-  const entries = components.map(toPageEntry);
-  emitComponentPages(entries);
-  emitComponentOutlines(entries);
+  emitComponentPages(components);
+  emitComponentOutlines(components);
   emitApiDrift(generated.artifacts.values());
   emitBundleSizes(sizes);
   emitTokenReference(colors);
