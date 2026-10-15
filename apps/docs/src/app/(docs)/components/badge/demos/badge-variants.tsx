@@ -8,11 +8,12 @@ const FILLED = [
   "destructive",
   "success",
   "warning",
-  "info",
   "muted",
   "accent",
   "card",
 ] as const;
+
+const SOFT = ["info", "soft-success", "soft-warning"] as const;
 
 const OUTLINE = [
   "outline",
@@ -27,6 +28,13 @@ export function BadgeVariants() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap gap-2">
         {FILLED.map((variant) => (
+          <Badge key={variant} variant={variant}>
+            {variant}
+          </Badge>
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {SOFT.map((variant) => (
           <Badge key={variant} variant={variant}>
             {variant}
           </Badge>

@@ -18,6 +18,8 @@ const BADGE_VARIANTS = [
   "success",
   "warning",
   "info",
+  "soft-success",
+  "soft-warning",
   "outline",
   "outline-secondary",
   "outline-destructive",
@@ -66,14 +68,18 @@ describe("Badge", () => {
     expect(getComputedStyle(badge).color).toBe(cssVarColor(badge, foreground));
   });
 
-  it("pairs the info variant's soft surface and foreground", () => {
-    renderThemed(<Badge variant="info">Scheduled</Badge>);
+  it.each([
+    ["info", "--info-soft", "--info-soft-foreground"],
+    ["soft-success", "--success-soft", "--success-soft-foreground"],
+    ["soft-warning", "--warning-soft", "--warning-soft-foreground"],
+  ] as const)("pairs the %s variant's soft surface and foreground", (variant, background, foreground) => {
+    renderThemed(<Badge variant={variant}>Scheduled</Badge>);
     const badge = badgeNamed("Scheduled");
     const styles = getComputedStyle(badge);
-    expect(styles.backgroundColor).not.toBe("rgba(0, 0, 0, 0)");
+    expect(styles.backgroundColor).toBe(cssVarColor(badge, background));
     expect(styles.borderTopColor).not.toBe("rgba(0, 0, 0, 0)");
     expect(styles.backgroundColor).not.toBe(styles.borderTopColor);
-    expect(styles.color).toBe(cssVarColor(badge, "--info-soft-foreground"));
+    expect(styles.color).toBe(cssVarColor(badge, foreground));
   });
 
   it("scales padding and type across the three decorative sizes", () => {
@@ -150,6 +156,12 @@ describe("badge and secondary typography contrast", () => {
               <Badge variant="info" className="transition-none">
                 Info sample
               </Badge>
+              <Badge variant="soft-success" className="transition-none">
+                Soft success sample
+              </Badge>
+              <Badge variant="soft-warning" className="transition-none">
+                Soft warning sample
+              </Badge>
               <Badge variant="outline-secondary" className="transition-none">
                 Outline sample
               </Badge>
@@ -173,6 +185,8 @@ describe("badge and secondary typography contrast", () => {
         // owns the floors those roles must meet, so no ratio is recomputed here.
         for (const [label, foreground] of [
           ["Info sample", "info-soft-foreground"],
+          ["Soft success sample", "success-soft-foreground"],
+          ["Soft warning sample", "warning-soft-foreground"],
           ["Muted sample", "foreground"],
           ["Outline sample", "foreground"],
         ] as const) {

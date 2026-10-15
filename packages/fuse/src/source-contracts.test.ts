@@ -772,6 +772,7 @@ describe("state faces", () => {
       // The action Button's fill override; the action has no disabled state.
       "components/alert/alert-variants.ts": [
         "hover:bg-error/90",
+        "hover:bg-info/90",
         "hover:bg-success/90",
         "hover:bg-warning/90",
       ],

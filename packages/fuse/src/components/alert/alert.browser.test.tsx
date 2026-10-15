@@ -14,6 +14,7 @@ import { ringLayers, settleTransitions } from "../../../test/assert-invalid-ring
 import { HOSTS, centreY, firstLineCentreY, hostCss } from "../../../test/first-line";
 import {
   computedContrast,
+  cssVarColor,
   headingNamed,
   px,
   renderThemed,
@@ -30,7 +31,7 @@ import { Badge } from "../badge/badge";
 import { PopoverContent, PopoverRoot, PopoverTrigger } from "../popover/popover";
 import { Alert } from "./alert";
 
-const VARIANTS = ["default", "destructive", "warning", "success"] as const;
+const VARIANTS = ["default", "destructive", "warning", "success", "info"] as const;
 
 /** Starts of Phosphor's bold paths (`dist/defs/*.es.js`), the icon default weight. */
 const ICON_PATH = {
@@ -38,6 +39,7 @@ const ICON_PATH = {
   warning: "M240.26,186.1",
   destructive: "M236,91.55v72.9",
   success: "M176.49,95.51",
+  info: "M108,84a16,16,0,1,1,16,16A16,16,0,0,1,108,84Z",
 } as const;
 
 function alertNamed(name: string): HTMLElement {
@@ -536,6 +538,31 @@ describe("Alert", () => {
   });
 });
 
+describe("Alert info action", () => {
+  it("paints the info action on the info pair and hovers to its 90% tint", async () => {
+    renderThemed(
+      <Alert.Root variant="info" onAction={vi.fn()} actionLabel="Read more">
+        <Alert.Title>New prices from 1 November</Alert.Title>
+      </Alert.Root>
+    );
+    const action = roleNamed("button", "Read more");
+    const root = alertNamed("info");
+    expect(getComputedStyle(action).backgroundColor).toBe(cssVarColor(action, "--info"));
+    expect(getComputedStyle(action).color).toBe(cssVarColor(action, "--info-foreground"));
+    expect(actionContrast(action, root)).toBeGreaterThanOrEqual(AA_TEXT_CONTRAST);
+
+    // `actionContrast` cannot read the translucent hovered fill until `CssColor` parses
+    // `oklab()`, so the hover is held to the tint it must be: not Button's `primary` hover fill.
+    const tint = document.createElement("span");
+    tint.style.backgroundColor = "color-mix(in oklab, var(--info) 90%, transparent)";
+    root.append(tint);
+    onTestFinished(() => tint.remove());
+    await userEvent.hover(action);
+    await settled(action);
+    expect(getComputedStyle(action).backgroundColor).toBe(getComputedStyle(tint).backgroundColor);
+  });
+});
+
 describe("Alert focus ring contrast", () => {
   let restoreDocumentTheme: () => void;
 
@@ -547,41 +574,44 @@ describe("Alert focus ring contrast", () => {
     restoreDocumentTheme();
   });
 
-  it("draws the warning action's focus ring at 3:1 against the alert fill in every theme and scheme", async () => {
-    renderThemed(
-      <>
-        <button type="button">Focus start</button>
-        <Alert.Root variant="warning" onAction={vi.fn()} actionLabel="Retry">
-          <Alert.Title>Meter offline</Alert.Title>
-        </Alert.Root>
-      </>
-    );
-    roleNamed("button", "Focus start").focus();
-    // A real Tab, so the action matches `:focus-visible` and paints the ring.
-    await userEvent.keyboard("{Tab}");
-    const action = roleNamed("button", "Retry");
-    expect(document.activeElement).toBe(action);
-    const root = alertNamed("warning");
-    // renderThemed's ThemeScope stamp outranks the document's, so the theme goes on that
-    // scope and the scheme on the document.
-    const scope = root.closest<HTMLElement>("[data-theme-brand]");
-    if (scope === null || scope === document.documentElement) {
-      throw new Error("expected the alert inside renderThemed's ThemeScope");
-    }
+  it.each(["warning", "info"] as const)(
+    "draws the %s action's focus ring at 3:1 against the alert fill in every theme and scheme",
+    async (variant) => {
+      renderThemed(
+        <>
+          <button type="button">Focus start</button>
+          <Alert.Root variant={variant} onAction={vi.fn()} actionLabel="Retry">
+            <Alert.Title>Meter offline</Alert.Title>
+          </Alert.Root>
+        </>
+      );
+      roleNamed("button", "Focus start").focus();
+      // A real Tab, so the action matches `:focus-visible` and paints the ring.
+      await userEvent.keyboard("{Tab}");
+      const action = roleNamed("button", "Retry");
+      expect(document.activeElement).toBe(action);
+      const root = alertNamed(variant);
+      // renderThemed's ThemeScope stamp outranks the document's, so the theme goes on that
+      // scope and the scheme on the document.
+      const scope = root.closest<HTMLElement>("[data-theme-brand]");
+      if (scope === null || scope === document.documentElement) {
+        throw new Error("expected the alert inside renderThemed's ThemeScope");
+      }
 
-    for (const scheme of ["light", "dark"] as const) {
-      for (const theme of LEGAL_THEMES) {
-        stampDocumentTheme(theme, scheme);
-        stampTheme(scope, theme);
-        settleTransitions(root, action);
-        const [ring] = ringLayers(action);
-        const context = `${themeSlug(theme)} ${scheme}`;
-        expect(ring, context).toBeDefined();
-        // WCAG 1.4.11: the ring's outer edge sits flush on the warning-soft surface.
-        expect
-          .soft(computedContrast(ring?.color ?? "", getComputedStyle(root).backgroundColor), context)
-          .toBeGreaterThanOrEqual(3);
+      for (const scheme of ["light", "dark"] as const) {
+        for (const theme of LEGAL_THEMES) {
+          stampDocumentTheme(theme, scheme);
+          stampTheme(scope, theme);
+          settleTransitions(root, action);
+          const [ring] = ringLayers(action);
+          const context = `${themeSlug(theme)} ${scheme}`;
+          expect(ring, context).toBeDefined();
+          // WCAG 1.4.11: the ring's outer edge sits flush on the soft status surface.
+          expect
+            .soft(computedContrast(ring?.color ?? "", getComputedStyle(root).backgroundColor), context)
+            .toBeGreaterThanOrEqual(3);
+        }
       }
     }
-  });
+  );
 });

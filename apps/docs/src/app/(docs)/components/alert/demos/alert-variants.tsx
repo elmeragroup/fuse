@@ -9,6 +9,10 @@ export function AlertVariants() {
         <Alert.Title>Scheduled maintenance</Alert.Title>
         <Alert.Description>Read-only access tonight from 22:00 to 23:00.</Alert.Description>
       </Alert.Root>
+      <Alert.Root variant="info">
+        <Alert.Title>New prices from 1 November</Alert.Title>
+        <Alert.Description>The change shows on your next invoice.</Alert.Description>
+      </Alert.Root>
       <Alert.Root variant="destructive">
         <Alert.Title>Two meters are offline</Alert.Title>
         <Alert.Description>Billing for those sites is paused until they reconnect.</Alert.Description>

@@ -6,7 +6,8 @@ import { tv } from "../../styles/tv";
  *
  * - `destructive` / `outline-destructive` keep their ref value names for consumer
  *   compat, but their classes resolve to the canonical `error` tokens.
- * - The `info` arm uses the paired soft status tokens on its tinted surface.
+ * - The `info`, `soft-success` and `soft-warning` arms use the paired soft status tokens on
+ *   their tinted surfaces.
  * - Badge is deliberately non-interactive. The recipe drops the ref's bare `:focus` ring
  *   and its `hover:` fills, so no state suggests an affordance a <div> does not have.
  * - `size` is a decorative pill axis, not a density rung:
@@ -22,6 +23,8 @@ export const badgeVariants = tv({
       success: "shadow-xs border-transparent bg-success text-success-foreground",
       warning: "shadow-xs border-transparent bg-warning text-warning-foreground",
       info: "shadow-xs border-info/20 bg-info-soft text-info-soft-foreground",
+      "soft-success": "shadow-xs border-success/20 bg-success-soft text-success-soft-foreground",
+      "soft-warning": "shadow-xs border-warning/20 bg-warning-soft text-warning-soft-foreground",
       outline: "text-foreground",
       "outline-secondary": "border-secondary text-foreground",
       "outline-destructive": "border-error text-error",

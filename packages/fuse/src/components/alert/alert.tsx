@@ -41,6 +41,7 @@ const ALERT_ICONS = {
   warning: Warning,
   destructive: WarningOctagon,
   success: CheckCircle,
+  info: Info,
 } as const;
 
 export type AlertRootProps = ComponentProps<"div"> & VariantProps<typeof alertVariants> & AlertActionProps;
@@ -48,7 +49,7 @@ export type AlertRootProps = ComponentProps<"div"> & VariantProps<typeof alertVa
 export type AlertIconProps = Omit<ComponentProps<typeof Info>, "title" | "weight"> & {
   /**
    * Status glyph. `default → Info`, `warning → Warning`, `destructive → WarningOctagon`,
-   * `success → CheckCircle`.
+   * `success → CheckCircle`, `info → Info`.
    */
   variant: AlertVariant;
   /**

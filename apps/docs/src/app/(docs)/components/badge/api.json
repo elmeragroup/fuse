@@ -23,7 +23,7 @@
         {
           "name": "variant",
           "origin": "recipe-axis",
-          "type": "\"accent\" | \"card\" | \"default\" | \"destructive\" | \"info\" | \"muted\" | \"outline\" | \"outline-destructive\" | \"outline-secondary\" | \"outline-success\" | \"outline-warning\" | \"secondary\" | \"success\" | \"warning\" | undefined",
+          "type": "\"accent\" | \"card\" | \"default\" | \"destructive\" | \"info\" | \"muted\" | \"outline\" | \"outline-destructive\" | \"outline-secondary\" | \"outline-success\" | \"outline-warning\" | \"secondary\" | \"soft-success\" | \"soft-warning\" | \"success\" | \"warning\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "",

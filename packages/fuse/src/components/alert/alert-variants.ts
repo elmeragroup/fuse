@@ -43,6 +43,13 @@ export const alertVariants = tv({
         icon: "text-success",
         button: "bg-success text-success-foreground hover:bg-success/90",
       },
+      info: {
+        // The flush focus ring takes the soft foreground, as on warning: the neutral grey
+        // falls under 3:1 on the info-soft fill in dark.
+        base: "border-info bg-info-soft text-info-soft-foreground [--ring:var(--info-soft-foreground)]",
+        icon: "text-info",
+        button: "bg-info text-info-foreground hover:bg-info/90",
+      },
     },
   },
   defaultVariants: {
