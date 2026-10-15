@@ -21,7 +21,12 @@ const VARIANT_SLOTS = {
     button: ["bg-error", "text-error-foreground", "hover:bg-error/90"],
   },
   warning: {
-    base: ["border-warning", "bg-warning-soft", "text-warning-soft-foreground"],
+    base: [
+      "border-warning",
+      "bg-warning-soft",
+      "text-warning-soft-foreground",
+      "[--ring:var(--warning-soft-foreground)]",
+    ],
     icon: ["text-warning"],
     button: ["bg-warning", "text-warning-foreground", "hover:bg-warning/90"],
   },

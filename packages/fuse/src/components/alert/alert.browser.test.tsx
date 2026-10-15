@@ -537,7 +537,9 @@ describe("Alert", () => {
     expect(actionContrast(action, alertNamed("default"))).toBeGreaterThanOrEqual(AA_TEXT_CONTRAST);
   });
 
-  it("paints the info action on the info pair and hovers to its 90% tint", async () => {
+  it("hovers the info action to its 90% tint with the label at 4.5:1 in every theme and scheme", async () => {
+    const restoreDocumentTheme = snapshotDocumentTheme();
+    onTestFinished(restoreDocumentTheme);
     renderThemed(
       <Alert.Root variant="info" onAction={vi.fn()} actionLabel="Read more">
         <Alert.Title>New prices from 1 November</Alert.Title>
@@ -545,19 +547,44 @@ describe("Alert", () => {
     );
     const action = roleNamed("button", "Read more");
     const root = alertNamed("info");
-    expect(getComputedStyle(action).backgroundColor).toBe(cssVarColor(action, "--info"));
-    expect(getComputedStyle(action).color).toBe(cssVarColor(action, "--info-foreground"));
-    expect(actionContrast(action, root)).toBeGreaterThanOrEqual(AA_TEXT_CONTRAST);
-
-    // `actionContrast` cannot read the translucent hovered fill until `CssColor` parses
-    // `oklab()`, so the hover is held to the tint it must be: not Button's `primary` hover fill.
+    // renderThemed's ThemeScope stamp outranks the document's, so the theme goes on that
+    // scope and the scheme on the document.
+    const scope = root.closest<HTMLElement>("[data-theme-brand]");
+    if (scope === null || scope === document.documentElement) {
+      throw new Error("expected the alert inside renderThemed's ThemeScope");
+    }
+    // The tint the hover must paint, built from the role rather than read from the recipe. Equal
+    // paint also proves Button's own `primary` hover fill does not win.
     const tint = document.createElement("span");
     tint.style.backgroundColor = "color-mix(in oklab, var(--info) 90%, transparent)";
     root.append(tint);
-    onTestFinished(() => tint.remove());
     await userEvent.hover(action);
     await settled(action);
-    expect(getComputedStyle(action).backgroundColor).toBe(getComputedStyle(tint).backgroundColor);
+
+    for (const scheme of ["light", "dark"] as const) {
+      for (const theme of LEGAL_THEMES) {
+        stampDocumentTheme(theme, scheme);
+        stampTheme(scope, theme);
+        settleTransitions(root, action);
+        const context = `${themeSlug(theme)} ${scheme}`;
+        expect(getComputedStyle(action).backgroundColor, context).toBe(
+          getComputedStyle(tint).backgroundColor
+        );
+        // `CssColor` cannot read the computed `oklab()` hover fill yet, so the label is measured on
+        // `info` at 90% alpha composited in sRGB over the alert's `info-soft` surface.
+        const info = computedSrgb(cssVarColor(action, "--info"));
+        const hoverFill = Srgb.compositeOver(
+          getOrThrow(Srgb.make({ r: info.r, g: info.g, b: info.b, alpha: 0.9 })),
+          computedSrgb(getComputedStyle(root).backgroundColor)
+        );
+        expect
+          .soft(
+            getOrThrow(Wcag.contrastRatio(computedSrgb(getComputedStyle(action).color), hoverFill)),
+            context
+          )
+          .toBeGreaterThanOrEqual(AA_TEXT_CONTRAST);
+      }
+    }
   });
 });
 

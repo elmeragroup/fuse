@@ -8,12 +8,13 @@ const FILLED = [
   "destructive",
   "success",
   "warning",
+  "info",
   "muted",
   "accent",
   "card",
 ] as const;
 
-const SOFT = ["info", "soft-success", "soft-warning"] as const;
+const SOFT = ["soft-info", "soft-success", "soft-warning"] as const;
 
 const OUTLINE = [
   "outline",

@@ -55,7 +55,7 @@ export function StatusBoard(): ReactElement {
           <Badge variant="outline-warning">Due soon</Badge>
         </div>
         <div className={styles.badges()}>
-          <Badge variant="info">New</Badge>
+          <Badge variant="soft-info">New</Badge>
           <Badge variant="soft-success">Paid</Badge>
           <Badge variant="soft-warning">Due soon</Badge>
         </div>

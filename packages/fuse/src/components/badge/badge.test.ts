@@ -10,6 +10,7 @@ const VARIANTS = [
   "success",
   "warning",
   "info",
+  "soft-info",
   "soft-success",
   "soft-warning",
   "outline",
@@ -44,7 +45,7 @@ describe("badgeVariants", () => {
     expect(resolved).not.toContain("ring-");
   });
 
-  it("resolves all sixteen variants without raw palette, dark or hover classes", () => {
+  it("resolves all seventeen variants without raw palette, dark or hover classes", () => {
     for (const variant of VARIANTS) {
       const resolved = badgeVariants({ variant });
       expect(resolved, variant).not.toBe("");
@@ -58,8 +59,10 @@ describe("badgeVariants", () => {
     // The destructive-named variants rename onto the canonical error tokens.
     ["destructive", ["bg-error", "text-error-foreground"], ["destructive"]],
     ["outline-destructive", ["border-error", "text-error"], ["destructive"]],
+    // info fills with the status role, like success and warning.
+    ["info", ["bg-info", "text-info-foreground", "border-transparent"], ["-soft"]],
     // The soft arms pair each soft surface with its foreground.
-    ["info", ["bg-info-soft", "border-info/20", "text-info-soft-foreground"], []],
+    ["soft-info", ["bg-info-soft", "border-info/20", "text-info-soft-foreground"], ["text-info-foreground"]],
     [
       "soft-success",
       ["bg-success-soft", "border-success/20", "text-success-soft-foreground"],

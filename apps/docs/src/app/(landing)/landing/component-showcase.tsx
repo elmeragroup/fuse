@@ -101,7 +101,7 @@ const SHOWCASE = [
     stage: (
       <div className={styles.stageRow()}>
         <Badge variant="success">Paid</Badge>
-        <Badge variant="info">Due 15 Oct</Badge>
+        <Badge variant="soft-info">Due 15 Oct</Badge>
         <Badge variant="destructive">Overdue</Badge>
       </div>
     ),

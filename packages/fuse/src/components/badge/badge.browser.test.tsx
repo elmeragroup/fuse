@@ -18,6 +18,7 @@ const BADGE_VARIANTS = [
   "success",
   "warning",
   "info",
+  "soft-info",
   "soft-success",
   "soft-warning",
   "outline",
@@ -61,6 +62,7 @@ describe("Badge", () => {
   it.each([
     ["default", undefined, "--primary", "--primary-foreground"],
     ["destructive", "destructive", "--error", "--error-foreground"],
+    ["info", "info", "--info", "--info-foreground"],
   ] as const)("paints the %s variant from its role tokens", (_label, variant, background, foreground) => {
     renderThemed(<Badge variant={variant}>Active</Badge>);
     const badge = badgeNamed("Active");
@@ -69,7 +71,7 @@ describe("Badge", () => {
   });
 
   it.each([
-    ["info", "--info-soft", "--info-soft-foreground"],
+    ["soft-info", "--info-soft", "--info-soft-foreground"],
     ["soft-success", "--success-soft", "--success-soft-foreground"],
     ["soft-warning", "--warning-soft", "--warning-soft-foreground"],
   ] as const)("pairs the %s variant's soft surface and foreground", (variant, background, foreground) => {
@@ -154,6 +156,9 @@ describe("badge and secondary typography contrast", () => {
           <div data-theme={scheme}>
             <ThemeScope theme={theme} className="bg-background">
               <Badge variant="info" className="transition-none">
+                Filled info sample
+              </Badge>
+              <Badge variant="soft-info" className="transition-none">
                 Info sample
               </Badge>
               <Badge variant="soft-success" className="transition-none">
@@ -184,6 +189,7 @@ describe("badge and secondary typography contrast", () => {
         // This suite owns which rendered role each variant paints; the theme contrast matrix
         // owns the floors those roles must meet, so no ratio is recomputed here.
         for (const [label, foreground] of [
+          ["Filled info sample", "info-foreground"],
           ["Info sample", "info-soft-foreground"],
           ["Soft success sample", "success-soft-foreground"],
           ["Soft warning sample", "warning-soft-foreground"],
