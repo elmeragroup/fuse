@@ -20,6 +20,7 @@ test("BadgeProps is native div props plus the recipe axes, and the element takes
     | "outline-destructive"
     | "outline-success"
     | "outline-warning"
+    | "outline-info"
     | "muted"
     | "accent"
     | "card"

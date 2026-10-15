@@ -51,6 +51,7 @@ export function StatusBoard(): ReactElement {
         </div>
         <div className={styles.badges()}>
           <Badge variant="outline-destructive">Overdue</Badge>
+          <Badge variant="outline-info">New</Badge>
           <Badge variant="outline-success">Paid</Badge>
           <Badge variant="outline-warning">Due soon</Badge>
         </div>

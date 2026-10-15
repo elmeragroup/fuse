@@ -10,7 +10,9 @@ fill in the dark scheme.
 `Badge` takes `variant="soft-destructive"`, `variant="soft-success"` and `variant="soft-warning"`,
 so every status has a soft arm beside `soft-info`: the soft status fill, its soft foreground
 and a 20% status border. `soft-destructive` keeps the `destructive` name, like
-`outline-destructive`, and draws the `error` roles.
+`outline-destructive`, and draws the `error` roles. `Badge` also takes `variant="outline-info"`,
+`info` border and text like `outline-success` and `outline-warning`, so every status has a
+filled, an outline and a soft arm.
 
 Migration: `Badge`'s soft blue arm is renamed from `variant="info"` to `variant="soft-info"`,
 beside `soft-success` and `soft-warning`. `variant="info"` now draws a filled badge on `info`

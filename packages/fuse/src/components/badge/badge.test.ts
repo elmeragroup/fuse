@@ -19,6 +19,7 @@ const VARIANTS = [
   "outline-destructive",
   "outline-success",
   "outline-warning",
+  "outline-info",
   "muted",
   "accent",
   "card",
@@ -46,7 +47,7 @@ describe("badgeVariants", () => {
     expect(resolved).not.toContain("ring-");
   });
 
-  it("resolves all eighteen variants without raw palette, dark or hover classes", () => {
+  it("resolves all nineteen variants without raw palette, dark or hover classes", () => {
     for (const variant of VARIANTS) {
       const resolved = badgeVariants({ variant });
       expect(resolved, variant).not.toBe("");
@@ -79,6 +80,8 @@ describe("badgeVariants", () => {
       ["bg-warning-soft", "border-warning/20", "text-warning-soft-foreground"],
       ["text-warning-foreground"],
     ],
+    // The status outlines draw the role as border and text, with no fill.
+    ["outline-info", ["border-info", "text-info"], ["bg-"]],
     // outline keeps a bare border and foreground text.
     ["outline", ["text-foreground", "border"], ["bg-"]],
   ] as const)("maps variant=%s onto its token classes", (variant, present, absent) => {

@@ -22,6 +22,7 @@ const OUTLINE = [
   "outline-destructive",
   "outline-success",
   "outline-warning",
+  "outline-info",
 ] as const;
 
 export function BadgeVariants() {

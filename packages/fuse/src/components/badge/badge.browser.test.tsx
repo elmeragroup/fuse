@@ -27,6 +27,7 @@ const BADGE_VARIANTS = [
   "outline-destructive",
   "outline-success",
   "outline-warning",
+  "outline-info",
   "muted",
   "accent",
   "card",
@@ -172,6 +173,9 @@ describe("badge and secondary typography contrast", () => {
               <Badge variant="soft-warning" className="transition-none">
                 Soft warning sample
               </Badge>
+              <Badge variant="outline-info" className="transition-none">
+                Outline info sample
+              </Badge>
               <Badge variant="outline-secondary" className="transition-none">
                 Outline sample
               </Badge>
@@ -201,6 +205,7 @@ describe("badge and secondary typography contrast", () => {
           ["Soft warning sample", "warning-soft-foreground"],
           ["Muted sample", "foreground"],
           ["Outline sample", "foreground"],
+          ["Outline info sample", "info"],
         ] as const) {
           const badge = badgeNamed(label);
           expect(getComputedStyle(badge).color, context).toBe(cssVarColor(badge, `--${foreground}`));
