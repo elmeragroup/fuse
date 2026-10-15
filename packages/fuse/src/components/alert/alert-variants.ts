@@ -14,10 +14,11 @@ export const alertVariants = tv({
     // The body takes the label text, `--label-text`, at `leading-normal`, as SelectionItem's
     // description does: 14px dense and 16px comfortable. The size carries the line height as its
     // `/normal` modifier, because tailwind-merge drops a line height that comes before a font size.
-    // Zeroes its blocks' own block margins and puts 8px between consecutive blocks, twice the
-    // title's 4px gap; the selectors live in fuse.css.
+    // `text-inherit` replaces Item's `text-muted-foreground`, so the body takes the variant's
+    // text colour from `base`, as the title does. Zeroes its blocks' own block margins and puts
+    // 8px between consecutive blocks, twice the title's 4px gap; the selectors live in fuse.css.
     description:
-      "text-(length:--label-text)/normal text-foreground alert-description-block:my-0 alert-description-gap:mt-2",
+      "text-(length:--label-text)/normal text-inherit alert-description-block:my-0 alert-description-gap:mt-2",
     button: "",
   },
   variants: {
@@ -31,6 +32,8 @@ export const alertVariants = tv({
         button: "bg-background text-foreground enabled-hover:bg-muted",
       },
       destructive: {
+        // `error` text on the 5% `error` tint over the page, card or card-soft is a gated pair
+        // (contrast-matrix.test.ts), for the title and the body alike.
         base: "border-error bg-error/5 text-error",
         icon: "text-error",
         button: "bg-error text-error-foreground hover:bg-error/90",
@@ -43,6 +46,7 @@ export const alertVariants = tv({
         button: "bg-warning text-warning-foreground hover:bg-warning/90",
       },
       success: {
+        // `foreground` on the 5% `success` tint is gated beside the destructive pair.
         base: "border-success bg-success/5 text-foreground",
         icon: "text-success",
         button: "bg-success text-success-foreground hover:bg-success/90",

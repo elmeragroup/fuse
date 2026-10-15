@@ -743,3 +743,52 @@ describe("Alert focus ring contrast", () => {
     }
   );
 });
+
+/**
+ * The text role each variant paints its title and body in, as the alert design specifies it:
+ * the soft foreground on the info and warning soft fills, `error` on the destructive tint and the
+ * page foreground on the default and success fills.
+ */
+const VARIANT_TEXT_ROLE = {
+  default: "--foreground",
+  destructive: "--error",
+  warning: "--warning-soft-foreground",
+  success: "--foreground",
+  info: "--info-soft-foreground",
+} as const;
+
+describe("Alert text colour", () => {
+  it("paints the body in the variant's text role, as the title, in every theme and scheme", () => {
+    const restoreDocumentTheme = snapshotDocumentTheme();
+    onTestFinished(restoreDocumentTheme);
+    for (const variant of VARIANTS) {
+      const { unmount } = renderThemed(
+        <Alert.Root variant={variant}>
+          <Alert.Title>{`${variant} title`}</Alert.Title>
+          <Alert.Description>{`${variant} body`}</Alert.Description>
+        </Alert.Root>
+      );
+      const root = alertNamed(variant);
+      // renderThemed's ThemeScope stamp outranks the document's, so the theme goes on that
+      // scope and the scheme on the document.
+      const scope = root.closest<HTMLElement>("[data-theme-brand]");
+      if (scope === null || scope === document.documentElement) {
+        throw new Error("expected the alert inside renderThemed's ThemeScope");
+      }
+      const title = headingNamed(`${variant} title`, 3);
+      const description = descriptionIn(root);
+      for (const scheme of ["light", "dark"] as const) {
+        for (const theme of LEGAL_THEMES) {
+          stampDocumentTheme(theme, scheme);
+          stampTheme(scope, theme);
+          settleTransitions(root, description);
+          const context = `${variant} ${themeSlug(theme)} ${scheme}`;
+          const role = cssVarColor(root, VARIANT_TEXT_ROLE[variant]);
+          expect.soft(getComputedStyle(description).color, context).toBe(role);
+          expect.soft(getComputedStyle(title).color, context).toBe(role);
+        }
+      }
+      unmount();
+    }
+  });
+});
