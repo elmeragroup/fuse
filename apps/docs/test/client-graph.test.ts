@@ -54,11 +54,8 @@ function resolveImport(fromFile: string, specifier: string): string | null {
   return null;
 }
 
-/**
- * Every module reachable from `entry` through relative imports, `entry` included. A module under
- * `seam` is reached but not followed, so its own imports count only when another path leads there.
- */
-function reachableFrom(entry: string, seam?: string): Set<string> {
+/** Every module reachable from `entry` through relative imports, `entry` included. */
+function reachableFrom(entry: string): Set<string> {
   const seen = new Set<string>();
   const queue = [entry];
   while (queue.length > 0) {
@@ -67,9 +64,6 @@ function reachableFrom(entry: string, seam?: string): Set<string> {
       continue;
     }
     seen.add(file);
-    if (seam !== undefined && file !== entry && file.startsWith(seam)) {
-      continue;
-    }
     const source = readFileSync(file, "utf8");
     for (const match of source.matchAll(RELATIVE_IMPORT)) {
       const resolved = resolveImport(file, match[1] ?? "");
@@ -110,24 +104,31 @@ describe("the docs client graph never reaches the highlighter", () => {
   });
 });
 
-describe("the landing client graph reaches the component-page manifest only through the site palette", () => {
-  const landingDir = path.join(srcRoot, "app/(landing)");
+describe("the client graph never reaches the full component-page manifest", () => {
   const manifest = path.join(srcRoot, "generated/component-pages.ts");
-  // The site palette ships on every surface and needs the manifest for its Components page, its
-  // demo search and a component page's table of contents, so the landing loads it eagerly for the
-  // palette. Every other landing module still states its count and titles from the generated
-  // landing index, so the manifest stays a palette dependency the landing could drop with it.
-  const sitePalette = path.join(srcRoot, "components/site-palette/");
+  const outlines = path.join(srcRoot, "generated/component-outlines.ts");
 
-  it("keeps the manifest out of every landing client module except through the site palette", () => {
-    const clients = sourceFiles(landingDir).filter((file) => isClientModule(readFileSync(file, "utf8")));
-    expect(clients.length).toBeGreaterThan(0);
-    const offenders = clients.filter((entry) => reachableFrom(entry, sitePalette).has(manifest));
+  it("keeps the manifest out of every client module in the docs, the landing and the studio", () => {
+    // The nav, the QuickNav and the site palette ship on every surface's first paint, and read
+    // the slim outlines. The full manifest's token lists, ledes and source links stay on the
+    // server, where the page intros, the Tokens-consumed sections and the metadata read them.
+    const clients = sourceFiles(srcRoot).filter((file) => isClientModule(readFileSync(file, "utf8")));
+    const offenders = clients.filter((entry) => reachableFrom(entry).has(manifest));
     expect(offenders.map((file) => path.relative(docsRoot, file))).toEqual([]);
   });
 
-  it("still sees the manifest from the site palette and from a docs module that imports it", () => {
-    expect(reachableFrom(path.join(srcRoot, "lib/nav.ts")).has(manifest)).toBe(true);
-    expect(reachableFrom(path.join(sitePalette, "site-palette.tsx")).has(manifest)).toBe(true);
+  it("still sees each manifest from a module that imports it", () => {
+    const clients = sourceFiles(srcRoot).filter((file) => isClientModule(readFileSync(file, "utf8")));
+    const surfaces = ["app/(landing)", "studio", "components"].map((dir) => path.join(srcRoot, dir));
+    for (const surface of surfaces) {
+      expect(
+        clients.some((file) => file.startsWith(surface)),
+        surface
+      ).toBe(true);
+    }
+    expect(reachableFrom(path.join(srcRoot, "lib/component-page.ts")).has(manifest)).toBe(true);
+    expect(reachableFrom(path.join(srcRoot, "components/site-palette/site-palette.tsx")).has(outlines)).toBe(
+      true
+    );
   });
 });

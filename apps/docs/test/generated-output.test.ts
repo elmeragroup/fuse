@@ -16,6 +16,7 @@ import { readRscStatus } from "../scripts/lib/docs-inspection.ts";
 import { parseComponentPage } from "../scripts/lib/page-source.ts";
 import type { ComponentPageSource } from "../scripts/lib/page-source.ts";
 import { repoRelative, repoRoot } from "../scripts/lib/paths.ts";
+import { COMPONENT_OUTLINES } from "../src/generated/component-outlines";
 import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import type { ComponentApiArtifact } from "../src/lib/docs-model";
 import { COMPONENT_INVENTORY } from "./component-inventory";
@@ -53,7 +54,7 @@ function declaredRsc(sourcePath: string): string {
   return readRscStatus(readFileSync(join(repoRoot, sourcePath), "utf8"));
 }
 
-/** The keys a manifest entry carries. Anything else would ship to the browser unreviewed. */
+/** The keys a manifest entry carries. Anything else would reach the server's pages unreviewed. */
 const MANIFEST_ENTRY_KEYS = [
   "demos",
   "headings",
@@ -76,7 +77,7 @@ describe("component page manifest", () => {
 
   it("carries page metadata only, with no demo source and no API data", () => {
     // The frame reads demo source from its file and the reference reads api.json, so
-    // neither travels through the manifest the browser downloads.
+    // neither travels through the manifest.
     const serialized = JSON.stringify(COMPONENT_PAGES);
     expect(serialized).not.toContain('"source"');
     expect(serialized).not.toContain('"props"');
@@ -154,8 +155,44 @@ describe("component page manifest", () => {
       for (const part of api(slug).parts) {
         expect(part.rsc, `${slug} ${part.name}`).toBe(declaredRsc(part.sourcePath));
       }
-      // The page's own status appears on the markdown endpoint, not in the browser manifest.
+      // The page's own status appears on the markdown endpoint, not in the manifest.
       expect(endpoint(slug), slug).toContain(`- RSC: ${reviewed.rsc}`);
+    }
+  });
+});
+
+/** The keys a component outline carries. Anything else would ship to every surface unreviewed. */
+const OUTLINE_KEYS = ["demos", "hasTokens", "headings", "markdownUrl", "partNames", "slug", "title"];
+
+describe("component outlines", () => {
+  it("carries only the fields client code reads", () => {
+    for (const outline of COMPONENT_OUTLINES) {
+      expect(Object.keys(outline).toSorted(), outline.slug).toEqual(OUTLINE_KEYS);
+    }
+    // Both kinds of page are present, so the flag is checked in both directions below.
+    expect(new Set(COMPONENT_OUTLINES.map((outline) => outline.hasTokens))).toEqual(new Set([true, false]));
+  });
+
+  it("agrees with the full manifest on every page and every field it keeps", () => {
+    // Unit under test: the client outlines. Oracle: the full manifest from the same generation
+    // run, which the server renders the same pages from. The outline keeps a page's identity,
+    // its depth-2 headings with their ids and titles, its demos and parts, and whether it lists
+    // any tokens.
+    expect(COMPONENT_OUTLINES.map((outline) => outline.slug)).toEqual(
+      COMPONENT_PAGES.map((entry) => entry.slug)
+    );
+    for (const [index, entry] of COMPONENT_PAGES.entries()) {
+      expect(COMPONENT_OUTLINES[index], entry.slug).toEqual({
+        slug: entry.slug,
+        title: entry.title,
+        markdownUrl: entry.markdownUrl,
+        headings: entry.headings
+          .filter((heading) => heading.depth === 2)
+          .map((heading) => ({ id: heading.id, title: heading.title })),
+        demos: entry.demos,
+        partNames: entry.partNames,
+        hasTokens: entry.tokens.length > 0,
+      });
     }
   });
 });

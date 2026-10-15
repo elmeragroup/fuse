@@ -1,13 +1,13 @@
 /**
  * What the site's ⌘K palette lists, as data. The palette component owns the dialog, the keys and
  * the effects; this module decides which rows each page of the palette shows and in what order.
- * It reads the generated search index and component manifest, which every surface ships eagerly.
+ * It reads the generated search index and component outlines, which every surface ships eagerly.
  */
 
 import { COLOR_SCHEMES } from "@elmeragroup/fuse/theme";
 import type { ColorScheme } from "@elmeragroup/fuse/theme";
 
-import { COMPONENT_PAGES } from "../../generated/component-pages";
+import { COMPONENT_OUTLINES } from "../../generated/component-outlines";
 import { SEARCH_ENTRIES } from "../../generated/search-index";
 import { INSTALL_COMMAND } from "../../lib/docs-model";
 import type { SearchEntry } from "../../lib/docs-model";
@@ -183,7 +183,7 @@ function pageRow(entry: SearchEntry): SiteRow {
 }
 
 /** Every demo of every component page, deep-linked to its anchor. */
-const DEMO_ROWS: readonly SiteRow[] = COMPONENT_PAGES.flatMap((component) =>
+const DEMO_ROWS: readonly SiteRow[] = COMPONENT_OUTLINES.flatMap((component) =>
   component.demos.map((demo): SiteRow => ({
     id: `demo:${component.slug}#${demo.id}`,
     title: demo.title,

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { COMPONENT_PAGES } from "../../../../generated/component-pages";
-import { componentBySlug } from "../../../../lib/nav";
+import { componentBySlug } from "../../../../lib/component-page";
 import { loadElmeraMark } from "../../../../og/og-assets";
 import { OgCard } from "../../../../og/og-card";
 import { ogResponse } from "../../../../og/og-response";

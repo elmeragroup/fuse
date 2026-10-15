@@ -104,13 +104,14 @@ export type ContentHeading = {
 };
 
 /**
- * One component page in the site manifest the browser gets.
+ * One component page in the site manifest the server renders from.
  *
  * Deliberately *not* the page's content: the prose, the demo frames and the API reference
  * all come from the authored `page.mdx`, the demo files and the committed `api.json`. What
  * is left is the metadata no single artifact owns — the page's identity (title, lede,
- * source links), its TOC skeleton, and the tokens its recipe reads — read by the nav,
- * the intro, the QuickNav and the page's `metadata` export.
+ * source links), its TOC skeleton, and the tokens its recipe reads — read by the intro, the
+ * Tokens-consumed section, the page's `metadata` export and its Open Graph card. Client code
+ * reads the slimmer {@link ComponentOutline} instead, so the token lists never ship.
  *
  * The import specifier and the page's RSC status are absent on purpose: the generation pass
  * is their only reader, so they live on `DocsComponent` and never reach the browser.
@@ -133,6 +134,31 @@ export type ComponentPageEntry = {
   /** Names of the API parts the reference renders, in order — one TOC anchor each. */
   partNames: readonly string[];
   tokens: readonly TokenRef[];
+};
+
+/** One prose section of a component page's TOC, a depth-2 heading of its `page.mdx`. */
+type TocHeading = {
+  id: string;
+  title: string;
+};
+
+/**
+ * One component page as client code gets it: the slice of {@link ComponentPageEntry} that the
+ * SideNav, the QuickNav and the site palette read on every surface, including the landing and
+ * the studio. It names the page, links its markdown endpoint and holds its TOC skeleton.
+ */
+export type ComponentOutline = {
+  slug: string;
+  title: string;
+  /** Site-relative URL of the generated markdown endpoint. */
+  markdownUrl: string;
+  /** The page's depth-2 headings, in page order. Deeper headings stay out of the TOC. */
+  headings: readonly TocHeading[];
+  demos: readonly DemoRef[];
+  /** Names of the API parts the reference renders, in order — one TOC anchor each. */
+  partNames: readonly string[];
+  /** Whether the page renders a Tokens-consumed section, which its TOC then lists. */
+  hasTokens: boolean;
 };
 
 /**

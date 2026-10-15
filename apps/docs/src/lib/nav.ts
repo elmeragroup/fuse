@@ -1,5 +1,5 @@
-import { COMPONENT_PAGES } from "../generated/component-pages";
-import type { ComponentPageEntry } from "./docs-model";
+import { COMPONENT_OUTLINES } from "../generated/component-outlines";
+import type { ComponentOutline } from "./docs-model";
 import { COMPONENTS_PREFIX, componentHref, staticPagesIn } from "./pages";
 
 export type NavItem = {
@@ -37,7 +37,7 @@ export function apiPropAnchor(partName: string, propName: string): string {
 }
 
 /** Flat alphabetical list of every published component page. */
-export const COMPONENT_NAV: readonly NavItem[] = COMPONENT_PAGES.map((component) => ({
+export const COMPONENT_NAV: readonly NavItem[] = COMPONENT_OUTLINES.map((component) => ({
   href: componentHref(component.slug),
   label: component.title,
 })).sort((left, right) => left.label.localeCompare(right.label));
@@ -50,7 +50,7 @@ function toNavItems(pages: readonly { href: string; label: string }[]): readonly
  * The complete three-group SideNav inventory.
  *
  * Overview and Handbook come from the authored page manifest; Components is derived from
- * the generated component-page manifest, which the generation pass globs off the route
+ * the generated component outlines, which the generation pass globs off the route
  * directories — so the nav cannot list a page the site does not serve, or miss one it does.
  */
 export const NAV_GROUPS: readonly NavGroup[] = [
@@ -59,32 +59,23 @@ export const NAV_GROUPS: readonly NavGroup[] = [
   { label: "Components", items: COMPONENT_NAV },
 ];
 
-/** The one slug → page lookup: the route, its metadata and the TOC all read it. */
-export function componentBySlug(slug: string): ComponentPageEntry | undefined {
-  return COMPONENT_PAGES.find((component) => component.slug === slug);
-}
-
-/** The component page a pathname serves, or `undefined` off the component pages. */
-export function componentForPath(pathname: string): ComponentPageEntry | undefined {
+/** The outline of the component page a pathname serves, or `undefined` off the component pages. */
+export function componentForPath(pathname: string): ComponentOutline | undefined {
   if (!pathname.startsWith(COMPONENTS_PREFIX)) {
     return undefined;
   }
-  return componentBySlug(pathname.slice(COMPONENTS_PREFIX.length));
+  const slug = pathname.slice(COMPONENTS_PREFIX.length);
+  return COMPONENT_OUTLINES.find((component) => component.slug === slug);
 }
 
 /** The on-page TOC of a component page: prose headings, demos, API parts, tokens. */
-function tocForComponent(component: ComponentPageEntry): readonly TocItem[] {
+function tocForComponent(component: ComponentOutline): readonly TocItem[] {
   return [
-    ...component.headings
-      .filter((heading) => heading.depth === 2)
-      .map((heading) => ({
-        id: heading.id,
-        title: heading.title,
-      })),
+    ...component.headings,
     ...component.demos.map((demo) => ({ id: demo.id, title: demo.title })),
     { id: API_SECTION_ID, title: "API reference" },
     ...component.partNames.map((name) => ({ id: apiPartAnchor(name), title: name })),
-    ...(component.tokens.length === 0 ? [] : [{ id: TOKENS_SECTION_ID, title: "Tokens consumed" }]),
+    ...(component.hasTokens ? [{ id: TOKENS_SECTION_ID, title: "Tokens consumed" }] : []),
   ];
 }
 

@@ -9,7 +9,8 @@
  *
  *   • each component's `api.json`, written *next to its page* and **committed**, so an API
  *     change is a reviewable diff; a drift check fails when a committed one is stale;
- *   • the component-page manifest the nav, page intros and QuickNav import;
+ *   • the component-page manifest the page intros and metadata import, and its client
+ *     outline, which the nav, the QuickNav and the site palette import;
  *   • the tokens each component's recipe reads, and the site-wide token reference;
  *   • the `/api/themes` catalog of the 24 legal permutations, plus Figma DTCG files;
  *   • the measured bundle sizes the Tokens page publishes;
@@ -34,7 +35,13 @@ import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 import type { ResolvedThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 import type { ApiArtifactDiagnostic, GeneratedApiComponent } from "@elmeragroup/internal";
 
-import type { ComponentPageEntry, DocsComponent, DocsDemo, ThemeCatalog } from "../src/lib/docs-model.ts";
+import type {
+  ComponentOutline,
+  ComponentPageEntry,
+  DocsComponent,
+  DocsDemo,
+  ThemeCatalog,
+} from "../src/lib/docs-model.ts";
 import { API_REGEN_COMMAND } from "../src/lib/docs-model.ts";
 import { studioGeneratedFiles } from "../src/studio/registration.ts";
 import { generateDocsApiArtifacts } from "./lib/api-artifact.ts";
@@ -154,22 +161,52 @@ function toPageEntry(component: DocsComponent): ComponentPageEntry {
   };
 }
 
+/** The client's outline of a manifest entry: its identity and its TOC skeleton. */
+function toOutline(entry: ComponentPageEntry): ComponentOutline {
+  return {
+    slug: entry.slug,
+    title: entry.title,
+    markdownUrl: entry.markdownUrl,
+    headings: entry.headings
+      .filter((heading) => heading.depth === 2)
+      .map((heading) => ({ id: heading.id, title: heading.title })),
+    demos: entry.demos,
+    partNames: entry.partNames,
+    hasTokens: entry.tokens.length > 0,
+  };
+}
+
 /**
- * The component-page manifest: the one module the *site* imports about its component pages —
- * what the SideNav lists, what a page's intro and `metadata` say, what the QuickNav outlines,
- * and which tokens the Tokens-consumed section shows. It is a manifest, not content: the prose
- * comes from the authored `page.mdx`, each demo's source is read from the demo file at render
- * time, and the API reference reads the committed `api.json`. So a page's *substance* has
- * exactly one source, and this carries only the metadata none of those files owns.
+ * The component-page manifest: the one module the *server* imports about its component pages —
+ * what a page's intro, `metadata` and Open Graph card say, and which tokens the Tokens-consumed
+ * section shows. It is a manifest, not content: the prose comes from the authored `page.mdx`,
+ * each demo's source is read from the demo file at render time, and the API reference reads the
+ * committed `api.json`. So a page's *substance* has exactly one source, and this carries only the
+ * metadata none of those files owns.
  */
-function emitComponentPages(components: readonly DocsComponent[]): void {
-  const entries: readonly ComponentPageEntry[] = components.map(toPageEntry);
+function emitComponentPages(entries: readonly ComponentPageEntry[]): void {
   writeFile(
     path.join(generatedDir, "component-pages.ts"),
     `${BANNER}import type { ComponentPageEntry } from "../lib/docs-model";
 
 /** Every component page the site serves, in route order. */
 export const COMPONENT_PAGES: readonly ComponentPageEntry[] = ${JSON.stringify(entries, null, 2)};
+`
+  );
+}
+
+/**
+ * The client's slice of the manifest: what the SideNav lists, what the QuickNav outlines and what
+ * the site palette searches and copies. Every surface ships it on first paint, the landing and
+ * the studio included, so it leaves out the token lists, the ledes and the source links.
+ */
+function emitComponentOutlines(entries: readonly ComponentPageEntry[]): void {
+  writeFile(
+    path.join(generatedDir, "component-outlines.ts"),
+    `${BANNER}import type { ComponentOutline } from "../lib/docs-model";
+
+/** Every component page the site serves, in route order, as client code reads it. */
+export const COMPONENT_OUTLINES: readonly ComponentOutline[] = ${JSON.stringify(entries.map(toOutline), null, 2)};
 `
   );
 }
@@ -340,7 +377,9 @@ async function main(): Promise<void> {
     return buildComponent(inspection, demos, api, colors);
   });
 
-  emitComponentPages(components);
+  const entries = components.map(toPageEntry);
+  emitComponentPages(entries);
+  emitComponentOutlines(entries);
   emitApiDrift(generated.artifacts.values());
   emitBundleSizes(sizes);
   emitTokenReference(colors);
@@ -372,4 +411,5 @@ try {
   process.exitCode = 1;
   // Leave no half-written manifest behind for the bundler to pick up.
   rmSync(path.join(generatedDir, "component-pages.ts"), { force: true });
+  rmSync(path.join(generatedDir, "component-outlines.ts"), { force: true });
 }
