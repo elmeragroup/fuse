@@ -174,8 +174,8 @@ export function CommandSearch({
   assertGrouping(part, grouped, virtualized, props.items ?? props.filteredItems);
   const { locale } = useLocale();
   const [ownQuery, setOwnQuery] = useState(defaultValue ?? "");
-  // Each close of the dialog starts the next opening fresh. The state changes during render, not
-  // in an effect, as React's docs adjust state from a changed prop.
+  // Each new session starts fresh. The state changes during render, not in an effect, as React's
+  // docs adjust state from a changed prop.
   const [seenSession, setSeenSession] = useState(session);
   if (seenSession !== session) {
     setSeenSession(session);

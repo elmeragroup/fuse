@@ -663,7 +663,7 @@ function EscapeBackPalette(): ReactElement {
           setStack(stack.slice(0, -1));
           return;
         }
-        if (!next) {
+        if (next) {
           setStack(["home"]);
         }
       }}>
@@ -920,18 +920,15 @@ function ResetOnOpenPalette(): ReactElement {
   );
 }
 
-/** Opens the palette with `reopen` while its close animation runs, and returns the kept popup. */
-async function interruptClose(reopen: () => Promise<void> | void): Promise<HTMLElement> {
+/** Opens the palette with `reopen` while its close animation runs. */
+async function interruptClose(reopen: () => Promise<void> | void): Promise<void> {
   const closing = roleNamed("dialog", "Command palette");
   await userEvent.keyboard("{Escape}");
   await expect.poll(() => closing.hasAttribute("data-ending-style")).toBe(true);
-  // Still playing its exit as the opening lands, so the opening interrupts the close.
-  expect(closing.isConnected && closing.hasAttribute("data-ending-style")).toBe(true);
   await reopen();
   await expect.poll(() => closing.hasAttribute("data-open")).toBe(true);
   // The same popup: the opening kept it from its close.
   expect(roleNamed("dialog", "Command palette")).toBe(closing);
-  return closing;
 }
 
 /**

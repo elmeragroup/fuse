@@ -216,19 +216,18 @@ export function CommandRoot<
     setSession((count) => count + 1);
     stack.reset();
   };
-  // Base UI ends a close with `onOpenChangeComplete(false)`, which starts the next opening fresh.
-  // An opening that interrupts the close aborts that callback and keeps the closing popup with
-  // its contents, so the Root starts a session here instead, during render as React's docs
-  // adjust state from a changed prop. Only a mounted `Command.Content` closes, so `open` flipping
-  // on an inline palette, or before a late Content mounts, starts nothing.
-  const [seenOpen, setSeenOpen] = useState(isOpen);
-  const [closing, setClosing] = useState(false);
-  if (seenOpen !== isOpen) {
-    setSeenOpen(isOpen);
-    setClosing(!isOpen && hasContent);
-    if (isOpen && closing) {
+  // Base UI ends a close with `onOpenChangeComplete(false)`, which moves the phase from closing
+  // to closed and starts the next opening fresh. An opening during the closing phase aborts that
+  // callback and keeps the closing popup with its contents, so the Root starts a session here
+  // instead, during render as React's docs adjust state from a changed prop. Only a mounted
+  // `Command.Content` enters the closing phase, so `open` flipping on an inline palette, or
+  // before a late Content mounts, starts nothing.
+  const [phase, setPhase] = useState<"open" | "closing" | "closed">(isOpen ? "open" : "closed");
+  if ((phase === "open") !== isOpen) {
+    if (isOpen && phase === "closing") {
       startSession();
     }
+    setPhase(isOpen ? "open" : hasContent ? "closing" : "closed");
   }
   const hasStack = pages !== undefined || defaultPages !== undefined;
   const palette: CommandPaletteContextValue = {
@@ -247,7 +246,7 @@ export function CommandRoot<
       onOpenChangeComplete: (next: boolean) => {
         onOpenChangeComplete?.(next);
         if (!next) {
-          setClosing(false);
+          setPhase((current) => (current === "closing" ? "closed" : current));
           startSession();
         }
       },
