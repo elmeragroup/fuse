@@ -293,7 +293,7 @@ theme or density CSS, and `pnpm --filter docs generate` when it touches generate
 
 The package is an Effect program. `src/main.ts` is the entry point. It runs `src/cli.ts` under
 `NodeRuntime.runMain`, which turns Ctrl-C into an interruption, so the local server and the
-browsers close through their finalizers. `cli.ts` declares the flags as an `effect/unstable/cli`
+browsers close through their finalizers. `cli.ts` declares the flags as an `effect/cli`
 command and maps failures to exit codes. `run-shots.ts` sequences one run.
 
 Each adapter is a service with a layer: `Capture` in `capture.ts` drives Playwright, `DocsServer` in

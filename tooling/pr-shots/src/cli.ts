@@ -4,7 +4,7 @@
  */
 
 import { Console, Data, Effect, Layer, Option, Runtime } from "effect";
-import { Argument, CliError, Command, Flag } from "effect/unstable/cli";
+import { Argument, CliError, Command, Flag } from "effect/cli";
 import path from "node:path";
 
 import packageJson from "../package.json" with { type: "json" };

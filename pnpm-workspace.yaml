@@ -6,9 +6,9 @@ packages:
 catalog:
   "@arethetypeswrong/cli": 0.18.5
   "@changesets/cli": 3.0.2
-  "@effect/platform-node": 4.0.0-rc.115
-  "@effect/vitest": 4.0.0-rc.115
-  "@elmeragroup/internal": 0.2.0-canary.7
+  "@effect/platform-node": 4.0.2
+  "@effect/vitest": 4.0.2
+  "@elmeragroup/internal": 0.2.0-canary.10
   "@arethetypeswrong/core": 0.18.5
   "@base-ui/react": 1.8.0
   "@fontsource/roboto": 5.3.0
@@ -35,7 +35,7 @@ catalog:
   "@vitest/browser-playwright": 5.0.0
   clsx: 2.1.1
   csstype: 3.2.3
-  effect: 4.0.0-rc.115
+  effect: 4.0.2
   eslint-plugin-turbo: 2.10.12
   fast-check: 4.10.2
   "libphonenumber-js": 1.13.13
@@ -77,7 +77,7 @@ autoInstallPeers: true
 overrides:
   # @effect/platform-node declares a caret range here, which resolves to a release whose
   # effect peer is newer than the catalog's effect. Keep the whole Effect family on one version.
-  "@effect/platform-node-shared": 4.0.0-rc.115
+  "@effect/platform-node-shared": 4.0.2
 
 allowBuilds:
   "@parcel/watcher": true
@@ -85,6 +85,6 @@ allowBuilds:
 minimumReleaseAge: 4320
 
 minimumReleaseAgeExclude:
-  - effect@4.0.0-rc.115
+  - effect@4.0.2
   # Canary line of the in-house tooling package; each bump names the exact version.
-  - "@elmeragroup/internal@0.2.0-canary.7"
+  - "@elmeragroup/internal@0.2.0-canary.10"

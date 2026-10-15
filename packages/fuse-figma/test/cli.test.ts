@@ -1,8 +1,8 @@
 import { assert, describe, it } from "@effect/vitest";
 import { ConfigProvider, Effect, Fiber, FileSystem, Layer, Path, Runtime, Stdio, Terminal } from "effect";
+import { CliOutput } from "effect/cli";
+import { ChildProcessSpawner } from "effect/process";
 import { TestClock, TestConsole } from "effect/testing";
-import { CliOutput } from "effect/unstable/cli";
-import { ChildProcessSpawner } from "effect/unstable/process";
 
 import * as Hex from "@elmeragroup/color/hex";
 import { getOrThrow } from "@elmeragroup/color/result";

@@ -4,7 +4,7 @@
  */
 
 import { Config, Console, Data, Effect, Runtime, Schema } from "effect";
-import { CliError, Command, Flag } from "effect/unstable/cli";
+import { CliError, Command, Flag } from "effect/cli";
 
 import packageJson from "../package.json" with { type: "json" };
 import { FigmaApi, FileKey } from "./figma-api.ts";
