@@ -75,6 +75,9 @@ function reachableFrom(entry: string): Set<string> {
   return seen;
 }
 
+/** Every client component in the docs source, the landing and the studio included. */
+const CLIENT_MODULES = sourceFiles(srcRoot).filter((file) => isClientModule(readFileSync(file, "utf8")));
+
 function importsHighlighter(file: string): boolean {
   return [...readFileSync(file, "utf8").matchAll(BARE_IMPORT)].some(
     (match) => match[1] === HIGHLIGHTER || (match[1]?.startsWith(`${HIGHLIGHTER}/`) ?? false)
@@ -84,7 +87,7 @@ function importsHighlighter(file: string): boolean {
 describe("the docs client graph never reaches the highlighter", () => {
   it("keeps sugar-high out of every module a client component can import", () => {
     const offenders: string[] = [];
-    for (const entry of sourceFiles(srcRoot).filter((file) => isClientModule(readFileSync(file, "utf8")))) {
+    for (const entry of CLIENT_MODULES) {
       for (const reached of reachableFrom(entry)) {
         if (importsHighlighter(reached)) {
           offenders.push(`${path.relative(docsRoot, entry)} → ${path.relative(docsRoot, reached)}`);
@@ -97,9 +100,8 @@ describe("the docs client graph never reaches the highlighter", () => {
   });
 
   it("still finds the client components and the server module that does highlight", () => {
-    const clients = sourceFiles(srcRoot).filter((file) => isClientModule(readFileSync(file, "utf8")));
-    expect(clients.length).toBeGreaterThanOrEqual(8);
-    expect(clients.map((file) => path.basename(file))).toContain("api-prop-rows.tsx");
+    expect(CLIENT_MODULES.length).toBeGreaterThanOrEqual(8);
+    expect(CLIENT_MODULES.map((file) => path.basename(file))).toContain("api-prop-rows.tsx");
     expect(importsHighlighter(path.join(srcRoot, "components/docs-code-block.tsx"))).toBe(true);
   });
 });
@@ -112,17 +114,15 @@ describe("the client graph never reaches the full component-page manifest", () =
     // The nav, the QuickNav and the site palette ship on every surface's first paint, and read
     // the slim outlines. The full manifest's token lists, ledes and source links stay on the
     // server, where the page intros, the Tokens-consumed sections and the metadata read them.
-    const clients = sourceFiles(srcRoot).filter((file) => isClientModule(readFileSync(file, "utf8")));
-    const offenders = clients.filter((entry) => reachableFrom(entry).has(manifest));
+    const offenders = CLIENT_MODULES.filter((entry) => reachableFrom(entry).has(manifest));
     expect(offenders.map((file) => path.relative(docsRoot, file))).toEqual([]);
   });
 
   it("still sees each manifest from a module that imports it", () => {
-    const clients = sourceFiles(srcRoot).filter((file) => isClientModule(readFileSync(file, "utf8")));
     const surfaces = ["app/(landing)", "studio", "components"].map((dir) => path.join(srcRoot, dir));
     for (const surface of surfaces) {
       expect(
-        clients.some((file) => file.startsWith(surface)),
+        CLIENT_MODULES.some((file) => file.startsWith(surface)),
         surface
       ).toBe(true);
     }
