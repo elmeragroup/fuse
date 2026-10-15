@@ -32,7 +32,7 @@
         {
           "name": "variant",
           "origin": "recipe-axis",
-          "type": "\"default\" | \"destructive\" | \"success\" | \"warning\" | undefined",
+          "type": "\"default\" | \"destructive\" | \"info\" | \"success\" | \"warning\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "",
@@ -56,7 +56,7 @@
           "type": "AlertVariant",
           "shortType": null,
           "defaultValue": null,
-          "description": "Status glyph. `default → Info`, `warning → Warning`, `destructive → WarningOctagon`, `success → CheckCircle`.",
+          "description": "Status glyph. `default → Info`, `warning → Warning`, `destructive → WarningOctagon`, `success → CheckCircle`, `info → Info`.",
           "required": true
         },
         {

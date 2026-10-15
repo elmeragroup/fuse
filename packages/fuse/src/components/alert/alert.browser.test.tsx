@@ -14,6 +14,7 @@ import { ringLayers, settleTransitions } from "../../../test/assert-invalid-ring
 import { HOSTS, centreY, firstLineCentreY, hostCss } from "../../../test/first-line";
 import {
   computedContrast,
+  cssVarColor,
   headingNamed,
   px,
   renderThemed,
@@ -30,7 +31,7 @@ import { Badge } from "../badge/badge";
 import { PopoverContent, PopoverRoot, PopoverTrigger } from "../popover/popover";
 import { Alert } from "./alert";
 
-const VARIANTS = ["default", "destructive", "warning", "success"] as const;
+const VARIANTS = ["default", "destructive", "warning", "success", "info"] as const;
 
 /** Starts of Phosphor's bold paths (`dist/defs/*.es.js`), the icon default weight. */
 const ICON_PATH = {
@@ -38,6 +39,7 @@ const ICON_PATH = {
   warning: "M240.26,186.1",
   destructive: "M236,91.55v72.9",
   success: "M176.49,95.51",
+  info: "M108,84a16,16,0,1,1,16,16A16,16,0,0,1,108,84Z",
 } as const;
 
 function alertNamed(name: string): HTMLElement {
@@ -534,6 +536,56 @@ describe("Alert", () => {
     expect(getComputedStyle(action).backgroundColor).not.toBe(restFill);
     expect(actionContrast(action, alertNamed("default"))).toBeGreaterThanOrEqual(AA_TEXT_CONTRAST);
   });
+
+  it("hovers the info action to its 90% tint with the label at 4.5:1 in every theme and scheme", async () => {
+    const restoreDocumentTheme = snapshotDocumentTheme();
+    onTestFinished(restoreDocumentTheme);
+    renderThemed(
+      <Alert.Root variant="info" onAction={vi.fn()} actionLabel="Read more">
+        <Alert.Title>New prices from 1 November</Alert.Title>
+      </Alert.Root>
+    );
+    const action = roleNamed("button", "Read more");
+    const root = alertNamed("info");
+    // renderThemed's ThemeScope stamp outranks the document's, so the theme goes on that
+    // scope and the scheme on the document.
+    const scope = root.closest<HTMLElement>("[data-theme-brand]");
+    if (scope === null || scope === document.documentElement) {
+      throw new Error("expected the alert inside renderThemed's ThemeScope");
+    }
+    // The tint the hover must paint, built from the role rather than read from the recipe. Equal
+    // paint also proves Button's own `primary` hover fill does not win.
+    const tint = document.createElement("span");
+    tint.style.backgroundColor = "color-mix(in oklab, var(--info) 90%, transparent)";
+    root.append(tint);
+    await userEvent.hover(action);
+    await settled(action);
+
+    for (const scheme of ["light", "dark"] as const) {
+      for (const theme of LEGAL_THEMES) {
+        stampDocumentTheme(theme, scheme);
+        stampTheme(scope, theme);
+        settleTransitions(root, action);
+        const context = `${themeSlug(theme)} ${scheme}`;
+        expect(getComputedStyle(action).backgroundColor, context).toBe(
+          getComputedStyle(tint).backgroundColor
+        );
+        // `CssColor` cannot read the computed `oklab()` hover fill yet, so the label is measured on
+        // `info` at 90% alpha composited in sRGB over the alert's `info-soft` surface.
+        const info = computedSrgb(cssVarColor(action, "--info"));
+        const hoverFill = Srgb.compositeOver(
+          getOrThrow(Srgb.make({ r: info.r, g: info.g, b: info.b, alpha: 0.9 })),
+          computedSrgb(getComputedStyle(root).backgroundColor)
+        );
+        expect
+          .soft(
+            getOrThrow(Wcag.contrastRatio(computedSrgb(getComputedStyle(action).color), hoverFill)),
+            context
+          )
+          .toBeGreaterThanOrEqual(AA_TEXT_CONTRAST);
+      }
+    }
+  });
 });
 
 describe("Alert focus ring contrast", () => {
@@ -547,41 +599,44 @@ describe("Alert focus ring contrast", () => {
     restoreDocumentTheme();
   });
 
-  it("draws the warning action's focus ring at 3:1 against the alert fill in every theme and scheme", async () => {
-    renderThemed(
-      <>
-        <button type="button">Focus start</button>
-        <Alert.Root variant="warning" onAction={vi.fn()} actionLabel="Retry">
-          <Alert.Title>Meter offline</Alert.Title>
-        </Alert.Root>
-      </>
-    );
-    roleNamed("button", "Focus start").focus();
-    // A real Tab, so the action matches `:focus-visible` and paints the ring.
-    await userEvent.keyboard("{Tab}");
-    const action = roleNamed("button", "Retry");
-    expect(document.activeElement).toBe(action);
-    const root = alertNamed("warning");
-    // renderThemed's ThemeScope stamp outranks the document's, so the theme goes on that
-    // scope and the scheme on the document.
-    const scope = root.closest<HTMLElement>("[data-theme-brand]");
-    if (scope === null || scope === document.documentElement) {
-      throw new Error("expected the alert inside renderThemed's ThemeScope");
-    }
+  it.each(["warning", "info"] as const)(
+    "draws the %s action's focus ring at 3:1 against the alert fill in every theme and scheme",
+    async (variant) => {
+      renderThemed(
+        <>
+          <button type="button">Focus start</button>
+          <Alert.Root variant={variant} onAction={vi.fn()} actionLabel="Retry">
+            <Alert.Title>{`${variant} status`}</Alert.Title>
+          </Alert.Root>
+        </>
+      );
+      roleNamed("button", "Focus start").focus();
+      // A real Tab, so the action matches `:focus-visible` and paints the ring.
+      await userEvent.keyboard("{Tab}");
+      const action = roleNamed("button", "Retry");
+      expect(document.activeElement).toBe(action);
+      const root = alertNamed(variant);
+      // renderThemed's ThemeScope stamp outranks the document's, so the theme goes on that
+      // scope and the scheme on the document.
+      const scope = root.closest<HTMLElement>("[data-theme-brand]");
+      if (scope === null || scope === document.documentElement) {
+        throw new Error("expected the alert inside renderThemed's ThemeScope");
+      }
 
-    for (const scheme of ["light", "dark"] as const) {
-      for (const theme of LEGAL_THEMES) {
-        stampDocumentTheme(theme, scheme);
-        stampTheme(scope, theme);
-        settleTransitions(root, action);
-        const [ring] = ringLayers(action);
-        const context = `${themeSlug(theme)} ${scheme}`;
-        expect(ring, context).toBeDefined();
-        // WCAG 1.4.11: the ring's outer edge sits flush on the warning-soft surface.
-        expect
-          .soft(computedContrast(ring?.color ?? "", getComputedStyle(root).backgroundColor), context)
-          .toBeGreaterThanOrEqual(3);
+      for (const scheme of ["light", "dark"] as const) {
+        for (const theme of LEGAL_THEMES) {
+          stampDocumentTheme(theme, scheme);
+          stampTheme(scope, theme);
+          settleTransitions(root, action);
+          const [ring] = ringLayers(action);
+          const context = `${themeSlug(theme)} ${scheme}`;
+          expect(ring, context).toBeDefined();
+          // WCAG 1.4.11: the ring's outer edge sits flush on the soft status surface.
+          expect
+            .soft(computedContrast(ring?.color ?? "", getComputedStyle(root).backgroundColor), context)
+            .toBeGreaterThanOrEqual(3);
+        }
       }
     }
-  });
+  );
 });

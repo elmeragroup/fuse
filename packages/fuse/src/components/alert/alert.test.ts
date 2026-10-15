@@ -7,7 +7,7 @@ import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { Alert } from "./alert";
 import { alertVariants } from "./alert-variants";
 
-const VARIANTS = ["default", "destructive", "warning", "success"] as const;
+const VARIANTS = ["default", "destructive", "warning", "success", "info"] as const;
 
 const VARIANT_SLOTS = {
   default: {
@@ -21,7 +21,12 @@ const VARIANT_SLOTS = {
     button: ["bg-error", "text-error-foreground", "hover:bg-error/90"],
   },
   warning: {
-    base: ["border-warning", "bg-warning-soft", "text-warning-soft-foreground"],
+    base: [
+      "border-warning",
+      "bg-warning-soft",
+      "text-warning-soft-foreground",
+      "[--ring:var(--warning-soft-foreground)]",
+    ],
     icon: ["text-warning"],
     button: ["bg-warning", "text-warning-foreground", "hover:bg-warning/90"],
   },
@@ -29,6 +34,16 @@ const VARIANT_SLOTS = {
     base: ["border-success", "bg-success/5", "text-foreground"],
     icon: ["text-success"],
     button: ["bg-success", "text-success-foreground", "hover:bg-success/90"],
+  },
+  info: {
+    base: [
+      "border-info",
+      "bg-info-soft",
+      "text-info-soft-foreground",
+      "[--ring:var(--info-soft-foreground)]",
+    ],
+    icon: ["text-info"],
+    button: ["bg-info", "text-info-foreground", "hover:bg-info/90"],
   },
 } as const;
 

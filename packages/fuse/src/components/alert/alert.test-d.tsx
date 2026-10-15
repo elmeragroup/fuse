@@ -6,10 +6,10 @@ import { Alert } from "@elmeragroup/fuse/alert";
 
 test("parts take the public API: required icon variant, heading level, no variant on copy", () => {
   expectTypeOf<Parameters<typeof Alert.Root>[0]["variant"]>().toEqualTypeOf<
-    "default" | "destructive" | "warning" | "success" | undefined
+    "default" | "destructive" | "warning" | "success" | "info" | undefined
   >();
   expectTypeOf<Parameters<typeof Alert.Icon>[0]["variant"]>().toEqualTypeOf<
-    "default" | "destructive" | "warning" | "success"
+    "default" | "destructive" | "warning" | "success" | "info"
   >();
   expectTypeOf<Parameters<typeof Alert.Title>[0]["level"]>().toEqualTypeOf<
     1 | 2 | 3 | 4 | 5 | 6 | undefined

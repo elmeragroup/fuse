@@ -210,7 +210,7 @@ function PriceModelCard(): ReactElement {
                 </RadioItem.Content>
                 {key === current ? (
                   <RadioItem.Actions>
-                    <Badge variant="info" size="sm">
+                    <Badge variant="soft-info" size="sm">
                       Current
                     </Badge>
                   </RadioItem.Actions>

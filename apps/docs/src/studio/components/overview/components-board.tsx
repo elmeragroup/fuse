@@ -213,7 +213,7 @@ export function ComponentsBoard(): ReactElement {
         <Badge variant="secondary">Scheduled</Badge>
         <Badge variant="warning">Due soon</Badge>
         <Badge variant="destructive">Overdue</Badge>
-        <Badge variant="info">New</Badge>
+        <Badge variant="soft-info">New</Badge>
       </div>
       <Alert.Root variant="warning">
         <Alert.Title>Verify your email</Alert.Title>

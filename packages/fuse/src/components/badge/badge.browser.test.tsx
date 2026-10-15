@@ -18,11 +18,16 @@ const BADGE_VARIANTS = [
   "success",
   "warning",
   "info",
+  "soft-destructive",
+  "soft-success",
+  "soft-warning",
+  "soft-info",
   "outline",
   "outline-secondary",
   "outline-destructive",
   "outline-success",
   "outline-warning",
+  "outline-info",
   "muted",
   "accent",
   "card",
@@ -59,6 +64,7 @@ describe("Badge", () => {
   it.each([
     ["default", undefined, "--primary", "--primary-foreground"],
     ["destructive", "destructive", "--error", "--error-foreground"],
+    ["info", "info", "--info", "--info-foreground"],
   ] as const)("paints the %s variant from its role tokens", (_label, variant, background, foreground) => {
     renderThemed(<Badge variant={variant}>Active</Badge>);
     const badge = badgeNamed("Active");
@@ -66,14 +72,35 @@ describe("Badge", () => {
     expect(getComputedStyle(badge).color).toBe(cssVarColor(badge, foreground));
   });
 
-  it("pairs the info variant's soft surface and foreground", () => {
-    renderThemed(<Badge variant="info">Scheduled</Badge>);
+  it.each([
+    ["soft-destructive", "--error-soft", "--error-soft-foreground"],
+    ["soft-success", "--success-soft", "--success-soft-foreground"],
+    ["soft-warning", "--warning-soft", "--warning-soft-foreground"],
+    ["soft-info", "--info-soft", "--info-soft-foreground"],
+  ] as const)("pairs the %s variant's soft surface and foreground", (variant, background, foreground) => {
+    renderThemed(<Badge variant={variant}>Scheduled</Badge>);
     const badge = badgeNamed("Scheduled");
     const styles = getComputedStyle(badge);
-    expect(styles.backgroundColor).not.toBe("rgba(0, 0, 0, 0)");
+    expect(styles.backgroundColor).toBe(cssVarColor(badge, background));
     expect(styles.borderTopColor).not.toBe("rgba(0, 0, 0, 0)");
     expect(styles.backgroundColor).not.toBe(styles.borderTopColor);
-    expect(styles.color).toBe(cssVarColor(badge, "--info-soft-foreground"));
+    // The base layer draws every bordered element in `--border`, so the status border must differ.
+    expect(styles.borderTopColor).not.toBe(cssVarColor(badge, "--border"));
+    expect(styles.color).toBe(cssVarColor(badge, foreground));
+  });
+
+  it.each([
+    ["outline-destructive", "--error"],
+    ["outline-success", "--success"],
+    ["outline-warning", "--warning"],
+    ["outline-info", "--info"],
+  ] as const)("draws the %s variant's border and text in its status role, with no fill", (variant, role) => {
+    renderThemed(<Badge variant={variant}>Scheduled</Badge>);
+    const badge = badgeNamed("Scheduled");
+    const styles = getComputedStyle(badge);
+    expect(styles.backgroundColor).toBe("rgba(0, 0, 0, 0)");
+    expect(styles.borderTopColor).toBe(cssVarColor(badge, role));
+    expect(styles.color).toBe(cssVarColor(badge, role));
   });
 
   it("scales padding and type across the three decorative sizes", () => {
@@ -148,7 +175,22 @@ describe("badge and secondary typography contrast", () => {
           <div data-theme={scheme}>
             <ThemeScope theme={theme} className="bg-background">
               <Badge variant="info" className="transition-none">
+                Filled info sample
+              </Badge>
+              <Badge variant="soft-info" className="transition-none">
                 Info sample
+              </Badge>
+              <Badge variant="soft-destructive" className="transition-none">
+                Soft destructive sample
+              </Badge>
+              <Badge variant="soft-success" className="transition-none">
+                Soft success sample
+              </Badge>
+              <Badge variant="soft-warning" className="transition-none">
+                Soft warning sample
+              </Badge>
+              <Badge variant="outline-info" className="transition-none">
+                Outline info sample
               </Badge>
               <Badge variant="outline-secondary" className="transition-none">
                 Outline sample
@@ -172,9 +214,14 @@ describe("badge and secondary typography contrast", () => {
         // This suite owns which rendered role each variant paints; the theme contrast matrix
         // owns the floors those roles must meet, so no ratio is recomputed here.
         for (const [label, foreground] of [
+          ["Filled info sample", "info-foreground"],
           ["Info sample", "info-soft-foreground"],
+          ["Soft destructive sample", "error-soft-foreground"],
+          ["Soft success sample", "success-soft-foreground"],
+          ["Soft warning sample", "warning-soft-foreground"],
           ["Muted sample", "foreground"],
           ["Outline sample", "foreground"],
+          ["Outline info sample", "info"],
         ] as const) {
           const badge = badgeNamed(label);
           expect(getComputedStyle(badge).color, context).toBe(cssVarColor(badge, `--${foreground}`));

@@ -1,12 +1,13 @@
 import { tv } from "../../styles/tv";
 
 /**
- * PUBLIC recipe. `CheckboxCard` borrows it for its tag chips, so it
- * ships from `@elmeragroup/fuse/badge`.
+ * PUBLIC recipe, exported from `@elmeragroup/fuse/badge` beside `Badge`.
  *
- * - `destructive` / `outline-destructive` keep their ref value names for consumer
- *   compat, but their classes resolve to the canonical `error` tokens.
- * - The `info` arm uses the paired soft status tokens on its tinted surface.
+ * - `destructive` / `outline-destructive` / `soft-destructive` keep the ref's `destructive`
+ *   name for consumer compat, but their classes resolve to the canonical `error` tokens.
+ * - Every status (destructive, success, warning, info) has a filled arm, an `outline-*` arm
+ *   that draws the status role as border and text, and a `soft-*` arm that uses the paired
+ *   soft status tokens on their tinted surface.
  * - Badge is deliberately non-interactive. The recipe drops the ref's bare `:focus` ring
  *   and its `hover:` fills, so no state suggests an affordance a <div> does not have.
  * - `size` is a decorative pill axis, not a density rung:
@@ -21,12 +22,17 @@ export const badgeVariants = tv({
       destructive: "shadow-xs border-transparent bg-error text-error-foreground",
       success: "shadow-xs border-transparent bg-success text-success-foreground",
       warning: "shadow-xs border-transparent bg-warning text-warning-foreground",
-      info: "shadow-xs border-info/20 bg-info-soft text-info-soft-foreground",
+      info: "shadow-xs border-transparent bg-info text-info-foreground",
+      "soft-destructive": "shadow-xs border-error/20 bg-error-soft text-error-soft-foreground",
+      "soft-success": "shadow-xs border-success/20 bg-success-soft text-success-soft-foreground",
+      "soft-warning": "shadow-xs border-warning/20 bg-warning-soft text-warning-soft-foreground",
+      "soft-info": "shadow-xs border-info/20 bg-info-soft text-info-soft-foreground",
       outline: "text-foreground",
       "outline-secondary": "border-secondary text-foreground",
       "outline-destructive": "border-error text-error",
       "outline-success": "border-success text-success",
       "outline-warning": "border-warning text-warning",
+      "outline-info": "border-info text-info",
       muted: "shadow-xs border-transparent bg-muted text-foreground",
       accent: "shadow-xs border-transparent bg-accent text-accent-foreground",
       card: "shadow-xs border-transparent bg-card text-card-foreground",

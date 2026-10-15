@@ -1226,7 +1226,7 @@ describe.each(HOSTS)("selection row first line in a %s host", (host) => {
               <SelectionItem.Description>Follows the hourly market.</SelectionItem.Description>
             </SelectionItem.Content>
             <SelectionItem.Actions>
-              <Badge variant="info" size="sm">
+              <Badge variant="soft-info" size="sm">
                 Current
               </Badge>
             </SelectionItem.Actions>
