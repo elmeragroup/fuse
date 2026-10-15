@@ -1,4 +1,4 @@
-import type { ComponentProps, ReactElement, ReactNode } from "react";
+import type { AriaRole, ComponentProps, ReactElement, ReactNode } from "react";
 
 import type { VariantProps } from "tailwind-variants";
 
@@ -44,7 +44,19 @@ const ALERT_ICONS = {
   info: Info,
 } as const;
 
-export type AlertRootProps = ComponentProps<"div"> & VariantProps<typeof alertVariants> & AlertActionProps;
+export type AlertRootProps = ComponentProps<"div"> &
+  VariantProps<typeof alertVariants> &
+  AlertActionProps & {
+    /**
+     * Live-region role. Defaults to `alert`, announced assertively, interrupting the user, when
+     * the alert is inserted or its content changes: keep it for errors and warnings that need
+     * attention now. Pass `status` for an informational message announced politely, after the
+     * reader finishes. Screen readers announce a status region only when its content changes
+     * while it is already in the DOM, so keep `Alert.Root` mounted and swap its children. Pass
+     * `none` for a static notice that is not announced.
+     */
+    role?: AriaRole;
+  };
 
 export type AlertIconProps = Omit<ComponentProps<typeof Info>, "title" | "weight"> & {
   /**
@@ -80,12 +92,13 @@ function AlertRoot({
   variant = "default",
   onAction,
   actionLabel,
+  role = "alert",
   ...props
 }: AlertRootProps): ReactElement {
   const { base, button } = alertVariants({ variant });
 
   return (
-    <ItemRootElement {...props} role="alert" variant="outline" size="sm" className={cn(base(), className)}>
+    <ItemRootElement {...props} role={role} variant="outline" size="sm" className={cn(base(), className)}>
       <ItemMedia variant="icon">
         <AlertIcon variant={variant} />
       </ItemMedia>

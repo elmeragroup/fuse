@@ -119,6 +119,24 @@ describe("Alert", () => {
     }
   });
 
+  it("takes a consumer's status role in place of alert and keeps its heading, icon and action", () => {
+    renderThemed(
+      <Alert.Root variant="info" role="status" onAction={() => undefined} actionLabel="Read more">
+        <Alert.Title>Invoice by email</Alert.Title>
+        <Alert.Description>The invoice goes to your email address.</Alert.Description>
+      </Alert.Root>
+    );
+    expect(page.getByRole("alert").query()).toBeNull();
+    const root = page.getByRole("status").element();
+    if (!(root instanceof HTMLElement)) {
+      throw new Error("expected status");
+    }
+    expect(root.contains(headingNamed("Invoice by email", 3))).toBe(true);
+    expect(root.contains(textNamed("The invoice goes to your email address."))).toBe(true);
+    expect(root.contains(roleNamed("button", "Read more"))).toBe(true);
+    expect(iconIn(root).getAttribute("aria-hidden")).toBe("true");
+  });
+
   it("shows every line of a long description instead of clamping it", () => {
     const sentence = "The supplier switch completes on the first day of next month.";
     renderThemed(

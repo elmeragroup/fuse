@@ -9,7 +9,7 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 279,
       "props": [
         {
           "name": "actionLabel",
@@ -27,6 +27,15 @@
           "shortType": "function",
           "defaultValue": null,
           "description": "When both `onAction` and `actionLabel` are set, renders a `Button` in `Item.Actions`. Forwarded as the button's `onClick` — the client boundary is the consumer's.",
+          "required": false
+        },
+        {
+          "name": "role",
+          "origin": "declared",
+          "type": "AriaRole | undefined",
+          "shortType": null,
+          "defaultValue": "\"alert\"",
+          "description": "Live-region role. Defaults to `alert`, announced assertively, interrupting the user, when the alert is inserted or its content changes: keep it for errors and warnings that need attention now. Pass `status` for an informational message announced politely, after the reader finishes. Screen readers announce a status region only when its content changes while it is already in the DOM, so keep `Alert.Root` mounted and swap its children. Pass `none` for a static notice that is not announced.",
           "required": false
         },
         {
