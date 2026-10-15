@@ -207,15 +207,91 @@ describe("site palette on the docs", () => {
     await expect.poll(() => isHighlighted(first)).toBe(false);
     const popup = await dialog.elementHandle();
     await page.keyboard.press("Escape");
-    await expect.poll(() => popup.getAttribute("data-closed")).toBe("");
+    await expect.poll(() => popup.getAttribute("data-ending-style")).toBe("");
+    // Still playing its exit as ⌘K lands, so the opening interrupts the close.
+    expect(await popup.evaluate((node) => node.isConnected && node.hasAttribute("data-ending-style"))).toBe(
+      true
+    );
     await page.keyboard.press("Meta+k");
-
-    // The same popup node: only a fresh opening can have reset the search.
+    // The same popup: the opening kept it from its close.
+    await expect.poll(() => popup.getAttribute("data-open")).toBe("");
     expect(await popup.evaluate((node) => node.isConnected)).toBe(true);
     await expect.poll(() => dialog.getByRole("combobox").inputValue()).toBe("");
     await expect.poll(() => groupLabels(dialog)).toEqual(["This page", "Go to", "Settings", "Copy"]);
     await expect.poll(() => isHighlighted(first)).toBe(true);
     await expect.poll(() => focusedName(page)).toBe("Search the site");
+    await closeContext(context);
+  });
+
+  // Guards the palette's own reset: `show()` sets the controlled stack back to the first page, also
+  // on an opening that interrupts the close of a sub-page.
+  it("reopens on the first page when ⌘K interrupts the close of a settings page", async () => {
+    const context = await browser().newContext({ colorScheme: "light", reducedMotion: "no-preference" });
+    const page = await openDocs(context, "/components/button");
+    // Slow every animation tenfold, so the popup is still closing when ⌘K lands.
+    const cdp = await context.newCDPSession(page);
+    await cdp.send("Animation.enable");
+    await cdp.send("Animation.setPlaybackRate", { playbackRate: 0.1 });
+    const dialog = palette(page);
+    const first = dialog.getByRole("option").first();
+
+    await page.keyboard.press("Meta+k");
+    await option(dialog, "Settings", "Appearance").click();
+    await expect.poll(() => focusedName(page)).toBe("Appearance");
+    await page.keyboard.press("ArrowDown");
+    await expect.poll(() => isHighlighted(first)).toBe(false);
+    const popup = await dialog.elementHandle();
+    await page.keyboard.press("Meta+k");
+    await expect.poll(() => popup.getAttribute("data-ending-style")).toBe("");
+    // Still playing its exit as ⌘K lands, so the opening interrupts the close.
+    expect(await popup.evaluate((node) => node.isConnected && node.hasAttribute("data-ending-style"))).toBe(
+      true
+    );
+    await page.keyboard.press("Meta+k");
+    // The same popup: the opening kept it from its close.
+    await expect.poll(() => popup.getAttribute("data-open")).toBe("");
+    expect(await popup.evaluate((node) => node.isConnected)).toBe(true);
+    await expect.poll(() => focusedName(page)).toBe("Search the site");
+    expect(await dialog.getByRole("combobox").inputValue()).toBe("");
+    await expect.poll(() => groupLabels(dialog)).toEqual(["This page", "Go to", "Settings", "Copy"]);
+    await expect.poll(() => isHighlighted(first)).toBe(true);
+    await closeContext(context);
+  });
+
+  // The drill-in case above resets through the palette's own `show()`, which puts the stack back
+  // on the first page. This one stays on the first page with an empty query, so nothing the
+  // palette controls changes, and only Command's own fresh start can move the highlight back.
+  it("highlights the first row again when ⌘K reopens it mid-close after the arrows moved it", async () => {
+    const context = await browser().newContext({ colorScheme: "light", reducedMotion: "no-preference" });
+    const page = await openDocs(context, "/components/button");
+    // Slow every animation tenfold, so the popup is still closing when ⌘K lands.
+    const cdp = await context.newCDPSession(page);
+    await cdp.send("Animation.enable");
+    await cdp.send("Animation.setPlaybackRate", { playbackRate: 0.1 });
+    const dialog = palette(page);
+    const first = dialog.getByRole("option").first();
+
+    await page.keyboard.press("Meta+k");
+    await expect.poll(() => focusedName(page)).toBe("Search the site");
+    await expect.poll(() => isHighlighted(first)).toBe(true);
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("ArrowDown");
+    await expect.poll(() => isHighlighted(first)).toBe(false);
+    const popup = await dialog.elementHandle();
+    await page.keyboard.press("Meta+k");
+    await expect.poll(() => popup.getAttribute("data-ending-style")).toBe("");
+    // Still playing its exit as ⌘K lands, so the opening interrupts the close.
+    expect(await popup.evaluate((node) => node.isConnected && node.hasAttribute("data-ending-style"))).toBe(
+      true
+    );
+    await page.keyboard.press("Meta+k");
+    // The same popup: the opening kept it from its close.
+    await expect.poll(() => popup.getAttribute("data-open")).toBe("");
+    expect(await popup.evaluate((node) => node.isConnected)).toBe(true);
+    await expect.poll(() => focusedName(page)).toBe("Search the site");
+    expect(await dialog.getByRole("combobox").inputValue()).toBe("");
+    await expect.poll(() => groupLabels(dialog)).toEqual(["This page", "Go to", "Settings", "Copy"]);
+    await expect.poll(() => isHighlighted(first)).toBe(true);
     await closeContext(context);
   });
 

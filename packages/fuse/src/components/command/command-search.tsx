@@ -1,10 +1,14 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { Autocomplete as AutocompletePrimitive } from "@base-ui/react";
-import type { AutocompleteRootHighlightEventDetails, AutocompleteRootProps } from "@base-ui/react";
+import type {
+  AutocompleteRootActions,
+  AutocompleteRootHighlightEventDetails,
+  AutocompleteRootProps,
+} from "@base-ui/react";
 
 import { useLocale } from "../../intl/locale-context";
 import { CommandCompositionError } from "./command-error";
@@ -138,9 +142,9 @@ function assertGrouping(
 
 /**
  * One search, which is Base UI's Autocomplete, always open, with its list inline and the first
- * match always highlighted. It owns an uncontrolled query, which goes back to `defaultValue` each
- * time the palette's dialog closes. A virtualized search tracks the highlighted row and scrolls
- * its virtual list when the highlight jumps out of view.
+ * match always highlighted. Each new session of the palette sends an uncontrolled query back to
+ * `defaultValue` and the highlight back to the first match. A virtualized search tracks the
+ * highlighted row and scrolls its virtual list when the highlight jumps out of view.
  */
 export function CommandSearch({
   part,
@@ -158,7 +162,8 @@ export function CommandSearch({
 }: CommandSearchCoreProps & {
   part: string;
   /**
-   * The palette's count of dialog closes. A change resets an uncontrolled query, including that
+   * The palette's count of sessions, which advances when a close animation ends or an opening
+   * interrupts a close. A change resets an uncontrolled query and the highlight, including those
    * of a page that wraps `Command.Content` and so stays mounted while the dialog is closed.
    */
   session: number;
@@ -176,6 +181,22 @@ export function CommandSearch({
     setSeenSession(session);
     setOwnQuery(defaultValue ?? "");
   }
+  // Autocomplete keeps its highlighted row in its own store, above any rows that remount. Base UI
+  // clears it in `unmount()`, which it calls itself when a close animation ends, but only while
+  // the Autocomplete is closed, and this inline search is always open. So the search calls it
+  // through `actionsRef` instead, which turns Base UI's own call off. `unmount()` clears the
+  // highlight, and `autoHighlight="always"` then puts it back on the first row. It fires
+  // `onItemHighlighted`, not `onValueChange`. It runs on each new session: after a finished
+  // close it clears a highlight the next opening would reset anyway, and after an opening that
+  // interrupted a close it is the only reset the highlight gets.
+  const actionsRef = useRef<AutocompleteRootActions | null>(null);
+  const highlightSession = useRef(session);
+  useLayoutEffect(() => {
+    if (highlightSession.current !== session) {
+      highlightSession.current = session;
+      actionsRef.current?.unmount();
+    }
+  }, [session]);
   const scroller = useRef<CommandVirtualScroller | null>(null);
   const [highlightedIndex, setHighlightedIndex] = useState<number | undefined>(undefined);
   const state = useMemo<CommandSearchState>(
@@ -187,6 +208,7 @@ export function CommandSearch({
       <AutocompletePrimitive.Root
         inline
         open
+        actionsRef={actionsRef}
         autoHighlight={autoHighlight}
         keepHighlight={keepHighlight}
         virtualized={virtualized}

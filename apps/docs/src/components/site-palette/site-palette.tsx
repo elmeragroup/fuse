@@ -80,11 +80,6 @@ type SitePaletteValue = {
   readonly open: boolean;
   /** Opens the palette on its first page with an empty field. */
   readonly show: () => void;
-  /**
-   * The count of openings. The first page is keyed by it, so an opening that interrupts the
-   * previous close mounts the search fresh, with the first row highlighted.
-   */
-  readonly opening: number;
   readonly stack: readonly string[];
   readonly setStack: (stack: readonly string[]) => void;
   readonly query: string;
@@ -167,17 +162,15 @@ export function SitePaletteProvider({ settings, toasts, children }: SitePaletteP
   const [stack, setStack] = useState<readonly string[]>(FIRST_PAGE);
   const [query, setQuery] = useState("");
   const [registrations, setRegistrations] = useState<readonly Registration[]>([]);
-  const [opening, setOpening] = useState(0);
   // What a row asked to run once the palette has closed.
   const afterClose = useRef<(() => void) | null>(null);
 
-  // Every opening starts on the first page with an empty field, including one that interrupts the
-  // previous close, which never reaches `onOpenChangeComplete`.
+  // Every opening starts on the first page with an empty field. The stack and the query are
+  // controlled here, so the Root leaves them as they are.
   const show = useCallback(() => {
     afterClose.current = null;
     setStack(FIRST_PAGE);
     setQuery("");
-    setOpening((count) => count + 1);
     setOpen(true);
   }, []);
 
@@ -239,7 +232,6 @@ export function SitePaletteProvider({ settings, toasts, children }: SitePaletteP
     return {
       open,
       show,
-      opening,
       stack,
       setStack,
       query,
@@ -299,7 +291,7 @@ export function SitePaletteProvider({ settings, toasts, children }: SitePaletteP
         option.apply();
       },
     };
-  }, [open, show, opening, stack, query, shown, toasts, router]);
+  }, [open, show, stack, query, shown, toasts, router]);
 
   return (
     <RegistryContext.Provider value={registry}>
@@ -421,19 +413,8 @@ function SubPageFooter(): ReactElement {
  * its theme: the popup portals into the nearest theme scope.
  */
 export function SitePaletteDialog(): ReactElement {
-  const {
-    open,
-    opening,
-    stack,
-    setStack,
-    query,
-    setQuery,
-    model,
-    onOpenChange,
-    onOpenChangeComplete,
-    run,
-    pick,
-  } = useSitePalette("SitePaletteDialog");
+  const { open, stack, setStack, query, setQuery, model, onOpenChange, onOpenChangeComplete, run, pick } =
+    useSitePalette("SitePaletteDialog");
   const groups = useMemo(() => homeGroups(model, query), [model, query]);
   return (
     <Command.Root
@@ -444,7 +425,6 @@ export function SitePaletteDialog(): ReactElement {
       onOpenChangeComplete={onOpenChangeComplete}>
       <Command.Content aria-label="Site search">
         <Command.Page
-          key={opening}
           id={FIRST_PAGE_ID}
           label="Search the site"
           grouped

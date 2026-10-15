@@ -104,7 +104,11 @@ export function useStack(
     focusRequest,
     reset: () => {
       if (pages === undefined) {
-        setOwnStack(defaultPages ?? []);
+        const first = defaultPages ?? [];
+        setOwnStack(first);
+        // The reset top counts as seen, so a reset as the palette opens requests no focus and
+        // leaves the dialog's `initialFocus` in charge.
+        setSeenTop(first.at(-1));
       }
     },
   };

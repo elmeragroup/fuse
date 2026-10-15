@@ -24,7 +24,7 @@ const FIRST_PAGE = ["settings"];
 /**
  * Escape goes back a page and closes the palette only from the first page. The demo controls the
  * stack, and the Root's `onOpenChange` cancels an Escape close while there is a page to go back
- * to. The stack returns to the first page once the close animation ends.
+ * to. The same handler sets the stack back to the first page each time the palette opens.
  */
 export function CommandEscapeBack() {
   const [open, setOpen] = useState(false);
@@ -42,12 +42,10 @@ export function CommandEscapeBack() {
             setStack(stack.slice(0, -1));
             return;
           }
-          setOpen(next);
-        }}
-        onOpenChangeComplete={(isOpen) => {
-          if (!isOpen) {
+          if (next) {
             setStack(FIRST_PAGE);
           }
+          setOpen(next);
         }}>
         <Command.Trigger render={<Button variant="outline" />}>Change settings</Command.Trigger>
         <Command.Content>
