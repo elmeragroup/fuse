@@ -14,7 +14,7 @@ const FILLED = [
   "card",
 ] as const;
 
-const SOFT = ["soft-info", "soft-success", "soft-warning"] as const;
+const SOFT = ["soft-destructive", "soft-success", "soft-warning", "soft-info"] as const;
 
 const OUTLINE = [
   "outline",

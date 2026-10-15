@@ -18,6 +18,7 @@ const BADGE_VARIANTS = [
   "success",
   "warning",
   "info",
+  "soft-destructive",
   "soft-info",
   "soft-success",
   "soft-warning",
@@ -71,6 +72,7 @@ describe("Badge", () => {
   });
 
   it.each([
+    ["soft-destructive", "--error-soft", "--error-soft-foreground"],
     ["soft-info", "--info-soft", "--info-soft-foreground"],
     ["soft-success", "--success-soft", "--success-soft-foreground"],
     ["soft-warning", "--warning-soft", "--warning-soft-foreground"],
@@ -161,6 +163,9 @@ describe("badge and secondary typography contrast", () => {
               <Badge variant="soft-info" className="transition-none">
                 Info sample
               </Badge>
+              <Badge variant="soft-destructive" className="transition-none">
+                Soft destructive sample
+              </Badge>
               <Badge variant="soft-success" className="transition-none">
                 Soft success sample
               </Badge>
@@ -191,6 +196,7 @@ describe("badge and secondary typography contrast", () => {
         for (const [label, foreground] of [
           ["Filled info sample", "info-foreground"],
           ["Info sample", "info-soft-foreground"],
+          ["Soft destructive sample", "error-soft-foreground"],
           ["Soft success sample", "success-soft-foreground"],
           ["Soft warning sample", "warning-soft-foreground"],
           ["Muted sample", "foreground"],
