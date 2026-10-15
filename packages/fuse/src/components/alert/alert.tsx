@@ -161,7 +161,8 @@ function AlertTitle({ children, className, level = 3, ...props }: AlertTitleProp
 /**
  * Renders the alert body as a `div` without Item.Description's two-line clamp, so it can
  * hold full instructions, paragraphs and lists. Its text follows document density, 14px dense
- * and 16px comfortable, at regular weight. Render it as a direct child of `Alert.Root`, as
+ * and 16px comfortable, at regular weight, and takes the variant's text colour from
+ * `Alert.Root`, the same colour as the title. Render it as a direct child of `Alert.Root`, as
  * `Alert.Title`.
  */
 function AlertDescription({ className, ...props }: AlertDescriptionProps): ReactElement {

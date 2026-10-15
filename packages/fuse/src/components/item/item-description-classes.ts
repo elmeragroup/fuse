@@ -1,8 +1,8 @@
 /**
  * Item.Description class string without the two-line clamp. Item.Description adds
  * `line-clamp-2`; Alert.Description renders it unclamped on a `div` so an alert can
- * carry full instructions, lists and paragraphs, and swaps its size for the density's
- * `--label-text`.
+ * carry full instructions, lists and paragraphs, swaps its size for the density's
+ * `--label-text`, and swaps its muted colour for the alert's own text colour.
  * Item.Description and SelectionItem.Description render a `p`, so the string resets block
  * margins: a host without Tailwind's preflight would keep the user agent's 1em above and below,
  * and the content column's gap would no longer be the only space around the description.

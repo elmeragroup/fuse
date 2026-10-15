@@ -56,7 +56,7 @@ describe("alertVariants", () => {
     expect(slots.icon()).toContain("block");
     expect(slots.icon()).toContain("size-5");
     expect(slots.icon()).toContain("shrink-0");
-    expect(slots.description()).toContain("text-foreground");
+    expect(slots.description()).toContain("text-inherit");
     expect(slots).not.toHaveProperty("content");
     expect(slots).not.toHaveProperty("title");
   });
@@ -95,6 +95,16 @@ describe("alertVariants", () => {
     expect(resolved).not.toContain("warning-accent");
     expect(resolved).not.toContain("bg-destructive/10");
     expect(resolved).not.toMatch(RAW_PALETTE_RE);
+  });
+
+  it("leaves the description's colour to the variant's base in every variant", () => {
+    for (const variant of VARIANTS) {
+      const description = alertVariants({ variant }).description().split(" ");
+      expect(description, variant).toContain("text-inherit");
+      // No colour of its own: a forced `text-foreground` put the body off the title's colour on
+      // the info, warning and destructive fills.
+      expect(description, variant).not.toContain("text-foreground");
+    }
   });
 });
 

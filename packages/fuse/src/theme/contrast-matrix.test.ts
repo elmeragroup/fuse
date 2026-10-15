@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 
+import * as Oklch from "@elmeragroup/color/oklch";
 import { getOrThrow } from "@elmeragroup/color/result";
+import * as Srgb from "@elmeragroup/color/srgb";
 import * as Wcag from "@elmeragroup/color/wcag";
 
 import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
 import { buildContrastMatrix, contrastRatio, TEXT_GRADE_PAIRS } from "./contrast";
 import { resolveThemeCatalog } from "./resolve-theme-catalog";
+import { tokenOklch } from "./token-color";
 import type { TokenName } from "./tokens/contract";
 import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
 import type { ThemeInput } from "./tokens/themes";
@@ -40,6 +43,20 @@ const FEATURE_TEXT_PAIRS = [
   ["feature-foreground", "feature"],
   ["feature-foreground", "feature-bright"],
 ] as const;
+
+/**
+ * Text on an alert's translucent status fill: `[text role, tint role]`. The destructive and
+ * success Alert fill `bg-<status>/5` over whatever surface holds the alert, and both the title
+ * and the body take the variant's text role: `error` on the destructive tint and `foreground`
+ * on the success tint. The info and warning fills are opaque soft roles in TEXT_GRADE_PAIRS.
+ */
+const ALERT_TINT_TEXT_PAIRS = [
+  ["error", "error"],
+  ["foreground", "success"],
+] as const;
+
+/** The alpha of an alert's status tint, Tailwind's `/5`. */
+const ALERT_TINT_ALPHA = 0.05;
 
 /** The surfaces a chart, syntax or control role must separate itself from. */
 const CONTROL_SURFACES = ["background", "card", "card-soft"] as const;
@@ -223,6 +240,33 @@ describe("contrast matrix", () => {
               contrastRatio(tokens[foreground], tokens[background]),
               `${scheme} ${slug} ${foreground}/${background}`
             ).toBeGreaterThanOrEqual(policy.floor);
+          }
+        }
+      }
+    }
+  });
+
+  it("holds alert text at 4.5:1 on its 5% status tint over every surface, theme and scheme", () => {
+    for (const scheme of ["light", "dark"] as const) {
+      for (const theme of LEGAL_THEMES) {
+        const tokens = composeTheme(theme, scheme);
+        for (const [text, tint] of ALERT_TINT_TEXT_PAIRS) {
+          const tintColor = Oklch.toSrgb(tokenOklch(tokens[tint]));
+          for (const surface of CONTROL_SURFACES) {
+            // The browser paints `color-mix(in oklab, <tint> 5%, transparent)`, the tint at 5%
+            // alpha, and composites it over the surface in sRGB.
+            const fill = Srgb.compositeOver(
+              getOrThrow(
+                Srgb.make({ r: tintColor.r, g: tintColor.g, b: tintColor.b, alpha: ALERT_TINT_ALPHA })
+              ),
+              Oklch.toSrgb(tokenOklch(tokens[surface]))
+            );
+            expect
+              .soft(
+                getOrThrow(Wcag.contrastRatio(Oklch.toSrgb(tokenOklch(tokens[text])), fill)),
+                `${scheme} ${themeSlug(theme)} ${text} on ${tint}/5 over ${surface}`
+              )
+              .toBeGreaterThanOrEqual(4.5);
           }
         }
       }
