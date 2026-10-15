@@ -11,9 +11,13 @@ export const alertVariants = tv({
   slots: {
     base: "relative",
     icon: "block size-5 shrink-0 text-foreground",
+    // The body takes the label text, `--label-text`, at `leading-normal`, as SelectionItem's
+    // description does: 14px dense and 16px comfortable. The size carries the line height as its
+    // `/normal` modifier, because tailwind-merge drops a line height that comes before a font size.
     // Zeroes its blocks' own block margins and puts 8px between consecutive blocks, twice the
     // title's 4px gap; the selectors live in fuse.css.
-    description: "text-foreground alert-description-block:my-0 alert-description-gap:mt-2",
+    description:
+      "text-(length:--label-text)/normal text-foreground alert-description-block:my-0 alert-description-gap:mt-2",
     button: "",
   },
   variants: {

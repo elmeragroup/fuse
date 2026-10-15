@@ -16,6 +16,7 @@ import {
   computedContrast,
   cssVarColor,
   headingNamed,
+  LABEL,
   px,
   renderThemed,
   roleNamed,
@@ -26,8 +27,10 @@ import {
   textNamed,
 } from "../../../test/themed-browser-render";
 import { DENSITIES } from "../../theme/density";
+import { PART_DENSITY } from "../../theme/tokens/density-roles";
 import { LEGAL_THEMES, themeSlug } from "../../theme/tokens/themes";
 import { Badge } from "../badge/badge";
+import { Item } from "../item";
 import { PopoverContent, PopoverRoot, PopoverTrigger } from "../popover/popover";
 import { Alert } from "./alert";
 
@@ -603,6 +606,88 @@ describe("Alert", () => {
           .toBeGreaterThanOrEqual(AA_TEXT_CONTRAST);
       }
     }
+  });
+});
+
+/**
+ * A rendered part's `PART_DENSITY` role: the first override key of its slot, in table order, that
+ * the part matches (the slot followed by a selector suffix starting with `[` or `:`), else the
+ * slot's own key.
+ */
+function declaredRole(element: Element): string | undefined {
+  const slot = element.getAttribute("data-slot") ?? "";
+  const entries = Object.entries(PART_DENSITY);
+  const override = entries.find(([key]) => {
+    const suffix = key.slice(slot.length);
+    return key.startsWith(slot) && /^[[:]/u.test(suffix) && element.matches(`[data-slot="${slot}"]${suffix}`);
+  });
+  return (override ?? entries.find(([key]) => key === slot))?.[1];
+}
+
+describe("Alert text size", () => {
+  it("sets the title and body in the label text at each density, the title medium and the body regular", () => {
+    for (const density of DENSITIES) {
+      stampDensity(density);
+      const { unmount } = renderThemed(
+        <Alert.Root>
+          <Alert.Title>Switch scheduled</Alert.Title>
+          <Alert.Description>The switch completes next month.</Alert.Description>
+        </Alert.Root>
+      );
+      const title = getComputedStyle(headingNamed("Switch scheduled", 3));
+      const description = getComputedStyle(descriptionIn(alertNamed("default")));
+      const { font } = LABEL[density];
+      // 14px dense and 16px comfortable; the title at Tailwind's snug 1.375, the body at normal 1.5.
+      expect(px(title.fontSize), density).toBe(font);
+      expect(px(title.lineHeight), density).toBeCloseTo(font * 1.375, 2);
+      expect(title.fontWeight, density).toBe("500");
+      expect(px(description.fontSize), density).toBe(font);
+      expect(px(description.lineHeight), density).toBeCloseTo(font * 1.5, 2);
+      expect(description.fontWeight, density).toBe("400");
+      unmount();
+    }
+  });
+
+  it("declares the alert's own title, body and described icon media as label parts, and no Item's", () => {
+    renderThemed(
+      <>
+        <Alert.Root>
+          <Alert.Title>Switch scheduled</Alert.Title>
+          <Alert.Description>The switch completes next month.</Alert.Description>
+        </Alert.Root>
+        {/* A plain Item holding the public Alert.Icon keeps Item's fixed type. */}
+        <Item.Root>
+          <Item.Media variant="icon">
+            <Alert.Icon variant="info" />
+          </Item.Media>
+          <Item.Content>
+            <Item.Title>Item title</Item.Title>
+            <Item.Description>Item description</Item.Description>
+          </Item.Content>
+        </Item.Root>
+      </>
+    );
+    const alert = alertNamed("default");
+    // DOM audit: density roles key on data-slot, and Item.Media has no accessible role or name.
+    const [alertMedia, itemMedia] = document.querySelectorAll('[data-slot="item-media"]');
+    expect(alertMedia?.parentElement).toBe(alert);
+    expect(declaredRole(headingNamed("Switch scheduled", 3))).toBe("label");
+    expect(declaredRole(descriptionIn(alert))).toBe("label");
+    expect(alertMedia && declaredRole(alertMedia)).toBe("label");
+    expect(declaredRole(textNamed("Item title"))).toBe("fixed");
+    expect(declaredRole(textNamed("Item description"))).toBe("fixed");
+    expect(itemMedia && declaredRole(itemMedia)).toBe("fixed");
+  });
+
+  it("keeps a title-only alert's icon media fixed, since it centres on the row", () => {
+    renderThemed(
+      <Alert.Root>
+        <Alert.Title>Saved</Alert.Title>
+      </Alert.Root>
+    );
+    // DOM audit: density roles key on data-slot, and Item.Media has no accessible role or name.
+    const media = alertNamed("default").querySelector('[data-slot="item-media"]');
+    expect(media && declaredRole(media)).toBe("fixed");
   });
 });
 

@@ -52,7 +52,8 @@ const SIZED_FAMILIES = [
  *   A row keeps 14/20 text at both densities, so `2 × row-py + 20px` is `row-h`, and a wrapped
  *   row grows by its leading. `row-h-header` is a table head, `row-h` plus 8px.
  * - `label-text` and `label-leading` are the words that describe a control, such as a selection
- *   row's title and description. Dense matches `text-sm`, and comfortable takes the
+ *   row's title and description, and the text of a notice set beside the controls, such as an
+ *   Alert's title and body. Dense matches `text-sm`, and comfortable takes the
  *   customer-facing reference radio card's 16px, a step below the 18px field and button text.
  */
 const SINGLE_FAMILIES = [

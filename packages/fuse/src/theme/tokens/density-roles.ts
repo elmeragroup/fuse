@@ -220,9 +220,16 @@ export const PART_DENSITY = {
   "item-group[data-direction=vertical]": "layout",
   "item-separator": "fixed",
   "item-listitem": "layout",
+  // Alert.Root's icon media beside a description is one line of its title tall, a line of the
+  // label text: the same described-row condition as Item.Media's own line rule.
+  "item-media:where([data-alert]:has(> [data-slot=item-content] > [data-slot=item-description]) > *)":
+    "label",
   "item-media": "fixed",
   "item-content": "layout",
+  // Alert.Title and Alert.Description read the label text in Alert.Root's content.
+  "item-title:where([data-alert] > [data-slot=item-content] > *)": "label",
   "item-title": "fixed",
+  "item-description:where([data-alert] > [data-slot=item-content] > *)": "label",
   "item-description": "fixed",
   "item-actions": "layout",
   // SelectionItem.Actions is one first line of its row tall, a line of the label text.

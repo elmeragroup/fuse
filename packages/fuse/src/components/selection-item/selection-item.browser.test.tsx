@@ -26,7 +26,6 @@ import {
 } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme";
 import { DENSITIES } from "../../theme/density";
-import { Alert } from "../alert/alert";
 import { Badge } from "../badge/badge";
 import { CheckboxCard } from "../checkbox-card/checkbox-card";
 import { Checkbox as UiCheckbox, CheckboxGroup, CheckboxItemGroup } from "../checkbox/checkbox";
@@ -1177,24 +1176,20 @@ describe("selection row type", () => {
     }
   );
 
-  it("leaves Item and Alert titles and descriptions at text-sm when comfortable", () => {
+  // Alert's title and description follow density through the label text; alert.browser.test.tsx
+  // covers them.
+  it("leaves Item titles and descriptions at text-sm when comfortable", () => {
     stampDensity("comfortable");
     renderThemed(
-      <>
-        <Item.Root>
-          <Item.Content>
-            <Item.Title>Item title</Item.Title>
-            <Item.Description>Item description</Item.Description>
-          </Item.Content>
-        </Item.Root>
-        <Alert.Root>
-          <Alert.Title>Alert title</Alert.Title>
-          <Alert.Description>Alert description</Alert.Description>
-        </Alert.Root>
-      </>
+      <Item.Root>
+        <Item.Content>
+          <Item.Title>Item title</Item.Title>
+          <Item.Description>Item description</Item.Description>
+        </Item.Content>
+      </Item.Root>
     );
 
-    for (const text of ["Item title", "Item description", "Alert title", "Alert description"]) {
+    for (const text of ["Item title", "Item description"]) {
       expect(fontAndLeading(textNamed(text))[0], text).toBe(14);
     }
   });

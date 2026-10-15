@@ -8,7 +8,7 @@ Every part now has a density role, and density changes every part that has one. 
 - `control`: an interactive single-line box.
 - `row`: one line of a collection.
 - `surface`: a shell that pads content, or a stack that spaces groups.
-- `label`: the words that describe a control.
+- `label`: the words that describe a control, or a notice's text beside the controls.
 - `layout`: sized by its children.
 - `fixed`: the same at both densities.
 
