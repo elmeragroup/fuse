@@ -55,10 +55,11 @@ export default function TokensPage(): ReactElement {
         Every part declares a density role, which names the metrics it reads. A <strong>control</strong> is an
         interactive single-line box, a <strong>row</strong> one line of a collection, a{" "}
         <strong>surface</strong> a shell that pads content or a stack that spaces groups, and a{" "}
-        <strong>label</strong> the words that describe a control. A <strong>layout</strong> part is sized by
-        its children and a <strong>fixed</strong> part is identical at both densities. A row keeps its text
-        size, so it grows only in height and padding, and a gap between one part&apos;s own pieces stays
-        fixed. The docs density coverage test checks every rendered part against its role.
+        <strong>label</strong> the words that describe a control, or the text of a notice beside the controls.
+        A <strong>layout</strong> part is sized by its children and a <strong>fixed</strong> part is identical
+        at both densities. A row keeps its text size, so it grows only in height and padding, and a gap
+        between one part&apos;s own pieces stays fixed. The docs density coverage test checks every rendered
+        part against its role.
       </p>
       <p>
         Button pads its labels with its own <code>--control-px-button-*</code> and{" "}

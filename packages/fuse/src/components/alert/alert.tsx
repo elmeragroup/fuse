@@ -36,6 +36,18 @@ type AlertActionProps =
       actionLabel?: never;
     };
 
+// An alert's text takes the label text, `--label-text`, so it follows document density as
+// SelectionItem's rows do: 14px dense and 16px comfortable. The title keeps Item.Title's
+// `font-medium` and `leading-snug`, written as the size's `/snug` modifier because tailwind-merge
+// drops a line height that comes before a font size. The body's size is the recipe's
+// `description` slot.
+const ALERT_TITLE_TYPE = cn("text-(length:--label-text)/snug");
+
+// Beside a description Item.Media is one title line tall and centres the glyph on it. Item sizes
+// that line for Item.Title's fixed `text-sm`; the alert title reads `--label-text`, so the media
+// line does too. It replaces Item.Media's own `item-described:` value of the same property.
+const ALERT_MEDIA_LINE = cn("item-described:[--item-media-line:calc(var(--label-text)*var(--leading-snug))]");
+
 const ALERT_ICONS = {
   default: Info,
   warning: Warning,
@@ -98,8 +110,15 @@ function AlertRoot({
   const { base, button } = alertVariants({ variant });
 
   return (
-    <ItemRootElement {...props} role={role} variant="outline" size="sm" className={cn(base(), className)}>
-      <ItemMedia variant="icon">
+    <ItemRootElement
+      {...props}
+      role={role}
+      // Marks the alert's own Item parts, which PART_DENSITY gives the label role.
+      data-alert=""
+      variant="outline"
+      size="sm"
+      className={cn(base(), className)}>
+      <ItemMedia variant="icon" className={ALERT_MEDIA_LINE}>
         <AlertIcon variant={variant} />
       </ItemMedia>
       <ItemContent>{children}</ItemContent>
@@ -121,11 +140,19 @@ function AlertIcon({ variant, className, ...props }: AlertIconProps): ReactEleme
   return <Glyph data-slot="alert-icon" className={cn(icon(), className)} {...props} aria-hidden="true" />;
 }
 
+/**
+ * The alert's heading, an `h3` unless `level` says otherwise. Its text follows document density,
+ * 14px dense and 16px comfortable, at `font-medium` so it stands apart from the body. Render it
+ * as a direct child of `Alert.Root`: the density catalog finds the alert's text parts there.
+ */
 function AlertTitle({ children, className, level = 3, ...props }: AlertTitleProps): ReactElement {
   const TitleTag = `h${level}` as const;
 
   return (
-    <TitleTag data-slot="item-title" className={cn(ITEM_TITLE_CLASSES, className)} {...props}>
+    <TitleTag
+      data-slot="item-title"
+      className={cn(ITEM_TITLE_CLASSES, ALERT_TITLE_TYPE, className)}
+      {...props}>
       {children}
     </TitleTag>
   );
@@ -133,7 +160,9 @@ function AlertTitle({ children, className, level = 3, ...props }: AlertTitleProp
 
 /**
  * Renders the alert body as a `div` without Item.Description's two-line clamp, so it can
- * hold full instructions, paragraphs and lists.
+ * hold full instructions, paragraphs and lists. Its text follows document density, 14px dense
+ * and 16px comfortable, at regular weight. Render it as a direct child of `Alert.Root`, as
+ * `Alert.Title`.
  */
 function AlertDescription({ className, ...props }: AlertDescriptionProps): ReactElement {
   const { description } = alertVariants();

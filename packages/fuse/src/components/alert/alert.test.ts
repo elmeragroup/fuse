@@ -76,6 +76,13 @@ describe("alertVariants", () => {
     }
   });
 
+  it("sizes the description with the label text in every variant", () => {
+    for (const variant of VARIANTS) {
+      const description = alertVariants({ variant }).description().split(" ");
+      expect(description, variant).toContain("text-(length:--label-text)/normal");
+    }
+  });
+
   it("carries no destructive token classes, warning-accent, raw palette, or dark classes", () => {
     const resolved = VARIANTS.flatMap((variant) => {
       const slots = alertVariants({ variant });
