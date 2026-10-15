@@ -4,8 +4,8 @@
  */
 
 import { Effect, FileSystem, Layer, Option, Path, Ref, Stdio, Terminal } from "effect";
-import { CliOutput, Command } from "effect/unstable/cli";
-import { ChildProcessSpawner } from "effect/unstable/process";
+import { CliOutput, Command } from "effect/cli";
+import { ChildProcessSpawner } from "effect/process";
 
 import { shots } from "../src/cli.ts";
 import type { ShotOptions } from "../src/options.ts";

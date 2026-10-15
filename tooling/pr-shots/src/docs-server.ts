@@ -19,7 +19,7 @@
 
 import { Console, Context, Duration, Effect, Layer, Option, Schema, Stream } from "effect";
 import type { Scope } from "effect";
-import { ChildProcess, ChildProcessSpawner } from "effect/unstable/process";
+import { ChildProcess, ChildProcessSpawner } from "effect/process";
 import { readFile, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import path from "node:path";

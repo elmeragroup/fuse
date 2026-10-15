@@ -1,5 +1,6 @@
 import { assert, describe, it } from "@effect/vitest";
 import { Cause, ConfigProvider, Effect, Fiber, Layer, Result, Schema, Tracer } from "effect";
+import { HttpClient } from "effect/http";
 import { TestClock } from "effect/testing";
 
 import { FigmaApi, FileKey } from "../src/figma-api.ts";
@@ -49,8 +50,10 @@ describe("FigmaApi and the token", () => {
       const figma = new InMemoryFigma(FILE_KEY, TOKEN);
       const { spans, tracer } = recordingTracer();
 
+      // Header capture is opt-in; a host that records every header must still see the mask.
       yield* syncFile(FILE_KEY, palette("destructive")).pipe(
         Effect.provide(figmaApi(figma)),
+        Effect.provideService(HttpClient.TracerHeaderFilter, () => true),
         Effect.withTracer(tracer)
       );
 

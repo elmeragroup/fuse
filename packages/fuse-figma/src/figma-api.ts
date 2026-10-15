@@ -5,8 +5,8 @@
  */
 
 import { Config, Context, Duration, Effect, Layer, Option, Redacted, Schedule, Schema } from "effect";
-import { Headers, HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http";
-import type { HttpClientError } from "effect/unstable/http";
+import { Headers, HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http";
+import type { HttpClientError } from "effect/http";
 
 import { CollectionId, ModeId, VariableId } from "./file-variables.ts";
 import type {
@@ -95,8 +95,9 @@ export class FigmaApi extends Context.Service<
             HttpClientRequest.acceptJson
           )
         ),
-        // The client records every request header on its span and masks only the names in
-        // `CurrentRedactedNames`, whose defaults do not include Figma's token header.
+        // A host that opts into span header capture (`HttpClient.TracerHeaderFilter`) gets every
+        // request header recorded, masked only by `CurrentRedactedNames`, whose defaults do not
+        // include Figma's token header.
         HttpClient.transform((response) =>
           response.pipe(
             Effect.updateService(Headers.CurrentRedactedNames, (names) => [...names, TOKEN_HEADER])

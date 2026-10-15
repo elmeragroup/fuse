@@ -3,7 +3,7 @@
  */
 
 import { Context, Duration, Effect, Layer, Schema, Stream } from "effect";
-import { ChildProcess, ChildProcessSpawner } from "effect/unstable/process";
+import { ChildProcess, ChildProcessSpawner } from "effect/process";
 
 /** What a `gh` call was for. */
 export type GhOperation = "read the PR body" | "edit the PR";

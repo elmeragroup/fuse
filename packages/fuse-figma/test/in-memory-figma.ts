@@ -9,8 +9,8 @@
  */
 
 import { Effect, Layer, Schema } from "effect";
-import { HttpClient, HttpClientError, HttpClientResponse } from "effect/unstable/http";
-import type { HttpClientRequest } from "effect/unstable/http";
+import { HttpClient, HttpClientError, HttpClientResponse } from "effect/http";
+import type { HttpClientRequest } from "effect/http";
 
 type Rgba = { r: number; g: number; b: number; a: number };
 type Alias = { type: "VARIABLE_ALIAS"; id: string };
