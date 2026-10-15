@@ -4,6 +4,7 @@ import { tv } from "tailwind-variants";
 
 import { LocaleProvider } from "@elmeragroup/fuse/theme";
 
+import { DocsPalette } from "./docs-palette";
 import { Header } from "./header";
 import { PreviewThemeProvider } from "./preview-theme";
 import { QuickNav } from "./quick-nav";
@@ -29,16 +30,18 @@ export function DocsShell({ children }: DocsShellProps): ReactElement {
   return (
     <PreviewThemeProvider>
       <LocaleProvider locale="en-US">
-        <div className={root()} data-docs-root>
-          <Header />
-          <div className={columns()}>
-            <SideNav />
-            <main className={main()} id={MAIN_CONTENT_ID}>
-              {children}
-            </main>
-            <QuickNav />
+        <DocsPalette>
+          <div className={root()} data-docs-root>
+            <Header />
+            <div className={columns()}>
+              <SideNav />
+              <main className={main()} id={MAIN_CONTENT_ID}>
+                {children}
+              </main>
+              <QuickNav />
+            </div>
           </div>
-        </div>
+        </DocsPalette>
       </LocaleProvider>
     </PreviewThemeProvider>
   );

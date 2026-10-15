@@ -34,13 +34,15 @@ const studioToolbar = tv({
 
 const styles = studioToolbar();
 
-const TOOLS = [
-  { value: "select", label: "Select", key: "V", Glyph: PointerGlyph },
-  { value: "hand", label: "Hand", key: "H", Glyph: HandGlyph },
+/** The canvas tools, in the bar's order. The site palette lists them too, matching `keywords`. */
+export const TOOLS = [
+  { value: "select", label: "Select", key: "V", keywords: ["pointer"], Glyph: PointerGlyph },
+  { value: "hand", label: "Hand", key: "H", keywords: ["pan"], Glyph: HandGlyph },
 ] as const satisfies readonly {
   value: StudioTool;
   label: string;
   key: string;
+  keywords: readonly string[];
   Glyph: (props: SVGProps<SVGSVGElement>) => ReactElement;
 }[];
 

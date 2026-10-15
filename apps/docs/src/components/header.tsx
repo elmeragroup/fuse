@@ -7,7 +7,7 @@ import { tv } from "tailwind-variants";
 
 import { STUDIO_HEADER_LINK } from "../studio/registration";
 import { usePreviewTheme } from "./preview-theme";
-import { SearchPalette } from "./search-palette";
+import { SitePaletteTrigger } from "./site-palette/site-palette";
 import { ThemePicker } from "./theme-picker";
 
 const header = tv({
@@ -35,7 +35,7 @@ export function Header(): ReactElement {
           {STUDIO_HEADER_LINK.label}
         </Link>
         <ThemePicker theme={theme} onThemeChange={setTheme} />
-        <SearchPalette />
+        <SitePaletteTrigger />
       </div>
     </header>
   );

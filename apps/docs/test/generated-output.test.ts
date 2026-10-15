@@ -16,6 +16,7 @@ import { readRscStatus } from "../scripts/lib/docs-inspection.ts";
 import { parseComponentPage } from "../scripts/lib/page-source.ts";
 import type { ComponentPageSource } from "../scripts/lib/page-source.ts";
 import { repoRelative, repoRoot } from "../scripts/lib/paths.ts";
+import { COMPONENT_OUTLINES } from "../src/generated/component-outlines";
 import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import type { ComponentApiArtifact } from "../src/lib/docs-model";
 import { COMPONENT_INVENTORY } from "./component-inventory";
@@ -53,19 +54,8 @@ function declaredRsc(sourcePath: string): string {
   return readRscStatus(readFileSync(join(repoRoot, sourcePath), "utf8"));
 }
 
-/** The keys a manifest entry carries. Anything else would ship to the browser unreviewed. */
-const MANIFEST_ENTRY_KEYS = [
-  "demos",
-  "headings",
-  "lede",
-  "markdownUrl",
-  "partNames",
-  "slug",
-  "sourcePath",
-  "sourceUrl",
-  "title",
-  "tokens",
-];
+/** The keys a manifest entry carries. Anything else would reach the server's pages unreviewed. */
+const MANIFEST_ENTRY_KEYS = ["lede", "markdownUrl", "slug", "sourcePath", "sourceUrl", "title", "tokens"];
 
 describe("component page manifest", () => {
   it("covers every authored component page", () => {
@@ -76,16 +66,13 @@ describe("component page manifest", () => {
 
   it("carries page metadata only, with no demo source and no API data", () => {
     // The frame reads demo source from its file and the reference reads api.json, so
-    // neither travels through the manifest the browser downloads.
+    // neither travels through the manifest.
     const serialized = JSON.stringify(COMPONENT_PAGES);
     expect(serialized).not.toContain('"source"');
     expect(serialized).not.toContain('"props"');
     expect(serialized).not.toContain("use client");
     for (const entry of COMPONENT_PAGES) {
       expect(Object.keys(entry).toSorted(), entry.slug).toEqual(MANIFEST_ENTRY_KEYS);
-      // The API data the manifest carries is one TOC anchor per part, named exactly as the
-      // committed artifact names them.
-      expect(entry.partNames, entry.slug).toEqual(api(entry.slug).parts.map((part) => part.name));
     }
   });
 
@@ -127,35 +114,83 @@ describe("component page manifest", () => {
     }
   });
 
-  it("carries every demo the page renders into the manifest, in order, each with a unique URL-safe ID and a nonempty title", () => {
-    // Unit under test: the generator's copy of each page's demos into the manifest. Oracle:
-    // the parsed page. The parser itself is tested against literal pages in docs-pipeline.
-    for (const entry of COMPONENT_PAGES) {
-      const authored = authoredPage(entry.slug).parsed;
-      expect(
-        entry.demos.map((demo) => demo.id),
-        entry.slug
-      ).toEqual(authored.demos.map((demo) => demo.id));
-      expect(
-        entry.demos.map((demo) => demo.title),
-        entry.slug
-      ).toEqual(authored.demos.map((demo) => demo.title));
-      expect(new Set(entry.demos.map((demo) => demo.id)).size, entry.slug).toBe(entry.demos.length);
-      for (const demo of entry.demos) {
-        expect(demo.id, `${entry.slug}.${demo.id}`).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
-        expect(demo.title.trim(), `${entry.slug}.${demo.id}`).not.toBe("");
-      }
-    }
-  });
-
   it("reports per-part directives and the reviewed page RSC status", () => {
     for (const [slug, reviewed] of COMPONENT_INVENTORY) {
       // Each part's badge is the leading directive of the module that declares it.
       for (const part of api(slug).parts) {
         expect(part.rsc, `${slug} ${part.name}`).toBe(declaredRsc(part.sourcePath));
       }
-      // The page's own status appears on the markdown endpoint, not in the browser manifest.
+      // The page's own status appears on the markdown endpoint, not in the manifest.
       expect(endpoint(slug), slug).toContain(`- RSC: ${reviewed.rsc}`);
+    }
+  });
+});
+
+/** The keys a component outline carries. Anything else would ship to every surface unreviewed. */
+const OUTLINE_KEYS = ["demos", "hasTokens", "headings", "markdownUrl", "partNames", "slug", "title"];
+
+describe("component outlines", () => {
+  it("carries only the fields client code reads", () => {
+    for (const outline of COMPONENT_OUTLINES) {
+      expect(Object.keys(outline).toSorted(), outline.slug).toEqual(OUTLINE_KEYS);
+    }
+    // Both kinds of page are present, so the flag is checked in both directions below.
+    expect(new Set(COMPONENT_OUTLINES.map((outline) => outline.hasTokens))).toEqual(new Set([true, false]));
+  });
+
+  it("agrees with the full manifest on every page's identity and on whether it lists tokens", () => {
+    // Unit under test: the client outlines' identity fields and token flag. Oracle: the full
+    // manifest from the same generation run, which the server renders the same pages from.
+    expect(
+      COMPONENT_OUTLINES.map(({ slug, title, markdownUrl, hasTokens }) => ({
+        slug,
+        title,
+        markdownUrl,
+        hasTokens,
+      }))
+    ).toEqual(
+      COMPONENT_PAGES.map((entry) => ({
+        slug: entry.slug,
+        title: entry.title,
+        markdownUrl: entry.markdownUrl,
+        hasTokens: entry.tokens.length > 0,
+      }))
+    );
+  });
+
+  it("outlines each page's depth-2 headings, in page order", () => {
+    // Unit under test: the generator's copy of each page's TOC headings into the outline.
+    // Oracle: the parsed page. Deeper headings stay out of the TOC.
+    for (const outline of COMPONENT_OUTLINES) {
+      const authored = authoredPage(outline.slug).parsed;
+      expect(outline.headings, outline.slug).toEqual(
+        authored.headings
+          .filter((heading) => heading.depth === 2)
+          .map((heading) => ({ id: heading.id, title: heading.title }))
+      );
+    }
+  });
+
+  it("carries every demo the page renders into the outline, in order, each with a unique URL-safe ID and a nonempty title", () => {
+    // Unit under test: the generator's copy of each page's demos into the outline. Oracle:
+    // the parsed page's id and title pairs, compared whole so no demo field beyond them (its
+    // source, say) ships to the client. The parser itself is tested against literal pages in
+    // docs-pipeline.
+    for (const outline of COMPONENT_OUTLINES) {
+      const authored = authoredPage(outline.slug).parsed;
+      expect(outline.demos, outline.slug).toEqual(authored.demos.map(({ id, title }) => ({ id, title })));
+      expect(new Set(outline.demos.map((demo) => demo.id)).size, outline.slug).toBe(outline.demos.length);
+      for (const demo of outline.demos) {
+        expect(demo.id, `${outline.slug}.${demo.id}`).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+        expect(demo.title.trim(), `${outline.slug}.${demo.id}`).not.toBe("");
+      }
+    }
+  });
+
+  it("names one TOC anchor per API part, exactly as the committed api.json names them", () => {
+    // Unit under test: the outline's part names. Oracle: the committed API artifact.
+    for (const outline of COMPONENT_OUTLINES) {
+      expect(outline.partNames, outline.slug).toEqual(api(outline.slug).parts.map((part) => part.name));
     }
   });
 });

@@ -241,7 +241,7 @@ export function DashboardMain({ sheetOpen, onSheetOpenChange }: DashboardMainPro
             variant="ghost"
             size="icon-sm"
             aria-label="Search"
-            aria-keyshortcuts="Meta+K Control+K"
+            aria-keyshortcuts="/"
             className={styles.phoneSearch()}
             onClick={openPalette}>
             <MagnifyingGlass />

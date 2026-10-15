@@ -144,9 +144,9 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
   );
 
   // Where focus returns when the palette closes. Both openers run with focus inside the window:
-  // the palette's buttons live there, and its shortcut listens on the window's scope element.
-  // Control+K during the exit animation fires from the closing palette's own field, which the
-  // reopen remounts, so the control that opened it before stays the invoker.
+  // the palette's buttons live there, and its `/` shortcut listens on the window's scope element.
+  // An opening while focus is still in the closing palette keeps the control that opened it
+  // before as the invoker.
   const remember = useCallback(() => {
     const active = document.activeElement;
     if (palettePopup.current?.contains(active) === true) {
@@ -228,7 +228,8 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
   }, [scope, toggleSidebar]);
 
   // Single-key shortcuts are wired on the scope element, so they only ever fire while focus is
-  // inside the window and the rest of the landing keeps its keys.
+  // inside the window and the rest of the landing keeps its keys. ⌘K and Ctrl+K open the site's
+  // palette from anywhere, so this window's palette opens from its buttons and `/`.
   useEffect(() => {
     const element = scope.current;
     if (element === null) {
@@ -236,15 +237,6 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
     }
     const onKey = (event: globalThis.KeyboardEvent) => {
       if (event.defaultPrevented || event.altKey) {
-        return;
-      }
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        if (paletteOpen) {
-          setPaletteOpen(false);
-        } else {
-          openPalette();
-        }
         return;
       }
       if (event.metaKey || event.ctrlKey || isTypingTarget(event.target, OVERLAYS)) {
@@ -286,7 +278,7 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
     return () => {
       element.removeEventListener("keydown", onKey);
     };
-  }, [scope, paletteOpen, setPaletteOpen, openPalette, setNewOrderOpen]);
+  }, [scope, openPalette, setNewOrderOpen]);
 
   return (
     <DashboardContext value={api}>

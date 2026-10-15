@@ -324,10 +324,7 @@ locally because Fuse has no part for them. Replace
 each stand-in once Fuse ships the part.
 
 - Replace `app-shell/kbd.tsx` with Fuse's `Kbd` and `KbdGroup`, which now ship. The stand-in
-  draws the shortcut caps in the sidebar, tooltips and palette.
-- Replace `app-shell/command-palette.tsx` and the docs search in
-  `apps/docs/src/components/search-palette.tsx` with Fuse's `Command`, which now ships. Both
-  build a palette from `Dialog` and the ARIA combobox pattern.
+  draws the shortcut caps in the sidebar, the tooltips and the order detail.
 - Add a floating action bar for row selections. `app-shell/bulk-toolbar.tsx` positions its own
   `role="toolbar"` over the queues' list and over Order search's table.
 - Add a list and detail split that becomes a Sheet below a breakpoint. `app-shell/dashboard-main.tsx`

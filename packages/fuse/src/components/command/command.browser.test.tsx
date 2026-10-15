@@ -1,5 +1,5 @@
-import { lazy, Suspense, useRef, useState } from "react";
-import type { ComponentProps, ReactElement, ReactNode } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import type { ComponentProps, CSSProperties, ReactElement, ReactNode } from "react";
 
 import { Autocomplete } from "@base-ui/react";
 import { describe, expect, it, vi } from "vitest";
@@ -588,12 +588,17 @@ describe("Command", () => {
 
 const COMMANDS = ["New customer", "Open invoices", "Register meter reading"];
 
+type DialogPaletteProps = {
+  readonly onRun?: (command: string) => void;
+  readonly contentStyle?: CSSProperties;
+};
+
 /** The one-page palette in a dialog, with the search in the Root above the dialog's portal. */
-function DialogPalette({ onRun = () => undefined }: { onRun?: (command: string) => void }): ReactElement {
+function DialogPalette({ onRun = () => undefined, contentStyle }: DialogPaletteProps): ReactElement {
   return (
     <Command.Root items={COMMANDS}>
       <Command.Trigger>Open palette</Command.Trigger>
-      <Command.Content>
+      <Command.Content style={contentStyle}>
         <Command.Input />
         <Command.Empty />
         <Command.List>
@@ -614,11 +619,11 @@ function DialogPalette({ onRun = () => undefined }: { onRun?: (command: string) 
 }
 
 /** The paged palette in a dialog, with an uncontrolled stack. */
-function PagedDialogPalette(): ReactElement {
+function PagedDialogPalette({ contentStyle }: { contentStyle?: CSSProperties }): ReactElement {
   return (
     <Command.Root defaultPages={["home"]}>
       <Command.Trigger>Open palette</Command.Trigger>
-      <Command.Content>
+      <Command.Content style={contentStyle}>
         <EntryPages onRun={() => undefined} />
       </Command.Content>
     </Command.Root>
@@ -658,7 +663,7 @@ function EscapeBackPalette(): ReactElement {
           setStack(stack.slice(0, -1));
           return;
         }
-        if (!next) {
+        if (next) {
           setStack(["home"]);
         }
       }}>
@@ -884,6 +889,283 @@ describe("Command.Content", () => {
     await expect.element(page.getByRole("dialog", { name: "Pick a command" })).toBeInTheDocument();
     await userEvent.click(roleNamed("button", "Done"));
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
+  });
+});
+
+/** Stretches the close animation to a second, so a reopening lands before it ends. */
+const SLOW_EXIT: CSSProperties = { animationDuration: "1000ms" };
+
+/**
+ * A palette whose stack and first page's query the consumer controls, and sets back to the first
+ * page and an empty query each time the palette opens.
+ */
+function ResetOnOpenPalette(): ReactElement {
+  const [stack, setStack] = useState<string[]>(["home"]);
+  const [query, setQuery] = useState("");
+  return (
+    <Command.Root
+      pages={stack}
+      onPagesChange={setStack}
+      onOpenChange={(next) => {
+        if (next) {
+          setStack(["home"]);
+          setQuery("");
+        }
+      }}>
+      <Command.Trigger>Open palette</Command.Trigger>
+      <Command.Content style={SLOW_EXIT}>
+        <EntryPages onRun={() => undefined} held={{ value: query, onValueChange: setQuery }} />
+      </Command.Content>
+    </Command.Root>
+  );
+}
+
+/** Opens the palette with `reopen` while its close animation runs. */
+async function interruptClose(reopen: () => Promise<void> | void): Promise<void> {
+  const closing = roleNamed("dialog", "Command palette");
+  await userEvent.keyboard("{Escape}");
+  await expect.poll(() => closing.hasAttribute("data-ending-style")).toBe(true);
+  await reopen();
+  await expect.poll(() => closing.hasAttribute("data-open")).toBe(true);
+  // The same popup: the opening kept it from its close.
+  expect(roleNamed("dialog", "Command palette")).toBe(closing);
+}
+
+/**
+ * Closes the palette on Escape and opens it again from `trigger` while the close animation runs,
+ * then waits for the dialog to focus the input named `input`.
+ */
+async function reopenMidClose(trigger: HTMLElement, input = "Search commands"): Promise<void> {
+  // A DOM click, since the closing dialog's overlay still covers the trigger.
+  await interruptClose(() => {
+    trigger.click();
+  });
+  // The input is looked up on each poll, since the children mount fresh.
+  await expect.poll(() => document.activeElement === comboboxNamed(input)).toBe(true);
+}
+
+/** A button that counts its own clicks, as state a fresh mount sets back to zero. */
+function TallyButton(): ReactElement {
+  const [count, setCount] = useState(0);
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        setCount((current) => current + 1);
+      }}>
+      {`Tally ${String(count)}`}
+    </button>
+  );
+}
+
+describe("Command.Content reopened before its close ends", () => {
+  it("starts with an empty query and the first match highlighted, and keeps the trigger", async () => {
+    renderPalette(<DialogPalette contentStyle={SLOW_EXIT} />);
+    const trigger = roleNamed("button", "Open palette");
+    await openPalette();
+    await userEvent.keyboard("invoices");
+    await expect.poll(highlightedLabel).toBe("Open invoices");
+    await reopenMidClose(trigger);
+    expect(comboboxNamed("Search commands").value).toBe("");
+    await expect.poll(highlightedLabel).toBe("New customer");
+    // The reopening kept the trigger's element, which closing then returns focus to.
+    expect(trigger.isConnected).toBe(true);
+    await userEvent.keyboard("{Escape}");
+    await closedPalette();
+    expect(roleNamed("button", "Open palette")).toBe(trigger);
+    await expect.poll(() => document.activeElement).toBe(trigger);
+  });
+
+  it("highlights the first match again after the arrows moved it down an empty query", async () => {
+    renderPalette(<DialogPalette contentStyle={SLOW_EXIT} />);
+    const trigger = roleNamed("button", "Open palette");
+    await openPalette();
+    await userEvent.keyboard("{ArrowDown}{ArrowDown}");
+    await expect.poll(highlightedLabel).toBe("Register meter reading");
+    await reopenMidClose(trigger);
+    await expect.poll(highlightedLabel).toBe("New customer");
+  });
+
+  it("goes back to the first page of an uncontrolled stack, with an empty query", async () => {
+    renderPalette(<PagedDialogPalette contentStyle={SLOW_EXIT} />);
+    const trigger = roleNamed("button", "Open palette");
+    await openPalette("Commands");
+    await userEvent.keyboard("{Enter}");
+    await mountedInput("Customers");
+    await userEvent.keyboard("grace");
+    await expect.poll(highlightedLabel).toBe("Grace Hopper");
+    await reopenMidClose(trigger, "Commands");
+    expect(page.getByRole("combobox").elements()).toEqual([comboboxNamed("Commands")]);
+    expect(comboboxNamed("Commands").value).toBe("");
+    await expect.poll(highlightedLabel).toBe("Customers");
+  });
+
+  it("mounts a stateful child passed as Command.Content's children fresh", async () => {
+    renderPalette(
+      <Command.Root items={COMMANDS}>
+        <Command.Trigger>Open palette</Command.Trigger>
+        <Command.Content style={SLOW_EXIT}>
+          <Command.Input />
+          <TallyButton />
+        </Command.Content>
+      </Command.Root>
+    );
+    const trigger = roleNamed("button", "Open palette");
+    await openPalette();
+    await userEvent.click(roleNamed("button", "Tally 0"));
+    await expect.element(page.getByRole("button", { name: "Tally 1", exact: true })).toBeInTheDocument();
+    await interruptClose(() => {
+      trigger.click();
+    });
+    await expect.element(page.getByRole("button", { name: "Tally 0", exact: true })).toBeInTheDocument();
+  });
+
+  it("keeps the state of content a render element writes itself, as documented", async () => {
+    renderPalette(
+      <Command.Root items={COMMANDS}>
+        <Command.Trigger>Open palette</Command.Trigger>
+        <Command.Content
+          style={SLOW_EXIT}
+          render={
+            <div>
+              <Command.Input />
+              <TallyButton />
+            </div>
+          }
+        />
+      </Command.Root>
+    );
+    const trigger = roleNamed("button", "Open palette");
+    await openPalette();
+    await userEvent.click(roleNamed("button", "Tally 0"));
+    await expect.element(page.getByRole("button", { name: "Tally 1", exact: true })).toBeInTheDocument();
+    await interruptClose(() => {
+      trigger.click();
+    });
+    expect(roleNamed("button", "Tally 1")).toBeInstanceOf(HTMLButtonElement);
+  });
+
+  it("returns focus to the element that opened it, after an opening interrupted the close", async () => {
+    function ShortcutPalette(): ReactElement {
+      const [open, setOpen] = useState(false);
+      useEffect(() => {
+        const onKeyDown = (event: KeyboardEvent) => {
+          if (event.key === "k" && event.metaKey) {
+            event.preventDefault();
+            setOpen((current) => !current);
+          }
+        };
+        document.addEventListener("keydown", onKeyDown, { capture: true });
+        return () => {
+          document.removeEventListener("keydown", onKeyDown, { capture: true });
+        };
+      }, []);
+      return (
+        <>
+          <input aria-label="Notes" />
+          <Command.Root items={COMMANDS} open={open} onOpenChange={setOpen}>
+            <Command.Trigger>Open palette</Command.Trigger>
+            <Command.Content style={SLOW_EXIT}>
+              <Command.Input />
+            </Command.Content>
+          </Command.Root>
+        </>
+      );
+    }
+    renderPalette(<ShortcutPalette />);
+    const notes = roleNamed("textbox", "Notes");
+    notes.focus();
+    await userEvent.keyboard("{Meta>}k{/Meta}");
+    await expect.poll(() => document.activeElement === comboboxNamed("Search commands")).toBe(true);
+    await interruptClose(() => userEvent.keyboard("{Meta>}k{/Meta}"));
+    await expect.poll(() => document.activeElement === comboboxNamed("Search commands")).toBe(true);
+    await userEvent.keyboard("{Escape}");
+    await closedPalette();
+    await expect.poll(() => document.activeElement).toBe(notes);
+  });
+
+  it("highlights the first match of a controlled stack and query the consumer resets on opening", async () => {
+    renderPalette(<ResetOnOpenPalette />);
+    const trigger = roleNamed("button", "Open palette");
+    await openPalette("Commands");
+    await userEvent.keyboard("{ArrowDown}{ArrowDown}");
+    await expect.poll(highlightedLabel).toBe("Register meter reading");
+    await reopenMidClose(trigger, "Commands");
+    await expect.poll(highlightedLabel).toBe("Customers");
+  });
+});
+
+/** A render target that calls its children as a function, as some layout components do. */
+function CallingShell({
+  children,
+  ...props
+}: Omit<ComponentProps<"div">, "children"> & { children: () => ReactNode }): ReactElement {
+  return <div {...props}>{children()}</div>;
+}
+
+/** A render target with default children, which it shows when nothing replaces them. */
+function DefaultSearchShell({ children = <Command.Input />, ...props }: ComponentProps<"div">): ReactElement {
+  return <div {...props}>{children}</div>;
+}
+
+describe("Command.Content render composition", () => {
+  it("passes a render element's function children through untouched", async () => {
+    renderPalette(
+      <Command.Root items={COMMANDS}>
+        <Command.Trigger>Open palette</Command.Trigger>
+        <Command.Content render={<CallingShell>{() => <Command.Input />}</CallingShell>} />
+      </Command.Root>
+    );
+    await openPalette();
+  });
+
+  it("keeps a render target's default children when Command.Content has none", async () => {
+    renderPalette(
+      <Command.Root items={COMMANDS}>
+        <Command.Trigger>Open palette</Command.Trigger>
+        <Command.Content render={<DefaultSearchShell />} />
+      </Command.Root>
+    );
+    await openPalette();
+  });
+});
+
+describe("Command.Root without Command.Content", () => {
+  it("keeps an inline palette's query when its controlled open state flips, since no dialog closes", async () => {
+    function ToggledInlinePalette(): ReactElement {
+      const [open, setOpen] = useState(true);
+      return (
+        <>
+          <button
+            type="button"
+            onClick={() => {
+              setOpen((current) => !current);
+            }}>
+            Flip open
+          </button>
+          <Command.Root items={COMMANDS} open={open}>
+            <Command.Input />
+            <Command.List>
+              {(command: string) => (
+                <Command.Item key={command} value={command}>
+                  {command}
+                </Command.Item>
+              )}
+            </Command.List>
+          </Command.Root>
+        </>
+      );
+    }
+    renderPalette(<ToggledInlinePalette />);
+    const input = comboboxNamed("Search commands");
+    input.focus();
+    await userEvent.keyboard("invoices");
+    await expect.poll(() => input.value).toBe("invoices");
+    const flip = roleNamed("button", "Flip open");
+    await userEvent.click(flip);
+    await userEvent.click(flip);
+    await expect.poll(highlightedLabel).toBe("Open invoices");
+    expect(comboboxNamed("Search commands").value).toBe("invoices");
   });
 });
 

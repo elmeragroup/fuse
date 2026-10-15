@@ -17,7 +17,8 @@ import { useStudio } from "./studio-state";
 
 const studioThemePicker = tv({
   slots: {
-    trigger: "sm:max-w-48 max-w-36 min-w-0",
+    // Shrinks, unlike a Button, so the truncated summary gives up the room a phone's bar lacks.
+    trigger: "sm:max-w-48 max-w-36 min-w-0 shrink",
     summary: "truncate",
     content: "w-60",
     help: "text-xs px-3 pt-1 pb-2 leading-4.5 text-muted-foreground",

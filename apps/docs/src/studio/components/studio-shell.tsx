@@ -23,6 +23,7 @@ import type { ColorScheme } from "@elmeragroup/fuse/theme";
 import { Toast } from "@elmeragroup/fuse/toast";
 
 import { SingleToggle } from "../../components/single-toggle";
+import { SitePaletteDialog, SitePaletteTrigger } from "../../components/site-palette/site-palette";
 import { HOME_PAGE } from "../../lib/pages";
 import { COLOR_SCHEME_LABELS } from "../../lib/theme";
 import { STUDIO_PAGES } from "../lib/pages";
@@ -32,6 +33,7 @@ import { StudioCanvas } from "./studio-canvas";
 import { useDesktop } from "./studio-desktop";
 import { StudioInspector } from "./studio-inspector";
 import { StudioNavigator } from "./studio-navigator";
+import { StudioToolbarCommands } from "./studio-palette";
 import { studioToasts } from "./studio-persistence";
 import { INSPECTOR_ID, regionProps, StudioSkipLinks, useRegionCycle } from "./studio-regions";
 import { useStudio } from "./studio-state";
@@ -190,6 +192,7 @@ export function StudioShell({ children }: { children: ReactNode }): ReactElement
           <span className={styles.page()}>{page?.label}</span>
         </p>
         <div className={styles.end()}>
+          <SitePaletteTrigger />
           <StudioThemePicker />
           <StudioActions />
           <div className={styles.desktop()}>
@@ -218,7 +221,10 @@ export function StudioShell({ children }: { children: ReactNode }): ReactElement
         <Toast.Provider toastManager={studioToasts}>
           <Toast.Viewport />
         </Toast.Provider>
+        {/* The palette portals into this scope, so it wears the chrome's scheme too. */}
+        <SitePaletteDialog />
       </ChromeScope>
+      <StudioToolbarCommands />
       <ChromeScope
         render={<aside aria-label="Pages and layers" />}
         className={styles.panel({ side: "left" })}

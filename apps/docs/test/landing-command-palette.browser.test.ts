@@ -1,6 +1,7 @@
 import type { Locator, Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
+import { isHighlighted } from "./command-page";
 import { DESKTOP_VIEWPORT } from "./demo-page";
 import {
   PHONE_VIEWPORT,
@@ -17,26 +18,24 @@ const { openLanding } = launchLandingSuite({ search: DASHBOARD_FIRST });
 /** A query that matches several orders, so the active option can move off the first. */
 const MULTI_RESULT_QUERY = "StrømSmart";
 
-/** Searches the open palette, moves the active option to the third result and checks it. */
+/** Searches the open palette, moves the highlight to the third result and checks it. */
 async function searchAndMoveActive(page: Page, palette: Locator): Promise<void> {
   const field = palette.getByRole("combobox");
   await field.fill(MULTI_RESULT_QUERY);
   const third = palette.getByRole("option").nth(2);
   await third.waitFor();
+  await expect.poll(async () => isHighlighted(palette.getByRole("option").first())).toBe(true);
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("ArrowDown");
-  expect(await third.getAttribute("aria-selected")).toBe("true");
-  expect(await field.getAttribute("aria-activedescendant")).toBe(await third.getAttribute("id"));
+  await expect.poll(async () => isHighlighted(third)).toBe(true);
 }
 
-/** Asserts an empty field with the first result active, as every opening starts. */
+/** Asserts an empty field with the first result highlighted, as every opening starts. */
 async function expectFreshSearch(palette: Locator): Promise<void> {
   const field = palette.getByRole("combobox");
   await field.waitFor();
   expect(await field.inputValue()).toBe("");
-  const first = palette.getByRole("option").first();
-  expect(await first.getAttribute("aria-selected")).toBe("true");
-  expect(await field.getAttribute("aria-activedescendant")).toBe(await first.getAttribute("id"));
+  await expect.poll(async () => isHighlighted(palette.getByRole("option").first())).toBe(true);
 }
 
 describe("landing Dashboard command palette", () => {
@@ -50,8 +49,17 @@ describe("landing Dashboard command palette", () => {
     await page.keyboard.press("Escape");
     await expect.poll(async () => palette.count()).toBe(0);
 
+    // ⌘K and Ctrl+K open the site's palette, even with focus in the window.
     await row(app, "Jonas Eide").focus();
     await page.keyboard.press("Control+k");
+    const sitePalette = page.getByRole("dialog", { name: "Site search", exact: true });
+    await sitePalette.waitFor();
+    expect(await palette.count()).toBe(0);
+    await page.keyboard.press("Escape");
+    await expect.poll(async () => sitePalette.count()).toBe(0);
+    await expect.poll(async () => focusedCustomer(page)).toBe("Jonas Eide");
+
+    await page.keyboard.press("/");
     await palette.getByRole("combobox").fill("Henrik");
     await palette.getByRole("option", { name: /Henrik Aasen/u }).waitFor();
     await page.keyboard.press("Enter");
@@ -117,31 +125,16 @@ describe("landing Dashboard command palette", () => {
     await page.context().close();
   });
 
-  it("starts a fresh search and returns focus to the row when the palette reopens before its exit animation ends", async () => {
-    const page = await openLanding(DESKTOP_VIEWPORT, { reducedMotion: "no-preference" });
-    // Slow every animation tenfold, so the popup's exit is still running when Control+K lands.
-    const cdp = await page.context().newCDPSession(page);
-    await cdp.send("Animation.enable");
-    await cdp.send("Animation.setPlaybackRate", { playbackRate: 0.1 });
+  it("returns focus to the row it opened from with `/`", async () => {
+    const page = await openLanding(DESKTOP_VIEWPORT);
     const palette = page.getByRole("dialog", { name: "Command palette" });
 
     await row(dashboard(page), "Jonas Eide").focus();
-    await page.keyboard.press("Control+k");
+    await page.keyboard.press("/");
     await searchAndMoveActive(page, palette);
-    const popup = await palette.elementHandle();
-    await page.keyboard.press("Escape");
-    await expect.poll(async () => popup.getAttribute("data-closed")).toBe("");
-    await page.keyboard.press("Control+k");
-
-    // The same popup node: it never unmounted, so only a fresh opening can have reset the search.
-    expect(await popup.evaluate((node) => node.isConnected)).toBe(true);
-    await expectFreshSearch(palette);
-
-    // The reopen remounted the search field that held focus, so the row stays the invoker.
-    await cdp.send("Animation.setPlaybackRate", { playbackRate: 1 });
     await page.keyboard.press("Escape");
     await expect.poll(async () => palette.count()).toBe(0);
-    expect(await focusedCustomer(page)).toBe("Jonas Eide");
+    await expect.poll(async () => focusedCustomer(page)).toBe("Jonas Eide");
     await page.context().close();
   });
 });

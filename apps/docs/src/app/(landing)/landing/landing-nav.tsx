@@ -9,6 +9,7 @@ import { Button } from "@elmeragroup/fuse/button";
 import { ElmeraGroupLogo } from "@elmeragroup/fuse/icons";
 import { NavigationMenu } from "@elmeragroup/fuse/navigation-menu";
 
+import { SitePaletteTrigger } from "../../../components/site-palette/site-palette";
 import { HOME_PAGE, staticPagesIn } from "../../../lib/pages";
 import type { StaticPage } from "../../../lib/pages";
 import { STUDIO_NAV_CARD } from "../../../studio/registration";
@@ -23,13 +24,14 @@ const landingNav = tv({
     wordmark:
       "text-base font-semibold flex items-center gap-2.5 rounded-md text-foreground no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
     mark: "size-5",
-    // Below md the menu and the CTA do not fit in one bar beside the theme picker.
+    // Below md the menu does not fit in one bar beside the theme picker and the CTA. From md to lg
+    // it takes the CTA's place, which the hero repeats right below.
     menu: "md:flex hidden flex-none",
     panel: "w-2xl m-0 grid list-none grid-cols-2 gap-1 p-0",
     end: "sm:gap-4 ml-auto flex min-w-0 items-center gap-3",
     // From `xl`: at `lg` the theme chip needs the room to show its whole summary.
     version: "text-xs xl:inline hidden font-mono text-muted-foreground",
-    cta: "shrink-0",
+    cta: "md:max-lg:hidden shrink-0",
   },
 });
 
@@ -89,6 +91,7 @@ export function LandingNav(): ReactElement {
         </NavigationMenu.Root>
         <div className={styles.end()}>
           <span className={styles.version()}>v1.0</span>
+          <SitePaletteTrigger />
           <ThemeChipPicker />
           <Button
             size="sm"

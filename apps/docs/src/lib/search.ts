@@ -1,15 +1,17 @@
 /**
- * Matching for the ⌘K palette.
+ * Matching for the site's ⌘K palette.
  *
- * Pure over the generated index, so the ranking is testable without a browser and the
- * palette component holds nothing but state and keyboard wiring.
+ * Pure over the rows it is given, from the generated index to the palette's own, so the ranking is
+ * testable without a browser and the palette component holds nothing but state and keyboard wiring.
  */
 
-import { SEARCH_ENTRIES } from "../generated/search-index";
-import type { SearchEntry } from "./docs-model";
-
-/** How many hits the palette lists at once. */
-const SEARCH_RESULT_LIMIT = 20;
+/** Anything the palette ranks: a page of the index, a demo, a setting or a command. */
+export type Searchable = {
+  readonly title: string;
+  /** Extra match text, such as an import specifier or a component's name. */
+  readonly keywords?: readonly string[];
+  readonly description?: string;
+};
 
 type Fields = {
   title: string;
@@ -26,17 +28,17 @@ const TITLE_SCORE = 5;
 const KEYWORD_SCORE = 3;
 const DESCRIPTION_SCORE = 1;
 
-const FIELDS = new WeakMap<SearchEntry, Fields>();
+const FIELDS = new WeakMap<Searchable, Fields>();
 
-function fieldsFor(entry: SearchEntry): Fields {
+function fieldsFor(entry: Searchable): Fields {
   const cached = FIELDS.get(entry);
   if (cached !== undefined) {
     return cached;
   }
   const fields: Fields = {
     title: entry.title.toLowerCase(),
-    keywords: entry.keywords.join(" ").toLowerCase(),
-    description: entry.description.toLowerCase(),
+    keywords: entry.keywords?.join(" ").toLowerCase() ?? "",
+    description: entry.description?.toLowerCase() ?? "",
   };
   FIELDS.set(entry, fields);
   return fields;
@@ -59,7 +61,7 @@ function scoreToken(fields: Fields, token: string): number {
   return 0;
 }
 
-function scoreEntry(entry: SearchEntry, tokens: readonly string[]): number {
+function scoreEntry(entry: Searchable, tokens: readonly string[]): number {
   const fields = fieldsFor(entry);
   let total = 0;
   for (const token of tokens) {
@@ -73,23 +75,45 @@ function scoreEntry(entry: SearchEntry, tokens: readonly string[]): number {
 }
 
 /**
- * The hits for a query, best first.
+ * The tokens of a query: lower-cased and split on whitespace.
  *
- * Every whitespace-separated token has to match somewhere, so `dialog close` narrows
- * rather than widens. An empty query is not an error state — it lists the site in nav
- * order, which is what the palette shows the moment it opens.
+ * @param query - What the user typed.
+ * @returns The tokens, none for a blank query.
  */
-export function matchSearchEntries(
-  query: string,
-  entries: readonly SearchEntry[] = SEARCH_ENTRIES
-): readonly SearchEntry[] {
-  const tokens = query
+export function queryTokens(query: string): readonly string[] {
+  return query
     .toLowerCase()
     .split(/\s+/)
     .filter((token) => token !== "");
-  if (tokens.length === 0) {
-    return entries.slice(0, SEARCH_RESULT_LIMIT);
-  }
+}
+
+/**
+ * Whether every token of a query appears in `text`, in any order, so `internal telinet` finds
+ * "Telinet · Private · Internal". A blank query matches everything.
+ *
+ * @param text - The text a row shows.
+ * @param query - What the user typed.
+ */
+export function matchesEveryToken(text: string, query: string): boolean {
+  const haystack = text.toLowerCase();
+  return queryTokens(query).every((token) => haystack.includes(token));
+}
+
+/**
+ * The entries that every token matches, best first. Every whitespace-separated token has to match
+ * somewhere, so `dialog close` narrows rather than widens. Equal scores sort by title.
+ *
+ * @template Entry - The kind of row ranked.
+ * @param entries - The rows to rank.
+ * @param tokens - The query's tokens, from `queryTokens`; at least one.
+ * @param limit - How many rows to keep at most.
+ * @returns The matching rows, best first, at most `limit`.
+ */
+export function rankEntries<Entry extends Searchable>(
+  entries: readonly Entry[],
+  tokens: readonly string[],
+  limit: number
+): readonly Entry[] {
   return entries
     .map((entry) => ({ entry, score: scoreEntry(entry, tokens) }))
     .filter((hit) => hit.score > 0)
@@ -98,6 +122,6 @@ export function matchSearchEntries(
         ? left.entry.title.localeCompare(right.entry.title)
         : right.score - left.score
     )
-    .slice(0, SEARCH_RESULT_LIMIT)
+    .slice(0, limit)
     .map((hit) => hit.entry);
 }

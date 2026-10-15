@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, use, useCallback, useLayoutEffect, useRef, useState } from "react";
+import { createContext, Fragment, use, useCallback, useLayoutEffect, useRef, useState } from "react";
 import type {
   ComponentProps,
   ComponentPropsWithRef,
@@ -79,7 +79,11 @@ type CommandPaletteContextValue = {
   readonly dialog: Omit<CommandDialogStateProps, "defaultOpen">;
   /** Tells the Root a `Command.Content` is mounted, until the returned cleanup runs. */
   readonly registerContent: () => () => void;
-  /** The count of dialog closes. A change resets each search's uncontrolled query. */
+  /**
+   * The count of sessions, which advances when a close animation ends or an opening interrupts a
+   * close. A change resets each search's uncontrolled query and highlight, and mounts
+   * `Command.Content`'s children fresh.
+   */
   readonly session: number;
 };
 
@@ -160,8 +164,10 @@ export type CommandRootProps<
  * its own search.
  *
  * Pass `grouped` when `items` are groups, and the callbacks receive one item of a group. Each
- * opening of the dialog starts fresh. When the close animation ends, an uncontrolled query goes
- * back to `defaultValue` and an uncontrolled stack goes back to `defaultPages`.
+ * opening of the dialog starts fresh, even one that interrupts the close animation. An
+ * uncontrolled query goes back to `defaultValue`, an uncontrolled stack goes back to
+ * `defaultPages`, the highlight goes back to the first match, and `Command.Content`'s children
+ * mount fresh. The Trigger and anything else outside `Command.Content` keep their state.
  *
  * @template Item - The item of a flat search.
  * @template Groups - The whole `items` array of a grouped search.
@@ -204,6 +210,25 @@ export function CommandRoot<
   // An inline palette always shows; one in `Command.Content` shows while its dialog is open.
   const showing = !hasContent || isOpen;
   const stack = useStack(pages, defaultPages, onPagesChange, showing, isOpen);
+  // A new session resets each search's uncontrolled query and highlight, and mounts
+  // `Command.Content`'s children fresh. It always comes with a reset of an uncontrolled stack.
+  const startSession = () => {
+    setSession((count) => count + 1);
+    stack.reset();
+  };
+  // Base UI ends a close with `onOpenChangeComplete(false)`, which moves the phase from closing
+  // to closed and starts the next opening fresh. An opening during the closing phase aborts that
+  // callback and keeps the closing popup with its contents, so the Root starts a session here
+  // instead, during render as React's docs adjust state from a changed prop. Only a mounted
+  // `Command.Content` enters the closing phase, so `open` flipping on an inline palette, or
+  // before a late Content mounts, starts nothing.
+  const [phase, setPhase] = useState<"open" | "closing" | "closed">(isOpen ? "open" : "closed");
+  if ((phase === "open") !== isOpen) {
+    if (isOpen && phase === "closing") {
+      startSession();
+    }
+    setPhase(isOpen ? "open" : hasContent ? "closing" : "closed");
+  }
   const hasStack = pages !== undefined || defaultPages !== undefined;
   const palette: CommandPaletteContextValue = {
     handle,
@@ -221,8 +246,8 @@ export function CommandRoot<
       onOpenChangeComplete: (next: boolean) => {
         onOpenChangeComplete?.(next);
         if (!next) {
-          setSession((count) => count + 1);
-          stack.reset();
+          setPhase((current) => (current === "closing" ? "closed" : current));
+          startSession();
         }
       },
     },
@@ -340,19 +365,29 @@ export type CommandContentProps = ComponentProps<typeof DialogPrimitive.Popup> &
  * near the top of the viewport, with no close button. Only this part renders a dialog, so a
  * palette without it renders none, and a palette inline in a dialog of your own leaves that
  * dialog's parts bound to that dialog. Its name defaults to the locale dictionary's, and a
- * `Dialog.Title` inside it names it instead. Escape closes it from any page. It may mount late,
- * such as on the first opening from a code-split chunk, but keep it mounted while the Root lives:
- * the end of its close animation is what resets an uncontrolled query and stack.
+ * `Dialog.Title` inside it names it instead. Escape closes it from any page. An opening that
+ * interrupts the close animation keeps the popup and mounts its children fresh. Content that a
+ * `render` element or function writes itself keeps its state then, so pass the palette's parts as
+ * children.
+ * It may mount late, such as on the first opening from a code-split chunk, but keep it mounted
+ * while the Root lives: the end of its close animation is what resets an uncontrolled query and
+ * stack.
  */
 export function CommandContent({
   className,
   container,
   "aria-label": ariaLabel,
+  children,
   ...props
 }: CommandContentProps): ReactElement {
   const strings = useLocalizedStrings(commandStrings);
-  const { handle, dialog, registerContent } = usePalette("Command.Content");
+  const { handle, dialog, registerContent, session } = usePalette("Command.Content");
   useLayoutEffect(registerContent, [registerContent]);
+  // A new session mounts the children fresh, even in a popup an opening kept from its close. The
+  // popup itself stays, so its focus manager keeps the element focus returns to on close. Absent
+  // children stay absent, so a `render` target's own default children still show, and `render`
+  // passes through untouched: content it writes itself keeps its state.
+  const sessionChildren = children === undefined ? undefined : <Fragment key={session}>{children}</Fragment>;
   return (
     <DialogPrimitive.Root handle={handle} {...dialog}>
       <OverlayPortal portal={DialogPortal} container={container}>
@@ -366,7 +401,7 @@ export function CommandContent({
             commandContentShellClass,
             styles.content()
           )}
-          {...definedProps(props)}
+          {...definedProps({ ...props, children: sessionChildren })}
         />
       </OverlayPortal>
     </DialogPrimitive.Root>

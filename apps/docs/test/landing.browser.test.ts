@@ -141,7 +141,8 @@ describe("landing page", () => {
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth
       );
-      expect(overflow, `${String(width)}px viewport`).toBe(0);
+      // Soft, so one overflowing width still lets every later width be measured.
+      expect.soft(overflow, `${String(width)}px viewport`).toBe(0);
       for (const mark of await picker.getByRole("img").all()) {
         await expectInside(mark, mark.locator(".."));
       }

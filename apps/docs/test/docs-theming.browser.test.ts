@@ -115,7 +115,8 @@ it("keeps search overlays in the document's dark palette", async () => {
   const page = await browser().newPage({ colorScheme: "dark", reducedMotion: "reduce" });
   await page.goto(`${docsBaseUrl()}/components/button`, { waitUntil: "domcontentloaded" });
   await waitForDocsShellHydration(page);
-  await page.getByRole("button", { name: "Search ⌘K", exact: true }).click();
+  // The trigger's caps repeat its `aria-keyshortcuts`, so its name is the word alone.
+  await page.getByRole("banner").getByRole("button", { name: "Search", exact: true }).click();
   await page.getByRole("dialog").waitFor();
   await page.evaluate(() =>
     Promise.all(document.getAnimations().map((animation) => animation.finished.catch(() => undefined)))
