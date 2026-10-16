@@ -28,6 +28,13 @@ export const guenExternal = {
   segment: "private",
 } as const satisfies ThemeInput;
 
+/** fkse/private, external: among the faintest light card steps off the page and the faintest dark one. */
+export const fkseExternal = {
+  variant: "external",
+  brand: "fkse",
+  segment: "private",
+} as const satisfies ThemeInput;
+
 /** guen/private, internal: a second internal brand for scope fixtures. */
 export const guenPrivate = {
   variant: "internal",

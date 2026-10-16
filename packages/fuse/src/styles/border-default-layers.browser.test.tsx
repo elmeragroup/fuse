@@ -5,8 +5,6 @@ import { render } from "../../test/browser-render";
 import { consumerCss } from "../../test/tailwind-consumer-build";
 import { fkasPrivate } from "../../test/theme-fixtures";
 import { cssVarColor, roleNamed } from "../../test/themed-browser-render";
-import { Card } from "../components/card/card";
-import { cardVariants } from "../components/card/card-variants";
 import { ThemeScope } from "../theme/theme-scope";
 
 /** The preflight-free entry the quick-start documents: the host states the order first. */
@@ -22,8 +20,11 @@ const FUSE_FIRST = ['@import "./fuse.css";', '@import "tailwindcss/utilities.css
   "\n"
 );
 
-/** The classes the Cards below spell. */
-const CANDIDATES = [...cardVariants().base().split(" "), "border-primary"];
+/**
+ * The classes the boxes below spell. They are plain elements, not Cards: Card colours its edge
+ * with the `border-card-border` utility, so it would pass without the base-layer default.
+ */
+const CANDIDATES = ["border", "border-primary"];
 
 describe("the base-layer border default in a layered consumer build", () => {
   let style: HTMLStyleElement | undefined;
@@ -41,12 +42,12 @@ describe("the base-layer border default in a layered consumer build", () => {
     document.head.append(style);
     render(
       <ThemeScope theme={fkasPrivate}>
-        <Card.Root role="group" aria-label="Card" />
-        <Card.Root role="group" aria-label="Primary card" className="border-primary" />
+        <div role="group" aria-label="Bare" className="border" />
+        <div role="group" aria-label="Primary" className="border border-primary" />
       </ThemeScope>
     );
-    const bare = roleNamed("group", "Card");
-    const primary = roleNamed("group", "Primary card");
+    const bare = roleNamed("group", "Bare");
+    const primary = roleNamed("group", "Primary");
     // The two roles must differ, or the second assertion cannot tell them apart.
     expect(cssVarColor(primary, "--primary")).not.toBe(cssVarColor(primary, "--border"));
     expect(getComputedStyle(bare).borderTopColor).toBe(cssVarColor(bare, "--border"));

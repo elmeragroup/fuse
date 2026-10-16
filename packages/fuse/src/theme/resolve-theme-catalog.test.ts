@@ -42,10 +42,10 @@ const SLUGS = [
 ] as const;
 
 // Counts the derived `secondary-hover` role, the `radius-step` rung spacing, the
-// `radius-field` field corner, the two outline Button roles, the resting and checked
-// selection row borders and dividers, the disabled selection row fill, stripe and text and the
-// selection row title weight and the modal fill and text.
-const TOKEN_COUNT = 92;
+// `radius-field` field corner, the card edge, the two outline Button roles, the resting and
+// checked selection row borders and dividers, the disabled selection row fill, stripe and text
+// and the selection row title weight and the modal fill and text.
+const TOKEN_COUNT = 93;
 
 // xs, sm, md, lg, xl and the unused popover rung.
 const RUNG_COUNT = 6;
@@ -244,6 +244,23 @@ describe("resolveThemeCatalog", () => {
     );
     // Internal rows keep the border role, oklch(0.9219 0 0) in light.
     expect(light("internal-fkas-private").tokens["selection-border"]).toMatchObject({
+      css: "var(--border)",
+      reference: { space: "token", name: "border" },
+      value: Oklch.toSrgb(getOrThrow(Oklch.parse("oklch(0.9219 0 0)"))),
+    });
+  });
+
+  it("resolves the external card edge to a zero-alpha colour in both schemes and the internal one to the border", () => {
+    // EXTERNAL_VARIANT_LAYER writes the edge as `oklch(0 0 0 / 0)`, a light-only key that dark keeps.
+    for (const scheme of ["light", "dark"] as const) {
+      expect(theme("external-fkse-private").schemes[scheme].tokens["card-border"], scheme).toMatchObject({
+        css: "oklch(0 0 0 / 0)",
+        reference: undefined,
+        value: { alpha: 0 },
+      });
+    }
+    // Internal cards keep the border role, oklch(0.9219 0 0) in light.
+    expect(light("internal-fkas-private").tokens["card-border"]).toMatchObject({
       css: "var(--border)",
       reference: { space: "token", name: "border" },
       value: Oklch.toSrgb(getOrThrow(Oklch.parse("oklch(0.9219 0 0)"))),

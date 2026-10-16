@@ -325,6 +325,7 @@ describe("theme contract", () => {
         "radius-button",
         "radius-field",
         "radius-step",
+        "card-border",
         "button-outline",
         "selection-border",
         "selection-checked-border",
@@ -521,9 +522,10 @@ describe("derived roles", () => {
 describe("external variant layer roles", () => {
   const rules = parseStyleRules(generateThemesCss());
 
-  it("sets the radius step, the reference's 2px text-color outline, the transparent selection row edge, checked or not, the grey divider between stacked rows, the card-filled unstriped disabled row with its muted text and the medium selection row title once for the external variant", () => {
+  it("sets the radius step, the transparent card edge, the reference's 2px text-color outline, the transparent selection row edge, checked or not, the grey divider between stacked rows, the card-filled unstriped disabled row with its muted text and the medium selection row title once for the external variant", () => {
     const external = {
       "radius-step": "2px",
+      "card-border": "oklch(0 0 0 / 0)",
       "button-outline": "var(--foreground)",
       "button-outline-width": "2px",
       "selection-border": "oklch(0 0 0 / 0)",
@@ -552,11 +554,12 @@ describe("external variant layer roles", () => {
       const selector = `[data-theme-variant="external"][data-theme-brand="${brand}"]`;
       expect(declaration(rules, selector, "radius-field"), selector).toBe("var(--radius)");
     }
-    // Internal themes and the root keep the 1px border hairline, the border-coloured selection
-    // row edge, the primary checked-row edge, dividers that follow those edges, the muted
-    // disabled row striped in black at 2% with foreground text, the regular selection row title
-    // and round fields with --radius.
+    // Internal themes and the root keep the border-coloured card edge, the 1px border hairline,
+    // the border-coloured selection row edge, the primary checked-row edge, dividers that follow
+    // those edges, the muted disabled row striped in black at 2% with foreground text, the
+    // regular selection row title and round fields with --radius.
     for (const selector of [":root", '[data-theme-variant="internal"]']) {
+      expect(declaration(rules, selector, "card-border"), selector).toBe("var(--border)");
       expect(declaration(rules, selector, "button-outline"), selector).toBe("var(--border)");
       expect(declaration(rules, selector, "selection-border"), selector).toBe("var(--border)");
       expect(declaration(rules, selector, "selection-checked-border"), selector).toBe("var(--primary)");
