@@ -15,7 +15,7 @@ const RADII = ["none", "lg", "xl"] as const;
 describe("accordionVariants", () => {
   it("defaults to variant=default and radius=none", () => {
     const slots = accordionVariants();
-    expect(slots.item()).toContain("bg-muted");
+    expect(slots.item()).toContain("bg-primary-soft");
     expect(slots.item()).toContain("rounded-sm");
     expect(slots.item()).toContain("p-(--surface-pad-md)");
     expect(slots.item()).not.toContain("overflow-hidden");
@@ -23,7 +23,13 @@ describe("accordionVariants", () => {
 
   it("maps each variant onto the public slots without leaking the others", () => {
     const defaults = accordionVariants({ variant: "default" });
-    expect(defaults.item()).toContain("bg-muted");
+    expect(defaults.base()).toContain("space-y-3");
+    expect(defaults.item()).toContain("bg-primary-soft");
+    expect(defaults.item()).toContain("text-primary-soft-foreground");
+    expect(defaults.item()).toContain("[--ring:var(--primary-soft-foreground)]");
+    expect(defaults.item()).not.toContain("bg-muted");
+    // The caret inherits the item's soft foreground rather than pinning the page foreground.
+    expect(defaults.icon()).not.toContain("text-foreground");
     expect(defaults.trigger()).not.toContain("transition-all");
     expect(defaults.contentInner()).toContain("pt-[calc(var(--surface-gap-lg)+--spacing(1.5))]");
     expect(defaults.item()).not.toContain("bg-card");
@@ -43,7 +49,7 @@ describe("accordionVariants", () => {
     // The panel sits inside the item's padding, so it rounds with the item's inner corner.
     expect(card.content()).toContain("rounded-inner");
     expect(card.icon()).toContain("text-foreground");
-    expect(card.item()).not.toContain("bg-muted");
+    expect(card.item()).not.toContain("bg-primary-soft");
     expect(card.trigger()).not.toContain("justify-start");
 
     const info = accordionVariants({ variant: "infodropdown" });
@@ -57,6 +63,7 @@ describe("accordionVariants", () => {
     expect(info.icon()).toContain("right-0");
     expect(info.indicator()).toContain("absolute");
     expect(info.indicator()).toContain("right-0");
+    expect(info.icon()).toContain("text-foreground");
     expect(defaults.indicator()).not.toContain("absolute");
     expect(info.content()).toContain("pl-7");
     expect(info.item()).not.toContain("bg-card");

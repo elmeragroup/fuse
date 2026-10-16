@@ -1,16 +1,25 @@
 import type { ComponentProps, ReactNode } from "react";
 import { useState } from "react";
 
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
+import { ringLayers, settleTransitions } from "../../../test/assert-invalid-ring";
 import { expectPanelHeightTransition } from "../../../test/panel-transition";
-import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
+import {
+  computedContrast,
+  cssVarColor,
+  renderThemed,
+  snapshotDocumentTheme,
+  stampDocumentTheme,
+  stampTheme,
+} from "../../../test/themed-browser-render";
 import { CaretRight } from "../../icons/generated/caret-right";
 import { Plus } from "../../icons/generated/plus";
+import { LEGAL_THEMES, themeSlug } from "../../theme/tokens/themes";
 import { Accordion } from "./index";
 
 function htmlControl(name: string): HTMLElement {
@@ -348,5 +357,114 @@ describe("Accordion", () => {
       </>
     );
     await assertFocusRingAtBothDensities(htmlControl("Before"), htmlControl("Shipping"));
+  });
+});
+
+/** The default item, its trigger and its caret, and the ThemeScope the suite restamps. */
+function shippingParts() {
+  const trigger = htmlControl("Shipping");
+  const item = page.getByRole("heading", { level: 3, name: "Shipping" }).element().parentElement;
+  const caret = trigger.querySelector("svg");
+  // renderThemed's ThemeScope stamp outranks the document's, so the theme goes on that
+  // scope and the scheme on the document.
+  const scope = trigger.closest<HTMLElement>("[data-theme-brand]");
+  if (
+    !(item instanceof HTMLElement) ||
+    caret === null ||
+    scope === null ||
+    scope === document.documentElement
+  ) {
+    throw new Error("expected the shipping item, its caret and renderThemed's ThemeScope");
+  }
+  return { trigger, item, caret, scope };
+}
+
+describe("Accordion default fill", () => {
+  let restoreDocumentTheme: () => void;
+
+  beforeEach(() => {
+    restoreDocumentTheme = snapshotDocumentTheme();
+  });
+
+  afterEach(() => {
+    restoreDocumentTheme();
+  });
+
+  it("fills a default item with the soft brand tint, with its label, caret and panel in the soft foreground", () => {
+    renderThemed(<ShippingBilling defaultValue={["shipping"]} />);
+    const { trigger, item, caret, scope } = shippingParts();
+    const panel = page.getByRole("region", { name: "Shipping" }).element();
+    if (!(panel instanceof HTMLElement)) {
+      throw new Error("expected the shipping region");
+    }
+
+    for (const scheme of ["light", "dark"] as const) {
+      for (const theme of LEGAL_THEMES) {
+        stampDocumentTheme(theme, scheme);
+        stampTheme(scope, theme);
+        settleTransitions(item, trigger);
+        const context = `${themeSlug(theme)} ${scheme}`;
+        const fill = getComputedStyle(item).backgroundColor;
+        expect.soft(fill, context).toBe(cssVarColor(item, "--primary-soft"));
+        const text = cssVarColor(item, "--primary-soft-foreground");
+        expect.soft(getComputedStyle(trigger).color, context).toBe(text);
+        expect.soft(getComputedStyle(caret).color, context).toBe(text);
+        expect.soft(getComputedStyle(panel).color, context).toBe(text);
+        // Without preflight the native button paints ButtonFace, which would sit between the
+        // label and the item's fill.
+        expect.soft(getComputedStyle(trigger).backgroundColor, context).toBe("rgba(0, 0, 0, 0)");
+        expect
+          .soft(computedContrast(getComputedStyle(trigger).color, fill), context)
+          .toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  });
+
+  it("sets stacked default items apart by the card variant's gap, so their rounded corners never touch", () => {
+    const gapBelowShipping = () => {
+      const shipping = page.getByRole("heading", { level: 3, name: "Shipping" }).element().parentElement;
+      const billing = page.getByRole("heading", { level: 3, name: "Billing" }).element().parentElement;
+      if (!(shipping instanceof HTMLElement) || !(billing instanceof HTMLElement)) {
+        throw new Error("expected the shipping and billing items");
+      }
+      expect(Number.parseFloat(getComputedStyle(shipping).borderBottomLeftRadius)).toBeGreaterThan(0);
+      return billing.getBoundingClientRect().top - shipping.getBoundingClientRect().bottom;
+    };
+    // Oracle: the card variant's item gap, which "passes variant and radius" holds to 11-16px.
+    const card = renderThemed(<ShippingBilling variant="card" />);
+    const cardGap = gapBelowShipping();
+    card.unmount();
+
+    renderThemed(<ShippingBilling />);
+    expect(gapBelowShipping()).toBeCloseTo(cardGap, 0);
+  });
+
+  it("draws the trigger's focus ring at 3:1 against the soft fill in every theme and scheme", async () => {
+    renderThemed(
+      <>
+        <button type="button">Before</button>
+        <ShippingBilling />
+      </>
+    );
+    htmlControl("Before").focus();
+    // A real Tab, so the trigger matches `:focus-visible` and paints the ring.
+    await userEvent.keyboard("{Tab}");
+    const { trigger, item, scope } = shippingParts();
+    expect(document.activeElement).toBe(trigger);
+
+    for (const scheme of ["light", "dark"] as const) {
+      for (const theme of LEGAL_THEMES) {
+        stampDocumentTheme(theme, scheme);
+        stampTheme(scope, theme);
+        settleTransitions(item, trigger);
+        const [ring] = ringLayers(trigger);
+        const context = `${themeSlug(theme)} ${scheme}`;
+        expect(ring, context).toBeDefined();
+        // WCAG 1.4.11: the ring sits on the item's soft fill.
+        expect
+          .soft(computedContrast(ring?.color ?? "", getComputedStyle(item).backgroundColor), context)
+          .toBeGreaterThanOrEqual(3);
+      }
+    }
   });
 });
