@@ -95,6 +95,20 @@ The checked row's tint and the disabled fill win over a background class on the 
 }
 ```
 
+`Dialog.Content`, `AlertDialog.Content` and `Sheet.Content` fill with `--dialog` and take `--dialog-foreground` as their text colour. Without them a modal takes your `--popover` and `--popover-foreground`, as internal themes and every dark theme do. For the external light look, where a modal fills with the page tint so the card-coloured fields and selection rows inside it stand apart as they do on the page, set the pair in your light rules and point it back at the popover pair in your dark ones, as the themes do:
+
+```css
+:root {
+  --dialog: var(--background);
+  --dialog-foreground: var(--foreground);
+}
+
+.dark /* your dark-scheme selector */ {
+  --dialog: var(--popover);
+  --dialog-foreground: var(--popover-foreground);
+}
+```
+
 Field boxes round with your `--radius`, as cards and the themes' fields do. For the external look, set the external step. It spreads the `rounded-*` scale in 2px steps around `--radius` and gives the checkbox and the calendar their external 4px corner. Fields then round with `--radius-field` where you set one, and with your `--radius` otherwise, so set it only for a field corner of your own:
 
 ```css

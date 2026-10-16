@@ -15,6 +15,7 @@ import { overlayCloseStrings } from "../overlay/intl";
 import {
   overlayFooterClass,
   overlayLayer,
+  overlayModalFillClass,
   overlayModalPopupClass,
   overlayScrimClass,
   overlaySizeVariants,
@@ -29,10 +30,12 @@ import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
 
 const dialogContentVariants = tv({
-  // Dialog's inner-corner shell comes after the modal face, so the shell's `rounded-xl` overrides
-  // the face's `rounded-md`. The shell publishes the corner inside its padding.
+  // Dialog's modal fill and inner-corner shell come after the modal face, so the fill replaces the
+  // face's popover fill and the shell's `rounded-xl` overrides the face's `rounded-md`. The shell
+  // publishes the corner inside its padding.
   base: cn(
     overlayModalPopupClass,
+    overlayModalFillClass,
     dialogShellClass,
     "text-sm fixed top-1/2 left-1/2 grid max-h-[calc(100%-2rem)] w-full max-w-(--overlay-width) -translate-x-1/2 -translate-y-1/2 gap-6 overflow-y-auto"
   ),

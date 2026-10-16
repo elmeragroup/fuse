@@ -28,7 +28,17 @@
   tkas, guen, fkse and elma themes, so a link Button reads as plain text until hover underlines it.
 - Ask design for a light `muted` that clears the 1.1:1 hover-tint floor on `card` and `popover`.
   The shared 0.97 on a white surface measures 1.09:1 on every light theme, so
-  `contrast-matrix.test.ts` holds `muted` to that floor in dark only.
+  `contrast-matrix.test.ts` holds `muted` to that floor in dark only. External light modals fill
+  with the page tint (`--dialog`), where the same tint, such as the corner close button's hover,
+  measures 1.03–1.04:1.
+- Ask design how edgeless selection rows should stand out in a dark Dialog or Sheet. Dark modals
+  keep `--dialog` on the popover, which every dark palette sets equal to `card`, the row fill, and
+  external rows draw no outer edge, so a `RadioItem` or `CheckboxItem` group in a dark modal has
+  no row outlines.
+- Ask design whether `Popover` follows `Dialog` onto the page tint in external light. A Popover can
+  hold a form, as the basic demo does, but the anchored popups share the `accent`-on-`popover`
+  1.1:1 floor in `contrast-matrix.test.ts`, which the external light accent, 1.00–1.07:1 on the
+  page tint, would not clear.
 - Ask design for a text-grade foreground on dark `feature`, or lighter dark `feature` tones.
   White text on dark `feature` measures 4.49:1 for tkas, 4.38:1 for fkse and 4.49:1 for elma,
   under the 4.5:1 floor. Until design decides, the landing's brand sites fill strong bands and

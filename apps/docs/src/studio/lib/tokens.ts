@@ -48,6 +48,8 @@ export const TOKEN_TABLE = {
   "card-soft-foreground": color("surfaces"),
   popover: color("surfaces"),
   "popover-foreground": color("surfaces"),
+  dialog: color("surfaces"),
+  "dialog-foreground": color("surfaces"),
   muted: color("surfaces"),
   "muted-foreground": color("surfaces"),
   accent: color("surfaces"),

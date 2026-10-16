@@ -18,6 +18,7 @@ describe("ROLE_TILES", () => {
         soft: { role: "card-soft", foreground: "card-soft-foreground", grade: "text" },
       },
       { role: "popover", foreground: "popover-foreground", grade: "text" },
+      { role: "dialog", foreground: "dialog-foreground", grade: "text" },
       { role: "muted", foreground: "muted-foreground", grade: "text" },
       { role: "accent", foreground: "accent-foreground", grade: "text" },
       { role: "feature", foreground: "feature-foreground", grade: "decorative" },

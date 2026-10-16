@@ -6,6 +6,7 @@ lede: >
 import { DialogBasic } from "./demos/dialog-basic";
 import { DialogSizes } from "./demos/dialog-sizes";
 import { DialogFooterClose } from "./demos/dialog-footer-close";
+import { DialogForm } from "./demos/dialog-form";
 import { DialogNoCloseButton } from "./demos/dialog-no-close-button";
 import { DialogScrolling } from "./demos/dialog-scrolling";
 
@@ -25,6 +26,12 @@ export const metadata = componentMetadata("dialog");
 
 <Demo slug="dialog" id="footer-close" title="Footer close action" file="dialog-footer-close.tsx">
   <DialogFooterClose />
+</Demo>
+
+In the external light themes a dialog fills with the page tint, so the white fields and selection rows inside it stand apart as they do on the page.
+
+<Demo slug="dialog" id="form" title="Form" file="dialog-form.tsx">
+  <DialogForm />
 </Demo>
 
 <Demo

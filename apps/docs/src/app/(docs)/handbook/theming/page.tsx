@@ -290,6 +290,20 @@ export default function ThemingPage(): ReactElement {
         <code>400</code>. A <code>className</code> weight on the title replaces the theme&apos;s.
       </p>
       <p>
+        The modals, <code>Dialog</code>, <code>AlertDialog</code> and <code>Sheet</code>, fill with{" "}
+        <code>--dialog</code> and set their text in <code>--dialog-foreground</code>. Internal themes and
+        every dark theme alias the popover pair, so a modal looks like the anchored popups. External light
+        themes fill a modal with the page tint, <code>var(--background)</code>, in the page&apos;s{" "}
+        <code>var(--foreground)</code>, so the white fields and selection rows inside it keep the separation
+        they have on the page. Popover, Select, Combobox, DropdownMenu, NavigationMenu, Toolbar, the neutral
+        Toast and the <code>Command</code> palette stay on <code>--popover</code>. The menus among them
+        highlight rows with the accent step, which needs the white popup. The theme rules resolve{" "}
+        <code>--dialog</code> on the element that carries the theme attributes, so a <code>--popover</code>{" "}
+        override on a plain wrapper no longer reaches a modal: override <code>--dialog</code> there instead.
+        To put one modal back on the popover fill, pass{" "}
+        <code>className=&quot;bg-popover text-popover-foreground&quot;</code>.
+      </p>
+      <p>
         The sidebar&apos;s brand pair, <code>--sidebar-brand</code> and{" "}
         <code>--sidebar-brand-foreground</code>, reaches 4.5:1 in every theme and color scheme. Where the
         brand color falls short on the sidebar, the theme steps its lightness away from the sidebar&apos;s

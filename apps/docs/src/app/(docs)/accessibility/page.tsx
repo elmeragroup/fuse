@@ -137,8 +137,8 @@ export default function AccessibilityPage(): ReactElement {
           1.19–1.70:1 on the same surfaces. A field border of at least 3:1 is a design decision on the
           roadmap. <code>Checkbox</code>, <code>Radio</code> and <code>Switch</code> do not depend on it: the
           unchecked Checkbox and Radio edge and the unchecked Switch edge and thumb are{" "}
-          <code>--muted-foreground</code>, held to 3:1 against the page, card and card-soft surfaces in both
-          color schemes.
+          <code>--muted-foreground</code>, held to 3:1 against the page, card, card-soft and modal surfaces in
+          both color schemes.
         </li>
         <li>
           External themes draw no outer edge around a <code>RadioItem</code> or <code>CheckboxItem</code> row:{" "}
@@ -146,7 +146,9 @@ export default function AccessibilityPage(): ReactElement {
           rows keep a decorative <code>--border</code> divider between them, which has no floor either. The
           row is not the control boundary. The <code>Checkbox</code> or <code>Radio</code> inside it carries
           the state with its own edge, held to 3:1 as above, and its checked fill. On a <code>card</code>
-          -coloured surface the row has no outline.
+          -coloured surface, such as a white <code>Card</code> or a dark <code>Dialog</code> or{" "}
+          <code>Sheet</code>, the row has no outline. External light modals fill with the page tint, so rows
+          inside them keep the separation they have on the page.
         </li>
         <li>
           A default <code>Accordion</code> item fills with <code>--primary-soft</code>. Its own text takes{" "}
@@ -161,7 +163,7 @@ export default function AccessibilityPage(): ReactElement {
       </ul>
       <p>
         Contrast snapshots cover all twenty-four themes. Text pairs hold 4.5:1 in both color schemes,
-        including <code>--muted-foreground</code> on the page, <code>--muted</code>, card and card-soft
+        including <code>--muted-foreground</code> on the page, <code>--muted</code>, card, card-soft and modal
         surfaces, so muted descriptions can carry required information. Additional tests cover dark panel
         text, dark input boundaries, the selection-control edge and focus colors. Decorative dark borders
         cannot be the sole control boundary. These checks do not establish chart-series distinction or

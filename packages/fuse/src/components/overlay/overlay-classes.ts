@@ -103,6 +103,12 @@ const overlayPopupVariants = tv({
     positioner: `isolate ${overlayLayer}`,
     /** The tokenized popup fill and its paired text role. */
     fill: "bg-popover text-popover-foreground",
+    /**
+     * The modal fill and its paired text role, which Dialog (and AlertDialog through it) and
+     * Sheet compose after their faces. The `dialog` role aliases the popover pair except in
+     * external light, where it is the page tint. `Command.Content` stays on the popover fill.
+     */
+    modalFill: "bg-dialog text-dialog-foreground",
     /** The popup edge: the `md` elevation rung plus the hairline ring. */
     edge: "shadow-md ring-1 ring-foreground/10",
     /**
@@ -136,6 +142,7 @@ export const overlayTitleClass = overlayPopupSlots.title();
 export const overlayFooterClass = overlayPopupSlots.footer();
 export const overlayPositionerClass = overlayPopupSlots.positioner();
 export const overlayPopupFillClass = overlayPopupSlots.fill();
+export const overlayModalFillClass = overlayPopupSlots.modalFill();
 const overlayPopupEdgeClass = overlayPopupSlots.edge();
 const overlayPopupFadeZoomClass = overlayPopupSlots.fadeZoom();
 const overlayPopupDurationClass = overlayPopupSlots.duration();
@@ -151,7 +158,8 @@ export const overlayPopupMotionClass = cn(overlayPopupSlots.anchor(), overlayPop
 /**
  * Fill + edge + the `md` radius rung: the whole surface of a popup that sits on the
  * popover role. Dialog and `Command.Content` take it through {@link overlayModalPopupClass},
- * raising the radius to `rounded-xl` in their shells; the four timed
+ * raising the radius to `rounded-xl` in their shells, and Dialog then swaps the fill for
+ * {@link overlayModalFillClass}; the four timed
  * anchored popups (Popover, Select, Combobox, DropdownMenu — Select raises the radius
  * to `rounded-lg`) take it through {@link overlayTimedPopupClass}. Each still overrides
  * a rung through the extra `cn` argument rather than restating the fill and ring.
@@ -187,7 +195,8 @@ export const overlayTimedPopupClass = cn(
  * focus ring. No trigger anchors a modal, so it leaves out the transform origin and the per-side
  * slide-ins of {@link overlayPopupMotionClass}. Each modal composes it first and passes its shell
  * and layout as later `cn` arguments, so the shell's `rounded-xl` overrides the surface's
- * `rounded-md`.
+ * `rounded-md`. Dialog also passes {@link overlayModalFillClass}, which replaces the popover
+ * fill; `Command.Content` keeps it.
  */
 export const overlayModalPopupClass = cn(
   overlayPopupSurfaceClass,

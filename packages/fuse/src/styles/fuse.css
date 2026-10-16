@@ -104,6 +104,8 @@
   --color-card-soft-foreground: var(--card-soft-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
+  --color-dialog: var(--dialog, var(--popover));
+  --color-dialog-foreground: var(--dialog-foreground, var(--popover-foreground));
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);

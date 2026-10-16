@@ -26,6 +26,12 @@ export type ExternalBrandCode = Exclude<BrandCode, "fkab">;
  * `--border` hairline, the `--border` row edge and divider, the `--primary` box around a checked
  * row, the muted, striped disabled row and the regular row title.
  *
+ * A light modal, Dialog, AlertDialog or Sheet, fills with the page tint and takes the page's
+ * text colour, so card-coloured fields and selection rows inside it stand apart as they do on
+ * the page. The anchored popups keep the white popover: their highlighted rows need the
+ * `accent`-on-`popover` step, which the faint external accent cannot take on the page tint. The
+ * dark sheets keep the popover pair, which `DARK_DEFAULTS` restates.
+ *
  * The layer names the neutral focus ring so every external light rule declares `--ring`
  * (and restates the `--sidebar-ring` alias), and a nested scope gets its own theme's ring. To
  * tune one brand's ring:
@@ -41,6 +47,8 @@ export type ExternalBrandCode = Exclude<BrandCode, "fkab">;
  * `contrast-matrix.test.ts` holds a tuned ring to 3:1 on the page and card surfaces.
  */
 export const EXTERNAL_VARIANT_LAYER = {
+  dialog: "var(--background)",
+  "dialog-foreground": "var(--foreground)",
   ring: NEUTRAL_RING,
   "button-outline": "var(--foreground)",
   "selection-border": "oklch(0 0 0 / 0)",
