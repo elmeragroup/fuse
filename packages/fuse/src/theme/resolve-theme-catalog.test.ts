@@ -44,8 +44,8 @@ const SLUGS = [
 // Counts the derived `secondary-hover` role, the `radius-step` rung spacing, the
 // `radius-field` field corner, the two outline Button roles, the resting and checked
 // selection row borders and dividers, the disabled selection row fill, stripe and text and the
-// selection row title weight.
-const TOKEN_COUNT = 90;
+// selection row title weight and the modal fill and text.
+const TOKEN_COUNT = 92;
 
 // xs, sm, md, lg, xl and the unused popover rung.
 const RUNG_COUNT = 6;

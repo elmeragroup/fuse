@@ -24,6 +24,10 @@ export const DARK_DEFAULTS = {
   border: "oklch(0.3956915 0.0031178 164.9356)", // #454746
   input: "oklch(0.6543689 0.0037291 145.5328)", // #8F918F
   ring: NEUTRAL_RING,
+  // Dark modals keep the popover pair. Named here so no dark rule inherits the external light
+  // layer's page alias.
+  dialog: "var(--popover)",
+  "dialog-foreground": "var(--popover-foreground)",
   "chart-1": "oklch(0.8235043 0.0474959 220.6613)", // #A4CDDB
   "chart-2": "oklch(0.8201874 0.0815522 220.2343)", // #86D1E9
   "chart-3": "oklch(0.8156596 0.1022421 190.6206)", // #69D8D2

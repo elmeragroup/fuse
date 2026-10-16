@@ -2,6 +2,7 @@
   "body": {
     "card-foreground/card": 17.16,
     "card-soft-foreground/card-soft": 14.48,
+    "dialog-foreground/dialog": 17.16,
     "error-foreground/error": 6.84,
     "error-soft-foreground/error-soft": 7.24,
     "foreground/background": 18.96,
@@ -11,6 +12,7 @@
     "muted-foreground/background": 7.63,
     "muted-foreground/card": 6.91,
     "muted-foreground/card-soft": 5.83,
+    "muted-foreground/dialog": 6.91,
     "muted-foreground/muted": 5.83,
     "primary-foreground/primary": 14.22,
     "primary-soft-foreground/primary-soft": 14.48,

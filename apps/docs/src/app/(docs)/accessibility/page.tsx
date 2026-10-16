@@ -146,7 +146,9 @@ export default function AccessibilityPage(): ReactElement {
           rows keep a decorative <code>--border</code> divider between them, which has no floor either. The
           row is not the control boundary. The <code>Checkbox</code> or <code>Radio</code> inside it carries
           the state with its own edge, held to 3:1 as above, and its checked fill. On a <code>card</code>
-          -coloured surface the row has no outline.
+          -coloured surface, such as a white <code>Card</code> or a dark <code>Dialog</code> or{" "}
+          <code>Sheet</code>, the row has no outline. External light modals fill with the page tint, so rows
+          inside them keep the separation they have on the page.
         </li>
         <li>
           A default <code>Accordion</code> item fills with <code>--primary-soft</code>. Its own text takes{" "}

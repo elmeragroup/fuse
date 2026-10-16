@@ -7,7 +7,7 @@ import * as Wcag from "@elmeragroup/color/wcag";
 
 import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
-import { buildContrastMatrix, contrastRatio, TEXT_GRADE_PAIRS } from "./contrast";
+import { buildContrastMatrix, contrastRatio, TEXT_GRADE_PAIRS, tokenLiteral } from "./contrast";
 import { resolveThemeCatalog } from "./resolve-theme-catalog";
 import { tokenOklch } from "./token-color";
 import type { TokenName } from "./tokens/contract";
@@ -58,8 +58,11 @@ const ALERT_TINT_TEXT_PAIRS = [
 /** The alpha of an alert's status tint, Tailwind's `/5`. */
 const ALERT_TINT_ALPHA = 0.05;
 
-/** The surfaces a chart, syntax or control role must separate itself from. */
-const CONTROL_SURFACES = ["background", "card", "card-soft"] as const;
+/**
+ * The surfaces a chart, syntax or control role must separate itself from: the page, the cards
+ * and the modal fill.
+ */
+const CONTROL_SURFACES = ["background", "card", "card-soft", "dialog"] as const;
 
 const CHART_ROLES = [
   "chart-1",
@@ -147,14 +150,15 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
     floor: 1.1,
   },
   {
-    // `hover:bg-muted` over a card or popover, such as a ghost Button in a Dialog, with the
-    // same 1.1:1 floor as the menu row. Dark only: light muted is the shadcn 0.97 on a white
+    // `hover:bg-muted` over a card, popover or modal, such as a ghost Button in a Dialog, with
+    // the same 1.1:1 floor as the menu row. Dark only: light muted is the shadcn 0.97 on a white
     // card, 1.09:1, a design value this floor does not yet override.
     schemes: ["dark"],
     matches: () => true,
     pairs: [
       ["muted", "popover"],
       ["muted", "card"],
+      ["muted", "dialog"],
     ],
     floor: 1.1,
   },
@@ -247,7 +251,7 @@ describe("contrast matrix", () => {
           if (!policy.schemes.includes(scheme) || !policy.matches(theme)) continue;
           for (const [foreground, background] of policy.pairs) {
             expect(
-              contrastRatio(tokens[foreground], tokens[background]),
+              contrastRatio(tokenLiteral(tokens, foreground), tokenLiteral(tokens, background)),
               `${scheme} ${slug} ${foreground}/${background}`
             ).toBeGreaterThanOrEqual(policy.floor);
           }
@@ -261,7 +265,7 @@ describe("contrast matrix", () => {
       for (const theme of LEGAL_THEMES) {
         const tokens = composeTheme(theme, scheme);
         for (const [text, tint] of ALERT_TINT_TEXT_PAIRS) {
-          const tintColor = Oklch.toSrgb(tokenOklch(tokens[tint]));
+          const tintColor = Oklch.toSrgb(tokenOklch(tokenLiteral(tokens, tint)));
           for (const surface of CONTROL_SURFACES) {
             // The browser paints `color-mix(in oklab, <tint> 5%, transparent)`, the tint at 5%
             // alpha, and composites it over the surface in sRGB.
@@ -269,11 +273,11 @@ describe("contrast matrix", () => {
               getOrThrow(
                 Srgb.make({ r: tintColor.r, g: tintColor.g, b: tintColor.b, alpha: ALERT_TINT_ALPHA })
               ),
-              Oklch.toSrgb(tokenOklch(tokens[surface]))
+              Oklch.toSrgb(tokenOklch(tokenLiteral(tokens, surface)))
             );
             expect
               .soft(
-                getOrThrow(Wcag.contrastRatio(Oklch.toSrgb(tokenOklch(tokens[text])), fill)),
+                getOrThrow(Wcag.contrastRatio(Oklch.toSrgb(tokenOklch(tokenLiteral(tokens, text))), fill)),
                 `${scheme} ${themeSlug(theme)} ${text} on ${tint}/5 over ${surface}`
               )
               .toBeGreaterThanOrEqual(4.5);

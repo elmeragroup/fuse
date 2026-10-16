@@ -221,6 +221,7 @@
       "dialog-basic.tsx",
       "dialog-sizes.tsx",
       "dialog-footer-close.tsx",
+      "dialog-form.tsx",
       "dialog-no-close-button.tsx",
       "dialog-scrolling.tsx"
     ]

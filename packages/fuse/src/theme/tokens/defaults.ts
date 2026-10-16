@@ -23,6 +23,12 @@ export const LAYER_DEFAULTS = {
   "card-soft-foreground": INTERNAL_FOREGROUND,
   popover: WHITE,
   "popover-foreground": INTERNAL_FOREGROUND,
+  // The fill and text of the modal surfaces, Dialog (and AlertDialog through it) and Sheet.
+  // Internal themes keep the popover pair the anchored popups use, and the external variant
+  // layer fills light modals with the page tint, so card-coloured fields and selection rows
+  // inside keep the separation they have on the page. Dark keeps the popover pair.
+  dialog: "var(--popover)",
+  "dialog-foreground": "var(--popover-foreground)",
   muted: "oklch(0.97 0.0013 106.42)",
   // The lightest grey, at three decimals, that measures at least 4.55:1 on `muted` and `card-soft`,
   // the darkest resting surfaces muted copy lands on (a highlighted `accent` row recolours its

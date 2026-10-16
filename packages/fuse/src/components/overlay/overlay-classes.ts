@@ -103,6 +103,12 @@ const overlayPopupVariants = tv({
     positioner: `isolate ${overlayLayer}`,
     /** The tokenized popup fill and its paired text role. */
     fill: "bg-popover text-popover-foreground",
+    /**
+     * The modal fill and its paired text role, which Dialog (and AlertDialog through it) and
+     * Sheet compose after their faces. The `dialog` role aliases the popover pair except in
+     * external light, where it is the page tint. `Command.Content` stays on the popover fill.
+     */
+    modalFill: "bg-dialog text-dialog-foreground",
     /** The popup edge: the `md` elevation rung plus the hairline ring. */
     edge: "shadow-md ring-1 ring-foreground/10",
     /**
@@ -136,6 +142,7 @@ export const overlayTitleClass = overlayPopupSlots.title();
 export const overlayFooterClass = overlayPopupSlots.footer();
 export const overlayPositionerClass = overlayPopupSlots.positioner();
 export const overlayPopupFillClass = overlayPopupSlots.fill();
+export const overlayModalFillClass = overlayPopupSlots.modalFill();
 const overlayPopupEdgeClass = overlayPopupSlots.edge();
 const overlayPopupFadeZoomClass = overlayPopupSlots.fadeZoom();
 const overlayPopupDurationClass = overlayPopupSlots.duration();

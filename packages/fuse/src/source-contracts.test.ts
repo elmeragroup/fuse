@@ -556,6 +556,7 @@ describe("superseded local forms", () => {
     for (const needle of [
       "origin-(--transform-origin)",
       "bg-popover text-popover-foreground",
+      "bg-dialog text-dialog-foreground",
       "shadow-md ring-1 ring-foreground/10",
       "pointer-events-none absolute right-2 flex items-center justify-center",
       "-mx-1 my-1 h-px bg-border",

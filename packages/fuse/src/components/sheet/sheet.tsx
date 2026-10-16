@@ -13,7 +13,7 @@ import { tv } from "../../styles/tv";
 import { selfFocusRingClass } from "../../styles/utils";
 import {
   overlayLayer,
-  overlayPopupFillClass,
+  overlayModalFillClass,
   overlayScrimClass,
   overlaySizeVariants,
 } from "../overlay/overlay-classes";
@@ -38,7 +38,7 @@ const SheetSideContext = createContext<SheetSide>("right");
 
 const sheetContentVariants = tv({
   base: cn(
-    overlayPopupFillClass,
+    overlayModalFillClass,
     // `--overlay-width` is set by the `size` axis below; these two selectors gate the
     // cap to left/right at `sm:` rather than repeating every rung.
     "data-[side=left]:sm:max-w-(--overlay-width) data-[side=right]:sm:max-w-(--overlay-width)",
