@@ -284,7 +284,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Icon rendered to the right of the title. Defaults to `WarningOctagon` (destructive) or `Info` (neutral).",
+          "description": "Icon rendered to the right of the title, centred on the title's first line. Defaults to `WarningOctagon` (destructive) or `Info` (neutral).",
           "required": false
         },
         {

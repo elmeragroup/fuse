@@ -91,8 +91,20 @@ const overlayPopupVariants = tv({
      * is allowlisted as a raw palette literal; a dark-mode scrim token is on the roadmap.
      */
     scrim: "bg-black/10 supports-backdrop-filter:backdrop-blur-xs",
-    /** Dialog title typography, shared so the interim tier cannot drift. */
-    title: "text-base font-medium font-heading leading-none text-balance",
+    /**
+     * The modal title typography that `Dialog.Title` (and AlertDialog's title through it),
+     * `Sheet.Title` and the interim tier's dialog heading share, so none of them can drift.
+     * `text-xl` keeps its own 28px line, so a wrapped title stays readable, and the title stands
+     * above comfortable `--label-text` and `--control-text`. It carries no colour: the title
+     * inherits its modal's ink, `text-dialog-foreground`. The title renders an `h2`, so `m-0`
+     * resets the block margins a host without Tailwind's preflight would otherwise keep.
+     */
+    title: "text-xl font-medium m-0 font-heading text-balance",
+    /**
+     * One title line beside the title, for the glyph AlertDialog sets in its header row. It takes
+     * the title's size, so `h-lh` is the title's first line, and centres the glyph on it.
+     */
+    titleLine: "text-xl flex h-lh shrink-0 items-center",
     /** Dialog footer action row, shared with the interim tier's footer slot. */
     footer: "sm:flex-row sm:justify-end flex flex-col-reverse gap-2",
     /**
@@ -139,6 +151,7 @@ const overlayPopupSlots = overlayPopupVariants();
 
 export const overlayScrimClass = overlayPopupSlots.scrim();
 export const overlayTitleClass = overlayPopupSlots.title();
+export const overlayTitleLineClass = overlayPopupSlots.titleLine();
 export const overlayFooterClass = overlayPopupSlots.footer();
 export const overlayPositionerClass = overlayPopupSlots.positioner();
 export const overlayPopupFillClass = overlayPopupSlots.fill();

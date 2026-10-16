@@ -58,11 +58,11 @@ function ConfirmDialog({
   );
 }
 
-async function openConfirm(): Promise<HTMLElement> {
+async function openConfirm(name = TITLE): Promise<HTMLElement> {
   await userEvent.click(page.getByRole("button", { name: "Delete order", exact: true }).element());
   // Base UI mounts the popup a frame or more after the click.
-  await expect.element(page.getByRole("alertdialog", { name: TITLE })).toBeInTheDocument();
-  const dialog = page.getByRole("alertdialog", { name: TITLE }).element();
+  await expect.element(page.getByRole("alertdialog", { name })).toBeInTheDocument();
+  const dialog = page.getByRole("alertdialog", { name }).element();
   if (!(dialog instanceof HTMLElement)) {
     throw new Error("expected the popup");
   }
@@ -288,5 +288,25 @@ describe("AlertDialog", () => {
     const custom = await openConfirm();
     expect(page.getByText("Custom mark", { exact: true }).element()).toBeTruthy();
     expect(custom.querySelector("svg")).toBeNull();
+  });
+
+  it("centres the icon on the first line of a title that wraps", async () => {
+    // Unit under test: the icon's vertical position in the header row. Oracle: the midpoint of the
+    // title's first line, the title's top plus half its own computed line height.
+    const title = "Delete this order and every delivery, invoice and meter reading attached to it?";
+    renderThemed(withLocale("en-US", <ConfirmDialog title={title} />));
+    const popup = await openConfirm(title);
+    const heading = page.getByRole("heading", { name: title, exact: true }).element();
+    const icon = popup.querySelector("svg");
+    if (!(heading instanceof HTMLElement) || !(icon instanceof SVGElement)) {
+      throw new Error("expected the title heading and the fallback icon");
+    }
+    // The popup zooms in from 95%; measure the settled layout.
+    await Promise.all(popup.getAnimations({ subtree: true }).map((animation) => animation.finished));
+    const line = Number.parseFloat(getComputedStyle(heading).lineHeight);
+    const headingBox = heading.getBoundingClientRect();
+    expect(headingBox.height).toBeGreaterThanOrEqual(2 * line);
+    const iconBox = icon.getBoundingClientRect();
+    expect(iconBox.top + iconBox.height / 2).toBeCloseTo(headingBox.top + line / 2, 0);
   });
 });

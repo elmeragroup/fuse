@@ -7,7 +7,12 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { render } from "../../../test/browser-render";
 import { ContextProbe, DESKTOP, MOBILE } from "../../../test/sidebar-browser-fixtures";
-import { cssVarColor, roleNamed, snapshotDocumentTheme } from "../../../test/themed-browser-render";
+import {
+  cssVarColor,
+  headingNamed,
+  roleNamed,
+  snapshotDocumentTheme,
+} from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import type { ResolvedColorScheme } from "../../theme/color-scheme-types";
 import { ThemeScope } from "../../theme/theme-scope";
@@ -147,7 +152,7 @@ describe("modal fill", () => {
   });
 
   it.each(MODALS)(
-    "reads a --dialog pair set on the theme element in $label",
+    "reads a --dialog pair set on the theme element in $label and its title",
     async ({ role, name, node }) => {
       document.documentElement.setAttribute("data-theme", "light");
       const custom = { "--dialog": "oklch(0.5 0.1 20)", "--dialog-foreground": "oklch(0.98 0.01 20)" };
@@ -160,6 +165,8 @@ describe("modal fill", () => {
       expect(style.backgroundColor).toBe(scopeColor("--dialog"));
       expect(style.color).toBe(scopeColor("--dialog-foreground"));
       expect(style.backgroundColor).not.toBe(scopeColor("--background"));
+      // The title inherits the modal ink rather than painting a role of its own.
+      expect(getComputedStyle(headingNamed(name)).color).toBe(scopeColor("--dialog-foreground"));
     }
   );
 

@@ -31,7 +31,7 @@ const dialogVariants = tv({
       "relative max-h-[inherit] overflow-y-auto outline-none",
     ],
     header: "flex items-start justify-between gap-4",
-    // The heading borrows the public Dialog's literal so the interim tier
+    // The heading takes the modal title class Dialog and Sheet share, so the interim tier
     // cannot drift.
     heading: overlayTitleClass,
     // The content stacks its groups, such as a calendar and its presets, by the large surface gap.
