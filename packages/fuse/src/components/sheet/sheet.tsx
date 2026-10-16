@@ -16,6 +16,7 @@ import {
   overlayModalFillClass,
   overlayScrimClass,
   overlaySizeVariants,
+  overlayTitleClass,
 } from "../overlay/overlay-classes";
 import { OverlayCloseButton, overlayCornerCloseClass } from "../overlay/overlay-close-button";
 import { OverlayPortal } from "../overlay/overlay-portal";
@@ -225,7 +226,7 @@ export function SheetTitle({
   return (
     <SheetPrimitive.Title
       data-slot="sheet-title"
-      className={mergeClassName(className, "text-xl font-medium font-heading text-balance text-foreground")}
+      className={mergeClassName(className, overlayTitleClass)}
       {...props}
     />
   );
