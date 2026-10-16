@@ -9,6 +9,9 @@ import {
 } from "../../styles/inner-corner/accordion";
 import { panelHeightTransition } from "../../styles/panel-height";
 import { dataStateFaceClass, nativeStateFaceClass } from "../../styles/state-face";
+import { tv } from "../../styles/tv";
+import { selfFocusRingClass } from "../../styles/utils";
+
 /**
  * PUBLIC slot recipe. Consumers borrow it from
  * `@elmeragroup/fuse/accordion`. Context-passed `variant` / `radius` stay on Root;
@@ -33,9 +36,6 @@ import { dataStateFaceClass, nativeStateFaceClass } from "../../styles/state-fac
  * The `card` item draws its 1px edge in `--card-border`, which external themes make transparent;
  * add `border-border` where a borrowed item must keep a visible edge.
  */
-import { tv } from "../../styles/tv";
-import { selfFocusRingClass } from "../../styles/utils";
-
 export const accordionVariants = tv({
   slots: {
     base: "",
