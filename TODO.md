@@ -37,6 +37,10 @@
   item fills with `primary-soft`, and every external dark sheet except ngfi sets it equal to
   `card` (`external-dark-palettes.ts`, `segment-sheets.ts`), so a default accordion inside a Card
   loses its box in dark mode.
+- Ask design for light tones that hold `muted-foreground` at 4.5:1 on `primary-soft`, the default
+  Accordion item's fill. It measures 4.43:1 on the internal default, 3.84:1 on fkas and 4.17:1 on
+  fkse, so a muted description inside the item falls under the text floor. `contrast-matrix.test.ts`
+  holds the pair in dark only.
 - Confirm the external Button numbers with design. They come from the sales flow's own button
   recipe, not a published brand spec: the comfortable label inset of 16px at `sm` and 32px at
   `md` and `lg` (`theme/tokens/density-metrics.ts`) and the 2px outline in `--foreground`

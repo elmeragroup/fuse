@@ -39,10 +39,10 @@ export const accordionVariants = tv({
     // Every item pads with the medium surface tier; the shells add it with the corner they publish.
     item: "p-(--surface-pad-md)",
     header: "flex",
-    // Fuse ships no preflight, so `text-inherit` replaces the native button's ButtonText and the
-    // label takes its item's text colour.
+    // Fuse ships no preflight, so `text-inherit` and `bg-transparent` replace the native button's
+    // ButtonText and ButtonFace: the label takes its item's text colour over its item's fill.
     trigger: cn(
-      "group/accordion-trigger font-medium flex flex-1 cursor-pointer items-center justify-between gap-2 text-inherit enabled-hover:underline",
+      "group/accordion-trigger font-medium flex flex-1 cursor-pointer items-center justify-between gap-2 bg-transparent text-inherit enabled-hover:underline",
       selfFocusRingClass,
       nativeStateFaceClass,
       dataStateFaceClass
@@ -61,7 +61,8 @@ export const accordionVariants = tv({
         // The brand's soft tint, the role Material's `secondary-container` maps to. `muted` is
         // the hover and read-only grey, so a panel in it reads as disabled on a tinted page.
         // The neutral ring falls under 3:1 on the tint, so focus takes the soft foreground,
-        // as Alert's soft fills do.
+        // as Alert's soft fills do. The rebind covers the whole item, so a control in the panel
+        // also draws its ring in the soft foreground over the same tint.
         item: [
           accordionItemShellClass,
           "bg-primary-soft text-primary-soft-foreground [--ring:var(--primary-soft-foreground)]",

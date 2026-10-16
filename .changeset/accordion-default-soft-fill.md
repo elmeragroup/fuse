@@ -3,7 +3,8 @@
 ---
 
 A default `Accordion.Item` now fills with the brand's soft tint, `primary-soft`, instead of the grey
-`muted`. Its label and caret take `primary-soft-foreground`, and its focus ring takes the same colour
-so it holds 3:1 on the tint. The internal themes look almost the same. The external themes swap the
-grey box for the brand tint. The trigger label also takes its item's text colour now instead of the
-native button colour. To keep the grey, pass `className="bg-muted"` on `Accordion.Item`.
+`muted`. The item's text, including the panel body, the trigger label and the caret, takes
+`primary-soft-foreground`. Focus rings inside the item take the same colour, so they hold 3:1 on the
+tint. The internal themes look almost the same. The external themes swap the grey box for the brand
+tint. Without preflight, the trigger no longer paints the native button's text and background colours.
+To keep the grey look, pass `className="bg-muted text-foreground"` on `Accordion.Item`.

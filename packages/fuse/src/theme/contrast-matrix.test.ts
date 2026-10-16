@@ -129,6 +129,15 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
     floor: 4.5,
   },
   {
+    // Muted copy, such as a field description, in a default Accordion item, which fills with
+    // `primary-soft`. Dark only: light measures 4.43:1 on the internal default, 3.84:1 on fkas
+    // and 4.17:1 on fkse, an accepted deviation until design picks the tones (TODO.md).
+    schemes: ["dark"],
+    matches: () => true,
+    pairs: [["muted-foreground", "primary-soft"]],
+    floor: 4.5,
+  },
+  {
     // A menu row's hover tint over its popup. It is not a text pair, but a tint equal to the
     // popup hides which row is highlighted; 1.1:1 sits under the light default's 1.12:1.
     schemes: ["light", "dark"],

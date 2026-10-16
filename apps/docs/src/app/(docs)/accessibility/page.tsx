@@ -64,10 +64,10 @@ export default function AccessibilityPage(): ReactElement {
         <li>
           Focus rings render on <code>:focus-visible</code> only, never bare <code>:focus</code>, always
           through one shared recipe: a flush two-pixel ring in the <code>--ring</code> role, a neutral grey by
-          default. Status Toasts and the warning and info Alerts rebind <code>--ring</code> to their soft
-          surface&apos;s foreground, as the accepted deviations below explain. A keyboard-focused invalid
-          control draws a one-pixel <code>--error</code> line inside its error halo instead. No component
-          suppresses or redefines either recipe.
+          default. Status Toasts, the warning and info Alerts and the default Accordion item rebind{" "}
+          <code>--ring</code> to their soft surface&apos;s foreground, as the accepted deviations below
+          explain. A keyboard-focused invalid control draws a one-pixel <code>--error</code> line inside its
+          error halo instead. No component suppresses or redefines either recipe.
         </li>
         <li>
           Keyboard behaviour follows base-ui, with the documented component defaults: arrow-key roving with
@@ -123,11 +123,12 @@ export default function AccessibilityPage(): ReactElement {
           The neutral <code>--ring</code> is held to 3:1 against the page, card and muted surfaces in both
           color schemes. Muted is the Tabs list track. Status Toasts and the warning and info Alerts redraw
           the ring in their soft surface&apos;s foreground, because the neutral grey falls under 3:1 on the
-          dark status soft fills. The ring sits flush against the control, so against a strong fill it can
-          measure below 3:1 against that fill. The external secondary button carries the brand color in every
-          brand except Nordic Green Energy, and in light mode the ring measures 1.62–1.79:1 against it.
-          Against the light Telinet and Nordic Green Energy primary buttons it measures under 2.7:1. A brand
-          can tune its ring in its palette.
+          dark status soft fills. A default <code>Accordion</code> item does the same, because the grey falls
+          under 3:1 on its <code>--primary-soft</code> fill in some brands. The ring sits flush against the
+          control, so against a strong fill it can measure below 3:1 against that fill. The external secondary
+          button carries the brand color in every brand except Nordic Green Energy, and in light mode the ring
+          measures 1.62–1.79:1 against it. Against the light Telinet and Nordic Green Energy primary buttons
+          it measures under 2.7:1. A brand can tune its ring in its palette.
         </li>
         <li>
           Light <code>--input</code>, the border of Input, Textarea, Select and the other field boxes,
@@ -146,6 +147,12 @@ export default function AccessibilityPage(): ReactElement {
           row is not the control boundary. The <code>Checkbox</code> or <code>Radio</code> inside it carries
           the state with its own edge, held to 3:1 as above, and its checked fill. On a <code>card</code>
           -coloured surface the row has no outline.
+        </li>
+        <li>
+          A default <code>Accordion</code> item fills with <code>--primary-soft</code>. Its own text takes{" "}
+          <code>--primary-soft-foreground</code>, but muted copy inside it, such as a field description,
+          measures under 4.5:1 in light mode: 4.43:1 on the internal themes, 3.84:1 on Fjordkraft and 4.17:1
+          on Telinet. Dark mode holds 4.5:1 in every theme.
         </li>
         <li>
           <code>feature-foreground</code> is reclassified as accent/decorative. Text on <code>feature</code>{" "}

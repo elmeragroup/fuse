@@ -390,9 +390,13 @@ describe("Accordion default fill", () => {
     restoreDocumentTheme();
   });
 
-  it("fills a default item with the soft brand tint, with its text and caret in the soft foreground", () => {
-    renderThemed(<ShippingBilling />);
+  it("fills a default item with the soft brand tint, with its label, caret and panel in the soft foreground", () => {
+    renderThemed(<ShippingBilling defaultValue={["shipping"]} />);
     const { trigger, item, caret, scope } = shippingParts();
+    const panel = page.getByRole("region", { name: "Shipping" }).element();
+    if (!(panel instanceof HTMLElement)) {
+      throw new Error("expected the shipping region");
+    }
 
     for (const scheme of ["light", "dark"] as const) {
       for (const theme of LEGAL_THEMES) {
@@ -400,12 +404,18 @@ describe("Accordion default fill", () => {
         stampTheme(scope, theme);
         settleTransitions(item, trigger);
         const context = `${themeSlug(theme)} ${scheme}`;
-        expect
-          .soft(getComputedStyle(item).backgroundColor, context)
-          .toBe(cssVarColor(item, "--primary-soft"));
+        const fill = getComputedStyle(item).backgroundColor;
+        expect.soft(fill, context).toBe(cssVarColor(item, "--primary-soft"));
         const text = cssVarColor(item, "--primary-soft-foreground");
         expect.soft(getComputedStyle(trigger).color, context).toBe(text);
         expect.soft(getComputedStyle(caret).color, context).toBe(text);
+        expect.soft(getComputedStyle(panel).color, context).toBe(text);
+        // Without preflight the native button paints ButtonFace, which would sit between the
+        // label and the item's fill.
+        expect.soft(getComputedStyle(trigger).backgroundColor, context).toBe("rgba(0, 0, 0, 0)");
+        expect
+          .soft(computedContrast(getComputedStyle(trigger).color, fill), context)
+          .toBeGreaterThanOrEqual(4.5);
       }
     }
   });
