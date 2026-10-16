@@ -8,6 +8,8 @@ import { tv } from "../../styles/tv";
 /**
  * PUBLIC slot recipe. `text-field`'s `card` variant and
  * `CheckboxCard` compose it, so it ships from `@elmeragroup/fuse/card`.
+ * The base draws its edge in `--card-border`, which external themes make transparent; both
+ * composers pin `border-border` over it, since a field box and a control keep a visible edge.
  * Horizontal cards keep their header text in a grid and wrap whole sections when
  * the container cannot fit them side by side.
  * One axis only — the external ref's surface/padding axes are decomposed away.

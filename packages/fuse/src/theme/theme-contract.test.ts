@@ -555,9 +555,9 @@ describe("external variant layer roles", () => {
       expect(declaration(rules, selector, "radius-field"), selector).toBe("var(--radius)");
     }
     // Internal themes and the root keep the border-coloured card edge, the 1px border hairline,
-    // the border-coloured selection row edge, the primary checked-row edge, dividers that follow those edges, the muted
-    // disabled row striped in black at 2% with foreground text, the regular selection row title
-    // and round fields with --radius.
+    // the border-coloured selection row edge, the primary checked-row edge, dividers that follow
+    // those edges, the muted disabled row striped in black at 2% with foreground text, the
+    // regular selection row title and round fields with --radius.
     for (const selector of [":root", '[data-theme-variant="internal"]']) {
       expect(declaration(rules, selector, "card-border"), selector).toBe("var(--border)");
       expect(declaration(rules, selector, "button-outline"), selector).toBe("var(--border)");

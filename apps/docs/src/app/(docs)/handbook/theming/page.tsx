@@ -258,7 +258,7 @@ export default function ThemingPage(): ReactElement {
         <code>var(--border)</code> edge. To change the card edge, override <code>--card-border</code> on the
         element that carries the theme attributes, which is <code>&lt;html&gt;</code> or a{" "}
         <code>ThemeScope</code>, where the theme rules resolve it, or on any element around the cards. On a
-        plain wrapper a <code>--border</code> override no longer reaches cards.
+        plain wrapper a <code>--border</code> override does not reach cards.
       </p>
       <p>
         A <code>RadioItem</code> or <code>CheckboxItem</code> row draws its 1px edge in{" "}

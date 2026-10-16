@@ -132,7 +132,7 @@ A row disabled on its own, or through a disabled group, takes the three disabled
 
 A checked row's `bg-muted` tint and a disabled row's fill win over a background class on the row, such as `bg-background` for a list that shows its surface through. To change the disabled fill, set `--selection-disabled-background` instead, for example to `var(--background)`.
 
-The theme rules resolve these roles on the element that carries the theme attributes, which is `<html>` or a `ThemeScope`. Set an override there. On a plain wrapper, a `--border` override reaches cards and `CheckboxCard`, but the rows keep the edges and dividers the theme element resolved. To give external rows back an outer edge:
+The theme rules resolve these roles on the element that carries the theme attributes, which is `<html>` or a `ThemeScope`. Set an override there. On a plain wrapper, a `--border` override reaches `CheckboxCard`, but the rows keep the edges and dividers the theme element resolved, and cards keep their `--card-border` edge. To give external rows back an outer edge:
 
 ```tsx
 import type { CSSProperties } from "react";

@@ -12,7 +12,7 @@ import "../../dist/themes.css";
 import { render } from "../../test/browser-render";
 import { withLocale } from "../../test/locale-matrix";
 import { bySlot, Frame as SidebarFrame, setupSidebarBrowser } from "../../test/sidebar-browser-fixtures";
-import { fkasPrivate, guenExternal } from "../../test/theme-fixtures";
+import { fkasPrivate, fkseExternal, guenExternal } from "../../test/theme-fixtures";
 import type { QueryableRole } from "../../test/themed-browser-render";
 import { cssVarColor, fieldRootFrom, px, roleNamed, textNamed } from "../../test/themed-browser-render";
 import { Accordion } from "../components/accordion";
@@ -41,10 +41,10 @@ type BareBorder = {
 /**
  * The parts with a bare `border*` width, plus a Card whose `border-error` utility must win
  * over the base default and its own `--card-border`. Card and the `card` Accordion item read
- * `--card-border` instead, which the card edge suite below covers. An external `primary` can equal the text colour, but the error role is
- * a status hue, so the check against the text colour stays meaningful in every scope. The first
- * Term and Details drop their border, so the second pair is read; the last body row drops its
- * own, so the first is.
+ * `--card-border` instead, which the card edge suite below covers. An external `primary` can
+ * equal the text colour, but the error role is a status hue, so the check against the text
+ * colour stays meaningful in every scope. The first Term and Details drop their border, so the
+ * second pair is read; the last body row drops its own, so the first is.
  */
 const PARTS: readonly BareBorder[] = [
   { name: "DescriptionList Term", find: () => textNamed("Meter point"), side: "Top", token: "--border" },
@@ -222,9 +222,6 @@ describe("the base-layer border default", () => {
   });
 });
 
-/** fkse/private, external: the weakest light card step off the page among the brands. */
-const fkseExternal = { variant: "external", brand: "fkse", segment: "private" } as const;
-
 const CARD_RADII = ["none", "lg", "xl"] as const;
 
 /** The parts that draw their edge in `--card-border`. */
@@ -359,10 +356,10 @@ describe("the card edge role", () => {
     render(
       <ThemeScope theme={fkasPrivate}>
         <div role="group" aria-label="Theme probe" />
-        <div style={{ "--card-border": "rgb(200, 0, 0)" } as CSSProperties}>
+        <div style={{ "--card-border": "rgb(200, 0, 0)" }}>
           <Card.Root role="group" aria-label="Recoloured" />
         </div>
-        <div style={{ "--border": "rgb(0, 0, 200)" } as CSSProperties}>
+        <div style={{ "--border": "rgb(0, 0, 200)" }}>
           <Card.Root role="group" aria-label="Wrapped" />
         </div>
       </ThemeScope>
