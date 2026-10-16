@@ -97,6 +97,7 @@ describe("FOREGROUND_PAIRS", () => {
       { surface: "card", foreground: "card-foreground" },
       { surface: "card-soft", foreground: "card-soft-foreground" },
       { surface: "popover", foreground: "popover-foreground" },
+      { surface: "dialog", foreground: "dialog-foreground" },
       { surface: "muted", foreground: "muted-foreground" },
       { surface: "accent", foreground: "accent-foreground" },
       { surface: "primary", foreground: "primary-foreground" },
