@@ -33,6 +33,10 @@
   White text on dark `feature` measures 4.49:1 for tkas, 4.38:1 for fkse and 4.49:1 for elma,
   under the 4.5:1 floor. Until design decides, the landing's brand sites fill strong bands and
   the promo hero with `primary-soft` in dark mode (`landing/brand-site/site-band.tsx`).
+- Ask design for a dark external `primary-soft` that differs from `card`. The default Accordion
+  item fills with `primary-soft`, and every external dark sheet except ngfi sets it equal to
+  `card` (`external-dark-palettes.ts`, `segment-sheets.ts`), so a default accordion inside a Card
+  loses its box in dark mode.
 - Confirm the external Button numbers with design. They come from the sales flow's own button
   recipe, not a published brand spec: the comfortable label inset of 16px at `sm` and 32px at
   `md` and `lg` (`theme/tokens/density-metrics.ts`) and the 2px outline in `--foreground`

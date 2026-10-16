@@ -39,14 +39,17 @@ export const accordionVariants = tv({
     // Every item pads with the medium surface tier; the shells add it with the corner they publish.
     item: "p-(--surface-pad-md)",
     header: "flex",
+    // Fuse ships no preflight, so `text-inherit` replaces the native button's ButtonText and the
+    // label takes its item's text colour.
     trigger: cn(
-      "group/accordion-trigger font-medium flex flex-1 cursor-pointer items-center justify-between gap-2 enabled-hover:underline",
+      "group/accordion-trigger font-medium flex flex-1 cursor-pointer items-center justify-between gap-2 text-inherit enabled-hover:underline",
       selfFocusRingClass,
       nativeStateFaceClass,
       dataStateFaceClass
     ),
     indicator: "flex shrink-0 items-center",
-    icon: "size-4 shrink-0 text-foreground transition-transform duration-200 group-data-[panel-open]/accordion-trigger:rotate-180",
+    // The caret takes its item's text colour, so it follows the default fill's soft foreground.
+    icon: "size-4 shrink-0 transition-transform duration-200 group-data-[panel-open]/accordion-trigger:rotate-180",
     content: cn(panelHeightTransition, "h-(--accordion-panel-height)"),
     // An open panel sits the large surface gap below its trigger, plus the 6px before its text.
     // The gap lives in the panel, so it opens and closes with the panel's height.
@@ -55,7 +58,14 @@ export const accordionVariants = tv({
   variants: {
     variant: {
       default: {
-        item: [accordionItemShellClass, "bg-muted"],
+        // The brand's soft tint, the role Material's `secondary-container` maps to. `muted` is
+        // the hover and read-only grey, so a panel in it reads as disabled on a tinted page.
+        // The neutral ring falls under 3:1 on the tint, so focus takes the soft foreground,
+        // as Alert's soft fills do.
+        item: [
+          accordionItemShellClass,
+          "bg-primary-soft text-primary-soft-foreground [--ring:var(--primary-soft-foreground)]",
+        ],
       },
       card: {
         base: "space-y-3",
@@ -68,7 +78,7 @@ export const accordionVariants = tv({
         base: "border-b border-border",
         trigger: "relative justify-start",
         indicator: "absolute right-0",
-        icon: "absolute right-0",
+        icon: "absolute right-0 text-foreground",
         content: "pl-7",
         contentInner: "pt-1.5",
       },
