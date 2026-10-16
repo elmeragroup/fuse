@@ -2,7 +2,7 @@ import type { TokenContract, TokenLayer } from "./contract";
 
 /**
  * The Figma sheet roles every external dark palette must name. The remaining roles —
- * status, chart, syntax, muted and the panel derivatives — come from `DARK_DEFAULTS` or
+ * status, chart, syntax, muted, the modal pair and the panel derivatives — come from `DARK_DEFAULTS` or
  * are derived from these, so a sheet that omits one of these keys is a type error rather
  * than a silent fallback to the light composition.
  */

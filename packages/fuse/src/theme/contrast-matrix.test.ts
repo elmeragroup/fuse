@@ -109,7 +109,8 @@ type ContrastPolicy = {
 
 /**
  * The text-grade pairs hold 4.5:1 in both schemes, `muted-foreground` among them on every
- * surface muted copy lands on: `background`, `muted`, `card` and `card-soft`. Muted copy carries
+ * surface muted copy lands on: `background`, `muted`, `card`, `card-soft` and the modal fill,
+ * `dialog`. Muted copy carries
  * field and selection row descriptions, which can hold required information.
  */
 const CONTRAST_POLICIES: readonly ContrastPolicy[] = [

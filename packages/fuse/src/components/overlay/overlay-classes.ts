@@ -158,7 +158,8 @@ export const overlayPopupMotionClass = cn(overlayPopupSlots.anchor(), overlayPop
 /**
  * Fill + edge + the `md` radius rung: the whole surface of a popup that sits on the
  * popover role. Dialog and `Command.Content` take it through {@link overlayModalPopupClass},
- * raising the radius to `rounded-xl` in their shells; the four timed
+ * raising the radius to `rounded-xl` in their shells, and Dialog then swaps the fill for
+ * {@link overlayModalFillClass}; the four timed
  * anchored popups (Popover, Select, Combobox, DropdownMenu — Select raises the radius
  * to `rounded-lg`) take it through {@link overlayTimedPopupClass}. Each still overrides
  * a rung through the extra `cn` argument rather than restating the fill and ring.
@@ -194,7 +195,8 @@ export const overlayTimedPopupClass = cn(
  * focus ring. No trigger anchors a modal, so it leaves out the transform origin and the per-side
  * slide-ins of {@link overlayPopupMotionClass}. Each modal composes it first and passes its shell
  * and layout as later `cn` arguments, so the shell's `rounded-xl` overrides the surface's
- * `rounded-md`.
+ * `rounded-md`. Dialog also passes {@link overlayModalFillClass}, which replaces the popover
+ * fill; `Command.Content` keeps it.
  */
 export const overlayModalPopupClass = cn(
   overlayPopupSurfaceClass,

@@ -137,8 +137,8 @@ export default function AccessibilityPage(): ReactElement {
           1.19–1.70:1 on the same surfaces. A field border of at least 3:1 is a design decision on the
           roadmap. <code>Checkbox</code>, <code>Radio</code> and <code>Switch</code> do not depend on it: the
           unchecked Checkbox and Radio edge and the unchecked Switch edge and thumb are{" "}
-          <code>--muted-foreground</code>, held to 3:1 against the page, card and card-soft surfaces in both
-          color schemes.
+          <code>--muted-foreground</code>, held to 3:1 against the page, card, card-soft and modal surfaces in
+          both color schemes.
         </li>
         <li>
           External themes draw no outer edge around a <code>RadioItem</code> or <code>CheckboxItem</code> row:{" "}
@@ -163,7 +163,7 @@ export default function AccessibilityPage(): ReactElement {
       </ul>
       <p>
         Contrast snapshots cover all twenty-four themes. Text pairs hold 4.5:1 in both color schemes,
-        including <code>--muted-foreground</code> on the page, <code>--muted</code>, card and card-soft
+        including <code>--muted-foreground</code> on the page, <code>--muted</code>, card, card-soft and modal
         surfaces, so muted descriptions can carry required information. Additional tests cover dark panel
         text, dark input boundaries, the selection-control edge and focus colors. Decorative dark borders
         cannot be the sole control boundary. These checks do not establish chart-series distinction or

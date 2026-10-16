@@ -295,11 +295,12 @@ export default function ThemingPage(): ReactElement {
         every dark theme alias the popover pair, so a modal looks like the anchored popups. External light
         themes fill a modal with the page tint, <code>var(--background)</code>, in the page&apos;s{" "}
         <code>var(--foreground)</code>, so the white fields and selection rows inside it keep the separation
-        they have on the page. Popover, Select, Combobox, DropdownMenu, Toast and the <code>Command</code>{" "}
-        palette stay on <code>--popover</code>, because their highlighted rows need the accent step over a
-        white popup. The theme rules resolve <code>--dialog</code> on the element that carries the theme
-        attributes, so a <code>--popover</code> override on a plain wrapper no longer reaches a modal:
-        override <code>--dialog</code> there instead. To put one modal back on the popover fill, pass{" "}
+        they have on the page. Popover, Select, Combobox, DropdownMenu, NavigationMenu, Toolbar, the neutral
+        Toast and the <code>Command</code> palette stay on <code>--popover</code>. The menus among them
+        highlight rows with the accent step, which needs the white popup. The theme rules resolve{" "}
+        <code>--dialog</code> on the element that carries the theme attributes, so a <code>--popover</code>{" "}
+        override on a plain wrapper no longer reaches a modal: override <code>--dialog</code> there instead.
+        To put one modal back on the popover fill, pass{" "}
         <code>className=&quot;bg-popover text-popover-foreground&quot;</code>.
       </p>
       <p>
