@@ -131,7 +131,8 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
   {
     // Muted copy, such as a field description, in a default Accordion item, which fills with
     // `primary-soft`. Dark only: light measures 4.43:1 on the internal default, 3.84:1 on fkas
-    // and 4.17:1 on fkse, an accepted deviation until design picks the tones (TODO.md).
+    // and 4.17:1 on fkse, an accepted deviation the accessibility page lists until design picks
+    // the light tones.
     schemes: ["dark"],
     matches: () => true,
     pairs: [["muted-foreground", "primary-soft"]],
