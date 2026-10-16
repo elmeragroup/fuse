@@ -146,7 +146,7 @@ export function AlertDialogContent({
       <DialogHeader className="flex-row items-start justify-between gap-4">
         <DialogTitle className="text-balance">{title}</DialogTitle>
         {/* The icon sits on the title's first line, as Alert centres its media on its title. */}
-        <span className={overlayTitleLineClass}>{icon ?? fallbackIcon}</span>
+        <div className={overlayTitleLineClass}>{icon ?? fallbackIcon}</div>
       </DialogHeader>
       <DialogDescription>{children}</DialogDescription>
       <DialogFooter>

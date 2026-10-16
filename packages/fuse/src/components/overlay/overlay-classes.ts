@@ -96,15 +96,17 @@ const overlayPopupVariants = tv({
      * `Sheet.Title` and the interim tier's dialog heading share, so none of them can drift.
      * `text-xl` keeps its own 28px line, so a wrapped title stays readable, and the title stands
      * above comfortable `--label-text` and `--control-text`. It carries no colour: the title
-     * inherits its modal's ink, `text-dialog-foreground`. The title renders an `h2`, so `m-0`
-     * resets the block margins a host without Tailwind's preflight would otherwise keep.
+     * inherits its surface's ink, `text-dialog-foreground` in Dialog and Sheet. Every title is a
+     * heading element, so `m-0` resets the block margins a host without Tailwind's preflight would
+     * otherwise keep. `titleLine` is one line of this type; change both together.
      */
     title: "text-xl font-medium m-0 font-heading text-balance",
     /**
-     * One title line beside the title, for the glyph AlertDialog sets in its header row. It takes
-     * the title's size, so `h-lh` is the title's first line, and centres the glyph on it.
+     * One title line beside the title, for the glyph AlertDialog sets in its header row: as tall
+     * as `text-xl`'s line, with the glyph centred on it. It sets no font size, so an icon sized in
+     * `em` keeps the header's size, and it hides when the icon renders nothing.
      */
-    titleLine: "text-xl flex h-lh shrink-0 items-center",
+    titleLine: "flex h-[calc(var(--text-xl)*var(--text-xl--line-height))] shrink-0 items-center empty:hidden",
     /** Dialog footer action row, shared with the interim tier's footer slot. */
     footer: "sm:flex-row sm:justify-end flex flex-col-reverse gap-2",
     /**
