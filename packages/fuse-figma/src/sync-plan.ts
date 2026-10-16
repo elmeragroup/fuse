@@ -508,9 +508,9 @@ export function changeBatch({ changes }: SyncPlan): ChangeBatch {
 
 /**
  * The metadata a write sends. When the sync sets web syntax, the write carries the whole
- * code syntax, the file's Android and iOS entries included. Figma does not document whether
- * an update merges code syntax or replaces it, and the complete object is right under
- * either rule. Without web syntax the write leaves code syntax out entirely.
+ * code syntax, the file's Android and iOS entries included, because an update replaces code
+ * syntax and would drop the entries it leaves out. Without web syntax the write leaves code
+ * syntax out entirely.
  */
 function metadataOf(spec: VariableSpec, fileSyntax: CodeSyntax): VariableMetadata {
   return {

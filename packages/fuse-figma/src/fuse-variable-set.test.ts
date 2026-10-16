@@ -59,12 +59,12 @@ describe("fuseVariableSet", () => {
     });
     expect(value(THEMES_COLLECTION, "light/button-outline-width", "external-fkas-private")).toEqual(px(2));
     expect(value(THEMES_COLLECTION, "light/button-outline-width", "internal-fkas-private")).toEqual(px(1));
-    expect(spec(TOKENS_COLLECTION, "font-sans")).toMatchObject({ type: "STRING", scopes: ["ALL_SCOPES"] });
+    expect(spec(TOKENS_COLLECTION, "font-sans")).toMatchObject({ type: "STRING", scopes: ["FONT_FAMILY"] });
     // A font weight syncs as a FLOAT variable that only the font weight picker offers, and
-    // keeps its value in both schemes.
+    // keeps its value in both schemes. A real file stores that picker's scope as FONT_STYLE.
     expect(spec(TOKENS_COLLECTION, "selection-title-weight")).toMatchObject({
       type: "FLOAT",
-      scopes: ["FONT_WEIGHT"],
+      scopes: ["FONT_STYLE"],
     });
     for (const scheme of ["light", "dark"]) {
       expect(value(THEMES_COLLECTION, `${scheme}/selection-title-weight`, "external-fkas-private")).toEqual({

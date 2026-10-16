@@ -115,16 +115,15 @@ const DIMENSION_SCOPES = {
 } as const satisfies Record<DimensionTokenName, readonly VariableScope[]>;
 
 /**
- * The pickers that offer a color or font token. Font families are STRING variables, and the
- * REST API's variable types page says scopes are currently only supported on FLOAT and COLOR
- * variables (https://developers.figma.com/docs/rest-api/variables-types/). They get
- * `ALL_SCOPES` until a real file shows that Figma keeps `FONT_FAMILY` on a STRING variable.
- * Font weights are FLOAT variables, so they get the font weight picker.
+ * The pickers that offer a color or font token. A real Enterprise file kept `FONT_FAMILY` on
+ * the STRING font family variables. Font weights are FLOAT variables and take `FONT_STYLE`,
+ * the REST API's name for a FLOAT variable's font weight picker. The Plugin API names the
+ * same stored scope `FONT_WEIGHT`.
  */
 const KIND_SCOPES = {
   color: ["ALL_SCOPES"],
-  fontFamily: ["ALL_SCOPES"],
-  fontWeight: ["FONT_WEIGHT"],
+  fontFamily: ["FONT_FAMILY"],
+  fontWeight: ["FONT_STYLE"],
 } as const satisfies Record<Exclude<TokenKind, "dimension">, readonly VariableScope[]>;
 
 /** The pickers that offer a contract token's `Fuse tokens` variable. */

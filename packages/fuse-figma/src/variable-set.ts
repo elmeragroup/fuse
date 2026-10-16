@@ -57,11 +57,12 @@ export type VariableValue = AliasValue | LiteralValue;
 export type VariableType = "COLOR" | "FLOAT" | "STRING";
 
 /**
- * The Figma picker scopes the REST API lists for the variable types the sync writes. An
- * empty list hides a variable from every picker while keeping it available as an alias
- * target. The type leaves out `FONT_FAMILY`. The same page says scopes currently apply only
- * to FLOAT and COLOR variables, so the font family tokens take `ALL_SCOPES` until a real file
- * shows that Figma keeps `FONT_FAMILY` on a STRING variable.
+ * The Figma picker scopes the REST API lists for the variable types the sync writes, except
+ * `FONT_WEIGHT`. The page lists `FONT_WEIGHT` for FLOAT variables, but a real Enterprise file
+ * stored it as `FONT_STYLE` on 2026-10-16, so a sync that sent it would never read back what
+ * it wrote. The same file kept `FONT_STYLE` on a FLOAT variable, and font weights take that.
+ * An empty list hides a variable from every picker while keeping it available as an alias
+ * target.
  */
 export type VariableScope =
   | "ALL_FILLS"
@@ -70,10 +71,10 @@ export type VariableScope =
   | "CORNER_RADIUS"
   | "EFFECT_COLOR"
   | "EFFECT_FLOAT"
+  | "FONT_FAMILY"
   | "FONT_SIZE"
   | "FONT_STYLE"
   | "FONT_VARIATIONS"
-  | "FONT_WEIGHT"
   | "FRAME_FILL"
   | "GAP"
   | "LETTER_SPACING"
@@ -162,6 +163,8 @@ const brandVariableSet = Brand.nominal<VariableSet>();
 /**
  * The variable types each scope applies to. The REST API's variable types page lists the
  * valid scopes per type, at https://developers.figma.com/docs/rest-api/variables-types/.
+ * The page lists `FONT_STYLE` for STRING only, and a real Enterprise file also kept it on a
+ * FLOAT variable.
  */
 const SCOPE_TYPES = {
   ALL_FILLS: ["COLOR"],
@@ -170,10 +173,10 @@ const SCOPE_TYPES = {
   CORNER_RADIUS: ["FLOAT"],
   EFFECT_COLOR: ["COLOR"],
   EFFECT_FLOAT: ["FLOAT"],
+  FONT_FAMILY: ["STRING"],
   FONT_SIZE: ["FLOAT"],
-  FONT_STYLE: ["STRING"],
+  FONT_STYLE: ["FLOAT", "STRING"],
   FONT_VARIATIONS: ["STRING"],
-  FONT_WEIGHT: ["FLOAT"],
   FRAME_FILL: ["COLOR"],
   GAP: ["FLOAT"],
   LETTER_SPACING: ["FLOAT"],

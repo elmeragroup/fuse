@@ -75,7 +75,9 @@ const MAX_BODY_BYTES = 4 * 1024 * 1024;
  * API's variable types page, at https://developers.figma.com/docs/rest-api/variables-types/.
  * The fake keeps its own copy in the page's layout, type by type, so it checks the table in
  * `makeVariableSet` rather than repeating it. The page lists no scope for BOOLEAN, so the
- * fake accepts only `ALL_SCOPES` there, and the same for `FUTURE_TYPE`.
+ * fake accepts only `ALL_SCOPES` there, and the same for `FUTURE_TYPE`. A real Enterprise
+ * file departed from the page on 2026-10-16. It kept `FONT_STYLE` on a FLOAT variable,
+ * which the page lists for STRING only, so the fake accepts it there too.
  */
 const TYPE_SCOPES = {
   BOOLEAN: ["ALL_SCOPES"],
@@ -91,6 +93,7 @@ const TYPE_SCOPES = {
     "COLOR_OPACITY",
     "EFFECT_FLOAT",
     "FONT_WEIGHT",
+    "FONT_STYLE",
     "FONT_SIZE",
     "LINE_HEIGHT",
     "LETTER_SPACING",
@@ -574,9 +577,8 @@ export class InMemoryFigma {
         continue;
       }
       if (change.scopes !== undefined) variable.scopes = checkedScopes(change.scopes, variable.resolvedType);
-      // Figma does not document whether an UPDATE merges code syntax or replaces it. The fake
-      // replaces it, the stricter rule, so a sync that keeps other platforms' entries under
-      // replacement also keeps them under a merge.
+      // An UPDATE replaces code syntax. A real Enterprise file dropped the Android and iOS
+      // entries of an update that sent only WEB on 2026-10-16.
       if (change.codeSyntax !== undefined) variable.codeSyntax = { ...change.codeSyntax };
     }
 
@@ -588,9 +590,8 @@ export class InMemoryFigma {
         reject(`Mode ${change.modeId} is not in the variable's collection`);
       }
       variable.valuesByMode.set(modeId, checkedValue(draft, variable, change.value, real));
-      // Figma does not say whether it checks for cycles after each value or only once the
-      // batch is applied. The fake checks after each one, the stricter reading, so a batch
-      // must never pass through a cycle on the way to an acyclic end state.
+      // Figma checks for a cycle after each value. A real Enterprise file refused a batch on
+      // 2026-10-16 that passed through a cycle on the way to an acyclic end state.
       if (onAliasCycle(draft, variable)) reject(`Alias cycle through ${variable.name}`);
     }
   }
@@ -693,7 +694,9 @@ function validModeName(name: string | undefined, collection: StoredCollection, s
 
 /**
  * Apply the REST page's scope rules. Every scope must fit the type, `ALL_SCOPES` stands alone,
- * and `ALL_FILLS` allows no other fill scope.
+ * and `ALL_FILLS` allows no other fill scope. A real Enterprise file stored the `FONT_WEIGHT`
+ * the page lists for FLOAT variables as `FONT_STYLE` on 2026-10-16, and the fake stores it
+ * the same way, so a sync that sends `FONT_WEIGHT` never reads back what it wrote.
  */
 function checkedScopes(scopes: readonly string[], type: ResolvedType): string[] {
   const accepted: readonly string[] = TYPE_SCOPES[type];
@@ -703,7 +706,7 @@ function checkedScopes(scopes: readonly string[], type: ResolvedType): string[] 
     reject("ALL_SCOPES cannot combine with other scopes");
   if (scopes.includes("ALL_FILLS") && scopes.some((scope) => FILL_SCOPES.includes(scope)))
     reject("ALL_FILLS cannot combine with other fill scopes");
-  return [...scopes];
+  return [...new Set(scopes.map((scope) => (scope === "FONT_WEIGHT" ? "FONT_STYLE" : scope)))];
 }
 
 function defaultValue(type: ResolvedType): StoredValue {
@@ -754,10 +757,10 @@ function checkedValue(
 }
 
 /**
- * Whether a chain of aliases leads from `start` back to it. Figma does not document how it
- * treats a cycle that only closes across modes, so the fake applies the sync's own
- * conservative rule: a variable points at every variable any of its modes aliases, and any
- * cycle is refused. The file had no cycle before the value that just changed, so only a
+ * Whether a chain of aliases leads from `start` back to it. A variable points at every
+ * variable any of its modes aliases, and any cycle is refused. A real Enterprise file
+ * refused a cycle that closed only across modes on 2026-10-16, and the sync applies the
+ * same rule. The file had no cycle before the value that just changed, so only a
  * cycle through the changed variable is possible.
  */
 function onAliasCycle(state: FileState, start: StoredVariable): boolean {

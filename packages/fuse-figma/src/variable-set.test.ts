@@ -80,6 +80,9 @@ describe("makeVariableSet", () => {
         ["STRING", ["TEXT_CONTENT"], text, undefined],
         ["FLOAT", ["TEXT_CONTENT"], six, undefined],
         ["FLOAT", ["FONT_VARIATIONS"], six, refusal("is a FLOAT variable but has the scope FONT_VARIATIONS")],
+        // A real Enterprise file kept FONT_STYLE on a FLOAT variable, which the page lists for STRING only.
+        ["FLOAT", ["FONT_STYLE"], six, undefined],
+        ["FLOAT", ["FONT_FAMILY"], six, refusal("is a FLOAT variable but has the scope FONT_FAMILY")],
         // ALL_FILLS may sit beside a stroke or effect scope, but not beside another fill scope.
         ["COLOR", ["ALL_FILLS", "STROKE_COLOR", "EFFECT_COLOR"], RED, undefined],
         ["COLOR", ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"], RED, undefined],

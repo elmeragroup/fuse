@@ -183,8 +183,12 @@ describe("fuse-figma sync", () => {
         codeSyntax: { WEB: "var(--radius)" },
       });
       assert.deepStrictEqual(figma.metadata("Fuse tokens", "font-sans"), {
-        scopes: ["ALL_SCOPES"],
+        scopes: ["FONT_FAMILY"],
         codeSyntax: { WEB: "var(--font-sans)" },
+      });
+      assert.deepStrictEqual(figma.metadata("Fuse tokens", "selection-title-weight"), {
+        scopes: ["FONT_STYLE"],
+        codeSyntax: { WEB: "var(--selection-title-weight)" },
       });
       assert.deepStrictEqual(figma.metadata("Fuse tokens", "secondary-hover"), {
         scopes: ["ALL_SCOPES"],
