@@ -282,17 +282,6 @@
 
 ## Figma token sync
 
-- Run the first sync against a real Enterprise file and confirm that empty picker scopes,
-  the per-type scopes from the REST variable types page, cross-collection aliases, the
-  mode change order and the read-back check behave as the in-memory fake assumes.
-  - Find out whether Figma checks for an alias cycle after each value in a batch or once
-    at the end. The sync orders values so that either rule passes, and the fake checks
-    after each one.
-  - Check which scopes Figma keeps on the STRING font variables. The REST variable types
-    page says scopes are currently only supported on FLOAT and COLOR variables, so
-    `font-sans` and `font-heading` sync with `ALL_SCOPES`. If Figma keeps `FONT_FAMILY`
-    on a STRING variable, tighten them to it. If it stores other scopes than the sync
-    sent, every `check` reports drift.
 - Add a CI job running `figma:check` once a service account owns a personal access token.
 - Add named Figma variables for the private corners in `styles/corner-radius.ts`, such
   as the compact corner that caps `rounded-md` at 10px in external themes, when the
