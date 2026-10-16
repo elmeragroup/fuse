@@ -23,6 +23,7 @@ describe("accordionVariants", () => {
 
   it("maps each variant onto the public slots without leaking the others", () => {
     const defaults = accordionVariants({ variant: "default" });
+    expect(defaults.base()).toContain("space-y-3");
     expect(defaults.item()).toContain("bg-primary-soft");
     expect(defaults.item()).toContain("text-primary-soft-foreground");
     expect(defaults.item()).toContain("[--ring:var(--primary-soft-foreground)]");

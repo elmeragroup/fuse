@@ -58,6 +58,9 @@ export const accordionVariants = tv({
   variants: {
     variant: {
       default: {
+        // Each item rounds all four corners, so stacked items sit apart, as card items do, instead
+        // of touching and leaving a notch where two rounded corners meet.
+        base: "space-y-3",
         // The brand's soft tint, the role Material's `secondary-container` maps to. `muted` is
         // the hover and read-only grey, so a panel in it reads as disabled on a tinted page.
         // The neutral ring falls under 3:1 on the tint, so focus takes the soft foreground,

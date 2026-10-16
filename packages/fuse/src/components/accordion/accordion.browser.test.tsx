@@ -420,6 +420,26 @@ describe("Accordion default fill", () => {
     }
   });
 
+  it("sets stacked default items apart by the card variant's gap, so their rounded corners never touch", () => {
+    const gapBelowShipping = () => {
+      const shipping = page.getByRole("heading", { level: 3, name: "Shipping" }).element().parentElement;
+      const billing = page.getByRole("heading", { level: 3, name: "Billing" }).element().parentElement;
+      if (!(shipping instanceof HTMLElement) || !(billing instanceof HTMLElement)) {
+        throw new Error("expected the shipping and billing items");
+      }
+      expect(Number.parseFloat(getComputedStyle(shipping).borderBottomLeftRadius)).toBeGreaterThan(0);
+      return billing.getBoundingClientRect().top - shipping.getBoundingClientRect().bottom;
+    };
+    // Oracle: the card variant's item gap, which "passes variant and radius" pins to 12px.
+    const card = renderThemed(<ShippingBilling variant="card" />);
+    const cardGap = gapBelowShipping();
+    card.unmount();
+
+    renderThemed(<ShippingBilling />);
+    expect(gapBelowShipping()).toBeGreaterThan(0);
+    expect(gapBelowShipping()).toBeCloseTo(cardGap, 0);
+  });
+
   it("draws the trigger's focus ring at 3:1 against the soft fill in every theme and scheme", async () => {
     renderThemed(
       <>
