@@ -4,6 +4,9 @@ import { Fragment } from "react";
 import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
+import * as CssColor from "@elmeragroup/color/css-color";
+import { getOrThrow } from "@elmeragroup/color/result";
+
 import "../../dist/styles.css";
 import "../../dist/themes.css";
 import { render } from "../../test/browser-render";
@@ -11,15 +14,18 @@ import { withLocale } from "../../test/locale-matrix";
 import { bySlot, Frame as SidebarFrame, setupSidebarBrowser } from "../../test/sidebar-browser-fixtures";
 import { fkasPrivate, guenExternal } from "../../test/theme-fixtures";
 import type { QueryableRole } from "../../test/themed-browser-render";
-import { cssVarColor, px, roleNamed, textNamed } from "../../test/themed-browser-render";
+import { cssVarColor, fieldRootFrom, px, roleNamed, textNamed } from "../../test/themed-browser-render";
 import { Accordion } from "../components/accordion";
 import { Badge } from "../components/badge/badge";
 import { ButtonGroup } from "../components/button-group";
 import { Card } from "../components/card/card";
+import { CheckboxCard } from "../components/checkbox-card/checkbox-card";
+import { CheckboxGroup } from "../components/checkbox/checkbox";
 import { DescriptionList } from "../components/description-list/description-list";
 import { Frame } from "../components/frame/frame";
 import { Sheet } from "../components/sheet";
 import { Table } from "../components/table/table";
+import { TextField } from "../components/text-field/text-field";
 import { ThemeScope } from "../theme/theme-scope";
 
 type Side = "Top" | "Right" | "Bottom" | "Left";
@@ -34,7 +40,8 @@ type BareBorder = {
 
 /**
  * The parts with a bare `border*` width, plus a Card whose `border-error` utility must win
- * over the base default. An external `primary` can equal the text colour, but the error role is
+ * over the base default and its own `--card-border`. Card and the `card` Accordion item read
+ * `--card-border` instead, which the card edge suite below covers. An external `primary` can equal the text colour, but the error role is
  * a status hue, so the check against the text colour stays meaningful in every scope. The first
  * Term and Details drop their border, so the second pair is read; the last body row drops its
  * own, so the first is.
@@ -42,12 +49,10 @@ type BareBorder = {
 const PARTS: readonly BareBorder[] = [
   { name: "DescriptionList Term", find: () => textNamed("Meter point"), side: "Top", token: "--border" },
   { name: "DescriptionList Details", find: () => textNamed("7070575000"), side: "Top", token: "--border" },
-  { name: "Card", find: () => roleNamed("group", "Card"), side: "Top", token: "--border" },
   { name: "outline Badge", find: () => textNamed("Outline"), side: "Top", token: "--border" },
   { name: "Table row", find: () => roleNamed("row", "Row one"), side: "Bottom", token: "--border" },
   { name: "ButtonGroupText", find: () => textNamed("https://"), side: "Top", token: "--border" },
   { name: "FramePanel", find: () => roleNamed("group", "Panel"), side: "Top", token: "--border" },
-  { name: "card Accordion item", find: () => roleNamed("group", "Item"), side: "Top", token: "--border" },
   { name: "Sheet popup", find: () => roleNamed("dialog", "Meter details"), side: "Left", token: "--border" },
   // DOM audit: the container has no role; Sidebar suites reach it by slot.
   {
@@ -95,13 +100,6 @@ function BareBorderParts() {
       <Frame.Root>
         <Frame.Panel role="group" aria-label="Panel" />
       </Frame.Root>
-      <Accordion.Root variant="card">
-        <Accordion.Item value="one" role="group" aria-label="Item">
-          <Accordion.Header>
-            <Accordion.Trigger>One</Accordion.Trigger>
-          </Accordion.Header>
-        </Accordion.Item>
-      </Accordion.Root>
       <SidebarFrame />
       <Sheet.Root defaultOpen modal={false}>
         <Sheet.Content>
@@ -221,5 +219,160 @@ describe("the base-layer border default", () => {
     expect(cssVarColor(roleNamed("group", "Card"), "--border")).not.toBe(
       cssVarColor(roleNamed("group", "Outer"), "--border")
     );
+  });
+});
+
+/** fkse/private, external: the weakest light card step off the page among the brands. */
+const fkseExternal = { variant: "external", brand: "fkse", segment: "private" } as const;
+
+const CARD_RADII = ["none", "lg", "xl"] as const;
+
+/** The parts that draw their edge in `--card-border`. */
+const CARD_EDGES: readonly { readonly name: string; readonly find: () => HTMLElement }[] = [
+  { name: "Card", find: () => roleNamed("group", "Card") },
+  ...CARD_RADII.map((radius) => ({
+    name: `card Accordion item, ${radius} radius`,
+    find: () => roleNamed("group", `Item ${radius}`),
+  })),
+];
+
+/** The parts built on the Card recipe that keep the `--border` edge. */
+const BORDER_KEEPERS: readonly { readonly name: string; readonly find: () => HTMLElement }[] = [
+  {
+    name: "CheckboxCard",
+    // DOM audit: the CheckboxCard edge is on Card.Root, which exposes its `card` slot.
+    find: () => {
+      const root = textNamed("Roadside").closest("[data-slot=card]");
+      if (!(root instanceof HTMLElement)) throw new Error("expected the CheckboxCard's card root");
+      return root;
+    },
+  },
+  { name: "TextField card", find: () => fieldRootFrom("Annual usage") },
+];
+
+function CardEdgeParts() {
+  return withLocale(
+    "en-US",
+    <>
+      <Card.Root role="group" aria-label="Card" />
+      <Card.Root role="group" aria-label="Error card" className="border-error" />
+      {CARD_RADII.map((radius) => (
+        <Accordion.Root key={radius} variant="card" radius={radius}>
+          <Accordion.Item value="one" role="group" aria-label={`Item ${radius}`}>
+            <Accordion.Header>
+              <Accordion.Trigger>One</Accordion.Trigger>
+            </Accordion.Header>
+          </Accordion.Item>
+        </Accordion.Root>
+      ))}
+      <CheckboxGroup>
+        <CheckboxCard value="roadside" title="Roadside" description="Towing included." />
+      </CheckboxGroup>
+      <TextField variant="card" label="Annual usage" placeholder="0" />
+    </>
+  );
+}
+
+const SIDES: readonly Side[] = ["Top", "Right", "Bottom", "Left"];
+
+/** Each side's computed width and colour. */
+function edges(element: HTMLElement): readonly { side: Side; width: number; color: string }[] {
+  const style = getComputedStyle(element);
+  return SIDES.map((side) => ({
+    side,
+    width: px(style[`border${side}Width`]),
+    color: style[`border${side}Color`],
+  }));
+}
+
+function alphaOf(serialized: string): number {
+  return getOrThrow(CssColor.parse(serialized)).alpha;
+}
+
+/** The `--border` edge the Card recipe's other consumers keep, visible in every scope. */
+function expectBorderKeepers(): void {
+  for (const part of BORDER_KEEPERS) {
+    const element = part.find();
+    const border = cssVarColor(element, "--border");
+    expect(alphaOf(border), `${part.name}: precondition, a visible border role`).toBeGreaterThan(0);
+    for (const { side, width, color } of edges(element)) {
+      expect.soft(width, `${part.name} ${side} width`).toBe(1);
+      expect.soft(color, `${part.name} ${side}`).toBe(border);
+    }
+  }
+}
+
+/** A border colour class on a Card beats the card edge role. */
+function expectClassOverride(): void {
+  const card = roleNamed("group", "Error card");
+  expect(getComputedStyle(card).borderTopColor).toBe(cssVarColor(card, "--error"));
+}
+
+describe("the card edge role", () => {
+  it.each([
+    ["internal light", (node: ReactNode) => <ThemeScope theme={fkasPrivate}>{node}</ThemeScope>],
+    [
+      "internal dark",
+      (node: ReactNode) => (
+        <div data-theme="dark">
+          <ThemeScope theme={fkasPrivate}>{node}</ThemeScope>
+        </div>
+      ),
+    ],
+  ] as const)("draws cards in the border role, %s", (_, scope) => {
+    render(scope(<CardEdgeParts />));
+    for (const part of CARD_EDGES) {
+      const element = part.find();
+      const border = cssVarColor(element, "--border");
+      for (const { side, width, color } of edges(element)) {
+        expect.soft(width, `${part.name} ${side} width`).toBe(1);
+        expect.soft(color, `${part.name} ${side}`).toBe(border);
+      }
+    }
+    expectBorderKeepers();
+    expectClassOverride();
+  });
+
+  it.each([
+    ["guen light", guenExternal, false],
+    ["fkse light", fkseExternal, false],
+    ["guen dark", guenExternal, true],
+    ["fkse dark", fkseExternal, true],
+  ] as const)("draws external cards with a transparent 1px edge, %s", (_, theme, dark) => {
+    const scoped = (
+      <ThemeScope theme={theme}>
+        <CardEdgeParts />
+      </ThemeScope>
+    );
+    render(dark ? <div data-theme="dark">{scoped}</div> : scoped);
+    for (const part of CARD_EDGES) {
+      for (const { side, width, color } of edges(part.find())) {
+        expect.soft(width, `${part.name} ${side} width`).toBe(1);
+        expect.soft(alphaOf(color), `${part.name} ${side} alpha`).toBe(0);
+      }
+    }
+    expectBorderKeepers();
+    expectClassOverride();
+  });
+
+  it("takes a --card-border override from any wrapper, but not a --border one", () => {
+    render(
+      <ThemeScope theme={fkasPrivate}>
+        <div role="group" aria-label="Theme probe" />
+        <div style={{ "--card-border": "rgb(200, 0, 0)" } as CSSProperties}>
+          <Card.Root role="group" aria-label="Recoloured" />
+        </div>
+        <div style={{ "--border": "rgb(0, 0, 200)" } as CSSProperties}>
+          <Card.Root role="group" aria-label="Wrapped" />
+        </div>
+      </ThemeScope>
+    );
+    expect(getComputedStyle(roleNamed("group", "Recoloured")).borderTopColor).toBe("rgb(200, 0, 0)");
+    // The role resolves on the theme element, so the Card keeps the theme's own border colour.
+    const themeBorder = cssVarColor(roleNamed("group", "Theme probe"), "--border");
+    expect(themeBorder, "precondition: the theme border differs from the wrapper's").not.toBe(
+      "rgb(0, 0, 200)"
+    );
+    expect(getComputedStyle(roleNamed("group", "Wrapped")).borderTopColor).toBe(themeBorder);
   });
 });

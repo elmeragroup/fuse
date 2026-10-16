@@ -73,7 +73,7 @@ export const accordionVariants = tv({
       },
       card: {
         base: "space-y-3",
-        item: [accordionCardItemShellClass, "bg-card text-foreground"],
+        item: [accordionCardItemShellClass, "border-card-border bg-card text-foreground"],
         // The panel sits inside the item's padding, so it rounds with the item's inner corner.
         content: "rounded-inner bg-card text-foreground",
         icon: "text-foreground",

@@ -26,6 +26,15 @@ export type ExternalBrandCode = Exclude<BrandCode, "fkab">;
  * `--border` hairline, the `--border` row edge and divider, the `--primary` box around a checked
  * row, the muted, striped disabled row and the regular row title.
  *
+ * A Card and a `card` Accordion item draw no edge either: a white card stands on the page tint
+ * by its fill, and Card by its `shadow-xs`, as the external order flows draw it. The zero-alpha
+ * edge keeps the 1px border, so the cards' inner corners and layout stay. A card is a container,
+ * not a control, so the faint step off the page, about 1.05:1 in the weakest light brands, is no
+ * 1.4.11 shortfall, and a card on a `card`-coloured surface, such as a nested Card, has no
+ * outline at all. `CheckboxCard` is a control and the TextField `card` box is a field boundary,
+ * so both keep `--border`. The role is light-only, so dark cards draw no edge either; whether
+ * they should keep one is an open design question in `TODO.md`.
+ *
  * A light modal, Dialog, AlertDialog or Sheet, fills with the page tint and takes the page's
  * text colour, so card-coloured fields and selection rows inside it stand apart as they do on
  * the page. The anchored popups keep the white popover: their highlighted rows need the
@@ -50,6 +59,7 @@ export const EXTERNAL_VARIANT_LAYER = {
   dialog: "var(--background)",
   "dialog-foreground": "var(--foreground)",
   ring: NEUTRAL_RING,
+  "card-border": "oklch(0 0 0 / 0)",
   "button-outline": "var(--foreground)",
   "selection-border": "oklch(0 0 0 / 0)",
   "selection-checked-border": "var(--selection-border)",

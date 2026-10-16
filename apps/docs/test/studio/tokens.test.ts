@@ -47,6 +47,7 @@ describe("TOKEN_TABLE", () => {
     ]);
     expect(sectionTokens("typography")).toEqual(["selection-title-weight", "font-sans", "font-heading"]);
     expect(sectionTokens("variant")).toEqual([
+      "card-border",
       "button-outline",
       "selection-border",
       "selection-checked-border",
@@ -63,6 +64,7 @@ describe("LIGHT_ONLY_TOKENS", () => {
   it("names the keys a dark palette keeps from light, which declare one value in both schemes", () => {
     expect([...LIGHT_ONLY_TOKENS].toSorted()).toEqual(
       [
+        "card-border",
         "button-outline",
         "selection-border",
         "selection-checked-border",

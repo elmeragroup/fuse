@@ -35,6 +35,11 @@
   keep `--dialog` on the popover, which every dark palette sets equal to `card`, the row fill, and
   external rows draw no outer edge, so a `RadioItem` or `CheckboxItem` group in a dark modal has
   no row outlines.
+- Ask design whether dark external cards keep an edge. `--card-border` is a light-only key, so
+  the zero-alpha external edge carries into dark, where `Card` and the `card` Accordion item stand
+  off the page only by the dark `card` step: about 1.25:1 in fkas, tkas and fkab, but 1.09:1 in
+  fkse and 1.13:1 in ngfi. Keeping an edge there means dropping `card-border` from
+  `LIGHT_ONLY_KEYS` and naming it in each dark sheet.
 - Ask design whether `Popover` follows `Dialog` onto the page tint in external light. A Popover can
   hold a form, as the basic demo does, but the anchored popups share the `accent`-on-`popover`
   1.1:1 floor in `contrast-matrix.test.ts`, which the external light accent, 1.00–1.07:1 on the

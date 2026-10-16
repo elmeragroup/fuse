@@ -70,6 +70,10 @@ export const LAYER_DEFAULTS = {
   border: NEUTRAL_LINE,
   input: NEUTRAL_LINE,
   ring: NEUTRAL_RING,
+  // The edge of a Card and of a `card` Accordion item. Internal themes draw it in the border
+  // role, and the external variant layer makes it transparent. `CheckboxCard` and the TextField
+  // `card` box keep `--border`.
+  "card-border": "var(--border)",
   // The outline Button's border. Internal themes draw it as a 1px hairline in the border
   // role, and the external variant layer swaps both values for the reference's 2px ring
   // in the text color.
