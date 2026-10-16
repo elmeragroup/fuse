@@ -39,12 +39,9 @@ type BareBorder = {
 };
 
 /**
- * The parts with a bare `border*` width, plus a Card whose `border-error` utility must win
- * over the base default and its own `--card-border`. Card and the `card` Accordion item read
- * `--card-border` instead, which the card edge suite below covers. An external `primary` can
- * equal the text colour, but the error role is a status hue, so the check against the text
- * colour stays meaningful in every scope. The first Term and Details drop their border, so the
- * second pair is read; the last body row drops its own, so the first is.
+ * The parts with a bare `border*` width. Card and the `card` Accordion item read `--card-border`
+ * instead, which the card edge suite below covers. The first Term and Details drop their border,
+ * so the second pair is read; the last body row drops its own, so the first is.
  */
 const PARTS: readonly BareBorder[] = [
   { name: "DescriptionList Term", find: () => textNamed("Meter point"), side: "Top", token: "--border" },
@@ -61,12 +58,6 @@ const PARTS: readonly BareBorder[] = [
     side: "Right",
     token: "--sidebar-border",
   },
-  {
-    name: "border-error Card",
-    find: () => roleNamed("group", "Error card"),
-    side: "Top",
-    token: "--error",
-  },
 ];
 
 function BareBorderParts() {
@@ -81,8 +72,7 @@ function BareBorderParts() {
           <DescriptionList.Details>7070575000</DescriptionList.Details>
         </DescriptionList.Content>
       </DescriptionList.Root>
-      <Card.Root role="group" aria-label="Card" />
-      <Card.Root role="group" aria-label="Error card" className="border-error" />
+      <div role="group" aria-label="Probe" />
       <Badge variant="outline">Outline</Badge>
       <Table.Root>
         <Table.Body>
@@ -216,7 +206,7 @@ describe("the base-layer border default", () => {
       </div>
     );
     await expectRoleBorders();
-    expect(cssVarColor(roleNamed("group", "Card"), "--border")).not.toBe(
+    expect(cssVarColor(roleNamed("group", "Probe"), "--border")).not.toBe(
       cssVarColor(roleNamed("group", "Outer"), "--border")
     );
   });
@@ -262,6 +252,13 @@ function CardEdgeParts() {
           </Accordion.Item>
         </Accordion.Root>
       ))}
+      <Accordion.Root variant="card">
+        <Accordion.Item value="one" role="group" aria-label="Error item" className="border-error">
+          <Accordion.Header>
+            <Accordion.Trigger>One</Accordion.Trigger>
+          </Accordion.Header>
+        </Accordion.Item>
+      </Accordion.Root>
       <CheckboxGroup>
         <CheckboxCard value="roadside" title="Roadside" description="Towing included." />
       </CheckboxGroup>
@@ -299,10 +296,15 @@ function expectBorderKeepers(): void {
   }
 }
 
-/** A border colour class on a Card beats the card edge role. */
+/**
+ * A border colour class on a Card or a card Accordion item beats the card edge role. An external
+ * `primary` can equal the text colour, but the error role is a status hue in every scope.
+ */
 function expectClassOverride(): void {
-  const card = roleNamed("group", "Error card");
-  expect(getComputedStyle(card).borderTopColor).toBe(cssVarColor(card, "--error"));
+  for (const name of ["Error card", "Error item"]) {
+    const part = roleNamed("group", name);
+    expect.soft(getComputedStyle(part).borderTopColor, name).toBe(cssVarColor(part, "--error"));
+  }
 }
 
 describe("the card edge role", () => {

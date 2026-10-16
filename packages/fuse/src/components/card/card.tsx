@@ -37,6 +37,8 @@ type CardDescriptionProps = HTMLAttributes<HTMLParagraphElement> &
  * The Card surface. It publishes `--inner-corner`, its corner less its border, and its header,
  * content and footer publish it less their padding too. The root and its sections write their
  * `direction` as `data-direction`: a vertical card pads its sections, a horizontal one pads itself.
+ * Its 1px edge is the theme's `--card-border`: `--border` in internal themes and a zero-alpha
+ * colour in external ones. A border colour class still wins.
  */
 function CardRoot({ className, direction, ...props }: CardDivProps): ReactElement {
   const { base } = cardVariants({ direction });

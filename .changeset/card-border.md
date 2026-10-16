@@ -12,6 +12,6 @@ now has no outline. `CheckboxCard`, the TextField `card` box, the Field label ca
 `DescriptionList`, `Separator` and the overlay edges keep `--border`. A border colour class on a
 `Card` still wins. A box you build from `cardVariants().base()` or the `card` item of
 `accordionVariants` takes `--card-border` too, so add `border-border` where it must keep a visible
-edge, as `CheckboxCard` and the TextField `card` box do. A plain wrapper that overrides `--border` no longer recolours cards; override
-`--card-border` instead. A host that maps its own tokens onto Fuse roles can set the role directly;
-without it cards fall back to `--border`.
+edge, as `CheckboxCard` and the TextField `card` box do. A plain wrapper that overrides `--border`
+no longer recolours cards; override `--card-border` instead. A host that maps its own tokens onto
+Fuse roles can set the role directly; without it cards fall back to `--border`.

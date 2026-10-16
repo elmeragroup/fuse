@@ -50,7 +50,9 @@ export function AccordionRoot<Value = unknown>({
 
 /**
  * One accordion item. A rounded item publishes `--inner-corner`, its corner less its border and
- * padding, and a card item's panel rounds with it.
+ * padding, and a card item's panel rounds with it. A `card` item draws its 1px edge in the theme's
+ * `--card-border`: `--border` in internal themes and a zero-alpha colour in external ones. A border
+ * colour class still wins.
  */
 export function AccordionItem({
   className,
