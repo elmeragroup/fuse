@@ -430,13 +430,12 @@ describe("Accordion default fill", () => {
       expect(Number.parseFloat(getComputedStyle(shipping).borderBottomLeftRadius)).toBeGreaterThan(0);
       return billing.getBoundingClientRect().top - shipping.getBoundingClientRect().bottom;
     };
-    // Oracle: the card variant's item gap, which "passes variant and radius" pins to 12px.
+    // Oracle: the card variant's item gap, which "passes variant and radius" holds to 11-16px.
     const card = renderThemed(<ShippingBilling variant="card" />);
     const cardGap = gapBelowShipping();
     card.unmount();
 
     renderThemed(<ShippingBilling />);
-    expect(gapBelowShipping()).toBeGreaterThan(0);
     expect(gapBelowShipping()).toBeCloseTo(cardGap, 0);
   });
 

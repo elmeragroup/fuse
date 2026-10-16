@@ -8,5 +8,5 @@ A default `Accordion.Item` now fills with the brand's soft tint, `primary-soft`,
 tint. The internal themes look almost the same. The external themes swap the grey box for the brand
 tint. Without preflight, the trigger no longer paints the native button's text and background colours.
 Stacked default items now sit 12px apart, as card items do, so their rounded corners no longer
-touch and leave a notch between items. To keep the grey look, pass
-`className="bg-muted text-foreground"` on `Accordion.Item`.
+touch and leave a notch between items. Pass `className="space-y-0"` on `Accordion.Root` to keep
+them flush. To keep the grey look, pass `className="bg-muted text-foreground"` on `Accordion.Item`.
