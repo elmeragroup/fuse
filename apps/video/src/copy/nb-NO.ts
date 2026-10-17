@@ -1,0 +1,191 @@
+import { NB_NO_BRAND_BOOK } from "./brand-book/nb-NO";
+import type { Copy } from "./catalog";
+
+/** The release video's Norwegian Bokmål copy. Drafted; a native speaker reviews it before a public render. */
+export const NB_NO: Copy = {
+  hero: {
+    eyebrow: "Designsystemet til Elmera Group",
+    lead: "Ett system.",
+    accent: "Alle merkevarer.",
+  },
+  brandMorph: {
+    caption: "Ett attributt setter temaet.",
+    tabs: ["Oversikt", "Fakturaer", "Avtaler"],
+    usage: "Strømforbruk",
+    period: "Denne uken",
+    delta: (percent) => `${percent} mot forrige uke`,
+    budget: "Månedsbudsjett",
+    budgetOf: (spent, limit) => `${spent} av ${limit}`,
+    notify: (percent) => `Varsle meg ved ${percent}`,
+    cta: "Se faktura",
+  },
+  density: {
+    title: "Kompakt eller romslig, valgt per app.",
+    internal: "Interne verktøy",
+    external: "Kundeapper",
+    controls: (px) => `${String(px)} px kontroller`,
+    table: {
+      title: "Ordrer",
+      customer: "Kunde",
+      status: "Status",
+      amount: "Beløp",
+      active: "Aktiv",
+      pending: "Venter",
+      paused: "Pause",
+    },
+    form: {
+      title: "Måleravlesning",
+      meter: "Målernummer",
+      reading: "Avlesning",
+      date: "Dato",
+      save: "Lagre avlesning",
+      cancel: "Avbryt",
+    },
+  },
+  montage: {
+    app: "Ordrer",
+    search: "Søk",
+    select: {
+      label: "Prisområde",
+    },
+    dialog: {
+      trigger: "Flytt avlesning",
+      title: "Flytte måleravlesningen?",
+      description: "Avlesningen kopieres til den nye adressen, og den gamle avtalen avsluttes.",
+      cancel: "Avbryt",
+      confirm: "Flytt avlesning",
+    },
+    sheet: {
+      title: "Ny ordre",
+      description: "Opprett en ordre for en ny kunde.",
+      customer: "Kunde",
+      product: "Produkt",
+      productValue: "Spotpris",
+      start: "Startdato",
+      submit: "Opprett ordre",
+    },
+    command: {
+      query: "måle",
+      placeholder: "Søk etter handlinger …",
+      items: ["Ny kunde", "Ny avtale", "Registrer måleravlesning", "Kunder", "Fakturaer", "Målepunkter"],
+    },
+    toast: {
+      title: "Avlesning lagret",
+      description: (reading, meter) => `${reading} kWh registrert på måler ${meter}.`,
+    },
+  },
+  install: {
+    title: "Installer Fuse.",
+    lede: "Én pakke og ett stilark. Bruk det med Tailwind eller som frittstående CSS.",
+    copy: "Kopier",
+  },
+  lockup: {
+    caption: "Designsystemet til Elmera Group",
+  },
+  claudeBuilds: {
+    terminal: {
+      welcome: (name) => `Welcome back, ${name}!`,
+      title: "Claude Code v2.0.0",
+      user: "Elmera team",
+      model: "Opus 5.5",
+      placeholder: 'Try "edit <filepath> to ..."',
+      prompt:
+        "hei claude, lag et komponentbibliotek som er ultradynamisk og støtter alle merkevarene våre. pass på at du ikke gjør noen feil",
+      reply: "skal bli, jeg følger sømmen",
+      thinking: "Thinking…",
+      interrupt: (seconds) => `(${String(seconds)}s · esc to interrupt)`,
+      shortcuts: "? for shortcuts",
+      todosTool: "Update Todos",
+      wrote: (lines, path) => `Wrote ${String(lines)} lines to ${path}`,
+      installed: (seconds) => `Done in ${seconds}s`,
+      clicked: (toast) => `Klikket. Siden viser «${toast}»`,
+      built: "Seks seksjoner, én merkevare. Nå de seks andre.",
+      done: "Ferdig. Ingen feil, som du ba om.",
+      todos: {
+        header: { label: "Toppfelt og meny", working: "Skriver toppfeltet…" },
+        hero: { label: "Hovedbanner", working: "Skriver hovedbanneret…" },
+        plans: { label: "Avtalekort", working: "Skriver avtalekortene…" },
+        calculator: { label: "Priskalkulator", working: "Skriver priskalkulatoren…" },
+        faq: { label: "Spørsmål og svar", working: "Skriver spørsmålene…" },
+        footer: { label: "Bunntekst", working: "Skriver bunnteksten…" },
+        brands: { label: "Alle merkevarer", working: "Prøver alle merkevarene…" },
+      },
+    },
+    site: {
+      nav: ["Avtaler", "Priser", "Kundeservice"],
+      navLabel: "Hovedmeny",
+      signIn: "Logg inn",
+      order: "Bestill",
+      areas: { NOK: "NO1 Oslo", SEK: "SE3 Stockholm", EUR: "FI Finland" },
+      hero: {
+        title: "Strøm til hjemmet, priset time for time.",
+        lede: "Se dagens priser, velg en avtale og bytt på to minutter.",
+        primary: "Velg avtale",
+        secondary: "Dagens priser",
+        today: "Dagens spotpris",
+        average: "Snitt",
+        low: "Lavest",
+        high: "Høyest",
+        perKwh: (amount) => `${amount} per kWh`,
+      },
+      plans: {
+        title: "Velg en avtale",
+        lede: "Ingen avtaler har bindingstid.",
+        popular: "Mest valgt",
+        perMonth: (amount) => `${amount} i måneden`,
+        choose: "Velg",
+        spot: {
+          name: "Spotpris",
+          text: "Følger markedet time for time.",
+          features: ["Ingen bindingstid", "Timepriser i appen", "Prisvarsler"],
+        },
+        fixed: {
+          name: "Fastpris",
+          text: "Én pris de neste 12 månedene.",
+          features: ["Fast pris i et år", "Samme regning hver måned", "Gratis bytte ved fornyelse"],
+        },
+        green: {
+          name: "Fornybar",
+          text: "Spotpris fra vind og vann.",
+          features: ["Opprinnelsesgaranti", "Ingen bindingstid", "Timepriser i appen"],
+        },
+      },
+      calculator: {
+        title: "Hva vil det koste?",
+        lede: "Et anslag ut fra prisområdet ditt og hvor mye du bruker.",
+        area: "Prisområde",
+        use: "Årlig forbruk i kWh",
+        estimate: "Anslått kostnad",
+        note: "Inkluderer månedsbeløpet. Nettselskapet fakturerer nettleien.",
+      },
+      faq: {
+        title: "Spørsmål og svar",
+        items: [
+          {
+            question: "Hvordan bytter jeg til dere?",
+            answer: "Bestill på nett, så ordner vi resten. Den gamle avtalen avsluttes når den nye starter.",
+          },
+          { question: "Når starter den nye avtalen?", answer: "Innen 14 dager etter bestillingen." },
+          { question: "Trenger jeg ny måler?", answer: "Nei. Måleren du har, virker med alle avtaler." },
+          { question: "Kan jeg si opp når som helst?", answer: "Ja. Ingen avtaler har bindingstid." },
+        ],
+      },
+      footer: {
+        columns: [
+          { title: "Strøm", links: ["Avtaler", "Dagens priser", "Flytting"] },
+          { title: "Kundeservice", links: ["Kontakt oss", "Fakturaer", "Strømbrudd"] },
+          { title: "Om oss", links: ["Jobb hos oss", "Bærekraft", "Personvern"] },
+        ],
+        legal: (brand) => `© 2026 ${brand}`,
+      },
+      toast: {
+        title: "Bestillingen er mottatt",
+        description: "Vi bekrefter startdatoen på e-post.",
+      },
+    },
+    lockup: {
+      caption: "Ett system. Alle merkevarer.",
+    },
+  },
+  brandBook: NB_NO_BRAND_BOOK,
+};
