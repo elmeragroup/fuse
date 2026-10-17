@@ -16,6 +16,7 @@ catalog:
   "@base-ui/react": 1.9.0
   "@figma/plugin-typings": 1.141.0
   "@fontsource/inter": 5.3.0
+  "@fontsource/jetbrains-mono": 5.3.0
   "@fontsource/roboto": 5.3.0
   "@fontsource/roboto-mono": 5.3.0
   "@internationalized/string": 3.2.10
@@ -27,6 +28,12 @@ catalog:
   "@microsoft/api-extractor": 7.59.4
   # The browser-floor gate's per-feature first versions. Past the minimum release age.
   "@mdn/browser-compat-data": 8.1.7
+  # Remotion's packages release together; keep every @remotion entry on one version.
+  "@remotion/bundler": 4.0.535
+  "@remotion/cli": 4.0.535
+  "@remotion/layout-utils": 4.0.535
+  "@remotion/media": 4.0.535
+  "@remotion/tailwind-v4": 4.0.535
   "@mdx-js/loader": 3.1.1
   "@next/mdx": 16.4.5
   "@shadcn/lint": 0.1.1
@@ -34,6 +41,7 @@ catalog:
   "@shuding/opentype.js": 1.4.0-beta.0
   "@tailwindcss/cli": 4.3.3
   "@tailwindcss/postcss": 4.3.3
+  "@tailwindcss/webpack": 4.3.3
   "@tailwindcss/typography": 0.5.20
   "@tanstack/react-table": 9.2.4
   "@tanstack/react-virtual": 3.14.13
@@ -98,6 +106,7 @@ catalog:
   react-dom: 19.3.0
   remark-frontmatter: 5.0.0
   remark-gfm: 4.0.1
+  remotion: 4.0.535
   # The repo-policy check that the root engines.node range admits the pinned Node.
   semver: 7.8.5
   tailwind-merge: 3.7.0
@@ -123,9 +132,16 @@ overrides:
   # @effect/platform-node declares a caret range here, which resolves to a release whose
   # effect peer is newer than the catalog's effect. Keep the whole Effect family on one version.
   "@effect/platform-node-shared": 4.1.3
+  # @remotion/tailwind-v4 pins Tailwind 4.2.0 for its webpack loader. Fuse's CSS compiles against
+  # the catalog Tailwind, so the video app's loader runs the same version.
+  "@remotion/tailwind-v4>@tailwindcss/webpack": "catalog:"
+  "@remotion/tailwind-v4>tailwindcss": "catalog:"
 
 allowBuilds:
   "@parcel/watcher": true
+  # Remotion's bundler runs esbuild through its platform package; the postinstall only re-checks
+  # that binary, so it stays off.
+  esbuild: false
 
 minimumReleaseAge: 4320
 

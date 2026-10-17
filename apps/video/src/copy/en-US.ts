@@ -1,0 +1,198 @@
+import { EN_US_BRAND_BOOK } from "./brand-book/en-US";
+import type { Copy } from "./catalog";
+
+/** The release video's English copy, the source the other catalogs translate. */
+export const EN_US: Copy = {
+  hero: {
+    eyebrow: "The Elmera Group design system",
+    lead: "One system.",
+    accent: "Every brand.",
+  },
+  brandMorph: {
+    caption: "One attribute sets the theme.",
+    tabs: ["Overview", "Invoices", "Agreements"],
+    usage: "Electricity use",
+    period: "This week",
+    delta: (percent) => `${percent} vs last week`,
+    budget: "Monthly budget",
+    budgetOf: (spent, limit) => `${spent} of ${limit}`,
+    notify: (percent) => `Notify me at ${percent}`,
+    cta: "See invoice",
+  },
+  density: {
+    title: "Dense or comfortable, set per app.",
+    internal: "Internal tools",
+    external: "Customer apps",
+    controls: (px) => `${String(px)} px controls`,
+    table: {
+      title: "Orders",
+      customer: "Customer",
+      status: "Status",
+      amount: "Amount",
+      active: "Active",
+      pending: "Pending",
+      paused: "Paused",
+    },
+    form: {
+      title: "Meter reading",
+      meter: "Meter number",
+      reading: "Reading",
+      date: "Date",
+      save: "Save reading",
+      cancel: "Cancel",
+    },
+  },
+  montage: {
+    app: "Orders",
+    search: "Search",
+    select: {
+      label: "Price area",
+    },
+    dialog: {
+      trigger: "Move reading",
+      title: "Move the meter reading?",
+      description: "The reading is copied to the new address and the old contract is closed.",
+      cancel: "Cancel",
+      confirm: "Move reading",
+    },
+    sheet: {
+      title: "New order",
+      description: "Create an order for a new customer.",
+      customer: "Customer",
+      product: "Product",
+      productValue: "Spot price",
+      start: "Start date",
+      submit: "Create order",
+    },
+    command: {
+      query: "meter",
+      placeholder: "Search actions…",
+      items: [
+        "New customer",
+        "New contract",
+        "Register meter reading",
+        "Customers",
+        "Invoices",
+        "Meter points",
+      ],
+    },
+    toast: {
+      title: "Reading saved",
+      description: (reading, meter) => `${reading} kWh registered for meter ${meter}.`,
+    },
+  },
+  install: {
+    title: "Install Fuse.",
+    lede: "One package and one stylesheet. Use it with Tailwind or as standalone CSS.",
+    copy: "Copy",
+  },
+  lockup: {
+    caption: "The Elmera Group design system",
+  },
+  claudeBuilds: {
+    terminal: {
+      welcome: (name) => `Welcome back, ${name}!`,
+      title: "Claude Code v2.0.0",
+      user: "Elmera team",
+      model: "Opus 5.5",
+      placeholder: 'Try "edit <filepath> to ..."',
+      prompt:
+        "hey claude, make me a component library that's ultra dynamic and supports all our brands. be sure to make no mistakes",
+      reply: "roger that, i'll follow the seam",
+      thinking: "Thinking…",
+      interrupt: (seconds) => `(${String(seconds)}s · esc to interrupt)`,
+      shortcuts: "? for shortcuts",
+      todosTool: "Update Todos",
+      wrote: (lines, path) => `Wrote ${String(lines)} lines to ${path}`,
+      installed: (seconds) => `Done in ${seconds}s`,
+      clicked: (toast) => `Clicked. The page shows "${toast}"`,
+      built: "Six sections, one brand. Now the other six.",
+      done: "Done. No mistakes, as requested.",
+      todos: {
+        header: { label: "Header and navigation", working: "Writing the header…" },
+        hero: { label: "Hero", working: "Writing the hero…" },
+        plans: { label: "Plan cards", working: "Writing the plan cards…" },
+        calculator: { label: "Price calculator", working: "Writing the price calculator…" },
+        faq: { label: "Questions and answers", working: "Writing the questions…" },
+        footer: { label: "Footer", working: "Writing the footer…" },
+        brands: { label: "Every brand", working: "Trying every brand…" },
+      },
+    },
+    site: {
+      nav: ["Plans", "Prices", "Customer service"],
+      navLabel: "Main menu",
+      signIn: "Log in",
+      order: "Order",
+      areas: { NOK: "NO1 Oslo", SEK: "SE3 Stockholm", EUR: "FI Finland" },
+      hero: {
+        title: "Electricity for your home, priced by the hour.",
+        lede: "See today's prices, pick a plan and switch in two minutes.",
+        primary: "Choose a plan",
+        secondary: "Today's prices",
+        today: "Today's spot price",
+        average: "Average",
+        low: "Lowest",
+        high: "Highest",
+        perKwh: (amount) => `${amount} per kWh`,
+      },
+      plans: {
+        title: "Choose a plan",
+        lede: "Every plan comes without lock-in.",
+        popular: "Most chosen",
+        perMonth: (amount) => `${amount} a month`,
+        choose: "Choose",
+        spot: {
+          name: "Spot price",
+          text: "Follows the market hour by hour.",
+          features: ["No lock-in", "Hourly prices in the app", "Price alerts"],
+        },
+        fixed: {
+          name: "Fixed price",
+          text: "One price for the next 12 months.",
+          features: ["Price fixed for a year", "The same bill every month", "Free switch at renewal"],
+        },
+        green: {
+          name: "Renewable",
+          text: "Spot price from wind and hydro.",
+          features: ["Guarantee of origin", "No lock-in", "Hourly prices in the app"],
+        },
+      },
+      calculator: {
+        title: "What will it cost?",
+        lede: "An estimate from your price area and how much you use.",
+        area: "Price area",
+        use: "Yearly use in kWh",
+        estimate: "Estimated cost",
+        note: "Includes the monthly fee. Your grid company bills grid rent.",
+      },
+      faq: {
+        title: "Questions and answers",
+        items: [
+          {
+            question: "How do I switch to you?",
+            answer: "Order online and we handle the rest. Your old plan ends when the new one starts.",
+          },
+          { question: "When does my new plan start?", answer: "Within 14 days of your order." },
+          { question: "Do I need a new meter?", answer: "No. The meter you have works with every plan." },
+          { question: "Can I cancel at any time?", answer: "Yes. Every plan comes without lock-in." },
+        ],
+      },
+      footer: {
+        columns: [
+          { title: "Electricity", links: ["Plans", "Today's prices", "Moving"] },
+          { title: "Customer service", links: ["Contact us", "Invoices", "Outages"] },
+          { title: "About us", links: ["Careers", "Sustainability", "Privacy"] },
+        ],
+        legal: (brand) => `© 2026 ${brand}`,
+      },
+      toast: {
+        title: "Order received",
+        description: "We'll confirm your start date by email.",
+      },
+    },
+    lockup: {
+      caption: "One system. Every brand.",
+    },
+  },
+  brandBook: EN_US_BRAND_BOOK,
+};

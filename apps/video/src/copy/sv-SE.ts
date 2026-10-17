@@ -1,0 +1,191 @@
+import { SV_SE_BRAND_BOOK } from "./brand-book/sv-SE";
+import type { Copy } from "./catalog";
+
+/** The release video's Swedish copy. Drafted; a native speaker reviews it before a public render. */
+export const SV_SE: Copy = {
+  hero: {
+    eyebrow: "Elmera Groups designsystem",
+    lead: "Ett system.",
+    accent: "Alla varumärken.",
+  },
+  brandMorph: {
+    caption: "Ett attribut styr temat.",
+    tabs: ["Översikt", "Fakturor", "Avtal"],
+    usage: "Elförbrukning",
+    period: "Den här veckan",
+    delta: (percent) => `${percent} mot förra veckan`,
+    budget: "Månadsbudget",
+    budgetOf: (spent, limit) => `${spent} av ${limit}`,
+    notify: (percent) => `Meddela mig vid ${percent}`,
+    cta: "Visa faktura",
+  },
+  density: {
+    title: "Kompakt eller luftig, vald per app.",
+    internal: "Interna verktyg",
+    external: "Kundappar",
+    controls: (px) => `${String(px)} px kontroller`,
+    table: {
+      title: "Order",
+      customer: "Kund",
+      status: "Status",
+      amount: "Belopp",
+      active: "Aktiv",
+      pending: "Väntar",
+      paused: "Pausad",
+    },
+    form: {
+      title: "Mätaravläsning",
+      meter: "Mätarnummer",
+      reading: "Avläsning",
+      date: "Datum",
+      save: "Spara avläsning",
+      cancel: "Avbryt",
+    },
+  },
+  montage: {
+    app: "Order",
+    search: "Sök",
+    select: {
+      label: "Elområde",
+    },
+    dialog: {
+      trigger: "Flytta avläsning",
+      title: "Flytta mätaravläsningen?",
+      description: "Avläsningen kopieras till den nya adressen och det gamla avtalet avslutas.",
+      cancel: "Avbryt",
+      confirm: "Flytta avläsning",
+    },
+    sheet: {
+      title: "Ny order",
+      description: "Skapa en order för en ny kund.",
+      customer: "Kund",
+      product: "Produkt",
+      productValue: "Rörligt elpris",
+      start: "Startdatum",
+      submit: "Skapa order",
+    },
+    command: {
+      query: "mät",
+      placeholder: "Sök efter åtgärder …",
+      items: ["Ny kund", "Nytt avtal", "Registrera mätaravläsning", "Kunder", "Fakturor", "Mätpunkter"],
+    },
+    toast: {
+      title: "Avläsning sparad",
+      description: (reading, meter) => `${reading} kWh registrerat för mätare ${meter}.`,
+    },
+  },
+  install: {
+    title: "Installera Fuse.",
+    lede: "Ett paket och en stilmall. Använd det med Tailwind eller som fristående CSS.",
+    copy: "Kopiera",
+  },
+  lockup: {
+    caption: "Elmera Groups designsystem",
+  },
+  claudeBuilds: {
+    terminal: {
+      welcome: (name) => `Welcome back, ${name}!`,
+      title: "Claude Code v2.0.0",
+      user: "Elmera team",
+      model: "Opus 5.5",
+      placeholder: 'Try "edit <filepath> to ..."',
+      prompt:
+        "hej claude, gör ett komponentbibliotek som är ultradynamiskt och stöder alla våra varumärken. se till att inte göra några fel",
+      reply: "uppfattat, jag följer sömmen",
+      thinking: "Thinking…",
+      interrupt: (seconds) => `(${String(seconds)}s · esc to interrupt)`,
+      shortcuts: "? for shortcuts",
+      todosTool: "Update Todos",
+      wrote: (lines, path) => `Wrote ${String(lines)} lines to ${path}`,
+      installed: (seconds) => `Done in ${seconds}s`,
+      clicked: (toast) => `Klickat. Sidan visar ”${toast}”`,
+      built: "Sex sektioner, ett varumärke. Nu de sex andra.",
+      done: "Klart. Inga fel, som du bad om.",
+      todos: {
+        header: { label: "Sidhuvud och meny", working: "Skriver sidhuvudet…" },
+        hero: { label: "Huvudbanner", working: "Skriver huvudbannern…" },
+        plans: { label: "Avtalskort", working: "Skriver avtalskorten…" },
+        calculator: { label: "Priskalkylator", working: "Skriver priskalkylatorn…" },
+        faq: { label: "Frågor och svar", working: "Skriver frågorna…" },
+        footer: { label: "Sidfot", working: "Skriver sidfoten…" },
+        brands: { label: "Alla varumärken", working: "Provar alla varumärken…" },
+      },
+    },
+    site: {
+      nav: ["Avtal", "Priser", "Kundservice"],
+      navLabel: "Huvudmeny",
+      signIn: "Logga in",
+      order: "Beställ",
+      areas: { NOK: "NO1 Oslo", SEK: "SE3 Stockholm", EUR: "FI Finland" },
+      hero: {
+        title: "El till hemmet, prissatt timme för timme.",
+        lede: "Se dagens priser, välj ett avtal och byt på två minuter.",
+        primary: "Välj avtal",
+        secondary: "Dagens priser",
+        today: "Dagens spotpris",
+        average: "Snitt",
+        low: "Lägst",
+        high: "Högst",
+        perKwh: (amount) => `${amount} per kWh`,
+      },
+      plans: {
+        title: "Välj ett avtal",
+        lede: "Inga avtal har bindningstid.",
+        popular: "Mest valt",
+        perMonth: (amount) => `${amount} i månaden`,
+        choose: "Välj",
+        spot: {
+          name: "Rörligt pris",
+          text: "Följer marknaden timme för timme.",
+          features: ["Ingen bindningstid", "Timpriser i appen", "Prisaviseringar"],
+        },
+        fixed: {
+          name: "Fast pris",
+          text: "Ett pris de kommande 12 månaderna.",
+          features: ["Fast pris i ett år", "Samma faktura varje månad", "Fritt byte vid förnyelse"],
+        },
+        green: {
+          name: "Förnybar",
+          text: "Rörligt pris från vind och vatten.",
+          features: ["Ursprungsgaranti", "Ingen bindningstid", "Timpriser i appen"],
+        },
+      },
+      calculator: {
+        title: "Vad kommer det att kosta?",
+        lede: "En uppskattning utifrån ditt elområde och hur mycket du använder.",
+        area: "Elområde",
+        use: "Årsförbrukning i kWh",
+        estimate: "Uppskattad kostnad",
+        note: "Inklusive månadsavgiften. Elnätsbolaget fakturerar nätavgiften.",
+      },
+      faq: {
+        title: "Frågor och svar",
+        items: [
+          {
+            question: "Hur byter jag till er?",
+            answer: "Beställ på nätet så ordnar vi resten. Det gamla avtalet upphör när det nya börjar.",
+          },
+          { question: "När börjar det nya avtalet?", answer: "Inom 14 dagar efter beställningen." },
+          { question: "Behöver jag en ny mätare?", answer: "Nej. Mätaren du har fungerar med alla avtal." },
+          { question: "Kan jag säga upp när som helst?", answer: "Ja. Inga avtal har bindningstid." },
+        ],
+      },
+      footer: {
+        columns: [
+          { title: "El", links: ["Avtal", "Dagens priser", "Flytta"] },
+          { title: "Kundservice", links: ["Kontakta oss", "Fakturor", "Avbrott"] },
+          { title: "Om oss", links: ["Karriär", "Hållbarhet", "Integritet"] },
+        ],
+        legal: (brand) => `© 2026 ${brand}`,
+      },
+      toast: {
+        title: "Beställningen är mottagen",
+        description: "Vi bekräftar startdatumet via e-post.",
+      },
+    },
+    lockup: {
+      caption: "Ett system. Alla varumärken.",
+    },
+  },
+  brandBook: SV_SE_BRAND_BOOK,
+};

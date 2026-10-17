@@ -127,6 +127,7 @@ it("the merge checks schedule all required gates without browser work", () => {
     "static-theme#test",
     "@elmeragroup/oxlint-plugin-fuse#test",
     "@elmeragroup/oxlint-plugin-fuse#type-check",
+    "video#type-check",
   ]) {
     expect(ids).toContain(required);
   }
@@ -391,5 +392,6 @@ it("the browser job schedules the browser, e2e and packed-consumer gates", () =>
     "@elmeragroup/pr-shots#test:e2e",
     "docs#test:e2e",
     "static-theme#test:browser",
+    "video#test:browser",
   ]);
 }, 30_000);

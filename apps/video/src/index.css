@@ -1,0 +1,30 @@
+@import "tailwindcss";
+@import "@elmeragroup/fuse/css";
+@import "@elmeragroup/fuse/themes.css";
+@import "@elmeragroup/fuse/demo-stage-density.css";
+/* The site sets Roboto first in --font-sans, and Neo Sans headings fall back to it. The video
+   ships the faces, so a render never depends on the machine's installed fonts. */
+@import "@fontsource/roboto/latin-400.css";
+@import "@fontsource/roboto/latin-500.css";
+@import "@fontsource/roboto/latin-600.css";
+@import "@fontsource/roboto/latin-700.css";
+/* Mono text draws in JetBrains Mono, the face the remocn terminal uses, bundled for the same
+   reason. Fuse's mono stack names only system faces, so the video points it at this one. */
+@import "@fontsource/jetbrains-mono/latin-400.css";
+@import "@fontsource/jetbrains-mono/latin-500.css";
+@import "@fontsource/jetbrains-mono/latin-700.css";
+/* Automatic source detection is rooted at this file's directory, so the library's recipes are
+   named explicitly. */
+@source "../../../packages/fuse/src";
+@source "./";
+
+:root {
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+/* A native caret blinks on the wall clock, which no seek can pause, and no frame needs one. */
+input,
+textarea,
+[contenteditable] {
+  caret-color: transparent;
+}
