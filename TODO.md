@@ -567,6 +567,35 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   `File[]` payload. Changing what its `onSelect` receives is a
   breaking change for FileTrigger consumers.
 
+## Charts
+
+Charts v1 ships the `chart` entry with a "preview" label. Remove the label at Fuse's first stable
+release.
+
+- v1 ships four compounds, `Chart`, `PieChart`, `RadialChart` and `RadarChart`, and each starts at
+  Root. The `AreaChart`, `BarChart` and `LineChart` aliases expose the cartesian parts of `Chart`
+  under their own names.
+- v1 matches every option of the evilcharts area, line, bar, composed, radar, pie and radial charts.
+  Decorative options such as background patterns, isometric bars and wipe origins ship as parts and
+  variants.
+- v1 includes the energy-domain features. Each reading carries a quality state, and each series or
+  `Chart.Panel` has its own resolution. Negative values work in every family with a diverging role,
+  and the time domain lists every slot. The total-price, effekttrinn and same-period-last-year
+  scenarios ship as demos.
+- `Sparkline` draws a static chart with `role="img"` and a label. It renders on the server with no
+  client JavaScript and takes no tab stop.
+
+Every later chart change follows the growth rule. A new capability becomes a new part, a variant
+value, a `config` field, a Root prop that describes the data's shape, Root state or a data attribute.
+It never becomes a boolean or mode prop on a part below Root.
+
+Some work stays outside v1.
+
+- Sankey, price forecast heatmaps, geographic charts and canvas rendering stay out of v1.
+- v1 has no automated VoiceOver sessions or real-iPhone checks. VoiceOver automation and the iOS
+  Simulator aren't set up, so a person runs both, and tests use the virtual screen reader and the
+  WebKit profile in their place.
+
 ## Landing stand-ins
 
 The hero window's Dashboard (`apps/docs/src/app/(landing)/landing/app-shell/`), the brand sites
@@ -620,7 +649,6 @@ that opens every overlay on a side before flipping the window.
   change and drops the pending navigation. An edit followed by a page link within the delay can
   leave the visitor on the old page. The opening restore no longer races. Coordinate address
   writes with the router's navigation. Found by source inspection; not reproduced.
-- When a product commits to charts, ship the deferred chart entry and decide its optional peer.
 - When a product needs density preferences, define persistence and pre-paint stamping in the host.
 - When a theme should choose its own density, rather than the host stamping it on the document
   root, design theme-driven density as its own change. Subtree theming never rescopes the density
