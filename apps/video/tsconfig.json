@@ -1,0 +1,15 @@
+{
+  "extends": "@elmeragroup/typescript-config/base.json",
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "jsx": "react-jsx",
+    "declaration": false,
+    "declarationMap": false,
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "types": ["node", "@elmeragroup/typescript-config/css-custom-properties"]
+  },
+  "include": ["src", "test", "scripts", "remotion.config.ts", "vitest.config.ts"],
+  "exclude": ["node_modules"]
+}

@@ -1,0 +1,47 @@
+{
+  "name": "video",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "music:cut": "node scripts/cut-music.ts",
+    "render": "remotion render src/index.ts",
+    "test:browser": "vitest run --project browser",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@elmeragroup/color": "workspace:*",
+    "@elmeragroup/fuse": "workspace:*",
+    "@fontsource/jetbrains-mono": "catalog:",
+    "@fontsource/roboto": "catalog:",
+    "@internationalized/date": "catalog:",
+    "@paper-design/shaders-react": "catalog:",
+    "@remotion/bundler": "catalog:",
+    "@remotion/cli": "catalog:",
+    "@remotion/layout-utils": "catalog:",
+    "@remotion/media": "catalog:",
+    "@remotion/tailwind-v4": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "remotion": "catalog:",
+    "tailwind-variants": "catalog:",
+    "tailwindcss": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/platform-node": "catalog:",
+    "@elmeragroup/typescript-config": "workspace:*",
+    "@tailwindcss/postcss": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
+    "effect": "catalog:",
+    "playwright": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

@@ -11,11 +11,18 @@ catalog:
   "@elmeragroup/internal": 0.2.0-canary.10
   "@arethetypeswrong/core": 0.18.5
   "@base-ui/react": 1.8.0
+  "@fontsource/jetbrains-mono": 5.3.0
   "@fontsource/roboto": 5.3.0
   "@internationalized/date": 3.12.4
   "@internationalized/string": 3.2.10
   "@paper-design/shaders-react": 0.0.81
   "@phosphor-icons/react": 2.1.10
+  # Remotion's packages release together; keep every @remotion entry on one version.
+  "@remotion/bundler": 4.0.535
+  "@remotion/cli": 4.0.535
+  "@remotion/layout-utils": 4.0.535
+  "@remotion/media": 4.0.535
+  "@remotion/tailwind-v4": 4.0.535
   "@mdx-js/loader": 3.1.1
   "@next/mdx": 16.4.0
   "@next/playwright": 16.4.0
@@ -24,6 +31,7 @@ catalog:
   "@shuding/opentype.js": 1.4.0-beta.0
   "@tailwindcss/cli": 4.3.3
   "@tailwindcss/postcss": 4.3.3
+  "@tailwindcss/webpack": 4.3.3
   "@tailwindcss/typography": 0.5.20
   "@tanstack/react-table": 9.2.4
   "@tanstack/react-virtual": 3.14.13
@@ -60,6 +68,7 @@ catalog:
   react-dom: 19.3.0
   remark-frontmatter: 5.0.0
   remark-gfm: 4.0.1
+  remotion: 4.0.535
   tailwind-merge: 3.7.0
   tailwind-variants: 3.3.1
   tailwindcss: 4.3.3
@@ -78,9 +87,16 @@ overrides:
   # @effect/platform-node declares a caret range here, which resolves to a release whose
   # effect peer is newer than the catalog's effect. Keep the whole Effect family on one version.
   "@effect/platform-node-shared": 4.0.2
+  # @remotion/tailwind-v4 pins Tailwind 4.2.0 for its webpack loader. Fuse's CSS compiles against
+  # the catalog Tailwind, so the video app's loader runs the same version.
+  "@remotion/tailwind-v4>@tailwindcss/webpack": "catalog:"
+  "@remotion/tailwind-v4>tailwindcss": "catalog:"
 
 allowBuilds:
   "@parcel/watcher": true
+  # Remotion's bundler runs esbuild through its platform package; the postinstall only re-checks
+  # that binary, so it stays off.
+  esbuild: false
 
 minimumReleaseAge: 4320
 

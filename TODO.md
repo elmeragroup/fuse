@@ -359,6 +359,22 @@ Every overlay on a side of the hero window must close when that side hides, thro
 new overlay that skips both keeps its scroll lock after a flip. Add a lint rule, or a browser test
 that opens every overlay on a side before flipping the window.
 
+## Release video
+
+`apps/video` renders the 1.0 release cut in en-US, nb-NO and sv-SE. Before it goes public:
+
+- Buy the Remotion Company License. Local renders for review are fine under the evaluation terms;
+  any public render is not.
+- Have native speakers review `apps/video/src/copy/nb-NO.ts` and `sv-SE.ts`, then re-check stills
+  of the longest-text frames in both locales.
+- Bump `@elmeragroup/fuse` to 1.0 through a changeset, render each `FuseRelease-{locale}` with
+  `version` set to the released version, upload the MP4s to the GitHub release, and link them from
+  `/releases` with a poster frame.
+- Render with the music cut in `apps/video/public/music/local/`, as `apps/video/AGENTS.md`
+  describes; without it the video renders silent. Check that each MP4 has an audio stream before
+  uploading. The Pixabay Content License lets the MP4s carry the track, but neither the MP3 nor
+  the cut may be committed or attached to the release.
+
 ## Product-triggered work
 
 - When Base UI offers suitable date primitives, migrate the interim React Aria tier.
