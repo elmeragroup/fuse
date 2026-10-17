@@ -25,3 +25,9 @@ next-env.d.ts
 apps/docs/src/generated/
 apps/docs/public/llms.txt
 apps/docs/public/components/
+# Licensed music the video plays but must not redistribute; apps/video/AGENTS.md says where to get it
+apps/video/public/music/local/
+# Remotion output carries a copy of that music: renders (`out/`, also Studio's render queue) and
+# bundles (`build/`, the default of `remotion bundle`). Renders also wait on the licence gate in TODO.md.
+apps/video/out/
+apps/video/build/
