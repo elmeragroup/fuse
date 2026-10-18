@@ -552,9 +552,10 @@ describe("superseded local forms", () => {
   // once" half. Private copies would undo the shared ownership. Calls and imports use lint
   // allow lists; class-string ownership stays
   // here because lint cannot count.
-  it("spells the popup motion, fill and surface classes only in overlay-classes.ts", () => {
+  it("spells the popup motion, fill, surface and modal title classes only in overlay-classes.ts", () => {
     for (const needle of [
       "origin-(--transform-origin)",
+      "text-xl font-medium",
       "bg-popover text-popover-foreground",
       "bg-dialog text-dialog-foreground",
       "shadow-md ring-1 ring-foreground/10",

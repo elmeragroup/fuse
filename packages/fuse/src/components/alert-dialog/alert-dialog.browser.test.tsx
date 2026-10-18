@@ -6,8 +6,14 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { centreY, firstLineCentreY, hostCss, HOSTS } from "../../../test/first-line";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import { cssVarColor, overlayBackdropOf, renderThemed } from "../../../test/themed-browser-render";
+import {
+  cssVarColor,
+  headingNamed,
+  overlayBackdropOf,
+  renderThemed,
+} from "../../../test/themed-browser-render";
 import { AlertDialog } from "./index";
 
 const CANCEL_COPY = {
@@ -58,11 +64,11 @@ function ConfirmDialog({
   );
 }
 
-async function openConfirm(): Promise<HTMLElement> {
+async function openConfirm(name = TITLE): Promise<HTMLElement> {
   await userEvent.click(page.getByRole("button", { name: "Delete order", exact: true }).element());
   // Base UI mounts the popup a frame or more after the click.
-  await expect.element(page.getByRole("alertdialog", { name: TITLE })).toBeInTheDocument();
-  const dialog = page.getByRole("alertdialog", { name: TITLE }).element();
+  await expect.element(page.getByRole("alertdialog", { name })).toBeInTheDocument();
+  const dialog = page.getByRole("alertdialog", { name }).element();
   if (!(dialog instanceof HTMLElement)) {
     throw new Error("expected the popup");
   }
@@ -289,4 +295,48 @@ describe("AlertDialog", () => {
     expect(page.getByText("Custom mark", { exact: true }).element()).toBeTruthy();
     expect(custom.querySelector("svg")).toBeNull();
   });
+
+  it.each(HOSTS)("centres the icon on the first line of a title that wraps, %s", async (host) => {
+    // Unit under test: the icon's vertical position in the header row. Oracle: the middle of the
+    // title's first rendered line, read from its text.
+    renderThemed(
+      withLocale(
+        "en-US",
+        <>
+          <style>{hostCss(host)}</style>
+          <ConfirmDialog title={WRAPPING_TITLE} />
+        </>
+      )
+    );
+    const popup = await openConfirm(WRAPPING_TITLE);
+    const heading = headingNamed(WRAPPING_TITLE);
+    const icon = popup.querySelector("svg");
+    if (!(icon instanceof SVGElement)) {
+      throw new Error("expected the fallback icon");
+    }
+    await settle(popup);
+    const line = Number.parseFloat(getComputedStyle(heading).lineHeight);
+    expect(heading.getBoundingClientRect().height).toBeGreaterThanOrEqual(2 * line);
+    expect(centreY(icon)).toBeCloseTo(firstLineCentreY(heading), 0);
+  });
+
+  it("gives the title the whole header row when icon is false", async () => {
+    // Oracle: with no icon the title is the row's only item, so it spans the header's width.
+    renderThemed(withLocale("en-US", <ConfirmDialog title={WRAPPING_TITLE} icon={false} />));
+    const popup = await openConfirm(WRAPPING_TITLE);
+    await settle(popup);
+    const heading = headingNamed(WRAPPING_TITLE);
+    const header = heading.parentElement;
+    if (header === null) {
+      throw new Error("expected the title's header row");
+    }
+    expect(heading.getBoundingClientRect().width).toBeCloseTo(header.getBoundingClientRect().width, 0);
+  });
 });
+
+const WRAPPING_TITLE = "Delete this order and every delivery, invoice and meter reading attached to it?";
+
+/** The popup zooms in from 95%; wait for it to settle before measuring layout. */
+async function settle(popup: HTMLElement): Promise<void> {
+  await Promise.all(popup.getAnimations({ subtree: true }).map((animation) => animation.finished));
+}

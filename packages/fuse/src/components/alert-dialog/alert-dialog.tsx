@@ -18,6 +18,7 @@ import {
   DialogTrigger,
 } from "../dialog/dialog";
 import type { DialogContentProps } from "../dialog/dialog";
+import { overlayTitleLineClass } from "../overlay/overlay-classes";
 import { alertDialogStrings } from "./intl";
 
 /**
@@ -44,8 +45,8 @@ export type AlertDialogContentProps = Omit<DialogContentProps, "showCloseButton"
   /** Confirm heading, rendered in `Dialog.Title`. */
   title: string;
   /**
-   * Icon rendered to the right of the title. Defaults to `WarningOctagon` (destructive)
-   * or `Info` (neutral).
+   * Icon rendered to the right of the title, centred on the title's first line. Defaults to
+   * `WarningOctagon` (destructive) or `Info` (neutral).
    */
   icon?: ReactNode;
   /**
@@ -144,7 +145,8 @@ export function AlertDialogContent({
       showCloseButton={false}>
       <DialogHeader className="flex-row items-start justify-between gap-4">
         <DialogTitle className="text-balance">{title}</DialogTitle>
-        {icon ?? fallbackIcon}
+        {/* The icon sits on the title's first line, as Alert centres its media on its title. */}
+        <div className={overlayTitleLineClass}>{icon ?? fallbackIcon}</div>
       </DialogHeader>
       <DialogDescription>{children}</DialogDescription>
       <DialogFooter>
