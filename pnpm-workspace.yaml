@@ -23,6 +23,9 @@ catalog:
   "@shadcn/lint": 0.1.1
   # satori, which next/og bundles, pins this exact build; the OG card measures text with it.
   "@shuding/opentype.js": 1.4.0-beta.0
+  # Mutation testing for the colour math and the chart palette roles. 10.0.0 is past the
+  # minimum release age, so it needs no exclude entry.
+  "@stryker-mutator/core": 10.0.0
   "@tailwindcss/cli": 4.3.3
   "@tailwindcss/postcss": 4.3.3
   "@tailwindcss/typography": 0.5.20

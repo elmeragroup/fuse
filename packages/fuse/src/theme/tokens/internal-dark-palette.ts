@@ -37,12 +37,6 @@ export const INTERNAL_DARK_PALETTE = {
   border: "oklch(1 0 0 / 10%)",
   // Raised from the supplied 15% to meet 3:1 on supported control surfaces.
   input: "oklch(1 0 0 / 40%)",
-  "chart-1": "oklch(0.845 0.143 164.978)",
-  "chart-2": "oklch(0.696 0.17 162.48)",
-  "chart-3": "oklch(0.596 0.145 163.225)",
-  // Lift the two darkest greens while preserving their hue, chroma and ordering.
-  "chart-4": "oklch(0.565 0.118 165.612)",
-  "chart-5": "oklch(0.54 0.095 166.913)",
   sidebar: "oklch(0.205 0 0)",
   "sidebar-foreground": "oklch(0.985 0 0)",
   "sidebar-accent": "oklch(0.269 0 0)",

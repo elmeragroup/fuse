@@ -1,0 +1,12 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "testRunner_comment": "The command runner reruns Vitest for each mutant. The Vitest plugin reads stale results under Vitest 5 and reports every mutant as survived.",
+  "testRunner": "command",
+  "commandRunner": { "command": "pnpm exec vitest run" },
+  "mutate": ["src/oklab.ts", "src/matrix3.ts", "src/cvd.ts"],
+  "reporters": ["clear-text", "progress"],
+  "thresholds": { "break": 80 },
+  "tempDirName": ".cache/stryker-tmp",
+  "tsconfigFile_comment": "TypeScript 7 has no JavaScript API, so Stryker cannot rewrite a tsconfig. The sandbox keeps the package's relative paths, and naming no file skips the step.",
+  "tsconfigFile": "no-tsconfig-rewrite"
+}

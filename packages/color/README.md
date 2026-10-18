@@ -8,7 +8,9 @@ The core modules have no dependencies. Import each one by its subpath, as a name
 
 | Subpath                        | Owns                                                                                                  |
 | ------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| `@elmeragroup/color/oklch`     | The `Oklch` type, `oklch()` parse and format, CSS `color-mix(in oklch)` mixing, conversion to sRGB    |
+| `@elmeragroup/color/oklch`     | The `Oklch` type, `oklch()` parse and format, CSS `color-mix(in oklch)` mixing, conversion with sRGB  |
+| `@elmeragroup/color/oklab`     | The `Oklab` type, conversion from sRGB, and ΔE as Euclidean OKLab distance times 100                  |
+| `@elmeragroup/color/cvd`       | Machado 2009 color vision deficiency simulation at severity 1.0, and ΔE under protan and deutan       |
 | `@elmeragroup/color/srgb`      | The gamma-encoded `Srgb` and linear-light `LinearSrgb` types, `rgb()` parsing, transfer, compositing  |
 | `@elmeragroup/color/hex`       | Six-digit hex, `#rrggbb` in and uppercase `#RRGGBB` out                                               |
 | `@elmeragroup/color/css-color` | One parser for every notation the package reads, including `lab()`, and conversion to sRGB            |
@@ -50,4 +52,4 @@ The package reads only the color forms the workspace uses and refuses the rest.
 - `rgb(r, g, b)` and `rgba(r, g, b, a)`, the legacy comma form Chromium serializes, with channels from 0 to 255 and a number alpha.
 - Six-digit `#rrggbb` hex, the form of the hex tokens.
 
-Out-of-range lightness, alpha and channels clamp as CSS clamps them at parse time. The parsers refuse percentages outside an `oklch()` alpha, angle units, the space-separated `rgb()` form, shorthand and eight-digit hex, the `none` keyword, named colors and other color functions. The package writes `oklch()` and six-digit hex. Its math covers OKLCH mixing, sRGB gamut clipping, compositing, and WCAG 2 luminance and contrast. Add a form, a notation or a space when a caller needs it, with tests against published reference values.
+Out-of-range lightness, alpha and channels clamp as CSS clamps them at parse time. The parsers refuse percentages outside an `oklch()` alpha, angle units, the space-separated `rgb()` form, shorthand and eight-digit hex, the `none` keyword, named colors and other color functions. The package writes `oklch()` and six-digit hex. Its math covers OKLCH mixing, sRGB gamut clipping, compositing, WCAG 2 luminance and contrast, ΔE as Euclidean OKLab distance times 100, and Machado 2009 color vision deficiency simulation at severity 1.0. The chart palette gates measure with the last two. Add a form, a notation or a space when a caller needs it, with tests against published reference values.

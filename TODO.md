@@ -2,8 +2,7 @@
 
 ## Design and accessibility review
 
-- Review GE dark semantics, Telinet's live collection, shared support roles,
-  chart ordering and syntax colors.
+- Review GE dark semantics, Telinet's live collection, shared support roles and syntax colors.
 - Check dark states, fixed-color artwork and chart distinction in product screens.
 - Ask design for per-brand focus ring colors. Every theme draws the neutral `oklch(0.6 0 0)` ring;
   a brand tunes it with a `ring` entry in its light palette (`external-palettes.ts`) and in its
