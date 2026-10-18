@@ -94,7 +94,8 @@
       "card-with-action.tsx",
       "card-tag.tsx",
       "card-horizontal.tsx",
-      "card-item-rows.tsx"
+      "card-item-rows.tsx",
+      "card-nested.tsx"
     ]
   },
   "checkbox": {

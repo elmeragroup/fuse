@@ -38,11 +38,16 @@ describe("textFieldVariants", () => {
   it("composes cardVariants on variant=card and restyles inline chrome", () => {
     const card = textFieldVariants({ variant: "card" });
     // Oracle: cardVariants, the upstream recipe every base token must survive twMerge with,
-    // except the inner corner the card publishes, which the field's own padding replaces.
+    // except the inner corner the card publishes, which the field's own padding replaces, and
+    // the card edge role, which the field box replaces with its `--border` boundary.
     const cardBase = cardVariants().base();
-    for (const token of cardBase.split(/\s+/).filter((token) => !token.startsWith("[--shell-inner:"))) {
+    const replaced = (token: string) => token.startsWith("[--shell-inner:") || token === "border-card-border";
+    for (const token of cardBase.split(/\s+/).filter((token) => !replaced(token))) {
       expect(card.base(), token).toContain(token);
     }
+    expect(cardBase, "precondition: the card draws the card edge role").toContain("border-card-border");
+    expect(card.base()).not.toContain("border-card-border");
+    expect(card.base()).toContain("border-border");
     expect(card.base()).toContain("gap-0");
     expect(card.base()).toContain("px-(--surface-pad-lg)");
     expect(card.base()).toContain("py-4");
