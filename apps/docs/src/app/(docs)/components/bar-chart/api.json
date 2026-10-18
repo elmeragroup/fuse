@@ -1,0 +1,2242 @@
+{
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate. Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "bar-chart",
+  "parts": [
+    {
+      "name": "BarChart.Root",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-root.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 273,
+      "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The chart's name. Pass this or `aria-labelledby`, never both.",
+          "required": false
+        },
+        {
+          "name": "aria-labelledby",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The id of the element that names the chart. Pass this or `aria-label`, never both.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The chart's parts. Root never inspects them.",
+          "required": false
+        },
+        {
+          "name": "config",
+          "origin": "declared",
+          "type": "TConfig & ChartSeriesConfigCheck<TConfig, TRow>",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "One entry per series, keyed by the number column it reads. Each entry is a `ChartSeriesConfig` with a required `label` and `color` and an optional `format`, `icon`, `stack`, `missing`, `projectedFrom`, `qualityKey` and `interval`. Write it `as const satisfies ChartConfig`, so a misspelt literal `qualityKey` fails the type.",
+          "required": true
+        },
+        {
+          "name": "data",
+          "origin": "declared",
+          "type": "readonly TRow[]",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The rows, one per slot or category. Every cell is serialisable, so a server component passes it.",
+          "required": true
+        },
+        {
+          "name": "data-fade",
+          "origin": "declared",
+          "type": "\"past\" | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "\"past\" fades marks whose slot ended before `now`.",
+          "required": false
+        },
+        {
+          "name": "data-intro",
+          "origin": "declared",
+          "type": "ChartIntro | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The entrance wipe origin, physical under `dir=\"rtl\"` too. \"none\" turns the entrance off. The entrance runs once, when Root mounts. A mark that mounts later, after a data update or a brush step, snaps into place.",
+          "required": false
+        },
+        {
+          "name": "defaultActiveX",
+          "origin": "declared",
+          "type": "ChartXValue<TRow[TXKey]> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The slot that is active before any pointer or key moves. An x survives a reload where an index would not.",
+          "required": false
+        },
+        {
+          "name": "defaultSelectedKey",
+          "origin": "declared",
+          "type": "(keyof TConfig & string) | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The series selected on first render, or null for none. Uncontrolled.",
+          "required": false
+        },
+        {
+          "name": "defaultXRange",
+          "origin": "declared",
+          "type": "ChartXRange<TRow[TXKey]> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The brushed window on first render.",
+          "required": false
+        },
+        {
+          "name": "description",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Replaces the generated description verbatim.",
+          "required": false
+        },
+        {
+          "name": "interval",
+          "origin": "declared",
+          "type": "Interval | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Time axes only. A category axis takes no interval. The slot length, which is also the finest interval in the chart. A time axis requires it.",
+          "required": false
+        },
+        {
+          "name": "now",
+          "origin": "declared",
+          "type": "ChartInstant | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Time axes only. The current instant. Fuse never reads the clock.",
+          "required": false
+        },
+        {
+          "name": "onSelectedKeyChange",
+          "origin": "declared",
+          "type": "((key: (keyof TConfig & string) | null, details: ChartChangeEventDetails<ChartSelectionChangeReason>) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called when a legend toggle, a plot press or a key changes the selection.",
+          "required": false
+        },
+        {
+          "name": "onXRangeChange",
+          "origin": "declared",
+          "type": "((range: readonly [first: ChartXOut<TRow[TXKey]>, last: ChartXOut<TRow[TXKey]>], details: ChartChangeEventDetails<ChartXRangeChangeReason>) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called on every brush step with the first and last slot. A data update never calls it.",
+          "required": false
+        },
+        {
+          "name": "onXRangeCommitted",
+          "origin": "declared",
+          "type": "((range: readonly [first: ChartXOut<TRow[TXKey]>, last: ChartXOut<TRow[TXKey]>], details: ChartChangeEventDetails<ChartXRangeChangeReason>) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called once when a brush drag, track press or key press ends. Fetch new data here.",
+          "required": false
+        },
+        {
+          "name": "orientation",
+          "origin": "declared",
+          "type": "\"horizontal\" | \"vertical\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "\"horizontal\" draws the x column down the left edge and values left to right, for horizontal bars. Axes keep their data roles in both orientations, so `XAxis` is always the `xKey` axis and `YAxis` always the value axis. Each category row is `--chart-row-height` tall.",
+          "required": false
+        },
+        {
+          "name": "period",
+          "origin": "declared",
+          "type": "ChartPeriod | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Time axes only. The whole window the axis lists, past the first and last rows, such as one calendar month. Every slot inside it gets a cell, with or without a row. A series with no reading at a slot that starts at or after `now` is pending there, which draws nothing. A past slot inside the series' run of readings is missing, which draws the missing marker. So leave out the rows of days to come, or give their cells null.",
+          "required": false
+        },
+        {
+          "name": "selectedKey",
+          "origin": "declared",
+          "type": "(keyof TConfig & string) | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The selected series, or null for none. Controlled.",
+          "required": false
+        },
+        {
+          "name": "stackOffset",
+          "origin": "declared",
+          "type": "\"diverging\" | \"expand\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "\"diverging\" by default, so negative values stack below zero.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "timeZone",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Time axes only. IANA zone of the data's market. It overrides LocaleProvider's, and a time axis with neither throws.",
+          "required": false
+        },
+        {
+          "name": "xFormat",
+          "origin": "declared",
+          "type": "XFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Time axes only. The x label format in the tooltip, the table and spoken text.",
+          "required": false
+        },
+        {
+          "name": "xKey",
+          "origin": "declared",
+          "type": "TXKey",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The x column. It names a column with no null values. A `Date` or epoch-milliseconds column makes a time axis, which needs `interval`, and a string column makes a category axis in data order.",
+          "required": true
+        },
+        {
+          "name": "xRange",
+          "origin": "declared",
+          "type": "ChartXRange<TRow[TXKey]> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The first and last slot of the brushed window, both inclusive. Prefer the uncontrolled `defaultXRange` with `onXRangeCommitted`, because a controlled range renders every series on each brush step.",
+          "required": false
+        },
+        {
+          "name": "xScale",
+          "origin": "declared",
+          "type": "\"band\" | \"point\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "\"band\" by default. Line and area charts usually pass \"point\".",
+          "required": false
+        },
+        {
+          "name": "yBaseline",
+          "origin": "declared",
+          "type": "\"none\" | \"zero\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "\"zero\" by default. \"none\" lets a Line-only layout leave 0 out, and Bar and Area throw under it. It governs the default layout only. Each Panel takes its own.",
+          "required": false
+        },
+        {
+          "name": "yInclude",
+          "origin": "declared",
+          "type": "readonly number[] | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Values the default layout's y domain must reach, such as a price cap. Each Panel takes its own.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.Panel",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-panel.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The Panel's plot parts. Tooltip, Legend, LegendToggleGroup, Brush, Table, Empty, Headline and Takeaway stay under Root, beside the Panels.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "series",
+          "origin": "declared",
+          "type": "readonly string[]",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The config keys this Panel draws. Its y domain comes from them, `yBaseline` and `yInclude`, over the rows inside the effective `xRange`. The series cycle and the \"all series\" option list keys in config order, so write config in Panel order.",
+          "required": true
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "yBaseline",
+          "origin": "declared",
+          "type": "\"none\" | \"zero\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "As Root's `yBaseline`, for this Panel's layout. \"zero\" by default.",
+          "required": false
+        },
+        {
+          "name": "yInclude",
+          "origin": "declared",
+          "type": "readonly number[] | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "As Root's `yInclude`, for this Panel's layout.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.Grid",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-grid.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "orientation",
+          "origin": "declared",
+          "type": "\"both\" | \"horizontal\" | \"vertical\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Which lines to draw, in screen directions. Without it, lines at the value ticks, which are horizontal under `orientation=\"vertical\"` and vertical under `\"horizontal\"`.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"dashed\" | \"solid\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The line style. \"solid\" by default, as the Figma `Chart` component draws.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.XAxis",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-axis.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "XFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The tick label format. The interval's tick preset is the default.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The axis title.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "tick",
+          "origin": "declared",
+          "type": "\"dot\" | \"none\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The tick mark. \"none\" by default.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.YAxis",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-axis.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "ValueFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The tick label format. The layout's first series' `format` is the default. Tick labels keep the format's unit, such as `2 kWh` and `142 øre/kWh`, and leave out a price's VAT basis, which the tooltip and the table print. `label` adds an axis title.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The axis title.",
+          "required": false
+        },
+        {
+          "name": "side",
+          "origin": "declared",
+          "type": "\"end\" | \"start\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "\"start\" draws the axis at the left edge, or at the bottom under `orientation=\"horizontal\"`. \"end\" draws it at the opposite edge. \"start\" by default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.Bar",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-bar.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series the bars draw. An unknown key throws `unknown-key`.",
+          "required": true
+        },
+        {
+          "name": "emphasis",
+          "origin": "declared",
+          "type": "ChartDatum | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The slots to emphasise. `\"now\"` selects the slot of this series that contains Root's `now`, so an hourly bar on a quarter-hour chart emphasises its whole hour. An x string on a time axis throws `x-type-mismatch`.",
+          "required": false
+        },
+        {
+          "name": "emphasisLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The word the option appends to an emphasised slot. The dictionary's \"uthevet\" is the default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"blocks\" | \"default\" | \"duotone\" | \"duotone-reverse\" | \"expandable\" | \"gradient\" | \"hatched\" | \"isometric\" | \"striped\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The bar's look. \"default\" by default.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.BarGroup",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-bar.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The group's Bar parts.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "series",
+          "origin": "declared",
+          "type": "readonly string[]",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The config keys that share the band, one sub-band each, in this order.",
+          "required": true
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.Line",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-line.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "curve",
+          "origin": "declared",
+          "type": "ChartCurve | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The curve through the readings. \"monotone\" by default.",
+          "required": false
+        },
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series the line draws. An unknown key throws `unknown-key`.",
+          "required": true
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"dashed\" | \"default\" | \"flowing\" | \"quiet\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The line's look. \"default\" by default.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.Area",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-area.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "curve",
+          "origin": "declared",
+          "type": "ChartCurve | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The curve along the area's edge. \"monotone\" by default.",
+          "required": false
+        },
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series the area draws. An unknown key throws `unknown-key`.",
+          "required": true
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"dotted\" | \"gradient\" | \"gradient-reverse\" | \"hatched\" | \"lines\" | \"solid\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The fill's look. \"gradient\" by default.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.Dots",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-dots.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series whose readings get a dot.",
+          "required": true
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"default\" | \"halo\" | \"ring\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The dot's look. \"default\" by default.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.ActiveDot",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-dots.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series the dot follows.",
+          "required": true
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"default\" | \"halo\" | \"ping\" | \"ring\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The dot's look. \"default\" by default.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.Marker",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-dots.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "at",
+          "origin": "declared",
+          "type": "ChartDatum",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The slots to mark. An x string on a time axis throws `x-type-mismatch`.",
+          "required": true
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "A `ValueLabel` adds the value as a pill beside the dot.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series the marker sits on.",
+          "required": true
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"default\" | \"halo\" | \"ping\" | \"ring\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The dot's look. \"default\" by default.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.ValueLabel",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-dots.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "ValueFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The value format. The series' config `format` is the default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.Crosshair",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-crosshair.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"band\" | \"line\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A band over the active slot or a line through it. The default follows `xScale`. A band spans the active slot of the coarsest series in its layout, so an hourly bar's band covers its hour.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.ReferenceLine",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-reference.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "ValueFormat | XFormat | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "How `{value}` in `label` prints, a `ValueFormat` on a `y` line and an `XFormat` on an `x` line.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The visible label. `{value}` prints the line's value.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "tone",
+          "origin": "declared",
+          "type": "ChartTone | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The line's tone. \"default\" by default.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"dashed\" | \"solid\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The line style. \"solid\" by default.",
+          "required": false
+        },
+        {
+          "name": "x",
+          "origin": "declared",
+          "type": "ChartX | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Not on a value line. The x the line marks. An x string on a time axis throws `x-type-mismatch`.",
+          "required": false
+        },
+        {
+          "name": "y",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The value the line marks. Not on an x line.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.ReferenceArea",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-reference.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "ValueFormat | XFormat | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "How `{value}` in `label` prints the range, a `ValueFormat` for `y1` and `y2` and an `XFormat` for `x1` and `x2`.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The visible label. `{value}` prints the range.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "tone",
+          "origin": "declared",
+          "type": "ChartTone | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The band's tone. \"default\" by default.",
+          "required": false
+        },
+        {
+          "name": "x1",
+          "origin": "declared",
+          "type": "ChartX | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Not on a value band. The band's first x. An x string on a time axis throws `x-type-mismatch`.",
+          "required": false
+        },
+        {
+          "name": "x2",
+          "origin": "declared",
+          "type": "ChartX | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Not on a value band. The band's last x. An x string on a time axis throws `x-type-mismatch`.",
+          "required": false
+        },
+        {
+          "name": "y1",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The band's first value. Not on an x band.",
+          "required": false
+        },
+        {
+          "name": "y2",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The band's last value. Not on an x band.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.ActiveValue",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-active-value.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series to print.",
+          "required": true
+        },
+        {
+          "name": "fallback",
+          "origin": "declared",
+          "type": "ChartFallback | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The datum to print when nothing is active. \"last\" by default.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "ValueFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The value format. The series' config `format` is the default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.ActiveValueLine",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-active-value.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "A `ValueLabel` adds the value as a pill at the value axis.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series whose active value the line marks.",
+          "required": true
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.TooltipTotal",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip-total.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "ValueFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The total's format. The stack's first series' format is the default.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The row's label. The dictionary's \"Totalt\" is the default.",
+          "required": false
+        },
+        {
+          "name": "stack",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "A config stack id. The first stack id in config order is the default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.Glow",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-effects.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The marks to glow.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.Reveal",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-effects.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The marks to reveal.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.Brush",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-brush.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The group's name. The dictionary's \"Periode\" is the default.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "A `BrushPreview` with the marks to draw in the brush track.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "endLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Joined to the group name for the end thumb. The dictionary's \"til\" is the default.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "XFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The thumbs' value text format. Root's label preset is the default. For intervals finer than a day, the `date` preset's spoken form leads the slot's spoken label. The year appears when the domain spans more than one calendar year in Root's zone.",
+          "required": false
+        },
+        {
+          "name": "minSpan",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The smallest window, in slots. `2` by default.",
+          "required": false
+        },
+        {
+          "name": "startLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Joined to the group name for the start thumb. The dictionary's \"fra\" is the default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "windowLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The pan window's name. The dictionary's \"Flytt periode\" is the default.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.BrushPreview",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-brush.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The marks to draw over the whole domain.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.Skeleton",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-skeleton.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 276,
+      "props": [
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The loader's name. The dictionary's \"Laster diagram\" is the default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"area\" | \"bar\" | \"line\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The mark the placeholder sketches. \"bar\" by default.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.Headline",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-headline.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.Takeaway",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-headline.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "string | number | readonly (string | number)[]",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The takeaway sentence. Interpolated strings and numbers pass, and elements fail the type.",
+          "required": true
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.Tooltip",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "anchor",
+          "origin": "declared",
+          "type": "\"point\" | \"top\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "\"point\" follows the active mark. \"top\" pins the popup to the plot top and tracks x only.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Without children, TooltipLabel over a TooltipItems template with Swatch, SeriesLabel and TooltipValue, then one TooltipTotal per stack id that holds two or more series. In pie and radial charts the template renders once, for the active slice or ring.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"default\" | \"frosted\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The popup's surface. \"default\" by default.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.TooltipLabel",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "XFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The slot label format. Root's `xFormat` is the default. It does nothing in polar charts.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.TooltipItems",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.TooltipValue",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series to print. Inside a TooltipItems row the row supplies it.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "ValueFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The value format. The series' config `format` is the default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.TooltipShare",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series to print. Inside a TooltipItems row the row supplies it.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "ChartFractionDigits | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The percentage digits.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.Swatch",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-series.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series to paint. Inside a template row the row supplies it.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"bar\" | \"circle\" | \"circle-outline\" | \"line\" | \"square\" | \"square-outline\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The swatch's shape. \"square\" by default.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.SeriesLabel",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-series.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series to name. Inside a template row the row supplies it.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.SeriesIcon",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-series.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series whose config `icon` to show. Inside a template row the row supplies it.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.Legend",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-legend.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "side",
+          "origin": "declared",
+          "type": "\"bottom\" | \"end\" | \"start\" | \"top\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Where the legend sits around the plot. \"bottom\" by default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.LegendItem",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-legend.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series of this item. Without one, the item is a template rendered once per legend entry.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.LegendValue",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-legend.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series to print. Inside a LegendItem template the item supplies it.",
+          "required": false
+        },
+        {
+          "name": "fallback",
+          "origin": "declared",
+          "type": "ChartFallback | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The datum to print when nothing is active. \"last\" by default.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "ValueFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The value format. The series' config `format` is the default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.LegendShare",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-legend.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series to print. Inside a LegendItem template the item supplies it.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "ChartFractionDigits | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The percentage digits.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.LegendToggleGroup",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-legend.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The group's name. The dictionary's \"Serier\" is the default.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "LegendToggle parts. Without children, one per config key, or per kept category in a folded pie.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "side",
+          "origin": "declared",
+          "type": "\"bottom\" | \"end\" | \"start\" | \"top\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Where the group sits around the plot. \"bottom\" by default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.LegendToggle",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-legend.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The toggle's content. The series' swatch and label by default.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The series the toggle selects. An unknown key throws `unknown-key`.",
+          "required": true
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.Table",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-table.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "caption",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Replaces the generated caption, the chart name and the period.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra columns as `TableColumn` parts, after the series and total columns.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "hideLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Replaces the dictionary's \"Skjul tabell\".",
+          "required": false
+        },
+        {
+          "name": "showLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Replaces the dictionary's \"Vis som tabell\".",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "xHeader",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Replaces the first column's header, which the interval picks.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.TableColumn",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-table.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "dataKey",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The row column to list. It names a row column, not a config key.",
+          "required": true
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "ValueFormat | XFormat | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "How number and `Date` cells print.",
+          "required": false
+        },
+        {
+          "name": "header",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The column header.",
+          "required": true
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.Empty",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-empty.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "BarChart.Background",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-background.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "ChartBackgroundPattern | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The pattern drawn behind the marks.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

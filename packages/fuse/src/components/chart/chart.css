@@ -1,0 +1,7 @@
+@layer theme, base, components, utilities;
+
+@layer components {
+  [data-slot="chart"] {
+    display: grid;
+  }
+}

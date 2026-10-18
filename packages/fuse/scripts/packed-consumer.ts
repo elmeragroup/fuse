@@ -13,14 +13,16 @@ export function releaseAgeCutoff(now: Date): string {
 }
 
 /**
- * The Tailwind entry stylesheet a consumer compiles Fuse with: Tailwind, Fuse's CSS and themes,
- * and an `@source` on the package's own files.
+ * The Tailwind entry stylesheet a consumer compiles Fuse with. It imports Tailwind, Fuse's CSS and
+ * themes, then each extra stylesheet, and adds an `@source` on the package's own files.
  *
  * @param sourceDir - The unpacked Fuse package, relative to the stylesheet.
+ * @param extraImports - Stylesheets imported after Fuse's themes, such as `@elmeragroup/fuse/chart.css`.
  * @returns The `source.css` text.
  */
-export function packedTailwindSource(sourceDir: string): string {
-  return `@import "tailwindcss" source(none);\n@import "@elmeragroup/fuse/css";\n@import "@elmeragroup/fuse/themes.css";\n@source "${sourceDir}";\n`;
+export function packedTailwindSource(sourceDir: string, extraImports: readonly string[] = []): string {
+  const extras = extraImports.map((entry) => `@import "${entry}";\n`).join("");
+  return `@import "tailwindcss" source(none);\n@import "@elmeragroup/fuse/css";\n@import "@elmeragroup/fuse/themes.css";\n${extras}@source "${sourceDir}";\n`;
 }
 
 /** One throwaway npm consumer of the packed tarball. */

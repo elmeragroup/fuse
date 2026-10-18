@@ -1,17 +1,21 @@
 /**
  * The time judges. Each pairs Fuse's time labels with an expectation from outside Fuse: the
  * zoneinfo slot oracle in `slots.json`, the frozen market data, or the literals in
- * `time-literals.ts`. `README.md` names each source.
+ * `time-literals.ts`. `README.md` names each source. The hand-written slot labels run through the
+ * public `formatChartSlot`, so every engine places each slot by its own zone data.
  */
+import { formatDateTime } from "../../../../intl/date-time-join";
 import type { SupportedLocale } from "../../../../intl/locale-context";
+import { formatChartSlot } from "../../chart-format";
 import { formatTime } from "../time-format";
 import type { Interval, TimePreset } from "../time-format";
 import se3 from "./elprisetjustnu/2025-10-26_SE3.json" with { type: "json" };
 import no1 from "./hvakosterstrommen/2025-10-26_NO1.json" with { type: "json" };
-import { LOCALES, ZONES, literalJudgements } from "./judgement";
+import { LOCALES, ZONES, labelJudgement, literalJudgements } from "./judgement";
 import type { Judgement, Zone } from "./judgement";
 import slots from "./slots.json" with { type: "json" };
 import { TIME_CASES } from "./time-literals";
+import type { SlotLabelCase } from "./time-literals";
 
 type Columns<T> = { readonly [L in SupportedLocale]: readonly T[] };
 type SubDay = {
@@ -201,4 +205,35 @@ export function timeLiteralJudgements(): Judgement[] {
       timeCase.role
     )
   );
+}
+
+/**
+ * Each hand-written case's label through the public `formatChartSlot`, one judgement per case.
+ *
+ * @param cases - The cases.
+ * @returns One judgement per case.
+ */
+export function publicSlotJudgements(cases: readonly SlotLabelCase[]): Judgement[] {
+  return cases.map((slotCase) => {
+    const { locale, zone: timeZone, format } = slotCase;
+    const options = format === undefined ? { locale, timeZone } : { locale, timeZone, format };
+    const label = formatChartSlot(Date.parse(slotCase.at), slotCase.interval, options);
+    return labelJudgement(slotCase.name, label, slotCase.text, slotCase.spoken);
+  });
+}
+
+/**
+ * A language outside the four keeps Intl's own join. The expectation is the engine's own Intl
+ * output, built without Fuse's formatter cache, so the judge claims no text across engines.
+ */
+export function foreignJoinJudgements(): Judgement[] {
+  const options = { timeZone: "Europe/Oslo", dateStyle: "long", timeStyle: "short" } as const;
+  const at = Date.parse("2026-10-18T10:30:00Z");
+  return [
+    {
+      name: "a de-DE date-time keeps Intl's join",
+      actual: [formatDateTime("de-DE", options, at)],
+      expected: [new Intl.DateTimeFormat("de-DE", options).format(at)],
+    },
+  ];
 }

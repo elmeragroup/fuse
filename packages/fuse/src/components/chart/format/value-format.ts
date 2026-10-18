@@ -7,50 +7,63 @@ import type { SupportedLocale } from "../../../intl/locale-context";
 import { makeFormattedText } from "./formatted-text";
 import type { FormattedText, LabelRole } from "./formatted-text";
 import { CHART_WORDS } from "./words";
-import type { ChartWords, Currency, EnergyUnit, PowerUnit, VatBasis } from "./words";
+import type { ChartWords } from "./words";
 
-/** The fraction digits every preset accepts. */
-type FractionDigits = {
+/**
+ * The fraction digits every preset accepts. It is exported because `ValueFormat` and
+ * `ChartShareFormat` reference it.
+ *
+ * @beta
+ */
+export type ChartFractionDigits = {
   /** The fewest fraction digits to show. */
   readonly minimumFractionDigits?: number;
   /** The most fraction digits to show. */
   readonly maximumFractionDigits?: number;
 };
 
-/** Energy, such as `1 234,5 kWh`. The SI symbol is the same in every locale. */
-export type EnergyFormat = FractionDigits & {
-  /** Selects the energy preset. */
-  readonly preset: "energy";
-  /** The energy unit the value is in. */
-  readonly unit: EnergyUnit;
-};
-
-/** Power, such as `3,2 kW`. The SI symbol is the same in every locale. */
-export type PowerFormat = FractionDigits & {
-  /** Selects the power preset. */
-  readonly preset: "power";
-  /** The power unit the value is in. */
-  readonly unit: PowerUnit;
-};
-
 /**
- * A price per kilowatt-hour, such as `1,42 kr/kWh inkl. mva` or, with `minor`, `142,3 øre/kWh
- * inkl. mva`. Full labels name the VAT basis, because Norwegian consumer law requires every price
- * element to show. Fuse computes no VAT, so the basis is the data's own.
+ * A value format, either Intl number options or one of Fuse's energy-market presets. It is plain
+ * data, so a server component can pass it to a client chart, and a function fails the type. The
+ * Intl arm carries `preset?: never`, so a preset object that lacks a required field cannot pass as
+ * Intl options.
+ *
+ * - `energy` prints energy, such as `1 234,5 kWh`. The SI symbol is the same in every locale.
+ * - `power` prints power, such as `3,2 kW`.
+ * - `unit-price` prints a price per kilowatt-hour, such as `1,42 kr/kWh inkl. mva` or, with
+ *   `minor`, `142,3 øre/kWh inkl. mva`. Full labels name the VAT basis, because Norwegian consumer
+ *   law requires every price element to show. Fuse computes no VAT, so `vat` states the data's own
+ *   basis.
+ *
+ * @beta
  */
-export type UnitPriceFormat = FractionDigits & {
-  /** Selects the unit-price preset. */
-  readonly preset: "unit-price";
-  /** The currency the value is in. */
-  readonly currency: Currency;
-  /** Whether the value is in the currency's subunit, such as øre or cents. */
-  readonly minor?: boolean;
-  /** Whether the value includes VAT. */
-  readonly vat: VatBasis;
-};
+export type ValueFormat =
+  | (Intl.NumberFormatOptions & { readonly preset?: never })
+  | (ChartFractionDigits & {
+      /** Selects the energy preset. */
+      readonly preset: "energy";
+      /** The energy unit the value is in. */
+      readonly unit: "Wh" | "kWh" | "MWh";
+    })
+  | (ChartFractionDigits & {
+      /** Selects the power preset. */
+      readonly preset: "power";
+      /** The power unit the value is in. */
+      readonly unit: "W" | "kW" | "MW";
+    })
+  | (ChartFractionDigits & {
+      /** Selects the unit-price preset. */
+      readonly preset: "unit-price";
+      /** The currency the value is in. */
+      readonly currency: "NOK" | "SEK" | "EUR";
+      /** Whether the value is in the currency's subunit, such as øre or cents. */
+      readonly minor?: boolean;
+      /** Whether the value includes VAT. */
+      readonly vat: "included" | "excluded";
+    });
 
-/** A value format, either Intl number options or one of Fuse's energy-market presets. */
-export type ValueFormat = Intl.NumberFormatOptions | EnergyFormat | PowerFormat | UnitPriceFormat;
+/** One of Fuse's presets. */
+type PresetFormat = Exclude<ValueFormat, { readonly preset?: never }>;
 
 /**
  * The visual text of a number. Every visual minus is U+2212, en-US included, where Intl writes
@@ -106,7 +119,7 @@ function spokenOptions(options: Intl.NumberFormatOptions): Intl.NumberFormatOpti
  * Fraction digits for a preset. A consumer minimum above the preset's default maximum raises the
  * maximum with it, where Intl would throw a RangeError on the pair.
  */
-function digits(format: FractionDigits, defaultMaximum: number | undefined): FractionDigits {
+function digits(format: ChartFractionDigits, defaultMaximum: number | undefined): ChartFractionDigits {
   const { minimumFractionDigits, maximumFractionDigits } = format;
   return {
     minimumFractionDigits,
@@ -119,7 +132,7 @@ function digits(format: FractionDigits, defaultMaximum: number | undefined): Fra
 function inflect(
   locale: SupportedLocale,
   value: number,
-  fraction: FractionDigits,
+  fraction: ChartFractionDigits,
   word: { readonly one: string; readonly other: string }
 ): string {
   return pluralRules(locale, fraction).select(value) === "one" ? word.one : word.other;
@@ -129,7 +142,7 @@ function formatPreset(
   locale: SupportedLocale,
   words: ChartWords,
   value: number,
-  format: EnergyFormat | PowerFormat | UnitPriceFormat,
+  format: PresetFormat,
   role: LabelRole
 ): FormattedText {
   if (format.preset === "energy" || format.preset === "power") {
@@ -185,7 +198,7 @@ export function formatValue(
   if (value === null) {
     return makeFormattedText(words.noValue.text, words.noValue.spoken);
   }
-  if ("preset" in format) {
+  if (format.preset !== undefined) {
     return formatPreset(locale, words, value, format, role);
   }
   const options: Intl.NumberFormatOptions = { ...format, signDisplay: format.signDisplay ?? "negative" };

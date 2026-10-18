@@ -454,3 +454,41 @@ export const SPOKEN_PER_KWH = {
   "fi-FI": "kilowattitunnilta",
   "en-US": "per\u00a0kilowatt-hour",
 } as const satisfies { readonly [L in SupportedLocale]: string };
+
+/** A value label through the public `formatChartValue`, written by hand for one locale. */
+export type PublicValueCase = {
+  readonly name: string;
+  readonly locale: SupportedLocale;
+  readonly value: number;
+  /** The format, or none for the locale's plain number. */
+  readonly format: ValueFormat | undefined;
+  readonly text: string;
+  /** The spoken label, where the case checks it. */
+  readonly spoken?: string;
+};
+
+/** Value labels as `formatChartValue` prints them beside a chart, from the same CLDR 48 data. */
+export const PUBLIC_VALUE_CASES: readonly PublicValueCase[] = [
+  {
+    name: "a tooltip's unit price with its VAT basis",
+    locale: "nb-NO",
+    value: 1.78,
+    format: { preset: "unit-price", currency: "NOK", vat: "included" },
+    text: "1,78 kr/kWh inkl. mva",
+    spoken: "1,78 norske kroner per kilowattime inkludert merverdiavgift",
+  },
+  {
+    name: "the nb-NO plain number without a format",
+    locale: "nb-NO",
+    value: 1234.5,
+    format: undefined,
+    text: "1 234,5",
+  },
+  {
+    name: "the en-US plain number without a format",
+    locale: "en-US",
+    value: 1234.5,
+    format: undefined,
+    text: "1,234.5",
+  },
+];

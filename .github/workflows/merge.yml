@@ -74,7 +74,7 @@ jobs:
       # failure should not wait on the Chromium suites.
       - name: turbo ci:checks (no browser)
         id: turbo-gate
-        run: pnpm exec turbo run '//#lint' '//#test:repo-policy' '//#type-check:scripts' type-check test test:types build package:check size-limit
+        run: pnpm exec turbo run '//#lint' '//#test:repo-policy' '//#type-check:scripts' type-check test test:types build package:check size-limit api:report
         env:
           TURBO_RUN_SUMMARY: "true"
 

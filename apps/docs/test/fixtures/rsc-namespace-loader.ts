@@ -4,9 +4,12 @@
  * `"use client"` modules become client-module proxies (`createClientModuleProxy`).
  * Every other TypeScript module is transpiled and evaluated, so a directive-free
  * namespace object stays a real object whose properties are client references.
+ *
+ * Registered with `{ data: { layer: "ssr" } }`, it only transpiles TypeScript and keeps Node's
+ * conditions, the way the SSR layer of an RSC bundler loads client modules as real code.
  */
 import { existsSync, readFileSync } from "node:fs";
-import type { LoadHook, ResolveHook } from "node:module";
+import type { InitializeHook, LoadHook, ResolveHook } from "node:module";
 import { dirname, extname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parseSync } from "oxc-parser";
@@ -17,6 +20,14 @@ const FLIGHT_SERVER_URL = pathToFileURL(
   fileURLToPath(new URL("./rsc-flight-server.ts", import.meta.url))
 ).href;
 const EXTENSIONS = [".ts", ".tsx", ".js", ".mjs"];
+
+/** Which RSC layer this process plays: the server, or the SSR renderer of client modules. */
+let layer: "server" | "ssr" = "server";
+
+/** Reads the layer `register()` passes as `data`. */
+export const initialize: InitializeHook<{ readonly layer?: "server" | "ssr" } | undefined> = (data) => {
+  layer = data?.layer ?? "server";
+};
 
 function fail(file: string, verb: string, errors: readonly { readonly message: string }[]): never {
   throw new Error(`${file} does not ${verb}: ${errors.map((error) => error.message).join("; ")}`);
@@ -85,7 +96,7 @@ function transpile(file: string, source: string): string {
 }
 
 function withReactServer(context: Parameters<ResolveHook>[1]): Parameters<ResolveHook>[1] {
-  if (context.conditions.includes("react-server")) {
+  if (layer === "ssr" || context.conditions.includes("react-server")) {
     return context;
   }
   return { ...context, conditions: [...context.conditions, "react-server"] };
@@ -148,7 +159,7 @@ export const load: LoadHook = async (url, context, nextLoad) => {
     return nextLoad(url, context);
   }
   const source = readFileSync(file, "utf8");
-  if (file.includes("/packages/fuse/src/")) {
+  if (layer === "server" && file.includes("/packages/fuse/src/")) {
     const parsed = parse(file, source);
     if (isUseClient(parsed)) {
       return { format: "module", source: clientStub(url, runtimeExportNames(parsed)), shortCircuit: true };

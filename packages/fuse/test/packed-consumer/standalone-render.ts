@@ -4,6 +4,7 @@ import process from "node:process";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { Button } from "@elmeragroup/fuse/button";
+import { Chart } from "@elmeragroup/fuse/chart";
 import { Input } from "@elmeragroup/fuse/input";
 import { InputGroup } from "@elmeragroup/fuse/input-group";
 import { NumberField } from "@elmeragroup/fuse/number-field";
@@ -24,7 +25,16 @@ process.stdout.write(
         h(InputGroup.Root, { id: "group" }, h(InputGroup.Input, { "aria-label": "Grouped" })),
         h("div", { id: "number" }, h(NumberField, { "aria-label": "Number" })),
         h("div", { id: "phone" }, h(PhoneNumberField, { "aria-label": "Phone" })),
-        h(Textarea, { id: "textarea", "aria-label": "Text", defaultValue: "One\nTwo\nThree\nFour\nFive" })
+        h(Textarea, { id: "textarea", "aria-label": "Text", defaultValue: "One\nTwo\nThree\nFour\nFive" }),
+        h(Chart.Root, { id: "chart-default", data: [], config: {}, xKey: "month", "aria-label": "Chart" }),
+        h(Chart.Root, {
+          id: "chart-block",
+          className: "block",
+          data: [],
+          config: {},
+          xKey: "month",
+          "aria-label": "Chart",
+        })
       ),
     })
   )

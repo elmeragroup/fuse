@@ -1,0 +1,24 @@
+---
+lede: >
+  Preview. A static chart for a table cell or a stat tile, with no client JavaScript.
+---
+
+import { SparklineHourlyPrice } from "./demos/sparkline-hourly-price";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("sparkline");
+
+<ComponentIntro slug="sparkline" />
+
+<Prose>
+
+The chart entry is a preview. Its parts render no marks yet, and names and props can change until Fuse's first stable release. `Sparkline` calls no hook, so a server component renders it, and it takes no tab stop.
+
+</Prose>
+
+<Demo slug="sparkline" id="hourly-price" title="Hourly price" file="sparkline-hourly-price.tsx">
+  <SparklineHourlyPrice />
+</Demo>
+
+<ApiReference slug="sparkline" />

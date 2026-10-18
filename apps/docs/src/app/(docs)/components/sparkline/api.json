@@ -1,0 +1,159 @@
+{
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate. Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "sparkline",
+  "parts": [
+    {
+      "name": "Sparkline",
+      "rsc": "server",
+      "sourcePath": "packages/fuse/src/components/chart/sparkline.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The consumer's name. The accessible name appends the generated range sentence to it.",
+          "required": true
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "color",
+          "origin": "declared",
+          "type": "ChartRole | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The paint. \"chart-1\" by default.",
+          "required": false
+        },
+        {
+          "name": "curve",
+          "origin": "declared",
+          "type": "ChartCurve | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The curve through the values. \"monotone\" by default.",
+          "required": false
+        },
+        {
+          "name": "data",
+          "origin": "declared",
+          "type": "readonly (number | null)[]",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Evenly spaced values. Null leaves a gap. No values, or only nulls, draw nothing and read the dictionary's `noData`.",
+          "required": true
+        },
+        {
+          "name": "description",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Replaces the generated range sentence verbatim.",
+          "required": false
+        },
+        {
+          "name": "emphasis",
+          "origin": "declared",
+          "type": "number | \"first\" | \"last\" | \"max\" | \"min\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "A dot on one value, by keyword or by index.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "ValueFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "How the range sentence prints values.",
+          "required": false
+        },
+        {
+          "name": "id",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The svg's id.",
+          "required": false
+        },
+        {
+          "name": "interval",
+          "origin": "declared",
+          "type": "Interval | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Only with `start`. Each value's slot length.",
+          "required": false
+        },
+        {
+          "name": "locale",
+          "origin": "declared",
+          "type": "SupportedLocale",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The locale of the range sentence. A hook-free component cannot read LocaleProvider.",
+          "required": true
+        },
+        {
+          "name": "reference",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "A flat dashed line, such as Norgespris against spot.",
+          "required": false
+        },
+        {
+          "name": "start",
+          "origin": "declared",
+          "type": "ChartInstant | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Without a start, the range sentence names no slots. The first value's slot start. With all three, the range sentence names the slots of the lowest and highest values.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "timeZone",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Only with `start`. The IANA zone the slot labels read in.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"area\" | \"bar\" | \"line\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The mark. \"line\" by default.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

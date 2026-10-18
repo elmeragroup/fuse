@@ -909,7 +909,14 @@
   }
 }
 
-/* Transform/layout motion off; opacity fades and color transitions stay. */
+/*
+ * Transform/layout motion off; opacity fades and color transitions stay.
+ * The property list below has 8 entries, and CSS Transitions repeats an element's shorter duration
+ * list to fill them, so opacity takes the first duration the element declares. Keep base transition
+ * lists to opacity and color at one duration, and declare movement, its durations and stagger
+ * delays inside `@media (prefers-reduced-motion: no-preference)`. The delay reset starts every
+ * remaining fade at once.
+ */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -917,6 +924,7 @@
     scroll-behavior: auto !important;
     transition-property:
       opacity, background-color, color, border-color, outline-color, fill, stroke, box-shadow !important;
+    transition-delay: 0s !important;
     --tw-enter-translate-x: 0 !important;
     --tw-enter-translate-y: 0 !important;
     --tw-enter-scale: 1 !important;
@@ -928,5 +936,8 @@
     --animate-spin: none !important;
     --animate-bounce: none !important;
     --animate-shimmer: none !important;
+    --animate-chart-ping: none !important;
+    --animate-chart-dash: none !important;
+    --animate-chart-shimmer: none !important;
   }
 }

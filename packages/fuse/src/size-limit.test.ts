@@ -49,11 +49,20 @@ describe("size-limit harness", () => {
     ];
     expect(JS_ENTRY_BUDGETS.map((budget) => budget.name).toSorted()).toEqual(published.toSorted());
     expect(NAMED_IMPORT_BUDGETS.map((budget) => budget.name)).toEqual([
+      "chart/Chart",
+      "chart/BarChart",
+      "chart/PieChart",
+      "chart/RadialChart",
+      "chart/RadarChart",
+      "chart/Sparkline",
+      "chart/useChartPoint",
+      "chart/formatChartValue",
+      "chart/formatChartSlot",
       "icons/Check",
       "Button from the root barrel",
     ]);
     expect(FLAG_RAW_BUDGETS).toEqual([{ name: "flags/*.svg", ceilingBytes: 819200 }]);
-    expect(CSS_BUDGETS.map((budget) => budget.name)).toEqual(["themes.css", "styles.css"]);
+    expect(CSS_BUDGETS.map((budget) => budget.name)).toEqual(["themes.css", "styles.css", "chart.css"]);
   });
 
   it("derives an omitted ceiling at measured × 1.5 and keeps a standing override", () => {

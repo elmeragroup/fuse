@@ -1,0 +1,24 @@
+---
+lede: >
+  Preview. Lines over a category or time axis.
+---
+
+import { LineChartSpotPrice } from "./demos/line-chart-spot-price";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("line-chart");
+
+<ComponentIntro slug="line-chart" />
+
+<Prose>
+
+The chart entry is a preview. Its parts render no marks yet, and names and props can change until Fuse's first stable release.
+
+</Prose>
+
+<Demo slug="line-chart" id="spot-price" title="Spot price" file="line-chart-spot-price.tsx">
+  <LineChartSpotPrice />
+</Demo>
+
+<ApiReference slug="line-chart" />

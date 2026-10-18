@@ -89,6 +89,13 @@ export const PART_DENSITY = {
   "card-section-button": "surface",
   "card-section-media": "fixed",
 
+  // The chart stubs write only these slots. Each later chart layer declares the slots it writes.
+  chart: "layout",
+  "pie-chart": "layout",
+  "radial-chart": "layout",
+  "radar-chart": "layout",
+  sparkline: "fixed",
+
   checkbox: "fixed",
   "checkbox-indicator": "fixed",
   "checkbox-group": "surface",
