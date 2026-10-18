@@ -7,6 +7,7 @@ import { getOrThrow } from "@elmeragroup/color/result";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { shadowLayerLengths, shadowLayers } from "../../../test/assert-invalid-ring";
 import { render } from "../../../test/browser-render";
 import { withLocale } from "../../../test/locale-matrix";
 import { fkasPrivate, fkseExternal, guenExternal } from "../../../test/theme-fixtures";
@@ -25,16 +26,18 @@ type Shadow = { readonly geometry: string; readonly alpha: number };
  * are dropped. Chromium writes each layer colour first, then its lengths.
  */
 function castShadows(element: HTMLElement): readonly Shadow[] {
-  const value = getComputedStyle(element).boxShadow;
-  if (value === "none") return [];
-  return value
-    .split(/,(?![^(]*\))/u)
+  return shadowLayers(getComputedStyle(element).boxShadow)
     .map((layer) => {
-      const match = /^\s*(rgba?\([^)]*\)|oklch\([^)]*\)|color\([^)]*\))\s+(.*?)\s*$/u.exec(layer);
-      if (match?.[1] === undefined || match[2] === undefined) {
+      const lengths = shadowLayerLengths(layer);
+      const color = /^\S+\([^)]*\)/u.exec(layer)?.[0];
+      if (lengths === undefined || color === undefined) {
         throw new Error(`unexpected box-shadow layer: ${layer}`);
       }
-      return { geometry: match[2], alpha: getOrThrow(CssColor.parse(match[1])).alpha };
+      const { x, y, blur, spread } = lengths;
+      return {
+        geometry: `${x}px ${y}px ${blur}px ${spread}px`,
+        alpha: getOrThrow(CssColor.parse(color)).alpha,
+      };
     })
     .filter((shadow) => shadow.geometry !== "0px 0px 0px 0px");
 }
