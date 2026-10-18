@@ -15,9 +15,13 @@ const TOUCH_TESTS = "**/*.touch.browser.test.tsx";
 /** Browser files that exercise production-only behavior, named by convention. */
 const PRODUCTION_TESTS = "**/*.production.browser.test.tsx";
 
+/** Browser files whose output every engine must write alike, as `.ts` or `.tsx`. */
+const ENGINES_TESTS = "**/*.engines.browser.test.{ts,tsx}";
+
 function browserProject(
   name: string,
-  files: { include?: string[]; exclude?: string[]; fileParallelism?: boolean }
+  files: { include?: string[]; exclude?: string[]; fileParallelism?: boolean },
+  browsers: readonly ("chromium" | "firefox" | "webkit")[] = ["chromium"]
 ): TestProjectInlineConfiguration {
   return {
     optimizeDeps: {
@@ -61,7 +65,7 @@ function browserProject(
         enabled: true,
         headless: true,
         provider: playwright(),
-        instances: [{ browser: "chromium" }],
+        instances: browsers.map((browser) => ({ browser })),
         commands: pointerCommands,
       },
     },
@@ -89,8 +93,14 @@ export default defineConfig({
         },
       },
       browserProject("browser", {
-        exclude: [CLIPBOARD_TESTS, PRODUCTION_TESTS, TOUCH_TESTS],
+        exclude: [CLIPBOARD_TESTS, ENGINES_TESTS, PRODUCTION_TESTS, TOUCH_TESTS],
       }),
+      // Node and each engine carry their own Intl data, and one differing space fails hydration.
+      browserProject("browser-engines", { include: [`src/${ENGINES_TESTS}`] }, [
+        "chromium",
+        "firefox",
+        "webkit",
+      ]),
       // Vite replaces `process.env.NODE_ENV` at transform time, so `vi.stubEnv` cannot reach
       // production-only branches in the browser. This project compiles its files, their source
       // and React as a production build, with the matching non-development JSX runtime.

@@ -27,6 +27,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { withLocale } from "../../../test/locale-matrix";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { LocaleProvider } from "../../intl/locale-context";
 import { Button } from "../button/button";
 import { DropdownMenu } from "../dropdown-menu";
 import { actionsColumn } from "./actions-column";
@@ -779,6 +780,48 @@ describe("DataTable app cell overrides", () => {
       .elements()
       .map((cell) => cell.textContent);
     expect(cells).toEqual(["1,235", "1,234.5", "Date withheld"]);
+  });
+});
+
+describe("DataTable date cells", () => {
+  // 2026-10-01T00:00Z is still 30 September in New York and already 1 October in Tokyo.
+  const MIDNIGHT_UTC = new Date(Date.UTC(2026, 9, 1));
+
+  function DateCells(): ReactElement {
+    return (
+      <table>
+        <tbody>
+          <tr>
+            <td>
+              <DataTable.Date value={MIDNIGHT_UTC} />
+            </td>
+            <td>
+              <DataTable.Date value={MIDNIGHT_UTC} timeZone="Asia/Tokyo" />
+            </td>
+            <td>
+              <DataTable.DateTime value={MIDNIGHT_UTC} />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    );
+  }
+
+  it("format in the provider's zone unless the cell names its own", () => {
+    renderThemed(
+      <LocaleProvider locale="nb-NO" timeZone="America/New_York">
+        <DateCells />
+      </LocaleProvider>
+    );
+
+    // CLDR nb: the medium date `d. MMM y`, the short time `HH:mm`, joined by `{1}, {0}`. Every space
+    // is U+00A0.
+    expect(
+      page
+        .getByRole("cell")
+        .elements()
+        .map((cell) => cell.textContent)
+    ).toEqual(["30.\u00a0sep.\u00a02026", "1.\u00a0okt.\u00a02026", "30.\u00a0sep.\u00a02026,\u00a020:00"]);
   });
 });
 

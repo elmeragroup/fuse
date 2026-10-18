@@ -3,9 +3,14 @@
   "testRunner_comment": "The command runner reruns Vitest for each mutant. The Vitest plugin reads stale results under Vitest 5 and reports every mutant as survived.",
   "testRunner": "command",
   "commandRunner": {
-    "command": "pnpm exec vitest run --project unit src/theme/tokens/chart-foreground.test.ts"
+    "command": "pnpm exec vitest run --project unit src/theme/tokens/chart-foreground.test.ts src/components/chart/format"
   },
-  "mutate": ["src/theme/tokens/chart-foreground.ts"],
+  "mutate": [
+    "src/theme/tokens/chart-foreground.ts",
+    "src/intl/canonical-spaces.ts",
+    "src/components/chart/format/*.ts",
+    "!src/components/chart/format/*.test.ts"
+  ],
   "reporters": ["clear-text", "progress"],
   "thresholds": { "break": 80 },
   "tempDirName": ".cache/stryker-tmp",

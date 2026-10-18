@@ -2,8 +2,10 @@ import type { ReactElement } from "react";
 
 import Link from "next/link";
 
+import { DemoFrame } from "../../../../components/demo-frame";
 import { DocsPage, pageMetadata } from "../../../../components/docs-page";
 import { DocsTable } from "../../../../components/docs-table";
+import { MarketTimeZone } from "./demos/market-time-zone";
 
 const HREF = "/handbook/localization";
 
@@ -12,6 +14,12 @@ export const metadata = pageMetadata(HREF);
 const PROVIDER = `import { LocaleProvider } from "@elmeragroup/fuse/theme";
 
 <LocaleProvider locale="nb-NO">{children}</LocaleProvider>;`;
+
+const TIME_ZONE = `import { LocaleProvider } from "@elmeragroup/fuse/theme";
+
+// Norwegian spot prices and meter readings run on Oslo's clock, wherever the server or the
+// visitor is.
+<LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">{children}</LocaleProvider>;`;
 
 const OVERRIDE = `// The dictionary already returns "Ingen resultater." under nb-NO.
 // The prop exists for copy control, not for translation.
@@ -134,6 +142,37 @@ export default function LocalizationPage(): ReactElement {
         Keep this in step with the <code>lang</code> attribute on <code>&lt;html&gt;</code>, which is your
         app&apos;s responsibility. See <Link href="/quick-start">Quick start</Link>.
       </p>
+
+      <h2 id="time-zone">Time zone</h2>
+      <p>
+        <code>LocaleProvider</code> also takes an optional <code>timeZone</code>, an IANA name such as{" "}
+        <code>Europe/Oslo</code>. Pass the zone of the market your data describes, not the viewer&apos;s.
+      </p>
+      <pre>
+        <code>{TIME_ZONE}</code>
+      </pre>
+      <p>
+        With a zone, the server and the browser write the same dates and hours, so the page hydrates cleanly.
+        Without one, <code>Intl</code> uses the runtime&apos;s zone. A server and a browser in different zones
+        then write different text, and React reports a hydration mismatch. An invalid name throws a{" "}
+        <code>RangeError</code> when the provider renders.
+      </p>
+      <p>
+        <code>DataTable</code> date and date-time cells format in the provider&apos;s zone unless a cell
+        passes its own <code>timeZone</code>, and write every space as U+00A0, because engines disagree on
+        spaces. Safari still joins an en-US medium date-time with &quot;at&quot; and an sv-SE long one without
+        &quot;kl.&quot;, so those two styles can mismatch. This table shows Oslo spot prices on the day Norway
+        left summer time, when 02:00 came twice. Its rows hold UTC instants, and the provider turns them into
+        Oslo hours on the server and in every browser.
+      </p>
+      <DemoFrame
+        section="handbook"
+        slug="localization"
+        id="market-time-zone"
+        title="Market time zone"
+        file="market-time-zone.tsx">
+        <MarketTimeZone />
+      </DemoFrame>
 
       <h2 id="override-precedence">Override precedence</h2>
       <p>

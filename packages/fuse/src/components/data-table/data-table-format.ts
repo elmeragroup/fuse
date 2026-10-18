@@ -4,6 +4,8 @@
  * cell therefore parses `getValue()` into a {@link CellValue} first, and a cell handed a value of
  * another kind renders its raw text instead of throwing.
  */
+import { canonicalSpaces } from "../../intl/canonical-spaces";
+import { dateTimeFormat, numberFormat } from "../../intl/intl-formatters";
 import type { SupportedLocale } from "../../intl/locale-context";
 
 /** Number format options a number cell accepts. `style` belongs to the cell kind. */
@@ -12,9 +14,9 @@ export type NumberFormatOptions = Omit<Intl.NumberFormatOptions, "style" | "curr
 /** The time zone a date cell formats in. */
 type TimeZoneOption = {
   /**
-   * The IANA time zone, such as `"Europe/Oslo"`. Defaults to the runtime's local time zone. A
-   * table that renders on the server and hydrates in the browser must pass it, or the server and
-   * browser text can differ.
+   * The IANA time zone, such as `"Europe/Oslo"`. Defaults to the `LocaleProvider` zone, and to
+   * the runtime's local time zone when the provider has none. A table that renders on the server
+   * and hydrates in the browser needs one of the two, or the server and browser text can differ.
    */
   timeZone?: Intl.DateTimeFormatOptions["timeZone"];
 };
@@ -31,29 +33,6 @@ export type CellValue =
   | { readonly kind: "number"; readonly value: number }
   | { readonly kind: "date"; readonly value: Date }
   | { readonly kind: "text"; readonly value: string };
-
-/**
- * Formatters by locale and options. Building an `Intl` formatter costs far more than formatting
- * with one, and every cell formats on each table render. The keys are bounded by the cell
- * configurations in app code, so the maps need no eviction.
- */
-const numberFormats = new Map<string, Intl.NumberFormat>();
-const dateTimeFormats = new Map<string, Intl.DateTimeFormat>();
-
-function cached<TFormat>(
-  cache: Map<string, TFormat>,
-  locale: SupportedLocale,
-  options: Intl.NumberFormatOptions | Intl.DateTimeFormatOptions,
-  create: () => TFormat
-): TFormat {
-  const key = `${locale}\u0000${JSON.stringify(options)}`;
-  let format = cache.get(key);
-  if (format === undefined) {
-    format = create();
-    cache.set(key, format);
-  }
-  return format;
-}
 
 /**
  * The raw text of a parsed cell value.
@@ -78,7 +57,7 @@ export function formatNumberCell(
   value: number,
   options: NumberFormatOptions
 ): string {
-  return cached(numberFormats, locale, options, () => new Intl.NumberFormat(locale, options)).format(value);
+  return numberFormat(locale, options).format(value);
 }
 
 /**
@@ -97,12 +76,7 @@ export function formatCurrencyCell(
   options: NumberFormatOptions
 ): string {
   const currencyOptions: Intl.NumberFormatOptions = { ...options, style: "currency", currency };
-  return cached(
-    numberFormats,
-    locale,
-    currencyOptions,
-    () => new Intl.NumberFormat(locale, currencyOptions)
-  ).format(value);
+  return numberFormat(locale, currencyOptions).format(value);
 }
 
 /**
@@ -111,10 +85,14 @@ export function formatCurrencyCell(
  * @param locale - The active supported locale.
  * @param value - The date. An invalid date renders as `"Invalid Date"`, which `Intl` would throw on.
  * @param options - Date and time styles and the time zone.
- * @returns The formatted date.
+ * @returns The formatted date, with every space written as U+00A0. Node and the browser engines
+ * write different spaces for the same date, such as U+202F or U+0020 before the en-US day period,
+ * and one differing space fails hydration. Spaces are the only difference this removes. WebKit's
+ * older CLDR still joins some date-times with other words, such as `Sep 30, 2026 at 2:05 PM` for an
+ * en-US medium date and `30 september 2026 14:05` without `kl.` for an sv-SE long date.
  */
 export function formatDateCell(locale: SupportedLocale, value: Date, options: DateTimeFormatOptions): string {
   return Number.isNaN(value.getTime())
     ? String(value)
-    : cached(dateTimeFormats, locale, options, () => new Intl.DateTimeFormat(locale, options)).format(value);
+    : canonicalSpaces(dateTimeFormat(locale, options).format(value));
 }

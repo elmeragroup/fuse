@@ -1,17 +1,18 @@
 import { chromium } from "playwright";
-import type { Browser, BrowserContext } from "playwright";
+import type { Browser, BrowserContext, BrowserType } from "playwright";
 import { afterAll, beforeAll } from "vitest";
 
 /**
- * One headless Chromium per suite file, shared by the docs and static-theme browser
- * suites. Docs-agnostic on purpose: this module imports no docs server state, so the
- * static-theme suites can borrow the lifecycle without loading the docs app.
+ * One headless browser per suite file, Chromium unless `engine` names another, shared by the docs
+ * and static-theme browser suites. Docs-agnostic on purpose: this module imports no docs server
+ * state, so the static-theme suites can borrow the lifecycle without loading the docs app. Call it
+ * inside a `describe` block to launch one engine per block.
  */
-export function launchSuiteBrowser(): () => Browser {
+export function launchSuiteBrowser(engine: BrowserType = chromium): () => Browser {
   let launched: Browser | null = null;
 
   beforeAll(async () => {
-    launched = await chromium.launch({ headless: true });
+    launched = await engine.launch({ headless: true });
   });
 
   afterAll(async () => {
