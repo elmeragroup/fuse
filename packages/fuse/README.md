@@ -58,11 +58,12 @@ Button's `outline` variant reads `--button-outline` and `--button-outline-width`
 }
 ```
 
-A `Card` and a `card` Accordion item draw their edge in `--card-border`. Without it they take your `--border`, as internal themes do, and `CheckboxCard` and the TextField `card` box always do. For the external themes' look, where a card stands on the page by its fill and shadow alone, set it to a transparent colour. The border keeps its 1px width, so the layout does not move, but a card on a `--card`-coloured surface, such as a nested `Card`, has no outline:
+A `Card` and a `card` Accordion item draw their edge in `--card-border`, and a `Card` casts its small shadow in `--card-shadow`. Without them they take your `--border` and Tailwind's 5% black shadow, as internal themes do, and `CheckboxCard` and the TextField `card` box always do. For the external themes' look, where a card stands on the page by its fill alone, set both to a transparent colour. The border keeps its 1px width, so the layout does not move, but a card on a `--card`-coloured surface, such as a nested `Card`, has no outline:
 
 ```css
 :root {
   --card-border: oklch(0 0 0 / 0);
+  --card-shadow: oklch(0 0 0 / 0);
 }
 ```
 

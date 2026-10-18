@@ -26,14 +26,16 @@ export type ExternalBrandCode = Exclude<BrandCode, "fkab">;
  * `--border` hairline, the `--border` row edge and divider, the `--primary` box around a checked
  * row, the muted, striped disabled row and the regular row title.
  *
- * A Card and a `card` Accordion item draw no edge either: a white card stands on the page tint
- * by its fill, and Card by its `shadow-xs`, as the external order flows draw it. The zero-alpha
- * edge keeps the 1px border, so the cards' inner corners and layout stay. A card is a container,
+ * A Card and a `card` Accordion item draw no edge either, and Card casts no shadow: a white card
+ * stands on the page tint by its fill alone, as the external order flows draw it. The zero-alpha
+ * edge keeps the 1px border, so the cards' inner corners and layout stay, and the zero-alpha
+ * shadow keeps Card's `shadow-xs` geometry, so a brand can tint it back. A card is a container,
  * not a control, so the faint step off the page, about 1.05:1 in the weakest light brands, is no
  * 1.4.11 shortfall, and a card on a `card`-coloured surface, such as a nested Card, has no
- * outline at all. `CheckboxCard` is a control and the TextField `card` box is a field boundary,
- * so both keep `--border`. The role is light-only, so dark cards draw no edge either; whether
- * they should keep one is an open design question in `TODO.md`. The line between a Card's
+ * boundary at all. `CheckboxCard` is a control and the TextField `card` box is a field boundary,
+ * so both keep `--border` and the plain `shadow-xs`. Both roles are light-only, so dark cards
+ * draw neither edge nor shadow; whether they should keep an edge is an open design question in
+ * `TODO.md`. The line between a Card's
  * stacked sections takes the page tint, `--background`, so it reads as a gap between segments of
  * the card rather than a drawn rule.
  *
@@ -63,6 +65,7 @@ export const EXTERNAL_VARIANT_LAYER = {
   ring: NEUTRAL_RING,
   "card-border": "oklch(0 0 0 / 0)",
   "card-section-divider": "var(--background)",
+  "card-shadow": "oklch(0 0 0 / 0)",
   "button-outline": "var(--foreground)",
   "selection-border": "oklch(0 0 0 / 0)",
   "selection-checked-border": "var(--selection-border)",

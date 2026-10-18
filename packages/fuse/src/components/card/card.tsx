@@ -57,7 +57,9 @@ type CardDescriptionProps = HTMLAttributes<HTMLParagraphElement> &
  * `direction` as `data-direction`: a vertical card pads its sections, a horizontal one pads itself.
  * The root writes its `size` as `data-size` and publishes its tier to the sections it holds.
  * Its 1px edge is the theme's `--card-border`: `--border` in internal themes and a zero-alpha
- * colour in external ones. A border colour class still wins.
+ * colour in external ones. A border colour class still wins. It casts Tailwind's `shadow-xs` in
+ * the theme's `--card-shadow`: 5% black in internal themes and zero alpha in external ones. A
+ * `shadow-*` class replaces it.
  */
 function CardRoot({ className, direction, size = "default", ...props }: CardRootProps): ReactElement {
   const { base } = cardVariants({ direction, size });

@@ -250,15 +250,17 @@ export default function ThemingPage(): ReactElement {
       <p>
         A <code>Card</code> and a <code>card</code> Accordion item draw their 1px edge in{" "}
         <code>--card-border</code>. Internal themes draw it in <code>var(--border)</code>. External themes
-        draw no edge: <code>--card-border</code> is a zero-alpha colour, so a white card stands on the page
-        tint by its fill, and a <code>Card</code> by its small shadow too. The border keeps its width, so the
-        cards&apos; inner corners and layout stay as they are. Without an edge, a card on a <code>card</code>
-        -coloured surface, such as a nested <code>Card</code>, has no outline. A <code>CheckboxCard</code> is
-        a control and the TextField <code>card</code> box is a field, so both keep their{" "}
-        <code>var(--border)</code> edge. To change the card edge, override <code>--card-border</code> on the
-        element that carries the theme attributes, which is <code>&lt;html&gt;</code> or a{" "}
-        <code>ThemeScope</code>, where the theme rules resolve it, or on any element around the cards. On a
-        plain wrapper a <code>--border</code> override does not reach cards.
+        draw no edge: <code>--card-border</code> is a zero-alpha colour. A <code>Card</code> casts a small
+        shadow in <code>--card-shadow</code>, black at 5% in internal themes and zero alpha in external ones,
+        so an external white card stands on the page tint by its fill alone. The border keeps its width and
+        the shadow its geometry, so the cards&apos; inner corners and layout stay as they are. Without an edge
+        or shadow, a card on a <code>card</code>-coloured surface, such as a nested <code>Card</code>, has no
+        outline. A <code>CheckboxCard</code> is a control and the TextField <code>card</code> box is a field,
+        so both keep their <code>var(--border)</code> edge and small shadow. To change the card edge or shadow
+        colour, override <code>--card-border</code> or <code>--card-shadow</code> on the element that carries
+        the theme attributes, which is <code>&lt;html&gt;</code> or a <code>ThemeScope</code>, where the theme
+        rules resolve them, or on any element around the cards. On a plain wrapper a <code>--border</code>{" "}
+        override does not reach cards.
       </p>
       <p>
         The 1px line between a card&apos;s stacked <code>Card.Section</code> parts is{" "}

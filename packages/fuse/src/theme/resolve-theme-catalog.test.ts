@@ -42,10 +42,10 @@ const SLUGS = [
 ] as const;
 
 // Counts the derived `secondary-hover` role, the `radius-step` rung spacing, the
-// `radius-field` field corner, the card edge and section divider, the two outline Button roles, the resting and
+// `radius-field` field corner, the card edge, section divider and shadow, the two outline Button roles, the resting and
 // checked selection row borders and dividers, the disabled selection row fill, stripe and text
 // and the selection row title weight and the modal fill and text.
-const TOKEN_COUNT = 94;
+const TOKEN_COUNT = 95;
 
 // xs, sm, md, lg, xl and the unused popover rung.
 const RUNG_COUNT = 6;
@@ -277,6 +277,23 @@ describe("resolveThemeCatalog", () => {
       reference: { space: "token", name: "border" },
       value: Oklch.toSrgb(getOrThrow(Oklch.parse("oklch(0.9219 0 0)"))),
     });
+  });
+
+  it("resolves the external card shadow to a zero-alpha colour in both schemes and the internal one to 5% black", () => {
+    // EXTERNAL_VARIANT_LAYER writes the shadow as `oklch(0 0 0 / 0)`, a light-only key that dark keeps.
+    for (const scheme of ["light", "dark"] as const) {
+      expect(theme("external-fkse-private").schemes[scheme].tokens["card-shadow"], scheme).toMatchObject({
+        css: "oklch(0 0 0 / 0)",
+        reference: undefined,
+        value: { alpha: 0 },
+      });
+      // Internal cards keep Tailwind's `shadow-xs` colour, black at 5%, in both schemes.
+      expect(theme("internal-fkas-private").schemes[scheme].tokens["card-shadow"], scheme).toMatchObject({
+        css: "oklch(0 0 0 / 0.05)",
+        reference: undefined,
+        value: { r: 0, g: 0, b: 0, alpha: 0.05 },
+      });
+    }
   });
 
   it("resolves the external disabled selection row to the card fill, zero-alpha stripes and muted text in both schemes", () => {

@@ -5,7 +5,7 @@
 `Card` and a `card`-variant `Accordion.Item` draw their 1px edge in a new theme role,
 `--card-border`. Internal themes alias it to `--border`, so they look as before. External themes
 draw no edge: `--card-border` is a zero-alpha colour, `oklch(0 0 0 / 0)`, in light and dark, so a
-white card stands on the page tint by its fill, and `Card` by its shadow too. Before, every
+white card stands on the page tint by its fill. Before, every
 external card was outlined in the grey `--border`. The border keeps its width, so the layout and
 inner corners do not move. On a `--card`-coloured surface, such as a nested `Card`, an external card
 now has no outline. `CheckboxCard`, the TextField `card` box, the Field label card, `Table`,

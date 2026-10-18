@@ -14,8 +14,10 @@ import { selfFocusRingClass } from "../../styles/utils";
 /**
  * PUBLIC slot recipe. `text-field`'s `card` variant and
  * `CheckboxCard` compose it, so it ships from `@elmeragroup/fuse/card`.
- * The base draws its edge in `--card-border`, which external themes make transparent; both
- * composers pin `border-border` over it, since a field box and a control keep a visible edge.
+ * The base draws its edge in `--card-border` and casts a `shadow-xs` in `--card-shadow`, both of
+ * which external themes make transparent; both composers pin `border-border` and `shadow-xs` over
+ * them, since a field box and a control keep a visible edge and elevation. The shadow is one
+ * utility, so a consumer `shadow-*` replaces it whole and casts in its own colour.
  * Horizontal cards keep their header text in a grid and wrap whole sections when
  * the container cannot fit them side by side.
  * The external ref's surface/padding axes are decomposed away into `direction` and `size`.
@@ -29,7 +31,10 @@ import { selfFocusRingClass } from "../../styles/utils";
  */
 export const cardVariants = tv({
   slots: {
-    base: [cardShellClass, "shadow-xs flex flex-col border-card-border bg-card text-card-foreground"],
+    base: [
+      cardShellClass,
+      "flex flex-col border-card-border bg-card text-card-foreground shadow-[0_1px_2px_0_--theme(--color-card-shadow)]",
+    ],
     cardHeader:
       "@container/card-header grid auto-rows-min items-start gap-1.5 has-data-[slot=card-action]:grid-cols-[1fr_auto]",
     cardTag: "text-sm font-semibold text-muted-foreground",

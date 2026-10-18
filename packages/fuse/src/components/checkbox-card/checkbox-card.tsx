@@ -24,9 +24,9 @@ import { Badge } from "../badge/badge";
 import { Card } from "../card/card";
 
 const checkboxCardStyles = tv({
-  // The card is a control, so it keeps the `--border` edge where Card's `--card-border` goes
-  // transparent in external themes.
-  base: "border-border",
+  // The card is a control, so it keeps the `--border` edge and the plain `shadow-xs` where Card's
+  // `--card-border` and `--card-shadow` go transparent in external themes.
+  base: "shadow-xs border-border",
   variants: {
     variant: {
       default: "bg-card",
