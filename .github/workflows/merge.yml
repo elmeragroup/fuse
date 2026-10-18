@@ -167,15 +167,16 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-chromium-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+          key: playwright-chromium-firefox-webkit-${{ runner.os }}-${{ steps.playwright.outputs.version }}
 
-      - name: Install Playwright Chromium
+      # The `browser-engines` project and the docs time-zone hydration suite run in all three.
+      - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: pnpm --filter @elmeragroup/fuse exec playwright install --with-deps chromium
+        run: pnpm --filter @elmeragroup/fuse exec playwright install --with-deps chromium firefox webkit
 
       - name: Install Playwright system dependencies
         if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: pnpm --filter @elmeragroup/fuse exec playwright install-deps chromium
+        run: pnpm --filter @elmeragroup/fuse exec playwright install-deps chromium firefox webkit
 
       # Turbo's local cache persists per job, so unchanged packages replay their cached
       # results. A PR restores from its own branch first and falls back to main's. Every run on

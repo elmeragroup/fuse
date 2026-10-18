@@ -5,6 +5,7 @@
  * another kind renders its raw text instead of throwing.
  */
 import { dateTimeFormat, numberFormat } from "../../internal/intl-cache";
+import { canonicalSpaces } from "../../intl/canonical-spaces";
 import type { SupportedLocale } from "../../intl/locale-context";
 
 /** Number format options a number cell accepts. `style` belongs to the cell kind. */
@@ -13,9 +14,9 @@ export type NumberFormatOptions = Omit<Intl.NumberFormatOptions, "style" | "curr
 /** The time zone a date cell formats in. */
 type TimeZoneOption = {
   /**
-   * The IANA time zone, such as `"Europe/Oslo"`. Defaults to the runtime's local time zone. A
-   * table that renders on the server and hydrates in the browser must pass it, or the server and
-   * browser text can differ.
+   * The IANA time zone, such as `"Europe/Oslo"`. Defaults to the `LocaleProvider` zone, and to
+   * the runtime's local time zone when the provider has none. A table that renders on the server
+   * and hydrates in the browser needs one of the two, or the server and browser text can differ.
    */
   timeZone?: Intl.DateTimeFormatOptions["timeZone"];
 };
@@ -84,8 +85,14 @@ export function formatCurrencyCell(
  * @param locale - The active supported locale.
  * @param value - The date. An invalid date renders as `"Invalid Date"`, which `Intl` would throw on.
  * @param options - Date and time styles and the time zone.
- * @returns The formatted date.
+ * @returns The formatted date, with every space written as U+00A0. Node and the browser engines
+ * write different spaces for the same date, such as U+202F or U+0020 before the en-US day period,
+ * and one differing space fails hydration. Spaces are the only difference this removes. WebKit's
+ * older CLDR still joins some date-times with other words, such as `Sep 30, 2026 at 2:05 PM` for an
+ * en-US medium date and `30 september 2026 14:05` without `kl.` for an sv-SE long date.
  */
 export function formatDateCell(locale: SupportedLocale, value: Date, options: DateTimeFormatOptions): string {
-  return Number.isNaN(value.getTime()) ? String(value) : dateTimeFormat(locale, options).format(value);
+  return Number.isNaN(value.getTime())
+    ? String(value)
+    : canonicalSpaces(dateTimeFormat(locale, options).format(value));
 }
