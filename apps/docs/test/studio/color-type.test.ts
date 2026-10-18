@@ -45,6 +45,20 @@ describe("ROLE_TILES", () => {
     ]);
   });
 
+  it("pairs each categorical slot and Other with the text a direct label on it takes", () => {
+    expect(ROLE_TILES.charts).toEqual([
+      { role: "chart-1", foreground: "chart-1-foreground", grade: "text" },
+      { role: "chart-2", foreground: "chart-2-foreground", grade: "text" },
+      { role: "chart-3", foreground: "chart-3-foreground", grade: "text" },
+      { role: "chart-4", foreground: "chart-4-foreground", grade: "text" },
+      { role: "chart-5", foreground: "chart-5-foreground", grade: "text" },
+      { role: "chart-6", foreground: "chart-6-foreground", grade: "text" },
+      { role: "chart-7", foreground: "chart-7-foreground", grade: "text" },
+      { role: "chart-8", foreground: "chart-8-foreground", grade: "text" },
+      { role: "chart-other", foreground: "chart-other-foreground", grade: "text" },
+    ]);
+  });
+
   it("pairs the four status roles with their soft forms", () => {
     expect(ROLE_TILES.status.map(({ role, soft }) => [role, soft?.role])).toEqual([
       ["error", "error-soft"],

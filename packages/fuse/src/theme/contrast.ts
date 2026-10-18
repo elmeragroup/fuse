@@ -11,6 +11,17 @@ import type { TokenContract, TokenName } from "./tokens/contract";
 import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
 import type { ThemeSlug } from "./tokens/themes";
 
+/**
+ * The surfaces a chart, syntax or control role must separate itself from: the page, the cards
+ * and the modal fill.
+ */
+export const CONTROL_SURFACES = [
+  "background",
+  "card",
+  "card-soft",
+  "dialog",
+] as const satisfies readonly TokenName[];
+
 export const TEXT_GRADE_PAIRS = [
   ["foreground", "background"],
   ["foreground", "muted"],

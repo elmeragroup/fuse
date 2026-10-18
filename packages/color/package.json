@@ -11,9 +11,17 @@
       "types": "./src/css-color.ts",
       "import": "./src/css-color.ts"
     },
+    "./cvd": {
+      "types": "./src/cvd.ts",
+      "import": "./src/cvd.ts"
+    },
     "./hex": {
       "types": "./src/hex.ts",
       "import": "./src/hex.ts"
+    },
+    "./oklab": {
+      "types": "./src/oklab.ts",
+      "import": "./src/oklab.ts"
     },
     "./oklch": {
       "types": "./src/oklch.ts",
@@ -34,10 +42,12 @@
   },
   "scripts": {
     "test": "vitest run",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test:mutation": "stryker run"
   },
   "devDependencies": {
     "@elmeragroup/typescript-config": "workspace:*",
+    "@stryker-mutator/core": "catalog:",
     "fast-check": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

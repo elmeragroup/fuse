@@ -9,6 +9,11 @@ const SUCCESS = "oklch(0.4277 0.13765 144.24)";
 const WARNING = "oklch(0.468 0.10443 65.71)";
 const NEUTRAL_LINE = "oklch(0.9219 0 0)";
 const NEUTRAL_950 = "oklch(0.16 0 0)";
+const CHART_ORANGE = "oklch(0.6358 0.1851 39.97)";
+const CHART_AQUA = "oklch(0.6157 0.1051 184.92)";
+const SEQ_2 = "oklch(0.6647 0.1497 255.01)";
+const SEQ_4 = "oklch(0.5255 0.1496 254.78)";
+const SEQ_6 = "oklch(0.3856 0.1167 254.88)";
 
 /**
  * The shared defaults before derivation, which are the internal light theme before its
@@ -108,14 +113,40 @@ export const LAYER_DEFAULTS = {
   "sidebar-ring": "var(--ring)",
   "right-panel": "oklch(0.9851 0 0)",
   "right-panel-foreground": "oklch(0.1448 0 0)",
-  "chart-1": "oklch(0.289 0.0518 217.7)",
-  "chart-2": "oklch(0.3629 0.0619 204.44)",
-  "chart-3": "oklch(0.4322 0.0777 181.31)",
-  "chart-4": "oklch(0.4933 0.1113 160.18)",
-  "chart-5": "oklch(0.5623 0.139 143.03)",
-  "chart-6": "oklch(0.6348 0.1494 124.51)",
-  "chart-7": "oklch(0.714 0.1487 100.58)",
-  "chart-8": "oklch(0.7945 0.1709 71.19)",
+  // The categorical slots, one shared set in a fixed cyclic order: blue, orange, aqua, magenta,
+  // green, violet, yellow and red. `chart-palette.test.ts` holds them to the palette gates on
+  // every legal theme.
+  "chart-1": "oklch(0.5609 0.1699 252.41)",
+  "chart-2": CHART_ORANGE,
+  "chart-3": CHART_AQUA,
+  "chart-4": "oklch(0.4451 0.1601 350.07)",
+  "chart-5": "oklch(0.51 0.1152 120.01)",
+  "chart-6": "oklch(0.5605 0.1804 295.05)",
+  "chart-7": "oklch(0.6346 0.1302 74.77)",
+  "chart-8": "oklch(0.5443 0.1847 359.72)",
+  // A neutral grey that keeps normal ΔE 10 from every slot and 3:1 on every surface.
+  "chart-other": "oklch(0.6 0 0)",
+  // The sequential ramp at hue 255, step 1 the least magnitude and nearest the surface.
+  "chart-seq-1": "oklch(0.7351 0.1275 254.95)",
+  "chart-seq-2": SEQ_2,
+  "chart-seq-3": "oklch(0.5943 0.1496 255)",
+  "chart-seq-4": SEQ_4,
+  "chart-seq-5": "oklch(0.4562 0.1377 254.82)",
+  "chart-seq-6": SEQ_6,
+  "chart-seq-7": "oklch(0.3158 0.0963 255.07)",
+  // The diverging scale, negative to positive. Steps 1 to 3 are ramp steps 6, 4 and 2, step 4 is
+  // the neutral midpoint at zero, and steps 5 to 7 are an orange ramp at hue 50.
+  "chart-diverging-1": SEQ_6,
+  "chart-diverging-2": SEQ_4,
+  "chart-diverging-3": SEQ_2,
+  "chart-diverging-4": "oklch(0.9 0 0)",
+  "chart-diverging-5": "oklch(0.675 0.15 50.03)",
+  "chart-diverging-6": "oklch(0.5302 0.1291 49.8)",
+  "chart-diverging-7": "oklch(0.3872 0.0948 49.92)",
+  // Favourable and unfavourable to the reader, such as a low and a high price, never the sign
+  // of a value. Each is its own literal, so a host override of a slot leaves it alone.
+  "chart-sentiment-positive": CHART_AQUA,
+  "chart-sentiment-negative": CHART_ORANGE,
   "sh-identifier": "#5c6773",
   "sh-keyword": "#ff7733",
   "sh-string": "#86b300",

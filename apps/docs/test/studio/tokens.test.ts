@@ -118,6 +118,15 @@ describe("FOREGROUND_PAIRS", () => {
       { surface: "sidebar-accent", foreground: "sidebar-accent-foreground" },
       { surface: "sidebar-brand", foreground: "sidebar-brand-foreground" },
       { surface: "right-panel", foreground: "right-panel-foreground" },
+      { surface: "chart-1", foreground: "chart-1-foreground" },
+      { surface: "chart-2", foreground: "chart-2-foreground" },
+      { surface: "chart-3", foreground: "chart-3-foreground" },
+      { surface: "chart-4", foreground: "chart-4-foreground" },
+      { surface: "chart-5", foreground: "chart-5-foreground" },
+      { surface: "chart-6", foreground: "chart-6-foreground" },
+      { surface: "chart-7", foreground: "chart-7-foreground" },
+      { surface: "chart-8", foreground: "chart-8-foreground" },
+      { surface: "chart-other", foreground: "chart-other-foreground" },
     ]);
   });
 });

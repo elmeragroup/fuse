@@ -7,7 +7,13 @@ import * as Wcag from "@elmeragroup/color/wcag";
 
 import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
-import { buildContrastMatrix, contrastRatio, TEXT_GRADE_PAIRS, tokenLiteral } from "./contrast";
+import {
+  buildContrastMatrix,
+  contrastRatio,
+  CONTROL_SURFACES,
+  TEXT_GRADE_PAIRS,
+  tokenLiteral,
+} from "./contrast";
 import { resolveThemeCatalog } from "./resolve-theme-catalog";
 import { tokenOklch } from "./token-color";
 import type { TokenName } from "./tokens/contract";
@@ -58,13 +64,8 @@ const ALERT_TINT_TEXT_PAIRS = [
 /** The alpha of an alert's status tint, Tailwind's `/5`. */
 const ALERT_TINT_ALPHA = 0.05;
 
-/**
- * The surfaces a chart, syntax or control role must separate itself from: the page, the cards
- * and the modal fill.
- */
-const CONTROL_SURFACES = ["background", "card", "card-soft", "dialog"] as const;
-
-const CHART_ROLES = [
+/** The chart marks that identify a series: the categorical slots, Other and the sentiments. */
+const CHART_MARK_ROLES = [
   "chart-1",
   "chart-2",
   "chart-3",
@@ -73,6 +74,22 @@ const CHART_ROLES = [
   "chart-6",
   "chart-7",
   "chart-8",
+  "chart-other",
+  "chart-sentiment-positive",
+  "chart-sentiment-negative",
+] as const;
+
+/** A direct label on a mark: each on-color role on the slot it was picked for. */
+const CHART_ON_COLOR_PAIRS = [
+  ["chart-1-foreground", "chart-1"],
+  ["chart-2-foreground", "chart-2"],
+  ["chart-3-foreground", "chart-3"],
+  ["chart-4-foreground", "chart-4"],
+  ["chart-5-foreground", "chart-5"],
+  ["chart-6-foreground", "chart-6"],
+  ["chart-7-foreground", "chart-7"],
+  ["chart-8-foreground", "chart-8"],
+  ["chart-other-foreground", "chart-other"],
 ] as const;
 
 const SYNTAX_ROLES = [
@@ -175,7 +192,24 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
     pairs: [["border", "background"]],
     floor: 1.19,
   },
-  { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(CHART_ROLES), floor: 3 },
+  {
+    // Chart marks are graphical objects (WCAG 1.4.11), so each separates from every surface a
+    // chart sits on at 3:1.
+    schemes: ["light", "dark"],
+    matches: () => true,
+    pairs: roleOnSurfaces(CHART_MARK_ROLES),
+    floor: 3,
+  },
+  {
+    // The step of an ordinal scale nearest the surface still has to read as a mark, at 2:1: the
+    // ramp's least step and each diverging arm's step beside the midpoint. The steps beyond them
+    // contrast more.
+    schemes: ["light", "dark"],
+    matches: () => true,
+    pairs: roleOnSurfaces(["chart-seq-1", "chart-diverging-3", "chart-diverging-5"]),
+    floor: 2,
+  },
+  { schemes: ["light", "dark"], matches: () => true, pairs: CHART_ON_COLOR_PAIRS, floor: 4.5 },
   { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(SYNTAX_ROLES), floor: 4.5 },
   { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(["input"]), floor: 3 },
   {

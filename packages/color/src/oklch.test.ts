@@ -1,9 +1,13 @@
 import * as fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
+import * as Hex from "./hex.ts";
 import { oklch } from "./oklch.arbitrary.ts";
 import * as Oklch from "./oklch.ts";
 import { getOrThrow } from "./result.ts";
+import { srgb } from "./srgb.arbitrary.ts";
+import * as SrgbColor from "./srgb.ts";
+import type { Srgb } from "./srgb.ts";
 
 function parsed(input: string): Oklch.Oklch {
   const result = Oklch.parse(input);
@@ -377,5 +381,37 @@ describe("clampChromaToSrgb", () => {
         expect([clamped.l, clamped.h, clamped.alpha]).toEqual([color.l, color.h, color.alpha]);
       })
     );
+  });
+});
+
+describe("fromSrgb", () => {
+  it("writes Ottosson's published primaries in polar form", () => {
+    // Red is OKLab 0.62796 0.22486 0.12585 and blue 0.45201 -0.03246 -0.31153, so their chroma
+    // and hue are the hypotenuse and the angle of the a and b axes. CSS Color 4's examples give
+    // the same red as oklch(62.8% 0.2577 29.23).
+    const red = Oklch.fromSrgb(getOrThrow(Hex.parse("#ff0000")));
+    expect([red.l, red.c, red.h].map((value) => Number(value.toFixed(3)))).toEqual([0.628, 0.258, 29.234]);
+    const blue = Oklch.fromSrgb(getOrThrow(Hex.parse("#0000ff")));
+    expect([blue.l, blue.c, blue.h].map((value) => Number(value.toFixed(3)))).toEqual([
+      0.452, 0.313, 264.052,
+    ]);
+  });
+
+  it("reads every sRGB color back through toSrgb within 1e-6, alpha included", () => {
+    const roundTrip = (color: Srgb) => {
+      const back = Oklch.toSrgb(Oklch.fromSrgb(color));
+      expect(Math.abs(back.r - color.r)).toBeLessThan(1e-6);
+      expect(Math.abs(back.g - color.g)).toBeLessThan(1e-6);
+      expect(Math.abs(back.b - color.b)).toBeLessThan(1e-6);
+      expect(back.alpha).toBe(color.alpha);
+    };
+    // A blue channel a step or two above 0 next to full red and green, where a forward matrix that
+    // is not the exact inverse of the backward one once missed by more than 1e-6.
+    for (const input of ["#FFFF01", "#FFFF0D"]) {
+      roundTrip(getOrThrow(Hex.parse(input)));
+    }
+    // A subnormal blue channel, which once left the lightness at -7e-111.
+    roundTrip(getOrThrow(SrgbColor.make({ r: 0, g: 0, b: 3.5e-323, alpha: 1 })));
+    fc.assert(fc.property(srgb, roundTrip), { numRuns: 10_000 });
   });
 });

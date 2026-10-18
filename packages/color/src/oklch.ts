@@ -9,6 +9,8 @@ import { clampToUnitInterval, outOfRange, UNIT_RANGE } from "./component-range.t
 import type { ComponentRange } from "./component-range.ts";
 import { CSS_NUMBER, readAlpha } from "./css-number.ts";
 import { InvalidColor } from "./invalid-color.ts";
+import { apply, LMS_TO_LINEAR_SRGB, OKLAB_TO_LMS } from "./matrix3.ts";
+import * as Oklab from "./oklab.ts";
 import type { OutOfRange } from "./out-of-range.ts";
 import { err, ok } from "./result-constructors.ts";
 import { getOrThrow } from "./result.ts";
@@ -258,18 +260,22 @@ export function toLinearSrgb(color: Oklch): Srgb.LinearSrgb {
   const a = color.c * Math.cos(hue);
   const b = color.c * Math.sin(hue);
   // Ottosson's OKLab to LMS and LMS to linear sRGB matrices, with the cube between them.
-  const l = (color.l + 0.3963377774 * a + 0.2158037573 * b) ** 3;
-  const m = (color.l - 0.1055613458 * a - 0.0638541728 * b) ** 3;
-  const s = (color.l - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  const [l, m, s] = apply(OKLAB_TO_LMS, [color.l, a, b]);
+  const [r, g, blue] = apply(LMS_TO_LINEAR_SRGB, [l ** 3, m ** 3, s ** 3]);
   // The chroma bound keeps every term finite, so the channels always construct.
-  return getOrThrow(
-    Srgb.makeLinear({
-      r: 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
-      g: -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
-      b: -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
-      alpha: color.alpha,
-    })
-  );
+  return getOrThrow(Srgb.makeLinear({ r, g, b: blue, alpha: color.alpha }));
+}
+
+/**
+ * Convert a gamma-encoded sRGB color to OKLCH, the polar form of its OKLab coordinates. A grey
+ * has no meaningful hue, so its hue is whatever angle rounding leaves on the achromatic axis.
+ *
+ * @param color - The sRGB color.
+ * @returns The color, with the same alpha, which {@link toSrgb} converts back within 1e-6.
+ */
+export function fromSrgb(color: Srgb.Srgb): Oklch {
+  const { l, a, b, alpha } = Oklab.fromSrgb(color);
+  return inRange(l, Math.hypot(a, b), wrapHue((Math.atan2(b, a) * 180) / Math.PI), alpha);
 }
 
 /**
