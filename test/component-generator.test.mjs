@@ -131,6 +131,17 @@ describe("component generator", () => {
 
   it("rejects existing, reserved, quarantined, deferred and invalid names without writes", () => {
     const directory = fixture();
+    // No entry is deferred today, so the fixture defers a scratch name to reach that refusal.
+    const entries = join(directory, "packages/fuse/scripts/entries.ts");
+    const declared = "export const DEFERRED_ENTRIES: readonly string[] = [];";
+    expect(readFileSync(entries, "utf8")).toContain(declared);
+    writeFileSync(
+      entries,
+      readFileSync(entries, "utf8").replace(
+        declared,
+        'export const DEFERRED_ENTRIES: readonly string[] = ["future-entry"];'
+      )
+    );
     const before = snapshot(directory);
     const result = generate(directory, [
       "button",
@@ -139,6 +150,7 @@ describe("component generator", () => {
       "react-aria",
       "calendar",
       "chart",
+      "future-entry",
       "../outside",
       "BadName",
       " spaced ",

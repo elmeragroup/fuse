@@ -16,8 +16,6 @@
 import { createElement } from "react";
 import type { ComponentType, ReactElement } from "react";
 
-import { PassThrough } from "node:stream";
-
 import { Accordion } from "@elmeragroup/fuse/accordion";
 import { Alert } from "@elmeragroup/fuse/alert";
 import { AlertDialog } from "@elmeragroup/fuse/alert-dialog";
@@ -51,8 +49,7 @@ import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
 import { Toolbar } from "@elmeragroup/fuse/toolbar";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
-import { renderToPipeableStream } from "./rsc-flight-server.ts";
-import type { FlightManifest, FlightModuleRecord } from "./rsc-flight-server.ts";
+import { renderFlight } from "./rsc-flight-server.ts";
 
 const ALERT_PARTS = ["Root", "Icon", "Title", "Description"] as const;
 
@@ -454,46 +451,12 @@ function Fixture(): ReactElement {
   );
 }
 
-function flightManifest() {
-  const records: FlightManifest = {};
-  return new Proxy(records, {
-    get(_target, property): FlightModuleRecord | undefined {
-      const id = String(property);
-      // `then` would make the manifest a thenable. Symbol keys are not module ids.
-      if (id === "then" || id.startsWith("Symbol(")) {
-        return undefined;
-      }
-      return { id, chunks: [], name: "*", async: false };
-    },
-  });
-}
-
-const manifest = flightManifest();
-
-const chunks: Buffer[] = [];
-let renderError: Error | undefined;
-const destination = new PassThrough();
-const finished = new Promise<void>((resolve, reject) => {
-  destination.on("data", (chunk: Buffer | string) => {
-    chunks.push(Buffer.from(chunk));
-  });
-  destination.on("end", () => {
-    resolve();
-  });
-  destination.on("error", reject);
-});
-const stream = renderToPipeableStream(createElement(Fixture), manifest, {
-  onError(error) {
-    renderError = error instanceof Error ? error : new Error(String(error));
-  },
-});
-stream.pipe(destination);
-await finished;
+const { payload, errors } = await renderFlight(createElement(Fixture));
+const [renderError] = errors;
 if (renderError !== undefined) {
   throw renderError;
 }
 
-const payload = Buffer.concat(chunks).toString("utf8");
 if (!payload.includes("Sync delayed") || !payload.includes("Facility data is more than an hour old.")) {
   throw new Error(`Alert text missing from the server payload:\n${payload.slice(0, 1500)}`);
 }

@@ -70,6 +70,23 @@ const EXPECTED_ENTRIES = {
   button: { inRootBarrel: true, runtimeExports: ["Button", "buttonVariants"] },
   "button-group": { inRootBarrel: true, runtimeExports: ["ButtonGroup", "buttonGroupVariants"] },
   card: { inRootBarrel: true, runtimeExports: ["Card", "cardVariants"] },
+  // Subpath-only: a preview entry stays out of the root barrel until Fuse's first stable release.
+  chart: {
+    inRootBarrel: false,
+    runtimeExports: [
+      "Chart",
+      "AreaChart",
+      "BarChart",
+      "LineChart",
+      "PieChart",
+      "RadialChart",
+      "RadarChart",
+      "Sparkline",
+      "useChartPoint",
+      "formatChartValue",
+      "formatChartSlot",
+    ],
+  },
   checkbox: {
     inRootBarrel: true,
     runtimeExports: ["Checkbox", "CheckboxDescription", "CheckboxGroup", "CheckboxItem", "CheckboxItemGroup"],
@@ -243,6 +260,8 @@ describe("exports map", () => {
     expect(exportBindingTarget(publishExports, "./demo-stage-density.css")).toBeUndefined();
     expect(exportBindingTarget(publishExports, "./themes.css")).toBe("./themes.css");
     expect(exportBindingTarget(publishExports, "./styles.css")).toBe("./styles.css");
+    expect(exportBindingTarget(publishExports, "./chart.css")).toBe("./chart.css");
+    expect(exportBindingTarget(sourceExports, "./chart.css")).toBe("./src/components/chart/chart.css");
     expect(JSON.stringify(publishExports)).not.toContain("/dist/");
   });
 

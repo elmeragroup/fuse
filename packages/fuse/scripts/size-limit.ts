@@ -5,6 +5,7 @@ import { gzipSync } from "node:zlib";
 import { rolldown } from "rolldown";
 import type { RolldownBuild } from "rolldown";
 
+import { PUBLISHED_PEER_RANGES } from "./entries.ts";
 import { flagPayload, listFlagFiles } from "./flag-assets.ts";
 import { packageRootFromScript } from "./paths.ts";
 import {
@@ -17,15 +18,8 @@ import {
 import { fail, withExtractedTarballAsync } from "./tarball.ts";
 
 const packageRoot = packageRootFromScript(import.meta.url);
-const PEER_EXTERNALS = [
-  "react",
-  "react-dom",
-  "react/jsx-runtime",
-  "react/jsx-dev-runtime",
-  "tailwindcss",
-  "@tanstack/react-table",
-  "@tanstack/react-virtual",
-];
+/** Every published peer, plus the JSX runtime subpaths of the `react` peer, which bundles exclude. */
+const PEER_EXTERNALS = [...Object.keys(PUBLISHED_PEER_RANGES), "react/jsx-runtime", "react/jsx-dev-runtime"];
 
 function gzipSize(bytes: Uint8Array): number {
   return gzipSync(bytes).byteLength;

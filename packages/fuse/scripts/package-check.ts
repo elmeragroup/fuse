@@ -1,7 +1,8 @@
 import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 
-import { discoverEntries } from "./entries";
+import { CSS_ENTRY_NAMES, discoverEntries } from "./entries";
+import { checkPackedChartBundles, checkPackedGrowthRule } from "./package-check-chart";
 import {
   checkPackedBareEntryRacDeclarations,
   checkPackedBootstrap,
@@ -51,17 +52,7 @@ try {
     const attw = abortOnFailure(
       runCommandAsync(
         "pnpm",
-        [
-          "exec",
-          "attw",
-          tarball,
-          "--profile",
-          "esm-only",
-          "--exclude-entrypoints",
-          "css",
-          "styles.css",
-          "themes.css",
-        ],
+        ["exec", "attw", tarball, "--profile", "esm-only", "--exclude-entrypoints", ...CSS_ENTRY_NAMES],
         { cwd: packageRoot, signal: controller.signal }
       )
     );
@@ -98,6 +89,7 @@ try {
     for (const print of await tools) {
       print();
     }
+    console.log(await checkPackedChartBundles(extracted));
   });
 } catch (error) {
   fail(error instanceof Error ? error.message : String(error));
@@ -121,6 +113,7 @@ function runInProcessChecks(extracted: string): void {
   checkPackedTwemojiNotices(extracted);
   checkValidateThemeEnv(extracted);
   checkPackedBootstrap(consumerRoot, exported[importSpecifier("theme")]);
+  checkPackedGrowthRule(extracted);
 }
 
 console.log("package:check passed");

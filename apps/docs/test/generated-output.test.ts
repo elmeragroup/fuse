@@ -126,6 +126,21 @@ describe("component page manifest", () => {
   });
 });
 
+/** The pages that read `@elmeragroup/fuse/chart`, from CONTRACT.md section 13. */
+const CHART_PAGES = new Set([
+  "chart",
+  "area-chart",
+  "bar-chart",
+  "line-chart",
+  "pie-chart",
+  "radial-chart",
+  "radar-chart",
+  "sparkline",
+]);
+
+/** The chart pages that repeat `chart` whole, as aliases of `Chart`. */
+const ALIAS_PAGES = new Set(["area-chart", "bar-chart", "line-chart"]);
+
 /** The keys a component outline carries. Anything else would ship to every surface unreviewed. */
 const OUTLINE_KEYS = ["demos", "hasTokens", "headings", "markdownUrl", "partNames", "slug", "title"];
 
@@ -188,9 +203,12 @@ describe("component outlines", () => {
   });
 
   it("names one TOC anchor per API part, exactly as the committed api.json names them", () => {
-    // Unit under test: the outline's part names. Oracle: the committed API artifact.
+    // Unit under test: the outline's part names. Oracle: the committed API artifact, and the
+    // alias pages CONTRACT.md section 13 names, whose reference is one sentence with no part anchor.
     for (const outline of COMPONENT_OUTLINES) {
-      expect(outline.partNames, outline.slug).toEqual(api(outline.slug).parts.map((part) => part.name));
+      expect(outline.partNames, outline.slug).toEqual(
+        ALIAS_PAGES.has(outline.slug) ? [] : api(outline.slug).parts.map((part) => part.name)
+      );
     }
   });
 });
@@ -414,7 +432,17 @@ describe("generated markdown endpoints", () => {
     for (const entry of COMPONENT_PAGES) {
       const markdown = endpoint(entry.slug);
       expect(markdown, entry.slug).toContain("## API reference");
+      if (ALIAS_PAGES.has(entry.slug)) {
+        // An alias page repeats `chart` whole, so its reference is one sentence.
+        expect(markdown, entry.slug).toContain("[`Chart`](/components/chart.md) under another name.");
+        continue;
+      }
       for (const part of api(entry.slug).parts) {
+        // A chart page part may repeat a part of an earlier chart page, and then it is one line
+        // that names the owner, which `shared-entry-pages.test.ts` pins.
+        if (CHART_PAGES.has(entry.slug) && markdown.includes(`### ${part.name}\n\n\`${part.name}\` is [`)) {
+          continue;
+        }
         // Per-part RSC rides on the heading, matching the HTML page's indicator.
         expect(markdown, part.name).toContain(`### ${part.name} · RSC: ${part.rsc}`);
         // Either the part's own props as a table, or the line that says it has none —

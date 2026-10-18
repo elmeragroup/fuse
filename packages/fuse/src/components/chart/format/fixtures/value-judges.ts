@@ -1,12 +1,14 @@
 /**
  * The value judges. Each pairs Fuse's value labels with the literals in `value-literals.ts`, which
- * are written by hand from CLDR 48 and from the drafted chart words.
+ * are written by hand from CLDR 48 and from the drafted chart words. The public cases run through
+ * `formatChartValue`, as a figure beside a chart prints them.
  */
+import { formatChartValue } from "../../chart-format";
 import { formatValue } from "../value-format";
 import type { ValueFormat } from "../value-format";
-import { LOCALES, literalJudgements } from "./judgement";
+import { LOCALES, labelJudgement, literalJudgements } from "./judgement";
 import type { Judgement } from "./judgement";
-import { PRESET_CASES, SPOKEN_PER_KWH, WORDS } from "./value-literals";
+import { PRESET_CASES, PUBLIC_VALUE_CASES, SPOKEN_PER_KWH, WORDS } from "./value-literals";
 
 /** Each preset case's output against its literals. */
 export function presetJudgements(): Judgement[] {
@@ -45,4 +47,16 @@ export function wordJudgements(): Judgement[] {
     });
     return [...unitJudgements, ...minorJudgements];
   });
+}
+
+/** Each public value case's label through `formatChartValue`, one judgement per case. */
+export function publicValueJudgements(): Judgement[] {
+  return PUBLIC_VALUE_CASES.map((valueCase) =>
+    labelJudgement(
+      valueCase.name,
+      formatChartValue(valueCase.value, valueCase.format, { locale: valueCase.locale }),
+      valueCase.text,
+      valueCase.spoken
+    )
+  );
 }

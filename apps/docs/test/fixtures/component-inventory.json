@@ -32,6 +32,11 @@
       "alert-dialog-custom-icon.tsx"
     ]
   },
+  "area-chart": {
+    "title": "Area Chart",
+    "rsc": "client",
+    "demos": ["area-chart-daily-usage.tsx"]
+  },
   "avatar": {
     "title": "Avatar",
     "rsc": "client",
@@ -41,6 +46,11 @@
     "title": "Badge",
     "rsc": "server",
     "demos": ["badge-basic.tsx", "badge-variants.tsx", "badge-status.tsx", "badge-sizes.tsx"]
+  },
+  "bar-chart": {
+    "title": "Bar Chart",
+    "rsc": "client",
+    "demos": ["bar-chart-year-over-year.tsx"]
   },
   "breadcrumb": {
     "title": "Breadcrumb",
@@ -96,6 +106,11 @@
       "card-horizontal.tsx",
       "card-item-rows.tsx"
     ]
+  },
+  "chart": {
+    "title": "Chart",
+    "rsc": "client",
+    "demos": ["chart-usage-and-price.tsx"]
   },
   "checkbox": {
     "title": "Checkbox",
@@ -344,6 +359,11 @@
     "rsc": "server",
     "demos": ["kbd-keys.tsx", "kbd-combination.tsx", "kbd-input-group.tsx"]
   },
+  "line-chart": {
+    "title": "Line Chart",
+    "rsc": "client",
+    "demos": ["line-chart-spot-price.tsx"]
+  },
   "link": {
     "title": "Link",
     "rsc": "client",
@@ -407,6 +427,11 @@
       "phone-number-field-states.tsx"
     ]
   },
+  "pie-chart": {
+    "title": "Pie Chart",
+    "rsc": "client",
+    "demos": ["pie-chart-bill.tsx"]
+  },
   "popover": {
     "title": "Popover",
     "rsc": "client",
@@ -426,6 +451,16 @@
       "popover-info-button-sizes.tsx",
       "popover-info-button-i18n.tsx"
     ]
+  },
+  "radar-chart": {
+    "title": "Radar Chart",
+    "rsc": "client",
+    "demos": ["radar-chart-weekdays.tsx"]
+  },
+  "radial-chart": {
+    "title": "Radial Chart",
+    "rsc": "client",
+    "demos": ["radial-chart-budgets.tsx"]
   },
   "radio-group": {
     "title": "Radio Group",
@@ -554,6 +589,11 @@
     "title": "Span",
     "rsc": "client",
     "demos": ["span-basic.tsx", "span-sizes.tsx", "span-variants.tsx", "span-truncate.tsx"]
+  },
+  "sparkline": {
+    "title": "Sparkline",
+    "rsc": "server",
+    "demos": ["sparkline-hourly-price.tsx"]
   },
   "switch": {
     "title": "Switch",

@@ -67,6 +67,13 @@ export const PART_DENSITY = {
   "card-footer[data-direction=horizontal]": "layout",
   "card-tag": "fixed",
 
+  // The chart stubs write only these slots. Each later chart layer declares the slots it writes.
+  chart: "layout",
+  "pie-chart": "layout",
+  "radial-chart": "layout",
+  "radar-chart": "layout",
+  sparkline: "fixed",
+
   checkbox: "fixed",
   "checkbox-indicator": "fixed",
   "checkbox-group": "surface",

@@ -76,11 +76,14 @@ export const BARE_COMPONENT_ENTRIES = [
   "navigation-menu",
 ] as const;
 
+/** Allowlisted entries with no source until they ship. None today. */
+export const DEFERRED_ENTRIES: readonly string[] = [];
+
 /**
- * Allowlisted entries with no source until they ship.
- * Chart stays deferred until a consuming product needs it; see the root TODO.md.
+ * Shipped entries that stay out of the root barrel until Fuse's first stable release, when each
+ * moves into it.
  */
-export const DEFERRED_ENTRIES = ["chart"] as const;
+export const PREVIEW_ENTRIES = ["chart"] as const;
 
 /** Appendix A — 11 quarantined react-aria interim entries. */
 export const RAC_ENTRIES = [
@@ -115,7 +118,7 @@ export const TOOLING_ONLY_CSS_ENTRIES = [
   { subpath: "demo-stage-density.css", distFile: "demo-stage-density.css" },
 ] as const;
 
-export const CSS_ENTRY_NAMES = ["css", "styles.css", "themes.css"] as const;
+export const CSS_ENTRY_NAMES = ["css", "styles.css", "themes.css", "chart.css"] as const;
 
 /** Runtime packages that published JS is allowed to import. */
 export const runtimeDependencies = [
@@ -163,6 +166,10 @@ export const PUBLISHED_PEER_RANGES = {
 
 function isOptionalPeerEntry(subpath: string): boolean {
   return Object.hasOwn(OPTIONAL_PEER_ENTRIES, subpath);
+}
+
+function isPreviewEntry(subpath: string): boolean {
+  return PREVIEW_ENTRIES.some((name) => name === subpath);
 }
 
 function isBareComponent(subpath: string): boolean {
@@ -422,6 +429,9 @@ export function walkImportedSourceFiles(packageRoot: string, entryFiles: readonl
   return [...seen].toSorted((left, right) => left.localeCompare(right));
 }
 
+/** The chart stylesheet, plain CSS that `build-css` copies to `dist/chart.css` unchanged. */
+export const CHART_CSS_SOURCE = "src/components/chart/chart.css";
+
 function cssEntries(packageRoot: string): CssExportEntry[] {
   const rawCss = "src/styles/fuse.css";
   if (!fileExists(join(packageRoot, rawCss))) {
@@ -431,6 +441,7 @@ function cssEntries(packageRoot: string): CssExportEntry[] {
     { subpath: "css", sourceFile: rawCss, publishFile: "styles/fuse.css" },
     { subpath: "styles.css", sourceFile: "dist/styles.css", publishFile: "styles.css" },
     { subpath: "themes.css", sourceFile: "dist/themes.css", publishFile: "themes.css" },
+    { subpath: "chart.css", sourceFile: CHART_CSS_SOURCE, publishFile: "chart.css" },
   ];
 }
 
@@ -474,7 +485,9 @@ export function discoverJsEntriesFromAllowlist(
       subpath,
       sourceFile,
       runtimeExports: facadeRuntimeExports(subpath, sourceFile, packageRoot),
-      inRootBarrel: subpath === "theme" || (isBareComponent(subpath) && !isOptionalPeerEntry(subpath)),
+      inRootBarrel:
+        subpath === "theme" ||
+        (isBareComponent(subpath) && !isOptionalPeerEntry(subpath) && !isPreviewEntry(subpath)),
     });
   }
 

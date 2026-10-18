@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { generateThemesCss } from "../src/theme/generate-css";
 import { generateDemoStageDensityCss } from "../src/theme/generate-demo-stage-css";
-import { TOOLING_ONLY_CSS_ENTRIES } from "./entries";
+import { CHART_CSS_SOURCE, TOOLING_ONLY_CSS_ENTRIES } from "./entries";
 import { packageRootFromScript } from "./paths";
 import { runCommand } from "./run-command";
 
@@ -27,6 +27,7 @@ export function buildCss(packageRoot: string): void {
     writeFileSync(join(distDir, entry.distFile), TOOLING_ONLY_CSS_GENERATORS[entry.distFile]());
   }
   copyFileSync(fuseCssPath, join(distDir, "styles/fuse.css"));
+  copyFileSync(join(packageRoot, CHART_CSS_SOURCE), join(distDir, "chart.css"));
 
   runCommand(
     "pnpm",

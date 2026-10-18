@@ -79,6 +79,9 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // `pnpm gen component` appends a 0-ceiling row below this marker, so a brand-new packed
   // entry cannot slip through unbudgeted. Replace the 0 with measured × 1.5.
   // plop:js-entry-budget
+  // 2026-10-18: new preview entry, measured at 4787 as stubs with real types and no rendering.
+  // Each chart layer re-measures this row and its named-import rows and gives the reason here.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 4787 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -214,6 +217,25 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
 ] satisfies readonly Measured<JsEntryBudget>[]);
 
 export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
+  // 2026-10-18: the chart stubs. BarChart judges every alias, because AreaChart and LineChart are
+  // the same object. It measures 2 bytes over Chart for its own export binding, and
+  // checkPackedChartBundles in package-check-chart.ts proves the BarChart.Root and Chart.Root
+  // routes byte-identical.
+  // The two format rows judge that a server headline pulls in no Root or part module.
+  { name: "chart/Chart", entryFile: "chart.js", exportName: "Chart", measuredGzip: 1112 },
+  { name: "chart/BarChart", entryFile: "chart.js", exportName: "BarChart", measuredGzip: 1114 },
+  { name: "chart/PieChart", entryFile: "chart.js", exportName: "PieChart", measuredGzip: 874 },
+  { name: "chart/RadialChart", entryFile: "chart.js", exportName: "RadialChart", measuredGzip: 849 },
+  { name: "chart/RadarChart", entryFile: "chart.js", exportName: "RadarChart", measuredGzip: 803 },
+  { name: "chart/Sparkline", entryFile: "chart.js", exportName: "Sparkline", measuredGzip: 246 },
+  { name: "chart/useChartPoint", entryFile: "chart.js", exportName: "useChartPoint", measuredGzip: 72 },
+  {
+    name: "chart/formatChartValue",
+    entryFile: "chart.js",
+    exportName: "formatChartValue",
+    measuredGzip: 1685,
+  },
+  { name: "chart/formatChartSlot", entryFile: "chart.js", exportName: "formatChartSlot", measuredGzip: 2403 },
   {
     name: "icons/Check",
     entryFile: "icons.js",
@@ -242,6 +264,8 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // recalibrates to measured × 1.5, as a code owner approved.
   { name: "themes.css", file: "themes.css", measuredGzip: 4472, ceilingGzip: 6416 },
   { name: "styles.css", file: "styles.css", measuredGzip: 24593 },
+  // 2026-10-18: new entry, measured at 115. It holds the layer statement and one rule.
+  { name: "chart.css", file: "chart.css", measuredGzip: 115 },
 ] satisfies readonly Measured<CssBudget>[]);
 
 export const FLAG_RAW_BUDGETS: readonly FlagRawBudget[] = [

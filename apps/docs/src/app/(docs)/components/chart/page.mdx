@@ -1,0 +1,24 @@
+---
+lede: >
+  Preview. Cartesian charts over a category or time axis, with Panels for composed charts.
+---
+
+import { ChartUsageAndPrice } from "./demos/chart-usage-and-price";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("chart");
+
+<ComponentIntro slug="chart" />
+
+<Prose>
+
+The chart entry is a preview. Its parts render no marks yet, and names and props can change until Fuse's first stable release. Import `@elmeragroup/fuse/chart.css` once, beside Fuse's own stylesheet. `Chart.Root` reads every series from `config` and never inspects its children, so a server component can compose the parts.
+
+</Prose>
+
+<Demo slug="chart" id="usage-and-price" title="Usage and price" file="chart-usage-and-price.tsx">
+  <ChartUsageAndPrice />
+</Demo>
+
+<ApiReference slug="chart" />

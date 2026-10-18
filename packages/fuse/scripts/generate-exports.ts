@@ -25,14 +25,8 @@ export type ExportBinding = {
   target: ExportCondition | string;
 };
 
-type WorkspacePeers = {
-  "@tanstack/react-table": string;
-  "@tanstack/react-virtual": string;
-  react: string;
-  "react-dom": string;
-  tailwindcss: string;
-  recharts?: string;
-};
+/** The published peer ranges, one per peer that `PUBLISHED_PEER_RANGES` names. */
+type WorkspacePeers = { readonly [Peer in keyof typeof PUBLISHED_PEER_RANGES]: string };
 
 /** npm registry metadata. Carried verbatim from the workspace manifest into the published one. */
 type PackageMetadata = {
@@ -49,12 +43,7 @@ type WorkspaceManifest = PackageMetadata & {
   version: string;
   license: string;
   sideEffects: string[];
-  peerDependenciesMeta: {
-    "@tanstack/react-table": { optional: boolean };
-    "@tanstack/react-virtual": { optional: boolean };
-    tailwindcss: { optional: boolean };
-    recharts?: { optional: boolean };
-  };
+  peerDependenciesMeta: Partial<Record<keyof WorkspacePeers, { optional: boolean }>>;
   dependencies: Dependencies;
 };
 
@@ -243,21 +232,11 @@ type PublishManifest = PackageMetadata & {
   elmeraRelease?: ReleaseSource;
 };
 
-function publishedPeerDependencies(): WorkspacePeers {
-  return {
-    "@tanstack/react-table": PUBLISHED_PEER_RANGES["@tanstack/react-table"],
-    "@tanstack/react-virtual": PUBLISHED_PEER_RANGES["@tanstack/react-virtual"],
-    react: PUBLISHED_PEER_RANGES.react,
-    "react-dom": PUBLISHED_PEER_RANGES["react-dom"],
-    tailwindcss: PUBLISHED_PEER_RANGES.tailwindcss,
-  };
-}
-
 const ROOT_BARREL_BANNER = `/**
  * AUTO-GENERATED FILE — DO NOT EDIT DIRECTLY.
  *
  * Root barrel of bare component entries plus /theme.
- * Icons, illustrations, flags, react-aria/* and optional-peer entries stay subpath-only.
+ * Icons, illustrations, flags, react-aria/*, optional-peer and preview entries stay subpath-only.
  */
 
 `;
@@ -313,7 +292,7 @@ export function writePublishManifest(packageRoot: string, release?: ReleaseStamp
     type: "module",
     sideEffects: workspace.sideEffects,
     exports: exportBindingsObject(buildPublishExportMap(discovered)),
-    peerDependencies: publishedPeerDependencies(),
+    peerDependencies: { ...PUBLISHED_PEER_RANGES },
     peerDependenciesMeta: workspace.peerDependenciesMeta,
     dependencies: publishedDependencies(workspace.dependencies, readWorkspaceCatalog()),
     publishConfig: { access: "public" },

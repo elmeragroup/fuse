@@ -54,3 +54,23 @@ export function literalJudgements<C extends LiteralCase>(
     ];
   });
 }
+
+/**
+ * One hand-written label against Fuse's, its spoken form included when the case writes one.
+ *
+ * @param name - The judgement's name.
+ * @param label - Fuse's label.
+ * @param text - The expected visual label.
+ * @param spoken - The expected spoken label, if the case checks it.
+ * @returns One judgement.
+ */
+export function labelJudgement(
+  name: string,
+  label: FormattedText,
+  text: string,
+  spoken: string | undefined
+): Judgement {
+  return spoken === undefined
+    ? { name, actual: [label.text], expected: [text] }
+    : { name, actual: [label.text, label.spoken], expected: [text, spoken] };
+}

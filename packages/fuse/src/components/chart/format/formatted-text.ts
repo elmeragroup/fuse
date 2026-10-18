@@ -1,6 +1,10 @@
 import { canonicalSpaces } from "../../../intl/canonical-spaces";
 
-/** A label in two forms. Screen readers read `spoken`, and every visual place shows `text`. */
+/**
+ * A label in two forms. Screen readers read `spoken`, and every visual place shows `text`.
+ *
+ * @beta
+ */
 export type FormattedText = {
   /** The visual label, such as `−0,05 kr/kWh`. */
   readonly text: string;

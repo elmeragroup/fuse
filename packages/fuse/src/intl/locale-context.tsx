@@ -3,7 +3,11 @@
 import { createContext, use, useMemo } from "react";
 import type { ReactNode } from "react";
 
-/** A locale with built-in translations in Fuse. */
+/**
+ * A locale with built-in translations in Fuse.
+ *
+ * @public
+ */
 export type SupportedLocale = "nb-NO" | "sv-SE" | "en-US" | "fi-FI";
 
 /** The locale and time zone shared by every string-bearing component. */
@@ -20,7 +24,8 @@ export type LocaleProviderProps = {
    * The IANA time zone that dates and times format in, such as `"Europe/Oslo"`. Pass the zone of
    * the market the data describes, not the viewer's. It removes the differences that runtime zones
    * cause, so a server and a browser in different zones write the same dates. WebKit's date-time
-   * join still differs for some styles, as `data-table-format.ts` and `TODO.md` record. Without
+   * join still differs for an en-US medium and an sv-SE long date-time, so those `DataTable`
+   * styles can still differ between a Node server and Safari. Without
    * it, `DataTable` date cells format in the runtime's zone. An invalid name throws a `RangeError`
    * when the provider renders.
    */

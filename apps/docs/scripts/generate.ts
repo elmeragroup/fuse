@@ -35,7 +35,9 @@ import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 import type { ResolvedThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 import type { ApiArtifactDiagnostic, GeneratedApiComponent } from "@elmeragroup/internal";
 
+import { aliasOf, sameAsLinks } from "../src/lib/api-same-as.ts";
 import type {
+  ApiFunction,
   ComponentOutline,
   ComponentPageEntry,
   DocsComponent,
@@ -45,6 +47,7 @@ import type {
 import { API_REGEN_COMMAND } from "../src/lib/docs-model.ts";
 import { studioGeneratedFiles } from "../src/studio/registration.ts";
 import { generateDocsApiArtifacts } from "./lib/api-artifact.ts";
+import { SHARED_ENTRY_PAGES } from "./lib/components.ts";
 import { buildDensityCatalog, renderDensityCatalog } from "./lib/density-catalog.ts";
 import {
   componentInspections,
@@ -55,6 +58,7 @@ import {
 } from "./lib/docs-inspection.ts";
 import type { ComponentInspection } from "./lib/docs-inspection.ts";
 import { ProblemLog } from "./lib/errors.ts";
+import { functionReferences } from "./lib/function-reference.ts";
 import { renderLandingFacts } from "./lib/landing-facts.ts";
 import { renderLlmsTxt } from "./lib/llms.ts";
 import { renderComponentMarkdown } from "./lib/markdown.ts";
@@ -120,6 +124,7 @@ function buildComponent(
   inspection: ComponentInspection,
   demos: readonly DocsDemo[],
   api: GeneratedApiComponent,
+  functions: ReadonlyMap<string, ApiFunction> | undefined,
   colors: ColorTokenMap
 ): DocsComponent {
   const { slug, page, paths } = inspection;
@@ -130,6 +135,7 @@ function buildComponent(
     slug,
     title: paths.title,
     lede: page.lede,
+    intro: page.intro,
     entry: paths.entry,
     sourcePath: repoRelative(paths.sourceFile),
     sourceUrl: `${REPO_BLOB_BASE}/${repoRelative(paths.sourceFile)}`,
@@ -140,7 +146,10 @@ function buildComponent(
     rsc: readRscStatus(readFileSync(paths.sourceFile, "utf8")),
     headings: page.headings,
     demos,
-    parts: api.parts,
+    parts: api.parts.map((part) => {
+      const reference = functions?.get(part.name);
+      return reference === undefined ? part : { ...part, function: reference };
+    }),
     tokens,
   };
 }
@@ -158,6 +167,35 @@ function toPageEntry(component: DocsComponent): ComponentPageEntry {
   };
 }
 
+/**
+ * Links every part that repeats a part of an earlier shared-entry page to its owner, walking the
+ * pages in `SHARED_ENTRY_PAGES` order, so `PieChart.Tooltip` names `Chart.Tooltip`, and marks a
+ * page whose every part repeats one other page as that page's alias. This is the one place either
+ * fact is computed.
+ */
+function linkSharedParts(components: readonly DocsComponent[]): readonly DocsComponent[] {
+  const bySlug = new Map(components.map((component) => [component.slug, component]));
+  const links = sameAsLinks(
+    [...SHARED_ENTRY_PAGES.keys()].flatMap((slug) => {
+      const component = bySlug.get(slug);
+      return component === undefined ? [] : [{ slug, parts: component.parts }];
+    })
+  );
+  return components.map((component) => {
+    const owners = links.get(component.slug);
+    if (owners === undefined) return component;
+    const alias = aliasOf(
+      component.parts.map((part) => part.name),
+      owners
+    );
+    const parts = component.parts.map((part) => {
+      const sameAs = owners.get(part.name);
+      return sameAs === undefined ? part : { ...part, sameAs };
+    });
+    return alias === undefined ? { ...component, parts } : { ...component, parts, alias };
+  });
+}
+
 /** The client's outline of a component: its identity and its TOC skeleton. */
 function toOutline(component: DocsComponent): ComponentOutline {
   return {
@@ -168,7 +206,8 @@ function toOutline(component: DocsComponent): ComponentOutline {
       .filter((heading) => heading.depth === 2)
       .map((heading) => ({ id: heading.id, title: heading.title })),
     demos: component.demos.map((demo) => ({ id: demo.id, title: demo.title })),
-    partNames: component.parts.map((part) => part.name),
+    // A page that repeats another page whole renders one sentence and no part anchors.
+    partNames: component.alias === undefined ? component.parts.map((part) => part.name) : [],
     hasTokens: component.tokens.length > 0,
   };
 }
@@ -230,6 +269,43 @@ function emitApiDrift(artifacts: Iterable<GeneratedApiComponent>): void {
  * stale — the drift check fails on it, naming \`${API_REGEN_COMMAND}\`.
  */
 export const API_ARTIFACTS_REWRITTEN: readonly string[] = ${JSON.stringify(stale, null, 2)};
+`
+  );
+}
+
+/**
+ * What `ApiReference` reads beside the committed `api.json`, per page. A repeated part renders one
+ * line naming its owner, an alias page one sentence, and a function part its signature reference.
+ */
+function emitApiReferenceExtras(components: readonly DocsComponent[]): void {
+  const sameAs = Object.fromEntries(
+    components.flatMap((component) => {
+      const parts = Object.fromEntries(
+        component.parts.flatMap((part) => (part.sameAs === undefined ? [] : [[part.name, part.sameAs]]))
+      );
+      return Object.keys(parts).length === 0
+        ? []
+        : [[component.slug, { alias: component.alias ?? null, parts }]];
+    })
+  );
+  const functions = Object.fromEntries(
+    components.flatMap((component) => {
+      const references = Object.fromEntries(
+        component.parts.flatMap((part) => (part.function === undefined ? [] : [[part.name, part.function]]))
+      );
+      return Object.keys(references).length === 0 ? [] : [[component.slug, references]];
+    })
+  );
+  writeFile(
+    path.join(generatedDir, "api-reference-extras.ts"),
+    `${BANNER}import type { ApiFunction } from "../lib/docs-model";
+import type { ApiPageSameAs } from "../lib/api-same-as";
+
+/** Per shared-entry page, its alias owner and the owner of each part it repeats. */
+export const API_SAME_AS: Readonly<Partial<Record<string, ApiPageSameAs>>> = ${JSON.stringify(sameAs, null, 2)};
+
+/** Per page, the signature reference of each function part, keyed by part name. */
+export const API_FUNCTIONS: Readonly<Partial<Record<string, Readonly<Record<string, ApiFunction>>>>> = ${JSON.stringify(functions, null, 2)};
 `
   );
 }
@@ -366,17 +442,24 @@ async function main(): Promise<void> {
   // and throws a DocsGenerationError on any extraction problem.
   const generated = await generateDocsApiArtifacts("write", docsApiInventory(inspections));
   reportDiagnostics(generated.diagnostics);
-  const components = inspected.map(({ inspection, demos }) => {
-    const api = generated.artifacts.get(inspection.slug);
-    if (api === undefined) {
-      throw new Error(`no generated API artifact for component "${inspection.slug}"`);
-    }
-    return buildComponent(inspection, demos, api, colors);
-  });
+  const functions = functionReferences(docsApiInventory(inspections));
+  for (const warning of functions.warnings) {
+    process.stderr.write(`docs: ${warning}\n`);
+  }
+  const components = linkSharedParts(
+    inspected.map(({ inspection, demos }) => {
+      const api = generated.artifacts.get(inspection.slug);
+      if (api === undefined) {
+        throw new Error(`no generated API artifact for component "${inspection.slug}"`);
+      }
+      return buildComponent(inspection, demos, api, functions.pages.get(inspection.slug), colors);
+    })
+  );
 
   emitComponentPages(components);
   emitComponentOutlines(components);
   emitApiDrift(generated.artifacts.values());
+  emitApiReferenceExtras(components);
   emitBundleSizes(sizes);
   emitTokenReference(colors);
   const catalog = resolveThemeCatalog();
@@ -408,4 +491,5 @@ try {
   // Leave no half-written manifest behind for the bundler to pick up.
   rmSync(path.join(generatedDir, "component-pages.ts"), { force: true });
   rmSync(path.join(generatedDir, "component-outlines.ts"), { force: true });
+  rmSync(path.join(generatedDir, "api-reference-extras.ts"), { force: true });
 }

@@ -299,10 +299,6 @@
   expands mapped `Intl` types.
 - Faceted filters, toolbars, search, URL state, editable cells, virtualization, column resizing,
   pinning, grouping and expanding are out of the first entry.
-- `packages/fuse/scripts/generate-exports.ts` repeats the peer list by hand in `WorkspacePeers`,
-  the `peerDependenciesMeta` type and `publishedPeerDependencies()`, and
-  `packages/fuse/scripts/size-limit.ts` repeats it in `PEER_EXTERNALS`. Derive all four from
-  `PUBLISHED_PEER_RANGES`.
 - Give `DataTable.ColumnToggle` and `DataTable.Pagination`'s Rows per page Select a controlled
   open state. Neither takes `open` or `onOpenChange`, so a host that must close their popups
   remounts them, as the landing's Order search does
@@ -310,6 +306,11 @@
 
 ## Command
 
+- A typed namespace factory, `createCommand<Grouped<ActionGroup>>()`, stays parked, not rejected. It
+  would return the same parts with the item type bound, so rows and the Root's `items` would be
+  checked end to end. React context cannot carry the type. If it returns, it likely applies to
+  Combobox and the other parts that annotate rows too, and to the parked chart factory under
+  "Charts".
 - `CommandVirtual.List` renders flat item lists only, so `virtualized` beside `grouped` throws. Add
   grouped virtual lists. They need a row per group label in the virtualizer's index space, and
   Base UI's item indexes kept separate from the row indexes.
@@ -340,7 +341,7 @@ release.
 - `Sparkline` draws a static chart with `role="img"` and a label. It renders on the server with no
   client JavaScript and takes no tab stop.
 
-Three time and locale tasks remain.
+Four sign-off, time and locale tasks remain.
 
 - The owner or the content owner signs off the drafted chart words in
   `packages/fuse/src/components/chart/format/words.ts`. They are the ISO week labels `uke 43`,
@@ -348,18 +349,30 @@ Three time and locale tasks remain.
   whether week 1 reads `W1` or `W01`, the subunits `øre`, `öre`, `äyri`, `snt`, `cent` and `c`, the
   VAT bases and the spoken unit, sign and clock words. When a week word changes, regenerate the slot
   oracle and `fixtures/slots.json`.
+- The owner or the content owner signs off the drafted chart dictionary, beside the week words
+  above. It holds about 40 strings in all four locales, such as `Vis som tabell`, `Skjul tabell`,
+  `Laster diagram`, `Ingen data for perioden`, `ingen data ennå`, `mangler`, `estimert`, `Annet` and
+  the brush, legend, table and live-region words. Each part adds the strings it reads when it lands.
+  Every string stays a draft until the sign-off, and explicit props replace each one verbatim.
 - Make `DataTable.DateTime` agree with WebKit. Date cells map every space to U+00A0, but WebKit's
   older CLDR joins an en-US medium date-time with `at` and an sv-SE long one without `kl.`, where
-  Node writes `,` and `kl.`, so those cells still fail hydration in Safari. A Fuse-owned date-time
-  join per locale would fix it, as the chart range separator does. Map the number and currency cells
-  through `canonicalSpaces` at the same time.
+  Node writes `,` and `kl.`, so those cells still fail hydration in Safari. The shared helper
+  `formatDateTime` in `packages/fuse/src/intl/date-time-join.ts` now joins the halves with CLDR 48's
+  pattern in en, nb, sv and fi, and the chart formatter uses it. Move the date cells onto it. Map
+  the number and currency cells through `canonicalSpaces` at the same time.
 - The `test:mutation` scripts run StrykerJS through its command runner, which starts Vitest once
   per mutant, because `@stryker-mutator/vitest-runner` 10.0.0 activates no mutant under Vitest 5. Move back to
   the plugin once it supports Vitest 5, so each mutant runs only the tests that cover it.
 
 Every later chart change follows the growth rule. A new capability becomes a new part, a variant
-value, a `config` field, a Root prop that describes the data's shape, Root state or a data attribute.
-It never becomes a boolean or mode prop on a part below Root.
+or datum-selector value, a `config` field, a Root prop that describes the data's shape or a Panel
+prop that mirrors one, Root state or a data attribute. It never becomes a boolean or mode prop on
+a part below Root.
+
+A typed parts factory, such as `Chart.typed<typeof config>()`, stays parked beside the Command
+factory under "Command". It would narrow `dataKey`, Panel and BarGroup `series` and TooltipTotal
+`stack` to config keys, where JSX children see only `string` today and `unknown-key` catches a typo
+at render. It can arrive later without breaking anyone.
 
 Some work stays outside v1.
 

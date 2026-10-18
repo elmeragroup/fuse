@@ -1,0 +1,24 @@
+---
+lede: >
+  Preview. Areas over a category or time axis.
+---
+
+import { AreaChartDailyUsage } from "./demos/area-chart-daily-usage";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("area-chart");
+
+<ComponentIntro slug="area-chart" />
+
+<Prose>
+
+The chart entry is a preview. Its parts render no marks yet, and names and props can change until Fuse's first stable release.
+
+</Prose>
+
+<Demo slug="area-chart" id="daily-usage" title="Daily usage" file="area-chart-daily-usage.tsx">
+  <AreaChartDailyUsage />
+</Demo>
+
+<ApiReference slug="area-chart" />

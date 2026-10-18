@@ -1,0 +1,24 @@
+---
+lede: >
+  Preview. Bars over a category or time axis, side by side or stacked.
+---
+
+import { BarChartYearOverYear } from "./demos/bar-chart-year-over-year";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("bar-chart");
+
+<ComponentIntro slug="bar-chart" />
+
+<Prose>
+
+The chart entry is a preview. Its parts render no marks yet, and names and props can change until Fuse's first stable release.
+
+</Prose>
+
+<Demo slug="bar-chart" id="year-over-year" title="Year over year" file="bar-chart-year-over-year.tsx">
+  <BarChartYearOverYear />
+</Demo>
+
+<ApiReference slug="bar-chart" />

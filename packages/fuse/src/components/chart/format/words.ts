@@ -1,22 +1,23 @@
 /**
  * Fuse's four-locale chart words. Intl has no currency subunits, no VAT basis, no week-number field
  * and no spoken forms, so Fuse owns these strings like its other built-in strings. Every entry is a
- * draft that the content owner signs off, as `TODO.md` lists. A space in an entry may be any space
+ * draft until the content owner signs it off. A space in an entry may be any space
  * character, because every formatter maps its output through `canonicalSpaces`.
  */
 import type { SupportedLocale } from "../../../intl/locale-context";
+import type { ValueFormat } from "./value-format";
 
 /** The currencies a unit price can carry. */
-export type Currency = "NOK" | "SEK" | "EUR";
+export type Currency = Extract<ValueFormat, { readonly preset: "unit-price" }>["currency"];
 
 /** The energy units the `energy` preset writes. Intl sanctions none of them. */
-export type EnergyUnit = "Wh" | "kWh" | "MWh";
+export type EnergyUnit = Extract<ValueFormat, { readonly preset: "energy" }>["unit"];
 
 /** The power units the `power` preset writes. Intl sanctions none of them. */
-export type PowerUnit = "W" | "kW" | "MW";
+export type PowerUnit = Extract<ValueFormat, { readonly preset: "power" }>["unit"];
 
 /** Whether a unit price includes VAT. */
-export type VatBasis = "included" | "excluded";
+export type VatBasis = Extract<ValueFormat, { readonly preset: "unit-price" }>["vat"];
 
 /** A word in the singular and plural forms `Intl.PluralRules` selects between. */
 type Inflected = { readonly one: string; readonly other: string };

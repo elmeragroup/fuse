@@ -1,11 +1,19 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, join, relative } from "node:path";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { parseSync, Visitor } from "oxc-parser";
-import type { Expression, JSXElementName, JSXOpeningElement } from "oxc-parser";
 import { describe, expect, it } from "vitest";
 
 import { OPTIONAL_PEER_ENTRIES, walkImportedSourceFiles } from "../scripts/entries";
+import { renderElementWiring, wiringPartSpreads } from "../test/jsx-wiring";
+import { hasUseClientDirective, loadSourceTree } from "../test/source-tree";
+import {
+  disabledArmDims,
+  disabledConditionDims,
+  isLocalDisabledDim,
+  isUngatedPointerFace,
+  localDisabledDims,
+  ungatedPointerFaces,
+} from "../test/state-face-tokens";
 import { writtenSlots } from "../test/written-slots";
 import { overlayLayer, toastLayer } from "./components/overlay/overlay-classes";
 import { PART_DENSITY } from "./theme/tokens/density-roles";
@@ -26,12 +34,6 @@ const SRC_ROOT = dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = join(SRC_ROOT, "..");
 
 type RscStatus = "client" | "server";
-
-type SourceRecord = {
-  relative: string;
-  source: string;
-  code: string;
-};
 
 const CLIENT_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["accordion", ["components/accordion/accordion.tsx"]],
@@ -142,97 +144,14 @@ const CLIENT_ISLANDS: ReadonlyArray<readonly [string, readonly string[]]> = [
 
 const CLIENT_HOOKS = ["hooks/use-localized-strings.ts"] as const;
 
-function isTestFile(path: string): boolean {
-  return (
-    path.endsWith(".test.ts") ||
-    path.endsWith(".test.tsx") ||
-    path.endsWith(".browser.test.tsx") ||
-    path.endsWith(".test-d.tsx")
-  );
-}
-
-function walkSourceFiles(directory: string): string[] {
-  const files: string[] = [];
-  for (const entry of readdirSync(directory)) {
-    const path = join(directory, entry);
-    if (statSync(path).isDirectory()) {
-      files.push(...walkSourceFiles(path));
-      continue;
-    }
-    if ((path.endsWith(".ts") || path.endsWith(".tsx")) && !isTestFile(path)) {
-      files.push(path);
-    }
-  }
-  return files;
-}
-
-/** Line-comment and block-comment lines dropped, so prose citing a spelling is not a copy of it. */
-function codeOnly(source: string): string {
-  return source
-    .split("\n")
-    .filter((line) => {
-      const trimmed = line.trimStart();
-      return !trimmed.startsWith("*") && !trimmed.startsWith("//") && !trimmed.startsWith("/*");
-    })
-    .join("\n");
-}
-
-function loadSourceTree(): ReadonlyMap<string, SourceRecord> {
-  const tree = new Map<string, SourceRecord>();
-  for (const file of walkSourceFiles(SRC_ROOT)) {
-    const source = readFileSync(file, "utf8");
-    tree.set(file, {
-      relative: relative(SRC_ROOT, file),
-      source,
-      code: codeOnly(source),
-    });
-  }
-  return tree;
-}
-
-const SOURCE_TREE = loadSourceTree();
-
-function sourceRecord(relativePath: string): SourceRecord {
-  const record = SOURCE_TREE.get(join(SRC_ROOT, relativePath));
-  if (record === undefined) {
-    throw new Error(`expected source file ${relativePath}`);
-  }
-  return record;
-}
-
-function readSrc(relativePath: string): string {
-  return sourceRecord(relativePath).source;
-}
-
-function readCode(relativePath: string): string {
-  return sourceRecord(relativePath).code;
-}
-
-function ownedBy(owner: string, needle: string): string[] {
-  const ownerPath = join(SRC_ROOT, owner);
-  const restating: string[] = [];
-  for (const [file, record] of SOURCE_TREE) {
-    if (file !== ownerPath && record.code.includes(needle)) {
-      restating.push(record.relative);
-    }
-  }
-  return restating;
-}
-
-function filesContainingCode(needle: string): string[] {
-  const hits: string[] = [];
-  for (const record of SOURCE_TREE.values()) {
-    if (record.code.includes(needle)) {
-      hits.push(record.relative);
-    }
-  }
-  return hits;
-}
-
-function hasUseClientDirective(source: string): boolean {
-  const trimmed = source.trimStart();
-  return trimmed.startsWith('"use client"') || trimmed.startsWith("'use client'");
-}
+const {
+  records: SOURCE_TREE,
+  source: readSrc,
+  code: readCode,
+  ownedBy,
+  filesContainingCode,
+  exportedNames,
+} = loadSourceTree(SRC_ROOT);
 
 function expectRsc(relativePath: string, rsc: RscStatus): void {
   const source = readSrc(relativePath);
@@ -242,15 +161,6 @@ function expectRsc(relativePath: string, rsc: RscStatus): void {
   }
   expect(source, relativePath).not.toContain('"use client"');
   expect(source, relativePath).not.toContain("'use client'");
-}
-
-/** Every name a module exports, with type-only exports prefixed `type `. */
-function exportedNames(relativePath: string): string[] {
-  const parsed = parseSync(relativePath, readSrc(relativePath));
-  expect(parsed.errors, relativePath).toEqual([]);
-  return parsed.module.staticExports.flatMap(({ entries }) =>
-    entries.map(({ exportName, isType }) => `${isType ? "type " : ""}${exportName.name ?? "default"}`)
-  );
 }
 
 describe("RSC classification", () => {
@@ -348,6 +258,106 @@ describe("RSC classification", () => {
     const file = `components/${slug}/index.ts`;
     expectRsc(file, "server");
     expect(exportedNames(file), file).toEqual([namespace]);
+  });
+});
+
+describe("chart module directives", () => {
+  // Why not a lint rule: which chart module a server component may evaluate is a per-module
+  // placement decision. A `"use client"` namespace makes `Chart.Root` an opaque client reference,
+  // and a part without the directive breaks the server build at its first hook, and lint sees
+  // neither module graph.
+  const CHART_DIR = "components/chart/";
+  const SERVER_CHART_MODULES = [
+    "components/chart/chart-namespace.ts",
+    "components/chart/pie-chart-namespace.ts",
+    "components/chart/radial-chart-namespace.ts",
+    "components/chart/radar-chart-namespace.ts",
+    "components/chart/sparkline.tsx",
+    "components/chart/chart-types.ts",
+    "components/chart/chart-format.ts",
+  ];
+  const chartModules = [...SOURCE_TREE.values()]
+    .map((record) => record.relative)
+    .filter((file) => file.startsWith(CHART_DIR))
+    .sort();
+
+  // The table derives from the folder, so a new chart module is classified the moment it exists.
+  const cases = chartModules.map((file): readonly [string, "client" | "server"] => [
+    file,
+    SERVER_CHART_MODULES.includes(file) || file.startsWith(`${CHART_DIR}format/`) ? "server" : "client",
+  ]);
+
+  it("classifies the folder's own modules, the Roots among the client ones", () => {
+    expect(cases).toContainEqual(["components/chart/chart-root.tsx", "client"]);
+    expect(cases).toContainEqual(["components/chart/format/time-format.ts", "server"]);
+  });
+
+  it.each(cases)("keeps %s %s", (file, rsc) => {
+    expectRsc(file, rsc);
+  });
+
+  it.each([
+    ["chart-namespace.ts", ["Chart", "AreaChart", "BarChart", "LineChart"]],
+    ["pie-chart-namespace.ts", ["PieChart"]],
+    ["radial-chart-namespace.ts", ["RadialChart"]],
+    ["radar-chart-namespace.ts", ["RadarChart"]],
+  ] as const)("%s exports only its namespace objects", (file, names) => {
+    expect(exportedNames(`${CHART_DIR}${file}`)).toEqual(names);
+  });
+});
+
+describe("chart display names", () => {
+  // Why not a lint rule: the owner is the API report, not the syntax. `Part.displayName = …` makes
+  // TypeScript emit an untagged `declare namespace Part` beside each `@beta` part in the `.d.ts`,
+  // which api-extractor rejects as a missing and a different release tag. `Object.assign` sets the
+  // same runtime name and emits no namespace. Fuse's other components keep the plain assignment.
+  const partModules = [...SOURCE_TREE.values()].filter(
+    (record) => record.relative.startsWith("components/chart/") && record.relative.endsWith(".tsx")
+  );
+
+  it("sets every chart part's displayName through Object.assign", () => {
+    expect(partModules.length).toBeGreaterThan(0);
+    expect(
+      partModules
+        .filter((record) => /^\w+\.displayName\s*=/mu.test(record.code))
+        .map((record) => record.relative)
+    ).toEqual([]);
+    expect(
+      partModules
+        .filter(
+          (record) => /^export function \w+/mu.test(record.code) && !record.code.includes("Object.assign(")
+        )
+        .map((record) => record.relative)
+    ).toEqual([]);
+  });
+});
+
+describe("chart colour namespace", () => {
+  // Why not a lint rule: lint cannot read custom-property names inside style objects or CSS files.
+  // `--color-*` is Tailwind 4's theme namespace, so a chart that wrote `--color-<key>` for a config
+  // key named `primary` would repaint every Fuse component inside it. Charts read
+  // `--chart-color-<key>` instead.
+  const WRITES_THEME_COLOR = /--color-[\w${}.-]*["'`]?\]?\s*:/u;
+
+  it("recognizes a written theme colour property and not a read one", () => {
+    expect(WRITES_THEME_COLOR.test('style={{ "--color-price": "red" }}')).toBe(true);
+    expect(WRITES_THEME_COLOR.test("[`--color-${key}`]: value")).toBe(true);
+    expect(WRITES_THEME_COLOR.test("[data-slot=chart] { --color-primary: red; }")).toBe(true);
+    expect(WRITES_THEME_COLOR.test("fill: var(--color-primary);")).toBe(false);
+    expect(WRITES_THEME_COLOR.test('style={{ "--chart-color-price": "red" }}')).toBe(false);
+  });
+
+  it("writes no --color- custom property from a chart module or chart.css", () => {
+    const writers = [...SOURCE_TREE.values()]
+      .filter((record) => record.relative.startsWith("components/chart/"))
+      .filter((record) => WRITES_THEME_COLOR.test(record.code))
+      .map((record) => record.relative);
+    const css = readFileSync(join(SRC_ROOT, "components/chart/chart.css"), "utf8").replace(
+      /\/\*[\s\S]*?\*\//gu,
+      ""
+    );
+    expect(writers).toEqual([]);
+    expect(WRITES_THEME_COLOR.test(css)).toBe(false);
   });
 });
 
@@ -534,13 +544,13 @@ describe("overlay layer", () => {
   // and could not assert "exactly once".
   it("is declared once in overlay-classes.ts and nowhere else in component source", () => {
     expect(overlayLayer).toBe("z-50");
-    expect(codeOnly(readSrc("components/overlay/overlay-classes.ts")).match(/z-50/gu)).toHaveLength(1);
+    expect(readCode("components/overlay/overlay-classes.ts").match(/z-50/gu)).toHaveLength(1);
     expect(ownedBy("components/overlay/overlay-classes.ts", "z-50")).toEqual([]);
   });
 
   it("declares the toast layer once in overlay-classes.ts and nowhere else in component source", () => {
     expect(toastLayer).toBe("z-60");
-    expect(codeOnly(readSrc("components/overlay/overlay-classes.ts")).match(/z-60/gu)).toHaveLength(1);
+    expect(readCode("components/overlay/overlay-classes.ts").match(/z-60/gu)).toHaveLength(1);
     expect(ownedBy("components/overlay/overlay-classes.ts", "z-60")).toEqual([]);
   });
 });
@@ -582,94 +592,6 @@ describe("superseded local forms", () => {
   });
 });
 
-/** The class tokens in source code: every run between whitespace, quotes and backticks. */
-function classTokens(code: string): string[] {
-  return code.split(/[\s"'`]+/u).filter((token) => token.length > 0);
-}
-
-/** Split a class token into its variants and utility at the colons outside brackets. */
-function splitVariants(token: string) {
-  const variants: string[] = [];
-  let depth = 0;
-  let current = "";
-  for (const character of token) {
-    if (character === "[") depth += 1;
-    if (character === "]") depth -= 1;
-    if (character === ":" && depth === 0) {
-      variants.push(current);
-      current = "";
-      continue;
-    }
-    current += character;
-  }
-  return { variants, utility: current };
-}
-
-/** A variant that reads another element's state (`group-*`, `peer-*`, `in-*`) styles a part. */
-function readsAnotherElement(variant: string): boolean {
-  return /^(?:group|peer|in)-/u.test(variant);
-}
-
-/**
- * A disabled dim or pointer-events drop the control writes on itself, rather than taking
- * it from the state face.
- */
-function isLocalDisabledDim(token: string): boolean {
-  const { variants, utility } = splitVariants(token);
-  if (!/^(?:opacity-\d+|pointer-events-none)$/u.test(utility)) return false;
-  if (variants.some(readsAnotherElement)) return false;
-  return variants.some(
-    (variant) =>
-      /^(?:disabled|data-disabled|aria-disabled|has-disabled|disabled-state)$/u.test(variant) ||
-      (/^(?:data|aria|has)-\[/u.test(variant) && variant.includes("disabled"))
-  );
-}
-
-/**
- * A `hover:` or `active:` face with no `enabled-*` gate in front of it. A token with no
- * utility after its last colon is an object key such as ScrollArea's `hover:` type, not a class.
- */
-function isUngatedPointerFace(token: string): boolean {
-  const { variants, utility } = splitVariants(token);
-  return utility.length > 0 && (variants.includes("hover") || variants.includes("active"));
-}
-
-const BARE_DISABLED_DIM = /^(?:opacity-\d+|pointer-events-none)$/u;
-
-/**
- * The bare dims a `tv` map writes inside a disabled-named variant arm (`isDisabled: { … }`
- * or `disabled: { … }`). The arm, not a selector, carries the state there, so the dim has
- * no `disabled:` variant for {@link isLocalDisabledDim} to see.
- */
-function disabledArmDims(code: string): string[] {
-  const dims: string[] = [];
-  for (const match of code.matchAll(/\b(?:isDisabled|disabled)\s*:\s*\{/gu)) {
-    const open = match.index + match[0].length - 1;
-    let depth = 0;
-    let close = open;
-    for (; close < code.length; close += 1) {
-      if (code[close] === "{") depth += 1;
-      if (code[close] === "}") depth -= 1;
-      if (depth === 0) break;
-    }
-    dims.push(...classTokens(code.slice(open + 1, close)).filter((token) => BARE_DISABLED_DIM.test(token)));
-  }
-  return dims;
-}
-
-/**
- * The bare dims a component adds behind a disabled-named prop condition
- * (`isVisuallyDisabled && "opacity-70"` or `isDisabled ? "opacity-50" : …`). The condition,
- * not a selector or a `tv` arm, carries the state there.
- */
-function disabledConditionDims(code: string): string[] {
-  const dims: string[] = [];
-  for (const match of code.matchAll(/\b\w*[Dd]isabled\w*\s*(?:&&|\?)\s*(["'`])([^"'`]*)\1/gu)) {
-    dims.push(...classTokens(match[2] ?? "").filter((token) => BARE_DISABLED_DIM.test(token)));
-  }
-  return dims;
-}
-
 /** Every flagged token per file, deduplicated and sorted, for files with at least one. */
 function flaggedTokensByFile(flagged: (code: string) => string[]) {
   return Object.fromEntries(
@@ -678,18 +600,6 @@ function flaggedTokensByFile(flagged: (code: string) => string[]) {
       .filter(([, tokens]) => tokens.length > 0)
       .toSorted(([a], [b]) => a.localeCompare(b))
   );
-}
-
-function localDisabledDims(code: string): string[] {
-  return [
-    ...classTokens(code).filter(isLocalDisabledDim),
-    ...disabledArmDims(code),
-    ...disabledConditionDims(code),
-  ];
-}
-
-function ungatedPointerFaces(code: string): string[] {
-  return classTokens(code).filter(isUngatedPointerFace);
 }
 
 describe("state faces", () => {
@@ -808,61 +718,6 @@ describe("state faces", () => {
     });
   });
 });
-
-/** A JSX tag as written, such as `ComboboxPrimitive.Input`. */
-function tagName(name: JSXElementName): string {
-  if (name.type === "JSXIdentifier") return name.name;
-  if (name.type === "JSXNamespacedName") return `${name.namespace.name}:${name.name.name}`;
-  return `${tagName(name.object)}.${name.property.name}`;
-}
-
-function openingElements(relativePath: string, source: string): JSXOpeningElement[] {
-  const parsed = parseSync(relativePath, source);
-  expect(parsed.errors, relativePath).toEqual([]);
-  const elements: JSXOpeningElement[] = [];
-  new Visitor({ JSXOpeningElement: (element) => void elements.push(element) }).visit(parsed.program);
-  return elements;
-}
-
-const STATE_OR_WIRING_ATTRIBUTE = /^(?:disabled|readOnly|required|id|value|aria-.+)$/u;
-
-/** `Part > RenderTag attribute` for each state or wiring attribute, or spread, on an inline render element. */
-function renderElementWiring(relativePath: string, source: string): string[] {
-  return openingElements(relativePath, source).flatMap((element) =>
-    element.attributes.flatMap((attribute) => {
-      if (attribute.type !== "JSXAttribute" || attribute.name.name !== "render") return [];
-      if (attribute.value?.type !== "JSXExpressionContainer") return [];
-      if (attribute.value.expression.type !== "JSXElement") return [];
-      const rendered = attribute.value.expression.openingElement;
-      const prefix = `${tagName(element.name)} > ${tagName(rendered.name)}`;
-      return rendered.attributes.flatMap((item) => {
-        if (item.type === "JSXSpreadAttribute") return [`${prefix} {...}`];
-        const name = tagName(item.name);
-        return STATE_OR_WIRING_ATTRIBUTE.test(name) ? [`${prefix} ${name}`] : [];
-      });
-    })
-  );
-}
-
-function isDefinedPropsCall(expression: Expression): boolean {
-  return (
-    expression.type === "CallExpression" &&
-    expression.callee.type === "Identifier" &&
-    expression.callee.name === "definedProps"
-  );
-}
-
-/** Each listed part in the source, with `raw` for every spread that skips `definedProps(…)`. */
-function wiringPartSpreads(relativePath: string, source: string, parts: ReadonlySet<string>): string[] {
-  return openingElements(relativePath, source).flatMap((element) => {
-    const tag = tagName(element.name);
-    if (!parts.has(tag)) return [];
-    const raw = element.attributes.filter(
-      (attribute) => attribute.type === "JSXSpreadAttribute" && !isDefinedPropsCall(attribute.argument)
-    );
-    return [raw.length === 0 ? tag : `${tag} raw`];
-  });
-}
 
 /**
  * The Base UI parts that read Field or Labelable context, plus Button (aria-disabled) and

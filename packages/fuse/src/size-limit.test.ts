@@ -55,6 +55,7 @@ describe("size-limit harness", () => {
       "input-group",
       "textarea",
       "flags",
+      "chart",
       "toolbar",
       "command",
       "command-virtual",
@@ -118,10 +119,19 @@ describe("size-limit harness", () => {
       "react-aria/grid-list",
       "react-aria/focusable",
       "react-aria/file-trigger",
+      "chart/Chart",
+      "chart/BarChart",
+      "chart/PieChart",
+      "chart/RadialChart",
+      "chart/RadarChart",
+      "chart/Sparkline",
+      "chart/useChartPoint",
+      "chart/formatChartValue",
+      "chart/formatChartSlot",
       "icons/Check",
     ]);
     expect(FLAG_RAW_BUDGETS).toEqual([{ name: "flags/*.svg", ceilingBytes: 819200 }]);
-    expect(CSS_BUDGETS.map((budget) => budget.name)).toEqual(["themes.css", "styles.css"]);
+    expect(CSS_BUDGETS.map((budget) => budget.name)).toEqual(["themes.css", "styles.css", "chart.css"]);
   });
 
   it("derives an omitted ceiling at measured × 1.5 and keeps a standing override", () => {
