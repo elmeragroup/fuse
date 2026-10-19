@@ -64,7 +64,10 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   { name: "theme", entryFile: "theme.js", measuredGzip: 6197, ceilingGzip: 9194 },
   { name: "badge", entryFile: "badge.js", measuredGzip: 15739, ceilingGzip: 23493 },
   { name: "button", entryFile: "button.js", measuredGzip: 25571, ceilingGzip: 37821 },
-  { name: "card", entryFile: "card.js", measuredGzip: 16100, ceilingGzip: 23937 },
+  // 2026-10-19: card measured 25067 once Card.Section brought Base UI's useRender and mergeProps
+  // and the shared focus ring and state face into the entry, over its 23937 ceiling, so it
+  // recalibrates to measured × 1.5.
+  { name: "card", entryFile: "card.js", measuredGzip: 25067, ceilingGzip: 37601 },
   { name: "dialog", entryFile: "dialog.js", measuredGzip: 46343, ceilingGzip: 67844 },
   { name: "popover", entryFile: "popover.js", measuredGzip: 57668, ceilingGzip: 85298 },
   { name: "scroll-area", entryFile: "scroll-area.js", measuredGzip: 28482, ceilingGzip: 42731 },
