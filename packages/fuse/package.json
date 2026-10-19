@@ -253,6 +253,10 @@
       "types": "./src/react-aria/ui-providers.ts",
       "import": "./src/react-aria/ui-providers.ts"
     },
+    "./recipe-catalog": {
+      "types": "./src/components/recipe-catalog.ts",
+      "import": "./src/components/recipe-catalog.ts"
+    },
     "./scroll-area": {
       "types": "./src/scroll-area.ts",
       "import": "./src/scroll-area.ts"

@@ -103,6 +103,7 @@ export const NON_COMPONENT_JS_ENTRIES = [".", "theme", "icons", "illustrations",
  * In-repo `package.json#exports` only. Neither packed nor in the root barrel.
  */
 export const TOOLING_ONLY_JS_ENTRIES = [
+  { subpath: "recipe-catalog", sourceFile: "src/components/recipe-catalog.ts" },
   { subpath: "theme-catalog", sourceFile: "src/theme/catalog.ts" },
 ] as const;
 
