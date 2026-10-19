@@ -86,8 +86,9 @@ export type PopoverInfoButtonProps = DistributiveOmit<ButtonProps, "children" | 
  * Ghost info button that opens a Popover. It defaults to the `icon-inline` square, as tall as
  * the line it sits in, so beside a `Field.Label`'s text it centres on the label's line and
  * keeps the label one line tall. Pass an `icon*` size for a standalone control-sized trigger.
- * The localized name labels both the trigger and the popup dialog, so a body without a
- * `Popover.Title` still opens a named dialog; a `Popover.Title` names the dialog when present.
+ * The resolved `label`, by default the localized "More information", names both the trigger and
+ * the popup dialog, so a body without a `Popover.Title` still opens a named dialog; a
+ * `Popover.Title` names the dialog when present.
  * Client — Popover state and localized name.
  */
 export function PopoverInfoButton({
