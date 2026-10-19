@@ -1,7 +1,8 @@
 import { cn } from "./cn";
 
 // The corners here leave the `rounded-*` scale in external themes and round with `--radius`
-// in internal ones. Each class reads the element's own `--radius` and `--radius-step`, so it
+// in internal ones, except the Checkbox's, which caps `rounded-md` at 4px in both. Each class
+// reads the element's own `--radius` and `--radius-step`, directly or through a rung, so it
 // follows the enclosing theme scope and a `--radius` override on the theme element.
 // `--radius-step` doubles as the variant switch. It is 0px in the internal variant and 2px
 // in the external one, and the formulas support no other value. `--radius - 1000 * step`
@@ -77,12 +78,11 @@ export const compactCornerClass = cn(
 );
 
 /**
- * The Checkbox corner. External themes round it with `rounded-md` capped at 4px, and
- * internal themes with `--radius`.
+ * The corner of the Checkbox and the GridList selection box, `rounded-md` capped at 4px in
+ * every variant. At a large `--radius` the cap stops the box from rounding into a circle that
+ * reads as a Radio.
  */
-export const checkboxCornerClass = cn(
-  "rounded-[min(--theme(--radius-md),max(4px,var(--radius)-1000*var(--radius-step,0px)))]"
-);
+export const checkboxCornerClass = cn("rounded-[min(--theme(--radius-md),4px)]");
 
 /**
  * The corner of the standalone Calendar. External themes keep the reference's 4px whatever

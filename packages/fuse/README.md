@@ -117,7 +117,7 @@ The checked row's tint and the disabled fill win over a background class on the 
 }
 ```
 
-Field boxes round with your `--radius`, as cards and the themes' fields do. For the external look, set the external step. It spreads the `rounded-*` scale in 2px steps around `--radius` and gives the checkbox and the calendar their external 4px corner. Fields then round with `--radius-field` where you set one, and with your `--radius` otherwise, so set it only for a field corner of your own:
+Field boxes round with your `--radius`, as cards and the themes' fields do. For the external look, set the external step. It spreads the `rounded-*` scale in 2px steps around `--radius` and gives the calendar its external 4px corner. Fields then round with `--radius-field` where you set one, and with your `--radius` otherwise, so set it only for a field corner of your own:
 
 ```css
 :root {

@@ -58,8 +58,8 @@ describe("inner corners in a layered consumer build", () => {
         </div>
       </ThemeScope>
     );
-    // The internal shell gives its own rows 6px less 4px. The tkas scope rounds with 16px.
-    expect(cornerRadius(roleNamed("group", "Shell row"))).toBe(2);
+    // The internal shell gives its own rows 8px less 4px. The tkas scope rounds with 16px.
+    expect(cornerRadius(roleNamed("group", "Shell row"))).toBe(4);
     expect(cornerRadius(roleNamed("group", "Scoped row"))).toBe(16);
   });
 });

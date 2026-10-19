@@ -24,10 +24,9 @@ import { selectionGroupOrientationVariants } from "../selection-item/selection-i
  * Checkbox owns the checked state. The indicator is internal: Phosphor regular `Minus`
  * when indeterminate, `Check` otherwise. Labeled usage composes `Field.Root` and
  * `Field.Label`, or `CheckboxItem`. A disabled checkbox dims to 50% on its own, also
- * outside a field. Internal themes round the box with the one radius, and external themes
- * keep the reference's 4px corner. Native form reset, including React's reset after a form
- * action, keeps the current state and what the form submits in step; an uncontrolled checkbox
- * does not return to `defaultChecked`.
+ * outside a field. The box rounds with `rounded-md` capped at 4px in every theme. Native form
+ * reset, including React's reset after a form action, keeps the current state and what the form
+ * submits in step; an uncontrolled checkbox does not return to `defaultChecked`.
  */
 export function Checkbox({
   className,

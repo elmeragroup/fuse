@@ -105,9 +105,9 @@ describe("resolveThemeCatalog", () => {
     expect(theme("external-fkas-private").schemes.dark.rungs["radius-xl"].value).toBe(16);
     // external-tkas-private sets 1rem, 16px, so radius-xs is 16 - 3 * 2.
     expect(light("external-tkas-private").rungs["radius-xs"].value).toBe(10);
-    // Internal themes keep 0.375rem, 6px, and step 0px, so every rung is 6px.
-    expect(light("internal-elma-private").rungs["radius-xs"].value).toBe(6);
-    expect(light("internal-elma-private").rungs["radius-xl"].value).toBe(6);
+    // Internal themes keep 0.5rem, 8px, and step 0px, so every rung is 8px.
+    expect(light("internal-elma-private").rungs["radius-xs"].value).toBe(8);
+    expect(light("internal-elma-private").rungs["radius-xl"].value).toBe(8);
     // The popover rung steps four times below --radius: 12 - 4 * 2.
     expect(light("external-fkas-private").rungs["radius-popover"]).toMatchObject({
       css: "calc(var(--radius) - 4 * var(--radius-step, 0px))",

@@ -43,6 +43,7 @@ import {
   DatePickerPresetGroup,
   DatePickerPresetItem,
 } from "../react-aria/date-picker/date-picker";
+import { GridList, GridListItem } from "../react-aria/grid-list/grid-list";
 import { SearchField } from "../react-aria/search-field/search-field";
 import { UiProviders } from "../react-aria/ui-providers/ui-providers";
 import { DENSITIES } from "./density";
@@ -65,6 +66,7 @@ type Specimen =
   | "toggle"
   | "toggle xs"
   | "checkbox"
+  | "grid list checkbox"
   | "input group"
   | "kbd"
   | "addon xs"
@@ -83,7 +85,8 @@ type Specimen =
 type Variant = "internal" | "fkas" | "tkas" | "guen";
 
 /**
- * Corner radii in px. Internal rounds every outer element with `--radius`, 0.375rem (6px). An
+ * Corner radii in px. Internal rounds every outer element with `--radius`, 0.5rem (8px), except
+ * the Checkbox and the GridList selection box, which every variant caps at 4px. An
  * external button rounds with the brand's `--radius-button`, which is 1.8125rem (29px) for
  * fkas, 1rem (16px) for tkas and 0.5rem (8px) for guen. An external field box rounds with
  * `--radius-field`, which aliases the brand's `--radius` as a card's `rounded-lg` does: 12px
@@ -91,41 +94,42 @@ type Variant = "internal" | "fkas" | "tkas" | "guen";
  * measured on origin/main (e178f6d7) with each theme on the document. The tkas row has since
  * moved 0.8px with its `--radius`, from 0.95rem to 1rem.
  *
- * Inner parts round with the field corner (6px internal, 12px fkas, 16px tkas, 8px guen) or
+ * Inner parts round with the field corner (8px internal, 12px fkas, 16px tkas, 8px guen) or
  * their shell's rung less the inset, floored at 0. The xs and sm addons, the phone trigger and
- * the search clear button sit 5px in: 1px internal, 7px fkas, 11px tkas and 3px guen. The kbd
- * sits 6.6px in: 0px internal, 5.4px fkas, 9.4px tkas and 1.4px guen. The date trigger sits
- * flush behind the 1px border: 5px internal, 11px fkas, 15px tkas and 7px guen. A date segment
+ * the search clear button sit 5px in: 3px internal, 7px fkas, 11px tkas and 3px guen. The kbd
+ * sits 6.6px in: 1.4px internal, 5.4px fkas, 9.4px tkas and 1.4px guen. The date trigger sits
+ * flush behind the 1px border: 7px internal, 11px fkas, 15px tkas and 7px guen. A date segment
  * sits behind the border and the dense 10px control inset, 11px in: 1px fkas, 5px tkas and 0px
  * internal and guen. The chips sit 7px in and the chip remove button 2px inside a chip, 9px in
  * all: 3px fkas, 7px tkas and 0px internal and guen. A tab sits 4px inside the list's
- * `rounded-lg`: 2px internal, 8px fkas, 12px tkas and 4px guen. A preset sits 5px inside the
- * popover's `rounded-md`, its 1px border and the 4px small surface tier: 1px internal, 5px fkas,
+ * `rounded-lg`: 4px internal, 8px fkas, 12px tkas and 4px guen. A preset sits 5px inside the
+ * popover's `rounded-md`, its 1px border and the 4px small surface tier: 3px internal, 5px fkas,
  * 9px tkas and 1px guen.
  */
 const EXPECTED = {
   internal: {
-    button: 6,
-    "grouped button": 6,
-    card: 6,
-    input: 6,
-    badge: 6,
-    toggle: 6,
-    "toggle xs": 6,
-    checkbox: 6,
-    "input group": 6,
-    kbd: 0,
-    "addon xs": 1,
-    "addon sm": 1,
-    frame: 6,
-    calendar: 6,
-    "calendar nav": 6,
-    tab: 2,
-    "phone trigger": 1,
-    "search clear": 1,
-    "date trigger": 5,
+    button: 8,
+    "grouped button": 8,
+    card: 8,
+    input: 8,
+    badge: 8,
+    toggle: 8,
+    "toggle xs": 8,
+    checkbox: 4,
+    "grid list checkbox": 4,
+    "input group": 8,
+    kbd: 1.4,
+    "addon xs": 3,
+    "addon sm": 3,
+    frame: 8,
+    calendar: 8,
+    "calendar nav": 8,
+    tab: 4,
+    "phone trigger": 3,
+    "search clear": 3,
+    "date trigger": 7,
     "date segment": 0,
-    preset: 1,
+    preset: 3,
     "chip remove": 0,
   },
   fkas: {
@@ -137,6 +141,7 @@ const EXPECTED = {
     toggle: 10,
     "toggle xs": 10,
     checkbox: 4,
+    "grid list checkbox": 4,
     "input group": 12,
     kbd: 5.4,
     "addon xs": 7,
@@ -161,6 +166,7 @@ const EXPECTED = {
     toggle: 14,
     "toggle xs": 10,
     checkbox: 4,
+    "grid list checkbox": 4,
     "input group": 16,
     kbd: 9.4,
     "addon xs": 11,
@@ -185,6 +191,7 @@ const EXPECTED = {
     toggle: 6,
     "toggle xs": 6,
     checkbox: 4,
+    "grid list checkbox": 4,
     "input group": 8,
     kbd: 1.4,
     "addon xs": 3,
@@ -203,11 +210,11 @@ const EXPECTED = {
 } as const satisfies Record<Variant, Record<Specimen, number>>;
 
 /**
- * The internal radii at a 1rem (16px) `--radius`: every outer element at 16px, and each inner
- * part 16px less its inset from {@link EXPECTED}: 6.6px for the kbd, 5px for the addons, the
- * phone trigger and the search clear button, 1px for the date trigger, 11px for a date
- * segment, 4px for a tab and 5px for a preset. The chip remove button sits 2px inside a chip
- * that sits 7px in, so it takes 7px.
+ * The internal radii at a 1rem (16px) `--radius`: every outer element at 16px except the Checkbox
+ * and the GridList selection box, which keep their 4px cap, and each inner part 16px less its inset
+ * from {@link EXPECTED}: 6.6px for the kbd, 5px for the addons, the phone trigger and the search
+ * clear button, 1px for the date trigger, 11px for a date segment, 4px for a tab and 5px for a
+ * preset. The chip remove button sits 2px inside a chip that sits 7px in, so it takes 7px.
  */
 const INTERNAL_AT_16PX = {
   button: 16,
@@ -217,7 +224,8 @@ const INTERNAL_AT_16PX = {
   badge: 16,
   toggle: 16,
   "toggle xs": 16,
-  checkbox: 16,
+  checkbox: 4,
+  "grid list checkbox": 4,
   "input group": 16,
   kbd: 9.4,
   "addon xs": 11,
@@ -256,6 +264,9 @@ function Specimens(): ReactElement {
       <Toggle>Toggle</Toggle>
       <Toggle size="xs">Toggle xs</Toggle>
       <Checkbox aria-label="Checkbox" />
+      <GridList aria-label="Meters" selectionMode="multiple" selectionBehavior="toggle">
+        <GridListItem id="oslo">Oslo</GridListItem>
+      </GridList>
       {/* Each inner part ends its own field box, so it sits at the box's corner. */}
       <InputGroup.Root aria-label="Input group">
         <InputGroup.Input aria-label="Grouped input" />
@@ -484,6 +495,7 @@ function measure(): readonly (readonly [Specimen, string, number])[] {
     button("toggle", "Toggle"),
     button("toggle xs", "Toggle xs"),
     ["checkbox", "Checkbox", radius(roleNamed("checkbox", "Checkbox"))],
+    ["grid list checkbox", "Grid list checkbox", radius(selectionBox("Oslo"))],
     ["input group", "Input group", radius(roleNamed("group", "Input group"))],
     ["kbd", "Kbd", radius(textNamed("K"))],
     button("addon xs", "Addon xs"),
@@ -502,6 +514,19 @@ function measure(): readonly (readonly [Specimen, string, number])[] {
     ["preset", "Today", radius(presetNamed("Today"))],
     button("chip remove", "Remove Apple"),
   ];
+}
+
+/**
+ * The GridList selection glyph of the row named `row`. React Aria names the row's checkbox
+ * "Select" plus the row. DOM audit: the glyph is a presentational box beside the visually
+ * hidden checkbox input, inside the label they share.
+ */
+function selectionBox(row: string): HTMLElement {
+  const box = roleNamed("checkbox", `Select ${row}`).parentElement?.nextElementSibling;
+  if (!(box instanceof HTMLElement)) {
+    throw new Error(`expected the selection box of ${row}`);
+  }
+  return box;
 }
 
 /** The element with a slot around `part`. DOM audit: field boxes and chips have no role. */
@@ -559,12 +584,12 @@ function expectConcentric(context: string): void {
  * The radii that differ when comfortable. An addon pads with `--control-px-icon-md`, 12px
  * comfortable, so a button pulled 4px into it, an addon button or the phone field's country
  * trigger, sits 9px inside the field box: 0px internal and guen, 3px fkas and 7px tkas. A kbd
- * pulled 0.15rem into it sits 10.6px in: 1.4px fkas, 5.4px tkas and 0px guen. A date segment
- * sits behind the border and the 14px comfortable control inset, 15px in: 0px fkas and 1px
+ * pulled 0.15rem into it sits 10.6px in: 1.4px fkas, 5.4px tkas and 0px internal and guen. A date
+ * segment sits behind the border and the 14px comfortable control inset, 15px in: 0px fkas and 1px
  * tkas. The other inner parts keep their dense insets.
  */
 const COMFORTABLE = {
-  internal: { "addon xs": 0, "addon sm": 0, "phone trigger": 0 },
+  internal: { "addon xs": 0, "addon sm": 0, "phone trigger": 0, kbd: 0 },
   fkas: { "addon xs": 3, "addon sm": 3, "phone trigger": 3, kbd: 1.4, "date segment": 0 },
   tkas: { "addon xs": 7, "addon sm": 7, "phone trigger": 7, kbd: 5.4, "date segment": 1 },
   guen: { "addon xs": 0, "addon sm": 0, "phone trigger": 0, kbd: 0 },
@@ -670,7 +695,7 @@ describe("radius roles", () => {
       </div>
     );
     expect(radius(roleNamed("textbox", "Wrapped input"))).toBe(16);
-    expect(radius(roleNamed("button", "Wrapped button"))).toBe(6);
+    expect(radius(roleNamed("button", "Wrapped button"))).toBe(8);
   });
 
   it("rounds every field box with the brand radius, a card's and a selection row's corner, in every external theme", () => {
@@ -738,9 +763,9 @@ describe("radius roles", () => {
     const host = (
       <div role="group" aria-label="Host button" style={{ borderRadius: "var(--radius-button)" }} />
     );
-    // Internal themes alias the button radius to --radius, 0.375rem. fkas sets 1.8125rem.
+    // Internal themes alias the button radius to --radius, 0.5rem. fkas sets 1.8125rem.
     for (const [theme, expected] of [
-      [fkasPrivate, 6],
+      [fkasPrivate, 8],
       [fkasExternal, 29],
     ] as const) {
       stampDocumentTheme(theme, "light");
@@ -761,12 +786,13 @@ describe("a host without themes.css", () => {
       ["card", roleNamed("group", "Host card")],
       ["input", roleNamed("textbox", "Host input")],
       ["frame", roleNamed("group", "Host frame")],
-      ["checkbox", roleNamed("checkbox", "Host checkbox")],
       ["toggle xs", roleNamed("button", "Host toggle xs")],
       ["input group", roleNamed("group", "Host input group")],
     ] as const) {
       expect(radius(element), label).toBe(host);
     }
+    // The Checkbox caps its corner at 4px, below the host's 8px.
+    expect(radius(roleNamed("checkbox", "Host checkbox")), "checkbox").toBe(4);
     // The xs addon sits 5px inside the host's 8px field corner.
     expect(radius(roleNamed("button", "Host addon xs")), "addon xs").toBe(3);
   });

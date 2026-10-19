@@ -67,7 +67,7 @@ describe("artboardStyle", () => {
  * declares its own button literal (tokens/external-palettes.ts) and keeps the field alias.
  */
 const INTERNAL_RADII = {
-  radius: "0.375rem",
+  radius: "0.5rem",
   "radius-button": "var(--radius)",
   "radius-field": "var(--radius)",
   "radius-step": "0px",

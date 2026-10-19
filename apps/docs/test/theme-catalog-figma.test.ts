@@ -144,9 +144,10 @@ describe("Figma DTCG documents", () => {
     });
 
     const internal = figmaDocumentFromScheme(lightScheme("internal-fkas-private"), CATALOG.primitives);
+    // Internal themes keep the default radius, 0.5rem, 8px at the 16px root.
     expect(token<FigmaDimensionToken>(internal.size, "radius")).toEqual({
       $type: "dimension",
-      $value: { value: 6, unit: "px" },
+      $value: { value: 8, unit: "px" },
     });
     expect(token<FigmaDimensionToken>(internal.size, "radius-button")).toEqual({
       $type: "dimension",

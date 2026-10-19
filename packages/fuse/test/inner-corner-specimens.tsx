@@ -21,16 +21,16 @@ export const CASES: readonly (readonly [Variant, ThemeInput, ThemeInput])[] = [
 ];
 
 /**
- * Each theme's `--radius` in px, the corner of an inner part outside any shell: 0.375rem
+ * Each theme's `--radius` in px, the corner of an inner part outside any shell: 0.5rem
  * internal, and 0.75rem for fkas, 1rem for tkas and 0.5rem for guen.
  */
-export const RADIUS = { internal: 6, fkas: 12, tkas: 16, guen: 8 } as const satisfies Record<Variant, number>;
+export const RADIUS = { internal: 8, fkas: 12, tkas: 16, guen: 8 } as const satisfies Record<Variant, number>;
 
 /**
  * Each theme's `rounded-md` in px: `--radius` less one 2px step externally, and `--radius`
  * itself internally.
  */
-export const RADIUS_MD = { internal: 6, fkas: 10, tkas: 14, guen: 6 } as const satisfies Record<
+export const RADIUS_MD = { internal: 8, fkas: 10, tkas: 14, guen: 6 } as const satisfies Record<
   Variant,
   number
 >;
@@ -39,7 +39,7 @@ export const RADIUS_MD = { internal: 6, fkas: 10, tkas: 14, guen: 6 } as const s
 export const RADIUS_LG = RADIUS;
 
 /** Each theme's `rounded-xl` in px: `--radius` plus two 2px steps externally. */
-export const RADIUS_XL = { internal: 6, fkas: 16, tkas: 20, guen: 12 } as const satisfies Record<
+export const RADIUS_XL = { internal: 8, fkas: 16, tkas: 20, guen: 12 } as const satisfies Record<
   Variant,
   number
 >;
