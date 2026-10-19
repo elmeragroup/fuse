@@ -25,8 +25,8 @@ export type TextPropertyIds = ReadonlyMap<string, string>;
 /** A placeholder icon draws a ring this thick, close to a 16px Phosphor glyph's stroke. */
 const ICON_STROKE_WEIGHT = 1.5;
 
-/** The text fields the kit binds to variables. */
-type BoundTextField = "fontFamily" | "fontSize" | "lineHeight";
+/** The text fields that pick a font's style, which the spec sets as a literal. */
+const STYLE_FIELDS: readonly VariableBindableTextField[] = ["fontStyle", "fontWeight"];
 
 /**
  * The variable a text field binds across the whole layer. `boundVariables` lists the aliases
@@ -39,7 +39,7 @@ type BoundTextField = "fontFamily" | "fontSize" | "lineHeight";
 function textBinding(
   run: Run,
   text: TextNode,
-  field: BoundTextField
+  field: VariableBindableTextField
 ): VariableAlias | null | PluginAPI["mixed"] {
   if (text.characters.length > 0) {
     return text.getRangeBoundVariable(0, text.characters.length, field);
@@ -214,15 +214,18 @@ export function requireNewTextFonts(
 function planFont(run: Run, text: TextNode, label: string, spec: TextLayerSpec, fontName: FontName): boolean {
   const holds = text.fontName === run.figma.mixed ? undefined : text.fontName;
   const differs = holds?.family !== fontName.family || holds.style !== fontName.style;
-  // A literal family takes over from any variable that some characters bind, so the unbind
-  // and the font write share one operation.
-  const unbind = spec.fontFamily.kind === "literal" && textBinding(run, text, "fontFamily") !== null;
-  if (!differs && !unbind) {
+  // The spec sets the style as a literal, and the family too unless it binds one. A variable
+  // that any character binds to one of those fields would override the literal in another
+  // theme, so the font write clears it in the same operation.
+  const literalFields: readonly VariableBindableTextField[] =
+    spec.fontFamily.kind === "literal" ? ["fontFamily", ...STYLE_FIELDS] : STYLE_FIELDS;
+  const unbind = literalFields.filter((field) => textBinding(run, text, field) !== null);
+  if (!differs && unbind.length === 0) {
     return false;
   }
   change(run.plan, label, `font → ${fontName.family} ${fontName.style}`, () => {
-    if (unbind) {
-      text.setBoundVariable("fontFamily", null);
+    for (const field of unbind) {
+      text.setBoundVariable(field, null);
     }
     text.fontName = fontName;
   });

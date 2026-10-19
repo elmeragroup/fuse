@@ -113,7 +113,7 @@ function labelStandIn(
   fields: Partial<TextStandIn>,
   ranges: RangeBindings = new Map()
 ): TextNode {
-  const bindings: RangeBindings = new Map([
+  const bindings = new Map<VariableBindableTextField, VariableAlias | PluginAPI["mixed"]>([
     ["fontSize", alias("control-text")],
     ["lineHeight", alias("control-leading")],
     ...ranges,
@@ -143,6 +143,11 @@ function labelStandIn(
     getRangeBoundVariable: (_start, _end, field) => bindings.get(field) ?? null,
     setBoundVariable: (field, variable) => {
       writes.push(variable === null ? `unbind ${field}` : `bind ${field}`);
+      for (const bound of bindings.keys()) {
+        if (bound === field && variable === null) {
+          bindings.delete(bound);
+        }
+      }
     },
     ...fields,
   };
@@ -190,6 +195,15 @@ function changesFor(figma: PluginAPI, label: TextNode, spec: TextLayerSpec = LAB
   return changeLines(plan);
 }
 
+/** Apply the Button's child layers to a stand-in label, and return the lines Apply made. */
+async function applyTo(figma: PluginAPI, label: TextNode): Promise<string[]> {
+  const { plan } = await runPlan(true, (pass) => {
+    planButton(pass, figma, [label]);
+    return Promise.resolve();
+  });
+  return changeLines(plan);
+}
+
 describe("planChildren on a label", () => {
   it("plans nothing for a label that matches the spec", () => {
     const { figma } = figmaStandIn([]);
@@ -219,6 +233,26 @@ describe("planChildren on a label", () => {
     });
     expect(changeLines(plan)).toEqual(["Button / Label: font → Roboto Medium"]);
     expect(writes).toEqual(["unbind fontFamily", "set fontName"]);
+  });
+
+  it("clears a weight binding in the font write, and keeps the font", async () => {
+    const { figma } = figmaStandIn([]);
+    const writes: string[] = [];
+    const label = labelStandIn(writes, {}, new Map([["fontWeight", alias("selection-title-weight")]]));
+    expect(await applyTo(figma, label)).toEqual(["Button / Label: font → Roboto Medium"]);
+    expect(writes).toEqual(["unbind fontWeight", "set fontName"]);
+    expect(label.fontName).toEqual(ROBOTO_MEDIUM);
+    expect(changesFor(figma, label)).toEqual([]);
+  });
+
+  it("clears a style binding that some characters keep, in the font write", async () => {
+    const { figma } = figmaStandIn([]);
+    const writes: string[] = [];
+    const label = labelStandIn(writes, {}, new Map([["fontStyle", figma.mixed]]));
+    expect(await applyTo(figma, label)).toEqual(["Button / Label: font → Roboto Medium"]);
+    expect(writes).toEqual(["unbind fontStyle", "set fontName"]);
+    expect(label.fontName).toEqual(ROBOTO_MEDIUM);
+    expect(changesFor(figma, label)).toEqual([]);
   });
 
   it("rebinds a font family that one character no longer follows", () => {
