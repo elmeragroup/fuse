@@ -25,32 +25,42 @@ export const cardSmallTierClass = cn("[--card-pad:var(--surface-pad-md)]");
 
 /**
  * The boundary every padded part inside a Card's border publishes: the card's `rounded-lg` less
- * its 1px border and the card's tier, `--card-pad`, its inline padding.
+ * its 1px border and the card's tier, `--card-pad`, its inline padding. Each padded part falls
+ * back to the large tier outside a card root, so a section recipe used on its own pads as before.
  */
 const cardTierBoundaryClass = cn(
-  "[--shell-inner:max(0px,--theme(--radius-lg)-1px-var(--card-pad))]",
+  "[--shell-inner:max(0px,--theme(--radius-lg)-1px-var(--card-pad,var(--surface-pad-lg)))]",
   publishShellBoundary
 );
 
 /**
  * A horizontal Card root, which pads its sections itself with the card's tier, `--card-pad`.
  */
-export const cardHorizontalShellClass = cn("p-(--card-pad)", cardTierBoundaryClass);
+export const cardHorizontalShellClass = cn(
+  "p-[var(--card-pad,var(--surface-pad-lg))]",
+  cardTierBoundaryClass
+);
 
 /**
  * A vertical Card's header, content or footer, which pads with the card's tier, `--card-pad`,
  * inside the card.
  */
-export const cardSectionShellClass = cn("p-(--card-pad)", cardTierBoundaryClass);
+export const cardSectionShellClass = cn("p-[var(--card-pad,var(--surface-pad-lg))]", cardTierBoundaryClass);
 
 /**
  * The TextField `card` box: a default Card root that pads inline with its tier, the large surface
  * tier, and 16px on the block axis.
  */
-export const textFieldCardShellClass = cn("px-(--card-pad) py-4", cardTierBoundaryClass);
+export const textFieldCardShellClass = cn(
+  "px-[var(--card-pad,var(--surface-pad-lg))] py-4",
+  cardTierBoundaryClass
+);
 
 /**
  * The CheckboxCard content: a default Card's section that pads inline with its tier, the large
  * surface tier, and 12px on the block axis.
  */
-export const checkboxCardContentShellClass = cn("px-(--card-pad) py-3", cardTierBoundaryClass);
+export const checkboxCardContentShellClass = cn(
+  "px-[var(--card-pad,var(--surface-pad-lg))] py-3",
+  cardTierBoundaryClass
+);

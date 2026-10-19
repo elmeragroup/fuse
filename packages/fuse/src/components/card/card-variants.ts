@@ -40,7 +40,10 @@ export const cardVariants = tv({
         cardFooter: [cardSectionShellClass, "pt-0"],
       },
       horizontal: {
-        base: [cardHorizontalShellClass, "flex-row flex-wrap items-start gap-(--card-pad)"],
+        base: [
+          cardHorizontalShellClass,
+          "flex-row flex-wrap items-start gap-[var(--card-pad,var(--surface-pad-lg))]",
+        ],
         cardHeader: "min-w-0 flex-[2_1_16rem] wrap-anywhere",
         cardContent: "min-w-0 flex-[1_1_12rem] wrap-anywhere",
         cardFooter: "min-w-0 flex-[1_1_8rem] wrap-anywhere",

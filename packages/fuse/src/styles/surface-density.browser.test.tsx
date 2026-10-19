@@ -260,6 +260,13 @@ describe("surface metrics follow document density", () => {
         expect(block.top - inner.top - 1, "inner top").toBe(SURFACE.lg[density]);
       });
 
+      it("pads a Card section outside a card root with the large tier", () => {
+        stampDensity(density);
+        renderThemed(<Card.Header role="group" aria-label="Loose header" />);
+        const pad = SURFACE.lg[density];
+        expect(paddings(roleNamed("group", "Loose header"))).toEqual([pad, pad, pad, pad]);
+      });
+
       it("pads Empty with the large tier, doubled from md up", async () => {
         stampDensity(density);
         await page.viewport(640, 800);

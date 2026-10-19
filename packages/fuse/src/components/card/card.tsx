@@ -15,8 +15,8 @@ type CardRootProps = CardDivProps & {
   /**
    * The card's surface tier, which pads its sections, gaps them and sets their inner corner.
    * `default` takes the large tier, `--surface-pad-lg`, for content. `sm` takes the medium tier,
-   * `--surface-pad-md`, for a card that holds rows, so its text lines up with the Items,
-   * Accordion items and selection items around it.
+   * `--surface-pad-md`, for a card that holds rows, so its text lines up with the Items and
+   * Accordion items around it.
    */
   size?: keyof typeof cardVariants.variants.size;
 };

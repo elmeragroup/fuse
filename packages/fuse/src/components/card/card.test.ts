@@ -42,20 +42,12 @@ describe("cardVariants", () => {
         ["cardDescription", "text-muted-foreground"],
         ["cardAction", "col-start-2"],
         ["base", "[--card-pad:var(--surface-pad-lg)]"],
-        ["cardContent", "p-(--card-pad)"],
+        ["cardContent", "p-[var(--card-pad,var(--surface-pad-lg))]"],
         ["cardFooter", "items-center"],
       ],
       [],
     ],
-    [
-      "sm",
-      { size: "sm" },
-      [
-        ["base", "[--card-pad:var(--surface-pad-md)]"],
-        ["cardHeader", "p-(--card-pad)"],
-      ],
-      [["base", "--surface-pad-lg"]],
-    ],
+    ["sm", { size: "sm" }, [["base", "[--card-pad:var(--surface-pad-md)]"]], [["base", "--surface-pad-lg"]]],
     [
       "horizontal",
       { direction: "horizontal" },
@@ -65,7 +57,7 @@ describe("cardVariants", () => {
         ["cardHeader", "grid"],
         ["cardTitle", "text-xl"],
       ],
-      [["cardContent", "p-(--card-pad)"]],
+      [["cardContent", "p-[var(--card-pad,var(--surface-pad-lg))]"]],
     ],
   ])("resolves every slot for the %s card", (_name, props, present, absent) => {
     const slots = cardVariants(props);

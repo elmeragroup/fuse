@@ -49,11 +49,11 @@ describe("textFieldVariants", () => {
     expect(card.base()).not.toContain("border-card-border");
     expect(card.base()).toContain("border-border");
     expect(card.base()).toContain("gap-0");
-    // The field box keeps a default card's large tier, which it pads with and subtracts.
-    expect(card.base()).toContain("[--card-pad:var(--surface-pad-lg)]");
-    expect(card.base()).toContain("px-(--card-pad)");
+    expect(card.base()).toContain("px-[var(--card-pad,var(--surface-pad-lg))]");
     expect(card.base()).toContain("py-4");
-    expect(card.base()).toContain("[--shell-inner:max(0px,--theme(--radius-lg)-1px-var(--card-pad))]");
+    expect(card.base()).toContain(
+      "[--shell-inner:max(0px,--theme(--radius-lg)-1px-var(--card-pad,var(--surface-pad-lg)))]"
+    );
     expect(card.fieldGroup()).toContain("w-full");
     expect(card.fieldGroup()).toContain("border-none");
     expect(card.input()).toContain("text-lg");

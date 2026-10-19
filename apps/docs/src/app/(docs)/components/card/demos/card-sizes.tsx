@@ -10,8 +10,7 @@ const ROWS = [
 
 /**
  * A default card pads with the large surface tier. A small card pads with the medium tier, so a
- * card of label and value rows lines up with the Items, Accordion items and selection items
- * around it.
+ * card of label and value rows lines up with the Items and Accordion items around it.
  */
 export function CardSizes() {
   return (
