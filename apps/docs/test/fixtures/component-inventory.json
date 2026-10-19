@@ -212,7 +212,8 @@
     "demos": [
       "description-list-basic.tsx",
       "description-list-multi-details.tsx",
-      "description-list-responsive.tsx"
+      "description-list-responsive.tsx",
+      "description-list-inline.tsx"
     ]
   },
   "dialog": {

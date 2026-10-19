@@ -136,8 +136,11 @@ export const PART_DENSITY = {
   "description-list": "layout",
   "description-list-heading": "fixed",
   "description-list-content": "layout",
+  "description-list-content[data-layout=inline]": "surface",
   "description-list-term": "row",
+  "description-list-term:where([data-layout=inline] *)": "layout",
   "description-list-details": "row",
+  "description-list-details:where([data-layout=inline] *)": "layout",
 
   dialog: "layout",
   "dialog-trigger": "control",

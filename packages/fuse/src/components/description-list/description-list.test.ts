@@ -69,7 +69,7 @@ describe("DescriptionList structure", () => {
     [
       "Term",
       "font-medium",
-      "text-muted-foreground",
+      "col-start-1",
       undefined,
       (className: string) => createElement(DescriptionList.Term, { className }, "Name"),
     ],
@@ -91,10 +91,46 @@ describe("DescriptionList structure", () => {
 
   it("paints from tokens without a dark variant or raw palette utility", () => {
     const html = markup();
-    expect(html).toContain("text-muted-foreground");
+    expect(html).toContain("var(--muted-foreground)");
     expect(html).toContain("text-foreground");
     expect(html).not.toContain("dark:");
     expect(html).not.toContain("destructive");
     expect(html).not.toMatch(RAW_PALETTE_RE);
+  });
+});
+
+describe("DescriptionList layouts", () => {
+  function list(layout?: "responsive" | "inline"): string {
+    return renderToStaticMarkup(
+      createElement(
+        DescriptionList.Content,
+        layout === undefined ? null : { layout },
+        createElement(DescriptionList.Term, null, "Start date"),
+        createElement(DescriptionList.Details, null, "1 November 2026")
+      )
+    );
+  }
+
+  it.each([
+    [undefined, "responsive", "sm:grid-cols-[min(50%,calc(var(--spacing)*80))_auto]", "fit-content(60%)"],
+    ["responsive", "responsive", "sm:grid-cols-[min(50%,calc(var(--spacing)*80))_auto]", "fit-content(60%)"],
+    ["inline", "inline", "grid-cols-[minmax(0,1fr)_fit-content(60%)]", "sm:grid-cols-"],
+  ] as const)(
+    "writes layout=%s as data-layout=%s with its own columns",
+    (layout, written, present, absent) => {
+      const html = list(layout);
+      expect(html).toContain(`data-layout="${written}"`);
+      expect(html).toContain(present);
+      expect(html).not.toContain(absent);
+      expect(html).not.toContain(" layout=");
+    }
+  );
+
+  it("lets a consumer colour on a term replace the term colour the list publishes", () => {
+    const html = renderToStaticMarkup(
+      createElement(DescriptionList.Term, { className: "text-muted-foreground" }, "Start date")
+    );
+    expect(html).toContain("text-muted-foreground");
+    expect(html).not.toContain("--description-list-term");
   });
 });
