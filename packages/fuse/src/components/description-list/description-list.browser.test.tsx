@@ -345,6 +345,52 @@ describe("DescriptionList", () => {
       expect(getComputedStyle(primary).color).toBe(cssVarColor(primary, "--primary"));
     });
 
+    it.each(DENSITIES)(
+      "keeps a responsive list nested in an inline list stacked and padded as its own at phone width (%s)",
+      async (density) => {
+        stampDensity(density);
+        await page.viewport(390, 800);
+        renderThemed(
+          <DescriptionList.Content layout="inline" style={{ width: 360 }}>
+            <DescriptionList.Term>Outer</DescriptionList.Term>
+            <DescriptionList.Details>
+              <DescriptionList.Content>
+                <DescriptionList.Term>Nested term</DescriptionList.Term>
+                <DescriptionList.Details>Nested value</DescriptionList.Details>
+              </DescriptionList.Content>
+            </DescriptionList.Details>
+          </DescriptionList.Content>
+        );
+        // --row-py written out by hand: 6px dense, 8px comfortable.
+        const rowPy = { dense: 6, comfortable: 8 }[density];
+        const term = textNamed("Nested term");
+        const details = textNamed("Nested value");
+        expect(px(getComputedStyle(term).paddingTop), "term padding").toBe(rowPy);
+        expect(px(getComputedStyle(details).paddingTop), "details padding").toBe(rowPy);
+        // Below `sm` the responsive list is one column: the details sits under its term.
+        expect(details.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+          term.getBoundingClientRect().bottom - 1
+        );
+      }
+    );
+
+    it.each(DENSITIES)(
+      "breaks a long one-word term inside its column instead of under its value (%s)",
+      (density) => {
+        stampDensity(density);
+        renderThemed(
+          <DescriptionList.Content layout="inline" style={{ width: 320 }}>
+            <DescriptionList.Term>Installasjonsadresseopplysninger</DescriptionList.Term>
+            <DescriptionList.Details>Storgata 1, inngang B, 3611 Kongsberg</DescriptionList.Details>
+          </DescriptionList.Content>
+        );
+        const term = boxOf("Installasjonsadresseopplysninger");
+        const details = boxOf("Storgata 1, inngang B, 3611 Kongsberg");
+        expect(term.right).toBeLessThanOrEqual(details.left);
+        expect(term.top, "one row").toBeCloseTo(details.top, 0);
+      }
+    );
+
     it("mutes a responsive list's terms inside an inline list", () => {
       renderThemed(
         <DescriptionList.Content layout="inline" style={{ width: 400 }}>
