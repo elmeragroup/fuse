@@ -23,7 +23,9 @@ export function CardSectionButton() {
         <CaretRight aria-hidden className="size-4 shrink-0" />
       </Card.Section>
       <Card.Section>
-        <p role="status">{declined ? "Continuing without home insurance." : ""}</p>
+        <p role="status">
+          {declined ? "Continuing without home insurance." : "You can add it later from your account."}
+        </p>
       </Card.Section>
     </Card.Root>
   );
