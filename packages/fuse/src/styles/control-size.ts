@@ -17,7 +17,7 @@ import { tv } from "./tv";
  * child sits.
  *
  * Apart from the icon edge, every size class is an unprefixed utility, so a consumer's
- * `className` utility of the same family (`h-12`, `px-4`) replaces it through tailwind-merge.
+ * `className` utility of the same family (`h-12`, `px-3`) replaces it through tailwind-merge.
  *
  * The recipe paints size only. The state face (`state-face.ts`) is a separate fragment,
  * and each control recipe composes both.
