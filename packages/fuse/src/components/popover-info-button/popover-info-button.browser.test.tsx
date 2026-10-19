@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
+import { Popover } from "@elmeragroup/fuse/popover";
 import { PopoverInfoButton } from "@elmeragroup/fuse/popover-info-button";
 
 import "../../../dist/styles.css";
@@ -41,18 +42,44 @@ async function openInfo(name = "More information"): Promise<HTMLElement> {
 }
 
 describe("PopoverInfoButton", () => {
-  it("renders the dictionary default in all four locales and honors an explicit label", () => {
+  // Oracle: the dictionary copy above, written out per locale. The same name labels the trigger
+  // and the dialog it opens, because a plain body carries no `Popover.Title`.
+  it("names the trigger and the dialog with the dictionary default in all four locales", async () => {
     for (const locale of SUPPORTED_LOCALES) {
+      const name = MORE_INFORMATION_COPY[locale];
       const { unmount } = renderInfo(<PopoverInfoButton>{EXPLAINER}</PopoverInfoButton>, locale);
-      expect(
-        page.getByRole("button", { name: MORE_INFORMATION_COPY[locale], exact: true }).query()
-      ).not.toBeNull();
+      expect(page.getByRole("button", { name, exact: true }).query(), locale).not.toBeNull();
+
+      await openInfo(name);
+      expect(page.getByRole("dialog", { name, exact: true }).query(), locale).not.toBeNull();
       unmount();
     }
+  });
 
+  it("names the trigger and the dialog with an explicit label", async () => {
     renderInfo(<PopoverInfoButton label="About grid rent">{EXPLAINER}</PopoverInfoButton>, "nb-NO");
     expect(page.getByRole("button", { name: "About grid rent", exact: true }).query()).not.toBeNull();
     expect(page.getByRole("button", { name: "Mer informasjon", exact: true }).query()).toBeNull();
+
+    await openInfo("About grid rent");
+    expect(page.getByRole("dialog", { name: "About grid rent", exact: true }).query()).not.toBeNull();
+    expect(page.getByRole("dialog", { name: "Mer informasjon", exact: true }).query()).toBeNull();
+  });
+
+  // Oracle: the Title text. `aria-labelledby` outranks `aria-label` in the accessible-name
+  // computation, so a mounted Title names the dialog while the label still names the trigger.
+  it("lets a Popover.Title name the dialog over the label", async () => {
+    renderInfo(
+      <PopoverInfoButton label="About grid rent">
+        <Popover.Header>
+          <Popover.Title>What is grid rent?</Popover.Title>
+          <Popover.Description>{EXPLAINER}</Popover.Description>
+        </Popover.Header>
+      </PopoverInfoButton>
+    );
+    await openInfo("About grid rent");
+    expect(page.getByRole("dialog", { name: "What is grid rent?", exact: true }).query()).not.toBeNull();
+    expect(page.getByRole("dialog", { name: "About grid rent", exact: true }).query()).toBeNull();
   });
 
   it("opens from click and Enter, toggles aria-expanded, and closes on Escape with focus return", async () => {

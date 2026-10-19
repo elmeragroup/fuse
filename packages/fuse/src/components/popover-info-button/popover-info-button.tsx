@@ -65,8 +65,9 @@ export type PopoverInfoButtonProps = DistributiveOmit<ButtonProps, "children" | 
     /** Popover body. */
     children: ReactNode;
     /**
-     * Trigger accessible name (`aria-label`). Defaults to the locale dictionary;
-     * an explicit value wins.
+     * Accessible name (`aria-label`) of the trigger and of the popup dialog. Defaults to the
+     * locale dictionary; an explicit value wins. A `Popover.Title` in `children` names the
+     * dialog instead.
      */
     label?: string;
     /**
@@ -85,7 +86,10 @@ export type PopoverInfoButtonProps = DistributiveOmit<ButtonProps, "children" | 
  * Ghost info button that opens a Popover. It defaults to the `icon-inline` square, as tall as
  * the line it sits in, so beside a `Field.Label`'s text it centres on the label's line and
  * keeps the label one line tall. Pass an `icon*` size for a standalone control-sized trigger.
- * Client — Popover state and localized trigger name.
+ * The resolved `label`, by default the localized "More information", names both the trigger and
+ * the popup dialog, so a body without a `Popover.Title` still opens a named dialog; a
+ * `Popover.Title` names the dialog when present.
+ * Client — Popover state and localized name.
  */
 export function PopoverInfoButton({
   children,
@@ -119,7 +123,15 @@ export function PopoverInfoButton({
       <PopoverTrigger render={trigger}>
         <Info aria-hidden="true" className={icon()} />
       </PopoverTrigger>
-      <PopoverContent side="right" sideOffset={8} showArrow className={content()} container={container}>
+      {/* Base UI names the dialog only through a mounted `Popover.Title` (`aria-labelledby`).
+          `aria-label` is the fallback: labelledby still wins when a Title is present. */}
+      <PopoverContent
+        side="right"
+        sideOffset={8}
+        showArrow
+        aria-label={accessibleName}
+        className={content()}
+        container={container}>
         {children}
       </PopoverContent>
     </PopoverRoot>
