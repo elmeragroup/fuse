@@ -19,6 +19,15 @@
           "defaultValue": null,
           "description": "",
           "required": false
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "\"default\" | \"sm\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "The card's surface tier, which pads its sections, gaps them and sets their inner corner. `default` takes the large tier, `--surface-pad-lg`, for content. `sm` takes the medium tier, `--surface-pad-md`, for a card that holds rows, so its text lines up with the Items, Accordion items and selection items around it.",
+          "required": false
         }
       ]
     },

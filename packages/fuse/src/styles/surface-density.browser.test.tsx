@@ -184,10 +184,13 @@ describe("surface metrics follow document density", () => {
         expect(px(style.paddingRight), "end").toBe(ROW[density].inset);
       });
 
-      it("pads Card sections with the large tier and gaps them by it", () => {
+      it.each([
+        ["a default Card", undefined, "lg"],
+        ["a small Card", "sm", "md"],
+      ] as const)("pads the sections of %s with the %s tier and gaps them by it", (_name, size, tier) => {
         stampDensity(density);
         renderThemed(
-          <Card.Root role="group" aria-label="Plan">
+          <Card.Root size={size} role="group" aria-label="Plan">
             <Card.Header>
               <div role="group" aria-label="Header block" className="h-4" />
             </Card.Header>
@@ -199,36 +202,62 @@ describe("surface metrics follow document density", () => {
             </Card.Footer>
           </Card.Root>
         );
-        const tier = SURFACE.lg[density];
+        const pad = SURFACE[tier][density];
         const card = roleNamed("group", "Plan").getBoundingClientRect();
         const header = roleNamed("group", "Header block").getBoundingClientRect();
         const content = roleNamed("group", "Content block").getBoundingClientRect();
         const footer = roleNamed("group", "Footer block").getBoundingClientRect();
         // The card's 1px border sits outside each section's padding.
-        expect(header.top - card.top - 1, "header top").toBe(tier);
-        expect(header.left - card.left - 1, "header start").toBe(tier);
-        expect(content.top - header.bottom, "header to content").toBe(tier);
-        expect(footer.top - content.bottom, "content to footer").toBe(tier);
-        expect(card.bottom - 1 - footer.bottom, "footer bottom").toBe(tier);
+        expect(header.top - card.top - 1, "header top").toBe(pad);
+        expect(header.left - card.left - 1, "header start").toBe(pad);
+        expect(card.right - 1 - header.right, "header end").toBe(pad);
+        expect(content.top - header.bottom, "header to content").toBe(pad);
+        expect(footer.top - content.bottom, "content to footer").toBe(pad);
+        expect(card.bottom - 1 - footer.bottom, "footer bottom").toBe(pad);
       });
 
-      it("pads a horizontal Card and gaps its sections with the large tier", () => {
+      it.each([
+        ["a horizontal Card", undefined, "lg"],
+        ["a small horizontal Card", "sm", "md"],
+      ] as const)("pads %s and gaps its sections with the %s tier", (_name, size, tier) => {
         stampDensity(density);
         renderThemed(
           <div style={{ width: "960px" }}>
-            <Card.Root direction="horizontal" role="group" aria-label="Wide plan">
+            <Card.Root direction="horizontal" size={size} role="group" aria-label="Wide plan">
               <Card.Header direction="horizontal" role="group" aria-label="Wide header" />
               <Card.Content direction="horizontal" role="group" aria-label="Wide content" />
             </Card.Root>
           </div>
         );
-        const tier = SURFACE.lg[density];
+        const pad = SURFACE[tier][density];
         const card = roleNamed("group", "Wide plan").getBoundingClientRect();
         const header = roleNamed("group", "Wide header").getBoundingClientRect();
         const content = roleNamed("group", "Wide content").getBoundingClientRect();
-        expect(header.left - card.left - 1, "start").toBe(tier);
+        expect(header.left - card.left - 1, "start").toBe(pad);
+        expect(header.top - card.top - 1, "top").toBe(pad);
         expect(header.top, "one row").toBe(content.top);
-        expect(content.left - header.right, "gap").toBe(tier);
+        expect(content.left - header.right, "gap").toBe(pad);
+      });
+
+      it("pads a default Card nested in a small Card with the large tier", () => {
+        stampDensity(density);
+        renderThemed(
+          <Card.Root size="sm" role="group" aria-label="Outer">
+            <Card.Content>
+              <Card.Root role="group" aria-label="Inner">
+                <Card.Header>
+                  <div role="group" aria-label="Inner block" className="h-4" />
+                </Card.Header>
+              </Card.Root>
+            </Card.Content>
+          </Card.Root>
+        );
+        const outer = roleNamed("group", "Outer").getBoundingClientRect();
+        const inner = roleNamed("group", "Inner").getBoundingClientRect();
+        const block = roleNamed("group", "Inner block").getBoundingClientRect();
+        expect(inner.left - outer.left - 1, "outer start").toBe(SURFACE.md[density]);
+        expect(block.left - inner.left - 1, "inner start").toBe(SURFACE.lg[density]);
+        expect(block.top - inner.top - 1, "inner top").toBe(SURFACE.lg[density]);
       });
 
       it("pads Empty with the large tier, doubled from md up", async () => {

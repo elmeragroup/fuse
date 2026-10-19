@@ -67,6 +67,7 @@ const PAIR_NAMES = [
   "sidebar action",
   "preset",
   "card block",
+  "small card block",
   "toolbar block",
   "dialog block",
 ] as const;
@@ -79,6 +80,7 @@ const BOX_PAIRS = [
   "frame panel",
   "panel block",
   "card block",
+  "small card block",
   "toolbar block",
 ] as const satisfies readonly PairName[];
 
@@ -111,7 +113,8 @@ const SURFACE_PAD = {
  * 4px (the small tier) inside the Frame's `rounded-xl`, a block its border and the large tier
  * inside a panel, a floating Sidebar row 4px inside its `rounded-lg` surface with the menu action
  * 4px inside the row, a preset its 1px border and 4px inside the popover's `rounded-md`, a block
- * the border and the large tier inside a Card, a block its 1px border and 4px inside a Toolbar's
+ * the border and the large tier inside a Card and the border and the medium tier inside a small
+ * Card, a block its 1px border and 4px inside a Toolbar's
  * `rounded-lg`, and the large tier inside a Dialog's `rounded-xl`.
  * The field parts and tabs `radius-roles.browser.test.tsx` pins are not repeated here.
  */
@@ -124,6 +127,7 @@ const EXPECTED = {
   "sidebar action": (v) => floor(floor(RADIUS_LG[v] - 4) - 4),
   preset: (v) => floor(RADIUS_MD[v] - 1 - 4),
   "card block": (v, d) => floor(RADIUS_LG[v] - 1 - SURFACE_PAD.lg[d]),
+  "small card block": (v, d) => floor(RADIUS_LG[v] - 1 - SURFACE_PAD.md[d]),
   "toolbar block": (v) => floor(RADIUS_LG[v] - 1 - 4),
   "dialog block": (v, d) => floor(RADIUS_XL[v] - SURFACE_PAD.lg[d]),
 } as const satisfies Record<PairName, (variant: Variant, density: Density) => number>;
@@ -180,6 +184,11 @@ function SurfaceParts(): ReactElement {
           <div role="group" aria-label="Card block" className="rounded-inner" />
         </Card.Content>
       </Card.Root>
+      <Card.Root size="sm" role="group" aria-label="Small card">
+        <Card.Content>
+          <div role="group" aria-label="Small card block" className="rounded-inner" />
+        </Card.Content>
+      </Card.Root>
       <Toolbar.Root aria-label="Toolbar">
         <div role="group" aria-label="Toolbar block" className="rounded-inner" />
       </Toolbar.Root>
@@ -208,6 +217,11 @@ const FIND = {
   "card block": () => ({
     part: roleNamed("group", "Card block"),
     shell: roleNamed("group", "Card"),
+    edge: "start",
+  }),
+  "small card block": () => ({
+    part: roleNamed("group", "Small card block"),
+    shell: roleNamed("group", "Small card"),
     edge: "start",
   }),
   "toolbar block": () => ({

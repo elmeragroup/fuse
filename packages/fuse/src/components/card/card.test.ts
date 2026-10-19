@@ -28,7 +28,7 @@ const DESCRIPTION_SIZES = ["xs", "sm", "default", "lg", "xl", "2xl"] as const;
 
 describe("cardVariants", () => {
   type Slot = keyof ReturnType<typeof cardVariants>;
-  it.each<[string, { direction?: "horizontal" }, [Slot, string][], [Slot, string][]]>([
+  it.each<[string, { direction?: "horizontal"; size?: "sm" }, [Slot, string][], [Slot, string][]]>([
     [
       "default",
       {},
@@ -41,10 +41,20 @@ describe("cardVariants", () => {
         ["cardTitle", "font-semibold"],
         ["cardDescription", "text-muted-foreground"],
         ["cardAction", "col-start-2"],
-        ["cardContent", "p-(--surface-pad-lg)"],
+        ["base", "[--card-pad:var(--surface-pad-lg)]"],
+        ["cardContent", "p-(--card-pad)"],
         ["cardFooter", "items-center"],
       ],
       [],
+    ],
+    [
+      "sm",
+      { size: "sm" },
+      [
+        ["base", "[--card-pad:var(--surface-pad-md)]"],
+        ["cardHeader", "p-(--card-pad)"],
+      ],
+      [["base", "--surface-pad-lg"]],
     ],
     [
       "horizontal",
@@ -55,9 +65,9 @@ describe("cardVariants", () => {
         ["cardHeader", "grid"],
         ["cardTitle", "text-xl"],
       ],
-      [["cardContent", "p-(--surface-pad-lg)"]],
+      [["cardContent", "p-(--card-pad)"]],
     ],
-  ])("resolves every slot for the %s direction", (_name, props, present, absent) => {
+  ])("resolves every slot for the %s card", (_name, props, present, absent) => {
     const slots = cardVariants(props);
     for (const [slot, token] of present) {
       expect(slots[slot](), slot).toContain(token);

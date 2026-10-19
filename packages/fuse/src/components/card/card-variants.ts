@@ -1,7 +1,9 @@
 import {
+  cardDefaultTierClass,
   cardHorizontalShellClass,
   cardSectionShellClass,
   cardShellClass,
+  cardSmallTierClass,
 } from "../../styles/inner-corner/card";
 import { tv } from "../../styles/tv";
 
@@ -12,10 +14,11 @@ import { tv } from "../../styles/tv";
  * composers pin `border-border` over it, since a field box and a control keep a visible edge.
  * Horizontal cards keep their header text in a grid and wrap whole sections when
  * the container cannot fit them side by side.
- * One axis only — the external ref's surface/padding axes are decomposed away.
- * Sections pad with the large surface tier, `--surface-pad-lg`, and content and footer drop
- * their top padding, so the tier is also the gap between sections.
- * A horizontal card pads and gaps its sections with the same tier.
+ * The external ref's surface/padding axes are decomposed away into `direction` and `size`.
+ * `size` sets the card's surface tier on the base as `--card-pad`: the large tier,
+ * `--surface-pad-lg`, by default and the medium tier, `--surface-pad-md`, at `sm`. Sections pad
+ * with it and content and footer drop their top padding, so the tier is also the gap between
+ * sections. A horizontal card pads and gaps its sections with the same tier.
  */
 export const cardVariants = tv({
   slots: {
@@ -37,16 +40,21 @@ export const cardVariants = tv({
         cardFooter: [cardSectionShellClass, "pt-0"],
       },
       horizontal: {
-        base: [cardHorizontalShellClass, "flex-row flex-wrap items-start gap-(--surface-pad-lg)"],
+        base: [cardHorizontalShellClass, "flex-row flex-wrap items-start gap-(--card-pad)"],
         cardHeader: "min-w-0 flex-[2_1_16rem] wrap-anywhere",
         cardContent: "min-w-0 flex-[1_1_12rem] wrap-anywhere",
         cardFooter: "min-w-0 flex-[1_1_8rem] wrap-anywhere",
         cardTitle: "text-xl",
       },
     },
+    size: {
+      default: { base: cardDefaultTierClass },
+      sm: { base: cardSmallTierClass },
+    },
   },
   defaultVariants: {
     direction: "vertical",
+    size: "default",
   },
 });
 

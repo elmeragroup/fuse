@@ -13,34 +13,44 @@ export const cardShellClass = cn(
 );
 
 /**
- * The boundary every large-tier part inside a Card's border publishes: the card's `rounded-lg`
- * less its 1px border and the large surface tier, `--surface-pad-lg`, its inline padding.
+ * A default Card's tier, published on the root as the private `--card-pad`: the large surface
+ * tier, `--surface-pad-lg`, for content surfaces. Every root sets it, so a nested card resets it.
  */
-const cardLargeTierBoundaryClass = cn(
-  "[--shell-inner:max(0px,--theme(--radius-lg)-1px-var(--surface-pad-lg))]",
+export const cardDefaultTierClass = cn("[--card-pad:var(--surface-pad-lg)]");
+
+/**
+ * A small Card's tier: the medium surface tier, `--surface-pad-md`, for cards that hold rows.
+ */
+export const cardSmallTierClass = cn("[--card-pad:var(--surface-pad-md)]");
+
+/**
+ * The boundary every padded part inside a Card's border publishes: the card's `rounded-lg` less
+ * its 1px border and the card's tier, `--card-pad`, its inline padding.
+ */
+const cardTierBoundaryClass = cn(
+  "[--shell-inner:max(0px,--theme(--radius-lg)-1px-var(--card-pad))]",
   publishShellBoundary
 );
 
 /**
- * A horizontal Card root, which pads its sections itself with the large surface tier,
- * `--surface-pad-lg`.
+ * A horizontal Card root, which pads its sections itself with the card's tier, `--card-pad`.
  */
-export const cardHorizontalShellClass = cn("p-(--surface-pad-lg)", cardLargeTierBoundaryClass);
+export const cardHorizontalShellClass = cn("p-(--card-pad)", cardTierBoundaryClass);
 
 /**
- * A vertical Card's header, content or footer, which pads with the large surface tier,
- * `--surface-pad-lg`, inside the card.
+ * A vertical Card's header, content or footer, which pads with the card's tier, `--card-pad`,
+ * inside the card.
  */
-export const cardSectionShellClass = cn("p-(--surface-pad-lg)", cardLargeTierBoundaryClass);
+export const cardSectionShellClass = cn("p-(--card-pad)", cardTierBoundaryClass);
 
 /**
- * The TextField `card` box: a Card root that pads inline with the large surface tier and 16px
- * on the block axis.
+ * The TextField `card` box: a default Card root that pads inline with its tier, the large surface
+ * tier, and 16px on the block axis.
  */
-export const textFieldCardShellClass = cn("px-(--surface-pad-lg) py-4", cardLargeTierBoundaryClass);
+export const textFieldCardShellClass = cn("px-(--card-pad) py-4", cardTierBoundaryClass);
 
 /**
- * The CheckboxCard content: a Card section that pads inline with the large surface tier and
- * 12px on the block axis.
+ * The CheckboxCard content: a default Card's section that pads inline with its tier, the large
+ * surface tier, and 12px on the block axis.
  */
-export const checkboxCardContentShellClass = cn("px-(--surface-pad-lg) py-3", cardLargeTierBoundaryClass);
+export const checkboxCardContentShellClass = cn("px-(--card-pad) py-3", cardTierBoundaryClass);

@@ -130,6 +130,18 @@ describe("Card", () => {
     }
   );
 
+  it.each([
+    [undefined, "default"],
+    ["sm", "sm"],
+  ] as const)("writes size=%s on the root as data-size=%s", (size, written) => {
+    renderThemed(
+      <Card.Root size={size}>
+        <Card.Content>Body</Card.Content>
+      </Card.Root>
+    );
+    expect(slot("card").dataset.size).toBe(written);
+  });
+
   it("renders the title icon before the text with the icon gap", () => {
     renderThemed(
       <Card.Root>
