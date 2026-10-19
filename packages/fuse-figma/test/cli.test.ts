@@ -119,9 +119,9 @@ describe("fuse-figma sync", () => {
       // 1.8125rem at the 16px root.
       assert.strictEqual(figma.resolve("Fuse tokens", "radius-button", light("external-fkas-private")), 29);
       // Fields round with the theme's radius in both variants: 0.75rem for external fkas and
-      // 0.375rem internally.
+      // 0.5rem internally.
       assert.strictEqual(figma.resolve("Fuse tokens", "radius-field", light("external-fkas-private")), 12);
-      assert.strictEqual(figma.resolve("Fuse tokens", "radius-field", light("internal-fkas-private")), 6);
+      assert.strictEqual(figma.resolve("Fuse tokens", "radius-field", light("internal-fkas-private")), 8);
       assert.strictEqual(
         figma.resolve("Fuse tokens", "font-heading", light("external-fkas-private")),
         "Neo Sans"
@@ -274,8 +274,8 @@ describe("fuse-figma sync", () => {
       const rungs = (modes: Readonly<Record<string, string>>) =>
         ["radius-xs", "radius-sm", "radius-md", "radius-lg", "radius-xl"].map((rung) => radius(rung, modes));
 
-      // Internal themes inherit --radius: 0.375rem, 6px, and step 0px, so every rung is 6px.
-      assert.deepStrictEqual(rungs(light("internal-fkas-private")), [6, 6, 6, 6, 6]);
+      // Internal themes inherit --radius: 0.5rem, 8px, and step 0px, so every rung is 8px.
+      assert.deepStrictEqual(rungs(light("internal-fkas-private")), [8, 8, 8, 8, 8]);
       // External themes step 2px. external-fkas-private sets --radius: 0.75rem, 12px at the
       // 16px root, so the rungs are 12 - 3 * 2, 12 - 2 * 2, 12 - 2, 12 and 12 + 2 * 2.
       assert.strictEqual(radius("radius", light("external-fkas-private")), 12);

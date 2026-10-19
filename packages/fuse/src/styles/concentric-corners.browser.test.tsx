@@ -56,21 +56,21 @@ type Family = (typeof FAMILY_NAMES)[number];
  * panel nested in another sits behind both contents' 4px, 8px in all. A NavigationMenu popup
  * mounted inside another's Content is a shell of its own and insets its rows 4px. The Select
  * popup rounds with `rounded-lg` (`--radius`) and pads nothing, and a Select group pads 4px.
- * `--radius` is 6px internal, and external 12px for fkas, 16px for tkas and 8px for guen, so
- * `rounded-md` is 6px internal, 10px for fkas, 14px for tkas and 6px for guen.
+ * `--radius` is 8px internal, and external 12px for fkas, 16px for tkas and 8px for guen, so
+ * `rounded-md` is 8px internal, 10px for fkas, 14px for tkas and 6px for guen.
  */
 const EXPECTED = {
   internal: {
-    dropdown: 2,
-    submenu: 2,
-    combobox: 2,
-    "combobox search": 2,
-    "combobox empty": 6,
-    "select group": 2,
-    "select ungrouped": 6,
-    navigation: 2,
+    dropdown: 4,
+    submenu: 4,
+    combobox: 4,
+    "combobox search": 4,
+    "combobox empty": 8,
+    "select group": 4,
+    "select ungrouped": 8,
+    navigation: 4,
     "navigation nested": 0,
-    "navigation nested popup": 2,
+    "navigation nested popup": 4,
   },
   fkas: {
     dropdown: 6,
@@ -112,9 +112,9 @@ const EXPECTED = {
 
 /**
  * A free-standing vertical NavigationMenu row's outer `rounded-sm` corner in px: `--radius` less
- * two 2px external steps, so 6px internal, 8px for fkas, 12px for tkas and 4px for guen.
+ * two 2px external steps, so 8px internal, 8px for fkas, 12px for tkas and 4px for guen.
  */
-const OUTER_ROW = { internal: 6, fkas: 8, tkas: 12, guen: 4 } as const satisfies Record<Variant, number>;
+const OUTER_ROW = { internal: 8, fkas: 8, tkas: 12, guen: 4 } as const satisfies Record<Variant, number>;
 
 /**
  * A row two 4px panels deep, in px: `rounded-md` less 8px. It is a row in an inline
@@ -502,7 +502,7 @@ describe("concentric inner corners", () => {
   it("rounds a rounded-inner part outside any shell with the theme's --radius", () => {
     stampDocumentTheme(fkasPrivate, "light");
     for (const [theme, expected] of [
-      [fkasPrivate, 6],
+      [fkasPrivate, 8],
       [tkasCompany, 16],
     ] as const) {
       const { unmount } = render(
@@ -530,9 +530,9 @@ describe("concentric inner corners", () => {
         </DropdownMenu.Root>
       </ThemeScope>
     );
-    // The internal shell gives its own rows 2px. The tkas scope inside it drops that value,
-    // so its row rounds with tkas's --radius, 16px.
-    expect(cornerRadius(await vi.waitFor(() => roleNamed("menuitem", "Profile")))).toBe(2);
+    // The internal shell gives its own rows 8px less 4px. The tkas scope inside it drops that
+    // value, so its row rounds with tkas's --radius, 16px.
+    expect(cornerRadius(await vi.waitFor(() => roleNamed("menuitem", "Profile")))).toBe(4);
     expect(cornerRadius(roleNamed("menuitem", "Switch brand"))).toBe(16);
   });
 

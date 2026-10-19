@@ -187,8 +187,9 @@ export const EXTERNAL_PALETTES = {
     "font-heading": "var(--font-sans)",
   },
   // Elmera Figma "Farger" sheet (file dWv89e4X0DXeCKMsJwD5zL, node 2106:18246). card-soft (P-99)
-  // and feature-bright (P-75) are interpolated tones between neighbouring sheet stops; radius is
-  // not yet specified by design, so it keeps the default. No segment delta.
+  // and feature-bright (P-75) are interpolated tones between neighbouring sheet stops. Design has
+  // not specified the radius yet, so the palette sets a 6px `0.375rem` placeholder. No segment
+  // delta.
   elma: {
     background: "oklch(0.98177 0.011862 223.5)",
     foreground: "oklch(0.28898 0.051828 217.7)",
@@ -217,8 +218,9 @@ export const EXTERNAL_PALETTES = {
   },
   // Nordic Green Energy Material 3 scheme, NGE/sys/light (Figma file q1sEYcZWmf1HUeuiaJFqm6,
   // section 129:12419), mapped to roles by meaning. The file's "Farger" sheets carry Gudbrandsdal
-  // Energi's palette, not NGE's. Radius is not yet specified by design; the button radius takes
-  // the pill other external brands use. No segment delta.
+  // Energi's palette, not NGE's. Design has not specified the radius yet, so the palette sets a
+  // 6px `0.375rem` placeholder, and the button radius takes the pill other external brands use.
+  // No segment delta.
   ngfi: {
     background: "oklch(0.9817261 0.0061352 137.7733593)", // #F7FAF6 surface
     foreground: "oklch(0.2214543 0.0071419 164.2694873)", // #181C1A on-surface

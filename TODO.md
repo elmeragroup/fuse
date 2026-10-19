@@ -15,8 +15,8 @@
   `segment-sheets.ts` and `defaults.ts` in the brand Figma files, which set the brand foreground
   at 70% alpha. Running `figma:sync` for the new values waits on the owner.
 - Ask design for Nordic Green Energy's radius and button radius, and sign off its palette.
-  `external-palettes.ts` maps the NGE Material 3 scheme by meaning, keeps the default
-  `0.375rem` radius and takes the `1.8125rem` pill button that Fjordkraft and Telinet use,
+  `external-palettes.ts` maps the NGE Material 3 scheme by meaning, sets a 6px `0.375rem`
+  placeholder radius and takes the `1.8125rem` pill button that Fjordkraft and Telinet use,
   since the nordicgreen.fi buttons are pills. Running `figma:sync` for the four new theme
   modes and two primitives waits on the owner.
 - Ask design for an external secondary hover tone. The fkas, tkas, guen, fkse and elma themes
@@ -74,9 +74,9 @@
   as `RadioItem` rows. `--selection-title-weight` is 500 in `EXTERNAL_VARIANT_LAYER`, from the
   radio card the sales flow used before `RadioItem` (`text-base/5 font-medium`), and internal
   themes keep the 400 the internal row was ported with.
-- Ask design whether external themes keep the reference's 4px corner on the `Checkbox` and
-  the standalone `Calendar` (`styles/corner-radius.ts`), or round them from the brand radius.
-  Internal themes round them with `--radius`.
+- Ask design whether external themes keep the reference's 4px corner on the standalone
+  `Calendar` (`styles/corner-radius.ts`), or round it from the brand radius. Internal themes
+  round it with `--radius`.
 - Ask design about the remaining Central Text input deltas at comfortable density: 8px
   inline padding (Fuse 14px), 16px input text (Fuse 18px), a darker border on hover, grey
   disabled fill and text instead of the 50% dim, and an error icon inside the box.

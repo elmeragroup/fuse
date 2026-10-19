@@ -44,8 +44,8 @@ describe("buildStudioSeeds", () => {
     // defaults.ts: button-outline var(--border), and border NEUTRAL_LINE, oklch(0.9219 0 0).
     // L 0.9219 is linear 0.9219³ = 0.7835, sRGB-encoded 0.8980, the byte 229: #E5E5E5.
     expect(internal["button-outline"]).toEqual({ css: "var(--border)", value: "#E5E5E5" });
-    // defaults.ts: radius-button var(--radius), and radius 0.375rem, 6px at the 16px root.
-    expect(internal["radius-button"]).toEqual({ css: "var(--radius)", value: "6px" });
+    // defaults.ts: radius-button var(--radius), and radius 0.5rem, 8px at the 16px root.
+    expect(internal["radius-button"]).toEqual({ css: "var(--radius)", value: "8px" });
     // defaults.ts: font-heading var(--font-sans), whose first family is Roboto.
     expect(internal["font-heading"]).toEqual({ css: "var(--font-sans)", value: "Roboto" });
     expect(internal["selection-title-weight"]).toEqual({ css: "400", value: "400" });

@@ -129,9 +129,10 @@ export const LAYER_DEFAULTS = {
   "sh-jsxliterals": "#4cbf99",
   "sh-sign": "#ed9366",
   "sh-comment": "#abb0b6",
-  radius: "0.375rem",
-  // The internal variant rounds every outer element with the one radius, and inner corners
-  // follow outer − inset (`styles/corner-radius.ts`). Buttons and fields alias the one radius,
+  radius: "0.5rem",
+  // The internal variant rounds every outer element but the Checkbox with the one radius, and
+  // inner corners follow outer − inset (`styles/corner-radius.ts`). The Checkbox caps its
+  // corner at 4px in every variant. Buttons and fields alias the one radius,
   // and a zero step collapses the `rounded-*` scale in `fuse.css` onto it. Each theme rule
   // resolves the aliases against the `--radius` of the element it matches. External palettes
   // set a brand button radius, and the external variant layer sets the step. Every variant
