@@ -275,6 +275,8 @@ export const PART_DENSITY = {
   "popover-title": "fixed",
   "popover-description": "fixed",
 
+  // Steps its blocks by `--surface-gap-sm` through their own top margins, so the body itself
+  // reads no metric.
   "popover-info-button-body": "layout",
 
   "radio-group": "surface",
