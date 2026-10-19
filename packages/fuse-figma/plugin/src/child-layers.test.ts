@@ -141,8 +141,8 @@ function labelStandIn(
     getSharedPluginData: () => "button/label",
     getRangeAllFontNames: () => [ROBOTO_MEDIUM],
     getRangeBoundVariable: (_start, _end, field) => bindings.get(field) ?? null,
-    setBoundVariable: (field) => {
-      writes.push(`bind ${field}`);
+    setBoundVariable: (field, variable) => {
+      writes.push(variable === null ? `unbind ${field}` : `bind ${field}`);
     },
     ...fields,
   };
@@ -209,6 +209,18 @@ describe("planChildren on a label", () => {
     expect(changesFor(figma, label, literal)).toEqual(["Button / Label: lineHeight → 20"]);
   });
 
+  it("unbinds a literal font family that some characters still bind, in the font write", async () => {
+    const { figma } = figmaStandIn([]);
+    const writes: string[] = [];
+    const label = labelStandIn(writes, {}, new Map([["fontFamily", figma.mixed]]));
+    const { plan } = await runPlan(true, (pass) => {
+      planButton(pass, figma, [label]);
+      return Promise.resolve();
+    });
+    expect(changeLines(plan)).toEqual(["Button / Label: font → Roboto Medium"]);
+    expect(writes).toEqual(["unbind fontFamily", "set fontName"]);
+  });
+
   it("rebinds a font family that one character no longer follows", () => {
     const { figma } = figmaStandIn([]);
     const bound: TextLayerSpec = {
@@ -231,7 +243,7 @@ describe("planChildren on a label", () => {
 });
 
 describe("planChildren with a font the machine cannot load", () => {
-  /** A label whose first word is in a font the file holds and the machine may lack. */
+  /** A label whose first word is in a font the file holds and the machine lacks. */
   const mixedLabel = (figma: PluginAPI, writes: string[]): TextNode =>
     labelStandIn(writes, {
       fontName: figma.mixed,
@@ -245,22 +257,8 @@ describe("planChildren with a font the machine cannot load", () => {
       return Promise.resolve();
     };
 
-  it("stops Apply before any write, and fails Plan the same way", async () => {
-    const { figma } = figmaStandIn([COMIC_SANS_BOLD]);
-    const writes: string[] = [];
-    const children = [staleStandIn(writes), mixedLabel(figma, writes)];
-
-    await expect(runPlan(true, planner(figma, children))).rejects.toThrow(
-      "Button / Label: Figma cannot load the font Comic Sans Bold."
-    );
-    await expect(runPlan(false, planner(figma, children))).rejects.toThrow(
-      "Figma cannot load the font Comic Sans Bold."
-    );
-    expect(writes).toEqual([]);
-  });
-
-  it("loads every font the label holds and the font it gets, then writes, when all of them load", async () => {
-    const { figma, loaded } = figmaStandIn([]);
+  it("repairs a label that holds the font, because the font write needs only the new font", async () => {
+    const { figma, loaded } = figmaStandIn([COMIC_SANS_BOLD]);
     const writes: string[] = [];
     const children = [staleStandIn(writes), mixedLabel(figma, writes)];
 
@@ -269,7 +267,22 @@ describe("planChildren with a font the machine cannot load", () => {
       "Button: delete the layer Old badge",
       "Button / Label: font → Roboto Medium",
     ]);
-    expect(loaded).toEqual(["Comic Sans Bold", "Roboto Medium"]);
+    expect(loaded).toEqual(["Roboto Medium"]);
     expect(writes).toEqual(["remove Old badge", "set fontName"]);
+  });
+
+  it("stops Apply before any write, and fails Plan the same way, for a label that keeps the font", async () => {
+    const { figma } = figmaStandIn([ROBOTO_MEDIUM]);
+    const writes: string[] = [];
+    const label = labelStandIn(writes, {}, new Map([["fontSize", figma.mixed]]));
+    const children = [staleStandIn(writes), label];
+
+    await expect(runPlan(true, planner(figma, children))).rejects.toThrow(
+      "Button / Label needs the font Roboto Medium, which Figma cannot load."
+    );
+    await expect(runPlan(false, planner(figma, children))).rejects.toThrow(
+      "Button / Label needs the font Roboto Medium, which Figma cannot load."
+    );
+    expect(writes).toEqual([]);
   });
 });

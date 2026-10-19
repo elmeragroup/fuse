@@ -4,6 +4,7 @@
 
 import type {
   ChildLayerSpec,
+  ComponentSetSpec,
   IconLayerSpec,
   NumberSpec,
   TextLayerSpec,
@@ -93,6 +94,85 @@ function fontFor(run: Run, consumer: SceneNode, spec: TextLayerSpec): FontName {
   return { family: resolved.value as string, style: spec.fontStyle };
 }
 
+function isAlias(value: VariableValue): value is VariableAlias {
+  // SAFETY: a string, number or boolean has no `type` field, so the read yields undefined, and
+  // only an alias carries VARIABLE_ALIAS.
+  return (value as Partial<VariableAlias>).type === "VARIABLE_ALIAS";
+}
+
+/**
+ * The value a variable takes in a node that sits on a page and pins no modes. Such a node
+ * reads each collection in the mode the page pins for it, or in the collection's default
+ * mode, and so does every alias the variable follows.
+ */
+async function resolveOnPage(
+  run: Run,
+  variable: Variable,
+  pageModes: PageNode["explicitVariableModes"]
+): Promise<VariableValue> {
+  const seen = new Set<string>();
+  let current = variable;
+  while (!seen.has(current.id)) {
+    seen.add(current.id);
+    const collection = await run.figma.variables.getVariableCollectionByIdAsync(current.variableCollectionId);
+    if (collection === null) {
+      throw new Error(`${current.name} belongs to no collection the file holds.`);
+    }
+    const value = current.valuesByMode[pageModes[collection.id] ?? collection.defaultModeId];
+    if (value === undefined) {
+      throw new Error(`${current.name} has no value in the mode a new layer reads.`);
+    }
+    if (!isAlias(value)) {
+      return value;
+    }
+    const target = await run.figma.variables.getVariableByIdAsync(value.id);
+    if (target === null) {
+      throw new Error(`${current.name} aliases a variable the file does not hold.`);
+    }
+    current = target;
+  }
+  throw new Error(`${variable.name} aliases itself.`);
+}
+
+/**
+ * Require the fonts of the text layers in a component set the run creates. A new set sits
+ * on the page, which is no scene node, so no existing node can resolve its labels' family
+ * through `resolveForConsumer`. The plan follows the family variable through the modes the
+ * set will read instead, which is what Figma renders once the set exists.
+ *
+ * @param run - The run.
+ * @param pageModes - The modes the page pins. A page the run creates pins none.
+ * @param set - The component set.
+ */
+export async function requireNewSetFonts(
+  run: Run,
+  pageModes: PageNode["explicitVariableModes"],
+  set: ComponentSetSpec
+): Promise<void> {
+  const families = new Map<string, string>();
+  for (const variant of set.variants) {
+    for (const child of variant.root.children) {
+      if (child.kind !== "text") {
+        continue;
+      }
+      let family = child.fontFamily.kind === "literal" ? child.fontFamily.value : undefined;
+      if (child.fontFamily.kind === "variable") {
+        const variable = run.variables.variable(child.fontFamily.variable);
+        family = families.get(variable.id);
+        if (family === undefined) {
+          // SAFETY: the kit check confirmed the font family variable is a STRING variable,
+          // and an alias keeps its variable's type, so the value is a string.
+          family = (await resolveOnPage(run, variable, pageModes)) as string;
+          families.set(variable.id, family);
+        }
+      }
+      if (family !== undefined) {
+        requireFont(run, `${set.name} / ${child.name}`, { family, style: child.fontStyle });
+      }
+    }
+  }
+}
+
 /** Every font a layer's characters use. An empty layer holds the one font it would type in. */
 function heldFonts(run: Run, text: TextNode): FontName[] {
   if (text.characters.length > 0) {
@@ -123,23 +203,75 @@ export function requireNewTextFonts(
   }
 }
 
-function planTextFields(
+/**
+ * Plan the font, and require the fonts the label's later writes need. A font write comes first
+ * among the label's writes, because Figma needs only the new font to set it. Every later write
+ * then needs only that font, so a label whose font the machine lacks can still be repaired.
+ * A label that keeps its font needs every font it holds for a write such as its size.
+ *
+ * @returns Whether the plan replaces the label's font.
+ */
+function planFont(run: Run, text: TextNode, label: string, spec: TextLayerSpec, fontName: FontName): boolean {
+  const holds = text.fontName === run.figma.mixed ? undefined : text.fontName;
+  const differs = holds?.family !== fontName.family || holds.style !== fontName.style;
+  // A literal family takes over from any variable that some characters bind, so the unbind
+  // and the font write share one operation.
+  const unbind = spec.fontFamily.kind === "literal" && textBinding(run, text, "fontFamily") !== null;
+  if (!differs && !unbind) {
+    return false;
+  }
+  change(run.plan, label, `font → ${fontName.family} ${fontName.style}`, () => {
+    if (unbind) {
+      text.setBoundVariable("fontFamily", null);
+    }
+    text.fontName = fontName;
+  });
+  requireFont(run, label, fontName);
+  return true;
+}
+
+/**
+ * Plan a text layer. The font comes first, then the writes that need no font, then the
+ * typography. The layer's operations only write, because the run loads every font before its
+ * first write.
+ *
+ * @param held - The fonts the layer holds now. A layer the run creates passes none, because
+ *   its first font is unknown until it exists, and the font write that a new layer gets
+ *   needs only the new font.
+ */
+function planText(
   run: Run,
   text: TextNode,
   label: string,
   spec: TextLayerSpec,
-  fontName: FontName,
-  propertyIds: TextPropertyIds
+  propertyIds: TextPropertyIds,
+  held: readonly FontName[]
 ): void {
+  const fontName = fontFor(run, text, spec);
+  const replaced = planFont(run, text, label, spec, fontName);
   planScalar(run, label, "name", text.name, spec.name, () => {
     text.name = spec.name;
   });
-  const holds = text.fontName === run.figma.mixed ? undefined : text.fontName;
-  if (holds?.family !== fontName.family || holds.style !== fontName.style) {
-    change(run.plan, label, `font → ${fontName.family} ${fontName.style}`, () => {
-      text.fontName = fontName;
-    });
+  planPaints(run, label, "text color", text.fills, spec.color, (paints) => {
+    text.fills = paints;
+  });
+
+  const start = run.plan.operations.length;
+  planTypography(run, text, label, spec, propertyIds);
+  if (!replaced && run.plan.operations.length > start) {
+    for (const font of [...held, fontName]) {
+      requireFont(run, label, font);
+    }
   }
+}
+
+function planTypography(
+  run: Run,
+  text: TextNode,
+  label: string,
+  spec: TextLayerSpec,
+  propertyIds: TextPropertyIds
+): void {
   if (spec.fontFamily.kind === "variable") {
     const variable = run.variables.variable(spec.fontFamily.variable);
     const binding = textBinding(run, text, "fontFamily");
@@ -174,9 +306,6 @@ function planTextFields(
       text.lineHeight = { unit: "PIXELS", value };
     }
   );
-  planPaints(run, label, "text color", text.fills, spec.color, (paints) => {
-    text.fills = paints;
-  });
   planScalar(run, label, "textAutoResize", text.textAutoResize, "WIDTH_AND_HEIGHT", () => {
     text.textAutoResize = "WIDTH_AND_HEIGHT";
   });
@@ -200,33 +329,6 @@ function planTextFields(
     text.characters = spec.characters;
     text.componentPropertyReferences = { characters: propertyId };
   });
-}
-
-/**
- * Plan a text layer, and require the fonts its writes need when it plans any. The layer's
- * operations only write, because the run loads every font before its first write.
- *
- * @param held - The fonts the layer holds now. Figma's text guide asks for them before any
- *   write but the font, and the run loads them rather than lean on the font write coming
- *   first. A layer the run creates passes none. Figma needs only the new font to set the font,
- *   and the font a new layer starts with is unknown until it exists.
- */
-function planText(
-  run: Run,
-  text: TextNode,
-  label: string,
-  spec: TextLayerSpec,
-  propertyIds: TextPropertyIds,
-  held: readonly FontName[]
-): void {
-  const fontName = fontFor(run, text, spec);
-  const start = run.plan.operations.length;
-  planTextFields(run, text, label, spec, fontName, propertyIds);
-  if (run.plan.operations.length > start) {
-    for (const font of [...held, fontName]) {
-      requireFont(run, label, font);
-    }
-  }
 }
 
 function planIcon(run: Run, icon: EllipseNode, label: string, spec: IconLayerSpec): void {

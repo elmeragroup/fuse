@@ -46,13 +46,14 @@ export type NumberField = {
  * @param font - The font.
  */
 export function requireFont(run: Run, label: string, font: FontName): void {
-  const key = JSON.stringify(["font", font.family, font.style, font.variationSettings ?? null]);
+  const axes = font.variationSettings === undefined ? "" : ` ${JSON.stringify(font.variationSettings)}`;
+  const key = `font ${font.family} ${font.style}${axes}`;
   requirement(run.plan, key, async () => {
     try {
       await run.figma.loadFontAsync(font);
     } catch (cause) {
       throw new Error(
-        `${label}: Figma cannot load the font ${font.family} ${font.style}. Install it, or replace it on this layer, then run the plugin again.`,
+        `${label} needs the font ${font.family} ${font.style}, which Figma cannot load. Install it, then run the plugin again.`,
         { cause }
       );
     }

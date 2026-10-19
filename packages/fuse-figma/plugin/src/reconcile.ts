@@ -9,7 +9,9 @@
 
 import type { KitSpec } from "../../src/components/kit-spec.ts";
 import { checkKit, kitCollections } from "./check-kit.ts";
+import { requireNewSetFonts } from "./child-layers.ts";
 import { planComponentSet } from "./component-set.ts";
+import type { PlannedSet } from "./component-set.ts";
 import { requireFont } from "./fields.ts";
 import type { Run } from "./fields.ts";
 import { findOwned, setKey, staleOwned } from "./identity.ts";
@@ -35,7 +37,10 @@ async function planPage(run: Run, kit: KitSpec, page: PageNode): Promise<void> {
   for (const stale of staleOwned(page.children, keep)) {
     change(run.plan, page.name, `delete ${stale.name}`, () => stale.remove());
   }
-  const sets = kit.componentSets.map((spec) => planComponentSet(run, page, spec));
+  const sets: PlannedSet[] = [];
+  for (const spec of kit.componentSets) {
+    sets.push(await planComponentSet(run, page, spec));
+  }
   const frames = await planPreviews(run, page, kit.previews, new Map(sets.map((set) => [set.spec.key, set])));
   placePreviews(run, page, frames, sets, run.plan.operations.length > start);
 }
@@ -47,6 +52,11 @@ async function planDocument(run: Run, kit: KitSpec): Promise<Target<PageNode>> {
     await found.loadAsync();
     await planPage(run, kit, found);
     return existing(found);
+  }
+  // The new page pins no modes, and its sets plan their contents only when the page's
+  // operation runs, so the pass requires their label fonts here.
+  for (const set of kit.componentSets) {
+    await requireNewSetFonts(run, {}, set);
   }
   const sets = kit.componentSets.map((set) => set.name).join(", ");
   return create(

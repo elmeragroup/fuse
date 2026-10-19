@@ -16,12 +16,22 @@ export type Operation = {
   readonly perform: () => void | Promise<void>;
 };
 
+/**
+ * What a run needs before its first write, such as fonts, by key so each is met once. Every
+ * plan in a run shares one registry, including the plans that new nodes make when their
+ * operations run.
+ */
+export type Requirements = {
+  readonly byKey: Map<string, () => Promise<void>>;
+  /** True once the run has met them. A requirement after that is one the pass missed. */
+  met: boolean;
+};
+
 /** What a planning pass found: its operations, in the order Apply performs them, and its warnings. */
 export type Plan = {
   readonly operations: Operation[];
   readonly warnings: string[];
-  /** What the operations need before the first of them runs, by key, so each runs once. */
-  readonly requirements: Map<string, () => Promise<void>>;
+  readonly requirements: Requirements;
 };
 
 /**
@@ -44,37 +54,49 @@ export type PlannedRun<Result> = {
 /**
  * Start an empty plan.
  *
- * @param warnings - The list to add warnings to. The plan for a new node's contents shares
- *   its parent's list.
- * @returns A plan with no operations and no requirements.
+ * @param parent - The plan this one belongs to, such as the run's plan for a new node's
+ *   contents. The new plan shares its warnings and requirements. Without one, the plan starts
+ *   a run.
+ * @returns A plan with no operations.
  */
-export function newPlan(warnings: string[] = []): Plan {
-  return { operations: [], warnings, requirements: new Map() };
+export function newPlan(parent?: Plan): Plan {
+  if (parent !== undefined) {
+    return { operations: [], warnings: parent.warnings, requirements: parent.requirements };
+  }
+  return { operations: [], warnings: [], requirements: { byKey: new Map(), met: false } };
 }
 
 /**
- * Record something the operations need before the first of them runs, such as a font that a
- * text write needs. A second requirement with the same key adds nothing.
+ * Record something the run needs before its first write, such as a font that a text write
+ * needs. A second requirement with the same key adds nothing.
  *
  * @param plan - The plan.
- * @param key - What the requirement is, such as the font's family and style.
+ * @param key - What the requirement is, such as `font Roboto Medium`.
  * @param meet - Meets the requirement, or throws when the run cannot.
+ * @throws When the run has met its requirements already and has not met this one, because a
+ *   write may have run before it.
  */
 export function requirement(plan: Plan, key: string, meet: () => Promise<void>): void {
-  if (!plan.requirements.has(key)) {
-    plan.requirements.set(key, meet);
+  const { requirements } = plan;
+  if (requirements.byKey.has(key)) {
+    return;
   }
+  if (requirements.met) {
+    throw new Error(`The run needs ${key}, which its planning pass did not prepare before the first write.`);
+  }
+  requirements.byKey.set(key, meet);
 }
 
 /**
- * Meet a plan's requirements, one after another.
+ * Meet a run's requirements, one after another.
  *
- * @param plan - The plan.
+ * @param plan - Any plan of the run.
  */
 export async function meetRequirements(plan: Plan): Promise<void> {
-  for (const meet of plan.requirements.values()) {
+  for (const meet of plan.requirements.byKey.values()) {
     await meet();
   }
+  plan.requirements.met = true;
 }
 
 /**
@@ -111,7 +133,7 @@ export function changeTogether(
   build: (group: Plan) => void,
   finish: () => void
 ): void {
-  const group: Plan = { operations: [], warnings: plan.warnings, requirements: plan.requirements };
+  const group = newPlan(plan);
   build(group);
   if (group.operations.length === 0) {
     return;
@@ -135,13 +157,13 @@ export function existing<Node>(node: Node): Target<Node> {
 
 /**
  * Record the creation of a node as one operation. When it runs, the operation makes the node,
- * plans the node's fields and its contents against the spec, meets that plan's requirements
- * and performs it at once. Plan therefore lists a new node once, however much the spec puts
- * inside it.
+ * plans the node's fields and its contents against the spec, and performs that plan at once.
+ * Plan therefore lists a new node once, however much the spec puts inside it.
  *
  * Planning a new node cannot meet a conflict, because the node holds only what `make` put in
  * it. The kit check resolves every variable the spec names before the first write, and the
- * outer pass requires the fonts the new node's text needs.
+ * outer pass requires the fonts the new node's text needs, so the contents' plan finds every
+ * requirement met.
  *
  * @param plan - The plan.
  * @param label - Where the node goes.
@@ -163,9 +185,8 @@ export function create<Node>(
     const node = make();
     made = node;
     if (configure !== undefined) {
-      const inner = newPlan(plan.warnings);
+      const inner = newPlan(plan);
       await configure(node, inner);
-      await meetRequirements(inner);
       await performPlan(inner);
     }
   });

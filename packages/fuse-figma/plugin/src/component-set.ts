@@ -5,7 +5,7 @@
  */
 
 import type { AxisSpec, ComponentSetSpec, VariantSpec } from "../../src/components/kit-spec.ts";
-import { planChildren, requireNewTextFonts } from "./child-layers.ts";
+import { planChildren, requireNewSetFonts, requireNewTextFonts } from "./child-layers.ts";
 import type { TextPropertyIds } from "./child-layers.ts";
 import { near, planScalar } from "./fields.ts";
 import type { Run } from "./fields.ts";
@@ -294,9 +294,8 @@ function planSetContents(
 
 /**
  * Record the creation of a set. Figma builds a set from components, so the operation creates
- * every variant with its key and name, combines them, and then plans the set's contents. A new
- * set has no existing node to resolve its label fonts through, so the run relies on the kit's
- * fonts, which it requires before every run.
+ * every variant with its key and name, combines them, and then plans the set's contents. The
+ * caller requires the fonts the set's labels need first.
  */
 function createSet(run: Run, page: PageNode, spec: ComponentSetSpec): PlannedSet {
   const node = create(
@@ -350,9 +349,14 @@ function createSet(run: Run, page: PageNode, spec: ComponentSetSpec): PlannedSet
  * @param spec - The component set.
  * @returns The set and its variants, as later operations find them.
  */
-export function planComponentSet(run: Run, page: PageNode, spec: ComponentSetSpec): PlannedSet {
+export async function planComponentSet(
+  run: Run,
+  page: PageNode,
+  spec: ComponentSetSpec
+): Promise<PlannedSet> {
   const found = findOwned(run.plan, page.children, page.name, spec.key, spec.name, isComponentSet);
   if (found === undefined) {
+    await requireNewSetFonts(run, page.explicitVariableModes, spec);
     return createSet(run, page, spec);
   }
   return { spec, node: existing(found), variants: planSetContents(run, found, spec) };

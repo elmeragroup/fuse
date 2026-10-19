@@ -174,29 +174,63 @@ describe("create", () => {
     expect(log).toEqual(["make", "plan the new node", "lay out Dark", "stack Dark"]);
   });
 
-  it("meets the new node's requirements before it writes the node's contents", async () => {
+  it("plans a new node's contents against the run's requirements, met before the first write", async () => {
     const log: string[] = [];
-    const plan = newPlan();
-    create(
-      plan,
-      "Button",
-      "create the text layer Label",
-      () => {
-        log.push("make");
-        return { name: "Label" };
-      },
-      (made, inner) => {
-        change(inner, made.name, "font → Roboto Medium", () => {
-          log.push("write font");
-        });
-        requirement(inner, "Roboto Medium", () => {
-          log.push("load Roboto Medium");
-          return Promise.resolve();
-        });
-      }
+    await runPlan(true, (pass) => {
+      requirement(pass, "font Roboto Medium", () => {
+        log.push("load Roboto Medium");
+        return Promise.resolve();
+      });
+      create(
+        pass,
+        "Button",
+        "create the text layer Label",
+        () => {
+          log.push("make");
+          return { name: "Label" };
+        },
+        (made, inner) => {
+          requirement(inner, "font Roboto Medium", () => {
+            log.push("load Roboto Medium again");
+            return Promise.resolve();
+          });
+          change(inner, made.name, "font → Roboto Medium", () => {
+            log.push("write font");
+          });
+        }
+      );
+      return Promise.resolve();
+    });
+    expect(log).toEqual(["load Roboto Medium", "make", "write font"]);
+  });
+
+  it("stops a new node's contents at a requirement the pass did not prepare", async () => {
+    const log: string[] = [];
+    const run = runPlan(true, (pass) => {
+      create(
+        pass,
+        "Button",
+        "create the text layer Label",
+        () => {
+          log.push("make");
+          return { name: "Label" };
+        },
+        (made, inner) => {
+          requirement(inner, "font Comic Sans Bold", () => {
+            log.push("load Comic Sans Bold");
+            return Promise.resolve();
+          });
+          change(inner, made.name, "font → Comic Sans Bold", () => {
+            log.push("write font");
+          });
+        }
+      );
+      return Promise.resolve();
+    });
+    await expect(run).rejects.toThrow(
+      "The run needs font Comic Sans Bold, which its planning pass did not prepare"
     );
-    await performPlan(plan);
-    expect(log).toEqual(["make", "load Roboto Medium", "write font"]);
+    expect(log).toEqual(["make"]);
   });
 
   it("refuses to hand out the node before the operation that makes it has run", () => {
