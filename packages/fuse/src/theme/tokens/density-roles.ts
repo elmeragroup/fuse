@@ -275,6 +275,8 @@ export const PART_DENSITY = {
   "popover-title": "fixed",
   "popover-description": "fixed",
 
+  "popover-info-button-body": "layout",
+
   "radio-group": "surface",
   "radio-group[data-direction=vertical]:has(> [data-selection-item])": "layout",
   "radio-group-item": "fixed",

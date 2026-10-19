@@ -18,7 +18,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Popover body.",
+          "description": "Popover body. Inline content, such as a sentence with a `<strong>` or a link, flows as one paragraph; consecutive blocks, such as two `<p>`s or a `Popover.Header` and a `<p>`, are spaced by the small surface gap.",
           "required": true
         },
         {
