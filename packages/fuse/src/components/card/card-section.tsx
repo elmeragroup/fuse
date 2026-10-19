@@ -24,11 +24,9 @@ export type CardSectionProps = useRender.ComponentProps<"div">;
 export function CardSection({ className, render, ...props }: CardSectionProps): ReactElement {
   return useRender({
     defaultTagName: "div",
-    props: mergeProps<"div">(
-      { "data-slot": "card-section", className: cn(cardVariants().cardSection(), className) },
-      props
-    ),
+    props: mergeProps<"div">({ className: cn(cardVariants().cardSection(), className) }, props),
     render,
+    state: { slot: "card-section" },
   });
 }
 
