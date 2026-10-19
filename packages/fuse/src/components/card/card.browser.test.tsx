@@ -132,7 +132,7 @@ describe("Card", () => {
 
   it.each([
     [undefined, "default"],
-    ["sm", "sm"],
+    ["lg", "lg"],
   ] as const)("writes size=%s on the root as data-size=%s", (size, written) => {
     renderThemed(
       <Card.Root size={size}>

@@ -1,9 +1,9 @@
 import {
   cardDefaultTierClass,
   cardHorizontalShellClass,
+  cardLargeTierClass,
   cardSectionShellClass,
   cardShellClass,
-  cardSmallTierClass,
 } from "../../styles/inner-corner/card";
 import { tv } from "../../styles/tv";
 
@@ -15,8 +15,8 @@ import { tv } from "../../styles/tv";
  * Horizontal cards keep their header text in a grid and wrap whole sections when
  * the container cannot fit them side by side.
  * The external ref's surface/padding axes are decomposed away into `direction` and `size`.
- * `size` sets the card's surface tier on the base as `--card-pad`: the large tier,
- * `--surface-pad-lg`, by default and the medium tier, `--surface-pad-md`, at `sm`. Sections pad
+ * `size` sets the card's surface tier on the base as `--card-pad`: the medium tier,
+ * `--surface-pad-md`, by default and the large tier, `--surface-pad-lg`, at `lg`. Sections pad
  * with it and content and footer drop their top padding, so the tier is also the gap between
  * sections. A horizontal card pads and gaps its sections with the same tier.
  */
@@ -42,7 +42,7 @@ export const cardVariants = tv({
       horizontal: {
         base: [
           cardHorizontalShellClass,
-          "flex-row flex-wrap items-start gap-[var(--card-pad,var(--surface-pad-lg))]",
+          "flex-row flex-wrap items-start gap-[var(--card-pad,var(--surface-pad-md))]",
         ],
         cardHeader: "min-w-0 flex-[2_1_16rem] wrap-anywhere",
         cardContent: "min-w-0 flex-[1_1_12rem] wrap-anywhere",
@@ -52,7 +52,7 @@ export const cardVariants = tv({
     },
     size: {
       default: { base: cardDefaultTierClass },
-      sm: { base: cardSmallTierClass },
+      lg: { base: cardLargeTierClass },
     },
   },
   defaultVariants: {

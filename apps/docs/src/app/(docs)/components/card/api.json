@@ -23,10 +23,10 @@
         {
           "name": "size",
           "origin": "declared",
-          "type": "\"default\" | \"sm\" | undefined",
+          "type": "\"default\" | \"lg\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The card's surface tier, which pads its sections, gaps them and sets their inner corner. `default` takes the large tier, `--surface-pad-lg`, for content. `sm` takes the medium tier, `--surface-pad-md`, for a card that holds rows, so its text lines up with the Items and Accordion items around it.",
+          "description": "The card's surface tier, which pads its sections, gaps them and sets their inner corner. `default` takes the medium tier, `--surface-pad-md`, which Items and Accordion items pad with too, so the card's text starts on their edge. `lg` takes the large tier, `--surface-pad-lg`, for a card that holds long prose or acts as a page's main panel.",
           "required": false
         }
       ]

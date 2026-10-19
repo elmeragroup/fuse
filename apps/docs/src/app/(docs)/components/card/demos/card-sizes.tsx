@@ -10,10 +10,11 @@ const ROWS = [
 ] as const;
 
 /**
- * A small card pads with the medium surface tier, as an Item does, so the text in a card of label
- * and value rows starts on the same edge as the Item above it.
+ * A default card pads with the medium surface tier, as an Item does, so the text in a card of
+ * label and value rows starts on the same edge as the Item above it. A large card pads with the
+ * large tier, for long prose.
  */
-export function CardSmall() {
+export function CardSizes() {
   return (
     <div className="max-w-md flex w-full flex-col gap-4">
       <Item.Root variant="outline">
@@ -22,7 +23,7 @@ export function CardSmall() {
           <Item.Description>Hourly price with no lock-in.</Item.Description>
         </Item.Content>
       </Item.Root>
-      <Card.Root size="sm">
+      <Card.Root>
         <Card.Header>
           <Card.Title size="lg">Order summary</Card.Title>
         </Card.Header>
@@ -35,6 +36,17 @@ export function CardSmall() {
               </div>
             ))}
           </dl>
+        </Card.Content>
+      </Card.Root>
+      <Card.Root size="lg">
+        <Card.Header>
+          <Card.Title size="lg">About spot pricing</Card.Title>
+        </Card.Header>
+        <Card.Content>
+          <p>
+            Spot follows the hourly market price on Nord Pool, plus a fixed markup. You pay less when demand
+            is low and more at peak hours, so moving laundry and charging to the night lowers the bill.
+          </p>
         </Card.Content>
       </Card.Root>
     </div>

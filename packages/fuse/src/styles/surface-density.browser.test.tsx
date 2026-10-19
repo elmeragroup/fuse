@@ -185,8 +185,8 @@ describe("surface metrics follow document density", () => {
       });
 
       it.each([
-        ["a default Card", undefined, "lg"],
-        ["a small Card", "sm", "md"],
+        ["a default Card", undefined, "md"],
+        ["a large Card", "lg", "lg"],
       ] as const)("pads the sections of %s with the %s tier and gaps them by it", (_name, size, tier) => {
         stampDensity(density);
         renderThemed(
@@ -217,8 +217,8 @@ describe("surface metrics follow document density", () => {
       });
 
       it.each([
-        ["a horizontal Card", undefined, "lg"],
-        ["a small horizontal Card", "sm", "md"],
+        ["a horizontal Card", undefined, "md"],
+        ["a large horizontal Card", "lg", "lg"],
       ] as const)("pads %s and gaps its sections with the %s tier", (_name, size, tier) => {
         stampDensity(density);
         renderThemed(
@@ -239,10 +239,10 @@ describe("surface metrics follow document density", () => {
         expect(content.left - header.right, "gap").toBe(pad);
       });
 
-      it("pads a default Card nested in a small Card with the large tier", () => {
+      it("pads a default Card nested in a large Card with the medium tier", () => {
         stampDensity(density);
         renderThemed(
-          <Card.Root size="sm" role="group" aria-label="Outer">
+          <Card.Root size="lg" role="group" aria-label="Outer">
             <Card.Content>
               <Card.Root role="group" aria-label="Inner">
                 <Card.Header>
@@ -255,15 +255,15 @@ describe("surface metrics follow document density", () => {
         const outer = roleNamed("group", "Outer").getBoundingClientRect();
         const inner = roleNamed("group", "Inner").getBoundingClientRect();
         const block = roleNamed("group", "Inner block").getBoundingClientRect();
-        expect(inner.left - outer.left - 1, "outer start").toBe(SURFACE.md[density]);
-        expect(block.left - inner.left - 1, "inner start").toBe(SURFACE.lg[density]);
-        expect(block.top - inner.top - 1, "inner top").toBe(SURFACE.lg[density]);
+        expect(inner.left - outer.left - 1, "outer start").toBe(SURFACE.lg[density]);
+        expect(block.left - inner.left - 1, "inner start").toBe(SURFACE.md[density]);
+        expect(block.top - inner.top - 1, "inner top").toBe(SURFACE.md[density]);
       });
 
-      it("pads a Card section outside a card root with the large tier", () => {
+      it("pads a Card section outside a card root with the medium tier", () => {
         stampDensity(density);
         renderThemed(<Card.Header role="group" aria-label="Loose header" />);
-        const pad = SURFACE.lg[density];
+        const pad = SURFACE.md[density];
         expect(paddings(roleNamed("group", "Loose header"))).toEqual([pad, pad, pad, pad]);
       });
 

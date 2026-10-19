@@ -9,7 +9,7 @@ import { CardTag } from "./demos/card-tag";
 import { CardHorizontal } from "./demos/card-horizontal";
 import { CardItemRows } from "./demos/card-item-rows";
 import { CardNested } from "./demos/card-nested";
-import { CardSmall } from "./demos/card-small";
+import { CardSizes } from "./demos/card-sizes";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -39,10 +39,10 @@ Horizontal cards wrap whole sections as their container narrows, keeping the tit
   <CardItemRows />
 </Demo>
 
-A card pads its sections, and spaces them, with a surface tier. The default size takes the large tier for content: a usage figure, a chart, a description. `size="sm"` takes the medium tier, 16px comfortable and 12px dense, for a card that holds a stack of short rows, such as an order summary, a receipt or a price box. Use it for a card beside Items or Accordion items, so the text in the card starts on the same edge as the text above it. Selection items line up with it at comfortable density. A card nested in a small card takes its own size.
+A card pads its sections, and spaces them, with a surface tier. The default size takes the medium tier, 16px comfortable and 12px dense, which Items and Accordion items pad with too, so the text in a card starts on the same edge as theirs. `size="lg"` takes the large tier, 24px comfortable and 16px dense, for a card that holds long prose or acts as a page's main panel. A card nested in a large card takes its own size.
 
-<Demo slug="card" id="small" title="Small" file="card-small.tsx">
-  <CardSmall />
+<Demo slug="card" id="sizes" title="Sizes" file="card-sizes.tsx">
+  <CardSizes />
 </Demo>
 
 A card draws its 1px edge in the theme's `--card-border`. Internal themes draw it in `--border`. External themes draw no edge, so a white card stands on the page tint by its fill and shadow, and a card on a card-coloured surface, such as a nested card, has no outline. A border colour class on the card still wins. To change the edge, override `--card-border` on the `ThemeScope` or on any element around the cards.

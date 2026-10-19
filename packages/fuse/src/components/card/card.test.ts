@@ -28,7 +28,7 @@ const DESCRIPTION_SIZES = ["xs", "sm", "default", "lg", "xl", "2xl"] as const;
 
 describe("cardVariants", () => {
   type Slot = keyof ReturnType<typeof cardVariants>;
-  it.each<[string, { direction?: "horizontal"; size?: "sm" }, [Slot, string][], [Slot, string][]]>([
+  it.each<[string, { direction?: "horizontal"; size?: "lg" }, [Slot, string][], [Slot, string][]]>([
     [
       "default",
       {},
@@ -41,13 +41,13 @@ describe("cardVariants", () => {
         ["cardTitle", "font-semibold"],
         ["cardDescription", "text-muted-foreground"],
         ["cardAction", "col-start-2"],
-        ["base", "[--card-pad:var(--surface-pad-lg)]"],
-        ["cardContent", "p-[var(--card-pad,var(--surface-pad-lg))]"],
+        ["base", "[--card-pad:var(--surface-pad-md)]"],
+        ["cardContent", "p-[var(--card-pad,var(--surface-pad-md))]"],
         ["cardFooter", "items-center"],
       ],
       [],
     ],
-    ["sm", { size: "sm" }, [["base", "[--card-pad:var(--surface-pad-md)]"]], [["base", "--surface-pad-lg"]]],
+    ["lg", { size: "lg" }, [["base", "[--card-pad:var(--surface-pad-lg)]"]], [["base", "--surface-pad-md"]]],
     [
       "horizontal",
       { direction: "horizontal" },
@@ -57,7 +57,7 @@ describe("cardVariants", () => {
         ["cardHeader", "grid"],
         ["cardTitle", "text-xl"],
       ],
-      [["cardContent", "p-[var(--card-pad,var(--surface-pad-lg))]"]],
+      [["cardContent", "p-[var(--card-pad,var(--surface-pad-md))]"]],
     ],
   ])("resolves every slot for the %s card", (_name, props, present, absent) => {
     const slots = cardVariants(props);

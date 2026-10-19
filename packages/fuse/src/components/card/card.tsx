@@ -14,9 +14,9 @@ type CardDivProps = HTMLAttributes<HTMLDivElement> & CardVariantProps;
 type CardRootProps = CardDivProps & {
   /**
    * The card's surface tier, which pads its sections, gaps them and sets their inner corner.
-   * `default` takes the large tier, `--surface-pad-lg`, for content. `sm` takes the medium tier,
-   * `--surface-pad-md`, for a card that holds rows, so its text lines up with the Items and
-   * Accordion items around it.
+   * `default` takes the medium tier, `--surface-pad-md`, which Items and Accordion items pad with
+   * too, so the card's text starts on their edge. `lg` takes the large
+   * tier, `--surface-pad-lg`, for a card that holds long prose or acts as a page's main panel.
    */
   size?: keyof typeof cardVariants.variants.size;
 };
