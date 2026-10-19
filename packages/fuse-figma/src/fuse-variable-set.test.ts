@@ -3,12 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import {
-  fuseVariableSet,
-  PRIMITIVES_COLLECTION,
-  THEMES_COLLECTION,
-  TOKENS_COLLECTION,
-} from "./fuse-variable-set.ts";
+import { fuseVariableSet } from "./fuse-variable-set.ts";
 import type { CollectionSpec, VariableSet, VariableSpec, VariableValue } from "./variable-set.ts";
 
 function variableSet(): VariableSet {
@@ -33,79 +28,99 @@ function value(collectionName: string, variable: string, mode: string): Variable
 
 const px = (value: number): VariableValue => ({ _tag: "Float", value });
 
+const alias = (collectionName: string, variable: string): VariableValue => ({
+  _tag: "Alias",
+  target: { collection: collectionName, variable },
+});
+
 describe("fuseVariableSet", () => {
+  it("chains every bound variable through variant, segment and brand", () => {
+    expect(value("Fuse tokens", "primary", "Dark")).toEqual(alias("Fuse variant", "dark/primary"));
+    expect(value("Fuse variant", "dark/primary", "External")).toEqual(
+      alias("Fuse segment", "dark/external/primary")
+    );
+    expect(value("Fuse segment", "dark/external/primary", "Company")).toEqual(
+      alias("Fuse brand", "dark/external/company/primary")
+    );
+    // A rung takes the same four hops, though only the variant changes its value.
+    expect(value("Fuse tokens", "radius-md", "Light")).toEqual(alias("Fuse variant", "light/radius-md"));
+    expect(value("Fuse segment", "light/internal/radius-md", "Private")).toEqual(
+      alias("Fuse brand", "light/internal/private/radius-md")
+    );
+  });
+
   it("writes each kind's resolved literal in its Figma form", () => {
     // `#5c6773` in DEFAULTS is a hex literal, not oklch.
-    expect(value(THEMES_COLLECTION, "light/sh-identifier", "internal-fkas-private")).toEqual({
+    expect(value("Fuse brand", "light/internal/private/sh-identifier", "Fjordkraft")).toEqual({
       _tag: "Color",
       color: { r: 0x5c / 255, g: 0x67 / 255, b: 0x73 / 255, a: 1 },
     });
     // The internal dark field border is white at 40% alpha, which Figma keeps as `a`.
-    expect(value(THEMES_COLLECTION, "dark/input", "internal-fkas-private")).toEqual({
+    expect(value("Fuse brand", "dark/internal/private/input", "Fjordkraft")).toEqual({
       _tag: "Color",
       color: { r: 1, g: 1, b: 1, a: 0.4 },
     });
-    expect(value(THEMES_COLLECTION, "light/radius-button", "external-fkas-private")).toEqual(px(29));
-    expect(value(THEMES_COLLECTION, "light/font-heading", "external-fkas-private")).toEqual({
+    expect(value("Fuse brand", "light/external/private/radius-button", "Fjordkraft")).toEqual(px(29));
+    expect(value("Fuse brand", "light/external/private/font-heading", "Fjordkraft")).toEqual({
       _tag: "String",
       value: "Neo Sans",
     });
-    expect(spec(TOKENS_COLLECTION, "primary")).toMatchObject({ type: "COLOR", scopes: ["ALL_SCOPES"] });
-    expect(spec(TOKENS_COLLECTION, "radius")).toMatchObject({ type: "FLOAT", scopes: ["CORNER_RADIUS"] });
-    expect(spec(TOKENS_COLLECTION, "radius-step")).toMatchObject({ type: "FLOAT", scopes: [] });
-    expect(spec(TOKENS_COLLECTION, "button-outline-width")).toMatchObject({
+    expect(spec("Fuse tokens", "primary")).toMatchObject({ type: "COLOR", scopes: ["ALL_SCOPES"] });
+    expect(spec("Fuse tokens", "radius")).toMatchObject({ type: "FLOAT", scopes: ["CORNER_RADIUS"] });
+    expect(spec("Fuse tokens", "radius-step")).toMatchObject({ type: "FLOAT", scopes: [] });
+    expect(spec("Fuse tokens", "button-outline-width")).toMatchObject({
       type: "FLOAT",
       scopes: ["STROKE_FLOAT"],
     });
-    expect(value(THEMES_COLLECTION, "light/button-outline-width", "external-fkas-private")).toEqual(px(2));
-    expect(value(THEMES_COLLECTION, "light/button-outline-width", "internal-fkas-private")).toEqual(px(1));
-    expect(spec(TOKENS_COLLECTION, "font-sans")).toMatchObject({ type: "STRING", scopes: ["FONT_FAMILY"] });
+    expect(value("Fuse brand", "light/external/private/button-outline-width", "Fjordkraft")).toEqual(px(2));
+    expect(value("Fuse brand", "light/internal/private/button-outline-width", "Fjordkraft")).toEqual(px(1));
+    expect(spec("Fuse tokens", "font-sans")).toMatchObject({ type: "STRING", scopes: ["FONT_FAMILY"] });
     // A font weight syncs as a FLOAT variable that only the font weight picker offers, and
     // keeps its value in both schemes. A real file stores that picker's scope as FONT_STYLE.
-    expect(spec(TOKENS_COLLECTION, "selection-title-weight")).toMatchObject({
+    expect(spec("Fuse tokens", "selection-title-weight")).toMatchObject({
       type: "FLOAT",
       scopes: ["FONT_STYLE"],
     });
     for (const scheme of ["light", "dark"]) {
-      expect(value(THEMES_COLLECTION, `${scheme}/selection-title-weight`, "external-fkas-private")).toEqual({
-        _tag: "Float",
-        value: 500,
-      });
-      expect(value(THEMES_COLLECTION, `${scheme}/selection-title-weight`, "internal-fkas-private")).toEqual({
-        _tag: "Float",
-        value: 400,
-      });
+      expect(value("Fuse brand", `${scheme}/external/private/selection-title-weight`, "Fjordkraft")).toEqual(
+        px(500)
+      );
+      expect(value("Fuse brand", `${scheme}/internal/private/selection-title-weight`, "Fjordkraft")).toEqual(
+        px(400)
+      );
     }
   });
 
-  it("turns var() references into aliases in the same scheme or to primitives", () => {
-    expect(value(THEMES_COLLECTION, "dark/destructive", "external-guen-private")).toEqual({
-      _tag: "Alias",
-      target: { collection: THEMES_COLLECTION, variable: "dark/error" },
-    });
-    expect(value(THEMES_COLLECTION, "light/brand", "external-fkab-company")).toEqual({
-      _tag: "Alias",
-      target: { collection: PRIMITIVES_COLLECTION, variable: "brand-fkab" },
-    });
+  it("turns var() references into aliases at the same theme path or to primitives", () => {
+    expect(value("Fuse brand", "dark/external/private/destructive", "Gudbrandsdal Energi")).toEqual(
+      alias("Fuse brand", "dark/external/private/error")
+    );
+    expect(value("Fuse brand", "light/external/company/brand", "Fjordkraft Företag (company only)")).toEqual(
+      alias("Fuse primitives", "brand-fkab")
+    );
     // fkab shares Fjordkraft's accent by policy.
-    expect(value(PRIMITIVES_COLLECTION, "brand-fkab", "Value")).toEqual({
-      _tag: "Alias",
-      target: { collection: PRIMITIVES_COLLECTION, variable: "brand-fkas" },
-    });
-    expect(value(TOKENS_COLLECTION, "primary", "Dark")).toEqual({
-      _tag: "Alias",
-      target: { collection: THEMES_COLLECTION, variable: "dark/primary" },
-    });
+    expect(value("Fuse primitives", "brand-fkab", "Value")).toEqual(alias("Fuse primitives", "brand-fkas"));
     // The external outline Button rings in the text color, and internal themes keep the
     // border role's hairline.
-    expect(value(THEMES_COLLECTION, "dark/button-outline", "external-tkas-private")).toEqual({
-      _tag: "Alias",
-      target: { collection: THEMES_COLLECTION, variable: "dark/foreground" },
-    });
-    expect(value(THEMES_COLLECTION, "light/button-outline", "internal-tkas-private")).toEqual({
-      _tag: "Alias",
-      target: { collection: THEMES_COLLECTION, variable: "light/border" },
-    });
+    expect(value("Fuse brand", "dark/external/private/button-outline", "TrøndelagKraft")).toEqual(
+      alias("Fuse brand", "dark/external/private/foreground")
+    );
+    expect(value("Fuse brand", "light/internal/private/button-outline", "TrøndelagKraft")).toEqual(
+      alias("Fuse brand", "light/internal/private/border")
+    );
+  });
+
+  it("gives Auto density the variant's default density and keeps Dense and Comfortable literal", () => {
+    // fuse.css: --control-h-md is 2.25rem on :root and 2.75rem when comfortable. Apps deploy
+    // internal themes dense and external themes comfortable.
+    expect(value("Fuse density", "control-h-md", "Auto")).toEqual(
+      alias("Fuse variant", "density/control-h-md")
+    );
+    expect(value("Fuse variant", "density/control-h-md", "Internal")).toEqual(px(36));
+    expect(value("Fuse variant", "density/control-h-md", "External")).toEqual(px(44));
+    expect(value("Fuse density", "control-h-md", "Dense")).toEqual(px(36));
+    expect(value("Fuse density", "control-h-md", "Comfortable")).toEqual(px(44));
+    expect(spec("Fuse variant", "density/control-h-md")).toMatchObject({ scopes: [], webSyntax: undefined });
   });
 });
 

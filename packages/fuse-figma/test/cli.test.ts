@@ -1,171 +1,56 @@
 import { assert, describe, it } from "@effect/vitest";
-import { ConfigProvider, Effect, Fiber, FileSystem, Layer, Path, Runtime, Stdio, Terminal } from "effect";
-import { CliOutput } from "effect/cli";
-import { ChildProcessSpawner } from "effect/process";
-import { TestClock, TestConsole } from "effect/testing";
+import { Effect, Fiber, Runtime } from "effect";
+import { TestClock } from "effect/testing";
 
-import * as Hex from "@elmeragroup/color/hex";
-import { getOrThrow } from "@elmeragroup/color/result";
-import * as Srgb from "@elmeragroup/color/srgb";
-
-import { runCli } from "../src/cli.ts";
+import {
+  BRAND_MODES,
+  errors,
+  FILE_KEY,
+  hex,
+  light,
+  output,
+  reads,
+  run,
+  TOKEN,
+  writes,
+} from "./cli-fixture.ts";
 import { InMemoryFigma } from "./in-memory-figma.ts";
-
-const FILE_KEY = "FuseFile123";
-const TOKEN = "figd_test-token";
 
 /** A value as a designer stores it in the fake file. */
 type StoredValue = Parameters<InMemoryFigma["setValue"]>[3];
 
-const cliEnvironment = Layer.mergeAll(
-  FileSystem.layerNoop({}),
-  Path.layer,
-  Stdio.layerTest({}),
-  Layer.succeed(
-    Terminal.Terminal,
-    Terminal.make({
-      columns: Effect.succeed(100),
-      rows: Effect.succeed(40),
-      readInput: Effect.die("the CLI never reads input"),
-      readLine: Effect.die("the CLI never reads input"),
-      display: () => Effect.void,
-    })
-  ),
-  Layer.succeed(
-    ChildProcessSpawner.ChildProcessSpawner,
-    ChildProcessSpawner.make(() => Effect.die("the CLI never spawns processes"))
-  ),
-  CliOutput.layer(CliOutput.defaultFormatter({ colors: false }))
-);
-
-function environment(figma: InMemoryFigma, env: Record<string, string> = { FIGMA_TOKEN: TOKEN }) {
-  return Layer.mergeAll(cliEnvironment, figma.layer(), ConfigProvider.layer(ConfigProvider.fromEnv({ env })));
-}
-
-function run(figma: InMemoryFigma, argv: readonly string[], env?: Record<string, string>) {
-  return runCli(argv).pipe(Effect.provide(environment(figma, env)));
-}
-
-const output = Effect.map(TestConsole.logLines, (lines) => lines.map(String).join("\n"));
-const errors = Effect.map(TestConsole.errorLines, (lines) => lines.map(String).join("\n"));
-
-function writes(figma: InMemoryFigma): number {
-  return figma.requests.filter((request) => request.method === "POST").length;
-}
-
-function reads(figma: InMemoryFigma): number {
-  return figma.requests.filter((request) => request.method === "GET").length;
-}
-
-function hex(value: ReturnType<InMemoryFigma["resolve"]>): string {
-  if (!(value instanceof Object)) throw new Error(`expected a color, got ${String(value)}`);
-  return Hex.formatOpaque(getOrThrow(Srgb.make({ r: value.r, g: value.g, b: value.b, alpha: value.a })));
-}
-
-const light = (theme: string) => ({ "Fuse tokens": "Light", "Fuse themes": theme });
-const dark = (theme: string) => ({ "Fuse tokens": "Dark", "Fuse themes": theme });
-
 describe("fuse-figma sync", () => {
-  it.effect("creates the four Fuse collections in an empty file", () =>
+  it.effect("creates the six Fuse collections in an empty file", () =>
     Effect.gen(function* () {
       const figma = new InMemoryFigma(FILE_KEY, TOKEN);
       yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
 
       assert.deepStrictEqual(figma.collectionNames(), [
         "Fuse primitives",
-        "Fuse themes",
+        "Fuse brand",
+        "Fuse segment",
+        "Fuse variant",
         "Fuse tokens",
         "Fuse density",
       ]);
       assert.deepStrictEqual(figma.modeNames("Fuse tokens"), ["Light", "Dark"]);
+      assert.deepStrictEqual(figma.modeNames("Fuse variant"), ["Internal", "External"]);
+      assert.deepStrictEqual(figma.modeNames("Fuse segment"), ["Private", "Company"]);
+      assert.deepStrictEqual(figma.modeNames("Fuse brand"), [...BRAND_MODES.values()]);
       assert.deepStrictEqual(figma.modeNames("Fuse primitives"), ["Value"]);
-      assert.deepStrictEqual(figma.modeNames("Fuse density"), ["Dense", "Comfortable"]);
-      const themeModes = figma.modeNames("Fuse themes");
-      assert.strictEqual(themeModes.length, 24);
-      assert.includeMembers(themeModes, [
-        "internal-fkas-private",
-        "external-elma-company",
-        "external-fkab-company",
-        "external-fkse-private",
-        "internal-ngfi-company",
-      ]);
-      assert.notInclude(themeModes, "external-fkab-private");
-      // 93 contract tokens plus 5 radius rungs, and each of those per scheme in Fuse themes.
+      assert.deepStrictEqual(figma.modeNames("Fuse density"), ["Auto", "Dense", "Comfortable"]);
+      // 93 contract tokens plus 5 radius rungs.
       assert.strictEqual(figma.variableNames("Fuse tokens").length, 98);
-      assert.strictEqual(figma.variableNames("Fuse themes").length, 196);
+      // Those 98 per scheme, plus 39 density metrics.
+      assert.strictEqual(figma.variableNames("Fuse variant").length, 196 + 39);
+      // Per scheme and variant, then per scheme, variant and segment.
+      assert.strictEqual(figma.variableNames("Fuse segment").length, 392);
+      assert.strictEqual(figma.variableNames("Fuse brand").length, 784);
       assert.strictEqual(figma.variableNames("Fuse primitives").length, 25);
       // 26 control metrics, 4 row, 2 label, 3 surface padding and 4 surface gap metrics.
       assert.strictEqual(figma.variableNames("Fuse density").length, 39);
       assert.strictEqual(writes(figma), 1);
       assert.include(yield* output, "reading it back matches the tokens");
-    })
-  );
-
-  it.effect("resolves token values the way a designer's frame sees them", () =>
-    Effect.gen(function* () {
-      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
-      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
-
-      // Pinned in the docs DTCG export for the same theme.
-      assert.strictEqual(
-        hex(figma.resolve("Fuse tokens", "primary", light("external-elma-company"))),
-        "#00313C"
-      );
-      assert.strictEqual(
-        hex(figma.resolve("Fuse tokens", "primary-foreground", light("external-fkas-private"))),
-        "#FFFFFF"
-      );
-      assert.strictEqual(figma.resolve("Fuse tokens", "radius", light("external-elma-company")), 6);
-      // 1.8125rem at the 16px root.
-      assert.strictEqual(figma.resolve("Fuse tokens", "radius-button", light("external-fkas-private")), 29);
-      // Fields round with the theme's radius in both variants: 0.75rem for external fkas and
-      // 0.5rem internally.
-      assert.strictEqual(figma.resolve("Fuse tokens", "radius-field", light("external-fkas-private")), 12);
-      assert.strictEqual(figma.resolve("Fuse tokens", "radius-field", light("internal-fkas-private")), 8);
-      assert.strictEqual(
-        figma.resolve("Fuse tokens", "font-heading", light("external-fkas-private")),
-        "Neo Sans"
-      );
-      assert.strictEqual(
-        figma.resolve("Fuse tokens", "font-heading", light("internal-fkas-private")),
-        "Roboto"
-      );
-
-      // radius-step is 0px in internal themes and 2px in external ones.
-      assert.strictEqual(figma.resolve("Fuse tokens", "radius-step", light("internal-fkas-private")), 0);
-      assert.strictEqual(figma.resolve("Fuse tokens", "radius-step", light("external-fkas-private")), 2);
-
-      // secondary-hover holds the composed literal, since Figma cannot mix colors. The theme
-      // contract test pins oklch(0.929 0.000205 2.4655) light and oklch(0.3048 0 0) dark, which
-      // are #E7E7E7 and #2F2F2F in sRGB.
-      assert.deepStrictEqual(
-        figma.aliasChain("Fuse tokens", "secondary-hover", light("internal-fkas-private")),
-        ["Fuse tokens/secondary-hover", "Fuse themes/light/secondary-hover"]
-      );
-      assert.strictEqual(
-        hex(figma.resolve("Fuse tokens", "secondary-hover", light("internal-fkas-private"))),
-        "#E7E7E7"
-      );
-      assert.strictEqual(
-        hex(figma.resolve("Fuse tokens", "secondary-hover", dark("internal-fkas-private"))),
-        "#2F2F2F"
-      );
-
-      // Internal dark borders are white at 10% opacity, stored as 32-bit floats.
-      const border = figma.resolve("Fuse tokens", "border", dark("internal-guen-company"));
-      assert.isTrue(border instanceof Object && Math.abs(border.a - 0.1) < 1e-6 && border.r > 0.999);
-
-      // The brand pointer reaches the brand's primitive, the way `var(--brand-tkas)` does in CSS.
-      assert.deepStrictEqual(figma.aliasChain("Fuse tokens", "brand", light("internal-tkas-private")), [
-        "Fuse tokens/brand",
-        "Fuse themes/light/brand",
-        "Fuse primitives/brand-tkas",
-      ]);
-      // destructive aliases the error role of the same scheme.
-      assert.deepStrictEqual(
-        figma.aliasChain("Fuse tokens", "destructive", dark("external-tkas-company")).slice(0, 3),
-        ["Fuse tokens/destructive", "Fuse themes/dark/destructive", "Fuse themes/dark/error"]
-      );
     })
   );
 
@@ -203,7 +88,15 @@ describe("fuse-figma sync", () => {
         scopes: ["ALL_SCOPES"],
         codeSyntax: { WEB: "var(--neutral-500)" },
       });
-      assert.deepStrictEqual(figma.metadata("Fuse themes", "light/primary"), { scopes: [], codeSyntax: {} });
+      // The hidden variables only feed aliases, so no picker offers them and they carry no code.
+      for (const [collection, variable] of [
+        ["Fuse variant", "light/primary"],
+        ["Fuse variant", "density/control-h-md"],
+        ["Fuse segment", "light/external/primary"],
+        ["Fuse brand", "light/external/company/primary"],
+      ] as const) {
+        assert.deepStrictEqual(figma.metadata(collection, variable), { scopes: [], codeSyntax: {} });
+      }
       // The built CSS defines no --radius-sm and most other rungs, so the rungs carry the calc().
       assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius-xs").codeSyntax, {
         WEB: "calc(var(--radius) - 3 * var(--radius-step, 0px))",
@@ -220,7 +113,10 @@ describe("fuse-figma sync", () => {
       assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius-xl").codeSyntax, {
         WEB: "calc(var(--radius) + 2 * var(--radius-step, 0px))",
       });
-      assert.deepStrictEqual(figma.metadata("Fuse themes", "dark/radius-md"), { scopes: [], codeSyntax: {} });
+      assert.deepStrictEqual(figma.metadata("Fuse brand", "dark/internal/private/radius-md"), {
+        scopes: [],
+        codeSyntax: {},
+      });
       assert.deepStrictEqual(figma.metadata("Fuse density", "control-h-md"), {
         scopes: ["WIDTH_HEIGHT"],
         codeSyntax: { WEB: "var(--control-h-md)" },
@@ -261,89 +157,6 @@ describe("fuse-figma sync", () => {
         scopes: ["GAP"],
         codeSyntax: { WEB: "var(--surface-gap-md)" },
       });
-    })
-  );
-
-  it.effect("resolves the radius rungs a theme derives from its radius and radius step", () =>
-    Effect.gen(function* () {
-      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
-      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
-      const radius = (name: string, modes: Readonly<Record<string, string>>) =>
-        figma.resolve("Fuse tokens", name, modes);
-
-      const rungs = (modes: Readonly<Record<string, string>>) =>
-        ["radius-xs", "radius-sm", "radius-md", "radius-lg", "radius-xl"].map((rung) => radius(rung, modes));
-
-      // Internal themes inherit --radius: 0.5rem, 8px, and step 0px, so every rung is 8px.
-      assert.deepStrictEqual(rungs(light("internal-fkas-private")), [8, 8, 8, 8, 8]);
-      // External themes step 2px. external-fkas-private sets --radius: 0.75rem, 12px at the
-      // 16px root, so the rungs are 12 - 3 * 2, 12 - 2 * 2, 12 - 2, 12 and 12 + 2 * 2.
-      assert.strictEqual(radius("radius", light("external-fkas-private")), 12);
-      assert.deepStrictEqual(rungs(light("external-fkas-private")), [6, 8, 10, 12, 16]);
-      // Dark keeps the light radius and step.
-      assert.deepStrictEqual(rungs(dark("external-fkas-private")), [6, 8, 10, 12, 16]);
-      // external-guen-private sets 0.5rem, 8px.
-      assert.deepStrictEqual(rungs(light("external-guen-private")), [2, 4, 6, 8, 12]);
-      // external-tkas-private sets 1rem, 16px.
-      assert.deepStrictEqual(rungs(light("external-tkas-private")), [10, 12, 14, 16, 20]);
-      // No component uses radius-popover, so the sync gives designers no variable for it.
-      assert.notInclude(figma.variableNames("Fuse tokens"), "radius-popover");
-      assert.notInclude(figma.variableNames("Fuse themes"), "light/radius-popover");
-
-      assert.deepStrictEqual(figma.aliasChain("Fuse tokens", "radius-md", dark("internal-tkas-company")), [
-        "Fuse tokens/radius-md",
-        "Fuse themes/dark/radius-md",
-      ]);
-    })
-  );
-
-  it.effect("resolves each density metric in the density a frame sets, whatever its theme", () =>
-    Effect.gen(function* () {
-      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
-      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
-      const metric = (name: string, density: string, theme = "external-fkas-private") =>
-        figma.resolve("Fuse density", name, { ...light(theme), "Fuse density": density });
-
-      // fuse.css: --control-h-md is 2.25rem on :root and 2.75rem when comfortable.
-      assert.strictEqual(metric("control-h-md", "Dense"), 36);
-      assert.strictEqual(metric("control-h-md", "Comfortable"), 44);
-      assert.strictEqual(metric("control-h-md", "Dense", "internal-guen-company"), 36);
-      assert.strictEqual(metric("control-h-xs", "Dense"), 24);
-      assert.strictEqual(metric("control-h-lg", "Comfortable"), 48);
-      assert.strictEqual(metric("control-px-xs", "Dense"), 8);
-      assert.strictEqual(metric("control-px-md", "Comfortable"), 14);
-      assert.strictEqual(metric("control-px-icon-sm", "Dense"), 6);
-      assert.strictEqual(metric("control-px-icon-lg", "Comfortable"), 12);
-      // Button's own inset: 0.625rem dense, and the reference's 1rem at sm and 2rem at md.
-      assert.strictEqual(metric("control-px-button-md", "Dense"), 10);
-      assert.strictEqual(metric("control-px-button-sm", "Comfortable"), 16);
-      assert.strictEqual(metric("control-px-button-md", "Comfortable"), 32);
-      // Its icon edge: 0.5rem dense, three quarters of the label inset comfortable.
-      assert.strictEqual(metric("control-px-button-icon-md", "Dense"), 8);
-      assert.strictEqual(metric("control-px-button-icon-md", "Comfortable"), 24);
-      assert.strictEqual(metric("control-gap-sm", "Dense"), 4);
-      assert.strictEqual(metric("control-gap-md", "Comfortable"), 8);
-      assert.strictEqual(metric("control-text", "Dense"), 14);
-      assert.strictEqual(metric("control-text", "Comfortable"), 18);
-      assert.strictEqual(metric("control-leading", "Dense"), 20);
-      assert.strictEqual(metric("control-leading", "Comfortable"), 24);
-      assert.strictEqual(metric("label-text", "Dense"), 14);
-      assert.strictEqual(metric("label-text", "Comfortable"), 16);
-      assert.strictEqual(metric("label-leading", "Dense"), 20);
-      assert.strictEqual(metric("label-leading", "Comfortable"), 24);
-      // A row is 32px dense and 36px comfortable; a table head adds 8px.
-      assert.strictEqual(metric("row-h", "Dense"), 32);
-      assert.strictEqual(metric("row-h", "Comfortable"), 36);
-      assert.strictEqual(metric("row-h-header", "Comfortable"), 44);
-      assert.strictEqual(metric("row-px", "Comfortable"), 12);
-      assert.strictEqual(metric("row-py", "Dense"), 6);
-      // The surface gap tiers step 8/12/16/24px dense and 12/16/24/32px comfortable.
-      assert.strictEqual(metric("surface-gap-sm", "Dense"), 8);
-      assert.strictEqual(metric("surface-gap-lg", "Comfortable"), 24);
-      assert.strictEqual(metric("surface-gap-xl", "Dense"), 24);
-      assert.strictEqual(metric("surface-gap-xl", "Comfortable"), 32);
-      // A frame that sets no density mode sees the collection's first mode, Dense.
-      assert.strictEqual(figma.resolve("Fuse density", "control-h-sm", {}), 32);
     })
   );
 
@@ -406,7 +219,7 @@ describe("fuse-figma sync", () => {
       yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
       const idsBefore = figma.variableIds();
       const synced = hex(figma.resolve("Fuse tokens", "primary", light("external-fkas-private")));
-      figma.setValue("Fuse themes", "light/primary", "external-fkas-private", drift(figma));
+      figma.setValue("Fuse brand", "light/external/private/primary", "Fjordkraft", drift(figma));
 
       yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
 
@@ -425,9 +238,9 @@ describe("fuse-figma sync", () => {
     Effect.gen(function* () {
       const figma = new InMemoryFigma(FILE_KEY, TOKEN);
       yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
-      const id = figma.variableIds().get("Fuse themes/light/primary");
-      if (id === undefined) throw new Error("the first sync creates light/primary");
-      figma.setMetadata("Fuse themes", "light/primary", {
+      const id = figma.variableIds().get("Fuse segment/light/external/primary");
+      if (id === undefined) throw new Error("the first sync creates light/external/primary");
+      figma.setMetadata("Fuse segment", "light/external/primary", {
         scopes: ["ALL_SCOPES"],
         codeSyntax: { WEB: "var(--designer)", ANDROID: "R.color.designer" },
       });
@@ -436,7 +249,7 @@ describe("fuse-figma sync", () => {
 
       // The write carries no codeSyntax at all, so it is safe whether Figma merges or replaces it.
       assert.deepStrictEqual(figma.acceptedWrites.at(-1)?.variables, [{ action: "UPDATE", id, scopes: [] }]);
-      assert.deepStrictEqual(figma.metadata("Fuse themes", "light/primary"), {
+      assert.deepStrictEqual(figma.metadata("Fuse segment", "light/external/primary"), {
         scopes: [],
         codeSyntax: { WEB: "var(--designer)", ANDROID: "R.color.designer" },
       });
@@ -489,18 +302,22 @@ describe("fuse-figma sync", () => {
       const libraryId = figma.addLibraryCollection("Fuse tokens", ["Light", "Dark"]);
       const libraryPrimary = figma.addVariable(libraryId, "primary", "COLOR", { r: 0, g: 0, b: 0, a: 1 });
       const brandId = figma.addCollection("Brand (designers)", ["Light", "Dark"]);
-      figma.addExtension("Fuse themes", brandId);
+      const extensionId = figma.addExtension("Fuse brand", brandId);
 
       yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
 
       assert.deepStrictEqual(figma.collectionNames(), [
         "Brand (designers)",
         "Fuse primitives",
-        "Fuse themes",
+        "Fuse brand",
+        "Fuse segment",
+        "Fuse variant",
         "Fuse tokens",
         "Fuse density",
       ]);
-      assert.strictEqual(figma.variableNames("Fuse themes").length, 196);
+      assert.isTrue(figma.hasCollection(extensionId));
+      assert.isTrue(figma.hasCollection(libraryId));
+      assert.strictEqual(figma.variableNames("Fuse brand").length, 784);
       assert.deepStrictEqual(figma.variableById(libraryPrimary).values, [
         { r: 0, g: 0, b: 0, a: 1 },
         { r: 0, g: 0, b: 0, a: 1 },
@@ -533,7 +350,12 @@ describe("fuse-figma sync", () => {
     Effect.gen(function* () {
       const figma = new InMemoryFigma(FILE_KEY, TOKEN);
       figma.afterNextWrite(() =>
-        figma.setValue("Fuse themes", "light/primary", "external-fkas-private", { r: 1, g: 0, b: 0, a: 1 })
+        figma.setValue("Fuse brand", "light/external/private/primary", "Fjordkraft", {
+          r: 1,
+          g: 0,
+          b: 0,
+          a: 1,
+        })
       );
 
       const failure = yield* Effect.flip(run(figma, ["--file-key", FILE_KEY, "sync"]));
@@ -553,12 +375,12 @@ describe("fuse-figma sync", () => {
       const figma = new InMemoryFigma(FILE_KEY, TOKEN);
       yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
       // A designer points error at destructive, the reverse of the tokens. Figma refuses a
-      // cycle, so destructive first gets a literal in every theme.
-      for (const theme of figma.modeNames("Fuse themes")) {
-        figma.setValue("Fuse themes", "light/destructive", theme, { r: 1, g: 0, b: 0, a: 1 });
+      // cycle, so destructive first gets a literal in every brand.
+      for (const brand of figma.modeNames("Fuse brand")) {
+        figma.setValue("Fuse brand", "light/external/company/destructive", brand, { r: 1, g: 0, b: 0, a: 1 });
       }
-      const destructive = figma.variableIds().get("Fuse themes/light/destructive") ?? "";
-      figma.setValue("Fuse themes", "light/error", "external-elma-company", {
+      const destructive = figma.variableIds().get("Fuse brand/light/external/company/destructive") ?? "";
+      figma.setValue("Fuse brand", "light/external/company/error", "Elmera", {
         type: "VARIABLE_ALIAS",
         id: destructive,
       });
@@ -568,8 +390,8 @@ describe("fuse-figma sync", () => {
       yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
 
       assert.deepStrictEqual(
-        figma.aliasChain("Fuse tokens", "destructive", light("external-elma-company")).slice(0, 3),
-        ["Fuse tokens/destructive", "Fuse themes/light/destructive", "Fuse themes/light/error"]
+        figma.aliasChain("Fuse tokens", "destructive", light("external-elma-company")).slice(3, 5),
+        ["Fuse brand/light/external/company/destructive", "Fuse brand/light/external/company/error"]
       );
       assert.include(yield* output, "reading it back matches the tokens");
     })
@@ -623,9 +445,12 @@ describe("fuse-figma check", () => {
       assert.include(printed, "Fuse tokens: create collection");
       assert.include(printed, "Fuse tokens: create mode Light");
       assert.include(printed, "Fuse tokens: create mode Dark");
-      assert.include(printed, "Fuse themes: create mode ×24");
-      assert.notInclude(printed, "Fuse themes: create mode external-elma-company");
-      assert.include(printed, "Fuse themes: create variable ×196");
+      assert.include(printed, "Fuse brand: create mode Telinet (private only)");
+      assert.include(printed, "Fuse brand: create variable ×784");
+      assert.notInclude(printed, "Fuse brand: create variable light/external/private/primary");
+      assert.include(printed, "Fuse segment: create variable ×392");
+      assert.include(printed, "Fuse variant: create variable ×235");
+      assert.include(printed, "Fuse density: create mode Auto");
       assert.include(printed, "Fuse density: create mode Comfortable");
       assert.include(printed, "Fuse density: create variable ×39");
     })

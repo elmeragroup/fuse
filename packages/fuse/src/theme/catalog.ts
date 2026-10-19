@@ -4,9 +4,11 @@
  * `/theme`, which re-exports client TSX. Its values are the resolved catalog, so readers
  * translate resolved values into their own format and never parse CSS themselves, and the
  * part density table it carries, which the docs coverage test reads without resolving every
- * theme.
+ * theme. It also carries the theme axes and the brand table, so a design tool can lay out
+ * variant, brand and segment as separate choices.
  */
 
+export { defaultDensityForVariant } from "./density";
 export { resolveThemeCatalog } from "./resolve-theme-catalog";
 export { DENSITY_ROLES, PART_DENSITY } from "./tokens/density-roles";
 export type {
@@ -30,4 +32,5 @@ export type { DensityMetricKind, DensityMetricName } from "./tokens/density-metr
 export type { DensityPart, DensityRole } from "./tokens/density-roles";
 export type { PrimitiveName } from "./tokens/primitives";
 export type { RadiusRungName } from "./tokens/radius-scale";
-export type { ThemeSlug } from "./tokens/themes";
+export { BRAND_CODES, BRANDS, THEME_SEGMENTS, THEME_VARIANTS } from "./tokens/themes";
+export type { BrandCode, ThemeSegment, ThemeSlug, ThemeVariant } from "./tokens/themes";

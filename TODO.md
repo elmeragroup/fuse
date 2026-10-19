@@ -17,8 +17,8 @@
 - Ask design for Nordic Green Energy's radius and button radius, and sign off its palette.
   `external-palettes.ts` maps the NGE Material 3 scheme by meaning, sets a 6px `0.375rem`
   placeholder radius and takes the `1.8125rem` pill button that Fjordkraft and Telinet use,
-  since the nordicgreen.fi buttons are pills. Running `figma:sync` for the four new theme
-  modes and two primitives waits on the owner.
+  since the nordicgreen.fi buttons are pills. Running `figma:sync` for the new `Fuse brand`
+  mode and two primitives waits on the owner.
 - Ask design for an external secondary hover tone. The fkas, tkas, guen, fkse and elma themes
   paint `secondary` in the brand color, and `--secondary-hover`, 5% toward `foreground`, measures
   1.03–1.06:1 against it in light and 1.01–1.04:1 in dark, so the hover is faint. Nordic Green
@@ -295,8 +295,11 @@
 - Remove the unused `--radius-popover` rung from `fuse.css` and `RADIUS_RUNGS` in a
   separate change. No component uses it, Fuse popups use `rounded-md`, and the Figma sync
   already leaves it out.
-- Revisit Figma extended collections for brand theming if the two-collection mode
-  pairing proves awkward for designers.
+- After the first axes sync of a file that already holds `Fuse density`, move the `Auto`
+  column all the way to the left of the variables view in Figma by hand, by dragging its header
+  or through the header's right-click menu. The left-most mode is the default. The REST API
+  appends the mode and cannot reorder modes, so `Dense` stays the file's default until someone
+  does.
 
 ## Data table
 
