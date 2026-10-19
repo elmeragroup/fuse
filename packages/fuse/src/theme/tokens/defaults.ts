@@ -74,6 +74,9 @@ export const LAYER_DEFAULTS = {
   // role, and the external variant layer makes it transparent. `CheckboxCard` and the TextField
   // `card` box keep `--border`.
   "card-border": "var(--border)",
+  // The line between a Card's stacked sections. Internal themes draw it in the border role, and
+  // the external variant layer draws it in the page tint, so each card reads as split in segments.
+  "card-section-divider": "var(--border)",
   // The outline Button's border. Internal themes draw it as a 1px hairline in the border
   // role, and the external variant layer swaps both values for the reference's 2px ring
   // in the text color.

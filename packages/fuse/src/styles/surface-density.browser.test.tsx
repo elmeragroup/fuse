@@ -292,6 +292,27 @@ describe("surface metrics follow document density", () => {
         expect(block.top - inner.top - 1, "inner top").toBe(SURFACE.md[density]);
       });
 
+      it.each([
+        ["a default Card", undefined, "md"],
+        ["a large Card", "lg", "lg"],
+      ] as const)("pads the stacked sections of %s with the %s tier on every side", (_name, size, tier) => {
+        stampDensity(density);
+        renderThemed(
+          <Card.Root size={size}>
+            <Card.Section role="group" aria-label="First section">
+              First
+            </Card.Section>
+            <Card.Section role="group" aria-label="Second section">
+              Second
+            </Card.Section>
+          </Card.Root>
+        );
+        const pad = SURFACE[tier][density];
+        for (const name of ["First section", "Second section"]) {
+          expect(paddings(roleNamed("group", name)), name).toEqual([pad, pad, pad, pad]);
+        }
+      });
+
       it("pads a Card section outside a card root with the medium tier", () => {
         stampDensity(density);
         renderThemed(<Card.Header role="group" aria-label="Loose header" />);

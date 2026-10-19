@@ -33,7 +33,9 @@ export type ExternalBrandCode = Exclude<BrandCode, "fkab">;
  * 1.4.11 shortfall, and a card on a `card`-coloured surface, such as a nested Card, has no
  * outline at all. `CheckboxCard` is a control and the TextField `card` box is a field boundary,
  * so both keep `--border`. The role is light-only, so dark cards draw no edge either; whether
- * they should keep one is an open design question in `TODO.md`.
+ * they should keep one is an open design question in `TODO.md`. The line between a Card's
+ * stacked sections takes the page tint, `--background`, so it reads as a gap between segments of
+ * the card rather than a drawn rule.
  *
  * A light modal, Dialog, AlertDialog or Sheet, fills with the page tint and takes the page's
  * text colour, so card-coloured fields and selection rows inside it stand apart as they do on
@@ -60,6 +62,7 @@ export const EXTERNAL_VARIANT_LAYER = {
   "dialog-foreground": "var(--foreground)",
   ring: NEUTRAL_RING,
   "card-border": "oklch(0 0 0 / 0)",
+  "card-section-divider": "var(--background)",
   "button-outline": "var(--foreground)",
   "selection-border": "oklch(0 0 0 / 0)",
   "selection-checked-border": "var(--selection-border)",

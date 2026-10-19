@@ -19,6 +19,19 @@ test("cardVariants is public and slotted with direction and size axes, and parts
   );
   const _description = <Card.Description size="lg">Body</Card.Description>;
 
+  const _section = (
+    <Card.Root>
+      <Card.Section>
+        <Card.SectionMedia>
+          <svg aria-hidden />
+        </Card.SectionMedia>
+        <p>Moving out on 1 November.</p>
+      </Card.Section>
+      <Card.Section render={<button type="button" />}>No thanks</Card.Section>
+    </Card.Root>
+  );
+  // @ts-expect-error a section takes the card's size from the root
+  const _sectionPartSize = <Card.Section size="lg" />;
   // @ts-expect-error level is constrained to 1-6
   const _badLevel = <Card.Title level={7} />;
   // @ts-expect-error the card's size is the root's alone

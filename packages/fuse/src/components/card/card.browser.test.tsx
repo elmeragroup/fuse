@@ -18,7 +18,7 @@ import { CheckboxGroup } from "../checkbox/checkbox";
 import { Card } from "./card";
 
 function slot(name: string): HTMLElement {
-  // DOM audit: all eight parts emit their data-slot values.
+  // DOM audit: all ten parts emit their data-slot values.
   const element = document.querySelector(`[data-slot="${name}"]`);
   if (!(element instanceof HTMLElement)) {
     throw new Error(`expected an element with data-slot="${name}"`);
@@ -54,7 +54,7 @@ describe("Card", () => {
     expect(levelTwo.tagName).toBe("H2");
   });
 
-  it("emits a data-slot on all eight parts", () => {
+  it("emits a data-slot on all ten parts", () => {
     renderThemed(
       <Card.Root>
         <Card.Header>
@@ -67,6 +67,12 @@ describe("Card", () => {
         </Card.Header>
         <Card.Content>Body</Card.Content>
         <Card.Footer>Footer</Card.Footer>
+        <Card.Section>
+          <Card.SectionMedia>
+            <svg aria-hidden />
+          </Card.SectionMedia>
+          <p>Section</p>
+        </Card.Section>
       </Card.Root>
     );
     // DOM audit: enumerate the emitted slot contract independently of each slot lookup.
@@ -83,6 +89,8 @@ describe("Card", () => {
       "card-action",
       "card-content",
       "card-footer",
+      "card-section",
+      "card-section-media",
     ]);
     expect(slot("card-description").tagName).toBe("P");
     expect(slot("card-tag").tagName).toBe("DIV");

@@ -77,6 +77,13 @@ describe("cardVariants", () => {
     }
   });
 
+  it("pads a section with the card's tier, falling back to the medium tier, and draws its divider in the section divider role", () => {
+    const { cardSection, cardSectionMedia } = cardVariants();
+    expect(cardSection()).toContain("p-[var(--card-pad,var(--surface-pad-md))]");
+    expect(cardSection()).toContain("border-card-section-divider");
+    expect(cardSectionMedia()).toContain("[&>svg]:size-5");
+  });
+
   it("carries no destructive, raw palette, or dark classes", () => {
     const slots = cardVariants({ direction: "horizontal" });
     const resolved = [
@@ -88,6 +95,8 @@ describe("cardVariants", () => {
       slots.cardAction(),
       slots.cardContent(),
       slots.cardFooter(),
+      slots.cardSection(),
+      slots.cardSectionMedia(),
     ].join(" ");
     expect(resolved).not.toContain("dark:");
     expect(resolved).not.toContain("destructive");

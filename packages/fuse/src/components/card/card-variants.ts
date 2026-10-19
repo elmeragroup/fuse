@@ -1,11 +1,15 @@
+import { cn } from "../../styles/cn";
 import {
   cardDefaultTierClass,
   cardHorizontalShellClass,
   cardLargeTierClass,
   cardSectionShellClass,
   cardShellClass,
+  cardStackedSectionShellClass,
 } from "../../styles/inner-corner/card";
+import { nativeStateFaceClass } from "../../styles/state-face";
 import { tv } from "../../styles/tv";
+import { insetFocusRingClass } from "../../styles/utils";
 
 /**
  * PUBLIC slot recipe. `text-field`'s `card` variant and
@@ -34,6 +38,18 @@ export const cardVariants = tv({
     cardAction: "col-start-2 row-span-2 row-start-1 self-start justify-self-end",
     cardContent: "",
     cardFooter: "flex items-center",
+    // Fuse ships no preflight, so the section resets a native button's face, font and alignment
+    // itself. A button or link section takes Item's anchor hover fill, a pointer cursor and an
+    // inset focus ring, which the sections around it cannot paint over.
+    cardSection: cn(
+      cardStackedSectionShellClass,
+      "box-border block w-full bg-transparent text-start text-inherit transition-colors duration-100 [font:inherit]",
+      "has-[>[data-slot=card-section-media]]:grid has-[>[data-slot=card-section-media]]:grid-cols-[auto_minmax(0,1fr)] has-[>[data-slot=card-section-media]]:items-center has-[>[data-slot=card-section-media]]:gap-x-(--surface-gap-md)",
+      "[&:is(a,button)]:cursor-pointer [&:is(a,button)]:enabled-hover:bg-muted",
+      insetFocusRingClass,
+      nativeStateFaceClass
+    ),
+    cardSectionMedia: "flex shrink-0 items-center justify-center [&>svg]:size-5",
   },
   variants: {
     direction: {

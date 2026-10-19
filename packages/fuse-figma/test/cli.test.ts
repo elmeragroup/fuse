@@ -47,13 +47,13 @@ describe("fuse-figma sync", () => {
       assert.deepStrictEqual(figma.modeNames("Fuse brand"), [...BRAND_MODES.values()]);
       assert.deepStrictEqual(figma.modeNames("Fuse primitives"), ["Value"]);
       assert.deepStrictEqual(figma.modeNames("Fuse density"), ["Auto", "Dense", "Comfortable"]);
-      // 93 contract tokens plus 5 radius rungs.
-      assert.strictEqual(figma.variableNames("Fuse tokens").length, 98);
-      // Those 98 per scheme, plus 39 density metrics.
-      assert.strictEqual(figma.variableNames("Fuse variant").length, 196 + 39);
+      // 94 contract tokens plus 5 radius rungs.
+      assert.strictEqual(figma.variableNames("Fuse tokens").length, 99);
+      // Those 99 per scheme, plus 39 density metrics.
+      assert.strictEqual(figma.variableNames("Fuse variant").length, 198 + 39);
       // Per scheme and variant, then per scheme, variant and segment.
-      assert.strictEqual(figma.variableNames("Fuse segment").length, 392);
-      assert.strictEqual(figma.variableNames("Fuse brand").length, 784);
+      assert.strictEqual(figma.variableNames("Fuse segment").length, 396);
+      assert.strictEqual(figma.variableNames("Fuse brand").length, 792);
       assert.strictEqual(figma.variableNames("Fuse primitives").length, 25);
       // 26 control metrics, 4 row, 2 label, 3 surface padding and 4 surface gap metrics.
       assert.strictEqual(figma.variableNames("Fuse density").length, 39);
@@ -223,7 +223,7 @@ describe("fuse-figma sync", () => {
         mismatched.map(([collection, entry]) => `${collection}/${entry.name}`),
         []
       );
-      assert.strictEqual(described.length, 98 + 25 + 39);
+      assert.strictEqual(described.length, 99 + 25 + 39);
       assert.include(figma.metadata("Fuse tokens", "feature-foreground").description, "not text-grade");
       for (const collection of ["Fuse variant", "Fuse segment", "Fuse brand"]) {
         const blank = figma
@@ -397,7 +397,7 @@ describe("fuse-figma sync", () => {
       ]);
       assert.isTrue(figma.hasCollection(extensionId));
       assert.isTrue(figma.hasCollection(libraryId));
-      assert.strictEqual(figma.variableNames("Fuse brand").length, 784);
+      assert.strictEqual(figma.variableNames("Fuse brand").length, 792);
       assert.deepStrictEqual(figma.variableById(libraryPrimary).values, [
         { r: 0, g: 0, b: 0, a: 1 },
         { r: 0, g: 0, b: 0, a: 1 },

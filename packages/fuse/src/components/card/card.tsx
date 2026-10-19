@@ -3,6 +3,7 @@ import type { HTMLAttributes, ReactElement, ReactNode } from "react";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import { CardSection } from "./card-section";
 import { cardDescriptionVariants, cardTitleVariants, cardVariants } from "./card-variants";
 
 // Every part takes `direction`; only the root takes the card's `size`, so the typography `size`
@@ -166,6 +167,16 @@ function CardFooter({ className, direction, ...props }: CardDivProps): ReactElem
   );
 }
 
+/**
+ * The icon column of a `Card.Section`. The section becomes a two-column grid, this column and the
+ * content, with the icon centred on the section's height. An `svg` is sized to `5`.
+ */
+function CardSectionMedia({ className, ...props }: HTMLAttributes<HTMLDivElement>): ReactElement {
+  const { cardSectionMedia } = cardVariants();
+
+  return <div data-slot="card-section-media" className={cn(cardSectionMedia(), className)} {...props} />;
+}
+
 CardRoot.displayName = "Card.Root";
 CardHeader.displayName = "Card.Header";
 CardTag.displayName = "Card.Tag";
@@ -174,6 +185,7 @@ CardDescription.displayName = "Card.Description";
 CardAction.displayName = "Card.Action";
 CardContent.displayName = "Card.Content";
 CardFooter.displayName = "Card.Footer";
+CardSectionMedia.displayName = "Card.SectionMedia";
 
 export const Card = {
   Root: CardRoot,
@@ -184,4 +196,6 @@ export const Card = {
   Action: CardAction,
   Content: CardContent,
   Footer: CardFooter,
+  Section: CardSection,
+  SectionMedia: CardSectionMedia,
 };

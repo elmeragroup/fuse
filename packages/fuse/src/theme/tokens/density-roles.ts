@@ -66,6 +66,8 @@ export const PART_DENSITY = {
   "card-footer": "surface",
   "card-footer[data-direction=horizontal]": "layout",
   "card-tag": "fixed",
+  "card-section": "surface",
+  "card-section-media": "fixed",
 
   checkbox: "fixed",
   "checkbox-indicator": "fixed",

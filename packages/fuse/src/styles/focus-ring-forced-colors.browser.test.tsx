@@ -8,6 +8,7 @@ import { emulateForcedColors } from "../../test/forced-colors";
 import { withLocale } from "../../test/locale-matrix";
 import { renderThemed, roleNamed } from "../../test/themed-browser-render";
 import { Button } from "../components/button/button";
+import { Card } from "../components/card/card";
 import { InputGroup } from "../components/input-group";
 import { Input } from "../components/input/input";
 import { DateField } from "../react-aria/date-field/date-field";
@@ -41,6 +42,10 @@ function renderHosts(): void {
         </InputGroup.Root>
         <button type="button">Before date field</button>
         <DateField label="Due date" />
+        <button type="button">Before section</button>
+        <Card.Root>
+          <Card.Section render={<button type="button" />}>Change plan</Card.Section>
+        </Card.Root>
       </UiProviders>
     )
   );
@@ -81,6 +86,8 @@ describe("the focus ring in forced-colors mode", () => {
       ["input group", "Before group", inputGroupRoot, () => roleNamed("textbox", "Search")],
       // State target: React Aria reports focus through a render prop.
       ["date field group", "Before date field", () => roleNamed("group", "Due date"), none],
+      // Inset target: a stacked Card section drawn as a button.
+      ["card section button", "Before section", () => roleNamed("button", "Change plan"), none],
     ] as const) {
       await tabInto(before);
       expect(outlineOf(host()), `${label} while focused`).toEqual({ style: "solid", width: "2px" });

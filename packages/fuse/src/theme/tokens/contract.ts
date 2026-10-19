@@ -49,6 +49,7 @@ export const TOKEN_NAMES = [
   "input",
   "ring",
   "card-border",
+  "card-section-divider",
   "button-outline",
   "selection-border",
   "selection-checked-border",
@@ -250,6 +251,7 @@ export const TOKEN_KINDS = {
   input: "color",
   ring: "color",
   "card-border": "color",
+  "card-section-divider": "color",
   "button-outline": "color",
   "selection-border": "color",
   "selection-checked-border": "color",
@@ -604,6 +606,7 @@ export const EXTERNAL_RESET_KEYS = [
   "input",
   "ring",
   "card-border",
+  "card-section-divider",
   "button-outline",
   "selection-border",
   "selection-checked-border",
@@ -656,7 +659,7 @@ export const MUST_OVERRIDE_INTERNAL = ["brand", "brand-foreground"] as const;
 
 /**
  * What a dark palette keeps from the light composition: geometry, typography, a Card's edge
- * color, the outline Button's border color, a selection row's resting and checked border and
+ * and section divider colors, the outline Button's border color, a selection row's resting and checked border and
  * divider colors and a disabled selection row's fill, stripe and label text colors. Each color is
  * either an alias, such as `var(--border)`, `var(--muted)` or `var(--foreground)`, so it follows
  * the dark role it names, or a value that does not depend on the scheme, such as the external
@@ -664,6 +667,7 @@ export const MUST_OVERRIDE_INTERNAL = ["brand", "brand-foreground"] as const;
  */
 const LIGHT_ONLY_KEYS: ReadonlySet<TokenName> = new Set([
   "card-border",
+  "card-section-divider",
   "button-outline",
   "selection-border",
   "selection-checked-border",

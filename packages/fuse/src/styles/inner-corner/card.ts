@@ -5,10 +5,13 @@ import { publishShellBoundary } from "../corner-radius";
 // `corner-radius.ts`. Each constant pairs a part's rung or padding with the corner it publishes.
 
 /**
- * The Card root: `rounded-lg` behind a 1px border.
+ * The Card root: `rounded-lg` behind a 1px border. It hands its direct `Card.Section` children the
+ * corner they round with, its own less the border, as the private `--card-section-corner`. Every
+ * section resets the property at lower specificity, so only a card's direct section holds a value,
+ * as Frame does with `--frame-corner`.
  */
 export const cardShellClass = cn(
-  "rounded-lg border [--shell-inner:max(0px,--theme(--radius-lg)-1px)]",
+  "rounded-lg border [--shell-inner:max(0px,--theme(--radius-lg)-1px)] *:data-[slot=card-section]:[--card-section-corner:max(0px,--theme(--radius-lg)-1px)]",
   publishShellBoundary
 );
 
@@ -65,5 +68,17 @@ export const textFieldCardShellClass = cn(
  */
 export const checkboxCardContentShellClass = cn(
   "px-[var(--card-pad,var(--surface-pad-md))] py-3",
+  cardTierBoundaryClass
+);
+
+/**
+ * A stacked `Card.Section`: it pads every side with the card's tier, `--card-pad`, and publishes
+ * the same inner corner as the other sections. A 1px `--card-section-divider` line runs above every
+ * section but the first. The first and last sections round their outer corners with the corner the
+ * card hands them, so a fill or a hover fill follows the card's corners. Both skip `hidden`
+ * siblings, and middle sections stay square. Outside a card the section is square.
+ */
+export const cardStackedSectionShellClass = cn(
+  "border-0 border-t border-card-section-divider p-[var(--card-pad,var(--surface-pad-md))] [--card-section-corner:initial] [&:nth-child(1_of_:not([hidden]))]:rounded-t-[var(--card-section-corner,0px)] [&:nth-child(1_of_:not([hidden]))]:border-t-0 [&:nth-last-child(1_of_:not([hidden]))]:rounded-b-[var(--card-section-corner,0px)]",
   cardTierBoundaryClass
 );
