@@ -26,6 +26,12 @@ function slot(name: string): HTMLElement {
   return element;
 }
 
+/** Tailwind's `leading-snug`, written out by hand: a line 1.375 times the font size. */
+const SNUG = 1.375;
+
+/** Every `Card.Title` size. */
+const TITLE_SIZES = ["default", "sm", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl"] as const;
+
 describe("Card", () => {
   it("renders the title as a level-3 heading by default and honours level", () => {
     renderThemed(
@@ -153,6 +159,47 @@ describe("Card", () => {
     );
     expect(slot("card").dataset.size).toBe(written);
   });
+  it("spaces the lines of a title that wraps at a snug leading", () => {
+    renderThemed(
+      <div style={{ width: 240 }}>
+        <Card.Root>
+          <Card.Header>
+            <Card.Title>12 Long Example Street, entrance B, 1234 Sampletown</Card.Title>
+          </Card.Header>
+        </Card.Root>
+      </div>
+    );
+    const title = headingNamed("12 Long Example Street, entrance B, 1234 Sampletown", 3);
+    const style = getComputedStyle(title);
+    const line = px(style.lineHeight);
+    expect(line).toBeCloseTo(px(style.fontSize) * SNUG, 1);
+    const lines = title.getBoundingClientRect().height / line;
+    expect(lines, "the title wraps").toBeGreaterThan(1.5);
+    expect(lines - Math.round(lines), "the height is whole lines").toBeCloseTo(0, 1);
+  });
+
+  it.each(["vertical", "horizontal"] as const)(
+    "gives a %s title a snug leading at every size",
+    (direction) => {
+      renderThemed(
+        <>
+          {TITLE_SIZES.map((size) => (
+            <Card.Root key={size} direction={direction}>
+              <Card.Header direction={direction}>
+                <Card.Title direction={direction} size={size}>
+                  {`Title ${size}`}
+                </Card.Title>
+              </Card.Header>
+            </Card.Root>
+          ))}
+        </>
+      );
+      for (const size of TITLE_SIZES) {
+        const style = getComputedStyle(headingNamed(`Title ${size}`, 3));
+        expect(px(style.lineHeight), size).toBeCloseTo(px(style.fontSize) * SNUG, 1);
+      }
+    }
+  );
 
   it("renders the title icon before the text with the icon gap", () => {
     renderThemed(
