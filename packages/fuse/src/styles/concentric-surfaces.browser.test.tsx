@@ -29,6 +29,8 @@ import {
 } from "../../test/themed-browser-render";
 import { Accordion } from "../components/accordion";
 import { Card } from "../components/card/card";
+import { CheckboxItemGroup } from "../components/checkbox/checkbox";
+import { CheckboxItem } from "../components/checkbox/checkbox-item";
 import { Combobox } from "../components/combobox";
 import { Dialog } from "../components/dialog";
 import { Frame } from "../components/frame/frame";
@@ -68,6 +70,7 @@ const PAIR_NAMES = [
   "preset",
   "card block",
   "large card block",
+  "selection block",
   "toolbar block",
   "dialog block",
 ] as const;
@@ -81,6 +84,7 @@ const BOX_PAIRS = [
   "panel block",
   "card block",
   "large card block",
+  "selection block",
   "toolbar block",
 ] as const satisfies readonly PairName[];
 
@@ -114,7 +118,8 @@ const SURFACE_PAD = {
  * inside a panel, a floating Sidebar row 4px inside its `rounded-lg` surface with the menu action
  * 4px inside the row, a preset its 1px border and 4px inside the popover's `rounded-md`, a block
  * the border and the medium tier inside a Card and the border and the large tier inside a large
- * Card, a block its 1px border and 4px inside a Toolbar's
+ * Card, a block the border and the medium tier inside a selection row, a block its 1px border and
+ * 4px inside a Toolbar's
  * `rounded-lg`, and the large tier inside a Dialog's `rounded-xl`.
  * The field parts and tabs `radius-roles.browser.test.tsx` pins are not repeated here.
  */
@@ -128,6 +133,7 @@ const EXPECTED = {
   preset: (v) => floor(RADIUS_MD[v] - 1 - 4),
   "card block": (v, d) => floor(RADIUS_LG[v] - 1 - SURFACE_PAD.md[d]),
   "large card block": (v, d) => floor(RADIUS_LG[v] - 1 - SURFACE_PAD.lg[d]),
+  "selection block": (v, d) => floor(RADIUS_LG[v] - 1 - SURFACE_PAD.md[d]),
   "toolbar block": (v) => floor(RADIUS_LG[v] - 1 - 4),
   "dialog block": (v, d) => floor(RADIUS_XL[v] - SURFACE_PAD.lg[d]),
 } as const satisfies Record<PairName, (variant: Variant, density: Density) => number>;
@@ -189,6 +195,11 @@ function SurfaceParts(): ReactElement {
           <div role="group" aria-label="Large card block" className="rounded-inner" />
         </Card.Content>
       </Card.Root>
+      <CheckboxItemGroup label="Add-ons">
+        <CheckboxItem value="insurance">
+          <div role="group" aria-label="Selection block" className="w-full rounded-inner" />
+        </CheckboxItem>
+      </CheckboxItemGroup>
       <Toolbar.Root aria-label="Toolbar">
         <div role="group" aria-label="Toolbar block" className="rounded-inner" />
       </Toolbar.Root>
@@ -224,6 +235,11 @@ const FIND = {
     shell: roleNamed("group", "Large card"),
     edge: "start",
   }),
+  "selection block": () => {
+    const part = roleNamed("group", "Selection block");
+    // The selection row's control sits at its start, so the block reaches only its end edge.
+    return { part, shell: slotAround(part, "checkbox-item"), edge: "end" };
+  },
   "toolbar block": () => ({
     part: roleNamed("group", "Toolbar block"),
     shell: roleNamed("toolbar", "Toolbar"),

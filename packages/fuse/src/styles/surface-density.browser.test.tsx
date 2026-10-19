@@ -9,10 +9,14 @@ import { fkasPrivate, tkasCompany } from "../../test/theme-fixtures";
 import { px, renderThemed, roleNamed, stampDensity } from "../../test/themed-browser-render";
 import { Accordion } from "../components/accordion";
 import { Card } from "../components/card/card";
+import { CheckboxItemGroup } from "../components/checkbox/checkbox";
+import { CheckboxItem } from "../components/checkbox/checkbox-item";
 import { DropdownMenu } from "../components/dropdown-menu";
 import { Empty } from "../components/empty/empty";
 import { Popover } from "../components/popover";
 import { PopoverInfoButton } from "../components/popover-info-button/popover-info-button";
+import { RadioItemGroup } from "../components/radio-group/radio-group";
+import { RadioItem } from "../components/radio-group/radio-item";
 import { Select } from "../components/select";
 import { Sidebar } from "../components/sidebar";
 import { DENSITIES } from "../theme/density";
@@ -182,6 +186,34 @@ describe("surface metrics follow document density", () => {
         const style = getComputedStyle(skeleton);
         expect(px(style.paddingLeft), "start").toBe(ROW[density].inset);
         expect(px(style.paddingRight), "end").toBe(ROW[density].inset);
+      });
+
+      it.each([
+        ["a CheckboxItem", "checkbox-item"],
+        ["a RadioItem", "radio-item"],
+      ] as const)("pads %s inline with the medium tier", (_name, slot) => {
+        stampDensity(density);
+        renderThemed(
+          withLocale(
+            "en-US",
+            slot === "checkbox-item" ? (
+              <CheckboxItemGroup label="Add-ons">
+                <CheckboxItem value="insurance">Insurance</CheckboxItem>
+              </CheckboxItemGroup>
+            ) : (
+              <RadioItemGroup label="Plans" defaultValue="spot">
+                <RadioItem value="spot">Spot</RadioItem>
+              </RadioItemGroup>
+            )
+          )
+        );
+        const name = slot === "checkbox-item" ? "Insurance" : "Spot";
+        const control = roleNamed(slot === "checkbox-item" ? "checkbox" : "radio", name);
+        const row = slotShell(slot, control);
+        const style = getComputedStyle(row);
+        const pad = SURFACE.md[density];
+        expect(px(style.paddingLeft), "start").toBe(pad);
+        expect(px(style.paddingRight), "end").toBe(pad);
       });
 
       it.each([

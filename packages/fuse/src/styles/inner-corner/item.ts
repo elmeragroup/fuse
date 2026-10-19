@@ -44,9 +44,10 @@ export const itemCompactSmShellClass = cn(
 );
 
 /**
- * A SelectionItem: `rounded-lg` behind a 1px border, 16px inline padding.
+ * A SelectionItem: `rounded-lg` behind a 1px border, padded inline with the medium surface tier,
+ * `--surface-pad-md`, so its text lines up with Items, Accordion items and Cards.
  */
 export const selectionItemShellClass = cn(
-  "px-4 [--shell-inner:max(0px,--theme(--radius-lg)-1px-4*var(--spacing))]",
+  "px-(--surface-pad-md) [--shell-inner:max(0px,--theme(--radius-lg)-1px-var(--surface-pad-md))]",
   publishShellBoundary
 );
