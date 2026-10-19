@@ -62,6 +62,18 @@ function light(slug: (typeof SLUGS)[number]): ResolvedScheme {
   return theme(slug).schemes.light;
 }
 
+/**
+ * An entry's fields other than its description, for the tests that pin an entry's values. The
+ * descriptions are prose, and the description test checks them.
+ */
+function withoutDescription<E extends { readonly description: string }>(
+  entry: E | undefined
+): Omit<E, "description"> | undefined {
+  if (entry === undefined) return undefined;
+  const { description: _description, ...rest } = entry;
+  return rest;
+}
+
 describe("resolveThemeCatalog", () => {
   it("resolves every legal theme in both schemes, in source order", () => {
     expect(catalog.themes.map((resolved) => resolved.slug)).toEqual(SLUGS);
@@ -94,7 +106,7 @@ describe("resolveThemeCatalog", () => {
 
   it("computes each radius rung from the theme's radius and step", () => {
     // external-fkas-private sets --radius: 0.75rem, 12px, and external themes step 2px.
-    expect(light("external-fkas-private").rungs["radius-md"]).toEqual({
+    expect(withoutDescription(light("external-fkas-private").rungs["radius-md"])).toEqual({
       name: "radius-md",
       kind: "dimension",
       css: "calc(var(--radius) - var(--radius-step, 0px))",
@@ -338,7 +350,7 @@ describe("resolveThemeCatalog", () => {
 
   it("reads font weights as numbers, kept in both schemes", () => {
     // EXTERNAL_VARIANT_LAYER sets "500" and LAYER_DEFAULTS "400".
-    expect(light("external-fkas-private").tokens["selection-title-weight"]).toEqual({
+    expect(withoutDescription(light("external-fkas-private").tokens["selection-title-weight"])).toEqual({
       name: "selection-title-weight",
       kind: "fontWeight",
       css: "500",
@@ -365,7 +377,7 @@ describe("resolveThemeCatalog", () => {
 
   it("gives each density metric its px per density", () => {
     // fuse.css: --control-h-md is 2.25rem on :root and 2.75rem when comfortable.
-    expect(catalog.density.find((metric) => metric.name === "control-h-md")).toEqual({
+    expect(withoutDescription(catalog.density.find((metric) => metric.name === "control-h-md"))).toEqual({
       name: "control-h-md",
       metricKind: "height",
       role: "control",
@@ -377,7 +389,9 @@ describe("resolveThemeCatalog", () => {
       px: { dense: 20, comfortable: 24 },
     });
     // Button's md inset is 0.625rem dense and the reference's 2rem comfortable.
-    expect(catalog.density.find((metric) => metric.name === "control-px-button-md")).toEqual({
+    expect(
+      withoutDescription(catalog.density.find((metric) => metric.name === "control-px-button-md"))
+    ).toEqual({
       name: "control-px-button-md",
       metricKind: "padding",
       role: "control",
@@ -408,6 +422,35 @@ describe("resolveThemeCatalog", () => {
       role: "label",
       px: { dense: 14, comfortable: 16 },
     });
+  });
+
+  it("describes every entry for a designer and gives each color where Fuse paints it", () => {
+    const scheme = light("external-fkas-private");
+    const entries = [
+      ...Object.values(scheme.tokens),
+      ...Object.values(scheme.rungs),
+      ...Object.values(catalog.primitives),
+      ...catalog.density,
+    ];
+    expect(entries.filter((entry) => entry.description.trim() === "").map((entry) => entry.name)).toEqual([]);
+    // CONTEXT.md: feature-foreground is not text-grade, so Fuse never paints text with it.
+    expect(scheme.tokens["feature-foreground"].description).toContain("not text-grade");
+    expect(scheme.tokens["feature-foreground"].paints).toEqual(["surface"]);
+    expect(scheme.tokens.ring.paints).toEqual(["line"]);
+    // Only a color carries paints.
+    expect(Object.hasOwn(scheme.tokens.radius, "paints")).toBe(false);
+    expect(Object.hasOwn(scheme.rungs["radius-md"], "paints")).toBe(false);
+    expect(scheme.rungs["radius-md"].description).toContain("One radius step below radius");
+    // The neutral ramp holds one value in every theme, so Fuse paints nothing with it.
+    expect(catalog.primitives["neutral-500"].paints).toEqual([]);
+    expect(catalog.primitives["brand-fkas"].paints).toEqual(["surface"]);
+    expect(catalog.primitives["brand-fkas-foreground"].paints).toEqual(["ink"]);
+    expect(catalog.density.find((metric) => metric.name === "control-h-md")?.description).toContain(
+      "size md"
+    );
+    expect(catalog.density.find((metric) => metric.name === "surface-pad-lg")?.description).toContain(
+      "Dialog"
+    );
   });
 
   it("resolves afresh on every call", () => {

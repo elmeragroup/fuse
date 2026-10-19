@@ -6,8 +6,11 @@ import type { Expression, JSXElementName, JSXOpeningElement } from "oxc-parser";
 import { describe, expect, it } from "vitest";
 
 import { OPTIONAL_PEER_ENTRIES, walkImportedSourceFiles } from "../scripts/entries";
+import { classTokens, colorRolePaints, splitVariants } from "../test/class-tokens";
 import { writtenSlots } from "../test/written-slots";
 import { overlayLayer, toastLayer } from "./components/overlay/overlay-classes";
+import { TOKEN_PAINTS } from "./theme/tokens/contract";
+import type { ColorTokenName, TokenPaint } from "./theme/tokens/contract";
 import { PART_DENSITY } from "./theme/tokens/density-roles";
 
 /**
@@ -583,29 +586,6 @@ describe("superseded local forms", () => {
   });
 });
 
-/** The class tokens in source code: every run between whitespace, quotes and backticks. */
-function classTokens(code: string): string[] {
-  return code.split(/[\s"'`]+/u).filter((token) => token.length > 0);
-}
-
-/** Split a class token into its variants and utility at the colons outside brackets. */
-function splitVariants(token: string) {
-  const variants: string[] = [];
-  let depth = 0;
-  let current = "";
-  for (const character of token) {
-    if (character === "[") depth += 1;
-    if (character === "]") depth -= 1;
-    if (character === ":" && depth === 0) {
-      variants.push(current);
-      current = "";
-      continue;
-    }
-    current += character;
-  }
-  return { variants, utility: current };
-}
-
 /** A variant that reads another element's state (`group-*`, `peer-*`, `in-*`) styles a part. */
 function readsAnotherElement(variant: string): boolean {
   return /^(?:group|peer|in)-/u.test(variant);
@@ -692,6 +672,27 @@ function localDisabledDims(code: string): string[] {
 function ungatedPointerFaces(code: string): string[] {
   return classTokens(code).filter(isUngatedPointerFace);
 }
+
+function allowedPaints(role: ColorTokenName): readonly TokenPaint[] {
+  return TOKEN_PAINTS[role];
+}
+
+describe("token paints", () => {
+  // Why not a lint rule: the oracle is the paint table in theme/tokens/contract.ts, and the
+  // `elmera` rules live in the external `@elmeragroup/internal/oxlint` package, which cannot read
+  // this repo's tables. The unit under test is TOKEN_PAINTS. The oracle is where the library's
+  // own classes paint each role, so a role the Figma sync hides from a picker is never one a
+  // component paints there. `test/class-tokens.ts` owns the class parsing and names the routes
+  // it cannot follow.
+  it("paints every color role only where its paints allow", () => {
+    const outside = [...SOURCE_TREE.values()].flatMap((record) =>
+      colorRolePaints(record.code)
+        .filter(({ role, paint }) => !allowedPaints(role).includes(paint))
+        .map(({ role, paint, token }) => `${record.relative}: ${token} paints ${role} as ${paint}`)
+    );
+    expect(outside).toEqual([]);
+  });
+});
 
 describe("state faces", () => {
   // Why not a lint rule: the `elmera` rules live in the external

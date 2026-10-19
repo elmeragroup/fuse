@@ -85,6 +85,9 @@ export type FileVariable = {
   readonly type: FileVariableType;
   readonly scopes: readonly string[];
   readonly codeSyntax: CodeSyntax;
+
+  /** The variable's description, empty when it has none. */
+  readonly description: string;
   readonly values: ReadonlyMap<ModeId, FileValue>;
 };
 
@@ -146,6 +149,9 @@ export type VariableMetadata = {
    * `undefined` leaves the variable's code syntax as it is.
    */
   readonly codeSyntax: CodeSyntax | undefined;
+
+  /** The description the variable should end up with, empty for none. */
+  readonly description: string;
 };
 
 /** A change to one variable. */

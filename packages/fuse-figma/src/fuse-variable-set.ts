@@ -17,16 +17,19 @@
  * - `Fuse brand` has one mode per brand and holds each theme's values at
  *   `<scheme>/<variant>/<segment>/<token>`. Figma cannot disable a mode, so a brand pinned to
  *   one segment holds that segment's values under the other segment too.
- * - `Fuse primitives` holds the neutral ramp and brand accents in a single mode. Primitive
- *   tokens are public API, so designers can bind these too.
+ * - `Fuse primitives` holds the neutral ramp and brand accents in a single mode. The neutral
+ *   ramp is hidden from pickers, because it holds one value in every theme, and stays an alias
+ *   target. The brand accents stay in the fill and text pickers for cross-brand artwork.
  * - `Fuse density` holds the density metrics with an Auto, a Dense and a Comfortable mode.
  *   Auto follows the frame's variant, as apps do.
  *
  * Every bound variable takes all four hops, so a hidden variable's name never depends on
  * which axes a token varies on. The variables of `Fuse variant`, `Fuse segment` and
- * `Fuse brand` are hidden from pickers and carry no code syntax, because they only feed
- * aliases. The sync deletes the retired `Fuse themes` collection, which held one mode per
- * theme slug before the axes split.
+ * `Fuse brand` are hidden from pickers and carry no code syntax and an empty description,
+ * because they only feed aliases. A color is offered only in the pickers for where Fuse paints
+ * it, and every variable a designer can bind carries the catalog's description. The sync
+ * deletes the retired `Fuse themes` collection, which held one mode per theme slug before the
+ * axes split.
  */
 
 import type { Result } from "effect";
@@ -58,6 +61,7 @@ import type {
   TokenEntry,
   TokenKind,
   TokenName,
+  TokenPaint,
 } from "@elmeragroup/fuse/theme-catalog";
 
 import { makeVariableSet } from "./variable-set.ts";
@@ -162,20 +166,57 @@ const DIMENSION_SCOPES = {
 } as const satisfies Record<DimensionTokenName, readonly VariableScope[]>;
 
 /**
- * The pickers that offer a color or font token. A real Enterprise file kept `FONT_FAMILY` on
- * the STRING font family variables. Font weights are FLOAT variables and take `FONT_STYLE`,
- * the REST API's name for a FLOAT variable's font weight picker. The Plugin API names the
- * same stored scope `FONT_WEIGHT`.
+ * The pickers that offer a font token. A real Enterprise file kept `FONT_FAMILY` on the STRING
+ * font family variables. Font weights are FLOAT variables and take `FONT_STYLE`, the REST API's
+ * name for a FLOAT variable's font weight picker. The Plugin API names the same stored scope
+ * `FONT_WEIGHT`.
  */
-const KIND_SCOPES = {
-  color: ["ALL_SCOPES"],
+const FONT_SCOPES = {
   fontFamily: ["FONT_FAMILY"],
   fontWeight: ["FONT_STYLE"],
-} as const satisfies Record<Exclude<TokenKind, "dimension">, readonly VariableScope[]>;
+} as const satisfies Record<Exclude<TokenKind, "color" | "dimension">, readonly VariableScope[]>;
+
+/**
+ * The pickers that offer a color for each place Fuse paints it. A surface fills frames and
+ * shapes. An ink colors text, and Fuse colors icons with the text color through `currentColor`,
+ * so an ink also fills shapes and strokes vectors. A line strokes.
+ */
+const PAINT_SCOPES = {
+  surface: ["FRAME_FILL", "SHAPE_FILL"],
+  ink: ["TEXT_FILL", "SHAPE_FILL", "STROKE_COLOR"],
+  line: ["STROKE_COLOR"],
+} as const satisfies Record<TokenPaint, readonly VariableScope[]>;
+
+/** The fill scopes `ALL_FILLS` stands for, which Figma refuses beside it. */
+const FILL_SCOPES = ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"] as const satisfies readonly VariableScope[];
+
+/**
+ * The pickers that offer a color painted in `paints`: each scope once, with the three fill
+ * scopes folded into `ALL_FILLS`, which Figma keeps for any fill picker it adds later. The plan
+ * compares a file's scopes as a set against this list's length, so a duplicate would read as
+ * drift on every run. No paints means no picker, which hides the variable and keeps it an
+ * alias target.
+ */
+function paintScopes(paints: readonly TokenPaint[]): readonly VariableScope[] {
+  const scopes = new Set<VariableScope>(paints.flatMap((paint) => PAINT_SCOPES[paint]));
+  if (FILL_SCOPES.every((scope) => scopes.has(scope))) {
+    const strokes = [...scopes].filter((scope) => !FILL_SCOPES.some((fill) => fill === scope));
+    return ["ALL_FILLS", ...strokes];
+  }
+  return [...scopes];
+}
 
 /** The pickers that offer a contract token's `Fuse tokens` variable. */
 function tokenScopes(entry: TokenEntry): readonly VariableScope[] {
-  return entry.kind === "dimension" ? DIMENSION_SCOPES[entry.name] : KIND_SCOPES[entry.kind];
+  switch (entry.kind) {
+    case "color":
+      return paintScopes(entry.paints);
+    case "dimension":
+      return DIMENSION_SCOPES[entry.name];
+    case "fontFamily":
+    case "fontWeight":
+      return FONT_SCOPES[entry.kind];
+  }
 }
 
 /**
@@ -203,6 +244,9 @@ type BoundVariable = {
   /** The CSS a developer pastes. Every `var()` in it names a property the shipped CSS defines. */
   readonly webSyntax: string;
 
+  /** What the token or rung is for, from the catalog. */
+  readonly description: string;
+
   /** The same token or rung in another theme's scheme. */
   readonly entryIn: (scheme: ResolvedScheme) => TokenEntry | RungEntry;
 };
@@ -227,6 +271,7 @@ function boundVariables(template: ResolvedScheme): readonly BoundVariable[] {
     type: VARIABLE_TYPES[entry.kind],
     scopes: tokenScopes(entry),
     webSyntax: entry.codeSyntax,
+    description: entry.description,
     entryIn: (scheme) => scheme.tokens[entry.name],
   }));
   const rungs = Object.values(template.rungs)
@@ -236,6 +281,7 @@ function boundVariables(template: ResolvedScheme): readonly BoundVariable[] {
       type: VARIABLE_TYPES[entry.kind],
       scopes: ["CORNER_RADIUS"],
       webSyntax: entry.codeSyntax,
+      description: entry.description,
       entryIn: (scheme) => scheme.rungs[entry.name],
     }));
   return [...tokens, ...rungs];
@@ -271,8 +317,9 @@ function primitivesCollection(primitives: ResolvedThemeCatalog["primitives"]): C
   const variables = Object.values(primitives).map((entry: PrimitiveEntry): VariableSpec => ({
     name: entry.name,
     type: VARIABLE_TYPES[entry.kind],
-    scopes: KIND_SCOPES[entry.kind],
+    scopes: paintScopes(entry.paints),
     webSyntax: entry.codeSyntax,
+    description: entry.description,
     values: new Map([
       [
         PRIMITIVES_MODE,
@@ -300,9 +347,11 @@ function brandCollection(catalog: ResolvedThemeCatalog, bound: readonly BoundVar
     return bound.map((variable): VariableSpec => ({
       name: brandVariableName(path, variable.name),
       type: variable.type,
-      // Only designers' pickers read scopes; these variables are reached through aliases.
+      // Only designers' pickers read scopes and descriptions; these variables are reached
+      // through aliases.
       scopes: [],
       webSyntax: undefined,
+      description: "",
       values: new Map(
         shown.map(([mode, theme]) => [mode, leafValue(variable.entryIn(theme.schemes[path.scheme]), path)])
       ),
@@ -350,6 +399,7 @@ function segmentCollection(bound: readonly BoundVariable[]): CollectionSpec {
         type: variable.type,
         scopes: [],
         webSyntax: undefined,
+        description: "",
         values: new Map(
           THEME_SEGMENTS.map((segment) => [
             SEGMENT_MODES[segment],
@@ -381,6 +431,7 @@ function variantCollection(
       type: variable.type,
       scopes: [],
       webSyntax: undefined,
+      description: "",
       values: new Map(
         THEME_VARIANTS.map((variant) => [
           VARIANT_MODES[variant],
@@ -394,6 +445,7 @@ function variantCollection(
     type: VARIABLE_TYPES.dimension,
     scopes: [],
     webSyntax: undefined,
+    description: "",
     values: new Map(
       THEME_VARIANTS.map((variant) => [
         VARIANT_MODES[variant],
@@ -414,6 +466,7 @@ function tokensCollection(bound: readonly BoundVariable[]): CollectionSpec {
     type: variable.type,
     scopes: variable.scopes,
     webSyntax: variable.webSyntax,
+    description: variable.description,
     values: new Map(
       SCHEMES.map((scheme) => [
         SCHEME_MODES[scheme],
@@ -456,6 +509,7 @@ function densityCollection(density: readonly DensityMetricEntry[]): CollectionSp
     type: VARIABLE_TYPES.dimension,
     scopes: DENSITY_SCOPES[metric.metricKind],
     webSyntax: metric.codeSyntax,
+    description: metric.description,
     values: new Map<string, VariableValue>([
       [AUTO_DENSITY_MODE, alias(VARIANT_COLLECTION, variantDensityName(metric))],
       ...DENSITIES.map((mode): [string, VariableValue] => [

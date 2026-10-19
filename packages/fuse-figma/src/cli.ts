@@ -146,8 +146,8 @@ function changeLabel(change: PlannedChange): ChangeLabel {
       return { kind: "create variable", detail: `create variable ${change.variable}` };
     case "UpdateVariable":
       return {
-        kind: "update scopes or code syntax",
-        detail: `update scopes or code syntax of ${change.variable}`,
+        kind: "update scopes, code syntax or description",
+        detail: `update scopes, code syntax or description of ${change.variable}`,
       };
     case "DeleteVariable":
       return { kind: "delete variable", detail: `delete variable ${change.variable}` };

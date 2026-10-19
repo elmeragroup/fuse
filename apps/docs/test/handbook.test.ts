@@ -104,6 +104,29 @@ describe("tokens page", () => {
     }
   });
 
+  // Unit under test: the colour token list. Oracle: the resolved catalog's description of each
+  // role and primitive, the text the Figma sync sends.
+  it("describes every colour token under its name with the catalog's description", async () => {
+    const html = await fetchText("/handbook/tokens");
+    const catalog = resolveThemeCatalog();
+    const [theme] = catalog.themes;
+    const described = new Map(
+      [
+        ...html.matchAll(
+          /<code[^>]*>(--[a-z0-9-]+)<\/code><span[^>]*data-token-description[^>]*>([^<]*)<\/span>/g
+        ),
+      ].map((match) => [match[1] ?? "", decodeHtml(match[2] ?? "")])
+    );
+    const colors = [
+      ...Object.values(theme.schemes.light.tokens).filter((entry) => entry.kind === "color"),
+      ...Object.values(catalog.primitives),
+    ];
+    expect(described.size).toBe(colors.length);
+    for (const entry of colors) {
+      expect(described.get(`--${entry.name}`), entry.name).toBe(entry.description);
+    }
+  });
+
   it("publishes a measured size and a ceiling for every budgeted entry", async () => {
     const html = await fetchText("/handbook/tokens");
     expect(BUNDLE_SIZES.length).toBeGreaterThan(0);

@@ -287,6 +287,7 @@ function invalidBody(operation: FigmaOperation, detail: string): FigmaRequestFai
 type VariableMetadataRequest = {
   readonly scopes: readonly string[];
   readonly codeSyntax?: CodeSyntax;
+  readonly description: string;
 };
 
 /** `POST /v1/files/:key/variables`, as the REST API documents it. */
@@ -401,9 +402,8 @@ function variableRequest(change: VariableChange): PostVariablesBody["variables"]
 
 /** `codeSyntax` is present only when the metadata sets one, and then it is complete. */
 function metadataRequest(metadata: VariableMetadata): VariableMetadataRequest {
-  return metadata.codeSyntax === undefined
-    ? { scopes: metadata.scopes }
-    : { scopes: metadata.scopes, codeSyntax: metadata.codeSyntax };
+  const { scopes, codeSyntax, description } = metadata;
+  return codeSyntax === undefined ? { scopes, description } : { scopes, codeSyntax, description };
 }
 
 function valueRequest(value: WriteValue): PostVariablesBody["variableModeValues"][number]["value"] {
@@ -439,8 +439,9 @@ const Value = Schema.Union([
 const KnownType = Schema.Literals(["BOOLEAN", "COLOR", "FLOAT", "STRING"]);
 
 /**
- * A variable row. The planner reads its id, name, collection, scopes and code syntax, and
- * those decode strictly. Figma has added value shapes before, so `resolvedType` accepts
+ * A variable row. The planner reads its id, name, collection, scopes, code syntax and
+ * description, and those decode strictly. Figma reports an empty description for a variable
+ * without one. Figma has added value shapes before, so `resolvedType` accepts
  * any name and `Value` decodes a shape it does not know to `UnknownValue`. A row in a
  * collection the sync does not own therefore cannot fail the read.
  */
@@ -457,6 +458,7 @@ const LocalVariable = Schema.Struct({
     ANDROID: Schema.optionalKey(Schema.String),
     iOS: Schema.optionalKey(Schema.String),
   }),
+  description: Schema.String,
   deletedButReferenced: Schema.optionalKey(Schema.Boolean),
 });
 
@@ -506,6 +508,7 @@ function fileVariable(variable: LocalVariable): FileVariable {
       : { _tag: "UnknownType", name: variable.resolvedType },
     scopes: variable.scopes,
     codeSyntax: variable.codeSyntax,
+    description: variable.description,
     values: new Map(
       Object.entries(variable.valuesByMode).map(
         ([modeId, value]) => [ModeId(modeId), fileValue(value)] as const

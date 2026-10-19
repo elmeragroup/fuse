@@ -11,7 +11,14 @@ function variable(
   type: VariableSpec["type"],
   values: Record<string, VariableValue>
 ): VariableSpec {
-  return { name, type, scopes: [], webSyntax: undefined, values: new Map(Object.entries(values)) };
+  return {
+    name,
+    type,
+    scopes: [],
+    webSyntax: undefined,
+    description: "",
+    values: new Map(Object.entries(values)),
+  };
 }
 
 function palette(variables: readonly VariableSpec[]): CollectionSpec {
@@ -91,6 +98,20 @@ describe("makeVariableSet", () => {
       ];
     for (const [type, scopes, value, expected] of rows) {
       expect(failure([palette([scoped(type, scopes, value)])]), `${type} ${scopes.join(" ")}`).toBe(expected);
+    }
+  });
+
+  it("refuses a description with a character Figma stores HTML-escaped", () => {
+    const described = (description: string) => ({
+      ...variable("probe", "COLOR", { Light: RED, Dark: RED }),
+      description,
+    });
+    expect(failure([palette([described("Text on the brand fill, 45° and Företag.")])])).toBeUndefined();
+    // A real Enterprise file read `a & b "c" 'd' <e>` back as `a &amp; b &quot;c&quot; &#39;d&#39; &lt;e&gt;`.
+    for (const character of ["&", "<", ">", '"', "'"]) {
+      expect(failure([palette([described(`The brand${character}s fill.`)])]), character).toBe(
+        `The Figma variable set is invalid: "Palette/probe" has the character ${character} in its description, which Figma stores HTML-escaped.`
+      );
     }
   });
 

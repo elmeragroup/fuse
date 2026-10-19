@@ -56,6 +56,8 @@ export const INSTALL_COMMAND = "pnpm add @elmeragroup/fuse";
 export type TokenRef = {
   name: string;
   isColor: boolean;
+  /** What the token is for, from the theme catalog. Only the tokens handbook list carries it. */
+  description?: string;
 };
 
 /**

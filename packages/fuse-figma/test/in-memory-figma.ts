@@ -47,6 +47,7 @@ type StoredVariable = {
   valuesByMode: Map<string, StoredValue>;
   scopes: string[];
   codeSyntax: CodeSyntax;
+  description: string;
   /** Deleted in the editor while layers or aliases still point at it. */
   deletedButReferenced: boolean;
 };
@@ -56,8 +57,8 @@ type FileState = {
   variables: Map<string, StoredVariable>;
 };
 
-/** The picker scopes and code syntax of a stored variable. */
-export type StoredMetadata = { scopes: string[]; codeSyntax: CodeSyntax };
+/** The picker scopes, code syntax and description of a stored variable. */
+export type StoredMetadata = { scopes: string[]; codeSyntax: CodeSyntax; description: string };
 
 /** A canned reply that replaces the next matching request's normal handling. */
 export type ScriptedReply = {
@@ -146,6 +147,7 @@ const PostBody = Schema.Struct({
             iOS: Schema.optionalKey(Schema.String),
           })
         ),
+        description: Schema.optionalKey(Schema.String),
       })
     )
   ),
@@ -266,6 +268,7 @@ export class InMemoryFigma {
       valuesByMode: new Map(owner.modes.map((mode) => [mode.modeId, float32(value)])),
       scopes: ["ALL_SCOPES"],
       codeSyntax: {},
+      description: "",
       deletedButReferenced: false,
     });
     return id;
@@ -287,11 +290,12 @@ export class InMemoryFigma {
     );
   }
 
-  /** Change the picker scopes and code syntax of a local variable as a designer would. */
+  /** Change the picker scopes, code syntax and description of a local variable as a designer would. */
   setMetadata(collection: string, variable: string, metadata: StoredMetadata): void {
     const stored = this.variableNamed(collection, variable);
     stored.scopes = [...metadata.scopes];
     stored.codeSyntax = { ...metadata.codeSyntax };
+    stored.description = metadata.description;
   }
 
   /** A variable's stored state by id, for rows that name lookups skip. */
@@ -353,10 +357,10 @@ export class InMemoryFigma {
     return this.collectionNamed(collection).id;
   }
 
-  /** The scopes and code syntax of a variable. */
+  /** The scopes, code syntax and description of a variable. */
   metadata(collection: string, variable: string): StoredMetadata {
     const stored = this.variableNamed(collection, variable);
-    return { scopes: stored.scopes, codeSyntax: stored.codeSyntax };
+    return { scopes: stored.scopes, codeSyntax: stored.codeSyntax, description: stored.description };
   }
 
   /**
@@ -441,7 +445,7 @@ export class InMemoryFigma {
           key: `key-${variable.id}`,
           valuesByMode: Object.fromEntries(variable.valuesByMode),
           remote: this.collectionById(variable.variableCollectionId).origin === "library",
-          description: "",
+          description: variable.description,
           hiddenFromPublishing: false,
         },
       ])
@@ -583,6 +587,8 @@ export class InMemoryFigma {
           valuesByMode: new Map(collection.modes.map((mode) => [mode.modeId, defaultValue(resolvedType)])),
           scopes: checkedScopes(change.scopes ?? ["ALL_SCOPES"], resolvedType),
           codeSyntax: { ...change.codeSyntax },
+          // A real Enterprise file reports an empty description for a variable without one.
+          description: storedDescription(change.description ?? ""),
           deletedButReferenced: false,
         });
         continue;
@@ -596,6 +602,7 @@ export class InMemoryFigma {
       // An UPDATE replaces code syntax. A real Enterprise file dropped the Android and iOS
       // entries of an update that sent only WEB on 2026-10-16.
       if (change.codeSyntax !== undefined) variable.codeSyntax = { ...change.codeSyntax };
+      if (change.description !== undefined) variable.description = storedDescription(change.description);
     }
 
     for (const change of body.variableModeValues ?? []) {
@@ -706,6 +713,19 @@ function validModeName(name: string | undefined, collection: StoredCollection, s
   if (collection.modes.some((mode) => mode.name === name && mode.modeId !== self))
     reject(`Duplicate mode name ${name}`);
   return name;
+}
+
+/**
+ * A description as a real Enterprise file stored it on 2026-10-19: with `&`, `<`, `>`, `"` and
+ * `'` HTML-escaped, which the REST and Plugin APIs both read back escaped.
+ */
+function storedDescription(description: string): string {
+  return description
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
 
 /**

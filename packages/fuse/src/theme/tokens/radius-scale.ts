@@ -31,6 +31,9 @@ type RadiusRung = {
 
   /** The exact value `fuse.css` declares for the rung, which is also its web code syntax. */
   readonly css: string;
+
+  /** What the rung is for, in one or two sentences for a designer picking a variable. */
+  readonly description: string;
 };
 
 /**
@@ -53,9 +56,32 @@ function rungCss(steps: number): string {
   return `calc(var(--radius) ${steps < 0 ? "-" : "+"} ${stepLength})`;
 }
 
-/** A rung `steps` lengths from `--radius`, with the CSS value built from that count. */
-function rung(steps: number): RadiusRung {
-  return { steps, css: rungCss(steps) };
+/** The count of steps a rung description spells, which never exceeds four. */
+const STEP_COUNTS = ["", "One", "Two", "Three", "Four"] as const;
+
+/**
+ * Where a rung sits on the scale, written for a designer: the steps it takes from `--radius`
+ * and what a step is in each variant.
+ */
+function rungPlacement(steps: number): string {
+  if (steps === 0) {
+    return "The corner at radius itself, in every theme.";
+  }
+  const count = STEP_COUNTS[Math.abs(steps)] ?? String(Math.abs(steps));
+  const unit = Math.abs(steps) === 1 ? "step" : "steps";
+  const side = steps < 0 ? "below" : "above";
+  return `${count} radius ${unit} ${side} radius. External themes step 2px and internal themes 0px, so every internal rung equals radius.`;
+}
+
+/**
+ * A rung `steps` lengths from `--radius`, with the CSS value built from that count.
+ *
+ * @param steps - The rung's distance from `--radius` in steps.
+ * @param use - What reads the rung, when its placement alone does not say.
+ */
+function rung(steps: number, use?: string): RadiusRung {
+  const placement = rungPlacement(steps);
+  return { steps, css: rungCss(steps), description: use === undefined ? placement : `${placement} ${use}` };
 }
 
 /**
@@ -69,5 +95,5 @@ export const RADIUS_RUNGS = {
   "radius-md": rung(-1),
   "radius-lg": rung(0),
   "radius-xl": rung(2),
-  "radius-popover": rung(-4),
+  "radius-popover": rung(-4, "No component reads it, because Fuse popups use radius-md."),
 } as const satisfies Record<RadiusRungName, RadiusRung>;

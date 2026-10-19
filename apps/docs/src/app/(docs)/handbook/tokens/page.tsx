@@ -35,7 +35,7 @@ export default function TokensPage(): ReactElement {
       </p>
       {/* Swatches render inside a `ThemeScope` on the header picker's theme, so the list shows
           real values for whichever of the twenty-four themes is selected. */}
-      <TokenSwatchList tokens={COLOR_TOKENS.map((name) => ({ name, isColor: true }))} />
+      <TokenSwatchList tokens={COLOR_TOKENS} />
 
       <h2 id="what-a-component-reads">What a component reads</h2>
       <p>

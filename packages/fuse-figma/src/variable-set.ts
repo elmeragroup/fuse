@@ -106,6 +106,13 @@ export type VariableSpec = {
    */
   readonly webSyntax: string | undefined;
 
+  /**
+   * The text Figma shows for the variable, such as when a designer hovers it in a picker. An
+   * empty string is no description, which is what Figma reports for a variable without one.
+   * It holds none of the characters Figma stores HTML-escaped, `&`, `<`, `>`, `"` and `'`.
+   */
+  readonly description: string;
+
   /** One value per mode of the owning collection, keyed by mode name. */
   readonly values: ReadonlyMap<string, VariableValue>;
 };
@@ -133,6 +140,7 @@ export type CollectionSpec = {
  * - Every variable has exactly one value for each mode of its collection.
  * - Every scope applies to its variable's type. `ALL_SCOPES` stands alone, and `ALL_FILLS`
  *   stands alone among the fill scopes.
+ * - No description holds a character Figma stores HTML-escaped.
  * - Every literal matches its variable's type.
  * - Every alias targets a variable of the set with the same type.
  * - No chain of aliases leads back to where it started, in any mode.
@@ -282,7 +290,10 @@ export function makeVariableSet(
 
   for (const collection of collections) {
     for (const variable of collection.variables) {
-      const problem = scopeProblem(variable) ?? valueProblem(collection, variable, variables);
+      const problem =
+        scopeProblem(variable) ??
+        descriptionProblem(variable) ??
+        valueProblem(collection, variable, variables);
       if (problem !== undefined) {
         return invalid(qualifiedName(collection.name, variable.name), problem);
       }
@@ -356,6 +367,21 @@ function scopeProblem(variable: VariableSpec): string | undefined {
   }
   const misfit = variable.scopes.find((scope) => !typeHasScope(variable.type, scope));
   return misfit === undefined ? undefined : `is a ${variable.type} variable but has the scope ${misfit}`;
+}
+
+/**
+ * The characters a real Enterprise file stored HTML-escaped on 2026-10-19: a description sent
+ * as `a & b "c" 'd' <e>` read back as `a &amp; b &quot;c&quot; &#39;d&#39; &lt;e&gt;`, through
+ * the REST API and the Plugin API alike. Figma shows the escaped text, and the sync would see a
+ * changed description on every run, so a description must not hold them.
+ */
+const ESCAPED_DESCRIPTION_CHARACTER = /[&<>"']/u;
+
+function descriptionProblem(variable: VariableSpec): string | undefined {
+  const escaped = ESCAPED_DESCRIPTION_CHARACTER.exec(variable.description)?.[0];
+  return escaped === undefined
+    ? undefined
+    : `has the character ${escaped} in its description, which Figma stores HTML-escaped`;
 }
 
 function typeHasScope(type: VariableType, scope: VariableScope): boolean {
