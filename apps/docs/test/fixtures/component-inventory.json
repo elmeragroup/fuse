@@ -91,6 +91,7 @@
     "rsc": "server",
     "demos": [
       "card-basic.tsx",
+      "card-content-only.tsx",
       "card-with-action.tsx",
       "card-tag.tsx",
       "card-horizontal.tsx",
