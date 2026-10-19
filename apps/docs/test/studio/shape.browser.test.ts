@@ -237,10 +237,13 @@ describe("the studio's Shape page", () => {
       const readout = await openReadout(page);
       await expect.poll(() => readout.getByRole("listitem").count()).toBe(CLOSED_MENU_PARTS);
 
-      // Every part still follows the formula once the corners leave the clamp: the three Card
-      // rows and the two Frame rows sit 1px of border and 24px of padding inside a 40px corner.
+      // Every part still follows the formula once the corners leave the clamp, inside a 40px
+      // corner: the three Card rows and the card Accordion item's panel sit 1px of border and
+      // the medium tier's 16px of padding in it, and the two Frame rows 1px of border and the
+      // large tier's 24px.
       await setRadius(page, 40);
-      await expect.poll(() => xrayLabels(page).filter({ hasText: "= 15px" }).count()).toBe(5);
+      await expect.poll(() => xrayLabels(page).filter({ hasText: "= 23px" }).count()).toBe(4);
+      await expect.poll(() => xrayLabels(page).filter({ hasText: "= 15px" }).count()).toBe(2);
       expect(await xrayLabels(page).and(page.locator('[data-mismatch="true"]')).count()).toBe(0);
 
       // An opened menu's rows are inner parts of its popup.
@@ -307,18 +310,23 @@ describe("the studio's Shape page", () => {
     try {
       await setRadius(page, 40);
       await showXray(page, CLOSED_MENU_PARTS);
-      // Comfortable, the Card rows and the Frame rows sit 1px of border and 24px of padding
-      // inside the 40px corner.
-      await expect.poll(() => xrayLabels(page).filter({ hasText: "= 15px" }).count()).toBe(5);
+      // Comfortable, inside the 40px corner, the Card rows and the card Accordion item's panel
+      // sit 1px of border and the medium tier's 16px of padding, and the Frame rows 1px of
+      // border and the large tier's 24px.
+      await expect.poll(() => xrayLabels(page).filter({ hasText: "= 23px" }).count()).toBe(4);
+      await expect.poll(() => xrayLabels(page).filter({ hasText: "= 15px" }).count()).toBe(2);
 
       await canvas(page).getByRole("button", { name: SHELLS, exact: true }).click();
       await inspector(page)
         .getByRole("group", { name: "Density", exact: true })
         .getByRole("button", { name: "Dense", exact: true })
         .click();
-      // Dense, the lg surface tier pads 16px (fuse's tokens/density-metrics.ts), so the rows
-      // round at 40 − 1 − 16 = 23px, and the labels follow without a stale 15px left.
-      await expect.poll(() => xrayLabels(page).filter({ hasText: "= 23px" }).count()).toBe(5);
+      // Dense, the md surface tier pads 12px and the lg tier 16px (fuse's
+      // tokens/density-metrics.ts), so the Card rows and the Accordion panel round at
+      // 40 − 1 − 12 = 27px and the Frame rows at 40 − 1 − 16 = 23px, and the labels follow
+      // without a stale 15px left.
+      await expect.poll(() => xrayLabels(page).filter({ hasText: "= 27px" }).count()).toBe(4);
+      await expect.poll(() => xrayLabels(page).filter({ hasText: "= 23px" }).count()).toBe(2);
       expect(await xrayLabels(page).filter({ hasText: "= 15px" }).count()).toBe(0);
       expect(await xrayLabels(page).and(page.locator('[data-mismatch="true"]')).count()).toBe(0);
       expect(errors).toEqual([]);
