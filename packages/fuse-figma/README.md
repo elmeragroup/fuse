@@ -125,8 +125,8 @@ The label inherits the text color and font family of the host page. The build ap
 
 ### How the plugin decides what to write
 
-- Plan and Apply run the same planning pass. The pass checks the kit against the file, matches each node and records every write as an operation, and it writes nothing. Plan lists the operations. Apply finishes the pass first, so a duplicate key, a missing variable or a variable of the wrong type stops the run before any write, and then performs the operations in order.
-- Each field planner compares the node with the spec and records an operation only when they differ, so a second run over an applied file plans nothing. A fill, stroke or shadow matches only with the `NORMAL` blend mode the plugin writes.
+- Plan and Apply run the same planning pass. The pass checks the kit against the file, matches each node and records every write as an operation, and it writes nothing. Plan lists the operations. Apply finishes the pass and loads every font the text writes need, so a duplicate key, a missing variable, a variable of the wrong type or a font this machine cannot load stops the run before any write. Then it performs the operations in order. Plan loads the fonts too, so it fails where Apply would.
+- Each field planner compares the node with the spec and records an operation only when they differ, so a second run over an applied file plans nothing. A fill, stroke or shadow matches only with the `NORMAL` blend mode the plugin writes. A text field counts as bound only when every character binds the variable.
 - Writes that depend on each other share one operation. A height write resets the sizing modes, so its operation writes them again. A new node is one operation that creates the node and everything the spec puts inside it, so Plan lists it once.
 - The variant grid and the preview stack read sizes when their operations run. A plan that changes a component set therefore lays out its grid again, and a plan that changes anything on the page stacks the previews again.
 - The plugin reads only the variable collections the kit names, and stops when two local collections share one of those names.

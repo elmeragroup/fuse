@@ -1,9 +1,10 @@
 /**
  * The plan of one run. The planning pass reads the file, checks it against the kit and
- * records each write as an operation with the change line Plan shows for it. The pass writes
- * nothing. Apply runs the same pass to the end, so a conflict or a missing variable stops the
- * run before the first write, and then performs the operations in the order the pass
- * recorded them.
+ * records each write as an operation with the change line Plan shows for it. It also records
+ * what the operations need before the first of them runs, such as fonts. The pass writes
+ * nothing. Apply runs the same pass to the end and meets every requirement, so a conflict, a
+ * missing variable or a font Figma cannot load stops the run before the first write. Then it
+ * performs the operations in the order the pass recorded them.
  */
 
 /** A write, or writes that must run together, and the line Plan shows for it. */
@@ -19,6 +20,8 @@ export type Operation = {
 export type Plan = {
   readonly operations: Operation[];
   readonly warnings: string[];
+  /** What the operations need before the first of them runs, by key, so each runs once. */
+  readonly requirements: Map<string, () => Promise<void>>;
 };
 
 /**
@@ -41,12 +44,37 @@ export type PlannedRun<Result> = {
 /**
  * Start an empty plan.
  *
- * @param warnings - The list to add warnings to. A plan for a group of writes shares its
- *   parent's list.
- * @returns A plan with no operations.
+ * @param warnings - The list to add warnings to. The plan for a new node's contents shares
+ *   its parent's list.
+ * @returns A plan with no operations and no requirements.
  */
 export function newPlan(warnings: string[] = []): Plan {
-  return { operations: [], warnings };
+  return { operations: [], warnings, requirements: new Map() };
+}
+
+/**
+ * Record something the operations need before the first of them runs, such as a font that a
+ * text write needs. A second requirement with the same key adds nothing.
+ *
+ * @param plan - The plan.
+ * @param key - What the requirement is, such as the font's family and style.
+ * @param meet - Meets the requirement, or throws when the run cannot.
+ */
+export function requirement(plan: Plan, key: string, meet: () => Promise<void>): void {
+  if (!plan.requirements.has(key)) {
+    plan.requirements.set(key, meet);
+  }
+}
+
+/**
+ * Meet a plan's requirements, one after another.
+ *
+ * @param plan - The plan.
+ */
+export async function meetRequirements(plan: Plan): Promise<void> {
+  for (const meet of plan.requirements.values()) {
+    await meet();
+  }
 }
 
 /**
@@ -83,7 +111,7 @@ export function changeTogether(
   build: (group: Plan) => void,
   finish: () => void
 ): void {
-  const group = newPlan(plan.warnings);
+  const group: Plan = { operations: [], warnings: plan.warnings, requirements: plan.requirements };
   build(group);
   if (group.operations.length === 0) {
     return;
@@ -93,25 +121,6 @@ export function changeTogether(
     await performPlan(group);
     finish();
   });
-}
-
-/**
- * Record the operations a group plans, each preceded by `step` when it runs, such as the font
- * loads Figma needs before a text write.
- *
- * @param plan - The plan.
- * @param step - Runs before each of the group's operations.
- * @param build - Plans the group's writes into the plan it receives.
- */
-export function precede(plan: Plan, step: () => Promise<void>, build: (group: Plan) => void): void {
-  const group = newPlan(plan.warnings);
-  build(group);
-  for (const operation of group.operations) {
-    change(plan, operation.label, operation.description, async () => {
-      await step();
-      await operation.perform();
-    });
-  }
 }
 
 /**
@@ -126,11 +135,13 @@ export function existing<Node>(node: Node): Target<Node> {
 
 /**
  * Record the creation of a node as one operation. When it runs, the operation makes the node,
- * plans the node's fields and its contents against the spec, and performs that plan at once.
- * Plan therefore lists a new node once, however much the spec puts inside it.
+ * plans the node's fields and its contents against the spec, meets that plan's requirements
+ * and performs it at once. Plan therefore lists a new node once, however much the spec puts
+ * inside it.
  *
  * Planning a new node cannot meet a conflict, because the node holds only what `make` put in
- * it. The kit check resolves every variable the spec names before the first write.
+ * it. The kit check resolves every variable the spec names before the first write, and the
+ * outer pass requires the fonts the new node's text needs.
  *
  * @param plan - The plan.
  * @param label - Where the node goes.
@@ -154,6 +165,7 @@ export function create<Node>(
     if (configure !== undefined) {
       const inner = newPlan(plan.warnings);
       await configure(node, inner);
+      await meetRequirements(inner);
       await performPlan(inner);
     }
   });
@@ -225,8 +237,10 @@ export async function performPlan(plan: Plan): Promise<void> {
 }
 
 /**
- * Plan a run, and perform the plan when the run applies. The planning pass runs to the end
- * before the first operation, so an error it throws stops the run with the file untouched.
+ * Plan a run, meet its requirements, and perform the plan when the run applies. The planning
+ * pass and the requirements finish before the first operation, so an error in either stops
+ * the run with the file untouched. A run that only plans meets the requirements too, so it
+ * fails where an apply would.
  *
  * @param apply - Whether to perform the plan or only return it.
  * @param planner - Records the run's operations and warnings into the plan it receives.
@@ -238,6 +252,7 @@ export async function runPlan<Result>(
 ): Promise<PlannedRun<Result>> {
   const plan = newPlan();
   const result = await planner(plan);
+  await meetRequirements(plan);
   if (apply) {
     await performPlan(plan);
   }

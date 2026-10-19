@@ -10,6 +10,7 @@
 import type { KitSpec } from "../../src/components/kit-spec.ts";
 import { checkKit, kitCollections } from "./check-kit.ts";
 import { planComponentSet } from "./component-set.ts";
+import { requireFont } from "./fields.ts";
 import type { Run } from "./fields.ts";
 import { findOwned, setKey, staleOwned } from "./identity.ts";
 import { change, changeLines, create, existing, runPlan } from "./plan.ts";
@@ -74,14 +75,14 @@ async function planDocument(run: Run, kit: KitSpec): Promise<Target<PageNode>> {
  * @returns The changes and the warnings.
  */
 export async function reconcileKit(figma: PluginAPI, kit: KitSpec, apply: boolean): Promise<ReconcileReport> {
-  // Plan loads the fonts too, so a machine that lacks one fails Plan as it would fail Apply.
-  for (const font of kit.fonts) {
-    await figma.loadFontAsync(font);
-  }
   const variables = await loadKitVariables(figma, kitCollections(kit));
   const { plan, result: page } = await runPlan(apply, (plan) => {
+    const run: Run = { figma, variables, plan };
     checkKit(variables, kit, plan);
-    return planDocument({ figma, variables, plan }, kit);
+    for (const font of kit.fonts) {
+      requireFont(run, kit.page.name, font);
+    }
+    return planDocument(run, kit);
   });
   if (apply) {
     await figma.setCurrentPageAsync(page.get());

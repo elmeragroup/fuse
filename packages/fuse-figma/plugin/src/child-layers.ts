@@ -8,10 +8,10 @@ import type {
   NumberSpec,
   TextLayerSpec,
 } from "../../src/components/kit-spec.ts";
-import { describeNumber, near, planNumber, planPaints, planScalar } from "./fields.ts";
+import { describeNumber, near, planNumber, planPaints, planScalar, requireFont } from "./fields.ts";
 import type { Run } from "./fields.ts";
 import { findOwned, setKey, staleOwned, unowned } from "./identity.ts";
-import { change, create, existing, keepsOrder, precede, warn } from "./plan.ts";
+import { change, create, existing, keepsOrder, warn } from "./plan.ts";
 import type { Target } from "./plan.ts";
 
 /**
@@ -24,6 +24,33 @@ export type TextPropertyIds = ReadonlyMap<string, string>;
 /** A placeholder icon draws a ring this thick, close to a 16px Phosphor glyph's stroke. */
 const ICON_STROKE_WEIGHT = 1.5;
 
+/** The text fields the kit binds to variables. */
+type BoundTextField = "fontFamily" | "fontSize" | "lineHeight";
+
+/**
+ * The variable a text field binds across the whole layer. `boundVariables` lists the aliases
+ * the characters bind and says nothing of characters that bind none, so the range read is
+ * what shows a layer that one character left.
+ *
+ * @returns The alias when every character binds it, null when no character binds a variable,
+ *   or `figma.mixed` when the characters differ.
+ */
+function textBinding(
+  run: Run,
+  text: TextNode,
+  field: BoundTextField
+): VariableAlias | null | PluginAPI["mixed"] {
+  if (text.characters.length > 0) {
+    return text.getRangeBoundVariable(0, text.characters.length, field);
+  }
+  // An empty layer has no range to read, so its node-level bindings speak for it.
+  const [first, ...rest] = text.boundVariables?.[field] ?? [];
+  if (first === undefined) {
+    return null;
+  }
+  return rest.every((alias) => alias.id === first.id) ? first : run.figma.mixed;
+}
+
 function planTextNumber(
   run: Run,
   text: TextNode,
@@ -33,16 +60,16 @@ function planTextNumber(
   matches: (value: number) => boolean,
   write: (value: number) => void
 ): void {
-  const bound = text.boundVariables?.[name] ?? [];
+  const binding = textBinding(run, text, name);
   if (spec.kind === "variable") {
     const variable = run.variables.variable(spec.variable);
-    if (bound.length > 0 && bound.every((alias) => alias.id === variable.id)) {
+    if (binding !== run.figma.mixed && binding?.id === variable.id) {
       return;
     }
     change(run.plan, label, `${name} → ${spec.variable.name}`, () => text.setBoundVariable(name, variable));
     return;
   }
-  if (bound.length === 0 && matches(spec.value)) {
+  if (binding === null && matches(spec.value)) {
     return;
   }
   change(run.plan, label, `${name} → ${describeNumber(spec)}`, () => {
@@ -52,18 +79,48 @@ function planTextNumber(
 }
 
 /**
- * The font family a text layer should render in. A bound family resolves through the
- * layer's modes, so the plugin can load it before it writes the layer. The kit check has
- * already confirmed that the variable holds a string.
+ * The font a text layer should render in. A bound family resolves through the modes of
+ * `consumer`, which is the layer itself, or the existing node a new layer lands in and takes
+ * its modes from. The kit check has already confirmed that the variable holds a string.
  */
-function fontFamilyFor(run: Run, text: TextNode, spec: TextLayerSpec): string {
+function fontFor(run: Run, consumer: SceneNode, spec: TextLayerSpec): FontName {
   if (spec.fontFamily.kind === "literal") {
-    return spec.fontFamily.value;
+    return { family: spec.fontFamily.value, style: spec.fontStyle };
   }
-  const resolved = run.variables.variable(spec.fontFamily.variable).resolveForConsumer(text);
+  const resolved = run.variables.variable(spec.fontFamily.variable).resolveForConsumer(consumer);
   // SAFETY: the kit check confirmed the font family variable is a STRING variable, which
   // resolves to a string.
-  return resolved.value as string;
+  return { family: resolved.value as string, style: spec.fontStyle };
+}
+
+/** Every font a layer's characters use. An empty layer holds the one font it would type in. */
+function heldFonts(run: Run, text: TextNode): FontName[] {
+  if (text.characters.length > 0) {
+    return text.getRangeAllFontNames(0, text.characters.length);
+  }
+  return text.fontName === run.figma.mixed ? [] : [text.fontName];
+}
+
+/**
+ * Require the fonts of the text layers a new node gets, resolved through the existing node it
+ * lands in.
+ *
+ * @param run - The run.
+ * @param consumer - The existing node whose modes the new layers take.
+ * @param label - The new node's label, for errors.
+ * @param specs - The new node's child layers.
+ */
+export function requireNewTextFonts(
+  run: Run,
+  consumer: SceneNode,
+  label: string,
+  specs: readonly ChildLayerSpec[]
+): void {
+  for (const spec of specs) {
+    if (spec.kind === "text") {
+      requireFont(run, `${label} / ${spec.name}`, fontFor(run, consumer, spec));
+    }
+  }
 }
 
 function planTextFields(
@@ -85,8 +142,8 @@ function planTextFields(
   }
   if (spec.fontFamily.kind === "variable") {
     const variable = run.variables.variable(spec.fontFamily.variable);
-    const bound = text.boundVariables?.fontFamily ?? [];
-    if (bound.length === 0 || bound.some((alias) => alias.id !== variable.id)) {
+    const binding = textBinding(run, text, "fontFamily");
+    if (binding === run.figma.mixed || binding?.id !== variable.id) {
       change(run.plan, label, `fontFamily → ${spec.fontFamily.variable.name}`, () =>
         text.setBoundVariable("fontFamily", variable)
       );
@@ -146,26 +203,30 @@ function planTextFields(
 }
 
 /**
- * Plan a text layer. Each of its operations loads the layer's fonts first, because Figma
- * refuses a text write unless the font the layer holds at that moment is loaded.
+ * Plan a text layer, and require the fonts its writes need when it plans any. The layer's
+ * operations only write, because the run loads every font before its first write.
+ *
+ * @param held - The fonts the layer holds now. Figma's text guide asks for them before any
+ *   write but the font, and the run loads them rather than lean on the font write coming
+ *   first. A layer the run creates passes none. Figma needs only the new font to set the font,
+ *   and the font a new layer starts with is unknown until it exists.
  */
 function planText(
   run: Run,
   text: TextNode,
   label: string,
   spec: TextLayerSpec,
-  propertyIds: TextPropertyIds
+  propertyIds: TextPropertyIds,
+  held: readonly FontName[]
 ): void {
-  const fontName: FontName = { family: fontFamilyFor(run, text, spec), style: spec.fontStyle };
-  const loadFonts = async (): Promise<void> => {
-    if (text.fontName !== run.figma.mixed) {
-      await run.figma.loadFontAsync(text.fontName);
+  const fontName = fontFor(run, text, spec);
+  const start = run.plan.operations.length;
+  planTextFields(run, text, label, spec, fontName, propertyIds);
+  if (run.plan.operations.length > start) {
+    for (const font of [...held, fontName]) {
+      requireFont(run, label, font);
     }
-    await run.figma.loadFontAsync(fontName);
-  };
-  precede(run.plan, loadFonts, (plan) =>
-    planTextFields({ ...run, plan }, text, label, spec, fontName, propertyIds)
-  );
+  }
 }
 
 function planIcon(run: Run, icon: EllipseNode, label: string, spec: IconLayerSpec): void {
@@ -224,9 +285,10 @@ function planChild(
   if (spec.kind === "text") {
     const found = findOwned(run.plan, component.children, label, spec.key, spec.name, isText);
     if (found !== undefined) {
-      planText(run, found, layerLabel, spec, propertyIds);
+      planText(run, found, layerLabel, spec, propertyIds, heldFonts(run, found));
       return existing(found);
     }
+    requireNewTextFonts(run, component, label, [spec]);
     return create(
       run.plan,
       label,
@@ -238,7 +300,7 @@ function planChild(
         made.name = spec.name;
         return made;
       },
-      (made, plan) => planText({ ...run, plan }, made, layerLabel, spec, propertyIds)
+      (made, plan) => planText({ ...run, plan }, made, layerLabel, spec, propertyIds, [])
     );
   }
   const found = findOwned(run.plan, component.children, label, spec.key, spec.name, isEllipse);

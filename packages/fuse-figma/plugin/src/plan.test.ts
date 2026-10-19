@@ -1,7 +1,8 @@
 /**
  * The operation model in `plan.ts` against hand-written expectations: the order Apply performs
- * a plan in, the lines Plan lists, and that an error in the planning pass stops a run before
- * its first write. Each operation pushes onto a log, and the log is the record of what ran.
+ * a plan in, the lines Plan lists, and that an error in the planning pass or in a requirement
+ * stops a run before its first write. Each operation and requirement pushes onto a log, and
+ * the log is the record of what ran.
  */
 import { describe, expect, it } from "vitest";
 
@@ -14,10 +15,10 @@ import {
   keepsOrder,
   newPlan,
   performPlan,
-  precede,
+  requirement,
   runPlan,
 } from "./plan.ts";
-import type { Target } from "./plan.ts";
+import type { Plan, Target } from "./plan.ts";
 
 describe("runPlan", () => {
   it("finishes the pass before the first write, then performs the operations in order", async () => {
@@ -57,6 +58,39 @@ describe("runPlan", () => {
       return Promise.reject(new Error("Button holds 2 layers with the key button/label."));
     });
     await expect(run).rejects.toThrow("Button holds 2 layers with the key button/label.");
+    expect(log).toEqual([]);
+  });
+
+  it("meets each requirement once, before the first write", async () => {
+    const log: string[] = [];
+    await runPlan(true, (pass) => {
+      change(pass, "Label", "font → Roboto Medium", () => {
+        log.push("write font");
+      });
+      for (const key of ["Roboto Medium", "Inter Regular", "Roboto Medium"]) {
+        requirement(pass, key, () => {
+          log.push(`load ${key}`);
+          return Promise.resolve();
+        });
+      }
+      return Promise.resolve();
+    });
+    expect(log).toEqual(["load Roboto Medium", "load Inter Regular", "write font"]);
+  });
+
+  it("writes nothing, and fails a plan too, when a requirement cannot be met", async () => {
+    const log: string[] = [];
+    const planner = (pass: Plan): Promise<void> => {
+      change(pass, "Fuse components", "delete Old button", () => {
+        log.push("delete");
+      });
+      requirement(pass, "Comic Sans Bold", () =>
+        Promise.reject(new Error("Comic Sans Bold is not installed."))
+      );
+      return Promise.resolve();
+    };
+    await expect(runPlan(true, planner)).rejects.toThrow("Comic Sans Bold is not installed.");
+    await expect(runPlan(false, planner)).rejects.toThrow("Comic Sans Bold is not installed.");
     expect(log).toEqual([]);
   });
 
@@ -107,31 +141,6 @@ describe("changeTogether", () => {
   });
 });
 
-describe("precede", () => {
-  it("runs the step before each of the group's operations and keeps their lines", async () => {
-    const log: string[] = [];
-    const plan = newPlan();
-    precede(
-      plan,
-      () => {
-        log.push("load fonts");
-        return Promise.resolve();
-      },
-      (group) => {
-        change(group, "Label", "font → Roboto Medium", () => {
-          log.push("font");
-        });
-        change(group, "Label", "fontSize → 14", () => {
-          log.push("font size");
-        });
-      }
-    );
-    expect(changeLines(plan)).toEqual(["Label: font → Roboto Medium", "Label: fontSize → 14"]);
-    await performPlan(plan);
-    expect(log).toEqual(["load fonts", "font", "load fonts", "font size"]);
-  });
-});
-
 describe("create", () => {
   it("lists a new node once, and configures it when the operation runs", async () => {
     const log: string[] = [];
@@ -163,6 +172,31 @@ describe("create", () => {
     expect(log).toEqual([]);
     await performPlan(plan);
     expect(log).toEqual(["make", "plan the new node", "lay out Dark", "stack Dark"]);
+  });
+
+  it("meets the new node's requirements before it writes the node's contents", async () => {
+    const log: string[] = [];
+    const plan = newPlan();
+    create(
+      plan,
+      "Button",
+      "create the text layer Label",
+      () => {
+        log.push("make");
+        return { name: "Label" };
+      },
+      (made, inner) => {
+        change(inner, made.name, "font → Roboto Medium", () => {
+          log.push("write font");
+        });
+        requirement(inner, "Roboto Medium", () => {
+          log.push("load Roboto Medium");
+          return Promise.resolve();
+        });
+      }
+    );
+    await performPlan(plan);
+    expect(log).toEqual(["make", "load Roboto Medium", "write font"]);
   });
 
   it("refuses to hand out the node before the operation that makes it has run", () => {

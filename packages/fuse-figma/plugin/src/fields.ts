@@ -14,7 +14,7 @@ import type {
   ShadowSpec,
   VariableRef,
 } from "../../src/components/kit-spec.ts";
-import { change, changeTogether } from "./plan.ts";
+import { change, changeTogether, requirement } from "./plan.ts";
 import type { Plan } from "./plan.ts";
 import type { KitVariables } from "./variables.ts";
 
@@ -35,6 +35,29 @@ export type NumberField = {
   readonly matches: (value: number) => boolean;
   readonly write: (value: number) => void;
 };
+
+/**
+ * Require a font before the run's first write. Figma refuses a text write unless the fonts it
+ * touches are loaded, and a file can hold a font this machine cannot load. Loading every font
+ * first makes such a font stop the run, Plan included, with nothing written.
+ *
+ * @param run - The run.
+ * @param label - The layer that needs the font, for the error.
+ * @param font - The font.
+ */
+export function requireFont(run: Run, label: string, font: FontName): void {
+  const key = JSON.stringify(["font", font.family, font.style, font.variationSettings ?? null]);
+  requirement(run.plan, key, async () => {
+    try {
+      await run.figma.loadFontAsync(font);
+    } catch (cause) {
+      throw new Error(
+        `${label}: Figma cannot load the font ${font.family} ${font.style}. Install it, or replace it on this layer, then run the plugin again.`,
+        { cause }
+      );
+    }
+  });
+}
 
 /**
  * Whether two numbers agree within what a 32-bit float keeps.

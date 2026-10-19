@@ -5,7 +5,7 @@
  */
 
 import type { AxisSpec, ComponentSetSpec, VariantSpec } from "../../src/components/kit-spec.ts";
-import { planChildren } from "./child-layers.ts";
+import { planChildren, requireNewTextFonts } from "./child-layers.ts";
 import type { TextPropertyIds } from "./child-layers.ts";
 import { near, planScalar } from "./fields.ts";
 import type { Run } from "./fields.ts";
@@ -251,6 +251,7 @@ function planVariant(
     planVariantFields(run, found, name, label, variant, propertyIds);
     return existing(found);
   }
+  requireNewTextFonts(run, set, label, variant.root.children);
   return create(
     run.plan,
     spec.name,
@@ -293,7 +294,9 @@ function planSetContents(
 
 /**
  * Record the creation of a set. Figma builds a set from components, so the operation creates
- * every variant with its key and name, combines them, and then plans the set's contents.
+ * every variant with its key and name, combines them, and then plans the set's contents. A new
+ * set has no existing node to resolve its label fonts through, so the run relies on the kit's
+ * fonts, which it requires before every run.
  */
 function createSet(run: Run, page: PageNode, spec: ComponentSetSpec): PlannedSet {
   const node = create(
