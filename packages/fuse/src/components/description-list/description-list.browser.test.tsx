@@ -323,6 +323,28 @@ describe("DescriptionList", () => {
       expect(getComputedStyle(primary).color).toBe(cssVarColor(primary, "--primary"));
     });
 
+    it("gives inline details the surrounding text colour, keeps responsive details on --foreground, and lets a consumer colour win", () => {
+      renderThemed(
+        <div style={{ color: "rgb(1, 2, 3)" }}>
+          <DescriptionList.Content layout="inline">
+            <DescriptionList.Term>Start date</DescriptionList.Term>
+            <DescriptionList.Details>Inline value</DescriptionList.Details>
+            <DescriptionList.Term>Total</DescriptionList.Term>
+            <DescriptionList.Details className="text-primary">Primary value</DescriptionList.Details>
+          </DescriptionList.Content>
+          <DescriptionList.Content>
+            <DescriptionList.Term>Name</DescriptionList.Term>
+            <DescriptionList.Details>Responsive value</DescriptionList.Details>
+          </DescriptionList.Content>
+        </div>
+      );
+      expect(getComputedStyle(textNamed("Inline value")).color).toBe("rgb(1, 2, 3)");
+      const responsive = textNamed("Responsive value");
+      expect(getComputedStyle(responsive).color).toBe(cssVarColor(responsive, "--foreground"));
+      const primary = textNamed("Primary value");
+      expect(getComputedStyle(primary).color).toBe(cssVarColor(primary, "--primary"));
+    });
+
     it("mutes a responsive list's terms inside an inline list", () => {
       renderThemed(
         <DescriptionList.Content layout="inline" style={{ width: 400 }}>

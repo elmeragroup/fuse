@@ -28,14 +28,15 @@ function DescriptionListRoot(props: DescriptionListRootProps): ReactElement {
   return <div data-slot="description-list" {...props} />;
 }
 
-// Each layout publishes the term colour as the private `--description-list-term`, so a nested list
-// resets it and a consumer colour class on a term still wins in both layouts. The term and details
+// Each layout publishes the term and details colours as the private `--description-list-term` and
+// `--description-list-details`, so a nested list resets them and a consumer colour class on a cell
+// still wins in both layouts. Inline cells take the surrounding text colour, such as a card's. The term and details
 // style the rest of the inline layout from the list's `data-layout`. Plain `cn` constants rather
 // than a `tv` recipe keep tailwind-variants out of this entry's size budget.
 
 /** The responsive list: one column on phones, then a term column capped at min(50%, 20rem). */
 const responsiveContentClass = cn(
-  "text-base/6 sm:grid-cols-[min(50%,calc(var(--spacing)*80))_auto] sm:text-sm/6 grid grid-cols-1 [--description-list-term:var(--muted-foreground)]"
+  "text-base/6 sm:grid-cols-[min(50%,calc(var(--spacing)*80))_auto] sm:text-sm/6 grid grid-cols-1 [--description-list-details:var(--foreground)] [--description-list-term:var(--muted-foreground)]"
 );
 
 /**
@@ -45,7 +46,7 @@ const responsiveContentClass = cn(
  */
 const inlineContentClass = cn(
   "grid grid-cols-[minmax(0,1fr)_fit-content(60%)] gap-x-(--surface-gap-md) gap-y-(--surface-gap-sm)",
-  "text-(length:--label-text) leading-(--label-leading) [--description-list-term:currentColor]",
+  "text-(length:--label-text) leading-(--label-leading) [--description-list-details:currentColor] [--description-list-term:currentColor]",
   "[&+&]:mt-(--surface-gap-lg)"
 );
 
@@ -83,7 +84,7 @@ function DescriptionListDetails({ className, ...props }: DescriptionListDetailsP
     <dd
       data-slot="description-list-details"
       className={cn(
-        "sm:border-t py-(--row-py) text-foreground first-of-type:border-none",
+        "sm:border-t py-(--row-py) text-[color:var(--description-list-details,var(--foreground))] first-of-type:border-none",
         "in-data-[layout=inline]:col-start-2 in-data-[layout=inline]:min-w-0 in-data-[layout=inline]:border-none in-data-[layout=inline]:py-0 in-data-[layout=inline]:text-end in-data-[layout=inline]:wrap-anywhere",
         className
       )}

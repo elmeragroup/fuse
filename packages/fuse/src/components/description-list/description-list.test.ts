@@ -56,7 +56,7 @@ describe("DescriptionList structure", () => {
       "Details",
       "text-primary",
       "text-primary",
-      "text-foreground",
+      "--description-list-details",
       (className: string) => createElement(DescriptionList.Details, { className }, "Kari Nordmann"),
     ],
     [
@@ -92,7 +92,7 @@ describe("DescriptionList structure", () => {
   it("paints from tokens without a dark variant or raw palette utility", () => {
     const html = markup();
     expect(html).toContain("var(--muted-foreground)");
-    expect(html).toContain("text-foreground");
+    expect(html).toContain("var(--foreground)");
     expect(html).not.toContain("dark:");
     expect(html).not.toContain("destructive");
     expect(html).not.toMatch(RAW_PALETTE_RE);
