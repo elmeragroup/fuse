@@ -2,6 +2,8 @@ import { assert, describe, it } from "@effect/vitest";
 import { Effect, Fiber, Runtime } from "effect";
 import { TestClock } from "effect/testing";
 
+import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
+
 import {
   BRAND_MODES,
   errors,
@@ -15,6 +17,12 @@ import {
   writes,
 } from "./cli-fixture.ts";
 import { InMemoryFigma } from "./in-memory-figma.ts";
+
+/** The picker scopes, in alphabetical order because Figma does not document one, and the code syntax of a variable. */
+function pickers(figma: InMemoryFigma, collection: string, variable: string) {
+  const { scopes, codeSyntax } = figma.metadata(collection, variable);
+  return { scopes: scopes.toSorted(), codeSyntax };
+}
 
 /** A value as a designer stores it in the fake file. */
 type StoredValue = Parameters<InMemoryFigma["setValue"]>[3];
@@ -59,33 +67,34 @@ describe("fuse-figma sync", () => {
       const figma = new InMemoryFigma(FILE_KEY, TOKEN);
       yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
 
-      assert.deepStrictEqual(figma.metadata("Fuse tokens", "primary"), {
-        scopes: ["ALL_SCOPES"],
+      assert.deepStrictEqual(pickers(figma, "Fuse tokens", "primary"), {
+        scopes: ["ALL_FILLS", "STROKE_COLOR"],
         codeSyntax: { WEB: "var(--primary)" },
       });
-      assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius"), {
+      assert.deepStrictEqual(pickers(figma, "Fuse tokens", "radius"), {
         scopes: ["CORNER_RADIUS"],
         codeSyntax: { WEB: "var(--radius)" },
       });
-      assert.deepStrictEqual(figma.metadata("Fuse tokens", "font-sans"), {
+      assert.deepStrictEqual(pickers(figma, "Fuse tokens", "font-sans"), {
         scopes: ["FONT_FAMILY"],
         codeSyntax: { WEB: "var(--font-sans)" },
       });
-      assert.deepStrictEqual(figma.metadata("Fuse tokens", "selection-title-weight"), {
+      assert.deepStrictEqual(pickers(figma, "Fuse tokens", "selection-title-weight"), {
         scopes: ["FONT_STYLE"],
         codeSyntax: { WEB: "var(--selection-title-weight)" },
       });
-      assert.deepStrictEqual(figma.metadata("Fuse tokens", "secondary-hover"), {
-        scopes: ["ALL_SCOPES"],
+      assert.deepStrictEqual(pickers(figma, "Fuse tokens", "secondary-hover"), {
+        scopes: ["FRAME_FILL", "SHAPE_FILL"],
         codeSyntax: { WEB: "var(--secondary-hover)" },
       });
       // radius-step spaces the radius scale, so no picker offers it for a corner.
-      assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius-step"), {
+      assert.deepStrictEqual(pickers(figma, "Fuse tokens", "radius-step"), {
         scopes: [],
         codeSyntax: { WEB: "var(--radius-step)" },
       });
-      assert.deepStrictEqual(figma.metadata("Fuse primitives", "neutral-500"), {
-        scopes: ["ALL_SCOPES"],
+      // The neutral ramp holds one value in every theme, so no picker offers it.
+      assert.deepStrictEqual(pickers(figma, "Fuse primitives", "neutral-500"), {
+        scopes: [],
         codeSyntax: { WEB: "var(--neutral-500)" },
       });
       // The hidden variables only feed aliases, so no picker offers them and they carry no code.
@@ -95,68 +104,133 @@ describe("fuse-figma sync", () => {
         ["Fuse segment", "light/external/primary"],
         ["Fuse brand", "light/external/company/primary"],
       ] as const) {
-        assert.deepStrictEqual(figma.metadata(collection, variable), { scopes: [], codeSyntax: {} });
+        assert.deepStrictEqual(pickers(figma, collection, variable), { scopes: [], codeSyntax: {} });
       }
       // The built CSS defines no --radius-sm and most other rungs, so the rungs carry the calc().
-      assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius-xs").codeSyntax, {
+      assert.deepStrictEqual(pickers(figma, "Fuse tokens", "radius-xs").codeSyntax, {
         WEB: "calc(var(--radius) - 3 * var(--radius-step, 0px))",
       });
-      assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius-sm"), {
+      assert.deepStrictEqual(pickers(figma, "Fuse tokens", "radius-sm"), {
         scopes: ["CORNER_RADIUS"],
         codeSyntax: { WEB: "calc(var(--radius) - 2 * var(--radius-step, 0px))" },
       });
-      assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius-md"), {
+      assert.deepStrictEqual(pickers(figma, "Fuse tokens", "radius-md"), {
         scopes: ["CORNER_RADIUS"],
         codeSyntax: { WEB: "calc(var(--radius) - var(--radius-step, 0px))" },
       });
-      assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius-lg").codeSyntax, { WEB: "var(--radius)" });
-      assert.deepStrictEqual(figma.metadata("Fuse tokens", "radius-xl").codeSyntax, {
+      assert.deepStrictEqual(pickers(figma, "Fuse tokens", "radius-lg").codeSyntax, { WEB: "var(--radius)" });
+      assert.deepStrictEqual(pickers(figma, "Fuse tokens", "radius-xl").codeSyntax, {
         WEB: "calc(var(--radius) + 2 * var(--radius-step, 0px))",
       });
-      assert.deepStrictEqual(figma.metadata("Fuse brand", "dark/internal/private/radius-md"), {
+      assert.deepStrictEqual(pickers(figma, "Fuse brand", "dark/internal/private/radius-md"), {
         scopes: [],
         codeSyntax: {},
       });
-      assert.deepStrictEqual(figma.metadata("Fuse density", "control-h-md"), {
+      assert.deepStrictEqual(pickers(figma, "Fuse density", "control-h-md"), {
         scopes: ["WIDTH_HEIGHT"],
         codeSyntax: { WEB: "var(--control-h-md)" },
       });
-      assert.deepStrictEqual(figma.metadata("Fuse density", "control-px-icon-sm"), {
+      assert.deepStrictEqual(pickers(figma, "Fuse density", "control-px-icon-sm"), {
         scopes: ["GAP"],
         codeSyntax: { WEB: "var(--control-px-icon-sm)" },
       });
-      assert.deepStrictEqual(figma.metadata("Fuse density", "control-gap-lg"), {
+      assert.deepStrictEqual(pickers(figma, "Fuse density", "control-gap-lg"), {
         scopes: ["GAP"],
         codeSyntax: { WEB: "var(--control-gap-lg)" },
       });
-      assert.deepStrictEqual(figma.metadata("Fuse density", "control-text"), {
+      assert.deepStrictEqual(pickers(figma, "Fuse density", "control-text"), {
         scopes: ["FONT_SIZE"],
         codeSyntax: { WEB: "var(--control-text)" },
       });
-      assert.deepStrictEqual(figma.metadata("Fuse density", "control-leading"), {
+      assert.deepStrictEqual(pickers(figma, "Fuse density", "control-leading"), {
         scopes: ["LINE_HEIGHT"],
         codeSyntax: { WEB: "var(--control-leading)" },
       });
-      assert.deepStrictEqual(figma.metadata("Fuse density", "label-text"), {
+      assert.deepStrictEqual(pickers(figma, "Fuse density", "label-text"), {
         scopes: ["FONT_SIZE"],
         codeSyntax: { WEB: "var(--label-text)" },
       });
-      assert.deepStrictEqual(figma.metadata("Fuse density", "label-leading"), {
+      assert.deepStrictEqual(pickers(figma, "Fuse density", "label-leading"), {
         scopes: ["LINE_HEIGHT"],
         codeSyntax: { WEB: "var(--label-leading)" },
       });
-      assert.deepStrictEqual(figma.metadata("Fuse density", "row-h"), {
+      assert.deepStrictEqual(pickers(figma, "Fuse density", "row-h"), {
         scopes: ["WIDTH_HEIGHT"],
         codeSyntax: { WEB: "var(--row-h)" },
       });
-      assert.deepStrictEqual(figma.metadata("Fuse density", "row-py"), {
+      assert.deepStrictEqual(pickers(figma, "Fuse density", "row-py"), {
         scopes: ["GAP"],
         codeSyntax: { WEB: "var(--row-py)" },
       });
-      assert.deepStrictEqual(figma.metadata("Fuse density", "surface-gap-md"), {
+      assert.deepStrictEqual(pickers(figma, "Fuse density", "surface-gap-md"), {
         scopes: ["GAP"],
         codeSyntax: { WEB: "var(--surface-gap-md)" },
       });
+    })
+  );
+
+  it.effect("offers each color only in the pickers for where Fuse paints it", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
+
+      // Oracle: a surface fills frames and shapes, an ink fills text and shapes and strokes
+      // vectors, and a line strokes. The three fills together are ALL_FILLS.
+      const expected = [
+        ["Fuse tokens", "card", ["FRAME_FILL", "SHAPE_FILL"]],
+        ["Fuse tokens", "card-foreground", ["SHAPE_FILL", "STROKE_COLOR", "TEXT_FILL"]],
+        ["Fuse tokens", "ring", ["STROKE_COLOR"]],
+        ["Fuse tokens", "secondary", ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"]],
+        ["Fuse tokens", "primary-foreground", ["ALL_FILLS", "STROKE_COLOR"]],
+        // Not text-grade, so the text fill picker leaves it out.
+        ["Fuse tokens", "feature-foreground", ["FRAME_FILL", "SHAPE_FILL"]],
+        ["Fuse primitives", "neutral-50", []],
+        ["Fuse primitives", "brand-fkas", ["FRAME_FILL", "SHAPE_FILL"]],
+        ["Fuse primitives", "brand-fkas-foreground", ["SHAPE_FILL", "STROKE_COLOR", "TEXT_FILL"]],
+      ] as const;
+      for (const [collection, variable, scopes] of expected) {
+        assert.deepStrictEqual(
+          pickers(figma, collection, variable).scopes,
+          [...scopes],
+          `${collection}/${variable}`
+        );
+      }
+    })
+  );
+
+  it.effect("describes every variable a designer can bind, and leaves the hidden ones blank", () =>
+    Effect.gen(function* () {
+      const figma = new InMemoryFigma(FILE_KEY, TOKEN);
+      yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
+
+      // Unit under test: the descriptions the sync stores. Oracle: the theme catalog's own
+      // description of each token, rung, primitive and density metric.
+      const catalog = resolveThemeCatalog();
+      const [theme] = catalog.themes;
+      const described = [
+        ...Object.values(theme.schemes.light.tokens).map((entry) => ["Fuse tokens", entry] as const),
+        ...Object.values(theme.schemes.light.rungs)
+          .filter((rung) => rung.name !== "radius-popover")
+          .map((entry) => ["Fuse tokens", entry] as const),
+        ...Object.values(catalog.primitives).map((entry) => ["Fuse primitives", entry] as const),
+        ...catalog.density.map((entry) => ["Fuse density", entry] as const),
+      ];
+      const mismatched = described.filter(
+        ([collection, entry]) =>
+          entry.description === "" || figma.metadata(collection, entry.name).description !== entry.description
+      );
+      assert.deepStrictEqual(
+        mismatched.map(([collection, entry]) => `${collection}/${entry.name}`),
+        []
+      );
+      assert.strictEqual(described.length, 98 + 25 + 39);
+      assert.include(figma.metadata("Fuse tokens", "feature-foreground").description, "not text-grade");
+      for (const collection of ["Fuse variant", "Fuse segment", "Fuse brand"]) {
+        const blank = figma
+          .variableNames(collection)
+          .filter((variable) => figma.metadata(collection, variable).description !== "");
+        assert.deepStrictEqual(blank, [], collection);
+      }
     })
   );
 
@@ -166,8 +240,9 @@ describe("fuse-figma sync", () => {
       yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
       const id = figma.variableIds().get("Fuse tokens/primary");
       if (id === undefined) throw new Error("the first sync creates primary");
+      const synced = figma.metadata("Fuse tokens", "primary");
       figma.setMetadata("Fuse tokens", "primary", {
-        scopes: ["ALL_SCOPES"],
+        ...synced,
         codeSyntax: { WEB: "var(--old-primary)", ANDROID: "R.color.primary", iOS: "Color.primary" },
       });
 
@@ -178,12 +253,13 @@ describe("fuse-figma sync", () => {
         {
           action: "UPDATE",
           id,
-          scopes: ["ALL_SCOPES"],
+          scopes: synced.scopes,
           codeSyntax: { WEB: "var(--primary)", ANDROID: "R.color.primary", iOS: "Color.primary" },
+          description: synced.description,
         },
       ]);
       assert.deepStrictEqual(figma.metadata("Fuse tokens", "primary"), {
-        scopes: ["ALL_SCOPES"],
+        ...synced,
         codeSyntax: { WEB: "var(--primary)", ANDROID: "R.color.primary", iOS: "Color.primary" },
       });
     })
@@ -243,15 +319,19 @@ describe("fuse-figma sync", () => {
       figma.setMetadata("Fuse segment", "light/external/primary", {
         scopes: ["ALL_SCOPES"],
         codeSyntax: { WEB: "var(--designer)", ANDROID: "R.color.designer" },
+        description: "A designer's note.",
       });
 
       yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
 
       // The write carries no codeSyntax at all, so it is safe whether Figma merges or replaces it.
-      assert.deepStrictEqual(figma.acceptedWrites.at(-1)?.variables, [{ action: "UPDATE", id, scopes: [] }]);
+      assert.deepStrictEqual(figma.acceptedWrites.at(-1)?.variables, [
+        { action: "UPDATE", id, scopes: [], description: "" },
+      ]);
       assert.deepStrictEqual(figma.metadata("Fuse segment", "light/external/primary"), {
         scopes: [],
         codeSyntax: { WEB: "var(--designer)", ANDROID: "R.color.designer" },
+        description: "",
       });
     })
   );
@@ -464,7 +544,10 @@ describe("fuse-figma check", () => {
       assert.include(yield* output, `Figma file ${FILE_KEY} matches the Fuse tokens.`);
 
       figma.setValue("Fuse tokens", "ring", "Dark", { r: 0, g: 1, b: 0, a: 1 });
-      figma.setMetadata("Fuse tokens", "primary", { scopes: [], codeSyntax: { WEB: "var(--primary)" } });
+      figma.setMetadata("Fuse tokens", "primary", {
+        ...figma.metadata("Fuse tokens", "primary"),
+        description: "A designer's note.",
+      });
       const failure = yield* Effect.flip(run(figma, ["--file-key", FILE_KEY, "check"]));
 
       assert.strictEqual(failure._tag, "ReportedFailure");
@@ -472,7 +555,7 @@ describe("fuse-figma check", () => {
       assert.strictEqual(writes(figma), 1);
       const printed = yield* output;
       assert.include(printed, "Fuse tokens: set value of ring in Dark");
-      assert.include(printed, "Fuse tokens: update scopes or code syntax of primary");
+      assert.include(printed, "Fuse tokens: update scopes, code syntax or description of primary");
       assert.include(
         yield* errors,
         `Figma file ${FILE_KEY} differs from the Fuse tokens in 2 places. Run \`sync\` to update it.`

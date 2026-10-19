@@ -112,6 +112,7 @@ function palette(aliasing: "error" | "destructive"): VariableSet {
     type: "COLOR",
     scopes: ["ALL_SCOPES"],
     webSyntax: undefined,
+    description: "",
     values: new Map<string, VariableValue>([
       [
         "Value",

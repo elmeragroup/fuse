@@ -27,7 +27,7 @@ export type {
 } from "./resolve-theme-catalog";
 export type { ResolvedColorScheme } from "./color-scheme-types";
 export type { Density } from "./density";
-export type { TokenKind, TokenName } from "./tokens/contract";
+export type { TokenKind, TokenName, TokenPaint } from "./tokens/contract";
 export type { DensityMetricKind, DensityMetricName } from "./tokens/density-metrics";
 export type { DensityPart, DensityRole } from "./tokens/density-roles";
 export type { PrimitiveName } from "./tokens/primitives";

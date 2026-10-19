@@ -20,13 +20,24 @@ import type { Density, DensityAttributes } from "./density";
 import { themeAttributes } from "./theme-attributes";
 import type { ThemeAttributes } from "./theme-attributes";
 import { readTokenColor } from "./token-color";
-import { TOKEN_KINDS, TOKEN_NAMES } from "./tokens/contract";
-import type { TokenContract, TokenKind, TokenName } from "./tokens/contract";
+import {
+  isColorTokenName,
+  TOKEN_DESCRIPTIONS,
+  TOKEN_KINDS,
+  TOKEN_NAMES,
+  TOKEN_PAINTS,
+} from "./tokens/contract";
+import type { TokenContract, TokenKind, TokenName, TokenPaint } from "./tokens/contract";
 import { DENSITY_METRIC_FAMILIES, DENSITY_METRICS } from "./tokens/density-metrics";
-import type { DensityMetricKind, DensityMetricName, DensityMetricRole } from "./tokens/density-metrics";
+import type {
+  DensityMetricKind,
+  DensityMetricName,
+  DensityMetricRole,
+  DensityMetricSpec,
+} from "./tokens/density-metrics";
 import { DENSITY_ROLES, PART_DENSITY } from "./tokens/density-roles";
 import type { DensityPart, DensityRole } from "./tokens/density-roles";
-import { PRIMITIVE_NAMES, PRIMITIVES } from "./tokens/primitives";
+import { PRIMITIVE_DESCRIPTIONS, PRIMITIVE_NAMES, PRIMITIVE_PAINTS, PRIMITIVES } from "./tokens/primitives";
 import type { PrimitiveName } from "./tokens/primitives";
 import { RADIUS_RUNG_NAMES, RADIUS_RUNGS } from "./tokens/radius-scale";
 import type { RadiusRungName } from "./tokens/radius-scale";
@@ -68,8 +79,16 @@ export type TokenReference = {
 /** The one custom property a `var()` names. */
 export type Reference = PrimitiveReference | TokenReference;
 
+/** Where a color entry is painted. Only a color carries paints. */
+type PaintsOf<Kind extends TokenKind> = Kind extends "color"
+  ? {
+      /** Where Fuse paints the color, which decides where exporters offer it. Empty for none. */
+      readonly paints: readonly TokenPaint[];
+    }
+  : unknown;
+
 /** One resolved custom property. */
-type Entry<Name extends string, Kind extends TokenKind, Ref extends Reference> = {
+type Entry<Name extends string, Kind extends TokenKind, Ref extends Reference> = PaintsOf<Kind> & {
   /** The custom property without its leading dashes. */
   readonly name: Name;
 
@@ -87,6 +106,13 @@ type Entry<Name extends string, Kind extends TokenKind, Ref extends Reference> =
 
   /** The literal at the end of the reference chain, in the same theme and scheme. */
   readonly value: LiteralByKind[Kind];
+
+  /**
+   * What the property is for, in one or two sentences for a designer picking a variable. It
+   * never holds `& < > " '`, which the Figma sync refuses (`descriptionProblem` in
+   * `packages/fuse-figma/src/variable-set.ts`).
+   */
+  readonly description: string;
 };
 
 /**
@@ -168,6 +194,9 @@ export type DensityMetricEntry = {
   /** The CSS a developer pastes, such as `var(--control-h-md)`. */
   readonly codeSyntax: string;
 
+  /** What the metric is for, in one or two sentences for a designer picking a variable. */
+  readonly description: string;
+
   /** The metric in px per density, at the 16px root. */
   readonly px: { readonly [D in Density]: number };
 };
@@ -229,7 +258,7 @@ export function resolveThemeCatalog(): ResolvedThemeCatalog {
     primitives,
     themes: [resolve(first), ...rest.map(resolve)],
     density: DENSITY_METRIC_FAMILIES.flatMap(({ kind, role, metrics }) =>
-      metrics.map((name) => densityEntry(name, kind, role))
+      metrics.map((metric) => densityEntry(metric, kind, role))
     ),
     partDensity: { roles: DENSITY_ROLES, parts: PART_DENSITY },
   };
@@ -320,8 +349,13 @@ function referenceIn(site: Site): Reference | undefined {
   throw defect(site, `--${target} is neither a token nor a primitive`);
 }
 
+/** What an entry says about its property beyond the value: its description, and a color's paints. */
+type EntryNotes =
+  | { readonly description: string }
+  | { readonly description: string; readonly paints: readonly TokenPaint[] };
+
 /** An entry before its type correlates the name with its kind and value. */
-type UncorrelatedEntry = {
+type UncorrelatedEntry = EntryNotes & {
   readonly name: string;
   readonly kind: TokenKind;
   readonly css: string;
@@ -350,6 +384,7 @@ function resolveScope<S extends Reference["space"], E extends AnyEntry>(
   names: readonly NameIn<S>[],
   siteOf: (name: NameIn<S>) => Site,
   kindOf: (name: NameIn<S>) => TokenKind,
+  notesOf: (name: NameIn<S>) => EntryNotes,
   foreignTarget: (reference: ReferenceOutside<S>, site: Site) => UncorrelatedEntry
 ): ReadonlyMap<NameIn<S>, E> {
   const resolved = new Map<NameIn<S>, E>();
@@ -372,7 +407,9 @@ function resolveScope<S extends Reference["space"], E extends AnyEntry>(
       throw defect(site, "its reference chain is a cycle");
     }
     resolving.add(name);
-    const entry = resolveEntry<E>(site, kindOf(name), (reference) => targetOf(reference, site));
+    const entry = resolveEntry<E>(site, kindOf(name), notesOf(name), (reference) =>
+      targetOf(reference, site)
+    );
     resolving.delete(name);
     resolved.set(name, entry);
     return entry;
@@ -401,7 +438,8 @@ function recordOf<N extends string, E extends { readonly name: N }>(
 function correlated<E extends AnyEntry>(entry: UncorrelatedEntry): E {
   // SAFETY: the resolver takes `kind` from the contract for `name`, and `value` either comes
   // from the reader for that kind or is copied from a reference target whose kind it checked
-  // is the same. TypeScript cannot correlate those three fields across a lookup.
+  // is the same. The notes come from the tables for `name`, which give a color its paints.
+  // TypeScript cannot correlate those fields across a lookup.
   return entry as E;
 }
 
@@ -430,6 +468,7 @@ function referencedValue(
 function resolveEntry<E extends AnyEntry>(
   site: Site,
   kind: TokenKind,
+  notes: EntryNotes,
   targetOf: (reference: Reference) => UncorrelatedEntry
 ): E {
   const reference = referenceIn(site);
@@ -444,6 +483,7 @@ function resolveEntry<E extends AnyEntry>(
     codeSyntax: `var(--${site.name})`,
     reference,
     value,
+    ...notes,
   });
 }
 
@@ -453,6 +493,7 @@ function resolvePrimitives(): ResolvedThemeCatalog["primitives"] {
     PRIMITIVE_NAMES,
     (name) => ({ scope: "primitive", name, css: PRIMITIVES[name] }),
     () => "color",
+    (name) => ({ description: PRIMITIVE_DESCRIPTIONS[name], paints: PRIMITIVE_PAINTS[name] }),
     (reference, site) => {
       throw defect(site, `a primitive cannot reference the token ${reference.name}`);
     }
@@ -488,26 +529,36 @@ function resolveScheme(
     TOKEN_NAMES,
     (name) => ({ scope: `token in ${where}`, name, css: composed[name] }),
     (name) => TOKEN_KINDS[name],
+    tokenNotes,
     (reference) => primitives[reference.name]
   );
   const tokens = recordOf(TOKEN_NAMES, entries);
   return { tokens, rungs: resolveRungs(tokens.radius.value, tokens["radius-step"].value) };
 }
 
+/** A token's description, and a color token's paints. */
+function tokenNotes(name: TokenName): EntryNotes {
+  const description = TOKEN_DESCRIPTIONS[name];
+  return isColorTokenName(name) ? { description, paints: TOKEN_PAINTS[name] } : { description };
+}
+
 /** Every radius rung in px, from a theme's `radius` and `radius-step` in px. */
 function resolveRungs(radius: number, step: number): ResolvedScheme["rungs"] {
   const rungs = new Map(
     RADIUS_RUNG_NAMES.map((name): [RadiusRungName, RungEntry] => {
-      const { steps, css } = RADIUS_RUNGS[name];
+      const { steps, css, description } = RADIUS_RUNGS[name];
       const value = Math.max(0, radius + steps * step);
-      return [name, { name, kind: "dimension", css, codeSyntax: css, reference: undefined, value }];
+      return [
+        name,
+        { name, kind: "dimension", css, codeSyntax: css, reference: undefined, value, description },
+      ];
     })
   );
   return recordOf(RADIUS_RUNG_NAMES, rungs);
 }
 
 function densityEntry(
-  name: DensityMetricName,
+  { name, description }: DensityMetricSpec,
   metricKind: DensityMetricKind,
   role: DensityMetricRole
 ): DensityMetricEntry {
@@ -517,6 +568,7 @@ function densityEntry(
     metricKind,
     role,
     codeSyntax: `var(--${name})`,
+    description,
     px: { dense: remToPx(rem.dense), comfortable: remToPx(rem.comfortable) },
   };
 }

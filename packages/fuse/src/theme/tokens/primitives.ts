@@ -1,3 +1,7 @@
+import type { TokenPaint } from "./contract";
+import { BRANDS } from "./themes";
+import type { BrandCode } from "./themes";
+
 export const WHITE = "oklch(1 0 0)";
 
 /**
@@ -74,3 +78,94 @@ export const PRIMITIVES = {
   "brand-ngfi": "oklch(0.3671893 0.072708 169.9789644)",
   "brand-ngfi-foreground": WHITE,
 } as const satisfies PrimitiveTokens;
+
+/**
+ * Where each primitive is painted. The neutral ramp paints nothing: it holds one value in every
+ * theme and scheme, so a part painted with it breaks dark mode and brand switching, and
+ * `elmera/no-primitive-colors` bans it in Fuse and the docs. It stays a public alias target. A
+ * brand accent fills an area, and its foreground colors text and icons on that fill, as in
+ * cross-brand artwork that `bg-brand-fkas` draws.
+ */
+export const PRIMITIVE_PAINTS = {
+  "neutral-50": [],
+  "neutral-100": [],
+  "neutral-200": [],
+  "neutral-300": [],
+  "neutral-400": [],
+  "neutral-500": [],
+  "neutral-600": [],
+  "neutral-700": [],
+  "neutral-800": [],
+  "neutral-900": [],
+  "neutral-950": [],
+  "brand-fkas": ["surface"],
+  "brand-fkas-foreground": ["ink"],
+  "brand-tkas": ["surface"],
+  "brand-tkas-foreground": ["ink"],
+  "brand-guen": ["surface"],
+  "brand-guen-foreground": ["ink"],
+  "brand-fkab": ["surface"],
+  "brand-fkab-foreground": ["ink"],
+  "brand-fkse": ["surface"],
+  "brand-fkse-foreground": ["ink"],
+  "brand-elma": ["surface"],
+  "brand-elma-foreground": ["ink"],
+  "brand-ngfi": ["surface"],
+  "brand-ngfi-foreground": ["ink"],
+} as const satisfies Record<PrimitiveName, readonly TokenPaint[]>;
+
+/** The description of one step of the neutral ramp. */
+function neutralStep(step: number): string {
+  return `Step ${String(step)} of the neutral ramp, where 50 is lightest. It holds one value in every theme and scheme, so bind a role token instead.`;
+}
+
+/** The descriptions of a brand's accent and of the text color on it, keyed by their primitives. */
+type BrandAccentDescriptions<Code extends BrandCode> = {
+  readonly [Name in `brand-${Code}` | `brand-${Code}-foreground`]: string;
+};
+
+/** The descriptions of a brand's two primitives. `note` follows the accent's description. */
+function brandAccentDescriptions<Code extends BrandCode>(
+  code: Code,
+  note?: string
+): BrandAccentDescriptions<Code> {
+  const brand = BRANDS[code].displayName;
+  const accent = `The ${brand} brand accent, the same in every theme. Use it for artwork of that brand, and use brand to follow the theme.`;
+  // SAFETY: both keys are built from `code`, so they are exactly the two keys of the return type.
+  // Object.fromEntries cannot express that correlation.
+  return Object.fromEntries([
+    [`brand-${code}`, note === undefined ? accent : `${accent} ${note}`],
+    [
+      `brand-${code}-foreground`,
+      `Text and icons on the ${brand} brand accent. Use brand-foreground to follow the theme.`,
+    ],
+  ]) as BrandAccentDescriptions<Code>;
+}
+
+/**
+ * What each primitive is for, in one or two sentences for a designer picking a variable. A new
+ * primitive without one fails to compile.
+ */
+export const PRIMITIVE_DESCRIPTIONS = {
+  "neutral-50": neutralStep(50),
+  "neutral-100": neutralStep(100),
+  "neutral-200": neutralStep(200),
+  "neutral-300": neutralStep(300),
+  "neutral-400": neutralStep(400),
+  "neutral-500": neutralStep(500),
+  "neutral-600": neutralStep(600),
+  "neutral-700": neutralStep(700),
+  "neutral-800": neutralStep(800),
+  "neutral-900": neutralStep(900),
+  "neutral-950": neutralStep(950),
+  ...brandAccentDescriptions("fkas"),
+  ...brandAccentDescriptions("tkas"),
+  ...brandAccentDescriptions("guen"),
+  ...brandAccentDescriptions(
+    "fkab",
+    "It aliases brand-fkas, because Fjordkraft Företag shares the Fjordkraft identity."
+  ),
+  ...brandAccentDescriptions("fkse"),
+  ...brandAccentDescriptions("elma"),
+  ...brandAccentDescriptions("ngfi"),
+} as const satisfies Record<PrimitiveName, string>;

@@ -65,7 +65,10 @@ describe("fuseVariableSet", () => {
       _tag: "String",
       value: "Neo Sans",
     });
-    expect(spec("Fuse tokens", "primary")).toMatchObject({ type: "COLOR", scopes: ["ALL_SCOPES"] });
+    expect(spec("Fuse tokens", "primary")).toMatchObject({
+      type: "COLOR",
+      scopes: ["ALL_FILLS", "STROKE_COLOR"],
+    });
     expect(spec("Fuse tokens", "radius")).toMatchObject({ type: "FLOAT", scopes: ["CORNER_RADIUS"] });
     expect(spec("Fuse tokens", "radius-step")).toMatchObject({ type: "FLOAT", scopes: [] });
     expect(spec("Fuse tokens", "button-outline-width")).toMatchObject({

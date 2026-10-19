@@ -547,19 +547,22 @@ function metadataOf(spec: VariableSpec, fileSyntax: CodeSyntax): VariableMetadat
   return {
     scopes: spec.scopes,
     codeSyntax: spec.webSyntax === undefined ? undefined : { ...fileSyntax, WEB: spec.webSyntax },
+    description: spec.description,
   };
 }
 
 /**
  * Scopes compare as sets because Figma does not document their order. Of the code syntax,
- * the sync owns only the web entry, and only on the variables it sets one for.
+ * the sync owns only the web entry, and only on the variables it sets one for. The sync owns
+ * every description, so a description a designer wrote counts as drift.
  */
 function sameMetadata(found: FileVariable, spec: VariableSpec): boolean {
   const scopes = new Set(found.scopes);
   return (
     scopes.size === spec.scopes.length &&
     spec.scopes.every((scope) => scopes.has(scope)) &&
-    (spec.webSyntax === undefined || found.codeSyntax.WEB === spec.webSyntax)
+    (spec.webSyntax === undefined || found.codeSyntax.WEB === spec.webSyntax) &&
+    found.description === spec.description
   );
 }
 

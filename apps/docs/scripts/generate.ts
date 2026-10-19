@@ -72,6 +72,7 @@ import type { BundleSizeReport } from "./lib/sizes.ts";
 import { collectRecipeSources } from "./lib/sources.ts";
 import { renderFigmaThemeCatalog } from "./lib/theme-catalog-figma.ts";
 import { buildThemeCatalog, renderThemeCatalog } from "./lib/theme-catalog.ts";
+import { buildTokenReference, renderTokenReference } from "./lib/token-reference.ts";
 import { extractTokens, readColorTokenMapFromFile } from "./lib/tokens.ts";
 import type { ColorTokenMap } from "./lib/tokens.ts";
 
@@ -255,13 +256,10 @@ export const BUNDLE_SIZES: readonly BundleSize[] = ${JSON.stringify(report.entri
 }
 
 /** The theme tokens the Tokens page lists, read from the library's own `@theme` block. */
-function emitTokenReference(colors: ColorTokenMap): void {
-  const tokens = [...new Set(colors.values())].sort((left, right) => left.localeCompare(right));
+function emitTokenReference(colors: ColorTokenMap, catalog: ResolvedThemeCatalog): void {
   writeFile(
     path.join(generatedDir, "token-reference.ts"),
-    `${BANNER}/** Every colour token a Tailwind utility in the library resolves to. */
-export const COLOR_TOKENS: readonly string[] = ${JSON.stringify(tokens, null, 2)};
-`
+    `${BANNER}${renderTokenReference(buildTokenReference(colors, catalog))}`
   );
 }
 
@@ -378,8 +376,8 @@ async function main(): Promise<void> {
   emitComponentOutlines(components);
   emitApiDrift(generated.artifacts.values());
   emitBundleSizes(sizes);
-  emitTokenReference(colors);
   const catalog = resolveThemeCatalog();
+  emitTokenReference(colors, catalog);
   emitThemeCatalog(buildThemeCatalog(catalog));
   emitFigmaThemeCatalog(catalog);
   emitLandingFacts(catalog, components);

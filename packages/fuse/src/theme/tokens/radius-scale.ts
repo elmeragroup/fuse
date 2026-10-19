@@ -31,6 +31,9 @@ type RadiusRung = {
 
   /** The exact value `fuse.css` declares for the rung, which is also its web code syntax. */
   readonly css: string;
+
+  /** What the rung is for, in one or two sentences for a designer picking a variable. */
+  readonly description: string;
 };
 
 /**
@@ -53,9 +56,14 @@ function rungCss(steps: number): string {
   return `calc(var(--radius) ${steps < 0 ? "-" : "+"} ${stepLength})`;
 }
 
-/** A rung `steps` lengths from `--radius`, with the CSS value built from that count. */
-function rung(steps: number): RadiusRung {
-  return { steps, css: rungCss(steps) };
+/**
+ * A rung `steps` lengths from `--radius`, with the CSS value built from that count.
+ *
+ * @param steps - The rung's distance from `--radius` in steps.
+ * @param description - What the rung is for.
+ */
+function rung(steps: number, description: string): RadiusRung {
+  return { steps, css: rungCss(steps), description };
 }
 
 /**
@@ -64,10 +72,13 @@ function rung(steps: number): RadiusRung {
  * steps 0px, so every internal rung equals `--radius`.
  */
 export const RADIUS_RUNGS = {
-  "radius-xs": rung(-3),
-  "radius-sm": rung(-2),
-  "radius-md": rung(-1),
-  "radius-lg": rung(0),
-  "radius-xl": rung(2),
-  "radius-popover": rung(-4),
+  "radius-xs": rung(-3, "Three radius-step lengths below radius."),
+  "radius-sm": rung(-2, "Two radius-step lengths below radius."),
+  "radius-md": rung(-1, "One radius-step length below radius."),
+  "radius-lg": rung(0, "The corner at radius itself, in every theme."),
+  "radius-xl": rung(2, "Two radius-step lengths above radius."),
+  "radius-popover": rung(
+    -4,
+    "Four radius-step lengths below radius. No component reads it, because Fuse popups use radius-md."
+  ),
 } as const satisfies Record<RadiusRungName, RadiusRung>;

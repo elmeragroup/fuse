@@ -295,6 +295,282 @@ export const TOKEN_KINDS = {
   "font-heading": "fontFamily",
 } as const satisfies Record<TokenName, TokenKind>;
 
+/** A contract token whose value is a color. */
+export type ColorTokenName = {
+  [Name in TokenName]: (typeof TOKEN_KINDS)[Name] extends "color" ? Name : never;
+}[TokenName];
+
+/**
+ * Where a color is painted. A `surface` fills an area, such as a card or a badge. An `ink`
+ * colors text and the icons that take the text color through `currentColor`. A `line` draws a
+ * border, ring, outline or divider.
+ */
+export type TokenPaint = "surface" | "ink" | "line";
+
+/**
+ * Where Fuse paints each color role. Exporters read it to offer a role only where it belongs,
+ * such as the Figma sync's picker scopes. The source contract in `source-contracts.test.ts`
+ * requires every color utility the library writes on a role to fall inside the role's paints.
+ * A role no component paints takes the paints its name and the docs demos give it. A new color
+ * token without an entry fails to compile.
+ */
+export const TOKEN_PAINTS = {
+  background: ["surface", "ink", "line"],
+  foreground: ["surface", "ink", "line"],
+  card: ["surface"],
+  "card-foreground": ["ink"],
+  "card-soft": ["surface"],
+  "card-soft-foreground": ["ink"],
+  popover: ["surface"],
+  "popover-foreground": ["ink"],
+  dialog: ["surface"],
+  "dialog-foreground": ["ink"],
+  // GridList draws a disabled checkbox edge in it through its `--checkbox-color` route.
+  muted: ["surface", "line"],
+  "muted-foreground": ["surface", "ink", "line"],
+  accent: ["surface"],
+  "accent-foreground": ["ink"],
+  feature: ["surface"],
+  "feature-bright": ["surface"],
+  // Not text-grade, so Fuse fills accent shapes with it and never sets text in it.
+  "feature-foreground": ["surface"],
+  primary: ["surface", "ink", "line"],
+  "primary-foreground": ["surface", "ink"],
+  "primary-soft": ["surface"],
+  // This and the four status soft foregrounds also draw the focus ring on their fill, routed into
+  // `--ring` by the default Accordion item, status Toasts and the info and warning Alerts.
+  "primary-soft-foreground": ["ink", "line"],
+  secondary: ["surface", "line"],
+  "secondary-foreground": ["ink"],
+  "secondary-hover": ["surface"],
+  "secondary-soft": ["surface"],
+  "secondary-soft-foreground": ["ink"],
+  brand: ["surface", "ink"],
+  "brand-foreground": ["ink"],
+  error: ["surface", "ink", "line"],
+  "error-foreground": ["ink"],
+  "error-soft": ["surface"],
+  "error-soft-foreground": ["ink", "line"],
+  info: ["surface", "ink", "line"],
+  "info-foreground": ["ink"],
+  "info-soft": ["surface"],
+  "info-soft-foreground": ["ink", "line"],
+  success: ["surface", "ink", "line"],
+  "success-foreground": ["ink"],
+  "success-soft": ["surface"],
+  "success-soft-foreground": ["ink", "line"],
+  warning: ["surface", "ink", "line"],
+  "warning-foreground": ["ink"],
+  "warning-soft": ["surface"],
+  "warning-soft-foreground": ["ink", "line"],
+  // No component reads it. The docs demos fill and outline with it.
+  destructive: ["surface", "line"],
+  "destructive-foreground": ["ink"],
+  border: ["surface", "line"],
+  input: ["surface", "line"],
+  ring: ["line"],
+  "card-border": ["line"],
+  "button-outline": ["line"],
+  "selection-border": ["line"],
+  "selection-checked-border": ["line"],
+  "selection-divider": ["line"],
+  "selection-checked-divider": ["line"],
+  "selection-disabled-background": ["surface"],
+  // The stripes are 8px bands of a background gradient, not hairlines.
+  "selection-disabled-hatch": ["surface"],
+  "selection-disabled-foreground": ["ink"],
+  sidebar: ["surface"],
+  "sidebar-foreground": ["ink"],
+  // The outline Sidebar button draws a 1px shadow ring in it on hover, which the paint
+  // contract cannot read, because no paint names a shadow.
+  "sidebar-accent": ["surface", "line"],
+  "sidebar-accent-foreground": ["ink"],
+  "sidebar-border": ["surface", "line"],
+  "sidebar-ring": ["line"],
+  "sidebar-brand": ["surface", "ink"],
+  "sidebar-brand-foreground": ["ink"],
+  "right-panel": ["surface"],
+  "right-panel-foreground": ["ink"],
+  "chart-1": ["surface"],
+  "chart-2": ["surface"],
+  "chart-3": ["surface"],
+  "chart-4": ["surface"],
+  "chart-5": ["surface"],
+  "chart-6": ["surface"],
+  "chart-7": ["surface"],
+  "chart-8": ["surface"],
+  "sh-identifier": ["ink"],
+  "sh-keyword": ["ink"],
+  "sh-string": ["ink"],
+  "sh-class": ["ink"],
+  "sh-property": ["ink"],
+  "sh-entity": ["ink"],
+  "sh-jsxliterals": ["ink"],
+  "sh-sign": ["ink"],
+  "sh-comment": ["ink"],
+} as const satisfies Record<ColorTokenName, readonly TokenPaint[]>;
+
+/**
+ * Whether a name is a contract token that holds a color.
+ *
+ * @param name - Any name, such as a custom property without its `--`.
+ * @returns `true` when the name is a contract token whose kind is `color`.
+ */
+export function isColorTokenName(name: string): name is ColorTokenName {
+  return Object.hasOwn(TOKEN_PAINTS, name);
+}
+
+/**
+ * What each contract token is for, in one or two sentences for a designer picking a variable.
+ * Each names the rule a designer could break, where the code states one, such as a pair that
+ * is not text-grade or a value that turns transparent in a variant. Exporters, such as the
+ * Figma sync, and the docs token list show it. A new token without one fails to compile. No
+ * description holds `& < > " '`, which the Figma sync refuses (`descriptionProblem` in
+ * `packages/fuse-figma/src/variable-set.ts`).
+ */
+// oxlint-disable-next-line elmera/no-raw-class-map -- the values are prose for designers, not classes; "text-grade" reads as a text- utility
+export const TOKEN_DESCRIPTIONS = {
+  background:
+    "The page fill. External light themes tint it with the brand, so a card stands out on it by its fill.",
+  foreground:
+    "Body text and icons on the page, text-grade on background and muted. Tooltips fill with it and set their text in background.",
+  card: "The fill of Card, a card Accordion item, selection rows, checkboxes and field boxes. Set text on it in card-foreground.",
+  "card-foreground": "Text and icons on card, text-grade on it.",
+  "card-soft":
+    "A softer card fill. Set text on it in card-soft-foreground, and muted-foreground also stays text-grade on it.",
+  "card-soft-foreground": "Text and icons on card-soft, text-grade on it.",
+  popover:
+    "The fill of anchored popups, such as Popover, Select and menu lists. Set text on it in popover-foreground.",
+  "popover-foreground": "Text and icons in anchored popups, on popover.",
+  dialog:
+    "The fill of Dialog, AlertDialog and Sheet. External light themes fill it with the page tint, and internal and dark themes use popover.",
+  "dialog-foreground": "Text and icons in Dialog, AlertDialog and Sheet, text-grade on dialog.",
+  muted:
+    "A quiet fill for hover tints, the Tabs list track, Skeleton and Kbd, and the edge of a disabled GridList checkbox. Text on it takes foreground or muted-foreground.",
+  "muted-foreground":
+    "Secondary text, such as descriptions, placeholders and captions, text-grade on background, muted, card, card-soft and dialog. It also draws the edge of an unchecked Checkbox, Radio and Switch.",
+  accent: "The fill of a highlighted row in menus, Select, Combobox and Command, one step off popover.",
+  "accent-foreground": "Text and icons on a highlighted accent row.",
+  feature: "The fill of promo and hero panels. Use accent for a subtle hover tint instead.",
+  "feature-bright": "A second fill for promo and hero panels, beside feature.",
+  "feature-foreground":
+    "Accent shapes and illustration details on a feature panel. It is not text-grade, so Fuse never sets text in it.",
+  primary:
+    "The main action color: the default Button, checked Checkbox, Radio and Switch, selected calendar days and link text. Set text on it in primary-foreground.",
+  "primary-foreground":
+    "Text and icons on primary, text-grade on it. It also fills the dot of a checked Radio.",
+  "primary-soft": "The fill of a default Accordion item. Set text on it in primary-soft-foreground.",
+  "primary-soft-foreground":
+    "Text and icons on primary-soft, text-grade on it. A default Accordion item also draws its focus ring in it.",
+  secondary: "The fill of the secondary Button and Badge. Set text on it in secondary-foreground.",
+  "secondary-foreground": "Text and icons on secondary and secondary-hover, text-grade on both.",
+  "secondary-hover":
+    "The hover fill of the secondary Button, secondary mixed toward foreground. Fuse computes it, so no theme sets it.",
+  "secondary-soft": "The soft companion of secondary. Set text on it in secondary-soft-foreground.",
+  "secondary-soft-foreground": "Text and icons on secondary-soft, text-grade on it.",
+  brand:
+    "The brand accent of the theme, which points at the brand-* primitive of the theme brand. Fill brand shapes with it and set text on them in brand-foreground. For brand-colored text on the Sidebar, use sidebar-brand, which Fuse steps to 4.5:1 there.",
+  "brand-foreground":
+    "Text and icons on a brand fill, which points at the brand-*-foreground primitive of the theme brand.",
+  error:
+    "The error status color: field errors, the invalid field border and ring, and destructive buttons and badges. It is text-grade on background, card and card-soft.",
+  "error-foreground": "Text and icons on an error fill, text-grade on it.",
+  "error-soft": "The tinted error fill of a Badge and a Toast. Set text on it in error-soft-foreground.",
+  "error-soft-foreground":
+    "Text and icons on error-soft, text-grade on it. An error Toast also draws its focus ring in it.",
+  info: "The info status color for text, borders and fills of Alert and Badge. It is text-grade on background, card and card-soft.",
+  "info-foreground": "Text and icons on an info fill, text-grade on it.",
+  "info-soft":
+    "The tinted info fill of an Alert, a Badge and a Toast. Set text on it in info-soft-foreground.",
+  "info-soft-foreground":
+    "Text and icons on info-soft, text-grade on it. Info Alerts and Toasts also draw their focus ring in it.",
+  success:
+    "The success status color for text, borders and fills of Alert, Badge, Button and Meter. It is text-grade on background, card and card-soft.",
+  "success-foreground": "Text and icons on a success fill, text-grade on it.",
+  "success-soft":
+    "The tinted success fill of a Badge and a Toast. Set text on it in success-soft-foreground.",
+  "success-soft-foreground":
+    "Text and icons on success-soft, text-grade on it. A success Toast also draws its focus ring in it.",
+  warning:
+    "The warning status color for text, borders and fills of Alert, Badge and Meter. It is text-grade on background, card and card-soft.",
+  "warning-foreground": "Text and icons on a warning fill, text-grade on it.",
+  "warning-soft":
+    "The tinted warning fill of an Alert, a Badge and a Toast. Set text on it in warning-soft-foreground.",
+  "warning-soft-foreground":
+    "Text and icons on warning-soft, text-grade on it. Warning Alerts and Toasts also draw their focus ring in it.",
+  destructive:
+    "An alias of error that no Fuse component reads. Destructive buttons and badges draw in error, so bind error instead.",
+  "destructive-foreground":
+    "An alias of error-foreground that no Fuse component reads. Bind error-foreground instead.",
+  border:
+    "Hairline borders, separators and dividers, such as the edges of Popover, Table and Kbd and the Separator line.",
+  input:
+    "The border of text fields, Select, NumberField and Toggle, and the fill of a disabled field at reduced alpha. Light input can fall under 3:1 on the page, so selection controls draw their edge in muted-foreground.",
+  ring: "The focus ring, a neutral grey that holds 3:1 on the page, cards, dialog and muted. Status Toasts, the info and warning Alerts and default Accordion items swap in their soft foreground.",
+  "card-border":
+    "The edge of a Card and a card Accordion item. Internal themes draw it in border, and external themes make it transparent.",
+  "button-outline":
+    "The border of the outline Button, at button-outline-width. Internal themes draw it in border, and external themes in foreground.",
+  "selection-border":
+    "The resting edge of a selection row, RadioItem or CheckboxItem. Internal themes draw it in border, and external themes make it transparent.",
+  "selection-checked-border":
+    "The edge of a checked selection row. Internal themes draw it in primary, and external themes keep the resting edge, so the control alone shows the choice.",
+  "selection-divider":
+    "The line between two stacked selection rows. Internal themes draw the edge of the row itself, and external themes a border line.",
+  "selection-checked-divider": "The line above and below a checked row in a stack of selection rows.",
+  "selection-disabled-background":
+    "The fill of a disabled selection row. Internal themes fill it with muted, and external themes keep the card fill.",
+  "selection-disabled-hatch":
+    "The stripe color of the hatch on a disabled selection row. Internal themes stripe it in a faint black, and external themes make it transparent.",
+  "selection-disabled-foreground":
+    "The label text of a disabled selection row. It is not text-grade. Internal themes set it in foreground, and external themes in muted-foreground.",
+  sidebar: "The fill of the Sidebar. Set text on it in sidebar-foreground.",
+  "sidebar-foreground": "Text and icons on the Sidebar.",
+  "sidebar-accent":
+    "The fill of a hovered or active Sidebar item. Set text on it in sidebar-accent-foreground.",
+  "sidebar-accent-foreground": "Text and icons on a hovered or active Sidebar item.",
+  "sidebar-border": "The edge and separators of the Sidebar, and the line its rail shows on hover.",
+  "sidebar-ring": "The focus ring inside the Sidebar, an alias of ring.",
+  "sidebar-brand":
+    "The brand on the Sidebar, stepped until it holds 4.5:1 there. Use it for brand text on the Sidebar and for fills behind text. Fuse computes it, so no theme sets it.",
+  "sidebar-brand-foreground":
+    "Text and icons on a sidebar-brand fill, text-grade on it. Fuse computes it, so no theme sets it.",
+  "right-panel": "The fill of a right-hand app panel. No Fuse component reads it.",
+  "right-panel-foreground": "Text and icons on right-panel. No Fuse component reads it.",
+  "chart-1": "The first chart series color. No Fuse component reads it yet.",
+  "chart-2": "The second chart series color. No Fuse component reads it yet.",
+  "chart-3": "The third chart series color. No Fuse component reads it yet.",
+  "chart-4": "The fourth chart series color. No Fuse component reads it yet.",
+  "chart-5": "The fifth chart series color. No Fuse component reads it yet.",
+  "chart-6": "The sixth chart series color. No Fuse component reads it yet.",
+  "chart-7": "The seventh chart series color. No Fuse component reads it yet.",
+  "chart-8": "The eighth chart series color. No Fuse component reads it yet.",
+  "sh-identifier": "The color of identifiers in the syntax highlighting of Code.",
+  "sh-keyword": "The color of keywords in the syntax highlighting of Code.",
+  "sh-string": "The color of strings in the syntax highlighting of Code.",
+  "sh-class": "The color of class names in the syntax highlighting of Code.",
+  "sh-property": "The color of properties in the syntax highlighting of Code.",
+  "sh-entity": "The color of entities in the syntax highlighting of Code.",
+  "sh-jsxliterals": "The color of JSX text in the syntax highlighting of Code.",
+  "sh-sign": "The color of punctuation and operators in the syntax highlighting of Code.",
+  "sh-comment": "The color of comments in the syntax highlighting of Code.",
+  radius:
+    "The corner radius of the theme, the corner of cards, selection rows and fields. The radius-xs to radius-xl rungs step around it.",
+  "radius-button":
+    "The corner of Button. Internal themes use radius, and external brands can set their own, as external Fjordkraft does.",
+  "radius-field":
+    "The corner of every field box, such as Input, Select and Textarea. It follows radius in every variant.",
+  "radius-step":
+    "The spacing of the radius rungs, which differs between internal and external themes. It switches the corner rules between the variants, so no layer rounds with it.",
+  "button-outline-width":
+    "The border width of the outline Button, which differs between internal and external themes.",
+  "selection-title-weight":
+    "The font weight of a selection row title, which differs between internal and external themes.",
+  "font-sans": "The body font stack, with Roboto first.",
+  "font-heading":
+    "The heading font. It follows font-sans unless the theme sets its own, such as Neo Sans in external Fjordkraft themes.",
+} as const satisfies Record<TokenName, string>;
+
 /**
  * The roles a light theme rule resets. They are every key the external variant layer, an
  * external palette or a segment delta can assign, plus each derived role computed from them

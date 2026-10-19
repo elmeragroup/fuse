@@ -20,6 +20,7 @@ function variableSet(): VariableSet {
           type: "COLOR",
           scopes: ["ALL_SCOPES"],
           webSyntax: "var(--red)",
+          description: "The red the palette paints with.",
           values: new Map([
             ["Light", { _tag: "Color", color: RED }],
             ["Dark", { _tag: "Color", color: RED }],
@@ -30,6 +31,7 @@ function variableSet(): VariableSet {
           type: "COLOR",
           scopes: [],
           webSyntax: undefined,
+          description: "",
           values: new Map([
             ["Light", { _tag: "Alias", target: { collection: "Palette", variable: "red" } }],
             ["Dark", { _tag: "Alias", target: { collection: "Palette", variable: "red" } }],
@@ -62,6 +64,7 @@ function syncedPalette(
         type: "COLOR",
         scopes: ["ALL_SCOPES"],
         codeSyntax: { WEB: "var(--red)" },
+        description: "The red the palette paints with.",
         values: new Map(modes.map((mode) => [mode.id, red])),
       },
       {
@@ -70,6 +73,7 @@ function syncedPalette(
         type: "COLOR",
         scopes: [],
         codeSyntax: {},
+        description: "",
         values: new Map(modes.map((mode) => [mode.id, alias])),
       },
     ],
@@ -97,6 +101,7 @@ function themesSet(modes: readonly string[]): VariableSet {
           type: "FLOAT",
           scopes: [],
           webSyntax: undefined,
+          description: "",
           values: new Map(modes.map((mode) => [mode, { _tag: "Float", value: 4 }])),
         },
       ],
@@ -178,6 +183,29 @@ describe("planSync", () => {
     ]);
   });
 
+  it("updates a variable whose description differs, keeping its scopes, code syntax and values", () => {
+    const file = syncedPalette();
+    const [red, danger] = file.variables;
+    if (red === undefined || danger === undefined) throw new Error("fixture has two variables");
+    const edited = { ...file, variables: [{ ...red, description: "A designer's note." }, danger] };
+
+    const { batch, changes } = plan({ collections: [edited] });
+
+    expect(changes).toMatchObject([{ _tag: "UpdateVariable", collection: "Palette", variable: "red" }]);
+    expect(batch.variables).toEqual([
+      {
+        _tag: "UpdateVariable",
+        id: "VariableID:1:10",
+        metadata: {
+          scopes: ["ALL_SCOPES"],
+          codeSyntax: { WEB: "var(--red)" },
+          description: "The red the palette paints with.",
+        },
+      },
+    ]);
+    expect(batch.values).toEqual([]);
+  });
+
   it("deletes a stale mode and creates the missing one instead of renaming it", () => {
     const sepia: FileMode = { id: ModeId("1:2"), name: "Sepia" };
     const { batch, changes } = plan({ collections: [syncedPalette([LIGHT, sepia])] });
@@ -247,6 +275,7 @@ describe("planSync", () => {
             type: "COLOR",
             scopes: [],
             webSyntax: undefined,
+            description: "",
             values: new Map([
               ["Light", { _tag: "Alias", target: { collection: "Roles", variable: "destructive" } }],
             ]),
@@ -256,6 +285,7 @@ describe("planSync", () => {
             type: "COLOR",
             scopes: [],
             webSyntax: undefined,
+            description: "",
             values: new Map([["Light", { _tag: "Color", color: RED }]]),
           },
         ],
@@ -273,6 +303,7 @@ describe("planSync", () => {
           type: "COLOR",
           scopes: [],
           codeSyntax: {},
+          description: "",
           values: new Map([[LIGHT.id, { _tag: "Color", color: RED }]]),
         },
         {
@@ -281,6 +312,7 @@ describe("planSync", () => {
           type: "COLOR",
           scopes: [],
           codeSyntax: {},
+          description: "",
           values: new Map([[LIGHT.id, { _tag: "Alias", id: VariableId("VariableID:1:20") }]]),
         },
       ],
@@ -346,6 +378,7 @@ describe("planSync", () => {
           type: "FLOAT" as const,
           scopes: [],
           codeSyntax: {},
+          description: "",
           values: new Map<ModeId, FileValue>(
             [...collection.modes, auto].map((mode) => [mode.id, { _tag: "Float", value: 4 }])
           ),
