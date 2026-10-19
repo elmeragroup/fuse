@@ -83,7 +83,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Trigger accessible name (`aria-label`). Defaults to the locale dictionary; an explicit value wins.",
+          "description": "Accessible name (`aria-label`) of the trigger and of the popup dialog. Defaults to the locale dictionary; an explicit value wins. A `Popover.Title` in `children` names the dialog instead.",
           "required": false
         },
         {
