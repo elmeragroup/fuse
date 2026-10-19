@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        margin: 0;
+        padding: 16px;
+        font:
+          12px/1.5 Inter,
+          system-ui,
+          sans-serif;
+        color: var(--figma-color-text, #1e1e1e);
+        background: var(--figma-color-bg, #fff);
+      }
+      .actions {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      button {
+        padding: 6px 12px;
+        border: 1px solid var(--figma-color-border, #e6e6e6);
+        border-radius: 6px;
+        font: inherit;
+        color: inherit;
+        background: var(--figma-color-bg-secondary, #f5f5f5);
+        cursor: pointer;
+      }
+      button.primary {
+        border-color: transparent;
+        color: var(--figma-color-text-onbrand, #fff);
+        background: var(--figma-color-bg-brand, #0d99ff);
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      #status {
+        margin: 0 0 8px;
+        font-weight: 600;
+      }
+      #status.error {
+        color: var(--figma-color-text-danger, #f24822);
+      }
+      #status.ok {
+        color: var(--figma-color-text-success, #14ae5c);
+      }
+      h2 {
+        margin: 12px 0 4px;
+        font-size: 12px;
+      }
+      ul {
+        margin: 0;
+        padding-left: 16px;
+        font-family: ui-monospace, monospace;
+        font-size: 11px;
+        word-break: break-word;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="actions">
+      <button id="plan">Plan</button>
+      <button id="apply" class="primary">Apply</button>
+    </div>
+    <p id="status">Plan lists what Apply would change. Apply writes it, then plans again.</p>
+    <div id="sections"></div>
+    <script>
+      const buttons = [document.getElementById("plan"), document.getElementById("apply")];
+      const status = document.getElementById("status");
+      const sections = document.getElementById("sections");
+
+      function setBusy(busy) {
+        for (const button of buttons) {
+          button.disabled = busy;
+        }
+      }
+
+      function showStatus(text, tone) {
+        status.textContent = text;
+        status.className = tone;
+      }
+
+      function addSection(title, lines) {
+        if (lines.length === 0) {
+          return;
+        }
+        const heading = document.createElement("h2");
+        heading.textContent = `${title} (${lines.length})`;
+        const list = document.createElement("ul");
+        for (const line of lines) {
+          const item = document.createElement("li");
+          item.textContent = line;
+          list.append(item);
+        }
+        sections.append(heading, list);
+      }
+
+      function send(request) {
+        setBusy(true);
+        sections.replaceChildren();
+        showStatus(request === "plan" ? "Planning…" : "Applying…", "");
+        parent.postMessage({ pluginMessage: request }, "*");
+      }
+
+      document.getElementById("plan").addEventListener("click", () => send("plan"));
+      document.getElementById("apply").addEventListener("click", () => send("apply"));
+
+      window.addEventListener("message", (event) => {
+        const message = event.data.pluginMessage;
+        setBusy(false);
+        if (message.kind === "error") {
+          showStatus(message.message, "error");
+          return;
+        }
+        if (message.kind === "plan") {
+          showStatus(
+            message.changes.length === 0
+              ? "The file matches the kit."
+              : `Apply would make ${message.changes.length} changes.`,
+            message.changes.length === 0 ? "ok" : ""
+          );
+          addSection("Changes", message.changes);
+          addSection("Warnings", message.warnings);
+          return;
+        }
+        if (message.remaining.length === 0) {
+          showStatus(`Applied ${message.changes.length} changes. The file now matches the kit.`, "ok");
+        } else {
+          showStatus(
+            `Applied ${message.changes.length} changes, but a new plan still lists ${message.remaining.length}. The plugin does not model something these fields hold.`,
+            "error"
+          );
+        }
+        addSection("Still different after the apply", message.remaining);
+        addSection("Applied", message.changes);
+        addSection("Warnings", message.warnings);
+      });
+    </script>
+  </body>
+</html>

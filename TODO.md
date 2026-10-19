@@ -310,6 +310,19 @@
   appends the mode and cannot reorder modes, so `Dense` stays the file's default until someone
   does.
 
+## Figma component sync
+
+- Run the components plugin on the scratch file and record the outcome of each check: a rerun
+  plans nothing, a renamed layer keeps its key, a duplicated variant stops the run, and a
+  published in-place edit reaches instances in a second file. Then delete and recreate the set
+  and record what those instances show.
+- Map the outline Button's shadow. Its blur and spread are `max()` and `min()` formulas over
+  `--button-outline-width`, which Figma variables cannot compute, so the shadow needs a value
+  the catalog computes per theme, as it does for the radius rungs.
+- Replace the placeholder icon ring with an icon component set and an instance swap property.
+- Test the reconciler against an in-memory fake of the Plugin API calls it makes, with the
+  rules the scratch-file run confirms.
+
 ## Data table
 
 - The docs API reference lists only `value` and `className` for the default cells: the generator

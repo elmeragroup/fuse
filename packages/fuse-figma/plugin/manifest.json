@@ -1,0 +1,12 @@
+{
+  "name": "Fuse components",
+  "id": "fuse-components-dev",
+  "api": "1.0.0",
+  "editorType": ["figma"],
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": ["none"]
+  },
+  "main": "dist/code.js",
+  "ui": "ui.html"
+}
