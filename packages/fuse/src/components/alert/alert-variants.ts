@@ -17,8 +17,7 @@ export const alertVariants = tv({
     // `text-inherit` replaces Item's `text-muted-foreground`, so the body takes the variant's
     // text colour from `base`, as the title does. Zeroes its blocks' own block margins and puts
     // 8px between consecutive blocks, twice the title's 4px gap; the selectors live in fuse.css.
-    description:
-      "text-(length:--label-text)/normal text-inherit alert-description-block:my-0 alert-description-gap:mt-2",
+    description: "text-(length:--label-text)/normal text-inherit rich-text-block:my-0 rich-text-gap:mt-2",
     button: "",
   },
   variants: {

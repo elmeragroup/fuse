@@ -229,7 +229,7 @@
 - `Badge` (`components/badge/badge.tsx`) renders a `div`, which is invalid inside the `<p>` of
   `Item.Description` and `SelectionItem.Description`. Render it as a `span` and change
   `BadgeProps` to `HTMLAttributes<HTMLSpanElement>`, then drop the
-  `:where(:not([data-slot="badge"]))` exclusion from the `alert-description-block` variant in
+  `:where(:not([data-slot="badge"]))` exclusion from the `rich-text-block` variant in
   `styles/fuse.css` and the Badge sentence in the comment above it. #277 deferred this.
 - Ask Base UI for a way to let a `Form` submit while its Fields are invalid. Its submit handler
   validates its enabled Fields and calls neither `onSubmit` nor `onFormSubmit` while one is

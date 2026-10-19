@@ -6,6 +6,7 @@ lede: >
 import { PopoverInfoButtonBasic } from "./demos/popover-info-button-basic";
 import { PopoverInfoButtonSizes } from "./demos/popover-info-button-sizes";
 import { PopoverInfoButtonI18n } from "./demos/popover-info-button-i18n";
+import { PopoverInfoButtonRichText } from "./demos/popover-info-button-rich-text";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -20,6 +21,14 @@ export const metadata = componentMetadata("popover-info-button");
 <Demo slug="popover-info-button" id="sizes" title="Content sizes" file="popover-info-button-sizes.tsx">
   <PopoverInfoButtonSizes />
 </Demo>
+
+<Demo slug="popover-info-button" id="rich-text" title="Rich text" file="popover-info-button-rich-text.tsx">
+  <PopoverInfoButtonRichText />
+</Demo>
+
+The body flows inline content, such as a bold word or a link, as one paragraph, so translated rich
+text needs no wrapper. Consecutive blocks, such as two paragraphs, are spaced by the small surface
+gap.
 
 <Demo slug="popover-info-button" id="i18n" title="Translated label" file="popover-info-button-i18n.tsx">
   <PopoverInfoButtonI18n />

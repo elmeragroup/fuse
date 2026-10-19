@@ -18,6 +18,10 @@ export const popoverInfoButtonStyles = tv({
   slots: {
     icon: "size-4",
     content: "text-sm w-auto",
+    // One flex item for the popup's column, so a sentence with a bold word or a link flows as one
+    // paragraph. Zeroes its blocks' own block margins and steps consecutive blocks by the small
+    // surface tier; the selectors live in fuse.css.
+    body: "rich-text-block:my-0 rich-text-gap:mt-(--surface-gap-sm)",
   },
   variants: {
     contentSize: {
@@ -62,7 +66,11 @@ type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K>
 
 export type PopoverInfoButtonProps = DistributiveOmit<ButtonProps, "children" | "aria-label"> &
   VariantProps<typeof popoverInfoButtonStyles> & {
-    /** Popover body. */
+    /**
+     * Popover body. Inline content, such as a sentence with a `<strong>` or a link, flows as one
+     * paragraph; consecutive blocks, such as two `<p>`s or a `Popover.Header` and a `<p>`, are
+     * spaced by the small surface gap.
+     */
     children: ReactNode;
     /**
      * Accessible name (`aria-label`) of the trigger and of the popup dialog. Defaults to the
@@ -102,7 +110,7 @@ export function PopoverInfoButton({
 }: PopoverInfoButtonProps): ReactElement {
   const strings = useLocalizedStrings(popoverInfoButtonStrings);
   const accessibleName = label ?? strings.format("moreInformation");
-  const { icon, content } = popoverInfoButtonStyles({ contentSize });
+  const { icon, content, body } = popoverInfoButtonStyles({ contentSize });
 
   // SAFETY: PopoverInfoButtonProps is a distributive Omit of ButtonProps. Reassembling
   // the icon/label union after destructuring is a TypeScript limitation; the runtime
@@ -132,7 +140,9 @@ export function PopoverInfoButton({
         aria-label={accessibleName}
         className={content()}
         container={container}>
-        {children}
+        <div data-slot="popover-info-button-body" className={body()}>
+          {children}
+        </div>
       </PopoverContent>
     </PopoverRoot>
   );

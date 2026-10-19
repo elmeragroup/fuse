@@ -425,6 +425,7 @@
     "demos": [
       "popover-info-button-basic.tsx",
       "popover-info-button-sizes.tsx",
+      "popover-info-button-rich-text.tsx",
       "popover-info-button-i18n.tsx"
     ]
   },

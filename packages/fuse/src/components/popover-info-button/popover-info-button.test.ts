@@ -55,4 +55,13 @@ describe("popoverInfoButtonStyles", () => {
       }
     }
   });
+
+  // The body is one flex item in the popup's column. It adds no padding of its own and steps
+  // consecutive blocks by the small surface tier through the shared rich-text variants.
+  it("steps the body's blocks by the small surface gap and adds no padding", () => {
+    const body = popoverInfoButtonStyles().body();
+    expect(body).toContain("rich-text-block:my-0");
+    expect(body).toContain("rich-text-gap:mt-(--surface-gap-sm)");
+    expect(body).not.toMatch(PADDING);
+  });
 });
