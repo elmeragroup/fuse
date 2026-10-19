@@ -1,9 +1,10 @@
 /**
- * Field writers. Each compares a node field with its spec and records a change only when
+ * Field planners. Each compares a node field with its spec and records an operation only when
  * they differ, so a second run over an applied file plans nothing. A bound field counts as
  * equal when it binds the same variable. A literal field counts as equal when no variable
  * binds it and the value matches within the precision Figma stores, which is a 32-bit
- * float.
+ * float. A planner looks up every variable and builds every paint before it records the
+ * operation, so the operation only assigns.
  */
 
 import type {
@@ -13,15 +14,15 @@ import type {
   ShadowSpec,
   VariableRef,
 } from "../../src/components/kit-spec.ts";
-import { change, warn } from "./ledger.ts";
-import type { Ledger } from "./ledger.ts";
+import { change, changeTogether } from "./plan.ts";
+import type { Plan } from "./plan.ts";
 import type { KitVariables } from "./variables.ts";
 
-/** What every writer needs: the plugin API, the file's variables and the run's ledger. */
+/** What every planner needs: the plugin API, the file's variables and the run's plan. */
 export type Run = {
   readonly figma: PluginAPI;
   readonly variables: KitVariables;
-  readonly ledger: Ledger;
+  readonly plan: Plan;
 };
 
 /**
@@ -83,12 +84,18 @@ export function describeColor(spec: ColorSpec): string {
   return `#${channel(spec.color.r)}${channel(spec.color.g)}${channel(spec.color.b)} at ${Math.round(spec.color.a * 100)}%`;
 }
 
-function variableLabel(ref: VariableRef): string {
+/**
+ * A short label for a variable in a warning.
+ *
+ * @param ref - The variable.
+ * @returns `collection/name`.
+ */
+export function variableLabel(ref: VariableRef): string {
   return `${ref.collection}/${ref.name}`;
 }
 
 /**
- * Bring one number field in line with its spec.
+ * Plan one number field against its spec.
  *
  * @param run - The run.
  * @param node - The node that owns the field.
@@ -96,7 +103,7 @@ function variableLabel(ref: VariableRef): string {
  * @param field - The field.
  * @param spec - The value the field should hold.
  */
-export function syncNumber(
+export function planNumber(
   run: Run,
   node: SceneNode,
   label: string,
@@ -109,7 +116,7 @@ export function syncNumber(
     if (field.bindings.every((binding) => bound?.[binding]?.id === variable.id)) {
       return;
     }
-    change(run.ledger, label, `${field.name} → ${spec.variable.name}`, () => {
+    change(run.plan, label, `${field.name} → ${spec.variable.name}`, () => {
       for (const binding of field.bindings) {
         node.setBoundVariable(binding, variable);
       }
@@ -119,7 +126,7 @@ export function syncNumber(
   if (field.bindings.every((binding) => bound?.[binding] === undefined) && field.matches(spec.value)) {
     return;
   }
-  change(run.ledger, label, `${field.name} → ${describeNumber(spec)}`, () => {
+  change(run.plan, label, `${field.name} → ${describeNumber(spec)}`, () => {
     for (const binding of field.bindings) {
       node.setBoundVariable(binding, null);
     }
@@ -128,7 +135,7 @@ export function syncNumber(
 }
 
 /**
- * Write a scalar field, such as a layout mode or a name, when it differs.
+ * Plan a scalar field, such as a layout mode or a name, when it differs.
  *
  * @param run - The run.
  * @param label - The node's label, for change lines.
@@ -137,7 +144,7 @@ export function syncNumber(
  * @param desired - The value the spec asks for.
  * @param write - Writes the desired value.
  */
-export function syncScalar<Value extends string | number | boolean>(
+export function planScalar<Value extends string | number | boolean>(
   run: Run,
   label: string,
   name: string,
@@ -146,7 +153,7 @@ export function syncScalar<Value extends string | number | boolean>(
   write: () => void
 ): void {
   if (current !== desired) {
-    change(run.ledger, label, `${name} → ${String(desired)}`, write);
+    change(run.plan, label, `${name} → ${String(desired)}`, write);
   }
 }
 
@@ -180,7 +187,8 @@ function rgbaMatches(color: RGB, alpha: number, spec: RgbaSpec): boolean {
 }
 
 function paintMatches(run: Run, paint: Paint, spec: ColorSpec): boolean {
-  if (paint.type !== "SOLID" || paint.visible === false) {
+  // Figma documents NORMAL as the blend mode of a paint that sets none.
+  if (paint.type !== "SOLID" || paint.visible === false || (paint.blendMode ?? "NORMAL") !== "NORMAL") {
     return false;
   }
   const opacity = paint.opacity ?? 1;
@@ -192,7 +200,7 @@ function paintMatches(run: Run, paint: Paint, spec: ColorSpec): boolean {
 }
 
 /**
- * Bring a node's fills or strokes in line with a single solid paint, or with none.
+ * Plan a node's fills or strokes as a single solid paint, or as none.
  *
  * @param run - The run.
  * @param label - The node's label, for change lines.
@@ -201,7 +209,7 @@ function paintMatches(run: Run, paint: Paint, spec: ColorSpec): boolean {
  * @param spec - The one paint the spec asks for, or undefined for no paint.
  * @param write - Writes the desired paint list.
  */
-export function syncPaints(
+export function planPaints(
   run: Run,
   label: string,
   name: string,
@@ -212,7 +220,7 @@ export function syncPaints(
   const holds = current === run.figma.mixed ? undefined : current;
   if (spec === undefined) {
     if (holds?.length !== 0) {
-      change(run.ledger, label, `${name} → none`, () => write([]));
+      change(run.plan, label, `${name} → none`, () => write([]));
     }
     return;
   }
@@ -220,7 +228,8 @@ export function syncPaints(
   if (holds?.length === 1 && only !== undefined && paintMatches(run, only, spec)) {
     return;
   }
-  change(run.ledger, label, `${name} → ${describeColor(spec)}`, () => write([solidPaint(run, spec)]));
+  const paint = solidPaint(run, spec);
+  change(run.plan, label, `${name} → ${describeColor(spec)}`, () => write([paint]));
 }
 
 function dropShadow(run: Run, spec: ShadowSpec): DropShadowEffect {
@@ -246,7 +255,7 @@ function dropShadow(run: Run, spec: ShadowSpec): DropShadowEffect {
 }
 
 function shadowMatches(run: Run, effect: Effect, spec: ShadowSpec): boolean {
-  if (effect.type !== "DROP_SHADOW" || !effect.visible) {
+  if (effect.type !== "DROP_SHADOW" || !effect.visible || effect.blendMode !== "NORMAL") {
     return false;
   }
   const geometry =
@@ -270,30 +279,19 @@ function describeShadow(spec: ShadowSpec): string {
 }
 
 /**
- * Bring a node's effects in line with the spec's drop shadows.
+ * Plan a node's effects as the spec's drop shadows.
  *
  * @param run - The run.
  * @param node - The node.
  * @param label - The node's label, for change lines.
  * @param specs - The shadows the spec asks for, in order.
  */
-export function syncShadows(
+export function planShadows(
   run: Run,
   node: SceneNode & BlendMixin,
   label: string,
   specs: readonly ShadowSpec[]
 ): void {
-  for (const spec of specs) {
-    if (spec.color.kind === "variable" && spec.color.opacity < 1) {
-      // Unverified on a real file: a bound effect color may take its alpha from the variable
-      // and drop the opacity the spec asks for.
-      warn(
-        run.ledger,
-        label,
-        `a shadow binds ${variableLabel(spec.color.variable)} at ${Math.round(spec.color.opacity * 100)}%, and Figma may drop that opacity`
-      );
-    }
-  }
   const current = node.effects;
   const same =
     current.length === specs.length &&
@@ -305,7 +303,62 @@ export function syncShadows(
     return;
   }
   const description = specs.length === 0 ? "none" : specs.map(describeShadow).join(", ");
-  change(run.ledger, label, `shadows → ${description}`, () => {
-    node.effects = specs.map((spec) => dropShadow(run, spec));
+  const effects = specs.map((spec) => dropShadow(run, spec));
+  change(run.plan, label, `shadows → ${description}`, () => {
+    node.effects = effects;
   });
+}
+
+/** The sizing modes of an auto layout frame. */
+export type SizingModes = {
+  readonly primary: "FIXED" | "AUTO";
+  readonly counter: "FIXED" | "AUTO";
+};
+
+/**
+ * Plan a size and the sizing modes as one operation. `resize` turns both sizing modes to
+ * FIXED, so the operation writes both sizing modes again after the size.
+ *
+ * @param run - The run.
+ * @param node - The auto layout frame.
+ * @param label - The node's label, for change lines.
+ * @param planSize - Plans the size into the run it receives.
+ * @param modes - The sizing modes the spec asks for.
+ */
+export function planSizing(
+  run: Run,
+  node: FrameNode | ComponentNode,
+  label: string,
+  planSize: (group: Run) => void,
+  modes: SizingModes
+): void {
+  const writeModes = (): void => {
+    node.primaryAxisSizingMode = modes.primary;
+    node.counterAxisSizingMode = modes.counter;
+  };
+  changeTogether(
+    run.plan,
+    label,
+    (plan) => {
+      const group: Run = { ...run, plan };
+      planSize(group);
+      planScalar(
+        group,
+        label,
+        "primaryAxisSizingMode",
+        node.primaryAxisSizingMode,
+        modes.primary,
+        writeModes
+      );
+      planScalar(
+        group,
+        label,
+        "counterAxisSizingMode",
+        node.counterAxisSizingMode,
+        modes.counter,
+        writeModes
+      );
+    },
+    writeModes
+  );
 }

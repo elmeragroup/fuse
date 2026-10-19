@@ -1,26 +1,21 @@
 /**
- * Plan or apply the whole kit. A plan walks the same code as an apply with writes turned
- * off, so the change list it returns is what an apply would do.
+ * Plan or apply the whole kit. Plan and Apply run the same planning pass, which reads the
+ * file and records every write as an operation without making it. Apply then performs the
+ * operations in order, so the change list a plan returns is what an apply does.
  *
  * The run takes the plugin API as an argument rather than reading the `figma` global, so a
  * test can hand it a fake file.
  */
 
-import type {
-  ColorSpec,
-  KitSpec,
-  NumberSpec,
-  StringSpec,
-  VariableRef,
-} from "../../src/components/kit-spec.ts";
-import { syncComponentSet } from "./component-set.ts";
-import type { SyncedSet } from "./component-set.ts";
+import type { KitSpec } from "../../src/components/kit-spec.ts";
+import { checkKit, kitCollections } from "./check-kit.ts";
+import { planComponentSet } from "./component-set.ts";
 import type { Run } from "./fields.ts";
 import { findOwned, setKey, staleOwned } from "./identity.ts";
-import { change, create, newLedger } from "./ledger.ts";
-import { syncPreviews } from "./previews.ts";
+import { change, changeLines, create, existing, runPlan } from "./plan.ts";
+import type { Target } from "./plan.ts";
+import { placePreviews, planPreviews } from "./previews.ts";
 import { loadKitVariables } from "./variables.ts";
-import type { KitVariables } from "./variables.ts";
 
 /** What a run changed, or would change, and what it could not represent. */
 export type ReconcileReport = {
@@ -30,46 +25,44 @@ export type ReconcileReport = {
 
 const isPage = (node: BaseNode): node is PageNode => node.type === "PAGE";
 
-function variableRefs(spec: NumberSpec | ColorSpec | StringSpec | undefined): VariableRef[] {
-  return spec?.kind === "variable" ? [spec.variable] : [];
+async function planPage(run: Run, kit: KitSpec, page: PageNode): Promise<void> {
+  const start = run.plan.operations.length;
+  const keep = new Set([
+    ...kit.componentSets.map((set) => set.key),
+    ...kit.previews.map((preview) => preview.key),
+  ]);
+  for (const stale of staleOwned(page.children, keep)) {
+    change(run.plan, page.name, `delete ${stale.name}`, () => stale.remove());
+  }
+  const sets = kit.componentSets.map((spec) => planComponentSet(run, page, spec));
+  const frames = await planPreviews(run, page, kit.previews, new Map(sets.map((set) => [set.spec.key, set])));
+  placePreviews(run, page, frames, sets, run.plan.operations.length > start);
 }
 
-/**
- * Look up every variable and mode the kit names before the run writes anything, so a file
- * that misses one fails with nothing half written.
- */
-function checkReferences(variables: KitVariables, kit: KitSpec): void {
-  for (const set of kit.componentSets) {
-    for (const { root } of set.variants) {
-      const refs = [
-        root.height,
-        root.minWidth,
-        root.paddingTop,
-        root.paddingRight,
-        root.paddingBottom,
-        root.paddingLeft,
-        root.itemSpacing,
-        root.cornerRadius,
-        root.fill,
-        root.stroke?.color,
-        root.stroke?.weight,
-        ...root.shadows.map((shadow) => shadow.color),
-        ...root.children.flatMap((child) =>
-          child.kind === "text"
-            ? [child.fontFamily, child.fontSize, child.lineHeight, child.color]
-            : [child.size, child.color]
-        ),
-      ].flatMap(variableRefs);
-      for (const ref of refs) {
-        variables.variable(ref);
-      }
-    }
+async function planDocument(run: Run, kit: KitSpec): Promise<Target<PageNode>> {
+  const document = "Document";
+  const found = findOwned(run.plan, run.figma.root.children, document, kit.page.key, kit.page.name, isPage);
+  if (found !== undefined) {
+    await found.loadAsync();
+    await planPage(run, kit, found);
+    return existing(found);
   }
-  for (const preview of kit.previews) {
-    for (const ref of preview.modes) {
-      variables.mode(ref);
+  const sets = kit.componentSets.map((set) => set.name).join(", ");
+  return create(
+    run.plan,
+    document,
+    `create the page ${kit.page.name} with ${sets} and ${kit.previews.length} previews`,
+    () => {
+      const made = run.figma.createPage();
+      made.name = kit.page.name;
+      setKey(made, kit.page.key);
+      return made;
+    },
+    async (made, plan) => {
+      await made.loadAsync();
+      await planPage({ ...run, plan }, kit, made);
     }
-  }
+  );
 }
 
 /**
@@ -81,54 +74,17 @@ function checkReferences(variables: KitVariables, kit: KitSpec): void {
  * @returns The changes and the warnings.
  */
 export async function reconcileKit(figma: PluginAPI, kit: KitSpec, apply: boolean): Promise<ReconcileReport> {
-  const ledger = newLedger(apply);
+  // Plan loads the fonts too, so a machine that lacks one fails Plan as it would fail Apply.
   for (const font of kit.fonts) {
     await figma.loadFontAsync(font);
   }
-  const variables = await loadKitVariables(figma);
-  checkReferences(variables, kit);
-  const run: Run = { figma, variables, ledger };
-
-  const document = "Document";
-  let page = findOwned(ledger, figma.root.children, document, kit.page.key, kit.page.name, isPage);
-  page ??= create(ledger, document, `create the page ${kit.page.name}`, () => {
-    const made = figma.createPage();
-    made.name = kit.page.name;
-    setKey(made, kit.page.key);
-    return made;
+  const variables = await loadKitVariables(figma, kitCollections(kit));
+  const { plan, result: page } = await runPlan(apply, (plan) => {
+    checkKit(variables, kit, plan);
+    return planDocument({ figma, variables, plan }, kit);
   });
-  if (page === undefined) {
-    for (const set of kit.componentSets) {
-      create(
-        ledger,
-        kit.page.name,
-        `create the component set ${set.name} with ${set.variants.length} variants`,
-        () => set
-      );
-    }
-    for (const preview of kit.previews) {
-      create(ledger, kit.page.name, `create the preview ${preview.name}`, () => preview);
-    }
-    return { changes: ledger.changes, warnings: ledger.warnings };
-  }
-  await page.loadAsync();
-
-  const keep = new Set([
-    ...kit.componentSets.map((set) => set.key),
-    ...kit.previews.map((preview) => preview.key),
-  ]);
-  for (const stale of staleOwned(page.children, keep)) {
-    change(ledger, page.name, `delete ${stale.name}`, () => stale.remove());
-  }
-
-  const sets = new Map<string, SyncedSet>();
-  for (const spec of kit.componentSets) {
-    sets.set(spec.key, await syncComponentSet(run, page, spec));
-  }
-  await syncPreviews(run, page, kit.previews, sets);
-
   if (apply) {
-    await figma.setCurrentPageAsync(page);
+    await figma.setCurrentPageAsync(page.get());
   }
-  return { changes: ledger.changes, warnings: ledger.warnings };
+  return { changes: changeLines(plan), warnings: plan.warnings };
 }

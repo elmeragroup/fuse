@@ -21,20 +21,32 @@ export type KitVariables = {
 const RUN_SYNC_FIRST = "Run `figma:sync` on this file first.";
 
 /**
- * Index the file's local collections and variables by name.
+ * Index the local collections the kit names, and their variables, by name. Only those names
+ * need to be unique, so other collections in the file may share a name, as in the token
+ * sync's plan.
  *
  * @param figma - The plugin API.
+ * @param names - The collections the kit's variable and mode references name.
  * @returns The lookups for the kit's variable and mode references.
+ * @throws When the file has two local collections with a name the kit uses.
  */
-export async function loadKitVariables(figma: PluginAPI): Promise<KitVariables> {
+export async function loadKitVariables(figma: PluginAPI, names: ReadonlySet<string>): Promise<KitVariables> {
   const allCollections = await figma.variables.getLocalVariableCollectionsAsync();
-  const collections = allCollections.filter((collection) => !collection.remote && !collection.isExtension);
+  const collections = allCollections.filter(
+    (collection) => !collection.remote && !collection.isExtension && names.has(collection.name)
+  );
   const collectionsByName = new Map<string, VariableCollection>();
-  for (const collection of collections) {
-    if (collectionsByName.has(collection.name)) {
-      throw new Error(`The file has two local collections named ${collection.name}. Delete one of them.`);
+  for (const name of names) {
+    const named = collections.filter((collection) => collection.name === name);
+    if (named.length > 1) {
+      throw new Error(
+        `The file has ${named.length} local collections named ${name}. Rename or delete all but one, then run the plugin again.`
+      );
     }
-    collectionsByName.set(collection.name, collection);
+    const [collection] = named;
+    if (collection !== undefined) {
+      collectionsByName.set(name, collection);
+    }
   }
 
   const variablesByName = new Map<string, Variable>();

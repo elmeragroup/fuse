@@ -117,7 +117,7 @@ The plugin creates the Button component set on a page named `Fuse components` an
 
 The build calls the Button recipe from the workspace-only `@elmeragroup/fuse/recipe-catalog` entry for each cell of the matrix. It sorts every class by its variants. `enabled-hover:`, `focus-visible:` and the three disabled variants map to the `state` axis, `has-data-[icon=inline-start]:` maps to the `icon` axis, and `[&_svg]` selects the icon layer. A class with any other variant, such as `aria-invalid:`, describes a state no cell shows, and the build drops it.
 
-Tailwind's own compiler compiles each utility against `fuse.css`. The build applies the declarations in cascade order, plain classes first and then the classes whose variants hold, each group in Tailwind's output order. A value that equals the web code syntax of a synced variable binds that variable, so `px-(--control-px-button-md)` binds both side paddings to `control-px-button-md`. A radius rung compiles to the same `calc()` that the sync writes as its code syntax, so it binds too. A `color-mix()` toward `transparent` binds the color at the mixed opacity. Any other value must evaluate to a number or a color, or it stays unmapped.
+Tailwind's own compiler compiles each utility against `fuse.css`, and the build reads the rules from the syntax tree Tailwind returns. The build applies the declarations in cascade order, plain classes first and then the classes whose variants hold, each group in Tailwind's output order. A value that equals the web code syntax of a synced variable binds that variable, so `px-(--control-px-button-md)` binds both side paddings to `control-px-button-md`. A radius rung compiles to the same `calc()` that the sync writes as its code syntax, so it binds too. A `color-mix()` toward `transparent` binds the color at the mixed opacity. Any other value must evaluate to a number or a color, or it stays unmapped.
 
 The label inherits the text color and font family of the host page. The build applies the `font-sans text-foreground` that the docs layout sets on `<body>` before any recipe class, so the outline Button's label binds `foreground`.
 
@@ -125,7 +125,11 @@ The label inherits the text color and font family of the host page. The build ap
 
 ### How the plugin decides what to write
 
-- Plan and Apply run the same code, and only Apply writes. Every field writer compares the node with the spec and records a change only when they differ, so a second run over an applied file plans nothing.
+- Plan and Apply run the same planning pass. The pass checks the kit against the file, matches each node and records every write as an operation, and it writes nothing. Plan lists the operations. Apply finishes the pass first, so a duplicate key, a missing variable or a variable of the wrong type stops the run before any write, and then performs the operations in order.
+- Each field planner compares the node with the spec and records an operation only when they differ, so a second run over an applied file plans nothing. A fill, stroke or shadow matches only with the `NORMAL` blend mode the plugin writes.
+- Writes that depend on each other share one operation. A height write resets the sizing modes, so its operation writes them again. A new node is one operation that creates the node and everything the spec puts inside it, so Plan lists it once.
+- The variant grid and the preview stack read sizes when their operations run. A plan that changes a component set therefore lays out its grid again, and a plan that changes anything on the page stacks the previews again.
+- The plugin reads only the variable collections the kit names, and stops when two local collections share one of those names.
 - Every node the plugin creates carries a key in shared plugin data under the `fuse` namespace. The plugin finds a node by its key first, so a designer can rename a layer. A node without a key matches by name once, and the plugin then writes the key onto it.
 - The plugin stops when two nodes share a key, such as after a designer duplicates a variant. It never deletes a node without a key, and it deletes a keyed node the spec no longer lists.
 - It edits the component set and its variants in place, so their node ids and component keys survive and instances in other files keep following them.
@@ -138,22 +142,22 @@ These behaviours have not run against a real file yet:
 
 ## Code map
 
-| Module                                                      | Role                                                                                    |
-| ----------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `fuse-variable-set.ts`                                      | Projects the theme catalog into the six collections                                     |
-| `variable-set.ts`                                           | The desired variables by name, checked once by `makeVariableSet`                        |
-| `file-variables.ts`                                         | What the file holds, with Figma ids, and the changes one write makes                    |
-| `sync-plan.ts`                                              | Diffs a variable set against a file and builds the batch. It is pure.                   |
-| `figma-api.ts`                                              | The REST adapter: auth, decoding, encoding, retries and errors                          |
-| `token-sync.ts`                                             | Plans, applies and verifies a sync against a `FigmaApi`                                 |
-| `cli.ts`, `main.ts`                                         | The command line and its Node entry point                                               |
-| `plural.ts`                                                 | Counted nouns for the messages of `cli.ts` and `token-sync.ts`                          |
-| `components/build-kit.ts`                                   | Builds the components plugin's kit spec and coverage table                              |
-| `components/component-spec.ts`                              | Turns a recipe into a component set, cell by cell, and records coverage                 |
-| `components/utility-css.ts`, `css-tree.ts`, `css-values.ts` | Compile utilities against `fuse.css` and read the values as Figma fields                |
-| `components/button-kit.ts`                                  | The Button matrix and the variants it models                                            |
-| `components/kit-spec.ts`                                    | The kit spec the plugin bundles                                                         |
-| `plugin/src/`                                               | The plugin: plan and apply, identity, field writers, the component set and the previews |
-| `scripts/build-plugin.ts`                                   | Builds the kit spec and bundles the plugin                                              |
+| Module                                       | Role                                                                                                                 |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `fuse-variable-set.ts`                       | Projects the theme catalog into the six collections                                                                  |
+| `variable-set.ts`                            | The desired variables by name, checked once by `makeVariableSet`                                                     |
+| `file-variables.ts`                          | What the file holds, with Figma ids, and the changes one write makes                                                 |
+| `sync-plan.ts`                               | Diffs a variable set against a file and builds the batch. It is pure.                                                |
+| `figma-api.ts`                               | The REST adapter: auth, decoding, encoding, retries and errors                                                       |
+| `token-sync.ts`                              | Plans, applies and verifies a sync against a `FigmaApi`                                                              |
+| `cli.ts`, `main.ts`                          | The command line and its Node entry point                                                                            |
+| `plural.ts`                                  | Counted nouns for the messages of `cli.ts` and `token-sync.ts`                                                       |
+| `components/build-kit.ts`                    | Builds the components plugin's kit spec and coverage table                                                           |
+| `components/component-spec.ts`               | Turns a recipe into a component set, cell by cell, and records coverage                                              |
+| `components/utility-css.ts`, `css-values.ts` | Compile utilities against `fuse.css` and read the values as Figma fields                                             |
+| `components/button-kit.ts`                   | The Button matrix and the variants it models                                                                         |
+| `components/kit-spec.ts`                     | The kit spec the plugin bundles                                                                                      |
+| `plugin/src/`                                | The plugin: the plan and its operations, the kit check, identity, field planners, the component set and the previews |
+| `scripts/build-plugin.ts`                    | Builds the kit spec and bundles the plugin                                                                           |
 
 The tests run the whole command line against `test/in-memory-figma.ts`. That fake file applies batches with the REST API's documented rules, stores numbers as 32-bit floats and resolves aliases the way Figma renders them. Where the documentation is silent, the fake does what a real Enterprise file did on 2026-10-16. It replaces code syntax on an update, it checks for an alias cycle after each value a batch sets, and it refuses any cycle, even one that closes only across modes. It deletes a collection with its modes and variables and keeps an alias into it until a later value in the batch replaces it, as a real Enterprise file did on 2026-10-19 when one batch deleted `Fuse themes` and then rewrote the `Fuse tokens` aliases into it. It also applies the scope rules on the REST API's [variable types page](https://developers.figma.com/docs/rest-api/variables-types/). It rejects a scope the page does not list for the variable's type, such as `GAP` on a color, `ALL_SCOPES` beside another scope, and `ALL_FILLS` beside another fill scope. It follows a real Enterprise file where that file departed from the page on 2026-10-16. It keeps `FONT_STYLE` on a number variable and stores `FONT_WEIGHT` there as `FONT_STYLE`. It stores a description with `&`, `<`, `>`, `"` and `'` HTML-escaped, as a real Enterprise file did on 2026-10-19. Tests can also make it answer with a status, drop a connection, or hold values and types newer than the sync.

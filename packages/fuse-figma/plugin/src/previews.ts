@@ -5,11 +5,12 @@
  */
 
 import type { NumberSpec, PreviewSpec } from "../../src/components/kit-spec.ts";
-import type { SyncedSet } from "./component-set.ts";
-import { near, syncNumber, syncPaints, syncScalar } from "./fields.ts";
+import type { PlannedSet } from "./component-set.ts";
+import { near, planNumber, planPaints, planScalar, planSizing } from "./fields.ts";
 import type { Run } from "./fields.ts";
 import { findOwned, setKey, staleOwned } from "./identity.ts";
-import { change, create, muted } from "./ledger.ts";
+import { change, create, existing, keepsOrder } from "./plan.ts";
+import type { Target } from "./plan.ts";
 
 /** Previews wrap their instances at this width. */
 const PREVIEW_WIDTH = 960;
@@ -21,7 +22,14 @@ const PREVIEW_MARGIN = 64;
 const PREVIEW_SPACING = 32;
 
 /** Previews paint the theme's background, so a dark preview reads as dark. */
-const BACKGROUND = { collection: "Fuse tokens", name: "background" } as const;
+export const PREVIEW_BACKGROUND = { collection: "Fuse tokens", name: "background" } as const;
+
+/** A preview frame and where the stack puts it. */
+type PlacedPreview = {
+  readonly frame: FrameNode;
+  readonly x: number;
+  readonly y: number;
+};
 
 const isFrame = (node: BaseNode): node is FrameNode => node.type === "FRAME";
 const isInstance = (node: BaseNode): node is InstanceNode => node.type === "INSTANCE";
@@ -30,37 +38,37 @@ function literal(value: number): NumberSpec {
   return { kind: "literal", value };
 }
 
-function syncFrameLayout(run: Run, frame: FrameNode, label: string): void {
-  syncScalar(run, label, "layoutMode", frame.layoutMode, "HORIZONTAL", () => {
+function planFrameLayout(run: Run, frame: FrameNode, label: string): void {
+  planScalar(run, label, "layoutMode", frame.layoutMode, "HORIZONTAL", () => {
     frame.layoutMode = "HORIZONTAL";
   });
-  syncScalar(run, label, "layoutWrap", frame.layoutWrap, "WRAP", () => {
+  planScalar(run, label, "layoutWrap", frame.layoutWrap, "WRAP", () => {
     frame.layoutWrap = "WRAP";
   });
-  // `resize` turns both sizing modes to FIXED, so the width comes before the sizing modes.
-  syncNumber(
+  planSizing(
     run,
     frame,
     label,
-    {
-      name: "width",
-      bindings: ["width"],
-      matches: (value) => near(frame.width, value),
-      write: (value) => frame.resize(value, frame.height),
-    },
-    literal(PREVIEW_WIDTH)
+    (group) =>
+      planNumber(
+        group,
+        frame,
+        label,
+        {
+          name: "width",
+          bindings: ["width"],
+          matches: (value) => near(frame.width, value),
+          write: (value) => frame.resize(value, frame.height),
+        },
+        literal(PREVIEW_WIDTH)
+      ),
+    { primary: "FIXED", counter: "AUTO" }
   );
-  syncScalar(run, label, "primaryAxisSizingMode", frame.primaryAxisSizingMode, "FIXED", () => {
-    frame.primaryAxisSizingMode = "FIXED";
-  });
-  syncScalar(run, label, "counterAxisSizingMode", frame.counterAxisSizingMode, "AUTO", () => {
-    frame.counterAxisSizingMode = "AUTO";
-  });
-  syncScalar(run, label, "counterAxisAlignItems", frame.counterAxisAlignItems, "CENTER", () => {
+  planScalar(run, label, "counterAxisAlignItems", frame.counterAxisAlignItems, "CENTER", () => {
     frame.counterAxisAlignItems = "CENTER";
   });
   for (const field of ["itemSpacing", "counterAxisSpacing"] as const) {
-    syncNumber(
+    planNumber(
       run,
       frame,
       label,
@@ -76,7 +84,7 @@ function syncFrameLayout(run: Run, frame: FrameNode, label: string): void {
     );
   }
   for (const field of ["paddingTop", "paddingRight", "paddingBottom", "paddingLeft"] as const) {
-    syncNumber(
+    planNumber(
       run,
       frame,
       label,
@@ -91,156 +99,182 @@ function syncFrameLayout(run: Run, frame: FrameNode, label: string): void {
       literal(PREVIEW_PADDING)
     );
   }
-  syncPaints(
+  planPaints(
     run,
     label,
     "fill",
     frame.fills,
-    { kind: "variable", variable: BACKGROUND, opacity: 1 },
+    { kind: "variable", variable: PREVIEW_BACKGROUND, opacity: 1 },
     (paints) => {
       frame.fills = paints;
     }
   );
 }
 
-function syncModes(run: Run, frame: FrameNode, label: string, spec: PreviewSpec): void {
+function planModes(run: Run, frame: FrameNode, label: string, spec: PreviewSpec): void {
   for (const ref of spec.modes) {
     const { collection, modeId } = run.variables.mode(ref);
     if (frame.explicitVariableModes[collection.id] !== modeId) {
-      change(run.ledger, label, `${ref.collection} mode → ${ref.mode}`, () =>
+      change(run.plan, label, `${ref.collection} mode → ${ref.mode}`, () =>
         frame.setExplicitVariableModeForCollection(collection, modeId)
       );
     }
   }
 }
 
-async function syncInstances(
+async function planInstances(
   run: Run,
   frame: FrameNode,
   label: string,
   spec: PreviewSpec,
-  set: SyncedSet
+  set: PlannedSet
 ): Promise<void> {
   const keys = spec.variants.map((variant) => `${spec.key}/${variant}`);
   for (const stale of staleOwned(frame.children, new Set(keys))) {
-    change(run.ledger, label, `delete the instance ${stale.name}`, () => stale.remove());
+    change(run.plan, label, `delete the instance ${stale.name}`, () => stale.remove());
   }
-  const owned: InstanceNode[] = [];
+  const owned: Target<InstanceNode>[] = [];
   for (const [index, variant] of spec.variants.entries()) {
-    if (!set.spec.variants.some((candidate) => candidate.key === variant)) {
+    const component = set.variants.get(variant);
+    if (component === undefined) {
       throw new Error(`${spec.name} places ${variant}, which ${set.spec.name} does not define.`);
     }
     const key = keys[index] ?? variant;
-    const component = set.variants.get(variant);
-    const existing = findOwned(run.ledger, frame.children, label, key, key, isInstance);
-    if (existing === undefined) {
-      const created = create(run.ledger, label, `add an instance of ${variant}`, () => {
-        if (component === undefined) {
-          throw new Error(`${set.spec.name} has no variant ${variant} to place in ${spec.name}.`);
-        }
-        const instance = component.createInstance();
-        frame.appendChild(instance);
-        setKey(instance, key);
-        return instance;
-      });
-      if (created !== undefined) {
-        owned.push(created);
-      }
+    const found = findOwned(run.plan, frame.children, label, key, key, isInstance);
+    if (found === undefined) {
+      owned.push(
+        create(run.plan, label, `add an instance of ${variant}`, () => {
+          const instance = component.get().createInstance();
+          frame.appendChild(instance);
+          setKey(instance, key);
+          return instance;
+        })
+      );
       continue;
     }
-    owned.push(existing);
-    if (component === undefined) {
-      continue;
-    }
-    const main = await existing.getMainComponentAsync();
-    if (main?.id !== component.id) {
-      change(run.ledger, label, `point the instance ${key} at ${variant}`, () =>
-        existing.swapComponent(component)
+    owned.push(existing(found));
+    const main = await found.getMainComponentAsync();
+    if (component.existing === undefined || main?.id !== component.existing.id) {
+      change(run.plan, label, `point the instance ${key} at ${variant}`, () =>
+        found.swapComponent(component.get())
       );
     }
   }
-  const order = frame.children.filter(
-    (node): node is InstanceNode => isInstance(node) && owned.includes(node)
-  );
-  if (order.some((node, index) => node !== owned[index])) {
-    change(run.ledger, label, "reorder the instances", () => {
-      owned.forEach((node, index) => frame.insertChild(index, node));
+  if (!keepsOrder(frame.children, owned)) {
+    change(run.plan, label, "reorder the instances", () => {
+      owned.forEach((target, index) => frame.insertChild(index, target.get()));
     });
   }
 }
 
+async function planFrame(run: Run, frame: FrameNode, spec: PreviewSpec, set: PlannedSet): Promise<void> {
+  planScalar(run, spec.name, "name", frame.name, spec.name, () => {
+    frame.name = spec.name;
+  });
+  planFrameLayout(run, frame, spec.name);
+  planModes(run, frame, spec.name, spec);
+  await planInstances(run, frame, spec.name, spec, set);
+}
+
 /**
- * Bring the preview frames in line with the spec.
+ * Plan the preview frames against the spec.
  *
  * @param run - The run.
  * @param page - The kit's page.
  * @param specs - The previews.
- * @param sets - The component sets after this run, by key.
+ * @param sets - The component sets as the plan leaves them, by key.
+ * @returns The preview frames, in spec order, as later operations find them.
  */
-export async function syncPreviews(
+export async function planPreviews(
   run: Run,
   page: PageNode,
   specs: readonly PreviewSpec[],
-  sets: ReadonlyMap<string, SyncedSet>
-): Promise<void> {
-  const frames: FrameNode[] = [];
+  sets: ReadonlyMap<string, PlannedSet>
+): Promise<Target<FrameNode>[]> {
+  const frames: Target<FrameNode>[] = [];
   for (const spec of specs) {
     const set = sets.get(spec.componentSet);
     if (set === undefined) {
       throw new Error(`${spec.name} places variants of ${spec.componentSet}, which the kit does not define.`);
     }
-    let frame = findOwned(run.ledger, page.children, page.name, spec.key, spec.name, isFrame);
-    let previewRun = run;
-    if (frame === undefined) {
-      frame = create(run.ledger, page.name, `create the preview ${spec.name}`, () => {
-        const made = run.figma.createFrame();
-        page.appendChild(made);
-        setKey(made, spec.key);
-        made.name = spec.name;
-        return made;
-      });
-      if (frame === undefined) {
-        continue;
-      }
-      previewRun = { ...run, ledger: muted(run.ledger) };
+    const found = findOwned(run.plan, page.children, page.name, spec.key, spec.name, isFrame);
+    if (found !== undefined) {
+      await planFrame(run, found, spec, set);
+      frames.push(existing(found));
+      continue;
     }
-    const target = frame;
-    syncScalar(previewRun, spec.name, "name", target.name, spec.name, () => {
-      target.name = spec.name;
-    });
-    syncFrameLayout(previewRun, target, spec.name);
-    syncModes(previewRun, target, spec.name, spec);
-    await syncInstances(previewRun, target, spec.name, spec, set);
-    frames.push(target);
+    frames.push(
+      create(
+        run.plan,
+        page.name,
+        `create the preview ${spec.name}`,
+        () => {
+          const made = run.figma.createFrame();
+          page.appendChild(made);
+          setKey(made, spec.key);
+          made.name = spec.name;
+          return made;
+        },
+        (made, plan) => planFrame({ ...run, plan }, made, spec, set)
+      )
+    );
   }
-  placePreviews(run, page, frames, sets);
+  return frames;
 }
 
-/** Stack the previews below the component sets, left-aligned with the first set. */
-function placePreviews(
-  run: Run,
-  page: PageNode,
-  frames: readonly FrameNode[],
-  sets: ReadonlyMap<string, SyncedSet>
-): void {
-  const setNodes = [...sets.values()].flatMap((set) => (set.node === undefined ? [] : [set.node]));
+function previewStack(sets: readonly PlannedSet[], frames: readonly Target<FrameNode>[]): PlacedPreview[] {
+  const setNodes = sets.map((set) => set.node.get());
   const [first] = setNodes;
-  if (first === undefined || frames.length === 0) {
-    return;
+  if (first === undefined) {
+    return [];
   }
   let y = Math.max(...setNodes.map((node) => node.y + node.height)) + PREVIEW_MARGIN;
-  const targets = frames.map((frame) => {
-    const target = { frame, x: first.x, y };
+  return frames.map((target) => {
+    const frame = target.get();
+    const placed = { frame, x: first.x, y };
     y += frame.height + PREVIEW_SPACING;
-    return target;
+    return placed;
   });
-  if (targets.every((target) => near(target.frame.x, target.x) && near(target.frame.y, target.y))) {
+}
+
+/**
+ * Plan the stack of previews below the component sets, left-aligned with the first set. The
+ * stack reads the sizes of the sets and the previews when its operation runs, after the
+ * writes that change them.
+ *
+ * @param run - The run.
+ * @param page - The kit's page.
+ * @param frames - The preview frames, in spec order.
+ * @param sets - The component sets.
+ * @param changed - Whether the plan changes anything on the page, which may move or resize
+ *   what the stack reads.
+ */
+export function placePreviews(
+  run: Run,
+  page: PageNode,
+  frames: readonly Target<FrameNode>[],
+  sets: readonly PlannedSet[],
+  changed: boolean
+): void {
+  if (sets.length === 0 || frames.length === 0) {
     return;
   }
-  change(run.ledger, page.name, `stack ${frames.length} previews below the component sets`, () => {
-    for (const target of targets) {
-      target.frame.x = target.x;
-      target.frame.y = target.y;
+  const settled =
+    !changed &&
+    sets.every((set) => set.node.existing !== undefined) &&
+    frames.every((frame) => frame.existing !== undefined);
+  if (
+    settled &&
+    previewStack(sets, frames).every(
+      (placed) => near(placed.frame.x, placed.x) && near(placed.frame.y, placed.y)
+    )
+  ) {
+    return;
+  }
+  change(run.plan, page.name, `stack ${frames.length} previews below the component sets`, () => {
+    for (const placed of previewStack(sets, frames)) {
+      placed.frame.x = placed.x;
+      placed.frame.y = placed.y;
     }
   });
 }

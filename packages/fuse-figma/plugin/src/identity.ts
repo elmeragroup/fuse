@@ -6,8 +6,8 @@
  */
 
 import { PLUGIN_DATA_KEY, PLUGIN_DATA_NAMESPACE } from "../../src/components/kit-spec.ts";
-import { change } from "./ledger.ts";
-import type { Ledger } from "./ledger.ts";
+import { change } from "./plan.ts";
+import type { Plan, Target } from "./plan.ts";
 
 /**
  * The key a node carries.
@@ -32,11 +32,11 @@ export function setKey(node: BaseNode, key: string): void {
 /**
  * Find the child that the spec calls `key`, by its key and then by its name.
  *
- * A name match only counts for a child that carries no key, and the run then writes the key
- * onto it, so the match survives a later rename. Two children with the same key stop the
- * run, because the plugin cannot tell which one a designer meant to keep.
+ * A name match only counts for a child that carries no key, and the plan writes the key onto
+ * it, so the match survives a later rename. Two children with the same key stop the run,
+ * because the plugin cannot tell which one a designer meant to keep.
  *
- * @param ledger - The run's ledger, which records the key it writes onto a name match.
+ * @param plan - The run's plan, which records the key it writes onto a name match.
  * @param siblings - The children to search.
  * @param where - The parent's label, for messages.
  * @param key - The key from the spec.
@@ -45,7 +45,7 @@ export function setKey(node: BaseNode, key: string): void {
  * @returns The child, or undefined when the parent has none.
  */
 export function findOwned<Node extends BaseNode>(
-  ledger: Ledger,
+  plan: Plan,
   siblings: ReadonlyArray<BaseNode>,
   where: string,
   key: string,
@@ -71,7 +71,7 @@ export function findOwned<Node extends BaseNode>(
     (node): node is Node => keyOf(node) === "" && node.name === name && accept(node)
   );
   if (named !== undefined) {
-    change(ledger, where, `adopt the layer named ${name} as ${key}`, () => setKey(named, key));
+    change(plan, where, `adopt the layer named ${name} as ${key}`, () => setKey(named, key));
   }
   return named;
 }
@@ -88,4 +88,19 @@ export function staleOwned(siblings: ReadonlyArray<SceneNode>, keep: ReadonlySet
     const key = keyOf(node);
     return key !== "" && !keep.has(key);
   });
+}
+
+/**
+ * The children the kit does not own. A child without a key that the plan adopts by name
+ * counts as owned, because the plan writes the key onto it.
+ *
+ * @param siblings - The children to search.
+ * @param owned - The children the plan matched or creates.
+ * @returns The children with no key that no spec matched.
+ */
+export function unowned(
+  siblings: ReadonlyArray<SceneNode>,
+  owned: ReadonlyArray<Target<BaseNode>>
+): SceneNode[] {
+  return siblings.filter((node) => keyOf(node) === "" && !owned.some((target) => target.existing === node));
 }

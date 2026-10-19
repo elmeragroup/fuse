@@ -4,9 +4,9 @@
  */
 
 import type { ComponentRootSpec } from "../../src/components/kit-spec.ts";
-import { near, syncNumber, syncPaints, syncScalar, syncShadows } from "./fields.ts";
+import { near, planNumber, planPaints, planScalar, planShadows, planSizing } from "./fields.ts";
 import type { NumberField, Run } from "./fields.ts";
-import { change } from "./ledger.ts";
+import { change } from "./plan.ts";
 
 function paddingField(node: ComponentNode, side: "Top" | "Right" | "Bottom" | "Left"): NumberField {
   const name = `padding${side}` as const;
@@ -45,7 +45,7 @@ function strokeWeightField(node: ComponentNode): NumberField {
 }
 
 /**
- * Bring a variant's root in line with the spec. The root hugs its content along the row and
+ * Plan a variant's root against the spec. The root hugs its content along the row and
  * centers it on both axes, as an `inline-flex items-center justify-center` box does.
  *
  * @param run - The run.
@@ -53,53 +53,54 @@ function strokeWeightField(node: ComponentNode): NumberField {
  * @param label - The variant's label, for change lines.
  * @param spec - The root the spec asks for.
  */
-export function syncRoot(run: Run, node: ComponentNode, label: string, spec: ComponentRootSpec): void {
-  syncScalar(run, label, "layoutMode", node.layoutMode, "HORIZONTAL", () => {
+export function planRoot(run: Run, node: ComponentNode, label: string, spec: ComponentRootSpec): void {
+  planScalar(run, label, "layoutMode", node.layoutMode, "HORIZONTAL", () => {
     node.layoutMode = "HORIZONTAL";
   });
-  syncScalar(run, label, "primaryAxisAlignItems", node.primaryAxisAlignItems, "CENTER", () => {
+  planScalar(run, label, "primaryAxisAlignItems", node.primaryAxisAlignItems, "CENTER", () => {
     node.primaryAxisAlignItems = "CENTER";
   });
-  syncScalar(run, label, "counterAxisAlignItems", node.counterAxisAlignItems, "CENTER", () => {
+  planScalar(run, label, "counterAxisAlignItems", node.counterAxisAlignItems, "CENTER", () => {
     node.counterAxisAlignItems = "CENTER";
   });
 
-  // `resize` turns both sizing modes to FIXED, so the height comes before the sizing modes.
-  if (spec.height === undefined) {
-    if (node.boundVariables?.height !== undefined) {
-      change(run.ledger, label, "height → hug", () => node.setBoundVariable("height", null));
-    }
-  } else {
-    syncNumber(
-      run,
-      node,
-      label,
-      {
-        name: "height",
-        bindings: ["height"],
-        matches: (value) => near(node.height, value),
-        write: (value) => node.resize(node.width, value),
-      },
-      spec.height
-    );
-  }
-  syncScalar(run, label, "primaryAxisSizingMode", node.primaryAxisSizingMode, "AUTO", () => {
-    node.primaryAxisSizingMode = "AUTO";
-  });
-  const counterSizing = spec.height === undefined ? "AUTO" : "FIXED";
-  syncScalar(run, label, "counterAxisSizingMode", node.counterAxisSizingMode, counterSizing, () => {
-    node.counterAxisSizingMode = counterSizing;
-  });
+  const height = spec.height;
+  planSizing(
+    run,
+    node,
+    label,
+    (group) => {
+      if (height === undefined) {
+        if (node.boundVariables?.height !== undefined) {
+          change(group.plan, label, "height → hug", () => node.setBoundVariable("height", null));
+        }
+        return;
+      }
+      planNumber(
+        group,
+        node,
+        label,
+        {
+          name: "height",
+          bindings: ["height"],
+          matches: (value) => near(node.height, value),
+          write: (value) => node.resize(node.width, value),
+        },
+        height
+      );
+    },
+    { primary: "AUTO", counter: height === undefined ? "AUTO" : "FIXED" }
+  );
 
   if (spec.minWidth === undefined) {
     if (node.minWidth !== null || node.boundVariables?.minWidth !== undefined) {
-      change(run.ledger, label, "minWidth → none", () => {
+      change(run.plan, label, "minWidth → none", () => {
         node.setBoundVariable("minWidth", null);
         node.minWidth = null;
       });
     }
   } else {
-    syncNumber(
+    planNumber(
       run,
       node,
       label,
@@ -115,11 +116,11 @@ export function syncRoot(run: Run, node: ComponentNode, label: string, spec: Com
     );
   }
 
-  syncNumber(run, node, label, paddingField(node, "Top"), spec.paddingTop);
-  syncNumber(run, node, label, paddingField(node, "Right"), spec.paddingRight);
-  syncNumber(run, node, label, paddingField(node, "Bottom"), spec.paddingBottom);
-  syncNumber(run, node, label, paddingField(node, "Left"), spec.paddingLeft);
-  syncNumber(
+  planNumber(run, node, label, paddingField(node, "Top"), spec.paddingTop);
+  planNumber(run, node, label, paddingField(node, "Right"), spec.paddingRight);
+  planNumber(run, node, label, paddingField(node, "Bottom"), spec.paddingBottom);
+  planNumber(run, node, label, paddingField(node, "Left"), spec.paddingLeft);
+  planNumber(
     run,
     node,
     label,
@@ -133,29 +134,29 @@ export function syncRoot(run: Run, node: ComponentNode, label: string, spec: Com
     },
     spec.itemSpacing
   );
-  syncNumber(run, node, label, cornerField(node), spec.cornerRadius);
+  planNumber(run, node, label, cornerField(node), spec.cornerRadius);
 
-  syncPaints(run, label, "fill", node.fills, spec.fill, (paints) => {
+  planPaints(run, label, "fill", node.fills, spec.fill, (paints) => {
     node.fills = paints;
   });
   // A CSS border sits inside the box and takes room from the content, so the stroke is drawn
   // inside and counts in the auto layout. A transparent CSS border arrives as a paint with
   // alpha 0, which keeps its weight in the layout. Unverified on a real file: whether Figma
   // counts the weight of a stroke whose only paint is fully transparent.
-  syncPaints(run, label, "stroke", node.strokes, spec.stroke?.color, (paints) => {
+  planPaints(run, label, "stroke", node.strokes, spec.stroke?.color, (paints) => {
     node.strokes = paints;
   });
   if (spec.stroke !== undefined) {
-    syncNumber(run, node, label, strokeWeightField(node), spec.stroke.weight);
-    syncScalar(run, label, "strokeAlign", node.strokeAlign, "INSIDE", () => {
+    planNumber(run, node, label, strokeWeightField(node), spec.stroke.weight);
+    planScalar(run, label, "strokeAlign", node.strokeAlign, "INSIDE", () => {
       node.strokeAlign = "INSIDE";
     });
-    syncScalar(run, label, "strokesIncludedInLayout", node.strokesIncludedInLayout, true, () => {
+    planScalar(run, label, "strokesIncludedInLayout", node.strokesIncludedInLayout, true, () => {
       node.strokesIncludedInLayout = true;
     });
   }
-  syncShadows(run, node, label, spec.shadows);
-  syncNumber(
+  planShadows(run, node, label, spec.shadows);
+  planNumber(
     run,
     node,
     label,

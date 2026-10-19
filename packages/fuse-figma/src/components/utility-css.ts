@@ -2,21 +2,32 @@
  * Compile bare Tailwind utilities against `fuse.css` and read back each utility's
  * declarations. The spec builder strips a class's variants first and decides the state from
  * them itself, so it compiles only the utility. Tailwind's own compiler resolves the
- * utility, which keeps the spec on the exact CSS a consumer ships.
+ * utility, which keeps the spec on the exact CSS a consumer ships, and the reader walks the
+ * compiler's own syntax tree.
  */
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { compile } from "tailwindcss";
+import { compileAst } from "tailwindcss";
 
-import { parseCss } from "./css-tree";
-import type { CssDeclaration, CssNode } from "./css-tree";
+/**
+ * A node of Tailwind's syntax tree. Tailwind exports `compileAst` but not its node types, so
+ * the reader takes them from that function's signature.
+ */
+type AstNode = Parameters<typeof compileAst>[0][number];
+type AtRule = Extract<AstNode, { readonly kind: "at-rule" }>;
+
+/** A `property: value` declaration of a utility. */
+export type UtilityDeclaration = {
+  readonly property: string;
+  readonly value: string;
+};
 
 /** A utility's declarations, as a browser that supports `color-mix()` applies them. */
 export type UtilityRule = {
   readonly utility: string;
   /** The rule's position in Tailwind's output. A later rule wins a property tie. */
   readonly order: number;
-  readonly declarations: readonly CssDeclaration[];
+  readonly declarations: readonly UtilityDeclaration[];
 };
 
 /** What the compile produced for a set of utilities. */
@@ -29,9 +40,16 @@ export type CompiledUtilities = {
   readonly propertyInitials: ReadonlyMap<string, string>;
 };
 
-/** The entry of a standalone consumer, as in `packages/fuse/test/tailwind-consumer-build.ts`. */
-const CONSUMER_ENTRY =
-  '@import "tailwindcss/theme.css";\n@import "tailwindcss/utilities.css" source(none);\n@import "./fuse.css";';
+/**
+ * The entry of a standalone consumer, as in `packages/fuse/test/tailwind-consumer-build.ts`.
+ * `compileAst` replaces each `@import` node with the stylesheet it loads, so every compile
+ * builds new nodes.
+ */
+function consumerEntry(): AstNode[] {
+  return ['"tailwindcss/theme.css"', '"tailwindcss/utilities.css" source(none)', '"./fuse.css"'].map(
+    (params): AtRule => ({ kind: "at-rule", name: "@import", params, nodes: [] })
+  );
+}
 
 /**
  * Compile the utilities with `fuse.css` the way a Tailwind-source consumer does.
@@ -49,7 +67,7 @@ export async function compileUtilities(utilities: readonly string[]): Promise<Co
       fileURLToPath(new URL("../../node_modules/tw-animate-css/dist/tw-animate.css", import.meta.url)),
     ],
   ]);
-  const compiler = await compile(CONSUMER_ENTRY, {
+  const compiler = await compileAst(consumerEntry(), {
     base: "/",
     loadStylesheet: async (id, base) => {
       const path = stylesheets.get(id);
@@ -65,54 +83,51 @@ export async function compileUtilities(utilities: readonly string[]): Promise<Co
       return { path: id, base, module: (await import("tailwindcss-react-aria-components")).default };
     },
   });
-  return readCompiledUtilities(parseCss(compiler.build([...utilities])));
+  return readCompiledUtilities(compiler.build([...utilities]));
 }
 
 /**
- * Read Tailwind's parsed output. A rule whose whole selector is one class is that utility's
+ * Read Tailwind's build output. A rule whose whole selector is one class is that utility's
  * rule. A `@supports` block that tests `color-mix()` overrides the declarations before it,
  * because every browser Fuse supports passes that test. Any other nested block, such as
  * `@media (forced-colors: active)`, describes a mode Figma does not show and is skipped.
  *
- * @param nodes - The parsed build output.
+ * @param nodes - The syntax tree `build` returns.
  * @returns The utility rules, theme values and registered property defaults.
  */
-export function readCompiledUtilities(nodes: readonly CssNode[]): CompiledUtilities {
+export function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
   const rules = new Map<string, UtilityRule>();
   const themeValues = new Map<string, string>();
   const propertyInitials = new Map<string, string>();
   let order = 0;
-  const visit = (node: CssNode): void => {
-    if (node.type === "at-rule") {
-      if (node.name === "property") {
-        const initial = node.children?.find(
-          (child): child is CssDeclaration =>
-            child.type === "declaration" && child.property === "initial-value"
+  const visit = (node: AstNode): void => {
+    if (node.kind === "at-rule") {
+      if (node.name === "@property") {
+        const initial = declarationsOf(node.nodes).find(
+          (declaration) => declaration.property === "initial-value"
         );
         if (initial !== undefined) {
           propertyInitials.set(node.params, initial.value);
         }
         return;
       }
-      if (node.name === "layer") {
-        node.children?.forEach(visit);
+      if (node.name === "@layer") {
+        node.nodes.forEach(visit);
       }
       return;
     }
-    if (node.type !== "rule") {
+    if (node.kind !== "rule") {
       return;
     }
     if (node.selector === ":root, :host") {
-      for (const child of node.children) {
-        if (child.type === "declaration") {
-          themeValues.set(child.property, child.value);
-        }
+      for (const declaration of declarationsOf(node.nodes)) {
+        themeValues.set(declaration.property, declaration.value);
       }
       return;
     }
     const utility = singleClassSelector(node.selector);
     if (utility !== undefined) {
-      rules.set(utility, { utility, order, declarations: effectiveDeclarations(node.children) });
+      rules.set(utility, { utility, order, declarations: effectiveDeclarations(node.nodes) });
       order += 1;
     }
   };
@@ -120,20 +135,29 @@ export function readCompiledUtilities(nodes: readonly CssNode[]): CompiledUtilit
   return { rules, themeValues, propertyInitials };
 }
 
-function effectiveDeclarations(children: readonly CssNode[]): readonly CssDeclaration[] {
-  const declarations: CssDeclaration[] = [];
-  for (const child of children) {
-    if (child.type === "declaration") {
-      declarations.push(child);
-    } else if (child.type === "at-rule" && child.name === "supports" && child.params.includes("color-mix(")) {
-      for (const nested of child.children ?? []) {
-        if (nested.type === "declaration") {
-          declarations.push(nested);
-        }
-      }
+/**
+ * The declarations among a block's nodes. An important declaration keeps `!important` in its
+ * value, as Tailwind prints it.
+ */
+function declarationsOf(nodes: readonly AstNode[]): UtilityDeclaration[] {
+  return nodes.flatMap((node) => {
+    if (node.kind !== "declaration" || node.value === undefined) {
+      return [];
     }
-  }
-  return declarations;
+    const value = node.important ? `${node.value} !important` : node.value;
+    return [{ property: node.property, value }];
+  });
+}
+
+function effectiveDeclarations(nodes: readonly AstNode[]): readonly UtilityDeclaration[] {
+  return nodes.flatMap((node) => {
+    if (node.kind === "at-rule") {
+      return node.name === "@supports" && node.params.includes("color-mix(")
+        ? declarationsOf(node.nodes)
+        : [];
+    }
+    return declarationsOf([node]);
+  });
 }
 
 /**
