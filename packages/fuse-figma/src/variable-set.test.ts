@@ -115,6 +115,31 @@ describe("makeVariableSet", () => {
     );
   });
 
+  it("refuses more variables in a collection than Figma allows", () => {
+    const many = (count: number) =>
+      Array.from({ length: count }, (_, index) =>
+        variable(`red-${index}`, "COLOR", { Light: RED, Dark: RED })
+      );
+    expect(failure([palette(many(5000))])).toBeUndefined();
+    expect(failure([palette(many(5001))])).toBe(
+      'The Figma variable set is invalid: "Palette" has 5001 variables, more than the 5000 Figma allows.'
+    );
+  });
+
+  it("refuses to retire a collection it holds or to retire one twice", () => {
+    const retire = (retired: readonly string[]) => {
+      const result = makeVariableSet([palette([])], retired);
+      return Result.isFailure(result) ? result.failure.message : result.success.retiredCollections;
+    };
+    expect(retire(["Legacy"])).toEqual(["Legacy"]);
+    expect(retire(["Palette"])).toBe(
+      'The Figma variable set is invalid: "Palette" is both held and retired.'
+    );
+    expect(retire(["Legacy", "Legacy"])).toBe(
+      'The Figma variable set is invalid: "Legacy" is retired twice.'
+    );
+  });
+
   it("refuses aliases that lead back to where they started, in any mode", () => {
     const alias = (collection: string, name: string): VariableValue => ({
       _tag: "Alias",

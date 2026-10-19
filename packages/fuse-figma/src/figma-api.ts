@@ -12,6 +12,7 @@ import { CollectionId, ModeId, VariableId } from "./file-variables.ts";
 import type {
   ChangeBatch,
   CodeSyntax,
+  CollectionChange,
   FileCollection,
   FileValue,
   FileVariable,
@@ -290,13 +291,16 @@ type VariableMetadataRequest = {
 
 /** `POST /v1/files/:key/variables`, as the REST API documents it. */
 type PostVariablesBody = {
-  readonly variableCollections: readonly {
-    readonly action: "CREATE";
-    readonly id: string;
-    readonly name: string;
-    readonly initialModeId: string;
-    readonly hiddenFromPublishing: false;
-  }[];
+  readonly variableCollections: readonly (
+    | {
+        readonly action: "CREATE";
+        readonly id: string;
+        readonly name: string;
+        readonly initialModeId: string;
+        readonly hiddenFromPublishing: false;
+      }
+    | { readonly action: "DELETE"; readonly id: string }
+  )[];
   readonly variableModes: readonly (
     | {
         readonly action: "CREATE" | "UPDATE";
@@ -330,13 +334,7 @@ type PostVariablesBody = {
 
 function postVariablesBody(batch: ChangeBatch): PostVariablesBody {
   return {
-    variableCollections: batch.collections.map((collection) => ({
-      action: "CREATE",
-      id: collection.id,
-      name: collection.name,
-      initialModeId: collection.initialModeId,
-      hiddenFromPublishing: false,
-    })),
+    variableCollections: batch.collections.map(collectionRequest),
     variableModes: batch.modes.map(modeRequest),
     variables: batch.variables.map(variableRequest),
     variableModeValues: batch.values.map((change) => ({
@@ -345,6 +343,21 @@ function postVariablesBody(batch: ChangeBatch): PostVariablesBody {
       value: valueRequest(change.value),
     })),
   };
+}
+
+function collectionRequest(change: CollectionChange): PostVariablesBody["variableCollections"][number] {
+  switch (change._tag) {
+    case "CreateCollection":
+      return {
+        action: "CREATE",
+        id: change.id,
+        name: change.name,
+        initialModeId: change.initialModeId,
+        hiddenFromPublishing: false,
+      };
+    case "DeleteCollection":
+      return { action: "DELETE", id: change.id };
+  }
 }
 
 function modeRequest(change: ModeChange): PostVariablesBody["variableModes"][number] {

@@ -275,7 +275,16 @@ describe("exports map", () => {
       "src/theme/catalog.ts",
       readFileSync(join(packageRoot, "src/theme/catalog.ts"), "utf8")
     );
-    expect(catalog).toEqual(["resolveThemeCatalog", "DENSITY_ROLES", "PART_DENSITY"]);
+    expect(catalog).toEqual([
+      "defaultDensityForVariant",
+      "resolveThemeCatalog",
+      "DENSITY_ROLES",
+      "PART_DENSITY",
+      "BRAND_CODES",
+      "BRANDS",
+      "THEME_SEGMENTS",
+      "THEME_VARIANTS",
+    ]);
   });
 
   it("keeps the committed root barrel in sync with the generator", () => {

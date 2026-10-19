@@ -343,6 +343,11 @@ export class InMemoryFigma {
     );
   }
 
+  /** Whether the file still holds the collection with this id, whatever its origin. */
+  hasCollection(id: string): boolean {
+    return this.state.collections.has(id);
+  }
+
   /** A collection's id. */
   collectionId(collection: string): string {
     return this.collectionNamed(collection).id;
@@ -502,10 +507,21 @@ export class InMemoryFigma {
     };
 
     for (const change of body.variableCollections ?? []) {
-      // The sync only creates collections. Failing loudly here catches a write that starts
-      // doing anything else before a real file sees it.
-      if (change.action !== "CREATE") {
-        throw new Error(`The fake does not model collection updates or deletes (got ${change.action})`);
+      // The sync only creates and deletes collections. Failing loudly here catches a write that
+      // starts doing anything else before a real file sees it.
+      if (change.action === "UPDATE") {
+        throw new Error("The fake does not model collection updates");
+      }
+      if (change.action === "DELETE") {
+        // Deleting a collection deletes its modes and variables. The REST documentation does
+        // not say what becomes of an alias into the deleted collection, and the fake keeps it
+        // dangling until a later value in the batch replaces it.
+        const collection = editable(change.id);
+        draft.collections.delete(collection.id);
+        for (const variable of [...draft.variables.values()]) {
+          if (variable.variableCollectionId === collection.id) draft.variables.delete(variable.id);
+        }
+        continue;
       }
       if (change.name === undefined || change.name === "") reject("A new collection needs a name");
       const id = create(change.id, "VariableCollectionId");

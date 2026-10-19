@@ -140,7 +140,7 @@ describe("planSync", () => {
     const { batch, changes } = plan({ collections: [] });
 
     expect(batch.collections).toEqual([
-      { id: "tmp_collection_0", name: "Palette", initialModeId: "tmp_mode_0_0" },
+      { _tag: "CreateCollection", id: "tmp_collection_0", name: "Palette", initialModeId: "tmp_mode_0_0" },
     ]);
     expect(batch.modes).toEqual([
       { _tag: "NameInitialMode", collectionId: "tmp_collection_0", id: "tmp_mode_0_0", name: "Light" },
@@ -290,6 +290,69 @@ describe("planSync", () => {
       { variableId: "VariableID:1:21", modeId: "1:0", value: { _tag: "Color", color: RED } },
       { variableId: "VariableID:1:20", modeId: "1:0", value: { _tag: "Alias", id: "VariableID:1:21" } },
     ]);
+  });
+
+  it("deletes every local collection the set retires before it creates any", () => {
+    const retiring = makeVariableSet(variableSet().collections, ["Legacy"]);
+    if (Result.isFailure(retiring)) throw new Error(retiring.failure.message);
+    const legacy = (id: string): FileCollection => ({
+      id: CollectionId(id),
+      name: "Legacy",
+      modes: [LIGHT],
+      variables: [],
+    });
+
+    const { batch, changes } = plan(
+      { collections: [legacy("VariableCollectionId:1:7"), legacy("VariableCollectionId:1:8")] },
+      retiring.success
+    );
+
+    expect(batch.collections).toEqual([
+      { _tag: "DeleteCollection", id: "VariableCollectionId:1:7" },
+      { _tag: "DeleteCollection", id: "VariableCollectionId:1:8" },
+      { _tag: "CreateCollection", id: "tmp_collection_0", name: "Palette", initialModeId: "tmp_mode_0_0" },
+    ]);
+    expect(changes.slice(0, 2)).toMatchObject([
+      { _tag: "DeleteCollection", collection: "Legacy" },
+      { _tag: "DeleteCollection", collection: "Legacy" },
+    ]);
+    // A file without the retired collection needs no change for it.
+    expect(plan({ collections: [syncedPalette()] }, retiring.success).changes).toEqual([]);
+  });
+
+  it("keeps mode ids when the set orders the modes differently from the file", () => {
+    // Figma appends a mode created in an existing collection, so a file can hold a set's modes
+    // in another order. Matching is by name, so the order alone changes nothing.
+    expect(plan({ collections: [syncedPalette([DARK, LIGHT])] }).changes).toEqual([]);
+
+    const auto: FileMode = { id: ModeId("1:5"), name: "Auto" };
+    const autoFirst = themesSet(["Auto", "Dense", "Comfortable"]);
+    const { batch } = plan(themesFile(["Dense", "Comfortable"]), autoFirst);
+    expect(batch.modes).toEqual([
+      {
+        _tag: "CreateMode",
+        collectionId: "VariableCollectionId:1:1",
+        id: "tmp_mode_0_0",
+        name: "Auto",
+      },
+    ]);
+    const synced = themesFile(["Dense", "Comfortable"]).collections.map((collection) => ({
+      ...collection,
+      modes: [...collection.modes, auto],
+      variables: [
+        {
+          id: VariableId("VariableID:1:30"),
+          name: "radius",
+          type: "FLOAT" as const,
+          scopes: [],
+          codeSyntax: {},
+          values: new Map<ModeId, FileValue>(
+            [...collection.modes, auto].map((mode) => [mode.id, { _tag: "Float", value: 4 }])
+          ),
+        },
+      ],
+    }));
+    expect(plan({ collections: synced }, autoFirst).changes).toEqual([]);
   });
 
   it("refuses to plan when a collection name is ambiguous or a type would change", () => {

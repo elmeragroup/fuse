@@ -110,12 +110,19 @@ export type FileVariables = {
   readonly collections: readonly FileCollection[];
 };
 
-/** A collection a write creates. Figma gives it one mode, which `initialModeId` names for the rest of the write. */
-export type NewCollection = {
-  readonly id: CollectionId;
-  readonly name: string;
-  readonly initialModeId: ModeId;
-};
+/**
+ * A change to one collection. Figma gives a collection a write creates one mode, which
+ * `initialModeId` names for the rest of the write. Deleting a collection deletes its modes
+ * and variables with it.
+ */
+export type CollectionChange =
+  | {
+      readonly _tag: "CreateCollection";
+      readonly id: CollectionId;
+      readonly name: string;
+      readonly initialModeId: ModeId;
+    }
+  | { readonly _tag: "DeleteCollection"; readonly id: CollectionId };
 
 /**
  * A change to one mode of a collection. `NameInitialMode` names the one mode Figma gives a
@@ -166,7 +173,7 @@ export type ValueChange = {
  * value may reference a mode or variable created earlier in the same write.
  */
 export type ChangeBatch = {
-  readonly collections: readonly NewCollection[];
+  readonly collections: readonly CollectionChange[];
   readonly modes: readonly ModeChange[];
   readonly variables: readonly VariableChange[];
   readonly values: readonly ValueChange[];

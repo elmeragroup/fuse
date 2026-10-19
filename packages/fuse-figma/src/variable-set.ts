@@ -127,8 +127,9 @@ export type CollectionSpec = {
  * builds one, so a set always has these properties:
  *
  * - Collection names are unique, and so are mode and variable names inside a collection.
- * - Every collection has between 1 and 40 modes, and no mode name is longer than 40
- *   characters, Figma's limits.
+ * - Every collection has between 1 and 40 modes and at most 5,000 variables, and no mode
+ *   name is longer than 40 characters, Figma's limits.
+ * - No retired collection name is also the name of a collection the set holds.
  * - Every variable has exactly one value for each mode of its collection.
  * - Every scope applies to its variable's type. `ALL_SCOPES` stands alone, and `ALL_FILLS`
  *   stands alone among the fill scopes.
@@ -138,6 +139,12 @@ export type CollectionSpec = {
  */
 export type VariableSet = {
   readonly collections: readonly CollectionSpec[];
+
+  /**
+   * Names of collections the sync once owned and now removes. A sync deletes a local
+   * collection with one of these names and leaves library collections and extensions alone.
+   */
+  readonly retiredCollections: readonly string[];
 } & Brand.Brand<"VariableSet">;
 
 /** The collections given to {@link makeVariableSet} break one of a set's rules. */
@@ -154,9 +161,10 @@ export class AliasCycle extends Schema.TaggedError<AliasCycle>()("AliasCycle", {
   cycle: Schema.Array(Schema.String),
 }) {}
 
-/** Figma's limits on the modes of one collection. */
+/** Figma's limits on one collection. */
 const MAX_MODES = 40;
 const MAX_MODE_NAME_LENGTH = 40;
+const MAX_VARIABLES = 5000;
 
 const brandVariableSet = Brand.nominal<VariableSet>();
 
@@ -217,10 +225,12 @@ export function qualifiedName(collection: string, variable: string): string {
  * {@link VariableSet}.
  *
  * @param collections - The collections a sync should own, in the order it creates them.
+ * @param retiredCollections - Names of collections a sync should delete from the file.
  * @returns The set, the first rule a collection breaks, or an alias cycle.
  */
 export function makeVariableSet(
-  collections: readonly CollectionSpec[]
+  collections: readonly CollectionSpec[],
+  retiredCollections: readonly string[] = []
 ): Result.Result<VariableSet, InvalidVariableSet | AliasCycle> {
   const variables = new Map<string, VariableSpec>();
   const collectionNames = new Set<string>();
@@ -248,6 +258,12 @@ export function makeVariableSet(
     if (new Set(collection.modes).size !== collection.modes.length) {
       return invalid(collection.name, "names a mode twice");
     }
+    if (collection.variables.length > MAX_VARIABLES) {
+      return invalid(
+        collection.name,
+        `has ${collection.variables.length} variables, more than the ${MAX_VARIABLES} Figma allows`
+      );
+    }
     for (const variable of collection.variables) {
       const name = qualifiedName(collection.name, variable.name);
       if (variables.has(name)) {
@@ -255,6 +271,13 @@ export function makeVariableSet(
       }
       variables.set(name, variable);
     }
+  }
+
+  const retired = retiredCollections.find(
+    (name, index) => collectionNames.has(name) || retiredCollections.indexOf(name) !== index
+  );
+  if (retired !== undefined) {
+    return invalid(retired, collectionNames.has(retired) ? "is both held and retired" : "is retired twice");
   }
 
   for (const collection of collections) {
@@ -275,7 +298,7 @@ export function makeVariableSet(
       })
     );
   }
-  return Result.succeed(brandVariableSet({ collections }));
+  return Result.succeed(brandVariableSet({ collections, retiredCollections }));
 }
 
 /**

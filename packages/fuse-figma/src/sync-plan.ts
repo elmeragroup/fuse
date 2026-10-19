@@ -2,8 +2,9 @@
  * Diffs a desired variable set against a file and produces the one change batch that
  * makes the file match. Matching is by name, so every collection, mode and variable that
  * survives keeps its Figma id, and so do the bindings designers made to it. The plan
- * touches only the collections the set names. Inside them the set is authoritative, so the
- * plan deletes modes and variables it does not name.
+ * touches only the collections the set names, and deletes the local collections the set
+ * retires. Inside the collections it holds the set is authoritative, so the plan deletes
+ * modes and variables it does not name.
  *
  * Planning walks each desired collection once and emits one planned change per write. A
  * planned change carries both the names a reader sees and the write itself, and
@@ -17,13 +18,13 @@ import { CollectionId, fileTypeName, ModeId, VariableId } from "./file-variables
 import type {
   ChangeBatch,
   CodeSyntax,
+  CollectionChange,
   FileCollection,
   FileMode,
   FileValue,
   FileVariable,
   FileVariables,
   ModeChange,
-  NewCollection,
   ValueChange,
   VariableChange,
   VariableMetadata,
@@ -34,7 +35,16 @@ import type { CollectionSpec, Rgba, VariableSet, VariableSpec, VariableValue } f
 
 /** One write of a plan, with the names people reading the plan need. */
 export type PlannedChange =
-  | { readonly _tag: "CreateCollection"; readonly collection: string; readonly write: NewCollection }
+  | {
+      readonly _tag: "CreateCollection";
+      readonly collection: string;
+      readonly write: Extract<CollectionChange, { readonly _tag: "CreateCollection" }>;
+    }
+  | {
+      readonly _tag: "DeleteCollection";
+      readonly collection: string;
+      readonly write: Extract<CollectionChange, { readonly _tag: "DeleteCollection" }>;
+    }
   | {
       readonly _tag: "CreateMode";
       readonly collection: string;
@@ -148,9 +158,29 @@ export function planSync(desired: VariableSet, file: FileVariables): Result.Resu
     const ids = variableIds(matches);
     const values = matches.flatMap((match) => valueChanges(match, ids));
     return {
-      changes: [...matches.flatMap((match) => match.changes), ...aliasTargetsFirst(desired, values)],
+      changes: [
+        ...retirements(desired, file),
+        ...matches.flatMap((match) => match.changes),
+        ...aliasTargetsFirst(desired, values),
+      ],
     };
   });
+}
+
+/**
+ * Delete every local collection the set retires. `FileVariables` holds no library
+ * collections or extensions, so the plan cannot reach one. Figma applies collection changes
+ * before any value, so a variable that still aliases a retired one gets its new value later
+ * in the same batch.
+ */
+function retirements(desired: VariableSet, file: FileVariables): readonly PlannedChange[] {
+  return file.collections
+    .filter((collection) => desired.retiredCollections.includes(collection.name))
+    .map((collection) => ({
+      _tag: "DeleteCollection",
+      collection: collection.name,
+      write: { _tag: "DeleteCollection", id: collection.id },
+    }));
 }
 
 type PlannedValueChange = Extract<PlannedChange, { readonly _tag: "SetValue" }>;
@@ -285,7 +315,7 @@ function newCollection(spec: CollectionSpec, index: number): CollectionModes {
       {
         _tag: "CreateCollection",
         collection: spec.name,
-        write: { id, name: spec.name, initialModeId: initialMode.id },
+        write: { _tag: "CreateCollection", id, name: spec.name, initialModeId: initialMode.id },
       },
       createMode(spec.name, id, initialMode, "NameInitialMode"),
       ...rest.map((mode) => createMode(spec.name, id, mode, "CreateMode")),
@@ -480,13 +510,14 @@ function guaranteed<A>(value: A | undefined, invariant: string): A {
  * @returns The batch for `FigmaApi.writeVariables`.
  */
 export function changeBatch({ changes }: SyncPlan): ChangeBatch {
-  const collections: NewCollection[] = [];
+  const collections: CollectionChange[] = [];
   const modes: ModeChange[] = [];
   const variables: VariableChange[] = [];
   const values: ValueChange[] = [];
   for (const change of changes) {
     switch (change._tag) {
       case "CreateCollection":
+      case "DeleteCollection":
         collections.push(change.write);
         break;
       case "CreateMode":

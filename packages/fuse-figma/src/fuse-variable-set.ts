@@ -1,30 +1,47 @@
 /**
  * The Fuse token contract projected into Figma variables.
  *
- * Fuse themes vary on two axes, the theme slug and the color scheme. Figma resolves an
- * alias using the layer's mode for the target collection, so the two axes become two
- * collections that designers set independently on a frame. Density is a third axis,
- * independent of the theme, so it has a collection of its own.
+ * Figma resolves an alias that crosses into another collection with the frame's mode for the
+ * target collection, inherited from any ancestor. Each theme axis therefore becomes one
+ * collection with one mode per value, and designers pick color scheme, variant, segment and
+ * brand separately in a frame's Appearance panel, as they do in the docs theme picker.
  *
  * - `Fuse tokens` holds one variable per role token and per radius rung a component uses,
- *   with a Light and a Dark mode. These are the variables designers bind; each one aliases
- *   its scheme's variable in `Fuse themes`.
- * - `Fuse themes` holds `light/<token>` and `dark/<token>` with one mode per theme slug.
- *   Its variables are hidden from the pickers because they only feed `Fuse tokens`.
+ *   with a Light and a Dark mode. These are the variables designers bind. Each one aliases
+ *   `<scheme>/<token>` in `Fuse variant` for its scheme mode.
+ * - `Fuse variant` has an Internal and an External mode. `<scheme>/<token>` aliases
+ *   `<scheme>/<variant>/<token>` in `Fuse segment`. `density/<metric>` holds the metric in
+ *   the variant's default density, which the Auto mode of `Fuse density` reads.
+ * - `Fuse segment` has a Private and a Company mode. `<scheme>/<variant>/<token>` aliases
+ *   `<scheme>/<variant>/<segment>/<token>` in `Fuse brand`.
+ * - `Fuse brand` has one mode per brand and holds each theme's values at
+ *   `<scheme>/<variant>/<segment>/<token>`. Figma cannot disable a mode, so a brand pinned to
+ *   one segment holds that segment's values under the other segment too.
  * - `Fuse primitives` holds the neutral ramp and brand accents in a single mode. Primitive
  *   tokens are public API, so designers can bind these too.
- * - `Fuse density` holds the density metrics (control, row, surface and label) with a Dense and a
- *   Comfortable mode.
+ * - `Fuse density` holds the density metrics with an Auto, a Dense and a Comfortable mode.
+ *   Auto follows the frame's variant, as apps do.
  *
- * Twenty-four theme modes stay well inside Figma's 40-mode limit, and a new theme adds a mode
- * rather than a collection.
+ * Every bound variable takes all four hops, so a hidden variable's name never depends on
+ * which axes a token varies on. The variables of `Fuse variant`, `Fuse segment` and
+ * `Fuse brand` are hidden from pickers and carry no code syntax, because they only feed
+ * aliases. The sync deletes the retired `Fuse themes` collection, which held one mode per
+ * theme slug before the axes split.
  */
 
 import type { Result } from "effect";
 
-import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
+import {
+  BRAND_CODES,
+  BRANDS,
+  defaultDensityForVariant,
+  resolveThemeCatalog,
+  THEME_SEGMENTS,
+  THEME_VARIANTS,
+} from "@elmeragroup/fuse/theme-catalog";
 import type {
   AnyEntry,
+  BrandCode,
   Density,
   DensityMetricEntry,
   DensityMetricKind,
@@ -33,8 +50,11 @@ import type {
   RadiusRungName,
   ResolvedColorScheme,
   ResolvedScheme,
+  ResolvedTheme,
   ResolvedThemeCatalog,
   RungEntry,
+  ThemeSegment,
+  ThemeVariant,
   TokenEntry,
   TokenKind,
   TokenName,
@@ -55,22 +75,49 @@ import type {
 } from "./variable-set.ts";
 
 /** The collection designers bind to, with Light and Dark modes. */
-export const TOKENS_COLLECTION = "Fuse tokens";
+const TOKENS_COLLECTION = "Fuse tokens";
 
-/** The collection with one mode per theme slug. */
-export const THEMES_COLLECTION = "Fuse themes";
+/** The collection with one mode per theme variant. */
+const VARIANT_COLLECTION = "Fuse variant";
+
+/** The collection with one mode per theme segment. */
+const SEGMENT_COLLECTION = "Fuse segment";
+
+/** The collection with one mode per brand, which holds the theme values. */
+const BRAND_COLLECTION = "Fuse brand";
 
 /** The collection holding the scheme-independent palette. */
-export const PRIMITIVES_COLLECTION = "Fuse primitives";
+const PRIMITIVES_COLLECTION = "Fuse primitives";
 
-/** The collection with the density metrics and one mode per density. */
+/** The collection with the density metrics and one mode per density, plus Auto. */
 const DENSITY_COLLECTION = "Fuse density";
+
+/**
+ * Collections earlier syncs wrote and this one deletes. `Fuse themes` held one mode per theme
+ * slug before the four axis collections replaced it.
+ */
+const RETIRED_COLLECTIONS = ["Fuse themes"] as const;
 
 const PRIMITIVES_MODE = "Value";
 
 const SCHEME_MODES = { light: "Light", dark: "Dark" } as const satisfies Record<ResolvedColorScheme, string>;
 
 const SCHEMES = ["light", "dark"] as const satisfies readonly ResolvedColorScheme[];
+
+/** The variant labels the docs theme picker shows. */
+const VARIANT_MODES = { internal: "Internal", external: "External" } as const satisfies Record<
+  ThemeVariant,
+  string
+>;
+
+/** The segment labels the docs theme picker shows. */
+const SEGMENT_MODES = { private: "Private", company: "Company" } as const satisfies Record<
+  ThemeSegment,
+  string
+>;
+
+/** The mode that follows the frame's variant, first so that a new collection defaults to it. */
+const AUTO_DENSITY_MODE = "Auto";
 
 const DENSITY_MODES = { dense: "Dense", comfortable: "Comfortable" } as const satisfies Record<
   Density,
@@ -143,8 +190,8 @@ function isSyncedRung(entry: RungEntry): entry is RungEntry<SyncedRungName> {
 }
 
 /**
- * One variable designers bind in `Fuse tokens`. `Fuse themes` holds its value per theme as
- * `light/<name>` and `dark/<name>`, and the `Fuse tokens` variable aliases those.
+ * One variable designers bind in `Fuse tokens`. `Fuse brand` holds its value per theme, and
+ * the variant and segment collections pass the frame's choice of each axis along.
  */
 type BoundVariable = {
   readonly name: TokenName | SyncedRungName;
@@ -158,6 +205,13 @@ type BoundVariable = {
 
   /** The same token or rung in another theme's scheme. */
   readonly entryIn: (scheme: ResolvedScheme) => TokenEntry | RungEntry;
+};
+
+/** Where a theme's value sits along the scheme, variant and segment axes. */
+type ThemePath = {
+  readonly scheme: ResolvedColorScheme;
+  readonly variant: ThemeVariant;
+  readonly segment: ThemeSegment;
 };
 
 /**
@@ -188,9 +242,10 @@ function boundVariables(template: ResolvedScheme): readonly BoundVariable[] {
 }
 
 /**
- * Build the variable set for every legal theme in both color schemes and both densities.
+ * Build the variable set for every legal theme in both color schemes and every density.
  *
- * @returns The four Fuse collections, or the variable set rule the projection breaks.
+ * @returns The six Fuse collections with `Fuse themes` retired, or the variable set rule the
+ *   projection breaks.
  * @throws Error when the theme catalog meets a token value it cannot resolve, which is a
  *   defect in a Fuse token module.
  */
@@ -199,12 +254,17 @@ export function fuseVariableSet(): Result.Result<VariableSet, InvalidVariableSet
   // The token list comes from the first theme; every theme holds the same tokens and rungs.
   const [first] = catalog.themes;
   const bound = boundVariables(first.schemes.light);
-  return makeVariableSet([
-    primitivesCollection(catalog.primitives),
-    themesCollection(catalog, bound),
-    tokensCollection(bound),
-    densityCollection(catalog.density),
-  ]);
+  return makeVariableSet(
+    [
+      primitivesCollection(catalog.primitives),
+      brandCollection(catalog, bound),
+      segmentCollection(bound),
+      variantCollection(bound, catalog.density),
+      tokensCollection(bound),
+      densityCollection(catalog.density),
+    ],
+    RETIRED_COLLECTIONS
+  );
 }
 
 function primitivesCollection(primitives: ResolvedThemeCatalog["primitives"]): CollectionSpec {
@@ -223,23 +283,129 @@ function primitivesCollection(primitives: ResolvedThemeCatalog["primitives"]): C
   return { name: PRIMITIVES_COLLECTION, modes: [PRIMITIVES_MODE], variables };
 }
 
-function themesCollection(catalog: ResolvedThemeCatalog, bound: readonly BoundVariable[]): CollectionSpec {
-  const variables = SCHEMES.flatMap((scheme) =>
-    bound.map((variable): VariableSpec => ({
-      name: themeVariableName(scheme, variable.name),
+/** Every scheme, variant and segment, in the order the hidden collections list them. */
+const THEME_PATHS: readonly ThemePath[] = SCHEMES.flatMap((scheme) =>
+  THEME_VARIANTS.flatMap((variant) => THEME_SEGMENTS.map((segment) => ({ scheme, variant, segment })))
+);
+
+/**
+ * One variable per bound variable at every theme path, with one mode per brand holding the
+ * value of the theme that brand shows at that path.
+ */
+function brandCollection(catalog: ResolvedThemeCatalog, bound: readonly BoundVariable[]): CollectionSpec {
+  const variables = THEME_PATHS.flatMap((path) => {
+    const shown = BRAND_CODES.map(
+      (brand) => [brandModeName(brand), shownTheme(catalog, path, brand)] as const
+    );
+    return bound.map((variable): VariableSpec => ({
+      name: brandVariableName(path, variable.name),
       type: variable.type,
       // Only designers' pickers read scopes; these variables are reached through aliases.
       scopes: [],
       webSyntax: undefined,
       values: new Map(
-        catalog.themes.map((theme) => [
-          theme.slug,
-          schemeValue(variable.entryIn(theme.schemes[scheme]), scheme),
+        shown.map(([mode, theme]) => [mode, leafValue(variable.entryIn(theme.schemes[path.scheme]), path)])
+      ),
+    }));
+  });
+  return { name: BRAND_COLLECTION, modes: BRAND_CODES.map(brandModeName), variables };
+}
+
+/**
+ * The theme a brand mode shows at a theme path. A brand that allows the path's segment shows
+ * its theme for that segment. A brand pinned to one segment shows its only theme under both
+ * segments, because Figma cannot disable a mode; the docs picker moves the segment instead.
+ */
+function shownTheme(catalog: ResolvedThemeCatalog, path: ThemePath, brand: BrandCode): ResolvedTheme {
+  const ofBrand = catalog.themes.filter(
+    (theme) => theme.input.variant === path.variant && theme.input.brand === brand
+  );
+  const shown =
+    ofBrand.find((theme) => theme.input.segment === path.segment) ??
+    (ofBrand.length === 1 ? ofBrand[0] : undefined);
+  if (shown === undefined) {
+    throw new Error(
+      `The theme catalog has no ${path.variant} theme for brand ${brand} to show under ${path.segment}, a defect in Fuse's theme table.`
+    );
+  }
+  return shown;
+}
+
+/**
+ * A brand's mode name, its display name. A brand pinned to one segment names that segment, so
+ * a designer can tell that the other segment mode repeats it.
+ */
+function brandModeName(code: BrandCode): string {
+  const { displayName, segments } = BRANDS[code];
+  const [only, ...others] = segments;
+  return others.length === 0 ? `${displayName} (${only} only)` : displayName;
+}
+
+/** One variable per bound variable for each scheme and variant, aliasing the brand leaf of each segment. */
+function segmentCollection(bound: readonly BoundVariable[]): CollectionSpec {
+  const variables = SCHEMES.flatMap((scheme) =>
+    THEME_VARIANTS.flatMap((variant) =>
+      bound.map((variable): VariableSpec => ({
+        name: segmentVariableName(scheme, variant, variable.name),
+        type: variable.type,
+        scopes: [],
+        webSyntax: undefined,
+        values: new Map(
+          THEME_SEGMENTS.map((segment) => [
+            SEGMENT_MODES[segment],
+            alias(BRAND_COLLECTION, brandVariableName({ scheme, variant, segment }, variable.name)),
+          ])
+        ),
+      }))
+    )
+  );
+  return {
+    name: SEGMENT_COLLECTION,
+    modes: THEME_SEGMENTS.map((segment) => SEGMENT_MODES[segment]),
+    variables,
+  };
+}
+
+/**
+ * One variable per bound variable for each scheme, aliasing the segment variable of each
+ * variant, and one variable per density metric holding the metric in the variant's default
+ * density.
+ */
+function variantCollection(
+  bound: readonly BoundVariable[],
+  density: readonly DensityMetricEntry[]
+): CollectionSpec {
+  const tokens = SCHEMES.flatMap((scheme) =>
+    bound.map((variable): VariableSpec => ({
+      name: variantVariableName(scheme, variable.name),
+      type: variable.type,
+      scopes: [],
+      webSyntax: undefined,
+      values: new Map(
+        THEME_VARIANTS.map((variant) => [
+          VARIANT_MODES[variant],
+          alias(SEGMENT_COLLECTION, segmentVariableName(scheme, variant, variable.name)),
         ])
       ),
     }))
   );
-  return { name: THEMES_COLLECTION, modes: catalog.themes.map((theme) => theme.slug), variables };
+  const metrics = density.map((metric): VariableSpec => ({
+    name: variantDensityName(metric),
+    type: VARIABLE_TYPES.dimension,
+    scopes: [],
+    webSyntax: undefined,
+    values: new Map(
+      THEME_VARIANTS.map((variant) => [
+        VARIANT_MODES[variant],
+        { _tag: "Float", value: metric.px[defaultDensityForVariant(variant)] },
+      ])
+    ),
+  }));
+  return {
+    name: VARIANT_COLLECTION,
+    modes: THEME_VARIANTS.map((variant) => VARIANT_MODES[variant]),
+    variables: [...tokens, ...metrics],
+  };
 }
 
 function tokensCollection(bound: readonly BoundVariable[]): CollectionSpec {
@@ -249,21 +415,40 @@ function tokensCollection(bound: readonly BoundVariable[]): CollectionSpec {
     scopes: variable.scopes,
     webSyntax: variable.webSyntax,
     values: new Map(
-      SCHEMES.map((scheme) => [SCHEME_MODES[scheme], themeAlias(themeVariableName(scheme, variable.name))])
+      SCHEMES.map((scheme) => [
+        SCHEME_MODES[scheme],
+        alias(VARIANT_COLLECTION, variantVariableName(scheme, variable.name)),
+      ])
     ),
   }));
   return { name: TOKENS_COLLECTION, modes: SCHEMES.map((scheme) => SCHEME_MODES[scheme]), variables };
 }
 
-/** The `Fuse themes` variable holding one bound variable's value in one scheme. */
-function themeVariableName(scheme: ResolvedColorScheme, name: string): string {
+/** The `Fuse variant` variable for one bound variable in one scheme. */
+function variantVariableName(scheme: ResolvedColorScheme, name: string): string {
   return `${scheme}/${name}`;
 }
 
+/** The `Fuse variant` variable holding one density metric in the variant's default density. */
+function variantDensityName(metric: DensityMetricEntry): string {
+  return `density/${metric.name}`;
+}
+
+/** The `Fuse segment` variable for one bound variable in one scheme and variant. */
+function segmentVariableName(scheme: ResolvedColorScheme, variant: ThemeVariant, name: string): string {
+  return `${scheme}/${variant}/${name}`;
+}
+
+/** The `Fuse brand` variable holding one bound variable's value at a theme path. */
+function brandVariableName(path: ThemePath, name: string): string {
+  return `${path.scheme}/${path.variant}/${path.segment}/${name}`;
+}
+
 /**
- * One FLOAT variable per density metric, named after its custom property. Density is
- * independent of theme and scheme, so these variables hold literals and alias nothing. A
- * metric's kind decides its scopes.
+ * One FLOAT variable per density metric, named after its custom property. Dense and
+ * Comfortable hold the metric's literals, and Auto aliases the metric in `Fuse variant`, so it
+ * follows the frame's variant the way apps pick a variant's default density. A metric's kind
+ * decides its scopes.
  */
 function densityCollection(density: readonly DensityMetricEntry[]): CollectionSpec {
   const variables = density.map((metric): VariableSpec => ({
@@ -271,26 +456,34 @@ function densityCollection(density: readonly DensityMetricEntry[]): CollectionSp
     type: VARIABLE_TYPES.dimension,
     scopes: DENSITY_SCOPES[metric.metricKind],
     webSyntax: metric.codeSyntax,
-    values: new Map<string, VariableValue>(
-      DENSITIES.map((mode) => [DENSITY_MODES[mode], { _tag: "Float", value: metric.px[mode] }])
-    ),
+    values: new Map<string, VariableValue>([
+      [AUTO_DENSITY_MODE, alias(VARIANT_COLLECTION, variantDensityName(metric))],
+      ...DENSITIES.map((mode): [string, VariableValue] => [
+        DENSITY_MODES[mode],
+        { _tag: "Float", value: metric.px[mode] },
+      ]),
+    ]),
   }));
-  return { name: DENSITY_COLLECTION, modes: DENSITIES.map((mode) => DENSITY_MODES[mode]), variables };
+  return {
+    name: DENSITY_COLLECTION,
+    modes: [AUTO_DENSITY_MODE, ...DENSITIES.map((mode) => DENSITY_MODES[mode])],
+    variables,
+  };
 }
 
 /**
- * The Figma value of one entry in a theme's scheme. A reference becomes an alias, which
+ * The `Fuse brand` value of one entry at a theme path. A reference becomes an alias, which
  * `makeVariableSet` later checks has the same type, and anything else is the entry's literal.
  * CSS resolves `var(--role)` against the element's own scope, so a role reference means the
- * same scheme's role, and a primitive reference means the primitive.
+ * role at the same path, and a primitive reference means the primitive.
  */
-function schemeValue(entry: TokenEntry | RungEntry, scheme: ResolvedColorScheme): VariableValue {
+function leafValue(entry: TokenEntry | RungEntry, path: ThemePath): VariableValue {
   if (entry.reference === undefined) {
     return literalValue(entry);
   }
   return entry.reference.space === "primitive"
     ? primitiveAlias(entry.reference.name)
-    : themeAlias(themeVariableName(scheme, entry.reference.name));
+    : alias(BRAND_COLLECTION, brandVariableName(path, entry.reference.name));
 }
 
 /**
@@ -313,9 +506,9 @@ function literalValue(entry: AnyEntry): LiteralValue {
 }
 
 function primitiveAlias(name: PrimitiveName): AliasValue {
-  return { _tag: "Alias", target: { collection: PRIMITIVES_COLLECTION, variable: name } };
+  return alias(PRIMITIVES_COLLECTION, name);
 }
 
-function themeAlias(variable: string): AliasValue {
-  return { _tag: "Alias", target: { collection: THEMES_COLLECTION, variable } };
+function alias(collection: string, variable: string): AliasValue {
+  return { _tag: "Alias", target: { collection, variable } };
 }
