@@ -96,7 +96,7 @@
       "card-horizontal.tsx",
       "card-item-rows.tsx",
       "card-nested.tsx",
-      "card-sizes.tsx"
+      "card-small.tsx"
     ]
   },
   "checkbox": {

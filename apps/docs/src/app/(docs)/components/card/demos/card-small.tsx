@@ -1,6 +1,7 @@
 "use client";
 
 import { Card } from "@elmeragroup/fuse/card";
+import { Item } from "@elmeragroup/fuse/item";
 
 const ROWS = [
   ["Electricity", "NOK 1 840,00"],
@@ -9,21 +10,18 @@ const ROWS = [
 ] as const;
 
 /**
- * A default card pads with the large surface tier. A small card pads with the medium tier, so a
- * card of label and value rows lines up with the Items and Accordion items around it.
+ * A small card pads with the medium surface tier, as an Item does, so the text in a card of label
+ * and value rows starts on the same edge as the Item above it.
  */
-export function CardSizes() {
+export function CardSmall() {
   return (
     <div className="max-w-md flex w-full flex-col gap-4">
-      <Card.Root>
-        <Card.Header>
-          <Card.Title size="lg">March usage</Card.Title>
-          <Card.Description>Estimated consumption for the period.</Card.Description>
-        </Card.Header>
-        <Card.Content>
-          <p>1 240 kWh across two meters.</p>
-        </Card.Content>
-      </Card.Root>
+      <Item.Root variant="outline">
+        <Item.Content>
+          <Item.Title>Spot</Item.Title>
+          <Item.Description>Hourly price with no lock-in.</Item.Description>
+        </Item.Content>
+      </Item.Root>
       <Card.Root size="sm">
         <Card.Header>
           <Card.Title size="lg">Order summary</Card.Title>
