@@ -2,7 +2,6 @@ import type { ComponentProps, ReactElement } from "react";
 
 import { cn } from "../../styles/cn";
 import { DescriptionListHeading } from "./description-list-heading";
-import { descriptionListContentVariants } from "./description-list-variants";
 
 export type DescriptionListRootProps = ComponentProps<"div">;
 export type DescriptionListContentProps = ComponentProps<"dl"> & {
@@ -14,7 +13,7 @@ export type DescriptionListContentProps = ComponentProps<"dl"> & {
    * row. Inline rows take the label type, have no rules and space with the small surface gap,
    * and the term is not muted. Defaults to `responsive`.
    */
-  layout?: keyof typeof descriptionListContentVariants.variants.layout;
+  layout?: "responsive" | "inline";
 };
 export type DescriptionListTermProps = ComponentProps<"dt">;
 export type DescriptionListDetailsProps = ComponentProps<"dd">;
@@ -29,6 +28,27 @@ function DescriptionListRoot(props: DescriptionListRootProps): ReactElement {
   return <div data-slot="description-list" {...props} />;
 }
 
+// Each layout publishes the term colour as the private `--description-list-term`, so a nested list
+// resets it and a consumer colour class on a term still wins in both layouts. The term and details
+// style the rest of the inline layout from the list's `data-layout`. Plain `cn` constants rather
+// than a `tv` recipe keep tailwind-variants out of this entry's size budget.
+
+/** The responsive list: one column on phones, then a term column capped at min(50%, 20rem). */
+const responsiveContentClass = cn(
+  "text-base/6 sm:grid-cols-[min(50%,calc(var(--spacing)*80))_auto] sm:text-sm/6 grid grid-cols-1 [--description-list-term:var(--muted-foreground)]"
+);
+
+/**
+ * The inline list: `minmax(0,1fr)` for the terms and `fit-content(60%)` for the details, rows
+ * spaced by the small surface gap, the label type set here for the cells to inherit, and
+ * consecutive inline lists spaced by the large surface gap.
+ */
+const inlineContentClass = cn(
+  "grid grid-cols-[minmax(0,1fr)_fit-content(60%)] gap-x-(--surface-gap-md) gap-y-(--surface-gap-sm)",
+  "text-(length:--label-text) leading-(--label-leading) [--description-list-term:currentColor]",
+  "[&+&]:mt-(--surface-gap-lg)"
+);
+
 function DescriptionListContent({
   className,
   layout = "responsive",
@@ -38,7 +58,7 @@ function DescriptionListContent({
     <dl
       data-slot="description-list-content"
       data-layout={layout}
-      className={cn(descriptionListContentVariants({ layout }), className)}
+      className={cn(layout === "inline" ? inlineContentClass : responsiveContentClass, className)}
       {...props}
     />
   );
