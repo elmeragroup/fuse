@@ -119,14 +119,27 @@ function neutralStep(step: number): string {
   return `Step ${String(step)} of the neutral ramp, where 50 is lightest. It holds one value in every theme and scheme, so bind a role token instead.`;
 }
 
-/** The description of a brand's accent. */
-function brandAccent(code: BrandCode): string {
-  return `The ${BRANDS[code].displayName} brand accent, the same in every theme. Use it for artwork of that brand, and use brand to follow the theme.`;
-}
+/** The descriptions of a brand's accent and of the text color on it, keyed by their primitives. */
+type BrandAccentDescriptions<Code extends BrandCode> = {
+  readonly [Name in `brand-${Code}` | `brand-${Code}-foreground`]: string;
+};
 
-/** The description of the text color on a brand's accent. */
-function brandAccentForeground(code: BrandCode): string {
-  return `Text and icons on the ${BRANDS[code].displayName} brand accent. Use brand-foreground to follow the theme.`;
+/** The descriptions of a brand's two primitives. `note` follows the accent's description. */
+function brandAccentDescriptions<Code extends BrandCode>(
+  code: Code,
+  note?: string
+): BrandAccentDescriptions<Code> {
+  const brand = BRANDS[code].displayName;
+  const accent = `The ${brand} brand accent, the same in every theme. Use it for artwork of that brand, and use brand to follow the theme.`;
+  // SAFETY: both keys are built from `code`, so they are exactly the two keys of the return type.
+  // Object.fromEntries cannot express that correlation.
+  return Object.fromEntries([
+    [`brand-${code}`, note === undefined ? accent : `${accent} ${note}`],
+    [
+      `brand-${code}-foreground`,
+      `Text and icons on the ${brand} brand accent. Use brand-foreground to follow the theme.`,
+    ],
+  ]) as BrandAccentDescriptions<Code>;
 }
 
 /**
@@ -145,18 +158,14 @@ export const PRIMITIVE_DESCRIPTIONS = {
   "neutral-800": neutralStep(800),
   "neutral-900": neutralStep(900),
   "neutral-950": neutralStep(950),
-  "brand-fkas": brandAccent("fkas"),
-  "brand-fkas-foreground": brandAccentForeground("fkas"),
-  "brand-tkas": brandAccent("tkas"),
-  "brand-tkas-foreground": brandAccentForeground("tkas"),
-  "brand-guen": brandAccent("guen"),
-  "brand-guen-foreground": brandAccentForeground("guen"),
-  "brand-fkab": `${brandAccent("fkab")} It aliases brand-fkas, because Fjordkraft Företag shares the Fjordkraft identity.`,
-  "brand-fkab-foreground": brandAccentForeground("fkab"),
-  "brand-fkse": brandAccent("fkse"),
-  "brand-fkse-foreground": brandAccentForeground("fkse"),
-  "brand-elma": brandAccent("elma"),
-  "brand-elma-foreground": brandAccentForeground("elma"),
-  "brand-ngfi": brandAccent("ngfi"),
-  "brand-ngfi-foreground": brandAccentForeground("ngfi"),
+  ...brandAccentDescriptions("fkas"),
+  ...brandAccentDescriptions("tkas"),
+  ...brandAccentDescriptions("guen"),
+  ...brandAccentDescriptions(
+    "fkab",
+    "It aliases brand-fkas, because Fjordkraft Företag shares the Fjordkraft identity."
+  ),
+  ...brandAccentDescriptions("fkse"),
+  ...brandAccentDescriptions("elma"),
+  ...brandAccentDescriptions("ngfi"),
 } as const satisfies Record<PrimitiveName, string>;

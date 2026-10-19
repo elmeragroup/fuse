@@ -337,9 +337,8 @@ export const TOKEN_PAINTS = {
   primary: ["surface", "ink", "line"],
   "primary-foreground": ["surface", "ink"],
   "primary-soft": ["surface"],
-  // This and the four status soft foregrounds also draw the focus ring on their fill. The default
-  // Accordion item, status Toasts and the info and warning Alerts route them into `--ring`, which
-  // the shared focus ring reads in another module.
+  // This and the four status soft foregrounds also draw the focus ring on their fill, routed into
+  // `--ring` by the default Accordion item, status Toasts and the info and warning Alerts.
   "primary-soft-foreground": ["ink", "line"],
   secondary: ["surface", "line"],
   "secondary-foreground": ["ink"],
@@ -412,12 +411,12 @@ export const TOKEN_PAINTS = {
 } as const satisfies Record<ColorTokenName, readonly TokenPaint[]>;
 
 /**
- * Whether a contract token holds a color.
+ * Whether a name is a contract token that holds a color.
  *
- * @param name - A contract token name.
- * @returns `true` when the token's kind is `color`.
+ * @param name - Any name, such as a custom property without its `--`.
+ * @returns `true` when the name is a contract token whose kind is `color`.
  */
-export function isColorTokenName(name: TokenName): name is ColorTokenName {
+export function isColorTokenName(name: string): name is ColorTokenName {
   return Object.hasOwn(TOKEN_PAINTS, name);
 }
 
@@ -425,7 +424,9 @@ export function isColorTokenName(name: TokenName): name is ColorTokenName {
  * What each contract token is for, in one or two sentences for a designer picking a variable.
  * Each names the rule a designer could break, where the code states one, such as a pair that
  * is not text-grade or a value that turns transparent in a variant. Exporters, such as the
- * Figma sync, and the docs token list show it. A new token without one fails to compile.
+ * Figma sync, and the docs token list show it. A new token without one fails to compile. No
+ * description holds `& < > " '`, which the Figma sync refuses (`descriptionProblem` in
+ * `packages/fuse-figma/src/variable-set.ts`).
  */
 // oxlint-disable-next-line elmera/no-raw-class-map -- the values are prose for designers, not classes; "text-grade" reads as a text- utility
 export const TOKEN_DESCRIPTIONS = {
@@ -464,7 +465,7 @@ export const TOKEN_DESCRIPTIONS = {
   secondary: "The fill of the secondary Button and Badge. Set text on it in secondary-foreground.",
   "secondary-foreground": "Text and icons on secondary and secondary-hover, text-grade on both.",
   "secondary-hover":
-    "The hover fill of the secondary Button, secondary mixed 5% toward foreground. Fuse computes it, so no theme sets it.",
+    "The hover fill of the secondary Button, secondary mixed toward foreground. Fuse computes it, so no theme sets it.",
   "secondary-soft": "The soft companion of secondary. Set text on it in secondary-soft-foreground.",
   "secondary-soft-foreground": "Text and icons on secondary-soft, text-grade on it.",
   brand:
@@ -509,7 +510,7 @@ export const TOKEN_DESCRIPTIONS = {
   "card-border":
     "The edge of a Card and a card Accordion item. Internal themes draw it in border, and external themes make it transparent.",
   "button-outline":
-    "The border of the outline Button. Internal themes draw a 1px border hairline, and external themes a 2px ring in foreground.",
+    "The border of the outline Button, at button-outline-width. Internal themes draw it in border, and external themes in foreground.",
   "selection-border":
     "The resting edge of a selection row, RadioItem or CheckboxItem. Internal themes draw it in border, and external themes make it transparent.",
   "selection-checked-border":
@@ -520,7 +521,7 @@ export const TOKEN_DESCRIPTIONS = {
   "selection-disabled-background":
     "The fill of a disabled selection row. Internal themes fill it with muted, and external themes keep the card fill.",
   "selection-disabled-hatch":
-    "The stripe color of the 45° hatch on a disabled selection row. Internal themes stripe it in black at 2% alpha, and external themes make it transparent.",
+    "The stripe color of the hatch on a disabled selection row. Internal themes stripe it in a faint black, and external themes make it transparent.",
   "selection-disabled-foreground":
     "The label text of a disabled selection row. It is not text-grade. Internal themes set it in foreground, and external themes in muted-foreground.",
   sidebar: "The fill of the Sidebar. Set text on it in sidebar-foreground.",
@@ -556,15 +557,15 @@ export const TOKEN_DESCRIPTIONS = {
   radius:
     "The corner radius of the theme, the corner of cards, selection rows and fields. The radius-xs to radius-xl rungs step around it.",
   "radius-button":
-    "The corner of Button. Internal themes use radius, and external brands set their own, such as 29px for external Fjordkraft.",
+    "The corner of Button. Internal themes use radius, and external brands can set their own, as external Fjordkraft does.",
   "radius-field":
     "The corner of every field box, such as Input, Select and Textarea. It follows radius in every variant.",
   "radius-step":
-    "The spacing of the radius rungs, 0px in internal themes and 2px in external ones. It switches the corner rules between the variants, so no layer rounds with it.",
+    "The spacing of the radius rungs, which differs between internal and external themes. It switches the corner rules between the variants, so no layer rounds with it.",
   "button-outline-width":
-    "The border width of the outline Button, 1px in internal themes and 2px in external ones.",
+    "The border width of the outline Button, which differs between internal and external themes.",
   "selection-title-weight":
-    "The font weight of a selection row title, 400 in internal themes and 500 in external ones.",
+    "The font weight of a selection row title, which differs between internal and external themes.",
   "font-sans": "The body font stack, with Roboto first.",
   "font-heading":
     "The heading font. It follows font-sans unless the theme sets its own, such as Neo Sans in external Fjordkraft themes.",

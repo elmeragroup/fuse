@@ -124,7 +124,7 @@ const SINGLE_FAMILIES = [
     family: "row-h-header",
     kind: "height",
     role: "row",
-    description: "The height of a table head row, row-h plus 8px.",
+    description: "The height of a table head row, taller than row-h.",
   },
   {
     family: "row-px",

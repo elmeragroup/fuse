@@ -209,8 +209,8 @@ const SCOPE_TYPES = {
   WIDTH_HEIGHT: ["FLOAT"],
 } as const satisfies Record<VariableScope, readonly VariableType[]>;
 
-/** The fill scopes that `ALL_FILLS` covers, so the page forbids setting them beside it. */
-const FILL_SCOPES: readonly VariableScope[] = ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"];
+/** The fill scopes that `ALL_FILLS` covers, which Figma refuses beside it. */
+export const FILL_SCOPES: readonly VariableScope[] = ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"];
 
 const LITERAL_TYPES = {
   Color: "COLOR",

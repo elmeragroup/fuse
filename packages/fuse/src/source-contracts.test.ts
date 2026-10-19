@@ -6,7 +6,7 @@ import type { Expression, JSXElementName, JSXOpeningElement } from "oxc-parser";
 import { describe, expect, it } from "vitest";
 
 import { OPTIONAL_PEER_ENTRIES, walkImportedSourceFiles } from "../scripts/entries";
-import { classTokens, colorRolePaints, splitVariants } from "../test/class-tokens";
+import { classTokens, colorRolePaints, splitVariants, tokenAssignments } from "../test/class-tokens";
 import { writtenSlots } from "../test/written-slots";
 import { overlayLayer, toastLayer } from "./components/overlay/overlay-classes";
 import { TOKEN_PAINTS } from "./theme/tokens/contract";
@@ -682,15 +682,29 @@ describe("token paints", () => {
   // `elmera` rules live in the external `@elmeragroup/internal/oxlint` package, which cannot read
   // this repo's tables. The unit under test is TOKEN_PAINTS. The oracle is where the library's
   // own classes paint each role, so a role the Figma sync hides from a picker is never one a
-  // component paints there. `test/class-tokens.ts` owns the class parsing and names the routes
-  // it cannot follow.
+  // component paints there. A role routed into a color token's own property, such as `--ring`,
+  // takes every paint the scan finds that token drawn with anywhere in the tree, never the paints
+  // TOKEN_PAINTS gives it. That goes one hop: `drawn` holds only the paints classes draw, so a
+  // token that is itself routed into a second token does not pass on the second token's paints.
+  // `test/class-tokens.ts` owns the class parsing and names the routes it cannot follow.
   it("paints every color role only where its paints allow", () => {
-    const outside = [...SOURCE_TREE.values()].flatMap((record) =>
-      colorRolePaints(record.code)
+    const drawn = new Map<ColorTokenName, Set<TokenPaint>>();
+    for (const record of SOURCE_TREE.values()) {
+      for (const { role, paint } of colorRolePaints(record.code)) {
+        drawn.set(role, new Set([...(drawn.get(role) ?? []), paint]));
+      }
+    }
+    const outside = (code: string) => [
+      ...colorRolePaints(code)
         .filter(({ role, paint }) => !allowedPaints(role).includes(paint))
-        .map(({ role, paint, token }) => `${record.relative}: ${token} paints ${role} as ${paint}`)
-    );
-    expect(outside).toEqual([]);
+        .map(({ role, paint, token }) => `${token} paints ${role} as ${paint}`),
+      ...tokenAssignments(code).flatMap(({ target, role, token }) =>
+        [...(drawn.get(target) ?? [])]
+          .filter((paint) => !allowedPaints(role).includes(paint))
+          .map((paint) => `${token} routes ${role} into ${target}, drawn as ${paint}`)
+      ),
+    ];
+    expect(flaggedTokensByFile(outside)).toEqual({});
   });
 });
 

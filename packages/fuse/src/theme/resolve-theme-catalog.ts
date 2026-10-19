@@ -107,7 +107,11 @@ type Entry<Name extends string, Kind extends TokenKind, Ref extends Reference> =
   /** The literal at the end of the reference chain, in the same theme and scheme. */
   readonly value: LiteralByKind[Kind];
 
-  /** What the property is for, in one or two sentences for a designer picking a variable. */
+  /**
+   * What the property is for, in one or two sentences for a designer picking a variable. It
+   * never holds `& < > " '`, which the Figma sync refuses (`descriptionProblem` in
+   * `packages/fuse-figma/src/variable-set.ts`).
+   */
   readonly description: string;
 };
 

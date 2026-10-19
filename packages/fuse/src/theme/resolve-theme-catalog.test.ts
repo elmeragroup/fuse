@@ -440,7 +440,7 @@ describe("resolveThemeCatalog", () => {
     // Only a color carries paints.
     expect(Object.hasOwn(scheme.tokens.radius, "paints")).toBe(false);
     expect(Object.hasOwn(scheme.rungs["radius-md"], "paints")).toBe(false);
-    expect(scheme.rungs["radius-md"].description).toContain("One radius step below radius");
+    expect(scheme.rungs["radius-md"].description).toContain("One radius-step length below radius");
     // The neutral ramp holds one value in every theme, so Fuse paints nothing with it.
     expect(catalog.primitives["neutral-500"].paints).toEqual([]);
     expect(catalog.primitives["brand-fkas"].paints).toEqual(["surface"]);

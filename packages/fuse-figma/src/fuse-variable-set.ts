@@ -64,7 +64,7 @@ import type {
   TokenPaint,
 } from "@elmeragroup/fuse/theme-catalog";
 
-import { makeVariableSet } from "./variable-set.ts";
+import { FILL_SCOPES, makeVariableSet } from "./variable-set.ts";
 import type {
   AliasCycle,
   AliasValue,
@@ -187,9 +187,6 @@ const PAINT_SCOPES = {
   line: ["STROKE_COLOR"],
 } as const satisfies Record<TokenPaint, readonly VariableScope[]>;
 
-/** The fill scopes `ALL_FILLS` stands for, which Figma refuses beside it. */
-const FILL_SCOPES = ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"] as const satisfies readonly VariableScope[];
-
 /**
  * The pickers that offer a color painted in `paints`: each scope once, with the three fill
  * scopes folded into `ALL_FILLS`, which Figma keeps for any fill picker it adds later. The plan
@@ -200,7 +197,7 @@ const FILL_SCOPES = ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"] as const satisfies
 function paintScopes(paints: readonly TokenPaint[]): readonly VariableScope[] {
   const scopes = new Set<VariableScope>(paints.flatMap((paint) => PAINT_SCOPES[paint]));
   if (FILL_SCOPES.every((scope) => scopes.has(scope))) {
-    const strokes = [...scopes].filter((scope) => !FILL_SCOPES.some((fill) => fill === scope));
+    const strokes = [...scopes].filter((scope) => !FILL_SCOPES.includes(scope));
     return ["ALL_FILLS", ...strokes];
   }
   return [...scopes];
@@ -330,6 +327,16 @@ function primitivesCollection(primitives: ResolvedThemeCatalog["primitives"]): C
   return { name: PRIMITIVES_COLLECTION, modes: [PRIMITIVES_MODE], variables };
 }
 
+/**
+ * The picker metadata of a hidden collection's variable. Only designers' pickers read scopes and
+ * descriptions, and the brand, segment and variant variables are reached through aliases.
+ */
+const HIDDEN_METADATA = {
+  scopes: [],
+  webSyntax: undefined,
+  description: "",
+} as const satisfies Pick<VariableSpec, "scopes" | "webSyntax" | "description">;
+
 /** Every scheme, variant and segment, in the order the hidden collections list them. */
 const THEME_PATHS: readonly ThemePath[] = SCHEMES.flatMap((scheme) =>
   THEME_VARIANTS.flatMap((variant) => THEME_SEGMENTS.map((segment) => ({ scheme, variant, segment })))
@@ -347,11 +354,7 @@ function brandCollection(catalog: ResolvedThemeCatalog, bound: readonly BoundVar
     return bound.map((variable): VariableSpec => ({
       name: brandVariableName(path, variable.name),
       type: variable.type,
-      // Only designers' pickers read scopes and descriptions; these variables are reached
-      // through aliases.
-      scopes: [],
-      webSyntax: undefined,
-      description: "",
+      ...HIDDEN_METADATA,
       values: new Map(
         shown.map(([mode, theme]) => [mode, leafValue(variable.entryIn(theme.schemes[path.scheme]), path)])
       ),
@@ -397,9 +400,7 @@ function segmentCollection(bound: readonly BoundVariable[]): CollectionSpec {
       bound.map((variable): VariableSpec => ({
         name: segmentVariableName(scheme, variant, variable.name),
         type: variable.type,
-        scopes: [],
-        webSyntax: undefined,
-        description: "",
+        ...HIDDEN_METADATA,
         values: new Map(
           THEME_SEGMENTS.map((segment) => [
             SEGMENT_MODES[segment],
@@ -429,9 +430,7 @@ function variantCollection(
     bound.map((variable): VariableSpec => ({
       name: variantVariableName(scheme, variable.name),
       type: variable.type,
-      scopes: [],
-      webSyntax: undefined,
-      description: "",
+      ...HIDDEN_METADATA,
       values: new Map(
         THEME_VARIANTS.map((variant) => [
           VARIANT_MODES[variant],
@@ -443,9 +442,7 @@ function variantCollection(
   const metrics = density.map((metric): VariableSpec => ({
     name: variantDensityName(metric),
     type: VARIABLE_TYPES.dimension,
-    scopes: [],
-    webSyntax: undefined,
-    description: "",
+    ...HIDDEN_METADATA,
     values: new Map(
       THEME_VARIANTS.map((variant) => [
         VARIANT_MODES[variant],

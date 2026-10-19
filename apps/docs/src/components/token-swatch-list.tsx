@@ -68,16 +68,14 @@ export function TokenSwatchList({ tokens }: TokenSwatchListProps): ReactElement 
           ) : (
             <span className={swatchEmpty()} data-token-swatch aria-hidden="true" />
           )}
-          {token.description === undefined ? (
+          <span className={itemText()}>
             <code className={itemCode()}>{token.name}</code>
-          ) : (
-            <span className={itemText()}>
-              <code className={itemCode()}>{token.name}</code>
+            {token.description === undefined ? null : (
               <span className={itemDescription()} data-token-description>
                 {token.description}
               </span>
-            </span>
-          )}
+            )}
+          </span>
         </li>
       ))}
     </ThemeScope>

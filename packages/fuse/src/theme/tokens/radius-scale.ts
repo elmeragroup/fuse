@@ -56,32 +56,14 @@ function rungCss(steps: number): string {
   return `calc(var(--radius) ${steps < 0 ? "-" : "+"} ${stepLength})`;
 }
 
-/** The count of steps a rung description spells, which never exceeds four. */
-const STEP_COUNTS = ["", "One", "Two", "Three", "Four"] as const;
-
-/**
- * Where a rung sits on the scale, written for a designer: the steps it takes from `--radius`
- * and what a step is in each variant.
- */
-function rungPlacement(steps: number): string {
-  if (steps === 0) {
-    return "The corner at radius itself, in every theme.";
-  }
-  const count = STEP_COUNTS[Math.abs(steps)] ?? String(Math.abs(steps));
-  const unit = Math.abs(steps) === 1 ? "step" : "steps";
-  const side = steps < 0 ? "below" : "above";
-  return `${count} radius ${unit} ${side} radius. External themes step 2px and internal themes 0px, so every internal rung equals radius.`;
-}
-
 /**
  * A rung `steps` lengths from `--radius`, with the CSS value built from that count.
  *
  * @param steps - The rung's distance from `--radius` in steps.
- * @param use - What reads the rung, when its placement alone does not say.
+ * @param description - What the rung is for.
  */
-function rung(steps: number, use?: string): RadiusRung {
-  const placement = rungPlacement(steps);
-  return { steps, css: rungCss(steps), description: use === undefined ? placement : `${placement} ${use}` };
+function rung(steps: number, description: string): RadiusRung {
+  return { steps, css: rungCss(steps), description };
 }
 
 /**
@@ -90,10 +72,13 @@ function rung(steps: number, use?: string): RadiusRung {
  * steps 0px, so every internal rung equals `--radius`.
  */
 export const RADIUS_RUNGS = {
-  "radius-xs": rung(-3),
-  "radius-sm": rung(-2),
-  "radius-md": rung(-1),
-  "radius-lg": rung(0),
-  "radius-xl": rung(2),
-  "radius-popover": rung(-4, "No component reads it, because Fuse popups use radius-md."),
+  "radius-xs": rung(-3, "Three radius-step lengths below radius."),
+  "radius-sm": rung(-2, "Two radius-step lengths below radius."),
+  "radius-md": rung(-1, "One radius-step length below radius."),
+  "radius-lg": rung(0, "The corner at radius itself, in every theme."),
+  "radius-xl": rung(2, "Two radius-step lengths above radius."),
+  "radius-popover": rung(
+    -4,
+    "Four radius-step lengths below radius. No component reads it, because Fuse popups use radius-md."
+  ),
 } as const satisfies Record<RadiusRungName, RadiusRung>;

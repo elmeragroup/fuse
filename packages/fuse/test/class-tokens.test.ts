@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { colorRolePaints } from "./class-tokens";
+import { colorRolePaints, tokenAssignments } from "./class-tokens";
 
 /** The role and paint of each class in `code`, without the class. */
 function paints(code: string) {
@@ -74,5 +74,30 @@ describe("colorRolePaints", () => {
     ]);
     // A variable the module assigns but never reads paints nothing.
     expect(paints('"[--checkbox-color:var(--muted)]"')).toEqual([]);
+  });
+});
+
+describe("tokenAssignments", () => {
+  it("reads a class that assigns a color token's own property, with each role its value reads", () => {
+    expect(
+      tokenAssignments(
+        '"focus-visible:[--ring:var(--info-soft-foreground)] [--ring:var(--a,var(--error))]"'
+      ).map(({ target, role }) => ({ target, role }))
+    ).toEqual([
+      { target: "ring", role: "info-soft-foreground" },
+      { target: "ring", role: "error" },
+    ]);
+  });
+
+  it("skips a local variable, a token that holds no color, a value that reads no color role, and a drawn utility", () => {
+    for (const code of [
+      "[--checkbox-color:var(--muted)]",
+      "[--toast-copy:var(--error-soft-foreground)]",
+      "[--ring:GrayText]",
+      "[--radius:var(--primary)]",
+      "ring-ring",
+    ]) {
+      expect(tokenAssignments(code), code).toEqual([]);
+    }
   });
 });
