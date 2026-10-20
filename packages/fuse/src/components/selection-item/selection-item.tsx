@@ -7,6 +7,7 @@ import { Field as FieldPrimitive } from "@base-ui/react/field";
 import { mergeProps } from "@base-ui/react/merge-props";
 
 import { definedProps } from "../../internal/defined-props";
+import { OWN_CLICK_SELECTOR, selectionReaches } from "../../internal/own-click";
 import { cn } from "../../styles/cn";
 import { selectionItemShellClass } from "../../styles/inner-corner/item";
 import { labelTypeClass } from "../../styles/label-type";
@@ -84,13 +85,6 @@ const disabledShellClass = cn(
 const disabledLabelTextClass = cn("selection-row-disabled-part:text-selection-disabled-foreground");
 
 /**
- * Elements in a SubSection that keep their own clicks under `isSubSectionSelectable`. A click
- * inside one of them, or inside an element that only takes focus, does not toggle the row.
- */
-const subSectionOwnClickSelector =
-  "a, button, input, select, textarea, label, summary, audio[controls], video[controls], [contenteditable], [role=button], [role=link], [tabindex]";
-
-/**
  * The click router of a row whose SubSection is selectable: a click in the row's own band
  * toggles the row's control, unless it lands on an element that keeps its own click, comes
  * from a portal or a nested row, or ends a text selection that reaches into the band. It reads
@@ -107,15 +101,11 @@ function selectFromSubSection(event: MouseEvent<HTMLDivElement>): void {
   if (band?.parentElement !== event.currentTarget) {
     return;
   }
-  const ownClick = event.target.closest(subSectionOwnClickSelector);
+  const ownClick = event.target.closest(OWN_CLICK_SELECTOR);
   if (ownClick && band.contains(ownClick)) {
     return;
   }
-  // A selection elsewhere outlives a click in a `select-none` card list, so only one that
-  // reaches into the band counts as the click that ended it.
-  const selection = window.getSelection();
-  const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-  if (range && !range.collapsed && range.intersectsNode(band)) {
+  if (selectionReaches(band)) {
     return;
   }
   // The label's control is the hidden input. Clicking it toggles without dispatching another

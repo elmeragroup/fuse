@@ -5,6 +5,7 @@ import type { ComponentProps, MouseEvent, ReactElement, ReactNode } from "react"
 
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { definedProps } from "../../internal/defined-props";
+import { OWN_CLICK_SELECTOR, selectionReaches } from "../../internal/own-click";
 import { cn } from "../../styles/cn";
 import { Skeleton } from "../skeleton/skeleton";
 import { Table } from "../table/table";
@@ -26,26 +27,13 @@ const { emptyCell, head, skeleton, row: rowClass } = dataTableVariants();
 type CellOf<TRow> = TRow extends RowSource<infer TCell> ? TCell : never;
 
 /**
- * Elements a click on a row must not also press the row through: native controls, links, the
- * ARIA widgets Fuse renders as non-native elements (Base UI's checkbox and radio spans, a slider
- * thumb, a date segment), editable regions, and anything else that takes focus. The slider's
- * track has no role, so its control is named by slot. It matches SelectionItem's own-click set
- * for a SubSection. `closest()` matches an SVG icon inside one of them, too.
+ * Elements a click on a row must not also press the row through: the shared own-click set, plus
+ * the ARIA widgets Fuse renders as non-native elements (Base UI's checkbox and radio spans, a
+ * slider thumb, a date segment) that a table cell can hold. The slider's track has no role, so
+ * its control is named by slot.
  */
 const INTERACTIVE_DESCENDANT = [
-  "a",
-  "button",
-  "input",
-  "select",
-  "textarea",
-  "label",
-  "summary",
-  "audio[controls]",
-  "video[controls]",
-  "[contenteditable]",
-  "[tabindex]",
-  "[role=button]",
-  "[role=link]",
+  OWN_CLICK_SELECTOR,
   "[role=checkbox]",
   "[role=radio]",
   "[role=switch]",
@@ -77,9 +65,7 @@ function pressesRow(target: EventTarget | null, row: Element): boolean {
   if (interactive !== null && interactive !== row && row.contains(interactive)) {
     return false;
   }
-  const selection = window.getSelection();
-  const range = selection !== null && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-  return range === null || range.collapsed || !range.intersectsNode(row);
+  return !selectionReaches(row);
 }
 
 function ariaSort(column: HeaderSource["column"]): "ascending" | "descending" | "none" | undefined {
