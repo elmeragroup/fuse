@@ -389,7 +389,7 @@
           "type": "\"destructive\" | \"neutral\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"destructive\"",
-          "description": "Drives the action-button variant and the fallback icon. Destructive dialogs initially focus Cancel; neutral dialogs initially focus the primary action.",
+          "description": "Drives the action-button variant and the fallback icon. Destructive dialogs initially focus Cancel; neutral dialogs initially focus the primary action, or Cancel while `isActionDisabled` is set.",
           "required": false
         }
       ]
