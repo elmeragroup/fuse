@@ -372,6 +372,7 @@ export const TOKEN_PAINTS = {
   input: ["surface", "line"],
   ring: ["line"],
   "card-border": ["line"],
+  "card-section-divider": ["line"],
   "button-outline": ["line"],
   "selection-border": ["line"],
   "selection-checked-border": ["line"],
@@ -511,6 +512,8 @@ export const TOKEN_DESCRIPTIONS = {
   ring: "The focus ring, a neutral grey that holds 3:1 on the page, cards, dialog and muted. Status Toasts, the info and warning Alerts and default Accordion items swap in their soft foreground.",
   "card-border":
     "The edge of a Card and a card Accordion item. Internal themes draw it in border, and external themes make it transparent.",
+  "card-section-divider":
+    "The 1px line between stacked Card.Section parts, edge to edge. Internal themes draw it in border, and external themes in the page background, so a white card reads as segments.",
   "button-outline":
     "The border of the outline Button, at button-outline-width. Internal themes draw it in border, and external themes in foreground.",
   "selection-border":
