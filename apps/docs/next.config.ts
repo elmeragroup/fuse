@@ -65,6 +65,29 @@ const nextConfig: NextConfig = {
    * stands for, so search engines and visitors only meet `/?theme=`. Redirects run before
    * `src/proxy.ts`, so this leaves the proxy's rewrite alone.
    */
+  /** Responses do not advertise the framework. */
+  poweredByHeader: false,
+  /**
+   * Hardening headers on every response. None needs a nonce, so they hold on prerendered routes:
+   * no MIME sniffing, no full URL in the referrer to other origins, no framing by other origins,
+   * no `<base>` from elsewhere and no plugins. A `script-src` policy waits on the hash-based CSP
+   * decision recorded in the theming handbook.
+   */
+  headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          {
+            key: "Content-Security-Policy",
+            value: "frame-ancestors 'self'; base-uri 'self'; object-src 'none'",
+          },
+        ],
+      },
+    ];
+  },
   redirects() {
     return [{ source: "/themed/:theme", destination: "/?theme=:theme", permanent: false }];
   },
