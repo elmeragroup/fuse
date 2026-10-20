@@ -11,12 +11,14 @@ import { Text } from "@elmeragroup/fuse/text";
 
 type Range = { start: DateValue; end: DateValue };
 
+const initialRange: Range = {
+  start: new CalendarDate(2026, 7, 14),
+  end: new CalendarDate(2026, 7, 18),
+};
+
 /** `onChange` reports whole ranges only — editing one row alone reports nothing. */
 export function DateRangePickerControlled() {
-  const [value, setValue] = useState<Range | null>({
-    start: new CalendarDate(2026, 7, 14),
-    end: new CalendarDate(2026, 7, 18),
-  });
+  const [value, setValue] = useState<Range | null>(initialRange);
 
   return (
     <UiProviders locale="en-US" navigate={() => undefined}>
