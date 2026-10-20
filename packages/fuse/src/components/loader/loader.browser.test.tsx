@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { withLocale } from "../../../test/locale-matrix";
 import { px, renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import type { SupportedLocale } from "../../intl/locale-context";
 import { Loader } from "./loader";
 
 const SIZES = ["default", "small", "medium", "large", "xl"] as const;
@@ -35,7 +37,7 @@ function statusIcon(status: HTMLElement): SVGElement {
 }
 
 describe("Loader", () => {
-  it("is found by role=status, named only from a consumer aria-label, and hides the spinning icon from the accessibility tree", () => {
+  it("is found by role=status, named only from a consumer aria-label (its text is not its name), and hides the spinning icon from the accessibility tree", () => {
     const { unmount } = renderThemed(<Loader aria-label="Laster" />);
     const loader = statusElement("Laster");
     expect(loader.tagName).toBe("DIV");
@@ -46,11 +48,50 @@ describe("Loader", () => {
     expect(getComputedStyle(icon).animationName).not.toBe("none");
     unmount();
 
-    renderThemed(<Loader />);
+    renderThemed(withLocale("en-US", <Loader />));
     const unnamed = statusElement();
     expect(unnamed.getAttribute("aria-label")).toBeNull();
     expect(page.getByRole("status", { name: "Loading" }).query()).toBeNull();
   });
+
+  it("renders its label as text inside the status region, so the region announces it", () => {
+    const { unmount } = renderThemed(<Loader label="Henter ordrer" />);
+    expect(statusElement().textContent).toBe("Henter ordrer");
+    unmount();
+
+    const named = renderThemed(<Loader aria-label="Laster" />);
+    expect(statusElement("Laster").textContent).toBe("Laster");
+    named.unmount();
+
+    // An explicit label wins over the aria-label for the announced text.
+    renderThemed(<Loader label="Henter ordrer" aria-label="Laster" />);
+    expect(statusElement("Laster").textContent).toBe("Henter ordrer");
+  });
+
+  it("keeps the label text visually hidden, so the wrapper is as large as the spinner alone", () => {
+    renderThemed(
+      <>
+        <Loader aria-label="Bare spinner" />
+        <Loader aria-label="Med lang tekst" label="En lang tekst som ikke skal synes på skjermen" />
+      </>
+    );
+    const bare = statusElement("Bare spinner").getBoundingClientRect();
+    const labelled = statusElement("Med lang tekst").getBoundingClientRect();
+    expect(labelled.height).toBe(bare.height);
+  });
+
+  it.each([
+    ["nb-NO", "Laster"],
+    ["sv-SE", "Laddar"],
+    ["en-US", "Loading"],
+    ["fi-FI", "Ladataan"],
+  ] as const satisfies ReadonlyArray<readonly [SupportedLocale, string]>)(
+    "announces the %s dictionary default when no label or aria-label is set",
+    (locale, text) => {
+      renderThemed(withLocale(locale, <Loader />));
+      expect(statusElement().textContent).toBe(text);
+    }
+  );
 
   it("maps each size onto the icon and merges className onto the wrapper", () => {
     renderThemed(

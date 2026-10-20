@@ -141,6 +141,8 @@ const SERVER_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
 const CLIENT_ISLANDS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["table", ["components/table/vertical-table-header.tsx", "components/table/vertical-table-key.tsx"]],
   ["description-list", ["components/description-list/description-list-heading.tsx"]],
+  // Loader stays a server component; only its dictionary default reads the client locale.
+  ["loader", ["components/loader/loader-default-label.tsx"]],
 ];
 
 const CLIENT_HOOKS = ["hooks/use-localized-strings.ts"] as const;

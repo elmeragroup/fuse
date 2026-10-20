@@ -10,9 +10,13 @@ test("LoaderProps is native div props plus the recipe axes, and the element take
   >();
   expectTypeOf<LoaderProps["className"]>().toEqualTypeOf<string | undefined>();
   expectTypeOf<LoaderProps["id"]>().toEqualTypeOf<string | undefined>();
+  expectTypeOf<LoaderProps["label"]>().toEqualTypeOf<string | undefined>();
 
   const _basic = <Loader />;
   const _named = <Loader size="medium" variant="default" aria-label="Laster" className="p-0" />;
+  const _labelled = <Loader label="Henter ordrer" />;
+  // @ts-expect-error the announced label is text, not a node
+  const _nodeLabel = <Loader label={<b>Henter</b>} />;
 
   // @ts-expect-error the variant axis is intentionally single-valued
   const _badVariant = <Loader variant="muted" />;
