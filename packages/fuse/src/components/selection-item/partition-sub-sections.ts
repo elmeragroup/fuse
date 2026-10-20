@@ -7,7 +7,7 @@
 import { Children, isValidElement } from "react";
 import type { ReactNode } from "react";
 
-import { SelectionItemSubSection } from "./selection-item";
+import { SelectionItemSubSection } from "./selection-item-sub-section";
 
 /** A row's children split for `SelectionItem.Shell`: label content and outside bands. */
 type PartitionedRowChildren = {

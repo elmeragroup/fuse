@@ -4,13 +4,9 @@
  * so a server component can read each part instead of dotting into a client reference.
  */
 import { ItemContent } from "../item/item-markup";
-import {
-  SelectionItemShell,
-  SelectionItemTitle,
-  SelectionItemActions,
-  SelectionItemSubSection,
-} from "./selection-item";
+import { SelectionItemShell, SelectionItemTitle, SelectionItemActions } from "./selection-item";
 import { SelectionItemDescription } from "./selection-item-description";
+import { SelectionItemSubSection } from "./selection-item-sub-section";
 
 /**
  * Shared selectable card row. `CheckboxItem` / `RadioItem` alias these part objects so

@@ -162,7 +162,7 @@
     {
       "name": "SelectionItem.SubSection",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/selection-item/selection-item.tsx",
+      "sourcePath": "packages/fuse/src/components/selection-item/selection-item-sub-section.tsx",
       "forwardedFrom": [
         "@types/react"
       ],

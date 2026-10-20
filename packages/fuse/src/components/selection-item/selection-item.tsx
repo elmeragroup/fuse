@@ -1,6 +1,6 @@
 "use client";
 
-import { Children, createContext, isValidElement, useContext, useMemo } from "react";
+import { Children, createContext, useContext, useMemo } from "react";
 import type { ComponentProps, MouseEvent, ReactElement, ReactNode } from "react";
 
 import { Field as FieldPrimitive } from "@base-ui/react/field";
@@ -12,8 +12,9 @@ import { selectionItemShellClass } from "../../styles/inner-corner/item";
 import { labelTypeClass } from "../../styles/label-type";
 import { FieldItem } from "../field/field";
 import { ItemGroup } from "../item/item";
-import { ItemActions, ItemFooter, ItemMedia, ItemTitle } from "../item/item-markup";
+import { ItemActions, ItemMedia, ItemTitle } from "../item/item-markup";
 import { itemVariants } from "../item/item-variants";
+import { partitionSubSections } from "./partition-sub-sections";
 import { selectionGroupOrientationVariants } from "./selection-item-variants";
 import type { SelectionItemGroupOrientation } from "./selection-item-variants";
 
@@ -88,6 +89,44 @@ const disabledLabelTextClass = cn("selection-row-disabled-part:text-selection-di
  */
 const subSectionOwnClickSelector =
   "a, button, input, select, textarea, label, summary, audio[controls], video[controls], [contenteditable], [role=button], [role=link], [tabindex]";
+
+/**
+ * The click router of a row whose SubSection is selectable: a click in the row's own band
+ * toggles the row's control, unless it lands on an element that keeps its own click, comes
+ * from a portal or a nested row, or ends a text selection that reaches into the band. It reads
+ * only the event, so every row shares this one handler. `mergeProps` runs the consumer's
+ * `onClick` first; `preventBaseUIHandler()` there skips this.
+ */
+function selectFromSubSection(event: MouseEvent<HTMLDivElement>): void {
+  if (event.defaultPrevented || !(event.target instanceof Element)) {
+    return;
+  }
+  // React bubbles clicks from portals and from rows nested in a SubSection; only a click
+  // in this row's own band toggles it.
+  const band = event.target.closest("[data-slot=selection-item-sub-sections]");
+  if (band?.parentElement !== event.currentTarget) {
+    return;
+  }
+  const ownClick = event.target.closest(subSectionOwnClickSelector);
+  if (ownClick && band.contains(ownClick)) {
+    return;
+  }
+  // A selection elsewhere outlives a click in a `select-none` card list, so only one that
+  // reaches into the band counts as the click that ended it.
+  const selection = window.getSelection();
+  const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+  if (range && !range.collapsed && range.intersectsNode(band)) {
+    return;
+  }
+  // The label's control is the hidden input. Clicking it toggles without dispatching another
+  // click through the row, so ancestors and `onClick` see this one click only. Focusing it
+  // moves focus to the visible control, as a click on the label row does, so the keyboard
+  // carries on from the chosen row.
+  const label = event.currentTarget.querySelector(":scope > label");
+  const control = label instanceof HTMLLabelElement ? label.control : null;
+  control?.click();
+  control?.focus({ preventScroll: true });
+}
 
 /**
  * What a shell sits in: `false` outside any selection group; otherwise the enclosing
@@ -190,28 +229,6 @@ export function SelectionItemActions({
       className={cn("min-h-(--selection-first-line) leading-(--selection-first-line)", className)}
       {...props}
     />
-  );
-}
-
-/**
- * Footer band rendered **outside** the row label. Direct `SelectionItem.SubSection`
- * children are partitioned by identity (`child.type === SelectionItem.SubSection`); a
- * Fragment, wrapper, or HOC hides the part from that filter and it stays inside the
- * label, so clicks would toggle the control.
- */
-export function SelectionItemSubSection({
-  children,
-  className,
-  mode = "default",
-  ...props
-}: ComponentProps<typeof ItemFooter>): ReactElement | null {
-  if (Children.toArray(children).length === 0) {
-    return null;
-  }
-  return (
-    <ItemFooter mode={mode} className={className} {...props}>
-      {children}
-    </ItemFooter>
   );
 }
 
@@ -359,13 +376,7 @@ export function SelectionItemShell({
   const groupLayout = useContext(SelectionItemGroupContext);
   const inItemGroup = groupLayout !== false && groupLayout.list;
   const connectedStack = groupLayout === false || groupLayout.orientation !== "horizontal";
-  const childArray = Children.toArray(children);
-  const directSubSections = childArray.filter(
-    (child) => isValidElement(child) && child.type === SelectionItemSubSection
-  );
-  const rowChildren = childArray.filter(
-    (child) => !(isValidElement(child) && child.type === SelectionItemSubSection)
-  );
+  const { row: rowChildren, subSections: directSubSections } = partitionSubSections(children);
   const hasSubSection = Children.toArray(passedSubSections).length > 0 || directSubSections.length > 0;
   const controlAtEnd = controlPosition === "end";
 
@@ -388,37 +399,6 @@ export function SelectionItemShell({
     </div>
   );
   const spacer = <span aria-hidden />;
-  // `mergeProps` runs the consumer's `onClick` first; `preventBaseUIHandler()` there skips this.
-  const selectFromSubSection = (event: MouseEvent<HTMLDivElement>) => {
-    if (event.defaultPrevented || !(event.target instanceof Element)) {
-      return;
-    }
-    // React bubbles clicks from portals and from rows nested in a SubSection; only a click
-    // in this row's own band toggles it.
-    const band = event.target.closest("[data-slot=selection-item-sub-sections]");
-    if (band?.parentElement !== event.currentTarget) {
-      return;
-    }
-    const ownClick = event.target.closest(subSectionOwnClickSelector);
-    if (ownClick && band.contains(ownClick)) {
-      return;
-    }
-    // A selection elsewhere outlives a click in a `select-none` card list, so only one that
-    // reaches into the band counts as the click that ended it.
-    const selection = window.getSelection();
-    const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-    if (range && !range.collapsed && range.intersectsNode(band)) {
-      return;
-    }
-    // The label's control is the hidden input. Clicking it toggles without dispatching another
-    // click through the row, so ancestors and `onClick` see this one click only. Focusing it
-    // moves focus to the visible control, as a click on the label row does, so the keyboard
-    // carries on from the chosen row.
-    const label = event.currentTarget.querySelector(":scope > label");
-    const control = label instanceof HTMLLabelElement ? label.control : null;
-    control?.click();
-    control?.focus({ preventScroll: true });
-  };
   // Separate child positions give each source its own key space; one merged array
   // would repeat the `.0` keys that the two `Children.toArray` calls assign independently.
   // The band ignores pointers until a footer shows, so the cluster takes them back: content in
@@ -493,4 +473,3 @@ export function SelectionItemShell({
 SelectionItemShell.displayName = "SelectionItem.Shell";
 SelectionItemTitle.displayName = "SelectionItem.Title";
 SelectionItemActions.displayName = "SelectionItem.Actions";
-SelectionItemSubSection.displayName = "SelectionItem.SubSection";

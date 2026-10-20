@@ -100,7 +100,13 @@ const CLIENT_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["scroll-area", ["components/scroll-area/scroll-area.tsx"]],
   ["search-field", ["react-aria/search-field/search-field.tsx"]],
   ["select", ["components/select/select.tsx"]],
-  ["selection-item", ["components/selection-item/selection-item.tsx"]],
+  [
+    "selection-item",
+    [
+      "components/selection-item/selection-item.tsx",
+      "components/selection-item/selection-item-sub-section.tsx",
+    ],
+  ],
   ["separator", ["components/separator/separator.tsx"]],
   ["sheet", ["components/sheet/sheet.tsx"]],
   ["sidebar", ["components/sidebar/sidebar.tsx"]],
