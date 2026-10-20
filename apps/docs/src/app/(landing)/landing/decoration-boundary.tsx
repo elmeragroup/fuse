@@ -14,7 +14,7 @@ type DecorationBoundaryState = { failed: boolean; resetKey: string };
 /**
  * Renders nothing in place of decoration that throws while rendering, such as a shader whose
  * image failed to load, so the failure stays inside the decoration instead of reaching the
- * route's error page. A new `resetKey` shows that input's decoration without remounting healthy
+ * app's global error page. A new `resetKey` shows that input's decoration without remounting healthy
  * children. A shader's image that already failed stays dropped until reload, because the shader
  * caches the rejection per image URL.
  */

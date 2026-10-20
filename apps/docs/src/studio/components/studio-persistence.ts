@@ -69,6 +69,16 @@ function writeHash(text: string | undefined): void {
   window.history.replaceState(null, "", text === undefined ? `${url.pathname}${url.search}` : url);
 }
 
+/**
+ * Discards the saved session: the autosave and the address's share hash. The studio's error page
+ * calls it before it tries again, so a session whose edits break rendering cannot break every
+ * reload too.
+ */
+export function discardStudioSession(): void {
+  writeAutosave(undefined);
+  writeHash(undefined);
+}
+
 function isPristine(document: StudioDocument, opening: StudioDocument): boolean {
   return document.theme === opening.theme && document.overrides === NO_OVERRIDES;
 }
