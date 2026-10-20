@@ -63,11 +63,16 @@
     <div class="actions">
       <button id="plan">Plan</button>
       <button id="apply" class="primary">Apply</button>
+      <button id="snapshots">Export snapshots</button>
     </div>
-    <p id="status">Plan lists what Apply would change. Apply writes it, then plans again.</p>
+    <p id="status">
+      Plan lists what Apply would change. Apply writes it, then plans again. Export snapshots downloads a PNG
+      of every preview instance for figma:compare.
+    </p>
     <div id="sections"></div>
     <script>
-      const buttons = [document.getElementById("plan"), document.getElementById("apply")];
+      const buttons = ["plan", "apply", "snapshots"].map((id) => document.getElementById(id));
+      const busyText = { plan: "Planning…", apply: "Applying…", snapshots: "Exporting snapshots…" };
       const status = document.getElementById("status");
       const sections = document.getElementById("sections");
 
@@ -100,18 +105,45 @@
       function send(request) {
         setBusy(true);
         sections.replaceChildren();
-        showStatus(request === "plan" ? "Planning…" : "Applying…", "");
+        showStatus(busyText[request], "");
         parent.postMessage({ pluginMessage: request }, "*");
       }
 
       document.getElementById("plan").addEventListener("click", () => send("plan"));
       document.getElementById("apply").addEventListener("click", () => send("apply"));
+      document.getElementById("snapshots").addEventListener("click", () => send("snapshots"));
+
+      // The plugin iframe may download a file through a temporary link to a Blob.
+      function download(name, text) {
+        const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = name;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
 
       window.addEventListener("message", (event) => {
         const message = event.data.pluginMessage;
+        if (message.kind === "progress") {
+          showStatus(`Exported ${message.done} of ${message.total} instances…`, "");
+          return;
+        }
         setBusy(false);
         if (message.kind === "error") {
           showStatus(message.message, "error");
+          return;
+        }
+        if (message.kind === "snapshots") {
+          const { previews } = message.snapshot;
+          const instances = previews.reduce((sum, preview) => sum + preview.instances.length, 0);
+          download("fuse-kit-snapshots.json", JSON.stringify(message.snapshot));
+          showStatus(
+            `Exported ${instances} instances from ${previews.length} previews to fuse-kit-snapshots.json.`,
+            "ok"
+          );
           return;
         }
         if (message.kind === "plan") {

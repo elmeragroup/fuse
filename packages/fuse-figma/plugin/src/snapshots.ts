@@ -1,0 +1,149 @@
+/**
+ * Export a snapshot of every instance in the kit's preview frames, for `figma:compare`. Each
+ * instance becomes a PNG at twice the canvas size, cut to its render bounds, so a focus ring
+ * drawn outside the box is in the picture. The export reads the file and writes nothing.
+ */
+
+import { SNAPSHOT_FORMAT, SNAPSHOT_VERSION } from "../../src/compare/snapshot.ts";
+import type {
+  CanvasRect,
+  InstanceSnapshot,
+  KitSnapshot,
+  PreviewSnapshot,
+} from "../../src/compare/snapshot.ts";
+import type { ModeRef } from "../../src/components/kit-spec.ts";
+import { keyOf } from "./identity.ts";
+
+/** Device pixels per canvas pixel, the browser's device scale factor in the comparison. */
+const SCALE = 2;
+
+/** Every preview frame's key starts with this. */
+const PREVIEW_PREFIX = "preview/";
+
+/** Reports how many instances the export has written so far. */
+export type SnapshotProgress = (done: number, total: number) => void;
+
+const isFrame = (node: BaseNode): node is FrameNode => node.type === "FRAME";
+const isInstance = (node: BaseNode): node is InstanceNode => node.type === "INSTANCE";
+
+function rect({ x, y, width, height }: Rect): CanvasRect {
+  return { x, y, width, height };
+}
+
+/** Lets Figma redraw and handle input between frames. */
+function yieldToFigma(): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
+}
+
+async function kitPage(figma: PluginAPI, pageKey: string): Promise<PageNode> {
+  const pages = figma.root.children.filter((node) => keyOf(node) === pageKey);
+  const [page, ...others] = pages;
+  if (page === undefined) {
+    throw new Error(`This file has no kit page with the key ${pageKey}. Apply the kit first.`);
+  }
+  if (others.length > 0) {
+    throw new Error(`This file has ${pages.length} pages with the key ${pageKey}. Delete the copies first.`);
+  }
+  await page.loadAsync();
+  return page;
+}
+
+/** The mode the frame resolves for each collection, inherited and default modes included. */
+async function resolvedModes(figma: PluginAPI, frame: FrameNode): Promise<ModeRef[]> {
+  const modes: ModeRef[] = [];
+  for (const [collectionId, modeId] of Object.entries(frame.resolvedVariableModes)) {
+    const collection = await figma.variables.getVariableCollectionByIdAsync(collectionId);
+    const mode = collection?.modes.find((candidate) => candidate.modeId === modeId);
+    if (collection !== null && mode !== undefined) {
+      modes.push({ collection: collection.name, mode: mode.name });
+    }
+  }
+  return modes.sort((left, right) => left.collection.localeCompare(right.collection));
+}
+
+/**
+ * The variant an instance shows. The main component's key names it, and an instance whose main
+ * component carries no key falls back on the variant part of its own key.
+ */
+async function variantOf(instance: InstanceNode, previewKey: string): Promise<string> {
+  const main = await instance.getMainComponentAsync();
+  const fromMain = main === null ? "" : keyOf(main);
+  return fromMain === "" ? keyOf(instance).slice(previewKey.length + 1) : fromMain;
+}
+
+async function snapshotInstance(
+  figma: PluginAPI,
+  instance: InstanceNode,
+  previewKey: string
+): Promise<InstanceSnapshot | undefined> {
+  const box = instance.absoluteBoundingBox;
+  if (box === null) {
+    return undefined;
+  }
+  const renderBounds = instance.absoluteRenderBounds;
+  const image =
+    renderBounds === null
+      ? null
+      : {
+          renderBounds: rect(renderBounds),
+          png: figma.base64Encode(
+            await instance.exportAsync({
+              format: "PNG",
+              constraint: { type: "SCALE", value: SCALE },
+              colorProfile: "SRGB",
+            })
+          ),
+        };
+  return { key: keyOf(instance), variant: await variantOf(instance, previewKey), box: rect(box), image };
+}
+
+/**
+ * Export every instance of every preview frame on the kit's page.
+ *
+ * @param figma - The plugin API.
+ * @param pageKey - The kit page's key, `KitSpec.page.key`.
+ * @param progress - Called after each instance with the count so far and the total.
+ * @returns The snapshot, ready for `JSON.stringify`.
+ * @throws When the file has no kit page, or more than one.
+ */
+export async function exportSnapshots(
+  figma: PluginAPI,
+  pageKey: string,
+  progress: SnapshotProgress
+): Promise<KitSnapshot> {
+  const page = await kitPage(figma, pageKey);
+  const frames = page.children.filter(
+    (node): node is FrameNode => isFrame(node) && keyOf(node).startsWith(PREVIEW_PREFIX)
+  );
+  const instancesOf = (frame: FrameNode) =>
+    frame.children.filter(
+      (node): node is InstanceNode => isInstance(node) && keyOf(node).startsWith(`${keyOf(frame)}/`)
+    );
+  const total = frames.reduce((sum, frame) => sum + instancesOf(frame).length, 0);
+  let done = 0;
+  const previews: PreviewSnapshot[] = [];
+  for (const frame of frames) {
+    const key = keyOf(frame);
+    const instances: InstanceSnapshot[] = [];
+    for (const instance of instancesOf(frame)) {
+      const snapshot = await snapshotInstance(figma, instance, key);
+      if (snapshot !== undefined) {
+        instances.push(snapshot);
+      }
+      done += 1;
+      progress(done, total);
+    }
+    previews.push({ key, name: frame.name, modes: await resolvedModes(figma, frame), instances });
+    await yieldToFigma();
+  }
+  return {
+    format: SNAPSHOT_FORMAT,
+    version: SNAPSHOT_VERSION,
+    exportedAt: new Date().toISOString(),
+    file: figma.root.name,
+    scale: SCALE,
+    previews,
+  };
+}
