@@ -17,7 +17,14 @@ export type TableHeadProps = ComponentProps<"th">;
 export type TableCellProps = ComponentProps<"td">;
 export type TableCaptionProps = ComponentProps<"caption">;
 
+/** One key/value row of `VerticalTable.Body`'s `data`. */
 export type VerticalTableItem = {
+  /**
+   * The row's identity, used as its React key. Set it when the list can be filtered, reordered
+   * or have rows inserted, so a stateful `value` (an open popover, an uncontrolled input) stays
+   * with its own item. Defaults to the item's position.
+   */
+  id?: string | number;
   label: ReactNode;
   value: ReactNode;
   fontWeight?: "normal" | "bold";
@@ -210,8 +217,15 @@ function VerticalTableBody({
         <tbody data-slot="vertical-table-body">
           {data && data.length > 0
             ? data.map(
-                ({ label, value, fontWeight = "normal", isLoading = false, text = "truncate" }, index) => (
-                  <VerticalTableRow key={`vertical-table-row-label-${index}`} fontWeight={fontWeight}>
+                (
+                  { id, label, value, fontWeight = "normal", isLoading = false, text = "truncate" },
+                  index
+                ) => (
+                  <VerticalTableRow
+                    key={
+                      id === undefined ? `vertical-table-row-label-${index}` : `vertical-table-row-id-${id}`
+                    }
+                    fontWeight={fontWeight}>
                     <VerticalTableKey text={text}>{label}</VerticalTableKey>
                     <VerticalTableValue text={text} isLoading={isLoading}>
                       {value}

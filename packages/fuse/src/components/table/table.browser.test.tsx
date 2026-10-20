@@ -1,13 +1,21 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { page } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { CONTROL_SM, ROW, px, renderThemed, stampDensity } from "../../../test/themed-browser-render";
+import {
+  CONTROL_SM,
+  ROW,
+  px,
+  renderThemed,
+  stampDensity,
+  textboxNamed,
+} from "../../../test/themed-browser-render";
 import { DENSITIES } from "../../theme/density";
 import { Button } from "../button/button";
 import { Frame } from "../frame/frame";
 import { Table, VerticalTable } from "./table";
+import type { VerticalTableItem } from "./table";
 
 function htmlTable(name?: string): HTMLTableElement {
   const element =
@@ -296,6 +304,18 @@ describe("VerticalTable", () => {
     // DOM audit: isLoading cells contain the skeleton node (no role; locate by the mandated slot).
     expect(loadingRow.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(2);
     expect(page.getByRole("cell", { name: "Name" }).elements()).toHaveLength(0);
+  });
+
+  it("keeps a row's stateful value with its own item when an item before it is removed", async () => {
+    const items: VerticalTableItem[] = [
+      { id: "plan", label: "Plan", value: <input aria-label="Plan note" defaultValue="" /> },
+      { id: "meter", label: "Meter", value: <input aria-label="Meter note" defaultValue="" /> },
+    ];
+    const { rerender } = renderThemed(<VerticalTable.Body data={items} />);
+    await userEvent.fill(textboxNamed("Meter note"), "Reading due");
+
+    rerender(<VerticalTable.Body data={items.slice(1)} />);
+    expect(textboxNamed("Meter note")).toHaveProperty("value", "Reading due");
   });
 
   it("names the table from Header via tableProps and exposes a Key row header", () => {
