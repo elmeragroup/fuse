@@ -477,7 +477,7 @@ test("a grouped Root keeps every group's item type", () => {
       }}
     />
   );
-  /* oxlint-disable typescript/no-unsafe-return, typescript/no-unsafe-member-access -- the access below is the type error under test, so its value is the error type */
+  /* oxlint-disable typescript/no-unsafe-return -- the access below is the type error under test, so its value is the error type */
   const _href = (
     <Command.Root
       grouped
@@ -486,7 +486,7 @@ test("a grouped Root keeps every group's item type", () => {
       itemToStringValue={(item) => item.href}
     />
   );
-  /* oxlint-enable typescript/no-unsafe-return, typescript/no-unsafe-member-access */
+  /* oxlint-enable typescript/no-unsafe-return */
 });
 
 test("a grouped Root takes filtered subsets and filtered groups with metadata", () => {

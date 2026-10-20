@@ -44,7 +44,6 @@ describe("useColorScheme", () => {
       try {
         // oxlint-disable-next-line react-hooks/rules-of-hooks -- probe asserts the provider's synchronous throw path; the hook never commits
         useColorScheme();
-        // oxlint-disable-next-line react/error-boundaries -- the probe renders the thrown message directly; the hook throws during this render
         return <span>ok</span>;
       } catch (error) {
         return <span>{error instanceof Error ? error.message : "error"}</span>;

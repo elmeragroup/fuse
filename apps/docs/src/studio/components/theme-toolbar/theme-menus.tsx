@@ -165,7 +165,6 @@ export function ThemeMenu({
         side={placement?.side ?? "bottom"}
         align="start"
         sideOffset={MENU_OFFSET}
-        // oxlint-disable-next-line shadcn/no-inline-styles -- a custom property only: the room on the menu's side of its trigger
         style={cap}
         className={styles.popup()}>
         <Popover.Header>

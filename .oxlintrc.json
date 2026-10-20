@@ -173,13 +173,28 @@
       "globals": {
         "React": "writable"
       },
-      "plugins": ["typescript", "oxc", "react", "unicorn"],
+      "plugins": ["typescript", "oxc", "react", "unicorn", "jsx-a11y"],
       "rules": {
         "react/react-in-jsx-scope": "off",
         "react/no-children-prop": "off",
         "react/exhaustive-deps": "error",
         "react-hooks/rules-of-hooks": "error",
-        "react-hooks/exhaustive-deps": "error"
+        "react-hooks/exhaustive-deps": "error",
+        "react/no-unstable-nested-components": "error",
+        "jsx-a11y/prefer-tag-over-role": "off",
+        "jsx-a11y/control-has-associated-label": "off",
+        "jsx-a11y/heading-has-content": "off",
+        "jsx-a11y/no-autofocus": "off",
+        "jsx-a11y/anchor-has-content": "off",
+        "jsx-a11y/label-has-associated-control": "off",
+        "jsx-a11y/aria-proptypes": "off",
+        "jsx-a11y/no-noninteractive-tabindex": "off",
+        "jsx-a11y/no-noninteractive-element-interactions": "off",
+        "jsx-a11y/no-aria-hidden-on-focusable": "off",
+        "jsx-a11y/img-redundant-alt": "off",
+        "jsx-a11y/click-events-have-key-events": "off",
+        "jsx-a11y/aria-role": "off",
+        "jsx-a11y/anchor-is-valid": "off"
       }
     },
     {

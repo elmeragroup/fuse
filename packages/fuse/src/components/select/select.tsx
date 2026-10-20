@@ -51,7 +51,6 @@ export function SelectTrigger({
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       data-size={size}
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- value-slot gap is content layout, not a control rung
       className={mergeClassName(
         className,
         selfFocusRingClass,
@@ -152,7 +151,6 @@ export function SelectItem({
         className,
         menuItemClass,
         menuItemIndicatorRoomClass,
-        // oxlint-disable-next-line elmera/no-local-focus-ring -- the highlight face menuItemClass leaves to the family; base-ui spells it `focus:` on Select items
         "w-full focus:bg-accent focus:text-accent-foreground focus:**:text-accent-foreground *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2"
       )}
       {...props}>

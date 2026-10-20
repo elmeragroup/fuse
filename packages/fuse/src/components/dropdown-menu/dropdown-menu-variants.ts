@@ -17,7 +17,6 @@ export const dropdownMenuVariants = tv({
       selfFocusRingClass,
       menuItemClass,
       menuItemInsetClass,
-      // oxlint-disable-next-line elmera/no-local-focus-ring -- highlight face, not native outline; ring comes from the shared adapter
       "group/dropdown-menu-item focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-[variant=destructive]:text-error data-[variant=destructive]:focus:bg-error/10 data-[variant=destructive]:focus:text-error data-[variant=destructive]:*:[svg]:text-error"
     ),
     // Both popups are inner-corner shells: they round, pad and publish `--inner-corner`.

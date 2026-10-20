@@ -137,7 +137,6 @@ export function InputGroupText({ className, ...props }: InputGroupTextProps): Re
       // The reference omits the slot, which breaks the
       // ButtonGroup `[data-slot]` child-selector contract.
       data-slot="input-group-text"
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- addon text gap is chrome, not a control rung
       className={cn(
         controlMd.type(),
         "flex items-center gap-2 text-muted-foreground [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",

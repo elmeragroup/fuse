@@ -11,7 +11,7 @@
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "gen": "plop --plopfile plopfile.mjs",
-    "lint": "oxlint . --deny-warnings",
+    "lint": "oxlint . --deny-warnings --report-unused-disable-directives-severity=error",
     "lint:fix": "oxlint --fix .",
     "release": "node --experimental-strip-types --experimental-transform-types --import ./packages/fuse/scripts/ts-resolve.mjs scripts/release.ts",
     "release:version": "pnpm exec changeset version && pnpm install --lockfile-only",

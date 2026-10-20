@@ -613,7 +613,6 @@ export function CornerXrayOverlay({ canvas }: { canvas: () => HTMLElement | null
           </g>
         ))}
         {drawings.map((drawing, index) => (
-          // oxlint-disable-next-line react/no-array-index-key -- the measured list has no other identity; it is redrawn whole
           <g key={index}>
             {Math.abs(drawing.partAt.x - drawing.insetEnd) > 1 ? (
               <path
@@ -635,7 +634,6 @@ export function CornerXrayOverlay({ canvas }: { canvas: () => HTMLElement | null
           }
           const x = drawing.side === "end" ? place.x + size.width : place.x;
           return (
-            // oxlint-disable-next-line react/no-array-index-key -- the measured list has no other identity; it is redrawn whole
             <path
               key={index}
               className={styles.leader()}
@@ -654,7 +652,6 @@ export function CornerXrayOverlay({ canvas }: { canvas: () => HTMLElement | null
           "--label-y": `${String(place.y)}px`,
         };
         return (
-          // oxlint-disable-next-line react/no-array-index-key -- the measured list has no other identity; it is redrawn whole
           <div
             key={index}
             className={styles.label()}
@@ -712,7 +709,6 @@ export function CornerReadout(): ReactElement | null {
         ) : (
           <ol className={styles.list()} aria-label="Measured corners">
             {corners.map((corner, index) => (
-              // oxlint-disable-next-line react/no-array-index-key -- the measured list has no other identity; it is redrawn whole
               <li key={index} className={styles.entry()} data-mismatch={corner.check.mismatch}>
                 <span className={styles.part()}>{`${corner.artboard} · ${corner.part}`}</span>
                 <span className={styles.equation()}>{readoutOf(corner)}</span>

@@ -301,7 +301,6 @@ export function ComboboxItem({
         className,
         menuItemClass,
         menuItemIndicatorRoomClass,
-        // oxlint-disable-next-line elmera/no-local-focus-ring -- the highlight face menuItemClass leaves to the family; base-ui spells it `data-highlighted:` on listbox options
         "w-full data-highlighted:bg-accent data-highlighted:text-accent-foreground data-highlighted:**:text-accent-foreground"
       )}
       {...props}>
@@ -390,7 +389,6 @@ export function ComboboxChips({
       </ComboboxPrimitive.Value>
       <ComboboxPrimitive.Chips
         data-slot="combobox-chips"
-        // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- chip wrap gap and compact chip padding are layout, not a control rung
         className={mergeClassName(
           className,
           controlMd.minHeight(),
@@ -463,7 +461,6 @@ export function ComboboxChip({
     <ComboboxPrimitive.Chip
       ref={mergedRef}
       data-slot="combobox-chip"
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- chip chrome is compact token, not a control rung
       className={mergeClassName(
         className,
         "text-xs font-medium flex h-[calc(--spacing(5.5))] w-fit items-center justify-center gap-1 bg-muted px-1.5 whitespace-nowrap text-foreground",

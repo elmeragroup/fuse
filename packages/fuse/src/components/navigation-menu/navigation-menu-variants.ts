@@ -18,7 +18,6 @@ import { overlayPopupSurfaceClass, overlayPositionerClass } from "../overlay/ove
  * `rounded-inner`. A row outside it, in a vertical Root or an inline Root on the page, keeps the
  * outer `rounded-sm`. Both corners weigh nothing, so a consumer's `rounded-*` class wins.
  */
-// oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- the 8px icon gap is row layout, not a control rung
 const contentRowClass = cn(
   "text-sm box-border min-h-(--row-h) gap-2 px-(--row-px) py-(--row-py) [:where(&)]:rounded-sm in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner"
 );
@@ -57,7 +56,6 @@ const barBoxClass = cn(
 export const navigationMenuVariants = tv({
   slots: {
     root: "relative flex max-w-max flex-1 items-center justify-center data-[orientation=vertical]:max-w-none data-[orientation=vertical]:items-stretch",
-    // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- the gap between triggers is bar layout, not a control rung
     list: "m-0 flex flex-1 list-none items-center justify-center gap-1 p-0 data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-stretch",
     item: "relative",
     trigger: [
@@ -97,9 +95,7 @@ export const navigationMenuVariants = tv({
       "data-active:font-medium flex items-center text-inherit no-underline outline-none data-active:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
     ],
     indicator:
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- the arrow is decorative geometry, not a control rung
       "pointer-events-none absolute inset-x-0 top-full flex h-1.5 items-end justify-center overflow-hidden opacity-0 transition-opacity duration-200 data-popup-open:opacity-100",
-    // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- the arrow is decorative geometry, not a control rung
     indicatorArrow: "relative top-[60%] size-2 rotate-45 rounded-tl-sm bg-border",
   },
   // A bar sits on the page and highlights with `muted`. A row sits on the popover and
