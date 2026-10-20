@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useImperativeHandle, useLayoutEffect, useState } from "react";
+import { memo, use, useImperativeHandle, useLayoutEffect, useMemo, useState } from "react";
 import type { ComponentProps, ReactElement } from "react";
 
 import { Autocomplete as AutocompletePrimitive } from "@base-ui/react";
@@ -34,6 +34,48 @@ function readRowMetrics(element: HTMLElement): RowMetrics {
     pad: metric("--surface-gap-sm") ?? DENSE_ROW_METRICS.pad,
   };
 }
+
+/** One window row's inputs. Each is unchanged for a row that stays in the window as it scrolls. */
+type VirtualRowProps = {
+  readonly rows: CommandListRows;
+  readonly item: unknown;
+  readonly index: number;
+  /** The row's offset in the list's scroll space, in pixels. */
+  readonly start: number;
+  readonly setSize: number;
+  readonly measureElement: (element: Element | null) => void;
+};
+
+/**
+ * One window row. The virtualizer re-renders the list on every scroll event, so a row renders
+ * again only when its own inputs change: a row that stays in the window keeps its element, its
+ * context value and its `style`, and Base UI's memoized item skips it too.
+ */
+const VirtualRow = memo(function VirtualRow({
+  rows,
+  item,
+  index,
+  start,
+  setSize,
+  measureElement,
+}: VirtualRowProps): ReactElement {
+  const row = useMemo(
+    () => ({
+      index,
+      ref: measureElement,
+      style: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width: "100%",
+        transform: `translateY(${String(start)}px)`,
+      } as const,
+      setSize,
+    }),
+    [index, measureElement, start, setSize]
+  );
+  return <CommandRowContext.Provider value={row}>{rows(item, index)}</CommandRowContext.Provider>;
+});
 
 /**
  * `CommandVirtual.List` takes a `div`'s props, which `Command.List` fills with Base UI's listbox
@@ -144,22 +186,15 @@ export function CommandVirtualList({
                 return null;
               }
               return (
-                <CommandRowContext.Provider
+                <VirtualRow
                   key={virtualItem.key}
-                  value={{
-                    index: virtualItem.index,
-                    ref: virtualizer.measureElement,
-                    style: {
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      width: "100%",
-                      transform: `translateY(${String(virtualItem.start)}px)`,
-                    },
-                    setSize: items.length,
-                  }}>
-                  {rows(item, virtualItem.index)}
-                </CommandRowContext.Provider>
+                  rows={rows}
+                  item={item}
+                  index={virtualItem.index}
+                  start={virtualItem.start}
+                  setSize={items.length}
+                  measureElement={virtualizer.measureElement}
+                />
               );
             })}
           </CommandListTargetContext.Provider>
