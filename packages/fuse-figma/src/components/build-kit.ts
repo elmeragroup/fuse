@@ -183,8 +183,12 @@ export async function buildKit(): Promise<{
 /**
  * Check that every icon a set places, and every icon its swap properties start with, is one of
  * the library's, and that each icon layer's swap property is one the set defines.
+ *
+ * @param set - The built component set.
+ * @param library - The icon library the kit ships.
+ * @throws When the set names an icon the library lacks, or links a property it does not define.
  */
-function checkIconReferences(set: ComponentSetSpec, library: IconLibrarySpec): void {
+export function checkIconReferences(set: ComponentSetSpec, library: IconLibrarySpec): void {
   const icons = new Set(library.icons.map((icon) => icon.key));
   const properties = new Set(set.swapProperties.map((property) => property.name));
   for (const property of set.swapProperties) {

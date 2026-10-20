@@ -70,6 +70,19 @@ const STATE_CONDITIONS = [
 ] as const;
 
 /**
+ * The states the recipe styles and the kit leaves out. An invalid or expanded Button belongs
+ * to a form or a menu trigger, the press offset to a moment of interaction, and the group
+ * corners to a Button group, none of which a standalone component shows.
+ */
+const OMITTED_STATES = new Set([
+  "aria-invalid",
+  "data-invalid",
+  "aria-expanded",
+  "enabled-active",
+  "in-data-[slot=button-group]",
+]);
+
+/**
  * The child selectors of the recipe. `[&_svg]` reaches every icon, the spinner's included.
  * `[&>svg:not([data-icon=inline-end])]` reaches only an `<svg>` child of the root that is not
  * an end icon, which a pending Button hides.
@@ -122,6 +135,13 @@ const ONLY_ICON: IconSlot = {
   swapProperty: "Icon",
 };
 
+/** The swap property of each slot that has one, starting with the slot's icon. */
+function swapProperties(slots: readonly IconSlot[]): ComponentDefinition["swapProperties"] {
+  return slots.flatMap((slot) =>
+    slot.swapProperty === undefined ? [] : [{ name: slot.swapProperty, defaultIcon: slot.icon }]
+  );
+}
+
 /** The spinner when the cell is pending, then the icons the cell's `icon` value places. */
 function buttonIcons(cell: Cell): readonly IconSlot[] {
   const pending = cell.state === "pending" ? [SPINNER] : [];
@@ -154,13 +174,11 @@ export const BUTTON: ComponentDefinition = {
     ["has-data-[icon=inline-start]", (cell: Cell) => cell.icon === "start" || cell.state === "pending"],
     ["has-data-[icon=inline-end]", (cell: Cell) => cell.icon === "end"],
   ]),
+  omittedStates: OMITTED_STATES,
   childSelectors: CHILD_SELECTORS,
   label: { key: "label", name: "label", characters: "Button", textProperty: "Label" },
   iconsFor: buttonIcons,
-  swapProperties: [
-    { name: "Start icon", defaultIcon: "Plus" },
-    { name: "End icon", defaultIcon: "ArrowRight" },
-  ],
+  swapProperties: swapProperties([START_ICON, END_ICON]),
 };
 
 /** The square sizes, as `<Button size="icon">` renders them around a lone icon. */
@@ -172,8 +190,9 @@ export const ICON_BUTTON: ComponentDefinition = {
   columnAxis: "state",
   classesFor,
   conditions: new Map([...STATE_CONDITIONS, ["has-data-[icon=inline-start]", inState("pending")]]),
+  omittedStates: OMITTED_STATES,
   childSelectors: CHILD_SELECTORS,
   label: undefined,
   iconsFor: (cell) => (cell.state === "pending" ? [SPINNER, ONLY_ICON] : [ONLY_ICON]),
-  swapProperties: [{ name: "Icon", defaultIcon: "Plus" }],
+  swapProperties: swapProperties([ONLY_ICON]),
 };

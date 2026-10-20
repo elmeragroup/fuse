@@ -107,8 +107,17 @@ describe("fuseVariableSet", () => {
       alias("Fuse brand", "dark/external/company/success/20")
     );
     // A tint holds a literal even where its role is one, since an alias cannot change alpha.
+    // The role is pinned first: Fjordkraft's internal light theme takes `:root`'s
+    // `--error: oklch(0.4526 0.17845 30.42)` in themes.css, which is sRGB 0.6353 0.0588 0.0038
+    // through the OKLab reference matrices, worked by hand.
     const role = value("Fuse brand", "light/internal/private/error", "Fjordkraft");
     if (role?._tag !== "Color") throw new Error("the internal light error role is no literal color");
+    expect(role.color.r).toBeCloseTo(0.6353, 3);
+    expect(role.color.g).toBeCloseTo(0.0588, 3);
+    expect(role.color.b).toBeCloseTo(0.0038, 3);
+    expect(role.color.a).toBe(1);
+    // A cross-check, not a tautology: the unit under test is the tint derivation, and its oracle
+    // is the role it derives from, at the tint's alpha.
     expect(value("Fuse brand", "light/internal/private/error/10", "Fjordkraft")).toEqual({
       _tag: "Color",
       color: { ...role.color, a: 0.1 },

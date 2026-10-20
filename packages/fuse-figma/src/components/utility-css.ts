@@ -95,7 +95,7 @@ export async function compileUtilities(utilities: readonly string[]): Promise<Co
  * @param nodes - The syntax tree `build` returns.
  * @returns The utility rules, theme values and registered property defaults.
  */
-export function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
+function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
   const rules = new Map<string, UtilityRule>();
   const themeValues = new Map<string, string>();
   const propertyInitials = new Map<string, string>();

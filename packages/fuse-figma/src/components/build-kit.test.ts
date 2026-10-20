@@ -7,9 +7,13 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import { PHOSPHOR_ICON_NAMES, buttonVariants } from "@elmeragroup/fuse/recipe-catalog";
 
-import { buildKit } from "./build-kit";
+import { buildKit, checkIconReferences } from "./build-kit";
+import { buildComponentSet, iconKey } from "./component-spec";
+import type { ComponentDefinition, IconSlot } from "./component-spec";
 import type { CoverageRow } from "./coverage";
+import { makeVariableIndex } from "./css-values";
 import type { ComponentRootSpec, KitSpec } from "./kit-spec";
+import { compileUtilities } from "./utility-css";
 
 let spec: KitSpec;
 let coverage: readonly CoverageRow[];
@@ -361,15 +365,65 @@ describe("the Button coverage", () => {
     ).toContainEqual(expect.objectContaining({ property: "display", outcome: "literal" }));
   });
 
-  it("drops the states no cell shows", () => {
-    const dropped = new Set(coverage.filter((row) => row.outcome === "dropped").map((row) => row.className));
-    for (const className of [
-      "aria-invalid:border-error",
-      "aria-expanded:bg-muted",
-      "enabled-active:not-aria-[haspopup]:translate-y-px",
-    ]) {
-      expect(dropped).toContain(className);
-    }
+  it("drops the states no cell shows, and only the ones the definition omits", () => {
+    const omitted = new Set(
+      coverage.flatMap((row) =>
+        row.outcome === "dropped" ? (/^no cell of the matrix shows `(.+)`$/.exec(row.detail)?.[1] ?? []) : []
+      )
+    );
+    expect(omitted).toEqual(
+      new Set([
+        "aria-invalid",
+        "data-invalid",
+        "aria-expanded",
+        "enabled-active",
+        "in-data-[slot=button-group]",
+      ])
+    );
+  });
+});
+
+describe("the icon reference check", () => {
+  const badge: IconSlot = {
+    key: "icon-badge",
+    name: "Badge icon",
+    side: "start",
+    direct: true,
+    dataIcon: "inline-start",
+    icon: "Plus",
+    swapProperty: "Badge icon",
+  };
+  const chip: ComponentDefinition = {
+    key: "chip",
+    name: "Chip",
+    slot: "chip",
+    axes: [{ name: "state", values: ["rest"] }],
+    columnAxis: "state",
+    classesFor: () => "text-[#000000] [&_svg]:size-[16px]",
+    conditions: new Map(),
+    omittedStates: new Set(),
+    childSelectors: new Map([["[&_svg]", () => true]]),
+    label: undefined,
+    iconsFor: () => [badge],
+    swapProperties: [],
+  };
+  const library = {
+    key: "icons",
+    name: "Icons",
+    size: 16,
+    color: transparent,
+    icons: [{ key: iconKey("Plus"), name: "Plus", svg: "<svg></svg>" }],
+  };
+
+  it("fails the build for an icon layer that links a swap property the set does not define", async () => {
+    const { componentSet } = buildComponentSet(chip, {
+      compiled: await compileUtilities(["text-[#000000]", "size-[16px]"]),
+      variables: makeVariableIndex([]),
+      page: [],
+    });
+    expect(() => checkIconReferences(componentSet, library)).toThrow(
+      "chip/state=rest: the Badge icon links Badge icon, which Chip does not define"
+    );
   });
 });
 

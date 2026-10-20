@@ -61,7 +61,7 @@ const CLASS_ATTRIBUTE = /\bclass="/;
  * @param markup - The SVG the icon renders.
  * @returns The icon's spec, or undefined for artwork with colors of its own.
  */
-export function iconSpec(name: string, markup: string): IconSpec | undefined {
+function iconSpec(name: string, markup: string): IconSpec | undefined {
   const paints = [...markup.matchAll(PAINT_ATTRIBUTE)].map(([, value]) => value);
   const tinted =
     paints.includes("currentColor") &&

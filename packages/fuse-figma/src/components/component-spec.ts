@@ -76,11 +76,14 @@ export type ComponentDefinition = {
   readonly columnAxis: string;
   /** The recipe's class string for one cell. */
   readonly classesFor: (cell: Cell) => string;
-  /**
-   * Each Tailwind variant the matrix models, and whether it holds in a cell. A class with a
-   * variant missing here, such as `aria-invalid`, describes a state no cell shows.
-   */
+  /** Each Tailwind variant the matrix models, and whether it holds in a cell. */
   readonly conditions: ReadonlyMap<string, (cell: Cell) => boolean>;
+  /**
+   * The Tailwind variants of states the matrix leaves out on purpose, such as `aria-invalid`.
+   * A class with one of them lands in the coverage table as dropped. A class with a variant
+   * found nowhere in the definition is unmapped, so a new state in the recipe fails the gate.
+   */
+  readonly omittedStates: ReadonlySet<string>;
   /**
    * Arbitrary variants that select child layers, each with the icons it selects, such as
    * `[&_svg]`, which selects every icon.
@@ -291,13 +294,16 @@ function cascade(
       holds &&= condition(cell);
     }
     if (unmodelled !== undefined) {
+      const omitted = definition.omittedStates.has(unmodelled);
       for (const declaration of rule.declarations) {
         record({
           className,
           property: declaration.property,
           value: declaration.value,
-          outcome: "dropped",
-          detail: `no cell of the matrix shows \`${unmodelled}\``,
+          outcome: omitted ? "dropped" : "unmapped",
+          detail: omitted
+            ? `no cell of the matrix shows \`${unmodelled}\``
+            : `the definition neither models nor omits \`${unmodelled}\``,
         });
       }
       continue;
