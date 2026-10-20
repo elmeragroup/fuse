@@ -64,7 +64,8 @@ export type PhoneNumberFieldProps = {
   /**
    * Custom/trimmed metadata. Replacement reconciles the picker while preserving existing
    * international identity. To limit the picker, pass `countries` instead: trimmed metadata can
-   * no longer parse the numbers it leaves out.
+   * no longer parse the numbers it leaves out. It does not make the bundle smaller: the field
+   * imports its full default metadata either way.
    */
   metadata?: MetadataJson;
   /**

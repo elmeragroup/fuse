@@ -221,6 +221,15 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     measuredGzip: 818,
     ceilingGzip: 1215,
   },
+  // 2026-10-20: new row, measured at 28289 against the `button` entry's 28333. The root barrel
+  // re-exports PhoneNumberField's metadata and Code's highlighter; this row fails if a root
+  // `Button` import stops tree-shaking them away.
+  {
+    name: "Button from the root barrel",
+    entryFile: "index.js",
+    exportName: "Button",
+    measuredGzip: 28289,
+  },
 ] satisfies readonly Measured<NamedImportBudget>[]);
 
 export const CSS_BUDGETS: readonly CssBudget[] = derive([
