@@ -53,7 +53,9 @@ function pageSizeChoices(pageSizes: readonly number[], current: number): number[
 
 /**
  * Rows-per-page select, page status, and first, previous, next and last buttons for a paginated
- * table. Changing the page size calls `table.setPageSize` and keeps the page index; resetting to
+ * table. The page status is a polite `role="status"` region, so each page change is announced, and
+ * an unavailable move stays focusable with `aria-disabled`, so focus never drops when a press
+ * reaches the first or last page. Changing the page size calls `table.setPageSize` and keeps the page index; resetting to
  * the first page on a size change is the state owner's job, for example in `onPaginationChange`.
  */
 export function DataTablePagination({
@@ -133,7 +135,9 @@ export function DataTablePagination({
           </SelectContent>
         </SelectRoot>
       </FieldRoot>
-      <span data-slot="data-table-page-status" className={pageStatusClass()}>
+      {/* A persistent polite live region: focus stays on the move button after a page change, so
+          the status text is what tells a screen-reader user the page moved. */}
+      <span data-slot="data-table-page-status" role="status" className={pageStatusClass()}>
         {statusText}
       </span>
       <div data-slot="data-table-page-controls" className={pageControls()}>
@@ -144,6 +148,10 @@ export function DataTablePagination({
             size="icon-sm"
             aria-label={label}
             disabled={target === undefined}
+            // Reaching the first or last page disables the move the user just pressed; keeping it
+            // focusable (aria-disabled instead of native disabled) holds focus on it instead of
+            // dropping it to the document body.
+            focusableWhenDisabled
             onClick={
               target === undefined
                 ? undefined

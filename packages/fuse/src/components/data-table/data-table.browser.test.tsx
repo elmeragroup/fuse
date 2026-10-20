@@ -189,9 +189,23 @@ function pageButtons() {
   };
 }
 
-/** The disabled state of the first, previous, next and last buttons. */
+/**
+ * The disabled state of the first, previous, next and last buttons. An unavailable move stays
+ * focusable, so it announces `aria-disabled` instead of carrying the native attribute.
+ */
 function disabledMoves(): boolean[] {
-  return Object.values(pageButtons()).map((control) => control.disabled);
+  return Object.values(pageButtons()).map(
+    (control) => control.disabled || control.getAttribute("aria-disabled") === "true"
+  );
+}
+
+/** The pagination's page status region. */
+function pageStatusRegion(): HTMLElement {
+  const element = page.getByRole("status").element();
+  if (!(element instanceof HTMLElement)) {
+    throw new Error("expected one status region");
+  }
+  return element;
 }
 
 describe("DataTable pagination", () => {
@@ -211,6 +225,36 @@ describe("DataTable pagination", () => {
 
     await userEvent.click(pageButtons().first);
     await expect.element(page.getByText("Page 1 of 3", { exact: true })).toBeVisible();
+  });
+
+  it("keeps focus on a move button that reaching the last page disables", async () => {
+    renderInEnglish(<ClientPagedTable data={ORDERS_25} />);
+
+    pageButtons().next.focus();
+    await userEvent.keyboard("{Enter}");
+    await expect.element(page.getByText("Page 2 of 3", { exact: true })).toBeVisible();
+    await userEvent.keyboard("{Enter}");
+    await expect.element(page.getByText("Page 3 of 3", { exact: true })).toBeVisible();
+
+    const next = pageButtons().next;
+    expect(document.activeElement).toBe(next);
+    expect(next.disabled).toBe(false);
+    expect(next.getAttribute("aria-disabled")).toBe("true");
+    // Activating the unavailable move again changes nothing.
+    await userEvent.keyboard("{Enter}");
+    expect(pageStatusRegion().textContent).toBe("Page 3 of 3");
+  });
+
+  it("announces the page through one persistent status region", async () => {
+    renderInEnglish(<ClientPagedTable data={ORDERS_25} />);
+
+    const region = pageStatusRegion();
+    expect(region.textContent).toBe("Page 1 of 3");
+
+    await userEvent.click(pageButtons().next);
+    await expect.element(page.getByText("Page 2 of 3", { exact: true })).toBeVisible();
+    expect(pageStatusRegion()).toBe(region);
+    expect(region.textContent).toBe("Page 2 of 3");
   });
 
   it("shows an empty known total as page 1 of 1 with every move disabled", () => {
