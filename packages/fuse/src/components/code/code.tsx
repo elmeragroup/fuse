@@ -3,6 +3,7 @@ import type { ComponentProps, ReactElement } from "react";
 import { parse, render } from "sugar-high/core";
 import { tokenize } from "sugar-high/lang/javascript";
 
+import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 
 /**
@@ -32,6 +33,10 @@ export type CodeProps = Omit<ComponentProps<"pre">, "children"> & {
  * Syntax-highlighted code block. Server component — it owns no
  * state, no handlers, and no browser APIs.
  *
+ * It is always a tab stop, so keyboard users can scroll a long block. Named through
+ * `aria-label` or `aria-labelledby`, it is also a `region` landmark; an unnamed region would
+ * announce nothing useful, so without a name it keeps no role.
+ *
  * The inner `<code>` receives highlighter HTML via `dangerouslySetInnerHTML`. That
  * markup is `sugar-high` output over the caller-supplied `code` string;
  * the highlighter escapes token text. Do not pass pre-built HTML.
@@ -41,7 +46,10 @@ export function Code({ className, code, ...props }: CodeProps): ReactElement {
     <pre
       data-slot="code"
       tabIndex={0}
-      role="region"
+      {...definedProps({
+        role:
+          props["aria-label"] !== undefined || props["aria-labelledby"] !== undefined ? "region" : undefined,
+      })}
       className={cn("text-xs leading-relaxed max-h-160 overflow-auto font-mono", className)}
       {...props}>
       <code dangerouslySetInnerHTML={{ __html: highlight(code) }} />
