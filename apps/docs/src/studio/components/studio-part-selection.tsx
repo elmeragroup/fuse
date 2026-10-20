@@ -55,6 +55,33 @@ export type PartMetrics = {
   readonly role: PartRole | undefined;
 };
 
+/** Where a keyboard pick moves from the picked part: out to its parent part, or in to its first. */
+export type PickDirection = "enclosing" | "first-child";
+
+/** The nearest part above `element` inside `stage`, the element with a slot it sits in. */
+function enclosingPart(element: HTMLElement, stage: HTMLElement): HTMLElement | undefined {
+  for (
+    let parent = element.parentElement;
+    parent !== null && parent !== stage;
+    parent = parent.parentElement
+  ) {
+    if (parent.dataset.slot !== undefined && parent.dataset.slot !== "") {
+      return parent;
+    }
+  }
+  return undefined;
+}
+
+/** The first part inside `element`, in document order. */
+function firstInnerPart(element: HTMLElement): HTMLElement | undefined {
+  for (const inner of element.querySelectorAll("[data-slot]")) {
+    if (inner instanceof HTMLElement && inner.dataset.slot !== "") {
+      return inner;
+    }
+  }
+  return undefined;
+}
+
 /** The picked part's identity and the commands on it, stable while the part stays picked. */
 type PartSelectionValue = {
   /** The picked part, while its artboard stays selected. */
@@ -64,6 +91,12 @@ type PartSelectionValue = {
    * artboard, and selects its artboard. Returns whether `target` sits in an artboard.
    */
   pick: (target: Element) => boolean;
+  /**
+   * Moves the pick from the picked part to the part that encloses it, or to the first part inside
+   * it, for keyboard picking. Returns the new part's slot, or `undefined` when there is none, in
+   * which case the pick stays.
+   */
+  pickRelative: (direction: PickDirection) => string | undefined;
   /** Drops the picked part, keeping its artboard selected. */
   clear: () => void;
   /** "Select part" mode: a plain press picks a part instead of using it. */
@@ -247,13 +280,31 @@ export function PartSelectionProvider({ children }: { children: ReactNode }): Re
     };
   }, [part, listeners]);
 
+  const pickRelative = useCallback(
+    (direction: PickDirection): string | undefined => {
+      const stage = part?.element.closest<HTMLElement>(STAGE);
+      if (part === undefined || stage === null || stage === undefined) {
+        return undefined;
+      }
+      const next =
+        direction === "enclosing" ? enclosingPart(part.element, stage) : firstInnerPart(part.element);
+      const slot = next?.dataset.slot;
+      if (next === undefined || slot === undefined) {
+        return undefined;
+      }
+      setPicked({ artboard: part.artboard, slot, element: next });
+      return slot;
+    },
+    [part]
+  );
+
   const clear = useCallback(() => {
     setPicked(undefined);
   }, []);
 
   const value = useMemo(
-    (): PartSelectionValue => ({ part, pick, clear, partMode, setPartMode, watch }),
-    [part, pick, clear, partMode, watch]
+    (): PartSelectionValue => ({ part, pick, pickRelative, clear, partMode, setPartMode, watch }),
+    [part, pick, pickRelative, clear, partMode, watch]
   );
   return (
     <PartSelectionContext value={value}>

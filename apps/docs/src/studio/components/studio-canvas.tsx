@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type {
   CSSProperties,
   MouseEvent as ReactMouseEvent,
@@ -99,7 +99,11 @@ type GestureEvent = UIEvent & { readonly scale: number; readonly clientX: number
  */
 export function StudioCanvas({ children }: { children: ReactNode }): ReactElement {
   const { tool, setTool, select, selectedId } = useStudio();
-  const { part, pick, clear: clearPart, partMode, setPartMode } = usePartSelection();
+  const { part, pick, pickRelative, clear: clearPart, partMode, setPartMode } = usePartSelection();
+  /** What the last keyboard pick did, for the canvas's live region. */
+  const [pickAnnouncement, setPickAnnouncement] = useState("");
+  /** The focused element a keyboard walk through the parts started from, so Enter keeps walking. */
+  const walkFrom = useRef<EventTarget | null>(null);
   const commands = useViewportCommands();
   const { attachCanvas } = commands;
   const { viewport, gliding, ready, announcement } = useViewportState();
@@ -156,6 +160,7 @@ export function StudioCanvas({ children }: { children: ReactNode }): ReactElemen
   const onPointerDownCapture = (event: ReactPointerEvent<HTMLElement>) => {
     const target = pickTarget(event);
     if (target !== undefined && pick(target)) {
+      walkFrom.current = null;
       event.preventDefault();
       event.stopPropagation();
       const focused = document.activeElement;
@@ -170,23 +175,70 @@ export function StudioCanvas({ children }: { children: ReactNode }): ReactElemen
       event.stopPropagation();
     }
   };
-  // In "Select part" mode, Enter or Space on a focused artboard control picks it as a press
-  // would, so the keyboard reaches every part the pointer does and a key never uses a control
-  // that a press would only pick. Capturing it keeps the control and its menus from seeing it.
-  const onKeyDownCapture = (event: ReactKeyboardEvent<HTMLElement>) => {
+  /**
+   * Keyboard picking in "Select part" mode, so the keyboard reaches every part the pointer does.
+   * Enter or Space on a focused artboard control picks it as a press would, and a key never uses a
+   * control that a press would only pick. With a part picked, Shift+Enter moves the pick out to the
+   * part that encloses it, and Enter with focus in the picked part, on the control the walk started
+   * from, or off the artboard's controls, moves it in to the first part inside, so parts that take no focus, such as a card's header or
+   * a badge, are reachable too. The live region names each pick a key makes.
+   *
+   * @returns Whether the key picked, so the caller keeps it from the control and its menus.
+   */
+  const pickByKey = (event: KeyboardEvent | ReactKeyboardEvent<HTMLElement>): boolean => {
     const { target } = event;
+    if (!partMode || tool !== "select" || event.altKey || event.metaKey || event.ctrlKey) {
+      return false;
+    }
+    if (target instanceof Element && target.closest("[data-canvas-overlay]") !== null) {
+      return false;
+    }
+    if (part !== undefined && event.key === "Enter") {
+      // Focus on a control inside the picked part counts as on it, and so does the control a walk
+      // started from: the pick moved away from it, and Enter keeps walking.
+      const onPicked =
+        !isControl(target) ||
+        target === walkFrom.current ||
+        (target instanceof Node && part.element.contains(target));
+      if (event.shiftKey || onPicked) {
+        const slot = pickRelative(event.shiftKey ? "enclosing" : "first-child");
+        if (slot !== undefined) {
+          walkFrom.current = target;
+        }
+        setPickAnnouncement(
+          slot === undefined
+            ? event.shiftKey
+              ? `No part encloses ${part.slot}`
+              : `No part inside ${part.slot}`
+            : `Picked ${slot}`
+        );
+        return true;
+      }
+    }
     if (
-      partMode &&
-      tool === "select" &&
       (event.key === "Enter" || event.key === " ") &&
-      !event.altKey &&
-      !event.metaKey &&
-      !event.ctrlKey &&
+      !event.shiftKey &&
       target instanceof Element &&
-      target.closest("[data-canvas-overlay]") === null &&
       isControl(target) &&
       pick(target)
     ) {
+      walkFrom.current = null;
+      const slot = target.closest<HTMLElement>("[data-slot]")?.dataset.slot;
+      if (slot !== undefined) {
+        setPickAnnouncement(`Picked ${slot}`);
+      }
+      return true;
+    }
+    return false;
+  };
+  // The window's key listener subscribes once per set of shortcuts; it reads the latest picker.
+  const pickByKeyRef = useRef(pickByKey);
+  useLayoutEffect(() => {
+    pickByKeyRef.current = pickByKey;
+  });
+  // Capturing the key on the canvas keeps the control and its menus from seeing it.
+  const onKeyDownCapture = (event: ReactKeyboardEvent<HTMLElement>) => {
+    if (pickByKey(event)) {
       event.preventDefault();
       event.stopPropagation();
     }
@@ -349,6 +401,12 @@ export function StudioCanvas({ children }: { children: ReactNode }): ReactElemen
       if (event.defaultPrevented || isTypingTarget(event.target, OVERLAYS)) {
         return;
       }
+      // A key from outside the canvas, such as with focus on the page after a pointer pick,
+      // still moves the pick; one on the canvas was handled, and stopped, as it was captured.
+      if (!isControl(event.target) && pickByKeyRef.current(event)) {
+        event.preventDefault();
+        return;
+      }
       const mod = event.metaKey || event.ctrlKey;
       const shortcut = { animate: true, announce: true } as const;
       if (event.shiftKey && !mod && !event.altKey && event.code === "Digit1") {
@@ -451,7 +509,7 @@ export function StudioCanvas({ children }: { children: ReactNode }): ReactElemen
       <StudioToolbar />
       <ThemeToolbar />
       <p role="status" aria-live="polite" className={styles.status()}>
-        {announcement}
+        <span>{announcement}</span> <span>{pickAnnouncement}</span>
       </p>
     </section>
   );
