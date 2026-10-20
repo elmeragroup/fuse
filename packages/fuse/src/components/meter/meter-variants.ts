@@ -16,7 +16,8 @@ export const meterVariants = tv({
     labelValue: "text-sm",
     icon: "inline-block size-4 align-text-bottom",
     bar: "relative h-1.5 w-full rounded-full bg-muted outline outline-1 -outline-offset-1 outline-transparent",
-    barFill: "absolute top-0 left-0 h-full rounded-full transition-all forced-colors:bg-[Highlight]",
+    barFill:
+      "absolute top-0 left-0 h-full rounded-full transition-[width,background-color] forced-colors:bg-[Highlight]",
   },
   variants: {
     tone: {

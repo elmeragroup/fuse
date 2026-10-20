@@ -1,3 +1,5 @@
+import { hydrateRoot } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -7,6 +9,32 @@ import { Field } from "../field";
 import { TextareaField } from "./textarea-field";
 
 describe("TextareaField", () => {
+  it("counts text typed before hydration into an empty field", async () => {
+    // React's hydration keeps such text only when the field has no default text to restore.
+    const element = <TextareaField label="Server bio" maxLength={20} />;
+    const host = document.createElement("div");
+    host.innerHTML = renderToString(element);
+    document.body.append(host);
+    const recover = vi.fn();
+    let root: ReturnType<typeof hydrateRoot> | undefined;
+    try {
+      expect(page.getByText("0/20", { exact: true }).query()).not.toBeNull();
+      // What typing does before the client scripts attach their listeners.
+      const area = textboxNamed("Server bio");
+      if (!(area instanceof HTMLTextAreaElement)) {
+        throw new Error("expected the server textarea");
+      }
+      area.value = "Hello there";
+      root = hydrateRoot(host, element, { onRecoverableError: recover });
+      await expect.element(page.getByText("11/20", { exact: true })).toBeInTheDocument();
+      expect(area.value).toBe("Hello there");
+      expect(recover).not.toHaveBeenCalled();
+    } finally {
+      root?.unmount();
+      host.remove();
+    }
+  });
+
   it("resolves the textbox by accessible name and links description and error", () => {
     renderThemed(
       <TextareaField
