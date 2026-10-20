@@ -39,6 +39,7 @@ describe("cardVariants", () => {
         ["cardHeader", "@container/card-header"],
         ["cardTag", "text-muted-foreground"],
         ["cardTitle", "font-semibold"],
+        ["cardTitle", "leading-snug"],
         ["cardDescription", "text-muted-foreground"],
         ["cardAction", "col-start-2"],
         ["base", "[--card-pad:var(--surface-pad-md)]"],
@@ -57,12 +58,13 @@ describe("cardVariants", () => {
         ["base", "flex-row"],
         ["base", "flex-wrap"],
         ["cardHeader", "grid"],
-        ["cardTitle", "text-xl"],
+        ["cardTitle", "text-xl/snug"],
       ],
       [
         ["cardContent", "p-[var(--card-pad,var(--surface-pad-md))]"],
         ["cardContent", "not-first:pt-0"],
         ["cardFooter", "not-first:pt-0"],
+        ["cardTitle", "leading-none"],
       ],
     ],
   ])("resolves every slot for the %s card", (_name, props, present, absent) => {

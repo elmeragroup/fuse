@@ -20,6 +20,8 @@ import { tv } from "../../styles/tv";
  * with it, and a content or footer below another section drops its top padding, so the tier is
  * also the gap between sections. A content or footer that opens the card keeps it. A horizontal
  * card pads and gaps its sections with the same tier.
+ * The title is `leading-snug` in both directions, as `Heading` and `Item.Title` are, so a title
+ * that wraps keeps space between its lines.
  */
 export const cardVariants = tv({
   slots: {
@@ -27,7 +29,7 @@ export const cardVariants = tv({
     cardHeader:
       "@container/card-header grid auto-rows-min items-start gap-1.5 has-data-[slot=card-action]:grid-cols-[1fr_auto]",
     cardTag: "text-sm font-semibold text-muted-foreground",
-    cardTitle: "font-semibold leading-none",
+    cardTitle: "font-semibold leading-snug",
     cardDescription: "text-muted-foreground",
     cardAction: "col-start-2 row-span-2 row-start-1 self-start justify-self-end",
     cardContent: "",
@@ -48,7 +50,7 @@ export const cardVariants = tv({
         cardHeader: "min-w-0 flex-[2_1_16rem] wrap-anywhere",
         cardContent: "min-w-0 flex-[1_1_12rem] wrap-anywhere",
         cardFooter: "min-w-0 flex-[1_1_8rem] wrap-anywhere",
-        cardTitle: "text-xl",
+        cardTitle: "text-xl/snug",
       },
     },
     size: {
@@ -66,7 +68,7 @@ export const cardVariants = tv({
  * Module-private type-scale recipes for `Card.Title` / `Card.Description`.
  * Not exported from `@elmeragroup/fuse/card` — there is no borrow
  * pattern. Kept off `cardVariants` because `direction="horizontal"` already
- * sets `cardTitle: "text-xl"`; a second `size` axis on that slot would fight
+ * sets `cardTitle: "text-xl/snug"`; a second `size` axis on that slot would fight
  * through twMerge. `size` is a type-scale axis, not a density control-box rung:
  * it does not read `--control-*`.
  */

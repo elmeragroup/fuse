@@ -104,7 +104,8 @@ function CardTitle({
       className={cn(
         cardTitleVariants({ size }),
         cardTitle({
-          // `direction="horizontal"` pins `text-xl` here, so the size class must come first.
+          // `direction="horizontal"` pins `text-xl/snug` here, so the size class must come first,
+          // and the slot's leading must follow it: a font size drops a line height before it.
           className: icon ? "flex items-center gap-x-1.5 [&>svg]:size-5" : undefined,
         }),
         className
