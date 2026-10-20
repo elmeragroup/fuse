@@ -24,6 +24,7 @@ import { AlertDialog } from "@elmeragroup/fuse/alert-dialog";
 import { Avatar } from "@elmeragroup/fuse/avatar";
 import { Breadcrumb } from "@elmeragroup/fuse/breadcrumb";
 import { ButtonGroup } from "@elmeragroup/fuse/button-group";
+import { Card } from "@elmeragroup/fuse/card";
 import { CheckboxItem } from "@elmeragroup/fuse/checkbox";
 import { Collapsible } from "@elmeragroup/fuse/collapsible";
 import { Combobox } from "@elmeragroup/fuse/combobox";
@@ -138,6 +139,19 @@ function namespaceElements(): ReactElement[] {
       "Ellipsis",
     ]),
     ...renderNamespace("ButtonGroup", ButtonGroup, ["Root", "Separator", "Text"]),
+    ...renderNamespace("Card", Card, ["Section"], {
+      server: [
+        "Root",
+        "Header",
+        "Tag",
+        "Title",
+        "Description",
+        "Action",
+        "Content",
+        "Footer",
+        "SectionMedia",
+      ],
+    }),
     ...renderNamespace("Collapsible", Collapsible, ["Root", "Trigger", "Content"]),
     ...renderNamespace("Combobox", Combobox, [
       "Root",

@@ -80,5 +80,7 @@ export const checkboxCardContentShellClass = cn(
  */
 export const cardStackedSectionShellClass = cn(
   "border-0 border-t border-card-section-divider p-[var(--card-pad,var(--surface-pad-md))] [--card-section-corner:initial] [&:nth-child(1_of_:not([hidden]))]:rounded-t-[var(--card-section-corner,0px)] [&:nth-child(1_of_:not([hidden]))]:border-t-0 [&:nth-last-child(1_of_:not([hidden]))]:rounded-b-[var(--card-section-corner,0px)]",
+  // Without preflight a section's own `block` or `grid` beats the user-agent `[hidden]` rule.
+  "[&[hidden]:not([hidden=until-found])]:hidden",
   cardTierBoundaryClass
 );

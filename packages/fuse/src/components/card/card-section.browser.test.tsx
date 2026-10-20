@@ -3,6 +3,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { settleTransitions } from "../../../test/assert-invalid-ring";
 import { RADIUS_LG } from "../../../test/inner-corner-specimens";
 import { cssVarColor, fkasExternal, px, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
@@ -17,14 +18,6 @@ function corners(element: HTMLElement): readonly number[] {
     style.borderBottomRightRadius,
     style.borderBottomLeftRadius,
   ].map(px);
-}
-
-/** Lets a part's colour transition finish before its computed colour is read. */
-async function settled(element: HTMLElement): Promise<void> {
-  await Promise.all(element.getAnimations().map((animation) => animation.finished.catch(() => undefined)));
-  for (const animation of element.getAnimations()) {
-    animation.finish();
-  }
 }
 
 function ThreeSections({ hiddenEnds = false }: { readonly hiddenEnds?: boolean }) {
@@ -75,6 +68,15 @@ describe("Card.Section", () => {
     expect(corners(roleNamed("group", "First")), "first visible").toEqual([corner, corner, 0, 0]);
     expect(px(getComputedStyle(roleNamed("group", "First")).borderTopWidth), "no divider above").toBe(0);
     expect(corners(roleNamed("group", "Last")), "last visible").toEqual([0, 0, corner, corner]);
+    // DOM audit: hidden sections have no accessible role, so they are found by their slot.
+    const hidden = [...document.querySelectorAll('[data-slot="card-section"][hidden]')];
+    expect(hidden, "two hidden sections").toHaveLength(2);
+    for (const section of hidden) {
+      expect(getComputedStyle(section).display, section.textContent ?? "").toBe("none");
+    }
+    // The first visible section opens the card, inside its 1px border.
+    const card = roleNamed("group", "Order").getBoundingClientRect();
+    expect(roleNamed("group", "First").getBoundingClientRect().top).toBe(card.top + 1);
   });
 
   it("is square outside a card", () => {
@@ -170,7 +172,7 @@ describe("Card.Section", () => {
     expect(style.fontSize).toBe(getComputedStyle(roleNamed("group", "Choice")).fontSize);
     expect(style.fontFamily).toBe(getComputedStyle(roleNamed("group", "Choice")).fontFamily);
     await userEvent.hover(button);
-    await settled(button);
+    settleTransitions(button);
     expect(getComputedStyle(button).backgroundColor).toBe(cssVarColor(button, "--muted"));
   });
 
@@ -182,7 +184,7 @@ describe("Card.Section", () => {
     );
     const button = roleNamed("button", "Unavailable");
     await userEvent.hover(button);
-    await settled(button);
+    settleTransitions(button);
     const style = getComputedStyle(button);
     expect(style.cursor).toBe("not-allowed");
     expect(style.opacity).toBe("0.5");
@@ -222,5 +224,6 @@ describe("Card.Section", () => {
     expect(link.getAttribute("href")).toBe("#terms");
     expect(getComputedStyle(link).cursor).toBe("pointer");
     expect(getComputedStyle(link).display).toBe("block");
+    expect(getComputedStyle(link).textDecorationLine).toBe("none");
   });
 });

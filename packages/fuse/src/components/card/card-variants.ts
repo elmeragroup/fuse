@@ -43,7 +43,7 @@ export const cardVariants = tv({
     // inset focus ring, which the sections around it cannot paint over.
     cardSection: cn(
       cardStackedSectionShellClass,
-      "box-border block w-full bg-transparent text-start text-inherit transition-colors duration-100 [font:inherit]",
+      "box-border block w-full bg-transparent text-start text-inherit no-underline transition-colors duration-100 [font:inherit]",
       "has-[>[data-slot=card-section-media]]:grid has-[>[data-slot=card-section-media]]:grid-cols-[auto_minmax(0,1fr)] has-[>[data-slot=card-section-media]]:items-center has-[>[data-slot=card-section-media]]:gap-x-(--surface-gap-md)",
       "[&:is(a,button)]:cursor-pointer [&:is(a,button)]:enabled-hover:bg-muted",
       insetFocusRingClass,
