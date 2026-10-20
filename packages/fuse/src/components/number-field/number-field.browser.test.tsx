@@ -541,6 +541,82 @@ describe("NumberField", () => {
   });
 });
 
+describe("NumberField onValueCommitted", () => {
+  // Each oracle is the list of commits written out by hand: one entry per finished edit.
+  it("commits a typed value once on blur, not on each character or on Enter", async () => {
+    const commits: number[] = [];
+    const onChange = vi.fn();
+    renderField(
+      <NumberField label="Quantity" onChange={onChange} onValueCommitted={(value) => commits.push(value)} />
+    );
+    const input = textboxNamed("Quantity");
+    input.focus();
+    await userEvent.keyboard("42");
+    expect(onChange).toHaveBeenLastCalledWith(42);
+    expect(commits).toEqual([]);
+    await userEvent.keyboard("{Enter}");
+    expect(commits).toEqual([]);
+    await userEvent.tab();
+    expect(commits).toEqual([42]);
+  });
+
+  it("commits once per stepper press", async () => {
+    const commits: number[] = [];
+    renderField(
+      <NumberField label="Quantity" defaultValue={5} onValueCommitted={(value) => commits.push(value)} />
+    );
+    await userEvent.click(page.getByRole("button", { name: "Increase", exact: true }));
+    expect(commits).toEqual([6]);
+    await userEvent.click(page.getByRole("button", { name: "Decrease", exact: true }));
+    await userEvent.click(page.getByRole("button", { name: "Decrease", exact: true }));
+    expect(commits).toEqual([6, 5, 4]);
+  });
+
+  it("commits each arrow step as it happens", async () => {
+    const commits: number[] = [];
+    renderField(
+      <NumberField label="Quantity" defaultValue={5} onValueCommitted={(value) => commits.push(value)} />
+    );
+    textboxNamed("Quantity").focus();
+    await userEvent.keyboard("{ArrowUp}{ArrowUp}{ArrowDown}");
+    expect(commits).toEqual([6, 7, 6]);
+  });
+
+  it("commits NaN when a cleared input blurs", async () => {
+    const commits: number[] = [];
+    renderField(
+      <NumberField label="Quantity" defaultValue={12} onValueCommitted={(value) => commits.push(value)} />
+    );
+    textboxNamed("Quantity").focus();
+    await userEvent.keyboard("{End}{Backspace}{Backspace}");
+    expect(commits).toEqual([]);
+    await userEvent.tab();
+    expect(commits).toEqual([NaN]);
+  });
+
+  it("commits the clamped value of a controlled field, which the parent then shows", async () => {
+    const commits: number[] = [];
+    function Controlled() {
+      const [value, setValue] = useState(5);
+      return (
+        <NumberField
+          label="Quantity"
+          maxValue={10}
+          value={value}
+          onChange={setValue}
+          onValueCommitted={(next) => commits.push(next)}
+        />
+      );
+    }
+    renderField(<Controlled />);
+    await userEvent.fill(page.getByRole("textbox", { name: "Quantity", exact: true }), "99");
+    expect(commits).toEqual([]);
+    await userEvent.tab();
+    expect(commits).toEqual([10]);
+    await expect.element(page.getByRole("textbox", { name: "Quantity", exact: true })).toHaveValue("10");
+  });
+});
+
 describe("NumberField density metrics", () => {
   it("pins the field box to the signed md rung and sizes each stepper xs-wide and full-height at both densities, without rescoping", () => {
     const { rerender, unmount: unmountMetrics } = renderField(<NumberField label="Meter" defaultValue={1} />);

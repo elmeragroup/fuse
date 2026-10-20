@@ -208,6 +208,15 @@
           "required": false
         },
         {
+          "name": "onValueCommitted",
+          "origin": "declared",
+          "type": "((value: number) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called once with the numeric value when the user finishes a change: when the input blurs after typing, when a stepper press ends, and on each arrow, Home or End key press. It does not fire on each typed character, and Enter does not commit. A cleared input reports `NaN`.",
+          "required": false
+        },
+        {
           "name": "step",
           "origin": "declared",
           "type": "number | undefined",

@@ -9,6 +9,7 @@ import "../../../dist/themes.css";
 import { assertWithinKeyboardFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
 import { expectInvalidFocusRing, expectInvalidRing } from "../../../test/assert-invalid-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
+import { whilePointerPressed } from "../../../test/pointer-press";
 import {
   CONTROL_MD,
   cssVarColor,
@@ -365,6 +366,145 @@ describe("Slider", () => {
       sliderNamed("Focus"),
       thumbOf("Focus")
     );
+  });
+});
+
+describe("Slider onValueCommitted", () => {
+  it("commits once when a thumb drag ends, not while it moves", async () => {
+    const commits: number[] = [];
+    const onChange = vi.fn();
+    renderSlider(
+      <div style={{ width: 400 }}>
+        <Slider
+          label="Drag"
+          defaultValue={0}
+          onChange={onChange}
+          onValueCommitted={(value) => commits.push(value)}
+        />
+      </div>
+    );
+    const control = controlOf("Drag");
+    const box = control.getBoundingClientRect();
+    await userEvent.hover(page.elementLocator(thumbOf("Drag")));
+    const midDrag = await whilePointerPressed(async () => {
+      await userEvent.hover(page.elementLocator(control), {
+        position: { x: box.width * 0.75, y: box.height / 2 },
+      });
+      return { changes: onChange.mock.calls.length, commits: [...commits] };
+    });
+    // The thumb moved while the button was held, and nothing committed until the release.
+    expect(midDrag.changes).toBeGreaterThan(0);
+    expect(midDrag.commits).toEqual([]);
+    // The thumb centres on the control edges, so 75% of the control's width is 75.
+    expect(commits).toHaveLength(1);
+    expect(commits[0]).toBeGreaterThanOrEqual(73);
+    expect(commits[0]).toBeLessThanOrEqual(77);
+    expect(commits[0]).toBe(valueNow("Drag"));
+  });
+
+  it("commits the starting value once when a drag moves away and comes back", async () => {
+    const start = 40;
+    const commits: number[] = [];
+    const onChange = vi.fn();
+    renderSlider(
+      <div style={{ width: 400 }}>
+        <Slider
+          label="Return"
+          defaultValue={start}
+          onChange={onChange}
+          onValueCommitted={(value) => commits.push(value)}
+        />
+      </div>
+    );
+    const control = controlOf("Return");
+    const box = control.getBoundingClientRect();
+    const thumb = thumbOf("Return").getBoundingClientRect();
+    // The press starts on the thumb's centre, so returning the pointer there returns the value.
+    const origin = { x: thumb.left + thumb.width / 2 - box.left, y: box.height / 2 };
+    await userEvent.hover(page.elementLocator(control), { position: origin });
+    await whilePointerPressed(async () => {
+      await userEvent.hover(page.elementLocator(control), {
+        position: { x: box.width * 0.75, y: box.height / 2 },
+      });
+      await userEvent.hover(page.elementLocator(control), { position: origin });
+    });
+    expect(onChange).toHaveBeenLastCalledWith(start);
+    expect(commits).toEqual([start]);
+  });
+
+  it("does not commit a press that never moves the value", async () => {
+    const commits: number[] = [];
+    const onChange = vi.fn();
+    renderSlider(
+      <div style={{ width: 400 }}>
+        <Slider
+          label="Still"
+          defaultValue={40}
+          onChange={onChange}
+          onValueCommitted={(value) => commits.push(value)}
+        />
+      </div>
+    );
+    await userEvent.hover(page.elementLocator(thumbOf("Still")));
+    await whilePointerPressed(() => undefined);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(commits).toEqual([]);
+    expect(valueNow("Still")).toBe(40);
+  });
+
+  it("commits once for a press on the track", async () => {
+    const commits: number[] = [];
+    renderSlider(
+      <div style={{ width: 400 }}>
+        <Slider label="Press" defaultValue={0} onValueCommitted={(value) => commits.push(value)} />
+      </div>
+    );
+    const control = controlOf("Press");
+    const box = control.getBoundingClientRect();
+    await userEvent.click(page.elementLocator(control), {
+      position: { x: box.width * 0.25, y: box.height / 2 },
+    });
+    expect(commits).toHaveLength(1);
+    expect(commits[0]).toBeGreaterThanOrEqual(23);
+    expect(commits[0]).toBeLessThanOrEqual(27);
+  });
+
+  it("commits each key press with the value it reached", async () => {
+    const commits: number[] = [];
+    renderSlider(<Slider label="Size" defaultValue={50} onValueCommitted={(value) => commits.push(value)} />);
+    sliderNamed("Size").focus();
+    await userEvent.keyboard("{ArrowRight}{ArrowRight}{Home}");
+    expect(commits).toEqual([51, 52, 0]);
+  });
+
+  it("commits a range in its own shape", async () => {
+    const commits: (readonly number[])[] = [];
+    renderSlider(
+      <Slider label="Pris" defaultValue={[20, 80]} onValueCommitted={(value) => commits.push(value)} />
+    );
+    sliderNamed("Pris, maximum").focus();
+    await userEvent.keyboard("{ArrowLeft}");
+    expect(commits).toEqual([[20, 79]]);
+  });
+
+  it("commits from a controlled slider, which the parent then shows", async () => {
+    const commits: number[] = [];
+    function Controlled() {
+      const [value, setValue] = useState(40);
+      return (
+        <Slider
+          label="Controlled"
+          value={value}
+          onChange={setValue}
+          onValueCommitted={(next) => commits.push(next)}
+        />
+      );
+    }
+    renderSlider(<Controlled />);
+    sliderNamed("Controlled").focus();
+    await userEvent.keyboard("{ArrowRight}");
+    expect(commits).toEqual([41]);
+    expect(valueNow("Controlled")).toBe(41);
   });
 });
 

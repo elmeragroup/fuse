@@ -4,6 +4,7 @@ lede: >
 ---
 
 import { SliderBasic } from "./demos/slider-basic";
+import { SliderCommit } from "./demos/slider-commit";
 import { SliderDisabled } from "./demos/slider-disabled";
 import { SliderFormat } from "./demos/slider-format";
 import { SliderInvalid } from "./demos/slider-invalid";
@@ -33,6 +34,10 @@ height, as the vertical demo does.
 `formatOptions` formats the value that `showValue` puts in the label row and the value a
 screen reader announces for each thumb.
 
+`onChange` reports every value while a thumb moves. `onValueCommitted` reports the final value
+once, when a drag or a track press ends, and on each key press. A range commits an array of
+the same shape. Save or fetch from `onValueCommitted`, as the commit demo does.
+
 </Prose>
 
 <Demo slug="slider" id="basic" title="Basic" file="slider-basic.tsx">
@@ -61,6 +66,10 @@ screen reader announces for each thumb.
 
 <Demo slug="slider" id="label-less" title="Without a label" file="slider-label-less.tsx">
   <SliderLabelLess />
+</Demo>
+
+<Demo slug="slider" id="commit" title="Commit" file="slider-commit.tsx">
+  <SliderCommit />
 </Demo>
 
 <ApiReference slug="slider" />

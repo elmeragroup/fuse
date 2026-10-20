@@ -392,7 +392,8 @@
       "number-field-format.tsx",
       "number-field-error.tsx",
       "number-field-states.tsx",
-      "number-field-uncontrolled.tsx"
+      "number-field-uncontrolled.tsx",
+      "number-field-commit.tsx"
     ]
   },
   "pagination": {
@@ -554,7 +555,8 @@
       "slider-vertical.tsx",
       "slider-disabled.tsx",
       "slider-invalid.tsx",
-      "slider-label-less.tsx"
+      "slider-label-less.tsx",
+      "slider-commit.tsx"
     ]
   },
   "span": {

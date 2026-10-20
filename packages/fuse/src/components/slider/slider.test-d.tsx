@@ -30,6 +30,33 @@ test("SliderProps is the closed labeled-composite face", () => {
   expectTypeOf<SliderProps>().not.toHaveProperty("onValueChange");
 });
 
+test("onValueCommitted reports the same shape as onChange", () => {
+  expectTypeOf<SliderProps["onValueCommitted"]>().toEqualTypeOf<((value: number) => void) | undefined>();
+  expectTypeOf<SliderProps<[number, number]>["onValueCommitted"]>().toEqualTypeOf<
+    ((value: [number, number]) => void) | undefined
+  >();
+  expectTypeOf<SliderProps<readonly [20, 80]>["onValueCommitted"]>().toEqualTypeOf<
+    ((value: readonly [number, number]) => void) | undefined
+  >();
+
+  <Slider
+    defaultValue={40}
+    onValueCommitted={(value) => {
+      expectTypeOf(value).toEqualTypeOf<number>();
+    }}
+  />;
+  <Slider
+    defaultValue={[20, 80]}
+    onValueCommitted={(value) => {
+      expectTypeOf(value).toEqualTypeOf<[number, number]>();
+    }}
+  />;
+  // @ts-expect-error a single-value slider never commits an array
+  <Slider value={40} onValueCommitted={(value: number[]) => value} />;
+  // @ts-expect-error a range never commits a single number
+  <Slider value={[20, 80]} onValueCommitted={(value: number) => value} />;
+});
+
 test("a single value reports a number", () => {
   expectTypeOf<SliderProps["value"]>().toEqualTypeOf<number | undefined>();
   expectTypeOf<SliderProps["onChange"]>().toEqualTypeOf<((value: number) => void) | undefined>();
