@@ -373,6 +373,9 @@ describe("site palette in the studio", () => {
       await expect.poll(() => dialog.count()).toBe(0);
 
       await page.getByRole("banner").getByRole("button", { name: "Search", exact: true }).click();
+      // Keys reach the query only once the palette has focused its input; a loaded runner moves
+      // focus there after the click returns.
+      await expect.poll(() => focusedName(page)).toBe("Search the site");
       await page.keyboard.type("hand");
       await expect.poll(() => highlighted(dialog)).toMatch(/^Hand tool/u);
       await page.keyboard.press("Enter");

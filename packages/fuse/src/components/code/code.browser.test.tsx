@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { assertNoAxeViolations } from "../../../test/axe";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { Code } from "./code";
 
@@ -35,5 +36,22 @@ describe("Code", () => {
     expect(region.tabIndex).toBe(0);
     region.focus();
     expect(document.activeElement).toBe(region);
+  });
+
+  it("takes the region role only with a name, and stays keyboard-scrollable without one", async () => {
+    const { host } = renderThemed(
+      <>
+        <h3 id="snippet-heading">Labelled snippet</h3>
+        <Code code={SNIPPET} aria-labelledby="snippet-heading" />
+        <Code code="const unnamed = true;" />
+      </>
+    );
+    expect(codeRegion("Labelled snippet").tabIndex).toBe(0);
+    expect(page.getByRole("region").elements()).toHaveLength(1);
+    // DOM audit: an unnamed block has no role to query by; it is the <pre> around its text.
+    const unnamed = page.getByText("const unnamed = true;").element().closest("pre");
+    expect(unnamed?.hasAttribute("role")).toBe(false);
+    expect(unnamed?.tabIndex).toBe(0);
+    await assertNoAxeViolations(host);
   });
 });

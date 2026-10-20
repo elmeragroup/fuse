@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 
+import { createPortal } from "react-dom";
 import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -12,12 +13,14 @@ import {
   expectNoFocusRing,
 } from "../../../test/assert-focus-ring";
 import { expectInvalidFocusRing, expectInvalidRing, expectNoRing } from "../../../test/assert-invalid-ring";
+import { countryAddon, phoneInput } from "../../../test/phone-browser-queries";
 import {
   CONTROL_MD,
   CONTROL_SM,
   CONTROL_XS,
   cssVarColor,
   fkasExternal,
+  inputNamed,
   px,
   renderThemed,
   roleNamed,
@@ -25,8 +28,10 @@ import {
   textNamed,
   textboxNamed,
 } from "../../../test/themed-browser-render";
+import { LocaleProvider } from "../../intl/locale-context";
 import { ThemeScope } from "../../theme";
 import { Input } from "../input/input";
+import { PhoneNumberField } from "../phone-number-field/phone-number-field";
 import { InputGroup } from "./index";
 
 function groupAround(start: HTMLElement): HTMLElement {
@@ -152,6 +157,84 @@ describe("InputGroup", () => {
     await userEvent.click(page.getByRole("button", { name: "Clear", exact: true }));
     expect(document.activeElement).not.toBe(control);
     expect(clicks).toEqual(["addon", "button"]);
+  });
+
+  it("focuses the group's own control from addon chrome, leaving a field nested in an addon its own focus", async () => {
+    renderThemed(
+      <>
+        <InputGroup.Root>
+          <InputGroup.Textarea aria-label="Message" />
+          <InputGroup.Addon align="block-end">
+            <InputGroup.Text>0/200</InputGroup.Text>
+          </InputGroup.Addon>
+        </InputGroup.Root>
+        <InputGroup.Root>
+          <InputGroup.Addon>
+            <InputGroup.Text>Amount</InputGroup.Text>
+            <input aria-label="Nested amount" />
+          </InputGroup.Addon>
+          <InputGroup.Input aria-label="Total" />
+          <InputGroup.Addon align="inline-end">
+            <InputGroup.Text>kr</InputGroup.Text>
+          </InputGroup.Addon>
+        </InputGroup.Root>
+      </>
+    );
+
+    await userEvent.click(page.getByText("0/200", { exact: true }));
+    expect(document.activeElement).toBe(textboxNamed("Message"));
+
+    await userEvent.click(page.getByText("kr", { exact: true }));
+    expect(document.activeElement).toBe(textboxNamed("Total"));
+
+    await userEvent.click(textboxNamed("Nested amount"));
+    await userEvent.keyboard("42");
+    expect(document.activeElement).toBe(textboxNamed("Nested amount"));
+    expect(inputNamed("Nested amount").value).toBe("42");
+    expect(inputNamed("Total").value).toBe("");
+
+    await userEvent.click(page.getByText("Amount", { exact: true }));
+    expect(document.activeElement).toBe(textboxNamed("Total"));
+  });
+
+  it("leaves focus off the own control for a label nested in an addon and for a portalled button", async () => {
+    const totalFocus: string[] = [];
+    function PortalledButton(): ReactElement {
+      return createPortal(<button type="button">Portalled</button>, document.body);
+    }
+    renderThemed(
+      <InputGroup.Root>
+        <InputGroup.Addon>
+          <label htmlFor="addon-quantity">Quantity</label>
+          <input id="addon-quantity" />
+          <PortalledButton />
+        </InputGroup.Addon>
+        <InputGroup.Input
+          aria-label="Total"
+          onFocus={() => {
+            totalFocus.push("focus");
+          }}
+        />
+      </InputGroup.Root>
+    );
+
+    await userEvent.click(page.getByText("Quantity", { exact: true }));
+    expect(document.activeElement).toBe(textboxNamed("Quantity"));
+    expect(totalFocus).toEqual([]);
+
+    await userEvent.click(page.getByRole("button", { name: "Portalled", exact: true }));
+    expect(document.activeElement).toBe(roleNamed("button", "Portalled"));
+    expect(totalFocus).toEqual([]);
+  });
+
+  it("focuses a PhoneNumberField's number input from its country addon chrome", () => {
+    renderThemed(
+      <LocaleProvider locale="en-US">
+        <PhoneNumberField label="Mobile" />
+      </LocaleProvider>
+    );
+    countryAddon().dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(document.activeElement).toBe(phoneInput());
   });
 
   it.each([

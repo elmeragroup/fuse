@@ -234,6 +234,10 @@ describe("parseTokenValue", () => {
     ["an unquoted revert", "revert, serif"],
     ["an unquoted revert-layer", "Inter, revert-layer"],
     ["an unquoted default", "default, serif"],
+    // CSS reads a form feed as a newline, which ends a quoted string and drops the declaration.
+    ["a form feed in a quoted name", '"a\fb", serif'],
+    ["a NUL in a quoted name", '"a\u0000b", serif'],
+    ["a tab in a quoted name", '"a\tb", serif'],
   ])("refuses a font stack with %s", (_label, css) => {
     expect(parseTokenValue("font-sans", css).ok).toBe(false);
   });

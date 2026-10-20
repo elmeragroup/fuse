@@ -20,6 +20,7 @@ import type { VariantProps } from "tailwind-variants";
 import { useIsMobile } from "../../hooks/use-is-mobile";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { SidebarSimple } from "../../icons/generated/sidebar-simple";
+import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import {
   sidebarMenuActionShellClass,
@@ -71,8 +72,56 @@ export const SIDEBAR_WIDTH = "16rem";
 export const SIDEBAR_WIDTH_MOBILE = "18rem";
 /** Icon-collapsed rail width, applied as `--sidebar-width-icon` on the Provider wrapper. */
 export const SIDEBAR_WIDTH_ICON = "3rem";
-/** Key that toggles the sidebar together with `metaKey` or `ctrlKey` (cmd/ctrl+B). */
+/**
+ * Key that toggles the sidebar together with the platform's command modifier: ⌘ (`metaKey`) on
+ * Apple platforms, where Ctrl+B moves the caret, and Ctrl (`ctrlKey`) elsewhere.
+ */
 export const SIDEBAR_KEYBOARD_SHORTCUT = "b";
+
+/** Apple platforms, where ⌘ is the command modifier and Ctrl+B moves the caret back. */
+const APPLE_PLATFORM = /mac|iphone|ipad|ipod/iu;
+
+/**
+ * Whether a keydown is the sidebar shortcut: B with the platform's command modifier alone, not
+ * already handled by another listener, not mid-composition and not typed into a text field, so
+ * an editor's own ⌘B (bold) and the caret keys keep working. Reads the platform per event, so
+ * the server render never touches `navigator`.
+ */
+function isSidebarShortcut(event: KeyboardEvent): boolean {
+  if (event.defaultPrevented || event.isComposing || event.altKey || event.shiftKey) {
+    return false;
+  }
+  if (event.key !== SIDEBAR_KEYBOARD_SHORTCUT) {
+    return false;
+  }
+  const isApple = APPLE_PLATFORM.test(navigator.platform);
+  const hasCommandModifier = isApple ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey;
+  return hasCommandModifier && !isTextEntry(event.target);
+}
+
+/** Input types that take no typed text, so the shortcut still works while one has focus. */
+const NON_TEXT_INPUT_TYPES = new Set([
+  "button",
+  "checkbox",
+  "color",
+  "file",
+  "hidden",
+  "image",
+  "radio",
+  "range",
+  "reset",
+  "submit",
+]);
+
+function isTextEntry(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+  if (target.isContentEditable || target instanceof HTMLTextAreaElement) {
+    return true;
+  }
+  return target instanceof HTMLInputElement && !NON_TEXT_INPUT_TYPES.has(target.type);
+}
 
 export type SidebarContextValue = {
   /** Derived from `open`. */
@@ -144,6 +193,11 @@ export type SidebarProviderProps = ComponentProps<"div"> & {
   labels?: Partial<SidebarLabels>;
 };
 
+/**
+ * Owns the open state, persists it to the `sidebar:state` cookie and toggles it on the keyboard
+ * shortcut: ⌘B on Apple platforms and Ctrl+B elsewhere. The shortcut stands aside for a keydown
+ * another handler already prevented, one mid-composition and one typed into a text field.
+ */
 export function SidebarProvider({
   defaultOpen = true,
   open: openProp,
@@ -201,7 +255,7 @@ export function SidebarProvider({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === SIDEBAR_KEYBOARD_SHORTCUT && (event.metaKey || event.ctrlKey)) {
+      if (isSidebarShortcut(event)) {
         event.preventDefault();
         toggleSidebar();
       }
@@ -397,6 +451,10 @@ export type SidebarTriggerProps = ButtonProps & {
   "aria-label"?: string;
 };
 
+/**
+ * Icon button that toggles the sidebar. It declares the keyboard shortcut in
+ * `aria-keyshortcuts`; a consumer value replaces it.
+ */
 export function SidebarTrigger({
   className,
   onClick,
@@ -410,7 +468,10 @@ export function SidebarTrigger({
     <Button
       data-slot="sidebar-trigger"
       aria-label={ariaLabel ?? labels.toggle}
-      {...props}
+      // Both modifiers: the server render cannot know the platform. The Provider honours ⌘B on
+      // Apple platforms and Ctrl+B elsewhere.
+      aria-keyshortcuts="Meta+B Control+B"
+      {...definedProps(props)}
       variant={variant}
       size="icon-sm"
       className={cn("hit-area-1", className)}

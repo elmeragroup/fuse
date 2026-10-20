@@ -34,6 +34,21 @@ function restrictedImportNames(rules) {
   );
 }
 
+/**
+ * A rule's severity: the level itself, or the first entry of a level with options.
+ *
+ * @param {unknown} level
+ * @returns {unknown}
+ */
+function severityOf(level) {
+  if (!Array.isArray(level)) {
+    return level;
+  }
+  /** @type {unknown[]} */
+  const entries = level;
+  return entries[0];
+}
+
 describe("workspace lint script", () => {
   it("runs oxlint over the tree with --deny-warnings and without --quiet", () => {
     const parsed = readJsonObject(join(repoRoot, "package.json"));
@@ -41,6 +56,7 @@ describe("workspace lint script", () => {
     expect(lint).toMatch(/\boxlint\b/);
     expect(lint).toMatch(/(?:^|\s)\.(?:\s|$)/);
     expect(lint).toContain("--deny-warnings");
+    expect(lint).toContain("--report-unused-disable-directives-severity=error");
     expect(lint).not.toContain("--quiet");
   });
 
@@ -59,7 +75,17 @@ describe("workspace lint script", () => {
 
     const overrides = asRecordArray(parsed.overrides, "overrides");
     const appsFuseOverride = overrides.find((entry) => overrideFiles(entry).includes("apps/**/*.{ts,tsx}"));
-    expect(appsFuseOverride?.plugins).toEqual(["typescript", "oxc", "react", "unicorn"]);
+    expect(appsFuseOverride?.plugins).toEqual(["typescript", "oxc", "react", "unicorn", "jsx-a11y"]);
+    const appsFuseRules = asRecord(appsFuseOverride?.rules, "apps and Fuse override rules");
+    expect(appsFuseRules["react/no-unstable-nested-components"]).toBe("error");
+    // A jsx-a11y rule is "error", alone or with options, or "off" while its hits are triaged;
+    // never warn or a numeric severity.
+    expect(
+      Object.entries(appsFuseRules).filter(([name, level]) => {
+        const severity = severityOf(level);
+        return name.startsWith("jsx-a11y/") && severity !== "error" && severity !== "off";
+      })
+    ).toEqual([]);
 
     const fuseSrcOverride = overrides.find((entry) =>
       overrideFiles(entry).includes("packages/fuse/src/**/*.{ts,tsx}")

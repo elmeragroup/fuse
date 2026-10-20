@@ -151,6 +151,11 @@ function AxisItem<Value extends string>({ option, glyph }: AxisItemProps<Value>)
   );
 }
 
+/** A scheme option's glyph, hoisted so the row passes one function identity on every render. */
+function schemeIcon(scheme: ColorScheme): ReactElement {
+  return <SchemeGlyph scheme={scheme} />;
+}
+
 /** The scheme row: sun, moon and monitor beside their names. */
 function SchemeToggle({ labelledBy }: { labelledBy: string }): ReactElement {
   const { colorScheme, schemes, changeColorScheme } = useThemePicker();
@@ -160,7 +165,7 @@ function SchemeToggle({ labelledBy }: { labelledBy: string }): ReactElement {
       options={schemes}
       value={colorScheme}
       onChange={changeColorScheme}
-      icon={(scheme) => <SchemeGlyph scheme={scheme} />}
+      icon={schemeIcon}
     />
   );
 }

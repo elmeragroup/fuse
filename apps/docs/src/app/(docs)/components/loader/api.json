@@ -12,6 +12,15 @@
       "forwardedCount": 278,
       "props": [
         {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The text the status region announces, rendered visually hidden inside it. Defaults to the `aria-label`, then to the locale dictionary's \"Loading\".",
+          "required": false
+        },
+        {
           "name": "size",
           "origin": "recipe-axis",
           "type": "\"default\" | \"large\" | \"medium\" | \"small\" | \"xl\" | undefined",

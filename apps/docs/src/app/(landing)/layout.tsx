@@ -19,6 +19,9 @@ export const metadata: Metadata = {
   metadataBase: siteOrigin(),
   title: "Fuse · The Elmera Group design system",
   description: LANDING_SUMMARY,
+  // Each `?theme=` address shows the same page in another theme, so all of them name `/` as the
+  // one page search engines index.
+  alternates: { canonical: "/" },
   ...ogMetadata({ image: ogLandingPath(), alt: "Fuse, the Elmera Group design system" }),
 };
 

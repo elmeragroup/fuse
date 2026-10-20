@@ -2,4 +2,5 @@
 export const svSE = {
   increase: "Öka",
   decrease: "Minska",
+  roleDescription: "Nummerfält",
 };

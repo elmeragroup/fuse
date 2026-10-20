@@ -2,4 +2,5 @@
 export const fiFI = {
   increase: "Lisää",
   decrease: "Vähennä",
+  roleDescription: "Numerokenttä",
 };

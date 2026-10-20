@@ -18,7 +18,7 @@ import { tv } from "../../styles/tv";
 const overlayMenuVariants = tv({
   slots: {
     item:
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics, elmera/no-local-focus-ring -- the 8px icon gap is row layout, not a control rung; `outline-hidden` only clears the UA outline; this constant carries no highlight face and no ring, both of which stay with the consuming family
+      // oxlint-disable-next-line elmera/no-local-focus-ring -- `outline-hidden` only clears the UA outline; this constant carries no highlight face and no ring, both of which stay with the consuming family
       "text-sm relative box-border flex min-h-(--row-h) cursor-default items-center gap-2 rounded-inner px-(--row-px) py-(--row-py) outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
     /** The trailing check slot on a selectable option row, positioned once for all three menu families. */
     indicator: "pointer-events-none absolute right-(--row-px) flex items-center justify-center",

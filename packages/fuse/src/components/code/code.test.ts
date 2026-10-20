@@ -10,7 +10,7 @@ const CONCAT_SNIPPET = 'const html = "<div>" + a + "</div>";';
 
 describe("Code highlight output", () => {
   it("renders highlighted token spans whose text equals the input source", () => {
-    const html = renderToStaticMarkup(createElement(Code, { code: SNIPPET }));
+    const html = renderToStaticMarkup(createElement(Code, { code: SNIPPET, "aria-label": "Snippet" }));
     expect(html).toContain('data-slot="code"');
     expect(html).toContain('role="region"');
     expect(html).toContain('tabindex="0"');

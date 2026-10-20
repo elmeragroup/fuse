@@ -27,6 +27,7 @@ import { overlayCloseStrings } from "../overlay/intl";
 import { toastLayer } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
+import { toastStrings } from "./intl";
 import { toastVariants, toastViewportVariants } from "./toast-variants";
 
 /** Resolved once at module scope — these slots carry no status axis (no per-render work). */
@@ -474,6 +475,11 @@ export type ToastViewportProps = ComponentProps<typeof ToastPrimitive.Viewport> 
     placement?: VariantProps<typeof toastViewportVariants>["placement"];
   };
 
+/**
+ * The portalled landmark region the toasts stack in, named by the locale dictionary's
+ * "Notifications" unless an `aria-label` replaces it. It renders `Toast.List` when given no
+ * children.
+ */
 export function ToastViewport({
   className,
   container,
@@ -481,6 +487,7 @@ export function ToastViewport({
   children,
   ...props
 }: ToastViewportProps): ReactElement | null {
+  const strings = useLocalizedStrings(toastStrings);
   const isSmUp = useMediaQuery(SM_UP_MEDIA_QUERY);
   const swipeDirection = swipeDirectionFor(placement, isSmUp);
   const placementContext = useMemo(() => ({ placement, swipeDirection }), [placement, swipeDirection]);
@@ -491,13 +498,17 @@ export function ToastViewport({
       <OverlayPortal portal={ToastPrimitive.Portal} container={container}>
         <ToastPrimitive.Viewport
           data-slot="toast-viewport"
+          // Base UI hard-codes the English "Notifications"; a consumer `aria-label` still wins
+          // through the later spread, which drops undefined keys so a wrapper's unset label
+          // cannot erase the default.
+          aria-label={strings.format("notifications")}
           className={mergeClassName(
             className,
             toastViewportVariants({ placement }),
             toastLayer,
             selfFocusRingClass
           )}
-          {...props}>
+          {...definedProps(props)}>
           {children ?? <ToastList />}
         </ToastPrimitive.Viewport>
       </OverlayPortal>

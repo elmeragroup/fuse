@@ -240,7 +240,7 @@
           "type": "MetadataJson | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Custom/trimmed metadata. Replacement reconciles the picker while preserving existing international identity. To limit the picker, pass `countries` instead: trimmed metadata can no longer parse the numbers it leaves out.",
+          "description": "Custom/trimmed metadata. Replacement reconciles the picker while preserving existing international identity. To limit the picker, pass `countries` instead: trimmed metadata can no longer parse the numbers it leaves out. It does not make the bundle smaller: the field imports its full default metadata either way.",
           "required": false
         },
         {

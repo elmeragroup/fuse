@@ -44,6 +44,8 @@ function browserProject(
         "@base-ui/react/internals/noop",
         "@tanstack/react-table",
         "@tanstack/react-virtual",
+        // The browser suites' accessibility pass.
+        "axe-core",
         "clsx",
         "tailwind-merge",
         "tailwind-variants",

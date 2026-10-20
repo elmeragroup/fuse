@@ -494,6 +494,31 @@ describe("the studio's Screens page", () => {
     }
   });
 
+  it("moves a keyboard pick out with Shift+Enter and in with Enter, announcing each pick", async () => {
+    const { context, page } = await openStudio(browser(), { route: SCREENS_PAGE });
+    try {
+      await page.keyboard.press("p");
+      await artboard(page, CHECKOUT).getByRole("button", { name: "Confirm order", exact: true }).focus();
+      const status = canvas(page).getByRole("status");
+      const steps = [
+        ["Enter", "button"],
+        ["Shift+Enter", "card-footer"],
+        ["Shift+Enter", "card"],
+        ["Enter", "card-header"],
+        ["Enter", "card-title"],
+      ] as const;
+      for (const [key, slot] of steps) {
+        await page.keyboard.press(key);
+        await expect
+          .poll(async () => (await readout(page)).Slot, { message: `${key} to ${slot}` })
+          .toBe(slot);
+        await expect.poll(async () => status.textContent()).toContain(`Picked ${slot}`);
+      }
+    } finally {
+      await context.close();
+    }
+  });
+
   it("refuses a Selection edit that loops through the base theme, not only the part's variant", async () => {
     // The opening base is external elma, which declares button-outline: var(--foreground).
     // Internal themes declare button-outline: var(--border), so the internal admin table alone

@@ -2,4 +2,5 @@
 export const nbNO = {
   increase: "Øk",
   decrease: "Reduser",
+  roleDescription: "Tallfelt",
 };

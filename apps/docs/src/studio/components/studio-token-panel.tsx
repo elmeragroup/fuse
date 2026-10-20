@@ -147,14 +147,7 @@ export function useResolvedColors(scheme: ArtboardScheme, scope?: ArtboardScope)
 
   const probe = isClient
     ? createPortal(
-        <ThemeScope
-          ref={probeRef}
-          theme={theme}
-          data-theme={scheme}
-          // oxlint-disable-next-line shadcn/no-inline-styles -- token edits: custom properties only (artboardStyle), as an artboard in this scheme wears them
-          style={style}
-          hidden
-          aria-hidden>
+        <ThemeScope ref={probeRef} theme={theme} data-theme={scheme} style={style} hidden aria-hidden>
           {COLOR_TOKENS.map((name) => (
             <span
               key={name}

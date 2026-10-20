@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { useFormReset } from "../../hooks/use-form-reset";
@@ -75,6 +75,17 @@ export function TextareaField({
           setUncontrolledLength(textareaRef.current?.value.length ?? 0);
         }
   );
+  // Text typed (or restored by the browser) before hydration stays in the DOM, but the count
+  // starts from `defaultValue`. Read the DOM on mount and whenever the field becomes
+  // uncontrolled; on a client mount, or a hydration without an early edit, the lengths are equal,
+  // and setting the same length again bails out.
+  useLayoutEffect(() => {
+    if (isControlled) return;
+    const length = textareaRef.current?.value.length;
+    if (length !== undefined) {
+      setUncontrolledLength(length);
+    }
+  }, [isControlled]);
   const currentLength = value === undefined ? uncontrolledLength : value.length;
   // SAFETY: Base UI types Field.Control's props for an <input>. It forwards every prop to
   // the rendered Textarea, so textarea-only attributes such as rows, cols and wrap, and

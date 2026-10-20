@@ -27,6 +27,7 @@ test("public API exports the namespaces and VerticalTableItem — never RAC or f
   expectTypeOf<VerticalTableItem["fontWeight"]>().toEqualTypeOf<"normal" | "bold" | undefined>();
   expectTypeOf<VerticalTableItem["isLoading"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<VerticalTableItem["text"]>().toEqualTypeOf<"default" | "truncate" | undefined>();
+  expectTypeOf<VerticalTableItem["id"]>().toEqualTypeOf<string | number | undefined>();
 
   expectTypeOf(TableModule).not.toHaveProperty("tableVariants");
   expectTypeOf(TableModule).not.toHaveProperty("TableHeader");

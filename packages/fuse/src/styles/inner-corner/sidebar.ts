@@ -19,7 +19,6 @@ export const sidebarSurfaceShellClass = cn(
  * which centres the 32px icon buttons in the 48px rail. It publishes only inside the floating
  * Sidebar's rounded surface, where it pads with the small surface tier, `--surface-pad-sm`.
  */
-// oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- the icon rail's fixed 8px, not a control size
 export const sidebarSectionShellClass = cn(
   "p-(--row-px) [--shell-inner:initial] group-data-[collapsible=icon]:p-2 in-data-[slot=sidebar-inner]:group-data-[variant=floating]:p-(--surface-pad-sm) in-data-[slot=sidebar-inner]:group-data-[variant=floating]:[--shell-inner:max(0px,--theme(--radius-lg)-var(--surface-pad-sm))] in-data-[slot=sidebar-inner]:group-data-[variant=floating]:group-data-[collapsible=icon]:p-2 in-data-[slot=sidebar-inner]:group-data-[variant=floating]:group-data-[collapsible=icon]:[--shell-inner:max(0px,--theme(--radius-lg)-2*var(--spacing))]",
   publishShellBoundary

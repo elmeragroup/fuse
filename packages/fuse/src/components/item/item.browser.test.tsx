@@ -8,6 +8,7 @@ import {
   expectFocusRing,
   focusRingClippers,
 } from "../../../test/assert-focus-ring";
+import { assertNoAxeViolations } from "../../../test/axe";
 import { hasIntermediateFrame, sampleFrames } from "../../../test/panel-transition";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import {
@@ -139,6 +140,32 @@ describe("Item", () => {
     expect(member?.getAttribute("role")).toBe("listitem");
     expect(member?.getAttribute("data-slot")).toBe("item");
     expect(textNamed("Override").parentElement?.getAttribute("role")).toBe("presentation");
+  });
+
+  it("keeps a grouped separator out of the list's children, and an ungrouped one a separator", async () => {
+    const { host } = renderThemed(
+      <>
+        <Item.Group aria-label="Addresses">
+          <Item.Root>
+            <Item.Title>Storgata 1</Item.Title>
+          </Item.Root>
+          <Item.Separator />
+          <Item.Root>
+            <Item.Title>Kirkeveien 22</Item.Title>
+          </Item.Root>
+        </Item.Group>
+        <Item.Separator aria-label="Between sections" />
+      </>
+    );
+    expect(page.getByRole("list").getByRole("separator").query()).toBeNull();
+    expect(roleNamed("separator", "Between sections").getAttribute("data-slot")).toBe("item-separator");
+    // Every child the list owns in the accessibility tree is a listitem; the separator stays
+    // painted but hidden from assistive technology.
+    const list = roleNamed("list", "Addresses");
+    const exposed = [...list.children].filter((child) => child.getAttribute("aria-hidden") !== "true");
+    expect(exposed.map((child) => child.getAttribute("role"))).toEqual(["listitem", "listitem"]);
+    expect(list.children).toHaveLength(3);
+    await assertNoAxeViolations(host);
   });
 
   it.each([
@@ -514,7 +541,9 @@ describe("Item", () => {
       );
       const above = textNamed("Above").parentElement;
       const below = textNamed("Below").parentElement;
-      const separator = page.getByRole("separator").element();
+      // DOM audit: a grouped separator is hidden from assistive technology, so it has no role to
+      // query; it is the row's next sibling.
+      const separator = above?.nextElementSibling;
       if (
         !(above instanceof HTMLElement) ||
         !(below instanceof HTMLElement) ||

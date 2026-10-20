@@ -29,6 +29,8 @@ import { withLocale } from "../../../test/locale-matrix";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Button } from "../button/button";
 import { DropdownMenu } from "../dropdown-menu";
+import { RadioGroup, RadioIconButton } from "../radio-group/radio-group";
+import { Slider } from "../slider/slider";
 import { actionsColumn } from "./actions-column";
 import { createFuseTableHook } from "./create-fuse-table-hook";
 import { NumberCell } from "./data-table-registered";
@@ -189,9 +191,23 @@ function pageButtons() {
   };
 }
 
-/** The disabled state of the first, previous, next and last buttons. */
+/**
+ * The disabled state of the first, previous, next and last buttons. An unavailable move stays
+ * focusable, so it announces `aria-disabled` instead of carrying the native attribute.
+ */
 function disabledMoves(): boolean[] {
-  return Object.values(pageButtons()).map((control) => control.disabled);
+  return Object.values(pageButtons()).map(
+    (control) => control.disabled || control.getAttribute("aria-disabled") === "true"
+  );
+}
+
+/** The pagination's page status region. */
+function pageStatusRegion(): HTMLElement {
+  const element = page.getByRole("status").element();
+  if (!(element instanceof HTMLElement)) {
+    throw new Error("expected one status region");
+  }
+  return element;
 }
 
 describe("DataTable pagination", () => {
@@ -211,6 +227,36 @@ describe("DataTable pagination", () => {
 
     await userEvent.click(pageButtons().first);
     await expect.element(page.getByText("Page 1 of 3", { exact: true })).toBeVisible();
+  });
+
+  it("keeps focus on a move button that reaching the last page disables", async () => {
+    renderInEnglish(<ClientPagedTable data={ORDERS_25} />);
+
+    pageButtons().next.focus();
+    await userEvent.keyboard("{Enter}");
+    await expect.element(page.getByText("Page 2 of 3", { exact: true })).toBeVisible();
+    await userEvent.keyboard("{Enter}");
+    await expect.element(page.getByText("Page 3 of 3", { exact: true })).toBeVisible();
+
+    const next = pageButtons().next;
+    expect(document.activeElement).toBe(next);
+    expect(next.disabled).toBe(false);
+    expect(next.getAttribute("aria-disabled")).toBe("true");
+    // Activating the unavailable move again changes nothing.
+    await userEvent.keyboard("{Enter}");
+    expect(pageStatusRegion().textContent).toBe("Page 3 of 3");
+  });
+
+  it("announces the page through one persistent status region", async () => {
+    renderInEnglish(<ClientPagedTable data={ORDERS_25} />);
+
+    const region = pageStatusRegion();
+    expect(region.textContent).toBe("Page 1 of 3");
+
+    await userEvent.click(pageButtons().next);
+    await expect.element(page.getByText("Page 2 of 3", { exact: true })).toBeVisible();
+    expect(pageStatusRegion()).toBe(region);
+    expect(region.textContent).toBe("Page 2 of 3");
   });
 
   it("shows an empty known total as page 1 of 1 with every move disabled", () => {
@@ -571,6 +617,100 @@ describe("DataTable row press", () => {
     expect(row?.hasAttribute("role")).toBe(false);
     expect(row?.hasAttribute("tabindex")).toBe(false);
     expect(page.getByRole("row").elements()).toContain(row);
+  });
+});
+
+describe("DataTable row press past Fuse widgets and text selection", () => {
+  const widgetColumns = appColumns.columns([
+    appColumns.accessor("customer", { header: "Customer", cell: ({ cell }) => <cell.TextCell /> }),
+    appColumns.display({
+      id: "priority",
+      header: "Priority",
+      cell: () => (
+        <RadioGroup label="Priority" isLabelHidden defaultValue="low" orientation="horizontal">
+          <RadioIconButton value="low" aria-label="Low">
+            L
+          </RadioIconButton>
+          <RadioIconButton value="high" aria-label="High">
+            H
+          </RadioIconButton>
+        </RadioGroup>
+      ),
+    }),
+    appColumns.display({
+      id: "share",
+      header: "Share",
+      cell: () => <Slider aria-label="Share" defaultValue={0} className="w-40" />,
+    }),
+    appColumns.display({
+      id: "note",
+      header: "Note",
+      cell: () => (
+        <div role="textbox" aria-label="Note" contentEditable suppressContentEditableWarning>
+          Call first
+        </div>
+      ),
+    }),
+  ]);
+
+  function renderWidgets(): number[] {
+    const pressed: number[] = [];
+    renderInEnglish(
+      <PressableTable
+        columns={widgetColumns}
+        onPress={(id) => {
+          pressed.push(id);
+        }}
+      />
+    );
+    return pressed;
+  }
+
+  it("lets a radio, a slider and an editable region own their clicks", async () => {
+    const pressed = renderWidgets();
+
+    await userEvent.click(roleNamed("radio", "High"));
+    expect(roleNamed("radio", "High").getAttribute("aria-checked")).toBe("true");
+
+    // DOM audit: the slider's track has no role; a pointer press on it is what moves the thumb.
+    const control = roleNamed("slider", "Share").closest("[data-slot=slider-control]");
+    if (!(control instanceof HTMLElement)) {
+      throw new Error("expected the slider control");
+    }
+    const { width, height } = control.getBoundingClientRect();
+    await userEvent.click(control, { position: { x: width - 2, y: height / 2 } });
+    expect(roleNamed("slider", "Share")).not.toHaveProperty("value", "0");
+
+    await userEvent.click(roleNamed("textbox", "Note"));
+    expect(pressed).toEqual([]);
+
+    await userEvent.click(roleNamed("cell", "Bergen"));
+    expect(pressed).toEqual([1]);
+  });
+
+  it("does not press a row when the click ends a text selection inside it", () => {
+    const pressed = renderWidgets();
+    const cell = roleNamed("cell", "Bergen");
+
+    const selection = window.getSelection();
+    selection?.selectAllChildren(cell);
+    expect(selection?.isCollapsed).toBe(false);
+    // A drag that selects text ends in a click on the text, with the selection still made.
+    cell.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(pressed).toEqual([]);
+
+    selection?.removeAllRanges();
+    cell.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(pressed).toEqual([1]);
+  });
+
+  it("presses while text outside the row stays selected", () => {
+    const pressed = renderWidgets();
+    const selection = window.getSelection();
+    selection?.selectAllChildren(roleNamed("columnheader", "Customer"));
+    roleNamed("cell", "Bergen").dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(pressed).toEqual([1]);
+    selection?.removeAllRanges();
   });
 });
 

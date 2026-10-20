@@ -187,6 +187,33 @@ describe("landing Dashboard window", () => {
     await page.context().close();
   });
 
+  it("reports a copy from an order's detail where the browser has no clipboard", async () => {
+    let errors: string[] = [];
+    const page = await openLanding(DESKTOP_VIEWPORT, {
+      prepare: async (target) => {
+        errors = collectPageErrors(target);
+        // An insecure origin, such as a LAN address, exposes no clipboard at all.
+        await target.addInitScript(() => {
+          Object.defineProperty(Navigator.prototype, "clipboard", {
+            get: () => undefined,
+            configurable: true,
+          });
+        });
+      },
+    });
+    const app = dashboard(page);
+    await app.scrollIntoViewIfNeeded();
+    await row(app, "Ida Hagen").click();
+    const detail = app.getByRole("complementary", { name: "Order details" });
+    await detail.getByRole("button", { name: "Copy meter point ID" }).click();
+    await app
+      .getByRole("region", { name: "Dashboard notifications" })
+      .getByText("Could not copy", { exact: true })
+      .waitFor();
+    expect(errors).toEqual([]);
+    await page.context().close();
+  });
+
   it("raises the bulk toolbar once two rows are checked", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
     const app = dashboard(page);

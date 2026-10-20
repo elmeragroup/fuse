@@ -165,4 +165,10 @@ describe("Meter", () => {
     meter.focus();
     expect(document.activeElement).not.toBe(meter);
   });
+
+  it("transitions only the fill's width and colour, never every property", () => {
+    renderMeter(<Meter label="Upload" value={40} />);
+    const fill = slot("meter-bar-fill", roleNamed("meter", "Upload"));
+    expect(getComputedStyle(fill).transitionProperty).toBe("width, background-color");
+  });
 });

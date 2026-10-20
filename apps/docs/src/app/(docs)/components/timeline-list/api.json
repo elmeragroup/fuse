@@ -114,7 +114,7 @@
           "type": "string | Date",
           "shortType": null,
           "defaultValue": null,
-          "description": "Event instant. A `Date` or parseable string, normalized with `new Date(date).toISOString()` onto the host `dateTime`. Every invalid value throws `RangeError(\"TimelineList.Time received an invalid date\")`.",
+          "description": "The event's date or instant. An HTML date or date-time string passes through unchanged onto the host `dateTime`, so a server and a browser in different time zones render the same value: a date (`2026-10-20`) or a date-time with an offset (`2026-10-20T10:00Z`, `2026-10-20T10:00+02:00`). A date-time without an offset names a different instant in each time zone, so development builds warn about one. A `Date`, or another string the JavaScript date parser reads (`June 15, 2024`, or `2024-02-30`, which it rolls over to March 1), is normalized with `toISOString()`. Every invalid value throws `RangeError(\"TimelineList.Time received an invalid date\")`.",
           "required": true
         }
       ]

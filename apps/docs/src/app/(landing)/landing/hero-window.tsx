@@ -10,6 +10,7 @@ import { Lock } from "@elmeragroup/fuse/icons";
 import { THEME_VARIANTS, ThemeScope } from "@elmeragroup/fuse/theme";
 import type { BrandCode, ThemeVariant } from "@elmeragroup/fuse/theme";
 
+import { RetryBoundary } from "../../../components/retry-boundary";
 import { SingleToggle } from "../../../components/single-toggle";
 import { VARIANT_LABELS } from "../../../lib/theme";
 import { BrandSite } from "./brand-site/brand-site";
@@ -106,6 +107,8 @@ type Side = ThemeVariant;
  * Each side mounts the first time it shows and stays mounted, so the Dashboard keeps its state
  * through a round trip, and the site's photos and the Dashboard's code load only once a visitor
  * asks. Pointing at or focusing Internal starts fetching the Dashboard's code before the flip.
+ * Each side fails on its own: a side that cannot render, such as a Dashboard whose code chunk a
+ * redeploy removed, shows a reload prompt while the nav and the other side keep working.
  */
 export function HeroWindow(): ReactElement {
   const { theme, changeTheme } = useLandingTheme();
@@ -192,7 +195,9 @@ export function HeroWindow(): ReactElement {
                 inert={external}
                 className={styles.side({ side: "internal" })}>
                 <WindowSide shown={!external}>
-                  <DashboardSide arrival={dashboardArrival} />
+                  <RetryBoundary subject="The Dashboard">
+                    <DashboardSide arrival={dashboardArrival} />
+                  </RetryBoundary>
                 </WindowSide>
               </div>
             ) : (
@@ -210,7 +215,9 @@ export function HeroWindow(): ReactElement {
                 className={styles.side({ side: "external" })}>
                 <WindowSide shown={external}>
                   <ThemeScope theme={{ ...theme, variant: "external" }} className={styles.siteScope()}>
-                    <BrandSite key={site.brand} site={site} onPickBrand={pickFromCard} />
+                    <RetryBoundary key={site.brand} subject="The website">
+                      <BrandSite site={site} onPickBrand={pickFromCard} />
+                    </RetryBoundary>
                   </ThemeScope>
                 </WindowSide>
               </div>

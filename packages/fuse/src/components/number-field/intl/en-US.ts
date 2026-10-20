@@ -2,4 +2,5 @@
 export const enUS = {
   increase: "Increase",
   decrease: "Decrease",
+  roleDescription: "Number field",
 };

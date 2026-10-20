@@ -173,6 +173,8 @@ export function NumberField({
             // validation input, not this one.
             ref={numberInputRef}
             aria-label={ariaLabel}
+            // Base UI hard-codes the English "Number field"; announce it in the provider locale.
+            aria-roledescription={strings.format("roleDescription")}
             autoFocus={autoFocus && reset.isInitialMount}
             data-focus-ring-control=""
             className={cn(

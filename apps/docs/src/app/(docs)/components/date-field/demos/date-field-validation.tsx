@@ -9,9 +9,10 @@ import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
 
 const minValue = new CalendarDate(2026, 7, 1);
 const maxValue = new CalendarDate(2026, 12, 31);
+const initialValue = new CalendarDate(2026, 1, 1);
 
 export function DateFieldValidation() {
-  const [value, setValue] = useState(new CalendarDate(2026, 1, 1));
+  const [value, setValue] = useState(initialValue);
   const isOutOfRange = value.compare(minValue) < 0 || value.compare(maxValue) > 0;
 
   return (

@@ -33,7 +33,7 @@ describe("size-limit harness", () => {
     expect(budgetFailure("button", 21, 20)).toBe("button 21 bytes exceeds ceiling 20");
   });
 
-  it("covers the current packed JS entries plus the per-icon export and flags", () => {
+  it("covers the current packed JS entries plus the named-import rows and flags", () => {
     const names = [
       ...JS_ENTRY_BUDGETS.map((budget) => budget.name),
       ...NAMED_IMPORT_BUDGETS.map((budget) => budget.name),
@@ -119,6 +119,7 @@ describe("size-limit harness", () => {
       "react-aria/focusable",
       "react-aria/file-trigger",
       "icons/Check",
+      "Button from the root barrel",
     ]);
     expect(FLAG_RAW_BUDGETS).toEqual([{ name: "flags/*.svg", ceilingBytes: 819200 }]);
     expect(CSS_BUDGETS.map((budget) => budget.name)).toEqual(["themes.css", "styles.css"]);

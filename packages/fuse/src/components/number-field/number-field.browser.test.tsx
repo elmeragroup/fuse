@@ -37,6 +37,13 @@ const DECREASE_COPY = {
   "fi-FI": "Vähennä",
 } as const;
 
+const ROLE_DESCRIPTION_COPY = {
+  "nb-NO": "Tallfelt",
+  "sv-SE": "Nummerfält",
+  "en-US": "Number field",
+  "fi-FI": "Numerokenttä",
+} as const;
+
 function renderField(node: ReactNode, locale: (typeof SUPPORTED_LOCALES)[number] = "en-US") {
   return renderThemed(withLocale(locale, node));
 }
@@ -86,6 +93,16 @@ describe("NumberField", () => {
   it("keeps the Field label when a wrapper forwards id and aria-label as undefined", () => {
     renderField(<NumberField label="Amount" id={undefined} aria-label={undefined} />);
     expect(textboxNamed("Amount").getAttribute("aria-roledescription")).toBe("Number field");
+  });
+
+  it("describes the input's role in the provider locale", () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      const { unmount } = renderField(<NumberField label="Amount" />, locale);
+      expect(textboxNamed("Amount").getAttribute("aria-roledescription"), locale).toBe(
+        ROLE_DESCRIPTION_COPY[locale]
+      );
+      unmount();
+    }
   });
 
   it("disables the input inside a disabled Field.Set", () => {

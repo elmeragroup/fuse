@@ -170,6 +170,11 @@ describe("AlertDialog", () => {
       () => page.getByRole("button", { name: ACTION, exact: true }),
     ],
     [
+      "Cancel for a neutral confirmation whose action is disabled",
+      <ConfirmDialog key="neutral-disabled" variant="neutral" isActionDisabled />,
+      () => page.getByRole("button", { name: "Cancel", exact: true }),
+    ],
+    [
       "a caller's initialFocus over the variant default",
       <CustomFocus key="custom" />,
       () => page.getByText("Custom focus target", { exact: true }),

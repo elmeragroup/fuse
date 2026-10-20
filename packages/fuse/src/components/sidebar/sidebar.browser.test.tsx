@@ -1,7 +1,7 @@
 import type { ComponentProps, ReactElement } from "react";
 import { createRef } from "react";
 
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
@@ -32,8 +32,39 @@ import type { SidebarContextValue } from "./sidebar";
 
 setupSidebarBrowser();
 
+/**
+ * Pins `navigator.platform`, which picks the shortcut's modifier, so a suite reads the same on a
+ * macOS workstation and a Linux CI runner. The own property shadows the prototype getter and is
+ * deleted after each test.
+ */
+function stubPlatform(platform: "MacIntel" | "Win32"): void {
+  Object.defineProperty(navigator, "platform", { value: platform, configurable: true });
+}
+
+beforeEach(() => {
+  stubPlatform("MacIntel");
+});
+
+afterEach(() => {
+  // SAFETY: deleting the own property restores the prototype getter that stubPlatform shadowed.
+  Reflect.deleteProperty(navigator, "platform");
+});
+
+/** Dispatches a B keydown and waits two frames, so a toggle it causes has committed. */
+async function pressB(
+  init: KeyboardEventInit,
+  target: EventTarget = window,
+  before?: (event: KeyboardEvent) => void
+): Promise<KeyboardEvent> {
+  const event = new KeyboardEvent("keydown", { key: "b", bubbles: true, cancelable: true, ...init });
+  before?.(event);
+  target.dispatchEvent(event);
+  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  return event;
+}
+
 describe("Sidebar toggle paths", () => {
-  it("toggles data-state from cmd+B and ctrl+B and prevents the browser default", async () => {
+  it("toggles data-state from ⌘B on Apple platforms and prevents the browser default", async () => {
     renderThemed(<Frame />);
     expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
 
@@ -41,16 +72,47 @@ describe("Sidebar toggle paths", () => {
     expect(sidebarRoot().getAttribute("data-state")).toBe("collapsed");
     expect(sidebarRoot().getAttribute("data-collapsible")).toBe("offcanvas");
 
-    await userEvent.keyboard("{Control>}b{/Control}");
+    const event = await pressB({ metaKey: true });
+    expect(event.defaultPrevented).toBe(true);
     expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
     expect(sidebarRoot().getAttribute("data-collapsible")).toBe("");
+    expect((await pressB({})).defaultPrevented).toBe(false);
+  });
 
-    const event = new KeyboardEvent("keydown", { key: "b", ctrlKey: true, cancelable: true });
-    window.dispatchEvent(event);
-    expect(event.defaultPrevented).toBe(true);
-    const plain = new KeyboardEvent("keydown", { key: "b", cancelable: true });
-    window.dispatchEvent(plain);
-    expect(plain.defaultPrevented).toBe(false);
+  it("leaves Ctrl+B to the caret on Apple platforms and toggles from Ctrl+B elsewhere", async () => {
+    renderThemed(<Frame />);
+    const control = await pressB({ ctrlKey: true });
+    expect(control.defaultPrevented).toBe(false);
+    expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
+
+    stubPlatform("Win32");
+    await userEvent.keyboard("{Control>}b{/Control}");
+    expect(sidebarRoot().getAttribute("data-state")).toBe("collapsed");
+    expect((await pressB({ metaKey: true })).defaultPrevented).toBe(false);
+    expect(sidebarRoot().getAttribute("data-state")).toBe("collapsed");
+  });
+
+  it("ignores a shortcut another handler already took, one mid-composition and one typed into text", async () => {
+    renderThemed(
+      <>
+        <Frame />
+        <textarea aria-label="Notes" />
+        <div role="textbox" aria-label="Editor" contentEditable suppressContentEditableWarning />
+      </>
+    );
+    await pressB({ metaKey: true }, window, (event) => {
+      event.preventDefault();
+    });
+    expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
+
+    await pressB({ metaKey: true, isComposing: true });
+    expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
+
+    for (const name of ["Notes", "Editor"]) {
+      const event = await pressB({ metaKey: true }, roleNamed("textbox", name));
+      expect(event.defaultPrevented, name).toBe(false);
+      expect(sidebarRoot().getAttribute("data-state"), name).toBe("expanded");
+    }
   });
 
   it("toggles from the Trigger, named by the dictionary, and runs the caller's onClick first", async () => {
@@ -62,6 +124,8 @@ describe("Sidebar toggle paths", () => {
           <Sidebar.Root />
           <Sidebar.Inset>
             <Sidebar.Trigger onClick={() => order.push("onClick")} />
+            <Sidebar.Trigger aria-label="Forwarded shortcut" aria-keyshortcuts={undefined} />
+            <Sidebar.Trigger aria-label="Own shortcut" aria-keyshortcuts="Alt+S" />
           </Sidebar.Inset>
         </Sidebar.Provider>
       )
@@ -69,6 +133,12 @@ describe("Sidebar toggle paths", () => {
     const trigger = roleNamed("button", "Toggle sidebar");
     expect(trigger.getAttribute("data-slot")).toBe("sidebar-trigger");
     expect(trigger.getAttribute("aria-label")).toBe("Toggle sidebar");
+    expect(trigger.getAttribute("aria-keyshortcuts")).toBe("Meta+B Control+B");
+    // A wrapper's unset value keeps the shortcut; an explicit one replaces it.
+    expect(roleNamed("button", "Forwarded shortcut").getAttribute("aria-keyshortcuts")).toBe(
+      "Meta+B Control+B"
+    );
+    expect(roleNamed("button", "Own shortcut").getAttribute("aria-keyshortcuts")).toBe("Alt+S");
     expect(trigger.querySelector(".sr-only")?.textContent).toBe("Toggle sidebar");
     expect(trigger.querySelector("svg")).not.toBeNull();
 

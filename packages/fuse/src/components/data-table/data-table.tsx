@@ -5,6 +5,7 @@ import type { ComponentProps, MouseEvent, ReactElement, ReactNode } from "react"
 
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { definedProps } from "../../internal/defined-props";
+import { OWN_CLICK_SELECTOR, selectionReaches } from "../../internal/own-click";
 import { cn } from "../../styles/cn";
 import { Skeleton } from "../skeleton/skeleton";
 import { Table } from "../table/table";
@@ -20,46 +21,51 @@ import type {
 import { dataTableVariants } from "./data-table-variants";
 import { dataTableStrings } from "./intl";
 
-const { emptyCell, head, skeleton } = dataTableVariants();
+const { emptyCell, head, skeleton, row: rowClass } = dataTableVariants();
 
 /** The cell type a row's `getAllCells()` returns. */
 type CellOf<TRow> = TRow extends RowSource<infer TCell> ? TCell : never;
 
 /**
- * Elements a click on a row must not also press the row through: native controls, links, and the
- * ARIA widgets Fuse renders as non-native elements, such as Base UI's checkbox span. `closest()`
- * matches an SVG icon inside one of them, too.
+ * Elements a click on a row must not also press the row through: the shared own-click set, plus
+ * the ARIA widgets Fuse renders as non-native elements (Base UI's checkbox and radio spans, a
+ * slider thumb, a date segment) that a table cell can hold. The slider's track has no role, so
+ * its control is named by slot.
  */
 const INTERACTIVE_DESCENDANT = [
-  "a",
-  "button",
-  "input",
-  "select",
-  "textarea",
-  "label",
-  "[role=button]",
-  "[role=link]",
+  OWN_CLICK_SELECTOR,
   "[role=checkbox]",
+  "[role=radio]",
   "[role=switch]",
+  "[role=slider]",
+  "[role=spinbutton]",
+  "[role=textbox]",
   "[role=combobox]",
   "[role=menuitem]",
+  "[data-slot=slider-control]",
 ].join(",");
 
 /**
  * Whether a click on a row presses it. React bubbles a click from a portal, such as an open menu,
  * to the `<tr>` that owns it in the React tree, though its DOM sits outside the row; such a click
- * never presses the row. Inside the row, an interactive element owns its click.
+ * never presses the row. Inside the row, an interactive element owns its click, and a click that
+ * ends a text selection reaching into the row (a drag to copy an order number) selects, not
+ * presses.
  *
  * @param target - The click's target.
  * @param row - The `<tr>` that received the click.
- * @returns `true` when the target sits inside the row's DOM and outside every interactive element in it.
+ * @returns `true` when the target sits inside the row's DOM and outside every interactive element
+ * in it, and no text selection reaches into the row.
  */
 function pressesRow(target: EventTarget | null, row: Element): boolean {
   if (!(target instanceof Element) || !row.contains(target)) {
     return false;
   }
   const interactive = target.closest(INTERACTIVE_DESCENDANT);
-  return interactive === null || interactive === row || !row.contains(interactive);
+  if (interactive !== null && interactive !== row && row.contains(interactive)) {
+    return false;
+  }
+  return !selectionReaches(row);
 }
 
 function ariaSort(column: HeaderSource["column"]): "ascending" | "descending" | "none" | undefined {
@@ -199,7 +205,7 @@ export function RowCells<TCell extends CellSource>({
     <Table.Row
       data-slot="data-table-row"
       {...definedProps({ "data-state": row.getIsSelected?.() === true ? "selected" : undefined })}
-      className={cn(dataTableVariants({ pressable: onPress !== undefined }).row(), className)}
+      className={cn(rowClass({ pressable: onPress !== undefined }), className)}
       onClick={(event) => {
         onClick?.(event);
         if (
@@ -344,9 +350,10 @@ export type DataTableRowProps<TCell extends CellSource> = ComponentProps<"tr"> &
   row: RowSource<TCell>;
   /**
    * Makes the whole row clickable without changing its role: the `<tr>` gets no `role="button"`
-   * and no `tabIndex`, so table navigation keeps working. Clicks on a link, button, input or other
-   * interactive element in the row do not press it, and neither do clicks inside a portal the row
-   * renders, such as an open menu. Keyboard users need the same action through a
+   * and no `tabIndex`, so table navigation keeps working. Clicks on a link, button, input, radio,
+   * slider, editable region or other interactive or focusable element in the row do not press it,
+   * nor does the click that ends a text selection reaching into the row, nor a click inside a
+   * portal the row renders, such as an open menu. Keyboard users need the same action through a
    * focusable primary action in the row, such as a link in its first cell.
    */
   onPress?: (event: MouseEvent<HTMLTableRowElement>) => void;

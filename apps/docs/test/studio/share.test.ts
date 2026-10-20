@@ -160,6 +160,7 @@ describe("decodeShare", () => {
     ["a font weight above 1000", sharedEdit("selection-title-weight", "1001")],
     ["a font weight below 1", sharedEdit("selection-title-weight", "0")],
     ["a value longer than the limit", lightEdit("font-sans", `a${", b".repeat(MAX_VALUE_LENGTH)}`)],
+    ["a quoted family with a form feed", lightEdit("font-sans", '"a\fb", serif')],
   ])("reads %s as no state", (_label, text) => {
     expect(decodeShare(text)).toBeUndefined();
   });

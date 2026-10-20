@@ -9,6 +9,7 @@ import { DemoHydrationMarker } from "./demo-hydration-marker";
 import { DemoStage } from "./demo-stage";
 import { DocsCodeBlock } from "./docs-code-block";
 import { DocsSectionHeading } from "./docs-section-heading";
+import { RetryBoundary } from "./retry-boundary";
 
 type DemoFrameProps = {
   /** Docs section of the page this demo belongs to. Component pages, the MDX default, omit it. */
@@ -47,7 +48,8 @@ const { root, card } = demoFrame();
  * A demo that reads the clock while it renders cannot prerender: React Aria's date components
  * build their dates on `new Date()`. The boundary keeps such a demo out of the static HTML, and
  * the browser renders it on hydration; every other demo prerenders as before. The marker inside
- * the boundary stamps `data-demo-hydrated` on the frame once the demo is live.
+ * the boundary stamps `data-demo-hydrated` on the frame once the demo is live. A demo that fails
+ * to render shows a reload prompt in its stage, and the page around it keeps working.
  */
 export function DemoFrame({
   section = "components",
@@ -64,10 +66,12 @@ export function DemoFrame({
       <DocsSectionHeading id={id}>{title}</DocsSectionHeading>
       <div className={card()}>
         <DemoStage sourcePath={demo.sourcePath}>
-          <Suspense fallback={null}>
-            {children}
-            <DemoHydrationMarker headingId={id} />
-          </Suspense>
+          <RetryBoundary subject="This demo">
+            <Suspense fallback={null}>
+              {children}
+              <DemoHydrationMarker headingId={id} />
+            </Suspense>
+          </RetryBoundary>
         </DemoStage>
         <DocsCodeBlock variant="embedded" data-demo-source source={demo.source} />
       </div>

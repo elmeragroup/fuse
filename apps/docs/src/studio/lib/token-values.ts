@@ -107,9 +107,11 @@ const refuse = (reason: string): Refusal => ({ ok: false, reason });
 
 /**
  * No character that could end the declaration, open or close a block, or start markup, since a
- * value lands in an inline style and in the exported CSS.
+ * value lands in an inline style and in the exported CSS. Control characters are refused whole:
+ * CSS reads LF, CR and FF as newlines, which end a quoted string and drop the declaration and the
+ * one after it, and NUL and tab have no place in a token value either.
  */
-const SAFE_VALUE = /^[^;{}<>\\\n\r]+$/u;
+const SAFE_VALUE = /^[^;{}<>\\\p{Cc}]+$/u;
 
 const KIND_NAMES = {
   color: "color",

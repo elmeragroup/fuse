@@ -4,6 +4,7 @@ import type { ComponentProps, ReactElement } from "react";
 
 import type { VariantProps } from "tailwind-variants";
 
+import { OWN_CLICK_SELECTOR } from "../../internal/own-click";
 import { cn } from "../../styles/cn";
 import { controlMd } from "../../styles/control-size-md";
 import { inputGroupRootClass, readOnlyFillCancelClass } from "../../styles/field-box";
@@ -95,10 +96,21 @@ export function InputGroupAddon({
       data-align={align}
       className={cn(inputGroupAddonVariants({ align }), className)}
       onClick={(event) => {
-        // The addon is an extension of the input's hit area, except over a
-        // nested button, which keeps its own click.
-        if (!(event.target instanceof HTMLElement) || !event.target.closest("button")) {
-          event.currentTarget.parentElement?.querySelector("input")?.focus();
+        // The addon is an extension of the group's own control's hit area, except over a
+        // nested control, such as a button, a label or a field, which keeps its own click and
+        // focus, and except for a click that bubbles through React from a portalled popup.
+        // The own control is the Root's direct input-group-control child: the first input in
+        // DOM order can be a field nested in an addon or a combobox's hidden input, and a
+        // Textarea group has no input at all.
+        const { currentTarget, target } = event;
+        if (
+          target instanceof Element &&
+          currentTarget.contains(target) &&
+          !currentTarget.contains(target.closest(OWN_CLICK_SELECTOR))
+        ) {
+          currentTarget.parentElement
+            ?.querySelector<HTMLElement>(":scope > [data-slot=input-group-control]")
+            ?.focus();
         }
         onClick?.(event);
       }}
@@ -133,7 +145,6 @@ export function InputGroupText({ className, ...props }: InputGroupTextProps): Re
       // The reference omits the slot, which breaks the
       // ButtonGroup `[data-slot]` child-selector contract.
       data-slot="input-group-text"
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- addon text gap is chrome, not a control rung
       className={cn(
         controlMd.type(),
         "flex items-center gap-2 text-muted-foreground [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",

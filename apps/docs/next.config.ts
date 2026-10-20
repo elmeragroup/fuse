@@ -60,6 +60,29 @@ const nextConfig: NextConfig = {
    * logs a warning when Cache Components is on without it.
    */
   partialPrefetching: true,
+  /** Responses do not advertise the framework. */
+  poweredByHeader: false,
+  /**
+   * Hardening headers on every response. None needs a nonce, so they hold on prerendered routes:
+   * no MIME sniffing, no full URL in the referrer to other origins, no framing by other origins,
+   * no `<base>` from elsewhere and no plugins. A `script-src` policy waits on the hash-based CSP
+   * decision recorded in the theming handbook.
+   */
+  headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          {
+            key: "Content-Security-Policy",
+            value: "frame-ancestors 'self'; base-uri 'self'; object-src 'none'",
+          },
+        ],
+      },
+    ];
+  },
   /**
    * The themed route is not an address of its own: a request for it goes to the shared address it
    * stands for, so search engines and visitors only meet `/?theme=`. Redirects run before
@@ -69,6 +92,11 @@ const nextConfig: NextConfig = {
     return [{ source: "/themed/:theme", destination: "/?theme=:theme", permanent: false }];
   },
   experimental: {
+    /**
+     * Serves `app/global-not-found.tsx` for an address no route matches. The app has a root layout
+     * per route group, so no single layout can frame a `not-found.tsx` for every address.
+     */
+    globalNotFound: true,
     /** Drops unreachable work from Turbopack's memory and its persistent cache. */
     turbopackGc: true,
     /** `next dev` compiles a client `import()` only when the browser first asks for its chunk. */

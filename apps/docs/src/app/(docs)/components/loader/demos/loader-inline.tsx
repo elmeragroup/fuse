@@ -12,7 +12,7 @@ export function LoaderInline() {
         <Card.Description>Latest consumption is still arriving.</Card.Description>
       </Card.Header>
       <Card.Content className="flex flex-col items-center">
-        <Loader size="medium" aria-label="Laster" />
+        <Loader size="medium" label="Loading the meter reading" />
         <Text size="sm" variant="muted">
           Fetching the latest reading.
         </Text>

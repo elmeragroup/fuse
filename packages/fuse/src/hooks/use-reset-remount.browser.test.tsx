@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { StrictMode, useRef } from "react";
 
 import { createPortal } from "react-dom";
 import { describe, expect, it, vi } from "vitest";
@@ -63,6 +63,31 @@ describe("useResetRemount", () => {
     await vi.waitFor(() => {
       expect(current().key).toBe(2);
     });
+  });
+
+  it("increments the key once per native reset under StrictMode's double mount", async () => {
+    const onState = vi.fn<(state: ResetRemount) => void>();
+    render(
+      <StrictMode>
+        <Probe enabled onState={onState} />
+      </StrictMode>
+    );
+    const frames = async () => {
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    };
+    formNamed("Probe").reset();
+    await vi.waitFor(() => {
+      expect(onState.mock.lastCall?.[0].key).toBe(1);
+    });
+    // A second subscription left by the double mount would bump the key again a task later.
+    await frames();
+    expect(onState.mock.lastCall?.[0]).toEqual({ key: 1, isInitialMount: false });
+    formNamed("Probe").reset();
+    await vi.waitFor(() => {
+      expect(onState.mock.lastCall?.[0].key).toBe(2);
+    });
+    await frames();
+    expect(onState.mock.lastCall?.[0]).toEqual({ key: 2, isInitialMount: false });
   });
 
   it("leaves the key alone when disabled", async () => {

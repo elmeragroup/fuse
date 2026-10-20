@@ -131,7 +131,7 @@
           "type": "((event: MouseEvent<HTMLTableRowElement, MouseEvent>) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Makes the whole row clickable without changing its role: the `<tr>` gets no `role=\"button\"` and no `tabIndex`, so table navigation keeps working. Clicks on a link, button, input or other interactive element in the row do not press it, and neither do clicks inside a portal the row renders, such as an open menu. Keyboard users need the same action through a focusable primary action in the row, such as a link in its first cell.",
+          "description": "Makes the whole row clickable without changing its role: the `<tr>` gets no `role=\"button\"` and no `tabIndex`, so table navigation keeps working. Clicks on a link, button, input, radio, slider, editable region or other interactive or focusable element in the row do not press it, nor does the click that ends a text selection reaching into the row, nor a click inside a portal the row renders, such as an open menu. Keyboard users need the same action through a focusable primary action in the row, such as a link in its first cell.",
           "required": false
         },
         {

@@ -100,7 +100,13 @@ const CLIENT_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["scroll-area", ["components/scroll-area/scroll-area.tsx"]],
   ["search-field", ["react-aria/search-field/search-field.tsx"]],
   ["select", ["components/select/select.tsx"]],
-  ["selection-item", ["components/selection-item/selection-item.tsx"]],
+  [
+    "selection-item",
+    [
+      "components/selection-item/selection-item.tsx",
+      "components/selection-item/selection-item-sub-section.tsx",
+    ],
+  ],
   ["separator", ["components/separator/separator.tsx"]],
   ["sheet", ["components/sheet/sheet.tsx"]],
   ["sidebar", ["components/sidebar/sidebar.tsx"]],
@@ -141,6 +147,8 @@ const SERVER_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
 const CLIENT_ISLANDS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["table", ["components/table/vertical-table-header.tsx", "components/table/vertical-table-key.tsx"]],
   ["description-list", ["components/description-list/description-list-heading.tsx"]],
+  // Loader stays a server component; only its dictionary default reads the client locale.
+  ["loader", ["components/loader/loader-default-label.tsx"]],
 ];
 
 const CLIENT_HOOKS = ["hooks/use-localized-strings.ts"] as const;

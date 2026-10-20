@@ -440,7 +440,7 @@ describe("SelectionItem", () => {
       const rowClicks: string[] = [];
       const ancestorClicks: string[] = [];
       renderThemed(
-        // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- counts bubbling clicks only
+        // oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- counts bubbling clicks only
         <div onClick={() => ancestorClicks.push("click")}>
           <Field.Root>
             <SelectionItem.Shell

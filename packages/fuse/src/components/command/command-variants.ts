@@ -22,11 +22,7 @@ export const commandVariants = tv({
   slots: {
     input: "m-(--surface-gap-sm) mb-0 w-auto shrink-0",
     list: "max-h-80 min-h-0 flex-1 scroll-py-(--surface-gap-sm) overflow-y-auto overscroll-contain",
-    item: cn(
-      menuItemClass,
-      // oxlint-disable-next-line elmera/no-local-focus-ring -- menuItemClass leaves the highlight face to each family; on base-ui listbox options it is the `data-highlighted:` variant
-      "w-full data-highlighted:bg-accent data-highlighted:text-accent-foreground"
-    ),
+    item: cn(menuItemClass, "w-full data-highlighted:bg-accent data-highlighted:text-accent-foreground"),
     trailing: "ms-auto text-muted-foreground in-data-highlighted:text-accent-foreground",
     empty: "text-sm px-(--row-px) py-6 text-center text-muted-foreground empty:p-0",
     status:

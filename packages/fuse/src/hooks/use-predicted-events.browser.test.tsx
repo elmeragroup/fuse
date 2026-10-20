@@ -150,4 +150,49 @@ describe("usePredictedEvents", () => {
       remove.mockRestore();
     }
   });
+
+  it("reads the box of no registration far outside the viewport while the pointer moves", async () => {
+    const nearIntent = vi.fn();
+    render(
+      <>
+        <Probe label="Near one" onIntent={nearIntent} />
+        <Probe label="Near two" onIntent={vi.fn()} />
+        <div style={{ marginTop: 5000 }}>
+          <Probe label="Far one" onIntent={vi.fn()} />
+          <Probe label="Far two" onIntent={vi.fn()} />
+          <Probe label="Far three" onIntent={vi.fn()} />
+        </div>
+      </>
+    );
+    const far = ["Far one", "Far two", "Far three"].map((name) => roleNamed("button", name));
+    const near = ["Near one", "Near two"].map((name) => roleNamed("button", name));
+    const reads = vi.spyOn(Element.prototype, "getBoundingClientRect");
+    const readFrom = (elements: HTMLElement[]) =>
+      reads.mock.contexts.filter((element) => elements.some((candidate) => candidate === element)).length;
+    // Each registration's viewport observer reports its element's first state a task or more after
+    // mount, in no fixed order; until then the registration counts as near. Wait for the reports.
+    await vi.waitFor(() => {
+      reads.mockClear();
+      dispatchPredictedPointer(5, 5000);
+      expect(readFrom(far)).toBe(0);
+    });
+
+    reads.mockClear();
+    for (let move = 0; move < 10; move += 1) {
+      dispatchPredictedPointer(5, 5000);
+    }
+    expect(readFrom(far)).toBe(0);
+    // At most one read per on-screen registration per move.
+    expect(readFrom(near)).toBeLessThanOrEqual(20);
+
+    // An on-screen registration still fires, once, and stops watching the viewport when it does.
+    const disconnect = vi.spyOn(IntersectionObserver.prototype, "disconnect");
+    // Above the first button, inside its 30px zone and outside the second's, so only it fires.
+    const { x } = center(near[0] ?? document.body);
+    const y = (near[0]?.getBoundingClientRect().top ?? 0) - 25;
+    dispatchPredictedPointer(x, y);
+    dispatchPredictedPointer(x, y);
+    expect(nearIntent).toHaveBeenCalledTimes(1);
+    expect(disconnect).toHaveBeenCalledTimes(1);
+  });
 });

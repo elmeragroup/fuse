@@ -16,6 +16,9 @@ import type { ItemGroupVariant } from "./item-group-variants";
 import { itemRootProps } from "./item-root-props";
 import type { itemVariants } from "./item-variants";
 
+/** Resolved once at module scope; each call passes the group's own axes. */
+const { root: groupRoot, separator: groupSeparator, item: groupItem } = itemGroupVariants();
+
 /** The enclosing group's variant, or `undefined` outside `Item.Group`. */
 const ItemGroupContext = createContext<ItemGroupVariant | undefined>(undefined);
 
@@ -37,20 +40,26 @@ export function ItemGroup({ className, variant = "default", ...props }: ItemGrou
         role="list"
         data-slot="item-group"
         data-variant={variant}
-        className={cn(itemGroupVariants({ variant }).root(), className)}
+        className={cn(groupRoot({ variant }), className)}
         {...props}
       />
     </ItemGroupContext.Provider>
   );
 }
 
+/**
+ * A rule between Item rows. Inside `Item.Group` it is decorative and hidden from assistive
+ * technology, since a list may own only list items; pass `aria-hidden={false}` to expose it.
+ * Outside a group it is a `separator`.
+ */
 export function ItemSeparator({ className, ...props }: ComponentProps<typeof Separator>): ReactElement {
   const variant = useContext(ItemGroupContext);
   return (
     <Separator
       data-slot="item-separator"
       orientation="horizontal"
-      className={mergeClassName(className, itemGroupVariants({ variant }).separator())}
+      {...definedProps({ "aria-hidden": variant === undefined ? undefined : true })}
+      className={mergeClassName(className, groupSeparator({ variant }))}
       {...props}
     />
   );
@@ -89,7 +98,7 @@ export function ItemRoot({
 }: useRender.ComponentProps<"div"> & VariantProps<typeof itemVariants>): ReactElement {
   const groupVariant = useContext(ItemGroupContext);
   const inGroup = groupVariant !== undefined;
-  const groupClassName = inGroup ? itemGroupVariants({ variant: groupVariant, size }).item() : undefined;
+  const groupClassName = inGroup ? groupItem({ variant: groupVariant, size }) : undefined;
   const wrapInListItem = inGroup && render !== undefined && props.role === undefined;
   const element = useRender({
     defaultTagName: "div",

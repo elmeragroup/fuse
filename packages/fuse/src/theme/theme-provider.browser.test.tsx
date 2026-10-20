@@ -34,7 +34,6 @@ function ThemeProbe() {
     // oxlint-disable-next-line react-hooks/rules-of-hooks -- probe asserts the provider's synchronous throw path; the hook never commits
     const theme = useTheme();
     return (
-      // oxlint-disable-next-line react/error-boundaries -- the probe renders the thrown message directly; the hook throws during this render
       <span>
         {theme.variant}-{theme.brand}-{theme.segment}-{theme.slug}
       </span>

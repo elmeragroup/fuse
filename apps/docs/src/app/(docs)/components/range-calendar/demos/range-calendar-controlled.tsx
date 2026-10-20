@@ -11,11 +11,13 @@ import { Text } from "@elmeragroup/fuse/text";
 
 type Range = { start: DateValue; end: DateValue };
 
+const initialRange: Range = {
+  start: new CalendarDate(2026, 7, 14),
+  end: new CalendarDate(2026, 7, 18),
+};
+
 export function RangeCalendarControlled() {
-  const [value, setValue] = useState<Range | null>({
-    start: new CalendarDate(2026, 7, 14),
-    end: new CalendarDate(2026, 7, 18),
-  });
+  const [value, setValue] = useState<Range | null>(initialRange);
 
   return (
     <UiProviders locale="en-US" navigate={() => undefined}>

@@ -118,19 +118,20 @@ function CopyButton({ value, label }: { value: string; label: string }): ReactEl
             variant="ghost"
             size="icon-xs"
             aria-label={label}
-            onClick={() => {
-              navigator.clipboard.writeText(value).then(
-                () => {
-                  notify({ type: "success", title: "Copied", description: value });
-                },
-                () => {
-                  notify({
-                    type: "error",
-                    title: "Could not copy",
-                    description: "The browser refused clipboard access.",
-                  });
-                }
-              );
+            onClick={async () => {
+              try {
+                // Rejects too where there is no clipboard at all, as on insecure origins: the
+                // property read throws inside the try.
+                await navigator.clipboard.writeText(value);
+              } catch {
+                notify({
+                  type: "error",
+                  title: "Could not copy",
+                  description: "The browser refused clipboard access.",
+                });
+                return;
+              }
+              notify({ type: "success", title: "Copied", description: value });
             }}
           />
         }>

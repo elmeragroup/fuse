@@ -20,12 +20,13 @@ import {
 } from "./phone-engine";
 
 describe("phone-number-field dictionary", () => {
-  it("carries no key beyond the three rows owned by PhoneNumberField", () => {
+  it("carries no key beyond the four rows owned by PhoneNumberField", () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(Object.keys(phoneNumberFieldStrings.getStringsForLocale(locale)).sort(), locale).toEqual([
         "noCountries",
         "searchCountries",
         "selectCountry",
+        "selectedCountry",
       ]);
     }
   });

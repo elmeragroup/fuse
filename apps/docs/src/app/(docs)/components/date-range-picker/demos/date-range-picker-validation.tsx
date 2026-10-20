@@ -13,15 +13,17 @@ type Range = { start: DateValue; end: DateValue };
 const minValue = new CalendarDate(2026, 7, 1);
 const maxValue = new CalendarDate(2026, 7, 31);
 
+const initialRange: Range = {
+  start: new CalendarDate(2026, 7, 11),
+  end: new CalendarDate(2026, 7, 15),
+};
+
 /**
  * Starts on a weekend, which is unavailable — so the function `errorMessage` has a real
  * `ValidationResult` to render rather than a permanent placeholder.
  */
 export function DateRangePickerValidation() {
-  const [value, setValue] = useState<Range | null>({
-    start: new CalendarDate(2026, 7, 11),
-    end: new CalendarDate(2026, 7, 15),
-  });
+  const [value, setValue] = useState<Range | null>(initialRange);
 
   return (
     <UiProviders locale="en-US" navigate={() => undefined}>

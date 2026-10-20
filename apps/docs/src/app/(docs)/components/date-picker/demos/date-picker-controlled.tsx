@@ -8,8 +8,10 @@ import { DatePicker } from "@elmeragroup/fuse/react-aria/date-picker";
 import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
 import { Text } from "@elmeragroup/fuse/text";
 
+const initialValue = new CalendarDate(2026, 7, 14);
+
 export function DatePickerControlled() {
-  const [value, setValue] = useState<CalendarDate | null>(new CalendarDate(2026, 7, 14));
+  const [value, setValue] = useState<CalendarDate | null>(initialValue);
 
   return (
     <UiProviders locale="en-US" navigate={() => undefined}>

@@ -51,7 +51,8 @@ export type AlertDialogContentProps = Omit<DialogContentProps, "showCloseButton"
   icon?: ReactNode;
   /**
    * Drives the action-button variant and the fallback icon. Destructive dialogs
-   * initially focus Cancel; neutral dialogs initially focus the primary action.
+   * initially focus Cancel; neutral dialogs initially focus the primary action, or Cancel
+   * while `isActionDisabled` is set.
    * @default "destructive"
    */
   variant?: "destructive" | "neutral";
@@ -112,10 +113,12 @@ export function AlertDialogContent({
   const strings = useLocalizedStrings(alertDialogStrings);
   // One `initialFocus` on the popup, not two mirroring `autoFocus` booleans: destructive
   // confirmations land on Cancel, neutral ones on the primary action, and a caller's own
-  // `initialFocus` wins over both.
+  // `initialFocus` wins over both. A disabled action is natively disabled and cannot take focus,
+  // and Base UI does not fall back when `.focus()` does nothing, so a neutral confirmation with
+  // its action disabled lands on Cancel too.
   const actionRef = useRef<HTMLButtonElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
-  const fallbackFocus = variant === "destructive" ? cancelRef : actionRef;
+  const fallbackFocus = variant === "destructive" || isActionDisabled ? cancelRef : actionRef;
   const fallbackIcon =
     variant === "destructive" ? (
       <WarningOctagon className="size-5 shrink-0 text-error" />
