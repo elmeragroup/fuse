@@ -69,11 +69,26 @@ describe("TimelineList.Time", () => {
     expect(dateTimeOf(new Date("2024-06-15T12:00:00.000Z"))).toBe("2024-06-15T12:00:00.000Z");
   });
 
-  it("passes a valid string through unchanged, so the machine-readable value never shifts by time zone", () => {
-    vi.stubEnv("TZ", "America/New_York");
+  it("passes an HTML date or date-time string through unchanged, so the machine-readable value never shifts by time zone", () => {
     expect(dateTimeOf("2026-10-20")).toBe("2026-10-20");
     expect(dateTimeOf("2024-06-15T12:00:00+02:00")).toBe("2024-06-15T12:00:00+02:00");
     expect(dateTimeOf("2026-10-20T10:00Z")).toBe("2026-10-20T10:00Z");
+  });
+
+  it("normalizes any other parseable string to its ISO instant", () => {
+    expect(dateTimeOf("Sat, 15 Jun 2024 12:00:00 GMT")).toBe("2024-06-15T12:00:00.000Z");
+    // The JavaScript parser reads an offset-less non-HTML string as local time.
+    vi.stubEnv("TZ", "America/New_York");
+    expect(dateTimeOf("June 15, 2024")).toBe("2024-06-15T04:00:00.000Z");
+    expect(dateTimeOf("2024/06/15")).toBe("2024-06-15T04:00:00.000Z");
+  });
+
+  it("normalizes a grammar-shaped string HTML rejects, and passes a leap day through", () => {
+    expect(dateTimeOf("2024-06-15T24:00Z")).toBe("2024-06-16T00:00:00.000Z");
+    expect(dateTimeOf("2024-02-30")).toBe("2024-03-01T00:00:00.000Z");
+    expect(dateTimeOf("2024-04-31")).toBe("2024-05-01T00:00:00.000Z");
+    expect(dateTimeOf("2026-10-20T10:00z")).toBe("2026-10-20T10:00:00.000Z");
+    expect(dateTimeOf("2024-02-29")).toBe("2024-02-29");
   });
 
   it("warns in development about a date-time string without an offset, and passes it through", () => {
