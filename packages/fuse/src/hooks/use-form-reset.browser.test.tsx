@@ -1,4 +1,4 @@
-import { Suspense, startTransition, use, useRef, useState } from "react";
+import { StrictMode, Suspense, startTransition, use, useRef, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
 import { createPortal } from "react-dom";
@@ -94,6 +94,26 @@ describe("useFormReset", () => {
     mountProbe({ onReset, onRender });
     expect(onRender).toHaveBeenCalledTimes(1);
     expect(resetCalls(add)).toHaveLength(listeners);
+  });
+
+  it("calls the callback once per native reset under StrictMode's double mount", async () => {
+    const onReset = vi.fn();
+    render(
+      <StrictMode>
+        <Probe onReset={onReset} />
+      </StrictMode>
+    );
+    vi.useFakeTimers();
+    try {
+      formNamed("Probe").reset();
+      await vi.runOnlyPendingTimersAsync();
+      expect(onReset).toHaveBeenCalledTimes(1);
+      formNamed("Probe").reset();
+      await vi.runOnlyPendingTimersAsync();
+      expect(onReset).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("invokes the callback after a reset button's default action has restored the control", async () => {

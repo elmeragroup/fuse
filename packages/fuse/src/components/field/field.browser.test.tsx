@@ -1,3 +1,4 @@
+import { StrictMode } from "react";
 import type { ReactNode } from "react";
 
 import { afterEach, describe, expect, it } from "vitest";
@@ -182,6 +183,23 @@ describe("Field", () => {
     );
     expect(textNamed("Pick one.").getAttribute("data-slot")).toBe("field-description");
     expect(textboxNamed("Email").hasAttribute("aria-describedby")).toBe(false);
+  });
+
+  it("registers each fieldset description once under StrictMode's double mount", async () => {
+    renderThemed(
+      <StrictMode>
+        <Field.Set>
+          <Field.Legend>Contact</Field.Legend>
+          <Field.Description>Pick one.</Field.Description>
+          <Field.Description>We reply within a day.</Field.Description>
+        </Field.Set>
+      </StrictMode>
+    );
+    const group = page.getByRole("group", { name: "Contact", exact: true });
+    await expect.element(group).toHaveAccessibleDescription("Pick one. We reply within a day.");
+    expect(group.element().getAttribute("aria-describedby")).toBe(
+      `${textNamed("Pick one.").id} ${textNamed("We reply within a day.").id}`
+    );
   });
 
   it("keeps the fieldset's descriptions in DOM order as they are inserted, re-identified and reordered", async () => {

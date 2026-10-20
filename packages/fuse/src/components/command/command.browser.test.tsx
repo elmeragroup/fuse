@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, StrictMode, Suspense, useEffect, useRef, useState } from "react";
 import type { ComponentProps, CSSProperties, ReactElement, ReactNode } from "react";
 
 import { Autocomplete } from "@base-ui/react";
@@ -688,6 +688,28 @@ async function closedPalette(): Promise<void> {
 }
 
 describe("Command.Content", () => {
+  it("keeps its session, stack and focus requests under StrictMode's double render", async () => {
+    renderPalette(
+      <StrictMode>
+        <PagedDialogPalette />
+      </StrictMode>
+    );
+    await openPalette("Commands");
+    await userEvent.keyboard("cust");
+    await expect.poll(highlightedLabel).toBe("Customers");
+    await userEvent.keyboard("{Enter}");
+    await expect.poll(() => document.activeElement).toBe(comboboxNamed("Customers"));
+    await userEvent.keyboard("{Backspace}");
+    await expect.poll(() => document.activeElement).toBe(comboboxNamed("Commands"));
+    expect(comboboxNamed("Commands").value).toBe("");
+
+    await userEvent.keyboard("{Escape}");
+    await closedPalette();
+    await openPalette("Commands");
+    expect(comboboxNamed("Commands").value).toBe("");
+    await expect.poll(highlightedLabel).toBe("Customers");
+  });
+
   it("opens from Command.Trigger, names the popup from the dictionary and renders no close button", async () => {
     renderPalette(<DialogPalette />);
     expect(page.getByRole("dialog").elements()).toEqual([]);
