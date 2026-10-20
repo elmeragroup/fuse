@@ -5,9 +5,21 @@ import type { VariantProps } from "tailwind-variants";
 import { cn } from "../../styles/cn";
 import { cardDescriptionVariants, cardTitleVariants, cardVariants } from "./card-variants";
 
-type CardVariantProps = VariantProps<typeof cardVariants>;
+// Every part takes `direction`; only the root takes the card's `size`, so the typography `size`
+// of `Card.Title` and `Card.Description` stays their own.
+type CardVariantProps = Pick<VariantProps<typeof cardVariants>, "direction">;
 
 type CardDivProps = HTMLAttributes<HTMLDivElement> & CardVariantProps;
+
+type CardRootProps = CardDivProps & {
+  /**
+   * The card's surface tier, which pads its sections, gaps them and sets their inner corner.
+   * `default` takes the medium tier, `--surface-pad-md`, which Items and Accordion items pad with
+   * too, so the card's text starts on their edge. `lg` takes the large
+   * tier, `--surface-pad-lg`, for a card that holds long prose or acts as a page's main panel.
+   */
+  size?: keyof typeof cardVariants.variants.size;
+};
 
 type CardTitleLevel = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -37,16 +49,18 @@ type CardDescriptionProps = HTMLAttributes<HTMLParagraphElement> &
  * The Card surface. It publishes `--inner-corner`, its corner less its border, and its header,
  * content and footer publish it less their padding too. The root and its sections write their
  * `direction` as `data-direction`: a vertical card pads its sections, a horizontal one pads itself.
+ * The root writes its `size` as `data-size` and publishes its tier to the sections it holds.
  * Its 1px edge is the theme's `--card-border`: `--border` in internal themes and a zero-alpha
  * colour in external ones. A border colour class still wins.
  */
-function CardRoot({ className, direction, ...props }: CardDivProps): ReactElement {
-  const { base } = cardVariants({ direction });
+function CardRoot({ className, direction, size = "default", ...props }: CardRootProps): ReactElement {
+  const { base } = cardVariants({ direction, size });
 
   return (
     <div
       data-slot="card"
       data-direction={direction ?? "vertical"}
+      data-size={size}
       className={cn(base(), className)}
       {...props}
     />
