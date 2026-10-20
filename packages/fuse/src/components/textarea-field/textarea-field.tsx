@@ -76,12 +76,11 @@ export function TextareaField({
         }
   );
   // Text typed (or restored by the browser) before hydration stays in the DOM, but the count
-  // starts from `defaultValue`. Read the DOM once on mount, as PhoneNumberField does; on a
-  // client mount, or a hydration without an early edit, the lengths are equal.
-  const hydrationCheckedRef = useRef(false);
+  // starts from `defaultValue`. Read the DOM on mount and whenever the field becomes
+  // uncontrolled; on a client mount, or a hydration without an early edit, the lengths are equal,
+  // and setting the same length again bails out.
   useLayoutEffect(() => {
-    if (hydrationCheckedRef.current || isControlled) return;
-    hydrationCheckedRef.current = true;
+    if (isControlled) return;
     const length = textareaRef.current?.value.length;
     if (length !== undefined) {
       setUncontrolledLength(length);
