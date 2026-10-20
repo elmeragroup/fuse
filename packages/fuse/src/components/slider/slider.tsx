@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef } from "react";
-import type { ReactElement, ReactNode } from "react";
+import { useCallback, useRef } from "react";
+import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { Slider as SliderPrimitive } from "@base-ui/react/slider";
 
@@ -115,6 +115,27 @@ function markFocusRingControl(input: HTMLInputElement | null): void {
   input?.setAttribute("data-focus-ring-control", "");
 }
 
+type SliderThumbProps = Omit<ComponentProps<typeof SliderPrimitive.Thumb>, "index" | "inputRef"> & {
+  readonly index: number;
+  readonly thumbCount: number;
+  /** Called as the thumb's range input attaches and detaches. */
+  readonly onInputAttach: (index: number, thumbCount: number, input: HTMLInputElement | null) => void;
+};
+
+/**
+ * One thumb. Its input ref keeps its identity while the value moves, so React attaches the
+ * range input once instead of on every pointer move, and the focus-ring mark is written once.
+ */
+function SliderThumb({ index, thumbCount, onInputAttach, ...props }: SliderThumbProps): ReactElement {
+  const inputRef = useCallback(
+    (input: HTMLInputElement | null) => {
+      onInputAttach(index, thumbCount, input);
+    },
+    [index, thumbCount, onInputAttach]
+  );
+  return <SliderPrimitive.Thumb index={index} inputRef={inputRef} {...definedProps(props)} />;
+}
+
 /**
  * Labeled slider composite over Field + base-ui Slider, for a single value or a range.
  * Client. Base UI owns the value and the pointer and keyboard handling, and the range
@@ -151,16 +172,19 @@ export function Slider<Value extends SliderValue = number>({
   const resetTarget = useRef<HTMLInputElement | null>(null);
   // base-ui does not observe native form reset; the hook remounts the primitive instead.
   const reset = useResetRemount(resetTarget, value === undefined);
-  const thumbInputRef = (index: number, thumbCount: number) => (input: HTMLInputElement | null) => {
-    markFocusRingControl(input);
-    thumbInputs.current[index] = input;
-    // A remount onto fewer thumbs hands focus to the last one left, so its input attaches as
-    // the reset target before the hook restores focus.
-    focusedThumb.current = Math.min(focusedThumb.current, thumbCount - 1);
-    if (index === focusedThumb.current) {
-      resetTarget.current = input;
-    }
-  };
+  const attachThumbInput = useCallback(
+    (index: number, thumbCount: number, input: HTMLInputElement | null) => {
+      markFocusRingControl(input);
+      thumbInputs.current[index] = input;
+      // A remount onto fewer thumbs hands focus to the last one left, so its input attaches as
+      // the reset target before the hook restores focus.
+      focusedThumb.current = Math.min(focusedThumb.current, thumbCount - 1);
+      if (index === focusedThumb.current) {
+        resetTarget.current = input;
+      }
+    },
+    []
+  );
   const thumbName = (index: number, thumbCount: number): string | undefined => {
     if (thumbCount === 1) {
       return ariaLabel;
@@ -217,11 +241,12 @@ export function Slider<Value extends SliderValue = number>({
                 <SliderPrimitive.Indicator data-slot="slider-indicator" className={slots.indicator()} />
               </SliderPrimitive.Track>
               {state.values.map((_, index) => (
-                <SliderPrimitive.Thumb
+                <SliderThumb
                   key={index}
                   index={index}
+                  thumbCount={state.values.length}
+                  onInputAttach={attachThumbInput}
                   data-slot="slider-thumb"
-                  inputRef={thumbInputRef(index, state.values.length)}
                   // The thumb's name carries its position, so the value text is the formatted
                   // value alone, not base-ui's English "start range" suffix.
                   getAriaValueText={(formattedValue) => formattedValue}
