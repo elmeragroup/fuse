@@ -80,6 +80,21 @@ describe("docs response HTML", () => {
       expect(html).not.toContain("ThemePicker");
       expect(html).not.toContain("data-docs-root");
       expect(html).not.toContain("Skip to contents");
+      expect(html).toContain('<meta name="robots" content="noindex, nofollow"/>');
     }
+  });
+
+  it("names the site root as the canonical page of every themed landing address", async () => {
+    const canonicals: string[] = [];
+    for (const pathname of ["/", "/?theme=internal-fkas-company"] as const) {
+      const href = /<link rel="canonical" href="([^"]+)"\/>/u.exec(await fetchHtml(pathname))?.[1];
+      expect(href, pathname).toBeDefined();
+      canonicals.push(href ?? "");
+    }
+    // The build bakes the site origin into the link; the path and query are what this asserts.
+    const [root, themed] = canonicals.map((href) => new URL(href));
+    expect(root?.pathname).toBe("/");
+    expect(root?.search).toBe("");
+    expect(themed?.href).toBe(root?.href);
   });
 });
