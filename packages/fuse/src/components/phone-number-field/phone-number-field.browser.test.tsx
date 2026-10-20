@@ -13,6 +13,7 @@ import {
   assertWithinKeyboardFocusRingAtBothDensities,
   expectNoFocusRing,
 } from "../../../test/assert-focus-ring";
+import { assertNoAxeViolations } from "../../../test/axe";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import {
   countryAddon,
@@ -25,7 +26,6 @@ import {
 } from "../../../test/phone-browser-queries";
 import { EXCLUDED_PRODUCT_COUNTRY_CODES, FLAG_GAP_COUNTRY_CODES } from "../../../test/phone-picker-contract";
 import {
-  assertNoAxeViolations,
   CONTROL_MD,
   fieldRootFrom,
   formNamed,

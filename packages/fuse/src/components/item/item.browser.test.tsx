@@ -8,10 +8,10 @@ import {
   expectFocusRing,
   focusRingClippers,
 } from "../../../test/assert-focus-ring";
+import { assertNoAxeViolations } from "../../../test/axe";
 import { hasIntermediateFrame, sampleFrames } from "../../../test/panel-transition";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import {
-  assertNoAxeViolations,
   ROW,
   metricPx,
   renderThemed,

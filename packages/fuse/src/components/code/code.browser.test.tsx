@@ -4,7 +4,8 @@ import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { assertNoAxeViolations, renderThemed } from "../../../test/themed-browser-render";
+import { assertNoAxeViolations } from "../../../test/axe";
+import { renderThemed } from "../../../test/themed-browser-render";
 import { Code } from "./code";
 
 const SNIPPET = "const answer = 42;";
