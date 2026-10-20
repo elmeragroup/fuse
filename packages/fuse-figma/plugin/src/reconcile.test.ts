@@ -61,12 +61,20 @@ const LABEL: TextLayerSpec = {
   fontSize: literal(14),
   lineHeight: literal(20),
   color: { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } },
+  underline: undefined,
 };
 
-/** A kit with one Button variant and no previews, which bundles Roboto Medium. */
+/** A kit with one Button variant, no icons and no previews, which bundles Roboto Medium. */
 const KIT: KitSpec = {
   page: { key: "page", name: "Fuse components" },
   fonts: [{ family: "Roboto", style: "Medium" }],
+  icons: {
+    key: "icons",
+    name: "Icons",
+    size: 16,
+    color: { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } },
+    icons: [],
+  },
   componentSets: [
     {
       key: "button",
@@ -74,12 +82,14 @@ const KIT: KitSpec = {
       axes: [{ name: "size", values: ["md"] }],
       columnAxis: "size",
       textProperties: [],
+      swapProperties: [],
       variants: [
         {
           key: "button/size=md",
           properties: { size: "md" },
           root: {
             name: "button",
+            width: undefined,
             height: literal(36),
             minWidth: undefined,
             paddingTop: literal(0),
@@ -130,6 +140,13 @@ function fileStandIn(family: string, withPage = true): FileStandIn {
     },
   ];
   const variables: VariableStandIn[] = [
+    {
+      id: "background",
+      name: "background",
+      variableCollectionId: "tokens",
+      resolvedType: "COLOR",
+      valuesByMode: { light: { r: 1, g: 1, b: 1, a: 1 } },
+    },
     {
       id: "font-sans",
       name: "font-sans",
@@ -213,7 +230,9 @@ describe("reconcileKit on a file without the component set", () => {
     const report = await reconcileKit(file.figma, KIT, false);
     expect(report.changes).toEqual([
       "Fuse components: delete Old preview",
+      "Fuse components: create the Icons frame with 0 icons",
       "Fuse components: create the component set Button with 1 variants",
+      "Fuse components: place 1 component sets and the icons in a row and stack 0 previews below them",
     ]);
     expect(file.loaded).toEqual(["Roboto Medium"]);
     expect(file.writes).toEqual([]);

@@ -9,21 +9,34 @@ import type {
   NumberSpec,
   TextLayerSpec,
 } from "../../src/components/kit-spec.ts";
-import { describeNumber, near, planNumber, planPaints, planScalar, requireFont } from "./fields.ts";
+import {
+  describeNumber,
+  near,
+  planNumber,
+  planPaints,
+  planScalar,
+  requireFont,
+  solidPaint,
+} from "./fields.ts";
 import type { Run } from "./fields.ts";
+import { glyphOf } from "./icons.ts";
+import type { PlannedIcon } from "./icons.ts";
 import { findOwned, setKey, staleOwned, unowned } from "./identity.ts";
 import { change, create, existing, keepsOrder, warn } from "./plan.ts";
 import type { Target } from "./plan.ts";
 
 /**
- * The text properties of a component set, from the name in the spec to the full property id.
- * An operation that adds a property puts its id here when it runs, before any text layer
- * links to it.
+ * The TEXT and INSTANCE_SWAP properties of a component set, from the name in the spec to the
+ * full property id. An operation that adds a property puts its id here when it runs, before
+ * any layer links to it.
  */
-export type TextPropertyIds = ReadonlyMap<string, string>;
+export type PropertyIds = ReadonlyMap<string, string>;
 
-/** A placeholder icon draws a ring this thick, close to a 16px Phosphor glyph's stroke. */
-const ICON_STROKE_WEIGHT = 1.5;
+/** What a variant's layers link to: the set's properties and the kit's icons. */
+export type LayerLinks = {
+  readonly properties: PropertyIds;
+  readonly icons: ReadonlyMap<string, PlannedIcon>;
+};
 
 /** The text fields that pick a font's style, which the spec sets as a literal. */
 const STYLE_FIELDS: readonly VariableBindableTextField[] = ["fontStyle", "fontWeight"];
@@ -247,7 +260,7 @@ function planText(
   text: TextNode,
   label: string,
   spec: TextLayerSpec,
-  propertyIds: TextPropertyIds,
+  propertyIds: PropertyIds,
   held: readonly FontName[]
 ): void {
   const fontName = fontFor(run, text, spec);
@@ -268,12 +281,47 @@ function planText(
   }
 }
 
+/** Whether a layer's underline offset is the one the spec asks for. */
+function offsetMatches(current: TextDecorationOffset | null, desired: TextDecorationOffset): boolean {
+  if (current === null || current.unit !== desired.unit) {
+    return false;
+  }
+  return current.unit !== "AUTO" && desired.unit !== "AUTO" ? near(current.value, desired.value) : true;
+}
+
+/**
+ * Plan the underline as one operation, because Figma holds an underline offset only while the
+ * layer is underlined.
+ */
+function planUnderline(run: Run, text: TextNode, label: string, spec: TextLayerSpec): void {
+  const underline = spec.underline;
+  if (underline === undefined) {
+    if (text.textDecoration !== "NONE") {
+      change(run.plan, label, "textDecoration → NONE", () => {
+        text.textDecoration = "NONE";
+      });
+    }
+    return;
+  }
+  const offset: TextDecorationOffset =
+    underline.offset === undefined ? { unit: "AUTO" } : { unit: "PIXELS", value: underline.offset };
+  const held = text.textDecorationOffset === run.figma.mixed ? null : text.textDecorationOffset;
+  if (text.textDecoration === "UNDERLINE" && offsetMatches(held, offset)) {
+    return;
+  }
+  const description = underline.offset === undefined ? "UNDERLINE" : `UNDERLINE, offset ${underline.offset}`;
+  change(run.plan, label, `textDecoration → ${description}`, () => {
+    text.textDecoration = "UNDERLINE";
+    text.textDecorationOffset = offset;
+  });
+}
+
 function planTypography(
   run: Run,
   text: TextNode,
   label: string,
   spec: TextLayerSpec,
-  propertyIds: TextPropertyIds
+  propertyIds: PropertyIds
 ): void {
   if (spec.fontFamily.kind === "variable") {
     const variable = run.variables.variable(spec.fontFamily.variable);
@@ -309,6 +357,7 @@ function planTypography(
       text.lineHeight = { unit: "PIXELS", value };
     }
   );
+  planUnderline(run, text, label, spec);
   planScalar(run, label, "textAutoResize", text.textAutoResize, "WIDTH_AND_HEIGHT", () => {
     text.textAutoResize = "WIDTH_AND_HEIGHT";
   });
@@ -334,63 +383,97 @@ function planTypography(
   });
 }
 
-function planIcon(run: Run, icon: EllipseNode, label: string, spec: IconLayerSpec): void {
-  planScalar(run, label, "name", icon.name, spec.name, () => {
-    icon.name = spec.name;
+/**
+ * Plan an icon layer: an instance of the icon component the spec names, linked to the set's
+ * swap property when it has one, sized by the cell and with its glyph in the label's color.
+ */
+async function planIcon(
+  run: Run,
+  instance: InstanceNode,
+  label: string,
+  spec: IconLayerSpec,
+  links: LayerLinks
+): Promise<void> {
+  planScalar(run, label, "name", instance.name, spec.name, () => {
+    instance.name = spec.name;
   });
+  const icon = links.icons.get(spec.icon);
+  if (icon === undefined) {
+    throw new Error(`${label} shows ${spec.icon}, which the kit's icon library lacks.`);
+  }
+  const main = await instance.getMainComponentAsync();
+  const swapped = icon.node.existing === undefined || main?.id !== icon.node.existing.id;
+  if (swapped) {
+    change(run.plan, label, `show ${icon.spec.name}`, () => instance.swapComponent(icon.node.get()));
+  }
+  const property = spec.swapProperty;
+  const linked = instance.componentPropertyReferences?.mainComponent;
+  if (property !== undefined && (linked === undefined || linked !== links.properties.get(property))) {
+    change(run.plan, label, `icon → the ${property} property`, () => {
+      const id = links.properties.get(property);
+      if (id === undefined) {
+        throw new Error(`${label}: the ${property} property has no id when the layer links to it.`);
+      }
+      instance.componentPropertyReferences = { ...instance.componentPropertyReferences, mainComponent: id };
+    });
+  } else if (property === undefined && linked !== undefined) {
+    change(run.plan, label, "icon → no property", () => {
+      const { mainComponent: _unlinked, ...rest } = instance.componentPropertyReferences ?? {};
+      instance.componentPropertyReferences = rest;
+    });
+  }
   planNumber(
     run,
-    icon,
+    instance,
     label,
     {
       name: "size",
       bindings: ["width", "height"],
-      matches: (value) => near(icon.width, value) && near(icon.height, value),
-      write: (value) => icon.resize(value, value),
+      matches: (value) => near(instance.width, value) && near(instance.height, value),
+      write: (value) => instance.resize(value, value),
     },
     spec.size
   );
-  planPaints(run, label, "fill", icon.fills, undefined, (paints) => {
-    icon.fills = paints;
-  });
-  planPaints(run, label, "stroke", icon.strokes, spec.color, (paints) => {
-    icon.strokes = paints;
-  });
-  planNumber(
-    run,
-    icon,
-    label,
-    {
-      name: "strokeWeight",
-      bindings: ["strokeWeight"],
-      matches: (value) => icon.strokeWeight !== run.figma.mixed && near(icon.strokeWeight, value),
-      write: (value) => {
-        icon.strokeWeight = value;
-      },
-    },
-    { kind: "literal", value: ICON_STROKE_WEIGHT }
-  );
-  planScalar(run, label, "strokeAlign", icon.strokeAlign, "INSIDE", () => {
-    icon.strokeAlign = "INSIDE";
+  // A swap or a redraw replaces the glyph, so the color goes on the glyph the instance holds
+  // once those ran.
+  const glyph = swapped || icon.redrawn ? undefined : glyphOf(instance);
+  if (glyph === undefined) {
+    const paint = solidPaint(run, spec.color);
+    change(
+      run.plan,
+      label,
+      `glyph fill → ${spec.color.kind === "variable" ? spec.color.variable.name : "a literal"}`,
+      () => {
+        const drawn = glyphOf(instance);
+        if (drawn === undefined) {
+          throw new Error(`${label}: ${icon.spec.name} has no glyph to color.`);
+        }
+        drawn.fills = [paint];
+      }
+    );
+    return;
+  }
+  planPaints(run, `${label} / glyph`, "fill", glyph.fills, spec.color, (paints) => {
+    glyph.fills = paints;
   });
 }
 
 const isText = (node: BaseNode): node is TextNode => node.type === "TEXT";
-const isEllipse = (node: BaseNode): node is EllipseNode => node.type === "ELLIPSE";
+const isInstance = (node: BaseNode): node is InstanceNode => node.type === "INSTANCE";
 
-function planChild(
+async function planChild(
   run: Run,
   component: ComponentNode,
   label: string,
   spec: ChildLayerSpec,
-  propertyIds: TextPropertyIds
-): Target<SceneNode> {
+  links: LayerLinks
+): Promise<Target<SceneNode>> {
   const layerLabel = `${label} / ${spec.name}`;
   const description = `create the ${spec.kind} layer ${spec.name}`;
   if (spec.kind === "text") {
     const found = findOwned(run.plan, component.children, label, spec.key, spec.name, isText);
     if (found !== undefined) {
-      planText(run, found, layerLabel, spec, propertyIds, heldFonts(run, found));
+      planText(run, found, layerLabel, spec, links.properties, heldFonts(run, found));
       return existing(found);
     }
     requireNewTextFonts(run, component, label, [spec]);
@@ -405,26 +488,30 @@ function planChild(
         made.name = spec.name;
         return made;
       },
-      (made, plan) => planText({ ...run, plan }, made, layerLabel, spec, propertyIds, [])
+      (made, plan) => planText({ ...run, plan }, made, layerLabel, spec, links.properties, [])
     );
   }
-  const found = findOwned(run.plan, component.children, label, spec.key, spec.name, isEllipse);
+  const found = findOwned(run.plan, component.children, label, spec.key, spec.name, isInstance);
   if (found !== undefined) {
-    planIcon(run, found, layerLabel, spec);
+    await planIcon(run, found, layerLabel, spec, links);
     return existing(found);
+  }
+  const icon = links.icons.get(spec.icon);
+  if (icon === undefined) {
+    throw new Error(`${layerLabel} shows ${spec.icon}, which the kit's icon library lacks.`);
   }
   return create(
     run.plan,
     label,
     description,
     () => {
-      const made = run.figma.createEllipse();
+      const made = icon.node.get().createInstance();
       component.appendChild(made);
       setKey(made, spec.key);
       made.name = spec.name;
       return made;
     },
-    (made, plan) => planIcon({ ...run, plan }, made, layerLabel, spec)
+    (made, plan) => planIcon({ ...run, plan }, made, layerLabel, spec, links)
   );
 }
 
@@ -436,21 +523,24 @@ function planChild(
  * @param component - The variant component.
  * @param label - The variant's label, for change lines.
  * @param specs - The child layers, in order.
- * @param propertyIds - The set's text properties.
+ * @param links - The set's properties and the kit's icons.
  */
-export function planChildren(
+export async function planChildren(
   run: Run,
   component: ComponentNode,
   label: string,
   specs: readonly ChildLayerSpec[],
-  propertyIds: TextPropertyIds
-): void {
+  links: LayerLinks
+): Promise<void> {
   const keep = new Set(specs.map((spec) => spec.key));
   for (const stale of staleOwned(component.children, keep)) {
     change(run.plan, label, `delete the layer ${stale.name}`, () => stale.remove());
   }
 
-  const owned = specs.map((spec) => planChild(run, component, label, spec, propertyIds));
+  const owned: Target<SceneNode>[] = [];
+  for (const spec of specs) {
+    owned.push(await planChild(run, component, label, spec, links));
+  }
 
   for (const node of unowned(component.children, owned)) {
     warn(run.plan, label, `keeps the layer ${node.name}, which the kit does not own`);

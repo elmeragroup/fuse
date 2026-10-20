@@ -5,6 +5,8 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
+import { PHOSPHOR_ICON_NAMES, buttonVariants } from "@elmeragroup/fuse/recipe-catalog";
+
 import { buildKit } from "./build-kit";
 import type { CoverageRow } from "./coverage";
 import type { ComponentRootSpec, KitSpec } from "./kit-spec";
@@ -20,31 +22,87 @@ const token = (name: string) =>
   ({ kind: "variable", variable: { collection: "Fuse tokens", name } }) as const;
 const density = (name: string) =>
   ({ kind: "variable", variable: { collection: "Fuse density", name } }) as const;
-const paint = (name: string, opacity = 1) =>
-  ({ kind: "variable", variable: { collection: "Fuse tokens", name }, opacity }) as const;
+const paint = (name: string) =>
+  ({ kind: "variable", variable: { collection: "Fuse tokens", name } }) as const;
 const literal = (value: number) => ({ kind: "literal", value }) as const;
 const transparent = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 0 } } as const;
 
-function root(variant: string, size: string, state: string, icon: string): ComponentRootSpec {
-  const key = `button/variant=${variant},size=${size},state=${state},icon=${icon}`;
-  const found = spec.componentSets[0]?.variants.find((cell) => cell.key === key);
+function find(key: string): ComponentRootSpec {
+  const found = spec.componentSets.flatMap((set) => set.variants).find((cell) => cell.key === key);
   if (found === undefined) {
     throw new Error(`the kit has no ${key}`);
   }
   return found.root;
 }
 
+function root(variant: string, size: string, state: string, icon: string): ComponentRootSpec {
+  return find(`button/variant=${variant},size=${size},state=${state},icon=${icon}`);
+}
+
+function square(variant: string, size: string, state: string): ComponentRootSpec {
+  return find(`icon-button/variant=${variant},size=${size},state=${state}`);
+}
+
+const VARIANTS = ["default", "outline", "secondary", "ghost", "destructive", "success", "link"];
+
+/** The icon layers `button.tsx` renders, as instances of the kit's icon components. */
+const startIcon = (size: number, color: ReturnType<typeof paint>) => ({
+  kind: "icon",
+  key: "icon-start",
+  name: "Start icon",
+  icon: "icon/Plus",
+  swapProperty: "Start icon",
+  size: literal(size),
+  color,
+});
+const endIcon = (size: number, color: ReturnType<typeof paint>) => ({
+  kind: "icon",
+  key: "icon-end",
+  name: "End icon",
+  icon: "icon/ArrowRight",
+  swapProperty: "End icon",
+  size: literal(size),
+  color,
+});
+const spinner = (size: number, color: ReturnType<typeof paint>) => ({
+  kind: "icon",
+  key: "spinner",
+  name: "Spinner",
+  icon: "icon/SpinnerGap",
+  swapProperty: undefined,
+  size: literal(size),
+  color,
+});
+
 describe("the Button component set", () => {
-  it("holds one variant per cell of the 3 × 2 × 4 × 2 matrix", () => {
+  it("holds one variant per cell of the 7 × 4 × 5 × 3 matrix", () => {
     const set = spec.componentSets[0];
+    // Each axis opens on the recipe's default, so the top-left variant, which Figma makes the
+    // set's default, is the Button `<Button>` renders.
     expect(set?.axes).toEqual([
-      { name: "variant", values: ["default", "outline", "destructive"] },
-      { name: "size", values: ["default", "sm"] },
-      { name: "state", values: ["rest", "hover", "focus", "disabled"] },
-      { name: "icon", values: ["none", "start"] },
+      { name: "variant", values: VARIANTS },
+      { name: "size", values: ["default", "xs", "sm", "lg"] },
+      { name: "state", values: ["rest", "hover", "focus", "disabled", "pending"] },
+      { name: "icon", values: ["none", "start", "end"] },
     ]);
-    expect(new Set(set?.variants.map((cell) => cell.key)).size).toBe(48);
+    expect(new Set(set?.variants.map((cell) => cell.key)).size).toBe(420);
     expect(set?.textProperties).toEqual([{ name: "Label", defaultValue: "Button" }]);
+    // The icons the Button docs place most: Plus before the label, ArrowRight after it.
+    expect(set?.swapProperties).toEqual([
+      { name: "Start icon", defaultIcon: "icon/Plus" },
+      { name: "End icon", defaultIcon: "icon/ArrowRight" },
+    ]);
+  });
+
+  it("covers every recipe size across the two sets, except the line-sized icon-inline", () => {
+    const sizes = spec.componentSets.flatMap(
+      (set) => set.axes.find((axis) => axis.name === "size")?.values ?? []
+    );
+    expect(sizes.toSorted()).toEqual(
+      Object.keys(buttonVariants.variants.size)
+        .filter((size) => size !== "icon-inline")
+        .toSorted()
+    );
   });
 
   it("binds the default md button to the control metrics, radius and primary roles", () => {
@@ -80,9 +138,9 @@ describe("the Button component set", () => {
   });
 
   it("maps hover, focus and disabled onto the state axis", () => {
-    expect(root("default", "default", "hover", "none").fill).toEqual(paint("primary", 0.8));
+    expect(root("default", "default", "hover", "none").fill).toEqual(paint("primary/80"));
     expect(root("default", "default", "focus", "none").shadows).toEqual([
-      { color: paint("ring"), offsetX: 0, offsetY: 0, radius: 0, spread: 2 },
+      { color: paint("ring"), offsetX: 0, offsetY: 0, radius: literal(0), spread: literal(2) },
     ]);
     const disabled = root("default", "default", "disabled", "none");
     expect(disabled.opacity).toBe(0.5);
@@ -94,13 +152,72 @@ describe("the Button component set", () => {
     expect(withIcon.paddingLeft).toEqual(density("control-px-button-icon-md"));
     expect(withIcon.paddingRight).toEqual(density("control-px-button-md"));
     expect(withIcon.children.map((child) => child.kind)).toEqual(["icon", "text"]);
-    expect(withIcon.children[0]).toEqual({
-      kind: "icon",
-      key: "icon",
-      name: "icon",
-      size: literal(16),
-      color: paint("primary-foreground"),
-    });
+    expect(withIcon.children[0]).toEqual(startIcon(16, paint("primary-foreground")));
+  });
+
+  it("tightens the right inset for an end icon, which follows the label", () => {
+    const withIcon = root("outline", "default", "rest", "end");
+    expect(withIcon.paddingLeft).toEqual(density("control-px-button-md"));
+    expect(withIcon.paddingRight).toEqual(density("control-px-button-icon-md"));
+    expect(withIcon.children.map((child) => child.kind)).toEqual(["text", "icon"]);
+    expect(withIcon.children[1]).toEqual(endIcon(16, paint("foreground")));
+  });
+
+  it("draws pending as the disabled face with a spinner in the leading slot", () => {
+    // button.tsx: `isPending` disables the button, keeps it focusable, and renders SpinnerGap in a
+    // span with `data-icon="inline-start"`, which takes the start inset. The recipe hides the
+    // button's own leading icon, and keeps an end icon.
+    const plain = root("default", "default", "pending", "none");
+    expect(plain.opacity).toBe(0.5);
+    expect(plain.fill).toEqual(paint("primary"));
+    expect(plain.paddingLeft).toEqual(density("control-px-button-icon-md"));
+    expect(plain.children.map((child) => (child.kind === "icon" ? child.key : child.kind))).toEqual([
+      "spinner",
+      "text",
+    ]);
+    expect(plain.children[0]).toEqual(spinner(16, paint("primary-foreground")));
+    const withStart = root("default", "default", "pending", "start");
+    expect(withStart.children.map((child) => (child.kind === "icon" ? child.key : child.kind))).toEqual([
+      "spinner",
+      "text",
+    ]);
+    const withEnd = root("ghost", "xs", "pending", "end");
+    expect(withEnd.children).toEqual([
+      spinner(12, paint("foreground")),
+      expect.objectContaining({ kind: "text" }),
+      endIcon(12, paint("foreground")),
+    ]);
+    expect([withEnd.paddingLeft, withEnd.paddingRight]).toEqual([
+      density("control-px-button-icon-xs"),
+      density("control-px-button-icon-xs"),
+    ]);
+  });
+
+  it("binds xs through its 24px floor, which control-h-xs never falls below", () => {
+    const xs = root("default", "xs", "rest", "start");
+    expect(xs.height).toEqual(density("control-h-xs"));
+    expect([xs.paddingLeft, xs.paddingRight, xs.itemSpacing]).toEqual([
+      density("control-px-button-icon-xs"),
+      density("control-px-button-xs"),
+      density("control-gap-xs"),
+    ]);
+    const [icon, label] = xs.children;
+    expect(icon?.kind === "icon" && icon.size).toEqual(literal(12));
+    expect(label?.kind === "text" && [label.fontSize, label.lineHeight]).toEqual([literal(12), literal(16)]);
+  });
+
+  it("gives lg its own box and md's density type pair", () => {
+    const lg = root("default", "lg", "rest", "none");
+    expect([lg.height, lg.paddingLeft, lg.itemSpacing]).toEqual([
+      density("control-h-lg"),
+      density("control-px-button-lg"),
+      density("control-gap-lg"),
+    ]);
+    const label = lg.children[0];
+    expect(label?.kind === "text" && [label.fontSize, label.lineHeight]).toEqual([
+      density("control-text"),
+      density("control-leading"),
+    ]);
   });
 
   it("sets sm type in fixed pixels, since only md and lg follow density", () => {
@@ -116,27 +233,132 @@ describe("the Button component set", () => {
     expect(outline.fill).toEqual(paint("background"));
     expect(outline.stroke).toEqual({ color: paint("button-outline"), weight: token("button-outline-width") });
     expect(outline.children[0]?.color).toEqual(paint("foreground"));
+    // Tailwind's shadow-xs, 0 1px 2px at 5% black, as formulas over the outline width.
+    expect(outline.shadows).toEqual([
+      {
+        color: { kind: "literal", color: { r: 0, g: 0, b: 0, a: 0.05 } },
+        offsetX: 0,
+        offsetY: 1,
+        radius: token("button-outline-shadow-blur"),
+        spread: token("button-outline-shadow-spread"),
+      },
+    ]);
     const hover = root("outline", "default", "hover", "none");
     expect(hover.fill).toEqual(paint("muted"));
     expect(hover.children[0]?.color).toEqual(paint("foreground"));
   });
 
-  it("mixes the error role for the destructive button", () => {
+  it("binds the error tints for the destructive button", () => {
     const rest = root("destructive", "default", "rest", "none");
-    expect(rest.fill).toEqual(paint("error", 0.1));
-    expect(rest.stroke).toEqual({ color: paint("error", 0.2), weight: literal(1) });
+    expect(rest.fill).toEqual(paint("error/10"));
+    expect(rest.stroke).toEqual({ color: paint("error/20"), weight: literal(1) });
     expect(rest.children[0]?.color).toEqual(paint("error"));
     const hover = root("destructive", "default", "hover", "none");
-    expect(hover.fill).toEqual(paint("error", 0.2));
+    expect(hover.fill).toEqual(paint("error/20"));
     expect(hover.stroke?.color).toEqual(paint("error"));
+  });
+
+  it("fills the secondary button with the secondary roles", () => {
+    const rest = root("secondary", "default", "rest", "none");
+    expect(rest.fill).toEqual(paint("secondary"));
+    expect(rest.children[0]?.color).toEqual(paint("secondary-foreground"));
+    expect(root("secondary", "default", "hover", "none").fill).toEqual(paint("secondary-hover"));
+  });
+
+  it("fills the ghost button only on hover, and inherits the page text color", () => {
+    const rest = root("ghost", "default", "rest", "none");
+    expect(rest.fill).toBeUndefined();
+    expect(rest.children[0]?.color).toEqual(paint("foreground"));
+    expect(root("ghost", "default", "hover", "none").fill).toEqual(paint("muted"));
+    const focus = root("ghost", "default", "focus", "none");
+    expect(focus.fill).toBeUndefined();
+    expect(focus.shadows).toEqual([
+      { color: paint("ring"), offsetX: 0, offsetY: 0, radius: literal(0), spread: literal(2) },
+    ]);
+  });
+
+  it("binds the success tints as destructive binds the error tints", () => {
+    const rest = root("success", "default", "rest", "none");
+    expect(rest.fill).toEqual(paint("success/10"));
+    expect(rest.stroke).toEqual({ color: paint("success/20"), weight: literal(1) });
+    expect(rest.children[0]?.color).toEqual(paint("success"));
+    const hover = root("success", "default", "hover", "none");
+    expect(hover.fill).toEqual(paint("success/20"));
+    expect(hover.stroke?.color).toEqual(paint("success"));
+  });
+
+  it("draws the link as primary text that underlines 4px down on hover", () => {
+    const rest = root("link", "default", "rest", "none");
+    expect(rest.fill).toBeUndefined();
+    const restLabel = rest.children[0];
+    expect(restLabel?.kind === "text" && [restLabel.color, restLabel.underline]).toEqual([
+      paint("primary"),
+      undefined,
+    ]);
+    const hoverLabel = root("link", "default", "hover", "none").children[0];
+    expect(hoverLabel?.kind === "text" && hoverLabel.underline).toEqual({ offset: 4 });
+  });
+});
+
+describe("the Icon button component set", () => {
+  it("holds one variant per cell of the 7 × 4 × 5 matrix, with no label", () => {
+    const set = spec.componentSets[1];
+    expect(set?.axes).toEqual([
+      { name: "variant", values: VARIANTS },
+      { name: "size", values: ["icon", "icon-xs", "icon-sm", "icon-lg"] },
+      { name: "state", values: ["rest", "hover", "focus", "disabled", "pending"] },
+    ]);
+    expect(new Set(set?.variants.map((cell) => cell.key)).size).toBe(140);
+    expect(set?.textProperties).toEqual([]);
+    expect(set?.swapProperties).toEqual([{ name: "Icon", defaultIcon: "icon/Plus" }]);
+  });
+
+  it("squares each size on its control height around a lone icon", () => {
+    const md = square("default", "icon", "rest");
+    expect([md.width, md.height, md.paddingLeft, md.paddingRight]).toEqual([
+      density("control-h-md"),
+      density("control-h-md"),
+      literal(0),
+      literal(0),
+    ]);
+    expect(md.children).toEqual([
+      {
+        kind: "icon",
+        key: "icon-only",
+        name: "Icon",
+        icon: "icon/Plus",
+        swapProperty: "Icon",
+        size: literal(16),
+        color: paint("primary-foreground"),
+      },
+    ]);
+    const xs = square("outline", "icon-xs", "rest");
+    expect([xs.width, xs.height]).toEqual([density("control-h-xs"), density("control-h-xs")]);
+    expect(xs.children[0]?.kind === "icon" && [xs.children[0].size, xs.children[0].color]).toEqual([
+      literal(12),
+      paint("foreground"),
+    ]);
+    expect(square("default", "icon-lg", "rest").width).toEqual(density("control-h-lg"));
+  });
+
+  it("shows only the spinner while pending, which takes the lone icon's place", () => {
+    expect(square("secondary", "icon-sm", "pending").children).toEqual([
+      spinner(16, paint("secondary-foreground")),
+    ]);
   });
 });
 
 describe("the Button coverage", () => {
-  it("leaves only the outline shadow unmapped, whose blur and spread are formulas over a variable", () => {
-    expect(coverage.filter((row) => row.outcome === "unmapped").map((row) => row.className)).toEqual([
-      "shadow-[0_1px_max(0px,4px-2*var(--button-outline-width,1px))_min(0px,2px-2*var(--button-outline-width,1px))_rgb(0_0_0/0.05)]",
-    ]);
+  it("leaves no declaration unmapped", () => {
+    expect(coverage.filter((row) => row.outcome === "unmapped")).toEqual([]);
+  });
+
+  it("reads the pending icon swap, which leaves the leading icon out", () => {
+    expect(
+      coverage.filter(
+        (row) => row.className === "data-[pending-indicator]:[&>svg:not([data-icon=inline-end])]:hidden"
+      )
+    ).toContainEqual(expect.objectContaining({ property: "display", outcome: "literal" }));
   });
 
   it("drops the states no cell shows", () => {
@@ -151,25 +373,54 @@ describe("the Button coverage", () => {
   });
 });
 
-describe("the preview frames", () => {
-  it("pin three themes at both densities, each on all five axes", () => {
-    expect(spec.previews.map((preview) => preview.key)).toEqual([
-      "preview/internal-fkas-private-light/dense",
-      "preview/internal-fkas-private-light/comfortable",
-      "preview/internal-elma-company-dark/dense",
-      "preview/internal-elma-company-dark/comfortable",
-      "preview/external-fkas-private-light/dense",
-      "preview/external-fkas-private-light/comfortable",
+describe("the icon library", () => {
+  it("holds the roster's icons that paint with currentColor, in roster order", () => {
+    // Of the bespoke icons, collect-logo.tsx, deviate-logo.tsx, funnel-logo.tsx, order-logo.tsx
+    // and strom-smart.tsx paint with currentColor. The others are artwork with colors of their own.
+    expect(spec.icons.icons.map((icon) => icon.name)).toEqual([
+      ...PHOSPHOR_ICON_NAMES,
+      "CollectLogo",
+      "DeviateLogo",
+      "FunnelLogo",
+      "OrderLogo",
+      "StromSmart",
     ]);
-    expect(spec.previews[2]?.modes).toEqual([
+    expect(spec.icons.size).toBe(16);
+    expect(spec.icons.color).toEqual(paint("foreground"));
+  });
+
+  it("paints each icon black for the plugin to recolor", () => {
+    // Phosphor paints with currentColor; the bold Plus is one path in a 256 viewBox at 16px.
+    const plus = spec.icons.icons.find((icon) => icon.name === "Plus");
+    expect(plus?.key).toBe("icon/Plus");
+    expect(plus?.svg).toMatch(/^<svg [^>]*width="16" height="16" fill="#000000" viewBox="0 0 256 256"/);
+    expect(spec.icons.icons.filter((icon) => icon.svg.includes("currentColor"))).toEqual([]);
+  });
+});
+
+describe("the preview frames", () => {
+  it("pin three themes at both densities for each set, each on all five axes", () => {
+    expect(spec.previews.map((preview) => preview.key)).toEqual(
+      [
+        "internal-fkas-private-light/dense",
+        "internal-fkas-private-light/comfortable",
+        "internal-elma-company-dark/dense",
+        "internal-elma-company-dark/comfortable",
+        "external-fkas-private-light/dense",
+        "external-fkas-private-light/comfortable",
+      ].flatMap((theme) => [`preview/button/${theme}`, `preview/icon-button/${theme}`])
+    );
+    expect(spec.previews[4]?.modes).toEqual([
       { collection: "Fuse tokens", mode: "Dark" },
       { collection: "Fuse variant", mode: "Internal" },
       { collection: "Fuse segment", mode: "Company" },
       { collection: "Fuse brand", mode: "Elmera" },
       { collection: "Fuse density", mode: "Dense" },
     ]);
-    const keys = new Set(spec.componentSets[0]?.variants.map((cell) => cell.key));
     for (const preview of spec.previews) {
+      const set = spec.componentSets.find((candidate) => candidate.key === preview.componentSet);
+      const keys = new Set(set?.variants.map((cell) => cell.key));
+      expect(preview.variants.length).toBeGreaterThan(0);
       expect(preview.variants.every((key) => keys.has(key))).toBe(true);
     }
   });

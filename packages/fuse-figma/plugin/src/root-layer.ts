@@ -1,9 +1,9 @@
 /**
- * A variant's component root: a horizontal auto layout box that hugs its content along the
- * row and centers it on both axes.
+ * A variant's component root: a horizontal auto layout box that centers its content on both
+ * axes, and hugs it along the row unless the spec fixes a width, as an icon square does.
  */
 
-import type { ComponentRootSpec } from "../../src/components/kit-spec.ts";
+import type { ColorSpec, ComponentRootSpec, NumberSpec } from "../../src/components/kit-spec.ts";
 import { near, planNumber, planPaints, planScalar, planShadows, planSizing } from "./fields.ts";
 import type { NumberField, Run } from "./fields.ts";
 import { change } from "./plan.ts";
@@ -45,8 +45,56 @@ function strokeWeightField(node: ComponentNode): NumberField {
 }
 
 /**
- * Plan a variant's root against the spec. The root hugs its content along the row and
- * centers it on both axes, as an `inline-flex items-center justify-center` box does.
+ * A fill Figma counts as visible that changes no 8-bit channel: black at an alpha below half a
+ * step, 1/510, moves a channel by less than 0.5, which rounds away. Figma does not count a fill
+ * at alpha 0. On a real file on 2026-10-20, ghost and link focus rings held their 2px spread
+ * over such a fill and drew nothing, and a test frame drew the ring once its fill reached 0.001.
+ */
+const CLEAR: ColorSpec = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 0.0015 } };
+
+/**
+ * The fill a root needs. Figma draws a drop shadow's spread only from a frame that clips its
+ * content and has a visible fill, and a focus ring is a spread shadow. A root without a fill,
+ * such as a ghost Button, therefore gets one that shows nothing, as CSS paints nothing for an
+ * unset `background-color`.
+ *
+ * @param spec - The root the spec asks for.
+ * @returns The fill to plan, or undefined for none.
+ */
+export function rootFill(spec: Pick<ComponentRootSpec, "fill" | "shadows">): ColorSpec | undefined {
+  const spreads = spec.shadows.some(
+    (shadow) => shadow.spread.kind === "variable" || shadow.spread.value !== 0
+  );
+  return spec.fill ?? (spreads ? CLEAR : undefined);
+}
+
+/** Plan a fixed width or height, or unbind one the spec lets the root hug. */
+function planSize(
+  run: Run,
+  node: ComponentNode,
+  label: string,
+  name: "width" | "height",
+  spec: NumberSpec | undefined,
+  write: (value: number) => void
+): void {
+  if (spec === undefined) {
+    if (node.boundVariables?.[name] !== undefined) {
+      change(run.plan, label, `${name} → hug`, () => node.setBoundVariable(name, null));
+    }
+    return;
+  }
+  planNumber(
+    run,
+    node,
+    label,
+    { name, bindings: [name], matches: (value) => near(node[name], value), write },
+    spec
+  );
+}
+
+/**
+ * Plan a variant's root against the spec. The root centers its content on both axes, as an
+ * `inline-flex items-center justify-center` box does, and hugs it where the spec fixes no size.
  *
  * @param run - The run.
  * @param node - The variant component.
@@ -64,32 +112,16 @@ export function planRoot(run: Run, node: ComponentNode, label: string, spec: Com
     node.counterAxisAlignItems = "CENTER";
   });
 
-  const height = spec.height;
+  const { width, height } = spec;
   planSizing(
     run,
     node,
     label,
     (group) => {
-      if (height === undefined) {
-        if (node.boundVariables?.height !== undefined) {
-          change(group.plan, label, "height → hug", () => node.setBoundVariable("height", null));
-        }
-        return;
-      }
-      planNumber(
-        group,
-        node,
-        label,
-        {
-          name: "height",
-          bindings: ["height"],
-          matches: (value) => near(node.height, value),
-          write: (value) => node.resize(node.width, value),
-        },
-        height
-      );
+      planSize(group, node, label, "width", width, (value) => node.resize(value, node.height));
+      planSize(group, node, label, "height", height, (value) => node.resize(node.width, value));
     },
-    { primary: "AUTO", counter: height === undefined ? "AUTO" : "FIXED" }
+    { primary: width === undefined ? "AUTO" : "FIXED", counter: height === undefined ? "AUTO" : "FIXED" }
   );
 
   if (spec.minWidth === undefined) {
@@ -136,13 +168,18 @@ export function planRoot(run: Run, node: ComponentNode, label: string, spec: Com
   );
   planNumber(run, node, label, cornerField(node), spec.cornerRadius);
 
-  planPaints(run, label, "fill", node.fills, spec.fill, (paints) => {
+  // The first run on a real file stored the focus ring's 2px spread as 0 on a root that did
+  // not clip. Clipping costs nothing here, since every child sits inside the padding.
+  planScalar(run, label, "clipsContent", node.clipsContent, true, () => {
+    node.clipsContent = true;
+  });
+  planPaints(run, label, "fill", node.fills, rootFill(spec), (paints) => {
     node.fills = paints;
   });
   // A CSS border sits inside the box and takes room from the content, so the stroke is drawn
   // inside and counts in the auto layout. A transparent CSS border arrives as a paint with
-  // alpha 0, which keeps its weight in the layout. Unverified on a real file: whether Figma
-  // counts the weight of a stroke whose only paint is fully transparent.
+  // alpha 0, which keeps its weight in the layout: on a real file on 2026-10-20 a default
+  // Button hugged to 64px, a 42px label, 10px of padding a side and two 1px sides.
   planPaints(run, label, "stroke", node.strokes, spec.stroke?.color, (paints) => {
     node.strokes = paints;
   });

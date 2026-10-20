@@ -90,22 +90,54 @@ export function describeNumber(spec: NumberSpec): string {
  * A short label for a color spec in a change line.
  *
  * @param spec - The spec.
- * @returns The variable name with its opacity, or the literal color.
+ * @returns The variable name, or the literal color.
  */
 export function describeColor(spec: ColorSpec): string {
-  if (spec.kind === "variable") {
-    return spec.opacity < 1
-      ? `${spec.variable.name} at ${Math.round(spec.opacity * 100)}%`
-      : spec.variable.name;
-  }
-  if (spec.color.a === 0) {
+  return spec.kind === "variable" ? spec.variable.name : describeRgba(spec.color, spec.color.a);
+}
+
+function describeRgba(color: RGB, alpha: number): string {
+  if (alpha === 0) {
     return "transparent";
   }
   const channel = (value: number): string =>
     Math.round(value * 255)
       .toString(16)
       .padStart(2, "0");
-  return `#${channel(spec.color.r)}${channel(spec.color.g)}${channel(spec.color.b)} at ${Math.round(spec.color.a * 100)}%`;
+  // A root's near-clear fill, alpha 0.0015, would round to 0% and read as transparent.
+  const percent = alpha < 0.01 ? (alpha * 100).toFixed(2) : String(Math.round(alpha * 100));
+  return `#${channel(color.r)}${channel(color.g)}${channel(color.b)} at ${percent}%`;
+}
+
+/**
+ * What a node holds, for a change line. A bound paint shows as `variable`, because the paint
+ * planner only reads a binding's id. A bound shadow also shows the color Figma stores, which
+ * the shadow planner compares. A mismatch after an apply shows what Figma kept.
+ */
+function describeHeldPaint(paint: Paint): string {
+  if (paint.type !== "SOLID") {
+    return paint.type;
+  }
+  const color =
+    paint.boundVariables?.color === undefined
+      ? describeRgba(paint.color, paint.opacity ?? 1)
+      : `variable at ${Math.round((paint.opacity ?? 1) * 100)}%`;
+  const hidden = paint.visible === false ? ", hidden" : "";
+  const blend = (paint.blendMode ?? "NORMAL") === "NORMAL" ? "" : `, ${paint.blendMode}`;
+  return `${color}${hidden}${blend}`;
+}
+
+function describeHeldEffect(effect: Effect): string {
+  if (effect.type !== "DROP_SHADOW") {
+    return effect.type;
+  }
+  const stored = describeRgba(effect.color, effect.color.a);
+  const color = effect.boundVariables?.color === undefined ? stored : `variable, stored ${stored},`;
+  return `${color} ${effect.offset.x} ${effect.offset.y} ${effect.radius} ${effect.spread ?? 0}`;
+}
+
+function describeHeld<Item>(items: readonly Item[], describe: (item: Item) => string): string {
+  return items.length === 0 ? "none" : items.map(describe).join(", ");
 }
 
 /**
@@ -181,7 +213,14 @@ export function planScalar<Value extends string | number | boolean>(
   }
 }
 
-function solidPaint(run: Run, spec: ColorSpec): SolidPaint {
+/**
+ * Build the solid paint a color spec asks for, binding its variable.
+ *
+ * @param run - The run.
+ * @param spec - The color.
+ * @returns The paint.
+ */
+export function solidPaint(run: Run, spec: ColorSpec): SolidPaint {
   if (spec.kind === "literal") {
     return {
       type: "SOLID",
@@ -194,7 +233,6 @@ function solidPaint(run: Run, spec: ColorSpec): SolidPaint {
   const base: SolidPaint = {
     type: "SOLID",
     color: { r: 0, g: 0, b: 0 },
-    opacity: spec.opacity,
     visible: true,
     blendMode: "NORMAL",
   };
@@ -215,12 +253,13 @@ function paintMatches(run: Run, paint: Paint, spec: ColorSpec): boolean {
   if (paint.type !== "SOLID" || paint.visible === false || (paint.blendMode ?? "NORMAL") !== "NORMAL") {
     return false;
   }
-  const opacity = paint.opacity ?? 1;
   const boundId = paint.boundVariables?.color?.id;
   if (spec.kind === "variable") {
-    return boundId === run.variables.variable(spec.variable).id && nearUnit(opacity, spec.opacity);
+    // A bound paint holds the variable's alpha as its opacity, so only the binding counts.
+    // The first run on a real file, on 2026-10-19, wrote `error` at 10% and read back 100%.
+    return boundId === run.variables.variable(spec.variable).id;
   }
-  return boundId === undefined && rgbaMatches(paint.color, opacity, spec.color);
+  return boundId === undefined && rgbaMatches(paint.color, paint.opacity ?? 1, spec.color);
 }
 
 /**
@@ -253,53 +292,111 @@ export function planPaints(
     return;
   }
   const paint = solidPaint(run, spec);
-  change(run.plan, label, `${name} → ${describeColor(spec)}`, () => write([paint]));
+  const held = holds === undefined ? "mixed" : describeHeld(holds, describeHeldPaint);
+  change(run.plan, label, `${name} → ${describeColor(spec)} (holds ${held})`, () => write([paint]));
 }
 
-function dropShadow(run: Run, spec: ShadowSpec): DropShadowEffect {
-  const base: DropShadowEffect = {
+/**
+ * The value a variable takes in a node. Figma stores a value with each binding and draws that.
+ * A new binding stores the variable's value, but an effect written with the binding it already
+ * holds keeps the value written. On a real file on 2026-10-20, 28 focus rings bound to `ring`
+ * kept the black an earlier run wrote and drew black where `ring` is gray.
+ *
+ * @param run - The run.
+ * @param ref - The variable.
+ * @param node - The node that binds it, whose modes pick the value.
+ * @returns The value, with every alias followed.
+ */
+function boundValue(run: Run, ref: VariableRef, node: SceneNode): VariableValue {
+  return run.variables.variable(ref).resolveForConsumer(node).value;
+}
+
+function boundColor(run: Run, ref: VariableRef, node: SceneNode): RGBA {
+  // SAFETY: the kit check confirmed that every variable the kit binds to a color is a COLOR
+  // variable, which resolves to a color with its alpha.
+  return boundValue(run, ref, node) as RGBA;
+}
+
+/** A length in a node: the literal, or the value its variable takes there. */
+function lengthIn(run: Run, spec: NumberSpec, node: SceneNode): number {
+  // SAFETY: the kit check confirmed that every variable the kit binds to a length is a FLOAT
+  // variable, which resolves to a number.
+  return spec.kind === "literal" ? spec.value : (boundValue(run, spec.variable, node) as number);
+}
+
+/** The shadow fields a spec binds, each with its variable. */
+function shadowBindings(spec: ShadowSpec): ReadonlyMap<VariableBindableEffectField, VariableRef> {
+  const bindings = new Map<VariableBindableEffectField, VariableRef>();
+  if (spec.color.kind === "variable") {
+    bindings.set("color", spec.color.variable);
+  }
+  if (spec.radius.kind === "variable") {
+    bindings.set("radius", spec.radius.variable);
+  }
+  if (spec.spread.kind === "variable") {
+    bindings.set("spread", spec.spread.variable);
+  }
+  return bindings;
+}
+
+/** The shadow fields the plugin binds or leaves unbound. */
+const SHADOW_FIELDS: readonly VariableBindableEffectField[] = ["color", "radius", "spread"];
+
+function dropShadow(run: Run, node: SceneNode, spec: ShadowSpec): DropShadowEffect {
+  const radius = lengthIn(run, spec.radius, node);
+  const spread = lengthIn(run, spec.spread, node);
+  let shadow: DropShadowEffect = {
     type: "DROP_SHADOW",
     color:
       spec.color.kind === "literal"
         ? { r: spec.color.color.r, g: spec.color.color.g, b: spec.color.color.b, a: spec.color.color.a }
-        : { r: 0, g: 0, b: 0, a: spec.color.opacity },
+        : boundColor(run, spec.color.variable, node),
     offset: { x: spec.offsetX, y: spec.offsetY },
-    radius: spec.radius,
-    spread: spec.spread,
+    radius,
+    spread,
     visible: true,
     blendMode: "NORMAL",
     showShadowBehindNode: false,
   };
-  if (spec.color.kind === "literal") {
-    return base;
+  for (const [field, ref] of shadowBindings(spec)) {
+    const variable = run.variables.variable(ref);
+    // SAFETY: binding a field of a drop shadow returns a drop shadow with the same fields.
+    shadow = run.figma.variables.setBoundVariableForEffect(shadow, field, variable) as DropShadowEffect;
   }
-  const variable = run.variables.variable(spec.color.variable);
-  // SAFETY: binding the color of a drop shadow returns a drop shadow with the same fields.
-  return run.figma.variables.setBoundVariableForEffect(base, "color", variable) as DropShadowEffect;
+  // Two runs on a real file stored the focus ring's 2px spread as 0, and the third, which wrote
+  // the geometry again after the bind, kept it on every variant.
+  return { ...shadow, offset: { x: spec.offsetX, y: spec.offsetY }, radius, spread };
 }
 
-function shadowMatches(run: Run, effect: Effect, spec: ShadowSpec): boolean {
-  if (effect.type !== "DROP_SHADOW" || !effect.visible || effect.blendMode !== "NORMAL") {
+function shadowMatches(run: Run, node: SceneNode, effect: Effect, spec: ShadowSpec): boolean {
+  if (
+    effect.type !== "DROP_SHADOW" ||
+    !effect.visible ||
+    effect.blendMode !== "NORMAL" ||
+    effect.showShadowBehindNode === true
+  ) {
     return false;
   }
-  const geometry =
+  const bindings = shadowBindings(spec);
+  const bound = SHADOW_FIELDS.every((field) => {
+    const ref = bindings.get(field);
+    return (
+      effect.boundVariables?.[field]?.id === (ref === undefined ? undefined : run.variables.variable(ref).id)
+    );
+  });
+  const color = spec.color.kind === "literal" ? spec.color.color : boundColor(run, spec.color.variable, node);
+  return (
+    bound &&
     near(effect.offset.x, spec.offsetX) &&
     near(effect.offset.y, spec.offsetY) &&
-    near(effect.radius, spec.radius) &&
-    near(effect.spread ?? 0, spec.spread) &&
-    effect.showShadowBehindNode !== true;
-  if (!geometry) {
-    return false;
-  }
-  const boundId = effect.boundVariables?.color?.id;
-  if (spec.color.kind === "variable") {
-    return boundId === run.variables.variable(spec.color.variable).id;
-  }
-  return boundId === undefined && rgbaMatches(effect.color, effect.color.a, spec.color.color);
+    near(effect.radius, lengthIn(run, spec.radius, node)) &&
+    near(effect.spread ?? 0, lengthIn(run, spec.spread, node)) &&
+    rgbaMatches(effect.color, effect.color.a, color)
+  );
 }
 
 function describeShadow(spec: ShadowSpec): string {
-  return `${describeColor(spec.color)} ${spec.offsetX} ${spec.offsetY} ${spec.radius} ${spec.spread}`;
+  return `${describeColor(spec.color)} ${spec.offsetX} ${spec.offsetY} ${describeNumber(spec.radius)} ${describeNumber(spec.spread)}`;
 }
 
 /**
@@ -321,14 +418,15 @@ export function planShadows(
     current.length === specs.length &&
     specs.every((spec, index) => {
       const effect = current[index];
-      return effect !== undefined && shadowMatches(run, effect, spec);
+      return effect !== undefined && shadowMatches(run, node, effect, spec);
     });
   if (same) {
     return;
   }
   const description = specs.length === 0 ? "none" : specs.map(describeShadow).join(", ");
-  const effects = specs.map((spec) => dropShadow(run, spec));
-  change(run.plan, label, `shadows → ${description}`, () => {
+  const effects = specs.map((spec) => dropShadow(run, node, spec));
+  const held = describeHeld(current, describeHeldEffect);
+  change(run.plan, label, `shadows → ${description} (holds ${held})`, () => {
     node.effects = effects;
   });
 }

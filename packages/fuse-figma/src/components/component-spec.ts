@@ -22,15 +22,49 @@ import type {
   ComponentRootSpec,
   ComponentSetSpec,
   NumberSpec,
+  IconLayerSpec,
   ShadowSpec,
   StringSpec,
   StrokeSpec,
+  SwapPropertySpec,
   VariantSpec,
 } from "./kit-spec";
 import type { CompiledUtilities } from "./utility-css";
 
 /** One cell of a variant matrix: a value for each axis. */
 export type Cell = Readonly<Record<string, string>>;
+
+/**
+ * An icon a part renders in a cell, described as the DOM holds it, so the recipe's child
+ * selectors can find it the way the browser does.
+ */
+export type IconSlot = {
+  readonly key: string;
+  readonly name: string;
+  /** The side of the label the icon sits on. */
+  readonly side: "start" | "end";
+  /**
+   * Whether the `<svg>` is a child of the root, which `[&>svg]` selects. The spinner of a
+   * pending Button sits in a span, so it is not.
+   */
+  readonly direct: boolean;
+  /** The `data-icon` the icon, or the span around it, carries. */
+  readonly dataIcon: "inline-start" | "inline-end" | undefined;
+  /** The Fuse icon the layer shows, by its export name, such as `Plus`. */
+  readonly icon: string;
+  /** The INSTANCE_SWAP property that picks the icon, or undefined for a fixed icon. */
+  readonly swapProperty: string | undefined;
+};
+
+/**
+ * The key of the icon component for a Fuse icon.
+ *
+ * @param name - The icon's export name, such as `ArrowRight`.
+ * @returns The key, such as `icon/ArrowRight`.
+ */
+export function iconKey(name: string): string {
+  return `icon/${name}`;
+}
 
 /** A component the builder can turn into a component set. */
 export type ComponentDefinition = {
@@ -47,16 +81,24 @@ export type ComponentDefinition = {
    * variant missing here, such as `aria-invalid`, describes a state no cell shows.
    */
   readonly conditions: ReadonlyMap<string, (cell: Cell) => boolean>;
-  /** Arbitrary variants that select a child layer, such as `[&_svg]` for the icon. */
-  readonly childSelectors: ReadonlyMap<string, "icon">;
-  readonly label: {
-    readonly key: string;
-    readonly name: string;
-    readonly characters: string;
-    readonly textProperty: string;
-  };
-  /** The icon layer of a cell that shows one, placed before the label. */
-  readonly iconFor: (cell: Cell) => { readonly key: string; readonly name: string } | undefined;
+  /**
+   * Arbitrary variants that select child layers, each with the icons it selects, such as
+   * `[&_svg]`, which selects every icon.
+   */
+  readonly childSelectors: ReadonlyMap<string, (slot: IconSlot) => boolean>;
+  /** The text layer, or undefined for a part that shows only its icon. */
+  readonly label:
+    | {
+        readonly key: string;
+        readonly name: string;
+        readonly characters: string;
+        readonly textProperty: string;
+      }
+    | undefined;
+  /** The icons a cell renders, in DOM order. A start icon sits before the label. */
+  readonly iconsFor: (cell: Cell) => readonly IconSlot[];
+  /** The INSTANCE_SWAP properties, each with the export name of the icon it starts with. */
+  readonly swapProperties: readonly SwapPropertySpec[];
 };
 
 /**
@@ -143,7 +185,14 @@ export function buildComponentSet(definition: ComponentDefinition, context: Buil
       name: definition.name,
       axes: definition.axes,
       columnAxis: definition.columnAxis,
-      textProperties: [{ name: definition.label.textProperty, defaultValue: definition.label.characters }],
+      textProperties:
+        definition.label === undefined
+          ? []
+          : [{ name: definition.label.textProperty, defaultValue: definition.label.characters }],
+      swapProperties: definition.swapProperties.map((property) => ({
+        name: property.name,
+        defaultIcon: iconKey(property.defaultIcon),
+      })),
       variants,
     },
     coverage: [...coverage.values()],
@@ -172,10 +221,10 @@ export function matrixCells(axes: readonly AxisSpec[]): readonly Cell[] {
 
 type StyleEntry = { readonly value: string; readonly className: string };
 
-/** The cascaded declarations of the root and of each child layer, by property. */
+/** The cascaded declarations of the root, and of any icon the cell renders, by property. */
 type CellStyles = {
   readonly root: ReadonlyMap<string, StyleEntry>;
-  readonly icon: ReadonlyMap<string, StyleEntry>;
+  readonly iconStyle: (slot: IconSlot) => ReadonlyMap<string, StyleEntry>;
 };
 
 type Recorder = (row: Omit<CoverageRow, "component">) => void;
@@ -185,6 +234,12 @@ type Applied = {
   readonly rank: number;
   readonly order: number;
   readonly declarations: readonly { readonly property: string; readonly value: string }[];
+};
+
+/** A class that styles the icons its child selectors pick. */
+type ChildRule = {
+  readonly selects: (slot: IconSlot) => boolean;
+  readonly applied: Applied;
 };
 
 /**
@@ -199,7 +254,7 @@ function cascade(
   record: Recorder
 ): CellStyles {
   const rootClasses: Applied[] = [];
-  const iconClasses: Applied[] = [];
+  const childRules: ChildRule[] = [];
   for (const className of definition
     .classesFor(cell)
     .split(/\s+/)
@@ -216,14 +271,15 @@ function cascade(
       });
       continue;
     }
-    let target: "root" | "icon" = "root";
+    let selects: ((slot: IconSlot) => boolean) | undefined;
     let conditional = false;
     let holds = true;
     let unmodelled: string | undefined;
     for (const variant of variants) {
       const child = definition.childSelectors.get(variant);
       if (child !== undefined) {
-        target = child;
+        const outer = selects;
+        selects = outer === undefined ? child : (slot) => outer(slot) && child(slot);
         continue;
       }
       const condition = definition.conditions.get(variant);
@@ -247,12 +303,17 @@ function cascade(
       continue;
     }
     if (holds) {
-      (target === "icon" ? iconClasses : rootClasses).push({
+      const applied = {
         className,
         rank: conditional ? 1 : 0,
         order: rule.order,
         declarations: rule.declarations,
-      });
+      };
+      if (selects === undefined) {
+        rootClasses.push(applied);
+      } else {
+        childRules.push({ selects, applied });
+      }
     }
   }
   const page: Applied[] = context.page.map(({ className, property, value }) => ({
@@ -261,7 +322,11 @@ function cascade(
     order: 0,
     declarations: [{ property, value }],
   }));
-  return { root: computeStyle([...page, ...rootClasses]), icon: computeStyle(iconClasses) };
+  return {
+    root: computeStyle([...page, ...rootClasses]),
+    iconStyle: (slot) =>
+      computeStyle(childRules.filter((rule) => rule.selects(slot)).map((rule) => rule.applied)),
+  };
 }
 
 function computeStyle(applied: readonly Applied[]): ReadonlyMap<string, StyleEntry> {
@@ -431,8 +496,7 @@ function describeNumber(spec: NumberSpec): CoverageNote {
 
 function describeColor(spec: ColorSpec): CoverageNote {
   if (spec.kind === "variable") {
-    const opacity = spec.opacity === 1 ? "" : ` at ${Math.round(spec.opacity * 100)}%`;
-    return { outcome: "bound", detail: `${spec.variable.collection} / ${spec.variable.name}${opacity}` };
+    return { outcome: "bound", detail: `${spec.variable.collection} / ${spec.variable.name}` };
   }
   const { r, g, b, a } = spec.color;
   return {
@@ -481,22 +545,27 @@ function mapRoot(
   }));
   const textColor = color("color");
 
-  const children: ChildLayerSpec[] = [];
-  const icon = definition.iconFor(cell);
-  if (icon !== undefined) {
-    const iconStyle = new StyleReader(styles.icon, context, record);
-    const width = iconStyle.read("width", (value) => readNumber(value, context.variables), describeNumber);
-    const height = iconStyle.read("height", (value) => readNumber(value, context.variables), describeNumber);
-    iconStyle.finish();
-    if (width === undefined || textColor === undefined || JSON.stringify(width) !== JSON.stringify(height)) {
-      throw new Error(`${variantKey(definition, cell)}: the icon needs a square size and a text color`);
+  const start: ChildLayerSpec[] = [];
+  const end: ChildLayerSpec[] = [];
+  for (const slot of definition.iconsFor(cell)) {
+    const icon = mapIcon(definition, cell, slot, styles.iconStyle(slot), context, record, textColor);
+    if (icon !== undefined) {
+      (slot.side === "start" ? start : end).push(icon);
     }
-    children.push({ kind: "icon", key: icon.key, name: icon.name, size: width, color: textColor });
   }
-  children.push(mapLabel(definition, cell, root, context, textColor));
+  const children: ChildLayerSpec[] = [...start];
+  if (definition.label === undefined) {
+    for (const property of TEXT_PROPERTIES) {
+      root.mark(property, "dropped", "the part shows no text");
+    }
+  } else {
+    children.push(mapLabel(definition, definition.label, cell, root, context, textColor));
+  }
+  children.push(...end);
 
   const spec: ComponentRootSpec = {
     name: definition.slot,
+    width: number("width"),
     height: number("height"),
     minWidth: number("min-width"),
     paddingTop: number("padding-top") ?? ZERO,
@@ -513,6 +582,51 @@ function mapRoot(
   };
   root.finish();
   return spec;
+}
+
+/**
+ * Map one icon. A slot whose cascaded style is `display: none` is left out, as the pending
+ * Button leaves out its own leading icon while its spinner takes the place.
+ *
+ * @returns The icon layer, or undefined for an icon the cell hides.
+ */
+function mapIcon(
+  definition: ComponentDefinition,
+  cell: Cell,
+  slot: IconSlot,
+  style: ReadonlyMap<string, StyleEntry>,
+  context: BuildContext,
+  record: Recorder,
+  color: ColorSpec | undefined
+): IconLayerSpec | undefined {
+  const reader = new StyleReader(style, context, record);
+  const hidden = reader.read(
+    "display",
+    (value) => (normalizeCss(value) === "none" ? true : undefined),
+    () => ({ outcome: "literal", detail: "the icon is left out" })
+  );
+  if (hidden === true) {
+    for (const property of ["width", "height"]) {
+      reader.mark(property, "dropped", "the icon is left out");
+    }
+    reader.finish();
+    return undefined;
+  }
+  const width = reader.read("width", (value) => readNumber(value, context.variables), describeNumber);
+  const height = reader.read("height", (value) => readNumber(value, context.variables), describeNumber);
+  reader.finish();
+  if (width === undefined || color === undefined || JSON.stringify(width) !== JSON.stringify(height)) {
+    throw new Error(`${variantKey(definition, cell)}: the ${slot.name} needs a square size and a text color`);
+  }
+  return {
+    kind: "icon",
+    key: slot.key,
+    name: slot.name,
+    icon: iconKey(slot.icon),
+    swapProperty: slot.swapProperty,
+    size: width,
+    color,
+  };
 }
 
 /** The `box-shadow` every Tailwind shadow and ring utility writes, one layer per custom property. */
@@ -568,8 +682,19 @@ function readStroke(root: StyleReader, context: BuildContext): StrokeSpec | unde
   return style === undefined || weight === undefined || color === undefined ? undefined : { color, weight };
 }
 
+/** The text properties a label reads, which a part without a label drops. */
+const TEXT_PROPERTIES = [
+  "font-family",
+  "font-size",
+  "font-weight",
+  "line-height",
+  "text-decoration-line",
+  "text-underline-offset",
+] as const;
+
 function mapLabel(
   definition: ComponentDefinition,
+  label: NonNullable<ComponentDefinition["label"]>,
   cell: Cell,
   root: StyleReader,
   context: BuildContext,
@@ -616,6 +741,25 @@ function mapLabel(
     },
     (style) => ({ outcome: "literal", detail: `font style ${style}` })
   );
+  const underlined = root.read(
+    "text-decoration-line",
+    (value) => {
+      const line = normalizeCss(value);
+      return line === "underline" ? true : line === "none" ? false : undefined;
+    },
+    (drawn) => ({ outcome: "literal", detail: drawn ? "an underline" : "no decoration" })
+  );
+  let underline: { readonly offset: number | undefined } | undefined;
+  if (underlined === true) {
+    underline = {
+      offset: root.read("text-underline-offset", evaluateNumber, (offset) => ({
+        outcome: "literal",
+        detail: `an underline offset of ${offset}px`,
+      })),
+    };
+  } else {
+    root.mark("text-underline-offset", "dropped", "the cell draws no underline");
+  }
   if (fontFamily === undefined || fontSize === undefined || lineHeight === undefined || color === undefined) {
     throw new Error(
       `${variantKey(definition, cell)}: the label needs a font family, size, line height and color`
@@ -623,14 +767,15 @@ function mapLabel(
   }
   return {
     kind: "text",
-    key: definition.label.key,
-    name: definition.label.name,
-    characters: definition.label.characters,
-    textProperty: definition.label.textProperty,
+    key: label.key,
+    name: label.name,
+    characters: label.characters,
+    textProperty: label.textProperty,
     fontFamily,
     fontStyle: weight ?? "Regular",
     fontSize,
     lineHeight,
     color,
+    underline,
   };
 }

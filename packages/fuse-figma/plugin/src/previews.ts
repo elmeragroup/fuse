@@ -12,21 +12,27 @@ import { findOwned, setKey, staleOwned } from "./identity.ts";
 import { change, create, existing, keepsOrder } from "./plan.ts";
 import type { Target } from "./plan.ts";
 
-/** Previews wrap their instances at this width. */
-const PREVIEW_WIDTH = 960;
-const PREVIEW_GAP = 16;
-const PREVIEW_PADDING = 24;
+/** A frame that wraps its children in rows of a fixed width, with even gaps and padding. */
+export type WrapGrid = {
+  readonly width: number;
+  readonly gap: number;
+  readonly padding: number;
+};
 
-/** The space between the component sets and the first preview, and between previews. */
+/** Previews wrap their instances at 960px. */
+const PREVIEW_GRID: WrapGrid = { width: 960, gap: 16, padding: 24 };
+
+/** The space between component sets, between the sets and the first preview, and between previews. */
+const SET_SPACING = 64;
 const PREVIEW_MARGIN = 64;
 const PREVIEW_SPACING = 32;
 
 /** Previews paint the theme's background, so a dark preview reads as dark. */
 export const PREVIEW_BACKGROUND = { collection: "Fuse tokens", name: "background" } as const;
 
-/** A preview frame and where the stack puts it. */
-type PlacedPreview = {
-  readonly frame: FrameNode;
+/** A component set or preview frame, and where the page layout puts it. */
+type Placed = {
+  readonly node: ComponentSetNode | FrameNode;
   readonly x: number;
   readonly y: number;
 };
@@ -38,7 +44,15 @@ function literal(value: number): NumberSpec {
   return { kind: "literal", value };
 }
 
-function planFrameLayout(run: Run, frame: FrameNode, label: string): void {
+/**
+ * Plan a frame that wraps its children in rows and paints the theme's background.
+ *
+ * @param run - The run.
+ * @param frame - The frame.
+ * @param label - The frame's label, for change lines.
+ * @param grid - The row width, gaps and padding.
+ */
+export function planWrapFrame(run: Run, frame: FrameNode, label: string, grid: WrapGrid): void {
   planScalar(run, label, "layoutMode", frame.layoutMode, "HORIZONTAL", () => {
     frame.layoutMode = "HORIZONTAL";
   });
@@ -60,7 +74,7 @@ function planFrameLayout(run: Run, frame: FrameNode, label: string): void {
           matches: (value) => near(frame.width, value),
           write: (value) => frame.resize(value, frame.height),
         },
-        literal(PREVIEW_WIDTH)
+        literal(grid.width)
       ),
     { primary: "FIXED", counter: "AUTO" }
   );
@@ -80,7 +94,7 @@ function planFrameLayout(run: Run, frame: FrameNode, label: string): void {
           frame[field] = value;
         },
       },
-      literal(PREVIEW_GAP)
+      literal(grid.gap)
     );
   }
   for (const field of ["paddingTop", "paddingRight", "paddingBottom", "paddingLeft"] as const) {
@@ -96,7 +110,7 @@ function planFrameLayout(run: Run, frame: FrameNode, label: string): void {
           frame[field] = value;
         },
       },
-      literal(PREVIEW_PADDING)
+      literal(grid.padding)
     );
   }
   planPaints(
@@ -104,7 +118,7 @@ function planFrameLayout(run: Run, frame: FrameNode, label: string): void {
     label,
     "fill",
     frame.fills,
-    { kind: "variable", variable: PREVIEW_BACKGROUND, opacity: 1 },
+    { kind: "variable", variable: PREVIEW_BACKGROUND },
     (paints) => {
       frame.fills = paints;
     }
@@ -171,7 +185,7 @@ async function planFrame(run: Run, frame: FrameNode, spec: PreviewSpec, set: Pla
   planScalar(run, spec.name, "name", frame.name, spec.name, () => {
     frame.name = spec.name;
   });
-  planFrameLayout(run, frame, spec.name);
+  planWrapFrame(run, frame, spec.name, PREVIEW_GRID);
   planModes(run, frame, spec.name, spec);
   await planInstances(run, frame, spec.name, spec, set);
 }
@@ -222,59 +236,82 @@ export async function planPreviews(
   return frames;
 }
 
-function previewStack(sets: readonly PlannedSet[], frames: readonly Target<FrameNode>[]): PlacedPreview[] {
-  const setNodes = sets.map((set) => set.node.get());
-  const [first] = setNodes;
+/**
+ * The page layout: the component sets in a row from where the first set sits, then the icon
+ * library, then the previews stacked below the tallest of them, left-aligned with the first set.
+ */
+function pageLayout(
+  sets: readonly PlannedSet[],
+  library: Target<FrameNode>,
+  frames: readonly Target<FrameNode>[]
+): Placed[] {
+  const row = [...sets.map((set) => set.node.get()), library.get()];
+  const [first] = row;
   if (first === undefined) {
     return [];
   }
-  let y = Math.max(...setNodes.map((node) => node.y + node.height)) + PREVIEW_MARGIN;
-  return frames.map((target) => {
+  const placed: Placed[] = [];
+  let x = first.x;
+  for (const node of row) {
+    placed.push({ node, x, y: first.y });
+    x += node.width + SET_SPACING;
+  }
+  let y = first.y + Math.max(...row.map((node) => node.height)) + PREVIEW_MARGIN;
+  for (const target of frames) {
     const frame = target.get();
-    const placed = { frame, x: first.x, y };
+    placed.push({ node: frame, x: first.x, y });
     y += frame.height + PREVIEW_SPACING;
-    return placed;
-  });
+  }
+  return placed;
 }
 
 /**
- * Plan the stack of previews below the component sets, left-aligned with the first set. The
- * stack reads the sizes of the sets and the previews when its operation runs, after the
- * writes that change them.
+ * Plan the page layout: the component sets and the icon library in a row, and the previews
+ * stacked below them. The layout reads the sizes of what it places when its operation runs,
+ * after the writes that change them.
  *
  * @param run - The run.
  * @param page - The kit's page.
- * @param frames - The preview frames, in spec order.
  * @param sets - The component sets.
+ * @param library - The icon library frame.
+ * @param frames - The preview frames, in spec order.
  * @param changed - Whether the plan changes anything on the page, which may move or resize
- *   what the stack reads.
+ *   what the layout reads.
  */
-export function placePreviews(
+export function placePageContents(
   run: Run,
   page: PageNode,
-  frames: readonly Target<FrameNode>[],
   sets: readonly PlannedSet[],
+  library: Target<FrameNode>,
+  frames: readonly Target<FrameNode>[],
   changed: boolean
 ): void {
-  if (sets.length === 0 || frames.length === 0) {
+  // The first set stays where it is and leads the row.
+  if (sets.length === 0) {
     return;
   }
   const settled =
     !changed &&
+    library.existing !== undefined &&
     sets.every((set) => set.node.existing !== undefined) &&
     frames.every((frame) => frame.existing !== undefined);
   if (
     settled &&
-    previewStack(sets, frames).every(
-      (placed) => near(placed.frame.x, placed.x) && near(placed.frame.y, placed.y)
+    pageLayout(sets, library, frames).every(
+      (placed) => near(placed.node.x, placed.x) && near(placed.node.y, placed.y)
     )
   ) {
     return;
   }
-  change(run.plan, page.name, `stack ${frames.length} previews below the component sets`, () => {
-    for (const placed of previewStack(sets, frames)) {
-      placed.frame.x = placed.x;
-      placed.frame.y = placed.y;
+  change(
+    run.plan,
+    page.name,
+    `place ${sets.length} component sets and the icons in a row and stack ${frames.length} previews below them`,
+    () => {
+      for (const placed of pageLayout(sets, library, frames)) {
+        placed.node.x = placed.x;
+        placed.node.y = placed.y;
+      }
     }
-  });
+  );
 }

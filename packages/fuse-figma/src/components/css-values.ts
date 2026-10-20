@@ -16,6 +16,8 @@ const ROOT_FONT_SIZE_PX = 16;
  */
 export type VariableIndex = {
   readonly lookup: (value: string) => VariableRef | undefined;
+  /** The smallest value a FLOAT variable holds in any mode, or undefined when unknown. */
+  readonly minimum: (ref: VariableRef) => number | undefined;
   /** Whether a custom property is a synced variable, which substitution must keep. */
   readonly owns: (customProperty: string) => boolean;
 };
@@ -23,29 +25,52 @@ export type VariableIndex = {
 /**
  * Index synced variables by their web code syntax.
  *
- * @param variables - Each synced variable with the code syntax the sync writes for it.
+ * @param variables - Each synced variable with the code syntax the sync writes for it, and the
+ *   smallest value it holds in any mode when it is a FLOAT variable.
  * @returns The index.
  */
 export function makeVariableIndex(
-  variables: readonly { readonly ref: VariableRef; readonly webSyntax: string }[]
+  variables: readonly {
+    readonly ref: VariableRef;
+    readonly webSyntax: string;
+    readonly minimum?: number | undefined;
+  }[]
 ): VariableIndex {
-  const bySyntax = new Map<string, VariableRef>();
   const owned = new Set<string>();
-  for (const { ref, webSyntax } of variables) {
-    bySyntax.set(normalizeCss(webSyntax), ref);
+  for (const { webSyntax } of variables) {
     const single = singleVar(webSyntax);
     if (single !== undefined) {
       owned.add(single.name);
     }
   }
+  // The builder reads values with Tailwind's variables substituted, which drops the fallback of
+  // every synced variable, so the index compares code syntax the same way.
+  const canonical = (value: string): string =>
+    normalizeCss(
+      substituteVars(
+        value,
+        () => undefined,
+        (name) => owned.has(name),
+        new Set()
+      ) ?? value
+    );
+  const bySyntax = new Map<string, VariableRef>();
+  const minimums = new Map<string, number>();
+  for (const { ref, webSyntax, minimum } of variables) {
+    bySyntax.set(canonical(webSyntax), ref);
+    if (minimum !== undefined) {
+      minimums.set(refKey(ref), minimum);
+    }
+  }
   return {
-    lookup: (value) => {
-      const normalized = normalizeCss(value);
-      const single = singleVar(normalized);
-      return bySyntax.get(single === undefined ? normalized : `var(${single.name})`);
-    },
+    lookup: (value) => bySyntax.get(canonical(value)),
+    minimum: (ref) => minimums.get(refKey(ref)),
     owns: (customProperty) => owned.has(customProperty),
   };
+}
+
+function refKey(ref: VariableRef): string {
+  return `${ref.collection}/${ref.name}`;
 }
 
 /**
@@ -260,7 +285,7 @@ function commonUnit(quantities: readonly Quantity[]): Quantity["unit"] {
  * @returns The bound variable or the literal pixels, or undefined.
  */
 export function readNumber(value: string, index: VariableIndex): NumberSpec | undefined {
-  const variable = index.lookup(value);
+  const variable = index.lookup(value) ?? flooredVariable(normalizeCss(value), index);
   if (variable !== undefined) {
     return { kind: "variable", variable };
   }
@@ -269,8 +294,37 @@ export function readNumber(value: string, index: VariableIndex): NumberSpec | un
 }
 
 /**
- * Read a color as a paint. A synced variable binds, `color-mix()` toward `transparent`
- * binds the variable at the mixed opacity, and a color literal becomes sRGB.
+ * The variable in a `max()` of a synced variable and a length that variable never falls below
+ * in any mode. The 24px target floor on `--control-h-xs` is one: the variable holds 24px or
+ * more at every density, so the floor never applies and the value binds the variable.
+ */
+function flooredVariable(value: string, index: VariableIndex): VariableRef | undefined {
+  if (!value.startsWith("max(") || matchingParen(value, 3) !== value.length - 1) {
+    return undefined;
+  }
+  const [first, second, ...rest] = splitTopLevel(value.slice(4, -1), ",");
+  if (first === undefined || second === undefined || rest.length > 0) {
+    return undefined;
+  }
+  for (const [candidate, floor] of [
+    [first, second],
+    [second, first],
+  ] as const) {
+    const variable = index.lookup(candidate);
+    const minimum = variable === undefined ? undefined : index.minimum(variable);
+    const length = evaluateNumber(floor);
+    if (variable !== undefined && minimum !== undefined && length !== undefined && minimum >= length) {
+      return variable;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Read a color as a paint. A synced variable binds, including a role tint whose code syntax is
+ * the `color-mix()` toward `transparent` that `bg-error/10` compiles to, and a color literal
+ * becomes sRGB. A mix the sync has no tint for stays unmapped, because a Figma paint takes its
+ * opacity from the variable it binds.
  *
  * @param value - A compiled value with Tailwind's variables already substituted.
  * @param index - The synced variables.
@@ -280,14 +334,7 @@ export function readColor(value: string, index: VariableIndex): ColorSpec | unde
   const normalized = normalizeCss(value);
   const variable = index.lookup(normalized);
   if (variable !== undefined) {
-    return { kind: "variable", variable, opacity: 1 };
-  }
-  const mix = /^color-mix\(in oklab,(.+) (\d+(?:\.\d+)?)%,transparent\)$/.exec(normalized);
-  if (mix !== null) {
-    const mixed = index.lookup(mix[1] ?? "");
-    return mixed === undefined
-      ? undefined
-      : { kind: "variable", variable: mixed, opacity: Number(mix[2]) / 100 };
+    return { kind: "variable", variable };
   }
   if (normalized === "transparent") {
     return { kind: "literal", color: { r: 0, g: 0, b: 0, a: 0 } };
@@ -302,7 +349,8 @@ export function readColor(value: string, index: VariableIndex): ColorSpec | unde
 
 /**
  * Read a `box-shadow` list as drop shadows. A layer with zero offsets, blur and spread is
- * Tailwind's empty placeholder and drops out.
+ * Tailwind's empty placeholder and drops out. The blur and spread bind a synced variable whose
+ * code syntax they spell, such as the outline Button's `max()` over its outline width.
  *
  * @param value - A compiled value with Tailwind's variables already substituted.
  * @param index - The synced variables.
@@ -315,15 +363,22 @@ export function readShadows(value: string, index: VariableIndex): readonly Shado
     if (tokens.includes("inset")) {
       return undefined;
     }
-    const lengths = tokens.slice(0, -1).map(evaluateNumber);
-    if (lengths.length < 2 || lengths.length > 4 || lengths.some((length) => length === undefined)) {
+    const [x, y, blur = "0", spreadBy = "0", ...extra] = tokens.slice(0, -1);
+    const offsetX = x === undefined ? undefined : evaluateNumber(x);
+    const offsetY = y === undefined ? undefined : evaluateNumber(y);
+    const radius = readNumber(blur, index);
+    const spread = readNumber(spreadBy, index);
+    if (
+      offsetX === undefined ||
+      offsetY === undefined ||
+      radius === undefined ||
+      spread === undefined ||
+      extra.length > 0
+    ) {
       return undefined;
     }
-    const [offsetX = 0, offsetY = 0, radius = 0, spread = 0] = lengths.filter(
-      (length): length is number => length !== undefined
-    );
     // Tailwind fills unused layers with `0 0 #0000`, which paints nothing whatever its color.
-    if (offsetX === 0 && offsetY === 0 && radius === 0 && spread === 0) {
+    if ([offsetX, offsetY, literalOf(radius), literalOf(spread)].every((length) => length === 0)) {
       continue;
     }
     const color = readColor(tokens.at(-1) ?? "", index);
@@ -333,6 +388,11 @@ export function readShadows(value: string, index: VariableIndex): readonly Shado
     shadows.push({ color, offsetX, offsetY, radius, spread });
   }
   return shadows;
+}
+
+/** A literal's pixels, or undefined for a bound length. */
+function literalOf(spec: NumberSpec): number | undefined {
+  return spec.kind === "literal" ? spec.value : undefined;
 }
 
 /** Split at a separator that sits outside parentheses, dropping empty parts. */

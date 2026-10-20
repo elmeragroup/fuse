@@ -1,16 +1,18 @@
 /**
- * One component set: its variants, its text properties and the grid the variants sit in.
+ * One component set: its variants, its text and swap properties and the grid the variants sit
+ * in.
  * The plugin edits an existing set in place, so the set and every variant keep their node
  * ids and component keys, and instances in other files keep following them.
  */
 
 import type { AxisSpec, ComponentSetSpec, VariantSpec } from "../../src/components/kit-spec.ts";
 import { planChildren, requireNewSetFonts, requireNewTextFonts } from "./child-layers.ts";
-import type { TextPropertyIds } from "./child-layers.ts";
+import type { LayerLinks } from "./child-layers.ts";
 import { near, planScalar } from "./fields.ts";
 import type { Run } from "./fields.ts";
+import type { PlannedIcon } from "./icons.ts";
 import { findOwned, keyOf, setKey, staleOwned, unowned } from "./identity.ts";
-import { change, create, existing, warn } from "./plan.ts";
+import { change, create, existing, keepsOrder, warn } from "./plan.ts";
 import type { Target } from "./plan.ts";
 import { planRoot } from "./root-layer.ts";
 
@@ -199,8 +201,12 @@ function planGrid(
   );
 }
 
-function planTextProperties(run: Run, set: ComponentSetNode, spec: ComponentSetSpec): TextPropertyIds {
-  const ids = new Map<string, string>();
+function planTextProperties(
+  run: Run,
+  set: ComponentSetNode,
+  spec: ComponentSetSpec,
+  ids: Map<string, string>
+): void {
   for (const property of spec.textProperties) {
     const found = Object.entries(set.componentPropertyDefinitions).find(
       ([id, definition]) => definition.type === "TEXT" && id.split("#")[0] === property.name
@@ -219,36 +225,114 @@ function planTextProperties(run: Run, set: ComponentSetNode, spec: ComponentSetS
       });
     }
   }
-  return ids;
 }
 
-function planVariantFields(
+/** The preferred values of a swap property: every icon in the kit's library, in order. */
+function preferredIcons(icons: ReadonlyMap<string, PlannedIcon>): InstanceSwapPreferredValue[] {
+  return [...icons.values()].map((icon) => ({ type: "COMPONENT", key: icon.node.get().key }));
+}
+
+/**
+ * Whether a swap property already offers exactly the library's icons. A library icon the run
+ * creates has no key yet, so the property must change.
+ */
+function offersLibrary(
+  definition: ComponentPropertyDefinitions[string],
+  icons: ReadonlyMap<string, PlannedIcon>
+): boolean {
+  const keys = new Set((definition.preferredValues ?? []).map((value) => value.key));
+  return (
+    keys.size === icons.size &&
+    [...icons.values()].every((icon) => icon.node.existing !== undefined && keys.has(icon.node.existing.key))
+  );
+}
+
+/**
+ * Plan the INSTANCE_SWAP properties. Each starts with its default icon and offers every icon in
+ * the library, so the swap menu lists the Fuse icons first.
+ */
+function planSwapProperties(
+  run: Run,
+  set: ComponentSetNode,
+  spec: ComponentSetSpec,
+  icons: ReadonlyMap<string, PlannedIcon>,
+  ids: Map<string, string>
+): void {
+  for (const property of spec.swapProperties) {
+    const icon = icons.get(property.defaultIcon);
+    if (icon === undefined) {
+      throw new Error(
+        `${spec.name}: the ${property.name} property starts with ${property.defaultIcon}, which the library lacks.`
+      );
+    }
+    const found = Object.entries(set.componentPropertyDefinitions).find(
+      ([id, definition]) => definition.type === "INSTANCE_SWAP" && id.split("#")[0] === property.name
+    );
+    if (found === undefined) {
+      change(
+        run.plan,
+        spec.name,
+        `add the swap property ${property.name}, starting with ${icon.spec.name}`,
+        () => {
+          ids.set(
+            property.name,
+            set.addComponentProperty(property.name, "INSTANCE_SWAP", icon.node.get().id, {
+              preferredValues: preferredIcons(icons),
+            })
+          );
+        }
+      );
+      continue;
+    }
+    const [id, definition] = found;
+    ids.set(property.name, id);
+    const starts = icon.node.existing !== undefined && definition.defaultValue === icon.node.existing.id;
+    if (!starts || !offersLibrary(definition, icons)) {
+      change(
+        run.plan,
+        spec.name,
+        `${property.name} → ${icon.spec.name} and the ${icons.size} library icons`,
+        () => {
+          ids.set(
+            property.name,
+            set.editComponentProperty(id, {
+              defaultValue: icon.node.get().id,
+              preferredValues: preferredIcons(icons),
+            })
+          );
+        }
+      );
+    }
+  }
+}
+
+async function planVariantFields(
   run: Run,
   component: ComponentNode,
   name: string,
   label: string,
   variant: VariantSpec,
-  propertyIds: TextPropertyIds
-): void {
+  links: LayerLinks
+): Promise<void> {
   planScalar(run, label, "name", component.name, name, () => {
     component.name = name;
   });
   planRoot(run, component, label, variant.root);
-  planChildren(run, component, label, variant.root.children, propertyIds);
+  await planChildren(run, component, label, variant.root.children, links);
 }
 
-function planVariant(
+async function planVariant(
   run: Run,
   set: ComponentSetNode,
   spec: ComponentSetSpec,
   variant: VariantSpec,
-  propertyIds: TextPropertyIds
-): Target<ComponentNode> {
+  links: LayerLinks
+): Promise<Target<ComponentNode>> {
   const name = variantName(spec, variant);
   const label = `${spec.name} / ${name}`;
   const found = findOwned(run.plan, set.children, spec.name, variant.key, name, isComponent);
   if (found !== undefined) {
-    planVariantFields(run, found, name, label, variant, propertyIds);
+    await planVariantFields(run, found, name, label, variant, links);
     return existing(found);
   }
   requireNewTextFonts(run, set, label, variant.root.children);
@@ -263,30 +347,45 @@ function planVariant(
       made.name = name;
       return made;
     },
-    (made, plan) => planVariantFields({ ...run, plan }, made, name, label, variant, propertyIds)
+    (made, plan) => planVariantFields({ ...run, plan }, made, name, label, variant, links)
   );
 }
 
-function planSetContents(
+async function planSetContents(
   run: Run,
   set: ComponentSetNode,
-  spec: ComponentSetSpec
-): ReadonlyMap<string, Target<ComponentNode>> {
+  spec: ComponentSetSpec,
+  icons: ReadonlyMap<string, PlannedIcon>
+): Promise<ReadonlyMap<string, Target<ComponentNode>>> {
   const start = run.plan.operations.length;
   planScalar(run, spec.name, "name", set.name, spec.name, () => {
     set.name = spec.name;
   });
-  const propertyIds = planTextProperties(run, set, spec);
+  const properties = new Map<string, string>();
+  planTextProperties(run, set, spec, properties);
+  planSwapProperties(run, set, spec, icons, properties);
+  const links: LayerLinks = { properties, icons };
 
   const keep = new Set(spec.variants.map((variant) => variant.key));
   for (const stale of staleOwned(set.children, keep)) {
     change(run.plan, spec.name, `delete the variant ${stale.name}`, () => stale.remove());
   }
-  const variants = new Map(
-    spec.variants.map((variant) => [variant.key, planVariant(run, set, spec, variant, propertyIds)] as const)
-  );
-  for (const child of unowned(set.children, [...variants.values()])) {
+  const variants = new Map<string, Target<ComponentNode>>();
+  for (const variant of spec.variants) {
+    variants.set(variant.key, await planVariant(run, set, spec, variant, links));
+  }
+  const owned = [...variants.values()];
+  for (const child of unowned(set.children, owned)) {
     warn(run.plan, spec.name, `keeps the variant ${child.name}, which the kit does not own`);
+  }
+  // The layers panel lists the variants in this order. Figma keeps each variant property's
+  // values in an order of its own: a new value goes last, and moving the variants or renaming a
+  // value leaves it where it is, as a real file showed on 2026-10-20. A set the plugin creates
+  // lists its values in spec order, but a set that gained values later keeps them last.
+  if (!keepsOrder(set.children, owned)) {
+    change(run.plan, spec.name, "reorder the variants", () => {
+      owned.forEach((target, index) => set.insertChild(index, target.get()));
+    });
   }
   planGrid(run, set, spec, variants, run.plan.operations.length > start);
   return variants;
@@ -297,7 +396,12 @@ function planSetContents(
  * every variant with its key and name, combines them, and then plans the set's contents. The
  * caller requires the fonts the set's labels need first.
  */
-function createSet(run: Run, page: PageNode, spec: ComponentSetSpec): PlannedSet {
+function createSet(
+  run: Run,
+  page: PageNode,
+  spec: ComponentSetSpec,
+  icons: ReadonlyMap<string, PlannedIcon>
+): PlannedSet {
   const node = create(
     run.plan,
     page.name,
@@ -315,8 +419,8 @@ function createSet(run: Run, page: PageNode, spec: ComponentSetSpec): PlannedSet
       set.name = spec.name;
       return set;
     },
-    (set, plan) => {
-      planSetContents({ ...run, plan }, set, spec);
+    async (set, plan) => {
+      await planSetContents({ ...run, plan }, set, spec, icons);
     }
   );
   const variants = new Map(
@@ -347,17 +451,19 @@ function createSet(run: Run, page: PageNode, spec: ComponentSetSpec): PlannedSet
  * @param run - The run.
  * @param page - The kit's page.
  * @param spec - The component set.
+ * @param icons - The kit's icons, by key, which the set's icon layers and swap properties use.
  * @returns The set and its variants, as later operations find them.
  */
 export async function planComponentSet(
   run: Run,
   page: PageNode,
-  spec: ComponentSetSpec
+  spec: ComponentSetSpec,
+  icons: ReadonlyMap<string, PlannedIcon>
 ): Promise<PlannedSet> {
   const found = findOwned(run.plan, page.children, page.name, spec.key, spec.name, isComponentSet);
   if (found === undefined) {
     await requireNewSetFonts(run, page.explicitVariableModes, spec);
-    return createSet(run, page, spec);
+    return createSet(run, page, spec, icons);
   }
-  return { spec, node: existing(found), variants: planSetContents(run, found, spec) };
+  return { spec, node: existing(found), variants: await planSetContents(run, found, spec, icons) };
 }

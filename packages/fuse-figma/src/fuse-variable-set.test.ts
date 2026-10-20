@@ -94,6 +94,52 @@ describe("fuseVariableSet", () => {
     }
   });
 
+  it("syncs each role tint as its role's color at the tint's alpha, with Tailwind's color-mix()", () => {
+    // The Button recipe fills with bg-error/10 and strokes with border-error/20, as error does.
+    expect(spec("Fuse tokens", "error/10")).toMatchObject({
+      type: "COLOR",
+      scopes: ["ALL_FILLS", "STROKE_COLOR"],
+      webSyntax: "color-mix(in oklab, var(--error) 10%, transparent)",
+    });
+    expect(spec("Fuse tokens", "error/10")?.description).toMatch(/^error at 10% opacity/);
+    expect(value("Fuse tokens", "error/10", "Light")).toEqual(alias("Fuse variant", "light/error/10"));
+    expect(value("Fuse segment", "dark/external/success/20", "Company")).toEqual(
+      alias("Fuse brand", "dark/external/company/success/20")
+    );
+    // A tint holds a literal even where its role is one, since an alias cannot change alpha.
+    const role = value("Fuse brand", "light/internal/private/error", "Fjordkraft");
+    if (role?._tag !== "Color") throw new Error("the internal light error role is no literal color");
+    expect(value("Fuse brand", "light/internal/private/error/10", "Fjordkraft")).toEqual({
+      _tag: "Color",
+      color: { ...role.color, a: 0.1 },
+    });
+  });
+
+  it("syncs the outline shadow lengths as their formulas give them for each outline width", () => {
+    expect(spec("Fuse tokens", "button-outline-shadow-blur")).toMatchObject({
+      type: "FLOAT",
+      scopes: ["EFFECT_FLOAT"],
+      webSyntax: "max(0px, 4px - 2 * var(--button-outline-width, 1px))",
+    });
+    expect(spec("Fuse tokens", "button-outline-shadow-spread")?.webSyntax).toBe(
+      "min(0px, 2px - 2 * var(--button-outline-width, 1px))"
+    );
+    // themes.css: internal themes draw a 1px outline, which casts Tailwind's shadow-xs, 0 1px 2px.
+    expect(value("Fuse brand", "light/internal/private/button-outline-width", "Fjordkraft")).toEqual(px(1));
+    expect(value("Fuse brand", "light/internal/private/button-outline-shadow-blur", "Fjordkraft")).toEqual(
+      px(2)
+    );
+    expect(value("Fuse brand", "light/internal/private/button-outline-shadow-spread", "Fjordkraft")).toEqual(
+      px(0)
+    );
+    // External themes draw 2px, where the shadow has no blur and shrinks inside the border box.
+    expect(value("Fuse brand", "dark/external/company/button-outline-width", "Elmera")).toEqual(px(2));
+    expect(value("Fuse brand", "dark/external/company/button-outline-shadow-blur", "Elmera")).toEqual(px(0));
+    expect(value("Fuse brand", "dark/external/company/button-outline-shadow-spread", "Elmera")).toEqual(
+      px(-2)
+    );
+  });
+
   it("turns var() references into aliases at the same theme path or to primitives", () => {
     expect(value("Fuse brand", "dark/external/private/destructive", "Gudbrandsdal Energi")).toEqual(
       alias("Fuse brand", "dark/external/private/error")

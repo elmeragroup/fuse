@@ -13,8 +13,10 @@ const primary = { collection: "Fuse tokens", name: "primary" };
 const ring = { collection: "Fuse tokens", name: "ring" };
 const outlineWidth = { collection: "Fuse tokens", name: "button-outline-width" };
 const radiusMd = { collection: "Fuse tokens", name: "radius-md" };
+const primary80 = { collection: "Fuse tokens", name: "primary/80" };
 const index = makeVariableIndex([
   { ref: primary, webSyntax: "var(--primary)" },
+  { ref: primary80, webSyntax: "color-mix(in oklab, var(--primary) 80%, transparent)" },
   { ref: ring, webSyntax: "var(--ring)" },
   { ref: outlineWidth, webSyntax: "var(--button-outline-width)" },
   { ref: radiusMd, webSyntax: "calc(var(--radius) - var(--radius-step, 0px))" },
@@ -81,13 +83,33 @@ describe("readNumber", () => {
   });
 });
 
-describe("readColor", () => {
-  it("binds a variable, keeps a color-mix() weight as paint opacity and reads literals", () => {
-    expect(readColor("var(--primary)", index)).toEqual({ kind: "variable", variable: primary, opacity: 1 });
-    expect(readColor("color-mix(in oklab, var(--primary) 80%, transparent)", index)).toEqual({
+describe("readNumber with a target floor", () => {
+  const controlHXs = { collection: "Fuse density", name: "control-h-xs" };
+  const indexWithMinimum = (minimum: number) =>
+    makeVariableIndex([{ ref: controlHXs, webSyntax: "var(--control-h-xs)", minimum }]);
+
+  it("binds the variable when it never falls below the floor in any mode", () => {
+    expect(readNumber("max(var(--control-h-xs), 24px)", indexWithMinimum(24))).toEqual({
       kind: "variable",
-      variable: primary,
-      opacity: 0.8,
+      variable: controlHXs,
+    });
+    expect(readNumber("max(24px,var(--control-h-xs))", indexWithMinimum(32))).toEqual({
+      kind: "variable",
+      variable: controlHXs,
+    });
+  });
+
+  it("leaves the max() unmapped when some mode falls below the floor", () => {
+    expect(readNumber("max(var(--control-h-xs), 24px)", indexWithMinimum(20))).toBeUndefined();
+  });
+});
+
+describe("readColor", () => {
+  it("binds a variable or a role tint, reads literals, and leaves a mix without a tint unmapped", () => {
+    expect(readColor("var(--primary)", index)).toEqual({ kind: "variable", variable: primary });
+    expect(readColor("color-mix(in oklab,var(--primary) 80%,transparent)", index)).toEqual({
+      kind: "variable",
+      variable: primary80,
     });
     expect(readColor("transparent", index)).toEqual({ kind: "literal", color: { r: 0, g: 0, b: 0, a: 0 } });
     expect(readColor("#ff0000", index)).toEqual({ kind: "literal", color: { r: 1, g: 0, b: 0, a: 1 } });
@@ -99,11 +121,11 @@ describe("readShadows", () => {
   it("drops Tailwind's empty layers and reads a ring as a spread shadow", () => {
     expect(readShadows("0 0 #0000, 0 0 #0000, 0 0 0 calc(2px + 0px) var(--ring), 0 0 #0000", index)).toEqual([
       {
-        color: { kind: "variable", variable: ring, opacity: 1 },
+        color: { kind: "variable", variable: ring },
         offsetX: 0,
         offsetY: 0,
-        radius: 0,
-        spread: 2,
+        radius: { kind: "literal", value: 0 },
+        spread: { kind: "literal", value: 2 },
       },
     ]);
     expect(readShadows("0 1px 2px 0 rgba(0, 0, 0, 0.05)", index)).toEqual([
@@ -111,8 +133,34 @@ describe("readShadows", () => {
         color: { kind: "literal", color: { r: 0, g: 0, b: 0, a: 0.05 } },
         offsetX: 0,
         offsetY: 1,
-        radius: 2,
-        spread: 0,
+        radius: { kind: "literal", value: 2 },
+        spread: { kind: "literal", value: 0 },
+      },
+    ]);
+  });
+
+  it("binds a blur and spread that spell a synced length's code syntax", () => {
+    const blur = { collection: "Fuse tokens", name: "button-outline-shadow-blur" };
+    const spread = { collection: "Fuse tokens", name: "button-outline-shadow-spread" };
+    const withLengths = makeVariableIndex([
+      { ref: outlineWidth, webSyntax: "var(--button-outline-width)" },
+      { ref: blur, webSyntax: "max(0px, 4px - 2 * var(--button-outline-width, 1px))" },
+      { ref: spread, webSyntax: "min(0px, 2px - 2 * var(--button-outline-width, 1px))" },
+    ]);
+    // Tailwind's compiled outline shadow once its own variables are substituted, which drops the
+    // fallback of the synced `--button-outline-width`.
+    expect(
+      readShadows(
+        "0 1px max(0px, 4px - 2 * var(--button-outline-width)) min(0px, 2px - 2 * var(--button-outline-width)) rgb(0 0 0/0.05)",
+        withLengths
+      )
+    ).toEqual([
+      {
+        color: { kind: "literal", color: { r: 0, g: 0, b: 0, a: 0.05 } },
+        offsetX: 0,
+        offsetY: 1,
+        radius: { kind: "variable", variable: blur },
+        spread: { kind: "variable", variable: spread },
       },
     ]);
   });

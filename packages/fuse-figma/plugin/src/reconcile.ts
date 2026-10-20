@@ -14,10 +14,11 @@ import { planComponentSet } from "./component-set.ts";
 import type { PlannedSet } from "./component-set.ts";
 import { requireFont } from "./fields.ts";
 import type { Run } from "./fields.ts";
+import { planIconLibrary } from "./icons.ts";
 import { findOwned, setKey, staleOwned } from "./identity.ts";
 import { change, changeLines, create, existing, runPlan } from "./plan.ts";
 import type { Target } from "./plan.ts";
-import { placePreviews, planPreviews } from "./previews.ts";
+import { placePageContents, planPreviews } from "./previews.ts";
 import { loadKitVariables } from "./variables.ts";
 
 /** What a run changed, or would change, and what it could not represent. */
@@ -31,18 +32,21 @@ const isPage = (node: BaseNode): node is PageNode => node.type === "PAGE";
 async function planPage(run: Run, kit: KitSpec, page: PageNode): Promise<void> {
   const start = run.plan.operations.length;
   const keep = new Set([
+    kit.icons.key,
     ...kit.componentSets.map((set) => set.key),
     ...kit.previews.map((preview) => preview.key),
   ]);
   for (const stale of staleOwned(page.children, keep)) {
     change(run.plan, page.name, `delete ${stale.name}`, () => stale.remove());
   }
+  // The icons come first, because the sets' icon layers and swap properties use them.
+  const library = planIconLibrary(run, page, kit.icons);
   const sets: PlannedSet[] = [];
   for (const spec of kit.componentSets) {
-    sets.push(await planComponentSet(run, page, spec));
+    sets.push(await planComponentSet(run, page, spec, library.icons));
   }
   const frames = await planPreviews(run, page, kit.previews, new Map(sets.map((set) => [set.spec.key, set])));
-  placePreviews(run, page, frames, sets, run.plan.operations.length > start);
+  placePageContents(run, page, sets, library.frame, frames, run.plan.operations.length > start);
 }
 
 async function planDocument(run: Run, kit: KitSpec): Promise<Target<PageNode>> {
@@ -88,7 +92,7 @@ export async function reconcileKit(figma: PluginAPI, kit: KitSpec, apply: boolea
   const variables = await loadKitVariables(figma, kitCollections(kit));
   const { plan, result: page } = await runPlan(apply, (plan) => {
     const run: Run = { figma, variables, plan };
-    checkKit(variables, kit, plan);
+    checkKit(variables, kit);
     for (const font of kit.fonts) {
       requireFont(run, kit.page.name, font);
     }

@@ -26,6 +26,8 @@ type TextStandIn = Pick<
   | "lineHeight"
   | "fills"
   | "textAutoResize"
+  | "textDecoration"
+  | "textDecorationOffset"
   | "boundVariables"
   | "componentPropertyReferences"
   | "getSharedPluginData"
@@ -65,7 +67,8 @@ const LABEL: TextLayerSpec = {
   fontStyle: "Medium",
   fontSize: { kind: "variable", variable: { collection: "Fuse density", name: "control-text" } },
   lineHeight: { kind: "variable", variable: { collection: "Fuse density", name: "control-leading" } },
-  color: { kind: "variable", variable: { collection: "Fuse tokens", name: "foreground" }, opacity: 1 },
+  color: { kind: "variable", variable: { collection: "Fuse tokens", name: "foreground" } },
+  underline: undefined,
 };
 
 /** A plugin API that loads every font except the ones the machine lacks. */
@@ -136,6 +139,8 @@ function labelStandIn(
       },
     ],
     textAutoResize: "WIDTH_AND_HEIGHT",
+    textDecoration: "NONE",
+    textDecorationOffset: null,
     boundVariables: { fontSize: [alias("control-text")], lineHeight: [alias("control-leading")] },
     componentPropertyReferences: null,
     getSharedPluginData: () => "button/label",
@@ -176,61 +181,74 @@ function staleStandIn(writes: string[]): RectangleNode {
 }
 
 /** Plan the Button's child layers on a stand-in component that holds `children`. */
-function planButton(
+async function planButton(
   plan: Plan,
   figma: PluginAPI,
   children: readonly SceneNode[],
   spec: TextLayerSpec = LABEL
-): void {
+): Promise<void> {
   const component: ComponentStandIn = { children, insertChild: () => undefined };
   const run: Run = { figma, variables: VARIABLES, plan };
   // SAFETY: `planChildren` reads a component's children and reorders them through
   // `insertChild`, and the stand-in children carry every field the planners read.
-  planChildren(run, component as ComponentNode, "Button", [spec], new Map());
+  await planChildren(run, component as ComponentNode, "Button", [spec], {
+    properties: new Map(),
+    icons: new Map(),
+  });
 }
 
-function changesFor(figma: PluginAPI, label: TextNode, spec: TextLayerSpec = LABEL): string[] {
+async function changesFor(figma: PluginAPI, label: TextNode, spec: TextLayerSpec = LABEL): Promise<string[]> {
   const plan = newPlan();
-  planButton(plan, figma, [label], spec);
+  await planButton(plan, figma, [label], spec);
   return changeLines(plan);
 }
 
 /** Apply the Button's child layers to a stand-in label, and return the lines Apply made. */
 async function applyTo(figma: PluginAPI, label: TextNode): Promise<string[]> {
-  const { plan } = await runPlan(true, (pass) => {
-    planButton(pass, figma, [label]);
-    return Promise.resolve();
-  });
+  const { plan } = await runPlan(true, (pass) => planButton(pass, figma, [label]));
   return changeLines(plan);
 }
 
 describe("planChildren on a label", () => {
-  it("plans nothing for a label that matches the spec", () => {
+  it("underlines a link label, then sets the offset an underline holds, in one operation", async () => {
     const { figma } = figmaStandIn([]);
-    expect(changesFor(figma, labelStandIn([], {}))).toEqual([]);
+    const writes: string[] = [];
+    const label = labelStandIn(writes, {});
+    const link: TextLayerSpec = { ...LABEL, underline: { offset: 4 } };
+    expect(await changesFor(figma, label, link)).toEqual([
+      "Button / Label: textDecoration → UNDERLINE, offset 4",
+    ]);
+
+    const { plan } = await runPlan(true, (pass) => planButton(pass, figma, [label], link));
+    expect(changeLines(plan)).toEqual(["Button / Label: textDecoration → UNDERLINE, offset 4"]);
+    expect(writes).toEqual(["set textDecoration", "set textDecorationOffset"]);
+    expect(label.textDecorationOffset).toEqual({ unit: "PIXELS", value: 4 });
+    expect(await changesFor(figma, label, link)).toEqual([]);
   });
 
-  it("rebinds a font size that one character no longer follows", () => {
+  it("plans nothing for a label that matches the spec", async () => {
+    const { figma } = figmaStandIn([]);
+    expect(await changesFor(figma, labelStandIn([], {}))).toEqual([]);
+  });
+
+  it("rebinds a font size that one character no longer follows", async () => {
     const { figma } = figmaStandIn([]);
     const label = labelStandIn([], {}, new Map([["fontSize", figma.mixed]]));
-    expect(changesFor(figma, label)).toEqual(["Button / Label: fontSize → control-text"]);
+    expect(await changesFor(figma, label)).toEqual(["Button / Label: fontSize → control-text"]);
   });
 
-  it("unbinds a literal line height that one character still binds", () => {
+  it("unbinds a literal line height that one character still binds", async () => {
     const { figma } = figmaStandIn([]);
     const literal: TextLayerSpec = { ...LABEL, lineHeight: { kind: "literal", value: 20 } };
     const label = labelStandIn([], {}, new Map([["lineHeight", figma.mixed]]));
-    expect(changesFor(figma, label, literal)).toEqual(["Button / Label: lineHeight → 20"]);
+    expect(await changesFor(figma, label, literal)).toEqual(["Button / Label: lineHeight → 20"]);
   });
 
   it("unbinds a literal font family that some characters still bind, in the font write", async () => {
     const { figma } = figmaStandIn([]);
     const writes: string[] = [];
     const label = labelStandIn(writes, {}, new Map([["fontFamily", figma.mixed]]));
-    const { plan } = await runPlan(true, (pass) => {
-      planButton(pass, figma, [label]);
-      return Promise.resolve();
-    });
+    const { plan } = await runPlan(true, (pass) => planButton(pass, figma, [label]));
     expect(changeLines(plan)).toEqual(["Button / Label: font → Roboto Medium"]);
     expect(writes).toEqual(["unbind fontFamily", "set fontName"]);
   });
@@ -242,7 +260,7 @@ describe("planChildren on a label", () => {
     expect(await applyTo(figma, label)).toEqual(["Button / Label: font → Roboto Medium"]);
     expect(writes).toEqual(["unbind fontWeight", "set fontName"]);
     expect(label.fontName).toEqual(ROBOTO_MEDIUM);
-    expect(changesFor(figma, label)).toEqual([]);
+    expect(await changesFor(figma, label)).toEqual([]);
   });
 
   it("clears a style binding that some characters keep, in the font write", async () => {
@@ -252,10 +270,10 @@ describe("planChildren on a label", () => {
     expect(await applyTo(figma, label)).toEqual(["Button / Label: font → Roboto Medium"]);
     expect(writes).toEqual(["unbind fontStyle", "set fontName"]);
     expect(label.fontName).toEqual(ROBOTO_MEDIUM);
-    expect(changesFor(figma, label)).toEqual([]);
+    expect(await changesFor(figma, label)).toEqual([]);
   });
 
-  it("rebinds a font family that one character no longer follows", () => {
+  it("rebinds a font family that one character no longer follows", async () => {
     const { figma } = figmaStandIn([]);
     const bound: TextLayerSpec = {
       ...LABEL,
@@ -272,7 +290,7 @@ describe("planChildren on a label", () => {
       },
       new Map([["fontFamily", figma.mixed]])
     );
-    expect(changesFor(figma, label, bound)).toEqual(["Button / Label: fontFamily → font-sans"]);
+    expect(await changesFor(figma, label, bound)).toEqual(["Button / Label: fontFamily → font-sans"]);
   });
 });
 
@@ -286,10 +304,8 @@ describe("planChildren with a font the machine cannot load", () => {
 
   const planner =
     (figma: PluginAPI, children: readonly SceneNode[]) =>
-    (plan: Plan): Promise<void> => {
+    (plan: Plan): Promise<void> =>
       planButton(plan, figma, children);
-      return Promise.resolve();
-    };
 
   it("repairs a label that holds the font, because the font write needs only the new font", async () => {
     const { figma, loaded } = figmaStandIn([COMIC_SANS_BOLD]);

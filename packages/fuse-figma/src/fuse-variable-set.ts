@@ -6,9 +6,10 @@
  * collection with one mode per value, and designers pick color scheme, variant, segment and
  * brand separately in a frame's Appearance panel, as they do in the docs theme picker.
  *
- * - `Fuse tokens` holds one variable per role token and per radius rung a component uses,
- *   with a Light and a Dark mode. These are the variables designers bind. Each one aliases
- *   `<scheme>/<token>` in `Fuse variant` for its scheme mode.
+ * - `Fuse tokens` holds one variable per role token, per radius rung a component uses and
+ *   per role tint the component kit binds, with a Light and a Dark mode. These are the
+ *   variables designers bind. Each one aliases `<scheme>/<token>` in `Fuse variant` for its
+ *   scheme mode.
  * - `Fuse variant` has an Internal and an External mode. `<scheme>/<token>` aliases
  *   `<scheme>/<variant>/<token>` in `Fuse segment`. `density/<metric>` holds the metric in
  *   the variant's default density, which the Auto mode of `Fuse density` reads.
@@ -147,8 +148,52 @@ const DENSITY_SCOPES = {
   lineHeight: ["LINE_HEIGHT"],
 } as const satisfies Record<DensityMetricKind, readonly VariableScope[]>;
 
+/** The tokens of the color kind. */
+type ColorTokenName = Extract<TokenEntry, { readonly kind: "color" }>["name"];
+
+/**
+ * The role tints the component kit binds, each a role and the percent a recipe mixes it at
+ * toward transparent, as `bg-error/10` does. A Figma paint takes its opacity from the alpha of
+ * the color variable it binds, so a paint cannot bind `error` at 10%. Each tint therefore syncs
+ * as its own variable, such as `error/10`, holding the role's color at that alpha. Its code
+ * syntax is the `color-mix()` Tailwind compiles the utility to, which the kit's builder binds,
+ * and it is offered in its role's pickers.
+ * The kit's coverage test fails when a recipe mixes a role at a percent this table lacks.
+ */
+const ROLE_TINTS = [
+  ["primary", 80],
+  ["error", 10],
+  ["error", 20],
+  ["success", 10],
+  ["success", 20],
+] as const satisfies readonly (readonly [ColorTokenName, number])[];
+
 /** The tokens of the dimension kind. */
 type DimensionTokenName = Extract<TokenEntry, { readonly kind: "dimension" }>["name"];
+
+/**
+ * The outline Button's shadow lengths, which `button-variants.ts` writes as formulas over
+ * `--button-outline-width`. At a 1px outline they give Tailwind's `shadow-xs`. From 2px the
+ * shadow stays inside the border box, where it paints nothing. Figma variables cannot compute,
+ * so each length syncs as its own variable holding what its formula gives for each theme's
+ * outline width. The code syntax is the formula, which the kit's builder binds.
+ */
+const OUTLINE_SHADOW_LENGTHS = [
+  {
+    name: "button-outline-shadow-blur",
+    formula: "max(0px, 4px - 2 * var(--button-outline-width, 1px))",
+    length: (width: number) => Math.max(0, 4 - 2 * width),
+    description:
+      "The blur of the outline Button shadow, max(0px, 4px - 2 * button-outline-width). Figma variables cannot compute, so the sync writes the result for each theme.",
+  },
+  {
+    name: "button-outline-shadow-spread",
+    formula: "min(0px, 2px - 2 * var(--button-outline-width, 1px))",
+    length: (width: number) => Math.min(0, 2 - 2 * width),
+    description:
+      "The spread of the outline Button shadow, min(0px, 2px - 2 * button-outline-width). Figma variables cannot compute, so the sync writes the result for each theme.",
+  },
+] as const;
 
 /**
  * The pickers that offer each dimension token. A length can round corners, space a gap or
@@ -232,7 +277,11 @@ function isSyncedRung(entry: RungEntry): entry is RungEntry<SyncedRungName> {
  * the variant and segment collections pass the frame's choice of each axis along.
  */
 type BoundVariable = {
-  readonly name: TokenName | SyncedRungName;
+  readonly name:
+    | TokenName
+    | SyncedRungName
+    | `${ColorTokenName}/${number}`
+    | (typeof OUTLINE_SHADOW_LENGTHS)[number]["name"];
   readonly type: VariableType;
 
   /** The pickers that offer the `Fuse tokens` variable. */
@@ -244,8 +293,8 @@ type BoundVariable = {
   /** What the token or rung is for, from the catalog. */
   readonly description: string;
 
-  /** The same token or rung in another theme's scheme. */
-  readonly entryIn: (scheme: ResolvedScheme) => TokenEntry | RungEntry;
+  /** The value `Fuse brand` holds for a theme's scheme at a theme path. */
+  readonly leafIn: (scheme: ResolvedScheme, path: ThemePath) => VariableValue;
 };
 
 /** Where a theme's value sits along the scheme, variant and segment axes. */
@@ -256,11 +305,13 @@ type ThemePath = {
 };
 
 /**
- * Every `Fuse tokens` variable: each role token, then each synced radius rung. A rung's
- * code syntax is the `calc()` `fuse.css` declares. `fuse.css` declares the rungs in
- * `@theme inline`, so Tailwind inlines them into its utilities and the built CSS does not
- * define `--radius-sm` and most other rungs as custom properties. Figma variables cannot
- * compute, so each rung holds the px the catalog computes per theme.
+ * Every `Fuse tokens` variable: each role token, then each synced radius rung, then each role
+ * tint, then the outline shadow lengths. A rung's code syntax is the `calc()` `fuse.css`
+ * declares. `fuse.css` declares the
+ * rungs in `@theme inline`, so Tailwind inlines them into its utilities and the built CSS does
+ * not define `--radius-sm` and most other rungs as custom properties. Figma variables cannot
+ * compute, so each rung holds the px the catalog computes per theme, each tint holds its
+ * role's color at the tint's alpha, and each outline shadow length holds what its formula gives.
  */
 function boundVariables(template: ResolvedScheme): readonly BoundVariable[] {
   const tokens = Object.values(template.tokens).map((entry): BoundVariable => ({
@@ -269,7 +320,7 @@ function boundVariables(template: ResolvedScheme): readonly BoundVariable[] {
     scopes: tokenScopes(entry),
     webSyntax: entry.codeSyntax,
     description: entry.description,
-    entryIn: (scheme) => scheme.tokens[entry.name],
+    leafIn: (scheme, path) => leafValue(scheme.tokens[entry.name], path),
   }));
   const rungs = Object.values(template.rungs)
     .filter(isSyncedRung)
@@ -279,9 +330,29 @@ function boundVariables(template: ResolvedScheme): readonly BoundVariable[] {
       scopes: ["CORNER_RADIUS"],
       webSyntax: entry.codeSyntax,
       description: entry.description,
-      entryIn: (scheme) => scheme.rungs[entry.name],
+      leafIn: (scheme, path) => leafValue(scheme.rungs[entry.name], path),
     }));
-  return [...tokens, ...rungs];
+  const tints = ROLE_TINTS.map(([role, percent]): BoundVariable => ({
+    name: `${role}/${percent}`,
+    type: VARIABLE_TYPES.color,
+    scopes: paintScopes(template.tokens[role].paints),
+    webSyntax: `color-mix(in oklab, ${template.tokens[role].codeSyntax} ${percent}%, transparent)`,
+    description: `${role} at ${percent}% opacity, which Fuse writes as ${role}/${percent}. Bind it instead of ${role}, because Figma takes the opacity of a bound color from its variable.`,
+    // Mixing toward transparent keeps the color and scales its alpha, in any color space.
+    leafIn: (scheme) => {
+      const { r, g, b, alpha } = scheme.tokens[role].value;
+      return { _tag: "Color", color: { r, g, b, a: (alpha * percent) / 100 } };
+    },
+  }));
+  const lengths = OUTLINE_SHADOW_LENGTHS.map(({ name, formula, length, description }): BoundVariable => ({
+    name,
+    type: VARIABLE_TYPES.dimension,
+    scopes: ["EFFECT_FLOAT"],
+    webSyntax: formula,
+    description,
+    leafIn: (scheme) => ({ _tag: "Float", value: length(scheme.tokens["button-outline-width"].value) }),
+  }));
+  return [...tokens, ...rungs, ...tints, ...lengths];
 }
 
 /**
@@ -356,7 +427,7 @@ function brandCollection(catalog: ResolvedThemeCatalog, bound: readonly BoundVar
       type: variable.type,
       ...HIDDEN_METADATA,
       values: new Map(
-        shown.map(([mode, theme]) => [mode, leafValue(variable.entryIn(theme.schemes[path.scheme]), path)])
+        shown.map(([mode, theme]) => [mode, variable.leafIn(theme.schemes[path.scheme], path)])
       ),
     }));
   });

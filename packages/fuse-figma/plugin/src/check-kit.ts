@@ -13,10 +13,8 @@ import type {
   StringSpec,
   VariableRef,
 } from "../../src/components/kit-spec.ts";
-import { checkComponentSet, variantName } from "./component-set.ts";
+import { checkComponentSet } from "./component-set.ts";
 import { variableLabel } from "./fields.ts";
-import { warn } from "./plan.ts";
-import type { Plan } from "./plan.ts";
 import { PREVIEW_BACKGROUND } from "./previews.ts";
 import type { KitVariables } from "./variables.ts";
 
@@ -41,6 +39,7 @@ function boundString(spec: StringSpec): BoundRef[] {
 function rootRefs(root: ComponentRootSpec): BoundRef[] {
   return [
     ...[
+      root.width,
       root.height,
       root.minWidth,
       root.paddingTop,
@@ -50,6 +49,7 @@ function rootRefs(root: ComponentRootSpec): BoundRef[] {
       root.itemSpacing,
       root.cornerRadius,
       root.stroke?.weight,
+      ...root.shadows.flatMap((shadow) => [shadow.radius, shadow.spread]),
     ].flatMap(boundNumber),
     ...[root.fill, root.stroke?.color, ...root.shadows.map((shadow) => shadow.color)].flatMap(boundColor),
     ...root.children.flatMap((child) =>
@@ -65,10 +65,13 @@ function rootRefs(root: ComponentRootSpec): BoundRef[] {
   ];
 }
 
-/** Every variable the run binds: the kit's, and the background the previews paint. */
+/**
+ * Every variable the run binds: the sets', the icon library's glyph color, and the background
+ * the previews and the library paint.
+ */
 function boundRefs(kit: KitSpec): BoundRef[] {
   const refs = kit.componentSets.flatMap((set) => set.variants.flatMap((variant) => rootRefs(variant.root)));
-  return kit.previews.length === 0 ? refs : [...refs, { ref: PREVIEW_BACKGROUND, type: "COLOR" }];
+  return [...refs, ...boundColor(kit.icons.color), { ref: PREVIEW_BACKGROUND, type: "COLOR" }];
 }
 
 /**
@@ -86,16 +89,15 @@ export function kitCollections(kit: KitSpec): ReadonlySet<string> {
 }
 
 /**
- * Check the kit against itself and against the file's variables, and warn about what the
- * plugin cannot represent. The planning pass calls this before it records any operation.
+ * Check the kit against itself and against the file's variables. The planning pass calls this
+ * before it records any operation.
  *
  * @param variables - The file's variables.
  * @param kit - The kit.
- * @param plan - The run's plan, which collects the warnings.
  * @throws When the file lacks a variable or mode the kit names, a variable has the wrong type,
  *   or the spec contradicts itself.
  */
-export function checkKit(variables: KitVariables, kit: KitSpec, plan: Plan): void {
+export function checkKit(variables: KitVariables, kit: KitSpec): void {
   for (const set of kit.componentSets) {
     checkComponentSet(set);
   }
@@ -121,21 +123,6 @@ export function checkKit(variables: KitVariables, kit: KitSpec, plan: Plan): voi
       throw new Error(
         `${variableLabel(ref)} is a ${variable.resolvedType} variable, and the kit binds it to a field that takes a ${type}. Run \`figma:sync\` on this file first.`
       );
-    }
-  }
-  for (const set of kit.componentSets) {
-    for (const variant of set.variants) {
-      for (const shadow of variant.root.shadows) {
-        // No real file has shown yet whether a bound effect color keeps the opacity the spec
-        // asks for or takes its alpha from the variable.
-        if (shadow.color.kind === "variable" && shadow.color.opacity < 1) {
-          warn(
-            plan,
-            `${set.name} / ${variantName(set, variant)}`,
-            `a shadow binds ${variableLabel(shadow.color.variable)} at ${Math.round(shadow.color.opacity * 100)}%, and Figma may drop that opacity`
-          );
-        }
-      }
     }
   }
 }
