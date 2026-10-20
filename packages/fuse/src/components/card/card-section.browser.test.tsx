@@ -72,7 +72,7 @@ describe("Card.Section", () => {
     const hidden = [...document.querySelectorAll('[data-slot="card-section"][hidden]')];
     expect(hidden, "two hidden sections").toHaveLength(2);
     for (const section of hidden) {
-      expect(getComputedStyle(section).display, section.textContent ?? "").toBe("none");
+      expect(getComputedStyle(section).display).toBe("none");
     }
     // The first visible section opens the card, inside its 1px border.
     const card = roleNamed("group", "Order").getBoundingClientRect();
