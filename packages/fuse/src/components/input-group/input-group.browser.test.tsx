@@ -12,6 +12,7 @@ import {
   expectNoFocusRing,
 } from "../../../test/assert-focus-ring";
 import { expectInvalidFocusRing, expectInvalidRing, expectNoRing } from "../../../test/assert-invalid-ring";
+import { countryAddon, phoneInput } from "../../../test/phone-browser-queries";
 import {
   CONTROL_MD,
   CONTROL_SM,
@@ -25,8 +26,10 @@ import {
   textNamed,
   textboxNamed,
 } from "../../../test/themed-browser-render";
+import { LocaleProvider } from "../../intl/locale-context";
 import { ThemeScope } from "../../theme";
 import { Input } from "../input/input";
+import { PhoneNumberField } from "../phone-number-field/phone-number-field";
 import { InputGroup } from "./index";
 
 function groupAround(start: HTMLElement): HTMLElement {
@@ -152,6 +155,44 @@ describe("InputGroup", () => {
     await userEvent.click(page.getByRole("button", { name: "Clear", exact: true }));
     expect(document.activeElement).not.toBe(control);
     expect(clicks).toEqual(["addon", "button"]);
+  });
+
+  it("focuses the group's own control from an addon click, not the first input in the group", async () => {
+    renderThemed(
+      <>
+        <InputGroup.Root>
+          <InputGroup.Textarea aria-label="Message" />
+          <InputGroup.Addon align="block-end">
+            <InputGroup.Text>0/200</InputGroup.Text>
+          </InputGroup.Addon>
+        </InputGroup.Root>
+        <InputGroup.Root>
+          <InputGroup.Addon>
+            <input aria-label="Nested amount" />
+          </InputGroup.Addon>
+          <InputGroup.Input aria-label="Total" />
+          <InputGroup.Addon align="inline-end">
+            <InputGroup.Text>kr</InputGroup.Text>
+          </InputGroup.Addon>
+        </InputGroup.Root>
+      </>
+    );
+
+    await userEvent.click(page.getByText("0/200", { exact: true }));
+    expect(document.activeElement).toBe(textboxNamed("Message"));
+
+    await userEvent.click(page.getByText("kr", { exact: true }));
+    expect(document.activeElement).toBe(textboxNamed("Total"));
+  });
+
+  it("focuses a PhoneNumberField's number input from its country addon chrome", () => {
+    renderThemed(
+      <LocaleProvider locale="en-US">
+        <PhoneNumberField label="Mobile" />
+      </LocaleProvider>
+    );
+    countryAddon().dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(document.activeElement).toBe(phoneInput());
   });
 
   it.each([

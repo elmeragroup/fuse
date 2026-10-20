@@ -95,10 +95,14 @@ export function InputGroupAddon({
       data-align={align}
       className={cn(inputGroupAddonVariants({ align }), className)}
       onClick={(event) => {
-        // The addon is an extension of the input's hit area, except over a
-        // nested button, which keeps its own click.
+        // The addon is an extension of the group's own control's hit area, except over a
+        // nested button, which keeps its own click. The own control is the Root's direct
+        // input-group-control child: the first input in DOM order can be a field nested in an
+        // addon or a combobox's hidden input, and a Textarea group has no input at all.
         if (!(event.target instanceof HTMLElement) || !event.target.closest("button")) {
-          event.currentTarget.parentElement?.querySelector("input")?.focus();
+          event.currentTarget.parentElement
+            ?.querySelector<HTMLElement>(":scope > [data-slot=input-group-control]")
+            ?.focus();
         }
         onClick?.(event);
       }}
