@@ -38,7 +38,7 @@ export type PixelDiff = {
 export const DEFAULT_THRESHOLD = 0.1;
 
 /** Bytes that should hold a PNG do not decode. */
-export class PngUnreadable extends Error {
+class PngUnreadable extends Error {
   readonly _tag = "PngUnreadable" as const;
 }
 

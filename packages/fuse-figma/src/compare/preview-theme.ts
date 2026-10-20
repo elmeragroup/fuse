@@ -33,7 +33,7 @@ export type PreviewTheme = {
 };
 
 /** Modes the harness cannot turn into a Fuse theme. */
-export class UnsupportedModes extends Error {
+class UnsupportedModes extends Error {
   readonly _tag = "UnsupportedModes" as const;
 }
 

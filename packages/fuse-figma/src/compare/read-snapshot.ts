@@ -42,7 +42,7 @@ const decode: (text: string) => Result.Result<KitSnapshot, Schema.SchemaError> =
 );
 
 /** The file is not a snapshot this version of `figma:compare` reads. */
-export class SnapshotUnreadable extends Error {
+class SnapshotUnreadable extends Error {
   readonly _tag = "SnapshotUnreadable" as const;
 }
 

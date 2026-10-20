@@ -1,25 +1,13 @@
 import { Result } from "effect";
 import { describe, expect, it } from "vitest";
 
-import { cellKey, parseCell, parseVariantProperties } from "./cells";
-
-function success<A, E>(result: Result.Result<A, E>): A {
-  if (Result.isFailure(result)) {
-    throw new Error(`expected a success, got ${String(result.failure)}`);
-  }
-  return result.success;
-}
-
-function failureMessage<A, E extends Error>(result: Result.Result<A, E>): string {
-  if (Result.isSuccess(result)) {
-    throw new Error(`expected a failure, got ${JSON.stringify(result.success)}`);
-  }
-  return result.failure.message;
-}
+import { cellKey, forcedPseudoClasses, parseCell, parseVariantProperties, restingTwin } from "./cells";
 
 describe("parseVariantProperties", () => {
   it("splits a key into its set and properties", () => {
-    const parsed = success(parseVariantProperties("icon-button/variant=ghost,size=icon-xs,state=hover"));
+    const parsed = Result.getOrThrow(
+      parseVariantProperties("icon-button/variant=ghost,size=icon-xs,state=hover")
+    );
     expect(parsed.set).toBe("icon-button");
     expect([...parsed.properties]).toEqual([
       ["variant", "ghost"],
@@ -31,7 +19,7 @@ describe("parseVariantProperties", () => {
 
 describe("parseCell", () => {
   it("reads a Button cell", () => {
-    expect(success(parseCell("button/variant=ghost,size=sm,state=pending,icon=end"))).toEqual({
+    expect(Result.getOrThrow(parseCell("button/variant=ghost,size=sm,state=pending,icon=end"))).toEqual({
       component: "button",
       variant: "ghost",
       size: "sm",
@@ -41,7 +29,7 @@ describe("parseCell", () => {
   });
 
   it("reads an Icon button cell", () => {
-    expect(success(parseCell("icon-button/variant=destructive,size=icon-xs,state=hover"))).toEqual({
+    expect(Result.getOrThrow(parseCell("icon-button/variant=destructive,size=icon-xs,state=hover"))).toEqual({
       component: "icon-button",
       variant: "destructive",
       size: "icon-xs",
@@ -90,7 +78,8 @@ describe("parseCell", () => {
     ],
     ["a property without a value", "button/variant,size=sm,state=rest,icon=none", "name=value"],
   ])("refuses %s", (_, key, reason) => {
-    const message = failureMessage(parseCell(key));
+    const result = parseCell(key);
+    const message = Result.isFailure(result) ? result.failure.message : undefined;
     expect(message).toContain(key);
     expect(message).toContain(reason);
   });
@@ -102,6 +91,25 @@ describe("cellKey", () => {
     "button/variant=outline,size=xs,state=focus,icon=start",
     "icon-button/variant=success,size=icon-lg,state=disabled",
   ])("writes back %s", (key) => {
-    expect(cellKey(success(parseCell(key)))).toBe(key);
+    expect(cellKey(Result.getOrThrow(parseCell(key)))).toBe(key);
+  });
+});
+
+describe("forcedPseudoClasses", () => {
+  it("forces :hover for hover, and :focus with :focus-visible for focus", () => {
+    expect(forcedPseudoClasses("hover")).toEqual(["hover"]);
+    expect(forcedPseudoClasses("focus")).toEqual(["focus", "focus-visible"]);
+  });
+
+  it("forces nothing for a state the markup draws", () => {
+    expect(forcedPseudoClasses("disabled")).toEqual([]);
+  });
+});
+
+describe("restingTwin", () => {
+  it("keeps every axis but the state, which rests", () => {
+    expect(
+      restingTwin({ component: "button", variant: "destructive", size: "sm", state: "focus", icon: "end" })
+    ).toEqual({ component: "button", variant: "destructive", size: "sm", state: "rest", icon: "end" });
   });
 });

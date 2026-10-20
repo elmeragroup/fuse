@@ -12,8 +12,8 @@ import { join } from "node:path";
 import { browserFootprint, coversRenderBounds, figmaFootprint, sharedCanvas } from "./align.ts";
 import { CompareBrowser, DEVICE_SCALE } from "./browser-render.ts";
 import type { BrowserUnavailable, CellRequest, FontNotLoaded, RenderedCell } from "./browser-render.ts";
-import { cellMarkup, restingTwin } from "./cell-markup.ts";
-import { parseCell, parseVariantProperties } from "./cells.ts";
+import { forcedPseudoClasses, parseCell, parseVariantProperties, restingTwin } from "./cells.ts";
+import type { Cell } from "./cells.ts";
 import { locateFuseBuild, readPageAssets } from "./page-assets.ts";
 import type { FuseBuildMissing } from "./page-assets.ts";
 import type { PageLayout } from "./preview-page.ts";
@@ -94,7 +94,7 @@ export type CompareReport = {
 };
 
 /** The snapshot was exported at a scale the browser does not render at. */
-export class UnsupportedScale extends Error {
+class UnsupportedScale extends Error {
   readonly _tag = "UnsupportedScale" as const;
 }
 
@@ -102,7 +102,7 @@ export class UnsupportedScale extends Error {
 export type CompareFailure = FuseBuildMissing | BrowserUnavailable | FontNotLoaded | UnsupportedScale;
 
 /** Renders a cell's Button to HTML, from the Fuse build. */
-type RenderCellHtml = (markup: ReturnType<typeof cellMarkup>) => string;
+type RenderCellHtml = (cell: Cell) => string;
 
 /** A snapshot instance and the page cell that renders it. */
 export type PlannedCell = { readonly instance: InstanceSnapshot; readonly request: CellRequest };
@@ -129,15 +129,14 @@ export function planCells(instances: readonly InstanceSnapshot[], renderHtml: Re
       unsupported.push({ variant: instance.variant, reason: cell.failure.message });
       return;
     }
-    const markup = cellMarkup(cell.success);
+    const forced = forcedPseudoClasses(cell.success.state);
     planned.push({
       instance,
       request: {
         id: `c${String(index)}`,
-        html: renderHtml(markup),
-        forced: markup.forced,
-        restingHtml:
-          markup.forced.length === 0 ? undefined : renderHtml(cellMarkup(restingTwin(cell.success))),
+        html: renderHtml(cell.success),
+        forced,
+        restingHtml: forced.length === 0 ? undefined : renderHtml(restingTwin(cell.success)),
       },
     });
   });

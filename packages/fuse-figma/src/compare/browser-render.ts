@@ -17,7 +17,7 @@ import { join } from "node:path";
 import { chromium } from "playwright";
 import type { Browser, Page, Route } from "playwright";
 
-import type { ForcedPseudoClass } from "./cell-markup.ts";
+import type { ForcedPseudoClass } from "./cells.ts";
 import type { PageAssets } from "./page-assets.ts";
 import {
   ASSET_PATHS,

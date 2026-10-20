@@ -6,20 +6,6 @@ import { parsePreviewTheme, themeStamps } from "./preview-theme";
 const modes = (entries: Readonly<Record<string, string>>) =>
   Object.entries(entries).map(([collection, mode]) => ({ collection, mode }));
 
-function success<A, E>(result: Result.Result<A, E>): A {
-  if (Result.isFailure(result)) {
-    throw new Error(`expected a success, got ${String(result.failure)}`);
-  }
-  return result.success;
-}
-
-function failureMessage<A, E extends Error>(result: Result.Result<A, E>): string {
-  if (Result.isSuccess(result)) {
-    throw new Error(`expected a failure, got ${JSON.stringify(result.success)}`);
-  }
-  return result.failure.message;
-}
-
 const FJORDKRAFT_LIGHT = {
   "Fuse tokens": "Light",
   "Fuse variant": "Internal",
@@ -30,7 +16,7 @@ const FJORDKRAFT_LIGHT = {
 
 describe("parsePreviewTheme", () => {
   it("reads the modes figma:sync names", () => {
-    expect(success(parsePreviewTheme(modes(FJORDKRAFT_LIGHT)))).toEqual({
+    expect(Result.getOrThrow(parsePreviewTheme(modes(FJORDKRAFT_LIGHT)))).toEqual({
       scheme: "light",
       variant: "internal",
       brand: "fkas",
@@ -38,7 +24,7 @@ describe("parsePreviewTheme", () => {
       density: "dense",
     });
     expect(
-      success(
+      Result.getOrThrow(
         parsePreviewTheme(
           modes({
             "Fuse tokens": "Dark",
@@ -60,13 +46,15 @@ describe("parsePreviewTheme", () => {
 
   it("ignores collections a theme does not read", () => {
     expect(
-      success(parsePreviewTheme(modes({ ...FJORDKRAFT_LIGHT, "Fuse primitives": "Value", Local: "Mode 1" })))
+      Result.getOrThrow(
+        parsePreviewTheme(modes({ ...FJORDKRAFT_LIGHT, "Fuse primitives": "Value", Local: "Mode 1" }))
+      )
     ).toMatchObject({ brand: "fkas" });
   });
 
   it("reads Auto density as the variant's default: dense inside, comfortable outside", () => {
     const auto = (variant: string) =>
-      success(
+      Result.getOrThrow(
         parsePreviewTheme(modes({ ...FJORDKRAFT_LIGHT, "Fuse variant": variant, "Fuse density": "Auto" }))
       ).density;
     expect(auto("Internal")).toBe("dense");
@@ -75,7 +63,7 @@ describe("parsePreviewTheme", () => {
 
   it("shows a brand pinned to one segment in that segment under either segment mode", () => {
     const pinned = (brand: string, segment: string) =>
-      success(
+      Result.getOrThrow(
         parsePreviewTheme(modes({ ...FJORDKRAFT_LIGHT, "Fuse brand": brand, "Fuse segment": segment }))
       );
     expect(pinned("Telinet (private only)", "Company")).toMatchObject({ brand: "fkse", segment: "private" });
@@ -87,8 +75,10 @@ describe("parsePreviewTheme", () => {
 
   it("refuses a missing collection and an unknown mode, naming them", () => {
     const { "Fuse density": _, ...withoutDensity } = FJORDKRAFT_LIGHT;
-    expect(failureMessage(parsePreviewTheme(modes(withoutDensity)))).toContain("Fuse density");
-    expect(failureMessage(parsePreviewTheme(modes({ ...FJORDKRAFT_LIGHT, "Fuse brand": "Acme" })))).toContain(
+    const refusal = (theme: ReturnType<typeof parsePreviewTheme>) =>
+      Result.isFailure(theme) ? theme.failure.message : undefined;
+    expect(refusal(parsePreviewTheme(modes(withoutDensity)))).toContain("Fuse density");
+    expect(refusal(parsePreviewTheme(modes({ ...FJORDKRAFT_LIGHT, "Fuse brand": "Acme" })))).toContain(
       "Fuse brand / Acme"
     );
   });

@@ -57,7 +57,7 @@ export type IconButtonCell = {
 export type Cell = LabelButtonCell | IconButtonCell;
 
 /** A variant key the harness cannot render. */
-export class UnsupportedVariant extends Error {
+class UnsupportedVariant extends Error {
   readonly _tag = "UnsupportedVariant" as const;
   /** The key as the snapshot holds it. */
   readonly variant: string;
@@ -200,4 +200,38 @@ export function cellKey(cell: Cell): string {
   return cell.component === "button"
     ? `button/variant=${cell.variant},size=${cell.size},state=${cell.state},icon=${cell.icon}`
     : `icon-button/variant=${cell.variant},size=${cell.size},state=${cell.state}`;
+}
+
+/** A pseudo class the page forces on a cell's button. */
+export type ForcedPseudoClass = "hover" | "focus" | "focus-visible";
+
+const FORCED = {
+  rest: [],
+  hover: ["hover"],
+  focus: ["focus", "focus-visible"],
+  disabled: [],
+  pending: [],
+} as const satisfies Record<CellState, readonly ForcedPseudoClass[]>;
+
+/**
+ * The pseudo classes the page forces for a cell: `:hover` for hover, and `:focus` with
+ * `:focus-visible` for focus, as a pointer over the button or a keyboard user on it would.
+ *
+ * @param state - A parsed cell's state.
+ * @returns The pseudo classes, none for a state the markup itself draws.
+ */
+export function forcedPseudoClasses(state: CellState): readonly ForcedPseudoClass[] {
+  return FORCED[state];
+}
+
+/**
+ * The same cell at rest: the reference the page compares a forced cell's styles against, to
+ * tell whether forcing the pseudo class reached Fuse's `enabled-hover:` and `focus-visible:`
+ * rules.
+ *
+ * @param cell - A parsed cell.
+ * @returns The cell with its state set to rest.
+ */
+export function restingTwin(cell: Cell): Cell {
+  return { ...cell, state: "rest" };
 }

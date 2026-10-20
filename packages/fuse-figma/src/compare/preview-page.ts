@@ -55,7 +55,7 @@ export type PageSize = { readonly width: number; readonly height: number };
  * @param index - The cell's position on the page.
  * @returns The slot's corner. The button's border box starts `padding` pixels further in.
  */
-export function slotOrigin(layout: PageLayout, index: number): PagePoint {
+function slotOrigin(layout: PageLayout, index: number): PagePoint {
   return {
     x: (index % layout.columns) * layout.slotWidth,
     y: layout.top + Math.floor(index / layout.columns) * layout.slotHeight,
