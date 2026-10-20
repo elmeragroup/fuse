@@ -19,7 +19,7 @@
           "type": "RefObject<Actions | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "A ref to imperative actions. - `unmount`: Manually unmounts the combobox. Call this after any externally controlled closing animation finishes.",
+          "description": "A ref to imperative actions. - `unmount`: Ends the closing phase of the combobox after an externally controlled closing animation finishes. Call `preventUnmountOnClose()` in `onOpenChange` first, otherwise the combobox completes closing on its own. Whether it leaves the DOM is decided by `keepMounted` on the portal. - `close`: Closes the combobox imperatively when called.",
           "required": false
         },
         {
@@ -71,7 +71,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "ComboboxValueType<Value, Multiple> | null | undefined",
+          "type": "ComboboxInputValue<Value, Multiple> | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "The uncontrolled selected value of the combobox when it's initially rendered. To render a controlled combobox, use the `value` prop instead.",
@@ -305,7 +305,7 @@
           "type": "((highlightedValue: Value | undefined, eventDetails: HighlightEventDetails) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Callback fired when an item is highlighted or unhighlighted. Receives the highlighted item value (or `undefined` if no item is highlighted) and event details with a `reason` property describing why the highlight changed. The `reason` can be: - `'keyboard'`: the highlight changed due to keyboard navigation. - `'pointer'`: the highlight changed due to pointer hovering. - `'none'`: the highlight changed programmatically.",
+          "description": "Callback fired when an item is highlighted or unhighlighted. Receives the highlighted item value (or `undefined` if no item is highlighted) and event details with a `reason` property describing why the highlight changed. The `reason` can be: - `'keyboard'`: the highlight changed due to keyboard navigation. - `'pointer'`: the highlight changed due to pointer hovering. The event may be a `MouseEvent` rather than a `PointerEvent`. - `'none'`: the highlight changed for another reason, such as typing, `autoHighlight`, the item list changing, or the popup opening or closing.",
           "required": false
         },
         {
@@ -313,7 +313,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((open: boolean, eventDetails: ChangeEventDetails) => void) | undefined",
+          "type": "((open: boolean, eventDetails: OpenChangeEventDetails) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Event handler called when the popup is opened or closed.",
@@ -335,7 +335,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((value: ComboboxValueType<Value, Multiple> | (Multiple extends true ? never : null), eventDetails: ChangeEventDetails) => void) | undefined",
+          "type": "((value: ComboboxOutputValue<Value, Multiple> | (Multiple extends true ? never : null), eventDetails: ChangeEventDetails) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Event handler called when the selected value of the combobox changes.",
@@ -390,7 +390,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "ComboboxValueType<Value, Multiple> | null | undefined",
+          "type": "ComboboxInputValue<Value, Multiple> | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "The selected value of the combobox. Use when controlled.",

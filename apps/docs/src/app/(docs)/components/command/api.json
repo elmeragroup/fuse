@@ -19,7 +19,7 @@
           "type": "RefObject<DialogRootActions | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "A ref to imperative actions. - `unmount`: Manually unmounts the dialog. Call this after any externally controlled closing animation finishes. - `close`: Closes the dialog imperatively when called.",
+          "description": "A ref to imperative actions. - `unmount`: Ends the closing phase of the dialog after an externally controlled closing animation finishes. Call `preventUnmountOnClose()` in `onOpenChange` first, otherwise the dialog completes closing on its own. Whether it leaves the DOM is decided by `keepMounted` on the portal. - `close`: Closes the dialog imperatively when called.",
           "required": false
         },
         {
@@ -271,7 +271,7 @@
           "type": "((highlightedValue: CommandItemOf<Item, Groups, Grouped> | undefined, eventDetails: HighlightEventDetails) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Callback fired when an item is highlighted or unhighlighted. Receives the highlighted item value (or `undefined` if no item is highlighted) and event details with a `reason` property describing why the highlight changed. The `reason` can be: - `'keyboard'`: the highlight changed due to keyboard navigation. - `'pointer'`: the highlight changed due to pointer hovering. - `'none'`: the highlight changed programmatically.",
+          "description": "Callback fired when an item is highlighted or unhighlighted. Receives the highlighted item value (or `undefined` if no item is highlighted) and event details with a `reason` property describing why the highlight changed. The `reason` can be: - `'keyboard'`: the highlight changed due to keyboard navigation. - `'pointer'`: the highlight changed due to pointer hovering. The event may be a `MouseEvent` rather than a `PointerEvent`. - `'none'`: the highlight changed for another reason, such as typing, `autoHighlight`, the item list changing, or the popup opening or closing.",
           "required": false
         },
         {
@@ -1317,7 +1317,7 @@
           "type": "((highlightedValue: CommandItemOf<Item, Groups, Grouped> | undefined, eventDetails: HighlightEventDetails) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Callback fired when an item is highlighted or unhighlighted. Receives the highlighted item value (or `undefined` if no item is highlighted) and event details with a `reason` property describing why the highlight changed. The `reason` can be: - `'keyboard'`: the highlight changed due to keyboard navigation. - `'pointer'`: the highlight changed due to pointer hovering. - `'none'`: the highlight changed programmatically.",
+          "description": "Callback fired when an item is highlighted or unhighlighted. Receives the highlighted item value (or `undefined` if no item is highlighted) and event details with a `reason` property describing why the highlight changed. The `reason` can be: - `'keyboard'`: the highlight changed due to keyboard navigation. - `'pointer'`: the highlight changed due to pointer hovering. The event may be a `MouseEvent` rather than a `PointerEvent`. - `'none'`: the highlight changed for another reason, such as typing, `autoHighlight`, the item list changing, or the popup opening or closing.",
           "required": false
         },
         {

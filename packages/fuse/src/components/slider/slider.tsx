@@ -97,9 +97,8 @@ export type SliderProps<Value extends SliderValue = number> = {
 const frameSlots = fieldFrameVariants();
 
 /**
- * Unwraps a one-number array to its number. base-ui's keyboard path treats any array as a
- * range while its pointer path treats one number as a single value, so untyped callers that
- * pass `[50]` would see `onChange` switch shape.
+ * Unwraps a one-number array to its number, so an untyped caller that passes `[50]` gets a
+ * single-value slider whose `onChange` reports a number, as `value` documents.
  */
 function asSliderValue<Value extends SliderValue>(input: Value | undefined): Value | undefined {
   // SAFETY: a one-number array only reaches here from untyped code, and the single value it
