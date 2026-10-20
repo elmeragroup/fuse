@@ -17,8 +17,9 @@ import { tv } from "../../styles/tv";
  * The external ref's surface/padding axes are decomposed away into `direction` and `size`.
  * `size` sets the card's surface tier on the base as `--card-pad`: the medium tier,
  * `--surface-pad-md`, by default and the large tier, `--surface-pad-lg`, at `lg`. Sections pad
- * with it and content and footer drop their top padding, so the tier is also the gap between
- * sections. A horizontal card pads and gaps its sections with the same tier.
+ * with it, and a content or footer below another section drops its top padding, so the tier is
+ * also the gap between sections. A content or footer that opens the card keeps it. A horizontal
+ * card pads and gaps its sections with the same tier.
  */
 export const cardVariants = tv({
   slots: {
@@ -36,8 +37,8 @@ export const cardVariants = tv({
     direction: {
       vertical: {
         cardHeader: cardSectionShellClass,
-        cardContent: [cardSectionShellClass, "pt-0"],
-        cardFooter: [cardSectionShellClass, "pt-0"],
+        cardContent: [cardSectionShellClass, "not-first:pt-0"],
+        cardFooter: [cardSectionShellClass, "not-first:pt-0"],
       },
       horizontal: {
         base: [

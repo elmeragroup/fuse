@@ -2,7 +2,19 @@ import { describe, expect, it } from "vitest";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { cssVarColor, headingNamed, renderThemed, textNamed } from "../../../test/themed-browser-render";
+import {
+  cssVarColor,
+  headingNamed,
+  metricPx,
+  px,
+  renderThemed,
+  roleNamed,
+  stampDensity,
+  textNamed,
+} from "../../../test/themed-browser-render";
+import { DENSITIES } from "../../theme/density";
+import { CheckboxCard } from "../checkbox-card/checkbox-card";
+import { CheckboxGroup } from "../checkbox/checkbox";
 import { Card } from "./card";
 
 function slot(name: string): HTMLElement {
@@ -209,5 +221,72 @@ describe("Card", () => {
         ).toBe(true);
       }
     }
+  });
+  describe.each(DENSITIES)("section top padding at %s density", (density) => {
+    /** A part's top padding in px. */
+    function paddingTop(element: HTMLElement): number {
+      return px(getComputedStyle(element).paddingTop);
+    }
+
+    it("pads a Content or Footer that opens the card on all four sides with the tier", () => {
+      stampDensity(density);
+      renderThemed(
+        <>
+          <Card.Root>
+            <Card.Content role="group" aria-label="Lone content">
+              Saved.
+            </Card.Content>
+          </Card.Root>
+          <Card.Root>
+            <Card.Footer role="group" aria-label="Lone footer">
+              Settled.
+            </Card.Footer>
+          </Card.Root>
+        </>
+      );
+      const tier = metricPx("surface-pad-md", density);
+      for (const name of ["Lone content", "Lone footer"]) {
+        const style = getComputedStyle(roleNamed("group", name));
+        expect(
+          [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft].map(px),
+          name
+        ).toEqual([tier, tier, tier, tier]);
+      }
+    });
+
+    it("drops the top padding of a Content and a Footer below a Header", () => {
+      stampDensity(density);
+      renderThemed(
+        <Card.Root>
+          <Card.Header>
+            <Card.Title>March usage</Card.Title>
+          </Card.Header>
+          <Card.Content role="group" aria-label="Body">
+            Body
+          </Card.Content>
+          <Card.Footer role="group" aria-label="Footer">
+            Footer
+          </Card.Footer>
+        </Card.Root>
+      );
+      expect(paddingTop(roleNamed("group", "Body")), "content").toBe(0);
+      expect(paddingTop(roleNamed("group", "Footer")), "footer").toBe(0);
+    });
+
+    it("keeps CheckboxCard's 12px block padding on its opening content", () => {
+      stampDensity(density);
+      renderThemed(
+        <CheckboxGroup>
+          <CheckboxCard value="green" title="Green power" description="Certified renewable." />
+        </CheckboxGroup>
+      );
+      // DOM audit: the CheckboxCard content is a Card section with no role of its own.
+      const content = document.querySelector('[data-slot="card-content"]');
+      if (!(content instanceof HTMLElement)) {
+        throw new Error("expected the CheckboxCard content");
+      }
+      expect(paddingTop(content)).toBe(12);
+      expect(px(getComputedStyle(content).paddingBottom)).toBe(12);
+    });
   });
 });

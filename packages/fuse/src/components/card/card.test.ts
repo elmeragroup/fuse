@@ -43,6 +43,8 @@ describe("cardVariants", () => {
         ["cardAction", "col-start-2"],
         ["base", "[--card-pad:var(--surface-pad-md)]"],
         ["cardContent", "p-[var(--card-pad,var(--surface-pad-md))]"],
+        ["cardContent", "not-first:pt-0"],
+        ["cardFooter", "not-first:pt-0"],
         ["cardFooter", "items-center"],
       ],
       [],
@@ -57,7 +59,11 @@ describe("cardVariants", () => {
         ["cardHeader", "grid"],
         ["cardTitle", "text-xl"],
       ],
-      [["cardContent", "p-[var(--card-pad,var(--surface-pad-md))]"]],
+      [
+        ["cardContent", "p-[var(--card-pad,var(--surface-pad-md))]"],
+        ["cardContent", "not-first:pt-0"],
+        ["cardFooter", "not-first:pt-0"],
+      ],
     ],
   ])("resolves every slot for the %s card", (_name, props, present, absent) => {
     const slots = cardVariants(props);

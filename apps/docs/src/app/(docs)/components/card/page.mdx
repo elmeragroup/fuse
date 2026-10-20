@@ -4,6 +4,7 @@ lede: >
 ---
 
 import { CardBasic } from "./demos/card-basic";
+import { CardContentOnly } from "./demos/card-content-only";
 import { CardWithAction } from "./demos/card-with-action";
 import { CardTag } from "./demos/card-tag";
 import { CardHorizontal } from "./demos/card-horizontal";
@@ -19,6 +20,12 @@ export const metadata = componentMetadata("card");
 
 <Demo slug="card" id="basic" title="Basic" file="card-basic.tsx">
   <CardBasic />
+</Demo>
+
+A card needs no header. A content or footer that opens the card pads every side with the card's tier, and one below another section drops its top padding, so the tier is also the gap between them.
+
+<Demo slug="card" id="content-only" title="Content only" file="card-content-only.tsx">
+  <CardContentOnly />
 </Demo>
 
 <Demo slug="card" id="with-action" title="With an action" file="card-with-action.tsx">

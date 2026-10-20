@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { CSSProperties, ReactElement } from "react";
 
-import { cn, tv } from "tailwind-variants";
+import { tv } from "tailwind-variants";
 
 import { Avatar } from "@elmeragroup/fuse/avatar";
 import { Badge } from "@elmeragroup/fuse/badge";
@@ -47,8 +47,6 @@ const productShot = tv({
     barSlot: "relative flex h-full min-w-0 flex-1 items-end",
     axis: "text-xs mt-2 flex justify-between font-mono text-muted-foreground tabular-nums",
     meter: "mt-6 border-t border-border pt-5",
-    // Content without a Card.Header above it gets the header's top padding back.
-    headless: "pt-6",
     switchRow: "items-start",
   },
 });
@@ -115,7 +113,7 @@ function UsageCard(): ReactElement {
         { name: "Meter", slug: "meter" },
       ]}>
       <Card.Root>
-        <Card.Content className={styles.headless()}>
+        <Card.Content>
           <div className={styles.usageHead()}>
             <div>
               <Card.Title>Usage</Card.Title>
@@ -253,7 +251,7 @@ function NotificationsCard(): ReactElement {
         { name: "Switch", slug: "switch" },
       ]}>
       <Card.Root>
-        <Card.Content className={cn(stack, styles.headless())}>
+        <Card.Content className={stack}>
           {ALERTS.map((alert) => (
             <Field.Root key={alert.id} orientation="horizontal" className={styles.switchRow()}>
               <Field.Content>
