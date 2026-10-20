@@ -29,6 +29,8 @@ import { withLocale } from "../../../test/locale-matrix";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Button } from "../button/button";
 import { DropdownMenu } from "../dropdown-menu";
+import { RadioGroup, RadioIconButton } from "../radio-group/radio-group";
+import { Slider } from "../slider/slider";
 import { actionsColumn } from "./actions-column";
 import { createFuseTableHook } from "./create-fuse-table-hook";
 import { NumberCell } from "./data-table-registered";
@@ -615,6 +617,100 @@ describe("DataTable row press", () => {
     expect(row?.hasAttribute("role")).toBe(false);
     expect(row?.hasAttribute("tabindex")).toBe(false);
     expect(page.getByRole("row").elements()).toContain(row);
+  });
+});
+
+describe("DataTable row press past Fuse widgets and text selection", () => {
+  const widgetColumns = appColumns.columns([
+    appColumns.accessor("customer", { header: "Customer", cell: ({ cell }) => <cell.TextCell /> }),
+    appColumns.display({
+      id: "priority",
+      header: "Priority",
+      cell: () => (
+        <RadioGroup label="Priority" isLabelHidden defaultValue="low" orientation="horizontal">
+          <RadioIconButton value="low" aria-label="Low">
+            L
+          </RadioIconButton>
+          <RadioIconButton value="high" aria-label="High">
+            H
+          </RadioIconButton>
+        </RadioGroup>
+      ),
+    }),
+    appColumns.display({
+      id: "share",
+      header: "Share",
+      cell: () => <Slider aria-label="Share" defaultValue={0} className="w-40" />,
+    }),
+    appColumns.display({
+      id: "note",
+      header: "Note",
+      cell: () => (
+        <div role="textbox" aria-label="Note" contentEditable suppressContentEditableWarning>
+          Call first
+        </div>
+      ),
+    }),
+  ]);
+
+  function renderWidgets(): number[] {
+    const pressed: number[] = [];
+    renderInEnglish(
+      <PressableTable
+        columns={widgetColumns}
+        onPress={(id) => {
+          pressed.push(id);
+        }}
+      />
+    );
+    return pressed;
+  }
+
+  it("lets a radio, a slider and an editable region own their clicks", async () => {
+    const pressed = renderWidgets();
+
+    await userEvent.click(roleNamed("radio", "High"));
+    expect(roleNamed("radio", "High").getAttribute("aria-checked")).toBe("true");
+
+    // DOM audit: the slider's track has no role; a pointer press on it is what moves the thumb.
+    const control = roleNamed("slider", "Share").closest("[data-slot=slider-control]");
+    if (!(control instanceof HTMLElement)) {
+      throw new Error("expected the slider control");
+    }
+    const { width, height } = control.getBoundingClientRect();
+    await userEvent.click(control, { position: { x: width - 2, y: height / 2 } });
+    expect(roleNamed("slider", "Share")).not.toHaveProperty("value", "0");
+
+    await userEvent.click(roleNamed("textbox", "Note"));
+    expect(pressed).toEqual([]);
+
+    await userEvent.click(roleNamed("cell", "Bergen"));
+    expect(pressed).toEqual([1]);
+  });
+
+  it("does not press a row when the click ends a text selection inside it", () => {
+    const pressed = renderWidgets();
+    const cell = roleNamed("cell", "Bergen");
+
+    const selection = window.getSelection();
+    selection?.selectAllChildren(cell);
+    expect(selection?.isCollapsed).toBe(false);
+    // A drag that selects text ends in a click on the text, with the selection still made.
+    cell.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(pressed).toEqual([]);
+
+    selection?.removeAllRanges();
+    cell.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(pressed).toEqual([1]);
+  });
+
+  it("presses while text outside the row stays selected", () => {
+    const pressed = renderWidgets();
+    const selection = window.getSelection();
+    selection?.selectAllChildren(roleNamed("columnheader", "Customer"));
+    roleNamed("cell", "Bergen").dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(pressed).toEqual([1]);
+    selection?.removeAllRanges();
   });
 });
 
