@@ -551,13 +551,16 @@ describe("SelectionItem", () => {
   });
 
   it.each([
-    { inset: 16, className: undefined },
+    // The medium surface tier: 12px dense and 16px comfortable.
+    { inset: 12, className: undefined, density: "dense" },
+    { inset: 16, className: undefined, density: "comfortable" },
     // The standalone sheet carries only the classes the library uses, so the override is one it ships.
-    { inset: 12, className: "px-3" },
-    { inset: 0, className: "px-0" },
+    { inset: 12, className: "px-3", density: "comfortable" },
+    { inset: 0, className: "px-0", density: "comfortable" },
   ] as const)(
-    "insets the row content $inset px for className $className and toggles from the label row's edges",
-    async ({ inset, className }) => {
+    "insets the row content $inset px for className $className at $density and toggles from the label row's edges",
+    async ({ inset, className, density }) => {
+      stampDensity(density);
       renderThemed(
         <CheckboxItemGroup label="Cards">
           <CheckboxItem value="a" className={className}>
@@ -975,7 +978,7 @@ describe("SelectionItem", () => {
     const title = "Mobile broadband with a fixed monthly price and no binding period";
     const description = "We send you a SIM card by post. You can easily insert it in your phone.";
     renderThemed(
-      <div style={{ width: "260px" }}>
+      <div style={{ width: "240px" }}>
         <CheckboxItemGroup label="Delivery">
           <CheckboxItem value="sim">
             <SelectionItem.Content>

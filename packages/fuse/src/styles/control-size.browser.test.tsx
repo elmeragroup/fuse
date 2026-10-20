@@ -626,35 +626,36 @@ describe("control size: consumer overrides", () => {
           </Select.Trigger>
         </Select.Root>
         <ToggleGroup.Root aria-label="wide segments" spacing={0}>
-          <ToggleGroup.Item value="one" aria-label="wide segment" className="px-4">
+          <ToggleGroup.Item value="one" aria-label="wide segment" className="px-3">
             Label
           </ToggleGroup.Item>
         </ToggleGroup.Root>
-        <Button className="px-4">wide button</Button>
+        <Button className="px-3">wide button</Button>
       </>
     );
-    // Tailwind's `h-12` is 3rem and `px-4` is 1rem, 48px and 16px at the 16px root. Neither
+    // Tailwind's `h-12` is 3rem and `px-3` is 0.75rem, 48px and 12px at the 16px root. Neither
     // is a dense control metric (sm is 32px high, the md icon inset 8px, the md button
-    // inset 10px).
+    // inset 10px). The standalone sheet carries only the classes the library uses, so the
+    // overrides are ones it ships.
     expect(measure("combobox", "tall select").height).toBe(48);
-    expect(measure("button", "wide segment").paddingStart).toBe(16);
-    expect(measure("button", "wide segment").paddingEnd).toBe(16);
-    expect(measure("button", "wide button").paddingStart).toBe(16);
-    expect(measure("button", "wide button").paddingEnd).toBe(16);
+    expect(measure("button", "wide segment").paddingStart).toBe(12);
+    expect(measure("button", "wide segment").paddingEnd).toBe(12);
+    expect(measure("button", "wide button").paddingStart).toBe(12);
+    expect(measure("button", "wide button").paddingEnd).toBe(12);
   });
 
   it("lets a className px utility replace a comfortable Button's label inset but not its icon edge", () => {
     stampDensity("comfortable");
     renderThemed(
-      <Button className="px-4" aria-label="padded icon button">
+      <Button className="px-3" aria-label="padded icon button">
         {iconChildren("start")}
       </Button>
     );
-    // `px-4` is 16px and replaces the 32px md label inset. The leading icon keeps the 24px
+    // `px-3` is 12px and replaces the 32px md label inset. The leading icon keeps the 24px
     // comfortable md icon edge: its `has-data-[icon=inline-start]:` class is another modifier,
-    // so tailwind-merge keeps it, and its `:has()` selector outranks `px-4`.
+    // so tailwind-merge keeps it, and its `:has()` selector outranks `px-3`.
     const box = measure("button", "padded icon button");
     expect(box.paddingStart).toBe(24);
-    expect(box.paddingEnd).toBe(16);
+    expect(box.paddingEnd).toBe(12);
   });
 });
