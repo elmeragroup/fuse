@@ -312,16 +312,11 @@
 
 ## Figma component sync
 
-- Run the components plugin on the scratch file and record the outcome of each check: a rerun
-  plans nothing, a renamed layer keeps its key, a duplicated variant stops the run, and a
-  published in-place edit reaches instances in a second file. Then delete and recreate the set
-  and record what those instances show.
-- Map the outline Button's shadow. Its blur and spread are `max()` and `min()` formulas over
-  `--button-outline-width`, which Figma variables cannot compute, so the shadow needs a value
-  the catalog computes per theme, as it does for the radius rungs.
-- Replace the placeholder icon ring with an icon component set and an instance swap property.
-- Test the reconciler against an in-memory fake of the Plugin API calls it makes, with the
-  rules the scratch-file run confirms.
+- Confirm on a real file that an instance's glyph fill override goes with the glyph when the
+  plugin draws an icon again, as `plugin/src/fake-figma.ts` assumes. Change one icon's markup,
+  run Apply, and check that the next Plan lists nothing.
+- Publish the library, edit it in place and check that instances in a second file follow with
+  their ids intact. Then delete and recreate the set and record what those instances show.
 
 ## Data table
 
