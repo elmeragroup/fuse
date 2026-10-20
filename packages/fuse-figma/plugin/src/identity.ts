@@ -6,7 +6,7 @@
  */
 
 import { PLUGIN_DATA_KEY, PLUGIN_DATA_NAMESPACE } from "../../src/components/kit-spec.ts";
-import { change } from "./plan.ts";
+import { change, keepsOrder, warn } from "./plan.ts";
 import type { Plan, Target } from "./plan.ts";
 
 /**
@@ -27,6 +27,29 @@ export function keyOf(node: BaseNode): string {
  */
 export function setKey(node: BaseNode, key: string): void {
   node.setSharedPluginData(PLUGIN_DATA_NAMESPACE, PLUGIN_DATA_KEY, key);
+}
+
+/**
+ * Put a node an operation created into its parent and give it its key and name.
+ *
+ * @param parent - The parent.
+ * @param node - The new node.
+ * @param key - The key from the spec.
+ * @param name - The node's name, or undefined to keep the one Figma gave it.
+ * @returns The node.
+ */
+export function placeOwned<Node extends SceneNode>(
+  parent: ChildrenMixin,
+  node: Node,
+  key: string,
+  name?: string
+): Node {
+  parent.appendChild(node);
+  setKey(node, key);
+  if (name !== undefined) {
+    node.name = name;
+  }
+  return node;
 }
 
 /**
@@ -98,9 +121,44 @@ export function staleOwned(siblings: ReadonlyArray<SceneNode>, keep: ReadonlySet
  * @param owned - The children the plan matched or creates.
  * @returns The children with no key that no spec matched.
  */
-export function unowned(
-  siblings: ReadonlyArray<SceneNode>,
-  owned: ReadonlyArray<Target<BaseNode>>
-): SceneNode[] {
+function unowned(siblings: ReadonlyArray<SceneNode>, owned: ReadonlyArray<Target<BaseNode>>): SceneNode[] {
   return siblings.filter((node) => keyOf(node) === "" && !owned.some((target) => target.existing === node));
+}
+
+/**
+ * Plan a parent's owned children against the spec: delete the kit's children the spec dropped,
+ * plan each spec's child, warn about the children the kit does not own, and restore the spec's
+ * order.
+ *
+ * @param plan - The run's plan.
+ * @param parent - The parent.
+ * @param label - The parent's label, for change lines.
+ * @param noun - What a child is, such as `variant`, for change lines.
+ * @param specs - The children's specs, in order.
+ * @param planOne - Plans one spec's child and returns it.
+ */
+export async function planOwnedChildren<Spec extends { readonly key: string }, Node extends SceneNode>(
+  plan: Plan,
+  parent: ChildrenMixin,
+  label: string,
+  noun: string,
+  specs: readonly Spec[],
+  planOne: (spec: Spec) => Target<Node> | Promise<Target<Node>>
+): Promise<void> {
+  const keep = new Set(specs.map((spec) => spec.key));
+  for (const stale of staleOwned(parent.children, keep)) {
+    change(plan, label, `delete the ${noun} ${stale.name}`, () => stale.remove());
+  }
+  const owned: Target<Node>[] = [];
+  for (const spec of specs) {
+    owned.push(await planOne(spec));
+  }
+  for (const child of unowned(parent.children, owned)) {
+    warn(plan, label, `keeps the layer ${child.name}, which the kit does not own`);
+  }
+  if (!keepsOrder(parent.children, owned)) {
+    change(plan, label, `reorder the ${noun}s`, () => {
+      owned.forEach((target, index) => parent.insertChild(index, target.get()));
+    });
+  }
 }

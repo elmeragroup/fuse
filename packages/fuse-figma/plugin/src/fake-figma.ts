@@ -1,6 +1,6 @@
 /**
  * An in-memory Figma file behind the parts of the Plugin API that the components plugin calls,
- * for tests that run `reconcileKit` end to end. The file starts as a synced file: it holds the
+ * for tests that run `reconcileKit` end to end and for the planners' unit tests. The file starts as a synced file: it holds the
  * variable collections `figma:sync` writes, with their modes, values and aliases, and one empty
  * page. Variables, collections, modes and nodes get ids in the order the file makes them, so a
  * test sees the same ids on every run.
@@ -47,6 +47,25 @@
  *    pins, or in the collection's default mode, and follows aliases across collections, each
  *    in the mode the node reads for the alias target's collection. `fuse-variable-set.ts`
  *    builds its theme axes on this rule.
+ * 9. `resize` moves and resizes each child as its constraints say: `MIN` keeps the child where
+ *    it is, and `SCALE` scales its position and size by the parent's ratio. A child that
+ *    changes size resizes its own children the same way, and an auto layout frame places its
+ *    children by its layout instead, which the fake leaves as they are. The fake throws for
+ *    `MAX`, `CENTER` and `STRETCH`, which it does not model. `resizeWithoutConstraints` leaves
+ *    the children as they are. Figma's reference pages for `resize` and
+ *    `resizeWithoutConstraints` say so, and the icon components rely on it to bring a glyph
+ *    back with its component.
+ * 10. A text layer keeps a font, size, line height and text field bindings per character, as
+ *    the typings' range methods and Figma's guide to mixed styles describe. `fontName`,
+ *    `fontSize` and `lineHeight` are `figma.mixed` when the characters differ, and
+ *    `getRangeBoundVariable` is `figma.mixed` when the characters of the range bind different
+ *    variables or some bind none, while `boundVariables` lists each alias any character binds.
+ *    Writing `characters` gives every new character the first character's style. A range
+ *    binding or font write restyles only its range, and a layer-wide write or binding every
+ *    character. A `fontWeight` binding gives each character of its range the style its
+ *    family names for the weight, which needs that font loaded, as Figma's guide to
+ *    typography variables says. The fake names the style by `WEIGHT_STYLES`, Thin for 100
+ *    up to Black for 900, and throws for another weight or a held style the table lacks.
  *
  * An instance's sublayers show the layers of its main component. An override, such as the
  * color an icon layer gives its glyph, belongs to the main layer it was made on. It moves to
@@ -85,8 +104,11 @@ export type FakeFigma = {
   readonly figma: PluginAPI;
   /** Every write the file took, in order, such as `12:3 fills`. */
   readonly writes: readonly string[];
-  /** Start a new plugin run: every page but the current one needs `loadAsync` again. */
-  readonly reopen: () => void;
+  /**
+   * Start a new plugin run: every page but the current one needs `loadAsync` again, and so does
+   * every font. A run on another machine can lack fonts the file holds.
+   */
+  readonly reopen: (options?: { readonly unavailableFonts?: readonly FontNameInput[] }) => void;
   /**
    * A synced variable by its collection and name.
    *
@@ -115,6 +137,17 @@ type Sides = { top: number; right: number; bottom: number; left: number };
 
 /** The four corner radii. */
 type Corners = { topLeft: number; topRight: number; bottomRight: number; bottomLeft: number };
+
+/**
+ * The font, size and line height of one character of a text layer, and the variables its text
+ * fields bind, by id.
+ */
+type CharacterStyle = {
+  readonly font: FontName;
+  readonly fontSize: number;
+  readonly lineHeight: LineHeight;
+  readonly bindings: ReadonlyMap<VariableBindableTextField, string>;
+};
 
 /** A TEXT, BOOLEAN or INSTANCE_SWAP property of a component set or a component. */
 type PropertyState = {
@@ -159,7 +192,7 @@ type FileState = {
   document: NodeState | undefined;
   current: NodeState | undefined;
   readonly loadedFonts: Set<string>;
-  readonly unavailableFonts: readonly FontNameInput[];
+  unavailableFonts: readonly FontNameInput[];
   readonly collections: readonly CollectionState[];
   readonly variables: ReadonlyMap<string, VariableState>;
 };
@@ -204,8 +237,8 @@ type NodeState = {
   itemSpacing: number;
   counterAxisSpacing: number | null;
   minWidth: number | null;
-  /** The variable each bound field follows, by id. */
-  readonly bindings: Map<BindableField, string>;
+  /** The variable each bound field that is not a text field follows, by id. */
+  readonly bindings: Map<VariableBindableNodeField, string>;
   /** The mode the node pins for each collection, by collection id. */
   readonly explicitModes: Map<string, string>;
   propertyReferences: FrameNode["componentPropertyReferences"];
@@ -220,9 +253,8 @@ type NodeState = {
   /** The fields a designer or the plugin overrode on an instance's sublayer. */
   readonly overridden: Set<string>;
   characters: string;
-  fontName: FontName;
-  fontSize: number;
-  lineHeight: LineHeight;
+  /** The style of each character, or of the one a text layer without characters types in. */
+  styles: readonly CharacterStyle[];
   textDecoration: TextDecoration;
   textDecorationOffset: TextDecorationOffset | null;
   textAutoResize: TextNode["textAutoResize"];
@@ -473,26 +505,6 @@ function insert(parent: NodeState, child: NodeState, index: number | undefined):
   write(parent, `insert ${child.id} at ${at}`);
 }
 
-function descendants(state: NodeState): NodeState[] {
-  return childrenOf(state).flatMap((child) => [child, ...descendants(child)]);
-}
-
-function findOne(state: NodeState, callback: (node: SceneNode) => boolean): SceneNode | null {
-  const found = descendants(state).find((node) => callback(sceneOf(node)));
-  return found === undefined ? null : sceneOf(found);
-}
-
-function findAll(state: NodeState, callback?: (node: SceneNode) => boolean): SceneNode[] {
-  return descendants(state)
-    .map(sceneOf)
-    .filter((node) => callback === undefined || callback(node));
-}
-
-function findChild(state: NodeState, callback: (node: SceneNode) => boolean): SceneNode | null {
-  const found = childrenOf(state).find((node) => callback(sceneOf(node)));
-  return found === undefined ? null : sceneOf(found);
-}
-
 /** The mode a node reads a collection in: the nearest pinned one, or the default. */
 function modeFor(consumer: NodeState | undefined, collection: CollectionState): string {
   for (let current = consumer; current !== undefined; current = current.parent) {
@@ -648,6 +660,57 @@ function resize(state: NodeState, width: number, height: number): void {
   }
 }
 
+/** Where a child's start and size land on one axis when its parent grows from `before` to `after`. */
+function constrainAxis(
+  constraint: ConstraintType,
+  start: number,
+  size: number,
+  before: number,
+  after: number
+): readonly [number, number] {
+  switch (constraint) {
+    case "MIN":
+      return [start, size];
+    case "SCALE":
+      return [(start * after) / before, (size * after) / before];
+    default:
+      throw new Error(`The fake Figma file does not model ${constraint} constraints.`);
+  }
+}
+
+/**
+ * Resize a node and move and resize each child as its constraints say (rule 9). An auto layout
+ * frame places its children by its layout instead, which the fake does not model.
+ */
+function resizeWithConstraints(state: NodeState, width: number, height: number): void {
+  const before = { width: state.width, height: state.height };
+  resize(state, width, height);
+  if (isAutoLayout(state)) {
+    return;
+  }
+  for (const child of childrenOf(state)) {
+    const [x, childWidth] = constrainAxis(
+      child.constraints.horizontal,
+      child.x,
+      child.width,
+      before.width,
+      state.width
+    );
+    const [y, childHeight] = constrainAxis(
+      child.constraints.vertical,
+      child.y,
+      child.height,
+      before.height,
+      state.height
+    );
+    child.x = f32(x);
+    child.y = f32(y);
+    if (f32(childWidth) !== child.width || f32(childHeight) !== child.height) {
+      resizeWithConstraints(child, childWidth, childHeight);
+    }
+  }
+}
+
 function rescale(state: NodeState, scale: number): void {
   state.x = f32(state.x * scale);
   state.y = f32(state.y * scale);
@@ -730,7 +793,7 @@ function setNumberField(state: NodeState, field: VariableBindableNodeField, valu
 }
 
 /** The fields a binding to `cornerRadius` or `strokeWeight` lands on, as the typings note. */
-function bindingTargets(field: BindableField): readonly BindableField[] {
+function bindingTargets(field: VariableBindableNodeField): readonly VariableBindableNodeField[] {
   switch (field) {
     case "cornerRadius":
       return ["topLeftRadius", "topRightRadius", "bottomRightRadius", "bottomLeftRadius"];
@@ -741,7 +804,7 @@ function bindingTargets(field: BindableField): readonly BindableField[] {
   }
 }
 
-const TEXT_FIELDS: ReadonlySet<string> = new Set<VariableBindableTextField>([
+const TEXT_FIELDS: ReadonlySet<VariableBindableTextField> = new Set<VariableBindableTextField>([
   "fontFamily",
   "fontSize",
   "fontStyle",
@@ -753,7 +816,8 @@ const TEXT_FIELDS: ReadonlySet<string> = new Set<VariableBindableTextField>([
 ]);
 
 function isTextField(field: BindableField): field is VariableBindableTextField {
-  return TEXT_FIELDS.has(field);
+  const names: ReadonlySet<string> = TEXT_FIELDS;
+  return names.has(field);
 }
 
 /** Bind or unbind a field of a layer that is not text. */
@@ -770,18 +834,21 @@ function bindNodeField(state: NodeState, field: VariableBindableNodeField, varia
   requireType(bound, "FLOAT", field);
   const value = resolveNumber(state.file, bound, state);
   for (const target of targets) {
-    if (isTextField(target)) {
-      throw new Error(`${state.id} is a ${state.type}, which has no ${target}.`);
-    }
     setNumberField(state, target, value);
     state.bindings.set(target, bound.id);
   }
   write(state, `bind ${field}`);
 }
 
-/** The fonts a text layer holds. The fake gives every character the layer's one font. */
+/** The distinct fonts of some characters' styles. */
+function distinctFonts(styles: readonly CharacterStyle[]): FontName[] {
+  const fonts = new Map(styles.map((style) => [fontKey(style.font), style.font] as const));
+  return [...fonts.values()].map((font) => ({ ...font }));
+}
+
+/** The fonts a text layer holds (rule 7). */
 function heldFonts(state: NodeState): readonly FontName[] {
-  return [state.fontName];
+  return distinctFonts(state.styles);
 }
 
 function requireHeldFonts(state: NodeState, what: string): void {
@@ -790,7 +857,142 @@ function requireHeldFonts(state: NodeState, what: string): void {
   }
 }
 
-/** Bind or unbind a field of a text layer (rule 7 for the fonts it touches). */
+/** Restyle the characters from `start` to `end` (rule 10). */
+function restyle(
+  state: NodeState,
+  start: number,
+  end: number,
+  update: (style: CharacterStyle) => CharacterStyle
+): void {
+  state.styles = state.styles.map((style, index) => (index >= start && index < end ? update(style) : style));
+}
+
+function withBinding(
+  style: CharacterStyle,
+  field: VariableBindableTextField,
+  id: string | undefined
+): ReadonlyMap<VariableBindableTextField, string> {
+  const bindings = new Map(style.bindings);
+  if (id === undefined) {
+    bindings.delete(field);
+  } else {
+    bindings.set(field, id);
+  }
+  return bindings;
+}
+
+/**
+ * The standard style name for each weight a `fontWeight` variable can bind (rule 10). The fake
+ * models only these names, so a family with other style names throws.
+ */
+const WEIGHT_STYLES: ReadonlyMap<number, string> = new Map([
+  [100, "Thin"],
+  [200, "ExtraLight"],
+  [300, "Light"],
+  [400, "Regular"],
+  [500, "Medium"],
+  [600, "SemiBold"],
+  [700, "Bold"],
+  [800, "ExtraBold"],
+  [900, "Black"],
+]);
+
+const WEIGHTED_STYLES: ReadonlySet<string> = new Set(WEIGHT_STYLES.values());
+
+/** The style a font takes for a bound weight (rule 10). */
+function weightedStyle(font: FontName, weight: number): string {
+  const style = WEIGHT_STYLES.get(weight);
+  if (style === undefined) {
+    throw new Error(`The fake Figma file does not model the font weight ${weight}.`);
+  }
+  if (!WEIGHTED_STYLES.has(font.style)) {
+    throw new Error(`The fake Figma file does not model the weight of the style "${font.style}".`);
+  }
+  return style;
+}
+
+/**
+ * Bind or unbind a text field of the characters from `start` to `end` (rules 7 and 10). A
+ * family, style or weight binding changes the font of those characters, and a size or line
+ * height binding their size or line height.
+ */
+function bindTextRange(
+  state: NodeState,
+  start: number,
+  end: number,
+  field: VariableBindableTextField,
+  variable: Variable | null
+): void {
+  if (variable === null) {
+    restyle(state, start, end, (style) => ({ ...style, bindings: withBinding(style, field, undefined) }));
+    write(state, `unbind ${field}`);
+    return;
+  }
+  requireHeldFonts(state, field);
+  const bound = fileVariable(state.file, variable);
+  const update = ((): ((style: CharacterStyle) => CharacterStyle) => {
+    switch (field) {
+      case "fontFamily": {
+        requireType(bound, "STRING", field);
+        const family = resolveString(state.file, bound, state);
+        return (style) => ({ ...style, font: { family, style: style.font.style } });
+      }
+      case "fontStyle": {
+        requireType(bound, "STRING", field);
+        const fontStyle = resolveString(state.file, bound, state);
+        return (style) => ({ ...style, font: { family: style.font.family, style: fontStyle } });
+      }
+      case "fontWeight": {
+        requireType(bound, "FLOAT", field);
+        const weight = resolveNumber(state.file, bound, state);
+        return (style) => ({
+          ...style,
+          font: { family: style.font.family, style: weightedStyle(style.font, weight) },
+        });
+      }
+      case "fontSize": {
+        requireType(bound, "FLOAT", field);
+        const fontSize = f32(resolveNumber(state.file, bound, state));
+        return (style) => ({ ...style, fontSize });
+      }
+      case "lineHeight": {
+        requireType(bound, "FLOAT", field);
+        const value = f32(resolveNumber(state.file, bound, state));
+        return (style) => ({ ...style, lineHeight: { unit: "PIXELS", value } });
+      }
+      default:
+        throw new Error(`The fake Figma file does not model binding ${field}.`);
+    }
+  })();
+  const restyled = state.styles.slice(start, end).map(update);
+  for (const font of distinctFonts(restyled)) {
+    requireFont(state, font, field);
+  }
+  restyle(state, start, end, (style) => ({
+    ...update(style),
+    bindings: withBinding(style, field, bound.id),
+  }));
+  write(state, `bind ${field}`);
+}
+
+/**
+ * Write a font to the characters from `start` to `end`, which needs only that font loaded
+ * (rules 7 and 10). `label` names the write in the log.
+ */
+function writeFont(state: NodeState, start: number, end: number, font: FontName, label: string): void {
+  requireFont(state, font, label);
+  write(state, label);
+  restyle(state, start, end, (style) => ({ ...style, font: { family: font.family, style: font.style } }));
+}
+
+/** The value the characters share, or `figma.mixed` when they differ (rule 10). */
+function shared<T>(state: NodeState, read: (style: CharacterStyle) => T): T | PluginAPI["mixed"] {
+  const values = new Map(state.styles.map((style) => [JSON.stringify(read(style)), read(style)] as const));
+  const [value, ...others] = values.values();
+  return value === undefined || others.length > 0 ? MIXED : value;
+}
+
+/** Bind or unbind a field of a text layer, every character's for a text field. */
 function bindTextField(state: NodeState, field: BindableField, variable: Variable | null): void {
   if (!isTextField(field)) {
     if (field === "characters") {
@@ -799,51 +1001,19 @@ function bindTextField(state: NodeState, field: BindableField, variable: Variabl
     bindNodeField(state, field, variable);
     return;
   }
-  if (variable === null) {
-    state.bindings.delete(field);
-    write(state, `unbind ${field}`);
-    return;
-  }
-  requireHeldFonts(state, field);
-  const bound = fileVariable(state.file, variable);
-  switch (field) {
-    case "fontFamily": {
-      requireType(bound, "STRING", field);
-      const font = { family: resolveString(state.file, bound, state), style: state.fontName.style };
-      requireFont(state, font, field);
-      state.fontName = font;
-      break;
-    }
-    case "fontStyle": {
-      requireType(bound, "STRING", field);
-      const font = { family: state.fontName.family, style: resolveString(state.file, bound, state) };
-      requireFont(state, font, field);
-      state.fontName = font;
-      break;
-    }
-    case "fontSize":
-      requireType(bound, "FLOAT", field);
-      state.fontSize = f32(resolveNumber(state.file, bound, state));
-      break;
-    case "lineHeight":
-      requireType(bound, "FLOAT", field);
-      state.lineHeight = { unit: "PIXELS", value: f32(resolveNumber(state.file, bound, state)) };
-      break;
-    default:
-      throw new Error(`The fake Figma file does not model binding ${field}.`);
-  }
-  state.bindings.set(field, bound.id);
-  write(state, `bind ${field}`);
+  bindTextRange(state, 0, state.styles.length, field, variable);
 }
 
 function nodeBindings(state: NodeState): NonNullable<FrameNode["boundVariables"]> {
   const nodeFields: { [field in VariableBindableNodeField]?: VariableAlias } = {};
-  const textFields: { [field in VariableBindableTextField]?: VariableAlias[] } = {};
   for (const [field, id] of state.bindings) {
-    if (isTextField(field)) {
-      textFields[field] = [alias(id)];
-    } else {
-      nodeFields[field] = alias(id);
+    nodeFields[field] = alias(id);
+  }
+  const textFields: { [field in VariableBindableTextField]?: VariableAlias[] } = {};
+  for (const field of TEXT_FIELDS) {
+    const ids = new Set(state.styles.flatMap((style) => style.bindings.get(field) ?? []));
+    if (ids.size > 0) {
+      textFields[field] = [...ids].map(alias);
     }
   }
   return { ...nodeFields, ...textFields };
@@ -1102,50 +1272,73 @@ function editProperty(
   return renamed;
 }
 
+/**
+ * The fields of a node a copy does not take from its source: its identity, its place in the
+ * tree, and what a duplicate or an instance's sublayer gets otherwise or not at all.
+ */
+type UncopiedField =
+  | "file"
+  | "id"
+  | "type"
+  | "exposed"
+  | "parent"
+  | "children"
+  | "removed"
+  | "sharedData"
+  | "loaded"
+  | "mirrorOf"
+  | "overridden"
+  | "properties"
+  | "variantOrder";
+
+/**
+ * The fields a copy takes from its source, with every object cloned. The return type names
+ * every field of `NodeState` but the uncopied ones, so a new field fails the type check until
+ * it is copied here or listed as uncopied.
+ */
+function copiedFields(source: NodeState): Omit<NodeState, UncopiedField> {
+  return {
+    name: source.name,
+    x: source.x,
+    y: source.y,
+    width: source.width,
+    height: source.height,
+    opacity: source.opacity,
+    constraints: { ...source.constraints },
+    fills: source.fills,
+    strokes: source.strokes,
+    strokeWeights: { ...source.strokeWeights },
+    strokeAlign: source.strokeAlign,
+    strokesIncludedInLayout: source.strokesIncludedInLayout,
+    effects: source.effects,
+    radii: { ...source.radii },
+    clipsContent: source.clipsContent,
+    layoutMode: source.layoutMode,
+    layoutWrap: source.layoutWrap,
+    primaryAxisSizingMode: source.primaryAxisSizingMode,
+    counterAxisSizingMode: source.counterAxisSizingMode,
+    primaryAxisAlignItems: source.primaryAxisAlignItems,
+    counterAxisAlignItems: source.counterAxisAlignItems,
+    padding: { ...source.padding },
+    itemSpacing: source.itemSpacing,
+    counterAxisSpacing: source.counterAxisSpacing,
+    minWidth: source.minWidth,
+    bindings: new Map(source.bindings),
+    explicitModes: new Map(source.explicitModes),
+    propertyReferences: source.propertyReferences === null ? null : { ...source.propertyReferences },
+    main: source.main,
+    characters: source.characters,
+    styles: source.styles,
+    textDecoration: source.textDecoration,
+    textDecorationOffset: source.textDecorationOffset === null ? null : { ...source.textDecorationOffset },
+    textAutoResize: source.textAutoResize,
+    autoRename: source.autoRename,
+  };
+}
+
 /** A copy of a node and its layers, as a duplicate or an instance's sublayer gets. */
 function copyNode(file: FileState, source: NodeState, type: NodeType, id?: string): NodeState {
-  const copy = createNode(file, type, source.name, id);
-  copy.x = source.x;
-  copy.y = source.y;
-  copy.width = source.width;
-  copy.height = source.height;
-  copy.opacity = source.opacity;
-  copy.constraints = source.constraints;
-  copy.fills = source.fills;
-  copy.strokes = source.strokes;
-  copy.strokeWeights = { ...source.strokeWeights };
-  copy.strokeAlign = source.strokeAlign;
-  copy.strokesIncludedInLayout = source.strokesIncludedInLayout;
-  copy.effects = source.effects;
-  copy.radii = { ...source.radii };
-  copy.clipsContent = source.clipsContent;
-  copy.layoutMode = source.layoutMode;
-  copy.layoutWrap = source.layoutWrap;
-  copy.primaryAxisSizingMode = source.primaryAxisSizingMode;
-  copy.counterAxisSizingMode = source.counterAxisSizingMode;
-  copy.primaryAxisAlignItems = source.primaryAxisAlignItems;
-  copy.counterAxisAlignItems = source.counterAxisAlignItems;
-  copy.padding = { ...source.padding };
-  copy.itemSpacing = source.itemSpacing;
-  copy.counterAxisSpacing = source.counterAxisSpacing;
-  copy.minWidth = source.minWidth;
-  for (const [field, variable] of source.bindings) {
-    copy.bindings.set(field, variable);
-  }
-  for (const [collection, mode] of source.explicitModes) {
-    copy.explicitModes.set(collection, mode);
-  }
-  copy.propertyReferences = source.propertyReferences === null ? null : { ...source.propertyReferences };
-  copy.main = source.main;
-  copy.characters = source.characters;
-  copy.fontName = source.fontName;
-  copy.fontSize = source.fontSize;
-  copy.lineHeight = source.lineHeight;
-  copy.textDecoration = source.textDecoration;
-  copy.textDecorationOffset = source.textDecorationOffset;
-  copy.textAutoResize = source.textAutoResize;
-  copy.autoRename = source.autoRename;
-  return copy;
+  return Object.assign(createNode(file, type, source.name, id), copiedFields(source));
 }
 
 /** A duplicate of a node with its layers and its shared plugin data, as Figma's clone makes. */
@@ -1245,18 +1438,6 @@ class FakePage extends FakeBaseNode {
     insert(live(this), live(child), index);
   }
 
-  findOne(callback: (node: SceneNode) => boolean): SceneNode | null {
-    return findOne(live(this), callback);
-  }
-
-  findAll(callback?: (node: SceneNode) => boolean): SceneNode[] {
-    return findAll(live(this), callback);
-  }
-
-  findChild(callback: (node: SceneNode) => boolean): SceneNode | null {
-    return findChild(live(this), callback);
-  }
-
   get explicitVariableModes(): { [collectionId: string]: string } {
     return Object.fromEntries(live(this).explicitModes);
   }
@@ -1331,7 +1512,7 @@ class FakeSceneNode extends FakeBaseNode {
 
   resize(width: number, height: number): void {
     const state = live(this);
-    resize(state, width, height);
+    resizeWithConstraints(state, width, height);
     write(state, "resize");
   }
 
@@ -1415,18 +1596,6 @@ class FakeFrameLikeNode extends FakeSceneNode {
 
   insertChild(index: number, child: SceneNode): void {
     insert(live(this), live(child), index);
-  }
-
-  findOne(callback: (node: SceneNode) => boolean): SceneNode | null {
-    return findOne(live(this), callback);
-  }
-
-  findAll(callback?: (node: SceneNode) => boolean): SceneNode[] {
-    return findAll(live(this), callback);
-  }
-
-  findChild(callback: (node: SceneNode) => boolean): SceneNode | null {
-    return findChild(live(this), callback);
   }
 
   get fills(): ReadonlyArray<Paint> | PluginAPI["mixed"] {
@@ -1733,12 +1902,6 @@ class FakeComponent extends FakeFrameLikeNode {
     return componentOf(copy);
   }
 
-  get variantProperties(): { [property: string]: string } | null {
-    const state = live(this);
-    const values = state.parent?.type === "COMPONENT_SET" ? variantValues(state.name) : undefined;
-    return values === undefined ? null : Object.fromEntries(values);
-  }
-
   get componentPropertyDefinitions(): ComponentPropertyDefinitions {
     const state = live(this);
     requirePropertyHolder(state);
@@ -1842,22 +2005,25 @@ class FakeText extends FakeSceneNode {
     return live(this).characters;
   }
 
+  /** New characters take the style of the first character (rule 10). */
   set characters(value: string) {
     const state = live(this);
     requireHeldFonts(state, "characters");
     write(state, "characters");
+    const [first] = state.styles;
+    if (first === undefined) {
+      throw new Error(`${state.id} holds no character style.`);
+    }
     state.characters = value;
+    state.styles = Array.from({ length: Math.max(1, value.length) }, () => first);
     if (state.autoRename) {
       state.name = value;
     }
   }
 
-  get autoRename(): boolean {
-    return live(this).autoRename;
-  }
-
   get fontName(): FontName | PluginAPI["mixed"] {
-    return live(this).fontName;
+    const [font, ...others] = heldFonts(live(this));
+    return font === undefined || others.length > 0 ? MIXED : font;
   }
 
   set fontName(font: FontName | PluginAPI["mixed"]) {
@@ -1865,13 +2031,11 @@ class FakeText extends FakeSceneNode {
     if (font === MIXED) {
       throw new Error("Cannot write figma.mixed as a font.");
     }
-    requireFont(state, font, "fontName");
-    write(state, "fontName");
-    state.fontName = { family: font.family, style: font.style };
+    writeFont(state, 0, state.styles.length, font, "fontName");
   }
 
   get fontSize(): number | PluginAPI["mixed"] {
-    return live(this).fontSize;
+    return shared(live(this), (style) => style.fontSize);
   }
 
   set fontSize(value: number | PluginAPI["mixed"]) {
@@ -1881,11 +2045,12 @@ class FakeText extends FakeSceneNode {
     }
     requireHeldFonts(state, "fontSize");
     write(state, "fontSize");
-    state.fontSize = f32(value);
+    const fontSize = f32(value);
+    restyle(state, 0, state.styles.length, (style) => ({ ...style, fontSize }));
   }
 
   get lineHeight(): LineHeight | PluginAPI["mixed"] {
-    return live(this).lineHeight;
+    return shared(live(this), (style) => style.lineHeight);
   }
 
   set lineHeight(value: LineHeight | PluginAPI["mixed"]) {
@@ -1895,8 +2060,9 @@ class FakeText extends FakeSceneNode {
     }
     requireHeldFonts(state, "lineHeight");
     write(state, "lineHeight");
-    state.lineHeight =
+    const lineHeight: LineHeight =
       value.unit === "AUTO" ? { unit: "AUTO" } : { unit: value.unit, value: f32(value.value) };
+    restyle(state, 0, state.styles.length, (style) => ({ ...style, lineHeight }));
   }
 
   get textDecoration(): TextDecoration | PluginAPI["mixed"] {
@@ -1946,7 +2112,14 @@ class FakeText extends FakeSceneNode {
   getRangeAllFontNames(start: number, end: number): FontName[] {
     const state = live(this);
     requireRange(state, start, end);
-    return [...heldFonts(state)];
+    return distinctFonts(state.styles.slice(start, end));
+  }
+
+  /** The new font needs loading, as for `fontName` (rule 7). */
+  setRangeFontName(start: number, end: number, font: FontName): void {
+    const state = live(this);
+    requireRange(state, start, end);
+    writeFont(state, start, end, font, `fontName ${start}-${end}`);
   }
 
   getRangeBoundVariable(
@@ -1956,8 +2129,23 @@ class FakeText extends FakeSceneNode {
   ): VariableAlias | null | PluginAPI["mixed"] {
     const state = live(this);
     requireRange(state, start, end);
-    const id = state.bindings.get(field);
+    const ids = new Set(state.styles.slice(start, end).map((style) => style.bindings.get(field)));
+    const [id, ...others] = ids;
+    if (others.length > 0) {
+      return MIXED;
+    }
     return id === undefined ? null : alias(id);
+  }
+
+  setRangeBoundVariable(
+    start: number,
+    end: number,
+    field: VariableBindableTextField,
+    variable: Variable | null
+  ): void {
+    const state = live(this);
+    requireRange(state, start, end);
+    bindTextRange(state, start, end, field, variable);
   }
 
   override setBoundVariable(field: BindableField, variable: Variable | null): void {
@@ -2121,9 +2309,14 @@ function createNode(file: FileState, type: NodeType, name: string, id?: string):
     mirrorOf: undefined,
     overridden: new Set(),
     characters: "",
-    fontName: { family: "Inter", style: "Regular" },
-    fontSize: 12,
-    lineHeight: { unit: "AUTO" },
+    styles: [
+      {
+        font: { family: "Inter", style: "Regular" },
+        fontSize: 12,
+        lineHeight: { unit: "AUTO" },
+        bindings: new Map(),
+      },
+    ],
     textDecoration: "NONE",
     textDecorationOffset: null,
     textAutoResize: "WIDTH_AND_HEIGHT",
@@ -2645,10 +2838,12 @@ export function createFakeFigma(options: FakeFigmaOptions): FakeFigma {
     // every other member.
     figma: guard(api, "figma") as PluginAPI,
     writes: file.writes,
-    reopen: () => {
+    reopen: (reopened) => {
       for (const page of document.children) {
         page.loaded = page === file.current;
       }
+      file.loadedFonts.clear();
+      file.unavailableFonts = reopened?.unavailableFonts ?? file.unavailableFonts;
     },
     variable: (collection, name) => {
       const found = [...file.variables.values()].find(

@@ -11,8 +11,8 @@ import type { LayerLinks } from "./child-layers.ts";
 import { near, planScalar } from "./fields.ts";
 import type { Run } from "./fields.ts";
 import type { PlannedIcon } from "./icons.ts";
-import { findOwned, keyOf, setKey, staleOwned, unowned } from "./identity.ts";
-import { change, create, existing, keepsOrder, warn } from "./plan.ts";
+import { findOwned, keyOf, placeOwned, planOwnedChildren, setKey } from "./identity.ts";
+import { change, create, existing } from "./plan.ts";
 import type { Target } from "./plan.ts";
 import { planRoot } from "./root-layer.ts";
 
@@ -37,7 +37,7 @@ const isComponent = (node: BaseNode): node is ComponentNode => node.type === "CO
  * @param variant - The variant.
  * @returns `prop=value, prop=value` in the set's axis order.
  */
-export function variantName(spec: ComponentSetSpec, variant: VariantSpec): string {
+function variantName(spec: ComponentSetSpec, variant: VariantSpec): string {
   return spec.axes
     .map((axis) => {
       const value = variant.properties[axis.name];
@@ -340,13 +340,7 @@ async function planVariant(
     run.plan,
     spec.name,
     `create the variant ${name}`,
-    () => {
-      const made = run.figma.createComponent();
-      set.appendChild(made);
-      setKey(made, variant.key);
-      made.name = name;
-      return made;
-    },
+    () => placeOwned(set, run.figma.createComponent(), variant.key, name),
     (made, plan) => planVariantFields({ ...run, plan }, made, name, label, variant, links)
   );
 }
@@ -366,27 +360,16 @@ async function planSetContents(
   planSwapProperties(run, set, spec, icons, properties);
   const links: LayerLinks = { properties, icons };
 
-  const keep = new Set(spec.variants.map((variant) => variant.key));
-  for (const stale of staleOwned(set.children, keep)) {
-    change(run.plan, spec.name, `delete the variant ${stale.name}`, () => stale.remove());
-  }
-  const variants = new Map<string, Target<ComponentNode>>();
-  for (const variant of spec.variants) {
-    variants.set(variant.key, await planVariant(run, set, spec, variant, links));
-  }
-  const owned = [...variants.values()];
-  for (const child of unowned(set.children, owned)) {
-    warn(run.plan, spec.name, `keeps the variant ${child.name}, which the kit does not own`);
-  }
-  // The layers panel lists the variants in this order. Figma keeps each variant property's
+  // The layers panel lists the variants in spec order. Figma keeps each variant property's
   // values in an order of its own: a new value goes last, and moving the variants or renaming a
   // value leaves it where it is, as a real file showed on 2026-10-20. A set the plugin creates
   // lists its values in spec order, but a set that gained values later keeps them last.
-  if (!keepsOrder(set.children, owned)) {
-    change(run.plan, spec.name, "reorder the variants", () => {
-      owned.forEach((target, index) => set.insertChild(index, target.get()));
-    });
-  }
+  const variants = new Map<string, Target<ComponentNode>>();
+  await planOwnedChildren(run.plan, set, spec.name, "variant", spec.variants, async (variant) => {
+    const target = await planVariant(run, set, spec, variant, links);
+    variants.set(variant.key, target);
+    return target;
+  });
   planGrid(run, set, spec, variants, run.plan.operations.length > start);
   return variants;
 }
@@ -407,13 +390,9 @@ function createSet(
     page.name,
     `create the component set ${spec.name} with ${spec.variants.length} variants`,
     () => {
-      const components = spec.variants.map((variant) => {
-        const component = run.figma.createComponent();
-        page.appendChild(component);
-        setKey(component, variant.key);
-        component.name = variantName(spec, variant);
-        return component;
-      });
+      const components = spec.variants.map((variant) =>
+        placeOwned(page, run.figma.createComponent(), variant.key, variantName(spec, variant))
+      );
       const set = run.figma.combineAsVariants(components, page);
       setKey(set, spec.key);
       set.name = spec.name;

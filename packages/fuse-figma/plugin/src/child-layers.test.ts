@@ -1,60 +1,25 @@
 /**
- * `planChildren` against hand-made stand-ins for a variant component, its label and a stale
- * layer. The stand-ins model two Figma rules from the plugin typings and the text guide.
- * `getRangeBoundVariable` returns `figma.mixed` when the characters bind different variables,
- * or some bind none, while `boundVariables` still lists the alias the rest bind.
- * `loadFontAsync` rejects a font the machine cannot load. The oracles are the change lines the
- * spec asks for and a log of every write the stand-ins receive.
+ * `planChildren` on a variant's label, on the in-memory file in `fake-figma.ts`. Each test
+ * builds the label by hand as the spec describes it, then changes what a designer or another
+ * machine could leave behind: a binding some characters dropped, a style or weight binding, a
+ * size only some characters hold, a font the machine lacks. The fake models the Figma rules
+ * these depend on, per-character fonts, sizes and bindings (rule 10) and the fonts a write
+ * needs (rule 7). The oracles are the change lines the spec asks for, the writes the file took
+ * and the label it holds afterwards.
  */
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import type { TextLayerSpec } from "../../src/components/kit-spec.ts";
 import { planChildren } from "./child-layers.ts";
-import type { Run } from "./fields.ts";
+import type { FakeFigma } from "./fake-figma.ts";
+import { color, fixtureFile, fixtureRun, float, string } from "./fake-fixtures.ts";
+import { setKey } from "./identity.ts";
 import { changeLines, newPlan, runPlan } from "./plan.ts";
 import type { Plan } from "./plan.ts";
-import type { KitVariables } from "./variables.ts";
-
-/** The fields of a text layer that planning a label reads and writes. */
-type TextStandIn = Pick<
-  TextNode,
-  | "type"
-  | "name"
-  | "characters"
-  | "fontName"
-  | "fontSize"
-  | "lineHeight"
-  | "fills"
-  | "textAutoResize"
-  | "textDecoration"
-  | "textDecorationOffset"
-  | "boundVariables"
-  | "componentPropertyReferences"
-  | "getSharedPluginData"
-  | "getRangeAllFontNames"
-  | "getRangeBoundVariable"
-  | "setBoundVariable"
->;
-
-/** The fields of a stale layer that planning its deletion reads and calls. */
-type StaleStandIn = Pick<RectangleNode, "type" | "name" | "getSharedPluginData" | "remove">;
-
-/** What a label binds across its characters, by field. A field it leaves out binds nothing. */
-type RangeBindings = ReadonlyMap<VariableBindableTextField, VariableAlias | PluginAPI["mixed"]>;
-
-/** The parts of a variant component that `planChildren` reads and calls. */
-type ComponentStandIn = Pick<ComponentNode, "children" | "insertChild">;
-
-/** The plugin API and the log of the fonts it loaded. */
-type FigmaStandIn = {
-  readonly figma: PluginAPI;
-  readonly loaded: readonly string[];
-};
 
 const ROBOTO_MEDIUM: FontName = { family: "Roboto", style: "Medium" };
+const ROBOTO_BOLD: FontName = { family: "Roboto", style: "Bold" };
 const COMIC_SANS_BOLD: FontName = { family: "Comic Sans", style: "Bold" };
-
-const alias = (id: string): VariableAlias => ({ type: "VARIABLE_ALIAS", id });
 
 /** The Button label as the spec builder writes it, with a literal family. */
 const LABEL: TextLayerSpec = {
@@ -71,268 +36,216 @@ const LABEL: TextLayerSpec = {
   underline: undefined,
 };
 
-/** A plugin API that loads every font except the ones the machine lacks. */
-function figmaStandIn(missing: readonly FontName[]): FigmaStandIn {
-  const loaded: string[] = [];
-  const figma = {
-    mixed: Symbol("mixed"),
-    loadFontAsync: (font: FontNameInput): Promise<void> => {
-      if (missing.some((lacking) => lacking.family === font.family && lacking.style === font.style)) {
-        return Promise.reject(new Error(`${font.family} is not installed`));
-      }
-      loaded.push(`${font.family} ${font.style ?? ""}`);
-      return Promise.resolve();
-    },
-  };
-  // SAFETY: planning and performing a label reads only `mixed` and `loadFontAsync` when the
-  // label's paint already matches.
-  return { figma: figma as PluginAPI, loaded };
-}
+/** The variables the label binds, and the ones a designer could bind to its font. */
+const VARIABLES = [
+  color("Fuse tokens", "foreground", { r: 0.1, g: 0.1, b: 0.1, a: 1 }),
+  string("Fuse tokens", "font-sans", "Roboto"),
+  string("Fuse tokens", "label-style", "Medium"),
+  float("Fuse density", "control-text", 14),
+  float("Fuse density", "control-leading", 20),
+  float("Fuse density", "selection-title-weight", 500),
+  float("Fuse density", "strong-weight", 700),
+  float("Fuse density", "display-text", 18),
+];
 
-/** The file's variables, each with its name as its id. A bound family resolves to Roboto. */
-const VARIABLES: KitVariables = {
-  variable: (ref) => {
-    const variable: Pick<Variable, "id" | "resolveForConsumer"> = {
-      id: ref.name,
-      resolveForConsumer: () => ({ value: "Roboto", resolvedType: "STRING" }),
-    };
-    // SAFETY: the planners read a variable's id, and `resolveForConsumer` for a bound family.
-    return variable as Variable;
-  },
-  mode: () => {
-    throw new Error("a label pins no mode");
-  },
+/** A synced file with a Button variant whose label matches `LABEL`, and what a test changes. */
+type ButtonFile = {
+  readonly file: FakeFigma;
+  readonly component: ComponentNode;
+  readonly label: TextNode;
 };
 
-/**
- * A label that matches `LABEL` and logs each write it receives.
- *
- * @param writes - The log of writes.
- * @param fields - The fields that differ from a matching label.
- * @param ranges - What the characters bind, field by field, when it differs.
- */
-function labelStandIn(
-  writes: string[],
-  fields: Partial<TextStandIn>,
-  ranges: RangeBindings = new Map()
-): TextNode {
-  const bindings = new Map<VariableBindableTextField, VariableAlias | PluginAPI["mixed"]>([
-    ["fontSize", alias("control-text")],
-    ["lineHeight", alias("control-leading")],
-    ...ranges,
-  ]);
-  const label: TextStandIn = {
-    type: "TEXT",
-    name: "Label",
-    characters: "Button",
-    fontName: ROBOTO_MEDIUM,
-    fontSize: 14,
-    lineHeight: { unit: "PIXELS", value: 20 },
-    fills: [
-      {
-        type: "SOLID",
-        color: { r: 0, g: 0, b: 0 },
-        opacity: 1,
-        visible: true,
-        blendMode: "NORMAL",
-        boundVariables: { color: alias("foreground") },
-      },
-    ],
-    textAutoResize: "WIDTH_AND_HEIGHT",
-    textDecoration: "NONE",
-    textDecorationOffset: null,
-    boundVariables: { fontSize: [alias("control-text")], lineHeight: [alias("control-leading")] },
-    componentPropertyReferences: null,
-    getSharedPluginData: () => "button/label",
-    getRangeAllFontNames: () => [ROBOTO_MEDIUM],
-    getRangeBoundVariable: (_start, _end, field) => bindings.get(field) ?? null,
-    setBoundVariable: (field, variable) => {
-      writes.push(variable === null ? `unbind ${field}` : `bind ${field}`);
-      for (const bound of bindings.keys()) {
-        if (bound === field && variable === null) {
-          bindings.delete(bound);
-        }
-      }
-    },
-    ...fields,
-  };
-  const logged = new Proxy(label, {
-    set: (target, property, value) => {
-      writes.push(`set ${String(property)}`);
-      return Reflect.set(target, property, value);
-    },
-  });
-  // SAFETY: the stand-in carries every field and method of a text layer that planning and
-  // performing a label touch.
-  return logged as TextNode;
+async function buttonFile(): Promise<ButtonFile> {
+  const file = fixtureFile(VARIABLES);
+  const { figma } = file;
+  await figma.loadFontAsync({ family: "Inter", style: "Regular" });
+  await figma.loadFontAsync(ROBOTO_MEDIUM);
+  await figma.loadFontAsync(COMIC_SANS_BOLD);
+  const component = figma.createComponent();
+  const label = figma.createText();
+  component.appendChild(label);
+  setKey(label, LABEL.key);
+  label.fontName = ROBOTO_MEDIUM;
+  label.characters = "Button";
+  label.name = "Label";
+  label.setBoundVariable("fontSize", file.variable("Fuse density", "control-text"));
+  label.setBoundVariable("lineHeight", file.variable("Fuse density", "control-leading"));
+  label.fills = [
+    figma.variables.setBoundVariableForPaint(
+      { type: "SOLID", color: { r: 0, g: 0, b: 0 } },
+      "color",
+      file.variable("Fuse tokens", "foreground")
+    ),
+  ];
+  return { file, component, label };
 }
 
-function staleStandIn(writes: string[]): RectangleNode {
-  const stale: StaleStandIn = {
-    type: "RECTANGLE",
-    name: "Old badge",
-    getSharedPluginData: () => "button/badge",
-    remove: () => {
-      writes.push("remove Old badge");
-    },
-  };
-  // SAFETY: planning a stale layer reads its key and name, and deleting it calls `remove`.
-  return stale as RectangleNode;
+/** A layer of the kit that the spec no longer lists. */
+function staleLayer({ file, component }: ButtonFile): FrameNode {
+  const stale = file.figma.createFrame();
+  component.insertChild(0, stale);
+  setKey(stale, "button/badge");
+  stale.name = "Old badge";
+  return stale;
 }
 
-/** Plan the Button's child layers on a stand-in component that holds `children`. */
 async function planButton(
+  { file, component }: ButtonFile,
   plan: Plan,
-  figma: PluginAPI,
-  children: readonly SceneNode[],
   spec: TextLayerSpec = LABEL
 ): Promise<void> {
-  const component: ComponentStandIn = { children, insertChild: () => undefined };
-  const run: Run = { figma, variables: VARIABLES, plan };
-  // SAFETY: `planChildren` reads a component's children and reorders them through
-  // `insertChild`, and the stand-in children carry every field the planners read.
-  await planChildren(run, component as ComponentNode, "Button", [spec], {
+  await planChildren(await fixtureRun(file, plan), component, "Button", [spec], {
     properties: new Map(),
     icons: new Map(),
   });
 }
 
-async function changesFor(figma: PluginAPI, label: TextNode, spec: TextLayerSpec = LABEL): Promise<string[]> {
+async function changesFor(button: ButtonFile, spec: TextLayerSpec = LABEL): Promise<string[]> {
   const plan = newPlan();
-  await planButton(plan, figma, [label], spec);
+  await planButton(button, plan, spec);
   return changeLines(plan);
 }
 
-/** Apply the Button's child layers to a stand-in label, and return the lines Apply made. */
-async function applyTo(figma: PluginAPI, label: TextNode): Promise<string[]> {
-  const { plan } = await runPlan(true, (pass) => planButton(pass, figma, [label]));
-  return changeLines(plan);
+/**
+ * Apply the Button's child layers in a new plugin run, and return the lines Apply made and the
+ * writes the file took.
+ */
+async function applyTo(
+  button: ButtonFile,
+  spec: TextLayerSpec = LABEL
+): Promise<{ readonly lines: string[]; readonly writes: string[] }> {
+  button.file.reopen();
+  const before = button.file.writes.length;
+  const { plan } = await runPlan(true, (pass) => planButton(button, pass, spec));
+  return { lines: changeLines(plan), writes: button.file.writes.slice(before) };
 }
 
 describe("planChildren on a label", () => {
-  it("underlines a link label, then sets the offset an underline holds, in one operation", async () => {
-    const { figma } = figmaStandIn([]);
-    const writes: string[] = [];
-    const label = labelStandIn(writes, {});
-    const link: TextLayerSpec = { ...LABEL, underline: { offset: 4 } };
-    expect(await changesFor(figma, label, link)).toEqual([
-      "Button / Label: textDecoration → UNDERLINE, offset 4",
-    ]);
+  let button: ButtonFile;
+  let label: TextNode;
 
-    const { plan } = await runPlan(true, (pass) => planButton(pass, figma, [label], link));
-    expect(changeLines(plan)).toEqual(["Button / Label: textDecoration → UNDERLINE, offset 4"]);
-    expect(writes).toEqual(["set textDecoration", "set textDecorationOffset"]);
-    expect(label.textDecorationOffset).toEqual({ unit: "PIXELS", value: 4 });
-    expect(await changesFor(figma, label, link)).toEqual([]);
+  beforeEach(async () => {
+    button = await buttonFile();
+    ({ label } = button);
   });
 
   it("plans nothing for a label that matches the spec", async () => {
-    const { figma } = figmaStandIn([]);
-    expect(await changesFor(figma, labelStandIn([], {}))).toEqual([]);
+    expect(await changesFor(button)).toEqual([]);
+  });
+
+  it("underlines a link label, then sets the offset an underline holds, in one operation", async () => {
+    const link: TextLayerSpec = { ...LABEL, underline: { offset: 4 } };
+    expect(await changesFor(button, link)).toEqual(["Button / Label: textDecoration → UNDERLINE, offset 4"]);
+
+    const { lines, writes } = await applyTo(button, link);
+    expect(lines).toEqual(["Button / Label: textDecoration → UNDERLINE, offset 4"]);
+    expect(writes).toEqual([`${label.id} textDecoration`, `${label.id} textDecorationOffset`]);
+    expect(label.textDecorationOffset).toEqual({ unit: "PIXELS", value: 4 });
+    expect(await changesFor(button, link)).toEqual([]);
+  });
+
+  it("writes a literal font size over a label whose first character alone holds it", async () => {
+    const literal: TextLayerSpec = { ...LABEL, fontSize: { kind: "literal", value: 18 } };
+    label.setBoundVariable("fontSize", null);
+    label.setRangeBoundVariable(0, 1, "fontSize", button.file.variable("Fuse density", "display-text"));
+    label.setRangeBoundVariable(0, 1, "fontSize", null);
+    expect(label.fontSize).toBe(button.file.figma.mixed);
+    expect(await changesFor(button, literal)).toEqual(["Button / Label: fontSize → 18"]);
+
+    await applyTo(button, literal);
+    expect(label.fontSize).toBe(18);
+    expect(await changesFor(button, literal)).toEqual([]);
   });
 
   it("rebinds a font size that one character no longer follows", async () => {
-    const { figma } = figmaStandIn([]);
-    const label = labelStandIn([], {}, new Map([["fontSize", figma.mixed]]));
-    expect(await changesFor(figma, label)).toEqual(["Button / Label: fontSize → control-text"]);
+    label.setRangeBoundVariable(0, 1, "fontSize", null);
+    expect(await changesFor(button)).toEqual(["Button / Label: fontSize → control-text"]);
   });
 
   it("unbinds a literal line height that one character still binds", async () => {
-    const { figma } = figmaStandIn([]);
     const literal: TextLayerSpec = { ...LABEL, lineHeight: { kind: "literal", value: 20 } };
-    const label = labelStandIn([], {}, new Map([["lineHeight", figma.mixed]]));
-    expect(await changesFor(figma, label, literal)).toEqual(["Button / Label: lineHeight → 20"]);
+    label.setRangeBoundVariable(1, 6, "lineHeight", null);
+    expect(await changesFor(button, literal)).toEqual(["Button / Label: lineHeight → 20"]);
   });
 
   it("unbinds a literal font family that some characters still bind, in the font write", async () => {
-    const { figma } = figmaStandIn([]);
-    const writes: string[] = [];
-    const label = labelStandIn(writes, {}, new Map([["fontFamily", figma.mixed]]));
-    const { plan } = await runPlan(true, (pass) => planButton(pass, figma, [label]));
-    expect(changeLines(plan)).toEqual(["Button / Label: font → Roboto Medium"]);
-    expect(writes).toEqual(["unbind fontFamily", "set fontName"]);
+    label.setRangeBoundVariable(1, 6, "fontFamily", button.file.variable("Fuse tokens", "font-sans"));
+    const { lines, writes } = await applyTo(button);
+    expect(lines).toEqual(["Button / Label: font → Roboto Medium"]);
+    expect(writes).toEqual([`${label.id} unbind fontFamily`, `${label.id} fontName`]);
+    expect(await changesFor(button)).toEqual([]);
   });
 
   it("clears a weight binding in the font write, and keeps the font", async () => {
-    const { figma } = figmaStandIn([]);
-    const writes: string[] = [];
-    const label = labelStandIn(writes, {}, new Map([["fontWeight", alias("selection-title-weight")]]));
-    expect(await applyTo(figma, label)).toEqual(["Button / Label: font → Roboto Medium"]);
-    expect(writes).toEqual(["unbind fontWeight", "set fontName"]);
+    label.setRangeBoundVariable(
+      0,
+      6,
+      "fontWeight",
+      button.file.variable("Fuse density", "selection-title-weight")
+    );
+    const { lines, writes } = await applyTo(button);
+    expect(lines).toEqual(["Button / Label: font → Roboto Medium"]);
+    expect(writes).toEqual([`${label.id} unbind fontWeight`, `${label.id} fontName`]);
     expect(label.fontName).toEqual(ROBOTO_MEDIUM);
-    expect(await changesFor(figma, label)).toEqual([]);
+    expect(await changesFor(button)).toEqual([]);
+  });
+
+  it("clears a weight binding that turned the label bold, and writes the font back", async () => {
+    await button.file.figma.loadFontAsync(ROBOTO_BOLD);
+    label.setRangeBoundVariable(0, 6, "fontWeight", button.file.variable("Fuse density", "strong-weight"));
+    expect(label.fontName).toEqual(ROBOTO_BOLD);
+
+    const { lines, writes } = await applyTo(button);
+    expect(lines).toEqual(["Button / Label: font → Roboto Medium"]);
+    expect(writes).toEqual([`${label.id} unbind fontWeight`, `${label.id} fontName`]);
+    expect(label.fontName).toEqual(ROBOTO_MEDIUM);
+    expect(await changesFor(button)).toEqual([]);
   });
 
   it("clears a style binding that some characters keep, in the font write", async () => {
-    const { figma } = figmaStandIn([]);
-    const writes: string[] = [];
-    const label = labelStandIn(writes, {}, new Map([["fontStyle", figma.mixed]]));
-    expect(await applyTo(figma, label)).toEqual(["Button / Label: font → Roboto Medium"]);
-    expect(writes).toEqual(["unbind fontStyle", "set fontName"]);
+    label.setRangeBoundVariable(0, 1, "fontStyle", button.file.variable("Fuse tokens", "label-style"));
+    const { lines, writes } = await applyTo(button);
+    expect(lines).toEqual(["Button / Label: font → Roboto Medium"]);
+    expect(writes).toEqual([`${label.id} unbind fontStyle`, `${label.id} fontName`]);
     expect(label.fontName).toEqual(ROBOTO_MEDIUM);
-    expect(await changesFor(figma, label)).toEqual([]);
+    expect(await changesFor(button)).toEqual([]);
   });
 
   it("rebinds a font family that one character no longer follows", async () => {
-    const { figma } = figmaStandIn([]);
     const bound: TextLayerSpec = {
       ...LABEL,
       fontFamily: { kind: "variable", variable: { collection: "Fuse tokens", name: "font-sans" } },
     };
-    const label = labelStandIn(
-      [],
-      {
-        boundVariables: {
-          fontFamily: [alias("font-sans")],
-          fontSize: [alias("control-text")],
-          lineHeight: [alias("control-leading")],
-        },
-      },
-      new Map([["fontFamily", figma.mixed]])
-    );
-    expect(await changesFor(figma, label, bound)).toEqual(["Button / Label: fontFamily → font-sans"]);
+    label.setBoundVariable("fontFamily", button.file.variable("Fuse tokens", "font-sans"));
+    label.setRangeBoundVariable(0, 1, "fontFamily", null);
+    expect(await changesFor(button, bound)).toEqual(["Button / Label: fontFamily → font-sans"]);
   });
 });
 
 describe("planChildren with a font the machine cannot load", () => {
-  /** A label whose first word is in a font the file holds and the machine lacks. */
-  const mixedLabel = (figma: PluginAPI, writes: string[]): TextNode =>
-    labelStandIn(writes, {
-      fontName: figma.mixed,
-      getRangeAllFontNames: () => [COMIC_SANS_BOLD, ROBOTO_MEDIUM],
-    });
-
-  const planner =
-    (figma: PluginAPI, children: readonly SceneNode[]) =>
-    (plan: Plan): Promise<void> =>
-      planButton(plan, figma, children);
-
   it("repairs a label that holds the font, because the font write needs only the new font", async () => {
-    const { figma, loaded } = figmaStandIn([COMIC_SANS_BOLD]);
-    const writes: string[] = [];
-    const children = [staleStandIn(writes), mixedLabel(figma, writes)];
+    const button = await buttonFile();
+    const stale = staleLayer(button);
+    // The first word is in a font the file holds and this machine lacks.
+    button.label.setRangeFontName(0, 3, COMIC_SANS_BOLD);
+    button.file.reopen({ unavailableFonts: [COMIC_SANS_BOLD] });
 
-    const { plan } = await runPlan(true, planner(figma, children));
-    expect(changeLines(plan)).toEqual([
-      "Button: delete the layer Old badge",
-      "Button / Label: font → Roboto Medium",
-    ]);
-    expect(loaded).toEqual(["Roboto Medium"]);
-    expect(writes).toEqual(["remove Old badge", "set fontName"]);
+    const { lines, writes } = await applyTo(button);
+    expect(lines).toEqual(["Button: delete the layer Old badge", "Button / Label: font → Roboto Medium"]);
+    expect(writes).toEqual([`${stale.id} remove`, `${button.label.id} fontName`]);
+    expect(button.label.fontName).toEqual(ROBOTO_MEDIUM);
   });
 
   it("stops Apply before any write, and fails Plan the same way, for a label that keeps the font", async () => {
-    const { figma } = figmaStandIn([ROBOTO_MEDIUM]);
-    const writes: string[] = [];
-    const label = labelStandIn(writes, {}, new Map([["fontSize", figma.mixed]]));
-    const children = [staleStandIn(writes), label];
+    const button = await buttonFile();
+    staleLayer(button);
+    button.label.setRangeBoundVariable(0, 1, "fontSize", null);
+    button.file.reopen({ unavailableFonts: [ROBOTO_MEDIUM] });
+    const before = button.file.writes.length;
 
-    await expect(runPlan(true, planner(figma, children))).rejects.toThrow(
-      "Button / Label needs the font Roboto Medium, which Figma cannot load."
-    );
-    await expect(runPlan(false, planner(figma, children))).rejects.toThrow(
-      "Button / Label needs the font Roboto Medium, which Figma cannot load."
-    );
-    expect(writes).toEqual([]);
+    const message = "Button / Label needs the font Roboto Medium, which Figma cannot load.";
+    await expect(runPlan(true, (pass) => planButton(button, pass))).rejects.toThrow(message);
+    await expect(runPlan(false, (pass) => planButton(button, pass))).rejects.toThrow(message);
+    expect(button.file.writes.slice(before)).toEqual([]);
   });
 });

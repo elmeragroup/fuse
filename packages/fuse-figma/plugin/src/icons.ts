@@ -7,15 +7,17 @@
  * white and clipping, whose layers take their names from the elements' `id`s. The plugin moves
  * the layers into the component, scales them to fit its square, centers them and flattens them
  * to one vector, the glyph, whose fill binds the library's color. An icon layer overrides that
- * fill, and the override survives a swap, because every glyph has the same name.
+ * fill, and the override survives a swap, because every glyph has the same name. The component
+ * records the markup it drew and the glyph's box, so a run redraws an icon whose markup
+ * changed or whose glyph a designer moved, scaled or unpinned from its component.
  */
 
 import { ICON_GLYPH, PLUGIN_DATA_NAMESPACE } from "../../src/components/kit-spec.ts";
 import type { IconLibrarySpec, IconSpec } from "../../src/components/kit-spec.ts";
 import { near, planNumber, planPaints, planScalar, solidPaint } from "./fields.ts";
 import type { Run } from "./fields.ts";
-import { findOwned, keyOf, setKey, staleOwned, unowned } from "./identity.ts";
-import { change, create, existing, keepsOrder, warn } from "./plan.ts";
+import { findOwned, keyOf, placeOwned, planOwnedChildren } from "./identity.ts";
+import { change, create, existing } from "./plan.ts";
 import type { Target } from "./plan.ts";
 import { planWrapFrame } from "./previews.ts";
 import type { WrapGrid } from "./previews.ts";
@@ -40,6 +42,13 @@ export type PlannedIcons = {
 /** The shared plugin data entry that holds a hash of the markup an icon was drawn from. */
 const DRAWN_FROM = "svg";
 
+/**
+ * The shared plugin data entry that holds the glyph's x, y, width and height as drawn, each a
+ * fraction of the component's width or height, so the record holds after the component and its
+ * glyph scale together.
+ */
+const GLYPH_BOX = "glyph";
+
 /** Sixteen icons a row. */
 const ICON_GRID: WrapGrid = { width: 544, gap: 16, padding: 24 };
 
@@ -55,7 +64,7 @@ const isComponent = (node: BaseNode): node is ComponentNode => node.type === "CO
  * @param svg - The markup.
  * @returns The hash, as hexadecimal.
  */
-export function markupHash(svg: string): string {
+function markupHash(svg: string): string {
   let hash = 0x811c9dc5;
   for (let index = 0; index < svg.length; index += 1) {
     hash ^= svg.charCodeAt(index);
@@ -71,11 +80,32 @@ export function glyphOf(node: ComponentNode | InstanceNode): VectorNode | undefi
   );
 }
 
-/** Whether an icon component holds the glyph its markup draws. */
+/**
+ * Whether an icon component holds the glyph its markup draws: drawn from the same markup, in
+ * the box it was drawn in, and pinned to scale with the component.
+ */
 function holdsDrawing(component: ComponentNode, spec: IconSpec): boolean {
+  const glyph = glyphOf(component);
+  if (
+    component.getSharedPluginData(PLUGIN_DATA_NAMESPACE, DRAWN_FROM) !== markupHash(spec.svg) ||
+    glyph === undefined ||
+    glyph.constraints.horizontal !== SCALE.horizontal ||
+    glyph.constraints.vertical !== SCALE.vertical
+  ) {
+    return false;
+  }
+  const [x, y, width, height, ...rest] = component
+    .getSharedPluginData(PLUGIN_DATA_NAMESPACE, GLYPH_BOX)
+    .split(",")
+    .map(Number);
+  if (x === undefined || y === undefined || width === undefined || height === undefined || rest.length > 0) {
+    return false;
+  }
   return (
-    component.getSharedPluginData(PLUGIN_DATA_NAMESPACE, DRAWN_FROM) === markupHash(spec.svg) &&
-    glyphOf(component) !== undefined
+    near(glyph.x, x * component.width) &&
+    near(glyph.y, y * component.height) &&
+    near(glyph.width, width * component.width) &&
+    near(glyph.height, height * component.height)
   );
 }
 
@@ -111,6 +141,13 @@ function drawIcon(
   glyph.fills = [glyphPaint];
   glyph.constraints = SCALE;
   component.setSharedPluginData(PLUGIN_DATA_NAMESPACE, DRAWN_FROM, markupHash(spec.svg));
+  const box = [
+    glyph.x / component.width,
+    glyph.y / component.height,
+    glyph.width / component.width,
+    glyph.height / component.height,
+  ];
+  component.setSharedPluginData(PLUGIN_DATA_NAMESPACE, GLYPH_BOX, box.join(","));
 }
 
 function planIconComponent(
@@ -131,8 +168,9 @@ function planIconComponent(
       name: "size",
       bindings: ["width", "height"],
       matches: (value) => near(component.width, value) && near(component.height, value),
-      // The drawing scales with the component, so the size changes without the constraints.
-      write: (value) => component.resizeWithoutConstraints(value, value),
+      // `resize` applies the glyph's SCALE constraints, so the glyph follows the component back
+      // to the library size after a designer scaled both.
+      write: (value) => component.resize(value, value),
     },
     { kind: "literal", value: library.size }
   );
@@ -164,43 +202,27 @@ function planIcon(run: Run, frame: FrameNode, library: IconLibrarySpec, spec: Ic
     run.plan,
     library.name,
     `create the icon ${spec.name}`,
-    () => {
-      const made = run.figma.createComponent();
-      frame.appendChild(made);
-      setKey(made, spec.key);
-      made.name = spec.name;
-      return made;
-    },
+    () => placeOwned(frame, run.figma.createComponent(), spec.key, spec.name),
     (made, plan) => planIconComponent({ ...run, plan }, made, label, library, spec)
   );
   return { spec, node, redrawn: true };
 }
 
-function planLibraryContents(
+async function planLibraryContents(
   run: Run,
   frame: FrameNode,
   library: IconLibrarySpec
-): ReadonlyMap<string, PlannedIcon> {
+): Promise<ReadonlyMap<string, PlannedIcon>> {
   planScalar(run, library.name, "name", frame.name, library.name, () => {
     frame.name = library.name;
   });
   planWrapFrame(run, frame, library.name, ICON_GRID);
-  const keep = new Set(library.icons.map((icon) => icon.key));
-  for (const stale of staleOwned(frame.children, keep)) {
-    change(run.plan, library.name, `delete the icon ${stale.name}`, () => stale.remove());
-  }
-  const icons = new Map(
-    library.icons.map((icon) => [icon.key, planIcon(run, frame, library, icon)] as const)
-  );
-  const owned = [...icons.values()].map((icon) => icon.node);
-  for (const child of unowned(frame.children, owned)) {
-    warn(run.plan, library.name, `keeps the layer ${child.name}, which the kit does not own`);
-  }
-  if (!keepsOrder(frame.children, owned)) {
-    change(run.plan, library.name, "reorder the icons", () => {
-      owned.forEach((target, index) => frame.insertChild(index, target.get()));
-    });
-  }
+  const icons = new Map<string, PlannedIcon>();
+  await planOwnedChildren(run.plan, frame, library.name, "icon", library.icons, (spec) => {
+    const icon = planIcon(run, frame, library, spec);
+    icons.set(spec.key, icon);
+    return icon.node;
+  });
   return icons;
 }
 
@@ -212,24 +234,22 @@ function planLibraryContents(
  * @param library - The icon library.
  * @returns The frame and its icons, as later operations find them.
  */
-export function planIconLibrary(run: Run, page: PageNode, library: IconLibrarySpec): PlannedIcons {
+export async function planIconLibrary(
+  run: Run,
+  page: PageNode,
+  library: IconLibrarySpec
+): Promise<PlannedIcons> {
   const found = findOwned(run.plan, page.children, page.name, library.key, library.name, isFrame);
   if (found !== undefined) {
-    return { frame: existing(found), icons: planLibraryContents(run, found, library) };
+    return { frame: existing(found), icons: await planLibraryContents(run, found, library) };
   }
   const frame = create(
     run.plan,
     page.name,
     `create the ${library.name} frame with ${library.icons.length} icons`,
-    () => {
-      const made = run.figma.createFrame();
-      page.appendChild(made);
-      setKey(made, library.key);
-      made.name = library.name;
-      return made;
-    },
-    (made, plan) => {
-      planLibraryContents({ ...run, plan }, made, library);
+    () => placeOwned(page, run.figma.createFrame(), library.key, library.name),
+    async (made, plan) => {
+      await planLibraryContents({ ...run, plan }, made, library);
     }
   );
   const icons = new Map(

@@ -92,7 +92,7 @@ export function describeNumber(spec: NumberSpec): string {
  * @param spec - The spec.
  * @returns The variable name, or the literal color.
  */
-export function describeColor(spec: ColorSpec): string {
+function describeColor(spec: ColorSpec): string {
   return spec.kind === "variable" ? spec.variable.name : describeRgba(spec.color, spec.color.a);
 }
 

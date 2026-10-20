@@ -92,7 +92,7 @@ export function requirement(plan: Plan, key: string, meet: () => Promise<void>):
  *
  * @param plan - Any plan of the run.
  */
-export async function meetRequirements(plan: Plan): Promise<void> {
+async function meetRequirements(plan: Plan): Promise<void> {
   for (const meet of plan.requirements.byKey.values()) {
     await meet();
   }

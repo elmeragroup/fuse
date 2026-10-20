@@ -8,8 +8,8 @@ import type { NumberSpec, PreviewSpec } from "../../src/components/kit-spec.ts";
 import type { PlannedSet } from "./component-set.ts";
 import { near, planNumber, planPaints, planScalar, planSizing } from "./fields.ts";
 import type { Run } from "./fields.ts";
-import { findOwned, setKey, staleOwned } from "./identity.ts";
-import { change, create, existing, keepsOrder } from "./plan.ts";
+import { findOwned, placeOwned, planOwnedChildren } from "./identity.ts";
+import { change, create, existing } from "./plan.ts";
 import type { Target } from "./plan.ts";
 
 /** A frame that wraps its children in rows of a fixed width, with even gaps and padding. */
@@ -143,42 +143,26 @@ async function planInstances(
   spec: PreviewSpec,
   set: PlannedSet
 ): Promise<void> {
-  const keys = spec.variants.map((variant) => `${spec.key}/${variant}`);
-  for (const stale of staleOwned(frame.children, new Set(keys))) {
-    change(run.plan, label, `delete the instance ${stale.name}`, () => stale.remove());
-  }
-  const owned: Target<InstanceNode>[] = [];
-  for (const [index, variant] of spec.variants.entries()) {
+  const children = spec.variants.map((variant) => ({ key: `${spec.key}/${variant}`, variant }));
+  await planOwnedChildren(run.plan, frame, label, "instance", children, async ({ key, variant }) => {
     const component = set.variants.get(variant);
     if (component === undefined) {
       throw new Error(`${spec.name} places ${variant}, which ${set.spec.name} does not define.`);
     }
-    const key = keys[index] ?? variant;
     const found = findOwned(run.plan, frame.children, label, key, key, isInstance);
     if (found === undefined) {
-      owned.push(
-        create(run.plan, label, `add an instance of ${variant}`, () => {
-          const instance = component.get().createInstance();
-          frame.appendChild(instance);
-          setKey(instance, key);
-          return instance;
-        })
+      return create(run.plan, label, `add an instance of ${variant}`, () =>
+        placeOwned(frame, component.get().createInstance(), key)
       );
-      continue;
     }
-    owned.push(existing(found));
     const main = await found.getMainComponentAsync();
     if (component.existing === undefined || main?.id !== component.existing.id) {
       change(run.plan, label, `point the instance ${key} at ${variant}`, () =>
         found.swapComponent(component.get())
       );
     }
-  }
-  if (!keepsOrder(frame.children, owned)) {
-    change(run.plan, label, "reorder the instances", () => {
-      owned.forEach((target, index) => frame.insertChild(index, target.get()));
-    });
-  }
+    return existing(found);
+  });
 }
 
 async function planFrame(run: Run, frame: FrameNode, spec: PreviewSpec, set: PlannedSet): Promise<void> {
@@ -222,13 +206,7 @@ export async function planPreviews(
         run.plan,
         page.name,
         `create the preview ${spec.name}`,
-        () => {
-          const made = run.figma.createFrame();
-          page.appendChild(made);
-          setKey(made, spec.key);
-          made.name = spec.name;
-          return made;
-        },
+        () => placeOwned(page, run.figma.createFrame(), spec.key, spec.name),
         (made, plan) => planFrame({ ...run, plan }, made, spec, set)
       )
     );

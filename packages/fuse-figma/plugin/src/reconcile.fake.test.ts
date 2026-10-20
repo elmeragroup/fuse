@@ -414,6 +414,55 @@ describe("a later run on an applied file", () => {
     );
   });
 
+  it("warns about a layer a designer dropped into a preview, and keeps it", async () => {
+    const file = await appliedFile();
+    const preview = childNamed(
+      await kitPage(file),
+      "FRAME",
+      "Button / Fjordkraft internal private, light / Dense"
+    );
+    const note = file.figma.createFrame();
+    note.name = "Note";
+    preview.appendChild(note);
+
+    const { changes: planned, warnings } = await reconcileKit(file.figma, kit, false);
+    expect(planned).toEqual([]);
+    expect(warnings).toEqual([
+      "Button / Fjordkraft internal private, light / Dense: keeps the layer Note, which the kit does not own",
+    ]);
+    await reconcileKit(file.figma, kit, true);
+    expect(preview.children).toContain(note);
+  });
+
+  it("brings an icon a designer scaled back to 16px with its glyph, in one Apply", async () => {
+    const file = await appliedFile();
+    const plus = childNamed(childNamed(await kitPage(file), "FRAME", "Icons"), "COMPONENT", "Plus");
+    const glyph = childNamed(plus, "VECTOR", "glyph");
+    plus.resize(32, 32);
+    expect([glyph.width, glyph.height]).toEqual([32, 32]);
+
+    await reconcileKit(file.figma, kit, true);
+    expect([plus.width, plus.height, glyph.width, glyph.height]).toEqual([16, 16, 16, 16]);
+    expect(await changes(file)).toEqual([]);
+  });
+
+  it.each([
+    ["moved", (glyph: VectorNode) => (glyph.x += 2)],
+    ["scaled", (glyph: VectorNode) => glyph.resize(glyph.width * 2, glyph.height * 2)],
+  ])("redraws an icon whose glyph a designer %s inside it, in one Apply", async (_, edit) => {
+    const file = await appliedFile();
+    const plus = childNamed(childNamed(await kitPage(file), "FRAME", "Icons"), "COMPONENT", "Plus");
+    const drawn = childNamed(plus, "VECTOR", "glyph");
+    const box = [drawn.x, drawn.y, drawn.width, drawn.height];
+    edit(drawn);
+
+    expect(await changes(file)).toContain("Icons / Plus: draw the icon from its Fuse markup");
+    await reconcileKit(file.figma, kit, true);
+    const glyph = childNamed(plus, "VECTOR", "glyph");
+    expect([glyph.x, glyph.y, glyph.width, glyph.height]).toEqual(box);
+    expect(await changes(file)).toEqual([]);
+  });
+
   it("repairs a focus ring that keeps a stale black under its ring binding in one Apply", async () => {
     const file = await appliedFile();
     const button = await componentSet(file, "Button");

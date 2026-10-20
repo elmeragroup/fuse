@@ -40,7 +40,7 @@ async function planPage(run: Run, kit: KitSpec, page: PageNode): Promise<void> {
     change(run.plan, page.name, `delete ${stale.name}`, () => stale.remove());
   }
   // The icons come first, because the sets' icon layers and swap properties use them.
-  const library = planIconLibrary(run, page, kit.icons);
+  const library = await planIconLibrary(run, page, kit.icons);
   const sets: PlannedSet[] = [];
   for (const spec of kit.componentSets) {
     sets.push(await planComponentSet(run, page, spec, library.icons));

@@ -21,8 +21,8 @@ import {
 import type { Run } from "./fields.ts";
 import { glyphOf } from "./icons.ts";
 import type { PlannedIcon } from "./icons.ts";
-import { findOwned, setKey, staleOwned, unowned } from "./identity.ts";
-import { change, create, existing, keepsOrder, warn } from "./plan.ts";
+import { findOwned, placeOwned, planOwnedChildren } from "./identity.ts";
+import { change, create, existing } from "./plan.ts";
 import type { Target } from "./plan.ts";
 
 /**
@@ -481,13 +481,7 @@ async function planChild(
       run.plan,
       label,
       description,
-      () => {
-        const made = run.figma.createText();
-        component.appendChild(made);
-        setKey(made, spec.key);
-        made.name = spec.name;
-        return made;
-      },
+      () => placeOwned(component, run.figma.createText(), spec.key, spec.name),
       (made, plan) => planText({ ...run, plan }, made, layerLabel, spec, links.properties, [])
     );
   }
@@ -504,13 +498,7 @@ async function planChild(
     run.plan,
     label,
     description,
-    () => {
-      const made = icon.node.get().createInstance();
-      component.appendChild(made);
-      setKey(made, spec.key);
-      made.name = spec.name;
-      return made;
-    },
+    () => placeOwned(component, icon.node.get().createInstance(), spec.key, spec.name),
     (made, plan) => planIcon({ ...run, plan }, made, layerLabel, spec, links)
   );
 }
@@ -532,23 +520,7 @@ export async function planChildren(
   specs: readonly ChildLayerSpec[],
   links: LayerLinks
 ): Promise<void> {
-  const keep = new Set(specs.map((spec) => spec.key));
-  for (const stale of staleOwned(component.children, keep)) {
-    change(run.plan, label, `delete the layer ${stale.name}`, () => stale.remove());
-  }
-
-  const owned: Target<SceneNode>[] = [];
-  for (const spec of specs) {
-    owned.push(await planChild(run, component, label, spec, links));
-  }
-
-  for (const node of unowned(component.children, owned)) {
-    warn(run.plan, label, `keeps the layer ${node.name}, which the kit does not own`);
-  }
-
-  if (!keepsOrder(component.children, owned)) {
-    change(run.plan, label, "reorder the layers", () => {
-      owned.forEach((target, index) => component.insertChild(index, target.get()));
-    });
-  }
+  await planOwnedChildren(run.plan, component, label, "layer", specs, (spec) =>
+    planChild(run, component, label, spec, links)
+  );
 }
