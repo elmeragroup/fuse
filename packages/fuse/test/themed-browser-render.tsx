@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
-import { afterEach } from "vitest";
+import axe from "axe-core";
+import { afterEach, expect } from "vitest";
 import { page } from "vitest/browser";
 
 import * as CssColor from "@elmeragroup/color/css-color";
@@ -365,4 +366,33 @@ export function cssVarColor(host: HTMLElement, token: string): string {
   const color = getComputedStyle(probe).borderTopColor;
   probe.remove();
   return color;
+}
+
+/**
+ * axe-core rules a component suite leaves out. `color-contrast` reads the rendered colours, which
+ * the theme suites check against the role tokens; `region` wants every node in a landmark, which a
+ * component fixture is not.
+ */
+const AXE_PAGE_RULES = { "color-contrast": { enabled: false }, region: { enabled: false } } as const;
+
+/**
+ * Runs axe-core over `root` and fails with each violation's rule and the elements it found, so a
+ * suite catches invalid ARIA that role and name queries cannot see: an attribute the role does not
+ * support, a list that owns something other than list items, a region without a name.
+ *
+ * @param root - The rendered fixture, such as the element `renderThemed` returns as `host`.
+ * @param knownRules - Rules a suite leaves out for a recorded reason, each named in `TODO.md`.
+ */
+export async function assertNoAxeViolations(
+  root: Element,
+  knownRules: readonly string[] = []
+): Promise<void> {
+  const rules = Object.fromEntries([
+    ...Object.entries(AXE_PAGE_RULES),
+    ...knownRules.map((rule) => [rule, { enabled: false }] as const),
+  ]);
+  const { violations } = await axe.run(root, { resultTypes: ["violations"], rules });
+  expect(
+    violations.map(({ id, nodes }) => `${id}: ${nodes.map(({ target }) => target.join(" ")).join(", ")}`)
+  ).toEqual([]);
 }

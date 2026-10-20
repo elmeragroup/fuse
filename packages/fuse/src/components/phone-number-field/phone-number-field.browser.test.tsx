@@ -25,6 +25,7 @@ import {
 } from "../../../test/phone-browser-queries";
 import { EXCLUDED_PRODUCT_COUNTRY_CODES, FLAG_GAP_COUNTRY_CODES } from "../../../test/phone-picker-contract";
 import {
+  assertNoAxeViolations,
   CONTROL_MD,
   fieldRootFrom,
   formNamed,
@@ -207,9 +208,11 @@ describe("PhoneNumberField", () => {
       .toHaveAccessibleDescription("Country: Sweden +46");
   });
 
-  it("puts no aria-readonly on the read-only trigger, which the button role does not support", () => {
-    renderField(<PhoneNumberField label="Mobile" isReadOnly />);
+  it("puts no aria-readonly on the read-only trigger, which the button role does not support", async () => {
+    const { host } = renderField(<PhoneNumberField label="Mobile" isReadOnly />);
     expect(roleNamed("button", "Select country").hasAttribute("aria-readonly")).toBe(false);
+    // The trigger's name leaves out its visible dial code (WCAG 2.5.3); the open-work list records it.
+    await assertNoAxeViolations(host, ["label-content-name-mismatch"]);
   });
 
   it("insets the country search from the popup edge", async () => {

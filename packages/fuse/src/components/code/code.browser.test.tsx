@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { assertNoAxeViolations, renderThemed } from "../../../test/themed-browser-render";
 import { Code } from "./code";
 
 const SNIPPET = "const answer = 42;";
@@ -37,8 +37,8 @@ describe("Code", () => {
     expect(document.activeElement).toBe(region);
   });
 
-  it("takes the region role only with a name, and stays keyboard-scrollable without one", () => {
-    renderThemed(
+  it("takes the region role only with a name, and stays keyboard-scrollable without one", async () => {
+    const { host } = renderThemed(
       <>
         <h3 id="snippet-heading">Labelled snippet</h3>
         <Code code={SNIPPET} aria-labelledby="snippet-heading" />
@@ -51,5 +51,6 @@ describe("Code", () => {
     const unnamed = page.getByText("const unnamed = true;").element().closest("pre");
     expect(unnamed?.hasAttribute("role")).toBe(false);
     expect(unnamed?.tabIndex).toBe(0);
+    await assertNoAxeViolations(host);
   });
 });

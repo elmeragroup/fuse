@@ -120,6 +120,15 @@
 - Dialog's backdrop blur samples shifted content inside a transformed scope, such as a theme
   studio artboard. The fix needs a Fuse option that drops `backdrop-blur` for scoped dialogs.
 
+- Put the visible dial code in `PhoneNumberField`'s country trigger name (WCAG 2.5.3 label in
+  name). The trigger is named "Select country" and describes the selected country and dial code,
+  so screen readers hear the country, but voice-control users see "+47" and must say the name.
+  Naming it after the country renames the trigger every test queries by "Select country", so the
+  axe pass in `phone-number-field.browser.test.tsx` leaves out `label-content-name-mismatch`
+  until then.
+- Triage the fourteen jsx-a11y rules `.oxlintrc.json` turns off, one rule per change: fix the
+  hits, or keep the rule off with a reason.
+
 ## Consumer and release verification
 
 - Add first-paint fixtures for the written Next Pages, TanStack Start and React Router recipes.

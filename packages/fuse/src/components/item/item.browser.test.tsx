@@ -11,6 +11,7 @@ import {
 import { hasIntermediateFrame, sampleFrames } from "../../../test/panel-transition";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import {
+  assertNoAxeViolations,
   ROW,
   metricPx,
   renderThemed,
@@ -141,8 +142,8 @@ describe("Item", () => {
     expect(textNamed("Override").parentElement?.getAttribute("role")).toBe("presentation");
   });
 
-  it("keeps a grouped separator out of the list's children, and an ungrouped one a separator", () => {
-    renderThemed(
+  it("keeps a grouped separator out of the list's children, and an ungrouped one a separator", async () => {
+    const { host } = renderThemed(
       <>
         <Item.Group aria-label="Addresses">
           <Item.Root>
@@ -164,6 +165,7 @@ describe("Item", () => {
     const exposed = [...list.children].filter((child) => child.getAttribute("aria-hidden") !== "true");
     expect(exposed.map((child) => child.getAttribute("role"))).toEqual(["listitem", "listitem"]);
     expect(list.children).toHaveLength(3);
+    await assertNoAxeViolations(host);
   });
 
   it.each([
