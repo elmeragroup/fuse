@@ -58,39 +58,34 @@ export type PartMetrics = {
 /** Where a keyboard pick moves from the picked part: out to its parent part, or in to its first. */
 export type PickDirection = "enclosing" | "first-child";
 
+/** A part: an HTML element with a non-empty slot. An SVG slot, such as Emoji's, is no part. */
+const PART = '[data-slot]:not([data-slot=""]):not(svg, svg *)';
+
 /** The nearest part above `element` inside `stage`, the element with a slot it sits in. */
 function enclosingPart(element: HTMLElement, stage: HTMLElement): HTMLElement | undefined {
-  for (
-    let parent = element.parentElement;
-    parent !== null && parent !== stage;
-    parent = parent.parentElement
-  ) {
-    if (parent.dataset.slot !== undefined && parent.dataset.slot !== "") {
-      return parent;
-    }
-  }
-  return undefined;
+  const parent = element.parentElement?.closest(PART);
+  return parent instanceof HTMLElement && stage.contains(parent) ? parent : undefined;
 }
 
 /** The first part inside `element`, in document order. */
 function firstInnerPart(element: HTMLElement): HTMLElement | undefined {
-  for (const inner of element.querySelectorAll("[data-slot]")) {
-    if (inner instanceof HTMLElement && inner.dataset.slot !== "") {
-      return inner;
-    }
-  }
-  return undefined;
+  const inner = element.querySelector(PART);
+  return inner instanceof HTMLElement ? inner : undefined;
 }
+
+/** What a pick landed on: the slot it picked, `undefined` when the target is on no part. */
+export type PickOutcome = { readonly slot: string | undefined };
 
 /** The picked part's identity and the commands on it, stable while the part stays picked. */
 type PartSelectionValue = {
   /** The picked part, while its artboard stays selected. */
   part: PickedPart | undefined;
   /**
-   * Picks the part at or above `target`, the nearest element with a `data-slot` inside an
-   * artboard, and selects its artboard. Returns whether `target` sits in an artboard.
+   * Picks the part at or above `target`, the nearest element with a non-empty `data-slot` inside
+   * an artboard's stage, and selects its artboard. Returns what it picked, `{ slot: undefined }`
+   * when `target` is on no part, or `undefined` when `target` sits in no stage.
    */
-  pick: (target: Element) => boolean;
+  pick: (target: Element) => PickOutcome | undefined;
   /**
    * Moves the pick from the picked part to the part that encloses it, or to the first part inside
    * it, for keyboard picking. Returns the new part's slot, or `undefined` when there is none, in
@@ -163,7 +158,7 @@ export function PartSelectionProvider({ children }: { children: ReactNode }): Re
       const stage = target.closest<HTMLElement>(STAGE);
       const artboard = stage?.closest<HTMLElement>(ARTBOARD)?.dataset.artboardId;
       if (stage === null || artboard === undefined) {
-        return false;
+        return undefined;
       }
       // An icon's SVG carries no slot; the chain starts at the HTML element around it.
       const chain: HTMLElement[] = [];
@@ -176,10 +171,12 @@ export function PartSelectionProvider({ children }: { children: ReactNode }): Re
       const nearest = nearestSlot(chain.map((element) => element.dataset.slot));
       const element = nearest === undefined ? undefined : chain[nearest.index];
       select(artboard);
-      setPicked(
-        nearest === undefined || element === undefined ? undefined : { artboard, slot: nearest.slot, element }
-      );
-      return true;
+      if (nearest === undefined || element === undefined) {
+        setPicked(undefined);
+        return { slot: undefined };
+      }
+      setPicked({ artboard, slot: nearest.slot, element });
+      return { slot: nearest.slot };
     },
     [select]
   );
@@ -282,8 +279,11 @@ export function PartSelectionProvider({ children }: { children: ReactNode }): Re
 
   const pickRelative = useCallback(
     (direction: PickDirection): string | undefined => {
-      const stage = part?.element.closest<HTMLElement>(STAGE);
-      if (part === undefined || stage === null || stage === undefined) {
+      if (part === undefined) {
+        return undefined;
+      }
+      const stage = part.element.closest<HTMLElement>(STAGE);
+      if (stage === null) {
         return undefined;
       }
       const next =

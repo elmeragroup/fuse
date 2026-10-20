@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import type {
   CSSProperties,
   MouseEvent as ReactMouseEvent,
@@ -159,7 +159,7 @@ export function StudioCanvas({ children }: { children: ReactNode }): ReactElemen
   // it takes the keyboard off the artboard's controls, so Escape then clears the selection.
   const onPointerDownCapture = (event: ReactPointerEvent<HTMLElement>) => {
     const target = pickTarget(event);
-    if (target !== undefined && pick(target)) {
+    if (target !== undefined && pick(target) !== undefined) {
       walkFrom.current = null;
       event.preventDefault();
       event.stopPropagation();
@@ -216,26 +216,25 @@ export function StudioCanvas({ children }: { children: ReactNode }): ReactElemen
       }
     }
     if (
-      (event.key === "Enter" || event.key === " ") &&
-      !event.shiftKey &&
-      target instanceof Element &&
-      isControl(target) &&
-      pick(target)
+      (event.key !== "Enter" && event.key !== " ") ||
+      event.shiftKey ||
+      !(target instanceof Element) ||
+      !isControl(target)
     ) {
-      walkFrom.current = null;
-      const slot = target.closest<HTMLElement>("[data-slot]")?.dataset.slot;
-      if (slot !== undefined) {
-        setPickAnnouncement(`Picked ${slot}`);
-      }
-      return true;
+      return false;
     }
-    return false;
+    const picked = pick(target);
+    if (picked === undefined) {
+      return false;
+    }
+    walkFrom.current = null;
+    if (picked.slot !== undefined) {
+      setPickAnnouncement(`Picked ${picked.slot}`);
+    }
+    return true;
   };
   // The window's key listener subscribes once per set of shortcuts; it reads the latest picker.
-  const pickByKeyRef = useRef(pickByKey);
-  useLayoutEffect(() => {
-    pickByKeyRef.current = pickByKey;
-  });
+  const pickByWindowKey = useEffectEvent(pickByKey);
   // Capturing the key on the canvas keeps the control and its menus from seeing it.
   const onKeyDownCapture = (event: ReactKeyboardEvent<HTMLElement>) => {
     if (pickByKey(event)) {
@@ -403,7 +402,7 @@ export function StudioCanvas({ children }: { children: ReactNode }): ReactElemen
       }
       // A key from outside the canvas, such as with focus on the page after a pointer pick,
       // still moves the pick; one on the canvas was handled, and stopped, as it was captured.
-      if (!isControl(event.target) && pickByKeyRef.current(event)) {
+      if (!isControl(event.target) && pickByWindowKey(event)) {
         event.preventDefault();
         return;
       }
