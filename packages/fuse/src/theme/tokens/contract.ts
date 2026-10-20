@@ -375,6 +375,9 @@ export const TOKEN_PAINTS = {
   ring: ["line"],
   "card-border": ["line"],
   "card-section-divider": ["line"],
+  // Card casts it in a shadow, and no paint names an effect, so the Figma sync offers it in no
+  // picker.
+  "card-shadow": [],
   "button-outline": ["line"],
   "selection-border": ["line"],
   "selection-checked-border": ["line"],
@@ -516,6 +519,8 @@ export const TOKEN_DESCRIPTIONS = {
     "The edge of a Card and a card Accordion item. Internal themes draw it in border, and external themes make it transparent.",
   "card-section-divider":
     "The 1px line between stacked Card.Section parts, edge to edge. Internal themes draw it in border, and external themes in the page background, so a white card reads as segments.",
+  "card-shadow":
+    "The color of the small shadow under a Card. Internal themes cast it in black at 5%, and external themes make it transparent.",
   "button-outline":
     "The border of the outline Button, at button-outline-width. Internal themes draw it in border, and external themes in foreground.",
   "selection-border":
