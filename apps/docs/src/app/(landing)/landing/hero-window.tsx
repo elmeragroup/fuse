@@ -216,7 +216,7 @@ export function HeroWindow(): ReactElement {
                 <WindowSide shown={external}>
                   <ThemeScope theme={{ ...theme, variant: "external" }} className={styles.siteScope()}>
                     <RetryBoundary key={site.brand} subject="The website">
-                      <BrandSite key={site.brand} site={site} onPickBrand={pickFromCard} />
+                      <BrandSite site={site} onPickBrand={pickFromCard} />
                     </RetryBoundary>
                   </ThemeScope>
                 </WindowSide>

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { DESKTOP_VIEWPORT } from "./demo-page";
 import { dashboard, liveDemo, showSide } from "./landing-dashboard";
 import { launchLandingSuite } from "./landing-page";
-import { canvas, openStudio } from "./studio/page";
+import { canvas, hashOf, openStudio } from "./studio/page";
 import { launchSuiteBrowser } from "./suite-browser";
 
 const { openLanding } = launchLandingSuite();
@@ -16,10 +16,7 @@ const AUTOSAVE_KEY = "fuse-studio-v1";
  * A share link holding one readable edit. The studio restores it and keeps it saved; text it
  * cannot read would be dropped from the autosave once the session settles as pristine.
  */
-const EDITED_SESSION = `#1.${Buffer.from(
-  JSON.stringify({ t: "external-elma-private", l: { primary: "#ff0000" } }),
-  "utf8"
-).toString("base64url")}`;
+const EDITED_SESSION = hashOf(JSON.stringify({ t: "external-elma-private", l: { primary: "#ff0000" } }));
 
 describe("render failures stay inside the part that failed", () => {
   it("shows a reload prompt in place of a Dashboard whose code chunk is gone, and keeps the rest of the landing", async () => {

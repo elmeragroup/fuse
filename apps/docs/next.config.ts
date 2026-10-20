@@ -60,11 +60,6 @@ const nextConfig: NextConfig = {
    * logs a warning when Cache Components is on without it.
    */
   partialPrefetching: true,
-  /**
-   * The themed route is not an address of its own: a request for it goes to the shared address it
-   * stands for, so search engines and visitors only meet `/?theme=`. Redirects run before
-   * `src/proxy.ts`, so this leaves the proxy's rewrite alone.
-   */
   /** Responses do not advertise the framework. */
   poweredByHeader: false,
   /**
@@ -88,6 +83,11 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  /**
+   * The themed route is not an address of its own: a request for it goes to the shared address it
+   * stands for, so search engines and visitors only meet `/?theme=`. Redirects run before
+   * `src/proxy.ts`, so this leaves the proxy's rewrite alone.
+   */
   redirects() {
     return [{ source: "/themed/:theme", destination: "/?theme=:theme", permanent: false }];
   },

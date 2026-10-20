@@ -3,9 +3,8 @@
 import type { ReactElement } from "react";
 
 import { Button } from "@elmeragroup/fuse/button";
-import { defaultDensityForVariant, densityAttributes, themeAttributes } from "@elmeragroup/fuse/theme";
 
-import { DOCUMENT_THEME } from "../lib/theme";
+import { DocumentRoot } from "../components/document-root";
 import "../styles/globals.css";
 
 export type GlobalErrorProps = {
@@ -20,12 +19,7 @@ export type GlobalErrorProps = {
  */
 export default function GlobalError({ retry }: GlobalErrorProps): ReactElement {
   return (
-    // The document `DocumentRoot` renders, spelled out: this page replaces the root layout.
-    <html
-      lang="en"
-      className="bg-background text-foreground"
-      {...themeAttributes(DOCUMENT_THEME)}
-      {...densityAttributes(defaultDensityForVariant(DOCUMENT_THEME.variant))}>
+    <DocumentRoot>
       <body className="m-0 grid min-h-dvh place-items-center bg-background p-6 font-sans text-foreground antialiased">
         <title>Something went wrong · Fuse</title>
         <main className="max-w-md flex flex-col items-start gap-4">
@@ -36,6 +30,6 @@ export default function GlobalError({ retry }: GlobalErrorProps): ReactElement {
           <Button onClick={retry}>Try again</Button>
         </main>
       </body>
-    </html>
+    </DocumentRoot>
   );
 }
