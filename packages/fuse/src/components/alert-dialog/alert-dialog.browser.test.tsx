@@ -322,7 +322,10 @@ describe("AlertDialog", () => {
     await settle(popup);
     const line = Number.parseFloat(getComputedStyle(heading).lineHeight);
     expect(heading.getBoundingClientRect().height).toBeGreaterThanOrEqual(2 * line);
-    expect(centreY(icon)).toBeCloseTo(firstLineCentreY(heading), 0);
+    // The text's content area is a whole number of pixels tall (23px in a 28px line), and when
+    // the half-leading is fractional Chromium puts it on a whole pixel, so its middle reads up
+    // to half a pixel off the line box's. Allow that half pixel and no more.
+    expect(Math.abs(centreY(icon) - firstLineCentreY(heading))).toBeLessThanOrEqual(0.5);
   });
 
   it("gives the title the whole header row when icon is false", async () => {
