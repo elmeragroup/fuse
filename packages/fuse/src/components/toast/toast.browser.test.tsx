@@ -31,6 +31,13 @@ const CLOSE_COPY = {
   "fi-FI": "Sulje",
 } as const;
 
+const NOTIFICATIONS_COPY = {
+  "nb-NO": "Varsler",
+  "sv-SE": "Aviseringar",
+  "en-US": "Notifications",
+  "fi-FI": "Ilmoitukset",
+} as const;
+
 function renderToast(
   node: ReactNode = <Toast.Viewport />,
   options: {
@@ -95,8 +102,9 @@ async function waitForToastGone(name: string): Promise<void> {
   });
 }
 
-async function expandViewport(): Promise<HTMLElement> {
-  const viewport = page.getByRole("region", { name: "Notifications", exact: true }).element();
+/** Moves focus into the viewport region, named by the render's locale (English by default). */
+async function expandViewport(name: string = NOTIFICATIONS_COPY["en-US"]): Promise<HTMLElement> {
+  const viewport = page.getByRole("region", { name, exact: true }).element();
   if (!(viewport instanceof HTMLElement)) {
     throw new Error("expected the toast viewport");
   }
@@ -416,13 +424,35 @@ describe("Toast chrome", () => {
     await waitForToastGone("Item deleted");
   });
 
+  it("names the viewport region in all four locales and lets an explicit aria-label win", () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      const { unmount } = renderToast(<Toast.Viewport />, { locale });
+      expect(roleNamed("region", NOTIFICATIONS_COPY[locale]).getAttribute("data-slot"), locale).toBe(
+        "toast-viewport"
+      );
+      unmount();
+    }
+    renderToast(<Toast.Viewport aria-label="Ordrevarsler" />, { locale: "nb-NO" });
+    expect(roleNamed("region", "Ordrevarsler").getAttribute("data-slot")).toBe("toast-viewport");
+  });
+
+  it("keeps the localized region name when a wrapper forwards an unset aria-label", () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      const { unmount } = renderToast(<Toast.Viewport aria-label={undefined} />, { locale });
+      expect(roleNamed("region", NOTIFICATIONS_COPY[locale]).getAttribute("data-slot"), locale).toBe(
+        "toast-viewport"
+      );
+      unmount();
+    }
+  });
+
   it("renders Close copy in all four locales, lets label override it, and lets an explicit aria-label win over both", async () => {
     for (const locale of SUPPORTED_LOCALES) {
       const manager = Toast.createToastManager();
       const { unmount } = renderToast(<Toast.Viewport />, { locale, manager });
       manager.add({ title: "Notice", timeout: 0 });
       await waitForToast("Notice");
-      await expandViewport();
+      await expandViewport(NOTIFICATIONS_COPY[locale]);
       expect(page.getByRole("button", { name: CLOSE_COPY[locale], exact: true }).query()).not.toBeNull();
       unmount();
     }
