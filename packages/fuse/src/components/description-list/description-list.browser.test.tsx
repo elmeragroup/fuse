@@ -384,12 +384,30 @@ describe("DescriptionList", () => {
             <DescriptionList.Details>Storgata 1, inngang B, 3611 Kongsberg</DescriptionList.Details>
           </DescriptionList.Content>
         );
-        const term = boxOf("Installasjonsadresseopplysninger");
+        const termCell = textNamed("Installasjonsadresseopplysninger");
+        // The word breaks inside the term's cell rather than painting past it.
+        expect(termCell.scrollWidth).toBeLessThanOrEqual(termCell.clientWidth);
+        const term = termCell.getBoundingClientRect();
         const details = boxOf("Storgata 1, inngang B, 3611 Kongsberg");
         expect(term.right).toBeLessThanOrEqual(details.left);
         expect(term.top, "one row").toBeCloseTo(details.top, 0);
       }
     );
+
+    it("colours responsive cells from their own theme scope", () => {
+      renderThemed(
+        <DescriptionList.Content>
+          <DescriptionList.Term style={{ "--muted-foreground": "rgb(4, 5, 6)" }}>
+            Scoped term
+          </DescriptionList.Term>
+          <DescriptionList.Details style={{ "--foreground": "rgb(7, 8, 9)" }}>
+            Scoped value
+          </DescriptionList.Details>
+        </DescriptionList.Content>
+      );
+      expect(getComputedStyle(textNamed("Scoped term")).color).toBe("rgb(4, 5, 6)");
+      expect(getComputedStyle(textNamed("Scoped value")).color).toBe("rgb(7, 8, 9)");
+    });
 
     it("mutes a responsive list's terms inside an inline list", () => {
       renderThemed(

@@ -31,16 +31,17 @@ function DescriptionListRoot(props: DescriptionListRootProps): ReactElement {
   return <div data-slot="description-list" {...props} />;
 }
 
-// Each layout publishes the term and details colours as the private `--description-list-term` and
-// `--description-list-details`, so a nested list resets them and a consumer colour class on a cell
-// still wins in both layouts. Inline cells take the surrounding text colour, such as a card's. The
+// The inline layout publishes the term and details colours as the private `--description-list-term`
+// and `--description-list-details`, and the responsive one resets them, so its cells fall back to
+// `--muted-foreground` and `--foreground` read in their own theme scope. A nested list resets them
+// too, and a consumer colour class on a cell still wins in both layouts. Inline cells take the surrounding text colour, such as a card's. The
 // term and details style the rest of the inline layout from their own list's `data-layout`, as
 // its direct children, so a responsive list nested in an inline one keeps its own layout. Plain
 // `cn` constants rather than a `tv` recipe keep tailwind-variants out of this entry's size budget.
 
 /** The responsive list: one column on phones, then a term column capped at min(50%, 20rem). */
 const responsiveContentClass = cn(
-  "text-base/6 sm:grid-cols-[min(50%,calc(var(--spacing)*80))_auto] sm:text-sm/6 grid grid-cols-1 [--description-list-details:var(--foreground)] [--description-list-term:var(--muted-foreground)]"
+  "text-base/6 sm:grid-cols-[min(50%,calc(var(--spacing)*80))_auto] sm:text-sm/6 grid grid-cols-1 [--description-list-details:initial] [--description-list-term:initial]"
 );
 
 /**
