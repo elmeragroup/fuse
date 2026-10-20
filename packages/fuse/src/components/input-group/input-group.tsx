@@ -4,6 +4,7 @@ import type { ComponentProps, ReactElement } from "react";
 
 import type { VariantProps } from "tailwind-variants";
 
+import { OWN_CLICK_SELECTOR } from "../../internal/own-click";
 import { cn } from "../../styles/cn";
 import { controlMd } from "../../styles/control-size-md";
 import { inputGroupRootClass, readOnlyFillCancelClass } from "../../styles/field-box";
@@ -96,11 +97,18 @@ export function InputGroupAddon({
       className={cn(inputGroupAddonVariants({ align }), className)}
       onClick={(event) => {
         // The addon is an extension of the group's own control's hit area, except over a
-        // nested button, which keeps its own click. The own control is the Root's direct
-        // input-group-control child: the first input in DOM order can be a field nested in an
-        // addon or a combobox's hidden input, and a Textarea group has no input at all.
-        if (!(event.target instanceof HTMLElement) || !event.target.closest("button")) {
-          event.currentTarget.parentElement
+        // nested control, such as a button, a label or a field, which keeps its own click and
+        // focus, and except for a click that bubbles through React from a portalled popup.
+        // The own control is the Root's direct input-group-control child: the first input in
+        // DOM order can be a field nested in an addon or a combobox's hidden input, and a
+        // Textarea group has no input at all.
+        const { currentTarget, target } = event;
+        if (
+          target instanceof Element &&
+          currentTarget.contains(target) &&
+          !currentTarget.contains(target.closest(OWN_CLICK_SELECTOR))
+        ) {
+          currentTarget.parentElement
             ?.querySelector<HTMLElement>(":scope > [data-slot=input-group-control]")
             ?.focus();
         }

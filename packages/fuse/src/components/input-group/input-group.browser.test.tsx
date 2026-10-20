@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 
+import { createPortal } from "react-dom";
 import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -19,6 +20,7 @@ import {
   CONTROL_XS,
   cssVarColor,
   fkasExternal,
+  inputNamed,
   px,
   renderThemed,
   roleNamed,
@@ -157,7 +159,7 @@ describe("InputGroup", () => {
     expect(clicks).toEqual(["addon", "button"]);
   });
 
-  it("focuses the group's own control from an addon click, not the first input in the group", async () => {
+  it("focuses the group's own control from addon chrome, leaving a field nested in an addon its own focus", async () => {
     renderThemed(
       <>
         <InputGroup.Root>
@@ -168,6 +170,7 @@ describe("InputGroup", () => {
         </InputGroup.Root>
         <InputGroup.Root>
           <InputGroup.Addon>
+            <InputGroup.Text>Amount</InputGroup.Text>
             <input aria-label="Nested amount" />
           </InputGroup.Addon>
           <InputGroup.Input aria-label="Total" />
@@ -183,6 +186,45 @@ describe("InputGroup", () => {
 
     await userEvent.click(page.getByText("kr", { exact: true }));
     expect(document.activeElement).toBe(textboxNamed("Total"));
+
+    await userEvent.click(textboxNamed("Nested amount"));
+    await userEvent.keyboard("42");
+    expect(document.activeElement).toBe(textboxNamed("Nested amount"));
+    expect(inputNamed("Nested amount").value).toBe("42");
+    expect(inputNamed("Total").value).toBe("");
+
+    await userEvent.click(page.getByText("Amount", { exact: true }));
+    expect(document.activeElement).toBe(textboxNamed("Total"));
+  });
+
+  it("leaves focus off the own control for a label nested in an addon and for a portalled button", async () => {
+    const totalFocus: string[] = [];
+    function PortalledButton(): ReactElement {
+      return createPortal(<button type="button">Portalled</button>, document.body);
+    }
+    renderThemed(
+      <InputGroup.Root>
+        <InputGroup.Addon>
+          <label htmlFor="addon-quantity">Quantity</label>
+          <input id="addon-quantity" />
+          <PortalledButton />
+        </InputGroup.Addon>
+        <InputGroup.Input
+          aria-label="Total"
+          onFocus={() => {
+            totalFocus.push("focus");
+          }}
+        />
+      </InputGroup.Root>
+    );
+
+    await userEvent.click(page.getByText("Quantity", { exact: true }));
+    expect(document.activeElement).toBe(textboxNamed("Quantity"));
+    expect(totalFocus).toEqual([]);
+
+    await userEvent.click(page.getByRole("button", { name: "Portalled", exact: true }));
+    expect(document.activeElement).toBe(roleNamed("button", "Portalled"));
+    expect(totalFocus).toEqual([]);
   });
 
   it("focuses a PhoneNumberField's number input from its country addon chrome", () => {
