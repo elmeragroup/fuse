@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 // Subpath import (`@base-ui/react/combobox`) type-checks but crashes at runtime with a
@@ -189,6 +189,67 @@ export type PhoneNumberFieldProps = {
   "aria-required"?: ComponentProps<"input">["aria-required"];
 };
 
+/** Props of the country picker's trigger. */
+type CountryTriggerProps = {
+  /** The trigger's name, the select-country action. */
+  label: string;
+  /** The selected country and its dial code, which describe the trigger. */
+  description: string;
+  isEditable: boolean;
+  /** The flag and dial code the trigger shows. */
+  children: ReactNode;
+};
+
+/** The country picker's trigger, inside `ComboboxPrimitive.Root`, with its description. */
+function CountryTrigger({ label, description, isEditable, children }: CountryTriggerProps): ReactElement {
+  const descriptionId = useId();
+  return (
+    <>
+      {/* role="button" overrides Base UI's default role="combobox" so the trigger keeps the
+          getByRole("button", {name}) contract the browser tests freeze. The picker's own
+          labelable scope already keeps the field's label off it; the empty aria-labelledby is a
+          safeguard that keeps aria-label the name. Don't "simplify" either without updating the
+          browser tests. The min height is 1.5rem, floored at the fixed 24px target for a host
+          root below 16px. The trigger renders a <button>, so the inline addon drops its block
+          padding and the trigger fits the field's fixed md box at both densities. */}
+      {/* The name stays the action; the description says which country and dial code the number
+          goes with, which the visible "+47" alone does not tell a screen reader. The server's Intl
+          data can name a country differently from the browser's (Hong Kong), so the text may keep
+          the server's through hydration. */}
+      <span id={descriptionId} className="sr-only" suppressHydrationWarning>
+        {description}
+      </span>
+      <ComboboxPrimitive.Trigger
+        role="button"
+        aria-label={label}
+        aria-labelledby=""
+        aria-describedby={descriptionId}
+        // Base UI marks a read-only combobox trigger aria-readonly, which the button
+        // role does not support; the read-only state shows as the inert cursor and the
+        // read-only number input.
+        aria-readonly={undefined}
+        className={cn(
+          selfFocusRingClass,
+          // No UA button border or fill in a preflight-free host.
+          "flex min-h-[max(1.5rem,24px)] shrink-0 items-center rounded-inner border-0 bg-transparent px-1 transition-[color,background-color,scale] duration-150",
+          isEditable
+            ? "cursor-pointer hover:bg-muted active:scale-[0.97] data-pressed:bg-muted"
+            : "cursor-default"
+        )}>
+        {children}
+      </ComboboxPrimitive.Trigger>
+    </>
+  );
+}
+
+function countryCodeOf(country: PhoneNumberCountry): string {
+  return country.code;
+}
+
+function isSameCountry(left: PhoneNumberCountry, right: PhoneNumberCountry): boolean {
+  return left.code === right.code;
+}
+
 /**
  * Labeled phone composite over Field + InputGroup. The country popup is the library
  * `Combobox.Content/List/Item/Empty`; Root, the flag Trigger, and the popup's search
@@ -247,6 +308,13 @@ export function PhoneNumberField({
   });
   useFormReset(numberInputRef, phone.onReset);
   const getCountryName = useMemo(() => countryNameResolver(locale), [locale]);
+  // Stable between keystrokes: a new identity makes Base UI re-filter and re-scan every row,
+  // though the picker is closed. Names are only needed once the popup is open (rows and filter).
+  const countryToStringLabel = useCallback(
+    (country: PhoneNumberCountry) =>
+      countryPickerOpenRef.current ? getCountryName(country.code) : country.code,
+    [getCountryName]
+  );
 
   // A Form reads the submitted number at submit time, after the commit that last changed it.
   const submittedValueRef = useRef(phone.outputValue);
@@ -357,11 +425,9 @@ export function PhoneNumberField({
                   phone.selectCountry(next?.code);
                   requestAnimationFrame(() => numberInputRef.current?.focus());
                 }}
-                itemToStringLabel={(country) =>
-                  countryPickerOpenRef.current ? getCountryName(country.code) : country.code
-                }
-                itemToStringValue={(country) => country.code}
-                isItemEqualToValue={(left, right) => left.code === right.code}
+                itemToStringLabel={countryToStringLabel}
+                itemToStringValue={countryCodeOf}
+                isItemEqualToValue={isSameCountry}
                 onOpenChange={(open) => {
                   // Only latch open. Base UI still filters with itemToStringLabel through
                   // the exit transition; flipping this back to false here would switch
@@ -387,28 +453,15 @@ export function PhoneNumberField({
                 form="fuse-phone-country-unbound"
                 locale={locale}>
                 <InputGroupAddon className="text-foreground" align="inline-start">
-                  {/* role="button" overrides Base UI's default role="combobox" so the trigger keeps the
-                        getByRole("button", {name}) contract the browser tests freeze. The picker's own labelable
-                        scope already keeps the field's label off it; the empty aria-labelledby is a safeguard
-                        that keeps aria-label the name.
-                        Don't "simplify" either without updating the browser tests.
-                        The min height is 1.5rem, floored at the fixed 24px target for a host root below 16px.
-                        The trigger renders a <button>, so the inline addon drops its block padding and the
-                        trigger fits the field's fixed md box at both densities. */}
-                  <ComboboxPrimitive.Trigger
-                    role="button"
-                    aria-label={resolvedSelectCountryLabel}
-                    aria-labelledby=""
-                    className={cn(
-                      selfFocusRingClass,
-                      // No UA button border or fill in a preflight-free host.
-                      "flex min-h-[max(1.5rem,24px)] shrink-0 items-center rounded-inner border-0 bg-transparent px-1 transition-[color,background-color,scale] duration-150",
-                      isEditable
-                        ? "cursor-pointer hover:bg-muted active:scale-[0.97] data-pressed:bg-muted"
-                        : "cursor-default"
-                    )}>
+                  <CountryTrigger
+                    label={resolvedSelectCountryLabel}
+                    description={strings.format("selectedCountry", {
+                      country: getCountryName(phone.country.code),
+                      dialCode: phone.country.dialCode,
+                    })}
+                    isEditable={isEditable}>
                     {countryFace}
-                  </ComboboxPrimitive.Trigger>
+                  </CountryTrigger>
                 </InputGroupAddon>
                 <ComboboxContent
                   anchor={inputGroupRef}

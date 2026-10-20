@@ -179,10 +179,37 @@ describe("PhoneNumberField", () => {
     // The field's error and description describe the number input, not the picker trigger. The
     // error sits directly under the control, ahead of the description, and is read first.
     await expect.element(textboxNamed("Mobile")).toHaveAccessibleDescription("Bad number. We text a code.");
-    expect(trigger.hasAttribute("aria-describedby")).toBe(false);
+    await expect.element(trigger).toHaveAccessibleDescription("Country: Norway +47");
     await openPicker();
     const ids = [trigger.id, countrySearch().id, textboxNamed("Mobile").id];
     expect(new Set(ids).size, JSON.stringify(ids)).toBe(3);
+  });
+
+  it("describes the trigger with the selected country and its dial code in each locale", async () => {
+    const described = {
+      "nb-NO": "Land: Norge +47",
+      "sv-SE": "Land: Norge +47",
+      "en-US": "Country: Norway +47",
+      "fi-FI": "Maa: Norja +47",
+    } as const;
+    for (const locale of SUPPORTED_LOCALES) {
+      const { unmount } = renderField(<PhoneNumberField label="Mobile" />, locale);
+      await expect
+        .element(roleNamed("button", SELECT_COUNTRY_COPY[locale]))
+        .toHaveAccessibleDescription(described[locale]);
+      unmount();
+    }
+
+    renderField(<PhoneNumberField label="Mobile" />);
+    await selectCountry("Sweden");
+    await expect
+      .element(roleNamed("button", "Select country"))
+      .toHaveAccessibleDescription("Country: Sweden +46");
+  });
+
+  it("puts no aria-readonly on the read-only trigger, which the button role does not support", () => {
+    renderField(<PhoneNumberField label="Mobile" isReadOnly />);
+    expect(roleNamed("button", "Select country").hasAttribute("aria-readonly")).toBe(false);
   });
 
   it("insets the country search from the popup edge", async () => {
@@ -212,14 +239,15 @@ describe("PhoneNumberField", () => {
     expect(observed.inset.right, JSON.stringify(observed)).toBeGreaterThan(0);
   });
 
-  it("does not call Intl.DisplayNames.of until the country popup opens", async () => {
+  it("names only the selected country through Intl.DisplayNames until the country popup opens", async () => {
     resetCountryNameCache();
     const ofSpy = vi.spyOn(Intl.DisplayNames.prototype, "of");
     try {
       renderField(<PhoneNumberField label="Mobile" />);
-      expect(ofSpy).not.toHaveBeenCalled();
+      // The trigger's description names the selected country; the rows wait for the popup.
+      expect(ofSpy.mock.calls).toEqual([["NO"]]);
       await openPicker();
-      expect(ofSpy.mock.calls.length).toBeGreaterThan(0);
+      expect(ofSpy.mock.calls.length).toBeGreaterThan(1);
     } finally {
       ofSpy.mockRestore();
       resetCountryNameCache();
