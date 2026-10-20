@@ -279,7 +279,7 @@ describe("exports map", () => {
       "src/components/recipe-catalog.ts",
       readFileSync(join(packageRoot, "src/components/recipe-catalog.ts"), "utf8")
     );
-    expect(catalog).toEqual(["buttonVariants"]);
+    expect(catalog).toEqual(["buttonVariants", "BESPOKE_ICON_NAMES", "PHOSPHOR_ICON_NAMES"]);
   });
 
   it("exposes a workspace-only theme-catalog tooling entry that is not published", () => {
