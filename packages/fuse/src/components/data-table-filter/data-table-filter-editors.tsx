@@ -35,11 +35,13 @@ import { useFilterInternals, useFocusRequest } from "./data-table-filter";
 import type { DraftValues, EditorContextValue } from "./data-table-filter-editor-context";
 import { useKindEditor } from "./data-table-filter-editor-context";
 import { dataTableFilterSlots as slots } from "./data-table-filter-variants";
+import { DEFAULT_DATE_PRESETS, datePresetRange, isOneDayPreset } from "./date-presets";
+import type { DatePresetKey } from "./date-presets";
 import { completeValues, draftSays, stepBounds } from "./editor-draft";
 import type { DateFilterField, FilterOption, NumberFilterField, TextFilterField } from "./filter-fields";
 import { calendarDateIn } from "./filter-match";
 import type { FilterOperator, IsoDate } from "./filter-model";
-import { addDays, allowedOperators, isFiniteNumber, isIsoDate, isOperatorOf, targetOf } from "./filter-model";
+import { allowedOperators, isFiniteNumber, isIsoDate, isOperatorOf, targetOf } from "./filter-model";
 import {
   LIST_KINDS,
   listSource,
@@ -421,11 +423,14 @@ function NumberEditorBody({
   );
 }
 
-// The date editor's presets apply and close. Its body is one or two date inputs by default, and
-// a function child replaces it, such as with a calendar the app imports, since the entry cannot
-// import React Aria. From the small breakpoint up the presets of a function child stand in a
-// column beside it, as the date pickers set their preset pane beside the calendar, and the popup
-// widens to that layout. Above the date inputs, or on a narrow viewport, they wrap above.
+// The date editor offers the field's presets, in the field's order, and the default five when it
+// lists none. A preset applies and closes. It writes `isBetween` over its range. On a field without
+// `isBetween`, Today and Yesterday, the one-day presets, write `is`, and the editor leaves the
+// other presets out. The body is one or two date inputs by default, and a function child
+// replaces it, such as with a calendar the app imports, since the entry cannot import React Aria.
+// From the small breakpoint up the presets of a function child stand in a column beside it, as the
+// date pickers set their preset pane beside the calendar, and the popup widens to that layout.
+// Above the date inputs, or on a narrow viewport, they wrap above.
 
 /** What the date editor hands its function child. */
 export type DateEditorState = {
@@ -441,35 +446,23 @@ export type DateEditorState = {
   readonly onValueChange: (values: readonly IsoDate[]) => void;
 };
 
-type PresetKey = "today" | "last7Days" | "last30Days" | "thisMonth" | "thisYear";
-
-type Preset = { readonly key: PresetKey; readonly range: (today: IsoDate) => readonly [IsoDate, IsoDate] };
-
-const PRESETS: readonly Preset[] = [
-  { key: "today", range: (today) => [today, today] },
-  { key: "last7Days", range: (today) => [addDays(today, -6), today] },
-  { key: "last30Days", range: (today) => [addDays(today, -29), today] },
-  { key: "thisMonth", range: (today) => [`${today.slice(0, 8)}01`, today] },
-  { key: "thisYear", range: (today) => [`${today.slice(0, 5)}01-01`, today] },
-];
-
 type PresetWrite = { readonly operator: FilterOperator<"date">; readonly values: readonly IsoDate[] };
 
 /**
- * The filter a preset writes, in an operator the field allows: `isBetween` over its range, or
- * for Today alone `is` today when the field allows no range. A preset the field cannot express
- * is left out.
+ * The filter a preset writes, in an operator the field allows: `isBetween` over its range, or `is`
+ * on its day for a one-day preset when the field allows no range. A preset the field cannot
+ * express writes nothing, and the editor leaves it out.
  */
 function presetWrite(
-  preset: Preset,
-  today: IsoDate,
+  key: DatePresetKey,
+  range: readonly [IsoDate, IsoDate],
   allowed: readonly FilterOperator[]
 ): PresetWrite | undefined {
   if (allowed.includes("isBetween")) {
-    return { operator: "isBetween", values: preset.range(today) };
+    return { operator: "isBetween", values: range };
   }
-  if (preset.key === "today" && allowed.includes("is")) {
-    return { operator: "is", values: [today] };
+  if (isOneDayPreset(key) && allowed.includes("is")) {
+    return { operator: "is", values: [range[0]] };
   }
   return undefined;
 }
@@ -492,9 +485,10 @@ export type DataTableFilterDateEditorProps = Omit<DataTableFilterKindEditorProps
 
 /**
  * Edits a date filter with presets and date inputs. Renders nothing for other kinds. The presets
- * write `isBetween`, so a field whose operators leave it out offers only Today, as `is`, if it
- * allows `is`, and no preset otherwise. Beside a function child they form a column, from a 40rem
- * viewport up.
+ * are the field's `presets`, and each writes `isBetween` over its range. On a field whose operators
+ * leave out `isBetween`, the one-day presets, Today and Yesterday, write `is` if the field allows
+ * it, and the editor leaves the other presets out. Beside a function child they form a column,
+ * from a 40rem viewport up.
  */
 export function DataTableFilterDateEditor(props: DataTableFilterDateEditorProps): ReactElement | null {
   const editor = useKindEditor("DataTableFilter.DateEditor", ["date"]);
@@ -521,9 +515,10 @@ function DateEditorBody({
   const today = calendarDateIn(new Date(), meta.timeZone);
   const target = targetOf("date", draft.operator) === "range" ? "range" : "single";
   const allowed = allowedOperators(field);
-  const presets = PRESETS.flatMap((preset) => {
-    const write = presetWrite(preset, today, allowed);
-    return write === undefined ? [] : [{ key: preset.key, write }];
+  // A key listed twice shows once, at its first place, so React keys and toggle values stay unique.
+  const presets = [...new Set(field.presets ?? DEFAULT_DATE_PRESETS)].flatMap((key) => {
+    const write = presetWrite(key, datePresetRange(key, today, meta.locale), allowed);
+    return write === undefined ? [] : [{ key, write }];
   });
   const pressed = presets.find(({ write }) => draftSays("date", write, filter))?.key;
   const focusRef = useFocusRequest<HTMLDivElement>(editor.focusKey);

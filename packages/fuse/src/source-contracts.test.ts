@@ -340,6 +340,7 @@ describe("RSC classification", () => {
     ["components/data-table-filter/filter-fn.ts", "server"],
     ["components/data-table-filter/filter-summary.ts", "server"],
     ["components/data-table-filter/option-list.ts", "server"],
+    ["components/data-table-filter/date-presets.ts", "server"],
     ["components/data-table-filter/data-table-filter-error.ts", "server"],
   ] as const)("keeps the shared module %s %s", (file, rsc) => {
     expectRsc(file, rsc);

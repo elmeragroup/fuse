@@ -358,6 +358,9 @@
   `startsWith` (`filter-model.ts`).
 - Hide a value list's search below some option count, for every list kind at once. A boolean's Yes
   and No list shows it for two rows (`data-table-filter-content.tsx`).
+- Custom date presets with an app-defined range, such as Last 3 days, as objects in a field's
+  `presets` (`date-presets.ts`).
+- A per-field `firstDayOfWeek`, shared with the calendar a function child renders.
 
 ## Command
 

@@ -452,18 +452,6 @@ export function isIsoDate(value: unknown): value is IsoDate {
   return new Date(Date.UTC(year, month - 1, day)).toISOString().slice(0, 10) === value;
 }
 
-/**
- * Adds whole days to an ISO date.
- *
- * @param date - The start date.
- * @param days - The days to add, negative to go back.
- * @returns The new ISO date.
- */
-export function addDays(date: IsoDate, days: number): IsoDate {
-  const [year = 0, month = 1, day = 1] = date.split("-").map(Number);
-  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
-}
-
 function valuesFit(kind: FilterKind, values: readonly unknown[]): boolean {
   switch (kind) {
     case "number":

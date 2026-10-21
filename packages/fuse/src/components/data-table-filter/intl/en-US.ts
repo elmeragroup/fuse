@@ -44,6 +44,11 @@ export const enUS = {
   last30Days: "Last 30 days",
   thisMonth: "This month",
   thisYear: "This year",
+  yesterday: "Yesterday",
+  thisWeek: "This week",
+  lastWeek: "Last week",
+  lastMonth: "Last month",
+  lastYear: "Last year",
   /** A boolean field's `true`, when the field names none. */
   yes: "Yes",
   /** A boolean field's `false`, when the field names none. */

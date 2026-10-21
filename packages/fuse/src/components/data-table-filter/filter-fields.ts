@@ -4,6 +4,7 @@
 
 import type { ReactNode } from "react";
 
+import type { DatePresetKey } from "./date-presets";
 import type { FilterKind, FilterOperator } from "./filter-model";
 import { allowedOperators } from "./filter-model";
 
@@ -98,10 +99,14 @@ export type DateFilterField = FieldBase & {
   readonly kind: "date";
   /**
    * A subset of the date operators, in menu order. Defaults to all of them. The presets write
-   * `isBetween`, so without it the editor offers only Today, as `is`, and no preset without `is`
-   * either.
+   * `isBetween`. Without it, a one-day preset writes `is`, and other presets are left out.
    */
   readonly operators?: readonly FilterOperator<"date">[];
+  /**
+   * The presets the editor offers, in this order. Defaults to Today, Last 7 days, Last 30 days,
+   * This month and This year. An empty list shows none. A period preset covers the whole period.
+   */
+  readonly presets?: readonly DatePresetKey[];
 };
 
 /** A field whose cell holds `true` or `false`. A missing cell is neither. */

@@ -38,7 +38,12 @@ const ORDER_FILTERS = defineFilterFields<Order>()({
       { value: "overdue", label: "Overdue" },
     ],
   },
-  created: { kind: "date", label: "Created", icon: <CalendarBlank /> },
+  created: {
+    kind: "date",
+    label: "Created",
+    icon: <CalendarBlank />,
+    presets: ["today", "yesterday", "thisWeek", "lastWeek", "thisMonth", "lastMonth"],
+  },
 });
 
 const dataTableFilter = createDataTableFilterFn({ timeZone: "Europe/Oslo" });

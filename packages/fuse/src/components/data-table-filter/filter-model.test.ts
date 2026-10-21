@@ -10,7 +10,6 @@ import type { FilterFieldMap } from "./filter-fields";
 import { createDataTableFilterFn } from "./filter-fn";
 import { matchesFilter } from "./filter-match";
 import {
-  addDays,
   allowedOperators,
   fieldAdmits,
   filterValuesEqual,
@@ -243,11 +242,6 @@ describe("dates", () => {
     ["2026-1-01", false],
   ] as const)("reads %s as an ISO date: %s", (value, expected) => {
     expect(isIsoDate(value)).toBe(expected);
-  });
-
-  it("adds days across month and year ends", () => {
-    expect(addDays("2026-10-31", 1)).toBe("2026-11-01");
-    expect(addDays("2027-01-01", -1)).toBe("2026-12-31");
   });
 });
 

@@ -21,7 +21,10 @@ root barrel.
 - Text fields can opt in to `startsWith` and `doesNotStartWith`. `formatOperator` receives the
   field id, so one field can relabel an operator.
 - A field's `operators` bound every filter the bar writes. An option field without a multi-value
-  operator is single-select, and a date field without `isBetween` offers only the Today preset.
+  operator is single-select, and a date field without `isBetween` offers only its one-day presets,
+  written as `is`.
+- A date field picks its presets from a catalog with `presets`. Each period preset covers its whole
+  calendar period, with weeks starting on the locale's first day.
 - With `manualFiltering`, pass server counts and ranges through `facets`. `parseColumnFilters` and
   `matchesFilter` parse and match the same values on a server.
 - `DateEditor` takes a function child that replaces its date inputs, for example with a calendar. On
