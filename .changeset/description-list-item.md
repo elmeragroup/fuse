@@ -5,7 +5,8 @@
 `DescriptionList.Item` wraps one name-value group: a `<div>` around its terms and details that takes
 attributes such as a `data-testid`. **Breaking:** every description list is now made of Items. Wrap
 each term and its details in a `DescriptionList.Item`; HTML doesn't allow a list to mix Items with
-bare terms and details, and the layouts no longer style bare ones.
+bare terms and details. The inline layout styles terms and details only inside an Item, and both
+layouts draw rules between Items only.
 
 Each inline Item now shares its own row between its term and details, whatever the other rows hold,
 instead of every row sharing one details column capped at 60% of the list. The details sits at the end

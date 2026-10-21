@@ -15,7 +15,7 @@ export const metadata = componentMetadata("description-list");
 
 <ComponentIntro slug="description-list" />
 
-Wrap each term and its details in an `Item`, the `<div>` HTML allows around one name-value group. Every list is made of Items: HTML doesn't allow a list to mix Items with bare terms and details, and the layouts style terms and details only inside an Item. An Item takes attributes such as a `data-testid`, so a test can find a row by it.
+Wrap each term and its details in an `Item`, the `<div>` HTML allows around one name-value group. Every list is made of Items: HTML doesn't allow a list to mix Items with bare terms and details, the inline layout styles terms and details only inside an Item, and both layouts draw rules between Items only. An Item takes attributes such as a `data-testid`, so a test can find a row by it.
 
 <Demo slug="description-list" id="basic" title="Basic" file="description-list-basic.tsx">
   <DescriptionListBasic />
