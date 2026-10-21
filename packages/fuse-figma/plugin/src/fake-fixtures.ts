@@ -1,7 +1,7 @@
 /**
  * Small synced files for the plugin's unit tests, on the in-memory file in `fake-figma.ts`. A
  * test names the few variables its planner binds, and gets a file whose collections hold them
- * in one mode, and the run a planner takes.
+ * in one mode, and the run a planner takes. The suites also share a typed child lookup.
  */
 
 import type {
@@ -89,4 +89,27 @@ export async function fixtureRun(file: FakeFigma, plan: Plan): Promise<Run> {
     new Set(collections.map((collection) => collection.name))
   );
   return { figma: file.figma, variables, plan };
+}
+
+/**
+ * A child of a given type and name, which a test expects the parent to hold.
+ *
+ * @param parent - The node whose children to search.
+ * @param type - The child's node type.
+ * @param name - The child's name.
+ * @returns The child, narrowed to its type.
+ * @throws When the parent holds no such child.
+ */
+export function childNamed<Type extends SceneNode["type"]>(
+  parent: ChildrenMixin,
+  type: Type,
+  name: string
+): Extract<SceneNode, { readonly type: Type }> {
+  const child = parent.children.find(
+    (node): node is Extract<SceneNode, { readonly type: Type }> => node.type === type && node.name === name
+  );
+  if (child === undefined) {
+    throw new Error(`no ${type} named ${name}`);
+  }
+  return child;
 }

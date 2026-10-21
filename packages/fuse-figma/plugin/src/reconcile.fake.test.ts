@@ -12,6 +12,7 @@ import type { KitSpec } from "../../src/components/kit-spec.ts";
 import type { AliasCycle, CollectionSpec, InvalidVariableSet, VariableSet } from "../../src/variable-set.ts";
 import { createFakeFigma, drawsShadowSpread } from "./fake-figma.ts";
 import type { FakeFigma } from "./fake-figma.ts";
+import { childNamed } from "./fake-fixtures.ts";
 import { keyOf } from "./identity.ts";
 import { reconcileKit } from "./reconcile.ts";
 import { exportSnapshots } from "./snapshots.ts";
@@ -184,20 +185,6 @@ function variantNamed(set: ComponentSetNode, name: string): ComponentNode {
     throw new Error(`${set.name} has no variant ${name}`);
   }
   return variant;
-}
-
-function childNamed<Type extends SceneNode["type"]>(
-  parent: ChildrenMixin,
-  type: Type,
-  name: string
-): Extract<SceneNode, { readonly type: Type }> {
-  const child = parent.children.find(
-    (node): node is Extract<SceneNode, { readonly type: Type }> => node.type === type && node.name === name
-  );
-  if (child === undefined) {
-    throw new Error(`no ${type} named ${name}`);
-  }
-  return child;
 }
 
 function onlyShadow(node: ComponentNode, index = 0): DropShadowEffect {

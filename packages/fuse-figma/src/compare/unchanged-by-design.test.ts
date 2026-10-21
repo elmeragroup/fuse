@@ -21,6 +21,8 @@ const ROOT: ComponentRootSpec = {
   paddingBottom: zero,
   paddingLeft: zero,
   itemSpacing: zero,
+  primaryAlign: "CENTER",
+  counterAlign: "CENTER",
   cornerRadius: zero,
   fill: muted,
   stroke: undefined,

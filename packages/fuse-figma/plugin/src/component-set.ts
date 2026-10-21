@@ -5,6 +5,7 @@
  * ids and component keys, and instances in other files keep following them.
  */
 
+import { walkLayers } from "../../src/components/kit-spec.ts";
 import type { AxisSpec, ComponentSetSpec, VariantSpec } from "../../src/components/kit-spec.ts";
 import { planChildren, requireNewSetFonts, requireNewTextFonts } from "./child-layers.ts";
 import type { LayerLinks } from "./child-layers.ts";
@@ -16,7 +17,7 @@ import type { Siblings } from "./identity.ts";
 import type { PlannedPage } from "./pages.ts";
 import { change, create, existing } from "./plan.ts";
 import type { Target } from "./plan.ts";
-import { planRoot } from "./root-layer.ts";
+import { planBox } from "./root-layer.ts";
 
 /** The gap between variants in the set's grid, and between the grid and the set's edge. */
 const GRID_GAP = 16;
@@ -121,10 +122,10 @@ export function checkComponentSet(spec: ComponentSetSpec): void {
   for (const variant of spec.variants) {
     variantName(spec, variant);
     gridCell(spec, variant);
-    for (const child of variant.root.children) {
-      if (child.kind === "text" && child.textProperty !== undefined && !properties.has(child.textProperty)) {
+    for (const layer of walkLayers(variant.root)) {
+      if (layer.kind === "text" && layer.textProperty !== undefined && !properties.has(layer.textProperty)) {
         throw new Error(
-          `${spec.name}: the variant ${variant.key} links ${child.textProperty}, which the set does not define.`
+          `${spec.name}: the variant ${variant.key} links ${layer.textProperty}, which the set does not define.`
         );
       }
     }
@@ -319,7 +320,7 @@ async function planVariantFields(
   planScalar(run, label, "name", component.name, name, () => {
     component.name = name;
   });
-  planRoot(run, component, label, variant.root);
+  planBox(run, component, label, variant.root, "root");
   await planChildren(run, component, label, variant.root.children, links);
 }
 
@@ -338,7 +339,7 @@ async function planVariant(
     await planVariantFields(run, found, name, label, variant, links);
     return existing(found);
   }
-  requireNewTextFonts(run, set, label, variant.root.children);
+  requireNewTextFonts(run, set, label, walkLayers(variant.root));
   return create(
     run.plan,
     spec.name,

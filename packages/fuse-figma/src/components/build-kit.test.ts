@@ -14,7 +14,7 @@ import { buildComponentSet, iconKey } from "./component-spec";
 import type { ComponentDefinition, IconSlot } from "./component-spec";
 import type { CoverageRow } from "./coverage";
 import { makeVariableIndex } from "./css-values";
-import type { ComponentRootSpec, KitSpec } from "./kit-spec";
+import type { ChildLayerSpec, ColorSpec, ComponentRootSpec, ComponentSetSpec, KitSpec } from "./kit-spec";
 import { compileUtilities } from "./utility-css";
 
 let spec: KitSpec;
@@ -39,6 +39,12 @@ function find(key: string): ComponentRootSpec {
     throw new Error(`the kit has no ${key}`);
   }
   return found.root;
+}
+
+/** The color of a root's first layer, a label or an icon in these flat sets. */
+function firstColor(box: ComponentRootSpec): ColorSpec | undefined {
+  const [first] = box.children;
+  return first?.kind === "frame" ? undefined : first?.color;
 }
 
 function root(variant: string, size: string, state: string, icon: string): ComponentRootSpec {
@@ -121,6 +127,8 @@ describe("the Button component set", () => {
       paddingBottom: literal(0),
       paddingLeft: density("control-px-button-md"),
       itemSpacing: density("control-gap-md"),
+      primaryAlign: "CENTER",
+      counterAlign: "CENTER",
       cornerRadius: token("radius-button"),
       fill: paint("primary"),
       stroke: { color: transparent, weight: literal(1) },
@@ -238,7 +246,7 @@ describe("the Button component set", () => {
     const outline = root("outline", "default", "rest", "none");
     expect(outline.fill).toEqual(paint("background"));
     expect(outline.stroke).toEqual({ color: paint("button-outline"), weight: token("button-outline-width") });
-    expect(outline.children[0]?.color).toEqual(paint("foreground"));
+    expect(firstColor(outline)).toEqual(paint("foreground"));
     // Tailwind's shadow-xs, 0 1px 2px at 5% black, as formulas over the outline width.
     expect(outline.shadows).toEqual([
       {
@@ -251,14 +259,14 @@ describe("the Button component set", () => {
     ]);
     const hover = root("outline", "default", "hover", "none");
     expect(hover.fill).toEqual(paint("muted"));
-    expect(hover.children[0]?.color).toEqual(paint("foreground"));
+    expect(firstColor(hover)).toEqual(paint("foreground"));
   });
 
   it("binds the error tints for the destructive button", () => {
     const rest = root("destructive", "default", "rest", "none");
     expect(rest.fill).toEqual(paint("error/10"));
     expect(rest.stroke).toEqual({ color: paint("error/20"), weight: literal(1) });
-    expect(rest.children[0]?.color).toEqual(paint("error"));
+    expect(firstColor(rest)).toEqual(paint("error"));
     const hover = root("destructive", "default", "hover", "none");
     expect(hover.fill).toEqual(paint("error/20"));
     expect(hover.stroke?.color).toEqual(paint("error"));
@@ -267,14 +275,14 @@ describe("the Button component set", () => {
   it("fills the secondary button with the secondary roles", () => {
     const rest = root("secondary", "default", "rest", "none");
     expect(rest.fill).toEqual(paint("secondary"));
-    expect(rest.children[0]?.color).toEqual(paint("secondary-foreground"));
+    expect(firstColor(rest)).toEqual(paint("secondary-foreground"));
     expect(root("secondary", "default", "hover", "none").fill).toEqual(paint("secondary-hover"));
   });
 
   it("fills the ghost button only on hover, and inherits the page text color", () => {
     const rest = root("ghost", "default", "rest", "none");
     expect(rest.fill).toBeUndefined();
-    expect(rest.children[0]?.color).toEqual(paint("foreground"));
+    expect(firstColor(rest)).toEqual(paint("foreground"));
     expect(root("ghost", "default", "hover", "none").fill).toEqual(paint("muted"));
     const focus = root("ghost", "default", "focus", "none");
     expect(focus.fill).toBeUndefined();
@@ -287,7 +295,7 @@ describe("the Button component set", () => {
     const rest = root("success", "default", "rest", "none");
     expect(rest.fill).toEqual(paint("success/10"));
     expect(rest.stroke).toEqual({ color: paint("success/20"), weight: literal(1) });
-    expect(rest.children[0]?.color).toEqual(paint("success"));
+    expect(firstColor(rest)).toEqual(paint("success"));
     const hover = root("success", "default", "hover", "none");
     expect(hover.fill).toEqual(paint("success/20"));
     expect(hover.stroke?.color).toEqual(paint("success"));
@@ -491,6 +499,8 @@ describe("the Badge component set", () => {
       paddingBottom: literal(2),
       paddingLeft: literal(10),
       itemSpacing: literal(0),
+      primaryAlign: "CENTER",
+      counterAlign: "CENTER",
       cornerRadius: token("radius-lg"),
       fill: paint("primary"),
       stroke: { color: transparent, weight: literal(1) },
@@ -517,7 +527,7 @@ describe("the Badge component set", () => {
     const outline = badge("outline", "default");
     expect(outline.stroke).toEqual({ color: paint("border"), weight: literal(1) });
     expect([outline.fill, outline.shadows]).toEqual([undefined, []]);
-    expect(outline.children[0]?.color).toEqual(paint("foreground"));
+    expect(firstColor(outline)).toEqual(paint("foreground"));
   });
 
   it("strokes each soft badge with its role at 20% over the soft surface", () => {
@@ -530,15 +540,15 @@ describe("the Badge component set", () => {
       const soft = badge(variant ?? "", "default");
       expect(soft.stroke, variant).toEqual({ color: paint(`${role}/20`), weight: literal(1) });
       expect(soft.fill, variant).toEqual(paint(`${role}-soft`));
-      expect(soft.children[0]?.color, variant).toEqual(paint(`${role}-soft-foreground`));
+      expect(firstColor(soft), variant).toEqual(paint(`${role}-soft-foreground`));
     }
   });
 
   it("strokes the outline status badges with their role, and outline-secondary with secondary", () => {
     expect(badge("outline-secondary", "default").stroke?.color).toEqual(paint("secondary"));
-    expect(badge("outline-secondary", "default").children[0]?.color).toEqual(paint("foreground"));
+    expect(firstColor(badge("outline-secondary", "default"))).toEqual(paint("foreground"));
     const warning = badge("outline-warning", "default");
-    expect([warning.stroke?.color, warning.children[0]?.color]).toEqual([paint("warning"), paint("warning")]);
+    expect([warning.stroke?.color, firstColor(warning)]).toEqual([paint("warning"), paint("warning")]);
     expect(badge("outline-destructive", "default").stroke?.color).toEqual(paint("error"));
   });
 
@@ -592,6 +602,8 @@ describe("the Kbd component set", () => {
       paddingBottom: literal(0),
       paddingLeft: literal(4),
       itemSpacing: literal(4),
+      primaryAlign: "CENTER",
+      counterAlign: "CENTER",
       cornerRadius: token("radius-sm"),
       fill: paint("muted"),
       stroke: { color: paint("border"), weight: literal(1) },
@@ -672,6 +684,8 @@ describe("the Radio icon button component set", () => {
       paddingBottom: literal(0),
       paddingLeft: literal(0),
       itemSpacing: literal(0),
+      primaryAlign: "CENTER",
+      counterAlign: "CENTER",
       cornerRadius: token("radius-lg"),
       fill: paint("card"),
       stroke: { color: paint("input"), weight: literal(1) },
@@ -788,17 +802,42 @@ describe("the icon reference check", () => {
     icons: [{ key: iconKey("Plus"), name: "Plus", svg: "<svg></svg>" }],
   };
 
-  it("fails the build for an icon layer that links a swap property the set does not define", async () => {
-    const { componentSet } = buildComponentSet(chip, {
-      compiled: await compileUtilities(["text-[#000000]", "[&_svg]:size-[16px]"]),
-      variables: makeVariableIndex([]),
-      page: [],
-      base: [],
-    });
-    expect(() => checkIconReferences(componentSet, library)).toThrow(
-      "chip/state=rest: the Badge icon links Badge icon, which Chip does not define"
-    );
+  /** The set with each root's layers moved into a frame inside a frame, as a part tree nests them. */
+  const nested = (set: Omit<ComponentSetSpec, "page">): Omit<ComponentSetSpec, "page"> => ({
+    ...set,
+    variants: set.variants.map((variant) => {
+      const { name: _slot, ...box } = variant.root;
+      const part = (key: string, children: readonly ChildLayerSpec[]): ChildLayerSpec => ({
+        ...box,
+        kind: "frame",
+        key,
+        name: key,
+        children,
+      });
+      return {
+        ...variant,
+        root: { ...variant.root, children: [part("outer", [part("inner", box.children)])] },
+      };
+    }),
   });
+
+  it.each([
+    ["on the root", (set: Omit<ComponentSetSpec, "page">) => set],
+    ["two frames down", nested],
+  ])(
+    "fails the build for an icon layer %s that links a swap property the set does not define",
+    async (_, place) => {
+      const { componentSet } = buildComponentSet(chip, {
+        compiled: await compileUtilities(["text-[#000000]", "[&_svg]:size-[16px]"]),
+        variables: makeVariableIndex([]),
+        page: [],
+        base: [],
+      });
+      expect(() => checkIconReferences(place(componentSet), library)).toThrow(
+        "chip/state=rest: the Badge icon links Badge icon, which Chip does not define"
+      );
+    }
+  );
 });
 
 describe("the icon library", () => {

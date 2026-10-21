@@ -17,6 +17,7 @@ import type { VariableIndex } from "./css-values";
 import { fuseIcons, ICON_SIZE } from "./icon-library";
 import { KIT } from "./kit-registry";
 import type { KitPage } from "./kit-registry";
+import { walkLayers } from "./kit-spec";
 import type { ComponentSetSpec, IconLibrarySpec, KitSpec, ModeRef, PageSpec, PreviewSpec } from "./kit-spec";
 import { baseBorderColor, compileUtilities } from "./utility-css";
 
@@ -229,16 +230,16 @@ export function checkIconReferences(set: Omit<ComponentSetSpec, "page">, library
     }
   }
   for (const variant of set.variants) {
-    for (const child of variant.root.children) {
-      if (child.kind !== "icon") {
+    for (const layer of walkLayers(variant.root)) {
+      if (layer.kind !== "icon") {
         continue;
       }
-      if (!icons.has(child.icon)) {
-        throw new Error(`${variant.key}: the ${child.name} shows ${child.icon}, which the library lacks`);
+      if (!icons.has(layer.icon)) {
+        throw new Error(`${variant.key}: the ${layer.name} shows ${layer.icon}, which the library lacks`);
       }
-      if (child.swapProperty !== undefined && !properties.has(child.swapProperty)) {
+      if (layer.swapProperty !== undefined && !properties.has(layer.swapProperty)) {
         throw new Error(
-          `${variant.key}: the ${child.name} links ${child.swapProperty}, which ${set.name} does not define`
+          `${variant.key}: the ${layer.name} links ${layer.swapProperty}, which ${set.name} does not define`
         );
       }
     }

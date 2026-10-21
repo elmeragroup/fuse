@@ -1,10 +1,12 @@
 /**
- * The text and icon layers inside a variant's root.
+ * The text, icon and frame layers inside a variant's root, and the layers each frame holds.
  */
 
+import { walkLayers } from "../../src/components/kit-spec.ts";
 import type {
   ChildLayerSpec,
   ComponentSetSpec,
+  FrameLayerSpec,
   IconLayerSpec,
   NumberSpec,
   TextLayerSpec,
@@ -25,6 +27,8 @@ import { findOwned, placeOwned, planOwnedChildren } from "./identity.ts";
 import type { Siblings } from "./identity.ts";
 import { change, create, existing } from "./plan.ts";
 import type { Target } from "./plan.ts";
+import { planBox } from "./root-layer.ts";
+import type { LayerParent } from "./root-layer.ts";
 
 /**
  * The TEXT and INSTANCE_SWAP properties of a component set, from the name in the spec to the
@@ -165,13 +169,13 @@ export async function requireNewSetFonts(
 ): Promise<void> {
   const families = new Map<string, string>();
   for (const variant of set.variants) {
-    for (const child of variant.root.children) {
-      if (child.kind !== "text") {
+    for (const layer of walkLayers(variant.root)) {
+      if (layer.kind !== "text") {
         continue;
       }
-      let family = child.fontFamily.kind === "literal" ? child.fontFamily.value : undefined;
-      if (child.fontFamily.kind === "variable") {
-        const variable = run.variables.variable(child.fontFamily.variable);
+      let family = layer.fontFamily.kind === "literal" ? layer.fontFamily.value : undefined;
+      if (layer.fontFamily.kind === "variable") {
+        const variable = run.variables.variable(layer.fontFamily.variable);
         family = families.get(variable.id);
         if (family === undefined) {
           // SAFETY: the kit check confirmed the font family variable is a STRING variable,
@@ -181,7 +185,7 @@ export async function requireNewSetFonts(
         }
       }
       if (family !== undefined) {
-        requireFont(run, `${set.name} / ${child.name}`, { family, style: child.fontStyle });
+        requireFont(run, `${set.name} / ${layer.name}`, { family, style: layer.fontStyle });
       }
     }
   }
@@ -202,17 +206,17 @@ function heldFonts(run: Run, text: TextNode): FontName[] {
  * @param run - The run.
  * @param consumer - The existing node whose modes the new layers take.
  * @param label - The new node's label, for errors.
- * @param specs - The new node's child layers.
+ * @param layers - Every layer the new node brings, such as `walkLayers` lists below a box.
  */
 export function requireNewTextFonts(
   run: Run,
   consumer: SceneNode,
   label: string,
-  specs: readonly ChildLayerSpec[]
+  layers: readonly ChildLayerSpec[]
 ): void {
-  for (const spec of specs) {
-    if (spec.kind === "text") {
-      requireFont(run, `${label} / ${spec.name}`, fontFor(run, consumer, spec));
+  for (const layer of layers) {
+    if (layer.kind === "text") {
+      requireFont(run, `${label} / ${layer.name}`, fontFor(run, consumer, layer));
     }
   }
 }
@@ -461,10 +465,26 @@ async function planIcon(
 
 const isText = (node: BaseNode): node is TextNode => node.type === "TEXT";
 const isInstance = (node: BaseNode): node is InstanceNode => node.type === "INSTANCE";
+const isFrame = (node: BaseNode): node is FrameNode => node.type === "FRAME";
+
+/** Plan a frame layer: its name, its box, then the layers it holds. */
+async function planFrame(
+  run: Run,
+  frame: FrameNode,
+  label: string,
+  spec: FrameLayerSpec,
+  links: LayerLinks
+): Promise<void> {
+  planScalar(run, label, "name", frame.name, spec.name, () => {
+    frame.name = spec.name;
+  });
+  planBox(run, frame, label, spec, "frame");
+  await planChildren(run, frame, label, spec.children, links);
+}
 
 async function planChild(
   run: Run,
-  component: ComponentNode,
+  parent: LayerParent,
   siblings: Siblings,
   label: string,
   spec: ChildLayerSpec,
@@ -472,18 +492,33 @@ async function planChild(
 ): Promise<Target<SceneNode>> {
   const layerLabel = `${label} / ${spec.name}`;
   const description = `create the ${spec.kind} layer ${spec.name}`;
+  if (spec.kind === "frame") {
+    const found = findOwned(run.plan, siblings, label, spec.key, spec.name, isFrame);
+    if (found !== undefined) {
+      await planFrame(run, found, layerLabel, spec, links);
+      return existing(found);
+    }
+    requireNewTextFonts(run, parent, label, walkLayers(spec));
+    return create(
+      run.plan,
+      label,
+      description,
+      () => placeOwned(parent, run.figma.createFrame(), spec.key, spec.name),
+      (made, plan) => planFrame({ ...run, plan }, made, layerLabel, spec, links)
+    );
+  }
   if (spec.kind === "text") {
     const found = findOwned(run.plan, siblings, label, spec.key, spec.name, isText);
     if (found !== undefined) {
       planText(run, found, layerLabel, spec, links.properties, heldFonts(run, found));
       return existing(found);
     }
-    requireNewTextFonts(run, component, label, [spec]);
+    requireNewTextFonts(run, parent, label, [spec]);
     return create(
       run.plan,
       label,
       description,
-      () => placeOwned(component, run.figma.createText(), spec.key, spec.name),
+      () => placeOwned(parent, run.figma.createText(), spec.key, spec.name),
       (made, plan) => planText({ ...run, plan }, made, layerLabel, spec, links.properties, [])
     );
   }
@@ -500,29 +535,30 @@ async function planChild(
     run.plan,
     label,
     description,
-    () => placeOwned(component, icon.node.get().createInstance(), spec.key, spec.name),
+    () => placeOwned(parent, icon.node.get().createInstance(), spec.key, spec.name),
     (made, plan) => planIcon({ ...run, plan }, made, layerLabel, spec, links)
   );
 }
 
 /**
- * Plan a variant's child layers against the spec: create the missing ones, update the rest,
- * delete the kit's layers the spec dropped and restore the spec's order.
+ * Plan the layers of a variant or of a frame layer against the spec: create the missing ones,
+ * update the rest, delete the kit's layers the spec dropped and restore the spec's order. A
+ * frame layer plans its own layers the same way, so a key is unique among its siblings alone.
  *
  * @param run - The run.
- * @param component - The variant component.
- * @param label - The variant's label, for change lines.
- * @param specs - The child layers, in order.
+ * @param parent - The variant component, or a frame layer below it.
+ * @param label - The parent's label, for change lines.
+ * @param specs - The parent's layers, in order.
  * @param links - The set's properties and the kit's icons.
  */
 export async function planChildren(
   run: Run,
-  component: ComponentNode,
+  parent: LayerParent,
   label: string,
   specs: readonly ChildLayerSpec[],
   links: LayerLinks
 ): Promise<void> {
-  await planOwnedChildren(run.plan, component, label, "layer", specs, (spec, siblings) =>
-    planChild(run, component, siblings, label, spec, links)
+  await planOwnedChildren(run.plan, parent, label, "layer", specs, (spec, siblings) =>
+    planChild(run, parent, siblings, label, spec, links)
   );
 }
