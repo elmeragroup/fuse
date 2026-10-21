@@ -19,7 +19,7 @@
           "type": "RefObject<SelectRootActions | null> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "A ref to imperative actions. - `unmount`: Manually unmounts the select. Call this after any externally controlled closing animation finishes.",
+          "description": "A ref to imperative actions. - `unmount`: Ends the closing phase of the select after an externally controlled closing animation finishes. Call `preventUnmountOnClose()` in `onOpenChange` first, otherwise the select completes closing on its own. Whether it leaves the DOM is decided by `keepMounted` on the portal. - `close`: Closes the select imperatively when called.",
           "required": false
         },
         {
@@ -49,7 +49,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "SelectValueType<Value, Multiple> | null | undefined",
+          "type": "SelectInputValue<Value, Multiple> | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "The uncontrolled value of the select when it's initially rendered. To render a controlled select, use the `value` prop instead.",
@@ -192,7 +192,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((open: boolean, eventDetails: SelectRootChangeEventDetails) => void) | undefined",
+          "type": "((open: boolean, eventDetails: SelectRootOpenChangeEventDetails) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Event handler called when the select popup is opened or closed.",
@@ -214,7 +214,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "((value: SelectValueType<Value, Multiple> | (Multiple extends true ? never : null), eventDetails: SelectRootChangeEventDetails) => void) | undefined",
+          "type": "((value: SelectOutputValue<Value, Multiple> | (Multiple extends true ? never : null), eventDetails: SelectRootChangeEventDetails) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Event handler called when the value of the select changes.",
@@ -258,7 +258,7 @@
           "origin": {
             "packageName": "@base-ui/react"
           },
-          "type": "SelectValueType<Value, Multiple> | null | undefined",
+          "type": "SelectInputValue<Value, Multiple> | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "The value of the select. Use when controlled.",

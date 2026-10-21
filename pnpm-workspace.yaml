@@ -10,7 +10,7 @@ catalog:
   "@effect/vitest": 4.0.2
   "@elmeragroup/internal": 0.2.0-canary.10
   "@arethetypeswrong/core": 0.18.5
-  "@base-ui/react": 1.8.0
+  "@base-ui/react": 1.9.0
   "@figma/plugin-typings": 1.141.0
   "@fontsource/roboto": 5.3.0
   "@internationalized/date": 3.12.4

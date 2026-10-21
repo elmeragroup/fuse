@@ -176,27 +176,29 @@ export function CommandSearch({
   const [ownQuery, setOwnQuery] = useState(defaultValue ?? "");
   // Each new session starts fresh. The state changes during render, not in an effect, as React's
   // docs adjust state from a changed prop.
+  // Autocomplete keeps its highlighted row in its own store, above any rows that remount. Base UI
+  // clears it in `unmount()`, which it calls itself when a close animation ends, but only while
+  // the Autocomplete is closed, and this inline search is always open. Base UI ignores an
+  // `unmount()` call while the Autocomplete is open, so each new session closes the search for
+  // one commit. The layout effect of that commit calls `unmount()`, and its cleanup reports
+  // `onOpenChangeComplete(false)`, which opens the search again before the browser paints.
+  // `unmount()` clears the highlight, and `autoHighlight="always"` then puts it back on the first
+  // row. It fires `onItemHighlighted`, not `onValueChange`. After a finished close it clears a
+  // highlight the next opening would reset anyway, and after an opening that interrupted a close
+  // it is the only reset the highlight gets.
+  const [resetting, setResetting] = useState(false);
   const [seenSession, setSeenSession] = useState(session);
   if (seenSession !== session) {
     setSeenSession(session);
     setOwnQuery(defaultValue ?? "");
+    setResetting(true);
   }
-  // Autocomplete keeps its highlighted row in its own store, above any rows that remount. Base UI
-  // clears it in `unmount()`, which it calls itself when a close animation ends, but only while
-  // the Autocomplete is closed, and this inline search is always open. So the search calls it
-  // through `actionsRef` instead, which turns Base UI's own call off. `unmount()` clears the
-  // highlight, and `autoHighlight="always"` then puts it back on the first row. It fires
-  // `onItemHighlighted`, not `onValueChange`. It runs on each new session: after a finished
-  // close it clears a highlight the next opening would reset anyway, and after an opening that
-  // interrupted a close it is the only reset the highlight gets.
   const actionsRef = useRef<AutocompleteRootActions | null>(null);
-  const highlightSession = useRef(session);
   useLayoutEffect(() => {
-    if (highlightSession.current !== session) {
-      highlightSession.current = session;
+    if (resetting) {
       actionsRef.current?.unmount();
     }
-  }, [session]);
+  }, [resetting]);
   const scroller = useRef<CommandVirtualScroller | null>(null);
   const [highlightedIndex, setHighlightedIndex] = useState<number | undefined>(undefined);
   const state = useMemo<CommandSearchState>(
@@ -207,7 +209,12 @@ export function CommandSearch({
     <CommandSearchContext.Provider value={state}>
       <AutocompletePrimitive.Root
         inline
-        open
+        open={!resetting}
+        onOpenChangeComplete={(isOpen) => {
+          if (!isOpen) {
+            setResetting(false);
+          }
+        }}
         actionsRef={actionsRef}
         autoHighlight={autoHighlight}
         keepHighlight={keepHighlight}

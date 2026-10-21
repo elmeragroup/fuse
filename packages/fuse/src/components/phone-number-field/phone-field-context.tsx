@@ -52,6 +52,7 @@ const DETACHED_FIELD_CONTEXT: FieldRootContext = {
   setDirty: NOOP,
   setFilled: NOOP,
   setFocused: NOOP,
+  focusOwnerRef: { current: undefined },
   validationMode: "onSubmit",
   shouldValidateOnChange: () => false,
   state: DEFAULT_FIELD_ROOT_STATE,
