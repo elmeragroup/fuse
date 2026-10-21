@@ -93,7 +93,9 @@ function summaryRows(report: CompareReport): string {
         preview.theme === null
           ? "not rendered"
           : `${preview.theme.variant}-${preview.theme.brand}-${preview.theme.segment}, ${preview.theme.scheme}, ${preview.theme.density}`;
-      return `<tr><td>${escape(preview.name)}</td><td>${escape(theme)}</td><td>${escape(preview.font ?? "")}</td><td>${String(rows.length)}</td><td>${String(sized)}</td><td>${percent(worst)}</td><td>${percent(mean)}</td><td>${String(skipped)}</td></tr>`;
+      // A rendered preview whose cells show no text checks no font, and reports an empty one.
+      const font = preview.font === "" ? "no text" : (preview.font ?? "");
+      return `<tr><td>${escape(preview.name)}</td><td>${escape(theme)}</td><td>${escape(font)}</td><td>${String(rows.length)}</td><td>${String(sized)}</td><td>${percent(worst)}</td><td>${percent(mean)}</td><td>${String(skipped)}</td></tr>`;
     })
     .join("\n");
 }
@@ -167,7 +169,7 @@ export function renderReportHtml(report: CompareReport): string {
 <body>
 <h1>Fuse kit compared with the browser</h1>
 <p>Snapshot of <strong>${escape(report.snapshot.file)}</strong>, exported ${escape(report.snapshot.exportedAt)}, compared ${escape(report.generatedAt)}.
-Each cell lays the Figma export and the browser's Fuse Button over the theme's background with their boxes' top-left corners aligned.
+Each cell lays the Figma export and the browser's Fuse component over the theme's background with their boxes' top-left corners aligned.
 Mismatch is the share of the browser box's area at ${String(report.snapshot.scale)}x whose pixels differ past pixelmatch's threshold of ${String(report.threshold)}.
 Tolerant leaves out the pixels pixelmatch takes for anti-aliasing; raw counts them. Δ is Figma's box minus the browser's, in pixels.
 Font: ${escape(report.fontPackage)}.</p>

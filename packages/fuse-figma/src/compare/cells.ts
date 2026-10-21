@@ -1,60 +1,19 @@
 /**
- * The cells `figma:compare` knows how to render: a kit variant key parsed into the Button props
- * it stands for. A key such as `button/variant=ghost,size=sm,state=hover,icon=end` names the
- * component set, then each variant property. The parser accepts only the axes and values the
- * harness can render, so a new axis in the kit shows up as an unsupported cell, not as a cell
- * rendered without it.
+ * The cells `figma:compare` knows how to render: a kit variant key parsed into the definition
+ * it belongs to and a value for each of its axes. A key such as
+ * `button/variant=ghost,size=sm,state=hover,icon=end` names the component set, then each
+ * variant property. `variantKey` in `component-spec.ts` writes these keys, and this module reads
+ * them back against the kit's definitions. The parser accepts only the axes and values a
+ * definition declares, so a new axis in a snapshot shows up as an unsupported cell, not as a
+ * cell rendered without it.
+ *
+ * Every definition names its interactive axis `state`, with `rest` among its values. The page
+ * forces the pointer and keyboard states from that axis and compares them with the cell at rest.
  */
 
 import { Result } from "effect";
 
-import { buttonVariants } from "@elmeragroup/fuse/recipe-catalog";
-
-/** A `variant` the Button recipe declares. */
-export type ButtonVariant = keyof typeof buttonVariants.variants.variant;
-
-type RecipeSize = keyof typeof buttonVariants.variants.size;
-
-/** A label size: every recipe size except the square `icon*` ones. */
-export type LabelSize = Exclude<RecipeSize, `icon${string}`>;
-
-/**
- * A square icon size. `icon-inline` stays out, as in the kit, because it takes its size from
- * the surrounding text line.
- */
-export type IconSize = Exclude<Extract<RecipeSize, `icon${string}`>, "icon-inline">;
-
-/** The kit's `state` axis. */
-export const CELL_STATES = ["rest", "hover", "focus", "disabled", "pending"] as const;
-
-/** One value of the kit's `state` axis. */
-export type CellState = (typeof CELL_STATES)[number];
-
-/** The kit's `icon` axis on `Button`. */
-export const ICON_PLACEMENTS = ["none", "start", "end"] as const;
-
-/** One value of the kit's `icon` axis. */
-export type IconPlacement = (typeof ICON_PLACEMENTS)[number];
-
-/** A cell of the `Button` set. */
-export type LabelButtonCell = {
-  readonly component: "button";
-  readonly variant: ButtonVariant;
-  readonly size: LabelSize;
-  readonly state: CellState;
-  readonly icon: IconPlacement;
-};
-
-/** A cell of the `Icon button` set. */
-export type IconButtonCell = {
-  readonly component: "icon-button";
-  readonly variant: ButtonVariant;
-  readonly size: IconSize;
-  readonly state: CellState;
-};
-
-/** A cell the harness renders. */
-export type Cell = LabelButtonCell | IconButtonCell;
+import type { Cell, ComponentDefinition } from "../components/component-spec.ts";
 
 /** A variant key the harness cannot render. */
 class UnsupportedVariant extends Error {
@@ -72,46 +31,11 @@ class UnsupportedVariant extends Error {
   }
 }
 
-/** Every `variant` the recipe declares, in its order. */
-export const BUTTON_VARIANTS: readonly ButtonVariant[] = Object.keys(buttonVariants.variants.variant).filter(
-  isButtonVariant
-);
-
-/** Every label size the recipe declares, in its order. */
-export const LABEL_SIZES: readonly LabelSize[] = Object.keys(buttonVariants.variants.size).filter(
-  isLabelSize
-);
-
-/** Every square size the kit models, in the recipe's order. */
-export const ICON_SIZES: readonly IconSize[] = Object.keys(buttonVariants.variants.size).filter(isIconSize);
-
-function isButtonVariant(value: string): value is ButtonVariant {
-  return Object.hasOwn(buttonVariants.variants.variant, value);
-}
-
-function isLabelSize(value: string): value is LabelSize {
-  return Object.hasOwn(buttonVariants.variants.size, value) && !value.startsWith("icon");
-}
-
-function isIconSize(value: string): value is IconSize {
-  return (
-    Object.hasOwn(buttonVariants.variants.size, value) && value.startsWith("icon") && value !== "icon-inline"
-  );
-}
-
-const AXES = {
-  button: ["variant", "size", "state", "icon"],
-  "icon-button": ["variant", "size", "state"],
-} as const;
-
 /**
- * Split a variant key into its component set and its properties.
- *
- * @param key - A variant key, such as `icon-button/variant=ghost,size=icon-xs,state=hover`.
- * @returns The set's key and each property's value, or `UnsupportedVariant` when the key does
- *   not have the `<set>/<name>=<value>,…` shape or names a property twice.
+ * Split a variant key into its component set and its properties, or `UnsupportedVariant` when
+ * the key does not have the `<set>/<name>=<value>,…` shape or names a property twice.
  */
-export function parseVariantProperties(
+function parseVariantProperties(
   key: string
 ): Result.Result<
   { readonly set: string; readonly properties: ReadonlyMap<string, string> },
@@ -136,92 +60,80 @@ export function parseVariantProperties(
   return Result.succeed({ set: key.slice(0, slash), properties });
 }
 
-function pick<Value extends string>(
-  key: string,
-  properties: ReadonlyMap<string, string>,
-  name: string,
-  accept: (value: string) => Value | undefined
-): Result.Result<Value, UnsupportedVariant> {
-  const value = properties.get(name);
-  if (value === undefined) {
-    return Result.fail(new UnsupportedVariant(key, `the key has no ${name}`));
-  }
-  const accepted = accept(value);
-  return accepted === undefined
-    ? Result.fail(new UnsupportedVariant(key, `the harness cannot render ${name}=${value}`))
-    : Result.succeed(accepted);
-}
-
-const among =
-  <Value extends string>(values: readonly Value[]) =>
-  (value: string): Value | undefined =>
-    values.find((candidate) => candidate === value);
+/**
+ * A parsed variant key.
+ *
+ * @template Definition - The definition type the parser searched.
+ */
+export type ParsedCell<Definition> = {
+  /** The definition whose key the variant key's set names. */
+  readonly definition: Definition;
+  /** A value for each of the definition's axes, each one the axis declares. */
+  readonly cell: Cell;
+};
 
 /**
- * Parse a kit variant key into the cell it renders.
+ * Parse a kit variant key into the definition it belongs to and the cell it names.
  *
+ * @template Definition - The definition type, which needs at least a key and axes.
  * @param key - A variant key from the snapshot.
- * @returns The cell, or `UnsupportedVariant` for a set, axis or value the harness cannot render.
+ * @param definitions - The definitions the harness renders, such as the kit registry's.
+ * @returns The definition and the cell, or `UnsupportedVariant` for a set no definition has, an
+ *   axis the definition lacks or misses, or a value its axis does not declare.
  */
-export function parseCell(key: string): Result.Result<Cell, UnsupportedVariant> {
+export function parseCell<Definition extends Pick<ComponentDefinition, "key" | "axes">>(
+  key: string,
+  definitions: readonly Definition[]
+): Result.Result<ParsedCell<Definition>, UnsupportedVariant> {
   return Result.gen(function* () {
     const { set, properties } = yield* parseVariantProperties(key);
-    if (set !== "button" && set !== "icon-button") {
+    const definition = definitions.find((candidate) => candidate.key === set);
+    if (definition === undefined) {
       return yield* Result.fail(new UnsupportedVariant(key, `the harness renders no component set ${set}`));
     }
-    const known: readonly string[] = AXES[set];
-    const extra = [...properties.keys()].filter((name) => !known.includes(name));
+    const known = new Set(definition.axes.map((axis) => axis.name));
+    const extra = [...properties.keys()].filter((name) => !known.has(name));
     if (extra.length > 0) {
       return yield* Result.fail(
         new UnsupportedVariant(key, `the harness cannot render the axis ${extra.join(", ")}`)
       );
     }
-    const variant = yield* pick(key, properties, "variant", among(BUTTON_VARIANTS));
-    const state = yield* pick(key, properties, "state", among(CELL_STATES));
-    if (set === "icon-button") {
-      const size = yield* pick(key, properties, "size", among(ICON_SIZES));
-      const cell: Cell = { component: "icon-button", variant, size, state };
-      return cell;
+    const cell: Record<string, string> = {};
+    for (const axis of definition.axes) {
+      const value = properties.get(axis.name);
+      if (value === undefined) {
+        return yield* Result.fail(new UnsupportedVariant(key, `the key has no ${axis.name}`));
+      }
+      if (!axis.values.includes(value)) {
+        return yield* Result.fail(
+          new UnsupportedVariant(key, `the harness cannot render ${axis.name}=${value}`)
+        );
+      }
+      cell[axis.name] = value;
     }
-    const size = yield* pick(key, properties, "size", among(LABEL_SIZES));
-    const icon = yield* pick(key, properties, "icon", among(ICON_PLACEMENTS));
-    const cell: Cell = { component: "button", variant, size, state, icon };
-    return cell;
+    return { definition, cell };
   });
 }
 
-/**
- * The variant key of a cell, in the kit's axis order.
- *
- * @param cell - The cell.
- * @returns The key the kit gives the cell's variant.
- */
-export function cellKey(cell: Cell): string {
-  return cell.component === "button"
-    ? `button/variant=${cell.variant},size=${cell.size},state=${cell.state},icon=${cell.icon}`
-    : `icon-button/variant=${cell.variant},size=${cell.size},state=${cell.state}`;
-}
-
-/** A pseudo class the page forces on a cell's button. */
+/** A pseudo class the page forces on a cell's measured element. */
 export type ForcedPseudoClass = "hover" | "focus" | "focus-visible";
 
-const FORCED = {
-  rest: [],
-  hover: ["hover"],
-  focus: ["focus", "focus-visible"],
-  disabled: [],
-  pending: [],
-} as const satisfies Record<CellState, readonly ForcedPseudoClass[]>;
+/** The `state` values the page forces. Every other state is one the markup draws itself. */
+const FORCED = new Map<string, readonly ForcedPseudoClass[]>([
+  ["hover", ["hover"]],
+  ["focus", ["focus", "focus-visible"]],
+]);
 
 /**
  * The pseudo classes the page forces for a cell: `:hover` for hover, and `:focus` with
- * `:focus-visible` for focus, as a pointer over the button or a keyboard user on it would.
+ * `:focus-visible` for focus, as a pointer over the element or a keyboard user on it would.
  *
- * @param state - A parsed cell's state.
- * @returns The pseudo classes, none for a state the markup itself draws.
+ * @param cell - A parsed cell.
+ * @returns The pseudo classes its `state` calls for, none for a state the markup itself draws
+ *   or a cell with no `state` axis.
  */
-export function forcedPseudoClasses(state: CellState): readonly ForcedPseudoClass[] {
-  return FORCED[state];
+export function forcedPseudoClasses(cell: Cell): readonly ForcedPseudoClass[] {
+  return FORCED.get(cell.state ?? "") ?? [];
 }
 
 /**

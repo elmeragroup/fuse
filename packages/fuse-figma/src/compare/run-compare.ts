@@ -1,19 +1,22 @@
 /**
- * Compare a snapshot with the real Fuse Button, cell by cell. For each preview the run renders
- * every instance's cell on one browser page in the preview's theme and density, lays the Figma
- * PNG and the browser crop over the theme's background on one canvas with their boxes aligned,
- * and diffs them. It writes three pictures per cell, `report.json` and `report.html`.
+ * Compare a snapshot with the real Fuse components, cell by cell. For each preview the run
+ * renders every instance's cell on one browser page in the preview's theme and density, lays the
+ * Figma PNG and the browser crop over the theme's background on one canvas with their boxes
+ * aligned, and diffs them. It writes three pictures per cell, `report.json` and `report.html`.
  */
 
 import { Result } from "effect";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import type { Cell } from "../components/component-spec.ts";
+import { KIT } from "../components/kit-registry.ts";
 import { browserFootprint, coversRenderBounds, figmaFootprint, sharedCanvas } from "./align.ts";
 import { CompareBrowser, DEVICE_SCALE } from "./browser-render.ts";
 import type { BrowserUnavailable, CellRequest, FontNotLoaded, RenderedCell } from "./browser-render.ts";
-import { forcedPseudoClasses, parseCell, parseVariantProperties, restingTwin } from "./cells.ts";
-import type { Cell } from "./cells.ts";
+import { loadRenderers, renderCellHtml } from "./cell-renderers.ts";
+import type { CellRenderer } from "./cell-renderers.ts";
+import { forcedPseudoClasses, parseCell, restingTwin } from "./cells.ts";
 import { locateFuseBuild, readPageAssets } from "./page-assets.ts";
 import type { FuseBuildMissing } from "./page-assets.ts";
 import type { PageLayout } from "./preview-page.ts";
@@ -75,7 +78,10 @@ export type ReportPreview = {
   readonly theme: PreviewTheme | null;
   /** The theme's `background` as `rgb(r g b)`, or null when the preview was skipped. */
   readonly background: string | null;
-  /** The font the buttons used, after the page checked that it loaded. */
+  /**
+   * The fonts the cells' text used, after the page checked that they loaded: empty when the
+   * preview shows no text, and null when the preview was skipped.
+   */
   readonly font: string | null;
 };
 
@@ -101,11 +107,15 @@ class UnsupportedScale extends Error {
 /** Why a run stopped before it compared anything. */
 export type CompareFailure = FuseBuildMissing | BrowserUnavailable | FontNotLoaded | UnsupportedScale;
 
-/** Renders a cell's Button to HTML, from the Fuse build. */
-type RenderCellHtml = (cell: Cell) => string;
+/** The renderers the run loaded from the Fuse build, by the key of the definition each renders. */
+type Renderers = ReadonlyMap<string, CellRenderer>;
 
-/** A snapshot instance and the page cell that renders it. */
-export type PlannedCell = { readonly instance: InstanceSnapshot; readonly request: CellRequest };
+/** A snapshot instance, the cell its variant key names, and the page cell that renders it. */
+export type PlannedCell = {
+  readonly instance: InstanceSnapshot;
+  readonly cell: Cell;
+  readonly request: CellRequest;
+};
 
 /** A preview's page: the cells it renders, and the instances it cannot. */
 export type CellPlan = {
@@ -117,26 +127,33 @@ export type CellPlan = {
  * Plan a preview's page: one request per instance the harness can render.
  *
  * @param instances - The preview's instances.
- * @param renderHtml - Renders a cell's Button.
+ * @param renderers - The renderers, by definition key.
  * @returns The planned cells, and the instances whose variant the harness cannot render.
  */
-export function planCells(instances: readonly InstanceSnapshot[], renderHtml: RenderCellHtml): CellPlan {
+export function planCells(instances: readonly InstanceSnapshot[], renderers: Renderers): CellPlan {
+  const renderable = KIT.flatMap(({ definition }) => {
+    const renderer = renderers.get(definition.key);
+    return renderer === undefined ? [] : [{ ...definition, renderer }];
+  });
   const planned: PlannedCell[] = [];
   const unsupported: { variant: string; reason: string }[] = [];
   instances.forEach((instance, index) => {
-    const cell = parseCell(instance.variant);
-    if (Result.isFailure(cell)) {
-      unsupported.push({ variant: instance.variant, reason: cell.failure.message });
+    const parsed = parseCell(instance.variant, renderable);
+    if (Result.isFailure(parsed)) {
+      unsupported.push({ variant: instance.variant, reason: parsed.failure.message });
       return;
     }
-    const forced = forcedPseudoClasses(cell.success.state);
+    const { definition, cell } = parsed.success;
+    const forced = forcedPseudoClasses(cell);
     planned.push({
       instance,
+      cell,
       request: {
         id: `c${String(index)}`,
-        html: renderHtml(cell.success),
+        html: renderCellHtml(definition.renderer, cell),
+        measured: `> [data-slot="${definition.slot}"]`,
         forced,
-        restingHtml: forced.length === 0 ? undefined : renderHtml(restingTwin(cell.success)),
+        restingHtml: forced.length === 0 ? undefined : renderCellHtml(definition.renderer, restingTwin(cell)),
       },
     });
   });
@@ -229,11 +246,6 @@ function compareCell(
   };
 }
 
-function axesOf(variant: string): Readonly<Record<string, string>> {
-  const parsed = parseVariantProperties(variant);
-  return Result.isFailure(parsed) ? {} : Object.fromEntries(parsed.success.properties);
-}
-
 /**
  * Compare every instance of a snapshot with the browser.
  *
@@ -257,8 +269,8 @@ export async function compareSnapshot(
     return Result.fail(build.failure);
   }
   const assets = readPageAssets(build.success);
-  // The Fuse build exists by now, so its modules load.
-  const { renderCellHtml } = await import("./fuse-markup.ts");
+  // The Fuse build exists by now, so the renderers' imports of it load.
+  const renderers = await loadRenderers();
   const launched = await CompareBrowser.launch(assets);
   if (Result.isFailure(launched)) {
     return Result.fail(launched.failure);
@@ -272,7 +284,7 @@ export async function compareSnapshot(
   const previews: ReportPreview[] = [];
   try {
     for (const [previewIndex, preview] of snapshot.previews.entries()) {
-      const outcome = await comparePreview(browser, preview, previewIndex, renderCellHtml, options);
+      const outcome = await comparePreview(browser, preview, previewIndex, renderers, options);
       if (Result.isFailure(outcome)) {
         return Result.fail(outcome.failure);
       }
@@ -302,7 +314,7 @@ async function comparePreview(
   browser: CompareBrowser,
   preview: PreviewSnapshot,
   previewIndex: number,
-  renderHtml: RenderCellHtml,
+  renderers: Renderers,
   options: CompareOptions
 ): Promise<
   Result.Result<
@@ -323,7 +335,7 @@ async function comparePreview(
       preview: { key: preview.key, name: preview.name, theme: null, background: null, font: null },
     });
   }
-  const { planned, unsupported } = planCells(preview.instances, renderHtml);
+  const { planned, unsupported } = planCells(preview.instances, renderers);
   const rendered = await browser.renderPreview(
     theme.success,
     planned.map((cell) => cell.request),
@@ -335,7 +347,7 @@ async function comparePreview(
   const { background, cells, font } = rendered.success;
   const rows: ReportRow[] = [];
   const skipped = unsupported.map((entry) => skip(entry.variant, entry.reason));
-  for (const { instance, request } of planned) {
+  for (const { instance, cell: parsedCell, request } of planned) {
     const cell = cells.get(request.id);
     if (cell === undefined) {
       throw new Error(`the page returned no picture for ${request.id}`);
@@ -375,7 +387,7 @@ async function comparePreview(
       preview: preview.key,
       previewName: preview.name,
       variant: instance.variant,
-      axes: axesOf(instance.variant),
+      axes: parsedCell,
       figmaBox: { width: instance.box.width, height: instance.box.height },
       browserBox: cell.box,
       pixels: compared._tag === "Compared" ? { raw: compared.raw, tolerant: compared.tolerant } : null,

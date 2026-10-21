@@ -171,9 +171,9 @@ These behaviours have not run against a real file yet:
 
 ### Comparing with the browser
 
-`figma:compare` checks the kit against the real Button. It renders every instance in the preview frames with the Fuse Button in Chromium and compares the two pictures cell by cell.
+`figma:compare` checks the kit against the real Fuse components. It renders every instance in the preview frames with its Fuse component in Chromium and compares the two pictures cell by cell.
 
-1. Build Fuse when `packages/fuse/dist` is missing or older than its sources, with `pnpm --filter @elmeragroup/fuse build`. The comparison renders the Button and loads `styles.css` and `themes.css` from that build, and it warns when the sources are newer.
+1. Build Fuse when `packages/fuse/dist` is missing or older than its sources, with `pnpm --filter @elmeragroup/fuse build`. The comparison renders the components and loads `styles.css` and `themes.css` from that build, and it warns when the sources are newer.
 2. Run the plugin and press Export snapshots. The plugin exports each preview instance as a PNG at 2x, cut to its render bounds so that a focus ring outside the box is included. It records each instance's box and render bounds and the modes its preview frame resolves. The UI downloads the result as `fuse-kit-snapshots.json`. The export writes nothing to the file.
 3. Run the comparison. pnpm runs the script in this package's directory, so pass an absolute path:
 
@@ -186,9 +186,19 @@ These behaviours have not run against a real file yet:
 The browser renders one page per preview:
 
 - The page stamps the preview's theme the way Fuse applies one: `data-theme` and `data-density` on `<html>`, and `data-theme-variant`, `data-theme-brand` and `data-theme-segment` on `<body>`. A brand mode maps to its brand by display name, and `Auto` density maps to the variant's default.
-- It loads Fuse's standalone `styles.css`, Tailwind's preflight in the `base` layer and `themes.css`, and sets `font-sans text-foreground` on `<body>` as the docs layout does. Roboto comes from `@fontsource/roboto`, which serves Google's Roboto, the family Figma renders. The run stops when the face the buttons use has not loaded, so the text never falls back to a system font.
-- Each cell is `<Button>` from the Fuse build, rendered to static HTML. `icon=start` adds `<Plus data-icon="inline-start" />` and `icon=end` adds `<ArrowRight data-icon="inline-end" />`. An icon button holds `<Plus />` and has an `aria-label`. Disabled sets `disabled` and pending sets `isPending`. The page turns off animations and transitions, so the spinner stays at 0°.
-- The page forces `:hover`, or `:focus` and `:focus-visible`, through the Chrome DevTools Protocol. It compares each forced cell's styles with the same cell at rest. When forcing changed nothing, it hovers or focuses that button for real before the screenshot.
+- It loads Fuse's standalone `styles.css`, Tailwind's preflight in the `base` layer and `themes.css`, and sets `font-sans text-foreground` on `<body>` as the docs layout does. Roboto comes from `@fontsource/roboto`, which serves Google's Roboto, the family Figma renders. The run checks every element in a cell that holds text, and stops when a face that text uses has not loaded, so the text never falls back to a system font.
+- The run parses each variant key against the definitions in `components/kit-registry.ts`. Each cell is the element its definition's renderer builds from the Fuse build, rendered to static HTML. The page turns off animations and transitions, so a spinner stays at 0°.
+- The page measures, forces and crops one element per cell: the slot's direct child whose `data-slot` is the definition's `slot`.
+- The page forces `:hover` for `state=hover`, and `:focus` and `:focus-visible` for `state=focus`, through the Chrome DevTools Protocol. It compares the styles of each forced element and its descendants with the same cell at `state=rest`. When forcing changed nothing, it hovers or focuses that element for real before the screenshot.
+
+The Button renderer, `compare/button-cell.ts`, renders both Button sets. `icon=start` adds `<Plus data-icon="inline-start" />` and `icon=end` adds `<ArrowRight data-icon="inline-end" />`. An icon button holds `<Plus />` and has an `aria-label`. Disabled sets `disabled` and pending sets `isPending`.
+
+To compare a new component set:
+
+1. Add its definition and preview cells to `KIT` in `components/kit-registry.ts`. Name its interactive axis `state`, with `rest` among its values, so the page can force hover and focus and find the resting twin.
+2. Add a renderer module beside `compare/button-cell.ts`. It exports a `CellRendering` whose `element(cell)` returns the real Fuse element for a parsed cell. Set the states the markup draws, such as disabled, pressed or checked, through props.
+3. List the module in `compare/cell-renderers.ts` with the definition's key and the `dist/` entry the module imports. The run checks that the entry exists before it loads the module.
+4. Add a markup test beside the renderer whose oracle is the component's public contract, as `compare/button-cell.test.ts` does. `compare/cell-renderers.test.ts` already checks that every definition has a renderer and that each preview cell renders one measured element.
 
 `report.html` opens from disk. It starts with a summary per preview and then lists every cell worst first. Each cell shows three pictures: Figma's export, the browser's crop, and the diff, which marks differing pixels red and anti-aliasing yellow. Figma's export and the browser's crop sit over the theme's background with the boxes' top-left corners aligned. Filters select a preview, a value of each variant axis, or only the flagged cells. `report.json` holds the same rows.
 
@@ -203,7 +213,7 @@ The first comparison of the test file, on 2026-10-20, covered 756 cells in the 1
 - Every Button was wider in Figma, by less than a pixel: 0.41px at 12px type, 0.47px at 14px and 0.61px at 18px. Figma rounds an auto-width text layer up to a whole pixel. Its Roboto matches the browser's, so three labels in a row are 125px wide in Figma and 124.59px in Chromium. The rounding moves the right edge and nothing else. The worst cell differs by 2% of its pixels, all of it that edge and text anti-aliasing.
 - A fixed label width could match the fraction, but then the label would not grow when a designer edits it, so the kit keeps auto width.
 
-`figma:compare --self-check` tests the comparison itself. It renders 182 cells in each of two themes and saves them as a fake snapshot whose render bounds reach 3 pixels past each box. It paints a square into one cell and widens another cell's box by a pixel, and then it compares the snapshot with a second render. It passes when those two cells lead the report and every other cell matches exactly.
+`figma:compare --self-check` tests the comparison itself. It renders every cell of the kit's preview frames in each of two themes and saves them as a fake snapshot whose render bounds reach 3 pixels past each box. It paints a square into the kit's first hover cell and widens the box of its first focus cell by a pixel, in registry order, and then it compares the snapshot with a second render. It passes when those two cells lead the report and every other cell matches exactly.
 
 ## Code map
 
@@ -220,11 +230,13 @@ The first comparison of the test file, on 2026-10-20, covered 756 cells in the 1
 | `components/build-kit.ts`                    | Builds the components plugin's kit spec and coverage table                                                                              |
 | `components/component-spec.ts`               | Turns a recipe into a component set, cell by cell, and records coverage                                                                 |
 | `components/utility-css.ts`, `css-values.ts` | Compile utilities against `fuse.css` and read the values as Figma fields                                                                |
+| `components/kit-registry.ts`                 | The kit's component sets and the cells their preview frames place, read by the build and the comparison                                 |
 | `components/button-kit.ts`                   | The Button and Icon button matrices, the variants they model and the icons each cell renders                                            |
 | `components/icon-library.ts`                 | Renders every Fuse icon to SVG markup for the icon library                                                                              |
 | `components/kit-spec.ts`                     | The kit spec the plugin bundles                                                                                                         |
 | `plugin/src/`                                | The plugin: the plan and its operations, the kit check, identity, field planners, the icon library, the component sets and the previews |
 | `scripts/build-plugin.ts`                    | Builds the kit spec and bundles the plugin                                                                                              |
-| `compare/`, `scripts/compare.ts`             | Renders the kit's cells with the real Button and diffs them against a Figma snapshot export                                             |
+| `compare/`, `scripts/compare.ts`             | Renders the kit's cells with the real Fuse components and diffs them against a Figma snapshot export                                    |
+| `compare/cell-renderers.ts`                  | One renderer per kit definition: the Fuse element for a cell, the element to measure, and the build entry it imports                    |
 
 The tests run the whole command line against `test/in-memory-figma.ts`. That fake file applies batches with the REST API's documented rules, stores numbers as 32-bit floats and resolves aliases the way Figma renders them. Where the documentation is silent, the fake does what a real Enterprise file did on 2026-10-16. It replaces code syntax on an update, it checks for an alias cycle after each value a batch sets, and it refuses any cycle, even one that closes only across modes. It deletes a collection with its modes and variables and keeps an alias into it until a later value in the batch replaces it, as a real Enterprise file did on 2026-10-19 when one batch deleted `Fuse themes` and then rewrote the `Fuse tokens` aliases into it. It also applies the scope rules on the REST API's [variable types page](https://developers.figma.com/docs/rest-api/variables-types/). It rejects a scope the page does not list for the variable's type, such as `GAP` on a color, `ALL_SCOPES` beside another scope, and `ALL_FILLS` beside another fill scope. It follows a real Enterprise file where that file departed from the page on 2026-10-16. It keeps `FONT_STYLE` on a number variable and stores `FONT_WEIGHT` there as `FONT_STYLE`. It stores a description with `&`, `<`, `>`, `"` and `'` HTML-escaped, as a real Enterprise file did on 2026-10-19. Tests can also make it answer with a status, drop a connection, or hold values and types newer than the sync.

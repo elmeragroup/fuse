@@ -2,12 +2,12 @@
  * The page that renders one preview's cells. It loads the CSS a docs-like host loads: Fuse's
  * standalone `styles.css`, Tailwind's preflight in the `base` layer, `themes.css` and the brand
  * font. The docs layout sets `font-sans text-foreground` on `<body>`, and the kit's labels
- * inherit both, so the page body does the same. Preflight matters too: without it a native
- * `<button>` keeps the browser's own font.
+ * inherit both, so the page body does the same. Preflight matters too: without it a native form
+ * control keeps the browser's own font.
  *
- * Each cell sits in its own absolutely placed slot at whole CSS pixels, with the button at a
+ * Each cell sits in its own absolutely placed slot at whole CSS pixels, with its element at a
  * fixed padding from the slot's corner, so every crop starts on a device pixel. The page stops
- * every animation and transition, so the pending spinner stays at 0°.
+ * every animation and transition, so a pending spinner stays at 0°.
  */
 
 import type { ThemeStamps } from "./preview-theme.ts";
@@ -27,7 +27,7 @@ export const ASSET_PATHS = {
 
 /** How the page lays out its cells, in CSS pixels. */
 export type PageLayout = {
-  /** The space around each button that the crop keeps, wide enough for a focus ring. */
+  /** The space around each measured element that the crop keeps, wide enough for a focus ring. */
   readonly padding: number;
   readonly slotWidth: number;
   readonly slotHeight: number;
@@ -39,7 +39,7 @@ export type PageLayout = {
 /** The layout `figma:compare` uses. */
 export const PAGE_LAYOUT: PageLayout = { padding: 8, slotWidth: 280, slotHeight: 96, columns: 6, top: 16 };
 
-/** A cell's place on the page: its id and its Button's HTML. */
+/** A cell's place on the page: its id and its element's HTML. */
 export type PageCell = { readonly id: string; readonly html: string };
 
 /** A point in CSS pixels. */
@@ -53,7 +53,8 @@ export type PageSize = { readonly width: number; readonly height: number };
  *
  * @param layout - The page layout.
  * @param index - The cell's position on the page.
- * @returns The slot's corner. The button's border box starts `padding` pixels further in.
+ * @returns The slot's corner. The measured element's border box starts `padding` pixels further
+ *   in.
  */
 function slotOrigin(layout: PageLayout, index: number): PagePoint {
   return {
@@ -76,9 +77,16 @@ export function pageViewport(layout: PageLayout, count: number): PageSize {
   };
 }
 
-/** The selector of a cell's button. */
-export function cellButtonSelector(id: string): string {
-  return `[data-compare-cell="${id}"] > button`;
+/**
+ * The selector of an element in a cell's slot.
+ *
+ * @param id - The cell's id.
+ * @param measured - A selector relative to the slot that starts with a combinator, such as
+ *   `> [data-slot="button"]`.
+ * @returns The selector from the document root.
+ */
+export function cellSelector(id: string, measured: string): string {
+  return `[data-compare-cell="${id}"] ${measured}`;
 }
 
 /** The selector of the element that paints the theme's `background`. */

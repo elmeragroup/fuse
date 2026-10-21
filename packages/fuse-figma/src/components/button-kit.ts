@@ -20,6 +20,7 @@
 import { buttonVariants } from "@elmeragroup/fuse/recipe-catalog";
 
 import type { Cell, ComponentDefinition, IconSlot } from "./component-spec";
+import { ownKey } from "./own-key";
 
 type ButtonVariant = keyof typeof buttonVariants.variants.variant;
 type ButtonSize = keyof typeof buttonVariants.variants.size;
@@ -35,11 +36,11 @@ const LABEL_SIZES = ["default", "xs", "sm", "lg"] as const satisfies readonly Bu
 const ICON_SIZES = ["icon", "icon-xs", "icon-sm", "icon-lg"] as const satisfies readonly ButtonSize[];
 
 function isVariant(value: string | undefined): value is ButtonVariant {
-  return value !== undefined && Object.hasOwn(buttonVariants.variants.variant, value);
+  return ownKey(buttonVariants.variants.variant, value);
 }
 
 function isSize(value: string | undefined): value is ButtonSize {
-  return value !== undefined && Object.hasOwn(buttonVariants.variants.size, value);
+  return ownKey(buttonVariants.variants.size, value);
 }
 
 function classesFor(cell: Cell): string {

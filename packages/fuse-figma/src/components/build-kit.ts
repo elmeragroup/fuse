@@ -1,7 +1,7 @@
 /**
- * Build the component kit the Fuse plugin applies: an icon component for every Fuse icon, the
- * Button and Icon button component sets from the Button recipe, preview frames that pin three
- * themes at both densities, and the coverage table of every recipe class.
+ * Build the component kit the Fuse plugin applies: an icon component for every Fuse icon, a
+ * component set for each entry of `kit-registry.ts`, preview frames that pin three themes at both
+ * densities, and the coverage table of every recipe class.
  */
 import { Result } from "effect";
 
@@ -9,13 +9,13 @@ import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 
 import { fuseVariableSet } from "../fuse-variable-set";
 import type { CollectionSpec, VariableSpec } from "../variable-set";
-import { BUTTON, ICON_BUTTON } from "./button-kit";
 import { splitClassName } from "./class-name";
 import { buildComponentSet, matrixCells, variantKey } from "./component-spec";
-import type { Cell, ComponentDefinition, PageDeclaration } from "./component-spec";
+import type { PageDeclaration } from "./component-spec";
 import type { CoverageOutcome, CoverageRow } from "./coverage";
 import { makeVariableIndex, readColor } from "./css-values";
 import { fuseIcons, ICON_SIZE } from "./icon-library";
+import { KIT } from "./kit-registry";
 import type { ComponentSetSpec, IconLibrarySpec, KitSpec, ModeRef, PreviewSpec } from "./kit-spec";
 import { compileUtilities } from "./utility-css";
 
@@ -54,20 +54,6 @@ const PREVIEW_THEMES = [
 ] as const;
 
 const PREVIEW_DENSITIES = ["Dense", "Comfortable"] as const;
-
-/** The component sets of the kit, each with the cells its preview frames place. */
-const KIT = [
-  {
-    definition: BUTTON,
-    previewCells: [
-      ...previewCells(BUTTON, "default", { icon: "none" }),
-      ...["start", "end"].flatMap((icon) =>
-        axisValues(BUTTON, "variant").map((variant) => ({ variant, size: "default", state: "rest", icon }))
-      ),
-    ],
-  },
-  { definition: ICON_BUTTON, previewCells: previewCells(ICON_BUTTON, "icon", {}) },
-];
 
 /**
  * The page a Fuse host renders into. The docs layout sets `font-sans text-foreground` on
@@ -253,26 +239,6 @@ function minimums(
     return minimum;
   };
   return minimumOf;
-}
-
-function axisValues(definition: ComponentDefinition, name: string): readonly string[] {
-  return definition.axes.find((axis) => axis.name === name)?.values ?? [];
-}
-
-/**
- * Every state of each variant at the base size, then each variant at rest at every other
- * size. `fixed` sets the cell's other axes.
- */
-function previewCells(definition: ComponentDefinition, baseSize: string, fixed: Cell): Cell[] {
-  const variants = axisValues(definition, "variant");
-  return [
-    ...variants.flatMap((variant) =>
-      axisValues(definition, "state").map((state) => ({ ...fixed, variant, size: baseSize, state }))
-    ),
-    ...axisValues(definition, "size")
-      .filter((size) => size !== baseSize)
-      .flatMap((size) => variants.map((variant) => ({ ...fixed, variant, size, state: "rest" }))),
-  ];
 }
 
 /** The family `font-sans` resolves to, which every theme shares. The plugin loads it. */

@@ -6,9 +6,10 @@
  * Hover and focus come from Chrome DevTools Protocol `CSS.forcePseudoState`, so every cell of a
  * page shows its state at once and no pointer or focus moves between screenshots. Fuse gates
  * hover behind `@media (hover: hover)` and `:not(<disabled>)`, so the page checks each forced
- * cell against its resting twin: a forced cell whose colors, shadow and underline equal the
- * twin's did not reach Fuse's `enabled-hover:` or `focus-visible:` rules, and the page then
- * hovers or focuses that button for real before its screenshot.
+ * cell against its resting twin: a forced cell whose measured element and descendants have the
+ * twin's colors, shadows and underlines did not reach Fuse's `enabled-hover:` or
+ * `focus-visible:` rules, and the page then hovers or focuses that element for real before its
+ * screenshot.
  */
 
 import { Result } from "effect";
@@ -22,7 +23,7 @@ import type { PageAssets } from "./page-assets.ts";
 import {
   ASSET_PATHS,
   BACKGROUND_PROBE,
-  cellButtonSelector,
+  cellSelector,
   PAGE_ORIGIN,
   pageViewport,
   previewDocument,
@@ -37,12 +38,17 @@ import type { BoxSize } from "./verdict.ts";
 /** Device pixels per CSS pixel, the scale the plugin exports at. */
 export const DEVICE_SCALE = 2;
 
-/** A cell to render: its Button's HTML, the state to force, and its resting twin's HTML. */
+/** A cell to render: its element's HTML, the state to force, and its resting twin's HTML. */
 export type CellRequest = {
   readonly id: string;
   readonly html: string;
+  /**
+   * The element the page forces, compares and crops, as a selector relative to the cell's slot
+   * that starts with a combinator. The resting twin's slot uses the same one.
+   */
+  readonly measured: string;
   readonly forced: readonly ForcedPseudoClass[];
-  /** The same Button at rest, rendered off to the side to check the forced state. */
+  /** The same element at rest, rendered off to the side to check the forced state. */
   readonly restingHtml: string | undefined;
 };
 
@@ -50,9 +56,9 @@ export type CellRequest = {
  * How the page reached a cell's state.
  *
  * - `none`: the cell forces nothing.
- * - `forced`: forcing the pseudo classes changed the button's styles.
+ * - `forced`: forcing the pseudo classes changed the element's styles.
  * - `interaction`: forcing changed nothing, and a real hover or focus did.
- * - `missing`: neither changed anything, so the screenshot shows the resting button.
+ * - `missing`: neither changed anything, so the screenshot shows the resting element.
  */
 export type StateOutcome = "none" | "forced" | "interaction" | "missing";
 
@@ -60,7 +66,7 @@ export type StateOutcome = "none" | "forced" | "interaction" | "missing";
 export type RenderedCell = {
   /** The crop: the border box plus the layout's padding on every side, transparent outside. */
   readonly raster: Raster;
-  /** The button's border box in CSS pixels. */
+  /** The measured element's border box in CSS pixels. */
   readonly box: BoxSize;
   readonly state: StateOutcome;
 };
@@ -69,7 +75,10 @@ export type RenderedCell = {
 export type RenderedPreview = {
   /** The theme's `background`, which the comparison lays both pictures over. */
   readonly background: Rgb;
-  /** The font the buttons use, as `<weight> <family>`, after the page checked it loaded. */
+  /**
+   * The fonts the cells' text uses, as `<weight> <family>`, after the page checked they loaded.
+   * Empty when the page shows no text.
+   */
   readonly font: string;
   readonly cells: ReadonlyMap<string, RenderedCell>;
 };
@@ -79,7 +88,7 @@ export class BrowserUnavailable extends Error {
   readonly _tag = "BrowserUnavailable" as const;
 }
 
-/** The page did not load the font its buttons use, so the text would come from a fallback. */
+/** The page did not load a font its text uses, so the text would come from a fallback. */
 export class FontNotLoaded extends Error {
   readonly _tag = "FontNotLoaded" as const;
 }
@@ -180,17 +189,6 @@ export class CompareBrowser {
       const page = await context.newPage();
       await page.route(`${PAGE_ORIGIN}/**`, (route) => this.#serve(route, html));
       await page.goto(`${PAGE_ORIGIN}/preview.html`);
-      // A browser fetches a face only for text it lays out, and an icon button preview has
-      // none, so the page loads the face each button's font names before the check.
-      await page.evaluate(async () => {
-        const fonts = new Set<string>();
-        document.querySelectorAll("[data-compare-cell] > button").forEach((button) => {
-          const style = getComputedStyle(button);
-          fonts.add(`${style.fontWeight} ${style.fontSize} ${style.fontFamily}`);
-        });
-        await Promise.all([...fonts].map((font) => document.fonts.load(font)));
-        await document.fonts.ready;
-      });
       const font = await checkFont(page);
       if (Result.isFailure(font)) {
         return Result.fail(font.failure);
@@ -209,14 +207,26 @@ export class CompareBrowser {
   }
 }
 
-/** Check that every button's first font family has a loaded face at its weight. */
+/**
+ * Load the face of every element in a cell that holds text, and check that each one's first
+ * font family has a loaded face at its weight. The sweep covers every element with a non-blank
+ * text node of its own, whatever the component, so a label in a child span counts too.
+ */
 async function checkFont(page: Page): Promise<Result.Result<string, FontNotLoaded>> {
-  const report = await page.evaluate(() => {
-    const used = new Set<string>();
-    document.querySelectorAll("[data-compare-cell] > button").forEach((button) => {
-      const style = getComputedStyle(button);
-      used.add(`${style.fontWeight}|${style.fontFamily.split(",")[0] ?? ""}`);
-    });
+  const report = await page.evaluate(async () => {
+    const styles = [...document.querySelectorAll("[data-compare-cell] *")]
+      .filter((element) =>
+        [...element.childNodes].some(
+          (node) => node.nodeType === Node.TEXT_NODE && (node.textContent ?? "").trim() !== ""
+        )
+      )
+      .map((element) => getComputedStyle(element));
+    const fonts = new Set(styles.map((style) => `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`));
+    await Promise.all([...fonts].map((font) => document.fonts.load(font)));
+    await document.fonts.ready;
+    const used = new Set(
+      styles.map((style) => `${style.fontWeight}|${style.fontFamily.split(",")[0] ?? ""}`)
+    );
     const loaded: string[] = [];
     document.fonts.forEach((face) => {
       if (face.status === "loaded") {
@@ -238,7 +248,7 @@ async function checkFont(page: Page): Promise<Result.Result<string, FontNotLoade
     if (!loaded.has(key)) {
       return Result.fail(
         new FontNotLoaded(
-          `The buttons use ${unquote(family)} at weight ${weight}, and the page has no loaded face for it. The comparison loads only @fontsource/roboto, so a theme whose --font-sans starts with another family needs that family added to page-assets.ts.`
+          `The cells' text uses ${unquote(family)} at weight ${weight}, and the page has no loaded face for it. The comparison loads only @fontsource/roboto, so a theme whose --font-sans starts with another family needs that family added to page-assets.ts.`
         )
       );
     }
@@ -260,44 +270,50 @@ async function forceStates(page: Page, requests: readonly CellRequest[]): Promis
   for (const request of forcing) {
     const { nodeId } = await cdp.send("DOM.querySelector", {
       nodeId: root.nodeId,
-      selector: cellButtonSelector(request.id),
+      selector: cellSelector(request.id, request.measured),
     });
     await cdp.send("CSS.forcePseudoState", { nodeId, forcedPseudoClasses: [...request.forced] });
   }
   const changed = new Set<string>();
   for (const request of forcing) {
-    if (await stateChanged(page, request.id)) {
+    if (await stateChanged(page, request)) {
       changed.add(request.id);
     }
   }
   return changed;
 }
 
-/** Whether a cell's button styles differ from its resting twin's. */
-async function stateChanged(page: Page, id: string): Promise<boolean> {
+/** Whether a cell's measured element, or any element inside it, differs from its resting twin's. */
+async function stateChanged(page: Page, request: CellRequest): Promise<boolean> {
   const [state, rest] = await Promise.all([
-    signature(page, cellButtonSelector(id)),
-    signature(page, cellButtonSelector(`${REFERENCE_PREFIX}${id}`)),
+    signature(page, cellSelector(request.id, request.measured)),
+    signature(page, cellSelector(`${REFERENCE_PREFIX}${request.id}`, request.measured)),
   ]);
-  return state.some((value, index) => value !== rest[index]);
+  return state.length !== rest.length || state.some((value, index) => value !== rest[index]);
 }
 
+/**
+ * The styles of an element and its descendants, so a state that repaints only a child, such as
+ * a switch's thumb, still counts as reached.
+ */
 function signature(page: Page, selector: string): Promise<StyleSignature> {
-  return page.locator(selector).evaluate((element) => {
-    const style = getComputedStyle(element);
-    return [
-      style.backgroundColor,
-      style.borderTopColor,
-      style.borderRightColor,
-      style.borderBottomColor,
-      style.borderLeftColor,
-      style.color,
-      style.boxShadow,
-      style.textDecorationLine,
-      style.outlineStyle,
-      style.opacity,
-    ];
-  });
+  return page.locator(selector).evaluate((element) =>
+    [element, ...element.querySelectorAll("*")].flatMap((part) => {
+      const style = getComputedStyle(part);
+      return [
+        style.backgroundColor,
+        style.borderTopColor,
+        style.borderRightColor,
+        style.borderBottomColor,
+        style.borderLeftColor,
+        style.color,
+        style.boxShadow,
+        style.textDecorationLine,
+        style.outlineStyle,
+        style.opacity,
+      ];
+    })
+  );
 }
 
 /**
@@ -310,10 +326,10 @@ async function renderCell(
   forcedState: StateOutcome,
   layout: PageLayout
 ): Promise<RenderedCell> {
-  const button = page.locator(cellButtonSelector(request.id));
-  const box = await button.boundingBox();
+  const measured = page.locator(cellSelector(request.id, request.measured));
+  const box = await measured.boundingBox();
   if (box === null) {
-    throw new Error(`the page did not lay out the button of cell ${request.id}`);
+    throw new Error(`the page did not lay out the measured element of cell ${request.id}`);
   }
   if (Math.abs(box.x - Math.round(box.x)) > 1 / 64 || Math.abs(box.y - Math.round(box.y)) > 1 / 64) {
     throw new Error(`the page placed cell ${request.id} at ${box.x},${box.y}, off the pixel grid`);
@@ -326,13 +342,13 @@ async function renderCell(
   }
   const interact = forcedState === "missing";
   if (interact && request.forced.includes("hover")) {
-    await button.hover({ force: true });
+    await measured.hover({ force: true });
   } else if (interact) {
-    await button.focus();
+    await measured.focus();
   }
   const state: StateOutcome = !interact
     ? forcedState
-    : (await stateChanged(page, request.id))
+    : (await stateChanged(page, request))
       ? "interaction"
       : "missing";
   const clip = {
@@ -346,7 +362,7 @@ async function renderCell(
   );
   if (interact) {
     await page.mouse.move(0, 0);
-    await button.blur();
+    await measured.blur();
   }
   return { raster, box: { width: box.width, height: box.height }, state };
 }

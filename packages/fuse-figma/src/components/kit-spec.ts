@@ -146,6 +146,20 @@ export type AxisSpec = {
   readonly values: readonly string[];
 };
 
+/**
+ * The values of one axis of a component or component set.
+ *
+ * @param component - The component, or anything else that lists axes.
+ * @param name - The axis's name, such as `state`.
+ * @returns The axis's values in order, or none when there is no such axis.
+ */
+export function axisValues(
+  component: { readonly axes: readonly AxisSpec[] },
+  name: string
+): readonly string[] {
+  return component.axes.find((axis) => axis.name === name)?.values ?? [];
+}
+
 /** A TEXT component property and the characters it starts with. */
 export type TextPropertySpec = {
   readonly name: string;

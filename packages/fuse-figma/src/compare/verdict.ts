@@ -16,8 +16,8 @@ export type BoxSize = { readonly width: number; readonly height: number };
  * - `subpixel-size`: the boxes differ by less than half a pixel, more than layout rounding.
  * - `png-size`: the Figma PNG is not the size its render bounds promise, so its placement is a
  *   guess.
- * - `state-by-interaction`: forcing the pseudo class changed none of the button's styles, so the
- *   page hovered or focused the button for real.
+ * - `state-by-interaction`: forcing the pseudo class changed none of the measured element's
+ *   styles, so the page hovered or focused the element for real.
  * - `state-missing`: the browser did not show the state at all, so the browser side is wrong.
  * - `no-figma-image`: Figma drew nothing for the instance.
  */
