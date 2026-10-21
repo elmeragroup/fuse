@@ -3,16 +3,19 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { expectActivationCancelled, resetHashAroundEach } from "../../../test/aria-disabled-activation";
 import {
   assertFocusRingOnKeyboardAbsentOnMouse,
   expectFocusRing,
   focusRingClippers,
 } from "../../../test/assert-focus-ring";
+import { settleTransitions } from "../../../test/assert-invalid-ring";
 import { assertNoAxeViolations } from "../../../test/axe";
 import { hasIntermediateFrame, sampleFrames } from "../../../test/panel-transition";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import {
   ROW,
+  cssVarColor,
   metricPx,
   renderThemed,
   roleNamed,
@@ -794,5 +797,83 @@ describe("Item", () => {
     } finally {
       setHash(initialHash);
     }
+  });
+});
+
+describe("aria-disabled Item rows", () => {
+  // A link takes no native `disabled`, so a link row announced unavailable cancels its own
+  // activation.
+  resetHashAroundEach();
+
+  it.each([
+    { name: "on the root", root: { "aria-disabled": "true" }, link: {} },
+    { name: "on the render element", root: {}, link: { "aria-disabled": "true" } },
+  ] as const)(
+    "neither follows a link row nor runs its onClick with aria-disabled $name",
+    async ({ root, link }) => {
+      const clicks: string[] = [];
+      renderThemed(
+        <Item.Root {...root} render={<a href="#profile" {...link} />} onClick={() => clicks.push("profile")}>
+          <Item.Title>Profile</Item.Title>
+        </Item.Root>
+      );
+
+      await expectActivationCancelled(roleNamed("link", "Profile"), clicks);
+    }
+  );
+
+  it("dims an aria-disabled link row with the not-allowed cursor and keeps it unfilled on hover", async () => {
+    renderThemed(
+      <Item.Root render={<a href="#profile" aria-disabled="true" />}>
+        <Item.Title>Profile</Item.Title>
+      </Item.Root>
+    );
+    const link = roleNamed("link", "Profile");
+    await userEvent.hover(link);
+    settleTransitions(link);
+    const style = getComputedStyle(link);
+    expect(style.opacity).toBe("0.5");
+    expect(style.cursor).toBe("not-allowed");
+    expect(style.backgroundColor).toBe("rgba(0, 0, 0, 0)");
+  });
+
+  it("dims a disabled button row with the not-allowed cursor", () => {
+    renderThemed(
+      <Item.Root render={<button type="button" disabled />}>
+        <Item.Title>Profile</Item.Title>
+      </Item.Root>
+    );
+    const style = getComputedStyle(roleNamed("button", "Profile"));
+    expect(style.opacity).toBe("0.5");
+    expect(style.cursor).toBe("not-allowed");
+  });
+
+  it("lets a link inside a plain aria-disabled row navigate", async () => {
+    renderThemed(
+      <Item.Root aria-disabled="true">
+        <Item.Title>Profile</Item.Title>
+        <Item.Actions>
+          <a href="#help">Help</a>
+        </Item.Actions>
+      </Item.Root>
+    );
+
+    // Playwright counts an element under an `aria-disabled` ancestor as disabled; `force` skips
+    // that check so the click reaches the link the way a user's pointer does.
+    await userEvent.click(roleNamed("link", "Help"), { force: true });
+    expect(location.hash).toBe("#help");
+  });
+
+  it("fills an enabled link row on hover", async () => {
+    renderThemed(
+      <Item.Root render={<a href="#profile" aria-disabled="false" />}>
+        <Item.Title>Profile</Item.Title>
+      </Item.Root>
+    );
+    const link = roleNamed("link", "Profile");
+    await userEvent.hover(link);
+    settleTransitions(link);
+    expect(getComputedStyle(link).backgroundColor).toBe(cssVarColor(link, "--muted"));
+    expect(getComputedStyle(link).opacity).toBe("1");
   });
 });

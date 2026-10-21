@@ -7,6 +7,7 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import type { VariantProps } from "tailwind-variants";
 
+import { ariaDisabledGuard } from "../../internal/aria-disabled-guard";
 import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
@@ -86,6 +87,12 @@ function renderedVisibility(element: ReactElement): Visibility {
  * `hidden` and `aria-hidden` the rendered element ends up with, whether they come from the
  * root or the render element. An explicit `role` replaces both and skips the wrapper.
  *
+ * Any row announced `aria-disabled="true"` dims with the `not-allowed` cursor, as a
+ * `render={<button disabled />}` row does. A `render` row, such as a link row, which takes no
+ * `disabled`, also drops its hover fill and cancels its own activation: a click or a keyboard
+ * Enter neither follows a link nor runs `onClick`, and a middle-click neither opens a new tab nor
+ * runs `onAuxClick`. A plain row keeps the clicks of the controls inside it.
+ *
  * It publishes `--inner-corner`, its corner less its border and padding, for parts that round with
  * `rounded-inner`.
  */
@@ -105,7 +112,10 @@ export function ItemRoot({
     props: mergeProps<"div">(
       itemRootProps({ variant, size, className: cn(groupClassName, className) }),
       inGroup && render === undefined ? { role: "listitem" } : undefined,
-      props
+      props,
+      // Only a `render` row (a link or button) activates; a plain row may hold its own controls,
+      // whose bubbled clicks the guard would cancel.
+      render === undefined ? undefined : ariaDisabledGuard
     ),
     render,
   });
