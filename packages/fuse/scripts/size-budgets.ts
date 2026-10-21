@@ -64,9 +64,10 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   { name: "theme", entryFile: "theme.js", measuredGzip: 6197, ceilingGzip: 9194 },
   { name: "badge", entryFile: "badge.js", measuredGzip: 15739, ceilingGzip: 23493 },
   { name: "button", entryFile: "button.js", measuredGzip: 25571, ceilingGzip: 37821 },
-  // 2026-10-21: card measured 25171, up 8519 from main's 16652, once Card.SectionButton brought
-  // Base UI's useRender and mergeProps and the shared focus ring and state face into the entry.
-  // The ceiling rises by that delta, from 23937.
+  // 2026-10-21: card measured 25171 once Card.SectionButton brought Base UI's useRender and
+  // mergeProps and the shared focus ring and state face into the entry. Main, whose row still
+  // records 16100, re-measured 16652 the same day, so the change adds 8519 and the ceiling rises
+  // by that delta, from 23937.
   { name: "card", entryFile: "card.js", measuredGzip: 25171, ceilingGzip: 32456 },
   { name: "dialog", entryFile: "dialog.js", measuredGzip: 46343, ceilingGzip: 67844 },
   { name: "popover", entryFile: "popover.js", measuredGzip: 57668, ceilingGzip: 85298 },
