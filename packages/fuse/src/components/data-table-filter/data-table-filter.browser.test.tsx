@@ -13,7 +13,9 @@ import "../../../dist/styles.css";
 import { CaughtError, caughtError } from "../../../test/caught-error";
 import {
   active,
+  CalendarStandIn,
   columnFilters,
+  CREATED_SEPTEMBER,
   freezeToday,
   CUSTOMER_NORD,
   FIELDS,
@@ -1185,6 +1187,57 @@ describe("DataTableFilter motion and layout", () => {
     // The first frame that shows the popover anywhere new already shows where it ends.
     const after = frames.slice(1).find((frame) => frame.left !== frames[0]?.left);
     expect(after).toEqual(end);
+  });
+
+  it("morphs the popover's width from a calendar beside its presets to another chip's editor", async () => {
+    // DOM audit: the morph runs on the popup's own 100 ms transition, stretched to a second.
+    const slow = document.createElement("style");
+    slow.textContent = "[data-slot=data-table-filter-value-content] { transition-duration: 1s !important; }";
+    document.head.append(slow);
+    onTestFinished(() => {
+      slow.remove();
+    });
+    await page.viewport(1280, 720);
+    renderOrders({
+      initial: [...CREATED_SEPTEMBER, ...STATUS_THREE],
+      children: (
+        <>
+          <DataTableFilter.Bar />
+          <DataTableFilter.Content />
+          <DataTableFilter.ValueContent>
+            <DataTableFilter.Editor>
+              <DataTableFilter.OptionEditor />
+              <DataTableFilter.DateEditor>{() => <CalendarStandIn />}</DataTableFilter.DateEditor>
+            </DataTableFilter.Editor>
+          </DataTableFilter.ValueContent>
+        </>
+      ),
+    });
+    await userEvent.click(page.getByRole("group", { name: "Created filter" }).getByRole("button").first());
+    await expect.poll(() => page.getByRole("dialog", { name: "Created" }).query()).not.toBeNull();
+    await settled();
+    const popup = roleNamed("dialog", "Created");
+    const wide = popup.getBoundingClientRect().width;
+    const calendar = roleNamed("button", "Calendar").getBoundingClientRect();
+    expect(wide).toBeGreaterThan(288);
+    expect(calendar.left).toBeGreaterThan(roleNamed("button", "Today").getBoundingClientRect().right);
+    expect(calendar.right).toBeLessThanOrEqual(popup.getBoundingClientRect().right);
+
+    const widths: number[] = [];
+    let sampling = true;
+    const sample = () => {
+      widths.push(popup.getBoundingClientRect().width);
+      if (sampling) {
+        requestAnimationFrame(sample);
+      }
+    };
+    requestAnimationFrame(sample);
+    await userEvent.click(roleNamed("button", "Paid, Pending +1"));
+    await expect.poll(() => page.getByRole("dialog", { name: "Status" }).query()).not.toBeNull();
+    await settled();
+    sampling = false;
+    expect(popup.getBoundingClientRect().width).toBe(288);
+    expect(widths.some((width) => between(width, wide, 288))).toBe(true);
   });
 
   it("hides the Trigger's label in a narrow bar and keeps its name", () => {

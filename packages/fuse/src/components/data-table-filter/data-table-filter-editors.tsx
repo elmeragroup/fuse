@@ -9,6 +9,7 @@ import type { ComponentProps, KeyboardEvent, ReactElement, ReactNode } from "rea
 
 import { Combobox as ComboboxPrimitive } from "@base-ui/react";
 
+import { useMediaQuery } from "../../hooks/use-media-query";
 import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { MagnifyingGlass } from "../../icons/generated/magnifying-glass";
 import { definedProps } from "../../internal/defined-props";
@@ -407,7 +408,9 @@ function NumberEditorBody({
 
 // The date editor's presets apply and close. Its body is one or two date inputs by default, and
 // a function child replaces it, such as with a calendar the app imports, since the entry cannot
-// import React Aria.
+// import React Aria. From the small breakpoint up the presets of a function child stand in a
+// column beside it, as the date pickers set their preset pane beside the calendar, and the popup
+// widens to that layout. Above the date inputs, or on a narrow viewport, they wrap above.
 
 /** What the date editor hands its function child. */
 export type DateEditorState = {
@@ -456,16 +459,27 @@ function presetWrite(
   return undefined;
 }
 
+/**
+ * The viewports wide enough for the presets beside a slot, Tailwind's `sm`. It is a viewport query
+ * because the popup sizes to this layout, so a query on the popup would be circular. It drives the
+ * layout and the presets' arrow-key axis together, so the two never disagree.
+ */
+const PRESETS_BESIDE_QUERY = "(min-width: 40rem)";
+
 /** The props of `DataTableFilter.DateEditor`. */
 export type DataTableFilterDateEditorProps = Omit<DataTableFilterKindEditorProps, "children"> & {
-  /** Replaces the date inputs, such as with a calendar. The presets and the header stay. */
+  /**
+   * Replaces the date inputs, such as with a calendar. The presets and the header stay. On a
+   * viewport 40rem wide or more the presets stand in a column beside it, and the popup widens to fit.
+   */
   children?: (editor: DateEditorState) => ReactNode;
 };
 
 /**
  * Edits a date filter with presets and date inputs. Renders nothing for other kinds. The presets
  * write `isBetween`, so a field whose operators leave it out offers only Today, as `is`, if it
- * allows `is`, and no preset otherwise.
+ * allows `is`, and no preset otherwise. Beside a function child they form a column, from a 40rem
+ * viewport up.
  */
 export function DataTableFilterDateEditor(props: DataTableFilterDateEditorProps): ReactElement | null {
   const editor = useKindEditor("DataTableFilter.DateEditor", ["date"]);
@@ -505,6 +519,12 @@ function DateEditorBody({
   const focusRef = useFocusRequest<HTMLDivElement>(editor.focusKey);
   const bodyRef = useMergedRefs(ref, focusRef);
   const operator = isOperatorOf("date", draft.operator) ? draft.operator : "isBetween";
+  const wide = useMediaQuery(PRESETS_BESIDE_QUERY);
+  let layout: "above" | "beside" | undefined;
+  if (presets.length > 0) {
+    layout = children !== undefined && wide ? "beside" : "above";
+  }
+  const beside = layout === "beside";
 
   const complete = completeValues("date", draft);
   const state: DateEditorState = {
@@ -528,15 +548,17 @@ function DateEditorBody({
       ref={bodyRef}
       data-slot="data-table-filter-date"
       data-target={target}
-      className={cn(slots.body(), className)}
+      {...definedProps({ "data-presets": layout })}
+      className={cn(beside ? slots.dateBeside() : slots.body(), className)}
       {...props}>
       {presets.length === 0 ? null : (
         <ToggleGroupRoot
-          variant="outline"
+          variant={beside ? "default" : "outline"}
           size="sm"
+          orientation={beside ? "vertical" : "horizontal"}
           aria-label={meta.format("datePresets")}
           value={pressed === undefined ? [] : [pressed]}
-          className={slots.presets()}
+          className={beside ? slots.presetsBeside() : slots.presets()}
           onValueChange={(next) => {
             const key = next[0] ?? pressed;
             const preset = presets.find((item) => item.key === key);
@@ -551,6 +573,7 @@ function DateEditorBody({
               key={preset.key}
               value={preset.key}
               {...definedProps({
+                className: beside ? slots.presetBeside() : undefined,
                 "data-dtf-initial-focus": preset.key === (pressed ?? presets[0]?.key) ? "" : undefined,
               })}>
               {meta.format(preset.key)}
@@ -558,7 +581,13 @@ function DateEditorBody({
           ))}
         </ToggleGroupRoot>
       )}
-      {children === undefined ? <DateInputs editor={editor} target={target} /> : children(state)}
+      {children === undefined ? (
+        <DateInputs editor={editor} target={target} />
+      ) : (
+        // One wrapper in both layouts, boxless above, so a viewport crossing the breakpoint
+        // restyles the slot without remounting it.
+        <div className={beside ? slots.dateSlotBeside() : slots.dateSlot()}>{children(state)}</div>
+      )}
     </div>
   );
 }

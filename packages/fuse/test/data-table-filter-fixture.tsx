@@ -235,6 +235,25 @@ export const CUSTOMER_NORD: ColumnFiltersState = [
   { id: "customer", value: { kind: "text", operator: "contains", values: ["nord"] } },
 ];
 
+/** Created falls in September 2026. */
+export const CREATED_SEPTEMBER: ColumnFiltersState = [
+  { id: "created", value: { kind: "date", operator: "isBetween", values: ["2026-09-01", "2026-09-30"] } },
+];
+
+/**
+ * A calendar's stand-in for a date editor's function child, at a month grid's size: seven 36px
+ * columns by eight rows.
+ *
+ * @returns A button named Calendar.
+ */
+export function CalendarStandIn(): ReactElement {
+  return (
+    <button type="button" style={{ width: 252, height: 288 }}>
+      Calendar
+    </button>
+  );
+}
+
 /** The fixture's props. */
 export type OrdersProps = {
   readonly initial: ColumnFiltersState;

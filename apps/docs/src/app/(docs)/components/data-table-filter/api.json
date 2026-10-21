@@ -745,7 +745,7 @@
           "type": "((editor: DateEditorState) => ReactNode) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Replaces the date inputs, such as with a calendar. The presets and the header stay.",
+          "description": "Replaces the date inputs, such as with a calendar. The presets and the header stay. On a viewport 40rem wide or more the presets stand in a column beside it, and the popup widens to fit.",
           "required": false
         }
       ]

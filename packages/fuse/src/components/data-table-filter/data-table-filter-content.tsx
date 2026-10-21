@@ -57,32 +57,42 @@ function useContains(locale: string): (text: string, query: string) => boolean {
   return useCallback((text: string, query: string) => contains(text, query), [contains]);
 }
 
+/** The popup's two morphed dimensions. */
+const MORPHED = ["width", "height"] as const;
+
+type Size = Record<(typeof MORPHED)[number], number>;
+
+/** Whether the morph has pinned either dimension inline. */
+function pinned(popup: HTMLElement): boolean {
+  return MORPHED.some((dimension) => popup.style[dimension] !== "");
+}
+
 /**
- * Morphs the popup's height when its step changes, from the field list to an editor and back, and
- * only then, so a keystroke that grows or shrinks the list snaps. Base UI measures a popup only
- * when its payload changes (`usePopupViewport.tsx`), and the menu has none, so this measures the
- * step change itself. A CSS transition, so a change mid-flight retargets. When the central
- * reduced-motion rule leaves `height` out of the transition list, nothing is pinned.
+ * Morphs the popup's width and height when its step changes, from the field list to an editor and
+ * back, and only then, so a keystroke that grows or shrinks the list snaps. Base UI measures a popup
+ * only when its payload changes (`usePopupViewport.tsx`), and the menu has none, so this measures
+ * the step change itself. A CSS transition, so a change mid-flight retargets. A dimension the
+ * central reduced-motion rule leaves out of the transition list is never pinned.
  *
  * @param step - The current step.
  * @returns A ref for the popup and its `transitionend` handler.
  */
 function useStepMorph(step: string) {
-  // The popup's settled height. The menu opens and filters without rendering this part again, so
-  // a ResizeObserver attached as the popup mounts keeps it current. It reports after layout, so at
-  // a step change the effect below still reads the height from before the change.
-  const lastHeight = useRef<number | null>(null);
+  // The popup's settled size. The menu opens and filters without rendering this part again, so a
+  // ResizeObserver attached as the popup mounts keeps it current. It reports after layout, so at a
+  // step change the effect below still reads the size from before the change.
+  const lastSize = useRef<Size | null>(null);
   const lastStep = useRef(step);
   const popupRef = useRef<HTMLElement | null>(null);
   const ref = useCallback((popup: HTMLElement | null) => {
     popupRef.current = popup;
-    lastHeight.current = null;
+    lastSize.current = null;
     if (popup === null) {
       return undefined;
     }
     const observer = new ResizeObserver(() => {
-      if (popup.style.height === "") {
-        lastHeight.current = popup.offsetHeight;
+      if (!pinned(popup)) {
+        lastSize.current = { width: popup.offsetWidth, height: popup.offsetHeight };
       }
     });
     observer.observe(popup);
@@ -97,27 +107,44 @@ function useStepMorph(step: string) {
     if (popup === null || !changed) {
       return;
     }
-    // A Back right after a drill starts from where the running morph has got to.
-    const from = popup.style.height === "" ? lastHeight.current : popup.getBoundingClientRect().height;
-    popup.style.height = "";
-    const to = popup.offsetHeight;
-    lastHeight.current = to;
-    const animates = getComputedStyle(popup)
+    const transitioned = getComputedStyle(popup)
       .transitionProperty.split(",")
-      .some((property) => property.trim() === "height");
-    if (from === null || Math.abs(from - to) < 0.5 || !animates) {
-      return;
+      .map((property) => property.trim());
+    // The dimensions leave the transition list while the morph measures and pins its start. The
+    // field list's width is a length, 18rem, so pinning the start would otherwise run a transition
+    // of its own, which the end value then cancels before any `transitionend` releases the pin.
+    const ownProperty = popup.style.transitionProperty;
+    popup.style.transitionProperty =
+      transitioned.filter((property) => !MORPHED.some((dimension) => dimension === property)).join(", ") ||
+      "none";
+    // A Back right after a drill starts from where the running morph has got to.
+    const from = pinned(popup) ? popup.getBoundingClientRect() : lastSize.current;
+    for (const dimension of MORPHED) {
+      popup.style[dimension] = "";
     }
-    popup.style.height = `${String(from)}px`;
-    // Reading the height commits the start value, so the next write transitions from it.
+    const to = { width: popup.offsetWidth, height: popup.offsetHeight } satisfies Size;
+    lastSize.current = to;
+    // Before the first settled size there is nothing to morph from.
+    const start = from ?? to;
+    const morphing = MORPHED.filter(
+      (dimension) => transitioned.includes(dimension) && Math.abs(start[dimension] - to[dimension]) >= 0.5
+    );
+    for (const dimension of morphing) {
+      popup.style[dimension] = `${String(start[dimension])}px`;
+    }
+    // Reading the size commits the start values, so the end values transition from them.
     popup.getBoundingClientRect();
-    popup.style.height = `${String(to)}px`;
+    popup.style.transitionProperty = ownProperty;
+    for (const dimension of morphing) {
+      popup.style[dimension] = `${String(to[dimension])}px`;
+    }
   }, [step]);
-  // The morph hands the height back to the content when it ends, so a later keystroke snaps. Only
-  // `transitionend`: a cancelled transition is one a newer morph replaced.
+  // The morph hands each dimension back to the content when it ends, so a later keystroke snaps.
+  // Only `transitionend`: a cancelled transition is one a newer morph replaced.
   const onTransitionEnd = (event: TransitionEvent<HTMLElement>) => {
-    if (event.target === event.currentTarget && event.propertyName === "height") {
-      event.currentTarget.style.height = "";
+    const dimension = MORPHED.find((name) => name === event.propertyName);
+    if (event.target === event.currentTarget && dimension !== undefined) {
+      event.currentTarget.style[dimension] = "";
     }
   };
   return { ref, onTransitionEnd };

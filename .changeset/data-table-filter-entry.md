@@ -19,6 +19,8 @@ root barrel.
   operator is single-select, and a date field without `isBetween` offers only the Today preset.
 - With `manualFiltering`, pass server counts and ranges through `facets`. `parseColumnFilters` and
   `matchesFilter` parse and match the same values on a server.
-- `DateEditor` takes a function child that replaces its date inputs, for example with a calendar.
+- `DateEditor` takes a function child that replaces its date inputs, for example with a calendar. On
+  a viewport 40rem wide or more, the presets stand in a column beside the child, and the popup widens
+  to fit.
 - `useDataTableFilter().actions.edit(fieldId)` opens a field's editor, and `onActiveFieldChange`
   reports the field whose submenu or editor opens.

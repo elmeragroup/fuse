@@ -6,12 +6,13 @@
 import { createRef, useLayoutEffect, useState } from "react";
 import type { ComponentProps } from "react";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, onTestFinished } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import {
   active,
+  CalendarStandIn,
   flipsIn,
   focusIs,
   menuOpen,
@@ -925,6 +926,92 @@ describe("DataTableFilter add menu motion and placement", () => {
     expect(roleNamed("button", "Today").tabIndex).toBe(0);
     await userEvent.keyboard("{ArrowRight}");
     await expect.poll(() => focusIs("button", "Last 7 days")).toBe(true);
+  });
+
+  /** The add menu with a calendar in the date editor's slot. */
+  function renderWithCalendar(): void {
+    renderOrders({
+      initial: [],
+      children: (
+        <>
+          <DataTableFilter.Bar />
+          <DataTableFilter.Content>
+            <DataTableFilter.FieldList />
+            <DataTableFilter.Editor>
+              <DataTableFilter.DateEditor>{() => <CalendarStandIn />}</DataTableFilter.DateEditor>
+            </DataTableFilter.Editor>
+          </DataTableFilter.Content>
+          <DataTableFilter.ValueContent />
+        </>
+      ),
+    });
+  }
+
+  it("widens the menu to a calendar beside its presets on a drill, and narrows it on Back", async () => {
+    // DOM audit: the morph runs on the popup's own 100 ms transition, stretched to a second. Base
+    // UI's mount-time `transition: none` would wipe an inline duration, so a rule holds it.
+    const slow = document.createElement("style");
+    slow.textContent = "[data-slot=data-table-filter-content] { transition-duration: 1s !important; }";
+    document.head.append(slow);
+    onTestFinished(() => {
+      slow.remove();
+    });
+    await page.viewport(1280, 800);
+    renderWithCalendar();
+    await openMenu();
+    const popup = menu();
+    expect(popup.offsetWidth).toBe(288);
+    await userEvent.click(roleNamed("menuitem", "Created"));
+    // The step change pins the width and lets the transition run to the editor's width.
+    expect(getComputedStyle(popup).transitionProperty).toContain("width");
+    expect(popup.style.width).not.toBe("");
+    await expect.poll(() => popup.style.width, { timeout: 5000 }).toBe("");
+    const today = roleNamed("button", "Today").getBoundingClientRect();
+    const week = roleNamed("button", "Last 7 days").getBoundingClientRect();
+    const calendar = roleNamed("button", "Calendar").getBoundingClientRect();
+    const frame = popup.getBoundingClientRect();
+    // The presets stand in a column, and the calendar beside it fits inside the wider popup.
+    expect(week.left).toBe(today.left);
+    expect(week.top).toBeGreaterThanOrEqual(today.bottom);
+    expect(calendar.left).toBeGreaterThan(today.right);
+    expect(calendar.right).toBeLessThanOrEqual(frame.right);
+    expect(frame.width).toBeGreaterThan(288);
+    // The column's arrow keys run down it.
+    await expect.poll(() => focusIs("button", "Today")).toBe(true);
+    await userEvent.keyboard("{ArrowDown}");
+    await expect.poll(() => focusIs("button", "Last 7 days")).toBe(true);
+
+    await userEvent.click(roleNamed("button", "Back to fields"));
+    await expect.poll(step).toBe("fields");
+    expect(popup.style.width).not.toBe("");
+    await expect.poll(() => popup.style.width, { timeout: 5000 }).toBe("");
+    expect(popup.offsetWidth).toBe(288);
+  });
+
+  it("keeps the presets above the calendar on a narrow viewport, at the menu's own width", async () => {
+    await page.viewport(414, 896);
+    renderWithCalendar();
+    await openMenu();
+    await userEvent.click(roleNamed("menuitem", "Created"));
+    await expect.poll(step).toBe("editor");
+    await expect.poll(() => menu().style.width, { timeout: 5000 }).toBe("");
+    const today = roleNamed("button", "Today").getBoundingClientRect();
+    const week = roleNamed("button", "Last 7 days").getBoundingClientRect();
+    expect(week.top).toBe(today.top);
+    expect(roleNamed("button", "Calendar").getBoundingClientRect().top).toBeGreaterThanOrEqual(today.bottom);
+    expect(menu().offsetWidth).toBe(288);
+  });
+
+  it("keeps the presets above the date inputs on a wide viewport, at the menu's own width", async () => {
+    await page.viewport(1280, 800);
+    renderOrders({ initial: [] });
+    await openMenu();
+    await userEvent.click(roleNamed("menuitem", "Created"));
+    await expect.poll(step).toBe("editor");
+    await settled();
+    const today = roleNamed("button", "Today").getBoundingClientRect();
+    expect(roleNamed("button", "Last 7 days").getBoundingClientRect().top).toBe(today.top);
+    expect(menu().offsetWidth).toBe(288);
   });
 });
 

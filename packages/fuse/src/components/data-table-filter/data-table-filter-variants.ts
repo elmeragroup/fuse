@@ -71,11 +71,12 @@ export const dataTableFilterVariants = tv({
       "shrink-0 [--dtf-search-corner:var(--inner-corner)] *:data-[slot=input-group]:h-(--control-h-sm) *:data-[slot=input-group]:w-full *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none *:data-[slot=input-group]:[--field-corner:var(--dtf-search-corner)] pointer-coarse:*:data-[slot=input-group]:h-[2.75rem]",
     /**
      * surface. The add menu and each value submenu: the menu shell at one fixed width, so typing
-     * and a drill never resize it sideways. The list scrolls inside. Its height follows the results
-     * and snaps on a keystroke, and the step change between the field list and an editor morphs it
-     * through `transition-[height]`.
+     * never resizes it sideways. The list scrolls inside. Its height follows the results and snaps
+     * on a keystroke. On the editor step the shell takes the editor's own width and a taller cap,
+     * and the step change between the field list and an editor morphs both through
+     * `transition-[height,width]`.
      */
-    menu: "ease-out box-border flex max-h-[min(24rem,var(--available-height))] w-72 max-w-(--available-width) flex-col overflow-hidden transition-[height] duration-100",
+    menu: "ease-out box-border flex max-h-[min(24rem,var(--available-height))] w-72 max-w-(--available-width) flex-col overflow-hidden transition-[height,width] duration-100 data-[step=editor]:max-h-[min(32rem,var(--available-height))] data-[step=editor]:w-max",
     /** layout. A menu list: it scrolls inside the popup, never the page. */
     list: "-mx-(--surface-pad-sm) mt-1 min-h-0 flex-1 overflow-y-auto overscroll-contain px-(--surface-pad-sm) [&_[role=group][hidden]]:hidden",
     /**
@@ -103,9 +104,10 @@ export const dataTableFilterVariants = tv({
       "text-xs -mx-(--surface-pad-sm) mt-1 shrink-0 border-t border-border px-[calc(var(--row-px)+var(--surface-pad-sm))] pt-1.5 pb-0.5 text-muted-foreground empty:hidden",
     /**
      * The in-place editor cancels the menu shell's padding, so its header and body reach the edge,
-     * and it shrinks to the menu's height cap, where its body scrolls.
+     * its width cap reaches over that padding too, and it shrinks to the menu's height cap, where
+     * its body scrolls.
      */
-    menuEditor: "-m-(--surface-pad-sm) min-h-0 flex-1",
+    menuEditor: "-m-(--surface-pad-sm) min-h-0 max-w-[calc(100%+2*var(--surface-pad-sm))] flex-1",
     /**
      * control. Back, rounding with the inner corner. Under a coarse pointer it reaches 44px
      * through `hit-area-*`, and nothing interactive sits within its reach.
@@ -114,23 +116,23 @@ export const dataTableFilterVariants = tv({
     /** fixed. A count right-aligned in tabular numerals, in a column that never collapses. */
     count: "text-xs ms-auto min-w-[3ch] shrink-0 text-end text-muted-foreground tabular-nums",
     /**
-     * surface. The value popover, one popup for every chip's editor at a fixed width.
+     * surface. The value popover, one popup for every chip's editor, as wide as the editor.
      *
      * It stays in flow on every side. With a Viewport inside, Base UI writes `position: absolute;
      * bottom: 0` on a top-side popup while it measures (`usePopupAutoResize.ts`). The positioner
      * then collapses, Floating UI finds room below and flips the popup. The `!` beats that inline
      * style.
      *
-     * Its height follows Base UI's `--popup-height`, which Base UI writes on a trigger change, so
-     * a move from chip to chip morphs, and an editor's own growth snaps. Base UI writes the new
-     * height a frame after the move, so under reduced motion the height follows the content and
-     * the move lands in one frame. It caps at 32rem or the room the viewport leaves, and the
-     * Viewport and the editor shrink with it, so a tall editor's body scrolls under its header.
-     * No padding, so it publishes its rows' real 4px inset instead of the popover shell's padded
-     * corner.
+     * Its size follows Base UI's `--popup-width` and `--popup-height`, which Base UI writes on a
+     * trigger change, so a move from chip to chip morphs, and an editor's own growth snaps. Base UI
+     * writes the new size a frame after the move, so under reduced motion the size follows the
+     * content and the move lands in one frame. It caps at 32rem or the room the viewport leaves,
+     * and the Viewport and the editor shrink with it, so a tall editor's body scrolls under its
+     * header. No padding, so it publishes its rows' real 4px inset instead of the popover shell's
+     * padded corner.
      */
     content:
-      "ease-out relative! bottom-auto! flex h-[var(--popup-height,auto)] max-h-[min(32rem,var(--available-height))] w-72 max-w-(--available-width) flex-col overflow-clip p-0 transition-[height] [--shell-inner:max(0px,--theme(--radius-md)-0.25rem)] motion-reduce:h-auto",
+      "ease-out relative! bottom-auto! flex h-[var(--popup-height,auto)] max-h-[min(32rem,var(--available-height))] w-[var(--popup-width,max-content)] max-w-(--available-width) flex-col overflow-clip p-0 transition-[height,width] [--shell-inner:max(0px,--theme(--radius-md)-0.25rem)] motion-reduce:h-auto motion-reduce:w-max",
     /** The positioner glides between chips on a trigger change. */
     positioner: "ease-out transition-[top,left] duration-100",
     /**
@@ -139,8 +141,15 @@ export const dataTableFilterVariants = tv({
      */
     viewport:
       "relative flex min-h-0 flex-col [&>[data-current]]:flex [&>[data-current]]:min-h-0 [&>[data-current]]:flex-col [&>[data-current]]:transition-opacity [&>[data-current]]:duration-100 [&>[data-current][data-starting-style]]:opacity-0 [&>[data-previous]]:inset-x-0 [&>[data-previous]]:top-0 [&>[data-previous]]:transition-opacity [&>[data-previous]]:duration-100 [&>[data-previous][data-ending-style]]:opacity-0",
-    /** surface. An editor: the header, then its body. */
-    editor: "flex min-h-0 flex-col",
+    /**
+     * surface. An editor: the header, then its body. It sets the width both popups take, 18rem,
+     * and a date editor with its presets beside a slot widens it to that layout, never below 18rem.
+     * A popup the viewport narrows narrows it too. The cap is a percentage, which a popup's
+     * intrinsic size ignores, since Base UI measures the value popover with `--available-width` at
+     * `max-content`.
+     */
+    editor:
+      "flex min-h-0 w-72 max-w-full flex-col has-data-[presets=beside]:w-max has-data-[presets=beside]:min-w-72",
     /**
      * layout. The editor's body: the kind editors. It scrolls inside the popup when a tall one,
      * such as a calendar, meets the height cap, and the header stays put above it.
@@ -149,10 +158,11 @@ export const dataTableFilterVariants = tv({
     /**
      * surface. The editor's header, the title and the operator. Under a coarse pointer its padding
      * grows to half the gap between a small control and 44px, so the 44px reach of Back and the
-     * operator stays inside the popup, which clips.
+     * operator stays inside the popup, which clips. Its inline size is contained, so a long title
+     * truncates instead of widening an editor that takes its body's width.
      */
     header:
-      "flex items-center gap-(--surface-pad-sm) border-b border-border p-(--surface-pad-sm) pointer-coarse:p-[max(var(--surface-pad-sm),calc((44px-var(--control-h-sm))/2))]",
+      "flex items-center gap-(--surface-pad-sm) border-b border-border p-(--surface-pad-sm) contain-inline-size pointer-coarse:p-[max(var(--surface-pad-sm),calc((44px-var(--control-h-sm))/2))]",
     /** The field's icon and name, the popover's title. */
     title:
       "text-sm font-medium flex min-w-0 flex-1 items-center gap-(--control-gap-sm) px-(--control-px-icon-sm) [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground",
@@ -165,8 +175,25 @@ export const dataTableFilterVariants = tv({
     body: "flex flex-col gap-(--surface-gap-md) p-(--surface-pad-md)",
     /** The text editor's Enter hint. */
     hint: "text-xs flex items-center gap-(--control-gap-sm) text-muted-foreground",
-    /** The date presets, wrapping. */
+    /** The date presets, wrapping above the date inputs or a narrow viewport's slot. */
     presets: "flex flex-wrap gap-(--surface-pad-sm)",
+    /**
+     * layout. A date editor with its presets beside the slot, as the date pickers set their preset
+     * pane beside the calendar. No padding, so the divider runs from the header to the popup's
+     * edge. The presets and the slot carry their own insets.
+     */
+    dateBeside: "flex",
+    /** The presets beside the slot: a column of ghost toggles behind the divider. */
+    presetsBeside: "shrink-0 gap-(--surface-pad-sm) rounded-none border-e border-border p-(--surface-pad-sm)",
+    /**
+     * control. A preset in the column, the date pickers' preset face: start-aligned, rounding with
+     * the inner corner, and lit with the accent while pressed.
+     */
+    presetBeside: "justify-start rounded-inner data-pressed:bg-accent data-pressed:text-accent-foreground",
+    /** The wrapper of a date editor's function child, boxless under the presets. */
+    dateSlot: "contents",
+    /** The wrapper beside the presets, at the editor body's inset. */
+    dateSlotBeside: "p-(--surface-pad-md)",
     /** Two date inputs side by side. */
     dateFields: "grid grid-cols-2 gap-(--surface-gap-sm)",
     /** A date input's Field, its label above the input in the popup's small type. */
