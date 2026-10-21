@@ -66,6 +66,8 @@ A `Card` and a `card` Accordion item draw their edge in `--card-border`. Without
 }
 ```
 
+The line between a card's stacked `Card.Section` and `Card.SectionButton` parts is `--card-section-divider`. Without it, it takes your `--border`. External themes draw it in the page tint, `var(--background)`.
+
 A `RadioItem` or `CheckboxItem` row draws its edge in `--selection-border`, and a checked row in `--selection-checked-border`. The line between stacked rows reads `--selection-divider`, and above and below a checked row `--selection-checked-divider`. Without them the row and its dividers take your `--border` and a checked row your `--primary`, as internal themes do. For the external themes' look, where stacked rows keep a grey separator but no outer edge and the control alone shows the selection, set the edge to a transparent colour, point the checked edge at it, and draw both dividers in `--border`. The border keeps its 1px width, so rows join and inset as before, but a row on a `--card`-coloured surface has no outline:
 
 ```css

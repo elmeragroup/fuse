@@ -11,6 +11,8 @@ import { CardHorizontal } from "./demos/card-horizontal";
 import { CardItemRows } from "./demos/card-item-rows";
 import { CardNested } from "./demos/card-nested";
 import { CardSizes } from "./demos/card-sizes";
+import { CardSections } from "./demos/card-sections";
+import { CardSectionButton } from "./demos/card-section-button";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -56,6 +58,20 @@ A card draws its 1px edge in the theme's `--card-border`. Internal themes draw i
 
 <Demo slug="card" id="nested" title="Nested" file="card-nested.tsx">
   <CardNested />
+</Demo>
+
+A vertical card's body can be split into stacked sections of equal weight with `Card.Section`, under one optional `Card.Header`. Each section pads every side with the card's tier, so it follows the card's `size`, and a 1px line in the theme's `--card-section-divider` runs above every section that has a part above it, from edge to edge. Internal themes draw the line in `--border`, and external themes in the page tint, `--background`, so the card reads as split into segments. The first and last sections round with the card's corners, so a fill or a hover fill follows them. A `Card.SectionMedia` before a `Card.Content` makes the section a two-column grid with the icon centred beside the content. Inside a section, `Card.Content` is that column and drops its own padding, since the section pads.
+
+Sections are the whole body, so put no `Card.Content` or `Card.Footer` beside them. A footer after sections takes no line and no top padding, so it reads as part of the last section; put that content in a last section instead. Sections take no `direction`: a horizontal card pads itself, so sections belong in a vertical card.
+
+<Demo slug="card" id="sections" title="Sections" file="card-sections.tsx">
+  <CardSections />
+</Demo>
+
+`Card.SectionButton` makes a whole section one button. It stacks, divides and rounds like a `Card.Section`, renders `<button type="button">`, takes a hover fill and a pointer cursor, and draws its focus ring inside its own edges, so the sections around it cannot cover it. `render={<a href="/terms" />}` makes it a link, and a trigger composes it as it composes `Button`: `<Dialog.Trigger render={<Card.SectionButton />}>`. Hold text, an icon or a `Card.SectionMedia` in it, and no other control. `Card.Section` itself stays a static, server-rendered part.
+
+<Demo slug="card" id="section-button" title="Section button" file="card-section-button.tsx">
+  <CardSectionButton />
 </Demo>
 
 <ApiReference slug="card" />

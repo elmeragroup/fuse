@@ -48,6 +48,7 @@ describe("TOKEN_TABLE", () => {
     expect(sectionTokens("typography")).toEqual(["selection-title-weight", "font-sans", "font-heading"]);
     expect(sectionTokens("variant")).toEqual([
       "card-border",
+      "card-section-divider",
       "button-outline",
       "selection-border",
       "selection-checked-border",
@@ -65,6 +66,7 @@ describe("LIGHT_ONLY_TOKENS", () => {
     expect([...LIGHT_ONLY_TOKENS].toSorted()).toEqual(
       [
         "card-border",
+        "card-section-divider",
         "button-outline",
         "selection-border",
         "selection-checked-border",

@@ -8,10 +8,10 @@ The sync owns six variable collections, matched by name.
 
 | Collection        | Modes                          | Variables                                                                                                                                                                    |
 | ----------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Fuse tokens`     | `Light`, `Dark`                | 98 variables, one per contract token such as `primary` or `radius` and one per radius rung such as `radius-md`. Designers bind these.                                        |
-| `Fuse variant`    | `Internal`, `External`         | 235 variables: `<scheme>/<token>` for each `Fuse tokens` variable, and `density/<metric>` for each density metric. Hidden from pickers.                                      |
-| `Fuse segment`    | `Private`, `Company`           | 392 variables, `<scheme>/<variant>/<token>` for each `Fuse tokens` variable. Hidden from pickers.                                                                            |
-| `Fuse brand`      | One per brand, 7               | 784 variables, `<scheme>/<variant>/<segment>/<token>` for each `Fuse tokens` variable. They hold the theme values. Hidden from pickers.                                      |
+| `Fuse tokens`     | `Light`, `Dark`                | 99 variables, one per contract token such as `primary` or `radius` and one per radius rung such as `radius-md`. Designers bind these.                                        |
+| `Fuse variant`    | `Internal`, `External`         | 237 variables: `<scheme>/<token>` for each `Fuse tokens` variable, and `density/<metric>` for each density metric. Hidden from pickers.                                      |
+| `Fuse segment`    | `Private`, `Company`           | 396 variables, `<scheme>/<variant>/<token>` for each `Fuse tokens` variable. Hidden from pickers.                                                                            |
+| `Fuse brand`      | One per brand, 7               | 792 variables, `<scheme>/<variant>/<segment>/<token>` for each `Fuse tokens` variable. They hold the theme values. Hidden from pickers.                                      |
 | `Fuse primitives` | `Value`                        | 25 variables, the neutral ramp and the brand accents. They hold the same value in every theme. The neutral ramp is hidden from pickers, and the brand accents stay bindable. |
 | `Fuse density`    | `Auto`, `Dense`, `Comfortable` | 39 variables, one per density metric: control (`control-h-md`), row (`row-h`), surface (`surface-pad-lg`, `surface-gap-md`) and label (`label-text`). Designers bind these.  |
 

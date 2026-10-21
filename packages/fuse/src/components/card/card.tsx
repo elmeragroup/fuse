@@ -3,7 +3,13 @@ import type { HTMLAttributes, ReactElement, ReactNode } from "react";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
-import { cardDescriptionVariants, cardTitleVariants, cardVariants } from "./card-variants";
+import { CardSectionButton } from "./card-section-button";
+import {
+  cardDescriptionVariants,
+  cardSectionVariants,
+  cardTitleVariants,
+  cardVariants,
+} from "./card-variants";
 
 // Every part takes `direction`; only the root takes the card's `size`, so the typography `size`
 // of `Card.Title` and `Card.Description` stays their own.
@@ -140,6 +146,10 @@ function CardAction({ className, direction, ...props }: CardDivProps): ReactElem
   return <div data-slot="card-action" className={cn(cardAction(), className)} {...props} />;
 }
 
+/**
+ * A card's body. Inside a `Card.Section` it is the section's content column, beside a
+ * `Card.SectionMedia`, and drops its own padding, since the section pads.
+ */
 function CardContent({ className, direction, ...props }: CardDivProps): ReactElement {
   const { cardContent } = cardVariants({ direction });
 
@@ -166,6 +176,33 @@ function CardFooter({ className, direction, ...props }: CardDivProps): ReactElem
   );
 }
 
+/**
+ * One of a vertical card's stacked sections of equal weight. Sections form the card's body under
+ * one optional `Card.Header`: a `Card.Content` or `Card.Footer` beside them takes no divider, so
+ * put that content in a section instead. A section pads every side with the card's tier, a 1px
+ * `--card-section-divider` line separates it from the part above, and the first and last
+ * sections round with the card's corners. A `Card.SectionMedia` as its first child makes it a
+ * two-column grid with the media centred beside a `Card.Content`, the unpadded content column.
+ * A horizontal card pads itself, so sections take no `direction` and belong in a vertical card.
+ * A whole section that acts is a `Card.SectionButton`.
+ */
+function CardSection({ className, ...props }: HTMLAttributes<HTMLDivElement>): ReactElement {
+  const { section } = cardSectionVariants();
+
+  return <div data-slot="card-section" className={cn(section(), className)} {...props} />;
+}
+
+/**
+ * The icon column of a `Card.Section` or `Card.SectionButton`. The section becomes a two-column
+ * grid, this column and the content, with the icon centred on the section's height. An `svg` is
+ * sized to `5`. It is a `span`, so it is phrasing content inside a section button.
+ */
+function CardSectionMedia({ className, ...props }: HTMLAttributes<HTMLSpanElement>): ReactElement {
+  const { media } = cardSectionVariants();
+
+  return <span data-slot="card-section-media" className={cn(media(), className)} {...props} />;
+}
+
 CardRoot.displayName = "Card.Root";
 CardHeader.displayName = "Card.Header";
 CardTag.displayName = "Card.Tag";
@@ -174,6 +211,8 @@ CardDescription.displayName = "Card.Description";
 CardAction.displayName = "Card.Action";
 CardContent.displayName = "Card.Content";
 CardFooter.displayName = "Card.Footer";
+CardSection.displayName = "Card.Section";
+CardSectionMedia.displayName = "Card.SectionMedia";
 
 export const Card = {
   Root: CardRoot,
@@ -184,4 +223,7 @@ export const Card = {
   Action: CardAction,
   Content: CardContent,
   Footer: CardFooter,
+  Section: CardSection,
+  SectionButton: CardSectionButton,
+  SectionMedia: CardSectionMedia,
 };

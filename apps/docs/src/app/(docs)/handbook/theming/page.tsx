@@ -261,6 +261,12 @@ export default function ThemingPage(): ReactElement {
         plain wrapper a <code>--border</code> override does not reach cards.
       </p>
       <p>
+        The 1px line between a card&apos;s stacked <code>Card.Section</code> parts is{" "}
+        <code>--card-section-divider</code>. Internal themes draw it in <code>var(--border)</code>, and
+        external themes in the page tint, <code>var(--background)</code>, so a card reads as split into
+        segments. Override it where you override <code>--card-border</code>.
+      </p>
+      <p>
         A <code>RadioItem</code> or <code>CheckboxItem</code> row draws its 1px edge in{" "}
         <code>--selection-border</code>, and a checked row draws it in <code>--selection-checked-border</code>
         . The line between the stacked rows of a vertical group is <code>--selection-divider</code>, and above

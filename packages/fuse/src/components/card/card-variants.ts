@@ -1,11 +1,15 @@
+import { cn } from "../../styles/cn";
 import {
   cardDefaultTierClass,
   cardHorizontalShellClass,
   cardLargeTierClass,
   cardSectionShellClass,
   cardShellClass,
+  cardStackedSectionShellClass,
 } from "../../styles/inner-corner/card";
+import { nativeStateFaceClass } from "../../styles/state-face";
 import { tv } from "../../styles/tv";
+import { selfFocusRingClass } from "../../styles/utils";
 
 /**
  * PUBLIC slot recipe. `text-field`'s `card` variant and
@@ -39,7 +43,9 @@ export const cardVariants = tv({
     direction: {
       vertical: {
         cardHeader: cardSectionShellClass,
-        cardContent: [cardSectionShellClass, "not-first:pt-0"],
+        // Inside a `Card.Section` the content is the section's column and the section pads, so
+        // the content drops its own tier there.
+        cardContent: [cardSectionShellClass, "not-first:pt-0", "[:where([data-slot=card-section])>&]:p-0"],
         cardFooter: [cardSectionShellClass, "not-first:pt-0"],
       },
       horizontal: {
@@ -61,6 +67,39 @@ export const cardVariants = tv({
   defaultVariants: {
     direction: "vertical",
     size: "default",
+  },
+});
+
+// A `Card.SectionMedia` child makes a section a two-column grid, the media centred beside the content.
+const sectionMediaGridClass = cn(
+  "has-[>[data-slot=card-section-media]]:grid has-[>[data-slot=card-section-media]]:grid-cols-[auto_minmax(0,1fr)] has-[>[data-slot=card-section-media]]:items-center has-[>[data-slot=card-section-media]]:gap-x-(--surface-gap-md)"
+);
+
+/**
+ * Module-private recipe for the stacked section parts, kept off the public `cardVariants`.
+ * `section` is the static `Card.Section` and `button` the interactive `Card.SectionButton`; both
+ * take the stacked shell, and a `Card.SectionMedia` child makes either a two-column grid.
+ * Fuse ships no preflight, so `button` resets a native button's face, font and alignment itself.
+ * The typed `*-[…:inherit]` font utilities, as on Button's `icon-inline`, let tailwind-merge
+ * replace them with a consumer's `text-*`, `font-*` or `leading-*` class. The button takes Item's
+ * anchor hover fill, a pointer cursor, the state face and the self focus ring drawn inset, which
+ * the sections around it cannot paint over.
+ */
+export const cardSectionVariants = tv({
+  slots: {
+    section: [cardStackedSectionShellClass, sectionMediaGridClass],
+    button: [
+      cardStackedSectionShellClass,
+      sectionMediaGridClass,
+      "box-border block w-full cursor-pointer bg-transparent text-start text-inherit no-underline transition-colors duration-100 enabled-hover:bg-muted",
+      "font-[family-name:inherit] text-[length:inherit] leading-[inherit] font-[weight:inherit]",
+      // oxlint-disable-next-line elmera/no-local-focus-ring -- the shared self ring, drawn inset
+      cn(selfFocusRingClass, "focus-visible:ring-inset"),
+      nativeStateFaceClass,
+    ],
+    // Without preflight the media's own `flex` beats the user-agent `[hidden]` rule.
+    media:
+      "flex shrink-0 items-center justify-center [&>svg]:size-5 [&[hidden]:not([hidden=until-found])]:hidden",
   },
 });
 

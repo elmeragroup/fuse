@@ -49,6 +49,7 @@ export const TOKEN_NAMES = [
   "input",
   "ring",
   "card-border",
+  "card-section-divider",
   "button-outline",
   "selection-border",
   "selection-checked-border",
@@ -250,6 +251,7 @@ export const TOKEN_KINDS = {
   input: "color",
   ring: "color",
   "card-border": "color",
+  "card-section-divider": "color",
   "button-outline": "color",
   "selection-border": "color",
   "selection-checked-border": "color",
@@ -370,6 +372,7 @@ export const TOKEN_PAINTS = {
   input: ["surface", "line"],
   ring: ["line"],
   "card-border": ["line"],
+  "card-section-divider": ["line"],
   "button-outline": ["line"],
   "selection-border": ["line"],
   "selection-checked-border": ["line"],
@@ -509,6 +512,8 @@ export const TOKEN_DESCRIPTIONS = {
   ring: "The focus ring, a neutral grey that holds 3:1 on the page, cards, dialog and muted. Status Toasts, the info and warning Alerts and default Accordion items swap in their soft foreground.",
   "card-border":
     "The edge of a Card and a card Accordion item. Internal themes draw it in border, and external themes make it transparent.",
+  "card-section-divider":
+    "The 1px line between stacked Card.Section parts, edge to edge. Internal themes draw it in border, and external themes in the page background, so a white card reads as segments.",
   "button-outline":
     "The border of the outline Button, at button-outline-width. Internal themes draw it in border, and external themes in foreground.",
   "selection-border":
@@ -604,6 +609,7 @@ export const EXTERNAL_RESET_KEYS = [
   "input",
   "ring",
   "card-border",
+  "card-section-divider",
   "button-outline",
   "selection-border",
   "selection-checked-border",
@@ -656,7 +662,7 @@ export const MUST_OVERRIDE_INTERNAL = ["brand", "brand-foreground"] as const;
 
 /**
  * What a dark palette keeps from the light composition: geometry, typography, a Card's edge
- * color, the outline Button's border color, a selection row's resting and checked border and
+ * and section divider colors, the outline Button's border color, a selection row's resting and checked border and
  * divider colors and a disabled selection row's fill, stripe and label text colors. Each color is
  * either an alias, such as `var(--border)`, `var(--muted)` or `var(--foreground)`, so it follows
  * the dark role it names, or a value that does not depend on the scheme, such as the external
@@ -664,6 +670,7 @@ export const MUST_OVERRIDE_INTERNAL = ["brand", "brand-foreground"] as const;
  */
 const LIGHT_ONLY_KEYS: ReadonlySet<TokenName> = new Set([
   "card-border",
+  "card-section-divider",
   "button-outline",
   "selection-border",
   "selection-checked-border",
