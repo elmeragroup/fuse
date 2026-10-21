@@ -51,50 +51,22 @@ function classesFor(cell: Cell): string {
   return buttonVariants({ variant, size });
 }
 
-const inState = (state: string) => (cell: Cell) => cell.state === state;
-
 const STATE_AXIS = { name: "state", values: ["rest", "hover", "focus", "disabled", "pending"] };
 
 /**
- * The state variants and the cells they hold in. A disabled Button is a native disabled
- * button, which Base UI also marks `data-disabled`. A pending Button stays focusable, so Base
- * UI marks it `aria-disabled` and `data-disabled` instead of `disabled`. Either way the state
- * face draws the disabled look.
+ * A pending Button stays focusable, so Base UI marks it `aria-disabled` and `data-disabled`
+ * instead of `disabled`, and the state face draws the disabled look. `state-table.ts` gives
+ * hover, focus and disabled their variants.
  */
-const STATE_CONDITIONS = [
-  ["enabled-hover", inState("hover")],
-  ["focus-visible", inState("focus")],
-  ["disabled", inState("disabled")],
-  ["data-disabled", (cell: Cell) => cell.state === "disabled" || cell.state === "pending"],
-  ["aria-disabled", inState("pending")],
-  ["data-[pending-indicator]", inState("pending")],
-] as const;
+const STATES = { pending: ["data-disabled", "aria-disabled", "data-[pending-indicator]"] };
+
+/** The group corners belong to a Button group, which a standalone component does not show. */
+const OMITTED_STATES = new Set(["in-data-[slot=button-group]"]);
 
 /**
- * The states the recipe styles and the kit leaves out. An invalid or expanded Button belongs
- * to a form or a menu trigger, the press offset to a moment of interaction, and the group
- * corners to a Button group, none of which a standalone component shows.
+ * The spinner `isPending` renders in a span that carries `data-icon="inline-start"`, so a
+ * pending cell takes the start icon's padding even with no icon of its own.
  */
-const OMITTED_STATES = new Set([
-  "aria-invalid",
-  "data-invalid",
-  "aria-expanded",
-  "enabled-active",
-  "in-data-[slot=button-group]",
-]);
-
-/**
- * The child selectors of the recipe. `[&_svg]` reaches every icon, the spinner's included.
- * `[&>svg:not([data-icon=inline-end])]` reaches only an `<svg>` child of the root that is not
- * an end icon, which a pending Button hides.
- */
-const CHILD_SELECTORS = new Map<string, (slot: IconSlot) => boolean>([
-  ["[&_svg]", () => true],
-  ["[&_svg:not([class*='size-'])]", () => true],
-  ["[&>svg:not([data-icon=inline-end])]", (slot) => slot.direct && slot.dataIcon !== "inline-end"],
-]);
-
-/** The spinner `isPending` renders in a span that carries `data-icon="inline-start"`. */
 const SPINNER: IconSlot = {
   key: "spinner",
   name: "Spinner",
@@ -168,15 +140,9 @@ export const BUTTON: ComponentDefinition = {
   ],
   columnAxis: "state",
   classesFor,
-  conditions: new Map([
-    ...STATE_CONDITIONS,
-    // The spinner's span carries `data-icon="inline-start"`, so a pending cell takes the start
-    // icon's padding even with no icon of its own.
-    ["has-data-[icon=inline-start]", (cell: Cell) => cell.icon === "start" || cell.state === "pending"],
-    ["has-data-[icon=inline-end]", (cell: Cell) => cell.icon === "end"],
-  ]),
+  states: STATES,
+  facts: new Map(),
   omittedStates: OMITTED_STATES,
-  childSelectors: CHILD_SELECTORS,
   label: { key: "label", name: "label", characters: "Button", textProperty: "Label" },
   iconsFor: buttonIcons,
   swapProperties: swapProperties([START_ICON, END_ICON]),
@@ -190,9 +156,9 @@ export const ICON_BUTTON: ComponentDefinition = {
   axes: [{ name: "variant", values: VARIANTS }, { name: "size", values: ICON_SIZES }, STATE_AXIS],
   columnAxis: "state",
   classesFor,
-  conditions: new Map([...STATE_CONDITIONS, ["has-data-[icon=inline-start]", inState("pending")]]),
+  states: STATES,
+  facts: new Map(),
   omittedStates: OMITTED_STATES,
-  childSelectors: CHILD_SELECTORS,
   label: undefined,
   iconsFor: (cell) => (cell.state === "pending" ? [SPINNER, ONLY_ICON] : [ONLY_ICON]),
   swapProperties: swapProperties([ONLY_ICON]),

@@ -29,6 +29,8 @@ import type {
   SwapPropertySpec,
   VariantSpec,
 } from "./kit-spec";
+import { makeStateTable } from "./state-table";
+import type { StateTable } from "./state-table";
 import type { CompiledUtilities } from "./utility-css";
 
 /** One cell of a variant matrix: a value for each axis. */
@@ -76,19 +78,20 @@ export type ComponentDefinition = {
   readonly columnAxis: string;
   /** The recipe's class string for one cell. */
   readonly classesFor: (cell: Cell) => string;
-  /** Each Tailwind variant the matrix models, and whether it holds in a cell. */
-  readonly conditions: ReadonlyMap<string, (cell: Cell) => boolean>;
   /**
-   * The Tailwind variants of states the matrix leaves out on purpose, such as `aria-invalid`.
-   * A class with one of them lands in the coverage table as dropped. A class with a variant
-   * found nowhere in the definition is unmapped, so a new state in the recipe fails the gate.
+   * The variants each of the component's own states renders, beyond the ones `state-table.ts`
+   * gives every component, such as `{ pending: ["data-disabled", "aria-disabled"] }`.
+   */
+  readonly states: Readonly<Record<string, readonly string[]>>;
+  /** Each variant only this component uses, and whether it holds in a cell. */
+  readonly facts: ReadonlyMap<string, (cell: Cell) => boolean>;
+  /**
+   * The variants of states this component leaves out on top of the shared ones, such as a
+   * group's corners. A class with one of them lands in the coverage table as dropped. A class
+   * with a variant neither the table nor the definition knows is unmapped, so a new state in
+   * the recipe fails the gate.
    */
   readonly omittedStates: ReadonlySet<string>;
-  /**
-   * Arbitrary variants that select child layers, each with the icons it selects, such as
-   * `[&_svg]`, which selects every icon.
-   */
-  readonly childSelectors: ReadonlyMap<string, (slot: IconSlot) => boolean>;
   /** The text layer, or undefined for a part that shows only its icon. */
   readonly label:
     | {
@@ -172,8 +175,9 @@ export function buildComponentSet(definition: ComponentDefinition, context: Buil
       full
     );
   };
+  const meaningOf = makeStateTable(definition);
   const variants = matrixCells(definition.axes).map((cell): VariantSpec => {
-    const styles = cascade(definition, cell, context, record);
+    const styles = cascade(definition, meaningOf, cell, context, record);
     const root = mapRoot(definition, cell, styles, context, record);
     for (const child of root.children) {
       if (child.kind === "text") {
@@ -252,6 +256,7 @@ type ChildRule = {
  */
 function cascade(
   definition: ComponentDefinition,
+  meaningOf: StateTable,
   cell: Cell,
   context: BuildContext,
   record: Recorder
@@ -277,24 +282,23 @@ function cascade(
     let selects: ((slot: IconSlot) => boolean) | undefined;
     let conditional = false;
     let holds = true;
-    let unmodelled: string | undefined;
+    let skipped: { readonly variant: string; readonly omitted: boolean } | undefined;
     for (const variant of variants) {
-      const child = definition.childSelectors.get(variant);
-      if (child !== undefined) {
+      const meaning = meaningOf(variant);
+      if (meaning.kind === "child") {
         const outer = selects;
-        selects = outer === undefined ? child : (slot) => outer(slot) && child(slot);
+        selects = outer === undefined ? meaning.selects : (slot) => outer(slot) && meaning.selects(slot);
         continue;
       }
-      const condition = definition.conditions.get(variant);
-      if (condition === undefined) {
-        unmodelled = variant;
+      if (meaning.kind !== "condition") {
+        skipped = { variant, omitted: meaning.kind === "omitted" };
         break;
       }
       conditional = true;
-      holds &&= condition(cell);
+      holds &&= meaning.holds(cell);
     }
-    if (unmodelled !== undefined) {
-      const omitted = definition.omittedStates.has(unmodelled);
+    if (skipped !== undefined) {
+      const { variant, omitted } = skipped;
       for (const declaration of rule.declarations) {
         record({
           className,
@@ -302,8 +306,8 @@ function cascade(
           value: declaration.value,
           outcome: omitted ? "dropped" : "unmapped",
           detail: omitted
-            ? `no cell of the matrix shows \`${unmodelled}\``
-            : `the definition neither models nor omits \`${unmodelled}\``,
+            ? `no cell of the matrix shows \`${variant}\``
+            : `the definition neither models nor omits \`${variant}\``,
         });
       }
       continue;
