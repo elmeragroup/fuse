@@ -159,22 +159,39 @@ const LEGACY_RGB = new RegExp(
   "i"
 );
 
+const MODERN_RGB = new RegExp(
+  `^rgba?\\(\\s*(${CSS_NUMBER})\\s+(${CSS_NUMBER})\\s+(${CSS_NUMBER})` +
+    `\\s*(?:\\/\\s*(${CSS_NUMBER})(%?)\\s*)?\\)$`,
+  "i"
+);
+
 /**
- * Parse CSS `rgb()` or `rgba()` in the legacy comma-separated form Chromium serializes a
- * computed sRGB color in: `rgb(r, g, b)` or `rgba(r, g, b, a)`. Channels are numbers from 0
- * to 255 and alpha is a number from 0 to 1. Out-of-range values clamp as CSS clamps them. The
- * parser refuses the space-separated form, percentages and the `none` keyword.
+ * Parse CSS `rgb()` or `rgba()` with number channels from 0 to 255, in either form CSS Color 4
+ * defines:
+ *
+ * - The legacy comma form Chromium serializes a computed sRGB color in: `rgb(r, g, b)` or
+ *   `rgba(r, g, b, a)`, with alpha a number from 0 to 1.
+ * - The space form Tailwind compiles an arbitrary color to, such as `rgb(0 0 0/0.05)`: three
+ *   channels and an optional alpha after `/`, as a number or a percentage.
+ *
+ * Out-of-range values clamp as CSS clamps them. The parser refuses percentage channels, the
+ * `none` keyword and a mix of the two forms.
  *
  * @param input - The text to parse, without surrounding whitespace.
- * @returns The color, or `InvalidColor` when the input is not that notation.
+ * @returns The color, or `InvalidColor` when the input is neither form.
  */
 export function parse(input: string): Result<Srgb, InvalidColor> {
-  const match = LEGACY_RGB.exec(input);
-  if (match === null) {
-    return err(new InvalidColor("rgb", input));
+  const legacy = LEGACY_RGB.exec(input);
+  if (legacy !== null) {
+    const [, r = "", g = "", b = "", alpha] = legacy;
+    return ok(encoded(readChannel(r), readChannel(g), readChannel(b), readAlpha(alpha)));
   }
-  const [, r = "", g = "", b = "", alpha] = match;
-  return ok(encoded(readChannel(r), readChannel(g), readChannel(b), readAlpha(alpha)));
+  const modern = MODERN_RGB.exec(input);
+  if (modern !== null) {
+    const [, r = "", g = "", b = "", alpha, percent] = modern;
+    return ok(encoded(readChannel(r), readChannel(g), readChannel(b), readAlpha(alpha, percent)));
+  }
+  return err(new InvalidColor("rgb", input));
 }
 
 function readChannel(value: string): number {

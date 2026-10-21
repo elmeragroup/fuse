@@ -261,10 +261,28 @@ describe("exports map", () => {
     expect(pkg.publishConfig.linkDirectory).toBe(false);
   });
 
-  it("exposes a workspace-only theme-catalog tooling entry that is not published", () => {
+  it("lists the workspace-only tooling entries", () => {
     expect(TOOLING_ONLY_JS_ENTRIES).toEqual([
+      { subpath: "recipe-catalog", sourceFile: "src/components/recipe-catalog.ts" },
       { subpath: "theme-catalog", sourceFile: "src/theme/catalog.ts" },
     ]);
+  });
+
+  it("exposes a workspace-only recipe-catalog tooling entry that is not published", () => {
+    expect(exportBindingTarget(sourceExports, "./recipe-catalog")).toEqual({
+      types: "./src/components/recipe-catalog.ts",
+      import: "./src/components/recipe-catalog.ts",
+    });
+    expect(exportBindingTarget(publishExports, "./recipe-catalog")).toBeUndefined();
+    expect(discovered.jsEntries.map((entry) => entry.subpath)).not.toContain("recipe-catalog");
+    const catalog = parseFacadeValueExports(
+      "src/components/recipe-catalog.ts",
+      readFileSync(join(packageRoot, "src/components/recipe-catalog.ts"), "utf8")
+    );
+    expect(catalog).toEqual(["buttonVariants", "BESPOKE_ICON_NAMES", "PHOSPHOR_ICON_NAMES"]);
+  });
+
+  it("exposes a workspace-only theme-catalog tooling entry that is not published", () => {
     expect(exportBindingTarget(sourceExports, "./theme-catalog")).toEqual({
       types: "./src/theme/catalog.ts",
       import: "./src/theme/catalog.ts",

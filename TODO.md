@@ -310,6 +310,14 @@
   appends the mode and cannot reorder modes, so `Dense` stays the file's default until someone
   does.
 
+## Figma component sync
+
+- Confirm on a real file that an instance's glyph fill override goes with the glyph when the
+  plugin draws an icon again, as `plugin/src/fake-figma.ts` assumes. Change one icon's markup,
+  run Apply, and check that the next Plan lists nothing.
+- Publish the library, edit it in place and check that instances in a second file follow with
+  their ids intact. Then delete and recreate the set and record what those instances show.
+
 ## Data table
 
 - The docs API reference lists only `value` and `className` for the default cells: the generator

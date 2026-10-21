@@ -28,21 +28,29 @@ describe("parse", () => {
     expect(channels(parsed("rgba(0, 255, 0)"))).toEqual([0, 1, 0, 1]);
   });
 
+  it("reads the space form, with an alpha after a slash as a number or a percentage", () => {
+    expect(channels(parsed("rgb(255 255 255)"))).toEqual([1, 1, 1, 1]);
+    // Tailwind compiles `shadow-[0_1px_2px_rgb(0_0_0/0.05)]` to this spelling.
+    expect(channels(parsed("rgb(0 0 0/0.05)"))).toEqual([0, 0, 0, 0.05]);
+    expect(channels(parsed("rgba(51 102 153 / 50%)"))).toEqual([0.2, 0.4, 0.6, 0.5]);
+  });
+
   it("clamps out-of-range channels and alpha as CSS does", () => {
     expect(channels(parsed("rgba(300, -5, 127.5, 1.5)"))).toEqual([1, 0, 0.5, 1]);
     expect(channels(parsed("rgb(1e400, -1e400, 0)"))).toEqual([1, 0, 0, 1]);
   });
 
-  it("refuses the space form, percentages, none, missing channels and other notations", () => {
+  it("refuses percentage channels, none, missing channels, mixed forms and other notations", () => {
     for (const input of [
-      "rgb(255 255 255)",
-      "rgb(255 51 0 / 50%)",
+      "rgb(100% 50% 0%)",
       "rgb(100%, 50%, 0%)",
       "rgba(0, 0, 0, 50%)",
       "rgb(none, 0, 0)",
       "rgb(1, 2)",
       "rgb(1, 2 3)",
       "rgb(1, 2, 3 / 0.5)",
+      "rgb(1 2 3, 0.5)",
+      "rgb(none 0 0)",
       "rgb(1, 2, 3) ",
       "#ffffff",
     ]) {

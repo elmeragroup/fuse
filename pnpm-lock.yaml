@@ -27,6 +27,9 @@ catalogs:
     '@elmeragroup/internal':
       specifier: 0.2.0-canary.10
       version: 0.2.0-canary.10
+    '@figma/plugin-typings':
+      specifier: 1.141.0
+      version: 1.141.0
     '@fontsource/roboto':
       specifier: 5.3.0
       version: 5.3.0
@@ -546,25 +549,67 @@ importers:
       '@effect/platform-node':
         specifier: 'catalog:'
         version: 4.0.2(effect@4.0.2)(redis@6.2.1)
+      '@elmeragroup/color':
+        specifier: workspace:*
+        version: link:../color
       '@elmeragroup/fuse':
         specifier: workspace:*
         version: link:../fuse
       effect:
         specifier: 'catalog:'
         version: 4.0.2
+      tailwindcss:
+        specifier: 'catalog:'
+        version: 4.3.3
+      tailwindcss-react-aria-components:
+        specifier: 'catalog:'
+        version: 2.2.0(tailwindcss@4.3.3)
+      tw-animate-css:
+        specifier: 'catalog:'
+        version: 1.4.0
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
         version: 4.0.2(effect@4.0.2)(vitest@5.0.0)
-      '@elmeragroup/color':
-        specifier: workspace:*
-        version: link:../color
       '@elmeragroup/typescript-config':
         specifier: workspace:*
         version: link:../../tooling/typescript
+      '@figma/plugin-typings':
+        specifier: 'catalog:'
+        version: 1.141.0
+      '@fontsource/roboto':
+        specifier: 'catalog:'
+        version: 5.3.0
       '@types/node':
         specifier: 'catalog:'
         version: 25.9.5
+      '@types/pngjs':
+        specifier: 'catalog:'
+        version: 6.0.5
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: 'catalog:'
+        version: 19.3.0(@types/react@19.3.0)
+      pixelmatch:
+        specifier: 'catalog:'
+        version: 7.2.0
+      playwright:
+        specifier: 'catalog:'
+        version: 1.63.0
+      pngjs:
+        specifier: 'catalog:'
+        version: 7.0.0
+      react:
+        specifier: 'catalog:'
+        version: 19.3.0
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.3.0(react@19.3.0)
+      rolldown:
+        specifier: 'catalog:'
+        version: 1.2.8
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -802,6 +847,9 @@ packages:
   '@eslint/plugin-kit@0.7.2':
     resolution: {integrity: sha512-+CNAzxglkrpNf/kKywqQfk74QjtceuOE7Qm+AF8miRvPF/wmmK5+OJOgVh3AVTT3RP2mH3+FOaxlE5v72owk0A==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
+
+  '@figma/plugin-typings@1.141.0':
+    resolution: {integrity: sha512-i+6AsBmiwGNpH4I6sgIvj5RX1dMWExzS7h33HGrU++//wPKotlIzJuGhG15woCQY1V1ctG/k5uW9HgfkTyTaWg==}
 
   '@floating-ui/core@1.8.0':
     resolution: {integrity: sha512-0CIZ5itps/8x7BG8dEIhs53BvCUH2PCoogtakwRTut+Arm58sJooJ0AuZhLw2HJYIR5cMLNPBSS728sPho2khQ==}
@@ -4419,18 +4467,6 @@ packages:
     resolution: {integrity: sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==}
     engines: {node: '>=10'}
 
-  ws@8.21.3:
-    resolution: {integrity: sha512-201TZ/kPWxoPr/OKWjquZR1SWKXcvxdH+e1xrx89b3YbmzLMFCLfnaG1HFIgWzJOEWZ7MvpK++odZufgYR50Rw==}
-    engines: {node: '>=10.0.0'}
-    peerDependencies:
-      bufferutil: ^4.0.1
-      utf-8-validate: '>=5.0.2'
-    peerDependenciesMeta:
-      bufferutil:
-        optional: true
-      utf-8-validate:
-        optional: true
-
   ws@8.22.0:
     resolution: {integrity: sha512-Ydggc987+RO0AnWtZ/7Wq9FtNvcrL1b/RO0ud9mWjUPgDrsAAwQSF51sm2hm1XofbU/4jkpGEsLFsZZxU+1DOg==}
     engines: {node: '>=10.0.0'}
@@ -4724,6 +4760,8 @@ snapshots:
     dependencies:
       '@eslint/core': 1.2.1
       levn: 0.4.1
+
+  '@figma/plugin-typings@1.141.0': {}
 
   '@floating-ui/core@1.8.0':
     dependencies:
@@ -5773,7 +5811,7 @@ snapshots:
       sirv: 3.0.2
       tinyrainbow: 3.1.1
       vitest: 5.0.0(@types/node@25.9.5)(@vitest/browser-playwright@5.0.0)(@vitest/ui@5.0.0)(vite@8.3.0(@types/node@25.9.5)(jiti@2.7.0)(yaml@2.9.1))
-      ws: 8.21.3
+      ws: 8.22.0
     transitivePeerDependencies:
       - bufferutil
       - msw
@@ -8090,8 +8128,6 @@ snapshots:
       ansi-styles: 4.3.0
       string-width: 4.2.3
       strip-ansi: 6.0.1
-
-  ws@8.21.3: {}
 
   ws@8.22.0: {}
 

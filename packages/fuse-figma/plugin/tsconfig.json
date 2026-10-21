@@ -1,0 +1,11 @@
+{
+  "extends": "@elmeragroup/typescript-config/base.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "exactOptionalPropertyTypes": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "types": ["@figma/plugin-typings", "@elmeragroup/typescript-config/css-custom-properties"]
+  },
+  "include": ["src"]
+}
