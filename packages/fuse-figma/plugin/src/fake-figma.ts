@@ -66,6 +66,14 @@
  *    family names for the weight, which needs that font loaded, as Figma's guide to
  *    typography variables says. The fake names the style by `WEIGHT_STYLES`, Thin for 100
  *    up to Black for 900, and throws for another weight or a held style the table lacks.
+ * 11. `resolvedVariableModes` lists only the collections the layer's subtree reads: those of
+ *    the variables a field, text range, paint or effect binds somewhere under it, and those
+ *    their aliases reach. The typings say "each variable collection in this file".
+ *    `explicitVariableModes` lists every pin. On a real file on 2026-10-21 a Badge preview
+ *    pinned `Fuse density` to Auto beside its theme. It resolved `Fuse tokens`, which its layers
+ *    bind, and the brand, segment and variant collections those tokens alias through, but
+ *    neither `Fuse density`, which no Badge layer binds, nor `Fuse primitives`. The Button and
+ *    Toggle previews, whose sets bind density, resolved Auto.
  *
  * An instance's sublayers show the layers of its main component. An override, such as the
  * color an icon layer gives its glyph, belongs to the main layer it was made on. It moves to
@@ -1022,6 +1030,50 @@ function nodeBindings(state: NodeState): NonNullable<FrameNode["boundVariables"]
   return { ...nodeFields, ...textFields };
 }
 
+/** The variable ids a layer's fields, text, paints and effects bind. */
+function layerBindings(state: NodeState): string[] {
+  const paints = [...shownFills(state), ...state.strokes].flatMap((paint) =>
+    paint.type === "SOLID" && paint.boundVariables?.color !== undefined ? [paint.boundVariables.color.id] : []
+  );
+  const effects = state.effects.flatMap((effect) =>
+    effect.type === "DROP_SHADOW" || effect.type === "INNER_SHADOW"
+      ? [...EFFECT_FIELD_TYPES.keys()].flatMap((field) => effect.boundVariables?.[field]?.id ?? [])
+      : []
+  );
+  const text = state.styles.flatMap((style) => [...style.bindings.values()]);
+  return [...state.bindings.values(), ...text, ...paints, ...effects];
+}
+
+/** The variable ids a layer and every layer under it bind, an instance's sublayers included. */
+function subtreeBindings(state: NodeState): Set<string> {
+  const ids = new Set(layerBindings(state));
+  for (const child of childrenOf(state)) {
+    for (const id of subtreeBindings(child)) {
+      ids.add(id);
+    }
+  }
+  return ids;
+}
+
+/**
+ * The collections a layer reads through the bindings in its subtree: each bound variable's,
+ * and each alias target's, following the aliases in the modes the layer reads.
+ */
+function boundCollections(state: NodeState): Set<string> {
+  const visited = new Set<string>();
+  const collections = new Set<string>();
+  for (const id of subtreeBindings(state)) {
+    for (let next: string | undefined = id; next !== undefined && !visited.has(next);) {
+      visited.add(next);
+      const variable = variableState(state.file, next);
+      collections.add(variable.collection.id);
+      const value = variable.values.get(modeFor(state, variable.collection));
+      next = value?.kind === "alias" ? value.id : undefined;
+    }
+  }
+  return collections;
+}
+
 /** The node a layer's property link reads from: its component set, or its component. */
 function propertyOwner(state: NodeState): NodeState | undefined {
   for (let current = state.parent; current !== undefined; current = current.parent) {
@@ -1620,11 +1672,17 @@ class FakeSceneNode extends FakeBaseNode {
     pinMode(live(this), collection, modeId);
   }
 
-  /** The mode the layer reads each collection in, pinned or inherited or the default (rule 8). */
+  /**
+   * The mode the layer reads each collection in, pinned or inherited or the default (rule 8),
+   * for the collections its subtree's bindings read (rule 11).
+   */
   get resolvedVariableModes(): { [collectionId: string]: string } {
     const state = live(this);
+    const bound = boundCollections(state);
     return Object.fromEntries(
-      state.file.collections.map((collection) => [collection.id, modeFor(state, collection)])
+      state.file.collections
+        .filter((collection) => bound.has(collection.id))
+        .map((collection) => [collection.id, modeFor(state, collection)])
     );
   }
 }

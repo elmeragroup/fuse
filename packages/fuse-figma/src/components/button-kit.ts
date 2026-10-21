@@ -137,7 +137,7 @@ export const BUTTON: ComponentDefinition = {
   states: STATES,
   facts: new Map(),
   omittedStates: OMITTED_STATES,
-  label: { key: "label", name: "label", characters: "Button", textProperty: "Label" },
+  label: { key: "label", name: "label", characters: "Button", textProperty: "Label", shownIn: () => true },
   iconsFor: buttonIcons,
   swapProperties: swapProperties([START_ICON, END_ICON]),
 };

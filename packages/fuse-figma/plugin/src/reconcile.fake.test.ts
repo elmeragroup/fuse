@@ -1,6 +1,6 @@
 /**
  * `reconcileKit` end to end against the in-memory file in `fake-figma.ts`, with the kit
- * `buildKit()` writes from the Button, Toggle and Badge recipes and the variables `fuseVariableSet()` syncs. The
+ * `buildKit()` writes from the Button, Toggle, Badge and Kbd recipes and the variables `fuseVariableSet()` syncs. The
  * fake models the Figma rules the real runs in 2026-10 confirmed, and throws for any Plugin API
  * member it does not model. The oracles are hand-written: the change lines Plan must list, the
  * values the Button recipe and the theme catalog give, and the order the kit's axes declare.
@@ -48,6 +48,7 @@ beforeAll(async () => {
 const BUTTON_PAGE = "page/button";
 const TOGGLE_PAGE = "page/toggle";
 const BADGE_PAGE = "page/badge";
+const KBD_PAGE = "page/kbd";
 const ICONS_PAGE = "page/icons";
 const DEFAULT_BUTTON = "variant=default, size=default, state=rest, icon=none";
 const LAY_OUT_BUTTONS = "Button: lay out 420 variants in 5 columns and 84 rows";
@@ -65,6 +66,9 @@ const CREATE_TOGGLE_PREVIEWS = TOGGLE_PREVIEWS.map((name) => `Toggle: create the
 const PLACE_BADGES = "Badge: place Badge in a row and stack 4 previews below them";
 const BADGE_PREVIEWS = PREVIEWS.map((name) => name.replace("Button", "Badge"));
 const CREATE_BADGE_PREVIEWS = BADGE_PREVIEWS.map((name) => `Badge: create the preview ${name}`);
+const PLACE_KBDS = "Kbd: place Kbd in a row and stack 4 previews below them";
+const KBD_PREVIEWS = PREVIEWS.map((name) => name.replace("Button", "Kbd"));
+const CREATE_KBD_PREVIEWS = KBD_PREVIEWS.map((name) => `Kbd: create the preview ${name}`);
 
 /** The page the plugin put the whole kit on before each component got a page of its own. */
 const LEGACY_PAGE = { key: "page/components", name: "Fuse components" };
@@ -237,6 +241,7 @@ describe("Apply on a synced file without the kit pages", () => {
         "Document: create the page Button",
         "Document: create the page Toggle",
         "Document: create the page Badge",
+        "Document: create the page Kbd",
         "Document: create the page Icons",
         "Icons: create the Icons frame with 135 icons",
         "Button: create the component set Button with 420 variants",
@@ -244,12 +249,15 @@ describe("Apply on a synced file without the kit pages", () => {
         "Toggle: create the component set Toggle with 192 variants",
         "Toggle: create the component set Icon toggle with 64 variants",
         "Badge: create the component set Badge with 57 variants",
+        "Kbd: create the component set Kbd with 2 variants",
         ...CREATE_PREVIEWS,
         PLACE,
         ...CREATE_TOGGLE_PREVIEWS,
         PLACE_TOGGLES,
         ...CREATE_BADGE_PREVIEWS,
         PLACE_BADGES,
+        ...CREATE_KBD_PREVIEWS,
+        PLACE_KBDS,
       ],
       warnings: [],
     });
@@ -257,14 +265,15 @@ describe("Apply on a synced file without the kit pages", () => {
   });
 
   it("shows the Button page and leaves nothing behind on the page that was current", async () => {
-    const [first, button, toggle, badge, icons] = file.figma.root.children;
+    const [first, button, toggle, badge, kbd, icons] = file.figma.root.children;
     expect(first?.name).toBe("Page 1");
     await first?.loadAsync();
     expect(first?.children).toEqual([]);
-    expect([button?.name, toggle?.name, badge?.name, icons?.name]).toEqual([
+    expect([button?.name, toggle?.name, badge?.name, kbd?.name, icons?.name]).toEqual([
       "Button",
       "Toggle",
       "Badge",
+      "Kbd",
       "Icons",
     ]);
     expect(file.figma.currentPage).toBe(button);
@@ -281,6 +290,10 @@ describe("Apply on a synced file without the kit pages", () => {
     expect((await kitPage(file, BADGE_PAGE)).children.map((node) => node.name)).toEqual([
       "Badge",
       ...BADGE_PREVIEWS,
+    ]);
+    expect((await kitPage(file, KBD_PAGE)).children.map((node) => node.name)).toEqual([
+      "Kbd",
+      ...KBD_PREVIEWS,
     ]);
     expect((await kitPage(file, ICONS_PAGE)).children.map((node) => node.name)).toEqual(["Icons"]);
   });
@@ -354,9 +367,14 @@ describe("Apply on a synced file without the kit pages", () => {
         ["preview/badge/internal-fkas-private-dark", BADGE_PREVIEWS[1], 57],
         ["preview/badge/external-fkas-private-light", BADGE_PREVIEWS[2], 57],
         ["preview/badge/external-fkas-private-dark", BADGE_PREVIEWS[3], 57],
+        // Kbd: the text cap and the icon cap.
+        ["preview/kbd/internal-fkas-private-light", KBD_PREVIEWS[0], 2],
+        ["preview/kbd/internal-fkas-private-dark", KBD_PREVIEWS[1], 2],
+        ["preview/kbd/external-fkas-private-light", KBD_PREVIEWS[2], 2],
+        ["preview/kbd/external-fkas-private-dark", KBD_PREVIEWS[3], 2],
       ]
     );
-    expect(progress).toEqual([924, 924]);
+    expect(progress).toEqual([932, 932]);
     const [first] = snapshot.previews;
     expect(new Set(Object.keys(first ?? {}))).toEqual(new Set(["key", "name", "modes", "instances"]));
     expect(first?.modes).toEqual(
@@ -377,6 +395,41 @@ describe("Apply on a synced file without the kit pages", () => {
     expect(instance?.image?.renderBounds).toEqual(instance?.box);
     expect(instance?.image?.png).toMatch(/^[A-Za-z0-9+/]+=*$/);
     expect(first?.instances[70]?.variant).toBe("icon-button/variant=default,size=icon,state=rest");
+  });
+
+  it("exports the density a Badge or Kbd preview pins, though none of their layers binds density", async () => {
+    const snapshot = await exportSnapshots(file.figma, [BADGE_PAGE, KBD_PAGE], () => undefined);
+    // The collections the real file's first Badge preview resolved on 2026-10-21 (rule 11): no
+    // density, which the preview pins and no Badge layer binds.
+    const names = new Map(
+      (await file.figma.variables.getLocalVariableCollectionsAsync()).map((collection) => [
+        collection.id,
+        collection.name,
+      ])
+    );
+    const [badgePreview] = (await kitPage(file, BADGE_PAGE)).children.filter(
+      (node): node is FrameNode => node.type === "FRAME"
+    );
+    expect(
+      new Set(Object.keys(badgePreview?.resolvedVariableModes ?? {}).map((id) => names.get(id)))
+    ).toEqual(new Set(["Fuse brand", "Fuse segment", "Fuse variant", "Fuse tokens"]));
+    const pins = (tokens: string, variant: string) => [
+      { collection: "Fuse brand", mode: "Fjordkraft" },
+      { collection: "Fuse density", mode: "Auto" },
+      { collection: "Fuse segment", mode: "Private" },
+      { collection: "Fuse tokens", mode: tokens },
+      { collection: "Fuse variant", mode: variant },
+    ];
+    const themes = [
+      pins("Light", "Internal"),
+      pins("Dark", "Internal"),
+      pins("Light", "External"),
+      pins("Dark", "External"),
+    ];
+    expect(snapshot.previews.map((preview) => [preview.name, preview.modes])).toEqual([
+      ...BADGE_PREVIEWS.map((name, index) => [name, themes[index]]),
+      ...KBD_PREVIEWS.map((name, index) => [name, themes[index]]),
+    ]);
   });
 
   it("writes nothing on a second Apply but showing the page", async () => {
@@ -720,8 +773,9 @@ describe("a file the plugin laid out on one page", () => {
       "Document: create the page Button",
       "Document: create the page Toggle",
       "Document: create the page Badge",
+      "Document: create the page Kbd",
       "Document: create the page Icons",
-      ...[...PREVIEWS, ...TOGGLE_PREVIEWS, ...BADGE_PREVIEWS].map(
+      ...[...PREVIEWS, ...TOGGLE_PREVIEWS, ...BADGE_PREVIEWS, ...KBD_PREVIEWS].map(
         (name) => `Fuse components: delete ${name}`
       ),
       "Fuse components: move Icons to the Icons page",
@@ -730,10 +784,11 @@ describe("a file the plugin laid out on one page", () => {
       "Fuse components: move Toggle to the Toggle page",
       "Fuse components: move Icon toggle to the Toggle page",
       "Fuse components: move Badge to the Badge page",
+      "Fuse components: move Kbd to the Kbd page",
     ];
 
     expect(await reconcileKit(file.figma, kit, false)).toEqual({
-      changes: [...pagePhase, "Document: plan the rest of the kit again once the 6 moves land"],
+      changes: [...pagePhase, "Document: plan the rest of the kit again once the 7 moves land"],
       warnings: [],
     });
     const applied = await reconcileKit(file.figma, kit, true);
@@ -746,6 +801,8 @@ describe("a file the plugin laid out on one page", () => {
         PLACE_TOGGLES,
         ...CREATE_BADGE_PREVIEWS,
         PLACE_BADGES,
+        ...CREATE_KBD_PREVIEWS,
+        PLACE_KBDS,
         "Document: delete the page Fuse components",
       ],
       warnings: [],
@@ -759,6 +816,7 @@ describe("a file the plugin laid out on one page", () => {
       "Button",
       "Toggle",
       "Badge",
+      "Kbd",
       "Icons",
     ]);
     const button = await componentSet(file, "Button");
@@ -802,10 +860,11 @@ describe("a file the plugin laid out on one page", () => {
     file.reopen();
 
     const applied = await reconcileKit(file.figma, kit, true);
-    expect(applied.changes.slice(0, 4)).toEqual([
+    expect(applied.changes.slice(0, 5)).toEqual([
       "Document: create the page Button",
       "Document: create the page Toggle",
       "Document: create the page Badge",
+      "Document: create the page Kbd",
       "Document: create the page Icons",
     ]);
     expect(file.figma.root.children.map((page) => page.name)).toEqual([
@@ -815,6 +874,7 @@ describe("a file the plugin laid out on one page", () => {
       "Button",
       "Toggle",
       "Badge",
+      "Kbd",
       "Icons",
     ]);
     for (const { page, frame } of imported) {

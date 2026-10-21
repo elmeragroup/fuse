@@ -2,7 +2,7 @@
 
 Syncs the Fuse design tokens into a Figma file's local variables. The repository is the master for theming data, so the sync writes code into Figma and never reads design decisions back. It is a private workspace package with no build step. Node runs the TypeScript directly.
 
-It also builds the Fuse components plugin, a proof of concept that creates the Button, Toggle and Badge component sets from their recipes and an icon library from Fuse's icons. [Components plugin](#components-plugin) describes it.
+It also builds the Fuse components plugin, a proof of concept that creates the Button, Toggle, Badge and Kbd component sets from their recipes and an icon library from Fuse's icons. [Components plugin](#components-plugin) describes it.
 
 ## What lands in Figma
 
@@ -99,7 +99,7 @@ The alternative was kumo-figma's approach, which deletes every variable and recr
 
 ## Components plugin
 
-The plugin creates two component sets from the Button recipe on a page named `Button`, two from the Toggle recipe on a page named `Toggle`, one from the Badge recipe on a page named `Badge`, and an icon library on a page named `Icons`. It edits them in place on every later run, and binds each field it can to the variables `figma:sync` writes.
+The plugin creates two component sets from the Button recipe on a page named `Button`, two from the Toggle recipe on a page named `Toggle`, one from the Badge recipe on a page named `Badge`, one from the Kbd recipe on a page named `Kbd`, and an icon library on a page named `Icons`. It edits them in place on every later run, and binds each field it can to the variables `figma:sync` writes.
 
 - The `Icons` frame holds one 16px component per icon `@elmeragroup/fuse/icons` publishes that takes the color of the text around it: the 130 Phosphor icons in their bold default weight and the 5 bespoke icons that paint with `currentColor`. The other bespoke icons are artwork with colors of their own, such as the Vipps mark and the Signing illustration, which read as blots at 16px or vanish on a light fill, so they stay out with the brand logos.
 - `Button` holds every variant the recipe declares at the default, xs, sm and lg sizes, in 5 states (rest, hover, focus, disabled and pending) and with no icon, a start icon or an end icon: 420 variants. Its `Label` text property sets the label, and its `Start icon` and `End icon` swap properties pick the icons, Plus and ArrowRight to begin with.
@@ -108,6 +108,7 @@ The plugin creates two component sets from the Button recipe on a page named `Bu
 - `Toggle` holds both variants the recipe declares at the default, xs, sm and lg sizes, in 4 states (rest, hover, focus and disabled), off and on, and with no icon, a start icon or an end icon: 192 variants. Its `pressed` property sits beside `state`. Its `Label` text property sets the label, and its `Start icon` and `End icon` swap properties pick the icons, Star on both sides to begin with, as the docs place it.
 - `Icon toggle` holds the same variants, sizes, states and pressed values, 64 variants, each one icon with no label, which its `Icon` swap property picks. The icon carries `data-icon="inline-start"`, as in the docs, so it takes the start icon's inset.
 - `Badge` holds every variant the recipe declares at the default, sm and lg sizes: 57 variants. A Badge is not interactive, so the set has no state axis, and its columns are the sizes. Its `Label` text property sets the label. It has no icons, since no docs demo places one.
+- `Kbd` holds a text cap and an icon cap: 2 variants. The recipe declares no axes, so the set's one property, `content`, says what the cap holds, `text` or `icon`, and its columns are those values. Its `Label` text property sets the text cap's label, `K` to begin with. Its `Icon` swap property picks the icon cap's 12px icon, Backspace to begin with, because the roster has no Command icon. Kbd group, which lays out caps in a row, waits until kit components can hold instances.
 - Four preview frames below the sets on each component page pin Fjordkraft private, internal and external, each in light and dark. Every preview pins density `Auto`, so the internal ones render dense and the external ones comfortable. A designer switches a preview's modes to see the other themes. Each preview holds a group per set on its page, so each set's instances start on a row of their own. A group has no padding and does not clip, so a focus ring at its edge still draws.
 
 ### Running it
@@ -128,7 +129,7 @@ The plugin creates two component sets from the Button recipe on a page named `Bu
 
 ### How the spec is built
 
-The build calls each recipe from the workspace-only `@elmeragroup/fuse/recipe-catalog` entry for each cell of its matrix. It sorts every class by its variants and maps them onto the cells as the component renders them. `fuse.css` and Tailwind fix most of what a variant means, so one shared table in `components/state-table.ts` holds that meaning for every component set. A definition such as `button-kit.ts`, `toggle-kit.ts` or `badge-kit.ts` adds only the variants its own states render, facts for variants only it uses, and its own omissions. The build stops when a definition gives a shared variant a second meaning.
+The build calls each recipe from the workspace-only `@elmeragroup/fuse/recipe-catalog` entry for each cell of its matrix. It sorts every class by its variants and maps them onto the cells as the component renders them. `fuse.css` and Tailwind fix most of what a variant means, so one shared table in `components/state-table.ts` holds that meaning for every component set. A definition such as `button-kit.ts`, `toggle-kit.ts`, `badge-kit.ts` or `kbd-kit.ts` adds only the variants its own states render, facts for variants only it uses, and its own omissions. The build stops when a definition gives a shared variant a second meaning. A definition also names the cells that show its label, so the Kbd's icon cap drops the text classes as a cell with no text.
 
 - `enabled-hover:` holds on hover and `focus-visible:` on focus.
 - `disabled:` holds on disabled. A pending Button stays focusable, so Base UI marks it `aria-disabled` instead, and `data-disabled:` holds in both.
@@ -148,7 +149,7 @@ Each root also gets the base-layer rule of `fuse.css`, `border-color: var(--bord
 
 The icon library comes from the same React components apps render. Node cannot load the bespoke icons' TSX, so the build bundles a small module with rolldown that renders each icon with `react-dom/server`. A Phosphor icon renders at 16px. A bespoke icon renders at its own size, and the plugin scales it to fit 16px. The library keeps an icon only when it paints with `currentColor` alone. Figma cannot read `currentColor`, so the markup paints the icon black and the plugin binds its color.
 
-`coverage.md` lists every declaration with what became of it. Bound and literal declarations reached a Figma field. A dropped declaration has no Figma form, such as a cursor or a transition, or belongs to a state no cell shows. An unmapped declaration is one the build cannot express yet, and a test holds the count at zero.
+`coverage.md` lists every declaration with what became of it. Bound and literal declarations reached a Figma field. A dropped declaration has no Figma form, such as a cursor or a transition, or belongs to a state no cell shows. `tabular-nums` sets `font-variant-numeric`, which has no Figma form either. The plugin typings let a plugin read a text layer's `openTypeFeatures` and give no setter for `TNUM`, so the Kbd label keeps the font's default numerals. An unmapped declaration is one the build cannot express yet, and a test holds the count at zero.
 
 ### How the plugin decides what to write
 
@@ -188,7 +189,7 @@ These behaviours have not run against a real file yet:
 `figma:compare` checks the kit against the real Fuse components. It renders every instance in the preview frames with its Fuse component in Chromium and compares the two pictures cell by cell.
 
 1. Build Fuse when `packages/fuse/dist` is missing or older than its sources, with `pnpm --filter @elmeragroup/fuse build`. The comparison renders the components and loads `styles.css` and `themes.css` from that build, and it warns when the sources are newer.
-2. Run the plugin and press Export snapshots. The plugin exports each instance in the preview frames of every kit page as a PNG at 2x, cut to its render bounds so that a focus ring outside the box is included. It records each instance's box and render bounds and the modes its preview frame resolves. The UI downloads the result as `fuse-kit-snapshots.json`. The export writes nothing to the file.
+2. Run the plugin and press Export snapshots. The plugin exports each instance in the preview frames of every kit page as a PNG at 2x, cut to its render bounds so that a focus ring outside the box is included. It records each instance's box and render bounds and the modes its preview frame resolves. Figma resolves a mode only for a collection the frame's layers bind or alias into, so the export adds each mode the frame or its page pins, such as the density a Badge preview pins though no Badge layer binds a density variable. The UI downloads the result as `fuse-kit-snapshots.json`. The export writes nothing to the file.
 3. Run the comparison. pnpm runs the script in this package's directory, so pass an absolute path:
 
    ```sh
@@ -210,6 +211,8 @@ The Button renderer, `compare/button-cell.ts`, renders both Button sets. `icon=s
 The Toggle renderer, `compare/toggle-cell.ts`, renders both Toggle sets. `pressed=on` sets `defaultPressed` and disabled sets `disabled`. `icon=start` and `icon=end` add a `<Star>` marked `inline-start` or `inline-end`. An icon toggle holds `<Star data-icon="inline-start" />` and has an `aria-label`.
 
 The Badge renderer, `compare/badge-cell.ts`, renders `<Badge variant size>Badge</Badge>`.
+
+The Kbd renderer, `compare/kbd-cell.ts`, renders `<Kbd>K</Kbd>` for `content=text` and `<Kbd><Backspace /></Kbd>` for `content=icon`.
 
 To compare a new component set:
 
@@ -253,6 +256,7 @@ The first comparison of the test file, on 2026-10-20, covered 756 cells in the 1
 | `components/button-kit.ts`                   | The Button and Icon button matrices, the variants they model and the icons each cell renders                                            |
 | `components/toggle-kit.ts`                   | The Toggle and Icon toggle matrices, the pressed facts, the omitted `aria-disabled` and the icons each cell renders                     |
 | `components/badge-kit.ts`                    | The Badge matrix, with no state axis, and the omitted `[&>span]`                                                                        |
+| `components/kbd-kit.ts`                      | The Kbd cap, with a `content` axis for its text and icon cells                                                                          |
 | `components/icon-library.ts`                 | Renders every Fuse icon to SVG markup for the icon library                                                                              |
 | `components/kit-spec.ts`                     | The kit spec the plugin bundles                                                                                                         |
 | `plugin/src/`                                | The plugin: the plan and its operations, the kit check, identity, field planners, the icon library, the component sets and the previews |

@@ -158,3 +158,18 @@ describe("a transparent background", () => {
     ]);
   });
 });
+
+// Unit under test: `buildComponentSet` on a root with `tabular-nums`. Oracle: the plugin typings
+// (`@figma/plugin-typings`), where a text layer's `openTypeFeatures` is read-only and no setter
+// writes `TNUM`, so `font-variant-numeric` has no Figma form and is dropped, not unmapped.
+describe("tabular numerals", () => {
+  it("drops font-variant-numeric", async () => {
+    const { coverage } = buildComponentSet(
+      { ...CHIP, classesFor: () => "tabular-nums" },
+      { ...context, compiled: await compileUtilities(["tabular-nums"]) }
+    );
+    expect(
+      coverage.filter((row) => row.property === "font-variant-numeric").map((row) => row.outcome)
+    ).toEqual(["dropped"]);
+  });
+});

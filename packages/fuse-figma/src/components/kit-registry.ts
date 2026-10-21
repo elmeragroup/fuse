@@ -12,6 +12,7 @@ import { BADGE } from "./badge-kit";
 import { BUTTON, ICON_BUTTON } from "./button-kit";
 import { matrixCells } from "./component-spec";
 import type { Cell, ComponentDefinition } from "./component-spec";
+import { KBD } from "./kbd-kit";
 import { axisValues } from "./kit-spec";
 import { ICON_TOGGLE, TOGGLE } from "./toggle-kit";
 
@@ -32,6 +33,9 @@ const TOGGLE_PAGE: KitPage = { slug: "toggle", name: "Toggle" };
 
 /** The page Badge sits on alone. */
 const BADGE_PAGE: KitPage = { slug: "badge", name: "Badge" };
+
+/** The page Kbd sits on alone. */
+const KBD_PAGE: KitPage = { slug: "kbd", name: "Kbd" };
 
 /**
  * A component set of the kit, the page it sits on, and the cells its preview frames place, in
@@ -111,4 +115,5 @@ export const KIT: readonly KitEntry[] = [
   },
   // A Badge has no state, so its previews place every cell of its matrix.
   { definition: BADGE, page: BADGE_PAGE, previewCells: matrixCells(BADGE.axes) },
+  { definition: KBD, page: KBD_PAGE, previewCells: matrixCells(KBD.axes) },
 ];

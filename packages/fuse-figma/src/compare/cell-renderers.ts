@@ -65,6 +65,11 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/badge.js",
     load: async () => (await import("./badge-cell.ts")).badge,
   },
+  {
+    set: "kbd",
+    entry: "dist/kbd.js",
+    load: async () => (await import("./kbd-cell.ts")).kbd,
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */
