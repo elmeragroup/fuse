@@ -17,16 +17,26 @@ import { DescriptionList } from "./description-list";
 
 /**
  * The inline layout's metrics in px, written out by hand rather than read from the library: the
- * label type is 14/20 dense and 16/24 comfortable, rows are spaced by the small surface gap, 8px
- * dense and 12px comfortable, and consecutive lists by the large surface gap, 16px and 24px.
+ * label type is 14/20 dense and 16/24 comfortable, Items are spaced by the small surface gap, 8px
+ * dense and 12px comfortable, a term and its details by the medium surface gap, 12px and 16px,
+ * and consecutive lists by the large surface gap, 16px and 24px.
  */
 const INLINE = {
-  dense: { text: 14, leading: 20, rowGap: 8, listGap: 16 },
-  comfortable: { text: 16, leading: 24, rowGap: 12, listGap: 24 },
+  dense: { text: 14, leading: 20, rowGap: 8, columnGap: 12, listGap: 16 },
+  comfortable: { text: 16, leading: 24, rowGap: 12, columnGap: 16, listGap: 24 },
 } as const satisfies Record<
   Density,
-  { readonly text: number; readonly leading: number; readonly rowGap: number; readonly listGap: number }
+  {
+    readonly text: number;
+    readonly leading: number;
+    readonly rowGap: number;
+    readonly columnGap: number;
+    readonly listGap: number;
+  }
 >;
+
+/** The inline list's content width in the row-sizing tests: a phone card's. */
+const ROW_WIDTH = 320;
 
 /** The `<dl>` around a cell. */
 function listOf(cell: HTMLElement): HTMLElement {
@@ -37,9 +47,99 @@ function listOf(cell: HTMLElement): HTMLElement {
   return list;
 }
 
+/** The Item around a cell: the cell's parent, which has no role or text of its own. */
+function itemOf(cell: HTMLElement): HTMLElement {
+  const item = cell.parentElement;
+  if (item?.tagName !== "DIV") {
+    throw new Error(`expected an Item around ${cell.textContent}`);
+  }
+  return item;
+}
+
 /** The box of the cell whose text is `name`. */
 function boxOf(name: string): DOMRect {
   return textNamed(name).getBoundingClientRect();
+}
+
+/**
+ * The width `text` takes on one line in `cell`'s font, measured in a probe outside any list, so
+ * the oracle is the text and the font, not the layout under test.
+ */
+function naturalWidth(text: string, cell: HTMLElement): number {
+  const style = getComputedStyle(cell);
+  const probe = document.createElement("span");
+  probe.style.fontFamily = style.fontFamily;
+  probe.style.fontSize = style.fontSize;
+  probe.style.fontWeight = style.fontWeight;
+  probe.style.whiteSpace = "nowrap";
+  probe.textContent = text;
+  document.body.append(probe);
+  const width = probe.getBoundingClientRect().width;
+  probe.remove();
+  return width;
+}
+
+/** The width of the widest space-separated word of `text` in `cell`'s font. */
+function widestWord(text: string, cell: HTMLElement): number {
+  return Math.max(...text.split(" ").map((word) => naturalWidth(word, cell)));
+}
+
+/** The lines a cell's text renders on, as one box per line read through a `Range`. */
+function textLines(cell: HTMLElement): DOMRect[] {
+  const range = document.createRange();
+  range.selectNodeContents(cell);
+  const lines: DOMRect[] = [];
+  for (const rect of range.getClientRects()) {
+    if (rect.width > 0 && !lines.some((line) => Math.abs(line.top - rect.top) < 1)) {
+      lines.push(rect);
+    }
+  }
+  return lines;
+}
+
+/** The words of a one-text-node cell that render across more than one line. */
+function wordsSplitAcrossLines(cell: HTMLElement): string[] {
+  const text = cell.firstChild;
+  if (!(text instanceof Text)) {
+    throw new Error(`expected one text node in ${cell.textContent}`);
+  }
+  const split: string[] = [];
+  let start = 0;
+  for (const word of text.data.split(" ")) {
+    const range = document.createRange();
+    range.setStart(text, start);
+    range.setEnd(text, start + word.length);
+    const tops = new Set([...range.getClientRects()].map((rect) => Math.round(rect.top)));
+    if (tops.size > 1) {
+      split.push(word);
+    }
+    start += word.length + 1;
+  }
+  return split;
+}
+
+/** An inline list `ROW_WIDTH` wide in a padded box, one Item per term and details pair. */
+function renderInlineRows(rows: readonly (readonly [string, string])[]) {
+  renderThemed(
+    <div style={{ padding: 24 }}>
+      <DescriptionList.Content layout="inline" style={{ width: ROW_WIDTH }}>
+        {rows.map(([term, details]) => (
+          <DescriptionList.Item key={term}>
+            <DescriptionList.Term>{term}</DescriptionList.Term>
+            <DescriptionList.Details>{details}</DescriptionList.Details>
+          </DescriptionList.Item>
+        ))}
+      </DescriptionList.Content>
+    </div>
+  );
+}
+
+/** Nothing in the list paints past its own box or any Item's. */
+function expectNoOverflow(list: HTMLElement): void {
+  expect(list.scrollWidth, "list overflow").toBeLessThanOrEqual(list.clientWidth);
+  for (const item of list.children) {
+    expect(item.scrollWidth, `${item.textContent} overflow`).toBeLessThanOrEqual(item.clientWidth);
+  }
 }
 
 function renderBasicList() {
@@ -47,17 +147,21 @@ function renderBasicList() {
     <DescriptionList.Root>
       <DescriptionList.Heading>Customer</DescriptionList.Heading>
       <DescriptionList.Content>
-        <DescriptionList.Term>Name</DescriptionList.Term>
-        <DescriptionList.Details>Kari Nordmann</DescriptionList.Details>
-        <DescriptionList.Term>Meter point</DescriptionList.Term>
-        <DescriptionList.Details>7070575000</DescriptionList.Details>
+        <DescriptionList.Item>
+          <DescriptionList.Term>Name</DescriptionList.Term>
+          <DescriptionList.Details>Kari Nordmann</DescriptionList.Details>
+        </DescriptionList.Item>
+        <DescriptionList.Item>
+          <DescriptionList.Term>Meter point</DescriptionList.Term>
+          <DescriptionList.Details>7070575000</DescriptionList.Details>
+        </DescriptionList.Item>
       </DescriptionList.Content>
     </DescriptionList.Root>
   );
 }
 
 describe("DescriptionList", () => {
-  it("renders a heading, a dl, and alternating terms and details in DOM order", () => {
+  it("renders a heading, a dl, and one div per group holding its term and details in DOM order", () => {
     renderBasicList();
     const heading = headingNamed("Customer", 2);
     expect(heading.tagName).toBe("H2");
@@ -69,14 +173,19 @@ describe("DescriptionList", () => {
       throw new Error("expected the description list content");
     }
     expect(content.tagName).toBe("DL");
-    const terms = [...content.querySelectorAll("dt")];
-    const details = [...content.querySelectorAll("dd")];
-    expect(terms.map((term) => term.textContent)).toEqual(["Name", "Meter point"]);
-    expect(details.map((item) => item.textContent)).toEqual(["Kari Nordmann", "7070575000"]);
-    expect(content.children[0]).toBe(terms[0]);
-    expect(content.children[1]).toBe(details[0]);
-    expect(content.children[2]).toBe(terms[1]);
-    expect(content.children[3]).toBe(details[1]);
+    expect([...content.children].map((item) => item.tagName)).toEqual(["DIV", "DIV"]);
+    expect(
+      [...content.children].map((item) => [...item.children].map((cell) => [cell.tagName, cell.textContent]))
+    ).toEqual([
+      [
+        ["DT", "Name"],
+        ["DD", "Kari Nordmann"],
+      ],
+      [
+        ["DT", "Meter point"],
+        ["DD", "7070575000"],
+      ],
+    ]);
   });
 
   it("lets a render override change the heading level without losing classes or data-slot", () => {
@@ -111,137 +220,315 @@ describe("DescriptionList", () => {
     expect(root.className).toBe("");
   });
 
-  it("forms two columns at sm with the term column capped at min(50%, 20rem)", async () => {
-    await page.viewport(1280, 720);
+  it("lets a test id on an Item find its row", async () => {
     renderThemed(
-      <DescriptionList.Content style={{ width: 800 }}>
-        <DescriptionList.Term>Name</DescriptionList.Term>
-        <DescriptionList.Details>Kari Nordmann</DescriptionList.Details>
-        <DescriptionList.Term>Address</DescriptionList.Term>
-        <DescriptionList.Details>Storgata 1, 3611 Kongsberg</DescriptionList.Details>
+      <DescriptionList.Content layout="inline">
+        <DescriptionList.Item data-testid="order-created">
+          <DescriptionList.Term>Created</DescriptionList.Term>
+          <DescriptionList.Details>21 October 2026 at 12:31:32</DescriptionList.Details>
+        </DescriptionList.Item>
       </DescriptionList.Content>
     );
-    const content = textNamed("Name").closest("dl");
-    if (!(content instanceof HTMLElement)) {
-      throw new Error("expected the description list");
-    }
-    const terms = [...content.querySelectorAll("dt")].filter(
-      (element): element is HTMLElement => element instanceof HTMLElement
-    );
-    const details = [...content.querySelectorAll("dd")].filter(
-      (element): element is HTMLElement => element instanceof HTMLElement
-    );
-    const [firstTerm, secondTerm] = terms;
-    const [firstDetails, secondDetails] = details;
-    if (
-      firstTerm === undefined ||
-      secondTerm === undefined ||
-      firstDetails === undefined ||
-      secondDetails === undefined
-    ) {
-      throw new Error("expected two terms and two details");
-    }
+    await expect
+      .element(page.getByTestId("order-created"))
+      .toHaveTextContent("Created21 October 2026 at 12:31:32");
+  });
 
-    expect(getComputedStyle(content).display).toBe("grid");
-    const firstTermBox = firstTerm.getBoundingClientRect();
-    const firstDetailsBox = firstDetails.getBoundingClientRect();
-    expect(firstDetailsBox.left).toBeGreaterThan(firstTermBox.right - 1);
-    expect(Math.abs(firstTermBox.top - firstDetailsBox.top)).toBeLessThan(2);
-    expect(firstTermBox.width).toBeLessThanOrEqual(320);
-    expect(firstTermBox.width).toBeGreaterThan(300);
+  describe("responsive layout", () => {
+    it("forms two columns at sm with the term column capped at min(50%, 20rem) and a rule above every Item but the first", async () => {
+      await page.viewport(1280, 720);
+      renderThemed(
+        <DescriptionList.Content style={{ width: 800 }}>
+          <DescriptionList.Item>
+            <DescriptionList.Term>Name</DescriptionList.Term>
+            <DescriptionList.Details>Kari Nordmann</DescriptionList.Details>
+          </DescriptionList.Item>
+          <DescriptionList.Item>
+            <DescriptionList.Term>Address</DescriptionList.Term>
+            <DescriptionList.Details>Storgata 1, 3611 Kongsberg</DescriptionList.Details>
+          </DescriptionList.Item>
+        </DescriptionList.Content>
+      );
+      const list = listOf(textNamed("Name")).getBoundingClientRect();
+      const nameBox = boxOf("Name");
+      const nameDetails = boxOf("Kari Nordmann");
+      expect(nameDetails.left).toBeGreaterThan(nameBox.right - 1);
+      expect(Math.abs(nameBox.top - nameDetails.top)).toBeLessThan(2);
+      expect(nameBox.width).toBeLessThanOrEqual(320);
+      expect(nameBox.width).toBeGreaterThan(300);
+      // Every Item's term column is the same width, so the details line up.
+      expect(boxOf("Storgata 1, 3611 Kongsberg").left).toBeCloseTo(nameDetails.left, 0);
 
-    expect(getComputedStyle(firstTerm).borderTopWidth).toBe("0px");
-    expect(getComputedStyle(firstDetails).borderTopWidth).toBe("0px");
-    expect(getComputedStyle(secondTerm).borderTopWidth).not.toBe("0px");
-    expect(getComputedStyle(secondDetails).borderTopWidth).not.toBe("0px");
+      const first = itemOf(textNamed("Name"));
+      const second = itemOf(textNamed("Address"));
+      expect(px(getComputedStyle(first).borderTopWidth)).toBe(0);
+      expect(px(getComputedStyle(second).borderTopWidth)).toBeGreaterThan(0);
+      expect(second.getBoundingClientRect().width).toBeCloseTo(list.width, 0);
+      for (const name of ["Name", "Kari Nordmann", "Address", "Storgata 1, 3611 Kongsberg"]) {
+        expect(px(getComputedStyle(textNamed(name)).borderTopWidth), name).toBe(0);
+      }
+    });
+
+    it("puts several terms in the term column with the details on the last one's row, and a later details under the first, each with its own rule at sm", async () => {
+      await page.viewport(1280, 720);
+      renderThemed(
+        <DescriptionList.Content style={{ width: 800 }}>
+          <DescriptionList.Item>
+            <DescriptionList.Term>Phone</DescriptionList.Term>
+            <DescriptionList.Term>Mobile</DescriptionList.Term>
+            <DescriptionList.Details>+47 900 12 345</DescriptionList.Details>
+          </DescriptionList.Item>
+          <DescriptionList.Item>
+            <DescriptionList.Term>Name</DescriptionList.Term>
+            <DescriptionList.Details>Kari Nordmann</DescriptionList.Details>
+            <DescriptionList.Details>Also billed as Nordmann Drift AS</DescriptionList.Details>
+          </DescriptionList.Item>
+        </DescriptionList.Content>
+      );
+      expect(boxOf("Mobile").top).toBeGreaterThanOrEqual(boxOf("Phone").bottom - 1);
+      expect(Math.abs(boxOf("+47 900 12 345").top - boxOf("Mobile").top)).toBeLessThan(2);
+      expect(px(getComputedStyle(textNamed("Mobile")).borderTopWidth)).toBeGreaterThan(0);
+
+      const later = boxOf("Also billed as Nordmann Drift AS");
+      expect(later.top).toBeGreaterThanOrEqual(boxOf("Kari Nordmann").bottom - 1);
+      expect(later.left).toBeCloseTo(boxOf("Kari Nordmann").left, 0);
+      expect(
+        px(getComputedStyle(textNamed("Also billed as Nordmann Drift AS")).borderTopWidth)
+      ).toBeGreaterThan(0);
+      expect(px(getComputedStyle(textNamed("Kari Nordmann")).borderTopWidth)).toBe(0);
+    });
+
+    it("stacks each details under its term below sm", async () => {
+      await page.viewport(390, 800);
+      renderBasicList();
+      for (const [term, details] of [
+        ["Name", "Kari Nordmann"],
+        ["Meter point", "7070575000"],
+      ] as const) {
+        expect(boxOf(details).top, details).toBeGreaterThanOrEqual(boxOf(term).bottom - 1);
+        expect(boxOf(details).left, details).toBeCloseTo(boxOf(term).left, 0);
+      }
+    });
   });
 
   describe("inline layout", () => {
     it.each(DENSITIES)(
-      "keeps each term and its details on one row at 320px, with the details at the end (%s)",
+      "sizes each Item's row on its own, so a pair that fits stays on one line whatever the other rows hold (%s)",
       (density) => {
         stampDensity(density);
-        renderThemed(
-          <DescriptionList.Content layout="inline" style={{ width: 320 }}>
-            <DescriptionList.Term>Start date</DescriptionList.Term>
-            <DescriptionList.Details>1 November 2026</DescriptionList.Details>
-            <DescriptionList.Term>Monthly amount</DescriptionList.Term>
-            <DescriptionList.Details>399 kr/month</DescriptionList.Details>
-          </DescriptionList.Content>
-        );
-        const list = listOf(textNamed("Start date")).getBoundingClientRect();
-        for (const [term, details] of [
-          ["Start date", "1 November 2026"],
-          ["Monthly amount", "399 kr/month"],
-        ] as const) {
-          expect(Math.abs(boxOf(term).top - boxOf(details).top), term).toBeLessThan(2);
-          expect(boxOf(details).right, details).toBeCloseTo(list.right, 0);
-          // A short details takes one line of the label leading.
-          expect(boxOf(details).height, details).toBeCloseTo(INLINE[density].leading, 0);
+        const rows = [
+          ["Email", "kari.nordmann@elmera-example.com"],
+          ["Chosen delivery start date", "28 Oct 2026"],
+        ] as const;
+        renderInlineRows(rows);
+        const list = listOf(textNamed("Email"));
+        const right = list.getBoundingClientRect().right;
+        const { columnGap, leading } = INLINE[density];
+        for (const [term, details] of rows) {
+          const termCell = textNamed(term);
+          const detailsCell = textNamed(details);
+          expect(
+            naturalWidth(term, termCell) + columnGap + naturalWidth(details, detailsCell),
+            `precondition: ${term} and its details fit on one row`
+          ).toBeLessThanOrEqual(ROW_WIDTH);
+          const [termLine, ...termRest] = textLines(termCell);
+          const [detailsLine, ...detailsRest] = textLines(detailsCell);
+          expect(termRest, `${term} on one line`).toEqual([]);
+          expect(detailsRest, `${details} on one line`).toEqual([]);
+          expect(Math.abs((termLine?.top ?? 0) - (detailsLine?.top ?? Infinity)), term).toBeLessThan(1);
+          expect(detailsLine?.right, details).toBeCloseTo(right, 0);
+          expect(detailsCell.getBoundingClientRect().height, details).toBeCloseTo(leading, 0);
         }
-        expect(getComputedStyle(textNamed("1 November 2026")).textAlign).toBe("end");
+        expect(getComputedStyle(textNamed("28 Oct 2026")).textAlign).toBe("end");
+        expectNoOverflow(list);
       }
     );
 
-    it("wraps a long details within 60% of the row, end-aligned and inside the list", () => {
-      stampDensity("comfortable");
+    it.each(DENSITIES)(
+      "wraps a long term beside its details while the term's widest word fits, level with its first line (%s)",
+      (density) => {
+        stampDensity(density);
+        const term = "Keep the existing phone number on the new plan";
+        const details = "+47 912 34 567";
+        renderInlineRows([[term, details]]);
+        const termCell = textNamed(term);
+        const detailsCell = textNamed(details);
+        const { columnGap } = INLINE[density];
+        const valueWidth = naturalWidth(details, detailsCell);
+        expect(
+          naturalWidth(term, termCell) + columnGap + valueWidth,
+          "precondition: the pair does not fit on one line"
+        ).toBeGreaterThan(ROW_WIDTH);
+        expect(
+          widestWord(term, termCell) + columnGap + valueWidth,
+          "precondition: the term's widest word fits beside the details"
+        ).toBeLessThanOrEqual(ROW_WIDTH);
+
+        const termLines = textLines(termCell);
+        const detailsLines = textLines(detailsCell);
+        expect(termLines.length).toBeGreaterThan(1);
+        expect(detailsLines).toHaveLength(1);
+        expect(Math.abs((termLines[0]?.top ?? 0) - (detailsLines[0]?.top ?? Infinity))).toBeLessThan(1);
+        expect(detailsLines[0]?.right).toBeCloseTo(listOf(termCell).getBoundingClientRect().right, 0);
+        expect(detailsLines[0]?.left ?? 0).toBeGreaterThanOrEqual(
+          Math.max(...termLines.map((line) => line.right)) + columnGap - 1
+        );
+      }
+    );
+
+    it.each(DENSITIES)(
+      "moves a details that fits on a line of its own but not beside its term under the term, at the end and unbroken (%s)",
+      (density) => {
+        stampDensity(density);
+        const term = "Kontaktinformasjon";
+        const details = "faktura.kari.nordmann@elmera-example.com";
+        renderInlineRows([
+          [term, details],
+          ["Created", "21 October 2026 at 12:31:32"],
+        ]);
+        const termCell = textNamed(term);
+        const detailsCell = textNamed(details);
+        const valueWidth = naturalWidth(details, detailsCell);
+        expect(
+          widestWord(term, termCell) + INLINE[density].columnGap + valueWidth,
+          "precondition: the details does not fit beside the term"
+        ).toBeGreaterThan(ROW_WIDTH);
+        expect(valueWidth, "precondition: the details fits on a line of its own").toBeLessThanOrEqual(
+          ROW_WIDTH
+        );
+
+        const termLines = textLines(termCell);
+        const detailsLines = textLines(detailsCell);
+        expect(termLines).toHaveLength(1);
+        expect(detailsLines).toHaveLength(1);
+        expect(wordsSplitAcrossLines(detailsCell)).toEqual([]);
+        // The moved details sits directly under the term, with no gap of its own.
+        expect(detailsCell.getBoundingClientRect().top).toBeCloseTo(
+          termCell.getBoundingClientRect().bottom,
+          0
+        );
+        const list = listOf(termCell);
+        expect(detailsLines[0]?.right).toBeCloseTo(list.getBoundingClientRect().right, 0);
+        // The next Item is spaced from the moved details by the list's row gap.
+        expect(boxOf("Created").top - detailsCell.getBoundingClientRect().bottom).toBeCloseTo(
+          INLINE[density].rowGap,
+          0
+        );
+        expectNoOverflow(list);
+      }
+    );
+
+    it.each(DENSITIES)(
+      "gives a details wider than the row the full row, wrapping between words, and breaks unbroken words without overflow (%s)",
+      (density) => {
+        stampDensity(density);
+        const address = "Storgata 1, inngang B, 4. etasje, 3611 Kongsberg, Buskerud";
+        const longTerm = "Installasjonsadresseopplysningerforbrukerkontaktinformasjonen";
+        const longValue = "707057500012345678901234567890123456789012345678901234567890";
+        renderInlineRows([
+          ["Address", address],
+          [longTerm, longValue],
+        ]);
+        const addressCell = textNamed(address);
+        expect(
+          naturalWidth(address, addressCell),
+          "precondition: the address is wider than the row"
+        ).toBeGreaterThan(ROW_WIDTH);
+        const list = listOf(addressCell);
+        const listBox = list.getBoundingClientRect();
+        const addressBox = addressCell.getBoundingClientRect();
+        expect(addressBox.top).toBeGreaterThanOrEqual(boxOf("Address").bottom - 1);
+        expect(addressBox.width).toBeCloseTo(listBox.width, 0);
+        expect(textLines(addressCell).length).toBeGreaterThan(1);
+        expect(wordsSplitAcrossLines(addressCell)).toEqual([]);
+
+        for (const name of [longTerm, longValue]) {
+          const cell = textNamed(name);
+          expect(naturalWidth(name, cell), `precondition: ${name} is wider than the row`).toBeGreaterThan(
+            ROW_WIDTH
+          );
+          expect(textLines(cell).length, name).toBeGreaterThan(1);
+          expect(cell.scrollWidth, name).toBeLessThanOrEqual(cell.clientWidth);
+          expect(cell.getBoundingClientRect().right, name).toBeLessThanOrEqual(listBox.right + 0.5);
+        }
+        expect(boxOf(longValue).top).toBeGreaterThanOrEqual(boxOf(longTerm).bottom - 1);
+        expectNoOverflow(list);
+      }
+    );
+
+    it("puts an Item's earlier terms and later details on lines of their own, pairing its last term with its first details", () => {
       renderThemed(
-        <DescriptionList.Content layout="inline" style={{ width: 320 }}>
-          <DescriptionList.Term>Address</DescriptionList.Term>
-          <DescriptionList.Details>Storgata 1, entrance B, 3611 Kongsberg</DescriptionList.Details>
-          <DescriptionList.Term>Meter</DescriptionList.Term>
-          <DescriptionList.Details>707057500012345678901234567890</DescriptionList.Details>
+        <DescriptionList.Content layout="inline" style={{ width: ROW_WIDTH }}>
+          <DescriptionList.Item>
+            <DescriptionList.Term>Owner</DescriptionList.Term>
+            <DescriptionList.Term>Payer</DescriptionList.Term>
+            <DescriptionList.Details>Kari Nordmann</DescriptionList.Details>
+          </DescriptionList.Item>
+          <DescriptionList.Item>
+            <DescriptionList.Term>Products</DescriptionList.Term>
+            <DescriptionList.Details>Spot</DescriptionList.Details>
+            <DescriptionList.Details>Insurance</DescriptionList.Details>
+          </DescriptionList.Item>
         </DescriptionList.Content>
       );
-      const element = listOf(textNamed("Address"));
-      const list = element.getBoundingClientRect();
-      for (const [term, details] of [
-        ["Address", "Storgata 1, entrance B, 3611 Kongsberg"],
-        ["Meter", "707057500012345678901234567890"],
-      ] as const) {
-        const box = boxOf(details);
-        expect(box.width, details).toBeLessThanOrEqual(0.6 * list.width + 0.5);
-        expect(box.right, details).toBeCloseTo(list.right, 0);
-        expect(box.height, details).toBeGreaterThan(INLINE.comfortable.leading * 1.5);
-        expect(Math.abs(boxOf(term).top - box.top), term).toBeLessThan(2);
-      }
-      expect(element.scrollWidth).toBeLessThanOrEqual(element.clientWidth);
+      const right = listOf(textNamed("Owner")).getBoundingClientRect().right;
+      const owner = boxOf("Owner");
+      const payer = boxOf("Payer");
+      expect(payer.left).toBeCloseTo(owner.left, 0);
+      expect(payer.top).toBeGreaterThanOrEqual(owner.bottom - 1);
+      expect(Math.abs(boxOf("Kari Nordmann").top - payer.top)).toBeLessThan(1);
+      expect(boxOf("Kari Nordmann").right).toBeCloseTo(right, 0);
+
+      const products = boxOf("Products");
+      expect(Math.abs(boxOf("Spot").top - products.top)).toBeLessThan(1);
+      const insurance = textLines(textNamed("Insurance"));
+      expect(insurance).toHaveLength(1);
+      expect(insurance[0]?.top ?? 0).toBeGreaterThanOrEqual(boxOf("Spot").bottom - 1);
+      expect(insurance[0]?.right).toBeCloseTo(right, 0);
     });
 
-    it("draws no rule between rows at a wide viewport", async () => {
+    it("draws no rule on Items or cells at a wide viewport", async () => {
       await page.viewport(1280, 720);
       renderThemed(
         <DescriptionList.Content layout="inline" style={{ width: 800 }}>
-          <DescriptionList.Term>Start date</DescriptionList.Term>
-          <DescriptionList.Details>1 November 2026</DescriptionList.Details>
-          <DescriptionList.Term>Monthly amount</DescriptionList.Term>
-          <DescriptionList.Details>399 kr/month</DescriptionList.Details>
+          <DescriptionList.Item>
+            <DescriptionList.Term>Start date</DescriptionList.Term>
+            <DescriptionList.Details>1 November 2026</DescriptionList.Details>
+          </DescriptionList.Item>
+          <DescriptionList.Item>
+            <DescriptionList.Term>Monthly amount</DescriptionList.Term>
+            <DescriptionList.Details>399 kr/month</DescriptionList.Details>
+            <DescriptionList.Details>Billed monthly</DescriptionList.Details>
+          </DescriptionList.Item>
         </DescriptionList.Content>
       );
-      for (const name of ["Start date", "1 November 2026", "Monthly amount", "399 kr/month"]) {
-        const style = getComputedStyle(textNamed(name));
-        expect(style.borderTopStyle === "none" || style.borderTopWidth === "0px", name).toBe(true);
+      const names = ["Start date", "1 November 2026", "Monthly amount", "399 kr/month", "Billed monthly"];
+      for (const element of [...names.map(textNamed), itemOf(textNamed("Monthly amount"))]) {
+        const style = getComputedStyle(element);
+        expect(style.borderTopStyle === "none" || style.borderTopWidth === "0px", element.textContent).toBe(
+          true
+        );
       }
     });
 
-    it.each(DENSITIES)("sets the label type and spaces rows by the small surface gap (%s)", (density) => {
+    it.each(DENSITIES)("sets the label type and spaces Items by the small surface gap (%s)", (density) => {
       stampDensity(density);
-      renderThemed(
-        <DescriptionList.Content layout="inline" style={{ width: 320 }}>
-          <DescriptionList.Term>Start date</DescriptionList.Term>
-          <DescriptionList.Details>1 November 2026</DescriptionList.Details>
-          <DescriptionList.Term>Monthly amount</DescriptionList.Term>
-          <DescriptionList.Details>399 kr/month</DescriptionList.Details>
-        </DescriptionList.Content>
-      );
+      renderInlineRows([
+        ["Start date", "1 November 2026"],
+        ["Monthly amount", "399 kr/month"],
+      ]);
       const expected = INLINE[density];
       for (const name of ["Start date", "1 November 2026"]) {
         const style = getComputedStyle(textNamed(name));
         expect(px(style.fontSize), name).toBe(expected.text);
         expect(px(style.lineHeight), name).toBe(expected.leading);
         expect(px(style.paddingTop), name).toBe(0);
+        expect(px(style.paddingRight), name).toBe(0);
       }
       expect(boxOf("Monthly amount").top - boxOf("Start date").bottom).toBeCloseTo(expected.rowGap, 0);
+      expect(boxOf("1 November 2026").left - boxOf("Start date").right).toBeGreaterThanOrEqual(
+        expected.columnGap - 0.5
+      );
     });
 
     it.each(DENSITIES)("spaces consecutive inline lists by the large surface gap (%s)", (density) => {
@@ -249,12 +536,16 @@ describe("DescriptionList", () => {
       renderThemed(
         <div style={{ width: 320 }}>
           <DescriptionList.Content layout="inline">
-            <DescriptionList.Term>Electricity</DescriptionList.Term>
-            <DescriptionList.Details>1 840 kr</DescriptionList.Details>
+            <DescriptionList.Item>
+              <DescriptionList.Term>Electricity</DescriptionList.Term>
+              <DescriptionList.Details>1 840 kr</DescriptionList.Details>
+            </DescriptionList.Item>
           </DescriptionList.Content>
           <DescriptionList.Content layout="inline">
-            <DescriptionList.Term>Total</DescriptionList.Term>
-            <DescriptionList.Details>2 252 kr</DescriptionList.Details>
+            <DescriptionList.Item>
+              <DescriptionList.Term>Total</DescriptionList.Term>
+              <DescriptionList.Details>2 252 kr</DescriptionList.Details>
+            </DescriptionList.Item>
           </DescriptionList.Content>
         </div>
       );
@@ -263,51 +554,28 @@ describe("DescriptionList", () => {
       expect(second.top - first.bottom).toBeCloseTo(INLINE[density].listGap, 0);
     });
 
-    it("puts a second details under the first, in the details column", () => {
-      renderThemed(
-        <DescriptionList.Content layout="inline" style={{ width: 320 }}>
-          <DescriptionList.Term>Products</DescriptionList.Term>
-          <DescriptionList.Details>Spot</DescriptionList.Details>
-          <DescriptionList.Details>Insurance</DescriptionList.Details>
-        </DescriptionList.Content>
-      );
-      const first = boxOf("Spot");
-      const second = boxOf("Insurance");
-      const list = listOf(textNamed("Products")).getBoundingClientRect();
-      expect(second.top).toBeGreaterThan(first.bottom);
-      expect(second.right).toBeCloseTo(list.right, 0);
-      expect(second.left).toBeGreaterThan(boxOf("Products").right);
-    });
-
-    it("sets several terms of one details in the term column, with the details on the last term's row", () => {
-      renderThemed(
-        <DescriptionList.Content layout="inline" style={{ width: 320 }}>
-          <DescriptionList.Term>Owner</DescriptionList.Term>
-          <DescriptionList.Term>Payer</DescriptionList.Term>
-          <DescriptionList.Details>Kari Nordmann</DescriptionList.Details>
-        </DescriptionList.Content>
-      );
-      const owner = boxOf("Owner");
-      const payer = boxOf("Payer");
-      expect(payer.left).toBeCloseTo(owner.left, 0);
-      expect(payer.top).toBeGreaterThan(owner.bottom);
-      expect(Math.abs(boxOf("Kari Nordmann").top - payer.top)).toBeLessThan(2);
-    });
-
     it("leaves the term unmuted, mutes the responsive term, and lets a consumer colour win in both", () => {
       renderThemed(
         <>
           <DescriptionList.Content layout="inline">
-            <DescriptionList.Term>Inline term</DescriptionList.Term>
-            <DescriptionList.Details>Value</DescriptionList.Details>
-            <DescriptionList.Term className="text-muted-foreground">Muted inline term</DescriptionList.Term>
-            <DescriptionList.Details>Value</DescriptionList.Details>
+            <DescriptionList.Item>
+              <DescriptionList.Term>Inline term</DescriptionList.Term>
+              <DescriptionList.Details>Value</DescriptionList.Details>
+            </DescriptionList.Item>
+            <DescriptionList.Item>
+              <DescriptionList.Term className="text-muted-foreground">Muted inline term</DescriptionList.Term>
+              <DescriptionList.Details>Value</DescriptionList.Details>
+            </DescriptionList.Item>
           </DescriptionList.Content>
           <DescriptionList.Content>
-            <DescriptionList.Term>Responsive term</DescriptionList.Term>
-            <DescriptionList.Details>Value</DescriptionList.Details>
-            <DescriptionList.Term className="text-primary">Primary term</DescriptionList.Term>
-            <DescriptionList.Details>Value</DescriptionList.Details>
+            <DescriptionList.Item>
+              <DescriptionList.Term>Responsive term</DescriptionList.Term>
+              <DescriptionList.Details>Value</DescriptionList.Details>
+            </DescriptionList.Item>
+            <DescriptionList.Item>
+              <DescriptionList.Term className="text-primary">Primary term</DescriptionList.Term>
+              <DescriptionList.Details>Value</DescriptionList.Details>
+            </DescriptionList.Item>
           </DescriptionList.Content>
         </>
       );
@@ -327,14 +595,20 @@ describe("DescriptionList", () => {
       renderThemed(
         <div style={{ color: "rgb(1, 2, 3)" }}>
           <DescriptionList.Content layout="inline">
-            <DescriptionList.Term>Start date</DescriptionList.Term>
-            <DescriptionList.Details>Inline value</DescriptionList.Details>
-            <DescriptionList.Term>Total</DescriptionList.Term>
-            <DescriptionList.Details className="text-primary">Primary value</DescriptionList.Details>
+            <DescriptionList.Item>
+              <DescriptionList.Term>Start date</DescriptionList.Term>
+              <DescriptionList.Details>Inline value</DescriptionList.Details>
+            </DescriptionList.Item>
+            <DescriptionList.Item>
+              <DescriptionList.Term>Total</DescriptionList.Term>
+              <DescriptionList.Details className="text-primary">Primary value</DescriptionList.Details>
+            </DescriptionList.Item>
           </DescriptionList.Content>
           <DescriptionList.Content>
-            <DescriptionList.Term>Name</DescriptionList.Term>
-            <DescriptionList.Details>Responsive value</DescriptionList.Details>
+            <DescriptionList.Item>
+              <DescriptionList.Term>Name</DescriptionList.Term>
+              <DescriptionList.Details>Responsive value</DescriptionList.Details>
+            </DescriptionList.Item>
           </DescriptionList.Content>
         </div>
       );
@@ -346,19 +620,27 @@ describe("DescriptionList", () => {
     });
 
     it.each(DENSITIES)(
-      "keeps a responsive list nested in an inline list stacked and padded as its own at phone width (%s)",
+      "keeps a responsive list nested in an inline list stacked, padded and ruled as its own at phone width (%s)",
       async (density) => {
         stampDensity(density);
         await page.viewport(390, 800);
         renderThemed(
           <DescriptionList.Content layout="inline" style={{ width: 360 }}>
-            <DescriptionList.Term>Outer</DescriptionList.Term>
-            <DescriptionList.Details>
-              <DescriptionList.Content>
-                <DescriptionList.Term>Nested term</DescriptionList.Term>
-                <DescriptionList.Details>Nested value</DescriptionList.Details>
-              </DescriptionList.Content>
-            </DescriptionList.Details>
+            <DescriptionList.Item>
+              <DescriptionList.Term>Outer</DescriptionList.Term>
+              <DescriptionList.Details className="basis-full">
+                <DescriptionList.Content>
+                  <DescriptionList.Item>
+                    <DescriptionList.Term>Nested term</DescriptionList.Term>
+                    <DescriptionList.Details>Nested value</DescriptionList.Details>
+                  </DescriptionList.Item>
+                  <DescriptionList.Item>
+                    <DescriptionList.Term>Second nested term</DescriptionList.Term>
+                    <DescriptionList.Details>Second nested value</DescriptionList.Details>
+                  </DescriptionList.Item>
+                </DescriptionList.Content>
+              </DescriptionList.Details>
+            </DescriptionList.Item>
           </DescriptionList.Content>
         );
         // --row-py written out by hand: 6px dense, 8px comfortable.
@@ -371,38 +653,24 @@ describe("DescriptionList", () => {
         expect(details.getBoundingClientRect().top).toBeGreaterThanOrEqual(
           term.getBoundingClientRect().bottom - 1
         );
-      }
-    );
-
-    it.each(DENSITIES)(
-      "breaks a long one-word term inside its column instead of under its value (%s)",
-      (density) => {
-        stampDensity(density);
-        renderThemed(
-          <DescriptionList.Content layout="inline" style={{ width: 320 }}>
-            <DescriptionList.Term>Installasjonsadresseopplysninger</DescriptionList.Term>
-            <DescriptionList.Details>Storgata 1, inngang B, 3611 Kongsberg</DescriptionList.Details>
-          </DescriptionList.Content>
+        expect(getComputedStyle(itemOf(textNamed("Nested term"))).display).toBe("grid");
+        expect(px(getComputedStyle(itemOf(textNamed("Second nested term"))).borderTopWidth)).toBeGreaterThan(
+          0
         );
-        const termCell = textNamed("Installasjonsadresseopplysninger");
-        // The word breaks inside the term's cell rather than painting past it.
-        expect(termCell.scrollWidth).toBeLessThanOrEqual(termCell.clientWidth);
-        const term = termCell.getBoundingClientRect();
-        const details = boxOf("Storgata 1, inngang B, 3611 Kongsberg");
-        expect(term.right).toBeLessThanOrEqual(details.left);
-        expect(term.top, "one row").toBeCloseTo(details.top, 0);
       }
     );
 
     it("colours responsive cells from their own theme scope", () => {
       renderThemed(
         <DescriptionList.Content>
-          <DescriptionList.Term style={{ "--muted-foreground": "rgb(4, 5, 6)" }}>
-            Scoped term
-          </DescriptionList.Term>
-          <DescriptionList.Details style={{ "--foreground": "rgb(7, 8, 9)" }}>
-            Scoped value
-          </DescriptionList.Details>
+          <DescriptionList.Item>
+            <DescriptionList.Term style={{ "--muted-foreground": "rgb(4, 5, 6)" }}>
+              Scoped term
+            </DescriptionList.Term>
+            <DescriptionList.Details style={{ "--foreground": "rgb(7, 8, 9)" }}>
+              Scoped value
+            </DescriptionList.Details>
+          </DescriptionList.Item>
         </DescriptionList.Content>
       );
       expect(getComputedStyle(textNamed("Scoped term")).color).toBe("rgb(4, 5, 6)");
@@ -412,13 +680,17 @@ describe("DescriptionList", () => {
     it("mutes a responsive list's terms inside an inline list", () => {
       renderThemed(
         <DescriptionList.Content layout="inline" style={{ width: 400 }}>
-          <DescriptionList.Term>Outer</DescriptionList.Term>
-          <DescriptionList.Details>
-            <DescriptionList.Content>
-              <DescriptionList.Term>Nested term</DescriptionList.Term>
-              <DescriptionList.Details>Value</DescriptionList.Details>
-            </DescriptionList.Content>
-          </DescriptionList.Details>
+          <DescriptionList.Item>
+            <DescriptionList.Term>Outer</DescriptionList.Term>
+            <DescriptionList.Details>
+              <DescriptionList.Content>
+                <DescriptionList.Item>
+                  <DescriptionList.Term>Nested term</DescriptionList.Term>
+                  <DescriptionList.Details>Value</DescriptionList.Details>
+                </DescriptionList.Item>
+              </DescriptionList.Content>
+            </DescriptionList.Details>
+          </DescriptionList.Item>
         </DescriptionList.Content>
       );
       const nested = textNamed("Nested term");

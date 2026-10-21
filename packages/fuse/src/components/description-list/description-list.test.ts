@@ -10,6 +10,7 @@ const SLOTS = [
   "description-list",
   "description-list-heading",
   "description-list-content",
+  "description-list-item",
   "description-list-term",
   "description-list-details",
 ] as const;
@@ -23,10 +24,18 @@ function markup(): string {
       createElement(
         DescriptionList.Content,
         null,
-        createElement(DescriptionList.Term, null, "Name"),
-        createElement(DescriptionList.Details, null, "Kari Nordmann"),
-        createElement(DescriptionList.Term, null, "Meter point"),
-        createElement(DescriptionList.Details, null, "7070575000")
+        createElement(
+          DescriptionList.Item,
+          null,
+          createElement(DescriptionList.Term, null, "Name"),
+          createElement(DescriptionList.Details, null, "Kari Nordmann")
+        ),
+        createElement(
+          DescriptionList.Item,
+          null,
+          createElement(DescriptionList.Term, null, "Meter point"),
+          createElement(DescriptionList.Details, null, "7070575000")
+        )
       )
     )
   );
@@ -67,6 +76,13 @@ describe("DescriptionList structure", () => {
       (className: string) => createElement(DescriptionList.Content, { className }),
     ],
     [
+      "Item",
+      "border-0",
+      "grid",
+      "border-t",
+      (className: string) => createElement(DescriptionList.Item, { className }),
+    ],
+    [
       "Term",
       "font-medium",
       "col-start-1",
@@ -102,21 +118,16 @@ describe("DescriptionList structure", () => {
 describe("DescriptionList layouts", () => {
   function list(layout?: "responsive" | "inline"): string {
     return renderToStaticMarkup(
-      createElement(
-        DescriptionList.Content,
-        layout === undefined ? null : { layout },
-        createElement(DescriptionList.Term, null, "Start date"),
-        createElement(DescriptionList.Details, null, "1 November 2026")
-      )
+      createElement(DescriptionList.Content, layout === undefined ? null : { layout })
     );
   }
 
   it.each([
-    [undefined, "responsive", "sm:grid-cols-[min(50%,calc(var(--spacing)*80))_auto]", "fit-content(60%)"],
-    ["responsive", "responsive", "sm:grid-cols-[min(50%,calc(var(--spacing)*80))_auto]", "fit-content(60%)"],
-    ["inline", "inline", "grid-cols-[minmax(0,1fr)_fit-content(60%)]", "sm:grid-cols-"],
+    [undefined, "responsive", "sm:text-sm/6", "gap-y-(--surface-gap-sm)"],
+    ["responsive", "responsive", "sm:text-sm/6", "gap-y-(--surface-gap-sm)"],
+    ["inline", "inline", "gap-y-(--surface-gap-sm)", "sm:text-sm/6"],
   ] as const)(
-    "writes layout=%s as data-layout=%s with its own columns",
+    "writes layout=%s as data-layout=%s with its own type and spacing",
     (layout, written, present, absent) => {
       const html = list(layout);
       expect(html).toContain(`data-layout="${written}"`);
@@ -125,6 +136,21 @@ describe("DescriptionList layouts", () => {
       expect(html).not.toContain(" layout=");
     }
   );
+
+  it("renders an Item as a div that forwards its attributes", () => {
+    const html = renderToStaticMarkup(
+      createElement(
+        DescriptionList.Item,
+        { id: "created", title: "Order created" },
+        createElement(DescriptionList.Term, null, "Created")
+      )
+    );
+    expect(html).toMatch(/^<div /u);
+    expect(html).toContain('data-slot="description-list-item"');
+    expect(html).toContain('id="created"');
+    expect(html).toContain('title="Order created"');
+    expect(html).toContain('<dt data-slot="description-list-term"');
+  });
 
   it("lets a consumer colour on a term replace the term colour the list publishes", () => {
     const html = renderToStaticMarkup(

@@ -225,12 +225,18 @@ export function InvoicesTab(): ReactElement {
           <Card.Content className={stack}>
             <DescriptionList.Root>
               <DescriptionList.Content>
-                <DescriptionList.Term>Amount</DescriptionList.Term>
-                <DescriptionList.Details>{`NOK ${nok.format(invoice.amount)}`}</DescriptionList.Details>
-                <DescriptionList.Term>Due</DescriptionList.Term>
-                <DescriptionList.Details>{invoice.due}</DescriptionList.Details>
-                <DescriptionList.Term>Payment</DescriptionList.Term>
-                <DescriptionList.Details>AvtaleGiro</DescriptionList.Details>
+                <DescriptionList.Item>
+                  <DescriptionList.Term>Amount</DescriptionList.Term>
+                  <DescriptionList.Details>{`NOK ${nok.format(invoice.amount)}`}</DescriptionList.Details>
+                </DescriptionList.Item>
+                <DescriptionList.Item>
+                  <DescriptionList.Term>Due</DescriptionList.Term>
+                  <DescriptionList.Details>{invoice.due}</DescriptionList.Details>
+                </DescriptionList.Item>
+                <DescriptionList.Item>
+                  <DescriptionList.Term>Payment</DescriptionList.Term>
+                  <DescriptionList.Details>AvtaleGiro</DescriptionList.Details>
+                </DescriptionList.Item>
               </DescriptionList.Content>
             </DescriptionList.Root>
             <TimelineList.Root>
@@ -297,12 +303,18 @@ export function AgreementsTab(): ReactElement {
           <Card.Content className={stack}>
             <DescriptionList.Root>
               <DescriptionList.Content>
-                <DescriptionList.Term>Markup</DescriptionList.Term>
-                <DescriptionList.Details>4.9 øre/kWh</DescriptionList.Details>
-                <DescriptionList.Term>Monthly fee</DescriptionList.Term>
-                <DescriptionList.Details>NOK 49</DescriptionList.Details>
-                <DescriptionList.Term>Binding</DescriptionList.Term>
-                <DescriptionList.Details>None</DescriptionList.Details>
+                <DescriptionList.Item>
+                  <DescriptionList.Term>Markup</DescriptionList.Term>
+                  <DescriptionList.Details>4.9 øre/kWh</DescriptionList.Details>
+                </DescriptionList.Item>
+                <DescriptionList.Item>
+                  <DescriptionList.Term>Monthly fee</DescriptionList.Term>
+                  <DescriptionList.Details>NOK 49</DescriptionList.Details>
+                </DescriptionList.Item>
+                <DescriptionList.Item>
+                  <DescriptionList.Term>Binding</DescriptionList.Term>
+                  <DescriptionList.Details>None</DescriptionList.Details>
+                </DescriptionList.Item>
               </DescriptionList.Content>
             </DescriptionList.Root>
             <Accordion.Root defaultValue={["price"]}>
@@ -504,10 +516,14 @@ export function MetersTab(): ReactElement {
           <Card.Content className={stack}>
             <DescriptionList.Root>
               <DescriptionList.Content>
-                <DescriptionList.Term>Grid company</DescriptionList.Term>
-                <DescriptionList.Details>{picked.grid}</DescriptionList.Details>
-                <DescriptionList.Term>Price area</DescriptionList.Term>
-                <DescriptionList.Details>{picked.area}</DescriptionList.Details>
+                <DescriptionList.Item>
+                  <DescriptionList.Term>Grid company</DescriptionList.Term>
+                  <DescriptionList.Details>{picked.grid}</DescriptionList.Details>
+                </DescriptionList.Item>
+                <DescriptionList.Item>
+                  <DescriptionList.Term>Price area</DescriptionList.Term>
+                  <DescriptionList.Details>{picked.area}</DescriptionList.Details>
+                </DescriptionList.Item>
               </DescriptionList.Content>
             </DescriptionList.Root>
             <Meter

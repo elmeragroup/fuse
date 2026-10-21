@@ -217,7 +217,8 @@
       "description-list-basic.tsx",
       "description-list-multi-details.tsx",
       "description-list-responsive.tsx",
-      "description-list-inline.tsx"
+      "description-list-inline.tsx",
+      "description-list-inline-rows.tsx"
     ]
   },
   "dialog": {
