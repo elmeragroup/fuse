@@ -1,7 +1,7 @@
 /**
  * Where the Figma PNG and the browser screenshot of one cell sit relative to each other. Both
  * pictures hold the same box: the Figma PNG covers the instance's render bounds, and the browser
- * screenshot covers the button's border box plus a fixed padding. The comparison aligns the two
+ * screenshot covers the measured element's border box plus a fixed padding. The comparison aligns the two
  * boxes' top-left corners and puts both pictures on one canvas that holds them both.
  *
  * Every footprint is in device pixels, relative to the box's top-left corner, so a picture that
@@ -59,7 +59,7 @@ export function figmaFootprint(
 
 /**
  * The browser screenshot's footprint. The page crops each cell at `padding` CSS pixels outside
- * the button's border box.
+ * the measured element's border box.
  *
  * @param padding - The crop's margin around the box, in CSS pixels.
  * @param scale - The device scale factor.

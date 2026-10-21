@@ -1,22 +1,24 @@
 /**
  * An end-to-end check of the comparison itself, run by hand with `figma:compare --self-check`.
- * It renders a matrix of cells in the browser, turns the crops into a fake snapshot shaped like a
- * Figma export, changes two cells, and compares the snapshot with a second render.
+ * It renders every cell the kit's preview frames place in the browser, turns the crops into a
+ * fake snapshot shaped like a Figma export, changes two cells, and compares the snapshot with a
+ * second render.
  *
  * The fake export cuts each crop to the box plus a margin, as render bounds would be, and places
- * the boxes at fractional canvas positions, so the alignment math has work to do. One cell gets a
- * magenta square painted into its PNG, and another cell's box grows by a pixel. A working harness
- * reports both at the top, the grown box first, and every other cell at no mismatch with equal
- * box sizes.
+ * the boxes at fractional canvas positions, so the alignment math has work to do. The kit's
+ * first hover cell gets a magenta square painted into its PNG, and its first focus cell grows by
+ * a pixel. A working harness reports both at the top, the grown box first, and every other cell
+ * at no mismatch with equal box sizes.
  */
 
 import { Result } from "effect";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { variantKey } from "../components/component-spec.ts";
+import { KIT } from "../components/kit-registry.ts";
 import { CompareBrowser, DEVICE_SCALE } from "./browser-render.ts";
-import { BUTTON_VARIANTS, CELL_STATES, cellKey, ICON_PLACEMENTS, ICON_SIZES, LABEL_SIZES } from "./cells.ts";
-import type { Cell, IconSize, LabelSize } from "./cells.ts";
+import { loadRenderers } from "./cell-renderers.ts";
 import { locateFuseBuild, readPageAssets } from "./page-assets.ts";
 import { parsePreviewTheme } from "./preview-theme.ts";
 import { crop, encodePng } from "./raster.ts";
@@ -54,45 +56,20 @@ const PREVIEWS = [
 /** How far the fake render bounds reach past the box, in canvas pixels. */
 const RENDER_MARGIN = 3;
 
-/** The sizes every state and icon is checked at, the recipe's defaults. */
-const BASE_LABEL: LabelSize = "default";
-const BASE_ICON: IconSize = "icon";
-
-/** The cell whose PNG gets a magenta square, in the first preview. */
-const PAINTED: Cell = {
-  component: "button",
-  variant: "outline",
-  size: BASE_LABEL,
-  state: "hover",
-  icon: "start",
-};
-
-/** The cell whose box grows by a pixel, in the second preview. */
-const GROWN: Cell = { component: "icon-button", variant: "ghost", size: BASE_ICON, state: "focus" };
-
-/** The cells each fake preview holds: every state and icon at the base sizes, every size at rest. */
-function selfCheckCells(): Cell[] {
-  const label: Cell[] = BUTTON_VARIANTS.flatMap((variant) =>
-    CELL_STATES.flatMap((state) =>
-      ICON_PLACEMENTS.map((icon): Cell => ({ component: "button", variant, size: BASE_LABEL, state, icon }))
-    )
-  );
-  const labelSizes: Cell[] = LABEL_SIZES.filter((size) => size !== BASE_LABEL).flatMap((size) =>
-    BUTTON_VARIANTS.map((variant): Cell => ({
-      component: "button",
-      variant,
-      size,
-      state: "rest",
-      icon: "none",
-    }))
-  );
-  const icon: Cell[] = BUTTON_VARIANTS.flatMap((variant) =>
-    CELL_STATES.map((state): Cell => ({ component: "icon-button", variant, size: BASE_ICON, state }))
-  );
-  const iconSizes: Cell[] = ICON_SIZES.filter((size) => size !== BASE_ICON).flatMap((size) =>
-    BUTTON_VARIANTS.map((variant): Cell => ({ component: "icon-button", variant, size, state: "rest" }))
-  );
-  return [...label, ...labelSizes, ...icon, ...iconSizes];
+/**
+ * The variant key of the first cell the kit's preview frames place in a state, in registry
+ * order. A set with no `state` axis has no such cell and is passed over.
+ *
+ * @throws When no set has such a cell, which leaves the self-check nothing to change.
+ */
+function firstInState(state: string): string {
+  for (const { definition, previewCells } of KIT) {
+    const cell = previewCells.find((candidate) => candidate.state === state);
+    if (cell !== undefined) {
+      return variantKey(definition, cell);
+    }
+  }
+  throw new Error(`the kit's preview frames place no ${state} cell for the self-check to change`);
 }
 
 function paintSquare(raster: Raster): Raster {
@@ -124,6 +101,7 @@ type Perturbed = { readonly preview: string; readonly variant: string };
  *
  * @param options - Where to write the fake snapshot and the report, and the diff settings.
  * @returns Whether the harness found exactly the changed cells, or why it could not run.
+ * @throws When the kit's preview frames place a cell the comparison cannot render.
  */
 export async function runSelfCheck(
   options: CompareOptions
@@ -132,14 +110,16 @@ export async function runSelfCheck(
   if (Result.isFailure(build)) {
     return Result.fail(build.failure);
   }
-  const { renderCellHtml } = await import("./fuse-markup.ts");
+  const variants = KIT.flatMap(({ definition, previewCells }) =>
+    previewCells.map((cell) => variantKey(definition, cell))
+  );
+  const painted: Perturbed = { preview: PREVIEWS[0].key, variant: firstInState("hover") };
+  const grown: Perturbed = { preview: PREVIEWS[1].key, variant: firstInState("focus") };
+  const renderers = await loadRenderers();
   const launched = await CompareBrowser.launch(readPageAssets(build.success));
   if (Result.isFailure(launched)) {
     return Result.fail(launched.failure);
   }
-  const cells = selfCheckCells();
-  const painted: Perturbed = { preview: PREVIEWS[0].key, variant: cellKey(PAINTED) };
-  const grown: Perturbed = { preview: PREVIEWS[1].key, variant: cellKey(GROWN) };
   const previews: PreviewSnapshot[] = [];
   try {
     for (const preview of PREVIEWS) {
@@ -148,13 +128,18 @@ export async function runSelfCheck(
       if (Result.isFailure(theme)) {
         throw theme.failure;
       }
-      const placeholders: InstanceSnapshot[] = cells.map((cell) => ({
-        key: `${preview.key}/${cellKey(cell)}`,
-        variant: cellKey(cell),
+      const placeholders: InstanceSnapshot[] = variants.map((variant) => ({
+        key: `${preview.key}/${variant}`,
+        variant,
         box: { x: 0, y: 0, width: 0, height: 0 },
         image: null,
       }));
-      const { planned } = planCells(placeholders, renderCellHtml);
+      const { planned, unsupported } = planCells(placeholders, renderers);
+      if (unsupported.length > 0) {
+        throw new Error(
+          `the comparison cannot render these cells of the kit: ${unsupported.map((entry) => entry.reason).join("; ")}`
+        );
+      }
       const rendered = await launched.success.renderPreview(
         theme.success,
         planned.map((cell) => cell.request),

@@ -1,115 +1,76 @@
 import { Result } from "effect";
 import { describe, expect, it } from "vitest";
 
-import { cellKey, forcedPseudoClasses, parseCell, parseVariantProperties, restingTwin } from "./cells";
+import { variantKey } from "../components/component-spec";
+import { KIT } from "../components/kit-registry";
+import { forcedPseudoClasses, parseCell, restingTwin } from "./cells";
 
-describe("parseVariantProperties", () => {
-  it("splits a key into its set and properties", () => {
-    const parsed = Result.getOrThrow(
-      parseVariantProperties("icon-button/variant=ghost,size=icon-xs,state=hover")
-    );
-    expect(parsed.set).toBe("icon-button");
-    expect([...parsed.properties]).toEqual([
-      ["variant", "ghost"],
-      ["size", "icon-xs"],
-      ["state", "hover"],
-    ]);
-  });
-});
+/** A set the tests declare, so the parser's refusals do not depend on any recipe. */
+const CHIP = {
+  key: "chip",
+  axes: [
+    { name: "tone", values: ["plain", "loud"] },
+    { name: "state", values: ["rest", "hover"] },
+  ],
+};
 
 describe("parseCell", () => {
-  it("reads a Button cell", () => {
-    expect(Result.getOrThrow(parseCell("button/variant=ghost,size=sm,state=pending,icon=end"))).toEqual({
-      component: "button",
-      variant: "ghost",
-      size: "sm",
-      state: "pending",
-      icon: "end",
-    });
-  });
-
-  it("reads an Icon button cell", () => {
-    expect(Result.getOrThrow(parseCell("icon-button/variant=destructive,size=icon-xs,state=hover"))).toEqual({
-      component: "icon-button",
-      variant: "destructive",
-      size: "icon-xs",
-      state: "hover",
-    });
-  });
-
-  it("reads every state and icon of the kit's matrix", () => {
-    const states = ["rest", "hover", "focus", "disabled", "pending"];
-    const icons = ["none", "start", "end"];
-    for (const state of states) {
-      for (const icon of icons) {
-        expect(Result.isSuccess(parseCell(`button/variant=link,size=lg,state=${state},icon=${icon}`))).toBe(
-          true
-        );
-      }
-    }
+  it("reads a cell of the set the key names", () => {
+    const parsed = Result.getOrThrow(parseCell("chip/tone=loud,state=hover", [CHIP]));
+    expect(parsed.definition).toBe(CHIP);
+    expect(parsed.cell).toEqual({ tone: "loud", state: "hover" });
   });
 
   it.each([
-    ["no component set", "variant=default,size=default,state=rest,icon=none", "no component set"],
+    ["no component set", "tone=plain,state=rest", "the key has no component set before a slash"],
     [
       "a set the harness does not render",
-      "toggle/variant=default,size=default,state=rest",
-      "component set toggle",
+      "badge/tone=plain,state=rest",
+      "the harness renders no component set badge",
     ],
-    [
-      "an axis the harness does not render",
-      "button/variant=default,size=sm,state=rest,icon=none,shape=pill",
-      "axis shape",
-    ],
-    ["a missing axis", "button/variant=default,size=sm,state=rest", "no icon"],
-    ["a variant the recipe lacks", "button/variant=primary,size=sm,state=rest,icon=none", "variant=primary"],
-    ["a state the kit lacks", "button/variant=default,size=sm,state=open,icon=none", "state=open"],
-    ["a square size on Button", "button/variant=default,size=icon,state=rest,icon=none", "size=icon"],
-    ["a label size on Icon button", "icon-button/variant=default,size=sm,state=rest", "size=sm"],
-    [
-      "icon-inline, which the kit leaves out",
-      "icon-button/variant=default,size=icon-inline,state=rest",
-      "size=icon-inline",
-    ],
-    [
-      "a property named twice",
-      "button/variant=default,variant=ghost,size=sm,state=rest,icon=none",
-      "variant twice",
-    ],
-    ["a property without a value", "button/variant,size=sm,state=rest,icon=none", "name=value"],
+    ["a missing axis", "chip/tone=plain", "the key has no state"],
+    ["an extra axis", "chip/tone=plain,state=rest,size=sm", "the harness cannot render the axis size"],
+    ["a value outside its axis", "chip/tone=quiet,state=rest", "the harness cannot render tone=quiet"],
+    ["a property named twice", "chip/tone=plain,tone=loud,state=rest", "the key names tone twice"],
+    ["a pair with no =", "chip/tone,state=rest", "the property tone is not a name=value pair"],
   ])("refuses %s", (_, key, reason) => {
-    const result = parseCell(key);
-    const message = Result.isFailure(result) ? result.failure.message : undefined;
-    expect(message).toContain(key);
-    expect(message).toContain(reason);
+    const result = parseCell(key, [CHIP]);
+    expect(Result.isFailure(result) ? result.failure.message : undefined).toBe(`${key}: ${reason}`);
   });
-});
 
-describe("cellKey", () => {
-  it.each([
-    "button/variant=default,size=default,state=rest,icon=none",
-    "button/variant=outline,size=xs,state=focus,icon=start",
-    "icon-button/variant=success,size=icon-lg,state=disabled",
-  ])("writes back %s", (key) => {
-    expect(cellKey(Result.getOrThrow(parseCell(key)))).toBe(key);
+  // Unit under test: parseCell, the reader. Oracle: variantKey, the writer that names every
+  // variant the plugin builds, over each cell the kit's preview frames place.
+  it("reads back every key the kit's preview frames write", () => {
+    const definitions = KIT.map((entry) => entry.definition);
+    for (const { definition, previewCells } of KIT) {
+      for (const cell of previewCells) {
+        const parsed = Result.getOrThrow(parseCell(variantKey(definition, cell), definitions));
+        expect(parsed.definition).toBe(definition);
+        expect(parsed.cell).toEqual(cell);
+      }
+    }
   });
 });
 
 describe("forcedPseudoClasses", () => {
   it("forces :hover for hover, and :focus with :focus-visible for focus", () => {
-    expect(forcedPseudoClasses("hover")).toEqual(["hover"]);
-    expect(forcedPseudoClasses("focus")).toEqual(["focus", "focus-visible"]);
+    expect(forcedPseudoClasses({ state: "hover" })).toEqual(["hover"]);
+    expect(forcedPseudoClasses({ state: "focus" })).toEqual(["focus", "focus-visible"]);
   });
 
-  it("forces nothing for a state the markup draws", () => {
-    expect(forcedPseudoClasses("disabled")).toEqual([]);
+  it("forces nothing for a state the markup draws, or a cell with no state", () => {
+    expect(forcedPseudoClasses({ state: "disabled" })).toEqual([]);
+    expect(forcedPseudoClasses({ variant: "default" })).toEqual([]);
   });
 });
 
 describe("restingTwin", () => {
   it("keeps every axis but the state, which rests", () => {
-    expect(
-      restingTwin({ component: "button", variant: "destructive", size: "sm", state: "focus", icon: "end" })
-    ).toEqual({ component: "button", variant: "destructive", size: "sm", state: "rest", icon: "end" });
+    expect(restingTwin({ variant: "destructive", size: "sm", state: "focus", icon: "end" })).toEqual({
+      variant: "destructive",
+      size: "sm",
+      state: "rest",
+      icon: "end",
+    });
   });
 });

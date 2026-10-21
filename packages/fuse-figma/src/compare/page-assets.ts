@@ -1,7 +1,7 @@
 /**
  * The files the comparison page loads, found on disk: Fuse's built CSS, Tailwind's preflight and
  * the brand font. The Fuse build is the one `pnpm --filter @elmeragroup/fuse build` writes, which
- * the comparison also renders the Button from.
+ * the comparison also renders the components from.
  *
  * The font comes from `@fontsource/roboto`, Google's Roboto, the family Figma renders for the
  * kit's labels. `--font-sans` lists Roboto first in every theme, and the page checks that the
@@ -14,13 +14,16 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { RENDERER_ENTRIES } from "./cell-renderers.ts";
 import { ASSET_PATHS } from "./preview-page.ts";
 
 /** The Fuse package, next to this one in the workspace. */
 const FUSE_ROOT = fileURLToPath(new URL("../../../fuse/", import.meta.url));
 
-/** The build outputs the comparison reads. */
-const BUILD_OUTPUTS = ["dist/styles.css", "dist/themes.css", "dist/button.js", "dist/icons.js"] as const;
+/** The build outputs the comparison reads: the CSS, the icons and each renderer's entry. */
+const BUILD_OUTPUTS: readonly string[] = [
+  ...new Set(["dist/styles.css", "dist/themes.css", "dist/icons.js", ...RENDERER_ENTRIES]),
+];
 
 /** The font weights the page can load, every upright cut the package ships. */
 const FONT_WEIGHTS = [100, 200, 300, 400, 500, 600, 700, 800, 900] as const;

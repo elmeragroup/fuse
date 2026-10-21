@@ -1,14 +1,14 @@
 /**
- * `figma:compare`: compare the plugin's snapshot export with the real Fuse Button in Chromium,
- * cell by cell, and write `report.html` and `report.json`.
+ * `figma:compare`: compare the plugin's snapshot export with the real Fuse components in
+ * Chromium, cell by cell, and write `report.html` and `report.json`.
  *
  *     pnpm --filter @elmeragroup/fuse-figma figma:compare <snapshot.json> [--out <dir>] [--threshold <0..1>]
  *     pnpm --filter @elmeragroup/fuse-figma figma:compare --self-check [--out <dir>]
  *
  * pnpm runs the script in this package's directory, so give the snapshot as an absolute path.
  * The report goes to `.cache/figma-compare/` in this package unless `--out` names a directory.
- * `--self-check` renders a matrix of cells, turns it into a fake snapshot with two cells changed,
- * and checks that the comparison reports exactly those two.
+ * `--self-check` renders the cells of the kit's preview frames, turns them into a fake snapshot
+ * with two cells changed, and checks that the comparison reports exactly those two.
  */
 
 import { Result } from "effect";
