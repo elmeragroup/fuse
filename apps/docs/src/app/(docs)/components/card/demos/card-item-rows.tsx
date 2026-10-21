@@ -4,8 +4,8 @@ import { Card } from "@elmeragroup/fuse/card";
 import { Item } from "@elmeragroup/fuse/item";
 
 /**
- * The external rich card's `CardSectionAnchor` rows land here: real anchors via
- * `Item.Root render={<a/>}` inside `Card.Content`.
+ * Link rows inside a card's content: real anchors via `Item.Root render={<a/>}` inside
+ * `Card.Content`. A whole card section that links is a `Card.SectionButton render={<a />}`.
  */
 export function CardItemRows() {
   return (
