@@ -1072,6 +1072,42 @@ describe("DataTableFilter operators a field allows", () => {
     await expect.poll(columnFilters).toEqual(expected);
     expect(parseColumnFilters(columnFilters(), RESTRICTED)).toEqual(expected);
   });
+
+  it("matches a text field from its start when the field lists startsWith", async () => {
+    const PREFIX: FilterFieldMap = {
+      ...FIELDS,
+      customer: { kind: "text", label: "Customer", operators: ["contains", "startsWith"] },
+    };
+    renderOrders({ initial: [], fields: PREFIX });
+    await userEvent.click(roleNamed("button", "Filter"));
+    await settled();
+    await userEvent.click(roleNamed("menuitem", "Customer"));
+    await expect.poll(() => focusIs("textbox", "Customer")).toBe(true);
+    await userEvent.fill(roleNamed("textbox", "Customer"), "nord");
+    const dialog = page.elementLocator(roleNamed("dialog", "Add filter"));
+    await userEvent.click(dialog.getByRole("combobox", { name: "Customer operator" }).element());
+    await pickOption("starts with");
+    const expected = [{ id: "customer", value: { kind: "text", operator: "startsWith", values: ["nord"] } }];
+    await expect.poll(columnFilters).toEqual(expected);
+    expect(parseColumnFilters(columnFilters(), PREFIX)).toEqual(expected);
+    // Nordlys Kafé starts with "nord". Café Nord only contains it, which `contains` would keep.
+    await expect.poll(visibleOrders).toBe("4");
+  });
+
+  it("leaves the opt-in text operators out of a field that lists none", async () => {
+    renderOrders({ initial: CUSTOMER_NORD });
+    await userEvent.click(roleNamed("button", "“nord”"));
+    await expect.poll(() => popoverOpen("Customer")).toBe(true);
+    const dialog = page.elementLocator(roleNamed("dialog", "Customer"));
+    await userEvent.click(dialog.getByRole("combobox", { name: "Customer operator" }).element());
+    await expect.poll(() => page.getByRole("option").elements().length).toBeGreaterThan(0);
+    expect(
+      page
+        .getByRole("option")
+        .elements()
+        .map((option) => option.textContent)
+    ).toEqual(["contains", "does not contain"]);
+  });
 });
 
 describe("DataTableFilter drafts under a host that republishes its filters", () => {

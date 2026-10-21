@@ -39,6 +39,8 @@ describe("OPERATORS negations", () => {
     ["multiOption", "excludesAllOf", "includesAllOf"],
     ["text", "contains", "doesNotContain"],
     ["text", "doesNotContain", "contains"],
+    ["text", "startsWith", "doesNotStartWith"],
+    ["text", "doesNotStartWith", "startsWith"],
     ["number", "is", "isNot"],
     ["number", "isNot", "is"],
     ["number", "isGreaterThan", "isLessThanOrEqual"],
@@ -99,8 +101,20 @@ describe("allowedOperators", () => {
       ["includesAllOf", "includes"],
     ],
     ["number without isBetween", { kind: "number", operators: ["isGreaterThan"] }, ["isGreaterThan"]],
+    ["text without a list", { kind: "text" }, ["contains", "doesNotContain"]],
+    ["text listing startsWith", { kind: "text", operators: ["startsWith"] }, ["startsWith"]],
   ] as const)("%s allows %j", (_name, field, expected) => {
     expect(allowedOperators(field)).toEqual(expected);
+  });
+
+  it("admits an opt-in text operator only from a field that lists it", () => {
+    const filters = [{ id: "customer", value: { kind: "text", operator: "startsWith", values: ["caf"] } }];
+    expect(parseColumnFilters(filters, { customer: { kind: "text", label: "Customer" } })).toEqual([]);
+    expect(
+      parseColumnFilters(filters, {
+        customer: { kind: "text", label: "Customer", operators: ["contains", "startsWith"] },
+      })
+    ).toEqual([{ id: "customer", value: { kind: "text", operator: "startsWith", values: ["caf"] } }]);
   });
 });
 
@@ -424,6 +438,17 @@ describe("matchesFilter", () => {
     ["bolg", "Bølgen", false],
   ] as const)("finds %s in %s: %s", (needle, cell, expected) => {
     expect(matchesFilter({ kind: "text", operator: "contains", values: [needle] }, cell)).toBe(expected);
+  });
+
+  it.each([
+    ["Café Nord", "startsWith", "cafe", true],
+    ["Café Nord", "startsWith", "nord", false],
+    ["Café Nord", "doesNotStartWith", "nord", true],
+    [7070123, "startsWith", "707", true],
+    [null, "doesNotStartWith", "x", true],
+    [null, "startsWith", "x", false],
+  ] as const)("matches %j %s %s: %s", (cell, operator, needle, expected) => {
+    expect(matchesFilter({ kind: "text", operator, values: [needle] }, cell)).toBe(expected);
   });
 
   it("includes both ends of a number range", () => {

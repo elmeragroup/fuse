@@ -26,7 +26,11 @@ export type FilterValue =
       readonly operator: "includesAnyOf" | "includesAllOf" | "excludesAnyOf" | "excludesAllOf";
       readonly values: Many<string>;
     }
-  | { readonly kind: "text"; readonly operator: "contains" | "doesNotContain"; readonly values: One<string> }
+  | {
+      readonly kind: "text";
+      readonly operator: "contains" | "doesNotContain" | "startsWith" | "doesNotStartWith";
+      readonly values: One<string>;
+    }
   | {
       readonly kind: "number";
       readonly operator:
@@ -83,14 +87,20 @@ type OperatorSpec<K extends FilterKind> = {
   readonly plural?: FilterOperator<K>;
   /** The operator an option filter moves to when its value count drops to one. */
   readonly singular?: FilterOperator<K>;
+  /**
+   * Offered only to a field that lists it in `operators`, so a server that implements a field's
+   * defaults never receives it.
+   */
+  readonly optIn?: true;
 };
 
 type OperatorTable = { readonly [K in FilterKind]: { readonly [O in FilterOperator<K>]: OperatorSpec<K> } };
 
 /**
  * The operator graph: each operator's target, its negation, whether it is negated and, for option
- * kinds, its sibling when the value count crosses one. Key order is menu order. `satisfies` makes a missing
- * operator, a sibling from another kind or an unknown target a type error.
+ * kinds, its sibling when the value count crosses one. An `optIn` operator is offered only to a
+ * field that lists it. Key order is menu order. `satisfies` makes a missing operator, a sibling
+ * from another kind or an unknown target a type error.
  */
 export const OPERATORS = {
   option: {
@@ -110,6 +120,8 @@ export const OPERATORS = {
   text: {
     contains: { target: "single", negation: "doesNotContain", negated: false },
     doesNotContain: { target: "single", negation: "contains", negated: true },
+    startsWith: { target: "single", negation: "doesNotStartWith", negated: false, optIn: true },
+    doesNotStartWith: { target: "single", negation: "startsWith", negated: true, optIn: true },
   },
   number: {
     is: { target: "single", negation: "isNot", negated: false },
@@ -204,6 +216,17 @@ function operatorsFor<K extends FilterKind>(kind: K): readonly FilterOperator<K>
 }
 
 /**
+ * The operators a field of a kind gets when it lists none: every operator but the opt-in ones, in
+ * menu order.
+ *
+ * @param kind - The kind.
+ * @returns The kind's default operators.
+ */
+function defaultOperatorsFor(kind: FilterKind): readonly FilterOperator[] {
+  return operatorsFor(kind).filter((operator) => OPERATOR_SPECS[kind][operator]?.optIn !== true);
+}
+
+/**
  * Whether a value is one of a kind's operators.
  *
  * @template K - The filter kind.
@@ -279,17 +302,17 @@ function upsertAdmitted(
 }
 
 /**
- * The operators a field allows, in menu order: its own list, else every operator of its kind. A
- * listed multi-value option operator also allows its one-value sibling, because a filter starts
- * from one tick and `isAnyOf` cannot hold one value. So `["isAnyOf"]` allows `is` too, while
- * `["is", "isNot"]` stays single-select. The parse, every reducer and every editor read this one
- * list, so every filter an action writes survives the parse.
+ * The operators a field allows, in menu order: its own list, else its kind's defaults, without the
+ * opt-in operators. A listed multi-value option operator also allows its one-value sibling,
+ * because a filter starts from one tick and `isAnyOf` cannot hold one value. So `["isAnyOf"]`
+ * allows `is` too, while `["is", "isNot"]` stays single-select. The parse, every reducer and every
+ * editor read this one list, so every filter an action writes survives the parse.
  *
  * @param field - The field.
  * @returns The allowed operators.
  */
 export function allowedOperators(field: OperatorPolicy): readonly FilterOperator[] {
-  const listed: readonly FilterOperator[] = field.operators ?? operatorsFor(field.kind);
+  const listed = field.operators ?? defaultOperatorsFor(field.kind);
   const allowed = [...listed];
   for (const operator of listed) {
     const singular = OPERATOR_SPECS[field.kind][operator]?.singular;

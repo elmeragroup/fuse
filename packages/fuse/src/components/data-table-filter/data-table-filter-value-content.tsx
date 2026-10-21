@@ -453,7 +453,13 @@ function EditorOperator({
   const { actions, meta } = useFilterInternals("DataTableFilter.Editor");
   const overlayRef = useOverlayRef(actions.registerOverlay, host);
   const { field, draft } = editor;
-  const items = useOperatorItems("DataTableFilter.Editor", field, editor.filter, draft.operator);
+  const items = useOperatorItems(
+    "DataTableFilter.Editor",
+    field,
+    editor.fieldId,
+    editor.filter,
+    draft.operator
+  );
   return (
     <SelectRoot<FilterOperator>
       items={items}

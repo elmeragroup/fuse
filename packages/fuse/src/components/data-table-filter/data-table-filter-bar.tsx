@@ -335,7 +335,7 @@ function OperatorSelect({
   const { actions, meta } = useFilterInternals("DataTableFilter.Operator");
   const segmentRef = useSegmentRef(chip.id, ref);
   const applied = chip.value;
-  const items = useOperatorItems("DataTableFilter.Operator", chip.field, applied, applied.operator);
+  const items = useOperatorItems("DataTableFilter.Operator", chip.field, chip.id, applied, applied.operator);
   return (
     <SelectRoot<FilterOperator>
       items={items}

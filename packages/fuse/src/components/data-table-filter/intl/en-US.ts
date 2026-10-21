@@ -56,6 +56,8 @@ export const enUS = {
   "multiOption.excludesAllOf": "excludes all of",
   "text.contains": "contains",
   "text.doesNotContain": "does not contain",
+  "text.startsWith": "starts with",
+  "text.doesNotStartWith": "does not start with",
   "number.is": "is",
   "number.isNot": "is not",
   "number.isGreaterThan": "is greater than",

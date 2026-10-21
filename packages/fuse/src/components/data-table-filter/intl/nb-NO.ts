@@ -45,6 +45,8 @@ export const nbNO = {
   "multiOption.excludesAllOf": "inneholder ikke alle",
   "text.contains": "inneholder",
   "text.doesNotContain": "inneholder ikke",
+  "text.startsWith": "begynner med",
+  "text.doesNotStartWith": "begynner ikke med",
   "number.is": "er",
   "number.isNot": "er ikke",
   "number.isGreaterThan": "er større enn",

@@ -115,8 +115,8 @@ export type DataTableFilterContextValue = {
     readonly facets: FacetReader;
     /** The zone dates compare in, or undefined for the runtime zone. */
     readonly timeZone: string | undefined;
-    /** An operator's label: the Root's `formatOperator`, else the dictionary's. */
-    readonly formatOperator: (operator: FilterOperator, kind: FilterKind) => string;
+    /** An operator's label on one field: the Root's `formatOperator`, else the dictionary's. */
+    readonly formatOperator: (operator: FilterOperator, kind: FilterKind, fieldId: string) => string;
   };
 };
 
@@ -439,8 +439,13 @@ export type DataTableFilterRootProps<TFields extends FilterFieldMap = FilterFiel
   facets?: FilterFacets<TFields> | undefined;
   /** The zone for date presets and the date editor's today. Defaults to the runtime zone. */
   timeZone?: string | undefined;
-  /** An operator's label. Return undefined to keep the dictionary's. */
-  formatOperator?: ((operator: FilterOperator, kind: FilterKind) => string | undefined) | undefined;
+  /**
+   * An operator's label for one field. Return undefined to keep the dictionary's. The field id
+   * lets one field relabel an operator without changing every field of its kind.
+   */
+  formatOperator?:
+    | ((operator: FilterOperator, kind: FilterKind, fieldId: string) => string | undefined)
+    | undefined;
   /** Called with the field whose editor opens, and null when it closes. A server fetches facets from it. */
   onActiveFieldChange?: ((fieldId: string | null) => void) | undefined;
   /** The Bar, the overlays and anything else that reads the filter. */
@@ -846,8 +851,8 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
       fields,
       facets: facetReader,
       timeZone,
-      formatOperator: (operator, kind) =>
-        formatOperator?.(operator, kind) ??
+      formatOperator: (operator, kind, fieldId) =>
+        formatOperator?.(operator, kind, fieldId) ??
         // SAFETY: every kind and operator pair of OPERATORS has a dictionary row, which the
         // dictionary's unit test checks.
         strings.format(`${kind}.${operator}` as DataTableFilterStringKey),

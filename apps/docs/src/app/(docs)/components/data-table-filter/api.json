@@ -39,10 +39,10 @@
         {
           "name": "formatOperator",
           "origin": "declared",
-          "type": "((operator: \"contains\" | \"doesNotContain\" | \"excludes\" | \"excludesAllOf\" | \"excludesAnyOf\" | \"includes\" | \"includesAllOf\" | \"includesAnyOf\" | \"is\" | \"isAfter\" | \"isAnyOf\" | \"isBefore\" | \"isBetween\" | \"isGreaterThan\" | \"isGreaterThanOrEqual\" | \"isLessThan\" | \"isLessThanOrEqual\" | \"isNoneOf\" | \"isNot\" | \"isNotBetween\" | \"isOnOrAfter\" | \"isOnOrBefore\", kind: FilterKind) => string | undefined) | undefined",
+          "type": "((operator: \"contains\" | \"doesNotContain\" | \"doesNotStartWith\" | \"excludes\" | \"excludesAllOf\" | \"excludesAnyOf\" | \"includes\" | \"includesAllOf\" | \"includesAnyOf\" | \"is\" | \"isAfter\" | \"isAnyOf\" | \"isBefore\" | \"isBetween\" | \"isGreaterThan\" | \"isGreaterThanOrEqual\" | \"isLessThan\" | \"isLessThanOrEqual\" | \"isNoneOf\" | \"isNot\" | \"isNotBetween\" | \"isOnOrAfter\" | \"isOnOrBefore\" | \"startsWith\", kind: FilterKind, fieldId: string) => string | undefined) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "An operator's label. Return undefined to keep the dictionary's.",
+          "description": "An operator's label for one field. Return undefined to keep the dictionary's. The field id lets one field relabel an operator without changing every field of its kind.",
           "required": false
         },
         {

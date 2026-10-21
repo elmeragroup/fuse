@@ -15,6 +15,8 @@ root barrel.
   search, value submenus, quick search across option values, and text, number and date editors that
   open in place. `ValueContent` is the popover a chip's value opens.
 - A list of values shows its first 50 matches and asks for more typing.
+- Text fields can opt in to `startsWith` and `doesNotStartWith`. `formatOperator` receives the
+  field id, so one field can relabel an operator.
 - A field's `operators` bound every filter the bar writes. An option field without a multi-value
   operator is single-select, and a date field without `isBetween` offers only the Today preset.
 - With `manualFiltering`, pass server counts and ranges through `facets`. `parseColumnFilters` and

@@ -19,7 +19,7 @@ export const metadata = componentMetadata("data-table-filter");
 
 Import from `@elmeragroup/fuse/data-table-filter` and install `@tanstack/react-table` 9.2 or later beside Fuse. The entry is not in the root barrel, so apps without TanStack never resolve it.
 
-The filter reads and writes the table's `columnFilters` state, and every filter value is a plain object, `{ kind, operator, values }`. Describe each filterable column once with `defineFilterFields<Row>()`, keyed by column id. The map checks each field's kind against the column's type and each option's value against the column's values. It holds no functions, so a server module can define it and pass it to the client.
+The filter reads and writes the table's `columnFilters` state, and every filter value is a plain object, `{ kind, operator, values }`. Describe each filterable column once with `defineFilterFields<Row>()`, keyed by column id. The map checks each field's kind against the column's type and each option's value against the column's values. It holds no functions, so a server module can define it and pass it to the client. A text field matches `contains` by default. List `startsWith` in its `operators` for a prefix match, such as an ID typed from its start.
 
 Register one filter function for every column. `createDataTableFilterFn({ timeZone })` returns it. Add it to `filterFns` in the table's features and name it in `defaultColumn.filterFn`. Use the same time zone in the filter function and on the Root, so date presets and date matches agree on the calendar day.
 
