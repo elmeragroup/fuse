@@ -2,8 +2,10 @@
  * The shared state table against fixture definitions. The unit under test is `makeStateTable`.
  * The oracle is what each variant means in the browser: fuse.css gates `enabled-hover:` on
  * hover of an enabled control, Tailwind's `focus-visible:` holds on keyboard focus, `disabled:`
- * on a native disabled control, `has-data-[icon=…]:` while a descendant carries that `data-icon`,
- * and each child selector picks the `<svg>` elements its CSS selector matches.
+ * on a native disabled control, `aria-disabled:` on a disabled Base UI span, which never matches
+ * `:disabled`, `aria-invalid:` and `data-invalid:` on a control inside an invalid Field,
+ * `has-data-[icon=…]:` while a descendant carries that `data-icon`, and each child selector
+ * picks the `<svg>` elements its CSS selector matches.
  */
 import { describe, expect, it } from "vitest";
 
@@ -15,6 +17,7 @@ type Definition = Parameters<typeof makeStateTable>[0];
 function definition(overrides: Partial<Definition>): Definition {
   return {
     name: "Chip",
+    rootKind: "native-control",
     axes: [],
     states: {},
     facts: new Map(),
@@ -75,6 +78,32 @@ describe("the shared state entries", () => {
     expect(holdsAt(pending, "state", "data-[pending-indicator]")).toEqual(["pending"]);
     expect(holdsAt(pending, "state", "disabled")).toEqual(["disabled"]);
   });
+
+  it("hold aria-disabled and data-disabled at disabled on a Base UI span, which never matches disabled:", () => {
+    // Base UI keeps a disabled span focusable-when-disabled: it stamps `aria-disabled="true"` and
+    // `data-disabled`, and a span has no `:disabled` state.
+    const span = definition({ rootKind: "base-ui-span", axes: [CONTROL_STATES] });
+    expect(holdsAt(span, "state", "aria-disabled")).toEqual(["disabled"]);
+    expect(holdsAt(span, "state", "data-disabled")).toEqual(["disabled"]);
+    expect(holdsAt(span, "state", "disabled")).toBe("unmodelled");
+  });
+
+  it("leave aria-disabled to the definition on a native control", () => {
+    expect(holdsAt(definition({ axes: [CONTROL_STATES] }), "state", "aria-disabled")).toBe("unmodelled");
+  });
+
+  it("refuse a disabled state on a definition that names no root kind", () => {
+    const { rootKind: _, ...unnamed } = definition({ axes: [CONTROL_STATES] });
+    expect(() => makeStateTable(unnamed)).toThrow("Chip has a disabled state and names no root kind");
+  });
+
+  it.each(["aria-invalid", "data-invalid"])(
+    "hold %s exactly at state=invalid for a set whose state axis has that value",
+    (variant) => {
+      const invalidAxis = { name: "state", values: [...CONTROL_STATES.values, "invalid"] };
+      expect(holdsAt(definition({ axes: [invalidAxis] }), "state", variant)).toEqual(["invalid"]);
+    }
+  );
 
   it("omit the states no standalone component shows, and the definition's own omissions", () => {
     const grouped = definition({
@@ -177,6 +206,15 @@ describe("one meaning per variant", () => {
     ],
     ["an omission of a shared state entry", { omittedStates: new Set(["focus-visible"]) }, "focus-visible"],
     ["a state that renders a shared omission", { states: { pending: ["aria-invalid"] } }, "aria-invalid"],
+    ["a fact for a shared omission", { facts: new Map([["aria-invalid", always]]) }, "aria-invalid"],
+    [
+      "a fact for the invalid state's variant",
+      {
+        axes: [{ name: "state", values: [...CONTROL_STATES.values, "invalid"] }],
+        facts: new Map([["data-invalid", always]]),
+      },
+      "data-invalid",
+    ],
     [
       "both a fact and an omission",
       { facts: new Map([["aria-pressed", always]]), omittedStates: new Set(["aria-pressed"]) },

@@ -1,15 +1,20 @@
 /**
- * Compile bare Tailwind utilities against `fuse.css` and read back each utility's
- * declarations. The spec builder strips a class's variants first and decides the state from
- * them itself, so it compiles only the utility. Tailwind's own compiler resolves the
- * utility, which keeps the spec on the exact CSS a consumer ships, and the reader walks the
+ * Compile recipe classes against `fuse.css` and read back each bare utility's declarations, and
+ * where each full class sits in the output and how specific its selector is. The spec builder
+ * decides from a class's variants whether it holds in a cell, so it reads the declarations of
+ * the bare utility. It orders the classes that hold as the browser does, by the full class's
+ * selector specificity and then its place in the output. Tailwind's own compiler resolves the
+ * classes, which keeps the spec on the exact CSS a consumer ships, and the reader walks the
  * compiler's own syntax tree.
  */
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { compileAst } from "tailwindcss";
 
+import { splitClassName } from "./class-name";
 import { splitTopLevel } from "./css-values";
+import { compareSpecificity, specificityOf } from "./specificity";
+import type { Specificity } from "./specificity";
 
 /**
  * A node of Tailwind's syntax tree. Tailwind exports `compileAst` but not its node types, so
@@ -27,15 +32,26 @@ export type UtilityDeclaration = {
 /** A utility's declarations, as a browser that supports `color-mix()` applies them. */
 export type UtilityRule = {
   readonly utility: string;
-  /** The rule's position in Tailwind's output. A later rule wins a property tie. */
-  readonly order: number;
   readonly declarations: readonly UtilityDeclaration[];
 };
 
-/** What the compile produced for a set of utilities. */
+/**
+ * Where a full class, variants included, sits in Tailwind's output and how specific its selector
+ * is. In one cascade layer the more specific rule wins a property, and a later one breaks a tie.
+ */
+export type ClassPlacement = {
+  /** The position of the class's first rule in Tailwind's output. */
+  readonly order: number;
+  /** The specificity of its most specific selector. */
+  readonly specificity: Specificity;
+};
+
+/** What the compile produced for a set of classes. */
 export type CompiledUtilities = {
-  /** Each utility Tailwind emitted a rule for. A utility it does not know is absent. */
+  /** Each bare utility Tailwind emitted a rule for. A utility it does not know is absent. */
   readonly rules: ReadonlyMap<string, UtilityRule>;
+  /** Each full class Tailwind emitted a rule for, such as `data-checked:border-primary`. */
+  readonly classes: ReadonlyMap<string, ClassPlacement>;
   /** The theme variables Tailwind emitted on `:root`, such as `--font-weight-medium: 500`. */
   readonly themeValues: ReadonlyMap<string, string>;
   /** The `initial-value` of each `@property` Tailwind registered, such as `--tw-ring-offset-width`. */
@@ -62,12 +78,15 @@ function consumerEntry(): AstNode[] {
 }
 
 /**
- * Compile the utilities with `fuse.css` the way a Tailwind-source consumer does.
+ * Compile the classes and their bare utilities with `fuse.css` the way a Tailwind-source
+ * consumer does.
  *
- * @param utilities - Bare utilities, without variants.
- * @returns Each utility's declarations and the variables they read.
+ * @param classes - Recipe classes, with or without variants.
+ * @returns Each bare utility's declarations, each full class's placement, and the variables
+ *   they read.
  */
-export async function compileUtilities(utilities: readonly string[]): Promise<CompiledUtilities> {
+export async function compileUtilities(classes: readonly string[]): Promise<CompiledUtilities> {
+  const candidates = new Set(classes.flatMap((className) => [className, splitClassName(className).utility]));
   const stylesheets = new Map<string, string>([
     ["tailwindcss/theme.css", fileURLToPath(import.meta.resolve("tailwindcss/theme.css"))],
     ["tailwindcss/utilities.css", fileURLToPath(import.meta.resolve("tailwindcss/utilities.css"))],
@@ -93,7 +112,7 @@ export async function compileUtilities(utilities: readonly string[]): Promise<Co
       return { path: id, base, module: (await import("tailwindcss-react-aria-components")).default };
     },
   });
-  return readCompiledUtilities(compiler.build([...utilities]));
+  return readCompiledUtilities(compiler.build([...candidates]));
 }
 
 /**
@@ -132,15 +151,41 @@ export function baseBorderColor(compiled: CompiledUtilities): UtilityDeclaration
  * `@media (forced-colors: active)`, describes a mode Figma does not show and is skipped. The
  * rules of the `base` layer are kept apart, since no class selects them.
  *
+ * Every rule whose selector starts with a class places that class, at the top level or inside
+ * an at-rule such as the `@media (hover: hover)` around `enabled-hover:`. Its first rule gives
+ * its order, and its most specific selector its specificity.
+ *
  * @param nodes - The syntax tree `build` returns.
- * @returns The utility rules, theme values and registered property defaults.
+ * @returns The utility rules, class placements, theme values and registered property defaults.
  */
 function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
   const rules = new Map<string, UtilityRule>();
+  const classes = new Map<string, ClassPlacement>();
   const themeValues = new Map<string, string>();
   const propertyInitials = new Map<string, string>();
   const baseRules: BaseRule[] = [];
   let order = 0;
+  const place = (node: AstNode): void => {
+    if (node.kind === "at-rule" && node.name !== "@property" && node.name !== "@keyframes") {
+      if (!(node.name === "@layer" && node.params === "base")) {
+        node.nodes.forEach(place);
+      }
+      return;
+    }
+    const leading = node.kind === "rule" ? leadingClass(node.selector) : undefined;
+    if (node.kind !== "rule" || leading === undefined) {
+      return;
+    }
+    const specificity = specificityOf(node.selector);
+    const placed = classes.get(leading.name);
+    if (placed === undefined) {
+      classes.set(leading.name, { order, specificity });
+      order += 1;
+    } else if (compareSpecificity(specificity, placed.specificity) > 0) {
+      classes.set(leading.name, { ...placed, specificity });
+    }
+  };
+  nodes.forEach(place);
   const visit = (node: AstNode): void => {
     if (node.kind === "at-rule") {
       if (node.name === "@property") {
@@ -172,14 +217,13 @@ function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
       }
       return;
     }
-    const utility = singleClassSelector(node.selector);
-    if (utility !== undefined) {
-      rules.set(utility, { utility, order, declarations: effectiveDeclarations(node.nodes) });
-      order += 1;
+    const leading = leadingClass(node.selector);
+    if (leading?.rest === "") {
+      rules.set(leading.name, { utility: leading.name, declarations: effectiveDeclarations(node.nodes) });
     }
   };
   nodes.forEach(visit);
-  return { rules, themeValues, propertyInitials, baseRules };
+  return { rules, classes, themeValues, propertyInitials, baseRules };
 }
 
 /**
@@ -208,10 +252,10 @@ function effectiveDeclarations(nodes: readonly AstNode[]): readonly UtilityDecla
 }
 
 /**
- * The class name of a selector that is exactly one class, unescaped, such as `bg-primary/80`
- * for `.bg-primary\/80`.
+ * The class a selector starts with, unescaped, such as `bg-primary/80` for `.bg-primary\/80`,
+ * and the rest of the selector after it, empty for a rule that selects one class.
  */
-function singleClassSelector(selector: string): string | undefined {
+function leadingClass(selector: string): { readonly name: string; readonly rest: string } | undefined {
   if (!selector.startsWith(".")) {
     return undefined;
   }
@@ -230,8 +274,8 @@ function singleClassSelector(selector: string): string | undefined {
     } else if (/[\w-]/.test(char) || char.charCodeAt(0) > 0x7f) {
       name += char;
     } else {
-      return undefined;
+      return { name, rest: selector.slice(index) };
     }
   }
-  return name;
+  return { name, rest: "" };
 }

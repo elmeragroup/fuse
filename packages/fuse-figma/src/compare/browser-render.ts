@@ -43,8 +43,8 @@ export type CellRequest = {
   readonly id: string;
   readonly html: string;
   /**
-   * The element the page forces, compares and crops, as a selector relative to the cell's slot
-   * that starts with a combinator. The resting twin's slot uses the same one.
+   * The element the page forces, compares and crops, as a selector for an element inside the
+   * cell's slot, as `cellSelector` reads it. The resting twin's slot uses the same one.
    */
   readonly measured: string;
   readonly forced: readonly ForcedPseudoClass[];

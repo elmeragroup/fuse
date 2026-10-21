@@ -5,7 +5,7 @@
  * the icons, and the states no standalone component shows. A definition adds only what is its
  * own: the attributes its own states render, facts for its own variants, and its own omissions.
  */
-import type { Cell, ComponentDefinition, IconSlot } from "./component-spec";
+import type { Cell, ComponentDefinition, IconSlot, RootKind } from "./component-spec";
 import { axisValues } from "./kit-spec";
 
 /**
@@ -26,15 +26,24 @@ export type VariantMeaning =
 export type StateTable = (variant: string) => VariantMeaning;
 
 /**
- * The variants each value of a `state` axis renders. fuse.css gates `enabled-hover:` on an
- * enabled control, and a disabled control is a native disabled element, which Base UI also
- * marks `data-disabled`.
+ * The variants each value of a `state` axis renders, apart from `disabled`. fuse.css gates
+ * `enabled-hover:` on an enabled control.
  */
 const SHARED_STATES = new Map([
   ["hover", ["enabled-hover"]],
   ["focus", ["focus-visible"]],
-  ["disabled", ["disabled", "data-disabled"]],
+  // Base UI marks a control inside an invalid Field `aria-invalid="true"` and `data-invalid`.
+  ["invalid", ["aria-invalid", "data-invalid"]],
 ]);
+
+/** The variants the `disabled` state renders, by what the root element is. */
+const DISABLED_BY_ROOT = {
+  // A native disabled control matches `:disabled`, and Base UI also marks it `data-disabled`.
+  "native-control": ["disabled", "data-disabled"],
+  // A span never matches `:disabled`. Base UI keeps a disabled span focusable and stamps
+  // `aria-disabled="true"` and `data-disabled` on it.
+  "base-ui-span": ["aria-disabled", "data-disabled"],
+} as const satisfies Record<RootKind, readonly string[]>;
 
 /** `has-data-[icon=…]:` holds while some icon of the cell, or the span around it, carries the `data-icon`. */
 const ICON_EDGES = new Map<string, NonNullable<IconSlot["dataIcon"]>>([
@@ -54,7 +63,8 @@ const CHILD_SELECTORS = new Map<string, (slot: IconSlot) => boolean>([
 const SHARED_OMISSIONS = new Set([
   // A press lasts only as long as the pointer is down.
   "enabled-active",
-  // Invalid belongs to a control inside a form field.
+  // Invalid belongs to a control inside a form field. A set whose `state` axis has `invalid`
+  // holds both in that state instead.
   "aria-invalid",
   "data-invalid",
   // Expanded belongs to the trigger of an open menu or popup.
@@ -64,9 +74,6 @@ const SHARED_OMISSIONS = new Set([
 /** The variants whose meaning is fixed here, which a definition's own states cannot render. */
 const FIXED_VARIANTS = new Set([...ICON_EDGES.keys(), ...CHILD_SELECTORS.keys(), ...SHARED_OMISSIONS]);
 
-/** Every variant this table gives a meaning. */
-const SHARED_VARIANTS = new Set([...FIXED_VARIANTS, ...[...SHARED_STATES.values()].flat()]);
-
 /**
  * Build the state table of one definition. A shared state entry is modelled only when the
  * definition's `state` axis has the value that renders it, so a set without a focus value
@@ -74,17 +81,31 @@ const SHARED_VARIANTS = new Set([...FIXED_VARIANTS, ...[...SHARED_STATES.values(
  *
  * @param definition - The component.
  * @returns The meaning of each variant.
- * @throws When the definition gives a variant a second meaning: a fact or an omission for a
- *   shared variant, a state that renders a fixed one, or one variant declared twice.
+ * @throws When the definition has a disabled state and names no root kind, or gives a variant
+ *   a second meaning: a fact or an omission for a shared variant, a state that renders a fixed
+ *   one, or one variant declared twice.
  */
 export function makeStateTable(
-  definition: Pick<ComponentDefinition, "name" | "axes" | "states" | "facts" | "omittedStates" | "iconsFor">
+  definition: Pick<
+    ComponentDefinition,
+    "name" | "rootKind" | "axes" | "states" | "facts" | "omittedStates" | "iconsFor"
+  >
 ): StateTable {
+  const stateValues = axisValues(definition, "state");
+  const sharedStates = new Map<string, readonly string[]>(SHARED_STATES);
+  if (definition.rootKind !== undefined) {
+    sharedStates.set("disabled", DISABLED_BY_ROOT[definition.rootKind]);
+  } else if (stateValues.includes("disabled")) {
+    throw new Error(`${definition.name} has a disabled state and names no root kind`);
+  }
+  // Every variant this table gives the definition a meaning.
+  const sharedVariants = new Set([...FIXED_VARIANTS, ...[...sharedStates.values()].flat()]);
+
   const sources = [
     // A state may add to a shared state entry, as a pending Button renders `data-disabled`.
     { variants: new Set(Object.values(definition.states).flat()), shared: FIXED_VARIANTS },
-    { variants: new Set(definition.facts.keys()), shared: SHARED_VARIANTS },
-    { variants: definition.omittedStates, shared: SHARED_VARIANTS },
+    { variants: new Set(definition.facts.keys()), shared: sharedVariants },
+    { variants: definition.omittedStates, shared: sharedVariants },
   ];
   for (const source of sources) {
     for (const variant of source.variants) {
@@ -98,8 +119,8 @@ export function makeStateTable(
   }
 
   const statesRendering = new Map<string, Set<string>>();
-  for (const state of axisValues(definition, "state")) {
-    for (const variant of [...(SHARED_STATES.get(state) ?? []), ...(definition.states[state] ?? [])]) {
+  for (const state of stateValues) {
+    for (const variant of [...(sharedStates.get(state) ?? []), ...(definition.states[state] ?? [])]) {
       statesRendering.set(variant, (statesRendering.get(variant) ?? new Set()).add(state));
     }
   }

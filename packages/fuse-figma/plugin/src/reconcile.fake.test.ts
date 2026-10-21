@@ -1,7 +1,7 @@
 /**
  * `reconcileKit` end to end against the in-memory file in `fake-figma.ts`, with the kit
- * `buildKit()` writes from the Button, Toggle, Badge and Kbd recipes and the variables `fuseVariableSet()` syncs. The
- * fake models the Figma rules the real runs in 2026-10 confirmed, and throws for any Plugin API
+ * `buildKit()` writes from the Button, Toggle, Badge, Kbd and Radio icon button recipes and the
+ * variables `fuseVariableSet()` syncs. The fake models the Figma rules the real runs in 2026-10 confirmed, and throws for any Plugin API
  * member it does not model. The oracles are hand-written: the change lines Plan must list, the
  * values the Button recipe and the theme catalog give, and the order the kit's axes declare.
  */
@@ -49,6 +49,7 @@ const BUTTON_PAGE = "page/button";
 const TOGGLE_PAGE = "page/toggle";
 const BADGE_PAGE = "page/badge";
 const KBD_PAGE = "page/kbd";
+const RADIO_PAGE = "page/radio";
 const ICONS_PAGE = "page/icons";
 const DEFAULT_BUTTON = "variant=default, size=default, state=rest, icon=none";
 const LAY_OUT_BUTTONS = "Button: lay out 420 variants in 5 columns and 84 rows";
@@ -69,6 +70,9 @@ const CREATE_BADGE_PREVIEWS = BADGE_PREVIEWS.map((name) => `Badge: create the pr
 const PLACE_KBDS = "Kbd: place Kbd in a row and stack 4 previews below them";
 const KBD_PREVIEWS = PREVIEWS.map((name) => name.replace("Button", "Kbd"));
 const CREATE_KBD_PREVIEWS = KBD_PREVIEWS.map((name) => `Kbd: create the preview ${name}`);
+const PLACE_RADIOS = "Radio: place Radio icon button in a row and stack 4 previews below them";
+const RADIO_PREVIEWS = PREVIEWS.map((name) => name.replace("Button", "Radio"));
+const CREATE_RADIO_PREVIEWS = RADIO_PREVIEWS.map((name) => `Radio: create the preview ${name}`);
 
 /** The page the plugin put the whole kit on before each component got a page of its own. */
 const LEGACY_PAGE = { key: "page/components", name: "Fuse components" };
@@ -242,6 +246,7 @@ describe("Apply on a synced file without the kit pages", () => {
         "Document: create the page Toggle",
         "Document: create the page Badge",
         "Document: create the page Kbd",
+        "Document: create the page Radio",
         "Document: create the page Icons",
         "Icons: create the Icons frame with 135 icons",
         "Button: create the component set Button with 420 variants",
@@ -250,6 +255,7 @@ describe("Apply on a synced file without the kit pages", () => {
         "Toggle: create the component set Icon toggle with 64 variants",
         "Badge: create the component set Badge with 57 variants",
         "Kbd: create the component set Kbd with 2 variants",
+        "Radio: create the component set Radio icon button with 50 variants",
         ...CREATE_PREVIEWS,
         PLACE,
         ...CREATE_TOGGLE_PREVIEWS,
@@ -258,6 +264,8 @@ describe("Apply on a synced file without the kit pages", () => {
         PLACE_BADGES,
         ...CREATE_KBD_PREVIEWS,
         PLACE_KBDS,
+        ...CREATE_RADIO_PREVIEWS,
+        PLACE_RADIOS,
       ],
       warnings: [],
     });
@@ -265,15 +273,16 @@ describe("Apply on a synced file without the kit pages", () => {
   });
 
   it("shows the Button page and leaves nothing behind on the page that was current", async () => {
-    const [first, button, toggle, badge, kbd, icons] = file.figma.root.children;
+    const [first, button, toggle, badge, kbd, radio, icons] = file.figma.root.children;
     expect(first?.name).toBe("Page 1");
     await first?.loadAsync();
     expect(first?.children).toEqual([]);
-    expect([button?.name, toggle?.name, badge?.name, kbd?.name, icons?.name]).toEqual([
+    expect([button?.name, toggle?.name, badge?.name, kbd?.name, radio?.name, icons?.name]).toEqual([
       "Button",
       "Toggle",
       "Badge",
       "Kbd",
+      "Radio",
       "Icons",
     ]);
     expect(file.figma.currentPage).toBe(button);
@@ -294,6 +303,10 @@ describe("Apply on a synced file without the kit pages", () => {
     expect((await kitPage(file, KBD_PAGE)).children.map((node) => node.name)).toEqual([
       "Kbd",
       ...KBD_PREVIEWS,
+    ]);
+    expect((await kitPage(file, RADIO_PAGE)).children.map((node) => node.name)).toEqual([
+      "Radio icon button",
+      ...RADIO_PREVIEWS,
     ]);
     expect((await kitPage(file, ICONS_PAGE)).children.map((node) => node.name)).toEqual(["Icons"]);
   });
@@ -372,9 +385,14 @@ describe("Apply on a synced file without the kit pages", () => {
         ["preview/kbd/internal-fkas-private-dark", KBD_PREVIEWS[1], 2],
         ["preview/kbd/external-fkas-private-light", KBD_PREVIEWS[2], 2],
         ["preview/kbd/external-fkas-private-dark", KBD_PREVIEWS[3], 2],
+        // Radio icon button: 5 sizes, off and on, in 5 states.
+        ["preview/radio/internal-fkas-private-light", RADIO_PREVIEWS[0], 50],
+        ["preview/radio/internal-fkas-private-dark", RADIO_PREVIEWS[1], 50],
+        ["preview/radio/external-fkas-private-light", RADIO_PREVIEWS[2], 50],
+        ["preview/radio/external-fkas-private-dark", RADIO_PREVIEWS[3], 50],
       ]
     );
-    expect(progress).toEqual([932, 932]);
+    expect(progress).toEqual([1132, 1132]);
     const [first] = snapshot.previews;
     expect(new Set(Object.keys(first ?? {}))).toEqual(new Set(["key", "name", "modes", "instances"]));
     expect(first?.modes).toEqual(
@@ -774,8 +792,9 @@ describe("a file the plugin laid out on one page", () => {
       "Document: create the page Toggle",
       "Document: create the page Badge",
       "Document: create the page Kbd",
+      "Document: create the page Radio",
       "Document: create the page Icons",
-      ...[...PREVIEWS, ...TOGGLE_PREVIEWS, ...BADGE_PREVIEWS, ...KBD_PREVIEWS].map(
+      ...[...PREVIEWS, ...TOGGLE_PREVIEWS, ...BADGE_PREVIEWS, ...KBD_PREVIEWS, ...RADIO_PREVIEWS].map(
         (name) => `Fuse components: delete ${name}`
       ),
       "Fuse components: move Icons to the Icons page",
@@ -785,10 +804,11 @@ describe("a file the plugin laid out on one page", () => {
       "Fuse components: move Icon toggle to the Toggle page",
       "Fuse components: move Badge to the Badge page",
       "Fuse components: move Kbd to the Kbd page",
+      "Fuse components: move Radio icon button to the Radio page",
     ];
 
     expect(await reconcileKit(file.figma, kit, false)).toEqual({
-      changes: [...pagePhase, "Document: plan the rest of the kit again once the 7 moves land"],
+      changes: [...pagePhase, "Document: plan the rest of the kit again once the 8 moves land"],
       warnings: [],
     });
     const applied = await reconcileKit(file.figma, kit, true);
@@ -803,6 +823,8 @@ describe("a file the plugin laid out on one page", () => {
         PLACE_BADGES,
         ...CREATE_KBD_PREVIEWS,
         PLACE_KBDS,
+        ...CREATE_RADIO_PREVIEWS,
+        PLACE_RADIOS,
         "Document: delete the page Fuse components",
       ],
       warnings: [],
@@ -817,6 +839,7 @@ describe("a file the plugin laid out on one page", () => {
       "Toggle",
       "Badge",
       "Kbd",
+      "Radio",
       "Icons",
     ]);
     const button = await componentSet(file, "Button");
@@ -860,11 +883,12 @@ describe("a file the plugin laid out on one page", () => {
     file.reopen();
 
     const applied = await reconcileKit(file.figma, kit, true);
-    expect(applied.changes.slice(0, 5)).toEqual([
+    expect(applied.changes.slice(0, 6)).toEqual([
       "Document: create the page Button",
       "Document: create the page Toggle",
       "Document: create the page Badge",
       "Document: create the page Kbd",
+      "Document: create the page Radio",
       "Document: create the page Icons",
     ]);
     expect(file.figma.root.children.map((page) => page.name)).toEqual([
@@ -875,6 +899,7 @@ describe("a file the plugin laid out on one page", () => {
       "Toggle",
       "Badge",
       "Kbd",
+      "Radio",
       "Icons",
     ]);
     for (const { page, frame } of imported) {

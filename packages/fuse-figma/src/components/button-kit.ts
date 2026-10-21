@@ -126,6 +126,7 @@ export const BUTTON: ComponentDefinition = {
   key: "button",
   name: "Button",
   slot: "button",
+  rootKind: "native-control",
   axes: [
     { name: "variant", values: VARIANTS },
     { name: "size", values: LABEL_SIZES },
@@ -147,6 +148,7 @@ export const ICON_BUTTON: ComponentDefinition = {
   key: "icon-button",
   name: "Icon button",
   slot: "button",
+  rootKind: "native-control",
   axes: [{ name: "variant", values: VARIANTS }, { name: "size", values: ICON_SIZES }, STATE_AXIS],
   columnAxis: "state",
   classesFor,

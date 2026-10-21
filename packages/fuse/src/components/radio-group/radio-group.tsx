@@ -275,7 +275,7 @@ export function RadioIconButton({
       data-slot="radio-icon-button"
       value={value}
       disabled={isDisabled}
-      className={cn(radioIconButtonVariants({ size }), selfFocusRingClass, className)}
+      className={cn(radioIconButtonVariants({ size }), className)}
       {...definedProps(props)}>
       {children}
     </RadioPrimitive.Root>

@@ -1,9 +1,9 @@
 /**
  * How `figma:compare` renders each kit definition's cells: one renderer per definition, which turns
  * a cell into the real Fuse element. The page measures, forces and crops the element's root part,
- * the slot's direct child whose `data-slot` is the definition's `slot`. A renderer sets the states
- * the markup draws, such as disabled or pending, through the element's props. The page forces hover
- * and focus itself.
+ * the one element in the slot whose `data-slot` is the definition's `slot`, at any depth, since a
+ * radio renders inside its group. A renderer sets the states the markup draws, such as disabled
+ * or pending, through the element's props. The page forces hover and focus itself.
  *
  * A renderer's element comes from a module that imports the Fuse build, which exists only after
  * `pnpm --filter @elmeragroup/fuse build`. This module lists each renderer's set and the build
@@ -69,6 +69,11 @@ const SOURCES: readonly RendererSource[] = [
     set: "kbd",
     entry: "dist/kbd.js",
     load: async () => (await import("./kbd-cell.ts")).kbd,
+  },
+  {
+    set: "radio-icon-button",
+    entry: "dist/radio-group.js",
+    load: async () => (await import("./radio-icon-button-cell.ts")).radioIconButton,
   },
 ];
 

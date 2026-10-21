@@ -113,6 +113,7 @@ export const TOGGLE: ComponentDefinition = {
   key: "toggle",
   name: "Toggle",
   slot: "toggle",
+  rootKind: "native-control",
   axes: [
     { name: "variant", values: VARIANTS },
     { name: "size", values: SIZES },
@@ -135,6 +136,7 @@ export const ICON_TOGGLE: ComponentDefinition = {
   key: "icon-toggle",
   name: "Icon toggle",
   slot: "toggle",
+  rootKind: "native-control",
   axes: [{ name: "variant", values: VARIANTS }, { name: "size", values: SIZES }, STATE_AXIS, PRESSED_AXIS],
   columnAxis: "state",
   classesFor,

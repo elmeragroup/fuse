@@ -87,8 +87,8 @@ export function pageViewport(layout: PageLayout, count: number): PageSize {
  * The selector of an element in a cell's slot.
  *
  * @param id - The cell's id.
- * @param measured - A selector relative to the slot that starts with a combinator, such as
- *   `> [data-slot="button"]`.
+ * @param measured - A selector for an element anywhere inside the slot, such as
+ *   `[data-slot="button"]`, or one that starts with a combinator, such as `> span`.
  * @returns The selector from the document root.
  */
 export function cellSelector(id: string, measured: string): string {

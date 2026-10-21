@@ -55,6 +55,28 @@ describe("a class whose variant no cell models", () => {
   it("is unmapped when the state axis lacks the value that renders a shared state", () => {
     expect(outcomes("focus-visible:bg-muted")).toEqual(new Set(["unmapped"]));
   });
+
+  // Oracle: a `state` axis holds one value per cell, so `aria-invalid:` (state=invalid) and
+  // `focus-visible:` (state=focus) never hold in the same cell, and the class would otherwise
+  // leave no row in the coverage table.
+  it("is dropped, naming its variants, when they never hold in one cell together", () => {
+    const { coverage } = buildComponentSet(
+      {
+        ...CHIP,
+        axes: [{ name: "state", values: ["rest", "focus", "invalid"] }],
+        classesFor: () => "aria-invalid:focus-visible:bg-muted",
+      },
+      context
+    );
+    expect(coverage).toEqual([
+      expect.objectContaining({
+        className: "aria-invalid:focus-visible:bg-muted",
+        property: "background-color",
+        outcome: "dropped",
+        detail: "no cell of the matrix shows `aria-invalid` and `focus-visible` at once",
+      }),
+    ]);
+  });
 });
 
 // Unit under test: `buildComponentSet` on a root whose class sets a border width and style and
@@ -156,6 +178,29 @@ describe("a transparent background", () => {
     expect(coverage.filter((row) => row.className === "bg-transparent").map((row) => row.outcome)).toEqual([
       "literal",
     ]);
+  });
+});
+
+// Unit under test: the cascade order of `buildComponentSet`. Oracle: CSS Cascading 4, where in one
+// layer the more specific selector wins and output order only breaks a tie. Tailwind emits
+// fuse.css's `data-checked:` after `aria-invalid:`, but `data-checked:` wraps its attribute in
+// `:where()`, so `.x:where([data-checked])` is (0,1,0) and `.x[aria-invalid="true"]` is (0,2,0).
+describe("two conditional classes that set one property", () => {
+  it("apply the more specific one, though Tailwind emits it first", async () => {
+    const classes = ["aria-invalid:bg-[rgb(0_0_255)]", "data-checked:bg-[rgb(255_0_0)]"];
+    const { componentSet } = buildComponentSet(
+      {
+        ...CHIP,
+        axes: [{ name: "state", values: ["invalid"] }],
+        classesFor: () => classes.join(" "),
+        facts: new Map([["data-checked", () => true]]),
+      },
+      { ...context, compiled: await compileUtilities(classes) }
+    );
+    expect(componentSet.variants[0]?.root.fill).toEqual({
+      kind: "literal",
+      color: { r: 0, g: 0, b: 1, a: 1 },
+    });
   });
 });
 
