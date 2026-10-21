@@ -87,10 +87,11 @@ function renderedVisibility(element: ReactElement): Visibility {
  * `hidden` and `aria-hidden` the rendered element ends up with, whether they come from the
  * root or the render element. An explicit `role` replaces both and skips the wrapper.
  *
- * Given `aria-disabled="true"`, as a link row must be since a link takes no `disabled`, a
- * `render` row dims, drops its hover fill and cancels its own activation: a click or a keyboard
+ * Any row announced `aria-disabled="true"` dims with the `not-allowed` cursor, as a
+ * `render={<button disabled />}` row does. A `render` row, such as a link row, which takes no
+ * `disabled`, also drops its hover fill and cancels its own activation: a click or a keyboard
  * Enter neither follows a link nor runs `onClick`, and a middle-click neither opens a new tab nor
- * runs `onAuxClick`. A `render={<button disabled />}` row dims too.
+ * runs `onAuxClick`. A plain row keeps the clicks of the controls inside it.
  *
  * It publishes `--inner-corner`, its corner less its border and padding, for parts that round with
  * `rounded-inner`.
