@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { addDays, DEFAULT_DATE_PRESETS, datePresetRange, isOneDayPreset } from "./date-presets";
+import { DEFAULT_DATE_PRESETS, datePresetRange, isOneDayPreset } from "./date-presets";
 import type { DatePresetKey } from "./date-presets";
 
 // 2026-10-21 is a Wednesday.
@@ -37,6 +37,9 @@ describe("datePresetRange", () => {
     ["last month in a leap year", "lastMonth", "2028-03-01", "nb-NO", ["2028-02-01", "2028-02-29"]],
     ["last month from a month's 31st", "lastMonth", "2026-03-31", "nb-NO", ["2026-02-01", "2026-02-28"]],
     ["yesterday across a month", "yesterday", "2026-03-01", "nb-NO", ["2026-02-28", "2026-02-28"]],
+    ["last week across a month end", "lastWeek", "2026-11-04", "nb-NO", ["2026-10-26", "2026-11-01"]],
+    ["last 7 days across a new year", "last7Days", "2027-01-03", "nb-NO", ["2026-12-28", "2027-01-03"]],
+    ["last 30 days across a new year", "last30Days", "2027-01-15", "nb-NO", ["2026-12-17", "2027-01-15"]],
   ] as const)("reads %s", (_name, key, today, locale, expected) => {
     expect(datePresetRange(key, today, locale)).toEqual(expected);
   });
@@ -64,11 +67,4 @@ describe("the preset catalog", () => {
       expect(isOneDayPreset(key)).toBe(expected);
     }
   );
-});
-
-describe("addDays", () => {
-  it("adds days across month and year ends", () => {
-    expect(addDays("2026-10-31", 1)).toBe("2026-11-01");
-    expect(addDays("2027-01-01", -1)).toBe("2026-12-31");
-  });
 });

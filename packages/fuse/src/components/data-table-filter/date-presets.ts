@@ -56,14 +56,8 @@ function partsOf(date: IsoDate): readonly [year: number, month: number, day: num
   return [year, month - 1, day];
 }
 
-/**
- * Adds whole days to an ISO date.
- *
- * @param date - The start date.
- * @param days - The days to add, negative to go back.
- * @returns The new ISO date.
- */
-export function addDays(date: IsoDate, days: number): IsoDate {
+/** An ISO date moved by whole days, negative to go back. */
+function addDays(date: IsoDate, days: number): IsoDate {
   const [year, month, day] = partsOf(date);
   return utcDate(year, month, day + days);
 }
