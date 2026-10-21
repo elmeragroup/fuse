@@ -9,10 +9,10 @@ bare terms and details. The inline layout styles terms and details only inside a
 layouts draw rules between Items only.
 
 Each inline Item now shares its own row between its term and details, whatever the other rows hold,
-instead of every row sharing one details column capped at 60% of the list. The details sits at the end
-of the term's line while the two fit, and a long term wraps beside it. A details too wide to sit
-beside the term's longest word moves under the term, at the end of the row, so an email address or a
-date stays on one line. Only a details wider than the row wraps, between words where it can. Override
+instead of every row sharing one details column capped at 60% of the list. The details stays beside
+its term, at the end of the row. When the two don't fit on one line, both wrap within the row: each
+keeps its longest word and they share the rest, so an email address stays whole beside a term that
+can wrap. A word breaks only when the two longest words can't share the row. Override
 inline cells with a `[:where([data-layout=inline]>*)>&]:` class, which replaces
 `[:where([data-layout=inline])>&]:`, and an inline Item's row with a `[:where([data-layout=inline])>&]:`
 class.

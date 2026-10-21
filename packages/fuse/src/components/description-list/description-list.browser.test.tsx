@@ -379,7 +379,7 @@ describe("DescriptionList", () => {
     );
 
     it.each(DENSITIES)(
-      "wraps a long term beside its details while the term's widest word fits, level with its first line (%s)",
+      "wraps a long term beside a short details, level with the term's first line (%s)",
       (density) => {
         stampDensity(density);
         const term = "Keep the existing phone number on the new plan";
@@ -388,15 +388,10 @@ describe("DescriptionList", () => {
         const termCell = textNamed(term);
         const detailsCell = textNamed(details);
         const { columnGap } = INLINE[density];
-        const valueWidth = naturalWidth(details, detailsCell);
         expect(
-          naturalWidth(term, termCell) + columnGap + valueWidth,
+          naturalWidth(term, termCell) + columnGap + naturalWidth(details, detailsCell),
           "precondition: the pair does not fit on one line"
         ).toBeGreaterThan(ROW_WIDTH);
-        expect(
-          widestWord(term, termCell) + columnGap + valueWidth,
-          "precondition: the term's widest word fits beside the details"
-        ).toBeLessThanOrEqual(ROW_WIDTH);
 
         const termLines = textLines(termCell);
         const detailsLines = textLines(detailsCell);
@@ -411,82 +406,121 @@ describe("DescriptionList", () => {
     );
 
     it.each(DENSITIES)(
-      "moves a details that fits on a line of its own but not beside its term under the term, at the end and unbroken (%s)",
+      "keeps a details too wide for the term's line beside the term, wrapping it there between words (%s)",
       (density) => {
         stampDensity(density);
-        const term = "Kontaktinformasjon";
-        const details = "faktura.kari.nordmann@elmera-example.com";
-        renderInlineRows([
-          [term, details],
-          ["Created", "21 October 2026 at 12:31:32"],
-        ]);
-        const termCell = textNamed(term);
-        const detailsCell = textNamed(details);
-        const valueWidth = naturalWidth(details, detailsCell);
-        expect(
-          widestWord(term, termCell) + INLINE[density].columnGap + valueWidth,
-          "precondition: the details does not fit beside the term"
-        ).toBeGreaterThan(ROW_WIDTH);
-        expect(valueWidth, "precondition: the details fits on a line of its own").toBeLessThanOrEqual(
-          ROW_WIDTH
-        );
-
-        const termLines = textLines(termCell);
-        const detailsLines = textLines(detailsCell);
-        expect(termLines).toHaveLength(1);
-        expect(detailsLines).toHaveLength(1);
-        expect(wordsSplitAcrossLines(detailsCell)).toEqual([]);
-        // The moved details sits directly under the term, with no gap of its own.
-        expect(detailsCell.getBoundingClientRect().top).toBeCloseTo(
-          termCell.getBoundingClientRect().bottom,
-          0
-        );
-        const list = listOf(termCell);
-        expect(detailsLines[0]?.right).toBeCloseTo(list.getBoundingClientRect().right, 0);
-        // The next Item is spaced from the moved details by the list's row gap.
-        expect(boxOf("Created").top - detailsCell.getBoundingClientRect().bottom).toBeCloseTo(
-          INLINE[density].rowGap,
-          0
-        );
+        const rows = [
+          ["Created", "21 October 2026 at 12:31:32, confirmed by SMS"],
+          ["Address", "Storgata 1, inngang B, 4. etasje, 3611 Kongsberg, Buskerud"],
+        ] as const;
+        renderInlineRows(rows);
+        const list = listOf(textNamed("Created"));
+        const right = list.getBoundingClientRect().right;
+        for (const [term, details] of rows) {
+          const termCell = textNamed(term);
+          const detailsCell = textNamed(details);
+          expect(
+            naturalWidth(term, termCell) + INLINE[density].columnGap + naturalWidth(details, detailsCell),
+            `precondition: ${term} and its details don't fit on one line`
+          ).toBeGreaterThan(ROW_WIDTH);
+          const termLines = textLines(termCell);
+          const detailsLines = textLines(detailsCell);
+          expect(termLines, `${term} on one line`).toHaveLength(1);
+          expect(detailsLines.length, details).toBeGreaterThan(1);
+          expect(Math.abs((termLines[0]?.top ?? 0) - (detailsLines[0]?.top ?? Infinity)), term).toBeLessThan(
+            1
+          );
+          expect(wordsSplitAcrossLines(detailsCell), details).toEqual([]);
+          for (const line of detailsLines) {
+            expect(line.right, details).toBeCloseTo(right, 0);
+            expect(line.left, details).toBeGreaterThanOrEqual(
+              (termLines[0]?.right ?? Infinity) + INLINE[density].columnGap - 1
+            );
+          }
+        }
         expectNoOverflow(list);
       }
     );
 
     it.each(DENSITIES)(
-      "gives a details wider than the row the full row, wrapping between words, and breaks unbroken words without overflow (%s)",
+      "keeps an unbroken details whole beside its term by wrapping the term down to its widest word (%s)",
       (density) => {
         stampDensity(density);
-        const address = "Storgata 1, inngang B, 4. etasje, 3611 Kongsberg, Buskerud";
-        const longTerm = "Installasjonsadresseopplysningerforbrukerkontaktinformasjonen";
-        const longValue = "707057500012345678901234567890123456789012345678901234567890";
-        renderInlineRows([
-          ["Address", address],
-          [longTerm, longValue],
-        ]);
-        const addressCell = textNamed(address);
+        const term = "E-mail address for invoices";
+        const details = "kari.nordmann@elmeramail.com";
+        renderInlineRows([[term, details]]);
+        const termCell = textNamed(term);
+        const detailsCell = textNamed(details);
+        const { columnGap } = INLINE[density];
+        const valueWidth = naturalWidth(details, detailsCell);
         expect(
-          naturalWidth(address, addressCell),
-          "precondition: the address is wider than the row"
+          naturalWidth(term, termCell) + columnGap + valueWidth,
+          "precondition: the pair does not fit on one line"
         ).toBeGreaterThan(ROW_WIDTH);
-        const list = listOf(addressCell);
-        const listBox = list.getBoundingClientRect();
-        const addressBox = addressCell.getBoundingClientRect();
-        expect(addressBox.top).toBeGreaterThanOrEqual(boxOf("Address").bottom - 1);
-        expect(addressBox.width).toBeCloseTo(listBox.width, 0);
-        expect(textLines(addressCell).length).toBeGreaterThan(1);
-        expect(wordsSplitAcrossLines(addressCell)).toEqual([]);
+        expect(
+          widestWord(term, termCell) + columnGap + valueWidth,
+          "precondition: the details fits whole beside the term's widest word"
+        ).toBeLessThanOrEqual(ROW_WIDTH);
 
-        for (const name of [longTerm, longValue]) {
-          const cell = textNamed(name);
-          expect(naturalWidth(name, cell), `precondition: ${name} is wider than the row`).toBeGreaterThan(
-            ROW_WIDTH
-          );
-          expect(textLines(cell).length, name).toBeGreaterThan(1);
-          expect(cell.scrollWidth, name).toBeLessThanOrEqual(cell.clientWidth);
-          expect(cell.getBoundingClientRect().right, name).toBeLessThanOrEqual(listBox.right + 0.5);
-        }
-        expect(boxOf(longValue).top).toBeGreaterThanOrEqual(boxOf(longTerm).bottom - 1);
-        expectNoOverflow(list);
+        const termLines = textLines(termCell);
+        const detailsLines = textLines(detailsCell);
+        expect(termLines.length).toBeGreaterThan(1);
+        expect(wordsSplitAcrossLines(termCell)).toEqual([]);
+        expect(detailsLines).toHaveLength(1);
+        expect(Math.abs((termLines[0]?.top ?? 0) - (detailsLines[0]?.top ?? Infinity))).toBeLessThan(1);
+        expect(detailsLines[0]?.right).toBeCloseTo(listOf(termCell).getBoundingClientRect().right, 0);
+        expectNoOverflow(listOf(termCell));
+      }
+    );
+
+    it.each(DENSITIES)(
+      "shares a row between a long term and a long details, wrapping both rather than squeezing one (%s)",
+      (density) => {
+        stampDensity(density);
+        const term = "Keep your existing phone number";
+        const details = "Delivered as eFaktura in your online bank";
+        renderInlineRows([[term, details]]);
+        const termCell = textNamed(term);
+        const detailsCell = textNamed(details);
+        const half = (ROW_WIDTH - INLINE[density].columnGap) / 2;
+        expect(
+          naturalWidth(term, termCell),
+          "precondition: the term is wider than half the row"
+        ).toBeGreaterThan(half);
+        expect(
+          naturalWidth(details, detailsCell),
+          "precondition: the details is wider than half the row"
+        ).toBeGreaterThan(half);
+
+        const termLines = textLines(termCell);
+        const detailsLines = textLines(detailsCell);
+        expect(termLines.length, "term wraps").toBeGreaterThan(1);
+        expect(detailsLines.length, "details wraps").toBeGreaterThan(1);
+        expect(Math.abs((termLines[0]?.top ?? 0) - (detailsLines[0]?.top ?? Infinity))).toBeLessThan(1);
+        expect(wordsSplitAcrossLines(termCell)).toEqual([]);
+        expect(wordsSplitAcrossLines(detailsCell)).toEqual([]);
+        expectNoOverflow(listOf(termCell));
+      }
+    );
+
+    it.each(DENSITIES)(
+      "breaks an unbroken details wider than the row beside its term without overflow (%s)",
+      (density) => {
+        stampDensity(density);
+        const details = "707057500012345678901234567890123456789012345678901234567890";
+        renderInlineRows([["Meter", details]]);
+        const detailsCell = textNamed(details);
+        expect(
+          naturalWidth(details, detailsCell),
+          "precondition: the details is wider than the row"
+        ).toBeGreaterThan(ROW_WIDTH);
+        const termLines = textLines(textNamed("Meter"));
+        const detailsLines = textLines(detailsCell);
+        expect(termLines).toHaveLength(1);
+        expect(detailsLines.length).toBeGreaterThan(1);
+        expect(Math.abs((termLines[0]?.top ?? 0) - (detailsLines[0]?.top ?? Infinity))).toBeLessThan(1);
+        expect(detailsCell.scrollWidth).toBeLessThanOrEqual(detailsCell.clientWidth);
+        expectNoOverflow(listOf(detailsCell));
       }
     );
 
@@ -549,9 +583,12 @@ describe("DescriptionList", () => {
       "sets the label type, spaces Items by the small surface gap and a term from its details by the medium one (%s)",
       (density) => {
         stampDensity(density);
+        const longTerm = "Keep your existing phone number";
+        const longDetails = "Delivered as eFaktura in your online bank";
         renderInlineRows([
           ["Start date", "1 November 2026"],
           ["Monthly amount", "399 kr/month"],
+          [longTerm, longDetails],
         ]);
         const expected = INLINE[density];
         for (const name of ["Start date", "1 November 2026"]) {
@@ -562,7 +599,9 @@ describe("DescriptionList", () => {
           expect(px(style.paddingRight), name).toBe(0);
         }
         expect(boxOf("Monthly amount").top - boxOf("Start date").bottom).toBeCloseTo(expected.rowGap, 0);
-        expect(boxOf("1 November 2026").left - boxOf("Start date").right).toBeCloseTo(expected.columnGap, 0);
+        // When both cells wrap they fill the row, so their boxes sit one column gap apart.
+        expect(textLines(textNamed(longTerm)).length, "precondition: the term wraps").toBeGreaterThan(1);
+        expect(boxOf(longDetails).left - boxOf(longTerm).right).toBeCloseTo(expected.columnGap, 0);
       }
     );
 

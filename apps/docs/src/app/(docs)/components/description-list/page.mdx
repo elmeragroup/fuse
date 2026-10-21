@@ -41,7 +41,7 @@ An Item can hold several terms of one details, or several details of one term. I
   <DescriptionListInline />
 </Demo>
 
-Each inline Item shares its own row between its term and details, whatever the other rows hold. The details sits at the end of the term's line while the two fit, and a long term wraps beside a short details. A details too wide to sit beside the term's longest word moves under the term, at the end of the row, so an email address or a date stays on one line. Only a details wider than the whole row wraps, between words where it can.
+Each inline Item shares its own row between its term and details, whatever the other rows hold. The details always sits beside its term, at the end of the row. When the two don't fit on one line, both wrap within the row: each keeps its longest word and they share the rest, so a long term wraps beside a short details, and a long details wraps beside a short term. A word breaks only when the two longest words can't share the row, and then in the details.
 
 <Demo slug="description-list" id="inline-rows" title="Inline rows" file="description-list-inline-rows.tsx">
   <DescriptionListInlineRows />
