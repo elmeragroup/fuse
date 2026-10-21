@@ -189,7 +189,7 @@ These behaviours have not run against a real file yet:
 `figma:compare` checks the kit against the real Fuse components. It renders every instance in the preview frames with its Fuse component in Chromium and compares the two pictures cell by cell.
 
 1. Build Fuse when `packages/fuse/dist` is missing or older than its sources, with `pnpm --filter @elmeragroup/fuse build`. The comparison renders the components and loads `styles.css` and `themes.css` from that build, and it warns when the sources are newer.
-2. Run the plugin and press Export snapshots. The plugin exports each instance in the preview frames of every kit page as a PNG at 2x, cut to its render bounds so that a focus ring outside the box is included. It records each instance's box and render bounds and the modes its preview frame resolves. The UI downloads the result as `fuse-kit-snapshots.json`. The export writes nothing to the file.
+2. Run the plugin and press Export snapshots. The plugin exports each instance in the preview frames of every kit page as a PNG at 2x, cut to its render bounds so that a focus ring outside the box is included. It records each instance's box and render bounds and the modes its preview frame resolves. Figma resolves a mode only for a collection the frame's layers bind or alias into, so the export adds each mode the frame or its page pins, such as the density a Badge preview pins though no Badge layer binds a density variable. The UI downloads the result as `fuse-kit-snapshots.json`. The export writes nothing to the file.
 3. Run the comparison. pnpm runs the script in this package's directory, so pass an absolute path:
 
    ```sh

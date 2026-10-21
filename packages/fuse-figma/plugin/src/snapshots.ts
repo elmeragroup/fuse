@@ -50,10 +50,22 @@ async function kitPage(figma: PluginAPI, pageKey: string): Promise<PageNode> {
   return page;
 }
 
-/** The mode the frame resolves for each collection, inherited and default modes included. */
-async function resolvedModes(figma: PluginAPI, frame: FrameNode): Promise<ModeRef[]> {
+/**
+ * The mode a preview frame reads each collection in, inherited and default modes included.
+ * Figma's `resolvedVariableModes` lists only the collections the frame's layers bind or alias
+ * into, as a real file showed on 2026-10-21 (rule 11 in `fake-figma.ts`), so a Badge preview
+ * that pins `Fuse density` resolves no density mode. A collection the frame or its page pins
+ * and the resolved modes leave out takes the nearest pin, which is the mode the frame would
+ * resolve. A collection nothing pins or binds, such as `Fuse primitives`, stays out.
+ */
+async function resolvedModes(figma: PluginAPI, page: PageNode, frame: FrameNode): Promise<ModeRef[]> {
+  const modeIds = {
+    ...page.explicitVariableModes,
+    ...frame.explicitVariableModes,
+    ...frame.resolvedVariableModes,
+  };
   const modes: ModeRef[] = [];
-  for (const [collectionId, modeId] of Object.entries(frame.resolvedVariableModes)) {
+  for (const [collectionId, modeId] of Object.entries(modeIds)) {
     const collection = await figma.variables.getVariableCollectionByIdAsync(collectionId);
     const mode = collection?.modes.find((candidate) => candidate.modeId === modeId);
     if (collection !== null && mode !== undefined) {
@@ -126,19 +138,23 @@ export async function exportSnapshots(
   pageKeys: readonly string[],
   progress: SnapshotProgress
 ): Promise<KitSnapshot> {
-  const frames: { readonly frame: FrameNode; readonly instances: InstanceNode[] }[] = [];
+  const frames: {
+    readonly page: PageNode;
+    readonly frame: FrameNode;
+    readonly instances: InstanceNode[];
+  }[] = [];
   for (const pageKey of pageKeys) {
     const page = await kitPage(figma, pageKey);
     for (const node of page.children) {
       if (isFrame(node) && keyOf(node).startsWith(PREVIEW_PREFIX)) {
-        frames.push({ frame: node, instances: instancesOf(node, keyOf(node)) });
+        frames.push({ page, frame: node, instances: instancesOf(node, keyOf(node)) });
       }
     }
   }
   const total = frames.reduce((sum, { instances }) => sum + instances.length, 0);
   let done = 0;
   const previews: PreviewSnapshot[] = [];
-  for (const { frame, instances: found } of frames) {
+  for (const { page, frame, instances: found } of frames) {
     const key = keyOf(frame);
     const instances: InstanceSnapshot[] = [];
     for (const instance of found) {
@@ -149,7 +165,7 @@ export async function exportSnapshots(
       done += 1;
       progress(done, total);
     }
-    previews.push({ key, name: frame.name, modes: await resolvedModes(figma, frame), instances });
+    previews.push({ key, name: frame.name, modes: await resolvedModes(figma, page, frame), instances });
     await yieldToFigma();
   }
   return {

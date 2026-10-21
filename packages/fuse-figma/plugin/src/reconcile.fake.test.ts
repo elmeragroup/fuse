@@ -397,6 +397,41 @@ describe("Apply on a synced file without the kit pages", () => {
     expect(first?.instances[70]?.variant).toBe("icon-button/variant=default,size=icon,state=rest");
   });
 
+  it("exports the density a Badge or Kbd preview pins, though none of their layers binds density", async () => {
+    const snapshot = await exportSnapshots(file.figma, [BADGE_PAGE, KBD_PAGE], () => undefined);
+    // The collections the real file's first Badge preview resolved on 2026-10-21 (rule 11): no
+    // density, which the preview pins and no Badge layer binds.
+    const names = new Map(
+      (await file.figma.variables.getLocalVariableCollectionsAsync()).map((collection) => [
+        collection.id,
+        collection.name,
+      ])
+    );
+    const [badgePreview] = (await kitPage(file, BADGE_PAGE)).children.filter(
+      (node): node is FrameNode => node.type === "FRAME"
+    );
+    expect(
+      new Set(Object.keys(badgePreview?.resolvedVariableModes ?? {}).map((id) => names.get(id)))
+    ).toEqual(new Set(["Fuse brand", "Fuse segment", "Fuse variant", "Fuse tokens"]));
+    const pins = (tokens: string, variant: string) => [
+      { collection: "Fuse brand", mode: "Fjordkraft" },
+      { collection: "Fuse density", mode: "Auto" },
+      { collection: "Fuse segment", mode: "Private" },
+      { collection: "Fuse tokens", mode: tokens },
+      { collection: "Fuse variant", mode: variant },
+    ];
+    const themes = [
+      pins("Light", "Internal"),
+      pins("Dark", "Internal"),
+      pins("Light", "External"),
+      pins("Dark", "External"),
+    ];
+    expect(snapshot.previews.map((preview) => [preview.name, preview.modes])).toEqual([
+      ...BADGE_PREVIEWS.map((name, index) => [name, themes[index]]),
+      ...KBD_PREVIEWS.map((name, index) => [name, themes[index]]),
+    ]);
+  });
+
   it("writes nothing on a second Apply but showing the page", async () => {
     const before = file.writes.length;
     expect((await reconcileKit(file.figma, kit, true)).changes).toEqual([]);
