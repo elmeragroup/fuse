@@ -62,6 +62,14 @@ export type SliderProps<Value extends SliderValue = number> = {
    * `value`, with each element widened to `number`. A native form reset does not call it.
    */
   onChange?: (value: ReportedValue<Value>) => void;
+  /**
+   * Called with the final value when the user finishes a change. It fires once when a thumb
+   * drag or a track press ends, if the press moved the value at any point, even when the value
+   * ends where it started. It also fires on each key press that changes the value. A range
+   * reports the same shape as `onChange`. It does not fire while a thumb drags, or for a press
+   * that never moved the value.
+   */
+  onValueCommitted?: (value: ReportedValue<Value>) => void;
   /** Lower bound, forwarded as base-ui `min`. Defaults to 0. */
   minValue?: number;
   /** Upper bound, forwarded as base-ui `max`. Defaults to 100. */
@@ -149,6 +157,7 @@ export function Slider<Value extends SliderValue = number>({
   value,
   defaultValue,
   onChange,
+  onValueCommitted,
   minValue,
   maxValue,
   step,
@@ -210,6 +219,8 @@ export function Slider<Value extends SliderValue = number>({
         // SAFETY: base-ui reports the value in the shape it was given, and the reported type
         // only widens that shape's elements to `number`.
         onValueChange={(next) => onChange?.(next as ReportedValue<Value>)}
+        // SAFETY: base-ui commits the same shape it reports to `onValueChange`.
+        onValueCommitted={(next) => onValueCommitted?.(next as ReportedValue<Value>)}
         className={cn(frameSlots.content(), slots.root())}
         {...definedProps({
           value: asSliderValue(value),

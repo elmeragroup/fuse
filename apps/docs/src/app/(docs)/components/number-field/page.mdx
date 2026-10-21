@@ -4,6 +4,7 @@ lede: >
 ---
 
 import { NumberFieldBasic } from "./demos/number-field-basic";
+import { NumberFieldCommit } from "./demos/number-field-commit";
 import { NumberFieldDenomination } from "./demos/number-field-denomination";
 import { NumberFieldFormat } from "./demos/number-field-format";
 import { NumberFieldError } from "./demos/number-field-error";
@@ -38,6 +39,19 @@ export const metadata = componentMetadata("number-field");
 
 <Demo slug="number-field" id="uncontrolled" title="Uncontrolled" file="number-field-uncontrolled.tsx">
   <NumberFieldUncontrolled />
+</Demo>
+
+<Prose>
+
+`onChange` reports the value on every typed character. `onValueCommitted` reports it once the
+user finishes a change. That happens when the input blurs after typing, when a stepper press
+ends, and on each arrow, Home or End key press. Save or fetch from `onValueCommitted` to act
+once per change.
+
+</Prose>
+
+<Demo slug="number-field" id="commit" title="Commit" file="number-field-commit.tsx">
+  <NumberFieldCommit />
 </Demo>
 
 <ApiReference slug="number-field" />

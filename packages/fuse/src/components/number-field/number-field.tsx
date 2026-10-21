@@ -54,6 +54,12 @@ export type NumberFieldProps = {
    * (`onChange?.(next ?? NaN)`).
    */
   onChange?: (value: number) => void;
+  /**
+   * Called once with the numeric value when the user finishes a change: when the input blurs
+   * after typing, when a stepper press ends, and on each arrow, Home or End key press. It does
+   * not fire on each typed character, and Enter does not commit. A cleared input reports `NaN`.
+   */
+  onValueCommitted?: (value: number) => void;
   /** Lower bound, forwarded as base-ui `min`. */
   minValue?: number;
   /** Upper bound, forwarded as base-ui `max`. */
@@ -114,6 +120,7 @@ export function NumberField({
   value,
   defaultValue,
   onChange,
+  onValueCommitted,
   minValue,
   maxValue,
   step,
@@ -151,6 +158,7 @@ export function NumberField({
         value={controlledValue}
         defaultValue={defaultValue}
         onValueChange={(next) => onChange?.(next ?? NaN)}
+        onValueCommitted={(next) => onValueCommitted?.(next ?? NaN)}
         min={minValue}
         max={maxValue}
         // base-ui defaults `step` to 1 and puts it on the hidden validation input, so with `min`

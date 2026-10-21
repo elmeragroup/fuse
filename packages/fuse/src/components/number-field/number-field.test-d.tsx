@@ -9,6 +9,7 @@ test("NumberFieldProps is the closed composite face", () => {
   expectTypeOf<NumberFieldProps["description"]>().toEqualTypeOf<string | undefined>();
   expectTypeOf<NumberFieldProps["errorMessage"]>().toEqualTypeOf<ReactNode | undefined>();
   expectTypeOf<NumberFieldProps["onChange"]>().toEqualTypeOf<((value: number) => void) | undefined>();
+  expectTypeOf<NumberFieldProps["onValueCommitted"]>().toEqualTypeOf<((value: number) => void) | undefined>();
   expectTypeOf<NumberFieldProps["value"]>().toEqualTypeOf<number | undefined>();
   expectTypeOf<NumberFieldProps["defaultValue"]>().toEqualTypeOf<number | undefined>();
   expectTypeOf<NumberFieldProps["minValue"]>().toEqualTypeOf<number | undefined>();

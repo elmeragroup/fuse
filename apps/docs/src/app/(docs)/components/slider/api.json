@@ -136,6 +136,15 @@
           "required": false
         },
         {
+          "name": "onValueCommitted",
+          "origin": "declared",
+          "type": "((value: ReportedValue<Value>) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called with the final value when the user finishes a change. It fires once when a thumb drag or a track press ends, if the press moved the value at any point, even when the value ends where it started. It also fires on each key press that changes the value. A range reports the same shape as `onChange`. It does not fire while a thumb drags, or for a press that never moved the value.",
+          "required": false
+        },
+        {
           "name": "orientation",
           "origin": "declared",
           "type": "\"horizontal\" | \"vertical\" | undefined",
