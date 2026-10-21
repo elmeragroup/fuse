@@ -44,7 +44,7 @@ function renderHosts(): void {
         <DateField label="Due date" />
         <button type="button">Before section</button>
         <Card.Root>
-          <Card.Section render={<button type="button" />}>Change plan</Card.Section>
+          <Card.SectionButton>Change plan</Card.SectionButton>
         </Card.Root>
       </UiProviders>
     )
@@ -86,7 +86,7 @@ describe("the focus ring in forced-colors mode", () => {
       ["input group", "Before group", inputGroupRoot, () => roleNamed("textbox", "Search")],
       // State target: React Aria reports focus through a render prop.
       ["date field group", "Before date field", () => roleNamed("group", "Due date"), none],
-      // Inset target: a stacked Card section drawn as a button.
+      // Self target drawn inset: a stacked Card section button.
       ["card section button", "Before section", () => roleNamed("button", "Change plan"), none],
     ] as const) {
       await tabInto(before);

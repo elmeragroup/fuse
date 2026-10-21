@@ -3,11 +3,18 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { settleTransitions } from "../../../test/assert-invalid-ring";
+import { ringLayers, settleTransitions } from "../../../test/assert-invalid-ring";
 import { RADIUS_LG } from "../../../test/inner-corner-specimens";
 import { cssVarColor, fkasExternal, px, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
+import { Dialog } from "../dialog";
 import { Card } from "./card";
+
+/** An element's four paddings in px, top, right, bottom, left. */
+function paddings(element: HTMLElement): readonly number[] {
+  const style = getComputedStyle(element);
+  return [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft].map(px);
+}
 
 /** An element's four border radii in px, top-left, top-right, bottom-right, bottom-left. */
 function corners(element: HTMLElement): readonly number[] {
@@ -124,7 +131,7 @@ describe("Card.Section", () => {
     expect(card.right - rect.right).toBe(1);
   });
 
-  it("centres the media column on a two-line section", () => {
+  it("centres the media column beside an unpadded Card.Content column on a two-line section", () => {
     renderThemed(
       <div style={{ width: 320 }}>
         <Card.Root>
@@ -132,10 +139,10 @@ describe("Card.Section", () => {
             <Card.SectionMedia>
               <svg role="img" aria-label="Home" viewBox="0 0 20 20" />
             </Card.SectionMedia>
-            <div role="group" aria-label="Lines">
+            <Card.Content role="group" aria-label="Lines">
               <p style={{ margin: 0 }}>12 Example Street</p>
               <p style={{ margin: 0 }}>1234 Sampletown</p>
-            </div>
+            </Card.Content>
           </Card.Section>
         </Card.Root>
       </div>
@@ -145,23 +152,98 @@ describe("Card.Section", () => {
       throw new Error("expected the Home icon");
     }
     const icon = svg.getBoundingClientRect();
-    const lines = roleNamed("group", "Lines").getBoundingClientRect();
+    const content = roleNamed("group", "Lines");
+    const lines = content.getBoundingClientRect();
     // The svg takes size-5, 20px, beside the content in the second column.
     expect(icon.width).toBe(20);
     expect(icon.right).toBeLessThan(lines.left);
     expect(Math.abs(icon.top + icon.height / 2 - (lines.top + lines.height / 2))).toBeLessThanOrEqual(0.5);
     expect(lines.height).toBeGreaterThan(icon.height);
+    // The section alone pads: the content column adds no tier of its own, so its box ends on the
+    // section's padding edge.
+    const section = roleNamed("group", "Address");
+    const [top, right, bottom] = paddings(section);
+    expect(right, "the section pads").toBeGreaterThan(0);
+    expect(paddings(content), "content padding").toEqual([0, 0, 0, 0]);
+    const box = section.getBoundingClientRect();
+    expect(lines.top).toBe(box.top + top);
+    expect(lines.right).toBe(box.right - right);
+    expect(lines.bottom).toBe(box.bottom - bottom);
   });
 
-  it("renders a button section as a full-width, start-aligned native button with a pointer and a hover fill", async () => {
+  it("forms the body under a Card.Header: a divider runs under the header and only the last section rounds", () => {
+    renderThemed(
+      <Card.Root role="group" aria-label="Order">
+        <Card.Header role="group" aria-label="Header">
+          <Card.Title>Your order</Card.Title>
+        </Card.Header>
+        <Card.Section role="group" aria-label="First">
+          First
+        </Card.Section>
+        <Card.Section role="group" aria-label="Last">
+          Last
+        </Card.Section>
+      </Card.Root>
+    );
+    const corner = RADIUS_LG.internal - 1;
+    const header = roleNamed("group", "Header");
+    const first = roleNamed("group", "First");
+    expect(px(getComputedStyle(first).borderTopWidth), "divider under the header").toBe(1);
+    expect(getComputedStyle(first).borderTopColor).toBe(cssVarColor(first, "--border"));
+    expect(corners(first), "first under a header").toEqual([0, 0, 0, 0]);
+    expect(corners(roleNamed("group", "Last")), "last").toEqual([0, 0, corner, corner]);
+    // The header keeps its tier on every side, and the first section starts right below it.
+    const pad = paddings(header)[0];
+    expect(pad).toBeGreaterThan(0);
+    expect(paddings(header)).toEqual([pad, pad, pad, pad]);
+    expect(first.getBoundingClientRect().top).toBe(header.getBoundingClientRect().bottom);
+  });
+
+  it("stays a static, unfilled surface under the pointer", async () => {
+    renderThemed(
+      <Card.Root>
+        <Card.Section role="group" aria-label="Static">
+          Moving out on 1 November.
+        </Card.Section>
+      </Card.Root>
+    );
+    const section = roleNamed("group", "Static");
+    expect(section.tagName).toBe("DIV");
+    await userEvent.hover(section);
+    settleTransitions(section);
+    expect(getComputedStyle(section).cursor).toBe("auto");
+    expect(getComputedStyle(section).backgroundColor).toBe("rgba(0, 0, 0, 0)");
+  });
+
+  it("hides a hidden Card.SectionMedia without preflight", () => {
+    renderThemed(
+      <Card.Root>
+        <Card.Section>
+          <Card.SectionMedia hidden>
+            <svg aria-hidden viewBox="0 0 20 20" />
+          </Card.SectionMedia>
+          <Card.Content>Text</Card.Content>
+        </Card.Section>
+      </Card.Root>
+    );
+    // DOM audit: hidden media has no accessible role, so it is found by its slot.
+    const media = document.querySelector('[data-slot="card-section-media"]');
+    if (!(media instanceof HTMLElement)) {
+      throw new Error("expected the section media");
+    }
+    expect(getComputedStyle(media).display).toBe("none");
+  });
+
+  it("renders Card.SectionButton as a full-width, start-aligned native button with a pointer and a hover fill", async () => {
     renderThemed(
       <Card.Root role="group" aria-label="Choice">
         <Card.Section>Summary</Card.Section>
-        <Card.Section render={<button type="button" />}>No thanks, continue without</Card.Section>
+        <Card.SectionButton>No thanks, continue without</Card.SectionButton>
       </Card.Root>
     );
     const button = roleNamed("button", "No thanks, continue without");
     expect(button.tagName).toBe("BUTTON");
+    expect(button.getAttribute("type")).toBe("button");
     const card = roleNamed("group", "Choice").getBoundingClientRect();
     expect(button.getBoundingClientRect().width).toBe(card.width - 2);
     const style = getComputedStyle(button);
@@ -176,10 +258,39 @@ describe("Card.Section", () => {
     expect(getComputedStyle(button).backgroundColor).toBe(cssVarColor(button, "--muted"));
   });
 
+  it("does not submit the form it sits in", async () => {
+    let submits = 0;
+    renderThemed(
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          submits += 1;
+        }}>
+        <Card.Root>
+          <Card.SectionButton>Change plan</Card.SectionButton>
+        </Card.Root>
+      </form>
+    );
+    await userEvent.click(roleNamed("button", "Change plan"));
+    expect(submits).toBe(0);
+  });
+
+  it("lets a consumer's type classes win over the inherited font", () => {
+    renderThemed(
+      <Card.Root>
+        <Card.SectionButton className="text-lg font-semibold">Change plan</Card.SectionButton>
+      </Card.Root>
+    );
+    // Tailwind's text-lg is 1.125rem on the 16px root, and font-semibold is 600.
+    const style = getComputedStyle(roleNamed("button", "Change plan"));
+    expect(style.fontSize).toBe("18px");
+    expect(style.fontWeight).toBe("600");
+  });
+
   it("keeps a disabled button section unfilled on hover, with the not-allowed cursor", async () => {
     renderThemed(
       <Card.Root>
-        <Card.Section render={<button type="button" disabled />}>Unavailable</Card.Section>
+        <Card.SectionButton disabled>Unavailable</Card.SectionButton>
       </Card.Root>
     );
     const button = roleNamed("button", "Unavailable");
@@ -195,7 +306,7 @@ describe("Card.Section", () => {
     renderThemed(
       <Card.Root>
         <Card.Section>Above</Card.Section>
-        <Card.Section render={<button type="button" />}>Change plan</Card.Section>
+        <Card.SectionButton>Change plan</Card.SectionButton>
         <Card.Section role="group" aria-label="Below">
           Below
         </Card.Section>
@@ -204,26 +315,50 @@ describe("Card.Section", () => {
     await userEvent.keyboard("{Tab}");
     const button = roleNamed("button", "Change plan");
     expect(document.activeElement).toBe(button);
-    // An inset 2px ring in --ring: a box shadow drawn inside the section's own border box on all
-    // four sides, which the next section, painted after it, does not reach.
-    const shadow = getComputedStyle(button).boxShadow;
-    const ring = cssVarColor(button, "--ring");
-    expect(shadow).toContain(`${ring} 0px 0px 0px 2px inset`);
+    // One inset 2px ring in --ring: drawn inside the section's own border box on all four sides,
+    // which the next section, painted after it, does not reach.
+    settleTransitions(button);
+    expect(ringLayers(button)).toEqual([
+      { spread: "2px", color: cssVarColor(button, "--ring"), inset: true },
+    ]);
     expect(button.getBoundingClientRect().bottom).toBeLessThanOrEqual(
       roleNamed("group", "Below").getBoundingClientRect().top
     );
   });
 
-  it("renders a link section as a native link", () => {
+  it("renders a link section as a native link with no button type", () => {
     renderThemed(
       <Card.Root>
-        <Card.Section render={<a href="#terms" />}>Read the terms</Card.Section>
+        <Card.SectionButton render={<a href="#terms" />}>Read the terms</Card.SectionButton>
       </Card.Root>
     );
     const link = roleNamed("link", "Read the terms");
     expect(link.getAttribute("href")).toBe("#terms");
+    expect(link.hasAttribute("type")).toBe(false);
     expect(getComputedStyle(link).cursor).toBe("pointer");
     expect(getComputedStyle(link).display).toBe("block");
     expect(getComputedStyle(link).textDecorationLine).toBe("none");
+  });
+
+  it("composes into a trigger as Button does, and still rounds as the card's last section", async () => {
+    renderThemed(
+      <Card.Root>
+        <Card.Section>Spot price</Card.Section>
+        <Dialog.Root>
+          <Dialog.Trigger render={<Card.SectionButton />}>Change plan</Dialog.Trigger>
+          <Dialog.Content showCloseButton={false}>
+            <Dialog.Title>Plans</Dialog.Title>
+          </Dialog.Content>
+        </Dialog.Root>
+      </Card.Root>
+    );
+    const trigger = roleNamed("button", "Change plan");
+    expect(trigger.getAttribute("type")).toBe("button");
+    expect(getComputedStyle(trigger).cursor).toBe("pointer");
+    const corner = RADIUS_LG.internal - 1;
+    expect(corners(trigger)).toEqual([0, 0, corner, corner]);
+    expect(px(getComputedStyle(trigger).borderTopWidth), "divider above").toBe(1);
+    await userEvent.click(trigger);
+    await expect.element(page.getByRole("dialog", { name: "Plans" })).toBeVisible();
   });
 });

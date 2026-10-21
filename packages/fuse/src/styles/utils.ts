@@ -9,8 +9,6 @@ import { tv } from "./tv";
  * `outline-hidden`, so forced-colors mode, which drops box-shadow, still draws an outline.
  *
  * - `self` paints on the element that matches `:focus-visible`.
- * - `inset` paints the same ring inside the element's own border box, for a part whose
- *   neighbours paint over its edges, such as a stacked `Card.Section` button.
  * - `within` paints on a group whose `data-focus-ring-control` descendant is focus-visible;
  *   its `control` slot cancels the control's own ring so the group paints once.
  * - `state` paints from React Aria's `isFocusVisible` render prop, for a non-focusable host.
@@ -27,9 +25,6 @@ export const focusRing = tv({
     target: {
       self: {
         root: "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden",
-      },
-      inset: {
-        root: "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden focus-visible:ring-inset",
       },
       within: {
         root: "has-[[data-focus-ring-control]:focus-visible]:ring-2 has-[[data-focus-ring-control]:focus-visible]:ring-ring has-[[data-focus-ring-control]:focus-visible]:outline-hidden",
@@ -66,12 +61,6 @@ export const focusRing = tv({
  * evaluated once per process rather than once per module.
  */
 export const selfFocusRingClass = focusRing({ target: "self" }).root();
-
-/**
- * The inset-target focus ring: the self ring drawn inside the element's border box, so the
- * sections around a stacked part cannot paint over it.
- */
-export const insetFocusRingClass = focusRing({ target: "inset" }).root();
 
 /**
  * The within-target focus ring root class, resolved once at module scope — the parent

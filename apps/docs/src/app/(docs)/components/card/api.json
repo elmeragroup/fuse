@@ -209,13 +209,23 @@
     },
     {
       "name": "Card.Section",
+      "rsc": "server",
+      "sourcePath": "packages/fuse/src/components/card/card.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": []
+    },
+    {
+      "name": "Card.SectionButton",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/card/card-section.tsx",
+      "sourcePath": "packages/fuse/src/components/card/card-section-button.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 280,
+      "forwardedCount": 290,
       "props": [
         {
           "name": "render",

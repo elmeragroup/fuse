@@ -5,13 +5,15 @@ import { publishShellBoundary } from "../corner-radius";
 // `corner-radius.ts`. Each constant pairs a part's rung or padding with the corner it publishes.
 
 /**
- * The Card root: `rounded-lg` behind a 1px border. It hands its direct `Card.Section` children the
- * corner they round with, its own less the border, as the private `--card-section-corner`. Every
- * section resets the property at lower specificity, so only a card's direct section holds a value,
- * as Frame does with `--frame-corner`.
+ * The Card root: `rounded-lg` behind a 1px border. It hands every direct child the corner a
+ * stacked section rounds with, its own less the border, as the private `--card-section-corner`,
+ * as Frame does with `--frame-corner`. It keys on no slot, because a `Card.SectionButton` a
+ * trigger renders carries the trigger's `data-slot`. Every section resets the property, and the
+ * root's child rule comes later in the sheet at the same specificity, so only a card's direct
+ * section holds a value and one nested deeper is square.
  */
 export const cardShellClass = cn(
-  "rounded-lg border [--shell-inner:max(0px,--theme(--radius-lg)-1px)] *:data-[slot=card-section]:[--card-section-corner:max(0px,--theme(--radius-lg)-1px)]",
+  "rounded-lg border [--shell-inner:max(0px,--theme(--radius-lg)-1px)] *:[--card-section-corner:max(0px,--theme(--radius-lg)-1px)]",
   publishShellBoundary
 );
 
@@ -72,9 +74,9 @@ export const checkboxCardContentShellClass = cn(
 );
 
 /**
- * A stacked `Card.Section`: it pads every side with the card's tier, `--card-pad`, and publishes
- * the same inner corner as the other sections. A 1px `--card-section-divider` line runs above every
- * section but the first. The first and last sections round their outer corners with the corner the
+ * A stacked `Card.Section` or `Card.SectionButton`: it pads every side with the card's tier,
+ * `--card-pad`, and publishes the same inner corner as the other sections. A 1px
+ * `--card-section-divider` line runs above every section but the first. The first and last sections round their outer corners with the corner the
  * card hands them, so a fill or a hover fill follows the card's corners. Both skip `hidden`
  * siblings, and middle sections stay square. Outside a card the section is square.
  */

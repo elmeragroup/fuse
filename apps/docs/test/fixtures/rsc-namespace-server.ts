@@ -139,7 +139,7 @@ function namespaceElements(): ReactElement[] {
       "Ellipsis",
     ]),
     ...renderNamespace("ButtonGroup", ButtonGroup, ["Root", "Separator", "Text"]),
-    ...renderNamespace("Card", Card, ["Section"], {
+    ...renderNamespace("Card", Card, ["SectionButton"], {
       server: [
         "Root",
         "Header",
@@ -149,6 +149,7 @@ function namespaceElements(): ReactElement[] {
         "Action",
         "Content",
         "Footer",
+        "Section",
         "SectionMedia",
       ],
     }),

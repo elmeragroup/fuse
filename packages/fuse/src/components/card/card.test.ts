@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { cn } from "../../styles/cn";
-import { cardDescriptionVariants, cardTitleVariants, cardVariants } from "./card-variants";
+import {
+  cardDescriptionVariants,
+  cardSectionVariants,
+  cardTitleVariants,
+  cardVariants,
+} from "./card-variants";
 
 const TITLE_SIZE_CLASS = {
   default: "text-base",
@@ -77,11 +82,20 @@ describe("cardVariants", () => {
     }
   });
 
-  it("pads a section with the card's tier, falling back to the medium tier, and draws its divider in the section divider role", () => {
-    const { cardSection, cardSectionMedia } = cardVariants();
-    expect(cardSection()).toContain("p-[var(--card-pad,var(--surface-pad-md))]");
-    expect(cardSection()).toContain("border-card-section-divider");
-    expect(cardSectionMedia()).toContain("[&>svg]:size-5");
+  it.each(["section", "button"] as const)(
+    "pads a %s with the card's tier, falling back to the medium tier, and draws its divider in the section divider role",
+    (slot) => {
+      const resolved = cardSectionVariants()[slot]();
+      expect(resolved).toContain("p-[var(--card-pad,var(--surface-pad-md))]");
+      expect(resolved).toContain("border-card-section-divider");
+    }
+  );
+
+  it("keeps the static section free of interactive classes", () => {
+    const { section } = cardSectionVariants();
+    for (const token of ["cursor-", "hover:", "focus-visible:", "disabled:"]) {
+      expect(section(), token).not.toContain(token);
+    }
   });
 
   it("carries no destructive, raw palette, or dark classes", () => {
@@ -95,8 +109,9 @@ describe("cardVariants", () => {
       slots.cardAction(),
       slots.cardContent(),
       slots.cardFooter(),
-      slots.cardSection(),
-      slots.cardSectionMedia(),
+      cardSectionVariants().section(),
+      cardSectionVariants().button(),
+      cardSectionVariants().media(),
     ].join(" ");
     expect(resolved).not.toContain("dark:");
     expect(resolved).not.toContain("destructive");
