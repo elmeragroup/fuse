@@ -400,10 +400,14 @@ describe("DataTableFilter editors", () => {
       initial: [{ id: "amount", value: { kind: "number", operator: "isBetween", values: [100, 500] } }],
     });
     await userEvent.click(roleNamed("button", "100–500"));
+    const dialog = roleNamed("dialog", "Amount");
     const maximum = roleNamed("textbox", "Maximum");
     await userEvent.fill(maximum, "900");
-    await userEvent.keyboard("{Tab}");
+    // Maximum is the editor's last control, so Tab would leave the popover and close it. Shift+Tab
+    // blurs Maximum onto Minimum and keeps the popover open for the steps that follow.
+    await userEvent.keyboard("{Shift>}{Tab}{/Shift}");
     await expect.poll(visibleOrders).toBe("1 2 5 6");
+    expect(dialog.hasAttribute("data-open")).toBe(true);
 
     const minimum = roleNamed("textbox", "Minimum");
     await userEvent.fill(minimum, "950");
@@ -411,11 +415,15 @@ describe("DataTableFilter editors", () => {
     await expect.poll(() => page.getByText("The minimum is above the maximum.").query()).not.toBeNull();
     // The last valid range stays applied.
     expect(visibleOrders()).toBe("1 2 5 6");
+    expect(dialog.hasAttribute("data-open")).toBe(true);
 
     await userEvent.fill(minimum, "300");
     await userEvent.keyboard("{Enter}");
     await expect.poll(() => page.getByRole("dialog").query()).toBeNull();
-    await expect.poll(visibleOrders).toBe("2 5 6");
+    expect(columnFilters()).toEqual([
+      { id: "amount", value: { kind: "number", operator: "isBetween", values: [300, 900] } },
+    ]);
+    expect(visibleOrders()).toBe("2 5 6");
   });
 
   it("commits a slider step from the keyboard", async () => {
@@ -461,6 +469,8 @@ describe("DataTableFilter editors", () => {
     // Tab steps through a native date input's own day, month and year fields, so the test blurs it.
     to.element().blur();
     await expect.poll(visibleOrders).toBe("1 2 3");
+    // The blur leaves the popover open, so the preset press below lands in a live editor.
+    expect(roleNamed("dialog", "Created").hasAttribute("data-open")).toBe(true);
 
     await userEvent.click(roleNamed("button", "Today"));
     await expect.poll(() => page.getByRole("dialog").query()).toBeNull();
