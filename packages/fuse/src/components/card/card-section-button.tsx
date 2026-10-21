@@ -26,13 +26,10 @@ export type CardSectionButtonProps = useRender.ComponentProps<"button">;
 export function CardSectionButton({ className, render, ...props }: CardSectionButtonProps): ReactElement {
   return useRender({
     defaultTagName: "button",
-    props: mergeProps<"button">(
-      {
-        "data-slot": "card-section-button",
-        className: cn(cardSectionVariants().button(), className),
-      },
-      props
-    ),
+    props: {
+      "data-slot": "card-section-button",
+      ...mergeProps<"button">({ className: cn(cardSectionVariants().button(), className) }, props),
+    },
     render,
   });
 }

@@ -11,9 +11,9 @@ import { Dialog } from "../dialog";
 import { Card } from "./card";
 
 /** An element's four paddings in px, top, right, bottom, left. */
-function paddings(element: HTMLElement): readonly number[] {
+function paddings(element: HTMLElement): readonly [number, number, number, number] {
   const style = getComputedStyle(element);
-  return [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft].map(px);
+  return [px(style.paddingTop), px(style.paddingRight), px(style.paddingBottom), px(style.paddingLeft)];
 }
 
 /** An element's four border radii in px, top-left, top-right, bottom-right, bottom-left. */
