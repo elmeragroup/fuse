@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   evaluateNumber,
+  evaluatePercentage,
   makeVariableIndex,
   readColor,
   readNumber,
@@ -120,6 +121,23 @@ describe("readNumber over a percentage", () => {
       expect(readNumber(value, index)).toBeUndefined();
     }
   );
+});
+
+// Oracle: CSS Values 4. `calc(1 / 2 * 100%)`, which `top-1/2` compiles to, is half the containing
+// block, and multiplying it by -1 negates the share. A sum with a length, such as
+// `calc(-100% + 0.5px)`, is no share of the block, though its numbers add up to -0.5.
+describe("evaluatePercentage", () => {
+  it.each([
+    ["50%", 0.5],
+    ["calc(1 / 2 * 100%)", 0.5],
+    ["calc(calc(1 / 2 * 100%) * -1)", -0.5],
+  ])("reads %s as %d", (value, share) => {
+    expect(evaluatePercentage(value)).toBe(share);
+  });
+
+  it.each(["calc(-100% + 0.5px)", "8px", "0.5"])("refuses %s", (value) => {
+    expect(evaluatePercentage(value)).toBeUndefined();
+  });
 });
 
 describe("readColor", () => {

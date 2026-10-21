@@ -5,10 +5,13 @@
  * compare the wrong box. A radio renders inside its `RadioGroup`, so its root is not at the top.
  *
  * Unit under test: each kit definition's attribute conditions, the cells where its state table
- * holds each variant of `ATTRIBUTE_VARIANTS`, and the icon slots the root and each part the cell
- * renders list in `iconsFor`. Oracle: the static markup the real Fuse component renders for every
- * preview cell, through the definition's compare renderer. A condition must hold in a cell exactly
- * when the measured element carries the attribute its variant selects, and the slots must match
+ * holds each variant of `ATTRIBUTE_VARIANTS`, the parts each cell shows, and the icon slots the
+ * root and each part the cell renders list in `iconsFor`. Oracle: the static markup the real Fuse
+ * component renders for every preview cell, through the definition's compare renderer. A
+ * condition must hold in a cell exactly when the measured element carries the attribute its
+ * variant selects. The parts must match the measured element's descendants that carry a part's
+ * `data-slot`, each below its parent part, and a part with no `data-slot` must be the one child
+ * element of its parent part. The slots must match
  * the measured element's `<svg>` descendants in order, each under the part that lists it, as a
  * child of that part or nested deeper, and with its `data-icon`. The pseudo-class
  * variants, `enabled-hover:` and `focus-visible:`, stay out, since static markup cannot show
@@ -116,6 +119,52 @@ function boxNames(box: BoxDefinition, name: string): readonly string[] {
   return [name, ...(box.parts ?? []).flatMap((part) => boxNames(part, part.slot ?? part.key))];
 }
 
+/** How a part path names a part with no `data-slot`, which the markup can only find by place. */
+const UNNAMED = "(no data-slot)";
+
+/**
+ * The path of each part a cell renders below a box, such as
+ * `/radio-group-indicator/(no data-slot)`, each part named by its `data-slot`.
+ */
+function slotParts(box: BoxDefinition, path: string, cell: Cell): readonly string[] {
+  return (box.parts ?? [])
+    .filter((part) => part.shownIn(cell))
+    .flatMap((part) => {
+      const partPath = `${path}/${part.slot ?? UNNAMED}`;
+      return [partPath, ...slotParts(part, partPath, cell)];
+    });
+}
+
+/**
+ * The path of each part the markup renders inside the measured element. An element whose
+ * `data-slot` names a box of the definition is a part, below its nearest such ancestor. An element
+ * with no `data-slot` is a part when it is the one child element of a part and not an `<svg>`,
+ * which an icon slot checks. That is where Radio's dot sits, alone in the indicator.
+ */
+function markupParts(
+  elements: readonly MarkupElement[],
+  measured: number,
+  slots: ReadonlySet<string>
+): readonly string[] {
+  const paths = new Map<number, string>([[measured, ""]]);
+  for (const [index, element] of elements.entries()) {
+    const slot = element.attributes.get("data-slot");
+    const owner = ownerOf(elements, index, slots);
+    const ownerPath = owner === undefined ? undefined : paths.get(owner.index);
+    if (slot !== undefined && slots.has(slot) && ownerPath !== undefined) {
+      paths.set(index, `${ownerPath}/${slot}`);
+    }
+  }
+  const unnamed = [...paths].flatMap(([index, path]) => {
+    const children = elements.filter((element) => element.parent === index);
+    const [only] = children;
+    return children.length === 1 && only?.name !== "svg" && only?.attributes.get("data-slot") === undefined
+      ? [`${path}/${UNNAMED}`]
+      : [];
+  });
+  return [...[...paths.values()].filter((path) => path !== ""), ...unnamed].toSorted();
+}
+
 /**
  * The icons a cell places in a box and the parts it renders below it, in DOM order: a part's
  * icons sit inside it, before the box's own.
@@ -153,7 +202,7 @@ describe("each kit definition against the markup of its component", () => {
     }
   );
 
-  it("renders one measured element per cell, holds each attribute condition exactly where it carries it, and places its icons", async () => {
+  it("renders one measured element per cell, holds each attribute condition exactly where it carries it, and places its parts and icons", async () => {
     const renderers = await loadRenderers();
     const checked = KIT.flatMap((entry) => {
       const renderer = renderers.get(entry.definition.key);
@@ -181,6 +230,9 @@ describe("each kit definition against the markup of its component", () => {
           }
           expect(slotIcons(definition, definition.slot, cell), key).toEqual(
             markupIcons(elements, measured, new Set(boxNames(definition, definition.slot)))
+          );
+          expect(slotParts(definition, "", cell).toSorted(), `${key}: parts`).toEqual(
+            markupParts(elements, measured, new Set(boxNames(definition, definition.slot)))
           );
         }
       }

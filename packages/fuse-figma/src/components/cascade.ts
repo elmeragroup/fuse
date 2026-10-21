@@ -430,6 +430,17 @@ export class LayerStyle {
   }
 
   /**
+   * The computed value with Tailwind's variables substituted, without recording a read, for a
+   * mapping that decides from several properties whether to read any of them.
+   */
+  resolved(property: string): string | undefined {
+    const entry = this.#layer.style.get(property);
+    return entry === undefined
+      ? undefined
+      : substitute(this.#layer, this.#ledger.scope.context, entry.value, new Set());
+  }
+
+  /**
    * Note what became of a declaration the layer sets itself, used without reading through it.
    * A read of the declaration anywhere in the cell takes precedence.
    */

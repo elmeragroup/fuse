@@ -11,13 +11,14 @@ import { useCheckedResetSync } from "../../hooks/use-checked-reset-sync";
 import { SpinnerGap } from "../../icons/generated/spinner-gap";
 import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
-import { dataStateFaceClass } from "../../styles/state-face";
-import { selfFocusRingClass } from "../../styles/utils";
+import { mergeClassName } from "../../styles/merge-class-name";
 import { FieldItem } from "../field/field";
 import { FieldFrame } from "../field/field-frame";
 import { SelectionGroupLayout, SelectionItemGroup } from "../selection-item/selection-item";
 import { selectionGroupOrientationVariants } from "../selection-item/selection-item-variants";
-import { radioIconButtonVariants } from "./radio-group-variants";
+import { radioIconButtonVariants, radioVariants } from "./radio-group-variants";
+
+const slots = radioVariants();
 
 /**
  * Unlabeled 16px radio over the base-ui primitive. Client component, because base-ui
@@ -37,26 +38,10 @@ export function RadioGroupItem({
       inputRef={syncedInputRef}
       data-slot="radio-group-item"
       value={value}
-      className={(state) =>
-        cn(
-          // The root is a <span>, which never matches `:disabled`, so the state face keys off
-          // Base UI's `data-disabled` and `data-invalid` attributes, plus a consumer's
-          // `aria-invalid`. A checked invalid radio keeps its primary border beside the ring.
-          // The unchecked edge is the circle's only boundary, so it takes `muted-foreground`, as
-          // Checkbox does.
-          // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; ring comes from the shared adapter
-          "group/radio-group-item peer relative flex aspect-square size-4 shrink-0 rounded-full border border-muted-foreground transition-[color,box-shadow] outline-none after:absolute after:-inset-x-3 after:-inset-y-2 after:content-[''] data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground",
-          selfFocusRingClass,
-          dataStateFaceClass,
-          "aria-invalid:aria-checked:border-primary data-invalid:aria-checked:border-primary",
-          className instanceof Function ? className(state) : className
-        )
-      }
+      className={mergeClassName(className, slots.root())}
       {...definedProps(props)}>
-      <RadioPrimitive.Indicator
-        data-slot="radio-group-indicator"
-        className="flex size-4 items-center justify-center">
-        <span className="absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary-foreground" />
+      <RadioPrimitive.Indicator data-slot="radio-group-indicator" className={slots.indicator()}>
+        <span className={slots.dot()} />
       </RadioPrimitive.Indicator>
     </RadioPrimitive.Root>
   );

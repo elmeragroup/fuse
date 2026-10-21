@@ -590,3 +590,100 @@ describe("a marker class", () => {
     }
   );
 });
+
+// Unit under test: `buildComponentSet` on a root with `rounded-full`, which Tailwind compiles to
+// `border-radius: calc(infinity * 1px)`. Oracle: CSS Backgrounds 3, which scales down corner radii
+// whose sum exceeds a side, so any radius above half the shorter side draws as that half: 8px on
+// a 16px circle, 4px on an 8px one. A box that hugs a side has no length to halve before layout.
+describe("a pill corner", () => {
+  async function build(classes: string) {
+    const { componentSet, coverage } = buildComponentSet(
+      { ...CHIP, classesFor: () => classes },
+      { ...context, compiled: await compileUtilities(classes.split(" ")) }
+    );
+    return {
+      corner: componentSet.variants[0]?.root.cornerRadius,
+      rows: coverage
+        .filter((row) => row.className === "rounded-full")
+        .map((row) => [row.outcome, row.detail]),
+    };
+  }
+
+  it.each([
+    ["size-[16px]", 8],
+    ["size-[8px]", 4],
+    ["w-[24px] h-[10px]", 5],
+  ])("reads as half the shorter side of a %s box", async (size, radius) => {
+    expect(await build(`${size} rounded-full`)).toEqual({
+      corner: { kind: "literal", value: radius },
+      rows: [["literal", `${radius}px, half the shorter side, which CSS draws for any larger radius`]],
+    });
+  });
+
+  it("is unmapped on a box that hugs a side", async () => {
+    const { rows } = await build("h-[16px] rounded-full");
+    expect(rows).toEqual([["unmapped", expect.any(String)]]);
+  });
+});
+
+// Unit under test: `buildComponentSet` on a root with `aspect-square`. Oracle: CSS Sizing 4, under
+// which `aspect-ratio` sizes a box only through a side it leaves automatic. With both sides fixed
+// the ratio changes nothing, and with one side hugging it would size that side, which a Figma
+// frame cannot follow.
+describe("an aspect ratio", () => {
+  it.each([
+    ["size-[16px] aspect-square", "dropped"],
+    ["h-[16px] aspect-square", "unmapped"],
+  ])("on %s is %s", async (classes, outcome) => {
+    const { coverage } = buildComponentSet(
+      { ...CHIP, classesFor: () => classes },
+      { ...context, compiled: await compileUtilities(classes.split(" ")) }
+    );
+    expect(coverage.filter((row) => row.className === "aspect-square").map((row) => row.outcome)).toEqual([
+      outcome,
+    ]);
+  });
+});
+
+// Unit under test: `buildComponentSet` on a part positioned by `absolute top-1/2 left-1/2
+// -translate-x-1/2 -translate-y-1/2`. Oracle: CSS. The offsets put the part's corner at the center
+// of its containing block, and the translate moves it back by half its own size, so its center
+// lands on the block's center. A parent that centers its one layer on both axes draws the same
+// place in auto layout. A parent that packs it at the start does not, and an offset outside the
+// whole pattern moves the part in a way no auto layout field holds.
+describe("a part centered by absolute position", () => {
+  const CENTERED = "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-[8px]";
+  const PLACEMENT = new Set(["position", "top", "left", "translate"]);
+
+  async function build(parentClasses: string, partClasses: string) {
+    const { variant, coverage } = await buildNested(parentClasses, dot(partClasses));
+    return {
+      frame: frameOf(variant?.root),
+      rows: coverage
+        .filter((row) => row.part === "chip-dot" && PLACEMENT.has(row.property))
+        .map((row) => `${row.property}: ${row.outcome}`)
+        .toSorted(),
+    };
+  }
+
+  it("is a layer its parent's auto layout centers", async () => {
+    const { frame, rows } = await build("relative flex items-center justify-center size-[16px]", CENTERED);
+    expect(frame).toEqual(
+      expect.objectContaining({ width: { kind: "literal", value: 8 }, height: { kind: "literal", value: 8 } })
+    );
+    expect(rows).toEqual(["left: literal", "position: literal", "top: literal", "translate: literal"]);
+  });
+
+  it("stays unmapped in a parent that does not center it", async () => {
+    const { rows } = await build("relative flex items-start justify-center size-[16px]", CENTERED);
+    expect(rows).toEqual(["left: unmapped", "position: unmapped", "top: unmapped", "translate: unmapped"]);
+  });
+
+  it("leaves a lone top-1/2 unmapped", async () => {
+    const { rows } = await build(
+      "relative flex items-center justify-center size-[16px]",
+      "top-1/2 size-[8px]"
+    );
+    expect(rows).toEqual(["top: unmapped"]);
+  });
+});

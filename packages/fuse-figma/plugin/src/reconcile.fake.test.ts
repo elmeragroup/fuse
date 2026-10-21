@@ -1,7 +1,7 @@
 /**
  * `reconcileKit` end to end against the in-memory file in `fake-figma.ts`, with the kit
- * `buildKit()` writes from the Button, Toggle, Badge, Kbd, Radio icon button and Checkbox recipes
- * and the variables `fuseVariableSet()` syncs. The fake models the Figma rules the real runs in 2026-10 confirmed, and throws for any Plugin API
+ * `buildKit()` writes from the Button, Toggle, Badge, Kbd, Radio icon button, Radio and Checkbox
+ * recipes and the variables `fuseVariableSet()` syncs. The fake models the Figma rules the real runs in 2026-10 confirmed, and throws for any Plugin API
  * member it does not model. The oracles are hand-written: the change lines Plan must list, the
  * values the Button recipe and the theme catalog give, and the order the kit's axes declare.
  */
@@ -72,7 +72,7 @@ const CREATE_BADGE_PREVIEWS = BADGE_PREVIEWS.map((name) => `Badge: create the pr
 const PLACE_KBDS = "Kbd: place Kbd in a row and stack 4 previews below them";
 const KBD_PREVIEWS = PREVIEWS.map((name) => name.replace("Button", "Kbd"));
 const CREATE_KBD_PREVIEWS = KBD_PREVIEWS.map((name) => `Kbd: create the preview ${name}`);
-const PLACE_RADIOS = "Radio: place Radio icon button in a row and stack 4 previews below them";
+const PLACE_RADIOS = "Radio: place Radio icon button and Radio in a row and stack 4 previews below them";
 const RADIO_PREVIEWS = PREVIEWS.map((name) => name.replace("Button", "Radio"));
 const CREATE_RADIO_PREVIEWS = RADIO_PREVIEWS.map((name) => `Radio: create the preview ${name}`);
 const PLACE_CHECKBOXES = "Checkbox: place Checkbox in a row and stack 4 previews below them";
@@ -248,6 +248,7 @@ describe("Apply on a synced file without the kit pages", () => {
         "Badge: create the component set Badge with 57 variants",
         "Kbd: create the component set Kbd with 2 variants",
         "Radio: create the component set Radio icon button with 50 variants",
+        "Radio: create the component set Radio with 8 variants",
         "Checkbox: create the component set Checkbox with 12 variants",
         ...CREATE_PREVIEWS,
         PLACE,
@@ -302,6 +303,7 @@ describe("Apply on a synced file without the kit pages", () => {
     ]);
     expect((await kitPage(file, RADIO_PAGE)).children.map((node) => node.name)).toEqual([
       "Radio icon button",
+      "Radio",
       ...RADIO_PREVIEWS,
     ]);
     expect((await kitPage(file, CHECKBOX_PAGE)).children.map((node) => node.name)).toEqual([
@@ -385,11 +387,11 @@ describe("Apply on a synced file without the kit pages", () => {
         ["preview/kbd/internal-fkas-private-dark", KBD_PREVIEWS[1], 2],
         ["preview/kbd/external-fkas-private-light", KBD_PREVIEWS[2], 2],
         ["preview/kbd/external-fkas-private-dark", KBD_PREVIEWS[3], 2],
-        // Radio icon button: 5 sizes, off and on, in 5 states.
-        ["preview/radio/internal-fkas-private-light", RADIO_PREVIEWS[0], 50],
-        ["preview/radio/internal-fkas-private-dark", RADIO_PREVIEWS[1], 50],
-        ["preview/radio/external-fkas-private-light", RADIO_PREVIEWS[2], 50],
-        ["preview/radio/external-fkas-private-dark", RADIO_PREVIEWS[3], 50],
+        // Radio icon button: 5 sizes, off and on, in 5 states. Radio: off and on, in 4 states.
+        ["preview/radio/internal-fkas-private-light", RADIO_PREVIEWS[0], 58],
+        ["preview/radio/internal-fkas-private-dark", RADIO_PREVIEWS[1], 58],
+        ["preview/radio/external-fkas-private-light", RADIO_PREVIEWS[2], 58],
+        ["preview/radio/external-fkas-private-dark", RADIO_PREVIEWS[3], 58],
         // Checkbox: off, on and mixed, in 4 states.
         ["preview/checkbox/internal-fkas-private-light", CHECKBOX_PREVIEWS[0], 12],
         ["preview/checkbox/internal-fkas-private-dark", CHECKBOX_PREVIEWS[1], 12],
@@ -397,7 +399,7 @@ describe("Apply on a synced file without the kit pages", () => {
         ["preview/checkbox/external-fkas-private-dark", CHECKBOX_PREVIEWS[3], 12],
       ]
     );
-    expect(progress).toEqual([1180, 1180]);
+    expect(progress).toEqual([1212, 1212]);
     const [first] = snapshot.previews;
     expect(new Set(Object.keys(first ?? {}))).toEqual(new Set(["key", "name", "modes", "instances"]));
     expect(first?.modes).toEqual(
@@ -816,11 +818,12 @@ describe("a file the plugin laid out on one page", () => {
       "Fuse components: move Badge to the Badge page",
       "Fuse components: move Kbd to the Kbd page",
       "Fuse components: move Radio icon button to the Radio page",
+      "Fuse components: move Radio to the Radio page",
       "Fuse components: move Checkbox to the Checkbox page",
     ];
 
     expect(await reconcileKit(file.figma, kit, false)).toEqual({
-      changes: [...pagePhase, "Document: plan the rest of the kit again once the 9 moves land"],
+      changes: [...pagePhase, "Document: plan the rest of the kit again once the 10 moves land"],
       warnings: [],
     });
     const applied = await reconcileKit(file.figma, kit, true);
