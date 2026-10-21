@@ -33,7 +33,7 @@ Counts and the number slider's range come from TanStack faceting in client mode.
 
 `useDataTableFilter().actions.edit(fieldId)` opens a field's editor from anywhere inside the Root. A field with a chip opens its value popover. A text, number or date field without one opens the add menu on its editor. `onActiveFieldChange` reports the field whose submenu or editor opens, so a server can fetch its counts first.
 
-The date editor offers presets and two date inputs. Pass a function child to `DateEditor` to replace the inputs, for example with a React Aria calendar. On a viewport 40rem wide or more, the presets stand in a column beside the child, as in the date pickers, and the popup widens to fit. Keep the calendar in your app's own modules, so the bare entry never pulls in React Aria.
+The date editor offers presets and two date inputs. A field lists its presets by key, such as `presets: ["today", "yesterday", "thisWeek", "lastMonth"]`. A period preset covers the whole period, and the week starts on the locale's first day. Pass a function child to `DateEditor` to replace the inputs, for example with a React Aria calendar. On a viewport 40rem wide or more, the presets stand in a column beside the child, as in the date pickers, and the popup widens to fit. Keep the calendar in your app's own modules, so the bare entry never pulls in React Aria.
 
 </Prose>
 

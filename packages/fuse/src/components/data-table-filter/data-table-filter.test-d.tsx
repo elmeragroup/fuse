@@ -13,6 +13,7 @@ import { DataTableFilter, defineFilterFields } from "@elmeragroup/fuse/data-tabl
 import type {
   DataTableFilterRootProps,
   DateEditorState,
+  DatePresetKey,
   FilterFieldMap,
   FilterOperator,
   FilterValue,
@@ -69,6 +70,26 @@ test("a field must fit its column's type", () => {
   defineOrderFields({
     // @ts-expect-error -- a boolean column takes a boolean field
     rush: { kind: "text", label: "Rush" },
+  });
+});
+
+test("a date field picks its presets from the catalog's keys", () => {
+  expectTypeOf<DatePresetKey>().toEqualTypeOf<
+    | "today"
+    | "yesterday"
+    | "thisWeek"
+    | "lastWeek"
+    | "last7Days"
+    | "last30Days"
+    | "thisMonth"
+    | "lastMonth"
+    | "thisYear"
+    | "lastYear"
+  >();
+  defineOrderFields({ created: { kind: "date", label: "Created", presets: ["thisWeek", "lastMonth"] } });
+  defineOrderFields({
+    // @ts-expect-error -- "fortnight" is not a preset in the catalog
+    created: { kind: "date", label: "Created", presets: ["fortnight"] },
   });
 });
 

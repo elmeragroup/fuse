@@ -42,6 +42,7 @@ export type {
   DataTableFilterEditorProps,
   DataTableFilterValueContentProps,
 } from "./components/data-table-filter/data-table-filter-value-content";
+export type { DatePresetKey } from "./components/data-table-filter/date-presets";
 export { defineFilterFields } from "./components/data-table-filter/filter-fields";
 export type {
   BooleanFilterField,

@@ -25,6 +25,7 @@ import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { useLocale } from "../../intl/locale-context";
+import type { SupportedLocale } from "../../intl/locale-context";
 import { isThemeDevelopment } from "../../theme/validate-theme";
 import { DataTableFilterCompositionError } from "./data-table-filter-error";
 import type { DataTableFilterCompositionRule } from "./data-table-filter-error";
@@ -199,7 +200,7 @@ export type DataTableFilterInternals = {
   readonly meta: DataTableFilterContextValue["meta"] & {
     readonly menuHandle: MenuPrimitive.Handle<unknown>;
     readonly valueHandle: PopoverPrimitive.Handle<ValuePayload>;
-    readonly locale: string;
+    readonly locale: SupportedLocale;
     readonly format: (key: DataTableFilterStringKey, vars?: Record<string, string | number>) => string;
     /** The id the Trigger registers with the menu's handle. */
     readonly triggerId: string;

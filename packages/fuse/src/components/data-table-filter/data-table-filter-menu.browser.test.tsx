@@ -6,6 +6,7 @@
 import { createRef, useState } from "react";
 import type { ComponentProps } from "react";
 
+import type { ColumnFiltersState } from "@tanstack/react-table";
 import { afterEach, describe, expect, it, onTestFinished } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -875,6 +876,118 @@ describe("DataTableFilter in-place editor", () => {
     await expect.poll(() => lit("menuitem", "Amount")).toBe(true);
     await userEvent.keyboard("{Enter}");
     await expect.poll(step).toBe("editor");
+  });
+});
+
+describe("DataTableFilter date presets a field chooses", () => {
+  // Today is Monday 2026-10-12, the day order 3 was created. Orders 1 and 2 are earlier in
+  // October, 4 is from September, and 5 and 6 are a week later.
+  const CHOSEN: FilterFieldMap = {
+    ...FIELDS,
+    created: { kind: "date", label: "Created", presets: ["yesterday", "thisWeek", "lastWeek", "lastMonth"] },
+  };
+
+  /** The drilled date editor's preset names, in order, in its group of this name. */
+  function presetNames(group = "Quick ranges"): string[] {
+    return page
+      .elementLocator(roleNamed("group", group))
+      .getByRole("button")
+      .elements()
+      .map((button) => button.textContent);
+  }
+
+  /** Freezes today, renders the fields in en-US, and drills the add menu into Created. */
+  async function drillCreated(fields: FilterFieldMap): Promise<void> {
+    freezeToday();
+    renderOrders({ initial: [], fields });
+    await openMenu();
+    await userEvent.click(roleNamed("menuitem", "Created"));
+    await expect.poll(step).toBe("editor");
+  }
+
+  /** The `columnFilters` of one date filter on Created. */
+  function createdFilter(operator: "is" | "isBetween", values: readonly string[]): ColumnFiltersState {
+    return [{ id: "created", value: { kind: "date", operator, values } }];
+  }
+
+  it("lists a field's presets in its order, and writes This week from Sunday in en-US", async () => {
+    await drillCreated(CHOSEN);
+    expect(presetNames()).toEqual(["Yesterday", "This week", "Last week", "Last month"]);
+    await userEvent.click(roleNamed("button", "This week"));
+    await expect.poll(menuOpen).toBe(false);
+    const expected = createdFilter("isBetween", ["2026-10-11", "2026-10-17"]);
+    expect(columnFilters()).toEqual(expected);
+    expect(visibleOrders()).toBe("3");
+    expect(parseColumnFilters(columnFilters(), CHOSEN)).toEqual(expected);
+  });
+
+  it("writes This week from Monday in nb-NO", async () => {
+    freezeToday();
+    renderOrders({ initial: [], fields: CHOSEN }, "nb-NO");
+    await userEvent.click(roleNamed("button", "Filter"));
+    await expect.poll(() => focusIs("searchbox", "Søk i felt")).toBe(true);
+    await userEvent.click(roleNamed("menuitem", "Created"));
+    await expect.poll(() => focusIs("button", "I går")).toBe(true);
+    expect(presetNames("Hurtigvalg")).toEqual(["I går", "Denne uken", "Forrige uke", "Forrige måned"]);
+    await userEvent.click(roleNamed("button", "Denne uken"));
+    const expected = createdFilter("isBetween", ["2026-10-12", "2026-10-18"]);
+    await expect.poll(columnFilters).toEqual(expected);
+    expect(parseColumnFilters(columnFilters(), CHOSEN)).toEqual(expected);
+  });
+
+  it("writes This month as the whole month, days after today included", async () => {
+    await drillCreated(FIELDS);
+    await userEvent.click(roleNamed("button", "This month"));
+    await expect.poll(menuOpen).toBe(false);
+    const expected = createdFilter("isBetween", ["2026-10-01", "2026-10-31"]);
+    expect(columnFilters()).toEqual(expected);
+    expect(visibleOrders()).toBe("1 2 3 5 6");
+    expect(parseColumnFilters(columnFilters(), FIELDS)).toEqual(expected);
+  });
+
+  it("shows no presets for an empty list, and keeps the date inputs", async () => {
+    await drillCreated({ ...FIELDS, created: { kind: "date", label: "Created", presets: [] } });
+    expect(page.getByRole("group", { name: "Quick ranges" }).query()).toBeNull();
+    expect(page.getByLabelText("From", { exact: true }).query()).not.toBeNull();
+    expect(page.getByLabelText("To", { exact: true }).query()).not.toBeNull();
+  });
+
+  it("writes a one-day preset as is on a field without isBetween, and leaves out the others", async () => {
+    const fields: FilterFieldMap = {
+      ...FIELDS,
+      created: {
+        kind: "date",
+        label: "Created",
+        operators: ["is", "isBefore"],
+        presets: ["today", "yesterday", "lastWeek"],
+      },
+    };
+    await drillCreated(fields);
+    expect(presetNames()).toEqual(["Today", "Yesterday"]);
+    await userEvent.click(roleNamed("button", "Yesterday"));
+    await expect.poll(menuOpen).toBe(false);
+    // No order was created on Sunday 2026-10-11.
+    const expected = createdFilter("is", ["2026-10-11"]);
+    expect(columnFilters()).toEqual(expected);
+    expect(visibleOrders()).toBe("");
+    expect(parseColumnFilters(columnFilters(), fields)).toEqual(expected);
+  });
+
+  it("presses This month for a filter over the whole month", async () => {
+    freezeToday();
+    renderOrders({ initial: createdFilter("isBetween", ["2026-10-01", "2026-10-31"]) });
+    await userEvent.click(roleNamed("button", "Oct 1\u2009–\u200931, 2026"));
+    await expect.poll(() => page.getByRole("dialog", { name: "Created" }).query()).not.toBeNull();
+    expect(roleNamed("button", "This month").getAttribute("aria-pressed")).toBe("true");
+    expect(roleNamed("button", "Last 7 days").getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("shows a preset listed twice once, at its first place", async () => {
+    await drillCreated({
+      ...FIELDS,
+      created: { kind: "date", label: "Created", presets: ["today", "today", "yesterday"] },
+    });
+    expect(presetNames()).toEqual(["Today", "Yesterday"]);
   });
 });
 
