@@ -269,7 +269,36 @@ describe("DescriptionList", () => {
       }
     });
 
-    it("puts several terms in the term column with the details on the last one's row, and a later details under the first, each with its own rule at sm", async () => {
+    it("sizes a shrink-wrapped list's columns to its widest term and widest details across Items", async () => {
+      await page.viewport(1280, 720);
+      const widestTerm = "Customer number";
+      const widestDetails = "Storgata 1, 3611 Kongsberg";
+      renderThemed(
+        <div style={{ width: "fit-content" }}>
+          <DescriptionList.Content>
+            <DescriptionList.Item>
+              <DescriptionList.Term>{widestTerm}</DescriptionList.Term>
+              <DescriptionList.Details>1</DescriptionList.Details>
+            </DescriptionList.Item>
+            <DescriptionList.Item>
+              <DescriptionList.Term>Name</DescriptionList.Term>
+              <DescriptionList.Details>{widestDetails}</DescriptionList.Details>
+            </DescriptionList.Item>
+          </DescriptionList.Content>
+        </div>
+      );
+      const term = textNamed(widestTerm);
+      const details = textNamed(widestDetails);
+      // One grid's max-content: the widest term with its end padding beside the widest details.
+      const expected =
+        naturalWidth(widestTerm, term) +
+        px(getComputedStyle(term).paddingRight) +
+        naturalWidth(widestDetails, details);
+      expect(listOf(term).getBoundingClientRect().width).toBeCloseTo(expected, 0);
+      expect(boxOf("1").left).toBeCloseTo(details.getBoundingClientRect().left, 0);
+    });
+
+    it("puts several terms in the term column with the details on the last one's row, a later details under the first, and no rule inside an Item", async () => {
       await page.viewport(1280, 720);
       renderThemed(
         <DescriptionList.Content style={{ width: 800 }}>
@@ -287,15 +316,20 @@ describe("DescriptionList", () => {
       );
       expect(boxOf("Mobile").top).toBeGreaterThanOrEqual(boxOf("Phone").bottom - 1);
       expect(Math.abs(boxOf("+47 900 12 345").top - boxOf("Mobile").top)).toBeLessThan(2);
-      expect(px(getComputedStyle(textNamed("Mobile")).borderTopWidth)).toBeGreaterThan(0);
 
       const later = boxOf("Also billed as Nordmann Drift AS");
       expect(later.top).toBeGreaterThanOrEqual(boxOf("Kari Nordmann").bottom - 1);
       expect(later.left).toBeCloseTo(boxOf("Kari Nordmann").left, 0);
-      expect(
-        px(getComputedStyle(textNamed("Also billed as Nordmann Drift AS")).borderTopWidth)
-      ).toBeGreaterThan(0);
-      expect(px(getComputedStyle(textNamed("Kari Nordmann")).borderTopWidth)).toBe(0);
+      for (const name of [
+        "Phone",
+        "Mobile",
+        "+47 900 12 345",
+        "Kari Nordmann",
+        "Also billed as Nordmann Drift AS",
+      ]) {
+        expect(px(getComputedStyle(textNamed(name)).borderTopWidth), name).toBe(0);
+      }
+      expect(px(getComputedStyle(itemOf(textNamed("Name"))).borderTopWidth)).toBeGreaterThan(0);
     });
 
     it("stacks each details under its term below sm", async () => {
@@ -511,25 +545,26 @@ describe("DescriptionList", () => {
       }
     });
 
-    it.each(DENSITIES)("sets the label type and spaces Items by the small surface gap (%s)", (density) => {
-      stampDensity(density);
-      renderInlineRows([
-        ["Start date", "1 November 2026"],
-        ["Monthly amount", "399 kr/month"],
-      ]);
-      const expected = INLINE[density];
-      for (const name of ["Start date", "1 November 2026"]) {
-        const style = getComputedStyle(textNamed(name));
-        expect(px(style.fontSize), name).toBe(expected.text);
-        expect(px(style.lineHeight), name).toBe(expected.leading);
-        expect(px(style.paddingTop), name).toBe(0);
-        expect(px(style.paddingRight), name).toBe(0);
+    it.each(DENSITIES)(
+      "sets the label type, spaces Items by the small surface gap and a term from its details by the medium one (%s)",
+      (density) => {
+        stampDensity(density);
+        renderInlineRows([
+          ["Start date", "1 November 2026"],
+          ["Monthly amount", "399 kr/month"],
+        ]);
+        const expected = INLINE[density];
+        for (const name of ["Start date", "1 November 2026"]) {
+          const style = getComputedStyle(textNamed(name));
+          expect(px(style.fontSize), name).toBe(expected.text);
+          expect(px(style.lineHeight), name).toBe(expected.leading);
+          expect(px(style.paddingTop), name).toBe(0);
+          expect(px(style.paddingRight), name).toBe(0);
+        }
+        expect(boxOf("Monthly amount").top - boxOf("Start date").bottom).toBeCloseTo(expected.rowGap, 0);
+        expect(boxOf("1 November 2026").left - boxOf("Start date").right).toBeCloseTo(expected.columnGap, 0);
       }
-      expect(boxOf("Monthly amount").top - boxOf("Start date").bottom).toBeCloseTo(expected.rowGap, 0);
-      expect(boxOf("1 November 2026").left - boxOf("Start date").right).toBeGreaterThanOrEqual(
-        expected.columnGap - 0.5
-      );
-    });
+    );
 
     it.each(DENSITIES)("spaces consecutive inline lists by the large surface gap (%s)", (density) => {
       stampDensity(density);

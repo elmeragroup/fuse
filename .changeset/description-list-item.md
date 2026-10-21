@@ -13,8 +13,10 @@ of the term's line while the two fit, and a long term wraps beside it. A details
 beside the term's longest word moves under the term, at the end of the row, so an email address or a
 date stays on one line. Only a details wider than the row wraps, between words where it can. Override
 inline cells with a `[:where([data-layout=inline]>*)>&]:` class, which replaces
-`[:where([data-layout=inline])>&]:`.
+`[:where([data-layout=inline])>&]:`, and an inline Item's row with a `[:where([data-layout=inline])>&]:`
+class.
 
-A responsive list draws its rule above each Item but the first. A later details of one term now stays
-in the details column from `sm` up, and details no longer take the browser's start margin in hosts
-without a CSS reset.
+A responsive list draws its rules between Items only, so a rule no longer splits the terms or details
+of one group, and its Items share the list's columns through a subgrid. A later details of one term
+now stays in the details column from `sm` up, and details no longer take the browser's start margin in
+hosts without a CSS reset.

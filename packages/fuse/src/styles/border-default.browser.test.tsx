@@ -40,9 +40,8 @@ type BareBorder = {
 
 /**
  * The parts with a bare `border*` width. Card and the `card` Accordion item read `--card-border`
- * instead, which the card edge suite below covers. The first DescriptionList Item, and the first
- * Term and Details in an Item, drop their border, so the second ones are read; the last body row
- * drops its own, so the first is.
+ * instead, which the card edge suite below covers. The first DescriptionList Item drops its
+ * border, so the second is read; the last body row drops its own, so the first is.
  */
 const PARTS: readonly BareBorder[] = [
   {
@@ -52,8 +51,6 @@ const PARTS: readonly BareBorder[] = [
     side: "Top",
     token: "--border",
   },
-  { name: "DescriptionList Term", find: () => textNamed("Metering point"), side: "Top", token: "--border" },
-  { name: "DescriptionList Details", find: () => textNamed("7070575001"), side: "Top", token: "--border" },
   { name: "outline Badge", find: () => textNamed("Outline"), side: "Top", token: "--border" },
   { name: "Table row", find: () => roleNamed("row", "Row one"), side: "Bottom", token: "--border" },
   { name: "ButtonGroupText", find: () => textNamed("https://"), side: "Top", token: "--border" },
@@ -89,9 +86,7 @@ function BareBorderParts() {
           </DescriptionList.Item>
           <DescriptionList.Item>
             <DescriptionList.Term>Meter point</DescriptionList.Term>
-            <DescriptionList.Term>Metering point</DescriptionList.Term>
             <DescriptionList.Details>7070575000</DescriptionList.Details>
-            <DescriptionList.Details>7070575001</DescriptionList.Details>
           </DescriptionList.Item>
         </DescriptionList.Content>
       </DescriptionList.Root>

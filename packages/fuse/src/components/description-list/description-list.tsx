@@ -8,15 +8,16 @@ export type DescriptionListRootProps = ComponentProps<"div">;
 export type DescriptionListContentProps = ComponentProps<"dl"> & {
   /**
    * How each Item's terms and details sit. `responsive` stacks the details under the term on
-   * phones and sets them in two columns, with a rule between Items, from `sm` up. `inline` is
-   * for label/value rows in cards and summaries: each Item shares its own row between its term
-   * and details, whatever the other Items hold. The details sits at the end of the term's line
-   * while the two fit, and the term wraps beside it until its longest word would not fit; then
-   * the details moves under the term, end-aligned, and wraps only when it is wider than the row.
-   * Inline rows take the label type, have no rules and space with the small surface gap, and
+   * phones and sets them in two columns from `sm` up, with a rule between Items at every width.
+   * `inline` is for label/value rows in cards and summaries: each Item shares its own row between
+   * its term and details, whatever the other Items hold. The details sits at the end of the term's
+   * line while the two fit, and the term wraps beside it until its longest word would not fit;
+   * then the details moves under the term, end-aligned, and wraps only when it is wider than the
+   * row. Inline rows take the label type, have no rules and space with the small surface gap, and
    * the term is not muted. A colour class on a cell wins in both layouts. The inline cells'
-   * padding, rules, sizing and alignment come from the list, so override them with a
-   * `[:where([data-layout=inline]>*)>&]:` class or a CSS rule. Defaults to `responsive`.
+   * padding, sizing and alignment come from the list, so override them with a
+   * `[:where([data-layout=inline]>*)>&]:` class or a CSS rule, and an inline Item's row, wrap and
+   * gap with a `[:where([data-layout=inline])>&]:` class. Defaults to `responsive`.
    */
   layout?: "responsive" | "inline";
 };
@@ -46,11 +47,13 @@ function DescriptionListRoot(props: DescriptionListRootProps): ReactElement {
 // keep tailwind-variants out of this entry's size budget.
 
 /**
- * The responsive list: Items stack, each laying out its own columns. Both lists use one
- * `minmax(0,1fr)` column, so an unbroken word can't widen the Items past the list.
+ * The responsive list: one column on phones, then a term column capped at min(50%, 20rem) that
+ * every Item shares through a subgrid, so the list sizes its columns to its widest term and widest
+ * details, as one grid would. Both lists start from one `minmax(0,1fr)` column, so an unbroken word
+ * can't widen the Items past the list on a phone.
  */
 const responsiveContentClass = cn(
-  "text-base/6 sm:text-sm/6 grid grid-cols-1 [--description-list-details:initial] [--description-list-term:initial]"
+  "text-base/6 sm:grid-cols-[min(50%,calc(var(--spacing)*80))_auto] sm:text-sm/6 grid grid-cols-1 [--description-list-details:initial] [--description-list-term:initial]"
 );
 
 /**
@@ -79,9 +82,10 @@ function DescriptionListContent({
   );
 }
 
-// A responsive Item lays out its own columns from `sm` up: a term column of min(50%, 20rem), so
-// every Item's columns line up, and the details beside it. It draws the rule above itself unless it
-// is the first. An inline Item is a wrapping flex row. The term grows from zero but is never
+// A responsive Item spans the list's columns as a subgrid, so its term and details sit in the
+// list's shared columns, and draws the rule above itself unless it is the first. Only Items draw
+// rules, so the terms or details of one group are never split by one. An inline Item is
+// a wrapping flex row. The term grows from zero but is never
 // narrower than its longest word or wider than the row, so it wraps beside the details until that
 // word would not fit. Then the details, at its own width up to the row's, moves onto a line of its
 // own under the term. Earlier terms and later details of one Item take lines of their own, so its
@@ -91,7 +95,7 @@ function DescriptionListItem({ className, ...props }: DescriptionListItemProps):
     <div
       data-slot="description-list-item"
       className={cn(
-        "sm:grid-cols-[min(50%,calc(var(--spacing)*80))_auto] grid grid-cols-1 border-t first-of-type:border-none",
+        "col-span-full grid grid-cols-subgrid border-t first-of-type:border-none",
         "[:where([data-layout=inline])>&]:flex [:where([data-layout=inline])>&]:flex-wrap [:where([data-layout=inline])>&]:gap-x-(--surface-gap-md) [:where([data-layout=inline])>&]:border-none",
         className
       )}
@@ -105,8 +109,8 @@ function DescriptionListTerm({ className, ...props }: DescriptionListTermProps):
     <dt
       data-slot="description-list-term"
       className={cn(
-        "col-start-1 border-t py-(--row-py) pr-(--row-px) text-[color:var(--description-list-term,var(--muted-foreground))] first-of-type:border-none",
-        "[:where([data-layout=inline]>*)>&]:max-w-full [:where([data-layout=inline]>*)>&]:grow [:where([data-layout=inline]>*)>&]:basis-0 [:where([data-layout=inline]>*)>&]:border-none [:where([data-layout=inline]>*)>&]:p-0 [:where([data-layout=inline]>*)>&]:wrap-break-word [:where([data-layout=inline]>*)>&]:not-last-of-type:basis-full",
+        "col-start-1 py-(--row-py) pr-(--row-px) text-[color:var(--description-list-term,var(--muted-foreground))]",
+        "[:where([data-layout=inline]>*)>&]:max-w-full [:where([data-layout=inline]>*)>&]:grow [:where([data-layout=inline]>*)>&]:basis-0 [:where([data-layout=inline]>*)>&]:p-0 [:where([data-layout=inline]>*)>&]:wrap-break-word [:where([data-layout=inline]>*)>&]:not-last-of-type:basis-full",
         className
       )}
       {...props}
@@ -119,8 +123,8 @@ function DescriptionListDetails({ className, ...props }: DescriptionListDetailsP
     <dd
       data-slot="description-list-details"
       className={cn(
-        "sm:col-start-2 sm:border-t ms-0 py-(--row-py) text-[color:var(--description-list-details,var(--foreground))] first-of-type:border-none",
-        "[:where([data-layout=inline]>*)>&]:ms-auto [:where([data-layout=inline]>*)>&]:max-w-full [:where([data-layout=inline]>*)>&]:border-none [:where([data-layout=inline]>*)>&]:py-0 [:where([data-layout=inline]>*)>&]:text-end [:where([data-layout=inline]>*)>&]:wrap-break-word [:where([data-layout=inline]>*)>&]:not-first-of-type:basis-full",
+        "sm:col-start-2 ms-0 py-(--row-py) text-[color:var(--description-list-details,var(--foreground))]",
+        "[:where([data-layout=inline]>*)>&]:ms-auto [:where([data-layout=inline]>*)>&]:max-w-full [:where([data-layout=inline]>*)>&]:py-0 [:where([data-layout=inline]>*)>&]:text-end [:where([data-layout=inline]>*)>&]:wrap-break-word [:where([data-layout=inline]>*)>&]:not-first-of-type:basis-full",
         className
       )}
       {...props}

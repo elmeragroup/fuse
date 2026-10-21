@@ -29,8 +29,8 @@ export function DescriptionListInlineRows() {
             <DescriptionList.Details>Yes</DescriptionList.Details>
           </DescriptionList.Item>
           <DescriptionList.Item>
-            <DescriptionList.Term>Email</DescriptionList.Term>
-            <DescriptionList.Details>kari.nordmann.invoices@example.com</DescriptionList.Details>
+            <DescriptionList.Term>Invoice email</DescriptionList.Term>
+            <DescriptionList.Details>kari.nordmann@example.com</DescriptionList.Details>
           </DescriptionList.Item>
           <DescriptionList.Item>
             <DescriptionList.Term>Invoice</DescriptionList.Term>
