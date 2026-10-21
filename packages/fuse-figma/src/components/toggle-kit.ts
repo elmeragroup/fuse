@@ -125,7 +125,7 @@ export const TOGGLE: ComponentDefinition = {
   states: {},
   facts: FACTS,
   omittedStates: OMITTED_STATES,
-  label: { key: "label", name: "label", characters: "Toggle", textProperty: "Label" },
+  label: { key: "label", name: "label", characters: "Toggle", textProperty: "Label", shownIn: () => true },
   iconsFor: toggleIcons,
   swapProperties: swapProperties([START_ICON, END_ICON]),
 };

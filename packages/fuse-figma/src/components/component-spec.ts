@@ -105,13 +105,18 @@ export type ComponentDefinition = {
    * the recipe fails the gate.
    */
   readonly omittedStates: ReadonlySet<string>;
-  /** The text layer, or undefined for a part that shows only its icon. */
+  /**
+   * The text layer and the set's text property, or undefined for a part that shows only its
+   * icon.
+   */
   readonly label:
     | {
         readonly key: string;
         readonly name: string;
         readonly characters: string;
         readonly textProperty: string;
+        /** Whether a cell shows the label. A Kbd shows it in its text cell and not its icon cell. */
+        readonly shownIn: (cell: Cell) => boolean;
       }
     | undefined;
   /** The icons a cell renders, in DOM order. A start icon sits before the label. */
@@ -167,6 +172,8 @@ const NO_FIGMA_FORM = new Map([
   ["transition-duration", "Figma components do not animate"],
   ["flex-shrink", "the component lays out alone"],
   ["outline-style", "Figma has no outline, and focus draws the ring"],
+  // The plugin typings expose a text layer's `openTypeFeatures` as read-only, with no setter.
+  ["font-variant-numeric", "the plugin API can read a text layer's OpenType features but not set them"],
 ]);
 
 /** The Figma style of each Roboto weight a recipe reaches. */
@@ -627,12 +634,13 @@ function mapRoot(
     }
   }
   const children: ChildLayerSpec[] = [...start];
-  if (definition.label === undefined) {
+  const label = definition.label?.shownIn(cell) === true ? definition.label : undefined;
+  if (label === undefined) {
     for (const property of TEXT_PROPERTIES) {
-      root.mark(property, "dropped", "the part shows no text");
+      root.mark(property, "dropped", "the cell shows no text");
     }
   } else {
-    children.push(mapLabel(definition, definition.label, cell, root, context, textColor));
+    children.push(mapLabel(definition, label, cell, root, context, textColor));
   }
   children.push(...end);
 

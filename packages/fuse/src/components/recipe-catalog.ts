@@ -9,5 +9,6 @@
 
 export { badgeVariants } from "./badge/badge-variants";
 export { buttonVariants } from "./button/button-variants";
+export { kbdVariants } from "./kbd/kbd-variants";
 export { toggleVariants } from "./toggle/toggle-variants";
 export { BESPOKE_ICON_NAMES, PHOSPHOR_ICON_NAMES } from "../icons/roster";

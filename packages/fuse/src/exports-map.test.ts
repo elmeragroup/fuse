@@ -282,6 +282,7 @@ describe("exports map", () => {
     expect(catalog).toEqual([
       "badgeVariants",
       "buttonVariants",
+      "kbdVariants",
       "toggleVariants",
       "BESPOKE_ICON_NAMES",
       "PHOSPHOR_ICON_NAMES",

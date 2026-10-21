@@ -1,8 +1,8 @@
 /**
- * The Button, Toggle and Badge kits against hand-written expectations: which Fuse variable or
- * literal each Figma field of a cell must carry, read from `button-variants.ts`,
- * `toggle-variants.ts`, `badge-variants.ts`, `control-size.ts`, `state-face.ts` and the base
- * layer of `fuse.css`. The spec builder is the unit under test.
+ * The Button, Toggle, Badge and Kbd kits against hand-written expectations: which Fuse variable
+ * or literal each Figma field of a cell must carry, read from `button-variants.ts`,
+ * `toggle-variants.ts`, `badge-variants.ts`, `kbd-variants.ts`, `control-size.ts`,
+ * `state-face.ts` and the base layer of `fuse.css`. The spec builder is the unit under test.
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -566,6 +566,81 @@ describe("the Badge component set", () => {
   });
 });
 
+function kbd(content: string): ComponentRootSpec {
+  return find(`kbd/content=${content}`);
+}
+
+describe("the Kbd component set", () => {
+  it("holds a text cap and an icon cap, with a Label text property and an Icon swap property", () => {
+    const set = spec.componentSets.find((candidate) => candidate.key === "kbd");
+    expect(set?.axes).toEqual([{ name: "content", values: ["text", "icon"] }]);
+    expect(set?.columnAxis).toBe("content");
+    expect(set?.variants.map((cell) => cell.key)).toEqual(["kbd/content=text", "kbd/content=icon"]);
+    expect(set?.textProperties).toEqual([{ name: "Label", defaultValue: "K" }]);
+    expect(set?.swapProperties).toEqual([{ name: "Icon", defaultIcon: "icon/Backspace" }]);
+  });
+
+  it("draws a 20px muted cap with a border hairline around the label", () => {
+    expect(kbd("text")).toEqual({
+      name: "kbd",
+      width: undefined,
+      height: literal(20),
+      minWidth: literal(20),
+      paddingTop: literal(0),
+      paddingRight: literal(4),
+      paddingBottom: literal(0),
+      paddingLeft: literal(4),
+      itemSpacing: literal(4),
+      cornerRadius: token("radius-sm"),
+      fill: paint("muted"),
+      stroke: { color: paint("border"), weight: literal(1) },
+      shadows: [],
+      opacity: 1,
+      children: [
+        {
+          kind: "text",
+          key: "label",
+          name: "label",
+          characters: "K",
+          textProperty: "Label",
+          fontFamily: token("font-sans"),
+          fontStyle: "Medium",
+          fontSize: literal(12),
+          lineHeight: literal(16),
+          color: paint("muted-foreground"),
+        },
+      ],
+    });
+  });
+
+  it("holds one 12px icon in the icon cap, and no label", () => {
+    const icon = kbd("icon");
+    expect({ ...icon, children: [] }).toEqual({ ...kbd("text"), children: [] });
+    expect(icon.children).toEqual([
+      {
+        kind: "icon",
+        key: "icon",
+        name: "Icon",
+        icon: "icon/Backspace",
+        swapProperty: "Icon",
+        size: literal(12),
+        color: paint("muted-foreground"),
+      },
+    ]);
+  });
+
+  it("places both caps in each preview", () => {
+    const previews = spec.previews.filter((preview) => preview.page === "page/kbd");
+    expect(previews).toHaveLength(4);
+    for (const preview of previews) {
+      expect(preview.groups.flatMap((group) => group.variants)).toEqual([
+        "kbd/content=text",
+        "kbd/content=icon",
+      ]);
+    }
+  });
+});
+
 describe("the kit coverage", () => {
   it("leaves no declaration unmapped", () => {
     expect(coverage.filter((row) => row.outcome === "unmapped")).toEqual([]);
@@ -683,6 +758,7 @@ describe("the preview frames", () => {
       { key: "page/button", name: "Button" },
       { key: "page/toggle", name: "Toggle" },
       { key: "page/badge", name: "Badge" },
+      { key: "page/kbd", name: "Kbd" },
       { key: "page/icons", name: "Icons" },
     ]);
     expect(spec.componentSets.map((set) => [set.key, set.page])).toEqual([
@@ -691,13 +767,14 @@ describe("the preview frames", () => {
       ["toggle", "page/toggle"],
       ["icon-toggle", "page/toggle"],
       ["badge", "page/badge"],
+      ["kbd", "page/kbd"],
     ]);
     expect(spec.icons.page).toBe("page/icons");
   });
 
   it("pin four Fjordkraft private themes at Auto density on each component page, each on all five axes", () => {
     expect(spec.previews.map((preview) => [preview.key, preview.page])).toEqual(
-      ["button", "toggle", "badge"].flatMap((page) =>
+      ["button", "toggle", "badge", "kbd"].flatMap((page) =>
         [
           "internal-fkas-private-light",
           "internal-fkas-private-dark",
@@ -732,6 +809,7 @@ describe("the preview frames", () => {
         ],
       ],
       ["page/badge", [["badge", "Badge"]]],
+      ["page/kbd", [["kbd", "Kbd"]]],
     ]);
     for (const preview of spec.previews) {
       expect(preview.groups.map((group) => [group.key, group.name])).toEqual(

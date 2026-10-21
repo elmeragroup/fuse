@@ -55,7 +55,7 @@ export const BADGE: ComponentDefinition = {
   // the root's own text, so no cell has that span, and the root's own `text-*` and the base's
   // `font-medium` set the same type.
   omittedStates: new Set(["[&>span]"]),
-  label: { key: "label", name: "label", characters: "Badge", textProperty: "Label" },
+  label: { key: "label", name: "label", characters: "Badge", textProperty: "Label", shownIn: () => true },
   iconsFor: () => [],
   swapProperties: [],
 };
