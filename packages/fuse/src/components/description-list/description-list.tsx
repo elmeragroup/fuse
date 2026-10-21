@@ -12,12 +12,17 @@ export type DescriptionListContentProps = ComponentProps<"dl"> & {
    * `inline` is for label/value rows in cards and summaries: each Item shares its own row between
    * its term and details, whatever the other Items hold. The details always sits beside its term,
    * at the end of the row. When the two don't fit on one line, both wrap within the row: each keeps
-   * its longest word and they share the rest, so a short one leaves the other room. A word breaks
-   * only when the two longest words can't share the row, and then in the details. Inline rows take the label type, have no rules and space with the small surface gap, and
-   * the term is not muted. A colour class on a cell wins in both layouts. The inline cells'
-   * padding, sizing and alignment come from the list, so override them with a
-   * `[:where([data-layout=inline]>*)>&]:` class or a CSS rule, and an inline Item's row, wrap and
-   * gap with a `[:where([data-layout=inline])>&]:` class. Defaults to `responsive`.
+   * its longest word and they share the rest, so a short one leaves the other room. In an Item with
+   * several terms or details, the first details takes the row first, so a long term beside it
+   * wraps down to its longest word. A word breaks only when the two longest words can't share the
+   * row, and then in the details. Inline rows take the label type, have no rules and space with the
+   * small surface gap, and the term is not muted. A colour class on a cell wins in both layouts.
+   * The inline cells' padding, sizing and alignment come from the list, so override them with a
+   * `[:where([data-layout=inline]>*)>&]:` class or a CSS rule; the first details of an Item with
+   * several terms or details takes its sizing from a
+   * `[:where([data-layout=inline]>:has(>:nth-child(3)))>&]:first-of-type:` class. Override an
+   * inline Item's row, wrap and gap with a `[:where([data-layout=inline])>&]:` class. Defaults to
+   * `responsive`.
    */
   layout?: "responsive" | "inline";
 };

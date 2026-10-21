@@ -21,7 +21,7 @@ Wrap each term and its details in an `Item`, the `<div>` HTML allows around one 
   <DescriptionListBasic />
 </Demo>
 
-An Item can hold several terms of one details, or several details of one term. Its last term shares a row with its first details; earlier terms and later details take rows of their own. Rules fall between Items only.
+An Item can hold several terms of one details, or several details of one term. Its last term shares a row with its first details; earlier terms and later details take rows of their own. In an inline list, that first details takes the row first, so a long term beside it wraps down to its longest word. Rules fall between Items only.
 
 <Demo
   slug="description-list"
@@ -35,7 +35,7 @@ An Item can hold several terms of one details, or several details of one term. I
   <DescriptionListResponsive />
 </Demo>
 
-`layout="inline"` is for label/value rows in receipts, order summaries and price boxes. Inline rows take the label type, so they follow density like field labels, are spaced by the small surface gap and have no rules. The term is not muted; add `text-muted-foreground` to a term to mute it, or `font-medium` to a details to emphasise it. To group rows, use one inline list per group: consecutive inline lists are spaced by the large surface gap. A colour class on a term or details wins in both layouts. The inline cells' padding, sizing and alignment come from the list, so override them with a `[:where([data-layout=inline]>*)>&]:` class or a CSS rule, and an inline Item's row, wrap and gap with a `[:where([data-layout=inline])>&]:` class.
+`layout="inline"` is for label/value rows in receipts, order summaries and price boxes. Inline rows take the label type, so they follow density like field labels, are spaced by the small surface gap and have no rules. The term is not muted; add `text-muted-foreground` to a term to mute it, or `font-medium` to a details to emphasise it. To group rows, use one inline list per group: consecutive inline lists are spaced by the large surface gap. A colour class on a term or details wins in both layouts. The inline cells' padding, sizing and alignment come from the list, so override them with a `[:where([data-layout=inline]>*)>&]:` class or a CSS rule. The first details of an Item with several terms or details takes its sizing from a `[:where([data-layout=inline]>:has(>:nth-child(3)))>&]:first-of-type:` class. Override an inline Item's row, wrap and gap with a `[:where([data-layout=inline])>&]:` class.
 
 <Demo slug="description-list" id="inline" title="Inline" file="description-list-inline.tsx">
   <DescriptionListInline />

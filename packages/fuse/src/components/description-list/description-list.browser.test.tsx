@@ -604,10 +604,15 @@ describe("DescriptionList", () => {
         const termCell = textNamed(term);
         const detailsCell = textNamed(details);
         expect(
+          naturalWidth(term, termCell) + INLINE[density].columnGap + naturalWidth(details, detailsCell),
+          "precondition: the pair does not fit on one line"
+        ).toBeGreaterThan(ROW_WIDTH);
+        expect(
           widestWord(term, termCell) + INLINE[density].columnGap + naturalWidth(details, detailsCell),
           "precondition: the details fits whole beside the term's widest word"
         ).toBeLessThanOrEqual(ROW_WIDTH);
         const termLines = textLines(termCell);
+        expect(termLines.length, "the term wraps").toBeGreaterThan(1);
         const detailsLines = textLines(detailsCell);
         expect(detailsLines).toHaveLength(1);
         expect(Math.abs((termLines[0]?.top ?? 0) - (detailsLines[0]?.top ?? Infinity))).toBeLessThan(1);
