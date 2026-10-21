@@ -8,4 +8,5 @@
  */
 
 export { buttonVariants } from "./button/button-variants";
+export { toggleVariants } from "./toggle/toggle-variants";
 export { BESPOKE_ICON_NAMES, PHOSPHOR_ICON_NAMES } from "../icons/roster";

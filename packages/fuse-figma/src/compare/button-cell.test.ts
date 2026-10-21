@@ -7,18 +7,17 @@
  */
 import { describe, expect, it } from "vitest";
 
+import { elementsOf } from "../../test/static-markup";
 import { iconButton, labelButton } from "./button-cell";
 import { renderCellHtml } from "./cell-renderers";
 
 /** The attributes of the HTML's first `<button>` tag, by name. */
 function buttonAttributes(html: string): ReadonlyMap<string, string> {
-  const tag = /<button\b([^>]*)>/.exec(html)?.[1];
-  if (tag === undefined) {
+  const button = elementsOf(html).find((element) => element.name === "button");
+  if (button === undefined) {
     throw new Error(`no <button> in ${html}`);
   }
-  return new Map(
-    [...tag.matchAll(/\s([\w:-]+)(?:="([^"]*)")?/g)].map(([, name = "", value = ""]) => [name, value])
-  );
+  return button.attributes;
 }
 
 describe("the Button renderer", () => {

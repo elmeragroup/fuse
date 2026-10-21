@@ -1,6 +1,6 @@
 /**
  * `reconcileKit` end to end against the in-memory file in `fake-figma.ts`, with the kit
- * `buildKit()` writes from the Button recipe and the variables `fuseVariableSet()` syncs. The
+ * `buildKit()` writes from the Button and Toggle recipes and the variables `fuseVariableSet()` syncs. The
  * fake models the Figma rules the real runs in 2026-10 confirmed, and throws for any Plugin API
  * member it does not model. The oracles are hand-written: the change lines Plan must list, the
  * values the Button recipe and the theme catalog give, and the order the kit's axes declare.
@@ -46,6 +46,7 @@ beforeAll(async () => {
 }, 60_000);
 
 const BUTTON_PAGE = "page/button";
+const TOGGLE_PAGE = "page/toggle";
 const ICONS_PAGE = "page/icons";
 const DEFAULT_BUTTON = "variant=default, size=default, state=rest, icon=none";
 const LAY_OUT_BUTTONS = "Button: lay out 420 variants in 5 columns and 84 rows";
@@ -57,6 +58,9 @@ const PREVIEWS = [
   "Button / Fjordkraft external private, dark",
 ];
 const CREATE_PREVIEWS = PREVIEWS.map((name) => `Button: create the preview ${name}`);
+const PLACE_TOGGLES = "Toggle: place Toggle and Icon toggle in a row and stack 4 previews below them";
+const TOGGLE_PREVIEWS = PREVIEWS.map((name) => name.replace("Button", "Toggle"));
+const CREATE_TOGGLE_PREVIEWS = TOGGLE_PREVIEWS.map((name) => `Toggle: create the preview ${name}`);
 
 /** The page the plugin put the whole kit on before each component got a page of its own. */
 const LEGACY_PAGE = { key: "page/components", name: "Fuse components" };
@@ -227,12 +231,17 @@ describe("Apply on a synced file without the kit pages", () => {
     expect(applied).toEqual({
       changes: [
         "Document: create the page Button",
+        "Document: create the page Toggle",
         "Document: create the page Icons",
         "Icons: create the Icons frame with 135 icons",
         "Button: create the component set Button with 420 variants",
         "Button: create the component set Icon button with 140 variants",
+        "Toggle: create the component set Toggle with 192 variants",
+        "Toggle: create the component set Icon toggle with 64 variants",
         ...CREATE_PREVIEWS,
         PLACE,
+        ...CREATE_TOGGLE_PREVIEWS,
+        PLACE_TOGGLES,
       ],
       warnings: [],
     });
@@ -240,16 +249,21 @@ describe("Apply on a synced file without the kit pages", () => {
   });
 
   it("shows the Button page and leaves nothing behind on the page that was current", async () => {
-    const [first, button, icons] = file.figma.root.children;
+    const [first, button, toggle, icons] = file.figma.root.children;
     expect(first?.name).toBe("Page 1");
     await first?.loadAsync();
     expect(first?.children).toEqual([]);
-    expect([button?.name, icons?.name]).toEqual(["Button", "Icons"]);
+    expect([button?.name, toggle?.name, icons?.name]).toEqual(["Button", "Toggle", "Icons"]);
     expect(file.figma.currentPage).toBe(button);
     expect((await kitPage(file)).children.map((node) => node.name)).toEqual([
       "Button",
       "Icon button",
       ...PREVIEWS,
+    ]);
+    expect((await kitPage(file, TOGGLE_PAGE)).children.map((node) => node.name)).toEqual([
+      "Toggle",
+      "Icon toggle",
+      ...TOGGLE_PREVIEWS,
     ]);
     expect((await kitPage(file, ICONS_PAGE)).children.map((node) => node.name)).toEqual(["Icons"]);
   });
@@ -312,9 +326,15 @@ describe("Apply on a synced file without the kit pages", () => {
         ["preview/button/internal-fkas-private-dark", PREVIEWS[1], 126],
         ["preview/button/external-fkas-private-light", PREVIEWS[2], 126],
         ["preview/button/external-fkas-private-dark", PREVIEWS[3], 126],
+        // Toggle: 2 variants in 4 states off and on, 2 at each of 3 other sizes, and 2 with
+        // each of 2 icons. Icon toggle: the same without the icons.
+        ["preview/toggle/internal-fkas-private-light", TOGGLE_PREVIEWS[0], 48],
+        ["preview/toggle/internal-fkas-private-dark", TOGGLE_PREVIEWS[1], 48],
+        ["preview/toggle/external-fkas-private-light", TOGGLE_PREVIEWS[2], 48],
+        ["preview/toggle/external-fkas-private-dark", TOGGLE_PREVIEWS[3], 48],
       ]
     );
-    expect(progress).toEqual([504, 504]);
+    expect(progress).toEqual([696, 696]);
     const [first] = snapshot.previews;
     expect(new Set(Object.keys(first ?? {}))).toEqual(new Set(["key", "name", "modes", "instances"]));
     expect(first?.modes).toEqual(
@@ -676,27 +696,42 @@ describe("a file the plugin laid out on one page", () => {
     const variantsBefore = [setOn(legacy, "Button"), setOn(legacy, "Icon button")].map(idsByName);
     const pagePhase = [
       "Document: create the page Button",
+      "Document: create the page Toggle",
       "Document: create the page Icons",
-      ...PREVIEWS.map((name) => `Fuse components: delete ${name}`),
+      ...[...PREVIEWS, ...TOGGLE_PREVIEWS].map((name) => `Fuse components: delete ${name}`),
       "Fuse components: move Icons to the Icons page",
       "Fuse components: move Button to the Button page",
       "Fuse components: move Icon button to the Button page",
+      "Fuse components: move Toggle to the Toggle page",
+      "Fuse components: move Icon toggle to the Toggle page",
     ];
 
     expect(await reconcileKit(file.figma, kit, false)).toEqual({
-      changes: [...pagePhase, "Document: plan the rest of the kit again once the 3 moves land"],
+      changes: [...pagePhase, "Document: plan the rest of the kit again once the 5 moves land"],
       warnings: [],
     });
     const applied = await reconcileKit(file.figma, kit, true);
     expect(applied).toEqual({
-      changes: [...pagePhase, ...CREATE_PREVIEWS, PLACE, "Document: delete the page Fuse components"],
+      changes: [
+        ...pagePhase,
+        ...CREATE_PREVIEWS,
+        PLACE,
+        ...CREATE_TOGGLE_PREVIEWS,
+        PLACE_TOGGLES,
+        "Document: delete the page Fuse components",
+      ],
       warnings: [],
     });
     file.reopen();
     expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
 
     expect(legacy.removed).toBe(true);
-    expect(file.figma.root.children.map((page) => page.name)).toEqual(["Page 1", "Button", "Icons"]);
+    expect(file.figma.root.children.map((page) => page.name)).toEqual([
+      "Page 1",
+      "Button",
+      "Toggle",
+      "Icons",
+    ]);
     const button = await componentSet(file, "Button");
     const iconButton = await componentSet(file, "Icon button");
     expect([button.id, iconButton.id, (await iconLibrary(file)).id]).toEqual([
@@ -738,8 +773,9 @@ describe("a file the plugin laid out on one page", () => {
     file.reopen();
 
     const applied = await reconcileKit(file.figma, kit, true);
-    expect(applied.changes.slice(0, 2)).toEqual([
+    expect(applied.changes.slice(0, 3)).toEqual([
       "Document: create the page Button",
+      "Document: create the page Toggle",
       "Document: create the page Icons",
     ]);
     expect(file.figma.root.children.map((page) => page.name)).toEqual([
@@ -747,6 +783,7 @@ describe("a file the plugin laid out on one page", () => {
       "Button",
       "Icons",
       "Button",
+      "Toggle",
       "Icons",
     ]);
     for (const { page, frame } of imported) {

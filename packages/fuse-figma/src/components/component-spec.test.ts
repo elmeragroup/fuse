@@ -51,3 +51,32 @@ describe("a class whose variant no cell models", () => {
     expect(outcomes("focus-visible:bg-muted")).toEqual(new Set(["unmapped"]));
   });
 });
+
+// Unit under test: `buildComponentSet` on a root with a transparent background and a ring.
+// Oracle: CSS, where `background-color: transparent` paints nothing, as an unset background
+// does, so the root gets no fill.
+describe("a transparent background", () => {
+  const RING: ComponentDefinition = { ...CHIP, classesFor: () => "bg-transparent ring-2 ring-[rgb(0_0_0)]" };
+
+  it("gives the root no fill, whatever shadow it casts", async () => {
+    const ringContext = {
+      ...context,
+      compiled: await compileUtilities(["bg-transparent", "ring-2", "ring-[rgb(0_0_0)]"]),
+    };
+    const { componentSet, coverage } = buildComponentSet(RING, ringContext);
+    const [variant] = componentSet.variants;
+    expect(variant?.root.shadows).toEqual([
+      {
+        color: { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } },
+        offsetX: 0,
+        offsetY: 0,
+        radius: { kind: "literal", value: 0 },
+        spread: { kind: "literal", value: 2 },
+      },
+    ]);
+    expect(variant?.root.fill).toBeUndefined();
+    expect(coverage.filter((row) => row.className === "bg-transparent").map((row) => row.outcome)).toEqual([
+      "literal",
+    ]);
+  });
+});

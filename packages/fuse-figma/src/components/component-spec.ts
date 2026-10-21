@@ -59,6 +59,18 @@ export type IconSlot = {
 };
 
 /**
+ * The swap properties of a set's icon slots.
+ *
+ * @param slots - The slots, in the order the set lists their properties.
+ * @returns The swap property of each slot that has one, starting with the slot's icon.
+ */
+export function swapProperties(slots: readonly IconSlot[]): readonly SwapPropertySpec[] {
+  return slots.flatMap((slot) =>
+    slot.swapProperty === undefined ? [] : [{ name: slot.swapProperty, defaultIcon: slot.icon }]
+  );
+}
+
+/**
  * The key of the icon component for a Fuse icon.
  *
  * @param name - The icon's export name, such as `ArrowRight`.
@@ -515,6 +527,26 @@ function describeColor(spec: ColorSpec): CoverageNote {
   };
 }
 
+/** A background that paints nothing, which the root writes as no fill. */
+const NO_FILL = "no fill";
+
+/**
+ * Read a background as the root's fill. A literal color at alpha 0, such as `transparent`,
+ * paints nothing in CSS, so it becomes no fill, as an unset background does. The plugin then
+ * gives a root that casts a spread shadow its clear fill, which Figma counts and an alpha-0
+ * fill it does not.
+ */
+function readFill(value: string, index: VariableIndex): ColorSpec | typeof NO_FILL | undefined {
+  const color = readColor(value, index);
+  return color?.kind === "literal" && color.color.a === 0 ? NO_FILL : color;
+}
+
+function describeFill(fill: ColorSpec | typeof NO_FILL): CoverageNote {
+  return fill === NO_FILL
+    ? { outcome: "literal", detail: "no fill, since a transparent background paints nothing" }
+    : describeColor(fill);
+}
+
 const ZERO: NumberSpec = { kind: "literal", value: 0 };
 
 function literalLayout(expected: readonly string[], detail: string) {
@@ -554,6 +586,7 @@ function mapRoot(
     detail: `opacity ${value}`,
   }));
   const textColor = color("color");
+  const fill = root.read("background-color", (value) => readFill(value, context.variables), describeFill);
 
   const start: ChildLayerSpec[] = [];
   const end: ChildLayerSpec[] = [];
@@ -584,7 +617,7 @@ function mapRoot(
     paddingLeft: number("padding-left") ?? ZERO,
     itemSpacing: number("gap") ?? ZERO,
     cornerRadius: number("border-radius") ?? ZERO,
-    fill: color("background-color"),
+    fill: fill === NO_FILL ? undefined : fill,
     stroke,
     shadows,
     opacity: opacity ?? 1,
