@@ -321,6 +321,13 @@
   ancestor that pins other modes, as Figma does. The fake resolves the value once, when the field
   binds, so no fake test shows a moved set's density-bound sizes changing. The two-phase Apply
   covers that case by construction only.
+- Give an overridden declaration a dropped row in `coverage.md`, so every recipe class appears in
+  the coverage table. The build records only the declaration that wins each property, so
+  `aria-pressed:bg-muted` gets no row: `data-pressed:bg-muted` sets the same property later in
+  Tailwind's order.
+- Make `packages/fuse-figma/src/compare/kit-markup.test.ts` fail when a definition's facts or
+  states name an attribute variant its explicit list lacks, such as `data-checked` once Checkbox
+  arrives. Today the test checks only the variants it lists, so a new fact goes unchecked.
 
 ## Data table
 

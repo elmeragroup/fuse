@@ -19,6 +19,7 @@
  */
 import { buttonVariants } from "@elmeragroup/fuse/recipe-catalog";
 
+import { swapProperties } from "./component-spec";
 import type { Cell, ComponentDefinition, IconSlot } from "./component-spec";
 import { ownKey } from "./own-key";
 
@@ -107,13 +108,6 @@ const ONLY_ICON: IconSlot = {
   icon: "Plus",
   swapProperty: "Icon",
 };
-
-/** The swap property of each slot that has one, starting with the slot's icon. */
-function swapProperties(slots: readonly IconSlot[]): ComponentDefinition["swapProperties"] {
-  return slots.flatMap((slot) =>
-    slot.swapProperty === undefined ? [] : [{ name: slot.swapProperty, defaultIcon: slot.icon }]
-  );
-}
 
 /** The spinner when the cell is pending, then the icons the cell's `icon` value places. */
 function buttonIcons(cell: Cell): readonly IconSlot[] {

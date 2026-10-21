@@ -149,6 +149,21 @@ describe("fuseVariableSet", () => {
     );
   });
 
+  it("syncs the compact corner as its formula gives it for each theme's radius", () => {
+    expect(spec("Fuse tokens", "radius-compact")).toMatchObject({
+      type: "FLOAT",
+      scopes: ["CORNER_RADIUS"],
+      webSyntax:
+        "min(calc(var(--radius) - var(--radius-step, 0px)), max(10px, var(--radius) - 1000 * var(--radius-step, 0px)))",
+    });
+    // themes.css: internal themes set --radius 0.5rem and step 0px, so the corner is --radius.
+    expect(value("Fuse brand", "light/internal/private/radius-compact", "Fjordkraft")).toEqual(px(8));
+    // External themes step 2px, so the corner is min(radius - 2px, 10px). Elmera sets 0.375rem,
+    // 6px, under the cap, and TrøndelagKraft sets 1rem, 16px, over it.
+    expect(value("Fuse brand", "dark/external/company/radius-compact", "Elmera")).toEqual(px(4));
+    expect(value("Fuse brand", "light/external/private/radius-compact", "TrøndelagKraft")).toEqual(px(10));
+  });
+
   it("turns var() references into aliases at the same theme path or to primitives", () => {
     expect(value("Fuse brand", "dark/external/private/destructive", "Gudbrandsdal Energi")).toEqual(
       alias("Fuse brand", "dark/external/private/error")

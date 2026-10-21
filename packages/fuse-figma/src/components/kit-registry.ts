@@ -4,11 +4,15 @@
  * reads each entry's axes to parse a snapshot's variant keys and to pick the self-check's cells.
  *
  * Keep this module free of Tailwind's compiler, the theme catalog and the Fuse build, so the
- * comparison loads it without them.
+ * modules that need only the definitions and their cells, such as the compare unit tests that
+ * parse keys and check markup, load it without them. A comparison run loads the compiler anyway,
+ * through `buildComponentSets()`.
  */
 import { BUTTON, ICON_BUTTON } from "./button-kit";
+import { matrixCells } from "./component-spec";
 import type { Cell, ComponentDefinition } from "./component-spec";
 import { axisValues } from "./kit-spec";
+import { ICON_TOGGLE, TOGGLE } from "./toggle-kit";
 
 /**
  * A page of the kit: one component and its close variants, such as Button and Icon button.
@@ -22,6 +26,9 @@ export type KitPage = {
 /** The page Button and Icon button share. */
 const BUTTON_PAGE: KitPage = { slug: "button", name: "Button" };
 
+/** The page Toggle and Icon toggle share. */
+const TOGGLE_PAGE: KitPage = { slug: "toggle", name: "Toggle" };
+
 /**
  * A component set of the kit, the page it sits on, and the cells its preview frames place, in
  * frame order.
@@ -33,19 +40,48 @@ export type KitEntry = {
 };
 
 /**
- * Every state of each variant at the base size, then each variant at rest at every other
- * size. `fixed` sets the cell's other axes.
+ * Every state of each variant at the base size, once for each combination of the `crossed`
+ * axes' values, then each variant at rest at every other size, with each crossed axis at its
+ * first value. `fixed` sets the cell's other axes.
  */
-function previewCells(definition: ComponentDefinition, baseSize: string, fixed: Cell): Cell[] {
+function previewCells(
+  definition: ComponentDefinition,
+  baseSize: string,
+  fixed: Cell,
+  crossed: readonly string[] = []
+): Cell[] {
   const variants = axisValues(definition, "variant");
+  const combinations = matrixCells(crossed.map((name) => ({ name, values: axisValues(definition, name) })));
+  const resting = Object.fromEntries(crossed.map((name) => [name, axisValues(definition, name)[0] ?? ""]));
   return [
     ...variants.flatMap((variant) =>
-      axisValues(definition, "state").map((state) => ({ ...fixed, variant, size: baseSize, state }))
+      combinations.flatMap((combination) =>
+        axisValues(definition, "state").map((state) => ({
+          ...fixed,
+          ...combination,
+          variant,
+          size: baseSize,
+          state,
+        }))
+      )
     ),
     ...axisValues(definition, "size")
       .filter((size) => size !== baseSize)
-      .flatMap((size) => variants.map((variant) => ({ ...fixed, variant, size, state: "rest" }))),
+      .flatMap((size) => variants.map((variant) => ({ ...fixed, ...resting, variant, size, state: "rest" }))),
   ];
+}
+
+/** Each variant at rest at the base size with a start icon, then with an end icon. */
+function iconCells(definition: ComponentDefinition, baseSize: string, fixed: Cell): Cell[] {
+  return ["start", "end"].flatMap((icon) =>
+    axisValues(definition, "variant").map((variant) => ({
+      ...fixed,
+      variant,
+      size: baseSize,
+      state: "rest",
+      icon,
+    }))
+  );
 }
 
 /** The kit's component sets, in the order the plugin places them. */
@@ -53,12 +89,20 @@ export const KIT: readonly KitEntry[] = [
   {
     definition: BUTTON,
     page: BUTTON_PAGE,
-    previewCells: [
-      ...previewCells(BUTTON, "default", { icon: "none" }),
-      ...["start", "end"].flatMap((icon) =>
-        axisValues(BUTTON, "variant").map((variant) => ({ variant, size: "default", state: "rest", icon }))
-      ),
-    ],
+    previewCells: [...previewCells(BUTTON, "default", { icon: "none" }), ...iconCells(BUTTON, "default", {})],
   },
   { definition: ICON_BUTTON, page: BUTTON_PAGE, previewCells: previewCells(ICON_BUTTON, "icon", {}) },
+  {
+    definition: TOGGLE,
+    page: TOGGLE_PAGE,
+    previewCells: [
+      ...previewCells(TOGGLE, "default", { icon: "none" }, ["pressed"]),
+      ...iconCells(TOGGLE, "default", { pressed: "off" }),
+    ],
+  },
+  {
+    definition: ICON_TOGGLE,
+    page: TOGGLE_PAGE,
+    previewCells: previewCells(ICON_TOGGLE, "default", {}, ["pressed"]),
+  },
 ];

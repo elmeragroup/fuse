@@ -18,9 +18,9 @@ import type { ReactElement } from "react";
 import { Button, buttonVariants } from "../../../fuse/dist/button.js";
 import type { IconButtonSize, LabelButtonSize } from "../../../fuse/dist/button.js";
 import { ArrowRight, Plus } from "../../../fuse/dist/icons.js";
-import type { ElmeraIconProps } from "../../../fuse/dist/icons.js";
 import type { Cell } from "../components/component-spec.ts";
 import { ownKey } from "../components/own-key.ts";
+import { markedIcon } from "./cell-renderers.ts";
 import type { CellRendering } from "./cell-renderers.ts";
 
 type ButtonVariant = keyof typeof buttonVariants.variants.variant;
@@ -50,14 +50,6 @@ function sharedProps(cell: Cell) {
     disabled: cell.state === "disabled",
     isPending: cell.state === "pending",
   };
-}
-
-/** An icon with the `data-icon` marker the Button recipe reads to move the padding on its side. */
-function markedIcon(icon: typeof Plus, marker: "inline-start" | "inline-end"): ReactElement {
-  // JSX passes `data-icon` through, and an object literal can only name it through a type that
-  // lists it.
-  const props: ElmeraIconProps & Readonly<Record<"data-icon", string>> = { "data-icon": marker };
-  return createElement(icon, { ...props, key: marker });
 }
 
 function labelChildren(icon: string | undefined): readonly (ReactElement | string)[] {

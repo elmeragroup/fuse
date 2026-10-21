@@ -63,6 +63,7 @@ function cellSection(row: ReportRow, rank: number): string {
     verdict.flags.length === 0
       ? ""
       : `<span class="flags">${verdict.flags.map((flag) => `<span class="flag">${escape(flag)}</span>`).join(" ")}</span>`;
+  const note = row.unchangedByDesign ? ` <span class="note">unchanged by design</span>` : "";
   const facts = [
     escape(row.previewName),
     `Figma ${size(row.figmaBox.width, row.figmaBox.height)}`,
@@ -73,7 +74,7 @@ function cellSection(row: ReportRow, rank: number): string {
       : `tolerant ${percent(verdict.tolerantPercent)} (${String(row.pixels.tolerant)} px), raw ${percent(verdict.rawPercent)} (${String(row.pixels.raw)} px)`,
   ].join(" · ");
   return `<section class="cell" data-preview="${escape(row.preview)}" data-flagged="${verdict.flags.length > 0 ? "yes" : "no"}"${data}>
-<h3><span class="rank">#${String(rank)}</span> ${escape(row.variant)} ${flags}</h3>
+<h3><span class="rank">#${String(rank)}</span> ${escape(row.variant)} ${flags}${note}</h3>
 <p>${facts}</p>
 <div class="pictures">${picture(row.images.figma, "Figma", row)}${picture(row.images.browser, "Browser", row)}${picture(row.images.diff, "Diff", row)}</div>
 </section>`;
@@ -109,6 +110,7 @@ table{border-collapse:collapse;background:#fff}td,th{border:1px solid #ddd;paddi
 .cell{margin:12px 0;padding:12px;background:#fff;border:1px solid #ddd;border-radius:6px}
 .cell p{margin:4px 0 8px;color:#555;font-size:12px}
 .rank{color:#888}.flag{display:inline-block;padding:0 6px;border-radius:4px;background:#fee4e2;color:#b42318;font-family:system-ui,sans-serif}
+.note{display:inline-block;padding:0 6px;border-radius:4px;background:#eef2f6;color:#475467;font-family:system-ui,sans-serif}
 .pictures{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
 figure{margin:0}figcaption{font-size:11px;color:#777}
 img,.none{display:block;width:calc(var(--w) * var(--zoom,2));image-rendering:pixelated;outline:1px solid #ddd}

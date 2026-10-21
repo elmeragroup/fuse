@@ -11,9 +11,10 @@ import { fuseVariableSet } from "../fuse-variable-set";
 import type { CollectionSpec, VariableSpec } from "../variable-set";
 import { splitClassName } from "./class-name";
 import { buildComponentSet, matrixCells, variantKey } from "./component-spec";
-import type { PageDeclaration } from "./component-spec";
+import type { BuiltComponent, PageDeclaration } from "./component-spec";
 import type { CoverageOutcome, CoverageRow } from "./coverage";
 import { makeVariableIndex, readColor } from "./css-values";
+import type { VariableIndex } from "./css-values";
 import { fuseIcons, ICON_SIZE } from "./icon-library";
 import { KIT } from "./kit-registry";
 import type { KitPage } from "./kit-registry";
@@ -67,17 +68,15 @@ const PAGE: readonly PageDeclaration[] = [
   { className: "body font-sans", property: "font-family", value: "var(--font-sans)" },
 ];
 
-/**
- * Build the kit and its coverage.
- *
- * @returns The kit spec the plugin bundles, and one coverage row per distinct outcome of each
- *   recipe declaration.
- * @throws When the variable set does not build, or a preview names a mode it lacks.
- */
-export async function buildKit(): Promise<{
-  readonly spec: KitSpec;
-  readonly coverage: readonly CoverageRow[];
-}> {
+/** The variable set the kit binds, and the index its CSS values resolve through. */
+type KitVariables = { readonly collections: readonly CollectionSpec[]; readonly variables: VariableIndex };
+
+/** A built component set, placed on its page. */
+export type KitComponentSet = Omit<BuiltComponent, "componentSet"> & {
+  readonly componentSet: ComponentSetSpec;
+};
+
+function kitVariables(): KitVariables {
   const variableSet = fuseVariableSet();
   if (Result.isFailure(variableSet)) {
     throw new Error(`the Fuse variable set does not build: ${String(variableSet.failure)}`);
@@ -99,6 +98,10 @@ export async function buildKit(): Promise<{
       )
     )
   );
+  return { collections, variables };
+}
+
+async function buildSets(variables: VariableIndex): Promise<readonly KitComponentSet[]> {
   const utilities = new Set(
     KIT.flatMap(({ definition }) =>
       matrixCells(definition.axes).flatMap((cell) =>
@@ -111,10 +114,36 @@ export async function buildKit(): Promise<{
     )
   );
   const compiled = await compileUtilities([...utilities]);
-  const built = KIT.map(({ definition, page }) => {
+  return KIT.map(({ definition, page }) => {
     const set = buildComponentSet(definition, { compiled, variables, page: PAGE });
     return { ...set, componentSet: { ...set.componentSet, page: pageSpec(page).key } };
   });
+}
+
+/**
+ * Build the kit's component sets alone, without the icon library or the previews.
+ *
+ * @returns Each set of `KIT`, in its order and on its page, with the coverage of the recipe
+ *   classes it read and the font styles its text uses.
+ * @throws When the variable set does not build.
+ */
+export async function buildComponentSets(): Promise<readonly KitComponentSet[]> {
+  return buildSets(kitVariables().variables);
+}
+
+/**
+ * Build the kit and its coverage.
+ *
+ * @returns The kit spec the plugin bundles, and one coverage row per distinct outcome of each
+ *   recipe declaration.
+ * @throws When the variable set does not build, or a preview names a mode it lacks.
+ */
+export async function buildKit(): Promise<{
+  readonly spec: KitSpec;
+  readonly coverage: readonly CoverageRow[];
+}> {
+  const { collections, variables } = kitVariables();
+  const built = await buildSets(variables);
   const glyphColor = readColor("var(--foreground)", variables);
   if (glyphColor === undefined) {
     throw new Error("the variable set has no foreground for the icon glyphs");

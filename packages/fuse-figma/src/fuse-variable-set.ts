@@ -6,10 +6,10 @@
  * collection with one mode per value, and designers pick color scheme, variant, segment and
  * brand separately in a frame's Appearance panel, as they do in the docs theme picker.
  *
- * - `Fuse tokens` holds one variable per role token, per radius rung a component uses and
- *   per role tint the component kit binds, with a Light and a Dark mode. These are the
- *   variables designers bind. Each one aliases `<scheme>/<token>` in `Fuse variant` for its
- *   scheme mode.
+ * - `Fuse tokens` holds one variable per role token, per radius rung a component uses, per
+ *   role tint the component kit binds and per formula a recipe writes over the tokens, with a
+ *   Light and a Dark mode. These are the variables designers bind. Each one aliases
+ *   `<scheme>/<token>` in `Fuse variant` for its scheme mode.
  * - `Fuse variant` has an Internal and an External mode. `<scheme>/<token>` aliases
  *   `<scheme>/<variant>/<token>` in `Fuse segment`. `density/<metric>` holds the metric in
  *   the variant's default density, which the Auto mode of `Fuse density` reads.
@@ -172,28 +172,57 @@ const ROLE_TINTS = [
 type DimensionTokenName = Extract<TokenEntry, { readonly kind: "dimension" }>["name"];
 
 /**
- * The outline Button's shadow lengths, which `button-variants.ts` writes as formulas over
- * `--button-outline-width`. At a 1px outline they give Tailwind's `shadow-xs`. From 2px the
- * shadow stays inside the border box, where it paints nothing. Figma variables cannot compute,
- * so each length syncs as its own variable holding what its formula gives for each theme's
- * outline width. The code syntax is the formula, which the kit's builder binds.
+ * The lengths a recipe writes as a formula over theme tokens. Figma variables cannot compute, so
+ * each formula syncs as its own FLOAT variable holding what the formula gives for each theme.
+ * The code syntax is the formula as Tailwind compiles the recipe's class, which the kit's builder
+ * binds once it compares the two with the fallbacks of synced variables dropped.
+ *
+ * - The outline Button's shadow lengths read `--button-outline-width`. At a 1px outline they
+ *   give Tailwind's `shadow-xs`. From 2px the shadow stays inside the border box, where it
+ *   paints nothing.
+ * - The compact corner is `compactCornerClass` in `corner-radius.ts`, which the xs Toggle
+ *   rounds with. Internal themes step 0px, which gives `--radius`, and external themes step
+ *   2px, which gives `radius-md` capped at 10px.
  */
-const OUTLINE_SHADOW_LENGTHS = [
+const FORMULA_VARIABLES = [
   {
     name: "button-outline-shadow-blur",
     formula: "max(0px, 4px - 2 * var(--button-outline-width, 1px))",
-    length: (width: number) => Math.max(0, 4 - 2 * width),
+    length: (scheme: ResolvedScheme) => Math.max(0, 4 - 2 * scheme.tokens["button-outline-width"].value),
+    scopes: ["EFFECT_FLOAT"],
     description:
       "The blur of the outline Button shadow, max(0px, 4px - 2 * button-outline-width). Figma variables cannot compute, so the sync writes the result for each theme.",
   },
   {
     name: "button-outline-shadow-spread",
     formula: "min(0px, 2px - 2 * var(--button-outline-width, 1px))",
-    length: (width: number) => Math.min(0, 2 - 2 * width),
+    length: (scheme: ResolvedScheme) => Math.min(0, 2 - 2 * scheme.tokens["button-outline-width"].value),
+    scopes: ["EFFECT_FLOAT"],
     description:
       "The spread of the outline Button shadow, min(0px, 2px - 2 * button-outline-width). Figma variables cannot compute, so the sync writes the result for each theme.",
   },
-] as const;
+  {
+    name: "radius-compact",
+    formula:
+      "min(calc(var(--radius) - var(--radius-step, 0px)), max(10px, var(--radius) - 1000 * var(--radius-step, 0px)))",
+    // The catalog's `radius-md` is the formula's first term, already clamped at 0 as CSS clamps
+    // a negative `border-radius`.
+    length: (scheme: ResolvedScheme) =>
+      Math.min(
+        scheme.rungs["radius-md"].value,
+        Math.max(10, scheme.tokens.radius.value - 1000 * scheme.tokens["radius-step"].value)
+      ),
+    scopes: ["CORNER_RADIUS"],
+    description:
+      "The corner of a compact button in a toolbar, such as the xs Toggle: radius in internal themes, and radius-md capped at 10px in external ones. Figma variables cannot compute, so the sync writes the result for each theme.",
+  },
+] as const satisfies readonly {
+  readonly name: string;
+  readonly formula: string;
+  readonly length: (scheme: ResolvedScheme) => number;
+  readonly scopes: readonly VariableScope[];
+  readonly description: string;
+}[];
 
 /**
  * The pickers that offer each dimension token. A length can round corners, space a gap or
@@ -281,7 +310,7 @@ type BoundVariable = {
     | TokenName
     | SyncedRungName
     | `${ColorTokenName}/${number}`
-    | (typeof OUTLINE_SHADOW_LENGTHS)[number]["name"];
+    | (typeof FORMULA_VARIABLES)[number]["name"];
   readonly type: VariableType;
 
   /** The pickers that offer the `Fuse tokens` variable. */
@@ -306,12 +335,12 @@ type ThemePath = {
 
 /**
  * Every `Fuse tokens` variable: each role token, then each synced radius rung, then each role
- * tint, then the outline shadow lengths. A rung's code syntax is the `calc()` `fuse.css`
- * declares. `fuse.css` declares the
- * rungs in `@theme inline`, so Tailwind inlines them into its utilities and the built CSS does
- * not define `--radius-sm` and most other rungs as custom properties. Figma variables cannot
- * compute, so each rung holds the px the catalog computes per theme, each tint holds its
- * role's color at the tint's alpha, and each outline shadow length holds what its formula gives.
+ * tint, then the formula variables. A rung's code syntax is the `calc()` `fuse.css` declares.
+ * `fuse.css` declares the rungs in `@theme inline`, so Tailwind inlines them into its utilities
+ * and the built CSS does not define `--radius-sm` and most other rungs as custom properties.
+ * Figma variables cannot compute, so each rung holds the px the catalog computes per theme, each
+ * tint holds its role's color at the tint's alpha, and each formula variable holds what its
+ * formula gives.
  */
 function boundVariables(template: ResolvedScheme): readonly BoundVariable[] {
   const tokens = Object.values(template.tokens).map((entry): BoundVariable => ({
@@ -344,15 +373,15 @@ function boundVariables(template: ResolvedScheme): readonly BoundVariable[] {
       return { _tag: "Color", color: { r, g, b, a: (alpha * percent) / 100 } };
     },
   }));
-  const lengths = OUTLINE_SHADOW_LENGTHS.map(({ name, formula, length, description }): BoundVariable => ({
+  const formulas = FORMULA_VARIABLES.map(({ name, formula, length, scopes, description }): BoundVariable => ({
     name,
     type: VARIABLE_TYPES.dimension,
-    scopes: ["EFFECT_FLOAT"],
+    scopes,
     webSyntax: formula,
     description,
-    leafIn: (scheme) => ({ _tag: "Float", value: length(scheme.tokens["button-outline-width"].value) }),
+    leafIn: (scheme) => ({ _tag: "Float", value: length(scheme) }),
   }));
-  return [...tokens, ...rungs, ...tints, ...lengths];
+  return [...tokens, ...rungs, ...tints, ...formulas];
 }
 
 /**

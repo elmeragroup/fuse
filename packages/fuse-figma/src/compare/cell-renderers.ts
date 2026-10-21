@@ -14,10 +14,12 @@
  * and list it below with the definition's key and its `dist/` entry.
  */
 
-import type { ReactElement } from "react";
+import { createElement } from "react";
+import type { ComponentType, ReactElement } from "react";
 
 import { renderToStaticMarkup } from "react-dom/server";
 
+import type { ElmeraIconProps } from "../../../fuse/dist/icons.js";
 import type { Cell } from "../components/component-spec.ts";
 
 /** Renders the cells of one kit definition with the real Fuse component. */
@@ -48,6 +50,16 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/button.js",
     load: async () => (await import("./button-cell.ts")).iconButton,
   },
+  {
+    set: "toggle",
+    entry: "dist/toggle.js",
+    load: async () => (await import("./toggle-cell.ts")).labelToggle,
+  },
+  {
+    set: "icon-toggle",
+    entry: "dist/toggle.js",
+    load: async () => (await import("./toggle-cell.ts")).iconToggle,
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */
@@ -64,6 +76,23 @@ export async function loadRenderers(): Promise<ReadonlyMap<string, CellRenderer>
     SOURCES.map(async ({ load, ...source }): Promise<CellRenderer> => ({ ...source, ...(await load()) }))
   );
   return new Map(renderers.map((renderer) => [renderer.set, renderer]));
+}
+
+/**
+ * An icon with the `data-icon` marker a recipe reads to move the padding on its side.
+ *
+ * @param icon - A Fuse icon from the build.
+ * @param marker - The side the icon sits on.
+ * @returns The icon element, keyed by its marker.
+ */
+export function markedIcon(
+  icon: ComponentType<ElmeraIconProps>,
+  marker: "inline-start" | "inline-end"
+): ReactElement {
+  // JSX passes `data-icon` through, and an object literal can only name it through a type that
+  // lists it.
+  const props: ElmeraIconProps & Readonly<Record<"data-icon", string>> = { "data-icon": marker };
+  return createElement(icon, { ...props, key: marker });
 }
 
 /**

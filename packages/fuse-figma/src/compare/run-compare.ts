@@ -9,6 +9,7 @@ import { Result } from "effect";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { buildComponentSets } from "../components/build-kit.ts";
 import type { Cell } from "../components/component-spec.ts";
 import { KIT } from "../components/kit-registry.ts";
 import { browserFootprint, coversRenderBounds, figmaFootprint, sharedCanvas } from "./align.ts";
@@ -26,6 +27,7 @@ import { compose, diffRasters, encodePng, parsePng } from "./raster.ts";
 import type { Raster, Rgb } from "./raster.ts";
 import { renderReportHtml } from "./report-html.ts";
 import type { CanvasRect, InstanceSnapshot, KitSnapshot, PreviewSnapshot } from "./snapshot.ts";
+import { unchangedByDesign } from "./unchanged-by-design.ts";
 import { judgeCell, worstFirst } from "./verdict.ts";
 import type { BoxSize, CellFlag, CellVerdict } from "./verdict.ts";
 
@@ -65,6 +67,11 @@ export type ReportRow = {
   /** The mismatched pixel counts, or null when Figma drew nothing. */
   readonly pixels: { readonly raw: number; readonly tolerant: number } | null;
   readonly verdict: CellVerdict;
+  /**
+   * True when the kit draws the cell's forced state exactly as at rest and the browser showed no
+   * change either, such as a pressed Toggle on hover. Such a cell gets no `state-missing` flag.
+   */
+  readonly unchangedByDesign: boolean;
   readonly images: CellImages;
 };
 
@@ -160,12 +167,16 @@ export function planCells(instances: readonly InstanceSnapshot[], renderers: Ren
   return { planned, unsupported };
 }
 
-function stateFlags(rendered: RenderedCell): CellFlag[] {
+/**
+ * The flags of a cell's state. `unchangedByDesign` is true when the browser showed no change for
+ * a cell the kit draws unchanged too, which gets no `state-missing` flag.
+ */
+function stateFlags(rendered: RenderedCell, unchangedByDesign: boolean): CellFlag[] {
   switch (rendered.state) {
     case "interaction":
       return ["state-by-interaction"];
     case "missing":
-      return ["state-missing"];
+      return unchangedByDesign ? [] : ["state-missing"];
     case "none":
     case "forced":
       return [];
@@ -199,11 +210,11 @@ type FigmaSide = {
 function compareCell(
   { instance, image }: FigmaSide,
   rendered: RenderedCell,
+  flags: readonly CellFlag[],
   background: Rgb,
   options: CompareOptions
 ): ComparedCell {
   const browserPrint = browserFootprint(options.layout.padding, DEVICE_SCALE, rendered.raster);
-  const flags = stateFlags(rendered);
   const figmaBox = { width: instance.box.width, height: instance.box.height };
   if (image === null) {
     const canvas = sharedCanvas([browserPrint]);
@@ -271,6 +282,7 @@ export async function compareSnapshot(
   const assets = readPageAssets(build.success);
   // The Fuse build exists by now, so the renderers' imports of it load.
   const renderers = await loadRenderers();
+  const unchanged = unchangedByDesign((await buildComponentSets()).map((set) => set.componentSet));
   const launched = await CompareBrowser.launch(assets);
   if (Result.isFailure(launched)) {
     return Result.fail(launched.failure);
@@ -284,7 +296,7 @@ export async function compareSnapshot(
   const previews: ReportPreview[] = [];
   try {
     for (const [previewIndex, preview] of snapshot.previews.entries()) {
-      const outcome = await comparePreview(browser, preview, previewIndex, renderers, options);
+      const outcome = await comparePreview(browser, preview, previewIndex, renderers, unchanged, options);
       if (Result.isFailure(outcome)) {
         return Result.fail(outcome.failure);
       }
@@ -315,6 +327,7 @@ async function comparePreview(
   preview: PreviewSnapshot,
   previewIndex: number,
   renderers: Renderers,
+  unchanged: ReadonlySet<string>,
   options: CompareOptions
 ): Promise<
   Result.Result<
@@ -365,7 +378,8 @@ async function comparePreview(
           : { renderBounds: instance.image.renderBounds, png: png.success },
     };
     const stem = `p${String(previewIndex).padStart(2, "0")}-${request.id}`;
-    const compared = compareCell(figmaSide, cell, background, options);
+    const unchangedByDesign = unchanged.has(instance.variant) && cell.state === "missing";
+    const compared = compareCell(figmaSide, cell, stateFlags(cell, unchangedByDesign), background, options);
     const write = (suffix: string, raster: Raster) => {
       const path = `cells/${stem}-${suffix}.png`;
       writeFileSync(join(options.outDir, path), encodePng(raster));
@@ -392,6 +406,7 @@ async function comparePreview(
       browserBox: cell.box,
       pixels: compared._tag === "Compared" ? { raw: compared.raw, tolerant: compared.tolerant } : null,
       verdict: compared.verdict,
+      unchangedByDesign,
       images: pictures,
     });
   }

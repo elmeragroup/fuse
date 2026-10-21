@@ -1,7 +1,7 @@
 /**
- * The Button kit against hand-written expectations: which Fuse variable or literal each Figma
- * field of a cell must carry, read from `button-variants.ts`, `control-size.ts` and
- * `state-face.ts`. The spec builder is the unit under test.
+ * The Button and Toggle kits against hand-written expectations: which Fuse variable or literal
+ * each Figma field of a cell must carry, read from `button-variants.ts`, `toggle-variants.ts`,
+ * `control-size.ts` and `state-face.ts`. The spec builder is the unit under test.
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -99,9 +99,9 @@ describe("the Button component set", () => {
   });
 
   it("covers every recipe size across the two sets, except the line-sized icon-inline", () => {
-    const sizes = spec.componentSets.flatMap(
-      (set) => set.axes.find((axis) => axis.name === "size")?.values ?? []
-    );
+    const sizes = spec.componentSets
+      .filter((set) => set.page === "page/button")
+      .flatMap((set) => set.axes.find((axis) => axis.name === "size")?.values ?? []);
     expect(sizes.toSorted()).toEqual(
       Object.keys(buttonVariants.variants.size)
         .filter((size) => size !== "icon-inline")
@@ -352,7 +352,84 @@ describe("the Icon button component set", () => {
   });
 });
 
-describe("the Button coverage", () => {
+function toggle(variant: string, size: string, state: string, pressed: string): ComponentRootSpec {
+  return find(`toggle/variant=${variant},size=${size},state=${state},pressed=${pressed},icon=none`);
+}
+
+describe("the Toggle component sets", () => {
+  it("hold the 2 × 4 × 4 × 2 × 3 Toggle matrix and the 2 × 4 × 4 × 2 Icon toggle matrix", () => {
+    const [labelled, square] = spec.componentSets.filter((set) => set.page === "page/toggle");
+    expect(labelled?.axes).toEqual([
+      { name: "variant", values: ["default", "outline"] },
+      { name: "size", values: ["default", "xs", "sm", "lg"] },
+      { name: "state", values: ["rest", "hover", "focus", "disabled"] },
+      { name: "pressed", values: ["off", "on"] },
+      { name: "icon", values: ["none", "start", "end"] },
+    ]);
+    expect(new Set(labelled?.variants.map((cell) => cell.key)).size).toBe(192);
+    expect(labelled?.textProperties).toEqual([{ name: "Label", defaultValue: "Toggle" }]);
+    // The docs place Star on either side.
+    expect(labelled?.swapProperties).toEqual([
+      { name: "Start icon", defaultIcon: "icon/Star" },
+      { name: "End icon", defaultIcon: "icon/Star" },
+    ]);
+    expect(new Set(square?.variants.map((cell) => cell.key)).size).toBe(64);
+    expect(square?.swapProperties).toEqual([{ name: "Icon", defaultIcon: "icon/Star" }]);
+  });
+
+  it("fills with muted while pressed or hovered, and with nothing at rest", () => {
+    // bg-transparent paints nothing, so the root has no fill, as a ghost Button has none.
+    expect(toggle("default", "default", "rest", "off").fill).toBeUndefined();
+    expect(toggle("default", "default", "hover", "off").fill).toEqual(paint("muted"));
+    // aria-pressed:bg-muted and enabled-hover:bg-muted agree, so pressed looks the same on hover.
+    expect(toggle("default", "default", "rest", "on").fill).toEqual(paint("muted"));
+    expect(toggle("default", "default", "hover", "on").fill).toEqual(paint("muted"));
+    const disabled = toggle("outline", "default", "disabled", "on");
+    expect([disabled.fill, disabled.opacity]).toEqual([paint("muted"), 0.5]);
+  });
+
+  it("rounds xs with the compact corner and the other sizes with radius-md", () => {
+    expect(toggle("default", "xs", "rest", "off").cornerRadius).toEqual(token("radius-compact"));
+    expect(toggle("default", "default", "rest", "off").cornerRadius).toEqual(token("radius-md"));
+    expect(toggle("outline", "lg", "rest", "off").cornerRadius).toEqual(token("radius-md"));
+  });
+
+  it("strokes the outline Toggle with the input role and casts Tailwind's shadow-xs", () => {
+    const outline = toggle("outline", "default", "rest", "off");
+    expect(outline.stroke).toEqual({ color: paint("input"), weight: literal(1) });
+    expect(outline.shadows).toEqual([
+      {
+        color: { kind: "literal", color: { r: 0, g: 0, b: 0, a: 0.05 } },
+        offsetX: 0,
+        offsetY: 1,
+        radius: literal(2),
+        spread: literal(0),
+      },
+    ]);
+  });
+
+  it("gives the icon toggle's lone icon the start icon's inset", () => {
+    const md = find("icon-toggle/variant=default,size=default,state=rest,pressed=off");
+    expect([md.minWidth, md.paddingLeft, md.paddingRight]).toEqual([
+      density("control-h-md"),
+      density("control-px-icon-md"),
+      density("control-px-md"),
+    ]);
+    expect(md.children).toEqual([
+      {
+        kind: "icon",
+        key: "icon-only",
+        name: "Icon",
+        icon: "icon/Star",
+        swapProperty: "Icon",
+        size: literal(16),
+        color: paint("foreground"),
+      },
+    ]);
+  });
+});
+
+describe("the kit coverage", () => {
   it("leaves no declaration unmapped", () => {
     expect(coverage.filter((row) => row.outcome === "unmapped")).toEqual([]);
   });
@@ -366,12 +443,15 @@ describe("the Button coverage", () => {
   });
 
   it("drops the states no cell shows, and only the ones the definition omits", () => {
-    const omitted = new Set(
-      coverage.flatMap((row) =>
-        row.outcome === "dropped" ? (/^no cell of the matrix shows `(.+)`$/.exec(row.detail)?.[1] ?? []) : []
-      )
-    );
-    expect(omitted).toEqual(
+    const omitted = (component: string) =>
+      new Set(
+        coverage.flatMap((row) =>
+          row.outcome === "dropped" && row.component === component
+            ? (/^no cell of the matrix shows `(.+)`$/.exec(row.detail)?.[1] ?? [])
+            : []
+        )
+      );
+    expect(omitted("Button")).toEqual(
       new Set([
         "aria-invalid",
         "data-invalid",
@@ -379,6 +459,10 @@ describe("the Button coverage", () => {
         "enabled-active",
         "in-data-[slot=button-group]",
       ])
+    );
+    // A disabled Toggle is a native disabled button, which Base UI never marks aria-disabled.
+    expect(omitted("Toggle")).toEqual(
+      new Set(["aria-invalid", "data-invalid", "enabled-active", "aria-disabled"])
     );
   });
 });
@@ -454,26 +538,31 @@ describe("the icon library", () => {
 });
 
 describe("the preview frames", () => {
-  it("put Button and Icon button on the Button page, and the icons on a page of their own", () => {
+  it("put each component's sets on its own page, and the icons on a page of their own", () => {
     expect(spec.pages).toEqual([
       { key: "page/button", name: "Button" },
+      { key: "page/toggle", name: "Toggle" },
       { key: "page/icons", name: "Icons" },
     ]);
     expect(spec.componentSets.map((set) => [set.key, set.page])).toEqual([
       ["button", "page/button"],
       ["icon-button", "page/button"],
+      ["toggle", "page/toggle"],
+      ["icon-toggle", "page/toggle"],
     ]);
     expect(spec.icons.page).toBe("page/icons");
   });
 
-  it("pin four Fjordkraft private themes at Auto density on the Button page, each on all five axes", () => {
+  it("pin four Fjordkraft private themes at Auto density on each component page, each on all five axes", () => {
     expect(spec.previews.map((preview) => [preview.key, preview.page])).toEqual(
-      [
-        "internal-fkas-private-light",
-        "internal-fkas-private-dark",
-        "external-fkas-private-light",
-        "external-fkas-private-dark",
-      ].map((theme) => [`preview/button/${theme}`, "page/button"])
+      ["button", "toggle"].flatMap((page) =>
+        [
+          "internal-fkas-private-light",
+          "internal-fkas-private-dark",
+          "external-fkas-private-light",
+          "external-fkas-private-dark",
+        ].map((theme) => [`preview/${page}/${theme}`, `page/${page}`])
+      )
     );
     expect(spec.previews[3]?.modes).toEqual([
       { collection: "Fuse tokens", mode: "Dark" },
@@ -485,11 +574,26 @@ describe("the preview frames", () => {
   });
 
   it("give each preview a group per set on its page, each placing variants of its set", () => {
+    const groups = new Map([
+      [
+        "page/button",
+        [
+          ["button", "Button"],
+          ["icon-button", "Icon button"],
+        ],
+      ],
+      [
+        "page/toggle",
+        [
+          ["toggle", "Toggle"],
+          ["icon-toggle", "Icon toggle"],
+        ],
+      ],
+    ]);
     for (const preview of spec.previews) {
-      expect(preview.groups.map((group) => [group.key, group.name])).toEqual([
-        [`${preview.key}/button`, "Button"],
-        [`${preview.key}/icon-button`, "Icon button"],
-      ]);
+      expect(preview.groups.map((group) => [group.key, group.name])).toEqual(
+        groups.get(preview.page)?.map(([key, name]) => [`${preview.key}/${key}`, name])
+      );
       for (const group of preview.groups) {
         const set = spec.componentSets.find((candidate) => candidate.key === group.componentSet);
         const keys = new Set(set?.variants.map((cell) => cell.key));
