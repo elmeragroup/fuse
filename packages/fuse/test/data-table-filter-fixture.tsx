@@ -404,17 +404,19 @@ export function freezeToday(): void {
 }
 
 /**
- * Renders the fixture inside an open shadow root, as a web-component host does: the shadow root
- * loads the stylesheets itself and holds the ThemeScope, so the overlays portal into it too.
- * Unmounts when the test finishes.
+ * Renders the fixture inside a shadow root, as a web-component host does: the shadow root loads
+ * the stylesheets itself and holds the ThemeScope, so the overlays portal into it too. Unmounts
+ * when the test finishes. Locators reach an open root only, so a test of a closed one queries the
+ * returned root itself.
  *
  * @param props - The fixture's props.
+ * @param mode - The shadow root's mode.
  * @returns The shadow root, whose `activeElement` names the focused element inside it.
  */
-export function renderOrdersInShadowRoot(props: OrdersProps): ShadowRoot {
+export function renderOrdersInShadowRoot(props: OrdersProps, mode: ShadowRootMode = "open"): ShadowRoot {
   const host = document.createElement("div");
   document.body.append(host);
-  const shadow = host.attachShadow({ mode: "open" });
+  const shadow = host.attachShadow({ mode });
   const style = document.createElement("style");
   style.textContent = `${stylesCss}\n${themesCss}`;
   const mount = document.createElement("div");

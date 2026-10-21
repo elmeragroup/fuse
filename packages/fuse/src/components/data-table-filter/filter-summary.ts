@@ -2,6 +2,7 @@
 // options list up to two labels and a bare "+N", and numbers and dates use the platform's own
 // `formatRange`.
 
+import { dateTimeFormat, listFormat, numberFormat } from "../../internal/intl-cache";
 import type { FilterField } from "./filter-fields";
 import { optionsOf } from "./filter-fields";
 import type { FilterValue } from "./filter-model";
@@ -51,12 +52,12 @@ export function summarize(
       const labels = value.values.map(
         (item) => options.find((option) => option.value === item)?.label ?? item
       );
-      const list = new Intl.ListFormat(locale, { type: "unit", style: "short" });
+      const list = listFormat(locale, { type: "unit", style: "short" });
       const shown = labels.slice(0, VISIBLE_OPTIONS);
       const rest = labels.length - shown.length;
       const text =
         rest > 0
-          ? `${list.format(shown)} ${strings.moreValues(new Intl.NumberFormat(locale).format(rest))}`
+          ? `${list.format(shown)} ${strings.moreValues(numberFormat(locale).format(rest))}`
           : list.format(shown);
       return { text, full: list.format(labels) };
     }
@@ -65,7 +66,7 @@ export function summarize(
       return { text, full: text };
     }
     case "number": {
-      const numbers = new Intl.NumberFormat(locale, field.kind === "number" ? field.format : undefined);
+      const numbers = numberFormat(locale, field.kind === "number" ? field.format : undefined);
       const text =
         value.values.length === 2
           ? numbers.formatRange(value.values[0], value.values[1])
@@ -74,7 +75,7 @@ export function summarize(
     }
     case "date": {
       // The values are calendar days, so they format in UTC, where midnight is that same day.
-      const dates = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" });
+      const dates = dateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" });
       const text =
         value.values.length === 2
           ? dates.formatRange(utcDay(value.values[0]), utcDay(value.values[1]))

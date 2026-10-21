@@ -35,6 +35,7 @@ import { overlayPositionerClass, overlayTimedPopupClass } from "../overlay/overl
 import { OverlayPortal } from "../overlay/overlay-portal";
 import { EditorTargetContext, useFilterInternals, useOverlayRef } from "./data-table-filter";
 import type { EditorTarget } from "./data-table-filter";
+import { OptionCount } from "./data-table-filter-editors";
 import { DefaultEditor } from "./data-table-filter-value-content";
 import { dataTableFilterSlots as slots } from "./data-table-filter-variants";
 import type { FilterField, FilterFieldOfKind, FilterOption } from "./filter-fields";
@@ -150,8 +151,14 @@ function useStepMorph(step: string) {
   return { ref, onTransitionEnd };
 }
 
-/** The props of `DataTableFilter.Content`: Base UI Menu Popup's. */
-export type DataTableFilterContentProps = Omit<ComponentProps<typeof MenuPrimitive.Popup>, "children"> & {
+/**
+ * The props of `DataTableFilter.Content`: Base UI Menu Popup's, except `finalFocus`, since the Root
+ * decides where focus goes as the menu closes.
+ */
+export type DataTableFilterContentProps = Omit<
+  ComponentProps<typeof MenuPrimitive.Popup>,
+  "children" | "finalFocus"
+> & {
   /**
    * The menu's body: `FieldList` and an `Editor` for the in-place drill, each rendering only for
    * its step. Defaults to both, with the default kind editors.
@@ -641,11 +648,7 @@ function ValueItem({
         ) : null}
         {option.label}
       </span>
-      {count === undefined ? null : (
-        <span aria-hidden data-slot="data-table-filter-count" className={slots.count()}>
-          {new Intl.NumberFormat(meta.locale).format(count)}
-        </span>
-      )}
+      {count === undefined ? null : <OptionCount count={count} />}
     </MenuPrimitive.CheckboxItem>
   );
 }

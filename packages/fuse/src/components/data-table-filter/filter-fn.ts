@@ -5,6 +5,7 @@
 import { matchesFilter } from "./filter-match";
 import type { MatchOptions } from "./filter-match";
 import { isFilterValue } from "./filter-model";
+import type { FilterValue } from "./filter-model";
 
 /** The row members the filter function reads. */
 type FilterRowSource = {
@@ -38,10 +39,24 @@ export type DataTableFilterFn = FilterRowPredicate & FilterFnMembers;
  * @returns The filter function.
  */
 export function createDataTableFilterFn(options: MatchOptions = {}): DataTableFilterFn {
+  // TanStack hands every row the same filter object, so each object is parsed once, not per row.
+  const parsed = new WeakMap<object, boolean>();
+  // oxlint-disable-next-line anti-slop/no-unknown-parameters -- TanStack's FilterFn contract passes the raw state value
+  const isParsed = (filterValue: unknown): filterValue is FilterValue => {
+    if (!(filterValue instanceof Object)) {
+      return false;
+    }
+    let valid = parsed.get(filterValue);
+    if (valid === undefined) {
+      valid = isFilterValue(filterValue);
+      parsed.set(filterValue, valid);
+    }
+    return valid;
+  };
   // oxlint-disable-next-line anti-slop/no-unknown-parameters -- TanStack's FilterFn contract passes the raw state value
   const filterFn = (row: FilterRowSource, columnId: string, filterValue: unknown): boolean =>
-    isFilterValue(filterValue) ? matchesFilter(filterValue, row.getValue(columnId), options) : true;
+    isParsed(filterValue) ? matchesFilter(filterValue, row.getValue(columnId), options) : true;
   // oxlint-disable-next-line anti-slop/no-unknown-parameters -- TanStack's FilterFn contract passes the raw state value
-  const autoRemove = (filterValue: unknown): boolean => !isFilterValue(filterValue);
+  const autoRemove = (filterValue: unknown): boolean => !isParsed(filterValue);
   return Object.assign(filterFn, { autoRemove });
 }

@@ -3,7 +3,8 @@ import type { ReactElement } from "react";
 /**
  * Public type guarantees of `@elmeragroup/fuse/data-table-filter`. Each positive case has a
  * negative control: a field must fit its column's type, a value's operator fixes its kind and
- * arity, facets fit their field's kind, and the Root rejects a table without column filtering.
+ * arity, facets fit their field's kind, the Root rejects a table without column filtering, and the
+ * overlays take no focus routing.
  */
 import { columnFilteringFeature, rowPaginationFeature, tableFeatures, useTable } from "@tanstack/react-table";
 import { expectTypeOf, test } from "vitest";
@@ -133,4 +134,20 @@ test("the date editor's function child receives a single or range target", () =>
     </DataTableFilter.DateEditor>
   );
   expectTypeOf(editor).toBeObject();
+});
+
+test("the overlays leave focus routing to the Root", () => {
+  const overlays = (
+    <>
+      <DataTableFilter.Content className="w-72" />
+      <DataTableFilter.ValueContent className="w-72" />
+      {/* @ts-expect-error -- the Root decides where focus goes as the menu closes */}
+      <DataTableFilter.Content finalFocus={false} />
+      {/* @ts-expect-error -- the Root decides where focus goes as the popover closes */}
+      <DataTableFilter.ValueContent finalFocus={false} />
+      {/* @ts-expect-error -- the Root decides where focus goes as the popover opens */}
+      <DataTableFilter.ValueContent initialFocus={false} />
+    </>
+  );
+  expectTypeOf(overlays).toBeObject();
 });

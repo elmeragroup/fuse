@@ -13,6 +13,8 @@ import { useMediaQuery } from "../../hooks/use-media-query";
 import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { MagnifyingGlass } from "../../icons/generated/magnifying-glass";
 import { definedProps } from "../../internal/defined-props";
+import { numberFormat } from "../../internal/intl-cache";
+import { isBackspaceOnEmpty } from "../../internal/is-backspace-on-empty";
 import { cn } from "../../styles/cn";
 import {
   ComboboxCollection,
@@ -35,7 +37,7 @@ import { useFilterInternals, useFocusRequest } from "./data-table-filter";
 import type { DraftValues, EditorContextValue } from "./data-table-filter-editor-context";
 import { useKindEditor } from "./data-table-filter-editor-context";
 import { dataTableFilterSlots as slots } from "./data-table-filter-variants";
-import { completeValues } from "./editor-draft";
+import { completeValues, stepBounds } from "./editor-draft";
 import type {
   DateFilterField,
   FilterFieldOfKind,
@@ -53,6 +55,19 @@ export type DataTableFilterKindEditorProps = ComponentProps<"div">;
 
 // Option and multi-option: an inline Base UI Combobox with `multiple`, so the list is
 // aria-multiselectable and each row states its selection. Each toggle applies at once.
+
+/**
+ * How many rows hold an option, beside its label in a list. Hidden from assistive technology, so
+ * the option's name stays "Paid".
+ */
+export function OptionCount({ count }: { readonly count: number }): ReactElement {
+  const { meta } = useFilterInternals("DataTableFilter.OptionEditor");
+  return (
+    <span aria-hidden data-slot="data-table-filter-count" className={slots.count()}>
+      {numberFormat(meta.locale).format(count)}
+    </span>
+  );
+}
 
 /** Edits an option or multi-option filter. Renders nothing for other kinds. */
 export function DataTableFilterOptionEditor(props: DataTableFilterKindEditorProps): ReactElement | null {
@@ -155,12 +170,7 @@ function OptionEditorBody({
                         </span>
                       )}
                       <span className="min-w-0 truncate">{option.label}</span>
-                      {count === undefined ? null : (
-                        // Hidden from assistive technology, so the option's name stays "Paid".
-                        <span aria-hidden data-slot="data-table-filter-count" className={slots.count()}>
-                          {new Intl.NumberFormat(meta.locale).format(count)}
-                        </span>
-                      )}
+                      {count === undefined ? null : <OptionCount count={count} />}
                     </ComboboxItem>
                   );
                 }}
@@ -204,16 +214,19 @@ function TextEditorBody({
   const text = String(draft.values[0] ?? "");
   const inputRef = useFocusRequest<HTMLInputElement>(editor.focusKey);
   const hintId = useId();
+  // Text an input method is still composing is not confirmed yet, so the pause waits for the
+  // composition to end and starts over from there.
+  const [composing, setComposing] = useState(false);
 
   useEffect(() => {
-    if (text.trim() === applied) {
+    if (composing || text.trim() === applied) {
       return undefined;
     }
     const timer = setTimeout(settle, TEXT_PAUSE_MS);
     return () => {
       clearTimeout(timer);
     };
-  }, [text, applied, settle]);
+  }, [composing, text, applied, settle]);
 
   return (
     <div
@@ -232,6 +245,12 @@ function TextEditorBody({
           onChange={(event) => {
             editor.setDraft({ operator: draft.operator, values: [event.currentTarget.value] });
           }}
+          onCompositionStart={() => {
+            setComposing(true);
+          }}
+          onCompositionEnd={() => {
+            setComposing(false);
+          }}
           onKeyDown={(event) => {
             if (isComposing(event)) {
               return;
@@ -244,12 +263,7 @@ function TextEditorBody({
               // Settled before the overlay closes or goes back, so a focus target sees the chip it
               // keeps.
               settle();
-            } else if (
-              editor.back !== undefined &&
-              event.key === "Backspace" &&
-              !event.repeat &&
-              event.currentTarget.value === ""
-            ) {
+            } else if (editor.back !== undefined && isBackspaceOnEmpty(event)) {
               // In the add menu a fresh Backspace in an empty input goes back a step, as Command's
               // search does. A held Backspace that has just emptied the input is still deleting.
               event.preventDefault();
@@ -296,8 +310,7 @@ function NumberEditorBody({
   const { field, fieldId, draft, settle } = editor;
   const step = field.step ?? 1;
   const range = meta.facets.range(fieldId);
-  const bounds: readonly [number, number] | undefined =
-    range === undefined ? undefined : [Math.floor(range[0] / step) * step, Math.ceil(range[1] / step) * step];
+  const bounds = range === undefined ? undefined : stepBounds(range, step);
   const target = targetOf("number", draft.operator);
   const count = target === "range" ? 2 : 1;
   // Each endpoint keeps its position, so a Maximum typed first stays in Maximum.

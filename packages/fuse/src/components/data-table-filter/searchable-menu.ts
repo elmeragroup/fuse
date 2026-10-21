@@ -8,6 +8,8 @@ import type { KeyboardEvent } from "react";
 
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 
+import { isBackspaceOnEmpty } from "../../internal/is-backspace-on-empty";
+
 /** Base UI's preview menu filtering parts. */
 export const SearchableMenu = {
   /** Makes the Menu.Root or Menu.SubmenuRoot inside it filterable. Renders no element. */
@@ -58,10 +60,10 @@ export function keepKeysFromToolbar(event: KeyboardEvent<HTMLElement>): void {
  * @param event - The submenu search's keydown.
  */
 export function closeSubmenuOnBackspace(event: KeyboardEvent<HTMLInputElement>): void {
-  const input = event.currentTarget;
-  if (event.key !== "Backspace" || event.repeat || input.value !== "" || event.nativeEvent.isComposing) {
+  if (!isBackspaceOnEmpty(event)) {
     return;
   }
+  const input = event.currentTarget;
   event.preventDefault();
   const view = input.ownerDocument.defaultView;
   if (view === null) {

@@ -455,6 +455,19 @@ type Ghost = { readonly id: string; readonly value: FilterValue; readonly index:
 
 type FocusTarget = { readonly chip: string; readonly edge: "first" | "last" } | { readonly trigger: true };
 
+/**
+ * Where focus goes when a chip goes: the next chip's first segment, else the previous chip's last,
+ * else the Trigger.
+ */
+function neighbourTarget(list: readonly { readonly id: string }[], index: number): FocusTarget {
+  const next = list[index + 1];
+  if (next !== undefined) {
+    return { chip: next.id, edge: "first" };
+  }
+  const previous = list[index - 1];
+  return previous === undefined ? { trigger: true } : { chip: previous.id, edge: "last" };
+}
+
 function moveTo(entries: DataTableFilterEntry[], id: string, index: number): DataTableFilterEntry[] {
   const entry = entries.find((item) => item.id === id);
   if (entry === undefined) {
@@ -673,33 +686,25 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
 
   const facetReader = createFacetReader(table, fields, knownFacets);
 
-  // Focuses the neighbour of a chip that goes: the next chip's first segment that takes focus, else
-  // the previous chip's last, else the Trigger. Returns the element that took focus.
-  const neighbourOf = (list: readonly ChipFilter[], index: number): HTMLElement | null => {
-    const next = list[index + 1];
-    if (next !== undefined) {
-      return focusEdge(segments.current.get(next.id), "first", triggerElement());
-    }
-    const previous = list[index - 1];
-    if (previous !== undefined) {
-      return focusEdge(segments.current.get(previous.id), "last", triggerElement());
-    }
-    return focusEdge(undefined, "first", triggerElement());
-  };
+  // Focuses the target's segment that takes focus, else the Trigger. Returns the element that took
+  // focus.
+  const focusTarget = (target: FocusTarget): HTMLElement | null =>
+    "trigger" in target
+      ? focusEdge(undefined, "first", triggerElement())
+      : focusEdge(segments.current.get(target.chip), target.edge, triggerElement());
 
-  // Focus after a remove or a clear: the next chip's first segment, else the previous chip's last,
-  // else the Trigger. The chips it names exist once this commit lands.
+  // Focuses the neighbour of a chip that goes, now rather than after a commit.
+  const neighbourOf = (list: readonly ChipFilter[], index: number): HTMLElement | null =>
+    focusTarget(neighbourTarget(list, index));
+
+  // Focus after a remove or a clear. The chips it names exist once this commit lands.
   useLayoutEffect(() => {
     const target = pendingFocus.current;
     if (target === null) {
       return;
     }
     pendingFocus.current = null;
-    if ("trigger" in target) {
-      focusEdge(undefined, "first", triggerElement());
-    } else {
-      focusEdge(segments.current.get(target.chip), target.edge, triggerElement());
-    }
+    focusTarget(target);
   });
 
   /**
@@ -795,15 +800,10 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
           // settles focus. Another field's open editor stays.
           return;
         }
-        const index = chips.findIndex((chip) => chip.id === fieldId);
-        const next = chips[index + 1];
-        const previous = chips[index - 1];
-        pendingFocus.current =
-          next !== undefined
-            ? { chip: next.id, edge: "first" }
-            : previous !== undefined
-              ? { chip: previous.id, edge: "last" }
-              : { trigger: true };
+        pendingFocus.current = neighbourTarget(
+          chips,
+          chips.findIndex((chip) => chip.id === fieldId)
+        );
         commit((state) => removeFilter(state, fieldId));
       },
       clear: () => {

@@ -50,10 +50,13 @@ import { resolveFocusTarget } from "./filter-focus";
 import type { FilterOperator } from "./filter-model";
 import { convertValues, filterValuesEqual, findFilter, operatorChoices } from "./filter-model";
 
-/** The props of `DataTableFilter.ValueContent`: Base UI Popover Popup's. */
+/**
+ * The props of `DataTableFilter.ValueContent`: Base UI Popover Popup's, except `initialFocus` and
+ * `finalFocus`, since the Root decides where focus goes as the popover opens and closes.
+ */
 export type DataTableFilterValueContentProps = Omit<
   ComponentProps<typeof PopoverPrimitive.Popup>,
-  "children"
+  "children" | "initialFocus" | "finalFocus"
 > & {
   /** Replaces the editor. `useDataTableFilter().state.editing` names the edited field. */
   children?: ReactNode;
@@ -142,7 +145,7 @@ export function DataTableFilterValueContent({
               popoverShellClass,
               slots.content()
             )}
-            {...definedProps(props)}>
+            {...props}>
             <PopoverPrimitive.Viewport data-slot="data-table-filter-viewport" className={slots.viewport()}>
               <EditorTargetContext value={target}>{children ?? <DefaultEditor />}</EditorTargetContext>
             </PopoverPrimitive.Viewport>

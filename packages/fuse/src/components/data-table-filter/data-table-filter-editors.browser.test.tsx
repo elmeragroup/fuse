@@ -959,6 +959,32 @@ describe("DataTableFilter IME composition", () => {
     await settled();
     expect(roleNamed("dialog", "Add filter").getAttribute("data-step")).toBe("editor");
   });
+
+  it("holds the typing pause through a composition and starts it over when the composition ends", async () => {
+    let count = 0;
+    renderOrders({
+      initial: CUSTOMER_NORD,
+      onColumnFiltersChange: () => {
+        count += 1;
+      },
+    });
+    await userEvent.click(roleNamed("button", "“nord”"));
+    await expect.poll(() => focusIs("textbox", "Customer")).toBe(true);
+    const input = roleNamed("textbox", "Customer");
+    input.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true }));
+    await userEvent.keyboard("{End}x");
+    // A person choosing a candidate pauses far longer than the 300 ms typing pause.
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(count).toBe(0);
+    input.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true, data: "x" }));
+    await vi.advanceTimersByTimeAsync(250);
+    expect(count).toBe(0);
+    await vi.advanceTimersByTimeAsync(100);
+    expect(count).toBe(1);
+    await expect
+      .poll(columnFilters)
+      .toEqual([{ id: "customer", value: { kind: "text", operator: "contains", values: ["nordx"] } }]);
+  });
 });
 
 describe("DataTableFilter number and date drafts", () => {

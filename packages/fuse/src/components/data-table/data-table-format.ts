@@ -4,6 +4,7 @@
  * cell therefore parses `getValue()` into a {@link CellValue} first, and a cell handed a value of
  * another kind renders its raw text instead of throwing.
  */
+import { dateTimeFormat, numberFormat } from "../../internal/intl-cache";
 import type { SupportedLocale } from "../../intl/locale-context";
 
 /** Number format options a number cell accepts. `style` belongs to the cell kind. */
@@ -33,29 +34,6 @@ export type CellValue =
   | { readonly kind: "text"; readonly value: string };
 
 /**
- * Formatters by locale and options. Building an `Intl` formatter costs far more than formatting
- * with one, and every cell formats on each table render. The keys are bounded by the cell
- * configurations in app code, so the maps need no eviction.
- */
-const numberFormats = new Map<string, Intl.NumberFormat>();
-const dateTimeFormats = new Map<string, Intl.DateTimeFormat>();
-
-function cached<TFormat>(
-  cache: Map<string, TFormat>,
-  locale: SupportedLocale,
-  options: Intl.NumberFormatOptions | Intl.DateTimeFormatOptions,
-  create: () => TFormat
-): TFormat {
-  const key = `${locale}\u0000${JSON.stringify(options)}`;
-  let format = cache.get(key);
-  if (format === undefined) {
-    format = create();
-    cache.set(key, format);
-  }
-  return format;
-}
-
-/**
  * The raw text of a parsed cell value.
  *
  * @param cell - The parsed value.
@@ -78,7 +56,7 @@ export function formatNumberCell(
   value: number,
   options: NumberFormatOptions
 ): string {
-  return cached(numberFormats, locale, options, () => new Intl.NumberFormat(locale, options)).format(value);
+  return numberFormat(locale, options).format(value);
 }
 
 /**
@@ -97,12 +75,7 @@ export function formatCurrencyCell(
   options: NumberFormatOptions
 ): string {
   const currencyOptions: Intl.NumberFormatOptions = { ...options, style: "currency", currency };
-  return cached(
-    numberFormats,
-    locale,
-    currencyOptions,
-    () => new Intl.NumberFormat(locale, currencyOptions)
-  ).format(value);
+  return numberFormat(locale, currencyOptions).format(value);
 }
 
 /**
@@ -114,7 +87,5 @@ export function formatCurrencyCell(
  * @returns The formatted date.
  */
 export function formatDateCell(locale: SupportedLocale, value: Date, options: DateTimeFormatOptions): string {
-  return Number.isNaN(value.getTime())
-    ? String(value)
-    : cached(dateTimeFormats, locale, options, () => new Intl.DateTimeFormat(locale, options)).format(value);
+  return Number.isNaN(value.getTime()) ? String(value) : dateTimeFormat(locale, options).format(value);
 }

@@ -29,8 +29,18 @@ describe("DataTableFilter demos", () => {
     const rows = demo.getByRole("table", { name: "Orders" }).getByRole("row").filter({ hasText: /^ORD-/ });
     await expect.poll(() => rows.count()).toBe(8);
 
-    await demo.getByRole("button", { name: "Filter", exact: true }).click();
-    await page.getByRole("menuitem", { name: "Status", exact: true }).click();
+    // The keyboard opens the value submenu. A pointer opens it on hover, which ties it to the
+    // pointer: on a loaded CI runner it closed with the pointer still on the Status row, and the
+    // click on Draft found the closing, inert submenu.
+    await demo.getByRole("button", { name: "Filter", exact: true }).focus();
+    await page.keyboard.press("Enter");
+    await page.getByRole("searchbox", { name: "Search fields", exact: true }).fill("Status");
+    const status = page.getByRole("menuitem", { name: "Status", exact: true });
+    await expect.poll(() => status.getAttribute("data-highlighted")).not.toBeNull();
+    await page.keyboard.press("ArrowRight");
+    // The submenu is open once its search holds focus.
+    const search = page.getByRole("searchbox", { name: "Search Status", exact: true });
+    await expect.poll(() => search.evaluate((element) => element === document.activeElement)).toBe(true);
     // 120 orders cycle through seven statuses, one of them draft: 17 drafts.
     const draft = page.getByRole("menuitemcheckbox", { name: "Draft", exact: true });
     await expect.poll(() => draft.textContent()).toBe("Draft17");

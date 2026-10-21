@@ -27,6 +27,18 @@ export type DraftWrite = {
 };
 
 /**
+ * A facet range widened out to whole steps: the slider's bounds, and the draft a new range starts
+ * from, which must agree so the draft sits inside the slider.
+ *
+ * @param range - The facet's lowest and highest values.
+ * @param step - The field's step.
+ * @returns The range's low end floored and its high end ceiled to a multiple of `step`.
+ */
+export function stepBounds(range: readonly [number, number], step: number): [number, number] {
+  return [Math.floor(range[0] / step) * step, Math.ceil(range[1] / step) * step];
+}
+
+/**
  * The draft an editor starts from: the applied filter, else the field's first operator with no
  * values. A new number range over a known facet range starts at that range, so the slider shows
  * it. A one-value operator starts empty, whatever the range.
@@ -46,12 +58,7 @@ export function draftFor(
   }
   const operator = firstOperator(field);
   if (field.kind === "number" && range !== undefined && targetOf("number", operator) === "range") {
-    const step = field.step ?? 1;
-    return {
-      operator,
-      values: [Math.floor(range[0] / step) * step, Math.ceil(range[1] / step) * step],
-      edited: false,
-    };
+    return { operator, values: stepBounds(range, field.step ?? 1), edited: false };
   }
   return { operator, values: field.kind === "text" ? [""] : [], edited: false };
 }

@@ -42,8 +42,13 @@ const dayFormatters = new Map<string, Intl.DateTimeFormat>();
  * @returns The day as `YYYY-MM-DD`.
  */
 export function calendarDateIn(date: Date, timeZone: string | undefined): IsoDate {
-  const key = timeZone ?? "";
-  let formatter = dayFormatters.get(key);
+  if (timeZone === undefined) {
+    // The runtime zone is the Date's own, so its getters read the day with no Intl call.
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${date.getFullYear()}-${month}-${day}`;
+  }
+  let formatter = dayFormatters.get(timeZone);
   if (formatter === undefined) {
     formatter = new Intl.DateTimeFormat("en-CA", {
       timeZone,
@@ -51,10 +56,61 @@ export function calendarDateIn(date: Date, timeZone: string | undefined): IsoDat
       month: "2-digit",
       day: "2-digit",
     });
-    dayFormatters.set(key, formatter);
+    dayFormatters.set(timeZone, formatter);
   }
-  const parts = new Map(formatter.formatToParts(date).map((part) => [part.type, part.value]));
-  return `${parts.get("year") ?? ""}-${parts.get("month") ?? ""}-${parts.get("day") ?? ""}`;
+  let year = "";
+  let month = "";
+  let day = "";
+  for (const part of formatter.formatToParts(date)) {
+    if (part.type === "year") {
+      year = part.value;
+    } else if (part.type === "month") {
+      month = part.value;
+    } else if (part.type === "day") {
+      day = part.value;
+    }
+  }
+  return `${year}-${month}-${day}`;
+}
+
+// What every row of one filter pass compares against, worked out once per filter value rather
+// than per row. TanStack and a server both hand each row the same value object.
+const needles = new WeakMap<FilterValue, string>();
+const pickedSets = new WeakMap<FilterValue, ReadonlySet<string>>();
+
+function prepared<T>(cache: WeakMap<FilterValue, T>, value: FilterValue, prepare: () => T): T {
+  let result = cache.get(value);
+  if (result === undefined) {
+    result = prepare();
+    cache.set(value, result);
+  }
+  return result;
+}
+
+/** The picked option values as a set. */
+function pickedOf(
+  value: Extract<FilterValue, { readonly kind: "option" | "multiOption" }>
+): ReadonlySet<string> {
+  return prepared(pickedSets, value, () => new Set(value.values));
+}
+
+/**
+ * Whether a multi-option cell holds any of the picked values, or with `all`, every one of them.
+ * One walk over the cell, and only the "every" check allocates.
+ */
+// oxlint-disable-next-line anti-slop/no-unknown-parameters -- a cell is whatever the row holds
+function holdsPicked(cell: unknown, picked: ReadonlySet<string>, all: boolean): boolean {
+  const items: readonly unknown[] = Array.isArray(cell) ? cell : [];
+  if (!all) {
+    return items.some((item) => isString(item) && picked.has(item));
+  }
+  const held = new Set<string>();
+  for (const item of items) {
+    if (isString(item) && picked.has(item)) {
+      held.add(item);
+    }
+  }
+  return held.size === picked.size;
 }
 
 type OrderedOperator = Extract<FilterValue, { readonly kind: "number" | "date" }>["operator"];
@@ -110,24 +166,22 @@ export function matchesFilter(value: FilterValue, cell: unknown, options: MatchO
   }
   switch (value.kind) {
     case "option": {
-      const hit = isString(cell) && value.values.includes(cell);
+      const hit = isString(cell) && pickedOf(value).has(cell);
       return value.operator === "is" || value.operator === "isAnyOf" ? hit : !hit;
     }
     case "multiOption": {
-      const present = new Set(Array.isArray(cell) ? cell.filter(isString) : []);
-      const some = value.values.some((item) => present.has(item));
-      const every = value.values.every((item) => present.has(item));
+      const picked = pickedOf(value);
       switch (value.operator) {
         case "includes":
         case "includesAnyOf":
-          return some;
+          return holdsPicked(cell, picked, false);
         case "includesAllOf":
-          return every;
+          return holdsPicked(cell, picked, true);
         case "excludes":
         case "excludesAnyOf":
-          return !some;
+          return !holdsPicked(cell, picked, false);
         case "excludesAllOf":
-          return !every;
+          return !holdsPicked(cell, picked, true);
       }
       return false;
     }
@@ -136,7 +190,8 @@ export function matchesFilter(value: FilterValue, cell: unknown, options: MatchO
       if (text === null) {
         return NEGATED.has(value.operator);
       }
-      const hit = normalizeText(text).includes(normalizeText(value.values[0]));
+      const needle = prepared(needles, value, () => normalizeText(value.values[0]));
+      const hit = normalizeText(text).includes(needle);
       return value.operator === "contains" ? hit : !hit;
     }
     case "number":

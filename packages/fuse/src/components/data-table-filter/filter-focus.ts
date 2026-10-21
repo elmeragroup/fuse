@@ -3,6 +3,7 @@
  * shadow roots and same-origin frames too. The Root owns when they run.
  */
 import { deepActiveElement, hasFocus } from "../../internal/active-element";
+import { isFocusRoot } from "../../internal/dom-node";
 
 const FOCUSABLE = "input:not([type=hidden]), button, [tabindex]:not([tabindex='-1'])";
 
@@ -35,17 +36,39 @@ export function resolveFocusTarget(scope: HTMLElement): HTMLElement | null {
  * @returns Whether focus moved elsewhere.
  */
 export function focusMovedElsewhere(popup: HTMLElement | null, owned: Iterable<Element>): boolean {
-  // Read through shadow roots, since the document names only the host of a focused control there.
-  const active = popup === null ? null : deepActiveElement(popup.ownerDocument);
+  if (popup === null) {
+    return false;
+  }
+  // Read from the popup's own root, since a document names only the host of a closed shadow root
+  // that holds focus. When focus is outside that root, the document's deep read finds it.
+  const root = popup.getRootNode();
+  const active =
+    (isFocusRoot(root) ? deepActiveElement(root) : null) ?? deepActiveElement(popup.ownerDocument);
   if (active === null || active === active.ownerDocument.body) {
     return false;
   }
   for (const element of owned) {
-    if (element.contains(active)) {
+    if (containsAcrossShadowRoots(element, active)) {
       return false;
     }
   }
   return true;
+}
+
+/**
+ * Whether `node` is inside `element`, or inside a shadow root hosted there, at any depth. A plain
+ * `contains` stops at a shadow root, such as one a custom editor control renders into.
+ */
+function containsAcrossShadowRoots(element: Element, node: Element): boolean {
+  let current: Node | null = node;
+  while (current !== null) {
+    if (element.contains(current)) {
+      return true;
+    }
+    const root = current.getRootNode();
+    current = isFocusRoot(root) && "host" in root ? root.host : null;
+  }
+  return false;
 }
 
 /**
