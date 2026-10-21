@@ -7,9 +7,10 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { buildComponentSet } from "./component-spec";
-import type { BuildContext, ComponentDefinition } from "./component-spec";
+import { buildComponentSet, definitionClasses } from "./component-spec";
+import type { BuildContext, ComponentDefinition, IconSlot, PartDefinition } from "./component-spec";
 import { makeVariableIndex } from "./css-values";
+import type { BoxSpec, FrameLayerSpec } from "./kit-spec";
 import { compileUtilities } from "./utility-css";
 
 const CHIP: ComponentDefinition = {
@@ -216,5 +217,236 @@ describe("tabular numerals", () => {
     expect(
       coverage.filter((row) => row.property === "font-variant-numeric").map((row) => row.outcome)
     ).toEqual(["dropped"]);
+  });
+});
+
+const zero = { kind: "literal", value: 0 } as const;
+
+// Unit under test: `buildComponentSet` on a root whose width is a percentage. Oracle: CSS, where a
+// percentage width is a share of the containing block, which a Figma number field cannot hold, so
+// the declaration fails the gate instead of passing as a fixed width.
+describe("a percentage width", () => {
+  it.each(["w-full", "w-[calc(100%-4px)]"])("leaves %s unmapped", async (className) => {
+    const { componentSet, coverage } = buildComponentSet(
+      { ...CHIP, classesFor: () => className },
+      { ...context, compiled: await compileUtilities([className]) }
+    );
+    expect(componentSet.variants[0]?.root.width).toBeUndefined();
+    expect(coverage).toEqual([
+      expect.objectContaining({ className, property: "width", outcome: "unmapped" }),
+    ]);
+  });
+});
+
+/** The one icon of the fixtures below, which sits inside the chip's dot. */
+const ICON: IconSlot = {
+  key: "icon",
+  name: "Icon",
+  side: "start",
+  direct: true,
+  dataIcon: undefined,
+  icon: "Plus",
+  swapProperty: undefined,
+};
+
+/** A part below the chip's root, the `chip-dot`, with the given classes and icons. */
+function dot(classes: string, icons: readonly IconSlot[] = []): PartDefinition {
+  return {
+    key: "dot",
+    slot: "chip-dot",
+    shownIn: () => true,
+    classesFor: () => classes,
+    label: undefined,
+    iconsFor: () => icons,
+  };
+}
+
+/**
+ * Build a chip whose root carries `rootClasses` and holds `part`, compiling every class the two
+ * use and `registered`, classes that make Tailwind register the custom properties they set.
+ */
+async function buildNested(rootClasses: string, part: PartDefinition, registered: readonly string[] = []) {
+  const definition: ComponentDefinition = { ...CHIP, classesFor: () => rootClasses, parts: [part] };
+  const built = buildComponentSet(definition, {
+    ...context,
+    compiled: await compileUtilities([...definitionClasses(definition), ...registered]),
+  });
+  return { ...built, variant: built.componentSet.variants[0] };
+}
+
+function frameOf(box: BoxSpec | undefined): FrameLayerSpec | undefined {
+  const [first] = box?.children ?? [];
+  return first?.kind === "frame" ? first : undefined;
+}
+
+// Unit under test: the cascade `buildComponentSet` runs for a part below the root. Oracle: CSS
+// inheritance. `color` and an unregistered custom property inherit their parent's computed value,
+// and a custom property Tailwind registers with `@property … { inherits: false }`, as it does
+// `--tw-ring-offset-width` for `ring-2`, takes its initial value `0px` on every child.
+describe("a part below the root", () => {
+  it("reads its parent's text color", async () => {
+    const { variant } = await buildNested("text-[#ff0000]", dot("[&_svg]:size-[16px]", [ICON]));
+    expect(frameOf(variant?.root)?.children).toEqual([
+      expect.objectContaining({
+        kind: "icon",
+        color: { kind: "literal", color: { r: 1, g: 0, b: 0, a: 1 } },
+      }),
+    ]);
+  });
+
+  it("reads a custom property its parent sets, which the parent's class reaches Figma through", async () => {
+    const { variant, coverage } = await buildNested(
+      "[--chip-corner:6px]",
+      dot("rounded-[var(--chip-corner)]")
+    );
+    expect(frameOf(variant?.root)?.cornerRadius).toEqual({ kind: "literal", value: 6 });
+    expect(coverage.filter((row) => row.className === "[--chip-corner:6px]")).toEqual([
+      expect.objectContaining({ part: "chip", property: "--chip-corner", outcome: "literal" }),
+    ]);
+  });
+
+  // Oracle: CSS selectors. `[&_svg]` compiles to `.x :is(svg)`, which matches an `<svg>` at any
+  // depth below the root, and `[&>svg:not(…)]` to `.x > svg:not(…)`, which matches only a child
+  // of the root. The icon is a child of the dot, so the 24px size must not reach it.
+  it("takes the root's descendant selector and not its child selector", async () => {
+    const { variant } = await buildNested(
+      "text-[#000000] [&_svg]:size-[16px] [&>svg:not([data-icon=inline-end])]:size-[24px]",
+      dot("", [ICON])
+    );
+    expect(frameOf(variant?.root)?.children).toEqual([
+      expect.objectContaining({ kind: "icon", size: { kind: "literal", value: 16 } }),
+    ]);
+  });
+
+  // Oracle: the coverage contract, one row per distinct outcome of each declaration of each part.
+  it("records one class on the root and on the part as two rows, one per part", async () => {
+    const { coverage } = await buildNested("bg-[#000000]", dot("bg-[#000000]"));
+    expect(
+      coverage
+        .filter((row) => row.className === "bg-[#000000]")
+        .map((row) => `${row.part}: ${row.outcome}`)
+        .toSorted()
+    ).toEqual(["chip-dot: literal", "chip: literal"]);
+  });
+
+  // Oracle: CSS inheritance passes `--chip-corner` through the dot to the ring below it, and the
+  // coverage contract names the root's class as read, whichever layer the build maps first.
+  it("records a root class only a grandchild reads as read, under the root", async () => {
+    const { variant, coverage } = await buildNested("[--chip-corner:6px]", {
+      ...dot(""),
+      parts: [{ ...dot("rounded-[var(--chip-corner)]"), key: "ring", slot: "chip-ring" }],
+    });
+    expect(frameOf(frameOf(variant?.root))?.cornerRadius).toEqual({ kind: "literal", value: 6 });
+    expect(coverage.filter((row) => row.className === "[--chip-corner:6px]")).toEqual([
+      expect.objectContaining({ part: "chip", property: "--chip-corner", outcome: "literal" }),
+    ]);
+  });
+
+  // Oracle: CSS inheritance, under which the `<svg>` inherits the custom property its part sets.
+  it("gives an icon the custom property its part sets", async () => {
+    const { variant, coverage } = await buildNested(
+      "text-[#000000]",
+      dot("[--icon-size:16px] [&_svg]:size-[var(--icon-size)]", [ICON])
+    );
+    expect(frameOf(variant?.root)?.children).toEqual([
+      expect.objectContaining({ kind: "icon", size: { kind: "literal", value: 16 } }),
+    ]);
+    expect(coverage.filter((row) => row.className === "[--icon-size:16px]")).toEqual([
+      expect.objectContaining({ part: "chip-dot", property: "--icon-size", outcome: "literal" }),
+    ]);
+  });
+
+  it("does not inherit a custom property registered with inherits: false", async () => {
+    const { variant } = await buildNested(
+      "[--tw-ring-offset-width:4px]",
+      dot("rounded-[var(--tw-ring-offset-width)]"),
+      ["ring-2"]
+    );
+    expect(frameOf(variant?.root)?.cornerRadius).toEqual(zero);
+  });
+});
+
+// Unit under test: `buildComponentSet` on a root that holds a part, which holds an icon, in the
+// cells the part's `shownIn` names. Oracle: CSS flexbox. `items-start` packs the children at the
+// start of the cross axis and `justify-end` at the end of the row, which Figma calls MIN and MAX,
+// and `items-center justify-center` centers them on both. The icon takes the root's white text
+// color and the dot's 12px `[&_svg]` size.
+describe("a root that holds a part", () => {
+  const definition: ComponentDefinition = {
+    ...CHIP,
+    axes: [{ name: "checked", values: ["off", "on"] }],
+    columnAxis: "checked",
+    classesFor: () => "inline-flex items-start justify-end text-[#ffffff]",
+    parts: [
+      {
+        ...dot("flex items-center justify-center size-[16px] bg-[#000000] [&_svg]:size-[12px]", [ICON]),
+        shownIn: (cell) => cell.checked === "on",
+      },
+    ],
+  };
+
+  /** Build the chip, with its root's classes replaced by `rootClasses` when given. */
+  async function build(rootClasses?: string) {
+    const built: ComponentDefinition =
+      rootClasses === undefined ? definition : { ...definition, classesFor: () => rootClasses };
+    return buildComponentSet(built, {
+      ...context,
+      compiled: await compileUtilities(definitionClasses(built)),
+    });
+  }
+
+  it("builds the part as a frame inside the root, in the cells that render it", async () => {
+    const { componentSet } = await build();
+    const box = { paddingTop: zero, paddingRight: zero, paddingBottom: zero, paddingLeft: zero };
+    const [off, on] = componentSet.variants;
+    expect(on?.root).toEqual({
+      name: "chip",
+      ...box,
+      itemSpacing: zero,
+      primaryAlign: "MAX",
+      counterAlign: "MIN",
+      cornerRadius: zero,
+      shadows: [],
+      opacity: 1,
+      children: [
+        {
+          kind: "frame",
+          key: "dot",
+          name: "chip-dot",
+          width: { kind: "literal", value: 16 },
+          height: { kind: "literal", value: 16 },
+          ...box,
+          itemSpacing: zero,
+          primaryAlign: "CENTER",
+          counterAlign: "CENTER",
+          cornerRadius: zero,
+          fill: { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } },
+          shadows: [],
+          opacity: 1,
+          children: [
+            {
+              kind: "icon",
+              key: "icon",
+              name: "Icon",
+              icon: "icon/Plus",
+              swapProperty: undefined,
+              size: { kind: "literal", value: 12 },
+              color: { kind: "literal", color: { r: 1, g: 1, b: 1, a: 1 } },
+            },
+          ],
+        },
+      ],
+    });
+    expect(off?.root.children).toEqual([]);
+  });
+
+  it("leaves an alignment other than start, center or end unmapped", async () => {
+    const { coverage } = await build("inline-flex justify-between items-baseline text-[#ffffff]");
+    expect(
+      coverage.filter((row) => row.outcome === "unmapped").map((row) => [row.part, row.property])
+    ).toEqual([
+      ["chip", "align-items"],
+      ["chip", "justify-content"],
+    ]);
   });
 });

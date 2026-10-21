@@ -54,10 +54,20 @@ export type CompiledUtilities = {
   readonly classes: ReadonlyMap<string, ClassPlacement>;
   /** The theme variables Tailwind emitted on `:root`, such as `--font-weight-medium: 500`. */
   readonly themeValues: ReadonlyMap<string, string>;
-  /** The `initial-value` of each `@property` Tailwind registered, such as `--tw-ring-offset-width`. */
-  readonly propertyInitials: ReadonlyMap<string, string>;
+  /** Each custom property Tailwind registered with `@property`, such as `--tw-ring-offset-width`. */
+  readonly registeredProperties: ReadonlyMap<string, RegisteredProperty>;
   /** The rules of the `base` layer, such as the one in `fuse.css` that colors every border. */
   readonly baseRules: readonly BaseRule[];
+};
+
+/**
+ * What an `@property` rule says about its custom property: the value an element takes where
+ * nothing sets it, and whether a child inherits its parent's value.
+ */
+export type RegisteredProperty = {
+  readonly initialValue: string | undefined;
+  /** False only where the rule says `inherits: false`, as Tailwind says for every `--tw-*`. */
+  readonly inherits: boolean;
 };
 
 /** A rule of the `base` layer: its whole selector list and its declarations. */
@@ -156,13 +166,13 @@ export function baseBorderColor(compiled: CompiledUtilities): UtilityDeclaration
  * its order, and its most specific selector its specificity.
  *
  * @param nodes - The syntax tree `build` returns.
- * @returns The utility rules, class placements, theme values and registered property defaults.
+ * @returns The utility rules, class placements, theme values and registered properties.
  */
 function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
   const rules = new Map<string, UtilityRule>();
   const classes = new Map<string, ClassPlacement>();
   const themeValues = new Map<string, string>();
-  const propertyInitials = new Map<string, string>();
+  const registeredProperties = new Map<string, RegisteredProperty>();
   const baseRules: BaseRule[] = [];
   let order = 0;
   const place = (node: AstNode): void => {
@@ -189,12 +199,13 @@ function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
   const visit = (node: AstNode): void => {
     if (node.kind === "at-rule") {
       if (node.name === "@property") {
-        const initial = declarationsOf(node.nodes).find(
-          (declaration) => declaration.property === "initial-value"
-        );
-        if (initial !== undefined) {
-          propertyInitials.set(node.params, initial.value);
-        }
+        const descriptors = declarationsOf(node.nodes);
+        const descriptor = (name: string) =>
+          descriptors.find((declaration) => declaration.property === name)?.value.trim();
+        registeredProperties.set(node.params, {
+          initialValue: descriptor("initial-value"),
+          inherits: descriptor("inherits") !== "false",
+        });
         return;
       }
       if (node.name === "@layer" && node.params === "base") {
@@ -223,7 +234,7 @@ function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
     }
   };
   nodes.forEach(visit);
-  return { rules, classes, themeValues, propertyInitials, baseRules };
+  return { rules, classes, themeValues, registeredProperties, baseRules };
 }
 
 /**

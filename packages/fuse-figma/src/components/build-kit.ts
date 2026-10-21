@@ -9,7 +9,7 @@ import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 
 import { fuseVariableSet } from "../fuse-variable-set";
 import type { CollectionSpec, VariableSpec } from "../variable-set";
-import { buildComponentSet, matrixCells, variantKey } from "./component-spec";
+import { buildComponentSet, definitionClasses, variantKey } from "./component-spec";
 import type { BuiltComponent, OuterDeclaration } from "./component-spec";
 import type { CoverageOutcome, CoverageRow } from "./coverage";
 import { makeVariableIndex, readColor } from "./css-values";
@@ -102,16 +102,7 @@ function kitVariables(): KitVariables {
 }
 
 async function buildSets(variables: VariableIndex): Promise<readonly KitComponentSet[]> {
-  const classes = new Set(
-    KIT.flatMap(({ definition }) =>
-      matrixCells(definition.axes).flatMap((cell) =>
-        definition
-          .classesFor(cell)
-          .split(/\s+/)
-          .filter((className) => className !== "")
-      )
-    )
-  );
+  const classes = new Set(KIT.flatMap(({ definition }) => definitionClasses(definition)));
   const compiled = await compileUtilities([...classes]);
   // The base layer's border color sets the color on each element, so a part does not inherit it
   // the way it inherits `PAGE`, and any utility that colors the border wins over it. The outline
@@ -328,12 +319,12 @@ export function renderCoverage(coverage: readonly CoverageRow[]): string {
       "",
       `## ${outcome}`,
       "",
-      "| Component | Class | Property | Value | Detail |",
-      "| --- | --- | --- | --- | --- |"
+      "| Component | Part | Class | Property | Value | Detail |",
+      "| --- | --- | --- | --- | --- | --- |"
     );
     for (const row of rows) {
       lines.push(
-        `| ${row.component} | ${cell(row.className)} | ${cell(row.property)} | ${cell(row.value)} | ${row.detail.replaceAll("|", "\\|")} |`
+        `| ${row.component} | ${row.part} | ${cell(row.className)} | ${cell(row.property)} | ${cell(row.value)} | ${row.detail.replaceAll("|", "\\|")} |`
       );
     }
   }

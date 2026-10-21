@@ -173,6 +173,10 @@ export function evaluateNumber(value: string): number | undefined {
   return evaluated?.value;
 }
 
+/**
+ * A number and its unit. The unit is `%` when any operand of the expression was a percentage,
+ * since the result then depends on the containing block whatever the operand order.
+ */
 type Quantity = { readonly value: number; readonly unit: "px" | "" | "%" };
 
 function evaluate(expression: string): Quantity | undefined {
@@ -265,20 +269,24 @@ function evaluateProduct(term: string): Quantity | undefined {
     if (product === undefined || next === undefined) {
       return undefined;
     }
-    product =
-      operators[index] === "*"
-        ? { value: product.value * next.value, unit: product.unit === "" ? next.unit : product.unit }
-        : { value: product.value / next.value, unit: product.unit };
+    product = {
+      value: operators[index] === "*" ? product.value * next.value : product.value / next.value,
+      unit: commonUnit([product, next]),
+    };
   }
   return product;
 }
 
+/** The unit of a result: `%` when any operand depends on a percentage, else the first unit. */
 function commonUnit(quantities: readonly Quantity[]): Quantity["unit"] {
-  return quantities.find((quantity) => quantity.unit !== "")?.unit ?? "";
+  return quantities.some((quantity) => quantity.unit === "%")
+    ? "%"
+    : (quantities.find((quantity) => quantity.unit !== "")?.unit ?? "");
 }
 
 /**
- * Read a length as a number field.
+ * Read a length as a number field. A percentage is a share of the containing block, which a
+ * Figma number field cannot hold, so it does not read, `calc()` over one included.
  *
  * @param value - A compiled value with Tailwind's variables already substituted.
  * @param index - The synced variables.
@@ -289,8 +297,14 @@ export function readNumber(value: string, index: VariableIndex): NumberSpec | un
   if (variable !== undefined) {
     return { kind: "variable", variable };
   }
-  const number = evaluateNumber(value);
-  return number === undefined ? undefined : { kind: "literal", value: number };
+  const length = evaluateLength(value);
+  return length === undefined ? undefined : { kind: "literal", value: length };
+}
+
+/** A length or number in pixels, or undefined for anything that depends on a percentage. */
+function evaluateLength(value: string): number | undefined {
+  const evaluated = evaluate(normalizeCss(value));
+  return evaluated === undefined || evaluated.unit === "%" ? undefined : evaluated.value;
 }
 
 /**
@@ -312,7 +326,7 @@ function flooredVariable(value: string, index: VariableIndex): VariableRef | und
   ] as const) {
     const variable = index.lookup(candidate);
     const minimum = variable === undefined ? undefined : index.minimum(variable);
-    const length = evaluateNumber(floor);
+    const length = evaluateLength(floor);
     if (variable !== undefined && minimum !== undefined && length !== undefined && minimum >= length) {
       return variable;
     }
