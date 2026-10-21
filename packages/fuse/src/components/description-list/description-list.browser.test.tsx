@@ -555,6 +555,67 @@ describe("DescriptionList", () => {
       expect(insurance[0]?.right).toBeCloseTo(right, 0);
     });
 
+    it.each(DENSITIES)(
+      "keeps the first details beside its term in an Item with several details, even when it must break (%s)",
+      (density) => {
+        stampDensity(density);
+        const details = "707057500012345678901234567890123456789012345678901234567890";
+        renderThemed(
+          <DescriptionList.Content layout="inline" style={{ width: ROW_WIDTH }}>
+            <DescriptionList.Item>
+              <DescriptionList.Term>Meter</DescriptionList.Term>
+              <DescriptionList.Details>{details}</DescriptionList.Details>
+              <DescriptionList.Details>Smart meter</DescriptionList.Details>
+            </DescriptionList.Item>
+          </DescriptionList.Content>
+        );
+        const detailsCell = textNamed(details);
+        expect(
+          naturalWidth(details, detailsCell),
+          "precondition: the details is wider than the row"
+        ).toBeGreaterThan(ROW_WIDTH);
+        const termLines = textLines(textNamed("Meter"));
+        const detailsLines = textLines(detailsCell);
+        expect(Math.abs((termLines[0]?.top ?? 0) - (detailsLines[0]?.top ?? Infinity))).toBeLessThan(1);
+        expect(detailsCell.scrollWidth).toBeLessThanOrEqual(detailsCell.clientWidth);
+        const later = textLines(textNamed("Smart meter"));
+        expect(later).toHaveLength(1);
+        expect(later[0]?.top ?? 0).toBeGreaterThanOrEqual(detailsCell.getBoundingClientRect().bottom - 1);
+        expect(later[0]?.right).toBeCloseTo(listOf(detailsCell).getBoundingClientRect().right, 0);
+        expectNoOverflow(listOf(detailsCell));
+      }
+    );
+
+    it.each(DENSITIES)(
+      "keeps an unbroken first details whole beside its term in an Item with several details (%s)",
+      (density) => {
+        stampDensity(density);
+        const term = "E-mail address for invoices";
+        const details = "kari.nordmann@elmeramail.com";
+        renderThemed(
+          <DescriptionList.Content layout="inline" style={{ width: ROW_WIDTH }}>
+            <DescriptionList.Item>
+              <DescriptionList.Term>{term}</DescriptionList.Term>
+              <DescriptionList.Details>{details}</DescriptionList.Details>
+              <DescriptionList.Details>Billing</DescriptionList.Details>
+            </DescriptionList.Item>
+          </DescriptionList.Content>
+        );
+        const termCell = textNamed(term);
+        const detailsCell = textNamed(details);
+        expect(
+          widestWord(term, termCell) + INLINE[density].columnGap + naturalWidth(details, detailsCell),
+          "precondition: the details fits whole beside the term's widest word"
+        ).toBeLessThanOrEqual(ROW_WIDTH);
+        const termLines = textLines(termCell);
+        const detailsLines = textLines(detailsCell);
+        expect(detailsLines).toHaveLength(1);
+        expect(Math.abs((termLines[0]?.top ?? 0) - (detailsLines[0]?.top ?? Infinity))).toBeLessThan(1);
+        expect(wordsSplitAcrossLines(termCell)).toEqual([]);
+        expectNoOverflow(listOf(termCell));
+      }
+    );
+
     it("draws no rule on Items or cells at a wide viewport", async () => {
       await page.viewport(1280, 720);
       renderThemed(
@@ -702,7 +763,7 @@ describe("DescriptionList", () => {
           <DescriptionList.Content layout="inline" style={{ width: 360 }}>
             <DescriptionList.Item>
               <DescriptionList.Term>Outer</DescriptionList.Term>
-              <DescriptionList.Details className="basis-full">
+              <DescriptionList.Details>
                 <DescriptionList.Content>
                   <DescriptionList.Item>
                     <DescriptionList.Term>Nested term</DescriptionList.Term>

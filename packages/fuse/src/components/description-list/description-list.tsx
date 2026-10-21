@@ -90,7 +90,9 @@ function DescriptionListContent({
 // longest words can't share the row, and then in the details; the term never breaks a word, so a
 // single term word wider than the whole row would overflow it. An Item with several terms or
 // details wraps: its earlier terms and later details take lines of their own, so its last term
-// pairs with its first details, as in the responsive layout.
+// pairs with its first details, as in the responsive layout. That details grows from zero there,
+// so the wrap never moves it off its term's line, and far faster than its term, so it still reaches
+// its own width before the term takes more than its longest word.
 function DescriptionListItem({ className, ...props }: DescriptionListItemProps): ReactElement {
   return (
     <div
@@ -125,7 +127,7 @@ function DescriptionListDetails({ className, ...props }: DescriptionListDetailsP
       data-slot="description-list-details"
       className={cn(
         "sm:col-start-2 ms-0 py-(--row-py) text-[color:var(--description-list-details,var(--foreground))]",
-        "[:where([data-layout=inline]>*)>&]:ms-auto [:where([data-layout=inline]>*)>&]:max-w-max [:where([data-layout=inline]>*)>&]:min-w-0 [:where([data-layout=inline]>*)>&]:grow [:where([data-layout=inline]>*)>&]:basis-[min-content] [:where([data-layout=inline]>*)>&]:py-0 [:where([data-layout=inline]>*)>&]:text-end [:where([data-layout=inline]>*)>&]:wrap-break-word [:where([data-layout=inline]>*)>&]:not-first-of-type:max-w-full [:where([data-layout=inline]>*)>&]:not-first-of-type:basis-full",
+        "[:where([data-layout=inline]>*)>&]:ms-auto [:where([data-layout=inline]>*)>&]:max-w-max [:where([data-layout=inline]>*)>&]:min-w-0 [:where([data-layout=inline]>*)>&]:grow [:where([data-layout=inline]>*)>&]:basis-[min-content] [:where([data-layout=inline]>*)>&]:py-0 [:where([data-layout=inline]>*)>&]:text-end [:where([data-layout=inline]>*)>&]:wrap-break-word [:where([data-layout=inline]>*)>&]:not-first-of-type:max-w-full [:where([data-layout=inline]>*)>&]:not-first-of-type:basis-full [:where([data-layout=inline]>:has(>:nth-child(3)))>&]:first-of-type:grow-999 [:where([data-layout=inline]>:has(>:nth-child(3)))>&]:first-of-type:basis-0",
         className
       )}
       {...props}
