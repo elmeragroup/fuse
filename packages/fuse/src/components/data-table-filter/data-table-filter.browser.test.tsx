@@ -24,6 +24,7 @@ import {
   renderOrders,
   renderOrdersInFrame,
   renderOrdersInShadowRoot,
+  renderCounted,
   settled,
   STATUS_THREE,
   visibleOrders,
@@ -669,23 +670,13 @@ describe("DataTableFilter composition", () => {
 
   /** Renders the fixture under a write counter with the full fields, then without `paid`. */
   function renderStalePaid() {
-    let count = 0;
-    const onColumnFiltersChange = () => {
-      count += 1;
-    };
-    const view = renderThemed(
-      withLocale(
-        "en-US",
-        <Orders initial={PAID} fields={FIELDS} onColumnFiltersChange={onColumnFiltersChange} />
-      )
-    );
-    view.rerender(
-      withLocale(
-        "en-US",
-        <Orders initial={PAID} fields={WITHOUT_PAID} onColumnFiltersChange={onColumnFiltersChange} />
-      )
-    );
-    return { writes: () => count };
+    const counted = renderCounted((onColumnFiltersChange) => (
+      <Orders initial={PAID} fields={FIELDS} onColumnFiltersChange={onColumnFiltersChange} />
+    ));
+    counted.rerender((onColumnFiltersChange) => (
+      <Orders initial={PAID} fields={WITHOUT_PAID} onColumnFiltersChange={onColumnFiltersChange} />
+    ));
+    return counted;
   }
 
   it("ticks a value onto a filter whose option left the config in one write, dropping the stale value", async () => {
@@ -750,24 +741,14 @@ describe("DataTableFilter composition", () => {
 
   /** Renders Status as any of three under a write counter, then restricts it to single-select. */
   function renderStaleMulti() {
-    let count = 0;
-    const onColumnFiltersChange = () => {
-      count += 1;
-    };
     const single = withField("status", { ...FIELDS.status, operators: ["is", "isNot"] });
-    const view = renderThemed(
-      withLocale(
-        "en-US",
-        <Orders initial={STATUS_THREE} fields={FIELDS} onColumnFiltersChange={onColumnFiltersChange} />
-      )
-    );
-    view.rerender(
-      withLocale(
-        "en-US",
-        <Orders initial={STATUS_THREE} fields={single} onColumnFiltersChange={onColumnFiltersChange} />
-      )
-    );
-    return { writes: () => count };
+    const counted = renderCounted((onColumnFiltersChange) => (
+      <Orders initial={STATUS_THREE} fields={FIELDS} onColumnFiltersChange={onColumnFiltersChange} />
+    ));
+    counted.rerender((onColumnFiltersChange) => (
+      <Orders initial={STATUS_THREE} fields={single} onColumnFiltersChange={onColumnFiltersChange} />
+    ));
+    return counted;
   }
 
   const UNTICKS = [

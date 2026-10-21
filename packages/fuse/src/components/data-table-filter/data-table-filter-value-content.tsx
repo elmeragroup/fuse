@@ -6,7 +6,7 @@
 // too. The popover renders it for a chip, and the add menu renders the same part in place for a
 // drilled field.
 
-import { Fragment, use, useCallback, useId, useLayoutEffect, useRef, useState } from "react";
+import { use, useCallback, useId, useLayoutEffect, useRef, useState } from "react";
 import type { ComponentProps, KeyboardEvent, ReactElement, ReactNode } from "react";
 
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
@@ -16,7 +16,6 @@ import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { CaretDown } from "../../icons/generated/caret-down";
 import { CaretLeft } from "../../icons/generated/caret-left";
 import { definedProps } from "../../internal/defined-props";
-import { isHTMLElement } from "../../internal/dom-node";
 import { cn } from "../../styles/cn";
 import { popoverShellClass } from "../../styles/inner-corner/popover";
 import { mergeClassName } from "../../styles/merge-class-name";
@@ -24,7 +23,7 @@ import { selfFocusRingClass } from "../../styles/utils";
 import { Button } from "../button/button";
 import { overlayPositionerClass, overlayTimedPopupClass } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
-import { SelectContent, SelectItem, SelectRoot } from "../select/select";
+import { SelectRoot } from "../select/select";
 import {
   drillKey,
   editKey,
@@ -32,7 +31,7 @@ import {
   useFilterInternals,
   useOverlayRef,
 } from "./data-table-filter";
-import type { EditorTarget } from "./data-table-filter";
+import type { EditorTarget, OverlayKind } from "./data-table-filter";
 import { EditorContext, useCompositionGuard } from "./data-table-filter-editor-context";
 import type { EditorContextValue } from "./data-table-filter-editor-context";
 import {
@@ -48,7 +47,8 @@ import type { DraftValues, EditorDraft } from "./editor-draft";
 import type { FilterField } from "./filter-fields";
 import { resolveFocusTarget } from "./filter-focus";
 import type { FilterOperator } from "./filter-model";
-import { convertValues, filterValuesEqual, findFilter, operatorChoices } from "./filter-model";
+import { convertValues, filterValuesEqual, findFilter } from "./filter-model";
+import { OperatorOptions, useOperatorItems } from "./operator-options";
 
 /**
  * The props of `DataTableFilter.ValueContent`: Base UI Popover Popup's, except `initialFocus` and
@@ -196,17 +196,16 @@ export function DataTableFilterEditor({
   const key = target.place === "menu" ? drillKey(fieldId) : editKey(fieldId);
   return (
     // Keyed by the overlay's open too, so every open starts a fresh editing session.
-    <Fragment key={`${key}:${String(state.openCount)}`}>
-      <EditorFrame
-        fieldId={fieldId}
-        field={field}
-        focusKey={key}
-        target={target}
-        className={className}
-        {...props}>
-        {children}
-      </EditorFrame>
-    </Fragment>
+    <EditorFrame
+      key={`${key}:${String(state.openCount)}`}
+      fieldId={fieldId}
+      field={field}
+      focusKey={key}
+      target={target}
+      className={className}
+      {...props}>
+      {children}
+    </EditorFrame>
   );
 }
 
@@ -217,28 +216,10 @@ export function DataTableFilterEditor({
  * (`useDismiss.ts`), and the toolbar relay takes the rest. All of them sit on the popup or the
  * document, so a stop at the editor reaches them first. A popup inside the editor, such as the
  * operator's Select, stops its own Escape before this sees it. Escape goes back to the field list.
- *
- * Tab passes, so focus moves on and leaves the menu as it does from the search. Shift+Tab from
- * Back, the editor's first control, closes the menu, as Shift+Tab from the search does
- * (`useMenuFilterKeyDown.ts`). Left to the browser it would move focus to the Trigger with the
- * menu still open, since focus-out never closes a popup when focus returns to the element it came
- * from (`FloatingFocusManager.tsx`).
+ * Tab passes, so focus moves on and leaves the menu as it does from the search.
  */
-function keepKeysInEditor(
-  event: KeyboardEvent<HTMLDivElement>,
-  back: () => void,
-  close: () => void,
-  composing: boolean
-): void {
+function keepKeysInEditor(event: KeyboardEvent<HTMLDivElement>, back: () => void, composing: boolean): void {
   if (event.key === "Tab") {
-    if (
-      event.shiftKey &&
-      isHTMLElement(event.target) &&
-      event.target.dataset.slot === "data-table-filter-back"
-    ) {
-      event.preventDefault();
-      close();
-    }
     return;
   }
   if (event.key === "Escape" && !composing) {
@@ -332,14 +313,10 @@ function EditorFrame({
   }, [field.kind, fieldId]);
   const commitDraft = useCallback(
     (change: (current: DraftValues) => DraftValues) => {
-      if (ended.current) {
-        return;
-      }
-      const next = change(latest.current.draft);
-      write({ operator: next.operator, values: next.values, edited: true });
+      updateDraft(change);
       settle();
     },
-    [write, settle]
+    [updateDraft, settle]
   );
   const discard = useCallback(() => {
     ended.current = true;
@@ -411,7 +388,7 @@ function EditorFrame({
         onKeyDown={(event) => {
           onKeyDown?.(event);
           if (back !== undefined && !event.isPropagationStopped()) {
-            keepKeysInEditor(event, back, actions.close, composition.isComposing(event));
+            keepKeysInEditor(event, back, composition.isComposing(event));
           }
         }}
         {...props}>
@@ -426,7 +403,18 @@ function EditorFrame({
                 size="icon-sm"
                 aria-label={meta.format("back")}
                 className={slots.back()}
-                onClick={back}>
+                onClick={back}
+                // Shift+Tab from Back, the editor's first control, closes the menu, as Shift+Tab
+                // from the search does (`useMenuFilterKeyDown.ts`). Left to the browser it would
+                // move focus to the Trigger with the menu still open, since focus-out never closes
+                // a popup when focus returns to the element it came from
+                // (`FloatingFocusManager.tsx`).
+                onKeyDown={(event) => {
+                  if (event.key === "Tab" && event.shiftKey) {
+                    event.preventDefault();
+                    actions.close();
+                  }
+                }}>
                 <CaretLeft aria-hidden />
               </Button>
               <span id={titleId} className={slots.title()}>
@@ -434,7 +422,9 @@ function EditorFrame({
               </span>
             </>
           )}
-          {operatorInHeader ? <EditorOperator /> : null}
+          {operatorInHeader ? (
+            <EditorOperator editor={editor} host={target.place === "menu" ? "menu" : "value"} />
+          ) : null}
         </div>
         {/* The body scrolls under a still header when a tall editor, such as a calendar, meets
             the popup's height cap. */}
@@ -452,27 +442,18 @@ function EditorFrame({
  * editor's current draft, typed text included, and applies the pair in one write. An untouched
  * draft only changes shape. Its trigger has the chip operator's face, a ghost Fuse Button.
  */
-function EditorOperator(): ReactElement | null {
-  const editor = use(EditorContext);
+function EditorOperator({
+  editor,
+  host,
+}: {
+  readonly editor: EditorContextValue;
+  /** The overlay that holds the editor, which focus in the operator's popup stays with. */
+  readonly host: OverlayKind;
+}): ReactElement {
   const { actions, meta } = useFilterInternals("DataTableFilter.Editor");
-  // Focus in the operator's popup stays with the overlay that holds the editor: the add menu for
-  // the in-place editor, else the value popover.
-  const host = use(EditorTargetContext)?.place === "menu" ? "menu" : "value";
   const overlayRef = useOverlayRef(actions.registerOverlay, host);
-  if (editor === null) {
-    return null;
-  }
   const { field, draft } = editor;
-  // The chip's own choices, so an applied operator the config has since left out still shows its
-  // label as the current choice.
-  const choices = operatorChoices(field, editor.filter);
-  // A draft's operator the config left out before it was ever applied keeps its label too.
-  const items = (choices.includes(draft.operator) ? choices : [draft.operator, ...choices]).map(
-    (operator) => ({
-      value: operator,
-      label: meta.formatOperator(operator, field.kind),
-    })
-  );
+  const items = useOperatorItems("DataTableFilter.Editor", field, editor.filter, draft.operator);
   return (
     <SelectRoot<FilterOperator>
       items={items}
@@ -491,13 +472,7 @@ function EditorOperator(): ReactElement | null {
         <SelectPrimitive.Value />
         <CaretDown data-icon="inline-end" aria-hidden />
       </SelectPrimitive.Trigger>
-      <SelectContent ref={overlayRef} alignItemWithTrigger={false} align="end">
-        {items.map((item) => (
-          <SelectItem key={item.value} value={item.value}>
-            {item.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
+      <OperatorOptions ref={overlayRef} items={items} align="end" />
     </SelectRoot>
   );
 }

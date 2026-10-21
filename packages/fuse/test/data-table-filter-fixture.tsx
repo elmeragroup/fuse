@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 /**
@@ -27,7 +27,11 @@ import { page } from "vitest/browser";
 import stylesCss from "../dist/styles.css?raw";
 import themesCss from "../dist/themes.css?raw";
 import { DataTableFilter } from "../src/components/data-table-filter";
-import type { DataTableFilterRootProps } from "../src/components/data-table-filter/data-table-filter";
+import { useDataTableFilter } from "../src/components/data-table-filter/data-table-filter";
+import type {
+  DataTableFilterContextValue,
+  DataTableFilterRootProps,
+} from "../src/components/data-table-filter/data-table-filter";
 import { defineFilterFields } from "../src/components/data-table-filter/filter-fields";
 import type { FilterFieldMap } from "../src/components/data-table-filter/filter-fields";
 import { createDataTableFilterFn } from "../src/components/data-table-filter/filter-fn";
@@ -258,7 +262,6 @@ export function CalendarStandIn(): ReactElement {
 export type OrdersProps = {
   readonly initial: ColumnFiltersState;
   readonly manual?: boolean;
-  readonly products?: boolean;
   readonly facets?: DataTableFilterRootProps<typeof FIELDS>["facets"];
   /** Replaces the fields, for a field config one test needs. Renders without facets. */
   readonly fields?: FilterFieldMap;
@@ -285,7 +288,6 @@ export type OrdersProps = {
 export function Orders({
   initial,
   manual = false,
-  products = false,
   facets,
   fields,
   onActiveFieldChange,
@@ -350,7 +352,7 @@ export function Orders({
   return fields === undefined ? (
     <DataTableFilter.Root
       table={table}
-      fields={products ? FIELDS_WITH_PRODUCT : FIELDS}
+      fields={FIELDS}
       timeZone="UTC"
       facets={facets}
       onActiveFieldChange={onActiveFieldChange}
@@ -388,6 +390,72 @@ export function columnFilters(): unknown {
  */
 export function renderOrders(props: OrdersProps, locale: SupportedLocale = "en-US") {
   return renderThemed(withLocale(locale, <Orders {...props} />));
+}
+
+/** The writes TanStack has heard so far, and the render's controls. */
+export type CountedRender = {
+  readonly writes: () => number;
+  /** Renders the next tree, handing it the same counting `onColumnFiltersChange`. */
+  readonly rerender: (orders: (onColumnFiltersChange: () => void) => ReactElement) => void;
+  readonly unmount: () => void;
+};
+
+/**
+ * Renders a tree that holds the fixture, in en-US, and counts the writes it sends. `orders` hands
+ * the given `onColumnFiltersChange` to the fixture, which then controls `columnFilters` and hears
+ * one call per write.
+ *
+ * @param orders - Builds the tree from the counting `onColumnFiltersChange`.
+ * @returns The write count and the render's controls.
+ */
+export function renderCounted(orders: (onColumnFiltersChange: () => void) => ReactElement): CountedRender {
+  let count = 0;
+  const onColumnFiltersChange = () => {
+    count += 1;
+  };
+  const view = renderThemed(withLocale("en-US", orders(onColumnFiltersChange)));
+  return {
+    writes: () => count,
+    rerender: (next) => {
+      view.rerender(withLocale("en-US", next(onColumnFiltersChange)));
+    },
+    unmount: () => {
+      view.unmount();
+    },
+  };
+}
+
+/** The filter's actions, read from inside a Root, for a test that drives them from code. */
+export type CapturedActions = {
+  /** Renders nothing. Place it inside the Root whose actions `act` returns. */
+  readonly Capture: () => null;
+  /** The actions of the last render. Throws before `Capture` has rendered. */
+  readonly act: () => DataTableFilterContextValue["actions"];
+};
+
+/**
+ * Captures a Root's actions. Call it once per describe, so `Capture` keeps one identity.
+ *
+ * @returns The capturing part and the reader.
+ */
+export function captureActions(): CapturedActions {
+  let captured: DataTableFilterContextValue["actions"] | null = null;
+  function Capture(): null {
+    const { actions } = useDataTableFilter();
+    useLayoutEffect(() => {
+      captured = actions;
+    });
+    return null;
+  }
+  return {
+    Capture,
+    act: () => {
+      if (captured === null) {
+        throw new Error("expected the filter's actions");
+      }
+      return captured;
+    },
+  };
 }
 
 /**
@@ -549,6 +617,29 @@ export function watchSides(): () => SideFrame[] {
  */
 export function flipsIn(frames: readonly SideFrame[]): number {
   return frames.filter((frame, index) => index > 0 && frame[0] !== frames[index - 1]?.[0]).length;
+}
+
+/**
+ * Whether a field's value popover is open.
+ *
+ * @param name - The field's label, which names the popover's dialog.
+ * @returns Whether that dialog is in the page.
+ */
+export function popoverOpen(name: string): boolean {
+  return page.getByRole("dialog", { name }).query() !== null;
+}
+
+/**
+ * Waits for animation frames, so React renders what the last state change scheduled.
+ *
+ * @param count - How many frames to wait.
+ */
+export async function nextFrames(count = 1): Promise<void> {
+  for (let frame = 0; frame < count; frame += 1) {
+    await new Promise((resolve) => {
+      requestAnimationFrame(resolve);
+    });
+  }
 }
 
 /**

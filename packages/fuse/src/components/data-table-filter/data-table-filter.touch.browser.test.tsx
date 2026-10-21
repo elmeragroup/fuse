@@ -4,33 +4,16 @@
  * in the `browser-touch` project.
  */
 import { afterEach, describe, expect, it } from "vitest";
-import { cdp, page, userEvent } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { focusIs, Orders, renderOrders, settled } from "../../../test/data-table-filter-fixture";
 import { withLocale } from "../../../test/locale-matrix";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { emulatePointer } from "../../../test/touch-emulation";
 
 /** WCAG 2.5.5's enhanced target, the floor the filter keeps under a coarse pointer. */
 const COARSE_TARGET = 44;
-
-type TouchEmulationCdp = {
-  send: (
-    method: "Emulation.setTouchEmulationEnabled",
-    params: { enabled: boolean; maxTouchPoints?: number }
-  ) => Promise<void>;
-};
-
-/** Chromium's touch emulation, which also switches `(pointer: coarse)` on and off. */
-async function emulatePointer(pointer: "fine" | "coarse"): Promise<void> {
-  // SAFETY: vitest types CDPSession as {}; Playwright's session implements send.
-  const session = cdp() as TouchEmulationCdp;
-  await session.send(
-    "Emulation.setTouchEmulationEnabled",
-    pointer === "coarse" ? { enabled: true, maxTouchPoints: 1 } : { enabled: false }
-  );
-  expect(matchMedia("(pointer: coarse)").matches, `${pointer} pointer emulated`).toBe(pointer === "coarse");
-}
 
 /**
  * Whether presses at the ends of a 44px band centred on the control land on it, the band running

@@ -76,6 +76,8 @@ const CLIENT_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
       "components/data-table-filter/data-table-filter-value-content.tsx",
       "components/data-table-filter/data-table-filter-editors.tsx",
       "components/data-table-filter/data-table-filter-editor-context.ts",
+      "components/data-table-filter/use-contains.ts",
+      "components/data-table-filter/operator-options.tsx",
     ],
   ],
   ["date-field", ["react-aria/date-field/date-field.tsx"]],

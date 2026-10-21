@@ -129,10 +129,6 @@ export type DataTableFilterInternals = {
     readonly drillOrigin: "list" | "edit";
     /** The field row Back returns to. The field list focuses its search as it mounts. */
     readonly returnTo: string | null;
-    /** A `Content` registered, which the Trigger checks in development. */
-    readonly hasContent: boolean;
-    /** A `ValueContent` registered, which a Value checks in development. */
-    readonly hasValueContent: boolean;
     /** How many times an overlay has opened. The editors remount, with a fresh session, on each. */
     readonly openCount: number;
   };
@@ -197,10 +193,10 @@ export type DataTableFilterInternals = {
     readonly valueId: (fieldId: string) => string;
     /** A chip's element, or null. */
     readonly chipElement: (fieldId: string) => HTMLElement | null;
-    /** A chip's Value segment, the value popover's trigger for that chip. */
-    readonly valueElement: (fieldId: string) => HTMLElement | null;
-    /** The Trigger's element, or null. */
-    readonly triggerElement: () => HTMLElement | null;
+    /** Whether a `Content` is registered, which the Trigger checks in development. */
+    readonly hasContent: () => boolean;
+    /** Whether a `ValueContent` is registered, which a Value checks in development. */
+    readonly hasValueContent: () => boolean;
     /** Focuses the neighbour of the chip at `index`, which goes away, and returns what took focus. */
     readonly neighbourOf: (chips: readonly ChipFilter[], index: number) => HTMLElement | null;
     /** Whether focus left this Root's closing overlay of `kind` for somewhere else. */
@@ -591,19 +587,19 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
   const [openCount, setOpenCount] = useState(0);
   const rootId = useId();
   // The Command.Root pattern: overlays register on mount, so a press with nothing to open can
-  // name the missing part.
-  const [hasContent, setHasContent] = useState(false);
-  const [hasValueContent, setHasValueContent] = useState(false);
+  // name the missing part. Only press handlers read them, so they are refs, not state.
+  const contentRegistered = useRef(false);
+  const valueContentRegistered = useRef(false);
   const registerContent = useCallback(() => {
-    setHasContent(true);
+    contentRegistered.current = true;
     return () => {
-      setHasContent(false);
+      contentRegistered.current = false;
     };
   }, []);
   const registerValueContent = useCallback(() => {
-    setHasValueContent(true);
+    valueContentRegistered.current = true;
     return () => {
-      setHasValueContent(false);
+      valueContentRegistered.current = false;
     };
   }, []);
   // Elements by field id, from each Chip's ref: a consumer `id` cannot break a focus move.
@@ -859,7 +855,7 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
   };
 
   const internals: DataTableFilterInternals = {
-    state: { ...value.state, focusRequest, drillOrigin, returnTo, hasContent, hasValueContent, openCount },
+    state: { ...value.state, focusRequest, drillOrigin, returnTo, openCount },
     actions: {
       ...value.actions,
       beginEdit: (fieldId) => {
@@ -932,8 +928,8 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
       triggerId,
       valueId,
       chipElement,
-      valueElement,
-      triggerElement,
+      hasContent: () => contentRegistered.current,
+      hasValueContent: () => valueContentRegistered.current,
       neighbourOf,
       focusLeft: (kind, popup) =>
         focusMovedElsewhere(popup, [

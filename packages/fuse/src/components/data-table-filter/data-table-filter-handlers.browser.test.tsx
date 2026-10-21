@@ -7,7 +7,7 @@ import type { ReactElement } from "react";
 
 import type { ColumnFiltersState } from "@tanstack/react-table";
 import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
-import { page, userEvent } from "vitest/browser";
+import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import {
@@ -15,12 +15,14 @@ import {
   CUSTOMER_NORD,
   focusIs,
   menuOpen,
+  nextFrames,
   Orders,
+  popoverOpen,
+  renderCounted,
   settled,
   STATUS_THREE,
 } from "../../../test/data-table-filter-fixture";
-import { withLocale } from "../../../test/locale-matrix";
-import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { roleNamed } from "../../../test/themed-browser-render";
 import { DataTableFilter } from "./index";
 
 afterEach(async () => {
@@ -77,31 +79,14 @@ type Setup = { readonly initial: ColumnFiltersState; readonly width?: number; re
 
 /** Renders the fixture with one consumer handler, and counts writes. */
 function renderWith(part: string, handler: string, spy: Spy, setup: Setup): () => number {
-  let writes = 0;
-  renderThemed(
-    withLocale(
-      "en-US",
-      <div style={{ width: setup.width ?? "100%" }}>
-        <Orders
-          initial={setup.initial}
-          onColumnFiltersChange={() => {
-            writes += 1;
-          }}>
-          {bar(part, handler, spy)}
-          {setup.noContent === true ? <DataTableFilter.ValueContent /> : overlays(part, handler, spy)}
-        </Orders>
-      </div>
-    )
-  );
-  return () => writes;
-}
-
-async function nextFrames(): Promise<void> {
-  for (let frame = 0; frame < 3; frame += 1) {
-    await new Promise((resolve) => {
-      requestAnimationFrame(resolve);
-    });
-  }
+  return renderCounted((onColumnFiltersChange) => (
+    <div style={{ width: setup.width ?? "100%" }}>
+      <Orders initial={setup.initial} onColumnFiltersChange={onColumnFiltersChange}>
+        {bar(part, handler, spy)}
+        {setup.noContent === true ? <DataTableFilter.ValueContent /> : overlays(part, handler, spy)}
+      </Orders>
+    </div>
+  )).writes;
 }
 
 async function openCustomer(): Promise<void> {
@@ -122,10 +107,6 @@ async function drillCustomer(): Promise<void> {
   await userEvent.click(roleNamed("menuitem", "Customer"));
   await expect.poll(() => focusIs("textbox", "Customer")).toBe(true);
   await settled();
-}
-
-function popoverOpen(): boolean {
-  return page.getByRole("dialog", { name: "Customer" }).query() !== null;
 }
 
 type Row = {
@@ -157,7 +138,7 @@ function destructive(
       await press(roleNamed("button", name));
     },
     works: async (writes) => {
-      await expect.poll(popoverOpen).toBe(false);
+      await expect.poll(() => popoverOpen("Customer")).toBe(false);
       await expect.poll(columnFilters).toEqual([]);
       await settled();
       expect(writes()).toBe(1);
@@ -231,10 +212,10 @@ const ROWS: readonly Row[] = [
     act: async () => {
       // Without the browser's own scroll, so only the part's scrolls the segment into view.
       roleNamed("button", "Remove Amount filter").focus({ preventScroll: true });
-      await nextFrames();
+      await nextFrames(3);
     },
     works: async () => {
-      await nextFrames();
+      await nextFrames(3);
       // DOM audit: the strip is a layout box with no role; its scroll position is the behaviour.
       const strip = roleNamed("button", "Remove Amount filter").closest(
         "[data-slot=data-table-filter-chips]"
@@ -309,7 +290,7 @@ const ROWS: readonly Row[] = [
     // An Enter while a composition is open neither applies nor closes.
     works: async (writes) => {
       await settled();
-      expect(popoverOpen()).toBe(true);
+      expect(popoverOpen("Customer")).toBe(true);
       expect(writes()).toBe(0);
     },
   },
@@ -329,7 +310,7 @@ const ROWS: readonly Row[] = [
     },
     // Enter after the composition still applies and closes.
     works: async () => {
-      await expect.poll(popoverOpen).toBe(false);
+      await expect.poll(() => popoverOpen("Customer")).toBe(false);
       expect(columnFilters()).toEqual([
         { id: "customer", value: { kind: "text", operator: "contains", values: ["aurora"] } },
       ]);

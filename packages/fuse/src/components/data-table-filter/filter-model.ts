@@ -77,6 +77,8 @@ type OperatorSpec<K extends FilterKind> = {
   readonly target: OperatorTarget;
   /** The operator that means the opposite. */
   readonly negation: FilterOperator<K>;
+  /** Whether the operator inverts its match, so a missing cell passes it. */
+  readonly negated: boolean;
   /** The operator an option filter moves to when its value count grows past one. */
   readonly plural?: FilterOperator<K>;
   /** The operator an option filter moves to when its value count drops to one. */
@@ -86,48 +88,48 @@ type OperatorSpec<K extends FilterKind> = {
 type OperatorTable = { readonly [K in FilterKind]: { readonly [O in FilterOperator<K>]: OperatorSpec<K> } };
 
 /**
- * The operator graph: each operator's target, its negation and, for option kinds, its sibling
- * when the value count crosses one. Key order is menu order. `satisfies` makes a missing
+ * The operator graph: each operator's target, its negation, whether it is negated and, for option
+ * kinds, its sibling when the value count crosses one. Key order is menu order. `satisfies` makes a missing
  * operator, a sibling from another kind or an unknown target a type error.
  */
 export const OPERATORS = {
   option: {
-    is: { target: "single", plural: "isAnyOf", negation: "isNot" },
-    isNot: { target: "single", plural: "isNoneOf", negation: "is" },
-    isAnyOf: { target: "multiple", singular: "is", negation: "isNoneOf" },
-    isNoneOf: { target: "multiple", singular: "isNot", negation: "isAnyOf" },
+    is: { target: "single", plural: "isAnyOf", negation: "isNot", negated: false },
+    isNot: { target: "single", plural: "isNoneOf", negation: "is", negated: true },
+    isAnyOf: { target: "multiple", singular: "is", negation: "isNoneOf", negated: false },
+    isNoneOf: { target: "multiple", singular: "isNot", negation: "isAnyOf", negated: true },
   },
   multiOption: {
-    includes: { target: "single", plural: "includesAnyOf", negation: "excludes" },
-    excludes: { target: "single", plural: "excludesAnyOf", negation: "includes" },
-    includesAnyOf: { target: "multiple", singular: "includes", negation: "excludesAnyOf" },
-    includesAllOf: { target: "multiple", singular: "includes", negation: "excludesAllOf" },
-    excludesAnyOf: { target: "multiple", singular: "excludes", negation: "includesAnyOf" },
-    excludesAllOf: { target: "multiple", singular: "excludes", negation: "includesAllOf" },
+    includes: { target: "single", plural: "includesAnyOf", negation: "excludes", negated: false },
+    excludes: { target: "single", plural: "excludesAnyOf", negation: "includes", negated: true },
+    includesAnyOf: { target: "multiple", singular: "includes", negation: "excludesAnyOf", negated: false },
+    includesAllOf: { target: "multiple", singular: "includes", negation: "excludesAllOf", negated: false },
+    excludesAnyOf: { target: "multiple", singular: "excludes", negation: "includesAnyOf", negated: true },
+    excludesAllOf: { target: "multiple", singular: "excludes", negation: "includesAllOf", negated: true },
   },
   text: {
-    contains: { target: "single", negation: "doesNotContain" },
-    doesNotContain: { target: "single", negation: "contains" },
+    contains: { target: "single", negation: "doesNotContain", negated: false },
+    doesNotContain: { target: "single", negation: "contains", negated: true },
   },
   number: {
-    is: { target: "single", negation: "isNot" },
-    isNot: { target: "single", negation: "is" },
-    isGreaterThan: { target: "single", negation: "isLessThanOrEqual" },
-    isGreaterThanOrEqual: { target: "single", negation: "isLessThan" },
-    isLessThan: { target: "single", negation: "isGreaterThanOrEqual" },
-    isLessThanOrEqual: { target: "single", negation: "isGreaterThan" },
-    isBetween: { target: "range", negation: "isNotBetween" },
-    isNotBetween: { target: "range", negation: "isBetween" },
+    is: { target: "single", negation: "isNot", negated: false },
+    isNot: { target: "single", negation: "is", negated: true },
+    isGreaterThan: { target: "single", negation: "isLessThanOrEqual", negated: false },
+    isGreaterThanOrEqual: { target: "single", negation: "isLessThan", negated: false },
+    isLessThan: { target: "single", negation: "isGreaterThanOrEqual", negated: false },
+    isLessThanOrEqual: { target: "single", negation: "isGreaterThan", negated: false },
+    isBetween: { target: "range", negation: "isNotBetween", negated: false },
+    isNotBetween: { target: "range", negation: "isBetween", negated: true },
   },
   date: {
-    is: { target: "single", negation: "isNot" },
-    isNot: { target: "single", negation: "is" },
-    isBefore: { target: "single", negation: "isOnOrAfter" },
-    isOnOrAfter: { target: "single", negation: "isBefore" },
-    isAfter: { target: "single", negation: "isOnOrBefore" },
-    isOnOrBefore: { target: "single", negation: "isAfter" },
-    isBetween: { target: "range", negation: "isNotBetween" },
-    isNotBetween: { target: "range", negation: "isBetween" },
+    is: { target: "single", negation: "isNot", negated: false },
+    isNot: { target: "single", negation: "is", negated: true },
+    isBefore: { target: "single", negation: "isOnOrAfter", negated: false },
+    isOnOrAfter: { target: "single", negation: "isBefore", negated: false },
+    isAfter: { target: "single", negation: "isOnOrBefore", negated: false },
+    isOnOrBefore: { target: "single", negation: "isAfter", negated: false },
+    isBetween: { target: "range", negation: "isNotBetween", negated: false },
+    isNotBetween: { target: "range", negation: "isBetween", negated: true },
   },
 } as const satisfies OperatorTable;
 
@@ -172,7 +174,7 @@ export function isFiniteNumber(value: unknown): value is number {
  * @returns Whether it is a filter kind.
  */
 // oxlint-disable-next-line anti-slop/no-unknown-parameters -- the parse boundary over untyped filter state
-export function isFilterKind(kind: unknown): kind is FilterKind {
+function isFilterKind(kind: unknown): kind is FilterKind {
   return isString(kind) && Object.hasOwn(OPERATOR_SPECS, kind);
 }
 
@@ -183,7 +185,7 @@ export function isFilterKind(kind: unknown): kind is FilterKind {
  * @param kind - The kind whose operators to list.
  * @returns The kind's operators.
  */
-export function operatorsFor<K extends FilterKind>(kind: K): readonly FilterOperator<K>[] {
+function operatorsFor<K extends FilterKind>(kind: K): readonly FilterOperator<K>[] {
   // SAFETY: the table's keys for `kind` are exactly `FilterOperator<K>`, which `satisfies` checks.
   return Object.keys(OPERATORS[kind]) as FilterOperator<K>[];
 }
@@ -213,6 +215,17 @@ export function isOperatorOf<K extends FilterKind>(
  */
 export function targetOf(kind: FilterKind, operator: FilterOperator): OperatorTarget {
   return OPERATOR_SPECS[kind][operator]?.target ?? "single";
+}
+
+/**
+ * Whether an operator inverts its match, so a missing cell passes it.
+ *
+ * @param kind - The operator's kind.
+ * @param operator - The operator.
+ * @returns Whether the operator is negated.
+ */
+export function isNegated(kind: FilterKind, operator: FilterOperator): boolean {
+  return OPERATOR_SPECS[kind][operator]?.negated ?? false;
 }
 
 /** The part of a field the policy reads: its kind, its own operator list and, for option kinds, its options. */
@@ -497,7 +510,7 @@ export function findFilter(state: DataTableFilterState, id: string): FilterValue
  * @param value - The new value, or `null` to remove it.
  * @returns The next state.
  */
-export function upsertFilter(
+function upsertFilter(
   state: DataTableFilterState,
   id: string,
   value: FilterValue | null

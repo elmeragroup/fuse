@@ -49,7 +49,7 @@ export type EditorContextValue = {
 };
 
 /** The composition handlers for an editor's element, and its key test. */
-export type CompositionGuard = {
+type CompositionGuard = {
   readonly onCompositionStart: () => void;
   readonly onCompositionEnd: () => void;
   readonly isComposing: (event: KeyboardEvent) => boolean;

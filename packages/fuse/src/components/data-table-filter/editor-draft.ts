@@ -20,12 +20,6 @@ export type DraftValues = {
  */
 export type EditorDraft = DraftValues & { readonly edited: boolean };
 
-/** The write a draft settles into: an operator and its values, or no values to remove the filter. */
-export type DraftWrite = {
-  readonly operator: FilterOperator;
-  readonly values: readonly (string | number)[];
-};
-
 /**
  * A facet range widened out to whole steps: the slider's bounds, and the draft a new range starts
  * from, which must agree so the draft sits inside the slider.
@@ -125,14 +119,14 @@ export function completeValues(
  * @param draft - The draft.
  * @param applied - The applied filter, if any.
  * @param range - The field's known number range, if any.
- * @returns The write, or undefined.
+ * @returns The write, an operator and its values or no values to remove the filter, or undefined.
  */
 export function draftWrite(
   kind: FilterKind,
   draft: EditorDraft,
   applied: FilterValue | undefined,
   range: readonly [number, number] | undefined
-): DraftWrite | undefined {
+): DraftValues | undefined {
   if (kind === "option" || kind === "multiOption" || (applied === undefined && !draft.edited)) {
     return undefined;
   }
@@ -159,12 +153,6 @@ export function draftWrite(
   ) {
     return undefined;
   }
-  if (
-    applied !== undefined &&
-    applied.operator === draft.operator &&
-    applied.values.join("\u0000") === values.join("\u0000")
-  ) {
-    return undefined;
-  }
-  return { operator: draft.operator, values };
+  const write = { operator: draft.operator, values };
+  return draftSays(kind, write, applied) ? undefined : write;
 }

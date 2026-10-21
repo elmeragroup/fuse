@@ -3,7 +3,7 @@
  * in-place drill, driven through a real TanStack v9 table. Expected rows, counts and orders are
  * written out by hand from the shared fixture's six rows, or computed from its fixture data.
  */
-import { createRef, useLayoutEffect, useState } from "react";
+import { createRef, useState } from "react";
 import type { ComponentProps } from "react";
 
 import { afterEach, describe, expect, it, onTestFinished } from "vitest";
@@ -13,6 +13,7 @@ import "../../../dist/styles.css";
 import {
   active,
   CalendarStandIn,
+  captureActions,
   flipsIn,
   focusIs,
   menuOpen,
@@ -20,6 +21,7 @@ import {
   ORDERS,
   PRODUCTS,
   FIELDS,
+  FIELDS_WITH_PRODUCT,
   columnFilters,
   CUSTOMER_NORD,
   STATUS_THREE,
@@ -62,12 +64,12 @@ function lit(role: "menuitem" | "menuitemcheckbox", name: string): boolean {
   return roleNamed(role, name).hasAttribute("data-highlighted");
 }
 
-/** The menu's step, the field list or an editor. */
 /** Whether a field's value submenu, a dialog named after the field, is in the page. */
 function submenuOpen(field: string): boolean {
   return page.getByRole("dialog", { name: field }).query() !== null;
 }
 
+/** The menu's step, the field list or an editor. */
 function step(): string | null {
   return menu().getAttribute("data-step");
 }
@@ -231,7 +233,7 @@ describe("DataTableFilter add menu", () => {
   });
 
   it("caps a 3,000-option field at 50 rows in count order with a status row, and narrows", async () => {
-    renderOrders({ initial: [], products: true });
+    renderOrders({ initial: [], fields: FIELDS_WITH_PRODUCT });
     await openMenu();
     await userEvent.click(roleNamed("menuitem", "Product"));
     await expect.poll(() => page.getByRole("menuitemcheckbox").elements().length).toBe(50);
@@ -266,7 +268,7 @@ describe("DataTableFilter add menu", () => {
   });
 
   it("starts each submenu's first row the same distance under its search", async () => {
-    renderOrders({ initial: [], products: true });
+    renderOrders({ initial: [], fields: FIELDS_WITH_PRODUCT });
     await openMenu();
     async function gapUnder(field: string): Promise<number> {
       await userEvent.fill(roleNamed("searchbox", "Search fields"), field);
@@ -593,20 +595,7 @@ describe("DataTableFilter in-place editor", () => {
   });
 
   describe("edit() while the menu closes", () => {
-    const captured = createRef<ReturnType<typeof useDataTableFilter>["actions"]>();
-    function Capture(): null {
-      const { actions } = useDataTableFilter();
-      useLayoutEffect(() => {
-        captured.current = actions;
-      });
-      return null;
-    }
-    function act(): ReturnType<typeof useDataTableFilter>["actions"] {
-      if (captured.current === null) {
-        throw new Error("expected the filter's actions");
-      }
-      return captured.current;
-    }
+    const { Capture, act } = captureActions();
 
     /** Both chips, the menu open, and every active field the Root reports. */
     async function openWithChips(

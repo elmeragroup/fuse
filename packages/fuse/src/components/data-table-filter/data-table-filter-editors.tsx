@@ -7,8 +7,6 @@
 import { useEffect, useId, useState } from "react";
 import type { ComponentProps, KeyboardEvent, ReactElement, ReactNode } from "react";
 
-import { Combobox as ComboboxPrimitive } from "@base-ui/react";
-
 import { useMediaQuery } from "../../hooks/use-media-query";
 import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { MagnifyingGlass } from "../../icons/generated/magnifying-glass";
@@ -37,7 +35,7 @@ import { useFilterInternals, useFocusRequest } from "./data-table-filter";
 import type { DraftValues, EditorContextValue } from "./data-table-filter-editor-context";
 import { useKindEditor } from "./data-table-filter-editor-context";
 import { dataTableFilterSlots as slots } from "./data-table-filter-variants";
-import { completeValues, stepBounds } from "./editor-draft";
+import { completeValues, draftSays, stepBounds } from "./editor-draft";
 import type {
   DateFilterField,
   FilterFieldOfKind,
@@ -49,6 +47,7 @@ import { calendarDateIn } from "./filter-match";
 import type { FilterOperator, IsoDate } from "./filter-model";
 import { addDays, allowedOperators, isFiniteNumber, isIsoDate, isOperatorOf, targetOf } from "./filter-model";
 import { matchOptions, OPTION_LIMIT, snapshotOrder } from "./option-list";
+import { useContains } from "./use-contains";
 
 /** The props every kind editor takes: its body's element. */
 export type DataTableFilterKindEditorProps = ComponentProps<"div">;
@@ -61,7 +60,7 @@ export type DataTableFilterKindEditorProps = ComponentProps<"div">;
  * the option's name stays "Paid".
  */
 export function OptionCount({ count }: { readonly count: number }): ReactElement {
-  const { meta } = useFilterInternals("DataTableFilter.OptionEditor");
+  const { meta } = useFilterInternals("DataTableFilter.OptionCount");
   return (
     <span aria-hidden data-slot="data-table-filter-count" className={slots.count()}>
       {numberFormat(meta.locale).format(count)}
@@ -92,8 +91,8 @@ function OptionEditorBody({
   // arrive later update in place.
   const [order] = useState(() => snapshotOrder(field, picked, counts));
   const [query, setQuery] = useState("");
-  const { contains } = ComboboxPrimitive.useFilter({ locale: meta.locale, multiple: true });
-  const matches = matchOptions(order, query, (text, needle) => contains(text, needle), OPTION_LIMIT);
+  const contains = useContains(meta.locale);
+  const matches = matchOptions(order, query, contains, OPTION_LIMIT);
   const inputRef = useFocusRequest<HTMLInputElement>(editor.focusKey);
   const groups: OptionGroup[] = [
     ...(order.pinned.length > 0 ? [{ value: "pinned" as const, items: order.pinned }] : []),
@@ -263,7 +262,7 @@ function TextEditorBody({
               // Settled before the overlay closes or goes back, so a focus target sees the chip it
               // keeps.
               settle();
-            } else if (editor.back !== undefined && isBackspaceOnEmpty(event)) {
+            } else if (editor.back !== undefined && !event.repeat && isBackspaceOnEmpty(event)) {
               // In the add menu a fresh Backspace in an empty input goes back a step, as Command's
               // search does. A held Backspace that has just emptied the input is still deleting.
               event.preventDefault();
@@ -523,12 +522,7 @@ function DateEditorBody({
     const write = presetWrite(preset, today, allowed);
     return write === undefined ? [] : [{ key: preset.key, write }];
   });
-  const pressed = presets.find(
-    ({ write }) =>
-      filter?.kind === "date" &&
-      filter.operator === write.operator &&
-      filter.values.join("/") === write.values.join("/")
-  )?.key;
+  const pressed = presets.find(({ write }) => draftSays("date", write, filter))?.key;
   const focusRef = useFocusRequest<HTMLDivElement>(editor.focusKey);
   const bodyRef = useMergedRefs(ref, focusRef);
   const operator = isOperatorOf("date", draft.operator) ? draft.operator : "isBetween";

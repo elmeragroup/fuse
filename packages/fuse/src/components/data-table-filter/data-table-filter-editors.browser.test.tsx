@@ -13,21 +13,25 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import {
+  captureActions,
   columnFilters,
   CUSTOMER_NORD,
   FIELDS,
   focusIs,
   menuOpen,
+  nextFrames,
   Orders,
+  popoverOpen,
+  renderCounted,
   renderOrders,
   settled,
   visibleOrders,
 } from "../../../test/data-table-filter-fixture";
+import type { CountedRender } from "../../../test/data-table-filter-fixture";
 import { withLocale } from "../../../test/locale-matrix";
 import { glidePointerTo, turnWheel, whilePointerPressed } from "../../../test/pointer-press";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import type { DataTableFilterContextValue } from "./data-table-filter";
-import { useDataTableFilter } from "./data-table-filter";
 import type { FilterFieldMap } from "./filter-fields";
 import { parseColumnFilters } from "./filter-parse";
 import { DataTableFilter } from "./index";
@@ -35,16 +39,6 @@ import { DataTableFilter } from "./index";
 afterEach(async () => {
   await settled();
 });
-
-/**
- * Runs the clock past the text editor's 300 ms typing pause, then waits out the overlays' close
- * animations. The suite's timers are fake but advance with real time, so the overlays run as
- * they do for a person.
- */
-async function outlastPauses(): Promise<void> {
-  await vi.advanceTimersByTimeAsync(1000);
-  await settled();
-}
 
 /** Moves focus to an element, which blurs the one that had it. */
 function focusOn(element: Element): void {
@@ -63,78 +57,6 @@ async function pickOption(name: string): Promise<void> {
   await userEvent.click(roleNamed("option", name));
 }
 
-/** Waits for React to render what the last state change scheduled. */
-async function nextFrame(): Promise<void> {
-  await new Promise((resolve) => {
-    requestAnimationFrame(resolve);
-  });
-}
-
-/** The open value popover's dialog, named after its field. */
-function popoverOpen(name: string): boolean {
-  return page.getByRole("dialog", { name }).query() !== null;
-}
-
-describe("DataTableFilter text drafts", () => {
-  beforeEach(() => {
-    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"], shouldAdvanceTime: true });
-  });
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  it("keeps a filter cleared while its value popover holds an unapplied draft gone", async () => {
-    renderOrders({ initial: CUSTOMER_NORD });
-    await userEvent.click(roleNamed("button", "“nord”"));
-    await expect.poll(() => focusIs("textbox", "Customer")).toBe(true);
-    await userEvent.keyboard("{End}x");
-    await userEvent.click(roleNamed("button", "Clear filters"));
-    await outlastPauses();
-    expect(columnFilters()).toEqual([]);
-    expect(visibleOrders()).toBe("1 2 3 4 5 6");
-  });
-
-  it("keeps a filter cleared while the menu's in-place editor holds an unapplied draft gone", async () => {
-    renderOrders({ initial: [] });
-    await userEvent.click(roleNamed("button", "Filter"));
-    await settled();
-    await userEvent.click(roleNamed("menuitem", "Customer"));
-    await expect.poll(() => focusIs("textbox", "Customer")).toBe(true);
-    await userEvent.keyboard("kafe");
-    // Accents ignored: "kafe" matches Nordlys Kafé only.
-    await expect.poll(visibleOrders).toBe("4");
-    await userEvent.keyboard("x");
-    await userEvent.click(roleNamed("button", "Clear filters"));
-    await outlastPauses();
-    expect(columnFilters()).toEqual([]);
-    expect(menuOpen()).toBe(false);
-  });
-
-  it("keeps a removed filter gone while its value popover holds an unapplied draft", async () => {
-    renderOrders({ initial: CUSTOMER_NORD });
-    await userEvent.click(roleNamed("button", "“nord”"));
-    await expect.poll(() => focusIs("textbox", "Customer")).toBe(true);
-    await userEvent.keyboard("{End}x");
-    await userEvent.click(roleNamed("button", "Remove Customer filter"));
-    await outlastPauses();
-    expect(columnFilters()).toEqual([]);
-  });
-
-  it("applies the typed text when the popover is dismissed before the pause ends", async () => {
-    renderOrders({ initial: CUSTOMER_NORD });
-    await userEvent.click(roleNamed("button", "“nord”"));
-    await expect.poll(() => focusIs("textbox", "Customer")).toBe(true);
-    await userEvent.fill(roleNamed("textbox", "Customer"), "aurora");
-    // Tab moves focus out of the popover, which dismisses it.
-    await userEvent.keyboard("{Tab}");
-    await outlastPauses();
-    expect(columnFilters()).toEqual([
-      { id: "customer", value: { kind: "text", operator: "contains", values: ["aurora"] } },
-    ]);
-    expect(visibleOrders()).toBe("1");
-  });
-});
-
 describe("DataTableFilter draft ownership", () => {
   // The typing pause cannot fire unless a test advances the clock, so every write below comes from
   // the exit or the press under test. Animations run on frames, which stay real.
@@ -145,56 +67,26 @@ describe("DataTableFilter draft ownership", () => {
     vi.useRealTimers();
   });
 
-  const captured = createRef<DataTableFilterContextValue["actions"]>();
-  function Capture() {
-    const { actions } = useDataTableFilter();
-    useLayoutEffect(() => {
-      captured.current = actions;
-    });
-    return null;
-  }
-  function act(): DataTableFilterContextValue["actions"] {
-    if (captured.current === null) {
-      throw new Error("expected the filter's actions");
-    }
-    return captured.current;
-  }
-
-  /** The number of writes TanStack has heard so far, and the render's unmount. */
-  type WriteCounter = { readonly writes: () => number; readonly unmount: () => void };
+  const { Capture, act } = captureActions();
 
   /** Renders the fixture under a write counter, with Capture. */
-  function renderCounted(
+  function renderDrafts(
     initial: ColumnFiltersState,
     bar: ReactElement = <DataTableFilter.Bar />
-  ): WriteCounter {
-    let count = 0;
-    const view = renderThemed(
-      withLocale(
-        "en-US",
-        <Orders
-          initial={initial}
-          onColumnFiltersChange={() => {
-            count += 1;
-          }}>
-          {bar}
-          <DataTableFilter.Content />
-          <DataTableFilter.ValueContent />
-          <Capture />
-        </Orders>
-      )
-    );
-    return {
-      writes: () => count,
-      unmount: () => {
-        view.unmount();
-      },
-    };
+  ): CountedRender {
+    return renderCounted((onColumnFiltersChange) => (
+      <Orders initial={initial} onColumnFiltersChange={onColumnFiltersChange}>
+        {bar}
+        <DataTableFilter.Content />
+        <DataTableFilter.ValueContent />
+        <Capture />
+      </Orders>
+    ));
   }
 
   /** Renders Customer "nord" and Status paid, counts writes, and opens Customer's popover. */
-  async function editCustomer(): Promise<WriteCounter> {
-    const counted = renderCounted([...CUSTOMER_NORD, ...STATUS_PAID]);
+  async function editCustomer(): Promise<CountedRender> {
+    const counted = renderDrafts([...CUSTOMER_NORD, ...STATUS_PAID]);
     await userEvent.click(roleNamed("button", "“nord”"));
     await expect.poll(() => focusIs("textbox", "Customer")).toBe(true);
     await settled();
@@ -264,8 +156,8 @@ describe("DataTableFilter draft ownership", () => {
   });
 
   /** Opens the add menu, drills Customer and types text the pause has not applied. */
-  async function draftInMenu(): Promise<WriteCounter> {
-    const counted = renderCounted([...CUSTOMER_NORD, ...STATUS_PAID]);
+  async function draftInMenu(): Promise<CountedRender> {
+    const counted = renderDrafts([...CUSTOMER_NORD, ...STATUS_PAID]);
     await userEvent.click(roleNamed("button", "Filter"));
     await settled();
     await userEvent.click(roleNamed("menuitem", "Customer"));
@@ -275,7 +167,7 @@ describe("DataTableFilter draft ownership", () => {
   }
 
   /** Opens Customer's value popover and types text the pause has not applied. */
-  async function draftInPopover(): Promise<WriteCounter> {
+  async function draftInPopover(): Promise<CountedRender> {
     const counted = await editCustomer();
     await userEvent.fill(roleNamed("textbox", "Customer"), "aurora");
     return counted;
@@ -309,6 +201,10 @@ describe("DataTableFilter draft ownership", () => {
       await outlast();
       expect(writes()).toBe(1);
       expect(columnFilters()).toEqual([]);
+      expect(visibleOrders()).toBe("1 2 3 4 5 6");
+      // The Clear closed whichever overlay held the draft.
+      expect(menuOpen()).toBe(false);
+      expect(popoverOpen("Customer")).toBe(false);
     }
   );
 
@@ -396,7 +292,7 @@ describe("DataTableFilter draft ownership", () => {
   ] as const;
 
   it("moves focus into the editor edit() switches an open popover to, as a press on its Value does", async () => {
-    renderCounted([AMOUNT_RANGE, ...CUSTOMER_NORD]);
+    renderDrafts([AMOUNT_RANGE, ...CUSTOMER_NORD]);
     await openChip("Customer filter", "Customer");
     await expect.poll(() => focusIs("textbox", "Customer")).toBe(true);
     act().edit("amount");
@@ -407,7 +303,7 @@ describe("DataTableFilter draft ownership", () => {
   });
 
   it("leaves another field's open editor and its draft alone on remove() of a field with no filter", async () => {
-    const { writes } = renderCounted([AMOUNT_RANGE]);
+    const { writes } = renderDrafts([AMOUNT_RANGE]);
     await openChip("Amount filter", "Amount");
     await userEvent.fill(roleNamed("textbox", "Minimum"), "300");
     act().remove("status");
@@ -421,7 +317,7 @@ describe("DataTableFilter draft ownership", () => {
   it.each(BLUR_WRITERS)(
     "clears in one write with %s dirty and focused",
     async (_name, filter, _field, dirty) => {
-      const { writes } = renderCounted([filter, ...STATUS_PAID]);
+      const { writes } = renderDrafts([filter, ...STATUS_PAID]);
       await dirty();
       expect(writes()).toBe(0);
       await userEvent.click(roleNamed("button", "Clear filters"));
@@ -434,7 +330,7 @@ describe("DataTableFilter draft ownership", () => {
   it.each(BLUR_WRITERS)(
     "removes the edited chip in one write with %s dirty and focused",
     async (_name, filter, field, dirty) => {
-      const { writes } = renderCounted([filter, ...STATUS_PAID]);
+      const { writes } = renderDrafts([filter, ...STATUS_PAID]);
       await dirty();
       await userEvent.click(roleNamed("button", `Remove ${field} filter`));
       await outlast();
@@ -444,23 +340,15 @@ describe("DataTableFilter draft ownership", () => {
   );
 
   it("settles the draft and clears nothing when Tab merely moves focus to a Clear outside the bar", async () => {
-    let count = 0;
-    renderThemed(
-      withLocale(
-        "en-US",
-        <Orders
-          initial={[...CUSTOMER_NORD, ...STATUS_PAID]}
-          onColumnFiltersChange={() => {
-            count += 1;
-          }}>
-          <DataTableFilter.Bar />
-          {/* The next stop after the bar, where Tab out of the popover lands. */}
-          <DataTableFilter.Clear>Reset</DataTableFilter.Clear>
-          <DataTableFilter.Content />
-          <DataTableFilter.ValueContent />
-        </Orders>
-      )
-    );
+    const { writes } = renderCounted((onColumnFiltersChange) => (
+      <Orders initial={[...CUSTOMER_NORD, ...STATUS_PAID]} onColumnFiltersChange={onColumnFiltersChange}>
+        <DataTableFilter.Bar />
+        {/* The next stop after the bar, where Tab out of the popover lands. */}
+        <DataTableFilter.Clear>Reset</DataTableFilter.Clear>
+        <DataTableFilter.Content />
+        <DataTableFilter.ValueContent />
+      </Orders>
+    ));
     await userEvent.click(roleNamed("button", "“nord”"));
     await expect.poll(() => focusIs("textbox", "Customer")).toBe(true);
     await settled();
@@ -469,7 +357,7 @@ describe("DataTableFilter draft ownership", () => {
     await expect.poll(() => focusIs("button", "Reset")).toBe(true);
     await expect.poll(() => popoverOpen("Customer")).toBe(false);
     await outlast();
-    expect(count).toBe(1);
+    expect(writes()).toBe(1);
     expect(columnFilters()).toEqual([
       { id: "customer", value: { kind: "text", operator: "contains", values: ["aurora"] } },
       ...STATUS_PAID,
@@ -477,8 +365,7 @@ describe("DataTableFilter draft ownership", () => {
   });
 
   it("applies the text 300 ms after the last keystroke while the host re-renders every 100 ms", async () => {
-    let count = 0;
-    function Host() {
+    function Host({ onColumnFiltersChange }: { readonly onColumnFiltersChange: () => void }) {
       const [, setTick] = useState(0);
       useEffect(() => {
         const timer = setInterval(() => {
@@ -489,24 +376,21 @@ describe("DataTableFilter draft ownership", () => {
         };
       }, []);
       return (
-        <Orders
-          initial={[...CUSTOMER_NORD, ...STATUS_PAID]}
-          onColumnFiltersChange={() => {
-            count += 1;
-          }}
-        />
+        <Orders initial={[...CUSTOMER_NORD, ...STATUS_PAID]} onColumnFiltersChange={onColumnFiltersChange} />
       );
     }
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval"] });
-    renderThemed(withLocale("en-US", <Host />));
+    const { writes } = renderCounted((onColumnFiltersChange) => (
+      <Host onColumnFiltersChange={onColumnFiltersChange} />
+    ));
     await userEvent.click(roleNamed("button", "“nord”"));
     await expect.poll(() => focusIs("textbox", "Customer")).toBe(true);
     await settled();
     await userEvent.fill(roleNamed("textbox", "Customer"), "aurora");
     await vi.advanceTimersByTimeAsync(250);
-    expect(count).toBe(0);
+    expect(writes()).toBe(0);
     await vi.advanceTimersByTimeAsync(100);
-    expect(count).toBe(1);
+    expect(writes()).toBe(1);
     await expect.poll(visibleOrders).toBe("1");
   });
 
@@ -535,8 +419,8 @@ describe("DataTableFilter draft ownership", () => {
   }
 
   /** Opens Customer's popover in a fixture with the given bar and types unapplied text. */
-  async function draftWithBar(bar: ReactElement): Promise<WriteCounter> {
-    const counted = renderCounted([...CUSTOMER_NORD, ...STATUS_PAID], bar);
+  async function draftWithBar(bar: ReactElement): Promise<CountedRender> {
+    const counted = renderDrafts([...CUSTOMER_NORD, ...STATUS_PAID], bar);
     await userEvent.click(roleNamed("button", "“nord”"));
     await expect.poll(() => focusIs("textbox", "Customer")).toBe(true);
     await settled();
@@ -594,7 +478,7 @@ describe("DataTableFilter draft ownership", () => {
   });
 
   it("drops a number typed before a cancelled Clear, even when Tab follows", async () => {
-    const { writes } = renderCounted([AMOUNT_RANGE, ...STATUS_PAID], stopClick);
+    const { writes } = renderDrafts([AMOUNT_RANGE, ...STATUS_PAID], stopClick);
     await openChip("Amount filter", "Amount");
     await userEvent.fill(roleNamed("textbox", "Minimum"), "300");
     await userEvent.click(roleNamed("button", "Clear filters"));
@@ -606,7 +490,7 @@ describe("DataTableFilter draft ownership", () => {
   });
 
   it("closes an open date editor without a write on a cancelled Clear", async () => {
-    const { writes } = renderCounted([CREATED_RANGE, ...STATUS_PAID], stopClick);
+    const { writes } = renderDrafts([CREATED_RANGE, ...STATUS_PAID], stopClick);
     await openChip("Created filter", "Created");
     await userEvent.click(roleNamed("button", "Clear filters"));
     await expect.poll(() => popoverOpen("Created")).toBe(false);
@@ -664,7 +548,7 @@ describe("DataTableFilter draft ownership", () => {
   async function draftThenDisable(
     parts: Parameters<typeof barDisabling>[0],
     press: string
-  ): Promise<WriteCounter> {
+  ): Promise<CountedRender> {
     const disable = createRef<() => void>();
     function Switchable(): ReactElement {
       const [disabled, setDisabled] = useState(false);
@@ -754,7 +638,7 @@ describe("DataTableFilter draft ownership", () => {
   });
 
   it("opens a fresh editor when edit() reopens the menu during a Clear's close", async () => {
-    const { writes } = renderCounted(STATUS_PAID);
+    const { writes } = renderDrafts(STATUS_PAID);
     await userEvent.click(roleNamed("button", "Filter"));
     await settled();
     await userEvent.click(roleNamed("menuitem", "Customer"));
@@ -775,7 +659,7 @@ describe("DataTableFilter draft ownership", () => {
   });
 
   it("keeps a filter cleared from code gone when a focused, edited number field then blurs", async () => {
-    const { writes } = renderCounted([
+    const { writes } = renderDrafts([
       { id: "amount", value: { kind: "number", operator: "isBetween", values: [120, 950] } },
     ]);
     const [value] = page.elementLocator(roleNamed("group", "Amount filter")).getByRole("button").elements();
@@ -795,7 +679,7 @@ describe("DataTableFilter draft ownership", () => {
   });
 
   it("writes nothing for two operator changes on an untouched number draft", async () => {
-    const { writes } = renderCounted([]);
+    const { writes } = renderDrafts([]);
     await userEvent.click(roleNamed("button", "Filter"));
     await settled();
     await userEvent.click(roleNamed("menuitem", "Amount"));
@@ -961,13 +845,9 @@ describe("DataTableFilter IME composition", () => {
   });
 
   it("holds the typing pause through a composition and starts it over when the composition ends", async () => {
-    let count = 0;
-    renderOrders({
-      initial: CUSTOMER_NORD,
-      onColumnFiltersChange: () => {
-        count += 1;
-      },
-    });
+    const { writes } = renderCounted((onColumnFiltersChange) => (
+      <Orders initial={CUSTOMER_NORD} onColumnFiltersChange={onColumnFiltersChange} />
+    ));
     await userEvent.click(roleNamed("button", "“nord”"));
     await expect.poll(() => focusIs("textbox", "Customer")).toBe(true);
     const input = roleNamed("textbox", "Customer");
@@ -975,12 +855,12 @@ describe("DataTableFilter IME composition", () => {
     await userEvent.keyboard("{End}x");
     // A person choosing a candidate pauses far longer than the 300 ms typing pause.
     await vi.advanceTimersByTimeAsync(1000);
-    expect(count).toBe(0);
+    expect(writes()).toBe(0);
     input.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true, data: "x" }));
     await vi.advanceTimersByTimeAsync(250);
-    expect(count).toBe(0);
+    expect(writes()).toBe(0);
     await vi.advanceTimersByTimeAsync(100);
-    expect(count).toBe(1);
+    expect(writes()).toBe(1);
     await expect
       .poll(columnFilters)
       .toEqual([{ id: "customer", value: { kind: "text", operator: "contains", values: ["nordx"] } }]);
@@ -1075,20 +955,7 @@ describe("DataTableFilter number and date drafts", () => {
 });
 
 describe("DataTableFilter operators a field allows", () => {
-  const captured = createRef<DataTableFilterContextValue["actions"]>();
-  function Capture() {
-    const { actions } = useDataTableFilter();
-    useLayoutEffect(() => {
-      captured.current = actions;
-    });
-    return null;
-  }
-  function act(): DataTableFilterContextValue["actions"] {
-    if (captured.current === null) {
-      throw new Error("expected the filter's actions");
-    }
-    return captured.current;
-  }
+  const { Capture, act } = captureActions();
 
   const RESTRICTED: FilterFieldMap = {
     ...FIELDS,
@@ -1184,7 +1051,7 @@ describe("DataTableFilter operators a field allows", () => {
     );
     for (const step of steps) {
       step(act());
-      await nextFrame();
+      await nextFrames();
     }
     await expect.poll(columnFilters).toEqual(expected);
     expect(parseColumnFilters(columnFilters(), fields)).toEqual(expected);
@@ -1219,14 +1086,7 @@ describe("DataTableFilter drafts under a host that republishes its filters", () 
     await expect.poll(republishes).toBeGreaterThanOrEqual(from + 2);
   }
 
-  const captured = createRef<DataTableFilterContextValue["actions"]>();
-  function Capture(): null {
-    const { actions } = useDataTableFilter();
-    useLayoutEffect(() => {
-      captured.current = actions;
-    });
-    return null;
-  }
+  const { Capture, act } = captureActions();
 
   /** The fixture, controlled, republishing deep copies of unchanged filters every 50 ms. */
   function renderRepublishing(initial: ColumnFiltersState): void {
@@ -1300,7 +1160,7 @@ describe("DataTableFilter drafts under a host that republishes its filters", () 
     renderRepublishing(CUSTOMER_NORD);
     await openValue("Customer filter", "Customer");
     await userEvent.fill(roleNamed("textbox", "Customer"), "aurora");
-    captured.current?.setValues("customer", "contains", ["kafe"]);
+    act().setValues("customer", "contains", ["kafe"]);
     await expect.poll(() => roleNamed("textbox", "Customer")).toHaveProperty("value", "kafe");
     await outlastRepublishes();
     expect(columnFilters()).toEqual([

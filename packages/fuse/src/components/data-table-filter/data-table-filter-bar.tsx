@@ -31,14 +31,14 @@ import { isHTMLElement, isNode } from "../../internal/dom-node";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { Button } from "../button/button";
-import { SelectContent, SelectItem, SelectRoot } from "../select/select";
+import { SelectRoot } from "../select/select";
 import { assertOverlay, BarContext, ChipContext, useChip, useFilterInternals } from "./data-table-filter";
 import type { ChipFilter } from "./data-table-filter";
 import { dataTableFilterSlots as slots } from "./data-table-filter-variants";
 import { optionsOf } from "./filter-fields";
-import { operatorChoices } from "./filter-model";
-import type { FilterOperator, FilterValue } from "./filter-model";
+import type { FilterOperator } from "./filter-model";
 import { summarize } from "./filter-summary";
+import { OperatorOptions, useOperatorItems } from "./operator-options";
 
 /**
  * Runs the consumer's handler, then the part's bookkeeping whatever the consumer did with the
@@ -164,7 +164,7 @@ export function DataTableFilterTrigger({
       }
       className={mergeClassName(className, slots.trigger())}
       onClick={chain((_event: MouseEvent<HTMLElement>) => {
-        assertOverlay("DataTableFilter.Trigger", state.hasContent, "no-content");
+        assertOverlay("DataTableFilter.Trigger", meta.hasContent(), "no-content");
       }, onClick)}
       {...definedProps(props)}>
       {children ?? (
@@ -322,26 +322,20 @@ export type DataTableFilterOperatorProps = Omit<ComponentProps<typeof ToolbarPri
  */
 export function DataTableFilterOperator(props: DataTableFilterOperatorProps): ReactElement {
   const chip = useChip("DataTableFilter.Operator");
-  return <OperatorSelect {...props} chip={chip} applied={chip.value} />;
+  return <OperatorSelect {...props} chip={chip} />;
 }
 
 function OperatorSelect({
   chip,
-  applied,
   className,
   render,
   ref,
   ...props
-}: DataTableFilterOperatorProps & {
-  readonly chip: ChipFilter;
-  readonly applied: FilterValue;
-}): ReactElement {
+}: DataTableFilterOperatorProps & { readonly chip: ChipFilter }): ReactElement {
   const { actions, meta } = useFilterInternals("DataTableFilter.Operator");
   const segmentRef = useSegmentRef(chip.id, ref);
-  const items = operatorChoices(chip.field, applied).map((operator) => ({
-    value: operator,
-    label: meta.formatOperator(operator, chip.field.kind),
-  }));
+  const applied = chip.value;
+  const items = useOperatorItems("DataTableFilter.Operator", chip.field, applied, applied.operator);
   return (
     <SelectRoot<FilterOperator>
       items={items}
@@ -364,13 +358,7 @@ function OperatorSelect({
         {...definedProps(props)}>
         <SelectPrimitive.Value />
       </ToolbarPrimitive.Button>
-      <SelectContent alignItemWithTrigger={false} align="start">
-        {items.map((item) => (
-          <SelectItem key={item.value} value={item.value}>
-            {item.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
+      <OperatorOptions items={items} align="start" />
     </SelectRoot>
   );
 }
@@ -398,7 +386,7 @@ export function DataTableFilterValue({
   ...props
 }: DataTableFilterValueProps): ReactElement {
   const chip = useChip("DataTableFilter.Value");
-  const { state, actions, meta } = useFilterInternals("DataTableFilter.Value");
+  const { actions, meta } = useFilterInternals("DataTableFilter.Value");
   const segmentRef = useSegmentRef(chip.id, ref);
   // One payload object per chip. Base UI measures the popover again whenever the payload's
   // identity changes (`usePopupViewport.tsx`), so a new object per render would remeasure on
@@ -433,7 +421,7 @@ export function DataTableFilterValue({
       {...definedProps({ "aria-description": summary.full === summary.text ? undefined : summary.full })}
       className={mergeClassName(className, slots.segment(), slots.value())}
       onClick={chain((_event: MouseEvent<HTMLElement>) => {
-        assertOverlay("DataTableFilter.Value", state.hasValueContent, "no-value-content");
+        assertOverlay("DataTableFilter.Value", meta.hasValueContent(), "no-value-content");
         actions.beginEdit(chip.id);
       }, onClick)}
       {...definedProps(props)}>

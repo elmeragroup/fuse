@@ -60,7 +60,7 @@ export function keepKeysFromToolbar(event: KeyboardEvent<HTMLElement>): void {
  * @param event - The submenu search's keydown.
  */
 export function closeSubmenuOnBackspace(event: KeyboardEvent<HTMLInputElement>): void {
-  if (!isBackspaceOnEmpty(event)) {
+  if (event.repeat || !isBackspaceOnEmpty(event)) {
     return;
   }
   const input = event.currentTarget;

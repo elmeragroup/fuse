@@ -11,7 +11,6 @@
 import { createContext, use, useCallback, useLayoutEffect, useRef, useState } from "react";
 import type { ComponentProps, ReactElement, ReactNode, TransitionEvent } from "react";
 
-import { Combobox as ComboboxPrimitive } from "@base-ui/react";
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 
 import { useMergedRefs } from "../../hooks/use-merged-refs";
@@ -42,6 +41,7 @@ import type { FilterField, FilterFieldOfKind, FilterOption } from "./filter-fiel
 import { findFilter } from "./filter-model";
 import { matchOptions, OPTION_LIMIT, snapshotOrder } from "./option-list";
 import { closeSubmenuOnBackspace, keepKeysFromToolbar, SearchableMenu } from "./searchable-menu";
+import { useContains } from "./use-contains";
 
 type OptionField = FilterFieldOfKind<"option" | "multiOption">;
 
@@ -50,13 +50,6 @@ const MenuQueryContext = createContext("");
 
 /** Quick search lists option values across fields from this many characters on. */
 const QUICK_SEARCH_MIN = 2;
-
-/** The menu and its submenus. Focus inside any of them still belongs to the menu. */
-/** The locale's matcher: case-, accent- and punctuation-insensitive "contains", as Base UI's lists match. */
-function useContains(locale: string): (text: string, query: string) => boolean {
-  const { contains } = ComboboxPrimitive.useFilter({ locale, multiple: true });
-  return useCallback((text: string, query: string) => contains(text, query), [contains]);
-}
 
 /** The popup's two morphed dimensions. */
 const MORPHED = ["width", "height"] as const;

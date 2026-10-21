@@ -43,7 +43,9 @@ export function createDataTableFilterFn(options: MatchOptions = {}): DataTableFi
   const parsed = new WeakMap<object, boolean>();
   // oxlint-disable-next-line anti-slop/no-unknown-parameters -- TanStack's FilterFn contract passes the raw state value
   const isParsed = (filterValue: unknown): filterValue is FilterValue => {
-    if (!(filterValue instanceof Object)) {
+    // An object from another realm, such as an iframe, fails `instanceof Object`.
+    // oxlint-disable-next-line anti-slop/no-runtime-typeof -- the parse boundary over TanStack's untyped filter value
+    if (typeof filterValue !== "object" || filterValue === null) {
       return false;
     }
     let valid = parsed.get(filterValue);

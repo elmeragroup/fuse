@@ -1,25 +1,14 @@
 // The filter predicates, shared by the client filter function and a server that filters rows in
 // memory. Pure, with no directive.
 
-import type { FilterOperator, FilterValue, IsoDate } from "./filter-model";
-import { isFiniteNumber, isIsoDate, isString } from "./filter-model";
+import type { FilterValue, IsoDate } from "./filter-model";
+import { isFiniteNumber, isIsoDate, isNegated, isString } from "./filter-model";
 
 /** Options every predicate takes. */
 export type MatchOptions = {
   /** The zone a `Date` cell's calendar day is read in. Defaults to the runtime zone. */
   readonly timeZone?: string | undefined;
 };
-
-/** The operators a missing cell passes, since it holds none of the values. */
-const NEGATED: ReadonlySet<FilterOperator> = new Set<FilterOperator>([
-  "isNot",
-  "isNoneOf",
-  "excludes",
-  "excludesAnyOf",
-  "excludesAllOf",
-  "doesNotContain",
-  "isNotBetween",
-]);
 
 /**
  * Lower case with accents removed, so "Café" matches "cafe". A letter of its own, such as `ø`,
@@ -115,7 +104,10 @@ function holdsPicked(cell: unknown, picked: ReadonlySet<string>, all: boolean): 
 
 type OrderedOperator = Extract<FilterValue, { readonly kind: "number" | "date" }>["operator"];
 
-/** Number and date operators, over numbers or ISO dates, which order the same way as text. */
+/**
+ * Number and date operators, over numbers or ISO dates, which order the same way as text. A
+ * negated operator answers its positive twin, which the caller inverts.
+ */
 function compareOrdered<T extends number | string>(
   operator: OrderedOperator,
   cell: T,
@@ -127,9 +119,8 @@ function compareOrdered<T extends number | string>(
   }
   switch (operator) {
     case "is":
-      return cell === first;
     case "isNot":
-      return cell !== first;
+      return cell === first;
     case "isGreaterThan":
     case "isAfter":
       return cell > first;
@@ -143,9 +134,8 @@ function compareOrdered<T extends number | string>(
     case "isOnOrBefore":
       return cell <= first;
     case "isBetween":
-      return second !== undefined && cell >= first && cell <= second;
     case "isNotBetween":
-      return second === undefined || cell < first || cell > second;
+      return second !== undefined && cell >= first && cell <= second;
   }
 }
 
@@ -161,43 +151,30 @@ function compareOrdered<T extends number | string>(
  */
 // oxlint-disable-next-line anti-slop/no-unknown-parameters -- a cell is whatever the row holds, and this is the parse at that boundary
 export function matchesFilter(value: FilterValue, cell: unknown, options: MatchOptions = {}): boolean {
-  if (cell === null || cell === undefined) {
-    return NEGATED.has(value.operator);
-  }
+  const hit = cell !== null && cell !== undefined && cellHolds(value, cell, options);
+  return isNegated(value.kind, value.operator) ? !hit : hit;
+}
+
+/** Whether a present cell holds the filter's values, read in the operator's positive sense. */
+// oxlint-disable-next-line anti-slop/no-unknown-parameters -- a cell is whatever the row holds
+function cellHolds(value: FilterValue, cell: unknown, options: MatchOptions): boolean {
   switch (value.kind) {
-    case "option": {
-      const hit = isString(cell) && pickedOf(value).has(cell);
-      return value.operator === "is" || value.operator === "isAnyOf" ? hit : !hit;
-    }
+    case "option":
+      return isString(cell) && pickedOf(value).has(cell);
     case "multiOption": {
-      const picked = pickedOf(value);
-      switch (value.operator) {
-        case "includes":
-        case "includesAnyOf":
-          return holdsPicked(cell, picked, false);
-        case "includesAllOf":
-          return holdsPicked(cell, picked, true);
-        case "excludes":
-        case "excludesAnyOf":
-          return !holdsPicked(cell, picked, false);
-        case "excludesAllOf":
-          return !holdsPicked(cell, picked, true);
-      }
-      return false;
+      const all = value.operator === "includesAllOf" || value.operator === "excludesAllOf";
+      return holdsPicked(cell, pickedOf(value), all);
     }
     case "text": {
       const text = isString(cell) ? cell : isFiniteNumber(cell) ? String(cell) : null;
       if (text === null) {
-        return NEGATED.has(value.operator);
+        return false;
       }
       const needle = prepared(needles, value, () => normalizeText(value.values[0]));
-      const hit = normalizeText(text).includes(needle);
-      return value.operator === "contains" ? hit : !hit;
+      return normalizeText(text).includes(needle);
     }
     case "number":
-      return isFiniteNumber(cell)
-        ? compareOrdered(value.operator, cell, value.values)
-        : NEGATED.has(value.operator);
+      return isFiniteNumber(cell) && compareOrdered(value.operator, cell, value.values);
     case "date": {
       const day =
         cell instanceof Date && !Number.isNaN(cell.getTime())
@@ -205,7 +182,7 @@ export function matchesFilter(value: FilterValue, cell: unknown, options: MatchO
           : isIsoDate(cell)
             ? cell
             : null;
-      return day === null ? NEGATED.has(value.operator) : compareOrdered(value.operator, day, value.values);
+      return day !== null && compareOrdered(value.operator, day, value.values);
     }
   }
 }
