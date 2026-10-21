@@ -166,6 +166,23 @@ const EXPECTED_ENTRIES = {
   toggle: { inRootBarrel: true, runtimeExports: ["Toggle", "toggleVariants"] },
   "toggle-group": { inRootBarrel: true, runtimeExports: ["ToggleGroup"] },
   tooltip: { inRootBarrel: true, runtimeExports: ["Tooltip"] },
+  // Subpath-only: its types read the optional @tanstack/react-table peer.
+  "data-table-filter": {
+    inRootBarrel: false,
+    runtimeExports: [
+      "DataTableFilter",
+      "DataTableFilterCompositionError",
+      "useDataTableFilter",
+      "useDataTableFilterChip",
+      "defineFilterFields",
+      "createDataTableFilterFn",
+      "calendarDateIn",
+      "matchesFilter",
+      "normalizeText",
+      "OPERATORS",
+      "parseColumnFilters",
+    ],
+  },
   toolbar: { inRootBarrel: true, runtimeExports: ["Toolbar"] },
   command: { inRootBarrel: true, runtimeExports: ["Command"] },
   // CommandVirtual stays out of the root barrel because it imports the optional

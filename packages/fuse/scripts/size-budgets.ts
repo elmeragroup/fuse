@@ -83,6 +83,10 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // `pnpm gen component` appends a 0-ceiling row below this marker, so a brand-new packed
   // entry cannot slip through unbudgeted. Replace the 0 with measured × 1.5.
   // plop:js-entry-budget
+  // 2026-10-20: new entry, measured at 154062 with the add menu. It renders Toolbar, Menu,
+  // Popover, Select, Combobox, ToggleGroup, NumberField and Slider, so the ceiling follows what
+  // those cost.
+  { name: "data-table-filter", entryFile: "data-table-filter.js", measuredGzip: 154062, ceilingGzip: 231093 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog

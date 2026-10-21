@@ -334,6 +334,27 @@
   remounts them, as the landing's Order search does
   (`apps/docs/src/app/(landing)/landing/app-shell/order-search.tsx`).
 
+## Data table filter
+
+- Run `DataTableFilter` on real touch hardware, with VoiceOver and TalkBack, and in RTL before v1.
+  Check the on-screen keyboard over an open menu, and check that a fresh Backspace in an empty RTL
+  submenu search closes the submenu, since `closeSubmenuOnBackspace` re-dispatches ArrowRight there
+  (`packages/fuse/src/components/data-table-filter/searchable-menu.ts`).
+- A value list scans every option label with a collator compare when a query matches nothing. Past
+  about 100k options, precompute normalized labels in the field config and match them with
+  `includes`, as row filtering does (`option-list.ts`).
+- The add menu and the value popover open and close with the shared overlay keyframes, which
+  cannot be interrupted (`packages/fuse/src/components/overlay/overlay-classes.ts`). Make them
+  interruptible in the overlay owner, for every overlay at once.
+- In a narrow bar, a move of the value popover from one chip to another shows it clamped at the
+  viewport's 8px edge for two frames. The chip strip scrolls the new chip into view while the
+  popover still anchors to the old one, which has scrolled away. To reproduce, open Status's
+  value popover at 414px wide with Status and Customer chips, press Customer's value, and sample
+  the positioner's `left` each frame: 40, 8, 8, then 110. Anchor the move after the strip
+  scrolls, or keep the old anchor in view until it does.
+- Base UI's menu filtering parts are a preview API. When they leave preview, rename them in
+  `searchable-menu.ts`, the one module that reads them.
+
 ## Command
 
 - `CommandVirtual.List` renders flat item lists only, so `virtualized` beside `grouped` throws. Add

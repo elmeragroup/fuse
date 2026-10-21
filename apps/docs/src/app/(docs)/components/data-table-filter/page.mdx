@@ -1,0 +1,68 @@
+---
+lede: >
+  A filter bar for TanStack Table v9 tables. People add a filter from a searchable menu, read each
+  filter as a chip, and edit option, text, number and date values in place.
+---
+
+import { DataTableFilterClient } from "./demos/data-table-filter-client";
+import { DataTableFilterServer } from "./demos/data-table-filter-server";
+import { DataTableFilterHighCardinality } from "./demos/data-table-filter-high-cardinality";
+import { DataTableFilterCalendar } from "./demos/data-table-filter-calendar";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("data-table-filter");
+
+<ComponentIntro slug="data-table-filter" />
+
+<Prose>
+
+Import from `@elmeragroup/fuse/data-table-filter` and install `@tanstack/react-table` 9.2 or later beside Fuse. The entry is not in the root barrel, so apps without TanStack never resolve it.
+
+The filter reads and writes the table's `columnFilters` state, and every filter value is a plain object, `{ kind, operator, values }`. Describe each filterable column once with `defineFilterFields<Row>()`, keyed by column id. The map checks each field's kind against the column's type and each option's value against the column's values. It holds no functions, so a server module can define it and pass it to the client.
+
+Register one filter function for every column. `createDataTableFilterFn({ timeZone })` returns it. Add it to `filterFns` in the table's features and name it in `defaultColumn.filterFn`. Use the same time zone in the filter function and on the Root, so date presets and date matches agree on the calendar day.
+
+Render `Bar`, `Content` and `ValueContent` as siblings inside `Root`, never one inside another. `Bar` is one toolbar with the Trigger, a chip per filter and Clear. `Content` is the add menu the Trigger opens. `ValueContent` is the popover a chip's value opens. A part outside its Root or chip throws a `DataTableFilterCompositionError` that names the fix.
+
+The add menu searches the fields. An option or multi-option field opens a submenu of its values with their counts, and each tick applies at once. A text, number or date field opens its editor in the same menu, in place of the list, and its value applies as it changes. Back, Escape, or Backspace in an empty text input return to the list with the search kept and that field highlighted. From two typed characters on, the menu also lists matching option values across every field. A list of values shows its first 50 matches and asks for more typing, so a field with thousands of options stays fast. A tap opens the menu or a submenu without focusing its search, so the on-screen keyboard stays down until the person taps the search.
+
+Counts and the number slider's range come from TanStack faceting in client mode. With `manualFiltering`, the table never counts the rows a server returns, so pass the server's counts and ranges through `facets`. An absent entry means unknown, and its list shows no counts. On the server, `parseColumnFilters` checks untrusted filter JSON against the same fields map, and `matchesFilter` runs the client's predicates on in-memory rows.
+
+`useDataTableFilter().actions.edit(fieldId)` opens a field's editor from anywhere inside the Root. A field with a chip opens its value popover. A text, number or date field without one opens the add menu on its editor. `onActiveFieldChange` reports the field whose submenu or editor opens, so a server can fetch its counts first.
+
+The date editor offers presets and two date inputs. Pass a function child to `DateEditor` to replace the inputs, for example with a React Aria calendar. Keep the calendar in your app's own modules, so the bare entry never pulls in React Aria.
+
+</Prose>
+
+<Demo slug="data-table-filter" id="client" title="Client filtering" file="data-table-filter-client.tsx">
+  <DataTableFilterClient />
+</Demo>
+
+<Demo
+  slug="data-table-filter"
+  id="server"
+  title="Server filtering with facets"
+  file="data-table-filter-server.tsx">
+  <DataTableFilterServer />
+</Demo>
+
+<Demo
+  slug="data-table-filter"
+  id="high-cardinality"
+  title="3,000 options"
+  file="data-table-filter-high-cardinality.tsx">
+  <DataTableFilterHighCardinality />
+</Demo>
+
+<Demo
+  slug="data-table-filter"
+  id="calendar"
+  title="Full composition with a calendar"
+  file="data-table-filter-calendar.tsx">
+  <DataTableFilterCalendar />
+</Demo>
+
+<ApiReference slug="data-table-filter" />
+
+<ComponentTokens slug="data-table-filter" />

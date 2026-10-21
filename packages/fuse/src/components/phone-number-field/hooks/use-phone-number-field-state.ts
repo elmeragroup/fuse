@@ -5,6 +5,7 @@ import type { RefObject } from "react";
 
 import type { CountryCode } from "libphonenumber-js/core";
 
+import { hasFocus } from "../../../internal/active-element";
 import * as PhoneEditor from "../phone-editor";
 import type { PhoneEdit, PhoneEditorProps, PhoneEditorState, PhoneEditorView } from "../phone-editor";
 import type { PhoneNumberCountry } from "../phone-engine";
@@ -79,10 +80,7 @@ export function usePhoneNumberFieldState({
     if (!pending || pending !== proposalKey || !selection || !input || input.value !== displayValue) {
       return;
     }
-    // The document's activeElement is the shadow host for an input in a shadow root.
-    const root = input.getRootNode();
-    const focused = root instanceof Document || root instanceof ShadowRoot ? root.activeElement : null;
-    if (focused !== input) {
+    if (!hasFocus(input)) {
       return;
     }
     input.setSelectionRange(selection.start, selection.end, selection.direction ?? undefined);

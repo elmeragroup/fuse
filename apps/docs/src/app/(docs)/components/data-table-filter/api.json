@@ -1,0 +1,754 @@
+{
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate. Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "data-table-filter",
+  "parts": [
+    {
+      "name": "DataTableFilter.Root",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table-filter/data-table-filter.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The Bar, the overlays and anything else that reads the filter.",
+          "required": false
+        },
+        {
+          "name": "facets",
+          "origin": "declared",
+          "type": "FilterFacets<TFields> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Server counts and ranges. They win over TanStack faceting, and with `manualFiltering` they are the only source, since TanStack would count the current page only.",
+          "required": false
+        },
+        {
+          "name": "fields",
+          "origin": "declared",
+          "type": "TFields",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The filterable fields keyed by column id, from `defineFilterFields`.",
+          "required": true
+        },
+        {
+          "name": "formatOperator",
+          "origin": "declared",
+          "type": "((operator: \"contains\" | \"doesNotContain\" | \"excludes\" | \"excludesAllOf\" | \"excludesAnyOf\" | \"includes\" | \"includesAllOf\" | \"includesAnyOf\" | \"is\" | \"isAfter\" | \"isAnyOf\" | \"isBefore\" | \"isBetween\" | \"isGreaterThan\" | \"isGreaterThanOrEqual\" | \"isLessThan\" | \"isLessThanOrEqual\" | \"isNoneOf\" | \"isNot\" | \"isNotBetween\" | \"isOnOrAfter\" | \"isOnOrBefore\", kind: FilterKind) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "An operator's label. Return undefined to keep the dictionary's.",
+          "required": false
+        },
+        {
+          "name": "onActiveFieldChange",
+          "origin": "declared",
+          "type": "((fieldId: string | null) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called with the field whose editor opens, and null when it closes. A server fetches facets from it.",
+          "required": false
+        },
+        {
+          "name": "table",
+          "origin": "declared",
+          "type": "FilterTableSource",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The table, from `useTable` or a Fuse table hook with `columnFilteringFeature`.",
+          "required": true
+        },
+        {
+          "name": "timeZone",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The zone for date presets and the date editor's today. Defaults to the runtime zone.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DataTableFilter.Bar",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table-filter/data-table-filter-bar.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 276,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: ToolbarRootState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "loopFocus",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "If `true`, using keyboard navigation will wrap focus to the other end of the toolbar once the end is reached.",
+          "required": false
+        },
+        {
+          "name": "orientation",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "Orientation | undefined",
+          "shortType": null,
+          "defaultValue": "'horizontal'",
+          "description": "The orientation of the toolbar.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, ToolbarRootState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ToolbarRootState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DataTableFilter.Trigger",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table-filter/data-table-filter-bar.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 283,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: ToolbarButtonState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "When `true` the item is disabled.",
+          "required": false
+        },
+        {
+          "name": "focusableWhenDisabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "When `true` the item remains focusable when disabled.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": "declared",
+          "type": "ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The presentation, which replaces the outline Fuse Button. The toolbar and menu wiring stay.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ToolbarButtonState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DataTableFilter.Chips",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table-filter/data-table-filter-bar.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "((chip: ChipFilter) => ReactNode) | ReactNode",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "The template each chip renders, inside its chip context. Plain children are a static template, such as a chip without the Operator. A function receives the chip, to branch on it. Custom segments read the chip with `useDataTableFilterChip()`.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DataTableFilter.Chip",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table-filter/data-table-filter-bar.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: ToolbarGroupState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "When `true` all toolbar items in the group are disabled.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, ToolbarGroupState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ToolbarGroupState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DataTableFilter.Subject",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table-filter/data-table-filter-bar.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "DataTableFilter.Operator",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table-filter/data-table-filter-bar.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 284,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: ToolbarButtonState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "When `true` the item is disabled.",
+          "required": false
+        },
+        {
+          "name": "focusableWhenDisabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "When `true` the item remains focusable when disabled.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": "declared",
+          "type": "ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The trigger's presentation, which replaces the ghost Fuse Button.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ToolbarButtonState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DataTableFilter.Value",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table-filter/data-table-filter-bar.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 283,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: ToolbarButtonState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "When `true` the item is disabled.",
+          "required": false
+        },
+        {
+          "name": "focusableWhenDisabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "When `true` the item remains focusable when disabled.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": "declared",
+          "type": "ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The presentation, which replaces the ghost Fuse Button.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ToolbarButtonState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DataTableFilter.Remove",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table-filter/data-table-filter-bar.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 284,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: ToolbarButtonState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "When `true` the item is disabled.",
+          "required": false
+        },
+        {
+          "name": "focusableWhenDisabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "When `true` the item remains focusable when disabled.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": "declared",
+          "type": "ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The presentation, which replaces the icon Fuse Button.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ToolbarButtonState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DataTableFilter.Clear",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table-filter/data-table-filter-bar.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 289,
+      "props": []
+    },
+    {
+      "name": "DataTableFilter.Content",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table-filter/data-table-filter-content.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 274,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The menu's body: `FieldList` and an `Editor` for the in-place drill, each rendering only for its step. Defaults to both, with the default kind editors.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: MenuPopupState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "finalFocus",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | RefObject<HTMLElement | null> | ((closeType: InteractionType) => void | boolean | HTMLElement | null) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Determines the element to focus when the menu is closed. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (trigger or previously focused element). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, or `false`/`undefined` to do nothing.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, MenuPopupState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: MenuPopupState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DataTableFilter.FieldList",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table-filter/data-table-filter-content.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": []
+    },
+    {
+      "name": "DataTableFilter.ValueContent",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table-filter/data-table-filter-value-content.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 274,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Replaces the editor. `useDataTableFilter().state.editing` names the edited field.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: PopoverPopupState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "finalFocus",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | RefObject<HTMLElement | null> | ((closeType: InteractionType) => void | boolean | HTMLElement | null) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Determines the element to focus when the popover is closed. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (trigger or previously focused element). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, `null` to fall back to the default behavior, or `false`/`undefined` to do nothing.",
+          "required": false
+        },
+        {
+          "name": "initialFocus",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | RefObject<HTMLElement | null> | ((openType: InteractionType) => void | boolean | HTMLElement | null) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Determines the element to focus when the popover is opened. By default, focus moves to the first tabbable element inside the popup, except when the popover is opened by touch — then the popup itself is focused to avoid opening the virtual keyboard. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (first tabbable element or popup). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, `null` to fall back to the default behavior, or `false`/`undefined` to do nothing.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, PopoverPopupState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: PopoverPopupState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DataTableFilter.Editor",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table-filter/data-table-filter-value-content.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "DataTableFilter.OptionEditor",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table-filter/data-table-filter-editors.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "DataTableFilter.TextEditor",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table-filter/data-table-filter-editors.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "DataTableFilter.NumberEditor",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table-filter/data-table-filter-editors.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "DataTableFilter.DateEditor",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/data-table-filter/data-table-filter-editors.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "((editor: DateEditorState) => ReactNode) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Replaces the date inputs, such as with a calendar. The presets and the header stay.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

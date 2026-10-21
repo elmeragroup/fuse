@@ -66,6 +66,18 @@ const CLIENT_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
       "components/data-table/create-fuse-table-hook.ts",
     ],
   ],
+  [
+    "data-table-filter",
+    [
+      "components/data-table-filter/data-table-filter.tsx",
+      "components/data-table-filter/data-table-filter-bar.tsx",
+      "components/data-table-filter/data-table-filter-content.tsx",
+      "components/data-table-filter/searchable-menu.ts",
+      "components/data-table-filter/data-table-filter-value-content.tsx",
+      "components/data-table-filter/data-table-filter-editors.tsx",
+      "components/data-table-filter/data-table-filter-editor-context.ts",
+    ],
+  ],
   ["date-field", ["react-aria/date-field/date-field.tsx"]],
   ["date-picker", ["react-aria/date-picker/date-picker.tsx"]],
   ["date-range-picker", ["react-aria/date-range-picker/date-range-picker.tsx"]],
@@ -317,6 +329,16 @@ describe("RSC classification", () => {
     // renders them inside the client palette. The presets that read the dictionary stay in
     // client modules.
     ["components/command/command-markup.tsx", "server"],
+    // The data table filter's model holds no state and imports no React or TanStack runtime, so
+    // a server parses request input and filters rows with the same predicates the client runs.
+    ["components/data-table-filter/filter-model.ts", "server"],
+    ["components/data-table-filter/filter-match.ts", "server"],
+    ["components/data-table-filter/filter-fields.ts", "server"],
+    ["components/data-table-filter/filter-parse.ts", "server"],
+    ["components/data-table-filter/filter-fn.ts", "server"],
+    ["components/data-table-filter/filter-summary.ts", "server"],
+    ["components/data-table-filter/option-list.ts", "server"],
+    ["components/data-table-filter/data-table-filter-error.ts", "server"],
   ] as const)("keeps the shared module %s %s", (file, rsc) => {
     expectRsc(file, rsc);
   });
@@ -337,6 +359,7 @@ describe("RSC classification", () => {
     ["command", "Command"],
     ["command-virtual", "CommandVirtual"],
     ["data-table", "DataTable"],
+    ["data-table-filter", "DataTableFilter"],
     ["dialog", "Dialog"],
     ["dropdown-menu", "DropdownMenu"],
     ["field", "Field"],
@@ -526,6 +549,10 @@ describe("runtime listeners and layout motion", () => {
       .filter((record) => layoutTransition.test(record.code))
       .map((record) => record.relative);
     expect(owners.toSorted()).toEqual([
+      // The data table filter's value popover follows Base UI's --popup-height and glides its
+      // positioner from chip to chip, and its add menu morphs its height between the field list
+      // and an editor drilled into in place.
+      "components/data-table-filter/data-table-filter-variants.ts",
       // Item.Footer, and so every SelectionItem.SubSection, tweens its grid row and top padding
       // between `hidden` and `visible`.
       "components/item/item-markup.tsx",
@@ -535,6 +562,48 @@ describe("runtime listeners and layout motion", () => {
       "components/sidebar/sidebar.tsx",
       "styles/panel-height.ts",
     ]);
+  });
+});
+
+describe("Base UI preview APIs", () => {
+  // Why not a lint rule: the preview members hang off the `Menu` namespace, and a restricted-import
+  // rule sees the import of `Menu`, not which of its members a module reads. Base UI renames
+  // preview APIs on their way out of preview, so one module owns them and a rename is one edit.
+  const PREVIEW_MENU_MEMBERS = /\b(?:FilterProvider|Input|List|Empty|useFilter)\b/u;
+
+  /** Each `Name.Member` read through a binding of `@base-ui/react/menu`'s `Menu` export. */
+  function previewMenuReads(code: string): string[] {
+    const aliases = [...code.matchAll(/import\s*\{([^}]*)\}\s*from\s*"@base-ui\/react\/menu"/gu)].flatMap(
+      ([, names = ""]) =>
+        names
+          .split(",")
+          .map((name) => /^\s*Menu(?:\s+as\s+(\w+))?\s*$/u.exec(name))
+          .flatMap((match) => (match === null ? [] : [match[1] ?? "Menu"]))
+    );
+    return aliases.flatMap((alias) =>
+      [...code.matchAll(new RegExp(`\\b${alias}\\.(\\w+)`, "gu"))]
+        .map(([, member = ""]) => member)
+        .filter((member) => PREVIEW_MENU_MEMBERS.test(member))
+        .map((member) => `${alias}.${member}`)
+    );
+  }
+
+  it("recognizes a preview member read through any alias of Menu, and not other members", () => {
+    expect(
+      previewMenuReads(
+        'import { Menu as M } from "@base-ui/react/menu";\nM.FilterProvider; M.Item; M.useFilter;'
+      )
+    ).toEqual(["M.FilterProvider", "M.useFilter"]);
+    expect(previewMenuReads('import { Menu } from "@base-ui/react/menu";\nMenu.Input;')).toEqual([
+      "Menu.Input",
+    ]);
+  });
+
+  it("reads Menu's preview filtering parts only in the data table filter's searchable-menu.ts", () => {
+    const readers = [...SOURCE_TREE.values()]
+      .filter((record) => previewMenuReads(record.code).length > 0)
+      .map((record) => record.relative);
+    expect(readers).toEqual(["components/data-table-filter/searchable-menu.ts"]);
   });
 });
 
